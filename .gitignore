@@ -1,0 +1,42 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+secrets.*
+*.pem
+*.key
+
+# Node / React
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.env
+
+# .NET / ASP.NET Core
+backend/**/bin/
+backend/**/obj/
+backend/**/TestResults/
+backend/**/*.user
+backend/**/*.suo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Docker / local volumes
+.docker-data/
+postgres-data/
+minio-data/
+redis-data/
+
+# Generated files
+uploads/
+certificates/generated/
+*.log
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
