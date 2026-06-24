@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DigiTalent.Api/DigiTalent.Api.csproj" />
+    <Project Path="src/DigiTalent.Application/DigiTalent.Application.csproj" />
+    <Project Path="src/DigiTalent.Domain/DigiTalent.Domain.csproj" />
+    <Project Path="src/DigiTalent.Infrastructure/DigiTalent.Infrastructure.csproj" />
+    <Project Path="src/DigiTalent.Shared/DigiTalent.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DigiTalent.IntegrationTests/DigiTalent.IntegrationTests.csproj" />
+    <Project Path="tests/DigiTalent.UnitTests/DigiTalent.UnitTests.csproj" />
+  </Folder>
+</Solution>

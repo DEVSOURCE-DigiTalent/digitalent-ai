@@ -1,0 +1,106 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: digitalent-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-digitalent}
+      POSTGRES_USER: ${POSTGRES_USER:-digitalent_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-digitalent_app}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - digitalent-net
+
+  minio:
+    image: minio/minio:latest
+    container_name: digitalent-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-digitalent_minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-changeme}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - digitalent-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: digitalent-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - digitalent-net
+    profiles:
+      - optional
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: digitalent-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ../frontend/dist:/usr/share/nginx/html:ro
+    depends_on:
+      - backend-api
+    networks:
+      - digitalent-net
+
+  backend-api:
+    build:
+      context: ../backend
+      dockerfile: ../backend/src/DigiTalent.Api/Dockerfile
+    container_name: digitalent-api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-digitalent};Username=${POSTGRES_USER:-digitalent_app};Password=${POSTGRES_PASSWORD:-changeme}
+      Jwt__Issuer: ${JWT_ISSUER:-DigiTalentAI}
+      Jwt__Audience: ${JWT_AUDIENCE:-DigiTalentAI.Web}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:-YourSuperSecretKeyThatIsAtLeast64CharactersLong!}
+      MinIO__Endpoint: minio:9000
+      MinIO__AccessKey: ${MINIO_ACCESS_KEY:-digitalent_minio}
+      MinIO__SecretKey: ${MINIO_SECRET_KEY:-changeme}
+      MinIO__UseSSL: "false"
+      AllowedOrigins: ${ALLOWED_ORIGINS:-http://localhost:80}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - digitalent-net
+
+networks:
+  digitalent-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:
