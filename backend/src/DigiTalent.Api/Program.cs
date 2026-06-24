@@ -77,11 +77,15 @@ if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    try { await db.Database.MigrateAsync(); }
+    try
+    {
+        await db.Database.MigrateAsync();
+        await DigiTalent.Infrastructure.Persistence.Seed.AppDbContextSeed.SeedAsync(db);
+    }
     catch (Exception ex)
     {
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogWarning(ex, "Database migration failed, continuing anyway");
+        logger.LogWarning(ex, "Database migration/seeding failed, continuing anyway");
     }
 }
 
