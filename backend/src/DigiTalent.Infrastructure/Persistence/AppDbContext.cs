@@ -61,6 +61,8 @@ public class AppDbContext : DbContext
     public DbSet<AiExplanationLog> AiExplanationLogs => Set<AiExplanationLog>();
     public DbSet<FileObject> FileObjects => Set<FileObject>();
     public DbSet<Notification> Notifications => Set<Notification>();
+public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
+public DbSet<PromotionReadinessResult> PromotionReadinessResults => Set<PromotionReadinessResult>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
     public DbSet<ScoringConfig> ScoringConfigs => Set<ScoringConfig>();

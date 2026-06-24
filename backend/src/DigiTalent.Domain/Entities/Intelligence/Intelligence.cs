@@ -65,6 +65,16 @@ public class ReadinessScore : AuditableEntity
     public string? SnapshotJson { get; set; }
 }
 
+public class PromotionReadinessResult : AuditableEntity
+{
+    public Guid EmployeeId { get; set; }
+    public Guid TargetJobPositionId { get; set; }
+    public decimal ReadinessPercent { get; set; }
+    public decimal MissingWeight { get; set; }
+    public string? RecommendationText { get; set; }
+    public DateTimeOffset GeneratedAt { get; set; }
+}
+
 public class AiExplanationLog : AuditableEntity
 {
     public string FeatureType { get; set; } = string.Empty;

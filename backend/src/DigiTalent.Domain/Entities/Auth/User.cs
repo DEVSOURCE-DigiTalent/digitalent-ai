@@ -25,6 +25,7 @@ public class Role : AuditableEntity
     public string? Description { get; set; }
     public string ScopeType { get; set; } = "ORGANIZATION";
     public bool IsSystemRole { get; set; }
+    public string Status { get; set; } = "ACTIVE";
 
     public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();

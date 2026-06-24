@@ -56,6 +56,7 @@ public class EmployeeCompetencyProfile : AuditableEntity
     public int CurrentLevelValue { get; set; }
     public decimal? ConfidenceScore { get; set; }
     public Guid? LastEvidenceId { get; set; }
+    public CompetencyEvidence? LastEvidence { get; set; }
     public DateTimeOffset? LastEvaluatedAt { get; set; }
     public Guid? UpdatedBy { get; set; }
 }
