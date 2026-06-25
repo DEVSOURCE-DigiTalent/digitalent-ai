@@ -1,17 +1,18 @@
-using DigiTalent.Domain.Entities.Auth;
-using DigiTalent.Domain.Entities.Organization;
-using DigiTalent.Domain.Entities.Competency;
-using DigiTalent.Domain.Entities.Learning;
+using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Domain.Entities.Assessment;
+using DigiTalent.Domain.Entities.Auth;
 using DigiTalent.Domain.Entities.Certificate;
-using DigiTalent.Domain.Entities.Task;
+using DigiTalent.Domain.Entities.Competency;
 using DigiTalent.Domain.Entities.Intelligence;
+using DigiTalent.Domain.Entities.Learning;
+using DigiTalent.Domain.Entities.Organization;
 using DigiTalent.Domain.Entities.Shared;
+using DigiTalent.Domain.Entities.Task;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Infrastructure.Persistence;
 
-public class AppDbContext : DbContext
+public class AppDbContext : DbContext, IApplicationDbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
