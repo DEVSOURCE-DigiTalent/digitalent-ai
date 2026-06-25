@@ -12,6 +12,7 @@ using OrgEntity = DigiTalent.Domain.Entities.Organization.Organization;
 using DeptEntity = DigiTalent.Domain.Entities.Organization.Department;
 using PositionEntity = DigiTalent.Domain.Entities.Organization.JobPosition;
 using EmpEntity = DigiTalent.Domain.Entities.Organization.Employee;
+using CompetencyEntity = DigiTalent.Domain.Entities.Competency.Competency;
 
 namespace DigiTalent.Application.Common.Interfaces;
 
@@ -28,7 +29,7 @@ public interface IApplicationDbContext
     DbSet<PositionEntity> JobPositions { get; }
     DbSet<EmpEntity> Employees { get; }
     DbSet<CompetencyCategory> CompetencyCategories { get; }
-    DbSet<Competency> Competencies { get; }
+    DbSet<CompetencyEntity> Competencies { get; }
     DbSet<CompetencyLevel> CompetencyLevels { get; }
     DbSet<PositionCompetencyRequirement> PositionCompetencyRequirements { get; }
     DbSet<EmployeeCompetencyProfile> EmployeeCompetencyProfiles { get; }

@@ -76,6 +76,9 @@ builder.Services.AddScoped<ResourceScopeAuthorizationService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<DigiTalent.Application.Users.Services.UserService>();
 builder.Services.AddScoped<DigiTalent.Application.Organization.Services.OrganizationService>();
+builder.Services.AddScoped<DigiTalent.Application.Competency.Services.CompetencyService>();
+builder.Services.AddScoped<DigiTalent.Application.Learning.Services.CourseService>();
+builder.Services.AddScoped<DigiTalent.Application.Learning.Services.EnrollmentService>();
 
 // CORS
 builder.Services.AddCors(options =>
