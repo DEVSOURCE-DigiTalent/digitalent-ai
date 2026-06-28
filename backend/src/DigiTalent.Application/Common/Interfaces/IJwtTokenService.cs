@@ -11,7 +11,7 @@ public interface IJwtTokenService
     /// <summary>
     /// Generates an access token for the specified user with roles and permissions.
     /// </summary>
-    string GenerateAccessToken(User user, List<string> roles, List<string> permissions, Guid? employeeId = null);
+    string GenerateAccessToken(User user, List<string> roles, List<string> permissions, Guid? employeeId = null, List<Guid>? managedDepartmentIds = null);
 
     /// <summary>
     /// Generates a refresh token entity (the token string itself is cryptographically random).

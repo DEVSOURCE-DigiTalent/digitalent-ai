@@ -24,16 +24,16 @@ public class CompetencyService
     {
         var query = _context.CompetencyCategories.AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(request.Keyword))
+        if (!string.IsNullOrWhiteSpace(request.Search))
         {
-            var kw = request.Keyword.ToLower();
+            var kw = request.Search.ToLower();
             query = query.Where(c => c.Name.ToLower().Contains(kw) || c.Code.ToLower().Contains(kw));
         }
 
         var totalItems = await query.CountAsync();
         var items = await query
             .OrderBy(c => c.SortOrder).ThenBy(c => c.Name)
-            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Skip((request.PageIndex - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(c => new CompetencyCategoryResponse
             {
@@ -47,7 +47,7 @@ public class CompetencyService
 
         return new PagedList<CompetencyCategoryResponse>
         {
-            Items = items, PageNumber = request.PageNumber,
+            Items = items, PageIndex = request.PageIndex,
             PageSize = request.PageSize, TotalItems = totalItems,
         };
     }
@@ -161,16 +161,16 @@ public class CompetencyService
             .Include(c => c.Category)
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(request.Keyword))
+        if (!string.IsNullOrWhiteSpace(request.Search))
         {
-            var kw = request.Keyword.ToLower();
+            var kw = request.Search.ToLower();
             query = query.Where(c => c.Name.ToLower().Contains(kw) || c.Code.ToLower().Contains(kw));
         }
 
         var totalItems = await query.CountAsync();
         var items = await query
             .OrderBy(c => c.Category.SortOrder).ThenBy(c => c.Code)
-            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Skip((request.PageIndex - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(c => new CompetencyResponse
             {
@@ -183,7 +183,7 @@ public class CompetencyService
 
         return new PagedList<CompetencyResponse>
         {
-            Items = items, PageNumber = request.PageNumber,
+            Items = items, PageIndex = request.PageIndex,
             PageSize = request.PageSize, TotalItems = totalItems,
         };
     }
@@ -467,7 +467,7 @@ public class CompetencyService
         var totalItems = await query.CountAsync();
         var items = await query
             .OrderByDescending(e => e.CreatedAt)
-            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Skip((request.PageIndex - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(e => new CompetencyEvidenceResponse
             {
@@ -486,7 +486,7 @@ public class CompetencyService
 
         return new PagedList<CompetencyEvidenceResponse>
         {
-            Items = items, PageNumber = request.PageNumber,
+            Items = items, PageIndex = request.PageIndex,
             PageSize = request.PageSize, TotalItems = totalItems,
         };
     }

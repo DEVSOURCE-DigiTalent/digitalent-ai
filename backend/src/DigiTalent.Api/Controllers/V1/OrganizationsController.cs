@@ -34,10 +34,11 @@ public class OrganizationsController : ControllerBase
 
     [HttpPatch("departments/{departmentId:guid}/status")]
     [HasPermission(PermissionConstants.DepartmentCreateUpdate)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ChangeDepartmentStatus(Guid departmentId, [FromBody] StatusChangeRequest request)
     {
         await _orgService.ChangeDepartmentStatusAsync(departmentId, request);
-        return Ok(ApiResponse.Ok(null, "Status updated"));
+        return NoContent();
     }
 
     [HttpGet("job-positions")]
@@ -47,8 +48,13 @@ public class OrganizationsController : ControllerBase
 
     [HttpPost("job-positions")]
     [HasPermission(PermissionConstants.JobPositionCreateUpdate)]
+    [ProducesResponseType(typeof(ApiResponse<JobPositionResponse>), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateJobPosition([FromBody] CreateJobPositionRequest request)
-        => Ok(ApiResponse<JobPositionResponse>.Ok(await _orgService.CreateJobPositionAsync(request), "Position created"));
+    {
+        var result = await _orgService.CreateJobPositionAsync(request);
+        return CreatedAtAction(nameof(SearchJobPositions), new { positionId = result.Id },
+            ApiResponse<JobPositionResponse>.Ok(result, "Position created"));
+    }
 
     [HttpPut("job-positions/{positionId:guid}")]
     [HasPermission(PermissionConstants.JobPositionCreateUpdate)]
@@ -62,8 +68,13 @@ public class OrganizationsController : ControllerBase
 
     [HttpPost("employees")]
     [HasPermission(PermissionConstants.EmployeeCreateUpdate)]
+    [ProducesResponseType(typeof(ApiResponse<EmployeeDetailResponse>), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateEmployee([FromBody] CreateEmployeeRequest request)
-        => Ok(ApiResponse<EmployeeDetailResponse>.Ok(await _orgService.CreateEmployeeAsync(request), "Employee created"));
+    {
+        var result = await _orgService.CreateEmployeeAsync(request);
+        return CreatedAtAction(nameof(GetEmployee), new { employeeId = result.Id },
+            ApiResponse<EmployeeDetailResponse>.Ok(result, "Employee created"));
+    }
 
     [HttpGet("employees/{employeeId:guid}")]
     [HasPermission(PermissionConstants.EmployeeRead)]
@@ -77,9 +88,10 @@ public class OrganizationsController : ControllerBase
 
     [HttpPatch("employees/{employeeId:guid}/assignment")]
     [HasPermission(PermissionConstants.EmployeeTransfer)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> TransferEmployee(Guid employeeId, [FromBody] EmployeeAssignmentRequest request)
     {
         await _orgService.TransferEmployeeAsync(employeeId, request);
-        return Ok(ApiResponse.Ok(null, "Employee transferred"));
+        return NoContent();
     }
 }

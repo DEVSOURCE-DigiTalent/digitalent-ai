@@ -18,10 +18,27 @@ var builder = WebApplication.CreateBuilder(args);
 // ──────────────────────────────────────────────
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 
-// Swagger
-builder.Services.AddSwaggerGen();
+// Swagger with JWT Bearer security scheme
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new() { Title = "DigiTalent AI API", Version = "v1" });
+
+    options.AddSecurityDefinition("bearer", new Microsoft.OpenApi.OpenApiSecurityScheme
+    {
+        Type = Microsoft.OpenApi.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "JWT Authorization header using the Bearer scheme.",
+    });
+
+    options.AddSecurityRequirement(document => new Microsoft.OpenApi.OpenApiSecurityRequirement
+    {
+        [new Microsoft.OpenApi.OpenApiSecuritySchemeReference("bearer", document)] = [],
+    });
+});
 
 // Database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "";
@@ -72,6 +89,12 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<ResourceScopeAuthorizationService>();
 
+// Common Services
+builder.Services.AddScoped<DigiTalent.Application.Common.Services.AuditLogService>();
+
+// SignalR Hub Service
+builder.Services.AddScoped<INotificationHubService, DigiTalent.Api.Hubs.NotificationHubService>();
+
 // Application Services
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<DigiTalent.Application.Users.Services.UserService>();
@@ -79,6 +102,23 @@ builder.Services.AddScoped<DigiTalent.Application.Organization.Services.Organiza
 builder.Services.AddScoped<DigiTalent.Application.Competency.Services.CompetencyService>();
 builder.Services.AddScoped<DigiTalent.Application.Learning.Services.CourseService>();
 builder.Services.AddScoped<DigiTalent.Application.Learning.Services.EnrollmentService>();
+
+// Phase 6 — Assessment & Certificate
+builder.Services.AddScoped<DigiTalent.Application.Assessment.Services.QuestionBankService>();
+builder.Services.AddScoped<DigiTalent.Application.Assessment.Services.AssessmentService>();
+builder.Services.AddScoped<DigiTalent.Application.Assessment.Services.AttemptService>();
+builder.Services.AddScoped<DigiTalent.Application.Certificate.Services.CertificateService>();
+
+// Phase 3 — Intelligence, Task, Dashboard, Notification
+builder.Services.AddScoped<DigiTalent.Application.Intelligence.Services.IntelligenceService>();
+builder.Services.AddScoped<DigiTalent.Application.Tasks.Services.TaskService>();
+builder.Services.AddScoped<DigiTalent.Application.Dashboard.Services.DashboardService>();
+builder.Services.AddScoped<DigiTalent.Application.Notifications.Services.NotificationService>();
+
+// Phase 7 — File Storage, Audit Log Search, Scoring Config
+builder.Services.AddScoped<DigiTalent.Application.FileStorage.Services.FileService>();
+builder.Services.AddScoped<DigiTalent.Application.AuditLogs.Services.AuditLogSearchService>();
+builder.Services.AddScoped<DigiTalent.Application.ScoringConfigs.Services.ScoringConfigService>();
 
 // CORS
 builder.Services.AddCors(options =>
@@ -118,6 +158,7 @@ app.MapGet("/health/ready", async (AppDbContext db) =>
 });
 
 app.MapControllers();
+app.MapHub<DigiTalent.Api.Hubs.NotificationHub>("/hubs/notifications");
 
 // Auto-migrate and seed on development
 if (app.Environment.IsDevelopment())

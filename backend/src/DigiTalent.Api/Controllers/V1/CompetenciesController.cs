@@ -28,7 +28,7 @@ public class CompetenciesController : ControllerBase
     public async Task<IActionResult> SearchCategories([FromQuery] PaginationRequest request)
     {
         // Non-paged listing if no pagination params specified
-        if (request.PageNumber <= 1 && request.PageSize >= 1000)
+        if (request.PageIndex <= 1 && request.PageSize >= 1000)
             return Ok(ApiResponse<List<CompetencyCategoryResponse>>.Ok(
                 await _competencyService.GetAllCategoriesAsync()));
 
@@ -44,9 +44,13 @@ public class CompetenciesController : ControllerBase
 
     [HttpPost("competency-categories")]
     [HasPermission(PermissionConstants.CompetencyCategoryManage)]
+    [ProducesResponseType(typeof(ApiResponse<CompetencyCategoryResponse>), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateCategory([FromBody] CreateCompetencyCategoryRequest request)
-        => Ok(ApiResponse<CompetencyCategoryResponse>.Ok(
-            await _competencyService.CreateCategoryAsync(request), "Category created"));
+    {
+        var result = await _competencyService.CreateCategoryAsync(request);
+        return CreatedAtAction(nameof(GetCategory), new { categoryId = result.Id },
+            ApiResponse<CompetencyCategoryResponse>.Ok(result, "Category created"));
+    }
 
     [HttpPut("competency-categories/{categoryId:guid}")]
     [HasPermission(PermissionConstants.CompetencyCategoryManage)]
@@ -59,7 +63,7 @@ public class CompetenciesController : ControllerBase
     public async Task<IActionResult> ChangeCategoryStatus(Guid categoryId, [FromBody] StatusChangeRequest request)
     {
         await _competencyService.ChangeCategoryStatusAsync(categoryId, request.Status);
-        return Ok(ApiResponse.Ok(null, "Status updated"));
+        return NoContent();
     }
 
     // ═══════════════════════════════════════
@@ -80,9 +84,13 @@ public class CompetenciesController : ControllerBase
 
     [HttpPost("competencies")]
     [HasPermission(PermissionConstants.CompetencyManage)]
+    [ProducesResponseType(typeof(ApiResponse<CompetencyResponse>), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateCompetency([FromBody] CreateCompetencyRequest request)
-        => Ok(ApiResponse<CompetencyResponse>.Ok(
-            await _competencyService.CreateCompetencyAsync(request), "Competency created"));
+    {
+        var result = await _competencyService.CreateCompetencyAsync(request);
+        return CreatedAtAction(nameof(SearchCompetencies), new { competencyId = result.Id },
+            ApiResponse<CompetencyResponse>.Ok(result, "Competency created"));
+    }
 
     [HttpPut("competencies/{competencyId:guid}")]
     [HasPermission(PermissionConstants.CompetencyManage)]
@@ -102,9 +110,13 @@ public class CompetenciesController : ControllerBase
 
     [HttpPost("competency-levels")]
     [HasPermission(PermissionConstants.CompetencyCategoryManage)]
+    [ProducesResponseType(typeof(ApiResponse<CompetencyLevelResponse>), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateLevel([FromBody] CreateCompetencyLevelRequest request)
-        => Ok(ApiResponse<CompetencyLevelResponse>.Ok(
-            await _competencyService.CreateLevelAsync(request), "Level created"));
+    {
+        var result = await _competencyService.CreateLevelAsync(request);
+        return CreatedAtAction(nameof(GetAllLevels), new { levelId = result.Id },
+            ApiResponse<CompetencyLevelResponse>.Ok(result, "Level created"));
+    }
 
     [HttpPut("competency-levels/{levelId:guid}")]
     [HasPermission(PermissionConstants.CompetencyCategoryManage)]

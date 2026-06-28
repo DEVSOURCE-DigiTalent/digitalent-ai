@@ -54,28 +54,31 @@ public class UsersController : ControllerBase
         return Ok(ApiResponse<UserDetailResponse>.Ok(result, "User updated successfully"));
     }
 
-    [HttpPost("users/{userId:guid}/roles")]
-    [HasPermission(PermissionConstants.RoleAssignBusiness)]
-    public async Task<IActionResult> AssignRoles(Guid userId, [FromBody] AssignUserRolesRequest request)
-    {
-        await _userService.AssignRolesAsync(userId, request);
-        return Ok(ApiResponse.Ok(null, "Roles assigned successfully"));
-    }
-
     [HttpPost("users/{userId:guid}/lock")]
     [HasPermission(PermissionConstants.UserLockUnlock)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> LockUser(Guid userId, [FromBody] LockUserRequest request)
     {
         await _userService.LockAsync(userId, request);
-        return Ok(ApiResponse.Ok(null, "User locked successfully"));
+        return NoContent();
     }
 
     [HttpPost("users/{userId:guid}/unlock")]
     [HasPermission(PermissionConstants.UserLockUnlock)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UnlockUser(Guid userId)
     {
         await _userService.UnlockAsync(userId);
-        return Ok(ApiResponse.Ok(null, "User unlocked successfully"));
+        return NoContent();
+    }
+
+    [HttpPost("users/{userId:guid}/roles")]
+    [HasPermission(PermissionConstants.RoleAssignBusiness)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> AssignRoles(Guid userId, [FromBody] AssignUserRolesRequest request)
+    {
+        await _userService.AssignRolesAsync(userId, request);
+        return NoContent();
     }
 
     // ── Roles ──

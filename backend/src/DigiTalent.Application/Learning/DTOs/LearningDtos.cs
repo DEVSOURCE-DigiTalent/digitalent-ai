@@ -262,3 +262,17 @@ public class LessonProgressResponse
     public DateTimeOffset? LastAccessedAt { get; set; }
     public DateTimeOffset? CompletedAt { get; set; }
 }
+
+// ═══════════════════════════════════════════════
+// Publish / Action DTOs
+// ═══════════════════════════════════════════════
+
+public class PublishCourseRequest
+{
+    public string? Message { get; set; }
+}
+
+public class LessonCompletionRequest
+{
+    public decimal? ProgressPercent { get; set; }
+}

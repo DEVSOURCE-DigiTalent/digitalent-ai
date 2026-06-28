@@ -60,11 +60,11 @@ public class AuthController : ControllerBase
     /// </summary>
     [HttpPost("logout")]
     [HasPermission(PermissionConstants.AuthLogout)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout()
     {
         await _authService.LogoutAsync();
-        return Ok(ApiResponse.Ok(null, "Logged out successfully"));
+        return NoContent();
     }
 
     /// <summary>
@@ -86,11 +86,11 @@ public class AuthController : ControllerBase
     /// </summary>
     [HttpPost("change-password")]
     [HasPermission(PermissionConstants.AccountChangeOwnPassword)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
         await _authService.ChangePasswordAsync(request);
-        return Ok(ApiResponse.Ok(null, "Password changed successfully"));
+        return NoContent();
     }
 }

@@ -34,7 +34,7 @@ public static class SeedOrganizationData
 
         var departments = new List<Department>
         {
-            new() { Id = DeptITId, OrganizationId = OrgDevsourceId, Code = "IT", Name = "Information Technology", Status = "ACTIVE" },
+            new() { Id = DeptITId, OrganizationId = OrgDevsourceId, Code = "IT", Name = "Information Technology", ManagerEmployeeId = SeedUserData.EmpManagerId, Status = "ACTIVE" },
             new() { Id = DeptHRId, OrganizationId = OrgDevsourceId, Code = "HR", Name = "Human Resources", Status = "ACTIVE" },
             new() { Id = DeptMarketingId, OrganizationId = OrgDevsourceId, Code = "MKT", Name = "Marketing", Status = "ACTIVE" },
             new() { Id = DeptFinanceId, OrganizationId = OrgDevsourceId, Code = "FIN", Name = "Finance", Status = "ACTIVE" },

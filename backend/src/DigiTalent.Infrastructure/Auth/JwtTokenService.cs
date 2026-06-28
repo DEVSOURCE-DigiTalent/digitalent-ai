@@ -32,7 +32,7 @@ public class JwtTokenService : IJwtTokenService
         };
     }
 
-    public string GenerateAccessToken(User user, List<string> roles, List<string> permissions, Guid? employeeId = null)
+    public string GenerateAccessToken(User user, List<string> roles, List<string> permissions, Guid? employeeId = null, List<Guid>? managedDepartmentIds = null)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.SigningKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -55,6 +55,13 @@ public class JwtTokenService : IJwtTokenService
         // Add permission claims (for quick checks without DB round-trip)
         foreach (var permission in permissions)
             claims.Add(new Claim("permission", permission));
+
+        // Add department claims for data-scope authorization
+        if (managedDepartmentIds != null)
+        {
+            foreach (var deptId in managedDepartmentIds)
+                claims.Add(new Claim("department_id", deptId.ToString()));
+        }
 
         var token = new JwtSecurityToken(
             issuer: _settings.Issuer,

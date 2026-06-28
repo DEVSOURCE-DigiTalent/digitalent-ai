@@ -1,4 +1,5 @@
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Shared.Constants;
 
 namespace DigiTalent.Api.Authorization;
 
@@ -26,7 +27,7 @@ public class ResourceScopeAuthorizationService
     /// </summary>
     public void EnsureDepartmentAccess(Guid? departmentId)
     {
-        if (_currentUser.Roles.Any(r => r is "SYSTEM_ADMIN" or "HR_MANAGER"))
+        if (_currentUser.Roles.Any(r => r is RoleConstants.SystemAdmin or RoleConstants.HRManager))
             return;
 
         if (departmentId.HasValue && _currentUser.ManagedDepartmentIds.Contains(departmentId.Value))
@@ -51,10 +52,24 @@ public class ResourceScopeAuthorizationService
     /// </summary>
     public void EnsureGlobalAccess()
     {
-        if (_currentUser.Roles.Any(r => r is "SYSTEM_ADMIN" or "HR_MANAGER"))
+        if (_currentUser.Roles.Any(r => r is RoleConstants.SystemAdmin or RoleConstants.HRManager))
             return;
 
         throw new UnauthorizedAccessException("You do not have global access to this resource.");
+    }
+
+    /// <summary>
+    /// Ensures the current user is a Trainer for the specified course.
+    /// </summary>
+    public void EnsureTrainerAccess(Guid courseId, Guid? ownerTrainerId)
+    {
+        if (_currentUser.Roles.Any(r => r is RoleConstants.SystemAdmin or RoleConstants.HRManager))
+            return;
+
+        if (_currentUser.EmployeeId.HasValue && ownerTrainerId == _currentUser.EmployeeId.Value)
+            return;
+
+        throw new UnauthorizedAccessException("You do not have trainer access to this course.");
     }
 
     /// <summary>
@@ -62,7 +77,7 @@ public class ResourceScopeAuthorizationService
     /// </summary>
     public bool CanAccessDepartment(Guid? departmentId)
     {
-        if (_currentUser.Roles.Any(r => r is "SYSTEM_ADMIN" or "HR_MANAGER"))
+        if (_currentUser.Roles.Any(r => r is RoleConstants.SystemAdmin or RoleConstants.HRManager))
             return true;
 
         if (departmentId.HasValue && _currentUser.ManagedDepartmentIds.Contains(departmentId.Value))
@@ -77,5 +92,29 @@ public class ResourceScopeAuthorizationService
     public bool IsOwner(Guid? resourceOwnerEmployeeId, Guid? currentUserEmployeeId)
     {
         return currentUserEmployeeId.HasValue && resourceOwnerEmployeeId == currentUserEmployeeId;
+    }
+
+    /// <summary>
+    /// Checks if the user has GLOBAL access (without throwing).
+    /// </summary>
+    public bool HasGlobalAccess()
+    {
+        return _currentUser.Roles.Any(r => r is RoleConstants.SystemAdmin or RoleConstants.HRManager);
+    }
+
+    /// <summary>
+    /// Checks if the user is a department manager (without throwing).
+    /// </summary>
+    public bool IsDepartmentManager()
+    {
+        return _currentUser.Roles.Contains(RoleConstants.DepartmentManager);
+    }
+
+    /// <summary>
+    /// Checks if the user is an Employee (own-data only role).
+    /// </summary>
+    public bool IsEmployee()
+    {
+        return _currentUser.Roles.Contains(RoleConstants.Employee);
     }
 }

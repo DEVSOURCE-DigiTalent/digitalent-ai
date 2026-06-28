@@ -24,9 +24,24 @@ public class CourseService
     {
         var query = _context.Courses.AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(request.Keyword))
+        // Data scope filter per RBAC matrix (Section 6.6)
+        var isEmployee = _currentUser.Roles.Contains("EMPLOYEE");
+        var isTrainer = _currentUser.Roles.Contains("TRAINER");
+
+        if (isEmployee)
         {
-            var kw = request.Keyword.ToLower();
+            // Employee: only see published/active courses
+            query = query.Where(c => c.Status == "PUBLISHED" || c.Status == "ACTIVE");
+        }
+        else if (isTrainer && _currentUser.EmployeeId.HasValue)
+        {
+            // Trainer: see courses they own/created
+            query = query.Where(c => c.OwnerTrainerId == _currentUser.EmployeeId.Value || c.Status == "PUBLISHED");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var kw = request.Search.ToLower();
             query = query.Where(c => c.Title.ToLower().Contains(kw)
                                   || c.Code.ToLower().Contains(kw));
         }
@@ -34,7 +49,7 @@ public class CourseService
         var totalItems = await query.CountAsync();
         var items = await query
             .OrderByDescending(c => c.CreatedAt)
-            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Skip((request.PageIndex - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(c => new CourseResponse
             {
@@ -54,7 +69,7 @@ public class CourseService
         return new PagedList<CourseResponse>
         {
             Items = items,
-            PageNumber = request.PageNumber,
+            PageIndex = request.PageIndex,
             PageSize = request.PageSize,
             TotalItems = totalItems,
         };
@@ -181,6 +196,39 @@ public class CourseService
 
         course.Status = status;
         await _context.SaveChangesAsync(default);
+    }
+
+    public async Task<CourseResponse> PublishCourseAsync(Guid courseId, PublishCourseRequest request)
+    {
+        var course = await _context.Courses
+            .Include(c => c.Modules)
+            .FirstOrDefaultAsync(c => c.Id == courseId)
+            ?? throw new KeyNotFoundException("Course not found.");
+
+        // Validate course can be published
+        if (course.Status != "DRAFT" && course.Status != "ARCHIVED")
+            throw new InvalidOperationException("Only DRAFT or ARCHIVED courses can be published.");
+
+        if (course.Modules.Count == 0)
+            throw new InvalidOperationException("Course must have at least one module before publishing.");
+
+        course.Status = "PUBLISHED";
+        await _context.SaveChangesAsync(default);
+
+        var moduleCount = await _context.CourseModules.CountAsync(m => m.CourseId == courseId);
+
+        return new CourseResponse
+        {
+            Id = course.Id,
+            Code = course.Code,
+            Title = course.Title,
+            Description = course.Description,
+            DifficultyLevel = course.DifficultyLevel,
+            EstimatedDurationMinutes = course.EstimatedDurationMinutes,
+            Status = course.Status,
+            ModuleCount = moduleCount,
+            CreatedAt = course.CreatedAt,
+        };
     }
 
     // ═══════════════════════════════════════
@@ -453,6 +501,27 @@ public class CourseService
             SortOrder = entity.SortOrder,
             CreatedAt = entity.CreatedAt,
         };
+    }
+
+    /// <summary>
+    /// Get lesson entity with its module and course info.
+    /// </summary>
+    public async Task<Domain.Entities.Learning.Lesson> GetLessonEntityAsync(Guid lessonId)
+    {
+        return await _context.Lessons
+            .Include(l => l.Module)
+            .FirstOrDefaultAsync(l => l.Id == lessonId)
+            ?? throw new KeyNotFoundException("Lesson not found.");
+    }
+
+    /// <summary>
+    /// Get module entity with course info.
+    /// </summary>
+    public async Task<Domain.Entities.Learning.CourseModule> GetModuleEntityAsync(Guid moduleId)
+    {
+        return await _context.CourseModules
+            .FirstOrDefaultAsync(m => m.Id == moduleId)
+            ?? throw new KeyNotFoundException("Module not found.");
     }
 
     // ═══════════════════════════════════════

@@ -64,16 +64,16 @@ public class EnrollmentService
             .Include(a => a.Course)
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(request.Keyword))
+        if (!string.IsNullOrWhiteSpace(request.Search))
         {
-            var kw = request.Keyword.ToLower();
+            var kw = request.Search.ToLower();
             query = query.Where(a => a.Course.Title.ToLower().Contains(kw));
         }
 
         var totalItems = await query.CountAsync();
         var items = await query
             .OrderByDescending(a => a.CreatedAt)
-            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Skip((request.PageIndex - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(a => new AssignmentResponse
             {
@@ -95,7 +95,7 @@ public class EnrollmentService
         return new PagedList<AssignmentResponse>
         {
             Items = items,
-            PageNumber = request.PageNumber,
+            PageIndex = request.PageIndex,
             PageSize = request.PageSize,
             TotalItems = totalItems,
         };
@@ -180,7 +180,7 @@ public class EnrollmentService
         var totalItems = await query.CountAsync();
         var items = await query
             .OrderByDescending(e => e.CreatedAt)
-            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Skip((request.PageIndex - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(e => new EnrollmentResponse
             {
@@ -202,7 +202,7 @@ public class EnrollmentService
         return new PagedList<EnrollmentResponse>
         {
             Items = items,
-            PageNumber = request.PageNumber,
+            PageIndex = request.PageIndex,
             PageSize = request.PageSize,
             TotalItems = totalItems,
         };
@@ -214,9 +214,32 @@ public class EnrollmentService
             .Include(e => e.Course)
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(request.Keyword))
+        // Data scope filter per RBAC
+        if (_currentUser.Roles.Any(r => r == "DEPARTMENT_MANAGER") && _currentUser.ManagedDepartmentIds.Count != 0)
         {
-            var kw = request.Keyword.ToLower();
+            // Department manager: only enrollments of employees in managed departments
+            var managedDeptIds = _currentUser.ManagedDepartmentIds;
+            query = query.Where(e => _context.Employees
+                .Where(emp => managedDeptIds.Contains(emp.DepartmentId))
+                .Select(emp => emp.Id)
+                .Contains(e.EmployeeId));
+        }
+        else if (_currentUser.Roles.Any(r => r == "TRAINER") && _currentUser.EmployeeId.HasValue)
+        {
+            // Trainer: enrollments for courses they own/created
+            var trainerId = _currentUser.EmployeeId.Value;
+            query = query.Where(e => e.Course.OwnerTrainerId == trainerId);
+        }
+        else if (_currentUser.Roles.Any(r => r == "EMPLOYEE") && _currentUser.EmployeeId.HasValue)
+        {
+            // Employee: own enrollments only
+            var empId = _currentUser.EmployeeId.Value;
+            query = query.Where(e => e.EmployeeId == empId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var kw = request.Search.ToLower();
             query = query.Where(e => e.Course.Title.ToLower().Contains(kw)
                                   || e.Course.Code.ToLower().Contains(kw));
         }
@@ -224,7 +247,7 @@ public class EnrollmentService
         var totalItems = await query.CountAsync();
         var items = await query
             .OrderByDescending(e => e.CreatedAt)
-            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Skip((request.PageIndex - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(e => new EnrollmentResponse
             {
@@ -246,7 +269,7 @@ public class EnrollmentService
         return new PagedList<EnrollmentResponse>
         {
             Items = items,
-            PageNumber = request.PageNumber,
+            PageIndex = request.PageIndex,
             PageSize = request.PageSize,
             TotalItems = totalItems,
         };

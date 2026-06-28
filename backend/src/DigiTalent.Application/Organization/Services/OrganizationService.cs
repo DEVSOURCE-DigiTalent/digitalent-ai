@@ -1,4 +1,5 @@
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Application.Common.Services;
 using DigiTalent.Application.Organization.DTOs;
 using DigiTalent.Shared.Pagination;
 using Microsoft.EntityFrameworkCore;
@@ -9,11 +10,13 @@ public class OrganizationService
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly AuditLogService _auditLog;
 
-    public OrganizationService(IApplicationDbContext context, ICurrentUserService currentUser)
+    public OrganizationService(IApplicationDbContext context, ICurrentUserService currentUser, AuditLogService auditLog)
     {
         _context = context;
         _currentUser = currentUser;
+        _auditLog = auditLog;
     }
 
     // ═══════════════════════════════════
@@ -24,16 +27,16 @@ public class OrganizationService
     {
         var query = _context.Departments.AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(request.Keyword))
+        if (!string.IsNullOrWhiteSpace(request.Search))
         {
-            var kw = request.Keyword.ToLower();
+            var kw = request.Search.ToLower();
             query = query.Where(d => d.Name.ToLower().Contains(kw) || d.Code.ToLower().Contains(kw));
         }
 
         var totalItems = await query.CountAsync();
         var items = await query
             .OrderBy(d => d.Name)
-            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Skip((request.PageIndex - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(d => new DepartmentResponse
             {
@@ -44,7 +47,7 @@ public class OrganizationService
             })
             .ToListAsync();
 
-        return new PagedList<DepartmentResponse> { Items = items, PageNumber = request.PageNumber, PageSize = request.PageSize, TotalItems = totalItems };
+        return new PagedList<DepartmentResponse> { Items = items, PageIndex = request.PageIndex, PageSize = request.PageSize, TotalItems = totalItems };
     }
 
     public async Task<DepartmentResponse> CreateDepartmentAsync(CreateDepartmentRequest request)
@@ -97,16 +100,16 @@ public class OrganizationService
     {
         var query = _context.JobPositions.AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(request.Keyword))
+        if (!string.IsNullOrWhiteSpace(request.Search))
         {
-            var kw = request.Keyword.ToLower();
+            var kw = request.Search.ToLower();
             query = query.Where(j => j.Title.ToLower().Contains(kw) || j.Code.ToLower().Contains(kw));
         }
 
         var totalItems = await query.CountAsync();
         var items = await query
             .OrderBy(j => j.Title)
-            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Skip((request.PageIndex - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(j => new JobPositionResponse
             {
@@ -116,7 +119,7 @@ public class OrganizationService
             })
             .ToListAsync();
 
-        return new PagedList<JobPositionResponse> { Items = items, PageNumber = request.PageNumber, PageSize = request.PageSize, TotalItems = totalItems };
+        return new PagedList<JobPositionResponse> { Items = items, PageIndex = request.PageIndex, PageSize = request.PageSize, TotalItems = totalItems };
     }
 
     public async Task<JobPositionResponse> CreateJobPositionAsync(CreateJobPositionRequest request)
@@ -160,7 +163,7 @@ public class OrganizationService
     {
         var query = _context.Employees.Include(e => e.Department).Include(e => e.JobPosition).AsQueryable();
 
-        // Data scope filter per RBAC
+        // Data scope filter per RBAC matrix (Section 6.3)
         if (_currentUser.Roles.Any(r => r is "DEPARTMENT_MANAGER" or "EMPLOYEE"))
         {
             if (_currentUser.ManagedDepartmentIds.Count != 0)
@@ -168,16 +171,21 @@ public class OrganizationService
             else if (_currentUser.EmployeeId.HasValue)
                 query = query.Where(e => e.Id == _currentUser.EmployeeId.Value);
         }
-
-        if (!string.IsNullOrWhiteSpace(request.Keyword))
+        else if (_currentUser.Roles.Any(r => r == "TRAINER"))
         {
-            var kw = request.Keyword.ToLower();
+            // Trainer: see assigned learners only — show all employees for now
+            // Future enhancement: filter by course assignment
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var kw = request.Search.ToLower();
             query = query.Where(e => e.FullName.ToLower().Contains(kw) || e.Email.Contains(kw) || e.EmployeeCode.ToLower().Contains(kw));
         }
         var totalItems = await query.CountAsync();
         var items = await query
             .OrderBy(e => e.FullName)
-            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Skip((request.PageIndex - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(e => new EmployeeSummaryResponse
             {
@@ -187,7 +195,7 @@ public class OrganizationService
             })
             .ToListAsync();
 
-        return new PagedList<EmployeeSummaryResponse> { Items = items, PageNumber = request.PageNumber, PageSize = request.PageSize, TotalItems = totalItems };
+        return new PagedList<EmployeeSummaryResponse> { Items = items, PageIndex = request.PageIndex, PageSize = request.PageSize, TotalItems = totalItems };
     }
 
     public async Task<EmployeeDetailResponse> GetEmployeeAsync(Guid employeeId)
@@ -196,6 +204,14 @@ public class OrganizationService
             .Include(e => e.Department).Include(e => e.JobPosition).Include(e => e.DirectManager)
             .FirstOrDefaultAsync(e => e.Id == employeeId)
             ?? throw new KeyNotFoundException("Employee not found.");
+
+        // Data scope check per RBAC
+        var isGlobal = _currentUser.Roles.Any(r => r is "SYSTEM_ADMIN" or "HR_MANAGER");
+        var isManagerOfDept = _currentUser.ManagedDepartmentIds.Contains(emp.DepartmentId);
+        var isOwnProfile = _currentUser.EmployeeId == emp.Id;
+
+        if (!isGlobal && !isManagerOfDept && !isOwnProfile)
+            throw new UnauthorizedAccessException("You do not have access to this employee profile.");
 
         return new EmployeeDetailResponse
         {
@@ -242,9 +258,17 @@ public class OrganizationService
     {
         var emp = await _context.Employees.FindAsync(employeeId)
             ?? throw new KeyNotFoundException("Employee not found.");
+        var oldDept = emp.DepartmentId;
         if (request.DepartmentId.HasValue) emp.DepartmentId = request.DepartmentId.Value;
         if (request.JobPositionId.HasValue) emp.JobPositionId = request.JobPositionId.Value;
         if (request.DirectManagerId.HasValue) emp.DirectManagerId = request.DirectManagerId;
         await _context.SaveChangesAsync(default);
+
+        // Audit: log employee transfer
+        await _auditLog.LogAsync(
+            action: "EMPLOYEE_TRANSFERRED",
+            entityType: "Employee",
+            entityId: employeeId,
+            newValuesJson: $"DepartmentId={request.DepartmentId}, PositionId={request.JobPositionId}");
     }
 }

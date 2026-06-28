@@ -1,4 +1,5 @@
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Application.Common.Services;
 using DigiTalent.Application.Users.DTOs;
 using DigiTalent.Domain.Entities.Auth;
 using DigiTalent.Shared.Constants;
@@ -12,11 +13,13 @@ public class UserService
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly AuditLogService _auditLog;
 
-    public UserService(IApplicationDbContext context, ICurrentUserService currentUser)
+    public UserService(IApplicationDbContext context, ICurrentUserService currentUser, AuditLogService auditLog)
     {
         _context = context;
         _currentUser = currentUser;
+        _auditLog = auditLog;
     }
 
     public async Task<PagedList<UserSummaryResponse>> SearchAsync(PaginationRequest request)
@@ -25,9 +28,9 @@ public class UserService
             .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(request.Keyword))
+        if (!string.IsNullOrWhiteSpace(request.Search))
         {
-            var kw = request.Keyword.ToLower();
+            var kw = request.Search.ToLower();
             query = query.Where(u => u.Email.Contains(kw) || u.FullName.ToLower().Contains(kw));
         }
 
@@ -35,7 +38,7 @@ public class UserService
 
         var items = await query
             .OrderByDescending(u => u.CreatedAt)
-            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Skip((request.PageIndex - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(u => new UserSummaryResponse
             {
@@ -53,7 +56,7 @@ public class UserService
         return new PagedList<UserSummaryResponse>
         {
             Items = items,
-            PageNumber = request.PageNumber,
+            PageIndex = request.PageIndex,
             PageSize = request.PageSize,
             TotalItems = totalItems,
         };
@@ -183,6 +186,13 @@ public class UserService
         }
 
         await _context.SaveChangesAsync(default);
+
+        // Audit: log role assignment change
+        await _auditLog.LogAsync(
+            action: "ROLE_ASSIGNMENT_CHANGED",
+            entityType: "User",
+            entityId: userId,
+            newValuesJson: string.Join(", ", request.RoleCodes));
     }
 
     public async Task LockAsync(Guid userId, LockUserRequest request)

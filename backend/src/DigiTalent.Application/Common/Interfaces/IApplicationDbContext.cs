@@ -13,6 +13,9 @@ using DeptEntity = DigiTalent.Domain.Entities.Organization.Department;
 using PositionEntity = DigiTalent.Domain.Entities.Organization.JobPosition;
 using EmpEntity = DigiTalent.Domain.Entities.Organization.Employee;
 using CompetencyEntity = DigiTalent.Domain.Entities.Competency.Competency;
+using AssessmentEntity = DigiTalent.Domain.Entities.Assessment.Assessment;
+using CertificateEntity = DigiTalent.Domain.Entities.Certificate.Certificate;
+using NotificationEntity = DigiTalent.Domain.Entities.Shared.Notification;
 
 namespace DigiTalent.Application.Common.Interfaces;
 
@@ -45,12 +48,12 @@ public interface IApplicationDbContext
     DbSet<QuestionBank> QuestionBanks { get; }
     DbSet<Question> Questions { get; }
     DbSet<QuestionOption> QuestionOptions { get; }
-    DbSet<Assessment> Assessments { get; }
+    DbSet<AssessmentEntity> Assessments { get; }
     DbSet<AssessmentQuestion> AssessmentQuestions { get; }
     DbSet<AssessmentAttempt> AssessmentAttempts { get; }
     DbSet<AssessmentAnswer> AssessmentAnswers { get; }
     DbSet<CertificateTemplate> CertificateTemplates { get; }
-    DbSet<Certificate> Certificates { get; }
+    DbSet<CertificateEntity> Certificates { get; }
     DbSet<CertificateVerificationLog> CertificateVerificationLogs { get; }
     DbSet<PracticalTask> PracticalTasks { get; }
     DbSet<TaskAssignment> TaskAssignments { get; }
@@ -63,7 +66,7 @@ public interface IApplicationDbContext
     DbSet<ReadinessScore> ReadinessScores { get; }
     DbSet<AiExplanationLog> AiExplanationLogs { get; }
     DbSet<FileObject> FileObjects { get; }
-    DbSet<Notification> Notifications { get; }
+    DbSet<NotificationEntity> Notifications { get; }
     DbSet<AuditLog> AuditLogs { get; }
     DbSet<SystemSetting> SystemSettings { get; }
     DbSet<ScoringConfig> ScoringConfigs { get; }

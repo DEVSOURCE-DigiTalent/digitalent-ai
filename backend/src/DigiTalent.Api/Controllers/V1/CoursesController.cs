@@ -31,10 +31,6 @@ public class CoursesController : ControllerBase
     [HasPermission(PermissionConstants.CourseReadCatalog)]
     public async Task<IActionResult> SearchCourses([FromQuery] PaginationRequest request)
     {
-        if (request.PageNumber <= 1 && request.PageSize >= 1000)
-            return Ok(ApiResponse<PagedList<CourseResponse>>.Ok(
-                await _courseService.SearchCoursesAsync(request)));
-
         return Ok(ApiResponse<PagedList<CourseResponse>>.Ok(
             await _courseService.SearchCoursesAsync(request)));
     }
@@ -47,9 +43,13 @@ public class CoursesController : ControllerBase
 
     [HttpPost("courses")]
     [HasPermission(PermissionConstants.CourseCreate)]
+    [ProducesResponseType(typeof(ApiResponse<CourseResponse>), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateCourse([FromBody] CreateCourseRequest request)
-        => Ok(ApiResponse<CourseResponse>.Ok(
-            await _courseService.CreateCourseAsync(request), "Course created"));
+    {
+        var result = await _courseService.CreateCourseAsync(request);
+        return CreatedAtAction(nameof(GetCourse), new { courseId = result.Id },
+            ApiResponse<CourseResponse>.Ok(result, "Course created"));
+    }
 
     [HttpPut("courses/{courseId:guid}")]
     [HasPermission(PermissionConstants.CourseUpdate)]
@@ -57,20 +57,32 @@ public class CoursesController : ControllerBase
         => Ok(ApiResponse<CourseResponse>.Ok(
             await _courseService.UpdateCourseAsync(courseId, request)));
 
+    /// <summary>
+    /// Publish course when required content is valid.
+    /// </summary>
+    [HttpPost("courses/{courseId:guid}/publish")]
+    [HasPermission(PermissionConstants.CoursePublishUnpublish)]
+    public async Task<IActionResult> PublishCourse(Guid courseId, [FromBody] PublishCourseRequest request)
+        => Ok(ApiResponse<CourseResponse>.Ok(
+            await _courseService.PublishCourseAsync(courseId, request),
+            "Course published"));
+
     [HttpPatch("courses/{courseId:guid}/status")]
     [HasPermission(PermissionConstants.CoursePublishUnpublish)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ChangeCourseStatus(Guid courseId, [FromBody] StatusChangeRequest request)
     {
         await _courseService.ChangeCourseStatusAsync(courseId, request.Status);
-        return Ok(ApiResponse.Ok(null, "Status updated"));
+        return NoContent();
     }
 
     [HttpDelete("courses/{courseId:guid}")]
     [HasPermission(PermissionConstants.CourseArchive)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ArchiveCourse(Guid courseId)
     {
         await _courseService.ChangeCourseStatusAsync(courseId, "ARCHIVED");
-        return Ok(ApiResponse.Ok(null, "Course archived"));
+        return NoContent();
     }
 
     // ═══════════════════════════════════════
@@ -91,9 +103,13 @@ public class CoursesController : ControllerBase
 
     [HttpPost("courses/{courseId:guid}/modules")]
     [HasPermission(PermissionConstants.CourseUpdate)]
+    [ProducesResponseType(typeof(ApiResponse<ModuleResponse>), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateModule(Guid courseId, [FromBody] CreateModuleRequest request)
-        => Ok(ApiResponse<ModuleResponse>.Ok(
-            await _courseService.CreateModuleAsync(courseId, request), "Module created"));
+    {
+        var result = await _courseService.CreateModuleAsync(courseId, request);
+        return CreatedAtAction(nameof(GetModule), new { courseId, moduleId = result.Id },
+            ApiResponse<ModuleResponse>.Ok(result, "Module created"));
+    }
 
     [HttpPut("courses/{courseId:guid}/modules/{moduleId:guid}")]
     [HasPermission(PermissionConstants.CourseUpdate)]
@@ -117,11 +133,16 @@ public class CoursesController : ControllerBase
         => Ok(ApiResponse<LessonDetailResponse>.Ok(
             await _courseService.GetLessonAsync(courseId, moduleId, lessonId)));
 
-    [HttpPost("courses/{courseId:guid}/modules/{moduleId:guid}/lessons")]
+    [HttpPost("modules/{moduleId:guid}/lessons")]
     [HasPermission(PermissionConstants.CourseUpdate)]
-    public async Task<IActionResult> CreateLesson(Guid courseId, Guid moduleId, [FromBody] CreateLessonRequest request)
-        => Ok(ApiResponse<LessonResponse>.Ok(
-            await _courseService.CreateLessonAsync(courseId, moduleId, request), "Lesson created"));
+    [ProducesResponseType(typeof(ApiResponse<LessonResponse>), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateLesson(Guid moduleId, [FromBody] CreateLessonRequest request)
+    {
+        var module = await _courseService.GetModuleEntityAsync(moduleId);
+        var result = await _courseService.CreateLessonAsync(module.CourseId, moduleId, request);
+        return CreatedAtAction(nameof(GetLesson), new { courseId = module.CourseId, moduleId, lessonId = result.Id },
+            ApiResponse<LessonResponse>.Ok(result, "Lesson created"));
+    }
 
     [HttpPut("courses/{courseId:guid}/modules/{moduleId:guid}/lessons/{lessonId:guid}")]
     [HasPermission(PermissionConstants.CourseUpdate)]
@@ -151,11 +172,17 @@ public class CoursesController : ControllerBase
     // Learning Materials
     // ═══════════════════════════════════════
 
-    [HttpPost("courses/{courseId:guid}/materials")]
+    [HttpPost("lessons/{lessonId:guid}/materials")]
     [HasPermission(PermissionConstants.MaterialUpload)]
-    public async Task<IActionResult> CreateMaterial(Guid courseId, [FromBody] CreateMaterialRequest request)
-        => Ok(ApiResponse<MaterialResponse>.Ok(
-            await _courseService.CreateMaterialAsync(courseId, request), "Material created"));
+    [ProducesResponseType(typeof(ApiResponse<MaterialResponse>), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateMaterial(Guid lessonId, [FromBody] CreateMaterialRequest request)
+    {
+        var lesson = await _courseService.GetLessonEntityAsync(lessonId);
+        request.LessonId = lessonId;
+        var result = await _courseService.CreateMaterialAsync(lesson.Module.CourseId, request);
+        return CreatedAtAction(nameof(GetCourse), new { courseId = lesson.Module.CourseId },
+            ApiResponse<MaterialResponse>.Ok(result, "Material created"));
+    }
 
     // ═══════════════════════════════════════
     // Course Assignments
@@ -163,9 +190,13 @@ public class CoursesController : ControllerBase
 
     [HttpPost("course-assignments")]
     [HasPermission(PermissionConstants.CourseAssignmentCreate)]
+    [ProducesResponseType(typeof(ApiResponse<AssignmentResponse>), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateAssignment([FromBody] CreateAssignmentRequest request)
-        => Ok(ApiResponse<AssignmentResponse>.Ok(
-            await _enrollmentService.CreateAssignmentAsync(request), "Assignment created"));
+    {
+        var result = await _enrollmentService.CreateAssignmentAsync(request);
+        return CreatedAtAction(nameof(SearchAssignments), new { assignmentId = result.Id },
+            ApiResponse<AssignmentResponse>.Ok(result, "Assignment created"));
+    }
 
     [HttpGet("course-assignments")]
     [HasPermission(PermissionConstants.CourseAssignmentRead)]
@@ -175,10 +206,11 @@ public class CoursesController : ControllerBase
 
     [HttpPatch("course-assignments/{assignmentId:guid}/cancel")]
     [HasPermission(PermissionConstants.CourseAssignmentCancel)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> CancelAssignment(Guid assignmentId)
     {
         await _enrollmentService.CancelAssignmentAsync(assignmentId);
-        return Ok(ApiResponse.Ok(null, "Assignment cancelled"));
+        return NoContent();
     }
 
     // ═══════════════════════════════════════
@@ -187,9 +219,13 @@ public class CoursesController : ControllerBase
 
     [HttpPost("enrollments/start")]
     [HasPermission(PermissionConstants.CourseReadCatalog)]
+    [ProducesResponseType(typeof(ApiResponse<EnrollmentResponse>), StatusCodes.Status201Created)]
     public async Task<IActionResult> StartEnrollment([FromBody] StartEnrollmentRequest request)
-        => Ok(ApiResponse<EnrollmentResponse>.Ok(
-            await _enrollmentService.StartEnrollmentAsync(request), "Enrolled successfully"));
+    {
+        var result = await _enrollmentService.StartEnrollmentAsync(request);
+        return CreatedAtAction(nameof(GetEnrollment), new { enrollmentId = result.Id },
+            ApiResponse<EnrollmentResponse>.Ok(result, "Enrolled successfully"));
+    }
 
     [HttpGet("enrollments/my")]
     [HasPermission(PermissionConstants.CourseReadCatalog)]
@@ -213,11 +249,19 @@ public class CoursesController : ControllerBase
     // Lesson Progress
     // ═══════════════════════════════════════
 
-    [HttpPut("enrollments/{enrollmentId:guid}/lessons/{lessonId:guid}/complete")]
+    /// <summary>
+    /// Mark lesson completed and update learning progress.
+    /// </summary>
+    [HttpPost("lessons/{lessonId:guid}/complete")]
     [HasPermission(PermissionConstants.LessonComplete)]
     public async Task<IActionResult> CompleteLesson(
-        Guid enrollmentId, Guid lessonId, [FromBody] UpdateLessonProgressRequest request)
+        Guid lessonId, [FromQuery] Guid enrollmentId, [FromBody] LessonCompletionRequest request)
         => Ok(ApiResponse<LessonProgressResponse>.Ok(
-            await _enrollmentService.CompleteLessonAsync(enrollmentId, lessonId, request),
-            "Lesson progress updated"));
+            await _enrollmentService.CompleteLessonAsync(enrollmentId, lessonId,
+                new UpdateLessonProgressRequest
+                {
+                    Status = "COMPLETED",
+                    ProgressPercent = request.ProgressPercent ?? 100,
+                }),
+            "Lesson completed"));
 }

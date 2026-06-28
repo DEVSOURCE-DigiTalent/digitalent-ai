@@ -66,8 +66,18 @@ public class AuthService
             .FirstOrDefaultAsync(e => e.Email == user.Email);
         var employeeId = employee?.Id;
 
+        // Get managed department IDs for department-scoped access
+        List<Guid> managedDeptIds = new();
+        if (employeeId.HasValue)
+        {
+            managedDeptIds = await _context.Departments
+                .Where(d => d.ManagerEmployeeId == employeeId.Value)
+                .Select(d => d.Id)
+                .ToListAsync();
+        }
+
         // Generate tokens
-        var accessToken = _jwtTokenService.GenerateAccessToken(user, roles, permissions, employeeId);
+        var accessToken = _jwtTokenService.GenerateAccessToken(user, roles, permissions, employeeId, managedDeptIds);
         var (refreshTokenEntity, plainRefreshToken) = _jwtTokenService.GenerateRefreshToken(user.Id, ipAddress, userAgent);
 
         // Store refresh token
@@ -125,8 +135,18 @@ public class AuthService
             .FirstOrDefaultAsync(e => e.Email == user.Email);
         var employeeId = employee?.Id;
 
+        // Get managed department IDs
+        List<Guid> managedDeptIds = new();
+        if (employeeId.HasValue)
+        {
+            managedDeptIds = await _context.Departments
+                .Where(d => d.ManagerEmployeeId == employeeId.Value)
+                .Select(d => d.Id)
+                .ToListAsync();
+        }
+
         // Generate new tokens
-        var accessToken = _jwtTokenService.GenerateAccessToken(user, roles, permissions, employeeId);
+        var accessToken = _jwtTokenService.GenerateAccessToken(user, roles, permissions, employeeId, managedDeptIds);
         var (newRefreshTokenEntity, plainRefreshToken) = _jwtTokenService.GenerateRefreshToken(user.Id, ipAddress);
 
         // Link new refresh token to the revoked one

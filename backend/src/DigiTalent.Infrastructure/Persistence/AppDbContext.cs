@@ -3,6 +3,8 @@ using DigiTalent.Domain.Entities.Assessment;
 using DigiTalent.Domain.Entities.Auth;
 using DigiTalent.Domain.Entities.Certificate;
 using DigiTalent.Domain.Entities.Competency;
+using AssessmentEntity = DigiTalent.Domain.Entities.Assessment.Assessment;
+using CertificateEntity = DigiTalent.Domain.Entities.Certificate.Certificate;
 using DigiTalent.Domain.Entities.Intelligence;
 using DigiTalent.Domain.Entities.Learning;
 using DigiTalent.Domain.Entities.Organization;
