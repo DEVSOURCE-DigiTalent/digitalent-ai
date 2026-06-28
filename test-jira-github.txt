@@ -1,0 +1,7 @@
+DT-63: Employee Competency Profile Page
+========================================
+Task for Linh - Frontend: MyCompetencyProfilePage
+- Show competency levels, evidence portfolio
+- APIs: GET /api/v1/employees/{id}/competency-profile
+        POST /api/v1/employees/{id}/competency-evidences
+- UC-09
