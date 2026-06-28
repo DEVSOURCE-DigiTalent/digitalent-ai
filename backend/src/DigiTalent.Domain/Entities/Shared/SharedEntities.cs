@@ -28,6 +28,14 @@ public class Notification : AuditableEntity
     public DateTimeOffset? ReadAt { get; set; }
 }
 
+public class NotificationPreference : AuditableEntity
+{
+    public Guid UserId { get; set; }
+    public string NotificationType { get; set; } = string.Empty;
+    public bool InAppEnabled { get; set; } = true;
+    public bool EmailEnabled { get; set; }
+}
+
 public class AuditLog : AuditableEntity
 {
     public Guid? OrganizationId { get; set; }

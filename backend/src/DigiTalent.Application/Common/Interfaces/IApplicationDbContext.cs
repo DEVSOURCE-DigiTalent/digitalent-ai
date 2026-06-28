@@ -4,10 +4,18 @@ using DigiTalent.Domain.Entities.Certificate;
 using DigiTalent.Domain.Entities.Competency;
 using DigiTalent.Domain.Entities.Intelligence;
 using DigiTalent.Domain.Entities.Learning;
-using DigiTalent.Domain.Entities.Organization;
 using DigiTalent.Domain.Entities.Shared;
 using DigiTalent.Domain.Entities.Task;
 using Microsoft.EntityFrameworkCore;
+// Organization entity aliased to avoid conflict with DigiTalent.Application.Organization namespace
+using OrgEntity = DigiTalent.Domain.Entities.Organization.Organization;
+using DeptEntity = DigiTalent.Domain.Entities.Organization.Department;
+using PositionEntity = DigiTalent.Domain.Entities.Organization.JobPosition;
+using EmpEntity = DigiTalent.Domain.Entities.Organization.Employee;
+using CompetencyEntity = DigiTalent.Domain.Entities.Competency.Competency;
+using AssessmentEntity = DigiTalent.Domain.Entities.Assessment.Assessment;
+using CertificateEntity = DigiTalent.Domain.Entities.Certificate.Certificate;
+using NotificationEntity = DigiTalent.Domain.Entities.Shared.Notification;
 
 namespace DigiTalent.Application.Common.Interfaces;
 
@@ -19,12 +27,12 @@ public interface IApplicationDbContext
     DbSet<UserRole> UserRoles { get; }
     DbSet<RolePermission> RolePermissions { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
-    DbSet<Organization> Organizations { get; }
-    DbSet<Department> Departments { get; }
-    DbSet<JobPosition> JobPositions { get; }
-    DbSet<Employee> Employees { get; }
+    DbSet<OrgEntity> Organizations { get; }
+    DbSet<DeptEntity> Departments { get; }
+    DbSet<PositionEntity> JobPositions { get; }
+    DbSet<EmpEntity> Employees { get; }
     DbSet<CompetencyCategory> CompetencyCategories { get; }
-    DbSet<Competency> Competencies { get; }
+    DbSet<CompetencyEntity> Competencies { get; }
     DbSet<CompetencyLevel> CompetencyLevels { get; }
     DbSet<PositionCompetencyRequirement> PositionCompetencyRequirements { get; }
     DbSet<EmployeeCompetencyProfile> EmployeeCompetencyProfiles { get; }
@@ -40,12 +48,12 @@ public interface IApplicationDbContext
     DbSet<QuestionBank> QuestionBanks { get; }
     DbSet<Question> Questions { get; }
     DbSet<QuestionOption> QuestionOptions { get; }
-    DbSet<Assessment> Assessments { get; }
+    DbSet<AssessmentEntity> Assessments { get; }
     DbSet<AssessmentQuestion> AssessmentQuestions { get; }
     DbSet<AssessmentAttempt> AssessmentAttempts { get; }
     DbSet<AssessmentAnswer> AssessmentAnswers { get; }
     DbSet<CertificateTemplate> CertificateTemplates { get; }
-    DbSet<Certificate> Certificates { get; }
+    DbSet<CertificateEntity> Certificates { get; }
     DbSet<CertificateVerificationLog> CertificateVerificationLogs { get; }
     DbSet<PracticalTask> PracticalTasks { get; }
     DbSet<TaskAssignment> TaskAssignments { get; }
@@ -58,11 +66,12 @@ public interface IApplicationDbContext
     DbSet<ReadinessScore> ReadinessScores { get; }
     DbSet<AiExplanationLog> AiExplanationLogs { get; }
     DbSet<FileObject> FileObjects { get; }
-    DbSet<Notification> Notifications { get; }
+    DbSet<NotificationEntity> Notifications { get; }
     DbSet<AuditLog> AuditLogs { get; }
     DbSet<SystemSetting> SystemSettings { get; }
     DbSet<ScoringConfig> ScoringConfigs { get; }
     DbSet<ScoringConfigItem> ScoringConfigItems { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    DbSet<TEntity> Set<TEntity>() where TEntity : class;
 }

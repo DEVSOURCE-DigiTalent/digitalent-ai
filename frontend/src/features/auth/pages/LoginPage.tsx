@@ -1,9 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../../services/api-client';
+import { useCurrentUser } from '../../../hooks/use-current-user';
+import { getDefaultPath } from '../../../lib/sidebar-config';
 
+/**
+ * Login page.
+ * Flow: POST /auth/login → save tokens → GET /auth/me → store user → redirect by role.
+ */
 export function LoginPage() {
   const navigate = useNavigate();
+  const setUser = useCurrentUser((s) => s.setUser);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -13,12 +20,22 @@ export function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+
     try {
-      const response = await apiClient.post('/auth/login', { email, password });
-      const { accessToken, refreshToken } = response.data.data;
+      // Step 1: Authenticate
+      const loginRes = await apiClient.post('/auth/login', { email, password });
+      const { accessToken, refreshToken } = loginRes.data.data;
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
-      navigate('/dashboard');
+
+      // Step 2: Load current user profile (roles + permissions)
+      const meRes = await apiClient.get('/auth/me');
+      const user = meRes.data.data;
+      setUser(user);
+
+      // Step 3: Redirect to role-appropriate dashboard
+      const homePath = getDefaultPath(user.roles);
+      navigate(homePath, { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
     } finally {

@@ -83,6 +83,7 @@ public class AssessmentAnswer : AuditableEntity
     public Guid AttemptId { get; set; }
     public AssessmentAttempt Attempt { get; set; } = null!;
     public Guid QuestionId { get; set; }
+    public Question Question { get; set; } = null!;
     public Guid? SelectedOptionId { get; set; }
     public string? AnswerText { get; set; }
     public bool? IsCorrect { get; set; }

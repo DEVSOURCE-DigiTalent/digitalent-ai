@@ -5,6 +5,7 @@ public interface ICurrentUserService
     Guid? UserId { get; }
     Guid? EmployeeId { get; }
     string? Email { get; }
+    string? FullName { get; }
     List<string> Roles { get; }
     List<string> Permissions { get; }
     List<Guid> ManagedDepartmentIds { get; }
