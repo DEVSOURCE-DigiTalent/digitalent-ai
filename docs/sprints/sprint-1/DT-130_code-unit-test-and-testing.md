@@ -1,10 +1,10 @@
 # SPRINT-1 Task Execution Log
 
 ## [DT-130] [S1-PBI-08] Code unit test and testing
-### [DT-131] [S1-T014] Write master test plan & configure automated testing frameworks
+### [DT-132] [S1-T015] Execute smoke test on skeleton build & prototype screen navigation
 
 - **Assignee**: Trần Đình Quý (quytdde180286@fpt.edu.vn)
-- **Completed Date**: 2026-09-01
+- **Completed Date**: 2026-09-03
 - **Parent Story**: DT-130
 - **Status**: Done / Accepted
 - **Verification**: Unit tests passed, Code review approved, Definition of Done met.
