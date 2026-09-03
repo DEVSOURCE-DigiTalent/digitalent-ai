@@ -1,9 +1,9 @@
 # SPRINT-1 Task Execution Log
 
 ## [DT-137] [S1-PBI-11] Update report 1, 2, 3
-### [DT-139] [S1-T019] Update Report 2 - Project management plan, WBS matrix & risk registry
+### [DT-140] [S1-T020] Update Report 3 - SRS functional specifications, 46 UCs & screen catalogs
 
-- **Assignee**: Trần Văn Linh (linhtvde180719@fpt.edu.vn)
+- **Assignee**: Nguyễn Văn Quang (quangnvde180682@fpt.edu.vn)
 - **Completed Date**: 2026-09-03
 - **Parent Story**: DT-137
 - **Status**: Done / Accepted
