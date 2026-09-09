@@ -1,9 +1,9 @@
 # SPRINT-2 Task Execution Log
 
 ## [DT-151] [S2-PBI-03] Design Database Schema & Migration
-### [DT-152] [S2-T003] [DB] Design EF Core entity mapping & generate Phase 1 database migration (13 tables)
+### [DT-153] [S2-T004] Design Sprint 2 RESTful API contracts & configure Swagger documentation
 
-- **Assignee**: Nguyễn Thiện Hoàng (hoangntde180649@fpt.edu.vn)
+- **Assignee**: Nguyễn Văn Quang (quangnvde180682@fpt.edu.vn)
 - **Completed Date**: 2026-09-09
 - **Parent Story**: DT-151
 - **Status**: Done / Accepted
