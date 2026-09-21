@@ -1,8 +1,8 @@
-using DigiTalent.Domain.Entities.Auth;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DigiTalent.Infrastructure.Persistence.Configurations.Auth;
+namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
 public class UserConfiguration : IEntityTypeConfiguration<User>
 {
@@ -10,53 +10,15 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     {
         builder.ToTable("users");
 
-        builder.HasKey(x => x.Id);
+        builder.HasKey(u => u.Id);
 
-        builder.Property(x => x.Email)
-            .HasMaxLength(255)
-            .IsRequired();
+        builder.Property(u => u.Email).IsRequired().HasMaxLength(255);
+        builder.HasIndex(u => u.Email).IsUnique();
 
-        builder.Property(x => x.PasswordHash)
-            .HasColumnType("text")
-            .IsRequired();
+        builder.Property(u => u.PasswordHash).IsRequired().HasMaxLength(255);
+        builder.Property(u => u.FullName).IsRequired().HasMaxLength(255);
 
-        builder.Property(x => x.FullName)
-            .HasMaxLength(255)
-            .IsRequired();
-
-        builder.Property(x => x.AvatarUrl)
-            .HasColumnType("text");
-
-        builder.Property(x => x.Status)
-            .HasConversion<string>()
-            .HasMaxLength(30);
-
-        builder.Property(x => x.FailedLoginCount);
-
-        builder.Property(x => x.CreatedAt)
-            .HasColumnType("timestamptz");
-
-        builder.Property(x => x.UpdatedAt)
-            .HasColumnType("timestamptz");
-
-        builder.Property(x => x.EmailVerifiedAt)
-            .HasColumnType("timestamptz");
-
-        builder.Property(x => x.LastLoginAt)
-            .HasColumnType("timestamptz");
-
-        builder.HasIndex(x => x.Email)
-            .IsUnique()
-            .HasDatabaseName("ux_users_email");
-
-        builder.HasMany(x => x.UserRoles)
-            .WithOne(x => x.User)
-            .HasForeignKey(x => x.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasMany(x => x.RefreshTokens)
-            .WithOne(x => x.User)
-            .HasForeignKey(x => x.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
+        // List<string> → cột roles kiểu text[] (PostgreSQL tự hỗ trợ)
+        builder.Property(u => u.Roles).IsRequired();
     }
 }

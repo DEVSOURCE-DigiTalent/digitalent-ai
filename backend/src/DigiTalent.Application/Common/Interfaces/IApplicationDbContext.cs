@@ -1,77 +1,16 @@
-using DigiTalent.Domain.Entities.Assessment;
-using DigiTalent.Domain.Entities.Auth;
-using DigiTalent.Domain.Entities.Certificate;
-using DigiTalent.Domain.Entities.Competency;
-using DigiTalent.Domain.Entities.Intelligence;
-using DigiTalent.Domain.Entities.Learning;
-using DigiTalent.Domain.Entities.Shared;
-using DigiTalent.Domain.Entities.Task;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-// Organization entity aliased to avoid conflict with DigiTalent.Application.Organization namespace
-using OrgEntity = DigiTalent.Domain.Entities.Organization.Organization;
-using DeptEntity = DigiTalent.Domain.Entities.Organization.Department;
-using PositionEntity = DigiTalent.Domain.Entities.Organization.JobPosition;
-using EmpEntity = DigiTalent.Domain.Entities.Organization.Employee;
-using CompetencyEntity = DigiTalent.Domain.Entities.Competency.Competency;
-using AssessmentEntity = DigiTalent.Domain.Entities.Assessment.Assessment;
-using CertificateEntity = DigiTalent.Domain.Entities.Certificate.Certificate;
-using NotificationEntity = DigiTalent.Domain.Entities.Shared.Notification;
 
 namespace DigiTalent.Application.Common.Interfaces;
 
+/// <summary>
+/// Use case làm việc với database qua interface này (không dùng thẳng AppDbContext).
+/// Thêm entity mới → thêm DbSet ở đây VÀ trong Infrastructure/Persistence/AppDbContext.cs.
+/// </summary>
 public interface IApplicationDbContext
 {
     DbSet<User> Users { get; }
-    DbSet<Role> Roles { get; }
-    DbSet<Permission> Permissions { get; }
-    DbSet<UserRole> UserRoles { get; }
-    DbSet<RolePermission> RolePermissions { get; }
-    DbSet<RefreshToken> RefreshTokens { get; }
-    DbSet<OrgEntity> Organizations { get; }
-    DbSet<DeptEntity> Departments { get; }
-    DbSet<PositionEntity> JobPositions { get; }
-    DbSet<EmpEntity> Employees { get; }
-    DbSet<CompetencyCategory> CompetencyCategories { get; }
-    DbSet<CompetencyEntity> Competencies { get; }
-    DbSet<CompetencyLevel> CompetencyLevels { get; }
-    DbSet<PositionCompetencyRequirement> PositionCompetencyRequirements { get; }
-    DbSet<EmployeeCompetencyProfile> EmployeeCompetencyProfiles { get; }
-    DbSet<CompetencyEvidence> CompetencyEvidences { get; }
-    DbSet<Course> Courses { get; }
-    DbSet<CourseModule> CourseModules { get; }
-    DbSet<Lesson> Lessons { get; }
-    DbSet<LearningMaterial> LearningMaterials { get; }
-    DbSet<CourseCompetency> CourseCompetencies { get; }
-    DbSet<CourseAssignment> CourseAssignments { get; }
-    DbSet<Enrollment> Enrollments { get; }
-    DbSet<LessonProgress> LessonProgresses { get; }
-    DbSet<QuestionBank> QuestionBanks { get; }
-    DbSet<Question> Questions { get; }
-    DbSet<QuestionOption> QuestionOptions { get; }
-    DbSet<AssessmentEntity> Assessments { get; }
-    DbSet<AssessmentQuestion> AssessmentQuestions { get; }
-    DbSet<AssessmentAttempt> AssessmentAttempts { get; }
-    DbSet<AssessmentAnswer> AssessmentAnswers { get; }
-    DbSet<CertificateTemplate> CertificateTemplates { get; }
-    DbSet<CertificateEntity> Certificates { get; }
-    DbSet<CertificateVerificationLog> CertificateVerificationLogs { get; }
-    DbSet<PracticalTask> PracticalTasks { get; }
-    DbSet<TaskAssignment> TaskAssignments { get; }
-    DbSet<TaskSubmission> TaskSubmissions { get; }
-    DbSet<TaskEvaluation> TaskEvaluations { get; }
-    DbSet<SkillGapResult> SkillGapResults { get; }
-    DbSet<SkillGapItem> SkillGapItems { get; }
-    DbSet<LearningRecommendation> LearningRecommendations { get; }
-    DbSet<TrainingRiskScore> TrainingRiskScores { get; }
-    DbSet<ReadinessScore> ReadinessScores { get; }
-    DbSet<AiExplanationLog> AiExplanationLogs { get; }
-    DbSet<FileObject> FileObjects { get; }
-    DbSet<NotificationEntity> Notifications { get; }
-    DbSet<AuditLog> AuditLogs { get; }
-    DbSet<SystemSetting> SystemSettings { get; }
-    DbSet<ScoringConfig> ScoringConfigs { get; }
-    DbSet<ScoringConfigItem> ScoringConfigItems { get; }
+    DbSet<Department> Departments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
-    DbSet<TEntity> Set<TEntity>() where TEntity : class;
 }

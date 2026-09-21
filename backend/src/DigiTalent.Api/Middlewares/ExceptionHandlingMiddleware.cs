@@ -1,15 +1,19 @@
-using System.Net;
 using System.Text.Json;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
+using DigiTalent.Api.Common;
+using DigiTalent.Application.Common.Exceptions;
+using FluentValidation;
 
 namespace DigiTalent.Api.Middlewares;
 
 /// <summary>
-/// Centralized exception handling middleware.
-/// Catches all unhandled exceptions and returns RFC 7807 ProblemDetails responses.
-/// Maps: UnauthorizedAccessException -> 403, KeyNotFoundException -> 404,
-///       InvalidOperationException -> 409, ArgumentException -> 400, others -> 500.
+/// Bắt mọi exception rồi đổi thành ApiResponse + status code phù hợp:
+///   ValidationException → 400   (Input sai — do validator throw)
+///   BadRequestException → 400
+///   ForbiddenException  → 403
+///   NotFoundException   → 404
+///   ConflictException   → 409
+///   Lỗi khác            → 500   (ghi log, không lộ chi tiết ra ngoài)
+/// Nhờ vậy use case chỉ cần throw, controller không cần try/catch.
 /// </summary>
 public class ExceptionHandlingMiddleware
 {
@@ -28,59 +32,44 @@ public class ExceptionHandlingMiddleware
         {
             await _next(context);
         }
-        catch (UnauthorizedAccessException ex)
+        catch (ValidationException ex)
         {
-            _logger.LogWarning(ex, "Unauthorized access: {Message}", ex.Message);
-            await WriteProblemDetailsAsync(context, HttpStatusCode.Forbidden, "Forbidden", ex.Message);
+            var errors = ex.Errors
+                .Select(e => new ApiError
+                {
+                    Field = JsonNamingPolicy.CamelCase.ConvertName(e.PropertyName), // "Code" → "code" cho khớp JSON
+                    Message = e.ErrorMessage,
+                })
+                .ToList();
+
+            await WriteErrorAsync(context, StatusCodes.Status400BadRequest, "Validation failed.", errors);
         }
-        catch (KeyNotFoundException ex)
+        catch (BadRequestException ex)
         {
-            _logger.LogWarning(ex, "Resource not found: {Message}", ex.Message);
-            await WriteProblemDetailsAsync(context, HttpStatusCode.NotFound, "Not Found", ex.Message);
+            await WriteErrorAsync(context, StatusCodes.Status400BadRequest, ex.Message);
         }
-        catch (InvalidOperationException ex)
+        catch (ForbiddenException ex)
         {
-            _logger.LogWarning(ex, "Invalid operation: {Message}", ex.Message);
-            await WriteProblemDetailsAsync(context, HttpStatusCode.Conflict, "Conflict", ex.Message);
+            await WriteErrorAsync(context, StatusCodes.Status403Forbidden, ex.Message);
         }
-        catch (ArgumentException ex)
+        catch (NotFoundException ex)
         {
-            _logger.LogWarning(ex, "Bad request: {Message}", ex.Message);
-            await WriteProblemDetailsAsync(context, HttpStatusCode.BadRequest, "Bad Request", ex.Message);
+            await WriteErrorAsync(context, StatusCodes.Status404NotFound, ex.Message);
+        }
+        catch (ConflictException ex)
+        {
+            await WriteErrorAsync(context, StatusCodes.Status409Conflict, ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception: {Message}", ex.Message);
-            await WriteProblemDetailsAsync(context, HttpStatusCode.InternalServerError, "Internal Server Error",
-                "An unexpected error occurred. Please try again later.");
+            _logger.LogError(ex, "Unhandled exception");
+            await WriteErrorAsync(context, StatusCodes.Status500InternalServerError, "An unexpected error occurred.");
         }
     }
 
-    private static async Task WriteProblemDetailsAsync(
-        HttpContext context,
-        HttpStatusCode statusCode,
-        string title,
-        string detail)
+    private static async Task WriteErrorAsync(HttpContext context, int statusCode, string message, List<ApiError>? errors = null)
     {
-        context.Response.ContentType = "application/problem+json";
-        context.Response.StatusCode = (int)statusCode;
-
-        var traceId = context.TraceIdentifier;
-        var problemDetails = new
-        {
-            type = $"https://httpstatuses.com/{(int)statusCode}",
-            title,
-            status = (int)statusCode,
-            detail,
-            traceId,
-            timestamp = DateTimeOffset.UtcNow.ToString("o")
-        };
-
-        var json = JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-
-        await context.Response.WriteAsync(json);
+        context.Response.StatusCode = statusCode;
+        await context.Response.WriteAsJsonAsync(ApiResponse<object>.Fail(message, errors));
     }
 }
