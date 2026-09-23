@@ -1,5 +1,4 @@
 using DigiTalent.Application.Common.Interfaces;
-using DigiTalent.Domain.Constants.Authorization;
 
 namespace DigiTalent.Api.Auth;
 
@@ -18,20 +17,16 @@ public class CurrentUser : ICurrentUser
 
     public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true;
 
-    public Guid? UserId
-    {
-        get
-        {
-            var sub = _httpContextAccessor.HttpContext?.User.FindFirst("sub")?.Value;
-            return Guid.TryParse(sub, out var id) ? id : null;
-        }
-    }
+    public Guid? UserId => ReadGuidClaim("sub");
+
+    public Guid? OrganizationId => ReadGuidClaim("org");
 
     public List<string> Roles =>
         _httpContextAccessor.HttpContext?.User.FindAll("role").Select(c => c.Value).ToList() ?? new List<string>();
 
-    public bool HasPermission(string permission)
+    private Guid? ReadGuidClaim(string claimName)
     {
-        return RolePermissions.HasPermission(Roles, permission);
+        var value = _httpContextAccessor.HttpContext?.User.FindFirst(claimName)?.Value;
+        return Guid.TryParse(value, out var id) ? id : null;
     }
 }

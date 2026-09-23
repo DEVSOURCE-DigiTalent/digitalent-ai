@@ -1,11 +1,7 @@
 using DigiTalent.Api.Extensions;
 using DigiTalent.Api.Middlewares;
 using DigiTalent.Application;
-using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Infrastructure;
-using DigiTalent.Infrastructure.Persistence;
-using DigiTalent.Infrastructure.Persistence.Seed;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,12 +41,6 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-
-    // Môi trường dev: tự chạy migration + tạo tài khoản mẫu khi start
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-    await DbSeeder.SeedAsync(db, scope.ServiceProvider.GetRequiredService<IPasswordHasher>());
 }
 
 app.UseCors("Frontend");
