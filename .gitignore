@@ -41,3 +41,6 @@ certificates/generated/
 .DS_Store
 Thumbs.db
 doc_DigiTalentAI/
+
+# Visual Studio
+.vs/
