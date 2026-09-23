@@ -1,7 +1,11 @@
 using DigiTalent.Api.Extensions;
 using DigiTalent.Api.Middlewares;
 using DigiTalent.Application;
+using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Infrastructure;
+using DigiTalent.Infrastructure.Persistence;
+using DigiTalent.Infrastructure.Persistence.Seed;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +35,15 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Development: tự tạo/cập nhật database và nạp tài khoản mẫu. Production KHÔNG tự migrate.
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+    await DbSeeder.SeedAsync(db, scope.ServiceProvider.GetRequiredService<IPasswordHasher>());
+}
+
 // ──────────────────────────────────────────────
 // 2. Pipeline xử lý request (thứ tự quan trọng)
 // ──────────────────────────────────────────────
@@ -45,6 +58,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("Frontend");
 app.UseAuthentication(); // đọc token → biết ai đang gọi (dùng trong [HasPermission] và ICurrentUser)
+app.UseAuthorization();
 
 app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }));

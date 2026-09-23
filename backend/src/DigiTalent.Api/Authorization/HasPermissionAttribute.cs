@@ -12,7 +12,7 @@ namespace DigiTalent.Api.Authorization;
 ///   - Đã đăng nhập nhưng không có quyền     → 403
 ///   - Có quyền                              → cho vào action
 ///
-/// Quyền của từng role đọc từ database (bảng role_permissions), có cache 5 phút.
+/// Quyền của từng role tra trong bảng RolePermissions (Domain).
 /// SYSTEM_ADMIN luôn được đi qua.
 ///
 /// VD: [HasPermission(Permissions.Department.CreateUpdate)]
@@ -28,7 +28,8 @@ public class HasPermissionAttribute : Attribute, IAsyncAuthorizationFilter
         _permissions = permissions;
     }
 
-    public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
+
+    public Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
         var currentUser = context.HttpContext.RequestServices.GetRequiredService<ICurrentUser>();
 
@@ -39,25 +40,18 @@ public class HasPermissionAttribute : Attribute, IAsyncAuthorizationFilter
             {
                 StatusCode = StatusCodes.Status401Unauthorized,
             };
-            return;
+            return Task.CompletedTask;
         }
 
-        // 2. Admin hệ thống thì bỏ qua mọi kiểm tra
-        if (currentUser.Roles.Contains(Roles.SystemAdmin))
-        {
-            return;
-        }
-
-        // 3. Không có quyền nào trong danh sách → 403
-        var permissionReader = context.HttpContext.RequestServices.GetRequiredService<IPermissionReader>();
-        var granted = await permissionReader.GetPermissionsAsync(currentUser.Roles);
-
-        if (!_permissions.Any(granted.Contains))
+        // 2. Không có quyền nào trong danh sách → 403 (SYSTEM_ADMIN được RolePermissions cho qua)
+        if (!_permissions.Any(currentUser.HasPermission))
         {
             context.Result = new ObjectResult(ApiResponse<object>.Fail("You do not have permission to do this."))
             {
                 StatusCode = StatusCodes.Status403Forbidden,
             };
         }
+
+        return Task.CompletedTask;
     }
 }
