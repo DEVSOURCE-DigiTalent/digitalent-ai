@@ -1,10 +1,10 @@
 # SPRINT-2 Task Execution Log
 
 ## [DT-176] [S2-PBI-09] Fix defects & Stabilization
-### [DT-177] [S2-T022] [BE] Fix backend validation bugs, foreign key constraints & null query issues
+### [DT-178] [S2-T023] [FE] Fix frontend layout overflow, toast notifications & form error bindings
 
-- **Assignee**: Nguyễn Thiện Hoàng (hoangntde180649@fpt.edu.vn)
-- **Completed Date**: 2026-09-23
+- **Assignee**: Trần Ngọc Việt (viettnde180693@fpt.edu.vn)
+- **Completed Date**: 2026-09-24
 - **Parent Story**: DT-176
 - **Status**: Done / Accepted
 - **Verification**: Unit tests passed, Code review approved, Definition of Done met.
