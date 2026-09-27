@@ -18,6 +18,8 @@ public static class RolePermissions
             Permissions.Account.ViewOwn,
             Permissions.Department.Read,
             Permissions.Department.CreateUpdate,
+            Permissions.JobFamily.Read,
+            Permissions.JobFamily.CreateUpdate,
             Permissions.JobPosition.Read,
             Permissions.JobPosition.CreateUpdate,
         },
@@ -25,18 +27,21 @@ public static class RolePermissions
         {
             Permissions.Account.ViewOwn,
             Permissions.Department.Read,
+            Permissions.JobFamily.Read,
             Permissions.JobPosition.Read,
         },
         [Roles.Trainer] = new[]
         {
             Permissions.Account.ViewOwn,
             Permissions.Department.Read,
+            Permissions.JobFamily.Read,
             Permissions.JobPosition.Read,
         },
         [Roles.Employee] = new[]
         {
             Permissions.Account.ViewOwn,
             Permissions.Department.Read,
+            Permissions.JobFamily.Read,
             Permissions.JobPosition.Read,
         },
     };

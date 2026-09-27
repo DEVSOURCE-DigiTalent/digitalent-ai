@@ -2,32 +2,29 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useCreateJobPosition, useUpdateJobPosition } from '@/hooks/use-job-positions';
-import { useJobFamilies } from '@/hooks/use-job-families';
-import type { JobPositionListItem } from '@/services/job-position.service';
+import { useCreateJobFamily, useUpdateJobFamily } from '@/hooks/use-job-families';
+import type { JobFamilyListItem } from '@/services/job-family.service';
 import { toast } from 'sonner';
 
 const formSchema = z.object({
   code: z.string().min(1, 'Code is required'),
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  jobFamilyId: z.string().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
-interface JobPositionFormDialogProps {
+interface JobFamilyFormDialogProps {
   open: boolean;
   onClose: () => void;
-  position?: JobPositionListItem | null;
+  family?: JobFamilyListItem | null;
 }
 
-export function JobPositionFormDialog({ open, onClose, position }: JobPositionFormDialogProps) {
-  const isEditing = !!position;
-  const createMutation = useCreateJobPosition();
-  const updateMutation = useUpdateJobPosition();
-  const { data: jobFamiliesData } = useJobFamilies({ pageSize: 100 });
+export function JobFamilyFormDialog({ open, onClose, family }: JobFamilyFormDialogProps) {
+  const isEditing = !!family;
+  const createMutation = useCreateJobFamily();
+  const updateMutation = useUpdateJobFamily();
 
   const {
     register,
@@ -40,61 +37,55 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
       code: '',
       name: '',
       description: '',
-      jobFamilyId: '',
       status: 'ACTIVE',
     },
   });
 
   useEffect(() => {
     if (open) {
-      if (position) {
+      if (family) {
         reset({
-          code: position.code,
-          name: position.name,
-          description: '',
-          jobFamilyId: position.jobFamilyId || '',
-          status: position.status === 'ARCHIVED' ? 'ACTIVE' : (position.status as any),
+          code: family.code,
+          name: family.name,
+          description: family.description || '',
+          status: family.status === 'ARCHIVED' ? 'ACTIVE' : (family.status as any),
         });
       } else {
         reset({
           code: '',
           name: '',
           description: '',
-          jobFamilyId: '',
           status: 'ACTIVE',
         });
       }
     }
-  }, [open, position, reset]);
+  }, [open, family, reset]);
 
   if (!open) return null;
 
   const onSubmit = async (data: FormData) => {
     try {
-      if (isEditing && position) {
+      if (isEditing && family) {
         await updateMutation.mutateAsync({
-          id: position.id,
+          id: family.id,
           data: {
-            code: data.code,
             name: data.name,
             description: data.description,
-            jobFamilyId: data.jobFamilyId || undefined,
             status: data.status as 'ACTIVE' | 'INACTIVE',
           },
         });
-        toast.success('Job position updated successfully');
+        toast.success('Job family updated successfully');
       } else {
         await createMutation.mutateAsync({
           code: data.code,
           name: data.name,
           description: data.description,
-          jobFamilyId: data.jobFamilyId || undefined,
         });
-        toast.success('Job position created successfully');
+        toast.success('Job family created successfully');
       }
       onClose();
     } catch {
-      toast.error(isEditing ? 'Failed to update job position' : 'Failed to create job position');
+      toast.error(isEditing ? 'Failed to update job family' : 'Failed to create job family');
     }
   };
 
@@ -103,7 +94,7 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" role="dialog">
         <h2 className="text-lg font-semibold text-slate-900 mb-4">
-          {isEditing ? 'Edit Job Position' : 'Create Job Position'}
+          {isEditing ? 'Edit Job Family' : 'Create Job Family'}
         </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -111,9 +102,9 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
             <label className="block text-sm font-medium text-slate-700 mb-1">Code *</label>
             <input
               {...register('code')}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="e.g. SWE-01"
-              disabled={isSubmitting}
+              disabled={isEditing || isSubmitting}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-slate-100"
+              placeholder="e.g. ENG"
             />
             {errors.code && <p className="mt-1 text-sm text-red-500">{errors.code.message}</p>}
           </div>
@@ -123,26 +114,10 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
             <input
               {...register('name')}
               className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="e.g. Software Engineer"
+              placeholder="e.g. Engineering"
               disabled={isSubmitting}
             />
             {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Job Family</label>
-            <select
-              {...register('jobFamilyId')}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              disabled={isSubmitting}
-            >
-              <option value="">None (Standalone)</option>
-              {jobFamiliesData?.items.map((family) => (
-                <option key={family.id} value={family.id}>
-                  {family.name} ({family.code})
-                </option>
-              ))}
-            </select>
           </div>
 
           <div>

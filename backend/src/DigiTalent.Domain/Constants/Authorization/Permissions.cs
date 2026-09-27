@@ -19,6 +19,12 @@ public static class Permissions
         public const string CreateUpdate = "department.create_update"; // tạo / sửa / lưu trữ (archive)
     }
 
+    public static class JobFamily
+    {
+        public const string Read = "job_family.read";
+        public const string CreateUpdate = "job_family.create_update";
+    }
+
     public static class JobPosition
     {
         public const string Read = "job_position.read";

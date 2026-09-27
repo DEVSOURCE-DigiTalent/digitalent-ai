@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PositionListPage } from '../pages/PositionListPage';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import * as posHooks from '@/hooks/use-job-positions';
+import * as famHooks from '@/hooks/use-job-families';
 
 vi.mock('sonner', () => ({
   toast: {
@@ -20,7 +21,7 @@ describe('PositionListPage', () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   });
 
-  const mockUserWithPermissions = (permissions: string[] = ['job_position.read', 'job_position.create_update']) => {
+  const mockUserWithPermissions = (permissions: string[] = ['job_position.read', 'job_position.create_update', 'job_family.read', 'job_family.create_update']) => {
     useCurrentUser.setState({
       user: {
         id: 'user-1',
@@ -76,7 +77,6 @@ describe('PositionListPage', () => {
   });
 
   it('ReadOnlyUserCannotEditPositions', async () => {
-    // Read-only user without job_position.create_update
     mockUserWithPermissions(['job_position.read']);
 
     vi.spyOn(posHooks, 'useJobPositions').mockReturnValue({
@@ -188,7 +188,37 @@ describe('PositionListPage', () => {
         code: 'QA-01',
         name: 'Quality Assurance',
         description: '',
+        jobFamilyId: undefined,
       });
     });
+  });
+
+  it('JobFamiliesTabSwitchesAndDisplaysFamilies', async () => {
+    mockUserWithPermissions();
+
+    vi.spyOn(famHooks, 'useJobFamilies').mockReturnValue({
+      data: {
+        items: [
+          { id: 'f1', code: 'TECH', name: 'Technology', description: 'Tech jobs', status: 'ACTIVE', createdAt: '' },
+        ],
+        totalItems: 1,
+        pageIndex: 1,
+        pageSize: 10,
+      },
+      isLoading: false,
+    } as any);
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <PositionListPage />
+      </QueryClientProvider>
+    );
+
+    const familiesTab = screen.getByRole('button', { name: /Job Families/i });
+    fireEvent.click(familiesTab);
+
+    expect(screen.getByText('Technology')).toBeInTheDocument();
+    expect(screen.getByText('TECH')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Create Job Family/i })).toBeInTheDocument();
   });
 });

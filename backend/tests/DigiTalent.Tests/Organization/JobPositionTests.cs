@@ -190,4 +190,43 @@ public class JobPositionTests
         archived.Should().NotBeNull();
         archived!.Status.Should().Be(Statuses.MasterData.Archived);
     }
+
+    [Fact]
+    public async Task ArchiveJobPosition_RejectsWhenEmployeesAreAssigned()
+    {
+        var dbName = Guid.NewGuid().ToString();
+        using var context = new AppDbContext(GetOptions(dbName));
+
+        var orgId = Guid.NewGuid();
+        var posId = Guid.NewGuid();
+        context.JobPositions.Add(new JobPosition
+        {
+            Id = posId,
+            OrganizationId = orgId,
+            Code = "OCCUPIED",
+            Name = "Occupied Position",
+            Status = Statuses.MasterData.Active
+        });
+
+        context.Employees.Add(new Employee
+        {
+            Id = Guid.NewGuid(),
+            OrganizationId = orgId,
+            DepartmentId = Guid.NewGuid(),
+            JobPositionId = posId,
+            EmployeeCode = "EMP001",
+            FullName = "John Doe",
+            Status = Statuses.Employee.Active
+        });
+
+        await context.SaveChangesAsync();
+
+        var currentUser = new Mock<ICurrentUser>();
+        currentUser.Setup(c => c.GetRequiredOrganizationId()).Returns(orgId);
+
+        var useCase = new ArchiveJobPositionUseCase(context, currentUser.Object);
+        var action = async () => await useCase.ExecuteAsync(new ArchiveJobPositionUseCaseInput { Id = posId });
+
+        await action.Should().ThrowAsync<ConflictException>().WithMessage("*assigned to one or more active employees*");
+    }
 }

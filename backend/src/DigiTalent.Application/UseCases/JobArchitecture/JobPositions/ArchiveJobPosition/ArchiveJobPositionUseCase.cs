@@ -29,6 +29,14 @@ public class ArchiveJobPositionUseCase : IUseCase<ArchiveJobPositionUseCaseInput
             throw new NotFoundException($"Job position with Id '{input.Id}' not found.");
         }
 
+        var hasEmployees = await _context.Employees
+            .AnyAsync(e => e.JobPositionId == position.Id && e.OrganizationId == organizationId && e.Status != Statuses.Employee.Archived);
+
+        if (hasEmployees)
+        {
+            throw new ConflictException($"Cannot archive job position '{position.Name}' because it is currently assigned to one or more active employees.");
+        }
+
         position.Status = Statuses.MasterData.Archived;
         await _context.SaveChangesAsync();
 
