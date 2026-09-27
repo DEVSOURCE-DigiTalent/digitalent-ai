@@ -79,7 +79,22 @@ services:
       dockerfile: ../backend/src/DigiTalent.Api/Dockerfile
     container_name: digitalent-api
     restart: unless-stopped
+    command: >
+      /bin/sh -c "
+      if [ \"$$ASPNETCORE_ENVIRONMENT\" = \"Production\" ]; then
+        if [ \"$$RAW_POSTGRES_PASSWORD\" = \"changeme\" ] || [ \"$$RAW_JWT_SIGNING_KEY\" = \"YourSuperSecretKeyThatIsAtLeast64CharactersLong!\" ] || [ \"$$RAW_MINIO_SECRET_KEY\" = \"changeme\" ]; then
+          echo 'ERROR: Default passwords/keys are not allowed in Production!'
+          exit 1
+        fi
+      fi
+      echo 'NOTE: Migrations must be run manually via: dotnet ef database update'
+      dotnet DigiTalent.Api.dll
+      "
     environment:
+      # DO NOT USE DEFAULT PASSWORDS IN PRODUCTION
+      RAW_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      RAW_JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-YourSuperSecretKeyThatIsAtLeast64CharactersLong!}
+      RAW_MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-changeme}
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-digitalent};Username=${POSTGRES_USER:-digitalent_app};Password=${POSTGRES_PASSWORD:-changeme}
       Jwt__Issuer: ${JWT_ISSUER:-DigiTalentAI}
