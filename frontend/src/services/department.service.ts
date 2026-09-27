@@ -2,31 +2,39 @@ import apiClient from './api-client';
 import type { ApiResponse, PagedList, PaginationRequest } from '../types/api';
 
 /** Khớp GetDepartmentByIdUseCaseOutput */
+/** ACTIVE | INACTIVE | ARCHIVED — khớp CHECK ck_departments_status (SQL v2.3) */
+export type DepartmentStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+
 export interface DepartmentDto {
   id: string;
   code: string;
   name: string;
   description?: string;
-  isActive: boolean;
+  parentDepartmentId?: string;
+  parentDepartmentName?: string;
+  managerEmployeeId?: string;
+  managerName?: string;
+  status: DepartmentStatus;
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
 }
 
 /** 1 dòng trong danh sách — khớp DepartmentListItem */
-export type DepartmentListItem = Pick<DepartmentDto, 'id' | 'code' | 'name' | 'isActive'>;
+export type DepartmentListItem = Pick<DepartmentDto, 'id' | 'code' | 'name' | 'parentDepartmentName' | 'status'>;
 
 export interface DepartmentListParams extends PaginationRequest {
-  isActive?: boolean;
+  status?: DepartmentStatus; // không gửi = mọi trạng thái trừ ARCHIVED
 }
 
 export interface CreateDepartmentRequest {
   code: string;
   name: string;
   description?: string;
+  parentDepartmentId?: string;
 }
 
 export interface UpdateDepartmentRequest extends CreateDepartmentRequest {
-  isActive: boolean;
+  status: Exclude<DepartmentStatus, 'ARCHIVED'>; // archive dùng remove()
 }
 
 /**
@@ -45,6 +53,7 @@ export const departmentService = {
   update: (id: string, data: UpdateDepartmentRequest) =>
     apiClient.put<ApiResponse<{ id: string }>>(`/departments/${id}`, data),
 
+  /** Lưu trữ (archive) — backend KHÔNG xóa cứng */
   remove: (id: string) =>
     apiClient.delete<ApiResponse<{ id: string }>>(`/departments/${id}`),
 };
