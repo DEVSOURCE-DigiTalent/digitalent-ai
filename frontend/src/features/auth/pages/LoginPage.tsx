@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useLogin } from '../../../hooks/use-auth';
+import { isSafeReturnTo } from '../auth-redirect';
 
 /**
  * Admin Login Page — Dark Glassmorphism / Blue Brick Wall Design
@@ -27,7 +28,7 @@ export function LoginPage() {
       
       const returnTo = searchParams.get('returnTo');
       let targetPath = defaultPath;
-      if (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//')) {
+      if (isSafeReturnTo(returnTo)) {
         targetPath = returnTo;
       }
       navigate(targetPath, { replace: true });

@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useCurrentUser } from '../../hooks/use-current-user';
 import apiClient from '../../services/api-client';
+import { getLoginPath } from '../../features/auth/auth-redirect';
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
+  const location = useLocation();
   const token = localStorage.getItem('accessToken');
   const user = useCurrentUser((s) => s.user);
   const setUser = useCurrentUser((s) => s.setUser);
@@ -28,10 +30,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
         localStorage.removeItem('accessToken');
       })
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [token, user, setUser]);
 
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={getLoginPath(location.pathname, location.search)} replace />;
   }
 
   if (isLoading) {

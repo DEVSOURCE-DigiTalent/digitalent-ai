@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import { getLoginPath } from '../features/auth/auth-redirect';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
 
@@ -22,7 +23,7 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('accessToken');
       if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+        window.location.href = getLoginPath(window.location.pathname, window.location.search);
       }
     }
     return Promise.reject(error);

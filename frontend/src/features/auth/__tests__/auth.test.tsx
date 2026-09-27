@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useSearchParams } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LoginPage } from '../pages/LoginPage';
 import apiClient from '../../../services/api-client';
+import { AuthGuard } from '../../../components/guards/AuthGuard';
+import { getLoginPath, isSafeReturnTo } from '../auth-redirect';
 
 vi.mock('../../../services/api-client', () => {
   return {
@@ -72,25 +74,25 @@ describe('Authentication', () => {
     });
   });
 
-  it('ExpiredSessionRedirectsToLoginOnce', () => {
-    localStorage.setItem('accessToken', 'expired-token');
+  it('AnonymousGuardPreservesCurrentPathForLogin', async () => {
+    function LoginDestination() {
+      const [params] = useSearchParams();
+      return <div>Return to: {params.get('returnTo')}</div>;
+    }
 
-    // Simulate 401 interceptor behavior: clears token, redirects to /login if not already there
-    const handle401 = (status: number, currentPath: string) => {
-      let redirectUrl: string | null = null;
-      if (status === 401) {
-        localStorage.removeItem('accessToken');
-        if (currentPath !== '/login') {
-          redirectUrl = '/login';
-        }
-      }
-      return redirectUrl;
-    };
+    render(
+      <MemoryRouter initialEntries={['/enterprise/organization/departments?page=2']}>
+        <Routes>
+          <Route path="/enterprise/organization/departments" element={<AuthGuard><div>Protected</div></AuthGuard>} />
+          <Route path="/login" element={<LoginDestination />} />
+        </Routes>
+      </MemoryRouter>
+    );
 
-    expect(handle401(401, '/dashboard')).toBe('/login');
-    expect(localStorage.getItem('accessToken')).toBeNull();
-    // When already on /login, no further redirect to prevent loops
-    expect(handle401(401, '/login')).toBeNull();
+    expect(await screen.findByText('Return to: /enterprise/organization/departments?page=2')).toBeInTheDocument();
+    expect(screen.queryByText('Protected')).not.toBeInTheDocument();
+    expect(getLoginPath('/enterprise/organization/departments', '?page=2'))
+      .toBe('/login?returnTo=%2Fenterprise%2Forganization%2Fdepartments%3Fpage%3D2');
   });
 
   it('LoginRedirectRespectsSafeInternalReturnTo', async () => {
@@ -103,8 +105,11 @@ describe('Authentication', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/login?returnTo=/organization/departments']}>
-          <LoginPage />
+        <MemoryRouter initialEntries={['/login?returnTo=/enterprise/organization/departments']}>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/enterprise/organization/departments" element={<div>Returned to departments</div>} />
+          </Routes>
         </MemoryRouter>
       </QueryClientProvider>
     );
@@ -118,7 +123,10 @@ describe('Authentication', () => {
     fireEvent.click(submitBtn);
     
     await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalled();
+      expect(screen.getByText('Returned to departments')).toBeInTheDocument();
     });
+
+    expect(isSafeReturnTo('//external.example')).toBe(false);
+    expect(isSafeReturnTo('/\\external.example')).toBe(false);
   });
 });
