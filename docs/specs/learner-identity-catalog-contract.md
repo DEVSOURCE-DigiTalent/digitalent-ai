@@ -4,7 +4,7 @@
 - `docs/specs/2026-09-27-two-surfaces-september-plan.md`
 - `docs/superpowers/plans/2026-09-27-two-surfaces-september.md`
 
-**Trạng thái:** `BLOCKED-BY-DECISION` (Chờ quyết định sản phẩm trước khi cập nhật `AppDbContext` và tạo migration)
+**Trạng thái:** `APPROVED` (Đã phê duyệt các quyết định sản phẩm ngày 2026-09-27)
 
 ---
 
@@ -148,21 +148,20 @@ CREATE TABLE learner_profiles (
 
 ---
 
-## 4. Bảng Quyết định Sản phẩm Còn Mở (Open Decisions & Questions)
+## 4. Bảng Quyết định Sản phẩm Đã Phê Duyệt (Approved Decisions)
 
-| # | Câu hỏi Cần Chốt | Mặc định Kỹ thuật Đề xuất | Trạng thái Hiện tại | Hệ quả nếu Thay đổi |
-| :--- | :--- | :--- | :--- | :--- |
-| **D-01** | Quy trình Đăng ký (Self-signup) của người học tự do: có cần xác thực email qua OTP không? | Có xác thực email trước khi kích hoạt `User` trạng thái `ACTIVE`. Mặc định role gán là `LEARNER`. | `BLOCKED-BY-DECISION` (Chờ Product Owner xác nhận) | Ảnh hưởng use case `RegisterUseCase` và cấu hình mail service. |
-| **D-02** | Quan hệ giữa `CareerRoleTemplate` (chuẩn công khai) và `JobPosition` (vị trí riêng của từng Doanh nghiệp)? | `CareerRoleTemplate` là danh mục chuẩn chung (không có `organization_id`). Doanh nghiệp khi tạo `JobPosition` có thể liên kết (mapping) tới 1 `CareerRoleTemplate` để dùng lại khung năng lực chuẩn. | `BLOCKED-BY-DECISION` (Chờ Product Owner xác nhận) | Ảnh hưởng FK trong bảng `job_positions` và logic tính skill gap. |
-| **D-03** | Khóa học của Doanh nghiệp có được phép Publish ra ngoài công khai không? | Mặc định **KHÔNG**. Chỉ có các khóa học do Platform Admin tạo với `organization_id = NULL` và `is_public = true` mới xuất hiện trên Public Catalog. | `BLOCKED-BY-DECISION` (Chờ Product Owner xác nhận) | Nếu cho phép, cần cơ chế duyệt nội dung (moderation) và bản quyền giữa các bên. |
-| **D-04** | Trải nghiệm chuyển đổi: Nhân viên doanh nghiệp có được chuyển tài khoản thành người học độc lập khi nghỉ việc không? | Tách biệt `users` (danh tính đăng nhập) và `employees` (hợp đồng nhân sự). Khi `employees.status = INACTIVE`, tài khoản `users` vẫn giữ quyền `LEARNER` tự do nếu chính sách công ty cho phép. | `BLOCKED-BY-DECISION` (Chờ Product Owner xác nhận) | Ảnh hưởng lifecycle của `User` khi Employee bị archive. |
+| # | Quyết định Nghiệp vụ | Phương án Đã Phê Duyệt | Trạng thái |
+| :--- | :--- | :--- | :--- |
+| **D-01** | Quy trình Đăng ký (Self-signup) của người học tự do | Đăng ký bằng Email + Mật khẩu, bắt buộc xác thực (OTP/Link kích hoạt) qua email trước khi kích hoạt tài khoản. | **APPROVED** (2026-09-27) |
+| **D-02** | Quan hệ giữa `CareerRoleTemplate` (chuẩn công khai) và `JobPosition` (vị trí doanh nghiệp) | `JobPosition` của doanh nghiệp có trường `career_role_template_id` (nullable) để liên kết với khung năng lực chuẩn công khai khi cần. | **APPROVED** (2026-09-27) |
+| **D-03** | Phạm vi Public Catalog của Khóa học | Khóa học của doanh nghiệp luôn riêng tư (Private). Chỉ nội dung do Platform Admin tạo (`organization_id = NULL`, `is_public = true`) mới được xuất hiện trên Public Catalog. | **APPROVED** (2026-09-27) |
+| **D-04** | Xử lý tài khoản khi Nhân viên nghỉ việc | Giữ tài khoản `User` với vai trò Người học tự do (`LEARNER`); bảo lưu chứng chỉ và tiến độ cá nhân, ngắt quyền truy cập toàn bộ tài nguyên nội bộ doanh nghiệp. | **APPROVED** (2026-09-27) |
 
 ---
 
 ## 5. Kết luận và Kế hoạch Tiếp nối
 
-1. **Tuân thủ nguyên tắc cốt lõi:** Không tự ý sửa `AppDbContext`, không tạo migration suy đoán trước khi có phê duyệt chính thức bằng văn bản cho các câu hỏi D-01 đến D-04.
-2. **Kế hoạch sau ngày 30/09:** Khi các quyết định được ký duyệt, tiến hành:
-   - Tạo migration `AddPublicLearnerAndCatalogTables`.
-   - Viết test `PublicCatalogContractTests.cs`.
-   - Triển khai use cases và controller cho `/api/v1/public/*` và `/api/v1/learner/*`.
+1. **Quyết định đã chốt:** Toàn bộ 4 câu hỏi nghiệp vụ nền tảng (D-01 đến D-04) đã được phê duyệt chính thức.
+2. **Kế hoạch thực hiện:**
+   - **Task 7 (P1):** Triển khai JobFamily & JobPosition CRUD với phạm vi tổ chức (`OrganizationId`), có trường `CareerRoleTemplateId` (nullable) sẵn sàng đón đầu kết nối danh mục công khai.
+   - **Backlog sau 30/09 (Deferred):** Triển khai migration `AddPublicLearnerAndCatalogTables`, luồng gửi OTP kích hoạt email, và API quản lý CareerRoleTemplate / Public Course Catalog.
