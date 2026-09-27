@@ -150,7 +150,7 @@ Các agent cùng dùng một working tree: **không tự stage/commit, không s�
 **Consumes:** foundation migration, auth, permission và route tree Tasks 1/2/4.
 **Produces:** JobFamily/JobPosition CRUD + archive có org scope và UI thật; là tiền đề cho requirement/learning.
 **Commits:**
-- Backend: `ce10992` (`feat: manage job architecture`)
+- Backend: `ce10992` (`feat: manage job architecture`), followed by `2dd0a7e` (`feat(job-arch): complete JobFamily CRUD, enforce position archive employee guard, and link UI`)
 - Frontend: `8d25b1d` (`feat: connect job position UI`)
 
 - [x] Viết test backend cho trùng mã trong một org, cùng mã ở hai org, archive vị trí đang được dùng, role thiếu quyền, và FE test list/form/empty/error.
@@ -181,6 +181,14 @@ Các agent cùng dùng một working tree: **không tự stage/commit, không s�
 4. Assessment, evidence/task, certificate issuance/verification và analytics.
 
 Mỗi mục deferred cần spec/contract riêng và tiêu chí tích hợp trước khi giao agent; không sao chép demo localStorage làm dữ liệu thật. Khi P0 xong, dùng cùng quy trình ownership, test trước, review diff và commit theo lát nhỏ.
+
+## Review & Remediation Checkpoint (27/09/2026)
+
+Toàn bộ 5 điểm rà soát đã được xử lý triệt để và tự đứng trên nhánh:
+- `5b73a15`: `feat(db): establish canonical foundation entities, configurations, and migration` — Toàn bộ domain entities, EF configurations, migration foundation 14 bảng, seeder và canonical script được commit đầy đủ, đảm bảo checkout sạch tự build độc lập.
+- `4fd7519`: `feat(auth,org): implement RBAC permission service and department archive lifecycle` — Permission service kiểm tra quyền DB, logic login khóa sau 5 lần sai, lifecycle archive phòng ban.
+- `2dd0a7e`: `feat(job-arch): complete JobFamily CRUD, enforce position archive employee guard, and link UI` — Hoàn thiện đầy đủ CRUD JobFamily, chặn archive JobPosition khi có nhân viên đang gắn kết, UI tabs và dialog liên kết JobPosition/JobFamily.
+- `d29fc21`: `fix(security,ops): enforce production secret checks, compose migration automation, and sync plan` — Chặn khởi động production với secret/password mặc định, tự động migrate trong docker-compose, test PostgreSQL thật (`FoundationMigrationTests` và `LoginUseCaseTests`), đồng bộ contract `/api/v1/public/career-roles` và `/api/v1/learner/me/targets`.
 
 ## Coordinator checkpoint trước mỗi commit
 
