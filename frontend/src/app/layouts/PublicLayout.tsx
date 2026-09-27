@@ -3,10 +3,10 @@ import { Outlet, Link } from 'react-router-dom';
 
 export const PublicLayout: React.FC = () => {
   return (
-    <div className="public-layout min-h-screen flex flex-col font-sans">
+    <div data-testid="public-layout" className="public-layout min-h-screen flex flex-col font-sans">
       <header className="flex items-center justify-between p-4 bg-white border-b">
         <div className="flex items-center gap-6">
-          <div className="text-xl font-bold text-blue-700">DigiTalent AI</div>
+          <Link to="/" className="text-xl font-bold text-blue-700">DigiTalent AI</Link>
           <nav className="hidden md:flex gap-4">
             <Link to="/" className="text-gray-600 hover:text-gray-900">Trang chủ</Link>
             <Link to="/careers" className="text-gray-600 hover:text-gray-900">Vị trí nghề nghiệp</Link>
@@ -14,10 +14,10 @@ export const PublicLayout: React.FC = () => {
           </nav>
         </div>
         <div className="flex items-center gap-4">
-          <Link to="/learn" className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded">
+          <Link to="/learn" className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded hover:bg-blue-50 transition">
             Vào học
           </Link>
-          <Link to="/login" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded">
+          <Link to="/login" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition">
             Dành cho Doanh nghiệp / Đăng nhập
           </Link>
         </div>

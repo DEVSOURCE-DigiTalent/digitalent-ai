@@ -5,7 +5,9 @@ import { AuthGuard } from '../../components/guards/AuthGuard';
 export const EnterpriseLayout: React.FC = () => {
   return (
     <AuthGuard>
-      <MainLayout />
+      <div data-testid="enterprise-layout" className="min-h-screen">
+        <MainLayout />
+      </div>
     </AuthGuard>
   );
 };
