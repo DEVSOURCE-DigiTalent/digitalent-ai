@@ -33,6 +33,7 @@ jobs:
         working-directory: backend
     env:
       DIGITALENT_TEST_POSTGRES_CONNECTION: Host=localhost;Port=5432;Database=digitalent_test;Username=digitalent_app;Password=${{ github.run_id }}
+      DIGITALENT_SMOKE_ADMIN_PASSWORD: ${{ github.run_id }}
 
     steps:
       - uses: actions/checkout@v4
@@ -47,6 +48,9 @@ jobs:
 
       - name: Build
         run: dotnet build --no-restore --configuration Release
+
+      - name: Live API smoke against PostgreSQL
+        run: python3 scripts/smoke_api.py
 
       - name: Test
         run: dotnet test --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=backend.trx"

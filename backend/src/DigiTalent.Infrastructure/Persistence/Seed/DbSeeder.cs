@@ -18,13 +18,18 @@ public static class DbSeeder
     private const string DefaultPassword = "Admin@1234";
     private const string DefaultOrganizationCode = "DIGITALENT";
 
-    public static async Task SeedAsync(AppDbContext db, IPasswordHasher passwordHasher)
+    public static async Task SeedAsync(AppDbContext db, IPasswordHasher passwordHasher, string? developmentPassword = null)
     {
         var organization = await SeedOrganizationAsync(db);
+        await SeedReferenceDataAsync(db);
+        await SeedUsersAsync(db, passwordHasher, organization.Id, developmentPassword ?? DefaultPassword);
+    }
+
+    public static async Task SeedReferenceDataAsync(AppDbContext db)
+    {
         await SeedRolesAsync(db);
         await SeedPermissionsAsync(db);
         await SeedRolePermissionsAsync(db);
-        await SeedUsersAsync(db, passwordHasher, organization.Id);
     }
 
     private static async Task<Organization> SeedOrganizationAsync(AppDbContext db)
@@ -94,14 +99,14 @@ public static class DbSeeder
         await db.SaveChangesAsync();
     }
 
-    private static async Task SeedUsersAsync(AppDbContext db, IPasswordHasher passwordHasher, Guid organizationId)
+    private static async Task SeedUsersAsync(AppDbContext db, IPasswordHasher passwordHasher, Guid organizationId, string password)
     {
         if (await db.Users.AnyAsync())
         {
             return;
         }
 
-        var passwordHash = passwordHasher.Hash(DefaultPassword);
+        var passwordHash = passwordHasher.Hash(password);
         var roleIds = await db.Roles.ToDictionaryAsync(r => r.Code, r => r.Id);
         var now = DateTimeOffset.UtcNow;
 

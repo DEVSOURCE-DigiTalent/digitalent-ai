@@ -59,6 +59,32 @@ public class FoundationMigrationTests
     }
 
     [Fact]
+    public async Task ReferenceSeedDoesNotCreateDemoUsersOrOrganization()
+    {
+        using var context = new AppDbContext(GetOptions(Guid.NewGuid().ToString()));
+
+        await DbSeeder.SeedReferenceDataAsync(context);
+
+        (await context.Roles.CountAsync()).Should().BeGreaterThan(0);
+        (await context.Permissions.CountAsync()).Should().BeGreaterThan(0);
+        (await context.Users.CountAsync()).Should().Be(0);
+        (await context.Organizations.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task DevelopmentSeedUsesConfiguredPassword()
+    {
+        using var context = new AppDbContext(GetOptions(Guid.NewGuid().ToString()));
+        var hasher = new Mock<IPasswordHasher>();
+        hasher.Setup(h => h.Hash("test-only-password")).Returns("hashed-password");
+
+        await DbSeeder.SeedAsync(context, hasher.Object, "test-only-password");
+
+        hasher.Verify(h => h.Hash("test-only-password"), Times.Once);
+        (await context.Users.CountAsync()).Should().Be(5);
+    }
+
+    [Fact]
     [Trait("Category", "Integration")]
     public async Task PostgreSQL_CanApplyMigrationsAndVerifySchema()
     {

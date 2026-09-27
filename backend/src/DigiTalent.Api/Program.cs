@@ -75,7 +75,17 @@ if (applyMigrations)
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
-    await DbSeeder.SeedAsync(db, scope.ServiceProvider.GetRequiredService<IPasswordHasher>());
+    if (app.Environment.IsDevelopment())
+    {
+        await DbSeeder.SeedAsync(
+            db,
+            scope.ServiceProvider.GetRequiredService<IPasswordHasher>(),
+            app.Configuration["DevelopmentSeed:Password"]);
+    }
+    else
+    {
+        await DbSeeder.SeedReferenceDataAsync(db);
+    }
 }
 
 if (args.Contains("--migrate-only"))
