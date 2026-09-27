@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.UseCases;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +29,9 @@ public static class DependencyInjection
 
         // 3. Tự đăng ký tất cả validator (class kế thừa AbstractValidator<>)
         services.AddValidatorsFromAssembly(assembly);
+
+        // 4. Tra quyền từ database (dùng cho [HasPermission] và /auth/me)
+        services.AddScoped<IPermissionService, PermissionService>();
 
         return services;
     }

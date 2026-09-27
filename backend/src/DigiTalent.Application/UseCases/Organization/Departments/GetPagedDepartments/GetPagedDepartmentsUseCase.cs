@@ -1,25 +1,31 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Departments;
 
 /// <summary>
 /// Danh sách phòng ban có phân trang, tìm kiếm theo mã/tên, lọc theo trạng thái.
+/// Mặc định (không gửi Status) KHÔNG hiện phòng ban đã archive.
 /// </summary>
 public class GetPagedDepartmentsUseCase : IUseCase<GetPagedDepartmentsUseCaseInput, GetPagedDepartmentsUseCaseOutput>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public GetPagedDepartmentsUseCase(IApplicationDbContext context)
+    public GetPagedDepartmentsUseCase(IApplicationDbContext context, ICurrentUser currentUser)
     {
         _context = context;
+        _currentUser = currentUser;
     }
 
     public async Task<GetPagedDepartmentsUseCaseOutput> ExecuteAsync(GetPagedDepartmentsUseCaseInput input)
     {
-        // 1. Tạo câu query (CHƯA chạy xuống database)
-        var query = _context.Departments.AsQueryable();
+        // 1. Tạo câu query (CHƯA chạy xuống database) — chỉ trong tổ chức của người gọi
+        var organizationId = _currentUser.GetRequiredOrganizationId();
+        var query = _context.Departments
+            .Where(d => d.OrganizationId == organizationId);
 
         // 2. Thêm điều kiện lọc nếu frontend có gửi
         if (!string.IsNullOrWhiteSpace(input.Search))
@@ -29,10 +35,9 @@ public class GetPagedDepartmentsUseCase : IUseCase<GetPagedDepartmentsUseCaseInp
                                   || d.Name.ToLower().Contains(keyword));
         }
 
-        if (input.IsActive.HasValue)
-        {
-            query = query.Where(d => d.IsActive == input.IsActive.Value);
-        }
+        query = string.IsNullOrWhiteSpace(input.Status)
+            ? query.Where(d => d.Status != Statuses.MasterData.Archived)
+            : query.Where(d => d.Status == input.Status);
 
         // 3. Đếm tổng số dòng (để frontend tính số trang)
         var totalItems = await query.CountAsync();
@@ -47,7 +52,11 @@ public class GetPagedDepartmentsUseCase : IUseCase<GetPagedDepartmentsUseCaseInp
                 Id = d.Id,
                 Code = d.Code,
                 Name = d.Name,
-                IsActive = d.IsActive,
+                ParentDepartmentName = _context.Departments
+                    .Where(p => p.Id == d.ParentDepartmentId)
+                    .Select(p => p.Name)
+                    .FirstOrDefault(),
+                Status = d.Status,
             })
             .ToListAsync();
 

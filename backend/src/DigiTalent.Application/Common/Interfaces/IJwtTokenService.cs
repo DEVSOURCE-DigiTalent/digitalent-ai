@@ -7,7 +7,7 @@ namespace DigiTalent.Application.Common.Interfaces;
 /// </summary>
 public interface IJwtTokenService
 {
-    JwtTokenResult CreateToken(User user);
+    JwtTokenResult CreateToken(User user, IReadOnlyCollection<string> roleCodes);
 }
 
 public class JwtTokenResult

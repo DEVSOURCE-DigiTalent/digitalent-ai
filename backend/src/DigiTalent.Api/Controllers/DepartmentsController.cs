@@ -23,7 +23,7 @@ namespace DigiTalent.Api.Controllers;
 [Route("api/v1/departments")]
 public class DepartmentsController : ControllerBase
 {
-    // GET api/v1/departments?pageIndex=1&pageSize=20&search=it&isActive=true
+    // GET api/v1/departments?pageIndex=1&pageSize=20&search=it&status=ACTIVE
     [HttpGet]
     [HasPermission(Permissions.Department.Read)]
     public async Task<ActionResult<ApiResponse<GetPagedDepartmentsUseCaseOutput>>> GetPaged(
@@ -72,16 +72,16 @@ public class DepartmentsController : ControllerBase
         return Ok(ApiResponse<UpdateDepartmentUseCaseOutput>.Ok(result, "Department updated."));
     }
 
-    // DELETE api/v1/departments/{id}
+    // DELETE api/v1/departments/{id} — lưu trữ (archive), KHÔNG xóa cứng
     [HttpDelete("{id:guid}")]
     [HasPermission(Permissions.Department.CreateUpdate)]
-    public async Task<ActionResult<ApiResponse<DeleteDepartmentUseCaseOutput>>> Delete(
+    public async Task<ActionResult<ApiResponse<ArchiveDepartmentUseCaseOutput>>> Archive(
         Guid id,
-        [FromServices] IUseCase<DeleteDepartmentUseCaseInput, DeleteDepartmentUseCaseOutput> useCase)
+        [FromServices] IUseCase<ArchiveDepartmentUseCaseInput, ArchiveDepartmentUseCaseOutput> useCase)
     {
-        var input = new DeleteDepartmentUseCaseInput { Id = id };
+        var input = new ArchiveDepartmentUseCaseInput { Id = id };
 
         var result = await useCase.ExecuteAsync(input);
-        return Ok(ApiResponse<DeleteDepartmentUseCaseOutput>.Ok(result, "Department deleted."));
+        return Ok(ApiResponse<ArchiveDepartmentUseCaseOutput>.Ok(result, "Department archived."));
     }
 }

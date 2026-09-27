@@ -1,6 +1,6 @@
 namespace DigiTalent.Application.UseCases.Departments;
 
-public class DeleteDepartmentUseCaseInput
+public class ArchiveDepartmentUseCaseInput
 {
     public Guid Id { get; set; }
 }

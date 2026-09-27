@@ -9,6 +9,7 @@ namespace DigiTalent.Api.Middlewares;
 /// Bắt mọi exception rồi đổi thành ApiResponse + status code phù hợp:
 ///   ValidationException → 400   (Input sai — do validator throw)
 ///   BadRequestException → 400
+///   UnauthorizedException → 401 (sai thông tin đăng nhập)
 ///   ForbiddenException  → 403
 ///   NotFoundException   → 404
 ///   ConflictException   → 409
@@ -47,6 +48,10 @@ public class ExceptionHandlingMiddleware
         catch (BadRequestException ex)
         {
             await WriteErrorAsync(context, StatusCodes.Status400BadRequest, ex.Message);
+        }
+        catch (UnauthorizedException ex)
+        {
+            await WriteErrorAsync(context, StatusCodes.Status401Unauthorized, ex.Message);
         }
         catch (ForbiddenException ex)
         {

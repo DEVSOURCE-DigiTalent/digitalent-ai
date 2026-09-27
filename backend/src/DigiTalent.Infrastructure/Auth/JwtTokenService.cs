@@ -16,17 +16,22 @@ public class JwtTokenService : IJwtTokenService
         _settings = settings;
     }
 
-    public JwtTokenResult CreateToken(User user)
+    public JwtTokenResult CreateToken(User user, IReadOnlyCollection<string> roleCodes)
     {
         // 1. Thông tin gắn vào token (gọi là "claim"). BE đọc lại các claim này ở mỗi request.
         var claims = new List<Claim>
         {
             new("sub", user.Id.ToString()),
             new("email", user.Email),
-            new("name", user.FullName),
+            new("name", user.DisplayName),
         };
 
-        foreach (var role in user.Roles)
+        if (user.OrganizationId.HasValue)
+        {
+            claims.Add(new Claim("org", user.OrganizationId.Value.ToString())); // ICurrentUser.OrganizationId
+        }
+
+        foreach (var role in roleCodes)
         {
             claims.Add(new Claim("role", role));
         }
