@@ -1,33 +1,52 @@
 # Backend DigiTalent — Hướng dẫn cho dev
 
 > Đọc hết file này trước khi code. Làm module mới thì **copy CRUD mẫu Department** rồi đổi tên — đừng tự nghĩ cấu trúc khác.
+>
+> **Schema chuẩn duy nhất:** [docs/database/DigiTalent_AI_Canonical_v2_3.sql](../docs/database/DigiTalent_AI_Canonical_v2_3.sql). Entity, configuration và migration phải khớp file này (tên bảng, cột, kiểu, CHECK, index). Muốn đổi schema → sửa file SQL trước, rồi mới sửa code.
 
 ---
 
 ## 1. Chạy project
 
-**Cần cài:** .NET 8 SDK. Database dùng chung trên **Neon** (PostgreSQL trên cloud), không cần cài gì thêm.
-
-**Khai báo connection string** (làm 1 lần trên máy bạn). KHÔNG bỏ mật khẩu vào `appsettings.json` vì repo là public:
+**Cần cài:** .NET 8 SDK, PostgreSQL (dùng Docker cho nhanh).
 
 ```bash
-cd backend/src/DigiTalent.Api
-dotnet user-secrets init
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=<host>.aws.neon.tech;Database=neondb;Username=<user>;Password=<password>;SSL Mode=Require;Trust Server Certificate=true"
-```
+# 1. Bật PostgreSQL
+cd docker
+docker compose up -d postgres
 
-Xin thông tin kết nối Neon từ trưởng nhóm. File này nằm ngoài repo nên không bị push lên.
+# 2. Cài công cụ migration (chỉ cần 1 lần, lấy đúng version trong .config/dotnet-tools.json)
+cd ../backend
+dotnet tool restore
 
-```bash
-cd backend
-dotnet tool restore              # chỉ cần 1 lần, cài dotnet-ef
+# 3. Chạy API
 dotnet run --project src/DigiTalent.Api
 ```
 
 - Swagger: http://localhost:5000/swagger
-- **API không tự tạo bảng.** Schema do file SQL quản lý, xem mục 11.
+- Lần chạy đầu, API **tự tạo bảng + tài khoản mẫu** (chỉ ở môi trường Development).
+- Connection string nằm trong `src/DigiTalent.Api/appsettings.json`.
+
+**Dữ liệu mẫu** (mật khẩu chung `Admin@1234`): 1 tổ chức `DIGITALENT`, 5 role, ma trận quyền mặc định, 1 phòng ban `OPS` (trưởng phòng = manager@), mỗi role 1 tài khoản:
+
+| Email | Role |
+|---|---|
+| admin@digitalent.ai | SYSTEM_ADMIN |
+| hr@digitalent.ai | HR_MANAGER |
+| manager@digitalent.ai | DEPARTMENT_MANAGER |
+| trainer@digitalent.ai | TRAINER |
+| employee@digitalent.ai | EMPLOYEE |
+
+hr@, manager@, trainer@, employee@ có hồ sơ nhân sự (bảng `employees`) trong phòng `OPS`; admin@ thì không.
+Xác minh chứng chỉ (`/verify`) là trang công khai — **không có role riêng**.
 
 **Test API cần đăng nhập trên Swagger:** gọi `POST /api/v1/auth/login` → copy `accessToken` → bấm nút **Authorize** (góc phải trên) → dán token → OK.
+
+> ⚠️ Migration đã được làm lại từ đầu (`InitialFoundation`, 26/09/2026). Nếu máy bạn còn database `digitalent` cũ (từ `InitialCreate`), API sẽ báo lỗi *"relation ... already exists"*. Xóa DB cũ rồi chạy lại:
+>
+> ```bash
+> docker exec -it digitalent-postgres psql -U digitalent_app -d postgres -c "DROP DATABASE digitalent WITH (FORCE);" -c "CREATE DATABASE digitalent;"
+> ```
 
 ---
 
@@ -37,7 +56,7 @@ dotnet run --project src/DigiTalent.Api
 backend/src/
 ├── DigiTalent.Domain/          Entity (class ánh xạ với bảng). Không phụ thuộc project nào.
 ├── DigiTalent.Application/     Use case (nghiệp vụ) + validator.       → dùng Domain
-├── DigiTalent.Infrastructure/  Database: DbContext, cấu hình bảng, JWT.     → dùng Application
+├── DigiTalent.Infrastructure/  Database: DbContext, cấu hình bảng, migration. → dùng Application
 └── DigiTalent.Api/             Controller, middleware, Program.cs.     → dùng Application + Infrastructure
 ```
 
@@ -45,7 +64,7 @@ backend/src/
 |---|---|---|
 | Domain | Khai báo entity | Gọi database, dùng EF Core |
 | Application | Viết use case, validator | Dùng HttpContext, Request, Controller |
-| Infrastructure | Cấu hình bảng, kết nối database, JWT | Viết nghiệp vụ |
+| Infrastructure | Cấu hình bảng, migration | Viết nghiệp vụ |
 | Api | Nhận request → gọi use case → trả response | Viết nghiệp vụ, truy vấn database |
 
 ---
@@ -81,7 +100,7 @@ UseCases/<Module>/<Entity số nhiều>/<TênUseCase>/
 └── <TênUseCase>UseCaseOutput.cs     ← dữ liệu trả về
 ```
 
-Input nhận từ body/query (Create, Update, GetPaged…) thì **phải có** Validator. Input chỉ có Id lấy từ URL (GetById, Delete) thì không cần.
+Input nhận từ body/query (Create, Update, GetPaged…) thì **phải có** Validator. Input chỉ có Id lấy từ URL (GetById, Archive) thì không cần.
 
 | Hành động | Tên use case |
 |---|---|
@@ -89,11 +108,13 @@ Input nhận từ body/query (Create, Update, GetPaged…) thì **phải có** V
 | Chi tiết | `Get<Entity>ById` |
 | Tạo | `Create<Entity>` |
 | Sửa | `Update<Entity>` |
-| Xóa | `Delete<Entity>` |
+| Xóa (thực chất là lưu trữ) | `Archive<Entity>` — đổi `Status = ARCHIVED`, **không xóa cứng** |
 | Hành động nghiệp vụ | Động từ + danh từ: `AssignTask`, `IssueCertificate`, `SubmitAttempt`… |
 
 - Mọi use case của 1 entity dùng **chung 1 namespace**: `DigiTalent.Application.UseCases.<Entity số nhiều>`.
 - **Không cần đăng ký DI**, không cần sửa `Program.cs`. Use case và validator được tự đăng ký.
+- Giá trị `status` lấy từ `Domain/Constants/Statuses.cs` (khớp CHECK trong SQL), không gõ chuỗi tay.
+- Dữ liệu luôn lọc theo tổ chức của người gọi: `d.OrganizationId == _currentUser.OrganizationId`.
 
 ---
 
@@ -103,26 +124,29 @@ Code: [src/DigiTalent.Application/UseCases/Organization/Departments/](src/DigiTa
 
 | Chức năng | API | Use case | Học được gì |
 |---|---|---|---|
-| Danh sách | `GET /api/v1/departments?pageIndex=1&pageSize=20&search=it` | `GetPagedDepartments` | Phân trang, tìm kiếm, lọc |
-| Chi tiết | `GET /api/v1/departments/{id}` | `GetDepartmentById` | `Select` sang Output, 404 |
-| Tạo | `POST /api/v1/departments` | `CreateDepartment` | Validator, check trùng mã → 409 |
-| Sửa | `PUT /api/v1/departments/{id}` | `UpdateDepartment` | Id lấy từ URL, check trùng trừ chính nó |
-| Xóa | `DELETE /api/v1/departments/{id}` | `DeleteDepartment` | 404, chỗ đặt kiểm tra ràng buộc trước khi xóa |
+| Danh sách | `GET /api/v1/departments?pageIndex=1&pageSize=20&search=it&status=ACTIVE` | `GetPagedDepartments` | Phân trang, tìm kiếm, lọc; mặc định ẩn ARCHIVED |
+| Chi tiết | `GET /api/v1/departments/{id}` | `GetDepartmentById` | `Select` sang Output (kèm tên phòng cha, trưởng phòng), 404 |
+| Tạo | `POST /api/v1/departments` | `CreateDepartment` | Validator, lấy tổ chức từ `ICurrentUser`, check trùng mã → 409 |
+| Sửa | `PUT /api/v1/departments/{id}` | `UpdateDepartment` | Id lấy từ URL, check trùng trừ chính nó, chặn vòng lặp phòng cha |
+| Lưu trữ | `DELETE /api/v1/departments/{id}` | `ArchiveDepartment` | Soft delete; còn nhân viên / phòng con → 409 |
 
 ---
 
 ## 6. Làm chức năng mới — từng bước
 
-Ví dụ làm CRUD **JobPosition** (chức danh) trong module Organization.
+Ví dụ làm CRUD **Competency** (Phase 2). *Các bảng Phase 1 — organizations, users, roles, permissions, user_roles, role_permissions, refresh_tokens, departments, job_families, job_positions, employees, audit_logs, system_settings — đã có entity + configuration + migration; làm chức năng cho chúng thì bỏ qua bước 1–4.*
 
-**Entity đã có sẵn hết rồi** — cả 59 bảng trong database đều đã có entity trong `Domain/Entities/` và file configuration tương ứng. Nên thường bạn chỉ cần làm từ bước 1:
-
-1. **Use case:** copy folder `UseCases/Organization/Departments` thành `UseCases/Organization/JobPositions`, đổi `Department` → `JobPosition`.
-2. **Quyền:** thêm mã quyền vào `Permissions.cs` (mục 8), và thêm dòng vào bảng `role_permissions` trong database cho role được phép.
-3. **Controller:** copy `DepartmentsController.cs` thành `JobPositionsController.cs`, đổi tên tương tự, gắn `[HasPermission(...)]` cho **mọi** action.
-4. **Chạy và test bằng Swagger** với vài tài khoản khác role.
-
-Chỉ khi **thêm bảng mới vào database** thì mới cần thêm entity — xem mục 11.
+1. **Entity:** mở bảng `competencies` trong file SQL v2.3, tạo `Domain/Entities/Competency/Competency.cs` đúng các cột đó, kế thừa `BaseEntity`, namespace `DigiTalent.Domain.Entities`.
+2. **Cấu hình bảng:** tạo `Infrastructure/Persistence/Configurations/Competency/CompetencyConfiguration.cs` (copy từ `DepartmentConfiguration`): tên bảng, độ dài cột, CHECK, unique index, FK — **đúng như SQL**.
+3. **DbSet:** thêm `DbSet<Competency> Competencies` vào **cả 2 file**: `IApplicationDbContext.cs` và `AppDbContext.cs`.
+4. **Migration:**
+   ```bash
+   dotnet ef migrations add AddCompetency --project src/DigiTalent.Infrastructure --startup-project src/DigiTalent.Api --output-dir Persistence/Migrations
+   ```
+5. **Use case:** copy folder `UseCases/Organization/Departments` thành `UseCases/Competency/Competencies`, đổi `Department` → `Competency`.
+6. **Quyền:** thêm mã quyền vào `Permissions.cs` và khai báo role nào được dùng trong `RolePermissions.cs` (xem mục 8).
+7. **Controller:** copy `DepartmentsController.cs` thành `CompetenciesController.cs`, đổi tên tương tự, gắn `[HasPermission(...)]` cho **mọi** action.
+8. **Chạy và test bằng Swagger** với vài tài khoản mẫu khác role.
 
 ---
 
@@ -137,64 +161,56 @@ Chỉ khi **thêm bảng mới vào database** thì mới cần thêm entity —
 
 ## 8. Phân quyền
 
-**Ý tưởng:** mỗi quyền là 1 **mã chuỗi** (VD `department.create_update`). Mỗi role được gán 1 danh sách mã.
-Khi gọi API, backend lấy role trong token → tra xem role đó có mã quyền mà API yêu cầu không.
+**Ý tưởng:** mỗi quyền là 1 **mã chuỗi** (VD `department.create_update`). Ma trận role ↔ quyền lưu trong **database** (bảng `roles`, `user_roles`, `permissions`, `role_permissions`) để admin chỉnh được trên giao diện.
+Khi gọi API, backend lấy role trong token → `IPermissionService` tra bảng `role_permissions` xem role đó có mã quyền mà API yêu cầu không.
 
 ```
-Đăng nhập ──► BE tạo token chứa: Id, email, role (VD "EMPLOYEE")
+Đăng nhập ──► BE tạo token chứa: Id (sub), email, org, role (VD "EMPLOYEE")
                 │
 FE lưu token, gửi kèm mọi request:  Authorization: Bearer <token>
                 │
 [HasPermission("department.create_update")]
    ├─ không có token / token sai / hết hạn  → 401
-   ├─ role trong token KHÔNG có mã này       → 403
+   ├─ role KHÔNG có mã này (tra database)    → 403
    └─ có                                     → chạy action
 ```
 
-**Mã quyền nằm ở đâu:**
+**3 file cần biết** (trong `Domain/Constants/Authorization/`):
 
-| Chỗ | Chứa gì |
+| File | Chứa gì |
 |---|---|
-| `Domain/Constants/Authorization/Roles.cs` | 5 mã role. Frontend dùng đúng các mã này, **không đổi tên** |
-| `Domain/Constants/Authorization/Permissions.cs` | Hằng số mã quyền để gắn vào controller, copy **đúng** mã trong doc 09 mục 6 |
-| Bảng `permissions` + `role_permissions` trong **database** | **Bảng phân quyền thật**: role nào có mã nào. Backend đọc từ đây (cache 5 phút) |
+| `Roles.cs` | 5 mã role (+ tên, scope để seed). Frontend dùng đúng các mã này, **không đổi tên** |
+| `Permissions.cs` | Mã quyền, copy **đúng** mã trong doc 09 mục 6 (frontend cũng dùng mã y hệt) |
+| `RolePermissions.cs` | **Ma trận quyền mặc định** để seed bảng `role_permissions`. `SYSTEM_ADMIN` có tất cả (không cần liệt kê) |
 
-`SYSTEM_ADMIN` luôn được đi qua, không cần khai báo quyền.
+Lúc chạy, quyền đọc từ **database**, không đọc từ `RolePermissions.cs`. Khi start ở Development, `DbSeeder` tự thêm mã quyền mới và các cặp role–quyền còn thiếu (không ghi đè những gì admin đã chỉnh).
 
 **Làm module mới cần quyền** (VD Job Position):
 
 ```csharp
-// 1. Permissions.cs — thêm hằng số (lấy mã từ doc 09)
+// 1. Permissions.cs — thêm mã (lấy từ doc 09)
 public static class JobPosition
 {
     public const string Read = "job_position.read";
     public const string CreateUpdate = "job_position.create_update";
 }
-```
 
-```sql
--- 2. Chạy trên Neon: thêm mã quyền và gán cho role được phép (theo bảng doc 09)
-INSERT INTO permissions (id, code, module, action)
-VALUES (gen_random_uuid(), 'job_position.read', 'job_position', 'read');
+// 2. RolePermissions.cs — thêm mã vào role được phép (theo bảng doc 09)
+[Roles.HrManager] = new[] { ..., Permissions.JobPosition.Read, Permissions.JobPosition.CreateUpdate },
+[Roles.Employee]  = new[] { ..., Permissions.JobPosition.Read },
 
-INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id FROM roles r, permissions p
-WHERE r.code = 'HR_MANAGER' AND p.code = 'job_position.read';
-```
-
-```csharp
 // 3. Controller — gắn lên từng action
 [HttpPost]
 [HasPermission(Permissions.JobPosition.CreateUpdate)]
 public async Task<...> Create(...)
 ```
 
-Sửa quyền trong database xong thì tối đa 5 phút sau là có hiệu lực, user **không cần đăng nhập lại**.
-
 **Quyền theo dữ liệu** (VD manager chỉ xem nhân viên phòng mình): `[HasPermission]` chỉ biết "có được gọi API không".
 Muốn giới hạn **dữ liệu** thì inject `ICurrentUser` vào use case để lọc, hoặc `throw new ForbiddenException(...)`.
 
-> Token hết hạn sau 8 tiếng (`Jwt:ExpiresInMinutes` trong appsettings) → FE tự chuyển về trang login. Chưa có refresh token.
+> Token hết hạn sau 8 tiếng (`Jwt:ExpiresInMinutes` trong appsettings) → FE tự chuyển về trang login. Bảng `refresh_tokens` đã có nhưng luồng refresh chưa làm; làm xong thì giảm access token xuống 30 phút (doc 15).
+>
+> Đăng nhập sai 5 lần liên tiếp → khóa 15 phút (`LoginPolicy`, `LoginUseCase.RecordFailedLoginAsync` — UPDATE nguyên tử, an toàn khi gọi song song).
 
 ---
 
@@ -205,7 +221,8 @@ Trong use case chỉ cần `throw`. Middleware tự đổi thành response.
 | Throw gì | Status | Khi nào |
 |---|---|---|
 | *(validator tự throw)* | 400 | Input sai |
-| `BadRequestException` | 400 | Yêu cầu sai mà cần đọc DB mới biết (VD sai mật khẩu) |
+| `BadRequestException` | 400 | Yêu cầu sai mà cần đọc DB mới biết (VD phòng ban cha không tồn tại) |
+| `UnauthorizedException` | 401 | Sai email / mật khẩu khi đăng nhập |
 | *([HasPermission] tự trả)* | 401 | Chưa đăng nhập, token sai hoặc hết hạn |
 | `ForbiddenException` | 403 | Không được phép (cũng là mã [HasPermission] trả khi thiếu quyền) |
 | `NotFoundException` | 404 | Không tìm thấy dữ liệu |
@@ -233,42 +250,33 @@ Mọi API đều trả cùng một khuôn:
 
 ---
 
-## 11. Đổi schema database
+## 11. Migration
 
-**Database là gốc, KHÔNG dùng migration.** Code không tự tạo hay sửa bảng.
+Chọn 1 trong 2 cách.
 
-Thứ tự bắt buộc khi cần thêm/sửa bảng:
-
-```
-1. Sửa file schema SQL (docs/db/schema.sql) — đây là bản gốc của cả nhóm
-2. Chạy câu lệnh SQL đó trên Neon (SQL Editor)
-3. Sinh lại entity từ database (lệnh scaffold bên dưới)
-4. Chép entity + configuration của bảng vừa đổi sang Domain/Infrastructure
-5. Thêm DbSet vào IApplicationDbContext.cs và AppDbContext.cs
-```
-
-**Lệnh sinh lại entity từ database:**
+**Cách 1 — Terminal** (đứng ở thư mục `backend/`, đã chạy `dotnet tool restore`):
 
 ```bash
-cd backend
-dotnet ef dbcontext scaffold "<connection string Neon>" Npgsql.EntityFrameworkCore.PostgreSQL --project src/DigiTalent.Infrastructure --startup-project src/DigiTalent.Api --context ScaffoldDbContext --context-namespace DigiTalent.Infrastructure.Scaffold --namespace DigiTalent.Infrastructure.Scaffold --output-dir Scaffold/Entities --context-dir Scaffold --no-onconfiguring --force
+# Tạo migration khi thêm/sửa entity hoặc configuration
+dotnet ef migrations add <TenMigration> --project src/DigiTalent.Infrastructure --startup-project src/DigiTalent.Api --output-dir Persistence/Migrations
+
+# Xóa migration vừa tạo (CHƯA push)
+dotnet ef migrations remove --project src/DigiTalent.Infrastructure --startup-project src/DigiTalent.Api
+
+# Apply xuống database (thường không cần — xem bên dưới)
+dotnet ef database update --project src/DigiTalent.Infrastructure --startup-project src/DigiTalent.Api
 ```
 
-Code sinh ra chỉ là **bản nháp**, phải lọc lại rồi mới đưa vào `Domain/Entities/<Module>/`:
+**Cách 2 — Visual Studio:** *Tools → NuGet Package Manager → Package Manager Console*, chọn **Default project = DigiTalent.Infrastructure**, Startup project = **DigiTalent.Api**:
 
-| Code gen ra | Sửa thành |
-|---|---|
-| `namespace DigiTalent.Infrastructure.Scaffold.Entities;` | `namespace DigiTalent.Domain.Entities;` |
-| `public partial class X` | `public class X` |
-| Mọi dòng có `virtual` (navigation) | **Xóa hết** |
-| `= null!;` sau property string | `= string.Empty;` |
-| `DateTime` | `DateTimeOffset` |
+```powershell
+Add-Migration <TenMigration> -OutputDir Persistence/Migrations
+Remove-Migration
+Update-Database
+```
 
-Có đủ 2 cột `CreatedAt` + `UpdatedAt` thì thêm `: IHasTimestamps` để được tự điền thời gian.
-
-File configuration chỉ cần 3 thứ, lấy từ `ScaffoldDbContext.cs`: `ToTable`, `HasKey`, và cột đặc biệt (`jsonb`, `HasPrecision`). Bỏ hết `HasColumnName` vì project tự đổi tên cột sang snake_case.
-
-**Xong nhớ xóa thư mục `Scaffold/`, đừng commit.**
+Không cần chạy `database update`: môi trường Development tự apply khi start API.
+**Không sửa migration đã push**. Cần đổi gì thì tạo migration mới.
 
 ---
 
@@ -276,9 +284,11 @@ File configuration chỉ cần 3 thứ, lấy từ `ScaffoldDbContext.cs`: `ToTa
 
 - [ ] `dotnet build` không lỗi
 - [ ] **Mọi action có `[HasPermission]`** (trừ login). Quên gắn = ai cũng gọi được, không cần đăng nhập
-- [ ] Mã quyền mới đã thêm vào bảng `permissions` + `role_permissions` trong database (không thì chỉ SYSTEM_ADMIN dùng được)
+- [ ] Mã quyền mới đã khai báo trong `RolePermissions.cs` (không thì chỉ SYSTEM_ADMIN dùng được)
 - [ ] Controller không có logic, không dùng DbContext
 - [ ] Không trả entity ra ngoài: luôn copy sang Output
 - [ ] Input nhận từ body có Validator
-- [ ] Có đổi bảng trong database thì đã cập nhật `docs/db/schema.sql` và sinh lại entity (mục 11)
+- [ ] Entity / configuration khớp bảng trong `docs/database/DigiTalent_AI_Canonical_v2_3.sql`
+- [ ] Có sửa entity hoặc configuration thì có migration mới
+- [ ] Không xóa cứng dữ liệu nghiệp vụ — dùng `Archive` / đổi status
 - [ ] Đặt tên và đặt folder đúng quy tắc mục 4

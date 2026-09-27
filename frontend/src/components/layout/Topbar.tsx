@@ -49,7 +49,7 @@ export function Topbar() {
         <button
           className="relative p-2 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700"
           title="Notifications"
-          onClick={() => navigate('/notifications')}
+          onClick={() => navigate('/enterprise/notifications')}
         >
           <Bell className="w-4.5 h-4.5" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-danger-500" />
@@ -78,14 +78,14 @@ export function Topbar() {
                   <p className="text-xs text-slate-500">{user?.email}</p>
                 </div>
                 <button
-                  onClick={() => { navigate('/my-profile'); setShowProfileMenu(false); }}
+                  onClick={() => { navigate('/enterprise/my-profile'); setShowProfileMenu(false); }}
                   className="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                 >
                   <UserCircle className="w-4 h-4" />
                   My Profile
                 </button>
                 <button
-                  onClick={() => { navigate('/admin/settings'); setShowProfileMenu(false); }}
+                  onClick={() => { navigate('/enterprise/admin/settings'); setShowProfileMenu(false); }}
                   className="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                 >
                   <Settings className="w-4 h-4" />

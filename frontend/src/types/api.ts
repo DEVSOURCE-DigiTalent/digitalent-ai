@@ -1,3 +1,4 @@
+/** Khớp DigiTalent.Api/Common/ApiResponse.cs */
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -7,24 +8,21 @@ export interface ApiResponse<T> {
 
 export interface ApiError {
   field?: string;
-  code: string;
   message: string;
 }
 
+/** Khớp Application/Common/Models/PagedList.cs */
 export interface PagedList<T> {
   items: T[];
-  pageNumber: number;
+  pageIndex: number; // trang đầu tiên là 1
   pageSize: number;
   totalItems: number;
   totalPages: number;
-  hasPreviousPage: boolean;
-  hasNextPage: boolean;
 }
 
+/** Khớp Application/Common/Models/PaginationRequest.cs */
 export interface PaginationRequest {
-  pageNumber?: number;
+  pageIndex?: number;
   pageSize?: number;
-  sortBy?: string;
-  sortDirection?: string;
-  keyword?: string;
+  search?: string;
 }

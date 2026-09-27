@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 
 namespace DigiTalent.Api.Auth;
@@ -23,6 +24,9 @@ public class CurrentUser : ICurrentUser
 
     public List<string> Roles =>
         _httpContextAccessor.HttpContext?.User.FindAll("role").Select(c => c.Value).ToList() ?? new List<string>();
+
+    public Guid GetRequiredOrganizationId() =>
+        OrganizationId ?? throw new ForbiddenException("Your account is not linked to an organization.");
 
     private Guid? ReadGuidClaim(string claimName)
     {

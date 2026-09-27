@@ -1,7 +1,8 @@
 # DigiTalent AI — Git Workflow Guide
 
 > Hướng dẫn nhanh cách tạo branch, commit, push và tạo Pull Request.
-> Chi tiết: [docs/12_Git_Workflow_Branching_Strategy_DigiTalent_AI](docs/12_Git_Workflow_Branching_Strategy_DigiTalent_AI)
+> 📌 **Bản hướng dẫn chi tiết tiếng Việt & mẫu PR đồng bộ Jira:** [HUONG_DAN_BRANCH_COMMIT_PR.md](HUONG_DAN_BRANCH_COMMIT_PR.md)
+> Chi tiết kiến trúc: [docs/12_Git_Workflow_Nhanh.md](docs/12_Git_Workflow_Nhanh.md)
 
 ---
 

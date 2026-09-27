@@ -44,6 +44,8 @@ export const PERMISSIONS = {
   // Organization (6.3)
   DEPARTMENT_READ: 'department.read',
   DEPARTMENT_CREATE_UPDATE: 'department.create_update',
+  JOB_FAMILY_READ: 'job_family.read',
+  JOB_FAMILY_CREATE_UPDATE: 'job_family.create_update',
   JOB_POSITION_READ: 'job_position.read',
   JOB_POSITION_CREATE_UPDATE: 'job_position.create_update',
   EMPLOYEE_READ: 'employee.read',

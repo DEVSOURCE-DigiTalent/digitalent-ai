@@ -3,16 +3,14 @@ using DigiTalent.Domain.Common;
 namespace DigiTalent.Domain.Entities;
 
 /// <summary>
-/// Bảng system_settings. Cấu hình hệ thống.
+/// Cấu hình hệ thống dạng key/value (value là chuỗi JSON, cột jsonb).
+/// OrganizationId = null → cấu hình toàn cục. KHÔNG lưu secret (API key...) ở đây.
 /// </summary>
-public class SystemSetting : IHasTimestamps
+public class SystemSetting : BaseEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
     public Guid? OrganizationId { get; set; }
     public string Key { get; set; } = string.Empty;
-    public string Value { get; set; } = string.Empty;
+    public string Value { get; set; } = "null";
     public string? Description { get; set; }
     public Guid? UpdatedByUserId { get; set; }
-    public DateTimeOffset UpdatedAt { get; set; }
-    public DateTimeOffset CreatedAt { get; set; }
 }

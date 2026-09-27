@@ -1,4 +1,5 @@
 using DigiTalent.Domain.Entities;
+using DigiTalent.Domain.Entities.Learner;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.Common.Interfaces;
@@ -6,6 +7,7 @@ namespace DigiTalent.Application.Common.Interfaces;
 /// <summary>
 /// Use case làm việc với database qua interface này (không dùng thẳng AppDbContext).
 /// Mỗi DbSet là 1 bảng. Thêm entity mới → thêm DbSet ở đây VÀ trong AppDbContext.cs.
+/// Schema chuẩn: docs/database/DigiTalent_AI_Canonical_v2_3.sql.
 /// </summary>
 public interface IApplicationDbContext
 {
@@ -17,14 +19,14 @@ public interface IApplicationDbContext
     DbSet<User> Users { get; }
     DbSet<UserRole> UserRoles { get; }
 
-    // Organization
+    // Organization & Job Architecture
     DbSet<Department> Departments { get; }
     DbSet<Employee> Employees { get; }
     DbSet<JobFamily> JobFamilies { get; }
     DbSet<JobPosition> JobPositions { get; }
     DbSet<Organization> Organizations { get; }
 
-    // Competency
+    // Competency & Position Requirements
     DbSet<Competency> Competencies { get; }
     DbSet<CompetencyCategory> CompetencyCategories { get; }
     DbSet<CompetencyEvaluationResult> CompetencyEvaluationResults { get; }
@@ -79,6 +81,9 @@ public interface IApplicationDbContext
     DbSet<SkillGapItem> SkillGapItems { get; }
     DbSet<SkillGapRun> SkillGapRuns { get; }
     DbSet<TrainingRiskScore> TrainingRiskScores { get; }
+
+    // Learner Surface (SEP-09)
+    DbSet<LearnerProfile> LearnerProfiles { get; }
 
     // Shared
     DbSet<AuditLog> AuditLogs { get; }

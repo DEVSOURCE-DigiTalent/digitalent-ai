@@ -4,19 +4,36 @@ on:
   pull_request:
     paths:
       - 'backend/**'
-      - 'infra/**'
-      - 'docker-compose.yml'
+      - 'docker/**'
   push:
     branches: [develop, main]
     paths:
       - 'backend/**'
+      - 'docker/**'
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: digitalent_test
+          POSTGRES_USER: digitalent_app
+          POSTGRES_PASSWORD: ${{ github.run_id }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         working-directory: backend
+    env:
+      DIGITALENT_TEST_POSTGRES_CONNECTION: Host=localhost;Port=5432;Database=digitalent_test;Username=digitalent_app;Password=${{ github.run_id }}
+      DIGITALENT_SMOKE_ADMIN_PASSWORD: ${{ github.run_id }}
 
     steps:
       - uses: actions/checkout@v4
@@ -32,5 +49,21 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
+      - name: Live API smoke against PostgreSQL
+        run: python3 scripts/smoke_api.py
+
       - name: Test
-        run: dotnet test --no-build --configuration Release --verbosity normal
+        run: dotnet test --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=backend.trx"
+
+      - name: Verify test count
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from xml.etree import ElementTree
+
+          reports = list(Path('tests').rglob('backend.trx'))
+          total = sum(int(ElementTree.parse(path).getroot().find('.//{*}Counters').attrib['total']) for path in reports)
+          print(f'Test count: {total}')
+          if total == 0:
+              raise SystemExit('No tests found in backend TRX report')
+          PY

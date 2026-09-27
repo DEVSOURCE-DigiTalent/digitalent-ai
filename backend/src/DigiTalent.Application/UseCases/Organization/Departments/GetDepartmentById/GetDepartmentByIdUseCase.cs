@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Departments;
 
 /// <summary>
-/// Xem chi tiết 1 phòng ban.
+/// Xem chi tiết 1 phòng ban (trong tổ chức của người gọi).
 /// </summary>
 public class GetDepartmentByIdUseCase : IUseCase<GetDepartmentByIdUseCaseInput, GetDepartmentByIdUseCaseOutput>
 {
@@ -21,19 +21,28 @@ public class GetDepartmentByIdUseCase : IUseCase<GetDepartmentByIdUseCaseInput, 
 
     public async Task<GetDepartmentByIdUseCaseOutput> ExecuteAsync(GetDepartmentByIdUseCaseInput input)
     {
-        // Chỉ xem được phòng ban trong tổ chức của mình.
-        // Select thẳng sang Output → chỉ lấy đúng các cột cần, không load cả entity.
+        var organizationId = _currentUser.GetRequiredOrganizationId();
+
+        // Select thẳng sang Output → chỉ lấy đúng các cột cần, không load cả entity
         var department = await _context.Departments
-            .Where(d => d.Id == input.Id && d.OrganizationId == _currentUser.OrganizationId)
+            .Where(d => d.Id == input.Id && d.OrganizationId == organizationId)
             .Select(d => new GetDepartmentByIdUseCaseOutput
             {
                 Id = d.Id,
                 Code = d.Code,
                 Name = d.Name,
                 Description = d.Description,
-                Status = d.Status,
                 ParentDepartmentId = d.ParentDepartmentId,
+                ParentDepartmentName = _context.Departments
+                    .Where(p => p.Id == d.ParentDepartmentId)
+                    .Select(p => p.Name)
+                    .FirstOrDefault(),
                 ManagerEmployeeId = d.ManagerEmployeeId,
+                ManagerName = _context.Employees
+                    .Where(e => e.Id == d.ManagerEmployeeId)
+                    .Select(e => e.FullName)
+                    .FirstOrDefault(),
+                Status = d.Status,
                 CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt,
             })

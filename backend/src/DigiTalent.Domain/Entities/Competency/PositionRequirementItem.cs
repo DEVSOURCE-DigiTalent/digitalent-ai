@@ -3,18 +3,19 @@ using DigiTalent.Domain.Common;
 namespace DigiTalent.Domain.Entities;
 
 /// <summary>
-/// Bảng position_requirement_items. Từng năng lực trong bộ yêu cầu, kèm bậc và trọng số.
+/// Chi tiết yêu cầu năng lực trong một bộ yêu cầu của vị trí công việc.
+/// Level: 1..3. WeightPercent: > 0 và <= 100.
 /// </summary>
-public class PositionRequirementItem : IHasTimestamps
+public class PositionRequirementItem : BaseEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
     public Guid RequirementSetId { get; set; }
     public Guid CompetencyId { get; set; }
-    public short RequiredLevel { get; set; }
+    public int RequiredLevel { get; set; }
     public decimal WeightPercent { get; set; }
-    public bool IsMandatory { get; set; }
-    public bool RequiresPracticalEvidence { get; set; }
+    public bool IsMandatory { get; set; } = true;
+    public bool RequiresPracticalEvidence { get; set; } = true;
     public string? Note { get; set; }
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset UpdatedAt { get; set; }
+
+    public PositionRequirementSet? RequirementSet { get; set; }
+    public Competency? Competency { get; set; }
 }

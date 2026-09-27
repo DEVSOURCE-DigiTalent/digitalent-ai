@@ -1,10 +1,14 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Domain.Common;
 using DigiTalent.Domain.Entities;
+using DigiTalent.Domain.Entities.Learner;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Infrastructure.Persistence;
 
+/// <summary>
+/// Schema chuẩn: docs/database/DigiTalent_AI_Canonical_v2_3.sql — entity + configuration viết khớp file đó.
+/// </summary>
 public class AppDbContext : DbContext, IApplicationDbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
@@ -19,14 +23,14 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
 
-    // Organization
+    // Organization & Job Architecture
     public DbSet<Department> Departments => Set<Department>();
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<JobFamily> JobFamilies => Set<JobFamily>();
     public DbSet<JobPosition> JobPositions => Set<JobPosition>();
     public DbSet<Organization> Organizations => Set<Organization>();
 
-    // Competency
+    // Competency & Position Requirements
     public DbSet<Competency> Competencies => Set<Competency>();
     public DbSet<CompetencyCategory> CompetencyCategories => Set<CompetencyCategory>();
     public DbSet<CompetencyEvaluationResult> CompetencyEvaluationResults => Set<CompetencyEvaluationResult>();
@@ -82,6 +86,9 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<SkillGapRun> SkillGapRuns => Set<SkillGapRun>();
     public DbSet<TrainingRiskScore> TrainingRiskScores => Set<TrainingRiskScore>();
 
+    // Learner Surface (SEP-09)
+    public DbSet<LearnerProfile> LearnerProfiles => Set<LearnerProfile>();
+
     // Shared
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<FileObject> FileObjects => Set<FileObject>();
@@ -92,11 +99,17 @@ public class AppDbContext : DbContext, IApplicationDbContext
     {
         // Tự nạp mọi class *Configuration trong thư mục Persistence/Configurations
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+
+        // Không xóa dây chuyền (cascade) — dữ liệu lịch sử phải được giữ lại (SQL v2.3 dùng RESTRICT/NO ACTION)
+        foreach (var foreignKey in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
+        {
+            foreignKey.DeleteBehavior = DeleteBehavior.Restrict;
+        }
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // Tự điền created_at / updated_at cho entity có 2 cột này
+        // Tự điền created_at / updated_at cho entity có 2 cột này (IHasTimestamps & BaseEntity)
         var now = DateTimeOffset.UtcNow;
 
         foreach (var entry in ChangeTracker.Entries<IHasTimestamps>())

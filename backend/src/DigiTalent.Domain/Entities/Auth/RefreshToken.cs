@@ -3,11 +3,10 @@ using DigiTalent.Domain.Common;
 namespace DigiTalent.Domain.Entities;
 
 /// <summary>
-/// Bảng refresh_tokens. Hiện chưa dùng tới (đăng nhập mới chỉ cấp access token).
+/// Refresh token (chỉ lưu hash, xoay vòng khi dùng). Bảng đã có; luồng refresh làm ở task sau.
 /// </summary>
-public class RefreshToken : IHasTimestamps
+public class RefreshToken : BaseEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
     public Guid UserId { get; set; }
     public string TokenHash { get; set; } = string.Empty;
     public DateTimeOffset ExpiresAt { get; set; }
@@ -15,6 +14,4 @@ public class RefreshToken : IHasTimestamps
     public Guid? ReplacedByTokenId { get; set; }
     public string? IpHash { get; set; }
     public string? UserAgent { get; set; }
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset UpdatedAt { get; set; }
 }

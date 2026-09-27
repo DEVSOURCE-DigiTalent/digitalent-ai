@@ -1,19 +1,23 @@
 using DigiTalent.Domain.Common;
+using DigiTalent.Domain.Constants;
 
 namespace DigiTalent.Domain.Entities;
 
 /// <summary>
-/// Bảng job_positions. Chức danh công việc.
+/// Vị trí công việc (VD: Sales Executive). Thăng tiến = chuyển sang vị trí khác; KHÔNG có CareerGrade.
 /// </summary>
-public class JobPosition : IHasTimestamps
+public class JobPosition : BaseEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
     public Guid OrganizationId { get; set; }
     public Guid? JobFamilyId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
-    public string Status { get; set; } = "ACTIVE";
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset UpdatedAt { get; set; }
+    public string Status { get; set; } = Statuses.MasterData.Active;
+
+    /// <summary>
+    /// Nullable link to a public CareerRoleTemplate (Decision D-02, SEP-09).
+    /// Allows an enterprise position to align with the platform's public career role catalog.
+    /// </summary>
+    public Guid? CareerRoleTemplateId { get; set; }
 }

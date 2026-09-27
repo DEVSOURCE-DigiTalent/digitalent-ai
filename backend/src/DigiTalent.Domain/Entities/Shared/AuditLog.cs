@@ -3,11 +3,10 @@ using DigiTalent.Domain.Common;
 namespace DigiTalent.Domain.Entities;
 
 /// <summary>
-/// Bảng audit_logs. Nhật ký thao tác quan trọng.
+/// Nhật ký thao tác nhạy cảm (chỉ thêm, không sửa). OldValues/NewValues là chuỗi JSON (cột jsonb).
 /// </summary>
-public class AuditLog : IHasTimestamps
+public class AuditLog : BaseEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
     public Guid? OrganizationId { get; set; }
     public Guid? ActorUserId { get; set; }
     public string Action { get; set; } = string.Empty;
@@ -16,6 +15,4 @@ public class AuditLog : IHasTimestamps
     public string? OldValues { get; set; }
     public string? NewValues { get; set; }
     public string? IpHash { get; set; }
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset UpdatedAt { get; set; }
 }

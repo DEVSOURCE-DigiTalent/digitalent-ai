@@ -4,15 +4,26 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
-/// <summary>
-/// Map entity CompetencyCategory với bảng "competency_categories".
-/// Database là gốc: tên cột tự đổi sang snake_case, không khai báo lại ở đây.
-/// </summary>
 public class CompetencyCategoryConfiguration : IEntityTypeConfiguration<CompetencyCategory>
 {
     public void Configure(EntityTypeBuilder<CompetencyCategory> builder)
     {
-        builder.ToTable("competency_categories");
-        builder.HasKey(x => x.Id);
+        builder.ToTable("competency_categories", table =>
+            table.HasCheckConstraint("ck_competency_categories_status", "status IN ('ACTIVE','INACTIVE','ARCHIVED')"));
+
+        builder.HasKey(c => c.Id);
+
+        builder.Property(c => c.Code).IsRequired().HasMaxLength(50);
+        builder.Property(c => c.Name).IsRequired().HasMaxLength(180);
+        builder.Property(c => c.Status).IsRequired().HasMaxLength(30);
+        builder.Property(c => c.SortOrder).HasDefaultValue(0);
+
+        builder.HasIndex(c => new { c.OrganizationId, c.Code })
+            .IsUnique()
+            .HasDatabaseName("uq_competency_categories_org_code");
+
+        builder.HasOne<Organization>()
+            .WithMany()
+            .HasForeignKey(c => c.OrganizationId);
     }
 }

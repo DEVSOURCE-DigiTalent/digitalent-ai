@@ -4,15 +4,22 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
-/// <summary>
-/// Map entity JobPosition với bảng "job_positions".
-/// Database là gốc: tên cột tự đổi sang snake_case, không khai báo lại ở đây.
-/// </summary>
 public class JobPositionConfiguration : IEntityTypeConfiguration<JobPosition>
 {
     public void Configure(EntityTypeBuilder<JobPosition> builder)
     {
-        builder.ToTable("job_positions");
-        builder.HasKey(x => x.Id);
+        builder.ToTable("job_positions", table =>
+            table.HasCheckConstraint("ck_job_positions_status", "status IN ('ACTIVE','INACTIVE','ARCHIVED')"));
+
+        builder.HasKey(p => p.Id);
+
+        builder.Property(p => p.Code).IsRequired().HasMaxLength(50);
+        builder.HasIndex(p => new { p.OrganizationId, p.Code }).IsUnique();
+
+        builder.Property(p => p.Name).IsRequired().HasMaxLength(180);
+        builder.Property(p => p.Status).IsRequired().HasMaxLength(30);
+
+        builder.HasOne<Organization>().WithMany().HasForeignKey(p => p.OrganizationId);
+        builder.HasOne<JobFamily>().WithMany().HasForeignKey(p => p.JobFamilyId);
     }
 }

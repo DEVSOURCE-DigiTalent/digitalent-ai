@@ -1,7 +1,7 @@
 namespace DigiTalent.Domain.Entities;
 
 /// <summary>
-/// Bảng role_permissions. Role nào có quyền nào. Khóa chính gồm 2 cột.
+/// Ma trận phân quyền: role nào có permission nào (khóa kép role_id + permission_id).
 /// </summary>
 public class RolePermission
 {

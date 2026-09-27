@@ -1,18 +1,16 @@
 using DigiTalent.Domain.Common;
+using DigiTalent.Domain.Constants;
 
 namespace DigiTalent.Domain.Entities;
 
 /// <summary>
-/// Bảng job_families. Nhóm ngành nghề, gom nhiều chức danh cùng loại.
+/// Nhóm vị trí công việc (VD: Sales, Human Resources).
 /// </summary>
-public class JobFamily : IHasTimestamps
+public class JobFamily : BaseEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
     public Guid OrganizationId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
-    public string Status { get; set; } = "ACTIVE";
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset UpdatedAt { get; set; }
+    public string Status { get; set; } = Statuses.MasterData.Active;
 }

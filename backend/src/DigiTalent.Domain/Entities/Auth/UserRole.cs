@@ -1,7 +1,7 @@
 namespace DigiTalent.Domain.Entities;
 
 /// <summary>
-/// Bảng user_roles. 1 user có thể có nhiều role. Khóa chính gồm 2 cột (user_id, role_id).
+/// Bảng nối users - roles (khóa kép user_id + role_id). 1 user có thể có nhiều role.
 /// </summary>
 public class UserRole
 {

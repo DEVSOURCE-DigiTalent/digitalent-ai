@@ -5,19 +5,17 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
 /// <summary>
-/// Map entity RolePermission với bảng "role_permissions".
-/// Database là gốc: tên cột tự đổi sang snake_case, không khai báo lại ở đây.
+/// Bảng nối "role_permissions" — ma trận quyền, khóa kép (role_id, permission_id).
 /// </summary>
 public class RolePermissionConfiguration : IEntityTypeConfiguration<RolePermission>
 {
     public void Configure(EntityTypeBuilder<RolePermission> builder)
     {
         builder.ToTable("role_permissions");
-        // Khóa chính gồm 2 cột
-        builder.HasKey(x => new { x.RoleId, x.PermissionId });
 
-        builder.HasOne(x => x.Permission)
-            .WithMany()
-            .HasForeignKey(x => x.PermissionId);
+        builder.HasKey(rp => new { rp.RoleId, rp.PermissionId });
+
+        builder.HasOne(rp => rp.Role).WithMany(r => r.RolePermissions).HasForeignKey(rp => rp.RoleId);
+        builder.HasOne(rp => rp.Permission).WithMany().HasForeignKey(rp => rp.PermissionId);
     }
 }

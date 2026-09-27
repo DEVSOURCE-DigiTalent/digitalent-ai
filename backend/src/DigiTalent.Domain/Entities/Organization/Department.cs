@@ -1,22 +1,21 @@
 using DigiTalent.Domain.Common;
+using DigiTalent.Domain.Constants;
 
 namespace DigiTalent.Domain.Entities;
 
 /// <summary>
-/// Bảng departments. Phòng ban. Mã (code) không trùng trong cùng 1 tổ chức.
+/// Phòng ban. Có phòng ban cha (dạng cây) và trưởng phòng (1 Employee).
+/// Không xóa cứng: chuyển Status = ARCHIVED.
 /// </summary>
-public class Department : IHasTimestamps
+public class Department : BaseEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
     public Guid OrganizationId { get; set; }
-    public Guid? ParentDepartmentId { get; set; }   // phòng ban cha (nếu có cấp bậc)
-    public Guid? ManagerEmployeeId { get; set; }    // trưởng phòng
+    public Guid? ParentDepartmentId { get; set; }
+    public Guid? ManagerEmployeeId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
-    public string Status { get; set; } = DepartmentStatuses.Active;
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset UpdatedAt { get; set; }
+    public string Status { get; set; } = Statuses.MasterData.Active;
 }
 
 /// <summary>
@@ -24,6 +23,7 @@ public class Department : IHasTimestamps
 /// </summary>
 public static class DepartmentStatuses
 {
-    public const string Active = "ACTIVE";
-    public const string Archived = "ARCHIVED";
+    public const string Active = Statuses.MasterData.Active;
+    public const string Inactive = Statuses.MasterData.Inactive;
+    public const string Archived = Statuses.MasterData.Archived;
 }

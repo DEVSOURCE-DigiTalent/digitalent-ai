@@ -1,6 +1,6 @@
 using DigiTalent.Api.Common;
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Interfaces;
-using DigiTalent.Domain.Constants.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
@@ -9,14 +9,15 @@ namespace DigiTalent.Api.Authorization;
 /// <summary>
 /// Gắn lên action của controller để yêu cầu quyền. Chạy TRƯỚC khi vào action:
 ///   - Chưa đăng nhập / token sai / hết hạn → 401
+///   - Tài khoản đã bị khóa / vô hiệu hóa    → 401
 ///   - Đã đăng nhập nhưng không có quyền     → 403
 ///   - Có quyền                              → cho vào action
 ///
-/// Quyền của từng role đọc từ database (bảng role_permissions), có cache 5 phút.
+/// Quyền của từng role đọc từ database (bảng role_permissions) qua IPermissionService.
 /// SYSTEM_ADMIN luôn được đi qua.
 ///
 /// VD: [HasPermission(Permissions.Department.CreateUpdate)]
-/// Truyền nhiều mã → chỉ cần có 1 trong các mã là được (giống cm-service).
+/// Truyền nhiều mã → chỉ cần có 1 trong các mã là được.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
 public class HasPermissionAttribute : Attribute, IAsyncAuthorizationFilter
@@ -30,7 +31,8 @@ public class HasPermissionAttribute : Attribute, IAsyncAuthorizationFilter
 
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
-        var currentUser = context.HttpContext.RequestServices.GetRequiredService<ICurrentUser>();
+        var services = context.HttpContext.RequestServices;
+        var currentUser = services.GetRequiredService<ICurrentUser>();
 
         // 1. Chưa đăng nhập → 401
         if (!currentUser.IsAuthenticated)
@@ -42,17 +44,19 @@ public class HasPermissionAttribute : Attribute, IAsyncAuthorizationFilter
             return;
         }
 
-        // 2. Admin hệ thống thì bỏ qua mọi kiểm tra
-        if (currentUser.Roles.Contains(Roles.SystemAdmin))
+        // 2. Token còn hạn nhưng tài khoản đã bị khóa / vô hiệu hóa → 401 (buộc đăng nhập lại)
+        var permissionService = services.GetRequiredService<IPermissionService>();
+        if (currentUser.UserId == null || !await permissionService.IsAccountUsableAsync(currentUser.UserId.Value))
         {
+            context.Result = new ObjectResult(ApiResponse<object>.Fail("Your session is no longer valid. Please log in again."))
+            {
+                StatusCode = StatusCodes.Status401Unauthorized,
+            };
             return;
         }
 
         // 3. Không có quyền nào trong danh sách → 403
-        var permissionReader = context.HttpContext.RequestServices.GetRequiredService<IPermissionReader>();
-        var granted = await permissionReader.GetPermissionsAsync(currentUser.Roles);
-
-        if (!_permissions.Any(granted.Contains))
+        if (!await permissionService.HasAnyAsync(currentUser.Roles, _permissions))
         {
             context.Result = new ObjectResult(ApiResponse<object>.Fail("You do not have permission to do this."))
             {

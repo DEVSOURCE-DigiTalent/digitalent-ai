@@ -4,19 +4,23 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
-/// <summary>
-/// Map entity Role với bảng "roles".
-/// Database là gốc: tên cột tự đổi sang snake_case, không khai báo lại ở đây.
-/// </summary>
 public class RoleConfiguration : IEntityTypeConfiguration<Role>
 {
     public void Configure(EntityTypeBuilder<Role> builder)
     {
-        builder.ToTable("roles");
-        builder.HasKey(x => x.Id);
+        builder.ToTable("roles", table =>
+        {
+            table.HasCheckConstraint("ck_roles_scope_type", "scope_type IN ('GLOBAL','ORGANIZATION','DEPARTMENT','SELF')");
+            table.HasCheckConstraint("ck_roles_status", "status IN ('ACTIVE','INACTIVE')");
+        });
 
-        builder.HasMany(x => x.RolePermissions)
-            .WithOne(x => x.Role)
-            .HasForeignKey(x => x.RoleId);
+        builder.HasKey(r => r.Id);
+
+        builder.Property(r => r.Code).IsRequired().HasMaxLength(80);
+        builder.HasIndex(r => r.Code).IsUnique();
+
+        builder.Property(r => r.Name).IsRequired().HasMaxLength(120);
+        builder.Property(r => r.ScopeType).IsRequired().HasMaxLength(30);
+        builder.Property(r => r.Status).IsRequired().HasMaxLength(30);
     }
 }

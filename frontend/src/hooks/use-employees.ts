@@ -1,11 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { employeeService, type CreateEmployeeRequest, type UpdateEmployeeRequest } from '../services/employee.service';
-import type { PaginationRequest } from '../types/api';
+import {
+  employeeService,
+  type CreateEmployeeRequest,
+  type UpdateEmployeeRequest,
+  type EmployeeListParams,
+} from '../services/employee.service';
 
 /**
  * Fetch paginated employee list.
  */
-export function useEmployees(params: PaginationRequest) {
+export function useEmployees(params?: EmployeeListParams) {
   return useQuery({
     queryKey: ['employees', params],
     queryFn: () => employeeService.getList(params).then((r) => r.data.data!),
@@ -48,3 +52,16 @@ export function useUpdateEmployee() {
     },
   });
 }
+
+/**
+ * Archive an employee profile. Invalidates list on success.
+ */
+export function useArchiveEmployee() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => employeeService.archive(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['employees'] }),
+  });
+}
+
+export const useDeleteEmployee = useArchiveEmployee;

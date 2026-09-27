@@ -1,11 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { departmentService, type CreateDepartmentRequest, type UpdateDepartmentRequest } from '../services/department.service';
-import type { PaginationRequest } from '../types/api';
+import { departmentService, type CreateDepartmentRequest, type UpdateDepartmentRequest, type DepartmentListParams } from '../services/department.service';
 
 /**
  * Fetch paginated department list.
  */
-export function useDepartments(params: PaginationRequest) {
+export function useDepartments(params: DepartmentListParams) {
   return useQuery({
     queryKey: ['departments', params],
     queryFn: () => departmentService.getList(params).then((r) => r.data.data!),
@@ -46,5 +45,16 @@ export function useUpdateDepartment() {
       qc.invalidateQueries({ queryKey: ['departments'] });
       qc.invalidateQueries({ queryKey: ['departments', variables.id] });
     },
+  });
+}
+
+/**
+ * Delete a department. Invalidates list on success.
+ */
+export function useDeleteDepartment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => departmentService.remove(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['departments'] }),
   });
 }

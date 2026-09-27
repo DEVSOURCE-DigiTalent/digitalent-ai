@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { useCurrentUser } from '@/hooks/use-current-user';
-import { sidebarGroups, type SidebarGroup, type SidebarItem } from '@/lib/sidebar-config';
+import { cn } from '../../lib/utils';
+import { useCurrentUser } from '../../hooks/use-current-user';
+import { sidebarGroups, type SidebarGroup, type SidebarItem } from '../../lib/sidebar-config';
 import { useState } from 'react';
 import { ChevronDown, ChevronLeft } from 'lucide-react';
 
