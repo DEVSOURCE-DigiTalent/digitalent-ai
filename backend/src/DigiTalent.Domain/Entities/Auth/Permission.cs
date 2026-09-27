@@ -8,7 +8,7 @@ namespace DigiTalent.Domain.Entities;
 public class Permission : BaseEntity
 {
     public string Code { get; set; } = string.Empty;
-    public string Module { get; set; } = string.Empty; // phần trước dấu chấm, VD "department"
-    public string Action { get; set; } = string.Empty; // phần sau dấu chấm, VD "read"
+    public string Module { get; set; } = string.Empty;
+    public string Action { get; set; } = string.Empty;
     public string? Description { get; set; }
 }

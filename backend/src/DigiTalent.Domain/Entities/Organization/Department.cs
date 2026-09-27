@@ -17,3 +17,13 @@ public class Department : BaseEntity
     public string? Description { get; set; }
     public string Status { get; set; } = Statuses.MasterData.Active;
 }
+
+/// <summary>
+/// Các giá trị dùng cho cột departments.status.
+/// </summary>
+public static class DepartmentStatuses
+{
+    public const string Active = Statuses.MasterData.Active;
+    public const string Inactive = Statuses.MasterData.Inactive;
+    public const string Archived = Statuses.MasterData.Archived;
+}

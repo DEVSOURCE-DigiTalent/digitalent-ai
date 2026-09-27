@@ -11,8 +11,8 @@ public class Role : BaseEntity
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
-    public string ScopeType { get; set; } = string.Empty; // GLOBAL / ORGANIZATION / DEPARTMENT / SELF
+    public string ScopeType { get; set; } = "ORGANIZATION"; // GLOBAL / ORGANIZATION / DEPARTMENT / SELF
     public string Status { get; set; } = Statuses.Simple.Active;
 
-    public List<RolePermission> RolePermissions { get; set; } = new();
+    public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
 }

@@ -1,6 +1,7 @@
 using DigiTalent.Domain.Common;
 using DigiTalent.Domain.Constants;
 
+// Mọi entity dùng chung 1 namespace để chỉ cần 1 dòng using
 namespace DigiTalent.Domain.Entities;
 
 /// <summary>
@@ -24,7 +25,7 @@ public class User : BaseEntity
     /// </summary>
     public uint Version { get; set; }
 
-    public List<UserRole> UserRoles { get; set; } = new();
+    public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 
     /// <summary>
     /// Đang bị khóa tại thời điểm now? Khóa tạm đã hết hạn thì coi như không khóa.
@@ -48,4 +49,14 @@ public class User : BaseEntity
         }
         LastLoginAt = now;
     }
+}
+
+/// <summary>
+/// Các giá trị hợp lệ của cột users.status (DB có CHECK constraint ck_users_status).
+/// </summary>
+public static class UserStatuses
+{
+    public const string Active = "ACTIVE";
+    public const string Inactive = "INACTIVE";
+    public const string Locked = "LOCKED";
 }

@@ -2,7 +2,7 @@
 
 **Nền tảng đào tạo, đánh giá năng lực số và cấp chứng chỉ nội bộ cho nhân viên doanh nghiệp**
 
-*Digital Competency Training, Internal Certification and Work-Based Assessment Platform*
+_Digital Competency Training, Internal Certification and Work-Based Assessment Platform_
 
 ---
 
@@ -12,32 +12,32 @@ DigiTalent AI là nền tảng web dành cho doanh nghiệp nhằm quản lý đ
 
 ## 🎯 Tính năng chính (MVP)
 
-| Module | Mô tả |
-|--------|-------|
-| **Authentication & Authorization** | JWT, refresh token, RBAC, role-based navigation |
-| **Organization & Employee Management** | Department, job position, employee profile |
-| **Competency Framework** | Competency category, level, position requirement |
-| **Course & Learning Management** | Course, lesson, material, progress tracking |
-| **Assessment & Question Bank** | Quiz, final assessment, scoring, pass/fail rule |
-| **Capability Intelligence Engine** | Skill gap, recommendation, training risk, readiness score |
-| **Certificate Management** | Certificate generation, QR verification, expiry/revocation |
-| **WMS-lite Task Management** | Task assignment, submission, evaluation, evidence |
-| **Dashboard & Analytics** | Role-based dashboards (HR, Manager, Trainer, Employee) |
-| **Notification & Reminder** | SignalR/in-app notifications |
+| Module                                 | Mô tả                                                      |
+| -------------------------------------- | ---------------------------------------------------------- |
+| **Authentication & Authorization**     | JWT, refresh token, RBAC, role-based navigation            |
+| **Organization & Employee Management** | Department, job position, employee profile                 |
+| **Competency Framework**               | Competency category, level, position requirement           |
+| **Course & Learning Management**       | Course, lesson, material, progress tracking                |
+| **Assessment & Question Bank**         | Quiz, final assessment, scoring, pass/fail rule            |
+| **Capability Intelligence Engine**     | Skill gap, recommendation, training risk, readiness score  |
+| **Certificate Management**             | Certificate generation, QR verification, expiry/revocation |
+| **WMS-lite Task Management**           | Task assignment, submission, evaluation, evidence          |
+| **Dashboard & Analytics**              | Role-based dashboards (HR, Manager, Trainer, Employee)     |
+| **Notification & Reminder**            | SignalR/in-app notifications                               |
 
 ## 🛠️ Công nghệ
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | ReactJS, TypeScript, TailwindCSS, ShadCN/UI |
-| **Backend** | ASP.NET Core / C# |
-| **Database** | PostgreSQL |
-| **File Storage** | MinIO (S3-compatible) |
-| **Realtime** | SignalR |
-| **Cache / Background Jobs** | Redis (optional) |
-| **API Documentation** | Swagger / OpenAPI |
-| **Deployment** | Docker, Docker Compose, Nginx |
-| **CI/CD** | GitHub Actions |
+| Layer                       | Technology                                  |
+| --------------------------- | ------------------------------------------- |
+| **Frontend**                | ReactJS, TypeScript, TailwindCSS, ShadCN/UI |
+| **Backend**                 | ASP.NET Core / C#                           |
+| **Database**                | PostgreSQL                                  |
+| **File Storage**            | MinIO (S3-compatible)                       |
+| **Realtime**                | SignalR                                     |
+| **Cache / Background Jobs** | Redis (optional)                            |
+| **API Documentation**       | Swagger / OpenAPI                           |
+| **Deployment**              | Docker, Docker Compose, Nginx               |
+| **CI/CD**                   | GitHub Actions                              |
 
 ## 📁 Cấu trúc thư mục
 
@@ -83,14 +83,14 @@ cp .env.example .env
 
 ## 🌿 Git Branch Strategy
 
-| Branch | Purpose |
-|--------|---------|
-| `main` | Production-ready / demo-ready code |
-| `develop` | Integration branch |
-| `feature/*` | New features |
-| `fix/*` | Bug fixes |
-| `release/*` | Release stabilization |
-| `hotfix/*` | Emergency fixes |
+| Branch      | Purpose                            |
+| ----------- | ---------------------------------- |
+| `main`      | Production-ready / demo-ready code |
+| `develop`   | Integration branch                 |
+| `feature/*` | New features                       |
+| `fix/*`     | Bug fixes                          |
+| `release/*` | Release stabilization              |
+| `hotfix/*`  | Emergency fixes                    |
 
 ## 📄 Tài liệu
 
@@ -99,3 +99,24 @@ Tài liệu dự án được lưu tại thư mục `docs/`.
 ---
 
 **DigiTalent AI** © 2026 DEVSOURCE
+
+# ── 1. Lấy code ────────────────────────────────────────────
+
+git clone https://github.com/DEVSOURCE-DigiTalent/digitalent-ai.git
+cd digitalent-ai
+git checkout develop2
+git pull
+
+# ── 2. Cài công cụ (chỉ 1 lần) ─────────────────────────────
+
+cd backend
+dotnet tool restore
+
+# ── 3. Khai báo kết nối database (chỉ 1 lần) ───────────────
+
+cd src/DigiTalent.Api
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=ep-summer-tooth-b4r1l2fn.c-6.us-east-2.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=npg_NfPQ0T6wiOMK;SSL Mode=Require;Trust Server Certificate=true"
+
+# ── 4. Chạy API ────────────────────────────────────────────
+
+dotnet run

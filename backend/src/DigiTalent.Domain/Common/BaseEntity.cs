@@ -5,7 +5,7 @@ namespace DigiTalent.Domain.Common;
 /// CreatedAt / UpdatedAt được AppDbContext tự điền khi SaveChanges — không cần gán tay.
 /// (Bảng nối khóa kép như user_roles, role_permissions KHÔNG kế thừa lớp này.)
 /// </summary>
-public abstract class BaseEntity
+public abstract class BaseEntity : IHasTimestamps
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public DateTimeOffset CreatedAt { get; set; }

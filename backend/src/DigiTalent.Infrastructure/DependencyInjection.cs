@@ -14,7 +14,8 @@ public static class DependencyInjection
     /// </summary>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // Database
+        // Database.
+        // Schema do file SQL quản lý (xem docs/db), code KHÔNG tự tạo bảng.
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
         services.AddDbContext<AppDbContext>(options => options
@@ -29,6 +30,10 @@ public static class DependencyInjection
         services.AddSingleton(jwtSettings);
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
+
+        // Phân quyền: đọc quyền của role từ database, có cache
+        services.AddMemoryCache();
+        services.AddScoped<IPermissionReader, PermissionReader>();
 
         return services;
     }
