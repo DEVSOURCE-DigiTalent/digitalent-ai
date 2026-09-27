@@ -1,4 +1,5 @@
 using DigiTalent.Domain.Entities;
+using DigiTalent.Domain.Entities.Learner;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.Common.Interfaces;
@@ -31,6 +32,9 @@ public interface IApplicationDbContext
     DbSet<CompetencyLevelCriterion> CompetencyLevelCriteria { get; }
     DbSet<PositionRequirementSet> PositionRequirementSets { get; }
     DbSet<PositionRequirementItem> PositionRequirementItems { get; }
+
+    // Learner Surface (SEP-09)
+    DbSet<LearnerProfile> LearnerProfiles { get; }
 
     // Shared
     DbSet<AuditLog> AuditLogs { get; }

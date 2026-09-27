@@ -93,19 +93,21 @@ public class FoundationMigrationTests
 
         var applied = await context.Database.GetAppliedMigrationsAsync();
         applied.Should().Contain("20260926060421_InitialFoundation");
+        applied.Should().Contain("20260927145053_AddLearnerProfileAndCareerRoleTemplateId");
 
         var expectedTables = new[]
         {
             "organizations", "permissions", "roles", "job_families", "users",
             "role_permissions", "job_positions", "audit_logs", "refresh_tokens",
-            "system_settings", "user_roles", "departments", "employees"
+            "system_settings", "user_roles", "departments", "employees",
+            "learner_profiles"
         };
         foreach (var table in expectedTables)
         {
             var exists = await context.Database.SqlQueryRaw<bool>(
                 "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = {0}) AS \"Value\"",
                 table).SingleAsync();
-            exists.Should().BeTrue($"table {table} must exist after the foundation migration");
+            exists.Should().BeTrue($"table {table} must exist after migrations");
         }
 
         var requiredColumns = new[]
@@ -113,14 +115,17 @@ public class FoundationMigrationTests
             (Table: "users", Column: "organization_id"),
             (Table: "departments", Column: "organization_id"),
             (Table: "job_positions", Column: "job_family_id"),
-            (Table: "employees", Column: "job_position_id")
+            (Table: "job_positions", Column: "career_role_template_id"),
+            (Table: "employees", Column: "job_position_id"),
+            (Table: "learner_profiles", Column: "user_id"),
+            (Table: "learner_profiles", Column: "target_role_id")
         };
         foreach (var (table, column) in requiredColumns)
         {
             var exists = await context.Database.SqlQueryRaw<bool>(
                 "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = {0} AND column_name = {1}) AS \"Value\"",
                 table, column).SingleAsync();
-            exists.Should().BeTrue($"column {table}.{column} must exist after the foundation migration");
+            exists.Should().BeTrue($"column {table}.{column} must exist after migrations");
         }
     }
 }

@@ -14,4 +14,10 @@ public class JobPosition : BaseEntity
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string Status { get; set; } = Statuses.MasterData.Active;
+
+    /// <summary>
+    /// Nullable link to a public CareerRoleTemplate (Decision D-02, SEP-09).
+    /// Allows an enterprise position to align with the platform's public career role catalog.
+    /// </summary>
+    public Guid? CareerRoleTemplateId { get; set; }
 }

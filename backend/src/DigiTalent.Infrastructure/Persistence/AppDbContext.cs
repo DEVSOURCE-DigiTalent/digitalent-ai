@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Domain.Common;
 using DigiTalent.Domain.Entities;
+using DigiTalent.Domain.Entities.Learner;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Infrastructure.Persistence;
@@ -37,6 +38,9 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<CompetencyLevelCriterion> CompetencyLevelCriteria => Set<CompetencyLevelCriterion>();
     public DbSet<PositionRequirementSet> PositionRequirementSets => Set<PositionRequirementSet>();
     public DbSet<PositionRequirementItem> PositionRequirementItems => Set<PositionRequirementItem>();
+
+    // Learner Surface (SEP-09)
+    public DbSet<LearnerProfile> LearnerProfiles => Set<LearnerProfile>();
 
     // Shared
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
