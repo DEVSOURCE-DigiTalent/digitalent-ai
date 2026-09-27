@@ -1,6 +1,8 @@
 # Backend DigiTalent — Hướng dẫn cho dev
 
 > Đọc hết file này trước khi code. Làm module mới thì **copy CRUD mẫu Department** rồi đổi tên — đừng tự nghĩ cấu trúc khác.
+>
+> **Schema chuẩn duy nhất:** [docs/database/DigiTalent_AI_Canonical_v2_3.sql](../docs/database/DigiTalent_AI_Canonical_v2_3.sql). Entity, configuration và migration phải khớp file này (tên bảng, cột, kiểu, CHECK, index). Muốn đổi schema → sửa file SQL trước, rồi mới sửa code.
 
 ---
 
@@ -25,7 +27,7 @@ dotnet run --project src/DigiTalent.Api
 - Lần chạy đầu, API **tự tạo bảng + tài khoản mẫu** (chỉ ở môi trường Development).
 - Connection string nằm trong `src/DigiTalent.Api/appsettings.json`.
 
-**Tài khoản mẫu** (mật khẩu chung `Admin@1234`), mỗi role 1 tài khoản để test phân quyền:
+**Dữ liệu mẫu** (mật khẩu chung `Admin@1234`): 1 tổ chức `DIGITALENT`, 5 role, ma trận quyền mặc định, 1 phòng ban `OPS` (trưởng phòng = manager@), mỗi role 1 tài khoản:
 
 | Email | Role |
 |---|---|
@@ -34,11 +36,13 @@ dotnet run --project src/DigiTalent.Api
 | manager@digitalent.ai | DEPARTMENT_MANAGER |
 | trainer@digitalent.ai | TRAINER |
 | employee@digitalent.ai | EMPLOYEE |
-| verifier@digitalent.ai | CERTIFICATE_VERIFIER |
+
+hr@, manager@, trainer@, employee@ có hồ sơ nhân sự (bảng `employees`) trong phòng `OPS`; admin@ thì không.
+Xác minh chứng chỉ (`/verify`) là trang công khai — **không có role riêng**.
 
 **Test API cần đăng nhập trên Swagger:** gọi `POST /api/v1/auth/login` → copy `accessToken` → bấm nút **Authorize** (góc phải trên) → dán token → OK.
 
-> ⚠️ Nếu máy bạn còn database `digitalent` của backend cũ, API sẽ báo lỗi *"relation ... already exists"*. Xóa DB cũ rồi chạy lại:
+> ⚠️ Migration đã được làm lại từ đầu (`InitialFoundation`, 26/09/2026). Nếu máy bạn còn database `digitalent` cũ (từ `InitialCreate`), API sẽ báo lỗi *"relation ... already exists"*. Xóa DB cũ rồi chạy lại:
 >
 > ```bash
 > docker exec -it digitalent-postgres psql -U digitalent_app -d postgres -c "DROP DATABASE digitalent WITH (FORCE);" -c "CREATE DATABASE digitalent;"
@@ -96,7 +100,7 @@ UseCases/<Module>/<Entity số nhiều>/<TênUseCase>/
 └── <TênUseCase>UseCaseOutput.cs     ← dữ liệu trả về
 ```
 
-Input nhận từ body/query (Create, Update, GetPaged…) thì **phải có** Validator. Input chỉ có Id lấy từ URL (GetById, Delete) thì không cần.
+Input nhận từ body/query (Create, Update, GetPaged…) thì **phải có** Validator. Input chỉ có Id lấy từ URL (GetById, Archive) thì không cần.
 
 | Hành động | Tên use case |
 |---|---|
@@ -104,11 +108,13 @@ Input nhận từ body/query (Create, Update, GetPaged…) thì **phải có** V
 | Chi tiết | `Get<Entity>ById` |
 | Tạo | `Create<Entity>` |
 | Sửa | `Update<Entity>` |
-| Xóa | `Delete<Entity>` |
+| Xóa (thực chất là lưu trữ) | `Archive<Entity>` — đổi `Status = ARCHIVED`, **không xóa cứng** |
 | Hành động nghiệp vụ | Động từ + danh từ: `AssignTask`, `IssueCertificate`, `SubmitAttempt`… |
 
 - Mọi use case của 1 entity dùng **chung 1 namespace**: `DigiTalent.Application.UseCases.<Entity số nhiều>`.
 - **Không cần đăng ký DI**, không cần sửa `Program.cs`. Use case và validator được tự đăng ký.
+- Giá trị `status` lấy từ `Domain/Constants/Statuses.cs` (khớp CHECK trong SQL), không gõ chuỗi tay.
+- Dữ liệu luôn lọc theo tổ chức của người gọi: `d.OrganizationId == _currentUser.OrganizationId`.
 
 ---
 
@@ -118,28 +124,28 @@ Code: [src/DigiTalent.Application/UseCases/Organization/Departments/](src/DigiTa
 
 | Chức năng | API | Use case | Học được gì |
 |---|---|---|---|
-| Danh sách | `GET /api/v1/departments?pageIndex=1&pageSize=20&search=it` | `GetPagedDepartments` | Phân trang, tìm kiếm, lọc |
-| Chi tiết | `GET /api/v1/departments/{id}` | `GetDepartmentById` | `Select` sang Output, 404 |
-| Tạo | `POST /api/v1/departments` | `CreateDepartment` | Validator, check trùng mã → 409 |
-| Sửa | `PUT /api/v1/departments/{id}` | `UpdateDepartment` | Id lấy từ URL, check trùng trừ chính nó |
-| Xóa | `DELETE /api/v1/departments/{id}` | `DeleteDepartment` | 404, chỗ đặt kiểm tra ràng buộc trước khi xóa |
+| Danh sách | `GET /api/v1/departments?pageIndex=1&pageSize=20&search=it&status=ACTIVE` | `GetPagedDepartments` | Phân trang, tìm kiếm, lọc; mặc định ẩn ARCHIVED |
+| Chi tiết | `GET /api/v1/departments/{id}` | `GetDepartmentById` | `Select` sang Output (kèm tên phòng cha, trưởng phòng), 404 |
+| Tạo | `POST /api/v1/departments` | `CreateDepartment` | Validator, lấy tổ chức từ `ICurrentUser`, check trùng mã → 409 |
+| Sửa | `PUT /api/v1/departments/{id}` | `UpdateDepartment` | Id lấy từ URL, check trùng trừ chính nó, chặn vòng lặp phòng cha |
+| Lưu trữ | `DELETE /api/v1/departments/{id}` | `ArchiveDepartment` | Soft delete; còn nhân viên / phòng con → 409 |
 
 ---
 
 ## 6. Làm chức năng mới — từng bước
 
-Ví dụ làm CRUD **JobPosition** (chức danh) trong module Organization:
+Ví dụ làm CRUD **Competency** (Phase 2). *Các bảng Phase 1 — organizations, users, roles, permissions, user_roles, role_permissions, refresh_tokens, departments, job_families, job_positions, employees, audit_logs, system_settings — đã có entity + configuration + migration; làm chức năng cho chúng thì bỏ qua bước 1–4.*
 
-1. **Entity:** tạo `Domain/Entities/Organization/JobPosition.cs`, kế thừa `BaseEntity`, namespace `DigiTalent.Domain.Entities`.
-2. **Cấu hình bảng:** tạo `Infrastructure/Persistence/Configurations/Organization/JobPositionConfiguration.cs` (copy từ `DepartmentConfiguration`).
-3. **DbSet:** thêm `DbSet<JobPosition> JobPositions` vào **cả 2 file**: `IApplicationDbContext.cs` và `AppDbContext.cs`.
+1. **Entity:** mở bảng `competencies` trong file SQL v2.3, tạo `Domain/Entities/Competency/Competency.cs` đúng các cột đó, kế thừa `BaseEntity`, namespace `DigiTalent.Domain.Entities`.
+2. **Cấu hình bảng:** tạo `Infrastructure/Persistence/Configurations/Competency/CompetencyConfiguration.cs` (copy từ `DepartmentConfiguration`): tên bảng, độ dài cột, CHECK, unique index, FK — **đúng như SQL**.
+3. **DbSet:** thêm `DbSet<Competency> Competencies` vào **cả 2 file**: `IApplicationDbContext.cs` và `AppDbContext.cs`.
 4. **Migration:**
    ```bash
-   dotnet ef migrations add AddJobPosition --project src/DigiTalent.Infrastructure --startup-project src/DigiTalent.Api --output-dir Persistence/Migrations
+   dotnet ef migrations add AddCompetency --project src/DigiTalent.Infrastructure --startup-project src/DigiTalent.Api --output-dir Persistence/Migrations
    ```
-5. **Use case:** copy folder `UseCases/Organization/Departments` thành `UseCases/Organization/JobPositions`, đổi `Department` → `JobPosition`.
+5. **Use case:** copy folder `UseCases/Organization/Departments` thành `UseCases/Competency/Competencies`, đổi `Department` → `Competency`.
 6. **Quyền:** thêm mã quyền vào `Permissions.cs` và khai báo role nào được dùng trong `RolePermissions.cs` (xem mục 8).
-7. **Controller:** copy `DepartmentsController.cs` thành `JobPositionsController.cs`, đổi tên tương tự, gắn `[HasPermission(...)]` cho **mọi** action.
+7. **Controller:** copy `DepartmentsController.cs` thành `CompetenciesController.cs`, đổi tên tương tự, gắn `[HasPermission(...)]` cho **mọi** action.
 8. **Chạy và test bằng Swagger** với vài tài khoản mẫu khác role.
 
 ---
@@ -155,17 +161,17 @@ Ví dụ làm CRUD **JobPosition** (chức danh) trong module Organization:
 
 ## 8. Phân quyền
 
-**Ý tưởng:** mỗi quyền là 1 **mã chuỗi** (VD `department.create_update`). Mỗi role được gán 1 danh sách mã.
-Khi gọi API, backend lấy role trong token → tra xem role đó có mã quyền mà API yêu cầu không.
+**Ý tưởng:** mỗi quyền là 1 **mã chuỗi** (VD `department.create_update`). Ma trận role ↔ quyền lưu trong **database** (bảng `roles`, `user_roles`, `permissions`, `role_permissions`) để admin chỉnh được trên giao diện.
+Khi gọi API, backend lấy role trong token → `IPermissionService` tra bảng `role_permissions` xem role đó có mã quyền mà API yêu cầu không.
 
 ```
-Đăng nhập ──► BE tạo token chứa: Id, email, role (VD "EMPLOYEE")
+Đăng nhập ──► BE tạo token chứa: Id (sub), email, org, role (VD "EMPLOYEE")
                 │
 FE lưu token, gửi kèm mọi request:  Authorization: Bearer <token>
                 │
 [HasPermission("department.create_update")]
    ├─ không có token / token sai / hết hạn  → 401
-   ├─ role trong token KHÔNG có mã này       → 403
+   ├─ role KHÔNG có mã này (tra database)    → 403
    └─ có                                     → chạy action
 ```
 
@@ -173,9 +179,11 @@ FE lưu token, gửi kèm mọi request:  Authorization: Bearer <token>
 
 | File | Chứa gì |
 |---|---|
-| `Roles.cs` | 6 mã role. Frontend dùng đúng các mã này, **không đổi tên** |
+| `Roles.cs` | 5 mã role (+ tên, scope để seed). Frontend dùng đúng các mã này, **không đổi tên** |
 | `Permissions.cs` | Mã quyền, copy **đúng** mã trong doc 09 mục 6 (frontend cũng dùng mã y hệt) |
-| `RolePermissions.cs` | **Bảng phân quyền**: role nào có mã nào. `SYSTEM_ADMIN` có tất cả |
+| `RolePermissions.cs` | **Ma trận quyền mặc định** để seed bảng `role_permissions`. `SYSTEM_ADMIN` có tất cả (không cần liệt kê) |
+
+Lúc chạy, quyền đọc từ **database**, không đọc từ `RolePermissions.cs`. Khi start ở Development, `DbSeeder` tự thêm mã quyền mới và các cặp role–quyền còn thiếu (không ghi đè những gì admin đã chỉnh).
 
 **Làm module mới cần quyền** (VD Job Position):
 
@@ -200,7 +208,9 @@ public async Task<...> Create(...)
 **Quyền theo dữ liệu** (VD manager chỉ xem nhân viên phòng mình): `[HasPermission]` chỉ biết "có được gọi API không".
 Muốn giới hạn **dữ liệu** thì inject `ICurrentUser` vào use case để lọc, hoặc `throw new ForbiddenException(...)`.
 
-> Token hết hạn sau 8 tiếng (`Jwt:ExpiresInMinutes` trong appsettings) → FE tự chuyển về trang login. Chưa có refresh token.
+> Token hết hạn sau 8 tiếng (`Jwt:ExpiresInMinutes` trong appsettings) → FE tự chuyển về trang login. Bảng `refresh_tokens` đã có nhưng luồng refresh chưa làm; làm xong thì giảm access token xuống 30 phút (doc 15).
+>
+> Đăng nhập sai 5 lần liên tiếp → khóa 15 phút (`LoginPolicy`, `LoginUseCase.RecordFailedLoginAsync` — UPDATE nguyên tử, an toàn khi gọi song song).
 
 ---
 
@@ -211,7 +221,8 @@ Trong use case chỉ cần `throw`. Middleware tự đổi thành response.
 | Throw gì | Status | Khi nào |
 |---|---|---|
 | *(validator tự throw)* | 400 | Input sai |
-| `BadRequestException` | 400 | Yêu cầu sai mà cần đọc DB mới biết (VD sai mật khẩu) |
+| `BadRequestException` | 400 | Yêu cầu sai mà cần đọc DB mới biết (VD phòng ban cha không tồn tại) |
+| `UnauthorizedException` | 401 | Sai email / mật khẩu khi đăng nhập |
 | *([HasPermission] tự trả)* | 401 | Chưa đăng nhập, token sai hoặc hết hạn |
 | `ForbiddenException` | 403 | Không được phép (cũng là mã [HasPermission] trả khi thiếu quyền) |
 | `NotFoundException` | 404 | Không tìm thấy dữ liệu |
@@ -277,5 +288,7 @@ Không cần chạy `database update`: môi trường Development tự apply khi
 - [ ] Controller không có logic, không dùng DbContext
 - [ ] Không trả entity ra ngoài: luôn copy sang Output
 - [ ] Input nhận từ body có Validator
+- [ ] Entity / configuration khớp bảng trong `docs/database/DigiTalent_AI_Canonical_v2_3.sql`
 - [ ] Có sửa entity hoặc configuration thì có migration mới
+- [ ] Không xóa cứng dữ liệu nghiệp vụ — dùng `Archive` / đổi status
 - [ ] Đặt tên và đặt folder đúng quy tắc mục 4

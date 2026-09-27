@@ -4,14 +4,11 @@ using DigiTalent.Domain.Constants;
 namespace DigiTalent.Domain.Entities;
 
 /// <summary>
-/// Phòng ban. Có phòng ban cha (dạng cây) và trưởng phòng (1 Employee).
-/// Không xóa cứng: chuyển Status = ARCHIVED.
+/// Nhóm vị trí công việc (VD: Sales, Human Resources).
 /// </summary>
-public class Department : BaseEntity
+public class JobFamily : BaseEntity
 {
     public Guid OrganizationId { get; set; }
-    public Guid? ParentDepartmentId { get; set; }
-    public Guid? ManagerEmployeeId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
