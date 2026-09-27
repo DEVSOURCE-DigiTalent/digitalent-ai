@@ -67,10 +67,10 @@ Các agent cùng dùng một working tree: **không tự stage/commit, không s�
 **Produces:** test project có trong solution, migration chain foundation đã kiểm tra trên PostgreSQL dùng một lần, kết quả seed idempotent.
 **Commit:** `19fbb05` (`test: verify auth scope and foundation migration`)
 
-- [x] Viết test `LoginRejectsInactiveAccount`, `DepartmentListExcludesOtherOrganization`, `FoundationMigrationCreatesExpectedTables`, `SeedTwiceDoesNotDuplicateRolesOrUsers`; assertions lần lượt là 403/401 phù hợp, chỉ thấy org của người gọi, các bảng nền có mặt, số role/user không tăng sau seed lại. Trên bản sao DB cũ dùng một lần, chạy thử đường upgrade; nếu chưa hỗ trợ, ghi rõ bước chuyển đổi thủ công và chặn deploy tự động lên DB cũ.
+- [ ] Viết test `LoginRejectsInactiveAccount`, `DepartmentListExcludesOtherOrganization`, `FoundationMigrationCreatesExpectedTables`, `SeedTwiceDoesNotDuplicateRolesOrUsers`; assertions lần lượt là 403/401 phù hợp, chỉ thấy org của người gọi, các bảng nền có mặt, số role/user không tăng sau seed lại. Trên bản sao DB cũ dùng một lần, chạy thử đường upgrade; nếu chưa hỗ trợ, ghi rõ bước chuyển đổi thủ công và chặn deploy tự động lên DB cũ. (Test hiện có; đường nâng cấp DB cũ chưa được kiểm chứng.)
 - [x] Chạy test và ghi lý do FAIL trước khi sửa mã; nếu môi trường không có PostgreSQL, tách unit test chạy ngay và để integration test chạy qua CI PostgreSQL service, không đổi test thành mock chỉ để xanh.
 - [x] Bổ sung test project vào solution, sửa đúng lỗi migration/seed tìm được; không xóa database người dùng hoặc tự viết lại migration đã áp dụng ở môi trường khác.
-- [x] Chạy `dotnet build backend/DigiTalent.sln --configuration Release` và `dotnet test backend/DigiTalent.sln --configuration Release --no-build --verbosity normal`; xác nhận test count > 0 và mọi test có thể chạy trong môi trường hiện tại đều PASS.
+- [ ] Chạy `dotnet build backend/DigiTalent.sln --configuration Release` và `dotnet test backend/DigiTalent.sln --configuration Release --no-build --verbosity normal`; xác nhận test count > 0 và mọi test có thể chạy trong môi trường hiện tại đều PASS. (Build và 26 unit test PASS; 3 PostgreSQL integration test chờ database test.)
 - [x] Báo coordinator diff/test evidence để commit `test: verify auth scope and foundation migration` hoặc `fix: stabilize foundation migration` theo nội dung thực tế.
 
 ## Task 2: Đồng bộ auth contract và phiên frontend
@@ -123,10 +123,10 @@ Các agent cùng dùng một working tree: **không tự stage/commit, không s�
 **Produces:** CI kích hoạt đúng đường dẫn, không xanh khi test count bằng 0, DB production/test có bước migrate trước API, API base URL thống nhất.
 **Commit:** `e601b96` (`ci: gate backend tests and deployment configuration`)
 
-- [x] Viết/điều chỉnh CI check cho `docker/**` và test project; kiểm tra cấu hình khi thay `docker/docker-compose.yml` sẽ kích hoạt backend/deploy gate. Chạy `docker compose config` nếu host có Docker; nếu không, để CI chạy kiểm tra này và báo giới hạn local.
+- [ ] Viết/điều chỉnh CI check cho `docker/**` và test project; kiểm tra cấu hình khi thay `docker/docker-compose.yml` sẽ kích hoạt backend/deploy gate. Chạy `docker compose config` nếu host có Docker; nếu không, để CI chạy kiểm tra này và báo giới hạn local. (Path filter đã sửa; chưa có Docker để xác nhận Compose.)
 - [x] Kiểm tra FAIL hiện tại: root `.env.example` trỏ `/api` trong khi FE cần `/api/v1`; backend CI theo dõi root `docker-compose.yml` sai chỗ; `dotnet test` không có test source.
 - [x] Sửa env example, path filters; chọn bước migration rõ ràng trước API trong compose/deploy. Không dùng fallback mật khẩu/JWT key ở Production, giữ dev setup thuận tiện nhưng tách môi trường.
-- [x] Chạy YAML/compose validation khả dụng, backend/FE build và CI test commands; xác nhận fresh DB path trên runner hoặc disposable DB.
+- [ ] Chạy YAML/compose validation khả dụng, backend/FE build và CI test commands; xác nhận fresh DB path trên runner hoặc disposable DB. (Build và TRX parser PASS; fresh DB/CI run chưa được kiểm chứng.)
 - [x] Báo coordinator để commit `ci: gate backend tests and deployment configuration`.
 
 ## Task 6: Smoke test xuyên suốt và chốt tháng 9
@@ -137,9 +137,9 @@ Các agent cùng dùng một working tree: **không tự stage/commit, không s�
 **Produces:** test report trên DB dùng một lần và danh sách bug/go-no-go tháng 9.
 **Commit:** `22cf3c3` (`test: cover September foundation flow`)
 
-- [x] Viết đường đi E2E: anonymous vào `/`, `/verify`; HR login → Department list/create/archive; employee không được tạo Department; reload vẫn giữ phiên đúng; API trực tiếp khác tenant bị chặn.
+- [ ] Viết đường đi E2E: anonymous vào `/`, `/verify`; HR login → Department list/create/archive; employee không được tạo Department; reload vẫn giữ phiên đúng; API trực tiếp khác tenant bị chặn. (Đã thêm smoke HTTP cho health/login/Department/Job Architecture; browser reload và cross-tenant HTTP còn thiếu.)
 - [x] Chạy trước khi sửa lỗi để ghi failure thật, gán về đúng lane; không xóa test khi thất bại.
-- [x] Chạy lại sau fix: backend test count > 0, frontend test/lint/build PASS, migration/seed trên DB mới PASS, E2E PASS. Nếu host không có Docker/PostgreSQL/browser, ghi gate chưa xác minh và để CI/test environment chạy; không tuyên bố pass dựa trên build.
+- [ ] Chạy lại sau fix: backend test count > 0, frontend test/lint/build PASS, migration/seed trên DB mới PASS, E2E PASS. Nếu host không có Docker/PostgreSQL/browser, ghi gate chưa xác minh và để CI/test environment chạy; không tuyên bố pass dựa trên build. (26 unit và 20 frontend test PASS; integration/smoke thực chưa chạy.)
 - [x] Coordinator rà `git diff`, chỉ stage file test/fix thuộc task, commit `test: cover September foundation flow` và cập nhật checkpoint tháng 9. Không push.
 
 ## Task 7: Job Architecture vertical slice (P1, chỉ sau P0)
@@ -156,7 +156,7 @@ Các agent cùng dùng một working tree: **không tự stage/commit, không s�
 - [x] Viết test backend cho trùng mã trong một org, cùng mã ở hai org, archive vị trí đang được dùng, role thiếu quyền, và FE test list/form/empty/error.
 - [x] Chạy test để thấy FAIL do controller/use case/UI chưa có.
 - [x] Triển khai BE trước, chốt DTO; FE dùng service/type khớp contract, không đọc entity trực tiếp. Giới hạn role và org tại backend.
-- [x] Chạy unit/integration, FE test/lint/build và smoke hai org; coordinator commit BE `feat: manage job architecture` rồi FE `feat: connect job position UI` riêng. Không push.
+- [ ] Chạy unit/integration, FE test/lint/build và smoke hai org; coordinator commit BE `feat: manage job architecture` rồi FE `feat: connect job position UI` riêng. Không push. (Unit/FE PASS; smoke hai org chưa kiểm chứng.)
 
 ## Task 8: Hợp đồng người học tự do và catalog công khai (P1, chỉ sau P0)
 
@@ -184,11 +184,19 @@ Mỗi mục deferred cần spec/contract riêng và tiêu chí tích hợp trư�
 
 ## Review & Remediation Checkpoint (27/09/2026)
 
-Toàn bộ 5 điểm rà soát đã được xử lý triệt để và tự đứng trên nhánh:
-- `5b73a15`: `feat(db): establish canonical foundation entities, configurations, and migration` — Toàn bộ domain entities, EF configurations, migration foundation 14 bảng, seeder và canonical script được commit đầy đủ, đảm bảo checkout sạch tự build độc lập.
+Các commit đã đưa mã nguồn nền tảng vào nhánh; gate tích hợp vẫn cần chạy trên database dùng một lần:
+- `5b73a15`: `feat(db): establish canonical foundation entities, configurations, and migration` — Domain entities, EF configurations, migration foundation 13 bảng nghiệp vụ (cộng bảng lịch sử migration của EF), seeder và canonical script đã được commit; checkout sạch build được.
 - `4fd7519`: `feat(auth,org): implement RBAC permission service and department archive lifecycle` — Permission service kiểm tra quyền DB, logic login khóa sau 5 lần sai, lifecycle archive phòng ban.
 - `2dd0a7e`: `feat(job-arch): complete JobFamily CRUD, enforce position archive employee guard, and link UI` — Hoàn thiện đầy đủ CRUD JobFamily, chặn archive JobPosition khi có nhân viên đang gắn kết, UI tabs và dialog liên kết JobPosition/JobFamily.
-- `d29fc21`: `fix(security,ops): enforce production secret checks, compose migration automation, and sync plan` — Chặn khởi động production với secret/password mặc định, tự động migrate trong docker-compose, test PostgreSQL thật (`FoundationMigrationTests` và `LoginUseCaseTests`), đồng bộ contract `/api/v1/public/career-roles` và `/api/v1/learner/me/targets`.
+- `d29fc21`: `fix(security,ops): enforce production secret checks, compose migration automation, and sync plan` — Thêm kiểm tra secret, cờ migration và test PostgreSQL; các lỗ hổng gate phát hiện sau đó được sửa ở các commit tiếp theo.
+
+## Verification checkpoint sau rà soát
+
+- `34ab1ad` (`fix: make migration and integration gates fail closed`): sửa Compose shell, `--migrate-only`, kiểm tra mật khẩu Production, CI đếm test từ TRX; 3 integration test giờ FAIL khi database test không truy cập được.
+- `79b2380` (`test: add live API smoke and isolate production seeding`): Production chỉ seed role/permission; CI có script smoke HTTP trên PostgreSQL dùng một lần, mật khẩu Development test sinh theo lần chạy.
+- `99cdecc` (`fix: preserve return path across authentication`): giữ `returnTo` khi vào route bảo vệ hoặc nhận 401, test điều hướng thật.
+- Đã xác minh cục bộ: backend Release build PASS; 26 unit test PASS; frontend build/lint PASS và 20 test PASS; TRX parser đọc đúng 26 test. Test với kết nối PostgreSQL cố ý sai FAIL 3/3 như yêu cầu.
+- Chưa xác minh: Compose startup, 3 integration test với PostgreSQL thật, script smoke HTTP trên CI, browser E2E, cross-tenant qua API và đường nâng cấp database cũ. Máy hiện tại không có Docker/PostgreSQL; nhánh chưa push nên CI chưa chạy. Không đánh dấu các gate này là PASS.
 
 ## Coordinator checkpoint trước mỗi commit
 
@@ -201,4 +209,4 @@ Toàn bộ 5 điểm rà soát đã được xử lý triệt để và tự đ�
 6. Ghi SHA và task ID vào plan; không push.
 ```
 
-**Handoff:** plan này là phân công chuẩn bị. Theo chỉ đạo hiện tại, **chưa dispatch subagent để sửa mã**. Khi người dùng yêu cầu bắt đầu triển khai, dùng subagent-driven development với các lane trên. Coordinator giữ quyền tích hợp và commit, báo rõ task nào PASS, task nào còn blocked do môi trường, và bảo toàn mọi thay đổi có sẵn trong working tree.
+**Handoff:** các task đã được triển khai theo các commit ghi trên; coordinator tiếp tục giữ quyền tích hợp và commit, không push. Những gate chưa xác minh ở checkpoint phải chạy trên môi trường có PostgreSQL/CI trước khi chốt hoàn thành tháng 9.
