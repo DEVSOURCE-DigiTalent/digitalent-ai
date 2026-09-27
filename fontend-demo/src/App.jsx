@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
-import LoginPage from './components/LoginPage';
+import AcquisitionPortal from './components/AcquisitionPortal';
+import FrameworkWorkspace from './components/FrameworkWorkspace';
+import { AccountWorkspace, CoursePreview, LearningMarketplace, usePlatform } from './components/PlatformWorkspace';
+import { clearSession, rememberSession, restoreSession } from './utils/platformService';
+import { courseAccess } from './utils/platformPolicy';
+import { ORGANIZATIONS_KEY } from './utils/demoAccess';
 import DiagnosticTestModal from './components/DiagnosticTestModal';
 import CourseOverviewModal from './components/CourseOverviewModal';
 import ClassroomView from './components/ClassroomView';
@@ -9,25 +14,31 @@ import PracticalTaskModal from './components/PracticalTaskModal';
 import ManagerEvaluationView from './components/ManagerEvaluationView';
 import PublicVerificationView from './components/PublicVerificationView';
 import HRDashboardView from './components/HRDashboardView';
-import EnterpriseWorkspace from './components/EnterpriseWorkspace';
+import BusinessManagementWorkspace from './components/BusinessManagementWorkspace';
 import PersonalWorkspace from './components/PersonalWorkspace';
 import { ALL_DIGCOMP_COURSES as DIGCOMP_15_COURSES } from './data/courseCatalog';
 import { getNextRecommendations, JOB_ROLE_BENCHMARKS } from './utils/competenceEngine';
 import { LogOut } from 'lucide-react';
-import { enterpriseAdmin, readOrganizations } from './utils/demoAccess';
+import { readOrganizations } from './utils/demoAccess';
+import { EmployeeAssignments } from './components/TrainingOperations';
+import { readOperations, syncLearningProgress } from './utils/trainingOperations';
+import SystemWorkspace from './components/SystemWorkspace';
 
 const scopedKey = (user, key) => `${key}:${user?.organizationId || 'demo'}:${user?.employeeId || user?.id || 'guest'}`;
 const readStored = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback; } catch { return fallback; } };
 
 export default function App() {
+  usePlatform();
   const [savedAssessment] = useState(() => {
     try { return JSON.parse(localStorage.getItem('digcomp_personal_assessment') || 'null'); } catch { return null; }
   });
   const [isDark, setIsDark] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentTab, setCurrentTab] = useState('home');
+  const [managedCourseId, setManagedCourseId] = useState(null);
   const [courseReturnTab, setCourseReturnTab] = useState('home');
   const [selectedAreaId, setSelectedAreaId] = useState(null);
+  const [workSection, setWorkSection] = useState('overview');
 
   // Active Target Role chosen by user for learning & competence benchmarking
   const [selectedRole, setSelectedRole] = useState(() => JOB_ROLE_BENCHMARKS.find(role => role.roleId === savedAssessment?.roleId) || JOB_ROLE_BENCHMARKS[0]);
@@ -85,17 +96,24 @@ export default function App() {
     if (currentUser) try { localStorage.setItem(scopedKey(currentUser, 'digcomp_task_submission'), JSON.stringify(taskSubmission)); } catch {}
   }, [taskSubmission, currentUser]);
 
+  useEffect(() => { const user = restoreSession(); if (user) handleLogin(user); }, []);
+
   const handleLogin = (user) => {
     if (!user) return;
     setCurrentUser(user);
+    setManagedCourseId(null);
+    rememberSession(user);
+    setShowDiagnosticModal(false); setShowCourseOverviewModal(false); setShowCertModal(false); setShowTaskModal(false);
+    setVerificationCode('');
     const assessment = readStored(scopedKey(user, 'digcomp_personal_assessment'), null);
     const benchmark = JOB_ROLE_BENCHMARKS.find(role => role.roleId === user.benchmarkId) || JOB_ROLE_BENCHMARKS.find(role => role.roleId === assessment?.roleId) || JOB_ROLE_BENCHMARKS[0];
     const organization = readOrganizations().find(item => item.id === user.organizationId);
     const person = organization?.employees.find(item => item.id === user.employeeId);
     const position = organization?.roles.find(item => item.id === person?.roleId);
+    const savedGoal = readStored(scopedKey(user, 'digcomp_career_goal'), null);
     setSelectedRole(position ? { ...benchmark, roleTitle: position.name,
       competencies: benchmark.competencies.map((item,index) => ({ ...item, reqLevelNumber: position.requirements[index]?.level ?? item.reqLevelNumber,
-        isCore: position.requirements[index]?.mandatory ?? item.isCore })) } : benchmark);
+        reqLevelLabel: `Mức ${position.requirements[index]?.level ?? item.reqLevelNumber}/6 theo vị trí`, isCore: position.requirements[index]?.mandatory ?? item.isCore })) } : savedGoal || benchmark);
     setDiagnosticDone(!!assessment?.roadmap?.routes);
     setCompetenceScores(assessment?.scores || null);
     setPersonalizedRoadmap(assessment?.roadmap?.routes ? assessment.roadmap : null);
@@ -118,12 +136,14 @@ export default function App() {
   };
 
   const handleOpenCourse = (course) => {
+    if (currentUser?.role === 'enterprise_admin') { setManagedCourseId(course.id); setCurrentTab('enterprise'); return; }
     setActiveCourse(course);
     setCourseReturnTab(currentTab);
     setShowCourseOverviewModal(true);
   };
 
   const handleEnterClassroom = (course) => {
+    if (currentUser?.role === 'enterprise_admin') { setShowCourseOverviewModal(false); setManagedCourseId(course?.id); setCurrentTab('enterprise'); return; }
     if (course) setActiveCourse(course);
     setCourseReturnTab(currentTab);
     setShowCourseOverviewModal(false);
@@ -131,7 +151,8 @@ export default function App() {
   };
 
   const handleSelectRole = (role) => {
-    if (!role || role.roleId === selectedRole?.roleId) return;
+    if (!role || (role.roleId === selectedRole?.roleId && role.goalKey === selectedRole?.goalKey)) return;
+    try { localStorage.setItem(scopedKey(currentUser, 'digcomp_career_goal'), JSON.stringify(role)); } catch {}
     setSelectedRole(role);
     setDiagnosticDone(false);
     setCompetenceScores(null);
@@ -156,6 +177,12 @@ export default function App() {
       newScores[ar.areaId] = Math.max(0, Math.min(100, perc));
     });
     setCompetenceScores(newScores);
+    if (currentUser.employeeId && currentUser.organizationId) {
+      const levels = role.competencies.map(item => Math.round((newScores[item.id] || 0) * 6 / 100));
+      const organizations = readOrganizations().map(org => org.id !== currentUser.organizationId ? org : { ...org, employees: org.employees.map(person => person.id !== currentUser.employeeId ? person : { ...person, [person.before ? 'after' : 'before']: levels, evidence: 'Khảo sát theo vị trí; cần thẩm định minh chứng riêng' }) });
+      localStorage.setItem(ORGANIZATIONS_KEY, JSON.stringify(organizations));
+      window.dispatchEvent(new Event('digcomp-organizations'));
+    }
     try { localStorage.setItem(scopedKey(currentUser, 'digcomp_personal_assessment'), JSON.stringify({ roleId: role.roleId, scores: newScores, roadmap })); } catch {}
 
     if (roadmap.assigned.length > 0) {
@@ -167,22 +194,17 @@ export default function App() {
   };
 
   const handleSaveProgress = (courseId, progressData) => {
-    setCourseProgress(prev => {
-      const updated = {
-        ...prev,
-        [courseId]: {
-          ...(prev[courseId] || {}),
-          ...progressData
-        }
-      };
-      try {
-        localStorage.setItem(scopedKey(currentUser, 'digcomp_course_progress'), JSON.stringify(updated));
-      } catch (e) {}
-      return updated;
-    });
+    if (!courseAccess(currentUser, courseId).allowed) return;
+    const updated = { ...courseProgress, [courseId]: { ...(courseProgress[courseId] || {}), ...progressData } };
+    setCourseProgress(updated);
+    try {
+      localStorage.setItem(scopedKey(currentUser, 'digcomp_course_progress'), JSON.stringify(updated));
+      syncLearningProgress(currentUser, courseId, updated[courseId]);
+    } catch (e) { console.error('Không thể lưu tiến độ học', e); }
   };
 
   const handleCourseCompleted = (courseId, score = 95) => {
+    if (!courseAccess(currentUser, courseId).allowed) return;
     const completionTime = new Date().toLocaleDateString('vi-VN') + " " + new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
     // 1. Save completed courses
@@ -205,6 +227,7 @@ export default function App() {
     if (courseObj?.modules) {
       courseObj.modules.forEach(m => { allMods[m.id] = true; });
     }
+    try { syncLearningProgress(currentUser, courseId, { isCompleted: true, completedModules: allMods }); } catch (e) { console.error('Không thể đồng bộ lớp học', e); }
     setCourseProgress(prev => {
       const updated = {
         ...prev,
@@ -243,7 +266,7 @@ export default function App() {
   };
 
   if (!currentUser) {
-    return <LoginPage onLogin={handleLogin} />;
+    return <AcquisitionPortal onLogin={handleLogin} />;
   }
 
   // Determine whether activeCourse is an assigned gap course vs an already completed course
@@ -251,7 +274,14 @@ export default function App() {
   const activeCourseProgress = courseProgress[activeCourse?.id];
   const recommendations = getNextRecommendations(personalizedRoadmap, completedCourses);
   const activeCourseAssignedInfo = recommendations.find(c => c.id === activeCourse?.id);
-  const currentRoleSubmission = taskSubmission?.roleId === selectedRole?.roleId ? taskSubmission : null;
+  const operations = currentUser.employeeId ? readOperations(currentUser.organizationId) : null;
+  const latestWorkSubmission = operations?.submissions.find(item => item.employeeId === currentUser.employeeId);
+  const latestWorkReview = operations?.evaluations.find(item => item.submissionId === latestWorkSubmission?.id);
+  const currentRoleSubmission = latestWorkSubmission ? {
+    status: latestWorkReview?.verdict === 'PASSED' ? 'approved' : latestWorkReview ? 'rejected' : 'pending_manager',
+    score: latestWorkReview ? Math.round(latestWorkReview.results.reduce((sum,item)=>sum+item.score,0)/latestWorkReview.results.length) : null,
+    managerFeedback: latestWorkReview?.feedback,
+  } : taskSubmission?.roleId === selectedRole?.roleId ? taskSubmission : null;
 
   return (
     <div className="app-container">
@@ -265,11 +295,13 @@ export default function App() {
         onOpenDiagnosticModal={() => setShowDiagnosticModal(true)}
       />
 
-      <div className="rf-actor-bar"><span>{currentUser.avatar} <strong>{currentUser.roleLabel}</strong> · {currentUser.name}</span><div><button onClick={() => setCurrentUser(null)}><LogOut size={14}/> Đăng xuất</button></div></div>
+      <div className="rf-actor-bar"><span>{currentUser.avatar} <strong>{currentUser.roleLabel}</strong> · {currentUser.name}</span><div>{currentUser.employeeId && <button onClick={() => { setWorkSection('overview'); setCurrentTab('work'); }}>Công việc & hồ sơ</button>}<button onClick={() => { clearSession(); setCurrentUser(null); setShowCourseOverviewModal(false); setShowCertModal(false); setShowTaskModal(false); setShowDiagnosticModal(false); }}><LogOut size={14}/> Đăng xuất</button></div></div>
 
+      {currentUser.accountId && currentUser.role !== 'enterprise_admin' && <nav className="pf-shell-links" aria-label="Không gian tài khoản"><button onClick={()=>setCurrentTab('home')}>Học tập của tôi</button><button className={currentTab==='marketplace'?'active':''} onClick={()=>setCurrentTab('marketplace')}>Khám phá & gói học</button><button className={currentTab==='account'?'active':''} onClick={()=>setCurrentTab('account')}>Tài khoản & lời mời</button><span className="pf-tag">{currentUser.email}</span></nav>}
       <main className="main-content">
-        {currentTab === 'enterprise' ? (
-          <EnterpriseWorkspace onOpenCourse={handleOpenCourse} organizationId={currentUser.organizationId} onOrganizationChange={organization => setCurrentUser(enterpriseAdmin(organization))} />
+        {currentUser.employeeId && currentUser.organizationId && ['landing','home','path'].includes(currentTab) && <EmployeeAssignments key={currentUser.id} user={currentUser} onOpenCourse={handleOpenCourse}/>}
+        {currentUser.role === 'enterprise_admin' && currentTab !== 'account' ? <BusinessManagementWorkspace key={currentUser.organizationId} user={currentUser} initialCourseId={managedCourseId}/> : currentTab === 'framework' ? <FrameworkWorkspace onOpenCourse={handleOpenCourse}/> : currentTab === 'account' && currentUser.accountId ? <AccountWorkspace user={currentUser} onSwitch={handleLogin}/> : currentTab === 'marketplace' && currentUser.accountId ? <LearningMarketplace user={currentUser} selectedRole={selectedRole} onSelectRole={handleSelectRole} onLearning={()=>setCurrentTab('home')} onOpenCourse={handleOpenCourse}/> : currentTab === 'work' && currentUser.employeeId ? (
+          <SystemWorkspace key={`${currentUser.id}:${workSection}`} initialSection={workSection} organization={readOrganizations().find(item=>item.id===currentUser.organizationId)} user={currentUser} onOpenCourse={handleOpenCourse}/>
         ) : ['landing', 'home', 'matrix', 'path', 'report'].includes(currentTab) ? (
           <PersonalWorkspace
             section={currentTab}
@@ -277,7 +309,7 @@ export default function App() {
             user={currentUser}
             selectedRole={selectedRole}
             onSelectRole={handleSelectRole}
-            roles={currentUser.role === 'employee' ? [selectedRole] : JOB_ROLE_BENCHMARKS}
+            roles={currentUser.role === 'employee' ? [selectedRole] : JOB_ROLE_BENCHMARKS.map(role => role.roleId === selectedRole?.roleId ? selectedRole : role)}
             diagnosticDone={diagnosticDone}
             competenceScores={competenceScores}
             roadmap={personalizedRoadmap}
@@ -288,10 +320,10 @@ export default function App() {
             submission={currentRoleSubmission}
             onStartDiagnostic={() => setShowDiagnosticModal(true)}
             onOpenCourse={handleOpenCourse}
-            onOpenTask={() => { setTaskCourse(null); setShowTaskModal(true); }}
+            onOpenTask={() => { if(currentUser.employeeId){setWorkSection('tasks');setCurrentTab('work');}else{setTaskCourse(null);setShowTaskModal(true);} }}
             onOpenCertificate={() => setShowCertModal(true)}
           />
-        ) : currentTab === 'classroom' ? (
+        ) : currentTab === 'classroom' && !courseAccess(currentUser, activeCourse?.id).allowed ? <CoursePreview key={activeCourse.id} user={currentUser} course={activeCourse} onBack={()=>setCurrentTab(courseReturnTab)} onShop={()=>setCurrentTab('marketplace')} onPurchased={()=>setCurrentTab('classroom')}/> : currentTab === 'classroom' ? (
           <ClassroomView
             course={activeCourse}
             onBackToDashboard={() => setCurrentTab(courseReturnTab)}
@@ -301,7 +333,7 @@ export default function App() {
             onSaveProgress={handleSaveProgress}
             onOpenCertificate={() => setShowCertModal(true)}
             assignedInfo={activeCourseAssignedInfo}
-            onOpenTask={course => { setTaskCourse(course); setShowTaskModal(true); }}
+            onOpenTask={course => { if(currentUser.employeeId){setWorkSection('tasks');setCurrentTab('work');}else{setTaskCourse(course);setShowTaskModal(true);} }}
           />
         ) : currentTab === 'public_verify' ? (
           <PublicVerificationView completedCourses={completedCourses} user={currentUser} initialCode={verificationCode} />
@@ -333,6 +365,7 @@ export default function App() {
           course={activeCourse}
           onClose={() => setShowCourseOverviewModal(false)}
           onEnterClassroom={handleEnterClassroom}
+          entryLabel={!courseAccess(currentUser, activeCourse?.id).allowed ? 'Xem bài học thử' : undefined}
           isAlreadyCompleted={isCurrentCourseCompleted}
           savedProgress={activeCourseProgress}
           assignedInfo={activeCourseAssignedInfo}

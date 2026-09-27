@@ -5,7 +5,7 @@ export const DIGCOMP_AREAS_FULL = [
     id: "area_1",
     code: "1",
     name: "Tìm kiếm, đánh giá, quản lý thông tin",
-    enName: "Information & Data Literacy",
+    enName: "Information search, evaluation and management",
     subCompetencies: [
       { code: "1.1", name: "Duyệt, tìm kiếm và lọc dữ liệu, thông tin và nội dung số" },
       { code: "1.2", name: "Đánh giá dữ liệu, thông tin và nội dung số" },
@@ -34,7 +34,7 @@ export const DIGCOMP_AREAS_FULL = [
     id: "area_3",
     code: "3",
     name: "Tạo lập nội dung",
-    enName: "Digital Content Creation",
+    enName: "Content creation",
     subCompetencies: [
       { code: "3.1", name: "Phát triển nội dung số" },
       { code: "3.2", name: "Tích hợp và chỉnh sửa lại nội dung số" },
@@ -48,7 +48,7 @@ export const DIGCOMP_AREAS_FULL = [
     id: "area_4",
     code: "4",
     name: "An toàn, phúc lợi và sử dụng có trách nhiệm",
-    enName: "Safety & Brand Protection",
+    enName: "Safety, wellbeing and responsible use",
     subCompetencies: [
       { code: "4.1", name: "Bảo vệ thiết bị và tài khoản" },
       { code: "4.2", name: "Bảo vệ dữ liệu cá nhân và quyền riêng tư" },
@@ -62,7 +62,7 @@ export const DIGCOMP_AREAS_FULL = [
     id: "area_5",
     code: "5",
     name: "Nhận diện và giải quyết vấn đề",
-    enName: "Problem Solving",
+    enName: "Problem identification and solving",
     subCompetencies: [
       { code: "5.1", name: "Giải quyết các vấn đề kỹ thuật" },
       { code: "5.2", name: "Xác định nhu cầu và các giải pháp công nghệ" },

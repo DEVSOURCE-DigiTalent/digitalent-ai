@@ -1,5 +1,22 @@
 # RP1 — Phạm vi thử nghiệm DigiTalent AI cho SME
 
+## Cập nhật khung tham chiếu ngày 27/09/2026
+
+Dùng **DigComp 3.0** cùng **Thông tư 02/2025/TT-BGDĐT**. DigComp có 5 lĩnh vực, 21 năng lực, 4 mức; Thông tư có 6 miền, 24 năng lực, 8 bậc. Bản đối chiếu đang là dự thảo, không tự quy đổi điểm khảo sát 0–6 hoặc hồ sơ nội bộ 3 mức thành mức chính thức. Thêm trang Khung đào tạo, truy vết 8 nguồn và xem trước 3 khóa/9 module AI. Xem [kết quả rà soát và ưu tiên phát triển](docs/DIGCOMP3_REVIEW_AND_ROADMAP.md); các mô tả thiết kế thử phía dưới không phải xác nhận đạt chuẩn.
+
+
+## Mở rộng trải nghiệm FE toàn hệ thống
+
+Đã bổ sung cổng quản trị 9 mục và không gian nhân viên 5 mục. Luồng thực hành dùng chung đã nối giao bài đa năng lực → nộp v1/v2 → yêu cầu bổ sung/duyệt → hồ sơ xác nhận → tính lại khoảng thiếu. Có thêm phòng ban, bản nháp/xuất bản khóa demo, ngân hàng câu hỏi, xác nhận/thu hồi/tra cứu, báo cáo CSV và tùy chọn giao diện. Xem [hướng dẫn thử FE toàn hệ thống](docs/FE_SYSTEM_GUIDE.md) để thực hiện từng bước. Các con số phân loại bảng trong báo cáo đối chiếu trước đây là ảnh chụp ở thời điểm trước lần mở rộng này.
+
+## Cập nhật theo tài liệu canonical ngày 26/09/2026
+
+Đã đối chiếu đủ **55 bảng cốt lõi + 4 bảng mở rộng**. Xem [báo cáo từng bảng và thiết kế chức năng](docs/DATABASE_FUNCTIONAL_REVIEW.md), [số liệu đối chiếu](docs/database-coverage.json), và [DBML đã bỏ hai quan hệ sai ở cuối tệp](docs/DigiTalent_v2_2_reviewed.dbml). Hiện chưa kết nối bảng PostgreSQL nào; 35/59 bảng có chức năng FE đại diện ở các mức khác nhau (8 có luồng thao tác mới, 27 chỉ mô phỏng một phần), không phải 35 bảng đã hoàn thiện.
+
+**Quy định v2.2 mới có ưu tiên:** năng lực vận hành là 3 mức, khung ACTIVE gồm 9–14 năng lực thành phần, tổng trọng số 100%; mức chưa xác nhận là thiếu profile/NULL. Phần khảo sát 5 lĩnh vực mức 0–6 bên dưới là thiết kế thử trước đây, cần ánh xạ có chuyên gia duyệt và không được dùng trực tiếp làm confirmed profile.
+
+Đã thêm **Quản lý đào tạo** trong trang doanh nghiệp: soạn và kích hoạt phiên bản khung, tính/lưu khoảng thiếu theo phiên bản, giao khóa kèm hạn học, xem tiến độ nhân viên và nhật ký thao tác. Nhân viên thấy khóa được giao và thông báo riêng; tiến độ lớp học đồng bộ về enrollment demo. Chưa có luồng review đa năng lực để phát sinh hồ sơ xác nhận, chưa có nhiều lượt học lại hoặc giao dịch máy chủ. Các giới hạn cũ dưới đây cần đọc cùng cập nhật này.
+
 ## 1. Vấn đề và người dùng
 
 - **Doanh nghiệp** cần biết từng vị trí cần năng lực số nào, ai đang thiếu, học gì trước và cải thiện ra sao sau đào tạo. CEO xem tổng quan tất cả vị trí; trưởng phòng và người học xem khung theo công việc.
@@ -13,7 +30,7 @@
 | Doanh nghiệp mẫu | 3 SME: Sao Mai Digital (18 người), An Phát Retail (32 người), Minh Việt Foods (24 người). Số liệu minh họa, không phải dữ liệu thật. |
 | Vị trí mẫu | 6 vị trí/doanh nghiệp: CEO, trưởng phòng, Marketing, kinh doanh, kế toán, nhân sự. Ưu tiên CEO và trưởng phòng. Có thể thêm vị trí đặc thù bằng giao diện. |
 | Số người khi tự tạo doanh nghiệp | Trường quy mô cho phép 1–500; đây là giới hạn nhập liệu bản thử, không phải năng lực hệ thống đã kiểm tải. |
-| Khung năng lực | 5 lĩnh vực; mức yêu cầu 1–6 trong bản thử, trọng số theo vị trí cộng 100%. Tài liệu hiện có còn nhắc DigComp 8 mức; cần thống nhất và chuyên gia thẩm định ánh xạ trước khi dùng chính thức. |
+| Khung năng lực | 5 lĩnh vực; mức yêu cầu 1–6 trong bản thử, trọng số theo vị trí cộng 100%. DigComp 3.0 có 4 mức; thang 1–6 ở đây là chỉ số nội bộ của thiết kế thử, cần chuyên gia thẩm định bảng đối chiếu. |
 | Khóa học | Danh mục 15 khóa, 3 cấp/lĩnh vực. Đã đưa 63 module và 315 câu hỏi từ 5 giáo trình dự án vào lớp học; 8 khóa được gắn trạng thái chờ chuyên gia thẩm định trước khi mở bán. Video chỉ phát khi gắn liên kết/tệp. Giá giả định cho 7 khóa sẵn sàng thương mại trong demo: cơ bản miễn phí; trung cấp 390.000 đ/chỗ; nâng cao 790.000 đ/chỗ. |
 | Đánh giá | Trang doanh nghiệp cho tự khai đầu vào và đánh giá lại; điểm là tỷ lệ đáp ứng yêu cầu vị trí. Không gian cá nhân có khảo sát 5 câu theo vị trí để gợi ý học tập, bài kiểm tra 5 câu/module đạt ≥80% và ôn tập cuối khóa đạt ≥70/100. Kết quả học chưa phải xác nhận năng lực thực tế. |
 | Doanh thu | Ghi đơn hàng mô phỏng và ước tính nhu cầu học của hồ sơ đã nhập. Chưa có giao dịch hay doanh thu thực thu. |

@@ -1,43 +1,11 @@
 // Dữ liệu mô phỏng chuẩn hóa theo khung vị trí công việc DigComp 3.0 & Thông tư Tiêu chuẩn Việt Nam
 
-// Hướng dẫn 8 cấp độ chuẩn DigComp 3.0 theo mức độ Tự chủ, Độ phức tạp nhận thức & Đối soát Tiêu chuẩn Việt Nam
+// DigComp 3.0 uses four levels. Occupational numbers below remain legacy internal indicators.
 export const DIGCOMP_LEVEL_GUIDE = [
-  {
-    tier: "Cơ bản (Foundation)",
-    levels: "Level 1 - 2",
-    code: "F",
-    autonomy: "Có hướng dẫn trực tiếp hoặc hỗ trợ từng bước",
-    complexity: "Nhiệm vụ đơn giản, quen thuộc, thao tác lặp lại",
-    vnStandardMapping: "Tương đương Chuẩn kỹ năng sử dụng CNTT cơ bản (Thông tư 03/2014/TT-BTTTT Mô-đun 01 - 06)",
-    description: "Nhớ và hiểu các khái niệm số cơ bản, thực hiện các thao tác số có sẵn hướng dẫn."
-  },
-  {
-    tier: "Trung cấp (Intermediate)",
-    levels: "Level 3 - 4",
-    code: "I",
-    autonomy: "Độc lập, tự chủ trong phạm vi công việc được giao",
-    complexity: "Nhiệm vụ có cấu trúc, giải quyết vấn đề thường gặp theo quy trình",
-    vnStandardMapping: "Tương đương Chuẩn kỹ năng sử dụng CNTT nâng cao (Thông tư 03/2014/TT-BTTTT Mô-đun 07 - 12)",
-    description: "Tự chủ áp dụng công cụ số vào công việc hàng ngày, lựa chọn công cụ phù hợp với nhiệm vụ thông thường."
-  },
-  {
-    tier: "Nâng cao (Advanced)",
-    levels: "Level 5 - 6",
-    code: "A",
-    autonomy: "Hoàn toàn độc lập, có khả năng hướng dẫn và giám sát người khác",
-    complexity: "Nhiệm vụ phức tạp, phi cấu trúc, tối ưu hóa quy trình nghiệp vụ",
-    vnStandardMapping: "Đạt chuẩn Quản trị & Chuyển đổi số doanh nghiệp (Nghị định 13/2023/NĐ-CP & Luật Giao dịch điện tử 2023)",
-    description: "Làm chủ công nghệ số, phân tích đánh giá dữ liệu sâu, thiết kế chiến lược và dẫn dắt đội nhóm."
-  },
-  {
-    tier: "Chuyên sâu (Highly Specialized)",
-    levels: "Level 7 - 8",
-    code: "S",
-    autonomy: "Dẫn dắt chiến lược toàn doanh nghiệp / chuyên gia ngành",
-    complexity: "Đổi mới sáng tạo, phát triển giải pháp mới, định hình tiêu chuẩn công nghệ",
-    vnStandardMapping: "Chuẩn Kiến trúc sư giải pháp & Giám đốc Chuyển đổi số (Chief Digital Officer / Enterprise Architect)",
-    description: "Sáng tạo các giải pháp số đột phá, chuyển đổi số toàn diện cho tổ chức."
-  }
+  { tier: 'Cơ bản (Basic)', levels: 'Basic', code: 'F', autonomy: 'Có hỗ trợ khi cần', complexity: 'Nhiệm vụ đơn giản', vnStandardMapping: 'Giáo trình Thông tư nhóm bậc 1–2; đối chiếu đầu ra chưa được duyệt.', description: 'Thực hiện nhiệm vụ số cơ bản với hướng dẫn phù hợp.' },
+  { tier: 'Trung cấp (Intermediate)', levels: 'Intermediate', code: 'I', autonomy: 'Tự chủ', complexity: 'Nhiệm vụ và vấn đề được xác định rõ', vnStandardMapping: 'Giáo trình Thông tư nhóm bậc 3–4; đối chiếu đầu ra chưa được duyệt.', description: 'Tự lựa chọn cách thực hiện nhiệm vụ rõ ràng.' },
+  { tier: 'Nâng cao (Advanced)', levels: 'Advanced', code: 'A', autonomy: 'Tự chủ và hướng dẫn khi cần', complexity: 'Nhiều nhiệm vụ phức tạp, thay đổi bối cảnh', vnStandardMapping: 'Giáo trình Thông tư nhóm bậc 5–6; đối chiếu đầu ra chưa được duyệt.', description: 'Đánh giá và điều chỉnh giải pháp theo bối cảnh.' },
+  { tier: 'Rất nâng cao (Highly advanced)', levels: 'Highly advanced', code: 'S', autonomy: 'Dẫn dắt và hướng dẫn khi cần', complexity: 'Vấn đề rất phức tạp hoặc chuyên biệt', vnStandardMapping: 'Ngoài phạm vi đào tạo hiện tại; không tự đồng nhất với bậc 7–8.', description: 'Phát triển giải pháp mới hoặc điều chỉnh giải pháp hiện có.' },
 ];
 
 // Từ điển chuẩn năng lực số cho các vị trí công việc tiêu biểu trong doanh nghiệp (Theo Báo Cáo Ma Trận DigComp SME)
@@ -129,7 +97,7 @@ export const POSITION_REQUIREMENTS = {
   roleTitle: "Chuyên viên Tiếp thị Số (Digital Marketing Specialist)",
   department: "Phòng Marketing & Truyền thông",
   roleCode: "MKT-DIG-01",
-  framework: "European DigComp 3.0 & Thông tư 03/2014/TT-BTTTT",
+  framework: "Tham chiếu DigComp 3.0 & Thông tư 02/2025/TT-BGDĐT; benchmark nội bộ chưa được thẩm định",
   competencies: [
     {
       id: "area_1",

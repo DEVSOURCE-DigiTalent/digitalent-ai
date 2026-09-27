@@ -1,5 +1,6 @@
 import { DIGCOMP_15_COURSES } from './digcomp15Courses.js';
 import CURRICULUM_LESSONS from './curriculumLessons.json' with { type: 'json' };
+import { courseFrameworkMetadata, COURSE_LEVELS } from './frameworkRegistry.js';
 
 const outlines = [
   ['A2-F', 'Giao tiếp số cơ bản nơi công sở', '12 giờ', '', [
@@ -75,6 +76,8 @@ export const ALL_DIGCOMP_COURSES = Object.fromEntries(Object.entries(metadata).m
   });
   return [id, {
     ...course,
+    level: COURSE_LEVELS[id.slice(-1)],
+    framework: courseFrameworkMetadata(id, modules),
     modules,
     objective: course.isOutlineOnly ? textbook.introduction : course.objective,
     introduction: textbook.introduction,
