@@ -9,6 +9,7 @@ on:
     branches: [develop, main]
     paths:
       - 'backend/**'
+      - 'docker/**'
 
 jobs:
   build:
@@ -17,9 +18,9 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: digitalent
+          POSTGRES_DB: digitalent_test
           POSTGRES_USER: digitalent_app
-          POSTGRES_PASSWORD: changeme
+          POSTGRES_PASSWORD: ${{ github.run_id }}
         ports:
           - 5432:5432
         options: >-
@@ -30,6 +31,8 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    env:
+      DIGITALENT_TEST_POSTGRES_CONNECTION: Host=localhost;Port=5432;Database=digitalent_test;Username=digitalent_app;Password=${{ github.run_id }}
 
     steps:
       - uses: actions/checkout@v4
@@ -46,13 +49,17 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Test
-        run: dotnet test --no-build --configuration Release --verbosity normal
+        run: dotnet test --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=backend.trx"
 
       - name: Verify test count
         run: |
-          TEST_COUNT=$(dotnet test --no-build --configuration Release --verbosity quiet --logger "console;verbosity=minimal" 2>&1 | grep -oP 'Total tests: \K[0-9]+' || echo "0")
-          echo "Test count: $TEST_COUNT"
-          if [ "$TEST_COUNT" -eq "0" ]; then
-            echo "::error::No tests found! Backend must have real tests."
-            exit 1
-          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          from xml.etree import ElementTree
+
+          reports = list(Path('tests').rglob('backend.trx'))
+          total = sum(int(ElementTree.parse(path).getroot().find('.//{*}Counters').attrib['total']) for path in reports)
+          print(f'Test count: {total}')
+          if total == 0:
+              raise SystemExit('No tests found in backend TRX report')
+          PY

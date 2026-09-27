@@ -3,6 +3,7 @@ using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Auth;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
+using DigiTalent.Tests.Persistence;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -10,6 +11,7 @@ using Xunit;
 
 namespace DigiTalent.Tests.Auth;
 
+[Collection("PostgresIntegration")]
 public class LoginUseCaseTests
 {
     private DbContextOptions<DigiTalent.Infrastructure.Persistence.AppDbContext> GetInMemoryOptions(string dbName) =>
@@ -63,16 +65,8 @@ public class LoginUseCaseTests
     [Trait("Category", "Integration")]
     public async Task LoginRejectsWrongPassword()
     {
-        var connStr = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") 
-                      ?? "Host=localhost;Port=5432;Database=digitalent;Username=digitalent_app;Password=changeme";
-
-        var options = new DbContextOptionsBuilder<DigiTalent.Infrastructure.Persistence.AppDbContext>()
-            .UseNpgsql(connStr)
-            .UseSnakeCaseNamingConvention()
-            .Options;
-
-        using var context = new DigiTalent.Infrastructure.Persistence.AppDbContext(options);
-        if (!await context.Database.CanConnectAsync()) return;
+        using var context = PostgresTestDatabase.CreateContext();
+        await PostgresTestDatabase.MigrateAsync(context);
 
         var org = await context.Organizations.FirstOrDefaultAsync();
         var orgId = org?.Id;
@@ -147,16 +141,8 @@ public class LoginUseCaseTests
     [Trait("Category", "Integration")]
     public async Task LoginLocksAccountAfterMaxFailedAttempts()
     {
-        var connStr = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") 
-                      ?? "Host=localhost;Port=5432;Database=digitalent;Username=digitalent_app;Password=changeme";
-
-        var options = new DbContextOptionsBuilder<DigiTalent.Infrastructure.Persistence.AppDbContext>()
-            .UseNpgsql(connStr)
-            .UseSnakeCaseNamingConvention()
-            .Options;
-
-        using var context = new DigiTalent.Infrastructure.Persistence.AppDbContext(options);
-        if (!await context.Database.CanConnectAsync()) return;
+        using var context = PostgresTestDatabase.CreateContext();
+        await PostgresTestDatabase.MigrateAsync(context);
 
         var org = await context.Organizations.FirstOrDefaultAsync();
         var orgId = org?.Id;

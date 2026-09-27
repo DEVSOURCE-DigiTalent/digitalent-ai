@@ -6,6 +6,7 @@ using DigiTalent.Infrastructure;
 using DigiTalent.Infrastructure.Persistence;
 using DigiTalent.Infrastructure.Persistence.Seed;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,16 +51,24 @@ if (app.Environment.IsProduction())
     }
 
     var connectionString = app.Configuration.GetConnectionString("DefaultConnection");
-    if (string.IsNullOrWhiteSpace(connectionString) || connectionString.Contains("changeme", StringComparison.OrdinalIgnoreCase))
+    if (string.IsNullOrWhiteSpace(connectionString))
     {
-        throw new InvalidOperationException("FATAL: In Production, ConnectionStrings:DefaultConnection must not contain default password 'changeme'.");
+        throw new InvalidOperationException("FATAL: In Production, ConnectionStrings:DefaultConnection is required.");
+    }
+
+    var databasePassword = new NpgsqlConnectionStringBuilder(connectionString).Password;
+    if (string.IsNullOrWhiteSpace(databasePassword) ||
+        new[] { "changeme", "postgres", "password" }.Contains(databasePassword, StringComparer.OrdinalIgnoreCase))
+    {
+        throw new InvalidOperationException("FATAL: In Production, configure a non-default database password.");
     }
 }
 
 // Chạy migration & seed khi ở Development hoặc khi có cờ ApplyMigrations/--migrate
 var applyMigrations = app.Environment.IsDevelopment() ||
                       string.Equals(app.Configuration["ApplyMigrations"], "true", StringComparison.OrdinalIgnoreCase) ||
-                      args.Contains("--migrate");
+                      args.Contains("--migrate") ||
+                      args.Contains("--migrate-only");
 
 if (applyMigrations)
 {

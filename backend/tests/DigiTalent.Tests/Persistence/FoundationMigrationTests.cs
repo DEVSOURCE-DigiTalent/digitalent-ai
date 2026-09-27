@@ -8,6 +8,7 @@ using Xunit;
 
 namespace DigiTalent.Tests.Persistence;
 
+[Collection("PostgresIntegration")]
 public class FoundationMigrationTests
 {
     private DbContextOptions<AppDbContext> GetOptions(string dbName) =>
@@ -16,12 +17,12 @@ public class FoundationMigrationTests
             .Options;
 
     [Fact]
-    public async Task FoundationMigrationCreatesExpectedTables()
+    public async Task FoundationModelExposesExpectedDbSets()
     {
         var dbName = Guid.NewGuid().ToString();
         using var context = new AppDbContext(GetOptions(dbName));
 
-        // In-memory doesn't run migrations, but we can verify DbSets exist and are queryable
+        // In-memory only verifies the model surface; PostgreSQL_CanApplyMigrationsAndVerifySchema checks the actual schema.
         var users = await context.Users.ToListAsync();
         var roles = await context.Roles.ToListAsync();
         var departments = await context.Departments.ToListAsync();
@@ -61,32 +62,39 @@ public class FoundationMigrationTests
     [Trait("Category", "Integration")]
     public async Task PostgreSQL_CanApplyMigrationsAndVerifySchema()
     {
-        var connStr = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") 
-                      ?? "Host=localhost;Port=5432;Database=digitalent;Username=digitalent_app;Password=changeme";
-
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseNpgsql(connStr)
-            .UseSnakeCaseNamingConvention()
-            .Options;
-
-        using var context = new AppDbContext(options);
-
-        if (!await context.Database.CanConnectAsync())
-        {
-            return;
-        }
-
-        await context.Database.MigrateAsync();
+        using var context = PostgresTestDatabase.CreateContext();
+        await PostgresTestDatabase.MigrateAsync(context);
 
         var applied = await context.Database.GetAppliedMigrationsAsync();
         applied.Should().Contain("20260926060421_InitialFoundation");
 
-        var orgsCount = await context.Organizations.CountAsync();
-        var usersCount = await context.Users.CountAsync();
-        var deptCount = await context.Departments.CountAsync();
+        var expectedTables = new[]
+        {
+            "organizations", "permissions", "roles", "job_families", "users",
+            "role_permissions", "job_positions", "audit_logs", "refresh_tokens",
+            "system_settings", "user_roles", "departments", "employees"
+        };
+        foreach (var table in expectedTables)
+        {
+            var exists = await context.Database.SqlQueryRaw<bool>(
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = {0}) AS \"Value\"",
+                table).SingleAsync();
+            exists.Should().BeTrue($"table {table} must exist after the foundation migration");
+        }
 
-        orgsCount.Should().BeGreaterThanOrEqualTo(1);
-        usersCount.Should().BeGreaterThanOrEqualTo(1);
-        deptCount.Should().BeGreaterThanOrEqualTo(1);
+        var requiredColumns = new[]
+        {
+            (Table: "users", Column: "organization_id"),
+            (Table: "departments", Column: "organization_id"),
+            (Table: "job_positions", Column: "job_family_id"),
+            (Table: "employees", Column: "job_position_id")
+        };
+        foreach (var (table, column) in requiredColumns)
+        {
+            var exists = await context.Database.SqlQueryRaw<bool>(
+                "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = {0} AND column_name = {1}) AS \"Value\"",
+                table, column).SingleAsync();
+            exists.Should().BeTrue($"column {table}.{column} must exist after the foundation migration");
+        }
     }
 }
