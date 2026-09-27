@@ -6,7 +6,7 @@ import './workspaceRefresh.css';
 import './learningFlow.css';
 
 export default function LoginPage({ onLogin }) {
-  const organizations = readOrganizations();
+  const organizations = readOrganizations().filter(item => !item.ownerAccountId);
   const [mode, setMode] = useState('enterprise');
   const [organizationId, setOrganizationId] = useState(organizations[0]?.id || '');
   const [username, setUsername] = useState('');

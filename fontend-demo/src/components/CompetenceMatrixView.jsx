@@ -91,7 +91,7 @@ export default function CompetenceMatrixView({
             style={{ borderRadius: 'var(--radius-pill)', gap: '6px' }}
           >
             <BookOpen size={15} />
-            <span>Tiêu Chí 8 Cấp Độ DigComp (Tự chủ & Nhận thức)</span>
+            <span>Bốn mức thành thạo DigComp 3.0</span>
           </button>
         </div>
       </div>
@@ -236,7 +236,7 @@ export default function CompetenceMatrixView({
               Từ Điển Chuẩn Năng Lực Số Giữa Các Vị Trí Việc Làm Tiêu Biểu
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-sm)' }}>
-              Nhấp chọn một vị trí việc làm để xem hồ sơ chuẩn hóa các cấp độ DigComp 3.0 tương ứng:
+              Chọn vị trí để xem benchmark nội bộ đề xuất; cần chuyên gia xác nhận trước khi gắn mức DigComp 3.0:
             </p>
 
             {/* Role selector buttons */}
@@ -365,10 +365,10 @@ export default function CompetenceMatrixView({
       {activeTab === 'level_guide' && (
         <div className="card" style={{ padding: 'var(--spacing-xl)' }}>
           <h3 style={{ fontSize: 'var(--font-lg)', color: 'var(--text-primary)', marginBottom: '6px' }}>
-            Khung Phân Định 8 Cấp Độ Năng Lực Số (European DigComp 3.0 & Thông tư VN)
+            Bốn mức DigComp 3.0 và đối chiếu Thông tư đang đề xuất
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-sm)', marginBottom: 'var(--spacing-lg)' }}>
-            Theo DigComp 3.0 & Thông tư 03/2014/TT-BTTTT, năng lực số được xác định dựa trên 2 tiêu chí cốt lõi: <strong>Mức độ Tự chủ (Autonomy)</strong> và <strong>Độ phức tạp nhận thức của nhiệm vụ (Cognitive Task Complexity)</strong>.
+            Phần dưới diễn giải DigComp 3.0; các chỉ số 0–6 ở ma trận là benchmark nội bộ, không phải mức của khung. Việc đối chiếu cần xem xét: <strong>Mức độ Tự chủ (Autonomy)</strong> và <strong>Độ phức tạp nhận thức của nhiệm vụ (Cognitive Task Complexity)</strong>.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>

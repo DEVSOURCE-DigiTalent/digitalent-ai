@@ -42,11 +42,12 @@
 .dt-page-title { align-items: end; }
 .dt-page-title p { font-size: 13px; margin-top: 6px; }
 .dt-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 39px; padding: 9px 15px; border-radius: 9px; font-size: 12px; font-weight: 800; white-space: nowrap; }
-.dt-button.primary { background: var(--dt-blue); color: #fff; }
+.dt-button.primary { background: var(--dt-blue, var(--brand-primary)); color: #fff; }
 .dt-button.primary:hover { background: var(--brand-primary-dark); }
 .dt-button.secondary { background: var(--brand-accent-50); color: var(--brand-accent-dark); }
-.dt-button.ghost { color: var(--dt-blue); border: 1px solid var(--surface-border-strong); background: var(--surface-bg-card); }
-.dt-button.ghost:hover { border-color: var(--dt-blue); }
+.dt-button.ghost { color: var(--dt-blue, var(--brand-primary)); border: 1px solid var(--surface-border-strong); background: var(--surface-bg-card); }
+.dt-button.ghost:hover { border-color: var(--dt-blue, var(--brand-primary)); }
+.dt-button:focus-visible { outline: 3px solid var(--brand-accent-light); outline-offset: 3px; }
 .dt-button.wide { width: 100%; }
 .dt-metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 13px; }
 .dt-metric, .dt-panel, .dt-milestone, .dt-course-card { background: var(--surface-bg-card); border: 1px solid var(--surface-border); border-radius: 16px; box-shadow: var(--shadow-sm); }
