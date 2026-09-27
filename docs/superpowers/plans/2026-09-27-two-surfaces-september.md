@@ -52,11 +52,12 @@ Các agent cùng dùng một working tree: **không tự stage/commit, không s�
 **Owner:** Coordinator.
 **Files:** `docs/specs/2026-09-27-two-surfaces-september-plan.md`, file plan này.
 **Interface:** Plan này là hợp đồng ownership và acceptance cho các agent.
+**Commit:** `b4bab4c` (`docs: plan two-surface September foundation`)
 
-- [ ] Xác nhận `git branch --show-current` là `codex/two-surfaces-september`; ghi `git status --short` và tách thay đổi có sẵn khỏi file mới.
-- [ ] Đọc lại spec và plan, xác nhận không có task P0 nào ngầm yêu cầu Course/Assessment production.
-- [ ] Stage chính xác hai file Markdown trên; kiểm tra `git diff --cached --check -- <hai đường dẫn>` và `git diff --cached --stat -- <hai đường dẫn>`.
-- [ ] Commit bằng `git commit --only -m "docs: plan two-surface September foundation" -- <hai đường dẫn>` để giữ nguyên các file đã staged từ trước. Không push.
+- [x] Xác nhận `git branch --show-current` là `codex/two-surfaces-september`; ghi `git status --short` và tách thay đổi có sẵn khỏi file mới.
+- [x] Đọc lại spec và plan, xác nhận không có task P0 nào ngầm yêu cầu Course/Assessment production.
+- [x] Stage chính xác hai file Markdown trên; kiểm tra `git diff --cached --check -- <hai đường dẫn>` và `git diff --cached --stat -- <hai đường dẫn>`.
+- [x] Commit bằng `git commit --only -m "docs: plan two-surface September foundation" -- <hai đường dẫn>` để giữ nguyên các file đã staged từ trước. Không push.
 
 ## Task 1: Baseline database và test backend thật
 
@@ -64,12 +65,13 @@ Các agent cùng dùng một working tree: **không tự stage/commit, không s�
 **Files:** `backend/DigiTalent.sln`; tạo `backend/tests/DigiTalent.Tests/DigiTalent.Tests.csproj`, `backend/tests/DigiTalent.Tests/Auth/LoginUseCaseTests.cs`, `backend/tests/DigiTalent.Tests/Organization/DepartmentScopeTests.cs`, `backend/tests/DigiTalent.Tests/Persistence/FoundationMigrationTests.cs`; chỉ sửa `backend/src/DigiTalent.Infrastructure/Persistence/Migrations/**` và `Seed/DbSeeder.cs` khi kiểm chứng nêu lỗi cụ thể.
 **Consumes:** `IUseCase<,>`, `IApplicationDbContext`, `ICurrentUser`, `AppDbContext`, seed dev hiện có.
 **Produces:** test project có trong solution, migration chain foundation đã kiểm tra trên PostgreSQL dùng một lần, kết quả seed idempotent.
+**Commit:** `19fbb05` (`test: verify auth scope and foundation migration`)
 
-- [ ] Viết test `LoginRejectsInactiveAccount`, `DepartmentListExcludesOtherOrganization`, `FoundationMigrationCreatesExpectedTables`, `SeedTwiceDoesNotDuplicateRolesOrUsers`; assertions lần lượt là 403/401 phù hợp, chỉ thấy org của người gọi, các bảng nền có mặt, số role/user không tăng sau seed lại. Trên bản sao DB cũ dùng một lần, chạy thử đường upgrade; nếu chưa hỗ trợ, ghi rõ bước chuyển đổi thủ công và chặn deploy tự động lên DB cũ.
-- [ ] Chạy test và ghi lý do FAIL trước khi sửa mã; nếu môi trường không có PostgreSQL, tách unit test chạy ngay và để integration test chạy qua CI PostgreSQL service, không đổi test thành mock chỉ để xanh.
-- [ ] Bổ sung test project vào solution, sửa đúng lỗi migration/seed tìm được; không xóa database người dùng hoặc tự viết lại migration đã áp dụng ở môi trường khác.
-- [ ] Chạy `dotnet build backend/DigiTalent.sln --configuration Release` và `dotnet test backend/DigiTalent.sln --configuration Release --no-build --verbosity normal`; xác nhận test count > 0 và mọi test có thể chạy trong môi trường hiện tại đều PASS.
-- [ ] Báo coordinator diff/test evidence để commit `test: verify auth scope and foundation migration` hoặc `fix: stabilize foundation migration` theo nội dung thực tế.
+- [x] Viết test `LoginRejectsInactiveAccount`, `DepartmentListExcludesOtherOrganization`, `FoundationMigrationCreatesExpectedTables`, `SeedTwiceDoesNotDuplicateRolesOrUsers`; assertions lần lượt là 403/401 phù hợp, chỉ thấy org của người gọi, các bảng nền có mặt, số role/user không tăng sau seed lại. Trên bản sao DB cũ dùng một lần, chạy thử đường upgrade; nếu chưa hỗ trợ, ghi rõ bước chuyển đổi thủ công và chặn deploy tự động lên DB cũ.
+- [x] Chạy test và ghi lý do FAIL trước khi sửa mã; nếu môi trường không có PostgreSQL, tách unit test chạy ngay và để integration test chạy qua CI PostgreSQL service, không đổi test thành mock chỉ để xanh.
+- [x] Bổ sung test project vào solution, sửa đúng lỗi migration/seed tìm được; không xóa database người dùng hoặc tự viết lại migration đã áp dụng ở môi trường khác.
+- [x] Chạy `dotnet build backend/DigiTalent.sln --configuration Release` và `dotnet test backend/DigiTalent.sln --configuration Release --no-build --verbosity normal`; xác nhận test count > 0 và mọi test có thể chạy trong môi trường hiện tại đều PASS.
+- [x] Báo coordinator diff/test evidence để commit `test: verify auth scope and foundation migration` hoặc `fix: stabilize foundation migration` theo nội dung thực tế.
 
 ## Task 2: Đồng bộ auth contract và phiên frontend
 
@@ -77,12 +79,13 @@ Các agent cùng dùng một working tree: **không tự stage/commit, không s�
 **Files:** `frontend/src/features/auth/pages/LoginPage.tsx`, `frontend/src/services/auth.service.ts`, `frontend/src/services/api-client.ts`, `frontend/src/hooks/use-auth.ts`, `frontend/src/hooks/use-current-user.ts`, `frontend/src/types/auth.ts`, `frontend/package.json`, `frontend/package-lock.json`; test auth mới cùng thư mục feature; cập nhật test setup frontend chỉ trong lane B.
 **Consumes:** backend hiện trả `{ accessToken, expiresAt }` từ `POST /api/v1/auth/login`, và `/auth/me` trả user/roles/permissions.
 **Produces:** `useLogin()` và login page dùng cùng DTO, token/session thống nhất; giao diện không hứa refresh/Google/password reset chưa có.
+**Commit:** `a4a331b` (`fix: align frontend auth with current API`)
 
-- [ ] Viết test `LoginStoresOnlyReturnedAccessToken` (không có key refresh), `ExpiredSessionRedirectsToLoginOnce`, `LoginRedirectRespectsSafeInternalReturnTo` (chặn URL ngoài origin); nếu cần harness, thêm Vitest/Testing Library vào `frontend/package.json` và lockfile trong lane B.
-- [ ] Chạy test tương ứng để thấy FAIL vì FE hiện đọc `refreshToken` hoặc chưa xử lý return path.
-- [ ] Bỏ trường/ghi `refreshToken` giả; đưa login page và hook về một luồng service duy nhất; xử lý 401 và logout thống nhất, hiển thị rõ các action đăng nhập chưa được hỗ trợ.
-- [ ] Chạy `npm run lint`, `npm run build` và test FE mới trong `frontend/`; ghi rõ warning còn lại. Không yêu cầu backend refresh được viết chỉ để khớp UI.
-- [ ] Báo coordinator để commit `fix: align frontend auth with current API`.
+- [x] Viết test `LoginStoresOnlyReturnedAccessToken` (không có key refresh), `ExpiredSessionRedirectsToLoginOnce`, `LoginRedirectRespectsSafeInternalReturnTo` (chặn URL ngoài origin); nếu cần harness, thêm Vitest/Testing Library vào `frontend/package.json` và lockfile trong lane B.
+- [x] Chạy test tương ứng để thấy FAIL vì FE hiện đọc `refreshToken` hoặc chưa xử lý return path.
+- [x] Bỏ trường/ghi `refreshToken` giả; đưa login page và hook về một luồng service duy nhất; xử lý 401 và logout thống nhất, hiển thị rõ các action đăng nhập chưa được hỗ trợ.
+- [x] Chạy `npm run lint`, `npm run build` và test FE mới trong `frontend/`; ghi rõ warning còn lại. Không yêu cầu backend refresh được viết chỉ để khớp UI.
+- [x] Báo coordinator để commit `fix: align frontend auth with current API`.
 
 ## Task 3: Department UI chạy bằng API thật
 
@@ -90,12 +93,13 @@ Các agent cùng dùng một working tree: **không tự stage/commit, không s�
 **Files:** `frontend/src/features/organization/pages/DepartmentListPage.tsx`; tạo component con/test dưới `frontend/src/features/organization/`; chỉ sửa `use-departments.ts` và `department.service.ts` khi DTO hiện tại lệch backend.
 **Consumes:** `departmentService` và hooks hiện có; auth/session từ Task 2.
 **Produces:** list/search/status/pagination và create/edit/archive từ UI, cache invalidation đúng.
+**Commit:** `a382ea4` (`feat: connect department management UI`)
 
-- [ ] Viết test `DepartmentPageShowsServerRowsAndEmptyState`, `CreateDepartmentShowsValidationAndRefreshesList`, `ArchiveDepartmentRequiresConfirmation`, `ReadOnlyUserCannotEdit`; mock API boundary, không mirror JSX.
-- [ ] Chạy test để thấy FAIL do trang hiện là placeholder.
-- [ ] Dùng DataTable/EmptyState/ConfirmActionDialog hiện có và hook Department để viết list/form; quyền nút theo `department.read`/`department.create_update`; phân biệt archive với xóa cứng.
-- [ ] Chạy test, `npm run lint`, `npm run build`; sau đó thử bằng hai role với backend thật khi Task 1/2 sẵn sàng.
-- [ ] Báo coordinator để commit `feat: connect department management UI`.
+- [x] Viết test `DepartmentPageShowsServerRowsAndEmptyState`, `CreateDepartmentShowsValidationAndRefreshesList`, `ArchiveDepartmentRequiresConfirmation`, `ReadOnlyUserCannotEdit`; mock API boundary, không mirror JSX.
+- [x] Chạy test để thấy FAIL do trang hiện là placeholder.
+- [x] Dùng DataTable/EmptyState/ConfirmActionDialog hiện có và hook Department để viết list/form; quyền nút theo `department.read`/`department.create_update`; phân biệt archive với xóa cứng.
+- [x] Chạy test, `npm run lint`, `npm run build`; sau đó thử bằng hai role với backend thật khi Task 1/2 sẵn sàng.
+- [x] Báo coordinator để commit `feat: connect department management UI`.
 
 ## Task 4: Route và layout hai giao diện
 
@@ -103,12 +107,13 @@ Các agent cùng dùng một working tree: **không tự stage/commit, không s�
 **Files:** `frontend/src/app/router.tsx`; tạo `frontend/src/app/routes/{public,learner,enterprise}.routes.tsx`, `frontend/src/app/layouts/{Public,Learner,Enterprise}Layout.tsx`, `frontend/src/features/public/landing/**`, `frontend/src/features/learner/shell/**` và test route; có thể dùng `MainLayout` hiện có bên trong EnterpriseLayout.
 **Consumes:** `AuthGuard`, `RequirePermission`, `getDefaultPath`, auth session Task 2; không sửa internals các file đó.
 **Produces:** `/`, `/careers`, `/verify`, `/learn/*`, `/enterprise/*` có layout đúng; route cũ redirect có kiểm soát.
+**Commit:** `91d10e9` (`feat: separate enterprise and learner routes`)
 
-- [ ] Viết test `AnonymousCanOpenLandingAndVerifyRoute`, `AnonymousCannotOpenEnterpriseRoute`, `EmployeeCanReachLearnerShell`, `LegacyDepartmentPathRedirectsToEnterprisePath`; kiểm tra CSS/layout trên desktop và mobile.
-- [ ] Chạy test để thấy FAIL vì `/verify` đang dưới guard và route hai bề mặt chưa tồn tại.
-- [ ] Tách route tree; public page trình bày chức năng thực có, không hiển thị khóa học/tiến độ giả như dữ liệu production; learner shell có navigation độc lập, trạng thái chưa có API được ghi rõ.
-- [ ] Chạy test, `npm run lint`, `npm run build`; xác nhận CSS của learner không đổi sidebar/dashboard enterprise.
-- [ ] Báo coordinator để commit `feat: separate enterprise and learner routes`.
+- [x] Viết test `AnonymousCanOpenLandingAndVerifyRoute`, `AnonymousCannotOpenEnterpriseRoute`, `EmployeeCanReachLearnerShell`, `LegacyDepartmentPathRedirectsToEnterprisePath`; kiểm tra CSS/layout trên desktop và mobile.
+- [x] Chạy test để thấy FAIL vì `/verify` đang dưới guard và route hai bề mặt chưa tồn tại.
+- [x] Tách route tree; public page trình bày chức năng thực có, không hiển thị khóa học/tiến độ giả như dữ liệu production; learner shell có navigation độc lập, trạng thái chưa có API được ghi rõ.
+- [x] Chạy test, `npm run lint`, `npm run build`; xác nhận CSS của learner không đổi sidebar/dashboard enterprise.
+- [x] Báo coordinator để commit `feat: separate enterprise and learner routes`.
 
 ## Task 5: CI, cấu hình API và deploy sạch
 
@@ -116,12 +121,13 @@ Các agent cùng dùng một working tree: **không tự stage/commit, không s�
 **Files:** `.github/workflows/backend-ci.yml`, `.github/workflows/frontend-ci.yml`, `docker/docker-compose.yml`, `docker/nginx/conf.d/default.conf`, `.env.example`, `frontend/.env.example`; tạo script migration riêng nếu cần.
 **Consumes:** test backend Task 1, test FE Task 2/3/4, một frontend build `frontend/dist`.
 **Produces:** CI kích hoạt đúng đường dẫn, không xanh khi test count bằng 0, DB production/test có bước migrate trước API, API base URL thống nhất.
+**Commit:** `e601b96` (`ci: gate backend tests and deployment configuration`)
 
-- [ ] Viết/điều chỉnh CI check cho `docker/**` và test project; kiểm tra cấu hình khi thay `docker/docker-compose.yml` sẽ kích hoạt backend/deploy gate. Chạy `docker compose config` nếu host có Docker; nếu không, để CI chạy kiểm tra này và báo giới hạn local.
-- [ ] Kiểm tra FAIL hiện tại: root `.env.example` trỏ `/api` trong khi FE cần `/api/v1`; backend CI theo dõi root `docker-compose.yml` sai chỗ; `dotnet test` không có test source.
-- [ ] Sửa env example, path filters; chọn bước migration rõ ràng trước API trong compose/deploy. Không dùng fallback mật khẩu/JWT key ở Production, giữ dev setup thuận tiện nhưng tách môi trường.
-- [ ] Chạy YAML/compose validation khả dụng, backend/FE build và CI test commands; xác nhận fresh DB path trên runner hoặc disposable DB.
-- [ ] Báo coordinator để commit `ci: gate backend tests and deployment configuration`.
+- [x] Viết/điều chỉnh CI check cho `docker/**` và test project; kiểm tra cấu hình khi thay `docker/docker-compose.yml` sẽ kích hoạt backend/deploy gate. Chạy `docker compose config` nếu host có Docker; nếu không, để CI chạy kiểm tra này và báo giới hạn local.
+- [x] Kiểm tra FAIL hiện tại: root `.env.example` trỏ `/api` trong khi FE cần `/api/v1`; backend CI theo dõi root `docker-compose.yml` sai chỗ; `dotnet test` không có test source.
+- [x] Sửa env example, path filters; chọn bước migration rõ ràng trước API trong compose/deploy. Không dùng fallback mật khẩu/JWT key ở Production, giữ dev setup thuận tiện nhưng tách môi trường.
+- [x] Chạy YAML/compose validation khả dụng, backend/FE build và CI test commands; xác nhận fresh DB path trên runner hoặc disposable DB.
+- [x] Báo coordinator để commit `ci: gate backend tests and deployment configuration`.
 
 ## Task 6: Smoke test xuyên suốt và chốt tháng 9
 
@@ -129,11 +135,12 @@ Các agent cùng dùng một working tree: **không tự stage/commit, không s�
 **Files:** test E2E/smoke mới trong `frontend/e2e/**` hoặc `backend/tests/**` theo harness thực có; không sửa production code lane khác; cập nhật trạng thái task trong plan này chỉ sau khi có bằng chứng.
 **Consumes:** Tasks 1–5.
 **Produces:** test report trên DB dùng một lần và danh sách bug/go-no-go tháng 9.
+**Commit:** `22cf3c3` (`test: cover September foundation flow`)
 
-- [ ] Viết đường đi E2E: anonymous vào `/`, `/verify`; HR login → Department list/create/archive; employee không được tạo Department; reload vẫn giữ phiên đúng; API trực tiếp khác tenant bị chặn.
-- [ ] Chạy trước khi sửa lỗi để ghi failure thật, gán về đúng lane; không xóa test khi thất bại.
-- [ ] Chạy lại sau fix: backend test count > 0, frontend test/lint/build PASS, migration/seed trên DB mới PASS, E2E PASS. Nếu host không có Docker/PostgreSQL/browser, ghi gate chưa xác minh và để CI/test environment chạy; không tuyên bố pass dựa trên build.
-- [ ] Coordinator rà `git diff`, chỉ stage file test/fix thuộc task, commit `test: cover September foundation flow` và cập nhật checkpoint tháng 9. Không push.
+- [x] Viết đường đi E2E: anonymous vào `/`, `/verify`; HR login → Department list/create/archive; employee không được tạo Department; reload vẫn giữ phiên đúng; API trực tiếp khác tenant bị chặn.
+- [x] Chạy trước khi sửa lỗi để ghi failure thật, gán về đúng lane; không xóa test khi thất bại.
+- [x] Chạy lại sau fix: backend test count > 0, frontend test/lint/build PASS, migration/seed trên DB mới PASS, E2E PASS. Nếu host không có Docker/PostgreSQL/browser, ghi gate chưa xác minh và để CI/test environment chạy; không tuyên bố pass dựa trên build.
+- [x] Coordinator rà `git diff`, chỉ stage file test/fix thuộc task, commit `test: cover September foundation flow` và cập nhật checkpoint tháng 9. Không push.
 
 ## Task 7: Job Architecture vertical slice (P1, chỉ sau P0)
 
@@ -142,11 +149,14 @@ Các agent cùng dùng một working tree: **không tự stage/commit, không s�
 **Files FE:** `frontend/src/features/enterprise/organization/JobPosition*` hoặc page vị trí hiện có, service/hook riêng; không đụng route cho tới khi lane D bàn giao.
 **Consumes:** foundation migration, auth, permission và route tree Tasks 1/2/4.
 **Produces:** JobFamily/JobPosition CRUD + archive có org scope và UI thật; là tiền đề cho requirement/learning.
+**Commits:**
+- Backend: `ce10992` (`feat: manage job architecture`)
+- Frontend: `8d25b1d` (`feat: connect job position UI`)
 
-- [ ] Viết test backend cho trùng mã trong một org, cùng mã ở hai org, archive vị trí đang được dùng, role thiếu quyền, và FE test list/form/empty/error.
-- [ ] Chạy test để thấy FAIL do controller/use case/UI chưa có.
-- [ ] Triển khai BE trước, chốt DTO; FE dùng service/type khớp contract, không đọc entity trực tiếp. Giới hạn role và org tại backend.
-- [ ] Chạy unit/integration, FE test/lint/build và smoke hai org; coordinator commit BE `feat: manage job architecture` rồi FE `feat: connect job position UI` riêng. Không push.
+- [x] Viết test backend cho trùng mã trong một org, cùng mã ở hai org, archive vị trí đang được dùng, role thiếu quyền, và FE test list/form/empty/error.
+- [x] Chạy test để thấy FAIL do controller/use case/UI chưa có.
+- [x] Triển khai BE trước, chốt DTO; FE dùng service/type khớp contract, không đọc entity trực tiếp. Giới hạn role và org tại backend.
+- [x] Chạy unit/integration, FE test/lint/build và smoke hai org; coordinator commit BE `feat: manage job architecture` rồi FE `feat: connect job position UI` riêng. Không push.
 
 ## Task 8: Hợp đồng người học tự do và catalog công khai (P1, chỉ sau P0)
 
@@ -154,11 +164,14 @@ Các agent cùng dùng một working tree: **không tự stage/commit, không s�
 **Files:** tạo `docs/specs/learner-identity-catalog-contract.md` với request/response, quyền, dữ liệu mẫu và migration proposal; tạo contract tests trong `backend/tests/DigiTalent.Tests/Learning/PublicCatalogContractTests.cs` khi endpoint bắt đầu được triển khai. Chưa sửa `AppDbContext` hoặc migration trước khi quyết định ở spec §7 được chốt.
 **Consumes:** route `/careers`, `/learn/*` của Task 4; current `User`/`Employee`/`JobPosition` và endpoint auth.
 **Produces:** contract đã review cho người học không có org, `LearnerProfile`, `CareerRoleTemplate`, course visibility và lựa chọn target; là đầu vào cho migration và API thật sau mốc foundation.
+**Commits:**
+- Contract: `32ecec1` (`docs: define public learner API contract`)
+- Product Decisions: `8244a56` (`docs: finalize public learner product decisions`)
 
-- [ ] Viết ví dụ contract cho anonymous đọc catalog publish, learner không có org lưu target, nhân viên chọn target cá nhân, và request đọc course private khác tenant bị 403/404.
-- [ ] Review các trường bắt buộc và trạng thái; xác nhận tên/kiểu dữ liệu FE và BE, điều kiện publish và giới hạn owner.
-- [ ] Đưa quyết định còn mở về signup, mapping org position và course ownership cho chủ sản phẩm; giữ task `blocked-by-decision` nếu chưa chốt, không đoán bằng code.
-- [ ] Coordinator commit contract riêng `docs: define public learner API contract` sau review; không push.
+- [x] Viết ví dụ contract cho anonymous đọc catalog publish, learner không có org lưu target, nhân viên chọn target cá nhân, và request đọc course private khác tenant bị 403/404.
+- [x] Review các trường bắt buộc và trạng thái; xác nhận tên/kiểu dữ liệu FE và BE, điều kiện publish và giới hạn owner.
+- [x] Đưa quyết định còn mở về signup, mapping org position và course ownership cho chủ sản phẩm; giữ task `blocked-by-decision` nếu chưa chốt, không đoán bằng code.
+- [x] Coordinator commit contract riêng `docs: define public learner API contract` sau review; không push.
 
 ## Deferred sau 30/09, không dispatch cùng P0
 

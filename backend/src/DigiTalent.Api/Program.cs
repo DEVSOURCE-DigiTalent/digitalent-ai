@@ -35,13 +35,43 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Development: tự tạo/cập nhật database và nạp tài khoản mẫu. Production KHÔNG tự migrate.
-if (app.Environment.IsDevelopment())
+// ──────────────────────────────────────────────
+// Khóa cấu hình production: Không cho phép khởi động nếu dùng secret/credential mặc định
+// ──────────────────────────────────────────────
+if (app.Environment.IsProduction())
+{
+    var signingKey = app.Configuration["Jwt:SigningKey"];
+    if (string.IsNullOrWhiteSpace(signingKey) ||
+        signingKey.Contains("ChangeThis", StringComparison.OrdinalIgnoreCase) ||
+        signingKey.Contains("DevOnly", StringComparison.OrdinalIgnoreCase) ||
+        signingKey.Length < 32)
+    {
+        throw new InvalidOperationException("FATAL: In Production, Jwt:SigningKey must be securely configured via environment variable and must not use development default values.");
+    }
+
+    var connectionString = app.Configuration.GetConnectionString("DefaultConnection");
+    if (string.IsNullOrWhiteSpace(connectionString) || connectionString.Contains("changeme", StringComparison.OrdinalIgnoreCase))
+    {
+        throw new InvalidOperationException("FATAL: In Production, ConnectionStrings:DefaultConnection must not contain default password 'changeme'.");
+    }
+}
+
+// Chạy migration & seed khi ở Development hoặc khi có cờ ApplyMigrations/--migrate
+var applyMigrations = app.Environment.IsDevelopment() ||
+                      string.Equals(app.Configuration["ApplyMigrations"], "true", StringComparison.OrdinalIgnoreCase) ||
+                      args.Contains("--migrate");
+
+if (applyMigrations)
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
     await DbSeeder.SeedAsync(db, scope.ServiceProvider.GetRequiredService<IPasswordHasher>());
+}
+
+if (args.Contains("--migrate-only"))
+{
+    return;
 }
 
 // ──────────────────────────────────────────────

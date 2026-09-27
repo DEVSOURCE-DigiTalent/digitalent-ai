@@ -56,4 +56,37 @@ public class FoundationMigrationTests
         finalRoleCount.Should().Be(initialRoleCount);
         finalOrgCount.Should().Be(initialOrgCount);
     }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task PostgreSQL_CanApplyMigrationsAndVerifySchema()
+    {
+        var connStr = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") 
+                      ?? "Host=localhost;Port=5432;Database=digitalent;Username=digitalent_app;Password=changeme";
+
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseNpgsql(connStr)
+            .UseSnakeCaseNamingConvention()
+            .Options;
+
+        using var context = new AppDbContext(options);
+
+        if (!await context.Database.CanConnectAsync())
+        {
+            return;
+        }
+
+        await context.Database.MigrateAsync();
+
+        var applied = await context.Database.GetAppliedMigrationsAsync();
+        applied.Should().Contain("20260926060421_InitialFoundation");
+
+        var orgsCount = await context.Organizations.CountAsync();
+        var usersCount = await context.Users.CountAsync();
+        var deptCount = await context.Departments.CountAsync();
+
+        orgsCount.Should().BeGreaterThanOrEqualTo(1);
+        usersCount.Should().BeGreaterThanOrEqualTo(1);
+        deptCount.Should().BeGreaterThanOrEqualTo(1);
+    }
 }

@@ -9,7 +9,7 @@ Nền tảng đào tạo, đánh giá năng lực số và cấp chứng chỉ n
 | Backend | ASP.NET Core 8 (.NET 8) / C#, Clean Architecture + **use-case pattern** |
 | Frontend | React 19 + TypeScript + Vite 8 + TailwindCSS 4 + shadcn/ui |
 | Database | PostgreSQL 16 (EF Core 8 + Npgsql, snake_case naming) |
-| Auth | JWT access token (8h, **no refresh token yet**), RBAC permissions in code |
+| Auth | JWT access token (8h; `refresh_tokens` table exists, refresh flow not built yet), lock-out 5 fails → 15 min, RBAC stored in DB tables |
 | Validation | FluentValidation (auto-run by a use-case decorator) |
 | API docs | Swagger / OpenAPI (Development only) |
 | CI/CD | GitHub Actions (`.github/workflows/backend-ci.yml`, `frontend-ci.yml`) |
@@ -25,6 +25,7 @@ frontend/    React + TypeScript + Vite SPA (npm)
 infra/       Docker & Nginx deployment assets
 docker/      docker-compose.yml (postgres, minio, redis[optional], nginx, backend-api)
 docs/        Project documentation (BRD, SRS, ERD, RBAC, coding conventions…)
+  database/  DigiTalent_AI_Canonical_v2_3.sql — THE schema source of truth (59 tables, phase-tagged)
 docs_v2/     Revised doc set (v2) — newer than docs/
 scripts/     setup.ps1 (local dev prerequisites check)
 ```
@@ -37,20 +38,24 @@ Dependency direction: `Api → Application → Domain` and `Api → Infrastructu
 
 | Project | Purpose | Constraints |
 |---------|---------|-------------|
-| `DigiTalent.Domain` | `BaseEntity`, entities (`User`, `Department`), `Roles`, `Permissions`, `RolePermissions` | No dependencies |
-| `DigiTalent.Application` | Use cases (Input/Output/Validator), `IUseCase<,>`, interfaces, `PagedList`, exceptions | No `HttpContext`, no `[Authorize]` |
+| `DigiTalent.Domain` | `BaseEntity`, Phase 1 entities (Organization, User, Role, Permission, UserRole, RolePermission, RefreshToken, Department, JobFamily, JobPosition, Employee, AuditLog, SystemSetting), `Statuses`, `LoginPolicy`, `Roles`, `Permissions`, `RolePermissions` | No dependencies |
+| `DigiTalent.Application` | Use cases (Input/Output/Validator), `IUseCase<,>`, interfaces, `IPermissionService`, `PagedList`, exceptions | No `HttpContext`, no `[Authorize]` |
 | `DigiTalent.Infrastructure` | `AppDbContext`, EF configurations, migrations, `DbSeeder`, JWT, BCrypt | Implements Application interfaces |
 | `DigiTalent.Api` | Controllers, `HasPermission` filter, `CurrentUser`, `ApiResponse`, exception middleware, `Program.cs` | No business logic |
 
 **Mandatory pattern:** `Controller → IUseCase<TIn,TOut> → IApplicationDbContext`. Controllers live in `Api/Controllers/` (route `api/v1/<module>`). One use case = one folder `Application/UseCases/<Module>/<Feature>/` with `XxxUseCase`, `XxxUseCaseInput`, `XxxUseCaseOutput`, `XxxUseCaseValidator` (optional). Use cases, validators are auto-registered (Scrutor) and auto-validated — no DI edits.
 
 **Conventions:**
-- Every action except login carries `[HasPermission(Permissions.X)]`. Permissions: `Domain/Constants/Authorization/Permissions.cs`; which role gets what: `RolePermissions.cs` (SYSTEM_ADMIN has all). Currently only 3 keys exist — add keys per module as it is built, and mirror them in `frontend/src/hooks/use-permission.ts`.
-- Responses are `ApiResponse<T>` (`{success, message, data, errors[{field,message}]}`). Use cases **throw** `NotFoundException`(404) / `ConflictException`(409) / `BadRequestException`(400) / `ForbiddenException`(403); `ExceptionHandlingMiddleware` maps them; validation failures → 400.
+- **Schema first:** `docs/database/DigiTalent_AI_Canonical_v2_3.sql` is the single source of truth. Entities/configurations must match its tables, columns, CHECKs and indexes; change the SQL first, then code, then Report 4 / docs. Only Phase 1 tables are implemented in code so far.
+- 5 roles only (SYSTEM_ADMIN, HR_MANAGER, DEPARTMENT_MANAGER, TRAINER, EMPLOYEE); public `/verify` needs no role. Roles/permissions live in tables `roles`, `user_roles`, `permissions`, `role_permissions`; `[HasPermission]` checks them at runtime via `IPermissionService` (SYSTEM_ADMIN always passes).
+- Every action except login carries `[HasPermission(Permissions.X)]`. Add keys to `Domain/Constants/Authorization/Permissions.cs` and the default matrix `RolePermissions.cs` (seed only — `DbSeeder` inserts missing permissions/pairs on Development start), and mirror them in `frontend/src/hooks/use-permission.ts`. Currently only 3 keys exist.
+- Status strings come from `Domain/Constants/Statuses.cs` (match SQL CHECKs). No hard delete of business data: "delete" endpoints archive (`Archive<Entity>` use case, `Status = ARCHIVED`).
+- Queries are scoped to the caller's organization (`ICurrentUser.OrganizationId`, JWT claim `org`).
+- Responses are `ApiResponse<T>` (`{success, message, data, errors[{field,message}]}`). Use cases **throw** `NotFoundException`(404) / `ConflictException`(409) / `BadRequestException`(400) / `UnauthorizedException`(401, bad login) / `ForbiddenException`(403); `ExceptionHandlingMiddleware` maps them; validation failures → 400.
 - Pagination: input `PageIndex` (1-based), `PageSize` (≤100), `Search`; output `PagedList` (`items, pageIndex, pageSize, totalItems, totalPages`).
-- New entity → entity in `Domain/Entities`, `<Entity>Configuration` in `Infrastructure/Persistence/Configurations/<Module>/`, **add `DbSet` to both `AppDbContext` and `IApplicationDbContext`**, then a new migration (never edit a pushed migration). `CreatedAt/UpdatedAt` are filled by `SaveChangesAsync`.
+- New entity → entity in `Domain/Entities`, `<Entity>Configuration` in `Infrastructure/Persistence/Configurations/<Module>/`, **add `DbSet` to both `AppDbContext` and `IApplicationDbContext`**, then a new migration (never edit a pushed migration). `CreatedAt/UpdatedAt` (both NOT NULL) are filled by `SaveChangesAsync`; composite-key join tables do not inherit `BaseEntity`. FKs are always `Restrict` (set globally in `AppDbContext`).
 - Use cases depend on `IApplicationDbContext` (interface), never `AppDbContext`. Project to output DTOs, never return entities.
-- Sensitive-action audit logging is planned but **not implemented** (no `AuditLogService` yet).
+- `audit_logs` table exists, but sensitive-action audit logging is **not implemented** yet (no `AuditLogService`).
 
 **Commands:**
 ```bash
@@ -59,7 +64,7 @@ dotnet restore && dotnet build
 dotnet run --project src/DigiTalent.Api            # Swagger at http://localhost:5000/swagger
 dotnet ef migrations add <Name> --project src/DigiTalent.Infrastructure --startup-project src/DigiTalent.Api --output-dir Persistence/Migrations
 ```
-Development startup auto-runs migrations and seeds 6 accounts (one per role): `admin@ / hr@ / manager@ / trainer@ / employee@ / verifier@digitalent.ai`, password `Admin@1234`. Production never auto-migrates. If only a newer .NET runtime is installed, prefix `dotnet ef`/`dotnet run` with `DOTNET_ROLL_FORWARD=Major`.
+Development startup auto-runs migrations (single baseline `InitialFoundation`) and seeds: org `DIGITALENT`, 5 roles, permissions + default matrix, department `OPS`, and 5 accounts `admin@ / hr@ / manager@ / trainer@ / employee@digitalent.ai` (password `Admin@1234`; all but admin have an `employees` profile, manager@ heads OPS). Production never auto-migrates. If only a newer .NET runtime is installed, prefix `dotnet ef`/`dotnet run` with `DOTNET_ROLL_FORWARD=Major`.
 
 ## Frontend — React SPA
 

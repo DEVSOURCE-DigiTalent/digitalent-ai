@@ -86,11 +86,15 @@ services:
           echo 'ERROR: Default passwords/keys are not allowed in Production!'
           exit 1
         fi
+      if [ "$$APPLY_MIGRATIONS" = "true" ] || [ "$$AUTO_MIGRATE" = "true" ]; then
+        echo "Applying database migrations and seeding foundation data..."
+        dotnet DigiTalent.Api.dll --migrate-only
       fi
-      echo 'NOTE: Migrations must be run manually via: dotnet ef database update'
+      echo "Starting DigiTalent API..."
       dotnet DigiTalent.Api.dll
       "
     environment:
+      APPLY_MIGRATIONS: ${APPLY_MIGRATIONS:-true}
       # DO NOT USE DEFAULT PASSWORDS IN PRODUCTION
       RAW_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
       RAW_JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-YourSuperSecretKeyThatIsAtLeast64CharactersLong!}

@@ -20,10 +20,10 @@ Thiết lập hợp đồng giao tiếp (API contract) cho trải nghiệm ngư�
 
 ## 2. Mô hình Định danh (Identity Architecture)
 
-### 2.1. Đề xuất bảng `learner_profiles`
+### 2.1. Cấu trúc bảng `learner_profiles` (Đã phê duyệt)
 
 ```sql
--- DRAFT PROPOSAL - CHƯA ÁP DỤNG MIGRATION CHO ĐẾN KHI PRODUCT OWNER CHỐT
+-- ĐÃ PHÊ DUYỆT (2026-09-27) THEO QUYẾT ĐỊNH D-01 .. D-04 - SẴN SÀNG CHO MIGRATION SPRINT TIẾP THEO
 CREATE TABLE learner_profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
@@ -52,7 +52,7 @@ CREATE TABLE learner_profiles (
 
 ### 3.1. Danh mục Vị trí Nghề nghiệp Công khai (Public Career Roles)
 
-- **Endpoint:** `GET /api/v1/public/careers`
+- **Endpoint:** `GET /api/v1/public/career-roles`
 - **Xác thực:** Không bắt buộc (Anonymous)
 - **Response:**
 ```json
@@ -116,14 +116,14 @@ CREATE TABLE learner_profiles (
 }
 ```
 
-### 3.3. Lưu Vị trí Mục tiêu Cá nhân (Save Target Career Role)
+### 3.3. Quản lý Vị trí Mục tiêu Cá nhân (Learner Target Roles)
 
-- **Endpoint:** `POST /api/v1/learner/target-role`
-- **Xác thực:** Bắt buộc (`Bearer token`) - áp dụng cho cả Người học Tự do và Nhân viên
-- **Request Body:**
+- **Endpoint:** `GET /api/v1/learner/me/targets`, `PUT /api/v1/learner/me/targets`
+- **Xác thực:** Bắt buộc (`Bearer token`) - áp dụng cho chính người dùng đang đăng nhập
+- **Request Body (PUT):**
 ```json
 {
-  "careerRoleId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+  "targetRoleId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
 }
 ```
 - **Response:**
