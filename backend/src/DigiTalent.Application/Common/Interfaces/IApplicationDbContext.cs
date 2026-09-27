@@ -25,6 +25,13 @@ public interface IApplicationDbContext
     DbSet<JobPosition> JobPositions { get; }
     DbSet<Employee> Employees { get; }
 
+    // Competency & Position Requirements
+    DbSet<CompetencyCategory> CompetencyCategories { get; }
+    DbSet<Competency> Competencies { get; }
+    DbSet<CompetencyLevelCriterion> CompetencyLevelCriteria { get; }
+    DbSet<PositionRequirementSet> PositionRequirementSets { get; }
+    DbSet<PositionRequirementItem> PositionRequirementItems { get; }
+
     // Shared
     DbSet<AuditLog> AuditLogs { get; }
     DbSet<SystemSetting> SystemSettings { get; }

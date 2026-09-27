@@ -31,6 +31,13 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<JobPosition> JobPositions => Set<JobPosition>();
     public DbSet<Employee> Employees => Set<Employee>();
 
+    // Competency & Position Requirements
+    public DbSet<CompetencyCategory> CompetencyCategories => Set<CompetencyCategory>();
+    public DbSet<Competency> Competencies => Set<Competency>();
+    public DbSet<CompetencyLevelCriterion> CompetencyLevelCriteria => Set<CompetencyLevelCriterion>();
+    public DbSet<PositionRequirementSet> PositionRequirementSets => Set<PositionRequirementSet>();
+    public DbSet<PositionRequirementItem> PositionRequirementItems => Set<PositionRequirementItem>();
+
     // Shared
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
