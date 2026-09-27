@@ -6,6 +6,7 @@ import { LoginPage } from '../pages/LoginPage';
 import apiClient from '../../../services/api-client';
 import { AuthGuard } from '../../../components/guards/AuthGuard';
 import { getLoginPath, isSafeReturnTo } from '../auth-redirect';
+import { useCurrentUser } from '../../../hooks/use-current-user';
 
 vi.mock('../../../services/api-client', () => {
   return {
@@ -25,6 +26,7 @@ describe('Authentication', () => {
 
   beforeEach(() => {
     localStorage.clear();
+    useCurrentUser.getState().clearUser();
     vi.clearAllMocks();
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     
@@ -128,5 +130,39 @@ describe('Authentication', () => {
 
     expect(isSafeReturnTo('//external.example')).toBe(false);
     expect(isSafeReturnTo('/\\external.example')).toBe(false);
+  });
+
+  it('FailedAuthMeNeverRendersGuardedContentEvenWithExpiredTokenInStorage', async () => {
+    localStorage.setItem('accessToken', 'expired-jwt-token');
+
+    (apiClient.get as any).mockRejectedValueOnce(new Error('401 Unauthorized'));
+
+    function LoginDestination() {
+      const [params] = useSearchParams();
+      return <div>Redirected to login: {params.get('returnTo')}</div>;
+    }
+
+    render(
+      <MemoryRouter initialEntries={['/enterprise/dashboard']}>
+        <Routes>
+          <Route
+            path="/enterprise/dashboard"
+            element={
+              <AuthGuard>
+                <div>Guarded Enterprise Secret Content</div>
+              </AuthGuard>
+            }
+          />
+          <Route path="/login" element={<LoginDestination />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/Redirected to login/i)).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('Guarded Enterprise Secret Content')).not.toBeInTheDocument();
+    expect(localStorage.getItem('accessToken')).toBeNull();
   });
 });

@@ -13,6 +13,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const token = localStorage.getItem('accessToken');
   const user = useCurrentUser((s) => s.user);
   const setUser = useCurrentUser((s) => s.setUser);
+  const clearUser = useCurrentUser((s) => s.clearUser);
   const [isLoading, setIsLoading] = useState(!user);
 
   useEffect(() => {
@@ -28,9 +29,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
       })
       .catch(() => {
         localStorage.removeItem('accessToken');
+        clearUser();
       })
       .finally(() => setIsLoading(false));
-  }, [token, user, setUser]);
+  }, [token, user, setUser, clearUser]);
 
   if (!token) {
     return <Navigate to={getLoginPath(location.pathname, location.search)} replace />;
@@ -45,6 +47,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return <Navigate to={getLoginPath(location.pathname, location.search)} replace />;
   }
 
   return <>{children}</>;

@@ -31,6 +31,24 @@ public static class Permissions
         public const string CreateUpdate = "job_position.create_update";
     }
 
+    public static class Employee
+    {
+        public const string Read = "employee.read";
+        public const string CreateUpdate = "employee.create_update";
+    }
+
+    public static class Competency
+    {
+        public const string Read = "competency.read";
+        public const string CreateUpdate = "competency.create_update";
+    }
+
+    public static class PositionRequirement
+    {
+        public const string Read = "position_requirement.read";
+        public const string CreateUpdate = "position_requirement.create_update";
+    }
+
     /// <summary>
     /// Mọi mã quyền khai báo trong class này (đọc tự động) — DbSeeder dùng để seed bảng permissions.
     /// </summary>

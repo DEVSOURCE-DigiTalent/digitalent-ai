@@ -22,6 +22,12 @@ public static class RolePermissions
             Permissions.JobFamily.CreateUpdate,
             Permissions.JobPosition.Read,
             Permissions.JobPosition.CreateUpdate,
+            Permissions.Employee.Read,
+            Permissions.Employee.CreateUpdate,
+            Permissions.Competency.Read,
+            Permissions.Competency.CreateUpdate,
+            Permissions.PositionRequirement.Read,
+            Permissions.PositionRequirement.CreateUpdate,
         },
         [Roles.DepartmentManager] = new[]
         {
@@ -29,6 +35,9 @@ public static class RolePermissions
             Permissions.Department.Read,
             Permissions.JobFamily.Read,
             Permissions.JobPosition.Read,
+            Permissions.Employee.Read,
+            Permissions.Competency.Read,
+            Permissions.PositionRequirement.Read,
         },
         [Roles.Trainer] = new[]
         {
@@ -36,6 +45,8 @@ public static class RolePermissions
             Permissions.Department.Read,
             Permissions.JobFamily.Read,
             Permissions.JobPosition.Read,
+            Permissions.Competency.Read,
+            Permissions.PositionRequirement.Read,
         },
         [Roles.Employee] = new[]
         {
@@ -43,6 +54,8 @@ public static class RolePermissions
             Permissions.Department.Read,
             Permissions.JobFamily.Read,
             Permissions.JobPosition.Read,
+            Permissions.Competency.Read,
+            Permissions.PositionRequirement.Read,
         },
     };
 }
