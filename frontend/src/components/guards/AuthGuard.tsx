@@ -26,7 +26,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
       })
       .catch(() => {
         localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
       })
       .finally(() => setIsLoading(false));
   }, []);

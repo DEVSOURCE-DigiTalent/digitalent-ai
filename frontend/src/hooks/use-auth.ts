@@ -42,6 +42,7 @@ export function useLogout() {
         // Proceed with local cleanup even if server call fails
       }
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
       clearUser();
     },
   });

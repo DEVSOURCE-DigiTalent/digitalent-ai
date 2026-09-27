@@ -23,6 +23,4 @@ export const authService = {
       permissions: string[];
     }>>('/auth/me'),
 
-  changePassword: (data: { currentPassword: string; newPassword: string }) =>
-    apiClient.post('/auth/change-password', data),
 };
