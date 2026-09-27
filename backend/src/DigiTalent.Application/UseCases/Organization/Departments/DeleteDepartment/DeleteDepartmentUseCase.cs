@@ -11,24 +11,30 @@ namespace DigiTalent.Application.UseCases.Departments;
 public class DeleteDepartmentUseCase : IUseCase<DeleteDepartmentUseCaseInput, DeleteDepartmentUseCaseOutput>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public DeleteDepartmentUseCase(IApplicationDbContext context)
+    public DeleteDepartmentUseCase(IApplicationDbContext context, ICurrentUser currentUser)
     {
         _context = context;
+        _currentUser = currentUser;
     }
 
     public async Task<DeleteDepartmentUseCaseOutput> ExecuteAsync(DeleteDepartmentUseCaseInput input)
     {
-        // 1. Tìm phòng ban cần xóa
-        var department = await _context.Departments.FirstOrDefaultAsync(d => d.Id == input.Id);
+        // 1. Tìm phòng ban cần xóa (trong tổ chức của user)
+        var department = await _context.Departments
+            .FirstOrDefaultAsync(d => d.Id == input.Id && d.OrganizationId == _currentUser.OrganizationId);
         if (department == null)
         {
             throw new NotFoundException($"Department '{input.Id}' not found.");
         }
 
-        // 2. Kiểm tra nghiệp vụ trước khi xóa.
-        //    Khi có bảng Employee: nếu phòng ban còn nhân viên thì
-        //    throw new ConflictException("...") để không cho xóa.
+        // 2. Không cho xóa khi phòng ban còn nhân viên (database cũng có khóa ngoại chặn)
+        var hasEmployees = await _context.Employees.AnyAsync(e => e.DepartmentId == department.Id);
+        if (hasEmployees)
+        {
+            throw new ConflictException("Cannot delete a department that still has employees.");
+        }
 
         // 3. Xóa và lưu
         _context.Departments.Remove(department);

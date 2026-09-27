@@ -16,19 +16,25 @@ public class JwtTokenService : IJwtTokenService
         _settings = settings;
     }
 
-    public JwtTokenResult CreateToken(User user)
+    public JwtTokenResult CreateToken(User user, IEnumerable<string> roleCodes)
     {
         // 1. Thông tin gắn vào token (gọi là "claim"). BE đọc lại các claim này ở mỗi request.
+        //    Chỉ để role, KHÔNG để danh sách quyền, để token không bị dài (doc 09 mục 8.2).
         var claims = new List<Claim>
         {
             new("sub", user.Id.ToString()),
             new("email", user.Email),
-            new("name", user.FullName),
+            new("name", user.DisplayName),
         };
 
-        foreach (var role in user.Roles)
+        if (user.OrganizationId.HasValue)
         {
-            claims.Add(new Claim("role", role));
+            claims.Add(new Claim("org", user.OrganizationId.Value.ToString()));
+        }
+
+        foreach (var roleCode in roleCodes)
+        {
+            claims.Add(new Claim("role", roleCode));
         }
 
         // 2. Ký token bằng khóa bí mật → FE đọc được nhưng KHÔNG sửa được (sửa là chữ ký sai)

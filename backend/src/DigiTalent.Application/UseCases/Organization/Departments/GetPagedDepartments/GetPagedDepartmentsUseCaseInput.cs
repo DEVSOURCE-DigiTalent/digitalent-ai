@@ -8,5 +8,5 @@ namespace DigiTalent.Application.UseCases.Departments;
 /// </summary>
 public class GetPagedDepartmentsUseCaseInput : PaginationRequest
 {
-    public bool? IsActive { get; set; } // null = lấy tất cả
+    public string? Status { get; set; } // null = lấy tất cả. VD: ACTIVE
 }

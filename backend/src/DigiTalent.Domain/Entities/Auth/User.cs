@@ -1,20 +1,35 @@
 using DigiTalent.Domain.Common;
 
+// Mọi entity dùng chung 1 namespace để chỉ cần 1 dòng using
 namespace DigiTalent.Domain.Entities;
 
 /// <summary>
-/// Tài khoản đăng nhập.
+/// Bảng users. Tài khoản đăng nhập.
 /// </summary>
-public class User : BaseEntity
+public class User : IHasTimestamps
 {
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid? OrganizationId { get; set; }
     public string Email { get; set; } = string.Empty;
-    public string PasswordHash { get; set; } = string.Empty; // KHÔNG lưu mật khẩu gốc, chỉ lưu bản mã hóa
-    public string FullName { get; set; } = string.Empty;
-    public bool IsActive { get; set; } = true;
+    public string PasswordHash { get; set; } = string.Empty; // KHÔNG lưu mật khẩu gốc
+    public string DisplayName { get; set; } = string.Empty;
+    public string? AvatarUrl { get; set; }
+    public string Status { get; set; } = UserStatuses.Active; // ACTIVE / INACTIVE / LOCKED
+    public int FailedLoginCount { get; set; }
+    public DateTimeOffset? LockedUntil { get; set; }
+    public DateTimeOffset? LastLoginAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
 
-    /// <summary>
-    /// Mã role, VD: ["HR_MANAGER"]. 1 user có thể có nhiều role (doc 09).
-    /// PostgreSQL lưu thành 1 cột kiểu mảng text[].
-    /// </summary>
-    public List<string> Roles { get; set; } = new();
+    public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+}
+
+/// <summary>
+/// Các giá trị hợp lệ của cột users.status (DB có CHECK constraint ck_users_status).
+/// </summary>
+public static class UserStatuses
+{
+    public const string Active = "ACTIVE";
+    public const string Inactive = "INACTIVE";
+    public const string Locked = "LOCKED";
 }

@@ -12,36 +12,45 @@ namespace DigiTalent.Application.UseCases.Departments;
 public class CreateDepartmentUseCase : IUseCase<CreateDepartmentUseCaseInput, CreateDepartmentUseCaseOutput>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public CreateDepartmentUseCase(IApplicationDbContext context)
+    public CreateDepartmentUseCase(IApplicationDbContext context, ICurrentUser currentUser)
     {
         _context = context;
+        _currentUser = currentUser;
     }
 
     public async Task<CreateDepartmentUseCaseOutput> ExecuteAsync(CreateDepartmentUseCaseInput input)
     {
-        // 1. Chuẩn hóa mã: bỏ khoảng trắng, viết HOA (tránh "it" và "IT" bị coi là 2 mã khác nhau)
+        // 1. Phòng ban luôn thuộc 1 tổ chức — lấy tổ chức của người đang đăng nhập
+        var organizationId = _currentUser.OrganizationId
+            ?? throw new ForbiddenException("Your account is not linked to any organization.");
+
+        // 2. Chuẩn hóa mã: bỏ khoảng trắng, viết HOA (tránh "it" và "IT" bị coi là 2 mã khác nhau)
         var code = input.Code.Trim().ToUpper();
 
-        // 2. Kiểm tra nghiệp vụ: mã không được trùng
-        var codeExists = await _context.Departments.AnyAsync(d => d.Code == code);
+        // 3. Kiểm tra nghiệp vụ: mã không được trùng TRONG CÙNG tổ chức
+        var codeExists = await _context.Departments
+            .AnyAsync(d => d.OrganizationId == organizationId && d.Code == code);
         if (codeExists)
         {
             throw new ConflictException($"Department code '{code}' already exists.");
         }
 
-        // 3. Tạo entity và lưu xuống database
+        // 4. Tạo entity và lưu xuống database
         var department = new Department
         {
+            OrganizationId = organizationId,
             Code = code,
             Name = input.Name.Trim(),
             Description = input.Description,
+            Status = DepartmentStatuses.Active,
         };
 
         _context.Departments.Add(department);
         await _context.SaveChangesAsync();
 
-        // 4. Trả kết quả
+        // 5. Trả kết quả
         return new CreateDepartmentUseCaseOutput { Id = department.Id };
     }
 }

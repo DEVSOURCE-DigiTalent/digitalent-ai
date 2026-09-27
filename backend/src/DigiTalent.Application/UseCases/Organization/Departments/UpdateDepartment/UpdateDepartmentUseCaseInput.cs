@@ -12,5 +12,5 @@ public class UpdateDepartmentUseCaseInput
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
-    public bool IsActive { get; set; }
+    public string Status { get; set; } = string.Empty; // ACTIVE / ARCHIVED
 }

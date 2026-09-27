@@ -4,21 +4,19 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
+/// <summary>
+/// Map entity User với bảng "users".
+/// Database là gốc: tên cột tự đổi sang snake_case, không khai báo lại ở đây.
+/// </summary>
 public class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
     {
         builder.ToTable("users");
+        builder.HasKey(x => x.Id);
 
-        builder.HasKey(u => u.Id);
-
-        builder.Property(u => u.Email).IsRequired().HasMaxLength(255);
-        builder.HasIndex(u => u.Email).IsUnique();
-
-        builder.Property(u => u.PasswordHash).IsRequired().HasMaxLength(255);
-        builder.Property(u => u.FullName).IsRequired().HasMaxLength(255);
-
-        // List<string> → cột roles kiểu text[] (PostgreSQL tự hỗ trợ)
-        builder.Property(u => u.Roles).IsRequired();
+        builder.HasMany(x => x.UserRoles)
+            .WithOne(x => x.User)
+            .HasForeignKey(x => x.UserId);
     }
 }

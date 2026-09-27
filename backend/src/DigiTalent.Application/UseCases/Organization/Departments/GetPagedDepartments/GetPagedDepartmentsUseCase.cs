@@ -10,16 +10,19 @@ namespace DigiTalent.Application.UseCases.Departments;
 public class GetPagedDepartmentsUseCase : IUseCase<GetPagedDepartmentsUseCaseInput, GetPagedDepartmentsUseCaseOutput>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public GetPagedDepartmentsUseCase(IApplicationDbContext context)
+    public GetPagedDepartmentsUseCase(IApplicationDbContext context, ICurrentUser currentUser)
     {
         _context = context;
+        _currentUser = currentUser;
     }
 
     public async Task<GetPagedDepartmentsUseCaseOutput> ExecuteAsync(GetPagedDepartmentsUseCaseInput input)
     {
-        // 1. Tạo câu query (CHƯA chạy xuống database)
-        var query = _context.Departments.AsQueryable();
+        // 1. Tạo câu query (CHƯA chạy xuống database), chỉ lấy dữ liệu trong tổ chức của user
+        var query = _context.Departments
+            .Where(d => d.OrganizationId == _currentUser.OrganizationId);
 
         // 2. Thêm điều kiện lọc nếu frontend có gửi
         if (!string.IsNullOrWhiteSpace(input.Search))
@@ -29,9 +32,9 @@ public class GetPagedDepartmentsUseCase : IUseCase<GetPagedDepartmentsUseCaseInp
                                   || d.Name.ToLower().Contains(keyword));
         }
 
-        if (input.IsActive.HasValue)
+        if (!string.IsNullOrWhiteSpace(input.Status))
         {
-            query = query.Where(d => d.IsActive == input.IsActive.Value);
+            query = query.Where(d => d.Status == input.Status);
         }
 
         // 3. Đếm tổng số dòng (để frontend tính số trang)
@@ -47,7 +50,7 @@ public class GetPagedDepartmentsUseCase : IUseCase<GetPagedDepartmentsUseCaseInp
                 Id = d.Id,
                 Code = d.Code,
                 Name = d.Name,
-                IsActive = d.IsActive,
+                Status = d.Status,
             })
             .ToListAsync();
 

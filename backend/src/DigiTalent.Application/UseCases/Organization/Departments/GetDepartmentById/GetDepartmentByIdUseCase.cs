@@ -11,24 +11,29 @@ namespace DigiTalent.Application.UseCases.Departments;
 public class GetDepartmentByIdUseCase : IUseCase<GetDepartmentByIdUseCaseInput, GetDepartmentByIdUseCaseOutput>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public GetDepartmentByIdUseCase(IApplicationDbContext context)
+    public GetDepartmentByIdUseCase(IApplicationDbContext context, ICurrentUser currentUser)
     {
         _context = context;
+        _currentUser = currentUser;
     }
 
     public async Task<GetDepartmentByIdUseCaseOutput> ExecuteAsync(GetDepartmentByIdUseCaseInput input)
     {
-        // Select thẳng sang Output → chỉ lấy đúng các cột cần, không load cả entity
+        // Chỉ xem được phòng ban trong tổ chức của mình.
+        // Select thẳng sang Output → chỉ lấy đúng các cột cần, không load cả entity.
         var department = await _context.Departments
-            .Where(d => d.Id == input.Id)
+            .Where(d => d.Id == input.Id && d.OrganizationId == _currentUser.OrganizationId)
             .Select(d => new GetDepartmentByIdUseCaseOutput
             {
                 Id = d.Id,
                 Code = d.Code,
                 Name = d.Name,
                 Description = d.Description,
-                IsActive = d.IsActive,
+                Status = d.Status,
+                ParentDepartmentId = d.ParentDepartmentId,
+                ManagerEmployeeId = d.ManagerEmployeeId,
                 CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt,
             })

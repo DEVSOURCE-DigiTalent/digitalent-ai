@@ -11,24 +11,28 @@ namespace DigiTalent.Application.UseCases.Departments;
 public class UpdateDepartmentUseCase : IUseCase<UpdateDepartmentUseCaseInput, UpdateDepartmentUseCaseOutput>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public UpdateDepartmentUseCase(IApplicationDbContext context)
+    public UpdateDepartmentUseCase(IApplicationDbContext context, ICurrentUser currentUser)
     {
         _context = context;
+        _currentUser = currentUser;
     }
 
     public async Task<UpdateDepartmentUseCaseOutput> ExecuteAsync(UpdateDepartmentUseCaseInput input)
     {
-        // 1. Tìm phòng ban cần sửa
-        var department = await _context.Departments.FirstOrDefaultAsync(d => d.Id == input.Id);
+        // 1. Tìm phòng ban cần sửa (trong tổ chức của user)
+        var department = await _context.Departments
+            .FirstOrDefaultAsync(d => d.Id == input.Id && d.OrganizationId == _currentUser.OrganizationId);
         if (department == null)
         {
             throw new NotFoundException($"Department '{input.Id}' not found.");
         }
 
-        // 2. Mã mới không được trùng với phòng ban KHÁC (d.Id != input.Id)
+        // 2. Mã mới không được trùng với phòng ban KHÁC trong cùng tổ chức
         var code = input.Code.Trim().ToUpper();
-        var codeExists = await _context.Departments.AnyAsync(d => d.Code == code && d.Id != input.Id);
+        var codeExists = await _context.Departments
+            .AnyAsync(d => d.OrganizationId == department.OrganizationId && d.Code == code && d.Id != input.Id);
         if (codeExists)
         {
             throw new ConflictException($"Department code '{code}' already exists.");
@@ -38,7 +42,7 @@ public class UpdateDepartmentUseCase : IUseCase<UpdateDepartmentUseCaseInput, Up
         department.Code = code;
         department.Name = input.Name.Trim();
         department.Description = input.Description;
-        department.IsActive = input.IsActive;
+        department.Status = input.Status;
 
         await _context.SaveChangesAsync();
 

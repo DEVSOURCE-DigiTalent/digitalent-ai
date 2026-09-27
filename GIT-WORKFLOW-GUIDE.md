@@ -7,28 +7,28 @@
 
 ## 1. Quy tắc cơ bản
 
-| Rule | Mô tả |
-|------|-------|
-| **Không push thẳng** vào `main` hoặc `develop` | Luôn tạo Pull Request |
-| **Branch phải có issue/task ID** | Giúp trace được công việc |
-| **Commit nhỏ, có ý nghĩa** | Mỗi commit là một thay đổi logic hoàn chỉnh |
-| **Luôn pull develop mới nhất** trước khi tạo branch | Tránh conflict không đáng có |
-| **Chạy build/test local** trước khi mở PR | CI sẽ kiểm tra, nhưng chạy trước cho chắc |
+| Rule                                                | Mô tả                                       |
+| --------------------------------------------------- | ------------------------------------------- |
+| **Không push thẳng** vào `main` hoặc `develop`      | Luôn tạo Pull Request                       |
+| **Branch phải có issue/task ID**                    | Giúp trace được công việc                   |
+| **Commit nhỏ, có ý nghĩa**                          | Mỗi commit là một thay đổi logic hoàn chỉnh |
+| **Luôn pull develop mới nhất** trước khi tạo branch | Tránh conflict không đáng có                |
+| **Chạy build/test local** trước khi mở PR           | CI sẽ kiểm tra, nhưng chạy trước cho chắc   |
 
 ---
 
 ## 2. Branch naming
 
-| Loại | Pattern | Ví dụ |
-|------|---------|-------|
-| **Feature mới** | `feature/DT-<issue>-<short-name>` | `feature/DT-101-auth-login-api` |
-| **Sửa lỗi** | `fix/DT-<issue>-<short-name>` | `fix/DT-142-certificate-qr-expired` |
-| **Tài liệu** | `docs/DT-<issue>-<short-name>` | `docs/DT-050-update-api-spec` |
-| **Refactor** | `refactor/DT-<issue>-<short-name>` | `refactor/DT-211-split-assessment-service` |
-| **Test** | `test/DT-<issue>-<short-name>` | `test/DT-305-add-rbac-api-tests` |
-| **DevOps/CI** | `chore/DT-<issue>-<short-name>` | `chore/DT-401-add-docker-compose` |
-| **Release** | `release/v<major>.<minor>.<patch>` | `release/v1.0.0` |
-| **Hotfix** | `hotfix/v<version>-<short-name>` | `hotfix/v1.0.1-refresh-token` |
+| Loại            | Pattern                            | Ví dụ                                      |
+| --------------- | ---------------------------------- | ------------------------------------------ |
+| **Feature mới** | `feature/DT-<issue>-<short-name>`  | `feature/DT-101-auth-login-api`            |
+| **Sửa lỗi**     | `fix/DT-<issue>-<short-name>`      | `fix/DT-142-certificate-qr-expired`        |
+| **Tài liệu**    | `docs/DT-<issue>-<short-name>`     | `docs/DT-050-update-api-spec`              |
+| **Refactor**    | `refactor/DT-<issue>-<short-name>` | `refactor/DT-211-split-assessment-service` |
+| **Test**        | `test/DT-<issue>-<short-name>`     | `test/DT-305-add-rbac-api-tests`           |
+| **DevOps/CI**   | `chore/DT-<issue>-<short-name>`    | `chore/DT-401-add-docker-compose`          |
+| **Release**     | `release/v<major>.<minor>.<patch>` | `release/v1.0.0`                           |
+| **Hotfix**      | `hotfix/v<version>-<short-name>`   | `hotfix/v1.0.1-refresh-token`              |
 
 > ⚠️ **Không dùng:** `linh-code`, `final-update`, `test2`, `new-branch`, `demo-fix`
 
@@ -40,17 +40,17 @@
 <type>(<scope>): <short summary>
 ```
 
-| Type | Khi nào dùng | Ví dụ |
-|------|--------------|-------|
-| `feat` | Tính năng mới | `feat(auth): implement login with refresh token` |
-| `fix` | Sửa lỗi | `fix(certificate): reject revoked certificate in verifier API` |
-| `docs` | Tài liệu | `docs(api): update assessment submit endpoint` |
-| `style` | Format code (ko đổi logic) | `style(ui): align dashboard card spacing` |
-| `refactor` | Tái cấu trúc code | `refactor(task): split task evaluation service` |
-| `test` | Thêm/sửa test | `test(rbac): add manager department scope tests` |
-| `chore` | Build, config, CI, dependencies | `chore(ci): add backend test workflow` |
-| `perf` | Tối ưu hiệu năng | `perf(dashboard): optimize readiness query` |
-| `security` | Thay đổi bảo mật | `security(auth): rotate refresh token on reuse detection` |
+| Type       | Khi nào dùng                    | Ví dụ                                                          |
+| ---------- | ------------------------------- | -------------------------------------------------------------- |
+| `feat`     | Tính năng mới                   | `feat(auth): implement login with refresh token`               |
+| `fix`      | Sửa lỗi                         | `fix(certificate): reject revoked certificate in verifier API` |
+| `docs`     | Tài liệu                        | `docs(api): update assessment submit endpoint`                 |
+| `style`    | Format code (ko đổi logic)      | `style(ui): align dashboard card spacing`                      |
+| `refactor` | Tái cấu trúc code               | `refactor(task): split task evaluation service`                |
+| `test`     | Thêm/sửa test                   | `test(rbac): add manager department scope tests`               |
+| `chore`    | Build, config, CI, dependencies | `chore(ci): add backend test workflow`                         |
+| `perf`     | Tối ưu hiệu năng                | `perf(dashboard): optimize readiness query`                    |
+| `security` | Thay đổi bảo mật                | `security(auth): rotate refresh token on reuse detection`      |
 
 > ❌ **Không dùng:** `update code`, `fix bug`, `final version`, `linh changes`, `working now`
 
@@ -76,7 +76,6 @@ git checkout -b feature/DT-101-auth-login-api
 ```bash
 git add backend/src/DigiTalent.Auth/
 git commit -m "feat(auth): implement login API"
-
 git add frontend/src/pages/Login.tsx
 git commit -m "feat(auth): add login page UI"
 ```
@@ -163,14 +162,14 @@ gh pr create \
 
 ## 8. Các lệnh thường gặp
 
-| Tình huống | Lệnh |
-|------------|------|
-| Lỡ commit nhầm vào develop | `git branch feature/DT-xxx-correct` + `git reset --hard HEAD~1` |
-| Tạm dừng code giữa chừng | `git stash push -m "WIP message"` + sau đó `git stash pop` |
-| Merge xong phát hiện lỗi | `git revert <commit-hash>` (trên develop, ko dùng reset) |
-| Sửa commit message cuối | `git commit --amend -m "feat(auth): new message"` |
-| Bỏ file đã stage | `git restore --staged <file>` |
-| Bỏ thay đổi local chưa stage | `git restore <file>` |
+| Tình huống                   | Lệnh                                                            |
+| ---------------------------- | --------------------------------------------------------------- |
+| Lỡ commit nhầm vào develop   | `git branch feature/DT-xxx-correct` + `git reset --hard HEAD~1` |
+| Tạm dừng code giữa chừng     | `git stash push -m "WIP message"` + sau đó `git stash pop`      |
+| Merge xong phát hiện lỗi     | `git revert <commit-hash>` (trên develop, ko dùng reset)        |
+| Sửa commit message cuối      | `git commit --amend -m "feat(auth): new message"`               |
+| Bỏ file đã stage             | `git restore --staged <file>`                                   |
+| Bỏ thay đổi local chưa stage | `git restore <file>`                                            |
 
 ---
 

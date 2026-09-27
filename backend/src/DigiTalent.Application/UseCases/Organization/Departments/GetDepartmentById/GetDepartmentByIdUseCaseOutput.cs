@@ -10,7 +10,9 @@ public class GetDepartmentByIdUseCaseOutput
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
-    public bool IsActive { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public Guid? ParentDepartmentId { get; set; }
+    public Guid? ManagerEmployeeId { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
 }
