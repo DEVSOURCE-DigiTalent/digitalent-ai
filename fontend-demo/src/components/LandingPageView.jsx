@@ -339,7 +339,7 @@ export default function LandingPageView({ onSelectRoleAndStartTest, onNavigateTo
           <div>
             <span className="badge badge-primary">Khung Tham Chiếu Năng Lực Số Châu Âu & Thông tư 03</span>
             <h3 style={{ fontSize: '18px', fontWeight: 800, marginTop: '4px' }}>
-              5 Lĩnh Vực Kỹ Năng Số Tiêu Chuẩn (DigComp 3.0 & Thông tư 03/2014/TT-BTTTT)
+              5 Lĩnh Vực Kỹ Năng Số Tiêu Chuẩn (tham chiếu DigComp 3.0 & Thông tư 02/2025/TT-BGDĐT)
             </h3>
           </div>
         </div>
