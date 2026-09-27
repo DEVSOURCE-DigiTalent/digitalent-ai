@@ -79,6 +79,41 @@ frontend/src/
 
 Đây là **cấu trúc mục tiêu**, không phải lệnh di chuyển toàn bộ file trong một PR. Di chuyển từng luồng theo chiều dọc. Giữ component chung khi thật sự dùng lại; không đưa sidebar/dashboard CSS vào learner shell. CSS của demo cần được scope theo layout/component vì hiện có nhiều selector toàn cục. API gọi qua service/hook dùng chung; component không gọi trực tiếp `localStorage` để lưu kết quả học.
 
+### 3.1.1. Hợp đồng định tuyến và sở hữu tính năng (Route & Feature Ownership Contract)
+
+1. **Phân định Route và Layout trong cùng một SPA:**
+   - **Enterprise Flow (`/enterprise/*`):** Thuộc `EnterpriseLayout` (sidebar quản trị, topbar thông báo org, breadcrumb quản lý). Ví dụ: `/enterprise/dashboard`, `/enterprise/organization/departments`, `/enterprise/organization/employees`, `/enterprise/organization/positions`, `/enterprise/competency/framework`, `/enterprise/competency/requirements`. Yêu cầu xác thực (`AuthGuard`), bắt buộc có `OrganizationId` và kiểm tra quyền (`RequirePermission`).
+   - **Public Flow (`/`, `/careers/*`, `/verify`):** Thuộc `PublicLayout` (header công khai, footer giới thiệu). Cho phép anonymous; hiển thị nội dung `PUBLISHED` nền tảng.
+   - **Learner Flow (`/learn/*`):** Thuộc `LearnerLayout` (giao diện học tập tập trung, thanh tiến độ, navigation bài học). Ví dụ: `/learn/dashboard`, `/learn/target`, `/learn/diagnostic`, `/learn/path`, `/learn/courses/:id`, `/learn/classroom/:id`, `/learn/progress`, `/learn/tasks`. Xem catalog/preview cho phép anonymous; ghi nhận mục tiêu, kết quả khảo sát, làm bài, nộp task yêu cầu tài khoản người học.
+   - **Auth Flow (`/login`):** Thuộc `AuthLayout`. Đăng nhập một điểm qua backend API; hỗ trợ query param `?returnTo=...`.
+
+2. **Cơ chế An toàn `getSafeReturnTo(raw: string | null): string`:**
+   - Chỉ chấp nhận đường dẫn nội bộ bắt đầu bằng đúng một ký tự `/` (loại trừ `//`, `http://`, `https://`, `javascript:`, data URIs).
+   - Nếu `raw` không hợp lệ hoặc rỗng: điều hướng mặc định dựa trên danh tính người dùng (`/enterprise/dashboard` nếu user có `OrganizationId`, ngược lại `/learn/dashboard` hoặc `/`).
+   - Ngăn chặn hoàn toàn lỗ hổng Open Redirect.
+
+3. **Chuẩn hóa API Response Envelope (`ApiResponse<T>`):**
+   - Mọi API trả về định dạng thống nhất:
+     ```typescript
+     export interface ApiResponse<T> {
+       success: boolean;
+       message: string;
+       data: T;
+       errors: Array<{ field?: string; message: string }>;
+     }
+     ```
+   - Lỗi trả về HTTP status code phù hợp (400, 401, 403, 404, 409) với danh sách `errors`.
+
+4. **Phân cấp Tầm nhìn API (Visibility & Tenant Isolation):**
+   - `/api/v1/public/*`: GET ẩn danh, chỉ lọc dữ liệu công khai đã publish của hệ thống (career templates, public courses).
+   - `/api/v1/learner/*`: Cần JWT xác thực, server chỉ cho phép truy xuất/thao tác trên chính `UserId` / `LearnerProfileId` của token.
+   - `/api/v1/enterprise/*` (hoặc `/api/v1/departments`, `/api/v1/employees`, `/api/v1/job-positions`, `/api/v1/competencies`, `/api/v1/position-requirements`): Yêu cầu JWT xác thực, quyền RBAC hợp lệ (`[HasPermission]`), và server tự động áp dụng `ICurrentUser.OrganizationId` để cô lập dữ liệu đa doanh nghiệp. Tuyệt đối không cho phép client ghi đè tenant qua body/param.
+
+5. **Chiến lược Di chuyển Theo Giai đoạn & Rollback:**
+   - Một bản build production duy nhất: `frontend/dist`.
+   - Nginx phục vụ SPA tĩnh với fallback về `index.html` và proxy `/api/` cùng `/hubs` sang backend ASP.NET Core.
+   - Khi cần rollback bất kỳ luồng nào, router map tạm thời redirect về trang tổng quan tương ứng mà không làm gián đoạn luồng còn lại.
+
 ### 3.2. Backend: một hệ thống, ranh giới theo nghiệp vụ
 
 Giữ bốn project và pattern `Controller → UseCase → interface → EF`. Trong `Application/UseCases` và `Infrastructure/Persistence`, nhóm theo capability thay vì tạo tầng mới cho từng giao diện:
