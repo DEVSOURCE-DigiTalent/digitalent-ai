@@ -16,6 +16,23 @@ public static class Permissions
     public static class Department
     {
         public const string Read = "department.read";
-        public const string CreateUpdate = "department.create_update"; // tạo / sửa / xóa
+        public const string CreateUpdate = "department.create_update"; // tạo / sửa / lưu trữ (archive)
     }
+
+    public static class JobPosition
+    {
+        public const string Read = "job_position.read";
+        public const string CreateUpdate = "job_position.create_update";
+    }
+
+    /// <summary>
+    /// Mọi mã quyền khai báo trong class này (đọc tự động) — DbSeeder dùng để seed bảng permissions.
+    /// </summary>
+    public static IReadOnlyList<string> All() =>
+        typeof(Permissions)
+            .GetNestedTypes()
+            .SelectMany(type => type.GetFields())
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Select(field => (string)field.GetRawConstantValue()!)
+            .ToList();
 }
