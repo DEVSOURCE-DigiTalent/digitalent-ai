@@ -1,5 +1,6 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
+using DomainRoles = DigiTalent.Domain.Constants.Authorization.Roles;
 
 namespace DigiTalent.Api.Auth;
 
@@ -22,11 +23,29 @@ public class CurrentUser : ICurrentUser
 
     public Guid? OrganizationId => ReadGuidClaim("org");
 
+    public Guid? EmployeeId => ReadGuidClaim("emp_id");
+
+    public Guid? DepartmentId => ReadGuidClaim("dept_id");
+
+    public string? IpAddress => _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+
     public List<string> Roles =>
         _httpContextAccessor.HttpContext?.User.FindAll("role").Select(c => c.Value).ToList() ?? new List<string>();
 
+    public bool IsInRole(string roleCode) =>
+        Roles.Contains(roleCode, StringComparer.OrdinalIgnoreCase);
+
+    public bool IsAdmin =>
+        IsInRole(DomainRoles.SystemAdmin) || IsInRole(DomainRoles.HrManager);
+
+    public bool IsDepartmentManager =>
+        IsInRole(DomainRoles.DepartmentManager);
+
     public Guid GetRequiredOrganizationId() =>
         OrganizationId ?? throw new ForbiddenException("Your account is not linked to an organization.");
+
+    public Guid GetRequiredDepartmentId() =>
+        DepartmentId ?? throw new ForbiddenException("Your account is not linked to any department.");
 
     private Guid? ReadGuidClaim(string claimName)
     {

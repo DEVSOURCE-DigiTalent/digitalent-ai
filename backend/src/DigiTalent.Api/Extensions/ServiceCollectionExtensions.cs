@@ -15,7 +15,7 @@ namespace DigiTalent.Api.Extensions;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Kiểm tra token FE gửi lên (header "Authorization: Bearer {token}"):
+    /// Kiểm tra token FE gửi lên (header "Authorization: Bearer {token}" hoặc query "access_token" cho SignalR):
     /// đúng chữ ký, đúng Issuer/Audience, chưa hết hạn → HttpContext.User có thông tin user.
     /// </summary>
     public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
@@ -37,6 +37,21 @@ public static class ServiceCollectionExtensions
                     ClockSkew = TimeSpan.Zero,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SigningKey)),
+                };
+
+                // Đọc token từ query string cho kết nối SignalR Hubs
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
                 };
             });
 

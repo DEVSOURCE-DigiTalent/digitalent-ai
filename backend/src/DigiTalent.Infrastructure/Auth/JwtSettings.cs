@@ -9,4 +9,5 @@ public class JwtSettings
     public string Audience { get; set; } = string.Empty;
     public string SigningKey { get; set; } = string.Empty; // khóa bí mật để ký token, tối thiểu 32 ký tự
     public int ExpiresInMinutes { get; set; } = 480;
+    public int RefreshTokenExpiresInDays { get; set; } = 7;
 }

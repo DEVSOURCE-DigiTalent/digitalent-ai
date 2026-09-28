@@ -1,6 +1,8 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Infrastructure.Auth;
+using DigiTalent.Infrastructure.FileStorage;
 using DigiTalent.Infrastructure.Persistence;
+using DigiTalent.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,6 +36,14 @@ public static class DependencyInjection
         // Phân quyền: đọc quyền của role từ database, có cache
         services.AddMemoryCache();
         services.AddScoped<IPermissionReader, PermissionReader>();
+
+        // Lưu trữ file (File Storage)
+        var fileStorageSettings = configuration.GetSection("FileStorage").Get<FileStorageSettings>() ?? new FileStorageSettings();
+        services.AddSingleton(fileStorageSettings);
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
+
+        // Audit Logging
+        services.AddScoped<IAuditService, AuditService>();
 
         return services;
     }

@@ -28,7 +28,7 @@ export const PublicLayout: React.FC = () => {
           </Link>
         </div>
       </header>
-      
+
       <main className="flex-1 bg-gray-50">
         <Outlet />
       </main>

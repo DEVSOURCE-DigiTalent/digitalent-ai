@@ -21,6 +21,16 @@ public class AuthController : ControllerBase
         return Ok(ApiResponse<LoginUseCaseOutput>.Ok(result, "Login successful."));
     }
 
+    // POST api/v1/auth/refresh — cấp lại AccessToken bằng RefreshToken khi token cũ hết hạn
+    [HttpPost("refresh")]
+    public async Task<ActionResult<ApiResponse<RefreshTokenUseCaseOutput>>> Refresh(
+        [FromBody] RefreshTokenUseCaseInput input,
+        [FromServices] IUseCase<RefreshTokenUseCaseInput, RefreshTokenUseCaseOutput> useCase)
+    {
+        var result = await useCase.ExecuteAsync(input);
+        return Ok(ApiResponse<RefreshTokenUseCaseOutput>.Ok(result, "Token refreshed successfully."));
+    }
+
     // GET api/v1/auth/me — thông tin user đang đăng nhập + roles + permissions
     [HttpGet("me")]
     [HasPermission(Permissions.Account.ViewOwn)]
