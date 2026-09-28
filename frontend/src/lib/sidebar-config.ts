@@ -106,7 +106,7 @@ export const sidebarGroups: SidebarGroup[] = [
   {
     label: 'Intelligence',
     items: [
-      { label: 'Skill Gap Analysis', path: '/enterprise/intelligence/skill-gap', icon: Brain, roles: ['HR_MANAGER', 'DEPARTMENT_MANAGER', 'EMPLOYEE'] },
+      { label: 'Skill Gap Analysis', path: '/enterprise/intelligence/skill-gap', icon: Brain, roles: ['HR_MANAGER', 'DEPARTMENT_MANAGER'] },
       { label: 'Training Risk', path: '/enterprise/intelligence/training-risk', icon: BarChart3, roles: ['HR_MANAGER', 'DEPARTMENT_MANAGER'] },
       { label: 'Workforce Readiness', path: '/enterprise/intelligence/readiness', icon: BarChart3, roles: ['HR_MANAGER', 'DEPARTMENT_MANAGER', 'EMPLOYEE'] },
     ],
