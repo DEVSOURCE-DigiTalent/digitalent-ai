@@ -80,19 +80,36 @@ public class LoginUseCase : IUseCase<LoginUseCaseInput, LoginUseCaseOutput>
             throw new ForbiddenException("Account is inactive.");
         }
 
-        // 5. Đúng → reset bộ đếm, tạo token chứa các role đang ACTIVE
+        // 5. Đúng → reset bộ đếm, lấy thông tin nhân viên (nếu có), tạo token chứa các role đang ACTIVE
         user.RegisterSuccessfulLogin(now);
-        await _context.SaveChangesAsync();
+
+        var employee = await _context.Employees
+            .Where(e => e.UserId == user.Id)
+            .Select(e => new { e.Id, e.DepartmentId })
+            .FirstOrDefaultAsync();
 
         var roleCodes = user.UserRoles
             .Where(ur => ur.Role!.Status == Statuses.Simple.Active)
             .Select(ur => ur.Role!.Code)
             .ToList();
-        var token = _jwtTokenService.CreateToken(user, roleCodes);
+
+        var token = _jwtTokenService.CreateToken(user, roleCodes, employee?.Id, employee?.DepartmentId);
+
+        // Lưu RefreshToken vào database (chỉ lưu dạng hash)
+        var refreshTokenEntity = new Domain.Entities.RefreshToken
+        {
+            UserId = user.Id,
+            TokenHash = _jwtTokenService.HashRefreshToken(token.RefreshToken),
+            ExpiresAt = token.RefreshTokenExpiresAt,
+        };
+        _context.RefreshTokens.Add(refreshTokenEntity);
+
+        await _context.SaveChangesAsync();
 
         return new LoginUseCaseOutput
         {
             AccessToken = token.AccessToken,
+            RefreshToken = token.RefreshToken,
             ExpiresAt = token.ExpiresAt,
         };
     }

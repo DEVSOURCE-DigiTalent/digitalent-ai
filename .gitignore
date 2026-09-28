@@ -44,3 +44,9 @@ doc_DigiTalentAI/
 
 # Visual Studio
 .vs/
+
+# Local tooling & scratch
+.codegraph/
+.playwright-mcp/
+.pnpm-store/
+scratch/

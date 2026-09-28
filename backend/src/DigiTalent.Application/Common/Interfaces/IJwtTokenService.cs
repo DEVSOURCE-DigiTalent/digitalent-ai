@@ -7,11 +7,15 @@ namespace DigiTalent.Application.Common.Interfaces;
 /// </summary>
 public interface IJwtTokenService
 {
-    JwtTokenResult CreateToken(User user, IEnumerable<string> roleCodes);
+    JwtTokenResult CreateToken(User user, IEnumerable<string> roleCodes, Guid? employeeId = null, Guid? departmentId = null);
+    string GenerateRefreshToken();
+    string HashRefreshToken(string refreshToken);
 }
 
 public class JwtTokenResult
 {
     public string AccessToken { get; set; } = string.Empty;
+    public string RefreshToken { get; set; } = string.Empty;
     public DateTimeOffset ExpiresAt { get; set; }
+    public DateTimeOffset RefreshTokenExpiresAt { get; set; }
 }

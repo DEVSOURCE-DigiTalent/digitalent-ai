@@ -20,6 +20,8 @@ builder.Services.AddJwtAuthentication(builder.Configuration);   // đọc + ki�
 
 builder.Services.AddControllers();
 builder.Services.AddSwaggerWithJwt();
+builder.Services.AddSignalR();
+builder.Services.AddScoped<INotificationSender, DigiTalent.Api.Services.SignalRNotificationSender>();
 
 // Cho phép frontend gọi API. Nhiều địa chỉ thì ngăn cách bằng dấu phẩy.
 var allowedOrigins = (builder.Configuration["AllowedOrigins"] ?? "http://localhost:5173")
@@ -110,6 +112,7 @@ app.UseAuthentication(); // đọc token → biết ai đang gọi (dùng trong 
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<DigiTalent.Api.Hubs.NotificationHub>("/hubs/notifications");
 app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }));
 
 app.Run();

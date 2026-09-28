@@ -124,8 +124,15 @@ public class LoginUseCaseTests
 
         var jwt = new Mock<IJwtTokenService>();
         var expiresAt = DateTimeOffset.UtcNow.AddHours(1);
-        jwt.Setup(j => j.CreateToken(It.IsAny<User>(), It.IsAny<IReadOnlyCollection<string>>()))
-            .Returns((new DigiTalent.Application.Common.Interfaces.JwtTokenResult { AccessToken = "token", ExpiresAt = expiresAt }));
+        jwt.Setup(j => j.CreateToken(It.IsAny<User>(), It.IsAny<IEnumerable<string>>(), It.IsAny<Guid?>(), It.IsAny<Guid?>()))
+            .Returns(new DigiTalent.Application.Common.Interfaces.JwtTokenResult
+            {
+                AccessToken = "token",
+                RefreshToken = "refreshtoken",
+                ExpiresAt = expiresAt,
+                RefreshTokenExpiresAt = expiresAt.AddDays(7),
+            });
+        jwt.Setup(j => j.HashRefreshToken(It.IsAny<string>())).Returns("hashed_token");
 
         var useCase = new LoginUseCase(context, hasher.Object, jwt.Object);
         var input = new LoginUseCaseInput { Email = "valid@test.com", Password = "password" };
