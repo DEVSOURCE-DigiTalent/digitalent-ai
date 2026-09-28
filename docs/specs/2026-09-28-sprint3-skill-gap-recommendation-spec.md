@@ -150,13 +150,15 @@ Thứ tự hiển thị: C1 (90) → C3 (75) → C4 (15) → C2, C5 (đạt, x�
 | Tình huống | Tính 1 nhân viên (`/calculate`) | Tính hàng loạt (`/calculate-batch`) |
 | --- | --- | --- |
 | Nhân viên không tồn tại / khác org / ngoài phạm vi | 404 | không nằm trong tập quét |
-| `status ≠ ACTIVE` | 400 `EMPLOYEE_NOT_ACTIVE` | skipped, lý do `EMPLOYEE_NOT_ACTIVE` |
+| `status ≠ ACTIVE` | 400 `EMPLOYEE_NOT_ACTIVE` | không nằm trong tập quét (batch chỉ lấy nhân viên ACTIVE — tránh danh sách skipped đầy nhân viên đã nghỉ/archive) |
 | Chưa gán vị trí (`job_position_id` NULL) | 400 `NO_JOB_POSITION` | skipped, `NO_JOB_POSITION` |
 | Vị trí chưa có bộ `ACTIVE` | 400 `NO_ACTIVE_REQUIREMENT_SET` | skipped, `NO_ACTIVE_REQUIREMENT_SET` |
 | `requirementSetId` truyền vào không `ACTIVE` / khác org | 400 / 404 | — |
 | Tập quét > 500 nhân viên | — | 400 `BATCH_TOO_LARGE` (lọc thêm theo phòng ban / vị trí) |
 
 Lỗi trả theo chuẩn `ApiResponse` hiện có: `message` tiếng Anh + mã lý do trong `errors[].message` với `field = "employeeId"`; FE ánh xạ mã sang tiếng Việt.
+
+> **Hợp đồng cho FE:** với lỗi 400 nghiệp vụ (`BadRequestException` có mã), `errors[].message` là **mã máy** (`NO_JOB_POSITION`, `BATCH_TOO_LARGE`…) để dịch; với lỗi 400 validate (`message = "Validation failed."`), `errors[].message` là **câu mô tả** của FluentValidation. Phân biệt bằng `message` của response.
 
 ### 4.7. API
 

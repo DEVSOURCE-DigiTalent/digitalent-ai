@@ -109,16 +109,17 @@ Tổng: 140 giờ, khớp Jira. Thứ tự cắt nếu trễ: (1) heatmap trong 
 - Modify: `Application/DependencyInjection.cs`
 - Test: `tests/DigiTalent.Tests/Intelligence/{SkillGapCalculatorTests.cs, SkillGapUseCaseTests.cs}`
 
-- [ ] **3.1 Test golden đỏ (T-SG-01..07):** `SkillGapCalculator.Calculate(IReadOnlyList<RequirementLine>, IReadOnlyDictionary<Guid, short> confirmed, SkillGapSettings)` → `SkillGapResult { Items, Summary }`. Dùng đúng bảng spec §4.5.
-- [ ] **3.2 Code calculator** theo §4.2–4.4 (thuần, không async, không EF). Chạy test → xanh.
-- [ ] **3.3 `SkillGapSettingsProvider`:** đọc `system_settings` key `intelligence.skill_gap` (org → global → default), parse JSON bằng `System.Text.Json`; JSON hỏng → log warning + default.
-- [ ] **3.4 `EmployeeScope`:** `Task<Employee> GetEmployeeInScopeAsync(Guid employeeId)` + `IQueryable<Employee> ApplyScope(IQueryable<Employee>)` theo D-S3-06 (Admin/HR: org; DM: `DepartmentId == currentUser.DepartmentId`; còn lại: `Id == currentUser.EmployeeId`). Ngoài phạm vi → `NotFoundException`.
-- [ ] **3.5 `SkillGapRunService.StageRunAsync(employee, requirementSetId?, generatedBy)`:** nạp requirement items + profile, gọi calculator, **Add** `SkillGapRun` + items vào context (không SaveChanges), trả run. Dùng lại ở Task 6.
-- [ ] **3.6 Use cases** theo spec §4.6–4.7. Batch: giới hạn 500, DM mặc định/khóa phòng của mình, trả `skipped` kèm lý do. `GetSkillGapRuns` với `latestOnly`: lọc `GeneratedAt == max theo employee` (dùng index `employee_id, generated_at desc`), phân trang trước rồi mới parse `summary_snapshot`.
-- [ ] **3.7 Test use case (T-SG-08..11)** với InMemory + mock `ICurrentUser` theo pattern `CompetencyTests`.
-- [ ] **3.8 Controller** `api/v1/intelligence/skill-gaps` với 5 action; route `me/latest` đặt trước `{runId:guid}`.
-- [ ] **3.9 Swagger thủ công:** login `hr@` → calculate `employee@` → khớp bảng §4.5; login `manager@` → batch phòng OPS; login `employee@` → `me/latest`, gọi `calculate` bị 403.
-- [ ] `dotnet build` 0 warning, `dotnet test` xanh. Commit `feat(intelligence): S3-T015 skill gap calculation api`. PR → HoangNT.
+- [x] **3.1 Test golden đỏ (T-SG-01..07):** `SkillGapCalculatorTests` — 11 case (golden §4.5, summary, chưa có profile, vượt chuẩn, bảng severity, cấu hình tùy chỉnh, làm tròn AwayFromZero, giữ thứ tự).
+- [x] **3.2 Code calculator** `Services/Intelligence/SkillGap/SkillGapCalculator.cs` (thuần, `CalculationVersion = "SG-1.0"`).
+- [x] **3.3 `SkillGapSettingsProvider`:** org → global → default; JSON hỏng hoặc ngoài khoảng (k ∈ [1,10], ngưỡng ∈ (0,100]) → log warning + default.
+- [x] **3.4 `EmployeeScope`** (`Common/Authorization`): `VisibleEmployees()` + `GetVisibleEmployeeAsync()`; ngoài phạm vi → 404.
+- [x] **3.5 `SkillGapRunService.StageRunsAsync(employees, orgId, generatedBy, requirementSetOverride?)`:** nạp theo lô (3 truy vấn cho cả danh sách, không N+1), Add run + items, không SaveChanges; trả outcome có `SkipReason`. `BadRequestException` mở rộng thêm `Errors[{field, code}]` để trả mã lý do.
+- [x] **3.6 Use cases:** `CalculateSkillGap`, `CalculateSkillGapBatch` (chỉ quét nhân viên ACTIVE, tối đa 500), `GetSkillGapRuns` (latestOnly, lọc trước khi project), `GetSkillGapRunById`, `GetMyLatestSkillGap`; DTO + `SkillGapRunReader` dùng chung ở `UseCases/Intelligence/SkillGap/Common`.
+- [x] **3.7 Test use case (T-SG-08..11)** — chạy trên **Postgres thật** thay vì InMemory để bắt lỗi dịch LINQ và CHECK constraint: 11 case (`SkillGapUseCaseTests` + `SkillGapTestWorld`).
+- [x] **3.8 Controller** `SkillGapsController` 5 action; `me/latest` đặt trước `{runId:guid}`.
+- [x] **3.9 Kiểm tay qua HTTP** (API thật + DB seed): HR calculate `employee@` khớp §4.5 (90/75/15, coverage 47.50); manager batch OPS → 2 tính được, 2 skipped `NO_JOB_POSITION`; employee `me/latest` 200, `calculate` 403; trainer → 400 `employeeId:NO_JOB_POSITION`.
+- [x] `dotnet build` 0 warning, `dotnet test` 91/91 xanh. Review (csharp-reviewer): không có CRITICAL/HIGH; đã sửa 3 góp ý — chọn run mới nhất theo Id (tránh trùng dòng khi 2 run cùng `GeneratedAt`, có test tái hiện), join thay subquery tương quan, `AsNoTracking` cho batch. Commit `feat(intelligence): S3-T015 skill gap calculation api`.
+- [ ] PR → HoangNT (chưa push).
 
 ### Task 4: FE My Skill Gap & Team Skill Gap (S3-T016)
 
