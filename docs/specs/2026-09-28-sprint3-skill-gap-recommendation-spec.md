@@ -354,6 +354,8 @@ Tích hợp: gọi hai policy trong use case bắt đầu / xem kết quả atte
 
 ## 8. Frontend — S3-T016
 
+> **Ngôn ngữ UI:** theo quy ước hiện hành của từng tuyến — trang `/enterprise/*` dùng **tiếng Anh** (như mọi trang enterprise khác), tuyến `/learn/*` dùng tiếng Việt. Mã lỗi (`NO_JOB_POSITION`…) được dịch trong `lib/competency-levels.ts`.
+
 ### 8.1. Thành phần dùng chung (`features/intelligence/components/`)
 
 | Component | Mô tả |
@@ -361,7 +363,7 @@ Tích hợp: gọi hai policy trong use case bắt đầu / xem kết quả atte
 | `CompetencyRadarChart` | Recharts `RadarChart`: lớp "Yêu cầu" (viền nét đứt) và lớp "Đã xác nhận" (vùng tô mờ), trục 0–3 có nhãn cấp độ. **Dưới 3 năng lực** thì hiển thị bar chart ngang (radar 1–2 trục vô nghĩa) |
 | `SkillGapKpiCards` | Tổng yêu cầu, Đã đạt, Còn thiếu, Mức đáp ứng chuẩn vị trí (%) |
 | `SkillGapTable` | Cột: năng lực, nhóm, yêu cầu, hiện tại, số bậc thiếu, trọng số, bắt buộc, `SeverityBadge`, priority |
-| `SeverityBadge` | HIGH đỏ, MEDIUM cam, LOW vàng, NULL xanh lục "Đạt" |
+| `SeverityBadge` | HIGH đỏ (danger), MEDIUM hổ phách (warning), LOW xám (default), NULL xanh lục "Met" — dùng đúng bảng màu `StatusBadge` hiện có |
 | `RecommendationList` | Thẻ khóa học: điểm, lý do (reasons), cảnh báo entry level, trạng thái đang học |
 | `lib/competency-levels.ts` | Nhãn 0–3 và map mã lỗi → tiếng Việt |
 
@@ -371,7 +373,7 @@ Tích hợp: gọi hai policy trong use case bắt đầu / xem kết quả atte
 | --- | --- | --- |
 | `MyCompetencyProfilePage` | `/enterprise/my-competency-profile` | Tab "Khoảng trống năng lực" (`GET me/latest`) + tab "Khóa học gợi ý". Empty state: "Chưa có phân tích — quản lý/HR sẽ chạy phân tích cho bạn" |
 | `SkillGapPage` | `/enterprise/intelligence/skill-gap` | Lọc phòng ban (DM bị khóa ở phòng mình), vị trí, tìm kiếm; bảng snapshot mới nhất; bấm dòng mở drawer chi tiết (radar + bảng + gợi ý). Nút "Phân tích lại" (1 người) và "Phân tích cả phòng" (batch, hiện danh sách bị bỏ qua kèm lý do). Nút chỉ hiện khi `can(SKILL_GAP_CALCULATE)` |
-| Learner `/learn/progress`, `/learn/target` | — | Thay biểu đồ cũ bằng `CompetencyRadarChart` với dữ liệu minh họa và nhãn "Dữ liệu minh họa" (D-S3-12) |
+| Learner `/learn/progress`, `/learn/target` | — | **Hoãn:** dữ liệu demo tuyến learner đang dùng thang **6 mức** ("Level 4/6"), trái quyết định thang 3 mức. Chỉ gắn radar sau khi dữ liệu learner chuyển sang thang 3 mức (D-S3-12) |
 
 ### 8.3. Mạng & trạng thái
 

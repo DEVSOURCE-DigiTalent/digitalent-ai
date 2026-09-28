@@ -130,13 +130,14 @@ Tổng: 140 giờ, khớp Jira. Thứ tự cắt nếu trễ: (1) heatmap trong 
 - Modify: `features/employee/pages/MyCompetencyProfilePage.tsx`, `features/intelligence/pages/SkillGapPage.tsx`, `features/learner/pages/{LearnerProgressPage,LearnerTargetPage}.tsx`
 - Test: `features/intelligence/__tests__/{SeverityBadge,CompetencyRadarChart,MyCompetencyProfilePage}.test.tsx`
 
-- [ ] **4.1** Type + service theo contract spec §4.7 (có thể làm từ 01/10 trước khi API merge). Map mã lỗi → tiếng Việt trong `competency-levels.ts`.
-- [ ] **4.2** Component dùng chung + test FE-01, FE-02 (radar < 3 trục → bar).
-- [ ] **4.3** `MyCompetencyProfilePage`: tab Skill gap (KPI + radar + bảng) và tab Gợi ý (để placeholder đến Task 5). Có đủ skeleton / empty / error. Test FE-03.
-- [ ] **4.4** `SkillGapPage`: bộ lọc (DM: select phòng bị khóa), bảng list `latestOnly`, drawer chi tiết, nút "Phân tích lại" + "Phân tích cả phòng" (ẩn nếu không có `SKILL_GAP_CALCULATE`), toast + hiện danh sách bị bỏ qua; invalidate query sau khi tính.
-- [ ] **4.5** Learner: thay biểu đồ bằng `CompetencyRadarChart`, gắn nhãn "Dữ liệu minh họa" (D-S3-12).
-- [ ] **4.6** *(Should)* Heatmap năng lực × nhân viên trong `SkillGapPage` từ dữ liệu list + detail.
-- [ ] `npm run build`, `npm run lint`, `npm test` xanh; kiểm tra tay ở 1280px và 768px. Commit `feat(intelligence): S3-T016 skill gap pages`. PR → VietTN.
+- [x] **4.1** `services/intelligence.service.ts` (`skillGapService`), `hooks/use-skill-gaps.ts`, `lib/competency-levels.ts` (nhãn Basic/Intermediate/Advanced + dịch mã lỗi). Cài `recharts` 3.10.1 (hỗ trợ React 19).
+- [x] **4.2** `SeverityBadge`, `CompetencyRadarChart` (< 3 năng lực → bar chart), `SkillGapKpiCards`, `SkillGapTable`, `SkillGapDetailView`, `SkillGapDetailDrawer`, `BatchResultPanel`; test FE-01, FE-02.
+- [x] **4.3** `MyCompetencyProfilePage`: tab Skill gap (skeleton / error + retry / empty / dữ liệu) + tab Recommended courses (placeholder đến Task 5). Test FE-03.
+- [x] **4.4** `SkillGapPage`: lọc vị trí + phòng ban (ẩn với DM — API đã tự giới hạn phòng), tìm kiếm, drawer chi tiết + Recalculate, "Recalculate all" (ẩn nếu không có quyền) + panel danh sách bị bỏ qua. Sidebar: bỏ EMPLOYEE khỏi mục Team Skill Gap (đã có My Competency Profile).
+- [ ] **4.5** *(Hoãn)* Radar tuyến learner — dữ liệu demo learner dùng thang 6 mức, cần chuyển sang thang 3 mức trước (xem spec §8.2).
+- [ ] **4.6** *(Should — chưa làm)* Heatmap năng lực × nhân viên.
+- [x] `npm run build` ✅, oxlint file mới ✅, `npm test` 76/76 ✅ (1 lần chạy toàn bộ bị lỗi khởi động môi trường thoáng qua, chạy lại xanh). Commit `feat(intelligence): S3-T016 skill gap pages`.
+- [ ] **Kiểm tra tay trên trình duyệt (1280px / 768px) — CHƯA LÀM:** máy dev hết bộ nhớ commit (31,5/32,6 GB do các dev server khác) nên Vite/API không khởi động được. Làm lại khi máy trống. PR → VietTN.
 
 ### Task 5: Course Recommendation (S3-T017)
 
