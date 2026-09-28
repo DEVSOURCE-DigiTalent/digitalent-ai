@@ -14,6 +14,12 @@ export const PublicLayout: React.FC = () => {
           </nav>
         </div>
         <div className="flex items-center gap-4">
+          <Link to="/experience?role=personal" className="text-sm font-medium text-blue-700 hover:underline">
+            Xem mẫu cá nhân
+          </Link>
+          <Link to="/experience?role=enterprise" className="text-sm font-medium text-blue-700 hover:underline">
+            Xem mẫu doanh nghiệp
+          </Link>
           <Link to="/learn" className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded hover:bg-blue-50 transition">
             Vào học
           </Link>
