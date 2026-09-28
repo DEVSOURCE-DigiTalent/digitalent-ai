@@ -12,7 +12,8 @@ public class QuestionBankConfiguration : IEntityTypeConfiguration<QuestionBank>
 {
     public void Configure(EntityTypeBuilder<QuestionBank> builder)
     {
-        builder.ToTable("question_banks");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("question_banks", table => table.ExcludeFromMigrations());
         builder.HasKey(x => x.Id);
     }
 }

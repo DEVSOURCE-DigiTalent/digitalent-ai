@@ -12,7 +12,8 @@ public class PracticalTaskTargetConfiguration : IEntityTypeConfiguration<Practic
 {
     public void Configure(EntityTypeBuilder<PracticalTaskTarget> builder)
     {
-        builder.ToTable("practical_task_targets");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("practical_task_targets", table => table.ExcludeFromMigrations());
         builder.HasKey(x => x.Id);
 
         // Cột đặc biệt (jsonb / số thập phân): phải khai báo đúng kiểu

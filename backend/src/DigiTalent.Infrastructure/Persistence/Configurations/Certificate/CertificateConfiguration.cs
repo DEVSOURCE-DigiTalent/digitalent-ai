@@ -12,7 +12,8 @@ public class CertificateConfiguration : IEntityTypeConfiguration<Certificate>
 {
     public void Configure(EntityTypeBuilder<Certificate> builder)
     {
-        builder.ToTable("certificates");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("certificates", table => table.ExcludeFromMigrations());
         builder.HasKey(x => x.Id);
     }
 }

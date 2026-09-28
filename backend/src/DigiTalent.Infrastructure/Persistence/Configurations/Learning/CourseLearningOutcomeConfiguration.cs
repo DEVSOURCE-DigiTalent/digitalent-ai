@@ -12,7 +12,8 @@ public class CourseLearningOutcomeConfiguration : IEntityTypeConfiguration<Cours
 {
     public void Configure(EntityTypeBuilder<CourseLearningOutcome> builder)
     {
-        builder.ToTable("course_learning_outcomes");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("course_learning_outcomes", table => table.ExcludeFromMigrations());
         builder.HasKey(x => x.Id);
     }
 }

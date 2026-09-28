@@ -12,7 +12,8 @@ public class CertificateVerificationLogConfiguration : IEntityTypeConfiguration<
 {
     public void Configure(EntityTypeBuilder<CertificateVerificationLog> builder)
     {
-        builder.ToTable("certificate_verification_logs");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("certificate_verification_logs", table => table.ExcludeFromMigrations());
         builder.HasKey(x => x.Id);
     }
 }

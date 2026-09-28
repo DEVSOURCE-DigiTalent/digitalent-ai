@@ -12,7 +12,8 @@ public class ReadinessScoreConfiguration : IEntityTypeConfiguration<ReadinessSco
 {
     public void Configure(EntityTypeBuilder<ReadinessScore> builder)
     {
-        builder.ToTable("readiness_scores");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("readiness_scores", table => table.ExcludeFromMigrations());
         builder.HasKey(x => x.Id);
 
         // Cột đặc biệt (jsonb / số thập phân): phải khai báo đúng kiểu

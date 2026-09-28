@@ -12,7 +12,8 @@ public class AssignedTaskTargetConfiguration : IEntityTypeConfiguration<Assigned
 {
     public void Configure(EntityTypeBuilder<AssignedTaskTarget> builder)
     {
-        builder.ToTable("assigned_task_targets");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("assigned_task_targets", table => table.ExcludeFromMigrations());
         builder.HasKey(x => x.Id);
 
         // Cột đặc biệt (jsonb / số thập phân): phải khai báo đúng kiểu

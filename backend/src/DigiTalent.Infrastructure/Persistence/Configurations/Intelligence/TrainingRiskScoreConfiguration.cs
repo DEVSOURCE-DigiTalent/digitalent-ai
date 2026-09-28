@@ -12,7 +12,8 @@ public class TrainingRiskScoreConfiguration : IEntityTypeConfiguration<TrainingR
 {
     public void Configure(EntityTypeBuilder<TrainingRiskScore> builder)
     {
-        builder.ToTable("training_risk_scores");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("training_risk_scores", table => table.ExcludeFromMigrations());
         builder.HasKey(x => x.Id);
 
         // Cột đặc biệt (jsonb / số thập phân): phải khai báo đúng kiểu

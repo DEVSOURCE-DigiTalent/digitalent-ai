@@ -12,7 +12,8 @@ public class CompetencyFrameworkConfiguration : IEntityTypeConfiguration<Compete
 {
     public void Configure(EntityTypeBuilder<CompetencyFramework> builder)
     {
-        builder.ToTable("competency_frameworks");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("competency_frameworks", table => table.ExcludeFromMigrations());
         builder.HasKey(x => x.Id);
     }
 }

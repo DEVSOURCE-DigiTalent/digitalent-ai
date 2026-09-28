@@ -12,7 +12,8 @@ public class LearningMaterialConfiguration : IEntityTypeConfiguration<LearningMa
 {
     public void Configure(EntityTypeBuilder<LearningMaterial> builder)
     {
-        builder.ToTable("learning_materials");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("learning_materials", table => table.ExcludeFromMigrations());
         builder.HasKey(x => x.Id);
     }
 }

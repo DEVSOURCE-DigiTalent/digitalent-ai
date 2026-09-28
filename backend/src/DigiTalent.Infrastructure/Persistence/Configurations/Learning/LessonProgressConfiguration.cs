@@ -12,7 +12,8 @@ public class LessonProgressConfiguration : IEntityTypeConfiguration<LessonProgre
 {
     public void Configure(EntityTypeBuilder<LessonProgress> builder)
     {
-        builder.ToTable("lesson_progress");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("lesson_progress", table => table.ExcludeFromMigrations());
         builder.HasKey(x => x.Id);
 
         // Cột đặc biệt (jsonb / số thập phân): phải khai báo đúng kiểu

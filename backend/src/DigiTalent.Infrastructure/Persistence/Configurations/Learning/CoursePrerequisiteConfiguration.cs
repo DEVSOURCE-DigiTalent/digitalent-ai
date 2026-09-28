@@ -11,7 +11,8 @@ public class CoursePrerequisiteConfiguration : IEntityTypeConfiguration<CoursePr
 {
     public void Configure(EntityTypeBuilder<CoursePrerequisite> builder)
     {
-        builder.ToTable("course_prerequisites");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("course_prerequisites", table => table.ExcludeFromMigrations());
         builder.HasKey(x => new { x.CourseId, x.PrerequisiteCourseId });
     }
 }

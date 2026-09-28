@@ -12,7 +12,8 @@ public class LessonConfiguration : IEntityTypeConfiguration<Lesson>
 {
     public void Configure(EntityTypeBuilder<Lesson> builder)
     {
-        builder.ToTable("lessons");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("lessons", table => table.ExcludeFromMigrations());
         builder.HasKey(x => x.Id);
     }
 }

@@ -12,7 +12,8 @@ public class QuestionOptionConfiguration : IEntityTypeConfiguration<QuestionOpti
 {
     public void Configure(EntityTypeBuilder<QuestionOption> builder)
     {
-        builder.ToTable("question_options");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("question_options", table => table.ExcludeFromMigrations());
         builder.HasKey(x => x.Id);
     }
 }

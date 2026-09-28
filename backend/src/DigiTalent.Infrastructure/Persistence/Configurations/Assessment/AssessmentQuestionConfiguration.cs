@@ -12,7 +12,8 @@ public class AssessmentQuestionConfiguration : IEntityTypeConfiguration<Assessme
 {
     public void Configure(EntityTypeBuilder<AssessmentQuestion> builder)
     {
-        builder.ToTable("assessment_questions");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("assessment_questions", table => table.ExcludeFromMigrations());
         builder.HasKey(x => new { x.AssessmentId, x.QuestionId });
 
         // Cột đặc biệt (jsonb / số thập phân): phải khai báo đúng kiểu

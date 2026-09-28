@@ -12,7 +12,8 @@ public class FileObjectConfiguration : IEntityTypeConfiguration<FileObject>
 {
     public void Configure(EntityTypeBuilder<FileObject> builder)
     {
-        builder.ToTable("file_objects");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("file_objects", table => table.ExcludeFromMigrations());
         builder.HasKey(x => x.Id);
     }
 }
