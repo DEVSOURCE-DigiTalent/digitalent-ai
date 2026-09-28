@@ -12,6 +12,7 @@ namespace DigiTalent.Infrastructure.Persistence.Seed;
 ///   2. 5 role + mọi mã quyền trong Permissions.cs + ma trận RolePermissions.Defaults
 ///      (chỉ THÊM phần còn thiếu — không ghi đè ma trận admin đã chỉnh)
 ///   3. Mỗi role 1 tài khoản (chỉ khi bảng users còn trống). Mật khẩu chung: Admin@1234
+///   4. Dữ liệu Skill Gap / gợi ý khóa học — xem SkillGapSeeder
 /// </summary>
 public static class DbSeeder
 {
@@ -23,6 +24,7 @@ public static class DbSeeder
         var organization = await SeedOrganizationAsync(db);
         await SeedReferenceDataAsync(db);
         await SeedUsersAsync(db, passwordHasher, organization.Id, developmentPassword ?? DefaultPassword);
+        await SkillGapSeeder.SeedDemoAsync(db, organization.Id);
     }
 
     public static async Task SeedReferenceDataAsync(AppDbContext db)
@@ -30,6 +32,7 @@ public static class DbSeeder
         await SeedRolesAsync(db);
         await SeedPermissionsAsync(db);
         await SeedRolePermissionsAsync(db);
+        await SkillGapSeeder.SeedReferenceAsync(db);
     }
 
     private static async Task<Organization> SeedOrganizationAsync(AppDbContext db)
