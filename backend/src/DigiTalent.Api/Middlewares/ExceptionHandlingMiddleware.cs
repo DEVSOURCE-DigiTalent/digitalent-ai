@@ -47,7 +47,10 @@ public class ExceptionHandlingMiddleware
         }
         catch (BadRequestException ex)
         {
-            await WriteErrorAsync(context, StatusCodes.Status400BadRequest, ex.Message);
+            var errors = ex.Errors
+                .Select(e => new ApiError { Field = e.Field, Message = e.Code })
+                .ToList();
+            await WriteErrorAsync(context, StatusCodes.Status400BadRequest, ex.Message, errors);
         }
         catch (UnauthorizedException ex)
         {

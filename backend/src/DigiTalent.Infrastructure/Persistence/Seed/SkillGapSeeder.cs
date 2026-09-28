@@ -1,3 +1,4 @@
+using DigiTalent.Application.Services.Intelligence.SkillGap;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,7 @@ namespace DigiTalent.Infrastructure.Persistence.Seed;
 /// </summary>
 public static class SkillGapSeeder
 {
-    public const string SkillGapSettingKey = "intelligence.skill_gap";
+    public const string SkillGapSettingKey = SkillGapSettingsProvider.SettingKey;
     private const string SkillGapSettingValue = """{"mandatoryMultiplier":1.5,"mediumWeightThreshold":20}""";
 
     private static readonly (string Code, decimal Weight, string Notes)[] RecommendationWeights =

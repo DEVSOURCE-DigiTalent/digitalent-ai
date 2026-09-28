@@ -1,5 +1,7 @@
 using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.Services.Intelligence.SkillGap;
+using DigiTalent.Application.UseCases.Intelligence.SkillGap.Common;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -32,6 +34,12 @@ public static class DependencyInjection
 
         // 4. Tra quyền từ database (dùng cho [HasPermission] và /auth/me)
         services.AddScoped<IPermissionService, PermissionService>();
+
+        // 5. Dịch vụ dùng chung giữa các use case (Scrutor chỉ tự quét IUseCase<,>)
+        services.AddScoped<EmployeeScope>();
+        services.AddScoped<SkillGapSettingsProvider>();
+        services.AddScoped<SkillGapRunService>();
+        services.AddScoped<SkillGapRunReader>();
 
         return services;
     }
