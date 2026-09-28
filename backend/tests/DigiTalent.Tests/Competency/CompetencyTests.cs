@@ -624,6 +624,101 @@ public class CompetencyTests
         v2Reloaded.ActivatedAt.Should().NotBeNull();
     }
 
+    [Theory]
+    [InlineData(60, 30)]   // tổng 90
+    [InlineData(60, 50)]   // tổng 110
+    public async Task ActivatePositionRequirementSet_RejectsWhenWeightSumIsNot100(decimal weight1, decimal weight2)
+    {
+        var dbName = Guid.NewGuid().ToString();
+        using var context = new AppDbContext(GetOptions(dbName));
+
+        var orgId = Guid.NewGuid();
+        var draft = SeedDraftRequirementSet(context, orgId, weight1, weight2);
+        await context.SaveChangesAsync();
+
+        var useCase = new ActivatePositionRequirementSetUseCase(context, CreateCurrentUserMock(orgId).Object);
+
+        var act = () => useCase.ExecuteAsync(new ActivatePositionRequirementSetUseCaseInput { Id = draft.Id });
+
+        await act.Should().ThrowAsync<BadRequestException>().WithMessage("*100*");
+        var reloaded = await context.GetDbSet<PositionRequirementSet>().FindAsync(draft.Id);
+        reloaded!.Status.Should().Be(Statuses.PositionRequirementSet.Draft);
+    }
+
+    [Fact]
+    public async Task ActivatePositionRequirementSet_AcceptsFractionalWeightsSummingTo100()
+    {
+        var dbName = Guid.NewGuid().ToString();
+        using var context = new AppDbContext(GetOptions(dbName));
+
+        var orgId = Guid.NewGuid();
+        var draft = SeedDraftRequirementSet(context, orgId, 33.33m, 66.67m);
+        await context.SaveChangesAsync();
+
+        var useCase = new ActivatePositionRequirementSetUseCase(context, CreateCurrentUserMock(orgId).Object);
+
+        var result = await useCase.ExecuteAsync(new ActivatePositionRequirementSetUseCaseInput { Id = draft.Id });
+
+        result.Status.Should().Be(Statuses.PositionRequirementSet.Active);
+    }
+
+    private static PositionRequirementSet SeedDraftRequirementSet(AppDbContext context, Guid orgId, decimal weight1, decimal weight2)
+    {
+        var position = new JobPosition
+        {
+            Id = Guid.NewGuid(),
+            OrganizationId = orgId,
+            Code = "DATA_ANALYST",
+            Name = "Data Analyst",
+            Status = Statuses.MasterData.Active
+        };
+        context.JobPositions.Add(position);
+
+        var category = new CompetencyCategory
+        {
+            Id = Guid.NewGuid(),
+            OrganizationId = orgId,
+            Code = "DATA",
+            Name = "Data",
+            Status = Statuses.MasterData.Active
+        };
+        context.GetDbSet<CompetencyCategory>().Add(category);
+
+        var comp1 = new Domain.Entities.Competency
+        {
+            Id = Guid.NewGuid(),
+            CategoryId = category.Id,
+            Code = "DATA_LITERACY",
+            Name = "Data Literacy",
+            CompetencyType = Statuses.CompetencyType.CoreDigital,
+            Status = Statuses.Competency.Active
+        };
+        var comp2 = new Domain.Entities.Competency
+        {
+            Id = Guid.NewGuid(),
+            CategoryId = category.Id,
+            Code = "AI_LITERACY",
+            Name = "AI Literacy",
+            CompetencyType = Statuses.CompetencyType.CoreDigital,
+            Status = Statuses.Competency.Active
+        };
+        context.GetDbSet<Domain.Entities.Competency>().AddRange(comp1, comp2);
+
+        var draft = new PositionRequirementSet
+        {
+            Id = Guid.NewGuid(),
+            JobPositionId = position.Id,
+            VersionNo = 1,
+            Status = Statuses.PositionRequirementSet.Draft,
+            CreatedByUserId = Guid.NewGuid()
+        };
+        draft.Items.Add(new PositionRequirementItem { Id = Guid.NewGuid(), RequirementSetId = draft.Id, CompetencyId = comp1.Id, RequiredLevel = 3, WeightPercent = weight1 });
+        draft.Items.Add(new PositionRequirementItem { Id = Guid.NewGuid(), RequirementSetId = draft.Id, CompetencyId = comp2.Id, RequiredLevel = 2, WeightPercent = weight2 });
+        context.GetDbSet<PositionRequirementSet>().Add(draft);
+
+        return draft;
+    }
+
     [Fact]
     public async Task MultiTenantIsolation_CompetencyCannotBeCreatedInAnotherOrgCategory()
     {

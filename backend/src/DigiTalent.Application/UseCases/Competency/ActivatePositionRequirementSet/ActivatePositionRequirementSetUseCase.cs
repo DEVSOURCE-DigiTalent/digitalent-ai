@@ -10,6 +10,8 @@ namespace DigiTalent.Application.UseCases.Competency;
 
 public class ActivatePositionRequirementSetUseCase : IUseCase<ActivatePositionRequirementSetUseCaseInput, ActivatePositionRequirementSetUseCaseOutput>
 {
+    private const decimal RequiredTotalWeightPercent = 100m;
+
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUser _currentUser;
 
@@ -39,10 +41,21 @@ public class ActivatePositionRequirementSetUseCase : IUseCase<ActivatePositionRe
             throw new BadRequestException("Cannot activate an archived requirement set.");
         }
 
-        var hasItems = await _context.GetDbSet<PositionRequirementItem>().AnyAsync(i => i.RequirementSetId == set.Id);
-        if (!hasItems)
+        var weights = await _context.GetDbSet<PositionRequirementItem>()
+            .Where(i => i.RequirementSetId == set.Id)
+            .Select(i => i.WeightPercent)
+            .ToListAsync();
+        if (weights.Count == 0)
         {
             throw new BadRequestException("Cannot activate a position requirement set with no items.");
+        }
+
+        // Skill gap priority & coverage assume weights sum to exactly 100 (drafts may be incomplete).
+        var totalWeight = weights.Sum();
+        if (totalWeight != RequiredTotalWeightPercent)
+        {
+            throw new BadRequestException(
+                $"Total weight percent must equal {RequiredTotalWeightPercent} before activation (current: {totalWeight}).");
         }
 
         if (set.Status != Statuses.PositionRequirementSet.Active)
