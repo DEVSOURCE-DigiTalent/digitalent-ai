@@ -209,7 +209,7 @@ Tổng: 140 giờ, khớp Jira. Thứ tự cắt nếu trễ: (1) heatmap trong 
 - [ ] Cập nhật Report 4 cho SQL v2.4 — **chờ Mentor duyệt D-S3-13**.
 - [x] Cập nhật `CLAUDE.md` phần đã cũ (tests, permission, SignalR, audit, migration, domain events, phạm vi dữ liệu, 409).
 - [x] Kịch bản demo kiểm tra trên trình duyệt (DB seed mới): HR "Recalculate all" → 2 tính, 2 bỏ qua kèm lý do → mở `employee@` (gap 3, coverage 47.5%, gợi ý DA-ADVANCED > SEC-BASIC > DA-EXCEL-PBI) → "Confirm level" Information security = Intermediate → panel tự chuyển snapshot mới (gap 2, coverage 72.5%), SEC-BASIC biến mất; `employee@` nhận push SignalR (client thật). *Radar chưa xem được trong phiên tự động (tab nền dừng animation) — cần xem tay trên máy demo.*
-- [x] Commit `docs: S3-T025 update report 3 for skill gap engine`.
+- [ ] Commit Report 3: `docs/03A_SRS_Yeu_Cau_Chuc_Nang.md` (cùng 18 tài liệu `docs/00–17`) **chưa được track trong git** — chờ Leader quyết định đưa bộ tài liệu này vào repo. `CLAUDE.md` + plan đã commit.
 
 ---
 
