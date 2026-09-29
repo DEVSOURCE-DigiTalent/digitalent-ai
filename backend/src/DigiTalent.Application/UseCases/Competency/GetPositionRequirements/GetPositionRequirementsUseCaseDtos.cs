@@ -15,6 +15,10 @@ public class PositionRequirementItemDto
     public string CompetencyType { get; set; } = string.Empty;
     public Guid CategoryId { get; set; }
     public string CategoryName { get; set; } = string.Empty;
+    /// <summary>Thứ tự nhóm (miền 1–6 với khung Thông tư 02/2025) — FE nhóm bảng theo miền.</summary>
+    public int CategorySortOrder { get; set; }
+    /// <summary>Mã năng lực trong Thông tư 02/2025 (ví dụ "4.2"); null nếu không mapping.</summary>
+    public string? FrameworkCode { get; set; }
     public int RequiredLevel { get; set; }
     public decimal WeightPercent { get; set; }
     public bool IsMandatory { get; set; }

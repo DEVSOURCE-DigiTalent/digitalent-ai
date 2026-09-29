@@ -66,9 +66,11 @@ public class GetCompetenciesUseCase : IUseCase<GetCompetenciesUseCaseInput, GetC
         var pageSize = input.PageSize < 1 ? 10 : input.PageSize;
 
         var criteriaSet = _context.GetDbSet<CompetencyLevelCriterion>().AsNoTracking();
+        var tt02Mappings = Tt02Mappings.Query(_context);
 
         var items = await query
-            .OrderBy(x => x.Competency.Code)
+            .OrderBy(x => x.Category.SortOrder)
+            .ThenBy(x => x.Competency.Code)
             .Skip((pageIndex - 1) * pageSize)
             .Take(pageSize)
             .Select(x => new CompetencyListItem
@@ -77,6 +79,8 @@ public class GetCompetenciesUseCase : IUseCase<GetCompetenciesUseCaseInput, GetC
                 CategoryId = x.Competency.CategoryId,
                 CategoryName = x.Category.Name,
                 CategoryCode = x.Category.Code,
+                CategorySortOrder = x.Category.SortOrder,
+                FrameworkCode = tt02Mappings.Where(m => m.CompetencyId == x.Competency.Id).Select(m => m.SourceCode).FirstOrDefault(),
                 Code = x.Competency.Code,
                 Name = x.Competency.Name,
                 Description = x.Competency.Description,

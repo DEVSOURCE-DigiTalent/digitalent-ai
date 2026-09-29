@@ -16,6 +16,10 @@ public class CompetencyListItem
     public Guid CategoryId { get; set; }
     public string CategoryName { get; set; } = string.Empty;
     public string CategoryCode { get; set; } = string.Empty;
+    /// <summary>Thứ tự nhóm (miền 1–6 với khung Thông tư 02/2025).</summary>
+    public int CategorySortOrder { get; set; }
+    /// <summary>Mã năng lực trong Thông tư 02/2025 (ví dụ "4.2"); null nếu năng lực nội bộ không mapping.</summary>
+    public string? FrameworkCode { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }

@@ -812,4 +812,30 @@ public class CompetencyTests
         var list = await getUseCase.ExecuteAsync(new GetCompetenciesUseCaseInput());
         list.Items.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task GetCompetenciesAndRequirements_ExposeCircular02CodeAndDomainOrder()
+    {
+        using var context = new AppDbContext(GetOptions(Guid.NewGuid().ToString()));
+        var orgId = Guid.NewGuid();
+        var competencies = await Tt02TestData.SeedMappedCompetenciesAsync(context, orgId);
+        var category = await context.CompetencyCategories.SingleAsync(c => c.Id == competencies[0].CategoryId);
+        category.SortOrder = 4;
+        var position = AddPosition(context, orgId);
+        var set = NewSet(position.Id, 1, Statuses.PositionRequirementSet.Draft);
+        set.Items = Tt02TestData.Items(set.Id, competencies).ToList();
+        context.GetDbSet<PositionRequirementSet>().Add(set);
+        await context.SaveChangesAsync();
+        var user = CreateCurrentUserMock(orgId).Object;
+
+        var list = await new GetCompetenciesUseCase(context, user).ExecuteAsync(new GetCompetenciesUseCaseInput { PageSize = 50 });
+        var requirements = await new GetPositionRequirementsUseCase(context, user)
+            .ExecuteAsync(new GetPositionRequirementsUseCaseInput { PositionId = position.Id });
+
+        list.Items.Single(i => i.Code == "TT02-4.2").FrameworkCode.Should().Be("4.2");
+        list.Items.Should().OnlyContain(i => i.CategorySortOrder == 4);
+        var item = requirements.Items.Single(i => i.CompetencyCode == "TT02-6.3");
+        item.FrameworkCode.Should().Be("6.3");
+        item.CategorySortOrder.Should().Be(4);
+    }
 }

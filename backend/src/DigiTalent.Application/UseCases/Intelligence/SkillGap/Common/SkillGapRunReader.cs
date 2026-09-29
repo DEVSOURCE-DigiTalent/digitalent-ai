@@ -1,6 +1,7 @@
 using System.Text.Json;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Services.Intelligence.SkillGap;
+using DigiTalent.Application.UseCases.Competency.Common;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -84,6 +85,7 @@ public class SkillGapRunReader
 
     private async Task<SkillGapRunDetail> ToDetailAsync(SkillGapRunHeader header)
     {
+        var tt02Mappings = Tt02Mappings.Query(_context);
         var items = await (
                 from item in _context.SkillGapItems
                 join competency in _context.Competencies on item.CompetencyId equals competency.Id
@@ -95,6 +97,8 @@ public class SkillGapRunReader
                     CompetencyCode = competency.Code,
                     CompetencyName = competency.Name,
                     CategoryName = category.Name,
+                    CategorySortOrder = category.SortOrder,
+                    FrameworkCode = tt02Mappings.Where(m => m.CompetencyId == competency.Id).Select(m => m.SourceCode).FirstOrDefault(),
                     RequiredLevel = item.RequiredLevel,
                     CurrentLevel = item.CurrentLevel,
                     GapSteps = item.GapSteps,

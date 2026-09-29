@@ -61,6 +61,7 @@ public class GetPositionRequirementsUseCase : IUseCase<GetPositionRequirementsUs
             };
         }
 
+        var tt02Mappings = Tt02Mappings.Query(_context);
         var items = await (from item in _context.GetDbSet<PositionRequirementItem>().AsNoTracking()
                            where item.RequirementSetId == set.Id
                            join comp in _context.GetDbSet<Domain.Entities.Competency>().AsNoTracking() on item.CompetencyId equals comp.Id
@@ -74,6 +75,8 @@ public class GetPositionRequirementsUseCase : IUseCase<GetPositionRequirementsUs
                                CompetencyType = comp.CompetencyType,
                                CategoryId = comp.CategoryId,
                                CategoryName = cat.Name,
+                               CategorySortOrder = cat.SortOrder,
+                               FrameworkCode = tt02Mappings.Where(m => m.CompetencyId == comp.Id).Select(m => m.SourceCode).FirstOrDefault(),
                                RequiredLevel = item.RequiredLevel,
                                WeightPercent = item.WeightPercent,
                                IsMandatory = item.IsMandatory,
