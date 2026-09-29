@@ -134,14 +134,66 @@ public class QuestionBankService
         };
     }
 
+    /// <summary>
+    /// Delete a question bank. Only banks with no questions can be removed
+    /// to avoid orphaning question records referenced elsewhere.
+    /// </summary>
+    public async Task DeleteBankAsync(Guid bankId)
+    {
+        var bank = await _context.QuestionBanks
+            .Include(b => b.Questions)
+            .FirstOrDefaultAsync(b => b.Id == bankId)
+            ?? throw new KeyNotFoundException("Question bank not found.");
+
+        if (bank.Questions.Count > 0)
+            throw new InvalidOperationException("Cannot delete a question bank that still contains questions.");
+
+        _context.QuestionBanks.Remove(bank);
+        await _context.SaveChangesAsync(default);
+    }
+
+    // ═══════════════════════════════════════
+    // Taxonomy Tags
+    // ═══════════════════════════════════════
+
+    public async Task<List<QuestionTagResponse>> GetAllTagsAsync()
+    {
+        return await _context.QuestionTags
+            .OrderBy(t => t.Category).ThenBy(t => t.Name)
+            .Select(t => new QuestionTagResponse { Id = t.Id, Name = t.Name, Category = t.Category })
+            .ToListAsync();
+    }
+
+    public async Task<QuestionTagResponse> CreateTagAsync(CreateQuestionTagRequest request)
+    {
+        var orgId = await _context.Organizations.Select(o => o.Id).FirstAsync();
+
+        var exists = await _context.QuestionTags
+            .AnyAsync(t => t.OrganizationId == orgId && t.Name.ToLower() == request.Name.ToLower());
+        if (exists)
+            throw new InvalidOperationException($"Tag '{request.Name}' already exists.");
+
+        var entity = new Domain.Entities.Assessment.QuestionTag
+        {
+            OrganizationId = orgId,
+            Name = request.Name,
+            Category = request.Category,
+        };
+        _context.QuestionTags.Add(entity);
+        await _context.SaveChangesAsync(default);
+
+        return new QuestionTagResponse { Id = entity.Id, Name = entity.Name, Category = entity.Category };
+    }
+
     // ═══════════════════════════════════════
     // Questions
     // ═══════════════════════════════════════
 
-    public async Task<PagedList<QuestionResponse>> SearchQuestionsAsync(Guid bankId, PaginationRequest request)
+    public async Task<PagedList<QuestionResponse>> SearchQuestionsAsync(Guid bankId, PaginationRequest request, Guid? tagId = null)
     {
         var query = _context.Questions
             .Include(q => q.Options)
+            .Include(q => q.TagAssignments).ThenInclude(a => a.Tag)
             .Where(q => q.BankId == bankId)
             .AsQueryable();
 
@@ -151,35 +203,22 @@ public class QuestionBankService
             query = query.Where(q => q.Content.ToLower().Contains(kw));
         }
 
+        if (tagId.HasValue)
+        {
+            query = query.Where(q => q.TagAssignments.Any(a => a.TagId == tagId.Value));
+        }
+
         var totalItems = await query.CountAsync();
         var items = await query
             .OrderByDescending(q => q.CreatedAt)
             .Skip((request.PageIndex - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(q => new QuestionResponse
-            {
-                Id = q.Id,
-                BankId = q.BankId,
-                CompetencyId = q.CompetencyId,
-                QuestionType = q.QuestionType,
-                Difficulty = q.Difficulty,
-                Content = q.Content,
-                Explanation = q.Explanation,
-                AiGeneratedFlag = q.AiGeneratedFlag,
-                Status = q.Status,
-                CreatedAt = q.CreatedAt,
-                Options = q.Options.OrderBy(o => o.SortOrder)
-                    .Select(o => new QuestionOptionResponse
-                    {
-                        Id = o.Id, Content = o.Content,
-                        IsCorrect = o.IsCorrect, SortOrder = o.SortOrder,
-                    }).ToList(),
-            })
             .ToListAsync();
 
         return new PagedList<QuestionResponse>
         {
-            Items = items, PageIndex = request.PageIndex,
+            Items = items.Select(q => (QuestionResponse)MapQuestionDetail(q)).ToList(),
+            PageIndex = request.PageIndex,
             PageSize = request.PageSize, TotalItems = totalItems,
         };
     }
@@ -188,6 +227,7 @@ public class QuestionBankService
     {
         var question = await _context.Questions
             .Include(q => q.Options)
+            .Include(q => q.TagAssignments).ThenInclude(a => a.Tag)
             .FirstOrDefaultAsync(q => q.Id == questionId)
             ?? throw new KeyNotFoundException("Question not found.");
 
@@ -227,6 +267,9 @@ public class QuestionBankService
             }
         }
 
+        if (request.TagIds.Count > 0)
+            await AttachTagsAsync(entity, request.TagIds);
+
         _context.Questions.Add(entity);
         await _context.SaveChangesAsync(default);
 
@@ -237,6 +280,7 @@ public class QuestionBankService
     {
         var question = await _context.Questions
             .Include(q => q.Options)
+            .Include(q => q.TagAssignments).ThenInclude(a => a.Tag)
             .FirstOrDefaultAsync(q => q.Id == questionId)
             ?? throw new KeyNotFoundException("Question not found.");
 
@@ -260,9 +304,51 @@ public class QuestionBankService
             }
         }
 
+        // Replace tags if provided
+        if (request.TagIds != null)
+        {
+            _context.QuestionTagAssignments.RemoveRange(question.TagAssignments);
+            question.TagAssignments.Clear();
+            if (request.TagIds.Count > 0)
+                await AttachTagsAsync(question, request.TagIds);
+        }
+
         await _context.SaveChangesAsync(default);
 
         return MapQuestionDetail(question);
+    }
+
+    /// <summary>
+    /// Delete a question. Only DRAFT questions with no assessment usage can be removed
+    /// so published exam content and historical attempts stay intact.
+    /// </summary>
+    public async Task DeleteQuestionAsync(Guid questionId)
+    {
+        var question = await _context.Questions.FindAsync(questionId)
+            ?? throw new KeyNotFoundException("Question not found.");
+
+        if (question.Status != "DRAFT")
+            throw new InvalidOperationException("Only DRAFT questions can be deleted.");
+
+        var isUsedInAssessment = await _context.AssessmentQuestions.AnyAsync(aq => aq.QuestionId == questionId);
+        if (isUsedInAssessment)
+            throw new InvalidOperationException("Cannot delete a question that is already attached to an assessment.");
+
+        _context.Questions.Remove(question);
+        await _context.SaveChangesAsync(default);
+    }
+
+    private async Task AttachTagsAsync(Domain.Entities.Assessment.Question question, List<Guid> tagIds)
+    {
+        var distinctTagIds = tagIds.Distinct().ToList();
+        var validTagCount = await _context.QuestionTags.CountAsync(t => distinctTagIds.Contains(t.Id));
+        if (validTagCount != distinctTagIds.Count)
+            throw new InvalidOperationException("One or more tag ids do not exist.");
+
+        foreach (var tagId in distinctTagIds)
+        {
+            question.TagAssignments.Add(new Domain.Entities.Assessment.QuestionTagAssignment { TagId = tagId });
+        }
     }
 
     public async Task ChangeQuestionStatusAsync(Guid questionId, string status)
@@ -284,6 +370,7 @@ public class QuestionBankService
     {
         var question = await _context.Questions
             .Include(q => q.Options)
+            .Include(q => q.TagAssignments).ThenInclude(a => a.Tag)
             .FirstOrDefaultAsync(q => q.Id == questionId)
             ?? throw new KeyNotFoundException("Question not found.");
 
@@ -364,6 +451,10 @@ public class QuestionBankService
                     Id = o.Id, Content = o.Content,
                     IsCorrect = o.IsCorrect, SortOrder = o.SortOrder,
                 }).ToList(),
+            Tags = question.TagAssignments
+                .Where(a => a.Tag != null)
+                .Select(a => new QuestionTagResponse { Id = a.Tag.Id, Name = a.Tag.Name, Category = a.Tag.Category })
+                .ToList(),
         };
     }
 }

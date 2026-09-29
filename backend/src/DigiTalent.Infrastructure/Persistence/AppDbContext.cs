@@ -45,6 +45,8 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<QuestionBank> QuestionBanks => Set<QuestionBank>();
     public DbSet<Question> Questions => Set<Question>();
     public DbSet<QuestionOption> QuestionOptions => Set<QuestionOption>();
+    public DbSet<QuestionTag> QuestionTags => Set<QuestionTag>();
+    public DbSet<QuestionTagAssignment> QuestionTagAssignments => Set<QuestionTagAssignment>();
     public DbSet<Assessment> Assessments => Set<Assessment>();
     public DbSet<AssessmentQuestion> AssessmentQuestions => Set<AssessmentQuestion>();
     public DbSet<AssessmentAttempt> AssessmentAttempts => Set<AssessmentAttempt>();

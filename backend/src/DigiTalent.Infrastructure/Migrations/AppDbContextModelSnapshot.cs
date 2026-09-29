@@ -428,6 +428,94 @@ namespace DigiTalent.Infrastructure.Migrations
                     b.ToTable("question_options", (string)null);
                 });
 
+            modelBuilder.Entity("DigiTalent.Domain.Entities.Assessment.QuestionTag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("category");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("question_tags", (string)null);
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.Assessment.QuestionTagAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("question_id");
+
+                    b.Property<Guid>("TagId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tag_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TagId");
+
+                    b.HasIndex("QuestionId", "TagId")
+                        .IsUnique();
+
+                    b.ToTable("question_tag_assignments", (string)null);
+                });
+
             modelBuilder.Entity("DigiTalent.Domain.Entities.Auth.Permission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3163,6 +3251,25 @@ namespace DigiTalent.Infrastructure.Migrations
                     b.Navigation("Question");
                 });
 
+            modelBuilder.Entity("DigiTalent.Domain.Entities.Assessment.QuestionTagAssignment", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.Assessment.Question", "Question")
+                        .WithMany("TagAssignments")
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DigiTalent.Domain.Entities.Assessment.QuestionTag", "Tag")
+                        .WithMany("TagAssignments")
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+
+                    b.Navigation("Tag");
+                });
+
             modelBuilder.Entity("DigiTalent.Domain.Entities.Auth.RefreshToken", b =>
                 {
                     b.HasOne("DigiTalent.Domain.Entities.Auth.RefreshToken", null)
@@ -3557,11 +3664,18 @@ namespace DigiTalent.Infrastructure.Migrations
             modelBuilder.Entity("DigiTalent.Domain.Entities.Assessment.Question", b =>
                 {
                     b.Navigation("Options");
+
+                    b.Navigation("TagAssignments");
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.Assessment.QuestionBank", b =>
                 {
                     b.Navigation("Questions");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.Assessment.QuestionTag", b =>
+                {
+                    b.Navigation("TagAssignments");
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.Auth.Permission", b =>

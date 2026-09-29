@@ -48,6 +48,8 @@ public interface IApplicationDbContext
     DbSet<QuestionBank> QuestionBanks { get; }
     DbSet<Question> Questions { get; }
     DbSet<QuestionOption> QuestionOptions { get; }
+    DbSet<QuestionTag> QuestionTags { get; }
+    DbSet<QuestionTagAssignment> QuestionTagAssignments { get; }
     DbSet<AssessmentEntity> Assessments { get; }
     DbSet<AssessmentQuestion> AssessmentQuestions { get; }
     DbSet<AssessmentAttempt> AssessmentAttempts { get; }

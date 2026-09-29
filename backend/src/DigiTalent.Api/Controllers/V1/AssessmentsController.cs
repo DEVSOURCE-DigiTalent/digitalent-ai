@@ -66,15 +66,42 @@ public class AssessmentsController : ControllerBase
         => Ok(ApiResponse<QuestionBankResponse>.Ok(
             await _questionBankService.UpdateBankAsync(bankId, request)));
 
+    [HttpDelete("question-banks/{bankId:guid}")]
+    [HasPermission(PermissionConstants.QuestionCreateUpdate)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeleteBank(Guid bankId)
+    {
+        await _questionBankService.DeleteBankAsync(bankId);
+        return NoContent();
+    }
+
+    // ═══════════════════════════════════════
+    // Taxonomy Tags
+    // ═══════════════════════════════════════
+
+    [HttpGet("question-tags")]
+    [HasPermission(PermissionConstants.QuestionBankRead)]
+    public async Task<IActionResult> GetAllTags()
+        => Ok(ApiResponse<List<QuestionTagResponse>>.Ok(await _questionBankService.GetAllTagsAsync()));
+
+    [HttpPost("question-tags")]
+    [HasPermission(PermissionConstants.QuestionCreateUpdate)]
+    [ProducesResponseType(typeof(ApiResponse<QuestionTagResponse>), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateTag([FromBody] CreateQuestionTagRequest request)
+    {
+        var result = await _questionBankService.CreateTagAsync(request);
+        return Ok(ApiResponse<QuestionTagResponse>.Ok(result, "Tag created"));
+    }
+
     // ═══════════════════════════════════════
     // Questions
     // ═══════════════════════════════════════
 
     [HttpGet("question-banks/{bankId:guid}/questions")]
     [HasPermission(PermissionConstants.QuestionBankRead)]
-    public async Task<IActionResult> SearchQuestions(Guid bankId, [FromQuery] PaginationRequest request)
+    public async Task<IActionResult> SearchQuestions(Guid bankId, [FromQuery] PaginationRequest request, [FromQuery] Guid? tagId = null)
         => Ok(ApiResponse<PagedList<QuestionResponse>>.Ok(
-            await _questionBankService.SearchQuestionsAsync(bankId, request)));
+            await _questionBankService.SearchQuestionsAsync(bankId, request, tagId)));
 
     [HttpPost("question-banks/{bankId:guid}/questions")]
     [HasPermission(PermissionConstants.QuestionCreateUpdate)]
@@ -97,6 +124,15 @@ public class AssessmentsController : ControllerBase
     public async Task<IActionResult> UpdateQuestion(Guid questionId, [FromBody] UpdateQuestionRequest request)
         => Ok(ApiResponse<QuestionDetailResponse>.Ok(
             await _questionBankService.UpdateQuestionAsync(questionId, request)));
+
+    [HttpDelete("questions/{questionId:guid}")]
+    [HasPermission(PermissionConstants.QuestionCreateUpdate)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeleteQuestion(Guid questionId)
+    {
+        await _questionBankService.DeleteQuestionAsync(questionId);
+        return NoContent();
+    }
 
     [HttpPatch("questions/{questionId:guid}/status")]
     [HasPermission(PermissionConstants.QuestionApprovePublish)]

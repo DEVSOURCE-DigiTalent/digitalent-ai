@@ -13,6 +13,27 @@ public class QuestionBank : AuditableEntity
     public ICollection<Question> Questions { get; set; } = new List<Question>();
 }
 
+/// <summary>
+/// Taxonomy tag for classifying questions (e.g. skill topic, Bloom's cognitive level),
+/// independent from the single CompetencyId link on Question.
+/// </summary>
+public class QuestionTag : AuditableEntity
+{
+    public Guid OrganizationId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Category { get; set; } = "TOPIC"; // TOPIC | BLOOM_LEVEL | SKILL
+
+    public ICollection<QuestionTagAssignment> TagAssignments { get; set; } = new List<QuestionTagAssignment>();
+}
+
+public class QuestionTagAssignment : AuditableEntity
+{
+    public Guid QuestionId { get; set; }
+    public Question Question { get; set; } = null!;
+    public Guid TagId { get; set; }
+    public QuestionTag Tag { get; set; } = null!;
+}
+
 public class Question : AuditableEntity
 {
     public Guid BankId { get; set; }
@@ -26,6 +47,7 @@ public class Question : AuditableEntity
     public string Status { get; set; } = "DRAFT";
 
     public ICollection<QuestionOption> Options { get; set; } = new List<QuestionOption>();
+    public ICollection<QuestionTagAssignment> TagAssignments { get; set; } = new List<QuestionTagAssignment>();
 }
 
 public class QuestionOption : AuditableEntity

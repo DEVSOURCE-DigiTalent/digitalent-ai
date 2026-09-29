@@ -28,6 +28,23 @@ public class QuestionBankResponse
 }
 
 // ═══════════════════════════════════════════════
+// Question Taxonomy Tags
+// ═══════════════════════════════════════════════
+
+public class CreateQuestionTagRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string Category { get; set; } = "TOPIC";
+}
+
+public class QuestionTagResponse
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+}
+
+// ═══════════════════════════════════════════════
 // Questions
 // ═══════════════════════════════════════════════
 
@@ -47,6 +64,7 @@ public class CreateQuestionRequest
     public string? Explanation { get; set; }
     public bool AiGeneratedFlag { get; set; }
     public List<CreateQuestionOptionRequest> Options { get; set; } = new();
+    public List<Guid> TagIds { get; set; } = new();
 }
 
 public class UpdateQuestionRequest
@@ -56,6 +74,7 @@ public class UpdateQuestionRequest
     public string? Difficulty { get; set; }
     public string? Status { get; set; }
     public List<CreateQuestionOptionRequest>? Options { get; set; }
+    public List<Guid>? TagIds { get; set; }
 }
 
 public class QuestionOptionResponse
@@ -79,6 +98,7 @@ public class QuestionResponse
     public string Status { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; }
     public List<QuestionOptionResponse> Options { get; set; } = new();
+    public List<QuestionTagResponse> Tags { get; set; } = new();
 }
 
 public class QuestionDetailResponse : QuestionResponse
