@@ -320,6 +320,28 @@ public class SkillGapEventIntegrationTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task ExecuteInTransaction_WhenWorkFails_RollsBackEarlierSaves()
+    {
+        var harness = await CreateAsync();
+        var code = $"TX_{Guid.NewGuid():N}"[..12];
+        using var scope = harness.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var act = () => context.ExecuteInTransactionAsync(async () =>
+        {
+            context.Organizations.Add(new Domain.Entities.Organization { Code = code, Name = "Rolled back", Status = Statuses.Simple.Active });
+            await context.SaveChangesAsync();
+            throw new InvalidOperationException("second step failed");
+        });
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        await using var db = harness.FreshContext();
+        (await db.Organizations.AnyAsync(o => o.Code == code)).Should().BeFalse();
+        context.ChangeTracker.Entries().Should().BeEmpty();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task DomainEventsInsideCallerOwnedTransaction_AreRejected()
     {
         var harness = await CreateAsync();

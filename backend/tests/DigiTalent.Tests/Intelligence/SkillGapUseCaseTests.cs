@@ -202,6 +202,115 @@ public class SkillGapUseCaseTests
         page.Items.Should().ContainSingle().Which.EmployeeId.Should().Be(world.AnalystInDepartmentB.Id);
     }
 
+    private static async Task<PositionRequirementSet> AddSetForClerkAsync(SkillGapTestWorld world, string status)
+    {
+        var userId = await world.Context.Users.Where(u => u.OrganizationId == world.Organization.Id).Select(u => u.Id).FirstAsync();
+        var set = new PositionRequirementSet
+        {
+            JobPositionId = world.PositionWithoutActiveSet.Id,
+            VersionNo = 1,
+            Status = status,
+            CreatedByUserId = userId,
+        };
+        set.Items.Add(new PositionRequirementItem { RequirementSetId = set.Id, CompetencyId = world.Competencies["DIGITAL_COMMUNICATION"].Id, RequiredLevel = 3, WeightPercent = 100m });
+        world.Context.PositionRequirementSets.Add(set);
+        await world.Context.SaveChangesAsync();
+        return set;
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Calculate_AgainstAnotherActiveStandard_UsesThatStandard()
+    {
+        var world = await CreateWorldAsync();
+        var clerkStandard = await AddSetForClerkAsync(world, Statuses.PositionRequirementSet.Active);
+
+        var detail = await Calculate(world, world.HrManager()).ExecuteAsync(new CalculateSkillGapUseCaseInput
+        {
+            EmployeeId = world.Analyst.Id,
+            RequirementSetId = clerkStandard.Id,
+        });
+
+        detail.RequirementSetId.Should().Be(clerkStandard.Id);
+        detail.JobPositionName.Should().Be("Office Clerk");
+        detail.Items.Should().ContainSingle().Which.GapSteps.Should().Be(1, "confirmed 2 vs required 3");
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Calculate_AgainstDraftOrUnknownStandard_IsRejected()
+    {
+        var world = await CreateWorldAsync();
+        var draft = await AddSetForClerkAsync(world, Statuses.PositionRequirementSet.Draft);
+        var useCase = Calculate(world, world.HrManager());
+
+        var againstDraft = () => useCase.ExecuteAsync(new CalculateSkillGapUseCaseInput { EmployeeId = world.Analyst.Id, RequirementSetId = draft.Id });
+        var againstUnknown = () => useCase.ExecuteAsync(new CalculateSkillGapUseCaseInput { EmployeeId = world.Analyst.Id, RequirementSetId = Guid.NewGuid() });
+
+        (await againstDraft.Should().ThrowAsync<BadRequestException>()).Which.Errors.Should().ContainSingle(e => e.Code == "REQUIREMENT_SET_NOT_ACTIVE");
+        await againstUnknown.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Batch_FilteredByPosition_ReportsPositionWithoutStandard()
+    {
+        var world = await CreateWorldAsync();
+        var hr = world.HrManager();
+
+        var result = await new CalculateSkillGapBatchUseCase(world.Context, hr, world.Scope(hr), world.RunService())
+            .ExecuteAsync(new CalculateSkillGapBatchUseCaseInput { JobPositionId = world.PositionWithoutActiveSet.Id });
+
+        result.CalculatedCount.Should().Be(0);
+        result.Skipped.Should().ContainSingle(s => s.EmployeeId == world.NoActiveSetEmployee.Id && s.Reason == SkillGapSkipReasons.NoActiveRequirementSet);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetRuns_FiltersByDepartmentPositionAndSearch()
+    {
+        var world = await CreateWorldAsync();
+        var hr = world.HrManager();
+        await Calculate(world, hr).ExecuteAsync(new CalculateSkillGapUseCaseInput { EmployeeId = world.Analyst.Id });
+        await Calculate(world, hr).ExecuteAsync(new CalculateSkillGapUseCaseInput { EmployeeId = world.AnalystInDepartmentB.Id });
+        var list = new GetSkillGapRunsUseCase(world.Context, world.Scope(hr), world.Reader());
+
+        var byDepartment = await list.ExecuteAsync(new GetSkillGapRunsUseCaseInput { DepartmentId = world.DepartmentB.Id });
+        var byPosition = await list.ExecuteAsync(new GetSkillGapRunsUseCaseInput { JobPositionId = world.DataAnalyst.Id });
+        var bySearch = await list.ExecuteAsync(new GetSkillGapRunsUseCaseInput { Search = world.AnalystInDepartmentB.EmployeeCode.ToLower() });
+
+        byDepartment.Items.Should().ContainSingle().Which.EmployeeId.Should().Be(world.AnalystInDepartmentB.Id);
+        byPosition.TotalItems.Should().Be(2);
+        bySearch.Items.Should().ContainSingle().Which.EmployeeId.Should().Be(world.AnalystInDepartmentB.Id);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetById_ToleratesSnapshotWithoutConfig()
+    {
+        // jsonb hợp lệ nhưng thiếu trường (dữ liệu cũ / đổi version công thức) không được làm API lỗi 500
+        var world = await CreateWorldAsync();
+        var run = new SkillGapRun
+        {
+            EmployeeId = world.Analyst.Id,
+            RequirementSetId = world.ActiveSet.Id,
+            GeneratedAt = DateTimeOffset.UtcNow,
+            GeneratedBy = Statuses.SkillGapGeneratedBy.System,
+            GapCount = 0,
+            CalculationVersion = "SG-0.9",
+            SummarySnapshot = "{}",
+        };
+        world.Context.SkillGapRuns.Add(run);
+        await world.Context.SaveChangesAsync();
+        var hr = world.HrManager();
+
+        var detail = await new GetSkillGapRunByIdUseCase(world.Scope(hr), world.Reader())
+            .ExecuteAsync(new GetSkillGapRunByIdUseCaseInput { RunId = run.Id });
+
+        detail.RunId.Should().Be(run.Id);
+        detail.Summary.Config.MandatoryMultiplier.Should().Be(0m);
+    }
+
     [Fact]
     [Trait("Category", "Integration")]
     public async Task Calculate_UsesOrganizationSettingOverride()

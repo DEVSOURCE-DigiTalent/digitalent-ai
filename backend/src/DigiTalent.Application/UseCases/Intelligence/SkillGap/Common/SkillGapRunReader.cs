@@ -139,11 +139,14 @@ public class SkillGapRunReader
             MediumCount = snapshot.MediumCount,
             LowCount = snapshot.LowCount,
             CoveragePercent = snapshot.CoveragePercent,
-            Config = new SkillGapConfigDto
-            {
-                MandatoryMultiplier = snapshot.Config.MandatoryMultiplier,
-                MediumWeightThreshold = snapshot.Config.MediumWeightThreshold,
-            },
+            // Snapshot cũ / khác version có thể thiếu config → để trống thay vì lỗi 500
+            Config = snapshot.Config == null
+                ? new SkillGapConfigDto()
+                : new SkillGapConfigDto
+                {
+                    MandatoryMultiplier = snapshot.Config.MandatoryMultiplier,
+                    MediumWeightThreshold = snapshot.Config.MediumWeightThreshold,
+                },
         };
     }
 

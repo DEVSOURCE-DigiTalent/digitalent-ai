@@ -41,7 +41,10 @@ public class SkillGapRunService
 
         var settings = await _settingsProvider.GetAsync(organizationId);
         var setsByPosition = await LoadActiveSetsAsync(employees, requirementSetOverride);
-        var requirementsBySet = await LoadRequirementsAsync(setsByPosition.Values.Select(s => s.Id).Distinct().ToList());
+        var setIds = requirementSetOverride != null
+            ? new List<Guid> { requirementSetOverride.Id }
+            : setsByPosition.Values.Select(s => s.Id).Distinct().ToList();
+        var requirementsBySet = await LoadRequirementsAsync(setIds);
         var levelsByEmployee = await LoadConfirmedLevelsAsync(employees.Select(e => e.Id).ToList());
         var generatedAt = DateTimeOffset.UtcNow;
 
