@@ -251,10 +251,14 @@ CourseRecommendation = {
   score, breakdown: { gapPriorityCoverage, mandatoryCoverage, entryLevelFit },
   reasons: Array<{ competencyId, competencyName, currentLevel, requiredLevel, courseTargetLevel,
                    coverageType, closesSteps, mandatory, severity }>,
-  explanation: string   // "Nâng 'Data literacy' từ Cơ bản lên Nâng cao (yêu cầu: Nâng cao, bắt buộc)."
+  explanation: string   // "Raises Data literacy from Basic to Advanced (required: Advanced, mandatory)."
   warnings: string[]    // ["ENTRY_LEVEL_NOT_MET"] khi ENTRY_LEVEL_FIT = 0
 }
-GetRecommendationsOutput = { skillGapRunId, generatedAt, scoringConfigVersion, reason /* null | 'NO_SKILL_GAP_RUN' | 'NO_GAP' */, items: CourseRecommendation[] }
+GetRecommendationsOutput = {
+  employeeId, skillGapRunId /* null */, generatedAt /* null */, scoringConfigVersion,
+  reason /* null | 'NO_EMPLOYEE_PROFILE' | 'NO_SKILL_GAP_RUN' | 'NO_GAP' | 'NO_MATCHING_COURSE' */,
+  items: CourseRecommendation[]
+}
 ```
 
 Nhãn cấp độ: 1 = Cơ bản (Basic), 2 = Trung cấp (Intermediate), 3 = Nâng cao (Advanced), NULL = Chưa xác nhận.
@@ -263,7 +267,22 @@ Nhãn cấp độ: 1 = Cơ bản (Basic), 2 = Trung cấp (Intermediate), 3 = N�
 
 | Method & path | Permission | Input | Ghi chú |
 | --- | --- | --- | --- |
-| `GET /api/v1/intelligence/recommendations` | `learning_recommendation.read` | `employeeId?` (mặc định bản thân), `limit?` | Xem người khác theo phạm vi D-S3-06; hiệu năng mục tiêu < 200 ms (3 truy vấn: run + items, khóa học ứng viên, enrollments) |
+| `GET /api/v1/intelligence/recommendations` | `learning_recommendation.read` | `employeeId?` (mặc định bản thân), `limit?` | Xem người khác theo phạm vi D-S3-06; hiệu năng mục tiêu < 200 ms. Thực tế: 5 truy vấn cố định (trọng số + items; nhân viên; run mới nhất + gap; khóa ứng viên; enrollments), đo p95 36 ms trên dữ liệu seed |
+
+### 5.6. Chi tiết triển khai đã chốt (29/09, trước khi code)
+
+| # | Điểm mơ hồ | Chốt |
+| --- | --- | --- |
+| R1 | "Version mới nhất" của khóa học | Tính trên **toàn bộ** khóa PUBLISHED cùng `code` trong tổ chức, không chỉ trên các khóa ứng viên. Nếu v2 PUBLISHED không còn dạy năng lực đang thiếu còn v1 thì có, **không** gợi ý v1 (khóa cũ đã bị thay) |
+| R2 | Nhiều enrollment cho cùng khóa | Có bất kỳ enrollment `COMPLETED` → loại khóa. `enrollmentStatus` = trạng thái enrollment đang mở (`NOT_STARTED/IN_PROGRESS/READY_FOR_ASSESSMENT`, tối đa 1 nhờ `ux_enrollments_one_active`); `CANCELLED` bị bỏ qua (được gợi ý lại) |
+| R3 | `breakdown` | Tính theo **điểm** (trọng số × tỉ lệ, làm tròn 2 số) để FE hiển thị "35 + 10 + 10". `score` = làm tròn tổng chưa làm tròn, nên có thể lệch ±0.01 so với tổng breakdown |
+| R4 | Ngôn ngữ `explanation` | **Tiếng Anh**, khớp UI enterprise. Mỗi năng lực một câu: `Raises {name} from {current} to {courseTarget} (required: {required}[, mandatory]).`; các câu nối bằng dấu cách. FE có thể tự dựng câu từ `reasons` nếu cần ngôn ngữ khác |
+| R5 | Thứ tự `reasons` | Theo priority của gap giảm dần |
+| R6 | Khi không có kết quả | `NO_EMPLOYEE_PROFILE`: không truyền `employeeId` và tài khoản không gắn hồ sơ nhân viên. `NO_SKILL_GAP_RUN`: chưa có snapshot. `NO_GAP`: snapshot mới nhất không còn gap. `NO_MATCHING_COURSE`: còn gap nhưng không khóa nào đủ điều kiện |
+| R7 | Cấu hình trọng số hỏng | Thiếu component, component lạ, hoặc tổng ≠ 100 → ghi log error và dùng DEFAULT (`scoringConfigVersion = "DEFAULT"`) |
+| R8 | Validate input | `limit` ∈ [1, 20] (mặc định 10); `employeeId` nếu có thì khác `Guid.Empty` |
+| R9 | `coverage_weight = 0` | Năng lực đó không cộng vào GAP; khóa có tổng `score = 0` bị loại |
+| R10 | Thang `current` | `current = current_level ?? 0` trong mọi công thức (closeFraction, ENTRY_LEVEL_FIT) |
 
 ---
 
@@ -402,7 +421,9 @@ Tích hợp: gọi hai policy trong use case bắt đầu / xem kết quả atte
 - **AC-REC-01** Given run §4.5 và khóa K1–K4 §5.3, When gọi `GET /recommendations`, Then thứ tự K3, K2, K1 với score 55.00 / 49.17 / 39.25 và không có K4.
 - **AC-REC-02** Given nhân viên đã COMPLETED K3, Then K3 không xuất hiện.
 - **AC-REC-03** Given course có 2 version PUBLISHED cùng code, Then chỉ version lớn nhất xuất hiện.
-- **AC-REC-04** Given chưa có run, Then `items = []`, `reason = NO_SKILL_GAP_RUN`; Given run không còn gap, Then `reason = NO_GAP`.
+- **AC-REC-04** Given chưa có run, Then `items = []`, `reason = NO_SKILL_GAP_RUN`; Given run không còn gap, Then `reason = NO_GAP`; Given còn gap nhưng không khóa nào khớp, Then `reason = NO_MATCHING_COURSE`.
+- **AC-REC-07** Given code X có v1 và v2 đều PUBLISHED và chỉ v1 dạy năng lực đang thiếu, Then không khóa nào của X được gợi ý (§5.6 R1).
+- **AC-REC-08** Given DM phòng A gọi với `employeeId` của nhân viên phòng B, Then 404.
 - **AC-REC-05** Given course entry_level 3 và current của năng lực PRIMARY là 1, Then `entryLevelFit = 0` và `warnings` có `ENTRY_LEVEL_NOT_MET`.
 - **AC-REC-06** Given course dạy năng lực thiếu với `target_level ≤ current`, Then không được gợi ý.
 

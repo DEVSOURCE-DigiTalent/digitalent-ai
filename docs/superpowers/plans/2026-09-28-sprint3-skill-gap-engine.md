@@ -148,13 +148,15 @@ Tổng: 140 giờ, khớp Jira. Thứ tự cắt nếu trễ: (1) heatmap trong 
 - Modify: `MyCompetencyProfilePage.tsx`, `SkillGapDetailDrawer.tsx` (gắn `RecommendationList`)
 - Test: `tests/DigiTalent.Tests/Intelligence/{CourseRecommenderTests.cs, GetCourseRecommendationsUseCaseTests.cs}`
 
-- [ ] **5.1 Test golden đỏ (T-REC-01..07)** theo spec §5.3: `CourseRecommender.Rank(gapItems, candidateCourses, enrollments, weights, limit)`.
-- [ ] **5.2 Code recommender** theo §5.1–5.2; sinh `reasons` + `explanation` tiếng Việt theo §5.4.
-- [ ] **5.3 `RecommendationWeightsProvider`:** đọc `scoring_configs` active `RECOMMENDATION_WEIGHTS` + items; không có → default + version `"DEFAULT"`; tổng ≠ 100 → log error + default.
-- [ ] **5.4 Use case:** tối đa 3 truy vấn (run mới nhất + items + tên năng lực; course PUBLISHED version cao nhất join `course_competencies` lọc theo competency đang thiếu; enrollments của nhân viên với các course đó). Phạm vi qua `EmployeeScope`. Test T-REC-08.
-- [ ] **5.5 Đo hiệu năng:** Swagger/`curl` 10 lần trên seed → ghi p95 vào PR (mục tiêu < 200 ms).
-- [ ] **5.6 FE:** gắn `RecommendationList` vào tab Gợi ý và drawer.
-- [ ] Commit `feat(intelligence): S3-T017 course recommendation api`. PR → HoangNT.
+- [x] **Chuẩn bị (29/09):** chốt 10 điểm mơ hồ vào spec §5.6 (R1–R10) và thêm AC-REC-07/08 trước khi code.
+- [x] **5.1 Test golden đỏ:** `CourseRecommenderTests` — 15 case (golden §5.3, breakdown theo điểm, loại COMPLETED, không nâng được bậc, năng lực đã đạt, entry level ×3, PRIMARY làm cơ sở entry, coverage_weight ghi đè, score 0 bị loại, reasons/explanation, "Not confirmed", tie-break + limit, trọng số tùy chỉnh).
+- [x] **5.2 `CourseRecommender`** (thuần) + `CompetencyLevelLabels`; explanation **tiếng Anh** (R4).
+- [x] **5.3 `RecommendationWeightsProvider`:** bản active mới nhất; thiếu/thừa component, trọng số âm, tổng ≠ 100 → log error + DEFAULT.
+- [x] **5.4 Use case + `RecommendationsController`** (`GET api/v1/intelligence/recommendations`): 6 truy vấn cố định (weights ×2, employee, run, gaps, courses+NOT EXISTS version mới hơn, enrollments), không N+1. Test Postgres `RecommendationUseCaseTests` — 9 case (golden, mặc định bản thân, R1 version, R2 enrollment, 3 lý do rỗng + NO_GAP, phạm vi DM, cấu hình trọng số hợp lệ/hỏng).
+- [x] **5.5 Hiệu năng + HTTP thật** (DB seed): 20 lần gọi → p50 31 ms, **p95 36 ms**, max 47 ms. Đúng golden (55.00 / 49.17 / 39.25) với cấu hình seed v1; trainer → `NO_SKILL_GAP_RUN`; `limit=0` → 400; employee xem người khác → 404.
+- [x] **5.6 FE:** `recommendationService` + `useCourseRecommendations` (invalidate cùng skill gap), component `CourseRecommendations` (xếp hạng, điểm + breakdown, lý do theo năng lực, trạng thái đang học, cảnh báo entry level, 4 empty state theo `reason`, lỗi + retry) gắn vào tab "Recommended courses" và drawer Team Skill Gap (khi có `learning_recommendation.read`). 7 test; FE toàn bộ 83/83, build ✅.
+- [x] Review (csharp-reviewer): **Approve**, không CRITICAL/HIGH. Đã sửa 2 góp ý: gộp run + gap và config + items thành 1 truy vấn mỗi cặp (còn 5 truy vấn); component trùng trong cấu hình trọng số → DEFAULT thay vì lỗi 500 (thêm `RecommendationWeightsProviderTests`). Backend 119/119. Commit `feat(intelligence): S3-T017 …`.
+- [ ] PR → HoangNT (BE), VietTN (FE) — chưa push.
 
 ### Task 6: Domain events + ghi nhận bằng chứng thủ công (S3-T018, phạm vi mới)
 
