@@ -34,6 +34,20 @@ export function useMySkillGap() {
   });
 }
 
+/** Returns a function resolving the id of an employee's latest snapshot (e.g. after an automatic recalculation). */
+export function useLatestRunLookup() {
+  const qc = useQueryClient();
+  return (employeeId: string) => {
+    const params = { employeeId, pageSize: 1 };
+    return qc
+      .fetchQuery({
+        queryKey: [...SKILL_GAPS_KEY, 'list', params],
+        queryFn: () => skillGapService.getList(params).then((r) => r.data.data!),
+      })
+      .then((page) => page.items[0]?.runId);
+  };
+}
+
 /** Recalculate one employee (HR / department manager). */
 export function useCalculateSkillGap() {
   const qc = useQueryClient();

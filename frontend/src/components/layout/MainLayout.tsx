@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom';
+import { useNotificationHub } from '@/hooks/use-notification-hub';
 import { RoleSidebar } from './RoleSidebar';
 import { Topbar } from './Topbar';
 
@@ -7,6 +8,9 @@ import { Topbar } from './Topbar';
  * Maps to IA Document section 4.1: Application Shell.
  */
 export function MainLayout() {
+  // Thông báo realtime (SignalR) cho mọi trang enterprise
+  useNotificationHub();
+
   return (
     <div className="min-h-screen flex">
       <RoleSidebar />

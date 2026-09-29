@@ -5,7 +5,7 @@ import { DataTable, PageHeader, type Column } from '@/components/shared';
 import { useDepartments } from '@/hooks/use-departments';
 import { useJobPositions } from '@/hooks/use-job-positions';
 import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
-import { useCalculateSkillGap, useCalculateSkillGapBatch, useSkillGapRuns } from '@/hooks/use-skill-gaps';
+import { useCalculateSkillGap, useCalculateSkillGapBatch, useLatestRunLookup, useSkillGapRuns } from '@/hooks/use-skill-gaps';
 import { skillGapErrorMessage } from '@/lib/competency-levels';
 import type { CalculateSkillGapBatchResult, SkillGapRunListItem } from '@/services/intelligence.service';
 import { BatchResultPanel } from '../components/BatchResultPanel';
@@ -43,6 +43,17 @@ export function SkillGapPage() {
   });
   const calculateMutation = useCalculateSkillGap();
   const batchMutation = useCalculateSkillGapBatch();
+  const lookupLatestRun = useLatestRunLookup();
+
+  // Backend đã tính lại skill gap trong cùng transaction → chuyển panel sang snapshot mới nhất
+  const handleLevelConfirmed = async (employeeId: string) => {
+    try {
+      const latestRunId = await lookupLatestRun(employeeId);
+      if (latestRunId) setSelectedRunId(latestRunId);
+    } catch {
+      toast.error('Level saved, but the latest analysis could not be loaded. Refresh the page.');
+    }
+  };
 
   const handleRecalculate = async (employeeId: string) => {
     try {
@@ -204,6 +215,7 @@ export function SkillGapPage() {
           canRecalculate={canCalculate}
           isRecalculating={calculateMutation.isPending}
           onRecalculate={handleRecalculate}
+          onLevelConfirmed={handleLevelConfirmed}
         />
       )}
     </div>
