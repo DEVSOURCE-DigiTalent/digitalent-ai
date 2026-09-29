@@ -88,6 +88,27 @@ public class RecommendationUseCaseTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task Get_HidesCourseUntilItsPrerequisiteIsCompleted()
+    {
+        // B7: DATA_LITERACY đang ở mức 1, K3 dạy lên mức 3 → cần xong K1 (tiên quyết) hoặc đã đạt mức 2
+        var world = await CreateWorldAsync();
+        var courses = await AddSpecCoursesAsync(world);
+        world.Context.CoursePrerequisites.Add(new CoursePrerequisite { CourseId = courses["K3"].Id, PrerequisiteCourseId = courses["K1"].Id });
+        await world.Context.SaveChangesAsync();
+        await CalculateGapAsync(world, world.Analyst);
+
+        var before = await Recommendations(world, world.HrManager())
+            .ExecuteAsync(new GetCourseRecommendationsUseCaseInput { EmployeeId = world.Analyst.Id });
+        await AddEnrollmentAsync(world, world.Analyst, courses["K1"], Statuses.Enrollment.Completed);
+        var after = await Recommendations(world, world.HrManager())
+            .ExecuteAsync(new GetCourseRecommendationsUseCaseInput { EmployeeId = world.Analyst.Id });
+
+        before.Items.Select(i => i.CourseCode).Should().Equal("K2", "K1");
+        after.Items.Select(i => i.CourseCode).Should().Equal("K3", "K2");
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task Get_GoldenExample_RanksK3K2K1AndExcludesDraft()
     {
         var world = await CreateWorldAsync();

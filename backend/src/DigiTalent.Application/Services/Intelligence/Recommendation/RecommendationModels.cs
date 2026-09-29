@@ -13,7 +13,10 @@ public sealed record RecommendationGap(
 /// <summary>Khóa học dạy năng lực nào lên cấp nào (course_competencies).</summary>
 public sealed record CourseTeaching(Guid CompetencyId, short TargetLevel, string CoverageType, decimal? CoverageWeight);
 
-/// <summary>Khóa học PUBLISHED (version mới nhất) kèm trạng thái học của nhân viên.</summary>
+/// <summary>
+/// Khóa học PUBLISHED (version mới nhất) kèm trạng thái học của nhân viên.
+/// Eligibility null = không có dữ liệu tiên quyết → coi như đủ điều kiện.
+/// </summary>
 public sealed record CandidateCourse(
     Guid CourseId,
     string Code,
@@ -22,7 +25,18 @@ public sealed record CandidateCourse(
     int? EstimatedDurationMinutes,
     string? EnrollmentStatus,
     bool IsCompleted,
-    IReadOnlyList<CourseTeaching> Teaches);
+    IReadOnlyList<CourseTeaching> Teaches,
+    CourseEligibility? Eligibility = null);
+
+/// <summary>
+/// Điều kiện vào khóa (B7, căn cứ khung chương trình A7): đã hoàn thành mọi khóa tiên quyết (course_prerequisites),
+/// HOẶC mức đã xác nhận thấp nhất trên mọi năng lực của khóa ≥ mức khóa − 1 (được bỏ qua khóa thấp nếu đã đạt).
+/// MinConfirmedLevel: năng lực chưa xác nhận tính 0. CourseLevel: target_level cao nhất của khóa.
+/// </summary>
+public sealed record CourseEligibility(bool PrerequisitesCompleted, short MinConfirmedLevel, short CourseLevel)
+{
+    public bool IsMet => PrerequisitesCompleted || MinConfirmedLevel >= CourseLevel - 1;
+}
 
 /// <summary>
 /// Trọng số xếp hạng (scoring_configs loại RECOMMENDATION_WEIGHTS), tổng = 100.

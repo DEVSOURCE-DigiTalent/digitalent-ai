@@ -6,6 +6,7 @@ namespace DigiTalent.Application.Services.Intelligence.Recommendation;
 /// Xếp hạng khóa học theo mức lấp khoảng trống năng lực — hàm thuần, giải thích được.
 /// Công thức: docs/specs/2026-09-28-sprint3-skill-gap-recommendation-spec.md §5.2 và §5.6.
 ///   score = W_gap × GAP_PRIORITY_COVERAGE + W_mand × MANDATORY_COVERAGE + W_entry × ENTRY_LEVEL_FIT   (0–100)
+/// Chỉ xét khóa người học đủ điều kiện vào (CourseEligibility — bậc kế tiếp theo tiên quyết, B7).
 /// </summary>
 public static class CourseRecommender
 {
@@ -31,7 +32,7 @@ public static class CourseRecommender
         var mandatoryGapCount = openGaps.Values.Count(g => g.Mandatory);
 
         return courses
-            .Where(c => !c.IsCompleted)
+            .Where(c => !c.IsCompleted && (c.Eligibility?.IsMet ?? true))
             .Select(c => Score(c, openGaps, totalPriority, mandatoryGapCount, weights))
             .Where(r => r != null && r.Score > 0)
             .Select(r => r!)

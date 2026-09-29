@@ -159,6 +159,7 @@ public class GetCourseRecommendationsUseCase : IUseCase<GetCourseRecommendations
             .Where(e => e.Status != Statuses.Enrollment.Completed && e.Status != Statuses.Enrollment.Cancelled)
             .GroupBy(e => e.CourseId)
             .ToDictionary(g => g.Key, g => g.First().Status);
+        var eligibility = await LoadEligibilityAsync(employeeId, courseIds);
 
         return rows
             .GroupBy(r => r.Id)
@@ -173,9 +174,48 @@ public class GetCourseRecommendationsUseCase : IUseCase<GetCourseRecommendations
                     course.EstimatedDurationMinutes,
                     openStatuses.GetValueOrDefault(course.Id),
                     completedCourseIds.Contains(course.Id),
-                    g.Select(r => r.Teaching).ToList());
+                    g.Select(r => r.Teaching).ToList(),
+                    eligibility[course.Id]);
             })
             .ToList();
+    }
+
+    /// <summary>
+    /// Điều kiện vào khóa (B7): tiên quyết đã COMPLETED (so theo mã khóa để chấp nhận mọi version),
+    /// và mức đã xác nhận thấp nhất trên MỌI năng lực của khóa (không chỉ năng lực đang thiếu).
+    /// </summary>
+    private async Task<Dictionary<Guid, CourseEligibility>> LoadEligibilityAsync(Guid employeeId, List<Guid> courseIds)
+    {
+        var teachings = await _context.CourseCompetencies
+            .AsNoTracking()
+            .Where(t => courseIds.Contains(t.CourseId))
+            .Select(t => new { t.CourseId, t.CompetencyId, t.TargetLevel })
+            .ToListAsync();
+        var prerequisiteCodes = await (
+                from prerequisite in _context.CoursePrerequisites.AsNoTracking()
+                join course in _context.Courses on prerequisite.PrerequisiteCourseId equals course.Id
+                where courseIds.Contains(prerequisite.CourseId)
+                select new { prerequisite.CourseId, course.Code })
+            .ToListAsync();
+        var completedCodes = (await (
+                from enrollment in _context.Enrollments.AsNoTracking()
+                join course in _context.Courses on enrollment.CourseId equals course.Id
+                where enrollment.EmployeeId == employeeId && enrollment.Status == Statuses.Enrollment.Completed
+                select course.Code)
+            .ToListAsync()).ToHashSet();
+        var competencyIds = teachings.Select(t => t.CompetencyId).Distinct().ToList();
+        var confirmed = await _context.EmployeeCompetencyProfiles
+            .AsNoTracking()
+            .Where(p => p.EmployeeId == employeeId && competencyIds.Contains(p.CompetencyId))
+            .ToDictionaryAsync(p => p.CompetencyId, p => p.ConfirmedLevel);
+
+        return courseIds.ToDictionary(courseId => courseId, courseId =>
+        {
+            var courseTeachings = teachings.Where(t => t.CourseId == courseId).ToList();
+            var prerequisitesDone = prerequisiteCodes.Where(p => p.CourseId == courseId).All(p => completedCodes.Contains(p.Code));
+            var minConfirmed = courseTeachings.Min(t => confirmed.GetValueOrDefault(t.CompetencyId));
+            return new CourseEligibility(prerequisitesDone, minConfirmed, courseTeachings.Max(t => t.TargetLevel));
+        });
     }
 
     private static GetCourseRecommendationsUseCaseOutput WithReason(GetCourseRecommendationsUseCaseOutput output, string reason)
