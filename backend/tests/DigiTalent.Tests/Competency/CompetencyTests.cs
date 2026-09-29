@@ -530,83 +530,20 @@ public class CompetencyTests
     [Fact]
     public async Task ActivatePositionRequirementSet_SetsActiveAndArchivesPreviousActive()
     {
-        var dbName = Guid.NewGuid().ToString();
-        using var context = new AppDbContext(GetOptions(dbName));
-
+        using var context = new AppDbContext(GetOptions(Guid.NewGuid().ToString()));
         var orgId = Guid.NewGuid();
-        var position = new JobPosition
-        {
-            Id = Guid.NewGuid(),
-            OrganizationId = orgId,
-            Code = "PRODUCT_OWNER",
-            Name = "Product Owner",
-            Status = Statuses.MasterData.Active
-        };
-        context.JobPositions.Add(position);
+        var competencies = await Tt02TestData.SeedMappedCompetenciesAsync(context, orgId);
+        var position = AddPosition(context, orgId);
 
-        var category = new CompetencyCategory
-        {
-            Id = Guid.NewGuid(),
-            OrganizationId = orgId,
-            Code = "PROD",
-            Name = "Product",
-            Status = Statuses.MasterData.Active
-        };
-        context.GetDbSet<CompetencyCategory>().Add(category);
-
-        var comp = new Domain.Entities.Competency
-        {
-            Id = Guid.NewGuid(),
-            CategoryId = category.Id,
-            Code = "ROADMAP",
-            Name = "Product Roadmapping",
-            CompetencyType = Statuses.CompetencyType.Professional,
-            Status = Statuses.Competency.Active
-        };
-        context.GetDbSet<Domain.Entities.Competency>().Add(comp);
-
-        // Previous ACTIVE version (v1)
-        var v1 = new PositionRequirementSet
-        {
-            Id = Guid.NewGuid(),
-            JobPositionId = position.Id,
-            VersionNo = 1,
-            Status = Statuses.PositionRequirementSet.Active,
-            CreatedByUserId = Guid.NewGuid()
-        };
-        v1.Items.Add(new PositionRequirementItem
-        {
-            Id = Guid.NewGuid(),
-            RequirementSetId = v1.Id,
-            CompetencyId = comp.Id,
-            RequiredLevel = 2,
-            WeightPercent = 100m
-        });
-
-        // New DRAFT version (v2)
-        var v2 = new PositionRequirementSet
-        {
-            Id = Guid.NewGuid(),
-            JobPositionId = position.Id,
-            VersionNo = 2,
-            Status = Statuses.PositionRequirementSet.Draft,
-            CreatedByUserId = Guid.NewGuid()
-        };
-        v2.Items.Add(new PositionRequirementItem
-        {
-            Id = Guid.NewGuid(),
-            RequirementSetId = v2.Id,
-            CompetencyId = comp.Id,
-            RequiredLevel = 3,
-            WeightPercent = 100m
-        });
-
+        var v1 = NewSet(position.Id, 1, Statuses.PositionRequirementSet.Active);
+        v1.Items = Tt02TestData.Items(v1.Id, competencies, level: 2).ToList();
+        var v2 = NewSet(position.Id, 2, Statuses.PositionRequirementSet.Draft);
+        v2.Items = Tt02TestData.Items(v2.Id, competencies, level: 3).ToList();
         context.GetDbSet<PositionRequirementSet>().AddRange(v1, v2);
         await context.SaveChangesAsync();
 
         var userId = Guid.NewGuid();
-        var currentUser = CreateCurrentUserMock(orgId, userId);
-        var useCase = new ActivatePositionRequirementSetUseCase(context, currentUser.Object);
+        var useCase = new ActivatePositionRequirementSetUseCase(context, CreateCurrentUserMock(orgId, userId).Object);
 
         var result = await useCase.ExecuteAsync(new ActivatePositionRequirementSetUseCaseInput { Id = v2.Id });
 
@@ -614,26 +551,26 @@ public class CompetencyTests
         result.VersionNo.Should().Be(2);
 
         var v1Reloaded = await context.GetDbSet<PositionRequirementSet>().FindAsync(v1.Id);
-        v1Reloaded.Should().NotBeNull();
         v1Reloaded!.Status.Should().Be(Statuses.PositionRequirementSet.Archived);
 
         var v2Reloaded = await context.GetDbSet<PositionRequirementSet>().FindAsync(v2.Id);
-        v2Reloaded.Should().NotBeNull();
         v2Reloaded!.Status.Should().Be(Statuses.PositionRequirementSet.Active);
         v2Reloaded.ActivatedByUserId.Should().Be(userId);
         v2Reloaded.ActivatedAt.Should().NotBeNull();
     }
 
     [Theory]
-    [InlineData(60, 30)]   // tổng 90
-    [InlineData(60, 50)]   // tổng 110
-    public async Task ActivatePositionRequirementSet_RejectsWhenWeightSumIsNot100(decimal weight1, decimal weight2)
+    [InlineData(-10)]  // tổng 90
+    [InlineData(10)]   // tổng 110
+    public async Task ActivatePositionRequirementSet_RejectsWhenWeightSumIsNot100(decimal delta)
     {
-        var dbName = Guid.NewGuid().ToString();
-        using var context = new AppDbContext(GetOptions(dbName));
-
+        using var context = new AppDbContext(GetOptions(Guid.NewGuid().ToString()));
         var orgId = Guid.NewGuid();
-        var draft = SeedDraftRequirementSet(context, orgId, weight1, weight2);
+        var competencies = await Tt02TestData.SeedMappedCompetenciesAsync(context, orgId);
+        var draft = NewSet(AddPosition(context, orgId).Id, 1, Statuses.PositionRequirementSet.Draft);
+        draft.Items = Tt02TestData.Items(draft.Id, competencies).ToList();
+        draft.Items.Last().WeightPercent += delta;
+        context.GetDbSet<PositionRequirementSet>().Add(draft);
         await context.SaveChangesAsync();
 
         var useCase = new ActivatePositionRequirementSetUseCase(context, CreateCurrentUserMock(orgId).Object);
@@ -646,13 +583,14 @@ public class CompetencyTests
     }
 
     [Fact]
-    public async Task ActivatePositionRequirementSet_AcceptsFractionalWeightsSummingTo100()
+    public async Task ActivatePositionRequirementSet_AcceptsAll24FrameworkCompetenciesWithFractionalWeights()
     {
-        var dbName = Guid.NewGuid().ToString();
-        using var context = new AppDbContext(GetOptions(dbName));
-
+        using var context = new AppDbContext(GetOptions(Guid.NewGuid().ToString()));
         var orgId = Guid.NewGuid();
-        var draft = SeedDraftRequirementSet(context, orgId, 33.33m, 66.67m);
+        var competencies = await Tt02TestData.SeedMappedCompetenciesAsync(context, orgId);
+        var draft = NewSet(AddPosition(context, orgId).Id, 1, Statuses.PositionRequirementSet.Draft);
+        draft.Items = Tt02TestData.Items(draft.Id, competencies).ToList(); // 23 × 4.17 + 4.09
+        context.GetDbSet<PositionRequirementSet>().Add(draft);
         await context.SaveChangesAsync();
 
         var useCase = new ActivatePositionRequirementSetUseCase(context, CreateCurrentUserMock(orgId).Object);
@@ -662,62 +600,80 @@ public class CompetencyTests
         result.Status.Should().Be(Statuses.PositionRequirementSet.Active);
     }
 
-    private static PositionRequirementSet SeedDraftRequirementSet(AppDbContext context, Guid orgId, decimal weight1, decimal weight2)
+    [Fact]
+    public async Task ActivatePositionRequirementSet_RejectsSetMissingFrameworkCompetencies_ListingMissingCodes()
+    {
+        using var context = new AppDbContext(GetOptions(Guid.NewGuid().ToString()));
+        var orgId = Guid.NewGuid();
+        var competencies = await Tt02TestData.SeedMappedCompetenciesAsync(context, orgId);
+        var draft = NewSet(AddPosition(context, orgId).Id, 1, Statuses.PositionRequirementSet.Draft);
+        draft.Items = Tt02TestData.Items(draft.Id, competencies.Where(c => !c.Code.StartsWith("TT02-6."))).ToList();
+        context.GetDbSet<PositionRequirementSet>().Add(draft);
+        await context.SaveChangesAsync();
+
+        var useCase = new ActivatePositionRequirementSetUseCase(context, CreateCurrentUserMock(orgId).Object);
+
+        var act = () => useCase.ExecuteAsync(new ActivatePositionRequirementSetUseCaseInput { Id = draft.Id });
+
+        var error = (await act.Should().ThrowAsync<BadRequestException>()
+            .WithMessage("A requirement set must include all 24 competencies of the national digital competence framework (Circular 02/2025)*"))
+            .Which;
+        error.Message.Should().Contain("6.1, 6.2, 6.3");
+        error.Errors.Should().ContainSingle(e => e.Field == "items" && e.Code == ActivatePositionRequirementSetUseCase.FrameworkCompetencyMissing);
+        (await context.GetDbSet<PositionRequirementSet>().FindAsync(draft.Id))!.Status.Should().Be(Statuses.PositionRequirementSet.Draft);
+    }
+
+    [Fact]
+    public async Task ActivatePositionRequirementSet_RejectsCompetencyWithoutFrameworkMapping()
+    {
+        using var context = new AppDbContext(GetOptions(Guid.NewGuid().ToString()));
+        var orgId = Guid.NewGuid();
+        var competencies = await Tt02TestData.SeedMappedCompetenciesAsync(context, orgId);
+        var internalCompetency = new Domain.Entities.Competency
+        {
+            CategoryId = competencies[0].CategoryId,
+            Code = "INTERNAL_EXCEL",
+            Name = "Excel nội bộ",
+            CompetencyType = Statuses.CompetencyType.Internal,
+            Status = Statuses.Competency.Active,
+        };
+        context.GetDbSet<Domain.Entities.Competency>().Add(internalCompetency);
+        var draft = NewSet(AddPosition(context, orgId).Id, 1, Statuses.PositionRequirementSet.Draft);
+        draft.Items = Tt02TestData.Items(draft.Id, competencies.Append(internalCompetency)).ToList();
+        context.GetDbSet<PositionRequirementSet>().Add(draft);
+        await context.SaveChangesAsync();
+
+        var useCase = new ActivatePositionRequirementSetUseCase(context, CreateCurrentUserMock(orgId).Object);
+
+        var act = () => useCase.ExecuteAsync(new ActivatePositionRequirementSetUseCaseInput { Id = draft.Id });
+
+        var error = (await act.Should().ThrowAsync<BadRequestException>()).Which;
+        error.Message.Should().Contain("INTERNAL_EXCEL");
+        error.Errors.Should().ContainSingle(e => e.Code == ActivatePositionRequirementSetUseCase.CompetencyNotInFramework);
+    }
+
+    private static JobPosition AddPosition(AppDbContext context, Guid orgId)
     {
         var position = new JobPosition
         {
             Id = Guid.NewGuid(),
             OrganizationId = orgId,
-            Code = "DATA_ANALYST",
-            Name = "Data Analyst",
+            Code = "ACCOUNTANT",
+            Name = "Kế toán",
             Status = Statuses.MasterData.Active
         };
         context.JobPositions.Add(position);
-
-        var category = new CompetencyCategory
-        {
-            Id = Guid.NewGuid(),
-            OrganizationId = orgId,
-            Code = "DATA",
-            Name = "Data",
-            Status = Statuses.MasterData.Active
-        };
-        context.GetDbSet<CompetencyCategory>().Add(category);
-
-        var comp1 = new Domain.Entities.Competency
-        {
-            Id = Guid.NewGuid(),
-            CategoryId = category.Id,
-            Code = "DATA_LITERACY",
-            Name = "Data Literacy",
-            CompetencyType = Statuses.CompetencyType.CoreDigital,
-            Status = Statuses.Competency.Active
-        };
-        var comp2 = new Domain.Entities.Competency
-        {
-            Id = Guid.NewGuid(),
-            CategoryId = category.Id,
-            Code = "AI_LITERACY",
-            Name = "AI Literacy",
-            CompetencyType = Statuses.CompetencyType.CoreDigital,
-            Status = Statuses.Competency.Active
-        };
-        context.GetDbSet<Domain.Entities.Competency>().AddRange(comp1, comp2);
-
-        var draft = new PositionRequirementSet
-        {
-            Id = Guid.NewGuid(),
-            JobPositionId = position.Id,
-            VersionNo = 1,
-            Status = Statuses.PositionRequirementSet.Draft,
-            CreatedByUserId = Guid.NewGuid()
-        };
-        draft.Items.Add(new PositionRequirementItem { Id = Guid.NewGuid(), RequirementSetId = draft.Id, CompetencyId = comp1.Id, RequiredLevel = 3, WeightPercent = weight1 });
-        draft.Items.Add(new PositionRequirementItem { Id = Guid.NewGuid(), RequirementSetId = draft.Id, CompetencyId = comp2.Id, RequiredLevel = 2, WeightPercent = weight2 });
-        context.GetDbSet<PositionRequirementSet>().Add(draft);
-
-        return draft;
+        return position;
     }
+
+    private static PositionRequirementSet NewSet(Guid positionId, int versionNo, string status) => new()
+    {
+        Id = Guid.NewGuid(),
+        JobPositionId = positionId,
+        VersionNo = versionNo,
+        Status = status,
+        CreatedByUserId = Guid.NewGuid()
+    };
 
     [Fact]
     public async Task MultiTenantIsolation_CompetencyCannotBeCreatedInAnotherOrgCategory()

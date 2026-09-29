@@ -11,6 +11,7 @@ using DigiTalent.Domain.Entities;
 using DigiTalent.Domain.Events;
 using DigiTalent.Infrastructure;
 using DigiTalent.Infrastructure.Persistence;
+using DigiTalent.Tests.Competency;
 using DigiTalent.Tests.Intelligence;
 using DigiTalent.Tests.Persistence;
 using FluentAssertions;
@@ -215,6 +216,7 @@ public class SkillGapEventIntegrationTests
     {
         var harness = await CreateAsync();
         var world = harness.World;
+        var frameworkCompetencies = await Tt02TestData.SeedMappedCompetenciesAsync(world.Context, world.Organization.Id);
         var v2 = new PositionRequirementSet
         {
             JobPositionId = world.DataAnalyst.Id,
@@ -222,7 +224,7 @@ public class SkillGapEventIntegrationTests
             Status = Statuses.PositionRequirementSet.Draft,
             CreatedByUserId = harness.AnalystUser.Id,
         };
-        v2.Items.Add(new PositionRequirementItem { RequirementSetId = v2.Id, CompetencyId = world.Competencies["DATA_LITERACY"].Id, RequiredLevel = 1, WeightPercent = 100m });
+        v2.Items.AddRange(Tt02TestData.Items(v2.Id, frameworkCompetencies, level: 1));
         world.Context.PositionRequirementSets.Add(v2);
         await world.Context.SaveChangesAsync();
 
@@ -247,6 +249,7 @@ public class SkillGapEventIntegrationTests
         // làm vi phạm ux_requirement_sets_one_active khoảng 50% số lần.
         var harness = await CreateAsync();
         var world = harness.World;
+        var frameworkCompetencies = await Tt02TestData.SeedMappedCompetenciesAsync(world.Context, world.Organization.Id);
         for (var version = 2; version <= 6; version++)
         {
             var next = new PositionRequirementSet
@@ -256,7 +259,7 @@ public class SkillGapEventIntegrationTests
                 Status = Statuses.PositionRequirementSet.Draft,
                 CreatedByUserId = harness.AnalystUser.Id,
             };
-            next.Items.Add(new PositionRequirementItem { RequirementSetId = next.Id, CompetencyId = world.Competencies["AI_LITERACY"].Id, RequiredLevel = 2, WeightPercent = 100m });
+            next.Items.AddRange(Tt02TestData.Items(next.Id, frameworkCompetencies));
             world.Context.PositionRequirementSets.Add(next);
             await world.Context.SaveChangesAsync();
 

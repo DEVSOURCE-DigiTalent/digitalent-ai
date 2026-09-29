@@ -11,6 +11,14 @@ namespace DigiTalent.Application.UseCases.Competency;
 
 public class ActivatePositionRequirementSetUseCase : IUseCase<ActivatePositionRequirementSetUseCaseInput, ActivatePositionRequirementSetUseCaseOutput>
 {
+    /// <summary>Mã lỗi trả về errors[].message (field "items") để FE dịch.</summary>
+    public const string CompetencyNotInFramework = "COMPETENCY_NOT_IN_FRAMEWORK";
+    public const string FrameworkCompetencyMissing = "FRAMEWORK_COMPETENCY_MISSING";
+
+    /// <summary>MSG07 (SRS §7.3.3) — thay quy tắc 9–14 năng lực, quyết định D-B4.</summary>
+    public const string FrameworkCompetencyMissingMessage =
+        "A requirement set must include all 24 competencies of the national digital competence framework (Circular 02/2025) before it can be activated.";
+
     private const decimal RequiredTotalWeightPercent = 100m;
 
     private readonly IApplicationDbContext _context;
@@ -42,17 +50,19 @@ public class ActivatePositionRequirementSetUseCase : IUseCase<ActivatePositionRe
             throw new BadRequestException("Cannot activate an archived requirement set.");
         }
 
-        var weights = await _context.GetDbSet<PositionRequirementItem>()
+        var items = await _context.GetDbSet<PositionRequirementItem>()
             .Where(i => i.RequirementSetId == set.Id)
-            .Select(i => i.WeightPercent)
+            .Select(i => new { i.CompetencyId, i.WeightPercent })
             .ToListAsync();
-        if (weights.Count == 0)
+        if (items.Count == 0)
         {
             throw new BadRequestException("Cannot activate a position requirement set with no items.");
         }
 
+        await EnsureCoversNationalFrameworkAsync(items.Select(i => i.CompetencyId).ToList());
+
         // Skill gap priority & coverage assume weights sum to exactly 100 (drafts may be incomplete).
-        var totalWeight = weights.Sum();
+        var totalWeight = items.Sum(i => i.WeightPercent);
         if (totalWeight != RequiredTotalWeightPercent)
         {
             throw new BadRequestException(
@@ -94,5 +104,46 @@ public class ActivatePositionRequirementSetUseCase : IUseCase<ActivatePositionRe
             Status = set.Status,
             ActivatedAt = set.ActivatedAt
         };
+    }
+
+    /// <summary>
+    /// D-B4: mọi dòng phải là năng lực có mapping tới khung Thông tư 02/2025 đang active,
+    /// và bộ tiêu chuẩn phải có đủ 24 năng lực của khung. Bản nháp được phép thiếu; chỉ chặn khi kích hoạt.
+    /// </summary>
+    private async Task EnsureCoversNationalFrameworkAsync(IReadOnlyList<Guid> competencyIds)
+    {
+        var frameworkIds = await _context.CompetencyFrameworks
+            .Where(f => f.Code == CompetencyFrameworks.Tt02.Code && f.IsActive)
+            .Select(f => f.Id)
+            .ToListAsync();
+        var mapped = await _context.CompetencyFrameworkMappings
+            .Where(m => frameworkIds.Contains(m.FrameworkId) && competencyIds.Contains(m.CompetencyId))
+            .Select(m => new { m.CompetencyId, m.SourceCode })
+            .ToListAsync();
+
+        var unmapped = competencyIds.Except(mapped.Select(m => m.CompetencyId)).ToList();
+        if (unmapped.Count > 0)
+        {
+            var codes = await _context.Competencies
+                .Where(c => unmapped.Contains(c.Id))
+                .Select(c => c.Code)
+                .OrderBy(c => c)
+                .ToListAsync();
+            throw new BadRequestException(
+                "Every competency must belong to the national digital competence framework (Circular 02/2025). "
+                + $"Not in the framework: {string.Join(", ", codes)}.",
+                "items",
+                CompetencyNotInFramework);
+        }
+
+        var covered = mapped.Select(m => m.SourceCode).ToHashSet();
+        var missing = CompetencyFrameworks.Tt02.CompetencyCodes.Where(code => !covered.Contains(code)).ToList();
+        if (missing.Count > 0)
+        {
+            throw new BadRequestException(
+                $"{FrameworkCompetencyMissingMessage} Missing: {string.Join(", ", missing)}.",
+                "items",
+                FrameworkCompetencyMissing);
+        }
     }
 }

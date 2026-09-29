@@ -1,3 +1,5 @@
+using DigiTalent.Domain.Constants;
+
 namespace DigiTalent.Infrastructure.Persistence.Seed;
 
 /// <summary>
@@ -7,8 +9,8 @@ namespace DigiTalent.Infrastructure.Persistence.Seed;
 /// </summary>
 public static class Tt02Catalog
 {
-    public const string FrameworkCode = "TT02_2025";
-    public const string FrameworkVersion = "02/2025/TT-BGDĐT";
+    public const string FrameworkCode = CompetencyFrameworks.Tt02.Code;
+    public const string FrameworkVersion = CompetencyFrameworks.Tt02.Version;
     public const string FrameworkName = "Khung năng lực số cho người học";
     public const string FrameworkAuthority = "Bộ Giáo dục và Đào tạo";
     public const string FrameworkSourceUrl = "https://datafiles.chinhphu.vn/cpp/files/vbpq/2025/01/02-bgddt.pdf";
