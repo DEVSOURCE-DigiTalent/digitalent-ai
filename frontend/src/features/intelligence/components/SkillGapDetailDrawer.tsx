@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { RefreshCw, X } from 'lucide-react';
+import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
 import { useSkillGapRun } from '@/hooks/use-skill-gaps';
+import { CourseRecommendations } from './CourseRecommendations';
 import { SkillGapDetailSkeleton, SkillGapDetailView } from './SkillGapDetailView';
 
 interface SkillGapDetailDrawerProps {
@@ -14,6 +16,8 @@ interface SkillGapDetailDrawerProps {
 /** Right-side panel with one employee's snapshot; Esc or backdrop click closes it. */
 export function SkillGapDetailDrawer({ runId, onClose, canRecalculate, isRecalculating, onRecalculate }: SkillGapDetailDrawerProps) {
   const { data: run, isLoading, isError } = useSkillGapRun(runId);
+  const { can } = usePermission();
+  const canReadRecommendations = can(PERMISSIONS.LEARNING_RECOMMENDATION_READ);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -68,6 +72,12 @@ export function SkillGapDetailDrawer({ runId, onClose, canRecalculate, isRecalcu
           {isLoading && <SkillGapDetailSkeleton />}
           {isError && <p className="text-sm text-danger-600">Could not load this analysis. Please close and try again.</p>}
           {run && <SkillGapDetailView run={run} />}
+          {run && canReadRecommendations && (
+            <section className="mt-6 space-y-3">
+              <h3 className="text-sm font-semibold text-slate-700">Recommended courses</h3>
+              <CourseRecommendations employeeId={run.employeeId} />
+            </section>
+          )}
         </div>
       </aside>
     </div>

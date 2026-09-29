@@ -5,6 +5,7 @@ import {
   type CalculateSkillGapRequest,
   type SkillGapRunListParams,
 } from '../services/intelligence.service';
+import { RECOMMENDATIONS_KEY } from './use-recommendations';
 
 export const SKILL_GAPS_KEY = ['skill-gaps'];
 
@@ -38,7 +39,11 @@ export function useCalculateSkillGap() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CalculateSkillGapRequest) => skillGapService.calculate(data).then((r) => r.data.data!),
-    onSuccess: () => qc.invalidateQueries({ queryKey: SKILL_GAPS_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: SKILL_GAPS_KEY });
+      // Recommendations are computed from the latest snapshot
+      qc.invalidateQueries({ queryKey: RECOMMENDATIONS_KEY });
+    },
   });
 }
 
@@ -48,6 +53,10 @@ export function useCalculateSkillGapBatch() {
   return useMutation({
     mutationFn: (data: CalculateSkillGapBatchRequest) =>
       skillGapService.calculateBatch(data).then((r) => r.data.data!),
-    onSuccess: () => qc.invalidateQueries({ queryKey: SKILL_GAPS_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: SKILL_GAPS_KEY });
+      // Recommendations are computed from the latest snapshot
+      qc.invalidateQueries({ queryKey: RECOMMENDATIONS_KEY });
+    },
   });
 }

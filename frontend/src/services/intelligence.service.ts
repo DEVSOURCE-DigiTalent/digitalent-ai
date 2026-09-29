@@ -78,6 +78,55 @@ export interface CalculateSkillGapBatchResult {
   skipped: { employeeId: string; employeeName: string; reason: string }[];
 }
 
+export type RecommendationEmptyReason = 'NO_EMPLOYEE_PROFILE' | 'NO_SKILL_GAP_RUN' | 'NO_GAP' | 'NO_MATCHING_COURSE';
+
+/** Khớp UseCases/Intelligence/Recommendation/GetCourseRecommendations (spec §5.4). */
+export interface CourseRecommendation {
+  courseId: string;
+  courseCode: string;
+  title: string;
+  estimatedDurationMinutes?: number | null;
+  entryLevel?: number | null;
+  /** NOT_STARTED / IN_PROGRESS / READY_FOR_ASSESSMENT; null = not enrolled */
+  enrollmentStatus: string | null;
+  score: number;
+  /** Points per component (weight × ratio); they add up to the score (±0.01). */
+  breakdown: { gapPriorityCoverage: number; mandatoryCoverage: number; entryLevelFit: number };
+  reasons: {
+    competencyId: string;
+    competencyName: string;
+    currentLevel: number | null;
+    requiredLevel: number;
+    courseTargetLevel: number;
+    coverageType: string;
+    closesSteps: number;
+    mandatory: boolean;
+    severity: SkillGapSeverity | null;
+  }[];
+  explanation: string;
+  warnings: string[];
+}
+
+export interface CourseRecommendationsResult {
+  employeeId: string | null;
+  skillGapRunId: string | null;
+  generatedAt: string | null;
+  scoringConfigVersion: string;
+  reason: RecommendationEmptyReason | null;
+  items: CourseRecommendation[];
+}
+
+export interface CourseRecommendationsParams {
+  employeeId?: string;
+  limit?: number;
+}
+
+/** Course recommendations from the latest skill gap snapshot (spec §5.5) — api/v1/intelligence/recommendations. */
+export const recommendationService = {
+  get: (params?: CourseRecommendationsParams) =>
+    apiClient.get<ApiResponse<CourseRecommendationsResult>>('/intelligence/recommendations', { params }),
+};
+
 /**
  * Skill Gap Engine API (spec §4.7) — api/v1/intelligence/skill-gaps.
  */

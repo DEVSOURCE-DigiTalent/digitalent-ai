@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { BookOpen, Radar as RadarIcon } from 'lucide-react';
+import { Radar as RadarIcon } from 'lucide-react';
 import { EmptyState, PageHeader } from '@/components/shared';
 import { useMySkillGap } from '@/hooks/use-skill-gaps';
 import { cn } from '@/lib/utils';
+import { CourseRecommendations } from '@/features/intelligence/components/CourseRecommendations';
 import { SkillGapDetailSkeleton, SkillGapDetailView } from '@/features/intelligence/components/SkillGapDetailView';
 
 type Tab = 'gap' | 'courses';
@@ -83,13 +84,13 @@ function MySkillGapTab() {
   return <SkillGapDetailView run={run} />;
 }
 
-// Task 5 (S3-T017) replaces this with the recommendation list.
 function RecommendedCoursesTab() {
   return (
-    <EmptyState
-      icon={<BookOpen className="w-16 h-16 mx-auto" strokeWidth={1} />}
-      title="Course recommendations are coming soon"
-      description="Courses that close your highest-priority gaps will appear here, with the reason each one was suggested."
-    />
+    <div className="space-y-3">
+      <p className="text-sm text-slate-500">
+        Ranked by how much of your highest-priority gaps each published course closes, with the reason for each suggestion.
+      </p>
+      <CourseRecommendations />
+    </div>
   );
 }
