@@ -14,7 +14,7 @@ public class CompetencyFramework : IHasTimestamps
     public string? Authority { get; set; }
     public string? Jurisdiction { get; set; }
     public string? SourceUrl { get; set; }
-    public bool IsActive { get; set; }
+    public bool IsActive { get; set; } = true;
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 }
