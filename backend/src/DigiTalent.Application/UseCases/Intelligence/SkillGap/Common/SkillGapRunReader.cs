@@ -145,7 +145,6 @@ public class SkillGapRunReader
                 : new SkillGapConfigDto
                 {
                     MandatoryMultiplier = snapshot.Config.MandatoryMultiplier,
-                    MediumWeightThreshold = snapshot.Config.MediumWeightThreshold,
                 },
         };
     }

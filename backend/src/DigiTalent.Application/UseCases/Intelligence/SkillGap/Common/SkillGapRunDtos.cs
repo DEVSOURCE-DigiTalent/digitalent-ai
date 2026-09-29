@@ -40,7 +40,6 @@ public class SkillGapSummaryDto
 public class SkillGapConfigDto
 {
     public decimal MandatoryMultiplier { get; set; }
-    public decimal MediumWeightThreshold { get; set; }
 }
 
 public class SkillGapItemDto

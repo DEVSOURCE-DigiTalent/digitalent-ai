@@ -5,10 +5,11 @@ public sealed record SkillGapRequirementLine(Guid CompetencyId, int RequiredLeve
 
 /// <summary>
 /// Tham số tính skill gap — đọc từ system_settings "intelligence.skill_gap" (spec D-S3-04).
+/// Ngưỡng trọng số MEDIUM đã bỏ theo D-B1; setting cũ còn "mediumWeightThreshold" vẫn đọc được (trường thừa bị bỏ qua).
 /// </summary>
-public sealed record SkillGapSettings(decimal MandatoryMultiplier, decimal MediumWeightThreshold)
+public sealed record SkillGapSettings(decimal MandatoryMultiplier)
 {
-    public static SkillGapSettings Default { get; } = new(1.5m, 20m);
+    public static SkillGapSettings Default { get; } = new(1.5m);
 }
 
 /// <summary>Kết quả 1 năng lực. CurrentLevel null = chưa có cấp độ xác nhận; Severity null = đã đạt.</summary>

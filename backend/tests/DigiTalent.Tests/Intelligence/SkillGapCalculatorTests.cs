@@ -78,12 +78,13 @@ public class SkillGapCalculatorTests
         line.Severity.Should().BeNull();
     }
 
+    // D-B1 (29/09/2026): mức nghiêm trọng chỉ dựa vào số mức thiếu, trọng số không còn ảnh hưởng
     [Theory]
-    [InlineData(3, 1, 10, false, "HIGH")]     // gap 2, không bắt buộc
-    [InlineData(2, 1, 10, true, "HIGH")]      // gap 1, bắt buộc
-    [InlineData(2, 1, 20, false, "MEDIUM")]   // gap 1, trọng số = ngưỡng
-    [InlineData(2, 1, 19.99, false, "LOW")]   // gap 1, trọng số dưới ngưỡng
-    public void Calculate_ClassifiesSeverity(int required, short confirmed, double weight, bool mandatory, string expected)
+    [InlineData(3, 1, 4.17, false, "HIGH")]   // thiếu 2 mức, không bắt buộc
+    [InlineData(3, 1, 4.17, true, "HIGH")]    // thiếu 2 mức, bắt buộc
+    [InlineData(2, 1, 4.17, true, "MEDIUM")]  // thiếu 1 mức, bắt buộc
+    [InlineData(2, 1, 50, false, "LOW")]      // thiếu 1 mức, không bắt buộc — dù trọng số lớn
+    public void Calculate_ClassifiesSeverityByMissingLevelsOnly(int required, short confirmed, double weight, bool mandatory, string expected)
     {
         var requirements = new[] { new SkillGapRequirementLine(DataLiteracy, required, (decimal)weight, mandatory) };
         var confirmedLevels = new Dictionary<Guid, short> { [DataLiteracy] = confirmed };
@@ -94,9 +95,9 @@ public class SkillGapCalculatorTests
     }
 
     [Fact]
-    public void Calculate_UsesConfiguredMultiplierAndThreshold()
+    public void Calculate_UsesConfiguredMultiplier()
     {
-        var settings = new SkillGapSettings(MandatoryMultiplier: 2m, MediumWeightThreshold: 10m);
+        var settings = new SkillGapSettings(MandatoryMultiplier: 2m);
         var requirements = new[]
         {
             new SkillGapRequirementLine(DataLiteracy, 2, 30m, true),
@@ -108,7 +109,7 @@ public class SkillGapCalculatorTests
 
         lines[DataLiteracy].MandatoryMultiplier.Should().Be(2m);
         lines[DataLiteracy].PriorityScore.Should().Be(120m); // 2 × 30 × 2
-        lines[AiLiteracy].Severity.Should().Be(Statuses.SkillGapSeverity.Medium); // 15 ≥ ngưỡng 10
+        lines[AiLiteracy].Severity.Should().Be(Statuses.SkillGapSeverity.Low);
     }
 
     [Fact]

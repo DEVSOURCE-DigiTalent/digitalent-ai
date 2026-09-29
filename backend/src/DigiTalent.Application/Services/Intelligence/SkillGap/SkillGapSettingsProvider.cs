@@ -7,7 +7,7 @@ namespace DigiTalent.Application.Services.Intelligence.SkillGap;
 
 /// <summary>
 /// Đọc tham số skill gap từ system_settings key "intelligence.skill_gap":
-/// cấu hình của tổ chức → cấu hình toàn cục → mặc định (k = 1.5, ngưỡng MEDIUM = 20%).
+/// cấu hình của tổ chức → cấu hình toàn cục → mặc định (k = 1.5).
 /// Giá trị hỏng/ngoài khoảng hợp lệ → ghi log cảnh báo và dùng mặc định (không chặn nghiệp vụ).
 /// </summary>
 public class SkillGapSettingsProvider
@@ -16,7 +16,6 @@ public class SkillGapSettingsProvider
 
     private const decimal MinMultiplier = 1m;
     private const decimal MaxMultiplier = 10m;
-    private const decimal MaxWeightThreshold = 100m;
 
     private readonly IApplicationDbContext _context;
     private readonly ILogger<SkillGapSettingsProvider> _logger;
@@ -61,6 +60,5 @@ public class SkillGapSettingsProvider
     }
 
     private static bool IsValid(SkillGapSettings settings) =>
-        settings.MandatoryMultiplier is >= MinMultiplier and <= MaxMultiplier
-        && settings.MediumWeightThreshold is > 0 and <= MaxWeightThreshold;
+        settings.MandatoryMultiplier is >= MinMultiplier and <= MaxMultiplier;
 }

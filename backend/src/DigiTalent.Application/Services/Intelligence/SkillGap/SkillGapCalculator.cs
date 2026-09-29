@@ -7,12 +7,15 @@ namespace DigiTalent.Application.Services.Intelligence.SkillGap;
 /// Công thức: docs/specs/2026-09-28-sprint3-skill-gap-recommendation-spec.md §4.
 ///   gap      = max(0, required − (confirmed ?? 0))
 ///   priority = gap × weight_percent × (mandatory ? k : 1)
-///   severity = NULL (đạt) | HIGH (gap ≥ 2 hoặc bắt buộc) | MEDIUM (weight ≥ ngưỡng) | LOW
+///   severity = NULL (đạt) | HIGH (gap ≥ 2) | MEDIUM (gap 1, bắt buộc) | LOW (gap 1, không bắt buộc) — D-B1
 /// </summary>
 public static class SkillGapCalculator
 {
-    /// <summary>Đổi công thức → tăng version để snapshot cũ vẫn giải thích được (BR-08).</summary>
-    public const string CalculationVersion = "SG-1.0";
+    /// <summary>
+    /// Đổi công thức → tăng version để snapshot cũ vẫn giải thích được (BR-08).
+    /// SG-2.0: severity chỉ theo số mức thiếu (D-B1, căn cứ Thông tư 02/2025).
+    /// </summary>
+    public const string CalculationVersion = "SG-2.0";
 
     private const decimal NonMandatoryMultiplier = 1.00m;
     private const int HighGapSteps = 2;
@@ -48,24 +51,22 @@ public static class SkillGapCalculator
             requirement.Mandatory,
             multiplier,
             priority,
-            ClassifySeverity(gapSteps, requirement, settings));
+            ClassifySeverity(gapSteps, requirement.Mandatory));
     }
 
-    private static string? ClassifySeverity(short gapSteps, SkillGapRequirementLine requirement, SkillGapSettings settings)
+    private static string? ClassifySeverity(short gapSteps, bool mandatory)
     {
         if (gapSteps == 0)
         {
             return null;
         }
 
-        if (gapSteps >= HighGapSteps || requirement.Mandatory)
+        if (gapSteps >= HighGapSteps)
         {
             return Statuses.SkillGapSeverity.High;
         }
 
-        return requirement.WeightPercent >= settings.MediumWeightThreshold
-            ? Statuses.SkillGapSeverity.Medium
-            : Statuses.SkillGapSeverity.Low;
+        return mandatory ? Statuses.SkillGapSeverity.Medium : Statuses.SkillGapSeverity.Low;
     }
 
     private static SkillGapSummary Summarize(IReadOnlyList<SkillGapRequirementLine> requirements, IReadOnlyList<SkillGapLineResult> items)

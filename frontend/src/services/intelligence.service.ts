@@ -44,7 +44,7 @@ export interface SkillGapSummary {
   mediumCount: number;
   lowCount: number;
   coveragePercent: number;
-  config: { mandatoryMultiplier: number; mediumWeightThreshold: number };
+  config: { mandatoryMultiplier: number };
 }
 
 export interface SkillGapRunDetail extends SkillGapRunListItem {

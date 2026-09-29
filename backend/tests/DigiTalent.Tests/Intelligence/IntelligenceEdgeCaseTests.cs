@@ -118,14 +118,32 @@ public class IntelligenceEdgeCaseTests
         var settings = await SettingsProvider(context).GetAsync(OrganizationId);
         var otherOrganization = await SettingsProvider(context).GetAsync(Guid.NewGuid());
 
-        settings.Should().Be(new SkillGapSettings(2m, 30m));
-        otherOrganization.Should().Be(new SkillGapSettings(1.2m, 25m));
+        settings.Should().Be(new SkillGapSettings(2m));
+        otherOrganization.Should().Be(new SkillGapSettings(1.2m));
+    }
+
+    [Fact]
+    public async Task SettingsProvider_ReadsLegacySettingThatStillHasMediumWeightThreshold()
+    {
+        // D-B1 bỏ ngưỡng trọng số; setting cũ (kể cả ngưỡng 0) vẫn đọc được, trường thừa bị bỏ qua
+        using var context = CreateContext();
+        context.SystemSettings.Add(new SystemSetting
+        {
+            OrganizationId = OrganizationId,
+            Key = SkillGapSettingsProvider.SettingKey,
+            Value = """{"mandatoryMultiplier":2,"mediumWeightThreshold":0}""",
+        });
+        await context.SaveChangesAsync();
+
+        var settings = await SettingsProvider(context).GetAsync(OrganizationId);
+
+        settings.Should().Be(new SkillGapSettings(2m));
     }
 
     [Theory]
     [InlineData("not json")]
-    [InlineData("""{"mandatoryMultiplier":0.5,"mediumWeightThreshold":20}""")] // hệ số < 1 làm năng lực bắt buộc kém ưu tiên
-    [InlineData("""{"mandatoryMultiplier":1.5,"mediumWeightThreshold":0}""")]
+    [InlineData("""{"mandatoryMultiplier":0.5}""")] // hệ số < 1 làm năng lực bắt buộc kém ưu tiên
+    [InlineData("""{"mandatoryMultiplier":11}""")]
     public async Task SettingsProvider_FallsBackToDefaultForInvalidValues(string value)
     {
         using var context = CreateContext();

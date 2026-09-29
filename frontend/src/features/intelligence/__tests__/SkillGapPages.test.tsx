@@ -26,10 +26,10 @@ const run: SkillGapRunDetail = {
   highCount: 2,
   coveragePercent: 47.5,
   requirementSetId: 'set-1',
-  calculationVersion: 'SG-1.0',
+  calculationVersion: 'SG-2.0',
   summary: {
     totalRequired: 5, totalMet: 2, totalGap: 3, highCount: 2, mediumCount: 0, lowCount: 1, coveragePercent: 47.5,
-    config: { mandatoryMultiplier: 1.5, mediumWeightThreshold: 20 },
+    config: { mandatoryMultiplier: 1.5 },
   },
   items: [
     { competencyId: 'c1', competencyCode: 'DATA_LITERACY', competencyName: 'Data literacy', categoryName: 'Digital core', requiredLevel: 3, currentLevel: 1, gapSteps: 2, weightPercent: 30, mandatory: true, mandatoryMultiplier: 1.5, priorityScore: 90, severity: 'HIGH' },

@@ -15,7 +15,7 @@ namespace DigiTalent.Infrastructure.Persistence.Seed;
 public static class SkillGapSeeder
 {
     public const string SkillGapSettingKey = SkillGapSettingsProvider.SettingKey;
-    private const string SkillGapSettingValue = """{"mandatoryMultiplier":1.5,"mediumWeightThreshold":20}""";
+    private const string SkillGapSettingValue = """{"mandatoryMultiplier":1.5}""";
 
     private static readonly (string Code, decimal Weight, string Notes)[] RecommendationWeights =
     {
@@ -40,7 +40,7 @@ public static class SkillGapSeeder
             {
                 Key = SkillGapSettingKey,
                 Value = SkillGapSettingValue,
-                Description = "Skill gap: hệ số nhân năng lực bắt buộc và ngưỡng trọng số (%) để xếp mức MEDIUM",
+                Description = "Skill gap: hệ số nhân priority của năng lực bắt buộc",
             });
         }
 
