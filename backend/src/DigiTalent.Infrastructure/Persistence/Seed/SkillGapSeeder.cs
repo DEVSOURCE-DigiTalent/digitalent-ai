@@ -6,11 +6,11 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Infrastructure.Persistence.Seed;
 
 /// <summary>
-/// Dữ liệu cho Skill Gap Engine & gợi ý khóa học (Sprint 3 —
-/// docs/specs/2026-09-28-sprint3-skill-gap-recommendation-spec.md §11). Chạy lại nhiều lần vẫn an toàn.
+/// Dữ liệu cho Skill Gap Engine & gợi ý khóa học. Chạy lại nhiều lần vẫn an toàn.
 ///   - Reference (mọi môi trường): tham số skill gap + trọng số gợi ý khóa học v1 cho mỗi tổ chức.
-///   - Demo (chỉ Development): vị trí Data Analyst, 5 năng lực, hồ sơ năng lực của employee@, 4 khóa học
-///     — đúng ví dụ tính tay §4.5 / §5.3 của spec.
+///   - Demo (chỉ Development): Khung năng lực số Thông tư 02/2025 (6 miền, 24 năng lực, mapping),
+///     5 vị trí theo ma trận vị trí × miền, 18 khóa học F/I/A có tiên quyết, employee@ là Kế toán đã xác nhận
+///     mọi năng lực ở mức Cơ bản — docs/specs/2026-09-29-tt02-position-competency-matrix.md §3–§8.
 /// </summary>
 public static class SkillGapSeeder
 {
@@ -24,7 +24,12 @@ public static class SkillGapSeeder
         ("ENTRY_LEVEL_FIT", 10m, "Nhân viên đủ trình độ đầu vào của khóa học"),
     };
 
-    private const string DemoCategoryCode = "DIGITAL_CORE";
+    private const string DemoEmployeeEmail = "employee@digitalent.ai";
+    private const string DemoEmployeePosition = "ACCOUNTANT";
+
+    /// <summary>manager@ trưởng phòng Operations: chọn Sales / CRM (gần nghiệp vụ vận hành, khách hàng nhất).</summary>
+    private const string DemoManagerEmail = "manager@digitalent.ai";
+    private const string DemoManagerPosition = "SALES_CRM";
 
     public static async Task SeedReferenceAsync(AppDbContext db)
     {
@@ -71,7 +76,8 @@ public static class SkillGapSeeder
 
     public static async Task SeedDemoAsync(AppDbContext db, Guid organizationId)
     {
-        if (await db.CompetencyCategories.AnyAsync(c => c.OrganizationId == organizationId && c.Code == DemoCategoryCode))
+        var firstCategoryCode = Tt02Catalog.Domains[0].CategoryCode;
+        if (await db.CompetencyCategories.AnyAsync(c => c.OrganizationId == organizationId && c.Code == firstCategoryCode))
         {
             return;
         }
@@ -85,159 +91,182 @@ public static class SkillGapSeeder
         }
         var authorUserId = users.GetValueOrDefault("trainer@digitalent.ai", hrUserId);
 
-        var competencies = SeedCompetencies(db, organizationId);
-        var position = SeedDataAnalystPosition(db, organizationId, hrUserId, competencies);
-        await AssignDemoEmployeesAsync(db, organizationId, position.Id);
+        var competencies = SeedFramework(db, organizationId);
+        var positions = SeedPositions(db, organizationId, hrUserId, competencies);
+        await AssignDemoEmployeeAsync(db, organizationId, DemoEmployeeEmail, positions[DemoEmployeePosition].Id);
+        await AssignDemoEmployeeAsync(db, organizationId, DemoManagerEmail, positions[DemoManagerPosition].Id);
         await SeedEmployeeProfileAsync(db, organizationId, hrUserId, competencies);
         SeedCourses(db, organizationId, authorUserId, competencies);
 
         await db.SaveChangesAsync();
     }
 
-    private static Dictionary<string, Competency> SeedCompetencies(AppDbContext db, Guid organizationId)
+    /// <summary>Khung TT02_2025, 6 nhóm = 6 miền, 24 năng lực (3 tiêu chí/mức) và 24 mapping DIRECT. Key = mã Thông tư ("4.2").</summary>
+    private static Dictionary<string, Competency> SeedFramework(AppDbContext db, Guid organizationId)
     {
-        var category = new CompetencyCategory
+        var framework = new CompetencyFramework
         {
-            OrganizationId = organizationId,
-            Code = DemoCategoryCode,
-            Name = "Năng lực số cốt lõi",
-            Description = "Nhóm năng lực số dùng cho demo Skill Gap (DigComp 3.0)",
+            Code = Tt02Catalog.FrameworkCode,
+            Version = Tt02Catalog.FrameworkVersion,
+            Name = Tt02Catalog.FrameworkName,
+            Authority = Tt02Catalog.FrameworkAuthority,
+            Jurisdiction = "VN",
+            SourceUrl = Tt02Catalog.FrameworkSourceUrl,
+            IsActive = true,
         };
-        db.CompetencyCategories.Add(category);
-
-        var definitions = new[]
-        {
-            ("DATA_LITERACY", "Data literacy", "Đọc, làm sạch, phân tích và trình bày dữ liệu"),
-            ("DIGITAL_COMMUNICATION", "Digital communication", "Giao tiếp và cộng tác qua công cụ số"),
-            ("INFORMATION_SECURITY", "Information security", "Bảo vệ thiết bị, dữ liệu và danh tính số"),
-            ("AI_LITERACY", "AI literacy", "Sử dụng công cụ AI hiệu quả và có trách nhiệm"),
-            ("PROBLEM_SOLVING", "Digital problem solving", "Xác định và giải quyết vấn đề bằng công cụ số"),
-        };
-        var levelNames = new[] { "Cơ bản", "Trung cấp", "Nâng cao" };
+        db.CompetencyFrameworks.Add(framework);
 
         var result = new Dictionary<string, Competency>();
-        foreach (var (code, name, description) in definitions)
+        foreach (var domain in Tt02Catalog.Domains)
         {
-            var competency = new Competency
+            var category = new CompetencyCategory
             {
-                CategoryId = category.Id,
-                Code = code,
-                Name = name,
-                Description = description,
-                CompetencyType = Statuses.CompetencyType.CoreDigital,
-                Status = Statuses.Competency.Active,
+                OrganizationId = organizationId,
+                Code = domain.CategoryCode,
+                Name = $"{domain.Number}. {domain.Name}",
+                Description = $"Miền {domain.Number} — Khung năng lực số, Thông tư 02/2025/TT-BGDĐT",
+                SortOrder = domain.Number,
             };
-            for (var level = 1; level <= 3; level++)
+            db.CompetencyCategories.Add(category);
+
+            foreach (var definition in domain.Competencies)
             {
-                competency.Criteria.Add(new CompetencyLevelCriterion
+                var competency = NewCompetency(category.Id, domain, definition);
+                db.Competencies.Add(competency);
+                db.CompetencyFrameworkMappings.Add(new CompetencyFrameworkMapping
                 {
                     CompetencyId = competency.Id,
-                    Level = level,
-                    IndicatorCode = $"{code}-L{level}",
-                    BehaviorIndicator = $"{name} ở mức {levelNames[level - 1]}: {description.ToLowerInvariant()}.",
-                    SortOrder = level,
+                    FrameworkId = framework.Id,
+                    SourceAreaCode = domain.Number.ToString(),
+                    SourceCode = definition.SourceCode,
+                    SourceName = definition.Name,
+                    SourceLevelText = Tt02Catalog.SourceLevelText,
+                    Relationship = "DIRECT",
+                    IsPrimary = true,
+                    MappingNote = Tt02Catalog.MappingNote,
+                    SourceUrl = Tt02Catalog.FrameworkSourceUrl,
                 });
+                result[definition.SourceCode] = competency;
             }
-            db.Competencies.Add(competency);
-            result[code] = competency;
         }
 
         return result;
     }
 
-    private static JobPosition SeedDataAnalystPosition(
-        AppDbContext db, Guid organizationId, Guid hrUserId, IReadOnlyDictionary<string, Competency> competencies)
+    /// <summary>Tiêu chí mỗi mức lấy từ tên module tương ứng của khóa F / I / A (khung chương trình, bảng C2).</summary>
+    private static Competency NewCompetency(Guid categoryId, Tt02Catalog.DomainDefinition domain, Tt02Catalog.CompetencyDefinition definition)
     {
-        var family = new JobFamily { OrganizationId = organizationId, Code = "DATA_ANALYTICS", Name = "Data & Analytics" };
-        var position = new JobPosition
+        var code = Tt02Catalog.CompetencyCode(definition.SourceCode);
+        var competency = new Competency
         {
-            OrganizationId = organizationId,
-            JobFamilyId = family.Id,
-            Code = "DATA_ANALYST",
-            Name = "Data Analyst",
+            CategoryId = categoryId,
+            Code = code,
+            Name = definition.Name,
+            Description = $"Năng lực thành phần {definition.SourceCode} — miền {domain.Number}. {domain.Name}",
+            CompetencyType = Statuses.CompetencyType.CoreDigital,
+            Status = Statuses.Competency.Active,
         };
-        db.JobFamilies.Add(family);
-        db.JobPositions.Add(position);
-
-        var now = DateTimeOffset.UtcNow;
-        var set = new PositionRequirementSet
+        for (var level = 1; level <= 3; level++)
         {
-            JobPositionId = position.Id,
-            VersionNo = 1,
-            Status = Statuses.PositionRequirementSet.Active,
-            EffectiveFrom = DateOnly.FromDateTime(now.UtcDateTime),
-            CreatedByUserId = hrUserId,
-            ActivatedByUserId = hrUserId,
-            ActivatedAt = now,
-        };
-
-        // Bảng ví dụ §4.5 của spec — tổng trọng số = 100
-        var requirements = new (string Code, int Level, decimal Weight, bool Mandatory)[]
-        {
-            ("DATA_LITERACY", 3, 30m, true),
-            ("DIGITAL_COMMUNICATION", 2, 20m, false),
-            ("INFORMATION_SECURITY", 2, 25m, true),
-            ("AI_LITERACY", 2, 15m, false),
-            ("PROBLEM_SOLVING", 1, 10m, false),
-        };
-        foreach (var (code, level, weight, mandatory) in requirements)
-        {
-            set.Items.Add(new PositionRequirementItem
+            competency.Criteria.Add(new CompetencyLevelCriterion
             {
-                RequirementSetId = set.Id,
-                CompetencyId = competencies[code].Id,
-                RequiredLevel = level,
-                WeightPercent = weight,
-                IsMandatory = mandatory,
+                CompetencyId = competency.Id,
+                Level = level,
+                IndicatorCode = $"{code}-L{level}",
+                BehaviorIndicator = $"{Tt02Catalog.LevelNames[level - 1]}: {definition.ModuleTitles[level - 1]} "
+                                    + $"(module {domain.CourseCode(level)}-M{Array.IndexOf(domain.Competencies, definition) + 1})",
+                SortOrder = level,
             });
         }
-        db.PositionRequirementSets.Add(set);
 
-        return position;
+        return competency;
     }
 
-    private static async Task AssignDemoEmployeesAsync(AppDbContext db, Guid organizationId, Guid positionId)
+    private static Dictionary<string, JobPosition> SeedPositions(
+        AppDbContext db, Guid organizationId, Guid hrUserId, IReadOnlyDictionary<string, Competency> competencies)
     {
-        var demoEmails = new[] { "employee@digitalent.ai", "manager@digitalent.ai" };
-        var employees = await db.Employees
-            .Where(e => e.OrganizationId == organizationId && e.JobPositionId == null && demoEmails.Contains(e.WorkEmail!))
-            .ToListAsync();
+        var family = new JobFamily { OrganizationId = organizationId, Code = "OFFICE", Name = "Khối văn phòng" };
+        db.JobFamilies.Add(family);
 
-        foreach (var employee in employees)
+        var weights = Tt02Catalog.WeightsByDomain(Tt02Catalog.Domains.Select(d => d.Competencies.Length).ToList());
+        var now = DateTimeOffset.UtcNow;
+        var result = new Dictionary<string, JobPosition>();
+        foreach (var definition in Tt02Catalog.Positions)
+        {
+            var position = new JobPosition
+            {
+                OrganizationId = organizationId,
+                JobFamilyId = family.Id,
+                Code = definition.Code,
+                Name = definition.Name,
+            };
+            db.JobPositions.Add(position);
+
+            var set = new PositionRequirementSet
+            {
+                JobPositionId = position.Id,
+                VersionNo = 1,
+                Status = Statuses.PositionRequirementSet.Active,
+                EffectiveFrom = DateOnly.FromDateTime(now.UtcDateTime),
+                CreatedByUserId = hrUserId,
+                ActivatedByUserId = hrUserId,
+                ActivatedAt = now,
+            };
+            for (var d = 0; d < Tt02Catalog.Domains.Length; d++)
+            {
+                var domain = Tt02Catalog.Domains[d];
+                for (var c = 0; c < domain.Competencies.Length; c++)
+                {
+                    set.Items.Add(new PositionRequirementItem
+                    {
+                        RequirementSetId = set.Id,
+                        CompetencyId = competencies[domain.Competencies[c].SourceCode].Id,
+                        RequiredLevel = definition.DomainLevels[d],
+                        WeightPercent = weights[d][c],
+                        IsMandatory = definition.IsMandatoryDomain(domain.Number),
+                    });
+                }
+            }
+            db.PositionRequirementSets.Add(set);
+            result[definition.Code] = position;
+        }
+
+        return result;
+    }
+
+    private static async Task AssignDemoEmployeeAsync(AppDbContext db, Guid organizationId, string email, Guid positionId)
+    {
+        var employee = await db.Employees
+            .FirstOrDefaultAsync(e => e.OrganizationId == organizationId && e.JobPositionId == null && e.WorkEmail == email);
+        if (employee != null)
         {
             employee.JobPositionId = positionId;
         }
     }
 
+    /// <summary>employee@ (Kế toán): mọi năng lực đã xác nhận ở mức Cơ bản — kịch bản demo §8 bước 2.</summary>
     private static async Task SeedEmployeeProfileAsync(
         AppDbContext db, Guid organizationId, Guid hrUserId, IReadOnlyDictionary<string, Competency> competencies)
     {
         var employee = await db.Employees
-            .FirstOrDefaultAsync(e => e.OrganizationId == organizationId && e.WorkEmail == "employee@digitalent.ai");
+            .FirstOrDefaultAsync(e => e.OrganizationId == organizationId && e.WorkEmail == DemoEmployeeEmail);
         if (employee == null)
         {
             return;
         }
 
-        // INFORMATION_SECURITY cố ý chưa có → current_level NULL trong ví dụ §4.5
-        var confirmedLevels = new (string Code, short Level)[]
-        {
-            ("DATA_LITERACY", 1),
-            ("DIGITAL_COMMUNICATION", 2),
-            ("AI_LITERACY", 1),
-            ("PROBLEM_SOLVING", 3),
-        };
+        const short basicLevel = 1;
         var now = DateTimeOffset.UtcNow;
-        foreach (var (code, level) in confirmedLevels)
+        foreach (var competency in competencies.Values)
         {
             var evidence = new CompetencyEvidence
             {
                 EmployeeId = employee.Id,
-                CompetencyId = competencies[code].Id,
+                CompetencyId = competency.Id,
                 SourceType = Statuses.EvidenceSourceType.Migration,
                 Status = Statuses.EvidenceStatus.Confirmed,
                 IsLevelConfirming = true,
-                ConfirmedLevel = level,
+                ConfirmedLevel = basicLevel,
                 ConfirmedByUserId = hrUserId,
                 ConfirmedAt = now,
                 ReviewNote = "Dữ liệu năng lực ban đầu (demo seed)",
@@ -246,8 +275,8 @@ public static class SkillGapSeeder
             db.EmployeeCompetencyProfiles.Add(new EmployeeCompetencyProfile
             {
                 EmployeeId = employee.Id,
-                CompetencyId = competencies[code].Id,
-                ConfirmedLevel = level,
+                CompetencyId = competency.Id,
+                ConfirmedLevel = basicLevel,
                 LatestConfirmingEvidenceId = evidence.Id,
                 ConfirmedAt = now,
                 RowVersion = 1,
@@ -255,45 +284,59 @@ public static class SkillGapSeeder
         }
     }
 
+    /// <summary>
+    /// 18 khóa PUBLISHED (3 mức × 6 miền): mỗi khóa phủ mọi năng lực của miền ở mức khóa, entry_level = mức − 1
+    /// (tối thiểu 1), tiên quyết F → I → A. Thêm 1 khóa DRAFT để kiểm "không gợi ý khóa nháp".
+    /// </summary>
     private static void SeedCourses(
         AppDbContext db, Guid organizationId, Guid authorUserId, IReadOnlyDictionary<string, Competency> competencies)
     {
-        // Ví dụ §5.3 của spec: kỳ vọng xếp hạng K3 > K2 > K1, K4 (DRAFT) bị loại
-        var courses = new (string Code, string Title, short? EntryLevel, int Minutes, string Status, (string Competency, short Target, string Coverage)[] Teaches)[]
+        foreach (var domain in Tt02Catalog.Domains)
         {
-            ("DA-EXCEL-PBI", "Excel & Power BI cho phân tích dữ liệu", 1, 480, Statuses.Course.Published,
-                new[] { ("DATA_LITERACY", (short)2, Statuses.CourseCoverageType.Primary), ("AI_LITERACY", (short)2, Statuses.CourseCoverageType.Supporting) }),
-            ("SEC-BASIC", "An toàn thông tin cơ bản", null, 240, Statuses.Course.Published,
-                new[] { ("INFORMATION_SECURITY", (short)2, Statuses.CourseCoverageType.Primary) }),
-            ("DA-ADVANCED", "Phân tích dữ liệu nâng cao", 2, 720, Statuses.Course.Published,
-                new[] { ("DATA_LITERACY", (short)3, Statuses.CourseCoverageType.Primary) }),
-            ("AI-OFFICE", "AI cho công việc văn phòng", 1, 300, Statuses.Course.Draft,
-                new[] { ("AI_LITERACY", (short)2, Statuses.CourseCoverageType.Primary) }),
-        };
-
-        foreach (var (code, title, entryLevel, minutes, status, teaches) in courses)
-        {
-            var course = new Course
+            Course? previous = null;
+            for (short level = 1; level <= 3; level++)
             {
-                OrganizationId = organizationId,
-                Code = code,
-                VersionNo = 1,
-                Title = title,
-                EntryLevel = entryLevel,
-                EstimatedDurationMinutes = minutes,
-                CertificateEnabled = true,
-                Status = status,
-                CreatedByUserId = authorUserId,
-                RowVersion = 1,
-            };
-            db.Courses.Add(course);
-            db.CourseCompetencies.AddRange(teaches.Select(t => new CourseCompetency
-            {
-                CourseId = course.Id,
-                CompetencyId = competencies[t.Competency].Id,
-                TargetLevel = t.Target,
-                CoverageType = t.Coverage,
-            }));
+                var course = AddCourse(db, organizationId, authorUserId, domain.CourseCode(level), domain.CourseTitles[level - 1],
+                    Math.Max((short)1, (short)(level - 1)), domain.CourseMinutes(level), Statuses.Course.Published,
+                    domain.Competencies.Select(c => competencies[c.SourceCode]), level);
+                if (previous != null)
+                {
+                    db.CoursePrerequisites.Add(new CoursePrerequisite { CourseId = course.Id, PrerequisiteCourseId = previous.Id });
+                }
+                previous = course;
+            }
         }
+
+        var aiDomain = Tt02Catalog.Domains[^1];
+        AddCourse(db, organizationId, authorUserId, "AI-OFFICE", "AI cho công việc văn phòng (bản nháp)", 1, 300,
+            Statuses.Course.Draft, aiDomain.Competencies.Select(c => competencies[c.SourceCode]), 2);
+    }
+
+    private static Course AddCourse(
+        AppDbContext db, Guid organizationId, Guid authorUserId, string code, string title, short entryLevel, int minutes,
+        string status, IEnumerable<Competency> teaches, short targetLevel)
+    {
+        var course = new Course
+        {
+            OrganizationId = organizationId,
+            Code = code,
+            VersionNo = 1,
+            Title = title,
+            EntryLevel = entryLevel,
+            EstimatedDurationMinutes = minutes,
+            CertificateEnabled = true,
+            Status = status,
+            CreatedByUserId = authorUserId,
+            RowVersion = 1,
+        };
+        db.Courses.Add(course);
+        db.CourseCompetencies.AddRange(teaches.Select(c => new CourseCompetency
+        {
+            CourseId = course.Id,
+            CompetencyId = c.Id,
+            TargetLevel = targetLevel,
+            CoverageType = Statuses.CourseCoverageType.Primary,
+        }));
+        return course;
     }
 }
