@@ -204,12 +204,12 @@ Tổng: 140 giờ, khớp Jira. Thứ tự cắt nếu trễ: (1) heatmap trong 
 
 ### Task 9: Report 3 + demo Sprint 3 (S3-T025)
 
-- [ ] Report 3: NF-01 (công thức §4, ví dụ golden §4.5), recommendation (§5), cơ chế event (§6), UC-23/UC-24; ghi rõ NF-02/NF-03 để Sprint sau.
-- [ ] Rà khớp tên bảng/cột/endpoint giữa Report 3, SQL v2.4 và Swagger.
-- [ ] Cập nhật Report 4 cho SQL v2.4 (2 cột `assessments`, `learner_profiles`).
-- [ ] Cập nhật `CLAUDE.md` / `DEVELOPER_GUIDE` phần đã cũ (số permission, SignalR, tests, domain events).
-- [ ] Kịch bản demo (dùng seed): HR tính gap `employee@` → radar + 3 gap → gợi ý K3 > K2 > K1 → HR ghi nhận C3 = 2 → employee nhận thông báo, gap giảm, gợi ý K2 biến mất.
-- [ ] Commit `docs: S3-T025 update report 3 for skill gap engine`.
+- [x] Report 3 (`docs/03A_SRS_Yeu_Cau_Chuc_Nang.md` → v3.1): §7.6.1–7.6.5 theo phần đã hiện thực (NF-01, gợi ý khóa học, tính lại tự động, ghi nhận thủ công), §7.8.5 theo D-S3-08, NF-01, MSG27–34, §13 trạng thái & 7 điểm mở (O-1..O-7). Mã UC đúng theo SRS: **UC-39** (My Competency Profile & Gap), **UC-28** (Team Skill Gap), không phải UC-23/24 như mô tả Jira cũ.
+- [x] Rà khớp tên bảng/cột/endpoint giữa Report 3, SQL v2.3 và API thật (đã gọi qua HTTP + trình duyệt). SQL v2.4 chưa áp dụng (chờ Mentor).
+- [ ] Cập nhật Report 4 cho SQL v2.4 — **chờ Mentor duyệt D-S3-13**.
+- [x] Cập nhật `CLAUDE.md` phần đã cũ (tests, permission, SignalR, audit, migration, domain events, phạm vi dữ liệu, 409).
+- [x] Kịch bản demo kiểm tra trên trình duyệt (DB seed mới): HR "Recalculate all" → 2 tính, 2 bỏ qua kèm lý do → mở `employee@` (gap 3, coverage 47.5%, gợi ý DA-ADVANCED > SEC-BASIC > DA-EXCEL-PBI) → "Confirm level" Information security = Intermediate → panel tự chuyển snapshot mới (gap 2, coverage 72.5%), SEC-BASIC biến mất; `employee@` nhận push SignalR (client thật). *Radar chưa xem được trong phiên tự động (tab nền dừng animation) — cần xem tay trên máy demo.*
+- [x] Commit `docs: S3-T025 update report 3 for skill gap engine`.
 
 ---
 
