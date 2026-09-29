@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
@@ -6,25 +7,23 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Organization.Employees;
 
 /// <summary>
-/// Lấy chi tiết nhân sự theo Id trong phạm vi tổ chức của người gọi.
+/// Lấy chi tiết nhân sự theo Id trong phạm vi người gọi (EmployeeScope); ngoài phạm vi → 404.
 /// </summary>
 public class GetEmployeeByIdUseCase : IUseCase<GetEmployeeByIdUseCaseInput, GetEmployeeByIdUseCaseOutput>
 {
     private readonly IApplicationDbContext _context;
-    private readonly ICurrentUser _currentUser;
+    private readonly EmployeeScope _employeeScope;
 
-    public GetEmployeeByIdUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    public GetEmployeeByIdUseCase(IApplicationDbContext context, EmployeeScope employeeScope)
     {
         _context = context;
-        _currentUser = currentUser;
+        _employeeScope = employeeScope;
     }
 
     public async Task<GetEmployeeByIdUseCaseOutput> ExecuteAsync(GetEmployeeByIdUseCaseInput input)
     {
-        var organizationId = _currentUser.GetRequiredOrganizationId();
-
-        var employee = await _context.Employees
-            .Where(e => e.Id == input.Id && e.OrganizationId == organizationId)
+        var employee = await _employeeScope.VisibleEmployees()
+            .Where(e => e.Id == input.Id)
             .Select(e => new GetEmployeeByIdUseCaseOutput
             {
                 Id = e.Id,

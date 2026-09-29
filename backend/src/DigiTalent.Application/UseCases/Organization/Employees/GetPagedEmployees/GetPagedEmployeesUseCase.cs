@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Domain.Constants;
@@ -8,22 +9,22 @@ namespace DigiTalent.Application.UseCases.Organization.Employees;
 /// <summary>
 /// Danh sách nhân viên có phân trang, tìm kiếm họ tên/mã, lọc theo phòng ban, vị trí, trạng thái.
 /// Mặc định (không gửi Status) KHÔNG hiện nhân viên đã archive.
+/// Chỉ trả nhân viên trong phạm vi người gọi (EmployeeScope — Department Manager: phòng mình, BR-12).
 /// </summary>
 public class GetPagedEmployeesUseCase : IUseCase<GetPagedEmployeesUseCaseInput, GetPagedEmployeesUseCaseOutput>
 {
     private readonly IApplicationDbContext _context;
-    private readonly ICurrentUser _currentUser;
+    private readonly EmployeeScope _employeeScope;
 
-    public GetPagedEmployeesUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    public GetPagedEmployeesUseCase(IApplicationDbContext context, EmployeeScope employeeScope)
     {
         _context = context;
-        _currentUser = currentUser;
+        _employeeScope = employeeScope;
     }
 
     public async Task<GetPagedEmployeesUseCaseOutput> ExecuteAsync(GetPagedEmployeesUseCaseInput input)
     {
-        var organizationId = _currentUser.GetRequiredOrganizationId();
-        var query = _context.Employees.Where(e => e.OrganizationId == organizationId);
+        var query = _employeeScope.VisibleEmployees();
 
         if (!string.IsNullOrWhiteSpace(input.Search))
         {

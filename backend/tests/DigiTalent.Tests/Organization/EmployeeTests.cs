@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Organization.Employees;
@@ -21,13 +22,31 @@ public class EmployeeTests
         return context;
     }
 
+    /// <summary>HR / admin caller (organization-wide scope) unless stated otherwise.</summary>
     private static Mock<ICurrentUser> MockUser(Guid organizationId)
     {
         var mock = new Mock<ICurrentUser>();
         mock.Setup(c => c.GetRequiredOrganizationId()).Returns(organizationId);
         mock.Setup(c => c.OrganizationId).Returns(organizationId);
+        mock.Setup(c => c.IsAdmin).Returns(true);
         return mock;
     }
+
+    private static Mock<ICurrentUser> MockDepartmentManager(Guid organizationId, Guid departmentId)
+    {
+        var mock = new Mock<ICurrentUser>();
+        mock.Setup(c => c.GetRequiredOrganizationId()).Returns(organizationId);
+        mock.Setup(c => c.OrganizationId).Returns(organizationId);
+        mock.Setup(c => c.IsDepartmentManager).Returns(true);
+        mock.Setup(c => c.DepartmentId).Returns(departmentId);
+        return mock;
+    }
+
+    private static GetPagedEmployeesUseCase PagedUseCase(IApplicationDbContext context, ICurrentUser user) =>
+        new(context, new EmployeeScope(context, user));
+
+    private static GetEmployeeByIdUseCase ByIdUseCase(IApplicationDbContext context, ICurrentUser user) =>
+        new(context, new EmployeeScope(context, user));
 
     private static async Task<DigiTalent.Domain.Entities.Organization> SeedOrganizationAsync(DigiTalent.Infrastructure.Persistence.AppDbContext context)
     {
@@ -132,7 +151,7 @@ public class EmployeeTests
         await context.SaveChangesAsync();
 
         var currentUser = MockUser(org.Id);
-        var useCase = new GetPagedEmployeesUseCase(context, currentUser.Object);
+        var useCase = PagedUseCase(context, currentUser.Object);
 
         // 1. Paged list excludes archived by default
         var pagedResult = await useCase.ExecuteAsync(new GetPagedEmployeesUseCaseInput
@@ -218,7 +237,7 @@ public class EmployeeTests
         await context.SaveChangesAsync();
 
         var currentUser = MockUser(org.Id);
-        var useCase = new GetEmployeeByIdUseCase(context, currentUser.Object);
+        var useCase = ByIdUseCase(context, currentUser.Object);
         var result = await useCase.ExecuteAsync(new GetEmployeeByIdUseCaseInput { Id = emp.Id });
 
         result.Should().NotBeNull();
@@ -240,7 +259,7 @@ public class EmployeeTests
         var org = await SeedOrganizationAsync(context);
         var currentUser = MockUser(org.Id);
 
-        var useCase = new GetEmployeeByIdUseCase(context, currentUser.Object);
+        var useCase = ByIdUseCase(context, currentUser.Object);
         var action = async () => await useCase.ExecuteAsync(new GetEmployeeByIdUseCaseInput { Id = Guid.NewGuid() });
 
         await action.Should().ThrowAsync<NotFoundException>();
@@ -533,7 +552,7 @@ public class EmployeeTests
         var currentUserB = MockUser(orgB.Id);
 
         // 1. GetById should throw NotFound
-        var getUseCase = new GetEmployeeByIdUseCase(context, currentUserB.Object);
+        var getUseCase = ByIdUseCase(context, currentUserB.Object);
         var getAction = async () => await getUseCase.ExecuteAsync(new GetEmployeeByIdUseCaseInput { Id = empA.Id });
         await getAction.Should().ThrowAsync<NotFoundException>();
 
@@ -554,8 +573,51 @@ public class EmployeeTests
         await archiveAction.Should().ThrowAsync<NotFoundException>();
 
         // 4. GetPaged should NOT list Tenant A's employee
-        var pagedUseCase = new GetPagedEmployeesUseCase(context, currentUserB.Object);
+        var pagedUseCase = PagedUseCase(context, currentUserB.Object);
         var pagedResult = await pagedUseCase.ExecuteAsync(new GetPagedEmployeesUseCaseInput());
         pagedResult.Items.Should().NotContain(x => x.Id == empA.Id);
+    }
+
+    [Fact]
+    public async Task DepartmentManager_SeesOnlyOwnDepartment_AndOtherDepartmentIsNotFound()
+    {
+        using var context = await CreateDatabaseAsync();
+        var org = await SeedOrganizationAsync(context);
+        var ownDept = await SeedDepartmentAsync(context, org.Id);
+        var otherDept = await SeedDepartmentAsync(context, org.Id);
+
+        Employee NewEmployee(Guid departmentId, string name) => new()
+        {
+            Id = Guid.NewGuid(),
+            OrganizationId = org.Id,
+            DepartmentId = departmentId,
+            EmployeeCode = $"SCOPE_{Guid.NewGuid():N}"[..15].ToUpper(),
+            FullName = name,
+            Status = Statuses.Employee.Active
+        };
+        var colleague = NewEmployee(ownDept.Id, "Same Department");
+        var outsider = NewEmployee(otherDept.Id, "Other Department");
+        context.Employees.AddRange(colleague, outsider);
+        await context.SaveChangesAsync();
+
+        var manager = MockDepartmentManager(org.Id, ownDept.Id).Object;
+
+        // BR-12: list only contains the manager's department, even when filtering by another department
+        var list = await PagedUseCase(context, manager).ExecuteAsync(new GetPagedEmployeesUseCaseInput { PageSize = 50 });
+        list.Items.Select(i => i.Id).Should().Contain(colleague.Id).And.NotContain(outsider.Id);
+        list.TotalItems.Should().Be(1);
+
+        var filtered = await PagedUseCase(context, manager).ExecuteAsync(new GetPagedEmployeesUseCaseInput { DepartmentId = otherDept.Id });
+        filtered.Items.Should().BeEmpty();
+
+        // Out of scope is indistinguishable from "does not exist"
+        (await ByIdUseCase(context, manager).ExecuteAsync(new GetEmployeeByIdUseCaseInput { Id = colleague.Id }))
+            .Id.Should().Be(colleague.Id);
+        var readOutsider = async () => await ByIdUseCase(context, manager).ExecuteAsync(new GetEmployeeByIdUseCaseInput { Id = outsider.Id });
+        await readOutsider.Should().ThrowAsync<NotFoundException>();
+
+        // HR keeps organization-wide visibility
+        var hrList = await PagedUseCase(context, MockUser(org.Id).Object).ExecuteAsync(new GetPagedEmployeesUseCaseInput { PageSize = 50 });
+        hrList.Items.Select(i => i.Id).Should().Contain(new[] { colleague.Id, outsider.Id });
     }
 }
