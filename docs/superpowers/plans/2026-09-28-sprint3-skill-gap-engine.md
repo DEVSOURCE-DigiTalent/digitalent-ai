@@ -183,10 +183,11 @@ Tổng: 140 giờ, khớp Jira. Thứ tự cắt nếu trễ: (1) heatmap trong 
 
 ### Task 7: Hoàn thiện test + coverage (S3-T020)
 
-- [ ] Rà test matrix spec §10: đủ các T-SG, T-REC, T-EVT, T-ACT, T-MIG (≥ 25 case, tối thiểu 15).
-- [ ] `dotnet test --collect:"XPlat Code Coverage"` → report (reportgenerator) cho namespace `Services.Intelligence` + `UseCases.Intelligence`: ≥ 85%. Đính kèm số liệu vào PR.
-- [ ] Đảm bảo CI `backend-ci.yml` xanh (đã có service Postgres).
-- [ ] Commit `test(intelligence): S3-T020 skill gap and recommendation coverage`. PR → QuyTD.
+- [x] Rà test matrix spec §10: đủ T-SG, T-REC, T-EVT, T-ACT, T-MIG — tổng backend **156 test** (Sprint 3 thêm ~95), FE 83.
+- [x] Coverage (`--collect:"XPlat Code Coverage"`, cobertura, gộp theo file): **Intelligence 97.4% line / 91.3% branch** (trước khi bổ sung 91.7% / 80.5%); events + manual evidence + scope 98.9% / 90.6%. Bổ sung 21 test cho nhánh chưa phủ: validator, cấu hình hỏng, giới hạn 500 (batch + activation), so với bộ tiêu chuẩn khác, bộ lọc list/batch, snapshot thiếu config, rollback `ExecuteInTransactionAsync`.
+- [x] **Bug tìm được nhờ lấp coverage:** (1) `requirementSetId` (so với vị trí khác) tạo snapshot **rỗng** — không nạp dòng yêu cầu của bộ được chọn → báo đạt 100% sai; (2) snapshot jsonb thiếu `config` → NullReference (500). Đã sửa + có test hồi quy.
+- [ ] CI `backend-ci.yml`: có sẵn service Postgres + biến môi trường; xác nhận xanh khi push (chưa push).
+- [x] Commit `test(intelligence): S3-T020 …` (kèm 2 bản sửa lỗi). PR → QuyTD.
 
 ### Task 8: Quy chế thi lại & hiển thị đáp án (S3-T024)
 
