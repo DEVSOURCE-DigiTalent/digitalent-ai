@@ -21,6 +21,7 @@ builder.Services.AddJwtAuthentication(builder.Configuration);   // đọc + ki�
 builder.Services.AddControllers();
 builder.Services.AddSwaggerWithJwt();
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<Microsoft.AspNetCore.SignalR.IUserIdProvider, DigiTalent.Api.Hubs.SubClaimUserIdProvider>(); // user id = claim "sub"
 builder.Services.AddScoped<INotificationSender, DigiTalent.Api.Services.SignalRNotificationSender>();
 
 // Cho phép frontend gọi API. Nhiều địa chỉ thì ngăn cách bằng dấu phẩy.
