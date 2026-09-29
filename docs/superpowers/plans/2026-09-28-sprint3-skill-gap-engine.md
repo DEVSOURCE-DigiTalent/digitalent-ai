@@ -170,14 +170,16 @@ Tổng: 140 giờ, khớp Jira. Thứ tự cắt nếu trễ: (1) heatmap trong 
 - Modify: `ActivatePositionRequirementSetUseCase.cs`, `UpdateEmployeeUseCase.cs` (Raise event)
 - Test: `tests/DigiTalent.Tests/Events/{DomainEventDispatcherTests.cs, ManualEvidenceIntegrationTests.cs}`
 
-- [ ] **6.1 Test dispatcher đỏ (T-EVT-03, T-EVT-04):** dedupe cùng employee; after-commit ném lỗi không làm hỏng `SaveChangesAsync`.
-- [ ] **6.2 Dispatcher** theo spec §6.1: nếu queue có event → `Database.IsRelational()` thì mở transaction (nếu chưa có) → save #1 → handler (tối đa 3 vòng) → save #2 → commit → chạy after-commit (try/catch + `ILogger`).
-- [ ] **6.3 Handler** `SkillGapRecalculationHandler`: dùng `SkillGapRunService.StageRunAsync(…, SYSTEM)`; bỏ qua nhân viên không đủ điều kiện (không throw); stage `Notification` row; enqueue push `INotificationSender.SendNotificationToUserAsync` sau commit. Activation: giới hạn 500 nhân viên.
-- [ ] **6.4 `CreateManualEvidenceUseCase`** theo spec §6.3 (supersede, upsert profile, audit, raise). Bắt `DbUpdateConcurrencyException` / unique violation → `ConflictException`.
-- [ ] **6.5 Raise event** trong Activate và UpdateEmployee (chỉ khi `JobPositionId` đổi). PR riêng nhỏ cho `UpdateEmployeeUseCase` để HoangNT review.
-- [ ] **6.6 Integration test Postgres (T-EVT-01, T-EVT-02)** trong collection `PostgresIntegration`.
-- [ ] **6.7 Kiểm tay:** mở FE bằng `employee@` (đang kết nối SignalR), dùng `hr@` gọi manual evidence C3 = 2 → nhận thông báo, radar cập nhật sau refetch.
-- [ ] Commit `feat(intelligence): S3-T018 domain events recalculate skill gap`. PR → QuangNV.
+- [x] **Chuẩn bị (29/09):** khảo sát AuditService / DI / UpdateEmployee / FE SignalR → chốt E1–E12 vào spec §6.4 trước khi code (phát hiện: AuditService tự SaveChanges + nuốt lỗi; supersede phải bỏ `is_level_confirming` vì CHECK).
+- [x] **6.1 Test pipeline đỏ:** `DomainEventPipelineTests` (InMemory + DI) — gom lô, lưu thay đổi của handler, handler lỗi → không lưu/không push/xóa event, after-commit lỗi không làm hỏng request, chặn vòng lặp 3 vòng, không handler, context không dispatcher.
+- [x] **6.2 Pipeline** trong `AppDbContext.SaveChangesAsync` (constructor mới nhận `IDomainEventDispatcher` + `AfterCommitQueue`) + `DomainEventDispatcher` + `AfterCommitQueue`; đổi xung đột ghi đồng thời / unique violation → `ConflictException` (E7).
+- [x] **6.3 `SkillGapRecalculationHandler`** (3 event, xử lý theo lô, không state) — snapshot SYSTEM, dòng `notifications` `SKILL_GAP_UPDATED`, push SignalR sau commit; activation giới hạn 500.
+- [x] **6.4 `CreateManualEvidenceUseCase`** + `POST api/v1/competency-evidences/manual` (`evidence.create_manual`): supersede (+ bỏ cờ confirming), evidence MANUAL_OVERRIDE, upsert profile (row_version), event, audit sau commit.
+- [x] **6.5 Raise event** trong `ActivatePositionRequirementSetUseCase` và `UpdateEmployeeUseCase` (+5 dòng, chỉ khi vị trí đổi) — cần HoangNT review phần `UpdateEmployee`.
+- [x] **6.6 Integration test Postgres với DI thật** (`SkillGapEventIntegrationTests`, 7 case): xác nhận → snapshot + notification + audit + push 1 lần; xác nhận lại → supersede + row_version; handler lỗi → **rollback thật**, không push; nhân viên INACTIVE → 400; kích hoạt v2 → tính lại mọi analyst ACTIVE; đổi vị trí → tính lại; ghi đồng thời → 409. Backend 132/132.
+- [x] **6.7 Kiểm tay qua HTTP** (DB seed): HR ghi nhận Information security = 2 cho `employee@` → gap 3 → 2, coverage 47.50 → 72.50, `generatedBy=SYSTEM`, SEC-BASIC biến mất khỏi gợi ý; manager → 403; level 4 → 400; có dòng notification + audit. *Chưa kiểm được realtime trên FE: FE chưa có client SignalR (E9).*
+- [x] Review (csharp-reviewer, kèm bảo mật): **Block** do 1 CRITICAL — đã sửa toàn bộ: (1) dịch lỗi xung đột trong DbContext làm hỏng vòng thử lại của `LoginUseCase` → chuyển sang middleware; (2) event trong transaction ngoài làm mất push âm thầm → chặn tường minh + thêm `ExecuteInTransactionAsync`; (3) `ChangeTracker.Clear()` khi lưu lỗi; (4) chặn tự xác nhận năng lực (403). Chạy lại suite lộ **bug Sprint 2** ở Activate (vi phạm unique index ngẫu nhiên) → sửa + test hồi quy 5 lần kích hoạt liên tiếp. Backend 135/135, ổn định 3 lần chạy. Commit `feat(intelligence): S3-T018 …`.
+- [ ] PR → QuangNV; HoangNT review phần `UpdateEmployeeUseCase` (chưa push).
 
 ### Task 7: Hoàn thiện test + coverage (S3-T020)
 

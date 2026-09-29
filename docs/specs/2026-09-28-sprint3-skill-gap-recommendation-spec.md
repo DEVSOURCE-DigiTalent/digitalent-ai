@@ -335,6 +335,26 @@ Xử lý trong 1 transaction:
 
 Xung đột ghi đồng thời (unique `(employee_id, competency_id)` hoặc row version) → 409 `ConflictException`.
 
+### 6.4. Chi tiết triển khai đã chốt (29/09, trước khi code)
+
+| # | Điểm cần chốt | Chốt |
+| --- | --- | --- |
+| E1 | Cách use case phát event | `IApplicationDbContext.AddDomainEvent(e)` — không thêm tham số constructor, nên use case của module khác (`UpdateEmployee`) chỉ sửa ~5 dòng và test cũ không phải đổi |
+| E2 | Handler & chống trùng | `IDomainEventHandler<T>.HandleAsync(IReadOnlyList<T> events)` — dispatcher gom event cùng loại trong 1 vòng; handler dedupe nhân viên trong lô, **không giữ state** (an toàn khi 1 request gọi SaveChanges nhiều lần) |
+| E3 | Transaction | Có event chờ → tự mở transaction (nếu provider relational và chưa có transaction ngoài) → save #1 → dispatch (tối đa 3 vòng) → save → commit. Handler lỗi → rollback, xóa event chờ, ném lại lỗi (API 500, **không lưu gì**) |
+| E4 | Tác vụ sau commit | `IAfterCommitQueue`: chỉ chạy khi commit thành công; mỗi tác vụ bọc try/catch + log error, không bao giờ làm request thất bại |
+| E5 | Audit log | **Khác §6.3 bước 5:** `AuditService` hiện có tự `SaveChanges` và nuốt lỗi (best-effort theo thiết kế của team). Gọi nó *trong* transaction sẽ lưu sớm dữ liệu chính và nuốt lỗi của handler. → Ghi audit **sau** khi commit dữ liệu chính, vẫn best-effort |
+| E6 | Thay thế bằng chứng cũ | Evidence xác nhận cũ → `status = SUPERSEDED` **và `is_level_confirming = false`** — nếu không sẽ vi phạm `ck_competency_evidences_level_confirming_rule` (is_level_confirming yêu cầu status CONFIRMED) |
+| E7 | Xung đột đồng thời | *(Sửa sau review)* `DbUpdateConcurrencyException` và vi phạm unique PostgreSQL (`23505`) được **giữ nguyên trong DbContext** để use case tự xử lý (VD: `LoginUseCase` bắt để thử lại); `ExceptionHandlingMiddleware` đổi phần không ai xử lý thành 409 (trước đây là 500). Bản đầu dịch ngay trong DbContext đã làm hỏng vòng thử lại của đăng nhập — reviewer bắt được |
+| E8 | Kích hoạt bộ tiêu chuẩn cho vị trí đông người | Tối đa 500 nhân viên ACTIVE; vượt quá → log warning và bỏ qua (HR dùng `calculate-batch`) |
+| E9 | Thông báo | Dòng `notifications` loại `SKILL_GAP_UPDATED` cho `employee.user_id` (bỏ qua nếu nhân viên chưa có tài khoản) + push SignalR sau commit. **FE chưa có client SignalR** (chưa cài `@microsoft/signalr`) nên hiện chỉ lưu DB; realtime hiển thị khi FE bổ sung client |
+| E10 | Phạm vi event đổi vị trí | Chỉ `UpdateEmployee`, khi vị trí mới khác vị trí cũ và khác NULL. `CreateEmployee` chưa phát event (theo §6.2) |
+| E11 | Output API ghi nhận | `{ evidenceId, employeeId, competencyId, previousLevel, confirmedLevel, supersededEvidenceId }`. Ghi nhận lại cùng cấp độ vẫn được (tạo evidence mới với ghi chú mới) |
+| E12 | Kiểm tra năng lực | Competency phải `ACTIVE` và thuộc tổ chức người gọi (qua `competency_categories.organization_id`), ngược lại 404 |
+| E13 | Tự xác nhận *(thêm sau review)* | Nguyên tắc 4 mắt: không xác nhận cấp độ cho hồ sơ nhân viên gắn với chính tài khoản đang gọi → 403 |
+| E14 | Transaction do use case chủ động *(thêm sau review)* | `IApplicationDbContext.ExecuteInTransactionAsync(work)`: nhiều lần SaveChanges trong 1 transaction, event vẫn xử lý, tác vụ sau commit chạy sau commit thật. Transaction mở bằng cách khác mà có event → `InvalidOperationException` (không để mất push âm thầm). **Sửa bug Sprint 2:** Activate trước đây archive bộ cũ và kích hoạt bộ mới trong 1 lần lưu → thứ tự UPDATE ngẫu nhiên vi phạm `ux_requirement_sets_one_active` (~50% số lần trên PostgreSQL; test InMemory không bắt được). Nay archive → lưu → kích hoạt → lưu trong 1 transaction |
+| E15 | Giới hạn đã biết | Bỏ vị trí của nhân viên (vị trí → NULL) không tạo snapshot mới (`skill_gap_runs.requirement_set_id` NOT NULL); snapshot cũ vẫn hiển thị kèm tên vị trí cũ. FE nên so với vị trí hiện tại khi cần |
+
 ---
 
 ## 7. Quy chế thi lại & hiển thị đáp án — S3-T024
