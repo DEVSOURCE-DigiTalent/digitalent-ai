@@ -1,3 +1,4 @@
+using DigiTalent.Domain.Common;
 using DigiTalent.Domain.Entities;
 using DigiTalent.Domain.Entities.Learner;
 using Microsoft.EntityFrameworkCore;
@@ -90,6 +91,18 @@ public interface IApplicationDbContext
     DbSet<FileObject> FileObjects { get; }
     DbSet<Notification> Notifications { get; }
     DbSet<SystemSetting> SystemSettings { get; }
+
+    /// <summary>
+    /// Phát domain event; handler chạy trong cùng transaction ở lần SaveChangesAsync kế tiếp
+    /// (spec Sprint 3 §6.4 E1–E4).
+    /// </summary>
+    void AddDomainEvent(IDomainEvent domainEvent);
+
+    /// <summary>
+    /// Chạy nhiều lần SaveChangesAsync trong 1 transaction (VD: cần thứ tự câu lệnh để không vi phạm unique index).
+    /// Domain event vẫn được xử lý; tác vụ sau commit chạy khi transaction này commit. Không lồng nhau.
+    /// </summary>
+    Task ExecuteInTransactionAsync(Func<Task> work, CancellationToken cancellationToken = default);
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

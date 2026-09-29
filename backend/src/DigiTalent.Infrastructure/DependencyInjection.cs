@@ -1,4 +1,6 @@
+using DigiTalent.Application.Common.Events;
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Infrastructure.Events;
 using DigiTalent.Infrastructure.Auth;
 using DigiTalent.Infrastructure.FileStorage;
 using DigiTalent.Infrastructure.Persistence;
@@ -26,6 +28,11 @@ public static class DependencyInjection
 
         // Use case chỉ biết IApplicationDbContext → trỏ nó về AppDbContext
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<AppDbContext>());
+
+        // Domain event: handler chạy trong transaction của SaveChangesAsync, tác vụ ngoài chạy sau commit
+        services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
+        services.AddScoped<AfterCommitQueue>();
+        services.AddScoped<IAfterCommitQueue>(provider => provider.GetRequiredService<AfterCommitQueue>());
 
         // Đăng nhập: tạo token + mã hóa mật khẩu
         var jwtSettings = configuration.GetSection("Jwt").Get<JwtSettings>() ?? new JwtSettings();

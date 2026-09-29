@@ -1,4 +1,5 @@
 using DigiTalent.Application.Common.Authorization;
+using DigiTalent.Application.Common.Events;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.Services.Intelligence.Recommendation;
 using DigiTalent.Application.Services.Intelligence.SkillGap;
@@ -29,6 +30,13 @@ public static class DependencyInjection
 
         // 2. Bọc mọi use case bằng lớp validate Input
         services.Decorate(typeof(IUseCase<,>), typeof(ValidationUseCaseDecorator<,>));
+
+        // 2b. Tự đăng ký domain event handler (mọi class implement IDomainEventHandler<>)
+        services.Scan(scan => scan
+            .FromAssemblies(assembly)
+            .AddClasses(classes => classes.AssignableTo(typeof(IDomainEventHandler<>)))
+            .AsImplementedInterfaces()
+            .WithScopedLifetime());
 
         // 3. Tự đăng ký tất cả validator (class kế thừa AbstractValidator<>)
         services.AddValidatorsFromAssembly(assembly);

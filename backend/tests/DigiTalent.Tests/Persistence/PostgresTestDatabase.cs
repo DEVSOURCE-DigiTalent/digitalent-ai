@@ -12,6 +12,16 @@ internal static class PostgresTestDatabase
 {
     public static AppDbContext CreateContext()
     {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseNpgsql(ConnectionString())
+            .UseSnakeCaseNamingConvention()
+            .Options;
+        return new AppDbContext(options);
+    }
+
+    /// <summary>Connection string của DB test dùng một lần (tên DB bắt buộc kết thúc bằng _test).</summary>
+    public static string ConnectionString()
+    {
         var connectionString = Environment.GetEnvironmentVariable("DIGITALENT_TEST_POSTGRES_CONNECTION");
         if (string.IsNullOrWhiteSpace(connectionString))
         {
@@ -26,11 +36,7 @@ internal static class PostgresTestDatabase
             throw new InvalidOperationException("Integration tests may only use a database whose name ends with _test.");
         }
 
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseNpgsql(connectionString)
-            .UseSnakeCaseNamingConvention()
-            .Options;
-        return new AppDbContext(options);
+        return connectionString;
     }
 
     public static async Task MigrateAsync(AppDbContext context)

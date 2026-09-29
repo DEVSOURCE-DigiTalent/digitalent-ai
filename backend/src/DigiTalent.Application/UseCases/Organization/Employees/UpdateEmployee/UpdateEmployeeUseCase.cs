@@ -2,6 +2,7 @@ using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Domain.Constants;
+using DigiTalent.Domain.Events;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Organization.Employees;
@@ -113,6 +114,7 @@ public class UpdateEmployeeUseCase : IUseCase<UpdateEmployeeUseCaseInput, Update
         }
 
         // 8. Cập nhật các trường
+        var previousPositionId = employee.JobPositionId;
         employee.EmployeeCode = code;
         employee.FullName = input.FullName.Trim();
         employee.DepartmentId = input.DepartmentId;
@@ -126,6 +128,12 @@ public class UpdateEmployeeUseCase : IUseCase<UpdateEmployeeUseCaseInput, Update
         if (!string.IsNullOrWhiteSpace(input.Status))
         {
             employee.Status = input.Status.Trim().ToUpper();
+        }
+
+        // 9. Đổi vị trí → tính lại skill gap theo tiêu chuẩn của vị trí mới (Sprint 3, domain event)
+        if (positionId.HasValue && positionId != previousPositionId)
+        {
+            _context.AddDomainEvent(new EmployeeJobPositionChanged(employee.Id, previousPositionId, positionId.Value));
         }
 
         await _context.SaveChangesAsync();

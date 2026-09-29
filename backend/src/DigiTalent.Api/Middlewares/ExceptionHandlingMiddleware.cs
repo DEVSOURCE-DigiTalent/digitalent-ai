@@ -2,6 +2,8 @@ using System.Text.Json;
 using DigiTalent.Api.Common;
 using DigiTalent.Application.Common.Exceptions;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace DigiTalent.Api.Middlewares;
 
@@ -13,6 +15,7 @@ namespace DigiTalent.Api.Middlewares;
 ///   ForbiddenException  → 403
 ///   NotFoundException   → 404
 ///   ConflictException   → 409
+///   DbUpdateConcurrencyException / unique violation (PostgreSQL 23505) → 409
 ///   Lỗi khác            → 500   (ghi log, không lộ chi tiết ra ngoài)
 /// Nhờ vậy use case chỉ cần throw, controller không cần try/catch.
 /// </summary>
@@ -67,6 +70,15 @@ public class ExceptionHandlingMiddleware
         catch (ConflictException ex)
         {
             await WriteErrorAsync(context, StatusCodes.Status409Conflict, ex.Message);
+        }
+        // Ghi đồng thời mà use case không tự xử lý (use case có thể bắt để thử lại, VD LoginUseCase) → 409 thay vì 500
+        catch (DbUpdateConcurrencyException)
+        {
+            await WriteErrorAsync(context, StatusCodes.Status409Conflict, "The record was changed by someone else. Reload it and try again.");
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+        {
+            await WriteErrorAsync(context, StatusCodes.Status409Conflict, "A record with the same unique value already exists.");
         }
         catch (Exception ex)
         {

@@ -4,6 +4,7 @@ using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.UseCases.Competency.Common;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
+using DigiTalent.Domain.Events;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Competency;
@@ -65,18 +66,25 @@ public class ActivatePositionRequirementSetUseCase : IUseCase<ActivatePositionRe
                 .Where(s => s.JobPositionId == set.JobPositionId && s.Status == Statuses.PositionRequirementSet.Active && s.Id != set.Id)
                 .ToListAsync();
 
-            foreach (var prevActive in activeSets)
+            // ux_requirement_sets_one_active (1 bộ ACTIVE / vị trí) được kiểm tra theo từng câu lệnh:
+            // phải archive bộ cũ TRƯỚC khi kích hoạt bộ mới — 2 lần lưu trong cùng 1 transaction.
+            await _context.ExecuteInTransactionAsync(async () =>
             {
-                prevActive.Status = Statuses.PositionRequirementSet.Archived;
-            }
+                foreach (var prevActive in activeSets)
+                {
+                    prevActive.Status = Statuses.PositionRequirementSet.Archived;
+                }
+                await _context.SaveChangesAsync();
 
-            var now = DateTimeOffset.UtcNow;
-            set.Status = Statuses.PositionRequirementSet.Active;
-            set.ActivatedByUserId = userId;
-            set.ActivatedAt = now;
-            set.RowVersion += 1;
+                set.Status = Statuses.PositionRequirementSet.Active;
+                set.ActivatedByUserId = userId;
+                set.ActivatedAt = DateTimeOffset.UtcNow;
+                set.RowVersion += 1;
 
-            await _context.SaveChangesAsync();
+                // Nhân viên ở vị trí này được tính lại skill gap theo bộ tiêu chuẩn mới (cùng transaction)
+                _context.AddDomainEvent(new PositionRequirementSetActivated(set.Id, set.JobPositionId));
+                await _context.SaveChangesAsync();
+            });
         }
 
         return new ActivatePositionRequirementSetUseCaseOutput

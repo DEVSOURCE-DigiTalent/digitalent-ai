@@ -1,7 +1,9 @@
+using DigiTalent.Application.Common.Events;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Domain.Common;
 using DigiTalent.Domain.Entities;
 using DigiTalent.Domain.Entities.Learner;
+using DigiTalent.Infrastructure.Events;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Infrastructure.Persistence;
@@ -11,8 +13,27 @@ namespace DigiTalent.Infrastructure.Persistence;
 /// </summary>
 public class AppDbContext : DbContext, IApplicationDbContext
 {
+    /// <summary>Event sinh event mới được xử lý ở vòng sau; quá số vòng này coi là vòng lặp vô hạn.</summary>
+    private const int MaxDomainEventRounds = 3;
+
+    private readonly List<IDomainEvent> _pendingEvents = new();
+    private readonly IDomainEventDispatcher? _eventDispatcher;
+    private readonly AfterCommitQueue? _afterCommitQueue;
+    private bool _inManagedTransaction;
+
+    /// <summary>Dùng cho test / công cụ: domain event bị bỏ qua (không có dispatcher).</summary>
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
+    }
+
+    /// <summary>Dùng khi chạy thật (DI chọn constructor này): domain event được xử lý khi SaveChangesAsync.</summary>
+    public AppDbContext(
+        DbContextOptions<AppDbContext> options,
+        IDomainEventDispatcher eventDispatcher,
+        AfterCommitQueue afterCommitQueue) : base(options)
+    {
+        _eventDispatcher = eventDispatcher;
+        _afterCommitQueue = afterCommitQueue;
     }
 
     // Auth
@@ -107,7 +128,131 @@ public class AppDbContext : DbContext, IApplicationDbContext
         }
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public void AddDomainEvent(IDomainEvent domainEvent) => _pendingEvents.Add(domainEvent);
+
+    public async Task ExecuteInTransactionAsync(Func<Task> work, CancellationToken cancellationToken = default)
+    {
+        if (!Database.IsRelational())
+        {
+            await work(); // InMemory (test): không có transaction
+            return;
+        }
+
+        if (_inManagedTransaction || Database.CurrentTransaction != null)
+        {
+            throw new InvalidOperationException("ExecuteInTransactionAsync cannot be nested inside another transaction.");
+        }
+
+        await using var transaction = await Database.BeginTransactionAsync(cancellationToken);
+        _inManagedTransaction = true;
+        try
+        {
+            await work();
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            ResetAfterFailure();
+            throw;
+        }
+        finally
+        {
+            _inManagedTransaction = false;
+        }
+
+        if (_afterCommitQueue != null)
+        {
+            await _afterCommitQueue.RunAsync(cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Không có event: lưu như cũ. Có event: 1 transaction gồm thay đổi chính + thay đổi của handler,
+    /// rồi mới chạy tác vụ sau commit (spec Sprint 3 §6.1, §6.4 E2–E4).
+    /// </summary>
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        if (_eventDispatcher == null)
+        {
+            _pendingEvents.Clear();
+            return await SaveWithTimestampsAsync(cancellationToken);
+        }
+
+        // Transaction do caller tự mở (không qua ExecuteInTransactionAsync): không biết khi nào commit
+        // → tác vụ sau commit (SignalR…) sẽ bị mất âm thầm. Chặn tường minh thay vì để lỗi ngầm (review S3-T018).
+        if (_pendingEvents.Count > 0 && Database.IsRelational() && Database.CurrentTransaction != null && !_inManagedTransaction)
+        {
+            _pendingEvents.Clear();
+            throw new InvalidOperationException(
+                "Domain events cannot be dispatched inside a caller-owned transaction; use ExecuteInTransactionAsync.");
+        }
+
+        await using var transaction = _pendingEvents.Count > 0 && Database.IsRelational() && Database.CurrentTransaction == null
+            ? await Database.BeginTransactionAsync(cancellationToken)
+            : null;
+        int saved;
+        try
+        {
+            saved = await SaveWithTimestampsAsync(cancellationToken);
+            saved += await DispatchPendingEventsAsync(cancellationToken);
+
+            if (transaction != null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+        }
+        catch
+        {
+            // Transaction bị dispose khi chưa commit → rollback
+            ResetAfterFailure();
+            throw;
+        }
+
+        // Trong ExecuteInTransactionAsync: đợi transaction ngoài commit rồi mới chạy
+        if (!_inManagedTransaction)
+        {
+            await _afterCommitQueue!.RunAsync(cancellationToken);
+        }
+
+        return saved;
+    }
+
+    /// <summary>
+    /// Sau khi lưu thất bại: bỏ event, tác vụ sau commit và thay đổi đang theo dõi, để lần SaveChanges sau
+    /// trong cùng request không lưu lại dữ liệu của lần thất bại.
+    /// </summary>
+    private void ResetAfterFailure()
+    {
+        _pendingEvents.Clear();
+        _afterCommitQueue?.Clear();
+        ChangeTracker.Clear();
+    }
+
+    private async Task<int> DispatchPendingEventsAsync(CancellationToken cancellationToken)
+    {
+        var saved = 0;
+        for (var round = 1; _pendingEvents.Count > 0; round++)
+        {
+            if (round > MaxDomainEventRounds)
+            {
+                throw new InvalidOperationException(
+                    $"Domain events were still being raised after {MaxDomainEventRounds} rounds; a handler probably raises events in a loop.");
+            }
+
+            var batch = _pendingEvents.ToList();
+            _pendingEvents.Clear();
+            await _eventDispatcher!.DispatchAsync(batch, cancellationToken);
+            saved += await SaveWithTimestampsAsync(cancellationToken);
+        }
+
+        return saved;
+    }
+
+    /// <summary>
+    /// Điền created_at / updated_at rồi lưu. Lỗi xung đột (DbUpdateConcurrencyException, unique violation) được giữ nguyên
+    /// để use case tự xử lý nếu muốn (VD: LoginUseCase thử lại); ExceptionHandlingMiddleware đổi thành 409 (spec §6.4 E7).
+    /// </summary>
+    private Task<int> SaveWithTimestampsAsync(CancellationToken cancellationToken)
     {
         // Tự điền created_at / updated_at cho entity có 2 cột này (IHasTimestamps & BaseEntity)
         var now = DateTimeOffset.UtcNow;
