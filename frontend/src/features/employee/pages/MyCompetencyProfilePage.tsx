@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Radar as RadarIcon } from 'lucide-react';
 import { EmptyState, PageHeader } from '@/components/shared';
+import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
 import { useMySkillGap } from '@/hooks/use-skill-gaps';
 import { cn } from '@/lib/utils';
 import { CourseRecommendations } from '@/features/intelligence/components/CourseRecommendations';
@@ -47,7 +48,19 @@ export function MyCompetencyProfilePage() {
 }
 
 function MySkillGapTab() {
-  const { data: run, isLoading, isError, refetch } = useMySkillGap();
+  const { can } = usePermission();
+  const canReadSkillGap = can(PERMISSIONS.SKILL_GAP_READ);
+  const { data: run, isLoading, isError, refetch } = useMySkillGap(canReadSkillGap);
+
+  if (!canReadSkillGap) {
+    return (
+      <EmptyState
+        icon={<RadarIcon className="w-16 h-16 mx-auto" strokeWidth={1} />}
+        title="Skill gap analysis is not available for your role"
+        description="Your role does not include access to skill gap analysis. Contact HR if you need it."
+      />
+    );
+  }
 
   if (isLoading) {
     return <SkillGapDetailSkeleton />;

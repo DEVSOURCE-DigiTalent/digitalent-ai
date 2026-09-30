@@ -65,6 +65,7 @@ export function CompetencyRadarChart({
   return (
     <div data-testid="competency-radar-chart" style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
+        {/* No entry animation: it never completes when the tab is in the background, leaving the chart empty */}
         <RadarChart data={data} outerRadius="70%">
           <PolarGrid />
           <PolarAngleAxis dataKey="competency" tick={{ fontSize: 11 }} />
@@ -76,8 +77,9 @@ export function CompetencyRadarChart({
             strokeDasharray="5 4"
             fill={REQUIRED_COLOR}
             fillOpacity={0.05}
+            isAnimationActive={false}
           />
-          <Radar name={confirmedLabel} dataKey="confirmed" stroke={CONFIRMED_COLOR} fill={CONFIRMED_COLOR} fillOpacity={0.35} />
+          <Radar name={confirmedLabel} dataKey="confirmed" stroke={CONFIRMED_COLOR} fill={CONFIRMED_COLOR} fillOpacity={0.35} isAnimationActive={false} />
           <Tooltip formatter={tooltipFormatter} />
           <Legend />
         </RadarChart>

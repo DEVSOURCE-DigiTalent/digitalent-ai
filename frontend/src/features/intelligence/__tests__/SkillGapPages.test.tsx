@@ -93,6 +93,16 @@ describe('MyCompetencyProfilePage', () => {
     fireEvent.click(screen.getByText('Try again'));
     expect(refetch).toHaveBeenCalled();
   });
+
+  it('tells a user without the skill gap permission that the analysis is not available, without calling the API', () => {
+    loginAs(['TRAINER'], ['recommendation.read']);
+    const useMySkillGap = vi.spyOn(skillGapHooks, 'useMySkillGap').mockReturnValue(queryResult({}));
+    renderWithClient(<MyCompetencyProfilePage />);
+
+    expect(screen.getByText('Skill gap analysis is not available for your role')).toBeInTheDocument();
+    expect(screen.queryByText('No skill gap analysis yet')).not.toBeInTheDocument();
+    expect(useMySkillGap).toHaveBeenCalledWith(false);
+  });
 });
 
 describe('SkillGapPage', () => {

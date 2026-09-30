@@ -27,10 +27,11 @@ export function useSkillGapRun(runId?: string) {
 }
 
 /** Caller's latest snapshot; resolves to null when none exists yet. */
-export function useMySkillGap() {
+export function useMySkillGap(enabled = true) {
   return useQuery({
     queryKey: [...SKILL_GAPS_KEY, 'me'],
     queryFn: () => skillGapService.getMyLatest().then((r) => r.data.data ?? null),
+    enabled,
   });
 }
 
