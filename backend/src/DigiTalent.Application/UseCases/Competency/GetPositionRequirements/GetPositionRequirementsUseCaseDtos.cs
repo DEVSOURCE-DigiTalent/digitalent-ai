@@ -26,6 +26,14 @@ public class PositionRequirementItemDto
     public string? Note { get; set; }
 }
 
+/// <summary>Một phiên bản bộ tiêu chuẩn của vị trí — để FE mở bản nháp nằm cạnh bản đang active.</summary>
+public class PositionRequirementVersionDto
+{
+    public Guid Id { get; set; }
+    public int VersionNo { get; set; }
+    public string Status { get; set; } = string.Empty;
+}
+
 public class GetPositionRequirementsUseCaseOutput
 {
     public Guid? Id { get; set; }
@@ -41,4 +49,6 @@ public class GetPositionRequirementsUseCaseOutput
     public Guid? ActivatedByUserId { get; set; }
     public DateTimeOffset? ActivatedAt { get; set; }
     public List<PositionRequirementItemDto> Items { get; set; } = new();
+    /// <summary>Mọi phiên bản của vị trí, mới nhất trước.</summary>
+    public List<PositionRequirementVersionDto> Versions { get; set; } = new();
 }

@@ -64,6 +64,8 @@ export function PositionRequirementsPage() {
   const { data: positionsData, isLoading: positionsLoading } = useJobPositions({ pageSize: 100 });
   const { data: competenciesData } = useCompetencies({ pageSize: 100 });
   const [selectedPositionId, setSelectedPositionId] = useState<string>('');
+  // undefined = the server default (the active version, or the latest one when none is active)
+  const [selectedVersionNo, setSelectedVersionNo] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (!selectedPositionId && positionsData?.items?.length) {
@@ -71,7 +73,7 @@ export function PositionRequirementsPage() {
     }
   }, [positionsData, selectedPositionId]);
 
-  const { data: reqData, isLoading: reqLoading } = usePositionRequirements(selectedPositionId);
+  const { data: reqData, isLoading: reqLoading } = usePositionRequirements(selectedPositionId, selectedVersionNo);
   const createDraftMutation = useCreateDraftPositionRequirements();
   const updateDraftMutation = useUpdateDraftPositionRequirements();
   const activateMutation = useActivatePositionRequirements();
@@ -100,6 +102,7 @@ export function PositionRequirementsPage() {
   const isSaving = createDraftMutation.isPending || updateDraftMutation.isPending || activateMutation.isPending;
   const canEdit = canManage && !isSaving;
   const isUnsavedDraft = !!reqData && !reqData.id && items.length > 0;
+  const versions = reqData?.versions ?? [];
   const selectedPosition = positionsData?.items?.find((p) => p.id === selectedPositionId);
 
   const handleRowChange = (competencyId: string, field: string, value: number | boolean | string) =>
@@ -123,7 +126,9 @@ export function PositionRequirementsPage() {
         await updateDraftMutation.mutateAsync({ id: reqData.id, data: { items: payloadItems } });
         toast.success('Draft requirements updated successfully');
       } else {
-        await createDraftMutation.mutateAsync({ jobPositionId: selectedPositionId, items: payloadItems });
+        const response = await createDraftMutation.mutateAsync({ jobPositionId: selectedPositionId, items: payloadItems });
+        // Keep working on the draft: the default view would go back to the active version
+        setSelectedVersionNo(response?.data?.data?.versionNo);
         toast.success('New draft requirement version created successfully');
       }
     } catch (error) {
@@ -168,7 +173,10 @@ export function PositionRequirementsPage() {
           <select
             id="position-select"
             value={selectedPositionId}
-            onChange={(e) => setSelectedPositionId(e.target.value)}
+            onChange={(e) => {
+              setSelectedPositionId(e.target.value);
+              setSelectedVersionNo(undefined);
+            }}
             disabled={positionsLoading || isSaving}
             className="min-w-[260px] px-3 py-2 border border-slate-300 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
           >
@@ -189,8 +197,32 @@ export function PositionRequirementsPage() {
         {selectedPositionId && reqData && (
           <div className="flex flex-wrap items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <span className="text-slate-500">Version:</span>
-              <span className="font-semibold text-slate-800">v{reqData.versionNo > 0 ? reqData.versionNo : 1}</span>
+              {versions.length > 1 ? (
+                <label htmlFor="version-select" className="text-slate-500">
+                  Version
+                </label>
+              ) : (
+                <span className="text-slate-500">Version</span>
+              )}
+              {versions.length > 1 ? (
+                <select
+                  id="version-select"
+                  value={reqData.versionNo}
+                  onChange={(e) => setSelectedVersionNo(Number(e.target.value))}
+                  disabled={isSaving}
+                  className="px-2 py-1 border border-slate-300 rounded-md text-sm font-semibold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  {versions.map((v) => (
+                    <option key={v.id} value={v.versionNo}>
+                      v{v.versionNo} · {v.status}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="font-semibold text-slate-800">
+                  v{reqData.versionNo > 0 ? reqData.versionNo : 1}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <span className="text-slate-500">Status:</span>

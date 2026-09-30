@@ -876,4 +876,46 @@ public class CompetencyTests
         item.FrameworkCode.Should().Be("6.3");
         item.CategorySortOrder.Should().Be(4);
     }
+
+    [Fact]
+    public async Task GetPositionRequirements_ListsEveryVersion_SoADraftNextToTheActiveSetCanBeOpened()
+    {
+        using var context = new AppDbContext(GetOptions(Guid.NewGuid().ToString()));
+        var orgId = Guid.NewGuid();
+        var position = AddPosition(context, orgId);
+        var otherPosition = AddPosition(context, orgId);
+        context.GetDbSet<PositionRequirementSet>().AddRange(
+            NewSet(position.Id, 1, Statuses.PositionRequirementSet.Archived),
+            NewSet(position.Id, 2, Statuses.PositionRequirementSet.Active),
+            NewSet(position.Id, 3, Statuses.PositionRequirementSet.Draft),
+            NewSet(otherPosition.Id, 1, Statuses.PositionRequirementSet.Draft));
+        await context.SaveChangesAsync();
+        var useCase = new GetPositionRequirementsUseCase(context, CreateCurrentUserMock(orgId).Object);
+
+        var current = await useCase.ExecuteAsync(new GetPositionRequirementsUseCaseInput { PositionId = position.Id });
+        var draft = await useCase.ExecuteAsync(new GetPositionRequirementsUseCaseInput { PositionId = position.Id, VersionNo = 3 });
+
+        current.VersionNo.Should().Be(2, "the active set stays the default view");
+        current.Versions.Select(v => (v.VersionNo, v.Status)).Should().Equal(
+            (3, Statuses.PositionRequirementSet.Draft),
+            (2, Statuses.PositionRequirementSet.Active),
+            (1, Statuses.PositionRequirementSet.Archived));
+        draft.Status.Should().Be(Statuses.PositionRequirementSet.Draft);
+        draft.Versions.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public async Task GetPositionRequirements_HasNoVersions_WhenThePositionHasNoSetYet()
+    {
+        using var context = new AppDbContext(GetOptions(Guid.NewGuid().ToString()));
+        var orgId = Guid.NewGuid();
+        var position = AddPosition(context, orgId);
+        await context.SaveChangesAsync();
+
+        var output = await new GetPositionRequirementsUseCase(context, CreateCurrentUserMock(orgId).Object)
+            .ExecuteAsync(new GetPositionRequirementsUseCaseInput { PositionId = position.Id });
+
+        output.Id.Should().BeNull();
+        output.Versions.Should().BeEmpty();
+    }
 }

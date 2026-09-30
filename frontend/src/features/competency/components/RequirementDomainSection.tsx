@@ -96,7 +96,7 @@ export function RequirementDomainSection({
                 value={row.requiredLevel}
                 onChange={(e) => onRowLevelChange(row.competencyId, Number(e.target.value))}
                 disabled={!canEdit}
-                className={`w-full ${inputClass}`}
+                className={`w-full min-w-[15rem] ${inputClass}`}
               >
                 {LEVEL_OPTIONS.map((level) => (
                   <option key={level} value={level}>

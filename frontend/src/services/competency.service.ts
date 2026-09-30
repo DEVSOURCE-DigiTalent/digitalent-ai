@@ -107,6 +107,12 @@ export interface PositionRequirementItemInput {
   note?: string;
 }
 
+export interface PositionRequirementVersion {
+  id: string;
+  versionNo: number;
+  status: string;
+}
+
 export interface PositionRequirementsOutput {
   id?: string;
   jobPositionId: string;
@@ -121,6 +127,8 @@ export interface PositionRequirementsOutput {
   activatedByUserId?: string;
   activatedAt?: string;
   items: PositionRequirementItemDto[];
+  /** Every version of the position, newest first. */
+  versions?: PositionRequirementVersion[];
 }
 
 export interface CreateDraftPositionRequirementSetRequest {

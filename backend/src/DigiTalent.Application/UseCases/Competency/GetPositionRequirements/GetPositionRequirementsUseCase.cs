@@ -61,6 +61,11 @@ public class GetPositionRequirementsUseCase : IUseCase<GetPositionRequirementsUs
             };
         }
 
+        var versions = await setsQuery
+            .OrderByDescending(s => s.VersionNo)
+            .Select(s => new PositionRequirementVersionDto { Id = s.Id, VersionNo = s.VersionNo, Status = s.Status })
+            .ToListAsync();
+
         var tt02Mappings = Tt02Mappings.Query(_context);
         var items = await (from item in _context.GetDbSet<PositionRequirementItem>().AsNoTracking()
                            where item.RequirementSetId == set.Id
@@ -98,7 +103,8 @@ public class GetPositionRequirementsUseCase : IUseCase<GetPositionRequirementsUs
             CreatedByUserId = set.CreatedByUserId,
             ActivatedByUserId = set.ActivatedByUserId,
             ActivatedAt = set.ActivatedAt,
-            Items = items
+            Items = items,
+            Versions = versions
         };
     }
 }

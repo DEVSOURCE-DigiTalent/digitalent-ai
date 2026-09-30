@@ -489,4 +489,37 @@ describe('PositionRequirementsPage', () => {
 
     await waitFor(() => expect(activate).toHaveBeenCalledWith('set-2'));
   });
+
+  const VERSIONS = [
+    { id: 'set-2', versionNo: 2, status: 'DRAFT' },
+    { id: 'set-1', versionNo: 1, status: 'ACTIVE' },
+  ];
+
+  it('lets HR open the draft that sits next to the active version', () => {
+    const useRequirements = mockSet({
+      id: 'set-1', jobPositionId: 'pos-1', versionNo: 1, status: 'ACTIVE', items: serverItems(CODES), versions: VERSIONS,
+    });
+    renderPage();
+
+    const versionSelect = screen.getByLabelText('Version');
+    expect(versionSelect).toHaveValue('1');
+    expect(within(versionSelect).getByRole('option', { name: 'v2 · DRAFT' })).toBeInTheDocument();
+    fireEvent.change(versionSelect, { target: { value: '2' } });
+
+    expect(useRequirements).toHaveBeenLastCalledWith('pos-1', 2);
+  });
+
+  it('opens the new draft after saving changes made on the active version', async () => {
+    const createDraft = vi.fn().mockResolvedValue({ data: { data: { id: 'set-2', versionNo: 2, status: 'DRAFT' } } });
+    vi.spyOn(compHooks, 'useCreateDraftPositionRequirements').mockReturnValue({ mutateAsync: createDraft } as any);
+    const useRequirements = mockSet({
+      id: 'set-1', jobPositionId: 'pos-1', versionNo: 1, status: 'ACTIVE', items: serverItems(CODES),
+      versions: [VERSIONS[1]],
+    });
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: /Save Draft/i }));
+
+    await waitFor(() => expect(useRequirements).toHaveBeenLastCalledWith('pos-1', 2));
+  });
 });
