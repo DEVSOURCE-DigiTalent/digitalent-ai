@@ -1,24 +1,39 @@
 import type { SkillGapRunDetail } from '@/services/intelligence.service';
+import { formatDateTime } from '@/lib/utils';
 import { CompetencyRadarChart } from './CompetencyRadarChart';
 import { SkillGapKpiCards } from './SkillGapKpiCards';
 import { SkillGapTable } from './SkillGapTable';
+import { shouldChartByDomain, summarizeByDomain, toDomainChartItems } from '../utils/domain-summary';
 
 /**
  * Full snapshot view (KPI + chart + table). Shared by My Competency Profile and the Team Skill Gap drawer.
+ * From 3 domains up the radar has one axis per domain showing the average confirmed level (D-B3).
  */
 export function SkillGapDetailView({ run }: { run: SkillGapRunDetail }) {
+  const byDomain = shouldChartByDomain(run.items);
+
   return (
     <div className="space-y-6">
       <p className="text-xs text-slate-500">
-        {run.jobPositionName} · standard v{run.requirementSetVersionNo} · calculated{' '}
-        {new Date(run.generatedAt).toLocaleString()} ({run.generatedBy === 'SYSTEM' ? 'automatic' : 'on request'})
+        {run.jobPositionName} · standard v{run.requirementSetVersionNo} · calculated {formatDateTime(run.generatedAt)} (
+        {run.generatedBy === 'SYSTEM' ? 'automatic' : 'on request'})
       </p>
 
       <SkillGapKpiCards summary={run.summary} />
 
       <div className="bg-white rounded-lg border border-slate-200 p-4">
-        <h3 className="text-sm font-semibold text-slate-700 mb-2">Required vs confirmed level</h3>
-        <CompetencyRadarChart items={run.items} />
+        <h3 className="text-sm font-semibold text-slate-700 mb-2">
+          {byDomain ? 'Required vs average confirmed level by domain' : 'Required vs confirmed level'}
+        </h3>
+        {byDomain ? (
+          <CompetencyRadarChart
+            items={toDomainChartItems(summarizeByDomain(run.items))}
+            requiredLabel="Required domain level"
+            confirmedLabel="Average level in domain"
+          />
+        ) : (
+          <CompetencyRadarChart items={run.items} />
+        )}
       </div>
 
       <div className="bg-white rounded-lg border border-slate-200">

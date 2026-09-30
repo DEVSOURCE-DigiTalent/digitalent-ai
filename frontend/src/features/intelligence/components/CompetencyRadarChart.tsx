@@ -38,7 +38,11 @@ export function CompetencyRadarChart({
   height = 320,
 }: CompetencyRadarChartProps) {
   const data = toChartData(items);
-  const tooltipFormatter = (value: unknown) => levelLabel(Number(value));
+  // Domain axes carry averages such as 1.25 — show the number instead of a level name.
+  const tooltipFormatter = (value: unknown) => {
+    const level = Number(value);
+    return Number.isInteger(level) ? levelLabel(level) : level.toFixed(2);
+  };
 
   if (data.length < MIN_RADAR_AXES) {
     return (

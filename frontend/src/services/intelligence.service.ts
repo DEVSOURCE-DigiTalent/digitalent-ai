@@ -25,6 +25,10 @@ export interface SkillGapItem {
   competencyCode: string;
   competencyName: string;
   categoryName?: string;
+  /** Domain order 1–6 (Circular 02/2025 categories). */
+  categorySortOrder?: number;
+  /** Circular 02/2025 code such as "4.2"; null for unmapped competencies. */
+  frameworkCode?: string | null;
   requiredLevel: number;
   /** null = no confirmed level yet */
   currentLevel: number | null;

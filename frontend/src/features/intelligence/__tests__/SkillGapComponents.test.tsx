@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { SeverityBadge } from '../components/SeverityBadge';
 import { CompetencyRadarChart } from '../components/CompetencyRadarChart';
+import { SkillGapTable } from '../components/SkillGapTable';
+import { SkillGapDetailView } from '../components/SkillGapDetailView';
 import { toChartData } from '../utils/chart-data';
-import type { SkillGapItem } from '@/services/intelligence.service';
+import type { SkillGapItem, SkillGapRunDetail } from '@/services/intelligence.service';
 
 const item = (overrides: Partial<SkillGapItem>): SkillGapItem => ({
   competencyId: 'c-1',
@@ -52,5 +54,62 @@ describe('CompetencyRadarChart', () => {
     const items = ['a', 'b', 'c'].map((id) => item({ competencyId: id, competencyName: id }));
     render(<CompetencyRadarChart items={items} />);
     expect(screen.getByTestId('competency-radar-chart')).toBeInTheDocument();
+  });
+});
+
+const domainItem = (code: string, required: number, current: number, priority: number) =>
+  item({
+    competencyId: `c-${code}`,
+    competencyCode: `TT02-${code}`,
+    competencyName: `Competency ${code}`,
+    frameworkCode: code,
+    categoryName: `${code[0]}. Domain ${code[0]}`,
+    categorySortOrder: Number(code[0]),
+    requiredLevel: required,
+    currentLevel: current,
+    gapSteps: Math.max(0, required - current),
+    priorityScore: priority,
+    severity: required - current >= 2 ? 'HIGH' : required - current === 1 ? 'MEDIUM' : null,
+  });
+
+const DOMAIN_ITEMS = [
+  domainItem('4.1', 3, 1, 12.51),
+  domainItem('4.2', 3, 2, 6.26),
+  domainItem('3.1', 1, 1, 0),
+  domainItem('1.1', 3, 1, 16.68),
+];
+
+describe('SkillGapTable grouped by domain', () => {
+  it('shows one collapsible group per domain with a "Domain met" badge only when every line is met', () => {
+    render(<SkillGapTable items={DOMAIN_ITEMS} />);
+
+    const domain4 = screen.getByRole('button', { name: /4\. Domain 4/ });
+    expect(domain4).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getAllByText('Domain met')).toHaveLength(1);
+    expect(screen.getByText('4.2 Competency 4.2')).toBeInTheDocument();
+
+    fireEvent.click(domain4);
+
+    expect(domain4).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText('4.2 Competency 4.2')).not.toBeInTheDocument();
+    expect(screen.getByText('1.1 Competency 1.1')).toBeInTheDocument();
+  });
+});
+
+describe('SkillGapDetailView', () => {
+  it('charts by domain with the average level once the standard spans 3 domains', () => {
+    const run = {
+      runId: 'r-1', employeeId: 'e-1', employeeCode: 'EMP-1', employeeName: 'Employee', requirementSetVersionNo: 1,
+      generatedAt: '2026-09-29T15:39:31Z', generatedBy: 'SYSTEM', gapCount: 3, highCount: 2, coveragePercent: 54.17,
+      requirementSetId: 's-1', calculationVersion: 'SG-2.0', jobPositionName: 'Kế toán',
+      summary: { totalRequired: 4, totalMet: 1, totalGap: 3, highCount: 2, mediumCount: 1, lowCount: 0, coveragePercent: 54.17, config: { mandatoryMultiplier: 1.5 } },
+      items: DOMAIN_ITEMS,
+    } as SkillGapRunDetail;
+
+    render(<SkillGapDetailView run={run} />);
+
+    expect(screen.getByText('Required vs average confirmed level by domain')).toBeInTheDocument();
+    expect(screen.getByTestId('competency-radar-chart')).toBeInTheDocument();
+    expect(screen.getByText(/29\/09\/2026/)).toBeInTheDocument();
   });
 });
