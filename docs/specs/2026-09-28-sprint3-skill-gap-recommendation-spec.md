@@ -61,7 +61,7 @@ Nguyên tắc chọn: (1) không phá schema v2.3 khi không bắt buộc; (2) b
 | **D-S3-12** | Tuyến người học cá nhân `/learn` | Sprint 3 **chỉ tái sử dụng component** (radar, bảng gap) với dữ liệu minh họa, gắn nhãn "Dữ liệu minh họa". Skill gap thật cho learner chờ migration `AddPublicLearnerAndCatalogTables` (đã được hoãn trong `learner-identity-catalog-contract.md`) | `skill_gap_runs.employee_id` NOT NULL; `career_role_templates` chưa tồn tại |
 | **D-S3-13** | S3-T024: `assessments` không có cột cooldown / hiển thị đáp án | Nâng SQL lên **v2.4**: thêm `retry_cooldown_minutes`, `answer_review_policy` (§7). Viết policy thuần + test; tích hợp vào use case làm bài khi engine thi của team sẵn sàng | Tuân thủ schema-first; tách phần LinhTV làm được khỏi phần phụ thuộc người khác |
 | **D-S3-14** | `position_requirement_items.requires_practical_evidence` | Sprint 3 **không dùng** cờ này khi tính gap: `employee_competency_profiles` là nguồn sự thật duy nhất | Profile chỉ được ghi qua evidence đã xác nhận bởi người có quyền; cờ này dành cho Readiness (Sprint sau) |
-| **D-S3-16** ✅ *Đã chốt 29/09 (Leader)* | Năng lực của vị trí lấy từ đâu | **Căn cứ Thông tư 02/2025/TT-BGDĐT** (6 miền, 24 năng lực) — xem `docs/specs/2026-09-29-tt02-position-competency-matrix.md`. Hệ quả: bộ tiêu chuẩn phải đủ 24 năng lực mới kích hoạt (D-B4), severity chỉ theo số mức thiếu (D-B1, §4.3), bắt buộc = miền Nâng cao + miền 4 (D-B2), radar theo miền (D-B3), chỉ gợi ý khóa bậc kế tiếp theo tiên quyết (§5.1, R11) | Chuẩn quốc gia, giải thích được với hội đồng; thay dữ liệu tự đặt *Data Analyst* |
+| **D-S3-16** ✅ *Đã chốt 29/09 (Leader)* | Năng lực của vị trí lấy từ đâu | **Căn cứ Thông tư 02/2025/TT-BGDĐT** (6 miền, 24 năng lực) — xem `docs/specs/2026-09-29-tt02-position-competency-matrix.md`. Hệ quả: mỗi vị trí chọn 9–24 năng lực của khung, mỗi năng lực một mức, luôn có lõi 4.1 và 4.2 (D-B7, 30/09 — thay D-B4 "đủ 24"), severity chỉ theo số mức thiếu (D-B1, §4.3), bắt buộc = năng lực mức Nâng cao + 4.1, 4.2 (D-B2), radar theo miền (D-B3), chỉ gợi ý khóa bậc kế tiếp theo tiên quyết (§5.1, R11); đánh giá đầu vào là thiết kế cho Sprint 4 (D-B8) | Chuẩn quốc gia, giải thích được với hội đồng; thay dữ liệu tự đặt *Data Analyst* |
 | **D-S3-15** ✅ *Đã chốt 28/09* | Chiến lược migration — 41 config Phase 2–3 hóa ra chỉ là khung rỗng | (1) `AddSkillGapLearningEvidenceTables` — tạo **16 bảng** Sprint 3 cần (config viết đầy đủ theo SQL v2.3), 25 bảng còn lại `ExcludeFromMigrations()` cho tới khi module sở hữu viết config đầy đủ; (2) `AssessmentRetryPolicyV24` — cột mới của v2.4, làm cùng lúc tạo bảng `assessments` | Không tạo bảng lệch schema; không giẫm lên module Assessment/Certificate/Lesson của thành viên khác |
 
 ### 3.1. Thay đổi so với mô tả Jira (cần cập nhật Jira/Report)
@@ -136,34 +136,35 @@ Làm tròn: `Math.Round(x, 2, MidpointRounding.AwayFromZero)`, chỉ làm tròn 
 
 #### 4.5.1. Kịch bản demo theo Thông tư 02/2025 — Kế toán (seed Development, `Tt02SkillGapScenarioTests`)
 
-Mức miền của Kế toán: miền 1 Nâng cao (3), 2 Trung bình (2), 3 Cơ bản (1), 4 Nâng cao (3), 5 Trung bình (2), 6 Trung bình (2). Bắt buộc (D-B2): miền 1 và 4 (7 năng lực).
+Từ 30/09 (D-B7) mỗi vị trí chọn năng lực phù hợp công việc, mỗi năng lực một mức riêng. Kế toán yêu cầu **21 / 24** năng lực (3.2, 3.3, 4.4 không yêu cầu). Bắt buộc (D-B2): năng lực mức Nâng cao + lõi 4.1, 4.2 → 1.2, 1.3, 2.3, 4.1, 4.2.
 
-Trọng số: 100% chia đều cho 6 miền, mỗi miền chia đều cho các năng lực; làm tròn 0.01, phần dư dồn vào phần tử cuối ở cả hai tầng:
+Trọng số: 100% chia đều cho các miền có yêu cầu, mỗi miền chia đều cho các năng lực được chọn; làm tròn 0.01, phần dư dồn vào phần tử cuối ở cả hai tầng (miền: 16.67 × 5, 16.65).
 
-| Miền | Số năng lực | Trọng số từng dòng | Tổng miền |
-| --- | --- | --- | --- |
-| 1 | 3 | 5.56, 5.56, 5.55 | 16.67 |
-| 2 | 6 | 2.78 × 5, 2.77 | 16.67 |
-| 3 | 4 | 4.17 × 3, 4.16 | 16.67 |
-| 4 | 4 | 4.17 × 3, 4.16 | 16.67 |
-| 5 | 4 | 4.17 × 3, 4.16 | 16.67 |
-| 6 | 3 | 5.55 × 3 | 16.65 |
+Nhân viên có **mức Cơ bản (1) ở mọi năng lực**:
 
-Nhân viên đã xác nhận **mọi năng lực ở mức Cơ bản (1)**:
+| Năng lực | Yêu cầu | Trọng số | Bắt buộc | gap | priority | severity |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1.1 | 2 | 5.56 | ✘ | 1 | 5.56 | LOW |
+| 1.2 | 3 | 5.56 | ✔ | 2 | 2 × 5.56 × 1.5 = **16.68** | HIGH |
+| 1.3 | 3 | 5.55 | ✔ | 2 | 16.65 | HIGH |
+| 2.1, 2.2, 2.4 | 2 | 2.78 | ✘ | 1 | 2.78 | LOW × 3 |
+| 2.3 | 3 | 2.78 | ✔ | 2 | 2 × 2.78 × 1.5 = **8.34** | HIGH |
+| 2.5 | 1 | 2.78 | ✘ | 0 | 0 | NULL |
+| 2.6 | 2 | 2.77 | ✘ | 1 | 2.77 | LOW |
+| 3.1 | 1 | 8.34 | ✘ | 0 | 0 | NULL |
+| 3.4 | 2 | 8.33 | ✘ | 1 | 8.33 | LOW |
+| 4.1 | 2 | 5.56 | ✔ (lõi) | 1 | 1 × 5.56 × 1.5 = **8.34** | MEDIUM |
+| 4.2 | 3 | 5.56 | ✔ | 2 | 16.68 | HIGH |
+| 4.3 | 1 | 5.55 | ✘ | 0 | 0 | NULL |
+| 5.1, 5.4 | 1 | 4.17, 4.16 | ✘ | 0 | 0 | NULL × 2 |
+| 5.2, 5.3 | 2 | 4.17 | ✘ | 1 | 4.17 | LOW × 2 |
+| 6.1 | 1 | 5.55 | ✘ | 0 | 0 | NULL |
+| 6.2, 6.3 | 2 | 5.55 | ✘ | 1 | 5.55 | LOW × 2 |
 
-| Miền | gap | Bắt buộc | priority từng dòng | severity |
-| --- | --- | --- | --- | --- |
-| 1 | 2 | ✔ | 2 × 5.56 × 1.5 = **16.68** (16.68, 16.65) | HIGH × 3 |
-| 2 | 1 | ✘ | 1 × 2.78 = 2.78 (…, 2.77) | LOW × 6 |
-| 3 | 0 | ✘ | 0 | NULL × 4 |
-| 4 | 2 | ✔ | 2 × 4.17 × 1.5 = **12.51** (…, 12.48) | HIGH × 4 |
-| 5 | 1 | ✘ | 4.17 (…, 4.16) | LOW × 4 |
-| 6 | 1 | ✘ | 5.55 | LOW × 3 |
+Kết quả: 21 dòng, `totalMet = 6`, `totalGap = 15`, `highCount = 4`, `mediumCount = 1`, `lowCount = 10`; tổng priority = **111.13**.
+`coveragePercent` = miền 1 (6.4833) + miền 2 (9.2617) + miền 3 (12.505) + miền 4 (10.1833) + miền 5 (12.5) + miền 6 (11.1) = **62.03**.
 
-Kết quả: 24 dòng, `totalMet = 4`, `totalGap = 20`, `highCount = 7`, `lowCount = 13`.
-`coveragePercent = (16.67×1/3 + 16.67×1/2 + 16.67 + 16.67×1/3 + 16.67×1/2 + 16.65×1/2) / 100 × 100 = 52.78`.
-
-**Sau khi xác nhận 4.2 lên Trung bình (2)** (demo bước 5): 4.2 còn thiếu 1 mức, bắt buộc → `MEDIUM`, priority `1 × 4.17 × 1.5 = 6.255 → 6.26`; `highCount = 6`, `mediumCount = 1`; coverage tăng `4.17 × (2/3 − 1/3) = 1.39` → **54.17**. Radar miền 4 (trung bình) từ 1.00 lên **1.25**; miền 4 vẫn chưa "đạt" vì 3 năng lực còn ở mức 1 (D-B3).
+**Sau khi xác nhận 4.2 lên Trung bình (2)** (demo bước 5): 4.2 còn thiếu 1 mức, bắt buộc → `MEDIUM`, priority `1 × 5.56 × 1.5 = 8.34`; `highCount = 3`, `mediumCount = 2`; coverage tăng `5.56 × (2/3 − 1/3) = 1.8533` → **63.89**. Radar miền 4 (trung bình của 4.1, 4.2, 4.3) từ 1.00 lên **1.33**; miền 4 vẫn chưa "đạt" (D-B3).
 
 #### 4.5.2. Ví dụ công thức (giữ làm golden test đơn vị, `SkillGapCalculatorTests`)
 
@@ -281,21 +282,22 @@ Thứ tự trả về: K3 → K2 → K1. (K1–K4 không có tiên quyết nên 
 
 #### 5.3.1. Kịch bản Kế toán theo Thông tư 02/2025 (nối tiếp §4.5.1, `CourseEligibilityTests`)
 
-Tổng priority còn thiếu = miền 1 (50.01) + miền 2 (16.67) + miền 4 (50.01) + miền 5 (16.67) + miền 6 (16.65) = **150.01**; 7 năng lực bắt buộc đang thiếu. Mỗi khóa phủ mọi năng lực của miền ở mức khóa (PRIMARY), `entry_level = mức khóa − 1` (tối thiểu 1).
+Tổng priority còn thiếu = **111.13** (miền 1: 38.89, miền 2: 19.45, miền 3: 8.33, miền 4: 25.02, miền 5: 8.34, miền 6: 11.10); 5 năng lực bắt buộc đang thiếu (1.2, 1.3, 2.3, 4.1, 4.2). Mỗi khóa dạy mọi năng lực của miền ở mức khóa (PRIMARY), `entry_level = mức khóa − 1` (tối thiểu 1). Với năng lực cần mức 3, khóa -I lấp ½ khoảng trống (`closeFraction = ½`).
 
-| Khóa | Đủ điều kiện? | GAP (×70) | MAND (×20) | ENTRY | score |
-| --- | --- | --- | --- | --- | --- |
-| A4-I | ✔ (mức hiện tại 1 ≥ 2 − 1) | 50.01 × ½ / 150.01 → 11.67 | 4/7 → 11.43 | 10 | **33.10** |
-| A1-I | ✔ | 50.01 × ½ / 150.01 → 11.67 | 3/7 → 8.57 | 10 | **30.24** |
-| A5-I (600 phút) | ✔ | 16.67 / 150.01 → 7.78 | 0 | 10 | **17.78** |
-| A2-I (900 phút) | ✔ | 16.67 / 150.01 → 7.78 | 0 | 10 | **17.78** |
-| M6-I | ✔ | 16.65 / 150.01 → 7.77 | 0 | 10 | **17.77** |
-| A1-A, A4-A | ✘ — cần xong A1-I / A4-I (hoặc đã đạt mức 2) | — | — | — | loại |
-| Mọi khóa -F | không nâng được mức (target 1 = hiện tại 1) | — | — | — | loại |
-| A3-* | miền 3 đã đạt | — | — | — | loại |
-| AI-OFFICE | DRAFT | — | — | — | loại |
+| Khóa | Đủ điều kiện? | Priority lấp được | GAP (×70) | MAND (×20) | ENTRY | score |
+| --- | --- | --- | --- | --- | --- | --- |
+| A1-I | ✔ (mức hiện tại 1 ≥ 2 − 1) | 5.56 + 16.68×½ + 16.65×½ = 22.225 | 14.00 | 2/5 → 8 | 10 | **32.00** |
+| A4-I | ✔ | 8.34 + 16.68×½ = 16.68 | 10.51 | 2/5 → 8 | 10 | **28.51** |
+| A2-I | ✔ | 2.78×3 + 8.34×½ + 2.77 = 15.28 | 9.62 | 1/5 → 4 | 10 | **23.62** |
+| M6-I | ✔ | 11.10 | 6.99 | 0 | 10 | **16.99** |
+| A5-I (600 phút) | ✔ | 8.34 | 5.25 | 0 | 10 | **15.25** |
+| A3-I (600 phút) | ✔ | 8.33 | 5.25 | 0 | 10 | **15.25** |
+| Mọi khóa -A | ✘ — cần xong khóa -I tương ứng (hoặc đã đạt mức 2) | — | — | — | — | loại |
+| Mọi khóa -F | không nâng được mức (target 1 = hiện tại 1) | — | — | — | — | loại |
+| AI-OFFICE | DRAFT | — | — | — | — | loại |
 
-Thứ tự: A4-I → A1-I → A5-I → A2-I (hòa điểm, khóa ngắn hơn trước) → M6-I.
+Thứ tự: A1-I → A4-I → A2-I → M6-I → A5-I → A3-I (hai khóa cuối hòa điểm và thời lượng, xếp theo tên khóa).
+Điều kiện vào khóa chỉ xét các năng lực mà vị trí có yêu cầu (D-B7): năng lực ngoài bộ tiêu chuẩn không kéo mức thấp nhất xuống 0.
 
 ### 5.4. Giải thích (explainability)
 
@@ -339,7 +341,7 @@ Nhãn cấp độ: 1 = Cơ bản (Basic), 2 = Trung cấp (Intermediate), 3 = N�
 | R8 | Validate input | `limit` ∈ [1, 20] (mặc định 10); `employeeId` nếu có thì khác `Guid.Empty` |
 | R9 | `coverage_weight = 0` | Năng lực đó không cộng vào GAP; khóa có tổng `score = 0` bị loại |
 | R10 | Thang `current` | `current = current_level ?? 0` trong mọi công thức (closeFraction, ENTRY_LEVEL_FIT) |
-| R11 *(29/09)* | Khóa bậc cao hơn khi chưa học khóa trước | Loại khỏi danh sách nếu không đủ điều kiện vào khóa (§5.1). `ENTRY_LEVEL_FIT` giữ nguyên để tương thích dữ liệu không có tiên quyết. Mức xác nhận đọc từ `employee_competency_profiles` (không chỉ các dòng đang thiếu) |
+| R11 *(29/09)* | Khóa bậc cao hơn khi chưa học khóa trước | Loại khỏi danh sách nếu không đủ điều kiện vào khóa (§5.1). `ENTRY_LEVEL_FIT` giữ nguyên để tương thích dữ liệu không có tiên quyết. Mức xác nhận đọc từ `employee_competency_profiles` cho các năng lực của khóa **mà vị trí có yêu cầu** (mọi dòng của snapshot, kể cả dòng đã đạt); năng lực vị trí không yêu cầu bị bỏ qua (D-B7) |
 
 ---
 
@@ -529,9 +531,9 @@ Tích hợp: gọi hai policy trong use case bắt đầu / xem kết quả atte
 | T-SG-02 | Chưa có profile → full gap, current NULL | Unit | SG-02 |
 | T-SG-03 | Đạt / vượt chuẩn → severity NULL, priority 0 | Unit | SG-03 |
 | T-SG-04 | Bảng severity (D-B1): (gap 2, không bắt buộc) HIGH; (2, bắt buộc) HIGH; (1, bắt buộc) MEDIUM; (1, không bắt buộc, w 50) LOW | Unit theory | §4.3 |
-| T-SG-TT02 | Kế toán mọi năng lực mức 1: 7 HIGH / 13 LOW / 4 đạt, coverage 52.78; 4.2 → 2: MEDIUM 6.26, coverage 54.17 | Unit | §4.5.1 |
-| T-RC-TT02 | Kế toán: A4-I 33.10, A1-I 30.24, A5-I 17.78, A2-I 17.78, M6-I 17.77; khóa -A bị loại tới khi xong tiên quyết (unit + PostgreSQL) | Unit + Integration | §5.3.1, R11 |
-| T-ACT-TT02 | Kích hoạt: đủ 24 → OK; thiếu 6.1–6.3 → 400 `FRAMEWORK_COMPETENCY_MISSING` kèm danh sách mã; năng lực không mapping → 400 `COMPETENCY_NOT_IN_FRAMEWORK` | Unit | D-B4 |
+| T-SG-TT02 | Kế toán (21 năng lực) mọi năng lực mức 1: 4 HIGH / 1 MEDIUM / 10 LOW / 6 đạt, coverage 62.03; 4.2 → 2: MEDIUM 8.34, coverage 63.89 | Unit | §4.5.1 |
+| T-RC-TT02 | Kế toán: A1-I 32.00, A4-I 28.51, A2-I 23.62, M6-I 16.99, A5-I 15.25, A3-I 15.25; khóa -A bị loại tới khi xong tiên quyết; năng lực vị trí không yêu cầu không chặn điều kiện vào khóa (unit + PostgreSQL) | Unit + Integration | §5.3.1, R11 |
+| T-ACT-TT02 | Kích hoạt (D-B7): chọn 21 năng lực → OK; dưới 9 → 400 `REQUIREMENT_COUNT_OUT_OF_RANGE`; thiếu 4.2 → 400 `CORE_COMPETENCY_MISSING`; năng lực không mapping → 400 `COMPETENCY_NOT_IN_FRAMEWORK` | Unit | D-B7 |
 | T-SG-05 | Multiplier tùy chỉnh được áp dụng và ghi vào snapshot | Unit | SG-10 |
 | T-SG-06 | Làm tròn AwayFromZero (weight 12.35, gap 1, bắt buộc, k 1.5 → 18.525 → **18.53**, không phải 18.52 như banker's rounding) | Unit | §4.2 |
 | T-SG-07 | coveragePercent golden = 47.50 | Unit | SG-01 |
@@ -571,7 +573,7 @@ Tích hợp: gọi hai policy trong use case bắt đầu / xem kết quả atte
 
 - 1 `competency_frameworks` `TT02_2025` / `02/2025/TT-BGDĐT`; 6 `competency_categories` = 6 miền (`sort_order` 1–6).
 - 24 `competencies` (`TT02-1.1` … `TT02-6.3`), 3 tiêu chí/mức lấy từ tên module F / I / A; 24 mapping `DIRECT`, `is_primary`.
-- 5 vị trí (CEO, HR, Marketing, Sales / CRM, Kế toán), mỗi vị trí 1 bộ ACTIVE 24 dòng theo ma trận, trọng số §4.5.1, bắt buộc theo D-B2.
+- 5 vị trí (CEO 21, HR 23, Marketing 22, Sales / CRM 20, Kế toán 21 năng lực), mỗi vị trí 1 bộ ACTIVE theo ma trận từng năng lực (tài liệu ma trận §4.1), trọng số §4.5.1, bắt buộc theo D-B2.
 - 18 khóa PUBLISHED (A1–A5, M6 × F/I/A) + 1 DRAFT (`AI-OFFICE`), `course_prerequisites` F → I → A.
 - `employee@` = Kế toán, 24 năng lực xác nhận mức 1 (evidence `MIGRATION`); `manager@` (trưởng phòng Operations) = Sales / CRM.
 - Ví dụ *Data Analyst* §4.5.2 / §5.3 chỉ còn trong unit test.
