@@ -49,6 +49,7 @@ describe('CompetencyFrameworkPage', () => {
             categoryId: 'cat-1',
             categoryName: 'Cloud & DevOps',
             categoryCode: 'COD',
+            frameworkCode: '4.2',
             code: 'DIG-01',
             name: 'Cloud Computing Fundamentals',
             description: 'Core concepts of cloud services',
@@ -92,6 +93,8 @@ describe('CompetencyFrameworkPage', () => {
     expect(screen.getByText('Cloud Computing Fundamentals')).toBeInTheDocument();
     expect(screen.getByText('Cloud & DevOps')).toBeInTheDocument();
     expect(screen.getByText('3 criteria')).toBeInTheDocument();
+    expect(screen.getByText('4.2')).toBeInTheDocument();
+    expect(screen.getByText('Not mapped')).toBeInTheDocument();
 
     expect(screen.getByText('PRO-01')).toBeInTheDocument();
     expect(screen.getByText('Backend Architecture')).toBeInTheDocument();
@@ -336,215 +339,126 @@ describe('CompetencyFrameworkPage', () => {
 describe('PositionRequirementsPage', () => {
   let queryClient: QueryClient;
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-
-    vi.spyOn(posHooks, 'useJobPositions').mockReturnValue({
-      data: {
-        items: [
-          { id: 'pos-1', code: 'SWE', name: 'Software Engineer', status: 'ACTIVE' },
-          { id: 'pos-2', code: 'DEV', name: 'DevOps Engineer', status: 'ACTIVE' },
-        ],
-        totalItems: 2,
-        pageIndex: 1,
-        pageSize: 100,
-        totalPages: 1,
-      },
-      isLoading: false,
-    } as any);
-
-    vi.spyOn(compHooks, 'useCompetencies').mockReturnValue({
-      data: {
-        items: [
-          { id: 'c-1', code: 'DIG-01', name: 'Cloud Computing', status: 'ACTIVE' },
-          { id: 'c-2', code: 'PRO-01', name: 'Clean Architecture', status: 'ACTIVE' },
-        ],
-        totalItems: 2,
-        pageIndex: 1,
-        pageSize: 100,
-        totalPages: 1,
-      },
-      isLoading: false,
-    } as any);
-  });
-
-  const mockUserWithPermissions = (
-    permissions: string[] = ['position_requirement.read', 'position_requirement.create_update', 'position_requirement.manage']
-  ) => {
-    useCurrentUser.setState({
-      user: {
-        id: 'user-1',
-        email: 'hr@digitalent.ai',
-        fullName: 'HR Specialist',
-        roles: ['HR_MANAGER'],
-        permissions,
-      },
-      isAuthenticated: true,
-    });
+  const CODES = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '3.1', '3.2', '3.3', '3.4',
+    '4.1', '4.2', '4.3', '4.4', '5.1', '5.2', '5.3', '5.4', '6.1', '6.2', '6.3'];
+  const DOMAINS = ['1. Khai thác dữ liệu và thông tin', '2. Giao tiếp và hợp tác', '3. Sáng tạo nội dung số',
+    '4. An toàn', '5. Giải quyết vấn đề', '6. Ứng dụng trí tuệ nhân tạo'];
+  const competency = (code: string) => {
+    const domain = Number(code.split('.')[0]);
+    return {
+      id: `c-${code}`, code: `TT02-${code}`, name: `Competency ${code}`, frameworkCode: code,
+      categoryId: `cat-${domain}`, categoryName: DOMAINS[domain - 1], categoryCode: `TT02_D${domain}`,
+      categorySortOrder: domain, status: 'ACTIVE', competencyType: 'CORE_DIGITAL', criteriaCount: 3,
+    };
   };
-
-  it('PositionRequirementsPageRendersPositionAndItems', async () => {
-    mockUserWithPermissions();
-
-    vi.spyOn(compHooks, 'usePositionRequirements').mockReturnValue({
-      data: {
-        id: 'req-set-1',
-        jobPositionId: 'pos-1',
-        jobPositionCode: 'SWE',
-        jobPositionName: 'Software Engineer',
-        versionNo: 1,
-        status: 'ACTIVE',
-        items: [
-          {
-            id: 'item-1',
-            competencyId: 'c-1',
-            competencyCode: 'DIG-01',
-            competencyName: 'Cloud Computing',
-            requiredLevel: 2,
-            weightPercent: 60,
-            isMandatory: true,
-            requiresPracticalEvidence: true,
-            note: 'AWS or Azure',
-          },
-          {
-            id: 'item-2',
-            competencyId: 'c-2',
-            competencyCode: 'PRO-01',
-            competencyName: 'Clean Architecture',
-            requiredLevel: 3,
-            weightPercent: 40,
-            isMandatory: false,
-            requiresPracticalEvidence: true,
-            note: 'Domain driven design',
-          },
-        ],
-      },
-      isLoading: false,
-    } as any);
-
+  const serverItems = (codes: string[]) => codes.map((code, i) => ({
+    ...competency(code),
+    id: `item-${code}`,
+    competencyId: `c-${code}`,
+    competencyCode: `TT02-${code}`,
+    competencyName: `Competency ${code}`,
+    requiredLevel: 2,
+    weightPercent: i < codes.length - 1 ? 4.17 : Math.round((100 - 4.17 * (codes.length - 1)) * 100) / 100,
+    isMandatory: code.startsWith('4.'),
+    requiresPracticalEvidence: true,
+  }));
+  const mockSet = (data: Record<string, unknown>) =>
+    vi.spyOn(compHooks, 'usePositionRequirements').mockReturnValue({ data, isLoading: false } as any);
+  const renderPage = () =>
     render(
       <QueryClientProvider client={queryClient}>
         <PositionRequirementsPage />
       </QueryClientProvider>
     );
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    useCurrentUser.setState({
+      user: {
+        id: 'user-1', email: 'hr@digitalent.ai', fullName: 'HR Specialist', roles: ['HR_MANAGER'],
+        permissions: ['position_requirement.read', 'position_requirement.create_update', 'position_requirement.manage'],
+      },
+      isAuthenticated: true,
+    });
+    vi.spyOn(posHooks, 'useJobPositions').mockReturnValue({
+      data: { items: [{ id: 'pos-1', code: 'ACCOUNTANT', name: 'Kế toán', status: 'ACTIVE' }], totalItems: 1, pageIndex: 1, pageSize: 100, totalPages: 1 },
+      isLoading: false,
+    } as any);
+    vi.spyOn(compHooks, 'useCompetencies').mockReturnValue({
+      data: { items: CODES.map(competency), totalItems: 24, pageIndex: 1, pageSize: 100, totalPages: 1 },
+      isLoading: false,
+    } as any);
+  });
+
+  it('groups a saved set by the 6 domains without any remove button', () => {
+    mockSet({ id: 'set-1', jobPositionId: 'pos-1', versionNo: 1, status: 'ACTIVE', items: serverItems(CODES) });
+
+    renderPage();
 
     expect(screen.getByText('v1')).toBeInTheDocument();
     expect(screen.getByText('ACTIVE')).toBeInTheDocument();
     expect(screen.getByText('100%')).toBeInTheDocument();
-
-    const weightInputs = screen.getAllByRole('spinbutton');
-    expect(weightInputs.length).toBe(2);
-    expect(weightInputs[0]).toHaveValue(60);
-    expect(weightInputs[1]).toHaveValue(40);
+    DOMAINS.forEach((name) => expect(screen.getByText(name)).toBeInTheDocument());
+    expect(screen.getAllByRole('spinbutton')).toHaveLength(24);
+    expect(screen.queryByTitle('Remove item')).not.toBeInTheDocument();
+    const level42 = screen.getByLabelText('Required level for 4.2 Competency 4.2');
+    expect(within(level42).getByRole('option', { name: 'Intermediate · TT02 tiers 3–4', selected: true })).toBeInTheDocument();
   });
 
-  it('PositionRequirementsEditorAllowsAddingItemAndSaveDraft', async () => {
-    mockUserWithPermissions();
-    const createDraftMutateAsync = vi.fn().mockResolvedValue({
-      data: { data: { id: 'new-set', versionNo: 1, status: 'DRAFT' } },
-    });
-    vi.spyOn(compHooks, 'useCreateDraftPositionRequirements').mockReturnValue({
-      mutateAsync: createDraftMutateAsync,
-    } as any);
+  it('starts a position without requirements from a full 24-competency draft and saves it', async () => {
+    const createDraft = vi.fn().mockResolvedValue({});
+    vi.spyOn(compHooks, 'useCreateDraftPositionRequirements').mockReturnValue({ mutateAsync: createDraft } as any);
+    mockSet({ id: undefined, jobPositionId: 'pos-1', versionNo: 0, status: '', items: [] });
 
-    vi.spyOn(compHooks, 'usePositionRequirements').mockReturnValue({
-      data: {
-        id: undefined,
-        jobPositionId: 'pos-1',
-        jobPositionCode: 'SWE',
-        jobPositionName: 'Software Engineer',
-        versionNo: 0,
-        status: '',
-        items: [],
-      },
-      isLoading: false,
-    } as any);
+    renderPage();
+    fireEvent.click(screen.getByRole('button', { name: /Save Draft/i }));
 
-    render(
-      <QueryClientProvider client={queryClient}>
-        <PositionRequirementsPage />
-      </QueryClientProvider>
-    );
-
-    expect(screen.getByText('No competency requirements mapped')).toBeInTheDocument();
-
-    // Click "Add First Competency"
-    const addBtn = screen.getByRole('button', { name: /Add First Competency/i });
-    fireEvent.click(addBtn);
-
-    // Now table should show 1 row
-    expect(screen.getByText('Required Competency Matrix')).toBeInTheDocument();
-    const saveDraftBtn = screen.getByRole('button', { name: /Save Draft/i });
-    expect(saveDraftBtn).toBeInTheDocument();
-
-    fireEvent.click(saveDraftBtn);
-
-    await waitFor(() => {
-      expect(createDraftMutateAsync).toHaveBeenCalledWith({
-        jobPositionId: 'pos-1',
-        items: [
-          expect.objectContaining({
-            competencyId: 'c-1',
-            requiredLevel: 2,
-            weightPercent: 20,
-            isMandatory: true,
-            requiresPracticalEvidence: true,
-          }),
-        ],
-      });
-    });
+    await waitFor(() => expect(createDraft).toHaveBeenCalledTimes(1));
+    const payload = createDraft.mock.calls[0][0];
+    expect(payload.jobPositionId).toBe('pos-1');
+    expect(payload.items).toHaveLength(24);
+    const total = payload.items.reduce((sum: number, i: { weightPercent: number }) => sum + i.weightPercent, 0);
+    expect(Math.round(total * 100) / 100).toBe(100);
   });
 
-  it('ActivateVersionCallsMutationWhenValid', async () => {
-    mockUserWithPermissions();
-    const activateMutateAsync = vi.fn().mockResolvedValue({
-      data: { data: { id: 'req-draft-1', versionNo: 2, status: 'ACTIVE' } },
-    });
-    vi.spyOn(compHooks, 'useActivatePositionRequirements').mockReturnValue({
-      mutateAsync: activateMutateAsync,
-    } as any);
+  it('applies a level to a whole domain and flags a line that differs', () => {
+    mockSet({ id: 'set-1', jobPositionId: 'pos-1', versionNo: 2, status: 'DRAFT', items: serverItems(CODES) });
+    renderPage();
 
-    vi.spyOn(compHooks, 'usePositionRequirements').mockReturnValue({
-      data: {
-        id: 'req-draft-1',
-        jobPositionId: 'pos-1',
-        jobPositionCode: 'SWE',
-        jobPositionName: 'Software Engineer',
-        versionNo: 2,
-        status: 'DRAFT',
-        items: [
-          {
-            id: 'item-1',
-            competencyId: 'c-1',
-            competencyCode: 'DIG-01',
-            competencyName: 'Cloud Computing',
-            requiredLevel: 2,
-            weightPercent: 100,
-            isMandatory: true,
-            requiresPracticalEvidence: true,
-          },
-        ],
-      },
-      isLoading: false,
-    } as any);
+    fireEvent.change(screen.getByLabelText(`Domain level for ${DOMAINS[0]}`), { target: { value: '3' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Apply level to domain' })[0]);
 
-    render(
-      <QueryClientProvider client={queryClient}>
-        <PositionRequirementsPage />
-      </QueryClientProvider>
-    );
+    ['1.1', '1.2', '1.3'].forEach((code) =>
+      expect(screen.getByLabelText(`Required level for ${code} Competency ${code}`)).toHaveValue('3'));
+    expect(screen.getByLabelText('Mandatory: 1.1 Competency 1.1')).toBeChecked();
+    expect(screen.queryByText('Differs from domain level')).not.toBeInTheDocument();
 
-    expect(screen.getByText('DRAFT')).toBeInTheDocument();
-    expect(screen.getByText('100%')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Required level for 1.2 Competency 1.2'), { target: { value: '2' } });
+    expect(screen.getByText('Differs from domain level')).toBeInTheDocument();
+  });
 
-    const activateBtn = screen.getByRole('button', { name: /Activate Version/i });
-    expect(activateBtn).toBeEnabled();
+  it('shows the missing Circular codes and blocks activation', () => {
+    mockSet({ id: 'set-1', jobPositionId: 'pos-1', versionNo: 2, status: 'DRAFT', items: serverItems(CODES.slice(0, 21)) });
 
-    fireEvent.click(activateBtn);
+    renderPage();
 
-    await waitFor(() => {
-      expect(activateMutateAsync).toHaveBeenCalledWith('req-draft-1');
-    });
+    expect(screen.getByRole('alert')).toHaveTextContent('Missing: 6.1, 6.2, 6.3');
+    expect(screen.getByRole('button', { name: /Activate Version/i })).toBeDisabled();
+  });
+
+  it('asks for confirmation before activating', async () => {
+    const activate = vi.fn().mockResolvedValue({});
+    vi.spyOn(compHooks, 'useActivatePositionRequirements').mockReturnValue({ mutateAsync: activate } as any);
+    mockSet({ id: 'set-2', jobPositionId: 'pos-1', versionNo: 2, status: 'DRAFT', items: serverItems(CODES) });
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: /Activate Version/i }));
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveTextContent('Activate version v2 for Kế toán');
+    expect(activate).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Activate' }));
+
+    await waitFor(() => expect(activate).toHaveBeenCalledWith('set-2'));
   });
 });

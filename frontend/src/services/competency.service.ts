@@ -20,6 +20,10 @@ export interface CompetencyListItem {
   categoryId: string;
   categoryName: string;
   categoryCode: string;
+  /** Domain order 1–6 for Circular 02/2025 categories. */
+  categorySortOrder?: number;
+  /** Circular 02/2025 code such as "4.2"; null for internal competencies. */
+  frameworkCode?: string | null;
   code: string;
   name: string;
   description?: string;
@@ -85,6 +89,8 @@ export interface PositionRequirementItemDto {
   competencyType: string;
   categoryId: string;
   categoryName: string;
+  categorySortOrder?: number;
+  frameworkCode?: string | null;
   requiredLevel: number;
   weightPercent: number;
   isMandatory: boolean;

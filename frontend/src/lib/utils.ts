@@ -1,9 +1,19 @@
+import { isAxiosError } from 'axios';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import type { ApiResponse } from '@/types/api';
 
 /** Merge Tailwind classes safely */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+/** Server message of a failed ApiResponse request (e.g. a business 400/409), else the fallback. */
+export function apiErrorMessage(error: unknown, fallback: string): string {
+  if (isAxiosError<ApiResponse<unknown>>(error)) {
+    return error.response?.data?.message || fallback;
+  }
+  return fallback;
 }
 
 /** Format a date ISO string to locale display */

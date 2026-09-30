@@ -76,6 +76,18 @@ export function CompetencyFrameworkPage() {
       cell: (row) => <span className="font-semibold text-slate-800">{row.code}</span>,
     },
     {
+      key: 'frameworkCode',
+      header: 'Circular 02/2025',
+      cell: (row) =>
+        row.frameworkCode ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+            {row.frameworkCode}
+          </span>
+        ) : (
+          <span className="text-xs text-slate-400">Not mapped</span>
+        ),
+    },
+    {
       key: 'name',
       header: 'Name',
       cell: (row) => (
@@ -96,7 +108,7 @@ export function CompetencyFrameworkPage() {
     },
     {
       key: 'categoryName',
-      header: 'Category',
+      header: 'Domain / Category',
       cell: (row) => row.categoryName || <span className="text-slate-400">-</span>,
     },
     {
