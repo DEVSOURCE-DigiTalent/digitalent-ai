@@ -3,6 +3,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateCompetency, useUpdateCompetency, useCompetency } from '@/hooks/use-competencies';
+import { levelWithTier } from '@/lib/competency-levels';
 import type { CompetencyListItem, CompetencyCriterion } from '@/services/competency.service';
 import { toast } from 'sonner';
 import { Plus, Trash2 } from 'lucide-react';
@@ -230,7 +231,7 @@ export function CompetencyFormDialog({ open, onClose, competency }: CompetencyFo
           <div className="pt-3 border-t border-slate-200">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h3 className="text-sm font-semibold text-slate-900">Proficiency Levels & Criteria (Level 1..3)</h3>
+                <h3 className="text-sm font-semibold text-slate-900">Proficiency Levels & Criteria (Basic / Intermediate / Advanced)</h3>
                 <p className="text-xs text-slate-500">Define observable behaviors and indicator codes per level</p>
               </div>
               <button
@@ -262,9 +263,11 @@ export function CompetencyFormDialog({ open, onClose, competency }: CompetencyFo
                         {...register(`criteria.${idx}.level` as const)}
                         className="text-xs border border-slate-300 rounded px-2 py-1 bg-white"
                       >
-                        <option value={1}>Level 1 (Foundational)</option>
-                        <option value={2}>Level 2 (Intermediate)</option>
-                        <option value={3}>Level 3 (Advanced)</option>
+                        {[1, 2, 3].map((level) => (
+                          <option key={level} value={level}>
+                            {levelWithTier(level)}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     {fields.length > 1 && (

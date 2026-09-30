@@ -117,6 +117,11 @@ describe('Lane E: Learner Flow Delivery Tests', () => {
       expect(localStorage.getItem('digitalent_target_role')).toBe('cloud-devops');
       expect(screen.getByText(/So sánh Kỹ năng Hiện tại vs Chuẩn Yêu cầu Vị trí/i)).toBeInTheDocument();
       expect(screen.getByText(/Cộng tác GitOps & Điều phối/i)).toBeInTheDocument();
+
+      // D-B5: 3-level scale (Circular 02/2025 tiers), no more "Level n/6" or "Trung cấp (L3-L4)"
+      expect(screen.getAllByText('Trung bình (bậc 3–4)').length).toBeGreaterThan(0);
+      expect(screen.queryByText(/\/6\b/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/L3-L4/)).not.toBeInTheDocument();
     });
 
     it('LearnerDiagnosticPage allows answering questions, computing radar score, and viewing exemptions', async () => {
@@ -143,6 +148,8 @@ describe('Lane E: Learner Flow Delivery Tests', () => {
 
       // Verify result persisted in localStorage
       expect(localStorage.getItem('digitalent_diagnostic_result')).toBeTruthy();
+      expect(screen.queryAllByText(/L\d\/6/)).toHaveLength(0);
+      expect(screen.getAllByText(/Chuẩn: (Cơ bản|Trung bình|Nâng cao)/).length).toBeGreaterThan(0);
     });
   });
 

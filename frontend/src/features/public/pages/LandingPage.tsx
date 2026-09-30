@@ -325,7 +325,7 @@ export const LandingPage: React.FC = () => {
               Khung Chuẩn Năng Lực Theo Từng Vị Trí Công Việc
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Mỗi vị trí có yêu cầu cấp độ (Level 1-6) khác nhau cho 5 lĩnh vực kỹ năng số chuẩn DigComp.
+              Mỗi vị trí có yêu cầu cấp độ (Cơ bản / Trung bình / Nâng cao) khác nhau cho 5 lĩnh vực kỹ năng số chuẩn DigComp.
             </p>
           </div>
           <Link

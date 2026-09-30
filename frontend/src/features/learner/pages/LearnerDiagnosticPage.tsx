@@ -9,6 +9,7 @@ import {
   BarChart3,
   RotateCcw,
 } from 'lucide-react';
+import { levelLabelViFromDigComp } from '@/lib/competency-levels';
 import { CAREER_ROLES, type CareerRole } from '../../public/data/careerData';
 import {
   DIAGNOSTIC_QUESTIONS,
@@ -301,7 +302,7 @@ export const LearnerDiagnosticPage: React.FC = () => {
                   <BarChart3 className="w-5 h-5 text-indigo-600" />
                   <span>Chi tiết kết quả theo 5 Lĩnh vực Năng lực số</span>
                 </h3>
-                <span className="text-xs text-slate-400">Thang đo DigComp Level 1 - 6</span>
+                <span className="text-xs text-slate-400">Thang 3 mức: Cơ bản / Trung bình / Nâng cao</span>
               </div>
 
               <div className="space-y-3">
@@ -333,7 +334,7 @@ export const LearnerDiagnosticPage: React.FC = () => {
                         </span>
                         <span className="text-slate-300">•</span>
                         <span className="text-slate-600">
-                          Cấp độ: <strong className="text-blue-700">L{area.currentLevel}/6</strong> (Chuẩn: L{area.requiredLevel})
+                          Cấp độ: <strong className="text-blue-700">{levelLabelViFromDigComp(area.currentLevel)}</strong> (Chuẩn: {levelLabelViFromDigComp(area.requiredLevel)})
                         </span>
                         {area.isExempt ? (
                           <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold border border-emerald-300 flex items-center gap-1">

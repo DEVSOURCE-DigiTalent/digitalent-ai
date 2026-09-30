@@ -42,7 +42,7 @@ const mockBadges: BadgeItem[] = [
     name: 'Đạt Chuẩn DigComp AI',
     category: 'Framework',
     earnedDate: '20/08/2026',
-    description: 'Vượt qua ngưỡng Level 4/6 ở cả 5 lĩnh vực kỹ năng số chuẩn hóa.',
+    description: 'Đạt mức Trung bình (bậc 3–4) ở cả 5 lĩnh vực kỹ năng số chuẩn hóa.',
     iconBg: 'bg-emerald-100 text-emerald-700',
   },
   {
@@ -125,14 +125,14 @@ export const LearnerProgressPage: React.FC = () => {
             <BarChart3 className="w-5 h-5 text-blue-600" />
             <span>Tiến trình đạt chuẩn các tiêu chí năng lực</span>
           </h2>
-          <span className="text-xs text-slate-500 font-medium">Khung DigComp AI 2.0 (Thang 1-6)</span>
+          <span className="text-xs text-slate-500 font-medium">Thang 3 mức: Cơ bản / Trung bình / Nâng cao (Thông tư 02/2025)</span>
         </div>
 
         <div className="space-y-5">
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-semibold">
               <span className="text-slate-800">1. Thiết kế và Tối ưu Câu lệnh (Prompt Design & Optimization)</span>
-              <span className="text-blue-600 font-bold">85% (Level 4/5)</span>
+              <span className="text-blue-600 font-bold">85% · Trung bình</span>
             </div>
             <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
               <div className="bg-blue-600 h-full rounded-full transition-all duration-500" style={{ width: '85%' }} />
@@ -143,7 +143,7 @@ export const LearnerProgressPage: React.FC = () => {
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-semibold">
               <span className="text-slate-800">2. Kiến trúc Quy trình LLM & RAG (Workflow & RAG)</span>
-              <span className="text-indigo-600 font-bold">60% (Level 3/5)</span>
+              <span className="text-indigo-600 font-bold">60% · Trung bình</span>
             </div>
             <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
               <div className="bg-indigo-600 h-full rounded-full transition-all duration-500" style={{ width: '60%' }} />
@@ -154,7 +154,7 @@ export const LearnerProgressPage: React.FC = () => {
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-semibold">
               <span className="text-slate-800">3. An toàn, Đạo đức & Guardrails trong AI</span>
-              <span className="text-amber-600 font-bold">45% (Level 2/5)</span>
+              <span className="text-amber-600 font-bold">45% · Cơ bản</span>
             </div>
             <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
               <div className="bg-amber-500 h-full rounded-full transition-all duration-500" style={{ width: '45%' }} />
@@ -165,7 +165,7 @@ export const LearnerProgressPage: React.FC = () => {
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-semibold">
               <span className="text-slate-800">4. Dữ liệu & Đánh giá Chất lượng Phản hồi (RAGAS Evaluation)</span>
-              <span className="text-emerald-600 font-bold">75% (Level 4/5)</span>
+              <span className="text-emerald-600 font-bold">75% · Trung bình</span>
             </div>
             <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
               <div className="bg-emerald-600 h-full rounded-full transition-all duration-500" style={{ width: '75%' }} />

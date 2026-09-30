@@ -458,7 +458,7 @@ export const COURSE_LIBRARY: Record<string, DetailedCourse> = {
     title: 'Tư duy Đặt câu hỏi và Phân rã bài toán cho AI',
     category: 'AI & Problem Solving',
     frameworkRef: 'Khung DigiComp AI 2.0',
-    level: 'Trung cấp',
+    level: 'Trung bình',
     duration: '4 giờ học',
     enrolledLearners: 980,
     rating: 4.8,

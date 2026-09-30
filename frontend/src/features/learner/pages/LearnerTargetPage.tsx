@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Target, CheckCircle2, ChevronRight, Award, ShieldAlert, Sparkles, Cpu, Database, Cloud, Lock, Code2 } from 'lucide-react';
+import { levelFromDigComp, levelLabelViFromDigComp } from '@/lib/competency-levels';
 import { CAREER_ROLES, type CareerRole } from '../../public/data/careerData';
 import type { DiagnosticResult } from '../data/learnerData';
 
@@ -215,7 +216,8 @@ export const LearnerTargetPage: React.FC = () => {
               const diagArea = diagnosticResult?.areaBreakdown.find((a) => a.areaId === comp.id);
               const currentLvl = diagArea ? diagArea.currentLevel : 3;
               const targetLvl = comp.requiredLevel;
-              const gap = Math.max(0, targetLvl - currentLvl);
+              // Learner data keeps the DigComp 1–6 scale; display uses the 3-level scale (D-B5)
+              const gap = Math.max(0, levelFromDigComp(targetLvl) - levelFromDigComp(currentLvl));
               const currentPercent = Math.min(100, Math.round((currentLvl / 6) * 100));
               const targetPercent = Math.min(100, Math.round((targetLvl / 6) * 100));
 
@@ -233,15 +235,15 @@ export const LearnerTargetPage: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-slate-500">
-                        Hiện tại: <strong className="text-emerald-700">Level {currentLvl}/6</strong>
+                        Hiện tại: <strong className="text-emerald-700">{levelLabelViFromDigComp(currentLvl)}</strong>
                       </span>
                       <span className="text-slate-300">|</span>
                       <span className="text-slate-700">
-                        Yêu cầu: <strong className="text-blue-700">Level {targetLvl}/6</strong>
+                        Yêu cầu: <strong className="text-blue-700">{levelLabelViFromDigComp(targetLvl)}</strong>
                       </span>
                       {gap > 0 ? (
                         <span className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 text-[10px] font-bold border border-rose-200">
-                          Gap: -{gap} bậc
+                          Thiếu {gap} mức
                         </span>
                       ) : (
                         <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">
@@ -266,9 +268,9 @@ export const LearnerTargetPage: React.FC = () => {
                       />
                     </div>
                     <div className="flex justify-between text-[10px] text-slate-400">
-                      <span>Cơ bản (L1-L2)</span>
-                      <span>Trung cấp (L3-L4)</span>
-                      <span>Nâng cao (L5-L6)</span>
+                      <span>Cơ bản (bậc 1–2)</span>
+                      <span>Trung bình (bậc 3–4)</span>
+                      <span>Nâng cao (bậc 5–6)</span>
                     </div>
                   </div>
 
@@ -282,7 +284,7 @@ export const LearnerTargetPage: React.FC = () => {
             <div className="bg-amber-50 rounded-xl p-4 border border-amber-200 text-amber-900 flex items-start gap-3 text-xs">
               <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <div>
-                <strong>Chưa có dữ liệu chẩn đoán thực tế:</strong> Hệ thống đang hiển thị mức ước tính khởi điểm (Level 3/6). Hãy làm bài chẩn đoán 10 câu hỏi để đo lường chính xác và tự động miễn học các phần bạn đã thành thạo!
+                <strong>Chưa có dữ liệu chẩn đoán thực tế:</strong> Hệ thống đang hiển thị mức ước tính khởi điểm (Trung bình). Hãy làm bài chẩn đoán 10 câu hỏi để đo lường chính xác và tự động miễn học các phần bạn đã thành thạo!
               </div>
             </div>
           )}
