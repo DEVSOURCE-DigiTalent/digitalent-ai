@@ -438,13 +438,41 @@ describe('PositionRequirementsPage', () => {
     expect(screen.getByText('Differs from domain level')).toBeInTheDocument();
   });
 
-  it('shows the missing Circular codes and blocks activation', () => {
-    mockSet({ id: 'set-1', jobPositionId: 'pos-1', versionNo: 2, status: 'DRAFT', items: serverItems(CODES.slice(0, 21)) });
+  it('lists the whole framework and shows unselected competencies as "Not required" (D-B7)', async () => {
+    const createDraft = vi.fn().mockResolvedValue({});
+    vi.spyOn(compHooks, 'useCreateDraftPositionRequirements').mockReturnValue({ mutateAsync: createDraft } as any);
+    mockSet({ id: 'set-1', jobPositionId: 'pos-1', versionNo: 1, status: 'ACTIVE', items: serverItems(CODES.slice(0, 21)) });
 
     renderPage();
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Missing: 6.1, 6.2, 6.3');
+    expect(screen.getByText('21 of 24')).toBeInTheDocument();
+    expect(screen.getAllByRole('spinbutton')).toHaveLength(24);
+    expect(screen.getByLabelText('Required level for 6.2 Competency 6.2')).toHaveValue('0');
+    expect(screen.getByLabelText('Weight percent for 6.2 Competency 6.2')).toBeDisabled();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+    // Only the selected competencies are saved
+    fireEvent.click(screen.getByRole('button', { name: /Save Draft/i }));
+    await waitFor(() => expect(createDraft).toHaveBeenCalledTimes(1));
+    expect(createDraft.mock.calls[0][0].items).toHaveLength(21);
+  });
+
+  it('blocks activation without the core safety competencies or with fewer than 9 competencies', () => {
+    mockSet({
+      id: 'set-1', jobPositionId: 'pos-1', versionNo: 2, status: 'DRAFT',
+      items: serverItems(CODES.filter((c) => c.startsWith('1.') || c.startsWith('2.') || c === '4.1')),
+    });
+    renderPage();
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Missing: 4.2');
     expect(screen.getByRole('button', { name: /Activate Version/i })).toBeDisabled();
+
+    // dropping below 9 selected competencies adds the count message
+    fireEvent.change(screen.getByLabelText(`Domain level for ${DOMAINS[1]}`), { target: { value: '0' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Apply level to domain' })[1]);
+
+    expect(screen.getByText('4 of 24')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('needs between 9 and 24 competencies');
   });
 
   it('asks for confirmation before activating', async () => {

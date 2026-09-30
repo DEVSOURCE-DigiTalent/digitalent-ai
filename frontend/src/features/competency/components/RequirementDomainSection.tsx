@@ -1,33 +1,42 @@
 import { useState } from 'react';
 import { levelWithTier } from '@/lib/competency-levels';
-import { domainLevel, type DomainGroup, type DomainRow } from '../utils/requirement-domains';
+import { NOT_REQUIRED, domainLevel, requiredRows, type DomainGroup, type DomainRow } from '../utils/requirement-domains';
 
 export interface EditableRequirementRow extends DomainRow {
   tempId: string;
 }
 
-type EditableField = 'requiredLevel' | 'weightPercent' | 'isMandatory' | 'requiresPracticalEvidence' | 'note';
+type EditableField = 'weightPercent' | 'isMandatory' | 'requiresPracticalEvidence' | 'note';
 
 interface RequirementDomainSectionProps {
   group: DomainGroup<EditableRequirementRow>;
   canEdit: boolean;
   onRowChange: (competencyId: string, field: EditableField, value: number | boolean | string) => void;
+  onRowLevelChange: (competencyId: string, level: number) => void;
   onApplyDomainLevel: (categoryId: string, level: number) => void;
 }
 
-const LEVELS = [1, 2, 3];
+const LEVEL_OPTIONS = [NOT_REQUIRED, 1, 2, 3];
+const levelOptionLabel = (level: number) => (level === NOT_REQUIRED ? 'Not required' : levelWithTier(level));
 const inputClass =
-  'text-sm px-2.5 py-1.5 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white disabled:bg-slate-50';
+  'text-sm px-2.5 py-1.5 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white disabled:bg-slate-50 disabled:text-slate-400';
 
 /**
- * One Circular 02/2025 domain of the requirement editor: header with the domain level control
- * and weight subtotal, then one row per competency (rows cannot be removed — D-B4).
+ * One Circular 02/2025 domain of the requirement editor: header with the domain level control and weight subtotal,
+ * then one row per competency of the framework. A competency the job does not need is set to "Not required" (D-B7).
  */
-export function RequirementDomainSection({ group, canEdit, onRowChange, onApplyDomainLevel }: RequirementDomainSectionProps) {
+export function RequirementDomainSection({
+  group,
+  canEdit,
+  onRowChange,
+  onRowLevelChange,
+  onApplyDomainLevel,
+}: RequirementDomainSectionProps) {
+  const required = requiredRows(group.rows);
   const currentDomainLevel = domainLevel(group.rows);
   const [pendingLevel, setPendingLevel] = useState<number | null>(null);
   const levelToApply = pendingLevel ?? currentDomainLevel;
-  const subtotal = Math.round(group.rows.reduce((sum, r) => sum + (Number(r.weightPercent) || 0), 0) * 100) / 100;
+  const subtotal = Math.round(required.reduce((sum, r) => sum + (Number(r.weightPercent) || 0), 0) * 100) / 100;
   const domainName = group.domain.name;
 
   return (
@@ -38,7 +47,7 @@ export function RequirementDomainSection({ group, canEdit, onRowChange, onApplyD
             <div>
               <span className="font-semibold text-slate-900">{domainName}</span>
               <span className="ml-2 text-xs font-normal text-slate-500">
-                {group.rows.length} competencies · {subtotal}% of total weight
+                {required.length} of {group.rows.length} required · {subtotal}% of total weight
               </span>
             </div>
             {canEdit && (
@@ -49,9 +58,9 @@ export function RequirementDomainSection({ group, canEdit, onRowChange, onApplyD
                   onChange={(e) => setPendingLevel(Number(e.target.value))}
                   className={inputClass}
                 >
-                  {LEVELS.map((level) => (
+                  {LEVEL_OPTIONS.map((level) => (
                     <option key={level} value={level}>
-                      {levelWithTier(level)}
+                      {levelOptionLabel(level)}
                     </option>
                   ))}
                 </select>
@@ -72,24 +81,26 @@ export function RequirementDomainSection({ group, canEdit, onRowChange, onApplyD
       </tr>
       {group.rows.map((row) => {
         const label = row.frameworkCode ? `${row.frameworkCode} ${row.competencyName ?? ''}` : row.competencyName ?? row.competencyCode;
-        const differs = row.requiredLevel !== currentDomainLevel;
+        const isRequired = row.requiredLevel > NOT_REQUIRED;
+        const differs = isRequired && row.requiredLevel !== currentDomainLevel;
+        const canEditDetails = canEdit && isRequired;
         return (
-          <tr key={row.tempId} className="hover:bg-slate-50/60 transition-colors">
+          <tr key={row.tempId} className={`transition-colors ${isRequired ? 'hover:bg-slate-50/60' : 'bg-slate-50/40'}`}>
             <td className="px-4 py-3">
-              <div className="font-medium text-slate-900">{label}</div>
-              <div className="text-xs text-slate-500">{row.competencyCode}</div>
+              <div className={`font-medium ${isRequired ? 'text-slate-900' : 'text-slate-400'}`}>{label}</div>
+              <div className="text-xs text-slate-400">{row.competencyCode}</div>
             </td>
             <td className="px-4 py-3">
               <select
                 aria-label={`Required level for ${label}`}
                 value={row.requiredLevel}
-                onChange={(e) => onRowChange(row.competencyId, 'requiredLevel', Number(e.target.value))}
+                onChange={(e) => onRowLevelChange(row.competencyId, Number(e.target.value))}
                 disabled={!canEdit}
                 className={`w-full ${inputClass}`}
               >
-                {LEVELS.map((level) => (
+                {LEVEL_OPTIONS.map((level) => (
                   <option key={level} value={level}>
-                    {levelWithTier(level)}
+                    {levelOptionLabel(level)}
                   </option>
                 ))}
               </select>
@@ -104,12 +115,12 @@ export function RequirementDomainSection({ group, canEdit, onRowChange, onApplyD
                 <input
                   type="number"
                   aria-label={`Weight percent for ${label}`}
-                  min={0.01}
+                  min={0}
                   max={100}
                   step={0.01}
                   value={row.weightPercent}
                   onChange={(e) => onRowChange(row.competencyId, 'weightPercent', Number(e.target.value))}
-                  disabled={!canEdit}
+                  disabled={!canEditDetails}
                   className={`w-24 ${inputClass}`}
                 />
                 <span className="text-slate-500 text-xs">%</span>
@@ -121,7 +132,7 @@ export function RequirementDomainSection({ group, canEdit, onRowChange, onApplyD
                 aria-label={`Mandatory: ${label}`}
                 checked={row.isMandatory}
                 onChange={(e) => onRowChange(row.competencyId, 'isMandatory', e.target.checked)}
-                disabled={!canEdit}
+                disabled={!canEditDetails}
                 className="w-4 h-4 text-primary-600 rounded border-slate-300 focus:ring-primary-500"
               />
             </td>
@@ -129,9 +140,9 @@ export function RequirementDomainSection({ group, canEdit, onRowChange, onApplyD
               <input
                 type="checkbox"
                 aria-label={`Evidence required: ${label}`}
-                checked={row.requiresPracticalEvidence}
+                checked={isRequired && row.requiresPracticalEvidence}
                 onChange={(e) => onRowChange(row.competencyId, 'requiresPracticalEvidence', e.target.checked)}
-                disabled={!canEdit}
+                disabled={!canEditDetails}
                 className="w-4 h-4 text-primary-600 rounded border-slate-300 focus:ring-primary-500"
               />
             </td>
@@ -141,8 +152,8 @@ export function RequirementDomainSection({ group, canEdit, onRowChange, onApplyD
                 aria-label={`Note for ${label}`}
                 value={row.note || ''}
                 onChange={(e) => onRowChange(row.competencyId, 'note', e.target.value)}
-                placeholder="Guidance or context..."
-                disabled={!canEdit}
+                placeholder={isRequired ? 'Guidance or context...' : ''}
+                disabled={!canEditDetails}
                 className={`w-full text-xs ${inputClass}`}
               />
             </td>

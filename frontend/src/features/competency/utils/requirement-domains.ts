@@ -1,6 +1,8 @@
 /**
  * Position requirement editor helpers — Circular 02/2025 (docs/specs/2026-09-29-tt02-position-competency-matrix.md).
- * A requirement set always holds all 24 competencies (D-B4), grouped by the 6 domains (competency categories).
+ * Decision D-B7: a position selects the competencies relevant to the job (9–24 of the 24, always including the core
+ * safety competencies), each at its own level. The editor always shows the whole framework grouped by the 6 domains;
+ * a competency the position does not need is set to "Not required" and is left out of the saved set.
  */
 
 /** The 24 competencies of the national digital competence framework — mirror of backend CompetencyFrameworks.Tt02. */
@@ -13,8 +15,11 @@ export const TT02_COMPETENCY_CODES = [
   '6.1', '6.2', '6.3',
 ] as const;
 
-/** Domain 4 (Safety) is mandatory for every position — personal data protection (Decree 13/2023). */
-const ALWAYS_MANDATORY_DOMAIN = 4;
+/** Mandatory for every position: 4.1 protecting devices, 4.2 protecting personal data (Decree 13/2023). */
+export const CORE_COMPETENCY_CODES: readonly string[] = ['4.1', '4.2'];
+export const MIN_REQUIREMENT_COUNT = 9;
+export const NOT_REQUIRED = 0;
+
 const ADVANCED_LEVEL = 3;
 const DEFAULT_DRAFT_LEVEL = 2;
 const TOTAL_CENTS = 10000;
@@ -27,6 +32,7 @@ export interface DomainRow {
   categoryId: string;
   categoryName: string;
   categorySortOrder: number;
+  /** 0 = not required for this position, 1–3 = Basic / Intermediate / Advanced. */
   requiredLevel: number;
   weightPercent: number;
   isMandatory: boolean;
@@ -56,6 +62,12 @@ export interface CompetencySource {
   categorySortOrder?: number;
 }
 
+export interface ActivationIssues {
+  requiredCount: number;
+  isCountValid: boolean;
+  missingCore: string[];
+}
+
 function compareCodes(a?: string | null, b?: string | null): number {
   const left = (a ?? '').split('.').map(Number);
   const right = (b ?? '').split('.').map(Number);
@@ -64,6 +76,10 @@ function compareCodes(a?: string | null, b?: string | null): number {
     if (diff !== 0) return diff;
   }
   return 0;
+}
+
+export function requiredRows<T extends DomainRow>(rows: T[]): T[] {
+  return rows.filter((r) => r.requiredLevel > NOT_REQUIRED);
 }
 
 export function groupByDomain<T extends DomainRow>(rows: T[]): DomainGroup<T>[] {
@@ -86,24 +102,34 @@ export function groupByDomain<T extends DomainRow>(rows: T[]): DomainGroup<T>[] 
     }));
 }
 
-/** Most frequent required level in the domain (ties → the higher level). */
+/** Most frequent level among the required lines of a domain (ties → the higher level); 0 when nothing is required. */
 export function domainLevel(rows: DomainRow[]): number {
   const counts = new Map<number, number>();
-  rows.forEach((r) => counts.set(r.requiredLevel, (counts.get(r.requiredLevel) ?? 0) + 1));
-  return [...counts.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0])[0]?.[0] ?? DEFAULT_DRAFT_LEVEL;
+  requiredRows(rows).forEach((r) => counts.set(r.requiredLevel, (counts.get(r.requiredLevel) ?? 0) + 1));
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0])[0]?.[0] ?? NOT_REQUIRED;
 }
 
-/** D-B2: mandatory = the domains required at Advanced, plus domain 4 for every position. */
-export function isMandatoryForDomain(level: number, domainSortOrder: number): boolean {
-  return level === ADVANCED_LEVEL || domainSortOrder === ALWAYS_MANDATORY_DOMAIN;
+/** Mandatory = competencies required at Advanced, plus the core safety competencies for every position. */
+export function isMandatoryFor(level: number, frameworkCode?: string | null): boolean {
+  if (level === NOT_REQUIRED) return false;
+  return level === ADVANCED_LEVEL || (!!frameworkCode && CORE_COMPETENCY_CODES.includes(frameworkCode));
+}
+
+function withLevel<T extends DomainRow>(row: T, level: number): T {
+  return {
+    ...row,
+    requiredLevel: level,
+    isMandatory: isMandatoryFor(level, row.frameworkCode),
+    weightPercent: level === NOT_REQUIRED ? 0 : row.weightPercent,
+  };
+}
+
+export function setRowLevel<T extends DomainRow>(rows: T[], competencyId: string, level: number): T[] {
+  return rows.map((row) => (row.competencyId === competencyId ? withLevel(row, level) : row));
 }
 
 export function applyLevelToDomain<T extends DomainRow>(rows: T[], categoryId: string, level: number): T[] {
-  return rows.map((row) =>
-    row.categoryId === categoryId
-      ? { ...row, requiredLevel: level, isMandatory: isMandatoryForDomain(level, row.categorySortOrder) }
-      : row,
-  );
+  return rows.map((row) => (row.categoryId === categoryId ? withLevel(row, level) : row));
 }
 
 /** Round each share to cents, the last part absorbs the remainder so parts always add up to the total. */
@@ -112,25 +138,34 @@ function splitEvenly(totalCents: number, parts: number): number[] {
   return Array.from({ length: parts }, (_, i) => (i === parts - 1 ? totalCents - share * (parts - 1) : share));
 }
 
-/** 100% split evenly across domains, then evenly across a domain's lines — same as backend Tt02Catalog.WeightsByDomain. */
+/**
+ * 100% split evenly across the domains that have required lines, then evenly across those lines —
+ * same as backend Tt02Catalog.RequirementsFor. "Not required" lines get 0.
+ */
 export function distributeWeightsByDomain<T extends DomainRow>(rows: T[]): T[] {
-  const groups = groupByDomain(rows);
-  const domainCents = splitEvenly(TOTAL_CENTS, groups.length);
+  const groups = groupByDomain(requiredRows(rows));
   const weights = new Map<string, number>();
-  groups.forEach((group, g) => {
-    splitEvenly(domainCents[g], group.rows.length).forEach((cents, i) => weights.set(group.rows[i].competencyId, cents / 100));
-  });
-  return rows.map((row) => ({ ...row, weightPercent: weights.get(row.competencyId) ?? row.weightPercent }));
+  if (groups.length > 0) {
+    const domainCents = splitEvenly(TOTAL_CENTS, groups.length);
+    groups.forEach((group, g) => {
+      splitEvenly(domainCents[g], group.rows.length).forEach((cents, i) => weights.set(group.rows[i].competencyId, cents / 100));
+    });
+  }
+  return rows.map((row) => ({ ...row, weightPercent: weights.get(row.competencyId) ?? 0 }));
 }
 
-/** Circular codes not yet in the set — activation is blocked server-side until this is empty. */
-export function missingFrameworkCodes(rows: Pick<DomainRow, 'frameworkCode'>[]): string[] {
-  const present = new Set(rows.map((r) => r.frameworkCode).filter(Boolean));
-  return TT02_COMPETENCY_CODES.filter((code) => !present.has(code));
+/** What still blocks activation: 9–24 competencies and the core safety competencies (server enforces the same). */
+export function activationIssues(rows: DomainRow[]): ActivationIssues {
+  const required = requiredRows(rows);
+  const present = new Set(required.map((r) => r.frameworkCode));
+  return {
+    requiredCount: required.length,
+    isCountValid: required.length >= MIN_REQUIREMENT_COUNT && required.length <= TT02_COMPETENCY_CODES.length,
+    missingCore: CORE_COMPETENCY_CODES.filter((code) => !present.has(code)),
+  };
 }
 
 export function toDomainRow(source: CompetencySource, level: number = DEFAULT_DRAFT_LEVEL): DomainRow {
-  const sortOrder = source.categorySortOrder ?? 0;
   return {
     competencyId: source.id,
     competencyCode: source.code,
@@ -138,16 +173,23 @@ export function toDomainRow(source: CompetencySource, level: number = DEFAULT_DR
     frameworkCode: source.frameworkCode ?? null,
     categoryId: source.categoryId,
     categoryName: source.categoryName,
-    categorySortOrder: sortOrder,
+    categorySortOrder: source.categorySortOrder ?? 0,
     requiredLevel: level,
     weightPercent: 0,
-    isMandatory: isMandatoryForDomain(level, sortOrder),
+    isMandatory: isMandatoryFor(level, source.frameworkCode),
     requiresPracticalEvidence: true,
     note: '',
   };
 }
 
-/** New draft: every framework competency at Intermediate, weights split by domain. */
+/** Saved lines plus a "Not required" row for every framework competency the set does not contain. */
+export function mergeWithFramework<T extends DomainRow>(rows: T[], competencies: CompetencySource[]): (T | DomainRow)[] {
+  const present = new Set(rows.map((r) => r.competencyId));
+  const missing = competencies.filter((c) => c.frameworkCode && !present.has(c.id)).map((c) => toDomainRow(c, NOT_REQUIRED));
+  return [...rows, ...missing];
+}
+
+/** New draft: every framework competency at Intermediate, weights split by domain — HR then trims and adjusts. */
 export function buildDraftRows(competencies: CompetencySource[]): DomainRow[] {
   const rows = competencies.filter((c) => c.frameworkCode).map((c) => toDomainRow(c));
   return distributeWeightsByDomain(groupByDomain(rows).flatMap((g) => g.rows));

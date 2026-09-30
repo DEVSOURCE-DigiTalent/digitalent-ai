@@ -11,18 +11,22 @@ import {
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { apiErrorMessage } from '@/lib/utils';
 import { toast } from 'sonner';
-import { CheckCircle2, Save, AlertCircle, Scale, ListPlus } from 'lucide-react';
+import { CheckCircle2, Save, AlertCircle, Scale } from 'lucide-react';
 import type { PositionRequirementItemInput, PositionRequirementItemDto, CompetencyListItem } from '@/services/competency.service';
 import { RequirementDomainSection, type EditableRequirementRow } from '../components/RequirementDomainSection';
 import {
+  MIN_REQUIREMENT_COUNT,
+  TT02_COMPETENCY_CODES,
+  activationIssues,
   applyLevelToDomain,
   buildDraftRows,
   distributeWeightsByDomain,
-  domainLevel,
   groupByDomain,
-  missingFrameworkCodes,
-  toDomainRow,
+  mergeWithFramework,
+  requiredRows,
+  setRowLevel,
   type CompetencySource,
+  type DomainRow,
 } from '../utils/requirement-domains';
 
 const toSource = (c: CompetencyListItem): CompetencySource => ({ ...c, categorySortOrder: c.categorySortOrder ?? 0 });
@@ -45,12 +49,13 @@ function fromServer(item: PositionRequirementItemDto): EditableRequirementRow {
   };
 }
 
-const withTempIds = (rows: ReturnType<typeof buildDraftRows>): EditableRequirementRow[] =>
-  rows.map((row) => ({ ...row, tempId: `new-${row.competencyId}` }));
+const withTempIds = (rows: DomainRow[]): EditableRequirementRow[] =>
+  rows.map((row) => ({ ...row, tempId: (row as Partial<EditableRequirementRow>).tempId ?? `new-${row.competencyId}` }));
 
 /**
- * Position requirement editor — Circular 02/2025 (D-B4): a set always holds all 24 competencies, grouped by the
- * 6 domains; a level can be applied to a whole domain and still be adjusted per line; lines cannot be removed.
+ * Position requirement editor — Circular 02/2025 (D-B7): the whole framework is always listed, grouped by the 6
+ * domains; each competency is set to a level or "Not required" for the job (9–24 required, core 4.1 and 4.2 always);
+ * a level can be applied to a whole domain and still be adjusted per line.
  */
 export function PositionRequirementsPage() {
   const { can } = usePermission();
@@ -75,10 +80,11 @@ export function PositionRequirementsPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const competencies = useMemo(() => (competenciesData?.items ?? []).map(toSource), [competenciesData]);
 
-  // Server set → editable rows; a position without any set starts from a full 24-line draft.
+  // Server set → editable rows (+ "Not required" rows for the rest of the framework);
+  // a position without any set starts from a full draft that HR trims.
   useEffect(() => {
     if (reqData?.items?.length) {
-      setItems(reqData.items.map(fromServer));
+      setItems(withTempIds(mergeWithFramework(reqData.items.map(fromServer), competencies)));
     } else if (reqData && !reqData.id) {
       setItems(withTempIds(buildDraftRows(competencies)));
     } else {
@@ -87,8 +93,9 @@ export function PositionRequirementsPage() {
   }, [reqData, competencies]);
 
   const groups = useMemo(() => groupByDomain(items), [items]);
-  const missingCodes = useMemo(() => missingFrameworkCodes(items), [items]);
-  const totalWeight = Math.round(items.reduce((sum, item) => sum + (Number(item.weightPercent) || 0), 0) * 100) / 100;
+  const issues = useMemo(() => activationIssues(items), [items]);
+  const selected = useMemo(() => requiredRows(items), [items]);
+  const totalWeight = Math.round(selected.reduce((sum, item) => sum + (Number(item.weightPercent) || 0), 0) * 100) / 100;
   const isWeightValid = Math.abs(totalWeight - 100) < 0.01;
   const isSaving = createDraftMutation.isPending || updateDraftMutation.isPending || activateMutation.isPending;
   const canEdit = canManage && !isSaving;
@@ -98,23 +105,12 @@ export function PositionRequirementsPage() {
   const handleRowChange = (competencyId: string, field: string, value: number | boolean | string) =>
     setItems((prev) => prev.map((row) => (row.competencyId === competencyId ? { ...row, [field]: value } : row)));
 
-  const handleAddMissing = () => {
-    const present = new Set(items.map((i) => i.competencyId));
-    const additions = competencies
-      .filter((c) => c.frameworkCode && missingCodes.includes(c.frameworkCode) && !present.has(c.id))
-      .map((c) => {
-        const domainRows = items.filter((i) => i.categoryId === c.categoryId);
-        return { ...toDomainRow(c, domainRows.length ? domainLevel(domainRows) : 2), tempId: `new-${c.id}` };
-      });
-    setItems((prev) => distributeWeightsByDomain([...prev, ...additions]));
-  };
-
   const handleSaveDraft = async () => {
-    if (!selectedPositionId || items.length === 0) {
-      toast.error('Select a job position with competency requirements first');
+    if (!selectedPositionId || selected.length === 0) {
+      toast.error('Set a required level for at least one competency first');
       return;
     }
-    const payloadItems: PositionRequirementItemInput[] = items.map((i) => ({
+    const payloadItems: PositionRequirementItemInput[] = selected.map((i) => ({
       competencyId: i.competencyId,
       requiredLevel: Number(i.requiredLevel),
       weightPercent: Number(i.weightPercent),
@@ -149,9 +145,11 @@ export function PositionRequirementsPage() {
     ? 'Save the draft before activating'
     : reqData.status === 'ACTIVE'
       ? 'This version is already active'
-      : missingCodes.length > 0
-        ? `Missing competencies: ${missingCodes.join(', ')}`
-        : !isWeightValid
+      : !issues.isCountValid
+        ? `Select ${MIN_REQUIREMENT_COUNT}–${TT02_COMPETENCY_CODES.length} competencies (currently ${issues.requiredCount})`
+        : issues.missingCore.length > 0
+          ? `Core competencies missing: ${issues.missingCore.join(', ')}`
+          : !isWeightValid
           ? 'Weights must total 100% to activate'
           : null;
 
@@ -159,7 +157,7 @@ export function PositionRequirementsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Position Requirements"
-        subtitle="Required level and weight of the 24 competencies of the national digital competence framework (Circular 02/2025) for each job position"
+        subtitle="Pick the competencies of the national digital competence framework (Circular 02/2025) each job position needs, with their required level and weight"
       />
 
       <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -202,6 +200,16 @@ export function PositionRequirementsPage() {
               />
             </div>
             <div className="flex items-center gap-2">
+              <span className="text-slate-500">Competencies:</span>
+              <span
+                className={`font-bold px-2 py-0.5 rounded text-xs ${
+                  issues.isCountValid ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                }`}
+              >
+                {issues.requiredCount} of {TT02_COMPETENCY_CODES.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
               <span className="text-slate-500">Total Weight:</span>
               <span
                 className={`font-bold px-2 py-0.5 rounded text-xs ${
@@ -215,22 +223,23 @@ export function PositionRequirementsPage() {
         )}
       </div>
 
-      {missingCodes.length > 0 && items.length > 0 && (
-        <div role="alert" className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      {items.length > 0 && (!issues.isCountValid || issues.missingCore.length > 0) && (
+        <div role="alert" className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           <AlertCircle className="w-5 h-5 shrink-0" />
-          <p className="flex-1">
-            A requirement set must include all 24 competencies of the national digital competence framework (Circular
-            02/2025) before it can be activated. Missing: <strong>{missingCodes.join(', ')}</strong>.
-          </p>
-          {canEdit && (
-            <button
-              type="button"
-              onClick={handleAddMissing}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-900 bg-white border border-amber-300 rounded-md hover:bg-amber-100"
-            >
-              <ListPlus className="w-3.5 h-3.5" /> Add missing competencies
-            </button>
-          )}
+          <div className="space-y-1">
+            {!issues.isCountValid && (
+              <p>
+                A requirement set needs between {MIN_REQUIREMENT_COUNT} and {TT02_COMPETENCY_CODES.length} competencies
+                before it can be activated (currently <strong>{issues.requiredCount}</strong>).
+              </p>
+            )}
+            {issues.missingCore.length > 0 && (
+              <p>
+                The core safety competencies are required for every position. Missing:{' '}
+                <strong>{issues.missingCore.join(', ')}</strong>.
+              </p>
+            )}
+          </div>
         </div>
       )}
 
@@ -239,7 +248,8 @@ export function PositionRequirementsPage() {
           <div>
             <h3 className="font-semibold text-slate-900">Required Competency Matrix</h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Grouped by the 6 domains · Basic / Intermediate / Advanced = Circular tiers 1–2 / 3–4 / 5–6 · weights total 100%
+              Grouped by the 6 domains · set "Not required" for competencies the job does not need · Basic / Intermediate /
+              Advanced = Circular tiers 1–2 / 3–4 / 5–6 · weights total 100%
             </p>
           </div>
           {canManage && (
@@ -302,6 +312,7 @@ export function PositionRequirementsPage() {
                   group={group}
                   canEdit={canEdit}
                   onRowChange={handleRowChange}
+                  onRowLevelChange={(competencyId, level) => setItems((prev) => setRowLevel(prev, competencyId, level))}
                   onApplyDomainLevel={(categoryId, level) => setItems((prev) => applyLevelToDomain(prev, categoryId, level))}
                 />
               ))}
