@@ -109,6 +109,41 @@ public class RecommendationUseCaseTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task Get_CourseEntryIgnoresCompetenciesThePositionDoesNotRequire()
+    {
+        // D-B7: vị trí không yêu cầu mọi năng lực của miền. K1 dạy DATA_LITERACY (vị trí cần, đang mức 1) và một năng lực
+        // vị trí không yêu cầu (chưa có mức nào). K1 có tiên quyết chưa học → chỉ còn xét theo mức; năng lực ngoài bộ
+        // tiêu chuẩn không được kéo mức thấp nhất xuống 0.
+        var world = await CreateWorldAsync();
+        var courses = await AddSpecCoursesAsync(world);
+        var notRequired = new Domain.Entities.Competency
+        {
+            CategoryId = world.Competencies["DATA_LITERACY"].CategoryId,
+            Code = $"EXTRA_{Guid.NewGuid():N}"[..20],
+            Name = "Not required by the position",
+            CompetencyType = Statuses.CompetencyType.CoreDigital,
+            Status = Statuses.Competency.Active,
+        };
+        world.Context.Competencies.Add(notRequired);
+        world.Context.CourseCompetencies.Add(new CourseCompetency
+        {
+            CourseId = courses["K1"].Id,
+            CompetencyId = notRequired.Id,
+            TargetLevel = 2,
+            CoverageType = Statuses.CourseCoverageType.Primary,
+        });
+        world.Context.CoursePrerequisites.Add(new CoursePrerequisite { CourseId = courses["K1"].Id, PrerequisiteCourseId = courses["K2"].Id });
+        await world.Context.SaveChangesAsync();
+        await CalculateGapAsync(world, world.Analyst);
+
+        var result = await Recommendations(world, world.HrManager())
+            .ExecuteAsync(new GetCourseRecommendationsUseCaseInput { EmployeeId = world.Analyst.Id });
+
+        result.Items.Select(i => i.CourseCode).Should().Contain("K1");
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task Get_GoldenExample_RanksK3K2K1AndExcludesDraft()
     {
         var world = await CreateWorldAsync();

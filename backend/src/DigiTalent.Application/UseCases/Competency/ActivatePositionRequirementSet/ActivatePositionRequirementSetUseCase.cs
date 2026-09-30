@@ -13,11 +13,16 @@ public class ActivatePositionRequirementSetUseCase : IUseCase<ActivatePositionRe
 {
     /// <summary>Mã lỗi trả về errors[].message (field "items") để FE dịch.</summary>
     public const string CompetencyNotInFramework = "COMPETENCY_NOT_IN_FRAMEWORK";
-    public const string FrameworkCompetencyMissing = "FRAMEWORK_COMPETENCY_MISSING";
+    public const string RequirementCountOutOfRange = "REQUIREMENT_COUNT_OUT_OF_RANGE";
+    public const string CoreCompetencyMissing = "CORE_COMPETENCY_MISSING";
 
-    /// <summary>MSG07 (SRS §7.3.3) — thay quy tắc 9–14 năng lực, quyết định D-B4.</summary>
-    public const string FrameworkCompetencyMissingMessage =
-        "A requirement set must include all 24 competencies of the national digital competence framework (Circular 02/2025) before it can be activated.";
+    /// <summary>MSG07 (SRS §7.3.3) — quyết định D-B7: vị trí chọn 9–24 năng lực của khung, không bắt buộc đủ 24.</summary>
+    public const string RequirementCountMessage =
+        "A requirement set needs between 9 and 24 competencies of the national digital competence framework (Circular 02/2025) before it can be activated";
+
+    /// <summary>MSG07b — năng lực lõi về an toàn bắt buộc với mọi vị trí.</summary>
+    public const string CoreCompetencyMessage =
+        "A requirement set must include the core safety competencies 4.1 (protecting devices) and 4.2 (protecting personal data and privacy).";
 
     private const decimal RequiredTotalWeightPercent = 100m;
 
@@ -107,8 +112,8 @@ public class ActivatePositionRequirementSetUseCase : IUseCase<ActivatePositionRe
     }
 
     /// <summary>
-    /// D-B4: mọi dòng phải là năng lực có mapping tới khung Thông tư 02/2025 đang active,
-    /// và bộ tiêu chuẩn phải có đủ 24 năng lực của khung. Bản nháp được phép thiếu; chỉ chặn khi kích hoạt.
+    /// D-B7 (thay D-B4): mọi dòng phải là năng lực có mapping tới khung Thông tư 02/2025 đang active; vị trí chọn
+    /// từ 9 đến 24 năng lực phù hợp công việc và luôn có năng lực lõi 4.1, 4.2. Bản nháp được phép thiếu; chỉ chặn khi kích hoạt.
     /// </summary>
     private async Task EnsureCoversNationalFrameworkAsync(IReadOnlyList<Guid> competencyIds)
     {
@@ -137,13 +142,21 @@ public class ActivatePositionRequirementSetUseCase : IUseCase<ActivatePositionRe
         }
 
         var covered = mapped.Select(m => m.SourceCode).ToHashSet();
-        var missing = CompetencyFrameworks.Tt02.CompetencyCodes.Where(code => !covered.Contains(code)).ToList();
-        if (missing.Count > 0)
+        if (covered.Count < CompetencyFrameworks.Tt02.MinRequirementCount)
         {
             throw new BadRequestException(
-                $"{FrameworkCompetencyMissingMessage} Missing: {string.Join(", ", missing)}.",
+                $"{RequirementCountMessage} (current: {covered.Count}).",
                 "items",
-                FrameworkCompetencyMissing);
+                RequirementCountOutOfRange);
+        }
+
+        var missingCore = CompetencyFrameworks.Tt02.CoreCompetencyCodes.Where(code => !covered.Contains(code)).ToList();
+        if (missingCore.Count > 0)
+        {
+            throw new BadRequestException(
+                $"{CoreCompetencyMessage} Missing: {string.Join(", ", missingCore)}.",
+                "items",
+                CoreCompetencyMissing);
         }
     }
 }

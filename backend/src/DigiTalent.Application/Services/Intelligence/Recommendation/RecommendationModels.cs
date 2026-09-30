@@ -30,8 +30,8 @@ public sealed record CandidateCourse(
 
 /// <summary>
 /// Điều kiện vào khóa (B7, căn cứ khung chương trình A7): đã hoàn thành mọi khóa tiên quyết (course_prerequisites),
-/// HOẶC mức đã xác nhận thấp nhất trên mọi năng lực của khóa ≥ mức khóa − 1 (được bỏ qua khóa thấp nếu đã đạt).
-/// MinConfirmedLevel: năng lực chưa xác nhận tính 0. CourseLevel: target_level cao nhất của khóa.
+/// HOẶC mức đã xác nhận thấp nhất trên các năng lực của khóa mà vị trí có yêu cầu ≥ mức khóa − 1 (được bỏ qua khóa thấp nếu đã đạt).
+/// MinConfirmedLevel: năng lực chưa xác nhận tính 0. CourseLevel: target_level cao nhất trong các năng lực đó.
 /// </summary>
 public sealed record CourseEligibility(bool PrerequisitesCompleted, short MinConfirmedLevel, short CourseLevel)
 {

@@ -53,11 +53,9 @@ public class CourseEligibilityTests
     public void Rank_AccountantAllBasic_RecommendsNextIntermediateCourses()
     {
         var accountant = Tt02Catalog.Positions.Single(p => p.Code == "ACCOUNTANT");
-        var weights = Tt02Catalog.WeightsByDomain(Tt02Catalog.Domains.Select(d => d.Competencies.Length).ToList());
         var competencyIds = Tt02Catalog.CompetencyCodes.ToDictionary(code => code, _ => Guid.NewGuid());
-        var requirements = Tt02Catalog.Domains
-            .SelectMany((domain, d) => domain.Competencies.Select((c, i) => new SkillGapRequirementLine(
-                competencyIds[c.SourceCode], accountant.DomainLevels[d], weights[d][i], accountant.IsMandatoryDomain(domain.Number))))
+        var requirements = Tt02Catalog.RequirementsFor(accountant)
+            .Select(r => new SkillGapRequirementLine(competencyIds[r.SourceCode], r.RequiredLevel, r.WeightPercent, r.Mandatory))
             .ToList();
         var skillGap = SkillGapCalculator.Calculate(requirements, competencyIds.Values.ToDictionary(id => id, _ => (short)1), SkillGapSettings.Default);
         var gaps = skillGap.Items
@@ -80,9 +78,10 @@ public class CourseEligibilityTests
 
         var ranked = CourseRecommender.Rank(gaps, courses, RecommendationWeights.Default, limit: 10);
 
-        // Số tính tay: spec Sprint 3 §5.3 (bản TT02). A1-A, A4-A chỉ mở sau khi xong khóa -I tương ứng.
-        ranked.Select(r => r.Course.Code).Should().Equal("A4-I", "A1-I", "A5-I", "A2-I", "M6-I");
-        ranked.Select(r => r.Score).Should().Equal(33.10m, 30.24m, 17.78m, 17.78m, 17.77m);
-        ranked[0].Breakdown.Should().Be(new RecommendationBreakdown(GapPriorityCoverage: 11.67m, MandatoryCoverage: 11.43m, EntryLevelFit: 10m));
+        // Số tính tay: spec Sprint 3 §5.3.1 (ma trận theo từng năng lực). Khóa -A chỉ mở sau khi xong khóa -I tương ứng.
+        // A5-I và A3-I hòa điểm và thời lượng → xếp theo tên khóa.
+        ranked.Select(r => r.Course.Code).Should().Equal("A1-I", "A4-I", "A2-I", "M6-I", "A5-I", "A3-I");
+        ranked.Select(r => r.Score).Should().Equal(32.00m, 28.51m, 23.62m, 16.99m, 15.25m, 15.25m);
+        ranked[0].Breakdown.Should().Be(new RecommendationBreakdown(GapPriorityCoverage: 14.00m, MandatoryCoverage: 8m, EntryLevelFit: 10m));
     }
 }

@@ -7,12 +7,21 @@ public static class CompetencyFrameworks
 {
     /// <summary>
     /// Khung năng lực số — Thông tư 02/2025/TT-BGDĐT: 6 miền, 24 năng lực thành phần.
-    /// Bộ tiêu chuẩn vị trí phải có đủ 24 năng lực này mới được kích hoạt (quyết định D-B4, 29/09/2026).
+    /// Bộ tiêu chuẩn vị trí chọn các năng lực phù hợp công việc (quyết định D-B7, 30/09/2026 — thay D-B4 "đủ 24"):
+    /// mọi dòng phải thuộc khung, từ 9 đến 24 năng lực, và luôn có các năng lực lõi về an toàn.
     /// </summary>
     public static class Tt02
     {
         public const string Code = "TT02_2025";
         public const string Version = "02/2025/TT-BGDĐT";
+
+        /// <summary>Số năng lực tối thiểu của một bộ tiêu chuẩn (SRS gốc: 9–14; nay 9–24).</summary>
+        public const int MinRequirementCount = 9;
+
+        /// <summary>
+        /// Bắt buộc với mọi vị trí: 4.1 Bảo vệ thiết bị, 4.2 Bảo vệ dữ liệu cá nhân và quyền riêng tư (Nghị định 13/2023).
+        /// </summary>
+        public static readonly IReadOnlyList<string> CoreCompetencyCodes = new[] { "4.1", "4.2" };
 
         public static readonly IReadOnlyList<string> CompetencyCodes = new[]
         {

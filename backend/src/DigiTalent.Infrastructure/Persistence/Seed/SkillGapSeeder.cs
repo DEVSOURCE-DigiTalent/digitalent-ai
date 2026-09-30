@@ -9,8 +9,8 @@ namespace DigiTalent.Infrastructure.Persistence.Seed;
 /// Dữ liệu cho Skill Gap Engine & gợi ý khóa học. Chạy lại nhiều lần vẫn an toàn.
 ///   - Reference (mọi môi trường): tham số skill gap + trọng số gợi ý khóa học v1 cho mỗi tổ chức.
 ///   - Demo (chỉ Development): Khung năng lực số Thông tư 02/2025 (6 miền, 24 năng lực, mapping),
-///     5 vị trí theo ma trận vị trí × miền, 18 khóa học F/I/A có tiên quyết, employee@ là Kế toán đã xác nhận
-///     mọi năng lực ở mức Cơ bản — docs/specs/2026-09-29-tt02-position-competency-matrix.md §3–§8.
+///     5 vị trí theo ma trận vị trí × năng lực (mỗi vị trí chọn năng lực phù hợp, D-B7), 18 khóa học F/I/A có tiên quyết,
+///     employee@ là Kế toán đã có mức Cơ bản ở mọi năng lực (giả lập kết quả đánh giá đầu vào) — docs/specs/2026-09-29-tt02-position-competency-matrix.md §3–§8.
 /// </summary>
 public static class SkillGapSeeder
 {
@@ -188,7 +188,6 @@ public static class SkillGapSeeder
         var family = new JobFamily { OrganizationId = organizationId, Code = "OFFICE", Name = "Khối văn phòng" };
         db.JobFamilies.Add(family);
 
-        var weights = Tt02Catalog.WeightsByDomain(Tt02Catalog.Domains.Select(d => d.Competencies.Length).ToList());
         var now = DateTimeOffset.UtcNow;
         var result = new Dictionary<string, JobPosition>();
         foreach (var definition in Tt02Catalog.Positions)
@@ -212,20 +211,16 @@ public static class SkillGapSeeder
                 ActivatedByUserId = hrUserId,
                 ActivatedAt = now,
             };
-            for (var d = 0; d < Tt02Catalog.Domains.Length; d++)
+            foreach (var line in Tt02Catalog.RequirementsFor(definition))
             {
-                var domain = Tt02Catalog.Domains[d];
-                for (var c = 0; c < domain.Competencies.Length; c++)
+                set.Items.Add(new PositionRequirementItem
                 {
-                    set.Items.Add(new PositionRequirementItem
-                    {
-                        RequirementSetId = set.Id,
-                        CompetencyId = competencies[domain.Competencies[c].SourceCode].Id,
-                        RequiredLevel = definition.DomainLevels[d],
-                        WeightPercent = weights[d][c],
-                        IsMandatory = definition.IsMandatoryDomain(domain.Number),
-                    });
-                }
+                    RequirementSetId = set.Id,
+                    CompetencyId = competencies[line.SourceCode].Id,
+                    RequiredLevel = line.RequiredLevel,
+                    WeightPercent = line.WeightPercent,
+                    IsMandatory = line.Mandatory,
+                });
             }
             db.PositionRequirementSets.Add(set);
             result[definition.Code] = position;

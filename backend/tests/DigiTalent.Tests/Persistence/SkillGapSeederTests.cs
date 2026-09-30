@@ -54,13 +54,14 @@ public class SkillGapSeederTests
         mappings.Single(m => m.SourceCode == "6.3").SourceAreaCode.Should().Be("6");
     }
 
+    // D-B7: mỗi vị trí chọn năng lực phù hợp công việc; bắt buộc = mức Nâng cao + năng lực lõi 4.1, 4.2
     [Theory]
-    [InlineData("CEO", 20)]
-    [InlineData("HR", 10)]
-    [InlineData("MARKETING", 24)]
-    [InlineData("SALES_CRM", 10)]
-    [InlineData("ACCOUNTANT", 7)]
-    public async Task DevelopmentSeed_EachPositionHasAll24CompetenciesWeighted100(string positionCode, int mandatoryCount)
+    [InlineData("CEO", 21, 15)]
+    [InlineData("HR", 23, 7)]
+    [InlineData("MARKETING", 22, 16)]
+    [InlineData("SALES_CRM", 20, 7)]
+    [InlineData("ACCOUNTANT", 21, 5)]
+    public async Task DevelopmentSeed_EachPositionSelectsItsCompetenciesWeighted100(string positionCode, int lineCount, int mandatoryCount)
     {
         using var context = await SeededTwiceAsync();
 
@@ -69,7 +70,7 @@ public class SkillGapSeederTests
             .Include(s => s.Items)
             .SingleAsync(s => s.JobPositionId == position.Id && s.Status == Statuses.PositionRequirementSet.Active);
 
-        set.Items.Should().HaveCount(24);
+        set.Items.Should().HaveCount(lineCount);
         set.Items.Sum(i => i.WeightPercent).Should().Be(100.00m);
         set.Items.Count(i => i.IsMandatory).Should().Be(mandatoryCount);
         set.Items.Should().OnlyContain(i => i.RequiredLevel >= 1 && i.RequiredLevel <= 3);
@@ -89,19 +90,28 @@ public class SkillGapSeederTests
                            select new { m.SourceAreaCode, m.SourceCode, i.RequiredLevel, i.WeightPercent, i.IsMandatory })
             .ToListAsync();
 
-        // Kế toán: miền 1 Nâng cao, 2 Trung bình, 3 Cơ bản, 4 Nâng cao, 5 Trung bình, 6 Trung bình; bắt buộc miền 1 và 4
-        var expectedLevel = new Dictionary<string, int> { ["1"] = 3, ["2"] = 2, ["3"] = 1, ["4"] = 3, ["5"] = 2, ["6"] = 2 };
-        items.Should().OnlyContain(i => i.RequiredLevel == expectedLevel[i.SourceAreaCode!]);
-        items.Where(i => i.IsMandatory).Select(i => i.SourceAreaCode).Distinct().Should().BeEquivalentTo(new[] { "1", "4" });
+        // Kế toán (ma trận §4 của tài liệu TT02): mức theo từng năng lực, 3.2 / 3.3 / 4.4 không yêu cầu
+        var levels = items.ToDictionary(i => i.SourceCode, i => i.RequiredLevel);
+        levels.Should().NotContainKeys("3.2", "3.3", "4.4");
+        levels.Should().Contain(new Dictionary<string, int>
+        {
+            ["1.1"] = 2, ["1.2"] = 3, ["1.3"] = 3,
+            ["2.3"] = 3, ["2.5"] = 1,   // thuế / hóa đơn điện tử cao hơn mức chung của miền 2
+            ["3.1"] = 1, ["3.4"] = 2,
+            ["4.1"] = 2, ["4.2"] = 3, ["4.3"] = 1,
+            ["6.1"] = 1, ["6.3"] = 2,
+        });
+        items.Where(i => i.IsMandatory).Select(i => i.SourceCode).Should().BeEquivalentTo(new[] { "1.2", "1.3", "2.3", "4.1", "4.2" });
 
-        // Trọng số chia đều theo miền: 16.67 × 5 + 16.65, phần dư dồn vào dòng cuối của miền
+        // Trọng số chia đều theo miền rồi trong miền (chỉ trên các dòng có yêu cầu), phần dư dồn vào dòng cuối
         items.GroupBy(i => i.SourceAreaCode).ToDictionary(g => g.Key!, g => g.Sum(i => i.WeightPercent))
             .Should().BeEquivalentTo(new Dictionary<string, decimal>
             {
                 ["1"] = 16.67m, ["2"] = 16.67m, ["3"] = 16.67m, ["4"] = 16.67m, ["5"] = 16.67m, ["6"] = 16.65m,
             });
-        items.Single(i => i.SourceCode == "4.2").WeightPercent.Should().Be(4.17m);
-        items.Single(i => i.SourceCode == "4.4").WeightPercent.Should().Be(4.16m);
+        items.Single(i => i.SourceCode == "4.2").WeightPercent.Should().Be(5.56m);
+        items.Single(i => i.SourceCode == "3.1").WeightPercent.Should().Be(8.34m);
+        items.Single(i => i.SourceCode == "3.4").WeightPercent.Should().Be(8.33m);
     }
 
     [Fact]

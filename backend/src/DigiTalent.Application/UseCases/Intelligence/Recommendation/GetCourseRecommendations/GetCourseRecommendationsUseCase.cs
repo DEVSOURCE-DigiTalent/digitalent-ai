@@ -61,7 +61,7 @@ public class GetCourseRecommendationsUseCase : IUseCase<GetCourseRecommendations
             return WithReason(output, RecommendationEmptyReasons.NoGap);
         }
 
-        var candidates = await LoadCandidateCoursesAsync(organizationId, employee.Id, gaps.Select(g => g.CompetencyId).ToList());
+        var candidates = await LoadCandidateCoursesAsync(organizationId, employee.Id, run.Id, gaps.Select(g => g.CompetencyId).ToList());
         var ranked = CourseRecommender.Rank(gaps, candidates, weights, input.Limit);
         if (ranked.Count == 0)
         {
@@ -117,7 +117,8 @@ public class GetCourseRecommendationsUseCase : IUseCase<GetCourseRecommendations
     /// Khóa PUBLISHED dạy ít nhất 1 năng lực đang thiếu, và là version PUBLISHED mới nhất của code đó
     /// trong toàn tổ chức (spec §5.6 R1) — kèm trạng thái enrollment của nhân viên (R2).
     /// </summary>
-    private async Task<List<CandidateCourse>> LoadCandidateCoursesAsync(Guid organizationId, Guid employeeId, List<Guid> gapCompetencyIds)
+    private async Task<List<CandidateCourse>> LoadCandidateCoursesAsync(
+        Guid organizationId, Guid employeeId, Guid skillGapRunId, List<Guid> gapCompetencyIds)
     {
         var courses = _context.Courses.AsNoTracking();
         var rows = await (
@@ -159,7 +160,7 @@ public class GetCourseRecommendationsUseCase : IUseCase<GetCourseRecommendations
             .Where(e => e.Status != Statuses.Enrollment.Completed && e.Status != Statuses.Enrollment.Cancelled)
             .GroupBy(e => e.CourseId)
             .ToDictionary(g => g.Key, g => g.First().Status);
-        var eligibility = await LoadEligibilityAsync(employeeId, courseIds);
+        var eligibility = await LoadEligibilityAsync(employeeId, skillGapRunId, courseIds);
 
         return rows
             .GroupBy(r => r.Id)
@@ -182,13 +183,17 @@ public class GetCourseRecommendationsUseCase : IUseCase<GetCourseRecommendations
 
     /// <summary>
     /// Điều kiện vào khóa (B7): tiên quyết đã COMPLETED (so theo mã khóa để chấp nhận mọi version),
-    /// và mức đã xác nhận thấp nhất trên MỌI năng lực của khóa (không chỉ năng lực đang thiếu).
+    /// và mức đã xác nhận thấp nhất trên các năng lực của khóa mà VỊ TRÍ CÓ YÊU CẦU — kể cả năng lực đã đạt,
+    /// nhưng bỏ qua năng lực vị trí không yêu cầu (D-B7: vị trí không cần mọi năng lực của miền).
     /// </summary>
-    private async Task<Dictionary<Guid, CourseEligibility>> LoadEligibilityAsync(Guid employeeId, List<Guid> courseIds)
+    private async Task<Dictionary<Guid, CourseEligibility>> LoadEligibilityAsync(Guid employeeId, Guid skillGapRunId, List<Guid> courseIds)
     {
+        var requiredCompetencyIds = _context.SkillGapItems
+            .Where(i => i.SkillGapRunId == skillGapRunId)
+            .Select(i => i.CompetencyId);
         var teachings = await _context.CourseCompetencies
             .AsNoTracking()
-            .Where(t => courseIds.Contains(t.CourseId))
+            .Where(t => courseIds.Contains(t.CourseId) && requiredCompetencyIds.Contains(t.CompetencyId))
             .Select(t => new { t.CourseId, t.CompetencyId, t.TargetLevel })
             .ToListAsync();
         var prerequisiteCodes = await (

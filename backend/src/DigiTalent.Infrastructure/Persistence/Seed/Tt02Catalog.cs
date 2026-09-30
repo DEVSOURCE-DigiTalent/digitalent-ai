@@ -125,24 +125,55 @@ public static class Tt02Catalog
 
     public static string CompetencyCode(string sourceCode) => $"TT02-{sourceCode}";
 
-    /// <summary>Vị trí × mức yêu cầu của từng miền 1–6 (§4). Miền 6 là suy luận (§5).</summary>
-    public sealed record PositionDefinition(string Code, string Name, int[] DomainLevels)
+    /// <summary>
+    /// Vị trí × mức yêu cầu của từng năng lực theo thứ tự 1.1 … 6.3 (0 = không yêu cầu, 1–3 = Cơ bản / Trung bình / Nâng cao).
+    /// Quyết định D-B7 (30/09/2026): mỗi vị trí chọn năng lực phù hợp công việc, mức khác nhau theo từng năng lực.
+    /// Mức chủ đạo của mỗi miền vẫn bám bảng A8 của khung chương trình; lý do từng ô ở tài liệu ma trận §4.
+    /// </summary>
+    public sealed record PositionDefinition(string Code, string Name, int[] Levels)
     {
-        /// <summary>D-B2: bắt buộc = miền cần mức Nâng cao + miền 4 (An toàn) cho mọi vị trí.</summary>
-        public bool IsMandatoryDomain(int domainNumber) => DomainLevels[domainNumber - 1] == 3 || domainNumber == 4;
+        public int Level(string sourceCode) => Levels[Array.IndexOf(AllCodes, sourceCode)];
+
+        /// <summary>D-B2 (theo năng lực): bắt buộc = năng lực cần mức Nâng cao + năng lực lõi 4.1, 4.2 cho mọi vị trí.</summary>
+        public bool IsMandatory(string sourceCode) =>
+            Level(sourceCode) == 3 || CompetencyFrameworks.Tt02.CoreCompetencyCodes.Contains(sourceCode);
     }
+
+    private static readonly string[] AllCodes = CompetencyFrameworks.Tt02.CompetencyCodes.ToArray();
 
     public static readonly PositionDefinition[] Positions =
     {
-        new("CEO", "CEO / Giám đốc", new[] { 3, 3, 2, 3, 3, 3 }),
-        new("HR", "Nhân sự (HR)", new[] { 2, 3, 2, 3, 2, 2 }),
-        new("MARKETING", "Marketing", new[] { 3, 3, 3, 2, 3, 3 }),
-        new("SALES_CRM", "Sales / CRM", new[] { 2, 3, 2, 2, 2, 2 }),
-        new("ACCOUNTANT", "Kế toán", new[] { 3, 2, 1, 3, 2, 2 }),
+        //                                      1.1 1.2 1.3  2.1 2.2 2.3 2.4 2.5 2.6  3.1 3.2 3.3 3.4  4.1 4.2 4.3 4.4  5.1 5.2 5.3 5.4  6.1 6.2 6.3
+        new("CEO", "CEO / Giám đốc", new[]      { 2, 3, 3,    3, 3, 2, 3, 3, 3,        2, 0, 2, 0,      3, 3, 2, 2,      0, 3, 3, 3,      3, 3, 3 }),
+        new("HR", "Nhân sự (HR)", new[]         { 2, 2, 2,    3, 2, 2, 3, 3, 2,        2, 1, 1, 0,      2, 3, 3, 1,      1, 2, 2, 3,      2, 2, 1 }),
+        new("MARKETING", "Marketing", new[]     { 3, 3, 2,    3, 3, 0, 3, 3, 3,        3, 3, 3, 2,      2, 2, 1, 0,      1, 2, 3, 2,      3, 3, 3 }),
+        new("SALES_CRM", "Sales / CRM", new[]   { 2, 2, 3,    3, 3, 0, 3, 3, 2,        2, 1, 0, 0,      2, 3, 1, 0,      1, 2, 2, 1,      2, 2, 1 }),
+        new("ACCOUNTANT", "Kế toán", new[]      { 2, 3, 3,    2, 2, 3, 2, 1, 2,        1, 0, 0, 2,      2, 3, 1, 0,      1, 2, 2, 1,      1, 2, 2 }),
     };
 
+    /// <summary>1 dòng yêu cầu của vị trí, đã có trọng số và cờ bắt buộc.</summary>
+    public sealed record RequirementLine(string SourceCode, int DomainNumber, int RequiredLevel, decimal WeightPercent, bool Mandatory);
+
     /// <summary>
-    /// Trọng số chia đều theo miền: 100 chia cho 6 miền, mỗi miền chia đều cho các năng lực của miền.
+    /// Các dòng yêu cầu của vị trí (bỏ năng lực mức 0). Trọng số: 100% chia đều cho các miền có yêu cầu,
+    /// trong miền chia đều cho các năng lực được yêu cầu.
+    /// </summary>
+    public static IReadOnlyList<RequirementLine> RequirementsFor(PositionDefinition position)
+    {
+        var byDomain = Domains
+            .Select(d => (Domain: d, Codes: d.Competencies.Select(c => c.SourceCode).Where(code => position.Level(code) > 0).ToList()))
+            .Where(x => x.Codes.Count > 0)
+            .ToList();
+        var weights = WeightsByDomain(byDomain.Select(x => x.Codes.Count).ToList());
+
+        return byDomain
+            .SelectMany((x, d) => x.Codes.Select((code, i) =>
+                new RequirementLine(code, x.Domain.Number, position.Level(code), weights[d][i], position.IsMandatory(code))))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Trọng số chia đều theo miền: 100 chia cho các miền, mỗi miền chia đều cho các năng lực của miền.
     /// Làm tròn 2 chữ số, phần dư dồn vào phần tử cuối — ở cả hai tầng — nên tổng luôn đúng 100.00.
     /// Giống hàm distributeWeightsByDomain ở FE (PositionRequirementsPage).
     /// </summary>

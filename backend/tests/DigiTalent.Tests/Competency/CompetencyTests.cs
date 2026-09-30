@@ -600,27 +600,65 @@ public class CompetencyTests
         result.Status.Should().Be(Statuses.PositionRequirementSet.Active);
     }
 
+    // D-B7 (30/09/2026): a position picks the competencies relevant to the job — not necessarily all 24.
+
     [Fact]
-    public async Task ActivatePositionRequirementSet_RejectsSetMissingFrameworkCompetencies_ListingMissingCodes()
+    public async Task ActivatePositionRequirementSet_AcceptsSelectionOfFrameworkCompetencies()
     {
         using var context = new AppDbContext(GetOptions(Guid.NewGuid().ToString()));
         var orgId = Guid.NewGuid();
         var competencies = await Tt02TestData.SeedMappedCompetenciesAsync(context, orgId);
         var draft = NewSet(AddPosition(context, orgId).Id, 1, Statuses.PositionRequirementSet.Draft);
-        draft.Items = Tt02TestData.Items(draft.Id, competencies.Where(c => !c.Code.StartsWith("TT02-6."))).ToList();
+        draft.Items = Tt02TestData.Items(draft.Id, competencies.Where(c => !c.Code.StartsWith("TT02-6."))).ToList(); // 21 lines
         context.GetDbSet<PositionRequirementSet>().Add(draft);
         await context.SaveChangesAsync();
 
-        var useCase = new ActivatePositionRequirementSetUseCase(context, CreateCurrentUserMock(orgId).Object);
+        var result = await new ActivatePositionRequirementSetUseCase(context, CreateCurrentUserMock(orgId).Object)
+            .ExecuteAsync(new ActivatePositionRequirementSetUseCaseInput { Id = draft.Id });
 
-        var act = () => useCase.ExecuteAsync(new ActivatePositionRequirementSetUseCaseInput { Id = draft.Id });
+        result.Status.Should().Be(Statuses.PositionRequirementSet.Active);
+    }
+
+    [Fact]
+    public async Task ActivatePositionRequirementSet_RejectsFewerThanNineCompetencies()
+    {
+        using var context = new AppDbContext(GetOptions(Guid.NewGuid().ToString()));
+        var orgId = Guid.NewGuid();
+        var competencies = await Tt02TestData.SeedMappedCompetenciesAsync(context, orgId);
+        var draft = NewSet(AddPosition(context, orgId).Id, 1, Statuses.PositionRequirementSet.Draft);
+        // 8 lines that still contain the core competencies 4.1 and 4.2
+        draft.Items = Tt02TestData.Items(draft.Id, competencies.Where(c => c.Code.StartsWith("TT02-4.") || c.Code.StartsWith("TT02-5."))).ToList();
+        context.GetDbSet<PositionRequirementSet>().Add(draft);
+        await context.SaveChangesAsync();
+
+        var act = () => new ActivatePositionRequirementSetUseCase(context, CreateCurrentUserMock(orgId).Object)
+            .ExecuteAsync(new ActivatePositionRequirementSetUseCaseInput { Id = draft.Id });
 
         var error = (await act.Should().ThrowAsync<BadRequestException>()
-            .WithMessage("A requirement set must include all 24 competencies of the national digital competence framework (Circular 02/2025)*"))
+            .WithMessage("A requirement set needs between 9 and 24 competencies of the national digital competence framework (Circular 02/2025)*"))
             .Which;
-        error.Message.Should().Contain("6.1, 6.2, 6.3");
-        error.Errors.Should().ContainSingle(e => e.Field == "items" && e.Code == ActivatePositionRequirementSetUseCase.FrameworkCompetencyMissing);
+        error.Message.Should().Contain("(current: 8)");
+        error.Errors.Should().ContainSingle(e => e.Field == "items" && e.Code == ActivatePositionRequirementSetUseCase.RequirementCountOutOfRange);
         (await context.GetDbSet<PositionRequirementSet>().FindAsync(draft.Id))!.Status.Should().Be(Statuses.PositionRequirementSet.Draft);
+    }
+
+    [Fact]
+    public async Task ActivatePositionRequirementSet_RejectsSetWithoutCoreSafetyCompetencies()
+    {
+        using var context = new AppDbContext(GetOptions(Guid.NewGuid().ToString()));
+        var orgId = Guid.NewGuid();
+        var competencies = await Tt02TestData.SeedMappedCompetenciesAsync(context, orgId);
+        var draft = NewSet(AddPosition(context, orgId).Id, 1, Statuses.PositionRequirementSet.Draft);
+        draft.Items = Tt02TestData.Items(draft.Id, competencies.Where(c => c.Code != "TT02-4.2")).ToList();
+        context.GetDbSet<PositionRequirementSet>().Add(draft);
+        await context.SaveChangesAsync();
+
+        var act = () => new ActivatePositionRequirementSetUseCase(context, CreateCurrentUserMock(orgId).Object)
+            .ExecuteAsync(new ActivatePositionRequirementSetUseCaseInput { Id = draft.Id });
+
+        var error = (await act.Should().ThrowAsync<BadRequestException>()).Which;
+        error.Message.Should().Contain("Missing: 4.2.");
+        error.Errors.Should().ContainSingle(e => e.Field == "items" && e.Code == ActivatePositionRequirementSetUseCase.CoreCompetencyMissing);
     }
 
     [Fact]
