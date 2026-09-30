@@ -72,6 +72,8 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<Question> Questions => Set<Question>();
     public DbSet<QuestionBank> QuestionBanks => Set<QuestionBank>();
     public DbSet<QuestionOption> QuestionOptions => Set<QuestionOption>();
+    public DbSet<QuestionTag> QuestionTags => Set<QuestionTag>();
+    public DbSet<QuestionTagAssignment> QuestionTagAssignments => Set<QuestionTagAssignment>();
 
     // Certificate
     public DbSet<Certificate> Certificates => Set<Certificate>();

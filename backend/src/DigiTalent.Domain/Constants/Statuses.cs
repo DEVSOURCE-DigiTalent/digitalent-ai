@@ -65,4 +65,19 @@ public static class Statuses
         public const string Active = "ACTIVE";
         public const string Archived = "ARCHIVED";
     }
+
+    /// <summary>question_banks.status</summary>
+    public static class QuestionBank
+    {
+        public const string Active = "ACTIVE";
+        public const string Archived = "ARCHIVED";
+    }
+
+    /// <summary>questions.status</summary>
+    public static class Question
+    {
+        public const string Draft = "DRAFT";
+        public const string Published = "PUBLISHED";
+        public const string Archived = "ARCHIVED";
+    }
 }
