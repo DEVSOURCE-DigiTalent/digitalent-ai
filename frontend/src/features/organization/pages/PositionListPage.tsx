@@ -6,6 +6,7 @@ import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { JobPositionFormDialog } from '../components/JobPositionFormDialog';
 import { JobFamilyFormDialog } from '../components/JobFamilyFormDialog';
 import { toast } from 'sonner';
+import { apiErrorMessage } from '@/lib/utils';
 import { Edit2, Trash2 } from 'lucide-react';
 import type { JobPositionListItem, JobPositionStatus } from '@/services/job-position.service';
 import type { JobFamilyListItem, JobFamilyStatus } from '@/services/job-family.service';
@@ -70,8 +71,8 @@ export function PositionListPage() {
     try {
       await deletePosMutation.mutateAsync(archivingPosition.id);
       toast.success('Job position archived successfully');
-    } catch {
-      toast.error('Failed to archive job position');
+    } catch (error) {
+      toast.error(apiErrorMessage(error, 'Failed to archive job position'));
     } finally {
       setIsPosArchiveOpen(false);
       setArchivingPosition(null);
@@ -93,8 +94,8 @@ export function PositionListPage() {
     try {
       await deleteFamMutation.mutateAsync(archivingFamily.id);
       toast.success('Job family archived successfully');
-    } catch {
-      toast.error('Failed to archive job family');
+    } catch (error) {
+      toast.error(apiErrorMessage(error, 'Failed to archive job family'));
     } finally {
       setIsFamArchiveOpen(false);
       setArchivingFamily(null);

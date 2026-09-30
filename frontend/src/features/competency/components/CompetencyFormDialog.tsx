@@ -6,6 +6,7 @@ import { useCreateCompetency, useUpdateCompetency, useCompetency } from '@/hooks
 import { levelWithTier } from '@/lib/competency-levels';
 import type { CompetencyListItem, CompetencyCriterion } from '@/services/competency.service';
 import { toast } from 'sonner';
+import { apiErrorMessage } from '@/lib/utils';
 import { Plus, Trash2 } from 'lucide-react';
 
 const criterionSchema = z.object({
@@ -148,8 +149,8 @@ export function CompetencyFormDialog({ open, onClose, competency }: CompetencyFo
         toast.success('Competency created successfully');
       }
       onClose();
-    } catch {
-      toast.error(isEditing ? 'Failed to update competency' : 'Failed to create competency');
+    } catch (error) {
+      toast.error(apiErrorMessage(error, isEditing ? 'Failed to update competency' : 'Failed to create competency'));
     }
   };
 

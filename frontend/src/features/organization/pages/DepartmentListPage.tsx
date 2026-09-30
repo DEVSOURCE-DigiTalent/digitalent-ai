@@ -4,6 +4,7 @@ import { useDepartments, useDeleteDepartment } from '@/hooks/use-departments';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { DepartmentFormDialog } from '../components/DepartmentFormDialog';
 import { toast } from 'sonner';
+import { apiErrorMessage } from '@/lib/utils';
 import { Edit2, Trash2 } from 'lucide-react';
 import type { DepartmentListItem, DepartmentStatus } from '@/services/department.service';
 
@@ -46,8 +47,8 @@ export function DepartmentListPage() {
     try {
       await deleteMutation.mutateAsync(archivingDept.id);
       toast.success('Department archived successfully');
-    } catch {
-      toast.error('Failed to archive department');
+    } catch (error) {
+      toast.error(apiErrorMessage(error, 'Failed to archive department'));
     } finally {
       setIsArchiveOpen(false);
       setArchivingDept(null);

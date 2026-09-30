@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useCreateJobFamily, useUpdateJobFamily } from '@/hooks/use-job-families';
 import type { JobFamilyListItem } from '@/services/job-family.service';
 import { toast } from 'sonner';
+import { apiErrorMessage } from '@/lib/utils';
 
 const formSchema = z.object({
   code: z.string().min(1, 'Code is required'),
@@ -84,8 +85,8 @@ export function JobFamilyFormDialog({ open, onClose, family }: JobFamilyFormDial
         toast.success('Job family created successfully');
       }
       onClose();
-    } catch {
-      toast.error(isEditing ? 'Failed to update job family' : 'Failed to create job family');
+    } catch (error) {
+      toast.error(apiErrorMessage(error, isEditing ? 'Failed to update job family' : 'Failed to create job family'));
     }
   };
 

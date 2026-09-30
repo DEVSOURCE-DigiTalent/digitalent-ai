@@ -6,6 +6,7 @@ import { useCreateJobPosition, useUpdateJobPosition } from '@/hooks/use-job-posi
 import { useJobFamilies } from '@/hooks/use-job-families';
 import type { JobPositionListItem } from '@/services/job-position.service';
 import { toast } from 'sonner';
+import { apiErrorMessage } from '@/lib/utils';
 
 const formSchema = z.object({
   code: z.string().min(1, 'Code is required'),
@@ -93,8 +94,8 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
         toast.success('Job position created successfully');
       }
       onClose();
-    } catch {
-      toast.error(isEditing ? 'Failed to update job position' : 'Failed to create job position');
+    } catch (error) {
+      toast.error(apiErrorMessage(error, isEditing ? 'Failed to update job position' : 'Failed to create job position'));
     }
   };
 

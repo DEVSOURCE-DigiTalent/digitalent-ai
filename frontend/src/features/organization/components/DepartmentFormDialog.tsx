@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useDepartments, useCreateDepartment, useUpdateDepartment } from '@/hooks/use-departments';
 import type { DepartmentDto } from '@/services/department.service';
 import { toast } from 'sonner';
+import { apiErrorMessage } from '@/lib/utils';
 
 const formSchema = z.object({
   code: z.string().min(1, 'Code is required'),
@@ -97,8 +98,8 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
         toast.success('Department created successfully');
       }
       onClose();
-    } catch {
-      toast.error(isEditing ? 'Failed to update department' : 'Failed to create department');
+    } catch (error) {
+      toast.error(apiErrorMessage(error, isEditing ? 'Failed to update department' : 'Failed to create department'));
     }
   };
 

@@ -7,6 +7,7 @@ import { useDepartments } from '@/hooks/use-departments';
 import { useJobPositions } from '@/hooks/use-job-positions';
 import type { EmployeeListItem } from '@/services/employee.service';
 import { toast } from 'sonner';
+import { apiErrorMessage } from '@/lib/utils';
 
 const employeeFormSchema = z.object({
   employeeCode: z.string().min(1, 'Employee code is required'),
@@ -115,8 +116,8 @@ export function EmployeeFormDialog({ open, onClose, employee }: EmployeeFormDial
         toast.success('Employee created successfully');
       }
       onClose();
-    } catch {
-      toast.error(isEditing ? 'Failed to update employee' : 'Failed to create employee');
+    } catch (error) {
+      toast.error(apiErrorMessage(error, isEditing ? 'Failed to update employee' : 'Failed to create employee'));
     }
   };
 

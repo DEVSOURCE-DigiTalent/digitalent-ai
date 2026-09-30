@@ -4,6 +4,7 @@ import { useCompetencies, useArchiveCompetency, useCompetency } from '@/hooks/us
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { CompetencyFormDialog } from '../components/CompetencyFormDialog';
 import { toast } from 'sonner';
+import { apiErrorMessage } from '@/lib/utils';
 import { Edit2, Trash2, Eye, X } from 'lucide-react';
 import type { CompetencyListItem } from '@/services/competency.service';
 
@@ -56,8 +57,8 @@ export function CompetencyFrameworkPage() {
     try {
       await archiveMutation.mutateAsync(archivingCompetency.id);
       toast.success('Competency archived successfully');
-    } catch {
-      toast.error('Failed to archive competency');
+    } catch (error) {
+      toast.error(apiErrorMessage(error, 'Failed to archive competency'));
     } finally {
       setIsArchiveOpen(false);
       setArchivingCompetency(null);

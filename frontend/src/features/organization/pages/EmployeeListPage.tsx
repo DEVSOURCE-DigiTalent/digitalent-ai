@@ -5,6 +5,7 @@ import { useDepartments } from '@/hooks/use-departments';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { EmployeeFormDialog } from '../components/EmployeeFormDialog';
 import { toast } from 'sonner';
+import { apiErrorMessage } from '@/lib/utils';
 import { Edit2, Trash2 } from 'lucide-react';
 import type { EmployeeListItem } from '@/services/employee.service';
 
@@ -51,8 +52,8 @@ export function EmployeeListPage() {
     try {
       await archiveMutation.mutateAsync(archivingEmployee.id);
       toast.success('Employee archived successfully');
-    } catch {
-      toast.error('Failed to archive employee');
+    } catch (error) {
+      toast.error(apiErrorMessage(error, 'Failed to archive employee'));
     } finally {
       setIsArchiveOpen(false);
       setArchivingEmployee(null);
