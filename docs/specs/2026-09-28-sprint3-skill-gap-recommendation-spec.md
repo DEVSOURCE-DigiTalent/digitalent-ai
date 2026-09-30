@@ -50,7 +50,7 @@ Nguyên tắc chọn: (1) không phá schema v2.3 khi không bắt buộc; (2) b
 | **D-S3-01** | Mức nghiêm trọng: S3-T015 ghi `CRITICAL/HIGH/MEDIUM/MET`, SQL chỉ cho `LOW/MEDIUM/HIGH`/NULL | **Giữ SQL.** `severity ∈ {HIGH, MEDIUM, LOW}` khi gap > 0; **NULL khi đã đạt** (FE hiển thị "Đạt"). Quy tắc ở §4.3 | Khớp CHECK `ck_skill_gap_items_severity`, khớp docs/16 §6.2 và S3-T003; không phải sửa SQL/Report 4 |
 | **D-S3-02** | Chưa có cấp độ xác nhận | Lưu `current_level = NULL`; khi tính coi là 0 | CHECK `ck_gap_current_level` chỉ cho 1–3 hoặc NULL |
 | **D-S3-03** | Priority: T003 dùng weight thô, T015 chia 100 | `priority = gap × weight_percent × (mandatory ? k : 1)`, **weight thô (0–100)** | Đúng docs/16 §6.2; giá trị tối đa 3×100×1.5 = 450 vừa `numeric(8,2)`; tránh mất chính xác khi làm tròn 2 chữ số (chia 100 → 0.125 bị làm tròn thành 0.13) |
-| **D-S3-04** | Hệ số k và ngưỡng không được hard-code (docs/16 §4) nhưng `scoring_configs.config_type` không có loại cho skill gap | Đọc từ `system_settings` key `intelligence.skill_gap` (ưu tiên org → global → mặc định trong code `k = 1.5`, `mediumWeightThreshold = 20`). Tham số đã dùng lưu vào `summary_snapshot.config`; `calculation_version = "SG-1.0"` | Không đổi schema; mỗi snapshot tự giải thích được (BR-08) |
+| **D-S3-04** | Hệ số k và ngưỡng không được hard-code (docs/16 §4) nhưng `scoring_configs.config_type` không có loại cho skill gap | Đọc từ `system_settings` key `intelligence.skill_gap` (ưu tiên org → global → mặc định trong code `k = 1.5`). Tham số đã dùng lưu vào `summary_snapshot.config`; `calculation_version = "SG-2.0"`. *(29/09: bỏ `mediumWeightThreshold` theo D-B1; setting cũ còn trường này vẫn đọc được; snapshot cũ giữ `SG-1.0`)* | Không đổi schema; mỗi snapshot tự giải thích được (BR-08) |
 | **D-S3-05** | "Readiness index" trong T015 trùng tên với NF-03 Readiness Score (bảng `readiness_scores`, Sprint sau) | Đổi tên KPI thành **`coveragePercent` — Mức đáp ứng chuẩn vị trí**, công thức §4.4 | Tránh hai con số "readiness" khác nhau trên UI; coverage sẽ là 1 factor của NF-03 sau này |
 | **D-S3-06** | Phạm vi dữ liệu | HR / Admin: toàn tổ chức. Department Manager: nhân viên **cùng `department_id`** (chưa tính phòng con — để Sprint 5). Employee/Trainer: chỉ bản thân. Ngoài phạm vi → **404** (giống lỗi không tồn tại) | Không lộ sự tồn tại của dữ liệu; khớp cách cô lập tenant hiện có; Sprint 5 đã có task data scoping đa phòng ban |
 | **D-S3-07** | Snapshot | Mỗi lần tính **insert run mới**, không update run cũ. `generated_by = USER_REQUEST` (gọi API) hoặc `SYSTEM` (event). Chỉ tính cho employee `ACTIVE` | docs/16 §4 "Snapshot không ghi đè"; CHECK `ck_skill_gap_runs_generated_by` |
@@ -61,6 +61,7 @@ Nguyên tắc chọn: (1) không phá schema v2.3 khi không bắt buộc; (2) b
 | **D-S3-12** | Tuyến người học cá nhân `/learn` | Sprint 3 **chỉ tái sử dụng component** (radar, bảng gap) với dữ liệu minh họa, gắn nhãn "Dữ liệu minh họa". Skill gap thật cho learner chờ migration `AddPublicLearnerAndCatalogTables` (đã được hoãn trong `learner-identity-catalog-contract.md`) | `skill_gap_runs.employee_id` NOT NULL; `career_role_templates` chưa tồn tại |
 | **D-S3-13** | S3-T024: `assessments` không có cột cooldown / hiển thị đáp án | Nâng SQL lên **v2.4**: thêm `retry_cooldown_minutes`, `answer_review_policy` (§7). Viết policy thuần + test; tích hợp vào use case làm bài khi engine thi của team sẵn sàng | Tuân thủ schema-first; tách phần LinhTV làm được khỏi phần phụ thuộc người khác |
 | **D-S3-14** | `position_requirement_items.requires_practical_evidence` | Sprint 3 **không dùng** cờ này khi tính gap: `employee_competency_profiles` là nguồn sự thật duy nhất | Profile chỉ được ghi qua evidence đã xác nhận bởi người có quyền; cờ này dành cho Readiness (Sprint sau) |
+| **D-S3-16** ✅ *Đã chốt 29/09 (Leader)* | Năng lực của vị trí lấy từ đâu | **Căn cứ Thông tư 02/2025/TT-BGDĐT** (6 miền, 24 năng lực) — xem `docs/specs/2026-09-29-tt02-position-competency-matrix.md`. Hệ quả: bộ tiêu chuẩn phải đủ 24 năng lực mới kích hoạt (D-B4), severity chỉ theo số mức thiếu (D-B1, §4.3), bắt buộc = miền Nâng cao + miền 4 (D-B2), radar theo miền (D-B3), chỉ gợi ý khóa bậc kế tiếp theo tiên quyết (§5.1, R11) | Chuẩn quốc gia, giải thích được với hội đồng; thay dữ liệu tự đặt *Data Analyst* |
 | **D-S3-15** ✅ *Đã chốt 28/09* | Chiến lược migration — 41 config Phase 2–3 hóa ra chỉ là khung rỗng | (1) `AddSkillGapLearningEvidenceTables` — tạo **16 bảng** Sprint 3 cần (config viết đầy đủ theo SQL v2.3), 25 bảng còn lại `ExcludeFromMigrations()` cho tới khi module sở hữu viết config đầy đủ; (2) `AssessmentRetryPolicyV24` — cột mới của v2.4, làm cùng lúc tạo bảng `assessments` | Không tạo bảng lệch schema; không giẫm lên module Assessment/Certificate/Lesson của thành viên khác |
 
 ### 3.1. Thay đổi so với mô tả Jira (cần cập nhật Jira/Report)
@@ -81,7 +82,7 @@ Nguyên tắc chọn: (1) không phá schema v2.3 khi không bắt buộc; (2) b
 - Employee `status = ACTIVE`, thuộc tổ chức của người gọi, nằm trong phạm vi D-S3-06.
 - Bộ tiêu chuẩn: `requirementSetId` nếu truyền vào (phải `ACTIVE` và thuộc tổ chức, dùng cho "so với vị trí khác"), mặc định là bộ `ACTIVE` của `employees.job_position_id`.
 - Cấp độ đã xác nhận: `employee_competency_profiles.confirmed_level` theo `(employee_id, competency_id)`. Evidence `PENDING` / `REJECTED` bị bỏ qua.
-- Tham số: `SkillGapSettings { MandatoryMultiplier = 1.5, MediumWeightThreshold = 20 }` (D-S3-04).
+- Tham số: `SkillGapSettings { MandatoryMultiplier = 1.5 }` (D-S3-04; ngưỡng trọng số đã bỏ theo D-B1).
 
 ### 4.2. Công thức cho từng dòng yêu cầu
 
@@ -99,16 +100,18 @@ Làm tròn: `Math.Round(x, 2, MidpointRounding.AwayFromZero)`, chỉ làm tròn 
 | Điều kiện (xét theo thứ tự) | severity |
 | --- | --- |
 | `gap_steps = 0` | `NULL` (hiển thị "Đạt") |
-| `gap_steps ≥ 2` **hoặc** `mandatory = true` | `HIGH` |
-| `gap_steps = 1` và `weight_percent ≥ MediumWeightThreshold` | `MEDIUM` |
-| `gap_steps = 1` và `weight_percent < MediumWeightThreshold` | `LOW` |
+| `gap_steps ≥ 2` | `HIGH` |
+| `gap_steps = 1` và `mandatory = true` | `MEDIUM` |
+| `gap_steps = 1` và `mandatory = false` | `LOW` |
+
+*Đổi 29/09 (D-B1, `SG-2.0`):* trước đây `mandatory` luôn là `HIGH` và `MEDIUM` dựa vào ngưỡng trọng số 20%. Với 24 dòng không dòng nào đạt 20%, và nếu mọi dòng bắt buộc thì không phân biệt được — nay severity chỉ dựa vào số mức thiếu, còn trọng số và cờ bắt buộc đã nằm trong `priority`.
 
 ### 4.4. Tổng hợp run (`skill_gap_runs`)
 
 | Trường | Giá trị |
 | --- | --- |
 | `gap_count` | số dòng `gap_steps > 0` |
-| `calculation_version` | `"SG-1.0"` |
+| `calculation_version` | `"SG-2.0"` (từ 29/09; trước đó `"SG-1.0"`) |
 | `generated_by` | `USER_REQUEST` / `SYSTEM` |
 | `summary_snapshot` (jsonb, camelCase) | xem dưới |
 
@@ -123,7 +126,7 @@ Làm tròn: `Math.Round(x, 2, MidpointRounding.AwayFromZero)`, chỉ làm tròn 
   "mediumCount": 0,
   "lowCount": 1,
   "coveragePercent": 47.50,
-  "config": { "mandatoryMultiplier": 1.5, "mediumWeightThreshold": 20 }
+  "config": { "mandatoryMultiplier": 1.5 }
 }
 ```
 
@@ -131,7 +134,40 @@ Làm tròn: `Math.Round(x, 2, MidpointRounding.AwayFromZero)`, chỉ làm tròn 
 
 ### 4.5. Ví dụ tính tay (dùng làm test chuẩn — golden test)
 
-Vị trí **Data Analyst**, bộ tiêu chuẩn v1 (tổng trọng số 100):
+#### 4.5.1. Kịch bản demo theo Thông tư 02/2025 — Kế toán (seed Development, `Tt02SkillGapScenarioTests`)
+
+Mức miền của Kế toán: miền 1 Nâng cao (3), 2 Trung bình (2), 3 Cơ bản (1), 4 Nâng cao (3), 5 Trung bình (2), 6 Trung bình (2). Bắt buộc (D-B2): miền 1 và 4 (7 năng lực).
+
+Trọng số: 100% chia đều cho 6 miền, mỗi miền chia đều cho các năng lực; làm tròn 0.01, phần dư dồn vào phần tử cuối ở cả hai tầng:
+
+| Miền | Số năng lực | Trọng số từng dòng | Tổng miền |
+| --- | --- | --- | --- |
+| 1 | 3 | 5.56, 5.56, 5.55 | 16.67 |
+| 2 | 6 | 2.78 × 5, 2.77 | 16.67 |
+| 3 | 4 | 4.17 × 3, 4.16 | 16.67 |
+| 4 | 4 | 4.17 × 3, 4.16 | 16.67 |
+| 5 | 4 | 4.17 × 3, 4.16 | 16.67 |
+| 6 | 3 | 5.55 × 3 | 16.65 |
+
+Nhân viên đã xác nhận **mọi năng lực ở mức Cơ bản (1)**:
+
+| Miền | gap | Bắt buộc | priority từng dòng | severity |
+| --- | --- | --- | --- | --- |
+| 1 | 2 | ✔ | 2 × 5.56 × 1.5 = **16.68** (16.68, 16.65) | HIGH × 3 |
+| 2 | 1 | ✘ | 1 × 2.78 = 2.78 (…, 2.77) | LOW × 6 |
+| 3 | 0 | ✘ | 0 | NULL × 4 |
+| 4 | 2 | ✔ | 2 × 4.17 × 1.5 = **12.51** (…, 12.48) | HIGH × 4 |
+| 5 | 1 | ✘ | 4.17 (…, 4.16) | LOW × 4 |
+| 6 | 1 | ✘ | 5.55 | LOW × 3 |
+
+Kết quả: 24 dòng, `totalMet = 4`, `totalGap = 20`, `highCount = 7`, `lowCount = 13`.
+`coveragePercent = (16.67×1/3 + 16.67×1/2 + 16.67 + 16.67×1/3 + 16.67×1/2 + 16.65×1/2) / 100 × 100 = 52.78`.
+
+**Sau khi xác nhận 4.2 lên Trung bình (2)** (demo bước 5): 4.2 còn thiếu 1 mức, bắt buộc → `MEDIUM`, priority `1 × 4.17 × 1.5 = 6.255 → 6.26`; `highCount = 6`, `mediumCount = 1`; coverage tăng `4.17 × (2/3 − 1/3) = 1.39` → **54.17**. Radar miền 4 (trung bình) từ 1.00 lên **1.25**; miền 4 vẫn chưa "đạt" vì 3 năng lực còn ở mức 1 (D-B3).
+
+#### 4.5.2. Ví dụ công thức (giữ làm golden test đơn vị, `SkillGapCalculatorTests`)
+
+Vị trí **Data Analyst**, bộ tiêu chuẩn v1 (tổng trọng số 100) — kết quả không đổi với quy tắc severity mới:
 
 | Mã | Năng lực | Yêu cầu | Trọng số | Bắt buộc | Đã xác nhận | gap | priority | severity |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -182,9 +218,10 @@ SkillGapRunListItem = {
 SkillGapRunDetail = SkillGapRunListItem & {
   requirementSetId, calculationVersion,
   summary: { totalRequired, totalMet, totalGap, highCount, mediumCount, lowCount, coveragePercent,
-             config: { mandatoryMultiplier, mediumWeightThreshold } },
+             config: { mandatoryMultiplier } },
   items: Array<{
     competencyId, competencyCode, competencyName, categoryName,
+    categorySortOrder /* miền 1–6 */, frameworkCode /* "4.2" hoặc null */,
     requiredLevel, currentLevel /* null */, gapSteps, weightPercent,
     mandatory, mandatoryMultiplier, priorityScore, severity /* 'HIGH'|'MEDIUM'|'LOW'|null */
   }>   // sắp priority giảm dần, rồi competencyName
@@ -201,6 +238,7 @@ SkillGapRunDetail = SkillGapRunListItem & {
 - Khóa học ứng viên: cùng org, `status = PUBLISHED`; với cùng `code` chỉ lấy `version_no` lớn nhất đang PUBLISHED.
 - `course_competencies` trỏ tới các năng lực đang thiếu, với **`target_level > current`** (khóa học phải nâng được ít nhất 1 bậc).
 - Loại khóa học mà nhân viên đã có enrollment `COMPLETED`. Enrollment `NOT_STARTED/IN_PROGRESS/READY_FOR_ASSESSMENT` vẫn gợi ý, trả kèm `enrollmentStatus` để FE hiện "Đang học".
+- **Điều kiện vào khóa (29/09, B7 — khung chương trình A7):** chỉ gợi ý khi (a) mọi khóa tiên quyết trong `course_prerequisites` đã `COMPLETED` (so theo `code`, chấp nhận mọi version), **hoặc** (b) mức đã xác nhận thấp nhất trên **mọi** năng lực của khóa ≥ mức khóa − 1 (mức khóa = `target_level` cao nhất). Nhờ vậy người học đi tuần tự F → I → A và được bỏ qua khóa thấp nếu đã đạt.
 
 ### 5.2. Công thức xếp hạng (thang 0–100)
 
@@ -239,7 +277,25 @@ Sắp xếp: `score` giảm dần → `estimated_duration_minutes` tăng dần (
 | K1 Excel & Power BI (entry 1) | PUBLISHED | C1 → 2 PRIMARY, C4 → 2 SUPPORTING | GAP = (90×0.5×1 + 15×1×0.3)/180 = 0.275; MAND = 1/2; ENTRY 1 | 19.25 + 10 + 10 = **39.25** |
 | K4 AI cho văn phòng | DRAFT | C4 → 2 | bị loại | — |
 
-Thứ tự trả về: K3 → K2 → K1.
+Thứ tự trả về: K3 → K2 → K1. (K1–K4 không có tiên quyết nên quy tắc điều kiện vào khóa không đổi kết quả.)
+
+#### 5.3.1. Kịch bản Kế toán theo Thông tư 02/2025 (nối tiếp §4.5.1, `CourseEligibilityTests`)
+
+Tổng priority còn thiếu = miền 1 (50.01) + miền 2 (16.67) + miền 4 (50.01) + miền 5 (16.67) + miền 6 (16.65) = **150.01**; 7 năng lực bắt buộc đang thiếu. Mỗi khóa phủ mọi năng lực của miền ở mức khóa (PRIMARY), `entry_level = mức khóa − 1` (tối thiểu 1).
+
+| Khóa | Đủ điều kiện? | GAP (×70) | MAND (×20) | ENTRY | score |
+| --- | --- | --- | --- | --- | --- |
+| A4-I | ✔ (mức hiện tại 1 ≥ 2 − 1) | 50.01 × ½ / 150.01 → 11.67 | 4/7 → 11.43 | 10 | **33.10** |
+| A1-I | ✔ | 50.01 × ½ / 150.01 → 11.67 | 3/7 → 8.57 | 10 | **30.24** |
+| A5-I (600 phút) | ✔ | 16.67 / 150.01 → 7.78 | 0 | 10 | **17.78** |
+| A2-I (900 phút) | ✔ | 16.67 / 150.01 → 7.78 | 0 | 10 | **17.78** |
+| M6-I | ✔ | 16.65 / 150.01 → 7.77 | 0 | 10 | **17.77** |
+| A1-A, A4-A | ✘ — cần xong A1-I / A4-I (hoặc đã đạt mức 2) | — | — | — | loại |
+| Mọi khóa -F | không nâng được mức (target 1 = hiện tại 1) | — | — | — | loại |
+| A3-* | miền 3 đã đạt | — | — | — | loại |
+| AI-OFFICE | DRAFT | — | — | — | loại |
+
+Thứ tự: A4-I → A1-I → A5-I → A2-I (hòa điểm, khóa ngắn hơn trước) → M6-I.
 
 ### 5.4. Giải thích (explainability)
 
@@ -283,6 +339,7 @@ Nhãn cấp độ: 1 = Cơ bản (Basic), 2 = Trung cấp (Intermediate), 3 = N�
 | R8 | Validate input | `limit` ∈ [1, 20] (mặc định 10); `employeeId` nếu có thì khác `Guid.Empty` |
 | R9 | `coverage_weight = 0` | Năng lực đó không cộng vào GAP; khóa có tổng `score = 0` bị loại |
 | R10 | Thang `current` | `current = current_level ?? 0` trong mọi công thức (closeFraction, ENTRY_LEVEL_FIT) |
+| R11 *(29/09)* | Khóa bậc cao hơn khi chưa học khóa trước | Loại khỏi danh sách nếu không đủ điều kiện vào khóa (§5.1). `ENTRY_LEVEL_FIT` giữ nguyên để tương thích dữ liệu không có tiên quyết. Mức xác nhận đọc từ `employee_competency_profiles` (không chỉ các dòng đang thiếu) |
 
 ---
 
@@ -471,7 +528,10 @@ Tích hợp: gọi hai policy trong use case bắt đầu / xem kết quả atte
 | T-SG-01 | `SkillGapCalculatorTests` golden §4.5 (theory 5 dòng) | Unit | SG-01 |
 | T-SG-02 | Chưa có profile → full gap, current NULL | Unit | SG-02 |
 | T-SG-03 | Đạt / vượt chuẩn → severity NULL, priority 0 | Unit | SG-03 |
-| T-SG-04 | Bảng severity: (gap 2, không bắt buộc) HIGH; (1, bắt buộc) HIGH; (1, w 20) MEDIUM; (1, w 19.99) LOW | Unit theory | §4.3 |
+| T-SG-04 | Bảng severity (D-B1): (gap 2, không bắt buộc) HIGH; (2, bắt buộc) HIGH; (1, bắt buộc) MEDIUM; (1, không bắt buộc, w 50) LOW | Unit theory | §4.3 |
+| T-SG-TT02 | Kế toán mọi năng lực mức 1: 7 HIGH / 13 LOW / 4 đạt, coverage 52.78; 4.2 → 2: MEDIUM 6.26, coverage 54.17 | Unit | §4.5.1 |
+| T-RC-TT02 | Kế toán: A4-I 33.10, A1-I 30.24, A5-I 17.78, A2-I 17.78, M6-I 17.77; khóa -A bị loại tới khi xong tiên quyết (unit + PostgreSQL) | Unit + Integration | §5.3.1, R11 |
+| T-ACT-TT02 | Kích hoạt: đủ 24 → OK; thiếu 6.1–6.3 → 400 `FRAMEWORK_COMPETENCY_MISSING` kèm danh sách mã; năng lực không mapping → 400 `COMPETENCY_NOT_IN_FRAMEWORK` | Unit | D-B4 |
 | T-SG-05 | Multiplier tùy chỉnh được áp dụng và ghi vào snapshot | Unit | SG-10 |
 | T-SG-06 | Làm tròn AwayFromZero (weight 12.35, gap 1, bắt buộc, k 1.5 → 18.525 → **18.53**, không phải 18.52 như banker's rounding) | Unit | §4.2 |
 | T-SG-07 | coveragePercent golden = 47.50 | Unit | SG-01 |
@@ -503,15 +563,18 @@ Tích hợp: gọi hai policy trong use case bắt đầu / xem kết quả atte
 ## 11. Dữ liệu seed
 
 **Reference (mọi môi trường, idempotent):**
-- `system_settings` global `intelligence.skill_gap = {"mandatoryMultiplier":1.5,"mediumWeightThreshold":20}`.
+
+- `system_settings` global `intelligence.skill_gap = {"mandatoryMultiplier":1.5}`.
 - `scoring_configs` `RECOMMENDATION_WEIGHTS` v1 active cho mỗi org + 3 item §5.2.
 
-**Demo (chỉ Development):** đúng bộ dữ liệu §4.5 và §5.3 để demo và làm golden test.
-- 1 category DigComp, 5 competency C1–C5 (mỗi cái có 3 level criterion).
-- Job family "Data & Analytics", vị trí "Data Analyst", requirement set v1 ACTIVE như §4.5.
-- `employee@` và `manager@` gán vị trí Data Analyst.
-- Profile của `employee@` như §4.5 qua evidence `source_type = MIGRATION`, `CONFIRMED`.
-- 4 khóa học K1–K4 kèm `course_competencies`.
+**Demo (chỉ Development) — thay 29/09 bằng dữ liệu Thông tư 02/2025 (`SkillGapSeeder` + `Tt02Catalog`):**
+
+- 1 `competency_frameworks` `TT02_2025` / `02/2025/TT-BGDĐT`; 6 `competency_categories` = 6 miền (`sort_order` 1–6).
+- 24 `competencies` (`TT02-1.1` … `TT02-6.3`), 3 tiêu chí/mức lấy từ tên module F / I / A; 24 mapping `DIRECT`, `is_primary`.
+- 5 vị trí (CEO, HR, Marketing, Sales / CRM, Kế toán), mỗi vị trí 1 bộ ACTIVE 24 dòng theo ma trận, trọng số §4.5.1, bắt buộc theo D-B2.
+- 18 khóa PUBLISHED (A1–A5, M6 × F/I/A) + 1 DRAFT (`AI-OFFICE`), `course_prerequisites` F → I → A.
+- `employee@` = Kế toán, 24 năng lực xác nhận mức 1 (evidence `MIGRATION`); `manager@` (trưởng phòng Operations) = Sales / CRM.
+- Ví dụ *Data Analyst* §4.5.2 / §5.3 chỉ còn trong unit test.
 
 ---
 
