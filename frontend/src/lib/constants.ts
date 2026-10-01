@@ -5,7 +5,6 @@ export const ROLES = {
   DEPARTMENT_MANAGER: 'DEPARTMENT_MANAGER',
   TRAINER: 'TRAINER',
   EMPLOYEE: 'EMPLOYEE',
-  CERTIFICATE_VERIFIER: 'CERTIFICATE_VERIFIER',
 } as const;
 export const STATUS_BADGES: Record<string, { label: string; variant: string }> = {
   ACTIVE: { label: 'Active', variant: 'success' },

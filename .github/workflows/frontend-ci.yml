@@ -4,10 +4,12 @@ on:
   pull_request:
     paths:
       - 'frontend/**'
+      - 'docker/**'
   push:
     branches: [develop, main]
     paths:
       - 'frontend/**'
+      - 'docker/**'
 
 jobs:
   build:
@@ -31,6 +33,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Test
+        run: npm test -- --run
 
       - name: Build
         run: npm run build

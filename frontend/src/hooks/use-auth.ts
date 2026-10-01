@@ -15,9 +15,8 @@ export function useLogin() {
   return useMutation({
     mutationFn: async (data: LoginRequest) => {
       const loginRes = await authService.login(data);
-      const { accessToken, refreshToken } = loginRes.data.data!;
+      const { accessToken } = loginRes.data.data!;
       localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
 
       const meRes = await authService.getMe();
       const user = meRes.data.data!;

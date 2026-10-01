@@ -1,38 +1,29 @@
-using DigiTalent.Domain.Entities.Competency;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DigiTalent.Infrastructure.Persistence.Configurations.Competency;
+namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
 public class CompetencyCategoryConfiguration : IEntityTypeConfiguration<CompetencyCategory>
 {
     public void Configure(EntityTypeBuilder<CompetencyCategory> builder)
     {
-        builder.ToTable("competency_categories");
+        builder.ToTable("competency_categories", table =>
+            table.HasCheckConstraint("ck_competency_categories_status", "status IN ('ACTIVE','INACTIVE','ARCHIVED')"));
 
-        builder.HasKey(x => x.Id);
+        builder.HasKey(c => c.Id);
 
-        builder.Property(x => x.Code)
-            .HasMaxLength(80);
+        builder.Property(c => c.Code).IsRequired().HasMaxLength(50);
+        builder.Property(c => c.Name).IsRequired().HasMaxLength(180);
+        builder.Property(c => c.Status).IsRequired().HasMaxLength(30);
+        builder.Property(c => c.SortOrder).HasDefaultValue(0);
 
-        builder.Property(x => x.Name)
-            .HasMaxLength(255);
-
-        builder.Property(x => x.Description)
-            .HasColumnType("text");
-
-        builder.Property(x => x.Status)
-            .HasConversion<string>()
-            .HasMaxLength(30);
-
-        builder.Property(x => x.CreatedAt)
-            .HasColumnType("timestamptz");
-
-        builder.Property(x => x.UpdatedAt)
-            .HasColumnType("timestamptz");
-
-        builder.HasIndex(x => new { x.OrganizationId, x.Code })
+        builder.HasIndex(c => new { c.OrganizationId, c.Code })
             .IsUnique()
-            .HasDatabaseName("ux_competency_categories_org_code");
+            .HasDatabaseName("uq_competency_categories_org_code");
+
+        builder.HasOne<Organization>()
+            .WithMany()
+            .HasForeignKey(c => c.OrganizationId);
     }
 }

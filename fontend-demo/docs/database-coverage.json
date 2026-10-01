@@ -1,0 +1,370 @@
+{
+  "sourceVersion": "2.2",
+  "date": "2026-09-26",
+  "connectedDatabaseTables": 0,
+  "core": 55,
+  "optional": 4,
+  "counts": {
+    "demo": 8,
+    "partial": 27,
+    "backend": 4,
+    "next": 16,
+    "optional": 4
+  },
+  "tables": [
+    {
+      "name": "organizations",
+      "status": "partial",
+      "feature": "Doanh nghiệp, vị trí, nhân sự và tài khoản demo",
+      "remaining": "Dữ liệu lồng nhau; cần chuẩn hóa FK, email, trạng thái và phân quyền máy chủ."
+    },
+    {
+      "name": "users",
+      "status": "partial",
+      "feature": "Doanh nghiệp, vị trí, nhân sự và tài khoản demo",
+      "remaining": "Dữ liệu lồng nhau; cần chuẩn hóa FK, email, trạng thái và phân quyền máy chủ."
+    },
+    {
+      "name": "roles",
+      "status": "partial",
+      "feature": "Vai trò mẫu và điều hướng theo vai trò",
+      "remaining": "Chưa có RBAC lưu trữ đúng schema."
+    },
+    {
+      "name": "permissions",
+      "status": "backend",
+      "feature": "Phân quyền và vòng đời phiên đăng nhập",
+      "remaining": "Cần API kiểm quyền, token băm, thu hồi phiên; không mô phỏng token bảo mật bằng localStorage."
+    },
+    {
+      "name": "user_roles",
+      "status": "backend",
+      "feature": "Phân quyền và vòng đời phiên đăng nhập",
+      "remaining": "Cần API kiểm quyền, token băm, thu hồi phiên; không mô phỏng token bảo mật bằng localStorage."
+    },
+    {
+      "name": "role_permissions",
+      "status": "backend",
+      "feature": "Phân quyền và vòng đời phiên đăng nhập",
+      "remaining": "Cần API kiểm quyền, token băm, thu hồi phiên; không mô phỏng token bảo mật bằng localStorage."
+    },
+    {
+      "name": "refresh_tokens",
+      "status": "backend",
+      "feature": "Phân quyền và vòng đời phiên đăng nhập",
+      "remaining": "Cần API kiểm quyền, token băm, thu hồi phiên; không mô phỏng token bảo mật bằng localStorage."
+    },
+    {
+      "name": "file_objects",
+      "status": "next",
+      "feature": "Kho tệp và cấu hình tổ chức",
+      "remaining": "Cần upload riêng tư/metadata/checksum và cấu hình có phạm vi, lịch sử."
+    },
+    {
+      "name": "job_families",
+      "status": "partial",
+      "feature": "Doanh nghiệp, vị trí, nhân sự và tài khoản demo",
+      "remaining": "Dữ liệu lồng nhau; cần chuẩn hóa FK, email, trạng thái và phân quyền máy chủ."
+    },
+    {
+      "name": "job_positions",
+      "status": "partial",
+      "feature": "Doanh nghiệp, vị trí, nhân sự và tài khoản demo",
+      "remaining": "Dữ liệu lồng nhau; cần chuẩn hóa FK, email, trạng thái và phân quyền máy chủ."
+    },
+    {
+      "name": "departments",
+      "status": "next",
+      "feature": "Cơ cấu phòng ban và quản lý trực tiếp",
+      "remaining": "Thêm màn hình phòng ban, phân công trưởng phòng, chặn chu trình quản lý."
+    },
+    {
+      "name": "employees",
+      "status": "partial",
+      "feature": "Doanh nghiệp, vị trí, nhân sự và tài khoản demo",
+      "remaining": "Dữ liệu lồng nhau; cần chuẩn hóa FK, email, trạng thái và phân quyền máy chủ."
+    },
+    {
+      "name": "competency_frameworks",
+      "status": "next",
+      "feature": "Nguồn khung và tiêu chí xác nhận",
+      "remaining": "Thêm registry phiên bản, nguồn tham chiếu, crosswalk do chuyên gia duyệt và tiêu chí hành vi từng mức."
+    },
+    {
+      "name": "competency_categories",
+      "status": "partial",
+      "feature": "5 nhóm / 21 năng lực thành phần có trong dữ liệu FE",
+      "remaining": "Cần ID, phân loại, trạng thái và quản trị danh mục; không tuyên bố tương đương khung chính thức."
+    },
+    {
+      "name": "competencies",
+      "status": "partial",
+      "feature": "5 nhóm / 21 năng lực thành phần có trong dữ liệu FE",
+      "remaining": "Cần ID, phân loại, trạng thái và quản trị danh mục; không tuyên bố tương đương khung chính thức."
+    },
+    {
+      "name": "competency_framework_mappings",
+      "status": "next",
+      "feature": "Nguồn khung và tiêu chí xác nhận",
+      "remaining": "Thêm registry phiên bản, nguồn tham chiếu, crosswalk do chuyên gia duyệt và tiêu chí hành vi từng mức."
+    },
+    {
+      "name": "competency_level_criteria",
+      "status": "next",
+      "feature": "Nguồn khung và tiêu chí xác nhận",
+      "remaining": "Thêm registry phiên bản, nguồn tham chiếu, crosswalk do chuyên gia duyệt và tiêu chí hành vi từng mức."
+    },
+    {
+      "name": "position_requirement_sets",
+      "status": "demo",
+      "feature": "Soạn nháp, sao chép, kích hoạt, lưu trữ phiên bản khung 9–14 năng lực / 3 mức / tổng 100%",
+      "remaining": "Mô phỏng một lần ghi localStorage; backend cần transaction và unique partial index, kiểm soát cạnh tranh."
+    },
+    {
+      "name": "position_requirement_items",
+      "status": "demo",
+      "feature": "Soạn nháp, sao chép, kích hoạt, lưu trữ phiên bản khung 9–14 năng lực / 3 mức / tổng 100%",
+      "remaining": "Mô phỏng một lần ghi localStorage; backend cần transaction và unique partial index, kiểm soát cạnh tranh."
+    },
+    {
+      "name": "courses",
+      "status": "partial",
+      "feature": "15 khóa, 63 module, video liên kết và lộ trình theo lĩnh vực",
+      "remaining": "Chưa tách Module/Lesson đầy đủ; thiếu quản trị publish/version/outcomes và lưu học liệu lên MinIO."
+    },
+    {
+      "name": "course_competencies",
+      "status": "partial",
+      "feature": "15 khóa, 63 module, video liên kết và lộ trình theo lĩnh vực",
+      "remaining": "Chưa tách Module/Lesson đầy đủ; thiếu quản trị publish/version/outcomes và lưu học liệu lên MinIO."
+    },
+    {
+      "name": "course_prerequisites",
+      "status": "partial",
+      "feature": "15 khóa, 63 module, video liên kết và lộ trình theo lĩnh vực",
+      "remaining": "Chưa tách Module/Lesson đầy đủ; thiếu quản trị publish/version/outcomes và lưu học liệu lên MinIO."
+    },
+    {
+      "name": "course_learning_outcomes",
+      "status": "next",
+      "feature": "Đầu ra K/S/A và ma trận bài học",
+      "remaining": "Cần biên soạn K/S/A có mức mục tiêu và ánh xạ lesson, duyệt trước khi xuất bản."
+    },
+    {
+      "name": "course_modules",
+      "status": "partial",
+      "feature": "15 khóa, 63 module, video liên kết và lộ trình theo lĩnh vực",
+      "remaining": "Chưa tách Module/Lesson đầy đủ; thiếu quản trị publish/version/outcomes và lưu học liệu lên MinIO."
+    },
+    {
+      "name": "lessons",
+      "status": "partial",
+      "feature": "15 khóa, 63 module, video liên kết và lộ trình theo lĩnh vực",
+      "remaining": "Chưa tách Module/Lesson đầy đủ; thiếu quản trị publish/version/outcomes và lưu học liệu lên MinIO."
+    },
+    {
+      "name": "lesson_learning_outcomes",
+      "status": "next",
+      "feature": "Đầu ra K/S/A và ma trận bài học",
+      "remaining": "Cần biên soạn K/S/A có mức mục tiêu và ánh xạ lesson, duyệt trước khi xuất bản."
+    },
+    {
+      "name": "learning_materials",
+      "status": "partial",
+      "feature": "15 khóa, 63 module, video liên kết và lộ trình theo lĩnh vực",
+      "remaining": "Chưa tách Module/Lesson đầy đủ; thiếu quản trị publish/version/outcomes và lưu học liệu lên MinIO."
+    },
+    {
+      "name": "practical_task_templates",
+      "status": "partial",
+      "feature": "Đề bài theo khóa, nộp liên kết, màn hình chấm demo",
+      "remaining": "Bài nộp hiện còn một bản gần nhất theo người; cần nhiều phiên bản, người duyệt và scope phòng ban thật."
+    },
+    {
+      "name": "practical_task_targets",
+      "status": "next",
+      "feature": "Nhiệm vụ đa năng lực, snapshot mục tiêu, tệp đính kèm, kết quả từng năng lực",
+      "remaining": "Cần luồng all-target PASSED; không có minh chứng xác nhận nếu một mục tiêu chưa đạt."
+    },
+    {
+      "name": "task_assignments",
+      "status": "partial",
+      "feature": "Đề bài theo khóa, nộp liên kết, màn hình chấm demo",
+      "remaining": "Bài nộp hiện còn một bản gần nhất theo người; cần nhiều phiên bản, người duyệt và scope phòng ban thật."
+    },
+    {
+      "name": "assigned_task_targets",
+      "status": "next",
+      "feature": "Nhiệm vụ đa năng lực, snapshot mục tiêu, tệp đính kèm, kết quả từng năng lực",
+      "remaining": "Cần luồng all-target PASSED; không có minh chứng xác nhận nếu một mục tiêu chưa đạt."
+    },
+    {
+      "name": "task_submissions",
+      "status": "partial",
+      "feature": "Đề bài theo khóa, nộp liên kết, màn hình chấm demo",
+      "remaining": "Bài nộp hiện còn một bản gần nhất theo người; cần nhiều phiên bản, người duyệt và scope phòng ban thật."
+    },
+    {
+      "name": "task_submission_files",
+      "status": "next",
+      "feature": "Nhiệm vụ đa năng lực, snapshot mục tiêu, tệp đính kèm, kết quả từng năng lực",
+      "remaining": "Cần luồng all-target PASSED; không có minh chứng xác nhận nếu một mục tiêu chưa đạt."
+    },
+    {
+      "name": "task_evaluations",
+      "status": "partial",
+      "feature": "Đề bài theo khóa, nộp liên kết, màn hình chấm demo",
+      "remaining": "Bài nộp hiện còn một bản gần nhất theo người; cần nhiều phiên bản, người duyệt và scope phòng ban thật."
+    },
+    {
+      "name": "competency_evaluation_results",
+      "status": "next",
+      "feature": "Nhiệm vụ đa năng lực, snapshot mục tiêu, tệp đính kèm, kết quả từng năng lực",
+      "remaining": "Cần luồng all-target PASSED; không có minh chứng xác nhận nếu một mục tiêu chưa đạt."
+    },
+    {
+      "name": "competency_evidences",
+      "status": "next",
+      "feature": "Hồ sơ mức đã xác nhận và minh chứng",
+      "remaining": "Chưa có giao dịch xác nhận đa năng lực; không nhập điểm khảo sát hoặc kết quả học làm profile."
+    },
+    {
+      "name": "employee_competency_profiles",
+      "status": "next",
+      "feature": "Hồ sơ mức đã xác nhận và minh chứng",
+      "remaining": "Chưa có giao dịch xác nhận đa năng lực; không nhập điểm khảo sát hoặc kết quả học làm profile."
+    },
+    {
+      "name": "skill_gap_runs",
+      "status": "demo",
+      "feature": "Lưu lần phân tích và snapshot theo khung ACTIVE, level 1–3, priority có trọng số",
+      "remaining": "Profile chưa xác nhận để NULL; tính 0 chỉ trong phép tính. Hệ số bắt buộc 1.5 là giả định demo cần phê duyệt."
+    },
+    {
+      "name": "skill_gap_items",
+      "status": "demo",
+      "feature": "Lưu lần phân tích và snapshot theo khung ACTIVE, level 1–3, priority có trọng số",
+      "remaining": "Profile chưa xác nhận để NULL; tính 0 chỉ trong phép tính. Hệ số bắt buộc 1.5 là giả định demo cần phê duyệt."
+    },
+    {
+      "name": "course_assignments",
+      "status": "demo",
+      "feature": "Giao khóa theo nhân viên, hạn học và theo dõi trạng thái",
+      "remaining": "Giao thủ công; chưa giao hàng loạt phòng ban, chưa tạo lượt học lại sau hoàn thành."
+    },
+    {
+      "name": "enrollments",
+      "status": "demo",
+      "feature": "Giao khóa theo nhân viên, hạn học và theo dõi trạng thái",
+      "remaining": "Giao thủ công; chưa giao hàng loạt phòng ban, chưa tạo lượt học lại sau hoàn thành."
+    },
+    {
+      "name": "lesson_progress",
+      "status": "partial",
+      "feature": "Tiến độ module và xem video được lưu theo người học; đồng bộ bảng theo dõi",
+      "remaining": "Cần lesson ID riêng; vị trí phát video không phải thời lượng xem đã xác minh."
+    },
+    {
+      "name": "question_banks",
+      "status": "partial",
+      "feature": "315 câu hỏi theo giáo trình và kiểm tra trong lớp",
+      "remaining": "Câu hỏi tĩnh, chưa có phiên bản đề bất biến; thiếu lịch sử đầy đủ từng lượt và đáp án đã nộp."
+    },
+    {
+      "name": "questions",
+      "status": "partial",
+      "feature": "315 câu hỏi theo giáo trình và kiểm tra trong lớp",
+      "remaining": "Câu hỏi tĩnh, chưa có phiên bản đề bất biến; thiếu lịch sử đầy đủ từng lượt và đáp án đã nộp."
+    },
+    {
+      "name": "question_options",
+      "status": "partial",
+      "feature": "315 câu hỏi theo giáo trình và kiểm tra trong lớp",
+      "remaining": "Câu hỏi tĩnh, chưa có phiên bản đề bất biến; thiếu lịch sử đầy đủ từng lượt và đáp án đã nộp."
+    },
+    {
+      "name": "assessments",
+      "status": "partial",
+      "feature": "315 câu hỏi theo giáo trình và kiểm tra trong lớp",
+      "remaining": "Câu hỏi tĩnh, chưa có phiên bản đề bất biến; thiếu lịch sử đầy đủ từng lượt và đáp án đã nộp."
+    },
+    {
+      "name": "assessment_questions",
+      "status": "partial",
+      "feature": "315 câu hỏi theo giáo trình và kiểm tra trong lớp",
+      "remaining": "Câu hỏi tĩnh, chưa có phiên bản đề bất biến; thiếu lịch sử đầy đủ từng lượt và đáp án đã nộp."
+    },
+    {
+      "name": "assessment_attempts",
+      "status": "partial",
+      "feature": "315 câu hỏi theo giáo trình và kiểm tra trong lớp",
+      "remaining": "Câu hỏi tĩnh, chưa có phiên bản đề bất biến; thiếu lịch sử đầy đủ từng lượt và đáp án đã nộp."
+    },
+    {
+      "name": "assessment_answers",
+      "status": "partial",
+      "feature": "315 câu hỏi theo giáo trình và kiểm tra trong lớp",
+      "remaining": "Câu hỏi tĩnh, chưa có phiên bản đề bất biến; thiếu lịch sử đầy đủ từng lượt và đáp án đã nộp."
+    },
+    {
+      "name": "certificate_templates",
+      "status": "next",
+      "feature": "Mẫu chứng chỉ phiên bản và lịch sử tra cứu",
+      "remaining": "Cần template đã duyệt, log tối thiểu và kiểm soát truy cập."
+    },
+    {
+      "name": "certificates",
+      "status": "partial",
+      "feature": "Xác nhận hoàn thành DEMO và tra cứu trong trình duyệt",
+      "remaining": "Chưa có certificate liên kết qualifying final attempt, PDF, hết hạn hoặc thu hồi."
+    },
+    {
+      "name": "certificate_verification_logs",
+      "status": "next",
+      "feature": "Mẫu chứng chỉ phiên bản và lịch sử tra cứu",
+      "remaining": "Cần template đã duyệt, log tối thiểu và kiểm soát truy cập."
+    },
+    {
+      "name": "notifications",
+      "status": "demo",
+      "feature": "Thông báo giao khóa/đánh dấu đã đọc và nhật ký nghiệp vụ đào tạo mới",
+      "remaining": "Chỉ local demo, không bất biến/bảo mật, chưa email hoặc realtime máy chủ; chưa audit toàn bộ chức năng cũ."
+    },
+    {
+      "name": "audit_logs",
+      "status": "demo",
+      "feature": "Thông báo giao khóa/đánh dấu đã đọc và nhật ký nghiệp vụ đào tạo mới",
+      "remaining": "Chỉ local demo, không bất biến/bảo mật, chưa email hoặc realtime máy chủ; chưa audit toàn bộ chức năng cũ."
+    },
+    {
+      "name": "system_settings",
+      "status": "next",
+      "feature": "Kho tệp và cấu hình tổ chức",
+      "remaining": "Cần upload riêng tư/metadata/checksum và cấu hình có phạm vi, lịch sử."
+    },
+    {
+      "name": "scoring_configs",
+      "status": "optional",
+      "feature": "Cấu hình điểm, cảnh báo rủi ro học, chỉ số sẵn sàng",
+      "remaining": "4 bảng mở rộng không chặn vòng đào tạo; cần dữ liệu thực và hiệu chỉnh trước khi hiển thị điểm."
+    },
+    {
+      "name": "scoring_config_items",
+      "status": "optional",
+      "feature": "Cấu hình điểm, cảnh báo rủi ro học, chỉ số sẵn sàng",
+      "remaining": "4 bảng mở rộng không chặn vòng đào tạo; cần dữ liệu thực và hiệu chỉnh trước khi hiển thị điểm."
+    },
+    {
+      "name": "training_risk_scores",
+      "status": "optional",
+      "feature": "Cấu hình điểm, cảnh báo rủi ro học, chỉ số sẵn sàng",
+      "remaining": "4 bảng mở rộng không chặn vòng đào tạo; cần dữ liệu thực và hiệu chỉnh trước khi hiển thị điểm."
+    },
+    {
+      "name": "readiness_scores",
+      "status": "optional",
+      "feature": "Cấu hình điểm, cảnh báo rủi ro học, chỉ số sẵn sàng",
+      "remaining": "4 bảng mở rộng không chặn vòng đào tạo; cần dữ liệu thực và hiệu chỉnh trước khi hiển thị điểm."
+    }
+  ]
+}

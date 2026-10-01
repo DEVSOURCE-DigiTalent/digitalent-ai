@@ -1,42 +1,32 @@
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DigiTalent.Infrastructure.Persistence.Configurations.Competency;
+namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
-public class CompetencyConfiguration : IEntityTypeConfiguration<Domain.Entities.Competency.Competency>
+public class CompetencyConfiguration : IEntityTypeConfiguration<Competency>
 {
-    public void Configure(EntityTypeBuilder<Domain.Entities.Competency.Competency> builder)
+    public void Configure(EntityTypeBuilder<Competency> builder)
     {
-        builder.ToTable("competencies");
+        builder.ToTable("competencies", table =>
+        {
+            table.HasCheckConstraint("ck_competencies_type", "competency_type IN ('CORE_DIGITAL','PROFESSIONAL','INTERNAL','BEHAVIOURAL')");
+            table.HasCheckConstraint("ck_competencies_status", "status IN ('DRAFT','ACTIVE','ARCHIVED')");
+        });
 
-        builder.HasKey(x => x.Id);
+        builder.HasKey(c => c.Id);
 
-        builder.Property(x => x.Code)
-            .HasMaxLength(80);
+        builder.Property(c => c.Code).IsRequired().HasMaxLength(80);
+        builder.Property(c => c.Name).IsRequired().HasMaxLength(200);
+        builder.Property(c => c.CompetencyType).IsRequired().HasMaxLength(30);
+        builder.Property(c => c.Status).IsRequired().HasMaxLength(30);
 
-        builder.Property(x => x.Name)
-            .HasMaxLength(255);
-
-        builder.Property(x => x.Description)
-            .HasColumnType("text");
-
-        builder.Property(x => x.Status)
-            .HasConversion<string>()
-            .HasMaxLength(30);
-
-        builder.Property(x => x.CreatedAt)
-            .HasColumnType("timestamptz");
-
-        builder.Property(x => x.UpdatedAt)
-            .HasColumnType("timestamptz");
-
-        builder.HasIndex(x => new { x.CategoryId, x.Code })
+        builder.HasIndex(c => new { c.CategoryId, c.Code })
             .IsUnique()
-            .HasDatabaseName("ux_competencies_category_code");
+            .HasDatabaseName("uq_competencies_category_code");
 
         builder.HasOne(c => c.Category)
             .WithMany(cat => cat.Competencies)
-            .HasForeignKey(c => c.CategoryId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .HasForeignKey(c => c.CategoryId);
     }
 }

@@ -1,79 +1,130 @@
 using DigiTalent.Application.Common.Interfaces;
-using DigiTalent.Domain.Entities.Assessment;
-using DigiTalent.Domain.Entities.Auth;
-using DigiTalent.Domain.Entities.Certificate;
-using DigiTalent.Domain.Entities.Competency;
-using AssessmentEntity = DigiTalent.Domain.Entities.Assessment.Assessment;
-using CertificateEntity = DigiTalent.Domain.Entities.Certificate.Certificate;
-using DigiTalent.Domain.Entities.Intelligence;
-using DigiTalent.Domain.Entities.Learning;
-using DigiTalent.Domain.Entities.Organization;
-using DigiTalent.Domain.Entities.Shared;
-using DigiTalent.Domain.Entities.Task;
+using DigiTalent.Domain.Common;
+using DigiTalent.Domain.Entities;
+using DigiTalent.Domain.Entities.Learner;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Infrastructure.Persistence;
 
+/// <summary>
+/// Schema chuẩn: docs/database/DigiTalent_AI_Canonical_v2_3.sql — entity + configuration viết khớp file đó.
+/// </summary>
 public class AppDbContext : DbContext, IApplicationDbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    {
+    }
 
-    public DbSet<User> Users => Set<User>();
-    public DbSet<Role> Roles => Set<Role>();
+    // Auth
     public DbSet<Permission> Permissions => Set<Permission>();
-    public DbSet<UserRole> UserRoles => Set<UserRole>();
-    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
-    public DbSet<Organization> Organizations => Set<Organization>();
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<UserRole> UserRoles => Set<UserRole>();
+
+    // Organization & Job Architecture
     public DbSet<Department> Departments => Set<Department>();
-    public DbSet<JobPosition> JobPositions => Set<JobPosition>();
     public DbSet<Employee> Employees => Set<Employee>();
-    public DbSet<CompetencyCategory> CompetencyCategories => Set<CompetencyCategory>();
+    public DbSet<JobFamily> JobFamilies => Set<JobFamily>();
+    public DbSet<JobPosition> JobPositions => Set<JobPosition>();
+    public DbSet<Organization> Organizations => Set<Organization>();
+
+    // Competency & Position Requirements
     public DbSet<Competency> Competencies => Set<Competency>();
-    public DbSet<CompetencyLevel> CompetencyLevels => Set<CompetencyLevel>();
-    public DbSet<PositionCompetencyRequirement> PositionCompetencyRequirements => Set<PositionCompetencyRequirement>();
-    public DbSet<EmployeeCompetencyProfile> EmployeeCompetencyProfiles => Set<EmployeeCompetencyProfile>();
+    public DbSet<CompetencyCategory> CompetencyCategories => Set<CompetencyCategory>();
+    public DbSet<CompetencyEvaluationResult> CompetencyEvaluationResults => Set<CompetencyEvaluationResult>();
     public DbSet<CompetencyEvidence> CompetencyEvidences => Set<CompetencyEvidence>();
+    public DbSet<CompetencyFramework> CompetencyFrameworks => Set<CompetencyFramework>();
+    public DbSet<CompetencyFrameworkMapping> CompetencyFrameworkMappings => Set<CompetencyFrameworkMapping>();
+    public DbSet<CompetencyLevelCriterion> CompetencyLevelCriteria => Set<CompetencyLevelCriterion>();
+    public DbSet<EmployeeCompetencyProfile> EmployeeCompetencyProfiles => Set<EmployeeCompetencyProfile>();
+    public DbSet<PositionRequirementItem> PositionRequirementItems => Set<PositionRequirementItem>();
+    public DbSet<PositionRequirementSet> PositionRequirementSets => Set<PositionRequirementSet>();
+
+    // Learning (khóa học)
     public DbSet<Course> Courses => Set<Course>();
-    public DbSet<CourseModule> CourseModules => Set<CourseModule>();
-    public DbSet<Lesson> Lessons => Set<Lesson>();
-    public DbSet<LearningMaterial> LearningMaterials => Set<LearningMaterial>();
-    public DbSet<CourseCompetency> CourseCompetencies => Set<CourseCompetency>();
     public DbSet<CourseAssignment> CourseAssignments => Set<CourseAssignment>();
+    public DbSet<CourseCompetency> CourseCompetencies => Set<CourseCompetency>();
+    public DbSet<CourseLearningOutcome> CourseLearningOutcomes => Set<CourseLearningOutcome>();
+    public DbSet<CourseModule> CourseModules => Set<CourseModule>();
+    public DbSet<CoursePrerequisite> CoursePrerequisites => Set<CoursePrerequisite>();
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
+    public DbSet<LearningMaterial> LearningMaterials => Set<LearningMaterial>();
+    public DbSet<Lesson> Lessons => Set<Lesson>();
+    public DbSet<LessonLearningOutcome> LessonLearningOutcomes => Set<LessonLearningOutcome>();
     public DbSet<LessonProgress> LessonProgresses => Set<LessonProgress>();
-    public DbSet<QuestionBank> QuestionBanks => Set<QuestionBank>();
-    public DbSet<Question> Questions => Set<Question>();
-    public DbSet<QuestionOption> QuestionOptions => Set<QuestionOption>();
-    public DbSet<Assessment> Assessments => Set<Assessment>();
-    public DbSet<AssessmentQuestion> AssessmentQuestions => Set<AssessmentQuestion>();
-    public DbSet<AssessmentAttempt> AssessmentAttempts => Set<AssessmentAttempt>();
-    public DbSet<AssessmentAnswer> AssessmentAnswers => Set<AssessmentAnswer>();
-    public DbSet<CertificateTemplate> CertificateTemplates => Set<CertificateTemplate>();
-    public DbSet<Certificate> Certificates => Set<Certificate>();
-    public DbSet<CertificateVerificationLog> CertificateVerificationLogs => Set<CertificateVerificationLog>();
-    public DbSet<PracticalTask> PracticalTasks => Set<PracticalTask>();
+
+    // Task (bài tập thực hành)
+    public DbSet<AssignedTaskTarget> AssignedTaskTargets => Set<AssignedTaskTarget>();
+    public DbSet<PracticalTaskTarget> PracticalTaskTargets => Set<PracticalTaskTarget>();
+    public DbSet<PracticalTaskTemplate> PracticalTaskTemplates => Set<PracticalTaskTemplate>();
     public DbSet<TaskAssignment> TaskAssignments => Set<TaskAssignment>();
-    public DbSet<TaskSubmission> TaskSubmissions => Set<TaskSubmission>();
     public DbSet<TaskEvaluation> TaskEvaluations => Set<TaskEvaluation>();
-    public DbSet<SkillGapResult> SkillGapResults => Set<SkillGapResult>();
-    public DbSet<SkillGapItem> SkillGapItems => Set<SkillGapItem>();
-    public DbSet<LearningRecommendation> LearningRecommendations => Set<LearningRecommendation>();
-    public DbSet<TrainingRiskScore> TrainingRiskScores => Set<TrainingRiskScore>();
+    public DbSet<TaskSubmission> TaskSubmissions => Set<TaskSubmission>();
+    public DbSet<TaskSubmissionFile> TaskSubmissionFiles => Set<TaskSubmissionFile>();
+
+    // Assessment (kiểm tra)
+    public DbSet<Assessment> Assessments => Set<Assessment>();
+    public DbSet<AssessmentAnswer> AssessmentAnswers => Set<AssessmentAnswer>();
+    public DbSet<AssessmentAttempt> AssessmentAttempts => Set<AssessmentAttempt>();
+    public DbSet<AssessmentQuestion> AssessmentQuestions => Set<AssessmentQuestion>();
+    public DbSet<Question> Questions => Set<Question>();
+    public DbSet<QuestionBank> QuestionBanks => Set<QuestionBank>();
+    public DbSet<QuestionOption> QuestionOptions => Set<QuestionOption>();
+
+    // Certificate
+    public DbSet<Certificate> Certificates => Set<Certificate>();
+    public DbSet<CertificateTemplate> CertificateTemplates => Set<CertificateTemplate>();
+    public DbSet<CertificateVerificationLog> CertificateVerificationLogs => Set<CertificateVerificationLog>();
+
+    // Intelligence (chấm điểm, phân tích)
     public DbSet<ReadinessScore> ReadinessScores => Set<ReadinessScore>();
-    public DbSet<AiExplanationLog> AiExplanationLogs => Set<AiExplanationLog>();
-    public DbSet<FileObject> FileObjects => Set<FileObject>();
-    public DbSet<Notification> Notifications => Set<Notification>();
-public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
-public DbSet<PromotionReadinessResult> PromotionReadinessResults => Set<PromotionReadinessResult>();
-    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
-    public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
     public DbSet<ScoringConfig> ScoringConfigs => Set<ScoringConfig>();
     public DbSet<ScoringConfigItem> ScoringConfigItems => Set<ScoringConfigItem>();
+    public DbSet<SkillGapItem> SkillGapItems => Set<SkillGapItem>();
+    public DbSet<SkillGapRun> SkillGapRuns => Set<SkillGapRun>();
+    public DbSet<TrainingRiskScore> TrainingRiskScores => Set<TrainingRiskScore>();
+
+    // Learner Surface (SEP-09)
+    public DbSet<LearnerProfile> LearnerProfiles => Set<LearnerProfile>();
+
+    // Shared
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<FileObject> FileObjects => Set<FileObject>();
+    public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
+        // Tự nạp mọi class *Configuration trong thư mục Persistence/Configurations
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+
+        // Không xóa dây chuyền (cascade) — dữ liệu lịch sử phải được giữ lại (SQL v2.3 dùng RESTRICT/NO ACTION)
+        foreach (var foreignKey in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
+        {
+            foreignKey.DeleteBehavior = DeleteBehavior.Restrict;
+        }
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        // Tự điền created_at / updated_at cho entity có 2 cột này (IHasTimestamps & BaseEntity)
+        var now = DateTimeOffset.UtcNow;
+
+        foreach (var entry in ChangeTracker.Entries<IHasTimestamps>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                entry.Entity.CreatedAt = now;
+                entry.Entity.UpdatedAt = now;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = now;
+            }
+        }
+
+        return base.SaveChangesAsync(cancellationToken);
     }
 }

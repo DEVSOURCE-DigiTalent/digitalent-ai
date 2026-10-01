@@ -1,0 +1,9 @@
+export { LearnerDashboardPage } from './LearnerDashboardPage';
+export { LearnerTargetPage } from './LearnerTargetPage';
+export { LearnerDiagnosticPage } from './LearnerDiagnosticPage';
+export { LearnerPathPage } from './LearnerPathPage';
+export { LearnerCourseDetailPage } from './LearnerCourseDetailPage';
+export { LearnerClassroomPage } from './LearnerClassroomPage';
+export { LearnerProgressPage } from './LearnerProgressPage';
+export { LearnerTasksPage } from './LearnerTasksPage';
+export { LearnerCertificatesPage } from './LearnerCertificatesPage';

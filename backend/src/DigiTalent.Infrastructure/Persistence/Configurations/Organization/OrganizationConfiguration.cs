@@ -1,53 +1,23 @@
-using DigiTalent.Domain.Entities.Organization;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DigiTalent.Infrastructure.Persistence.Configurations.Organization;
+namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
-public class OrganizationConfiguration : IEntityTypeConfiguration<Domain.Entities.Organization.Organization>
+public class OrganizationConfiguration : IEntityTypeConfiguration<Organization>
 {
-    public void Configure(EntityTypeBuilder<Domain.Entities.Organization.Organization> builder)
+    public void Configure(EntityTypeBuilder<Organization> builder)
     {
-        builder.ToTable("organizations");
+        builder.ToTable("organizations", table =>
+            table.HasCheckConstraint("ck_organizations_status", "status IN ('ACTIVE','INACTIVE')"));
 
-        builder.HasKey(x => x.Id);
+        builder.HasKey(o => o.Id);
 
-        builder.Property(x => x.Code)
-            .HasMaxLength(80);
+        builder.Property(o => o.Code).IsRequired().HasMaxLength(50);
+        builder.HasIndex(o => o.Code).IsUnique();
 
-        builder.Property(x => x.Name)
-            .HasMaxLength(255);
-
-        builder.Property(x => x.Domain)
-            .HasMaxLength(255);
-
-        builder.Property(x => x.Status)
-            .HasConversion<string>()
-            .HasMaxLength(30);
-
-        builder.Property(x => x.CreatedAt)
-            .HasColumnType("timestamptz");
-
-        builder.Property(x => x.UpdatedAt)
-            .HasColumnType("timestamptz");
-
-        builder.HasIndex(x => x.Code)
-            .IsUnique()
-            .HasDatabaseName("ux_organizations_code");
-
-        builder.HasMany(o => o.Departments)
-            .WithOne(d => d.Organization)
-            .HasForeignKey(d => d.OrganizationId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasMany(o => o.JobPositions)
-            .WithOne(jp => jp.Organization)
-            .HasForeignKey(jp => jp.OrganizationId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasMany(o => o.Employees)
-            .WithOne(e => e.Organization)
-            .HasForeignKey(e => e.OrganizationId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.Property(o => o.Name).IsRequired().HasMaxLength(200);
+        builder.Property(o => o.Domain).HasMaxLength(255);
+        builder.Property(o => o.Status).IsRequired().HasMaxLength(30);
     }
 }

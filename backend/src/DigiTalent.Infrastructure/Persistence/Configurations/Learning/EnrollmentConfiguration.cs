@@ -1,68 +1,21 @@
-using DigiTalent.Domain.Entities.Learning;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DigiTalent.Infrastructure.Persistence.Configurations.Learning;
+namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
+/// <summary>
+/// Map entity Enrollment với bảng "enrollments".
+/// Database là gốc: tên cột tự đổi sang snake_case, không khai báo lại ở đây.
+/// </summary>
 public class EnrollmentConfiguration : IEntityTypeConfiguration<Enrollment>
 {
     public void Configure(EntityTypeBuilder<Enrollment> builder)
     {
         builder.ToTable("enrollments");
+        builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.Id)
-            .HasColumnName("id");
-
-        builder.Property(x => x.CourseId)
-            .HasColumnName("course_id");
-
-        builder.Property(x => x.EmployeeId)
-            .HasColumnName("employee_id");
-
-        builder.Property(x => x.CourseAssignmentId)
-            .HasColumnName("course_assignment_id");
-
-        builder.Property(x => x.Status)
-            .HasMaxLength(30)
-            .HasColumnName("status");
-
-        builder.Property(x => x.ProgressPercentage)
-            .HasColumnType("numeric(5,2)")
-            .HasColumnName("progress_percentage");
-
-        builder.Property(x => x.StartedAt)
-            .HasColumnType("timestamptz")
-            .HasColumnName("started_at");
-
-        builder.Property(x => x.CompletedAt)
-            .HasColumnType("timestamptz")
-            .HasColumnName("completed_at");
-
-        builder.Property(x => x.DueDate)
-            .HasColumnType("date")
-            .HasColumnName("due_date");
-
-        builder.Property(x => x.CreatedAt)
-            .HasColumnType("timestamptz")
-            .HasColumnName("created_at");
-
-        builder.Property(x => x.CreatedBy)
-            .HasColumnName("created_by");
-
-        builder.Property(x => x.UpdatedAt)
-            .HasColumnType("timestamptz")
-            .HasColumnName("updated_at");
-
-        builder.Property(x => x.UpdatedBy)
-            .HasColumnName("updated_by");
-
-        builder.HasIndex(x => new { x.CourseId, x.EmployeeId })
-            .IsUnique()
-            .HasDatabaseName("ux_enrollment_course_employee");
-
-        builder.HasMany(e => e.LessonProgresses)
-            .WithOne(lp => lp.Enrollment)
-            .HasForeignKey(lp => lp.EnrollmentId)
-            .OnDelete(DeleteBehavior.Restrict);
+        // Cột đặc biệt (jsonb / số thập phân): phải khai báo đúng kiểu
+        builder.Property(x => x.ProgressPercent).HasPrecision(5, 2);
     }
 }

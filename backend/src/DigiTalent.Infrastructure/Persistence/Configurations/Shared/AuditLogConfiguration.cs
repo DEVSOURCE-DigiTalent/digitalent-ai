@@ -1,8 +1,8 @@
-using DigiTalent.Domain.Entities.Shared;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DigiTalent.Infrastructure.Persistence.Configurations.Shared;
+namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
 public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
 {
@@ -10,25 +10,19 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
     {
         builder.ToTable("audit_logs");
 
-        builder.Property(x => x.Id).HasColumnName("id");
-        builder.Property(x => x.CreatedAt).HasColumnName("created_at").HasColumnType("timestamptz");
-        builder.Property(x => x.CreatedBy).HasColumnName("created_by");
-        builder.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasColumnType("timestamptz");
-        builder.Property(x => x.UpdatedBy).HasColumnName("updated_by");
+        builder.HasKey(a => a.Id);
 
-        builder.Property(x => x.OrganizationId).HasColumnName("organization_id");
-        builder.Property(x => x.ActorUserId).HasColumnName("actor_user_id");
-        builder.Property(x => x.Action).HasColumnName("action").HasMaxLength(120);
-        builder.Property(x => x.EntityType).HasColumnName("entity_type").HasMaxLength(120);
-        builder.Property(x => x.EntityId).HasColumnName("entity_id");
-        builder.Property(x => x.OldValuesJson).HasColumnName("old_values_json").HasColumnType("jsonb");
-        builder.Property(x => x.NewValuesJson).HasColumnName("new_values_json").HasColumnType("jsonb");
-        builder.Property(x => x.IpAddress).HasColumnName("ip_address").HasMaxLength(64);
+        builder.Property(a => a.Action).IsRequired().HasMaxLength(120);
+        builder.Property(a => a.EntityType).IsRequired().HasMaxLength(100);
+        builder.Property(a => a.OldValues).HasColumnType("jsonb");
+        builder.Property(a => a.NewValues).HasColumnType("jsonb");
+        builder.Property(a => a.IpHash).HasMaxLength(128);
 
-        builder.HasIndex(x => new { x.EntityType, x.EntityId })
-            .HasDatabaseName("ix_audit_entity");
+        builder.HasOne<Organization>().WithMany().HasForeignKey(a => a.OrganizationId);
+        builder.HasOne<User>().WithMany().HasForeignKey(a => a.ActorUserId);
 
-        builder.HasIndex(x => x.ActorUserId)
-            .HasDatabaseName("ix_audit_actor");
+        builder.HasIndex(a => new { a.EntityType, a.EntityId, a.CreatedAt })
+            .IsDescending(false, false, true)
+            .HasDatabaseName("ix_audit_logs_entity_created_desc");
     }
 }

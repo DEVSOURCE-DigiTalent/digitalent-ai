@@ -1,77 +1,95 @@
-using DigiTalent.Domain.Entities.Assessment;
-using DigiTalent.Domain.Entities.Auth;
-using DigiTalent.Domain.Entities.Certificate;
-using DigiTalent.Domain.Entities.Competency;
-using DigiTalent.Domain.Entities.Intelligence;
-using DigiTalent.Domain.Entities.Learning;
-using DigiTalent.Domain.Entities.Shared;
-using DigiTalent.Domain.Entities.Task;
+using DigiTalent.Domain.Entities;
+using DigiTalent.Domain.Entities.Learner;
 using Microsoft.EntityFrameworkCore;
-// Organization entity aliased to avoid conflict with DigiTalent.Application.Organization namespace
-using OrgEntity = DigiTalent.Domain.Entities.Organization.Organization;
-using DeptEntity = DigiTalent.Domain.Entities.Organization.Department;
-using PositionEntity = DigiTalent.Domain.Entities.Organization.JobPosition;
-using EmpEntity = DigiTalent.Domain.Entities.Organization.Employee;
-using CompetencyEntity = DigiTalent.Domain.Entities.Competency.Competency;
-using AssessmentEntity = DigiTalent.Domain.Entities.Assessment.Assessment;
-using CertificateEntity = DigiTalent.Domain.Entities.Certificate.Certificate;
-using NotificationEntity = DigiTalent.Domain.Entities.Shared.Notification;
 
 namespace DigiTalent.Application.Common.Interfaces;
 
+/// <summary>
+/// Use case làm việc với database qua interface này (không dùng thẳng AppDbContext).
+/// Mỗi DbSet là 1 bảng. Thêm entity mới → thêm DbSet ở đây VÀ trong AppDbContext.cs.
+/// Schema chuẩn: docs/database/DigiTalent_AI_Canonical_v2_3.sql.
+/// </summary>
 public interface IApplicationDbContext
 {
-    DbSet<User> Users { get; }
-    DbSet<Role> Roles { get; }
+    // Auth
     DbSet<Permission> Permissions { get; }
-    DbSet<UserRole> UserRoles { get; }
-    DbSet<RolePermission> RolePermissions { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
-    DbSet<OrgEntity> Organizations { get; }
-    DbSet<DeptEntity> Departments { get; }
-    DbSet<PositionEntity> JobPositions { get; }
-    DbSet<EmpEntity> Employees { get; }
+    DbSet<Role> Roles { get; }
+    DbSet<RolePermission> RolePermissions { get; }
+    DbSet<User> Users { get; }
+    DbSet<UserRole> UserRoles { get; }
+
+    // Organization & Job Architecture
+    DbSet<Department> Departments { get; }
+    DbSet<Employee> Employees { get; }
+    DbSet<JobFamily> JobFamilies { get; }
+    DbSet<JobPosition> JobPositions { get; }
+    DbSet<Organization> Organizations { get; }
+
+    // Competency & Position Requirements
+    DbSet<Competency> Competencies { get; }
     DbSet<CompetencyCategory> CompetencyCategories { get; }
-    DbSet<CompetencyEntity> Competencies { get; }
-    DbSet<CompetencyLevel> CompetencyLevels { get; }
-    DbSet<PositionCompetencyRequirement> PositionCompetencyRequirements { get; }
-    DbSet<EmployeeCompetencyProfile> EmployeeCompetencyProfiles { get; }
+    DbSet<CompetencyEvaluationResult> CompetencyEvaluationResults { get; }
     DbSet<CompetencyEvidence> CompetencyEvidences { get; }
+    DbSet<CompetencyFramework> CompetencyFrameworks { get; }
+    DbSet<CompetencyFrameworkMapping> CompetencyFrameworkMappings { get; }
+    DbSet<CompetencyLevelCriterion> CompetencyLevelCriteria { get; }
+    DbSet<EmployeeCompetencyProfile> EmployeeCompetencyProfiles { get; }
+    DbSet<PositionRequirementItem> PositionRequirementItems { get; }
+    DbSet<PositionRequirementSet> PositionRequirementSets { get; }
+
+    // Learning (khóa học)
     DbSet<Course> Courses { get; }
-    DbSet<CourseModule> CourseModules { get; }
-    DbSet<Lesson> Lessons { get; }
-    DbSet<LearningMaterial> LearningMaterials { get; }
-    DbSet<CourseCompetency> CourseCompetencies { get; }
     DbSet<CourseAssignment> CourseAssignments { get; }
+    DbSet<CourseCompetency> CourseCompetencies { get; }
+    DbSet<CourseLearningOutcome> CourseLearningOutcomes { get; }
+    DbSet<CourseModule> CourseModules { get; }
+    DbSet<CoursePrerequisite> CoursePrerequisites { get; }
     DbSet<Enrollment> Enrollments { get; }
+    DbSet<LearningMaterial> LearningMaterials { get; }
+    DbSet<Lesson> Lessons { get; }
+    DbSet<LessonLearningOutcome> LessonLearningOutcomes { get; }
     DbSet<LessonProgress> LessonProgresses { get; }
-    DbSet<QuestionBank> QuestionBanks { get; }
-    DbSet<Question> Questions { get; }
-    DbSet<QuestionOption> QuestionOptions { get; }
-    DbSet<AssessmentEntity> Assessments { get; }
-    DbSet<AssessmentQuestion> AssessmentQuestions { get; }
-    DbSet<AssessmentAttempt> AssessmentAttempts { get; }
-    DbSet<AssessmentAnswer> AssessmentAnswers { get; }
-    DbSet<CertificateTemplate> CertificateTemplates { get; }
-    DbSet<CertificateEntity> Certificates { get; }
-    DbSet<CertificateVerificationLog> CertificateVerificationLogs { get; }
-    DbSet<PracticalTask> PracticalTasks { get; }
+
+    // Task (bài tập thực hành)
+    DbSet<AssignedTaskTarget> AssignedTaskTargets { get; }
+    DbSet<PracticalTaskTarget> PracticalTaskTargets { get; }
+    DbSet<PracticalTaskTemplate> PracticalTaskTemplates { get; }
     DbSet<TaskAssignment> TaskAssignments { get; }
-    DbSet<TaskSubmission> TaskSubmissions { get; }
     DbSet<TaskEvaluation> TaskEvaluations { get; }
-    DbSet<SkillGapResult> SkillGapResults { get; }
-    DbSet<SkillGapItem> SkillGapItems { get; }
-    DbSet<LearningRecommendation> LearningRecommendations { get; }
-    DbSet<TrainingRiskScore> TrainingRiskScores { get; }
+    DbSet<TaskSubmission> TaskSubmissions { get; }
+    DbSet<TaskSubmissionFile> TaskSubmissionFiles { get; }
+
+    // Assessment (kiểm tra)
+    DbSet<Assessment> Assessments { get; }
+    DbSet<AssessmentAnswer> AssessmentAnswers { get; }
+    DbSet<AssessmentAttempt> AssessmentAttempts { get; }
+    DbSet<AssessmentQuestion> AssessmentQuestions { get; }
+    DbSet<Question> Questions { get; }
+    DbSet<QuestionBank> QuestionBanks { get; }
+    DbSet<QuestionOption> QuestionOptions { get; }
+
+    // Certificate
+    DbSet<Certificate> Certificates { get; }
+    DbSet<CertificateTemplate> CertificateTemplates { get; }
+    DbSet<CertificateVerificationLog> CertificateVerificationLogs { get; }
+
+    // Intelligence (chấm điểm, phân tích)
     DbSet<ReadinessScore> ReadinessScores { get; }
-    DbSet<AiExplanationLog> AiExplanationLogs { get; }
-    DbSet<FileObject> FileObjects { get; }
-    DbSet<NotificationEntity> Notifications { get; }
-    DbSet<AuditLog> AuditLogs { get; }
-    DbSet<SystemSetting> SystemSettings { get; }
     DbSet<ScoringConfig> ScoringConfigs { get; }
     DbSet<ScoringConfigItem> ScoringConfigItems { get; }
+    DbSet<SkillGapItem> SkillGapItems { get; }
+    DbSet<SkillGapRun> SkillGapRuns { get; }
+    DbSet<TrainingRiskScore> TrainingRiskScores { get; }
+
+    // Learner Surface (SEP-09)
+    DbSet<LearnerProfile> LearnerProfiles { get; }
+
+    // Shared
+    DbSet<AuditLog> AuditLogs { get; }
+    DbSet<FileObject> FileObjects { get; }
+    DbSet<Notification> Notifications { get; }
+    DbSet<SystemSetting> SystemSettings { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
-    DbSet<TEntity> Set<TEntity>() where TEntity : class;
 }
