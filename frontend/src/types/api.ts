@@ -11,6 +11,23 @@ export interface ApiError {
   message: string;
 }
 
+/** Mirrors DigiTalent.Shared.Pagination.PagedList<T> (System.Text.Json camelCase) */
+export interface PagedList<T> {
+  items: T[];
+  pageIndex: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasPrevious: boolean;
+  hasNext: boolean;
+}
+
+/** Mirrors DigiTalent.Shared.Pagination.PaginationRequest (System.Text.Json camelCase) */
+export interface PaginationRequest {
+  pageIndex?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortDirection?: string;
 /** Khớp Application/Common/Models/PagedList.cs */
 export interface PagedList<T> {
   items: T[];
