@@ -1,5 +1,6 @@
 import { Navigate, type RouteObject } from 'react-router-dom';
 import { LearnerLayout } from '../layouts/LearnerLayout';
+import { AuthGuard } from '../../components/guards/AuthGuard';
 import {
   LearnerDashboardPage,
   LearnerTargetPage,
@@ -15,7 +16,7 @@ import {
 export const learnerRoutes: RouteObject[] = [
   {
     path: '/learn',
-    element: <LearnerLayout />,
+    element: <AuthGuard><LearnerLayout /></AuthGuard>,
     children: [
       { index: true, element: <LearnerDashboardPage /> },
       { path: 'dashboard', element: <LearnerDashboardPage /> },
