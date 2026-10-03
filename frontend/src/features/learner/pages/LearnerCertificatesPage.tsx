@@ -109,7 +109,12 @@ export const LearnerCertificatesPage: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSelectedCert(c)}
+                  onClick={() => {
+                    // Open the preview modal first, then trigger browser print dialog
+                    setSelectedCert(c);
+                    // Slight delay so the modal renders before print is called
+                    setTimeout(() => window.print(), 300);
+                  }}
                   className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 transition inline-flex items-center gap-1"
                 >
                   <Download className="w-3.5 h-3.5" />
