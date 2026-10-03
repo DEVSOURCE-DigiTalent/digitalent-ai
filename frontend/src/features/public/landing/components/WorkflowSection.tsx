@@ -12,7 +12,7 @@ type WorkflowSection = Extract<LandingSectionConfig, { kind: 'workflow' }>;
  * preview. Every step stays in the DOM and in reading order.
  */
 export function WorkflowSection({ section }: { section: WorkflowSection }) {
-  const { active, register } = useActiveStep(section.steps.length);
+  const { active, register, scrollToStep } = useActiveStep(section.steps.length);
   const current = section.steps[active] ?? section.steps[0];
 
   return (
@@ -27,7 +27,11 @@ export function WorkflowSection({ section }: { section: WorkflowSection }) {
               key={step.title}
               ref={register(index)}
               data-active={index === active || undefined}
-              className="relative grid gap-5 py-8 pl-9 lg:min-h-[42svh] lg:content-center"
+              onClick={() => scrollToStep(index)}
+              className={cn(
+                'relative grid gap-5 py-8 pl-9 transition-colors lg:min-h-[42svh] lg:cursor-pointer lg:content-center',
+                index === active ? '' : 'lg:hover:opacity-80'
+              )}
             >
               <span
                 aria-hidden="true"

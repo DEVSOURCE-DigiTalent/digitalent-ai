@@ -351,6 +351,9 @@ describe('employee activation (FLOW-02)', () => {
     type('Nhập lại mật khẩu', 'MatKhauMoi6789');
     click('Kích hoạt và vào hệ thống');
 
+    expect(await heading('Bài test đánh giá năng lực hiện tại')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('link', { name: 'Vào trang cá nhân' }));
+
     expect(await screen.findByTestId('enterprise-layout', {}, { timeout: 10000 })).toBeInTheDocument();
     expect(await heading('Bảng phát triển của tôi')).toBeInTheDocument();
   });

@@ -54,7 +54,6 @@ export function PositionDetailPage() {
         subtitle={[
           `Mã: ${p.code}`,
           p.departmentName ? `Phòng ban: ${p.departmentName}` : null,
-          p.jobGrade ? `Cấp bậc: ${p.jobGrade} (${p.jobGradeName ?? p.jobGrade})` : null,
         ].filter(Boolean).join(' · ')}
       >
         <StatusBadge label={p.status === 'ACTIVE' ? 'Đang dùng' : 'Ngừng dùng'} variant={getStatusVariant(p.status)} />

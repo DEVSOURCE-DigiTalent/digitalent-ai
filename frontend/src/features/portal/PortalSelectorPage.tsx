@@ -20,7 +20,7 @@ const OPTIONS: PortalOption[] = [
     eyebrow: 'Dành cho doanh nghiệp',
     title: 'Quản trị năng lực số của cả đội ngũ.',
     body: 'Đặt yêu cầu năng lực cho từng vị trí, thấy khoảng trống kỹ năng, giao khóa học và xác nhận năng lực bằng bằng chứng thực tế.',
-    points: ['Mua gói theo số ghế', 'Mời nhân viên, phân quyền theo vai trò', 'Nhiệm vụ thực hành và đánh giá của quản lý'],
+    points: ['Mua gói theo quy mô người dùng', 'Mời nhân viên, phân quyền theo vai trò', 'Nhiệm vụ thực hành và đánh giá của quản lý'],
     cta: 'Xem giải pháp doanh nghiệp',
   },
   {

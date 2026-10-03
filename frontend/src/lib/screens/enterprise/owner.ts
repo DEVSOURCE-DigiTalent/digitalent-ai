@@ -54,7 +54,7 @@ export const OWNER_SCREENS: ScreenDef[] = [
   },
   {
     id: 'OW-09',
-    title: 'Vị trí & Cấp bậc',
+    title: 'Vị trí công việc',
     path: '/enterprise/positions',
     roles: OWNER_ROLES,
     permission: P.JOB_POSITION_READ,
@@ -70,11 +70,12 @@ export const OWNER_SCREENS: ScreenDef[] = [
   },
   {
     id: 'OW-12',
-    title: 'Cấu hình cấp bậc',
+    title: 'Cấu hình cấp bậc (Đã bỏ)',
     path: '/enterprise/positions/grades',
     roles: OWNER_ROLES,
     permission: P.JOB_GRADE_READ,
-    priority: 'P0',
+    priority: 'P2',
+    status: 'RETIRED',
   },
   {
     id: 'OW-13',
@@ -280,7 +281,7 @@ export const OWNER_SCREENS: ScreenDef[] = [
   },
   {
     id: 'OW-42',
-    title: 'Số ghế & Sử dụng',
+    title: 'Quyền sử dụng & Hạn mức',
     path: '/enterprise/subscription/usage',
     roles: OWNER_ROLES,
     allowUnpaid: true,

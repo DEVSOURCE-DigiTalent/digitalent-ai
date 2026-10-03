@@ -88,20 +88,25 @@ export function MyCertificatesPage() {
                 </div>
               </div>
 
-              <div className="relative pt-4 border-t border-slate-100 flex items-center justify-between">
+              <div className="relative pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold">
                   <CheckCircle2 className="size-4 text-emerald-600" />
                   <span>Xác thực bởi DigiTalent AI</span>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleDownload(cert.certificateCode)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-lg transition"
-                >
-                  <Download className="size-3.5" />
-                  <span>Tải bản PDF</span>
-                </button>
+                <div className="flex flex-col sm:items-end gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleDownload(cert.certificateCode)}
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-lg transition"
+                  >
+                    <Download className="size-3.5" />
+                    <span>Tải bản PDF</span>
+                  </button>
+                  <p className="text-[11px] text-slate-400 sm:text-right">
+                    Chứng chỉ số xác thực nội bộ. Bản in PDF tích hợp QuestPDF sẵn sàng khi kết nối dịch vụ backend.
+                  </p>
+                </div>
               </div>
             </div>
           ))}

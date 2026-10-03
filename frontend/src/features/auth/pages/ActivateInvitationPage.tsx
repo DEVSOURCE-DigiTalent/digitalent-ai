@@ -10,6 +10,7 @@ import { useLogin } from '@/hooks/use-auth';
 import { ROLE_LABELS, type Role } from '@/lib/roles';
 import { invitationService } from '@/services/invitation.service';
 import { passwordSchema, requiredText } from '../validation';
+import { PasswordField } from '../components/PasswordField';
 
 const schema = z
   .object({
@@ -98,8 +99,8 @@ function ActivationForm({ token, email, fullName, organizationName, roleLabel }:
     setSubmitError(undefined);
     try {
       await invitationService.activate({ token, fullName: values.fullName, password: values.password });
-      const home = await login.mutateAsync({ email, password: values.password });
-      navigate(home, { replace: true });
+      await login.mutateAsync({ email, password: values.password });
+      navigate('/enterprise/initial-assessment', { replace: true });
     } catch (error) {
       setSubmitError(errorMessage(error));
     }
@@ -123,15 +124,29 @@ function ActivationForm({ token, email, fullName, organizationName, roleLabel }:
           <input id="fullName" autoComplete="name" aria-invalid={!!errors.fullName} className={DARK_INPUT_CLASS} {...register('fullName')} />
         </Field>
 
-        <Field label="Mật khẩu" htmlFor="password" error={errors.password?.message} hint="Ít nhất 8 ký tự, gồm chữ và số.">
-          <input id="password" type="password" autoComplete="new-password" aria-invalid={!!errors.password} className={DARK_INPUT_CLASS} {...register('password')} />
+        <Field label="Mật khẩu" htmlFor="password" error={errors.password?.message} hint="Mật khẩu cần ít nhất 12 ký tự.">
+          <PasswordField
+            id="password"
+            autoComplete="new-password"
+            placeholder="Tối thiểu 12 ký tự"
+            showMinHint={false}
+            error={errors.password?.message}
+            {...register('password')}
+          />
         </Field>
 
         <Field label="Nhập lại mật khẩu" htmlFor="confirmPassword" error={errors.confirmPassword?.message}>
-          <input id="confirmPassword" type="password" autoComplete="new-password" aria-invalid={!!errors.confirmPassword} className={DARK_INPUT_CLASS} {...register('confirmPassword')} />
+          <PasswordField
+            id="confirmPassword"
+            autoComplete="new-password"
+            placeholder="Nhập lại mật khẩu"
+            showMinHint={false}
+            error={errors.confirmPassword?.message}
+            {...register('confirmPassword')}
+          />
         </Field>
 
-        <button type="submit" disabled={isSubmitting} className={`${DARK_PRIMARY_BUTTON} mt-2`}>
+        <button type="submit" disabled={isSubmitting} className={`${DARK_PRIMARY_BUTTON} mt-2 cursor-pointer`}>
           {isSubmitting ? 'Đang kích hoạt…' : 'Kích hoạt và vào hệ thống'}
         </button>
       </form>

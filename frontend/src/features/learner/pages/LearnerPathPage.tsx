@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Check, Lock, Play } from 'lucide-react';
-import { usePersonalPath } from '@/hooks/use-personal-learning';
+import { useDemoFastTrackTarget, useDemoReset, usePersonalPath } from '@/hooks/use-personal-learning';
 import { levelLabelVi } from '@/lib/competency-levels';
 import { cn } from '@/lib/utils';
 import type { PathCourse, PathCourseStatus, PersonalPath } from '@/services/personal-learning.service';
@@ -47,8 +47,43 @@ export function LearnerPathPage() {
 }
 
 function PathBody({ path }: { path: PersonalPath }) {
+  const fastTrackTarget = useDemoFastTrackTarget();
+  const demoReset = useDemoReset();
+
   return (
     <>
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-pt-line bg-pt-raised p-5">
+        <div className="flex items-center gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-pt-fg/10 text-pt-fg font-medium">⚡</span>
+          <div>
+            <p className="text-xs uppercase tracking-wider text-pt-fg-3">Công cụ Trình diễn Demo</p>
+            <p className="text-sm font-medium text-pt-fg">
+              Vị trí đang chọn: <span className="font-semibold">{path.target?.name}</span> ({path.target?.code})
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            disabled={fastTrackTarget.isPending}
+            onClick={() => fastTrackTarget.mutate(path.target?.code)}
+            className={PT_BUTTON}
+            title="Tự động hoàn thành tất cả các khóa học của vị trí này để xem kết quả 100%"
+          >
+            ⚡ {fastTrackTarget.isPending ? 'Đang hoàn tất…' : 'Hoàn thành 100% vị trí (Demo)'}
+          </button>
+          <button
+            type="button"
+            disabled={demoReset.isPending}
+            onClick={() => demoReset.mutate()}
+            className={PT_BUTTON_SECONDARY}
+            title="Khôi phục trạng thái ban đầu để demo lại"
+          >
+            🔄 {demoReset.isPending ? 'Đang đặt lại…' : 'Đặt lại Demo'}
+          </button>
+        </div>
+      </div>
+
       <Card className="grid gap-6 p-6 md:grid-cols-[1.4fr_repeat(3,1fr)] md:items-end md:p-8">
         <div className="grid gap-3">
           <p className={PT_EYEBROW}>Tiến độ lộ trình</p>
@@ -61,6 +96,7 @@ function PathBody({ path }: { path: PersonalPath }) {
         <Stat label="Còn lại" value={formatHours(path.minutesLeft)} hint="thời lượng ước tính" />
         <Stat label="Được miễn" value={path.exempt.length} hint="khóa nhờ đánh giá đầu vào" />
       </Card>
+
 
       {!path.assessed && (
         <Card className="flex flex-col gap-4 border-pt-warn/40 p-5 sm:flex-row sm:items-center sm:justify-between">

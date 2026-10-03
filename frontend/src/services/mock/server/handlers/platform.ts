@@ -111,7 +111,7 @@ const platformState = {
       action: 'ORGANIZATION_APPROVED',
       targetType: 'Organization',
       targetName: 'Acme Corporation',
-      details: 'Kích hoạt gói dịch vụ Pro (10 ghế)',
+      details: 'Kích hoạt gói dịch vụ Pro (10 người dùng)',
     },
     {
       id: 'aud-02',
@@ -179,7 +179,7 @@ function getAllOrganizations(): PlatformOrganizationDto[] {
     planCode: 'ENT_PRO',
     planName: 'Gói Pro',
     status: acmeSuspended ? 'SUSPENDED' : 'ACTIVE',
-    seatLimit: platformState.seatOverrides.get(ACME_ORGANIZATION_ID) ?? 10,
+    seatLimit: platformState.seatOverrides.get(ACME_ORGANIZATION_ID) ?? 100,
     seatsUsed: acmeData.employees.length || 5,
     departmentsCount: acmeData.departments.length || 3,
     positionsCount: acmeData.positions.length || 5,
@@ -329,7 +329,7 @@ route('PUT', '/platform/organizations/:id/quota', (context) => {
   const { id } = context.params;
   const seatLimit = Number(context.body.seatLimit);
   if (!Number.isInteger(seatLimit) || seatLimit < 1 || seatLimit > 1000) {
-    throw badRequest('Hạn mức ghế phải là số nguyên từ 1 đến 1000.');
+    throw badRequest('Hạn mức người dùng phải là số nguyên từ 1 đến 1000.');
   }
 
   const org = getAllOrganizations().find((o) => o.id === id);
@@ -345,11 +345,11 @@ route('PUT', '/platform/organizations/:id/quota', (context) => {
     action: 'QUOTA_UPDATED',
     targetType: 'Organization',
     targetName: org.name,
-    details: `Thay đổi hạn mức số ghế thành ${seatLimit}`,
+    details: `Thay đổi hạn mức người dùng thành ${seatLimit}`,
   });
 
   return { ...org, seatLimit };
-}, { message: 'Đã cập nhật hạn mức ghế thành công.' });
+}, { message: 'Đã cập nhật hạn mức người dùng thành công.' });
 
 // ── PA-04 & PA-05: User Accounts Management ──
 const DEMO_PLATFORM_USERS: PlatformUserDto[] = [
@@ -815,7 +815,7 @@ route('GET', '/platform/subscriptions/:id', (context) => {
           timestamp: new Date(Date.now() - 3600000 * 48).toISOString(),
           actor: 'platform@digitalent.demo',
           action: 'QUOTA_EXPANSION',
-          note: `Đã mở rộng hạn mức từ 5 lên ${org.seatLimit} ghế`,
+          note: `Đã mở rộng hạn mức từ 5 lên ${org.seatLimit} người dùng`,
         },
       ],
     };

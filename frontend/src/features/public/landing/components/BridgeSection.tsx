@@ -28,7 +28,7 @@ export function BridgeSection({ section }: { section: BridgeSection }) {
       if (Math.abs(progress - lastProgress) < 0.002) return;
       lastProgress = progress;
       lines.forEach((line, index) => {
-        line.style.opacity = revealOpacity(progress, index, lines.length).toFixed(3);
+        line.style.opacity = revealOpacity(progress, index, lines.length, 0.45).toFixed(3);
       });
     };
     const schedule = () => {

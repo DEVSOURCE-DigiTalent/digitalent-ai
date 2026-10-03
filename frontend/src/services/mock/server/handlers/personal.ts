@@ -1,19 +1,21 @@
-import { TT02_COMPETENCY_NAMES, TT02_DOMAINS } from '../../../../lib/reference-positions';
+import { TT02_COMPETENCY_NAMES, TT02_DOMAINS, getReferencePosition, summarizeRequirements } from '../../../../lib/reference-positions';
 import { WORKSPACES } from '../../../../lib/roles';
 import type {
   AssessmentOutcome, CourseAssessment, PersonalDiagnostic, PersonalOverview, PersonalProgress,
 } from '../../../personal-learning.service';
 import { badRequest, forbidden, notFound } from '../http';
 import { route, type RequestContext } from '../router';
-import { courseIdOfTask, courseModules } from '../personal/course-content';
+import { courseDomain, courseIdOfTask, courseModules, taskIdOf } from '../personal/course-content';
+import { courseFor } from '../catalog';
 import {
   ASSESSMENT_PASS_PERCENT, activity, buildPath, certificateIdOf, certificates, completedCourses, competencyLevels,
   courseDetail, courseStatus, diagnosticLevels, diagnosticResult, findCourse, isReferencePosition, learnedMinutes,
   milestones, skillGap, targetDto, tasks,
 } from '../personal/personal-logic';
-import { getPersonalState, updatePersonalState, type PersonalState } from '../personal/personal-store';
+import { demoState, getPersonalState, updatePersonalState, type PersonalState } from '../personal/personal-store';
 import { ENTRY_QUESTIONS, QUESTION_BY_ID, questionsOfDomain } from '../personal/question-bank';
 import { updateDb } from '../../mock-store';
+
 
 /** Personal workspace (spec IND-*): one learner, their target, path, courses, tasks and certificates. */
 
@@ -176,9 +178,10 @@ route('GET', '/personal/courses/:id/assessment', (context): CourseAssessment => 
     courseTitle: course.title,
     passPercent: ASSESSMENT_PASS_PERCENT,
     ready: detail.completedLessons === detail.lessonCount,
-    questions: questionsOfDomain(detail.domainNumber).map(({ id, competencyCode, text, options }) => ({
-      id, competencyCode, text, options,
+    questions: questionsOfDomain(detail.domainNumber).map(({ id, competencyCode, text, options, correctIndex }) => ({
+      id, competencyCode, text, options, correctOptionIndex: correctIndex,
     })),
+
   };
 });
 
@@ -263,4 +266,95 @@ route('GET', '/personal/progress', (context): PersonalProgress => {
     milestones: milestones(state),
     activity: activity(state, 12),
   };
+});
+
+// ── Demo Fast-Track Endpoints ──
+
+route('POST', '/personal/demo/fast-track-course', (context) => {
+  const courseId = String(context.body?.courseId ?? '');
+  const course = courseOrThrow(courseId);
+  return updatePersonalState(learnerId(context), (state) => {
+    const modules = courseModules(course);
+    const lessons = modules.flatMap((m) => m.lessons);
+    const now = new Date().toISOString();
+    state.lessons[course.id] = Object.fromEntries(lessons.map((l) => [l.id, now]));
+
+    const questions = questionsOfDomain(courseDomain(course).number);
+    if (!state.attempts.some((a) => a.courseId === course.id && a.passed)) {
+      state.attempts.push({
+        courseId: course.id,
+        at: now,
+        correct: questions.length,
+        total: questions.length,
+        passed: true,
+      });
+    }
+
+    const tId = taskIdOf(course.id);
+    state.submissions[tId] = {
+      linkUrl: `https://digitalent.vn/evidence/${course.code.toLowerCase()}`,
+      content: `Sản phẩm thực hành chuẩn hóa cho khóa ${course.code} (${course.title}).`,
+      submittedAt: now,
+      status: 'APPROVED',
+      score: 95,
+      feedback: 'Sản phẩm hoàn thành xuất sắc theo đúng tiêu chuẩn đánh giá của khung năng lực số TT02.',
+      reviewedAt: now,
+    };
+
+    return { ok: true, courseId: course.id };
+  });
+});
+
+route('POST', '/personal/demo/fast-track-target', (context) => {
+  const targetCode = context.body?.positionCode ? String(context.body.positionCode).toUpperCase() : null;
+  return updatePersonalState(learnerId(context), (state) => {
+    if (targetCode && isReferencePosition(targetCode)) {
+      state.targetCode = targetCode;
+      state.targetSetAt = new Date().toISOString();
+    }
+    if (!state.targetCode) throw badRequest('Chưa chọn vị trí mục tiêu.');
+
+    const now = new Date().toISOString();
+    const position = getReferencePosition(state.targetCode);
+    if (!position) throw badRequest('Không tìm thấy thông tin vị trí.');
+
+    const { domains } = summarizeRequirements(position);
+    for (const d of domains) {
+      if (d.highestLevel > 0) {
+        for (let lvl = 1; lvl <= d.highestLevel; lvl++) {
+          const course = courseFor(`cat-${d.number}`, lvl);
+          if (course) {
+            const modules = courseModules(course);
+            state.lessons[course.id] = Object.fromEntries(modules.flatMap((m) => m.lessons).map((l) => [l.id, now]));
+            const questions = questionsOfDomain(d.number);
+            if (!state.attempts.some((a) => a.courseId === course.id && a.passed)) {
+              state.attempts.push({
+                courseId: course.id,
+                at: now,
+                correct: questions.length,
+                total: questions.length,
+                passed: true,
+              });
+            }
+            const tId = taskIdOf(course.id);
+            state.submissions[tId] = {
+              linkUrl: `https://digitalent.vn/evidence/${course.code.toLowerCase()}`,
+              content: `Sản phẩm thực hành chuẩn hóa cho khóa ${course.code} (${course.title}).`,
+              submittedAt: now,
+              status: 'APPROVED',
+              score: 95,
+              feedback: 'Bài nộp đáp ứng đầy đủ tiêu chí thẩm định theo Thông tư 02/2025/TT-BGDĐT.',
+              reviewedAt: now,
+            };
+          }
+        }
+      }
+    }
+
+    return { ok: true, targetCode: state.targetCode };
+  });
+});
+
+route('POST', '/personal/demo/reset', (context) => {
+  return updatePersonalState(learnerId(context), () => demoState());
 });

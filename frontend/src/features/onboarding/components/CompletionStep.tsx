@@ -24,11 +24,6 @@ function checklistFor(setup: OrganizationSetup): ChecklistItem[] {
       done: Boolean(setup.organization),
     },
     {
-      label: 'Cấp bậc (G1–G3)',
-      detail: setup.grades?.length ? `${setup.grades.length} cấp bậc chuẩn hóa` : '3 cấp bậc (G1–G3)',
-      done: true,
-    },
-    {
       label: 'Phòng ban',
       detail: setup.departments.length
         ? `${setup.departments.length} phòng ban`
@@ -38,16 +33,9 @@ function checklistFor(setup: OrganizationSetup): ChecklistItem[] {
     {
       label: 'Vị trí công việc',
       detail: setup.positions.length
-        ? `${setup.positions.length} vị trí đã cấu hình Cấp bậc`
+        ? `${setup.positions.length} vị trí công việc đã thiết lập`
         : 'Chưa chọn, thêm sau trong mục Vị trí',
       done: setup.positions.length > 0,
-    },
-    {
-      label: 'Nhân viên & Phân quyền',
-      detail: setup.invitations.length
-        ? `Đã mời ${setup.invitations.length} người`
-        : 'Chưa mời, thêm sau trong mục Thành viên',
-      done: setup.invitations.length > 0,
     },
   ];
 }

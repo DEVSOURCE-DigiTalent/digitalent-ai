@@ -123,7 +123,7 @@ export function PlatformPlanDetailPage() {
 
       <PageHeader
         title={`Cấu hình gói dịch vụ: ${plan.name}`}
-        subtitle={`Thiết lập chính sách giá, hạn mức số lượng ghế và phân quyền tính năng cho gói ${plan.name}`}
+        subtitle={`Thiết lập chính sách giá, hạn mức người dùng và phân quyền tính năng cho gói ${plan.name}`}
       />
 
       {saveSuccess && (
@@ -237,13 +237,13 @@ export function PlatformPlanDetailPage() {
           </div>
         </div>
 
-        {/* Seat Range Limits */}
+        {/* User Capacity Limits */}
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-          <h3 className="text-base font-bold text-slate-900">Hạn mức quy mô người dùng (Số ghế)</h3>
+          <h3 className="text-base font-bold text-slate-900">Hạn mức quy mô người dùng</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="minSeats" className="block text-xs font-semibold text-slate-700 uppercase mb-1">
-                Số ghế tối thiểu
+                Số người dùng tối thiểu
               </label>
               <input
                 id="minSeats"
@@ -256,7 +256,7 @@ export function PlatformPlanDetailPage() {
 
             <div>
               <label htmlFor="maxSeats" className="block text-xs font-semibold text-slate-700 uppercase mb-1">
-                Số ghế tối đa
+                Số người dùng tối đa
               </label>
               <input
                 id="maxSeats"

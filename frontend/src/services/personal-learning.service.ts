@@ -230,7 +230,9 @@ export interface AssessmentQuestion {
   competencyCode: string;
   text: string;
   options: string[];
+  correctOptionIndex?: number;
 }
+
 
 export interface CourseAssessment {
   courseId: string;
@@ -354,4 +356,8 @@ export const personalLearningService = {
     data<PersonalTask>(apiClient.post(`${BASE}/tasks/${taskId}/submissions`, input)),
   getCertificates: () => data<PersonalCertificate[]>(apiClient.get(`${BASE}/certificates`)),
   getProgress: () => data<PersonalProgress>(apiClient.get(`${BASE}/progress`)),
+  demoFastTrackCourse: (courseId: string) => data<{ ok: boolean; courseId: string }>(apiClient.post(`${BASE}/demo/fast-track-course`, { courseId })),
+  demoFastTrackTarget: (positionCode?: string) => data<{ ok: boolean; targetCode: string }>(apiClient.post(`${BASE}/demo/fast-track-target`, { positionCode })),
+  demoReset: () => data<unknown>(apiClient.post(`${BASE}/demo/reset`)),
 };
+

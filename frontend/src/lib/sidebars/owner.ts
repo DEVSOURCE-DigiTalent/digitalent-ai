@@ -49,10 +49,10 @@ export const OWNER_SIDEBAR: SidebarConfig = [
         activeFor: ['OW-07', 'OW-08'],
       },
       {
-        label: 'Vị trí & Cấp bậc',
+        label: 'Vị trí công việc',
         screenId: 'OW-09',
         icon: Briefcase,
-        activeFor: ['OW-10', 'OW-11', 'OW-12'],
+        activeFor: ['OW-10', 'OW-11'],
       },
       {
         label: 'Phân quyền',

@@ -27,21 +27,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ member }) => {
         <Field label="Vai trò" value={rolesLabel(member.roles)} />
         <Field label="Phòng ban" value={member.departmentName} />
         <Field
-          label="Vị trí & Cấp bậc"
-          value={
-            member.positionName ? (
-              <span>
-                {member.positionName}{' '}
-                {member.jobGrade && (
-                  <span className="ml-1 inline-flex items-center rounded-md bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700 ring-1 ring-purple-600/20 ring-inset">
-                    {member.jobGrade} ({member.jobGradeName ?? member.jobGrade})
-                  </span>
-                )}
-              </span>
-            ) : (
-              '—'
-            )
-          }
+          label="Vị trí công việc"
+          value={member.positionName || '—'}
         />
         <Field label="Quản lý trực tiếp" value={member.directManagerName} />
         <Field

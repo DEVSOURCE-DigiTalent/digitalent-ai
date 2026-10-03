@@ -115,7 +115,7 @@ dotnet tool restore
 # ── 3. Khai báo kết nối database (chỉ 1 lần) ───────────────
 
 cd src/DigiTalent.Api
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=ep-summer-tooth-b4r1l2fn.c-6.us-east-2.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=npg_NfPQ0T6wiOMK;SSL Mode=Require;Trust Server Certificate=true"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=<YOUR_POSTGRES_HOST>;Database=<YOUR_DB>;Username=<YOUR_USER>;Password=<YOUR_PASSWORD>;SSL Mode=Require;Trust Server Certificate=true"
 
 # ── 4. Chạy API ────────────────────────────────────────────
 

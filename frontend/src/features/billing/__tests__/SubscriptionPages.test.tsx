@@ -33,7 +33,7 @@ describe('SubscriptionPages (Agent 1 - Phase H: OW-41, OW-43)', () => {
         id: 'inv-1',
         code: 'INV-2026-001',
         issuedAt: '2026-01-01T00:00:00Z',
-        description: 'Đăng ký thường niên gói Enterprise Growth (50 ghế)',
+        description: 'Đăng ký thường niên gói Enterprise Growth (50 người dùng)',
         amount: 24000000,
         status: 'PAID' as const,
       },
@@ -41,7 +41,7 @@ describe('SubscriptionPages (Agent 1 - Phase H: OW-41, OW-43)', () => {
         id: 'inv-2',
         code: 'INV-2026-002',
         issuedAt: '2026-06-01T00:00:00Z',
-        description: 'Bổ sung 10 ghế đào tạo số nội bộ',
+        description: 'Bổ sung 10 người dùng đào tạo số nội bộ',
         amount: 4800000,
         status: 'PAID' as const,
       },
@@ -82,7 +82,7 @@ describe('SubscriptionPages (Agent 1 - Phase H: OW-41, OW-43)', () => {
       expect(screen.getByText('Gói dịch vụ doanh nghiệp')).toBeInTheDocument();
       expect(screen.getByText('Enterprise Growth')).toBeInTheDocument();
       expect(screen.getByText('Đang hoạt động')).toBeInTheDocument();
-      expect(screen.getByText(/18 \/ 50 ghế/i)).toBeInTheDocument();
+      expect(screen.getByText(/18 \/ 50 quyền sử dụng/i)).toBeInTheDocument();
       expect(screen.getByText('Nâng cấp / Đổi gói')).toBeInTheDocument();
       expect(screen.getByText('Ngừng gia hạn')).toBeInTheDocument();
       expect(screen.getByText('Xem chi tiết mức sử dụng')).toBeInTheDocument();
