@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Mail, CheckCircle2 } from 'lucide-react';
 import { PublicShell } from '../../public/components/PublicShell';
@@ -14,6 +14,8 @@ import { useRefreshSession } from '@/hooks/use-refresh-session';
 import { resolveWorkspace, WORKSPACES } from '@/lib/roles';
 import { resolveNextStep } from '@/lib/navigation';
 import { checkoutService } from '@/services/checkout.service';
+import { passwordService } from '@/services/password.service';
+import { USE_MOCK } from '@/services/mock/mock-config';
 
 export function VerifyEmailRequiredPage() {
   const user = useCurrentUser((s) => s.user);
@@ -25,9 +27,18 @@ export function VerifyEmailRequiredPage() {
   const [showChangeEmail, setShowChangeEmail] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [changeError, setChangeError] = useState<string>();
-  const [mockVerifyLink, setMockVerifyLink] = useState<string>(
-    user ? `/verify-email/mock-token-${user.id}` : '',
-  );
+  const [verifyLink, setVerifyLink] = useState<string>();
+  const [notVerifiedNotice, setNotVerifiedNotice] = useState(false);
+
+  useEffect(() => {
+    if (USE_MOCK && user?.email) {
+      passwordService.getVerifyLink(user.email).then((res) => {
+        if (res.data?.data?.debugVerifyLink) {
+          setVerifyLink(res.data.data.debugVerifyLink);
+        }
+      }).catch(() => {});
+    }
+  }, [user?.email]);
 
   if (!user) return <Navigate to="/login" replace />;
 
@@ -41,11 +52,17 @@ export function VerifyEmailRequiredPage() {
   const handleResend = async () => {
     setResending(true);
     setResendSuccess(false);
-    setTimeout(() => {
-      setResending(false);
+    try {
+      const res = await passwordService.resendVerificationEmail(user.email);
       setResendSuccess(true);
-      setMockVerifyLink(`/verify-email/mock-token-${user.id}-${Date.now().toString(36)}`);
-    }, 400);
+      if (res.data?.data?.debugVerifyLink) {
+        setVerifyLink(res.data.data.debugVerifyLink);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setResending(false);
+    }
   };
 
   const handleChangeEmail = async () => {
@@ -55,7 +72,7 @@ export function VerifyEmailRequiredPage() {
       await refreshSession();
       setShowChangeEmail(false);
       if (res.data?.data?.debugVerifyLink) {
-        setMockVerifyLink(res.data.data.debugVerifyLink);
+        setVerifyLink(res.data.data.debugVerifyLink);
       }
     } catch (err: any) {
       setChangeError(err?.response?.data?.message || 'Không thể đổi email.');
@@ -130,23 +147,39 @@ export function VerifyEmailRequiredPage() {
           </div>
         )}
 
-        <div className="pt-2 text-left">
-          <MockEmailNotice label="Kích hoạt email tài khoản" to={mockVerifyLink} />
-        </div>
+        {USE_MOCK && verifyLink && (
+          <div className="pt-2 text-left">
+            <MockEmailNotice label="Kích hoạt email tài khoản (Mô phỏng)" to={verifyLink} />
+          </div>
+        )}
 
-        <button
-          type="button"
-          onClick={async () => {
-            await refreshSession();
-            const fresh = useCurrentUser.getState().user;
-            if (fresh?.emailVerified) {
-              navigate(resolveNextStep(fresh), { replace: true });
-            }
-          }}
-          className="text-xs text-stone-500 hover:text-stone-300 underline"
-        >
-          Tôi đã xác minh email, tiếp tục
-        </button>
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={async () => {
+              setNotVerifiedNotice(false);
+              try {
+                await refreshSession();
+              } catch {
+                // ignore
+              }
+              const fresh = useCurrentUser.getState().user;
+              if (fresh?.emailVerified) {
+                navigate(resolveNextStep(fresh), { replace: true });
+              } else {
+                setNotVerifiedNotice(true);
+              }
+            }}
+            className="text-xs text-stone-500 hover:text-stone-300 underline"
+          >
+            Tôi đã xác minh email, tiếp tục
+          </button>
+          {notVerifiedNotice && (
+            <p role="alert" className="text-xs text-amber-400">
+              Email chưa được xác thực. Vui lòng kiểm tra hộp thư hoặc bấm Gửi lại email.
+            </p>
+          )}
+        </div>
       </section>
     </PublicShell>
   );

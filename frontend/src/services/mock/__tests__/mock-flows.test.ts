@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { mockAuthService } from '../mock-auth.service';
 import { mockCheckoutService } from '../mock-checkout.service';
+import { mockContractService } from '../mock-contract.service';
 import { mockInvitationService } from '../mock-invitation.service';
 import { mockOnboardingService } from '../mock-onboarding.service';
 import { mockPasswordService } from '../mock-password.service';
@@ -17,10 +18,22 @@ async function signIn(email: string, password: string) {
   return (await mockAuthService.getMe()).data.data!;
 }
 
-async function registerOwner(email = 'owner@acme.vn', plan: PlanSelection = PRO) {
+async function registerOwner(email = 'owner@acme.vn', plan: PlanSelection = PRO, signContract = true) {
   await mockRegistrationService.registerEnterprise({
     fullName: 'Chủ Acme', email, password: 'Matkhau1', phone: '0912345678', jobTitle: 'Giám đốc', plan,
   });
+  if (signContract) {
+    const login = await mockAuthService.login({ email, password: 'Matkhau1' });
+    localStorage.setItem('accessToken', login.data.data!.accessToken);
+    await mockContractService.signContract({
+      organizationName: 'Acme',
+      taxCode: '0101234567',
+      address: 'Hà Nội',
+      signerName: 'Chủ Acme',
+      signerTitle: 'Giám đốc',
+      signMethod: 'email_otp',
+    });
+  }
   return signIn(email, 'Matkhau1');
 }
 
@@ -38,12 +51,12 @@ beforeEach(() => {
 });
 
 describe('registration', () => {
-  it('creates an enterprise owner who must pay first', async () => {
-    const session = await registerOwner();
+  it('creates an enterprise owner who must sign contract and pay', async () => {
+    const session = await registerOwner('owner@acme.vn', PRO, false);
 
     expect(session.roles).toEqual(['OWNER']);
     expect(session.workspace).toBe('enterprise');
-    expect(session.onboardingStatus).toBe('payment');
+    expect(session.onboardingStatus).toBe('contract');
     expect(session.subscription).toBeUndefined();
     expect(session.organization).toBeUndefined();
   });
@@ -167,7 +180,7 @@ describe('checkout', () => {
     expect((await mockCheckoutService.getPendingPlan()).data.data?.seats).toBe(20);
   });
 
-  it('turns a paid individual plan on at once, with no setup step', async () => {
+  it('turns a paid individual plan on and moves to personal onboarding (setup)', async () => {
     const plus: PlanSelection = { planCode: 'IND_PLUS', seats: 1, cycle: 'month' };
     await mockRegistrationService.registerIndividual({ fullName: 'A', email: 'a@b.vn', password: 'Matkhau1', plan: plus });
     await signIn('a@b.vn', 'Matkhau1');
@@ -176,7 +189,7 @@ describe('checkout', () => {
     const session = (await mockAuthService.getMe()).data.data!;
 
     expect(session.subscription?.planCode).toBe('IND_PLUS');
-    expect(session.onboardingStatus).toBeUndefined();
+    expect(session.onboardingStatus).toBe('setup');
   });
 });
 

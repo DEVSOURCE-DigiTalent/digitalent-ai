@@ -149,7 +149,7 @@ describe('mockCheckoutService (P10, §4.6, T10, T11, T13)', () => {
     const user = getDb().users.find((u) => u.id === MOCK_USER_ID)!;
     expect(user.subscription?.status).toBe('active');
     expect(user.subscription?.planCode).toBe('ENT_STARTER');
-    expect(user.onboardingStatus).toBe('contract'); // Enterprise moves to contract signing step
+    expect(user.onboardingStatus).toBe('setup'); // Enterprise moves to setup wizard after payment
   });
 });
 
@@ -164,18 +164,15 @@ describe('mockContractService (B2B E-Contract Signing)', () => {
     await expect(mockContractService.verifyOtp('000000')).rejects.toBeDefined();
   });
 
-  it('signs contract and moves enterprise user from contract to setup wizard', async () => {
-    // First simulate paid order
-    const selection = { planCode: 'ENT_STARTER', seats: 10, cycle: 'month' as const };
-    const order = (await mockCheckoutService.createOrder(selection)).data.data!;
-    await mockCheckoutService.confirmPayment(order.id, 'paid');
-
+  it('signs contract and moves enterprise user from contract to payment step', async () => {
     const signResult = (
       await mockContractService.signContract({
         organizationName: 'Công ty Acme',
         taxCode: '0109876543',
+        address: 'Hà Nội',
+        signerName: 'Nguyễn Văn A',
         signerTitle: 'Giám đốc điều hành',
-        signMethod: 'otp',
+        signMethod: 'email_otp',
       })
     ).data.data!;
 
@@ -184,6 +181,7 @@ describe('mockContractService (B2B E-Contract Signing)', () => {
     expect(signResult.status).toBe('signed');
 
     const user = getDb().users.find((u) => u.id === MOCK_USER_ID)!;
-    expect(user.onboardingStatus).toBe('setup'); // Moved to setup wizard!
+    expect(user.onboardingStatus).toBe('payment'); // Moved to payment step!
+    expect(user.contractSigned).toBe(true);
   });
 });

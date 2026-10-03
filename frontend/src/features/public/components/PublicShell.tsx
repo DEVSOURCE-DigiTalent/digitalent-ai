@@ -4,6 +4,8 @@ import { Wordmark } from '@/components/brand/Wordmark';
 import { cn } from '@/lib/utils';
 import { usePageBackground } from '../landing/hooks/use-page-background';
 import type { PortalChoice } from '../../portal/portal-preference';
+import { useCurrentUser } from '@/hooks/use-current-user';
+import { useLogout } from '@/hooks/use-auth';
 
 interface PublicShellProps {
   /** Product the visitor is looking at: decides the header links. Omit on neutral pages (selector). */
@@ -28,6 +30,8 @@ export function PublicShell({ portal, children, width = 'narrow', className }: P
   const location = useLocation();
   const links = portal ? HEADER_LINKS[portal] : undefined;
   const isPricingPage = links ? location.pathname === links.pricing : false;
+  const user = useCurrentUser((s) => s.user);
+  const logout = useLogout();
 
   return (
     <div lang="vi" className="flex min-h-screen flex-col bg-black font-landing text-cream antialiased">
@@ -41,13 +45,28 @@ export function PublicShell({ portal, children, width = 'narrow', className }: P
               Bảng giá
             </Link>
           )}
-          <Link to={links?.login ?? '/login'} className="transition-colors hover:text-cream">
-            Đăng nhập
-          </Link>
-          {links && !isPricingPage && (
-            <Link to={links.pricing} className="rounded-full bg-cream-soft px-4 py-2 font-medium text-black">
-              Bắt đầu
-            </Link>
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-stone-400 hidden sm:inline">{user.email}</span>
+              <button
+                type="button"
+                onClick={() => logout.mutate()}
+                className="text-xs text-cream/70 hover:text-cream transition-colors"
+              >
+                Đăng xuất
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link to={links?.login ?? '/login'} className="transition-colors hover:text-cream">
+                Đăng nhập
+              </Link>
+              {links && !isPricingPage && (
+                <Link to={links.pricing} className="rounded-full bg-cream-soft px-4 py-2 font-medium text-black">
+                  Bắt đầu
+                </Link>
+              )}
+            </>
           )}
         </nav>
       </header>

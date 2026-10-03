@@ -1,17 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CareerCatalogPage } from '../career-catalog/CareerCatalogPage';
 import { REFERENCE_POSITIONS } from '@/lib/reference-positions';
 
 function renderAt(path: string) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path="/careers" element={<CareerCatalogPage />} />
-        <Route path="/careers/:slug" element={<CareerCatalogPage />} />
-      </Routes>
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/careers" element={<CareerCatalogPage />} />
+          <Route path="/careers/:slug" element={<CareerCatalogPage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
   );
 }
 

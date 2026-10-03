@@ -6,6 +6,7 @@ import { useRefreshSession } from '@/hooks/use-refresh-session';
 import { useSetup } from '@/hooks/use-onboarding';
 import { resolveNextStep } from '@/lib/navigation';
 import { onboardingService } from '@/services/onboarding.service';
+import { PurchaseStepper } from '@/features/commerce/components/PurchaseStepper';
 import { CompletionStep } from '../components/CompletionStep';
 import { DepartmentsStep } from '../components/DepartmentsStep';
 import { GradesStep } from '../components/GradesStep';
@@ -65,7 +66,7 @@ export function SetupWizardPage() {
     if (stepIndex === undefined && setup) {
       if (setup.setupStep !== undefined && setup.setupStep > 0) {
         setStepIndex(setup.setupStep);
-      } else if (setup.organization) {
+      } else if (setup.organization?.industry) {
         setStepIndex(1);
       } else {
         setStepIndex(0);
@@ -77,7 +78,8 @@ export function SetupWizardPage() {
   if (!user) return <Navigate to="/login" replace />;
   if (user.onboardingStatus !== 'setup') return <Navigate to={resolveNextStep(user)} replace />;
 
-  const current = stepIndex ?? (setup?.setupStep ?? (setup?.organization ? 1 : 0));
+  const isOrgSaved = Boolean(setup?.organization?.industry);
+  const current = stepIndex ?? (setup?.setupStep ?? (isOrgSaved ? 1 : 0));
   const step = STEPS[current] ?? STEPS[0];
 
   const goTo = (idx: number) => {
@@ -104,8 +106,8 @@ export function SetupWizardPage() {
   };
 
   const completed = new Set<string>(skipped);
-  if (setup?.organization) completed.add('organization');
-  if (setup?.grades?.length) completed.add('grades');
+  if (isOrgSaved) completed.add('organization');
+  if (setup?.grades?.length && current > 1) completed.add('grades');
   if (setup?.departments.length) completed.add('departments');
   if (setup?.positions.length) completed.add('positions');
   if (setup?.invitations.length) completed.add('members');
@@ -113,9 +115,10 @@ export function SetupWizardPage() {
   return (
     <div className="py-8">
       <main className="mx-auto max-w-5xl px-4 lg:px-8">
+        <PurchaseStepper audience="enterprise" currentStep={5} className="mb-6" />
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-2xl font-semibold text-ent-fg">Thiết lập tổ chức</h1>
-          {Boolean(setup?.organization) && (
+          {isOrgSaved && (
             <button
               type="button"
               onClick={handleSaveAndExit}
@@ -138,7 +141,7 @@ export function SetupWizardPage() {
             steps={STEPS}
             current={current}
             completed={completed}
-            onStepSelect={setup.organization ? goTo : undefined}
+            onStepSelect={isOrgSaved ? goTo : undefined}
             title={TITLES[step.id].title}
             description={TITLES[step.id].description}
           >

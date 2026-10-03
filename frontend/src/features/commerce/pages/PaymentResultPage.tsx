@@ -49,12 +49,14 @@ export function PaymentResultPage() {
   const plan = getPlan(order?.planCode);
   const nextStep =
     audience === 'enterprise'
-      ? 'Tiếp theo: ký hợp đồng dịch vụ điện tử.'
-      : 'Tiếp theo: chọn mục tiêu nghề nghiệp.';
+      ? 'Tiếp theo: thiết lập tổ chức và phân quyền nhân sự.'
+      : 'Tiếp theo: chọn vị trí mục tiêu theo Chuẩn 02/2025.';
+
+  const currentStep = audience === 'enterprise' ? 4 : 3;
 
   return (
     <PublicShell portal={audience}>
-      <PurchaseStepper audience={audience} currentStep={3} className="mb-6" />
+      <PurchaseStepper audience={audience} currentStep={currentStep} className="mb-6" />
 
       {!order ? (
         <p className="mt-6 text-sm text-stone-400">Đang kiểm tra thanh toán…</p>
@@ -79,7 +81,7 @@ export function PaymentResultPage() {
               navigate(fresh ? resolveNextStep(fresh) : '/', { replace: true });
             }}
           >
-            {audience === 'enterprise' ? 'Tiếp tục ký hợp đồng' : 'Tiếp tục'}
+            {audience === 'enterprise' ? 'Tiến hành thiết lập tổ chức' : 'Bắt đầu thiết lập lộ trình'}
           </button>
           {refreshFailed && (
             <p role="alert" className="text-sm text-red-300">

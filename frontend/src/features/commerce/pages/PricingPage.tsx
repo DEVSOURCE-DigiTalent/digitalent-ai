@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { PublicShell } from '../../public/components/PublicShell';
 import { rememberPortalChoice } from '../../portal/portal-preference';
@@ -8,6 +8,7 @@ import { PlanComparison } from '../components/PlanComparison';
 import { SALES_EMAIL } from '../sales-contact';
 import { resolvePlanChoice } from '../resolve-plan-choice';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { useRefreshSession } from '@/hooks/use-refresh-session';
 import { purchaseService } from '@/services/purchase.service';
 import type { PlanSelection } from '@/types/commerce';
 
@@ -39,13 +40,28 @@ export function PricingPage({ audience }: PricingPageProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const user = useCurrentUser((s) => s.user);
+  const refreshSession = useRefreshSession();
   const [cycle, setCycle] = useState<BillingCycle>('month');
   const [notice, setNotice] = useState<string>();
   const reason = searchParams.get('reason');
 
+  useEffect(() => {
+    if (!user && localStorage.getItem('accessToken')) {
+      refreshSession().catch(() => {});
+    }
+  }, [user, refreshSession]);
+
   const choose = async (selection: PlanSelection) => {
     rememberPortalChoice(copy.portal);
-    const result = resolvePlanChoice(user, selection, audience);
+    let currentUser = user;
+    if (!currentUser && localStorage.getItem('accessToken')) {
+      try {
+        currentUser = await refreshSession();
+      } catch {
+        // ignore
+      }
+    }
+    const result = resolvePlanChoice(currentUser, selection, audience);
 
     if (result.type === 'contact') {
       window.location.href = `mailto:${result.email}?subject=Tu%20van%20goi%20doanh%20nghiep`;
@@ -72,13 +88,13 @@ export function PricingPage({ audience }: PricingPageProps) {
         const myDraft = (await purchaseService.getMyDraft()).data?.data;
         if (myDraft) {
           const updated = await purchaseService.updateDraft(myDraft.id, selection);
-          navigate(`/checkout?draft=${updated.data.data?.id}`);
+          navigate(`${result.path}?draft=${updated.data.data?.id}`);
         } else {
-          const created = await purchaseService.createDraft(selection, audience, user?.id);
-          navigate(`/checkout?draft=${created.data.data?.id}`);
+          const created = await purchaseService.createDraft(selection, audience, currentUser?.id);
+          navigate(`${result.path}?draft=${created.data.data?.id}`);
         }
       } catch {
-        navigate('/checkout');
+        navigate(result.path);
       }
     }
   };

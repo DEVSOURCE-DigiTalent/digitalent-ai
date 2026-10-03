@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { Wordmark } from '@/components/brand/Wordmark';
 import { SECTION_IDS } from '../landing-content';
 import { useLandingContent } from '../landing-content-context';
 import { useLandingCta } from '../hooks/use-landing-cta';
@@ -43,8 +44,8 @@ export function StickyDock({ visible }: StickyDockProps) {
         visible ? 'translate-y-0' : '-translate-y-[calc(100%+28px)]'
       )}
     >
-      <SectionLink sectionId={SECTION_IDS.top} className="whitespace-nowrap text-base font-semibold tracking-[-0.045em] text-cream">
-        DigiTalent<sup className="ml-[3px] text-[0.5em] font-medium tracking-normal">AI</sup>
+      <SectionLink sectionId={SECTION_IDS.top} className="inline-flex items-center text-cream">
+        <Wordmark className="text-sm" />
       </SectionLink>
       <ul className="hidden gap-[22px] min-[900px]:flex">
         {dockNav.map((item) => (
