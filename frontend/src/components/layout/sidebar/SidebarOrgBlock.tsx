@@ -1,4 +1,5 @@
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { ROLES, WORKSPACES } from '@/lib/roles';
 
 interface SidebarOrgBlockProps {
   isRail?: boolean;
@@ -7,14 +8,23 @@ interface SidebarOrgBlockProps {
 export function SidebarOrgBlock({ isRail = false }: SidebarOrgBlockProps) {
   const user = useCurrentUser((s) => s.user);
 
-  const orgName = user?.organization?.name || 'DigiTalent AI Org';
-  const planName = user?.subscription?.planName
+  const isPlatform = user?.workspace === WORKSPACES.PLATFORM || Boolean(user?.roles?.includes(ROLES.PLATFORM_ADMIN));
+
+  const orgName = isPlatform
+    ? (user?.organization?.name || 'DigiTalent Platform')
+    : (user?.organization?.name || 'DigiTalent AI Org');
+
+  const planName = isPlatform
+    ? 'Quản trị hệ thống'
+    : user?.subscription?.planName
     ? `Gói ${user.subscription.planName}`
     : user?.subscription?.planCode
     ? `Gói ${user.subscription.planCode}`
     : 'Gói Doanh nghiệp';
 
-  const initial = orgName.trim().charAt(0).toUpperCase() || 'D';
+  const initial = isPlatform && !user?.organization?.name
+    ? 'P'
+    : (orgName.trim().charAt(0).toUpperCase() || 'D');
 
   return (
     <div className="flex flex-col gap-1 p-4 border-b border-ent-line">

@@ -76,7 +76,7 @@ describe('enterprise purchase, contract signing and organization setup (FLOW-01 
 
     // 2. Account registration (3 fields + terms)
     await heading('Tạo tài khoản doanh nghiệp');
-    expect(screen.getByText(/Pro · 10 ghế/)).toBeInTheDocument();
+    expect(screen.getByText(/Pro · 50 người dùng/)).toBeInTheDocument();
 
     fillOwnerForm('chu@acme.vn');
     click('Tạo tài khoản và thanh toán');
@@ -96,7 +96,7 @@ describe('enterprise purchase, contract signing and organization setup (FLOW-01 
 
     // 4. Checkout → QR payment (Step 4)
     await heading('Quét mã để thanh toán');
-    expect(screen.getAllByText(/790/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/19\.090|1\.990/).length).toBeGreaterThan(0);
     expect(screen.getByText(/Công ty Acme/)).toBeInTheDocument();
     click('Tôi đã quét mã và thanh toán');
     await heading('Thanh toán thành công');

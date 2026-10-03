@@ -174,7 +174,7 @@ export function EnterpriseContractPage() {
                   <span className="font-mono">{formatVnd(totalAmount)}</span>
                 </div>
                 <div className="flex justify-between text-[11px] text-stone-400">
-                  <span>Quy mô: {seats} ghế nhân sự</span>
+                  <span>Quy mô: {seats} người dùng</span>
                   <span>Chu kỳ: {cycle === 'year' ? '12 tháng (Tiết kiệm 20%)' : 'Hàng tháng'}</span>
                 </div>
               </div>

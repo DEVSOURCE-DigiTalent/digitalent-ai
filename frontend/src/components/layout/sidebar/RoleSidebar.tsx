@@ -70,7 +70,12 @@ export function RoleSidebar({
       aria-hidden={!isMobileOpen && isMobile ? true : undefined}
     >
       <SidebarOrgBlock isRail={isRail && !isMobileOpen} />
-      <SidebarNav config={activeConfig} isRail={isRail && !isMobileOpen} onItemClick={onMobileClose} />
+      <SidebarNav
+        config={activeConfig}
+        isRail={isRail && !isMobileOpen}
+        onItemClick={onMobileClose}
+        workspace={portal.workspace}
+      />
       <SidebarFooter
         isRail={isRail && !isMobileOpen}
         isOwner={isOwner}

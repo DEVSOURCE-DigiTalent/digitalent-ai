@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ENTERPRISE_SCREENS } from '@/lib/screens/enterprise';
+import { PLATFORM_SCREENS } from '@/lib/screens/platform';
+import { ROLES, WORKSPACES } from '@/lib/roles';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import type { ScreenDef } from '@/lib/screens/types';
 
@@ -14,8 +16,10 @@ interface CommandPaletteProps {
 function useFilteredScreens(query: string): ScreenDef[] {
   const hasPermission = useCurrentUser((s) => s.hasPermission);
   const user = useCurrentUser((s) => s.user);
+  const isPlatform = user?.workspace === WORKSPACES.PLATFORM || Boolean(user?.roles?.includes(ROLES.PLATFORM_ADMIN));
+  const pool = isPlatform ? PLATFORM_SCREENS : ENTERPRISE_SCREENS;
 
-  return ENTERPRISE_SCREENS.filter((screen) => {
+  return pool.filter((screen) => {
     if (screen.path.includes(':')) return false; // skip detail pages
     if (screen.permission && !hasPermission(screen.permission)) return false;
     if (!screen.roles.includes('*') && !screen.roles.some((r) => user?.roles.includes(r))) return false;

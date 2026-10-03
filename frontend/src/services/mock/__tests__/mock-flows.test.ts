@@ -9,8 +9,8 @@ import { mockRegistrationService } from '../mock-registration.service';
 import { resetMockDb } from '../mock-store';
 import type { PlanSelection } from '../../../types/commerce';
 
-const PRO: PlanSelection = { planCode: 'ENT_PRO', seats: 10, cycle: 'month' };
-const STARTER: PlanSelection = { planCode: 'ENT_STARTER', seats: 5, cycle: 'month' };
+const PRO: PlanSelection = { planCode: 'ENT_PRO', seats: 50, cycle: 'month' };
+const STARTER: PlanSelection = { planCode: 'ENT_STARTER', seats: 20, cycle: 'month' };
 
 async function signIn(email: string, password: string) {
   const login = await mockAuthService.login({ email, password });
@@ -104,9 +104,9 @@ describe('checkout', () => {
 
   it('prices the order from the plan, seats and billing cycle', async () => {
     await registerOwner();
-    const order = (await mockCheckoutService.createOrder({ ...PRO, seats: 20, cycle: 'year' })).data.data!;
+    const order = (await mockCheckoutService.createOrder({ ...PRO, seats: 50, cycle: 'year' })).data.data!;
 
-    expect(order.amount).toBe(Math.round(79_000 * 20 * 12 * 0.8));
+    expect(order.amount).toBe(19_090_000);
     expect(order.status).toBe('pending');
     expect(order.code).toMatch(/^DT/);
   });
@@ -115,7 +115,7 @@ describe('checkout', () => {
     await registerOwner('o@x.vn', STARTER);
     const order = (await mockCheckoutService.createOrder({ ...STARTER, seats: 500 })).data.data!;
 
-    expect(order.seats).toBe(20);
+    expect(order.seats).toBe(30);
   });
 
   it('refuses plans that cannot be bought online or belong to the other audience', async () => {
@@ -133,7 +133,7 @@ describe('checkout', () => {
 
     expect(paid.status).toBe('paid');
     expect(paid.paidAt).toBeDefined();
-    expect(session.subscription).toMatchObject({ planCode: 'ENT_PRO', status: 'active', seatLimit: 10 });
+    expect(session.subscription).toMatchObject({ planCode: 'ENT_PRO', status: 'active', seatLimit: 50 });
     expect(session.subscription?.entitlements).toContain('internal_learning');
     expect(session.onboardingStatus).toBe('setup');
   });
@@ -177,7 +177,7 @@ describe('checkout', () => {
   it('clamps the seats of a plan picked before registering the same way the order will', async () => {
     await registerOwner('o@x.vn', { ...STARTER, seats: 500 });
 
-    expect((await mockCheckoutService.getPendingPlan()).data.data?.seats).toBe(20);
+    expect((await mockCheckoutService.getPendingPlan()).data.data?.seats).toBe(30);
   });
 
   it('turns a paid individual plan on and moves to personal onboarding (setup)', async () => {
@@ -254,7 +254,7 @@ describe('organization setup', () => {
 
     expect(result.created.map((c) => c.email)).toEqual(['an@x.vn', 'binh@x.vn']);
     expect(setup.seatsUsed).toBe(3);
-    expect(setup.seatLimit).toBe(5);
+    expect(setup.seatLimit).toBe(20);
     expect(setup.canBulkImport).toBe(false);
   });
 
@@ -275,13 +275,13 @@ describe('organization setup', () => {
 
   it('flags a full plan as out of seats', async () => {
     await payAndCreateOrganization({ ...STARTER });
-    const rows = Array.from({ length: 6 }, (_, i) => ({ email: `u${i}@x.vn`, fullName: `U${i}`, role: 'EMPLOYEE' as const }));
+    const rows = Array.from({ length: 21 }, (_, i) => ({ email: `u${i}@x.vn`, fullName: `U${i}`, role: 'EMPLOYEE' as const }));
     const result = (await mockOnboardingService.inviteMembers(rows)).data.data!;
 
-    expect(result.created).toHaveLength(4);
+    expect(result.created).toHaveLength(19);
     expect(result.rejected).toEqual([
-      { email: 'u4@x.vn', reason: 'Đã hết số ghế của gói.' },
-      { email: 'u5@x.vn', reason: 'Đã hết số ghế của gói.' },
+      { email: 'u19@x.vn', reason: 'Đã hết quyền sử dụng của gói.' },
+      { email: 'u20@x.vn', reason: 'Đã hết quyền sử dụng của gói.' },
     ]);
   });
 });

@@ -10,6 +10,9 @@ import { NotificationPopover } from './NotificationPopover';
 import { UserAvatarMenu } from './UserAvatarMenu';
 import { CommandPalette } from './CommandPalette';
 import { cn } from '@/lib/utils';
+import { WORKSPACES } from '@/lib/roles';
+import { PLATFORM_SCREENS } from '@/lib/screens/platform';
+import { PLATFORM_SIDEBAR } from '@/lib/sidebars/platform';
 
 interface TopbarProps {
   portal: PortalConfig;
@@ -77,7 +80,10 @@ export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false }: Top
   const [paletteOpen, setPaletteOpen] = useState(false);
   const scrolled = useScrolled();
 
-  const breadcrumbs = buildBreadcrumbs(pathname);
+  const isPlatform = portal.workspace === WORKSPACES.PLATFORM;
+  const screens = isPlatform ? PLATFORM_SCREENS : undefined;
+  const sidebarConfig = isPlatform ? PLATFORM_SIDEBAR : undefined;
+  const breadcrumbs = buildBreadcrumbs(pathname, screens, sidebarConfig);
 
   // Global Ctrl+K shortcut
   useEffect(() => {
