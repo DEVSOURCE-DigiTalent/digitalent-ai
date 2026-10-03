@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
+import { toast } from 'sonner';
 import { useLogin } from '../../../hooks/use-auth';
 import { isSafeReturnTo } from '../auth-redirect';
 
@@ -199,7 +200,7 @@ export function LoginPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
 
-              {/* ── Phone / Username input (pill) ── */}
+              {/* ── Email / Username input (pill) ── */}
               <div
                 className="flex items-center overflow-hidden transition-all"
                 style={{
@@ -209,21 +210,14 @@ export function LoginPage() {
                   height: '52px',
                 }}
               >
-                {/* VN flag + dial code */}
-                <div className="flex items-center gap-1.5 pl-5 pr-2 flex-shrink-0">
-                  <span className="text-base leading-none">🇻🇳</span>
-                  <span className="text-sm font-semibold text-white/70">+84</span>
-                </div>
-                {/* Divider */}
-                <div className="w-px h-5 bg-white/15 flex-shrink-0" />
                 {/* Input */}
                 <input
-                  type="text"
+                  type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="flex-1 bg-transparent px-4 text-sm text-white placeholder-white/45 outline-none"
-                  placeholder="Tên đăng nhập / Email"
-                  autoComplete="username"
+                  className="flex-1 bg-transparent pl-5 pr-2 text-sm text-white placeholder-white/45 outline-none"
+                  placeholder="Email đăng nhập"
+                  autoComplete="email"
                   required
                 />
                 {/* User icon */}
@@ -299,8 +293,7 @@ export function LoginPage() {
 
                 <button
                   type="button"
-                  title="Tính năng chưa khả dụng"
-                  onClick={() => alert('Tính năng chưa khả dụng')}
+                  onClick={() => toast.info('Tính năng đặt lại mật khẩu chưa khả dụng. Vui lòng liên hệ IT Helpdesk.')}
                   className="text-sm text-white/80 hover:text-white transition-colors cursor-pointer bg-transparent border-none"
                 >
                   Quên mật khẩu?
@@ -344,8 +337,7 @@ export function LoginPage() {
               {/* ── Google Login ── */}
               <button
                 type="button"
-                title="Tính năng chưa khả dụng"
-                onClick={() => alert('Tính năng chưa khả dụng')}
+                onClick={() => toast.info('Đăng nhập với Google chưa khả dụng. Vui lòng dùng tài khoản nội bộ.')}
                 className="w-full flex items-center justify-center gap-3 py-3 rounded-full text-sm font-medium text-white transition-all cursor-pointer"
                 style={{
                   background: 'rgba(15, 25, 55, 0.55)',
