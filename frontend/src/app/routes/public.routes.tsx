@@ -1,9 +1,9 @@
 import { lazy, Suspense } from 'react';
 import type { RouteObject } from 'react-router-dom';
 import { PublicLayout } from '../layouts/PublicLayout';
-import { LandingPage } from '../../features/public/landing/LandingPage';
-import { CareerCatalogPage } from '../../features/public/career-catalog/CareerCatalogPage';
-import { CertificateVerificationPage } from '../../features/certificate/pages/CertificateVerificationPage';
+import { LandingPage } from '../../features/public/pages/LandingPage';
+import { CareerCatalogPage } from '../../features/public/pages/CareerCatalogPage';
+import { CertificateVerificationPage } from '../../features/public/pages/CertificateVerificationPage';
 
 const ExperienceRoute = lazy(() => import('../../features/experience/pages/ExperienceRoute').then(module => ({ default: module.ExperienceRoute })));
 
