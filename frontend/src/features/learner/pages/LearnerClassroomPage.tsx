@@ -177,9 +177,22 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
 
 function LessonMedia({ lesson, moduleTitle }: { lesson: PersonalLesson; moduleTitle: string }) {
   if (lesson.kind === 'VIDEO') {
+    let videoSrc = STUDY_CLIP;
+    if (lesson.id.includes('A1-A') || lesson.id.includes('a1-a')) {
+      if (lesson.id.includes('11-1') || lesson.id.includes('-1-1') || lesson.title.toLowerCase().includes('craap')) {
+        videoSrc = '/videos/a1-a-v01.mp4';
+      } else if (lesson.id.includes('12-1') || lesson.id.includes('-2-1')) {
+        videoSrc = '/videos/a1-a-v02.mp4';
+      } else if (lesson.id.includes('13-1') || lesson.id.includes('-3-1') || lesson.title.toLowerCase().includes('governance')) {
+        videoSrc = '/videos/a1-a-v03.mp4';
+      } else {
+        videoSrc = '/videos/a1-a-v01.mp4';
+      }
+    }
+
     return (
       <figure className="relative bg-black">
-        <video key={lesson.id} src={STUDY_CLIP} controls preload="metadata" playsInline className="aspect-video w-full object-cover" aria-label={`Video bài học: ${lesson.title}`} />
+        <video key={lesson.id} src={videoSrc} controls preload="metadata" playsInline className="aspect-video w-full object-contain" aria-label={`Video bài học: ${lesson.title}`} />
         <figcaption className="pointer-events-none absolute left-5 top-4 text-xs uppercase tracking-[0.14em] text-white/70">{moduleTitle}</figcaption>
       </figure>
     );

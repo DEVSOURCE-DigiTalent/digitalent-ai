@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, Clock, Layers, Users,
   CheckCircle2, AlertCircle, UserCheck, ShieldCheck,
@@ -8,8 +8,9 @@ import {
 import { useCourse, useAssignments } from '@/hooks/use-assignments';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { LevelBadge } from '@/components/shared/LevelBadge';
+import { CoursePathwayManager } from '../components/CoursePathwayManager';
 
-type DetailTab = 'overview' | 'curriculum' | 'assessment' | 'learners';
+type DetailTab = 'overview' | 'pathway' | 'assessment' | 'learners';
 
 /**
  * OW-24: Course Detail (/enterprise/courses/:id hoặc /enterprise/catalog/:id)
@@ -19,8 +20,24 @@ type DetailTab = 'overview' | 'curriculum' | 'assessment' | 'learners';
  */
 export function StandardCourseDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<DetailTab>('overview');
+
+  const tabParam = searchParams.get('tab') as DetailTab | null;
+  const batchId = searchParams.get('batchId') || undefined;
+  const batchName = searchParams.get('batchName') || undefined;
+
+  const [activeTab, setActiveTab] = useState<DetailTab>(
+    tabParam && ['overview', 'pathway', 'assessment', 'learners'].includes(tabParam)
+      ? tabParam
+      : 'overview'
+  );
+
+  useEffect(() => {
+    if (tabParam && ['overview', 'pathway', 'assessment', 'learners'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   const { data: course, isLoading: courseLoading } = useCourse(id);
   const { data: assignmentsData } = useAssignments({
@@ -84,6 +101,18 @@ export function StandardCourseDetailPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab('pathway')}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg border shadow-sm transition-colors ${
+                activeTab === 'pathway'
+                  ? 'bg-primary-50 text-primary-700 border-primary-200'
+                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              <PlayCircle className="size-4 text-primary-600" />
+              Xem luồng đào tạo
+            </button>
             <button
               type="button"
               onClick={() => navigate(`/enterprise/training-batches/new?courseId=${course.id}`)}
@@ -152,7 +181,7 @@ export function StandardCourseDetailPage() {
             onClick={() => setActiveTab('overview')}
             className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'overview'
-                ? 'border-primary-600 text-primary-600'
+                ? 'border-primary-600 text-primary-600 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -160,21 +189,21 @@ export function StandardCourseDetailPage() {
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('curriculum')}
+            onClick={() => setActiveTab('pathway')}
             className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'curriculum'
-                ? 'border-primary-600 text-primary-600'
+              activeTab === 'pathway'
+                ? 'border-primary-600 text-primary-600 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            Cấu trúc giáo trình ({Array.isArray(modules) ? modules.length : 3} module)
+            Luồng đào tạo
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('assessment')}
             className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'assessment'
-                ? 'border-primary-600 text-primary-600'
+                ? 'border-primary-600 text-primary-600 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -185,7 +214,7 @@ export function StandardCourseDetailPage() {
             onClick={() => setActiveTab('learners')}
             className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'learners'
-                ? 'border-primary-600 text-primary-600'
+                ? 'border-primary-600 text-primary-600 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -262,53 +291,12 @@ export function StandardCourseDetailPage() {
         </div>
       )}
 
-      {activeTab === 'curriculum' && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-slate-900">Cấu trúc các chương học</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Các bài học được xây dựng theo phương pháp vi học tập (micro-learning) kết hợp câu hỏi tình huống thực tế
-              </p>
-            </div>
-            <span className="text-xs text-slate-500 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">
-              Giáo trình chỉ đọc
-            </span>
-          </div>
-
-          <div className="space-y-4">
-            {Array.isArray(modules) && modules.length > 0 ? (
-              modules.map((m: any, idx: number) => (
-                <div key={m.id || idx} className="rounded-xl border border-slate-200 overflow-hidden">
-                  <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary-100 text-primary-700 text-xs font-bold">
-                        {idx + 1}
-                      </span>
-                      <span className="font-semibold text-sm text-slate-900">{m.title || `Module ${idx + 1}`}</span>
-                    </div>
-                    <span className="text-xs text-slate-500">{m.lessons?.length || 3} bài học</span>
-                  </div>
-                  <div className="divide-y divide-slate-100 p-2">
-                    {(m.lessons || []).map((lesson: any, lIdx: number) => (
-                      <div key={lesson.id || lIdx} className="px-3 py-2.5 flex items-center justify-between hover:bg-slate-50/50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <PlayCircle className="w-4 h-4 text-slate-400" />
-                          <span className="text-sm font-medium text-slate-800">{lesson.title}</span>
-                        </div>
-                        <span className="text-xs text-slate-400">{lesson.durationMinutes || 15} phút</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="py-8 text-center text-sm text-slate-500">
-                Khóa học có 3 module bài giảng với thời lượng ước tính {course.estimatedDurationMinutes || 180} phút.
-              </div>
-            )}
-          </div>
-        </div>
+      {activeTab === 'pathway' && (
+        <CoursePathwayManager
+          course={course}
+          batchId={batchId}
+          batchName={batchName}
+        />
       )}
 
       {activeTab === 'assessment' && (

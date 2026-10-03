@@ -277,10 +277,10 @@ export function TrainingBatchDetailPage() {
                   Tỷ lệ hoàn thành: <strong className="text-emerald-700">{crs.completionRate}%</strong>
                 </span>
                 <Link
-                  to={`/enterprise/courses/${crs.id}`}
+                  to={`/enterprise/courses/${crs.id}?tab=pathway&batchId=${batch.id}&batchName=${encodeURIComponent(batch.name)}`}
                   className="text-xs font-semibold text-primary-600 hover:underline inline-flex items-center gap-1"
                 >
-                  Xem giáo trình <ExternalLink className="w-3 h-3" />
+                  Luồng đào tạo <ExternalLink className="w-3 h-3" />
                 </Link>
               </div>
             </div>
