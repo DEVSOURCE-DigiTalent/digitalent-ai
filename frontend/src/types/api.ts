@@ -28,18 +28,5 @@ export interface PaginationRequest {
   pageSize?: number;
   sortBy?: string;
   sortDirection?: string;
-/** Khớp Application/Common/Models/PagedList.cs */
-export interface PagedList<T> {
-  items: T[];
-  pageIndex: number; // trang đầu tiên là 1
-  pageSize: number;
-  totalItems: number;
-  totalPages: number;
-}
-
-/** Khớp Application/Common/Models/PaginationRequest.cs */
-export interface PaginationRequest {
-  pageIndex?: number;
-  pageSize?: number;
   search?: string;
 }
