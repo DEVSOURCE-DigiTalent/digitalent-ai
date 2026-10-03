@@ -43,41 +43,40 @@ describe('enterprise pricing (PUB-04)', () => {
     expect(card('Enterprise').queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it('prices by seats and shows the total', () => {
+  it('prices by user capacity bundle and shows add-on totals', () => {
     renderPricing('enterprise');
+    // Switch to monthly for testing monthly bundle calculation
+    fireEvent.click(screen.getByRole('button', { name: /Theo tháng/ }));
 
-    expect(card('Pro').getByText(/Tổng 790\.000.* \/ tháng cho 10 ghế/)).toBeInTheDocument();
-    fireEvent.change(card('Pro').getByLabelText(/Số ghế/), { target: { value: '50' } });
-    expect(card('Pro').getByText(/Tổng 3\.950\.000.* cho 50 ghế/)).toBeInTheDocument();
+    expect(card('Pro').getByText(/Trọn gói 1\.990\.000.* \/ tháng cho tối đa 50 người dùng/)).toBeInTheDocument();
+    fireEvent.change(card('Pro').getByLabelText(/Số người dùng/), { target: { value: '60' } });
+    expect(card('Pro').getByText(/Tổng 2\.340\.000.* cho 60 người dùng/)).toBeInTheDocument();
   });
 
-  it('keeps seats inside what the plan sells once the field is left', () => {
+  it('keeps users inside what the plan allows once the field is left', () => {
     renderPricing('enterprise');
-    const seats = card('Starter').getByLabelText(/Số ghế/) as HTMLInputElement;
+    const usersInput = card('Starter').getByLabelText(/Số người dùng/) as HTMLInputElement;
 
-    fireEvent.change(seats, { target: { value: '500' } });
-    fireEvent.blur(seats);
+    fireEvent.change(usersInput, { target: { value: '500' } });
+    fireEvent.blur(usersInput);
 
-    expect(seats.value).toBe('20');
-    expect(card('Starter').getByText(/cho 20 ghế/)).toBeInTheDocument();
+    expect(usersInput.value).toBe('30');
+    expect(card('Starter').getByText(/cho 30 người dùng/)).toBeInTheDocument();
   });
 
-  it('switches to yearly prices with the 20% discount', () => {
+  it('defaults to yearly prices with annual-first experience', () => {
     renderPricing('enterprise');
-    fireEvent.click(screen.getByRole('button', { name: /Theo năm/ }));
 
     expect(screen.getByRole('button', { name: /Theo năm/ })).toHaveAttribute('aria-pressed', 'true');
-    // 79.000 x 10 seats x 12 months x 0.8
-    expect(card('Pro').getByText(/Tổng 7\.584\.000.* \/ năm cho 10 ghế/)).toBeInTheDocument();
+    expect(card('Pro').getByText(/Trọn gói 19\.090\.000.* \/ năm cho tối đa 50 người dùng/)).toBeInTheDocument();
   });
 
   it('carries the choice into registration and remembers the product', () => {
     renderPricing('enterprise');
-    fireEvent.change(card('Pro').getByLabelText(/Số ghế/), { target: { value: '30' } });
-    fireEvent.click(screen.getByRole('button', { name: /Theo năm/ }));
+    fireEvent.change(card('Pro').getByLabelText(/Số người dùng/), { target: { value: '60' } });
     fireEvent.click(card('Pro').getByRole('button', { name: 'Chọn gói Pro' }));
 
-    expect(screen.getByTestId('where')).toHaveTextContent('/business/register?plan=ENT_PRO&seats=30&cycle=year');
+    expect(screen.getByTestId('where')).toHaveTextContent('/business/register?plan=ENT_PRO&seats=60&cycle=year');
     expect(getPortalChoice()).toBe('enterprise');
   });
 
@@ -98,18 +97,18 @@ describe('individual pricing (PUB-05)', () => {
 
     expect(screen.queryByRole('article', { name: 'Gói Khởi đầu' })).not.toBeInTheDocument();
     expect(screen.queryByText(/Miễn phí|miễn phí/)).not.toBeInTheDocument();
-    expect(card('Plus').getAllByText(/149.000/).length).toBeGreaterThan(0);
-    expect(screen.queryByLabelText(/Số ghế/)).not.toBeInTheDocument();
+    expect(card('Plus').getAllByText(/1\.190\.000/).length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText(/Số người dùng/)).not.toBeInTheDocument();
     fireEvent.click(card('Plus').getByRole('button', { name: 'Chọn gói Plus' }));
 
-    expect(screen.getByTestId('where')).toHaveTextContent('/individual/register?plan=IND_PLUS&seats=1&cycle=month');
+    expect(screen.getByTestId('where')).toHaveTextContent('/individual/register?plan=IND_PLUS&seats=1&cycle=year');
     expect(getPortalChoice()).toBe('individual');
   });
 
   it('shows the yearly total of a paid plan', () => {
     renderPricing('individual');
-    fireEvent.click(screen.getByRole('button', { name: /Theo năm/ }));
 
-    expect(card('Plus').getByText(/Tổng 1\.430\.400.* \/ năm/)).toBeInTheDocument();
+    expect(card('Plus').getByText(/1\.190\.000.* \/ năm/)).toBeInTheDocument();
+    expect(card('Plus').getByText(/≈ 99\.167.* \/ tháng/)).toBeInTheDocument();
   });
 });

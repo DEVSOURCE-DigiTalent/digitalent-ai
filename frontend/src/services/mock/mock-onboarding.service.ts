@@ -220,7 +220,7 @@ export const mockOnboardingService = {
         if (findMockAccountByEmail(email) || findUserByEmail(email) || alreadyInvited) {
           rejected.push({ email, reason: 'Email đã có tài khoản hoặc đã được mời.' });
         } else if (seatLimit !== undefined && used >= seatLimit) {
-          rejected.push({ email, reason: 'Đã hết số ghế của gói.' });
+          rejected.push({ email, reason: 'Đã hết quyền sử dụng của gói.' });
         } else {
           const invitation: StoredInvitation = {
             token: newToken(),

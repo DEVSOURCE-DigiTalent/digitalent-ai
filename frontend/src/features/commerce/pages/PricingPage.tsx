@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { PublicShell } from '../../public/components/PublicShell';
 import { rememberPortalChoice } from '../../portal/portal-preference';
-import { plansFor, type BillingCycle, type PlanAudience } from '@/lib/plans';
+import { plansFor, suggestPlanForUsers, type BillingCycle, type PlanAudience } from '@/lib/plans';
 import { PlanCard } from '../components/PlanCard';
 import { PlanComparison } from '../components/PlanComparison';
 import { SALES_EMAIL } from '../sales-contact';
@@ -15,7 +15,7 @@ import type { PlanSelection } from '@/types/commerce';
 const COPY: Record<PlanAudience, { title: string; lead: string; registerPath: string; loginPath: string; portal: 'enterprise' | 'individual' }> = {
   enterprise: {
     title: 'Chọn gói cho đội ngũ của bạn.',
-    lead: 'Giá tính theo số ghế mỗi tháng. Mua theo năm tiết kiệm 20%. Có thể đổi gói khi nhu cầu thay đổi.',
+    lead: 'Định mức quyền sử dụng rõ ràng. Mua theo năm tiết kiệm 20%. Mở rộng linh hoạt khi đội ngũ phát triển.',
     registerPath: '/business/register',
     loginPath: '/business/login',
     portal: 'enterprise',
@@ -41,9 +41,14 @@ export function PricingPage({ audience }: PricingPageProps) {
   const [searchParams] = useSearchParams();
   const user = useCurrentUser((s) => s.user);
   const refreshSession = useRefreshSession();
-  const [cycle, setCycle] = useState<BillingCycle>('month');
+  // Default to annual pricing (annual-first)
+  const [cycle, setCycle] = useState<BillingCycle>('year');
+  const [projectedUsers, setProjectedUsers] = useState<string>('');
   const [notice, setNotice] = useState<string>();
   const reason = searchParams.get('reason');
+
+  const projectedNum = Number(projectedUsers);
+  const suggestedPlan = projectedNum > 0 ? suggestPlanForUsers(projectedNum, audience) : undefined;
 
   useEffect(() => {
     if (!user && localStorage.getItem('accessToken')) {
@@ -116,8 +121,9 @@ export function PricingPage({ audience }: PricingPageProps) {
         <h1 className="mt-5 text-balance text-[clamp(30px,5vw,56px)] font-normal leading-[1.05] tracking-[-0.03em]">{copy.title}</h1>
         <p className="mx-auto mt-5 max-w-[52ch] text-pretty text-sm leading-[1.7] text-stone-400 sm:text-base">{copy.lead}</p>
 
+        {/* Billing cycle tabs (Annual first) */}
         <div role="group" aria-label="Chu kỳ thanh toán" className="mt-8 inline-flex rounded-full bg-landing-card p-1 text-sm">
-          {(['month', 'year'] as const).map((value) => (
+          {(['year', 'month'] as const).map((value) => (
             <button
               key={value}
               type="button"
@@ -125,16 +131,40 @@ export function PricingPage({ audience }: PricingPageProps) {
               onClick={() => setCycle(value)}
               className={`rounded-full px-5 py-2 transition-colors ${cycle === value ? 'bg-cream-soft font-medium text-black' : 'text-cream/80 hover:text-cream'}`}
             >
-              {value === 'month' ? 'Theo tháng' : 'Theo năm · -20%'}
+              {value === 'year' ? 'Theo năm · Tiết kiệm 20%' : 'Theo tháng'}
             </button>
           ))}
         </div>
+
+        {/* Optional quick plan estimation without gating */}
+        {audience === 'enterprise' && (
+          <div className="mx-auto mt-6 max-w-md rounded-2xl bg-landing-card/50 p-3 ring-1 ring-cream/10 text-xs text-stone-300 flex items-center justify-between gap-3">
+            <label htmlFor="projected-users" className="text-stone-300">
+              Dự kiến số người sử dụng (tùy chọn):
+            </label>
+            <input
+              id="projected-users"
+              type="number"
+              min={1}
+              placeholder="VD: 35"
+              value={projectedUsers}
+              onChange={(e) => setProjectedUsers(e.target.value)}
+              className="w-24 rounded-lg bg-landing-panel px-3 py-1 text-center text-sm text-cream ring-1 ring-cream/20 focus:outline-none focus:ring-cream font-mono"
+            />
+          </div>
+        )}
       </div>
 
       <ul className={`mx-auto mt-10 grid max-w-5xl gap-5 ${plans.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
         {plans.map((plan) => (
           <li key={plan.code}>
-            <PlanCard plan={plan} cycle={cycle} onChoose={choose} salesEmail={SALES_EMAIL} />
+            <PlanCard
+              plan={plan}
+              cycle={cycle}
+              onChoose={choose}
+              salesEmail={SALES_EMAIL}
+              isSuggested={suggestedPlan?.code === plan.code}
+            />
           </li>
         ))}
       </ul>

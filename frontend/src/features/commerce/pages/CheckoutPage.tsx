@@ -175,10 +175,10 @@ function CheckoutBody({ selection, pricingPath, draft, audience }: CheckoutBodyP
     <div className="mt-6 grid gap-5">
       <PlanSummary selection={selection} changeTo={pricingPath} />
 
-      {/* P17: Seat billing note for enterprise */}
+      {/* Enterprise user quota note */}
       {audience === 'enterprise' && (
         <p className="text-xs leading-[1.6] text-stone-400">
-          Ghế được tính cho thành viên đang hoạt động và thành viên đã mời nhưng chưa kích hoạt.
+          Quyền sử dụng được tính cho thành viên đang hoạt động và lời mời đang chờ kích hoạt. Lời mời đang chờ tạm giữ 1 slot quota.
         </p>
       )}
 

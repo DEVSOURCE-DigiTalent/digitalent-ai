@@ -107,7 +107,8 @@ function parseChange(body: Record<string, unknown>): ChangeRequest {
   const plan = getPlan(String(body.planCode));
   if (!plan || plan.audience !== 'enterprise' || !isPurchasableOnline(plan)) throw badRequest('Gói này không đổi được trực tuyến. Hãy liên hệ tư vấn.');
   const cycle: BillingCycle = body.cycle === 'year' ? 'year' : 'month';
-  return { plan, seats: clampSeats(plan, Number(body.seats)), cycle };
+  const rawSeats = Number(body.seats);
+  return { plan, seats: Number.isFinite(rawSeats) ? rawSeats : clampSeats(plan, rawSeats), cycle };
 }
 
 function describeChange(context: RequestContext, change: ChangeRequest) {
@@ -152,7 +153,7 @@ route('POST', '/subscription/change', (context) => {
 
   const previous = requireCurrentPlan(context);
   return context.update((data) => {
-    data.subscriptionOverride = { planCode: change.plan.code, seats: change.seats, cycle: change.cycle, status: 'active', cancelAtPeriodEnd: false };
+    data.subscriptionOverride = { planCode: change.plan.code, seats: clampSeats(change.plan, change.seats), cycle: change.cycle, status: 'active', cancelAtPeriodEnd: false };
     const registered = getDb().organizations.find((org) => org.id === data.organizationId);
     if (registered) {
       const renews = new Date();

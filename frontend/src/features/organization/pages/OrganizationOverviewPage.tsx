@@ -80,10 +80,10 @@ export function OrganizationOverviewPage() {
           subtitle={`${orgData.members.inactive} vô hiệu · ${orgData.members.pending} chờ kích hoạt`}
         />
         <ScoreCard
-          label="Ghế đang dùng"
+          label="Quyền sử dụng đã cấp"
           value={orgData.seats.limit === null ? orgData.seats.used : `${orgData.seats.used} / ${orgData.seats.limit}`}
           variant={seatsFull ? 'danger' : 'default'}
-          subtitle={seatsFull ? 'Hết ghế: cần nâng cấp' : 'Theo gói đăng ký'}
+          subtitle={seatsFull ? 'Đã hết quyền: cần nâng gói' : 'Theo gói đăng ký'}
         />
         <ScoreCard
           label="Tỷ lệ đáp ứng năng lực"

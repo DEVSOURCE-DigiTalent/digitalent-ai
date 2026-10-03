@@ -37,16 +37,16 @@ afterEach(() => {
 
 describe('mockPurchaseService (§4.2, GĐ 3)', () => {
   it('creates a purchase draft with correct id, recomputed amount, and 7-day expiration', async () => {
-    const selection = { planCode: 'ENT_STARTER', seats: 10, cycle: 'month' as const };
+    const selection = { planCode: 'ENT_STARTER', seats: 25, cycle: 'month' as const };
     const plan = getPlan('ENT_STARTER')!;
-    const expectedAmount = priceFor(plan, 10, 'month');
+    const expectedAmount = priceFor(plan, 25, 'month');
 
     const result = await mockPurchaseService.createDraft(selection, 'enterprise', MOCK_USER_ID);
     const draft = result.data.data!;
 
     expect(draft.id).toMatch(/^pd_/);
     expect(draft.planCode).toBe('ENT_STARTER');
-    expect(draft.seats).toBe(10);
+    expect(draft.seats).toBe(25);
     expect(draft.amount).toBe(expectedAmount);
     expect(draft.status).toBe('DRAFT');
 
@@ -57,7 +57,7 @@ describe('mockPurchaseService (§4.2, GĐ 3)', () => {
   });
 
   it('retrieves the active draft for the current user via getMyDraft', async () => {
-    const selection = { planCode: 'ENT_STARTER', seats: 5, cycle: 'month' as const };
+    const selection = { planCode: 'ENT_STARTER', seats: 20, cycle: 'month' as const };
     const created = (await mockPurchaseService.createDraft(selection, 'enterprise', MOCK_USER_ID)).data.data!;
 
     const myDraft = (await mockPurchaseService.getMyDraft()).data.data;
@@ -65,22 +65,22 @@ describe('mockPurchaseService (§4.2, GĐ 3)', () => {
   });
 
   it('updates draft plan, seats, and recalculates amount accurately', async () => {
-    const selection = { planCode: 'ENT_STARTER', seats: 5, cycle: 'month' as const };
+    const selection = { planCode: 'ENT_STARTER', seats: 20, cycle: 'month' as const };
     const created = (await mockPurchaseService.createDraft(selection, 'enterprise', MOCK_USER_ID)).data.data!;
 
     const proPlan = getPlan('ENT_PRO')!;
-    const newExpectedAmount = priceFor(proPlan, 15, 'year');
+    const newExpectedAmount = priceFor(proPlan, 60, 'year');
 
     const updated = (
       await mockPurchaseService.updateDraft(created.id, {
         planCode: 'ENT_PRO',
-        seats: 15,
+        seats: 60,
         cycle: 'year',
       })
     ).data.data!;
 
     expect(updated.planCode).toBe('ENT_PRO');
-    expect(updated.seats).toBe(15);
+    expect(updated.seats).toBe(60);
     expect(updated.cycle).toBe('year');
     expect(updated.amount).toBe(newExpectedAmount);
   });

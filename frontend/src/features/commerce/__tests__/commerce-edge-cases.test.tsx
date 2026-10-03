@@ -115,21 +115,21 @@ describe('commerce edge cases (T5, T6, T7, T14, T15, T17, T18)', () => {
 
     const draft = (await mockPurchaseService.getMyDraft()).data.data!;
     expect(draft.planCode).toBe('ENT_STARTER');
-    expect(draft.seats).toBe(5);
+    expect(draft.seats).toBe(20);
 
-    // Update draft to PRO with 15 seats
+    // Update draft to PRO with 60 seats (50 included + 10 add-ons)
     const updated = (
       await mockPurchaseService.updateDraft(draft.id, {
         planCode: 'ENT_PRO',
-        seats: 15,
+        seats: 60,
         cycle: 'year',
       })
     ).data.data!;
 
     expect(updated.planCode).toBe('ENT_PRO');
-    expect(updated.seats).toBe(15);
+    expect(updated.seats).toBe(60);
     expect(updated.cycle).toBe('year');
-    expect(updated.amount).toBe(priceFor(getPlan('ENT_PRO')!, 15, 'year'));
+    expect(updated.amount).toBe(priceFor(getPlan('ENT_PRO')!, 60, 'year'));
   });
 
   it('T7: reloading checkout page retains draft and payment status', async () => {
@@ -158,7 +158,7 @@ describe('commerce edge cases (T5, T6, T7, T14, T15, T17, T18)', () => {
     // Simulate page reload
     renderApp('/checkout');
     await heading('Quét mã để thanh toán');
-    expect(screen.getByText(/Starter · 5 ghế/)).toBeInTheDocument();
+    expect(screen.getByText(/Starter · 20 người dùng/)).toBeInTheDocument();
   });
 
   it('T14: resuming setup wizard opens at stored step', async () => {

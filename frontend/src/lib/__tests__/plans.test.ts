@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  PLANS, YEARLY_PRICE_FACTOR, clampSeats, formatVnd, getPlan, isPurchasableOnline, plansFor, priceFor,
+  PLANS, clampSeats, formatVnd, getPlan, isPurchasableOnline, plansFor, priceFor,
 } from '../plans';
 import { parsePlanSelection, planSelectionToQuery } from '../plan-query';
 import { ENTITLEMENTS } from '../entitlements';
@@ -37,19 +37,21 @@ describe('plan catalog', () => {
 });
 
 describe('pricing', () => {
-  it('multiplies the seat price by the seats', () => {
-    expect(priceFor(pro, 50, 'month')).toBe(79_000 * 50);
+  it('calculates bundle base price and add-on users correctly', () => {
+    expect(priceFor(pro, 50, 'month')).toBe(1_990_000);
+    expect(priceFor(pro, 60, 'month')).toBe(1_990_000 + 10 * 35_000);
   });
 
-  it('gives 20% off when paying for a year up front', () => {
-    expect(priceFor(pro, 10, 'year')).toBe(Math.round(79_000 * 10 * 12 * YEARLY_PRICE_FACTOR));
+  it('calculates yearly bundle price with add-on users', () => {
+    expect(priceFor(pro, 50, 'year')).toBe(19_090_000);
+    expect(priceFor(pro, 60, 'year')).toBe(19_090_000 + 10 * 336_000);
   });
 
   it('keeps seats inside what the plan sells', () => {
-    expect(clampSeats(starter, 1)).toBe(starter.seatRange!.min);
-    expect(clampSeats(starter, 999)).toBe(starter.seatRange!.max);
-    expect(clampSeats(starter, Number.NaN)).toBe(starter.seatRange!.min);
-    expect(priceFor(starter, 999, 'month')).toBe(49_000 * starter.seatRange!.max);
+    expect(clampSeats(starter, 1)).toBe(starter.users!.included);
+    expect(clampSeats(starter, 999)).toBe(starter.users!.max);
+    expect(clampSeats(starter, Number.NaN)).toBe(starter.users!.included);
+    expect(priceFor(starter, 999, 'month')).toBe(790_000 + 10 * 40_000);
   });
 
   it('charges individual plans once, whatever the seats', () => {
@@ -67,8 +69,8 @@ describe('pricing', () => {
 
 describe('plan query', () => {
   it('round-trips a selection', () => {
-    const query = planSelectionToQuery({ planCode: 'ENT_PRO', seats: 25, cycle: 'year' });
-    expect(parsePlanSelection(new URLSearchParams(query), 'enterprise')).toEqual({ planCode: 'ENT_PRO', seats: 25, cycle: 'year' });
+    const query = planSelectionToQuery({ planCode: 'ENT_PRO', seats: 60, cycle: 'year' });
+    expect(parsePlanSelection(new URLSearchParams(query), 'enterprise')).toEqual({ planCode: 'ENT_PRO', seats: 60, cycle: 'year' });
   });
 
   it('ignores plans of the other audience, unknown plans and the contact plan', () => {

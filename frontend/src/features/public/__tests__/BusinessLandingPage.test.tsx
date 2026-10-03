@@ -234,16 +234,16 @@ describe('Business landing page: pricing, FAQ and closing', () => {
     renderBusiness();
 
     const section = region(/Chọn gói theo quy mô/);
-    fireEvent.change(within(section).getByLabelText('Số nhân viên'), { target: { value: '25' } });
+    fireEvent.change(within(section).getByLabelText('Số nhân viên'), { target: { value: '35' } });
 
     const pro = within(section).getByRole('article', { name: 'Gói Pro' });
-    expect(within(pro).getByText(/1\.975\.000/)).toBeInTheDocument();
+    expect(within(pro).getAllByText(/1\.990\.000/).length).toBeGreaterThan(0);
     expect(within(pro).getByRole('link', { name: 'Chọn gói Pro' })).toHaveAttribute(
       'href',
-      '/business/register?plan=ENT_PRO&seats=25&cycle=month'
+      '/business/register?plan=ENT_PRO&seats=50&cycle=month'
     );
     const starter = within(section).getByRole('article', { name: 'Gói Starter' });
-    expect(within(starter).getByText(/tối đa 20 ghế/i)).toBeInTheDocument();
+    expect(within(starter).getByText(/tối đa 30 ghế/i)).toBeInTheDocument();
     expect(within(starter).queryByRole('link', { name: 'Chọn gói Starter' })).not.toBeInTheDocument();
     expect(within(section).getByRole('article', { name: 'Gói Enterprise' })).toBeInTheDocument();
     expect(section.textContent).toMatch(/lời mời chưa kích hoạt vẫn chiếm ghế/);
