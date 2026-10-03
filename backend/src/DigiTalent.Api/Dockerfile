@@ -7,7 +7,7 @@ COPY src/DigiTalent.Api/*.csproj src/DigiTalent.Api/
 COPY src/DigiTalent.Application/*.csproj src/DigiTalent.Application/
 COPY src/DigiTalent.Domain/*.csproj src/DigiTalent.Domain/
 COPY src/DigiTalent.Infrastructure/*.csproj src/DigiTalent.Infrastructure/
-RUN dotnet restore
+RUN dotnet restore src/DigiTalent.Api/DigiTalent.Api.csproj
 
 COPY src/ ./src/
 RUN dotnet publish src/DigiTalent.Api/DigiTalent.Api.csproj -c Release -o /app/publish --no-restore

@@ -10,7 +10,6 @@ export const PublicLayout: React.FC = () => {
           <nav className="hidden md:flex gap-4">
             <Link to="/" className="text-gray-600 hover:text-gray-900">Trang chủ</Link>
             <Link to="/careers" className="text-gray-600 hover:text-gray-900">Vị trí nghề nghiệp</Link>
-            <Link to="/verify" className="text-gray-600 hover:text-gray-900">Tra cứu chứng chỉ</Link>
           </nav>
         </div>
         <div className="flex items-center gap-4">
@@ -20,7 +19,7 @@ export const PublicLayout: React.FC = () => {
           <Link to="/experience?role=enterprise" className="text-sm font-medium text-blue-700 hover:underline">
             Xem mẫu doanh nghiệp
           </Link>
-          <Link to="/learn" className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded hover:bg-blue-50 transition">
+          <Link to="/personal" className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded hover:bg-blue-50 transition">
             Vào học
           </Link>
           <Link to="/login" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition">

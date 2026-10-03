@@ -8,11 +8,4 @@ export interface LoginResponse {
   expiresAt: string;
 }
 
-export interface CurrentUser {
-  id: string;
-  email: string;
-  fullName: string;
-  employeeId?: string;
-  roles: string[];
-  permissions: string[];
-}
+export type { SessionUser as CurrentUser } from './session';

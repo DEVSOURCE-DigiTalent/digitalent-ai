@@ -1,36 +1,30 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { LoginPage } from '../features/auth/pages/LoginPage';
+import { createBrowserRouter } from 'react-router-dom';
 import { NotFoundPage } from '../features/auth/pages/NotFoundPage';
 
 import { publicRoutes } from './routes/public.routes';
-import { learnerRoutes } from './routes/learner.routes';
+import { personalRoutes } from './routes/personal.routes';
 import { enterpriseRoutes } from './routes/enterprise.routes';
+import { platformRoutes } from './routes/platform.routes';
+import { onboardingRoutes } from './routes/onboarding.routes';
+import { legacyRedirectRoutes } from './routes/legacy-redirects';
 
 /**
- * Application router mapping to Screen Specification Document routes.
+ * Application router. Three portals (UI/UX spec section 2): Enterprise, Personal, Platform.
  */
 export const routes = [
-  // ── Public Routes (Landing, Careers, Verify) ──
+  // ── Public Routes (Landing, Careers) ──
   ...publicRoutes,
 
-  // ── Learner Routes (Learn) ──
-  ...learnerRoutes,
+  // ── Checkout and organization setup (after sign-up) ──
+  ...onboardingRoutes,
 
-  // ── Enterprise Routes (Dashboard, Admin, HR, etc.) ──
+  // ── Portals ──
+  ...personalRoutes,
   ...enterpriseRoutes,
+  ...platformRoutes,
 
-  // ── Auth ──
-  { path: '/login', element: <LoginPage /> },
-
-  // ── Legacy Redirects ──
-  { path: '/organization/departments', element: <Navigate to="/enterprise/organization/departments" replace /> },
-  { path: '/organization/positions', element: <Navigate to="/enterprise/organization/positions" replace /> },
-  { path: '/organization/employees', element: <Navigate to="/enterprise/organization/employees" replace /> },
-  { path: '/dashboard', element: <Navigate to="/enterprise/dashboard" replace /> },
-  { path: '/my-dashboard', element: <Navigate to="/enterprise/my-dashboard" replace /> },
-  { path: '/admin/*', element: <Navigate to="/enterprise/admin" replace /> },
-  { path: '/competency-framework/*', element: <Navigate to="/enterprise/competency-framework" replace /> },
-  { path: '/courses', element: <Navigate to="/enterprise/courses" replace /> },
+  // ── Legacy Redirects (pre-restructure paths) ──
+  ...legacyRedirectRoutes,
 
   // ── Catch-all ──
   { path: '*', element: <NotFoundPage /> },

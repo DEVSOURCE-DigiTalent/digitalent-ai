@@ -1,11 +1,5 @@
 export const APP_NAME = 'DigiTalent AI';
-export const ROLES = {
-  SYSTEM_ADMIN: 'SYSTEM_ADMIN',
-  HR_MANAGER: 'HR_MANAGER',
-  DEPARTMENT_MANAGER: 'DEPARTMENT_MANAGER',
-  TRAINER: 'TRAINER',
-  EMPLOYEE: 'EMPLOYEE',
-} as const;
+export { ROLES } from './roles';
 export const STATUS_BADGES: Record<string, { label: string; variant: string }> = {
   ACTIVE: { label: 'Active', variant: 'success' },
   INACTIVE: { label: 'Inactive', variant: 'warning' },

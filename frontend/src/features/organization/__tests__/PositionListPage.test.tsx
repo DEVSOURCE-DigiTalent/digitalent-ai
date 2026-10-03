@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 import { PositionListPage } from '../pages/PositionListPage';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { ROLES } from '@/lib/roles';
 import * as posHooks from '@/hooks/use-job-positions';
-import * as famHooks from '@/hooks/use-job-families';
 
 vi.mock('sonner', () => ({
   toast: {
@@ -27,7 +28,7 @@ describe('PositionListPage', () => {
         id: 'user-1',
         email: 'hr@digitalent.ai',
         fullName: 'HR Manager',
-        roles: ['HR_MANAGER'],
+        roles: [ROLES.OWNER],
         permissions,
       },
       isAuthenticated: true,
@@ -53,7 +54,7 @@ describe('PositionListPage', () => {
 
     const { rerender } = render(
       <QueryClientProvider client={queryClient}>
-        <PositionListPage />
+        <MemoryRouter><PositionListPage /></MemoryRouter>
       </QueryClientProvider>
     );
 
@@ -69,11 +70,11 @@ describe('PositionListPage', () => {
 
     rerender(
       <QueryClientProvider client={queryClient}>
-        <PositionListPage />
+        <MemoryRouter><PositionListPage /></MemoryRouter>
       </QueryClientProvider>
     );
 
-    expect(screen.getByText('No job positions found')).toBeInTheDocument();
+    expect(screen.getByText('Chưa có vị trí công việc')).toBeInTheDocument();
   });
 
   it('ReadOnlyUserCannotEditPositions', async () => {
@@ -94,13 +95,13 @@ describe('PositionListPage', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <PositionListPage />
+        <MemoryRouter><PositionListPage /></MemoryRouter>
       </QueryClientProvider>
     );
 
-    expect(screen.queryByRole('button', { name: /Create Position/i })).not.toBeInTheDocument();
-    expect(screen.queryByTitle('Edit')).not.toBeInTheDocument();
-    expect(screen.queryByTitle('Archive')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Tạo vị trí/i })).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Sửa')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Lưu trữ')).not.toBeInTheDocument();
   });
 
   it('ArchivePositionRequiresConfirmation', async () => {
@@ -125,16 +126,16 @@ describe('PositionListPage', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <PositionListPage />
+        <MemoryRouter><PositionListPage /></MemoryRouter>
       </QueryClientProvider>
     );
 
-    const archiveBtn = screen.getByTitle('Archive');
+    const archiveBtn = screen.getByTitle('Lưu trữ');
     fireEvent.click(archiveBtn);
 
-    expect(screen.getByText(/Are you sure you want to archive/i)).toBeInTheDocument();
+    expect(screen.getByText(/ẩn khỏi danh sách đang dùng/i)).toBeInTheDocument();
     const dialog = screen.getByRole('dialog');
-    const confirmBtn = within(dialog).getByRole('button', { name: 'Archive' });
+    const confirmBtn = within(dialog).getByRole('button', { name: 'Lưu trữ' });
     expect(confirmBtn).toBeInTheDocument();
 
     fireEvent.click(confirmBtn);
@@ -158,25 +159,25 @@ describe('PositionListPage', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <PositionListPage />
+        <MemoryRouter><PositionListPage /></MemoryRouter>
       </QueryClientProvider>
     );
 
-    const createBtn = screen.getByRole('button', { name: /Create Position/i });
+    const createBtn = screen.getByRole('button', { name: /Tạo vị trí/i });
     fireEvent.click(createBtn);
 
-    expect(screen.getByRole('heading', { name: 'Create Job Position' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Tạo vị trí công việc' })).toBeInTheDocument();
 
-    const saveBtn = screen.getByRole('button', { name: 'Save' });
+    const saveBtn = screen.getByRole('button', { name: 'Lưu' });
     fireEvent.click(saveBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('Code is required')).toBeInTheDocument();
-      expect(screen.getByText('Name is required')).toBeInTheDocument();
+      expect(screen.getByText('Vui lòng nhập mã')).toBeInTheDocument();
+      expect(screen.getByText('Vui lòng nhập tên')).toBeInTheDocument();
     });
 
-    const codeInput = screen.getByPlaceholderText('e.g. SWE-01');
-    const nameInput = screen.getByPlaceholderText('e.g. Software Engineer');
+    const codeInput = screen.getByPlaceholderText('Ví dụ: KT-01');
+    const nameInput = screen.getByPlaceholderText('Ví dụ: Kế toán viên');
 
     fireEvent.change(codeInput, { target: { value: 'QA-01' } });
     fireEvent.change(nameInput, { target: { value: 'Quality Assurance' } });
@@ -184,41 +185,30 @@ describe('PositionListPage', () => {
     fireEvent.click(saveBtn);
 
     await waitFor(() => {
-      expect(createMutateAsync).toHaveBeenCalledWith({
-        code: 'QA-01',
-        name: 'Quality Assurance',
-        description: '',
-        jobFamilyId: undefined,
-      });
+      expect(createMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          code: 'QA-01',
+          name: 'Quality Assurance',
+        }),
+      );
     });
   });
 
-  it('JobFamiliesTabSwitchesAndDisplaysFamilies', async () => {
+  it('FilterByGradeAndDepartmentWorks', async () => {
     mockUserWithPermissions();
-
-    vi.spyOn(famHooks, 'useJobFamilies').mockReturnValue({
-      data: {
-        items: [
-          { id: 'f1', code: 'TECH', name: 'Technology', description: 'Tech jobs', status: 'ACTIVE', createdAt: '' },
-        ],
-        totalItems: 1,
-        pageIndex: 1,
-        pageSize: 10,
-      },
-      isLoading: false,
-    } as any);
 
     render(
       <QueryClientProvider client={queryClient}>
-        <PositionListPage />
+        <MemoryRouter><PositionListPage /></MemoryRouter>
       </QueryClientProvider>
     );
 
-    const familiesTab = screen.getByRole('button', { name: /Job Families/i });
-    fireEvent.click(familiesTab);
-
-    expect(screen.getByText('Technology')).toBeInTheDocument();
-    expect(screen.getByText('TECH')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Create Job Family/i })).toBeInTheDocument();
+    // According to spec v2.1 OW-09, Job Family tab is removed in favor of Grade & Department filters
+    expect(screen.getByLabelText('Lọc theo phòng ban')).toBeInTheDocument();
+    expect(screen.getByLabelText('Lọc theo Cấp bậc')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Cấu hình Cấp bậc/i })).toHaveAttribute(
+      'href',
+      '/enterprise/positions/grades',
+    );
   });
 });

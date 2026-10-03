@@ -7,3 +7,5 @@ export { LearnerClassroomPage } from './LearnerClassroomPage';
 export { LearnerProgressPage } from './LearnerProgressPage';
 export { LearnerTasksPage } from './LearnerTasksPage';
 export { LearnerCertificatesPage } from './LearnerCertificatesPage';
+export { LearnerSubscriptionPage } from './LearnerSubscriptionPage';
+export { LearnerBillingPage } from './LearnerBillingPage';

@@ -1,34 +1,55 @@
 import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Plus, Settings2, Edit2, Trash2 } from 'lucide-react';
 import { PageHeader, DataTable, StatusBadge, getStatusVariant, ConfirmActionDialog, type Column } from '@/components/shared';
 import { useJobPositions, useDeleteJobPosition } from '@/hooks/use-job-positions';
-import { useJobFamilies, useDeleteJobFamily } from '@/hooks/use-job-families';
+import { useDepartments } from '@/hooks/use-departments';
+import { useJobGrades } from '@/hooks/use-job-grades';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { JobPositionFormDialog } from '../components/JobPositionFormDialog';
-import { JobFamilyFormDialog } from '../components/JobFamilyFormDialog';
 import { toast } from 'sonner';
 import { apiErrorMessage } from '@/lib/utils';
-import { Edit2, Trash2 } from 'lucide-react';
+import { INPUT_CLASS, PRIMARY_BUTTON } from '@/features/onboarding/components/styles';
 import type { JobPositionListItem, JobPositionStatus } from '@/services/job-position.service';
-import type { JobFamilyListItem, JobFamilyStatus } from '@/services/job-family.service';
 
+const STATUS_LABELS: Record<string, string> = { ACTIVE: 'Đang dùng', INACTIVE: 'Ngừng dùng', ARCHIVED: 'Đã lưu trữ' };
+
+/**
+ * OW-09: Position List (UI/UX spec v2.1 §3.2, §10).
+ * - Removed Job Family tab (hidden from UI per frozen design decision §9).
+ * - Filters: Department · Job Grade (G1-G3) · Status.
+ * - Columns: Code · Position Name · Department · Job Grade · Headcount · Requirement Status · Status.
+ * - Actions: Add Position (OW-11), Configure Job Grades (OW-12), Edit, Archive.
+ */
 export function PositionListPage() {
+  const navigate = useNavigate();
   const { can } = usePermission();
   const canManagePositions = can(PERMISSIONS.JOB_POSITION_CREATE_UPDATE);
-  const canManageFamilies = can(PERMISSIONS.JOB_FAMILY_CREATE_UPDATE) || canManagePositions;
 
-  const [activeTab, setActiveTab] = useState<'positions' | 'families'>('positions');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState<JobPositionStatus | undefined>(undefined);
+  const [departmentId, setDepartmentId] = useState('');
+  const [jobGrade, setJobGrade] = useState('');
 
-  // Positions state
-  const [posPage, setPosPage] = useState(1);
-  const [posPageSize, setPosPageSize] = useState(10);
-  const [posSearch, setPosSearch] = useState('');
-  const [posStatus, setPosStatus] = useState<JobPositionStatus | undefined>(undefined);
+  const { data: deptData } = useDepartments({ pageSize: 100, status: 'ACTIVE' });
+  const departments = deptData?.items || [];
 
-  const { data: posData, isLoading: posLoading } = useJobPositions({
-    pageIndex: posPage,
-    pageSize: posPageSize,
-    search: posSearch,
-    status: posStatus,
+  const { data: gradesData } = useJobGrades();
+  const grades = gradesData || [
+    { code: 'G1', name: 'Nhân viên' },
+    { code: 'G2', name: 'Phó phòng' },
+    { code: 'G3', name: 'Trưởng phòng' },
+  ];
+
+  const { data, isLoading } = useJobPositions({
+    pageIndex: page,
+    pageSize,
+    search,
+    status,
+    departmentId: departmentId || undefined,
+    jobGrade: jobGrade || undefined,
   });
 
   const deletePosMutation = useDeleteJobPosition();
@@ -36,25 +57,6 @@ export function PositionListPage() {
   const [editingPosition, setEditingPosition] = useState<JobPositionListItem | null>(null);
   const [isPosArchiveOpen, setIsPosArchiveOpen] = useState(false);
   const [archivingPosition, setArchivingPosition] = useState<JobPositionListItem | null>(null);
-
-  // Families state
-  const [famPage, setFamPage] = useState(1);
-  const [famPageSize, setFamPageSize] = useState(10);
-  const [famSearch, setFamSearch] = useState('');
-  const [famStatus, setFamStatus] = useState<JobFamilyStatus | undefined>(undefined);
-
-  const { data: famData, isLoading: famLoading } = useJobFamilies({
-    pageIndex: famPage,
-    pageSize: famPageSize,
-    search: famSearch,
-    status: famStatus,
-  });
-
-  const deleteFamMutation = useDeleteJobFamily();
-  const [isFamFormOpen, setIsFamFormOpen] = useState(false);
-  const [editingFamily, setEditingFamily] = useState<JobFamilyListItem | null>(null);
-  const [isFamArchiveOpen, setIsFamArchiveOpen] = useState(false);
-  const [archivingFamily, setArchivingFamily] = useState<JobFamilyListItem | null>(null);
 
   const handleEditPos = (pos: JobPositionListItem) => {
     setEditingPosition(pos);
@@ -70,63 +72,94 @@ export function PositionListPage() {
     if (!archivingPosition) return;
     try {
       await deletePosMutation.mutateAsync(archivingPosition.id);
-      toast.success('Job position archived successfully');
+      toast.success('Đã lưu trữ vị trí công việc');
     } catch (error) {
-      toast.error(apiErrorMessage(error, 'Failed to archive job position'));
+      toast.error(apiErrorMessage(error, 'Không lưu trữ được vị trí công việc'));
     } finally {
       setIsPosArchiveOpen(false);
       setArchivingPosition(null);
     }
   };
 
-  const handleEditFam = (fam: JobFamilyListItem) => {
-    setEditingFamily(fam);
-    setIsFamFormOpen(true);
-  };
-
-  const handleArchiveFamClick = (fam: JobFamilyListItem) => {
-    setArchivingFamily(fam);
-    setIsFamArchiveOpen(true);
-  };
-
-  const handleArchiveFamConfirm = async () => {
-    if (!archivingFamily) return;
-    try {
-      await deleteFamMutation.mutateAsync(archivingFamily.id);
-      toast.success('Job family archived successfully');
-    } catch (error) {
-      toast.error(apiErrorMessage(error, 'Failed to archive job family'));
-    } finally {
-      setIsFamArchiveOpen(false);
-      setArchivingFamily(null);
-    }
-  };
-
-  const posColumns: Column<JobPositionListItem>[] = [
+  const columns: Column<JobPositionListItem>[] = [
     {
       key: 'code',
-      header: 'Code',
-      cell: (row) => <span className="font-medium">{row.code}</span>,
+      header: 'Mã',
+      cell: (row) => <span className="font-medium font-mono text-slate-900">{row.code}</span>,
     },
     {
       key: 'name',
-      header: 'Name',
-      cell: (row) => row.name,
+      header: 'Tên vị trí',
+      cell: (row) => (
+        <div>
+          <span className="font-semibold text-slate-900 hover:text-primary-700">{row.name}</span>
+          {row.description && <p className="text-xs text-slate-500 line-clamp-1">{row.description}</p>}
+        </div>
+      ),
     },
     {
-      key: 'family',
-      header: 'Job Family',
-      cell: (row) => row.jobFamilyName || <span className="text-slate-400">None</span>,
+      key: 'department',
+      header: 'Phòng ban',
+      cell: (row) => row.departmentName || (row as any).jobFamilyName || <span className="text-slate-400">Chưa gắn</span>,
+    },
+    {
+      key: 'grade',
+      header: 'Cấp bậc',
+      cell: (row) =>
+        row.jobGrade ? (
+          <span
+            className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${
+              row.jobGrade === 'G3'
+                ? 'bg-purple-50 text-purple-700 ring-purple-600/20'
+                : row.jobGrade === 'G2'
+                ? 'bg-blue-50 text-blue-700 ring-blue-600/20'
+                : 'bg-teal-50 text-teal-700 ring-teal-600/20'
+            }`}
+          >
+            {row.jobGrade} ({row.jobGradeName ?? row.jobGrade})
+          </span>
+        ) : (
+          <span className="text-xs text-slate-400">—</span>
+        ),
+    },
+    {
+      key: 'headcount',
+      header: 'Nhân sự',
+      cell: (row) => (
+        <span className="font-medium tabular-nums text-slate-900">
+          {row.headcount ?? 0} người
+        </span>
+      ),
+    },
+    {
+      key: 'requirementSet',
+      header: 'Yêu cầu năng lực',
+      cell: (row) =>
+        row.hasRequirementSet ? (
+          <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-600/20 ring-inset">
+            Đã có yêu cầu
+          </span>
+        ) : (
+          <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-amber-600/20 ring-inset">
+            Chưa thiết lập
+          </span>
+        ),
+      hideOnMobile: true,
     },
     {
       key: 'status',
-      header: 'Status',
-      cell: (row) => <StatusBadge label={row.status} variant={getStatusVariant(row.status)} />,
+      header: 'Trạng thái',
+      cell: (row) => (
+        <StatusBadge
+          label={STATUS_LABELS[row.status] ?? row.status}
+          variant={getStatusVariant(row.status)}
+        />
+      ),
     },
   ];
 
   if (canManagePositions) {
-    posColumns.push({
+    columns.push({
       key: 'actions',
       header: '',
       cell: (row) => (
@@ -137,7 +170,7 @@ export function PositionListPage() {
               handleEditPos(row);
             }}
             className="p-1 text-slate-400 hover:text-primary-600 transition-colors"
-            title="Edit"
+            title="Sửa"
           >
             <Edit2 className="w-4 h-4" />
           </button>
@@ -147,7 +180,7 @@ export function PositionListPage() {
               handleArchivePosClick(row);
             }}
             className="p-1 text-slate-400 hover:text-danger-600 transition-colors"
-            title="Archive"
+            title="Lưu trữ"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -156,172 +189,99 @@ export function PositionListPage() {
     });
   }
 
-  const famColumns: Column<JobFamilyListItem>[] = [
-    {
-      key: 'code',
-      header: 'Code',
-      cell: (row) => <span className="font-medium">{row.code}</span>,
-    },
-    {
-      key: 'name',
-      header: 'Name',
-      cell: (row) => row.name,
-    },
-    {
-      key: 'description',
-      header: 'Description',
-      cell: (row) => row.description || <span className="text-slate-400">-</span>,
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      cell: (row) => <StatusBadge label={row.status} variant={getStatusVariant(row.status)} />,
-    },
-  ];
-
-  if (canManageFamilies) {
-    famColumns.push({
-      key: 'actions',
-      header: '',
-      cell: (row) => (
-        <div className="flex items-center justify-end gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEditFam(row);
-            }}
-            className="p-1 text-slate-400 hover:text-primary-600 transition-colors"
-            title="Edit"
-          >
-            <Edit2 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleArchiveFamClick(row);
-            }}
-            className="p-1 text-slate-400 hover:text-danger-600 transition-colors"
-            title="Archive"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      ),
-    });
-  }
+  const resetPage = <T,>(setter: (val: T) => void) => (val: T) => {
+    setter(val);
+    setPage(1);
+  };
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Job Architecture" subtitle="Manage job positions, job families, and requirements">
-        <div className="flex items-center gap-3">
-          {activeTab === 'positions' && canManagePositions && (
+      <PageHeader
+        title="Vị trí công việc"
+        subtitle="Quản lý danh mục vị trí, Cấp bậc (G1–G3) và bộ tiêu chuẩn năng lực yêu cầu"
+      >
+        <div className="flex items-center gap-2">
+          <Link
+            to="/enterprise/positions/grades"
+            className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <Settings2 className="size-4 text-slate-500" />
+            Cấu hình Cấp bậc
+          </Link>
+          {canManagePositions && (
             <button
               onClick={() => {
                 setEditingPosition(null);
                 setIsPosFormOpen(true);
               }}
-              className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700"
+              className={PRIMARY_BUTTON}
             >
-              Create Position
-            </button>
-          )}
-          {activeTab === 'families' && canManageFamilies && (
-            <button
-              onClick={() => {
-                setEditingFamily(null);
-                setIsFamFormOpen(true);
-              }}
-              className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700"
-            >
-              Create Job Family
+              <Plus className="size-4" />
+              Tạo vị trí
             </button>
           )}
         </div>
       </PageHeader>
 
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200">
-        <button
-          onClick={() => setActiveTab('positions')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-            activeTab === 'positions'
-              ? 'border-primary-600 text-primary-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Job Positions ({posData?.totalItems || 0})
-        </button>
-        <button
-          onClick={() => setActiveTab('families')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-            activeTab === 'families'
-              ? 'border-primary-600 text-primary-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Job Families ({famData?.totalItems || 0})
-        </button>
-      </div>
-
-      {activeTab === 'positions' ? (
-        <DataTable
-          columns={posColumns}
-          data={posData?.items || []}
-          keyExtractor={(row) => row.id}
-          isLoading={posLoading}
-          searchValue={posSearch}
-          onSearchChange={setPosSearch}
-          filters={
+      <DataTable
+        columns={columns}
+        data={data?.items || []}
+        keyExtractor={(row) => row.id}
+        isLoading={isLoading}
+        searchValue={search}
+        onSearchChange={resetPage(setSearch)}
+        searchPlaceholder="Tìm theo tên hoặc mã vị trí"
+        onRowClick={(row) => navigate(`/enterprise/positions/${row.id}`)}
+        emptyTitle="Chưa có vị trí công việc"
+        emptyDescription="Tạo vị trí công việc để thiết lập bộ yêu cầu năng lực cho tổ chức."
+        filters={
+          <>
             <select
-              value={posStatus || ''}
-              onChange={(e) => setPosStatus(e.target.value ? (e.target.value as JobPositionStatus) : undefined)}
-              className="px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              aria-label="Lọc theo phòng ban"
+              value={departmentId}
+              onChange={(e) => resetPage(setDepartmentId)(e.target.value)}
+              className={INPUT_CLASS}
             >
-              <option value="">All Status</option>
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
+              <option value="">Mọi phòng ban</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
             </select>
-          }
-          emptyTitle="No job positions found"
-          emptyDescription="Get started by creating a new job position."
-          pageInfo={{
-            page: posPage,
-            pageSize: posPageSize,
-            total: posData?.totalItems || 0,
-            onPageChange: setPosPage,
-            onPageSizeChange: setPosPageSize,
-          }}
-        />
-      ) : (
-        <DataTable
-          columns={famColumns}
-          data={famData?.items || []}
-          keyExtractor={(row) => row.id}
-          isLoading={famLoading}
-          searchValue={famSearch}
-          onSearchChange={setFamSearch}
-          filters={
             <select
-              value={famStatus || ''}
-              onChange={(e) => setFamStatus(e.target.value ? (e.target.value as JobFamilyStatus) : undefined)}
-              className="px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              aria-label="Lọc theo Cấp bậc"
+              value={jobGrade}
+              onChange={(e) => resetPage(setJobGrade)(e.target.value)}
+              className={INPUT_CLASS}
             >
-              <option value="">All Status</option>
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
+              <option value="">Mọi Cấp bậc</option>
+              {grades.map((g) => (
+                <option key={g.code} value={g.code}>
+                  {g.code} - {g.name}
+                </option>
+              ))}
             </select>
-          }
-          emptyTitle="No job families found"
-          emptyDescription="Get started by creating a new job family."
-          pageInfo={{
-            page: famPage,
-            pageSize: famPageSize,
-            total: famData?.totalItems || 0,
-            onPageChange: setFamPage,
-            onPageSizeChange: setFamPageSize,
-          }}
-        />
-      )}
+            <select
+              aria-label="Lọc theo trạng thái"
+              value={status || ''}
+              onChange={(e) => resetPage(setStatus)(e.target.value ? (e.target.value as JobPositionStatus) : undefined)}
+              className={INPUT_CLASS}
+            >
+              <option value="">Mọi trạng thái</option>
+              <option value="ACTIVE">Đang dùng</option>
+              <option value="INACTIVE">Ngừng dùng</option>
+            </select>
+          </>
+        }
+        pageInfo={{
+          page,
+          pageSize,
+          total: data?.totalItems || 0,
+          onPageChange: setPage,
+          onPageSizeChange: setPageSize,
+        }}
+      />
 
       {isPosFormOpen && (
         <JobPositionFormDialog
@@ -336,37 +296,13 @@ export function PositionListPage() {
           open={isPosArchiveOpen}
           onClose={() => setIsPosArchiveOpen(false)}
           onConfirm={handleArchivePosConfirm}
-          title="Archive Job Position"
+          title="Lưu trữ vị trí công việc"
           description={
             <span>
-              Are you sure you want to archive <strong>{archivingPosition.name}</strong>? This action will hide the position from active lists.
+              Lưu trữ vị trí <strong>{archivingPosition.name}</strong>? Vị trí sẽ ẩn khỏi danh sách đang dùng nhưng vẫn giữ dữ liệu lịch sử.
             </span>
           }
-          confirmLabel="Archive"
-          confirmVariant="danger"
-        />
-      )}
-
-      {isFamFormOpen && (
-        <JobFamilyFormDialog
-          open={isFamFormOpen}
-          onClose={() => setIsFamFormOpen(false)}
-          family={editingFamily}
-        />
-      )}
-
-      {isFamArchiveOpen && archivingFamily && (
-        <ConfirmActionDialog
-          open={isFamArchiveOpen}
-          onClose={() => setIsFamArchiveOpen(false)}
-          onConfirm={handleArchiveFamConfirm}
-          title="Archive Job Family"
-          description={
-            <span>
-              Are you sure you want to archive <strong>{archivingFamily.name}</strong>? This action will hide the family from active lists.
-            </span>
-          }
-          confirmLabel="Archive"
+          confirmLabel="Lưu trữ"
           confirmVariant="danger"
         />
       )}

@@ -7,27 +7,27 @@ import { SeverityBadge } from './SeverityBadge';
 
 const EMPTY_STATES: Record<RecommendationEmptyReason, { title: string; description: string }> = {
   NO_EMPLOYEE_PROFILE: {
-    title: 'No employee profile',
-    description: 'Recommendations are based on an employee position standard; this account is not linked to an employee.',
+    title: 'Chưa có hồ sơ nhân viên',
+    description: 'Đề xuất dựa trên chuẩn vị trí của nhân viên; tài khoản này chưa gắn với nhân viên nào.',
   },
   NO_SKILL_GAP_RUN: {
-    title: 'No skill gap analysis yet',
-    description: 'Recommendations appear once a skill gap analysis has been run.',
+    title: 'Chưa có phân tích skill gap',
+    description: 'Đề xuất xuất hiện sau khi chạy phân tích skill gap.',
   },
   NO_GAP: {
-    title: 'All position competencies are met',
-    description: 'There is no competency gap to close against the current position standard.',
+    title: 'Đã đạt mọi năng lực của vị trí',
+    description: 'Không còn khoảng trống năng lực nào so với chuẩn vị trí hiện tại.',
   },
   NO_MATCHING_COURSE: {
-    title: 'No course matches the current gaps',
-    description: 'No published course raises the missing competencies yet. HR can link courses to competencies.',
+    title: 'Chưa có khóa học phù hợp với khoảng trống hiện tại',
+    description: 'Chưa có khóa học đã xuất bản nào nâng được các năng lực còn thiếu.',
   },
 };
 
 const ENROLLMENT_LABELS: Record<string, string> = {
-  NOT_STARTED: 'Enrolled',
-  IN_PROGRESS: 'In progress',
-  READY_FOR_ASSESSMENT: 'Ready for assessment',
+  NOT_STARTED: 'Đã được giao',
+  IN_PROGRESS: 'Đang học',
+  READY_FOR_ASSESSMENT: 'Chờ đánh giá',
 };
 
 /**
@@ -38,7 +38,7 @@ export function CourseRecommendations({ employeeId }: { employeeId?: string }) {
 
   if (isLoading) {
     return (
-      <div className="space-y-3 animate-pulse" aria-label="Loading recommendations">
+      <div className="space-y-3 animate-pulse" aria-label="Đang tải đề xuất">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="h-28 bg-slate-200 rounded-lg" />
         ))}
@@ -49,15 +49,15 @@ export function CourseRecommendations({ employeeId }: { employeeId?: string }) {
   if (isError || !data) {
     return (
       <EmptyState
-        title="Could not load recommendations"
-        description="Something went wrong while loading course recommendations."
+        title="Không tải được đề xuất"
+        description="Có lỗi khi tải đề xuất khóa học."
         action={
           <button
             type="button"
             onClick={() => refetch()}
             className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700"
           >
-            Try again
+            Thử lại
           </button>
         }
       />
@@ -109,12 +109,12 @@ function RecommendationCard({ item, rank }: { item: CourseRecommendation; rank: 
           {item.estimatedDurationMinutes != null && (
             <span className="inline-flex items-center gap-1">
               <Clock className="w-3.5 h-3.5" />
-              {Math.round(item.estimatedDurationMinutes / 60)} h
+              {Math.round(item.estimatedDurationMinutes / 60)} giờ
             </span>
           )}
           <span>
-            Gap coverage {breakdown.gapPriorityCoverage.toFixed(1)} · Mandatory {breakdown.mandatoryCoverage.toFixed(1)} · Entry
-            level {breakdown.entryLevelFit.toFixed(1)}
+            Đóng khoảng trống {breakdown.gapPriorityCoverage.toFixed(1)} · Bắt buộc {breakdown.mandatoryCoverage.toFixed(1)} · Phù hợp
+            đầu vào {breakdown.entryLevelFit.toFixed(1)}
           </span>
         </p>
 
@@ -124,9 +124,9 @@ function RecommendationCard({ item, rank }: { item: CourseRecommendation; rank: 
               <SeverityBadge severity={reason.severity} />
               <span>
                 {reason.competencyName}: {levelLabel(reason.currentLevel)} → {levelLabel(reason.courseTargetLevel)}
-                <span className="text-slate-400"> (required {levelLabel(reason.requiredLevel)})</span>
+                <span className="text-slate-400"> (yêu cầu {levelLabel(reason.requiredLevel)})</span>
               </span>
-              {reason.mandatory && <span className="text-[10px] font-semibold uppercase text-danger-600">Mandatory</span>}
+              {reason.mandatory && <span className="text-[10px] font-semibold uppercase text-danger-600">Bắt buộc</span>}
             </li>
           ))}
         </ul>
@@ -134,7 +134,7 @@ function RecommendationCard({ item, rank }: { item: CourseRecommendation; rank: 
         {item.warnings.includes('ENTRY_LEVEL_NOT_MET') && (
           <p className="flex items-center gap-1.5 text-xs text-warning-700">
             <AlertTriangle className="w-3.5 h-3.5" />
-            The course entry level is above the current level — consider a foundation course first.
+            Mức đầu vào của khóa cao hơn mức hiện tại — nên học khóa nền tảng trước.
           </p>
         )}
       </div>

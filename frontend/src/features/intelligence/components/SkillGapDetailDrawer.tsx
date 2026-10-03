@@ -44,7 +44,7 @@ export function SkillGapDetailDrawer({ runId, onClose, canRecalculate, isRecalcu
       <aside
         role="dialog"
         aria-modal="true"
-        aria-label="Skill gap detail"
+        aria-label="Chi tiết skill gap"
         className="relative w-full max-w-4xl h-full overflow-y-auto bg-slate-50 shadow-xl"
       >
         <header className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 bg-white border-b border-slate-200">
@@ -64,7 +64,7 @@ export function SkillGapDetailDrawer({ runId, onClose, canRecalculate, isRecalcu
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
               >
                 <BadgeCheck className="w-4 h-4" />
-                Confirm level
+                Xác nhận mức
               </button>
             )}
             {canRecalculate && run && (
@@ -75,14 +75,14 @@ export function SkillGapDetailDrawer({ runId, onClose, canRecalculate, isRecalcu
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary-700 border border-primary-200 rounded-md hover:bg-primary-50 disabled:opacity-50"
               >
                 <RefreshCw className={isRecalculating ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} />
-                Recalculate
+                Tính lại
               </button>
             )}
             <button
               type="button"
               onClick={onClose}
               className="p-1.5 text-slate-400 hover:text-slate-700 rounded-md"
-              aria-label="Close"
+              aria-label="Đóng"
             >
               <X className="w-5 h-5" />
             </button>
@@ -91,11 +91,11 @@ export function SkillGapDetailDrawer({ runId, onClose, canRecalculate, isRecalcu
 
         <div className="p-6">
           {isLoading && <SkillGapDetailSkeleton />}
-          {isError && <p className="text-sm text-danger-600">Could not load this analysis. Please close and try again.</p>}
+          {isError && <p className="text-sm text-danger-600">Không tải được kết quả này. Hãy đóng và thử lại.</p>}
           {run && <SkillGapDetailView run={run} />}
           {run && canReadRecommendations && (
             <section className="mt-6 space-y-3">
-              <h3 className="text-sm font-semibold text-slate-700">Recommended courses</h3>
+              <h3 className="text-sm font-semibold text-slate-700">Khóa học được đề xuất</h3>
               <CourseRecommendations employeeId={run.employeeId} />
             </section>
           )}

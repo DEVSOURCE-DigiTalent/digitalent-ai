@@ -8,6 +8,13 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Frontend-first: with VITE_USE_MOCK=true the REST calls are answered by the mock server (services/mock/server)
+// instead of the network, so every service and page works unchanged. The check is inline so that a production
+// build drops the import together with all the mock data.
+if (import.meta.env.VITE_USE_MOCK === 'true') {
+  apiClient.defaults.adapter = (config) => import('./mock/server/mock-adapter').then((module) => module.mockAdapter(config));
+}
+
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('accessToken');
   if (token && config.headers) {

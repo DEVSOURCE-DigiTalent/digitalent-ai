@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AxiosError, type AxiosResponse } from 'axios';
 import { toast } from 'sonner';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as deptHooks from '@/hooks/use-departments';
 import { DepartmentFormDialog } from '../components/DepartmentFormDialog';
 
@@ -12,6 +13,10 @@ const conflict = (message: string) =>
     status: 409,
     data: { success: false, message, data: null, errors: [] },
   } as AxiosResponse);
+
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+const renderWithClient = (ui: React.ReactElement) =>
+  render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 
 describe('DepartmentFormDialog', () => {
   beforeEach(() => {
@@ -24,11 +29,11 @@ describe('DepartmentFormDialog', () => {
     const mutateAsync = vi.fn().mockRejectedValue(conflict("Department code 'OPS' already exists."));
     vi.spyOn(deptHooks, 'useCreateDepartment').mockReturnValue({ mutateAsync } as never);
     const onClose = vi.fn();
-    render(<DepartmentFormDialog open onClose={onClose} />);
+    renderWithClient(<DepartmentFormDialog open onClose={onClose} />);
 
-    fireEvent.change(screen.getByPlaceholderText('e.g. ENG'), { target: { value: 'OPS' } });
-    fireEvent.change(screen.getByPlaceholderText('e.g. Engineering'), { target: { value: 'Operations' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.change(screen.getByPlaceholderText('Ví dụ: ENG'), { target: { value: 'OPS' } });
+    fireEvent.change(screen.getByPlaceholderText('Ví dụ: Kỹ thuật'), { target: { value: 'Operations' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu' }));
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Department code 'OPS' already exists."));
     expect(onClose).not.toHaveBeenCalled();
@@ -37,12 +42,12 @@ describe('DepartmentFormDialog', () => {
   it('falls back to a generic message when the server gives none', async () => {
     const mutateAsync = vi.fn().mockRejectedValue(new Error('Network Error'));
     vi.spyOn(deptHooks, 'useCreateDepartment').mockReturnValue({ mutateAsync } as never);
-    render(<DepartmentFormDialog open onClose={vi.fn()} />);
+    renderWithClient(<DepartmentFormDialog open onClose={vi.fn()} />);
 
-    fireEvent.change(screen.getByPlaceholderText('e.g. ENG'), { target: { value: 'OPS' } });
-    fireEvent.change(screen.getByPlaceholderText('e.g. Engineering'), { target: { value: 'Operations' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.change(screen.getByPlaceholderText('Ví dụ: ENG'), { target: { value: 'OPS' } });
+    fireEvent.change(screen.getByPlaceholderText('Ví dụ: Kỹ thuật'), { target: { value: 'Operations' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu' }));
 
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Failed to create department'));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Không tạo được phòng ban'));
   });
 });

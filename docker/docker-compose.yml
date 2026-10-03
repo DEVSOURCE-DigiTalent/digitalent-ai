@@ -23,7 +23,7 @@ services:
       - digitalent-net
 
   minio:
-    image: minio/minio:latest
+    image: coollabsio/minio:latest
     container_name: digitalent-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -65,9 +65,11 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ../frontend/dist:/usr/share/nginx/html:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - backend-api
     networks:

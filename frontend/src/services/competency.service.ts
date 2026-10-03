@@ -111,6 +111,10 @@ export interface PositionRequirementVersion {
   id: string;
   versionNo: number;
   status: string;
+  changeReason?: string;
+  changeUserFullName?: string;
+  effectiveFrom?: string;
+  activatedAt?: string;
 }
 
 export interface PositionRequirementsOutput {
@@ -126,9 +130,36 @@ export interface PositionRequirementsOutput {
   createdByUserId?: string;
   activatedByUserId?: string;
   activatedAt?: string;
+  changeReason?: string;
+  changeUserFullName?: string;
   items: PositionRequirementItemDto[];
   /** Every version of the position, newest first. */
   versions?: PositionRequirementVersion[];
+}
+
+export interface PositionRequirementSummary {
+  jobPositionId: string;
+  jobPositionCode: string;
+  jobPositionName: string;
+  jobGrade?: string;
+  departmentId?: string;
+  departmentName: string;
+  employeeCount: number;
+  activeSet: {
+    id: string;
+    versionNo: number;
+    effectiveFrom?: string;
+    activatedAt?: string;
+    competencyCount: number;
+    changeReason?: string;
+  } | null;
+  draftSet: {
+    id: string;
+    versionNo: number;
+    competencyCount: number;
+  } | null;
+  totalVersions: number;
+  status: 'ACTIVE' | 'DRAFT' | 'NOT_CONFIGURED';
 }
 
 export interface CreateDraftPositionRequirementSetRequest {
@@ -136,6 +167,7 @@ export interface CreateDraftPositionRequirementSetRequest {
   effectiveFrom?: string;
   effectiveTo?: string;
   reviewDate?: string;
+  changeReason?: string;
   items: PositionRequirementItemInput[];
 }
 
@@ -143,6 +175,7 @@ export interface UpdateDraftPositionRequirementSetRequest {
   effectiveFrom?: string;
   effectiveTo?: string;
   reviewDate?: string;
+  changeReason?: string;
   items: PositionRequirementItemInput[];
 }
 
@@ -153,16 +186,50 @@ export interface RequirementSetMutationResponse {
   activatedAt?: string;
 }
 
+export interface EmployeeWithGap {
+  employeeId: string;
+  fullName: string;
+  email: string;
+  departmentName: string;
+  jobPositionName: string;
+  jobGrade?: string;
+  currentLevel: number;
+  requiredLevel: number;
+  gap: number;
+}
+
+/** Where a competency is used in the organization (LCA-07 / OW-15). */
+export interface CompetencyUsage {
+  positions: { positionId: string; positionName: string; requiredLevel: number; isMandatory: boolean; weightPercent: number; employees: number }[];
+  courses: { id: string; code: string; title: string; level: number; assigned: number }[];
+  /** Number of active employees at each level 0-3 (0 = nothing confirmed). */
+  levelDistribution: Record<string, number>;
+  employeesWithGap?: EmployeeWithGap[];
+}
+
+export interface CompetencyCategory {
+  id: string;
+  code: string;
+  name: string;
+  sortOrder: number;
+}
+
 /**
  * Competency Framework & Position Requirements API service.
  */
 export const competencyService = {
   // ── Competencies ──
+  getCategories: () =>
+    apiClient.get<ApiResponse<CompetencyCategory[]>>('/competency-categories'),
+
   getList: (params?: CompetencyListParams) =>
     apiClient.get<ApiResponse<GetCompetenciesResponse>>('/competencies', { params }),
 
   getById: (id: string) =>
     apiClient.get<ApiResponse<CompetencyDetail>>(`/competencies/${id}`),
+
+  getUsage: (id: string) =>
+    apiClient.get<ApiResponse<CompetencyUsage>>(`/competencies/${id}/usage`),
 
   create: (data: CreateCompetencyRequest) =>
     apiClient.post<ApiResponse<{ id: string }>>('/competencies', data),
@@ -174,6 +241,9 @@ export const competencyService = {
     apiClient.delete<ApiResponse<{ id: string }>>(`/competencies/${id}`),
 
   // ── Position Requirements ──
+  getAllSummaries: () =>
+    apiClient.get<ApiResponse<PositionRequirementSummary[]>>('/position-requirements/summaries'),
+
   getRequirements: (positionId: string, versionNo?: number) =>
     apiClient.get<ApiResponse<PositionRequirementsOutput>>('/position-requirements', {
       params: { positionId, versionNo },
@@ -185,6 +255,6 @@ export const competencyService = {
   updateDraft: (id: string, data: UpdateDraftPositionRequirementSetRequest) =>
     apiClient.put<ApiResponse<RequirementSetMutationResponse>>(`/position-requirements/${id}`, data),
 
-  activate: (id: string) =>
-    apiClient.post<ApiResponse<RequirementSetMutationResponse>>(`/position-requirements/${id}/activate`),
+  activate: (id: string, data?: { changeReason?: string }) =>
+    apiClient.post<ApiResponse<RequirementSetMutationResponse>>(`/position-requirements/${id}/activate`, data),
 };

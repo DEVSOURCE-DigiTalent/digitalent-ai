@@ -1,447 +1,236 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, Check, Lightbulb } from 'lucide-react';
+import { usePersonalCourse, useSaveCourseNotes, useSetLessonCompleted } from '@/hooks/use-personal-learning';
+import { levelLabelVi } from '@/lib/competency-levels';
+import { cn } from '@/lib/utils';
+import type { PersonalCourseDetail, PersonalLesson } from '@/services/personal-learning.service';
+import { CourseAssessment } from '../components/CourseAssessment';
 import {
-  Play,
-  Pause,
-  SkipForward,
-  SkipBack,
-  ArrowLeft,
-  CheckCircle2,
-  MessageSquare,
-  FileText,
-  Bookmark,
-  Sparkles,
-  Award,
-} from 'lucide-react';
-import { COURSE_LIBRARY, type CourseLesson, type DetailedCourse } from '../data/learnerData';
+  Card, EmptyState, ErrorBlock, LoadingBlock, PT_BUTTON, PT_BUTTON_SECONDARY, PT_EYEBROW, PT_INPUT, ProgressBar
+} from '../components/ui';
+import { errorMessage } from '../utils/error-message';
+import { LESSON_KIND } from '../utils/lesson-kind';
 
-export const LearnerClassroomPage: React.FC = () => {
+const STUDY_CLIP = '/videos/individual-study.mp4';
+
+/** IND-10 "/personal/classroom/:id": one lesson at a time, notes, and the end-of-course assessment. */
+export function LearnerClassroomPage() {
   const { id } = useParams<{ id: string }>();
-  const courseId = id || 'crs-01';
-
-  const course: DetailedCourse =
-    COURSE_LIBRARY[courseId] || COURSE_LIBRARY['crs-01'];
-
-  // Flatten all lessons across modules for the classroom player
-  const allLessons: CourseLesson[] = course.modules.flatMap((m) => m.lessons);
-
-  const [activeLessonIndex, setActiveLessonIndex] = useState<number>(0);
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [completedLessonIds, setCompletedLessonIds] = useState<Record<string, boolean>>(() => {
-    try {
-      const stored = localStorage.getItem(`digitalent_progress_${courseId}`);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch {
-      // ignore
-    }
-    // Default: mark lesson 1 as completed for realistic demo feel
-    return { [allLessons[0]?.id || 'les-01']: true };
-  });
-
-  const [activeTab, setActiveTab] = useState<'content' | 'notes' | 'discussion'>('content');
-  const [notes, setNotes] = useState<string>(() => {
-    return localStorage.getItem(`digitalent_notes_${courseId}`) || 'Cần chú ý nguyên lý Chain-of-Thought khi thiết kế prompt cho trợ lý tư vấn tài chính.';
-  });
-  const [noteSaved, setNoteSaved] = useState<boolean>(false);
-
-  const currentLesson: CourseLesson = allLessons[activeLessonIndex] || allLessons[0];
-
-  const completedCount = allLessons.filter((l) => completedLessonIds[l.id]).length;
-  const progressPercent = Math.round((completedCount / allLessons.length) * 100);
-
-  const handleToggleComplete = (lessonId: string) => {
-    const updated = {
-      ...completedLessonIds,
-      [lessonId]: !completedLessonIds[lessonId],
-    };
-    setCompletedLessonIds(updated);
-    try {
-      localStorage.setItem(`digitalent_progress_${courseId}`, JSON.stringify(updated));
-    } catch {
-      // ignore
-    }
-  };
-
-  const handleSaveNotes = () => {
-    try {
-      localStorage.setItem(`digitalent_notes_${courseId}`, notes);
-      setNoteSaved(true);
-      setTimeout(() => setNoteSaved(false), 2000);
-    } catch {
-      // ignore
-    }
-  };
-
-  const handleNextLesson = () => {
-    if (activeLessonIndex < allLessons.length - 1) {
-      setActiveLessonIndex(activeLessonIndex + 1);
-    }
-  };
-
-  const handlePrevLesson = () => {
-    if (activeLessonIndex > 0) {
-      setActiveLessonIndex(activeLessonIndex - 1);
-    }
-  };
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !navigator.userAgent.includes('jsdom')) {
-      try {
-        window.scrollTo?.({ top: 0, behavior: 'smooth' });
-      } catch {
-        // ignore
-      }
-    }
-  }, [activeLessonIndex]);
+  const { data, isLoading, isError, error, refetch } = usePersonalCourse(id);
 
   return (
-    <div data-testid="learner-classroom-page" className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Top Bar with router test expected texts */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
-        <div className="flex items-center gap-3">
-          <Link
-            to={`/learn/courses/${courseId}`}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 transition"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Về trang chi tiết khóa học</span>
-          </Link>
-          <span className="text-slate-300">|</span>
-          <span className="text-xs font-semibold px-2.5 py-0.5 bg-blue-100 text-blue-800 rounded font-mono">
-            Lớp học số: {courseId}
-          </span>
-          <span className="text-xs text-slate-500 font-medium hidden md:inline truncate max-w-sm">
-            {course.title}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Link
-            to="/learn/tasks"
-            className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200"
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Bài tập kèm theo</span>
-          </Link>
-          <Link
-            to="/learn/certificates"
-            className="text-xs font-semibold text-emerald-700 hover:underline flex items-center gap-1 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200"
-          >
-            <Award className="w-3.5 h-3.5" />
-            <span>Chứng chỉ</span>
-          </Link>
-        </div>
+    <div data-testid="learner-classroom-page" className="grid gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link to={id ? `/personal/courses/${id}` : '/personal/path'} className="inline-flex items-center gap-1.5 text-sm text-pt-fg-2 transition-colors hover:text-pt-fg">
+          <ArrowLeft className="size-4" aria-hidden="true" /> Thông tin khóa học
+        </Link>
+        <p className={PT_EYEBROW}>Lớp học số: {data?.code ?? id}</p>
       </div>
+      {isLoading && <LoadingBlock />}
+      {isError && <ErrorBlock message={errorMessage(error)} onRetry={() => refetch()} />}
+      {data && data.status === 'LOCKED' && (
+        <EmptyState
+          title="Khóa học chưa mở"
+          body={`Khóa này cần mức ${levelLabelVi(data.entryLevel)} của miền ${data.domainName}. Hoàn thành khóa tiên quyết trước.`}
+          action={data.prerequisite && <Link to={`/personal/classroom/${data.prerequisite.id}`} className={PT_BUTTON}>Học {data.prerequisite.title}</Link>}
+        />
+      )}
+      {data && data.status !== 'LOCKED' && <Classroom course={data} />}
+    </div>
+  );
+}
 
-      {/* Main Classroom Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Video Player & Lesson Stage (Left 2 Cols) */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Virtual Video Player Container */}
-          <div className="aspect-video bg-slate-950 rounded-3xl flex flex-col justify-between text-white relative shadow-xl overflow-hidden border border-slate-800 group">
-            {/* Top player bar */}
-            <div className="p-4 flex items-center justify-between text-xs text-slate-300 bg-gradient-to-b from-black/80 to-transparent">
-              <span className="font-semibold truncate pr-4">
-                {currentLesson.title}
-              </span>
-              <span className="bg-blue-600 text-white font-bold px-2 py-0.5 rounded text-[10px]">
-                1080p HD
-              </span>
-            </div>
+function Classroom({ course }: { course: PersonalCourseDetail }) {
+  const [params, setParams] = useSearchParams();
+  const lessons = useMemo(() => course.modules.flatMap((module) => module.lessons), [course.modules]);
+  const firstOpen = lessons.find((lesson) => !lesson.completed) ?? lessons[0];
+  const requested = lessons.find((lesson) => lesson.id === params.get('lesson'));
+  const lesson = requested ?? firstOpen;
+  const index = lessons.indexOf(lesson);
+  const module = course.modules.find((item) => item.lessons.some((entry) => entry.id === lesson.id))!;
+  const [tab, setTab] = useState<'content' | 'notes'>('content');
+  const setCompleted = useSetLessonCompleted();
 
-            {/* Center Play Button */}
-            <div className="flex flex-col items-center justify-center space-y-3">
+  const open = (target: PersonalLesson) => {
+    setParams({ lesson: target.id }, { replace: true });
+    setTab('content');
+  };
+
+  const toggle = () =>
+    setCompleted.mutate(
+      { courseId: course.id, lessonId: lesson.id, completed: !lesson.completed },
+      {
+        onSuccess: (updated) => {
+          const next = updated.modules.flatMap((m) => m.lessons)[index + 1];
+          if (!lesson.completed && next) open(next);
+        },
+      },
+    );
+
+  const Kind = LESSON_KIND[lesson.kind];
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
+      <aside aria-label="Danh sách bài học" className="order-2 lg:order-1 lg:sticky lg:top-28 lg:self-start">
+        <Card className="p-5">
+          <p className="text-[15px] leading-snug text-pt-fg">{course.title}</p>
+          <div className="mt-3 flex items-center gap-3">
+            <ProgressBar value={course.progressPercent} label="Tiến độ khóa học" />
+            <span className="text-xs tabular-nums text-pt-fg-3">{course.completedLessons}/{course.lessonCount}</span>
+          </div>
+          <h2 className="mt-5 text-xs uppercase tracking-[0.14em] text-pt-fg-3">Danh sách bài học</h2>
+          <ol className="mt-3 grid max-h-[60vh] gap-4 overflow-y-auto pr-1">
+            {course.modules.map((item) => (
+              <li key={item.id}>
+                <p className="mb-1.5 text-xs text-pt-fg-3">{item.title}</p>
+                <ul className="grid gap-0.5">
+                  {item.lessons.map((entry) => (
+                    <li key={entry.id}>
+                      <button
+                        type="button"
+                        onClick={() => open(entry)}
+                        aria-current={entry.id === lesson.id ? 'true' : undefined}
+                        className={cn(
+                          'flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] transition-colors',
+                          entry.id === lesson.id ? 'bg-pt-fg/10 text-pt-fg' : 'text-pt-fg-2 hover:bg-pt-fg/5 hover:text-pt-fg',
+                        )}
+                      >
+                        <span className={cn('grid size-5 shrink-0 place-items-center rounded-full border', entry.completed ? 'border-pt-ok/50 bg-pt-ok/15 text-pt-ok' : 'border-pt-line')}>
+                          {entry.completed && <Check className="size-3" aria-label="Đã học" />}
+                        </span>
+                        <span className="flex-1 leading-snug">{entry.title}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ol>
+        </Card>
+      </aside>
+
+      <div className="order-1 grid content-start gap-4 lg:order-2">
+        <Card className="overflow-hidden">
+          <LessonMedia lesson={lesson} moduleTitle={module.title} />
+          <div className="flex flex-wrap items-center gap-1 border-b border-pt-line px-4" role="tablist" aria-label="Bài học">
+            {(['content', 'notes'] as const).map((key) => (
               <button
+                key={key}
                 type="button"
-                onClick={() => setIsPlaying(!isPlaying)}
-                className="w-16 h-16 rounded-full bg-blue-600/90 hover:bg-blue-600 flex items-center justify-center hover:scale-110 transition shadow-lg cursor-pointer"
-                aria-label={isPlaying ? 'Tạm dừng video' : 'Phát video'}
+                role="tab"
+                aria-selected={tab === key}
+                onClick={() => setTab(key)}
+                className={cn('relative px-3 py-3.5 text-sm transition-colors', tab === key ? 'text-pt-fg' : 'text-pt-fg-3 hover:text-pt-fg')}
               >
-                {isPlaying ? (
-                  <Pause className="w-7 h-7 text-white fill-white" />
-                ) : (
-                  <Play className="w-7 h-7 text-white fill-white ml-1" />
-                )}
+                {key === 'content' ? 'Nội dung bài học' : 'Ghi chú của tôi'}
+                {tab === key && <span className="absolute inset-x-3 bottom-0 h-px bg-pt-fg" aria-hidden="true" />}
               </button>
-              <p className="text-xs sm:text-sm font-medium text-slate-300 px-4 text-center">
-                {currentLesson.title}
-              </p>
-            </div>
-
-            {/* Bottom Controls Bar */}
-            <div className="p-4 bg-gradient-to-t from-black/90 via-black/50 to-transparent space-y-2">
-              <div className="w-full bg-slate-700/80 h-1.5 rounded-full overflow-hidden cursor-pointer">
-                <div
-                  className="bg-blue-500 h-full rounded-full transition-all"
-                  style={{ width: isPlaying ? '65%' : '20%' }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-slate-400">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsPlaying(!isPlaying)}
-                    className="hover:text-white transition"
-                  >
-                    {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handlePrevLesson}
-                    disabled={activeLessonIndex === 0}
-                    className="hover:text-white disabled:opacity-40 transition"
-                    title="Bài trước"
-                  >
-                    <SkipBack className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleNextLesson}
-                    disabled={activeLessonIndex === allLessons.length - 1}
-                    className="hover:text-white disabled:opacity-40 transition"
-                    title="Bài kế tiếp"
-                  >
-                    <SkipForward className="w-4 h-4" />
-                  </button>
-                  <span>{isPlaying ? '24:18' : '08:45'} / {currentLesson.duration}</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleToggleComplete(currentLesson.id)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                      completedLessonIds[currentLesson.id]
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-white/20 text-white hover:bg-white/30'
-                    }`}
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>{completedLessonIds[currentLesson.id] ? 'Đã hoàn thành' : 'Đánh dấu hoàn thành'}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
 
-          {/* Lesson Content Tabs */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-            {/* Tab Header */}
-            <div className="flex items-center gap-4 border-b pb-3 text-xs sm:text-sm font-semibold">
-              <button
-                type="button"
-                onClick={() => setActiveTab('content')}
-                className={`pb-2 transition relative ${
-                  activeTab === 'content'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                Nội dung bài học
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('notes')}
-                className={`pb-2 transition relative flex items-center gap-1 ${
-                  activeTab === 'notes'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <Bookmark className="w-3.5 h-3.5" />
-                <span>Ghi chú của tôi</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('discussion')}
-                className={`pb-2 transition relative flex items-center gap-1 ${
-                  activeTab === 'discussion'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span>Thảo luận (3)</span>
-              </button>
-            </div>
-
-            {/* Tab 1: Lesson Content */}
-            {activeTab === 'content' && (
-              <div className="space-y-4 text-sm text-slate-700 leading-relaxed">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900 mb-1">
-                    {currentLesson.title}
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Thời lượng ước tính: {currentLesson.duration} • Loại bài: {currentLesson.type.toUpperCase()}
-                  </p>
-                </div>
-
-                <p className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                  {currentLesson.content}
-                </p>
-
-                <div className="bg-blue-50/60 p-4 rounded-xl border border-blue-200 space-y-2">
-                  <h3 className="font-bold text-xs text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-blue-600" />
-                    <span>Mẹo thực chiến tại doanh nghiệp:</span>
-                  </h3>
-                  <p className="text-xs text-blue-950">
-                    Luôn thiết lập cờ <code>temperature = 0.0</code> hoặc <code>0.2</code> khi thực hiện các bài toán phân loại dữ liệu, trích xuất thực thể hoặc parse JSON Schema để giảm thiểu tối đa ảo giác.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Tab 2: Personal Notes */}
-            {activeTab === 'notes' && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label htmlFor="notes-input" className="text-xs font-bold text-slate-700">
-                    Ghi chép bài học lưu vào bộ nhớ cá nhân:
-                  </label>
-                  {noteSaved && (
-                    <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Đã lưu ghi chú!
-                    </span>
-                  )}
-                </div>
-                <textarea
-                  id="notes-input"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={5}
-                  className="w-full p-3.5 rounded-xl border border-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition"
-                  placeholder="Ghi lại các ý tưởng, prompt mẫu hoặc lưu ý quan trọng tại đây..."
-                />
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handleSaveNotes}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
-                  >
-                    Lưu ghi chú
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Tab 3: Discussion & Q&A */}
-            {activeTab === 'discussion' && (
-              <div className="space-y-4">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-800">Lê Anh Tuấn (Học viên)</span>
-                    <span className="text-slate-400">2 ngày trước</span>
-                  </div>
-                  <p className="text-slate-600">
-                    Làm sao để đo lường độ trễ khi kết hợp RAG với reranker vậy thầy?
-                  </p>
-                </div>
-                <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-xs space-y-1 ml-4">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-blue-900">TS. Nguyễn Hoàng Nam (Giảng viên)</span>
-                    <span className="text-blue-500">1 ngày trước</span>
-                  </div>
-                  <p className="text-blue-950">
-                    Em có thể dùng OpenTelemetry hoặc LangSmith trace từng bước: embedding latency, vector search và rerank scoring để so sánh nhé.
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Playlist & Course Progress Sidebar (Right 1 Col) */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4 h-fit">
-          {/* Progress Header */}
-          <div className="border-b pb-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-slate-900 text-sm">Danh sách bài học</h3>
-              <span className="text-xs font-bold text-blue-700">
-                {completedCount} / {allLessons.length} hoàn thành
-              </span>
-            </div>
-            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-              <div
-                className="bg-emerald-500 h-full rounded-full transition-all duration-300"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-[11px] text-slate-400">
-              <span>Tiến độ khóa học</span>
-              <strong className="text-slate-700">{progressPercent}%</strong>
-            </div>
+          <div className="p-6 md:p-8" role="tabpanel">
+            {tab === 'content' ? <LessonContent lesson={lesson} /> : <Notes course={course} />}
           </div>
 
-          {/* Lessons List */}
-          <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
-            {allLessons.map((les, idx) => {
-              const isActive = idx === activeLessonIndex;
-              const isDone = completedLessonIds[les.id];
-
-              return (
-                <div
-                  key={les.id}
-                  onClick={() => setActiveLessonIndex(idx)}
-                  className={`p-3 rounded-xl border text-xs font-medium cursor-pointer transition flex items-center justify-between gap-2.5 ${
-                    isActive
-                      ? 'border-blue-600 bg-blue-50/80 text-blue-950 font-bold shadow-sm ring-1 ring-blue-500/20'
-                      : isDone
-                      ? 'border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100'
-                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 truncate">
-                    {isDone ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    ) : isActive ? (
-                      <Play className="w-4 h-4 text-blue-600 shrink-0" />
-                    ) : (
-                      <span className="w-4 h-4 rounded-full border border-slate-300 flex items-center justify-center text-[10px] text-slate-400 shrink-0">
-                        {idx + 1}
-                      </span>
-                    )}
-                    <span className="truncate">{les.title}</span>
-                  </div>
-
-                  <span className="text-[11px] text-slate-400 shrink-0">
-                    {les.duration}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Bottom Actions */}
-          <div className="pt-2 border-t space-y-2">
-            <button
-              type="button"
-              onClick={() => handleToggleComplete(currentLesson.id)}
-              className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>
-                {completedLessonIds[currentLesson.id]
-                  ? 'Bỏ đánh dấu hoàn thành'
-                  : 'Hoàn thành bài học này'}
-              </span>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-pt-line px-6 py-5 md:px-8">
+            <button type="button" onClick={() => open(lessons[index - 1])} disabled={index === 0} className={PT_BUTTON_SECONDARY}>
+              <ArrowLeft className="size-4" aria-hidden="true" /> Bài trước
             </button>
-
-            <Link
-              to="/learn/tasks"
-              className="w-full inline-flex items-center justify-center gap-1.5 p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition"
-            >
-              <MessageSquare className="w-4 h-4" />
-              <span>Thảo luận & Nộp bài thực hành</span>
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={toggle} disabled={setCompleted.isPending} aria-pressed={lesson.completed} className={lesson.completed ? PT_BUTTON_SECONDARY : PT_BUTTON}>
+                {lesson.completed ? 'Bỏ đánh dấu hoàn thành' : 'Đánh dấu hoàn thành'}
+                {!lesson.completed && <Check className="size-4" aria-hidden="true" />}
+              </button>
+              {index < lessons.length - 1 && (
+                <button type="button" onClick={() => open(lessons[index + 1])} className={PT_BUTTON_SECONDARY}>
+                  Bài sau <ArrowRight className="size-4" aria-hidden="true" />
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+          {setCompleted.isError && <p role="alert" className="px-8 pb-5 text-sm text-pt-bad">{errorMessage(setCompleted.error)}</p>}
+        </Card>
+
+        <p className="flex items-center gap-2 px-1 text-xs text-pt-fg-3">
+          <Kind.icon className="size-3.5" aria-hidden="true" /> {Kind.label} · {lesson.durationMinutes} phút · bài {index + 1}/{lessons.length}
+        </p>
+
+        <CourseAssessment course={course} />
       </div>
     </div>
   );
-};
+}
+
+function LessonMedia({ lesson, moduleTitle }: { lesson: PersonalLesson; moduleTitle: string }) {
+  if (lesson.kind === 'VIDEO') {
+    return (
+      <figure className="relative bg-black">
+        <video key={lesson.id} src={STUDY_CLIP} controls preload="metadata" playsInline className="aspect-video w-full object-cover" aria-label={`Video bài học: ${lesson.title}`} />
+        <figcaption className="pointer-events-none absolute left-5 top-4 text-xs uppercase tracking-[0.14em] text-white/70">{moduleTitle}</figcaption>
+      </figure>
+    );
+  }
+  return (
+    <div className="relative overflow-hidden border-b border-pt-line bg-pt-raised px-6 py-10 md:px-8 md:py-14">
+      <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-pt-fg/8 blur-3xl" />
+      <p className={PT_EYEBROW}>{moduleTitle}</p>
+      <h1 className="relative mt-4 max-w-[30ch] text-balance text-[clamp(24px,3vw,34px)] font-normal leading-[1.12] tracking-[-0.025em]">{lesson.title}</h1>
+    </div>
+  );
+}
+
+function LessonContent({ lesson }: { lesson: PersonalLesson }) {
+  return (
+    <article className="grid gap-6">
+      {lesson.kind === 'VIDEO' && <h1 className="text-[clamp(22px,2.6vw,30px)] font-normal leading-tight tracking-[-0.02em]">{lesson.title}</h1>}
+      <p className="text-[17px] leading-relaxed text-pt-fg">{lesson.summary}</p>
+      <div className="grid gap-4 text-[15px] leading-[1.75] text-pt-fg-2">
+        {lesson.body.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+      </div>
+      <div className="rounded-2xl border border-pt-line p-5">
+        <p className={PT_EYEBROW}>Ghi nhớ</p>
+        <ul className="mt-3 grid gap-2">
+          {lesson.takeaways.map((item) => (
+            <li key={item} className="flex gap-2.5 text-sm text-pt-fg-2"><Check className="mt-0.5 size-4 shrink-0 text-pt-fg-3" aria-hidden="true" />{item}</li>
+          ))}
+        </ul>
+      </div>
+      {lesson.practice && (
+        <div className="flex gap-3 rounded-2xl bg-pt-fg/6 p-5 text-sm leading-relaxed text-pt-fg">
+          <Lightbulb className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <p><span className="font-medium">Thực hành: </span>{lesson.practice}</p>
+        </div>
+      )}
+    </article>
+  );
+}
+
+function Notes({ course }: { course: PersonalCourseDetail }) {
+  const [notes, setNotes] = useState(course.notes);
+  const save = useSaveCourseNotes();
+  useEffect(() => setNotes(course.notes), [course.notes]);
+
+  return (
+    <div className="grid gap-3">
+      <label htmlFor="lesson-notes" className="text-sm text-pt-fg-2">Ghi chép bài học</label>
+      <textarea
+        id="lesson-notes"
+        value={notes}
+        onChange={(event) => setNotes(event.target.value)}
+        rows={8}
+        maxLength={2000}
+        placeholder="Điều bạn muốn nhớ, cách áp dụng vào công việc của mình…"
+        className={PT_INPUT}
+      />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className="text-xs text-pt-fg-3" role="status">
+          {save.isSuccess ? 'Đã lưu ghi chú.' : save.isError ? errorMessage(save.error) : `${notes.length}/2000 ký tự · ghi chú dùng chung cho cả khóa`}
+        </span>
+        <button type="button" onClick={() => save.mutate({ courseId: course.id, notes })} disabled={save.isPending} className={PT_BUTTON}>
+          {save.isPending ? 'Đang lưu…' : 'Lưu ghi chú'}
+        </button>
+      </div>
+    </div>
+  );
+}

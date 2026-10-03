@@ -164,7 +164,7 @@ Nhân viên có **mức Cơ bản (1) ở mọi năng lực**:
 Kết quả: 21 dòng, `totalMet = 6`, `totalGap = 15`, `highCount = 4`, `mediumCount = 1`, `lowCount = 10`; tổng priority = **111.13**.
 `coveragePercent` = miền 1 (6.4833) + miền 2 (9.2617) + miền 3 (12.505) + miền 4 (10.1833) + miền 5 (12.5) + miền 6 (11.1) = **62.03**.
 
-**Sau khi xác nhận 4.2 lên Trung bình (2)** (demo bước 5): 4.2 còn thiếu 1 mức, bắt buộc → `MEDIUM`, priority `1 × 5.56 × 1.5 = 8.34`; `highCount = 3`, `mediumCount = 2`; coverage tăng `5.56 × (2/3 − 1/3) = 1.8533` → **63.89**. Radar miền 4 (trung bình của 4.1, 4.2, 4.3) từ 1.00 lên **1.33**; miền 4 vẫn chưa "đạt" (D-B3).
+**Sau khi xác nhận 4.2 lên Trung cấp (2)** (demo bước 5): 4.2 còn thiếu 1 mức, bắt buộc → `MEDIUM`, priority `1 × 5.56 × 1.5 = 8.34`; `highCount = 3`, `mediumCount = 2`; coverage tăng `5.56 × (2/3 − 1/3) = 1.8533` → **63.89**. Radar miền 4 (trung bình của 4.1, 4.2, 4.3) từ 1.00 lên **1.33**; miền 4 vẫn chưa "đạt" (D-B3).
 
 #### 4.5.2. Ví dụ công thức (giữ làm golden test đơn vị, `SkillGapCalculatorTests`)
 

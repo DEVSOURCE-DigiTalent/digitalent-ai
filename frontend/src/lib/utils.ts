@@ -16,18 +16,12 @@ export function apiErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-/** Format a date ISO string to locale display */
+/** dd/mm/yyyy (Vietnamese locale) */
 export function formatDate(isoString: string | null | undefined): string {
   if (!isoString) return '—';
-  try {
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    }).format(new Date(isoString));
-  } catch {
-    return '—';
-  }
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
 }
 
 /** dd/mm/yyyy HH:mm in local time (SRS CR-05). */
@@ -45,7 +39,7 @@ export function formatDateTime(isoString: string | null | undefined): string {
   }).format(date);
 }
 
-/** Format a date ISO string to relative time (e.g., "2 days ago") */
+/** Format a date ISO string to relative time (e.g., "2 ngày trước") */
 export function formatRelativeTime(isoString: string | null | undefined): string {
   if (!isoString) return '—';
   try {
@@ -53,12 +47,12 @@ export function formatRelativeTime(isoString: string | null | undefined): string
     const then = new Date(isoString).getTime();
     const diffMs = now - then;
     const diffMinutes = Math.floor(diffMs / 60000);
-    if (diffMinutes < 1) return 'Just now';
-    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    if (diffMinutes < 1) return 'Vừa xong';
+    if (diffMinutes < 60) return `${diffMinutes} phút trước`;
     const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
     const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffDays < 7) return `${diffDays} ngày trước`;
     return formatDate(isoString);
   } catch {
     return '—';

@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 import { DepartmentListPage } from '../pages/DepartmentListPage';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { ROLES } from '@/lib/roles';
 import * as deptHooks from '@/hooks/use-departments';
 
 // Mock sonner
@@ -21,13 +23,20 @@ describe('DepartmentListPage', () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   });
 
+  const renderWithRouter = (ui: React.ReactElement) =>
+    render(
+      <MemoryRouter>
+        <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+      </MemoryRouter>
+    );
+
   const mockUserWithPermissions = (permissions: string[] = ['department.read', 'department.create_update']) => {
     useCurrentUser.setState({
       user: {
         id: 'user-1',
         email: 'admin@digitalent.ai',
         fullName: 'Admin User',
-        roles: ['HR_MANAGER'],
+        roles: [ROLES.OWNER],
         permissions,
       },
       isAuthenticated: true,
@@ -52,11 +61,7 @@ describe('DepartmentListPage', () => {
       isLoading: false,
     } as any);
 
-    const { rerender } = render(
-      <QueryClientProvider client={queryClient}>
-        <DepartmentListPage />
-      </QueryClientProvider>
-    );
+    const { rerender } = renderWithRouter(<DepartmentListPage />);
 
     expect(screen.getByText('Information Technology')).toBeInTheDocument();
     expect(screen.getByText('Human Resources')).toBeInTheDocument();
@@ -75,12 +80,14 @@ describe('DepartmentListPage', () => {
     } as any);
 
     rerender(
-      <QueryClientProvider client={queryClient}>
-        <DepartmentListPage />
-      </QueryClientProvider>
+      <MemoryRouter>
+        <QueryClientProvider client={queryClient}>
+          <DepartmentListPage />
+        </QueryClientProvider>
+      </MemoryRouter>
     );
 
-    expect(screen.getByText('No departments found')).toBeInTheDocument();
+    expect(screen.getByText('Chưa có phòng ban nào')).toBeInTheDocument();
   });
 
   it('ReadOnlyUserCannotEdit', async () => {
@@ -100,17 +107,13 @@ describe('DepartmentListPage', () => {
       isLoading: false,
     } as any);
 
-    render(
-      <QueryClientProvider client={queryClient}>
-        <DepartmentListPage />
-      </QueryClientProvider>
-    );
+    renderWithRouter(<DepartmentListPage />);
 
     // Read-only user should NOT see "Create Department" button
-    expect(screen.queryByRole('button', { name: /Create Department/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Tạo phòng ban/i })).not.toBeInTheDocument();
     // Read-only user should NOT see Edit or Archive action buttons
-    expect(screen.queryByTitle('Edit')).not.toBeInTheDocument();
-    expect(screen.queryByTitle('Archive')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Sửa')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Lưu trữ')).not.toBeInTheDocument();
   });
 
   it('ArchiveDepartmentRequiresConfirmation', async () => {
@@ -133,19 +136,15 @@ describe('DepartmentListPage', () => {
       isLoading: false,
     } as any);
 
-    render(
-      <QueryClientProvider client={queryClient}>
-        <DepartmentListPage />
-      </QueryClientProvider>
-    );
+    renderWithRouter(<DepartmentListPage />);
 
-    const archiveBtn = screen.getByTitle('Archive');
+    const archiveBtn = screen.getByTitle('Lưu trữ');
     fireEvent.click(archiveBtn);
 
     // Confirmation dialog should appear
-    expect(screen.getByText(/Are you sure you want to archive/i)).toBeInTheDocument();
+    expect(screen.getByText(/ẩn khỏi danh sách đang dùng/i)).toBeInTheDocument();
     const dialog = screen.getByRole('dialog');
-    const confirmBtn = within(dialog).getByRole('button', { name: 'Archive' });
+    const confirmBtn = within(dialog).getByRole('button', { name: 'Lưu trữ' });
     expect(confirmBtn).toBeInTheDocument();
 
     // Confirm archive
@@ -168,30 +167,26 @@ describe('DepartmentListPage', () => {
       isLoading: false,
     } as any);
 
-    render(
-      <QueryClientProvider client={queryClient}>
-        <DepartmentListPage />
-      </QueryClientProvider>
-    );
+    renderWithRouter(<DepartmentListPage />);
 
-    const createBtn = screen.getByRole('button', { name: /Create Department/i });
+    const createBtn = screen.getByRole('button', { name: /Tạo phòng ban/i });
     fireEvent.click(createBtn);
 
     // Form dialog should be visible
-    expect(screen.getByRole('heading', { name: 'Create Department' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Tạo phòng ban' })).toBeInTheDocument();
 
-    const saveBtn = screen.getByRole('button', { name: 'Save' });
+    const saveBtn = screen.getByRole('button', { name: 'Lưu' });
     fireEvent.click(saveBtn);
 
     // Validation should trigger
     await waitFor(() => {
-      expect(screen.getByText('Code is required')).toBeInTheDocument();
-      expect(screen.getByText('Name is required')).toBeInTheDocument();
+      expect(screen.getByText('Vui lòng nhập mã')).toBeInTheDocument();
+      expect(screen.getByText('Vui lòng nhập tên')).toBeInTheDocument();
     });
 
     // Fill inputs
-    const codeInput = screen.getByPlaceholderText('e.g. ENG');
-    const nameInput = screen.getByPlaceholderText('e.g. Engineering');
+    const codeInput = screen.getByPlaceholderText('Ví dụ: ENG');
+    const nameInput = screen.getByPlaceholderText('Ví dụ: Kỹ thuật');
 
     fireEvent.change(codeInput, { target: { value: 'ENG' } });
     fireEvent.change(nameInput, { target: { value: 'Engineering' } });

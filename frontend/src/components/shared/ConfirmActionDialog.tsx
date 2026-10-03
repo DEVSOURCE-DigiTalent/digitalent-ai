@@ -1,10 +1,12 @@
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { Modal } from './Modal';
 
 interface ConfirmActionDialogProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void> | void;
+  /** Receives the reason typed by the user (empty when no reason is asked for). */
+  onConfirm: (reason: string) => Promise<void> | void;
   title: string;
   description: string | ReactNode;
   confirmLabel?: string;
@@ -16,8 +18,7 @@ interface ConfirmActionDialogProps {
 
 /**
  * Confirmation dialog for critical actions.
- * Supports optional reason field for destructive operations (revoke, archive, delete).
- * Traps focus, ESC to cancel, loading state during API call.
+ * Styled with Enterprise tokens.
  */
 export function ConfirmActionDialog({
   open,
@@ -25,84 +26,85 @@ export function ConfirmActionDialog({
   onConfirm,
   title,
   description,
-  confirmLabel = 'Confirm',
+  confirmLabel = 'Xác nhận',
   confirmVariant = 'danger',
   requireReason = false,
-  reasonPlaceholder = 'Explain why this action is needed...',
+  reasonPlaceholder = 'Nêu lý do cần thực hiện thao tác này…',
   children,
 }: ConfirmActionDialogProps) {
+  const reasonId = useId();
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (!open) return null;
 
   const handleConfirm = async () => {
     setIsSubmitting(true);
     try {
-      await onConfirm();
+      await onConfirm(reason.trim());
     } finally {
       setIsSubmitting(false);
+      setReason('');
       onClose();
     }
   };
 
   const canConfirm = !requireReason || reason.trim().length > 0;
+  const close = () => {
+    if (isSubmitting) return;
+    setReason('');
+    onClose();
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      {/* Dialog */}
-      <div
-        className="relative bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6"
-        role="dialog"
-        aria-modal="true"
-      >
-        <h2 className="text-lg font-semibold text-slate-900 mb-2">{title}</h2>
-        <div className="text-sm text-slate-600 mb-4">
-          {typeof description === 'string' ? <p>{description}</p> : description}
-        </div>
-
-        {children}
-
-        {requireReason && (
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Reason <span className="text-danger-500">*</span>
-            </label>
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder={reasonPlaceholder}
-              rows={3}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              disabled={isSubmitting}
-            />
-          </div>
-        )}
-
-        <div className="flex justify-end gap-3">
+    <Modal
+      open={open}
+      onClose={close}
+      size="sm"
+      title={title}
+      description={typeof description === 'string' ? <p>{description}</p> : description}
+      footer={
+        <>
           <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50"
+            type="button"
+            onClick={close}
             disabled={isSubmitting}
+            className="px-4 py-2 text-sm font-medium text-ent-fg-2 bg-ent-raised border border-ent-line rounded-lg hover:bg-ent-card hover:text-ent-fg transition-colors disabled:opacity-50"
           >
-            Cancel
+            Hủy
           </button>
           <button
+            type="button"
             onClick={handleConfirm}
             disabled={!canConfirm || isSubmitting}
             className={cn(
-              'px-4 py-2 text-sm font-medium text-white rounded-md disabled:opacity-50',
+              'px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50',
               confirmVariant === 'danger'
-                ? 'bg-danger-600 hover:bg-danger-700'
-                : 'bg-primary-600 hover:bg-primary-700',
+                ? 'bg-ent-bad text-white hover:opacity-90'
+                : 'bg-ent-primary text-ent-on-primary hover:opacity-90',
             )}
           >
-            {isSubmitting ? 'Processing...' : confirmLabel}
+            {isSubmitting ? 'Đang xử lý…' : confirmLabel}
           </button>
+        </>
+      }
+    >
+      {children}
+      {requireReason && (
+        <div className="mt-3">
+          <label htmlFor={reasonId} className="block text-sm font-medium text-ent-fg mb-1">
+            Lý do <span className="text-ent-bad" aria-hidden="true">*</span>
+          </label>
+          <textarea
+            id={reasonId}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder={reasonPlaceholder}
+            rows={3}
+            required
+            className="w-full px-3 py-2 bg-ent-raised border border-ent-line rounded-lg text-sm text-ent-fg placeholder:text-ent-fg-3 focus:outline-none focus:ring-2 focus:ring-ent-accent focus:border-ent-accent"
+            disabled={isSubmitting}
+          />
         </div>
-      </div>
-    </div>
+      )}
+    </Modal>
   );
 }

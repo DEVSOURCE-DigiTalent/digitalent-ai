@@ -1,295 +1,209 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { Target, CheckCircle2, ChevronRight, Award, ShieldAlert, Sparkles, Cpu, Database, Cloud, Lock, Code2 } from 'lucide-react';
-import { levelFromDigComp, levelLabelViFromDigComp } from '@/lib/competency-levels';
-import { CAREER_ROLES, type CareerRole } from '../../public/data/careerData';
-import type { DiagnosticResult } from '../data/learnerData';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowRight, Check } from 'lucide-react';
+import { usePersonalProgress, usePersonalSkillGap, useSetPersonalTarget } from '@/hooks/use-personal-learning';
+import { levelLabelVi } from '@/lib/competency-levels';
+import {
+  REFERENCE_POSITIONS, getReferencePosition, requirementsByDomain, summarizeRequirements, type ReferencePosition,
+} from '@/lib/reference-positions';
+import { cn } from '@/lib/utils';
+import { DomainPips } from '../../public/components/DomainPips';
+import {
+  Card, ErrorBlock, LevelPips, LoadingBlock, PT_BUTTON, PT_BUTTON_SECONDARY, PT_EYEBROW, PageIntro, Tag
+} from '../components/ui';
+import { errorMessage } from '../utils/error-message';
 
-export const LearnerTargetPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const queryRole = searchParams.get('role');
-
-  const [selectedRoleId, setSelectedRoleId] = useState<string>(() => {
-    return queryRole || localStorage.getItem('digitalent_target_role') || 'ai-engineer';
-  });
-
-  const [diagnosticResult, setDiagnosticResult] = useState<DiagnosticResult | null>(null);
-  const [savedNotification, setSavedNotification] = useState<boolean>(false);
+/** IND-05 "/personal/target": pick one of the reference positions, after seeing what it asks of you. */
+export function LearnerTargetPage() {
+  const [params] = useSearchParams();
+  const gap = usePersonalSkillGap();
+  const progress = usePersonalProgress();
+  const setTarget = useSetPersonalTarget();
+  const savedCode = gap.data?.target?.code ?? null;
+  const [previewCode, setPreviewCode] = useState<string | null>(params.get('role')?.toUpperCase() ?? null);
 
   useEffect(() => {
-    if (queryRole) {
-      setSelectedRoleId(queryRole);
-      localStorage.setItem('digitalent_target_role', queryRole);
-    }
-  }, [queryRole]);
+    if (!previewCode && savedCode) setPreviewCode(savedCode);
+  }, [previewCode, savedCode]);
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('digitalent_diagnostic_result');
-      if (stored) {
-        setDiagnosticResult(JSON.parse(stored));
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
+  const levels = useMemo(() => {
+    const map = new Map<string, number>();
+    progress.data?.profile.forEach((domain) => domain.items.forEach((item) => map.set(item.code, item.level)));
+    return map;
+  }, [progress.data]);
 
-  const activeRole: CareerRole =
-    CAREER_ROLES.find((r) => r.slug === selectedRoleId || r.id === selectedRoleId) || CAREER_ROLES[0];
-
-  const handleSelectRole = (roleSlug: string) => {
-    setSelectedRoleId(roleSlug);
-    localStorage.setItem('digitalent_target_role', roleSlug);
-    setSavedNotification(true);
-    setTimeout(() => setSavedNotification(false), 2500);
-  };
-
-  const getRoleIcon = (slug: string) => {
-    switch (slug) {
-      case 'ai-engineer':
-        return <Cpu className="w-5 h-5 text-blue-600" />;
-      case 'data-analyst':
-        return <Database className="w-5 h-5 text-indigo-600" />;
-      case 'cloud-devops':
-        return <Cloud className="w-5 h-5 text-emerald-600" />;
-      case 'cybersecurity':
-        return <Lock className="w-5 h-5 text-rose-600" />;
-      case 'fullstack':
-        return <Code2 className="w-5 h-5 text-cyan-600" />;
-      default:
-        return <Target className="w-5 h-5 text-blue-600" />;
-    }
-  };
+  const preview = getReferencePosition(previewCode ?? '') ?? (gap.data ? REFERENCE_POSITIONS[0] : undefined);
 
   return (
-    <div data-testid="learner-target-page" className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-5">
-        <div>
-          <div className="flex items-center gap-2 text-blue-600 mb-1">
-            <Target className="w-5 h-5" />
-            <span className="text-xs font-bold uppercase tracking-wider">Lập mục tiêu sự nghiệp</span>
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900">Mục tiêu nghề nghiệp & Khung năng lực</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Chọn vị trí công việc bạn hướng tới để hệ thống gợi ý lộ trình và bài đánh giá năng lực tương ứng.
-          </p>
-        </div>
+    <div data-testid="learner-target-page" className="grid gap-10">
+      <PageIntro
+        label="Vị trí mục tiêu"
+        title="Bạn muốn hướng tới"
+        accent="vị trí nào?"
+        lead="Mỗi vị trí tham chiếu chọn một bộ năng lực trong Khung năng lực số TT02 và một mức yêu cầu cho từng năng lực. Xem yêu cầu so với mức hiện tại của bạn trước khi chọn; bạn có thể đổi mục tiêu bất cứ lúc nào."
+      />
 
-        <div className="flex items-center gap-3">
-          {savedNotification && (
-            <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 animate-fade-in flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Đã lưu mục tiêu!
-            </span>
-          )}
-          <Link
-            to={`/learn/diagnostic?role=${activeRole.slug}`}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition shadow-sm"
-          >
-            <span>Làm bài chẩn đoán</span>
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </div>
+      {(gap.isLoading || progress.isLoading) && <LoadingBlock />}
+      {gap.isError && <ErrorBlock message={errorMessage(gap.error)} onRetry={() => gap.refetch()} />}
 
-      {/* Target Roles Selection Grid */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-slate-800">
-            Danh mục 5 vị trí số hóa mục tiêu
-          </h2>
-          <span className="text-xs text-slate-500">
-            Đang chọn: <strong className="text-blue-600">{activeRole.title.split('(')[0]}</strong>
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          {CAREER_ROLES.map((item) => {
-            const isSelected = activeRole.slug === item.slug;
-            return (
-              <div
-                key={item.id}
-                onClick={() => handleSelectRole(item.slug)}
-                className={`cursor-pointer rounded-xl p-4 border transition relative flex flex-col justify-between ${
-                  isSelected
-                    ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-500/20 shadow-md'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-mono">
-                      {item.roleCode}
-                    </span>
-                    {isSelected ? (
-                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                    ) : (
-                      getRoleIcon(item.slug)
-                    )}
-                  </div>
-                  <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
-                    {item.title.split('(')[0]}
-                  </h3>
-                  <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">{item.department}</p>
-                </div>
-
-                <div className="pt-3 mt-3 border-t text-[11px] text-slate-500 flex items-center justify-between">
-                  <span className="text-blue-700 font-semibold">{item.levelBadge.split('(')[0]}</span>
-                  <span className="font-medium text-emerald-600">{item.recommendedCourses.length} khóa</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Selected Target Deep Dive & Skill Gap Comparison */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Role Overview Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 bg-blue-100 text-blue-800 rounded font-mono text-xs font-bold">
-              {activeRole.roleCode}
-            </span>
-            <span className="text-xs text-slate-500">{activeRole.department}</span>
+      {gap.data && preview && (
+        <>
+          <div role="radiogroup" aria-label="Vị trí tham chiếu" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {REFERENCE_POSITIONS.map((position) => (
+              <PositionOption
+                key={position.code}
+                position={position}
+                selected={position.code === preview.code}
+                saved={position.code === savedCode}
+                onSelect={() => setPreviewCode(position.code)}
+              />
+            ))}
           </div>
 
-          <div>
-            <h2 className="text-xl font-black text-slate-900">{activeRole.title}</h2>
-            <p className="text-xs text-slate-500 mt-1">{activeRole.levelBadge}</p>
-          </div>
-
-          <p className="text-xs text-slate-600 leading-relaxed border-t pt-3">
-            {activeRole.description}
-          </p>
-
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-2 text-xs">
-            <div>
-              <span className="font-semibold text-slate-700">Mức lương chuẩn:</span>{' '}
-              <strong className="text-emerald-700">{activeRole.salaryRange}</strong>
-            </div>
-            <div>
-              <span className="font-semibold text-slate-700">Chuẩn đối soát:</span>{' '}
-              <span className="text-slate-600">{activeRole.vnStandardReference}</span>
-            </div>
-          </div>
-
-          <div className="pt-2">
-            <Link
-              to={`/learn/diagnostic?role=${activeRole.slug}`}
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Bắt đầu bài chẩn đoán vị trí này</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* Skill Gap & Competency Comparison */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-4">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-600">
-                Phân tích đối soát năng lực
-              </span>
-              <h3 className="text-lg font-bold text-slate-900 mt-0.5">
-                So sánh Kỹ năng Hiện tại vs Chuẩn Yêu cầu Vị trí
-              </h3>
-            </div>
-            <div className="flex items-center gap-4 text-xs">
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-blue-600" />
-                <span>Mục tiêu vị trí</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-emerald-500" />
-                <span>Hiện tại của bạn</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Competency Comparison Bars */}
-          <div className="space-y-4">
-            {activeRole.competencies.map((comp) => {
-              // Read current level from diagnostic result if available for this area, else default to 2 or 3
-              const diagArea = diagnosticResult?.areaBreakdown.find((a) => a.areaId === comp.id);
-              const currentLvl = diagArea ? diagArea.currentLevel : 3;
-              const targetLvl = comp.requiredLevel;
-              // Learner data keeps the DigComp 1–6 scale; display uses the 3-level scale (D-B5)
-              const gap = Math.max(0, levelFromDigComp(targetLvl) - levelFromDigComp(currentLvl));
-              const currentPercent = Math.min(100, Math.round((currentLvl / 6) * 100));
-              const targetPercent = Math.min(100, Math.round((targetLvl / 6) * 100));
-
-              return (
-                <div key={comp.id} className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/50 space-y-2">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
-                    <div className="flex items-center gap-2">
-                      <Award className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                      <span className="font-bold text-slate-800">{comp.name}</span>
-                      {comp.isCore && (
-                        <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">
-                          Cốt lõi ★
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-slate-500">
-                        Hiện tại: <strong className="text-emerald-700">{levelLabelViFromDigComp(currentLvl)}</strong>
-                      </span>
-                      <span className="text-slate-300">|</span>
-                      <span className="text-slate-700">
-                        Yêu cầu: <strong className="text-blue-700">{levelLabelViFromDigComp(targetLvl)}</strong>
-                      </span>
-                      {gap > 0 ? (
-                        <span className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 text-[10px] font-bold border border-rose-200">
-                          Thiếu {gap} mức
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">
-                          Đạt chuẩn
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Dual comparison progress bar */}
-                  <div className="space-y-1">
-                    <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden relative">
-                      {/* Target marker */}
-                      <div
-                        className="bg-blue-300 h-full absolute opacity-40"
-                        style={{ width: `${targetPercent}%` }}
-                      />
-                      {/* Current level fill */}
-                      <div
-                        className="bg-emerald-500 h-full rounded-full transition-all duration-500"
-                        style={{ width: `${currentPercent}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-[10px] text-slate-400">
-                      <span>Cơ bản (bậc 1–2)</span>
-                      <span>Trung bình (bậc 3–4)</span>
-                      <span>Nâng cao (bậc 5–6)</span>
-                    </div>
-                  </div>
-
-                  <p className="text-[11px] text-slate-500">{comp.benchmarkNote}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          {!diagnosticResult && (
-            <div className="bg-amber-50 rounded-xl p-4 border border-amber-200 text-amber-900 flex items-start gap-3 text-xs">
-              <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <div>
-                <strong>Chưa có dữ liệu chẩn đoán thực tế:</strong> Hệ thống đang hiển thị mức ước tính khởi điểm (Trung bình). Hãy làm bài chẩn đoán 10 câu hỏi để đo lường chính xác và tự động miễn học các phần bạn đã thành thạo!
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+          <PositionDetail
+            position={preview}
+            levels={levels}
+            assessed={gap.data.assessed}
+            saved={preview.code === savedCode}
+            saving={setTarget.isPending}
+            error={setTarget.isError ? errorMessage(setTarget.error) : undefined}
+            onSave={() => setTarget.mutate(preview.code)}
+          />
+        </>
+      )}
     </div>
   );
-};
+}
+
+interface PositionOptionProps {
+  position: ReferencePosition;
+  selected: boolean;
+  saved: boolean;
+  onSelect: () => void;
+}
+
+function PositionOption({ position, selected, saved, onSelect }: PositionOptionProps) {
+  const { selected: count, domains } = summarizeRequirements(position);
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onSelect}
+      className={cn(
+        'group flex min-h-[188px] flex-col justify-between gap-6 rounded-card border p-5 text-left transition-[border-color,background-color,transform] duration-300 ease-cinematic',
+        selected ? 'border-pt-fg bg-pt-raised' : 'border-pt-line bg-pt-card hover:-translate-y-0.5 hover:border-pt-fg/40',
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <DomainPips domains={domains} tone="theme" className="gap-1.5 [&_i]:w-4" />
+        {saved && <Tag tone="solid"><Check className="size-3" aria-hidden="true" />Mục tiêu</Tag>}
+      </div>
+      <div>
+        <span className="block text-[19px] font-normal leading-tight tracking-[-0.015em] text-pt-fg">{position.name}</span>
+        <span className="mt-1.5 block text-xs leading-snug text-pt-fg-3">{count}/24 năng lực</span>
+      </div>
+    </button>
+  );
+}
+
+interface PositionDetailProps {
+  position: ReferencePosition;
+  levels: Map<string, number>;
+  assessed: boolean;
+  saved: boolean;
+  saving: boolean;
+  error?: string;
+  onSave: () => void;
+}
+
+function PositionDetail({ position, levels, assessed, saved, saving, error, onSave }: PositionDetailProps) {
+  const groups = requirementsByDomain(position);
+  const required = groups.flatMap((group) => group.items);
+  const missing = required.filter((item) => (levels.get(item.code) ?? 0) < item.level);
+  const steps = missing.reduce((sum, item) => sum + item.level - (levels.get(item.code) ?? 0), 0);
+
+  return (
+    <Card className="grid gap-10 p-6 md:p-9 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+      <div className="flex flex-col gap-6 lg:sticky lg:top-28 lg:self-start">
+        <div>
+          <p className={PT_EYEBROW}>{saved ? 'Mục tiêu hiện tại' : 'Đang xem'}</p>
+          <h2 className="mt-3 text-[clamp(28px,3.4vw,40px)] font-normal leading-[1.05] tracking-[-0.03em]">{position.name}</h2>
+          <p className="mt-3 text-[15px] leading-relaxed text-pt-fg-2">{position.description}</p>
+        </div>
+
+        <dl className="grid grid-cols-3 gap-4 border-y border-pt-line py-5">
+          <div>
+            <dt className="text-xs text-pt-fg-3">Yêu cầu</dt>
+            <dd className="mt-1 text-2xl font-light tabular-nums">{required.length}<span className="text-sm text-pt-fg-3">/24</span></dd>
+          </div>
+          <div>
+            <dt className="text-xs text-pt-fg-3">Còn thiếu</dt>
+            <dd className="mt-1 text-2xl font-light tabular-nums">{missing.length}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-pt-fg-3">Bậc cần lên</dt>
+            <dd className="mt-1 text-2xl font-light tabular-nums">{steps}</dd>
+          </div>
+        </dl>
+
+        {!assessed && (
+          <p className="text-sm leading-relaxed text-pt-fg-3">
+            Bạn chưa làm đánh giá đầu vào nên mức hiện tại đang tính là 0. Sau khi làm bài, phần còn thiếu sẽ chính xác hơn.
+          </p>
+        )}
+
+        <div className="flex flex-wrap gap-3">
+          {saved ? (
+            <Link to={assessed ? '/personal/path' : '/personal/diagnostic'} className={PT_BUTTON}>
+              {assessed ? 'Xem lộ trình' : 'Làm đánh giá đầu vào'}
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+          ) : (
+            <button type="button" onClick={onSave} disabled={saving} className={PT_BUTTON}>
+              {saving ? 'Đang lưu…' : 'Chọn làm mục tiêu'}
+            </button>
+          )}
+          <Link to={`/careers/${position.code.toLowerCase()}`} className={PT_BUTTON_SECONDARY}>Mô tả công khai</Link>
+        </div>
+        {saved && <p role="status" className="text-xs text-pt-ok">Đây là mục tiêu của bạn. Lộ trình được dựng theo vị trí này.</p>}
+        {error && <p role="alert" className="text-xs text-pt-bad">{error}</p>}
+      </div>
+
+      <div className="grid gap-7">
+        {groups.map((group) => (
+          <section key={group.number} aria-labelledby={`domain-${group.number}`}>
+            <h3 id={`domain-${group.number}`} className="flex items-baseline gap-3 border-b border-pt-line pb-2 text-sm text-pt-fg">
+              <span className="font-landing-serif text-lg italic text-pt-fg-3">{group.number}</span>
+              {group.name}
+            </h3>
+            {group.items.length === 0 ? (
+              <p className="py-3 text-xs text-pt-fg-3">Vị trí này không yêu cầu năng lực nào của miền.</p>
+            ) : (
+              <ul>
+                {group.items.map((item) => {
+                  const current = levels.get(item.code) ?? 0;
+                  return (
+                    <li key={item.code} className="grid grid-cols-[2.5rem_1fr] items-center gap-x-3 gap-y-1.5 border-b border-pt-line/60 py-3 last:border-0 sm:grid-cols-[2.5rem_1fr_auto]">
+                      <span className="text-xs tabular-nums text-pt-fg-3">{item.code}</span>
+                      <span className="text-sm leading-snug text-pt-fg">{item.name}</span>
+                      <span className="col-start-2 flex items-center gap-3 sm:col-start-3">
+                        <LevelPips level={current} required={item.level} />
+                        <span className={cn('w-[4.5rem] text-right text-xs', current >= item.level ? 'text-pt-ok' : 'text-pt-fg-2')}>
+                          {levelLabelVi(item.level)}
+                        </span>
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {group.notRequired.length > 0 && group.items.length > 0 && (
+              <p className="pt-2 text-[11px] text-pt-fg-3">Không yêu cầu: {group.notRequired.join(', ')}</p>
+            )}
+          </section>
+        ))}
+      </div>
+    </Card>
+  );
+}

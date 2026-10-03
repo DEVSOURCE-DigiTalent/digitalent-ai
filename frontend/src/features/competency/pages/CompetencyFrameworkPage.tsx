@@ -1,328 +1,283 @@
 import { useState } from 'react';
-import { PageHeader, DataTable, StatusBadge, getStatusVariant, ConfirmActionDialog, type Column } from '@/components/shared';
-import { useCompetencies, useArchiveCompetency, useCompetency } from '@/hooks/use-competencies';
-import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
-import { CompetencyFormDialog } from '../components/CompetencyFormDialog';
-import { toast } from 'sonner';
-import { apiErrorMessage } from '@/lib/utils';
-import { Edit2, Trash2, Eye, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Layers, Table, ChevronRight } from 'lucide-react';
+import { PageHeader, DataTable, StatusBadge, getStatusVariant, type Column } from '@/components/shared';
+import { useCompetencies, useCompetencyCategories } from '@/hooks/use-competencies';
+import { INPUT_CLASS } from '@/features/onboarding/components/styles';
 import type { CompetencyListItem } from '@/services/competency.service';
 
-export function CompetencyFrameworkPage() {
-  const { can } = usePermission();
-  const canManage =
-    can(PERMISSIONS.COMPETENCY_MANAGE) ||
-    can('competency.create_update');
+const TYPE_LABELS: Record<string, string> = {
+  CORE_DIGITAL: 'Năng lực số cốt lõi',
+  PROFESSIONAL: 'Chuyên môn',
+  INTERNAL: 'Nội bộ',
+  BEHAVIOURAL: 'Hành vi',
+};
 
+const STATUS_LABELS: Record<string, string> = { ACTIVE: 'Đang dùng', DRAFT: 'Bản nháp', ARCHIVED: 'Đã lưu trữ' };
+
+/**
+ * OW-14: TT02 Framework Explorer (/enterprise/framework)
+ * Khung năng lực số quốc gia (Thông tư 02/2025/TT-BGDĐT) gồm 6 miền năng lực, 24 năng lực cốt lõi.
+ * Chế độ xem: Nhóm theo 6 miền năng lực hoặc bảng danh sách chi tiết.
+ */
+export function CompetencyFrameworkPage() {
+  const [viewMode, setViewMode] = useState<'domains' | 'table'>('table');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [competencyType, setCompetencyType] = useState('');
-  const [status, setStatus] = useState('');
 
+  const { data: categories = [] } = useCompetencyCategories();
+
+  // Load all for domain view if domain mode, otherwise paginated
   const { data, isLoading } = useCompetencies({
-    pageIndex: page,
-    pageSize,
+    pageIndex: viewMode === 'table' ? page : 1,
+    pageSize: viewMode === 'table' ? pageSize : 100,
     search: search.trim() || undefined,
+    categoryId: selectedCategory || undefined,
     competencyType: competencyType || undefined,
-    status: status || undefined,
   });
-
-  const archiveMutation = useArchiveCompetency();
-
-  // Create / Edit Dialog State
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingCompetency, setEditingCompetency] = useState<CompetencyListItem | null>(null);
-
-  // Archive Dialog State
-  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
-  const [archivingCompetency, setArchivingCompetency] = useState<CompetencyListItem | null>(null);
-
-  // View Criteria Modal State
-  const [viewingCompetencyId, setViewingCompetencyId] = useState<string | null>(null);
-  const { data: detailData, isLoading: detailLoading } = useCompetency(viewingCompetencyId || '');
-
-  const handleEdit = (comp: CompetencyListItem) => {
-    setEditingCompetency(comp);
-    setIsFormOpen(true);
-  };
-
-  const handleArchiveClick = (comp: CompetencyListItem) => {
-    setArchivingCompetency(comp);
-    setIsArchiveOpen(true);
-  };
-
-  const handleArchiveConfirm = async () => {
-    if (!archivingCompetency) return;
-    try {
-      await archiveMutation.mutateAsync(archivingCompetency.id);
-      toast.success('Competency archived successfully');
-    } catch (error) {
-      toast.error(apiErrorMessage(error, 'Failed to archive competency'));
-    } finally {
-      setIsArchiveOpen(false);
-      setArchivingCompetency(null);
-    }
-  };
-
-  const handleCreateNew = () => {
-    setEditingCompetency(null);
-    setIsFormOpen(true);
-  };
 
   const columns: Column<CompetencyListItem>[] = [
     {
-      key: 'code',
-      header: 'Code',
-      cell: (row) => <span className="font-semibold text-slate-800">{row.code}</span>,
-    },
-    {
       key: 'frameworkCode',
-      header: 'Circular 02/2025',
+      header: 'Mã TT 02/2025',
       cell: (row) =>
         row.frameworkCode ? (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+          <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">
             {row.frameworkCode}
           </span>
         ) : (
-          <span className="text-xs text-slate-400">Not mapped</span>
+          <span className="text-xs text-slate-400">Chưa ánh xạ</span>
         ),
     },
     {
       key: 'name',
-      header: 'Name',
+      header: 'Tên năng lực',
       cell: (row) => (
         <div>
-          <div className="font-medium text-slate-900">{row.name}</div>
-          {row.description && <div className="text-xs text-slate-500 line-clamp-1">{row.description}</div>}
+          <Link to={`/enterprise/framework/${row.id}`} className="font-medium text-slate-900 hover:underline">
+            {row.name}
+          </Link>
+          {row.description && <div className="line-clamp-1 text-xs text-slate-500">{row.description}</div>}
         </div>
-      ),
-    },
-    {
-      key: 'competencyType',
-      header: 'Type',
-      cell: (row) => (
-        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-          {row.competencyType}
-        </span>
       ),
     },
     {
       key: 'categoryName',
-      header: 'Domain / Category',
+      header: 'Miền năng lực',
       cell: (row) => row.categoryName || <span className="text-slate-400">-</span>,
     },
     {
+      key: 'competencyType',
+      header: 'Loại',
+      hideOnMobile: true,
+      cell: (row) => <span className="text-xs text-slate-600">{TYPE_LABELS[row.competencyType] ?? row.competencyType}</span>,
+    },
+    {
       key: 'criteriaCount',
-      header: 'Criteria',
-      cell: (row) => (
-        <span className="text-xs font-medium text-slate-600">
-          {row.criteriaCount ?? 0} criteria
-        </span>
-      ),
+      header: 'Tiêu chí theo mức',
+      hideOnMobile: true,
+      cell: (row) => <span className="text-xs font-medium text-slate-600">{row.criteriaCount ?? 0} tiêu chí</span>,
     },
     {
       key: 'status',
-      header: 'Status',
-      cell: (row) => <StatusBadge label={row.status} variant={getStatusVariant(row.status)} />,
-    },
-    {
-      key: 'actions',
-      header: '',
-      cell: (row) => (
-        <div className="flex items-center justify-end gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setViewingCompetencyId(row.id);
-            }}
-            className="p-1 text-slate-400 hover:text-primary-600 transition-colors"
-            title="View Criteria"
-          >
-            <Eye className="w-4 h-4" />
-          </button>
-          {canManage && (
-            <>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEdit(row);
-                }}
-                className="p-1 text-slate-400 hover:text-primary-600 transition-colors"
-                title="Edit"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleArchiveClick(row);
-                }}
-                className="p-1 text-slate-400 hover:text-danger-600 transition-colors"
-                title="Archive"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </>
-          )}
-        </div>
-      ),
+      header: 'Trạng thái',
+      cell: (row) => <StatusBadge label={STATUS_LABELS[row.status] ?? row.status} variant={getStatusVariant(row.status)} />,
     },
   ];
 
-  const filters = (
-    <div className="flex flex-wrap items-center gap-3">
-      <select
-        value={competencyType}
-        onChange={(e) => {
-          setCompetencyType(e.target.value);
-          setPage(1);
-        }}
-        className="px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-      >
-        <option value="">All Types</option>
-        <option value="CORE_DIGITAL">Core Digital</option>
-        <option value="PROFESSIONAL">Professional</option>
-        <option value="INTERNAL">Internal</option>
-        <option value="BEHAVIOURAL">Behavioural</option>
-      </select>
+  const items = data?.items || [];
 
-      <select
-        value={status}
-        onChange={(e) => {
-          setStatus(e.target.value);
-          setPage(1);
-        }}
-        className="px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-      >
-        <option value="">All Status</option>
-        <option value="ACTIVE">Active</option>
-        <option value="DRAFT">Draft</option>
-        <option value="ARCHIVED">Archived</option>
-      </select>
-    </div>
-  );
+  // Group competencies by domain category
+  const domainGroups = categories.map((cat) => {
+    const matched = items.filter((c) => c.categoryId === cat.id);
+    return {
+      category: cat,
+      competencies: matched,
+    };
+  }).filter((group) => !selectedCategory || group.category.id === selectedCategory);
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Competency Framework"
-        subtitle="Define competencies, proficiency levels, and behavioral criteria"
-      >
-        {canManage && (
-          <button
-            onClick={handleCreateNew}
-            className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700"
-          >
-            Create Competency
-          </button>
-        )}
-      </PageHeader>
-
-      <DataTable
-        columns={columns}
-        data={data?.items || []}
-        keyExtractor={(row) => row.id}
-        isLoading={isLoading}
-        searchValue={search}
-        onSearchChange={(val) => {
-          setSearch(val);
-          setPage(1);
-        }}
-        filters={filters}
-        emptyTitle="No competencies found"
-        emptyDescription="Get started by defining competencies and proficiency levels."
-        pageInfo={{
-          page,
-          pageSize,
-          total: data?.totalItems || 0,
-          onPageChange: setPage,
-          onPageSizeChange: setPageSize,
-        }}
-      />
-
-      {/* Criteria Details Modal */}
-      {viewingCompetencyId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setViewingCompetencyId(null)} />
-          <div
-            className="relative bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 p-6 max-h-[90vh] overflow-y-auto"
-            role="dialog"
-          >
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">
-                  {detailData?.name || 'Competency Criteria'}
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Code: <span className="font-semibold">{detailData?.code}</span> | Type:{' '}
-                  <span className="font-medium">{detailData?.competencyType}</span>
-                </p>
-              </div>
-              <button
-                onClick={() => setViewingCompetencyId(null)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-md"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {detailLoading ? (
-              <div className="py-8 text-center text-sm text-slate-500">Loading criteria...</div>
-            ) : detailData?.criteria && detailData.criteria.length > 0 ? (
-              <div className="space-y-4">
-                {detailData.criteria.map((cr) => (
-                  <div key={cr.id || cr.indicatorCode} className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="px-2 py-0.5 rounded text-xs font-semibold bg-primary-100 text-primary-800">
-                        Level {cr.level}
-                      </span>
-                      <span className="text-xs font-mono font-medium text-slate-600">
-                        [{cr.indicatorCode}]
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-800 mt-1">{cr.behaviorIndicator}</p>
-                    {cr.assessmentGuidance && (
-                      <div className="mt-2 text-xs text-slate-500">
-                        <span className="font-medium text-slate-700">Assessment: </span>
-                        {cr.assessmentGuidance}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-6 text-center text-sm text-slate-500">
-                No criteria defined for this competency yet.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Form Dialog */}
-      {isFormOpen && (
-        <CompetencyFormDialog
-          open={isFormOpen}
-          onClose={() => setIsFormOpen(false)}
-          competency={editingCompetency}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <PageHeader
+          title="Khung năng lực TT 02/2025"
+          subtitle="Khung chuẩn năng lực số gồm 6 miền và 24 năng lực theo Thông tư 02/2025/TT-BGDĐT. Dùng chung cho toàn bộ tổ chức làm căn cứ thiết lập yêu cầu vị trí"
         />
-      )}
+        <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+          <button
+            type="button"
+            onClick={() => setViewMode('domains')}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              viewMode === 'domains'
+                ? 'bg-white text-primary-700 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Layers className="size-3.5" />
+            6 Miền năng lực
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('table')}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              viewMode === 'table'
+                ? 'bg-white text-primary-700 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Table className="size-3.5" />
+            Dạng bảng
+          </button>
+        </div>
+      </div>
 
-      {/* Archive Confirm Dialog */}
-      {isArchiveOpen && archivingCompetency && (
-        <ConfirmActionDialog
-          open={isArchiveOpen}
-          onClose={() => setIsArchiveOpen(false)}
-          onConfirm={handleArchiveConfirm}
-          title="Archive Competency"
-          description={
-            <span>
-              Are you sure you want to archive <strong>{archivingCompetency.name}</strong> ({archivingCompetency.code})?
-            </span>
-          }
-          confirmLabel="Archive"
-          confirmVariant="danger"
+      {/* Filter toolbar */}
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-4">
+        <div className="flex-1 min-w-[220px]">
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Tìm theo tên năng lực hoặc mã..."
+            className={INPUT_CLASS}
+          />
+        </div>
+        <div className="w-56">
+          <select
+            aria-label="Lọc theo miền năng lực"
+            value={selectedCategory}
+            onChange={(e) => {
+              setSelectedCategory(e.target.value);
+              setPage(1);
+            }}
+            className={INPUT_CLASS}
+          >
+            <option value="">Tất cả 6 miền năng lực</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.code}: {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="w-44">
+          <select
+            aria-label="Lọc theo loại năng lực"
+            value={competencyType}
+            onChange={(e) => {
+              setCompetencyType(e.target.value);
+              setPage(1);
+            }}
+            className={INPUT_CLASS}
+          >
+            <option value="">Mọi loại năng lực</option>
+            {Object.entries(TYPE_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Content presentation */}
+      {viewMode === 'domains' ? (
+        <div className="space-y-6">
+          {isLoading ? (
+            <div className="p-8 text-center text-sm text-slate-500">Đang tải danh mục khung năng lực...</div>
+          ) : domainGroups.length === 0 ? (
+            <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+              Không có năng lực nào khớp với bộ lọc tìm kiếm.
+            </div>
+          ) : (
+            domainGroups.map((group) => (
+              <section
+                key={group.category.id}
+                className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50/80 px-5 py-3.5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex size-7 items-center justify-center rounded-lg bg-primary-100 text-xs font-bold text-primary-800">
+                      {group.category.sortOrder}
+                    </span>
+                    <div>
+                      <h2 className="text-sm font-semibold text-slate-900">
+                        {group.category.name}
+                      </h2>
+                      <span className="text-xs font-mono text-slate-500">{group.category.code}</span>
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-slate-200/70 px-2.5 py-0.5 text-xs font-medium text-slate-700">
+                    {group.competencies.length} năng lực
+                  </span>
+                </div>
+
+                <div className="grid divide-y divide-slate-100 sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-4">
+                  {group.competencies.map((comp) => (
+                    <Link
+                      key={comp.id}
+                      to={`/enterprise/framework/${comp.id}`}
+                      className="group flex flex-col justify-between p-4.5 transition-colors hover:bg-slate-50/80"
+                    >
+                      <div>
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-mono font-bold text-emerald-800">
+                            {comp.frameworkCode || comp.code}
+                          </span>
+                          <span className="text-[11px] text-slate-500">
+                            {comp.criteriaCount} mức tiêu chí
+                          </span>
+                        </div>
+                        <h3 className="line-clamp-2 text-sm font-semibold text-slate-900 group-hover:text-primary-700">
+                          {comp.name}
+                        </h3>
+                        {comp.description && (
+                          <p className="mt-1 line-clamp-2 text-xs text-slate-500">{comp.description}</p>
+                        )}
+                      </div>
+                      <div className="mt-4 flex items-center justify-between text-xs font-medium text-primary-700">
+                        <span>Chi tiết năng lực</span>
+                        <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                      </div>
+                    </Link>
+                  ))}
+                  {group.competencies.length === 0 && (
+                    <div className="col-span-full p-4 text-center text-xs text-slate-400">
+                      Không có năng lực nào thuộc miền này theo bộ lọc hiện tại.
+                    </div>
+                  )}
+                </div>
+              </section>
+            ))
+          )}
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={items}
+          keyExtractor={(row) => row.id}
+          isLoading={isLoading}
+          searchValue={search}
+          onSearchChange={(val) => {
+            setSearch(val);
+            setPage(1);
+          }}
+          searchPlaceholder="Tìm theo tên hoặc mã năng lực"
+          emptyTitle="Không tìm thấy năng lực nào"
+          emptyDescription="Thử đổi từ khóa hoặc bộ lọc."
+          pageInfo={{
+            page,
+            pageSize,
+            total: data?.totalItems || 0,
+            onPageChange: setPage,
+            onPageSizeChange: setPageSize,
+          }}
         />
       )}
     </div>

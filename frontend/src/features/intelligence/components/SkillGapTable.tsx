@@ -14,7 +14,7 @@ function SkillGapRow({ item }: { item: SkillGapItem }) {
       <td className="px-4 py-3">
         <div className="font-medium text-slate-900">
           {name}
-          {item.mandatory && <span className="ml-2 text-[10px] font-semibold uppercase text-danger-600">Mandatory</span>}
+          {item.mandatory && <span className="ml-2 text-[10px] font-semibold uppercase text-danger-600">Bắt buộc</span>}
         </div>
         {!item.frameworkCode && <div className="text-xs text-slate-400">{item.competencyCode}</div>}
       </td>
@@ -52,13 +52,13 @@ export function SkillGapTable({ items }: { items: SkillGapItem[] }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-            <th className="px-4 py-3">Competency</th>
-            <th className="px-4 py-3">Required</th>
-            <th className="px-4 py-3">Confirmed</th>
-            <th className="px-4 py-3 text-right">Gap</th>
-            <th className="px-4 py-3 text-right">Weight</th>
-            <th className="px-4 py-3 text-right">Priority</th>
-            <th className="px-4 py-3">Severity</th>
+            <th className="px-4 py-3">Năng lực</th>
+            <th className="px-4 py-3">Yêu cầu</th>
+            <th className="px-4 py-3">Đã xác nhận</th>
+            <th className="px-4 py-3 text-right">Thiếu</th>
+            <th className="px-4 py-3 text-right">Trọng số</th>
+            <th className="px-4 py-3 text-right">Ưu tiên</th>
+            <th className="px-4 py-3">Mức độ</th>
           </tr>
         </thead>
         {domains.map((domain) => {
@@ -76,12 +76,12 @@ export function SkillGapTable({ items }: { items: SkillGapItem[] }) {
                     {isOpen ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronRight className="h-4 w-4 text-slate-500" />}
                     <span className="font-semibold text-slate-900">{domain.name}</span>
                     <span className="text-xs text-slate-500">
-                      Required {levelLabel(domain.requiredLevel)} · average {domain.averageLevel.toFixed(2)} ·{' '}
-                      {domain.gapCount} gap{domain.gapCount === 1 ? '' : 's'}
+                      Yêu cầu {levelLabel(domain.requiredLevel)} · trung bình {domain.averageLevel.toFixed(2)} ·{' '}
+                      {domain.gapCount} khoảng trống
                     </span>
                     {domain.isMet && (
                       <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Domain met
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Miền đã đạt
                       </span>
                     )}
                   </button>

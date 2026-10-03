@@ -1,34 +1,20 @@
 import type { LucideIcon } from 'lucide-react';
-import {
-  LayoutDashboard,
-  Users,
-  Shield,
-  Settings,
-  FileText,
-  Building2,
-  Briefcase,
-  UserCircle,
-  GitBranch,
-  BookOpen,
-  GraduationCap,
-  HelpCircle,
-  Award,
-  ClipboardList,
-  Brain,
-  BarChart3,
-  Bell,
-  Search,
-  FileSpreadsheet,
-} from 'lucide-react';
+
+// ---------------------------------------------------------------------------
+// Legacy sidebar types — kept for portals.ts compatibility.
+// New code should use lib/sidebars/* (role-based SidebarConfig / SidebarSection).
+// ---------------------------------------------------------------------------
 
 export interface SidebarItem {
   label: string;
   path: string;
   icon: LucideIcon;
-  roles?: string[];
+  /** `['*']` = every signed-in user of the portal. */
+  roles: string[];
   /** Permission the target route is guarded with; the item is hidden without it. */
   permission?: string;
-  children?: SidebarItem[];
+  /** Plan feature the target route needs; the item stays visible but locked without it. */
+  entitlement?: string;
 }
 
 export interface SidebarGroup {
@@ -36,106 +22,13 @@ export interface SidebarGroup {
   items: SidebarItem[];
 }
 
-/**
- * Role-based sidebar navigation configuration.
- * Maps to IA Document section 5: Full Sitemap by Role.
- * Items are filtered by user roles and, when set, by the route's permission at render time.
- * 'roles' with ['*'] means all authenticated users can see it.
+/** Returns an empty group list — nav field was removed from ScreenDef in Phase J.
+ *  Sidebar is now driven by lib/sidebars/{owner,manager,employee,platform}.ts.
+ * @deprecated
  */
-export const sidebarGroups: SidebarGroup[] = [
-  {
-    label: 'Dashboard',
-    items: [
-      { label: 'Admin Dashboard', path: '/enterprise/admin/dashboard', icon: LayoutDashboard, roles: ['SYSTEM_ADMIN'] },
-      { label: 'HR Dashboard', path: '/enterprise/hr/dashboard', icon: BarChart3, roles: ['HR_MANAGER'] },
-      { label: 'Manager Dashboard', path: '/enterprise/manager/dashboard', icon: LayoutDashboard, roles: ['DEPARTMENT_MANAGER'] },
-      { label: 'Trainer Dashboard', path: '/enterprise/trainer/dashboard', icon: LayoutDashboard, roles: ['TRAINER'] },
-      { label: 'My Dashboard', path: '/enterprise/my-dashboard', icon: LayoutDashboard, roles: ['EMPLOYEE'] },
-    ],
-  },
-  {
-    label: 'Administration',
-    items: [
-      { label: 'User Management', path: '/enterprise/admin/users', icon: Users, permission: 'user.read', roles: ['SYSTEM_ADMIN'] },
-      { label: 'Role & Permission', path: '/enterprise/admin/roles', icon: Shield, roles: ['SYSTEM_ADMIN'] },
-      { label: 'System Configuration', path: '/enterprise/admin/settings', icon: Settings, permission: 'system_config.manage', roles: ['SYSTEM_ADMIN'] },
-      { label: 'Audit Log', path: '/enterprise/admin/audit-log', icon: FileText, roles: ['SYSTEM_ADMIN', 'HR_MANAGER'] },
-    ],
-  },
-  {
-    label: 'Organization',
-    items: [
-      { label: 'Departments', path: '/enterprise/organization/departments', icon: Building2, permission: 'department.read', roles: ['SYSTEM_ADMIN', 'HR_MANAGER'] },
-      { label: 'Job Positions', path: '/enterprise/organization/positions', icon: Briefcase, permission: 'job_position.read', roles: ['SYSTEM_ADMIN', 'HR_MANAGER'] },
-      { label: 'Employees', path: '/enterprise/organization/employees', icon: UserCircle, permission: 'employee.read', roles: ['SYSTEM_ADMIN', 'HR_MANAGER', 'DEPARTMENT_MANAGER'] },
-    ],
-  },
-  {
-    label: 'Competency',
-    items: [
-      { label: 'Competency Framework', path: '/enterprise/competency-framework', icon: GitBranch, permission: 'competency.read', roles: ['HR_MANAGER', 'DEPARTMENT_MANAGER', 'TRAINER'] },
-      { label: 'Position Requirements', path: '/enterprise/competency-framework/position-requirements', icon: ClipboardList, permission: 'position_requirement.read', roles: ['HR_MANAGER'] },
-    ],
-  },
-  {
-    label: 'Learning Management',
-    items: [
-      { label: 'Courses', path: '/enterprise/courses', icon: BookOpen, permission: 'course.read_catalog', roles: ['HR_MANAGER', 'TRAINER', 'DEPARTMENT_MANAGER'] },
-      { label: 'Course Assignment', path: '/enterprise/course-assignment', icon: GraduationCap, permission: 'course_assignment.read', roles: ['HR_MANAGER', 'DEPARTMENT_MANAGER'] },
-    ],
-  },
-  {
-    label: 'Assessment',
-    items: [
-      { label: 'Question Bank', path: '/enterprise/trainer/question-bank', icon: HelpCircle, permission: 'question_bank.read', roles: ['TRAINER'] },
-      { label: 'Assessments', path: '/enterprise/trainer/assessments', icon: FileSpreadsheet, permission: 'assessment.read', roles: ['TRAINER', 'HR_MANAGER'] },
-      { label: 'Learner Results', path: '/enterprise/trainer/learners', icon: BarChart3, permission: 'attempt.read_result', roles: ['TRAINER', 'HR_MANAGER'] },
-    ],
-  },
-  {
-    label: 'Certificates',
-    items: [
-      { label: 'Certificate Management', path: '/enterprise/certificates', icon: Award, permission: 'certificate.read', roles: ['HR_MANAGER', 'DEPARTMENT_MANAGER', 'TRAINER'] },
-      { label: 'Certificate Verification', path: '/verify', icon: Search, roles: ['HR_MANAGER', 'DEPARTMENT_MANAGER'] } // trang /verify công khai, không cần role riêng,
-    ],
-  },
-  {
-    label: 'Tasks',
-    items: [
-      { label: 'Task Board', path: '/enterprise/tasks', icon: ClipboardList, permission: 'task.read', roles: ['HR_MANAGER', 'DEPARTMENT_MANAGER', 'EMPLOYEE'] },
-    ],
-  },
-  {
-    label: 'Intelligence',
-    items: [
-      { label: 'Skill Gap Analysis', path: '/enterprise/intelligence/skill-gap', icon: Brain, permission: 'skill_gap.read', roles: ['HR_MANAGER', 'DEPARTMENT_MANAGER'] },
-      { label: 'Training Risk', path: '/enterprise/intelligence/training-risk', icon: BarChart3, permission: 'training_risk.read', roles: ['HR_MANAGER', 'DEPARTMENT_MANAGER'] },
-      { label: 'Workforce Readiness', path: '/enterprise/intelligence/readiness', icon: BarChart3, permission: 'readiness.read', roles: ['HR_MANAGER', 'DEPARTMENT_MANAGER', 'EMPLOYEE'] },
-    ],
-  },
-  {
-    label: 'My Learning',
-    items: [
-      { label: 'My Learning', path: '/enterprise/my-learning', icon: BookOpen, roles: ['EMPLOYEE'] },
-      { label: 'My Assessments', path: '/enterprise/my-assessments', icon: HelpCircle, roles: ['EMPLOYEE'] },
-      { label: 'My Certificates', path: '/enterprise/my-certificates', icon: Award, roles: ['EMPLOYEE'] },
-      { label: 'My Competency Profile', path: '/enterprise/my-competency-profile', icon: UserCircle, roles: ['EMPLOYEE'] },
-    ],
-  },
-  {
-    label: 'Notifications',
-    items: [
-      { label: 'Notification Center', path: '/enterprise/notifications', icon: Bell, roles: ['*'] },
-    ],
-  },
-];
-
-/** Get the default landing page path for a user based on their roles */
-export function getDefaultPath(roles: string[]): string {
-  if (roles.includes('SYSTEM_ADMIN')) return '/enterprise/admin/dashboard';
-  if (roles.includes('HR_MANAGER')) return '/enterprise/hr/dashboard';
-  if (roles.includes('DEPARTMENT_MANAGER')) return '/enterprise/manager/dashboard';
-  if (roles.includes('TRAINER')) return '/enterprise/trainer/dashboard';
-  if (roles.includes('EMPLOYEE')) return '/enterprise/my-dashboard';
-  return '/enterprise/my-dashboard';
+export function buildSidebarGroups(_screens: unknown[]): SidebarGroup[] {
+  return [];
 }
+
+export const enterpriseSidebarGroups: SidebarGroup[] = [];
+export const platformSidebarGroups: SidebarGroup[] = [];

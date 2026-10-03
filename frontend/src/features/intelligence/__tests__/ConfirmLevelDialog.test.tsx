@@ -35,19 +35,19 @@ describe('ConfirmLevelDialog', () => {
   it('requires a review note', async () => {
     const { mutateAsync } = setup();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm level' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận mức' }));
 
-    expect(await screen.findByText('Explain the evidence behind this level')).toBeInTheDocument();
+    expect(await screen.findByText('Nêu bằng chứng cho mức này')).toBeInTheDocument();
     expect(mutateAsync).not.toHaveBeenCalled();
   });
 
   it('submits the selected competency, level and note', async () => {
     const { mutateAsync, onClose, onConfirmed } = setup();
 
-    fireEvent.change(screen.getByLabelText('Competency'), { target: { value: 'c3' } });
-    fireEvent.change(screen.getByLabelText('Confirmed level'), { target: { value: '2' } });
-    fireEvent.change(screen.getByLabelText('Evidence / review note'), { target: { value: 'Led the phishing drill' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm level' }));
+    fireEvent.change(screen.getByLabelText('Năng lực'), { target: { value: 'c3' } });
+    fireEvent.change(screen.getByLabelText('Trình độ xác nhận'), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText('Bằng chứng / ghi chú đánh giá'), { target: { value: 'Led the phishing drill' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận mức' }));
 
     await waitFor(() =>
       expect(mutateAsync).toHaveBeenCalledWith({
@@ -72,8 +72,8 @@ describe('ConfirmLevelDialog', () => {
     });
     const { onClose } = setup(vi.fn().mockRejectedValue(forbidden));
 
-    fireEvent.change(screen.getByLabelText('Evidence / review note'), { target: { value: 'self review' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm level' }));
+    fireEvent.change(screen.getByLabelText('Bằng chứng / ghi chú đánh giá'), { target: { value: 'self review' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận mức' }));
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('You cannot confirm your own competency level.'));
     expect(onClose).not.toHaveBeenCalled();

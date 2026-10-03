@@ -8,8 +8,8 @@ import { toast } from 'sonner';
 import { apiErrorMessage } from '@/lib/utils';
 
 const formSchema = z.object({
-  code: z.string().min(1, 'Code is required'),
-  name: z.string().min(1, 'Name is required'),
+  code: z.string().min(1, 'Vui lòng nhập mã'),
+  name: z.string().min(1, 'Vui lòng nhập tên'),
   description: z.string().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 });
@@ -75,18 +75,18 @@ export function JobFamilyFormDialog({ open, onClose, family }: JobFamilyFormDial
             status: data.status as 'ACTIVE' | 'INACTIVE',
           },
         });
-        toast.success('Job family updated successfully');
+        toast.success('Đã cập nhật nhóm công việc');
       } else {
         await createMutation.mutateAsync({
           code: data.code,
           name: data.name,
           description: data.description,
         });
-        toast.success('Job family created successfully');
+        toast.success('Đã tạo nhóm công việc');
       }
       onClose();
     } catch (error) {
-      toast.error(apiErrorMessage(error, isEditing ? 'Failed to update job family' : 'Failed to create job family'));
+      toast.error(apiErrorMessage(error, isEditing ? 'Không cập nhật được nhóm công việc' : 'Không tạo được nhóm công việc'));
     }
   };
 
@@ -95,34 +95,34 @@ export function JobFamilyFormDialog({ open, onClose, family }: JobFamilyFormDial
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" role="dialog">
         <h2 className="text-lg font-semibold text-slate-900 mb-4">
-          {isEditing ? 'Edit Job Family' : 'Create Job Family'}
+          {isEditing ? 'Sửa nhóm công việc' : 'Tạo nhóm công việc'}
         </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Code *</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Mã *</label>
             <input
               {...register('code')}
               disabled={isEditing || isSubmitting}
               className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-slate-100"
-              placeholder="e.g. ENG"
+              placeholder="Ví dụ: ENG"
             />
             {errors.code && <p className="mt-1 text-sm text-red-500">{errors.code.message}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Name *</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Tên *</label>
             <input
               {...register('name')}
               className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="e.g. Engineering"
+              placeholder="Ví dụ: Kỹ thuật"
               disabled={isSubmitting}
             />
             {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Mô tả</label>
             <textarea
               {...register('description')}
               rows={3}
@@ -133,14 +133,14 @@ export function JobFamilyFormDialog({ open, onClose, family }: JobFamilyFormDial
 
           {isEditing && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Trạng thái</label>
               <select
                 {...register('status')}
                 className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 disabled={isSubmitting}
               >
-                <option value="ACTIVE">Active</option>
-                <option value="INACTIVE">Inactive</option>
+                <option value="ACTIVE">Đang dùng</option>
+                <option value="INACTIVE">Ngừng dùng</option>
               </select>
             </div>
           )}
@@ -152,14 +152,14 @@ export function JobFamilyFormDialog({ open, onClose, family }: JobFamilyFormDial
               className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50"
               disabled={isSubmitting}
             >
-              Cancel
+              Hủy
             </button>
             <button
               type="submit"
               className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Saving...' : 'Save'}
+              {isSubmitting ? 'Đang lưu…' : 'Lưu'}
             </button>
           </div>
         </form>

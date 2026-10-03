@@ -62,9 +62,9 @@ describe('Authentication', () => {
       </QueryClientProvider>
     );
 
-    const emailInput = screen.getByPlaceholderText(/Tên đăng nhập \/ Email/i);
-    const passwordInput = screen.getByPlaceholderText(/Mật khẩu/i);
-    const submitBtn = screen.getByRole('button', { name: /Đăng nhập vào hệ thống/i });
+    const emailInput = screen.getByLabelText('Email');
+    const passwordInput = screen.getByLabelText('Mật khẩu');
+    const submitBtn = screen.getByRole('button', { name: 'Đăng nhập' });
 
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
@@ -116,9 +116,9 @@ describe('Authentication', () => {
       </QueryClientProvider>
     );
 
-    const emailInput = screen.getByPlaceholderText(/Tên đăng nhập \/ Email/i);
-    const passwordInput = screen.getByPlaceholderText(/Mật khẩu/i);
-    const submitBtn = screen.getByRole('button', { name: /Đăng nhập vào hệ thống/i });
+    const emailInput = screen.getByLabelText('Email');
+    const passwordInput = screen.getByLabelText('Mật khẩu');
+    const submitBtn = screen.getByRole('button', { name: 'Đăng nhập' });
 
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });

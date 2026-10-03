@@ -46,14 +46,14 @@ describe('CourseRecommendations', () => {
     const spy = vi.spyOn(recommendationHooks, 'useCourseRecommendations').mockReturnValue(queryResult({ isLoading: true }));
     render(<CourseRecommendations employeeId="emp-9" />);
     expect(spy).toHaveBeenCalledWith('emp-9');
-    expect(screen.getByLabelText('Loading recommendations')).toBeInTheDocument();
+    expect(screen.getByLabelText('Đang tải đề xuất')).toBeInTheDocument();
   });
 
   it.each([
-    ['NO_SKILL_GAP_RUN', 'No skill gap analysis yet'],
-    ['NO_GAP', 'All position competencies are met'],
-    ['NO_MATCHING_COURSE', 'No course matches the current gaps'],
-    ['NO_EMPLOYEE_PROFILE', 'No employee profile'],
+    ['NO_SKILL_GAP_RUN', 'Chưa có phân tích skill gap'],
+    ['NO_GAP', 'Đã đạt mọi năng lực của vị trí'],
+    ['NO_MATCHING_COURSE', 'Chưa có khóa học phù hợp với khoảng trống hiện tại'],
+    ['NO_EMPLOYEE_PROFILE', 'Chưa có hồ sơ nhân viên'],
   ] as const)('explains the empty reason %s', (reason, title) => {
     vi.spyOn(recommendationHooks, 'useCourseRecommendations').mockReturnValue(queryResult({ data: result({ reason }) }));
     render(<CourseRecommendations />);
@@ -73,10 +73,10 @@ describe('CourseRecommendations', () => {
 
     expect(screen.getByText('Advanced data analysis')).toBeInTheDocument();
     expect(screen.getByText('55.0')).toBeInTheDocument();
-    expect(screen.getAllByText('Gap coverage 35.0 · Mandatory 10.0 · Entry level 10.0')).toHaveLength(2);
-    expect(screen.getAllByText(/Data literacy: Basic → Advanced/)).toHaveLength(2);
-    expect(screen.getByText('In progress')).toBeInTheDocument();
-    expect(screen.getByText(/entry level is above/i)).toBeInTheDocument();
+    expect(screen.getAllByText('Đóng khoảng trống 35.0 · Bắt buộc 10.0 · Phù hợp đầu vào 10.0')).toHaveLength(2);
+    expect(screen.getAllByText(/Data literacy: Cơ bản → Nâng cao/)).toHaveLength(2);
+    expect(screen.getByText('Đang học')).toBeInTheDocument();
+    expect(screen.getByText(/mức đầu vào của khóa cao hơn/i)).toBeInTheDocument();
   });
 
   it('offers a retry when loading fails', () => {
@@ -84,7 +84,7 @@ describe('CourseRecommendations', () => {
     vi.spyOn(recommendationHooks, 'useCourseRecommendations').mockReturnValue(queryResult({ isError: true, refetch }));
     render(<CourseRecommendations />);
 
-    fireEvent.click(screen.getByText('Try again'));
+    fireEvent.click(screen.getByText('Thử lại'));
     expect(refetch).toHaveBeenCalled();
   });
 });

@@ -1,13 +1,30 @@
-import React from 'react';
 import { MainLayout } from '../../components/layout/MainLayout';
 import { AuthGuard } from '../../components/guards/AuthGuard';
+import { RequireOnboarded } from '../../components/guards/RequireOnboarded';
+import { RequireWorkspace } from '../../components/guards/RequireWorkspace';
+import { ENTERPRISE_PORTAL } from '../../lib/portals';
+import { WORKSPACES } from '../../lib/roles';
 
-export const EnterpriseLayout: React.FC = () => {
+import { useCurrentUser } from '../../hooks/use-current-user';
+import { sidebarFor } from '../../lib/sidebars';
+import { useEnterpriseTheme } from '../../hooks/use-enterprise-theme';
+
+export function EnterpriseLayout() {
+  const user = useCurrentUser((s) => s.user);
+  const subscriptionStatus = useCurrentUser((s) => s.getSubscriptionStatus)();
+  const isUnpaid = subscriptionStatus && subscriptionStatus !== 'active' ? true : undefined;
+  
+  useEnterpriseTheme(); // Mount theme
+
   return (
     <AuthGuard>
-      <div data-testid="enterprise-layout" className="min-h-screen">
-        <MainLayout />
-      </div>
+      <RequireWorkspace workspace={WORKSPACES.ENTERPRISE}>
+        <RequireOnboarded>
+          <div data-testid="enterprise-layout">
+            <MainLayout portal={ENTERPRISE_PORTAL} sidebarConfig={sidebarFor(user)} isUnpaid={isUnpaid} />
+          </div>
+        </RequireOnboarded>
+      </RequireWorkspace>
     </AuthGuard>
   );
-};
+}

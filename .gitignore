@@ -50,3 +50,14 @@ doc_DigiTalentAI/
 .playwright-mcp/
 .pnpm-store/
 scratch/
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+
+# Vitest temporary files
+frontend/vitest_output.txt
+frontend/vitest.config.ts.timestamp-*

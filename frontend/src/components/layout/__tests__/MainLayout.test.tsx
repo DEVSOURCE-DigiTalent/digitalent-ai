@@ -3,21 +3,38 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { ENTERPRISE_PORTAL } from '@/lib/portals';
+import { ROLES } from '@/lib/roles';
+import { PERMISSIONS } from '@/hooks/use-permission';
+import type { SubscriptionContext } from '@/types/session';
 import { MainLayout } from '../MainLayout';
+import { useSidebarState } from '@/hooks/use-sidebar-state';
 
-function loginAs(roles: string[], permissions: string[]) {
-  useCurrentUser.setState({
-    user: { id: 'u-1', email: 'u@digitalent.ai', fullName: 'User', roles, permissions },
-    isAuthenticated: true,
+const PRO: SubscriptionContext = {
+  planCode: 'PRO',
+  planName: 'Pro',
+  status: 'active',
+  entitlements: ['internal_learning', 'practical_tasks'],
+};
+
+function loginAs(roles: string[], permissions: string[], subscription: SubscriptionContext = PRO) {
+  useCurrentUser.getState().setUser({
+    id: 'u-1',
+    email: 'u@digitalent.ai',
+    fullName: 'User',
+    roles,
+    permissions,
+    workspace: 'enterprise',
+    subscription,
   });
 }
 
-function renderLayout(path = '/enterprise/hr/dashboard') {
+function renderLayout(path = '/enterprise/dashboard') {
   return render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <MemoryRouter initialEntries={[path]}>
         <Routes>
-          <Route path="/enterprise" element={<MainLayout />}>
+          <Route path="/enterprise" element={<MainLayout portal={ENTERPRISE_PORTAL} />}>
             <Route path="*" element={<p>Page content</p>} />
           </Route>
         </Routes>
@@ -28,55 +45,85 @@ function renderLayout(path = '/enterprise/hr/dashboard') {
 
 describe('MainLayout navigation', () => {
   beforeEach(() => {
-    loginAs(['HR_MANAGER'], ['assessment.read', 'skill_gap.read']);
+    localStorage.clear();
+    // Reset sidebar to open state for predictable test environment
+    useSidebarState.setState({ state: 'open', isMobileOpen: false });
+    loginAs([ROLES.OWNER], [
+      PERMISSIONS.SKILL_GAP_READ,
+      PERMISSIONS.JOB_POSITION_READ,
+      PERMISSIONS.POSITION_REQUIREMENT_READ,
+      PERMISSIONS.EMPLOYEE_READ,
+      PERMISSIONS.DEPARTMENT_READ,
+    ]);
   });
 
   it('hides sidebar items whose page the user has no permission for', () => {
+    loginAs([ROLES.OWNER], [PERMISSIONS.SKILL_GAP_READ]);
     renderLayout();
-    const nav = within(screen.getByRole('navigation', { name: 'Main navigation' }));
+    const nav = within(screen.getByRole('navigation', { name: /Điều hướng chính|Thanh điều hướng/i }));
 
-    expect(nav.getByText('Assessments')).toBeInTheDocument();
-    expect(nav.getByText('Skill Gap Analysis')).toBeInTheDocument();
-    // HR role is listed for the item, but the route needs attempt.read_result
-    expect(nav.queryByText('Learner Results')).not.toBeInTheDocument();
+    expect(nav.getByText(/Khoảng trống năng lực/i)).toBeInTheDocument();
+    // Without audit.read, audit log is hidden
+    expect(nav.queryByText('Nhật ký kiểm toán')).not.toBeInTheDocument();
   });
 
-  it('shows every item of the role to a system administrator', () => {
-    loginAs(['SYSTEM_ADMIN'], []);
-    renderLayout();
+  it('hides the items of other roles', () => {
+    loginAs([ROLES.EMPLOYEE], [PERMISSIONS.DASHBOARD_EMPLOYEE_READ]);
+    renderLayout('/enterprise/me');
+    const nav = within(screen.getByRole('navigation', { name: /Điều hướng chính|Thanh điều hướng/i }));
 
-    expect(screen.getByText('User Management')).toBeInTheDocument();
+    // Employees should not see Owner administration links
+    expect(nav.queryByText('Phân quyền')).not.toBeInTheDocument();
+    expect(nav.queryByText('Gói & Thanh toán')).not.toBeInTheDocument();
   });
 
   it('renders navigation items as links', () => {
     renderLayout();
 
-    expect(screen.getByRole('link', { name: 'Skill Gap Analysis' })).toHaveAttribute(
+    const nav = screen.getByRole('navigation', { name: /Điều hướng chính|Thanh điều hướng/i });
+    expect(within(nav).getByRole('link', { name: /Khoảng trống năng lực/i })).toHaveAttribute(
       'href',
-      '/enterprise/intelligence/skill-gap',
+      '/enterprise/skill-gap',
     );
   });
 
-  it('marks only the most specific item as the current page', () => {
-    loginAs(['HR_MANAGER'], ['competency.read', 'position_requirement.read']);
-    renderLayout('/enterprise/competency-framework/position-requirements');
+  it('keeps items that need a missing plan feature visible but locked', () => {
+    loginAs([ROLES.OWNER], [PERMISSIONS.COURSE_UPDATE], { ...PRO, entitlements: [] });
+    renderLayout();
 
-    expect(screen.getByRole('link', { name: 'Position Requirements' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Competency Framework' })).not.toHaveAttribute('aria-current');
+    const nav = screen.getByRole('navigation', { name: /Điều hướng chính|Thanh điều hướng/i });
+    const link = within(nav).getByRole('link', { name: /Khóa nội bộ/i });
+    expect(within(link).getByLabelText('Chưa có trong gói')).toBeInTheDocument();
+  });
+
+  it('does not lock items when the plan includes the feature', () => {
+    renderLayout();
+
+    const nav = screen.getByRole('navigation', { name: /Điều hướng chính|Thanh điều hướng/i });
+    const link = within(nav).getByRole('link', { name: /Khóa nội bộ/i });
+    expect(within(link).queryByLabelText('Chưa có trong gói')).not.toBeInTheDocument();
+  });
+
+  it('marks only the most specific item as the current page', () => {
+    renderLayout('/enterprise/requirements');
+
+    const nav = screen.getByRole('navigation', { name: /Điều hướng chính|Thanh điều hướng/i });
+    expect(within(nav).getByRole('link', { name: /Yêu cầu theo vị trí/i })).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByRole('link', { name: /Vị trí & Cấp bậc/i })).not.toHaveAttribute('aria-current');
   });
 
   it('opens the navigation drawer on small screens and closes it from the backdrop or after navigating', () => {
     renderLayout();
     expect(screen.queryByTestId('sidebar-backdrop')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mở điều hướng' }));
     expect(screen.getByTestId('sidebar-backdrop')).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId('sidebar-backdrop'));
     expect(screen.queryByTestId('sidebar-backdrop')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
-    fireEvent.click(screen.getByRole('link', { name: 'Skill Gap Analysis' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mở điều hướng' }));
+    fireEvent.click(screen.getByRole('link', { name: /Khoảng trống năng lực/i }));
     expect(screen.queryByTestId('sidebar-backdrop')).not.toBeInTheDocument();
   });
 
@@ -84,8 +131,8 @@ describe('MainLayout navigation', () => {
     renderLayout();
 
     const topbar = within(screen.getByRole('banner'));
-    expect(topbar.getByRole('button', { name: 'Search' })).toBeInTheDocument();
-    expect(topbar.getByRole('button', { name: 'Notifications' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Collapse sidebar' })).toBeInTheDocument();
+    expect(topbar.getByRole('button', { name: 'Tìm kiếm' })).toBeInTheDocument();
+    expect(topbar.getByRole('button', { name: /Thông báo/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Thu gọn thanh bên' })).toBeInTheDocument();
   });
 });

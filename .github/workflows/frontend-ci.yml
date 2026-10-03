@@ -39,3 +39,6 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Check the build has no mock code
+        run: npm run check:no-mock

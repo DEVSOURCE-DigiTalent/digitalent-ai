@@ -20,9 +20,9 @@ public static class Tt02Catalog
     /// <summary>Mức hệ thống 1–3 ↔ bậc Thông tư (§2). Bậc 7–8 ngoài phạm vi.</summary>
     public const string SourceLevelText = "Bậc 1–2 / 3–4 / 5–6";
 
-    public static readonly string[] LevelNames = { "Cơ bản", "Trung bình", "Nâng cao" };
+    public static readonly string[] LevelNames = { "Cơ bản", "Trung cấp", "Nâng cao" };
 
-    /// <summary>Hậu tố mã khóa học theo mức: F = Cơ bản, I = Trung bình, A = Nâng cao.</summary>
+    /// <summary>Hậu tố mã khóa học theo mức: F = Cơ bản, I = Trung cấp, A = Nâng cao.</summary>
     private static readonly string[] LevelSuffixes = { "F", "I", "A" };
 
     /// <summary>Thời lượng chuẩn mỗi module (phút) theo mức — khung chương trình mục A5.</summary>
@@ -126,7 +126,7 @@ public static class Tt02Catalog
     public static string CompetencyCode(string sourceCode) => $"TT02-{sourceCode}";
 
     /// <summary>
-    /// Vị trí × mức yêu cầu của từng năng lực theo thứ tự 1.1 … 6.3 (0 = không yêu cầu, 1–3 = Cơ bản / Trung bình / Nâng cao).
+    /// Vị trí × mức yêu cầu của từng năng lực theo thứ tự 1.1 … 6.3 (0 = không yêu cầu, 1–3 = Cơ bản / Trung cấp / Nâng cao).
     /// Quyết định D-B7 (30/09/2026): mỗi vị trí chọn năng lực phù hợp công việc, mức khác nhau theo từng năng lực.
     /// Mức chủ đạo của mỗi miền vẫn bám bảng A8 của khung chương trình; lý do từng ô ở tài liệu ma trận §4.
     /// </summary>

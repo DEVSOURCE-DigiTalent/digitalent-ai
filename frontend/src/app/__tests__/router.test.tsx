@@ -1,9 +1,14 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useRoutes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { routes } from '../router';
 import { isSafeReturnTo } from '../../features/auth/auth-redirect';
+import { MOCK_EMAILS, signInAsMock, signOut } from '../../test/session';
+import { usePersonalTheme } from '../../features/learner/theme/use-personal-theme';
+
+// Built pages call the API; the mock REST server answers instead of a real backend.
+vi.hoisted(() => vi.stubEnv('VITE_USE_MOCK', 'true'));
 
 function AppRoutes() {
   return useRoutes(routes);
@@ -23,177 +28,273 @@ describe('Router Configuration & Surface Separation', () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
-    localStorage.clear();
+    signOut();
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   });
 
   describe('Public Flow (Anonymous Access)', () => {
-    it('Anonymous can access landing page without login redirect', async () => {
-      renderWithRouter('/', queryClient);
+    it('Anonymous can access the enterprise landing page without login redirect', async () => {
+      renderWithRouter('/business', queryClient);
 
-      expect(screen.getByTestId('public-layout')).toBeInTheDocument();
-      expect(screen.getByText(/Welcome to DigiTalent AI/i)).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: /Dành cho Doanh nghiệp/i })).toBeInTheDocument();
+      // The landing page is lazy-loaded (first import is slow when the whole suite runs in parallel)
+      // and brings its own navigation and footer.
+      expect(await screen.findByTestId('landing-page', {}, { timeout: 10_000 })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'DigiTalent AI' })).toBeInTheDocument();
+      expect(screen.queryByTestId('public-layout')).not.toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
-    it('Anonymous can access career catalog without login redirect', async () => {
+    it('Anonymous can access the reference positions without login redirect', async () => {
       renderWithRouter('/careers', queryClient);
 
-      expect(screen.getByTestId('public-layout')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: /Career Catalog/i })).toBeInTheDocument();
-      expect(screen.getByText(/Browse available career paths/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: /Vị trí tham chiếu/ })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
-    it('Anonymous can access career detail slug without login redirect', async () => {
-      renderWithRouter('/careers/ai-engineer', queryClient);
+    it('Anonymous can open one reference position without login redirect', async () => {
+      renderWithRouter('/careers/accountant', queryClient);
 
-      expect(screen.getByTestId('public-layout')).toBeInTheDocument();
-      expect(screen.getByText(/Viewing details for career path: ai-engineer/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Kế toán' })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
-    it('Anonymous can access certificate verification without login redirect', async () => {
+    it('has no public certificate verification page any more', async () => {
       renderWithRouter('/verify', queryClient);
 
-      expect(screen.getByTestId('public-layout')).toBeInTheDocument();
-      expect(screen.getByText(/Certificate Verification/i)).toBeInTheDocument();
-      expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('public-layout')).not.toBeInTheDocument();
+      expect(screen.queryByText(/Certificate Verification/i)).not.toBeInTheDocument();
     });
   });
 
-  describe('Learner Flow & Deep-Link Boundaries', () => {
-    it('Direct load /learn/courses/crs-01 renders LearnerLayout and does NOT contain Enterprise shell', async () => {
-      renderWithRouter('/learn/courses/crs-01', queryClient);
+  describe('Personal Flow & Deep-Link Boundaries', () => {
+    beforeEach(() => {
+      signInAsMock(MOCK_EMAILS.personal);
+    });
 
-      // Verify Learner layout is active
-      expect(screen.getByTestId('learner-layout')).toBeInTheDocument();
+    it('Direct load /personal/courses/crs-A3-I renders the personal layout and does NOT contain Enterprise shell', async () => {
+      renderWithRouter('/personal/courses/crs-A3-I', queryClient);
 
-      // Verify Course Detail content for crs-01 is rendered
+      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
       expect(screen.getByTestId('learner-course-detail')).toBeInTheDocument();
-      expect(screen.getByText(/Mã: crs-01/i)).toBeInTheDocument();
-      expect(screen.getByText(/Kỹ nghệ Câu lệnh AI Nâng cao/i)).toBeInTheDocument();
+      expect(await screen.findByText(/Mã: A3-I/i, {}, { timeout: 10000 })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Tạo lập nội dung chuyên nghiệp' })).toBeInTheDocument();
 
-      // Verify Enterprise shell and login redirect are NOT rendered
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
-      expect(screen.queryByText(/Đăng nhập vào hệ thống/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { level: 1, name: 'Đăng nhập' })).not.toBeInTheDocument();
     });
 
-    it('Direct load /learn renders learner dashboard directly', async () => {
-      renderWithRouter('/learn', queryClient);
+    it('Direct load /personal renders learner dashboard directly', async () => {
+      renderWithRouter('/personal', queryClient);
 
-      expect(screen.getByTestId('learner-layout')).toBeInTheDocument();
+      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
       expect(screen.getByTestId('learner-dashboard')).toBeInTheDocument();
-      expect(screen.getByText(/Chào mừng trở lại với DigiTalent AI/i)).toBeInTheDocument();
+      expect(await screen.findByText(/đây là chặng đường của bạn/i, {}, { timeout: 10000 })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
-    it('Direct load /learn/dashboard renders learner dashboard', async () => {
-      renderWithRouter('/learn/dashboard', queryClient);
+    it('Direct load /personal/dashboard renders learner dashboard', async () => {
+      renderWithRouter('/personal/dashboard', queryClient);
 
-      expect(screen.getByTestId('learner-layout')).toBeInTheDocument();
+      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
       expect(screen.getByTestId('learner-dashboard')).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
-    it('Direct load /learn/target renders target career and competencies', async () => {
-      renderWithRouter('/learn/target', queryClient);
+    it('Direct load /personal/target renders the reference positions', async () => {
+      renderWithRouter('/personal/target', queryClient);
 
-      expect(screen.getByTestId('learner-layout')).toBeInTheDocument();
+      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
       expect(screen.getByTestId('learner-target-page')).toBeInTheDocument();
-      expect(screen.getByText(/Mục tiêu nghề nghiệp & Khung năng lực/i)).toBeInTheDocument();
+      expect(await screen.findByRole('radio', { name: /Marketing/ })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
-    it('Direct load /learn/diagnostic renders diagnostic assessment page', async () => {
-      renderWithRouter('/learn/diagnostic', queryClient);
+    it('Direct load /personal/diagnostic renders diagnostic assessment page', async () => {
+      renderWithRouter('/personal/diagnostic', queryClient);
 
-      expect(screen.getByTestId('learner-layout')).toBeInTheDocument();
+      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
       expect(screen.getByTestId('learner-diagnostic-page')).toBeInTheDocument();
-      expect(screen.getByText(/Bài kiểm tra chẩn đoán năng lực/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: /Bài đánh giá/ })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
-    it('Direct load /learn/path renders learning path roadmap', async () => {
-      renderWithRouter('/learn/path', queryClient);
+    it('Direct load /personal/path renders learning path roadmap', async () => {
+      renderWithRouter('/personal/path', queryClient);
 
-      expect(screen.getByTestId('learner-layout')).toBeInTheDocument();
+      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
       expect(screen.getByTestId('learner-path-page')).toBeInTheDocument();
-      expect(screen.getByText(/Lộ trình học tập mục tiêu/i)).toBeInTheDocument();
+      expect(await screen.findByText(/Tiến độ lộ trình/i)).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
-    it('Direct load /learn/classroom/crs-01 renders virtual classroom player', async () => {
-      renderWithRouter('/learn/classroom/crs-01', queryClient);
+    it('Direct load /personal/classroom/crs-A3-I renders the classroom', async () => {
+      renderWithRouter('/personal/classroom/crs-A3-I', queryClient);
 
-      expect(screen.getByTestId('learner-layout')).toBeInTheDocument();
+      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
       expect(screen.getByTestId('learner-classroom-page')).toBeInTheDocument();
-      expect(screen.getByText(/Lớp học số: crs-01/i)).toBeInTheDocument();
+      expect(await screen.findByText(/Lớp học số: A3-I/i)).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
-    it('Direct load /learn/progress renders personal skill progress', async () => {
-      renderWithRouter('/learn/progress', queryClient);
+    it('Direct load /personal/progress renders personal skill progress', async () => {
+      renderWithRouter('/personal/progress', queryClient);
 
-      expect(screen.getByTestId('learner-layout')).toBeInTheDocument();
+      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
       expect(screen.getByTestId('learner-progress-page')).toBeInTheDocument();
       expect(screen.getByText(/Tiến độ tích lũy kỹ năng/i)).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
-    it('Direct load /learn/tasks renders practical tasks page', async () => {
-      renderWithRouter('/learn/tasks', queryClient);
+    it('Direct load /personal/tasks renders practical tasks page', async () => {
+      renderWithRouter('/personal/tasks', queryClient);
 
-      expect(screen.getByTestId('learner-layout')).toBeInTheDocument();
+      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
       expect(screen.getByTestId('learner-tasks-page')).toBeInTheDocument();
-      expect(screen.getByText(/Nhiệm vụ & Bài tập thực hành/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: /Minh chứng/ })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
-    it('Direct load /learn/certificates renders certificates page', async () => {
-      renderWithRouter('/learn/certificates', queryClient);
+    it('Direct load /personal/certificates renders certificates page', async () => {
+      renderWithRouter('/personal/certificates', queryClient);
 
-      expect(screen.getByTestId('learner-layout')).toBeInTheDocument();
+      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
       expect(screen.getByTestId('learner-certificates-page')).toBeInTheDocument();
-      expect(screen.getByText(/Chứng chỉ & Huy hiệu đã đạt/i)).toBeInTheDocument();
+      expect(screen.getByText(/Chứng chỉ & Huy hiệu/i)).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
+    });
+
+    it('opens in the dark theme and remembers the light theme', async () => {
+      renderWithRouter('/personal', queryClient);
+
+      const layout = screen.getByTestId('personal-layout');
+      expect(layout).toHaveAttribute('data-theme', 'dark');
+      screen.getByRole('button', { name: 'Chuyển sang giao diện sáng' }).click();
+      await waitFor(() => expect(layout).toHaveAttribute('data-theme', 'light'));
+      expect(localStorage.getItem('dt-personal-theme')).toBe('light');
+      usePersonalTheme.getState().setTheme('dark');
     });
   });
 
   describe('Enterprise Flow & Auth Guards', () => {
-    it('Unauthenticated access to /enterprise/dashboard redirects to /login?returnTo=...', async () => {
-      renderWithRouter('/enterprise/dashboard', queryClient);
+    it('Unauthenticated access to /enterprise/overview redirects to /login?returnTo=...', async () => {
+      renderWithRouter('/enterprise/overview', queryClient);
 
       await waitFor(() => {
-        expect(screen.getByText(/Đăng nhập vào hệ thống/i)).toBeInTheDocument();
+        expect(screen.getByRole('heading', { level: 1, name: 'Đăng nhập' })).toBeInTheDocument();
       });
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
-    it('Unauthenticated access to /enterprise/organization/departments redirects to login', async () => {
-      renderWithRouter('/enterprise/organization/departments', queryClient);
+    it('Unauthenticated access to /enterprise/departments redirects to login', async () => {
+      renderWithRouter('/enterprise/departments', queryClient);
 
       await waitFor(() => {
-        expect(screen.getByText(/Đăng nhập vào hệ thống/i)).toBeInTheDocument();
+        expect(screen.getByRole('heading', { level: 1, name: 'Đăng nhập' })).toBeInTheDocument();
       });
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
-    it('Legacy /organization/departments redirects to /enterprise/organization/departments then login', async () => {
+    it('Legacy /organization/departments redirects to /enterprise/departments then login', async () => {
       renderWithRouter('/organization/departments', queryClient);
 
       await waitFor(() => {
-        expect(screen.getByText(/Đăng nhập vào hệ thống/i)).toBeInTheDocument();
+        expect(screen.getByRole('heading', { level: 1, name: 'Đăng nhập' })).toBeInTheDocument();
       });
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Portal separation', () => {
+    it('sends a personal user who opens /enterprise to their own home', async () => {
+      signInAsMock(MOCK_EMAILS.personal);
+      renderWithRouter('/enterprise/overview', queryClient);
+
+      expect(await screen.findByTestId('personal-layout')).toBeInTheDocument();
+      expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
+    });
+
+    it('sends an enterprise user who opens /personal to their own home', async () => {
+      signInAsMock(MOCK_EMAILS.orgAdmin);
+      renderWithRouter('/personal/dashboard', queryClient);
+
+      expect(await screen.findByTestId('enterprise-layout')).toBeInTheDocument();
+      expect(screen.queryByTestId('personal-layout')).not.toBeInTheDocument();
+    });
+
+    it('keeps platform staff out of the enterprise portal', async () => {
+      signInAsMock(MOCK_EMAILS.platform);
+      renderWithRouter('/enterprise/overview', queryClient);
+
+      expect(await screen.findByTestId('platform-layout')).toBeInTheDocument();
+      expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
+    });
+
+    it('opens /enterprise on the home of the signed-in role', async () => {
+      signInAsMock(MOCK_EMAILS.manager);
+      renderWithRouter('/enterprise', queryClient);
+
+      expect(await screen.findByRole('heading', { name: 'Bảng năng lực của nhóm' })).toBeInTheDocument();
+    });
+
+    it('shows access denied to a role the screen is not meant for', async () => {
+      signInAsMock(MOCK_EMAILS.learner);
+      renderWithRouter('/enterprise/members', queryClient);
+
+      expect(await screen.findByText(/Truy cập bị từ chối/i)).toBeInTheDocument();
+    });
+
+    it('keeps the tail of old /learn links', async () => {
+      signInAsMock(MOCK_EMAILS.personal);
+      renderWithRouter('/learn/courses/crs-01', queryClient);
+
+      expect(await screen.findByTestId('learner-course-detail')).toBeInTheDocument();
+    });
+
+    it('redirects the old /learn paths to /personal', async () => {
+      signInAsMock(MOCK_EMAILS.personal);
+      renderWithRouter('/learn/path', queryClient);
+
+      expect(await screen.findByTestId('personal-layout')).toBeInTheDocument();
+    });
+  });
+
+  describe('Plan gating', () => {
+    it('blocks a paid workspace whose subscription needs payment', async () => {
+      signInAsMock(MOCK_EMAILS.expiredOwner);
+      renderWithRouter('/enterprise/overview', queryClient);
+
+      expect(await screen.findByRole('heading', { name: 'Gói dịch vụ đã hết hạn' })).toBeInTheDocument();
+    });
+
+    it('keeps billing open for an owner whose subscription needs payment, so they can renew', async () => {
+      signInAsMock(MOCK_EMAILS.expiredOwner);
+      renderWithRouter('/enterprise/billing', queryClient);
+
+      expect(await screen.findByRole('heading', { name: /Gói dịch vụ doanh nghiệp|Gói và thanh toán/i }, { timeout: 5000 })).toBeInTheDocument();
+      expect(screen.getByTestId('enterprise-layout')).toBeInTheDocument();
+    });
+
+    it('shows "feature unavailable" when the plan lacks the feature', async () => {
+      signInAsMock(MOCK_EMAILS.learningAdmin, {
+        subscription: { planCode: 'S', planName: 'Starter', status: 'active', entitlements: [] },
+      });
+      renderWithRouter('/enterprise/internal-courses', queryClient);
+
+      expect(await screen.findByRole('heading', { name: 'Tính năng chưa có trong gói' })).toBeInTheDocument();
+    });
+
+    it('opens the feature when the plan includes it', async () => {
+      signInAsMock(MOCK_EMAILS.learningAdmin);
+      renderWithRouter('/enterprise/internal-courses', queryClient);
+
+      expect(await screen.findByRole('heading', { name: 'Khóa học nội bộ' })).toBeInTheDocument();
     });
   });
 
   describe('Safe returnTo Validation', () => {
     it('isSafeReturnTo allows valid internal relative paths', () => {
-      expect(isSafeReturnTo('/enterprise/dashboard')).toBe(true);
-      expect(isSafeReturnTo('/learn/courses/crs-01')).toBe(true);
+      expect(isSafeReturnTo('/enterprise/overview')).toBe(true);
+      expect(isSafeReturnTo('/personal/courses/crs-01')).toBe(true);
       expect(isSafeReturnTo('/careers?search=ai')).toBe(true);
     });
 

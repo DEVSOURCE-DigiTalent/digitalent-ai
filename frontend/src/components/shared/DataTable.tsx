@@ -37,23 +37,25 @@ interface DataTableProps<T> {
   };
   onRowClick?: (row: T) => void;
   className?: string;
+  /** When true, keeps horizontal scroll container even on large screens */
+  forceScrollX?: boolean;
 }
 
 /**
- * Reusable DataTable with server-side pagination, search, sorting,
- * loading skeleton, and empty states. Maps to UI/UX spec section 10.
+ * Reusable DataTable with sticky header (sticks at var(--shell-top)), server-side pagination, search,
+ * sorting, loading skeleton, and empty states. Styled with Enterprise tokens.
  */
 export function DataTable<T extends Record<string, any>>({
   columns,
   data,
   keyExtractor,
   isLoading,
-  emptyTitle = 'No data found',
+  emptyTitle = 'Không có dữ liệu',
   emptyDescription,
   emptyAction,
   searchValue,
   onSearchChange,
-  searchPlaceholder = 'Search...',
+  searchPlaceholder = 'Tìm kiếm…',
   filters,
   toolbarActions,
   sortBy,
@@ -62,36 +64,42 @@ export function DataTable<T extends Record<string, any>>({
   pageInfo,
   onRowClick,
   className,
+  forceScrollX = false,
 }: DataTableProps<T>) {
-  const visibleColumns = columns.filter((c) => !c.hideOnMobile);
+  const visibleColumns = columns;
+  const mobileClass = (col: Column<T>) => {
+    if (col.className?.includes('hidden')) return '';
+    return col.hideOnMobile ? 'hidden md:table-cell' : '';
+  };
 
   const renderSortIcon = (key: string) => {
-    if (sortBy !== key) return <ChevronsUpDown className="w-3.5 h-3.5 text-slate-400" />;
+    if (sortBy !== key) return <ChevronsUpDown className="w-3.5 h-3.5 text-ent-fg-3" />;
     return sortDirection === 'asc' ? (
-      <ChevronUp className="w-3.5 h-3.5 text-primary-600" />
+      <ChevronUp className="w-3.5 h-3.5 text-ent-accent" />
     ) : (
-      <ChevronDown className="w-3.5 h-3.5 text-primary-600" />
+      <ChevronDown className="w-3.5 h-3.5 text-ent-accent" />
     );
   };
 
   return (
-    <div className={cn('bg-white rounded-lg shadow-sm border border-slate-200', className)}>
+    <div className={cn('bg-ent-card rounded-lg border border-ent-line', className)}>
       {/* Toolbar */}
       {(onSearchChange || filters || toolbarActions) && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 border-b border-slate-200">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 border-b border-ent-line">
           {onSearchChange && (
             <div className="relative flex-1 max-w-sm w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ent-fg-3" />
               <input
                 type="text"
+                aria-label={searchPlaceholder}
                 value={searchValue ?? ''}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder={searchPlaceholder}
-                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full pl-9 pr-3 py-2 text-sm bg-ent-raised border border-ent-line rounded-md text-ent-fg placeholder:text-ent-fg-3 focus:outline-none focus:ring-2 focus:ring-ent-accent focus:border-ent-accent"
               />
             </div>
           )}
-          {filters && <div className="flex items-center gap-2">{filters}</div>}
+          {filters && <div className="flex flex-wrap items-center gap-2">{filters}</div>}
           {toolbarActions && <div className="flex items-center gap-2 ml-auto">{toolbarActions}</div>}
         </div>
       )}
@@ -102,7 +110,7 @@ export function DataTable<T extends Record<string, any>>({
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex gap-4 animate-pulse">
               {visibleColumns.map((col) => (
-                <div key={col.key} className="h-5 bg-slate-200 rounded flex-1" />
+                <div key={col.key} className="h-5 bg-ent-raised rounded flex-1" />
               ))}
             </div>
           ))}
@@ -114,18 +122,21 @@ export function DataTable<T extends Record<string, any>>({
         <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />
       )}
 
-      {/* Table */}
+      {/* Table with sticky headers */}
       {!isLoading && data.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className={cn('w-full', forceScrollX ? 'overflow-x-auto' : 'overflow-x-auto lg:overflow-x-visible')}>
+          <table className="w-full text-sm border-separate border-spacing-0">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50">
-                {visibleColumns.map((col) => (
+              <tr>
+                {visibleColumns.map((col, idx) => (
                   <th
                     key={col.key}
                     className={cn(
-                      'px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider',
-                      col.sortable && 'cursor-pointer select-none hover:text-slate-800',
+                      'sticky top-[var(--shell-top)] z-10 bg-ent-raised border-b border-ent-line',
+                      'px-3.5 py-2.5 text-left text-xs font-semibold text-ent-fg-2 uppercase tracking-wider whitespace-nowrap',
+                      idx === 0 && 'sticky left-0 z-20',
+                      col.sortable && 'cursor-pointer select-none hover:text-ent-fg',
+                      mobileClass(col),
                       col.className,
                     )}
                     onClick={() => col.sortable && onSort?.(col.key)}
@@ -138,18 +149,26 @@ export function DataTable<T extends Record<string, any>>({
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-ent-line">
               {data.map((row) => (
                 <tr
                   key={keyExtractor(row)}
                   className={cn(
-                    'hover:bg-slate-50 transition-colors',
+                    'hover:bg-ent-raised transition-colors group',
                     onRowClick && 'cursor-pointer',
                   )}
                   onClick={() => onRowClick?.(row)}
                 >
-                  {visibleColumns.map((col) => (
-                    <td key={col.key} className={cn('px-4 py-3 text-slate-700', col.className)}>
+                  {visibleColumns.map((col, idx) => (
+                    <td
+                      key={col.key}
+                      className={cn(
+                        'px-3.5 py-2.5 text-ent-fg border-b border-ent-line',
+                        idx === 0 && 'sticky left-0 bg-ent-card group-hover:bg-ent-raised z-1',
+                        mobileClass(col),
+                        col.className,
+                      )}
+                    >
                       {col.cell(row)}
                     </td>
                   ))}
@@ -162,26 +181,26 @@ export function DataTable<T extends Record<string, any>>({
 
       {/* Pagination */}
       {pageInfo && data.length > 0 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200">
-          <span className="text-xs text-slate-500">
+        <div className="flex items-center justify-between px-4 py-3 border-t border-ent-line">
+          <span className="text-xs text-ent-fg-3 tabular-nums">
             {pageInfo.pageSize * (pageInfo.page - 1) + 1}–
-            {Math.min(pageInfo.pageSize * pageInfo.page, pageInfo.total)} of {pageInfo.total}
+            {Math.min(pageInfo.pageSize * pageInfo.page, pageInfo.total)} trên {pageInfo.total}
           </span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => pageInfo.onPageChange(pageInfo.page - 1)}
               disabled={pageInfo.page <= 1}
-              className="px-3 py-1 text-xs font-medium text-slate-600 border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-40"
+              className="px-3 py-1 text-xs font-medium text-ent-fg-2 border border-ent-line rounded-md hover:bg-ent-raised disabled:opacity-40 transition-colors"
             >
-              Previous
+              Trước
             </button>
-            <span className="text-xs text-slate-500">Page {pageInfo.page}</span>
+            <span className="text-xs text-ent-fg-3">Trang {pageInfo.page}</span>
             <button
               onClick={() => pageInfo.onPageChange(pageInfo.page + 1)}
               disabled={pageInfo.page >= Math.ceil(pageInfo.total / pageInfo.pageSize)}
-              className="px-3 py-1 text-xs font-medium text-slate-600 border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-40"
+              className="px-3 py-1 text-xs font-medium text-ent-fg-2 border border-ent-line rounded-md hover:bg-ent-raised disabled:opacity-40 transition-colors"
             >
-              Next
+              Sau
             </button>
           </div>
         </div>

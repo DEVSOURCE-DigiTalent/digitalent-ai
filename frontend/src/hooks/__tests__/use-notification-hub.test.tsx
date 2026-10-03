@@ -5,6 +5,7 @@ import { HubConnectionBuilder } from '@microsoft/signalr';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { ROLES } from '@/lib/roles';
 import { notificationHubUrl, useNotificationHub } from '@/hooks/use-notification-hub';
 
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() } }));
@@ -40,7 +41,7 @@ function renderHub(queryClient = new QueryClient()) {
 
 function signIn(isAuthenticated: boolean) {
   useCurrentUser.setState({
-    user: isAuthenticated ? { id: 'u-1', email: 'e@digitalent.ai', fullName: 'E', roles: ['EMPLOYEE'], permissions: [] } : null,
+    user: isAuthenticated ? { id: 'u-1', email: 'e@digitalent.ai', fullName: 'E', roles: [ROLES.EMPLOYEE], permissions: [] } : null,
     isAuthenticated,
   });
 }

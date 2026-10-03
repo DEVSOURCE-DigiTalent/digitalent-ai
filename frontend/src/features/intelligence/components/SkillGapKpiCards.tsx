@@ -14,18 +14,18 @@ function coverageVariant(coverage: number): 'success' | 'warning' | 'danger' {
 export function SkillGapKpiCards({ summary }: { summary: SkillGapSummary }) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <ScoreCard label="Required competencies" value={summary.totalRequired} />
-      <ScoreCard label="Met" value={summary.totalMet} variant="success" />
+      <ScoreCard label="Năng lực yêu cầu" value={summary.totalRequired} />
+      <ScoreCard label="Đã đạt" value={summary.totalMet} variant="success" />
       <ScoreCard
-        label="Gaps"
+        label="Khoảng trống"
         value={summary.totalGap}
-        subtitle={`${summary.highCount} high · ${summary.mediumCount} medium · ${summary.lowCount} low`}
+        subtitle={`${summary.highCount} mức cao · ${summary.mediumCount} trung bình · ${summary.lowCount} thấp`}
         variant={summary.highCount > 0 ? 'danger' : summary.totalGap > 0 ? 'warning' : 'success'}
       />
       <ScoreCard
-        label="Position coverage"
+        label="Tỷ lệ đáp ứng năng lực"
         value={`${summary.coveragePercent.toFixed(1)}%`}
-        subtitle="Weighted match with the position standard"
+        subtitle="Mức khớp có trọng số với chuẩn vị trí"
         variant={coverageVariant(summary.coveragePercent)}
       />
     </div>

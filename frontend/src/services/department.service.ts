@@ -14,13 +14,25 @@ export interface DepartmentDto {
   parentDepartmentName?: string;
   managerEmployeeId?: string;
   managerName?: string;
+  headcount?: number;
+  gradeDistribution?: Record<string, number>;
   status: DepartmentStatus;
   createdAt: string;
   updatedAt: string;
 }
 
 /** 1 dòng trong danh sách — khớp DepartmentListItem */
-export type DepartmentListItem = Pick<DepartmentDto, 'id' | 'code' | 'name' | 'parentDepartmentName' | 'status'>;
+export interface DepartmentListItem {
+  id: string;
+  code: string;
+  name: string;
+  parentDepartmentName?: string;
+  managerEmployeeId?: string;
+  managerName?: string;
+  headcount?: number;
+  gradeDistribution?: Record<string, number>;
+  status: DepartmentStatus;
+}
 
 export interface DepartmentListParams extends PaginationRequest {
   status?: DepartmentStatus; // không gửi = mọi trạng thái trừ ARCHIVED
@@ -31,11 +43,13 @@ export interface CreateDepartmentRequest {
   name: string;
   description?: string;
   parentDepartmentId?: string;
+  managerEmployeeId?: string;
 }
 
 export interface UpdateDepartmentRequest extends CreateDepartmentRequest {
   status: Exclude<DepartmentStatus, 'ARCHIVED'>; // archive dùng remove()
 }
+
 
 /**
  * Department management API service.

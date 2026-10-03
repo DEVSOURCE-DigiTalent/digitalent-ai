@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useCurrentUser } from '../../hooks/use-current-user';
-import apiClient from '../../services/api-client';
+import { authService } from '../../services/auth.service';
 import { getLoginPath } from '../../features/auth/auth-redirect';
 
 interface AuthGuardProps {
@@ -22,10 +22,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
       setIsLoading(false);
       return;
     }
-    apiClient
-      .get('/auth/me')
+    authService
+      .getMe()
       .then((res) => {
-        setUser(res.data.data);
+        setUser(res.data.data!);
       })
       .catch(() => {
         localStorage.removeItem('accessToken');

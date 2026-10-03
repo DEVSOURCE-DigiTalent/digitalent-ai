@@ -4,6 +4,7 @@ import { MemoryRouter, useRoutes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { routes } from '../app/router';
 import { useCurrentUser } from '../hooks/use-current-user';
+import { MOCK_EMAILS, signInAsMock } from './session';
 
 function App() {
   return useRoutes(routes);
@@ -14,102 +15,68 @@ describe('End-to-End Foundation Smoke Tests (SEP-06)', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    useCurrentUser.setState({ user: null, isAuthenticated: false });
+    useCurrentUser.getState().clearUser();
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     vi.clearAllMocks();
   });
 
-  it('AnonymousCanAccessLandingAndVerifyWithoutRedirect', async () => {
+  it('AnonymousCanAccessLandingWithoutRedirect', async () => {
     // 1. Anonymous lands on /
-    const { unmount } = render(
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/']}>
-          <App />
-        </MemoryRouter>
-      </QueryClientProvider>
-    );
-
-    expect(screen.getByText(/Welcome to DigiTalent AI/i)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Dành cho Doanh nghiệp/i })).toBeInTheDocument();
-    unmount();
-
-    // 2. Anonymous visits /verify - MUST NOT redirect to login
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/verify']}>
+        <MemoryRouter initialEntries={['/business']}>
           <App />
         </MemoryRouter>
       </QueryClientProvider>
     );
 
-    expect(screen.getByText(/Certificate Verification/i)).toBeInTheDocument();
+    // The landing page is lazy-loaded; its first import is slow when the whole suite runs in parallel.
+    expect(await screen.findByRole('heading', { level: 1, name: 'DigiTalent AI' }, { timeout: 10_000 })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /^Xem bảng giá$/ })[0]).toHaveAttribute('href', '/business/pricing');
   });
 
-  it('HRManagerCanAccessEnterpriseDepartments', async () => {
-    // Set authenticated HR session
-    localStorage.setItem('accessToken', 'mock-hr-token');
-    useCurrentUser.setState({
-      user: {
-        id: 'hr-1',
-        email: 'hr@digitalent.ai',
-        fullName: 'HR Manager',
-        roles: ['HR_MANAGER'],
-        permissions: ['department.read', 'department.create_update'],
-      },
-      isAuthenticated: true,
-    });
+  it('OwnerCanAccessEnterpriseDepartments', async () => {
+    signInAsMock(MOCK_EMAILS.owner);
 
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/enterprise/organization/departments']}>
+        <MemoryRouter initialEntries={['/enterprise/departments']}>
           <App />
         </MemoryRouter>
       </QueryClientProvider>
     );
 
-    expect(screen.getByRole('heading', { name: 'Departments' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Create Department' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Phòng ban/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tạo phòng ban' })).toBeInTheDocument();
   });
 
-  it('EmployeeCannotSeeDepartmentCreateButton', async () => {
-    // Set authenticated Employee session with read-only department permission
-    localStorage.setItem('accessToken', 'mock-emp-token');
-    useCurrentUser.setState({
-      user: {
-        id: 'emp-1',
-        email: 'employee@digitalent.ai',
-        fullName: 'Employee',
-        roles: ['EMPLOYEE'],
-        permissions: ['department.read', 'account.view_own'],
-      },
-      isAuthenticated: true,
-    });
+  it('OwnerWithoutEditPermissionCannotSeeDepartmentCreateButton', async () => {
+    signInAsMock(MOCK_EMAILS.owner, { permissions: ['department.read'] });
 
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/enterprise/organization/departments']}>
+        <MemoryRouter initialEntries={['/enterprise/departments']}>
           <App />
         </MemoryRouter>
       </QueryClientProvider>
     );
 
-    expect(screen.getByRole('heading', { name: 'Departments' })).toBeInTheDocument();
-    // Employee lacks department.create_update permission
-    expect(screen.queryByRole('button', { name: 'Create Department' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Phòng ban/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tạo phòng ban' })).not.toBeInTheDocument();
   });
 
   it('AnonymousAccessingEnterpriseRouteRedirectsToLogin', async () => {
     // No token in localStorage
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/enterprise/admin/users']}>
+        <MemoryRouter initialEntries={['/enterprise/members']}>
           <App />
         </MemoryRouter>
       </QueryClientProvider>
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Đăng nhập vào hệ thống/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Đăng nhập' })).toBeInTheDocument();
     });
   });
 
@@ -123,7 +90,7 @@ describe('End-to-End Foundation Smoke Tests (SEP-06)', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Đăng nhập vào hệ thống/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Đăng nhập' })).toBeInTheDocument();
     });
   });
 });

@@ -69,23 +69,39 @@ Development startup auto-runs migrations and seeds: org `DIGITALENT`, 5 roles, p
 
 ## Frontend — React SPA
 
+Three portals (spec: `docs/specs/2026-10-01-frontend-ui-ux-restructure-plan.md`, source doc "Danh sách màn hình và luồng UI/UX v1.0"): **Enterprise** `/enterprise/*`, **Personal** `/personal/*` (individual users, replaces `/learn/*`), **Platform** `/platform/*` (DigiTalent staff). The frontend is being rebuilt ahead of the backend, on mock data.
+
 **Directory map (`frontend/src/`):**
 ```
-app/        router.tsx + routes/{enterprise,learner,public}.routes.tsx + providers.tsx (React Query)
-components/ guards/ (AuthGuard, RequirePermission, RequireRole), layout/, shared/ (DataTable, PageHeader, StatusBadge, EmptyState…)
-features/   <module>/pages/*.tsx  — one page per file
+app/        router.tsx + routes/{public,personal,enterprise,platform}.routes.tsx (+ build-routes.tsx) + layouts/ + providers.tsx
+components/ guards/ (AuthGuard, RequireWorkspace, RequireRole, RequirePermission, RequireEntitlement, RequireActiveSubscription), layout/, shared/ (DataTable, PageHeader, StatusBadge, EmptyState…)
+features/   <module>/pages/*.tsx  — one page per file; system/ = PlaceholderPage, FeatureUnavailable, PaymentRequired
 hooks/      React Query hooks + Zustand stores (use-auth, use-current-user, use-permission…)
-lib/        constants.ts, sidebar-config.ts, utils.ts (no React)
-services/   API calls via apiClient (axios) — <module>.service.ts
-types/      shared TS interfaces (api.ts, auth.ts, common.ts)
+lib/        roles.ts, entitlements.ts, navigation.ts, portals.ts, sidebar-config.ts, screens/{enterprise,platform}.ts (the sitemap), utils.ts (no React)
+services/   API calls via apiClient (axios) — <module>.service.ts; mock/ = mock adapters + demo accounts
+types/      shared TS interfaces (api.ts, auth.ts, session.ts, common.ts)
 ```
 
 **Conventions:**
 - Data fetching via **TanStack Query**; client/auth state via **Zustand** (`useCurrentUser`) — do NOT introduce other state-management patterns.
 - API calls only through `apiClient` (`services/api-client.ts`) — never raw `fetch` or direct `axios`. Services export an object (not a class): `export const courseService = { getList, getById, create }`.
-- Route guards: wrap pages in `<RequirePermission permission="...">` or `<RequireRole roles={[...]}>` inside `app/router.tsx`. `SYSTEM_ADMIN` always passes `can()` checks. `my-*` routes need auth only; `/verify` is public.
-- Permission keys come from `hooks/use-permission.ts` (`PERMISSIONS` object) — mirror of backend `Permissions`.
-- UI language: `/enterprise/*` pages in English (SRS CR-08), learner `/learn/*` pages in Vietnamese.
+- **Sitemap-driven routing:** every screen of the spec is one entry in `lib/screens/{enterprise,platform}.ts` (id, path, roles, permission, entitlement, `allowUnpaid`, optional `aliases`). The router is built from these entries; a screen without a built page renders `PlaceholderPage`. To build a screen, add its page to `ENTERPRISE_PAGES` / `PLATFORM_PAGES` in `app/routes/*.routes.tsx` keyed by screen ID — do not hand-write routes.
+- **Roles (v2.1 canonical model):** 4 roles: `PLATFORM_ADMIN, OWNER, MANAGER, EMPLOYEE`. Legacy roles (`ORG_ADMIN, LEARNING_ADMIN` → `OWNER`; `LEARNER` → `EMPLOYEE`) are normalized via `normalizeRoles` in `lib/roles.ts`. `PLATFORM_ADMIN` always passes `can()` checks.
+- **Role-based sidebars:** configured in `lib/sidebars/{owner, manager, employee, platform}.ts`. `sidebarFor(user)` resolves the highest role: `PLATFORM_ADMIN > OWNER > MANAGER > EMPLOYEE`.
+- **Access order (FLOW-07):** subscription active (`RequireActiveSubscription`) → plan entitlement (`RequireEntitlement`) → role (`RequireRole`) → permission (`RequirePermission`). A user is kept to their portal by `RequireWorkspace`. With no `subscription` in `/auth/me` (legacy backend) plan gating is not enforced.
+- **Permission keys:** come from `hooks/use-permission.ts` (`PERMISSIONS` object) — mirror of backend `Permissions`. Entitlement keys: `lib/entitlements.ts`.
+- **Mock mode & REST Mock Server:** `VITE_USE_MOCK=true` (in `frontend/.env`, default `false` in `.env.example`) makes `authService` and API services answer from `services/mock/` over a simulated REST server and localStorage database (`services/mock/mock-store.ts`, key `dt-mock-db`). Demo accounts (password `Admin@1234`): `owner@`, `manager@`, `employee@`, `platform@`, `personal@`, `starter@`, `expired@digitalent.demo`. Tests force `VITE_USE_MOCK=false`; use `test/session.ts` (`signInAsMock`) in unit/integration tests. Other services get a mock adapter when their screens are built.
+- **Entry, sign-up and purchase:**
+  - **Portal entry:** `/` portal selector (asks once, remembered in `localStorage` `dt-portal`; `/portal` always shows it) → `/business` or `/individual` landing → `/{business,individual}/pricing` → `/{business,individual}/register` (requires `?plan=&seats=&cycle=`, bare visits redirect back to pricing with `?reason=choose-plan`).
+  - **Flows & Steppers (`PurchaseStepper`):**
+    - **Enterprise (5 steps):** Chọn gói (`/business/pricing`) → Tạo tài khoản (`/business/register`) → Thanh toán QR (`/checkout`) → Ký hợp đồng điện tử B2B (`/enterprise/contract`, chữ ký số canvas/OTP `686868`, mộc số, in PDF) → Thiết lập tổ chức (`/setup`, 6 bước, hỗ trợ Lưu và tiếp tục sau) → Không gian doanh nghiệp (`/enterprise/dashboard`).
+    - **Individual (4 steps):** Chọn gói (`/individual/pricing`) → Tạo tài khoản (`/individual/register`) → Thanh toán QR (`/checkout`) → Khởi tạo học tập (`/personal/onboarding`, chọn vị trí mục tiêu theo Chuẩn 02/2025, chọn chẩn đoán/vào học ngay) → Không gian cá nhân (`/personal/dashboard`).
+  - **Order & Drafts:** `PurchaseDraft` (ID `pd_*`, hạn 7 ngày, lưu trữ trong `purchaseDrafts`), Đơn hàng thanh toán QR (`dt-mock-db.orders`, hết hạn sau 15 phút, idempotent `confirmPayment`).
+  - **Gating & Security:** `onboardingStatus` (`payment` → `contract` → `setup` → undefined). `RequireOnboarded` & `resolveNextStep` điều hướng đúng bước tiếp theo. Chưa xác thực email (`emailVerified: false`) bị chặn bởi `/verify-email-required` trước khi vào workspace. Mật khẩu tuân thủ 12–128 ký tự, danh sách đen, không trùng email. Tài khoản demo (`owner@`, `manager@`, `employee@`, `personal@`, etc., mật khẩu `Admin@1234`) vào thẳng workspace (`emailVerified: true`, không có draft chưa hoàn tất).
+- **Personal portal (`/personal/*`)** uses the landing look (cream on black) with a dark default and a light theme (`features/learner/theme/`, key `dt-personal-theme`); style with the `pt-*` tokens (`bg-pt-card`, `text-pt-fg-2`…) and `features/learner/components/ui.tsx`, never raw slate/blue. Data goes through `services/personal-learning.service.ts` + `hooks/use-personal-learning.ts`; the mock server (`services/mock/server/personal/`, `handlers/personal.ts`, localStorage `dt-mock-personal-v1`) reuses the enterprise TT02 catalog: target = one of the 5 reference positions, entry assessment = 18 questions (3 per domain, level = highest level answered right in a row), path = stages by level from the assessed level, passing a course's 4-question assessment raises the domain and issues a certificate. personal@ is seeded mid-way (Marketing).
+- **Enterprise & Platform shell (`/enterprise/*`, `/platform/*`)**: Thiết kế lại theo phong cách **"Mực & Giấy"** (dark mặc định, light tùy chọn, store `useEnterpriseTheme`, key `dt-enterprise-theme`, gắn `html.ent-theme[data-theme]`). Khung cuộn theo tài liệu: sidebar `position: fixed` (100dvh, rail 64px / mở 248px / mobile drawer 288px, store `useSidebarState`, key `dt-sidebar`), topbar `position: sticky; top: 0` (56px, breadcrumb từ sitemap, command palette `Ctrl+K`), banner hết hạn dính cùng topbar. Token `ent-*` (`bg-ent-card`, `text-ent-fg`, `border-ent-line`, `bg-ent-raised`, `text-ent-accent`, `ent-ok/warn/bad`). Lớp tương thích tối `styles/enterprise-dark-compat.css` tự đảo màu Tailwind trong `html.ent-theme[data-theme='dark']` để các trang cũ tương thích ngay. Khung trang dùng `PageContainer` (`narrow | default | wide | full`) và `PageHeader` v2.
+- UI language: **Vietnamese for all three portals.** Pages not yet rebuilt still have English text; translate a page when you rebuild it.
+- No public certificate verification (`/verify` was removed); no Public Visitor actor.
 - Path alias `@/` → `src/` (configured in `vite.config.ts` + `tsconfig`). Vite dev proxy: `/api` and `/hubs` → `http://localhost:5000`.
 - Forms: `react-hook-form` + `zod` (`@hookform/resolvers/zod`). Toasts via `sonner`. Icons via `lucide-react`.
 
@@ -95,6 +111,7 @@ cd frontend
 npm install && npm run dev        # http://localhost:5173
 npm run build                     # tsc -b && vite build
 npm run lint                      # oxlint (not eslint)
+npm test                          # vitest
 ```
 
 ## Environment & Config

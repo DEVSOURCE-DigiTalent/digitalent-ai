@@ -25,10 +25,10 @@ const item = (overrides: Partial<SkillGapItem>): SkillGapItem => ({
 
 describe('SeverityBadge', () => {
   it.each([
-    ['HIGH', 'High'],
-    ['MEDIUM', 'Medium'],
-    ['LOW', 'Low'],
-    [null, 'Met'],
+    ['HIGH', 'Cao'],
+    ['MEDIUM', 'Trung bình'],
+    ['LOW', 'Thấp'],
+    [null, 'Đạt'],
   ] as const)('renders %s as "%s"', (severity, label) => {
     render(<SeverityBadge severity={severity} />);
     expect(screen.getByText(label)).toBeInTheDocument();
@@ -80,12 +80,12 @@ const DOMAIN_ITEMS = [
 ];
 
 describe('SkillGapTable grouped by domain', () => {
-  it('shows one collapsible group per domain with a "Domain met" badge only when every line is met', () => {
+  it('shows one collapsible group per domain with a "Miền đã đạt" badge only when every line is met', () => {
     render(<SkillGapTable items={DOMAIN_ITEMS} />);
 
     const domain4 = screen.getByRole('button', { name: /4\. Domain 4/ });
     expect(domain4).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getAllByText('Domain met')).toHaveLength(1);
+    expect(screen.getAllByText('Miền đã đạt')).toHaveLength(1);
     expect(screen.getByText('4.2 Competency 4.2')).toBeInTheDocument();
 
     fireEvent.click(domain4);
@@ -108,7 +108,7 @@ describe('SkillGapDetailView', () => {
 
     render(<SkillGapDetailView run={run} />);
 
-    expect(screen.getByText('Required vs average confirmed level by domain')).toBeInTheDocument();
+    expect(screen.getByText('Trình độ yêu cầu và trình độ đã xác nhận trung bình theo miền')).toBeInTheDocument();
     expect(screen.getByTestId('competency-radar-chart')).toBeInTheDocument();
     expect(screen.getByText(/29\/09\/2026/)).toBeInTheDocument();
   });

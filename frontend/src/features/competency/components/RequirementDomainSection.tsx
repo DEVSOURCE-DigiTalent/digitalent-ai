@@ -17,7 +17,7 @@ interface RequirementDomainSectionProps {
 }
 
 const LEVEL_OPTIONS = [NOT_REQUIRED, 1, 2, 3];
-const levelOptionLabel = (level: number) => (level === NOT_REQUIRED ? 'Not required' : levelWithTier(level));
+const levelOptionLabel = (level: number) => (level === NOT_REQUIRED ? 'Không yêu cầu' : levelWithTier(level));
 const inputClass =
   'text-sm px-2.5 py-1.5 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white disabled:bg-slate-50 disabled:text-slate-400';
 
@@ -47,13 +47,13 @@ export function RequirementDomainSection({
             <div>
               <span className="font-semibold text-slate-900">{domainName}</span>
               <span className="ml-2 text-xs font-normal text-slate-500">
-                {required.length} of {group.rows.length} required · {subtotal}% of total weight
+                {required.length}/{group.rows.length} năng lực được yêu cầu · {subtotal}% tổng trọng số
               </span>
             </div>
             {canEdit && (
               <div className="flex items-center gap-2 font-normal">
                 <select
-                  aria-label={`Domain level for ${domainName}`}
+                  aria-label={`Mức cho cả miền ${domainName}`}
                   value={levelToApply}
                   onChange={(e) => setPendingLevel(Number(e.target.value))}
                   className={inputClass}
@@ -72,7 +72,7 @@ export function RequirementDomainSection({
                   }}
                   className="px-3 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-md"
                 >
-                  Apply level to domain
+                  Áp mức cho cả miền
                 </button>
               </div>
             )}
@@ -92,7 +92,7 @@ export function RequirementDomainSection({
             </td>
             <td className="px-4 py-3">
               <select
-                aria-label={`Required level for ${label}`}
+                aria-label={`Trình độ yêu cầu của ${label}`}
                 value={row.requiredLevel}
                 onChange={(e) => onRowLevelChange(row.competencyId, Number(e.target.value))}
                 disabled={!canEdit}
@@ -106,7 +106,7 @@ export function RequirementDomainSection({
               </select>
               {differs && (
                 <span className="mt-1 inline-block rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">
-                  Differs from domain level
+                  Khác mức của miền
                 </span>
               )}
             </td>
@@ -114,7 +114,7 @@ export function RequirementDomainSection({
               <div className="flex items-center gap-1.5">
                 <input
                   type="number"
-                  aria-label={`Weight percent for ${label}`}
+                  aria-label={`Trọng số của ${label}`}
                   min={0}
                   max={100}
                   step={0.01}
@@ -129,7 +129,7 @@ export function RequirementDomainSection({
             <td className="px-4 py-3 text-center">
               <input
                 type="checkbox"
-                aria-label={`Mandatory: ${label}`}
+                aria-label={`Bắt buộc: ${label}`}
                 checked={row.isMandatory}
                 onChange={(e) => onRowChange(row.competencyId, 'isMandatory', e.target.checked)}
                 disabled={!canEditDetails}
@@ -139,7 +139,7 @@ export function RequirementDomainSection({
             <td className="px-4 py-3 text-center">
               <input
                 type="checkbox"
-                aria-label={`Evidence required: ${label}`}
+                aria-label={`Cần minh chứng: ${label}`}
                 checked={isRequired && row.requiresPracticalEvidence}
                 onChange={(e) => onRowChange(row.competencyId, 'requiresPracticalEvidence', e.target.checked)}
                 disabled={!canEditDetails}
@@ -149,10 +149,10 @@ export function RequirementDomainSection({
             <td className="px-4 py-3">
               <input
                 type="text"
-                aria-label={`Note for ${label}`}
+                aria-label={`Lý do / Rationale cho ${label}`}
                 value={row.note || ''}
                 onChange={(e) => onRowChange(row.competencyId, 'note', e.target.value)}
-                placeholder={isRequired ? 'Guidance or context...' : ''}
+                placeholder={isRequired ? 'Lý do yêu cầu (Rationale)…' : ''}
                 disabled={!canEditDetails}
                 className={`w-full text-xs ${inputClass}`}
               />

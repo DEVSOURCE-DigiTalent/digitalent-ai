@@ -3,6 +3,7 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { ROLES } from '@/lib/roles';
 import * as skillGapHooks from '@/hooks/use-skill-gaps';
 import * as departmentHooks from '@/hooks/use-departments';
 import * as positionHooks from '@/hooks/use-job-positions';
@@ -58,19 +59,19 @@ function loginAs(roles: string[], permissions: string[]) {
 describe('MyCompetencyProfilePage', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    loginAs(['EMPLOYEE'], ['skill_gap.read']);
+    loginAs([ROLES.EMPLOYEE], ['skill_gap.read']);
   });
 
   it('shows a skeleton while loading', () => {
     vi.spyOn(skillGapHooks, 'useMySkillGap').mockReturnValue(queryResult({ isLoading: true }));
     renderWithClient(<MyCompetencyProfilePage />);
-    expect(screen.getByLabelText('Loading skill gap')).toBeInTheDocument();
+    expect(screen.getByLabelText('Đang tải skill gap')).toBeInTheDocument();
   });
 
   it('explains how an analysis gets created when none exists', () => {
     vi.spyOn(skillGapHooks, 'useMySkillGap').mockReturnValue(queryResult({ data: null }));
     renderWithClient(<MyCompetencyProfilePage />);
-    expect(screen.getByText('No skill gap analysis yet')).toBeInTheDocument();
+    expect(screen.getByText('Chưa có phân tích skill gap')).toBeInTheDocument();
   });
 
   it('renders KPIs and gap lines of the latest snapshot', () => {
@@ -80,9 +81,9 @@ describe('MyCompetencyProfilePage', () => {
     expect(screen.getByText('47.5%')).toBeInTheDocument();
     const table = within(screen.getByRole('table'));
     expect(table.getByText('Information security')).toBeInTheDocument();
-    expect(table.getByText('Not confirmed')).toBeInTheDocument();
-    expect(table.getAllByText('High')).toHaveLength(2);
-    expect(table.getByText('Met')).toBeInTheDocument();
+    expect(table.getByText('Chưa xác nhận')).toBeInTheDocument();
+    expect(table.getAllByText('Cao')).toHaveLength(2);
+    expect(table.getByText('Đạt')).toBeInTheDocument();
   });
 
   it('offers a retry when loading fails', () => {
@@ -90,17 +91,17 @@ describe('MyCompetencyProfilePage', () => {
     vi.spyOn(skillGapHooks, 'useMySkillGap').mockReturnValue(queryResult({ isError: true, refetch }));
     renderWithClient(<MyCompetencyProfilePage />);
 
-    fireEvent.click(screen.getByText('Try again'));
+    fireEvent.click(screen.getByText('Thử lại'));
     expect(refetch).toHaveBeenCalled();
   });
 
   it('tells a user without the skill gap permission that the analysis is not available, without calling the API', () => {
-    loginAs(['TRAINER'], ['recommendation.read']);
+    loginAs([ROLES.EMPLOYEE], ['recommendation.read']);
     const useMySkillGap = vi.spyOn(skillGapHooks, 'useMySkillGap').mockReturnValue(queryResult({}));
     renderWithClient(<MyCompetencyProfilePage />);
 
-    expect(screen.getByText('Skill gap analysis is not available for your role')).toBeInTheDocument();
-    expect(screen.queryByText('No skill gap analysis yet')).not.toBeInTheDocument();
+    expect(screen.getByText('Vai trò của bạn không xem được phân tích skill gap')).toBeInTheDocument();
+    expect(screen.queryByText('Chưa có phân tích skill gap')).not.toBeInTheDocument();
     expect(useMySkillGap).toHaveBeenCalledWith(false);
   });
 });
@@ -117,30 +118,30 @@ describe('SkillGapPage', () => {
   });
 
   it('lists snapshots and lets HR recalculate and filter by department', () => {
-    loginAs(['HR_MANAGER'], ['skill_gap.read', 'skill_gap.calculate', 'department.read']);
+    loginAs([ROLES.OWNER], ['skill_gap.read', 'skill_gap.calculate', 'department.read']);
     renderWithClient(<SkillGapPage />);
 
     expect(screen.getByText('EMP-0004')).toBeInTheDocument();
-    expect(screen.getByText('2 high')).toBeInTheDocument();
-    expect(screen.getByText('Recalculate all')).toBeInTheDocument();
-    expect(screen.getByLabelText('Department')).toBeInTheDocument();
+    expect(screen.getByText('2 mức cao')).toBeInTheDocument();
+    expect(screen.getByText('Tính lại tất cả')).toBeInTheDocument();
+    expect(screen.getByLabelText('Phòng ban')).toBeInTheDocument();
   });
 
   it('hides recalculation and the department filter for a read-only department manager', () => {
-    loginAs(['DEPARTMENT_MANAGER'], ['skill_gap.read', 'department.read']);
+    loginAs([ROLES.MANAGER], ['skill_gap.read', 'department.read']);
     renderWithClient(<SkillGapPage />);
 
-    expect(screen.queryByText('Recalculate all')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Department')).not.toBeInTheDocument();
+    expect(screen.queryByText('Tính lại tất cả')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Phòng ban')).not.toBeInTheDocument();
   });
 
   it('opens the detail drawer when a row is clicked', () => {
-    loginAs(['HR_MANAGER'], ['skill_gap.read', 'skill_gap.calculate']);
+    loginAs([ROLES.OWNER], ['skill_gap.read', 'skill_gap.calculate']);
     renderWithClient(<SkillGapPage />);
 
     fireEvent.click(screen.getByText('EMP-0004'));
 
-    expect(screen.getByRole('dialog', { name: 'Skill gap detail' })).toBeInTheDocument();
-    expect(screen.getByText('Recalculate')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Chi tiết skill gap' })).toBeInTheDocument();
+    expect(screen.getByText('Tính lại')).toBeInTheDocument();
   });
 });

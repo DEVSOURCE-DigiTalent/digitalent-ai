@@ -44,6 +44,9 @@ export const PERMISSIONS = {
   // Organization (6.3)
   DEPARTMENT_READ: 'department.read',
   DEPARTMENT_CREATE_UPDATE: 'department.create_update',
+  DEPARTMENT_MANAGER_ASSIGN: 'department.manager_assign',
+  JOB_GRADE_READ: 'job_grade.read',
+  JOB_GRADE_MANAGE: 'job_grade.manage',
   JOB_FAMILY_READ: 'job_family.read',
   JOB_FAMILY_CREATE_UPDATE: 'job_family.create_update',
   JOB_POSITION_READ: 'job_position.read',
@@ -68,6 +71,7 @@ export const PERMISSIONS = {
   EVIDENCE_READ: 'evidence.read',
   EVIDENCE_CREATE_MANUAL: 'evidence.create_manual',
   EVIDENCE_APPROVE_CONFIRM: 'evidence.approve_confirm',
+  EVIDENCE_EVALUATE: 'evidence.evaluate',
   EVIDENCE_REVOKE: 'evidence.revoke',
 
   // Course (6.6)
@@ -77,6 +81,12 @@ export const PERMISSIONS = {
   COURSE_PUBLISH_UNPUBLISH: 'course.publish_unpublish',
   COURSE_ARCHIVE: 'course.archive',
   COURSE_COMPETENCY_MANAGE: 'course_competency.manage',
+
+  // Training Batch (6.6b)
+  TRAINING_BATCH_READ: 'training_batch.read',
+  TRAINING_BATCH_CREATE: 'training_batch.create',
+  TRAINING_BATCH_UPDATE: 'training_batch.update',
+  TRAINING_BATCH_CANCEL: 'training_batch.cancel',
 
   // Material (6.7)
   MATERIAL_UPLOAD: 'material.upload',
@@ -142,6 +152,10 @@ export const PERMISSIONS = {
   TASK_REOPEN: 'task.reopen',
   TASK_CANCEL: 'task.cancel',
   TASK_ATTACHMENT_DOWNLOAD: 'task_attachment.download',
+  PRACTICAL_TASK_READ: 'task.read',
+  PRACTICAL_TASK_CREATE: 'task.create',
+  PRACTICAL_TASK_ASSIGN: 'task.assign',
+  PRACTICAL_TASK_EVALUATE: 'task.evaluate',
 
   // Dashboard (6.15)
   DASHBOARD_HR_COMPANY_READ: 'dashboard.hr_company.read',

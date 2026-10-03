@@ -11,7 +11,7 @@ interface RequirePermissionProps {
 
 /**
  * Route guard that checks if the current user has the required permission(s).
- * SYSTEM_ADMIN always passes (superuser bypass per RBAC §4).
+ * PLATFORM_ADMIN always passes (superuser bypass per RBAC §4).
  * Renders fallback (default: ForbiddenPage) when denied.
  */
 export function RequirePermission({ permission, children, fallback }: RequirePermissionProps) {

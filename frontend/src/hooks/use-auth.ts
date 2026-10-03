@@ -1,7 +1,7 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { authService } from '../services/auth.service';
 import { useCurrentUser } from './use-current-user';
-import { getDefaultPath } from '../lib/sidebar-config';
+import { getHomePath } from '../lib/navigation';
 import type { LoginRequest } from '../types/auth';
 
 /**
@@ -19,10 +19,9 @@ export function useLogin() {
       localStorage.setItem('accessToken', accessToken);
 
       const meRes = await authService.getMe();
-      const user = meRes.data.data!;
-      setUser(user);
+      setUser(meRes.data.data!);
 
-      return getDefaultPath(user.roles);
+      return getHomePath(useCurrentUser.getState().user!);
     },
   });
 }
@@ -33,6 +32,7 @@ export function useLogin() {
  */
 export function useLogout() {
   const clearUser = useCurrentUser((s) => s.clearUser);
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
@@ -44,6 +44,8 @@ export function useLogout() {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       clearUser();
+      // Cached data belongs to the user who just left: the next one must not see it, even for a moment.
+      queryClient.clear();
     },
   });
 }

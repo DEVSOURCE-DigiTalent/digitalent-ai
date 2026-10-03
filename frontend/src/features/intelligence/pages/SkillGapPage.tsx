@@ -7,6 +7,8 @@ import { useJobPositions } from '@/hooks/use-job-positions';
 import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
 import { useCalculateSkillGap, useCalculateSkillGapBatch, useLatestRunLookup, useSkillGapRuns } from '@/hooks/use-skill-gaps';
 import { skillGapErrorMessage } from '@/lib/competency-levels';
+import { formatDateTime } from '@/lib/utils';
+import { ROLES } from '@/lib/roles';
 import type { CalculateSkillGapBatchResult, SkillGapRunListItem } from '@/services/intelligence.service';
 import { BatchResultPanel } from '../components/BatchResultPanel';
 import { SkillGapDetailDrawer } from '../components/SkillGapDetailDrawer';
@@ -18,11 +20,11 @@ const SELECT_CLASS =
  * Team Skill Gap (S3-T016): latest snapshot per employee in the caller's scope,
  * sorted by number of gaps. HR sees the organization, department managers their department.
  */
-export function SkillGapPage() {
+export function SkillGapPage({ embedded = false }: { embedded?: boolean }) {
   const { can, is } = usePermission();
   const canCalculate = can(PERMISSIONS.SKILL_GAP_CALCULATE);
   // Department managers are scoped to their own department by the API — no department filter for them.
-  const showDepartmentFilter = !is('DEPARTMENT_MANAGER') && can(PERMISSIONS.DEPARTMENT_READ);
+  const showDepartmentFilter = !is(ROLES.MANAGER) && can(PERMISSIONS.DEPARTMENT_READ);
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -51,7 +53,7 @@ export function SkillGapPage() {
       const latestRunId = await lookupLatestRun(employeeId);
       if (latestRunId) setSelectedRunId(latestRunId);
     } catch {
-      toast.error('Level saved, but the latest analysis could not be loaded. Refresh the page.');
+      toast.error('Đã lưu mức năng lực nhưng chưa tải được phân tích mới nhất. Hãy tải lại trang.');
     }
   };
 
@@ -59,9 +61,9 @@ export function SkillGapPage() {
     try {
       const run = await calculateMutation.mutateAsync({ employeeId });
       setSelectedRunId(run.runId);
-      toast.success(`Skill gap recalculated for ${run.employeeName}`);
+      toast.success(`Đã tính lại skill gap cho ${run.employeeName}`);
     } catch (error) {
-      toast.error(skillGapErrorMessage(error, 'Failed to recalculate skill gap'));
+      toast.error(skillGapErrorMessage(error, 'Không tính lại được skill gap'));
     }
   };
 
@@ -72,16 +74,16 @@ export function SkillGapPage() {
         jobPositionId: jobPositionId || undefined,
       });
       setBatchResult(result);
-      toast.success(`Skill gap calculated for ${result.calculatedCount} employee(s)`);
+      toast.success(`Đã tính skill gap cho ${result.calculatedCount} nhân viên`);
     } catch (error) {
-      toast.error(skillGapErrorMessage(error, 'Failed to recalculate skill gaps'));
+      toast.error(skillGapErrorMessage(error, 'Không tính lại được skill gap'));
     }
   };
 
   const columns: Column<SkillGapRunListItem>[] = [
     {
       key: 'employee',
-      header: 'Employee',
+      header: 'Nhân viên',
       cell: (row) => (
         <div>
           <div className="font-medium text-slate-900">{row.employeeName}</div>
@@ -89,28 +91,28 @@ export function SkillGapPage() {
         </div>
       ),
     },
-    { key: 'department', header: 'Department', cell: (row) => row.departmentName ?? '-' },
-    { key: 'position', header: 'Position', cell: (row) => row.jobPositionName ?? '-' },
+    { key: 'department', header: 'Phòng ban', cell: (row) => row.departmentName ?? '-' },
+    { key: 'position', header: 'Vị trí', cell: (row) => row.jobPositionName ?? '-' },
     {
       key: 'gaps',
-      header: 'Gaps',
+      header: 'Khoảng trống',
       cell: (row) => (
         <span className="tabular-nums">
           {row.gapCount}
-          {row.highCount > 0 && <span className="ml-2 text-xs font-medium text-danger-600">{row.highCount} high</span>}
+          {row.highCount > 0 && <span className="ml-2 text-xs font-medium text-danger-600">{row.highCount} mức cao</span>}
         </span>
       ),
     },
     {
       key: 'coverage',
-      header: 'Coverage',
+      header: 'Tỷ lệ đáp ứng năng lực',
       cell: (row) => <span className="tabular-nums">{row.coveragePercent.toFixed(1)}%</span>,
     },
     {
       key: 'generatedAt',
-      header: 'Calculated',
+      header: 'Tính lúc',
       hideOnMobile: true,
-      cell: (row) => <span className="text-xs text-slate-500">{new Date(row.generatedAt).toLocaleString()}</span>,
+      cell: (row) => <span className="text-xs text-slate-500">{formatDateTime(row.generatedAt)}</span>,
     },
   ];
 
@@ -118,7 +120,7 @@ export function SkillGapPage() {
     <div className="flex flex-wrap items-center gap-3">
       {showDepartmentFilter && (
         <select
-          aria-label="Department"
+          aria-label="Phòng ban"
           value={departmentId}
           onChange={(e) => {
             setDepartmentId(e.target.value);
@@ -126,7 +128,7 @@ export function SkillGapPage() {
           }}
           className={SELECT_CLASS}
         >
-          <option value="">All Departments</option>
+          <option value="">Mọi phòng ban</option>
           {departments?.items?.map((d) => (
             <option key={d.id} value={d.id}>
               {d.name}
@@ -135,7 +137,7 @@ export function SkillGapPage() {
         </select>
       )}
       <select
-        aria-label="Position"
+        aria-label="Vị trí"
         value={jobPositionId}
         onChange={(e) => {
           setJobPositionId(e.target.value);
@@ -143,7 +145,7 @@ export function SkillGapPage() {
         }}
         className={SELECT_CLASS}
       >
-        <option value="">All Positions</option>
+        <option value="">Mọi vị trí</option>
         {positions?.items?.map((p) => (
           <option key={p.id} value={p.id}>
             {p.name}
@@ -161,21 +163,25 @@ export function SkillGapPage() {
       className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 disabled:opacity-50"
     >
       <RefreshCw className={batchMutation.isPending ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} />
-      Recalculate all
+      Tính lại tất cả
     </button>
   );
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Skill Gap Analysis" subtitle="Latest competency gaps per employee against their position standard">
-        {recalculateAllButton}
-      </PageHeader>
+      {embedded ? (
+        <div className="flex justify-end">{recalculateAllButton}</div>
+      ) : (
+        <PageHeader title="Skill gap theo nhân viên" subtitle="Khoảng trống năng lực mới nhất của từng nhân viên so với chuẩn vị trí">
+          {recalculateAllButton}
+        </PageHeader>
+      )}
 
       {batchResult && <BatchResultPanel result={batchResult} onDismiss={() => setBatchResult(null)} />}
 
       {isError && (
         <p role="alert" className="text-sm text-danger-600">
-          Could not load skill gap analyses. Please refresh the page.
+          Không tải được kết quả skill gap. Hãy tải lại trang.
         </p>
       )}
 
@@ -189,14 +195,14 @@ export function SkillGapPage() {
           setSearch(value);
           setPage(1);
         }}
-        searchPlaceholder="Search employee name or code..."
+        searchPlaceholder="Tìm theo tên hoặc mã nhân viên"
         filters={filters}
         onRowClick={(row) => setSelectedRunId(row.runId)}
-        emptyTitle="No skill gap analysis yet"
+        emptyTitle="Chưa có kết quả skill gap"
         emptyDescription={
           canCalculate
-            ? 'Run the analysis to compare employees with their position standards.'
-            : 'Analyses appear here once HR or your manager runs them.'
+            ? 'Hãy chạy phân tích để so sánh nhân viên với chuẩn vị trí.'
+            : 'Kết quả hiện ở đây khi quản trị học tập hoặc quản lý chạy phân tích.'
         }
         emptyAction={recalculateAllButton || undefined}
         pageInfo={{
