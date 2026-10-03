@@ -31,6 +31,7 @@ export interface StoredUser {
   onboardingStatus?: OnboardingStatus;
   setupStep?: number;
   contractSigned?: boolean;
+  pendingOrganization?: { name: string; taxCode?: string; address?: string };
 }
 
 export interface StoredDepartment {
@@ -60,6 +61,8 @@ export interface StoredOrganization {
   size: string;
   logoUrl?: string;
   timezone?: string;
+  taxCode?: string;
+  address?: string;
   ownerId: string;
   departments: StoredDepartment[];
   positions: StoredPosition[];
@@ -82,6 +85,13 @@ export interface StoredPurchaseDraft {
   status: DraftStatus;
   createdAt: string;
   expiresAt: string;     // +7 days
+  companyInfo?: {
+    organizationName: string;
+    taxCode: string;
+    address?: string;
+    signerName?: string;
+    signerTitle?: string;
+  };
 }
 
 export type OrderStatus = 'pending' | 'paid' | 'failed' | 'expired' | 'cancelled';
@@ -106,13 +116,15 @@ export interface EContract {
   id: string;
   contractNumber: string;
   orderId: string;
+  draftId?: string;
   userId: string;
   organizationName: string;
   taxCode: string;
+  address?: string;
   signerName: string;
   signerTitle: string;
   signatureData?: string;
-  signMethod: 'draw' | 'otp';
+  signMethod: 'draw' | 'otp' | 'email_otp';
   signedAt: string;
   status: 'signed';
   planCode: string;

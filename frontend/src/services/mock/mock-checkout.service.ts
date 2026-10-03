@@ -132,9 +132,22 @@ export const mockCheckoutService = {
             renewsAt: renewalDate(stored.cycle),
           };
           user.subscription = subscription;
-          user.pendingPlan = undefined;
-          // Enterprise goes to contract signing step, individual goes to personal onboarding
-          user.onboardingStatus = user.workspace === WORKSPACES.ENTERPRISE ? 'contract' : 'setup';
+          user.onboardingStatus = 'setup';
+
+          // For enterprise: carry company info from contract / draft into user.pendingOrganization
+          if (user.workspace === WORKSPACES.ENTERPRISE) {
+            const contract = db.contracts?.find((c) => c.userId === user.id);
+            const draft = db.purchaseDrafts?.find((d) => d.id === stored.draftId || d.userId === user.id);
+            const orgName = contract?.organizationName || draft?.companyInfo?.organizationName || user.pendingOrganization?.name || 'Doanh nghiệp của bạn';
+            const taxCode = contract?.taxCode || draft?.companyInfo?.taxCode || user.pendingOrganization?.taxCode;
+            const address = contract?.address || draft?.companyInfo?.address || user.pendingOrganization?.address;
+
+            user.pendingOrganization = {
+              name: orgName,
+              taxCode,
+              address,
+            };
+          }
 
           // If linked to a draft, mark draft as paid
           if (stored.draftId) {

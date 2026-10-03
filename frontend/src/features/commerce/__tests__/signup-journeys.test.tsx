@@ -81,27 +81,30 @@ describe('enterprise purchase, contract signing and organization setup (FLOW-01 
     fillOwnerForm('chu@acme.vn');
     click('Tạo tài khoản và thanh toán');
 
-    // 3. Checkout → QR payment
+    // 3. B2B E-Contract Signing step (Step 3, before checkout)
+    await heading('Hợp đồng dịch vụ điện tử B2B');
+    type('Tên tổ chức / Doanh nghiệp *', 'Công ty Acme');
+    type('Mã số thuế (MST) *', '0101234567');
+    type('Chức vụ người ký *', 'Giám đốc');
+    type('Địa chỉ trụ sở đăng ký *', 'Hà Nội');
+    type('Họ tên người đại diện ký *', 'Nguyễn Văn Chủ');
+    fireEvent.click(screen.getByRole('checkbox'));
+    click('Gửi mã OTP');
+    await screen.findByPlaceholderText('Nhập mã OTP 6 số');
+    fireEvent.change(screen.getByPlaceholderText('Nhập mã OTP 6 số'), { target: { value: '686868' } });
+    click('Xác nhận OTP và Ký hợp đồng');
+
+    // 4. Checkout → QR payment (Step 4)
     await heading('Quét mã để thanh toán');
     expect(screen.getAllByText(/790/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Công ty Acme/)).toBeInTheDocument();
     click('Tôi đã quét mã và thanh toán');
     await heading('Thanh toán thành công');
-    click('Tiếp tục ký hợp đồng');
+    click('Tiến hành thiết lập tổ chức');
 
-    // 4. B2B E-Contract Signing step
-    await heading('Ký hợp đồng dịch vụ điện tử');
-    type('Tên tổ chức / Doanh nghiệp', 'Công ty Acme');
-    type('Mã số thuế (MST)', '0101234567');
-    click('Dùng mẫu chữ ký theo tên');
-    fireEvent.click(screen.getByRole('checkbox'));
-    click('Ký hợp đồng điện tử');
-
-    expect(await screen.findByText('Hợp đồng đã có hiệu lực')).toBeInTheDocument();
-    click('Tiếp tục thiết lập tổ chức');
-
-    // 5. Setup wizard
+    // 5. Setup wizard (Step 5)
     await heading('Thông tin tổ chức');
-    type('Tên tổ chức', 'Công ty Acme');
+    expect(await screen.findByDisplayValue('Công ty Acme')).toBeInTheDocument();
     type('Ngành hoạt động', 'Dịch vụ');
     type('Quy mô', '21-100');
     click('Lưu và tiếp tục');
@@ -201,6 +204,13 @@ describe('payment outcomes & states (ENT-ONB-03, T9, T10, T11)', () => {
       password: VALID_PASSWORD,
       plan: { planCode: 'ENT_PRO', seats: 10, cycle: 'month' },
     });
+    updateDb((db) => {
+      const u = db.users.find((x) => x.email === 'chu@acme.vn');
+      if (u) {
+        u.contractSigned = true;
+        u.onboardingStatus = 'payment';
+      }
+    });
     renderApp('/login');
     type(/Email/, 'chu@acme.vn');
     type('Mật khẩu', VALID_PASSWORD);
@@ -244,7 +254,7 @@ describe('payment outcomes & states (ENT-ONB-03, T9, T10, T11)', () => {
     await heading('Quét mã để thanh toán');
   });
 
-  it('T12: directs paid enterprise owner directly to contract step when signing in', async () => {
+  it('T12: directs enterprise owner to contract step when signing in before signing contract', async () => {
     await mockRegistrationService.registerEnterprise({
       fullName: 'Chủ 2',
       email: 'chu2@acme.vn',
@@ -252,27 +262,12 @@ describe('payment outcomes & states (ENT-ONB-03, T9, T10, T11)', () => {
       plan: { planCode: 'ENT_PRO', seats: 10, cycle: 'month' },
     });
 
-    // Mark paid directly
-    updateDb((db) => {
-      const user = db.users.find((u) => u.email === 'chu2@acme.vn');
-      if (user) {
-        user.onboardingStatus = 'contract';
-        user.subscription = {
-          planCode: 'ENT_PRO',
-          planName: 'Enterprise Pro',
-          seatLimit: 10,
-          status: 'active',
-          entitlements: ['analytics'],
-        };
-      }
-    });
-
     renderApp('/login');
     type(/Email/, 'chu2@acme.vn');
     type('Mật khẩu', VALID_PASSWORD);
     click('Đăng nhập');
 
-    await heading('Ký hợp đồng dịch vụ điện tử');
+    await heading('Hợp đồng dịch vụ điện tử B2B');
   });
 });
 
@@ -295,7 +290,7 @@ describe('individual sign-up and onboarding (FLOW-05, T19)', () => {
     await heading('Quét mã để thanh toán');
     click('Tôi đã quét mã và thanh toán');
     await heading('Thanh toán thành công');
-    click('Tiếp tục');
+    click('Bắt đầu thiết lập lộ trình');
 
     // Personal Onboarding step
     await heading('Chọn vị trí mục tiêu nghề nghiệp');
@@ -324,6 +319,13 @@ describe('employee activation (FLOW-02)', () => {
       fullName: 'Chủ',
       email: 'chu@acme.vn',
       password: VALID_PASSWORD,
+    });
+    updateDb((db) => {
+      const u = db.users.find((x) => x.email === 'chu@acme.vn');
+      if (u) {
+        u.contractSigned = true;
+        u.onboardingStatus = 'payment';
+      }
     });
     const owner = await import('../../../services/mock/mock-auth.service');
     const login = await owner.mockAuthService.login({ email: 'chu@acme.vn', password: VALID_PASSWORD });
@@ -465,7 +467,7 @@ describe('email verification & routes (AUTH-07, T20, T22)', () => {
     click('Đăng nhập');
 
     await heading('Xác minh email của bạn');
-    expect(screen.getByText(/unverified@acme.vn/)).toBeInTheDocument();
+    expect(screen.getAllByText(/unverified@acme.vn/).length).toBeGreaterThanOrEqual(1);
   });
 });
 

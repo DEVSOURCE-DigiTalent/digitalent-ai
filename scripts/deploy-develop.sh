@@ -8,12 +8,15 @@ echo "=========================================="
 
 cd /opt/digitalent-ai
 
-# 1. Backup environment configs
+# 1. Backup environment & SSL configs
 if [ -f .env ]; then
     cp .env /tmp/.env.digitalent.bak
 fi
 if [ -f docker/.env ]; then
     cp docker/.env /tmp/.env.docker.bak
+fi
+if [ -f docker/nginx/conf.d/default.conf ]; then
+    cp docker/nginx/conf.d/default.conf /tmp/default.conf.bak
 fi
 
 # 2. Pull latest code from develop branch
@@ -22,17 +25,25 @@ git fetch origin develop
 git checkout -f develop
 git reset --hard origin/develop
 
-# 3. Restore environment configs
+# 3. Restore environment & SSL configs
 if [ -f /tmp/.env.digitalent.bak ]; then
     cp /tmp/.env.digitalent.bak .env
 fi
 if [ -f /tmp/.env.docker.bak ]; then
     cp /tmp/.env.docker.bak docker/.env
 fi
+if [ -f /tmp/default.conf.bak ]; then
+    cp /tmp/default.conf.bak docker/nginx/conf.d/default.conf
+fi
 
-# 4. Apply compatibility fixes if needed
+# 4. Apply compatibility & SSL fixes to docker-compose.yml
 sed -i 's|image: minio/minio:latest|image: coollabsio/minio:latest|g' docker/docker-compose.yml
-sed -i 's|RUN dotnet restore$|RUN dotnet restore src/DigiTalent.Api/DigiTalent.Api.csproj|g' backend/src/DigiTalent.Api/Dockerfile
+if ! grep -q "443:443" docker/docker-compose.yml; then
+    sed -i '/"80:80"/a \      - "443:443"' docker/docker-compose.yml
+fi
+if ! grep -q "/etc/letsencrypt" docker/docker-compose.yml; then
+    sed -i '/html:ro/a \      - /etc/letsencrypt:/etc/letsencrypt:ro' docker/docker-compose.yml
+fi
 
 # 5. Build frontend inside container
 echo "--> Building frontend assets with node container..."
@@ -40,17 +51,17 @@ docker run --rm \
     -v /opt/digitalent-ai/frontend:/app \
     -w /app \
     node:20-alpine \
-    sh -c "npm install --include=dev --legacy-peer-deps && npx vite build"
+    sh -c "npm install --include=dev --legacy-peer-deps && npm install react-is --legacy-peer-deps && npx vite build"
 
 # 6. Build and restart Docker containers
 echo "--> Rebuilding and launching Docker containers..."
 cd /opt/digitalent-ai/docker
 docker compose up -d --build
 
-# 6. Verify health
+# 7. Verify health
 echo "--> Checking API health status..."
 for i in {1..15}; do
-    if curl -s -f http://localhost:80/health > /dev/null; then
+    if curl -s -k -f https://localhost:443/health > /dev/null || curl -s -f http://localhost:80/health > /dev/null; then
         echo "API health check PASSED!"
         break
     fi
@@ -58,7 +69,7 @@ for i in {1..15}; do
     sleep 4
 done
 
-# 7. Clean up dangling images
+# 8. Clean up dangling images
 docker image prune -f
 
 echo "=========================================="

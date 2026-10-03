@@ -58,7 +58,7 @@ export function BusinessRegisterPage() {
 
     try {
       const home = await login.mutateAsync({ email: values.email, password: values.password });
-      const nextPath = draftId ? `/checkout?draft=${draftId}` : home;
+      const nextPath = draftId ? `/enterprise/contract?draft=${draftId}` : home;
       navigate(nextPath, { replace: true });
     } catch {
       navigate('/business/login', { replace: true });

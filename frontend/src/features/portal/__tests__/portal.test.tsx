@@ -43,7 +43,7 @@ describe('portal selector (PUB-01)', () => {
     renderApp('/');
 
     expect(await screen.findByTestId('landing-page', {}, { timeout: 10_000 })).toBeInTheDocument();
-    expect(screen.getByText('Nền tảng năng lực số cho doanh nghiệp')).toBeInTheDocument();
+    expect(screen.getByText(/Nền tảng.*năng lực số cho doanh nghiệp/)).toBeInTheDocument();
   });
 
   it('is always reachable at /portal to change direction', () => {
@@ -87,18 +87,18 @@ describe('login entrances', () => {
     renderApp('/business/login');
     expect(screen.getByText('Doanh nghiệp')).toBeInTheDocument();
     expect(screen.getByText('Quản lý năng lực số của đội ngũ bạn.')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Tạo tài khoản doanh nghiệp' })).toHaveAttribute('href', '/register?audience=enterprise');
+    expect(screen.getByRole('link', { name: 'Chọn gói và đăng ký' })).toHaveAttribute('href', '/business/pricing');
     expect(screen.getByRole('link', { name: 'Quên mật khẩu?' })).toHaveAttribute('href', '/forgot-password');
 
     renderApp('/individual/login');
     expect(screen.getByText('Cá nhân')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Tạo tài khoản cá nhân' })).toHaveAttribute('href', '/register?audience=individual');
+    expect(screen.getByRole('link', { name: 'Chọn gói và đăng ký' })).toHaveAttribute('href', '/individual/pricing');
   });
 
   it('sends a visitor of the neutral /login back to the portal choice', () => {
     renderApp('/login');
 
     expect(screen.getByRole('link', { name: 'DigiTalent AI, về trang chủ' })).toHaveAttribute('href', '/portal');
-    expect(screen.getByRole('link', { name: 'Tạo tài khoản' })).toHaveAttribute('href', '/register');
+    expect(screen.getByRole('link', { name: 'Chọn hướng sử dụng' })).toHaveAttribute('href', '/portal');
   });
 });

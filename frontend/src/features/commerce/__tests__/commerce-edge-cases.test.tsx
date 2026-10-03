@@ -140,6 +140,14 @@ describe('commerce edge cases (T5, T6, T7, T14, T15, T17, T18)', () => {
       plan: { planCode: 'ENT_STARTER', seats: 5, cycle: 'month' },
     });
 
+    updateDb((db) => {
+      const u = db.users.find((x) => x.email === 'reload@acme.vn');
+      if (u) {
+        u.contractSigned = true;
+        u.onboardingStatus = 'payment';
+      }
+    });
+
     renderApp('/login');
     type(/Email/, 'reload@acme.vn');
     type('Mật khẩu', VALID_PASSWORD);
@@ -159,6 +167,14 @@ describe('commerce edge cases (T5, T6, T7, T14, T15, T17, T18)', () => {
       email: 'setup@acme.vn',
       password: VALID_PASSWORD,
       plan: { planCode: 'ENT_PRO', seats: 10, cycle: 'month' },
+    });
+
+    updateDb((db) => {
+      const u = db.users.find((x) => x.email === 'setup@acme.vn');
+      if (u) {
+        u.contractSigned = true;
+        u.onboardingStatus = 'payment';
+      }
     });
 
     const auth = await import('../../../services/mock/mock-auth.service');

@@ -45,4 +45,22 @@ export const mockPasswordService = {
     });
     return mockOk(null, 'Đã xác minh email.');
   },
+
+  resendVerificationEmail: async (email: string) => {
+    const db = getDb();
+    const user = db.users.find((u) => u.email === email.trim().toLowerCase());
+    if (!user) return mockFail(404, 'Không tìm thấy tài khoản với email này.');
+    const token = crypto.randomUUID().replace(/-/g, '');
+    updateDb((d) => {
+      const u = d.users.find((item) => item.id === user.id);
+      if (u) u.verifyToken = token;
+    });
+    return mockOk({ debugVerifyLink: `/verify-email/${token}` }, 'Đã gửi lại email xác minh.');
+  },
+
+  getVerifyLink: async (email: string) => {
+    const user = getDb().users.find((u) => u.email === email.trim().toLowerCase());
+    if (!user || !user.verifyToken) return mockFail(404, 'Không tìm thấy liên kết xác minh.');
+    return mockOk({ debugVerifyLink: `/verify-email/${user.verifyToken}` });
+  },
 };

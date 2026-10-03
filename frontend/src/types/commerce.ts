@@ -48,6 +48,13 @@ export interface StoredPurchaseDraft {
   status: DraftStatus;
   createdAt: string;
   expiresAt: string;     // +7 days
+  companyInfo?: {
+    organizationName: string;
+    taxCode: string;
+    address?: string;
+    signerName?: string;
+    signerTitle?: string;
+  };
 }
 
 export type PurchaseDraft = StoredPurchaseDraft;
@@ -73,13 +80,15 @@ export interface EContract {
   id: string;
   contractNumber: string;
   orderId: string;
+  draftId?: string;
   userId: string;
   organizationName: string;
   taxCode: string;
+  address?: string;
   signerName: string;
   signerTitle: string;
   signatureData?: string;
-  signMethod: 'draw' | 'otp';
+  signMethod: 'draw' | 'otp' | 'email_otp';
   signedAt: string;
   status: 'signed';
   planCode: string;

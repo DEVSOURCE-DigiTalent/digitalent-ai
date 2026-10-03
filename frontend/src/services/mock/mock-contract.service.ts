@@ -30,9 +30,10 @@ export const mockContractService = {
   signContract: async (data: {
     organizationName: string;
     taxCode: string;
+    address?: string;
+    signerName?: string;
     signerTitle: string;
-    signatureData?: string;
-    signMethod: 'draw' | 'otp';
+    signMethod: 'draw' | 'otp' | 'email_otp';
   }) => {
     const userId = currentMockUserId();
     if (!userId) return mockFail(401, 'Chưa đăng nhập');
@@ -41,28 +42,30 @@ export const mockContractService = {
     if (!user) return mockFail(404, 'Không tìm thấy người dùng');
 
     const db = getDb();
-    // Find the paid order or user's active subscription
+    const draft = db.purchaseDrafts?.find((d) => d.userId === userId && d.status === 'DRAFT');
     const order = db.orders.find((o) => o.userId === userId && o.status === 'paid');
-    const planCode = order?.planCode ?? user.subscription?.planCode ?? 'ENT_STARTER';
+    const planCode = draft?.planCode ?? order?.planCode ?? user.subscription?.planCode ?? user.pendingPlan?.planCode ?? 'ENT_STARTER';
     const plan = getPlan(planCode);
-    const seats = order?.seats ?? user.subscription?.seatLimit ?? 10;
-    const cycle = order?.cycle ?? 'month';
-    const amount = order?.amount ?? (plan ? priceFor(plan, seats, cycle) ?? 0 : 0);
+    const seats = draft?.seats ?? order?.seats ?? user.subscription?.seatLimit ?? user.pendingPlan?.seats ?? 10;
+    const cycle = draft?.cycle ?? order?.cycle ?? user.pendingPlan?.cycle ?? 'month';
+    const amount = draft?.amount ?? order?.amount ?? (plan ? priceFor(plan, seats, cycle) ?? 0 : 0);
 
     const now = new Date();
     const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-    const contractNumber = `HD-${dateStr}/DGT-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
+    const randStr = crypto.randomUUID().replace(/-/g, '').slice(0, 4).toUpperCase();
+    const contractNumber = `HD-${dateStr}-${randStr}`;
 
     const contract: EContract = {
       id: newId('ctr'),
       contractNumber,
-      orderId: order?.id ?? newId('ord'),
+      orderId: order?.id ?? '',
+      draftId: draft?.id,
       userId,
       organizationName: data.organizationName.trim(),
       taxCode: data.taxCode.trim(),
-      signerName: user.fullName,
+      address: data.address?.trim(),
+      signerName: data.signerName?.trim() || user.fullName,
       signerTitle: data.signerTitle.trim() || 'Người đại diện theo pháp luật',
-      signatureData: data.signatureData,
       signMethod: data.signMethod,
       signedAt: now.toISOString(),
       status: 'signed',
@@ -78,11 +81,27 @@ export const mockContractService = {
 
       const u = database.users.find((item) => item.id === userId);
       if (u) {
-        // Move enterprise from 'contract' step to 'setup' wizard
-        u.onboardingStatus = 'setup';
+        // Contract signed: move enterprise user to step 4 (payment / checkout)
+        u.contractSigned = true;
+        u.onboardingStatus = 'payment';
+        u.pendingOrganization = {
+          name: data.organizationName.trim(),
+          taxCode: data.taxCode.trim(),
+          address: data.address?.trim(),
+        };
+      }
+
+      if (draft) {
+        draft.companyInfo = {
+          organizationName: data.organizationName.trim(),
+          taxCode: data.taxCode.trim(),
+          address: data.address?.trim() || '',
+          signerName: data.signerName?.trim() || user.fullName,
+          signerTitle: data.signerTitle.trim() || 'Người đại diện theo pháp luật',
+        };
       }
     });
 
-    return mockOk<EContract>(contract, 'Hợp đồng điện tử đã được ký số thành công.');
+    return mockOk<EContract>(contract, 'Hợp đồng điện tử đã được xác thực và ký kết thành công.');
   },
 };

@@ -6,7 +6,7 @@ import { join } from 'node:path';
  * database). Run after \`npm run build\` with VITE_USE_MOCK unset or false.
  */
 const DIST = new URL('../dist', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
-const MARKERS = ['mock-token:', 'Admin@1234', 'digitalent.demo', 'dt-mock-db'];
+const MARKERS = ['mock-token', 'Admin@1234', 'digitalent.demo', 'dt-mock-db', '686868'];
 
 function* files(dir) {
   for (const name of readdirSync(dir)) {

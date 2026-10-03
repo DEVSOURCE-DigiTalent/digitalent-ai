@@ -57,6 +57,12 @@ export function CheckoutPage() {
   const audience = resolveWorkspace(user) === WORKSPACES.PERSONAL ? 'individual' : 'enterprise';
   const pricingPath = audience === 'individual' ? '/individual/pricing' : '/business/pricing';
 
+  // Enterprise must sign contract before payment
+  if (audience === 'enterprise' && user.onboardingStatus === 'contract') {
+    const draftQueryParam = draftIdParam ? `?draft=${draftIdParam}` : '';
+    return <Navigate to={`/enterprise/contract${draftQueryParam}`} replace />;
+  }
+
   // Only an account that still has to pay belongs here; everyone else moves forward
   if (user.onboardingStatus !== 'payment') {
     return <Navigate to={getHomePath(user)} replace />;
@@ -76,10 +82,12 @@ export function CheckoutPage() {
     return <Navigate to={pricingPath} replace />;
   }
 
+  const currentStep = audience === 'enterprise' ? 4 : 3;
+
   return (
     <PublicShell portal={audience}>
       <div className="mb-6 space-y-6">
-        <PurchaseStepper audience={audience} currentStep={3} changePlanPath={pricingPath} />
+        <PurchaseStepper audience={audience} currentStep={currentStep} changePlanPath={pricingPath} />
         <h1 className="text-[clamp(28px,4vw,40px)] font-normal leading-[1.1] tracking-[-0.03em]">Thanh toán</h1>
       </div>
 
@@ -172,6 +180,30 @@ function CheckoutBody({ selection, pricingPath, draft, audience }: CheckoutBodyP
         <p className="text-xs leading-[1.6] text-stone-400">
           Ghế được tính cho thành viên đang hoạt động và thành viên đã mời nhưng chưa kích hoạt.
         </p>
+      )}
+
+      {/* Enterprise: Company Invoice info from Step 3 Contract */}
+      {audience === 'enterprise' && draft?.companyInfo && (
+        <div className="rounded-2xl bg-landing-panel px-5 py-3.5 ring-1 ring-cream/10 text-xs space-y-1">
+          <span className="text-stone-400 block text-[11px] uppercase tracking-wide">
+            Thông tin xuất hóa đơn VAT (theo hợp đồng):
+          </span>
+          <p className="font-medium text-cream">{draft.companyInfo.organizationName}</p>
+          <p className="text-stone-400 font-mono">Mã số thuế: {draft.companyInfo.taxCode}</p>
+          {draft.companyInfo.address && <p className="text-stone-400">{draft.companyInfo.address}</p>}
+        </div>
+      )}
+
+      {/* Individual: Terms & auto-renewal consent summary */}
+      {audience === 'individual' && (
+        <div className="rounded-2xl bg-landing-panel p-4 ring-1 ring-cream/10 text-xs text-stone-300 space-y-2">
+          <h3 className="font-medium text-cream">Điều khoản gia hạn & hoàn tiền</h3>
+          <ul className="space-y-1 text-stone-400 text-[11px] list-disc list-inside">
+            <li>Gói cước tự động gia hạn định kỳ theo chu kỳ đã chọn ({selection.cycle === 'year' ? '12 tháng' : 'hàng tháng'}).</li>
+            <li>Hủy gia hạn dễ dàng bất kỳ lúc nào tại mục Cài đặt tài khoản trước kỳ thanh toán tiếp theo.</li>
+            <li>Chính sách hoàn tiền áp dụng trong vòng 7 ngày đầu tiên nếu chưa qua khóa học nào.</li>
+          </ul>
+        </div>
       )}
 
       {/* Account email & change email action */}

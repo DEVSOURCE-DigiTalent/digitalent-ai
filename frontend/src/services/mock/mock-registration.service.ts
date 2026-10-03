@@ -55,7 +55,7 @@ export const mockRegistrationService = {
       emailVerified: false,
       verifyToken: newToken(),
       pendingPlan: { planCode: draft.planCode, seats: draft.seats, cycle: draft.cycle },
-      onboardingStatus: 'payment',
+      onboardingStatus: 'contract',
     };
 
     updateDb((db) => {

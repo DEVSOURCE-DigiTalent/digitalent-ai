@@ -12,8 +12,8 @@ export interface PurchaseStepperProps {
 const ENTERPRISE_STEPS = [
   { id: 1, name: 'Chọn gói' },
   { id: 2, name: 'Tài khoản' },
-  { id: 3, name: 'Thanh toán' },
-  { id: 4, name: 'Ký hợp đồng' },
+  { id: 3, name: 'Hợp đồng' },
+  { id: 4, name: 'Thanh toán' },
   { id: 5, name: 'Thiết lập tổ chức' },
 ];
 
@@ -21,7 +21,7 @@ const INDIVIDUAL_STEPS = [
   { id: 1, name: 'Chọn gói' },
   { id: 2, name: 'Tài khoản' },
   { id: 3, name: 'Thanh toán' },
-  { id: 4, name: 'Thiết lập cá nhân' },
+  { id: 4, name: 'Khởi tạo học tập' },
 ];
 
 export function PurchaseStepper({

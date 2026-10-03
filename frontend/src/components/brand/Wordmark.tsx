@@ -15,20 +15,19 @@ interface WordmarkProps {
  * optionally led by the official 3D golden brand emblem with subtle amber aura.
  * Size follows the font size of the parent (set it with a text-* class).
  */
-export function Wordmark({ className, withMark = true, markOnly = false, useBrandLogo = false }: WordmarkProps) {
+export function Wordmark({ className, withMark = true, markOnly = false, useBrandLogo = true }: WordmarkProps) {
   return (
-    <span className={cn('inline-flex items-center gap-3 whitespace-nowrap leading-none text-current', className)}>
+    <span className={cn('inline-flex items-center gap-2.5 whitespace-nowrap leading-none text-current', className)}>
       {(withMark || markOnly) && (
         useBrandLogo ? (
           <span
             aria-hidden="true"
-            className="relative flex h-[2.15em] w-auto shrink-0 items-center justify-center"
+            className="relative flex h-[2.6em] w-auto shrink-0 items-center justify-center"
           >
-            <span className="pointer-events-none absolute -bottom-0.5 left-1/2 -translate-x-1/2 h-1.5 w-full rounded-full bg-amber-400/25 blur-[3px]" />
             <img
               src="/logo.png"
               alt=""
-              className="relative h-full w-auto object-contain drop-shadow-[0_2px_8px_rgba(245,180,80,0.2)]"
+              className="relative h-full w-auto object-contain drop-shadow-[0_2px_8px_rgba(245,180,80,0.22)]"
             />
           </span>
         ) : (
