@@ -62,7 +62,16 @@ function setupFor(user: StoredUser): OrganizationSetup {
           logoUrl: organization.logoUrl,
           timezone: organization.timezone || 'Asia/Ho_Chi_Minh',
         }
-      : null,
+      : user.pendingOrganization
+        ? {
+            id: '',
+            name: user.pendingOrganization.name,
+            industry: '',
+            size: '',
+            logoUrl: undefined,
+            timezone: 'Asia/Ho_Chi_Minh',
+          }
+        : null,
     grades: organization?.grades && organization.grades.length > 0 ? organization.grades : DEFAULT_GRADES,
     departments: organization?.departments ?? [],
     positions: organization?.positions ?? [],
@@ -105,6 +114,8 @@ export const mockOnboardingService = {
       const organization: StoredOrganization = {
         id: newId('org'),
         name: input.name.trim(),
+        taxCode: stored.pendingOrganization?.taxCode,
+        address: stored.pendingOrganization?.address,
         industry: input.industry,
         size: input.size,
         logoUrl: input.logoUrl?.trim() || undefined,

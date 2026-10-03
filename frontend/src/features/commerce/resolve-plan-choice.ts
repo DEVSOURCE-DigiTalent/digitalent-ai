@@ -56,12 +56,13 @@ export function resolvePlanChoice(
     };
   }
 
-  // 4. Logged in, onboardingStatus === 'payment'
-  if (user.onboardingStatus === 'payment') {
+  // 4. Logged in, onboarding in progress (contract or payment)
+  if (user.onboardingStatus === 'contract' || user.onboardingStatus === 'payment') {
+    const nextPath = user.onboardingStatus === 'contract' && isEnterpriseUser ? '/enterprise/contract' : '/checkout';
     return {
       type: 'checkout',
       draftAction: 'update',
-      path: '/checkout',
+      path: nextPath,
     };
   }
 

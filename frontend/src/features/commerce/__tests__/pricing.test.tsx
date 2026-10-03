@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PricingPage } from '../pages/PricingPage';
 import { getPortalChoice } from '../../portal/portal-preference';
 
@@ -12,13 +13,18 @@ function Where() {
 function renderPricing(audience: 'enterprise' | 'individual') {
   cleanup();
   const base = audience === 'enterprise' ? '/business' : '/individual';
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
-    <MemoryRouter initialEntries={[`${base}/pricing`]}>
-      <Routes>
-        <Route path={`${base}/pricing`} element={<PricingPage audience={audience} />} />
-        <Route path="*" element={<Where />} />
-      </Routes>
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[`${base}/pricing`]}>
+        <Routes>
+          <Route path={`${base}/pricing`} element={<PricingPage audience={audience} />} />
+          <Route path="*" element={<Where />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 
