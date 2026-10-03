@@ -243,10 +243,10 @@ describe('Business landing page: pricing, FAQ and closing', () => {
       '/business/register?plan=ENT_PRO&seats=50&cycle=month'
     );
     const starter = within(section).getByRole('article', { name: 'Gói Starter' });
-    expect(within(starter).getByText(/tối đa 30 ghế/i)).toBeInTheDocument();
+    expect(within(starter).getByText(/tối đa 30 người dùng/i)).toBeInTheDocument();
     expect(within(starter).queryByRole('link', { name: 'Chọn gói Starter' })).not.toBeInTheDocument();
     expect(within(section).getByRole('article', { name: 'Gói Enterprise' })).toBeInTheDocument();
-    expect(section.textContent).toMatch(/lời mời chưa kích hoạt vẫn chiếm ghế/);
+    expect(section.textContent).toMatch(/lời mời đang chờ kích hoạt đều tính vào quyền sử dụng/);
   });
 
   it('answers the questions the product can answer, and keeps billing policy out', () => {
@@ -254,7 +254,7 @@ describe('Business landing page: pricing, FAQ and closing', () => {
 
     const section = region(/Câu hỏi thường gặp/);
     for (const question of [
-      /Số ghế được tính như thế nào/,
+      /Quyền sử dụng và số người dùng được tính như thế nào/,
       /Manager có bắt buộc không/,
       /không có Manager thì ai review minh chứng/,
       /Yêu cầu năng lực theo vị trí được thiết lập ra sao/,

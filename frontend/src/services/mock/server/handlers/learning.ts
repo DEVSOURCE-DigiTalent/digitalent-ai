@@ -381,19 +381,21 @@ route('POST', '/assessments/:id/attempt', (context) => context.update((data) => 
       assignment.completedAt = now;
     }
     const frameworkCodes = COMPETENCIES.filter((c) => c.categoryId === course.categoryId).map((c) => c.frameworkCode);
-    data.profiles[employee.id] = data.profiles[employee.id] ?? {};
-    for (const cmp of COMPETENCIES.filter((c) => c.categoryId === course.categoryId)) {
-      const current = data.profiles[employee.id][cmp.id]?.level ?? 0;
-      if (course.level > current) {
-        data.profiles[employee.id][cmp.id] = {
-          level: course.level,
-          source: 'ASSESSMENT',
-          confirmedAt: now,
-          note: `Hoàn thành bài đánh giá khóa học ${course.code}`,
-        };
+    if (course.level === 1) {
+      data.profiles[employee.id] = data.profiles[employee.id] ?? {};
+      for (const cmp of COMPETENCIES.filter((c) => c.categoryId === course.categoryId)) {
+        const current = data.profiles[employee.id][cmp.id]?.level ?? 0;
+        if (1 > current) {
+          data.profiles[employee.id][cmp.id] = {
+            level: 1,
+            source: 'ASSESSMENT',
+            confirmedAt: now,
+            note: `Hoàn thành bài đánh giá khóa học ${course.code}`,
+          };
+        }
       }
+      calculateRun(data, employee.id, 'SYSTEM', now);
     }
-    calculateRun(data, employee.id, 'SYSTEM', now);
 
     certificate = {
       id: newId('cert'),

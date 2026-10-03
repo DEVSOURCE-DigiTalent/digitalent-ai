@@ -1,6 +1,7 @@
 import { levelLabelVi } from '../../../../lib/competency-levels';
 import { TT02_COMPETENCY_NAMES } from '../../../../lib/reference-positions';
 import { CATEGORY_BY_ID, type CatalogCourse } from '../catalog';
+import { CURRICULUM_DATA } from '../../../../features/learning/data/standard-curriculum';
 
 /**
  * Content of the 18 standard courses as the personal track shows them. A course of domain N has one module per
@@ -97,6 +98,10 @@ export function courseDomain(course: CatalogCourse): { number: number; name: str
 }
 
 export function courseDescription(course: CatalogCourse): string {
+  const curr = CURRICULUM_DATA[course.code];
+  if (curr?.description) {
+    return `${curr.description}. ${DOMAIN_PITCH[domainOf(course)]} ${LEVEL_PITCH[course.level]}`;
+  }
   return `${DOMAIN_PITCH[domainOf(course)]} ${LEVEL_PITCH[course.level]}`;
 }
 
@@ -108,10 +113,93 @@ export function courseOutcomes(course: CatalogCourse): string[] {
 }
 
 function lessonsFor(course: CatalogCourse, code: string, minutes: number): LessonContent[] {
-  const name = TT02_COMPETENCY_NAMES[code];
-  const focus = FOCUS[code];
+  const name = TT02_COMPETENCY_NAMES[code] ?? `Năng lực ${code}`;
+  const focus = FOCUS[code] ?? name;
   const label = levelLabelVi(course.level);
   const id = (n: number) => `${course.id}-${code.replace('.', '')}-${n}`;
+
+  const curriculum = CURRICULUM_DATA[course.code];
+  const modData = curriculum?.modules.find((m) => m.competencyCode === code);
+
+  if (modData) {
+    const lesson1Title = `${modData.title}: Lý thuyết nền tảng & Quy chuẩn`;
+    const lesson2Title = `Tình huống công việc & Tác nghiệp thực tế (${code})`;
+    const lesson3Title = `Thực hành có hướng dẫn & Sản phẩm đầu ra (${code})`;
+
+    const lesson1Body: string[] = [];
+    if (modData.objectives.length > 0) {
+      lesson1Body.push(`Mục tiêu học tập cốt lõi: ${modData.objectives.join('; ')}.`);
+    }
+    if (modData.definitions.length > 0) {
+      lesson1Body.push(`Quy chuẩn thuật ngữ theo Thông tư 02/2025/TT-BGDĐT:`);
+      lesson1Body.push(...modData.definitions);
+    }
+    if (modData.body.length > 0) {
+      lesson1Body.push(...modData.body);
+    } else {
+      lesson1Body.push(`Thông tư 02/2025/TT-BGDĐT quy định năng lực ${code} "${name}". Ở mức ${label}, bạn ${LEVEL_DOING[course.level]}.`);
+    }
+
+    const lesson2Body: string[] = [];
+    if (modData.examples.length > 0) {
+      lesson2Body.push(...modData.examples);
+    } else {
+      lesson2Body.push(`Tình huống thực tế ứng dụng năng lực ${code} (${name}) trong môi trường doanh nghiệp:`);
+      if (modData.body.length > 1) {
+        lesson2Body.push(...modData.body.slice(1));
+      }
+    }
+    lesson2Body.push('Lưu ý chuyên môn: Luôn kiểm tra tính xác thực của dữ liệu, tuân thủ chính sách bảo mật nội bộ và đạo đức số khi xử lý công việc.');
+
+    const lesson3Body: string[] = [
+      `Đề bài thực hành: ${modData.practice || `Áp dụng năng lực ${code} vào xử lý công việc: ${focus}.`}`,
+      `Yêu cầu sản phẩm đầu ra: ${modData.deliverable || 'Bản ghi lại kết quả thực hiện và bằng chứng hoàn thành theo đúng các bước hướng dẫn.'}`,
+      'Tiêu chuẩn hoàn thành: Thao tác đúng quy chuẩn, bảo vệ an toàn dữ liệu và có thể áp dụng trực tiếp vào công việc hàng ngày.',
+    ];
+
+    return [
+      {
+        id: id(1),
+        title: lesson1Title,
+        kind: 'VIDEO',
+        durationMinutes: Math.max(10, Math.round(minutes * 0.35)),
+        summary: `Năng lực ${code} ở mức ${label}: ${modData.title}. Khung kiến thức chuẩn Thông tư 02/2025/TT-BGDĐT.`,
+        body: lesson1Body,
+        takeaways: modData.objectives.length > 0
+          ? modData.objectives.slice(0, 3)
+          : [`Hiểu rõ yêu cầu năng lực ${code} ở mức ${label}.`, 'Nắm vững các thuật ngữ và quy chuẩn số liên quan.'],
+        practice: `Tự kiểm tra các khái niệm cốt lõi của năng lực ${code} trước khi sang phần phân tích tình huống.`,
+      },
+      {
+        id: id(2),
+        title: lesson2Title,
+        kind: 'READING',
+        durationMinutes: Math.max(10, Math.round(minutes * 0.35)),
+        summary: `Tình huống công sở thực tế, kịch bản xử lý và phân tích hành vi đạt chuẩn năng lực ${code} ở mức ${label}.`,
+        body: lesson2Body,
+        takeaways: [
+          `Áp dụng năng lực ${code} vào tình huống công việc cụ thể.`,
+          'Tuân thủ quy trình bảo mật và chuẩn mực số nơi làm việc.',
+          'Phát hiện sớm các lỗi thường gặp và cách phòng tránh hiệu quả.',
+        ],
+        practice: modData.practice ? `Xem xét tình huống thực tế: ${modData.practice.slice(0, 160)}...` : undefined,
+      },
+      {
+        id: id(3),
+        title: lesson3Title,
+        kind: 'PRACTICE',
+        durationMinutes: Math.max(10, Math.round(minutes * 0.3)),
+        summary: 'Thực hiện bài tập thực hành theo hướng dẫn và hoàn thiện sản phẩm công việc.',
+        body: lesson3Body,
+        takeaways: [
+          'Tự thực hiện hoàn chỉnh sản phẩm công việc theo đúng yêu cầu nghiệp vụ.',
+          'Sẵn sàng áp dụng phương pháp đã học vào thực tế công việc hàng ngày.',
+        ],
+        practice: `${modData.practice || `Thực hành: ${focus}`} (Sản phẩm nộp: ${modData.deliverable || 'Bản ghi kết quả thực hiện'}).`,
+      },
+    ];
+  }
+
   return [
     {
       id: id(1),
@@ -161,13 +249,20 @@ function lessonsFor(course: CatalogCourse, code: string, minutes: number): Lesso
 export function courseModules(course: CatalogCourse): ModuleContent[] {
   const codes = competencyCodesOf(course);
   const lessonMinutes = Math.max(10, Math.round(course.estimatedDurationMinutes / (codes.length * 3)));
-  return codes.map((code) => ({
-    id: `${course.id}-m${code.replace('.', '')}`,
-    competencyCode: code,
-    title: `${code} · ${TT02_COMPETENCY_NAMES[code]}`,
-    lessons: lessonsFor(course, code, lessonMinutes),
-  }));
+  const curriculum = CURRICULUM_DATA[course.code];
+
+  return codes.map((code) => {
+    const modData = curriculum?.modules.find((m) => m.competencyCode === code);
+    const title = modData ? `${code} · ${modData.title}` : `${code} · ${TT02_COMPETENCY_NAMES[code]}`;
+    return {
+      id: `${course.id}-m${code.replace('.', '')}`,
+      competencyCode: code,
+      title,
+      lessons: lessonsFor(course, code, lessonMinutes),
+    };
+  });
 }
+
 
 /** One practical task per domain and level. */
 const TASKS: Record<number, Record<number, TaskTemplate>> = {
@@ -294,6 +389,18 @@ const TASKS: Record<number, Record<number, TaskTemplate>> = {
 };
 
 export function taskTemplate(course: CatalogCourse): TaskTemplate {
+  const curr = CURRICULUM_DATA[course.code];
+  if (curr?.finalTask && curr.finalTask.brief) {
+    const rawTitle = curr.finalTask.title.replace(/^ĐÁNH GIÁ CUỐI KHÓA\s*[MA]\d-[FIA]\s*[—–-]?\s*/i, '').trim();
+    return {
+      title: rawTitle || curr.finalTask.title,
+      brief: curr.finalTask.brief,
+      deliverable: curr.finalTask.deliverable || 'Tài liệu tổng hợp kết quả thực hiện và bằng chứng minh chứng.',
+      rubric: curr.finalTask.rubric && curr.finalTask.rubric.length > 0
+        ? curr.finalTask.rubric
+        : ['Nắm vững quy chuẩn và phương pháp thực hiện', 'Sản phẩm đầu ra đúng định dạng và đủ nội dung', 'Có đánh giá và kiểm chứng độc lập'],
+    };
+  }
   return TASKS[domainOf(course)][course.level];
 }
 

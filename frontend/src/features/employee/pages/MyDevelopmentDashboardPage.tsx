@@ -17,6 +17,10 @@ export function MyDevelopmentDashboardPage() {
   const tasks = taskData?.items ?? [];
   const activeTasks = tasks.filter((t) => !t.submission || t.submission.status === 'REVISION_REQUESTED');
 
+  const initialAssessmentKey = user ? `dt_initial_assessment_${user.id}` : 'dt_initial_assessment';
+  const savedAssessment = typeof window !== 'undefined' ? localStorage.getItem(initialAssessmentKey) : null;
+  const assessmentData = savedAssessment ? JSON.parse(savedAssessment) : null;
+
   return (
     <div className="space-y-6 pb-16">
       {/* Welcome Banner */}
@@ -33,6 +37,45 @@ export function MyDevelopmentDashboardPage() {
           </p>
         </div>
       </div>
+
+      {/* Initial Assessment Banner */}
+      {!assessmentData ? (
+        <div className="bg-amber-50 border-2 border-amber-300 rounded-3xl p-6 sm:p-7 text-amber-950 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 shadow-sm">
+          <div className="space-y-1.5 max-w-2xl">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-200 text-amber-900 uppercase tracking-wide">
+                Chưa đánh giá
+              </span>
+              <h2 className="text-lg font-bold text-amber-950">Bài test đánh giá năng lực hiện tại</h2>
+            </div>
+            <p className="text-sm text-amber-800 leading-relaxed">
+              Bạn chưa thực hiện bài test đánh giá năng lực hiện tại. Hãy dành ~5 phút làm bài để hệ thống phân tích khoảng trống năng lực (Skill Gap) và kích hoạt lộ trình đào tạo cá nhân hóa chính xác nhất!
+            </p>
+          </div>
+          <Link
+            to="/enterprise/initial-assessment"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm transition-all shadow-md shrink-0 cursor-pointer"
+          >
+            <span>Làm bài test ngay</span>
+            <ArrowRight className="size-4" />
+          </Link>
+        </div>
+      ) : (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-emerald-900 text-sm">
+          <div className="flex items-center gap-2.5">
+            <span className="size-2 rounded-full bg-emerald-600 shrink-0" />
+            <span>
+              Đã hoàn thành đánh giá năng lực đầu vào ({assessmentData.score}/{assessmentData.total} câu đạt - {assessmentData.percentage}%). Lộ trình đào tạo đã được thiết lập.
+            </span>
+          </div>
+          <Link
+            to="/enterprise/initial-assessment"
+            className="text-xs font-semibold text-emerald-800 hover:text-emerald-950 underline underline-offset-2 shrink-0"
+          >
+            Xem lại kết quả & Làm lại
+          </Link>
+        </div>
+      )}
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -55,7 +98,7 @@ export function MyDevelopmentDashboardPage() {
           </div>
           <div className="text-3xl font-black text-emerald-600">{certificates.length}</div>
           <Link
-            to="/enterprise/me/certificates"
+            to="/enterprise/me/achievements"
             className="text-xs font-semibold text-blue-600 hover:underline inline-block"
           >
             Xem sổ chứng nhận &rarr;
@@ -195,7 +238,7 @@ export function MyDevelopmentDashboardPage() {
                 <Clock className="size-4 text-emerald-600" />
               </Link>
               <Link
-                to="/enterprise/me/certificates"
+                to="/enterprise/me/achievements"
                 className="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/30 transition text-xs font-semibold text-slate-800"
               >
                 <span>Chứng nhận số đã được cấp</span>

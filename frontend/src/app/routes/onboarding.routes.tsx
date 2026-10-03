@@ -8,6 +8,7 @@ import { EnterpriseContractPage } from '../../features/commerce/pages/Enterprise
 import { SetupWizardPage } from '../../features/onboarding/pages/SetupWizardPage';
 import { PersonalOnboardingPage } from '../../features/learner/pages/PersonalOnboardingPage';
 import { VerifyEmailRequiredPage } from '../../features/auth/pages/VerifyEmailRequiredPage';
+import { EmployeeInitialAssessmentPage } from '../../features/employee/pages/EmployeeInitialAssessmentPage';
 import { ROLES, WORKSPACES } from '../../lib/roles';
 import { FocusLayout } from '../layouts/FocusLayout';
 
@@ -82,6 +83,22 @@ export const onboardingRoutes: RouteObject[] = [
     element: (
       <AuthGuard>
         <VerifyEmailRequiredPage />
+      </AuthGuard>
+    ),
+  },
+  {
+    path: '/enterprise/initial-assessment',
+    element: (
+      <AuthGuard>
+        <RequireWorkspace workspace={WORKSPACES.ENTERPRISE}>
+          <FocusLayout
+            exitPath="/enterprise/me"
+            exitLabel="Vào trang cá nhân"
+            title="Đánh giá năng lực đầu vào"
+          >
+            <EmployeeInitialAssessmentPage />
+          </FocusLayout>
+        </RequireWorkspace>
       </AuthGuard>
     ),
   },

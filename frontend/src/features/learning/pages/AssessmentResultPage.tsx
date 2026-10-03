@@ -122,12 +122,14 @@ export function AssessmentResultPage() {
                 Mã chứng chỉ: {certificate.certificateCode}
               </h2>
               <p className="text-xs text-slate-600 mt-0.5">
-                Hồ sơ năng lực của bạn đã được cập nhật tự động lên hệ thống doanh nghiệp.
+                {certificate.courseLevel && certificate.courseLevel >= 2
+                  ? 'Bạn đã hoàn thành xuất sắc đánh giá kiến thức lý thuyết. Để được xác nhận năng lực Trung cấp tại nơi làm việc, hãy hoàn thành Nhiệm vụ thực tế được giao.'
+                  : 'Hồ sơ năng lực của bạn đã được cập nhật tự động lên hệ thống doanh nghiệp.'}
               </p>
             </div>
           </div>
           <Link
-            to="/enterprise/me/certificates"
+            to="/enterprise/me/achievements"
             className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-xl shadow-sm transition"
           >
             <span>Xem chứng nhận</span>

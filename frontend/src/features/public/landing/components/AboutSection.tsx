@@ -1,16 +1,32 @@
+import { cn } from '@/lib/utils';
 import { SECTION_IDS } from '../landing-content';
 import { useLandingContent } from '../landing-content-context';
 import { ScrollRevealText } from './ScrollRevealText';
 import { WordsPullUp } from './WordsPullUp';
 
-function SpecGroup({ label, specs, columns, accent }: { label?: string; specs: { value: string; label: string }[]; columns: string; accent?: boolean }) {
+function SpecGroup({
+  label,
+  specs,
+  columns,
+  accent,
+}: {
+  label?: string;
+  specs: { value: string; label: string }[];
+  columns: string;
+  accent?: boolean;
+}) {
   return (
     <div className="px-2 md:px-6">
       {label && <p className="mb-6 text-xs uppercase tracking-[0.14em] text-stone-500">{label}</p>}
-      <ul className={`grid grid-cols-2 gap-x-4 gap-y-8 ${columns}`}>
+      <ul className={cn('grid gap-x-4 gap-y-8', columns)}>
         {specs.map((spec) => (
           <li key={spec.value}>
-            <span className={`block text-[clamp(34px,4vw,52px)] font-light leading-none tracking-[-0.04em] tabular-nums ${accent ? 'font-landing-serif italic text-cream-soft' : 'text-cream'}`}>
+            <span
+              className={cn(
+                'block whitespace-nowrap text-[clamp(32px,3.8vw,50px)] font-light leading-none tracking-[-0.04em] tabular-nums',
+                accent ? 'font-landing-serif italic text-cream-soft' : 'text-cream'
+              )}
+            >
               {spec.value}
             </span>
             <span className="mx-auto mt-3 block max-w-[22ch] text-sm leading-[1.45] text-stone-400">{spec.label}</span>
@@ -23,6 +39,7 @@ function SpecGroup({ label, specs, columns, accent }: { label?: string; specs: {
 
 export function AboutSection() {
   const { about } = useLandingContent();
+  const hasConfigured = Boolean(about.configured);
 
   return (
     <section id={SECTION_IDS.about} tabIndex={-1} aria-labelledby="lp-about-title" className="scroll-mt-24 py-2 outline-none">
@@ -42,9 +59,27 @@ export function AboutSection() {
           className="max-w-[44rem] text-pretty text-base font-light leading-[1.7] text-cream-soft sm:text-lg"
         />
 
-        <div className="mt-2 grid w-full max-w-4xl gap-8 border-t border-cream/12 pt-9 md:grid-cols-[3fr_1fr] md:gap-0 md:divide-x md:divide-cream/12">
-          <SpecGroup label={about.specsLabel} specs={about.specs} columns="md:grid-cols-3" />
-          {about.configured && <SpecGroup label={about.configured.label} specs={about.configured.specs} columns="grid-cols-1" accent />}
+        <div
+          className={cn(
+            'mt-2 grid w-full max-w-5xl border-t border-cream/12 pt-9',
+            hasConfigured
+              ? 'gap-8 md:grid-cols-[3fr_1.35fr] md:gap-0 md:divide-x md:divide-cream/12'
+              : 'grid-cols-1'
+          )}
+        >
+          <SpecGroup
+            label={about.specsLabel}
+            specs={about.specs}
+            columns={hasConfigured ? 'grid-cols-3' : 'grid-cols-2 md:grid-cols-4'}
+          />
+          {about.configured && (
+            <SpecGroup
+              label={about.configured.label}
+              specs={about.configured.specs}
+              columns="grid-cols-1"
+              accent
+            />
+          )}
         </div>
       </div>
     </section>

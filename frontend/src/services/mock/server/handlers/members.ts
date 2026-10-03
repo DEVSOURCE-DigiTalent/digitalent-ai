@@ -78,7 +78,7 @@ route('POST', '/members/invitations', ({ body, org, session, update }) => {
       else if (!fullName) reject('Thiếu họ tên.');
       else if (!allowed.some((r) => r === role)) reject('Bạn không được cấp vai trò này.');
       else if (taken.has(email) || findMockAccountByEmail(email) || findUserByEmail(email)) reject('Email đã có tài khoản hoặc đã được mời.');
-      else if (seatLimit !== undefined && used >= seatLimit) reject('Đã hết số ghế của gói.');
+      else if (seatLimit !== undefined && used >= seatLimit) reject('Đã hết quyền sử dụng của gói.');
       else {
         const departmentName = data.departments.find((d) => d.id === row.departmentId)?.name;
         const positionName = data.positions.find((p) => p.id === row.jobPositionId)?.name;
@@ -214,7 +214,7 @@ route('POST', '/members/:id/reactivate', (context) => context.update((data) => {
   assertCanManage(context, member);
   if (member.status !== 'INACTIVE') throw conflict('Thành viên này đang hoạt động.');
   const seatLimit = session.subscription?.seatLimit;
-  if (seatLimit !== undefined && seatsInUse(data) >= seatLimit) throw conflict('Đã hết số ghế của gói. Hãy nâng cấp gói hoặc giải phóng một ghế.');
+  if (seatLimit !== undefined && seatsInUse(data) >= seatLimit) throw conflict('Đã hết quyền sử dụng của gói. Hãy nâng cấp gói hoặc thu hồi lời mời/thành viên.');
 
   setStatus(data, member, 'ACTIVE');
   recordAudit(data, session, 'MEMBER_REACTIVATED', 'Thành viên', member.fullName);

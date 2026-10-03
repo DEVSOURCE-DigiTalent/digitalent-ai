@@ -1,23 +1,21 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ArrowRight, ShieldCheck, Mail, Users } from 'lucide-react';
 import { PageHeader, DataTable, EmptyState } from '@/components/shared';
 import { useEmployees } from '@/hooks/use-employees';
 import { useJobPositions } from '@/hooks/use-job-positions';
-import { JOB_GRADES } from '@/lib/terms';
 import { INPUT_CLASS } from '@/features/onboarding/components/styles';
 import type { EmployeeDto } from '@/services/employee.service';
 
 /**
  * MG-02: Team Members Page (Manager Scope)
  * Danh sách thành viên trong nhóm thuộc quyền quản lý của Quản lý:
- * - Bộ lọc: tìm kiếm họ tên/mã, vị trí công việc, Cấp bậc (G1–G3), trạng thái.
+ * - Bộ lọc: tìm kiếm họ tên/mã, vị trí công việc, trạng thái.
  * - Trạng thái trống hướng dẫn liên hệ Owner nếu Manager chưa được phân công phòng ban.
  */
 export function TeamMembersPage() {
   const [search, setSearch] = useState('');
   const [positionId, setPositionId] = useState('');
-  const [jobGrade, setJobGrade] = useState('');
   const [status, setStatus] = useState<'ACTIVE' | 'INACTIVE' | ''>('');
   const [pageIndex, setPageIndex] = useState(1);
 
@@ -31,16 +29,10 @@ export function TeamMembersPage() {
 
   const { data: positions } = useJobPositions();
 
-  // Client-side grade filter if API doesn't support jobGrade param directly on /employees
-  const itemsList = empData?.items;
-  const filteredItems = useMemo(() => {
-    const list = itemsList ?? [];
-    if (!jobGrade) return list;
-    return list.filter((e) => (e as any).jobGrade === jobGrade);
-  }, [itemsList, jobGrade]);
-  const rawItems = itemsList ?? [];
+  const filteredItems = empData?.items ?? [];
+  const rawItems = filteredItems;
 
-  const hasActiveFilters = Boolean(search || positionId || jobGrade || status);
+  const hasActiveFilters = Boolean(search || positionId || status);
 
   if (!isLoading && rawItems.length === 0 && !hasActiveFilters) {
     return (
@@ -77,7 +69,7 @@ export function TeamMembersPage() {
               {row.fullName}
             </Link>
             <p className="text-xs text-slate-500 font-mono">
-              {row.employeeCode} {(row as any).jobGrade ? `· Cấp bậc ${(row as any).jobGrade}` : ''}
+              {row.employeeCode}
             </p>
           </div>
         </div>
@@ -183,24 +175,6 @@ export function TeamMembersPage() {
           </select>
         </div>
 
-        <div className="w-40">
-          <select
-            value={jobGrade}
-            onChange={(e) => {
-              setJobGrade(e.target.value);
-              setPageIndex(1);
-            }}
-            aria-label="Lọc theo Cấp bậc (G1–G3)"
-            className={INPUT_CLASS}
-          >
-            <option value="">Mọi cấp bậc</option>
-            {JOB_GRADES.map((g) => (
-              <option key={g} value={g}>
-                Cấp bậc {g}
-              </option>
-            ))}
-          </select>
-        </div>
 
         <div className="w-36">
           <select

@@ -138,7 +138,7 @@ describe('invitations', () => {
 
     expect(result.created).toHaveLength(20);
     expect(result.rejected).toHaveLength(2);
-    expect(result.rejected[0]).toMatchObject({ email: 'p20@startup.vn', reason: 'Đã hết số ghế của gói.' });
+    expect(result.rejected[0]).toMatchObject({ email: 'p20@startup.vn', reason: 'Đã hết quyền sử dụng của gói.' });
   });
 
   it('resends and revokes a pending invitation', async () => {
@@ -260,7 +260,7 @@ describe('subscription (owner only)', () => {
     const impact = await call('post', '/subscription/preview', { planCode: 'ENT_STARTER', seats: 5, cycle: 'month' });
 
     expect(impact.allowed).toBe(false);
-    expect(impact.blockers[0]).toMatch(/14 ghế/);
+    expect(impact.blockers[0]).toMatch(/14 quyền sử dụng/);
     expect(await failure(call('post', '/subscription/change', { planCode: 'ENT_STARTER', seats: 5, cycle: 'month' }))).toMatchObject({ status: 409 });
   });
 

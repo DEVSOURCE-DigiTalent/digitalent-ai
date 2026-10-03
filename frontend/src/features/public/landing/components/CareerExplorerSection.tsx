@@ -53,14 +53,17 @@ function PositionCard({ position, index, linkLabel }: { position: ReferencePosit
   const { selected, domains } = summarizeRequirements(position);
 
   return (
-    <article className={cn(CARD, 'justify-between gap-8 bg-landing-card')} style={stagger(index)}>
+    <article className={cn(CARD, 'justify-between gap-8 bg-landing-card ring-1 ring-transparent transition-all duration-300 hover:ring-cream/20')} style={stagger(index)}>
       <DomainPips domains={domains} />
 
       <div>
         <h3 className="text-[22px] font-normal leading-[1.22] tracking-[-0.015em] text-cream">{position.name}</h3>
         <p className="mt-2 text-sm leading-[1.5] text-stone-400">{position.description}</p>
         <p className="mt-4 text-xs text-stone-500 tabular-nums">{selected}/24 năng lực được chọn</p>
-        <Link to={`/careers/${position.code.toLowerCase()}`} className="group mt-5 inline-flex items-center gap-1.5 text-sm text-cream">
+        <Link
+          to={`/careers/${position.code.toLowerCase()}`}
+          className="group mt-4 inline-flex min-h-[44px] items-center gap-1.5 text-sm text-cream touch-manipulation"
+        >
           {linkLabel}
           <span className="sr-only"> {position.name}</span>
           <ArrowRight

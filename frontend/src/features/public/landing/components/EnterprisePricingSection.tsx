@@ -61,7 +61,7 @@ export function EnterprisePricingSection({ section }: { section: PricingSection 
           </StepButton>
         </div>
         <p className="text-center text-xs leading-[1.6] text-stone-500">
-          Mỗi nhân viên đang hoạt động chiếm một ghế, và lời mời chưa kích hoạt vẫn chiếm ghế.
+          Mỗi thành viên đang hoạt động và lời mời đang chờ kích hoạt đều tính vào quyền sử dụng.
         </p>
       </div>
 
@@ -122,7 +122,7 @@ function PlanPanel({ plan, seats }: { plan: Plan; seats: number }) {
         {contactOnly && <p className="text-3xl font-light tracking-[-0.03em]">Liên hệ</p>}
         {!contactOnly && overLimit && range && (
           <p className="text-sm leading-[1.6] text-stone-400">
-            {plan.name} hỗ trợ tối đa {range.max} ghế. Với {seats} nhân viên, hãy chọn gói khác.
+            {plan.name} hỗ trợ tối đa {range.max} người dùng. Với {seats} nhân viên, hãy chọn gói khác.
           </p>
         )}
         {!contactOnly && !overLimit && (
@@ -132,8 +132,8 @@ function PlanPanel({ plan, seats }: { plan: Plan; seats: number }) {
               <span className="ml-1 text-sm text-stone-400">/ tháng</span>
             </p>
             <p className="mt-1 text-xs text-stone-500 tabular-nums">
-              {formatVnd(plan.monthlyPrice ?? 0)} × {billedSeats} ghế
-              {range && seats < range.min ? ` · tối thiểu ${range.min} ghế` : ''}
+              {formatVnd(plan.monthlyPrice ?? 0)} × {billedSeats} người dùng
+              {range && seats < range.min ? ` · tối thiểu ${range.min} người dùng` : ''}
             </p>
           </>
         )}
@@ -167,6 +167,14 @@ function PlanPanel({ plan, seats }: { plan: Plan; seats: number }) {
           Chọn gói {plan.name}
           <ArrowRight className="size-4 transition-transform duration-300 ease-cinematic motion-safe:group-hover:translate-x-0.5" aria-hidden="true" />
         </Link>
+      )}
+      {!contactOnly && overLimit && (
+        <div
+          aria-disabled="true"
+          className="mt-8 inline-flex items-center justify-center rounded-full border border-cream/10 bg-cream/5 px-6 py-3 text-sm text-stone-500 cursor-not-allowed"
+        >
+          Số nhân viên vượt quá quy mô gói
+        </div>
       )}
     </article>
   );

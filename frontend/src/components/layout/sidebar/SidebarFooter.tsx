@@ -22,7 +22,7 @@ export function SidebarFooter({
       {!isRail && hasSeatsInfo && (
         <div className="text-xs text-ent-sidebar-muted mb-1">
           <div className="flex items-center justify-between mb-1">
-            <span>Ghế sử dụng</span>
+            <span>Quyền sử dụng</span>
             <span className="tabular-nums font-medium text-ent-sidebar-fg">
               {usedSeats} / {totalSeats}
             </span>

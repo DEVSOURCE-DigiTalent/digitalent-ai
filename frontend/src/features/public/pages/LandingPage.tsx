@@ -13,6 +13,7 @@ import { LandingFooter } from '../landing/components/LandingFooter';
 import { SectionLink } from '../landing/components/LandingLinks';
 import { LandingMotionProvider } from '../landing/components/LandingMotionProvider';
 import { StickyDock } from '../landing/components/LandingNav';
+import { LandingAudioControl } from '../landing/components/LandingAudioControl';
 
 interface LandingPageProps {
   /** Copy of the product shown; the enterprise one unless told otherwise. */
@@ -69,6 +70,7 @@ function LandingShell() {
         Bỏ qua đến nội dung
       </SectionLink>
       <StickyDock visible={scrolledPastHero} />
+      <LandingAudioControl />
 
       <HeroSection metaRef={heroMetaRef} />
       <main id={SECTION_IDS.main} tabIndex={-1} className="outline-none">

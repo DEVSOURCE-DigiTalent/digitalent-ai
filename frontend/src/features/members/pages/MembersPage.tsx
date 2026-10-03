@@ -16,11 +16,6 @@ import { MEMBER_STATUS_LABELS, MEMBER_STATUS_VARIANTS, roleLabel, rolesLabel } f
 
 const PAGE_SIZE = 15;
 const ENTERPRISE_ROLES = [ROLES.OWNER, ROLES.MANAGER, ROLES.EMPLOYEE];
-const JOB_GRADES = [
-  { code: 'G1', label: 'G1 - Nhân viên' },
-  { code: 'G2', label: 'G2 - Phó phòng' },
-  { code: 'G3', label: 'G3 - Trưởng phòng' },
-];
 
 const SELECT_CLASS =
   'px-2.5 py-1.5 text-xs bg-ent-raised border border-ent-line rounded-lg text-ent-fg focus:outline-none focus:ring-1 focus:ring-ent-accent';
@@ -41,7 +36,6 @@ export function MembersPage() {
   const [role, setRole] = useState('');
   const [departmentId, setDepartmentId] = useState('');
   const [jobPositionId, setJobPositionId] = useState('');
-  const [jobGrade, setJobGrade] = useState('');
   const [page, setPage] = useState(1);
   const [inviting, setInviting] = useState(false);
 
@@ -56,7 +50,6 @@ export function MembersPage() {
     role: role || undefined,
     departmentId: departmentId || undefined,
     jobPositionId: jobPositionId || undefined,
-    jobGrade: jobGrade || undefined,
   });
 
   const seats = user.subscription?.seatLimit;
@@ -98,16 +91,11 @@ export function MembersPage() {
     },
     {
       key: 'position',
-      header: 'Vị trí & Cấp bậc',
+      header: 'Vị trí công việc',
       cell: (m) => (
-        <div className="flex items-center gap-1.5 whitespace-nowrap text-xs">
-          <span className="text-ent-fg truncate max-w-[120px] xl:max-w-[160px]">{m.positionName ?? '—'}</span>
-          {m.jobGrade && (
-            <span className="inline-flex items-center rounded bg-[var(--ent-level-2)]/15 border border-[var(--ent-level-2)]/30 px-1 py-0.2 text-[11px] font-medium text-[var(--ent-level-2)]">
-              {m.jobGrade}
-            </span>
-          )}
-        </div>
+        <span className="text-ent-fg truncate max-w-[140px] xl:max-w-[180px] text-xs">
+          {m.positionName ?? '—'}
+        </span>
       ),
       hideOnMobile: true,
     },
@@ -177,7 +165,7 @@ export function MembersPage() {
         title="Thành viên"
         description={
           seats !== undefined && user.subscription?.seatsUsed !== undefined
-            ? `${user.subscription.seatsUsed} / ${seats} ghế đang dùng · Quản lý nhân sự, vai trò và phân bố năng lực`
+            ? `${user.subscription.seatsUsed} / ${seats} quyền sử dụng đã cấp · Quản lý nhân sự, vai trò và phân bố năng lực`
             : 'Những người có quyền truy cập tổ chức'
         }
         actions={
@@ -236,19 +224,6 @@ export function MembersPage() {
               {positions.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label="Lọc theo Cấp bậc"
-              value={jobGrade}
-              onChange={(e) => resetPage(setJobGrade)(e.target.value)}
-              className={SELECT_CLASS}
-            >
-              <option value="">Mọi Cấp bậc</option>
-              {JOB_GRADES.map((g) => (
-                <option key={g.code} value={g.code}>
-                  {g.label}
                 </option>
               ))}
             </select>

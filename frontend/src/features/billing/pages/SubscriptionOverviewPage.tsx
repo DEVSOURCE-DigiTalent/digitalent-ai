@@ -117,9 +117,9 @@ export function SubscriptionOverviewPage() {
             </dd>
           </div>
           <div>
-            <dt className="text-xs uppercase font-semibold text-slate-500">Số ghế nhân sự</dt>
+            <dt className="text-xs uppercase font-semibold text-slate-500">Người dùng đã kích hoạt</dt>
             <dd className={`mt-1 font-bold text-base ${seatsFull ? 'text-red-600' : 'text-slate-900'}`}>
-              {subscription.seatsUsed} {subscription.seatLimit !== undefined ? `/ ${subscription.seatLimit} ghế` : 'ghế (Không giới hạn)'}
+              {subscription.seatsUsed} {subscription.seatLimit !== undefined ? `/ ${subscription.seatLimit} người dùng đã kích hoạt` : 'người dùng đã kích hoạt (Không giới hạn)'}
             </dd>
           </div>
           <div>
@@ -160,7 +160,7 @@ export function SubscriptionOverviewPage() {
               <Users className="size-5" />
               <span className="font-bold text-xs uppercase tracking-wider">Mức sử dụng</span>
             </div>
-            <h3 className="text-lg font-bold text-slate-900">Số ghế & Dung lượng lưu trữ</h3>
+            <h3 className="text-lg font-bold text-slate-900">Quyền sử dụng & Dung lượng lưu trữ</h3>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
               Theo dõi chi tiết mức sử dụng tài nguyên của tổ chức, số lượng thành viên đang kích hoạt và hạn mức lưu trữ hồ sơ tài liệu.
             </p>

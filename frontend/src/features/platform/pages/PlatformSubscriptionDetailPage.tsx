@@ -139,7 +139,7 @@ export function PlatformSubscriptionDetailPage() {
           <div>
             <p className="text-xs font-medium text-slate-500">Gói đang áp dụng</p>
             <p className="text-sm font-bold text-slate-900">{sub.planName}</p>
-            <p className="text-xs text-slate-500">{sub.seats} ghế tài khoản</p>
+            <p className="text-xs text-slate-500">{sub.seats} người dùng</p>
           </div>
         </div>
 

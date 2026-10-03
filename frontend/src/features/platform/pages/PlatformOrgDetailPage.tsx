@@ -77,7 +77,7 @@ export function PlatformOrgDetailPage() {
       await updateQuota.mutateAsync({ id: org.id, seatLimit: Number(newSeatLimit) });
       setQuotaModalOpen(false);
     } catch (e: any) {
-      setActionError(e?.message || 'Không thể cập nhật hạn mức ghế.');
+      setActionError(e?.message || 'Không thể cập nhật hạn mức người dùng.');
     }
   };
 
@@ -274,8 +274,8 @@ export function PlatformOrgDetailPage() {
                 </div>
                 <div className="border-t border-slate-100 pt-3">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-slate-500">Hạn mức số ghế:</span>
-                    <span className="font-bold text-slate-900">{org.seatsUsed} / {org.seatLimit} ghế</span>
+                    <span className="text-slate-500">Quyền sử dụng:</span>
+                    <span className="font-bold text-slate-900">{org.seatsUsed} / {org.seatLimit} quyền sử dụng</span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2">
                     <div
@@ -299,7 +299,7 @@ export function PlatformOrgDetailPage() {
                   className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
                   <Sliders className="size-4" />
-                  Điều chỉnh hạn mức ghế
+                  Điều chỉnh hạn mức người dùng
                 </button>
                 {org.status === 'ACTIVE' ? (
                   <button
@@ -341,9 +341,9 @@ export function PlatformOrgDetailPage() {
                 <dd className="text-xs text-slate-400 mt-0.5">Mã gói: {org.planCode}</dd>
               </div>
               <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
-                <dt className="text-slate-500 font-medium">Hạn mức số ghế</dt>
-                <dd className="mt-1 text-lg font-bold text-slate-900">{org.seatLimit} ghế</dd>
-                <dd className="text-xs text-slate-400 mt-0.5">Đã sử dụng: {org.seatsUsed} ghế</dd>
+                <dt className="text-slate-500 font-medium">Hạn mức người dùng</dt>
+                <dd className="mt-1 text-lg font-bold text-slate-900">{org.seatLimit} người dùng</dd>
+                <dd className="text-xs text-slate-400 mt-0.5">Đã cấp: {org.seatsUsed} quyền sử dụng</dd>
               </div>
               <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
                 <dt className="text-slate-500 font-medium">Trạng thái thanh toán</dt>
@@ -367,7 +367,7 @@ export function PlatformOrgDetailPage() {
                 className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
               >
                 <Sliders className="size-4" />
-                Cập nhật hạn mức ghế
+                Cập nhật hạn mức người dùng
               </button>
               <button
                 type="button"
@@ -387,12 +387,12 @@ export function PlatformOrgDetailPage() {
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2">
               <Activity className="size-5 text-primary-600" />
-              Sử dụng tài nguyên và phân bổ ghế
+              Sử dụng tài nguyên và phân bổ quyền sử dụng
             </h2>
             <div className="space-y-6">
               <div>
                 <div className="flex justify-between text-sm font-medium mb-2">
-                  <span className="text-slate-700">Tỷ lệ sử dụng số ghế:</span>
+                  <span className="text-slate-700">Tỷ lệ sử dụng quyền sử dụng:</span>
                   <span className="text-primary-700 font-bold">
                     {org.seatsUsed} / {org.seatLimit} ({Math.round((org.seatsUsed / org.seatLimit) * 100)}%)
                   </span>
@@ -404,7 +404,7 @@ export function PlatformOrgDetailPage() {
                   />
                 </div>
                 <p className="mt-2 text-xs text-slate-500">
-                  Còn lại {Math.max(0, org.seatLimit - org.seatsUsed)} ghế trống sẵn sàng mời thêm nhân sự.
+                  Còn lại {Math.max(0, org.seatLimit - org.seatsUsed)} quyền sử dụng sẵn sàng mời thêm nhân sự.
                 </p>
               </div>
 
@@ -524,16 +524,16 @@ export function PlatformOrgDetailPage() {
       <Modal
         open={quotaModalOpen}
         onClose={() => setQuotaModalOpen(false)}
-        title="Điều chỉnh hạn mức số ghế (Quota)"
+        title="Điều chỉnh hạn mức người dùng (Quota)"
       >
         <div className="space-y-4">
           <p className="text-sm text-slate-600">
-            Điều chỉnh tổng số ghế tối đa được phép cấp phát cho nhân sự của tổ chức <strong className="text-slate-900">{org.name}</strong>.
+            Điều chỉnh tổng số người dùng tối đa được phép cấp phát cho nhân sự của tổ chức <strong className="text-slate-900">{org.name}</strong>.
           </p>
 
           <div>
             <label htmlFor="quota-input" className="block text-sm font-medium text-slate-700 mb-1">
-              Số ghế tối đa mới
+              Số người dùng tối đa mới
             </label>
             <input
               id="quota-input"
@@ -544,7 +544,7 @@ export function PlatformOrgDetailPage() {
               onChange={(e) => setNewSeatLimit(Number(e.target.value))}
               className="w-full rounded-lg border border-slate-300 p-2.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             />
-            <p className="mt-1 text-xs text-slate-500">Hiện tại tổ chức đã dùng {org.seatsUsed} ghế.</p>
+            <p className="mt-1 text-xs text-slate-500">Hiện tại tổ chức đã cấp {org.seatsUsed} quyền sử dụng.</p>
           </div>
 
           {actionError && <p className="text-xs text-red-600 font-medium">{actionError}</p>}

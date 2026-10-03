@@ -51,7 +51,7 @@ docker run --rm \
     -v /opt/digitalent-ai/frontend:/app \
     -w /app \
     node:20-alpine \
-    sh -c "npm install --include=dev --legacy-peer-deps && npm install react-is --legacy-peer-deps && npx vite build"
+    sh -c "npm install react-is@^19.0.0 --save --legacy-peer-deps && npm install --include=dev --legacy-peer-deps && npx vite build"
 
 # 6. Build and restart Docker containers
 echo "--> Rebuilding and launching Docker containers..."

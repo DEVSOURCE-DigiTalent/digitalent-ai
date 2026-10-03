@@ -99,8 +99,6 @@ export function PlacementModal({ member, open, onClose }: MemberDialogProps) {
   const [departmentId, setDepartmentId] = useState(member.departmentId ?? '');
   const [jobPositionId, setJobPositionId] = useState(member.jobPositionId ?? '');
 
-  const selectedPos = positions.find((p) => p.id === jobPositionId);
-
   const save = async () => {
     try {
       await update.mutateAsync({ id: member.id, data: { departmentId: departmentId || undefined, jobPositionId } });
@@ -141,11 +139,6 @@ export function PlacementModal({ member, open, onClose }: MemberDialogProps) {
             <option value="">Chưa xếp vị trí</option>
             {positions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          {selectedPos?.jobGrade && (
-            <p className="mt-1 text-xs font-medium text-purple-700">
-              Cấp bậc tự động: {selectedPos.jobGrade} ({selectedPos.jobGrade === 'G3' ? 'Trưởng phòng' : selectedPos.jobGrade === 'G2' ? 'Phó phòng' : 'Nhân viên'})
-            </p>
-          )}
         </div>
       </div>
     </Modal>
@@ -161,7 +154,7 @@ export function DeactivateMemberDialog({ member, open, onClose }: MemberDialogPr
       open={open}
       onClose={onClose}
       title={`Vô hiệu hóa ${member.fullName}?`}
-      description="Người này sẽ không đăng nhập được nữa và ghế được trả lại cho gói. Hồ sơ năng lực, lịch sử học tập và bằng chứng vẫn được giữ nguyên, có thể kích hoạt lại sau."
+      description="Người này sẽ không đăng nhập được nữa và quyền sử dụng được giải phóng lại cho gói. Hồ sơ năng lực, lịch sử học tập và bằng chứng vẫn được giữ nguyên, có thể kích hoạt lại sau."
       confirmLabel="Vô hiệu hóa"
       requireReason
       reasonPlaceholder="Ví dụ: nghỉ việc, chuyển công ty…"
@@ -184,7 +177,7 @@ export function ReactivateMemberDialog({ member, open, onClose }: MemberDialogPr
       open={open}
       onClose={onClose}
       title={`Kích hoạt lại ${member.fullName}?`}
-      description="Người này đăng nhập lại được và chiếm một ghế của gói."
+      description="Người này đăng nhập lại được và sử dụng một quyền sử dụng của gói."
       confirmLabel="Kích hoạt lại"
       confirmVariant="primary"
       onConfirm={async () => {
@@ -221,7 +214,7 @@ export function InvitationActions({ member }: { member: MemberListItem }) {
         open={confirmRevoke}
         onClose={() => setConfirmRevoke(false)}
         title={`Thu hồi lời mời của ${member.fullName}?`}
-        description="Liên kết kích hoạt sẽ không dùng được nữa và ghế được trả lại cho gói."
+        description="Liên kết kích hoạt sẽ không dùng được nữa và quyền sử dụng được giải phóng lại cho gói."
         confirmLabel="Thu hồi"
         onConfirm={async () => {
           try {

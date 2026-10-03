@@ -129,8 +129,8 @@ export function InviteMembersModal({ open, onClose }: InviteMembersModalProps) {
         {seatsLeft !== undefined && (
           <p role="status" className={seatsLeft < 0 ? 'text-sm text-red-600' : 'text-sm text-slate-600'}>
             {seatsLeft < 0
-              ? `Danh sách vượt số ghế của gói ${-seatsLeft} người.`
-              : `Còn ${seatsLeft} ghế trong gói ${user.subscription?.planName}.`}
+              ? `Danh sách vượt hạn ngạch quyền sử dụng của gói ${-seatsLeft} người.`
+              : `Còn ${seatsLeft} quyền sử dụng trong gói ${user.subscription?.planName}.`}
           </p>
         )}
 
@@ -167,16 +167,6 @@ export function InviteMembersModal({ open, onClose }: InviteMembersModalProps) {
                 <option value="">Chưa xếp</option>
                 {positions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
-              {(() => {
-                const pos = positions.find((p) => p.id === draft.jobPositionId);
-                if (!pos?.jobGrade) return null;
-                const gradeName = pos.jobGrade === 'G3' ? 'Trưởng phòng' : pos.jobGrade === 'G2' ? 'Phó phòng' : 'Nhân viên';
-                return (
-                  <p className="text-xs text-purple-700 font-medium">
-                    Cấp bậc tự động: {pos.jobGrade} ({gradeName})
-                  </p>
-                );
-              })()}
             </div>
           </div>
 

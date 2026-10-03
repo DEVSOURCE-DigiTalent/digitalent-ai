@@ -62,6 +62,8 @@ export const legacyRedirectRoutes: RouteObject[] = [
   { path: '/enterprise/my-skill-gap', element: <RedirectWithQuery to="/enterprise/me/skill-gap" /> },
   { path: '/enterprise/my-tasks', element: <RedirectWithQuery to="/enterprise/me/tasks" /> },
   { path: '/enterprise/my-achievements', element: <RedirectWithQuery to="/enterprise/me/achievements" /> },
+  { path: '/enterprise/me/certificates', element: <RedirectWithQuery to="/enterprise/me/achievements" /> },
+  { path: '/enterprise/positions/grades', element: <RedirectWithQuery to="/enterprise/positions" /> },
   { path: '/enterprise/evidence/:id', element: <RedirectWithQuery to="/enterprise/reviews" /> },
   { path: '/enterprise/reviews/evidence/:id', element: <RedirectWithQuery to="/enterprise/reviews" /> },
 

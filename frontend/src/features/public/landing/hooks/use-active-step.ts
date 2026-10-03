@@ -4,7 +4,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * Which of several stacked blocks sits in the middle band of the viewport while scrolling.
  * Register each block with `register(index)`; without IntersectionObserver the first block stays active.
  */
-export function useActiveStep(count: number): { active: number; register: (index: number) => (element: HTMLElement | null) => void } {
+export function useActiveStep(count: number): {
+  active: number;
+  setActive: (index: number) => void;
+  register: (index: number) => (element: HTMLElement | null) => void;
+  scrollToStep: (index: number) => void;
+} {
   const [active, setActive] = useState(0);
   const elements = useRef<(HTMLElement | null)[]>([]);
 
@@ -14,6 +19,14 @@ export function useActiveStep(count: number): { active: number; register: (index
     },
     []
   );
+
+  const scrollToStep = useCallback((index: number) => {
+    setActive(index);
+    const target = elements.current[index];
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof IntersectionObserver === 'undefined') return;
@@ -31,5 +44,5 @@ export function useActiveStep(count: number): { active: number; register: (index
     return () => observer.disconnect();
   }, [count]);
 
-  return { active, register };
+  return { active, setActive, register, scrollToStep };
 }
