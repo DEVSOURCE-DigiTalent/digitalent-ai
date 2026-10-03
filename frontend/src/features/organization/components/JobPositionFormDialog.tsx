@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateJobPosition, useUpdateJobPosition } from '@/hooks/use-job-positions';
 import { useDepartments } from '@/hooks/use-departments';
-import { useJobGrades } from '@/hooks/use-job-grades';
 import type { JobPositionListItem } from '@/services/job-position.service';
 import { toast } from 'sonner';
 import { apiErrorMessage } from '@/lib/utils';
@@ -15,7 +14,6 @@ const formSchema = z.object({
   name: z.string().min(1, 'Vui lòng nhập tên'),
   description: z.string().optional(),
   departmentId: z.string().optional(),
-  jobGrade: z.enum(['G1', 'G2', 'G3']).optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 });
 
@@ -35,13 +33,6 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
   const { data: deptData } = useDepartments({ pageSize: 100, status: 'ACTIVE' });
   const departments = deptData?.items || [];
 
-  const { data: gradesData } = useJobGrades();
-  const grades = gradesData || [
-    { code: 'G1', name: 'Nhân viên' },
-    { code: 'G2', name: 'Phó phòng' },
-    { code: 'G3', name: 'Trưởng phòng' },
-  ];
-
   const {
     register,
     handleSubmit,
@@ -54,7 +45,6 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
       name: '',
       description: '',
       departmentId: '',
-      jobGrade: 'G1',
       status: 'ACTIVE',
     },
   });
@@ -67,7 +57,6 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
           name: position.name,
           description: '',
           departmentId: position.departmentId || '',
-          jobGrade: position.jobGrade || 'G1',
           status: position.status === 'ARCHIVED' ? 'ACTIVE' : position.status,
         });
       } else {
@@ -76,7 +65,6 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
           name: '',
           description: '',
           departmentId: '',
-          jobGrade: 'G1',
           status: 'ACTIVE',
         });
       }
@@ -95,7 +83,6 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
             name: data.name.trim(),
             description: data.description?.trim(),
             departmentId: data.departmentId || undefined,
-            jobGrade: data.jobGrade,
             status: data.status as 'ACTIVE' | 'INACTIVE',
           },
         });
@@ -106,7 +93,6 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
           name: data.name.trim(),
           description: data.description?.trim(),
           departmentId: data.departmentId || undefined,
-          jobGrade: data.jobGrade,
         });
         toast.success('Đã tạo vị trí công việc');
       }
@@ -168,23 +154,6 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Cấp bậc (Job Grade) *</label>
-            <select
-              {...register('jobGrade')}
-              className={INPUT_CLASS}
-              disabled={isSubmitting}
-            >
-              {grades.map((g) => (
-                <option key={g.code} value={g.code}>
-                  {g.code} - {g.name}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-2xs text-slate-500">
-              Nhân sự giữ vị trí này sẽ tự động nhận Cấp bậc tương ứng.
-            </p>
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Mô tả</label>

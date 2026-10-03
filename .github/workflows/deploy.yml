@@ -24,4 +24,4 @@ jobs:
           timeout: 15m
           command_timeout: 15m
           script: |
-            /opt/digitalent-ai/scripts/deploy-develop.sh
+            bash /opt/digitalent-ai/scripts/deploy-develop.sh

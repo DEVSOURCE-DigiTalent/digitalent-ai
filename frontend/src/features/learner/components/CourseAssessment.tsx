@@ -127,7 +127,20 @@ export function CourseAssessment({ course }: { course: PersonalCourseDetail }) {
 
       {!outcome && (
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-pt-line pt-6">
-          {submit.isError ? <p role="alert" className="text-sm text-pt-bad">{errorMessage(submit.error)}</p> : <span />}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const filled = Object.fromEntries(questions.map((q) => [q.id, q.correctOptionIndex ?? 0]));
+                setAnswers(filled);
+              }}
+              className={PT_BUTTON_SECONDARY}
+              title="Tự động chọn đáp án đúng để hỗ trợ trình diễn demo nhanh"
+            >
+              ⚡ Điền đáp án chuẩn (Demo)
+            </button>
+            {submit.isError && <p role="alert" className="text-sm text-pt-bad">{errorMessage(submit.error)}</p>}
+          </div>
           <button
             type="button"
             disabled={!allAnswered || submit.isPending}
@@ -139,5 +152,6 @@ export function CourseAssessment({ course }: { course: PersonalCourseDetail }) {
         </div>
       )}
     </Card>
+
   );
 }

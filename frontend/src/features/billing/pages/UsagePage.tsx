@@ -44,12 +44,12 @@ export function UsagePage() {
 
   return (
     <div>
-      <PageHeader title="Số ghế và mức sử dụng" subtitle={`Gói ${data.planName}`}>
+      <PageHeader title="Quyền sử dụng và mức lưu trữ" subtitle={`Gói ${data.planName}`}>
         {isOwner && <Link to="/enterprise/subscription" className="text-sm font-medium text-primary-700 hover:underline">Quản lý gói</Link>}
       </PageHeader>
 
       <div className="mb-6 grid gap-4 md:grid-cols-2">
-        <Meter label="Ghế" used={data.seats.used} limit={data.seats.limit} unit="ghế" valueLabel={data.seats.limit === null ? `${data.seats.used}` : `${data.seats.used} / ${data.seats.limit}`} />
+        <Meter label="Quyền sử dụng" used={data.seats.used} limit={data.seats.limit} unit="quyền sử dụng" valueLabel={data.seats.limit === null ? `${data.seats.used}` : `${data.seats.used} / ${data.seats.limit}`} />
         <Meter label="Dung lượng lưu trữ" used={data.storage.usedMb} limit={data.storage.limitMb} unit="dung lượng" valueLabel={`${gb(data.storage.usedMb)} / ${gb(data.storage.limitMb)}`} />
       </div>
 

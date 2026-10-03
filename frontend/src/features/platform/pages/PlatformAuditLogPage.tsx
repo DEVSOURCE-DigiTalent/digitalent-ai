@@ -99,7 +99,7 @@ export function PlatformAuditLogPage() {
           <option value="">Tất cả hành động</option>
           <option value="ORGANIZATION_SUSPENDED">Tạm khóa tổ chức</option>
           <option value="ORGANIZATION_ACTIVATED">Mở khóa tổ chức</option>
-          <option value="QUOTA_UPDATED">Điều chỉnh số ghế</option>
+          <option value="QUOTA_UPDATED">Điều chỉnh hạn mức người dùng</option>
           <option value="USER_ACCOUNT_LOCKED">Khóa tài khoản người dùng</option>
           <option value="USER_ACCOUNT_UNLOCKED">Mở khóa tài khoản người dùng</option>
           <option value="USER_PASSWORD_RESET_ASSISTED">Cấp lại mật khẩu người dùng</option>

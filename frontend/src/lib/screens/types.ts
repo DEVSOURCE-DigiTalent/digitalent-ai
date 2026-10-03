@@ -19,4 +19,5 @@ export interface ScreenDef {
   /** Stays reachable while the subscription is expired (billing, account, notifications). */
   allowUnpaid?: boolean;
   priority: ScreenPriority;
+  status?: 'ACTIVE' | 'RETIRED';
 }

@@ -69,7 +69,7 @@ interface EmployeeSeed {
 }
 
 const EMPLOYEES: EmployeeSeed[] = [
-  { n: 1, name: 'Hoàng Văn Nhân Viên', email: 'employee@digitalent.demo', department: 'dep-kt', position: 'pos-acc', base: 1, accountId: 'mock-employee', roles: ['EMPLOYEE'] },
+  { n: 1, name: 'Hoàng Văn Nhân Viên', email: 'employee@digitalent.demo', department: 'dep-kd', position: 'pos-sales', base: 1, accountId: 'mock-employee', roles: ['EMPLOYEE'] },
   { n: 2, name: 'Phạm Thị Quản Lý', email: 'manager@digitalent.demo', department: 'dep-kd', position: 'pos-sales-lead', base: 2.3, accountId: 'mock-manager', roles: ['MANAGER'] },
   { n: 3, name: 'Nguyễn Văn Chủ', email: 'owner@digitalent.demo', department: 'dep-bgd', position: 'pos-ceo', base: 2.6, accountId: 'mock-owner', roles: ['OWNER'] },
   { n: 4, name: 'Trần Thị Nhân Sự', email: 'nhansu.tran@acme.vn', department: 'dep-ns', position: 'pos-hr', base: 2.2, roles: ['EMPLOYEE'] },
@@ -236,7 +236,7 @@ function buildAudit(): AuditEntry[] {
     [-21, 'Lê Văn Học Tập', 'COURSE_ASSIGNED', 'Khóa học', 'A4-F cho Lý Mai Phương'],
     [-30, 'Lê Văn Học Tập', 'REQUIREMENT_ACTIVATED', 'Yêu cầu năng lực', 'Kinh doanh (CRM) v2'],
     [-31, 'Nguyễn Văn Chủ', 'ORGANIZATION_UPDATED', 'Tổ chức', 'Công ty Cổ phần Acme', 'Cập nhật quy mô'],
-    [-45, 'Nguyễn Văn Chủ', 'SUBSCRIPTION_PURCHASED', 'Gói dịch vụ', 'Doanh nghiệp Pro', '100 ghế'],
+    [-45, 'Nguyễn Văn Chủ', 'SUBSCRIPTION_PURCHASED', 'Gói dịch vụ', 'Doanh nghiệp Pro', '100 người dùng'],
   ];
   return rows.map(([days, actorName, action, targetType, targetLabel, detail], index) => ({
     id: `aud-${String(index + 1).padStart(3, '0')}`,

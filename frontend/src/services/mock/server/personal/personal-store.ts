@@ -73,7 +73,7 @@ function answersForLevels(levels: number[]): Record<string, number> {
   return answers;
 }
 
-function demoState(): PersonalState {
+export function demoState(): PersonalState {
   const now = Date.now();
   const at = (daysAgo: number, hour = 20) => {
     const date = new Date(now - daysAgo * DAY_MS);

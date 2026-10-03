@@ -53,7 +53,7 @@ export function OrganizationOverviewPage() {
       <div className="space-y-1">
         <PageHeader
           title="Tổng quan tổ chức"
-          description={`${orgData.name} · Bảng điều khiển nhân lực, phân bố cấp bậc và năng lực số`}
+          description={`${orgData.name} · Bảng điều khiển nhân lực và năng lực số`}
         />
         <p className="font-landing-serif italic text-sm text-ent-fg-3 -mt-4">
           Chào mừng trở lại, theo dõi tiến độ nâng cao năng lực số của tổ chức hôm nay.
@@ -80,10 +80,10 @@ export function OrganizationOverviewPage() {
           subtitle={`${orgData.members.inactive} vô hiệu · ${orgData.members.pending} chờ kích hoạt`}
         />
         <ScoreCard
-          label="Quyền sử dụng đã cấp"
-          value={orgData.seats.limit === null ? orgData.seats.used : `${orgData.seats.used} / ${orgData.seats.limit}`}
+          label="Người dùng đã kích hoạt"
+          value={orgData.seats.limit === null ? `${orgData.seats.used} người dùng` : `${orgData.seats.used} / ${orgData.seats.limit} người dùng`}
           variant={seatsFull ? 'danger' : 'default'}
-          subtitle={seatsFull ? 'Đã hết quyền: cần nâng gói' : 'Theo gói đăng ký'}
+          subtitle={seatsFull ? 'Đã hết hạn mức: cần nâng gói' : 'Theo gói đăng ký'}
         />
         <ScoreCard
           label="Tỷ lệ đáp ứng năng lực"
@@ -109,60 +109,46 @@ export function OrganizationOverviewPage() {
         />
       </div>
 
-      {/* ── Main Grid 1: Job Grade Distribution & 6 Competency Domains ── */}
+      {/* ── Main Grid 1: Org Structure & 6 Competency Domains ── */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Phân bố Cấp bậc G1-G3 */}
-        <section aria-labelledby="grades-title" className="rounded-lg border border-ent-line bg-ent-card p-5">
+        {/* Cơ cấu nhân sự theo tổ chức */}
+        <section aria-labelledby="org-structure-title" className="rounded-lg border border-ent-line bg-ent-card p-5">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 id="grades-title" className="text-base font-semibold text-ent-fg">
-                Phân bố Cấp bậc (G1 – G3)
+              <h2 id="org-structure-title" className="text-base font-semibold text-ent-fg">
+                Cơ cấu nhân sự theo tổ chức
               </h2>
-              <p className="text-xs text-ent-fg-3">Cơ cấu nhân sự theo cấp bậc chuyên môn và quản lý</p>
+              <p className="text-xs text-ent-fg-3">Phòng ban và các vị trí công việc chuẩn hóa</p>
             </div>
             <Link
-              to="/enterprise/positions/grades"
+              to="/enterprise/positions"
               className="text-xs font-medium text-ent-accent hover:underline"
             >
-              Cấu hình Cấp bậc &rarr;
+              Danh mục vị trí &rarr;
             </Link>
           </div>
 
           <div className="space-y-4">
-            {orgData.gradeDistribution && orgData.gradeDistribution.length > 0 ? (
-              orgData.gradeDistribution.map((item) => (
-                <div key={item.code} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-ent-fg">
-                      {item.code} - {item.name}
-                    </span>
-                    <span className="text-xs text-ent-fg-3 tabular-nums">
-                      {item.count} nhân sự ({item.percentage}%)
-                    </span>
-                  </div>
-                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-ent-raised">
-                    <div
-                      className={`h-full rounded-full transition-all duration-300 ${
-                        item.code === 'G3'
-                          ? 'bg-[var(--ent-level-3)]'
-                          : item.code === 'G2'
-                          ? 'bg-[var(--ent-level-2)]'
-                          : 'bg-[var(--ent-level-1)]'
-                      }`}
-                      style={{ width: `${Math.max(item.percentage, 4)}%` }}
-                    />
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-ent-fg-3">Chưa có dữ liệu phân bố cấp bậc.</p>
-            )}
+            <div className="rounded-lg border border-ent-line bg-ent-raised p-4 space-y-2.5">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-ent-fg font-medium">Nhân sự chính thức đang hoạt động</span>
+                <span className="font-bold text-ent-accent tabular-nums">{orgData.members.active} thành viên</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-ent-fg font-medium">Lời mời đang chờ kích hoạt</span>
+                <span className="font-semibold text-ent-fg-3 tabular-nums">{orgData.members.pending} tài khoản</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-ent-fg font-medium">Hạn mức tài khoản theo gói</span>
+                <span className="font-semibold text-ent-fg tabular-nums">{orgData.seats.limit ? `${orgData.seats.limit} người dùng` : 'Không giới hạn'}</span>
+              </div>
+            </div>
           </div>
 
           <div className="mt-5 border-t border-ent-line pt-3 text-xs text-ent-fg-3 flex justify-between items-center">
-            <span>Cấp bậc G1–G3 gắn liền với yêu cầu vị trí công việc.</span>
-            <Link to="/enterprise/positions" className="font-medium text-ent-accent hover:underline">
-              Xem vị trí &rarr;
+            <span>Tiêu chuẩn năng lực áp dụng trực tiếp theo từng vị trí công việc.</span>
+            <Link to="/enterprise/requirements" className="font-medium text-ent-accent hover:underline">
+              Yêu cầu vị trí &rarr;
             </Link>
           </div>
         </section>

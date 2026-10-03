@@ -1,3 +1,5 @@
+import { CURRICULUM_DATA } from './standard-curriculum';
+
 export interface LessonItem {
   id: string;
   moduleId: string;
@@ -39,8 +41,64 @@ export interface CourseAssessmentData {
   questions: AssessmentQuestion[];
 }
 
-/** Generates realistic modules and lessons for any standard course. */
+/** Generates realistic modules and lessons for any standard course, using authentic curriculum data when available. */
 export function getCourseModules(courseId: string, courseCode: string, courseTitle: string, moduleCount = 3): CourseModuleContent[] {
+  const curr = CURRICULUM_DATA[courseCode];
+  if (curr && curr.modules.length > 0) {
+    return curr.modules.map((m) => {
+      const moduleId = `mod-${courseId}-${m.moduleIndex}`;
+      const moduleTitle = `Học phần ${m.moduleIndex}: ${m.title} (TT02-${m.competencyCode})`;
+      const lessons: LessonItem[] = [
+        {
+          id: `les-${courseId}-${m.moduleIndex}-1`,
+          moduleId,
+          moduleTitle,
+          lessonNo: 1,
+          title: `Bài 1: ${m.title} — Lý thuyết & Quy chuẩn`,
+          durationMinutes: 20,
+          objective: `Nắm vững chuẩn năng lực ${m.competencyCode}: ${m.objectives.join('; ')}`,
+          summary: `Khung kiến thức chuẩn Thông tư 02/2025/TT-BGDĐT cho năng lực ${m.competencyCode}.`,
+          content: [
+            `Mục tiêu học tập: ${m.objectives.join('; ')}.`,
+            ...(m.definitions.length > 0 ? [`Quy chuẩn thuật ngữ (Thông tư 02/2025/TT-BGDĐT):`, ...m.definitions] : []),
+            ...m.body,
+          ],
+          keyTakeaways: m.objectives.length > 0 ? m.objectives.slice(0, 3) : ['Hiểu rõ quy chuẩn năng lực.', 'Nắm vững khái niệm cốt lõi.'],
+          practiceTask: `Tự kiểm tra các khái niệm cốt lõi của năng lực ${m.competencyCode} tại doanh nghiệp của bạn.`,
+        },
+        {
+          id: `les-${courseId}-${m.moduleIndex}-2`,
+          moduleId,
+          moduleTitle,
+          lessonNo: 2,
+          title: `Bài 2: Tác nghiệp thực tế & Hoàn thiện sản phẩm (${m.competencyCode})`,
+          durationMinutes: 25,
+          objective: `Ứng dụng năng lực ${m.competencyCode} giải quyết tình huống thực tế và bàn giao sản phẩm đạt chuẩn.`,
+          summary: `Phân tích tình huống công sở, các lỗi thường gặp và bài tập thực hành.`,
+          content: [
+            ...(m.examples.length > 0 ? m.examples : [`Tình huống thực tế ứng dụng trong môi trường doanh nghiệp:`]),
+            `Đề bài thực hành: ${m.practice}`,
+            `Sản phẩm nộp: ${m.deliverable || 'Bản ghi kết quả thực hiện theo hướng dẫn.'}`,
+            'Lưu ý: Luôn tuân thủ quy định bảo vệ an toàn dữ liệu và đạo đức số.',
+          ],
+          keyTakeaways: [
+            `Giải quyết trọn vẹn tình huống nghiệp vụ cho năng lực ${m.competencyCode}.`,
+            'Bàn giao sản phẩm công việc đúng hạn và đúng quy chuẩn.',
+          ],
+          practiceTask: `${m.practice} (Sản phẩm nộp: ${m.deliverable || 'Báo cáo/kết quả thực hiện'}).`,
+        },
+      ];
+
+      return {
+        id: moduleId,
+        moduleNo: m.moduleIndex,
+        title: moduleTitle,
+        description: `Cung cấp kiến thức và kỹ năng thực hành cho năng lực ${m.competencyCode} (${m.title}).`,
+        lessons,
+      };
+    });
+  }
+
   const modules: CourseModuleContent[] = [];
   for (let m = 1; m <= moduleCount; m++) {
     const moduleId = `mod-${courseId}-${m}`;
@@ -100,8 +158,32 @@ export function getCourseModules(courseId: string, courseCode: string, courseTit
   return modules;
 }
 
-/** Generates 10 standard assessment questions for a course. */
+/** Generates standard assessment questions for a course, using authentic questions from curriculum data when available. */
 export function getCourseAssessment(courseId: string, courseCode: string, courseTitle: string): CourseAssessmentData {
+  const curr = CURRICULUM_DATA[courseCode];
+  if (curr && curr.modules.length > 0) {
+    const rawQuestions = curr.modules.flatMap((m) => m.questions);
+    if (rawQuestions.length > 0) {
+      const selected = rawQuestions.slice(0, 10);
+      return {
+        id: `asm-${courseId.replace('crs-', '')}`,
+        courseId,
+        courseCode,
+        courseTitle,
+        timeLimitMinutes: 20,
+        passPercentage: 70,
+        questions: selected.map((q, idx) => ({
+          id: `q-${idx + 1}`,
+          questionText: q.questionText,
+          options: q.options,
+          correctOptionIndex: q.correctIndex,
+          explanation: q.explanation,
+          competencyCode: q.competencyCode,
+        })),
+      };
+    }
+  }
+
   return {
     id: `asm-${courseId.replace('crs-', '')}`,
     courseId,
@@ -110,6 +192,7 @@ export function getCourseAssessment(courseId: string, courseCode: string, course
     timeLimitMinutes: 20,
     passPercentage: 70,
     questions: [
+
       {
         id: 'q-1',
         questionText: 'Theo Thông tư 02/2025/TT-BGDĐT, hành động nào sau đây thể hiện đúng chuẩn mực bảo vệ dữ liệu cá nhân (TT02-4.2)?',

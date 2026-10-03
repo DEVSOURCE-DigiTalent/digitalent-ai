@@ -76,7 +76,7 @@ export function PlatformDashboardPage() {
     },
     {
       key: 'seats',
-      header: 'Số ghế',
+      header: 'Quyền sử dụng',
       cell: (row: PlatformOrganizationDto) => (
         <span className="text-sm text-slate-700 font-medium">
           {row.seatsUsed} / {row.seatLimit}

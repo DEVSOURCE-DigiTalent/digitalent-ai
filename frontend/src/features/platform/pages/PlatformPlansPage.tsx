@@ -91,10 +91,10 @@ export function PlatformPlansPage() {
     },
     {
       key: 'seatRange',
-      header: 'Hạn mức ghế',
+      header: 'Hạn mức người dùng',
       cell: (row: PlatformPlanDto) => (
         <span className="text-sm text-slate-700">
-          {row.seatRange ? `${row.seatRange.min} – ${row.seatRange.max} ghế` : '1 người'}
+          {row.seatRange ? `${row.seatRange.min} – ${row.seatRange.max} người dùng` : '1 người dùng'}
         </span>
       ),
     },

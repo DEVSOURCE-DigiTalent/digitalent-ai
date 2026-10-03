@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Lightbulb } from 'lucide-react';
-import { usePersonalCourse, useSaveCourseNotes, useSetLessonCompleted } from '@/hooks/use-personal-learning';
+import { useDemoFastTrackCourse, usePersonalCourse, useSaveCourseNotes, useSetLessonCompleted } from '@/hooks/use-personal-learning';
 import { levelLabelVi } from '@/lib/competency-levels';
 import { cn } from '@/lib/utils';
 import type { PersonalCourseDetail, PersonalLesson } from '@/services/personal-learning.service';
@@ -51,6 +51,7 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
   const module = course.modules.find((item) => item.lessons.some((entry) => entry.id === lesson.id))!;
   const [tab, setTab] = useState<'content' | 'notes'>('content');
   const setCompleted = useSetLessonCompleted();
+  const fastTrack = useDemoFastTrackCourse();
 
   const open = (target: PersonalLesson) => {
     setParams({ lesson: target.id }, { replace: true });
@@ -79,7 +80,19 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
             <ProgressBar value={course.progressPercent} label="Tiến độ khóa học" />
             <span className="text-xs tabular-nums text-pt-fg-3">{course.completedLessons}/{course.lessonCount}</span>
           </div>
+          {course.completedLessons < course.lessonCount && (
+            <button
+              type="button"
+              disabled={fastTrack.isPending}
+              onClick={() => fastTrack.mutate(course.id)}
+              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-pt-line bg-pt-raised px-3 py-1.5 text-xs text-pt-fg transition-colors hover:bg-pt-fg/10"
+              title="Đánh dấu hoàn thành toàn bộ bài học của khóa này để mở bài đánh giá"
+            >
+              ⚡ {fastTrack.isPending ? 'Đang hoàn tất…' : 'Hoàn thành bài học (Demo)'}
+            </button>
+          )}
           <h2 className="mt-5 text-xs uppercase tracking-[0.14em] text-pt-fg-3">Danh sách bài học</h2>
+
           <ol className="mt-3 grid max-h-[60vh] gap-4 overflow-y-auto pr-1">
             {course.modules.map((item) => (
               <li key={item.id}>

@@ -11,7 +11,14 @@ export interface PasswordFieldProps extends InputHTMLAttributes<HTMLInputElement
 export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
   ({ className, error, showMinHint = true, value, onChange, ...props }, ref) => {
     const [show, setShow] = useState(false);
-    const length = typeof value === 'string' ? value.length : 0;
+    const [innerLength, setInnerLength] = useState(0);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setInnerLength(e.target.value.length);
+      onChange?.(e);
+    };
+
+    const length = typeof value === 'string' ? value.length : innerLength;
 
     return (
       <div className="relative">
@@ -20,7 +27,7 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
           type={show ? 'text' : 'password'}
           autoComplete="new-password"
           value={value}
-          onChange={onChange}
+          onChange={handleChange}
           className={cn(DARK_INPUT_CLASS, 'pr-12', className)}
           aria-invalid={error ? true : undefined}
           {...props}
@@ -29,7 +36,7 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
           type="button"
           tabIndex={-1}
           onClick={() => setShow((prev) => !prev)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-cream transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-cream transition-colors cursor-pointer"
           aria-label={show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
         >
           {show ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}

@@ -60,14 +60,17 @@ export function EvidenceSection({ section }: { section: EvidenceSection }) {
           </p>
           <p className="mt-2 text-2xl leading-[1.25] tracking-[-0.02em] text-cream">{sample.task}</p>
 
-          <ol aria-label="Các giai đoạn của minh chứng" className="mt-8 grid gap-0 sm:grid-cols-5">
+          <ol aria-label="Các giai đoạn của minh chứng" className="relative mt-8 grid gap-0 sm:grid-cols-5">
+            {/* Connecting lines */}
+            <span aria-hidden="true" className="absolute bottom-6 left-[5.5px] top-2 w-px bg-cream/15 sm:hidden" />
+            <span aria-hidden="true" className="absolute left-1.5 right-6 top-1.5 hidden h-px bg-cream/15 sm:block" />
             {sample.stages.map((label, index) => (
               <li key={label} className="relative pb-5 pl-6 sm:pb-0 sm:pl-0 sm:pt-6">
                 <span
                   aria-hidden="true"
                   className={cn(
-                    'absolute left-0 top-1 block size-3 rounded-full border transition-colors duration-500 sm:top-0',
-                    index <= stage ? 'border-cream bg-cream' : 'border-cream/30',
+                    'relative z-10 block size-3 rounded-full border transition-colors duration-500 max-sm:absolute max-sm:left-0 max-sm:top-1 sm:mb-2',
+                    index <= stage ? 'border-cream bg-cream' : 'border-cream/30 bg-landing-card',
                   )}
                 />
                 <span className={cn('block text-sm leading-[1.4] transition-colors duration-500 sm:pr-2', index <= stage ? 'text-cream' : 'text-stone-500')}>

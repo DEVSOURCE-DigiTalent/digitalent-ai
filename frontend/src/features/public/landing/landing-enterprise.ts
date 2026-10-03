@@ -242,7 +242,7 @@ const DEPLOYMENT: LandingSectionConfig = {
     title: [{ text: 'Từ đăng ký đến triển khai,' }, { text: 'theo một luồng rõ ràng.', className: SERIF_ITALIC }],
   },
   steps: [
-    { title: 'Chọn gói', note: 'Số ghế tính cả nhân viên đang hoạt động và lời mời chưa kích hoạt.' },
+    { title: 'Chọn gói', note: 'Quyền sử dụng tính cả thành viên đang hoạt động và lời mời chưa kích hoạt.' },
     { title: 'Tạo tổ chức', note: 'Tạo tài khoản Owner, thanh toán và khai báo thông tin doanh nghiệp.', chip: 'Tổ chức đã được tạo' },
     { title: 'Thiết lập phòng ban và vị trí', note: 'Có thể bắt đầu từ các vị trí tham chiếu.', chip: '3 vị trí đã cấu hình' },
     { title: 'Đặt yêu cầu năng lực', note: 'Chọn 9–24 năng lực cho mỗi vị trí.' },
@@ -258,16 +258,16 @@ const PRICING: LandingSectionConfig = {
   intro: {
     label: 'Bảng giá',
     title: [{ text: 'Chọn gói theo quy mô' }, { text: 'đội ngũ của bạn.', className: SERIF_ITALIC }],
-    lead: 'Giá tính theo số ghế mỗi tháng. Mua theo năm tiết kiệm 20%.',
+    lead: 'Giá tính theo gói người dùng linh hoạt. Mua theo năm tiết kiệm 20%.',
   },
   compareLabel: 'So sánh chi tiết các gói',
 };
 
-/** Seat limits are read from the plan catalogue so the answer never drifts from the pricing page. */
-const seatAnswer = (): string =>
+/** User capacity limits are read from the plan catalogue so the answer never drifts from the pricing page. */
+const userCapacityAnswer = (): string =>
   `${plansFor('enterprise')
-    .map((plan) => (plan.seatRange ? `${plan.name}: ${plan.seatRange.min}–${plan.seatRange.max} ghế` : `${plan.name}: số ghế theo thỏa thuận`))
-    .join('; ')}. Mỗi nhân viên đang hoạt động chiếm một ghế, và lời mời chưa được kích hoạt cũng chiếm ghế. Khi vượt số ghế của gói, hệ thống từ chối từng lời mời thừa chứ không mất cả danh sách.`;
+    .map((plan) => (plan.seatRange ? `${plan.name}: tối đa ${plan.seatRange.max} người dùng` : `${plan.name}: người dùng theo thỏa thuận`))
+    .join('; ')}. Mỗi thành viên đang hoạt động và lời mời đang chờ kích hoạt đều tính vào quyền sử dụng. Khi hết quyền sử dụng của gói, hệ thống từ chối từng lời mời thừa chứ không mất cả danh sách.`;
 
 const FAQ: LandingSectionConfig = {
   kind: 'faq',
@@ -278,7 +278,7 @@ const FAQ: LandingSectionConfig = {
   // Not shown yet because the policy is not decided or the product does not guarantee it: refunds, cancellation,
   // data retention, data isolation between customers, failed payments and automatic renewal.
   items: [
-    { question: 'Số ghế được tính như thế nào?', answer: seatAnswer() },
+    { question: 'Quyền sử dụng và số người dùng được tính như thế nào?', answer: userCapacityAnswer() },
     {
       question: 'Manager có bắt buộc không?',
       answer:

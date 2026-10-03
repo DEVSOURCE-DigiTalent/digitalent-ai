@@ -113,3 +113,28 @@ export function useSubmitPersonalTask() {
     onSuccess: refresh,
   });
 }
+
+export function useDemoFastTrackCourse() {
+  const refresh = useRefreshTrack();
+  return useMutation({
+    mutationFn: (courseId: string) => personalLearningService.demoFastTrackCourse(courseId),
+    onSuccess: refresh,
+  });
+}
+
+export function useDemoFastTrackTarget() {
+  const refresh = useRefreshTrack();
+  return useMutation({
+    mutationFn: (positionCode?: string) => personalLearningService.demoFastTrackTarget(positionCode),
+    onSuccess: refresh,
+  });
+}
+
+export function useDemoReset() {
+  const refresh = useRefreshTrack();
+  return useMutation({
+    mutationFn: () => personalLearningService.demoReset(),
+    onSuccess: refresh,
+  });
+}
+

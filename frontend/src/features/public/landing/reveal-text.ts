@@ -30,9 +30,9 @@ export function revealProgress(top: number, height: number, viewportHeight: numb
 }
 
 /** Opacity of character `index` out of `total` at the given progress. */
-export function revealOpacity(progress: number, index: number, total: number): number {
+export function revealOpacity(progress: number, index: number, total: number, minOpacity: number = MIN_OPACITY): number {
   if (total <= 0) return 1;
   const start = (index / total) * SPREAD - LEAD;
   const t = clamp01((progress - start) / (LEAD + TAIL));
-  return MIN_OPACITY + (1 - MIN_OPACITY) * t;
+  return minOpacity + (1 - minOpacity) * t;
 }

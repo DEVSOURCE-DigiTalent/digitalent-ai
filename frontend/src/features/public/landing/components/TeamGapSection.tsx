@@ -86,40 +86,46 @@ export function TeamGapSection({ section }: { section: TeamGapSection }) {
               <p className="text-5xl font-light tracking-[-0.04em] text-cream tabular-nums">{sample.coverage}%</p>
             </div>
 
-            <div className="mt-6 overflow-x-auto">
-              <table aria-label={`Khoảng trống năng lực của nhóm ${sample.department}`} className="w-full min-w-[520px] border-collapse text-left text-base">
-                <thead>
-                  <tr className="text-xs uppercase tracking-[0.1em] text-stone-500">
-                    <th scope="col" className="py-2 pr-4 font-normal">Năng lực</th>
-                    <th scope="col" className="px-4 py-2 font-normal">Trình độ hiện tại</th>
-                    <th scope="col" className="px-4 py-2 font-normal">Trình độ yêu cầu</th>
-                    <th scope="col" className="py-2 pl-4 text-right font-normal">Khoảng trống</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row, index) => (
-                    <tr
-                      key={`${sample.label}-${row.code}`}
-                      className="border-t border-cream/10 transition-opacity duration-700"
-                      style={{ opacity: shown ? 1 : 0, transitionDelay: `${index * 120}ms` }}
-                    >
-                      <td className="py-4 pr-4 text-cream/90">
-                        <span className="mr-2 text-stone-500 tabular-nums">{row.code}</span>
-                        {TT02_COMPETENCY_NAMES[row.code]}
-                      </td>
-                      <td className="px-4 py-4 text-stone-400">{TIER_LABELS[row.current]}</td>
-                      <td className="px-4 py-4 text-stone-400">{TIER_LABELS[row.required]}</td>
-                      <td className="py-4 pl-4 text-right">
-                        <span className={cn('block whitespace-nowrap text-sm tabular-nums', row.gap > 0 ? 'text-cream' : 'text-[#A7C4A0]')}>
-                          {row.gap > 0 ? `Còn thiếu ${row.gap} tầng` : 'Đã đạt'}
-                        </span>
-                        <GapBar current={row.current} required={row.required} shown={shown} />
-                      </td>
+            <div className="relative mt-6">
+              <div className="overflow-x-auto pb-1 scrollbar-thin">
+                <table aria-label={`Khoảng trống năng lực của nhóm ${sample.department}`} className="w-full min-w-[520px] border-collapse text-left text-base">
+                  <thead>
+                    <tr className="text-xs uppercase tracking-[0.1em] text-stone-500">
+                      <th scope="col" className="py-2 pr-4 font-normal">Năng lực</th>
+                      <th scope="col" className="px-4 py-2 font-normal">Trình độ hiện tại</th>
+                      <th scope="col" className="px-4 py-2 font-normal">Trình độ yêu cầu</th>
+                      <th scope="col" className="py-2 pl-4 text-right font-normal">Khoảng trống</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {rows.map((row, index) => (
+                      <tr
+                        key={`${sample.label}-${row.code}`}
+                        className="border-t border-cream/10 transition-opacity duration-700"
+                        style={{ opacity: shown ? 1 : 0, transitionDelay: `${index * 120}ms` }}
+                      >
+                        <td className="py-4 pr-4 text-cream/90">
+                          <span className="mr-2 text-stone-500 tabular-nums">{row.code}</span>
+                          {TT02_COMPETENCY_NAMES[row.code]}
+                        </td>
+                        <td className="px-4 py-4 text-stone-400">{TIER_LABELS[row.current]}</td>
+                        <td className="px-4 py-4 text-stone-400">{TIER_LABELS[row.required]}</td>
+                        <td className="py-4 pl-4 text-right">
+                          <span className={cn('block whitespace-nowrap text-sm tabular-nums', row.gap > 0 ? 'text-cream' : 'text-[#A7C4A0]')}>
+                            {row.gap > 0 ? `Còn thiếu ${row.gap} tầng` : 'Đã đạt'}
+                          </span>
+                          <GapBar current={row.current} required={row.required} shown={shown} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-linear-to-l from-landing-panel to-transparent sm:hidden" aria-hidden="true" />
             </div>
+            <p className="mt-2 text-right text-[11px] text-stone-500 sm:hidden" aria-hidden="true">
+              ← Vuốt bảng để xem khoảng trống →
+            </p>
           </div>
 
           <div className="grid min-w-0 grid-cols-1 gap-3">

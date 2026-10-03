@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Plus, Settings2, Edit2, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { PageHeader, DataTable, StatusBadge, getStatusVariant, ConfirmActionDialog, type Column } from '@/components/shared';
 import { useJobPositions, useDeleteJobPosition } from '@/hooks/use-job-positions';
 import { useDepartments } from '@/hooks/use-departments';
-import { useJobGrades } from '@/hooks/use-job-grades';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { JobPositionFormDialog } from '../components/JobPositionFormDialog';
 import { toast } from 'sonner';
@@ -17,9 +16,9 @@ const STATUS_LABELS: Record<string, string> = { ACTIVE: 'Đang dùng', INACTIVE:
 /**
  * OW-09: Position List (UI/UX spec v2.1 §3.2, §10).
  * - Removed Job Family tab (hidden from UI per frozen design decision §9).
- * - Filters: Department · Job Grade (G1-G3) · Status.
- * - Columns: Code · Position Name · Department · Job Grade · Headcount · Requirement Status · Status.
- * - Actions: Add Position (OW-11), Configure Job Grades (OW-12), Edit, Archive.
+ * - Filters: Department · Status.
+ * - Columns: Code · Position Name · Department · Headcount · Requirement Status · Status.
+ * - Actions: Add Position (OW-11), Edit, Archive.
  */
 export function PositionListPage() {
   const navigate = useNavigate();
@@ -31,17 +30,9 @@ export function PositionListPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<JobPositionStatus | undefined>(undefined);
   const [departmentId, setDepartmentId] = useState('');
-  const [jobGrade, setJobGrade] = useState('');
 
   const { data: deptData } = useDepartments({ pageSize: 100, status: 'ACTIVE' });
   const departments = deptData?.items || [];
-
-  const { data: gradesData } = useJobGrades();
-  const grades = gradesData || [
-    { code: 'G1', name: 'Nhân viên' },
-    { code: 'G2', name: 'Phó phòng' },
-    { code: 'G3', name: 'Trưởng phòng' },
-  ];
 
   const { data, isLoading } = useJobPositions({
     pageIndex: page,
@@ -49,7 +40,6 @@ export function PositionListPage() {
     search,
     status,
     departmentId: departmentId || undefined,
-    jobGrade: jobGrade || undefined,
   });
 
   const deletePosMutation = useDeleteJobPosition();
@@ -101,26 +91,6 @@ export function PositionListPage() {
       key: 'department',
       header: 'Phòng ban',
       cell: (row) => row.departmentName || (row as any).jobFamilyName || <span className="text-slate-400">Chưa gắn</span>,
-    },
-    {
-      key: 'grade',
-      header: 'Cấp bậc',
-      cell: (row) =>
-        row.jobGrade ? (
-          <span
-            className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${
-              row.jobGrade === 'G3'
-                ? 'bg-purple-50 text-purple-700 ring-purple-600/20'
-                : row.jobGrade === 'G2'
-                ? 'bg-blue-50 text-blue-700 ring-blue-600/20'
-                : 'bg-teal-50 text-teal-700 ring-teal-600/20'
-            }`}
-          >
-            {row.jobGrade} ({row.jobGradeName ?? row.jobGrade})
-          </span>
-        ) : (
-          <span className="text-xs text-slate-400">—</span>
-        ),
     },
     {
       key: 'headcount',
@@ -198,16 +168,9 @@ export function PositionListPage() {
     <div className="space-y-6">
       <PageHeader
         title="Vị trí công việc"
-        subtitle="Quản lý danh mục vị trí, Cấp bậc (G1–G3) và bộ tiêu chuẩn năng lực yêu cầu"
+        subtitle="Quản lý danh mục vị trí và bộ tiêu chuẩn năng lực yêu cầu"
       >
         <div className="flex items-center gap-2">
-          <Link
-            to="/enterprise/positions/grades"
-            className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            <Settings2 className="size-4 text-slate-500" />
-            Cấu hình Cấp bậc
-          </Link>
           {canManagePositions && (
             <button
               onClick={() => {
@@ -246,19 +209,6 @@ export function PositionListPage() {
               {departments.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label="Lọc theo Cấp bậc"
-              value={jobGrade}
-              onChange={(e) => resetPage(setJobGrade)(e.target.value)}
-              className={INPUT_CLASS}
-            >
-              <option value="">Mọi Cấp bậc</option>
-              {grades.map((g) => (
-                <option key={g.code} value={g.code}>
-                  {g.code} - {g.name}
                 </option>
               ))}
             </select>

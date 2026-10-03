@@ -35,7 +35,7 @@ function invoicesFor(data: OrgData, plan: Plan, seats: number, cycle: BillingCyc
       id: order.id,
       code: order.code,
       issuedAt: order.paidAt ?? order.createdAt,
-      description: `Gói ${getPlan(order.planCode)?.name ?? order.planCode} (${order.seats} ghế)`,
+      description: `Gói ${getPlan(order.planCode)?.name ?? order.planCode} (${order.seats} người dùng)`,
       amount: order.amount,
       status: 'PAID' as const,
     }));
@@ -46,7 +46,7 @@ function invoicesFor(data: OrgData, plan: Plan, seats: number, cycle: BillingCyc
     id: `inv-${data.organizationId}-${n}`,
     code: `DT-${new Date(Date.now() - n * 30 * DAY_MS).toISOString().slice(0, 7).replace('-', '')}`,
     issuedAt: new Date(Date.now() - n * 30 * DAY_MS).toISOString(),
-    description: `Gói ${plan.name} (${seats} ghế)`,
+    description: `Gói ${plan.name} (${seats} người dùng)`,
     amount,
     status: 'PAID' as const,
   }));
@@ -123,7 +123,7 @@ function describeChange(context: RequestContext, change: ChangeRequest) {
   const next = entitlementKeys(change.plan);
   const label = (key: string) => ENTITLEMENT_LABELS[key as Entitlement] ?? key;
   const blockers: string[] = [];
-  if (used > change.seats) blockers.push(`Tổ chức đang dùng ${used} ghế, nhiều hơn ${change.seats} ghế của gói mới. Hãy vô hiệu hóa bớt thành viên hoặc chọn thêm ghế.`);
+  if (used > change.seats) blockers.push(`Tổ chức đang dùng ${used} quyền sử dụng, nhiều hơn ${change.seats} người dùng của gói mới. Hãy vô hiệu hóa bớt thành viên hoặc chọn thêm người dùng.`);
 
   const isUpgrade = newAmount > currentAmount;
   return {
@@ -168,7 +168,7 @@ route('POST', '/subscription/change', (context) => {
         }
       });
     }
-    recordAudit(data, context.session, 'SUBSCRIPTION_CHANGED', 'Gói dịch vụ', change.plan.name, `${previous.name} → ${change.plan.name}, ${change.seats} ghế`);
+    recordAudit(data, context.session, 'SUBSCRIPTION_CHANGED', 'Gói dịch vụ', change.plan.name, `${previous.name} → ${change.plan.name}, ${change.seats} người dùng`);
     return impact;
   });
 }, { ...OWNER_ONLY, message: 'Đã đổi gói dịch vụ.' });

@@ -76,7 +76,7 @@ export function PlanChangeModal({ open, onClose, subscription }: PlanChangeModal
                       {plan.name}
                       {plan.current && <span className="ml-2 text-xs font-normal text-slate-500">(đang dùng)</span>}
                     </span>
-                    <span className="block text-slate-500">{formatVnd(plan.monthlyPrice ?? 0)} / ghế / tháng</span>
+                    <span className="block text-slate-500">{formatVnd(plan.monthlyPrice ?? 0)} / người dùng / tháng</span>
                   </span>
                 </label>
               </li>
@@ -87,7 +87,7 @@ export function PlanChangeModal({ open, onClose, subscription }: PlanChangeModal
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5">
             <label htmlFor={`${base}-seats`} className="text-sm font-medium text-slate-700">
-              Số ghế{selected?.seatRange ? ` (${selected.seatRange.min}–${selected.seatRange.max})` : ''}
+              Số người dùng{selected?.seatRange ? ` (${selected.seatRange.min}–${selected.seatRange.max})` : ''}
             </label>
             <input id={`${base}-seats`} type="number" min={selected?.seatRange?.min} max={selected?.seatRange?.max} value={seats} onChange={(e) => setSeats(Number(e.target.value))} onBlur={() => setSeats(effectiveSeats)} className={INPUT_CLASS} />
           </div>
@@ -103,7 +103,7 @@ export function PlanChangeModal({ open, onClose, subscription }: PlanChangeModal
         <section aria-live="polite" aria-label="Tác động của việc đổi gói" className="rounded-lg bg-slate-50 p-4 text-sm">
           {isFetching && !impact && <p className="text-slate-500">Đang tính…</p>}
           {error && <p role="alert" className="text-red-600">{apiErrorMessage(error, 'Không tính được tác động.')}</p>}
-          {impact && impact.direction === 'same' && <p className="text-slate-600">Đây là gói bạn đang dùng. Hãy chọn gói, số ghế hoặc chu kỳ khác.</p>}
+          {impact && impact.direction === 'same' && <p className="text-slate-600">Đây là gói bạn đang dùng. Hãy chọn gói, số lượng người dùng hoặc chu kỳ khác.</p>}
           {impact && impact.direction !== 'same' && (
             <div className="grid gap-3">
               <p className="font-medium text-slate-900">
@@ -113,7 +113,7 @@ export function PlanChangeModal({ open, onClose, subscription }: PlanChangeModal
               <p className="text-slate-600">{impact.note}</p>
               {impact.gained.length > 0 && <p><span className="font-medium text-emerald-700">Có thêm:</span> {impact.gained.join(', ')}</p>}
               {impact.lost.length > 0 && <p><span className="font-medium text-amber-700">Không còn:</span> {impact.lost.join(', ')}</p>}
-              <p className="text-slate-600">Đang dùng {impact.seatsUsed} ghế.</p>
+              <p className="text-slate-600">Đang dùng {impact.seatsUsed} quyền sử dụng.</p>
               {impact.blockers.map((blocker) => <p key={blocker} role="alert" className="font-medium text-red-600">{blocker}</p>)}
             </div>
           )}

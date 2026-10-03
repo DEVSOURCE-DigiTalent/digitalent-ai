@@ -66,7 +66,7 @@ describe('Platform Portal Tests (PA-01..21 according to UI/UX Spec v2.1)', () =>
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Công ty Cổ phần Acme' })).toBeInTheDocument();
     expect(await screen.findByText('Thông tin doanh nghiệp')).toBeInTheDocument();
-    expect(await screen.findByText(/Điều chỉnh hạn mức ghế/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Điều chỉnh hạn mức người dùng/i)).toBeInTheDocument();
   });
 
   it('PA-04: Admin can access Platform Users page and view users list', async () => {
