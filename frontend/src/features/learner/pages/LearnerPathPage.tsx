@@ -25,9 +25,15 @@ export const LearnerPathPage: React.FC = () => {
 
   const milestones: Milestone[] = LEARNER_MILESTONES;
 
+  // Calculate progress dynamically from milestone data
+  const allCourses = milestones.flatMap((m) => m.courses);
+  const totalCourses = allCourses.length;
+  const completedCourses = allCourses.filter((c) => c.completed).length;
+  const progressPercent = totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0;
+
   return (
     <div data-testid="learner-path-page" className="p-6 max-w-6xl mx-auto space-y-6">
-      {/* Header with test expectation strings */}
+      {/* Header */}
       <div className="border-b pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-emerald-600 mb-1">
@@ -40,10 +46,12 @@ export const LearnerPathPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Progress stat pill - retains exact string for existing router tests */}
+        {/* Dynamic progress pill */}
         <div className="text-sm text-slate-600 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-200 shadow-sm flex items-center gap-2">
           <span>Tiến độ lộ trình:</span>
-          <strong className="text-emerald-700 font-bold">25% (1/4 khóa học)</strong>
+          <strong className="text-emerald-700 font-bold">
+            {progressPercent}% ({completedCourses}/{totalCourses} khóa học)
+          </strong>
         </div>
       </div>
 
