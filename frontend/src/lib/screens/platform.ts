@@ -33,3 +33,7 @@ export const PLATFORM_SCREENS: ScreenDef[] = [
   { id: 'SHR-02', title: 'Bảo mật', path: '/platform/account/security', roles: ADMIN, priority: 'P1' },
   { id: 'SHR-03', title: 'Trung tâm thông báo', path: '/platform/notifications', roles: ADMIN, priority: 'P1' },
 ];
+
+export function findPlatformScreen(id: string): ScreenDef | undefined {
+  return PLATFORM_SCREENS.find((s) => s.id === id || s.aliases?.includes(id));
+}

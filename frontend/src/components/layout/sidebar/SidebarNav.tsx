@@ -4,7 +4,9 @@ import { useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import type { SidebarConfig } from '@/lib/sidebars/types';
 import type { LucideIcon } from 'lucide-react';
-import { findEnterpriseScreen } from '@/lib/screens/enterprise';
+import { findScreen } from '@/lib/screens';
+import { matchPath } from '@/lib/breadcrumbs';
+import { WORKSPACES, type Workspace } from '@/lib/roles';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { SidebarItem } from './SidebarItem';
 
@@ -12,21 +14,32 @@ interface SidebarNavProps {
   config: SidebarConfig;
   isRail: boolean;
   onItemClick?: () => void;
+  workspace?: Workspace;
 }
 
-export function SidebarNav({ config, isRail, onItemClick }: SidebarNavProps) {
+export function SidebarNav({ config, isRail, onItemClick, workspace }: SidebarNavProps) {
   const { pathname } = useLocation();
   const hasEntitlement = useCurrentUser((s) => s.hasEntitlement);
   const hasPermission = useCurrentUser((s) => s.hasPermission);
   const user = useCurrentUser((s) => s.user);
 
+  const currentWorkspace = workspace ?? (pathname.startsWith('/platform') ? WORKSPACES.PLATFORM : WORKSPACES.ENTERPRISE);
+
   const isVisible = (screenId?: string) => {
     if (!screenId) return true;
-    const screen = findEnterpriseScreen(screenId);
+    const screen = findScreen(screenId, currentWorkspace);
     if (!screen) return true;
     if (screen.permission && !hasPermission(screen.permission)) return false;
     if (screen.roles.includes('*')) return true;
     return screen.roles.some((r) => user?.roles.includes(r));
+  };
+
+  const isScreenActive = (screenId: string, activeFor?: string[]) => {
+    const allFor = [screenId, ...(activeFor ?? [])];
+    return allFor.some((id) => {
+      const s = findScreen(id, currentWorkspace);
+      return s?.path && matchPath(s.path, pathname);
+    });
   };
 
   // Determine which group contains the active page
@@ -34,14 +47,7 @@ export function SidebarNav({ config, isRail, onItemClick }: SidebarNavProps) {
     for (const section of config) {
       if (section.items) {
         for (const item of section.items) {
-          const screen = findEnterpriseScreen(item.screenId);
-          if (!screen) continue;
-          const allFor = [item.screenId, ...(item.activeFor ?? [])];
-          const isActive = allFor.some((id) => {
-            const s = findEnterpriseScreen(id);
-            return s?.path && (pathname === s.path || pathname.startsWith(`${s.path}/`));
-          });
-          if (isActive) return section.label;
+          if (isScreenActive(item.screenId, item.activeFor)) return section.label;
         }
       }
     }
@@ -68,15 +74,11 @@ export function SidebarNav({ config, isRail, onItemClick }: SidebarNavProps) {
         // Single top-level link (e.g. Tổng quan, Báo cáo)
         if (section.screenId && !section.items?.length) {
           if (!isVisible(section.screenId)) return null;
-          const screen = findEnterpriseScreen(section.screenId);
+          const screen = findScreen(section.screenId, currentWorkspace);
           const path = screen?.path ?? '#';
           const locked = !!screen?.entitlement && !hasEntitlement(screen.entitlement);
           const Icon = section.icon as LucideIcon | undefined;
-          const allFor = [section.screenId, ...(section.activeFor ?? [])];
-          const isActive = allFor.some((id) => {
-            const s = findEnterpriseScreen(id);
-            return s?.path && (pathname === s.path || pathname.startsWith(`${s.path}/`));
-          });
+          const isActive = isScreenActive(section.screenId, section.activeFor);
           return (
             <div key={section.label} className="py-0.5">
               <SidebarItem
@@ -116,15 +118,11 @@ export function SidebarNav({ config, isRail, onItemClick }: SidebarNavProps) {
               )}
               <div className={cn('space-y-0.5', !isExpanded && !isRail && 'hidden')}>
                 {visibleItems.map((item) => {
-                  const screen = findEnterpriseScreen(item.screenId);
+                  const screen = findScreen(item.screenId, currentWorkspace);
                   const path = screen?.path ?? '#';
                   const locked = !!screen?.entitlement && !hasEntitlement(screen.entitlement);
                   const Icon = item.icon as LucideIcon | undefined;
-                  const allFor = [item.screenId, ...(item.activeFor ?? [])];
-                  const isActive = allFor.some((id) => {
-                    const s = findEnterpriseScreen(id);
-                    return s?.path && (pathname === s.path || pathname.startsWith(`${s.path}/`));
-                  });
+                  const isActive = isScreenActive(item.screenId, item.activeFor);
                   return (
                     <SidebarItem
                       key={item.screenId}
@@ -148,3 +146,4 @@ export function SidebarNav({ config, isRail, onItemClick }: SidebarNavProps) {
     </nav>
   );
 }
+

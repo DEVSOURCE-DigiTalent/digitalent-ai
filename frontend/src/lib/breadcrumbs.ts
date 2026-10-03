@@ -20,7 +20,7 @@ function findGroupLabel(screenId: string, config: SidebarConfig): string | null 
 }
 
 /** Match a pathname against a screen path pattern that may contain :param segments. */
-function matchPath(screenPath: string, pathname: string): boolean {
+export function matchPath(screenPath: string, pathname: string): boolean {
   if (screenPath === pathname) return true;
   if (!screenPath.includes(':')) {
     return pathname.startsWith(`${screenPath}/`);

@@ -49,6 +49,11 @@ export const ENTERPRISE_SCREENS: ScreenDef[] = [
   ...ENTERPRISE_SHARED_SCREENS,
 ];
 
+import { PLATFORM_SCREENS } from '../platform';
+
 export function findEnterpriseScreen(id: string): ScreenDef | undefined {
-  return ENTERPRISE_SCREENS.find((s) => s.id === id || s.aliases?.includes(id));
+  return (
+    ENTERPRISE_SCREENS.find((s) => s.id === id || s.aliases?.includes(id)) ??
+    PLATFORM_SCREENS.find((s) => s.id === id || s.aliases?.includes(id))
+  );
 }

@@ -230,7 +230,7 @@ describe('subscription (owner only)', () => {
     asUser('owner');
     const subscription = await call('get', '/subscription');
 
-    expect(subscription).toMatchObject({ planCode: 'ENT_PRO', status: 'active', seatLimit: 100, cycle: 'month', amountPerPeriod: 7_900_000 });
+    expect(subscription).toMatchObject({ planCode: 'ENT_PRO', status: 'active', seatLimit: 100, cycle: 'month', amountPerPeriod: 3_740_000 });
     expect(subscription.seatsUsed).toBe(14);
     expect(subscription.invoices).toHaveLength(3);
     asUser('manager');

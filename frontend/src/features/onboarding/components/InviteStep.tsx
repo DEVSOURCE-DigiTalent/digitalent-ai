@@ -107,9 +107,9 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
     <div className="grid max-w-3xl gap-8">
       {setup.seatLimit !== undefined && (
         <p className="text-sm text-slate-600" role="status">
-          Số ghế: <strong className="font-semibold text-slate-900">{setup.seatsUsed + queue.length}</strong> / {setup.seatLimit}
+          Quyền sử dụng: <strong className="font-semibold text-slate-900">{setup.seatsUsed + queue.length}</strong> / {setup.seatLimit} đã cấp
           {seatsLeft !== undefined && seatsLeft < 0 && (
-            <span className="ml-2 font-medium text-red-600">Vượt quá số ghế của gói đăng ký.</span>
+            <span className="ml-2 font-medium text-red-600">Vượt quá quyền sử dụng của gói đăng ký. Vui lòng nâng gói hoặc mua thêm quyền sử dụng.</span>
           )}
         </p>
       )}

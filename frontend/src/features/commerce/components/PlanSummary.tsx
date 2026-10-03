@@ -22,7 +22,7 @@ export function PlanSummary({ selection, changeTo, className }: PlanSummaryProps
         <p className="text-xs uppercase tracking-[0.12em] text-stone-500">Gói đã chọn</p>
         <p className="mt-1 truncate font-medium">
           {plan.name}
-          {plan.seatRange ? ` · ${selection.seats} ghế` : ''}
+          {plan.users && plan.audience === 'enterprise' ? ` · ${selection.seats} người dùng` : ''}
         </p>
         <p className="text-sm text-stone-400 tabular-nums">
           {total === null ? 'Liên hệ' : `${formatVnd(total)} / ${BILLING_CYCLE_LABELS[selection.cycle]}`}
