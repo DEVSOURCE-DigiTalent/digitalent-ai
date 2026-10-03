@@ -55,16 +55,9 @@ export const LearnerDiagnosticPage: React.FC = () => {
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
-    // Default to correct answers if none selected to ensure friendly demo experience if user just clicks submit
-    const finalAnswers: Record<number, number> = { ...selectedAnswers };
-    DIAGNOSTIC_QUESTIONS.forEach((q) => {
-      if (finalAnswers[q.id] === undefined) {
-        // give the correct option for first 8, wrong for rest if empty, or keep user answers
-        finalAnswers[q.id] = q.correctIndex;
-      }
-    });
-
-    const evaluated = evaluateDiagnosticQuiz(finalAnswers, targetRole);
+    // Unanswered questions are treated as wrong — no auto-fill of correct answers.
+    // evaluateDiagnosticQuiz checks answers[q.id] === q.correctIndex; undefined !== number → counts as incorrect.
+    const evaluated = evaluateDiagnosticQuiz(selectedAnswers, targetRole);
     setResult(evaluated);
     setSubmitted(true);
     localStorage.setItem('digitalent_diagnostic_result', JSON.stringify(evaluated));
@@ -447,9 +440,19 @@ export const LearnerDiagnosticPage: React.FC = () => {
         {/* Submit Actions */}
         {!submitted && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t">
-            <p className="text-xs text-slate-500">
-              * Bạn có thể nộp bài bất kỳ lúc nào để nhận ngay kết quả phân tích năng lực.
-            </p>
+            <div className="space-y-1">
+              <p className="text-xs text-slate-500">
+                * Câu chưa trả lời sẽ được tính là sai. Bạn đã trả lời{' '}
+                <strong className={answeredCount < DIAGNOSTIC_QUESTIONS.length ? 'text-amber-600' : 'text-emerald-600'}>
+                  {answeredCount}/{DIAGNOSTIC_QUESTIONS.length} câu
+                </strong>.
+              </p>
+              {answeredCount < DIAGNOSTIC_QUESTIONS.length && (
+                <p className="text-xs text-amber-600 font-semibold">
+                  ⚠ Còn {DIAGNOSTIC_QUESTIONS.length - answeredCount} câu chưa trả lời — điểm sẽ thấp hơn thực tế nếu bỏ qua.
+                </p>
+              )}
+            </div>
             <button
               type="button"
               onClick={handleSubmit}
