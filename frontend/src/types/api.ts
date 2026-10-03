@@ -11,18 +11,22 @@ export interface ApiError {
   message: string;
 }
 
-/** Khớp Application/Common/Models/PagedList.cs */
+/** Mirrors DigiTalent.Shared.Pagination.PagedList<T> (System.Text.Json camelCase) */
 export interface PagedList<T> {
   items: T[];
   pageIndex: number; // trang đầu tiên là 1
   pageSize: number;
   totalItems: number;
   totalPages: number;
+  hasPrevious?: boolean;
+  hasNext?: boolean;
 }
 
-/** Khớp Application/Common/Models/PaginationRequest.cs */
+/** Mirrors DigiTalent.Shared.Pagination.PaginationRequest (System.Text.Json camelCase) */
 export interface PaginationRequest {
   pageIndex?: number;
   pageSize?: number;
+  sortBy?: string;
+  sortDirection?: string;
   search?: string;
 }
