@@ -106,9 +106,10 @@ export const sidebarGroups: SidebarGroup[] = [
   {
     label: 'Intelligence',
     items: [
-      { label: 'Skill Gap Analysis', path: '/enterprise/intelligence/skill-gap', icon: Brain, roles: ['HR_MANAGER', 'DEPARTMENT_MANAGER', 'EMPLOYEE'] },
+      // EMPLOYEE excluded: Skill Gap and Readiness pages are not yet implemented for self-service
+      { label: 'Skill Gap Analysis', path: '/enterprise/intelligence/skill-gap', icon: Brain, roles: ['HR_MANAGER', 'DEPARTMENT_MANAGER'] },
       { label: 'Training Risk', path: '/enterprise/intelligence/training-risk', icon: BarChart3, roles: ['HR_MANAGER', 'DEPARTMENT_MANAGER'] },
-      { label: 'Workforce Readiness', path: '/enterprise/intelligence/readiness', icon: BarChart3, roles: ['HR_MANAGER', 'DEPARTMENT_MANAGER', 'EMPLOYEE'] },
+      { label: 'Workforce Readiness', path: '/enterprise/intelligence/readiness', icon: BarChart3, roles: ['HR_MANAGER', 'DEPARTMENT_MANAGER'] },
     ],
   },
   {
@@ -117,7 +118,7 @@ export const sidebarGroups: SidebarGroup[] = [
       { label: 'My Learning', path: '/enterprise/my-learning', icon: BookOpen, roles: ['EMPLOYEE'] },
       { label: 'My Assessments', path: '/enterprise/my-assessments', icon: HelpCircle, roles: ['EMPLOYEE'] },
       { label: 'My Certificates', path: '/enterprise/my-certificates', icon: Award, roles: ['EMPLOYEE'] },
-      { label: 'My Tasks', path: '/enterprise/my-tasks', icon: ClipboardList, roles: ['EMPLOYEE'] },
+      // 'My Tasks' removed: route /enterprise/my-tasks does not exist; EMPLOYEE already sees Task Board above
       { label: 'My Competency Profile', path: '/enterprise/my-competency-profile', icon: UserCircle, roles: ['EMPLOYEE'] },
     ],
   },
