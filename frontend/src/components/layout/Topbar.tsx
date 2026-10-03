@@ -1,109 +1,158 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Bell, Search, LogOut, Settings, UserCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Menu, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { APP_NAME } from '@/lib/constants';
-import apiClient from '@/services/api-client';
+import { PERMISSIONS } from '@/hooks/use-permission';
+import type { PortalConfig } from '@/lib/portals';
+import { buildBreadcrumbs } from '@/lib/breadcrumbs';
+import { NotificationPopover } from './NotificationPopover';
+import { UserAvatarMenu } from './UserAvatarMenu';
+import { CommandPalette } from './CommandPalette';
+import { cn } from '@/lib/utils';
 
-/**
- * Top bar with breadcrumb, global search, notifications, and profile dropdown.
- */
-export function Topbar() {
-  const navigate = useNavigate();
-  const user = useCurrentUser((s) => s.user);
-  const clearUser = useCurrentUser((s) => s.clearUser);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
+interface TopbarProps {
+  portal: PortalConfig;
+  onOpenMobileNav?: () => void;
+  isMobileNavOpen?: boolean;
+}
 
-  const handleLogout = async () => {
-    try {
-      await apiClient.post('/auth/logout');
-    } catch {
-      // Proceed with local cleanup even if server call fails
-    }
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    clearUser();
-    navigate('/login');
-  };
+function useScrolled() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 2);
+    window.addEventListener('scroll', handler, { passive: true });
+    return () => window.removeEventListener('scroll', handler);
+  }, []);
+  return scrolled;
+}
+
+function QuickCreateMenu() {
+  const hasPermission = useCurrentUser((s) => s.hasPermission);
+  const [open, setOpen] = useState(false);
+
+  const actions = [
+    { label: 'Mời thành viên', perm: PERMISSIONS.USER_CREATE, href: '/enterprise/members?invite=1' },
+    { label: 'Tạo đợt đào tạo', perm: PERMISSIONS.TRAINING_BATCH_CREATE, href: '/enterprise/batches/new' },
+    { label: 'Giao nhiệm vụ', perm: PERMISSIONS.TASK_ASSIGN, href: '/enterprise/tasks/new' },
+  ].filter((a) => hasPermission(a.perm));
+
+  if (actions.length === 0) return null;
 
   return (
-    <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-6 shrink-0">
-      {/* Left */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <span className="text-slate-400">{APP_NAME}</span>
-      </div>
-
-      {/* Right actions */}
-      <div className="flex items-center gap-2">
-        {/* Global search */}
-        <button
-          onClick={() => setShowSearch(!showSearch)}
-          className="p-2 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-          title="Search (Ctrl+K)"
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Tạo nhanh"
+        className="flex items-center justify-center w-8 h-8 rounded-lg text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg transition-colors"
+      >
+        <Plus className="w-4 h-4" />
+      </button>
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-1 w-48 bg-ent-card border border-ent-line rounded-lg shadow-lg py-1 z-50"
+          onBlur={() => setOpen(false)}
         >
-          <Search className="w-4.5 h-4.5" />
-        </button>
+          {actions.map((action) => (
+            <Link
+              key={action.label}
+              to={action.href}
+              className="block px-4 py-2 text-sm text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg transition-colors"
+              onClick={() => setOpen(false)}
+            >
+              {action.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
-        {/* Notifications */}
-        <button
-          className="relative p-2 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-          title="Notifications"
-          onClick={() => navigate('/notifications')}
-        >
-          <Bell className="w-4.5 h-4.5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-danger-500" />
-        </button>
+export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false }: TopbarProps) {
+  const { pathname } = useLocation();
+  const hasPermission = useCurrentUser((s) => s.hasPermission);
+  const canManageSettings = !portal.settingsPermission || hasPermission(portal.settingsPermission);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const scrolled = useScrolled();
 
-        {/* Profile dropdown */}
-        <div className="relative">
+  const breadcrumbs = buildBreadcrumbs(pathname);
+
+  // Global Ctrl+K shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key.toLowerCase() === 'k') { e.preventDefault(); setPaletteOpen(true); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  return (
+    <>
+      <header
+        className={cn(
+          'h-14 flex items-center justify-between px-4 lg:px-6',
+          'bg-[var(--ent-topbar)] backdrop-blur-sm',
+          'transition-shadow duration-150',
+          scrolled ? 'border-b border-ent-line' : 'border-b border-transparent',
+        )}
+      >
+        {/* Left: menu button + breadcrumb */}
+        <div className="flex items-center gap-2 min-w-0">
           <button
-            onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="flex items-center gap-2 p-1.5 rounded-md hover:bg-slate-100"
+            type="button"
+            onClick={onOpenMobileNav}
+            className="md:hidden p-2 -ml-2 rounded-lg text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg transition-colors"
+            aria-label="Mở điều hướng"
+            aria-expanded={isMobileNavOpen}
           >
-            <div className="w-7 h-7 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-semibold">
-              {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
-            </div>
-            <span className="text-sm text-slate-700 font-medium hidden sm:inline">
-              {user?.fullName || 'User'}
-            </span>
+            <Menu className="w-5 h-5" />
           </button>
 
-          {showProfileMenu && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowProfileMenu(false)} />
-              <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-lg border border-slate-200 z-20 py-1">
-                <div className="px-4 py-2 border-b border-slate-100">
-                  <p className="text-sm font-medium text-slate-900">{user?.fullName}</p>
-                  <p className="text-xs text-slate-500">{user?.email}</p>
-                </div>
-                <button
-                  onClick={() => { navigate('/my-profile'); setShowProfileMenu(false); }}
-                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                >
-                  <UserCircle className="w-4 h-4" />
-                  My Profile
-                </button>
-                <button
-                  onClick={() => { navigate('/admin/settings'); setShowProfileMenu(false); }}
-                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                >
-                  <Settings className="w-4 h-4" />
-                  Settings
-                </button>
-                <hr className="my-1 border-slate-100" />
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-danger-600 hover:bg-danger-50"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Sign Out
-                </button>
-              </div>
-            </>
+          {/* Breadcrumb */}
+          {breadcrumbs.length > 0 && (
+            <nav aria-label="Đường dẫn" className="flex items-center gap-1.5 text-sm">
+              {breadcrumbs.map((crumb, i) => (
+                <span key={i} className="flex items-center gap-1.5">
+                  {i > 0 && <span className="text-ent-fg-3">/</span>}
+                  {crumb.href && i < breadcrumbs.length - 1 ? (
+                    <Link to={crumb.href} className="text-ent-fg-2 hover:text-ent-fg transition-colors truncate max-w-[200px]">
+                      {crumb.label}
+                    </Link>
+                  ) : (
+                    <span className="text-ent-fg font-medium truncate max-w-[200px]">{crumb.label}</span>
+                  )}
+                </span>
+              ))}
+            </nav>
           )}
         </div>
-      </div>
-    </header>
+
+        {/* Right actions */}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setPaletteOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-ent-fg-3 hover:bg-ent-raised hover:text-ent-fg transition-colors text-sm"
+            aria-label="Tìm kiếm"
+            title="Tìm kiếm (Ctrl+K)"
+          >
+            <Search className="w-4 h-4" />
+            <span className="hidden lg:inline text-xs text-ent-fg-3">Ctrl+K</span>
+          </button>
+
+          <QuickCreateMenu />
+          <NotificationPopover notificationsPath={portal.notificationsPath} />
+          <UserAvatarMenu
+            accountPath={portal.accountPath}
+            settingsPath={portal.settingsPath}
+            canManageSettings={canManageSettings}
+          />
+        </div>
+      </header>
+
+      <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
+    </>
   );
 }

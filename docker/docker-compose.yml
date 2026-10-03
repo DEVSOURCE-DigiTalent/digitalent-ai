@@ -23,7 +23,7 @@ services:
       - digitalent-net
 
   minio:
-    image: minio/minio:latest
+    image: coollabsio/minio:latest
     container_name: digitalent-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -65,9 +65,11 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ../frontend/dist:/usr/share/nginx/html:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - backend-api
     networks:
@@ -79,7 +81,28 @@ services:
       dockerfile: ../backend/src/DigiTalent.Api/Dockerfile
     container_name: digitalent-api
     restart: unless-stopped
+    command: >
+      /bin/sh -c "
+      set -e
+      if [ \"$$ASPNETCORE_ENVIRONMENT\" = \"Production\" ]; then
+        if [ \"$$RAW_POSTGRES_PASSWORD\" = \"changeme\" ] || [ \"$$RAW_JWT_SIGNING_KEY\" = \"YourSuperSecretKeyThatIsAtLeast64CharactersLong!\" ] || [ \"$$RAW_MINIO_SECRET_KEY\" = \"changeme\" ]; then
+          echo 'ERROR: Default passwords/keys are not allowed in Production!'
+          exit 1
+        fi
+      fi
+      if [ "$$APPLY_MIGRATIONS" = "true" ] || [ "$$AUTO_MIGRATE" = "true" ]; then
+        echo "Applying database migrations and seeding foundation data..."
+        dotnet DigiTalent.Api.dll --migrate-only
+      fi
+      echo "Starting DigiTalent API..."
+      exec dotnet DigiTalent.Api.dll
+      "
     environment:
+      APPLY_MIGRATIONS: ${APPLY_MIGRATIONS:-true}
+      # DO NOT USE DEFAULT PASSWORDS IN PRODUCTION
+      RAW_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      RAW_JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-YourSuperSecretKeyThatIsAtLeast64CharactersLong!}
+      RAW_MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-changeme}
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-digitalent};Username=${POSTGRES_USER:-digitalent_app};Password=${POSTGRES_PASSWORD:-changeme}
       Jwt__Issuer: ${JWT_ISSUER:-DigiTalentAI}

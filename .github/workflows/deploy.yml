@@ -1,0 +1,27 @@
+name: Deploy to AWS EC2 (Develop)
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-develop
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to AWS EC2 Server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Remote Deployment via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER || 'ubuntu' }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          timeout: 15m
+          command_timeout: 15m
+          script: |
+            /opt/digitalent-ai/scripts/deploy-develop.sh

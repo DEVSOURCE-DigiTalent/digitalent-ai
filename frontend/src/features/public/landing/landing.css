@@ -1,0 +1,211 @@
+/*
+ * Landing page ("/"): cinematic cream on black.
+ * Everything is scoped under .landing. Colors and fonts used by utilities live in index.css @theme;
+ * this file holds what utilities cannot express (noise, liquid glass, fillets, keyframes).
+ * Entrance motion only applies when .landing[data-motion='on'] (no prefers-reduced-motion).
+ */
+
+@keyframes lp-rise {
+  to { transform: none; }
+}
+@keyframes lp-preview-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes lp-fade-rise {
+  to { opacity: 1; transform: none; }
+}
+
+/* Unlayered CSS would beat every Tailwind utility (e.g. .lp-glass position vs .fixed); inside
+   the components layer, utilities on the same element still win. */
+@layer components {
+  .landing {
+    --lp-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --lp-ease-card: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* ── Film grain ── */
+  .landing .lp-noise-overlay {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px 256px;
+  }
+  .landing .lp-noise-bg {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px 256px;
+  }
+
+  /* ── Shades that keep text readable over footage ── */
+  .landing .lp-hero-shade {
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.38) 55%, rgba(0, 0, 0, 0.78));
+  }
+  .landing .lp-finale-scrim {
+    background:
+      linear-gradient(to top, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0) 45%),
+      radial-gradient(ellipse 75% 65% at 50% 55%, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0) 78%);
+  }
+
+  /* ── Liquid glass ── */
+  .landing .lp-glass {
+    position: relative;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.01);
+    background-blend-mode: luminosity;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  }
+  .landing .lp-glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.4px;
+    background: linear-gradient(180deg,
+      rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.15) 20%,
+      rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0) 60%,
+      rgba(255, 255, 255, 0.15) 80%, rgba(255, 255, 255, 0.45) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .landing .lp-dock {
+    background: rgba(20, 20, 18, 0.6);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+
+  /* ── Hanging nav: concave fillets join the pill to the frame's top edge ── */
+  .landing .lp-pill {
+    background: #000;
+    border-radius: 0 0 16px 16px;
+  }
+  .landing .lp-pill::before,
+  .landing .lp-pill::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+  }
+  .landing .lp-pill::before {
+    right: 100%;
+    background: radial-gradient(circle at 0 100%, transparent 15.5px, #000 16px);
+  }
+  .landing .lp-pill::after {
+    left: 100%;
+    background: radial-gradient(circle at 100% 100%, transparent 15.5px, #000 16px);
+  }
+  @media (min-width: 768px) {
+    .landing .lp-pill { border-radius: 0 0 24px 24px; }
+    .landing .lp-pill::before,
+    .landing .lp-pill::after { width: 24px; height: 24px; }
+    .landing .lp-pill::before { background: radial-gradient(circle at 0 100%, transparent 23.5px, #000 24px); }
+    .landing .lp-pill::after { background: radial-gradient(circle at 100% 100%, transparent 23.5px, #000 24px); }
+  }
+
+  /* ── Wordmark: "DigiTalent" fills the hero width ── */
+  .landing .lp-wordmark-row {
+    container-type: inline-size;
+  }
+  .landing .lp-wordmark {
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    white-space: nowrap;
+    font-weight: 500;
+    line-height: 0.85;
+    letter-spacing: -0.065em;
+    font-size: calc((100vw - 64px) / 4.85 * var(--lp-wm-scale, 1));
+  }
+  @media (min-width: 768px) {
+    .landing .lp-wordmark { font-size: calc((100vw - 112px) / 4.85 * var(--lp-wm-scale, 1)); }
+  }
+  @supports (font-size: 1cqw) {
+    .landing .lp-wordmark { font-size: calc(100cqw / 4.85 * var(--lp-wm-scale, 1)); }
+  }
+  .landing .lp-wordmark-clip {
+    display: block;
+    overflow: hidden;
+    /* room for the "g" descender inside the rising mask */
+    padding: 0.05em 0.03em 0.17em 0;
+    margin-bottom: -0.05em;
+  }
+  .landing .lp-wordmark-word {
+    display: block;
+  }
+  .landing .lp-wordmark-sup {
+    font-size: 0.15em;
+    line-height: 1;
+    letter-spacing: 0;
+    margin: 1.05em 0 0 0.3em;
+  }
+
+  /* ── Word pull-up ── */
+  .landing .lp-word {
+    display: inline-block;
+  }
+
+  /* ── Entrance motion ── */
+
+  .landing[data-motion='on'] .lp-wordmark-word {
+    transform: translateY(112%);
+    animation: lp-rise 1.35s var(--lp-ease) 0.15s forwards;
+  }
+  .landing[data-motion='on'] .lp-wordmark-sup {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: lp-fade-rise 0.9s var(--lp-ease) 1s forwards;
+  }
+  .landing[data-motion='on'] .lp-fade-rise {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: lp-fade-rise 0.9s var(--lp-ease) var(--lp-delay, 0s) forwards;
+  }
+
+  .landing[data-motion='on'] .lp-word {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.8s var(--lp-ease), transform 0.8s var(--lp-ease);
+    transition-delay: calc(var(--i, 0) * 80ms);
+  }
+  .landing[data-motion='on'] [data-in] .lp-word {
+    opacity: 1;
+    transform: none;
+  }
+
+  .landing[data-motion='on'] .lp-card {
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.9s var(--lp-ease-card), transform 0.9s var(--lp-ease-card);
+    transition-delay: calc(var(--i, 0) * 150ms);
+  }
+  .landing[data-motion='on'] [data-in] > .lp-card {
+    opacity: 1;
+    transform: none;
+  }
+
+  .landing[data-motion='on'] .lp-reveal-up {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    transition-delay: var(--lp-delay, 0s);
+  }
+  .landing[data-motion='on'] [data-in] > .lp-reveal-up {
+    opacity: 1;
+    transform: none;
+  }
+
+  .landing[data-motion='on'] .lp-preview-in {
+    animation: lp-preview-in 0.5s var(--lp-ease) both;
+  }
+}
+
+/*
+ * Readability on black: Tailwind's stone-400/500 sit around 35–55% of white on this background.
+ * Inside the landing they become secondary (78%) and muted (58%) cream. Unlayered on purpose:
+ * it has to win over the utility layer.
+ */
+.landing .text-stone-400 { color: rgba(225, 224, 204, 0.78); }
+.landing .text-stone-500 { color: rgba(225, 224, 204, 0.58); }

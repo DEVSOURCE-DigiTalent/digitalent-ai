@@ -1,42 +1,28 @@
-using DigiTalent.Domain.Entities.Common;
+using DigiTalent.Domain.Common;
 
-namespace DigiTalent.Domain.Entities.Certificate;
+namespace DigiTalent.Domain.Entities;
 
-public class CertificateTemplate : AuditableEntity
+/// <summary>
+/// Bảng certificates. Chứng chỉ đã cấp.
+/// </summary>
+public class Certificate : IHasTimestamps
 {
-    public Guid OrganizationId { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string TemplateHtml { get; set; } = string.Empty;
-    public Guid? BackgroundFileObjectId { get; set; }
-    public string Status { get; set; } = "DRAFT";
-    public Guid? CreatedByUserId { get; set; }
-}
-
-public class Certificate : AuditableEntity
-{
+    public Guid Id { get; set; } = Guid.NewGuid();
     public Guid EmployeeId { get; set; }
-    public Organization.Employee Employee { get; set; } = null!;
-    public Guid CourseId { get; set; }
-    public Learning.Course Course { get; set; } = null!;
-    public Guid? AssessmentAttemptId { get; set; }
+    public Guid EnrollmentId { get; set; }
+    public Guid AssessmentAttemptId { get; set; }
     public Guid CertificateTemplateId { get; set; }
-    public CertificateTemplate CertificateTemplate { get; set; } = null!;
     public string CertificateCode { get; set; } = string.Empty;
-    public string QrUrl { get; set; } = string.Empty;
-    public string Status { get; set; } = "VALID";
+    public string HolderNameSnapshot { get; set; } = string.Empty;
+    public string CourseTitleSnapshot { get; set; } = string.Empty;
+    public string? PrimaryCompetencySnapshot { get; set; }
     public DateTimeOffset IssuedAt { get; set; }
     public DateTimeOffset? ExpiresAt { get; set; }
-    public DateTimeOffset? RevokedAt { get; set; }
-    public string? RevokedReason { get; set; }
+    public string Status { get; set; } = string.Empty;
     public Guid? PdfFileObjectId { get; set; }
-}
-
-public class CertificateVerificationLog : AuditableEntity
-{
-    public Guid? CertificateId { get; set; }
-    public string CertificateCode { get; set; } = string.Empty;
-    public DateTimeOffset VerifiedAt { get; set; }
-    public string ResultStatus { get; set; } = string.Empty;
-    public string? VerifierIp { get; set; }
-    public string? UserAgent { get; set; }
+    public DateTimeOffset? RevokedAt { get; set; }
+    public Guid? RevokedByUserId { get; set; }
+    public string? RevocationReason { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
 }

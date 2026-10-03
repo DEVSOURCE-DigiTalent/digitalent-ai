@@ -1,0 +1,95 @@
+/*
+ * Personal workspace themes. Dark (default) is the landing page: cream on black. Light is the same page
+ * printed on warm paper: ink on cream. Colors are read through the pt-* utilities declared in index.css.
+ */
+@layer base {
+  .personal-theme,
+  .personal-theme[data-theme='dark'] {
+    --pt-bg: #000;
+    --pt-panel: #0b0b0a;
+    --pt-card: #151513;
+    --pt-raised: #1f1f1c;
+    --pt-line: rgba(225, 224, 204, 0.13);
+    --pt-fg: #e1e0cc;
+    --pt-fg-2: rgba(225, 224, 204, 0.78);
+    --pt-fg-3: rgba(225, 224, 204, 0.58);
+    --pt-accent: #dedbc8;
+    --pt-on-accent: #000;
+    --pt-ok: #a9d6a0;
+    --pt-warn: #e8c46e;
+    --pt-bad: #f29a8e;
+    --pt-info: #a9c4ee;
+    color-scheme: dark;
+  }
+
+  .personal-theme[data-theme='light'] {
+    --pt-bg: #f2efe4;
+    --pt-panel: #f8f6ee;
+    --pt-card: #fffefa;
+    --pt-raised: #ebe7da;
+    --pt-line: rgba(28, 27, 22, 0.13);
+    --pt-fg: #1c1b16;
+    --pt-fg-2: rgba(28, 27, 22, 0.76);
+    --pt-fg-3: rgba(28, 27, 22, 0.6);
+    --pt-accent: #1c1b16;
+    --pt-on-accent: #f2efe4;
+    --pt-ok: #2d7a3c;
+    --pt-warn: #8a5c00;
+    --pt-bad: #b13a2c;
+    --pt-info: #2c5ca3;
+    color-scheme: light;
+  }
+
+  .personal-theme ::selection {
+    background: color-mix(in oklab, var(--pt-fg) 22%, transparent);
+  }
+
+  .personal-theme :focus-visible {
+    outline: 2px solid var(--pt-fg);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Film grain, as on the landing page; quieter on paper. */
+  .personal-theme .pt-grain {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px 256px;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+  }
+  .personal-theme[data-theme='light'] .pt-grain {
+    opacity: 0.035;
+    mix-blend-mode: multiply;
+  }
+
+  .personal-theme .pt-scroll-x {
+    scrollbar-width: none;
+  }
+  .personal-theme .pt-scroll-x::-webkit-scrollbar {
+    display: none;
+  }
+
+  @keyframes pt-rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+  .personal-theme .pt-rise {
+    animation: pt-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .personal-theme .pt-rise { animation: none; }
+  }
+}
+
+/* Printing a certificate prints only the certificate sheet. */
+@media print {
+  body:has(.pt-print) * { visibility: hidden; }
+  body:has(.pt-print) .pt-print,
+  body:has(.pt-print) .pt-print * { visibility: visible; }
+  body:has(.pt-print) .pt-print {
+    position: fixed;
+    inset: 0;
+    border-radius: 0;
+  }
+}

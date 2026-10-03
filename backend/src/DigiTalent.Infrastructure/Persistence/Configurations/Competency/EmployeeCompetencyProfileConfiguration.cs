@@ -1,46 +1,33 @@
-using DigiTalent.Domain.Entities.Competency;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DigiTalent.Infrastructure.Persistence.Configurations.Competency;
+namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
+/// <summary>
+/// Map entity EmployeeCompetencyProfile với bảng "employee_competency_profiles".
+/// Cấp độ đã xác nhận — chỉ được ghi qua competency_evidences đã CONFIRMED.
+/// </summary>
 public class EmployeeCompetencyProfileConfiguration : IEntityTypeConfiguration<EmployeeCompetencyProfile>
 {
     public void Configure(EntityTypeBuilder<EmployeeCompetencyProfile> builder)
     {
-        builder.ToTable("employee_competency_profiles");
-
+        builder.ToTable("employee_competency_profiles", table =>
+        {
+            table.HasCheckConstraint("ck_profile_confirmed_level", "confirmed_level BETWEEN 1 AND 3");
+            table.HasCheckConstraint("ck_employee_competency_profiles_row_version", "row_version > 0");
+        });
         builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.ConfidenceScore)
-            .HasColumnType("numeric(5,2)");
+        // Ghi đồng thời → DbUpdateConcurrencyException (use case tự tăng row_version)
+        builder.Property(x => x.RowVersion).HasDefaultValue(1L).IsConcurrencyToken();
 
-        builder.Property(x => x.LastEvaluatedAt)
-            .HasColumnType("timestamptz");
-
-        builder.Property(x => x.UpdatedAt)
-            .HasColumnType("timestamptz");
-
-        builder.Property(x => x.CreatedAt)
-            .HasColumnType("timestamptz");
+        builder.HasOne<Employee>().WithMany().HasForeignKey(x => x.EmployeeId);
+        builder.HasOne<Competency>().WithMany().HasForeignKey(x => x.CompetencyId);
+        builder.HasOne<CompetencyEvidence>().WithMany().HasForeignKey(x => x.LatestConfirmingEvidenceId);
 
         builder.HasIndex(x => new { x.EmployeeId, x.CompetencyId })
             .IsUnique()
-            .HasDatabaseName("ux_employee_competency");
-
-        builder.HasOne(x => x.Employee)
-            .WithMany()
-            .HasForeignKey(x => x.EmployeeId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(x => x.Competency)
-            .WithMany()
-            .HasForeignKey(x => x.CompetencyId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(x => x.LastEvidence)
-            .WithMany()
-            .HasForeignKey(x => x.LastEvidenceId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .HasDatabaseName("uq_employee_competency_profiles_employee_competency");
     }
 }

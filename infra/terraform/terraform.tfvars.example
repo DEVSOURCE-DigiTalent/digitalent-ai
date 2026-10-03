@@ -1,0 +1,22 @@
+# AWS Region (Singapore is closest to Vietnam)
+aws_region       = "ap-southeast-1"
+
+# Environment
+environment      = "production"
+project_name     = "digitalent-ai"
+
+# Instance Sizing (t3.medium: 2 vCPU, 4GB RAM)
+instance_type    = "t3.medium"
+root_volume_size = 30
+
+# Allowed IP for SSH (replace with your IP/32 for enhanced security, or 0.0.0.0/0 for everywhere)
+allowed_ssh_cidr = ["0.0.0.0/0"]
+
+# Git repository and branch
+git_repo_url     = "https://github.com/DEVSOURCE-DigiTalent/digitalent-ai.git"
+git_branch       = "main"
+
+# Optional: Set custom passwords (if blank, Terraform will automatically generate secure random keys)
+# postgres_password = "MySecurePassword123!"
+# jwt_signing_key   = "a_very_long_secure_jwt_signing_key_at_least_64_characters_long_123456"
+# minio_secret_key  = "MyMinioSecretKey123!"

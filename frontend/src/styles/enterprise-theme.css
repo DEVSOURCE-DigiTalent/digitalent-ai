@@ -1,0 +1,77 @@
+/* Enterprise theme token values */
+.ent-theme,
+.ent-theme[data-theme='dark'] {
+  --ent-bg: #111110;
+  --ent-sidebar: #0A0A09;
+  --ent-sidebar-fg: #E7E5DA;
+  --ent-sidebar-muted: #9C9A8E;
+  --ent-sidebar-hover: rgba(231,229,218,.06);
+  --ent-sidebar-active: rgba(231,229,218,.10);
+  --ent-topbar: rgba(17,17,16,.82);
+  --ent-card: #181816;
+  --ent-raised: #1F1F1C;
+  --ent-line: #2A2924;
+  --ent-fg: #E7E5DA;
+  --ent-fg-2: #B4B2A6;
+  --ent-fg-3: #8E8C80;
+  --ent-primary: #E7E5DA;
+  --ent-on-primary: #12120F;
+  --ent-accent: #7C9BE6;
+  --ent-accent-soft: rgba(124,155,230,.14);
+  --ent-ok: #7FC48C;
+  --ent-ok-soft: rgba(127,196,140,.14);
+  --ent-warn: #E3B65A;
+  --ent-warn-soft: rgba(227,182,90,.14);
+  --ent-bad: #EE8E80;
+  --ent-bad-soft: rgba(238,142,128,.14);
+  --ent-level-1: #3A4A72;
+  --ent-level-2: #5C7BCB;
+  --ent-level-3: #9DB6F0;
+  color-scheme: dark;
+}
+
+.ent-theme[data-theme='light'] {
+  --ent-bg: #F6F5F1;
+  --ent-sidebar: #12120F; /* sidebar luôn tối */
+  --ent-sidebar-fg: #E7E5DA;
+  --ent-sidebar-muted: #9C9A8E;
+  --ent-sidebar-hover: rgba(231,229,218,.06);
+  --ent-sidebar-active: rgba(231,229,218,.10);
+  --ent-topbar: rgba(246,245,241,.85);
+  --ent-card: #FFFFFF;
+  --ent-raised: #FBFAF7;
+  --ent-line: #E6E3DA;
+  --ent-fg: #1C1B16;
+  --ent-fg-2: #57554C;
+  --ent-fg-3: #6F6D63;
+  --ent-primary: #1C1B16;
+  --ent-on-primary: #F6F5F1;
+  --ent-accent: #2D5BD0;
+  --ent-accent-soft: #EAF0FD;
+  --ent-ok: #2D7A3C;
+  --ent-ok-soft: #EAF4EC;
+  --ent-warn: #8A5C00;
+  --ent-warn-soft: #FBF2DE;
+  --ent-bad: #B13A2C;
+  --ent-bad-soft: #FBEAE7;
+  --ent-level-1: #C9D6F5;
+  --ent-level-2: #7C9BE6;
+  --ent-level-3: #2D5BD0;
+  color-scheme: light;
+}
+
+/* Font Enterprise */
+.ent-theme {
+  font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+}
+
+/* Focus ring */
+.ent-theme :focus-visible {
+  outline: 2px solid var(--ent-accent);
+  outline-offset: 2px;
+}
+
+/* Selection */
+.ent-theme ::selection {
+  background: color-mix(in oklab, var(--ent-accent) 22%, transparent);
+}

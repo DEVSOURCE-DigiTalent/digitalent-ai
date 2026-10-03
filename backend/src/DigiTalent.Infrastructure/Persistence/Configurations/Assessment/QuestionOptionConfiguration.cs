@@ -1,24 +1,19 @@
-using DigiTalent.Domain.Entities.Assessment;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DigiTalent.Infrastructure.Persistence.Configurations.Assessment;
+namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
+/// <summary>
+/// Map entity QuestionOption với bảng "question_options".
+/// Database là gốc: tên cột tự đổi sang snake_case, không khai báo lại ở đây.
+/// </summary>
 public class QuestionOptionConfiguration : IEntityTypeConfiguration<QuestionOption>
 {
     public void Configure(EntityTypeBuilder<QuestionOption> builder)
     {
-        builder.ToTable("question_options");
-
-        builder.Property(x => x.Id).HasColumnName("id");
-        builder.Property(x => x.CreatedAt).HasColumnName("created_at").HasColumnType("timestamptz");
-        builder.Property(x => x.CreatedBy).HasColumnName("created_by");
-        builder.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasColumnType("timestamptz");
-        builder.Property(x => x.UpdatedBy).HasColumnName("updated_by");
-
-        builder.Property(x => x.QuestionId).HasColumnName("question_id");
-        builder.Property(x => x.Content).HasColumnName("content").HasColumnType("text");
-        builder.Property(x => x.IsCorrect).HasColumnName("is_correct");
-        builder.Property(x => x.SortOrder).HasColumnName("sort_order");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("question_options", table => table.ExcludeFromMigrations());
+        builder.HasKey(x => x.Id);
     }
 }

@@ -1,92 +1,42 @@
-using DigiTalent.Domain.Entities.Learning;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DigiTalent.Infrastructure.Persistence.Configurations.Learning;
+namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
+/// <summary>
+/// Map entity Course với bảng "courses" (khóa học có version theo code).
+/// </summary>
 public class CourseConfiguration : IEntityTypeConfiguration<Course>
 {
     public void Configure(EntityTypeBuilder<Course> builder)
     {
-        builder.ToTable("courses");
+        builder.ToTable("courses", table =>
+        {
+            table.HasCheckConstraint("ck_courses_version", "version_no > 0");
+            table.HasCheckConstraint("ck_courses_entry_level", "entry_level IS NULL OR entry_level BETWEEN 1 AND 3");
+            table.HasCheckConstraint("ck_courses_duration", "estimated_duration_minutes IS NULL OR estimated_duration_minutes >= 0");
+            table.HasCheckConstraint("ck_courses_certificate_validity_days", "certificate_validity_days IS NULL OR certificate_validity_days > 0");
+            table.HasCheckConstraint("ck_courses_status", "status IN ('DRAFT','REVIEW','PUBLISHED','ARCHIVED')");
+            table.HasCheckConstraint("ck_courses_not_self_supersede", "supersedes_course_id IS NULL OR supersedes_course_id <> id");
+            table.HasCheckConstraint("ck_courses_row_version", "row_version > 0");
+        });
+        builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.Id)
-            .HasColumnName("id");
+        builder.Property(x => x.Code).IsRequired().HasMaxLength(50);
+        builder.Property(x => x.Title).IsRequired().HasMaxLength(250);
+        builder.Property(x => x.ShortName).HasMaxLength(120);
+        builder.Property(x => x.Status).IsRequired().HasMaxLength(30).HasDefaultValue("DRAFT");
+        // Sentinel = default DB: false vẫn được ghi xuống (tránh bẫy bool + HasDefaultValue(true) của EF)
+        builder.Property(x => x.CertificateEnabled).HasDefaultValue(true).HasSentinel(true);
+        builder.Property(x => x.RowVersion).HasDefaultValue(1L);
 
-        builder.Property(x => x.OrganizationId)
-            .HasColumnName("organization_id");
+        builder.HasOne<Organization>().WithMany().HasForeignKey(x => x.OrganizationId);
+        builder.HasOne<Course>().WithMany().HasForeignKey(x => x.SupersedesCourseId);
+        builder.HasOne<User>().WithMany().HasForeignKey(x => x.CreatedByUserId);
 
-        builder.Property(x => x.Code)
-            .HasMaxLength(80)
-            .HasColumnName("code");
-
-        builder.Property(x => x.Title)
-            .HasMaxLength(255)
-            .HasColumnName("title");
-
-        builder.Property(x => x.Description)
-            .HasColumnType("text")
-            .HasColumnName("description");
-
-        builder.Property(x => x.DifficultyLevel)
-            .HasMaxLength(30)
-            .HasColumnName("difficulty_level");
-
-        builder.Property(x => x.EstimatedDurationMinutes)
-            .HasColumnName("estimated_duration_minutes");
-
-        builder.Property(x => x.OwnerTrainerId)
-            .HasColumnName("owner_trainer_id");
-
-        builder.Property(x => x.PassingScore)
-            .HasColumnType("numeric(5,2)")
-            .HasColumnName("passing_score");
-
-        builder.Property(x => x.Status)
-            .HasMaxLength(30)
-            .HasColumnName("status");
-
-        builder.Property(x => x.CreatedAt)
-            .HasColumnType("timestamptz")
-            .HasColumnName("created_at");
-
-        builder.Property(x => x.CreatedBy)
-            .HasColumnName("created_by");
-
-        builder.Property(x => x.UpdatedAt)
-            .HasColumnType("timestamptz")
-            .HasColumnName("updated_at");
-
-        builder.Property(x => x.UpdatedBy)
-            .HasColumnName("updated_by");
-
-        builder.HasIndex(x => new { x.OrganizationId, x.Code })
+        builder.HasIndex(x => new { x.OrganizationId, x.Code, x.VersionNo })
             .IsUnique()
-            .HasDatabaseName("ux_courses_org_code");
-
-        builder.HasMany(c => c.Modules)
-            .WithOne(m => m.Course)
-            .HasForeignKey(m => m.CourseId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasMany(c => c.CourseCompetencies)
-            .WithOne(cc => cc.Course)
-            .HasForeignKey(cc => cc.CourseId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasMany(c => c.Assignments)
-            .WithOne(ca => ca.Course)
-            .HasForeignKey(ca => ca.CourseId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasMany(c => c.Enrollments)
-            .WithOne(e => e.Course)
-            .HasForeignKey(e => e.CourseId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasMany(c => c.Materials)
-            .WithOne()
-            .HasForeignKey(lm => lm.CourseId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .HasDatabaseName("uq_courses_org_code_version");
     }
 }

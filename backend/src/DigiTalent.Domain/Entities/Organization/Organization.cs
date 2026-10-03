@@ -1,65 +1,15 @@
-using DigiTalent.Domain.Entities.Auth;
-using DigiTalent.Domain.Entities.Common;
+using DigiTalent.Domain.Common;
+using DigiTalent.Domain.Constants;
 
-namespace DigiTalent.Domain.Entities.Organization;
+namespace DigiTalent.Domain.Entities;
 
-public class Organization : AuditableEntity
+/// <summary>
+/// Ranh giới tổ chức. MVP chỉ có 1 tổ chức (seed sẵn); cột organization_id để mở rộng sau.
+/// </summary>
+public class Organization : BaseEntity
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Domain { get; set; }
-    public string Status { get; set; } = "ACTIVE";
-
-    public ICollection<Department> Departments { get; set; } = new List<Department>();
-    public ICollection<JobPosition> JobPositions { get; set; } = new List<JobPosition>();
-    public ICollection<Employee> Employees { get; set; } = new List<Employee>();
-}
-
-public class Department : AuditableEntity
-{
-    public Guid OrganizationId { get; set; }
-    public Organization Organization { get; set; } = null!;
-    public Guid? ParentDepartmentId { get; set; }
-    public Department? ParentDepartment { get; set; }
-    public Guid? ManagerEmployeeId { get; set; }
-    public string Code { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public string Status { get; set; } = "ACTIVE";
-
-    public ICollection<Employee> Employees { get; set; } = new List<Employee>();
-}
-
-public class JobPosition : AuditableEntity
-{
-    public Guid OrganizationId { get; set; }
-    public Organization Organization { get; set; } = null!;
-    public Guid? DepartmentId { get; set; }
-    public string Code { get; set; } = string.Empty;
-    public string Title { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public string? LevelName { get; set; }
-    public string Status { get; set; } = "ACTIVE";
-
-    public ICollection<Competency.PositionCompetencyRequirement> CompetencyRequirements { get; set; } = new List<Competency.PositionCompetencyRequirement>();
-}
-
-public class Employee : AuditableEntity
-{
-    public Guid OrganizationId { get; set; }
-    public Organization Organization { get; set; } = null!;
-    public Guid? UserId { get; set; }
-    public Auth.User? User { get; set; }
-    public Guid DepartmentId { get; set; }
-    public Department Department { get; set; } = null!;
-    public Guid JobPositionId { get; set; }
-    public JobPosition JobPosition { get; set; } = null!;
-    public Guid? DirectManagerId { get; set; }
-    public Employee? DirectManager { get; set; }
-    public string EmployeeCode { get; set; } = string.Empty;
-    public string FullName { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string? Phone { get; set; }
-    public string EmploymentStatus { get; set; } = "ACTIVE";
-    public DateOnly? JoinedAt { get; set; }
+    public string Status { get; set; } = Statuses.Simple.Active;
 }

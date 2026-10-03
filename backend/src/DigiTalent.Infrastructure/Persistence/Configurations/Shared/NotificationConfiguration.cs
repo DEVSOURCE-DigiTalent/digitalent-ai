@@ -1,31 +1,32 @@
-using DigiTalent.Domain.Entities.Shared;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DigiTalent.Infrastructure.Persistence.Configurations.Shared;
+namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
+/// <summary>
+/// Map entity Notification với bảng "notifications" (thông báo in-app, được push realtime qua SignalR).
+/// </summary>
 public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
 {
     public void Configure(EntityTypeBuilder<Notification> builder)
     {
-        builder.ToTable("notifications");
+        builder.ToTable("notifications", table =>
+        {
+            table.HasCheckConstraint("ck_notifications_read_at", "(is_read = false AND read_at IS NULL) OR is_read = true");
+        });
+        builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.Id).HasColumnName("id");
-        builder.Property(x => x.CreatedAt).HasColumnName("created_at").HasColumnType("timestamptz");
-        builder.Property(x => x.CreatedBy).HasColumnName("created_by");
-        builder.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasColumnType("timestamptz");
-        builder.Property(x => x.UpdatedBy).HasColumnName("updated_by");
+        builder.Property(x => x.Type).IsRequired().HasMaxLength(50);
+        builder.Property(x => x.Title).IsRequired().HasMaxLength(250);
+        builder.Property(x => x.Message).IsRequired();
+        builder.Property(x => x.RelatedEntityType).HasMaxLength(80);
+        builder.Property(x => x.IsRead).HasDefaultValue(false);
 
-        builder.Property(x => x.RecipientUserId).HasColumnName("recipient_user_id");
-        builder.Property(x => x.Type).HasColumnName("type").HasMaxLength(80);
-        builder.Property(x => x.Title).HasColumnName("title").HasMaxLength(255);
-        builder.Property(x => x.Message).HasColumnName("message").HasColumnType("text");
-        builder.Property(x => x.RelatedEntityType).HasColumnName("related_entity_type").HasMaxLength(80);
-        builder.Property(x => x.RelatedEntityId).HasColumnName("related_entity_id");
-        builder.Property(x => x.IsRead).HasColumnName("is_read");
-        builder.Property(x => x.ReadAt).HasColumnName("read_at").HasColumnType("timestamptz");
+        builder.HasOne<User>().WithMany().HasForeignKey(x => x.RecipientUserId);
 
-        builder.HasIndex(x => new { x.RecipientUserId, x.IsRead })
-            .HasDatabaseName("ix_notifications_recipient_isread");
+        builder.HasIndex(x => new { x.RecipientUserId, x.IsRead, x.CreatedAt })
+            .IsDescending(false, false, true)
+            .HasDatabaseName("ix_notifications_recipient_unread");
     }
 }

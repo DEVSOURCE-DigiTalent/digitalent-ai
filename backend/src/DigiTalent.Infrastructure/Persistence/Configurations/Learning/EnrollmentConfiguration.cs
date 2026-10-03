@@ -1,68 +1,39 @@
-using DigiTalent.Domain.Entities.Learning;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DigiTalent.Infrastructure.Persistence.Configurations.Learning;
+namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
+/// <summary>
+/// Map entity Enrollment với bảng "enrollments". Mỗi nhân viên chỉ có 1 enrollment đang mở / khóa học.
+/// </summary>
 public class EnrollmentConfiguration : IEntityTypeConfiguration<Enrollment>
 {
     public void Configure(EntityTypeBuilder<Enrollment> builder)
     {
-        builder.ToTable("enrollments");
+        builder.ToTable("enrollments", table =>
+        {
+            table.HasCheckConstraint("ck_enrollments_status", "status IN ('NOT_STARTED','IN_PROGRESS','READY_FOR_ASSESSMENT','COMPLETED','CANCELLED')");
+            table.HasCheckConstraint("ck_enrollment_progress", "progress_percent BETWEEN 0 AND 100");
+            table.HasCheckConstraint("ck_enrollments_completion_time", "completed_at IS NULL OR started_at IS NULL OR completed_at >= started_at");
+        });
+        builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.Id)
-            .HasColumnName("id");
+        builder.Property(x => x.Status).IsRequired().HasMaxLength(30);
+        builder.Property(x => x.ProgressPercent).HasPrecision(5, 2).HasDefaultValue(0m);
 
-        builder.Property(x => x.CourseId)
-            .HasColumnName("course_id");
+        builder.HasOne<CourseAssignment>().WithMany().HasForeignKey(x => x.CourseAssignmentId);
+        builder.HasOne<Employee>().WithMany().HasForeignKey(x => x.EmployeeId);
+        builder.HasOne<Course>().WithMany().HasForeignKey(x => x.CourseId);
 
-        builder.Property(x => x.EmployeeId)
-            .HasColumnName("employee_id");
+        // course_assignment_id UNIQUE (NULL được lặp lại)
+        builder.HasIndex(x => x.CourseAssignmentId).IsUnique();
 
-        builder.Property(x => x.CourseAssignmentId)
-            .HasColumnName("course_assignment_id");
-
-        builder.Property(x => x.Status)
-            .HasMaxLength(30)
-            .HasColumnName("status");
-
-        builder.Property(x => x.ProgressPercentage)
-            .HasColumnType("numeric(5,2)")
-            .HasColumnName("progress_percentage");
-
-        builder.Property(x => x.StartedAt)
-            .HasColumnType("timestamptz")
-            .HasColumnName("started_at");
-
-        builder.Property(x => x.CompletedAt)
-            .HasColumnType("timestamptz")
-            .HasColumnName("completed_at");
-
-        builder.Property(x => x.DueDate)
-            .HasColumnType("date")
-            .HasColumnName("due_date");
-
-        builder.Property(x => x.CreatedAt)
-            .HasColumnType("timestamptz")
-            .HasColumnName("created_at");
-
-        builder.Property(x => x.CreatedBy)
-            .HasColumnName("created_by");
-
-        builder.Property(x => x.UpdatedAt)
-            .HasColumnType("timestamptz")
-            .HasColumnName("updated_at");
-
-        builder.Property(x => x.UpdatedBy)
-            .HasColumnName("updated_by");
-
-        builder.HasIndex(x => new { x.CourseId, x.EmployeeId })
+        builder.HasIndex(x => new { x.EmployeeId, x.Status })
+            .HasDatabaseName("ix_enrollments_employee_status");
+        builder.HasIndex(x => new { x.EmployeeId, x.CourseId })
             .IsUnique()
-            .HasDatabaseName("ux_enrollment_course_employee");
-
-        builder.HasMany(e => e.LessonProgresses)
-            .WithOne(lp => lp.Enrollment)
-            .HasForeignKey(lp => lp.EnrollmentId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .HasFilter("status IN ('NOT_STARTED','IN_PROGRESS','READY_FOR_ASSESSMENT')")
+            .HasDatabaseName("ux_enrollments_one_active");
     }
 }

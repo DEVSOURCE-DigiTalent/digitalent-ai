@@ -13,8 +13,7 @@ interface EmptyStateProps {
 
 /**
  * Reusable empty state for no-data and filtered-empty scenarios.
- * - default: "No X yet. Create one to get started."
- * - filtered: "No results match current filters." + Clear Filters suggestion
+ * Styled with Enterprise tokens (Mực & Giấy).
  */
 export function EmptyState({
   icon,
@@ -26,14 +25,14 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className={cn('flex flex-col items-center justify-center py-16 px-4 text-center', className)}>
-      <div className="text-slate-300 mb-4">
+      <div className="text-ent-fg-3 mb-4">
         {icon ?? <Inbox className="w-16 h-16 mx-auto" strokeWidth={1} />}
       </div>
-      <h3 className="text-lg font-semibold text-slate-700 mb-1">{title}</h3>
-      {description && <p className="text-sm text-slate-500 max-w-md mb-6">{description}</p>}
+      <h3 className="text-lg font-semibold text-ent-fg mb-1">{title}</h3>
+      {description && <p className="text-sm text-ent-fg-2 max-w-md mb-6">{description}</p>}
       {action && <div>{action}</div>}
       {variant === 'filtered' && !action && (
-        <p className="text-sm text-slate-400 mt-2">Try adjusting your search or filters.</p>
+        <p className="text-sm text-ent-fg-3 mt-2">Hãy thử đổi từ khóa hoặc bộ lọc.</p>
       )}
     </div>
   );

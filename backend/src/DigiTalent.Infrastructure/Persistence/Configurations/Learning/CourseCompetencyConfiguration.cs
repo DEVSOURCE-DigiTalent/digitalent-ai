@@ -1,56 +1,31 @@
-using DigiTalent.Domain.Entities.Learning;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DigiTalent.Infrastructure.Persistence.Configurations.Learning;
+namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
+/// <summary>
+/// Map entity CourseCompetency với bảng "course_competencies" (khóa học nâng năng lực nào lên cấp nào).
+/// </summary>
 public class CourseCompetencyConfiguration : IEntityTypeConfiguration<CourseCompetency>
 {
     public void Configure(EntityTypeBuilder<CourseCompetency> builder)
     {
-        builder.ToTable("course_competencies");
-
+        builder.ToTable("course_competencies", table =>
+        {
+            table.HasCheckConstraint("ck_course_target_level", "target_level BETWEEN 1 AND 3");
+            table.HasCheckConstraint("ck_course_coverage_type", "coverage_type IN ('PRIMARY','SECONDARY','SUPPORTING')");
+            table.HasCheckConstraint("ck_course_coverage_weight", "coverage_weight IS NULL OR coverage_weight BETWEEN 0 AND 100");
+        });
         builder.HasKey(x => new { x.CourseId, x.CompetencyId });
 
-        builder.Property(x => x.CourseId)
-            .HasColumnName("course_id");
+        builder.Property(x => x.CoverageType).IsRequired().HasMaxLength(30);
+        builder.Property(x => x.CoverageWeight).HasPrecision(5, 2);
 
-        builder.Property(x => x.CompetencyId)
-            .HasColumnName("competency_id");
+        builder.HasOne<Course>().WithMany().HasForeignKey(x => x.CourseId);
+        builder.HasOne<Competency>().WithMany().HasForeignKey(x => x.CompetencyId);
 
-        builder.Property(x => x.TargetLevelValue)
-            .HasColumnName("target_level_value");
-
-        builder.Property(x => x.CoverageWeight)
-            .HasColumnType("numeric(5,2)")
-            .HasColumnName("coverage_weight");
-
-        builder.Property(x => x.Notes)
-            .HasColumnType("text")
-            .HasColumnName("notes");
-
-        builder.Property(x => x.CreatedAt)
-            .HasColumnType("timestamptz")
-            .HasColumnName("created_at");
-
-        builder.Property(x => x.CreatedBy)
-            .HasColumnName("created_by");
-
-        builder.Property(x => x.UpdatedAt)
-            .HasColumnType("timestamptz")
-            .HasColumnName("updated_at");
-
-        builder.Property(x => x.UpdatedBy)
-            .HasColumnName("updated_by");
-
-        builder.HasOne(cc => cc.Course)
-            .WithMany(c => c.CourseCompetencies)
-            .HasForeignKey(cc => cc.CourseId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(cc => cc.Competency)
-            .WithMany()
-            .HasForeignKey(cc => cc.CompetencyId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(x => new { x.CompetencyId, x.TargetLevel })
+            .HasDatabaseName("ix_course_competencies_competency_target_level");
     }
 }

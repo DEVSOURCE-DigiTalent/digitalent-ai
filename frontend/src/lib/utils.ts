@@ -1,26 +1,45 @@
+import { isAxiosError } from 'axios';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import type { ApiResponse } from '@/types/api';
 
 /** Merge Tailwind classes safely */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Format a date ISO string to locale display */
-export function formatDate(isoString: string | null | undefined): string {
-  if (!isoString) return '—';
-  try {
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    }).format(new Date(isoString));
-  } catch {
-    return '—';
+/** Server message of a failed ApiResponse request (e.g. a business 400/409), else the fallback. */
+export function apiErrorMessage(error: unknown, fallback: string): string {
+  if (isAxiosError<ApiResponse<unknown>>(error)) {
+    return error.response?.data?.message || fallback;
   }
+  return fallback;
 }
 
-/** Format a date ISO string to relative time (e.g., "2 days ago") */
+/** dd/mm/yyyy (Vietnamese locale) */
+export function formatDate(isoString: string | null | undefined): string {
+  if (!isoString) return '—';
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+}
+
+/** dd/mm/yyyy HH:mm in local time (SRS CR-05). */
+export function formatDateTime(isoString: string | null | undefined): string {
+  if (!isoString) return '—';
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date);
+}
+
+/** Format a date ISO string to relative time (e.g., "2 ngày trước") */
 export function formatRelativeTime(isoString: string | null | undefined): string {
   if (!isoString) return '—';
   try {
@@ -28,12 +47,12 @@ export function formatRelativeTime(isoString: string | null | undefined): string
     const then = new Date(isoString).getTime();
     const diffMs = now - then;
     const diffMinutes = Math.floor(diffMs / 60000);
-    if (diffMinutes < 1) return 'Just now';
-    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    if (diffMinutes < 1) return 'Vừa xong';
+    if (diffMinutes < 60) return `${diffMinutes} phút trước`;
     const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
     const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffDays < 7) return `${diffDays} ngày trước`;
     return formatDate(isoString);
   } catch {
     return '—';

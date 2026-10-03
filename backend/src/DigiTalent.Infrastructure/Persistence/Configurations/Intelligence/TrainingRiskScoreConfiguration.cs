@@ -1,33 +1,27 @@
-using DigiTalent.Domain.Entities.Intelligence;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DigiTalent.Infrastructure.Persistence.Configurations.Intelligence;
+namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
+/// <summary>
+/// Map entity TrainingRiskScore với bảng "training_risk_scores".
+/// Database là gốc: tên cột tự đổi sang snake_case, không khai báo lại ở đây.
+/// </summary>
 public class TrainingRiskScoreConfiguration : IEntityTypeConfiguration<TrainingRiskScore>
 {
     public void Configure(EntityTypeBuilder<TrainingRiskScore> builder)
     {
-        builder.ToTable("training_risk_scores");
+        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
+        builder.ToTable("training_risk_scores", table => table.ExcludeFromMigrations());
+        builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.Id).HasColumnName("id");
-        builder.Property(x => x.CreatedAt).HasColumnName("created_at").HasColumnType("timestamptz");
-        builder.Property(x => x.CreatedBy).HasColumnName("created_by");
-        builder.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasColumnType("timestamptz");
-        builder.Property(x => x.UpdatedBy).HasColumnName("updated_by");
-
-        builder.Property(x => x.EnrollmentId).HasColumnName("enrollment_id");
-        builder.Property(x => x.EmployeeId).HasColumnName("employee_id");
-        builder.Property(x => x.RiskScore).HasColumnName("risk_score").HasColumnType("numeric(5,2)");
-        builder.Property(x => x.RiskLevel).HasColumnName("risk_level").HasMaxLength(30);
-        builder.Property(x => x.InactivityScore).HasColumnName("inactivity_score").HasColumnType("numeric(5,2)");
-        builder.Property(x => x.LowScoreRate).HasColumnName("low_score_rate").HasColumnType("numeric(5,2)");
-        builder.Property(x => x.DeadlinePressure).HasColumnName("deadline_pressure").HasColumnType("numeric(5,2)");
-        builder.Property(x => x.FailedAttemptRate).HasColumnName("failed_attempt_rate").HasColumnType("numeric(5,2)");
-        builder.Property(x => x.ProgressDelay).HasColumnName("progress_delay").HasColumnType("numeric(5,2)");
-        builder.Property(x => x.GeneratedAt).HasColumnName("generated_at").HasColumnType("timestamptz");
-
-        builder.HasIndex(x => new { x.EnrollmentId, x.GeneratedAt })
-            .HasDatabaseName("ix_risk_enrollment_generated");
+        // Cột đặc biệt (jsonb / số thập phân): phải khai báo đúng kiểu
+        builder.Property(x => x.DeadlinePressure).HasPrecision(5, 2);
+        builder.Property(x => x.FailedAttemptRate).HasPrecision(5, 2);
+        builder.Property(x => x.InactivityScore).HasPrecision(5, 2);
+        builder.Property(x => x.LowScoreRate).HasPrecision(5, 2);
+        builder.Property(x => x.ProgressDelay).HasPrecision(5, 2);
+        builder.Property(x => x.RiskScore).HasPrecision(5, 2);
     }
 }

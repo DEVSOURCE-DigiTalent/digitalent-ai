@@ -1,28 +1,34 @@
-using DigiTalent.Domain.Entities.Task;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DigiTalent.Infrastructure.Persistence.Configurations.Task;
+namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
+/// <summary>
+/// Map entity TaskEvaluation với bảng "task_evaluations" (1 lần chấm / 1 bài nộp).
+/// </summary>
 public class TaskEvaluationConfiguration : IEntityTypeConfiguration<TaskEvaluation>
 {
     public void Configure(EntityTypeBuilder<TaskEvaluation> builder)
     {
-        builder.ToTable("task_evaluations");
+        builder.ToTable("task_evaluations", table =>
+        {
+            table.HasCheckConstraint("ck_task_evaluations_score", "overall_score IS NULL OR overall_score BETWEEN 0 AND 100");
+            table.HasCheckConstraint("ck_task_evaluations_verdict", "verdict IN ('PASSED','NEEDS_REVISION','FAILED')");
+            table.HasCheckConstraint("ck_task_evaluations_evidence_requires_pass", "NOT counts_as_evidence OR verdict = 'PASSED'");
+            table.HasCheckConstraint("ck_task_evaluations_row_version", "row_version > 0");
+        });
+        builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.Id).HasColumnName("id");
-        builder.Property(x => x.CreatedAt).HasColumnName("created_at").HasColumnType("timestamptz");
-        builder.Property(x => x.CreatedBy).HasColumnName("created_by");
-        builder.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasColumnType("timestamptz");
-        builder.Property(x => x.UpdatedBy).HasColumnName("updated_by");
+        builder.Property(x => x.OverallScore).HasPrecision(5, 2);
+        builder.Property(x => x.Verdict).IsRequired().HasMaxLength(30);
+        builder.Property(x => x.CountsAsEvidence).HasDefaultValue(false);
+        builder.Property(x => x.RowVersion).HasDefaultValue(1L);
 
-        builder.Property(x => x.TaskAssignmentId).HasColumnName("task_assignment_id");
-        builder.Property(x => x.EvaluatorUserId).HasColumnName("evaluator_user_id");
-        builder.Property(x => x.TaskScore).HasColumnName("task_score").HasColumnType("numeric(5,2)");
-        builder.Property(x => x.Feedback).HasColumnName("feedback").HasColumnType("text");
-        builder.Property(x => x.ConfirmedCompetencyId).HasColumnName("confirmed_competency_id");
-        builder.Property(x => x.ConfirmedLevelValue).HasColumnName("confirmed_level_value");
-        builder.Property(x => x.EvaluationStatus).HasColumnName("evaluation_status").HasMaxLength(30);
-        builder.Property(x => x.EvaluatedAt).HasColumnName("evaluated_at").HasColumnType("timestamptz");
+        builder.HasOne<TaskSubmission>().WithMany().HasForeignKey(x => x.TaskSubmissionId);
+        builder.HasOne<User>().WithMany().HasForeignKey(x => x.ReviewerUserId);
+
+        builder.HasIndex(x => x.TaskSubmissionId).IsUnique();
+        builder.HasIndex(x => x.FinalizationKey).IsUnique();
     }
 }

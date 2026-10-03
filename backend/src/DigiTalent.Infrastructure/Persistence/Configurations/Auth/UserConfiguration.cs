@@ -1,62 +1,36 @@
-using DigiTalent.Domain.Entities.Auth;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DigiTalent.Infrastructure.Persistence.Configurations.Auth;
+namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
+/// <summary>
+/// Bảng "users" — khớp SQL v2.3. Tên cột tự đổi sang snake_case (DisplayName → display_name).
+/// </summary>
 public class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
     {
-        builder.ToTable("users");
+        builder.ToTable("users", table =>
+        {
+            table.HasCheckConstraint("ck_users_status", "status IN ('ACTIVE','INACTIVE','LOCKED')");
+            table.HasCheckConstraint("ck_users_failed_login_count", "failed_login_count >= 0");
+        });
 
-        builder.HasKey(x => x.Id);
+        builder.HasKey(u => u.Id);
 
-        builder.Property(x => x.Email)
-            .HasMaxLength(255)
-            .IsRequired();
+        // Email luôn lưu chữ thường (use case chuẩn hóa) → unique thường = unique không phân biệt hoa/thường
+        builder.Property(u => u.Email).IsRequired().HasMaxLength(255);
+        builder.HasIndex(u => u.Email).IsUnique().HasDatabaseName("ux_users_email_normalized");
 
-        builder.Property(x => x.PasswordHash)
-            .HasColumnType("text")
-            .IsRequired();
+        builder.Property(u => u.PasswordHash).IsRequired();
+        builder.Property(u => u.DisplayName).IsRequired().HasMaxLength(200);
+        builder.Property(u => u.Status).IsRequired().HasMaxLength(30);
+        builder.Property(u => u.FailedLoginCount).HasDefaultValue(0);
 
-        builder.Property(x => x.FullName)
-            .HasMaxLength(255)
-            .IsRequired();
+        // uint + IsRowVersion → Npgsql dùng cột hệ thống xmin làm concurrency token (không thêm cột)
+        builder.Property(u => u.Version).IsRowVersion();
 
-        builder.Property(x => x.AvatarUrl)
-            .HasColumnType("text");
-
-        builder.Property(x => x.Status)
-            .HasConversion<string>()
-            .HasMaxLength(30);
-
-        builder.Property(x => x.FailedLoginCount);
-
-        builder.Property(x => x.CreatedAt)
-            .HasColumnType("timestamptz");
-
-        builder.Property(x => x.UpdatedAt)
-            .HasColumnType("timestamptz");
-
-        builder.Property(x => x.EmailVerifiedAt)
-            .HasColumnType("timestamptz");
-
-        builder.Property(x => x.LastLoginAt)
-            .HasColumnType("timestamptz");
-
-        builder.HasIndex(x => x.Email)
-            .IsUnique()
-            .HasDatabaseName("ux_users_email");
-
-        builder.HasMany(x => x.UserRoles)
-            .WithOne(x => x.User)
-            .HasForeignKey(x => x.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasMany(x => x.RefreshTokens)
-            .WithOne(x => x.User)
-            .HasForeignKey(x => x.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Organization>().WithMany().HasForeignKey(u => u.OrganizationId);
     }
 }

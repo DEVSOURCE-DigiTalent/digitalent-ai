@@ -1,11 +1,19 @@
 import axios, { AxiosError } from 'axios';
+import { getLoginPath } from '../features/auth/auth-redirect';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 });
+
+// Frontend-first: with VITE_USE_MOCK=true the REST calls are answered by the mock server (services/mock/server)
+// instead of the network, so every service and page works unchanged. The check is inline so that a production
+// build drops the import together with all the mock data.
+if (import.meta.env.VITE_USE_MOCK === 'true') {
+  apiClient.defaults.adapter = (config) => import('./mock/server/mock-adapter').then((module) => module.mockAdapter(config));
+}
 
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('accessToken');
@@ -15,25 +23,14 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Backend chưa có refresh token: token hết hạn / sai (401) → xóa token và về trang đăng nhập.
 apiClient.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as any;
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-      originalRequest._retry = true;
-      try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, { refreshToken });
-        const { accessToken } = response.data.data;
-        localStorage.setItem('accessToken', accessToken);
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-        }
-        return apiClient(originalRequest);
-      } catch {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
+  (error: AxiosError) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('accessToken');
+      if (window.location.pathname !== '/login') {
+        window.location.href = getLoginPath(window.location.pathname, window.location.search);
       }
     }
     return Promise.reject(error);

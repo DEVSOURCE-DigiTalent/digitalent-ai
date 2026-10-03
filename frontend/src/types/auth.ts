@@ -5,15 +5,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   accessToken: string;
-  refreshToken: string;
   expiresAt: string;
 }
 
-export interface CurrentUser {
-  id: string;
-  email: string;
-  fullName: string;
-  employeeId?: string;
-  roles: string[];
-  permissions: string[];
-}
+export type { SessionUser as CurrentUser } from './session';

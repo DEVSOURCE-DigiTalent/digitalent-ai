@@ -1,8 +1,8 @@
-using DigiTalent.Domain.Entities.Auth;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DigiTalent.Infrastructure.Persistence.Configurations.Auth;
+namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
 public class PermissionConfiguration : IEntityTypeConfiguration<Permission>
 {
@@ -10,25 +10,12 @@ public class PermissionConfiguration : IEntityTypeConfiguration<Permission>
     {
         builder.ToTable("permissions");
 
-        builder.HasKey(x => x.Id);
+        builder.HasKey(p => p.Id);
 
-        builder.Property(x => x.Code)
-            .HasMaxLength(120)
-            .IsRequired();
+        builder.Property(p => p.Code).IsRequired().HasMaxLength(120);
+        builder.HasIndex(p => p.Code).IsUnique();
 
-        builder.Property(x => x.Module)
-            .HasMaxLength(80)
-            .IsRequired();
-
-        builder.Property(x => x.Action)
-            .HasMaxLength(80)
-            .IsRequired();
-
-        builder.Property(x => x.Description)
-            .HasColumnType("text");
-
-        builder.HasIndex(x => x.Code)
-            .IsUnique()
-            .HasDatabaseName("ux_permissions_code");
+        builder.Property(p => p.Module).IsRequired().HasMaxLength(80);
+        builder.Property(p => p.Action).IsRequired().HasMaxLength(80);
     }
 }

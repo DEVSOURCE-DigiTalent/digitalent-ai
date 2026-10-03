@@ -1,8 +1,8 @@
-using DigiTalent.Domain.Entities.Auth;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DigiTalent.Infrastructure.Persistence.Configurations.Auth;
+namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
 public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 {
@@ -10,42 +10,15 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
     {
         builder.ToTable("refresh_tokens");
 
-        builder.HasKey(x => x.Id);
+        builder.HasKey(t => t.Id);
 
-        builder.Property(x => x.TokenHash)
-            .HasColumnType("text")
-            .IsRequired();
+        builder.Property(t => t.TokenHash).IsRequired();
+        builder.HasIndex(t => t.TokenHash).IsUnique();
+        builder.Property(t => t.IpHash).HasMaxLength(128);
 
-        builder.Property(x => x.ExpiresAt)
-            .HasColumnType("timestamptz");
+        builder.HasOne<User>().WithMany().HasForeignKey(t => t.UserId);
+        builder.HasOne<RefreshToken>().WithMany().HasForeignKey(t => t.ReplacedByTokenId);
 
-        builder.Property(x => x.RevokedAt)
-            .HasColumnType("timestamptz");
-
-        builder.Property(x => x.IpAddress)
-            .HasMaxLength(64);
-
-        builder.Property(x => x.UserAgent)
-            .HasColumnType("text");
-
-        builder.Property(x => x.CreatedAt)
-            .HasColumnType("timestamptz");
-
-        builder.Property(x => x.UpdatedAt)
-            .HasColumnType("timestamptz");
-
-        builder.HasIndex(x => x.TokenHash)
-            .IsUnique()
-            .HasDatabaseName("ux_refresh_tokens_token_hash");
-
-        builder.HasOne(x => x.User)
-            .WithMany(x => x.RefreshTokens)
-            .HasForeignKey(x => x.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne<RefreshToken>()
-            .WithMany()
-            .HasForeignKey(x => x.ReplacedByTokenId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(t => t.UserId).HasDatabaseName("ix_refresh_tokens_user");
     }
 }
