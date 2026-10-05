@@ -127,7 +127,9 @@ Route gốc `api/v1`, mỗi module một controller trong `Api/Controllers/V1/`.
 | `CertificatesController` | `GET /certificates`, `GET /certificates/mine`, `GET /certificates/{code}/verify`, `POST /certificates/{id}/revoke`, `GET /certificates/{id}/pdf` | HR/Employee/Public | `verify` công khai, rate-limit |
 | `TasksController` | `GET/POST/PUT /task-templates`, `/task-assignments`, `/task-submissions`, `/task-evaluations` | Dept Manager/Employee | WMS-lite |
 | `IntelligenceController` | `GET /skill-gap/mine`, `/skill-gap/team`, `/skill-gap/analytics`, `POST /skill-gap/recalculate`, `GET /readiness`, `/risk` | HR/Manager/Employee | Đọc snapshot |
-| `DashboardController` | `GET /dashboard/executive`, `/department`, `/trainer`, `/my-learning` | Theo vai trò | — |
+| `OrganizationController` | `GET /organization/overview` ✅ | HR/Admin | OW-01: thành viên, người dùng/hạn mức, gói, đợt đào tạo đang chạy, nhiệm vụ chờ duyệt, tiến độ thiết lập, hoạt động gần đây (`dashboard.hr_company.read`) |
+| `IntelligenceDashboardController` | `GET /intelligence/dashboard` ✅ | HR/Admin | OW-01, LCA-01: `kpis` (nhân viên đã phân tích, coverage TB, có khoảng trống HIGH, phân công quá hạn, tỷ lệ hoàn thành, gợi ý chờ duyệt), `domains` (yêu cầu / hiện tại TB theo miền, hiện tại chặn trần ở mức yêu cầu), `atRisk` (top 5). `dashboard.hr_company.read`, phạm vi EmployeeScope |
+| `DashboardController` | `GET /dashboard/department`, `/trainer`, `/employee` | Theo vai trò | Chưa làm. Mỗi endpoint một quyền `dashboard.*.read` |
 | `ScoringConfigsController` | `GET/PUT /scoring-configs` | Admin | Weights versioned |
 | `NotificationsController` | `GET /notifications`, `POST /notifications/{id}/read` | Tất cả | SignalR realtime |
 | `AuditLogsController` | `GET /audit-logs` | Admin | Chỉ đọc |

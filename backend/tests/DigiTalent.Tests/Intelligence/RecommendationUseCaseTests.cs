@@ -27,8 +27,9 @@ public class RecommendationUseCaseTests
     }
 
     private static GetCourseRecommendationsUseCase Recommendations(SkillGapTestWorld world, ICurrentUser user) =>
-        new(world.Context, user, world.Scope(user),
-            new RecommendationWeightsProvider(world.Context, NullLogger<RecommendationWeightsProvider>.Instance));
+        new(user, world.Scope(user),
+            new RecommendationWeightsProvider(world.Context, NullLogger<RecommendationWeightsProvider>.Instance),
+            new EmployeeRecommendationService(world.Context));
 
     private static Task CalculateGapAsync(SkillGapTestWorld world, Employee employee)
     {
