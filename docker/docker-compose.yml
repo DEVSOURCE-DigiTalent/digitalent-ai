@@ -81,22 +81,22 @@ services:
       dockerfile: ../backend/src/DigiTalent.Api/Dockerfile
     container_name: digitalent-api
     restart: unless-stopped
-    command: >
-      /bin/sh -c "
-      set -e
-      if [ \"$$ASPNETCORE_ENVIRONMENT\" = \"Production\" ]; then
-        if [ \"$$RAW_POSTGRES_PASSWORD\" = \"changeme\" ] || [ \"$$RAW_JWT_SIGNING_KEY\" = \"YourSuperSecretKeyThatIsAtLeast64CharactersLong!\" ] || [ \"$$RAW_MINIO_SECRET_KEY\" = \"changeme\" ]; then
-          echo 'ERROR: Default passwords/keys are not allowed in Production!'
-          exit 1
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        if [ "$$ASPNETCORE_ENVIRONMENT" = "Production" ]; then
+          if [ "$$RAW_POSTGRES_PASSWORD" = "changeme" ] || [ "$$RAW_JWT_SIGNING_KEY" = "YourSuperSecretKeyThatIsAtLeast64CharactersLong!" ] || [ "$$RAW_MINIO_SECRET_KEY" = "changeme" ]; then
+            echo 'ERROR: Default passwords/keys are not allowed in Production!'
+            exit 1
+          fi
         fi
-      fi
-      if [ "$$APPLY_MIGRATIONS" = "true" ] || [ "$$AUTO_MIGRATE" = "true" ]; then
-        echo "Applying database migrations and seeding foundation data..."
-        dotnet DigiTalent.Api.dll --migrate-only
-      fi
-      echo "Starting DigiTalent API..."
-      exec dotnet DigiTalent.Api.dll
-      "
+        if [ "$$APPLY_MIGRATIONS" = "true" ] || [ "$$AUTO_MIGRATE" = "true" ]; then
+          echo "Applying database migrations and seeding foundation data..."
+          dotnet DigiTalent.Api.dll --migrate-only
+        fi
+        echo "Starting DigiTalent API..."
+        exec dotnet DigiTalent.Api.dll
     environment:
       APPLY_MIGRATIONS: ${APPLY_MIGRATIONS:-true}
       # DO NOT USE DEFAULT PASSWORDS IN PRODUCTION
