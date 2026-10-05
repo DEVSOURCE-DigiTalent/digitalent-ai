@@ -25,6 +25,7 @@ public static class DbSeeder
         await SeedReferenceDataAsync(db);
         await SeedUsersAsync(db, passwordHasher, organization.Id, developmentPassword ?? DefaultPassword);
         await SkillGapSeeder.SeedDemoAsync(db, organization.Id);
+        await SeedDemoSubscriptionAsync(db, organization);
     }
 
     public static async Task SeedReferenceDataAsync(AppDbContext db)
@@ -47,6 +48,43 @@ public static class DbSeeder
         db.Organizations.Add(organization);
         await db.SaveChangesAsync();
         return organization;
+    }
+
+    /// <summary>
+    /// Gói dịch vụ, trạng thái thiết lập và 1 đợt đào tạo đang chạy cho tổ chức demo (màn hình Tổng quan).
+    /// Idempotent: chỉ thêm phần còn thiếu nên DB Development cũ cũng được bổ sung.
+    /// </summary>
+    private static async Task SeedDemoSubscriptionAsync(AppDbContext db, Organization organization)
+    {
+        organization.SetupCompletedAt ??= DateTimeOffset.UtcNow;
+
+        if (!await db.OrganizationSubscriptions.AnyAsync(s => s.OrganizationId == organization.Id))
+        {
+            db.OrganizationSubscriptions.Add(new OrganizationSubscription
+            {
+                OrganizationId = organization.Id,
+                PlanCode = "BUSINESS",
+                PlanName = "Gói Doanh nghiệp",
+                Status = Statuses.Subscription.Active,
+                SeatLimit = 50,
+                RenewsAt = DateTimeOffset.UtcNow.AddYears(1),
+            });
+        }
+
+        var hr = await db.Users.FirstOrDefaultAsync(u => u.OrganizationId == organization.Id && u.Email == "hr@digitalent.ai");
+        if (hr != null && !await db.TrainingBatches.AnyAsync(b => b.OrganizationId == organization.Id))
+        {
+            db.TrainingBatches.Add(new TrainingBatch
+            {
+                OrganizationId = organization.Id,
+                Name = "Đợt đào tạo năng lực số Q4/2026",
+                Status = Statuses.TrainingBatch.Running,
+                StartDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                CreatedByUserId = hr.Id,
+            });
+        }
+
+        await db.SaveChangesAsync();
     }
 
     private static async Task SeedRolesAsync(AppDbContext db)

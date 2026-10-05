@@ -7,6 +7,14 @@
 -- configurations and migrations are written to match it; Report 4 Section 2 and
 -- docs/07 describe it. Change this file first, then the code and the documents.
 --
+-- Addendum 2026-10-05 (organization overview page, OW-01) — 3 new tables, 2 new columns:
+--   * organizations.setup_completed_at: onboarding state ("setup not finished" banner).
+--   * organization_subscriptions (new): current plan, status and seat limit.
+--   * training_batches (new): "running training batches" KPI.
+--   * audit_logs.entity_label: human-readable target shown in "recent activity".
+--   * recommendation_decisions (new): HR decision on a recommended course
+--     (pending recommendations KPI = recommended, not enrolled, no open decision).
+--
 -- Changes v2.2 -> v2.3:
 --   * employees.job_position_id is NULLABLE (new hire without a position ->
 --     skill gap returns NOT_ASSIGNED).
@@ -60,10 +68,28 @@ CREATE TABLE organizations (
     name            varchar(200) NOT NULL,
     domain          varchar(255),
     status          varchar(30)  NOT NULL,
+    setup_completed_at timestamptz,          -- NULL = onboarding wizard not finished
     created_at      timestamptz  NOT NULL,
     updated_at      timestamptz  NOT NULL,
     CONSTRAINT ck_organizations_status
         CHECK (status IN ('ACTIVE','INACTIVE'))
+);
+
+-- One current subscription per organization (plan history is out of scope).
+CREATE TABLE organization_subscriptions (
+    id               uuid PRIMARY KEY,
+    organization_id  uuid NOT NULL UNIQUE REFERENCES organizations(id),
+    plan_code        varchar(50)  NOT NULL,
+    plan_name        varchar(100) NOT NULL,
+    status           varchar(30)  NOT NULL,
+    seat_limit       integer,                 -- NULL = unlimited
+    renews_at        timestamptz,
+    created_at       timestamptz  NOT NULL,
+    updated_at       timestamptz  NOT NULL,
+    CONSTRAINT ck_organization_subscriptions_status
+        CHECK (status IN ('ACTIVE','EXPIRED','PAYMENT_REQUIRED')),
+    CONSTRAINT ck_organization_subscriptions_seat_limit
+        CHECK (seat_limit IS NULL OR seat_limit > 0)
 );
 
 CREATE TABLE users (
@@ -849,9 +875,47 @@ CREATE TABLE skill_gap_items (
         CHECK (severity IS NULL OR severity IN ('LOW','MEDIUM','HIGH'))
 );
 
+-- HR / manager decision on a course recommended to an employee (one row per pair, updated in place).
+-- REOPENED puts the recommendation back to "pending" without deleting the history row.
+CREATE TABLE recommendation_decisions (
+    id                  uuid PRIMARY KEY,
+    employee_id         uuid NOT NULL REFERENCES employees(id),
+    course_id           uuid NOT NULL REFERENCES courses(id),
+    skill_gap_run_id    uuid REFERENCES skill_gap_runs(id),   -- snapshot the decision was based on
+    status              varchar(30) NOT NULL,
+    reason              text,
+    decided_by_user_id  uuid NOT NULL REFERENCES users(id),
+    decided_at          timestamptz NOT NULL,
+    created_at          timestamptz NOT NULL,
+    updated_at          timestamptz NOT NULL,
+    CONSTRAINT uq_recommendation_decisions_employee_course
+        UNIQUE (employee_id, course_id),
+    CONSTRAINT ck_recommendation_decisions_status
+        CHECK (status IN ('ACCEPTED','DISMISSED','REOPENED'))
+);
+
 -- ============================================================================
 -- 8. LEARNING ASSIGNMENT / ENROLLMENT / PROGRESS  [Phase 3]
 -- ============================================================================
+
+CREATE TABLE training_batches (
+    id                    uuid PRIMARY KEY,
+    organization_id       uuid NOT NULL REFERENCES organizations(id),
+    name                  varchar(200) NOT NULL,
+    status                varchar(30)  NOT NULL,
+    start_date            date,
+    end_date              date,
+    created_by_user_id    uuid NOT NULL REFERENCES users(id),
+    created_at            timestamptz NOT NULL,
+    updated_at            timestamptz NOT NULL,
+    CONSTRAINT ck_training_batches_status
+        CHECK (status IN ('DRAFT','RUNNING','COMPLETED','CANCELLED')),
+    CONSTRAINT ck_training_batches_dates
+        CHECK (start_date IS NULL OR end_date IS NULL OR end_date >= start_date)
+);
+
+CREATE INDEX ix_training_batches_org_status
+    ON training_batches (organization_id, status);
 
 CREATE TABLE course_assignments (
     id                       uuid PRIMARY KEY,
@@ -1162,6 +1226,7 @@ CREATE TABLE audit_logs (
     action           varchar(120) NOT NULL,
     entity_type      varchar(100) NOT NULL,
     entity_id        uuid,
+    entity_label     varchar(255),
     old_values       jsonb,
     new_values       jsonb,
     ip_hash          varchar(128),

@@ -12,6 +12,8 @@ public class AuditLog : BaseEntity
     public string Action { get; set; } = string.Empty;
     public string EntityType { get; set; } = string.Empty;
     public Guid? EntityId { get; set; }
+    /// <summary>Tên đối tượng dễ đọc (VD: tên phòng ban) để hiển thị ở "hoạt động gần đây".</summary>
+    public string? EntityLabel { get; set; }
     public string? OldValues { get; set; }
     public string? NewValues { get; set; }
     public string? IpHash { get; set; }

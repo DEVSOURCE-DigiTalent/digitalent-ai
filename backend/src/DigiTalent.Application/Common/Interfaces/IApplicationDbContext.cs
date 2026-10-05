@@ -26,6 +26,7 @@ public interface IApplicationDbContext
     DbSet<JobFamily> JobFamilies { get; }
     DbSet<JobPosition> JobPositions { get; }
     DbSet<Organization> Organizations { get; }
+    DbSet<OrganizationSubscription> OrganizationSubscriptions { get; }
 
     // Competency & Position Requirements
     DbSet<Competency> Competencies { get; }
@@ -42,6 +43,7 @@ public interface IApplicationDbContext
     // Learning (khóa học)
     DbSet<Course> Courses { get; }
     DbSet<CourseAssignment> CourseAssignments { get; }
+    DbSet<TrainingBatch> TrainingBatches { get; }
     DbSet<CourseCompetency> CourseCompetencies { get; }
     DbSet<CourseLearningOutcome> CourseLearningOutcomes { get; }
     DbSet<CourseModule> CourseModules { get; }
@@ -81,6 +83,7 @@ public interface IApplicationDbContext
     DbSet<ScoringConfigItem> ScoringConfigItems { get; }
     DbSet<SkillGapItem> SkillGapItems { get; }
     DbSet<SkillGapRun> SkillGapRuns { get; }
+    DbSet<RecommendationDecision> RecommendationDecisions { get; }
     DbSet<TrainingRiskScore> TrainingRiskScores { get; }
 
     // Learner Surface (SEP-09)
