@@ -31,6 +31,7 @@ No plan file was supplied. The journey was derived from the production incident:
 - The targeted regression test passes.
 - The full backend suite was executed with `--collect:"XPlat Code Coverage"`: 126 passed and 58 failed because the local environment does not define `DIGITALENT_TEST_POSTGRES_CONNECTION` for disposable PostgreSQL integration tests. The failures are environment prerequisites, not failures introduced by this change.
 - Coverage percentage is not claimed because the full suite could not complete successfully without a disposable PostgreSQL instance.
+- The deploy script resets the server checkout to `origin/develop`. These local commits and the corrected Compose file are active on EC2, but the next deploy from `develop` can overwrite the fix until the commits are merged into that branch.
 - PostgreSQL port `5432` remains reachable through the current infrastructure configuration. Restricting it and requiring SSH tunneling is a separate security hardening task.
 
 ## Merge evidence
