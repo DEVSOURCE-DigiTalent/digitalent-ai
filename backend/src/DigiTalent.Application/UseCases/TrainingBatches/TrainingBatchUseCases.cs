@@ -85,7 +85,7 @@ public class GetTrainingBatchesUseCase : IUseCase<GetTrainingBatchesInput, GetTr
 
         var totalItems = await query.CountAsync();
         var pageIndex = Math.Max(1, input.PageIndex);
-        var pageSize = Math.Max(1, input.PageSize);
+        var pageSize = Math.Clamp(input.PageSize, 1, 100);
 
         var batchEmployees = _context.TrainingBatchEmployees.AsNoTracking();
         var courses = _context.Courses.AsNoTracking();
@@ -344,6 +344,35 @@ public class CancelTrainingBatchUseCase : IUseCase<CancelTrainingBatchInput, Can
     }
 }
 
+// ── Activate ──
+public class ActivateTrainingBatchUseCase : IUseCase<ActivateTrainingBatchInput, ActivateTrainingBatchOutput>
+{
+    private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
+
+    public ActivateTrainingBatchUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    {
+        _context = context;
+        _currentUser = currentUser;
+    }
+
+    public async Task<ActivateTrainingBatchOutput> ExecuteAsync(ActivateTrainingBatchInput input)
+    {
+        var orgId = _currentUser.GetRequiredOrganizationId();
+
+        var batch = await _context.TrainingBatches
+            .FirstOrDefaultAsync(b => b.Id == input.Id && b.OrganizationId == orgId)
+            ?? throw new NotFoundException("Training batch not found.");
+
+        if (batch.Status != "DRAFT")
+            throw new BadRequestException("Only draft batches can be activated.");
+
+        batch.Status = "ACTIVE";
+        await _context.SaveChangesAsync();
+        return new ActivateTrainingBatchOutput { Success = true };
+    }
+}
+
 // ── Complete ──
 public class CompleteTrainingBatchUseCase : IUseCase<CompleteTrainingBatchInput, CompleteTrainingBatchOutput>
 {
@@ -453,7 +482,7 @@ public class RemoveBatchEmployeeUseCase : IUseCase<RemoveBatchEmployeeInput, Rem
             .FirstOrDefaultAsync(be => be.TrainingBatchId == input.BatchId && be.EmployeeId == input.EmployeeId)
             ?? throw new NotFoundException("Employee not found in this batch.");
 
-        _context.TrainingBatchEmployees.Remove(entry);
+        entry.Status = "DROPPED";
         await _context.SaveChangesAsync();
 
         return new RemoveBatchEmployeeOutput { Success = true };

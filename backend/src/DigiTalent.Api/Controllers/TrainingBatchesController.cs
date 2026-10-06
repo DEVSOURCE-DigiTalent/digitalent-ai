@@ -62,6 +62,16 @@ public class TrainingBatchesController : ControllerBase
         return Ok(ApiResponse<UpdateTrainingBatchOutput>.Ok(result));
     }
 
+    [HttpPost("{id:guid}/activate")]
+    [HasPermission(Permissions.Learning.CreateAssignment)]
+    public async Task<ActionResult<ApiResponse<ActivateTrainingBatchOutput>>> Activate(
+        Guid id,
+        [FromServices] IUseCase<ActivateTrainingBatchInput, ActivateTrainingBatchOutput> useCase)
+    {
+        var result = await useCase.ExecuteAsync(new ActivateTrainingBatchInput { Id = id });
+        return Ok(ApiResponse<ActivateTrainingBatchOutput>.Ok(result));
+    }
+
     [HttpPost("{id:guid}/cancel")]
     [HasPermission(Permissions.Learning.CancelAssignment)]
     public async Task<ActionResult<ApiResponse<CancelTrainingBatchOutput>>> Cancel(

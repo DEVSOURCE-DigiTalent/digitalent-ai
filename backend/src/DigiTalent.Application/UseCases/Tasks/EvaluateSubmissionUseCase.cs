@@ -22,16 +22,30 @@ public class EvaluateSubmissionUseCase : IUseCase<EvaluateSubmissionInput, TaskS
         var userId = _currentUser.UserId
             ?? throw new ForbiddenException("Chưa xác thực.");
 
+        var organizationId = _currentUser.GetRequiredOrganizationId();
+
         var sub = await _context.TaskSubmissions
             .FirstOrDefaultAsync(s => s.Id == input.SubmissionId)
             ?? throw new NotFoundException($"Submission '{input.SubmissionId}' not found.");
+
+        var assignmentBelongsToOrg = await _context.TaskAssignments.AsNoTracking()
+            .Where(a => a.Id == sub.TaskAssignmentId && a.TaskTemplateId.HasValue)
+            .AnyAsync(a => _context.PracticalTaskTemplates.Any(t => t.Id == a.TaskTemplateId && t.OrganizationId == organizationId));
+        if (!assignmentBelongsToOrg)
+            throw new NotFoundException($"Submission '{input.SubmissionId}' not found.");
+
+        if (sub.Status == "SUPERSEDED")
+            throw new BadRequestException("Không thể đánh giá bài nộp đã bị thay thế.");
 
         var existingEval = await _context.TaskEvaluations.AsNoTracking()
             .AnyAsync(ev => ev.TaskSubmissionId == sub.Id);
         if (existingEval)
             throw new BadRequestException("Bài nộp này đã được đánh giá.");
 
-        var verdict = input.Decision.ToUpper() switch
+        if (string.IsNullOrWhiteSpace(input.Decision))
+            throw new BadRequestException("Decision không được để trống.");
+
+        var verdict = input.Decision.Trim().ToUpper() switch
         {
             "APPROVED" => "PASSED",
             "REVISION_REQUESTED" => "NEEDS_REVISION",

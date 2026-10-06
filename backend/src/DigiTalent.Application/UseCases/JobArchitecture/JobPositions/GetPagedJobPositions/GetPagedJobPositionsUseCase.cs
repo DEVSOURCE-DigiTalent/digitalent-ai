@@ -49,7 +49,7 @@ public class GetPagedJobPositionsUseCase : IUseCase<GetPagedJobPositionsUseCaseI
         var totalItems = await query.CountAsync();
 
         var pageIndex = input.PageIndex < 1 ? 1 : input.PageIndex;
-        var pageSize = input.PageSize < 1 ? 10 : input.PageSize;
+        var pageSize = Math.Clamp(input.PageSize, 1, 100);
 
         var items = await query
             .OrderBy(p => p.Code)

@@ -28,10 +28,10 @@ public class GetAssignmentSummaryUseCase : IUseCase<GetAssignmentSummaryInput, A
             join emp in _context.Employees.AsNoTracking() on ca.EmployeeId equals emp.Id
             join enrollment in _context.Enrollments.AsNoTracking() on ca.Id equals enrollment.CourseAssignmentId into enrollJoin
             from enrollment in enrollJoin.DefaultIfEmpty()
-            where course.OrganizationId == organizationId
+            where course.OrganizationId == organizationId && ca.Status == "ACTIVE"
             select new
             {
-                ca.Status,
+                EnrollmentStatus = enrollment != null ? enrollment.Status : Statuses.Enrollment.NotStarted,
                 ca.DueDate,
                 emp.DepartmentId,
                 Progress = enrollment != null ? (int)enrollment.ProgressPercent : 0,
@@ -39,12 +39,11 @@ public class GetAssignmentSummaryUseCase : IUseCase<GetAssignmentSummaryInput, A
         ).ToListAsync();
 
         var total = assignments.Count;
-        var notStarted = assignments.Count(a => a.Status == Statuses.Enrollment.NotStarted);
-        var inProgress = assignments.Count(a => a.Status == Statuses.Enrollment.InProgress);
-        var readyForAssessment = assignments.Count(a => a.Status == Statuses.Enrollment.ReadyForAssessment);
-        var completed = assignments.Count(a => a.Status == Statuses.Enrollment.Completed);
-        var cancelled = assignments.Count(a => a.Status == Statuses.Enrollment.Cancelled);
-        var active = assignments.Where(a => a.Status != Statuses.Enrollment.Completed && a.Status != Statuses.Enrollment.Cancelled).ToList();
+        var notStarted = assignments.Count(a => a.EnrollmentStatus == Statuses.Enrollment.NotStarted);
+        var inProgress = assignments.Count(a => a.EnrollmentStatus == Statuses.Enrollment.InProgress);
+        var readyForAssessment = assignments.Count(a => a.EnrollmentStatus == Statuses.Enrollment.ReadyForAssessment);
+        var completed = assignments.Count(a => a.EnrollmentStatus == Statuses.Enrollment.Completed);
+        var active = assignments.Where(a => a.EnrollmentStatus != Statuses.Enrollment.Completed).ToList();
         var overdue = active.Count(a => a.DueDate != null && a.DueDate < today);
         var dueSoon = active.Count(a => a.DueDate != null && a.DueDate >= today && a.DueDate <= dueSoonThreshold);
 
@@ -61,8 +60,8 @@ public class GetAssignmentSummaryUseCase : IUseCase<GetAssignmentSummaryInput, A
                 DepartmentId = dept.Id,
                 Name = dept.Name,
                 Total = deptAssignments.Count,
-                Completed = deptAssignments.Count(a => a.Status == Statuses.Enrollment.Completed),
-                Overdue = deptAssignments.Count(a => a.DueDate != null && a.DueDate < today && a.Status != Statuses.Enrollment.Completed && a.Status != Statuses.Enrollment.Cancelled),
+                Completed = deptAssignments.Count(a => a.EnrollmentStatus == Statuses.Enrollment.Completed),
+                Overdue = deptAssignments.Count(a => a.DueDate != null && a.DueDate < today && a.EnrollmentStatus != Statuses.Enrollment.Completed),
                 AverageProgress = deptAssignments.Count > 0 ? (int)deptAssignments.Average(a => a.Progress) : 0,
             };
         }).Where(d => d.Total > 0).ToList();

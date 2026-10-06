@@ -63,7 +63,7 @@ public class GetCompetenciesUseCase : IUseCase<GetCompetenciesUseCaseInput, GetC
         var totalItems = await query.CountAsync();
 
         var pageIndex = input.PageIndex < 1 ? 1 : input.PageIndex;
-        var pageSize = input.PageSize < 1 ? 10 : input.PageSize;
+        var pageSize = Math.Clamp(input.PageSize, 1, 100);
 
         var criteriaSet = _context.GetDbSet<CompetencyLevelCriterion>().AsNoTracking();
         var tt02Mappings = Tt02Mappings.Query(_context);

@@ -28,7 +28,7 @@ public class GetNotificationsUseCase : IUseCase<GetNotificationsInput, GetNotifi
         var unread = await query.CountAsync(n => !n.IsRead);
 
         var pageIndex = Math.Max(1, input.PageIndex);
-        var pageSize = Math.Max(1, input.PageSize);
+        var pageSize = Math.Clamp(input.PageSize, 1, 100);
 
         var items = await query
             .OrderByDescending(n => n.CreatedAt)

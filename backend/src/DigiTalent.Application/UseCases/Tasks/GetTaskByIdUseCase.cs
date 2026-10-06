@@ -8,13 +8,19 @@ namespace DigiTalent.Application.UseCases.Tasks;
 public class GetTaskByIdUseCase : IUseCase<GetTaskByIdInput, PracticalTaskDetailDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public GetTaskByIdUseCase(IApplicationDbContext context) => _context = context;
+    public GetTaskByIdUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    {
+        _context = context;
+        _currentUser = currentUser;
+    }
 
     public async Task<PracticalTaskDetailDto> ExecuteAsync(GetTaskByIdInput input)
     {
+        var organizationId = _currentUser.GetRequiredOrganizationId();
         var template = await _context.PracticalTaskTemplates.AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == input.Id)
+            .FirstOrDefaultAsync(t => t.Id == input.Id && t.OrganizationId == organizationId)
             ?? throw new NotFoundException($"Task '{input.Id}' not found.");
 
         var competencyIds = await _context.PracticalTaskTargets.AsNoTracking()
