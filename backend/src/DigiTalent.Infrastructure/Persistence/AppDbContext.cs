@@ -50,7 +50,6 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<JobFamily> JobFamilies => Set<JobFamily>();
     public DbSet<JobPosition> JobPositions => Set<JobPosition>();
     public DbSet<Organization> Organizations => Set<Organization>();
-    public DbSet<OrganizationSubscription> OrganizationSubscriptions => Set<OrganizationSubscription>();
 
     // Competency & Position Requirements
     public DbSet<Competency> Competencies => Set<Competency>();
@@ -67,7 +66,6 @@ public class AppDbContext : DbContext, IApplicationDbContext
     // Learning (khóa học)
     public DbSet<Course> Courses => Set<Course>();
     public DbSet<CourseAssignment> CourseAssignments => Set<CourseAssignment>();
-    public DbSet<TrainingBatch> TrainingBatches => Set<TrainingBatch>();
     public DbSet<CourseCompetency> CourseCompetencies => Set<CourseCompetency>();
     public DbSet<CourseLearningOutcome> CourseLearningOutcomes => Set<CourseLearningOutcome>();
     public DbSet<CourseModule> CourseModules => Set<CourseModule>();
@@ -77,6 +75,8 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<Lesson> Lessons => Set<Lesson>();
     public DbSet<LessonLearningOutcome> LessonLearningOutcomes => Set<LessonLearningOutcome>();
     public DbSet<LessonProgress> LessonProgresses => Set<LessonProgress>();
+    public DbSet<TrainingBatch> TrainingBatches => Set<TrainingBatch>();
+    public DbSet<TrainingBatchEmployee> TrainingBatchEmployees => Set<TrainingBatchEmployee>();
 
     // Task (bài tập thực hành)
     public DbSet<AssignedTaskTarget> AssignedTaskTargets => Set<AssignedTaskTarget>();
@@ -107,11 +107,16 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<ScoringConfigItem> ScoringConfigItems => Set<ScoringConfigItem>();
     public DbSet<SkillGapItem> SkillGapItems => Set<SkillGapItem>();
     public DbSet<SkillGapRun> SkillGapRuns => Set<SkillGapRun>();
-    public DbSet<RecommendationDecision> RecommendationDecisions => Set<RecommendationDecision>();
     public DbSet<TrainingRiskScore> TrainingRiskScores => Set<TrainingRiskScore>();
+    public DbSet<RecommendationReview> RecommendationReviews => Set<RecommendationReview>();
 
     // Learner Surface (SEP-09)
     public DbSet<LearnerProfile> LearnerProfiles => Set<LearnerProfile>();
+
+    // Billing
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<SubscriptionEntitlement> SubscriptionEntitlements => Set<SubscriptionEntitlement>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
 
     // Shared
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();

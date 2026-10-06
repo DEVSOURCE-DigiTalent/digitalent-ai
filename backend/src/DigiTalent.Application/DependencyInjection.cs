@@ -50,7 +50,6 @@ public static class DependencyInjection
         services.AddScoped<SkillGapRunService>();
         services.AddScoped<SkillGapRunReader>();
         services.AddScoped<RecommendationWeightsProvider>();
-        services.AddScoped<EmployeeRecommendationService>();
 
         return services;
     }

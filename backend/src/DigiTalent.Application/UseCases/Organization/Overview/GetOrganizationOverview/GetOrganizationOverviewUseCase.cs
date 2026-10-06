@@ -33,7 +33,7 @@ public class GetOrganizationOverviewUseCase : IUseCase<GetOrganizationOverviewUs
             .FirstOrDefaultAsync()
             ?? throw new NotFoundException("Organization not found.");
 
-        var subscription = await _context.OrganizationSubscriptions
+        var subscription = await _context.Subscriptions
             .Where(s => s.OrganizationId == organizationId)
             .Select(s => new { s.PlanCode, s.PlanName, s.Status, s.RenewsAt, s.SeatLimit })
             .FirstOrDefaultAsync();
@@ -60,7 +60,7 @@ public class GetOrganizationOverviewUseCase : IUseCase<GetOrganizationOverviewUs
                 },
             PendingReviews = await CountPendingReviewsAsync(organizationId),
             RunningBatches = await _context.TrainingBatches
-                .CountAsync(b => b.OrganizationId == organizationId && b.Status == Statuses.TrainingBatch.Running),
+                .CountAsync(b => b.OrganizationId == organizationId && b.Status == Statuses.TrainingBatch.Active),
             Setup = await BuildSetupAsync(organizationId, members),
             SetupCompleted = organization.SetupCompletedAt != null,
             RecentActivity = await GetRecentActivityAsync(organizationId),

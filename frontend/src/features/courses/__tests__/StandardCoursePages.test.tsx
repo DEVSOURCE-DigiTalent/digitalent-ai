@@ -69,6 +69,7 @@ describe('StandardCoursePages (Agent 1 - Phase D)', () => {
       modules: [],
     },
   ];
+  const catalogCourses = mockCourses.map((course) => ({ ...course, modules: course.modules.length, assignedCount: 0 }));
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -87,9 +88,9 @@ describe('StandardCoursePages (Agent 1 - Phase D)', () => {
 
   describe('StandardCourseCatalogPage', () => {
     it('renders page header, KPI cards, and course items', () => {
-      vi.spyOn(assignmentHooks, 'useCourses').mockReturnValue({
+      vi.spyOn(assignmentHooks, 'useCourseCatalog').mockReturnValue({
         data: {
-          items: mockCourses,
+          items: catalogCourses,
           totalItems: 2,
           pageIndex: 1,
           pageSize: 20,
@@ -113,10 +114,10 @@ describe('StandardCoursePages (Agent 1 - Phase D)', () => {
     });
 
     it('filters courses by search keyword', () => {
-      vi.spyOn(assignmentHooks, 'useCourses').mockImplementation(({ search }: any) => {
+      vi.spyOn(assignmentHooks, 'useCourseCatalog').mockImplementation(({ search }: any) => {
         const filtered = search
-          ? mockCourses.filter((c) => c.title.includes(search) || c.code.includes(search))
-          : mockCourses;
+          ? catalogCourses.filter((c) => c.title.includes(search) || c.code.includes(search))
+          : catalogCourses;
         return {
           data: { items: filtered, totalItems: filtered.length, pageIndex: 1, pageSize: 20, totalPages: 1 },
           isLoading: false,
@@ -135,6 +136,25 @@ describe('StandardCoursePages (Agent 1 - Phase D)', () => {
       fireEvent.change(searchInput, { target: { value: 'Google' } });
 
       expect(screen.getByText('Kỹ năng cộng tác trực tuyến với Google Workspace')).toBeDefined();
+    });
+
+    it('sorts the filtered catalog before paging and lets the owner change pages', () => {
+      const items = Array.from({ length: 14 }, (_, index) => ({
+        ...mockCourses[0], id: `course-${index + 1}`, code: `C${String(index + 1).padStart(2, '0')}`,
+        title: `Khóa học ${index + 1}`, modules: 3, assignedCount: 0,
+      }));
+      vi.spyOn(assignmentHooks, 'useCourseCatalog').mockReturnValue({
+        data: { items, totalItems: 14 }, isLoading: false, isError: false,
+      } as any);
+
+      render(<QueryClientProvider client={queryClient}><MemoryRouter><StandardCourseCatalogPage /></MemoryRouter></QueryClientProvider>);
+
+      expect(screen.queryByText('Khóa học 14')).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Trang 2' }));
+      expect(screen.getByText('Khóa học 14')).toBeDefined();
+      fireEvent.change(screen.getByRole('combobox', { name: 'Sắp xếp khóa học' }), { target: { value: 'title-desc' } });
+      expect(screen.getByText('Khóa học 14')).toBeDefined();
+      expect(screen.queryByText('Khóa học 1')).toBeNull();
     });
   });
 
@@ -178,6 +198,11 @@ describe('StandardCoursePages (Agent 1 - Phase D)', () => {
         data: { items: [], totalItems: 0 } as any,
         isLoading: false,
       } as any);
+      vi.spyOn(assignmentHooks, 'useCourseLesson').mockReturnValue({
+        data: { id: 'l-1', title: 'Bài 1: Lỗ hổng mật khẩu', lessonType: 'TEXT', contentBody: 'Nội dung thật từ BE2', moduleTitle: 'Học phần 1' },
+        isLoading: false,
+        isError: false,
+      } as any);
 
       render(
         <QueryClientProvider client={queryClient}>
@@ -189,11 +214,12 @@ describe('StandardCoursePages (Agent 1 - Phase D)', () => {
         </QueryClientProvider>,
       );
 
-      const syllabusButton = screen.getByRole('button', { name: /Cấu trúc giáo trình/i });
+      const syllabusButton = screen.getByRole('button', { name: /^Luồng đào tạo$/i });
       fireEvent.click(syllabusButton);
 
-      expect(screen.getByText('Học phần 1: Nhận diện rủi ro')).toBeDefined();
-      expect(screen.getByText('Bài 1: Lỗ hổng mật khẩu')).toBeDefined();
+      expect(screen.getAllByText(/Học phần 1: Nhận diện rủi ro/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Bài 1: Lỗ hổng mật khẩu').length).toBeGreaterThan(0);
+      expect(screen.getByText('Khung xem trước video bài giảng')).toBeDefined();
     });
   });
 });

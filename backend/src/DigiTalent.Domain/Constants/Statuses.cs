@@ -41,19 +41,20 @@ public static class Statuses
         public const string Inactive = "INACTIVE";
     }
 
-    /// <summary>organization_subscriptions.status</summary>
+    /// <summary>subscriptions.status</summary>
     public static class Subscription
     {
         public const string Active = "ACTIVE";
         public const string Expired = "EXPIRED";
         public const string PaymentRequired = "PAYMENT_REQUIRED";
+        public const string Cancelled = "CANCELLED";
     }
 
     /// <summary>training_batches.status</summary>
     public static class TrainingBatch
     {
         public const string Draft = "DRAFT";
-        public const string Running = "RUNNING";
+        public const string Active = "ACTIVE";
         public const string Completed = "COMPLETED";
         public const string Cancelled = "CANCELLED";
     }
@@ -108,13 +109,6 @@ public static class Statuses
         public const string Supporting = "SUPPORTING";
     }
 
-    /// <summary>course_assignments.status</summary>
-    public static class CourseAssignment
-    {
-        public const string Active = "ACTIVE";
-        public const string Cancelled = "CANCELLED";
-    }
-
     /// <summary>enrollments.status</summary>
     public static class Enrollment
     {
@@ -155,14 +149,6 @@ public static class Statuses
     {
         public const string System = "SYSTEM";
         public const string UserRequest = "USER_REQUEST";
-    }
-
-    /// <summary>recommendation_decisions.status</summary>
-    public static class RecommendationDecision
-    {
-        public const string Accepted = "ACCEPTED";
-        public const string Dismissed = "DISMISSED";
-        public const string Reopened = "REOPENED";
     }
 
     /// <summary>scoring_configs.config_type</summary>

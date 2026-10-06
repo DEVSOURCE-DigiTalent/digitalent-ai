@@ -43,7 +43,7 @@ export function AssignmentsTable({ rows, isLoading, onCancel, search, onSearchCh
       cell: (a) => (
         <div>
           <p className="text-slate-900">{a.courseTitle}</p>
-          <p className="font-mono text-xs text-slate-500">{a.courseCode}{a.source === 'RECOMMENDATION' ? ' · từ đề xuất' : ''}</p>
+          <p className="font-mono text-xs text-slate-500">{a.courseCode}{a.source === 'SKILL_GAP' || a.source === 'RECOMMENDATION' ? ' · từ đề xuất' : ''}</p>
         </div>
       ),
     },

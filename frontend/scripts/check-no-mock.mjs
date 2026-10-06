@@ -1,11 +1,12 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /**
  * Fails when a production build still contains the mock layer (demo accounts, their password, the mock
  * database). Run after \`npm run build\` with VITE_USE_MOCK unset or false.
  */
-const DIST = new URL('../dist', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+const DIST = fileURLToPath(new URL('../dist', import.meta.url));
 const MARKERS = ['mock-token', 'Admin@1234', 'digitalent.demo', 'dt-mock-db', '686868'];
 
 function* files(dir) {

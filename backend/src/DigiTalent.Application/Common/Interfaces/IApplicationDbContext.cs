@@ -26,7 +26,6 @@ public interface IApplicationDbContext
     DbSet<JobFamily> JobFamilies { get; }
     DbSet<JobPosition> JobPositions { get; }
     DbSet<Organization> Organizations { get; }
-    DbSet<OrganizationSubscription> OrganizationSubscriptions { get; }
 
     // Competency & Position Requirements
     DbSet<Competency> Competencies { get; }
@@ -43,7 +42,6 @@ public interface IApplicationDbContext
     // Learning (khóa học)
     DbSet<Course> Courses { get; }
     DbSet<CourseAssignment> CourseAssignments { get; }
-    DbSet<TrainingBatch> TrainingBatches { get; }
     DbSet<CourseCompetency> CourseCompetencies { get; }
     DbSet<CourseLearningOutcome> CourseLearningOutcomes { get; }
     DbSet<CourseModule> CourseModules { get; }
@@ -53,6 +51,8 @@ public interface IApplicationDbContext
     DbSet<Lesson> Lessons { get; }
     DbSet<LessonLearningOutcome> LessonLearningOutcomes { get; }
     DbSet<LessonProgress> LessonProgresses { get; }
+    DbSet<TrainingBatch> TrainingBatches { get; }
+    DbSet<TrainingBatchEmployee> TrainingBatchEmployees { get; }
 
     // Task (bài tập thực hành)
     DbSet<AssignedTaskTarget> AssignedTaskTargets { get; }
@@ -83,11 +83,16 @@ public interface IApplicationDbContext
     DbSet<ScoringConfigItem> ScoringConfigItems { get; }
     DbSet<SkillGapItem> SkillGapItems { get; }
     DbSet<SkillGapRun> SkillGapRuns { get; }
-    DbSet<RecommendationDecision> RecommendationDecisions { get; }
     DbSet<TrainingRiskScore> TrainingRiskScores { get; }
+    DbSet<RecommendationReview> RecommendationReviews { get; }
 
     // Learner Surface (SEP-09)
     DbSet<LearnerProfile> LearnerProfiles { get; }
+
+    // Billing
+    DbSet<Subscription> Subscriptions { get; }
+    DbSet<SubscriptionEntitlement> SubscriptionEntitlements { get; }
+    DbSet<Invoice> Invoices { get; }
 
     // Shared
     DbSet<AuditLog> AuditLogs { get; }

@@ -1,12 +1,12 @@
 import type { PageRegistry } from '../build-routes';
 
-import { TeamCapabilityDashboardPage } from '../../../features/team/pages/TeamCapabilityDashboardPage';
-import { TeamMembersPage } from '../../../features/team/pages/TeamMembersPage';
-import { TeamMemberDetailPage } from '../../../features/team/pages/TeamMemberDetailPage';
-import { TeamCompetencyMatrixPage } from '../../../features/team/pages/TeamCompetencyMatrixPage';
-import { TeamSkillGapAnalyticsPage } from '../../../features/team/pages/TeamSkillGapAnalyticsPage';
+import { TeamCapabilityDashboardPage } from '../../../features/manager/pages/team/TeamCapabilityDashboardPage';
+import { TeamMembersPage } from '../../../features/manager/pages/team/TeamMembersPage';
+import { TeamMemberDetailPage } from '../../../features/manager/pages/team/TeamMemberDetailPage';
+import { TeamCompetencyMatrixPage } from '../../../features/manager/pages/team/TeamCompetencyMatrixPage';
+import { TeamSkillGapAnalyticsPage } from '../../../features/manager/pages/team/TeamSkillGapAnalyticsPage';
 import { TrainingMonitorPage } from '../../../features/assignments/pages/TrainingMonitorPage';
-import { TrainingAssignmentDetailPage } from '../../../features/team/pages/TrainingAssignmentDetailPage';
+import { TrainingAssignmentDetailPage } from '../../../features/manager/pages/team/TrainingAssignmentDetailPage';
 
 /** MANAGER page registry mapping screen IDs (MG-*) to components. */
 export const MANAGER_PAGES: PageRegistry = {

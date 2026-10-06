@@ -58,28 +58,35 @@ public static class DbSeeder
     {
         organization.SetupCompletedAt ??= DateTimeOffset.UtcNow;
 
-        if (!await db.OrganizationSubscriptions.AnyAsync(s => s.OrganizationId == organization.Id))
+        if (!await db.Subscriptions.AnyAsync(s => s.OrganizationId == organization.Id))
         {
-            db.OrganizationSubscriptions.Add(new OrganizationSubscription
+            db.Subscriptions.Add(new Subscription
             {
                 OrganizationId = organization.Id,
                 PlanCode = "BUSINESS",
                 PlanName = "Gói Doanh nghiệp",
                 Status = Statuses.Subscription.Active,
+                Cycle = "year",
                 SeatLimit = 50,
                 RenewsAt = DateTimeOffset.UtcNow.AddYears(1),
             });
         }
 
         var hr = await db.Users.FirstOrDefaultAsync(u => u.OrganizationId == organization.Id && u.Email == "hr@digitalent.ai");
-        if (hr != null && !await db.TrainingBatches.AnyAsync(b => b.OrganizationId == organization.Id))
+        var course = await db.Courses
+            .Where(c => c.OrganizationId == organization.Id && c.Status == Statuses.Course.Published)
+            .OrderBy(c => c.Code)
+            .FirstOrDefaultAsync();
+        if (hr != null && course != null && !await db.TrainingBatches.AnyAsync(b => b.OrganizationId == organization.Id))
         {
             db.TrainingBatches.Add(new TrainingBatch
             {
                 OrganizationId = organization.Id,
-                Name = "Đợt đào tạo năng lực số Q4/2026",
-                Status = Statuses.TrainingBatch.Running,
-                StartDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                Code = "BATCH-Q4-2026",
+                Title = "Đợt đào tạo năng lực số Q4/2026",
+                CourseId = course.Id,
+                Status = Statuses.TrainingBatch.Active,
+                StartDate = DateTimeOffset.UtcNow,
                 CreatedByUserId = hr.Id,
             });
         }

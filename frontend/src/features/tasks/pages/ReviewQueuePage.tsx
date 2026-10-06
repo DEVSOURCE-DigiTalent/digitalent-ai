@@ -120,6 +120,7 @@ export function ReviewQueuePage() {
           isLoading={isLoading}
           keyExtractor={(row) => row.id}
           emptyTitle="Hàng chờ trống — Tất cả bài tập đã được chấm điểm!"
+          pageInfo={{ page: pageIndex, pageSize: 15, total: data?.totalItems ?? 0, onPageChange: setPageIndex }}
         />
       </div>
     </div>

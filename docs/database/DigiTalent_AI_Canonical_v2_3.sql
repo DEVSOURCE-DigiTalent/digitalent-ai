@@ -7,13 +7,13 @@
 -- configurations and migrations are written to match it; Report 4 Section 2 and
 -- docs/07 describe it. Change this file first, then the code and the documents.
 --
--- Addendum 2026-10-05 (organization overview page, OW-01) — 3 new tables, 2 new columns:
+-- Addendum 2026-10-06 (organization overview page OW-01 + BE2 tables) — 6 new tables, 2 new columns:
 --   * organizations.setup_completed_at: onboarding state ("setup not finished" banner).
---   * organization_subscriptions (new): current plan, status and seat limit.
---   * training_batches (new): "running training batches" KPI.
 --   * audit_logs.entity_label: human-readable target shown in "recent activity".
---   * recommendation_decisions (new): HR decision on a recommended course
---     (pending recommendations KPI = recommended, not enrolled, no open decision).
+--   * subscriptions, subscription_entitlements, invoices, training_batches,
+--     training_batch_employees, recommendation_reviews: tables already used by the BE2
+--     module (entities existed, excluded from migrations, created by no script).
+--     Declared here so every database built from this repo has them.
 --
 -- Changes v2.2 -> v2.3:
 --   * employees.job_position_id is NULLABLE (new hire without a position ->
@@ -75,22 +75,60 @@ CREATE TABLE organizations (
         CHECK (status IN ('ACTIVE','INACTIVE'))
 );
 
--- One current subscription per organization (plan history is out of scope).
-CREATE TABLE organization_subscriptions (
-    id               uuid PRIMARY KEY,
-    organization_id  uuid NOT NULL UNIQUE REFERENCES organizations(id),
-    plan_code        varchar(50)  NOT NULL,
-    plan_name        varchar(100) NOT NULL,
-    status           varchar(30)  NOT NULL,
-    seat_limit       integer,                 -- NULL = unlimited
-    renews_at        timestamptz,
-    created_at       timestamptz  NOT NULL,
-    updated_at       timestamptz  NOT NULL,
-    CONSTRAINT ck_organization_subscriptions_status
-        CHECK (status IN ('ACTIVE','EXPIRED','PAYMENT_REQUIRED')),
-    CONSTRAINT ck_organization_subscriptions_seat_limit
-        CHECK (seat_limit IS NULL OR seat_limit > 0)
+-- Current plan of an organization (one row per organization).
+CREATE TABLE subscriptions (
+    id                    uuid PRIMARY KEY,
+    organization_id       uuid NOT NULL REFERENCES organizations(id),
+    plan_code             varchar(50)  NOT NULL,
+    plan_name             varchar(100) NOT NULL,
+    status                varchar(30)  NOT NULL,
+    cycle                 varchar(10)  NOT NULL,
+    seat_limit            integer,                  -- NULL = unlimited
+    seats_used            integer      NOT NULL,
+    amount_per_period     numeric(18,2) NOT NULL,
+    cancel_at_period_end  boolean      NOT NULL,
+    renews_at             timestamptz,
+    cancelled_at          timestamptz,
+    created_at            timestamptz  NOT NULL,
+    updated_at            timestamptz  NOT NULL,
+    CONSTRAINT ck_subscriptions_status
+        CHECK (status IN ('ACTIVE','EXPIRED','PAYMENT_REQUIRED','CANCELLED')),
+    CONSTRAINT ck_subscriptions_cycle
+        CHECK (cycle IN ('month','year'))
 );
+
+CREATE UNIQUE INDEX ux_subscriptions_org
+    ON subscriptions (organization_id);
+
+CREATE TABLE subscription_entitlements (
+    id                uuid PRIMARY KEY,
+    subscription_id   uuid NOT NULL REFERENCES subscriptions(id),
+    entitlement_key   varchar(100) NOT NULL,
+    created_at        timestamptz  NOT NULL,
+    updated_at        timestamptz  NOT NULL
+);
+
+CREATE UNIQUE INDEX ux_subscription_entitlements_sub_key
+    ON subscription_entitlements (subscription_id, entitlement_key);
+
+CREATE TABLE invoices (
+    id                uuid PRIMARY KEY,
+    subscription_id   uuid NOT NULL REFERENCES subscriptions(id),
+    organization_id   uuid NOT NULL REFERENCES organizations(id),
+    code              varchar(50)   NOT NULL,
+    description       varchar(500)  NOT NULL,
+    amount            numeric(18,2) NOT NULL,
+    status            varchar(30)   NOT NULL,
+    issued_at         timestamptz   NOT NULL,
+    created_at        timestamptz   NOT NULL,
+    updated_at        timestamptz   NOT NULL,
+    CONSTRAINT ck_invoices_status
+        CHECK (status IN ('PAID','PENDING','FAILED','REFUNDED'))
+);
+
+CREATE INDEX ix_invoices_org
+    ON invoices (organization_id);
+
 
 CREATE TABLE users (
     id                  uuid PRIMARY KEY,
@@ -875,47 +913,35 @@ CREATE TABLE skill_gap_items (
         CHECK (severity IS NULL OR severity IN ('LOW','MEDIUM','HIGH'))
 );
 
--- HR / manager decision on a course recommended to an employee (one row per pair, updated in place).
--- REOPENED puts the recommendation back to "pending" without deleting the history row.
-CREATE TABLE recommendation_decisions (
-    id                  uuid PRIMARY KEY,
-    employee_id         uuid NOT NULL REFERENCES employees(id),
-    course_id           uuid NOT NULL REFERENCES courses(id),
-    skill_gap_run_id    uuid REFERENCES skill_gap_runs(id),   -- snapshot the decision was based on
-    status              varchar(30) NOT NULL,
-    reason              text,
-    decided_by_user_id  uuid NOT NULL REFERENCES users(id),
-    decided_at          timestamptz NOT NULL,
-    created_at          timestamptz NOT NULL,
-    updated_at          timestamptz NOT NULL,
-    CONSTRAINT uq_recommendation_decisions_employee_course
-        UNIQUE (employee_id, course_id),
-    CONSTRAINT ck_recommendation_decisions_status
-        CHECK (status IN ('ACCEPTED','DISMISSED','REOPENED'))
-);
 
 -- ============================================================================
 -- 8. LEARNING ASSIGNMENT / ENROLLMENT / PROGRESS  [Phase 3]
 -- ============================================================================
 
 CREATE TABLE training_batches (
-    id                    uuid PRIMARY KEY,
-    organization_id       uuid NOT NULL REFERENCES organizations(id),
-    name                  varchar(200) NOT NULL,
-    status                varchar(30)  NOT NULL,
-    start_date            date,
-    end_date              date,
-    created_by_user_id    uuid NOT NULL REFERENCES users(id),
-    created_at            timestamptz NOT NULL,
-    updated_at            timestamptz NOT NULL,
+    id                  uuid PRIMARY KEY,
+    organization_id     uuid NOT NULL REFERENCES organizations(id),
+    code                varchar(50)   NOT NULL,
+    title               varchar(200)  NOT NULL,
+    description         varchar(2000),
+    course_id           uuid NOT NULL REFERENCES courses(id),
+    department_id       uuid REFERENCES departments(id),
+    job_position_id     uuid REFERENCES job_positions(id),
+    start_date          timestamptz NOT NULL,
+    end_date            timestamptz,
+    due_date            timestamptz,
+    status              varchar(30) NOT NULL,
+    created_by_user_id  uuid NOT NULL REFERENCES users(id),
+    created_at          timestamptz NOT NULL,
+    updated_at          timestamptz NOT NULL,
     CONSTRAINT ck_training_batches_status
-        CHECK (status IN ('DRAFT','RUNNING','COMPLETED','CANCELLED')),
-    CONSTRAINT ck_training_batches_dates
-        CHECK (start_date IS NULL OR end_date IS NULL OR end_date >= start_date)
+        CHECK (status IN ('DRAFT','ACTIVE','COMPLETED','CANCELLED'))
 );
 
 CREATE INDEX ix_training_batches_org_status
     ON training_batches (organization_id, status);
+CREATE UNIQUE INDEX ux_training_batches_org_code
+    ON training_batches (organization_id, code);
 
 CREATE TABLE course_assignments (
     id                       uuid PRIMARY KEY,
@@ -939,6 +965,48 @@ CREATE TABLE course_assignments (
 
 CREATE INDEX ix_course_assignments_employee
     ON course_assignments (employee_id, status);
+
+CREATE TABLE training_batch_employees (
+    id                    uuid PRIMARY KEY,
+    training_batch_id     uuid NOT NULL REFERENCES training_batches(id),
+    employee_id           uuid NOT NULL REFERENCES employees(id),
+    course_assignment_id  uuid REFERENCES course_assignments(id),
+    status                varchar(30) NOT NULL,
+    created_at            timestamptz NOT NULL,
+    updated_at            timestamptz NOT NULL,
+    CONSTRAINT ck_training_batch_employees_status
+        CHECK (status IN ('ENROLLED','IN_PROGRESS','COMPLETED','DROPPED'))
+);
+
+CREATE UNIQUE INDEX ux_training_batch_employees_batch_emp
+    ON training_batch_employees (training_batch_id, employee_id);
+
+-- A recommended course awaiting (or after) a reviewer's decision; one row per employee and course.
+-- Reopening sets status back to PENDING instead of deleting the row.
+CREATE TABLE recommendation_reviews (
+    id                    uuid PRIMARY KEY,
+    organization_id       uuid NOT NULL REFERENCES organizations(id),
+    employee_id           uuid NOT NULL REFERENCES employees(id),
+    course_id             uuid NOT NULL REFERENCES courses(id),
+    skill_gap_run_id      uuid NOT NULL REFERENCES skill_gap_runs(id),
+    score                 numeric(8,4)  NOT NULL,
+    gaps_closed           integer       NOT NULL,
+    mandatory_closed      integer       NOT NULL,
+    high_closed           integer       NOT NULL,
+    explanation           varchar(2000) NOT NULL,
+    status                varchar(30)   NOT NULL,
+    decision_reason       varchar(500),
+    decided_at            timestamptz,
+    decided_by_user_id    uuid REFERENCES users(id),
+    course_assignment_id  uuid REFERENCES course_assignments(id),
+    created_at            timestamptz NOT NULL,
+    updated_at            timestamptz NOT NULL,
+    CONSTRAINT ck_recommendation_reviews_status
+        CHECK (status IN ('PENDING','ACCEPTED','DISMISSED'))
+);
+
+CREATE UNIQUE INDEX uq_recommendation_reviews_emp_course
+    ON recommendation_reviews (organization_id, employee_id, course_id);
 
 CREATE TABLE enrollments (
     id                    uuid PRIMARY KEY,

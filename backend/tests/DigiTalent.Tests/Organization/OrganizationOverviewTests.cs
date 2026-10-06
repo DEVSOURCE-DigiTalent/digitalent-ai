@@ -78,18 +78,30 @@ public class OrganizationOverviewTests
         world.Unassigned.UserId = invited.Id;
         world.Analyst.UserId = loggedIn.Id;
 
-        context.OrganizationSubscriptions.Add(new OrganizationSubscription
+        context.Subscriptions.Add(new Subscription
         {
             OrganizationId = organizationId,
             PlanCode = "BUSINESS",
             PlanName = "Gói Doanh nghiệp",
             Status = Statuses.Subscription.Active,
+            Cycle = "month",
             SeatLimit = 10,
             RenewsAt = new DateTimeOffset(2027, 1, 1, 0, 0, 0, TimeSpan.Zero),
         });
+        var course = new Course
+        {
+            OrganizationId = organizationId,
+            Code = $"C_{suffix}",
+            VersionNo = 1,
+            Title = "Digital basics",
+            Status = Statuses.Course.Published,
+            CreatedByUserId = invited.Id,
+            RowVersion = 1,
+        };
+        context.Courses.Add(course);
         context.TrainingBatches.AddRange(
-            NewBatch(organizationId, invited, "Running", Statuses.TrainingBatch.Running),
-            NewBatch(organizationId, invited, "Done", Statuses.TrainingBatch.Completed));
+            NewBatch(organizationId, course, invited, "ACTIVE_BATCH", Statuses.TrainingBatch.Active),
+            NewBatch(organizationId, course, invited, "DONE_BATCH", Statuses.TrainingBatch.Completed));
 
         var assignment = new TaskAssignment
         {
@@ -171,10 +183,13 @@ public class OrganizationOverviewTests
         result.RecentActivity[1].ActorName.Should().Be("Actor");
     }
 
-    private static TrainingBatch NewBatch(Guid organizationId, User creator, string name, string status) => new()
+    private static TrainingBatch NewBatch(Guid organizationId, Course course, User creator, string code, string status) => new()
     {
         OrganizationId = organizationId,
-        Name = name,
+        Code = code,
+        Title = code,
+        CourseId = course.Id,
+        StartDate = DateTimeOffset.UtcNow,
         Status = status,
         CreatedByUserId = creator.Id,
     };

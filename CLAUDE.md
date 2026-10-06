@@ -25,7 +25,7 @@ frontend/    React + TypeScript + Vite SPA (npm)
 infra/       Docker & Nginx deployment assets
 docker/      docker-compose.yml (postgres, minio, redis[optional], nginx, backend-api)
 docs/        Project documentation (BRD, SRS, ERD, RBAC, coding conventions…)
-  database/  DigiTalent_AI_Canonical_v2_3.sql — THE schema source of truth (62 tables, phase-tagged)
+  database/  DigiTalent_AI_Canonical_v2_3.sql — THE schema source of truth (65 tables, phase-tagged)
 docs_v2/     Revised doc set (v2) — newer than docs/
 scripts/     setup.ps1 (local dev prerequisites check)
 ```
