@@ -108,6 +108,7 @@ public sealed partial class TrialService
         if (item.Status == "not_started") throw new ConflictException("Start the learning item before saving progress.");
         var percent = Math.Max(request.Percent, item.ProgressPercent);
         path = path with { Items = path.Items.Select(x => x.Id == itemId ? x with { ProgressPercent = percent, Status = percent == 100 ? "completed" : "in_progress" } : x).ToArray() };
+        path = path with { Items = path.Items.Select(x => x with { AllowedToStart = x.Prerequisites.All(id => path.Items.Any(prerequisite => prerequisite.Id == id && prerequisite.Status == "completed")) }).ToArray() };
         attempt.PathJson = Json(path); await Save(trial);
         return path;
     }

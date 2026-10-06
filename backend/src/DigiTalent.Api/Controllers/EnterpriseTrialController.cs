@@ -68,7 +68,7 @@ public sealed class EnterpriseTrialController(TrialService trial) : ControllerBa
     public async Task<IActionResult> Progress(string id, TrialProgressRequest request) => Ok(ApiResponse<TrialLearningPathDto>.Ok(await trial.ProgressAsync(id, request)));
 
     [HttpGet("path/items/{id}/content")]
-    public async Task<IActionResult> Content(string id) => Ok(ApiResponse<TrialLearningContentDto>.Ok(await trial.ContentAsync(id)));
+    public async Task<IActionResult> LearningContent(string id) => Ok(ApiResponse<TrialLearningContentDto>.Ok(await trial.ContentAsync(id)));
 
     [HttpGet("results")]
     public async Task<IActionResult> Results() => Ok(ApiResponse<TrialResultRowDto[]>.Ok(await trial.ResultsAsync()));

@@ -12,12 +12,18 @@ public sealed partial class TrialService
         var trial = await Workspace();
         var policy = Policy(trial); var writable = trial.ConvertedAt != null || Now < trial.EndsAt;
         var isOwner = trial.OwnerUserId == actor.UserId;
+        var isEmployee = await db.TrialInvitations.AnyAsync(x => x.OrganizationId == trial.OrganizationId && x.EmployeeId != null &&
+            x.Role == "Employee" && x.AcceptedAt != null && db.Employees.Any(e => e.Id == x.EmployeeId && e.UserId == actor.UserId && e.Status == "ACTIVE"));
+        string[] allowedActions = writable
+            ? isOwner ? ["select_position", "invite", "view_results", "request_conversion"] :
+              isEmployee ? ["diagnostic", "learning", "read"] : ["view_results", "read"]
+            : ["read", "request_conversion"];
         var invitations = await db.TrialInvitations.Where(x => x.OrganizationId == trial.OrganizationId).ToListAsync();
         var submitted = await db.PositionDiagnosticAttempts.AnyAsync(x => x.OrganizationId == trial.OrganizationId && x.SubmittedAt != null && x.ResultJson != null && x.PathJson != null);
         var bundle = trial.BundleJson == null ? null : Bundle(trial);
         return new(trial.OrganizationId, trial.ConvertedAt != null ? "converted" : writable ? "trial_active" : "trial_read_only",
             trial.StartedAt, trial.EndsAt, policy.PolicyVersion, policy with { EnableDevelopmentCapture = false, EnableDevelopmentBundle = false },
-            await Usage(trial), writable ? (isOwner ? ["select_position", "invite", "view_results", "request_conversion"] : ["diagnostic", "learning", "read"]) : ["read", "request_conversion"],
+            await Usage(trial), allowedActions,
             bundle == null ? null : new(trial.PositionId!.Value, trial.DepartmentId!.Value, bundle.Name, bundle.RequirementVersion),
             [new("position", trial.PositionId != null, "select_position"), new("invite", invitations.Any(x => !x.SendFailed), "invite"),
              new("assessment", submitted, "await_assessment"), new("results", submitted && trial.ResultsViewedAt != null, "view_results")], Readiness());
@@ -54,7 +60,11 @@ public sealed partial class TrialService
 
     public async Task ConvertAsync(Guid organizationId, string approvedReference)
     {
-        if (!actor.IsAuthenticated || !(actor.IsInRole("SYSTEM_ADMIN") || actor.IsInRole("SystemAdmin")))
+        var claimedAdmin = actor.IsInRole("SYSTEM_ADMIN") || actor.IsInRole("SystemAdmin");
+        var activeAdmin = actor.UserId.HasValue && await db.UserRoles.AnyAsync(userRole =>
+            userRole.UserId == actor.UserId.Value && userRole.User.Status == "ACTIVE" && userRole.Role.Status == "ACTIVE" &&
+            (userRole.Role.Code == "SYSTEM_ADMIN" || userRole.Role.Code == "SystemAdmin"));
+        if (!actor.IsAuthenticated || !claimedAdmin || !activeAdmin)
             throw new ForbiddenException("Only a trusted platform administrator may confirm an approved conversion.");
         var reference = Text(approvedReference, 200, "Approved entitlement reference");
         var trial = await db.TrialWorkspaces.SingleOrDefaultAsync(x => x.OrganizationId == organizationId)
@@ -68,8 +78,8 @@ public sealed partial class TrialService
         await db.Users.CountAsync(x => x.OrganizationId == trial.OrganizationId && x.Status == "ACTIVE"),
         await db.TrialInvitations.CountAsync(x => x.OrganizationId == trial.OrganizationId && x.AcceptedAt == null && x.ExpiresAt > Now));
 
-    private TrialInvitationDto Invitation(TrialInvitation x, string? token = null) => new(x.Id, x.Name, x.Email, x.Role, x.DepartmentId, x.PositionId,
+    private TrialInvitationDto Invitation(TrialInvitation x, TrialOptions policy, string? token = null) => new(x.Id, x.Name, x.Email, x.Role, x.DepartmentId, x.PositionId,
         x.AcceptedAt != null ? "accepted" : x.SendFailed ? "send_failed" : Now >= x.ExpiresAt ? "expired" : "pending", x.SentAt, x.ExpiresAt,
-        x.AcceptedAt == null && x.SendCount < options.MaxInvitationSends && Now >= x.SentAt.AddSeconds(options.ResendCooldownSeconds),
+        x.AcceptedAt == null && x.SendCount < policy.MaxInvitationSends && Now >= x.SentAt.AddSeconds(policy.ResendCooldownSeconds),
         token == null || x.SendFailed ? null : DevelopmentLink("invite", token));
 }

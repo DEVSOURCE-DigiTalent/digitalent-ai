@@ -34,7 +34,8 @@ public static class TrialAnalysis
             if (candidates.Length == 0) missing.Add($"No published content for {gap.CompetencyId}: level {gap.CurrentLevel} → {gap.RequiredLevel}.");
             foreach (var content in candidates)
             {
-                var prerequisitesAvailable = content.Prerequisites.All(id => bundle.Content.Any(c => c.Id == id && c.Published));
+                // Publication alone does not satisfy a prerequisite: it must be completed in this employee's path.
+                var prerequisitesAvailable = content.Prerequisites.Length == 0;
                 items.Add(new(content.Id, content.Title, content.Version, content.CompetencyId,
                     [$"{gap.CompetencyId}: measured {gap.CurrentLevel}, required {gap.RequiredLevel}, deficit {gap.GapSteps}; attempt {result.SourceAttemptId}."],
                     content.Prerequisites, prerequisitesAvailable, "not_started", 0));

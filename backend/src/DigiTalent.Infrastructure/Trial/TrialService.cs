@@ -73,7 +73,17 @@ public sealed partial class TrialService
         };
         db.TrialRegistrations.Add(registration);
         await db.SaveChangesAsync();
-        await mail.SendAsync(email, "verify", token);
+        try
+        {
+            await mail.SendAsync(email, "verify", token);
+        }
+        catch
+        {
+            // A failed delivery must not reserve the unique email or retain a password hash.
+            db.TrialRegistrations.Remove(registration);
+            await db.SaveChangesAsync();
+            throw;
+        }
         return new("verification_pending", registration.ExpiresAt, DevelopmentLink("verify", token));
     }
 
@@ -120,8 +130,9 @@ public sealed partial class TrialService
     {
         var trial = await Workspace();
         await EnsureReporter(trial);
+        var policy = Policy(trial);
         return (await db.TrialInvitations.Where(x => x.OrganizationId == trial.OrganizationId && x.DepartmentId == trial.DepartmentId).ToListAsync())
-            .Select(x => Invitation(x)).ToArray();
+            .Select(x => Invitation(x, policy)).ToArray();
     }
 
     public async Task<TrialInvitationDto> InviteAsync(TrialInviteRequest request)
@@ -146,7 +157,7 @@ public sealed partial class TrialService
         // Workspace revision is a shared atomic quota guard. Parallel requests cannot both commit the last seat.
         await Save(trial);
         await DeliverInvitation(invitation, token);
-        return Invitation(invitation, token);
+        return Invitation(invitation, Policy(trial), token);
     }
 
     public async Task<TrialInvitationDto> ResendAsync(Guid id)
@@ -168,7 +179,7 @@ public sealed partial class TrialService
         invitation.SentAt = Now; invitation.SendCount++; invitation.SendFailed = false;
         await Save(trial);
         await DeliverInvitation(invitation, token);
-        return Invitation(invitation, token);
+        return Invitation(invitation, policy, token);
     }
 
     public async Task<TrialAccountDto> AcceptAsync(TrialAcceptRequest request)

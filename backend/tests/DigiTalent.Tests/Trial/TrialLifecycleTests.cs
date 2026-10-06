@@ -113,7 +113,11 @@ public sealed class TrialLifecycleTests
         var rows = await world.Service.ResultsAsync();
         Assert.Contains(rows, r => r.State == "learning_in_progress");
         Assert.True((await world.Service.ContextAsync()).Checklist.Single(x => x.Key == "results").Complete);
-        world.Actor(Guid.NewGuid(), null, "SystemAdmin");
+        var platformAdmin = new User { Email = "platform-admin@example.test", DisplayName = "Platform admin", PasswordHash = "test-only" };
+        var platformAdminRole = new Role { Code = "SYSTEM_ADMIN", Name = "System admin", Status = "ACTIVE" };
+        world.Db.AddRange(platformAdmin, platformAdminRole, new UserRole { UserId = platformAdmin.Id, RoleId = platformAdminRole.Id, AssignedAt = world.Clock.Now });
+        await world.Db.SaveChangesAsync();
+        world.Actor(platformAdmin.Id, null, "SYSTEM_ADMIN");
         await world.Service.ConvertAsync(world.OwnerOrganizationId, "approved-contract-123");
         world.Actor(world.EmployeeUserId, world.OwnerOrganizationId, "Employee");
         Assert.Equal(attemptId, (await world.Service.DiagnosticAsync())!.AttemptId);
@@ -179,6 +183,130 @@ public sealed class TrialLifecycleTests
         await Assert.ThrowsAsync<ForbiddenException>(() => world.Service.SaveAnswersAsync(attempt.AttemptId, new(0, [])));
     }
 
+    [Fact]
+    public async Task Catalog_readiness_selection_and_invalid_inputs_fail_closed()
+    {
+        using var world = new World();
+        Assert.True(world.Service.Readiness().CanRegister);
+        var catalog = world.Service.Catalog();
+        Assert.True(catalog.Single().DevelopmentOnly);
+        await Assert.ThrowsAsync<BadRequestException>(() => world.Service.RegisterAsync(world.Registration("not-an-email")));
+        await Assert.ThrowsAsync<BadRequestException>(() => world.Service.RegisterAsync(world.Registration("ok@example.test") with { Password = "weak" }));
+        await Assert.ThrowsAsync<BadRequestException>(() => world.Service.RegisterAsync(world.Registration("ok@example.test") with { AcceptedTerms = false }));
+        await Assert.ThrowsAsync<BadRequestException>(() => world.Service.VerifyAsync("invalid"));
+        await world.CreateOwnerAndPosition();
+        await Assert.ThrowsAsync<ConflictException>(() => world.Service.SelectPositionAsync(new("digital-skills", "Other")));
+        await Assert.ThrowsAsync<ForbiddenException>(() => world.Service.ResultAsync());
+        world.Catalog.Bundle = world.Catalog.Bundle with { Approved = false, Active = false, Questions = [], Content = [] };
+        Assert.False(world.Service.Catalog().Single().Eligible);
+        Assert.False(world.Service.Readiness().CanRegister);
+        await Assert.ThrowsAsync<ForbiddenException>(() => world.Service.RegisterAsync(world.Registration("not-ready@example.test")));
+    }
+
+    [Fact]
+    public async Task Invitation_lists_pending_and_resend_cooldown_and_limit_are_honest()
+    {
+        using var world = new World(new TrialOptions { MaxInvitationSends = 2 });
+        await world.CreateOwnerAndPosition();
+        var invite = await world.Service.InviteAsync(new("Person", "person@example.test", "Employee"));
+        Assert.Equal("pending", (await world.Service.InvitationsAsync()).Single().State);
+        Assert.Equal("pending_invitation", (await world.Service.ResultsAsync()).Single().State);
+        Assert.False((await world.Service.ContextAsync()).Checklist.Single(x => x.Key == "results").Complete);
+        await Assert.ThrowsAsync<ConflictException>(() => world.Service.ResendAsync(invite.Id));
+        world.Clock.Now = world.Clock.Now.AddDays(4);
+        Assert.Equal("expired", (await world.Service.InvitationsAsync()).Single().State);
+        await world.Service.ResendAsync(invite.Id);
+        world.Clock.Now = world.Clock.Now.AddMinutes(2);
+        await Assert.ThrowsAsync<ConflictException>(() => world.Service.ResendAsync(invite.Id));
+        await Assert.ThrowsAsync<NotFoundException>(() => world.Service.ResendAsync(Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task Diagnostic_validation_cross_employee_content_and_progress_are_enforced()
+    {
+        using var world = new World();
+        await world.CreateEmployee();
+        Assert.Null(await world.Service.DiagnosticAsync());
+        Assert.Null(await world.Service.ResultAsync());
+        Assert.Null(await world.Service.PathAsync());
+        await Assert.ThrowsAsync<ConflictException>(() => world.Service.StartItemAsync("missing"));
+        var started = await world.Service.StartAsync();
+        Assert.Equal(started.AttemptId, (await world.Service.StartAsync()).AttemptId);
+        await Assert.ThrowsAsync<BadRequestException>(() => world.Service.SaveAnswersAsync(started.AttemptId, new(0, [new("q1", "invalid")])));
+        await Assert.ThrowsAsync<BadRequestException>(() => world.Service.SaveAnswersAsync(started.AttemptId, new(0, [new("q1", "a"), new("q1", "b")])));
+        await Assert.ThrowsAsync<NotFoundException>(() => world.Service.SubmitAsync(Guid.NewGuid()));
+        await world.Service.SaveAnswersAsync(started.AttemptId, new(0, [new("q1", "b"), new("q2", "b")]));
+        await world.Service.SubmitAsync(started.AttemptId);
+        await Assert.ThrowsAsync<ConflictException>(() => world.Service.SaveAnswersAsync(started.AttemptId, new(2, [])));
+        await Assert.ThrowsAsync<ForbiddenException>(() => world.Service.ContentAsync("safe-accounts"));
+        await Assert.ThrowsAsync<ConflictException>(() => world.Service.ProgressAsync("safe-accounts", new(50)));
+        await Assert.ThrowsAsync<BadRequestException>(() => world.Service.ProgressAsync("safe-accounts", new(101)));
+        await Assert.ThrowsAsync<NotFoundException>(() => world.Service.StartItemAsync("missing"));
+        await world.Service.StartItemAsync("safe-accounts");
+        await world.Service.StartItemAsync("safe-accounts");
+        await world.Service.ProgressAsync("safe-accounts", new(100));
+        Assert.Equal(100, (await world.Service.ProgressAsync("safe-accounts", new(25))).Items[0].ProgressPercent);
+        Assert.NotEmpty((await world.Service.ContentAsync("safe-accounts")).Body);
+        world.Actor(world.OwnerId, world.OwnerOrganizationId, "Owner");
+        var rows = await world.Service.ResultsAsync();
+        Assert.NotNull(rows.Single().Result);
+        var other = await world.Service.InviteAsync(new("Other employee", "other@example.test", "Employee"));
+        var account = await world.Service.AcceptAsync(new(world.Mail.LatestToken, "Strong-pass-123!"));
+        world.Actor(account.UserId, account.OrganizationId, "Employee");
+        await Assert.ThrowsAsync<NotFoundException>(() => world.Service.SaveAnswersAsync(started.AttemptId, new(0, [])));
+        await Assert.ThrowsAsync<ConflictException>(() => world.Service.ProgressAsync("safe-accounts", new(50)));
+    }
+
+    [Fact]
+    public async Task Assigned_manager_has_group_report_but_no_diagnostic_and_employee_cannot_convert()
+    {
+        using var world = new World();
+        await world.CreateEmployee();
+        await Assert.ThrowsAsync<ForbiddenException>(() => world.Service.ConvertAsync(world.OwnerOrganizationId, "fake"));
+        world.Actor(world.OwnerId, world.OwnerOrganizationId, "Owner");
+        await world.Service.InviteAsync(new("Manager", "manager@example.test", "Manager"));
+        var manager = await world.Service.AcceptAsync(new(world.Mail.LatestToken, "Strong-pass-123!"));
+        world.Actor(manager.UserId, manager.OrganizationId, "Manager");
+        Assert.DoesNotContain("diagnostic", (await world.Service.ContextAsync()).AllowedActions);
+        Assert.Contains("view_results", (await world.Service.ContextAsync()).AllowedActions);
+        Assert.Equal(2, (await world.Service.ResultsAsync()).Length);
+        Assert.Equal(2, (await world.Service.InvitationsAsync()).Length);
+        await Assert.ThrowsAsync<ForbiddenException>(() => world.Service.StartAsync());
+        await Assert.ThrowsAsync<ForbiddenException>(() => world.Service.InviteAsync(new("Another manager", "another@example.test", "Manager")));
+        world.Actor(world.OwnerId, world.OwnerOrganizationId, "Owner");
+        world.Clock.Now = world.Clock.Now.AddDays(14);
+        Assert.Equal("trial_read_only", (await world.Service.RequestConversionAsync()).Status);
+        Assert.Equal("trial_read_only", (await world.Service.RequestConversionAsync()).Status);
+        await Assert.ThrowsAsync<ForbiddenException>(() => world.Service.InviteAsync(new("Too late", "late@example.test", "Employee")));
+    }
+
+    [Fact]
+    public async Task Failed_verification_delivery_releases_registration_for_retry()
+    {
+        using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var options = new TrialOptions { DevelopmentEnvironment = true, EnableDevelopmentCapture = true, EnableDevelopmentBundle = true };
+        var hasher = new Mock<IPasswordHasher>();
+        hasher.Setup(x => x.Hash(It.IsAny<string>())).Returns("bcrypt-test-only");
+        var service = new TrialService(db, Mock.Of<ICurrentUser>(), hasher.Object, options, new ThrowingEmail(), new DevelopmentTrialCatalog(options), TimeProvider.System);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.RegisterAsync(new("Company", "Owner", "retry@example.test", "Strong-pass-123!", "technology", "1-20", "onboarding", true)));
+
+        Assert.False(await db.TrialRegistrations.AnyAsync(x => x.Email == "retry@example.test"));
+    }
+
+    [Fact]
+    public async Task Stale_system_admin_claim_cannot_convert_after_role_is_removed()
+    {
+        using var world = new World();
+        await world.CreateOwnerAndPosition();
+        var platformAdmin = new User { Email = "removed-admin@example.test", DisplayName = "Removed admin", PasswordHash = "test-only" };
+        world.Db.Users.Add(platformAdmin);
+        await world.Db.SaveChangesAsync();
+        world.Actor(platformAdmin.Id, null, "SYSTEM_ADMIN");
+
+        await Assert.ThrowsAsync<ForbiddenException>(() => world.Service.ConvertAsync(world.OwnerOrganizationId, "stale-token"));
+    }
+
     private sealed class World : IDisposable
     {
         public readonly AppDbContext Db = new(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
@@ -242,6 +370,11 @@ public sealed class TrialLifecycleTests
         public bool IsReady => true;
         public string LatestToken = "";
         public Task SendAsync(string email, string kind, string token, CancellationToken ct = default) { LatestToken = token; return Task.CompletedTask; }
+    }
+    private sealed class ThrowingEmail : ITrialEmailSender
+    {
+        public bool IsReady => true;
+        public Task SendAsync(string email, string kind, string token, CancellationToken ct = default) => throw new InvalidOperationException("delivery failed");
     }
     private sealed class MutableCatalog : ITrialCatalog
     {
