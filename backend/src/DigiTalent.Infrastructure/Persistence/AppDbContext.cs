@@ -108,6 +108,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<SkillGapItem> SkillGapItems => Set<SkillGapItem>();
     public DbSet<SkillGapRun> SkillGapRuns => Set<SkillGapRun>();
     public DbSet<TrainingRiskScore> TrainingRiskScores => Set<TrainingRiskScore>();
+    public DbSet<RecommendationReview> RecommendationReviews => Set<RecommendationReview>();
 
     // Learner Surface (SEP-09)
     public DbSet<LearnerProfile> LearnerProfiles => Set<LearnerProfile>();
