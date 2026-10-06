@@ -17,6 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();                              // use case + validator (tự động)
 builder.Services.AddInfrastructure(builder.Configuration);      // database, tạo token, mã hóa mật khẩu
 builder.Services.AddJwtAuthentication(builder.Configuration);   // đọc + kiểm tra token FE gửi lên
+builder.Services.AddEnterpriseTrial(builder.Configuration, builder.Environment);
 
 builder.Services.AddControllers();
 builder.Services.AddSwaggerWithJwt();
@@ -111,6 +112,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("Frontend");
 app.UseAuthentication(); // đọc token → biết ai đang gọi (dùng trong [HasPermission] và ICurrentUser)
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 app.MapHub<DigiTalent.Api.Hubs.NotificationHub>("/hubs/notifications");

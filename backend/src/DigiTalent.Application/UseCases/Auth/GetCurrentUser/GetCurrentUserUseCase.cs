@@ -33,6 +33,7 @@ public class GetCurrentUserUseCase : IUseCase<GetCurrentUserUseCaseInput, GetCur
                 u.Id,
                 u.Email,
                 u.DisplayName,
+                u.OrganizationId,
                 Roles = u.UserRoles
                     .Where(ur => ur.Role!.Status == Statuses.Simple.Active)
                     .Select(ur => ur.Role!.Code)
@@ -51,6 +52,8 @@ public class GetCurrentUserUseCase : IUseCase<GetCurrentUserUseCaseInput, GetCur
 
         // 2. Đổi role → danh sách quyền (bảng role_permissions)
         var permissions = await _permissionService.GetPermissionsAsync(user.Roles);
+        var trial = user.OrganizationId == null ? null : await _context.TrialWorkspaces
+            .AsNoTracking().SingleOrDefaultAsync(x => x.OrganizationId == user.OrganizationId);
 
         return new GetCurrentUserUseCaseOutput
         {
@@ -58,6 +61,8 @@ public class GetCurrentUserUseCase : IUseCase<GetCurrentUserUseCaseInput, GetCur
             Email = user.Email,
             FullName = user.DisplayName,
             EmployeeId = user.EmployeeId,
+            OrganizationId = user.OrganizationId,
+            EnterpriseTrialStatus = trial == null ? null : trial.ConvertedAt != null ? "converted" : DateTimeOffset.UtcNow < trial.EndsAt ? "trial_active" : "trial_read_only",
             Roles = user.Roles,
             Permissions = permissions.ToList(),
         };

@@ -110,6 +110,11 @@ public class AppDbContext : DbContext, IApplicationDbContext
     // Learner Surface (SEP-09)
     public DbSet<LearnerProfile> LearnerProfiles => Set<LearnerProfile>();
 
+    public DbSet<TrialRegistration> TrialRegistrations => Set<TrialRegistration>();
+    public DbSet<TrialWorkspace> TrialWorkspaces => Set<TrialWorkspace>();
+    public DbSet<TrialInvitation> TrialInvitations => Set<TrialInvitation>();
+    public DbSet<PositionDiagnosticAttempt> PositionDiagnosticAttempts => Set<PositionDiagnosticAttempt>();
+
     // Shared
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<FileObject> FileObjects => Set<FileObject>();

@@ -86,6 +86,11 @@ public interface IApplicationDbContext
     // Learner Surface (SEP-09)
     DbSet<LearnerProfile> LearnerProfiles { get; }
 
+    DbSet<TrialRegistration> TrialRegistrations { get; }
+    DbSet<TrialWorkspace> TrialWorkspaces { get; }
+    DbSet<TrialInvitation> TrialInvitations { get; }
+    DbSet<PositionDiagnosticAttempt> PositionDiagnosticAttempts { get; }
+
     // Shared
     DbSet<AuditLog> AuditLogs { get; }
     DbSet<FileObject> FileObjects { get; }

@@ -86,18 +86,19 @@ public sealed class TrialLifecycleTests
         await world.CreateEmployee();
         var started = await world.Service.StartAsync();
         var question = started.Questions.First();
-        var saved = await world.Service.SaveAnswersAsync(started.AttemptId, new(0, [new(question.Id, question.Options.Last().Id)]));
+        var saved = await world.Service.SaveAnswersAsync(started.AttemptId, new(0, started.Questions.Select(q => new TrialAnswerDto(q.Id, q.Options.Last().Id)).ToArray()));
         Assert.Equal(1, saved.Revision);
         world.Db.ChangeTracker.Clear();
-        Assert.Single((await world.Service.DiagnosticAsync())!.SavedAnswers);
+        Assert.Equal(started.Questions.Length, (await world.Service.DiagnosticAsync())!.SavedAnswers.Length);
         await Assert.ThrowsAsync<ConflictException>(() => world.Service.SaveAnswersAsync(started.AttemptId, new(0, [])));
         world.Catalog.Bundle = world.Catalog.Bundle with { RequirementVersion = "changed-v2" };
         var result = await world.Service.SubmitAsync(started.AttemptId);
         Assert.Equal("development-standard-v1", result.RequirementVersion);
-        Assert.Equal(result, await world.Service.SubmitAsync(started.AttemptId));
+        Assert.Equal(JsonSerializer.Serialize(result), JsonSerializer.Serialize(await world.Service.SubmitAsync(started.AttemptId)));
         Assert.Contains(result.Items, i => i.Classification == "gap");
         Assert.Contains(result.Items, i => i.Classification == "insufficient_data" && i.CurrentLevel is null && i.GapSteps is null);
-        Assert.DoesNotContain(JsonSerializer.Serialize(saved).ToLowerInvariant(), new[] { "correctoption", "tokenhash", "passwordhash" });
+        foreach (var secretField in new[] { "correctoption", "tokenhash", "passwordhash" })
+            Assert.DoesNotContain(secretField, JsonSerializer.Serialize(saved).ToLowerInvariant());
         var path = await world.Service.PathAsync();
         Assert.Equal("ready", path!.State);
         Assert.Contains("digital-safety", path.Items[0].Reasons[0]);
@@ -191,7 +192,8 @@ public sealed class TrialLifecycleTests
         {
             var hasher = new Mock<IPasswordHasher>();
             hasher.Setup(x => x.Hash(It.IsAny<string>())).Returns("bcrypt-test-only");
-            Service = new(Db, Current.Object, hasher.Object, options ?? new(), Mail, Catalog, Clock);
+            var policy = (options ?? new()) with { DevelopmentEnvironment = true, EnableDevelopmentCapture = true, EnableDevelopmentBundle = true };
+            Service = new(Db, Current.Object, hasher.Object, policy, Mail, Catalog, Clock);
         }
         public TrialRegistrationRequest Registration(string email) => new("Company", "Owner", email, "Strong-pass-123!", "technology", "1-20", "onboarding", true);
         public async Task CreateOwnerAndPosition()
