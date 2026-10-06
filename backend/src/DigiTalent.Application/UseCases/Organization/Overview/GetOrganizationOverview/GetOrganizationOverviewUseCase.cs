@@ -51,7 +51,13 @@ public class GetOrganizationOverviewUseCase : IUseCase<GetOrganizationOverviewUs
             },
             Plan = subscription == null
                 ? null
-                : new PlanSummary { Code = subscription.PlanCode, Name = subscription.PlanName, Status = subscription.Status, RenewsAt = subscription.RenewsAt },
+                : new PlanSummary
+                {
+                    Code = subscription.PlanCode,
+                    Name = subscription.PlanName,
+                    Status = subscription.Status,
+                    RenewsAt = subscription.RenewsAt,
+                },
             PendingReviews = await CountPendingReviewsAsync(organizationId),
             RunningBatches = await _context.TrainingBatches
                 .CountAsync(b => b.OrganizationId == organizationId && b.Status == Statuses.TrainingBatch.Running),
@@ -97,8 +103,22 @@ public class GetOrganizationOverviewUseCase : IUseCase<GetOrganizationOverviewUs
 
         return new List<SetupItem>
         {
-            new() { Key = "departments", Label = "Phòng ban", Done = departments > 0, Detail = $"{departments} phòng ban", Path = "/enterprise/departments" },
-            new() { Key = "positions", Label = "Vị trí công việc", Done = positions > 0, Detail = $"{positions} vị trí", Path = "/enterprise/positions" },
+            new()
+            {
+                Key = "departments",
+                Label = "Phòng ban",
+                Done = departments > 0,
+                Detail = $"{departments} phòng ban",
+                Path = "/enterprise/departments",
+            },
+            new()
+            {
+                Key = "positions",
+                Label = "Vị trí công việc",
+                Done = positions > 0,
+                Detail = $"{positions} vị trí",
+                Path = "/enterprise/positions",
+            },
             new()
             {
                 Key = "requirements",

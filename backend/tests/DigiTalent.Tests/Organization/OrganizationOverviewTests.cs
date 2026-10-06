@@ -61,9 +61,19 @@ public class OrganizationOverviewTests
         var organizationId = world.Organization.Id;
         var suffix = Guid.NewGuid().ToString("N")[..8];
 
-        var invited = new User { OrganizationId = organizationId, Email = $"invited_{suffix}@test.local", PasswordHash = "x", DisplayName = "Invited" };
-        var loggedIn = new User { OrganizationId = organizationId, Email = $"login_{suffix}@test.local", PasswordHash = "x", DisplayName = "Logged in", LastLoginAt = DateTimeOffset.UtcNow };
-        var disabled = new User { OrganizationId = organizationId, Email = $"off_{suffix}@test.local", PasswordHash = "x", DisplayName = "Disabled", Status = Statuses.User.Inactive };
+        User NewUser(string emailPrefix, string displayName) => new()
+        {
+            OrganizationId = organizationId,
+            Email = $"{emailPrefix}_{suffix}@test.local",
+            PasswordHash = "x",
+            DisplayName = displayName,
+        };
+
+        var invited = NewUser("invited", "Invited");
+        var loggedIn = NewUser("login", "Logged in");
+        loggedIn.LastLoginAt = DateTimeOffset.UtcNow;
+        var disabled = NewUser("off", "Disabled");
+        disabled.Status = Statuses.User.Inactive;
         context.Users.AddRange(invited, loggedIn, disabled);
         world.Unassigned.UserId = invited.Id;
         world.Analyst.UserId = loggedIn.Id;
@@ -93,9 +103,17 @@ public class OrganizationOverviewTests
             ExpectedOutputSnapshot = "A report",
         };
         context.TaskAssignments.Add(assignment);
+        TaskSubmission NewSubmission(int versionNo, string status) => new()
+        {
+            TaskAssignmentId = assignment.Id,
+            VersionNo = versionNo,
+            SubmittedAt = DateTimeOffset.UtcNow,
+            Status = status,
+        };
+
         context.TaskSubmissions.AddRange(
-            new TaskSubmission { TaskAssignmentId = assignment.Id, VersionNo = 1, SubmittedAt = DateTimeOffset.UtcNow, Status = Statuses.TaskSubmission.Superseded },
-            new TaskSubmission { TaskAssignmentId = assignment.Id, VersionNo = 2, SubmittedAt = DateTimeOffset.UtcNow, Status = Statuses.TaskSubmission.Submitted });
+            NewSubmission(1, Statuses.TaskSubmission.Superseded),
+            NewSubmission(2, Statuses.TaskSubmission.Submitted));
         await context.SaveChangesAsync();
 
         var result = await RunAsync(world);
@@ -117,7 +135,13 @@ public class OrganizationOverviewTests
     {
         var world = await CreateWorldAsync();
         var context = world.Context;
-        var actor = new User { OrganizationId = world.Organization.Id, Email = $"actor_{Guid.NewGuid():N}@test.local", PasswordHash = "x", DisplayName = "Actor" };
+        var actor = new User
+        {
+            OrganizationId = world.Organization.Id,
+            Email = $"actor_{Guid.NewGuid():N}@test.local",
+            PasswordHash = "x",
+            DisplayName = "Actor",
+        };
         context.Users.Add(actor);
         await context.SaveChangesAsync();
 

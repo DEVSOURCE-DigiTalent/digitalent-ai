@@ -18,7 +18,8 @@ public class EmployeeRecommendationService
         _context = context;
     }
 
-    public async Task<EmployeeRecommendationResult> RecommendAsync(Guid organizationId, Guid employeeId, RecommendationWeights weights, int limit)
+    public async Task<EmployeeRecommendationResult> RecommendAsync(
+        Guid organizationId, Guid employeeId, RecommendationWeights weights, int limit)
     {
         var run = await LoadLatestRunWithGapsAsync(employeeId);
         if (run == null)
@@ -73,7 +74,8 @@ public class EmployeeRecommendationService
                 run.Id,
                 run.GeneratedAt,
                 run.Gaps
-                    .Select(g => new RecommendationGap(g.CompetencyId, g.Name, g.RequiredLevel, g.CurrentLevel, g.Mandatory, g.PriorityScore, g.Severity))
+                    .Select(g => new RecommendationGap(
+                        g.CompetencyId, g.Name, g.RequiredLevel, g.CurrentLevel, g.Mandatory, g.PriorityScore, g.Severity))
                     .ToList());
     }
 
@@ -104,7 +106,8 @@ public class EmployeeRecommendationService
                     course.Title,
                     course.EntryLevel,
                     course.EstimatedDurationMinutes,
-                    Teaching = new CourseTeaching(teaching.CompetencyId, teaching.TargetLevel, teaching.CoverageType, teaching.CoverageWeight),
+                    Teaching = new CourseTeaching(
+                        teaching.CompetencyId, teaching.TargetLevel, teaching.CoverageType, teaching.CoverageWeight),
                 })
             .ToListAsync();
         if (rows.Count == 0)

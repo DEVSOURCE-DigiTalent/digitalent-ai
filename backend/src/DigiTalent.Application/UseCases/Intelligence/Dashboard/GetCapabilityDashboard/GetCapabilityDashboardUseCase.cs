@@ -92,7 +92,8 @@ public class GetCapabilityDashboardUseCase : IUseCase<GetCapabilityDashboardUseC
     }
 
     /// <summary>Every competency category of the organization, 0 when it has no data, so the radar always shows all axes.</summary>
-    private async Task<List<CapabilityDomain>> GetDomainsAsync(Guid organizationId, IQueryable<Employee> activeEmployees, IQueryable<SkillGapRun> latestRuns)
+    private async Task<List<CapabilityDomain>> GetDomainsAsync(
+        Guid organizationId, IQueryable<Employee> activeEmployees, IQueryable<SkillGapRun> latestRuns)
     {
         var latestRunIds = from run in latestRuns
                            join employee in activeEmployees on run.EmployeeId equals employee.Id
