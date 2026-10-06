@@ -8,17 +8,27 @@ namespace DigiTalent.Application.UseCases.Tasks;
 public class GetSubmissionDetailUseCase : IUseCase<GetSubmissionDetailInput, SubmissionDetailDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public GetSubmissionDetailUseCase(IApplicationDbContext context) => _context = context;
+    public GetSubmissionDetailUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    {
+        _context = context;
+        _currentUser = currentUser;
+    }
 
     public async Task<SubmissionDetailDto> ExecuteAsync(GetSubmissionDetailInput input)
     {
+        var organizationId = _currentUser.GetRequiredOrganizationId();
+
         var sub = await _context.TaskSubmissions.AsNoTracking()
             .FirstOrDefaultAsync(s => s.Id == input.Id)
             ?? throw new NotFoundException($"Submission '{input.Id}' not found.");
 
         var assignment = await _context.TaskAssignments.AsNoTracking()
-            .FirstOrDefaultAsync(a => a.Id == sub.TaskAssignmentId)
+            .Where(a => a.Id == sub.TaskAssignmentId)
+            .Where(a => a.TaskTemplateId.HasValue &&
+                _context.PracticalTaskTemplates.Any(t => t.Id == a.TaskTemplateId && t.OrganizationId == organizationId))
+            .FirstOrDefaultAsync()
             ?? throw new NotFoundException("Assignment not found.");
 
         var emp = await _context.Employees.AsNoTracking()

@@ -27,10 +27,14 @@ public class GetDashboardUseCase : IUseCase<GetDashboardInput, DashboardDto>
         var assignments = _context.CourseAssignments.AsNoTracking()
             .Where(ca => _context.Courses.AsNoTracking().Any(c => c.Id == ca.CourseId && c.OrganizationId == orgId));
 
-        var totalAssignments = await assignments.CountAsync();
-        var completedAssignments = await assignments.CountAsync(ca => ca.Status == "COMPLETED");
+        var totalAssignments = await assignments.CountAsync(ca => ca.Status == "ACTIVE");
+
+        var enrollments = _context.Enrollments.AsNoTracking()
+            .Where(e => assignments.Any(ca => ca.Id == e.CourseAssignmentId));
+        var completedAssignments = await enrollments.CountAsync(e => e.Status == "COMPLETED");
         var overdueAssignments = await assignments.CountAsync(ca =>
-            ca.DueDate != null && ca.DueDate < today && ca.Status != "COMPLETED" && ca.Status != "CANCELLED");
+            ca.DueDate != null && ca.DueDate < today && ca.Status == "ACTIVE"
+            && !enrollments.Any(e => e.CourseAssignmentId == ca.Id && e.Status == "COMPLETED"));
 
         var completionRate = totalAssignments > 0
             ? Math.Round((decimal)completedAssignments / totalAssignments * 100, 1)
@@ -148,9 +152,13 @@ public class GetReportsOverviewUseCase : IUseCase<GetReportsOverviewInput, Repor
         if (input.DepartmentId.HasValue)
             caQuery = caQuery.Where(ca => _context.Employees.Any(e => e.Id == ca.EmployeeId && e.DepartmentId == input.DepartmentId.Value));
 
-        var totalAssignments = await caQuery.CountAsync();
-        var completedAssignments = await caQuery.CountAsync(ca => ca.Status == "COMPLETED");
-        var inProgressAssignments = await caQuery.CountAsync(ca => ca.Status == "ACTIVE");
+        var activeCaQuery = caQuery.Where(ca => ca.Status == "ACTIVE");
+        var totalAssignments = await activeCaQuery.CountAsync();
+
+        var caEnrollments = _context.Enrollments.AsNoTracking()
+            .Where(e => activeCaQuery.Any(ca => ca.Id == e.CourseAssignmentId));
+        var completedAssignments = await caEnrollments.CountAsync(e => e.Status == "COMPLETED");
+        var inProgressAssignments = await caEnrollments.CountAsync(e => e.Status == "IN_PROGRESS");
         var trainingCompletionRate = totalAssignments > 0
             ? Math.Round((decimal)completedAssignments / totalAssignments * 100, 1)
             : 0;
@@ -178,8 +186,10 @@ public class GetReportsOverviewUseCase : IUseCase<GetReportsOverviewInput, Repor
         var totalAttempts = await attempts.CountAsync();
         var passedAttempts = await attempts.CountAsync(a => a.Passed == true);
         var passRate = totalAttempts > 0 ? Math.Round((decimal)passedAttempts / totalAttempts * 100, 1) : 0;
-        var averageScore = totalAttempts > 0
-            ? Math.Round(await attempts.Where(a => a.Score.HasValue).AverageAsync(a => (decimal)a.Score!.Value), 1)
+        var scoredAttempts = attempts.Where(a => a.Score.HasValue);
+        var hasScored = await scoredAttempts.AnyAsync();
+        var averageScore = hasScored
+            ? Math.Round(await scoredAttempts.AverageAsync(a => (decimal)a.Score!.Value), 1)
             : 0;
 
         var excellentCount = await attempts.CountAsync(a => a.Score >= 90);
@@ -194,9 +204,11 @@ public class GetReportsOverviewUseCase : IUseCase<GetReportsOverviewInput, Repor
         var submissions = _context.TaskSubmissions.AsNoTracking()
             .Where(s => _context.TaskAssignments.Any(ta => ta.Id == s.TaskAssignmentId &&
                 _context.PracticalTaskTemplates.Any(t => t.Id == ta.TaskTemplateId && t.OrganizationId == orgId)));
-        var currentSubmissions = submissions.Where(s => s.SupersedesSubmissionId == null);
+        var currentSubmissions = submissions.Where(s => s.Status != "SUPERSEDED");
         var totalSubmissions = await currentSubmissions.CountAsync();
-        var approvedSubmissions = await currentSubmissions.CountAsync(s => s.Status == "APPROVED");
+        var approvedSubmissions = await _context.TaskEvaluations.AsNoTracking()
+            .CountAsync(ev => ev.Verdict == "PASSED"
+                && currentSubmissions.Any(s => s.Id == ev.TaskSubmissionId));
         var approvalRate = totalSubmissions > 0
             ? Math.Round((decimal)approvedSubmissions / totalSubmissions * 100, 1)
             : 0;
@@ -209,16 +221,18 @@ public class GetReportsOverviewUseCase : IUseCase<GetReportsOverviewInput, Repor
                 .Where(ta => deptEmpIds.Contains(ta.EmployeeId) &&
                     _context.PracticalTaskTemplates.Any(t => t.Id == ta.TaskTemplateId && t.OrganizationId == orgId))
             let deptSubs = _context.TaskSubmissions.AsNoTracking()
-                .Where(s => s.SupersedesSubmissionId == null && deptAssignments.Any(ta => ta.Id == s.TaskAssignmentId))
+                .Where(s => s.Status != "SUPERSEDED" && deptAssignments.Any(ta => ta.Id == s.TaskAssignmentId))
+            let deptApproved = _context.TaskEvaluations.AsNoTracking()
+                .Count(ev => ev.Verdict == "PASSED" && deptSubs.Any(s => s.Id == ev.TaskSubmissionId))
             select new DepartmentEvidenceSummary
             {
                 DepartmentId = dept.Id.ToString(),
                 DepartmentName = dept.Name,
                 AssignedCount = deptAssignments.Count(),
                 SubmittedCount = deptSubs.Count(),
-                ApprovedCount = deptSubs.Count(s => s.Status == "APPROVED"),
+                ApprovedCount = deptApproved,
                 ApprovalRate = deptSubs.Any()
-                    ? Math.Round((decimal)deptSubs.Count(s => s.Status == "APPROVED") / deptSubs.Count() * 100, 1)
+                    ? Math.Round((decimal)deptApproved / deptSubs.Count() * 100, 1)
                     : 0,
             }
         ).ToListAsync();

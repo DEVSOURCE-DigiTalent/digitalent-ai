@@ -69,7 +69,7 @@ public class GetCoursesUseCase : IUseCase<GetCoursesUseCaseInput, GetCoursesUseC
         var totalItems = await query.CountAsync();
 
         var pageIndex = input.PageIndex < 1 ? 1 : input.PageIndex;
-        var pageSize = input.PageSize < 1 ? 50 : input.PageSize;
+        var pageSize = Math.Clamp(input.PageSize, 1, 100);
 
         var modulesSet = _context.CourseModules.AsNoTracking();
         var assignmentsSet = _context.CourseAssignments.AsNoTracking();

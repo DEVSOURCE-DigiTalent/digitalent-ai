@@ -34,8 +34,15 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
         var targetEmployees = await ResolveTargetEmployees(organizationId, input.Targets);
 
         var existingAssignments = await _context.CourseAssignments.AsNoTracking()
-            .Where(ca => ca.CourseId == input.CourseId && targetEmployees.Select(e => e.Id).Contains(ca.EmployeeId))
-            .Select(ca => new { ca.EmployeeId, ca.Status })
+            .Where(ca => ca.CourseId == input.CourseId && ca.Status == "ACTIVE"
+                && targetEmployees.Select(e => e.Id).Contains(ca.EmployeeId))
+            .Select(ca => ca.EmployeeId)
+            .ToListAsync();
+
+        var completedEnrollments = await _context.Enrollments.AsNoTracking()
+            .Where(e => e.CourseId == input.CourseId && e.Status == Statuses.Enrollment.Completed
+                && targetEmployees.Select(t => t.Id).Contains(e.EmployeeId))
+            .Select(e => e.EmployeeId)
             .ToListAsync();
 
         DateOnly? dueDate = null;
@@ -46,13 +53,14 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
 
         foreach (var emp in targetEmployees)
         {
-            var existing = existingAssignments.FirstOrDefault(a => a.EmployeeId == emp.Id);
-            if (existing != null)
+            if (completedEnrollments.Contains(emp.Id))
             {
-                if (existing.Status == Statuses.Enrollment.Completed)
-                    output.Skipped.Add(new SkippedEmployee { EmployeeId = emp.Id, EmployeeName = emp.FullName, Reason = "ALREADY_COMPLETED" });
-                else
-                    output.Skipped.Add(new SkippedEmployee { EmployeeId = emp.Id, EmployeeName = emp.FullName, Reason = "ALREADY_ASSIGNED" });
+                output.Skipped.Add(new SkippedEmployee { EmployeeId = emp.Id, EmployeeName = emp.FullName, Reason = "ALREADY_COMPLETED" });
+                continue;
+            }
+            if (existingAssignments.Contains(emp.Id))
+            {
+                output.Skipped.Add(new SkippedEmployee { EmployeeId = emp.Id, EmployeeName = emp.FullName, Reason = "ALREADY_ASSIGNED" });
                 continue;
             }
 
@@ -72,7 +80,7 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
                 AssignedByUserId = userId,
                 AssignedAt = DateTimeOffset.UtcNow,
                 DueDate = dueDate,
-                Status = Statuses.Enrollment.NotStarted,
+                Status = "ACTIVE",
             };
             _context.CourseAssignments.Add(assignment);
 
@@ -98,7 +106,7 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
                 CourseTitle = course.Title,
                 AssignedAt = assignment.AssignedAt,
                 DueDate = dueDate?.ToString("yyyy-MM-dd"),
-                Status = assignment.Status,
+                Status = "ACTIVE",
                 ProgressPercent = 0,
                 Source = "MANUAL",
             });

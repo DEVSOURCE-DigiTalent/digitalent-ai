@@ -9,11 +9,22 @@ namespace DigiTalent.Application.UseCases.Assessments;
 public class GetQuestionsUseCase : IUseCase<GetQuestionsInput, GetQuestionsOutput>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public GetQuestionsUseCase(IApplicationDbContext context) => _context = context;
+    public GetQuestionsUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    {
+        _context = context;
+        _currentUser = currentUser;
+    }
 
     public async Task<GetQuestionsOutput> ExecuteAsync(GetQuestionsInput input)
     {
+        var organizationId = _currentUser.GetRequiredOrganizationId();
+        var bankExists = await _context.QuestionBanks.AsNoTracking()
+            .AnyAsync(b => b.Id == input.BankId && b.OrganizationId == organizationId);
+        if (!bankExists)
+            throw new NotFoundException($"QuestionBank '{input.BankId}' not found.");
+
         var query = _context.Questions.AsNoTracking()
             .Where(q => q.BankId == input.BankId);
 
@@ -25,7 +36,7 @@ public class GetQuestionsUseCase : IUseCase<GetQuestionsInput, GetQuestionsOutpu
 
         var totalItems = await query.CountAsync();
         var pageIndex = Math.Max(1, input.PageIndex);
-        var pageSize = Math.Max(1, input.PageSize);
+        var pageSize = Math.Clamp(input.PageSize, 1, 100);
 
         var options = _context.QuestionOptions.AsNoTracking();
 
@@ -70,13 +81,21 @@ public class GetQuestionsUseCase : IUseCase<GetQuestionsInput, GetQuestionsOutpu
 public class GetQuestionByIdUseCase : IUseCase<GetQuestionByIdInput, QuestionDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public GetQuestionByIdUseCase(IApplicationDbContext context) => _context = context;
+    public GetQuestionByIdUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    {
+        _context = context;
+        _currentUser = currentUser;
+    }
 
     public async Task<QuestionDto> ExecuteAsync(GetQuestionByIdInput input)
     {
+        var organizationId = _currentUser.GetRequiredOrganizationId();
         var q = await _context.Questions.AsNoTracking()
-            .FirstOrDefaultAsync(q => q.Id == input.Id)
+            .Where(q => q.Id == input.Id)
+            .Where(q => _context.QuestionBanks.Any(b => b.Id == q.BankId && b.OrganizationId == organizationId))
+            .FirstOrDefaultAsync()
             ?? throw new NotFoundException($"Question '{input.Id}' not found.");
 
         var opts = await _context.QuestionOptions.AsNoTracking()
@@ -123,6 +142,12 @@ public class CreateQuestionUseCase : IUseCase<CreateQuestionInput, QuestionDto>
     {
         var userId = _currentUser.UserId
             ?? throw new ForbiddenException("Chưa xác thực.");
+        var organizationId = _currentUser.GetRequiredOrganizationId();
+
+        var bankExists = await _context.QuestionBanks.AsNoTracking()
+            .AnyAsync(b => b.Id == input.BankId && b.OrganizationId == organizationId);
+        if (!bankExists)
+            throw new NotFoundException($"QuestionBank '{input.BankId}' not found.");
 
         var question = new Question
         {
@@ -181,13 +206,21 @@ public class CreateQuestionUseCase : IUseCase<CreateQuestionInput, QuestionDto>
 public class UpdateQuestionUseCase : IUseCase<UpdateQuestionInput, QuestionDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public UpdateQuestionUseCase(IApplicationDbContext context) => _context = context;
+    public UpdateQuestionUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    {
+        _context = context;
+        _currentUser = currentUser;
+    }
 
     public async Task<QuestionDto> ExecuteAsync(UpdateQuestionInput input)
     {
+        var organizationId = _currentUser.GetRequiredOrganizationId();
         var question = await _context.Questions
-            .FirstOrDefaultAsync(q => q.Id == input.Id)
+            .Where(q => q.Id == input.Id)
+            .Where(q => _context.QuestionBanks.Any(b => b.Id == q.BankId && b.OrganizationId == organizationId))
+            .FirstOrDefaultAsync()
             ?? throw new NotFoundException($"Question '{input.Id}' not found.");
 
         if (input.CompetencyId.HasValue) question.CompetencyId = input.CompetencyId;
@@ -246,13 +279,21 @@ public class UpdateQuestionUseCase : IUseCase<UpdateQuestionInput, QuestionDto>
 public class DeleteQuestionUseCase : IUseCase<DeleteQuestionInput, DeleteQuestionOutput>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public DeleteQuestionUseCase(IApplicationDbContext context) => _context = context;
+    public DeleteQuestionUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    {
+        _context = context;
+        _currentUser = currentUser;
+    }
 
     public async Task<DeleteQuestionOutput> ExecuteAsync(DeleteQuestionInput input)
     {
+        var organizationId = _currentUser.GetRequiredOrganizationId();
         var q = await _context.Questions
-            .FirstOrDefaultAsync(q => q.Id == input.Id)
+            .Where(q => q.Id == input.Id)
+            .Where(q => _context.QuestionBanks.Any(b => b.Id == q.BankId && b.OrganizationId == organizationId))
+            .FirstOrDefaultAsync()
             ?? throw new NotFoundException($"Question '{input.Id}' not found.");
 
         q.Status = "ARCHIVED";
@@ -264,16 +305,27 @@ public class DeleteQuestionUseCase : IUseCase<DeleteQuestionInput, DeleteQuestio
 public class ChangeQuestionStatusUseCase : IUseCase<ChangeQuestionStatusInput, ChangeQuestionStatusOutput>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public ChangeQuestionStatusUseCase(IApplicationDbContext context) => _context = context;
+    public ChangeQuestionStatusUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    {
+        _context = context;
+        _currentUser = currentUser;
+    }
 
     public async Task<ChangeQuestionStatusOutput> ExecuteAsync(ChangeQuestionStatusInput input)
     {
+        var organizationId = _currentUser.GetRequiredOrganizationId();
         var q = await _context.Questions
-            .FirstOrDefaultAsync(q => q.Id == input.Id)
+            .Where(q => q.Id == input.Id)
+            .Where(q => _context.QuestionBanks.Any(b => b.Id == q.BankId && b.OrganizationId == organizationId))
+            .FirstOrDefaultAsync()
             ?? throw new NotFoundException($"Question '{input.Id}' not found.");
 
-        q.Status = input.Status.Trim().ToUpper();
+        var status = input.Status.Trim().ToUpper();
+        if (status is not ("DRAFT" or "APPROVED" or "ARCHIVED"))
+            throw new BadRequestException($"Status '{status}' không hợp lệ. Chỉ cho phép: DRAFT, APPROVED, ARCHIVED.");
+        q.Status = status;
         await _context.SaveChangesAsync();
         return new ChangeQuestionStatusOutput { Success = true };
     }
@@ -282,13 +334,21 @@ public class ChangeQuestionStatusUseCase : IUseCase<ChangeQuestionStatusInput, C
 public class ApproveQuestionUseCase : IUseCase<ApproveQuestionInput, QuestionDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public ApproveQuestionUseCase(IApplicationDbContext context) => _context = context;
+    public ApproveQuestionUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    {
+        _context = context;
+        _currentUser = currentUser;
+    }
 
     public async Task<QuestionDto> ExecuteAsync(ApproveQuestionInput input)
     {
+        var organizationId = _currentUser.GetRequiredOrganizationId();
         var q = await _context.Questions
-            .FirstOrDefaultAsync(q => q.Id == input.Id)
+            .Where(q => q.Id == input.Id)
+            .Where(q => _context.QuestionBanks.Any(b => b.Id == q.BankId && b.OrganizationId == organizationId))
+            .FirstOrDefaultAsync()
             ?? throw new NotFoundException($"Question '{input.Id}' not found.");
 
         q.Status = "APPROVED";

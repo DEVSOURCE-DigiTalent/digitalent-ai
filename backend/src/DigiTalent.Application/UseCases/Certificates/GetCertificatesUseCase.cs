@@ -17,9 +17,12 @@ public class GetCertificatesUseCase : IUseCase<GetCertificatesInput, GetCertific
 
     public async Task<GetCertificatesOutput> ExecuteAsync(GetCertificatesInput input)
     {
+        var organizationId = _currentUser.GetRequiredOrganizationId();
+
         var query =
             from cert in _context.Certificates.AsNoTracking()
             join emp in _context.Employees.AsNoTracking() on cert.EmployeeId equals emp.Id
+            where emp.OrganizationId == organizationId
             select new { cert, emp };
 
         if (input.EmployeeId.HasValue)
@@ -41,7 +44,7 @@ public class GetCertificatesUseCase : IUseCase<GetCertificatesInput, GetCertific
 
         var totalItems = await query.CountAsync();
         var pageIndex = Math.Max(1, input.PageIndex);
-        var pageSize = Math.Max(1, input.PageSize);
+        var pageSize = Math.Clamp(input.PageSize, 1, 100);
 
         var attempts = _context.AssessmentAttempts.AsNoTracking();
         var courseCompetencies = _context.CourseCompetencies.AsNoTracking();

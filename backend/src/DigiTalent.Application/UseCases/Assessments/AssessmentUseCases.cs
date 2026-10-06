@@ -8,13 +8,22 @@ namespace DigiTalent.Application.UseCases.Assessments;
 public class GetAssessmentByIdUseCase : IUseCase<GetAssessmentByIdInput, AssessmentDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public GetAssessmentByIdUseCase(IApplicationDbContext context) => _context = context;
+    public GetAssessmentByIdUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    {
+        _context = context;
+        _currentUser = currentUser;
+    }
 
     public async Task<AssessmentDto> ExecuteAsync(GetAssessmentByIdInput input)
     {
+        var organizationId = _currentUser.GetRequiredOrganizationId();
+
         var assessment = await _context.Assessments.AsNoTracking()
-            .FirstOrDefaultAsync(a => a.Id == input.Id)
+            .Where(a => a.Id == input.Id)
+            .Where(a => _context.Courses.Any(c => c.Id == a.CourseId && c.OrganizationId == organizationId))
+            .FirstOrDefaultAsync()
             ?? throw new NotFoundException($"Assessment '{input.Id}' not found.");
 
         var course = await _context.Courses.AsNoTracking()
@@ -272,7 +281,7 @@ public class GetAssessmentHistoryUseCase : IUseCase<GetAssessmentHistoryInput, G
 
         var totalItems = await query.CountAsync();
         var pageIndex = Math.Max(1, input.PageIndex);
-        var pageSize = Math.Max(1, input.PageSize);
+        var pageSize = Math.Clamp(input.PageSize, 1, 100);
 
         var items = await query
             .OrderByDescending(x => x.att.SubmittedAt)

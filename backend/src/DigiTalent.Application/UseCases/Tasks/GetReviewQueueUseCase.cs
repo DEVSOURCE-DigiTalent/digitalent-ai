@@ -19,14 +19,17 @@ public class GetReviewQueueUseCase : IUseCase<GetReviewQueueInput, GetReviewQueu
     {
         var userId = _currentUser.UserId
             ?? throw new Common.Exceptions.ForbiddenException("Chưa xác thực.");
+        var organizationId = _currentUser.GetRequiredOrganizationId();
 
         var query =
             from s in _context.TaskSubmissions.AsNoTracking()
             join a in _context.TaskAssignments.AsNoTracking() on s.TaskAssignmentId equals a.Id
+            join t in _context.PracticalTaskTemplates.AsNoTracking() on a.TaskTemplateId equals t.Id
             join emp in _context.Employees.AsNoTracking() on a.EmployeeId equals emp.Id
             join dept in _context.Departments.AsNoTracking() on emp.DepartmentId equals dept.Id into deptJoin
             from dept in deptJoin.DefaultIfEmpty()
             where s.Status == "SUBMITTED" && a.Status == "SUBMITTED"
+                && t.OrganizationId == organizationId
             select new { s, a, emp, dept };
 
         if (!_currentUser.IsAdmin)
@@ -42,7 +45,7 @@ public class GetReviewQueueUseCase : IUseCase<GetReviewQueueInput, GetReviewQueu
 
         var totalItems = await query.CountAsync();
         var pageIndex = Math.Max(1, input.PageIndex);
-        var pageSize = Math.Max(1, input.PageSize);
+        var pageSize = Math.Clamp(input.PageSize, 1, 100);
 
         var targets = _context.PracticalTaskTargets.AsNoTracking();
 

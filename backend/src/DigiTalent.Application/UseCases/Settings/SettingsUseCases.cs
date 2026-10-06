@@ -118,7 +118,7 @@ public class GetAuditLogUseCase : IUseCase<GetAuditLogInput, GetAuditLogOutput>
 
         var totalItems = await query.CountAsync();
         var pageIndex = Math.Max(1, input.PageIndex);
-        var pageSize = Math.Max(1, input.PageSize);
+        var pageSize = Math.Clamp(input.PageSize, 1, 100);
 
         var users = _context.Users.AsNoTracking();
 

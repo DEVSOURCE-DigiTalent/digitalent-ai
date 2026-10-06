@@ -31,7 +31,7 @@ public class GetQuestionBanksUseCase : IUseCase<GetQuestionBanksInput, GetQuesti
 
         var totalItems = await query.CountAsync();
         var pageIndex = Math.Max(1, input.PageIndex);
-        var pageSize = Math.Max(1, input.PageSize);
+        var pageSize = Math.Clamp(input.PageSize, 1, 100);
 
         var questions = _context.Questions.AsNoTracking();
 
@@ -63,13 +63,19 @@ public class GetQuestionBanksUseCase : IUseCase<GetQuestionBanksInput, GetQuesti
 public class GetQuestionBankByIdUseCase : IUseCase<GetQuestionBankByIdInput, QuestionBankDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public GetQuestionBankByIdUseCase(IApplicationDbContext context) => _context = context;
+    public GetQuestionBankByIdUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    {
+        _context = context;
+        _currentUser = currentUser;
+    }
 
     public async Task<QuestionBankDto> ExecuteAsync(GetQuestionBankByIdInput input)
     {
+        var organizationId = _currentUser.GetRequiredOrganizationId();
         var bank = await _context.QuestionBanks.AsNoTracking()
-            .FirstOrDefaultAsync(b => b.Id == input.Id)
+            .FirstOrDefaultAsync(b => b.Id == input.Id && b.OrganizationId == organizationId)
             ?? throw new NotFoundException($"QuestionBank '{input.Id}' not found.");
 
         var questionCount = await _context.Questions.AsNoTracking()
@@ -128,13 +134,19 @@ public class CreateQuestionBankUseCase : IUseCase<CreateQuestionBankInput, Quest
 public class UpdateQuestionBankUseCase : IUseCase<UpdateQuestionBankInput, QuestionBankDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public UpdateQuestionBankUseCase(IApplicationDbContext context) => _context = context;
+    public UpdateQuestionBankUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    {
+        _context = context;
+        _currentUser = currentUser;
+    }
 
     public async Task<QuestionBankDto> ExecuteAsync(UpdateQuestionBankInput input)
     {
+        var organizationId = _currentUser.GetRequiredOrganizationId();
         var bank = await _context.QuestionBanks
-            .FirstOrDefaultAsync(b => b.Id == input.Id)
+            .FirstOrDefaultAsync(b => b.Id == input.Id && b.OrganizationId == organizationId)
             ?? throw new NotFoundException($"QuestionBank '{input.Id}' not found.");
 
         if (!string.IsNullOrWhiteSpace(input.Title))
@@ -162,13 +174,19 @@ public class UpdateQuestionBankUseCase : IUseCase<UpdateQuestionBankInput, Quest
 public class DeleteQuestionBankUseCase : IUseCase<DeleteQuestionBankInput, DeleteQuestionBankOutput>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
 
-    public DeleteQuestionBankUseCase(IApplicationDbContext context) => _context = context;
+    public DeleteQuestionBankUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    {
+        _context = context;
+        _currentUser = currentUser;
+    }
 
     public async Task<DeleteQuestionBankOutput> ExecuteAsync(DeleteQuestionBankInput input)
     {
+        var organizationId = _currentUser.GetRequiredOrganizationId();
         var bank = await _context.QuestionBanks
-            .FirstOrDefaultAsync(b => b.Id == input.Id)
+            .FirstOrDefaultAsync(b => b.Id == input.Id && b.OrganizationId == organizationId)
             ?? throw new NotFoundException($"QuestionBank '{input.Id}' not found.");
 
         bank.Status = "ARCHIVED";

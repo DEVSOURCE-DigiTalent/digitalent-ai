@@ -46,7 +46,7 @@ public class GetRecommendationReviewsUseCase : IUseCase<GetRecommendationReviews
 
         var totalItems = await query.CountAsync();
         var pageIndex = Math.Max(1, input.PageIndex);
-        var pageSize = Math.Max(1, input.PageSize);
+        var pageSize = Math.Clamp(input.PageSize, 1, 100);
 
         var items = await query
             .OrderByDescending(x => x.rr.Score)
@@ -130,10 +130,20 @@ public class AcceptReviewUseCase : IUseCase<AcceptReviewInput, ReviewActionOutpu
             AssignedAt = DateTimeOffset.UtcNow,
             DueDate = dueDate,
             Status = "ACTIVE",
-            AssignmentSource = "RECOMMENDATION",
+            AssignmentSource = "SKILL_GAP",
         };
-
         _context.CourseAssignments.Add(assignment);
+
+        var enrollment = new Domain.Entities.Enrollment
+        {
+            CourseAssignmentId = assignment.Id,
+            EmployeeId = input.EmployeeId,
+            CourseId = input.CourseId,
+            Status = "NOT_STARTED",
+            ProgressPercent = 0,
+            DueDate = dueDate,
+        };
+        _context.Enrollments.Add(enrollment);
 
         review.Status = "ACCEPTED";
         review.DecidedAt = DateTimeOffset.UtcNow;

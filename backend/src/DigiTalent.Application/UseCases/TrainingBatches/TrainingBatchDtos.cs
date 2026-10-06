@@ -120,6 +120,16 @@ public class UpdateTrainingBatchOutput
 }
 
 // ── Cancel / Complete ──
+public class ActivateTrainingBatchInput
+{
+    public Guid Id { get; set; }
+}
+
+public class ActivateTrainingBatchOutput
+{
+    public bool Success { get; set; }
+}
+
 public class CancelTrainingBatchInput
 {
     public Guid Id { get; set; }

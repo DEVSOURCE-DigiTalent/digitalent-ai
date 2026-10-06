@@ -29,7 +29,7 @@ public class CreateTaskUseCase : IUseCase<CreateTaskInput, PracticalTaskDetailDt
             throw new BadRequestException("Phải chọn ít nhất 1 nhân viên.");
 
         var employees = await _context.Employees.AsNoTracking()
-            .Where(e => input.AssignedEmployeeIds.Contains(e.Id) && e.Status == "ACTIVE")
+            .Where(e => input.AssignedEmployeeIds.Contains(e.Id) && e.Status == "ACTIVE" && e.OrganizationId == organizationId)
             .Select(e => new { e.Id, e.FullName, e.EmployeeCode, e.WorkEmail, e.DepartmentId })
             .ToListAsync();
 

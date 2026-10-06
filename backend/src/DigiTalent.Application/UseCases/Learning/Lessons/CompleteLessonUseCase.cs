@@ -60,6 +60,8 @@ public class CompleteLessonUseCase : IUseCase<CompleteLessonInput, CompleteLesso
             progress.LastAccessedAt = DateTimeOffset.UtcNow;
         }
 
+        await _context.SaveChangesAsync();
+
         var totalLessons = await (
             from l in _context.Lessons.AsNoTracking()
             join m in _context.CourseModules.AsNoTracking() on l.ModuleId equals m.Id
@@ -69,7 +71,6 @@ public class CompleteLessonUseCase : IUseCase<CompleteLessonInput, CompleteLesso
 
         var completedLessons = await _context.LessonProgresses.AsNoTracking()
             .CountAsync(lp => lp.EnrollmentId == enrollment.Id && lp.Status == "COMPLETED");
-        completedLessons = Math.Max(completedLessons, 1);
 
         var courseProgress = totalLessons > 0
             ? Math.Round((decimal)completedLessons / totalLessons * 100, 1)
@@ -83,7 +84,7 @@ public class CompleteLessonUseCase : IUseCase<CompleteLessonInput, CompleteLesso
             enrollment.StartedAt = DateTimeOffset.UtcNow;
         }
 
-        if (courseProgress >= 100)
+        if (courseProgress >= 100 && enrollment.Status != Statuses.Enrollment.Completed)
         {
             enrollment.Status = Statuses.Enrollment.ReadyForAssessment;
         }
