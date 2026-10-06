@@ -8,7 +8,8 @@ public class RecommendationReviewConfiguration : IEntityTypeConfiguration<Recomm
 {
     public void Configure(EntityTypeBuilder<RecommendationReview> builder)
     {
-        builder.ToTable("recommendation_reviews", t => t.ExcludeFromMigrations());
+        builder.ToTable("recommendation_reviews", t =>
+            t.HasCheckConstraint("ck_recommendation_reviews_status", "status IN ('PENDING','ACCEPTED','DISMISSED')"));
 
         builder.HasKey(r => r.Id);
         builder.Property(r => r.Id).HasColumnName("id");
@@ -28,6 +29,13 @@ public class RecommendationReviewConfiguration : IEntityTypeConfiguration<Recomm
         builder.Property(r => r.CourseAssignmentId).HasColumnName("course_assignment_id");
         builder.Property(r => r.CreatedAt).HasColumnName("created_at").IsRequired();
         builder.Property(r => r.UpdatedAt).HasColumnName("updated_at").IsRequired();
+
+        builder.HasOne<Organization>().WithMany().HasForeignKey(r => r.OrganizationId);
+        builder.HasOne<Employee>().WithMany().HasForeignKey(r => r.EmployeeId);
+        builder.HasOne<Course>().WithMany().HasForeignKey(r => r.CourseId);
+        builder.HasOne<SkillGapRun>().WithMany().HasForeignKey(r => r.SkillGapRunId);
+        builder.HasOne<User>().WithMany().HasForeignKey(r => r.DecidedByUserId);
+        builder.HasOne<CourseAssignment>().WithMany().HasForeignKey(r => r.CourseAssignmentId);
 
         builder.HasIndex(r => new { r.OrganizationId, r.EmployeeId, r.CourseId })
             .IsUnique()

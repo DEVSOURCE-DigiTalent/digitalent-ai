@@ -41,6 +41,32 @@ public static class Statuses
         public const string Inactive = "INACTIVE";
     }
 
+    /// <summary>subscriptions.status</summary>
+    public static class Subscription
+    {
+        public const string Active = "ACTIVE";
+        public const string Expired = "EXPIRED";
+        public const string PaymentRequired = "PAYMENT_REQUIRED";
+        public const string Cancelled = "CANCELLED";
+    }
+
+    /// <summary>training_batches.status</summary>
+    public static class TrainingBatch
+    {
+        public const string Draft = "DRAFT";
+        public const string Active = "ACTIVE";
+        public const string Completed = "COMPLETED";
+        public const string Cancelled = "CANCELLED";
+    }
+
+    /// <summary>task_submissions.status</summary>
+    public static class TaskSubmission
+    {
+        public const string Submitted = "SUBMITTED";
+        public const string UnderReview = "UNDER_REVIEW";
+        public const string Superseded = "SUPERSEDED";
+    }
+
     /// <summary>competencies.status</summary>
     public static class Competency
     {

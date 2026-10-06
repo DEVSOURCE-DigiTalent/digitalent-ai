@@ -25,6 +25,7 @@ public static class DbSeeder
         await SeedReferenceDataAsync(db);
         await SeedUsersAsync(db, passwordHasher, organization.Id, developmentPassword ?? DefaultPassword);
         await SkillGapSeeder.SeedDemoAsync(db, organization.Id);
+        await SeedDemoSubscriptionAsync(db, organization);
     }
 
     public static async Task SeedReferenceDataAsync(AppDbContext db)
@@ -47,6 +48,50 @@ public static class DbSeeder
         db.Organizations.Add(organization);
         await db.SaveChangesAsync();
         return organization;
+    }
+
+    /// <summary>
+    /// Subscription, setup state and one ACTIVE training batch for the demo organization (overview screen).
+    /// Idempotent: only missing data is added, so existing Development databases are backfilled.
+    /// </summary>
+    private static async Task SeedDemoSubscriptionAsync(AppDbContext db, Organization organization)
+    {
+        organization.SetupCompletedAt ??= DateTimeOffset.UtcNow;
+
+        if (!await db.Subscriptions.AnyAsync(s => s.OrganizationId == organization.Id))
+        {
+            db.Subscriptions.Add(new Subscription
+            {
+                OrganizationId = organization.Id,
+                PlanCode = "BUSINESS",
+                PlanName = "Gói Doanh nghiệp",
+                Status = Statuses.Subscription.Active,
+                Cycle = "year",
+                SeatLimit = 50,
+                RenewsAt = DateTimeOffset.UtcNow.AddYears(1),
+            });
+        }
+
+        var hr = await db.Users.FirstOrDefaultAsync(u => u.OrganizationId == organization.Id && u.Email == "hr@digitalent.ai");
+        var course = await db.Courses
+            .Where(c => c.OrganizationId == organization.Id && c.Status == Statuses.Course.Published)
+            .OrderBy(c => c.Code)
+            .FirstOrDefaultAsync();
+        if (hr != null && course != null && !await db.TrainingBatches.AnyAsync(b => b.OrganizationId == organization.Id))
+        {
+            db.TrainingBatches.Add(new TrainingBatch
+            {
+                OrganizationId = organization.Id,
+                Code = "BATCH-Q4-2026",
+                Title = "Đợt đào tạo năng lực số Q4/2026",
+                CourseId = course.Id,
+                Status = Statuses.TrainingBatch.Active,
+                StartDate = DateTimeOffset.UtcNow,
+                CreatedByUserId = hr.Id,
+            });
+        }
+
+        await db.SaveChangesAsync();
     }
 
     private static async Task SeedRolesAsync(AppDbContext db)
