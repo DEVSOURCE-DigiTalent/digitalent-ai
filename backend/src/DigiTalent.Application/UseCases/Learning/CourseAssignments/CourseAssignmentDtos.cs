@@ -48,6 +48,13 @@ public class GetCourseAssignmentsOutput
     public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalItems / PageSize) : 0;
 }
 
+// ── Get by ID ──
+
+public class GetCourseAssignmentByIdInput
+{
+    public Guid Id { get; set; }
+}
+
 // ── Summary ──
 
 public class GetAssignmentSummaryInput { }

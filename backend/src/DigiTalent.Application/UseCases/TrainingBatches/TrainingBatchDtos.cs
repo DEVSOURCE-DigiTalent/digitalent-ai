@@ -31,6 +31,19 @@ public class TrainingBatchListItem
     public DateTimeOffset CreatedAt { get; set; }
 }
 
+// ── Summary ──
+public class GetTrainingBatchSummaryInput { }
+
+public class TrainingBatchSummaryDto
+{
+    public int Total { get; set; }
+    public int Running { get; set; }
+    public int Scheduled { get; set; }
+    public int Completed { get; set; }
+    public int Cancelled { get; set; }
+    public int TotalParticipants { get; set; }
+}
+
 // ── Detail ──
 public class GetTrainingBatchByIdInput
 {

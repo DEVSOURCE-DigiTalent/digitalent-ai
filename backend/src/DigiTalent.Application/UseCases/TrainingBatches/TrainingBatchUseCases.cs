@@ -6,6 +6,47 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.TrainingBatches;
 
+// ── GET summary ──
+public class GetTrainingBatchSummaryUseCase : IUseCase<GetTrainingBatchSummaryInput, TrainingBatchSummaryDto>
+{
+    private readonly IApplicationDbContext _context;
+    private readonly ICurrentUser _currentUser;
+
+    public GetTrainingBatchSummaryUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    {
+        _context = context;
+        _currentUser = currentUser;
+    }
+
+    public async Task<TrainingBatchSummaryDto> ExecuteAsync(GetTrainingBatchSummaryInput input)
+    {
+        var orgId = _currentUser.GetRequiredOrganizationId();
+
+        var batches = _context.TrainingBatches.AsNoTracking()
+            .Where(b => b.OrganizationId == orgId);
+
+        var total = await batches.CountAsync();
+        var running = await batches.CountAsync(b => b.Status == "ACTIVE");
+        var scheduled = await batches.CountAsync(b => b.Status == "DRAFT");
+        var completed = await batches.CountAsync(b => b.Status == "COMPLETED");
+        var cancelled = await batches.CountAsync(b => b.Status == "CANCELLED");
+
+        var batchIds = batches.Select(b => b.Id);
+        var totalParticipants = await _context.TrainingBatchEmployees.AsNoTracking()
+            .CountAsync(be => batchIds.Contains(be.TrainingBatchId));
+
+        return new TrainingBatchSummaryDto
+        {
+            Total = total,
+            Running = running,
+            Scheduled = scheduled,
+            Completed = completed,
+            Cancelled = cancelled,
+            TotalParticipants = totalParticipants,
+        };
+    }
+}
+
 // ── GET list ──
 public class GetTrainingBatchesUseCase : IUseCase<GetTrainingBatchesInput, GetTrainingBatchesOutput>
 {

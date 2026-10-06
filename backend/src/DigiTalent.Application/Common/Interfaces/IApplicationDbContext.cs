@@ -84,6 +84,7 @@ public interface IApplicationDbContext
     DbSet<SkillGapItem> SkillGapItems { get; }
     DbSet<SkillGapRun> SkillGapRuns { get; }
     DbSet<TrainingRiskScore> TrainingRiskScores { get; }
+    DbSet<RecommendationReview> RecommendationReviews { get; }
 
     // Learner Surface (SEP-09)
     DbSet<LearnerProfile> LearnerProfiles { get; }

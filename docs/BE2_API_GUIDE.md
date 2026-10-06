@@ -97,6 +97,12 @@ Response item:
 | overdue | boolean | |
 | dueSoon | boolean | Hạn trong 7 ngày |
 
+### GET /course-assignments/:id — Chi tiết phân công
+
+Response `data` = một `AssignmentRow` (cùng shape với item trong danh sách ở trên).
+
+Trả 404 nếu không tìm thấy hoặc khác tổ chức.
+
 ### GET /course-assignments/summary — Thống kê tổng quan
 
 Response `data`:
@@ -691,6 +697,23 @@ Response item:
 
 ## 15. LÔ ĐÀO TẠO (Training Batches)
 
+### GET /training-batches/summary — Thống kê tổng
+
+Response `data`:
+
+```json
+{
+  "total": 12,
+  "running": 3,
+  "scheduled": 2,
+  "completed": 5,
+  "cancelled": 2,
+  "totalParticipants": 85
+}
+```
+
+> `running` = ACTIVE, `scheduled` = DRAFT
+
 ### GET /training-batches — Danh sách lô
 
 ```
@@ -936,6 +959,140 @@ Response `data`:
       { "departmentId": "guid", "departmentName": "OPS", "assignedCount": 30, "submittedCount": 25, "approvedCount": 18, "approvalRate": 72.0 }
     ]
   }
+}
+```
+
+---
+
+## 18. ĐỀ XUẤT ĐÀO TẠO (Recommendation Reviews)
+
+Route: `api/v1/intelligence/recommendation-reviews`
+
+### GET /intelligence/recommendation-reviews — Danh sách đề xuất
+
+```
+Query: ?pageIndex=1&pageSize=20&status=&departmentId=&jobPositionId=
+```
+
+Response item:
+
+| Field | Type | Mô tả |
+|-------|------|-------|
+| employeeId | guid | |
+| employeeName | string | |
+| employeeCode | string? | |
+| departmentName | string? | |
+| positionName | string? | |
+| courseId | guid | |
+| courseCode | string | |
+| title | string | Tên khóa học |
+| score | decimal | Điểm ưu tiên |
+| gapsClosed | int | Số gap đóng được |
+| mandatoryClosed | int | Gap bắt buộc |
+| highClosed | int | Gap mức cao |
+| explanation | string? | Giải thích |
+| enrollmentStatus | string? | |
+| status | string | PENDING / ACCEPTED / DISMISSED |
+| decisionReason | string? | Lý do bỏ qua |
+| decidedAt | datetime? | |
+| decidedByName | string? | |
+
+### POST /intelligence/recommendation-reviews/accept — Chấp nhận đề xuất
+
+Tự tạo `CourseAssignment` (source = RECOMMENDATION) cho nhân viên.
+
+```json
+{
+  "employeeId": "guid",
+  "courseId": "guid",
+  "dueDate": "2025-12-31 (tùy chọn)"
+}
+```
+
+Response: `{ status: "ACCEPTED" }`
+
+> Lỗi 409 nếu nhân viên đã được giao khóa này (ACTIVE).
+
+### POST /intelligence/recommendation-reviews/dismiss — Bỏ qua đề xuất
+
+```json
+{
+  "employeeId": "guid",
+  "courseId": "guid",
+  "reason": "Lý do bỏ qua"
+}
+```
+
+Response: `{ status: "DISMISSED" }`
+
+### POST /intelligence/recommendation-reviews/reopen — Mở lại đề xuất
+
+```json
+{
+  "employeeId": "guid",
+  "courseId": "guid"
+}
+```
+
+Response: `{ status: "PENDING" }`
+
+---
+
+## 19. KHÓA HỌC NỘI BỘ (Internal Courses)
+
+Route: `api/v1/internal-courses`
+
+> Dùng bảng `courses` có sẵn. `Category` trong DTO map sang field `Purpose` trong DB.
+
+### GET /internal-courses — Danh sách khóa nội bộ
+
+```
+Query: ?pageIndex=1&pageSize=20&search=&status=
+```
+
+Response item:
+
+| Field | Type | Mô tả |
+|-------|------|-------|
+| id | guid | |
+| code | string | VD: "INT-001" |
+| title | string | |
+| description | string | |
+| category | string | Map từ `Purpose` |
+| modulesCount | number | Số module |
+| durationMinutes | number | |
+| status | string | DRAFT / PUBLISHED / ARCHIVED |
+| createdAt | datetime | |
+| updatedAt | datetime | |
+
+### GET /internal-courses/:id — Chi tiết khóa nội bộ
+
+Response `data` = `InternalCourseDto` (cùng shape ở trên).
+
+### POST /internal-courses — Tạo khóa nội bộ
+
+```json
+{
+  "code": "INT-001 (tùy chọn, tự sinh nếu bỏ trống)",
+  "title": "Tên khóa học",
+  "description": "Mô tả...",
+  "category": "Phân loại",
+  "durationMinutes": 120,
+  "status": "DRAFT (mặc định)"
+}
+```
+
+> Lỗi 409 nếu `code` đã tồn tại trong tổ chức.
+
+### PUT /internal-courses/:id — Cập nhật khóa nội bộ
+
+```json
+{
+  "title": "Tên mới",
+  "description": "Mô tả mới",
+  "category": "Phân loại mới",
+  "durationMinutes": 180,
+  "status": "PUBLISHED (tùy chọn)"
 }
 ```
 

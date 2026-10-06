@@ -21,6 +21,16 @@ public class CourseAssignmentsController : ControllerBase
         return Ok(ApiResponse<GetCourseAssignmentsOutput>.Ok(result));
     }
 
+    [HttpGet("{id:guid}")]
+    [HasPermission(Permissions.Learning.ReadAssignment)]
+    public async Task<ActionResult<ApiResponse<AssignmentRow>>> GetById(
+        Guid id,
+        [FromServices] IUseCase<GetCourseAssignmentByIdInput, AssignmentRow> useCase)
+    {
+        var result = await useCase.ExecuteAsync(new GetCourseAssignmentByIdInput { Id = id });
+        return Ok(ApiResponse<AssignmentRow>.Ok(result));
+    }
+
     [HttpGet("summary")]
     [HasPermission(Permissions.Learning.ReadAssignment)]
     public async Task<ActionResult<ApiResponse<AssignmentSummaryOutput>>> GetSummary(

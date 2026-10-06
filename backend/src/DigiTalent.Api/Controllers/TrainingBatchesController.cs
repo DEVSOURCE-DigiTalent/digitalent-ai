@@ -21,6 +21,15 @@ public class TrainingBatchesController : ControllerBase
         return Ok(ApiResponse<GetTrainingBatchesOutput>.Ok(result));
     }
 
+    [HttpGet("summary")]
+    [HasPermission(Permissions.Learning.ReadAssignment)]
+    public async Task<ActionResult<ApiResponse<TrainingBatchSummaryDto>>> GetSummary(
+        [FromServices] IUseCase<GetTrainingBatchSummaryInput, TrainingBatchSummaryDto> useCase)
+    {
+        var result = await useCase.ExecuteAsync(new GetTrainingBatchSummaryInput());
+        return Ok(ApiResponse<TrainingBatchSummaryDto>.Ok(result));
+    }
+
     [HttpGet("{id:guid}")]
     [HasPermission(Permissions.Learning.ReadAssignment)]
     public async Task<ActionResult<ApiResponse<TrainingBatchDetailDto>>> GetById(
