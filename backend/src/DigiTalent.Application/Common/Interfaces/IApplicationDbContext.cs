@@ -51,6 +51,8 @@ public interface IApplicationDbContext
     DbSet<Lesson> Lessons { get; }
     DbSet<LessonLearningOutcome> LessonLearningOutcomes { get; }
     DbSet<LessonProgress> LessonProgresses { get; }
+    DbSet<TrainingBatch> TrainingBatches { get; }
+    DbSet<TrainingBatchEmployee> TrainingBatchEmployees { get; }
 
     // Task (bài tập thực hành)
     DbSet<AssignedTaskTarget> AssignedTaskTargets { get; }
@@ -85,6 +87,11 @@ public interface IApplicationDbContext
 
     // Learner Surface (SEP-09)
     DbSet<LearnerProfile> LearnerProfiles { get; }
+
+    // Billing
+    DbSet<Subscription> Subscriptions { get; }
+    DbSet<SubscriptionEntitlement> SubscriptionEntitlements { get; }
+    DbSet<Invoice> Invoices { get; }
 
     // Shared
     DbSet<AuditLog> AuditLogs { get; }

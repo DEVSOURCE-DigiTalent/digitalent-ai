@@ -1396,7 +1396,8 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasColumnName("id");
 
                     b.Property<string>("Code")
-                        .HasColumnType("text")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
                         .HasColumnName("code");
 
                     b.Property<Guid>("CourseId")
@@ -1416,7 +1417,9 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasColumnName("estimated_minutes");
 
                     b.Property<bool>("IsRequired")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
+                        .HasDefaultValue(false)
                         .HasColumnName("is_required");
 
                     b.Property<string>("Purpose")
@@ -1429,12 +1432,16 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasDefaultValue("ACTIVE")
                         .HasColumnName("status");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)")
                         .HasColumnName("title");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
@@ -1444,9 +1451,14 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_course_modules");
 
+                    b.HasIndex("CourseId", "SortOrder")
+                        .HasDatabaseName("ix_course_modules_course_sort_order");
+
                     b.ToTable("course_modules", null, t =>
                         {
-                            t.ExcludeFromMigrations();
+                            t.HasCheckConstraint("ck_course_modules_estimated_minutes", "estimated_minutes IS NULL OR estimated_minutes >= 0");
+
+                            t.HasCheckConstraint("ck_course_modules_status", "status IN ('ACTIVE','ARCHIVED')");
                         });
                 });
 
@@ -2077,12 +2089,16 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasColumnName("id");
 
                     b.Property<string>("Code")
-                        .HasColumnType("text")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
                         .HasColumnName("code");
 
                     b.Property<string>("CompletionRule")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("VIEW")
                         .HasColumnName("completion_rule");
 
                     b.Property<string>("ContentBody")
@@ -2098,12 +2114,17 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasColumnName("estimated_minutes");
 
                     b.Property<bool>("IsRequired")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
+                        .HasDefaultValue(false)
                         .HasColumnName("is_required");
 
                     b.Property<string>("LessonType")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasDefaultValue("TEXT")
                         .HasColumnName("lesson_type");
 
                     b.Property<Guid>("ModuleId")
@@ -2116,12 +2137,16 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasDefaultValue("ACTIVE")
                         .HasColumnName("status");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)")
                         .HasColumnName("title");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
@@ -2131,9 +2156,18 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_lessons");
 
+                    b.HasIndex("ModuleId", "SortOrder")
+                        .HasDatabaseName("ix_lessons_module_sort_order");
+
                     b.ToTable("lessons", null, t =>
                         {
-                            t.ExcludeFromMigrations();
+                            t.HasCheckConstraint("ck_lessons_completion_rule", "completion_rule IN ('VIEW','MANUAL_COMPLETE','PASS_CHECK','SUBMIT_ACTIVITY')");
+
+                            t.HasCheckConstraint("ck_lessons_estimated_minutes", "estimated_minutes IS NULL OR estimated_minutes >= 0");
+
+                            t.HasCheckConstraint("ck_lessons_status", "status IN ('ACTIVE','ARCHIVED')");
+
+                            t.HasCheckConstraint("ck_lessons_type", "lesson_type IN ('TEXT','VIDEO','CASE_STUDY','GUIDED_PRACTICE','WORKPLACE_SCENARIO','QUIZ','REFLECTION','ASSIGNMENT')");
                         });
                 });
 
@@ -4013,6 +4047,16 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_course_competencies_courses_course_id");
                 });
 
+            modelBuilder.Entity("DigiTalent.Domain.Entities.CourseModule", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.Course", null)
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_course_modules_courses_course_id");
+                });
+
             modelBuilder.Entity("DigiTalent.Domain.Entities.CoursePrerequisite", b =>
                 {
                     b.HasOne("DigiTalent.Domain.Entities.Course", null)
@@ -4167,6 +4211,16 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_learner_profiles_users_user_id");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.Lesson", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.CourseModule", null)
+                        .WithMany()
+                        .HasForeignKey("ModuleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_lessons_course_modules_module_id");
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.Notification", b =>
