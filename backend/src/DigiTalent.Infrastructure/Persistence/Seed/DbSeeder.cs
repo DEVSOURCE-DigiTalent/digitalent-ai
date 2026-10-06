@@ -51,7 +51,7 @@ public static class DbSeeder
     }
 
     /// <summary>
-    /// Subscription, setup state and one running training batch for the demo organization (overview screen).
+    /// Subscription, setup state and one ACTIVE training batch for the demo organization (overview screen).
     /// Idempotent: only missing data is added, so existing Development databases are backfilled.
     /// </summary>
     private static async Task SeedDemoSubscriptionAsync(AppDbContext db, Organization organization)

@@ -35,7 +35,7 @@
 --       Optional            : Intelligence extension
 --
 -- Scope created by this script:
---   * 55 core tables
+--   * 61 core tables (55 + 6 added by the 2026-10-06 addendum)
 --   * 4 non-blocking Intelligence extension tables
 --   * password_reset_tokens is intentionally NOT created by default (conditional)
 --
