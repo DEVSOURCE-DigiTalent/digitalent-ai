@@ -4,16 +4,27 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
-/// <summary>
-/// Map entity CourseModule với bảng "course_modules".
-/// Database là gốc: tên cột tự đổi sang snake_case, không khai báo lại ở đây.
-/// </summary>
 public class CourseModuleConfiguration : IEntityTypeConfiguration<CourseModule>
 {
     public void Configure(EntityTypeBuilder<CourseModule> builder)
     {
-        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
-        builder.ToTable("course_modules", table => table.ExcludeFromMigrations());
+        builder.ToTable("course_modules", table =>
+        {
+            table.HasCheckConstraint("ck_course_modules_estimated_minutes",
+                "estimated_minutes IS NULL OR estimated_minutes >= 0");
+            table.HasCheckConstraint("ck_course_modules_status",
+                "status IN ('ACTIVE','ARCHIVED')");
+        });
         builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Code).HasMaxLength(80);
+        builder.Property(x => x.Title).IsRequired().HasMaxLength(250);
+        builder.Property(x => x.Status).IsRequired().HasMaxLength(30).HasDefaultValue("ACTIVE");
+        builder.Property(x => x.IsRequired).HasDefaultValue(false);
+
+        builder.HasOne<Course>().WithMany().HasForeignKey(x => x.CourseId);
+
+        builder.HasIndex(x => new { x.CourseId, x.SortOrder })
+            .HasDatabaseName("ix_course_modules_course_sort_order");
     }
 }

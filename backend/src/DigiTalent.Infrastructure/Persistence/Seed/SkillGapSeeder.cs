@@ -77,7 +77,8 @@ public static class SkillGapSeeder
     public static async Task SeedDemoAsync(AppDbContext db, Guid organizationId)
     {
         var firstCategoryCode = Tt02Catalog.Domains[0].CategoryCode;
-        if (await db.CompetencyCategories.AnyAsync(c => c.OrganizationId == organizationId && c.Code == firstCategoryCode))
+        if (await db.CompetencyCategories.AnyAsync(c => c.OrganizationId == organizationId && c.Code == firstCategoryCode)
+            || await db.Courses.AnyAsync(c => c.OrganizationId == organizationId))
         {
             return;
         }

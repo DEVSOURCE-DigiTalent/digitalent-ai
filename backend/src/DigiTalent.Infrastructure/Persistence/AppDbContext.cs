@@ -75,6 +75,8 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<Lesson> Lessons => Set<Lesson>();
     public DbSet<LessonLearningOutcome> LessonLearningOutcomes => Set<LessonLearningOutcome>();
     public DbSet<LessonProgress> LessonProgresses => Set<LessonProgress>();
+    public DbSet<TrainingBatch> TrainingBatches => Set<TrainingBatch>();
+    public DbSet<TrainingBatchEmployee> TrainingBatchEmployees => Set<TrainingBatchEmployee>();
 
     // Task (bài tập thực hành)
     public DbSet<AssignedTaskTarget> AssignedTaskTargets => Set<AssignedTaskTarget>();
@@ -109,6 +111,11 @@ public class AppDbContext : DbContext, IApplicationDbContext
 
     // Learner Surface (SEP-09)
     public DbSet<LearnerProfile> LearnerProfiles => Set<LearnerProfile>();
+
+    // Billing
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<SubscriptionEntitlement> SubscriptionEntitlements => Set<SubscriptionEntitlement>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
 
     // Shared
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
