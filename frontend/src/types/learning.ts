@@ -1,4 +1,4 @@
-import { PaginatedQuery, PaginatedList } from './api';
+import type { PaginationRequest } from './api';
 
 export interface CourseListItem {
   id: string;
@@ -34,7 +34,7 @@ export interface CourseDetailDto {
   modules: CourseModuleDto[];
 }
 
-export interface GetCoursesParams extends PaginatedQuery {
+export interface GetCoursesParams extends PaginationRequest {
   search?: string;
   status?: string;
   entryLevel?: number;

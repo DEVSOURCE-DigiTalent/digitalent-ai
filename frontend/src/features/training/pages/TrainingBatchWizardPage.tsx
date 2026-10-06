@@ -51,12 +51,9 @@ export function TrainingBatchWizardPage() {
   const [selectedGrades, setSelectedGrades] = useState<string[]>([]);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
 
-  // Options
-  const [autoAssign, setAutoAssign] = useState(true);
-
   // Hooks
   const createMutation = useCreateTrainingBatch();
-  const { data: coursesPaged } = useCourses();
+  const { data: coursesPaged } = useCourses({ status: 'PUBLISHED', pageSize: 100 });
   const { data: departmentsData } = useDepartments({ pageSize: 100 });
   const { data: positionsData } = useJobPositions({ pageSize: 100 });
   const { data: membersData } = useMembers({ pageSize: 200, status: 'ACTIVE' });
@@ -96,7 +93,7 @@ export function TrainingBatchWizardPage() {
 
   const toggleCourse = (cId: string) => {
     setSelectedCourseIds((prev) =>
-      prev.includes(cId) ? prev.filter((id) => id !== cId) : [...prev, cId]
+      prev.includes(cId) ? [] : [cId]
     );
   };
 
@@ -125,7 +122,7 @@ export function TrainingBatchWizardPage() {
     return true;
   };
 
-  const handleSubmit = async (isDraft: boolean) => {
+  const handleSubmit = async () => {
     if (!name.trim()) {
       toast.error('Vui lòng nhập tên đợt đào tạo.');
       return;
@@ -153,10 +150,9 @@ export function TrainingBatchWizardPage() {
           jobGrades: selectedGrades.length ? selectedGrades : undefined,
         } : undefined,
         participantEmployeeIds: resolvedEmployees.map((e) => e.id),
-        autoAssign: !isDraft && autoAssign,
       });
 
-      toast.success(isDraft ? 'Đã lưu bản nháp đợt đào tạo.' : 'Đã tạo và kích hoạt đợt đào tạo thành công!');
+      toast.success('Đã tạo bản nháp đợt đào tạo.');
       navigate(`/enterprise/training-batches/${result.id}`);
     } catch (err: any) {
       toast.error(err?.message || 'Có lỗi xảy ra khi tạo đợt đào tạo.');
@@ -291,7 +287,7 @@ export function TrainingBatchWizardPage() {
           <div className="space-y-5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="text-base font-semibold text-slate-900">2. Chọn các khóa học đưa vào đợt</h3>
+                <h3 className="text-base font-semibold text-slate-900">2. Chọn khóa học cho đợt</h3>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Đã chọn <strong className="text-primary-700">{selectedCourseIds.length}</strong> khóa học
                 </p>
@@ -324,7 +320,7 @@ export function TrainingBatchWizardPage() {
                     }`}
                   >
                     <input
-                      type="checkbox"
+                      type="radio"
                       checked={isSelected}
                       onChange={() => {}}
                       className="mt-1 h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 pointer-events-none"
@@ -340,7 +336,7 @@ export function TrainingBatchWizardPage() {
                       <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-1">
                         <span>{c.categoryName || 'Thông tư 02'}</span>
                         <span>·</span>
-                        <span>{c.estimatedDurationMinutes} phút</span>
+                        <span>{c.estimatedDurationMinutes == null ? 'Chưa cập nhật' : `${c.estimatedDurationMinutes} phút`}</span>
                       </div>
                     </div>
                   </div>
@@ -530,22 +526,9 @@ export function TrainingBatchWizardPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={autoAssign}
-                  onChange={(e) => setAutoAssign(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
-                />
-                <div className="text-xs">
-                  <span className="font-bold text-slate-900 block">Tự động phân công khóa học cho học viên</span>
-                  <span className="text-slate-600">
-                    Ngay sau khi phát hành đợt, hệ thống sẽ tự động giao toàn bộ các khóa học đã chọn cho {resolvedEmployees.length} học viên tham gia với hạn chót là {endDate}.
-                  </span>
-                </div>
-              </label>
-            </div>
+            <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
+              Đợt được tạo ở trạng thái bản nháp. API hiện tại chưa có thao tác kích hoạt hoặc tự động phân công khóa học.
+            </p>
           </div>
         )}
       </div>
@@ -566,20 +549,12 @@ export function TrainingBatchWizardPage() {
             <>
               <button
                 type="button"
-                onClick={() => handleSubmit(true)}
-                disabled={createMutation.isPending}
-                className="px-4 py-2 text-xs font-semibold rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50"
-              >
-                Lưu bản nháp
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSubmit(false)}
+                onClick={handleSubmit}
                 disabled={createMutation.isPending}
                 className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 shadow-sm disabled:opacity-50 transition-colors"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                {createMutation.isPending ? 'Đang khởi tạo…' : 'Phát hành đợt đào tạo'}
+                {createMutation.isPending ? 'Đang khởi tạo…' : 'Tạo bản nháp'}
               </button>
             </>
           ) : (

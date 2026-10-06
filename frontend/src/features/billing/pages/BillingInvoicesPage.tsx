@@ -1,10 +1,7 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { toast } from 'sonner';
 import {
   ArrowLeft,
   Receipt,
-  Download,
   Building,
 } from 'lucide-react';
 import { PageHeader, StatusBadge, DataTable, ScoreCard, type Column } from '@/components/shared';
@@ -14,25 +11,16 @@ import { formatVnd } from '@/lib/plans';
 import { formatDate } from '@/lib/utils';
 import type { Invoice } from '@/services/subscription.service';
 
-/** OW-43: Billing & Invoices History. Owner only. */
+/** OW-43: The 20 most recent invoices returned by GET /subscription. Owner only. */
 export function BillingInvoicesPage() {
   const { data: subscription, isLoading, isError } = useSubscription();
   const { data: org } = useOrganization();
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   if (isLoading) return <p className="text-sm text-slate-500">Đang tải danh sách hóa đơn…</p>;
   if (isError || !subscription) return <p role="alert" className="text-sm text-red-600">Không tải được lịch sử hóa đơn.</p>;
 
   const invoices = subscription.invoices ?? [];
-  const totalPaid = invoices.reduce((sum, i) => sum + i.amount, 0);
-
-  const handleDownload = (invoice: Invoice) => {
-    setDownloadingId(invoice.id);
-    setTimeout(() => {
-      setDownloadingId(null);
-      toast.success(`Đã tải hóa đơn điện tử VAT ${invoice.code} (PDF)`);
-    }, 600);
-  };
+  const totalPaid = invoices.filter((invoice) => invoice.status === 'PAID').reduce((sum, i) => sum + i.amount, 0);
 
   const invoiceColumns: Column<Invoice>[] = [
     {
@@ -78,26 +66,7 @@ export function BillingInvoicesPage() {
     {
       key: 'status',
       header: 'Trạng thái',
-      cell: () => <StatusBadge label="Đã thanh toán" variant="success" />,
-    },
-    {
-      key: 'actions',
-      header: 'Thao tác',
-      className: 'text-right',
-      cell: (i) => (
-        <div className="flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => handleDownload(i)}
-            disabled={downloadingId === i.id}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition disabled:opacity-50"
-            title="Tải hóa đơn VAT (PDF)"
-          >
-            <Download className="size-3.5" />
-            <span>{downloadingId === i.id ? 'Đang tải…' : 'Tải PDF'}</span>
-          </button>
-        </div>
-      ),
+      cell: (i) => <StatusBadge label={i.status} variant={i.status === 'PAID' ? 'success' : 'warning'} />,
     },
   ];
 
@@ -116,14 +85,14 @@ export function BillingInvoicesPage() {
 
       <PageHeader
         title="Lịch sử thanh toán & Hóa đơn"
-        subtitle="Quản lý toàn bộ hóa đơn điện tử VAT, biên lai và chứng từ thanh toán của tổ chức"
+        subtitle="Xem tối đa 20 hóa đơn gần đây do API gói dịch vụ trả về"
       />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <ScoreCard label="Tổng chi phí đã thanh toán" value={formatVnd(totalPaid)} subtitle="Tích lũy từ đầu năm" />
-        <ScoreCard label="Tổng số hóa đơn" value={invoices.length} subtitle="Hóa đơn VAT hợp lệ" />
-        <ScoreCard label="Trạng thái tài khoản" value="Đầy đủ" variant="success" subtitle="Không nợ cước" />
+        <ScoreCard label="Tổng giá trị hóa đơn đã thanh toán" value={formatVnd(totalPaid)} subtitle="Theo dữ liệu hóa đơn hiện có" />
+        <ScoreCard label="Tổng số hóa đơn" value={invoices.length} subtitle="Theo API gói dịch vụ" />
+        <ScoreCard label="Trạng thái tài khoản" value={subscription.status} variant="success" subtitle="Theo API gói dịch vụ" />
         <ScoreCard label="Kỳ thanh toán tiếp theo" value={formatDate(subscription.renewsAt)} subtitle="Gia hạn tự động" />
       </div>
 
@@ -131,7 +100,7 @@ export function BillingInvoicesPage() {
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
         <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
           <Receipt className="size-4 text-blue-600" />
-          <span>Danh sách hóa đơn VAT đã phát hành</span>
+          <span>Hóa đơn gần đây</span>
         </h2>
 
         <DataTable

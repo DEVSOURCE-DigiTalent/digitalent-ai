@@ -16,7 +16,7 @@ import { useAssignmentSummary } from '@/hooks/use-assignments';
  * Hiển thị empty state hướng dẫn liên hệ Owner nếu Manager chưa phụ trách phòng ban nào.
  */
 export function TeamCapabilityDashboardPage() {
-  const { data: empData, isLoading: empLoading } = useEmployees();
+  const { data: empData, isLoading: empLoading, isError: empError } = useEmployees();
   const { data: taskData } = usePracticalTasks();
   const { data: reviewData } = useReviewQueue();
   const { data: dashboardData } = useCapabilityDashboard();
@@ -26,18 +26,15 @@ export function TeamCapabilityDashboardPage() {
   const tasks = taskData?.items ?? [];
   const pendingReviews = reviewData?.totalItems ?? 0;
 
-  // Grade distribution (G1–G3)
-  const gradeDistribution: Record<string, number> = { G1: 0, G2: 0, G3: 0 };
-  for (const emp of employees) {
-    const grade = (emp as any).jobGrade;
-    if (grade && grade in gradeDistribution) {
-      gradeDistribution[grade]++;
-    }
-  }
+  const activeEmployees = employees.filter((employee) => employee.status === 'ACTIVE').length;
 
   // Active & overdue training from assignment summary
   const inProgressTraining = assignmentSummary?.inProgress ?? 0;
   const overdueTraining = assignmentSummary?.overdue ?? 0;
+
+  if (empError) {
+    return <div className="space-y-6 pb-12"><PageHeader title="Bảng năng lực của nhóm" subtitle="Theo dõi năng lực và đào tạo của nhân sự thuộc phạm vi quản lý." /><p role="alert" className="rounded-xl border border-red-200 p-4 text-red-700">Không tải được danh sách nhân sự từ BE2. Vui lòng thử lại sau.</p></div>;
+  }
 
   if (!empLoading && employees.length === 0) {
     return (
@@ -66,7 +63,7 @@ export function TeamCapabilityDashboardPage() {
         />
         <div className="flex items-center gap-3 shrink-0">
           <Link
-            to="/enterprise/review-queue"
+            to="/enterprise/reviews"
             className="inline-flex items-center gap-2 px-3.5 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-sm rounded-xl transition"
           >
             <Inbox className="size-4 text-amber-500" />
@@ -90,8 +87,8 @@ export function TeamCapabilityDashboardPage() {
             <span className="text-xs font-semibold uppercase tracking-wider">Tổng nhân sự nhóm</span>
             <Users className="size-5 text-blue-600" />
           </div>
-          <div className="text-3xl font-black text-slate-900">{employees.length}</div>
-          <p className="text-xs text-slate-500">100% đã được phân vị trí việc làm</p>
+          <div className="text-3xl font-black text-slate-900">{dashboardData?.kpis?.employees ?? empData?.totalItems ?? employees.length}</div>
+          <p className="text-xs text-slate-500">Nhân sự trong phạm vi quản lý</p>
         </div>
 
         {/* Coverage */}
@@ -101,9 +98,9 @@ export function TeamCapabilityDashboardPage() {
             <TrendingUp className="size-5 text-emerald-600" />
           </div>
           <div className="text-3xl font-black text-emerald-600">
-            {dashboardData?.kpis?.averageCoverage ?? 76}%
+            {dashboardData?.kpis ? `${Math.round(dashboardData.kpis.averageCoverage)}%` : '—'}
           </div>
-          <p className="text-xs text-emerald-700 font-medium">+4% so với tháng trước</p>
+          <p className="text-xs text-emerald-700 font-medium">Theo phân tích năng lực mới nhất</p>
         </div>
 
         {/* High Gap */}
@@ -113,7 +110,7 @@ export function TeamCapabilityDashboardPage() {
             <AlertTriangle className="size-5 text-amber-500" />
           </div>
           <div className="text-3xl font-black text-slate-900">
-            {dashboardData?.kpis?.employeesWithHigh ?? 3}
+            {dashboardData?.kpis?.employeesWithHigh ?? '—'}
           </div>
           <p className="text-xs text-slate-500">Cần ưu tiên bồi dưỡng năng lực</p>
         </div>
@@ -131,25 +128,21 @@ export function TeamCapabilityDashboardPage() {
 
       {/* Grade distribution & Training monitor row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Phân bố cấp bậc G1-G3 */}
+        {/* Status is present in GET /employees; grade distribution is not returned by that API. */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3 sm:col-span-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Phân bố Cấp bậc (Job Grade G1–G3)
+              Trạng thái nhân sự đang hiển thị
             </span>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
-              <span className="text-xs font-semibold text-slate-500 block">Cấp bậc G1</span>
-              <span className="text-xl font-bold text-slate-900">{gradeDistribution.G1}</span>
+              <span className="text-xs font-semibold text-slate-500 block">Đang hoạt động</span>
+              <span className="text-xl font-bold text-slate-900">{activeEmployees}</span>
             </div>
             <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
-              <span className="text-xs font-semibold text-slate-500 block">Cấp bậc G2</span>
-              <span className="text-xl font-bold text-slate-900">{gradeDistribution.G2}</span>
-            </div>
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
-              <span className="text-xs font-semibold text-slate-500 block">Cấp bậc G3</span>
-              <span className="text-xl font-bold text-slate-900">{gradeDistribution.G3}</span>
+              <span className="text-xs font-semibold text-slate-500 block">Khác</span>
+              <span className="text-xl font-bold text-slate-900">{employees.length - activeEmployees}</span>
             </div>
           </div>
         </div>
@@ -272,21 +265,21 @@ export function TeamCapabilityDashboardPage() {
 
         {/* Right: Quick shortcuts and AI assistant suggestion */}
         <div className="space-y-6">
-          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white space-y-3 shadow-md">
+          {(dashboardData?.kpis?.employeesWithHigh ?? 0) > 0 && <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white space-y-3 shadow-md">
             <div className="flex items-center gap-2">
               <Sparkles className="size-5" />
-              <h4 className="font-bold text-sm">Gợi ý từ DigiTalent AI</h4>
+              <h4 className="font-bold text-sm">Nhân sự cần ưu tiên hỗ trợ</h4>
             </div>
             <p className="text-xs text-blue-100 leading-relaxed">
-              Nhóm đang có khoảng trống kỹ năng số cần bổ trợ. Bạn nên giao bài thực hành tình huống nghiệp vụ thực tế để củng cố trước đợt đánh giá định kỳ.
+              {dashboardData?.kpis?.employeesWithHigh} nhân sự có khoảng trống năng lực mức cao. Xem phân tích để quyết định phương án bồi dưỡng.
             </p>
             <Link
-              to="/enterprise/tasks/new"
+              to="/enterprise/team/skill-gap"
               className="inline-block mt-2 px-3.5 py-1.5 bg-white text-blue-700 font-bold text-xs rounded-lg hover:bg-blue-50 transition shadow-sm"
             >
-              Giao bài thực hành mới
+              Xem khoảng trống năng lực
             </Link>
-          </div>
+          </div>}
 
           <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-3 shadow-sm">
             <h4 className="font-bold text-slate-900 text-sm">Lối tắt thao tác nhanh</h4>
@@ -306,7 +299,7 @@ export function TeamCapabilityDashboardPage() {
                 <Brain className="size-4 text-blue-600" />
               </Link>
               <Link
-                to="/enterprise/review-queue"
+                to="/enterprise/reviews"
                 className="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-amber-400 hover:bg-amber-50/30 transition text-xs font-semibold text-slate-800"
               >
                 <span>Duyệt minh chứng bài tập chờ chấm</span>

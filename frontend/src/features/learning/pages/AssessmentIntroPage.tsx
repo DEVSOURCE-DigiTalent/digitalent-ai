@@ -23,7 +23,7 @@ export function AssessmentIntroPage() {
       <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 max-w-xl mx-auto my-12">
         <p className="text-red-600 font-medium">Không tìm thấy bài đánh giá.</p>
         <Link
-          to="/enterprise/me/learning"
+          to="/enterprise/me/courses"
           className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-200"
         >
           <ArrowLeft className="size-4" /> Quay lại danh sách học tập

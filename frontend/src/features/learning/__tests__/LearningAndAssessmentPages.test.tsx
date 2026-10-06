@@ -12,6 +12,8 @@ import { AssessmentResultsOverviewPage } from '@/features/assignments/pages/Asse
 import { InternalCourseListPage } from '@/features/assignments/pages/InternalCourseListPage';
 import { InternalCourseEditorPage } from '@/features/assignments/pages/InternalCourseEditorPage';
 import * as learningHooks from '@/hooks/use-learning';
+import * as assignmentHooks from '@/hooks/use-assignments';
+import * as myLearningHooks from '@/hooks/use-my-learning';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { ROLES } from '@/lib/roles';
 
@@ -47,7 +49,7 @@ describe('Learning & Assessment Flow (EMP-05..10 & LCA-14..17)', () => {
         email: 'learner@digitalent.demo',
         fullName: 'Nguyễn Văn Học',
         roles: [ROLES.EMPLOYEE, ROLES.OWNER],
-        permissions: ['learning.read', 'learning.manage'],
+        permissions: ['learning.read', 'learning.manage', 'lesson.complete'],
       },
       isAuthenticated: true,
     });
@@ -62,8 +64,8 @@ describe('Learning & Assessment Flow (EMP-05..10 & LCA-14..17)', () => {
       code: 'GENAI-101',
       title: 'Ứng dụng AI Tạo sinh trong Công việc Hàng ngày',
       description: 'Làm quen và ứng dụng các công cụ AI tạo sinh cơ bản.',
-      targetLevel: 2,
-      durationMinutes: 120,
+      level: 2,
+      estimatedDurationMinutes: 120,
       competencyIds: ['TT02_D1_01', 'TT02_D3_02'],
       assignment: {
         status: 'IN_PROGRESS' as const,
@@ -75,20 +77,21 @@ describe('Learning & Assessment Flow (EMP-05..10 & LCA-14..17)', () => {
           id: 'mod-1',
           title: 'Chương 1: Tổng quan GenAI',
           lessons: [
-            { id: 'les-01', title: 'Bài 1: Khái niệm LLM', durationMinutes: 15, isCompleted: true },
-            { id: 'les-02', title: 'Bài 2: Viết prompt cơ bản', durationMinutes: 20, isCompleted: false },
+            { id: 'les-01', title: 'Bài 1: Khái niệm LLM', estimatedMinutes: 15 },
+            { id: 'les-02', title: 'Bài 2: Viết prompt cơ bản', estimatedMinutes: 20 },
           ],
         },
       ],
     };
 
     it('renders course details, modules, and lessons correctly', () => {
-      vi.spyOn(learningHooks, 'useCourseDetail').mockReturnValue({
+      vi.spyOn(assignmentHooks, 'useCourse').mockReturnValue({
         data: mockCourse,
         isLoading: false,
         isError: false,
         error: null,
       } as any);
+      vi.spyOn(myLearningHooks, 'useMyLearning').mockReturnValue({ data: { items: [{ courseId: mockCourse.id, progressPercent: 50, completedLessons: 1, totalLessons: 2 }] } } as any);
 
       renderWithClient(
         <Routes>
@@ -99,14 +102,14 @@ describe('Learning & Assessment Flow (EMP-05..10 & LCA-14..17)', () => {
 
       expect(screen.getAllByText('GENAI-101').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('Ứng dụng AI Tạo sinh trong Công việc Hàng ngày')).toBeInTheDocument();
-      expect(screen.getByText('Chương 1: Tổng quan GenAI')).toBeInTheDocument();
+      expect(screen.getByText(/Chương 1: Tổng quan GenAI/)).toBeInTheDocument();
       expect(screen.getByText('Bài 1: Khái niệm LLM')).toBeInTheDocument();
       expect(screen.getByText('Bài 2: Viết prompt cơ bản')).toBeInTheDocument();
-      expect(screen.getByText('50%')).toBeInTheDocument();
+      expect(screen.getByText(/Tiến độ: 50%/)).toBeInTheDocument();
     });
 
     it('shows error state when course cannot be loaded', () => {
-      vi.spyOn(learningHooks, 'useCourseDetail').mockReturnValue({
+      vi.spyOn(assignmentHooks, 'useCourse').mockReturnValue({
         data: undefined,
         isLoading: false,
         isError: true,
@@ -129,31 +132,24 @@ describe('Learning & Assessment Flow (EMP-05..10 & LCA-14..17)', () => {
   // ==========================================
   describe('EMP-06: LessonViewerPage', () => {
     const mockLessonData = {
-      courseId: 'crs-genai-01',
-      courseCode: 'GENAI-101',
-      courseTitle: 'Ứng dụng AI Tạo sinh',
-      lesson: {
-        id: 'les-01',
-        title: 'Bài 1: Khái niệm LLM',
-        durationMinutes: 15,
-        objective: 'Hiểu nguyên lý hoạt động của Large Language Model',
-        content: ['Các mô hình ngôn ngữ lớn hoạt động dựa trên transformer...'],
-        keyTakeaways: ['LLM sinh từ tiếp theo dựa trên xác suất'],
-        practiceTask: 'Thử nghiệm viết prompt trên hệ thống',
-        isCompleted: false,
-      },
-      prevLessonId: null,
-      nextLessonId: 'les-02',
+      id: 'les-01',
+      title: 'Bài 1: Khái niệm LLM',
+      estimatedMinutes: 15,
+      lessonType: 'TEXT',
+      moduleTitle: 'Chương 1: Tổng quan GenAI',
+      contentBody: 'Các mô hình ngôn ngữ lớn hoạt động dựa trên transformer...',
     };
 
     it('renders lesson content and completion navigation', async () => {
       const mutateAsync = vi.fn().mockResolvedValue({ success: true });
-      vi.spyOn(learningHooks, 'useLesson').mockReturnValue({
+      vi.spyOn(assignmentHooks, 'useCourseLesson').mockReturnValue({
         data: mockLessonData,
         isLoading: false,
         isError: false,
       } as any);
-      vi.spyOn(learningHooks, 'useCompleteLesson').mockReturnValue({
+      vi.spyOn(assignmentHooks, 'useCourse').mockReturnValue({ data: { id: 'crs-genai-01', title: 'Ứng dụng AI Tạo sinh', modules: [{ id: 'mod-1', lessons: [{ id: 'les-01' }, { id: 'les-02' }] }] }, isLoading: false, isError: false } as any);
+      vi.spyOn(myLearningHooks, 'useMyLearning').mockReturnValue({ data: { items: [{ courseId: 'crs-genai-01' }] }, isLoading: false } as any);
+      vi.spyOn(myLearningHooks, 'useCompleteMyLesson').mockReturnValue({
         mutateAsync,
         isPending: false,
       } as any);
@@ -168,15 +164,12 @@ describe('Learning & Assessment Flow (EMP-05..10 & LCA-14..17)', () => {
       expect(screen.getByText('Bài 1: Khái niệm LLM')).toBeInTheDocument();
       expect(screen.getByText(/Các mô hình ngôn ngữ lớn hoạt động dựa trên transformer/i)).toBeInTheDocument();
 
-      const completeBtn = screen.getByRole('button', { name: /Hoàn thành & Sang bài tiếp theo/i });
+      const completeBtn = screen.getByRole('button', { name: /Hoàn thành bài học/i });
       expect(completeBtn).toBeInTheDocument();
 
       fireEvent.click(completeBtn);
       await waitFor(() => {
-        expect(mutateAsync).toHaveBeenCalledWith({
-          courseId: 'crs-genai-01',
-          lessonId: 'les-01',
-        });
+        expect(mutateAsync).toHaveBeenCalledWith('les-01');
       });
     });
   });

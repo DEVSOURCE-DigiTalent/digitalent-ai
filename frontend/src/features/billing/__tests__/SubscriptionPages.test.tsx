@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { SubscriptionOverviewPage } from '../pages/SubscriptionOverviewPage';
@@ -21,7 +21,7 @@ describe('SubscriptionPages (Agent 1 - Phase H: OW-41, OW-43)', () => {
     planId: 'plan-enterprise',
     planName: 'Enterprise Growth',
     status: 'active' as const,
-    cycle: 'yearly' as const,
+    cycle: 'year' as const,
     amountPerPeriod: 24000000,
     seatsUsed: 18,
     seatLimit: 50,
@@ -82,8 +82,8 @@ describe('SubscriptionPages (Agent 1 - Phase H: OW-41, OW-43)', () => {
       expect(screen.getByText('Gói dịch vụ doanh nghiệp')).toBeInTheDocument();
       expect(screen.getByText('Enterprise Growth')).toBeInTheDocument();
       expect(screen.getByText('Đang hoạt động')).toBeInTheDocument();
-      expect(screen.getByText(/18 \/ 50 quyền sử dụng/i)).toBeInTheDocument();
-      expect(screen.getByText('Nâng cấp / Đổi gói')).toBeInTheDocument();
+      expect(screen.getByText(/18 \/ 50 người dùng đã kích hoạt/i)).toBeInTheDocument();
+      expect(screen.queryByText('Nâng cấp / Đổi gói')).not.toBeInTheDocument();
       expect(screen.getByText('Ngừng gia hạn')).toBeInTheDocument();
       expect(screen.getByText('Xem chi tiết mức sử dụng')).toBeInTheDocument();
       expect(screen.getByText('Xem toàn bộ lịch sử hóa đơn')).toBeInTheDocument();
@@ -92,7 +92,7 @@ describe('SubscriptionPages (Agent 1 - Phase H: OW-41, OW-43)', () => {
   });
 
   describe('OW-43: BillingInvoicesPage', () => {
-    it('renders full invoice history, VAT business details and download action', () => {
+    it('renders invoice history without an unsupported download action', () => {
       renderWithClient(<BillingInvoicesPage />);
 
       expect(screen.getByText('Lịch sử thanh toán & Hóa đơn')).toBeInTheDocument();
@@ -103,10 +103,7 @@ describe('SubscriptionPages (Agent 1 - Phase H: OW-41, OW-43)', () => {
       expect(screen.getAllByText(/Chưa cấu hình|0109887766/).length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText(/Chỉnh sửa trong Cài đặt tổ chức/i)).toBeInTheDocument();
 
-      // Download PDF button
-      const downloadButtons = screen.getAllByRole('button', { name: /Tải PDF/i });
-      expect(downloadButtons.length).toBeGreaterThan(0);
-      fireEvent.click(downloadButtons[0]);
+      expect(screen.queryByRole('button', { name: /Tải PDF/i })).not.toBeInTheDocument();
     });
   });
 });

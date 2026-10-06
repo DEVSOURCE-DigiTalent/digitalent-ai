@@ -28,7 +28,7 @@ type FormValues = z.input<typeof schema>;
 
 /** ADM-07: name, industry, size, time zone and the default time given to finish a course. */
 export function OrganizationSettingsPage() {
-  const { data, isLoading } = useOrganization();
+  const { data, isLoading, isError } = useOrganization();
   const save = useUpdateOrganizationSettings();
   const {
     register,
@@ -52,6 +52,7 @@ export function OrganizationSettingsPage() {
   });
 
   if (isLoading) return <p className="text-sm text-slate-500">Đang tải…</p>;
+  if (isError || !data) return <p role="alert" className="text-sm text-red-600">Không tải được cài đặt tổ chức.</p>;
 
   return (
     <div>
@@ -60,7 +61,8 @@ export function OrganizationSettingsPage() {
       <form onSubmit={onSubmit} noValidate className="grid max-w-xl gap-5 rounded-lg border border-slate-200 bg-white p-6">
         <div className="grid gap-1.5">
           <label htmlFor="org-name" className="text-sm font-medium text-slate-700">Tên tổ chức</label>
-          <input id="org-name" aria-invalid={!!errors.name} aria-describedby={errors.name ? 'org-name-error' : undefined} className={INPUT_CLASS} {...register('name')} />
+          <input id="org-name" readOnly aria-invalid={!!errors.name} aria-describedby={errors.name ? 'org-name-error' : undefined} className={INPUT_CLASS} {...register('name')} />
+          <p className="text-xs text-slate-500">Tên tổ chức hiện chỉ có thể xem; API cài đặt không hỗ trợ đổi tên.</p>
           {errors.name && <p id="org-name-error" role="alert" className="text-xs text-red-600">{errors.name.message}</p>}
         </div>
 

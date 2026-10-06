@@ -217,7 +217,7 @@ describe('TrainingBatchPages (Agent 1 - Phase D)', () => {
       fireEvent.click(nextButton);
 
       // Now should see Step 2: Chọn khóa học
-      expect(screen.getByText(/2. Chọn các khóa học đưa vào đợt/i)).toBeDefined();
+      expect(screen.getByText(/2. Chọn khóa học cho đợt/i)).toBeDefined();
       expect(screen.getByText('An toàn dữ liệu cá nhân')).toBeDefined();
     });
   });

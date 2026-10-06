@@ -186,14 +186,14 @@ export function TaskDetailPage() {
                       />
                       {sub.status === 'PENDING_REVIEW' ? (
                         <Link
-                          to={`/enterprise/tasks/${task.id}/evaluate?subId=${sub.id}`}
+                          to={`/enterprise/reviews/${sub.id}`}
                           className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition"
                         >
                           Chấm điểm
                         </Link>
                       ) : (
                         <Link
-                          to={`/enterprise/evidence/${sub.id}`}
+                          to={`/enterprise/reviews/${sub.id}`}
                           className="px-3 py-1.5 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-medium transition"
                         >
                           Xem minh chứng

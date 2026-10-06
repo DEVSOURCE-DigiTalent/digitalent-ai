@@ -4,10 +4,11 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Team / Manager Pages
-import { TeamCapabilityDashboardPage } from '@/features/team/pages/TeamCapabilityDashboardPage';
-import { TeamMembersPage } from '@/features/team/pages/TeamMembersPage';
-import { TeamMemberDetailPage } from '@/features/team/pages/TeamMemberDetailPage';
-import { TeamSkillGapPage } from '@/features/team/pages/TeamSkillGapPage';
+import { TeamCapabilityDashboardPage } from '@/features/manager/pages/team/TeamCapabilityDashboardPage';
+import { TeamMembersPage } from '@/features/manager/pages/team/TeamMembersPage';
+import { TeamMemberDetailPage } from '@/features/manager/pages/team/TeamMemberDetailPage';
+import { TeamSkillGapPage } from '@/features/manager/pages/team/TeamSkillGapPage';
+import * as managerSkillGapHooks from '@/features/manager/hooks/use-manager-skill-gaps';
 
 // Task Management Pages
 import { PracticalTaskListPage } from '../pages/PracticalTaskListPage';
@@ -172,8 +173,8 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12 & EMP-01, 11..15)', () => {
 
       expect(screen.getByText('Lê Văn An')).toBeInTheDocument();
       expect(screen.getByText('NV-001')).toBeInTheDocument();
-      expect(screen.getByText('an.le@acme.com')).toBeInTheDocument();
-      expect(screen.getByText('Khối Công nghệ')).toBeInTheDocument();
+      expect(screen.getByText(/Email: an.le@acme.com/)).toBeInTheDocument();
+      expect(screen.getByText(/Phòng ban: Khối Công nghệ/)).toBeInTheDocument();
     });
   });
 
@@ -182,27 +183,17 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12 & EMP-01, 11..15)', () => {
   // ==========================================
   describe('MGR-04: TeamSkillGapPage', () => {
     it('renders competency gaps in the team and quick assignment link', () => {
-      vi.spyOn(analyticsHooks, 'useCompetencyGaps').mockReturnValue({
-        data: [
-          {
-            id: 'cmp-1',
-            frameworkCode: 'TT02-1.3',
-            name: 'Quản lý dữ liệu và nội dung số',
-            employeesWithGap: 4,
-            averageCurrentLevel: 1.5,
-            targetLevel: 3,
-          },
-        ],
+      vi.spyOn(managerSkillGapHooks, 'useManagerSkillGapPage').mockReturnValue({
+        data: { items: [{ runId: 'run-1', employeeId: 'emp-1', employeeName: 'Lê Văn An', employeeCode: 'NV-001', jobPositionName: 'Chuyên viên', coveragePercent: 50, gapCount: 4, highCount: 2 }], totalPages: 1 },
         isLoading: false,
       } as any);
 
       renderWithClient(<TeamSkillGapPage />);
 
-      expect(screen.getByText(/Khoảng trống năng lực của nhóm/i)).toBeInTheDocument();
-      expect(screen.getByText('TT02-1.3')).toBeInTheDocument();
-      expect(screen.getByText('Quản lý dữ liệu và nội dung số')).toBeInTheDocument();
-      expect(screen.getByText(/4 nhân sự/i)).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: /Giao bài tập khắc phục Gap/i })).toBeInTheDocument();
+      expect(screen.getByText(/Khoảng trống năng lực nhóm/i)).toBeInTheDocument();
+      expect(screen.getByText('Lê Văn An')).toBeInTheDocument();
+      expect(screen.getByText('4')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /Xem nhân viên/i })).toBeInTheDocument();
     });
   });
 

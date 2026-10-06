@@ -8,7 +8,7 @@ export interface Invoice {
   issuedAt: string;
   description: string;
   amount: number;
-  status: 'PAID';
+  status: string;
 }
 
 export interface SubscriptionDto {
@@ -16,7 +16,7 @@ export interface SubscriptionDto {
   planName: string;
   status: 'active' | 'expired' | 'payment_required';
   cycle: BillingCycle;
-  seatLimit?: number;
+  seatLimit?: number | null;
   seatsUsed: number;
   renewsAt?: string;
   cancelAtPeriodEnd: boolean;
