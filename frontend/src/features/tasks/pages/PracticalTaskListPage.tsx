@@ -131,7 +131,7 @@ export function PracticalTaskListPage() {
         />
         <div className="flex items-center gap-3 shrink-0">
           <Link
-            to="/enterprise/review-queue"
+            to="/enterprise/reviews"
             className="inline-flex items-center gap-2 px-3.5 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-sm rounded-xl transition"
           >
             <CheckCircle2 className="size-4 text-emerald-600" />
@@ -188,6 +188,7 @@ export function PracticalTaskListPage() {
           isLoading={isLoading}
           keyExtractor={(row) => row.id}
           emptyTitle="Chưa có bài thực hành nào"
+          pageInfo={{ page: pageIndex, pageSize: 15, total: data?.totalItems ?? 0, onPageChange: setPageIndex }}
         />
       </div>
     </div>

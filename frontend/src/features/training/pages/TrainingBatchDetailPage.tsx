@@ -264,11 +264,11 @@ export function TrainingBatchDetailPage() {
                   <span className="font-mono text-xs font-bold text-primary-700 bg-primary-50 px-2 py-0.5 rounded border border-primary-100">
                     {crs.code}
                   </span>
-                  <LevelBadge level={crs.level} />
+                  {crs.level > 0 && <LevelBadge level={crs.level} />}
                 </div>
                 <h4 className="font-semibold text-sm text-slate-900 line-clamp-2">{crs.title}</h4>
                 <div className="flex items-center gap-3 text-xs text-slate-500 mt-2">
-                  <span>{crs.durationMinutes} phút</span>
+                  {crs.durationMinutes > 0 && <span>{crs.durationMinutes} phút</span>}
                 </div>
               </div>
 

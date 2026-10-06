@@ -3,9 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft, Calendar, Clock, CheckCircle2, AlertTriangle,
 } from 'lucide-react';
-import apiClient from '@/services/api-client';
-import type { ApiResponse } from '@/types/api';
-import type { AssignmentRow } from '@/services/assignment.service';
+import { assignmentService } from '@/services/assignment.service';
 import { EmptyState } from '@/components/shared';
 import { formatDate } from '@/lib/utils';
 import { ASSIGNMENT_STATUS_LABELS } from '@/features/assignments/assignment-labels';
@@ -15,10 +13,7 @@ export function TrainingAssignmentDetailPage() {
 
   const { data: assignment, isLoading, isError } = useQuery({
     queryKey: ['course-assignments', assignmentId],
-    queryFn: async () => {
-      const res = await apiClient.get<ApiResponse<AssignmentRow>>(`/course-assignments/${assignmentId}`);
-      return res.data.data!;
-    },
+    queryFn: () => assignmentService.getById(assignmentId!),
     enabled: Boolean(assignmentId),
   });
 

@@ -417,7 +417,12 @@ export function useLoginHistory() {
 export function useNotifications(params?: { unreadOnly?: boolean }) {
   return useQuery({
     queryKey: PLATFORM_KEYS.notifications(params),
-    queryFn: async () => (await platformService.getNotifications(params)).data.data!,
+    queryFn: async () => {
+      const payload = (await platformService.getNotifications(params)).data.data;
+      const notifications = Array.isArray(payload) ? payload : payload?.items ?? [];
+      // BE2 accepts paging parameters but does not support the mock server's unreadOnly filter.
+      return params?.unreadOnly ? notifications.filter((notification) => !notification.isRead) : notifications;
+    },
   });
 }
 

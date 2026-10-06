@@ -36,7 +36,7 @@ interface AssignCourseModalProps {
 export function AssignCourseModal({ open, onClose, courseId: initialCourse, employeeIds: initialEmployees }: AssignCourseModalProps) {
   const base = useId();
   const create = useCreateAssignments();
-  const courses = (useCourses({ status: 'PUBLISHED' }).data?.items ?? []);
+  const courses = (useCourses({ status: 'PUBLISHED', pageSize: 100 }).data?.items ?? []);
   const departments = useDepartments({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
   const positions = useJobPositions({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
   const employees = useEmployees({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];

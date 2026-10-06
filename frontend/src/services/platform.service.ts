@@ -281,6 +281,15 @@ export interface NotificationDto {
   link?: string;
 }
 
+/** BE2 returns notification items with paging metadata; the mock server still returns an array. */
+export interface NotificationListDto {
+  items: NotificationDto[];
+  total: number;
+  unread: number;
+  pageIndex: number;
+  pageSize: number;
+}
+
 export const platformService = {
   // PLT-01
   getDashboard: () => apiClient.get<ApiResponse<PlatformDashboardDto>>('/platform/dashboard'),
@@ -380,7 +389,7 @@ export const platformService = {
 
   // Shared Notifications (SHR-03)
   getNotifications: (params?: { unreadOnly?: boolean }) =>
-    apiClient.get<ApiResponse<NotificationDto[]>>('/notifications', { params }),
+    apiClient.get<ApiResponse<NotificationListDto | NotificationDto[]>>('/notifications', { params }),
   markNotificationRead: (id: string) => apiClient.put<ApiResponse<null>>(`/notifications/${id}/read`),
   markAllNotificationsRead: () => apiClient.put<ApiResponse<null>>('/notifications/read-all'),
 };

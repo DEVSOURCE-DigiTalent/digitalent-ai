@@ -122,7 +122,7 @@ export function AssessmentAttemptPage() {
         <p className="text-red-600 font-medium">Không thể nạp bài đánh giá.</p>
         <button
           type="button"
-          onClick={() => navigate('/enterprise/me/learning')}
+          onClick={() => navigate('/enterprise/me/courses')}
           className="mt-4 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm"
         >
           Quay lại
