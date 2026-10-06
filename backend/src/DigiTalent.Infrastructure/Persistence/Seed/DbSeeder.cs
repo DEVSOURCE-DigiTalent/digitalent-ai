@@ -51,8 +51,8 @@ public static class DbSeeder
     }
 
     /// <summary>
-    /// Gói dịch vụ, trạng thái thiết lập và 1 đợt đào tạo đang chạy cho tổ chức demo (màn hình Tổng quan).
-    /// Idempotent: chỉ thêm phần còn thiếu nên DB Development cũ cũng được bổ sung.
+    /// Subscription, setup state and one running training batch for the demo organization (overview screen).
+    /// Idempotent: only missing data is added, so existing Development databases are backfilled.
     /// </summary>
     private static async Task SeedDemoSubscriptionAsync(AppDbContext db, Organization organization)
     {

@@ -3,8 +3,8 @@ using DigiTalent.Domain.Common;
 namespace DigiTalent.Domain.Entities;
 
 /// <summary>
-/// Bảng recommendation_decisions. Quyết định của HR / quản lý với 1 khóa học được gợi ý cho 1 nhân viên
-/// (mỗi cặp nhân viên + khóa học một dòng, cập nhật tại chỗ; REOPENED = trả về trạng thái chờ duyệt).
+/// Table recommendation_decisions: a reviewer's decision on a course recommended to an employee.
+/// One row per employee and course, updated in place; REOPENED puts the recommendation back to pending.
 /// </summary>
 public class RecommendationDecision : BaseEntity
 {

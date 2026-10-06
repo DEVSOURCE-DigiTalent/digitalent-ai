@@ -13,7 +13,7 @@ using Xunit;
 namespace DigiTalent.Tests.Intelligence;
 
 /// <summary>
-/// Chạy trên PostgreSQL thật: group-by/average, subquery "run mới nhất" và bảng recommendation_decisions.
+/// Runs against PostgreSQL: covers group-by averages, the latest-run subquery and the recommendation_decisions table.
 /// </summary>
 [Collection("PostgresIntegration")]
 public class CapabilityDashboardTests
@@ -92,7 +92,7 @@ public class CapabilityDashboardTests
         result.Kpis.AverageCoverage.Should().Be(0m);
         result.Kpis.PendingRecommendations.Should().Be(0);
         result.AtRisk.Should().BeEmpty();
-        var domain = result.Domains.Should().ContainSingle().Subject; // miền chưa có dữ liệu vẫn có trục trên radar
+        var domain = result.Domains.Should().ContainSingle().Subject; // categories without data still get a radar axis
         domain.Name.Should().Be("Digital core");
         domain.AverageRequired.Should().Be(0m);
     }
@@ -103,18 +103,18 @@ public class CapabilityDashboardTests
     {
         var world = await CreateWorldAsync();
         await CalculateAllAsync(world);
-        await CalculateAllAsync(world); // run thứ 2 không được tính trùng
+        await CalculateAllAsync(world); // the second run must not be counted twice
 
         var result = await DashboardAsync(world, world.HrManager());
 
-        result.Kpis.Employees.Should().Be(2); // analyst + analystB (có vị trí và bộ yêu cầu ACTIVE)
+        result.Kpis.Employees.Should().Be(2); // analyst + analystB: the only ones with a position and an ACTIVE requirement set
         result.Kpis.EmployeesWithHigh.Should().BeGreaterThan(0);
         result.AtRisk.Select(a => a.EmployeeId).Should().Contain(world.AnalystInDepartmentB.Id);
         result.AtRisk.Should().BeInDescendingOrder(a => a.HighCount);
 
         var domain = result.Domains.Should().ContainSingle().Subject;
         domain.AverageRequired.Should().Be(2.0m); // (3+2+2+2+1)/5
-        // analyst: 1+2+0+1+min(3,1)=5, analystB: 0 → 5/10; không chặn trần sẽ ra 0.7
+        // analyst: 1+2+0+1+min(3,1) = 5, analystB: 0, so 5/10; without the cap it would be 0.7
         domain.AverageCurrent.Should().Be(0.5m);
     }
 
@@ -152,10 +152,10 @@ public class CapabilityDashboardTests
         await world.Context.SaveChangesAsync();
 
         var all = await DashboardAsync(world, world.HrManager());
-        // Phạm vi EmployeeScope: người xem thuộc phòng B (HR / Admin mới có quyền gọi endpoint)
+        // EmployeeScope limited to department B (the endpoint itself is gated to HR and Admin)
         var departmentB = await DashboardAsync(world, world.ManagerOf(world.DepartmentB));
 
-        all.Kpis.OverdueAssignments.Should().Be(1); // phân công đã có enrollment COMPLETED không tính quá hạn
+        all.Kpis.OverdueAssignments.Should().Be(1); // an assignment with a COMPLETED enrollment is not overdue
         all.Kpis.CompletionRate.Should().Be(50m);
         departmentB.Kpis.Employees.Should().Be(1);
         departmentB.Kpis.OverdueAssignments.Should().Be(0);
@@ -174,7 +174,7 @@ public class CapabilityDashboardTests
         var hr = world.HrManager();
 
         var baseline = (await DashboardAsync(world, hr)).Kpis.PendingRecommendations;
-        baseline.Should().Be(4); // 2 khóa gợi ý × 2 nhân viên đã phân tích
+        baseline.Should().Be(4); // 2 recommended courses x 2 analyzed employees
 
         var decision = new RecommendationDecision
         {

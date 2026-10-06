@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.Services.Intelligence.Recommendation;
 
 /// <summary>
-/// Gợi ý khóa học cho 1 nhân viên từ snapshot skill gap mới nhất (spec §5): nạp dữ liệu rồi xếp hạng bằng CourseRecommender.
-/// Dùng chung cho màn hình gợi ý và chỉ số "gợi ý chờ duyệt" của dashboard. Không kiểm tra phạm vi —
-/// người gọi phải lọc nhân viên qua EmployeeScope trước.
+/// Recommends courses for one employee from their latest skill gap run (spec §5): loads the data and ranks it with
+/// <see cref="CourseRecommender"/>. Shared by the recommendations endpoint and the dashboard's pending-recommendations KPI.
+/// Does not check access: callers must restrict employees through EmployeeScope first.
 /// </summary>
 public class EmployeeRecommendationService
 {
@@ -38,7 +38,7 @@ public class EmployeeRecommendationService
             : new EmployeeRecommendationResult(run.Id, run.GeneratedAt, null, ranked);
     }
 
-    /// <summary>Snapshot mới nhất (tie-break theo Id) kèm các năng lực còn thiếu — 1 truy vấn.</summary>
+    /// <summary>Latest run (ties broken by Id) with its unmet competencies, in a single query.</summary>
     private async Task<LatestRun?> LoadLatestRunWithGapsAsync(Guid employeeId)
     {
         var run = await _context.SkillGapRuns
@@ -80,8 +80,8 @@ public class EmployeeRecommendationService
     private sealed record LatestRun(Guid Id, DateTimeOffset GeneratedAt, List<RecommendationGap> Gaps);
 
     /// <summary>
-    /// Khóa PUBLISHED dạy ít nhất 1 năng lực đang thiếu, và là version PUBLISHED mới nhất của code đó
-    /// trong toàn tổ chức (spec §5.6 R1) — kèm trạng thái enrollment của nhân viên (R2).
+    /// PUBLISHED courses that teach at least one unmet competency and are the latest PUBLISHED version of their code
+    /// in the organization (spec §5.6 R1), with the employee's enrollment status (R2).
     /// </summary>
     private async Task<List<CandidateCourse>> LoadCandidateCoursesAsync(
         Guid organizationId, Guid employeeId, Guid skillGapRunId, List<Guid> gapCompetencyIds)
@@ -148,9 +148,9 @@ public class EmployeeRecommendationService
     }
 
     /// <summary>
-    /// Điều kiện vào khóa (B7): tiên quyết đã COMPLETED (so theo mã khóa để chấp nhận mọi version),
-    /// và mức đã xác nhận thấp nhất trên các năng lực của khóa mà VỊ TRÍ CÓ YÊU CẦU — kể cả năng lực đã đạt,
-    /// nhưng bỏ qua năng lực vị trí không yêu cầu (D-B7: vị trí không cần mọi năng lực của miền).
+    /// Entry conditions (B7): prerequisites COMPLETED (matched by course code, so any version counts), and the lowest
+    /// confirmed level across the course's competencies that the position requires, met ones included. Competencies the
+    /// position does not require are ignored (D-B7: a position need not cover every competency of a domain).
     /// </summary>
     private async Task<Dictionary<Guid, CourseEligibility>> LoadEligibilityAsync(Guid employeeId, Guid skillGapRunId, List<Guid> courseIds)
     {
@@ -190,7 +190,10 @@ public class EmployeeRecommendationService
     }
 }
 
-/// <summary>Kết quả gợi ý cho 1 nhân viên; danh sách rỗng luôn kèm EmptyReason (RecommendationEmptyReasons).</summary>
+/// <summary>
+/// Recommendations for one employee. An empty list always comes with an <see cref="EmptyReason"/>
+/// (see <see cref="RecommendationEmptyReasons"/>).
+/// </summary>
 public sealed record EmployeeRecommendationResult(
     Guid? SkillGapRunId,
     DateTimeOffset? GeneratedAt,

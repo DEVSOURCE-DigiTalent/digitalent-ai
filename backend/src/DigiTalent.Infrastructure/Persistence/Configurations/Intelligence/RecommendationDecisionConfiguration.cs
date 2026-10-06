@@ -4,9 +4,6 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
-/// <summary>
-/// Map entity RecommendationDecision với bảng "recommendation_decisions" (duyệt khóa học được gợi ý).
-/// </summary>
 public class RecommendationDecisionConfiguration : IEntityTypeConfiguration<RecommendationDecision>
 {
     public void Configure(EntityTypeBuilder<RecommendationDecision> builder)

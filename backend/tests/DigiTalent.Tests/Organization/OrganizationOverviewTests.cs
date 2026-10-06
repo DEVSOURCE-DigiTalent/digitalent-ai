@@ -9,7 +9,7 @@ using Xunit;
 namespace DigiTalent.Tests.Organization;
 
 /// <summary>
-/// Chạy trên PostgreSQL thật: kiểm tra schema mới (subscription, training_batches, entity_label) và truy vấn tổng quan.
+/// Runs against PostgreSQL: covers the new schema (subscription, training_batches, entity_label) and the overview queries.
 /// </summary>
 [Collection("PostgresIntegration")]
 public class OrganizationOverviewTests
@@ -36,9 +36,9 @@ public class OrganizationOverviewTests
         result.Name.Should().Be("Skill Gap Test Org");
         result.Plan.Should().BeNull();
         result.Seats.Limit.Should().BeNull();
-        result.Seats.Used.Should().Be(1); // user "HR" của world
+        result.Seats.Used.Should().Be(1); // the world's "HR" user
         result.Members.Active.Should().Be(4);
-        result.Members.Pending.Should().Be(0); // nhân viên không có tài khoản không bị tính là chờ kích hoạt
+        result.Members.Pending.Should().Be(0); // employees without an account are not pending activation
         result.Members.Inactive.Should().Be(1);
         result.RunningBatches.Should().Be(0);
         result.PendingReviews.Should().Be(0);
@@ -47,7 +47,7 @@ public class OrganizationOverviewTests
         result.Setup.Select(s => (s.Key, s.Done)).Should().Equal(
             ("departments", true),
             ("positions", true),
-            ("requirements", false), // chỉ Data Analyst có bộ yêu cầu ACTIVE
+            ("requirements", false), // only Data Analyst has an ACTIVE requirement set
             ("members", true));
         result.Setup.Single(s => s.Key == "requirements").Detail.Should().Be("1/2 vị trí đã có yêu cầu đang áp dụng");
     }
@@ -104,11 +104,11 @@ public class OrganizationOverviewTests
         result.Plan!.Name.Should().Be("Gói Doanh nghiệp");
         result.Plan.Status.Should().Be(Statuses.Subscription.Active);
         result.Seats.Limit.Should().Be(10);
-        result.Seats.Used.Should().Be(3); // "HR" + invited + loggedIn; tài khoản INACTIVE không tính
-        result.Members.Pending.Should().Be(1); // chỉ Unassigned: có tài khoản chưa đăng nhập
+        result.Seats.Used.Should().Be(3); // "HR" + invited + loggedIn; INACTIVE accounts are excluded
+        result.Members.Pending.Should().Be(1); // only Unassigned has an account that never signed in
         result.Members.Active.Should().Be(3);
         result.RunningBatches.Should().Be(1);
-        result.PendingReviews.Should().Be(1); // bản nộp SUPERSEDED không tính
+        result.PendingReviews.Should().Be(1); // SUPERSEDED submissions are excluded
     }
 
     [Fact]
@@ -121,7 +121,7 @@ public class OrganizationOverviewTests
         context.Users.Add(actor);
         await context.SaveChangesAsync();
 
-        // CreatedAt do SaveChangesAsync gán → lưu từng dòng cách nhau để thứ tự thời gian xác định
+        // SaveChangesAsync stamps CreatedAt, so rows are saved one at a time to get a deterministic order
         for (var i = 0; i < 6; i++)
         {
             context.AuditLogs.Add(new AuditLog
@@ -142,7 +142,7 @@ public class OrganizationOverviewTests
         var result = await RunAsync(world);
 
         result.RecentActivity.Select(a => a.Action).Should().Equal("ACTION_5", "ACTION_4", "ACTION_3", "ACTION_2", "ACTION_1");
-        result.RecentActivity[0].TargetLabel.Should().Be("departments"); // không có label → dùng entity_type
+        result.RecentActivity[0].TargetLabel.Should().Be("departments"); // no label, so entity_type is used
         result.RecentActivity[1].TargetLabel.Should().Be("Label 4");
         result.RecentActivity[1].ActorName.Should().Be("Actor");
     }

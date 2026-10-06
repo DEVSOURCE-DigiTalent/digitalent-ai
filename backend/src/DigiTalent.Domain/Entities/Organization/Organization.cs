@@ -12,6 +12,6 @@ public class Organization : BaseEntity
     public string Name { get; set; } = string.Empty;
     public string? Domain { get; set; }
     public string Status { get; set; } = Statuses.Simple.Active;
-    /// <summary>NULL = chưa hoàn tất các bước thiết lập tổ chức.</summary>
+    /// <summary>Null until the organization setup wizard is completed.</summary>
     public DateTimeOffset? SetupCompletedAt { get; set; }
 }

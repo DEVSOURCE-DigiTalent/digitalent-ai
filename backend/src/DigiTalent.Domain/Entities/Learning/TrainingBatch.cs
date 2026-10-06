@@ -4,7 +4,7 @@ using DigiTalent.Domain.Constants;
 namespace DigiTalent.Domain.Entities;
 
 /// <summary>
-/// Bảng training_batches. Đợt đào tạo của tổ chức (màn hình Tổng quan đếm số đợt RUNNING).
+/// Table training_batches: a training batch of an organization.
 /// </summary>
 public class TrainingBatch : BaseEntity
 {

@@ -7,8 +7,8 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.OrganizationOverview;
 
 /// <summary>
-/// Tổng quan tổ chức (OW-01): thành viên, người dùng/gói dịch vụ, đợt đào tạo đang chạy,
-/// nhiệm vụ chờ duyệt, tiến độ thiết lập và hoạt động gần đây. Chỉ đọc.
+/// Organization overview (OW-01): members, seats and plan, running training batches, task submissions awaiting
+/// review, setup progress and recent activity. Read-only.
 /// </summary>
 public class GetOrganizationOverviewUseCase : IUseCase<GetOrganizationOverviewUseCaseInput, GetOrganizationOverviewUseCaseOutput>
 {

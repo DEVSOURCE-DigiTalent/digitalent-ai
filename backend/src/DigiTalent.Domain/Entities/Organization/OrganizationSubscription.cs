@@ -4,7 +4,7 @@ using DigiTalent.Domain.Constants;
 namespace DigiTalent.Domain.Entities;
 
 /// <summary>
-/// Bảng organization_subscriptions. Gói dịch vụ hiện tại của tổ chức (mỗi tổ chức một dòng).
+/// Table organization_subscriptions: the organization's current plan (one row per organization).
 /// </summary>
 public class OrganizationSubscription : BaseEntity
 {
@@ -12,7 +12,7 @@ public class OrganizationSubscription : BaseEntity
     public string PlanCode { get; set; } = string.Empty;
     public string PlanName { get; set; } = string.Empty;
     public string Status { get; set; } = Statuses.Subscription.Active;
-    /// <summary>NULL = không giới hạn người dùng.</summary>
+    /// <summary>Null means an unlimited number of users.</summary>
     public int? SeatLimit { get; set; }
     public DateTimeOffset? RenewsAt { get; set; }
 }

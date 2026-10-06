@@ -10,13 +10,13 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Intelligence.Dashboard;
 
 /// <summary>
-/// Dashboard năng lực (OW-01, LCA-01): KPI, 6 miền năng lực và nhân sự cần chú ý, tính trên snapshot skill gap
-/// mới nhất của mỗi nhân viên đang làm việc trong phạm vi người gọi (EmployeeScope). Chỉ đọc.
+/// Capability dashboard (OW-01, LCA-01): KPIs, competency domains and at-risk employees, computed from the latest
+/// skill gap run of each active employee in the caller's EmployeeScope. Read-only.
 /// </summary>
 public class GetCapabilityDashboardUseCase : IUseCase<GetCapabilityDashboardUseCaseInput, GetCapabilityDashboardUseCaseOutput>
 {
     private const int AtRiskLimit = 5;
-    /// <summary>Số khóa gợi ý mỗi nhân viên được xét là "chờ duyệt" (giống màn hình duyệt gợi ý).</summary>
+    /// <summary>Recommendations per employee considered for review, as on the recommendation review screen.</summary>
     private const int RecommendationsPerEmployee = 3;
 
     private readonly IApplicationDbContext _context;
@@ -47,7 +47,7 @@ public class GetCapabilityDashboardUseCase : IUseCase<GetCapabilityDashboardUseC
         var organizationId = _currentUser.GetRequiredOrganizationId();
         var activeEmployees = _employeeScope.VisibleEmployees().Where(e => e.Status == Statuses.Employee.Active);
 
-        // So theo Id (tie-break) thay vì "GeneratedAt == Max": 2 run trùng thời điểm không làm nhân đôi dòng
+        // Pick by Id rather than "GeneratedAt == Max" so two runs with the same timestamp do not duplicate an employee.
         var latestRuns = _context.SkillGapRuns.Where(r => r.Id == _context.SkillGapRuns
             .Where(x => x.EmployeeId == r.EmployeeId)
             .OrderByDescending(x => x.GeneratedAt)
@@ -55,7 +55,7 @@ public class GetCapabilityDashboardUseCase : IUseCase<GetCapabilityDashboardUseC
             .Select(x => x.Id)
             .First());
 
-        // Coverage và số khoảng trống HIGH nằm trong summary_snapshot (JSON) → đọc qua SkillGapRunReader
+        // Coverage and HIGH gap counts live in the summary_snapshot JSON, which SkillGapRunReader parses.
         var headers = await _runReader.Headers(activeEmployees, latestRuns).ToListAsync();
         var runs = headers.Select(h => _runReader.FillListItem(h, new SkillGapRunListItem())).ToList();
         var analyzedEmployeeIds = runs.Select(r => r.EmployeeId).ToList();
@@ -91,7 +91,7 @@ public class GetCapabilityDashboardUseCase : IUseCase<GetCapabilityDashboardUseC
         };
     }
 
-    /// <summary>Mọi miền năng lực của tổ chức (miền chưa có dữ liệu trả 0) để radar luôn đủ trục.</summary>
+    /// <summary>Every competency category of the organization, 0 when it has no data, so the radar always shows all axes.</summary>
     private async Task<List<CapabilityDomain>> GetDomainsAsync(Guid organizationId, IQueryable<Employee> activeEmployees, IQueryable<SkillGapRun> latestRuns)
     {
         var latestRunIds = from run in latestRuns
@@ -107,7 +107,7 @@ public class GetCapabilityDashboardUseCase : IUseCase<GetCapabilityDashboardUseC
                 {
                     CategoryId = g.Key,
                     Required = g.Average(i => (decimal)i.RequiredLevel),
-                    // Chưa có hồ sơ năng lực = mức 0; vượt yêu cầu tính bằng mức yêu cầu
+                    // No confirmed level counts as 0; exceeding the requirement must not offset gaps elsewhere.
                     Current = g.Average(i => (decimal)((i.CurrentLevel ?? 0) > i.RequiredLevel ? i.RequiredLevel : (i.CurrentLevel ?? 0))),
                 })
             .ToDictionaryAsync(a => a.CategoryId);
@@ -147,8 +147,8 @@ public class GetCapabilityDashboardUseCase : IUseCase<GetCapabilityDashboardUseC
     }
 
     /// <summary>
-    /// Gợi ý chờ duyệt = top 3 khóa gợi ý của mỗi nhân viên, chưa ghi danh và chưa có quyết định ACCEPTED/DISMISSED
-    /// (REOPENED = chờ duyệt lại). Chạy engine gợi ý cho từng nhân viên: chi phí tăng theo số nhân viên đã phân tích.
+    /// Counts each employee's top recommendations that are not enrolled and have no ACCEPTED or DISMISSED decision
+    /// (REOPENED counts as pending). Runs the recommender once per analyzed employee, so cost grows with headcount.
     /// </summary>
     private async Task<int> CountPendingRecommendationsAsync(Guid organizationId, List<Guid> employeeIds)
     {

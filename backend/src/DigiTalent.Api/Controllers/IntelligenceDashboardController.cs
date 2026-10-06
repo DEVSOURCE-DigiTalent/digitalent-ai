@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DigiTalent.Api.Controllers;
 
 /// <summary>
-/// Dashboard năng lực (OW-01, LCA-01). Phạm vi dữ liệu theo EmployeeScope.
+/// Capability dashboard (OW-01, LCA-01). Data is limited to the caller's EmployeeScope.
 /// </summary>
 [ApiController]
 [Route("api/v1/intelligence/dashboard")]

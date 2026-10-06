@@ -4,9 +4,6 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
-/// <summary>
-/// Map entity OrganizationSubscription với bảng "organization_subscriptions" (gói dịch vụ hiện tại, 1 dòng / tổ chức).
-/// </summary>
 public class OrganizationSubscriptionConfiguration : IEntityTypeConfiguration<OrganizationSubscription>
 {
     public void Configure(EntityTypeBuilder<OrganizationSubscription> builder)

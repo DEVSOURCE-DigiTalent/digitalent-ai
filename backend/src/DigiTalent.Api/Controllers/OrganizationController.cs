@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DigiTalent.Api.Controllers;
 
 /// <summary>
-/// Thông tin tổ chức của người gọi.
+/// The caller's organization.
 /// </summary>
 [ApiController]
 [Route("api/v1/organization")]

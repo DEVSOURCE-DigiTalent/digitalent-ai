@@ -4,9 +4,6 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
-/// <summary>
-/// Map entity TrainingBatch với bảng "training_batches" (đợt đào tạo).
-/// </summary>
 public class TrainingBatchConfiguration : IEntityTypeConfiguration<TrainingBatch>
 {
     public void Configure(EntityTypeBuilder<TrainingBatch> builder)

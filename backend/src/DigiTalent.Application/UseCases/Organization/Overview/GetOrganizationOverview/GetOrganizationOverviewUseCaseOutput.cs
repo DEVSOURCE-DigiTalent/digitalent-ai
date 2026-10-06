@@ -5,9 +5,9 @@ public class GetOrganizationOverviewUseCaseOutput
     public string Name { get; set; } = string.Empty;
     public MemberCounts Members { get; set; } = new();
     public SeatUsage Seats { get; set; } = new();
-    /// <summary>NULL khi tổ chức chưa có gói dịch vụ.</summary>
+    /// <summary>Null when the organization has no subscription.</summary>
     public PlanSummary? Plan { get; set; }
-    /// <summary>Nhiệm vụ thực tế đã nộp, đang chờ người duyệt đánh giá.</summary>
+    /// <summary>Practical task submissions waiting for a reviewer's evaluation.</summary>
     public int PendingReviews { get; set; }
     public int RunningBatches { get; set; }
     public List<SetupItem> Setup { get; set; } = new();
@@ -15,21 +15,21 @@ public class GetOrganizationOverviewUseCaseOutput
     public List<RecentActivityItem> RecentActivity { get; set; } = new();
 }
 
-/// <summary>Nhân viên chưa lưu trữ theo trạng thái; ACTIVE được tách thành đã đăng nhập và chờ kích hoạt.</summary>
+/// <summary>Non-archived employees by status; ACTIVE employees are split into active and pending activation.</summary>
 public class MemberCounts
 {
-    /// <summary>ACTIVE, không có tài khoản hoặc tài khoản đã đăng nhập ít nhất một lần.</summary>
+    /// <summary>ACTIVE employees without an account, or whose account has signed in at least once.</summary>
     public int Active { get; set; }
-    /// <summary>ACTIVE nhưng tài khoản chưa đăng nhập lần nào (chờ kích hoạt).</summary>
+    /// <summary>ACTIVE employees whose account has never signed in.</summary>
     public int Pending { get; set; }
     public int Inactive { get; set; }
 }
 
 public class SeatUsage
 {
-    /// <summary>Số tài khoản người dùng đang ACTIVE của tổ chức.</summary>
+    /// <summary>ACTIVE user accounts in the organization.</summary>
     public int Used { get; set; }
-    /// <summary>NULL = không giới hạn.</summary>
+    /// <summary>Null means unlimited.</summary>
     public int? Limit { get; set; }
 }
 
@@ -47,7 +47,7 @@ public class SetupItem
     public string Label { get; set; } = string.Empty;
     public bool Done { get; set; }
     public string Detail { get; set; } = string.Empty;
-    /// <summary>Đường dẫn màn hình frontend để hoàn thành bước này.</summary>
+    /// <summary>Frontend route where the step is completed.</summary>
     public string Path { get; set; } = string.Empty;
 }
 
