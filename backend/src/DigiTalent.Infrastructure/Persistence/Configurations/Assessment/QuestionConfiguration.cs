@@ -4,16 +4,25 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
-/// <summary>
-/// Map entity Question với bảng "questions".
-/// Database là gốc: tên cột tự đổi sang snake_case, không khai báo lại ở đây.
-/// </summary>
 public class QuestionConfiguration : IEntityTypeConfiguration<Question>
 {
     public void Configure(EntityTypeBuilder<Question> builder)
     {
-        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
-        builder.ToTable("questions", table => table.ExcludeFromMigrations());
+        builder.ToTable("questions", table =>
+        {
+            table.HasCheckConstraint("ck_questions_type", "question_type IN ('MULTIPLE_CHOICE','TRUE_FALSE')");
+            table.HasCheckConstraint("ck_questions_status", "status IN ('DRAFT','APPROVED','ARCHIVED')");
+        });
         builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.QuestionType).IsRequired().HasMaxLength(30);
+        builder.Property(x => x.Difficulty).HasMaxLength(30);
+        builder.Property(x => x.Content).IsRequired();
+        builder.Property(x => x.AiGeneratedFlag).HasDefaultValue(false);
+        builder.Property(x => x.Status).IsRequired().HasMaxLength(30);
+
+        builder.HasOne<QuestionBank>().WithMany().HasForeignKey(x => x.BankId);
+        builder.HasOne<Competency>().WithMany().HasForeignKey(x => x.CompetencyId);
+        builder.HasOne<User>().WithMany().HasForeignKey(x => x.CreatedByUserId);
     }
 }

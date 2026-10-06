@@ -55,8 +55,6 @@ public class SubmitTaskEvidenceInput
     public List<string>? FileUrls { get; set; }
 }
 
-public class GetMyTasksInput { }
-public class GetMyEvidenceInput { }
 
 // ──────────────── Outputs ────────────────
 
@@ -174,46 +172,4 @@ public class SubmissionDetailDto : TaskSubmissionDto
     public string? RubricCriteria { get; set; }
     public short TargetLevel { get; set; }
     public string? DepartmentName { get; set; }
-}
-
-public class LearnerTaskDto
-{
-    public Guid Id { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public string ExpectedOutput { get; set; } = string.Empty;
-    public List<Guid> CompetencyIds { get; set; } = new();
-    public short TargetLevel { get; set; }
-    public string? AssignedByName { get; set; }
-    public string? DueDate { get; set; }
-    public string? RubricCriteria { get; set; }
-    public TaskSubmissionDto? Submission { get; set; }
-}
-
-public class GetMyTasksOutput
-{
-    public List<LearnerTaskDto> Items { get; set; } = new();
-    public int Total { get; set; }
-}
-
-public class EvidenceItemDto
-{
-    public Guid Id { get; set; }
-    public Guid TaskId { get; set; }
-    public string TaskTitle { get; set; } = string.Empty;
-    public string? TaskDescription { get; set; }
-    public short TargetLevel { get; set; }
-    public List<Guid> CompetencyIds { get; set; } = new();
-    public DateTimeOffset SubmittedAt { get; set; }
-    public string Content { get; set; } = string.Empty;
-    public List<string> LinkUrls { get; set; } = new();
-    public List<string> FileUrls { get; set; } = new();
-    public string Status { get; set; } = string.Empty;
-    public EvaluationDto? Evaluation { get; set; }
-}
-
-public class GetMyEvidenceOutput
-{
-    public List<EvidenceItemDto> Items { get; set; } = new();
-    public int Total { get; set; }
 }

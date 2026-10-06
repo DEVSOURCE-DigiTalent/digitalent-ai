@@ -13,6 +13,7 @@ namespace DigiTalent.Infrastructure.Persistence.Seed;
 ///      (chỉ THÊM phần còn thiếu — không ghi đè ma trận admin đã chỉnh)
 ///   3. Mỗi role 1 tài khoản (chỉ khi bảng users còn trống). Mật khẩu chung: Admin@1234
 ///   4. Dữ liệu Skill Gap / gợi ý khóa học — xem SkillGapSeeder
+///   5. Hành trình học của employee@ cho các trang cá nhân EM-* — xem EmployeeJourneySeeder
 /// </summary>
 public static class DbSeeder
 {
@@ -26,6 +27,7 @@ public static class DbSeeder
         await SeedUsersAsync(db, passwordHasher, organization.Id, developmentPassword ?? DefaultPassword);
         await SkillGapSeeder.SeedDemoAsync(db, organization.Id);
         await SeedDemoSubscriptionAsync(db, organization);
+        await EmployeeJourneySeeder.SeedDemoAsync(db, organization.Id);
     }
 
     public static async Task SeedReferenceDataAsync(AppDbContext db)

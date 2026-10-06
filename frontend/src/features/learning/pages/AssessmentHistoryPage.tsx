@@ -1,146 +1,139 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Clock, CheckCircle2, XCircle, Search, ArrowRight,
-} from 'lucide-react';
-import { PageHeader, StatusBadge, DataTable } from '@/components/shared';
-import { useAssessmentHistory } from '@/hooks/use-learning';
-import { formatDate } from '@/lib/utils';
-import type { AssessmentAttemptRowDto } from '@/services/learning.service';
+import { Clock, CheckCircle2, XCircle, ArrowRight, ArrowLeft } from 'lucide-react';
+import { PageHeader, StatusBadge, DataTable, type Column } from '@/components/shared';
+import { useAttemptHistory } from '@/hooks/use-me';
+import type { MyAttemptHistoryRow } from '@/services/me.service';
+import { ASSESSMENT_TYPE_LABELS, formatDuration } from '@/lib/me-labels';
+import { formatDateTime } from '@/lib/utils';
 
+const PAGE_SIZE = 10;
+
+const columns: Column<MyAttemptHistoryRow>[] = [
+  {
+    key: 'assessment',
+    header: 'Bài đánh giá',
+    cell: (row) => (
+      <div>
+        <p className="font-semibold text-sm text-slate-900">{row.assessmentTitle}</p>
+        <p className="text-xs text-slate-500">
+          {row.courseCode} · {ASSESSMENT_TYPE_LABELS[row.assessmentType] ?? row.assessmentType} · Lần {row.attemptNo}
+        </p>
+      </div>
+    ),
+  },
+  {
+    key: 'score',
+    header: 'Kết quả',
+    cell: (row) => row.status === 'SCORED' ? (
+      <div className="flex items-center gap-2">
+        {row.passed ? <CheckCircle2 className="size-4 text-emerald-600 shrink-0" /> : <XCircle className="size-4 text-rose-600 shrink-0" />}
+        <span className="font-bold text-sm text-slate-900">{row.score}%</span>
+        <span className="text-xs text-slate-500">({row.correctCount}/{row.totalQuestions} câu)</span>
+      </div>
+    ) : <span className="text-xs text-slate-500">—</span>,
+  },
+  {
+    key: 'status',
+    header: 'Trạng thái',
+    cell: (row) => row.status === 'SCORED'
+      ? <StatusBadge variant={row.passed ? 'success' : 'danger'} label={row.passed ? 'Đạt' : 'Chưa đạt'} />
+      : <StatusBadge variant="warning" label="Đang làm dở" />,
+  },
+  {
+    key: 'duration',
+    header: 'Thời gian làm',
+    hideOnMobile: true,
+    cell: (row) => (
+      <span className="text-xs text-slate-600 flex items-center gap-1">
+        <Clock className="size-3.5 text-slate-400" />
+        {row.submittedAt ? formatDuration(row.durationSeconds) : '—'}
+      </span>
+    ),
+  },
+  {
+    key: 'submittedAt',
+    header: 'Thời điểm',
+    hideOnMobile: true,
+    cell: (row) => <span className="text-xs text-slate-600 font-medium">{formatDateTime(row.submittedAt ?? row.startedAt)}</span>,
+  },
+  {
+    key: 'actions',
+    header: '',
+    cell: (row) => row.status === 'SCORED' ? (
+      <Link
+        to={`/enterprise/me/assessments/${row.assessmentId}/result?attempt=${row.attemptId}`}
+        className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+      >
+        <span>Xem kết quả</span>
+        <ArrowRight className="size-3.5" />
+      </Link>
+    ) : (
+      <Link
+        to={`/enterprise/me/assessments/${row.assessmentId}/attempt?attempt=${row.attemptId}`}
+        className="text-xs font-semibold text-amber-700 hover:text-amber-900 flex items-center gap-1"
+      >
+        <span>Làm tiếp</span>
+        <ArrowRight className="size-3.5" />
+      </Link>
+    ),
+  },
+];
+
+/** EM-13: Lịch sử đánh giá — mọi lần làm bài của chính mình. */
 export function AssessmentHistoryPage() {
   const [search, setSearch] = useState('');
-  const [passed, setPassed] = useState<string>('');
+  const [passed, setPassed] = useState<'' | 'true' | 'false'>('');
   const [pageIndex, setPageIndex] = useState(1);
 
-  const { data, isLoading } = useAssessmentHistory({
-    search: search || undefined,
-    passed: passed || undefined,
+  const { data, isLoading } = useAttemptHistory({
+    search: search.trim() || undefined,
+    passed: passed === '' ? undefined : passed === 'true',
     pageIndex,
-    pageSize: 10,
+    pageSize: PAGE_SIZE,
   });
-
-  const columns = [
-    {
-      key: 'courseTitle',
-      header: 'Khóa học / Bài đánh giá',
-      cell: (row: AssessmentAttemptRowDto) => (
-        <div>
-          <p className="font-semibold text-sm text-slate-900">{row.courseTitle}</p>
-          <p className="text-xs text-slate-500 font-mono">Mã bài: {row.assessmentId}</p>
-        </div>
-      ),
-    },
-    {
-      key: 'score',
-      header: 'Kết quả',
-      cell: (row: AssessmentAttemptRowDto) => (
-        <div className="flex items-center gap-2">
-          {row.passed ? (
-            <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
-          ) : (
-            <XCircle className="size-4 text-rose-600 shrink-0" />
-          )}
-          <span className="font-bold text-sm text-slate-900">{row.score}%</span>
-          <span className="text-xs text-slate-500">
-            ({row.correctAnswers}/{row.totalQuestions} câu)
-          </span>
-        </div>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Trạng thái',
-      cell: (row: AssessmentAttemptRowDto) => (
-        <StatusBadge
-          variant={row.passed ? 'success' : 'danger'}
-          label={row.passed ? 'Đạt' : 'Chưa đạt'}
-        />
-      ),
-    },
-    {
-      key: 'duration',
-      header: 'Thời gian làm',
-      cell: (row: AssessmentAttemptRowDto) => (
-        <span className="text-xs text-slate-600 flex items-center gap-1">
-          <Clock className="size-3.5 text-slate-400" />
-          {Math.floor(row.durationSeconds / 60)} phút {row.durationSeconds % 60}s
-        </span>
-      ),
-    },
-    {
-      key: 'submittedAt',
-      header: 'Ngày nộp',
-      cell: (row: AssessmentAttemptRowDto) => (
-        <span className="text-xs text-slate-600 font-medium">
-          {formatDate(row.submittedAt)}
-        </span>
-      ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      cell: (row: AssessmentAttemptRowDto) => (
-        <Link
-          to={`/enterprise/me/assessments/${row.courseId}`}
-          className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
-        >
-          <span>Chi tiết</span>
-          <ArrowRight className="size-3.5" />
-        </Link>
-      ),
-    },
-  ];
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Lịch sử bài đánh giá"
-        subtitle="Theo dõi toàn bộ các lần làm bài kiểm tra năng lực và kết quả đạt chuẩn của bạn."
-      />
+      <Link to="/enterprise/me/assessments" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 transition">
+        <ArrowLeft className="size-4" /> Danh sách bài đánh giá
+      </Link>
+      <PageHeader title="Lịch sử bài đánh giá" subtitle="Toàn bộ các lần làm bài đánh giá năng lực và kết quả của bạn." />
 
-      {/* Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200">
-        <div className="relative w-full sm:w-72">
-          <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPageIndex(1);
-            }}
-            placeholder="Tìm theo tên khóa học…"
-            className="w-full pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+      <DataTable
+        data={data?.items ?? []}
+        columns={columns}
+        keyExtractor={(row) => row.attemptId}
+        isLoading={isLoading}
+        searchValue={search}
+        onSearchChange={(value) => {
+          setSearch(value);
+          setPageIndex(1);
+        }}
+        searchPlaceholder="Tìm theo bài đánh giá hoặc khóa học…"
+        filters={
           <select
             value={passed}
             onChange={(e) => {
-              setPassed(e.target.value);
+              setPassed(e.target.value as '' | 'true' | 'false');
               setPageIndex(1);
             }}
+            aria-label="Lọc theo kết quả"
             className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-700"
           >
             <option value="">Tất cả kết quả</option>
-            <option value="true">Chỉ bài đạt (≥ 70%)</option>
+            <option value="true">Chỉ bài đạt</option>
             <option value="false">Chỉ bài chưa đạt</option>
           </select>
-        </div>
-      </div>
-
-      {isLoading ? (
-        <div className="h-64 bg-slate-100 animate-pulse rounded-xl" />
-      ) : (
-        <DataTable
-          data={data?.items ?? []}
-          columns={columns}
-          keyExtractor={(row) => row.id}
-          emptyTitle="Chưa có lịch sử làm bài đánh giá nào."
-        />
-      )}
+        }
+        emptyTitle="Chưa có lần làm bài đánh giá nào."
+        pageInfo={{
+          page: data?.pageIndex ?? pageIndex,
+          pageSize: data?.pageSize ?? PAGE_SIZE,
+          total: data?.totalItems ?? 0,
+          onPageChange: setPageIndex,
+        }}
+      />
     </div>
   );
 }
