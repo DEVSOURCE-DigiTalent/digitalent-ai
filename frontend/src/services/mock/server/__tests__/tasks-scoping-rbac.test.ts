@@ -102,19 +102,20 @@ describe('Practical Tasks RBAC & Scoping Matrix', () => {
     });
 
     it('allows employee to submit for their assigned task and view in /me/tasks and /me/evidence', async () => {
-      asUser('employee'); // emp-01
-      const myTasks = await call<{ items: any[]; total: number }>('get', '/me/tasks');
-      expect(myTasks.items.some((t) => t.id === 'tsk-002')).toBe(true);
+      asUser('employee'); // emp-01, được giao tsk-001
+      const myTasks = await call<{ items: { assignmentId: string }[] }>('get', '/me/tasks');
+      expect(myTasks.items.some((t) => t.assignmentId === 'tsk-001')).toBe(true);
+      expect(myTasks.items.some((t) => t.assignmentId === 'tsk-002')).toBe(false);
 
-      const submitted = await call<TaskSubmissionRecord>('post', '/tasks/tsk-002/submit', {
-        content: 'Bản nộp cập nhật cho tsk-002',
+      const submitted = await call<{ versionNo: number; assignmentStatus: string }>('post', '/me/tasks/tsk-001/submissions', {
+        content: 'Bản nộp minh chứng cho tsk-001 của nhân viên',
         linkUrls: ['https://drive.google.com/test-link'],
+        attachmentIds: [],
       });
-      expect(submitted.status).toBe('PENDING_REVIEW');
-      expect(submitted.employeeId).toBe('emp-01');
+      expect(submitted).toMatchObject({ versionNo: 1, assignmentStatus: 'SUBMITTED' });
 
-      const myEvidence = await call<{ items: any[]; total: number }>('get', '/me/evidence');
-      expect(myEvidence.items.some((e) => e.taskId === 'tsk-002')).toBe(true);
+      const myEvidence = await call<{ items: { assignmentId?: string; status: string }[] }>('get', '/me/evidence');
+      expect(myEvidence.items.some((e) => e.assignmentId === 'tsk-001' && e.status === 'PENDING')).toBe(true);
     });
   });
 
