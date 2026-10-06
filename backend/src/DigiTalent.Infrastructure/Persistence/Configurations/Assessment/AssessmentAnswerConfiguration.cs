@@ -4,19 +4,24 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
-/// <summary>
-/// Map entity AssessmentAnswer với bảng "assessment_answers".
-/// Database là gốc: tên cột tự đổi sang snake_case, không khai báo lại ở đây.
-/// </summary>
 public class AssessmentAnswerConfiguration : IEntityTypeConfiguration<AssessmentAnswer>
 {
     public void Configure(EntityTypeBuilder<AssessmentAnswer> builder)
     {
-        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
-        builder.ToTable("assessment_answers", table => table.ExcludeFromMigrations());
+        builder.ToTable("assessment_answers", table =>
+        {
+            table.HasCheckConstraint("ck_assessment_answers_points_awarded", "points_awarded IS NULL OR points_awarded >= 0");
+        });
         builder.HasKey(x => x.Id);
 
-        // Cột đặc biệt (jsonb / số thập phân): phải khai báo đúng kiểu
         builder.Property(x => x.PointsAwarded).HasPrecision(7, 2);
+
+        builder.HasOne<AssessmentAttempt>().WithMany().HasForeignKey(x => x.AttemptId);
+        builder.HasOne<Question>().WithMany().HasForeignKey(x => x.QuestionId);
+        builder.HasOne<QuestionOption>().WithMany().HasForeignKey(x => x.SelectedOptionId);
+
+        builder.HasIndex(x => new { x.AttemptId, x.QuestionId }, "uq_assessment_answers_attempt_question")
+            .IsUnique()
+            .HasDatabaseName("uq_assessment_answers_attempt_question");
     }
 }
