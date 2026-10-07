@@ -3,7 +3,7 @@
 > Base URL: `http://localhost:5000/api/v1`
 > Auth: Tất cả API cần header `Authorization: Bearer <accessToken>`
 > Lấy token: `POST /api/v1/auth/login` với `{ email, password }`
-> Phạm vi: các API do nhánh `feature/DT-overview-dashboard-api` (PR #49, mục 1–2) và `feature/DT-organization-api` (mục 3 — nhóm Tổ chức) thêm vào. Hướng dẫn chi tiết cho trang OW-01: `docs/integration/OW-01_Tong_Quan_FE_Integration.md`.
+> Phạm vi: các API do nhánh `feature/DT-overview-dashboard-api` (PR #49, mục 1–2) và `feature/DT-organization-api` (mục 3 — API nhóm Tổ chức, mục 4 — hướng dẫn tích hợp frontend) thêm vào. Hướng dẫn chi tiết cho trang OW-01: `docs/integration/OW-01_Tong_Quan_FE_Integration.md`.
 
 ## Response chung
 
@@ -738,6 +738,8 @@ Hiện ở `recentActivity` của `GET /organization/overview` (OW-01) và `hist
 
 ### 3.9 Khác biệt so với mock / lưu ý cho FE
 
+> Việc cụ thể cần làm ở từng file FE: xem **mục 4**.
+
 | # | Nội dung | Gợi ý xử lý ở FE |
 |---|----------|------------------|
 | 1 | `AssignManagerDepartmentsModal` gửi `PUT /departments/{id}` với `parentDepartmentId: undefined` và không gửi `description` → mỗi lần gán quản lý sẽ **xóa phòng ban cha và mô tả** (vì `PUT` thay toàn bộ) | Gửi lại đủ `parentDepartmentId`, `description` hiện có |
@@ -750,6 +752,212 @@ Hiện ở `recentActivity` của `GET /organization/overview` (OW-01) và `hist
 | 8 | `DepartmentFormDialog` lấy trưởng phòng từ `useMembers` với value `employeeId ?? id`: tài khoản chưa có hồ sơ sẽ gửi user id → 400 `INVALID_MANAGER` | Chỉ liệt kê thành viên có `employeeId` |
 | 9 | `invitationService` chưa nối backend | Xem mục 3.3 |
 | 10 | Thẻ "chờ kích hoạt" ở OW-01 (`members.pending`) vẫn đếm tài khoản chưa đăng nhập lần nào, chưa tính lời mời `PENDING` | Số lời mời: `GET /members?status=PENDING` → `totalItems` |
+
+---
+
+## 4. HƯỚNG DẪN TÍCH HỢP FRONTEND — NHÓM TỔ CHỨC
+
+> Dành cho FE1 khi nối các màn OW-02 … OW-13 với backend thật. Mục 3 là hợp đồng API; mục này nói **làm gì ở FE, ở file nào**. Số dòng tham chiếu theo code tại thời điểm viết (nhánh `feature/DT-organization-api`), có thể lệch vài dòng.
+
+### 4.1 Bật kết nối backend
+
+1. Chạy backend Development: `cd backend && dotnet run --project src/DigiTalent.Api` (migration + seed tự chạy, Swagger `http://localhost:5000/swagger`).
+2. `frontend/.env`: `VITE_USE_MOCK=false`. Vite proxy `/api`, `/hubs` → `http://localhost:5000`.
+3. Đăng nhập `hr@digitalent.ai` / `Admin@1234` (FE chuẩn hóa `HR_MANAGER` → `OWNER`).
+
+Cơ chế: mọi service dùng `apiClient` (`services/api-client.ts`) tự gọi backend khi tắt mock (mock chỉ là `axios adapter`), nên `memberService`, `departmentService`, `jobPositionService`, `jobGradeService` **không cần sửa đường dẫn**. Ngoại lệ duy nhất: `invitationService` — khi tắt mock đang là `unavailableAdapter` (luôn lỗi), phải nối tay (mục 4.4).
+
+### 4.2 Bản đồ màn hình → code FE → API
+
+| Màn | Page / component | Hook | Service → Endpoint | Trạng thái |
+|-----|------------------|------|--------------------|------------|
+| OW-02 Thành viên | `features/members/pages/MembersPage.tsx` | `useMembers` | `memberService.getList` → `GET /members` | Chạy được ngay |
+| | `features/members/components/InviteMembersModal.tsx` | `useInviteMembers` | `memberService.invite` → `POST /members/invitations` | Cần sửa nhỏ (4.5-②) |
+| OW-03 Chi tiết thành viên | `features/members/pages/MemberDetailPage.tsx`, `components/employee-tabs/OverviewTab.tsx` (`history`) | `useMember` | `memberService.getById` → `GET /members/{id}` | Cần sửa nhỏ (4.5-④) |
+| | `features/members/components/MemberDialogs.tsx` (đổi vai trò, đổi vị trí, vô hiệu hóa, kích hoạt lại, gửi lại / thu hồi lời mời) | `useUpdateMember`, `useDeactivateMember`, `useReactivateMember`, `useResendInvitation`, `useRevokeInvitation` | `PUT /members/{id}`, `POST …/deactivate`, `POST …/reactivate`, `POST …/resend-invitation`, `DELETE /members/invitations/{id}` | Chạy được ngay |
+| OW-06 Phòng ban | `features/organization/pages/DepartmentListPage.tsx`, `components/DepartmentFormDialog.tsx` | `useDepartments`, `useCreateDepartment`, `useUpdateDepartment`, `useDeleteDepartment` | `/departments` | Cần sửa nhỏ (4.5-⑤) |
+| OW-07 Chi tiết phòng ban | `features/organization/pages/DepartmentDetailPage.tsx` | `useDepartment`, `useMembers({ departmentId })`, `useJobPositions({ departmentId })` | `GET /departments/{id}`, `GET /members?departmentId=`, `GET /job-positions?departmentId=` | Chạy được ngay |
+| OW-09 Vị trí | `features/organization/pages/PositionListPage.tsx`, `components/JobPositionFormDialog.tsx` | `useJobPositions`, `useCreateJobPosition`, `useUpdateJobPosition`, `useDeleteJobPosition` | `/job-positions` (thêm `departmentId`, `jobGrade`) | **Phải sửa** (4.5-⑨) |
+| OW-10 Chi tiết vị trí | `features/organization/pages/PositionDetailPage.tsx` | `useJobPosition` (+ `usePositionRequirements`, `useWorkforce`, `useAssignments` của module khác) | `GET /job-positions/{id}` | Chạy được ngay |
+| OW-12 Cấp bậc | `features/organization/pages/JobGradeConfigPage.tsx` | `useJobGrades`, `useUpdateJobGrade` | `GET /job-grades`, `PUT /job-grades/{code}` | Cần sửa nhỏ (4.5-③) |
+| OW-13 Phân quyền | `features/members/pages/RolesAccessPage.tsx`, `components/AssignManagerDepartmentsModal.tsx` | `useRoles`, `useMembers({ role })`, `useUpdateMember`, `useUpdateDepartment` | `GET /roles`, `GET /members?role=MANAGER`, `PUT /members/{id}`, `PUT /departments/{id}` | **Phải sửa** (4.5-①) |
+| `/activate/:token` | `features/auth/pages/ActivateInvitationPage.tsx` | `useQuery(['invitation', token])` | `invitationService.getInvitation` / `.activate` → `/invitations/*` | **Phải nối** (4.4) |
+
+> OW-12 đang đánh dấu `status: 'RETIRED'` trong `lib/screens/enterprise/owner.ts`, nhưng API vẫn được dùng để hiển thị tên cấp bậc (`jobGradeName`) ở danh sách thành viên, phòng ban, vị trí.
+
+### 4.3 Cập nhật kiểu TypeScript
+
+Backend trả `null` (không phải `undefined`) cho field trống — các field optional của FE đã chịu được với `?? '—'`; chỉ cần sửa các chỗ dưới.
+
+**`services/member.service.ts`**
+
+```ts
+export interface MemberListItem {
+  // … giữ nguyên các field hiện có, thêm "| null" cho các field optional:
+  coveragePercent?: number | null;
+  highGapCount?: number | null;
+  activeCourses?: number | null;
+  deactivatedReason?: string | null;
+}
+
+export interface MemberHistoryEntry {
+  id: string;
+  at: string;
+  actorName: string | null;     // null = hệ thống
+  action: string;
+  targetType: string;
+  targetLabel: string;
+  detail?: string;              // BE không trả, giữ optional
+}
+
+export interface MemberDetail extends MemberListItem {
+  directManagerId?: string | null;   // mới
+  directManagerName?: string | null;
+  history: MemberHistoryEntry[];
+}
+
+export interface RoleSummary {
+  role: string;
+  roleCode?: string;            // mới: HR_MANAGER | DEPARTMENT_MANAGER | EMPLOYEE
+  name: string;
+  summary: string;
+  can: string[];
+  permissions?: string[];       // mới: mã quyền thực tế trong role_permissions
+  memberCount: number;
+  assignable: boolean;
+}
+
+export interface UpdateMemberRequest {
+  roles?: string[];
+  departmentId?: string;
+  jobPositionId?: string;       // "" = bỏ vị trí (giữ nguyên hành vi hiện tại của PlacementModal)
+}
+```
+
+**`types/commerce.ts`**
+
+```ts
+export interface InvitationSummary extends InviteRow {
+  id?: string;                  // mới: invitation id (BE)
+  token?: string | null;        // BE chỉ trả ở Development
+  debugLink?: string | null;    // mới
+  expiresAt?: string;           // mới
+  status: 'pending' | 'accepted';
+}
+
+export interface InvitationDetail {
+  organizationName: string;
+  email: string;
+  fullName: string;
+  role: MemberRole;
+  status: 'pending' | 'accepted';  // BE luôn trả 'pending' (link không dùng được → 404)
+  expiresAt?: string;              // mới
+}
+```
+
+**`services/job-grade.service.ts`**
+
+```ts
+export interface JobGradeItem {
+  code: 'G1' | 'G2' | 'G3';
+  name: string;
+  description: string | null;   // đổi: có thể null
+  isCustomized?: boolean;       // mới
+  positionCount: number;
+  employeeCount: number;
+}
+```
+
+**`services/department.service.ts`** — thêm vào `DepartmentDto` (chi tiết): `positionCount?: number; subDepartmentCount?: number;` và vào `DepartmentListItem`: `parentDepartmentId?: string;`. Các field `headcount`, `gradeDistribution`, `managerEmployeeId`, `managerName` đã có sẵn.
+
+**`services/job-position.service.ts`** — thêm vào `JobPositionDto`: `activeRequirementSetVersionNo?: number | null;`. Các field còn lại đã có sẵn.
+
+### 4.4 Nối `invitationService` với backend
+
+Thay phần `unavailableAdapter` trong `services/invitation.service.ts`:
+
+```ts
+import apiClient from './api-client';
+import type { ApiResponse } from '../types/api';
+import type { ActivateInvitationInput, InvitationDetail } from '../types/commerce';
+
+const apiInvitationService = {
+  getInvitation: (token: string) =>
+    apiClient.get<ApiResponse<InvitationDetail>>(`/invitations/${encodeURIComponent(token)}`),
+  activate: (input: ActivateInvitationInput) =>
+    apiClient.post<ApiResponse<{ email: string; userId: string; employeeId: string | null }>>('/invitations/activate', input),
+};
+
+export const invitationService: InvitationService = USE_MOCK ? lazyAdapter(loadMock) : apiInvitationService;
+```
+
+`ActivateInvitationPage` không cần đổi: nó gọi `activate` rồi `login` bằng email + mật khẩu vừa đặt và chuyển tới `/enterprise/initial-assessment`. Lỗi 404 (`The invitation link is invalid or has expired.`) hiển thị qua `errorMessage(...)` sẵn có; nên thay bằng câu tiếng Việt khi `status === 404`.
+
+### 4.5 Các lỗi FE cần sửa
+
+| # | File | Vấn đề với backend thật | Cách sửa |
+|---|------|-------------------------|----------|
+| ① | `features/members/components/AssignManagerDepartmentsModal.tsx` (vòng `toAssign` / `toUnassign`, ~dòng 49–70) | Gửi `PUT /departments/{id}` với `parentDepartmentId: undefined` và không có `description` → BE (PUT thay toàn bộ) **xóa phòng ban cha và mô tả** mỗi lần gán/bỏ quản lý | Gửi lại `parentDepartmentId: d.parentDepartmentId` (đã có trong list item) và `description` (lấy qua `departmentService.getById` hoặc thêm vào list nếu cần) |
+| ② | `features/members/components/InviteMembersModal.tsx` (~dòng 229–233) | Dùng `person.token` làm `key` và link "giả lập email"; ngoài Development BE trả `token: null` → key trùng, link hỏng | `key={person.id ?? person.email}`; chỉ render link khi `person.token`; có thể dùng `person.debugLink` |
+| ③ | `features/organization/pages/JobGradeConfigPage.tsx` (~dòng 26) | `setDescription(g.description)` với `null` → input controlled nhận `null` | `setDescription(g.description ?? '')` |
+| ④ | `features/members/pages/MemberDetailPage.tsx` (~dòng 70) | `employeeId = member?.employeeId ?? id`: tài khoản chưa có hồ sơ (VD `admin@`) dùng **user id** gọi capability API → 404 | Chỉ gọi `useEmployeeCapability` khi `member?.employeeId` có giá trị; hiển thị "Chưa có hồ sơ nhân viên" |
+| ⑤ | `features/organization/components/DepartmentFormDialog.tsx` (~dòng 166) | Danh sách chọn trưởng phòng lấy từ `useMembers` với value `m.employeeId ?? m.id` → chọn tài khoản chưa có hồ sơ gửi user id → 400 `INVALID_MANAGER` | Lọc `members.filter(m => m.employeeId && m.status === 'ACTIVE')` và dùng `m.employeeId` |
+| ⑥ | `features/members/member-labels.ts` (`AUDIT_ACTION_LABELS`) | Thiếu nhãn cho 2 action mới → hiện mã thô | Thêm `INVITATION_ACCEPTED: 'Kích hoạt lời mời'`, `JOB_GRADE_UPDATED: 'Cập nhật cấp bậc'` |
+| ⑦ | `hooks/use-members.ts` (`useMemberMutation`) | Đổi phòng ban/vị trí, vô hiệu hóa thay đổi sĩ số phòng ban/vị trí/cấp bậc nhưng chỉ invalidate `members`, `organization`, `subscription`, `workforce` | Thêm `['departments']`, `['job-positions']`, `['job-grades']` vào danh sách invalidate |
+| ⑧ | `hooks/use-departments.ts`, `hooks/use-job-positions.ts` | Đổi trưởng phòng / phòng ban của vị trí không làm mới danh sách thành viên & tổng quan | Invalidate thêm `['members']`, `['organization', 'overview']` |
+| ⑨ | `features/organization/components/JobPositionFormDialog.tsx`, `pages/PositionListPage.tsx` | Form **không có trường `jobGrade`** mà `PUT /job-positions/{id}` thay toàn bộ → mỗi lần sửa vị trí qua form sẽ **xóa cấp bậc**; danh sách chưa hiển thị/lọc cấp bậc | Thêm select cấp bậc (G1/G2/G3, nhãn lấy từ `useJobGrades`) vào schema zod + `defaultValues` (`position.jobGrade ?? ''`) và gửi `jobGrade: data.jobGrade \|\| undefined`; thêm cột `jobGradeName` + bộ lọc `jobGrade` ở danh sách |
+
+### 4.6 Hiển thị lỗi bằng tiếng Việt
+
+`message` lỗi của BE là tiếng Anh; `apiErrorMessage(error, fallback)` hiện ưu tiên `message`. Gợi ý thêm helper dịch theo mã máy trong `errors[].message` (chỉ áp dụng khi BE có mã), đặt ở `lib/` (không dùng React):
+
+```ts
+const ORG_ERROR_MESSAGES: Record<string, string> = {
+  NO_ACCOUNT: 'Nhân viên này chưa có tài khoản nên chưa thể gán vai trò.',
+  NO_EMPLOYEE_PROFILE: 'Thành viên chưa có hồ sơ nhân viên. Hãy chọn phòng ban để tạo hồ sơ.',
+  INVALID_DEPARTMENT: 'Phòng ban không tồn tại hoặc không còn hoạt động.',
+  INVALID_JOB_POSITION: 'Vị trí công việc không tồn tại hoặc không còn hoạt động.',
+  INVALID_MANAGER: 'Trưởng phòng phải là nhân viên đang hoạt động của tổ chức.',
+  PASSWORD_SAME_AS_EMAIL: 'Mật khẩu không được trùng với email.',
+};
+
+export function orgErrorMessage(error: unknown, fallback: string): string {
+  if (isAxiosError<ApiResponse<unknown>>(error)) {
+    const code = error.response?.data?.errors?.[0]?.message;
+    if (code && ORG_ERROR_MESSAGES[code]) return ORG_ERROR_MESSAGES[code];
+    if (error.response?.status === 409 || error.response?.status === 403) return fallback;
+  }
+  return apiErrorMessage(error, fallback);
+}
+```
+
+Các lỗi 409 thường gặp nên có câu riêng ở dialog tương ứng: còn 1 Owner (`The organization must keep at least one active Owner.`), tự vô hiệu hóa chính mình, hết ghế khi kích hoạt lại, lưu trữ phòng ban còn nhân viên / phòng ban con / vị trí, sửa vị trí đã lưu trữ. Danh sách đầy đủ ở các bảng lỗi mục 3.2, 3.6, 3.7.
+
+### 4.7 Quy tắc hiển thị nên áp dụng
+
+- **Phân biệt 3 loại dòng thành viên:** `kind === 'invitation'` → lời mời; `employeeId == null` → tài khoản chưa có hồ sơ (ẩn tab năng lực/học tập, cho "Đổi phòng ban" để tạo hồ sơ); `email === ''` hoặc đổi vai trò trả `NO_ACCOUNT` → hồ sơ chưa có tài khoản.
+- **Nút theo quyền:** đổi vai trò cần `ROLE_ASSIGN_BUSINESS`; vô hiệu hóa/kích hoạt lại cần `USER_LOCK_UNLOCK`; mời/gửi lại/thu hồi cần `USER_CREATE`; sửa cấp bậc cần `JOB_GRADE_MANAGE`. Ẩn "Vô hiệu hóa" với chính mình và với `SYSTEM_ADMIN` (BE vẫn chặn).
+- **Ghế:** `seatsUsed` (FE lấy từ `/auth/me`) có thể chưa tính lời mời; số lời mời PENDING lấy từ `GET /members?status=PENDING&pageSize=1` → `totalItems`.
+- **Cấp bậc:** luôn hiển thị `jobGradeName` (tên theo tổ chức) thay vì mã `G1/G2/G3`.
+- **Chỉ số năng lực:** `coveragePercent === null` → "Chưa đánh giá" (MembersPage đã làm đúng).
+- **Lời mời hết hạn:** BE vẫn liệt kê như `PENDING`; có thể so `invitedAt + 7 ngày` để gợi ý "Gửi lại".
+
+### 4.8 Kịch bản kiểm thử thủ công (backend thật)
+
+| # | Tài khoản | Thao tác | Kết quả mong đợi |
+|---|-----------|----------|------------------|
+| 1 | hr@ | Mở `/enterprise/members` | 5 thành viên seed; `admin@` là OWNER không có phòng ban |
+| 2 | hr@ | Mời 1 email mới vai trò MANAGER + 1 email sai | 1 created (có link ở Development), 1 rejected "Email không hợp lệ."; dòng lời mời PENDING ở cuối danh sách |
+| 3 | (ẩn danh) | Mở link `/activate/{token}`, đặt mật khẩu ≥12 ký tự | Tạo tài khoản, tự đăng nhập, vào enterprise; link dùng lại → báo hết hạn |
+| 4 | hr@ | Chi tiết thành viên vừa kích hoạt → đổi vai trò EMPLOYEE, đổi vị trí | Vai trò, vị trí cập nhật; tab lịch sử có `INVITATION_ACCEPTED`, `ROLE_CHANGED` |
+| 5 | hr@ | Vô hiệu hóa thành viên đó (nhập lý do) rồi kích hoạt lại | Trạng thái + lý do hiển thị; người đó bị đăng xuất khi đang dùng; đăng nhập lại khi INACTIVE → 403 |
+| 6 | hr@ | Tự hạ vai trò của chính mình xuống EMPLOYEE | 409, giữ nguyên vai trò |
+| 7 | hr@ | `/enterprise/departments` → gán trưởng phòng | `managerName`, `headcount`, phân bố cấp bậc đúng; phòng ban cha **không bị mất** (sau khi sửa 4.5-①) |
+| 8 | hr@ | `/enterprise/positions` → gán phòng ban + cấp bậc G1 cho ACCOUNTANT | Lọc theo phòng ban/cấp bậc ra đúng; thành viên `employee@` hiện cấp bậc G1 |
+| 9 | hr@ | `/enterprise/positions/grades` → đổi tên G1 | Tên mới xuất hiện ở danh sách vị trí, thành viên |
+| 10 | hr@ | `/enterprise/access` | 3 vai trò, số người giữ đúng, `assignable = true` |
+| 11 | manager@ | Mở `/enterprise/members` hoặc gọi `/roles` | 403; `GET /job-grades` vẫn 200 |
+| 12 | employee@ | Gọi bất kỳ API `/members` | 403 |
 
 ---
 
