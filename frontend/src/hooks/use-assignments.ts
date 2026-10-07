@@ -14,9 +14,10 @@ export function useCourses(params?: { search?: string; status?: string; category
 }
 
 /** BE2 fixes course ordering by code and has no sort parameter. Fetch filtered pages before UI sorting. */
-export function useCourseCatalog(params: { search?: string; status?: string; categoryId?: string; level?: number }) {
+export function useCourseCatalog(params: { search?: string; status?: string; categoryId?: string; level?: number }, enabled = true) {
   return useQuery({
     queryKey: [...ASSIGNMENTS_KEY, 'catalog', params],
+    enabled,
     queryFn: async () => {
       const pageSize = 100;
       const first = (await assignmentService.getCourses({ ...params, pageIndex: 1, pageSize })).data.data!;

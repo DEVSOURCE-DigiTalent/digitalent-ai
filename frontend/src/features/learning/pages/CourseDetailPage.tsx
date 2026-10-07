@@ -3,10 +3,10 @@ import { primaryRole, ROLES } from '@/lib/roles';
 import { CatalogCourseDetailPage } from './CatalogCourseDetailPage';
 import { EmployeeCourseDetailPage } from './EmployeeCourseDetailPage';
 
-/** Preserve the BE2 owner/manager course preview and the employee /me enrollment flow. */
+/** Personal course routes use /me for employee and manager; the owner keeps the catalog preview. */
 export function CourseDetailPage() {
   const role = useCurrentUser((state) => primaryRole(state.user));
-  return role === ROLES.EMPLOYEE
+  return role === ROLES.EMPLOYEE || role === ROLES.MANAGER
     ? <EmployeeCourseDetailPage />
     : <CatalogCourseDetailPage />;
 }

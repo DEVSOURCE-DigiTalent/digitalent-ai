@@ -219,7 +219,8 @@ describe('StandardCoursePages (Agent 1 - Phase D)', () => {
 
       expect(screen.getAllByText(/Học phần 1: Nhận diện rủi ro/).length).toBeGreaterThan(0);
       expect(screen.getAllByText('Bài 1: Lỗ hổng mật khẩu').length).toBeGreaterThan(0);
-      expect(screen.getByText('Khung xem trước video bài giảng')).toBeDefined();
+      expect(screen.getByText('Video bài học đang được cập nhật')).toBeDefined();
+      expect(screen.getByText('Nội dung thật từ BE2')).toBeDefined();
     });
   });
 });

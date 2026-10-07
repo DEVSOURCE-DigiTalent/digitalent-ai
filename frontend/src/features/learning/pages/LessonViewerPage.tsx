@@ -3,10 +3,10 @@ import { primaryRole, ROLES } from '@/lib/roles';
 import { CatalogLessonViewerPage } from './CatalogLessonViewerPage';
 import { EmployeeLessonViewerPage } from './EmployeeLessonViewerPage';
 
-/** Employee lesson progress is handled by /me; owner/manager keep the BE2 viewer. */
+/** Personal lesson routes use /me for employee and manager; the owner keeps the catalog viewer. */
 export function LessonViewerPage() {
   const role = useCurrentUser((state) => primaryRole(state.user));
-  return role === ROLES.EMPLOYEE
+  return role === ROLES.EMPLOYEE || role === ROLES.MANAGER
     ? <EmployeeLessonViewerPage />
     : <CatalogLessonViewerPage />;
 }
