@@ -293,7 +293,7 @@ describe('invitation activation', () => {
       { email: 'an@x.vn', fullName: 'Nguyễn An', role: 'MANAGER' },
     ])).data.data!;
     localStorage.clear();
-    return result.created[0].token;
+    return result.created[0].token!;
   }
 
   it('shows who is invited, to which organization and as what', async () => {

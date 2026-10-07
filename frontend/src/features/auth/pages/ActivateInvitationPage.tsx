@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { PublicShell } from '../../public/components/PublicShell';
 import { DARK_INPUT_CLASS, DARK_PRIMARY_BUTTON, Field, FormError } from '../../public/components/FormControls';
 import { useLogin } from '@/hooks/use-auth';
+import { organizationErrorMessage } from '@/lib/organization-errors';
 import { ROLE_LABELS, type Role } from '@/lib/roles';
 import { invitationService } from '@/services/invitation.service';
 import { passwordSchema, requiredText } from '../validation';
@@ -25,10 +26,7 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>;
 
-function errorMessage(error: unknown): string {
-  const response = (error as { response?: { data?: { message?: string } } })?.response;
-  return response?.data?.message ?? (error instanceof Error ? error.message : 'Không thể kích hoạt tài khoản.');
-}
+const errorMessage = (error: unknown) => organizationErrorMessage(error, 'Không thể kích hoạt tài khoản. Vui lòng thử lại.');
 
 /** AUTH-05: an invited employee confirms the invitation, sets a password and enters the organization. */
 export function ActivateInvitationPage() {
