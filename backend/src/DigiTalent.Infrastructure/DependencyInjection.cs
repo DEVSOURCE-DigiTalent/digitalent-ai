@@ -3,6 +3,7 @@ using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Infrastructure.Events;
 using DigiTalent.Infrastructure.Auth;
 using DigiTalent.Infrastructure.FileStorage;
+using DigiTalent.Infrastructure.Invitations;
 using DigiTalent.Infrastructure.Persistence;
 using DigiTalent.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
@@ -51,6 +52,11 @@ public static class DependencyInjection
 
         // Audit Logging
         services.AddScoped<IAuditService, AuditService>();
+
+        // Member invitations: activation link delivery (logged until an e-mail provider exists)
+        var invitationSettings = configuration.GetSection("Invitations").Get<InvitationSettings>() ?? new InvitationSettings();
+        services.AddSingleton(invitationSettings);
+        services.AddScoped<IInvitationSender, LoggingInvitationSender>();
 
         return services;
     }
