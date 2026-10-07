@@ -4,6 +4,7 @@ using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.Services.Intelligence.Recommendation;
 using DigiTalent.Application.Services.Intelligence.SkillGap;
 using DigiTalent.Application.UseCases.Intelligence.SkillGap.Common;
+using DigiTalent.Application.UseCases.Organization.Members;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -50,6 +51,7 @@ public static class DependencyInjection
         services.AddScoped<SkillGapRunService>();
         services.AddScoped<SkillGapRunReader>();
         services.AddScoped<RecommendationWeightsProvider>();
+        services.AddScoped<MemberDirectory>();
 
         return services;
     }
