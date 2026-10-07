@@ -1,6 +1,6 @@
 import React from 'react';
 import { formatDate, formatDateTime } from '@/lib/utils';
-import { auditActionLabel, rolesLabel } from '../../member-labels';
+import { auditActionLabel, rolesLabel, SYSTEM_ACTOR } from '../../member-labels';
 import type { MemberDetail } from '@/services/member.service';
 
 interface OverviewTabProps {
@@ -52,7 +52,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ member }) => {
                 <p className="font-medium text-slate-900">{auditActionLabel(entry.action)}</p>
                 <p className="text-xs text-slate-600 mt-0.5">{entry.detail ?? entry.targetLabel}</p>
                 <p className="mt-1.5 text-2xs text-slate-400">
-                  {entry.actorName} · {formatDateTime(entry.at)}
+                  {entry.actorName ?? SYSTEM_ACTOR} · {formatDateTime(entry.at)}
                 </p>
               </li>
             ))}

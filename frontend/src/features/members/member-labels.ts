@@ -17,11 +17,15 @@ export const roleLabel = (role: string): string => ROLE_LABELS[role as Role] ?? 
 
 export const rolesLabel = (roles: string[]): string => roles.map(roleLabel).join(', ') || '—';
 
+/** Actor shown for audit entries the system made (the backend sends actorName: null). */
+export const SYSTEM_ACTOR = 'Hệ thống';
+
 /** Audit actions as the log shows them. */
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
   MEMBER_INVITED: 'Mời thành viên',
   INVITATION_RESENT: 'Gửi lại lời mời',
   INVITATION_REVOKED: 'Thu hồi lời mời',
+  INVITATION_ACCEPTED: 'Kích hoạt lời mời',
   MEMBER_DEACTIVATED: 'Vô hiệu hóa thành viên',
   MEMBER_REACTIVATED: 'Kích hoạt lại thành viên',
   MEMBER_PLACEMENT_CHANGED: 'Đổi phòng ban / vị trí',
@@ -37,6 +41,7 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   POSITION_CREATED: 'Tạo vị trí',
   POSITION_UPDATED: 'Sửa vị trí',
   POSITION_ARCHIVED: 'Lưu trữ vị trí',
+  JOB_GRADE_UPDATED: 'Cập nhật cấp bậc',
   EMPLOYEE_CREATED: 'Tạo hồ sơ nhân viên',
   EMPLOYEE_UPDATED: 'Sửa hồ sơ nhân viên',
   EMPLOYEE_ARCHIVED: 'Lưu trữ nhân viên',

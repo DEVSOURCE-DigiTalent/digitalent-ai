@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Modal } from '@/components/shared';
-import { useDepartments, useUpdateDepartment } from '@/hooks/use-departments';
+import { useDepartments, useSetDepartmentManager } from '@/hooks/use-departments';
 import { toast } from 'sonner';
-import { apiErrorMessage } from '@/lib/utils';
+import { organizationErrorMessage } from '@/lib/organization-errors';
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from '@/features/onboarding/components/styles';
 import type { MemberListItem } from '@/services/member.service';
 
@@ -15,66 +15,39 @@ interface AssignManagerDepartmentsModalProps {
 export function AssignManagerDepartmentsModal({ manager, open, onClose }: AssignManagerDepartmentsModalProps) {
   const { data: deptData, isLoading } = useDepartments({ pageSize: 100, status: 'ACTIVE' });
   const allDepartments = deptData?.items || [];
-  const updateMutation = useUpdateDepartment();
+  const setDepartmentManager = useSetDepartmentManager();
 
-  const managerEmpId = manager.employeeId ?? manager.id;
+  // Departments are headed by an employee profile; an account without one cannot be assigned yet.
+  const managerEmpId = manager.employeeId ?? undefined;
+  const managedIds = allDepartments.filter((d) => managerEmpId && d.managerEmployeeId === managerEmpId).map((d) => d.id);
 
-  // Selected department IDs managed by this manager
-  const initialSelected = allDepartments
-    .filter((d) => d.managerEmployeeId === managerEmpId)
-    .map((d) => d.id);
-
-  const [selectedIds, setSelectedIds] = useState<string[]>(initialSelected);
+  // null until the Owner ticks something, so the initial ticks follow the department list once it has loaded.
+  const [pickedIds, setPickedIds] = useState<string[] | null>(null);
+  const selectedIds = pickedIds ?? managedIds;
   const [saving, setSaving] = useState(false);
 
   const toggleDept = (deptId: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(deptId) ? prev.filter((id) => id !== deptId) : [...prev, deptId]
-    );
+    setPickedIds(selectedIds.includes(deptId) ? selectedIds.filter((id) => id !== deptId) : [...selectedIds, deptId]);
   };
 
   const handleSave = async () => {
+    if (!managerEmpId) return;
     setSaving(true);
     try {
-      // 1. Departments to assign (in selectedIds but previously not)
-      const toAssign = allDepartments.filter(
-        (d) => selectedIds.includes(d.id) && d.managerEmployeeId !== managerEmpId
-      );
-      // 2. Departments to unassign (not in selectedIds but previously had this manager)
-      const toUnassign = allDepartments.filter(
-        (d) => !selectedIds.includes(d.id) && d.managerEmployeeId === managerEmpId
-      );
+      const toAssign = allDepartments.filter((d) => selectedIds.includes(d.id) && !managedIds.includes(d.id));
+      const toUnassign = allDepartments.filter((d) => !selectedIds.includes(d.id) && managedIds.includes(d.id));
 
       for (const d of toAssign) {
-        await updateMutation.mutateAsync({
-          id: d.id,
-          data: {
-            code: d.code,
-            name: d.name,
-            parentDepartmentId: undefined,
-            managerEmployeeId: managerEmpId,
-            status: d.status as 'ACTIVE' | 'INACTIVE',
-          },
-        });
+        await setDepartmentManager.mutateAsync({ id: d.id, managerEmployeeId: managerEmpId });
       }
-
       for (const d of toUnassign) {
-        await updateMutation.mutateAsync({
-          id: d.id,
-          data: {
-            code: d.code,
-            name: d.name,
-            parentDepartmentId: undefined,
-            managerEmployeeId: undefined,
-            status: d.status as 'ACTIVE' | 'INACTIVE',
-          },
-        });
+        await setDepartmentManager.mutateAsync({ id: d.id, managerEmployeeId: undefined });
       }
 
       toast.success(`Đã cập nhật phạm vi quản lý cho ${manager.fullName}`);
       onClose();
     } catch (error) {
-      toast.error(apiErrorMessage(error, 'Không thể cập nhật phân công phòng ban'));
+      toast.error(organizationErrorMessage(error, 'Không thể cập nhật phân công phòng ban'));
     } finally {
       setSaving(false);
     }
@@ -92,14 +65,19 @@ export function AssignManagerDepartmentsModal({ manager, open, onClose }: Assign
           <button type="button" onClick={onClose} className={SECONDARY_BUTTON} disabled={saving}>
             Hủy
           </button>
-          <button type="button" onClick={handleSave} className={PRIMARY_BUTTON} disabled={saving}>
+          <button type="button" onClick={handleSave} className={PRIMARY_BUTTON} disabled={saving || !managerEmpId}>
             {saving ? 'Đang lưu…' : 'Lưu phân công'}
           </button>
         </>
       }
     >
       <div className="space-y-4">
-        {isLoading ? (
+        {!managerEmpId ? (
+          <p role="status" className="text-sm text-amber-700">
+            {manager.fullName} chưa có hồ sơ nhân viên nên chưa thể quản lý phòng ban. Hãy xếp phòng ban cho người này
+            ở trang chi tiết thành viên trước.
+          </p>
+        ) : isLoading ? (
           <p className="text-sm text-slate-500">Đang tải danh sách phòng ban…</p>
         ) : allDepartments.length === 0 ? (
           <p className="text-sm text-slate-500">Chưa có phòng ban nào trong tổ chức.</p>
