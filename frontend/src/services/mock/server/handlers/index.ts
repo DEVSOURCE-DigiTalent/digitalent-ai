@@ -12,3 +12,4 @@ import './platform';
 import './tasks';
 import './training-batches';
 import './personal';
+import './me';

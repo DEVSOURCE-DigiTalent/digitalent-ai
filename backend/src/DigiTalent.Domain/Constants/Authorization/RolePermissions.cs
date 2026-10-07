@@ -120,9 +120,15 @@ public static class RolePermissions
             Permissions.Learning.ReadCatalog,
             Permissions.Learning.ReadAssignment,
             Permissions.Learning.ReadProgress,
+            // Menu "Cá nhân" của Manager dùng lại trang Employee (EM-*): tự học, làm bài, nộp nhiệm vụ của chính mình
+            Permissions.Learning.CompleteLesson,
+            Permissions.Learning.DownloadViewMaterial,
 
             Permissions.Assessment.Read,
             Permissions.Assessment.ResultExport,
+            Permissions.Assessment.AttemptStart,
+            Permissions.Assessment.AttemptSubmit,
+            Permissions.Assessment.AttemptReadResult,
 
             Permissions.Certificate.Read,
             Permissions.Certificate.DownloadPdf,
@@ -142,8 +148,10 @@ public static class RolePermissions
             Permissions.Task.Reopen,
             Permissions.Task.Cancel,
             Permissions.Task.AttachmentDownload,
+            Permissions.Task.Submit,
 
             Permissions.Dashboard.DepartmentRead,
+            Permissions.Dashboard.EmployeeRead,
             Permissions.Dashboard.CompetencyHeatmapRead,
             Permissions.Dashboard.ReportExport,
 
@@ -170,8 +178,12 @@ public static class RolePermissions
             Permissions.Competency.CategoryRead,
             Permissions.Competency.Read,
             Permissions.Competency.PositionRequirementRead,
+            // Frontend xếp TRAINER vào nhóm EMPLOYEE: các trang cá nhân (EM-*) cần quyền trên dữ liệu của chính mình
+            Permissions.Competency.ProfileRead,
+            Permissions.Competency.EvidenceRead,
 
             Permissions.Learning.ReadCatalog,
+            Permissions.Learning.CompleteLesson,
             Permissions.Learning.Create,
             Permissions.Learning.Update,
             Permissions.Learning.PublishUnpublish,
@@ -190,6 +202,8 @@ public static class RolePermissions
             Permissions.Assessment.Read,
             Permissions.Assessment.CreateUpdate,
             Permissions.Assessment.PublishClose,
+            Permissions.Assessment.AttemptStart,
+            Permissions.Assessment.AttemptSubmit,
             Permissions.Assessment.AttemptReadResult,
             Permissions.Assessment.AttemptRegradeOverride,
             Permissions.Assessment.ResultExport,
@@ -197,18 +211,24 @@ public static class RolePermissions
             Permissions.Certificate.Read,
             Permissions.Certificate.DownloadPdf,
 
+            Permissions.Intelligence.SkillGapRead,
             Permissions.Intelligence.RecommendationRead,
+            Permissions.Intelligence.ReadinessRead,
 
             Permissions.Task.Read,
+            Permissions.Task.UpdateProgress,
+            Permissions.Task.Submit,
             Permissions.Task.AttachmentDownload,
 
             Permissions.Dashboard.TrainerRead,
+            Permissions.Dashboard.EmployeeRead,
 
             Permissions.Notification.ReadOwn,
             Permissions.Notification.MarkRead,
             Permissions.Notification.SignalRConnect,
 
             Permissions.System.FileUploadMaterial,
+            Permissions.System.FileUploadTaskSubmission,
             Permissions.System.FileDownloadAuthorized,
         },
 

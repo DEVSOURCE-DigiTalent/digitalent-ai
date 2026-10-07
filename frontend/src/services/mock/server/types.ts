@@ -1,7 +1,9 @@
 import type { SkillGapItem, SkillGapSummary } from '../../intelligence.service';
 import type { ReferencePositionCode } from './catalog';
 import type { EnrollmentStatus } from './engine';
-import type { AssessmentAttemptRecord, CertificateRecord, PracticalTaskRecord, TaskSubmissionRecord } from './types-work';
+import type {
+  AssessmentAttemptRecord, CertificateRecord, OpenAttemptRecord, PracticalTaskRecord, TaskFileRecord, TaskSubmissionRecord,
+} from './types-work';
 
 export * from './types-work';
 
@@ -130,6 +132,9 @@ export interface AssignmentRecord {
   progressPercent: number;
   completedAt?: string;
   cancelReason?: string;
+  /** Lessons the employee finished (trang EM-07/EM-08). */
+  completedLessonIds?: string[];
+  startedAt?: string;
 }
 
 export interface RecommendationDecision {
@@ -250,6 +255,8 @@ export interface OrgData {
   certificates?: CertificateRecord[];
   tasks?: PracticalTaskRecord[];
   submissions?: TaskSubmissionRecord[];
+  openAttempts?: OpenAttemptRecord[];
+  taskFiles?: TaskFileRecord[];
   internalCourses?: InternalCourseRecord[];
   /** Plan changes made after sign-up (seeded organizations have their plan in code). */
   subscriptionOverride?: {

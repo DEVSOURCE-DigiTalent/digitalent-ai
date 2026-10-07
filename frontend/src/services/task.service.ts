@@ -89,34 +89,6 @@ export interface SubmissionDetailDto extends TaskSubmissionDto {
   departmentName?: string;
 }
 
-export interface LearnerTaskDto {
-  id: string;
-  title: string;
-  description: string;
-  expectedOutput: string;
-  competencyIds: string[];
-  targetLevel: number;
-  assignedByName: string;
-  dueDate: string;
-  rubricCriteria: RubricCriterion[];
-  submission: TaskSubmissionDto | null;
-}
-
-export interface EvidenceItemDto {
-  id: string;
-  taskId: string;
-  taskTitle: string;
-  taskDescription?: string;
-  targetLevel: number;
-  competencyIds: string[];
-  submittedAt: string;
-  content: string;
-  linkUrls: string[];
-  fileUrls: string[];
-  status: 'PENDING_REVIEW' | 'REVISION_REQUESTED' | 'APPROVED' | 'REJECTED';
-  evaluation?: TaskSubmissionDto['evaluation'];
-}
-
 export interface CreatePracticalTaskPayload {
   title: string;
   description: string;
@@ -217,28 +189,8 @@ export const taskService = {
     }).then((res) => mapData(res, normalizeSubmission));
   },
 
-  getMyTasks: () => {
-    return apiClient.get<ApiResponse<{ items: LearnerTaskDto[]; total: number }>>('/me/tasks')
-      .then((res) => mapData(res, (data) => ({ ...data, items: data.items.map((task) => ({
-        ...task,
-        rubricCriteria: parseJson(task.rubricCriteria, []),
-        submission: task.submission ? normalizeSubmission(task.submission) : null,
-      })) })));
-  },
-
   submitTaskEvidence: (taskId: string, payload: SubmitEvidencePayload) => {
     return apiClient.post<ApiResponse<TaskSubmissionDto>>(`/tasks/${taskId}/submit`, payload)
       .then((res) => mapData(res, normalizeSubmission));
-  },
-
-  getMyEvidence: () => {
-    return apiClient.get<ApiResponse<{ items: EvidenceItemDto[]; total: number }>>('/me/evidence')
-      .then((res) => mapData(res, (data) => ({ ...data, items: data.items.map((item) => ({
-        ...item,
-        evaluation: item.evaluation ? {
-          ...item.evaluation,
-          rubricScores: parseJson(item.evaluation.rubricScores, {}),
-        } : undefined,
-      })) })));
   },
 };
