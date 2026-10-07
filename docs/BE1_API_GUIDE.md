@@ -154,7 +154,7 @@ Nhánh này khai báo chính thức trong SQL gốc và migration 6 bảng mà c
 
 ## 3. TỔ CHỨC (OW-02 … OW-13)
 
-> Nhánh `feature/DT-organization-api`. Đường dẫn và shape giữ đúng như mock server của FE (`frontend/src/services/mock/server/handlers/{members,structure,organization}.ts`) và các interface trong `frontend/src/services/{member,department,job-position,job-grade}.service.ts`, nên FE chỉ cần tắt mock (`VITE_USE_MOCK=false`). Riêng kích hoạt lời mời (3.3) FE chưa nối API.
+> Nhánh `feature/DT-organization-api`. Đường dẫn và shape giữ đúng như mock server của FE (`frontend/src/services/mock/server/handlers/{members,structure,organization}.ts`) và các interface trong `frontend/src/services/{member,department,job-position,job-grade}.service.ts`, nên FE chỉ cần tắt mock (`VITE_USE_MOCK=false`). Kích hoạt lời mời (3.3) đã được nối ở nhánh `feature/DT-organization-fe-integration` (mục 4).
 
 ### 3.0 Tổng quan thay đổi
 
@@ -546,7 +546,7 @@ Response `data`: `{ email, userId, employeeId }`, message `Account activated.` S
 | 404 | `The invitation link is invalid or has expired.` | |
 | 409 | `An account with this e-mail already exists.` | Email đã được đăng ký sau khi mời |
 
-> FE: `services/invitation.service.ts` hiện chỉ có mock (`unavailableAdapter`). Cần nối `getInvitation(token)` → `GET /invitations/{token}` và `activate({ token, fullName, password })` → `POST /invitations/activate`.
+> FE: `services/invitation.service.ts` gọi `getInvitation(token)` → `GET /invitations/{token}` và `activate({ token, fullName, password })` → `POST /invitations/activate` khi tắt mock (mục 4.4).
 
 ### 3.4 Phân quyền — GET /roles (OW-13)
 
@@ -758,6 +758,8 @@ Hiện ở `recentActivity` của `GET /organization/overview` (OW-01) và `hist
 ## 4. HƯỚNG DẪN TÍCH HỢP FRONTEND — NHÓM TỔ CHỨC
 
 > Dành cho FE1 khi nối các màn OW-02 … OW-13 với backend thật. Mục 3 là hợp đồng API; mục này nói **làm gì ở FE, ở file nào**. Số dòng tham chiếu theo code tại thời điểm viết (nhánh `feature/DT-organization-api`), có thể lệch vài dòng.
+>
+> **Trạng thái:** đã làm ở nhánh `feature/DT-organization-fe-integration`: kiểu TypeScript (4.3), `invitationService` (4.4), các lỗi ①–⑨ (4.5) và helper dịch lỗi `organizationErrorMessage` (`frontend/src/lib/organization-errors.ts`, 4.6). Cột "Trạng thái" ở bảng 4.2 là tình trạng trước khi tích hợp.
 
 ### 4.1 Bật kết nối backend
 
