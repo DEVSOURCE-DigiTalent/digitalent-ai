@@ -16,12 +16,22 @@ public static class RolePermissions
             Permissions.Account.UpdateOwnProfile,
             Permissions.Account.ChangeOwnPassword,
 
+            // Members & roles (OW-02, OW-03, OW-13): HR_MANAGER is the enterprise "Owner"
+            Permissions.UserRole.UserRead,
+            Permissions.UserRole.UserCreate,
+            Permissions.UserRole.UserUpdate,
+            Permissions.UserRole.UserLockUnlock,
+            Permissions.UserRole.RoleRead,
+            Permissions.UserRole.RoleAssignBusiness,
+
             Permissions.Department.Read,
             Permissions.Department.CreateUpdate,
             Permissions.JobFamily.Read,
             Permissions.JobFamily.CreateUpdate,
             Permissions.JobPosition.Read,
             Permissions.JobPosition.CreateUpdate,
+            Permissions.JobGrade.Read,
+            Permissions.JobGrade.Manage,
             Permissions.Employee.Read,
             Permissions.Employee.CreateUpdate,
             Permissions.Employee.Transfer,
@@ -97,6 +107,7 @@ public static class RolePermissions
             Permissions.Department.Read,
             Permissions.JobFamily.Read,
             Permissions.JobPosition.Read,
+            Permissions.JobGrade.Read,
             Permissions.Employee.Read,
 
             Permissions.Competency.CategoryRead,

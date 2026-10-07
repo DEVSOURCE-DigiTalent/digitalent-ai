@@ -44,6 +44,12 @@ public static class Permissions
         public const string CreateUpdate = "job_position.create_update";
     }
 
+    public static class JobGrade
+    {
+        public const string Read = "job_grade.read";
+        public const string Manage = "job_grade.manage";
+    }
+
     public static class Employee
     {
         public const string Read = "employee.read";
