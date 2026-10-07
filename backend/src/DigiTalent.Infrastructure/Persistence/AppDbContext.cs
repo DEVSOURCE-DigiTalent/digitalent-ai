@@ -48,7 +48,9 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<Department> Departments => Set<Department>();
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<JobFamily> JobFamilies => Set<JobFamily>();
+    public DbSet<JobGrade> JobGrades => Set<JobGrade>();
     public DbSet<JobPosition> JobPositions => Set<JobPosition>();
+    public DbSet<MemberInvitation> MemberInvitations => Set<MemberInvitation>();
     public DbSet<Organization> Organizations => Set<Organization>();
 
     // Competency & Position Requirements

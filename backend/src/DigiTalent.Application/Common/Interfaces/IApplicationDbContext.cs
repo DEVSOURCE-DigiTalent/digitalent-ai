@@ -24,7 +24,9 @@ public interface IApplicationDbContext
     DbSet<Department> Departments { get; }
     DbSet<Employee> Employees { get; }
     DbSet<JobFamily> JobFamilies { get; }
+    DbSet<JobGrade> JobGrades { get; }
     DbSet<JobPosition> JobPositions { get; }
+    DbSet<MemberInvitation> MemberInvitations { get; }
     DbSet<Organization> Organizations { get; }
 
     // Competency & Position Requirements

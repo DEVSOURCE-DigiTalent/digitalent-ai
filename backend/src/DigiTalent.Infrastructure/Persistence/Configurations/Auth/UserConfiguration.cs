@@ -27,6 +27,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.DisplayName).IsRequired().HasMaxLength(200);
         builder.Property(u => u.Status).IsRequired().HasMaxLength(30);
         builder.Property(u => u.FailedLoginCount).HasDefaultValue(0);
+        builder.Property(u => u.DeactivatedReason).HasMaxLength(500);
 
         // uint + IsRowVersion → Npgsql dùng cột hệ thống xmin làm concurrency token (không thêm cột)
         builder.Property(u => u.Version).IsRowVersion();
