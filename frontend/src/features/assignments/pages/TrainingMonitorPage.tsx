@@ -39,9 +39,8 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
   const [jobGrade, setJobGrade] = useState<JobGradeCode | ''>('');
   const [page, setPage] = useState(1);
 
-  // Position lookup map by name and by id
+  // Mock data supports a local grade filter; BE2 only accepts jobPositionId.
   const positionByName = useMemo(() => new Map(positions.map((p) => [p.name, p])), [positions]);
-  const selectedPosition = useMemo(() => positions.find((p) => p.id === jobPositionId), [positions, jobPositionId]);
 
   const { data, isLoading } = useAssignments({
     pageIndex: page,
@@ -50,7 +49,6 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
     status: status || undefined,
     departmentId: departmentId || undefined,
     jobPositionId: jobPositionId || undefined,
-    jobGrade: jobGrade || undefined,
     overdue: quick === 'overdue' || undefined,
     dueSoon: quick === 'dueSoon' || undefined,
   });
@@ -60,20 +58,15 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
     setPage(1);
   };
 
-  // Client-side refinement if needed for jobGrade or jobPosition matching
+  // Grade filtering is available only in mock mode; the live API has no grade filter.
   const displayedRows = useMemo(() => {
-    let rows = data?.items ?? [];
-    if (jobGrade) {
-      rows = rows.filter((r) => {
-        const pos = r.positionName ? positionByName.get(r.positionName) : undefined;
-        return pos?.jobGrade === jobGrade;
-      });
-    }
-    if (jobPositionId && selectedPosition) {
-      rows = rows.filter((r) => r.positionName === selectedPosition.name);
-    }
-    return rows;
-  }, [data?.items, jobGrade, jobPositionId, selectedPosition, positionByName]);
+    const rows = data?.items ?? [];
+    if (import.meta.env.VITE_USE_MOCK !== 'true' || !jobGrade) return rows;
+    return rows.filter((r) => {
+      const pos = r.positionName ? positionByName.get(r.positionName) : undefined;
+      return pos?.jobGrade === jobGrade;
+    });
+  }, [data?.items, jobGrade, positionByName]);
 
   return (
     <div className="space-y-6">
@@ -139,6 +132,8 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
       <AssignmentsTable
         rows={displayedRows}
         isLoading={isLoading}
+        employeeLinkPrefix={isManager ? '/enterprise/team/members' : undefined}
+        assignmentLinkPrefix={isManager ? '/enterprise/team/training' : undefined}
         search={search}
         onSearchChange={(value) => {
           setSearch(value);
@@ -155,8 +150,10 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
               }}
               className={INPUT_CLASS}
             >
-              <option value="">Đang hiệu lực</option>
-              {(['NOT_STARTED', 'IN_PROGRESS', 'READY_FOR_ASSESSMENT', 'COMPLETED'] as AssignmentStatus[]).map((s) => (
+              <option value="">Tất cả trạng thái</option>
+              {((import.meta.env.VITE_USE_MOCK === 'true'
+                ? ['NOT_STARTED', 'IN_PROGRESS', 'READY_FOR_ASSESSMENT', 'COMPLETED']
+                : ['ACTIVE', 'CANCELLED']) as AssignmentStatus[]).map((s) => (
                 <option key={s} value={s}>
                   {ASSIGNMENT_STATUS_LABELS[s]}
                 </option>
@@ -199,7 +196,7 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
               ))}
             </select>
 
-            <select
+            {import.meta.env.VITE_USE_MOCK === 'true' && <select
               aria-label="Lọc theo cấp bậc"
               value={jobGrade}
               onChange={(e) => {
@@ -214,7 +211,7 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
                   Cấp bậc {code} ({JOB_GRADE_DEFAULT_NAMES[code]})
                 </option>
               ))}
-            </select>
+            </select>}
 
             <select
               aria-label="Lọc theo hạn"

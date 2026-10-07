@@ -21,10 +21,12 @@ const STATUS_VARIANTS = { PENDING: 'warning', ASSIGNED: 'info', ACCEPTED: 'succe
 
 /** LCA-11: review the rule-based course suggestions: give the course, or set it aside with a reason. */
 export function RecommendationReviewPage() {
-  const canAssign = useCurrentUser((s) => s.hasPermission)(PERMISSIONS.COURSE_ASSIGNMENT_CREATE);
+  const hasPermission = useCurrentUser((s) => s.hasPermission);
+  const canAssign = hasPermission(PERMISSIONS.COURSE_ASSIGNMENT_CREATE);
+  const canReview = hasPermission(PERMISSIONS.LEARNING_RECOMMENDATION_READ);
   const [status, setStatus] = useState<ReviewStatus | ''>('PENDING');
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useRecommendationReviews({ pageIndex: page, pageSize: PAGE_SIZE, status: status || undefined });
+  const { data, isLoading, isError, error, refetch } = useRecommendationReviews({ pageIndex: page, pageSize: PAGE_SIZE, status: status || undefined });
 
   const accept = useAcceptReview();
   const dismiss = useDismissReview();
@@ -95,16 +97,15 @@ export function RecommendationReviewPage() {
       header: '',
       className: 'text-right',
       cell: (r) => {
-        if (!canAssign) return null;
         if (r.status === 'PENDING') {
           return (
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setAccepting(r)} className={PRIMARY_BUTTON} aria-label={`Giao ${r.courseCode} cho ${r.employeeName}`}>Giao khóa</button>
-              <button type="button" onClick={() => setDismissing(r)} className={SECONDARY_BUTTON} aria-label={`Bỏ qua ${r.courseCode} của ${r.employeeName}`}>Bỏ qua</button>
+              {canAssign && <button type="button" onClick={() => setAccepting(r)} className={PRIMARY_BUTTON} aria-label={`Giao ${r.courseCode} cho ${r.employeeName}`}>Giao khóa</button>}
+              {canReview && <button type="button" onClick={() => setDismissing(r)} className={SECONDARY_BUTTON} aria-label={`Bỏ qua ${r.courseCode} của ${r.employeeName}`}>Bỏ qua</button>}
             </div>
           );
         }
-        if (r.status === 'DISMISSED') {
+        if (r.status === 'DISMISSED' && canReview) {
           return (
             <button
               type="button"
@@ -124,6 +125,11 @@ export function RecommendationReviewPage() {
   return (
     <div>
       <PageHeader title="Duyệt đề xuất học tập" subtitle="Hệ thống đề xuất khóa học theo khoảng trống kỹ năng. Quản trị học tập quyết định giao hay bỏ qua." />
+      {isError && <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+        Không tải được đề xuất: {apiErrorMessage(error, 'Vui lòng thử lại.')}
+        <button type="button" onClick={() => void refetch()} className="ml-3 font-semibold underline">Thử lại</button>
+      </div>}
+      {!isError && <>
       <DataTable
         columns={columns}
         data={data?.items ?? []}
@@ -139,6 +145,7 @@ export function RecommendationReviewPage() {
         }
         pageInfo={{ page, pageSize: PAGE_SIZE, total: data?.totalItems ?? 0, onPageChange: setPage }}
       />
+      </>}
 
       <Modal
         open={Boolean(accepting)}

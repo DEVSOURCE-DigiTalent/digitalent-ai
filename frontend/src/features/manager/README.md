@@ -12,6 +12,7 @@ Các trang chỉ dùng cho role `DEPARTMENT_MANAGER` nằm trong `pages/`. Trang
 | `/enterprise/team/competency` | `GET /intelligence/skill-gaps` và `GET /intelligence/skill-gaps/{runId}` |
 | `/enterprise/team/skill-gap` | `GET /intelligence/skill-gaps` |
 | `/enterprise/team/training` | `GET /course-assignments`, `/course-assignments/summary` |
+| `/enterprise/team/training/:assignmentId` | `GET /course-assignments/{guid}` |
 | `/enterprise/me` | `GET /my/learning`, `/intelligence/skill-gaps/me/latest` |
 | `/enterprise/me/learning-path` | `GET /my/learning`, `/intelligence/recommendations` |
 | `/enterprise/me/courses` | `GET /my/learning` |
@@ -20,5 +21,7 @@ Các trang chỉ dùng cho role `DEPARTMENT_MANAGER` nằm trong `pages/`. Trang
 | `/enterprise/initial-assessment` | `GET /intelligence/skill-gaps/me/latest`, `POST /intelligence/skill-gaps/calculate` |
 
 BE2 không có API ghi bài test đầu vào 6 câu; kết quả localStorage cũ không tạo skill gap, gợi ý hay ghi danh. Gợi ý từ `/intelligence/recommendations` chỉ xuất hiện sau khi BE2 có snapshot skill gap; gợi ý không phải phân công đào tạo. `DEPARTMENT_MANAGER` có quyền xem bài học nhưng mặc định không có `lesson.complete`, `attempt.start` và `attempt.submit`.
+
+`GET /course-assignments` và `/course-assignments/summary` hiện lọc theo tổ chức trong BE2, chưa lọc theo phòng ban của Manager. FE hiển thị kết quả API và không thể bảo đảm phạm vi nhóm bằng bộ lọc trên một trang phân trang.
 
 Các endpoint FE cũ `/workforce`, `/competency-profiles/matrix`, `/intelligence/analytics/*` không có controller tương ứng trong BE2. Manager pages không còn gọi các endpoint đó. `/enterprise/me/learning` là route FE cũ, được chuyển về `/enterprise/me/courses`.

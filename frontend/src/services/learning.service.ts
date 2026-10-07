@@ -141,6 +141,8 @@ export interface CreateInternalCourseInput {
   status?: 'DRAFT' | 'PUBLISHED';
 }
 
+export type UpdateInternalCourseInput = Pick<CreateInternalCourseInput, 'title' | 'description' | 'category' | 'durationMinutes' | 'status'>;
+
 export const learningService = {
   getCourseDetail: (id: string) =>
     apiClient.get<ApiResponse<CourseDetailDto>>(`/courses/${id}`),
@@ -173,4 +175,7 @@ export const learningService = {
 
   createInternalCourse: (body: CreateInternalCourseInput) =>
     apiClient.post<ApiResponse<InternalCourseDto>>('/internal-courses', body),
+
+  updateInternalCourse: (id: string, body: UpdateInternalCourseInput) =>
+    apiClient.put<ApiResponse<InternalCourseDto>>(`/internal-courses/${id}`, body),
 };

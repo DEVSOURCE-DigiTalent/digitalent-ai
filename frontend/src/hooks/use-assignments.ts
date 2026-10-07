@@ -63,11 +63,12 @@ export function useCourseLesson(id: string | undefined) {
   });
 }
 
-export function useAssignments(params?: AssignmentListParams) {
+export function useAssignments(params?: AssignmentListParams, enabled = true) {
   return useQuery({
     queryKey: [...ASSIGNMENTS_KEY, 'list', params],
     queryFn: async () => (await assignmentService.getList(params)).data.data!,
     placeholderData: (previous) => previous,
+    enabled,
   });
 }
 

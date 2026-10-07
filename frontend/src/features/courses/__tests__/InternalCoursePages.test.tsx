@@ -1,12 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { InternalCourseListPage } from '@/features/assignments/pages/InternalCourseListPage';
 import { InternalCourseEditorPage } from '@/features/assignments/pages/InternalCourseEditorPage';
 import { InternalCourseDetailPage } from '../pages/InternalCourseDetailPage';
 import * as learningHooks from '@/hooks/use-learning';
-import * as assignmentHooks from '@/hooks/use-assignments';
 
 vi.mock('sonner', () => ({
   toast: {
@@ -34,13 +33,13 @@ describe('InternalCoursePages (Agent 1 - Phase H: OW-31..33)', () => {
   };
 
   describe('OW-31: InternalCourseListPage', () => {
-    it('renders course list with TT02 notice banner and KPI cards', () => {
+    it('shows the API course list and its classification limitation', () => {
       vi.spyOn(learningHooks, 'useInternalCourses').mockReturnValue({
         data: {
           items: [
             {
               id: 'icrs-1',
-              code: 'NB-01',
+              code: 'INT-001',
               title: 'Văn hóa doanh nghiệp & Quy tắc ứng xử số',
               description: 'Bộ quy tắc ứng xử nội bộ trên môi trường làm việc số.',
               category: 'Văn hóa & Hội nhập',
@@ -61,16 +60,16 @@ describe('InternalCoursePages (Agent 1 - Phase H: OW-31..33)', () => {
 
       renderWithClient(<InternalCourseListPage />);
 
-      expect(screen.getByText('Khóa học nội bộ')).toBeInTheDocument();
-      expect(screen.getByText(/không tự động tăng bậc năng lực/i)).toBeInTheDocument();
+      expect(screen.getByText('Khóa học trong tổ chức')).toBeInTheDocument();
+      expect(screen.getByText(/chưa có trường phân loại khóa chuẩn và khóa nội bộ/i)).toBeInTheDocument();
       expect(screen.getByText('Văn hóa doanh nghiệp & Quy tắc ứng xử số')).toBeInTheDocument();
-      expect(screen.getByText('NB-01')).toBeInTheDocument();
-      expect(screen.getByText('Tổng khóa nội bộ')).toBeInTheDocument();
+      expect(screen.getByText('INT-001')).toBeInTheDocument();
+      expect(screen.getByText('Tổng khóa tổ chức')).toBeInTheDocument();
     });
   });
 
   describe('OW-32: InternalCourseEditorPage', () => {
-    it('allows building internal course curriculum modules and submitting form', async () => {
+    it('creates only course metadata as a draft', async () => {
       vi.spyOn(learningHooks, 'useInternalCourse').mockReturnValue({
         data: undefined,
         isLoading: false,
@@ -82,34 +81,69 @@ describe('InternalCoursePages (Agent 1 - Phase H: OW-31..33)', () => {
         isPending: false,
       } as any);
 
-      renderWithClient(<InternalCourseEditorPage />);
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={['/enterprise/internal-courses/new']}>
+            <Routes>
+              <Route path="/enterprise/internal-courses/new" element={<InternalCourseEditorPage />} />
+              <Route path="/enterprise/internal-courses/:id" element={<p>Đã lưu</p>} />
+            </Routes>
+          </MemoryRouter>
+        </QueryClientProvider>
+      );
 
-      expect(screen.getByText('Soạn khóa học nội bộ mới')).toBeInTheDocument();
-      expect(screen.getByText(/Lưu ý giáo trình/i)).toBeInTheDocument();
-
-      // Check default modules count
-      expect(screen.getByText(/Học phần & Học liệu/i)).toBeInTheDocument();
-
-      // Click "Thêm học phần"
-      const addModuleBtn = screen.getByRole('button', { name: /Thêm học phần/i });
-      fireEvent.click(addModuleBtn);
+      expect(screen.getByText('Tạo khóa học nội bộ')).toBeInTheDocument();
+      expect(screen.getByText(/chưa có API lưu nội dung từng học phần/i)).toBeInTheDocument();
 
       // Fill title
       const titleInput = screen.getByLabelText(/Tên khóa học/i);
       fireEvent.change(titleInput, { target: { value: 'Khóa hướng dẫn bảo mật nội bộ 2026' } });
 
       // Submit
-      const submitBtn = screen.getByRole('button', { name: /Lưu khóa học nội bộ/i });
+      const submitBtn = screen.getByRole('button', { name: /Tạo bản nháp/i });
       fireEvent.click(submitBtn);
+      await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ title: 'Khóa hướng dẫn bảo mật nội bộ 2026', modulesCount: 0, status: 'DRAFT' })));
+      await screen.findByText('Đã lưu');
+    });
+
+    it('edits an INT course through PUT without creating a duplicate', async () => {
+      const create = vi.fn();
+      const update = vi.fn().mockResolvedValue({ id: 'course-1' });
+      vi.spyOn(learningHooks, 'useInternalCourse').mockReturnValue({
+        data: {
+          id: 'course-1', code: 'INT-001', title: 'Khóa cũ', description: '', category: 'Nội bộ',
+          modulesCount: 0, durationMinutes: 30, status: 'DRAFT',
+        }, isLoading: false,
+      } as any);
+      vi.spyOn(learningHooks, 'useCreateInternalCourse').mockReturnValue({ mutateAsync: create, isPending: false } as any);
+      vi.spyOn(learningHooks, 'useUpdateInternalCourse').mockReturnValue({ mutateAsync: update, isPending: false } as any);
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={['/enterprise/internal-courses/course-1/edit']}>
+            <Routes>
+              <Route path="/enterprise/internal-courses/:id/edit" element={<InternalCourseEditorPage />} />
+              <Route path="/enterprise/internal-courses/:id" element={<p>Đã lưu</p>} />
+            </Routes>
+          </MemoryRouter>
+        </QueryClientProvider>
+      );
+      fireEvent.change(screen.getByLabelText('Tên khóa học'), { target: { value: 'Khóa mới' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Lưu thay đổi' }));
+      await waitFor(() => expect(update).toHaveBeenCalledWith({
+        id: 'course-1', input: expect.objectContaining({ title: 'Khóa mới' }),
+      }));
+      await screen.findByText('Đã lưu');
+      expect(create).not.toHaveBeenCalled();
     });
   });
 
   describe('OW-33: InternalCourseDetailPage', () => {
-    it('renders detail page with TT02 notice, tabs and action buttons', () => {
+    it('renders only saved BE2 course metadata', () => {
       vi.spyOn(learningHooks, 'useInternalCourse').mockReturnValue({
         data: {
           id: 'icrs-1',
-          code: 'NB-01',
+          code: 'INT-001',
           title: 'Văn hóa làm việc số tại DigiTalent',
           description: 'Quy chuẩn giao tiếp, bảo mật và lưu trữ tài liệu.',
           category: 'Văn hóa & Hội nhập',
@@ -118,24 +152,6 @@ describe('InternalCoursePages (Agent 1 - Phase H: OW-31..33)', () => {
           status: 'PUBLISHED',
           createdAt: '2026-09-01T00:00:00Z',
           updatedAt: '2026-09-15T00:00:00Z',
-        },
-        isLoading: false,
-      } as any);
-
-      vi.spyOn(assignmentHooks, 'useAssignments').mockReturnValue({
-        data: {
-          items: [
-            {
-              id: 'asg-1',
-              employeeId: 'emp-1',
-              employeeName: 'Lê Hoàng Nam',
-              departmentName: 'Phòng Kỹ thuật',
-              progressPercent: 100,
-              dueDate: '2026-10-30T00:00:00Z',
-              status: 'COMPLETED',
-            },
-          ],
-          totalItems: 1,
         },
         isLoading: false,
       } as any);
@@ -150,27 +166,11 @@ describe('InternalCoursePages (Agent 1 - Phase H: OW-31..33)', () => {
         </QueryClientProvider>
       );
 
-      // Hero & notice
       expect(screen.getByText('Văn hóa làm việc số tại DigiTalent')).toBeInTheDocument();
-      expect(screen.getByText('NB-01')).toBeInTheDocument();
-      expect(screen.getByText(/không tự động tăng bậc năng lực/i)).toBeInTheDocument();
-
-      // Action buttons
-      expect(screen.getByText('Chỉnh sửa nội dung')).toBeInTheDocument();
-      expect(screen.getByText('Giao khóa học này')).toBeInTheDocument();
-
-      // Tabs exist
-      expect(screen.getByRole('button', { name: /Cấu trúc giáo trình/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Danh sách học viên/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Cài đặt & Xuất bản/i })).toBeInTheDocument();
-
-      // Switch to learners tab
-      fireEvent.click(screen.getByRole('button', { name: /Danh sách học viên/i }));
-      expect(screen.getByText('Lê Hoàng Nam')).toBeInTheDocument();
-
-      // Switch to settings tab
-      fireEvent.click(screen.getByRole('button', { name: /Cài đặt & Xuất bản/i }));
-      expect(screen.getByText('Thông số kỹ thuật & Vận hành')).toBeInTheDocument();
+      expect(screen.getByText('INT-001')).toBeInTheDocument();
+      expect(screen.getByText(/chưa trả danh sách nội dung từng học phần/i)).toBeInTheDocument();
+      expect(screen.getByText('Chỉnh sửa thông tin')).toBeInTheDocument();
+      expect(screen.queryByText('Lê Hoàng Nam')).not.toBeInTheDocument();
     });
   });
 });

@@ -43,7 +43,7 @@ export function TrainingAssignmentDetailPage() {
     );
   }
 
-  const isCompleted = assignment.status === 'COMPLETED';
+  const isCompleted = assignment.status === 'COMPLETED' || Boolean(assignment.completedAt);
   const isOverdue = assignment.overdue;
 
   return (

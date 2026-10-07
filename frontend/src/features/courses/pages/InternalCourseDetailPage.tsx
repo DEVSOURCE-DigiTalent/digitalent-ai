@@ -18,10 +18,17 @@ import { formatDate } from '@/lib/utils';
 import { AssignCourseModal } from '@/features/assignments/components/AssignCourseModal';
 import { AssignmentStatusBadge } from '@/features/assignments/assignment-labels';
 import type { AssignmentRow } from '@/services/assignment.service';
+import { LiveInternalCourseDetailPage } from './LiveInternalCourseDetailPage';
 
 type DetailTab = 'curriculum' | 'learners' | 'settings';
 
 export function InternalCourseDetailPage() {
+  return import.meta.env.VITE_USE_MOCK === 'true'
+    ? <MockInternalCourseDetailPage />
+    : <LiveInternalCourseDetailPage />;
+}
+
+function MockInternalCourseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<DetailTab>('curriculum');
   const [assignModalOpen, setAssignModalOpen] = useState(false);

@@ -35,7 +35,7 @@ describe('TrainingMonitorPage & AssessmentResultsOverviewPage (Agent 1 - Phase H
   };
 
   describe('OW-30: TrainingMonitorPage', () => {
-    it('renders training monitor with job grade filter, dept stats, and assignments', () => {
+    it('renders BE2-supported filters, department stats, and assignments', () => {
       vi.spyOn(assignmentHooks, 'useAssignmentSummary').mockReturnValue({
         data: {
           total: 25,
@@ -117,12 +117,8 @@ describe('TrainingMonitorPage & AssessmentResultsOverviewPage (Agent 1 - Phase H
       expect(screen.getByLabelText('Lọc theo trạng thái')).toBeInTheDocument();
       expect(screen.getByLabelText('Lọc theo phòng ban')).toBeInTheDocument();
       expect(screen.getByLabelText('Lọc theo vị trí')).toBeInTheDocument();
-      expect(screen.getByLabelText('Lọc theo cấp bậc')).toBeInTheDocument();
-
-      // Select Grade G1
-      const gradeSelect = screen.getByLabelText('Lọc theo cấp bậc');
-      fireEvent.change(gradeSelect, { target: { value: 'G1' } });
-      expect((gradeSelect as HTMLSelectElement).value).toBe('G1');
+      expect(screen.queryByLabelText('Lọc theo cấp bậc')).not.toBeInTheDocument();
+      expect(screen.getByRole('option', { name: 'Đang hiệu lực' })).toBeInTheDocument();
     });
 
     it('adapts title and hides org department breakdown when in manager scope', () => {

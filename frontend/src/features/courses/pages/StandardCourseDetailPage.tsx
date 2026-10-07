@@ -47,10 +47,10 @@ export function StandardCourseDetailPage() {
   const { data: apiCategories = [] } = useCompetencyCategories();
   const categories = courseCategories(apiCategories);
   const { data: assignmentsData } = useAssignments({
-    courseId: id,
+    courseId: course?.id,
     pageIndex: learnerPage,
     pageSize: 100,
-  });
+  }, Boolean(course?.id));
 
   if (courseLoading) {
     return <div className="py-20 text-center text-sm text-slate-500">Đang tải chi tiết khóa học…</div>;
@@ -390,10 +390,10 @@ export function StandardCourseDetailPage() {
                         <StatusBadge
                           label={
                             asg.status === 'COMPLETED' ? 'Đã xong' :
-                            asg.status === 'IN_PROGRESS' ? 'Đang học' :
+                            asg.status === 'IN_PROGRESS' || (asg.status === 'ACTIVE' && asg.progressPercent > 0) ? 'Đang học' :
                             asg.status === 'READY_FOR_ASSESSMENT' ? 'Chờ thi' : 'Chưa bắt đầu'
                           }
-                          variant={asg.status === 'COMPLETED' ? 'success' : asg.status === 'IN_PROGRESS' ? 'info' : 'default'}
+                          variant={asg.status === 'COMPLETED' ? 'success' : asg.status === 'IN_PROGRESS' || (asg.status === 'ACTIVE' && asg.progressPercent > 0) ? 'info' : 'default'}
                         />
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-500">
