@@ -52,15 +52,29 @@ public class GetPagedDepartmentsUseCase : IUseCase<GetPagedDepartmentsUseCaseInp
                 Id = d.Id,
                 Code = d.Code,
                 Name = d.Name,
+                ParentDepartmentId = d.ParentDepartmentId,
                 ParentDepartmentName = _context.Departments
                     .Where(p => p.Id == d.ParentDepartmentId)
                     .Select(p => p.Name)
+                    .FirstOrDefault(),
+                ManagerEmployeeId = d.ManagerEmployeeId,
+                ManagerName = _context.Employees
+                    .Where(e => e.Id == d.ManagerEmployeeId)
+                    .Select(e => e.FullName)
                     .FirstOrDefault(),
                 Status = d.Status,
             })
             .ToListAsync();
 
-        // 5. Trả kết quả
+        // 5. Sĩ số + phân bố cấp bậc của các phòng ban trong trang (1 query gom nhóm)
+        var stats = await DepartmentRules.LoadStatsAsync(_context, items.Select(i => i.Id).ToList());
+        foreach (var item in items)
+        {
+            item.Headcount = stats[item.Id].Headcount;
+            item.GradeDistribution = stats[item.Id].GradeDistribution;
+        }
+
+        // 6. Trả kết quả
         return new GetPagedDepartmentsUseCaseOutput
         {
             Items = items,

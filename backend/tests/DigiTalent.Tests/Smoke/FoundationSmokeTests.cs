@@ -74,7 +74,7 @@ public class FoundationSmokeTests
         var caller = new Mock<ICurrentUser>();
         caller.Setup(c => c.GetRequiredOrganizationId()).Returns(tenantOrgId);
 
-        var createUseCase = new CreateDepartmentUseCase(context, caller.Object);
+        var createUseCase = new CreateDepartmentUseCase(context, caller.Object, Mock.Of<IAuditService>());
         var output = await createUseCase.ExecuteAsync(new CreateDepartmentUseCaseInput
         {
             Code = "FIN",
@@ -110,7 +110,7 @@ public class FoundationSmokeTests
         var caller = new Mock<ICurrentUser>();
         caller.Setup(c => c.GetRequiredOrganizationId()).Returns(orgId);
 
-        var archiveUseCase = new ArchiveDepartmentUseCase(context, caller.Object);
+        var archiveUseCase = new ArchiveDepartmentUseCase(context, caller.Object, Mock.Of<IAuditService>());
         await archiveUseCase.ExecuteAsync(new ArchiveDepartmentUseCaseInput { Id = deptId });
 
         // Verify entity still exists in database with ARCHIVED status (not deleted)

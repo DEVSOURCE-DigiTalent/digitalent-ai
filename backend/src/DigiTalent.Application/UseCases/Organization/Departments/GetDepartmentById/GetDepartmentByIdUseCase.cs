@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Departments;
@@ -52,6 +53,15 @@ public class GetDepartmentByIdUseCase : IUseCase<GetDepartmentByIdUseCaseInput, 
         {
             throw new NotFoundException($"Department '{input.Id}' not found.");
         }
+
+        // Số liệu cho trang chi tiết (OW-07): sĩ số, phân bố cấp bậc, số vị trí và phòng ban con
+        var stats = (await DepartmentRules.LoadStatsAsync(_context, new[] { department.Id }))[department.Id];
+        department.Headcount = stats.Headcount;
+        department.GradeDistribution = stats.GradeDistribution;
+        department.PositionCount = await _context.JobPositions
+            .CountAsync(p => p.DepartmentId == department.Id && p.Status != Statuses.MasterData.Archived);
+        department.SubDepartmentCount = await _context.Departments
+            .CountAsync(d => d.ParentDepartmentId == department.Id && d.Status != Statuses.MasterData.Archived);
 
         return department;
     }

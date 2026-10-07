@@ -75,7 +75,7 @@ public class DepartmentScopeTests
         var currentUser = new Mock<ICurrentUser>();
         currentUser.Setup(c => c.GetRequiredOrganizationId()).Returns(orgId);
 
-        var useCase = new CreateDepartmentUseCase(context, currentUser.Object);
+        var useCase = new CreateDepartmentUseCase(context, currentUser.Object, Mock.Of<IAuditService>());
         var input = new CreateDepartmentUseCaseInput { Code = "NEW", Name = "New Dept" };
 
         var result = await useCase.ExecuteAsync(input);
