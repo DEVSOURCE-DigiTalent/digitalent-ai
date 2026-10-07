@@ -69,4 +69,17 @@ public class MembersController : ControllerBase
         var result = await useCase.ExecuteAsync(new RevokeInvitationUseCaseInput { Id = id });
         return Ok(ApiResponse<RevokeInvitationUseCaseOutput>.Ok(result, "Invitation revoked."));
     }
+
+    // PUT api/v1/members/{id} — body { roles?, departmentId?, jobPositionId? } (only the fields that change)
+    [HttpPut("{id:guid}")]
+    [HasPermission(Permissions.UserRole.UserUpdate)]
+    public async Task<ActionResult<ApiResponse<UpdateMemberUseCaseOutput>>> Update(
+        Guid id,
+        [FromBody] UpdateMemberUseCaseInput input,
+        [FromServices] IUseCase<UpdateMemberUseCaseInput, UpdateMemberUseCaseOutput> useCase)
+    {
+        input.Id = id;
+        var result = await useCase.ExecuteAsync(input);
+        return Ok(ApiResponse<UpdateMemberUseCaseOutput>.Ok(result, "Member updated."));
+    }
 }
