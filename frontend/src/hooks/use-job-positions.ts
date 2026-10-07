@@ -8,6 +8,17 @@ import {
 
 const QUERY_KEY = ['job-positions'];
 
+/**
+ * Data a position change shows up in: position lists and details, member rows (position, grade), department and
+ * grade counts, and the overview setup steps.
+ */
+const POSITION_DEPENDENT_KEYS = [QUERY_KEY, ['members'], ['departments'], ['job-grades'], ['organization', 'overview']];
+
+function useInvalidatePositions() {
+  const queryClient = useQueryClient();
+  return () => Promise.all(POSITION_DEPENDENT_KEYS.map((queryKey) => queryClient.invalidateQueries({ queryKey })));
+}
+
 export function useJobPositions(params?: JobPositionListParams) {
   return useQuery({
     queryKey: [...QUERY_KEY, params],
@@ -30,32 +41,26 @@ export function useJobPosition(id: string) {
 }
 
 export function useCreateJobPosition() {
-  const queryClient = useQueryClient();
+  const invalidate = useInvalidatePositions();
   return useMutation({
     mutationFn: (data: CreateJobPositionRequest) => jobPositionService.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-    },
+    onSuccess: invalidate,
   });
 }
 
 export function useUpdateJobPosition() {
-  const queryClient = useQueryClient();
+  const invalidate = useInvalidatePositions();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateJobPositionRequest }) =>
       jobPositionService.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-    },
+    onSuccess: invalidate,
   });
 }
 
 export function useDeleteJobPosition() {
-  const queryClient = useQueryClient();
+  const invalidate = useInvalidatePositions();
   return useMutation({
     mutationFn: (id: string) => jobPositionService.remove(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-    },
+    onSuccess: invalidate,
   });
 }

@@ -5,7 +5,7 @@ import { useDepartments, useDeleteDepartment } from '@/hooks/use-departments';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { DepartmentFormDialog } from '../components/DepartmentFormDialog';
 import { toast } from 'sonner';
-import { apiErrorMessage } from '@/lib/utils';
+import { organizationErrorMessage } from '@/lib/organization-errors';
 import { Edit2, Trash2 } from 'lucide-react';
 import type { DepartmentListItem, DepartmentStatus } from '@/services/department.service';
 
@@ -53,7 +53,7 @@ export function DepartmentListPage() {
       await deleteMutation.mutateAsync(archivingDept.id);
       toast.success('Đã lưu trữ phòng ban');
     } catch (error) {
-      toast.error(apiErrorMessage(error, 'Không lưu trữ được phòng ban'));
+      toast.error(organizationErrorMessage(error, 'Không lưu trữ được phòng ban'));
     } finally {
       setIsArchiveOpen(false);
       setArchivingDept(null);
