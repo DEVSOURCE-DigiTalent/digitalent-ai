@@ -151,6 +151,14 @@ public static class Statuses
         public const string UserRequest = "USER_REQUEST";
     }
 
+    /// <summary>member_invitations.status</summary>
+    public static class MemberInvitation
+    {
+        public const string Pending = "PENDING";
+        public const string Accepted = "ACCEPTED";
+        public const string Revoked = "REVOKED";
+    }
+
     /// <summary>scoring_configs.config_type</summary>
     public static class ScoringConfigType
     {

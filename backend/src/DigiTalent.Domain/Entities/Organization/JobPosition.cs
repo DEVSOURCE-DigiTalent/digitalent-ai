@@ -10,9 +10,15 @@ public class JobPosition : BaseEntity
 {
     public Guid OrganizationId { get; set; }
     public Guid? JobFamilyId { get; set; }
+
+    /// <summary>Owning department (optional): positions are listed and filtered per department.</summary>
+    public Guid? DepartmentId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
+
+    /// <summary>Grade on the shared scale G1..G3 (<see cref="JobGrades"/>); null = not graded yet.</summary>
+    public string? JobGrade { get; set; }
     public string Status { get; set; } = Statuses.MasterData.Active;
 
     /// <summary>
