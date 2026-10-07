@@ -7,6 +7,15 @@
 -- configurations and migrations are written to match it; Report 4 Section 2 and
 -- docs/07 describe it. Change this file first, then the code and the documents.
 --
+-- Addendum 2026-10-06b (organization screens OW-02..OW-13) — 2 new tables, 3 new columns:
+--   * job_positions.department_id, job_positions.job_grade: a position belongs to a
+--     department and sits on one of the shared grades G1..G3 (position list/detail, grades).
+--   * job_grades: per-organization display name/description of the G1..G3 scale (OW-12).
+--     A grade without a row falls back to the default name, so no seeding is required.
+--   * member_invitations: invitations to join the organization (OW-02 "invite members").
+--     Only a SHA-256 hash of the activation token is stored.
+--   * users.deactivated_reason: why an Owner deactivated a member (offboarding).
+--
 -- Addendum 2026-10-06 (organization overview page OW-01 + BE2 tables) — 6 new tables, 2 new columns:
 --   * organizations.setup_completed_at: onboarding state ("setup not finished" banner).
 --   * audit_logs.entity_label: human-readable target shown in "recent activity".
@@ -35,7 +44,7 @@
 --       Optional            : Intelligence extension
 --
 -- Scope created by this script:
---   * 61 core tables (55 + 6 added by the 2026-10-06 addendum)
+--   * 63 core tables (55 + 6 added by the 2026-10-06 addendum + 2 by the 2026-10-06b addendum)
 --   * 4 non-blocking Intelligence extension tables
 --   * password_reset_tokens is intentionally NOT created by default (conditional)
 --
@@ -141,6 +150,7 @@ CREATE TABLE users (
     failed_login_count  integer      NOT NULL DEFAULT 0,
     locked_until        timestamptz,
     last_login_at       timestamptz,
+    deactivated_reason  varchar(500),                         -- set when an Owner deactivates the member
     created_at          timestamptz  NOT NULL,
     updated_at          timestamptz  NOT NULL,
     CONSTRAINT ck_users_status
@@ -243,19 +253,39 @@ CREATE TABLE job_families (
         CHECK (status IN ('ACTIVE','INACTIVE','ARCHIVED'))
 );
 
+-- department_id is declared now but its FK is added after departments exists.
 CREATE TABLE job_positions (
     id              uuid PRIMARY KEY,
     organization_id uuid NOT NULL REFERENCES organizations(id),
     job_family_id   uuid REFERENCES job_families(id),
+    department_id   uuid,                                     -- owning department (optional)
     code            varchar(50)  NOT NULL,
     name            varchar(180) NOT NULL,
     description     text,
+    job_grade       varchar(10),                              -- G1 / G2 / G3 (see job_grades)
     status          varchar(30)  NOT NULL,
     created_at      timestamptz  NOT NULL,
     updated_at      timestamptz  NOT NULL,
     CONSTRAINT uq_job_positions_org_code UNIQUE (organization_id, code),
     CONSTRAINT ck_job_positions_status
-        CHECK (status IN ('ACTIVE','INACTIVE','ARCHIVED'))
+        CHECK (status IN ('ACTIVE','INACTIVE','ARCHIVED')),
+    CONSTRAINT ck_job_positions_job_grade
+        CHECK (job_grade IS NULL OR job_grade IN ('G1','G2','G3'))
+);
+
+-- Display name and description of the shared grade scale, per organization (OW-12).
+-- The codes are fixed (G1..G3); a missing row means "use the default name".
+CREATE TABLE job_grades (
+    id              uuid PRIMARY KEY,
+    organization_id uuid NOT NULL REFERENCES organizations(id),
+    code            varchar(10)  NOT NULL,
+    name            varchar(120) NOT NULL,
+    description     text,
+    created_at      timestamptz  NOT NULL,
+    updated_at      timestamptz  NOT NULL,
+    CONSTRAINT uq_job_grades_org_code UNIQUE (organization_id, code),
+    CONSTRAINT ck_job_grades_code
+        CHECK (code IN ('G1','G2','G3'))
 );
 
 -- manager_employee_id is declared now but its FK is added after employees exists.
@@ -302,6 +332,42 @@ CREATE TABLE employees (
 ALTER TABLE departments
     ADD CONSTRAINT fk_departments_manager_employee
     FOREIGN KEY (manager_employee_id) REFERENCES employees(id);
+
+ALTER TABLE job_positions
+    ADD CONSTRAINT fk_job_positions_department
+    FOREIGN KEY (department_id) REFERENCES departments(id);
+
+CREATE INDEX ix_job_positions_department
+    ON job_positions (department_id);
+
+-- Invitation to join an organization (OW-02). The account (users + employees + user_roles)
+-- is created only when the invitee activates it with the emailed token.
+CREATE TABLE member_invitations (
+    id                  uuid PRIMARY KEY,
+    organization_id     uuid NOT NULL REFERENCES organizations(id),
+    email               varchar(255) NOT NULL,                -- stored lower-case
+    full_name           varchar(200) NOT NULL,
+    employee_code       varchar(50),                          -- optional; generated on activation if empty
+    role_id             uuid NOT NULL REFERENCES roles(id),
+    department_id       uuid REFERENCES departments(id),
+    job_position_id     uuid REFERENCES job_positions(id),
+    token_hash          varchar(128) NOT NULL UNIQUE,         -- SHA-256 of the activation token
+    status              varchar(30)  NOT NULL,
+    invited_by_user_id  uuid REFERENCES users(id),
+    invited_at          timestamptz  NOT NULL,
+    expires_at          timestamptz  NOT NULL,
+    accepted_user_id    uuid REFERENCES users(id),
+    accepted_at         timestamptz,
+    created_at          timestamptz  NOT NULL,
+    updated_at          timestamptz  NOT NULL,
+    CONSTRAINT ck_member_invitations_status
+        CHECK (status IN ('PENDING','ACCEPTED','REVOKED'))
+);
+
+-- At most one pending invitation per e-mail in an organization.
+CREATE UNIQUE INDEX ux_member_invitations_pending_email
+    ON member_invitations (organization_id, email)
+    WHERE status = 'PENDING';
 
 CREATE UNIQUE INDEX ux_employees_work_email_per_org
     ON employees (organization_id, lower(work_email))
