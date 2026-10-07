@@ -10,10 +10,11 @@ import { RECOMMENDATIONS_KEY } from './use-recommendations';
 export const SKILL_GAPS_KEY = ['skill-gaps'];
 
 /** Latest (or full history) skill gap snapshots visible to the caller. */
-export function useSkillGapRuns(params?: SkillGapRunListParams) {
+export function useSkillGapRuns(params?: SkillGapRunListParams, enabled = true) {
   return useQuery({
     queryKey: [...SKILL_GAPS_KEY, 'list', params],
     queryFn: () => skillGapService.getList(params).then((r) => r.data.data!),
+    enabled,
   });
 }
 
