@@ -102,8 +102,8 @@ describe('Learning & Assessment Flow (EMP-05..10 & LCA-14..17)', () => {
 
       expect(screen.getAllByText('GENAI-101').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('Ứng dụng AI Tạo sinh trong Công việc Hàng ngày')).toBeInTheDocument();
-      expect(screen.getByText(/Chương 1: Tổng quan GenAI/)).toBeInTheDocument();
-      expect(screen.getByText('Bài 1: Khái niệm LLM')).toBeInTheDocument();
+      expect(screen.getAllByText(/Chương 1: Tổng quan GenAI/).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Bài 1: Khái niệm LLM').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('Bài 2: Viết prompt cơ bản')).toBeInTheDocument();
       expect(screen.getByText(/Tiến độ: 50%/)).toBeInTheDocument();
     });
@@ -475,7 +475,7 @@ describe('Learning & Assessment Flow (EMP-05..10 & LCA-14..17)', () => {
 
       renderWithClient(<InternalCourseListPage />);
 
-      expect(screen.getByText('Khóa học nội bộ')).toBeInTheDocument();
+      expect(screen.getByText('Khóa học trong tổ chức')).toBeInTheDocument();
       expect(screen.getByText('INT-ONBOARD-2026')).toBeInTheDocument();
       expect(screen.getByText('Văn hóa & Quy trình bảo mật số nội bộ')).toBeInTheDocument();
     });
@@ -498,23 +498,21 @@ describe('Learning & Assessment Flow (EMP-05..10 & LCA-14..17)', () => {
         '/internal-courses/new'
       );
 
-      expect(screen.getByText('Soạn khóa học nội bộ mới')).toBeInTheDocument();
+      expect(screen.getByText('Tạo khóa học nội bộ')).toBeInTheDocument();
 
-      fireEvent.change(screen.getByPlaceholderText(/VD: NB-03/i), {
-        target: { value: 'INT-TEST-01' },
-      });
-      fireEvent.change(screen.getByPlaceholderText(/VD: Hướng dẫn an toàn thông tin/i), {
+      fireEvent.change(screen.getByLabelText('Tên khóa học'), {
         target: { value: 'Khóa học kiểm thử tự động' },
       });
 
-      const submitBtn = screen.getByRole('button', { name: /Lưu khóa học/i });
+      const submitBtn = screen.getByRole('button', { name: /Tạo bản nháp/i });
       fireEvent.click(submitBtn);
 
       await waitFor(() => {
         expect(mutateAsync).toHaveBeenCalledWith(
           expect.objectContaining({
-            code: 'INT-TEST-01',
             title: 'Khóa học kiểm thử tự động',
+            modulesCount: 0,
+            status: 'DRAFT',
           })
         );
       });

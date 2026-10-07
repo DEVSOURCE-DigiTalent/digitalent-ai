@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, Users, BookOpen, CheckCircle2,
-  AlertCircle, Ban, CheckSquare,
+  AlertCircle, Ban, CheckSquare, Play,
   BarChart3, ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -10,6 +10,7 @@ import {
   useTrainingBatch,
   useCompleteTrainingBatch,
   useCancelTrainingBatch,
+  useActivateTrainingBatch,
 } from '@/hooks/use-training-batches';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { LevelBadge } from '@/components/shared/LevelBadge';
@@ -28,6 +29,7 @@ export function TrainingBatchDetailPage() {
   const { data: batch, isLoading } = useTrainingBatch(id);
   const completeMutation = useCompleteTrainingBatch();
   const cancelMutation = useCancelTrainingBatch();
+  const activateMutation = useActivateTrainingBatch();
 
   if (isLoading) {
     return <div className="py-20 text-center text-sm text-slate-500">Đang tải chi tiết đợt đào tạo…</div>;
@@ -95,8 +97,20 @@ export function TrainingBatchDetailPage() {
     }
   };
 
+  const handleActivate = async () => {
+    if (!window.confirm(`Bắt đầu đợt đào tạo "${batch.name}"?`)) return;
+    try {
+      await activateMutation.mutateAsync(batch.id);
+      toast.success('Đã bắt đầu đợt đào tạo.');
+    } catch (error: any) {
+      toast.error(error?.message || 'Không thể bắt đầu đợt đào tạo.');
+    }
+  };
+
   const handleCancel = async () => {
-    const reason = window.prompt('Nhập lý do hủy đợt đào tạo này:');
+    const reason = import.meta.env.VITE_USE_MOCK === 'true'
+      ? window.prompt('Nhập lý do hủy đợt đào tạo này:')
+      : window.confirm(`Hủy đợt đào tạo "${batch.name}"?`) ? '' : null;
     if (reason === null) return;
     try {
       await cancelMutation.mutateAsync({ id: batch.id, reason: reason.trim() || undefined });
@@ -133,6 +147,16 @@ export function TrainingBatchDetailPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            {batch.status === 'DRAFT' && import.meta.env.VITE_USE_MOCK !== 'true' && (
+              <button
+                type="button"
+                onClick={handleActivate}
+                disabled={activateMutation.isPending}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 transition-colors"
+              >
+                <Play className="size-4" /> Bắt đầu đợt
+              </button>
+            )}
             {batch.status === 'RUNNING' && (
               <button
                 type="button"
@@ -158,6 +182,12 @@ export function TrainingBatchDetailPage() {
           </div>
         </div>
       </div>
+
+      {import.meta.env.VITE_USE_MOCK !== 'true' && batch.status !== 'CANCELLED' && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          Học viên trong đợt chưa được giao khóa học tự động. Dùng <Link to="/enterprise/assignments" className="font-semibold underline">Giao khóa học</Link> để tạo phân công.
+        </p>
+      )}
 
       {/* KPI Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-white rounded-xl border border-slate-200 p-4 shadow-sm">

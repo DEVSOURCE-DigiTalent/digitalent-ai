@@ -1,6 +1,5 @@
 import apiClient from './api-client';
 import type { ApiResponse, PagedList } from '../types/api';
-import type { AssignmentRow } from './assignment.service';
 
 export interface GapStats {
   employees: number;
@@ -156,7 +155,7 @@ export const analyticsService = {
   getReviews: (params?: ReviewListParams) =>
     apiClient.get<ApiResponse<PagedList<RecommendationReviewRow>>>('/intelligence/recommendation-reviews', { params }),
   acceptReview: (data: { employeeId: string; courseId: string; dueDate?: string }) =>
-    apiClient.post<ApiResponse<AssignmentRow>>('/intelligence/recommendation-reviews/accept', data),
+    apiClient.post<ApiResponse<{ status: string }>>('/intelligence/recommendation-reviews/accept', data),
   dismissReview: (data: { employeeId: string; courseId: string; reason: string }) =>
     apiClient.post<ApiResponse<{ status: string }>>('/intelligence/recommendation-reviews/dismiss', data),
   reopenReview: (data: { employeeId: string; courseId: string }) =>

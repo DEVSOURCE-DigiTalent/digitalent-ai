@@ -7,6 +7,7 @@ import { useTrainingBatches, useTrainingBatchSummary } from '@/hooks/use-trainin
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import type { TrainingBatchStatus } from '@/services/mock/server/types';
+import { apiErrorMessage } from '@/lib/utils';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: 'Tất cả trạng thái' },
@@ -28,7 +29,7 @@ export function TrainingBatchListPage() {
   const [pageIndex, setPageIndex] = useState(1);
 
   const { data: summary } = useTrainingBatchSummary();
-  const { data: batchesData, isLoading } = useTrainingBatches({
+  const { data: batchesData, isLoading, isError, error, refetch } = useTrainingBatches({
     search: search.trim() || undefined,
     status: statusFilter ? (statusFilter as TrainingBatchStatus) : undefined,
     pageIndex,
@@ -72,7 +73,7 @@ export function TrainingBatchListPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <PageHeader
           title="Đợt đào tạo (Training Batches)"
-          subtitle="Tổ chức các đợt bồi dưỡng năng lực tập trung cho các phòng ban, vị trí công việc hoặc nhóm Cấp bậc G1–G3. Tự động giao khóa học và giám sát tiến độ hoàn thành."
+          subtitle="Tổ chức đợt bồi dưỡng, chọn học viên và theo dõi tiến độ. Việc giao khóa học cho học viên được thực hiện ở mục Giao khóa học."
         />
         <Link
           to="/enterprise/training-batches/new"
@@ -137,7 +138,12 @@ export function TrainingBatchListPage() {
 
       {/* Bảng danh sách đợt đào tạo */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        {isLoading ? (
+        {isError ? (
+          <div role="alert" className="py-12 text-center text-sm text-rose-700">
+            Không tải được đợt đào tạo: {apiErrorMessage(error, 'Vui lòng thử lại.')}
+            <button type="button" onClick={() => void refetch()} className="ml-3 font-semibold underline">Thử lại</button>
+          </div>
+        ) : isLoading ? (
           <div className="py-20 text-center text-sm text-slate-500">Đang tải danh sách đợt đào tạo…</div>
         ) : batches.length === 0 ? (
           <div className="py-16 text-center">

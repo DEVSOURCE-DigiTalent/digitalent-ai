@@ -1,7 +1,7 @@
 import apiClient from './api-client';
 import type { ApiResponse, PagedList } from '../types/api';
 
-export type AssignmentStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'READY_FOR_ASSESSMENT' | 'COMPLETED' | 'CANCELLED';
+export type AssignmentStatus = 'ACTIVE' | 'NOT_STARTED' | 'IN_PROGRESS' | 'READY_FOR_ASSESSMENT' | 'COMPLETED' | 'CANCELLED';
 
 export interface CourseListItem {
   id: string;
@@ -38,6 +38,7 @@ export interface CourseDetailDto {
     code?: string | null;
     title: string;
     description?: string | null;
+    sortOrder?: number;
     lessons: { id: string; code?: string | null; title: string; lessonType: string; estimatedMinutes?: number | null; sortOrder?: number }[];
   }[];
 }
@@ -121,26 +122,8 @@ export const assignmentService = {
   getCourse: (id: string) => apiClient.get<ApiResponse<CourseDetailDto>>(`/courses/${id}`),
   getLesson: (id: string) => apiClient.get<ApiResponse<CourseLessonDto>>(`/lessons/${id}`),
   getList: (params?: AssignmentListParams) => apiClient.get<ApiResponse<PagedList<AssignmentRow>>>('/course-assignments', { params }),
-  getById: async (id: string): Promise<AssignmentRow> => {
-    if (import.meta.env.VITE_USE_MOCK === 'true') {
-      const response = await apiClient.get<ApiResponse<AssignmentRow>>(`/course-assignments/${id}`);
-      return response.data.data!;
-    }
-    // BE2 exposes a paged list but no GET /course-assignments/:id.
-    let pageIndex = 1;
-    let totalPages = 1;
-    while (pageIndex <= totalPages) {
-      const response = await apiClient.get<ApiResponse<PagedList<AssignmentRow>>>('/course-assignments', {
-        params: { pageIndex, pageSize: 100 },
-      });
-      const page = response.data.data!;
-      const match = page.items.find((assignment) => assignment.id === id);
-      if (match) return match;
-      totalPages = page.totalPages;
-      pageIndex++;
-    }
-    throw new Error('Không tìm thấy phân công đào tạo.');
-  },
+  getById: async (id: string): Promise<AssignmentRow> =>
+    (await apiClient.get<ApiResponse<AssignmentRow>>(`/course-assignments/${id}`)).data.data!,
   getSummary: () => apiClient.get<ApiResponse<AssignmentSummary>>('/course-assignments/summary'),
   create: (data: CreateAssignmentRequest) => apiClient.post<ApiResponse<CreateAssignmentResult>>('/course-assignments', data),
   cancel: (id: string, reason?: string) => apiClient.delete<ApiResponse<{ id: string }>>(`/course-assignments/${id}`, { data: { reason } }),

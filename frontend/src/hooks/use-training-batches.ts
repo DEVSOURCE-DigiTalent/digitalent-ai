@@ -75,3 +75,12 @@ export function useCompleteTrainingBatch() {
     },
   });
 }
+
+export function useActivateTrainingBatch() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      (await trainingBatchService.activateBatch(id)).data.data!,
+    onSuccess: () => qc.invalidateQueries({ queryKey: TRAINING_BATCHES_KEY }),
+  });
+}

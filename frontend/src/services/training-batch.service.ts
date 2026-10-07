@@ -6,19 +6,25 @@ import type { TrainingBatchStatus } from './mock/server/types';
 const mock = import.meta.env.VITE_USE_MOCK === 'true';
 const dateTime = (value?: string) => value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00Z` : value;
 
-interface BackendBatch {
+interface BackendBatchBase {
   id: string;
   code: string;
   title: string;
-  description?: string;
-  courseId: string;
   courseName?: string;
   startDate: string;
   endDate?: string;
   status: string;
+  createdAt: string;
+}
+
+interface BackendBatch extends BackendBatchBase {
   totalEmployees: number;
   completedCount: number;
-  createdAt: string;
+}
+
+interface BackendBatchDetail extends BackendBatchBase {
+  description?: string;
+  courseId: string;
   createdByName?: string;
   employees?: { employeeId: string; employeeName: string; employeeCode?: string; departmentName?: string; status: string; progressPercent: number }[];
 }
@@ -81,11 +87,10 @@ function mapList(item: BackendBatch): TrainingBatchListItemDto {
     completedParticipantsCount: item.completedCount,
     averageProgressPercent: item.totalEmployees ? Math.round(item.completedCount / item.totalEmployees * 100) : 0,
     createdAt: item.createdAt,
-    createdByName: item.createdByName,
   };
 }
 
-function mapDetail(item: BackendBatch, course?: BackendCourse): TrainingBatchDetailDto {
+function mapDetail(item: BackendBatchDetail, course?: BackendCourse): TrainingBatchDetailDto {
   const participants = (item.employees ?? []).map((e) => ({
     employeeId: e.employeeId,
     employeeName: e.employeeName,
@@ -104,6 +109,7 @@ function mapDetail(item: BackendBatch, course?: BackendCourse): TrainingBatchDet
       totalEmployees: participants.length,
       completedCount: participants.filter((p) => p.isFullyCompleted).length,
     }),
+    createdByName: item.createdByName,
     description: item.description,
     courseIds: [item.courseId],
     participantEmployeeIds: participants.map((e) => e.employeeId),
@@ -136,26 +142,25 @@ export const trainingBatchService = {
   },
 
   getSummary: async () => {
-    if (mock) return apiClient.get<ApiResponse<TrainingBatchSummary>>('/training-batches/summary');
-    const first = await apiClient.get<ApiResponse<PagedList<BackendBatch>>>('/training-batches', { params: { pageIndex: 1, pageSize: 100 } });
-    const page = first.data.data!;
-    const pages = await Promise.all(Array.from({ length: Math.max(0, page.totalPages - 1) }, (_, i) =>
-      apiClient.get<ApiResponse<PagedList<BackendBatch>>>('/training-batches', { params: { pageIndex: i + 2, pageSize: 100 } })));
-    const items = [page, ...pages.map((res) => res.data.data!)].flatMap((p) => p.items);
-    const summary: TrainingBatchSummary = {
-      total: page.totalItems,
-      running: items.filter((x) => x.status === 'ACTIVE').length,
-      scheduled: items.filter((x) => x.status === 'DRAFT').length,
-      completed: items.filter((x) => x.status === 'COMPLETED').length,
-      cancelled: items.filter((x) => x.status === 'CANCELLED').length,
-      totalParticipants: items.reduce((sum, x) => sum + x.totalEmployees, 0),
-    };
-    return { ...first, data: { ...first.data, data: summary } };
+    if (!mock) return apiClient.get<ApiResponse<TrainingBatchSummary>>('/training-batches/summary');
+    const response = await apiClient.get<ApiResponse<{
+      totalBatches: number; runningBatches: number; scheduledBatches: number;
+      completedBatches: number; totalParticipants: number;
+    }>>('/training-batches/summary');
+    const value = response.data.data!;
+    return { ...response, data: { ...response.data, data: {
+      total: value.totalBatches,
+      running: value.runningBatches,
+      scheduled: value.scheduledBatches,
+      completed: value.completedBatches,
+      cancelled: 0,
+      totalParticipants: value.totalParticipants,
+    } } };
   },
 
   getBatchById: async (id: string) => {
     if (mock) return apiClient.get<ApiResponse<TrainingBatchDetailDto>>(`/training-batches/${id}`);
-    const response = await apiClient.get<ApiResponse<BackendBatch>>(`/training-batches/${id}`);
+    const response = await apiClient.get<ApiResponse<BackendBatchDetail>>(`/training-batches/${id}`);
     const batch = response.data.data!;
     const course = await apiClient.get<ApiResponse<BackendCourse>>(`/courses/${batch.courseId}`)
       .then((res) => res.data.data ?? undefined).catch(() => undefined);
@@ -189,6 +194,9 @@ export const trainingBatchService = {
 
   completeBatch: (id: string) =>
     apiClient.post<ApiResponse<{ success: boolean }>>(`/training-batches/${id}/complete`),
+
+  activateBatch: (id: string) =>
+    apiClient.post<ApiResponse<{ success: boolean }>>(`/training-batches/${id}/activate`),
 
   addEmployees: (id: string, employeeIds: string[]) =>
     apiClient.post<ApiResponse<{ added: number }>>(`/training-batches/${id}/employees`, { employeeIds }),

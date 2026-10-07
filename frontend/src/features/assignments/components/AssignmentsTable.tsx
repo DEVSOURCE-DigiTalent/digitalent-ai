@@ -18,10 +18,12 @@ interface AssignmentsTableProps {
   pageInfo: { page: number; pageSize: number; total: number; onPageChange: (page: number) => void };
   /** Where a name leads; none for roles that cannot open the capability page. */
   employeeLink?: boolean;
+  employeeLinkPrefix?: string;
+  assignmentLinkPrefix?: string;
 }
 
 /** The list of course assignments shared by the assignment and the training monitor screens. */
-export function AssignmentsTable({ rows, isLoading, onCancel, search, onSearchChange, filters, toolbarActions, pageInfo, employeeLink = true }: AssignmentsTableProps) {
+export function AssignmentsTable({ rows, isLoading, onCancel, search, onSearchChange, filters, toolbarActions, pageInfo, employeeLink = true, employeeLinkPrefix = '/enterprise/members', assignmentLinkPrefix }: AssignmentsTableProps) {
   const columns: Column<AssignmentRow>[] = [
     {
       key: 'employee',
@@ -29,7 +31,7 @@ export function AssignmentsTable({ rows, isLoading, onCancel, search, onSearchCh
       cell: (a) => (
         <div>
           {employeeLink ? (
-            <Link to={`/enterprise/members/${a.employeeId}`} className="font-medium text-slate-900 hover:underline">{a.employeeName}</Link>
+            <Link to={`${employeeLinkPrefix}/${a.employeeId}`} className="font-medium text-slate-900 hover:underline">{a.employeeName}</Link>
           ) : (
             <span className="font-medium text-slate-900">{a.employeeName}</span>
           )}
@@ -42,7 +44,9 @@ export function AssignmentsTable({ rows, isLoading, onCancel, search, onSearchCh
       header: 'Khóa học',
       cell: (a) => (
         <div>
-          <p className="text-slate-900">{a.courseTitle}</p>
+          {assignmentLinkPrefix ? (
+            <Link to={`${assignmentLinkPrefix}/${a.id}`} className="text-slate-900 hover:underline">{a.courseTitle}</Link>
+          ) : <p className="text-slate-900">{a.courseTitle}</p>}
           <p className="font-mono text-xs text-slate-500">{a.courseCode}{a.source === 'SKILL_GAP' || a.source === 'RECOMMENDATION' ? ' · từ đề xuất' : ''}</p>
         </div>
       ),
@@ -69,7 +73,7 @@ export function AssignmentsTable({ rows, isLoading, onCancel, search, onSearchCh
       header: '',
       className: 'text-right',
       cell: (a) =>
-        a.status === 'COMPLETED' || a.status === 'CANCELLED' ? null : (
+        a.status === 'COMPLETED' || a.status === 'CANCELLED' || a.completedAt ? null : (
           <button type="button" onClick={() => onCancel(a)} className={SECONDARY_BUTTON} aria-label={`Hủy khóa ${a.courseCode} của ${a.employeeName}`}>
             Hủy giao
           </button>

@@ -182,7 +182,7 @@ export function TrainingBatchWizardPage() {
             { num: 1, label: 'Thông tin chung' },
             { num: 2, label: 'Chọn khóa học' },
             { num: 3, label: 'Đối tượng học viên' },
-            { num: 4, label: 'Xác nhận & Phát hành' },
+            { num: 4, label: 'Xác nhận bản nháp' },
           ].map((s, idx) => (
             <div key={s.num} className="flex items-center flex-1 last:flex-none">
               <div className="flex items-center gap-2">
@@ -502,7 +502,7 @@ export function TrainingBatchWizardPage() {
         {step === 4 && (
           <div className="space-y-6">
             <h3 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-3">
-              4. Xác nhận và cấu hình phát hành
+              4. Xác nhận bản nháp
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -527,7 +527,7 @@ export function TrainingBatchWizardPage() {
             </div>
 
             <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
-              Đợt được tạo ở trạng thái bản nháp. API hiện tại chưa có thao tác kích hoạt hoặc tự động phân công khóa học.
+              Đợt được tạo ở trạng thái bản nháp. Mở chi tiết đợt để bắt đầu; học viên cần được giao khóa học riêng ở mục Giao khóa học.
             </p>
           </div>
         )}

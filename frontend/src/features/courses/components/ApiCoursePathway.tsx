@@ -1,12 +1,30 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Clock3, Eye, Layers3, Play, ShieldCheck, Video } from 'lucide-react';
+import { ChevronRight, Clock3, Eye, Layers3, Play, ShieldCheck } from 'lucide-react';
 import { useCourseLesson, useCourses } from '@/hooks/use-assignments';
 import type { CourseDetailDto } from '@/services/assignment.service';
-import { resolveCourseMedia } from './course-media';
+import { LessonMedia, LessonText } from '@/features/learning/components/LessonPresentation';
 
 interface ApiCoursePathwayProps {
   course: CourseDetailDto;
+}
+
+type CourseModule = CourseDetailDto['modules'][number];
+type CourseLesson = CourseModule['lessons'][number];
+
+function bySortOrder<T extends { sortOrder?: number }>(items: T[]): T[] {
+  // Preserve BE order when older responses omit sortOrder.
+  return [...items].sort((a, b) => (a.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.sortOrder ?? Number.MAX_SAFE_INTEGER));
+}
+
+function moduleHeading(module: CourseModule, index: number): string {
+  const title = module.title.trim().replace(/^Học phần\s+\d+\s*:\s*/i, '');
+  return `Học phần ${index + 1}: ${title}`;
+}
+
+function lessonHeading(lesson: CourseLesson, index: number): string {
+  const title = lesson.title.trim().replace(/^Bài\s+\d+\s*:\s*/i, '').replace(/^Mûc tiêu/i, 'Mục tiêu');
+  return `Bài ${index + 1}: ${title}`;
 }
 
 export function ApiCoursePathway({ course }: ApiCoursePathwayProps) {
@@ -15,13 +33,12 @@ export function ApiCoursePathway({ course }: ApiCoursePathwayProps) {
     { search: codeMatch ? `${codeMatch[1].toUpperCase()}${codeMatch[2]}-` : undefined, pageIndex: 1, pageSize: 100 },
     Boolean(codeMatch),
   );
-  const modules = course.modules ?? [];
-  const lessonEntries = modules.flatMap((module) => module.lessons.map((lesson) => ({ module, lesson })));
+  const modules = bySortOrder(course.modules ?? []).map((module) => ({ ...module, lessons: bySortOrder(module.lessons ?? []) }));
+  const lessonEntries = modules.flatMap((module, moduleIndex) => module.lessons.map((lesson, lessonIndex) => ({ module, moduleIndex, lesson, lessonIndex })));
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const selectedEntry = lessonEntries.find(({ lesson }) => lesson.id === selectedLessonId) ?? lessonEntries[0];
   const { data: lessonContent, isLoading, isError } = useCourseLesson(selectedEntry?.lesson.id);
-  const videoSource = lessonContent?.videoUrl ?? (lessonContent?.lessonType === 'VIDEO' ? lessonContent.contentBody : null);
-  const media = resolveCourseMedia(videoSource);
+  const presentedLesson = selectedEntry ? { ...selectedEntry.lesson, ...lessonContent } : undefined;
 
   if (lessonEntries.length === 0) {
     return <div className="rounded-xl border border-slate-200 bg-white p-8 text-sm text-slate-600">Khóa học này chưa có bài học trong dữ liệu BE2.</div>;
@@ -65,18 +82,18 @@ export function ApiCoursePathway({ course }: ApiCoursePathwayProps) {
             {modules.map((module, moduleIndex) => (
               <div key={module.id} className="mb-3">
                 <div className="mb-1 flex items-center justify-between gap-2 rounded-md bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700">
-                  <span>Học phần {moduleIndex + 1}: {module.title}</span>
+                  <span>{moduleHeading(module, moduleIndex)}</span>
                   <span className="shrink-0 font-normal text-slate-500">{module.lessons.length} bài</span>
                 </div>
                 <div className="space-y-1">
-                  {module.lessons.map((lesson) => {
+                  {module.lessons.map((lesson, lessonIndex) => {
                     const selected = lesson.id === selectedEntry.lesson.id;
                     return (
                       <button key={lesson.id} type="button" onClick={() => setSelectedLessonId(lesson.id)}
                         aria-current={selected ? 'step' : undefined}
                         className={`flex w-full items-start gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${selected ? 'bg-primary-50 font-semibold text-primary-800 ring-1 ring-primary-300' : 'text-slate-700 hover:bg-slate-50'}`}>
                         <Play className="mt-0.5 size-3.5 shrink-0" />
-                        <span className="min-w-0 flex-1"><span className="block">{lesson.title}</span><span className="mt-0.5 block text-xs font-normal text-slate-500">{lesson.estimatedMinutes == null ? lesson.lessonType : `${lesson.estimatedMinutes} phút · ${lesson.lessonType}`}</span></span>
+                        <span className="min-w-0 flex-1"><span className="block">{lessonHeading(lesson, lessonIndex)}</span><span className="mt-0.5 block text-xs font-normal text-slate-500">{lesson.estimatedMinutes == null ? 'Chưa cập nhật thời lượng' : `${lesson.estimatedMinutes} phút`}</span></span>
                         <ChevronRight className="mt-0.5 size-4 shrink-0 opacity-50" />
                       </button>
                     );
@@ -90,7 +107,7 @@ export function ApiCoursePathway({ course }: ApiCoursePathwayProps) {
         <div className="space-y-4 lg:col-span-8">
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
             <span className="inline-flex items-center gap-2 font-semibold text-primary-700"><Eye className="size-4" /> Xem trước như học viên</span>
-            <span className="text-slate-600">Đang xem: <strong>{selectedEntry.lesson.title}</strong></span>
+            <span className="text-slate-600">Đang xem: <strong>{lessonHeading(selectedEntry.lesson, selectedEntry.lessonIndex)}</strong></span>
           </div>
           <section className="space-y-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
@@ -98,30 +115,13 @@ export function ApiCoursePathway({ course }: ApiCoursePathwayProps) {
               <span>{selectedEntry.lesson.estimatedMinutes == null ? 'Chưa cập nhật thời lượng' : `Thời lượng: ${selectedEntry.lesson.estimatedMinutes} phút`}</span>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary-600">{selectedEntry.module.title}</p>
-              <h3 className="mt-1 text-xl font-bold text-slate-900">{selectedEntry.lesson.title}</h3>
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary-600">{moduleHeading(selectedEntry.module, selectedEntry.moduleIndex)}</p>
+              <h3 className="mt-1 text-xl font-bold text-slate-900">{lessonHeading(selectedEntry.lesson, selectedEntry.lessonIndex)}</h3>
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2 text-xs"><span className="inline-flex items-center gap-1.5 font-semibold text-slate-800"><Video className="size-4 text-primary-600" /> Video bài giảng</span><span className="text-slate-500">{media ? 'Video từ nội dung bài học' : 'Chưa có liên kết video'}</span></div>
-              {media?.kind === 'embed' ? (
-                <div className="aspect-video overflow-hidden rounded-xl border border-slate-300 bg-slate-950">
-                  <iframe title={`Video bài học: ${selectedEntry.lesson.title}`} src={media.url} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="h-full w-full border-0" />
-                </div>
-              ) : media?.kind === 'file' ? (
-                <video key={media.url} controls preload="metadata" className="aspect-video w-full rounded-xl bg-slate-950" src={media.url}>Trình duyệt không hỗ trợ phát video này.</video>
-              ) : (
-                <div className="flex aspect-video items-center justify-center rounded-xl border border-[#555c65] bg-gradient-to-br from-[#293443] via-[#56616a] to-[#202b3b] px-6 text-center text-[#f7f5eb]">
-                  <div><span className="mx-auto flex size-16 items-center justify-center rounded-full bg-[#9bb5ee] text-[#182238] shadow-lg"><Play className="ml-1 size-7 fill-current" /></span><p className="mt-4 font-semibold">Khung xem trước video bài giảng</p><p className="mt-1 max-w-md text-sm text-[#e5e8ed]">BE2 chưa cung cấp URL video cho bài học này. Khi có liên kết video, trình phát sẽ hiển thị tại đây.</p></div>
-                </div>
-              )}
-            </div>
-            <div className="border-t border-slate-200 pt-5">
-              <h4 className="text-sm font-semibold text-slate-900">Nội dung bài học</h4>
-              {isLoading ? <p className="mt-2 text-sm text-slate-500">Đang tải nội dung…</p>
-                : isError ? <p className="mt-2 text-sm text-rose-700">Không tải được nội dung bài học từ BE2.</p>
-                : lessonContent?.contentBody && !media ? <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-700">{lessonContent.contentBody}</p>
-                : <p className="mt-2 text-sm text-slate-500">Bài học này chưa có nội dung văn bản.</p>}
-            </div>
+            {presentedLesson && <LessonMedia lesson={presentedLesson} />}
+            {isLoading ? <p className="rounded-xl bg-slate-50 p-5 text-sm text-slate-500">Đang tải nội dung bài học…</p>
+              : isError ? <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-700">Không tải được nội dung bài học. Vui lòng thử lại.</p>
+                : presentedLesson && <LessonText lesson={presentedLesson} />}
           </section>
         </div>
       </div>
