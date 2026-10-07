@@ -10,11 +10,13 @@ public class UpdateJobPositionUseCase : IUseCase<UpdateJobPositionUseCaseInput, 
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUser _currentUser;
+    private readonly IAuditService _auditService;
 
-    public UpdateJobPositionUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    public UpdateJobPositionUseCase(IApplicationDbContext context, ICurrentUser currentUser, IAuditService auditService)
     {
         _context = context;
         _currentUser = currentUser;
+        _auditService = auditService;
     }
 
     public async Task<UpdateJobPositionUseCaseOutput> ExecuteAsync(UpdateJobPositionUseCaseInput input)
@@ -27,6 +29,11 @@ public class UpdateJobPositionUseCase : IUseCase<UpdateJobPositionUseCaseInput, 
         if (position == null)
         {
             throw new NotFoundException($"Job position with Id '{input.Id}' not found.");
+        }
+
+        if (position.Status == Statuses.MasterData.Archived)
+        {
+            throw new ConflictException("Archived job positions cannot be edited.");
         }
 
         var code = input.Code.Trim().ToUpper();
@@ -49,13 +56,21 @@ public class UpdateJobPositionUseCase : IUseCase<UpdateJobPositionUseCaseInput, 
             }
         }
 
+        await JobPositionRules.EnsureValidDepartmentAsync(_context, organizationId, input.DepartmentId);
+
+        var oldValues = new { position.Code, position.Name, position.DepartmentId, position.JobGrade, position.Status };
         position.Code = code;
         position.Name = input.Name.Trim();
         position.Description = input.Description;
         position.JobFamilyId = input.JobFamilyId;
+        position.DepartmentId = input.DepartmentId;
+        position.JobGrade = JobPositionRules.NormalizeGrade(input.JobGrade);
         position.Status = input.Status;
 
         await _context.SaveChangesAsync();
+
+        await _auditService.LogAsync("POSITION_UPDATED", "job_positions", position.Id, oldValues,
+            new { position.Code, position.Name, position.DepartmentId, position.JobGrade, position.Status }, position.Name);
 
         return new UpdateJobPositionUseCaseOutput { Id = position.Id };
     }

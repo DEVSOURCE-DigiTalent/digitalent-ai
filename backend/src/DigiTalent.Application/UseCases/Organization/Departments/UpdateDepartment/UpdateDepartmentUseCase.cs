@@ -13,11 +13,13 @@ public class UpdateDepartmentUseCase : IUseCase<UpdateDepartmentUseCaseInput, Up
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUser _currentUser;
+    private readonly IAuditService _auditService;
 
-    public UpdateDepartmentUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    public UpdateDepartmentUseCase(IApplicationDbContext context, ICurrentUser currentUser, IAuditService auditService)
     {
         _context = context;
         _currentUser = currentUser;
+        _auditService = auditService;
     }
 
     public async Task<UpdateDepartmentUseCaseOutput> ExecuteAsync(UpdateDepartmentUseCaseInput input)
@@ -51,14 +53,25 @@ public class UpdateDepartmentUseCase : IUseCase<UpdateDepartmentUseCaseInput, Up
             await EnsureValidParentAsync(department.Id, department.OrganizationId, input.ParentDepartmentId.Value);
         }
 
-        // 4. Gán giá trị mới rồi lưu (EF tự biết field nào thay đổi để UPDATE)
+        // 4. Trưởng phòng mới (nếu đổi) phải là nhân viên ACTIVE cùng tổ chức
+        if (input.ManagerEmployeeId.HasValue && input.ManagerEmployeeId != department.ManagerEmployeeId)
+        {
+            await DepartmentRules.EnsureValidManagerAsync(_context, department.OrganizationId, input.ManagerEmployeeId.Value);
+        }
+
+        // 5. Gán giá trị mới rồi lưu (EF tự biết field nào thay đổi để UPDATE)
+        var oldValues = new { department.Code, department.Name, department.ManagerEmployeeId, department.Status };
         department.Code = code;
         department.Name = input.Name.Trim();
         department.Description = input.Description;
         department.ParentDepartmentId = input.ParentDepartmentId;
+        department.ManagerEmployeeId = input.ManagerEmployeeId;
         department.Status = input.Status;
 
         await _context.SaveChangesAsync();
+
+        await _auditService.LogAsync("DEPARTMENT_UPDATED", "departments", department.Id, oldValues,
+            new { department.Code, department.Name, department.ManagerEmployeeId, department.Status }, department.Name);
 
         return new UpdateDepartmentUseCaseOutput { Id = department.Id };
     }

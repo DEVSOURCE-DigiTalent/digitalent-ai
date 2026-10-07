@@ -10,11 +10,13 @@ public class ArchiveJobPositionUseCase : IUseCase<ArchiveJobPositionUseCaseInput
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUser _currentUser;
+    private readonly IAuditService _auditService;
 
-    public ArchiveJobPositionUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    public ArchiveJobPositionUseCase(IApplicationDbContext context, ICurrentUser currentUser, IAuditService auditService)
     {
         _context = context;
         _currentUser = currentUser;
+        _auditService = auditService;
     }
 
     public async Task<ArchiveJobPositionUseCaseOutput> ExecuteAsync(ArchiveJobPositionUseCaseInput input)
@@ -39,6 +41,8 @@ public class ArchiveJobPositionUseCase : IUseCase<ArchiveJobPositionUseCaseInput
 
         position.Status = Statuses.MasterData.Archived;
         await _context.SaveChangesAsync();
+
+        await _auditService.LogAsync("POSITION_ARCHIVED", "job_positions", position.Id, entityLabel: position.Name);
 
         return new ArchiveJobPositionUseCaseOutput { Id = position.Id };
     }

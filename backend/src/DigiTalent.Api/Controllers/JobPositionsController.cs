@@ -11,7 +11,7 @@ namespace DigiTalent.Api.Controllers;
 [Route("api/v1/job-positions")]
 public class JobPositionsController : ControllerBase
 {
-    // GET api/v1/job-positions?pageIndex=1&pageSize=20&search=dev&status=ACTIVE&jobFamilyId=...
+    // GET api/v1/job-positions?pageIndex=1&pageSize=20&search=dev&status=ACTIVE&jobFamilyId=...&departmentId=...&jobGrade=G1
     [HttpGet]
     [HasPermission(Permissions.JobPosition.Read)]
     public async Task<ActionResult<ApiResponse<GetPagedJobPositionsUseCaseOutput>>> GetPaged(
