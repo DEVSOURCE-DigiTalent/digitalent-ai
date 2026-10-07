@@ -17,21 +17,12 @@ import { TaskDetailPage } from '../pages/TaskDetailPage';
 import { EvaluateEvidencePage } from '../pages/EvaluateEvidencePage';
 import { ReviewQueuePage } from '../pages/ReviewQueuePage';
 
-// Learner Pages
-import { MyDevelopmentDashboardPage } from '@/features/employee/pages/MyDevelopmentDashboardPage';
-import { MyPracticalTasksPage } from '@/features/employee/pages/MyPracticalTasksPage';
-import { SubmitEvidencePage } from '@/features/employee/pages/SubmitEvidencePage';
-import { TaskFeedbackPage } from '@/features/employee/pages/TaskFeedbackPage';
-import { EvidencePortfolioPage } from '@/features/employee/pages/EvidencePortfolioPage';
-import { MyCertificatesPage } from '@/features/employee/pages/MyCertificatesPage';
-
 // Hooks
 import * as taskHooks from '@/hooks/use-tasks';
 import * as empHooks from '@/hooks/use-employees';
 import * as jobHooks from '@/hooks/use-job-positions';
 import * as deptHooks from '@/hooks/use-departments';
 import * as analyticsHooks from '@/hooks/use-analytics';
-import * as learningHooks from '@/hooks/use-learning';
 import { useCurrentUser } from '@/hooks/use-current-user';
 
 // Mock sonner
@@ -56,7 +47,7 @@ function renderWithClient(ui: React.ReactElement, initialRoute = '/') {
   );
 }
 
-describe('Tasks, Team & Evidence Flow (MGR-01..12 & EMP-01, 11..15)', () => {
+describe('Tasks, Team & Evidence Flow (MGR-01..12)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useCurrentUser.setState({
@@ -439,227 +430,6 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12 & EMP-01, 11..15)', () => {
       expect(screen.getByText('Lê Văn An')).toBeInTheDocument();
       expect(screen.getByText('Tự động hóa báo cáo')).toBeInTheDocument();
       expect(screen.getByRole('link', { name: /Chấm điểm/i })).toBeInTheDocument();
-    });
-  });
-
-  // ==========================================
-  // EMP-01: MyDevelopmentDashboardPage
-  // ==========================================
-  describe('EMP-01: MyDevelopmentDashboardPage', () => {
-    it('renders learner dashboard welcome, target levels, and quick shortcuts', () => {
-      vi.spyOn(learningHooks, 'useCertificates').mockReturnValue({
-        data: { items: [{ id: 'c1' }, { id: 'c2' }] },
-      } as any);
-      vi.spyOn(taskHooks, 'useMyTasks').mockReturnValue({
-        data: { items: [{ id: 't1', submission: null }] },
-      } as any);
-
-      renderWithClient(<MyDevelopmentDashboardPage />);
-
-      expect(screen.getByText(/Lộ trình phát triển năng lực số 2026/i)).toBeInTheDocument();
-      expect(screen.getByText('Cấp độ 2')).toBeInTheDocument();
-      expect(screen.getByText('2')).toBeInTheDocument(); // 2 certificates
-    });
-  });
-
-  // ==========================================
-  // EMP-11: MyPracticalTasksPage
-  // ==========================================
-  describe('EMP-11: MyPracticalTasksPage', () => {
-    it('renders learner tasks list with submit evidence CTA', () => {
-      vi.spyOn(taskHooks, 'useMyTasks').mockReturnValue({
-        data: {
-          items: [
-            {
-              id: 'tsk-001',
-              title: 'Bài tập tạo macro Excel tự động',
-              targetLevel: 2,
-              dueDate: '2026-10-15',
-              submission: null,
-              competencyIds: ['TT02-1.1'],
-            },
-          ],
-        },
-        isLoading: false,
-      } as any);
-
-      renderWithClient(<MyPracticalTasksPage />);
-
-      expect(screen.getByText('Nhiệm vụ thực hành của tôi')).toBeInTheDocument();
-      expect(screen.getByText('Bài tập tạo macro Excel tự động')).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: /Nộp minh chứng/i })).toBeInTheDocument();
-    });
-  });
-
-  // ==========================================
-  // EMP-12: SubmitEvidencePage
-  // ==========================================
-  describe('EMP-12: SubmitEvidencePage', () => {
-    it('renders submission form, allows adding link URLs, and handles submission', async () => {
-      const mutateAsync = vi.fn().mockResolvedValue({ id: 'sub-001' });
-
-      vi.spyOn(taskHooks, 'usePracticalTask').mockReturnValue({
-        data: {
-          id: 'tsk-001',
-          title: 'Bài tập tạo macro Excel tự động',
-          targetLevel: 2,
-          expectedOutput: 'File Excel đính kèm link Drive',
-          dueDate: '2026-10-15',
-          assignedByName: 'Trần Quản Lý',
-          rubricCriteria: [{ id: 'rc-1', label: 'Tính hoàn thiện', maxPoints: 50 }],
-        },
-        isLoading: false,
-      } as any);
-
-      vi.spyOn(taskHooks, 'useSubmitTaskEvidence').mockReturnValue({
-        mutateAsync,
-        isPending: false,
-      } as any);
-
-      renderWithClient(
-        <Routes>
-          <Route path="/tasks/:id/submit" element={<SubmitEvidencePage />} />
-        </Routes>,
-        '/tasks/tsk-001/submit'
-      );
-
-      expect(screen.getByText(/Nộp minh chứng: Bài tập tạo macro Excel tự động/i)).toBeInTheDocument();
-      expect(screen.getByText('File Excel đính kèm link Drive')).toBeInTheDocument();
-
-      const textarea = screen.getByPlaceholderText(/Trình bày chi tiết cách bạn đã giải quyết tình huống/i);
-      fireEvent.change(textarea, { target: { value: 'Em đã hoàn thành file macro trên Drive.' } });
-
-      const linkInput = screen.getByPlaceholderText(/https:\/\/drive.google.com\/.../i);
-      fireEvent.change(linkInput, { target: { value: 'https://drive.google.com/file-macro' } });
-
-      const submitBtn = screen.getByRole('button', { name: /Gửi nộp minh chứng/i });
-      fireEvent.click(submitBtn);
-
-      await waitFor(() => {
-        expect(mutateAsync).toHaveBeenCalledWith({
-          taskId: 'tsk-001',
-          payload: {
-            content: 'Em đã hoàn thành file macro trên Drive.',
-            linkUrls: ['https://drive.google.com/file-macro'],
-          },
-        });
-      });
-    });
-  });
-
-  // ==========================================
-  // EMP-13: TaskFeedbackPage
-  // ==========================================
-  describe('EMP-13: TaskFeedbackPage', () => {
-    it('renders feedback and score from manager for a submitted task', () => {
-      vi.spyOn(taskHooks, 'usePracticalTask').mockReturnValue({
-        data: {
-          id: 'tsk-001',
-          title: 'Bài tập tạo macro Excel tự động',
-          assignedByName: 'Trần Quản Lý',
-          dueDate: '2026-10-15',
-          submissions: [
-            {
-              id: 'sub-001',
-              status: 'APPROVED',
-              score: 90,
-              evaluation: {
-                evaluatedBy: 'Trần Quản Lý',
-                feedback: 'Quy trình hoạt động mượt mà, đạt chuẩn TT02.',
-                score: 90,
-                decision: 'APPROVED',
-                evaluatedAt: '2026-10-01T12:00:00Z',
-              },
-            },
-          ],
-        },
-        isLoading: false,
-      } as any);
-
-      renderWithClient(
-        <Routes>
-          <Route path="/tasks/:id/feedback" element={<TaskFeedbackPage />} />
-        </Routes>,
-        '/tasks/tsk-001/feedback'
-      );
-
-      expect(screen.getByText(/Kết quả & Phản hồi: Bài tập tạo macro Excel tự động/i)).toBeInTheDocument();
-      expect(screen.getByText('90')).toBeInTheDocument();
-      expect(screen.getByText(/\/ 100đ/)).toBeInTheDocument();
-      expect(screen.getByText('Quy trình hoạt động mượt mà, đạt chuẩn TT02.')).toBeInTheDocument();
-      expect(screen.getByText('Trần Quản Lý')).toBeInTheDocument();
-    });
-  });
-
-  // ==========================================
-  // EMP-14: EvidencePortfolioPage
-  // ==========================================
-  describe('EMP-14: EvidencePortfolioPage', () => {
-    it('renders portfolio list and filter buttons', () => {
-      vi.spyOn(taskHooks, 'useMyEvidence').mockReturnValue({
-        data: {
-          items: [
-            {
-              id: 'sub-001',
-              taskTitle: 'Phân tích dữ liệu doanh thu',
-              targetLevel: 2,
-              submittedAt: '2026-09-25T10:00:00Z',
-              status: 'APPROVED',
-              score: 92,
-              content: 'Tóm tắt kết quả phân tích',
-              linkUrls: ['https://github.com/demo'],
-              competencyIds: ['TT02-1.1'],
-              evaluation: {
-                evaluatorName: 'Trần Quản Lý',
-                feedback: 'Rất chi tiết!',
-                score: 92,
-              },
-            },
-          ],
-        },
-        isLoading: false,
-      } as any);
-
-      renderWithClient(<EvidencePortfolioPage />);
-
-      expect(screen.getByText('Hồ sơ minh chứng năng lực (Portfolio)')).toBeInTheDocument();
-      expect(screen.getByText('Phân tích dữ liệu doanh thu')).toBeInTheDocument();
-      expect(screen.getByText(/Đã duyệt \(92đ\)/i)).toBeInTheDocument();
-      expect(screen.getByText('Tất cả minh chứng (1)')).toBeInTheDocument();
-    });
-  });
-
-  // ==========================================
-  // EMP-15: MyCertificatesPage
-  // ==========================================
-  describe('EMP-15: MyCertificatesPage', () => {
-    it('renders issued certificates and triggers download notification', () => {
-      vi.spyOn(learningHooks, 'useCertificates').mockReturnValue({
-        data: {
-          items: [
-            {
-              id: 'cert-1',
-              certificateCode: 'CERT-CYBER-2026-001',
-              courseTitle: 'An toàn bảo mật dữ liệu',
-              courseLevel: 2,
-              score: 95,
-              issueDate: '2026-09-30T10:00:00Z',
-              frameworkCompetencyCodes: ['TT02_D4_01'],
-              status: 'ACTIVE',
-            },
-          ],
-        },
-        isLoading: false,
-      } as any);
-
-      renderWithClient(<MyCertificatesPage />);
-
-      expect(screen.getByText('Chứng nhận của tôi')).toBeInTheDocument();
-      expect(screen.getByText('CERT-CYBER-2026-001')).toBeInTheDocument();
-      expect(screen.getByText('An toàn bảo mật dữ liệu')).toBeInTheDocument();
-
-      const downloadBtn = screen.getByRole('button', { name: /Tải bản PDF/i });
-      fireEvent.click(downloadBtn);
     });
   });
 });

@@ -4,19 +4,26 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
-/// <summary>
-/// Map entity LessonProgress với bảng "lesson_progress".
-/// Database là gốc: tên cột tự đổi sang snake_case, không khai báo lại ở đây.
-/// </summary>
+/// <summary>Tiến độ từng bài học theo enrollment (1 dòng / enrollment / bài).</summary>
 public class LessonProgressConfiguration : IEntityTypeConfiguration<LessonProgress>
 {
     public void Configure(EntityTypeBuilder<LessonProgress> builder)
     {
-        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
-        builder.ToTable("lesson_progress", table => table.ExcludeFromMigrations());
+        builder.ToTable("lesson_progress", table =>
+        {
+            table.HasCheckConstraint("ck_lesson_progress_status", "status IN ('NOT_STARTED','IN_PROGRESS','COMPLETED')");
+            table.HasCheckConstraint("ck_lesson_progress_percent", "progress_percent BETWEEN 0 AND 100");
+        });
         builder.HasKey(x => x.Id);
 
-        // Cột đặc biệt (jsonb / số thập phân): phải khai báo đúng kiểu
-        builder.Property(x => x.ProgressPercent).HasPrecision(5, 2);
+        builder.Property(x => x.Status).IsRequired().HasMaxLength(30);
+        builder.Property(x => x.ProgressPercent).HasPrecision(5, 2).HasDefaultValue(0m);
+
+        builder.HasOne<Enrollment>().WithMany().HasForeignKey(x => x.EnrollmentId);
+        builder.HasOne<Lesson>().WithMany().HasForeignKey(x => x.LessonId);
+
+        builder.HasIndex(x => new { x.EnrollmentId, x.LessonId }, "uq_lesson_progress_enrollment_lesson")
+            .IsUnique()
+            .HasDatabaseName("uq_lesson_progress_enrollment_lesson");
     }
 }

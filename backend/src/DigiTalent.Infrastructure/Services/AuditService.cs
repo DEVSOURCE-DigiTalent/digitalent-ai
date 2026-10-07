@@ -27,6 +27,7 @@ public class AuditService : IAuditService
         Guid? entityId = null,
         object? oldValues = null,
         object? newValues = null,
+        string? entityLabel = null,
         CancellationToken cancellationToken = default)
     {
         try
@@ -38,6 +39,7 @@ public class AuditService : IAuditService
                 Action = action,
                 EntityType = entityType,
                 EntityId = entityId,
+                EntityLabel = entityLabel,
                 OldValues = oldValues != null ? JsonSerializer.Serialize(oldValues) : null,
                 NewValues = newValues != null ? JsonSerializer.Serialize(newValues) : null,
                 IpHash = _currentUser.IpAddress,

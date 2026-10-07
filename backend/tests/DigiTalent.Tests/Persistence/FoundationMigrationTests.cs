@@ -153,7 +153,7 @@ public class FoundationMigrationTests
         // Các bảng chưa có config đầy đủ phải chưa được tạo (ExcludeFromMigrations)
         (await ExistsAsync(context,
             "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = {0}) AS \"Value\"",
-            "assessments")).Should().BeFalse("assessments is excluded until its configuration matches SQL v2.3");
+            "certificate_verification_logs")).Should().BeFalse("certificate_verification_logs is excluded until its configuration matches SQL v2.3");
 
         var canonicalConstraints = new[]
         {
@@ -175,6 +175,56 @@ public class FoundationMigrationTests
             "ix_skill_gap_runs_employee_generated_desc", "ux_enrollments_one_active",
             "ux_scoring_configs_active", "uq_courses_org_code_version",
             "uq_task_submissions_assignment_version", "ix_task_submissions_assignment"
+        };
+        foreach (var index in canonicalIndexes)
+        {
+            (await ExistsAsync(context,
+                "SELECT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = {0}) AS \"Value\"",
+                index)).Should().BeTrue($"index {index} must match the canonical SQL");
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task PostgreSQL_LearnerSelfServiceTablesMatchCanonicalConstraints()
+    {
+        using var context = PostgresTestDatabase.CreateContext();
+        await PostgresTestDatabase.MigrateAsync(context);
+
+        var tables = new[]
+        {
+            "question_banks", "questions", "question_options", "assessments", "assessment_questions",
+            "assessment_attempts", "assessment_answers", "certificate_templates", "certificates", "file_objects",
+            "course_learning_outcomes", "learning_materials", "lesson_progress",
+            "practical_task_targets", "assigned_task_targets", "task_submission_files"
+        };
+        foreach (var table in tables)
+        {
+            (await ExistsAsync(context,
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = {0}) AS \"Value\"",
+                table)).Should().BeTrue($"table {table} must exist after migrations");
+        }
+
+        var canonicalConstraints = new[]
+        {
+            "ck_questions_type", "ck_assessments_final_type", "ck_assessments_passing_score",
+            "ck_assessment_attempts_status", "ck_assessment_attempts_submitted_after_start",
+            "ck_certificates_revocation_fields", "ck_certificates_expiry", "ck_file_objects_access_level",
+            "ck_learning_materials_exactly_one_source", "ck_lesson_progress_status", "ck_assigned_task_targets_level"
+        };
+        foreach (var constraint in canonicalConstraints)
+        {
+            (await ExistsAsync(context,
+                "SELECT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = {0}) AS \"Value\"",
+                constraint)).Should().BeTrue($"constraint {constraint} must match the canonical SQL");
+        }
+
+        var canonicalIndexes = new[]
+        {
+            "uq_assessments_course_code_version", "ux_assessments_one_published_final",
+            "uq_assessment_attempts_assessment_enrollment_attempt", "uq_assessment_answers_attempt_question",
+            "ix_certificates_employee", "uq_lesson_progress_enrollment_lesson",
+            "uq_practical_task_targets_template_competency", "uq_assigned_task_targets_assignment_competency"
         };
         foreach (var index in canonicalIndexes)
         {

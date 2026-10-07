@@ -10,7 +10,6 @@ public class SubscriptionConfiguration : IEntityTypeConfiguration<Subscription>
     {
         builder.ToTable("subscriptions", table =>
         {
-            table.ExcludeFromMigrations();
             table.HasCheckConstraint("ck_subscriptions_status", "status IN ('ACTIVE','EXPIRED','PAYMENT_REQUIRED','CANCELLED')");
             table.HasCheckConstraint("ck_subscriptions_cycle", "cycle IN ('month','year')");
         });
@@ -34,7 +33,7 @@ public class SubscriptionEntitlementConfiguration : IEntityTypeConfiguration<Sub
 {
     public void Configure(EntityTypeBuilder<SubscriptionEntitlement> builder)
     {
-        builder.ToTable("subscription_entitlements", table => table.ExcludeFromMigrations());
+        builder.ToTable("subscription_entitlements");
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.EntitlementKey).IsRequired().HasMaxLength(100);
@@ -53,7 +52,6 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
     {
         builder.ToTable("invoices", table =>
         {
-            table.ExcludeFromMigrations();
             table.HasCheckConstraint("ck_invoices_status", "status IN ('PAID','PENDING','FAILED','REFUNDED')");
         });
         builder.HasKey(x => x.Id);

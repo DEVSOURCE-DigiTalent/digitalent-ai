@@ -4,16 +4,15 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
-/// <summary>
-/// Map entity QuestionOption với bảng "question_options".
-/// Database là gốc: tên cột tự đổi sang snake_case, không khai báo lại ở đây.
-/// </summary>
 public class QuestionOptionConfiguration : IEntityTypeConfiguration<QuestionOption>
 {
     public void Configure(EntityTypeBuilder<QuestionOption> builder)
     {
-        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
-        builder.ToTable("question_options", table => table.ExcludeFromMigrations());
+        builder.ToTable("question_options");
         builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Content).IsRequired();
+
+        builder.HasOne<Question>().WithMany().HasForeignKey(x => x.QuestionId);
     }
 }

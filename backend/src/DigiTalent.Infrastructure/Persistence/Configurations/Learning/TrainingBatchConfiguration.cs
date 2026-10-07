@@ -10,7 +10,6 @@ public class TrainingBatchConfiguration : IEntityTypeConfiguration<TrainingBatch
     {
         builder.ToTable("training_batches", table =>
         {
-            table.ExcludeFromMigrations();
             table.HasCheckConstraint("ck_training_batches_status", "status IN ('DRAFT','ACTIVE','COMPLETED','CANCELLED')");
         });
         builder.HasKey(x => x.Id);
