@@ -82,4 +82,28 @@ public class MembersController : ControllerBase
         var result = await useCase.ExecuteAsync(input);
         return Ok(ApiResponse<UpdateMemberUseCaseOutput>.Ok(result, "Member updated."));
     }
+
+    // POST api/v1/members/{id}/deactivate — body { reason }
+    [HttpPost("{id:guid}/deactivate")]
+    [HasPermission(Permissions.UserRole.UserLockUnlock)]
+    public async Task<ActionResult<ApiResponse<DeactivateMemberUseCaseOutput>>> Deactivate(
+        Guid id,
+        [FromBody] DeactivateMemberUseCaseInput input,
+        [FromServices] IUseCase<DeactivateMemberUseCaseInput, DeactivateMemberUseCaseOutput> useCase)
+    {
+        input.Id = id;
+        var result = await useCase.ExecuteAsync(input);
+        return Ok(ApiResponse<DeactivateMemberUseCaseOutput>.Ok(result, "Member deactivated."));
+    }
+
+    // POST api/v1/members/{id}/reactivate
+    [HttpPost("{id:guid}/reactivate")]
+    [HasPermission(Permissions.UserRole.UserLockUnlock)]
+    public async Task<ActionResult<ApiResponse<ReactivateMemberUseCaseOutput>>> Reactivate(
+        Guid id,
+        [FromServices] IUseCase<ReactivateMemberUseCaseInput, ReactivateMemberUseCaseOutput> useCase)
+    {
+        var result = await useCase.ExecuteAsync(new ReactivateMemberUseCaseInput { Id = id });
+        return Ok(ApiResponse<ReactivateMemberUseCaseOutput>.Ok(result, "Member reactivated."));
+    }
 }
