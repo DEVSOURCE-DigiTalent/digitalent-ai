@@ -68,7 +68,7 @@ describe('registration', () => {
       fullName: 'X', email: 'OWNER@acme.vn', password: 'Matkhau1', phone: '0912345678', jobTitle: 'Y',
     })).rejects.toMatchObject({ response: { status: 409 } });
     await expect(mockRegistrationService.registerIndividual({
-      fullName: 'X', email: 'employee@digitalent.demo', password: 'Matkhau1',
+      fullName: 'X', email: 'employee@digitalent.ai', password: 'Matkhau1',
     })).rejects.toMatchObject({ response: { status: 409 } });
   });
 
@@ -239,7 +239,7 @@ describe('organization setup', () => {
   });
 
   it('is closed to anyone who is not an owner or organization admin', async () => {
-    await signIn('employee@digitalent.demo', 'Admin@1234');
+    await signIn('employee@digitalent.ai', 'Admin@1234');
 
     await expect(mockOnboardingService.getSetup()).rejects.toMatchObject({ response: { status: 403 } });
   });
@@ -263,14 +263,14 @@ describe('organization setup', () => {
     await mockOnboardingService.inviteMembers([{ email: 'an@x.vn', fullName: 'An', role: 'EMPLOYEE' }]);
     const result = (await mockOnboardingService.inviteMembers([
       { email: 'an@x.vn', fullName: 'An', role: 'EMPLOYEE' },
-      { email: 'employee@digitalent.demo', fullName: 'Demo', role: 'EMPLOYEE' },
+      { email: 'employee@digitalent.ai', fullName: 'Demo', role: 'EMPLOYEE' },
       { email: 'c@x.vn', fullName: 'C', role: 'EMPLOYEE' },
       { email: 'd@x.vn', fullName: 'D', role: 'EMPLOYEE' },
       { email: 'e@x.vn', fullName: 'E', role: 'EMPLOYEE' },
     ])).data.data!;
 
     expect(result.created.map((c) => c.email)).toEqual(['c@x.vn', 'd@x.vn', 'e@x.vn']);
-    expect(result.rejected.map((r) => r.email)).toEqual(['an@x.vn', 'employee@digitalent.demo']);
+    expect(result.rejected.map((r) => r.email)).toEqual(['an@x.vn', 'employee@digitalent.ai']);
   });
 
   it('flags a full plan as out of seats', async () => {

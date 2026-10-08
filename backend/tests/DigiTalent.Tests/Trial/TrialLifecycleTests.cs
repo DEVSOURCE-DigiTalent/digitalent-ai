@@ -114,10 +114,10 @@ public sealed class TrialLifecycleTests
         Assert.Contains(rows, r => r.State == "learning_in_progress");
         Assert.True((await world.Service.ContextAsync()).Checklist.Single(x => x.Key == "results").Complete);
         var platformAdmin = new User { Email = "platform-admin@example.test", DisplayName = "Platform admin", PasswordHash = "test-only" };
-        var platformAdminRole = new Role { Code = "SYSTEM_ADMIN", Name = "System admin", Status = "ACTIVE" };
+        var platformAdminRole = new Role { Code = "PLATFORM_ADMIN", Name = "Platform admin", Status = "ACTIVE" };
         world.Db.AddRange(platformAdmin, platformAdminRole, new UserRole { UserId = platformAdmin.Id, RoleId = platformAdminRole.Id, AssignedAt = world.Clock.Now });
         await world.Db.SaveChangesAsync();
-        world.Actor(platformAdmin.Id, null, "SYSTEM_ADMIN");
+        world.Actor(platformAdmin.Id, null, "PLATFORM_ADMIN");
         await world.Service.ConvertAsync(world.OwnerOrganizationId, "approved-contract-123");
         world.Actor(world.EmployeeUserId, world.OwnerOrganizationId, "Employee");
         Assert.Equal(attemptId, (await world.Service.DiagnosticAsync())!.AttemptId);
@@ -302,7 +302,7 @@ public sealed class TrialLifecycleTests
         var platformAdmin = new User { Email = "removed-admin@example.test", DisplayName = "Removed admin", PasswordHash = "test-only" };
         world.Db.Users.Add(platformAdmin);
         await world.Db.SaveChangesAsync();
-        world.Actor(platformAdmin.Id, null, "SYSTEM_ADMIN");
+        world.Actor(platformAdmin.Id, null, "PLATFORM_ADMIN");
 
         await Assert.ThrowsAsync<ForbiddenException>(() => world.Service.ConvertAsync(world.OwnerOrganizationId, "stale-token"));
     }

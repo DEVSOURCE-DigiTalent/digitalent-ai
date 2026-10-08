@@ -11,7 +11,7 @@ namespace DigiTalent.Application.UseCases.Organization.Members;
 
 /// <summary>
 /// Changes a member's roles and/or placement (OW-03 "Đổi vai trò", "Đổi phòng ban / vị trí"; OW-13).
-///   - Roles: only HR_MANAGER / DEPARTMENT_MANAGER / EMPLOYEE are granted or revoked; TRAINER and SYSTEM_ADMIN are
+///   - Roles: only OWNER / MANAGER / EMPLOYEE are granted or revoked; PLATFORM_ADMIN is
 ///     never touched. Requires role.assign_business and keeps at least one active Owner.
 ///   - Placement: department and position of the employee profile. A member without a profile (e.g. an Owner
 ///     created at sign-up) gets one when a department is given.
@@ -105,7 +105,7 @@ public class UpdateMemberUseCase : IUseCase<UpdateMemberUseCaseInput, UpdateMemb
         var desired = roles.Select(role => MemberRoles.ToRoleCode(role)!).Distinct().ToList();
 
         // Removing Owner from the last active Owner (including oneself) would lock everybody out of administration
-        if (!desired.Contains(Roles.HrManager))
+        if (!desired.Contains(Roles.Owner))
         {
             await MemberRules.EnsureAnotherOwnerRemainsAsync(_directory, organizationId, member);
         }

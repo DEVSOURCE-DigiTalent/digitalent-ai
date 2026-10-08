@@ -25,7 +25,7 @@ describe('Learning assessments and certificates data scoping', () => {
   });
 
   it('restricts EMPLOYEE to seeing only their own assessment attempts and certificates', async () => {
-    // employee@digitalent.demo is emp-01 (Hoàng Văn Nhân Viên)
+    // employee@digitalent.ai is emp-01 (Hoàng Văn Nhân Viên)
     signInAsMock(MOCK_EMAILS.employee);
 
     const attemptsRes = await learningService.getAssessmentHistory();
@@ -46,7 +46,7 @@ describe('Learning assessments and certificates data scoping', () => {
   });
 
   it('restricts MANAGER to seeing only attempts and certificates of employees in their department scope', async () => {
-    // manager@digitalent.demo is emp-02 (Phạm Thị Quản Lý), managing dep-kd
+    // manager@digitalent.ai is emp-02 (Phạm Thị Quản Lý), managing dep-kd
     signInAsMock(MOCK_EMAILS.manager);
 
     const attemptsRes = await learningService.getAssessmentHistory();
@@ -72,7 +72,7 @@ describe('Learning assessments and certificates data scoping', () => {
   });
 
   it('allows OWNER to see assessment attempts and certificates of the entire organization', async () => {
-    // owner@digitalent.demo is emp-03 (Nguyễn Văn Chủ), OWNER
+    // owner@digitalent.ai is emp-03 (Nguyễn Văn Chủ), OWNER
     signInAsMock(MOCK_EMAILS.owner);
 
     const attemptsRes = await learningService.getAssessmentHistory();

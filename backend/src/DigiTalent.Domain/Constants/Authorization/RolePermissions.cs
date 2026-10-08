@@ -4,19 +4,19 @@ namespace DigiTalent.Domain.Constants.Authorization;
 /// MA TRẬN QUYỀN MẶC ĐỊNH (chép từ ma trận quyền chuẩn trong doc 09 mục 6 & 7) — dùng để SEED bảng role_permissions.
 ///
 /// Lúc chạy, quyền được đọc từ database (bảng role_permissions), KHÔNG đọc từ file này:
-/// admin có thể chỉnh ma trận trên giao diện. SYSTEM_ADMIN luôn có mọi quyền nên không cần liệt kê.
+/// The four role policies are fixed for this release and seeded into role_permissions.
 /// </summary>
 public static class RolePermissions
 {
     public static readonly IReadOnlyDictionary<string, string[]> Defaults = new Dictionary<string, string[]>
     {
-        [Roles.HrManager] = new[]
+        [Roles.Owner] = new[]
         {
             Permissions.Account.ViewOwn,
             Permissions.Account.UpdateOwnProfile,
             Permissions.Account.ChangeOwnPassword,
 
-            // Members & roles (OW-02, OW-03, OW-13): HR_MANAGER is the enterprise "Owner"
+            // Members & roles (OW-02, OW-03, OW-13): OWNER administers the enterprise.
             Permissions.UserRole.UserRead,
             Permissions.UserRole.UserCreate,
             Permissions.UserRole.UserUpdate,
@@ -56,8 +56,23 @@ public static class RolePermissions
             Permissions.Learning.ReadAssignment,
             Permissions.Learning.CancelAssignment,
             Permissions.Learning.ReadProgress,
+            // Internal organization content, explicitly approved for OWNER.
+            Permissions.Learning.Create,
+            Permissions.Learning.Update,
+            Permissions.Learning.PublishUnpublish,
+            Permissions.Learning.Archive,
+            Permissions.Learning.ManageCompetencies,
+            Permissions.Learning.UploadMaterial,
+            Permissions.Learning.DeleteArchiveMaterial,
 
             Permissions.Assessment.Read,
+            Permissions.Assessment.QuestionBankRead,
+            Permissions.Assessment.QuestionCreateUpdate,
+            Permissions.Assessment.QuestionAiGenerateDraft,
+            Permissions.Assessment.QuestionApprovePublish,
+            Permissions.Assessment.CreateUpdate,
+            Permissions.Assessment.PublishClose,
+            Permissions.Assessment.AttemptRegradeOverride,
             Permissions.Assessment.ResultExport,
 
             Permissions.Certificate.ManageTemplate,
@@ -94,11 +109,12 @@ public static class RolePermissions
             Permissions.Notification.SignalRConnect,
 
             Permissions.System.FileDownloadAuthorized,
+            Permissions.System.FileUploadMaterial,
             Permissions.System.AuditLogReadDepartment,
             Permissions.System.BusinessConfigManage,
         },
 
-        [Roles.DepartmentManager] = new[]
+        [Roles.Manager] = new[]
         {
             Permissions.Account.ViewOwn,
             Permissions.Account.UpdateOwnProfile,
@@ -165,71 +181,13 @@ public static class RolePermissions
             Permissions.System.AuditLogReadDepartment,
         },
 
-        [Roles.Trainer] = new[]
+        [Roles.PlatformAdmin] = new[]
         {
             Permissions.Account.ViewOwn,
             Permissions.Account.UpdateOwnProfile,
             Permissions.Account.ChangeOwnPassword,
-
-            Permissions.Department.Read,
-            Permissions.JobFamily.Read,
-            Permissions.JobPosition.Read,
-
-            Permissions.Competency.CategoryRead,
-            Permissions.Competency.Read,
-            Permissions.Competency.PositionRequirementRead,
-            // Frontend xếp TRAINER vào nhóm EMPLOYEE: các trang cá nhân (EM-*) cần quyền trên dữ liệu của chính mình
-            Permissions.Competency.ProfileRead,
-            Permissions.Competency.EvidenceRead,
-
-            Permissions.Learning.ReadCatalog,
-            Permissions.Learning.CompleteLesson,
-            Permissions.Learning.Create,
-            Permissions.Learning.Update,
-            Permissions.Learning.PublishUnpublish,
-            Permissions.Learning.Archive,
-            Permissions.Learning.ManageCompetencies,
-            Permissions.Learning.UploadMaterial,
-            Permissions.Learning.DownloadViewMaterial,
-            Permissions.Learning.DeleteArchiveMaterial,
-            Permissions.Learning.ReadAssignment,
-            Permissions.Learning.ReadProgress,
-
-            Permissions.Assessment.QuestionBankRead,
-            Permissions.Assessment.QuestionCreateUpdate,
-            Permissions.Assessment.QuestionAiGenerateDraft,
-            Permissions.Assessment.QuestionApprovePublish,
-            Permissions.Assessment.Read,
-            Permissions.Assessment.CreateUpdate,
-            Permissions.Assessment.PublishClose,
-            Permissions.Assessment.AttemptStart,
-            Permissions.Assessment.AttemptSubmit,
-            Permissions.Assessment.AttemptReadResult,
-            Permissions.Assessment.AttemptRegradeOverride,
-            Permissions.Assessment.ResultExport,
-
-            Permissions.Certificate.Read,
-            Permissions.Certificate.DownloadPdf,
-
-            Permissions.Intelligence.SkillGapRead,
-            Permissions.Intelligence.RecommendationRead,
-            Permissions.Intelligence.ReadinessRead,
-
-            Permissions.Task.Read,
-            Permissions.Task.UpdateProgress,
-            Permissions.Task.Submit,
-            Permissions.Task.AttachmentDownload,
-
-            Permissions.Dashboard.TrainerRead,
-            Permissions.Dashboard.EmployeeRead,
-
-            Permissions.Notification.ReadOwn,
-            Permissions.Notification.MarkRead,
-            Permissions.Notification.SignalRConnect,
-
-            Permissions.System.FileUploadMaterial,
-            Permissions.System.FileUploadTaskSubmission,
-            Permissions.System.FileDownloadAuthorized,
+            Permissions.System.AuditLogReadSystem,
+            Permissions.System.SystemConfigManage,
         },
 
         [Roles.Employee] = new[]

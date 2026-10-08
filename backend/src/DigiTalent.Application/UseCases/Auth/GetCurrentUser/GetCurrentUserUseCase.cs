@@ -3,6 +3,7 @@ using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Domain.Constants;
+using DigiTalent.Domain.Constants.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Auth;
@@ -52,8 +53,9 @@ public class GetCurrentUserUseCase : IUseCase<GetCurrentUserUseCaseInput, GetCur
         }
 
         var roles = user.Roles;
-        var isPersonal = user.OrganizationId == null;
-        if (isPersonal && !roles.Any())
+        var isPlatform = roles.Contains(Roles.PlatformAdmin);
+        var isPersonal = user.OrganizationId == null && !isPlatform;
+        if (isPersonal)
         {
             roles = new List<string> { "LEARNER" };
         }
@@ -103,7 +105,7 @@ public class GetCurrentUserUseCase : IUseCase<GetCurrentUserUseCaseInput, GetCur
             FullName = user.DisplayName,
             EmployeeId = user.EmployeeId,
             OrganizationId = user.OrganizationId,
-            Workspace = isPersonal ? "personal" : "enterprise",
+            Workspace = isPlatform ? "platform" : isPersonal ? "personal" : "enterprise",
             EmailVerified = user.EmailVerifiedAt != null,
             OnboardingStatus = onboardingStatus,
             Subscription = subDto,

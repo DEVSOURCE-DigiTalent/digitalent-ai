@@ -54,19 +54,19 @@ VITE_API_BASE_URL=http://localhost:5000/api/v1
 
 Mật khẩu chung: `Admin@1234` (seed Development).
 
-| Tài khoản | Vai trò backend | Vai trò frontend (sau `normalizeRoles`) | `/organization/overview` | `/intelligence/dashboard` |
+| Tài khoản | Vai trò | Workspace | `/organization/overview` | `/intelligence/dashboard` |
 |---|---|---|---|---|
-| `hr@digitalent.ai` | `HR_MANAGER` | `OWNER` | 200 | 200 |
-| `admin@digitalent.ai` | `SYSTEM_ADMIN` | `PLATFORM_ADMIN` + `OWNER` | 200 | 200 |
-| `manager@digitalent.ai` | `DEPARTMENT_MANAGER` | `MANAGER` | 403 | 200 |
-| `trainer@`, `employee@digitalent.ai` | `TRAINER`, `EMPLOYEE` | `EMPLOYEE` | 403 | 403 |
+| `owner@digitalent.ai` | `OWNER` | `enterprise` | 200 | 200 |
+| `platform@digitalent.ai` | `PLATFORM_ADMIN` | `platform` | 403 | 403 |
+| `manager@digitalent.ai` | `MANAGER` | `enterprise` | 403 | 200 |
+| `employee@digitalent.ai` | `EMPLOYEE` | `enterprise` | 403 | 403 |
 
 - `/organization/overview` yêu cầu quyền `dashboard.hr_company.read`.
 - `/intelligence/dashboard` chấp nhận `dashboard.hr_company.read` **hoặc** `dashboard.department.read`, nên Manager gọi được (trang Team của Manager dùng chung endpoint này).
 
 ### 2.4. Chuẩn bị dữ liệu cho phần năng lực
 
-Seed **không tự tính skill gap**, nên lần đầu "Nhân sự cần chú ý" sẽ trống. Để có dữ liệu, đăng nhập HR rồi gọi một lần:
+Seed **không tự tính skill gap**, nên lần đầu "Nhân sự cần chú ý" sẽ trống. Để có dữ liệu, đăng nhập Owner rồi gọi một lần:
 
 ```http
 POST /api/v1/intelligence/skill-gaps/calculate-batch
@@ -254,7 +254,7 @@ Mọi response đều có dạng `ApiResponse<T>`:
 | HTTP | Khi nào | Frontend xử lý |
 |---|---|---|
 | 200 | Thành công | Dùng `response.data.data` (hook hiện tại đã làm vậy) |
-| 401 | Chưa đăng nhập, token hết hạn, hoặc tài khoản bị khóa | `apiClient` tự xóa token và chuyển về trang đăng nhập |
+| 401 | Chưa đăng nhập, token hết hạn, hoặc tài khoản bị khóa | `apiClient` thử refresh một lần; nếu refresh thất bại thì xóa phiên và chuyển về trang đăng nhập |
 | 403 | Thiếu quyền (xem mục 2.3) | Overview lỗi thì trang hiện "Không tải được thông tin bảng điều khiển tổ chức."; dashboard lỗi thì các thẻ năng lực hiện `—` |
 | 404 | Không tìm thấy tổ chức của người gọi (dữ liệu hỏng) | Trang hiện thông báo lỗi |
 
@@ -262,7 +262,7 @@ Mọi response đều có dạng `ApiResponse<T>`:
 
 ## 8. Kiểm tra nhanh sau khi tích hợp
 
-- [ ] Đăng nhập `hr@digitalent.ai`, vào `/enterprise/dashboard`: đủ 6 thẻ KPI, thẻ "Gói dịch vụ" hiện "Gói Doanh nghiệp", gia hạn sau 1 năm.
+- [ ] Đăng nhập `owner@digitalent.ai`, vào `/enterprise/dashboard`: đủ 6 thẻ KPI, thẻ "Gói dịch vụ" hiện "Gói Doanh nghiệp", gia hạn sau 1 năm.
 - [ ] "Người dùng đã kích hoạt" hiện `x / 50 người dùng`.
 - [ ] "Đợt đào tạo đang chạy" = 1 (đợt demo `BATCH-Q4-2026` trong seed).
 - [ ] "Mức sẵn sàng thiết lập tổ chức": 4/4 hoàn thành.

@@ -12,6 +12,7 @@ namespace DigiTalent.Tests.Trial;
 
 [Collection("PostgresIntegration")]
 [Trait("Category", "PostgresIntegration")]
+[Trait("Category", "Integration")]
 public sealed class TrialPostgresTests
 {
     [Fact]

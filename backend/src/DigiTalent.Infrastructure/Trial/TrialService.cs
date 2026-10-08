@@ -98,7 +98,7 @@ public sealed partial class TrialService
         var organization = new Organization { Code = "TRIAL-" + Guid.NewGuid().ToString("N"), Name = registration.OrganizationName };
         var owner = new User { Email = registration.Email, DisplayName = registration.OwnerName, PasswordHash = registration.PasswordHash, OrganizationId = organization.Id };
         db.Organizations.Add(organization); db.Users.Add(owner);
-        await AssignRole(owner, "HR_MANAGER");
+        await AssignRole(owner, "OWNER");
         var trial = new TrialWorkspace
         {
             OrganizationId = organization.Id, OwnerUserId = owner.Id, Industry = registration.Industry, Size = registration.Size, Goal = registration.Goal,
@@ -197,7 +197,7 @@ public sealed partial class TrialService
         var employee = new Employee { OrganizationId = invitation.OrganizationId, DepartmentId = invitation.DepartmentId, JobPositionId = invitation.PositionId,
             UserId = user.Id, FullName = invitation.Name, WorkEmail = invitation.Email, EmployeeCode = "TRIAL-" + Guid.NewGuid().ToString("N") };
         db.Users.Add(user); db.Employees.Add(employee);
-        await AssignRole(user, invitation.Role == "Manager" ? "DEPARTMENT_MANAGER" : "EMPLOYEE");
+        await AssignRole(user, invitation.Role == "Manager" ? "MANAGER" : "EMPLOYEE");
         if (invitation.Role == "Manager")
         {
             var department = await db.Departments.SingleAsync(x => x.Id == invitation.DepartmentId && x.OrganizationId == invitation.OrganizationId);
@@ -217,7 +217,7 @@ public sealed partial class TrialService
     private async Task AssignRole(User user, string code)
     {
         var role = await db.Roles.SingleOrDefaultAsync(x => x.Code == code);
-        if (role == null) { role = new Role { Code = code, Name = code, ScopeType = code == "DEPARTMENT_MANAGER" ? "DEPARTMENT" : "ORGANIZATION" }; db.Roles.Add(role); }
+        if (role == null) { role = new Role { Code = code, Name = code, ScopeType = code == "MANAGER" ? "DEPARTMENT" : "ORGANIZATION" }; db.Roles.Add(role); }
         db.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = role.Id, AssignedAt = Now });
     }
     private static string NormalizeEmail(string value)

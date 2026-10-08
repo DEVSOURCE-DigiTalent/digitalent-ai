@@ -15,7 +15,7 @@ public static class RoleDescriptions
     {
         new Description(
             MemberRoles.Owner,
-            Roles.HrManager,
+            Roles.Owner,
             "Chủ doanh nghiệp",
             "Toàn quyền quản trị doanh nghiệp, tổ chức, năng lực, đào tạo, gói dịch vụ và phân quyền.",
             new[]
@@ -29,7 +29,7 @@ public static class RoleDescriptions
             }),
         new Description(
             MemberRoles.Manager,
-            Roles.DepartmentManager,
+            Roles.Manager,
             "Quản lý",
             "Theo dõi tiến độ, giao nhiệm vụ thực tế và đánh giá minh chứng trong phạm vi phòng ban được phân công.",
             new[]

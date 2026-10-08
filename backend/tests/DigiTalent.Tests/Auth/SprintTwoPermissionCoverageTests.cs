@@ -21,7 +21,7 @@ public class SprintTwoPermissionCoverageTests
     [Fact]
     public void SprintTwo_HrManager_HasAllSprintTwoManagementPermissions()
     {
-        Assert.True(RolePermissions.Defaults.TryGetValue(Roles.HrManager, out var hrPerms));
+        Assert.True(RolePermissions.Defaults.TryGetValue(Roles.Owner, out var hrPerms));
         Assert.NotNull(hrPerms);
 
         Assert.Contains(Permissions.Employee.Read, hrPerms);

@@ -98,7 +98,7 @@ DECLARE
   v_m_m6_a_03 uuid := '87e514d1-0a0b-40f0-a90d-b828cf84ef3e';
 BEGIN
   SELECT id INTO v_org_id FROM organizations LIMIT 1;
-  SELECT id INTO v_user_id FROM users WHERE email = 'admin@digitalent.ai';
+  SELECT id INTO v_user_id FROM users WHERE email = 'owner@digitalent.ai';
 
   -- === COURSES ===
   INSERT INTO courses (id, organization_id, code, version_no, title, description, entry_level, estimated_duration_minutes, certificate_enabled, status, created_by_user_id, created_at, updated_at, row_version)

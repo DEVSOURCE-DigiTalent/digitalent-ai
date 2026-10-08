@@ -10,34 +10,33 @@ WHERE NOT EXISTS (SELECT 1 FROM organizations WHERE code = 'DIGITALENT');
 INSERT INTO roles (id, code, name, scope_type, status, created_at, updated_at)
 SELECT gen_random_uuid(), v.code, v.name, v.scope_type, 'ACTIVE', now(), now()
 FROM (VALUES
-  ('SYSTEM_ADMIN',      'System Administrator',  'GLOBAL'),
-  ('HR_MANAGER',         'HR / Training Manager', 'ORGANIZATION'),
-  ('DEPARTMENT_MANAGER', 'Department Manager',    'DEPARTMENT'),
-  ('TRAINER',            'Internal Trainer',      'SELF'),
-  ('EMPLOYEE',           'Employee',              'SELF')
+  ('PLATFORM_ADMIN', 'Platform Administrator', 'GLOBAL'),
+  ('OWNER',          'Enterprise Owner',       'ORGANIZATION'),
+  ('MANAGER',        'Department Manager',      'DEPARTMENT'),
+  ('EMPLOYEE',       'Employee',                'SELF')
 ) AS v(code, name, scope_type)
 WHERE NOT EXISTS (SELECT 1 FROM roles r WHERE r.code = v.code);
 
--- 3. Admin user (password: Admin@1234, chỉ thêm nếu chưa có)
+-- 3. Platform admin (password: Admin@1234, chỉ dùng cho môi trường demo)
 INSERT INTO users (id, organization_id, email, display_name, password_hash, status, failed_login_count, created_at, updated_at)
 SELECT gen_random_uuid(),
-       (SELECT id FROM organizations WHERE code = 'DIGITALENT'),
-       'admin@digitalent.ai',
-       'System Admin',
+       NULL,
+       'platform@digitalent.ai',
+       'Platform Administrator',
        '$2b$12$rlgaReb0FmfvQFr68KPqJ.uBRT6.J59EYSsPw33c3xNajlF0y3HzO',
        'ACTIVE', 0, now(), now()
-WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@digitalent.ai');
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'platform@digitalent.ai');
 
--- 4. Gán SYSTEM_ADMIN role cho admin user
+-- 4. Gán PLATFORM_ADMIN role cho platform user
 INSERT INTO user_roles (user_id, role_id, assigned_at)
 SELECT
-  (SELECT id FROM users WHERE email = 'admin@digitalent.ai'),
-  (SELECT id FROM roles WHERE code = 'SYSTEM_ADMIN'),
+  (SELECT id FROM users WHERE email = 'platform@digitalent.ai'),
+  (SELECT id FROM roles WHERE code = 'PLATFORM_ADMIN'),
   now()
 WHERE NOT EXISTS (
   SELECT 1 FROM user_roles
-  WHERE user_id = (SELECT id FROM users WHERE email = 'admin@digitalent.ai')
-    AND role_id = (SELECT id FROM roles WHERE code = 'SYSTEM_ADMIN')
+  WHERE user_id = (SELECT id FROM users WHERE email = 'platform@digitalent.ai')
+    AND role_id = (SELECT id FROM roles WHERE code = 'PLATFORM_ADMIN')
 );
 
--- Done: 1 org, 5 roles, 1 admin user
+-- Done: 1 org, 4 roles, 1 platform admin

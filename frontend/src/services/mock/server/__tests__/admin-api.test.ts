@@ -113,14 +113,14 @@ describe('invitations', () => {
       rows: [
         { email: 'khong-hop-le', fullName: 'A', role: 'EMPLOYEE' },
         { email: 'long.cao@acme.vn', fullName: 'Trùng', role: 'EMPLOYEE' },
-        { email: 'owner@digitalent.demo', fullName: 'Có tài khoản', role: 'EMPLOYEE' },
+        { email: 'owner@digitalent.ai', fullName: 'Có tài khoản', role: 'EMPLOYEE' },
         { email: 'boss@acme.vn', fullName: 'Sai vai trò', role: 'INVALID_ROLE' },
         { email: 'okay@acme.vn', fullName: 'Hợp lệ', role: 'MANAGER' },
       ],
     });
 
     expect(result.created.map((c: { email: string }) => c.email)).toEqual(['okay@acme.vn']);
-    expect(result.rejected.map((r: { email: string }) => r.email)).toEqual(['khong-hop-le', 'long.cao@acme.vn', 'owner@digitalent.demo', 'boss@acme.vn']);
+    expect(result.rejected.map((r: { email: string }) => r.email)).toEqual(['khong-hop-le', 'long.cao@acme.vn', 'owner@digitalent.ai', 'boss@acme.vn']);
   });
 
   it('lets only the owner grant roles and invite members', async () => {
@@ -207,7 +207,7 @@ describe('offboarding (FLOW-08)', () => {
     expect((await call('get', '/employees/emp-01')).status).toBe('INACTIVE');
 
     const { mockAuthService } = await import('../../mock-auth.service');
-    await expect(mockAuthService.login({ email: 'employee@digitalent.demo', password: 'Admin@1234' })).rejects.toMatchObject({ response: { status: 403 } });
+    await expect(mockAuthService.login({ email: 'employee@digitalent.ai', password: 'Admin@1234' })).rejects.toMatchObject({ response: { status: 403 } });
   });
 
   it('needs a reason, and refuses deactivating the last owner', async () => {

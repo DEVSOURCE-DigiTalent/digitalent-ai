@@ -7,7 +7,7 @@ namespace DigiTalent.Application.Common.Authorization;
 public interface IPermissionService
 {
     /// <summary>
-    /// Mọi mã quyền của các role (SYSTEM_ADMIN → mọi quyền trong bảng permissions).
+    /// Permission codes explicitly granted to the supplied roles.
     /// </summary>
     Task<IReadOnlyCollection<string>> GetPermissionsAsync(IReadOnlyCollection<string> roleCodes);
 

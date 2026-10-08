@@ -82,7 +82,14 @@ public class FoundationMigrationTests
 
         hasher.Verify(h => h.Hash("test-only-password"), Times.Once);
         var seededEmails = await context.Users.Select(user => user.Email).ToListAsync();
-        seededEmails.Should().HaveCount(8);
+        seededEmails.Should().HaveCount(7);
+        seededEmails.Should().Contain(new[]
+        {
+            "platform@digitalent.ai",
+            "owner@digitalent.ai",
+            "manager@digitalent.ai",
+            "employee@digitalent.ai",
+        });
         seededEmails.Should().Contain(new[]
         {
             "personal@digitalent.ai",
@@ -239,6 +246,51 @@ public class FoundationMigrationTests
                 "SELECT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = {0}) AS \"Value\"",
                 index)).Should().BeTrue($"index {index} must match the canonical SQL");
         }
+    }
+
+    [Fact]
+    public void NormalizeAuthorizationRolesMigration_ContainsPlatformAdminPermissionPurge()
+    {
+        var migration = new DigiTalent.Infrastructure.Persistence.Migrations.NormalizeAuthorizationRoles();
+        var builder = new Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder("Npgsql");
+        typeof(DigiTalent.Infrastructure.Persistence.Migrations.NormalizeAuthorizationRoles)
+            .GetMethod("Up", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .Invoke(migration, new object[] { builder });
+
+        var sqlOps = builder.Operations.OfType<Microsoft.EntityFrameworkCore.Migrations.Operations.SqlOperation>().ToList();
+        sqlOps.Should().NotBeEmpty();
+        var sql = sqlOps.First().Sql;
+        sql.Should().Contain("DELETE FROM role_permissions rp");
+        sql.Should().Contain("r.code = 'PLATFORM_ADMIN'");
+        sql.Should().Contain("audit_log.read_system");
+        sql.Should().Contain("system_config.manage");
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task PostgreSQL_NormalizeAuthorizationRoles_RemovesEnterprisePermissionsFromPlatformAdmin()
+    {
+        using var context = PostgresTestDatabase.CreateContext();
+        await PostgresTestDatabase.MigrateAsync(context);
+
+        var platformRole = await context.Roles.FirstOrDefaultAsync(r => r.Code == "PLATFORM_ADMIN");
+        platformRole.Should().NotBeNull();
+
+        var permissionCodes = await context.RolePermissions
+            .Where(rp => rp.RoleId == platformRole!.Id)
+            .Join(context.Permissions, rp => rp.PermissionId, p => p.Id, (rp, p) => p.Code)
+            .ToListAsync();
+
+        var expectedAllowlist = new[]
+        {
+            "account.view_own",
+            "account.update_own_profile",
+            "account.change_own_password",
+            "audit_log.read_system",
+            "system_config.manage"
+        };
+
+        permissionCodes.Should().BeEquivalentTo(expectedAllowlist);
     }
 
     private static Task<bool> ExistsAsync(AppDbContext context, string sql, params object[] parameters) =>

@@ -9,14 +9,25 @@ public static class EnterpriseTrialExtensions
 {
     public static IServiceCollection AddEnterpriseTrial(this IServiceCollection services, IConfiguration config, IHostEnvironment environment)
     {
-        var options = (config.GetSection("EnterpriseTrial").Get<TrialOptions>() ?? new()) with { DevelopmentEnvironment = environment.IsDevelopment() };
+        var devEnv = environment.IsDevelopment() || config.GetValue<bool>("EnterpriseTrial:DevelopmentEnvironment");
+        var options = (config.GetSection("EnterpriseTrial").Get<TrialOptions>() ?? new()) with { DevelopmentEnvironment = devEnv };
         options.Validate();
         services.AddSingleton(options);
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<ITrialCatalog, DevelopmentTrialCatalog>();
         if (options.DevelopmentEnvironment && options.EnableDevelopmentCapture)
+        {
             services.AddSingleton<ITrialEmailSender, DevelopmentCaptureTrialEmailSender>();
-        else services.AddSingleton<ITrialEmailSender, UnavailableTrialEmailSender>();
+        }
+        else
+        {
+            var smtpHost = config["IndividualCommerce:Smtp:Host"] ?? config["EnterpriseTrial:Smtp:Host"];
+            var smtpUser = config["IndividualCommerce:Smtp:UserName"] ?? config["EnterpriseTrial:Smtp:UserName"];
+            if (!string.IsNullOrWhiteSpace(smtpHost) && !string.IsNullOrWhiteSpace(smtpUser))
+                services.AddSingleton<ITrialEmailSender, SmtpTrialEmailSender>();
+            else
+                services.AddSingleton<ITrialEmailSender, UnavailableTrialEmailSender>();
+        }
         services.AddScoped<TrialService>();
         services.AddRateLimiter(limits =>
         {

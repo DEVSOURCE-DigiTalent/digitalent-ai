@@ -68,11 +68,12 @@ if (app.Environment.IsProduction())
     }
 }
 
-// Chạy migration & seed khi ở Development hoặc khi có cờ ApplyMigrations/--migrate
-var applyMigrations = app.Environment.IsDevelopment() ||
-                      string.Equals(app.Configuration["ApplyMigrations"], "true", StringComparison.OrdinalIgnoreCase) ||
-                      args.Contains("--migrate") ||
-                      args.Contains("--migrate-only");
+// Chạy migration & seed khi ở Development hoặc khi có cờ ApplyMigrations/--migrate (trừ khi cố ý tắt bằng ApplyMigrations=false)
+var applyMigrations = !string.Equals(app.Configuration["ApplyMigrations"], "false", StringComparison.OrdinalIgnoreCase) &&
+                      (app.Environment.IsDevelopment() ||
+                       string.Equals(app.Configuration["ApplyMigrations"], "true", StringComparison.OrdinalIgnoreCase) ||
+                       args.Contains("--migrate") ||
+                       args.Contains("--migrate-only"));
 
 if (applyMigrations)
 {

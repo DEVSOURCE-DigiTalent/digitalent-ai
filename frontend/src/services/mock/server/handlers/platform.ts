@@ -106,7 +106,7 @@ const platformState = {
     {
       id: 'aud-01',
       timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-      actorEmail: 'platform@digitalent.demo',
+      actorEmail: 'platform@digitalent.ai',
       actorName: 'Quản trị viên Nền tảng',
       action: 'ORGANIZATION_APPROVED',
       targetType: 'Organization',
@@ -116,7 +116,7 @@ const platformState = {
     {
       id: 'aud-02',
       timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
-      actorEmail: 'platform@digitalent.demo',
+      actorEmail: 'platform@digitalent.ai',
       actorName: 'Quản trị viên Nền tảng',
       action: 'FRAMEWORK_SYNC',
       targetType: 'CompetencyFramework',
@@ -126,7 +126,7 @@ const platformState = {
     {
       id: 'aud-03',
       timestamp: new Date(Date.now() - 3600000 * 48).toISOString(),
-      actorEmail: 'platform@digitalent.demo',
+      actorEmail: 'platform@digitalent.ai',
       actorName: 'Quản trị viên Nền tảng',
       action: 'PLAN_UPDATED',
       targetType: 'SubscriptionPlan',
@@ -175,7 +175,7 @@ function getAllOrganizations(): PlatformOrganizationDto[] {
     industry: acmeData.settings.industry || 'Công nghệ thông tin',
     size: acmeData.settings.size || '21-100',
     ownerName: 'Nguyễn Văn Chủ',
-    ownerEmail: 'owner@digitalent.demo',
+    ownerEmail: 'owner@digitalent.ai',
     planCode: 'ENT_PRO',
     planName: 'Gói Pro',
     status: acmeSuspended ? 'SUSPENDED' : 'ACTIVE',
@@ -355,7 +355,7 @@ route('PUT', '/platform/organizations/:id/quota', (context) => {
 const DEMO_PLATFORM_USERS: PlatformUserDto[] = [
   {
     id: 'usr-plt-01',
-    email: 'platform@digitalent.demo',
+    email: 'platform@digitalent.ai',
     fullName: 'Quản trị viên Nền tảng',
     phone: '0901234567',
     jobTitle: 'Quản trị hệ thống',
@@ -368,7 +368,7 @@ const DEMO_PLATFORM_USERS: PlatformUserDto[] = [
   },
   {
     id: 'usr-own-01',
-    email: 'owner@digitalent.demo',
+    email: 'owner@digitalent.ai',
     fullName: 'Nguyễn Văn Chủ',
     phone: '0912345678',
     jobTitle: 'Giám đốc điều hành',
@@ -383,7 +383,7 @@ const DEMO_PLATFORM_USERS: PlatformUserDto[] = [
   },
   {
     id: 'usr-mng-01',
-    email: 'manager@digitalent.demo',
+    email: 'manager@digitalent.ai',
     fullName: 'Trần Thị Quản Lý',
     phone: '0923456789',
     jobTitle: 'Trưởng phòng Kinh doanh',
@@ -398,7 +398,7 @@ const DEMO_PLATFORM_USERS: PlatformUserDto[] = [
   },
   {
     id: 'usr-emp-01',
-    email: 'employee@digitalent.demo',
+    email: 'employee@digitalent.ai',
     fullName: 'Lê Văn Nhân Viên',
     phone: '0934567890',
     jobTitle: 'Chuyên viên Phân tích',
@@ -413,7 +413,7 @@ const DEMO_PLATFORM_USERS: PlatformUserDto[] = [
   },
   {
     id: 'usr-own-02',
-    email: 'starter@digitalent.demo',
+    email: 'starter@digitalent.ai',
     fullName: 'Phạm Khởi Nghiệp',
     phone: '0945678901',
     jobTitle: 'Founder',
@@ -428,7 +428,7 @@ const DEMO_PLATFORM_USERS: PlatformUserDto[] = [
   },
   {
     id: 'usr-exp-01',
-    email: 'expired@digitalent.demo',
+    email: 'expired@digitalent.ai',
     fullName: 'Hoàng Hết Hạn',
     phone: '0956789012',
     jobTitle: 'Giám đốc',
@@ -443,7 +443,7 @@ const DEMO_PLATFORM_USERS: PlatformUserDto[] = [
   },
   {
     id: 'usr-per-01',
-    email: 'personal@digitalent.demo',
+    email: 'personal@digitalent.ai',
     fullName: 'Vũ Học Viên Cá Nhân',
     phone: '0967890123',
     jobTitle: 'Chuyên viên tự do',
@@ -730,7 +730,7 @@ route('GET', '/platform/subscriptions', (context) => {
       id: 'sub-ind-02',
       audience: 'individual',
       customerName: 'Nguyễn Thị Học Viên',
-      customerEmail: 'learner@digitalent.demo',
+      customerEmail: 'learner@digitalent.ai',
       planCode: 'IND_PLUS',
       planName: 'Cá nhân Plus',
       status: 'active',
@@ -813,7 +813,7 @@ route('GET', '/platform/subscriptions/:id', (context) => {
         {
           id: `sup-${org.id}-01`,
           timestamp: new Date(Date.now() - 3600000 * 48).toISOString(),
-          actor: 'platform@digitalent.demo',
+          actor: 'platform@digitalent.ai',
           action: 'QUOTA_EXPANSION',
           note: `Đã mở rộng hạn mức từ 5 lên ${org.seatLimit} người dùng`,
         },
@@ -829,7 +829,7 @@ route('GET', '/platform/subscriptions/:id', (context) => {
       id,
       audience: 'individual',
       customerName: id === 'sub-ind-01' ? 'Trần Văn Linh' : 'Nguyễn Thị Học Viên',
-      customerEmail: id === 'sub-ind-01' ? 'linh.tv@example.com' : 'learner@digitalent.demo',
+      customerEmail: id === 'sub-ind-01' ? 'linh.tv@example.com' : 'learner@digitalent.ai',
       planCode: 'IND_PLUS',
       planName: 'Cá nhân Plus',
       status: isCancelled ? 'cancelled' : 'active',

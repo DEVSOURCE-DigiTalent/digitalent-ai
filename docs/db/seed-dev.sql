@@ -1,8 +1,8 @@
 -- ============================================================================
 -- DigiTalent AI — Seed dữ liệu để chạy thử (development)
 --
--- Tạo: 1 tổ chức, 5 role, 3 mã quyền đang dùng, mapping role-quyền,
---      5 tài khoản demo (mỗi role 1 cái) và 2 phòng ban mẫu.
+-- Tạo: 1 tổ chức, 4 role persisted, các quyền tối thiểu của script,
+--      4 tài khoản theo role, 3 tài khoản cá nhân và 2 phòng ban mẫu.
 --
 -- Mật khẩu chung: Admin@1234
 -- Mật khẩu được PostgreSQL mã hóa BCrypt (extension pgcrypto), khớp với
@@ -28,11 +28,10 @@ ON CONFLICT DO NOTHING;
 -- ----------------------------------------------------------------------------
 INSERT INTO roles (id, code, name, description, scope_type, status)
 VALUES
-    (gen_random_uuid(), 'SYSTEM_ADMIN',         'System Admin',         'Quản trị hệ thống, có mọi quyền',      'GLOBAL',       'ACTIVE'),
-    (gen_random_uuid(), 'HR_MANAGER',           'HR / Training Manager', 'Quản lý đào tạo toàn tổ chức',        'ORGANIZATION', 'ACTIVE'),
-    (gen_random_uuid(), 'DEPARTMENT_MANAGER',   'Department Manager',   'Quản lý nhân viên trong phòng ban',    'DEPARTMENT',   'ACTIVE'),
-    (gen_random_uuid(), 'TRAINER',              'Internal Trainer',     'Biên soạn khóa học và đề kiểm tra',    'ORGANIZATION', 'ACTIVE'),
-    (gen_random_uuid(), 'EMPLOYEE',             'Employee',             'Nhân viên học và làm bài tập',         'SELF',         'ACTIVE')
+    (gen_random_uuid(), 'PLATFORM_ADMIN', 'Platform Administrator', 'Quản trị nền tảng DigiTalent',          'GLOBAL',       'ACTIVE'),
+    (gen_random_uuid(), 'OWNER',          'Enterprise Owner',       'Quản trị toàn tổ chức và nội dung nội bộ', 'ORGANIZATION', 'ACTIVE'),
+    (gen_random_uuid(), 'MANAGER',        'Department Manager',      'Quản lý nhân viên trong phòng ban',    'DEPARTMENT',   'ACTIVE'),
+    (gen_random_uuid(), 'EMPLOYEE',       'Employee',                'Nhân viên học và làm bài tập',         'SELF',         'ACTIVE')
 ON CONFLICT (code) DO NOTHING;
 
 -- ----------------------------------------------------------------------------
@@ -42,26 +41,29 @@ INSERT INTO permissions (id, code, module, action, description)
 VALUES
     (gen_random_uuid(), 'account.view_own',           'account',    'view_own',      'Xem tài khoản của chính mình'),
     (gen_random_uuid(), 'department.read',            'department', 'read',          'Xem danh sách / chi tiết phòng ban'),
-    (gen_random_uuid(), 'department.create_update',   'department', 'create_update', 'Tạo, sửa, xóa phòng ban')
+    (gen_random_uuid(), 'department.create_update',   'department', 'create_update', 'Tạo, sửa, xóa phòng ban'),
+    (gen_random_uuid(), 'audit_log.read_system',       'audit_log',     'read_system', 'Xem nhật ký toàn hệ thống'),
+    (gen_random_uuid(), 'system_config.manage',        'system_config', 'manage', 'Quản lý cấu hình nền tảng')
 ON CONFLICT (code) DO NOTHING;
 
 -- ----------------------------------------------------------------------------
--- 4. Role nào có quyền nào (SYSTEM_ADMIN không cần, backend cho đi qua hết)
+-- 4. Role nào có quyền nào (mọi role đều cần quyền tường minh)
 -- ----------------------------------------------------------------------------
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM roles r
 JOIN permissions p ON TRUE
 WHERE (r.code, p.code) IN (
-    ('HR_MANAGER',           'account.view_own'),
-    ('HR_MANAGER',           'department.read'),
-    ('HR_MANAGER',           'department.create_update'),
-    ('DEPARTMENT_MANAGER',   'account.view_own'),
-    ('DEPARTMENT_MANAGER',   'department.read'),
-    ('TRAINER',              'account.view_own'),
-    ('TRAINER',              'department.read'),
-    ('EMPLOYEE',             'account.view_own'),
-    ('EMPLOYEE',             'department.read')
+    ('PLATFORM_ADMIN', 'account.view_own'),
+    ('PLATFORM_ADMIN', 'audit_log.read_system'),
+    ('PLATFORM_ADMIN', 'system_config.manage'),
+    ('OWNER',          'account.view_own'),
+    ('OWNER',          'department.read'),
+    ('OWNER',          'department.create_update'),
+    ('MANAGER',        'account.view_own'),
+    ('MANAGER',        'department.read'),
+    ('EMPLOYEE',       'account.view_own'),
+    ('EMPLOYEE',       'department.read')
 )
 ON CONFLICT DO NOTHING;
 
@@ -70,11 +72,13 @@ ON CONFLICT DO NOTHING;
 -- ----------------------------------------------------------------------------
 INSERT INTO users (id, organization_id, email, password_hash, display_name, status, failed_login_count, created_at, updated_at)
 VALUES
-    (gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'admin@digitalent.ai',    crypt('Admin@1234', gen_salt('bf', 11)), 'System Admin',         'ACTIVE', 0, now(), now()),
-    (gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'hr@digitalent.ai',       crypt('Admin@1234', gen_salt('bf', 11)), 'HR Manager',           'ACTIVE', 0, now(), now()),
-    (gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'manager@digitalent.ai',  crypt('Admin@1234', gen_salt('bf', 11)), 'Department Manager',   'ACTIVE', 0, now(), now()),
-    (gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'trainer@digitalent.ai',  crypt('Admin@1234', gen_salt('bf', 11)), 'Trainer',              'ACTIVE', 0, now(), now()),
-    (gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001', 'employee@digitalent.ai', crypt('Admin@1234', gen_salt('bf', 11)), 'Employee',             'ACTIVE', 0, now(), now())
+    (gen_random_uuid(), NULL,                                           'platform@digitalent.ai', crypt('Admin@1234', gen_salt('bf', 11)), 'Platform Administrator', 'ACTIVE', 0, now(), now()),
+    (gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001',       'owner@digitalent.ai',    crypt('Admin@1234', gen_salt('bf', 11)), 'Enterprise Owner',       'ACTIVE', 0, now(), now()),
+    (gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001',       'manager@digitalent.ai',  crypt('Admin@1234', gen_salt('bf', 11)), 'Department Manager',      'ACTIVE', 0, now(), now()),
+    (gen_random_uuid(), 'a0000000-0000-0000-0000-000000000001',       'employee@digitalent.ai', crypt('Admin@1234', gen_salt('bf', 11)), 'Employee',                'ACTIVE', 0, now(), now()),
+    (gen_random_uuid(), NULL,                                           'personal@digitalent.ai', crypt('Admin@1234', gen_salt('bf', 11)), 'Bùi Thị Cá Nhân',         'ACTIVE', 0, now(), now()),
+    (gen_random_uuid(), NULL,                                           'trial@digitalent.ai',    crypt('Admin@1234', gen_salt('bf', 11)), 'Lý Văn Dùng Thử',         'ACTIVE', 0, now(), now()),
+    (gen_random_uuid(), NULL,                                           'free@digitalent.ai',     crypt('Admin@1234', gen_salt('bf', 11)), 'Mai Thị Miễn Phí',        'ACTIVE', 0, now(), now())
 ON CONFLICT DO NOTHING;
 
 -- ----------------------------------------------------------------------------
@@ -85,10 +89,9 @@ SELECT u.id, r.id, now()
 FROM users u
 JOIN roles r ON TRUE
 WHERE (lower(u.email), r.code) IN (
-    ('admin@digitalent.ai',    'SYSTEM_ADMIN'),
-    ('hr@digitalent.ai',       'HR_MANAGER'),
-    ('manager@digitalent.ai',  'DEPARTMENT_MANAGER'),
-    ('trainer@digitalent.ai',  'TRAINER'),
+    ('platform@digitalent.ai', 'PLATFORM_ADMIN'),
+    ('owner@digitalent.ai',    'OWNER'),
+    ('manager@digitalent.ai',  'MANAGER'),
     ('employee@digitalent.ai', 'EMPLOYEE')
 )
 ON CONFLICT DO NOTHING;

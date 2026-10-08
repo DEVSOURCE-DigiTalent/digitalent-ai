@@ -12,6 +12,16 @@ interface DemoAccounts {
   password: string;
 }
 
+const SEEDED_API_ACCOUNTS: SessionUser[] = [
+  { id: 'seed-platform', email: 'platform@digitalent.ai', fullName: 'Platform Administrator', roles: ['PLATFORM_ADMIN'], permissions: [], workspace: 'platform' },
+  { id: 'seed-owner', email: 'owner@digitalent.ai', fullName: 'Enterprise Owner', roles: ['OWNER'], permissions: [], workspace: 'enterprise' },
+  { id: 'seed-manager', email: 'manager@digitalent.ai', fullName: 'Department Manager', roles: ['MANAGER'], permissions: [], workspace: 'enterprise' },
+  { id: 'seed-employee', email: 'employee@digitalent.ai', fullName: 'Employee', roles: ['EMPLOYEE'], permissions: [], workspace: 'enterprise' },
+  { id: 'seed-personal', email: 'personal@digitalent.ai', fullName: 'Bùi Thị Cá Nhân', roles: ['LEARNER'], permissions: [], workspace: 'personal' },
+  { id: 'seed-trial', email: 'trial@digitalent.ai', fullName: 'Lý Văn Dùng Thử', roles: ['LEARNER'], permissions: [], workspace: 'personal' },
+  { id: 'seed-free', email: 'free@digitalent.ai', fullName: 'Mai Thị Miễn Phí', roles: ['LEARNER'], permissions: [], workspace: 'personal' },
+];
+
 function describeAccount(account: SessionUser): string {
   if (account.workspace === 'personal') {
     if (account.subscription?.status === 'trialing') return 'Cá nhân · dùng thử';
@@ -22,19 +32,23 @@ function describeAccount(account: SessionUser): string {
 }
 
 /**
- * Lists the mock accounts so each role can be tried quickly. Rendered only with VITE_USE_MOCK=true;
- * the accounts are loaded on demand so they are not part of a production bundle.
+ * Lists development accounts so each role can be tried quickly. The real API list is visible only
+ * when VITE_SHOW_DEMO_ACCOUNTS=true in a development build.
  * Folded into an accessible collapsible details panel so it doesn't take form space.
  */
 export function DemoAccountPicker({ onPick }: DemoAccountPickerProps) {
   const [demo, setDemo] = useState<DemoAccounts | null>(null);
 
   useEffect(() => {
-    // Tested inline so a production build drops the import (see services/auth.service.ts).
-    if (import.meta.env.VITE_USE_MOCK !== 'true') return;
-    import('../../../services/mock/mock-accounts').then((module) =>
-      setDemo({ accounts: module.MOCK_ACCOUNTS, password: module.MOCK_PASSWORD }),
-    );
+    if (import.meta.env.VITE_USE_MOCK === 'true') {
+      import('../../../services/mock/mock-accounts').then((module) =>
+        setDemo({ accounts: module.MOCK_ACCOUNTS, password: module.MOCK_PASSWORD }),
+      );
+      return;
+    }
+    if (import.meta.env.DEV && import.meta.env.VITE_SHOW_DEMO_ACCOUNTS === 'true') {
+      setDemo({ accounts: SEEDED_API_ACCOUNTS, password: 'Admin@1234' });
+    }
   }, []);
 
   if (!demo) return null;

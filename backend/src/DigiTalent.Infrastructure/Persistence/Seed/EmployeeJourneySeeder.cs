@@ -49,13 +49,12 @@ public static class EmployeeJourneySeeder
         var employee = await db.Employees.FirstOrDefaultAsync(e => e.OrganizationId == organizationId && e.WorkEmail == EmployeeEmail);
         var manager = await db.Employees.FirstOrDefaultAsync(e => e.OrganizationId == organizationId && e.WorkEmail == ManagerEmail);
         if (employee == null || manager == null
-            || !users.TryGetValue("hr@digitalent.ai", out var hr)
+            || !users.TryGetValue("owner@digitalent.ai", out var owner)
             || !users.TryGetValue(ManagerEmail, out var managerUser))
         {
             return;
         }
 
-        var trainer = users.GetValueOrDefault("trainer@digitalent.ai") ?? hr;
         var competencies = await db.Competencies
             .Where(c => db.CompetencyCategories.Any(cat => cat.Id == c.CategoryId && cat.OrganizationId == organizationId))
             .ToDictionaryAsync(c => c.Code);
@@ -71,7 +70,7 @@ public static class EmployeeJourneySeeder
             VersionNo = 1,
             TemplateHtml = "<h1>{{holderName}}</h1><p>Hoàn thành khóa {{courseTitle}}</p><p>Mã: {{certificateCode}}</p>",
             Status = Statuses.CertificateTemplate.Active,
-            CreatedByUserId = hr.Id,
+            CreatedByUserId = owner.Id,
         });
 
         var bank = new QuestionBank
@@ -79,7 +78,7 @@ public static class EmployeeJourneySeeder
             OrganizationId = organizationId,
             Title = "Ngân hàng câu hỏi năng lực số (demo)",
             Description = "Câu hỏi trắc nghiệm theo Thông tư 02/2025 dùng cho các bài đánh giá demo.",
-            OwnerUserId = trainer.Id,
+            OwnerUserId = owner.Id,
             Status = Statuses.QuestionBank.Active,
         };
         db.QuestionBanks.Add(bank);
@@ -99,7 +98,7 @@ public static class EmployeeJourneySeeder
                 new LessonSeed("Kiểm tra nhanh cuối học phần", "QUIZ", 10, Statuses.LessonCompletionRule.PassCheck, "Làm bài kiểm tra nhanh của khóa để hoàn thành mục này."),
             }),
         });
-        AddAssessment(db, securityCourse, bank, trainer.Id, "A4-I-QUIZ", "Kiểm tra nhanh: An toàn thông tin",
+        AddAssessment(db, securityCourse, bank, owner.Id, "A4-I-QUIZ", "Kiểm tra nhanh: An toàn thông tin",
             Statuses.AssessmentType.Quiz, isFinal: false, timeLimit: null, maxAttempts: null, passing: 60m, new[]
             {
                 Q(Tt02("4.1"), "Cách nào giúp bảo vệ tài khoản công việc tốt nhất?",
@@ -115,7 +114,7 @@ public static class EmployeeJourneySeeder
                     "Chỉ chia sẻ khi có cơ sở pháp lý / sự đồng ý và áp dụng biện pháp bảo vệ (mã hóa, giới hạn người nhận).",
                     "Kiểm tra cơ sở cho phép chia sẻ và mã hóa file*", "Đổi tên file cho dễ tìm", "Nén file thật nhỏ", "Gửi bằng email cá nhân cho nhanh"),
             });
-        AddAssessment(db, securityCourse, bank, trainer.Id, MarkerAssessmentCode, "Đánh giá cuối khóa A4-I: An toàn thông tin trong công việc",
+        AddAssessment(db, securityCourse, bank, owner.Id, MarkerAssessmentCode, "Đánh giá cuối khóa A4-I: An toàn thông tin trong công việc",
             Statuses.AssessmentType.Final, isFinal: true, timeLimit: 15, maxAttempts: 3, passing: 70m, new[]
             {
                 Q(Tt02("4.1"), "Phần mềm diệt virus trên máy tính công việc nên được cập nhật khi nào?",
@@ -151,7 +150,7 @@ public static class EmployeeJourneySeeder
                 new LessonSeed("Quy ước đặt tên và cấu trúc thư mục", "GUIDED_PRACTICE", 25, Statuses.LessonCompletionRule.ManualComplete, FolderConventionContent),
             }),
         });
-        AddAssessment(db, infoCourse, bank, trainer.Id, "A1-I-FINAL", "Đánh giá cuối khóa A1-I: Tìm kiếm và quản lý thông tin",
+        AddAssessment(db, infoCourse, bank, owner.Id, "A1-I-FINAL", "Đánh giá cuối khóa A1-I: Tìm kiếm và quản lý thông tin",
             Statuses.AssessmentType.Final, isFinal: true, timeLimit: 15, maxAttempts: 3, passing: 70m, new[]
             {
                 Q(Tt02("1.1"), "Toán tử nào tìm chính xác cụm từ \"hóa đơn điện tử\"?",
@@ -177,7 +176,7 @@ public static class EmployeeJourneySeeder
                 new LessonSeed("Họp trực tuyến hiệu quả", "TEXT", 15, Statuses.LessonCompletionRule.View, MeetingContent),
             }),
         });
-        var communicationFinal = AddAssessment(db, communicationCourse, bank, trainer.Id, "A2-F-FINAL", "Đánh giá cuối khóa A2-F: Giao tiếp số cơ bản",
+        var communicationFinal = AddAssessment(db, communicationCourse, bank, owner.Id, "A2-F-FINAL", "Đánh giá cuối khóa A2-F: Giao tiếp số cơ bản",
             Statuses.AssessmentType.Final, isFinal: true, timeLimit: 15, maxAttempts: 3, passing: 70m, new[]
             {
                 Q(Tt02("2.1"), "Tiêu đề email công việc nên thế nào?",
@@ -295,7 +294,7 @@ public static class EmployeeJourneySeeder
             CourseId = infoCourse.Id,
             EmployeeId = employee.Id,
             AssignmentSource = Statuses.CourseAssignmentSource.SkillGap,
-            AssignedByUserId = hr.Id,
+            AssignedByUserId = owner.Id,
             AssignedAt = now.AddDays(-2),
             DueDate = today.AddDays(20),
             Status = Statuses.CourseAssignment.Active,

@@ -43,7 +43,6 @@ export const useCurrentUser = create<AuthState>((set, get) => ({
   hasPermission: (permission: string) => {
     const { user } = get();
     if (!user) return false;
-    if (user.roles.includes(ROLES.PLATFORM_ADMIN)) return true;
     return user.permissions.includes(permission);
   },
 

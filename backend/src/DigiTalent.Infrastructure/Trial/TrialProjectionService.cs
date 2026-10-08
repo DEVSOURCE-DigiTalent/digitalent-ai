@@ -60,10 +60,10 @@ public sealed partial class TrialService
 
     public async Task ConvertAsync(Guid organizationId, string approvedReference)
     {
-        var claimedAdmin = actor.IsInRole("SYSTEM_ADMIN") || actor.IsInRole("SystemAdmin");
+        var claimedAdmin = actor.IsInRole("PLATFORM_ADMIN");
         var activeAdmin = actor.UserId.HasValue && await db.UserRoles.AnyAsync(userRole =>
             userRole.UserId == actor.UserId.Value && userRole.User.Status == "ACTIVE" && userRole.Role.Status == "ACTIVE" &&
-            (userRole.Role.Code == "SYSTEM_ADMIN" || userRole.Role.Code == "SystemAdmin"));
+            userRole.Role.Code == "PLATFORM_ADMIN");
         if (!actor.IsAuthenticated || !claimedAdmin || !activeAdmin)
             throw new ForbiddenException("Only a trusted platform administrator may confirm an approved conversion.");
         var reference = Text(approvedReference, 200, "Approved entitlement reference");

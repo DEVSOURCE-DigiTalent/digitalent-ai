@@ -14,7 +14,7 @@ namespace DigiTalent.Api.Authorization;
 ///   - Có quyền                              → cho vào action
 ///
 /// Quyền của từng role đọc từ database (bảng role_permissions) qua IPermissionService.
-/// SYSTEM_ADMIN luôn được đi qua.
+/// Every role, including PLATFORM_ADMIN, must hold an explicit permission.
 ///
 /// VD: [HasPermission(Permissions.Department.CreateUpdate)]
 /// Truyền nhiều mã → chỉ cần có 1 trong các mã là được.

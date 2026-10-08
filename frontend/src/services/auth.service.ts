@@ -6,14 +6,14 @@ import type { SessionUser } from '../types/session';
 
 interface AuthService {
   login: (data: LoginRequest) => Promise<{ data: ApiResponse<LoginResponse> }>;
-  logout: () => Promise<unknown>;
+  logout: (refreshToken: string) => Promise<unknown>;
   getMe: () => Promise<{ data: ApiResponse<SessionUser> }>;
 }
 
 /** Authentication API service. All endpoints relative to /auth base path. */
 const apiAuthService: AuthService = {
   login: (data) => apiClient.post<ApiResponse<LoginResponse>>('/auth/login', data),
-  logout: () => apiClient.post('/auth/logout'),
+  logout: (refreshToken) => apiClient.post('/auth/logout', { refreshToken }),
   getMe: () => apiClient.get<ApiResponse<SessionUser>>('/auth/me'),
 };
 

@@ -12,7 +12,7 @@ import type {
 } from './types';
 
 /**
- * Demo organization behind the seeded accounts (owner@, manager@, employee@digitalent.demo):
+ * Demo organization behind the seeded accounts (owner@, manager@, employee@digitalent.ai):
  * "Công ty Cổ phần Acme".
  */
 
@@ -69,9 +69,9 @@ interface EmployeeSeed {
 }
 
 const EMPLOYEES: EmployeeSeed[] = [
-  { n: 1, name: 'Hoàng Văn Nhân Viên', email: 'employee@digitalent.demo', department: 'dep-kd', position: 'pos-sales', base: 1, accountId: 'mock-employee', roles: ['EMPLOYEE'] },
-  { n: 2, name: 'Phạm Thị Quản Lý', email: 'manager@digitalent.demo', department: 'dep-kd', position: 'pos-sales-lead', base: 2.3, accountId: 'mock-manager', roles: ['MANAGER'] },
-  { n: 3, name: 'Nguyễn Văn Chủ', email: 'owner@digitalent.demo', department: 'dep-bgd', position: 'pos-ceo', base: 2.6, accountId: 'mock-owner', roles: ['OWNER'] },
+  { n: 1, name: 'Hoàng Văn Nhân Viên', email: 'employee@digitalent.ai', department: 'dep-kd', position: 'pos-sales', base: 1, accountId: 'mock-employee', roles: ['EMPLOYEE'] },
+  { n: 2, name: 'Phạm Thị Quản Lý', email: 'manager@digitalent.ai', department: 'dep-kd', position: 'pos-sales-lead', base: 2.3, accountId: 'mock-manager', roles: ['MANAGER'] },
+  { n: 3, name: 'Nguyễn Văn Chủ', email: 'owner@digitalent.ai', department: 'dep-bgd', position: 'pos-ceo', base: 2.6, accountId: 'mock-owner', roles: ['OWNER'] },
   { n: 4, name: 'Trần Thị Nhân Sự', email: 'nhansu.tran@acme.vn', department: 'dep-ns', position: 'pos-hr', base: 2.2, roles: ['EMPLOYEE'] },
   { n: 5, name: 'Lê Văn Đào Tạo', email: 'daotao.le@acme.vn', department: 'dep-ns', position: 'pos-hr', base: 2.4, roles: ['EMPLOYEE'] },
   { n: 6, name: 'Đỗ Minh Quân', email: 'quan.do@acme.vn', department: 'dep-kd', position: 'pos-sales', base: 1.6, roles: ['EMPLOYEE'] },

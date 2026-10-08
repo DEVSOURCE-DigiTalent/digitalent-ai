@@ -1,6 +1,6 @@
 # Manager FE2
 
-Các trang chỉ dùng cho role `DEPARTMENT_MANAGER` nằm trong `pages/`. Trang nhóm ở `pages/team/`; hook tổng hợp skill gap ở `hooks/`. Các thành phần dùng chung cho employee/manager (chi tiết khóa học, bài học, danh sách ghi danh) tiếp tục ở `features/learning`, `features/employee` và `services` để không tạo hai bản API khác nhau.
+Các trang chỉ dùng cho role `MANAGER` nằm trong `pages/`. Trang nhóm ở `pages/team/`; hook tổng hợp skill gap ở `hooks/`. Các thành phần dùng chung cho employee/manager (chi tiết khóa học, bài học, danh sách ghi danh) tiếp tục ở `features/learning`, `features/employee` và `services` để không tạo hai bản API khác nhau.
 
 ## Route giao diện
 
@@ -24,7 +24,7 @@ Các trang chỉ dùng cho role `DEPARTMENT_MANAGER` nằm trong `pages/`. Trang
 | `/enterprise/me/achievements` | `GET /me/achievements` |
 | `/enterprise/initial-assessment` | `GET /intelligence/skill-gaps/me/latest`, `POST /intelligence/skill-gaps/calculate` |
 
-Menu Cá nhân của Manager dùng lại giao diện, hook và API `/me/*` của Employee; các truy vấn này được BE giới hạn theo hồ sơ nhân viên liên kết với chính tài khoản đang đăng nhập. Cần có bản ghi `employees.user_id` tương ứng với Manager trong cùng tổ chức để các trang cá nhân tải được dữ liệu. Quyền mặc định của `DEPARTMENT_MANAGER` đã gồm `lesson.complete`, `attempt.start`, `attempt.submit` và `task.submit`; quyền thực tế vẫn lấy từ bảng `role_permissions`.
+Menu Cá nhân của Manager dùng lại giao diện, hook và API `/me/*` của Employee; các truy vấn này được BE giới hạn theo hồ sơ nhân viên liên kết với chính tài khoản đang đăng nhập. Cần có bản ghi `employees.user_id` tương ứng với Manager trong cùng tổ chức để các trang cá nhân tải được dữ liệu. Quyền mặc định của `MANAGER` đã gồm `lesson.complete`, `attempt.start`, `attempt.submit` và `task.submit`; quyền thực tế vẫn lấy từ bảng `role_permissions`.
 
 Bài test đầu vào 6 câu cũ chỉ lưu ở trình duyệt nên không tự tạo skill gap, gợi ý hoặc ghi danh trên BE. Trang `/enterprise/initial-assessment` của Manager dùng phân tích skill gap của BE2.
 

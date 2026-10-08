@@ -42,11 +42,12 @@ public class AuthController : ControllerBase
     }
 
     // POST api/v1/auth/logout
-    // Token không lưu ở server nên không có gì để xóa: FE tự xóa token trong localStorage.
-    // Giữ API này vì FE (Topbar) đang gọi tới.
     [HttpPost("logout")]
-    public ActionResult<ApiResponse<object?>> Logout()
+    public async Task<ActionResult<ApiResponse<object?>>> Logout(
+        [FromBody] LogoutUseCaseInput input,
+        [FromServices] IUseCase<LogoutUseCaseInput, bool> useCase)
     {
+        await useCase.ExecuteAsync(input);
         return Ok(ApiResponse<object?>.Ok(null, "Logged out."));
     }
 }

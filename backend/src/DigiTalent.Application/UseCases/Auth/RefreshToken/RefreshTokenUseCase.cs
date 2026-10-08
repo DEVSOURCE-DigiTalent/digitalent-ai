@@ -41,9 +41,18 @@ public class RefreshTokenUseCase : IUseCase<RefreshTokenUseCaseInput, RefreshTok
         if (existingToken.RevokedAt != null)
         {
             // Thu hồi toàn bộ token còn hiệu lực của user để ngăn chặn tấn công chiếm quyền
-            await _context.RefreshTokens
+            var activeTokens = await _context.RefreshTokens
                 .Where(t => t.UserId == existingToken.UserId && t.RevokedAt == null)
-                .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, now));
+                .ToListAsync();
+
+            if (activeTokens.Count > 0)
+            {
+                foreach (var active in activeTokens)
+                {
+                    active.RevokedAt = now;
+                }
+                await _context.SaveChangesAsync();
+            }
 
             throw new UnauthorizedException("Refresh token was previously revoked. Suspicious activity detected.");
         }
@@ -59,14 +68,19 @@ public class RefreshTokenUseCase : IUseCase<RefreshTokenUseCaseInput, RefreshTok
             .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
             .FirstOrDefaultAsync(u => u.Id == existingToken.UserId);
 
-        if (user == null || user.Status != Statuses.User.Active)
+        if (user == null)
         {
-            throw new UnauthorizedException("User account is inactive or not found.");
+            throw new UnauthorizedException("User account is not found.");
         }
 
         if (user.IsLockedAt(now))
         {
             throw new ForbiddenException("Account is locked.");
+        }
+
+        if (user.Status != Statuses.User.Active)
+        {
+            throw new UnauthorizedException("User account is inactive.");
         }
 
         // Lấy thông tin nhân viên
@@ -80,7 +94,7 @@ public class RefreshTokenUseCase : IUseCase<RefreshTokenUseCaseInput, RefreshTok
             .Select(ur => ur.Role!.Code)
             .ToList();
 
-        // Thu hồi token cũ
+        // Thu hồi token cũ (RevokedAt có concurrency token: chỉ một request cập nhật thành công)
         existingToken.RevokedAt = now;
 
         // Sinh token mới
@@ -96,7 +110,14 @@ public class RefreshTokenUseCase : IUseCase<RefreshTokenUseCaseInput, RefreshTok
         _context.RefreshTokens.Add(newRefreshTokenEntity);
         existingToken.ReplacedByTokenId = newRefreshTokenEntity.Id;
 
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new UnauthorizedException("Refresh token was already used or revoked.");
+        }
 
         return new RefreshTokenUseCaseOutput
         {

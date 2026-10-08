@@ -1,7 +1,7 @@
 /**
  * Role & workspace model (UI/UX spec v2.1, §1, §2).
  * 4 roles: PLATFORM_ADMIN, OWNER, MANAGER, EMPLOYEE.
- * Individual is a Personal Workspace, not an RBAC role.
+ * LEARNER is retained only for Personal Workspace accounts.
  */
 export const ROLES = {
   PLATFORM_ADMIN: 'PLATFORM_ADMIN',
@@ -44,39 +44,20 @@ export function primaryRole(user?: { roles: readonly string[] } | null): Role | 
   return undefined;
 }
 
-/**
- * Role names the current backend still returns, mapped to the new model (transitional, remove once the
- * backend speaks the new roles).
- * - SYSTEM_ADMIN gets PLATFORM_ADMIN and temporarily OWNER while platform is integrating.
- * - HR_MANAGER becomes OWNER.
- * - DEPARTMENT_MANAGER becomes MANAGER.
- * - EMPLOYEE and TRAINER become EMPLOYEE.
- */
-const LEGACY_ROLE_MAP: Record<string, Role[]> = {
-  SYSTEM_ADMIN: [ROLES.PLATFORM_ADMIN, ROLES.OWNER],
-  ORG_ADMIN: [ROLES.OWNER],
-  HR_MANAGER: [ROLES.OWNER],
-  LEARNING_ADMIN: [ROLES.OWNER],
-  DEPARTMENT_MANAGER: [ROLES.MANAGER],
-  EMPLOYEE: [ROLES.EMPLOYEE],
-  TRAINER: [ROLES.EMPLOYEE],
-  LEARNER: [ROLES.EMPLOYEE],
-};
-
-/** Converts any legacy role names to the new ones and removes duplicates. */
+/** Removes duplicates while preserving the backend's canonical role codes. */
 export function normalizeRoles(roles: readonly string[]): string[] {
-  const mapped = roles.flatMap((role) => LEGACY_ROLE_MAP[role] ?? [role as Role]);
-  return [...new Set(mapped)];
+  return [...new Set(roles)];
 }
 
 /**
- * Workspace implied by a role list when the backend does not send one. Platform staff who also hold
- * enterprise roles (the legacy SYSTEM_ADMIN) stay in the enterprise portal.
+ * Workspace implied by a role list when the backend does not send one.
  */
 export function inferWorkspace(roles: readonly string[]): Workspace {
-  const hasEnterpriseRole = roles.some((role) => role !== ROLES.PLATFORM_ADMIN);
-  if (roles.includes(ROLES.PLATFORM_ADMIN) && !hasEnterpriseRole) return WORKSPACES.PLATFORM;
-  return roles.length > 0 ? WORKSPACES.ENTERPRISE : WORKSPACES.PERSONAL;
+  if (roles.includes(ROLES.PLATFORM_ADMIN)) return WORKSPACES.PLATFORM;
+  if (roles.some((role) => role === ROLES.OWNER || role === ROLES.MANAGER || role === ROLES.EMPLOYEE)) {
+    return WORKSPACES.ENTERPRISE;
+  }
+  return WORKSPACES.PERSONAL;
 }
 
 /** The user's workspace, falling back to the one implied by their roles. */

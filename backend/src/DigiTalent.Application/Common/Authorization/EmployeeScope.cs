@@ -7,8 +7,8 @@ namespace DigiTalent.Application.Common.Authorization;
 
 /// <summary>
 /// Phạm vi nhân viên mà người gọi được xem/thao tác (spec D-S3-06):
-///   SYSTEM_ADMIN, HR_MANAGER → toàn tổ chức
-///   DEPARTMENT_MANAGER       → nhân viên cùng phòng ban (chưa tính phòng con — Sprint 5)
+///   OWNER   → toàn tổ chức
+///   MANAGER → nhân viên cùng phòng ban (chưa tính phòng con — Sprint 5)
 ///   vai trò khác             → chỉ bản thân
 /// Ngoài phạm vi → 404, không phân biệt với "không tồn tại" để tránh lộ dữ liệu.
 /// </summary>
@@ -28,7 +28,7 @@ public class EmployeeScope
         var organizationId = _currentUser.GetRequiredOrganizationId();
         var employees = _context.Employees.Where(e => e.OrganizationId == organizationId);
 
-        // IsAdmin = SYSTEM_ADMIN hoặc HR_MANAGER (xem CurrentUser)
+        // IsAdmin means organization OWNER (see CurrentUser).
         if (_currentUser.IsAdmin)
         {
             return employees;

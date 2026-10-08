@@ -156,12 +156,12 @@ public class MemberDirectory
             .Select(s => s.SeatLimit)
             .FirstOrDefaultAsync();
 
-    /// <summary>Active accounts holding the Owner role (HR_MANAGER) — the organization must always keep one.</summary>
+    /// <summary>Active accounts holding the Owner role — the organization must always keep one.</summary>
     public Task<int> CountActiveOwnersAsync(Guid organizationId) =>
         (from userRole in _context.UserRoles
          join role in _context.Roles on userRole.RoleId equals role.Id
          join user in _context.Users on userRole.UserId equals user.Id
-         where role.Code == Roles.HrManager
+         where role.Code == Roles.Owner
                && user.OrganizationId == organizationId
                && user.Status != Statuses.User.Inactive
          select user.Id).Distinct().CountAsync();

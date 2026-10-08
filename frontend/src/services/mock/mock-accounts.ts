@@ -82,30 +82,30 @@ const enterprise = (
  * - platform@ (Platform admin)
  */
 const SEEDS: MockAccountSeed[] = [
-  enterprise('mock-owner', 'owner@digitalent.demo', 'Nguyễn Văn Chủ', ROLES.OWNER, ACME, PRO_PLAN),
-  enterprise('mock-owner2', 'owner2@digitalent.demo', 'Trần Văn Chủ Nhỏ', ROLES.OWNER, SMALL_CO, PRO_PLAN),
-  enterprise('mock-manager', 'manager@digitalent.demo', 'Phạm Thị Quản Lý', ROLES.MANAGER, ACME, PRO_PLAN),
-  enterprise('mock-employee', 'employee@digitalent.demo', 'Hoàng Văn Nhân Viên', ROLES.EMPLOYEE, ACME, PRO_PLAN),
+  enterprise('mock-owner', 'owner@digitalent.ai', 'Nguyễn Văn Chủ', ROLES.OWNER, ACME, PRO_PLAN),
+  enterprise('mock-owner2', 'owner2@digitalent.ai', 'Trần Văn Chủ Nhỏ', ROLES.OWNER, SMALL_CO, PRO_PLAN),
+  enterprise('mock-manager', 'manager@digitalent.ai', 'Phạm Thị Quản Lý', ROLES.MANAGER, ACME, PRO_PLAN),
+  enterprise('mock-employee', 'employee@digitalent.ai', 'Hoàng Văn Nhân Viên', ROLES.EMPLOYEE, ACME, PRO_PLAN),
   // Starter plan: no internal learning or advanced analytics, to see the "feature unavailable" screen.
-  enterprise('mock-starter', 'starter@digitalent.demo', 'Đặng Văn Starter', ROLES.OWNER, STARTUP, STARTER_PLAN),
+  enterprise('mock-starter', 'starter@digitalent.ai', 'Đặng Văn Starter', ROLES.OWNER, STARTUP, STARTER_PLAN),
   // Expired plan: to see read-only / payment required state.
-  enterprise('mock-expired', 'expired@digitalent.demo', 'Vũ Thị Hết Hạn', ROLES.OWNER, LEGACY_CO, {
+  enterprise('mock-expired', 'expired@digitalent.ai', 'Vũ Thị Hết Hạn', ROLES.OWNER, LEGACY_CO, {
     ...PRO_PLAN, status: 'payment_required', renewsAt: '2026-08-31',
   }),
   {
-    id: 'mock-personal', email: 'personal@digitalent.demo', fullName: 'Bùi Thị Cá Nhân',
+    id: 'mock-personal', email: 'personal@digitalent.ai', fullName: 'Bùi Thị Cá Nhân',
     roles: [], workspace: WORKSPACES.PERSONAL, subscription: PERSONAL_PLAN,
   },
   {
-    id: 'mock-trial', email: 'trial@digitalent.demo', fullName: 'Lý Văn Dùng Thử',
+    id: 'mock-trial', email: 'trial@digitalent.ai', fullName: 'Lý Văn Dùng Thử',
     roles: [], workspace: WORKSPACES.PERSONAL, subscription: TRIAL_DEMO_PLAN,
   },
   {
-    id: 'mock-free', email: 'free@digitalent.demo', fullName: 'Mai Thị Miễn Phí',
+    id: 'mock-free', email: 'free@digitalent.ai', fullName: 'Mai Thị Miễn Phí',
     roles: [], workspace: WORKSPACES.PERSONAL, subscription: FREE_DEMO_PLAN,
   },
   {
-    id: 'mock-platform', email: 'platform@digitalent.demo', fullName: 'Ngô Văn Nền Tảng',
+    id: 'mock-platform', email: 'platform@digitalent.ai', fullName: 'Ngô Văn Nền Tảng',
     roles: [ROLES.PLATFORM_ADMIN], workspace: WORKSPACES.PLATFORM,
   },
 ];

@@ -1,15 +1,14 @@
 namespace DigiTalent.Domain.Constants.Authorization;
 
 /// <summary>
-/// Mã 5 role của hệ thống (doc 09 mục 3). Frontend dùng đúng các chuỗi này — KHÔNG đổi tên.
-/// Xác minh chứng chỉ công khai (/verify) KHÔNG cần role nào.
+/// Four persisted roles for platform and enterprise workspaces.
+/// Personal accounts have no persisted enterprise role and are exposed as LEARNER by /auth/me.
 /// </summary>
 public static class Roles
 {
-    public const string SystemAdmin = "SYSTEM_ADMIN";
-    public const string HrManager = "HR_MANAGER";
-    public const string DepartmentManager = "DEPARTMENT_MANAGER";
-    public const string Trainer = "TRAINER";
+    public const string PlatformAdmin = "PLATFORM_ADMIN";
+    public const string Owner = "OWNER";
+    public const string Manager = "MANAGER";
     public const string Employee = "EMPLOYEE";
 
     /// <summary>
@@ -17,10 +16,9 @@ public static class Roles
     /// </summary>
     public static readonly IReadOnlyList<(string Code, string Name, string ScopeType)> Definitions = new[]
     {
-        (SystemAdmin, "System Administrator", "GLOBAL"),
-        (HrManager, "HR / Training Manager", "ORGANIZATION"),
-        (DepartmentManager, "Department Manager", "DEPARTMENT"),
-        (Trainer, "Internal Trainer", "SELF"),
+        (PlatformAdmin, "Platform Administrator", "GLOBAL"),
+        (Owner, "Enterprise Owner", "ORGANIZATION"),
+        (Manager, "Department Manager", "DEPARTMENT"),
         (Employee, "Employee", "SELF"),
     };
 }

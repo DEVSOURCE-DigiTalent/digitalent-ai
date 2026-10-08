@@ -86,17 +86,17 @@ public static class SkillGapSeeder
         var users = await db.Users
             .Where(u => u.OrganizationId == organizationId)
             .ToDictionaryAsync(u => u.Email, u => u.Id);
-        if (!users.TryGetValue("hr@digitalent.ai", out var hrUserId))
+        if (!users.TryGetValue("owner@digitalent.ai", out var ownerUserId))
         {
-            return; // Demo cần tài khoản HR để ghi người xác nhận năng lực
+            return; // Demo needs an Owner to record confirmations.
         }
-        var authorUserId = users.GetValueOrDefault("trainer@digitalent.ai", hrUserId);
+        var authorUserId = ownerUserId;
 
         var competencies = SeedFramework(db, organizationId);
-        var positions = SeedPositions(db, organizationId, hrUserId, competencies);
+        var positions = SeedPositions(db, organizationId, ownerUserId, competencies);
         await AssignDemoEmployeeAsync(db, organizationId, DemoEmployeeEmail, positions[DemoEmployeePosition].Id);
         await AssignDemoEmployeeAsync(db, organizationId, DemoManagerEmail, positions[DemoManagerPosition].Id);
-        await SeedEmployeeProfileAsync(db, organizationId, hrUserId, competencies);
+        await SeedEmployeeProfileAsync(db, organizationId, ownerUserId, competencies);
         SeedCourses(db, organizationId, authorUserId, competencies);
 
         await db.SaveChangesAsync();

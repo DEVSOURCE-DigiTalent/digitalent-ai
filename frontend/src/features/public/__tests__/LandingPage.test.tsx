@@ -39,7 +39,7 @@ describe('LandingPage', () => {
   it('sends a signed-in user to the home of their workspace', () => {
     useCurrentUser.getState().setUser({
       id: 'u-1',
-      email: 'learning@digitalent.demo',
+      email: 'learning@digitalent.ai',
       fullName: 'Learning Admin',
       roles: [ROLES.OWNER],
       permissions: [],

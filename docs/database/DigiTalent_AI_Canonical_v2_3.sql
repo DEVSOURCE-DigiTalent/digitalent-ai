@@ -27,8 +27,8 @@
 -- Changes v2.2 -> v2.3:
 --   * employees.job_position_id is NULLABLE (new hire without a position ->
 --     skill gap returns NOT_ASSIGNED).
---   * RBAC stored in roles / user_roles / role_permissions; 5 roles only
---     (SYSTEM_ADMIN, HR_MANAGER, DEPARTMENT_MANAGER, TRAINER, EMPLOYEE).
+--   * RBAC stored in roles / user_roles / role_permissions; 4 platform/enterprise roles
+--     (PLATFORM_ADMIN, OWNER, MANAGER, EMPLOYEE).
 --     Public certificate verification needs no role.
 --   * Every table with a surrogate id has created_at + updated_at (timestamptz,
 --     NOT NULL). Join tables with composite keys do not.
@@ -1510,16 +1510,15 @@ CREATE TABLE readiness_scores (
 --    do not cascade-delete attempts/certificates/submissions/evaluations/evidence.
 
 -- ============================================================================
--- 15. REFERENCE DATA — THE FIVE SYSTEM ROLES (v2.3)
+-- 15. REFERENCE DATA — PLATFORM AND ENTERPRISE ROLES
 -- ============================================================================
 -- Permissions and role_permissions are seeded by the application from
 -- Domain/Constants/Authorization (Permissions.cs, RolePermissions.cs).
 
 INSERT INTO roles (id, code, name, scope_type, status) VALUES
-    (gen_random_uuid(), 'SYSTEM_ADMIN',       'System Administrator',  'GLOBAL',       'ACTIVE'),
-    (gen_random_uuid(), 'HR_MANAGER',         'HR / Training Manager', 'ORGANIZATION', 'ACTIVE'),
-    (gen_random_uuid(), 'DEPARTMENT_MANAGER', 'Department Manager',    'DEPARTMENT',   'ACTIVE'),
-    (gen_random_uuid(), 'TRAINER',            'Internal Trainer',      'SELF',         'ACTIVE'),
+    (gen_random_uuid(), 'PLATFORM_ADMIN',      'Platform Administrator','GLOBAL',       'ACTIVE'),
+    (gen_random_uuid(), 'OWNER',               'Enterprise Owner',      'ORGANIZATION', 'ACTIVE'),
+    (gen_random_uuid(), 'MANAGER',             'Department Manager',    'DEPARTMENT',   'ACTIVE'),
     (gen_random_uuid(), 'EMPLOYEE',           'Employee',              'SELF',         'ACTIVE');
 
 COMMIT;

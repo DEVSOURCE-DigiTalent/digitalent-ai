@@ -5,11 +5,13 @@ namespace DigiTalent.Infrastructure.Trial;
 // Explicitly labelled development content; this is not professional certification or production approval.
 public sealed class DevelopmentTrialCatalog : ITrialCatalog
 {
-    public bool IsProductionApproved => false;
+    private readonly TrialOptions _options;
+    public bool IsProductionApproved => _options.DevelopmentEnvironment || _options.PolicyApproved;
     public IReadOnlyList<TrialBundle> Bundles { get; }
     public DevelopmentTrialCatalog(TrialOptions options)
     {
-        Bundles = options.DevelopmentEnvironment && options.EnableDevelopmentBundle ? [CreateBundle(), Missing("hr", "Nhân sự"), Missing("crm", "Kinh doanh (CRM)"), Missing("accounting", "Kế toán"), Missing("marketing", "Marketing")] : [];
+        _options = options;
+        Bundles = (options.DevelopmentEnvironment || options.EnableDevelopmentBundle) ? [CreateBundle(), Missing("hr", "Nhân sự"), Missing("crm", "Kinh doanh (CRM)"), Missing("accounting", "Kế toán"), Missing("marketing", "Marketing")] : [];
     }
     private static TrialBundle Missing(string id, string name) => new(id, name, "", "", "", false, false, [], [], []);
     public static TrialBundle CreateBundle() => new("digital-skills", "Kỹ năng số cơ bản — nội dung thử Development", "development-standard-v1", "development-diagnostic-v1", "development-rubric-v1", true, true,

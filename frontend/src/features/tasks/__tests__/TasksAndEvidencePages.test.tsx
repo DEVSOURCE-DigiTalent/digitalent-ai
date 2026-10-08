@@ -53,7 +53,7 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12)', () => {
     useCurrentUser.setState({
       user: {
         id: 'usr-mgr-01',
-        email: 'manager@digitalent.demo',
+        email: 'manager@digitalent.ai',
         fullName: 'Trần Quản Lý',
         roles: ['MANAGER'],
         permissions: ['team.manage', 'tasks.manage'],
