@@ -1,11 +1,0 @@
-$ npx tsc -b
-tsc -b exit code: 0
-
-$ npm run lint
-Lint: exit code 0 · lỗi: 0 · cảnh báo toàn repo: 75
-Số cảnh báo ở file thay đổi của nhánh (45 file): 0
-
-$ npm run build
-vite v8.1.0 building client environment for production...
-transforming...✓ 1268 modules transformed.
-✓ built in 1.17s
