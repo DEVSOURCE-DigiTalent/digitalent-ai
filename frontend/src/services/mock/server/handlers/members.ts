@@ -21,8 +21,10 @@ const ROLE_NAMES: Record<string, string> = {
 };
 const roleName = (roles: string[]) => roles.map((r) => ROLE_NAMES[r] ?? r).join(', ');
 
+/** By the list id, or by the employee profile id (screens built on employees link to members with it). */
 function findMember(data: OrgData, id: string): MemberView {
-  const member = listMembers(data).find((m) => m.id === id);
+  const members = listMembers(data);
+  const member = members.find((m) => m.id === id) ?? members.find((m) => m.employeeId === id);
   if (!member) throw notFound('Không tìm thấy thành viên.');
   return member;
 }

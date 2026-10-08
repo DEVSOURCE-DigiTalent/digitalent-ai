@@ -80,11 +80,14 @@ public class MemberDirectory
             .ToList();
     }
 
-    /// <summary>One member or pending invitation by the id used in the list; null when not found.</summary>
+    /// <summary>
+    /// One member or pending invitation by the id used in the list, or by the member's employee profile id (screens built
+    /// on employees — overview, skill gaps, positions — link to the member with it); null when not found.
+    /// </summary>
     public async Task<MemberListItem?> FindAsync(Guid organizationId, Guid id)
     {
         var members = await ListAsync(organizationId);
-        return members.FirstOrDefault(m => m.Id == id);
+        return members.FirstOrDefault(m => m.Id == id) ?? members.FirstOrDefault(m => m.EmployeeId == id);
     }
 
     /// <summary>
