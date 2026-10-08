@@ -93,7 +93,7 @@ export function CourseDetailPage() {
             <h1 className="text-2xl font-bold text-slate-900 leading-tight">{course.title}</h1>
 
             <p className="text-slate-600 text-sm leading-relaxed">
-              Khóa đào tạo chuẩn hóa thuộc Khung năng lực số Thông tư 02/2025/TT-BGDĐT. Giúp nhân sự làm chủ công nghệ,
+              Khóa đào tạo chuẩn hóa thuộc Khung chuẩn năng lực số. Giúp nhân sự làm chủ công nghệ,
               quy trình xử lý dữ liệu và tiêu chuẩn bảo vệ an toàn số nơi công sở.
             </p>
 

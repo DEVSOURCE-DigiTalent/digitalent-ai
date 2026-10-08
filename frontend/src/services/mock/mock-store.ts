@@ -1,6 +1,8 @@
 import { WORKSPACES, type Workspace } from '../../lib/roles';
 import type { BillingCycle } from '../../lib/plans';
+import { freeSubscription, isTrialExpired } from '../../lib/personal-access';
 import type { OnboardingStatus, SessionUser, SubscriptionContext } from '../../types/session';
+import { MOCK_PASSWORD, findMockAccountById } from './mock-accounts';
 import { PERSONAL_PERMISSIONS, permissionsForRoles } from './mock-rbac';
 
 /**
@@ -28,6 +30,10 @@ export interface StoredUser {
   pendingPlan?: { planCode: string; seats: number; cycle: BillingCycle };
   /** Paid plan. For members of an organization the owner's subscription applies. */
   subscription?: SubscriptionContext;
+  /** Mock-only projection used by the Enterprise shell to render the guided trial experience. */
+  enterpriseTrialStatus?: SessionUser['enterpriseTrialStatus'];
+  /** When the account first started a trial. Never cleared: one trial per email (BR-01). */
+  trialUsedAt?: string;
   onboardingStatus?: OnboardingStatus;
   setupStep?: number;
   contractSigned?: boolean;
@@ -250,6 +256,47 @@ export function subscriptionOf(user: StoredUser): SubscriptionContext | undefine
   return owner?.subscription;
 }
 
+/**
+ * The demo learners (trial@, free@, personal@) are static seeds; a payment needs an account in the database to change.
+ * This copies the seed in the first time it is needed and returns it; registered accounts are returned as they are.
+ */
+export function ensureStoredPersonal(userId: string): StoredUser | undefined {
+  const existing = findUserById(userId);
+  if (existing) return existing;
+  const seed = findMockAccountById(userId);
+  if (!seed || seed.workspace !== WORKSPACES.PERSONAL) return undefined;
+  const stored: StoredUser = {
+    id: seed.id,
+    email: seed.email,
+    password: MOCK_PASSWORD,
+    fullName: seed.fullName,
+    workspace: WORKSPACES.PERSONAL,
+    roles: [],
+    emailVerified: true,
+    verifyToken: '',
+    subscription: seed.subscription,
+  };
+  updateDb((db) => {
+    db.users.push(stored);
+  });
+  return findUserById(userId);
+}
+
+/**
+ * Lazy trial expiry: a trial that has ended becomes the Free plan the next time the account is read, and the change
+ * is saved (only when there is one, so repeated reads write nothing). The backend adds a daily job as the main path.
+ */
+export function settleTrial(user: StoredUser, now: Date = new Date()): void {
+  // Enterprise guided trials keep their organization history in read-only mode.
+  // Only the personal reverse trial falls back to IND_FREE.
+  if (user.workspace !== WORKSPACES.PERSONAL) return;
+  if (!isTrialExpired(user.subscription, now)) return;
+  updateDb((db) => {
+    const stored = db.users.find((candidate) => candidate.id === user.id);
+    if (stored) stored.subscription = freeSubscription(stored.subscription);
+  });
+}
+
 /** Seats taken in an organization: active members plus invitations still waiting. */
 export function seatsUsed(organizationId: string): number {
   const db = getDb();
@@ -260,6 +307,7 @@ export function seatsUsed(organizationId: string): number {
 
 /** Builds the `/auth/me` answer for an account created through the sign-up flows. */
 export function toSessionUser(user: StoredUser): SessionUser {
+  settleTrial(user);
   const organization = user.organizationId
     ? getDb().organizations.find((org) => org.id === user.organizationId)
     : undefined;
@@ -268,6 +316,11 @@ export function toSessionUser(user: StoredUser): SessionUser {
     user.workspace === WORKSPACES.PERSONAL ? PERSONAL_PERMISSIONS : permissionsForRoles(user.roles);
 
   const contract = getDb().contracts.find((c) => c.userId === user.id);
+  const enterpriseTrialStatus = user.enterpriseTrialStatus === 'trial_active'
+    && subscription?.trialEndsAt
+    && Date.parse(subscription.trialEndsAt) <= Date.now()
+    ? 'trial_read_only'
+    : user.enterpriseTrialStatus;
 
   return {
     id: user.id,
@@ -279,6 +332,7 @@ export function toSessionUser(user: StoredUser): SessionUser {
     organization: organization ? { id: organization.id, name: organization.name } : undefined,
     subscription:
       subscription && organization ? { ...subscription, seatsUsed: seatsUsed(organization.id) } : subscription,
+    enterpriseTrialStatus,
     onboardingStatus: user.onboardingStatus,
     emailVerified: user.emailVerified ?? true,
     contractSigned: Boolean(contract || user.contractSigned),

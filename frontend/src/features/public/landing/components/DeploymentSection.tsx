@@ -55,7 +55,7 @@ export function DeploymentSection({ section }: { section: DeploymentSection }) {
           <span aria-hidden="true" className="absolute bottom-3 left-[11px] top-3 w-px bg-cream/12" />
           <span
             aria-hidden="true"
-            className="absolute bottom-3 left-[11px] top-3 w-px origin-top bg-cream/70"
+            className="absolute bottom-3 left-[11px] top-3 w-px origin-top bg-[#F5CA65]/70"
             style={{ transform: 'scaleY(var(--fill, 0))' }}
           />
           {section.steps.map((step, index) => {
@@ -66,13 +66,13 @@ export function DeploymentSection({ section }: { section: DeploymentSection }) {
                   aria-hidden="true"
                   className={cn(
                     'relative z-10 mt-1 grid size-6 place-items-center rounded-full border transition-colors duration-500',
-                    done ? 'border-cream bg-cream text-black' : 'border-cream/30 bg-black text-transparent',
+                    done ? 'border-[#F5CA65] bg-[#F5CA65] text-black' : 'border-amber-400/30 bg-black text-transparent',
                   )}
                 >
                   <Check className="size-3.5" strokeWidth={3} />
                 </span>
                 <div className={cn('transition-opacity duration-500', done ? 'opacity-100' : 'opacity-50')}>
-                  <p className="text-xs tracking-[0.14em] text-stone-500 tabular-nums">{String(index + 1).padStart(2, '0')}</p>
+                  <p className="text-xs tracking-[0.14em] text-[#E8C67C]/80 tabular-nums">{String(index + 1).padStart(2, '0')}</p>
                   <h3 className="mt-1 text-[clamp(22px,2.4vw,30px)] font-normal leading-[1.2] tracking-[-0.02em] text-cream">{step.title}</h3>
                   {step.note && <p className="mt-2 max-w-[52ch] text-base leading-[1.55] text-stone-400">{step.note}</p>}
                   {step.chip && (

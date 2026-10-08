@@ -96,7 +96,7 @@ export function StandardCourseDetailPage() {
             </div>
             <h1 className="text-2xl font-bold text-slate-900">{course.title}</h1>
             <p className="text-sm text-slate-500">
-              Thuộc miền năng lực: <strong className="text-slate-700">{course.categoryName || 'Thông tư 02'}</strong>
+              Thuộc miền năng lực: <strong className="text-slate-700">{course.categoryName || 'Năng lực số'}</strong>
             </p>
           </div>
 
@@ -230,7 +230,7 @@ export function StandardCourseDetailPage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
               <h2 className="text-base font-semibold text-slate-900">Mục tiêu và chuẩn đầu ra</h2>
               <p className="text-sm text-slate-600 leading-relaxed">
-                Khóa học được thiết kế bám sát chuẩn năng lực số quốc gia (Thông tư 02/2025/TT-BGDĐT) nhằm trang bị cho nhân sự kiến thức thực tiễn và kỹ năng số cốt lõi. Sau khi hoàn thành khóa học, nhân viên được chứng nhận trình độ tương ứng và tự động cập nhật vào Hồ sơ năng lực số của doanh nghiệp.
+                Khóa học được thiết kế bám sát Khung chuẩn năng lực số nhằm trang bị cho nhân sự kiến thức thực tiễn và kỹ năng số cốt lõi. Sau khi hoàn thành khóa học, nhân viên được chứng nhận trình độ tương ứng và tự động cập nhật vào Hồ sơ năng lực số của doanh nghiệp.
               </p>
               
               <div className="rounded-lg bg-primary-50/60 border border-primary-100 p-4">
@@ -304,7 +304,7 @@ export function StandardCourseDetailPage() {
           <div>
             <h2 className="text-base font-semibold text-slate-900">Bài kiểm tra & Tiêu chuẩn đạt</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Học viên hoàn thành bài đánh giá cuối khóa để được ghi nhận vào hồ sơ năng lực Thông tư 02
+              Học viên hoàn thành bài đánh giá cuối khóa để được ghi nhận vào hồ sơ năng lực số
             </p>
           </div>
 

@@ -1,72 +1,135 @@
 /*
- * Personal workspace themes. Dark (default) is the landing page: cream on black. Light is the same page
- * printed on warm paper: ink on cream. Colors are read through the pt-* utilities declared in index.css.
+ * Individual & Personal workspace themes.
+ * Digital Dawn (dark, default): deep teal-black canvas, crisp mint accents, subtle morning spark.
+ * Daybreak (light): mist-white canvas, clean dark teal text, shared mint accent.
+ *
+ * Scopes:
+ * - [data-individual-theme='dark'] / [data-individual-theme='light']
+ * - .personal-theme[data-theme='dark'] / .personal-theme[data-theme='light']
+ * - Default fallback when .personal-theme is applied without data-theme is 'dark' (Digital Dawn).
  */
+
 @layer base {
-  .personal-theme,
-  .personal-theme[data-theme='dark'] {
-    --pt-bg: #000;
-    --pt-panel: #0b0b0a;
-    --pt-card: #151513;
-    --pt-raised: #1f1f1c;
-    --pt-line: rgba(225, 224, 204, 0.13);
-    --pt-fg: #e1e0cc;
-    --pt-fg-2: rgba(225, 224, 204, 0.78);
-    --pt-fg-3: rgba(225, 224, 204, 0.58);
-    --pt-accent: #dedbc8;
-    --pt-on-accent: #000;
-    --pt-ok: #a9d6a0;
-    --pt-warn: #e8c46e;
-    --pt-bad: #f29a8e;
-    --pt-info: #a9c4ee;
+  /* Digital Dawn (Dark) */
+  [data-individual-theme='dark'],
+  .personal-theme[data-theme='dark'],
+  .personal-theme {
+    --ind-bg: #07151b;
+    --ind-panel: #0b2027;
+    --ind-card: #102c34;
+    --ind-raised: #183943;
+    --ind-line-subtle: #2b4d56;
+    --ind-line-strong: #607e84;
+    --ind-fg: #f2f7f5;
+    --ind-fg-muted: #c2d3d1;
+    --ind-fg-subtle: #93aaa8;
+    --ind-accent: #79e0c2;
+    --ind-on-accent: #062019;
+    --ind-gold: #f5ca65;
+    --ind-amber: #e5a93c;
+    --ind-spark: #f5ca65;
+    --ind-info: #77bef2;
+    --ind-success: #76d39a;
+    --ind-warning: #f1c66d;
+    --ind-danger: #ff9188;
+
+    /* Backward compatibility aliases for Personal components */
+    --pt-bg: var(--ind-bg);
+    --pt-panel: var(--ind-panel);
+    --pt-card: var(--ind-card);
+    --pt-raised: var(--ind-raised);
+    --pt-line: var(--ind-line-subtle);
+    --pt-line-strong: var(--ind-line-strong);
+    --pt-fg: var(--ind-fg);
+    --pt-fg-2: var(--ind-fg-muted);
+    --pt-fg-3: var(--ind-fg-subtle);
+    --pt-accent: var(--ind-accent);
+    --pt-on-accent: var(--ind-on-accent);
+    --pt-gold: var(--ind-gold);
+    --pt-amber: var(--ind-amber);
+    --pt-ok: var(--ind-success);
+    --pt-warn: var(--ind-warning);
+    --pt-bad: var(--ind-danger);
+    --pt-info: var(--ind-info);
+    --pt-spark: var(--ind-spark);
+
     color-scheme: dark;
   }
 
+  /* Daybreak (Light) */
+  [data-individual-theme='light'],
   .personal-theme[data-theme='light'] {
-    --pt-bg: #f2efe4;
-    --pt-panel: #f8f6ee;
-    --pt-card: #fffefa;
-    --pt-raised: #ebe7da;
-    --pt-line: rgba(28, 27, 22, 0.13);
-    --pt-fg: #1c1b16;
-    --pt-fg-2: rgba(28, 27, 22, 0.76);
-    --pt-fg-3: rgba(28, 27, 22, 0.6);
-    --pt-accent: #1c1b16;
-    --pt-on-accent: #f2efe4;
-    --pt-ok: #2d7a3c;
-    --pt-warn: #8a5c00;
-    --pt-bad: #b13a2c;
-    --pt-info: #2c5ca3;
+    --ind-bg: #f3f8f7;
+    --ind-panel: #eaf3f1;
+    --ind-card: #ffffff;
+    --ind-raised: #ddebe8;
+    --ind-line-subtle: #c4d7d2;
+    --ind-line-strong: #75928b;
+    --ind-fg: #102a2e;
+    --ind-fg-muted: #3e5b5b;
+    --ind-fg-subtle: #526a68;
+    --ind-accent: #087d68;
+    --ind-on-accent: #ffffff;
+    --ind-spark: #a94c10;
+    --ind-info: #266f9b;
+    --ind-success: #187a4d;
+    --ind-warning: #8a5b00;
+    --ind-danger: #b43e45;
+
+    /* Backward compatibility aliases for Personal components */
+    --pt-bg: var(--ind-bg);
+    --pt-panel: var(--ind-panel);
+    --pt-card: var(--ind-card);
+    --pt-raised: var(--ind-raised);
+    --pt-line: var(--ind-line-subtle);
+    --pt-line-strong: var(--ind-line-strong);
+    --pt-fg: var(--ind-fg);
+    --pt-fg-2: var(--ind-fg-muted);
+    --pt-fg-3: var(--ind-fg-subtle);
+    --pt-accent: var(--ind-accent);
+    --pt-on-accent: var(--ind-on-accent);
+    --pt-ok: var(--ind-success);
+    --pt-warn: var(--ind-warning);
+    --pt-bad: var(--ind-danger);
+    --pt-info: var(--ind-info);
+    --pt-spark: var(--ind-spark);
+
     color-scheme: light;
   }
 
-  .personal-theme ::selection {
-    background: color-mix(in oklab, var(--pt-fg) 22%, transparent);
+  .personal-theme ::selection,
+  [data-individual-theme] ::selection {
+    background: color-mix(in oklab, var(--ind-accent) 25%, transparent);
   }
 
-  .personal-theme :focus-visible {
-    outline: 2px solid var(--pt-fg);
+  .personal-theme :focus-visible,
+  [data-individual-theme] :focus-visible {
+    outline: 2px solid var(--ind-accent);
     outline-offset: 2px;
   }
 }
 
 @layer components {
-  /* Film grain, as on the landing page; quieter on paper. */
-  .personal-theme .pt-grain {
+  /* Film grain: quiet atmospheric texture */
+  .personal-theme .pt-grain,
+  [data-individual-theme] .pt-grain {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     background-size: 256px 256px;
-    opacity: 0.05;
+    opacity: 0.04;
     mix-blend-mode: overlay;
   }
-  .personal-theme[data-theme='light'] .pt-grain {
-    opacity: 0.035;
+  .personal-theme[data-theme='light'] .pt-grain,
+  [data-individual-theme='light'] .pt-grain {
+    opacity: 0.025;
     mix-blend-mode: multiply;
   }
 
-  .personal-theme .pt-scroll-x {
+  .personal-theme .pt-scroll-x,
+  [data-individual-theme] .pt-scroll-x {
     scrollbar-width: none;
   }
-  .personal-theme .pt-scroll-x::-webkit-scrollbar {
+  .personal-theme .pt-scroll-x::-webkit-scrollbar,
+  [data-individual-theme] .pt-scroll-x::-webkit-scrollbar {
     display: none;
   }
 
@@ -74,15 +137,45 @@
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: none; }
   }
-  .personal-theme .pt-rise {
+  .personal-theme .pt-rise,
+  [data-individual-theme] .pt-rise {
     animation: pt-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   @media (prefers-reduced-motion: reduce) {
-    .personal-theme .pt-rise { animation: none; }
+    .personal-theme .pt-rise,
+    [data-individual-theme] .pt-rise { animation: none; }
   }
 }
 
 /* Printing a certificate prints only the certificate sheet. */
+/* Workspace geometry is scoped so the public preview keeps its own shell. */
+.pt-workspace { overflow-wrap: anywhere; }
+.pt-workspace .grid > * { min-width: 0; }
+.pt-workspace-sidebar {
+  position: sticky;
+  top: 84px;
+  width: 232px;
+  max-height: calc(100dvh - 108px);
+  flex: 0 0 232px;
+  align-self: flex-start;
+  flex-direction: column;
+  overflow-y: auto;
+  border: 1px solid var(--pt-line);
+  border-radius: 16px;
+  background: var(--pt-panel);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 8%);
+}
+.pt-workspace[data-focus='true'] .pt-workspace-sidebar { display: none; }
+.pt-workspace main { scroll-margin-top: 76px; }
+.pt-workspace :is(button, a, input, textarea, select) { scroll-margin-block: 80px 24px; }
+@media (prefers-reduced-motion: reduce) {
+  .pt-workspace *, .pt-workspace *::before, .pt-workspace *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @media print {
   body:has(.pt-print) * { visibility: hidden; }
   body:has(.pt-print) .pt-print,
@@ -93,3 +186,42 @@
     border-radius: 0;
   }
 }
+
+/*
+ * Public pages of the individual product (pricing, sign-up, trial, careers) carry .pt-soft: their light theme is a
+ * softer misty grey-teal, like the login page, instead of near-white with pure white cards.
+ */
+@layer base {
+  .personal-theme.pt-soft[data-theme='light'],
+  .pt-soft[data-individual-theme='light'] {
+    --ind-bg: #dee7e4;
+    --ind-panel: #e6edea;
+    --ind-card: #edf2f0;
+    --ind-raised: #d3dfdb;
+    --ind-line-subtle: #b9cac4;
+  }
+}
+
+/*
+ * Light-theme bridge for components written for the dark public pages (cream text, stone greys, landing panels):
+ * on a light individual page they take the personal tokens instead of vanishing. Unlayered on purpose, to beat the
+ * utilities they replace; scoped to the light theme only.
+ */
+/* A dark island inside a light page (the sign-up card) keeps its own colours: :not() skips it. */
+[data-individual-theme='light'] .text-cream:not([data-individual-theme='dark'] *),
+[data-individual-theme='light'] .text-cream\/90:not([data-individual-theme='dark'] *),
+[data-individual-theme='light'] .text-cream\/85:not([data-individual-theme='dark'] *),
+[data-individual-theme='light'] .text-cream\/80:not([data-individual-theme='dark'] *) { color: var(--ind-fg); }
+[data-individual-theme='light'] .text-cream-soft:not([data-individual-theme='dark'] *) { color: var(--ind-accent); }
+[data-individual-theme='light'] .text-stone-300:not([data-individual-theme='dark'] *),
+[data-individual-theme='light'] .text-stone-400:not([data-individual-theme='dark'] *) { color: var(--ind-fg-muted); }
+[data-individual-theme='light'] .text-stone-500:not([data-individual-theme='dark'] *) { color: var(--ind-fg-subtle); }
+[data-individual-theme='light'] .text-emerald-100:not([data-individual-theme='dark'] *),
+[data-individual-theme='light'] .text-emerald-200:not([data-individual-theme='dark'] *),
+[data-individual-theme='light'] .text-emerald-300:not([data-individual-theme='dark'] *) { color: var(--ind-success); }
+[data-individual-theme='light'] .text-amber-200:not([data-individual-theme='dark'] *),
+[data-individual-theme='light'] .text-amber-300:not([data-individual-theme='dark'] *) { color: var(--ind-warning); }
+[data-individual-theme='light'] .text-blue-200:not([data-individual-theme='dark'] *) { color: var(--ind-info); }
+[data-individual-theme='light'] .bg-landing-panel:not([data-individual-theme='dark'] *) { background-color: var(--ind-panel); }
+[data-individual-theme='light'] .bg-landing-card:not([data-individual-theme='dark'] *),
+[data-individual-theme='light'] .bg-landing-card\/60:not([data-individual-theme='dark'] *) { background-color: var(--ind-raised); }

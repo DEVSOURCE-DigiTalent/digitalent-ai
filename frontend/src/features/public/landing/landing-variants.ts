@@ -1,4 +1,4 @@
-import { plansFor } from '@/lib/plans';
+import { INDIVIDUAL_TRIAL, plansFor } from '@/lib/plans';
 import {
   BUSINESS_ABOUT, BUSINESS_DOCK_NAV, BUSINESS_FINALE, BUSINESS_FOOTER_PRODUCT, BUSINESS_HERO_EYEBROW, BUSINESS_HERO_HEADLINE,
   BUSINESS_HERO_LEDE, BUSINESS_MAIN_NAV, BUSINESS_SECTIONS,
@@ -24,7 +24,7 @@ export const ENTERPRISE_CONTENT: LandingContent = {
     {
       title: 'Truy cập',
       links: [
-        { label: 'Đăng nhập', to: '/business/login', kind: 'route' },
+        { label: 'Đăng nhập', to: '/login', kind: 'route' },
         { label: 'Bảng giá', to: '/business/pricing', kind: 'route' },
         { label: 'Dành cho cá nhân', to: '/individual', kind: 'route' },
         { label: 'Đổi hướng sử dụng', to: '/portal', kind: 'route' },
@@ -36,6 +36,7 @@ export const ENTERPRISE_CONTENT: LandingContent = {
   heroLede: BUSINESS_HERO_LEDE,
   heroWordmarkScale: 0.7,
   about: BUSINESS_ABOUT,
+  featuresLabel: 'Giải pháp toàn diện',
   featuresHeadline: FEATURES_HEADLINE,
   featuresSubline: FEATURES_SUBLINE,
   mediaCard: MEDIA_CARD,
@@ -46,11 +47,13 @@ export const ENTERPRISE_CONTENT: LandingContent = {
     guestTo: '/business/pricing',
     secondaryLabel: 'Xem cách hoạt động',
     secondaryTo: SECTION_IDS.process,
+    trialLabel: 'Trải nghiệm Enterprise',
+    trialTo: '/business/try',
     heroLabel: 'Xem bảng giá',
     dockLabel: 'Bảng giá',
     finaleLabel: 'Xem bảng giá',
     signedInTo: '/enterprise',
-    loginPath: '/business/login',
+    loginPath: '/login',
   },
 };
 
@@ -138,9 +141,9 @@ const FAQ_SECTION: LandingSectionConfig = {
         'Bằng bài đánh giá đầu vào theo từng năng lực của vị trí bạn chọn. Mỗi năng lực được hỏi lần lượt từng tầng, từ Cơ bản đến Trung cấp rồi Nâng cao, đạt tầng này mới lên tầng kế tiếp. Kết quả là mức hiện tại của bạn, không mặc định bằng không.',
     },
     {
-      question: 'Khung năng lực TT02 được dùng như thế nào?',
+      question: 'Khung chuẩn năng lực số được dùng như thế nào?',
       answer:
-        'Thông tư 02/2025/TT-BGDĐT cung cấp khung gồm 6 miền, 24 năng lực thành phần và 8 bậc; DigiTalent AI dùng khung này làm thước đo. Các vị trí tham chiếu và yêu cầu năng lực của từng vị trí do DigiTalent AI xây dựng dựa trên khung. Thông tư không quy định vị trí việc làm.',
+        'Khung chuẩn năng lực số gồm 6 miền, 24 năng lực thành phần và 8 bậc được DigiTalent AI vận dụng làm thước đo tham chiếu. Các vị trí tham chiếu và yêu cầu năng lực do DigiTalent AI xây dựng bám sát bối cảnh thực tế.',
     },
     {
       question: 'Tôi có thể thay đổi vị trí nghề nghiệp mục tiêu không?',
@@ -202,7 +205,7 @@ export const INDIVIDUAL_CONTENT: LandingContent = {
           { text: 'Bạn muốn hướng tới vị trí nào?' },
           { text: 'Mỗi vị trí một bộ năng lực số riêng.', className: SERIF_ITALIC },
         ],
-        lead: 'Chọn mục tiêu để xem bạn cần phát triển những gì. Đây là các vị trí tham chiếu do DigiTalent AI xây dựng dựa trên Khung năng lực số TT02.',
+        lead: 'Chọn mục tiêu để xem bạn cần phát triển những gì. Đây là các vị trí tham chiếu do DigiTalent AI xây dựng dựa trên Khung chuẩn năng lực số.',
       },
       cardLinkLabel: 'Xem yêu cầu vị trí',
       exploreAllLabel: 'Khám phá tất cả vị trí',
@@ -236,13 +239,13 @@ export const INDIVIDUAL_CONTENT: LandingContent = {
     { label: 'Cách hoạt động', to: SECTION_IDS.process, kind: 'section' },
     { label: 'Khung năng lực', to: SECTION_IDS.about, kind: 'section', wideOnly: true },
     { label: 'Bảng giá', to: '/individual/pricing', kind: 'route', wideOnly: true },
-    { label: 'Đăng nhập', to: '/individual/login', kind: 'route' },
+    { label: 'Đăng nhập', to: '/login', kind: 'route' },
   ],
   dockNav: [
     { label: 'Vị trí nghề nghiệp', to: SECTION_IDS.careers, kind: 'section' },
     { label: 'Cách hoạt động', to: SECTION_IDS.process, kind: 'section' },
     { label: 'Bảng giá', to: '/individual/pricing', kind: 'route' },
-    { label: 'Đăng nhập', to: '/individual/login', kind: 'route' },
+    { label: 'Đăng nhập', to: '/login', kind: 'route' },
   ],
   footerGroups: [
     {
@@ -257,7 +260,7 @@ export const INDIVIDUAL_CONTENT: LandingContent = {
     {
       title: 'Truy cập',
       links: [
-        { label: 'Đăng nhập', to: '/individual/login', kind: 'route' },
+        { label: 'Đăng nhập', to: '/login', kind: 'route' },
         { label: 'Xem gói cá nhân', to: '/individual/pricing', kind: 'route' },
         { label: 'Dành cho doanh nghiệp', to: '/business', kind: 'route' },
         { label: 'Đổi hướng sử dụng', to: '/portal', kind: 'route' },
@@ -266,27 +269,31 @@ export const INDIVIDUAL_CONTENT: LandingContent = {
   ],
   heroEyebrow: {
     title: 'Nền tảng phát triển năng lực số cá nhân',
-    basis: 'Căn cứ Thông tư 02/2025/TT-BGDĐT',
+    basis: 'Căn cứ Khung chuẩn năng lực số',
   },
   heroLede:
     'Chọn vị trí bạn muốn đạt tới, làm bài đánh giá đầu vào, biết mình còn thiếu năng lực nào và học theo lộ trình dựng riêng cho bạn.',
   about: {
-    label: 'Khung năng lực số · Thông tư 02/2025',
+    label: 'Khung chuẩn năng lực số',
     title: [
       { text: 'Biết mình đang ở đâu,' },
       { text: 'và cần học gì tiếp theo.', className: SERIF_ITALIC },
       { text: 'Lộ trình bám sát vị trí bạn nhắm tới.' },
     ],
     body:
-      'Thông tư 02/2025/TT-BGDĐT chia năng lực số thành 6 miền với 24 năng lực thành phần, xếp theo 8 bậc. Chương trình của DigiTalent AI hiện dạy 3 tầng: Cơ bản (bậc 1–2), Trung cấp (bậc 3–4) và Nâng cao (bậc 5–6). Bạn chọn một vị trí mục tiêu, làm bài đánh giá đầu vào để hệ thống biết mức hiện tại của bạn thay vì mặc định bằng không, rồi so với yêu cầu của vị trí để chỉ ra phần còn thiếu và xếp các khóa học theo đúng thứ tự tiên quyết.',
+      'Khung chuẩn năng lực số chia thành 6 miền với 24 năng lực thành phần, xếp theo 8 bậc. Chương trình của DigiTalent AI hiện dạy 3 tầng: Cơ bản (bậc 1–2), Trung cấp (bậc 3–4) và Nâng cao (bậc 5–6). Bạn chọn một vị trí mục tiêu, làm bài đánh giá đầu vào để hệ thống biết mức hiện tại của bạn thay vì mặc định bằng không, rồi so với yêu cầu của vị trí để chỉ ra phần còn thiếu và xếp các khóa học theo đúng thứ tự tiên quyết.',
     specs: [
       { value: '6', label: 'miền năng lực, gồm cả ứng dụng AI' },
-      { value: '24', label: 'năng lực thành phần theo Thông tư' },
+      { value: '24', label: 'năng lực thành phần cốt lõi' },
       { value: '8', label: 'bậc năng lực trong khung tham chiếu' },
       { value: '3', label: 'tầng chương trình hiện hỗ trợ: Cơ bản · Trung cấp · Nâng cao' },
     ],
   },
-  featuresHeadline: [{ text: 'Từ mục tiêu nghề nghiệp đến lộ trình học, trên cùng một nền tảng.' }],
+  featuresLabel: 'Lộ trình và hồ sơ năng lực',
+  featuresHeadline: [
+    { text: 'Từ mục tiêu nghề nghiệp đến lộ trình học,' },
+    { text: 'trên cùng một nền tảng.', className: SERIF_ITALIC },
+  ],
   featuresSubline: [{ text: 'Chọn đích đến. Đo điểm xuất phát. Học đúng chỗ còn thiếu.' }],
   mediaCard: {
     label: 'Hồ sơ năng lực cá nhân',
@@ -333,19 +340,23 @@ export const INDIVIDUAL_CONTENT: LandingContent = {
     leadMuted: 'một lộ trình.',
     tail: 'Mỗi bài học',
     tailMuted: 'một bước tiến.',
-    guestBody: 'Chọn gói phù hợp, chọn vị trí mục tiêu và làm bài đánh giá đầu vào để thấy khoảng cách của bạn.',
+    guestBody: 'Chọn một trong 5 vị trí, làm khảo sát định hướng và học thử một phần trước khi chọn gói.',
     memberBody: 'Lộ trình học và hồ sơ năng lực của bạn đang chờ trong hệ thống.',
   },
   footerText: {
-    about: 'Nền tảng phát triển năng lực số cá nhân theo lộ trình riêng, căn cứ Thông tư 02/2025/TT-BGDĐT.',
-    basis: 'Khung năng lực số theo Thông tư 02/2025/TT-BGDĐT, hiệu lực từ 11/3/2025.',
+    about: 'Nền tảng phát triển năng lực số cá nhân theo lộ trình riêng theo Khung chuẩn năng lực số.',
+    basis: 'Khung chuẩn năng lực số gồm 6 miền và 24 năng lực cốt lõi.',
   },
   cta: {
-    guestTo: '/individual/pricing',
-    heroLabel: 'Xem gói cá nhân',
-    dockLabel: 'Xem gói',
-    finaleLabel: 'Xem gói cá nhân',
+    guestTo: '/individual/try',
+    secondaryLabel: 'Xem gói cá nhân',
+    secondaryTo: '/individual/pricing',
+    trialLabel: `hoặc tạo tài khoản dùng thử ${INDIVIDUAL_TRIAL.days} ngày`,
+    trialTo: '/individual/register?trial=1&source=landing',
+    heroLabel: 'Trải nghiệm miễn phí',
+    dockLabel: 'Học thử',
+    finaleLabel: 'Trải nghiệm miễn phí',
     signedInTo: '/personal',
-    loginPath: '/individual/login',
+    loginPath: '/login',
   },
 };

@@ -69,7 +69,7 @@ export const LANDING_MEDIA: LandingMedia = {
 
 export const HERO_EYEBROW = {
   title: 'Nền tảng năng lực số cho doanh nghiệp',
-  basis: 'Căn cứ Thông tư 02/2025/TT-BGDĐT',
+  basis: 'Căn cứ Khung chuẩn năng lực số',
 };
 
 export const HERO_LEDE =
@@ -80,9 +80,10 @@ export interface TextSegment {
   className?: string;
 }
 
-export const SERIF_ITALIC = 'font-landing-serif italic text-[1.1em] tracking-[-0.01em]';
+/** Emphasised words in titles: serif italic, filled with the product gradient (lp-em in landing.css). */
+export const SERIF_ITALIC = 'lp-em font-landing-serif italic text-[1.1em] tracking-[-0.01em]';
 
-export const ABOUT_LABEL = 'Khung năng lực số · Thông tư 02/2025';
+export const ABOUT_LABEL = 'Khung chuẩn năng lực số';
 
 export const ABOUT_TITLE: TextSegment[] = [
   { text: 'Mỗi vị trí cần' },
@@ -91,11 +92,11 @@ export const ABOUT_TITLE: TextSegment[] = [
 ];
 
 export const ABOUT_BODY =
-  'Thông tư 02/2025/TT-BGDĐT chia năng lực số thành 6 miền với 24 năng lực thành phần, từ khai thác dữ liệu đến ứng dụng trí tuệ nhân tạo. Doanh nghiệp chọn cho mỗi vị trí từ 9 đến 24 năng lực và đặt mức yêu cầu cho từng năng lực. Nhân viên làm bài chẩn đoán, hệ thống so với yêu cầu của vị trí, xếp mức thiếu hụt và gợi ý các khóa học theo đúng thứ tự tiên quyết.';
+  'Khung chuẩn năng lực số chia thành 6 miền với 24 năng lực thành phần, từ khai thác dữ liệu đến ứng dụng trí tuệ nhân tạo. Doanh nghiệp chọn cho mỗi vị trí từ 9 đến 24 năng lực và đặt mức yêu cầu cho từng năng lực. Nhân viên làm bài chẩn đoán, hệ thống so với yêu cầu của vị trí, xếp mức thiếu hụt và gợi ý các khóa học theo đúng thứ tự tiên quyết.';
 
 export const FRAMEWORK_SPECS = [
   { value: '6', label: 'miền năng lực, gồm cả ứng dụng AI' },
-  { value: '24', label: 'năng lực thành phần theo Thông tư' },
+  { value: '24', label: 'năng lực thành phần cốt lõi' },
   { value: '9–24', label: 'năng lực được chọn cho mỗi vị trí' },
   { value: '3', label: 'tầng chương trình: Cơ bản · Trung cấp · Nâng cao' },
 ];
@@ -146,7 +147,7 @@ export const FEATURES: Feature[] = [
     title: 'Ma trận năng lực theo vị trí.',
     visual: 'matrix',
     points: [
-      'Chọn 9–24 năng lực từ 24 năng lực của Thông tư',
+      'Chọn 9–24 năng lực từ 24 năng lực cốt lõi',
       'Đặt mức yêu cầu riêng cho từng năng lực',
       'Luôn gồm năng lực an toàn 4.1 và 4.2',
       'Lưu nháp, kích hoạt và giữ lịch sử phiên bản',
@@ -209,8 +210,8 @@ export const FINALE = {
 };
 
 export const FOOTER_TEXT = {
-  about: 'Nền tảng đào tạo, đánh giá và cấp chứng chỉ năng lực số nội bộ cho doanh nghiệp, căn cứ Thông tư 02/2025/TT-BGDĐT.',
-  basis: 'Khung năng lực số theo Thông tư 02/2025/TT-BGDĐT, hiệu lực từ 11/3/2025.',
+  about: 'Nền tảng đào tạo, đánh giá và cấp chứng chỉ năng lực số nội bộ cho doanh nghiệp theo Khung chuẩn năng lực số.',
+  basis: 'Khung chuẩn năng lực số gồm 6 miền và 24 năng lực cốt lõi.',
 };
 
 /** Everything that differs between the enterprise and the individual landing page. */
@@ -358,6 +359,7 @@ export interface LandingContent {
     /** Figures DigiTalent AI chose itself, shown apart from the framework's own. */
     configured?: { label: string; specs: { value: string; label: string }[] };
   };
+  featuresLabel?: string;
   featuresHeadline: TextSegment[];
   featuresSubline: TextSegment[];
   mediaCard: { label: string; caption: string };
@@ -370,11 +372,14 @@ export interface LandingContent {
   finale: { lead: string; leadMuted: string; tail: string; tailMuted: string; guestBody: string; memberBody: string };
   footerText: { about: string; basis: string };
   cta: {
-    /** Where a visitor without a session is sent: pricing for businesses, free sign-up for individuals. */
+    /** Primary visitor destination: pricing for businesses, the guided trial for individuals. */
     guestTo: string;
     /** Optional second, quieter link in the hero. */
     secondaryLabel?: string;
     secondaryTo?: string;
+    /** Optional line under the hero actions for visitors: another way in, as a text link. */
+    trialLabel?: string;
+    trialTo?: string;
     heroLabel: string;
     dockLabel: string;
     finaleLabel: string;

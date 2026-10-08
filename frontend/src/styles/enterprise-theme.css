@@ -1,23 +1,23 @@
 /* Enterprise theme token values */
 .ent-theme,
 .ent-theme[data-theme='dark'] {
-  --ent-bg: #111110;
-  --ent-sidebar: #0A0A09;
-  --ent-sidebar-fg: #E7E5DA;
-  --ent-sidebar-muted: #9C9A8E;
-  --ent-sidebar-hover: rgba(231,229,218,.06);
-  --ent-sidebar-active: rgba(231,229,218,.10);
-  --ent-topbar: rgba(17,17,16,.82);
-  --ent-card: #181816;
-  --ent-raised: #1F1F1C;
-  --ent-line: #2A2924;
-  --ent-fg: #E7E5DA;
-  --ent-fg-2: #B4B2A6;
-  --ent-fg-3: #8E8C80;
-  --ent-primary: #E7E5DA;
-  --ent-on-primary: #12120F;
-  --ent-accent: #7C9BE6;
-  --ent-accent-soft: rgba(124,155,230,.14);
+  --ent-bg: #0C0E12;
+  --ent-sidebar: #080A0D;
+  --ent-sidebar-fg: #F5F2E9;
+  --ent-sidebar-muted: #A8A399;
+  --ent-sidebar-hover: rgba(245, 202, 101, 0.08);
+  --ent-sidebar-active: rgba(245, 202, 101, 0.14);
+  --ent-topbar: rgba(12, 14, 18, 0.85);
+  --ent-card: #11151E;
+  --ent-raised: #171C26;
+  --ent-line: rgba(245, 202, 101, 0.12);
+  --ent-fg: #F5F2E9;
+  --ent-fg-2: #BFB9AC;
+  --ent-fg-3: #8C867A;
+  --ent-primary: #F5CA65;
+  --ent-on-primary: #0C0E12;
+  --ent-accent: #E5A93C;
+  --ent-accent-soft: rgba(229, 169, 60, 0.14);
   --ent-ok: #7FC48C;
   --ent-ok-soft: rgba(127,196,140,.14);
   --ent-warn: #E3B65A;

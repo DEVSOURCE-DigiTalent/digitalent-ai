@@ -173,7 +173,7 @@ export function CoursePathwayManager({ course, batchId, batchName }: CoursePathw
                 Mã chuẩn: {activeCourseCode}
               </span>
               <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <ShieldCheck className="size-3.5" /> Chuẩn Thông tư 02/2025/TT-BGDĐT
+                <ShieldCheck className="size-3.5" /> Chuẩn năng lực số
               </span>
               {batchName && (
                 <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
@@ -693,7 +693,7 @@ export function CoursePathwayManager({ course, batchId, batchName }: CoursePathw
                   <div className="text-xs text-slate-500 flex items-start gap-2">
                     <AlertCircle className="size-4 text-amber-500 shrink-0 mt-0.5" />
                     <p className="leading-relaxed text-[11px]">
-                      Nội dung học thuật và chuẩn đầu ra Thông tư 02 được bảo chứng bởi Hội đồng Chuyên gia DigiTalent.
+                      Nội dung học thuật và chuẩn đầu ra năng lực số được bảo chứng bởi Hội đồng Chuyên gia DigiTalent.
                       Chủ doanh nghiệp <strong>không được chỉnh sửa</strong> phần này nhằm bảo đảm tính pháp lý và giá trị của chứng chỉ cấp cho nhân viên.
                     </p>
                   </div>

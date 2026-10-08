@@ -42,17 +42,18 @@ export function RadarChart({ required, current, size = 112, grown = true, classN
       </g>
       <polygon
         points={polygon(current)}
-        fill="currentColor"
-        fillOpacity={0.28}
-        stroke="currentColor"
-        strokeOpacity={0.55}
+        fill="#14B8A6"
+        fillOpacity={0.32}
+        stroke="#2DD4BF"
+        strokeWidth={1.5}
+        strokeOpacity={0.85}
         style={{
           transformOrigin: `${CENTER}px ${CENTER}px`,
           transform: grown ? 'scale(1)' : 'scale(0.15)',
           transition: 'transform 1s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       />
-      <polygon points={polygon(required)} fill="none" stroke="currentColor" strokeWidth={1.5} />
+      <polygon points={polygon(required)} fill="none" stroke="#F5CA65" strokeWidth={1.75} strokeOpacity={0.95} />
       {axes.map((axis) => {
         const [x, y] = radarPoint(axis, RADIUS + 9);
         return (

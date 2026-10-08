@@ -42,9 +42,9 @@ const platformState = {
   assessmentTemplates: [
     {
       id: 'tpl-tt02-d1',
-      code: 'TPL-TT02-D1-BASIC',
+      code: 'TPL-D1-BASIC',
       title: 'Đề đánh giá chuẩn: Miền 1 - Dữ liệu và thông tin số',
-      description: 'Bộ đề trắc nghiệm chuẩn hóa đánh giá kiến thức và kỹ năng khai thác, phân tích dữ liệu theo TT02/2025.',
+      description: 'Bộ đề trắc nghiệm chuẩn hóa đánh giá kiến thức và kỹ năng khai thác, phân tích dữ liệu theo Khung chuẩn năng lực số.',
       durationMinutes: 45,
       totalQuestions: 20,
       passScorePercentage: 70,
@@ -120,8 +120,8 @@ const platformState = {
       actorName: 'Quản trị viên Nền tảng',
       action: 'FRAMEWORK_SYNC',
       targetType: 'CompetencyFramework',
-      targetName: 'TT02_2025',
-      details: 'Đồng bộ 24 chuẩn năng lực theo Thông tư 02/2025/TT-BGDĐT',
+      targetName: 'DIGITAL_FRAMEWORK',
+      details: 'Đồng bộ 24 chuẩn năng lực theo Khung chuẩn năng lực số',
     },
     {
       id: 'aud-03',
@@ -138,7 +138,7 @@ const platformState = {
     {
       id: 'notif-1',
       title: 'Chào mừng bạn đến với DigiTalent AI',
-      message: 'Hệ thống đã sẵn sàng với bộ dữ liệu khung năng lực số Thông tư 02/2025.',
+      message: 'Hệ thống đã sẵn sàng với bộ dữ liệu Khung chuẩn năng lực số.',
       type: 'info',
       createdAt: new Date(Date.now() - 3600000).toISOString(),
       isRead: false,
@@ -600,7 +600,7 @@ route('POST', '/platform/users/:id/reset-password-assistance', (context) => {
 // ── PLT-10: Plans & Entitlements ──
 route('GET', '/platform/plans', () => {
   const orgs = getAllOrganizations();
-  return PLANS.map((plan) => {
+  return PLANS.filter((plan) => !plan.free).map((plan) => {
     const override = platformState.planOverrides.get(plan.code);
     const activeCount = plan.audience === 'enterprise'
       ? orgs.filter((o) => o.planCode === plan.code).length
@@ -1024,10 +1024,10 @@ function enrichCourse(course: CatalogCourse): PlatformStandardCourseDto {
   return {
     ...course,
     title: override?.title ?? course.title,
-    description: override?.description ?? `Khóa đào tạo chuẩn theo khung Thông tư 02/2025/TT-BGDĐT miền ${domain?.name}.`,
+    description: override?.description ?? `Khóa đào tạo chuẩn theo Khung chuẩn năng lực số miền ${domain?.name}.`,
     targetAudience: override?.targetAudience ?? 'Nhân sự các phòng ban và quản lý doanh nghiệp.',
     learningOutcomes: override?.learningOutcomes ?? [
-      'Hiểu rõ các nguyên tắc và chỉ số hành vi theo Thông tư 02/2025.',
+      'Hiểu rõ các nguyên tắc và chỉ số hành vi theo Khung chuẩn năng lực số.',
       'Áp dụng thành thạo vào quy trình làm việc hằng ngày.',
       'Sẵn sàng cho bài đánh giá năng lực số cấp độ tương ứng.',
     ],

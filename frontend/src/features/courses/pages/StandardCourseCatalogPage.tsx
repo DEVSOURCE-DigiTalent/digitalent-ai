@@ -54,7 +54,7 @@ export function StandardCourseCatalogPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <PageHeader
           title="Chương trình chuẩn (Standard Course Catalog)"
-          subtitle="Danh mục các khóa học số chuẩn hóa theo 6 miền năng lực Thông tư 02/2025/TT-BGDĐT. Dùng để bồi dưỡng nâng cấp năng lực cho nhân viên và đợt đào tạo doanh nghiệp."
+          subtitle="Danh mục các khóa học số chuẩn hóa theo 6 miền của Khung chuẩn năng lực số. Dùng để bồi dưỡng nâng cấp năng lực cho nhân viên và đợt đào tạo doanh nghiệp."
         />
         <div className="flex items-center gap-2">
           <Link
@@ -191,7 +191,7 @@ export function StandardCourseCatalogPage() {
               </h3>
 
               <div className="mt-2 text-xs text-slate-500 font-medium">
-                {course.categoryName || 'Miền năng lực Thông tư 02'}
+                {course.categoryName || 'Miền năng lực số'}
               </div>
 
               <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">

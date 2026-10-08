@@ -1,6 +1,9 @@
 import apiClient from './api-client';
 import type { ApiResponse } from '../types/api';
 import type { DomainRequirementSummary } from '../lib/reference-positions';
+import type { AccessMode, SeenKey, TrialChecklistItem } from '../lib/personal-access';
+
+export type { AccessMode, SeenKey, TrialChecklistItem } from '../lib/personal-access';
 
 /**
  * Personal workspace (/personal/*): target position, entry assessment, skill gap, learning path, courses,
@@ -76,6 +79,10 @@ export interface PathCourse {
   prerequisiteTitle?: string;
   /** Competency codes ("2.4") the course raises toward the target. */
   closes: string[];
+  /** The plan will not open its lessons (trial slots used up, or the Free plan). Not the same as LOCKED. */
+  planLocked: boolean;
+  /** The course uses one of the learner's trial slots. */
+  trialSlot: boolean;
 }
 
 export interface PathStage {
@@ -142,6 +149,8 @@ export interface PersonalDiagnostic {
   target: PersonalTarget | null;
   questions: DiagnosticQuestion[];
   result: DiagnosticResult | null;
+  /** How the learner did in the no-account quick try, when they signed up from it. */
+  tryOrientation: { correct: number; total: number } | null;
 }
 
 export type LessonKind = 'VIDEO' | 'READING' | 'PRACTICE';
@@ -215,6 +224,8 @@ export interface PersonalCourseDetail {
   status: PathCourseStatus;
   inPath: boolean;
   exempt: boolean;
+  planLocked: boolean;
+  trialSlot: boolean;
   modules: PersonalModule[];
   lessonCount: number;
   completedLessons: number;
@@ -249,11 +260,17 @@ export interface AssessmentOutcome {
   passed: boolean;
   review: DiagnosticReview[];
   certificateId: string | null;
+  /** Passed, but the certificate waits for an upgrade (trial or Free plan). */
+  certificatePending: boolean;
 }
+
+export type CertificateStatus = 'ISSUED' | 'PENDING_UPGRADE';
 
 export interface PersonalCertificate {
   id: string;
-  code: string;
+  status: CertificateStatus;
+  /** Null while the certificate is pending. */
+  code: string | null;
   courseId: string;
   courseCode: string;
   courseTitle: string;
@@ -261,8 +278,29 @@ export interface PersonalCertificate {
   domainName: string;
   competencies: { code: string; name: string }[];
   recipientName: string;
-  issuedAt: string;
+  passedAt: string;
+  /** Null while the certificate is pending. */
+  issuedAt: string | null;
   scorePercent: number;
+}
+
+/** What the learner's plan allows right now, and the trial guidance state (spec §7.4). */
+export interface PersonalAccess {
+  mode: AccessMode;
+  planName: string;
+  trialEndsAt: string | null;
+  /** Calendar days left in the trial; null outside a trial. */
+  daysLeft: number | null;
+  courseLimit: number | null;
+  trialCourseIds: string[];
+  coursesLeft: number | null;
+  diagnosticAvailable: boolean;
+  reassessAvailableAt: string | null;
+  targetChangesLeft: number | null;
+  pendingCertificates: number;
+  /** Empty with the full plan. */
+  checklist: TrialChecklistItem[];
+  seen: Record<string, string>;
 }
 
 export type ActivityKind = 'TARGET' | 'DIAGNOSTIC' | 'LESSON' | 'ASSESSMENT' | 'TASK' | 'CERTIFICATE';
@@ -355,9 +393,10 @@ export const personalLearningService = {
   submitTask: (taskId: string, input: SubmitTaskInput) =>
     data<PersonalTask>(apiClient.post(`${BASE}/tasks/${taskId}/submissions`, input)),
   getCertificates: () => data<PersonalCertificate[]>(apiClient.get(`${BASE}/certificates`)),
+  verifyCertificate: (code: string) => data<PersonalCertificate>(apiClient.get(`${BASE}/certificates/verify/${code}`)),
   getProgress: () => data<PersonalProgress>(apiClient.get(`${BASE}/progress`)),
-  demoFastTrackCourse: (courseId: string) => data<{ ok: boolean; courseId: string }>(apiClient.post(`${BASE}/demo/fast-track-course`, { courseId })),
-  demoFastTrackTarget: (positionCode?: string) => data<{ ok: boolean; targetCode: string }>(apiClient.post(`${BASE}/demo/fast-track-target`, { positionCode })),
-  demoReset: () => data<unknown>(apiClient.post(`${BASE}/demo/reset`)),
+  getAccess: () => data<PersonalAccess>(apiClient.get(`${BASE}/access`)),
+  /** Marks a UI hint as seen. Answers the learner's whole `seen` record. */
+  markSeen: (key: SeenKey) => data<Record<string, string>>(apiClient.put(`${BASE}/seen/${key}`)),
 };
 

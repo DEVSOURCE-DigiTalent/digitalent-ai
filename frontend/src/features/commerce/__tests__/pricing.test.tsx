@@ -1,16 +1,17 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PricingPage } from '../pages/PricingPage';
 import { getPortalChoice } from '../../portal/portal-preference';
+import { authService } from '@/services/auth.service';
 
 function Where() {
   const location = useLocation();
   return <p data-testid="where">{location.pathname + location.search}</p>;
 }
 
-function renderPricing(audience: 'enterprise' | 'individual') {
+function renderPricing(audience: 'enterprise' | 'individual', search = '') {
   cleanup();
   const base = audience === 'enterprise' ? '/business' : '/individual';
   const queryClient = new QueryClient({
@@ -18,7 +19,7 @@ function renderPricing(audience: 'enterprise' | 'individual') {
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[`${base}/pricing`]}>
+      <MemoryRouter initialEntries={[`${base}/pricing${search}`]}>
         <Routes>
           <Route path={`${base}/pricing`} element={<PricingPage audience={audience} />} />
           <Route path="*" element={<Where />} />
@@ -92,6 +93,17 @@ describe('enterprise pricing (PUB-04)', () => {
 });
 
 describe('individual pricing (PUB-05)', () => {
+  it('keeps the valid trial context when the learner chooses a paid plan', () => {
+    renderPricing('individual', '?source=trial&position=HR');
+
+    expect(screen.getByRole('status')).toHaveTextContent(/hoàn thành phần trải nghiệm.*Nhân sự/i);
+    fireEvent.click(card('Plus').getByRole('button', { name: 'Chọn gói Plus' }));
+
+    expect(screen.getByTestId('where')).toHaveTextContent(
+      '/individual/register?plan=IND_PLUS&seats=1&cycle=year&source=trial&position=HR',
+    );
+  });
+
   it('offers only paid plans and asks for no seats', () => {
     renderPricing('individual');
 
@@ -110,5 +122,51 @@ describe('individual pricing (PUB-05)', () => {
 
     expect(card('Plus').getByText(/1\.190\.000.* \/ năm/)).toBeInTheDocument();
     expect(card('Plus').getByText(/≈ 99\.167.* \/ tháng/)).toBeInTheDocument();
+  });
+});
+
+describe('individual pricing: way into the 7-day trial (spec §8.2)', () => {
+  const strip = () => screen.getByRole('complementary', { name: 'Dùng thử' });
+
+  it('offers the trial to a visitor under the plans, without asking for a card', () => {
+    renderPricing('individual');
+
+    expect(strip()).toHaveTextContent(/Dùng thử Plus 7 ngày.*không cần thẻ/);
+    expect(within(strip()).getByRole('link', { name: 'Dùng thử 7 ngày' })).toHaveAttribute(
+      'href',
+      '/individual/register?trial=1&source=pricing',
+    );
+  });
+
+  it('keeps the position the learner tried', () => {
+    renderPricing('individual', '?source=trial&position=HR');
+
+    expect(within(strip()).getByRole('link', { name: 'Dùng thử 7 ngày' })).toHaveAttribute(
+      'href',
+      '/individual/register?trial=1&source=pricing&position=HR',
+    );
+  });
+
+  it('leads to the trial sign-up when followed', () => {
+    renderPricing('individual');
+
+    fireEvent.click(within(strip()).getByRole('link', { name: 'Dùng thử 7 ngày' }));
+
+    expect(screen.getByTestId('where')).toHaveTextContent('/individual/register?trial=1&source=pricing');
+  });
+
+  it('is not shown to the enterprise pricing page', () => {
+    renderPricing('enterprise');
+
+    expect(screen.queryByRole('complementary', { name: 'Dùng thử' })).not.toBeInTheDocument();
+  });
+
+  it('is not shown while a stored session is still being loaded', () => {
+    vi.spyOn(authService, 'getMe').mockRejectedValue(new Error('session not loaded in this test'));
+    localStorage.setItem('accessToken', 'mock-token:mock-trial');
+
+    renderPricing('individual');
+
+    expect(screen.queryByRole('complementary', { name: 'Dùng thử' })).not.toBeInTheDocument();
   });
 });

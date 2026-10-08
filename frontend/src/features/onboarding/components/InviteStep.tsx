@@ -106,10 +106,10 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
   return (
     <div className="grid max-w-3xl gap-8">
       {setup.seatLimit !== undefined && (
-        <p className="text-sm text-slate-600" role="status">
-          Quyền sử dụng: <strong className="font-semibold text-slate-900">{setup.seatsUsed + queue.length}</strong> / {setup.seatLimit} đã cấp
+        <p className="text-sm text-ent-fg-2" role="status">
+          Quyền sử dụng: <strong className="font-semibold text-[#F5CA65]">{setup.seatsUsed + queue.length}</strong> / {setup.seatLimit} đã cấp
           {seatsLeft !== undefined && seatsLeft < 0 && (
-            <span className="ml-2 font-medium text-red-600">Vượt quá quyền sử dụng của gói đăng ký. Vui lòng nâng gói hoặc mua thêm quyền sử dụng.</span>
+            <span className="ml-2 font-medium text-red-400">Vượt quá quyền sử dụng của gói đăng ký. Vui lòng nâng gói hoặc mua thêm quyền sử dụng.</span>
           )}
         </p>
       )}
@@ -119,13 +119,13 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
           event.preventDefault();
           addDraft();
         }}
-        className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs"
+        className="rounded-xl border border-ent-line bg-ent-card p-5 shadow-md ring-1 ring-amber-400/10"
         aria-label="Thêm một nhân viên"
       >
-        <p className="mb-4 text-sm font-semibold text-slate-900">Thêm nhân viên vào danh sách</p>
+        <p className="mb-4 text-sm font-semibold text-ent-fg">Thêm nhân viên vào danh sách</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5">
-            <label htmlFor="invite-name" className="text-xs font-medium text-slate-700">
+            <label htmlFor="invite-name" className="text-xs font-medium text-ent-fg">
               Họ tên
             </label>
             <input
@@ -138,7 +138,7 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
           </div>
 
           <div className="grid gap-1.5">
-            <label htmlFor="invite-email" className="text-xs font-medium text-slate-700">
+            <label htmlFor="invite-email" className="text-xs font-medium text-ent-fg">
               Email
             </label>
             <input
@@ -152,7 +152,7 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
           </div>
 
           <div className="grid gap-1.5">
-            <label htmlFor="invite-code" className="text-xs font-medium text-slate-700">
+            <label htmlFor="invite-code" className="text-xs font-medium text-ent-fg">
               Mã nhân viên (tùy chọn)
             </label>
             <input
@@ -165,7 +165,7 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
           </div>
 
           <div className="grid gap-1.5">
-            <label htmlFor="invite-position" className="text-xs font-medium text-slate-700">
+            <label htmlFor="invite-position" className="text-xs font-medium text-ent-fg">
               Vị trí công việc
             </label>
             <select
@@ -174,15 +174,15 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
               onChange={(e) => handlePositionChange(e.target.value)}
               className={INPUT_CLASS}
             >
-              <option value="">Chưa xếp</option>
+              <option value="" className="bg-[#11151E] text-cream">Chưa xếp</option>
               {known.positions.map((name) => (
-                <option key={name} value={name}>{name}</option>
+                <option key={name} value={name} className="bg-[#11151E] text-cream">{name}</option>
               ))}
             </select>
           </div>
 
           <div className="grid gap-1.5">
-            <label htmlFor="invite-department" className="text-xs font-medium text-slate-700">
+            <label htmlFor="invite-department" className="text-xs font-medium text-ent-fg">
               Phòng ban
             </label>
             <select
@@ -191,15 +191,15 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
               onChange={(e) => set('departmentName', e.target.value)}
               className={INPUT_CLASS}
             >
-              <option value="">Chưa xếp</option>
+              <option value="" className="bg-[#11151E] text-cream">Chưa xếp</option>
               {known.departments.map((name) => (
-                <option key={name} value={name}>{name}</option>
+                <option key={name} value={name} className="bg-[#11151E] text-cream">{name}</option>
               ))}
             </select>
           </div>
 
           <div className="grid gap-1.5">
-            <label htmlFor="invite-role" className="text-xs font-medium text-slate-700">
+            <label htmlFor="invite-role" className="text-xs font-medium text-ent-fg">
               Vai trò tài khoản
             </label>
             <select
@@ -209,22 +209,22 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
               className={INPUT_CLASS}
             >
               {MEMBER_ROLES.map((role) => (
-                <option key={role} value={role}>{ROLE_LABELS[role as keyof typeof ROLE_LABELS] || role}</option>
+                <option key={role} value={role} className="bg-[#11151E] text-cream">{ROLE_LABELS[role as keyof typeof ROLE_LABELS] || role}</option>
               ))}
             </select>
           </div>
         </div>
 
         {draft.role === 'OWNER' && (
-          <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800">
-            <AlertTriangle className="size-4 shrink-0 text-amber-600 mt-0.5" />
+          <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-400/30 bg-amber-500/10 p-2.5 text-xs text-ent-fg">
+            <AlertTriangle className="size-4 shrink-0 text-[#F5CA65] mt-0.5" />
             <span>
-              <strong>Cảnh báo quyền hạn:</strong> Vai trò Chủ doanh nghiệp có toàn quyền quản trị, chỉnh sửa cấu trúc tổ chức, thanh toán và gán quyền. Chỉ phân quyền cho người có thẩm quyền cao nhất.
+              <strong className="text-[#F5CA65]">Cảnh báo quyền hạn:</strong> Vai trò Chủ doanh nghiệp có toàn quyền quản trị, chỉnh sửa cấu trúc tổ chức, thanh toán và gán quyền. Chỉ phân quyền cho người có thẩm quyền cao nhất.
             </span>
           </div>
         )}
 
-        {draftError && <p role="alert" className="mt-3 text-sm text-red-600">{draftError}</p>}
+        {draftError && <p role="alert" className="mt-3 text-sm text-red-400">{draftError}</p>}
 
         <div className="mt-4">
           <button type="submit" className={SECONDARY_BUTTON}>
@@ -237,23 +237,23 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
       <CsvImport enabled={setup.canBulkImport} known={known} onRows={addRows} />
 
       {queue.length > 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-          <p className="mb-3 text-sm font-semibold text-slate-900">
+        <div className="rounded-xl border border-ent-line bg-ent-card p-5 shadow-md ring-1 ring-amber-400/10">
+          <p className="mb-3 text-sm font-semibold text-ent-fg">
             Chờ gửi lời mời ({queue.length} nhân sự)
           </p>
-          <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
+          <ul className="divide-y divide-ent-line rounded-lg border border-ent-line">
             {queue.map((row) => (
               <li key={row.email} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
                 <span className="min-w-0">
-                  <span className="flex items-center gap-2 truncate font-medium text-slate-900">
+                  <span className="flex items-center gap-2 truncate font-medium text-ent-fg">
                     {row.fullName}
                     {row.employeeCode && (
-                      <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[11px] font-normal text-slate-600">
+                      <span className="rounded bg-amber-400/20 border border-amber-400/30 px-1.5 py-0.2 text-[11px] font-medium text-[#F5CA65]">
                         {row.employeeCode}
                       </span>
                     )}
                   </span>
-                  <span className="block truncate text-xs text-slate-500">
+                  <span className="block truncate text-xs text-ent-fg-3">
                     {row.email} · {ROLE_LABELS[row.role as keyof typeof ROLE_LABELS] || row.role}
                     {row.positionName ? ` · ${row.positionName}` : ''}
                     {row.departmentName ? ` · ${row.departmentName}` : ''}
@@ -264,14 +264,14 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
                   type="button"
                   onClick={() => setQueue(queue.filter((r) => r.email !== row.email))}
                   aria-label={`Bỏ ${row.fullName} khỏi danh sách`}
-                  className="grid size-7 shrink-0 place-items-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+                  className="grid size-7 shrink-0 place-items-center rounded-full hover:bg-ent-raised text-ent-fg-3 hover:text-ent-fg"
                 >
                   <X className="size-4" aria-hidden="true" />
                 </button>
               </li>
             ))}
           </ul>
-          {submitError && <p role="alert" className="mt-2 text-sm text-red-600">{submitError}</p>}
+          {submitError && <p role="alert" className="mt-2 text-sm text-red-400">{submitError}</p>}
           <button type="button" onClick={send} disabled={invite.isPending} className={`${PRIMARY_BUTTON} mt-4`}>
             {invite.isPending ? 'Đang gửi…' : `Gửi ${queue.length} lời mời`}
           </button>

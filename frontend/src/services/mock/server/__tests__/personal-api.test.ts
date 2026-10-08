@@ -33,6 +33,28 @@ async function failure(promise: Promise<unknown>) {
 const allCorrect = () => Object.fromEntries(ENTRY_QUESTIONS.map((q) => [q.id, q.correctIndex]));
 
 describe('personal track mock API', () => {
+  it.each([
+    ['fast-track-course', { courseId: 'crs-A3-I' }],
+    ['fast-track-target', { positionCode: 'MARKETING' }],
+    ['reset', {}],
+  ])('does not expose demo mutation %s to learners', async (operation, body) => {
+    const before = await api.getProgress();
+    const response = await failure(apiClient.post(`/personal/demo/${operation}`, body));
+
+    expect(response.status).toBe(404);
+    expect(await api.getProgress()).toEqual(before);
+  });
+
+  it('does not disclose answer keys before an assessment is submitted', async () => {
+    const assessment = await api.getAssessment('crs-A3-I');
+
+    expect(assessment.questions.length).toBeGreaterThan(0);
+    assessment.questions.forEach((question) => {
+      expect(question).not.toHaveProperty('correctOptionIndex');
+      expect(question).not.toHaveProperty('correctIndex');
+    });
+  });
+
   it('seeds the demo learner mid-way: Marketing target, assessed, one course done, one in progress', async () => {
     const overview = await api.getOverview();
 

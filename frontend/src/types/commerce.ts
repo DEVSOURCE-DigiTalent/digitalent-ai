@@ -19,6 +19,14 @@ export interface RegisterEnterpriseInput {
   plan?: PlanSelection;
 }
 
+/** Result of the no-account "thử nhanh" flow, handed over when the visitor signs up for a trial. */
+export interface TryOrientationInput {
+  positionCode: string;
+  correct: number;
+  total: number;
+  completedAt: string;
+}
+
 export interface RegisterIndividualInput {
   fullName: string;
   email: string;
@@ -26,6 +34,11 @@ export interface RegisterIndividualInput {
   acceptTerms?: boolean;
   phone?: string;
   plan?: PlanSelection;
+  /** Starts a trial instead of a purchase: no plan is needed and no purchase draft is created. */
+  trial?: boolean;
+  /** Reference position the visitor tried; ignored when it is not one of them. */
+  positionCode?: string;
+  tryOrientation?: TryOrientationInput;
 }
 
 export interface RegistrationResult {

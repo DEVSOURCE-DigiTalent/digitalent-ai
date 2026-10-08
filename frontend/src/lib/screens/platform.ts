@@ -13,7 +13,7 @@ export const PLATFORM_SCREENS: ScreenDef[] = [
   { id: 'PA-03', title: 'Chi tiết và hỗ trợ tổ chức', path: '/platform/organizations/:id', roles: ADMIN, priority: 'P0', aliases: ['PLT-03'] },
   { id: 'PA-04', title: 'Danh sách người dùng', path: '/platform/users', roles: ADMIN, priority: 'P0', aliases: ['PLT-04-USERS'] },
   { id: 'PA-05', title: 'Chi tiết người dùng', path: '/platform/users/:id', roles: ADMIN, priority: 'P0', aliases: ['PLT-05-USER-DETAIL'] },
-  { id: 'PA-06', title: 'Quản lý khung TT 02/2025', path: '/platform/framework', roles: ADMIN, priority: 'P0', aliases: ['PLT-04'] },
+  { id: 'PA-06', title: 'Quản lý Khung chuẩn năng lực', path: '/platform/framework', roles: ADMIN, priority: 'P0', aliases: ['PLT-04'] },
   { id: 'PA-07', title: 'Chi tiết năng lực chuẩn', path: '/platform/framework/:id', roles: ADMIN, priority: 'P0', aliases: ['PLT-07-COMPETENCY'] },
   { id: 'PA-08', title: 'Chương trình đào tạo chuẩn', path: '/platform/curriculum', roles: ADMIN, priority: 'P0', aliases: ['PLT-05', 'PLT-06'] },
   { id: 'PA-09', title: 'Chi tiết khóa học chuẩn', path: '/platform/courses/:id', roles: ADMIN, priority: 'P0', aliases: ['PLT-09-COURSE'] },

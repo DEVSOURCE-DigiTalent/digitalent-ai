@@ -6,6 +6,7 @@ import { useInView } from '../hooks/use-in-view';
 import { useLandingMotion } from '../landing-motion';
 import { RadarChart } from './RadarChart';
 import { SectionHeader } from './SectionHeader';
+import { LP_KICKER } from '../landing-type';
 
 type TeamGapSection = Extract<LandingSectionConfig, { kind: 'team-gap' }>;
 
@@ -111,7 +112,7 @@ export function TeamGapSection({ section }: { section: TeamGapSection }) {
                         <td className="px-4 py-4 text-stone-400">{TIER_LABELS[row.current]}</td>
                         <td className="px-4 py-4 text-stone-400">{TIER_LABELS[row.required]}</td>
                         <td className="py-4 pl-4 text-right">
-                          <span className={cn('block whitespace-nowrap text-sm tabular-nums', row.gap > 0 ? 'text-cream' : 'text-[#A7C4A0]')}>
+                          <span className={cn('block whitespace-nowrap text-sm tabular-nums', row.gap > 0 ? 'text-[#F5CA65] font-medium' : 'text-[#79E0C2] font-medium')}>
                             {row.gap > 0 ? `Còn thiếu ${row.gap} tầng` : 'Đã đạt'}
                           </span>
                           <GapBar current={row.current} required={row.required} shown={shown} />
@@ -140,7 +141,7 @@ export function TeamGapSection({ section }: { section: TeamGapSection }) {
               className="rounded-[20px] bg-landing-card p-6 transition-[opacity,transform] duration-700 ease-cinematic md:p-8"
               style={{ opacity: shown ? 1 : 0, transform: shown ? 'none' : 'translateY(16px)', transitionDelay: '500ms' }}
             >
-              <p className="text-xs uppercase tracking-[0.14em] text-stone-500">Ưu tiên đào tạo</p>
+              <p className={LP_KICKER}>Ưu tiên đào tạo</p>
               <ul className="mt-5 grid gap-4">
                 {priorities.map((row) => (
                   <li key={row.code} className="flex items-baseline justify-between gap-4 text-base leading-[1.35]">
@@ -154,7 +155,7 @@ export function TeamGapSection({ section }: { section: TeamGapSection }) {
               </ul>
               <button
                 type="button"
-                className="mt-7 inline-flex items-center rounded-full border border-cream/30 px-6 py-3 text-base text-cream transition-colors hover:border-cream/70"
+                className="mt-7 inline-flex items-center rounded-full border border-amber-400/50 bg-amber-500/10 px-6 py-3 text-base text-[#F5CA65] transition-all duration-300 hover:border-amber-400/90 hover:bg-amber-500/20 hover:shadow-[0_0_16px_rgba(245,202,101,0.2)]"
               >
                 {sample.recommendLabel}
               </button>
@@ -181,7 +182,14 @@ function GapBar({ current, required, shown }: { current: number; required: numbe
       {[1, 2, 3].map((step) => (
         <i
           key={step}
-          className={cn('block h-2 flex-1 rounded-full', step <= current ? 'bg-cream' : step <= required ? 'border border-cream/70' : 'bg-cream/12')}
+          className={cn(
+            'block h-2 flex-1 rounded-full transition-colors duration-500',
+            step <= current
+              ? 'bg-[#79E0C2]'
+              : step <= required
+                ? 'border border-[#F5CA65]/80 bg-[#F5CA65]/20 shadow-[0_0_6px_rgba(245,202,101,0.25)]'
+                : 'bg-cream/12',
+          )}
         />
       ))}
     </span>

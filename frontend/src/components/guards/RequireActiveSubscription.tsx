@@ -1,4 +1,5 @@
 import { useCurrentUser } from '../../hooks/use-current-user';
+import { isSubscriptionUsable } from '../../lib/personal-access';
 import { PaymentRequiredPage } from '../../features/system/pages/PaymentRequiredPage';
 
 interface RequireActiveSubscriptionProps {
@@ -11,6 +12,6 @@ interface RequireActiveSubscriptionProps {
  */
 export function RequireActiveSubscription({ children }: RequireActiveSubscriptionProps) {
   const status = useCurrentUser((s) => s.getSubscriptionStatus)();
-  if (status && status !== 'active') return <PaymentRequiredPage />;
+  if (status && !isSubscriptionUsable(status)) return <PaymentRequiredPage />;
   return <>{children}</>;
 }

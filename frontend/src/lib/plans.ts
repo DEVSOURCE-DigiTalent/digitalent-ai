@@ -40,7 +40,38 @@ export interface Plan {
   /** Bullet points shown on the card, in order. */
   highlights: string[];
   recommended?: boolean;
+  /** The plan an account falls back to when its trial ends: never listed, never sold. */
+  free?: boolean;
 }
+
+/** Individual reverse trial: Plus rights for a few days, then the Free plan. The only place for these numbers. */
+export const INDIVIDUAL_TRIAL = {
+  days: 7,
+  courseLimit: 3,
+  /** Position changes allowed after the first choice, during the trial. */
+  targetChanges: 1,
+  /** From this many days left the plan label turns gold and the "still N days" reminder is shown. */
+  reminderDays: 2,
+} as const;
+
+/** Free plan: minimum gap between two entry assessments. */
+export const FREE_REASSESS_DAYS = 30;
+
+/** What the Free plan keeps. Shared by the plan page, the trial-ended panel and the Free plan card. */
+export const IND_FREE_KEEPS: string[] = [
+  'Hồ sơ năng lực và kết quả đánh giá',
+  'Toàn bộ lộ trình (xem)',
+  'Bài đã học và ghi chú',
+  `Đánh giá lại mỗi ${FREE_REASSESS_DAYS} ngày`,
+];
+
+/** What the Free plan does not open. */
+export const IND_FREE_LOCKED: string[] = [
+  'Học mọi khóa trong lộ trình',
+  'Bài đánh giá sau khóa',
+  'Chứng nhận',
+  'Nhiệm vụ thực hành',
+];
 
 /** Share of the monthly price kept when paying a year up front (20% off). */
 export const YEARLY_PRICE_FACTOR = 0.8;
@@ -71,7 +102,7 @@ export const PLANS: Plan[] = [
     entitlements: [ENTITLEMENTS.PRACTICAL_TASKS],
     highlights: [
       'Bao gồm 20 người dùng (mở rộng tối đa 30)',
-      'Khung năng lực TT 02/2025 đầy đủ 6 miền',
+      'Khung chuẩn năng lực số đầy đủ 6 miền',
       'Yêu cầu năng lực theo vị trí',
       'Phân tích skill gap và đề xuất học tập',
       'Nhiệm vụ thực hành và bằng chứng (evidence)',
@@ -185,6 +216,26 @@ export const PLANS: Plan[] = [
     entitlements: [ENTITLEMENTS.PERSONAL_LEARNING_PATH, ENTITLEMENTS.ADVANCED_ANALYTICS],
     highlights: ['Mọi tính năng của Plus', 'So sánh với nhiều vị trí mục tiêu', 'Phân tích tiến bộ chi tiết'],
   },
+  {
+    code: 'IND_FREE',
+    audience: 'individual',
+    name: 'Miễn phí',
+    tagline: 'Giữ hồ sơ và kết quả sau kỳ dùng thử.',
+    billing: {
+      monthlyPrice: 0,
+      annualPrice: 0,
+    },
+    users: {
+      included: 1,
+      max: 1,
+      addonAllowed: false,
+    },
+    monthlyPrice: 0,
+    seatRange: { min: 1, max: 1 },
+    entitlements: [ENTITLEMENTS.PERSONAL_LEARNING_PATH],
+    highlights: IND_FREE_KEEPS,
+    free: true,
+  },
 ];
 
 export function getPlan(code: string | null | undefined): Plan | undefined {
@@ -192,7 +243,7 @@ export function getPlan(code: string | null | undefined): Plan | undefined {
 }
 
 export function plansFor(audience: PlanAudience): Plan[] {
-  return PLANS.filter((plan) => plan.audience === audience);
+  return PLANS.filter((plan) => plan.audience === audience && !plan.free);
 }
 
 /** Suggest an appropriate plan based on estimated user count without forcing input. */
@@ -243,7 +294,7 @@ export function formatVnd(amount: number): string {
 }
 
 export function isPurchasableOnline(plan: Plan): boolean {
-  return plan.billing.monthlyPrice !== null;
+  return !plan.free && plan.billing.monthlyPrice !== null;
 }
 
 /** Entitlements as the session carries them. */

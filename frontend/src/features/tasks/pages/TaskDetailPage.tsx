@@ -109,16 +109,19 @@ export function TaskDetailPage() {
         {/* Right column: Competencies & Info */}
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
-            <h3 className="font-bold text-slate-900 text-base">Chuẩn năng lực TT 02/2025</h3>
+            <h3 className="font-bold text-slate-900 text-base">Chuẩn năng lực liên kết</h3>
             <div className="flex flex-wrap gap-2">
-              {task.competencyIds.map((code: string) => (
-                <span
-                  key={code}
-                  className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-mono font-bold"
-                >
-                  TT02-{code.toUpperCase()}
-                </span>
-              ))}
+              {task.competencyIds.map((code: string) => {
+                const cleanCode = code.toUpperCase().replace(/^TT02-/, '').replace(/^CMP-/, '');
+                return (
+                  <span
+                    key={code}
+                    className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-mono font-bold"
+                  >
+                    CMP-{cleanCode}
+                  </span>
+                );
+              })}
             </div>
             {task.departmentName && (
               <div className="pt-2 text-xs text-slate-500">

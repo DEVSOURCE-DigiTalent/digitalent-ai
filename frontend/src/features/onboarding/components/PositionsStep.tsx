@@ -91,8 +91,8 @@ export function PositionsStep({ setup, onBack, onDone, onSkip }: PositionsStepPr
   return (
     <div className="grid max-w-3xl gap-6">
       <fieldset>
-        <legend className="mb-2 text-sm font-medium text-slate-700">
-          Vị trí tham chiếu chuẩn theo Thông tư 02/2025
+        <legend className="mb-2 text-sm font-medium text-ent-fg">
+          Vị trí tham chiếu chuẩn theo Khung chuẩn năng lực số
         </legend>
         <ul className="grid gap-3 sm:grid-cols-2">
           {REFERENCE_POSITIONS.map((position) => {
@@ -102,10 +102,10 @@ export function PositionsStep({ setup, onBack, onDone, onSkip }: PositionsStepPr
             return (
               <li
                 key={position.code}
-                className={`rounded-lg border p-3 text-sm transition-colors ${
+                className={`rounded-xl border p-3.5 text-sm transition-all ${
                   isChecked
-                    ? 'border-primary-600 bg-primary-50/60 shadow-xs'
-                    : 'border-slate-200 bg-white hover:bg-slate-50'
+                    ? 'border-amber-400/40 bg-amber-500/10 shadow-sm ring-1 ring-amber-400/20'
+                    : 'border-ent-line bg-ent-card hover:bg-ent-raised'
                 }`}
               >
                 <label className="flex cursor-pointer items-start gap-3">
@@ -113,26 +113,26 @@ export function PositionsStep({ setup, onBack, onDone, onSkip }: PositionsStepPr
                     type="checkbox"
                     checked={isChecked}
                     onChange={() => toggle(position.code)}
-                    className="mt-0.5 size-4 accent-primary-600"
+                    className="mt-0.5 size-4 accent-[#E5A93C]"
                   />
                   <span className="min-w-0 flex-1">
-                    <span className="block font-medium text-slate-900">{position.name}</span>
-                    <span className="block text-xs text-slate-500 line-clamp-2">{position.description}</span>
+                    <span className="block font-medium text-ent-fg">{position.name}</span>
+                    <span className="block text-xs text-ent-fg-3 line-clamp-2">{position.description}</span>
                   </span>
                 </label>
 
                 {isChecked && (
-                  <div className="mt-3 border-t border-primary-200/60 pt-2.5">
+                  <div className="mt-3 border-t border-amber-400/20 pt-2.5">
                     <div>
-                      <label className="text-[11px] font-medium text-slate-600">Phòng ban trực thuộc</label>
+                      <label className="text-[11px] font-medium text-[#F5CA65]">Phòng ban trực thuộc</label>
                       <select
                         value={currentDept}
                         onChange={(e) => updateDepartment(position.code, e.target.value)}
-                        className="mt-0.5 h-7 w-full rounded border border-slate-300 bg-white px-1.5 text-xs text-slate-800"
+                        className="mt-1 h-8 w-full rounded-lg border border-amber-400/20 bg-ent-card px-2 text-xs text-ent-fg focus:outline-none focus:ring-1 focus:ring-[#E5A93C]"
                       >
-                        <option value="">Chưa gán phòng ban</option>
+                        <option value="" className="bg-[#11151E] text-cream">Chưa gán phòng ban</option>
                         {departments.map((d) => (
-                          <option key={d} value={d}>
+                          <option key={d} value={d} className="bg-[#11151E] text-cream">
                             {d}
                           </option>
                         ))}
@@ -151,15 +151,15 @@ export function PositionsStep({ setup, onBack, onDone, onSkip }: PositionsStepPr
           event.preventDefault();
           addCustom();
         }}
-        className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs"
+        className="rounded-xl border border-ent-line bg-ent-card p-4 shadow-md ring-1 ring-amber-400/10"
       >
-        <p className="mb-2 text-sm font-medium text-slate-800 flex items-center gap-1.5">
-          <Layers className="size-4 text-slate-500" />
+        <p className="mb-2 text-sm font-medium text-ent-fg flex items-center gap-1.5">
+          <Layers className="size-4 text-[#F5CA65]" />
           Thêm vị trí riêng của tổ chức
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label htmlFor="custom-position" className="text-xs text-slate-600 block mb-1">
+            <label htmlFor="custom-position" className="text-xs text-ent-fg-2 block mb-1">
               Tên vị trí
             </label>
             <input
@@ -172,7 +172,7 @@ export function PositionsStep({ setup, onBack, onDone, onSkip }: PositionsStepPr
           </div>
 
           <div>
-            <label htmlFor="custom-dept" className="text-xs text-slate-600 block mb-1">
+            <label htmlFor="custom-dept" className="text-xs text-ent-fg-2 block mb-1">
               Phòng ban
             </label>
             <select
@@ -181,9 +181,9 @@ export function PositionsStep({ setup, onBack, onDone, onSkip }: PositionsStepPr
               onChange={(e) => setDraftDept(e.target.value)}
               className={INPUT_CLASS}
             >
-              <option value="">Chưa gán phòng ban</option>
+              <option value="" className="bg-[#11151E] text-cream">Chưa gán phòng ban</option>
               {departments.map((d) => (
-                <option key={d} value={d}>
+                <option key={d} value={d} className="bg-[#11151E] text-cream">
                   {d}
                 </option>
               ))}
@@ -208,15 +208,15 @@ export function PositionsStep({ setup, onBack, onDone, onSkip }: PositionsStepPr
             return (
               <li
                 key={name}
-                className="inline-flex items-center gap-2 rounded-lg bg-slate-100 py-1.5 pl-3 pr-2 text-xs font-medium text-slate-800"
+                className="inline-flex items-center gap-2 rounded-lg bg-ent-raised border border-amber-400/20 py-1.5 pl-3 pr-2 text-xs font-medium text-ent-fg"
               >
                 <span>{name}</span>
-                {dept && <span className="text-[11px] text-slate-500 font-normal">({dept})</span>}
+                {dept && <span className="text-[11px] text-[#F5CA65] font-normal">({dept})</span>}
                 <button
                   type="button"
                   onClick={() => setCustom(custom.filter((n) => n !== name))}
                   aria-label={`Xóa ${name}`}
-                  className="grid size-5 place-items-center rounded-full hover:bg-slate-200"
+                  className="grid size-5 place-items-center rounded-full hover:bg-amber-400/20 text-ent-fg-3 hover:text-ent-fg"
                 >
                   <X className="size-3" aria-hidden="true" />
                 </button>

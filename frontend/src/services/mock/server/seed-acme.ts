@@ -342,7 +342,7 @@ export function buildAcmeData(): OrgData {
       {
         id: 'tb-001',
         code: 'DOT-2026-01',
-        name: 'Phổ cập Năng lực số TT02 cho Khối Nghiệp vụ & Kỹ thuật',
+        name: 'Phổ cập Năng lực số cho Khối Nghiệp vụ & Kỹ thuật',
         description: 'Chương trình đào tạo trọng điểm Quý 1/2026 nhằm nâng cao năng lực khai thác dữ liệu và an toàn thông tin.',
         status: 'RUNNING',
         startDate: dateFromNow(-15),
@@ -376,7 +376,7 @@ export function buildAcmeData(): OrgData {
         id: 'tb-003',
         code: 'DOT-2025-04',
         name: 'Đợt Khởi động - Nhập môn Chuyển đổi số & An toàn thông tin',
-        description: 'Đợt đào tạo toàn diện chuẩn bị lộ trình chuẩn hóa theo Thông tư 02.',
+        description: 'Đợt đào tạo toàn diện chuẩn bị lộ trình chuẩn hóa theo Khung chuẩn năng lực số.',
         status: 'COMPLETED',
         startDate: dateFromNow(-90),
         endDate: dateFromNow(-30),

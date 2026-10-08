@@ -181,7 +181,7 @@ export function PositionRequirementsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Yêu cầu năng lực theo vị trí"
-        subtitle="Chọn các năng lực của khung năng lực số quốc gia (Thông tư 02/2025) mà mỗi vị trí cần, kèm mức yêu cầu và trọng số"
+        subtitle="Chọn các năng lực của Khung chuẩn năng lực số mà mỗi vị trí cần, kèm mức yêu cầu và trọng số"
       />
 
       <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -341,7 +341,7 @@ export function PositionRequirementsPage() {
             <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <p className="text-base font-medium text-slate-700">Chưa có năng lực nào</p>
             <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-              Khung năng lực chưa có năng lực nào của Thông tư 02/2025.
+              Khung năng lực chưa có năng lực nào được kích hoạt.
             </p>
           </div>
         ) : (
@@ -392,7 +392,7 @@ export function PositionRequirementsPage() {
                 id="activate-reason"
                 value={changeReason}
                 onChange={(e) => setChangeReason(e.target.value)}
-                placeholder="Ví dụ: Áp dụng chuẩn Thông tư 02 cho toàn bộ nhân sự mới, ban hành chính thức..."
+                placeholder="Ví dụ: Áp dụng khung chuẩn năng lực số cho toàn bộ nhân sự mới, ban hành chính thức..."
                 rows={3}
                 className="w-full rounded-lg border border-slate-300 p-2.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />

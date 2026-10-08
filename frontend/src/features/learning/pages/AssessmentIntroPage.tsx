@@ -96,7 +96,7 @@ export function AssessmentIntroPage() {
             <li className="flex items-start gap-2.5">
               <CheckCircle2 className="size-4 text-emerald-600 shrink-0 mt-0.5" />
               <span>
-                <strong>Cập nhật hồ sơ năng lực:</strong> Khi đạt điểm chuẩn, bậc năng lực của bạn theo Thông tư 02 sẽ được hệ thống cập nhật chính thức.
+                <strong>Cập nhật hồ sơ năng lực:</strong> Khi đạt điểm chuẩn, bậc năng lực của bạn theo Khung chuẩn năng lực số sẽ được hệ thống cập nhật chính thức.
               </span>
             </li>
             <li className="flex items-start gap-2.5">

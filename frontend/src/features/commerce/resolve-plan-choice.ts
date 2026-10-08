@@ -1,4 +1,5 @@
 import { getPlan, isPurchasableOnline, type PlanAudience } from '@/lib/plans';
+import { isIndividualUpgrader } from '@/lib/personal-access';
 import { planSelectionToQuery } from '@/lib/plan-query';
 import { WORKSPACES, resolveWorkspace } from '@/lib/roles';
 import { SALES_EMAIL } from './sales-contact';
@@ -17,6 +18,7 @@ export type PlanChoiceResult =
  * - "Liên hệ" plan -> contact email
  * - Guest -> register with query params
  * - Logged in, onboardingStatus === 'payment' -> update draft -> checkout
+ * - Logged in on a trial or the Free plan -> create a purchase draft -> checkout (BR-17)
  * - Logged in with subscription -> manage subscription path with message
  * - Wrong audience -> mismatch message
  */
@@ -66,7 +68,12 @@ export function resolvePlanChoice(
     };
   }
 
-  // 5. User already has active plan or completed setup
+  // 5. A trial or Free learner upgrades through a new purchase draft
+  if (isPersonalUser && isIndividualUpgrader({ workspace: WORKSPACES.PERSONAL, subscription: user.subscription })) {
+    return { type: 'checkout', draftAction: 'create', path: '/checkout' };
+  }
+
+  // 6. User already has active plan or completed setup
   const planName = user.subscription?.planName ?? (plan ? plan.name : '');
   const subscriptionPath = isEnterpriseUser ? '/enterprise/billing' : '/personal/billing';
 

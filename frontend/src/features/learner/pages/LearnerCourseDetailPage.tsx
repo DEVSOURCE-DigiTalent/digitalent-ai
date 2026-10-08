@@ -1,12 +1,15 @@
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Lock } from 'lucide-react';
-import { usePersonalCourse } from '@/hooks/use-personal-learning';
+import { usePersonalAccess, usePersonalCourse } from '@/hooks/use-personal-learning';
+import { usePlanMode } from '@/hooks/use-plan-mode';
 import { levelLabelVi } from '@/lib/competency-levels';
 import { cn } from '@/lib/utils';
-import type { PersonalCourseDetail } from '@/services/personal-learning.service';
+import type { PersonalAccess, PersonalCourseDetail } from '@/services/personal-learning.service';
 import {
-  Card, ErrorBlock, LevelPips, LoadingBlock, PT_BUTTON, PT_BUTTON_SECONDARY, PT_EYEBROW, ProgressBar, SectionTitle, Tag
+  Card, ErrorBlock, LoadingBlock, PT_BUTTON, PT_BUTTON_SECONDARY, PT_EYEBROW, ProgressBar, SectionTitle, Tag
 } from '../components/ui';
+import { PlanLockBlock } from '../components/PlanLockBlock';
+import { UpgradeLink } from '../components/UpgradeLink';
 import { errorMessage } from '../utils/error-message';
 import { formatMinutes } from '../utils/format';
 import { LESSON_KIND } from '../utils/lesson-kind';
@@ -28,15 +31,46 @@ export function LearnerCourseDetailPage() {
   );
 }
 
-function primaryAction(course: PersonalCourseDetail) {
-  if (course.status === 'LOCKED') return null;
+function primaryAction(course: PersonalCourseDetail, access: PersonalAccess | undefined) {
+  if (course.status === 'LOCKED' || course.planLocked) return null;
   if (course.status === 'COMPLETED') return { label: 'Ôn lại khóa học', to: `/personal/classroom/${course.id}` };
-  if (course.status === 'IN_PROGRESS') return { label: 'Học tiếp', to: `/personal/classroom/${course.id}` };
+  if (course.status === 'IN_PROGRESS') {
+    // On the Free plan the lessons already done can be read again; nothing new opens.
+    return { label: access?.mode === 'free' ? 'Xem lại bài đã học' : 'Học tiếp', to: `/personal/classroom/${course.id}` };
+  }
   return { label: 'Bắt đầu học', to: `/personal/classroom/${course.id}` };
 }
 
+/** One sentence about what this course costs or gives under the learner's plan; nothing for a paying plan. */
+function PlanNote({ course, access }: { course: PersonalCourseDetail; access: PersonalAccess | undefined }) {
+  if (!access) return null;
+  const box = 'rounded-xl border border-pt-line border-l-2 border-l-pt-accent bg-pt-raised/60 px-4 py-3 text-sm text-pt-fg-2';
+
+  if (access.mode === 'trial') {
+    const costsSlot = !course.trialSlot && !course.planLocked && !course.exempt && course.status !== 'LOCKED' && course.status !== 'COMPLETED';
+    if (!costsSlot || access.coursesLeft === null) return null;
+    return (
+      <p role="note" className={box}>
+        Khóa này sẽ dùng 1 trong {access.courseLimit} lượt học thử (còn {access.coursesLeft}). Lượt chỉ được tính khi bạn hoàn thành bài đầu tiên.
+      </p>
+    );
+  }
+  if (access.mode === 'free' && course.trialSlot && course.status !== 'COMPLETED') {
+    return (
+      <p role="note" className={box}>
+        Gói Miễn phí: bạn xem lại được các bài đã học; bài chưa học mở khi nâng cấp.{' '}
+        <UpgradeLink placement="course" variant="text">Nâng cấp Plus</UpgradeLink>
+      </p>
+    );
+  }
+  return null;
+}
+
 function CourseBody({ course }: { course: PersonalCourseDetail }) {
-  const action = primaryAction(course);
+  const { data: access } = usePersonalAccess();
+  const action = primaryAction(course, access);
+  const planMode = usePlanMode();
+  const lockedMode = planMode && planMode !== 'full' && course.planLocked ? planMode : null;
 
   return (
     <>
@@ -48,13 +82,17 @@ function CourseBody({ course }: { course: PersonalCourseDetail }) {
             <Tag>Miền {course.domainNumber} · {course.domainName}</Tag>
             {course.inPath && <Tag tone="info">Trong lộ trình</Tag>}
             {course.exempt && <Tag tone="ok">Được miễn</Tag>}
+            {course.trialSlot && <Tag tone="ok">Đang học thử</Tag>}
             {course.status === 'COMPLETED' && <Tag tone="ok"><Check className="size-3" aria-hidden="true" />Đã hoàn thành</Tag>}
           </div>
-          <h1 className="mt-5 text-balance text-[clamp(30px,4.6vw,52px)] font-normal leading-[1.04] tracking-[-0.03em]">{course.title}</h1>
-          <p className="mt-4 max-w-[62ch] text-[15px] leading-[1.7] text-pt-fg-2">{course.description}</p>
+          <h1 className="mt-5 text-balance text-[clamp(26px,3vw,32px)] font-semibold leading-tight tracking-[-0.03em]">{course.title}</h1>
+          <p className="mt-3 max-w-[62ch] text-[15px] leading-[1.7] text-pt-fg-2">{course.description}</p>
+          <p className="mt-3 text-sm text-pt-fg-3">{formatMinutes(course.durationMinutes)} · {course.lessonCount} bài · {course.status === 'IN_PROGRESS' ? 'Đang học' : course.status === 'COMPLETED' ? 'Đã hoàn thành' : course.status === 'LOCKED' ? 'Chờ điều kiện tiên quyết' : 'Có thể bắt đầu'}</p>
         </div>
         <div className="flex flex-col gap-3 lg:items-end">
-          {action ? (
+          {lockedMode ? (
+            <PlanLockBlock mode={lockedMode} courseLimit={access?.courseLimit ?? null} placement="course" className="w-full max-w-sm" />
+          ) : action ? (
             <Link to={action.to} className={PT_BUTTON}>
               {action.label} <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
@@ -71,6 +109,8 @@ function CourseBody({ course }: { course: PersonalCourseDetail }) {
           )}
         </div>
       </header>
+
+      <PlanNote course={course} access={access} />
 
       {course.status === 'LOCKED' && course.prerequisite && (
         <Card className="flex flex-col gap-3 border-pt-warn/40 p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -117,7 +157,9 @@ function CourseBody({ course }: { course: PersonalCourseDetail }) {
                             <li key={lesson.id} className="flex items-center gap-3 py-2.5 text-sm">
                               {lesson.completed
                                 ? <Check className="size-4 shrink-0 text-pt-ok" aria-label="Đã học" />
-                                : <kind.icon className="size-4 shrink-0 text-pt-fg-3" aria-hidden="true" />}
+                                : access?.mode === 'free'
+                                  ? <Lock className="size-4 shrink-0 text-pt-fg-3" aria-label="Mở khi nâng cấp" />
+                                  : <kind.icon className="size-4 shrink-0 text-pt-fg-3" aria-hidden="true" />}
                               <span className={cn('flex-1', lesson.completed ? 'text-pt-fg-2' : 'text-pt-fg')}>{lesson.title}</span>
                               <span className="text-xs text-pt-fg-3">{kind.label} · {lesson.durationMinutes} phút</span>
                             </li>
@@ -157,7 +199,7 @@ function CourseBody({ course }: { course: PersonalCourseDetail }) {
                 <li key={competency.code} className="grid gap-1.5">
                   <span className="text-sm leading-snug text-pt-fg"><span className="mr-2 text-xs text-pt-fg-3">{competency.code}</span>{competency.name}</span>
                   <span className="flex items-center gap-3 text-xs text-pt-fg-3">
-                    <LevelPips level={competency.currentLevel} required={Math.max(competency.requiredLevel, course.level)} />
+                    <span>Hiện tại: {levelLabelVi(competency.currentLevel)}</span>
                     {competency.requiredLevel > 0 ? `Vị trí cần ${levelLabelVi(competency.requiredLevel)}` : 'Vị trí không yêu cầu'}
                   </span>
                 </li>

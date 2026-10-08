@@ -61,7 +61,7 @@ describe('Business landing page: hero and bridge', () => {
     useCurrentUser.getState().clearUser();
   });
 
-  it('opens with the two-line promise, description, and two calls to action', () => {
+  it('opens with the two-line promise and offers pricing, product detail, and the enterprise trial', () => {
     renderBusiness();
 
     expect(screen.getByText('Biết đội ngũ đang thiếu gì.')).toBeInTheDocument();
@@ -69,6 +69,7 @@ describe('Business landing page: hero and bridge', () => {
     expect(screen.getByText(/Đánh giá, đào tạo và xác nhận năng lực bằng minh chứng công việc thực tế\./)).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'Xem bảng giá' })[0]).toHaveAttribute('href', '/business/pricing');
     expect(screen.getByRole('link', { name: 'Xem cách hoạt động' })).toHaveAttribute('href', '#cach-hoat-dong');
+    expect(screen.getByRole('link', { name: 'Trải nghiệm Enterprise' })).toHaveAttribute('href', '/business/try');
   });
 
   it('keeps the hero clean without dashboard sample data fragments', () => {

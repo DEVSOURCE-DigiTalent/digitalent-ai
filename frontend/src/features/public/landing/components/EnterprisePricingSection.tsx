@@ -108,13 +108,15 @@ function PlanPanel({ plan, seats }: { plan: Plan; seats: number }) {
       aria-label={`Gói ${plan.name}`}
       data-featured={plan.recommended || undefined}
       className={cn(
-        'flex flex-col rounded-[20px] p-7 ring-1',
-        plan.recommended ? 'bg-landing-card ring-2 ring-cream/70 md:-my-4 md:p-9' : 'bg-landing-panel ring-cream/10',
+        'flex flex-col rounded-[20px] p-7 ring-1 transition-all duration-300',
+        plan.recommended
+          ? 'bg-landing-card ring-2 ring-amber-400/60 shadow-[0_12px_36px_rgba(245,202,101,0.12)] md:-my-4 md:p-9'
+          : 'bg-landing-panel ring-cream/10 hover:ring-cream/20',
       )}
     >
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-xl font-medium tracking-[-0.02em]">{plan.name}</h3>
-        {plan.recommended && <span className="rounded-full bg-cream-soft px-3 py-1 text-[11px] font-medium text-black">Nên chọn</span>}
+        {plan.recommended && <span className="rounded-full bg-cream-soft px-3 py-1 text-[11px] font-semibold text-black">Nên chọn</span>}
       </div>
       <p className="mt-2 min-h-[2.8em] text-base leading-[1.5] text-stone-400">{plan.tagline}</p>
 
@@ -142,7 +144,7 @@ function PlanPanel({ plan, seats }: { plan: Plan; seats: number }) {
       <ul className="mt-6 grid flex-1 content-start gap-2.5 text-base text-cream/90">
         {plan.highlights.map((point) => (
           <li key={point} className="grid grid-cols-[16px_minmax(0,1fr)] gap-2.5 leading-[1.45]">
-            <Check className="mt-[3px] size-3.5 text-cream-soft" strokeWidth={2.5} aria-hidden="true" />
+            <Check className="mt-[3px] size-3.5 text-[#79E0C2]" strokeWidth={2.5} aria-hidden="true" />
             {point}
           </li>
         ))}
@@ -151,7 +153,7 @@ function PlanPanel({ plan, seats }: { plan: Plan; seats: number }) {
       {contactOnly && (
         <a
           href={`mailto:${SALES_EMAIL}?subject=${encodeURIComponent('Tư vấn gói Enterprise')}`}
-          className="mt-8 inline-flex items-center justify-center rounded-full border border-cream/30 px-6 py-3 text-sm text-cream transition-colors hover:border-cream/70"
+          className="mt-8 inline-flex items-center justify-center rounded-full border border-cream/30 px-6 py-3 text-sm text-cream transition-colors hover:border-cream/70 hover:bg-cream/5"
         >
           Liên hệ tư vấn
         </a>
@@ -160,8 +162,10 @@ function PlanPanel({ plan, seats }: { plan: Plan; seats: number }) {
         <Link
           to={choose}
           className={cn(
-            'group mt-8 inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-opacity hover:opacity-90',
-            plan.recommended ? 'bg-cream-soft text-black' : 'border border-cream/30 text-cream',
+            'group mt-8 inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all duration-300',
+            plan.recommended
+              ? 'bg-cream-soft text-black font-semibold hover:shadow-[0_6px_20px_rgba(245,202,101,0.35)] hover:brightness-105'
+              : 'border border-cream/30 text-cream hover:border-cream/70 hover:bg-cream/5',
           )}
         >
           Chọn gói {plan.name}

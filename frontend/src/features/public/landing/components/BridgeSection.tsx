@@ -2,6 +2,7 @@ import { Fragment, useEffect, useRef } from 'react';
 import { SECTION_IDS, type LandingSectionConfig } from '../landing-content';
 import { useLandingMotion } from '../landing-motion';
 import { revealOpacity, revealProgress } from '../reveal-text';
+import { LP_TITLE } from '../landing-type';
 
 type BridgeSection = Extract<LandingSectionConfig, { kind: 'bridge' }>;
 
@@ -57,7 +58,7 @@ export function BridgeSection({ section }: { section: BridgeSection }) {
         <h2
           id="lp-bridge-title"
           data-line=""
-          className="text-balance text-[clamp(34px,5.6vw,76px)] font-normal leading-[1.04] tracking-[-0.03em] text-cream"
+          className={LP_TITLE}
         >
           {section.statement}
         </h2>
@@ -65,11 +66,11 @@ export function BridgeSection({ section }: { section: BridgeSection }) {
         <ul className="grid gap-6 md:gap-8">
           {section.questions.map((question, index) => (
             <Fragment key={question}>
-              <li data-line="" className="text-balance font-landing-serif text-[clamp(22px,3vw,40px)] italic leading-[1.2] tracking-[-0.01em] text-cream/90">
+              <li data-line="" className="text-balance font-landing-serif text-[clamp(22px,2.5vw,34px)] italic leading-[1.25] tracking-[-0.01em] text-cream/90 transition-colors duration-300 hover:text-[#F5CA65]">
                 {question}
               </li>
               {index < section.questions.length - 1 && (
-                <li aria-hidden="true" className="text-cream/30">
+                <li aria-hidden="true" className="text-amber-400/50 text-base">
                   ↓
                 </li>
               )}

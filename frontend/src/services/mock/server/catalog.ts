@@ -26,12 +26,12 @@ export interface CatalogCompetency {
 }
 
 export const CATEGORIES: CatalogCategory[] = [
-  { id: 'cat-1', code: 'TT02-D1', name: 'Khai thác dữ liệu và thông tin', sortOrder: 1 },
-  { id: 'cat-2', code: 'TT02-D2', name: 'Giao tiếp và hợp tác trong môi trường số', sortOrder: 2 },
-  { id: 'cat-3', code: 'TT02-D3', name: 'Sáng tạo nội dung số', sortOrder: 3 },
-  { id: 'cat-4', code: 'TT02-D4', name: 'An toàn', sortOrder: 4 },
-  { id: 'cat-5', code: 'TT02-D5', name: 'Giải quyết vấn đề', sortOrder: 5 },
-  { id: 'cat-6', code: 'TT02-D6', name: 'Ứng dụng trí tuệ nhân tạo', sortOrder: 6 },
+  { id: 'cat-1', code: 'D1', name: 'Khai thác dữ liệu và thông tin', sortOrder: 1 },
+  { id: 'cat-2', code: 'D2', name: 'Giao tiếp và hợp tác trong môi trường số', sortOrder: 2 },
+  { id: 'cat-3', code: 'D3', name: 'Sáng tạo nội dung số', sortOrder: 3 },
+  { id: 'cat-4', code: 'D4', name: 'An toàn', sortOrder: 4 },
+  { id: 'cat-5', code: 'D5', name: 'Giải quyết vấn đề', sortOrder: 5 },
+  { id: 'cat-6', code: 'D6', name: 'Ứng dụng trí tuệ nhân tạo', sortOrder: 6 },
 ];
 
 const LEVEL_INDICATORS: Record<number, string> = {
@@ -54,7 +54,7 @@ function criteriaFor(frameworkCode: string): CompetencyCriterion[] {
     behaviorIndicator: LEVEL_INDICATORS[level],
     assessmentGuidance: 'Đánh giá qua câu hỏi tình huống gắn với công việc của vị trí.',
     evidenceGuidance: LEVEL_EVIDENCE[level],
-    sourceNote: 'Thông tư 02/2025/TT-BGDĐT',
+    sourceNote: 'Khung chuẩn năng lực số',
     sortOrder: level,
   }));
 }
@@ -62,10 +62,10 @@ function criteriaFor(frameworkCode: string): CompetencyCriterion[] {
 export const COMPETENCIES: CatalogCompetency[] = Object.entries(TT02_COMPETENCY_NAMES).map(([frameworkCode, name]) => ({
   id: `cmp-${frameworkCode.replace('.', '-')}`,
   frameworkCode,
-  code: `TT02-${frameworkCode}`,
+  code: `CMP-${frameworkCode}`,
   name,
   categoryId: `cat-${frameworkCode.split('.')[0]}`,
-  description: `Năng lực ${frameworkCode} của khung năng lực số theo Thông tư 02/2025/TT-BGDĐT.`,
+  description: `Năng lực ${frameworkCode} của Khung chuẩn năng lực số.`,
   criteria: criteriaFor(frameworkCode),
 }));
 

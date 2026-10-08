@@ -26,7 +26,7 @@ export function PlatformPositionsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Vị trí tham chiếu chuẩn nền tảng"
-        subtitle="5 vị trí công việc mẫu chuẩn hóa theo Khung năng lực Thông tư 02/2025/TT-BGDĐT"
+        subtitle="5 vị trí công việc mẫu chuẩn hóa theo Khung chuẩn năng lực số"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

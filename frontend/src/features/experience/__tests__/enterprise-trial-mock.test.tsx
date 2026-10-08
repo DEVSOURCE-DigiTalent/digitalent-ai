@@ -1,0 +1,42 @@
+import { beforeEach, describe, expect, it } from 'vitest';
+import { mockEnterpriseTrialService as service } from '../enterprise-trial/mock-trial-adapter';
+import { resetMockDb } from '@/services/mock/mock-store';
+
+beforeEach(() => { localStorage.clear(); resetMockDb(); });
+describe('persisted mock trial lifecycle', () => {
+  it('supports registration, owner selection, invited employee answers, persisted path and owner results', async () => {
+    const registration = await service.register({ organizationName: 'Demo', ownerName: 'Owner', email: 'owner@demo.test', password: 'demo-password-123', industry: 'technology', size: '1-20', goal: 'onboarding', acceptedTerms: true });
+    const token = new URL(registration.data.data!.developmentLink!, 'http://localhost').searchParams.get('token')!;
+    expect(localStorage.getItem('dt-mock-enterprise-guided-trial-v1')).not.toContain('demo-password-123');
+    await service.verify(token, 'demo-password-123');
+    await expect(service.verify(token, 'demo-password-123')).rejects.toBeDefined();
+    const login = await service.login('owner@demo.test', 'demo-password-123'); localStorage.setItem('accessToken', login.data.data!.accessToken);
+    const owner = (await service.currentUser()).data.data!;
+    expect(owner.enterpriseTrialStatus).toBe('trial_active');
+    expect(owner.subscription).toMatchObject({ planCode: 'ENT_TRIAL', status: 'trialing', seatLimit: 5 });
+    const context = (await service.context()).data.data!;
+    expect(context.publicationReadiness.developmentOnly).toBe(true); expect(context.publicationReadiness.productionReady).toBe(false);
+    await service.selectPosition('demo-crm', 'Team');
+    const invitation = (await service.invite('Employee', 'employee@demo.test', 'Employee')).data.data!;
+    expect(localStorage.getItem('dt-mock-enterprise-guided-trial-v1')).not.toContain('"token"');
+    const inviteToken = new URL(invitation.developmentLink!, 'http://localhost').searchParams.get('token')!;
+    await service.accept(inviteToken, 'demo-password-123');
+    localStorage.setItem('accessToken', (await service.login('employee@demo.test', 'demo-password-123')).data.data!.accessToken);
+    const attempt = (await service.startDiagnostic()).data.data!;
+    const saved = (await service.saveAnswers(attempt.attemptId, attempt.revision, [{ questionId: attempt.questions[0].id, optionId: attempt.questions[0].options[0].id }])).data.data!;
+    expect((await service.diagnostic()).data.data!.savedAnswers).toEqual(saved.savedAnswers);
+    await expect(service.saveAnswers(attempt.attemptId, attempt.revision, [])).rejects.toBeDefined();
+    const result = (await service.submitDiagnostic(attempt.attemptId)).data.data!;
+    expect(result.items.some(item => item.classification === 'insufficient_data')).toBe(true);
+    const path = (await service.path()).data.data!;
+    await service.startPathItem(path.items[0].id);
+    await expect(service.startPathItem(path.items[1].id)).rejects.toBeDefined();
+    await service.progressPathItem(path.items[0].id, 100);
+    expect((await service.path()).data.data!.items[1].allowedToStart).toBe(true);
+    expect((await service.pathContent(path.items[0].id)).data.data!.body).toContain('minh họa');
+    localStorage.setItem('accessToken', login.data.data!.accessToken);
+    const rows = (await service.results()).data.data!;
+    expect(rows[0].result).toEqual(result); expect(rows[0].state).toBe('learning_in_progress');
+    expect((await service.requestConversion()).data.data!.status).toBe('trial_active');
+  });
+});

@@ -235,7 +235,7 @@ export function EvaluateEvidencePage() {
                 <CheckCircle2 className={`size-5 ${decision === 'APPROVED' ? 'text-emerald-600' : 'text-slate-400'}`} />
                 <div>
                   <p className="font-bold text-xs">Đạt chuẩn (Phê duyệt)</p>
-                  <p className="text-[11px] text-slate-500">Ghi nhận năng lực TT02</p>
+                  <p className="text-[11px] text-slate-500">Ghi nhận năng lực số</p>
                 </div>
               </button>
 

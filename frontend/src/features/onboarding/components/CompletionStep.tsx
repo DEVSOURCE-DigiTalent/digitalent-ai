@@ -24,6 +24,11 @@ function checklistFor(setup: OrganizationSetup): ChecklistItem[] {
       done: Boolean(setup.organization),
     },
     {
+      label: 'Cấp bậc (G1–G3)',
+      detail: setup.grades?.length ? `${setup.grades.length} cấp bậc chuẩn hóa` : '3 cấp bậc (G1–G3)',
+      done: true,
+    },
+    {
       label: 'Phòng ban',
       detail: setup.departments.length
         ? `${setup.departments.length} phòng ban`
@@ -33,9 +38,16 @@ function checklistFor(setup: OrganizationSetup): ChecklistItem[] {
     {
       label: 'Vị trí công việc',
       detail: setup.positions.length
-        ? `${setup.positions.length} vị trí công việc đã thiết lập`
+        ? `${setup.positions.length} vị trí đã cấu hình Cấp bậc`
         : 'Chưa chọn, thêm sau trong mục Vị trí',
       done: setup.positions.length > 0,
+    },
+    {
+      label: 'Nhân viên & Phân quyền',
+      detail: setup.invitations.length
+        ? `Đã mời ${setup.invitations.length} người`
+        : 'Chưa mời, thêm sau trong mục Thành viên',
+      done: setup.invitations.length > 0,
     },
   ];
 }
@@ -64,8 +76,8 @@ export function CompletionStep({ setup, onBack }: { setup: OrganizationSetup; on
     <div className="grid max-w-xl gap-6">
       {/* Org identity snippet */}
       {setup.organization && (
-        <div className="flex items-center gap-3.5 rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-lg border border-slate-100 bg-slate-50">
+        <div className="flex items-center gap-3.5 rounded-xl border border-ent-line bg-ent-card p-4 shadow-md ring-1 ring-amber-400/10">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-lg border border-ent-line bg-ent-raised text-ent-fg-3">
             {setup.organization.logoUrl ? (
               <img
                 src={setup.organization.logoUrl}
@@ -76,38 +88,38 @@ export function CompletionStep({ setup, onBack }: { setup: OrganizationSetup; on
                 }}
               />
             ) : (
-              <Building2 className="size-6 text-slate-400" />
+              <Building2 className="size-6 text-[#F5CA65]" />
             )}
           </div>
           <div>
-            <p className="font-semibold text-slate-900">{setup.organization.name}</p>
-            <p className="text-xs text-slate-500">
+            <p className="font-semibold text-ent-fg">{setup.organization.name}</p>
+            <p className="text-xs text-ent-fg-3">
               {setup.organization.industry} · {setup.organization.size} · Múi giờ {setup.organization.timezone || 'Asia/Ho_Chi_Minh'}
             </p>
           </div>
         </div>
       )}
 
-      <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white shadow-xs">
+      <ul className="divide-y divide-ent-line rounded-xl border border-ent-line bg-ent-card shadow-md ring-1 ring-amber-400/10">
         {items.map((item) => (
           <li key={item.label} className="flex items-start gap-3 px-4 py-3.5">
             {item.done ? (
-              <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" aria-label="Đã xong" />
+              <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-400" aria-label="Đã xong" />
             ) : (
-              <Circle className="mt-0.5 size-5 shrink-0 text-slate-300" aria-label="Chưa làm" />
+              <Circle className="mt-0.5 size-5 shrink-0 text-ent-fg-3/40" aria-label="Chưa làm" />
             )}
             <div>
-              <p className="text-sm font-medium text-slate-900">{item.label}</p>
-              <p className="text-xs text-slate-500">{item.detail}</p>
+              <p className="text-sm font-medium text-ent-fg">{item.label}</p>
+              <p className="text-xs text-ent-fg-3">{item.detail}</p>
             </div>
           </li>
         ))}
       </ul>
 
-      <div className="rounded-xl border border-primary-200 bg-primary-50/70 p-4 text-xs leading-relaxed text-primary-950">
-        <p className="font-semibold text-primary-900 text-sm">Việc tiếp theo sau khi khởi tạo</p>
-        <p className="mt-1">
-          Thiết lập <strong>Bộ yêu cầu năng lực</strong> cho từng vị trí công việc theo chuẩn Thông tư 02/2025/TT-BKHCN
+      <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-4 text-xs leading-relaxed text-ent-fg ring-1 ring-amber-400/20">
+        <p className="font-semibold text-[#F5CA65] text-sm">Việc tiếp theo sau khi khởi tạo</p>
+        <p className="mt-1 text-ent-fg-2">
+          Thiết lập <strong>Bộ yêu cầu năng lực</strong> cho từng vị trí công việc theo Khung chuẩn năng lực số
           để hệ thống tự động đo lường khoảng trống năng lực (Skill Gap) và gợi ý lộ trình đào tạo phù hợp cho nhân viên.
         </p>
       </div>

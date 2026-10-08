@@ -11,6 +11,10 @@ export const MOCK_EMAILS = {
   starterOwner: 'starter@digitalent.demo',
   expiredOwner: 'expired@digitalent.demo',
   personal: 'personal@digitalent.demo',
+  /** Individual on day 5 of a 7-day trial (2 of 3 course slots used). */
+  trial: 'trial@digitalent.demo',
+  /** Individual whose trial ended three days ago (Free plan). */
+  free: 'free@digitalent.demo',
   platform: 'platform@digitalent.demo',
   /** Legacy aliases for tests migrating to v2.1 */
   orgAdmin: 'owner@digitalent.demo',

@@ -36,7 +36,7 @@ export function MyCompetencyProfilePage() {
     <div className="space-y-6 pb-16">
       <PageHeader
         title="Hồ sơ năng lực của tôi"
-        subtitle="Hồ sơ năng lực số chuẩn hóa theo Thông tư 02/2025/TT-BGDĐT gắn với vị trí việc làm của bạn."
+        subtitle="Hồ sơ năng lực số chuẩn hóa gắn với vị trí việc làm của bạn theo Khung chuẩn năng lực số."
       />
 
       <MyCompetencyTabs />

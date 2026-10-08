@@ -53,7 +53,7 @@ export function HeroSection({ metaRef }: HeroSectionProps) {
               )}
               {content.heroHeadline && (
                 <p
-                  className="lp-fade-rise max-w-[20ch] text-balance text-[clamp(32px,4.8vw,72px)] font-normal leading-[1.08] tracking-[-0.03em] text-cream"
+                  className="lp-fade-rise max-w-[20ch] text-balance text-[clamp(32px,4.2vw,60px)] font-normal leading-[1.08] tracking-[-0.03em] text-cream"
                   style={delay(0.25)}
                 >
                   {content.heroHeadline.map((line) => (
@@ -73,7 +73,7 @@ export function HeroSection({ metaRef }: HeroSectionProps) {
               <div className="lp-fade-rise flex flex-col items-start gap-3.5 sm:flex-row sm:items-center sm:gap-6" style={delay(0.55)}>
                 <Link
                   to={cta.to}
-                  className="group inline-flex items-center gap-2 rounded-full bg-cream-soft py-[6px] pl-7 pr-[6px] text-base font-medium text-black transition-[gap] duration-300 ease-cinematic hover:gap-3 sm:text-lg"
+                  className="group inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-cream-soft py-[6px] pl-7 pr-[6px] text-base font-medium text-black transition-[gap] duration-300 ease-cinematic hover:gap-3 sm:text-lg"
                 >
                   {cta.isSignedIn ? 'Vào hệ thống' : content.cta.heroLabel}
                   <span className="grid size-11 place-items-center rounded-full bg-black text-cream-soft transition-transform duration-300 ease-cinematic motion-safe:group-hover:scale-110 sm:size-12" aria-hidden="true">
@@ -86,6 +86,11 @@ export function HeroSection({ metaRef }: HeroSectionProps) {
                   </div>
                 )}
               </div>
+              {content.cta.trialLabel && content.cta.trialTo && !cta.isSignedIn && (
+                <div className="lp-fade-rise pl-1 sm:pl-0" style={delay(0.65)}>
+                  <SecondaryLink to={content.cta.trialTo}>{content.cta.trialLabel}</SecondaryLink>
+                </div>
+              )}
             </div>
           </div>
 

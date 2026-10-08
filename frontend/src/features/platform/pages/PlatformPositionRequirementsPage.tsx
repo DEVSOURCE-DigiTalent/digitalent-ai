@@ -91,7 +91,7 @@ export function PlatformPositionRequirementsPage() {
 
       <PageHeader
         title={`Yêu cầu năng lực chuẩn: ${position.name}`}
-        subtitle={`Thiết lập trình độ năng lực yêu cầu chuẩn Thông tư 02/2025/TT-BGDĐT cho vị trí ${position.name}`}
+        subtitle={`Thiết lập trình độ năng lực yêu cầu theo Khung chuẩn năng lực số cho vị trí ${position.name}`}
       />
 
       {saveSuccess && (

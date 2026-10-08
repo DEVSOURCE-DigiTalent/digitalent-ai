@@ -126,9 +126,9 @@ export function EnterpriseContractPage() {
 
       <div className="grid gap-8 lg:grid-cols-12 items-start">
         {/* Cột trái: Văn bản hợp đồng điện tử & Điều khoản DPA */}
-        <section className="lg:col-span-7 rounded-3xl bg-landing-panel p-6 sm:p-8 ring-1 ring-cream/15 space-y-6 max-h-[700px] overflow-y-auto text-xs text-stone-300 leading-relaxed font-sans">
-          <div className="border-b border-cream/10 pb-5 text-center space-y-2">
-            <p className="text-[11px] uppercase tracking-wider text-cream-soft font-mono">
+        <section className="lg:col-span-7 rounded-3xl bg-landing-panel p-6 sm:p-8 ring-1 ring-amber-400/20 shadow-xl shadow-amber-950/20 space-y-6 max-h-[700px] overflow-y-auto text-xs text-stone-300 leading-relaxed font-sans">
+          <div className="border-b border-amber-400/15 pb-5 text-center space-y-2">
+            <p className="text-[11px] uppercase tracking-wider text-[#F5CA65] font-mono">
               CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
             </p>
             <p className="text-[11px] font-medium text-stone-400">Độc lập - Tự do - Hạnh phúc</p>
@@ -145,7 +145,7 @@ export function EnterpriseContractPage() {
           <div className="space-y-4">
             <div>
               <h3 className="font-semibold text-cream mb-1">BÊN A (BÊN CUNG CẤP DỊCH VỤ):</h3>
-              <ul className="space-y-1 pl-3 text-stone-400">
+              <ul className="space-y-1 pl-3 text-stone-300">
                 <li>• <strong>CÔNG TY CỔ PHẦN CÔNG NGHỆ DIGITALENT AI</strong></li>
                 <li>• Mã số thuế: <span className="italic">[Chờ pháp chế cung cấp]</span></li>
                 <li>• Đại diện pháp lý: <span className="italic">[Chờ pháp chế cung cấp]</span></li>
@@ -156,7 +156,7 @@ export function EnterpriseContractPage() {
 
             <div>
               <h3 className="font-semibold text-cream mb-1">BÊN B (BÊN SỬ DỤNG DỊCH VỤ):</h3>
-              <ul className="space-y-1 pl-3 text-stone-400">
+              <ul className="space-y-1 pl-3 text-stone-300">
                 <li>• Tên doanh nghiệp: <strong className="text-cream">{orgName || '[Chưa nhập]'}</strong></li>
                 <li>• Mã số thuế: <span className="text-cream font-mono">{taxCode || '[Chưa nhập]'}</span></li>
                 <li>• Địa chỉ: <span className="text-cream">{address || '[Chưa nhập]'}</span></li>
@@ -173,7 +173,7 @@ export function EnterpriseContractPage() {
                   <span>{planName}</span>
                   <span className="font-mono">{formatVnd(totalAmount)}</span>
                 </div>
-                <div className="flex justify-between text-[11px] text-stone-400">
+                <div className="flex justify-between text-[11px] text-stone-300">
                   <span>Quy mô: {seats} người dùng</span>
                   <span>Chu kỳ: {cycle === 'year' ? '12 tháng (Tiết kiệm 20%)' : 'Hàng tháng'}</span>
                 </div>
@@ -185,7 +185,7 @@ export function EnterpriseContractPage() {
               <p>
                 Căn cứ Nghị định 13/2023/NĐ-CP và Luật Bảo vệ dữ liệu cá nhân 2025 (Luật số 91/2025/QH15, có hiệu lực từ ngày 01/01/2026):
               </p>
-              <ul className="mt-1 space-y-1 pl-3 text-stone-400 list-disc list-inside">
+              <ul className="mt-1 space-y-1 pl-3 text-stone-300 list-disc list-inside">
                 <li>Bên B là <strong>Bên Kiểm soát dữ liệu cá nhân</strong> đối với toàn bộ thông tin nhân sự và kết quả đánh giá kỹ năng của nhân viên đưa lên nền tảng.</li>
                 <li>Bên A là <strong>Bên Xử lý dữ liệu cá nhân</strong>, cam kết chỉ xử lý dữ liệu theo phạm vi hợp đồng và ủy quyền của Bên B; áp dụng các biện pháp kỹ thuật và tổ chức bảo vệ an toàn dữ liệu.</li>
               </ul>
@@ -215,9 +215,9 @@ export function EnterpriseContractPage() {
         {/* Cột phải: Form thông tin pháp nhân & Ký kết OTP */}
         <section className="lg:col-span-5 flex flex-col gap-5">
           {!isSigned ? (
-            <div className="rounded-3xl bg-landing-panel p-6 sm:p-7 ring-1 ring-cream/15 space-y-4">
+            <div className="rounded-3xl bg-landing-panel p-6 sm:p-7 ring-1 ring-amber-400/20 shadow-xl shadow-amber-950/20 space-y-4">
               <div className="flex items-center gap-2">
-                <FileText className="size-5 text-cream-soft" />
+                <FileText className="size-5 text-[#F5CA65]" />
                 <h2 className="text-base font-medium text-cream">Thông tin pháp nhân ký hợp đồng</h2>
               </div>
 
@@ -296,10 +296,10 @@ export function EnterpriseContractPage() {
                 </label>
 
                 {/* Khung OTP xác thực */}
-                <div className="pt-2 border-t border-cream/10 space-y-3">
+                <div className="pt-2 border-t border-amber-400/15 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-cream flex items-center gap-1.5">
-                      <KeyRound className="size-3.5 text-cream-soft" />
+                      <KeyRound className="size-3.5 text-[#F5CA65]" />
                       Xác thực OTP qua email
                     </span>
                     {!otpSent ? (
@@ -307,7 +307,7 @@ export function EnterpriseContractPage() {
                         type="button"
                         onClick={() => sendOtpMutation.mutate()}
                         disabled={sendOtpMutation.isPending}
-                        className="text-xs text-cream underline hover:text-cream-soft"
+                        className="text-xs text-[#F5CA65] underline hover:text-amber-300 font-medium"
                       >
                         {sendOtpMutation.isPending ? 'Đang gửi…' : 'Gửi mã OTP'}
                       </button>

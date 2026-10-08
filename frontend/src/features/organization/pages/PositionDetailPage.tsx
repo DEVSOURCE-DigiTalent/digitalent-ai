@@ -93,7 +93,7 @@ export function PositionDetailPage() {
 
         {tab === 'requirements' &&
           (!hasSet ? (
-            <EmptyState title="Chưa có yêu cầu năng lực" description="Chọn từ 9 đến 24 năng lực của Thông tư 02/2025 và đặt trình độ yêu cầu cho từng năng lực." action={<Link to={`/enterprise/positions/requirements?positionId=${id}`} className={PRIMARY_BUTTON}>Đặt yêu cầu năng lực</Link>} />
+            <EmptyState title="Chưa có yêu cầu năng lực" description="Chọn từ 9 đến 24 năng lực của Khung chuẩn năng lực số và đặt trình độ yêu cầu cho từng năng lực." action={<Link to={`/enterprise/positions/requirements?positionId=${id}`} className={PRIMARY_BUTTON}>Đặt yêu cầu năng lực</Link>} />
           ) : (
             <div className="grid gap-5">
               {domains.map((group) => (

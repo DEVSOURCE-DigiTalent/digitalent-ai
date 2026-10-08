@@ -9,6 +9,7 @@ import { PurchaseStepper } from '../components/PurchaseStepper';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useRefreshSession } from '@/hooks/use-refresh-session';
 import { getHomePath } from '@/lib/navigation';
+import { isIndividualUpgrader } from '@/lib/personal-access';
 import { WORKSPACES, resolveWorkspace } from '@/lib/roles';
 import { USE_MOCK } from '@/services/mock/mock-config';
 import { checkoutService } from '@/services/checkout.service';
@@ -29,6 +30,8 @@ export function CheckoutPage() {
   const user = useCurrentUser((s) => s.user);
   const [searchParams] = useSearchParams();
   const draftIdParam = searchParams.get('draft');
+  // An account that still has to pay, or a trial / Free learner upgrading (BR-17).
+  const canPay = Boolean(user && (user.onboardingStatus === 'payment' || isIndividualUpgrader(user)));
 
   const draftQuery = useQuery({
     queryKey: ['checkout', 'draft', draftIdParam, user?.id],
@@ -42,13 +45,13 @@ export function CheckoutPage() {
       }
       return (await purchaseService.getMyDraft()).data.data;
     },
-    enabled: Boolean(user && user.onboardingStatus === 'payment'),
+    enabled: canPay,
   });
 
   const pendingPlanQuery = useQuery({
     queryKey: ['checkout', 'pending-plan', user?.id],
     queryFn: async () => (await checkoutService.getPendingPlan()).data.data,
-    enabled: Boolean(user && user.onboardingStatus === 'payment' && !draftQuery.data && !draftQuery.isLoading),
+    enabled: canPay && !draftQuery.data && !draftQuery.isLoading,
   });
 
   // If visitor is not signed in, redirect to login
@@ -64,7 +67,7 @@ export function CheckoutPage() {
   }
 
   // Only an account that still has to pay belongs here; everyone else moves forward
-  if (user.onboardingStatus !== 'payment') {
+  if (!canPay) {
     return <Navigate to={getHomePath(user)} replace />;
   }
 
@@ -184,8 +187,8 @@ function CheckoutBody({ selection, pricingPath, draft, audience }: CheckoutBodyP
 
       {/* Enterprise: Company Invoice info from Step 3 Contract */}
       {audience === 'enterprise' && draft?.companyInfo && (
-        <div className="rounded-2xl bg-landing-panel px-5 py-3.5 ring-1 ring-cream/10 text-xs space-y-1">
-          <span className="text-stone-400 block text-[11px] uppercase tracking-wide">
+        <div className="rounded-2xl bg-landing-panel px-5 py-3.5 ring-1 ring-amber-400/20 text-xs space-y-1">
+          <span className="text-[#F5CA65] font-semibold block text-[11px] uppercase tracking-wide">
             Thông tin xuất hóa đơn VAT (theo hợp đồng):
           </span>
           <p className="font-medium text-cream">{draft.companyInfo.organizationName}</p>
@@ -194,10 +197,18 @@ function CheckoutBody({ selection, pricingPath, draft, audience }: CheckoutBodyP
         </div>
       )}
 
+      {/* Trial or Free learner: what the upgrade keeps (BR-12, BR-14, BR-17) */}
+      {audience === 'individual' && isIndividualUpgrader(user) && (
+        <p className="rounded-2xl bg-landing-panel px-5 py-3.5 text-xs leading-[1.6] text-stone-300 ring-1 ring-emerald-400/25">
+          Nâng cấp giữ nguyên hồ sơ, tiến độ và các chứng nhận chờ cấp.
+          {user.subscription?.status === 'trialing' && ' Kỳ trả phí tính từ ngày thanh toán; số ngày dùng thử còn lại không cộng dồn.'}
+        </p>
+      )}
+
       {/* Individual: Terms & auto-renewal consent summary */}
       {audience === 'individual' && (
-        <div className="rounded-2xl bg-landing-panel p-4 ring-1 ring-cream/10 text-xs text-stone-300 space-y-2">
-          <h3 className="font-medium text-cream">Điều khoản gia hạn & hoàn tiền</h3>
+        <div className="rounded-2xl bg-landing-panel p-4 ring-1 ring-amber-400/20 text-xs text-stone-300 space-y-2">
+          <h3 className="font-medium text-[#F5CA65]">Điều khoản gia hạn & hoàn tiền</h3>
           <ul className="space-y-1 text-stone-400 text-[11px] list-disc list-inside">
             <li>Gói cước tự động gia hạn định kỳ theo chu kỳ đã chọn ({selection.cycle === 'year' ? '12 tháng' : 'hàng tháng'}).</li>
             <li>Hủy gia hạn dễ dàng bất kỳ lúc nào tại mục Cài đặt tài khoản trước kỳ thanh toán tiếp theo.</li>
@@ -207,7 +218,7 @@ function CheckoutBody({ selection, pricingPath, draft, audience }: CheckoutBodyP
       )}
 
       {/* Account email & change email action */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-landing-panel px-5 py-3.5 ring-1 ring-cream/10 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-landing-panel px-5 py-3.5 ring-1 ring-amber-400/20 text-sm">
         <div className="min-w-0">
           <span className="text-stone-400 text-xs block">Tài khoản nhận hóa đơn & quản trị:</span>
           <span className="font-medium text-cream truncate">{user.email}</span>
@@ -219,7 +230,7 @@ function CheckoutBody({ selection, pricingPath, draft, audience }: CheckoutBodyP
             setEmailError(undefined);
             setShowEmailDialog(true);
           }}
-          className="text-xs text-cream underline decoration-cream/40 underline-offset-4 hover:decoration-cream"
+          className="text-xs font-medium text-[#F5CA65] underline decoration-amber-400/40 underline-offset-4 hover:decoration-amber-400"
         >
           Thay đổi
         </button>
@@ -231,7 +242,7 @@ function CheckoutBody({ selection, pricingPath, draft, audience }: CheckoutBodyP
 
       {/* Change email dialog */}
       {showEmailDialog && (
-        <div className="rounded-2xl border border-cream/20 bg-landing-panel p-5 ring-1 ring-cream/10 space-y-3">
+        <div className="rounded-2xl border border-amber-400/30 bg-landing-panel p-5 ring-1 ring-amber-400/20 space-y-3 shadow-xl shadow-black/40">
           <h3 className="text-sm font-medium text-cream">Thay đổi email tài khoản</h3>
           <p className="text-xs text-stone-400">
             Email mới sẽ nhận thông tin thanh toán và liên kết xác minh tài khoản.

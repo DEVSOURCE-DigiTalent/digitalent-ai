@@ -1,6 +1,6 @@
 import type { PageRegistry } from '../build-routes';
 
-import { TeamCapabilityDashboardPage } from '../../../features/team/pages/TeamCapabilityDashboardPage';
+import { TrialAwareManagerDashboardPage } from '../../../features/experience/enterprise-trial/TrialAwareDashboardPages';
 import { TeamMembersPage } from '../../../features/team/pages/TeamMembersPage';
 import { TeamMemberDetailPage } from '../../../features/team/pages/TeamMemberDetailPage';
 import { TeamCompetencyMatrixPage } from '../../../features/team/pages/TeamCompetencyMatrixPage';
@@ -11,7 +11,7 @@ import { TrainingAssignmentDetailPage } from '../../../features/team/pages/Train
 /** MANAGER page registry mapping screen IDs (MG-*) to components. */
 export const MANAGER_PAGES: PageRegistry = {
   // v2.1 IDs
-  'MG-01': TeamCapabilityDashboardPage,
+  'MG-01': TrialAwareManagerDashboardPage,
   'MG-02': TeamMembersPage,
   'MG-03': TeamMemberDetailPage,
   'MG-04': TeamCompetencyMatrixPage,

@@ -2,6 +2,8 @@ import {
   REFERENCE_POSITIONS, TT02_COMPETENCY_NAMES, TT02_DOMAINS, getReferencePosition, summarizeRequirements,
 } from '../../../../lib/reference-positions';
 import { levelLabelVi } from '../../../../lib/competency-levels';
+import { INDIVIDUAL_TRIAL } from '../../../../lib/plans';
+import type { AccessMode } from '../../../../lib/personal-access';
 import type {
   ActivityKind, DiagnosticResult, PathCourse, PathCourseStatus, PathStage, PersonalActivity, PersonalCertificate,
   PersonalCompetencyGap, PersonalCourseDetail, PersonalDomainLevel, PersonalMilestone, PersonalPath, PersonalSkillGap,
@@ -21,6 +23,15 @@ import type { PersonalState, StoredAttempt } from './personal-store';
 /** Pure rules of the personal track; handlers/personal.ts turns them into API answers. */
 
 export const ASSESSMENT_PASS_PERCENT = 75;
+
+/** What the plan lets the learner do, as the path, course and certificate builders need it. Defaults to everything. */
+export interface PlanView {
+  mode: AccessMode;
+  /** Trial slots the plan allows (read only when mode is 'trial'). */
+  courseLimit: number;
+}
+
+export const FULL_PLAN_VIEW: PlanView = { mode: 'full', courseLimit: INDIVIDUAL_TRIAL.courseLimit };
 const DIAGNOSTIC_SOURCE = 'Đánh giá đầu vào';
 const COMPETENCY_CODES = Object.keys(TT02_COMPETENCY_NAMES);
 const STAGE_TITLES: Record<number, string> = {
@@ -201,7 +212,22 @@ function progressOf(state: PersonalState, course: CatalogCourse): number {
   return Math.round((completedLessonCount(state, course) / lessonCount(course)) * 100);
 }
 
-function pathCourse(state: PersonalState, course: CatalogCourse, levels: Map<string, LevelInfo>, closes: string[]): PathCourse {
+/**
+ * Plan flags of a course (BR-16). `trialSlot`: the course is one of the learner's trial courses.
+ * `planLocked`: the plan will not open its lessons. Trial: a course outside the slots once they are used up,
+ * unless the entry assessment exempts it. Free: every course outside the slots.
+ */
+export function planFlags(state: PersonalState, plan: PlanView, courseId: string, exempt = false): { trialSlot: boolean; planLocked: boolean } {
+  if (plan.mode === 'full') return { trialSlot: false, planLocked: false };
+  const trialSlot = state.trialCourseIds.includes(courseId);
+  if (trialSlot) return { trialSlot, planLocked: false };
+  if (plan.mode === 'free') return { trialSlot, planLocked: true };
+  return { trialSlot, planLocked: !exempt && state.trialCourseIds.length >= plan.courseLimit };
+}
+
+function pathCourse(
+  state: PersonalState, course: CatalogCourse, levels: Map<string, LevelInfo>, closes: string[], plan: PlanView,
+): PathCourse {
   const domain = courseDomain(course);
   const done = completedCourses(state).has(course.id);
   return {
@@ -218,6 +244,7 @@ function pathCourse(state: PersonalState, course: CatalogCourse, levels: Map<str
     status: courseStatus(state, course, levels),
     prerequisiteTitle: course.prerequisiteCourseId ? COURSE_BY_ID.get(course.prerequisiteCourseId)?.title : undefined,
     closes,
+    ...planFlags(state, plan, course.id),
   };
 }
 
@@ -226,7 +253,7 @@ function pathCourse(state: PersonalState, course: CatalogCourse, levels: Map<str
  * in each domain, one course per level from just above the assessed level up to the highest required level.
  * Courses at or below the assessed level are exempt. Stages follow the levels, so prerequisites always come first.
  */
-export function buildPath(state: PersonalState): PersonalPath {
+export function buildPath(state: PersonalState, plan: PlanView = FULL_PLAN_VIEW): PersonalPath {
   const target = targetDto(state);
   const empty: PersonalPath = {
     target, assessed: Boolean(state.diagnostic), stages: [], exempt: [], totalCourses: 0, completedCourses: 0,
@@ -272,7 +299,7 @@ export function buildPath(state: PersonalState): PersonalPath {
         .filter(({ course }) => course.level === level)
         .sort((a, b) => priority(courseDomain(b.course).number) - priority(courseDomain(a.course).number)
           || a.course.code.localeCompare(b.course.code))
-        .map(({ course, closes }) => pathCourse(state, course, levels, closes)),
+        .map(({ course, closes }) => pathCourse(state, course, levels, closes, plan)),
     }))
     .filter((stage) => stage.courses.length > 0);
 
@@ -293,21 +320,35 @@ export function buildPath(state: PersonalState): PersonalPath {
     completedCourses: courses.filter((course) => course.status === 'COMPLETED').length,
     minutesLeft,
     progressPercent: totalLessons === 0 ? 0 : Math.round((doneLessons / totalLessons) * 100),
-    nextCourse: courses.find((course) => course.status === 'IN_PROGRESS')
-      ?? courses.find((course) => course.status === 'AVAILABLE')
-      ?? null,
+    nextCourse: nextCourseOf(courses, plan),
   };
 }
 
-export function courseDetail(state: PersonalState, course: CatalogCourse): PersonalCourseDetail {
+/** The course to offer next: one the plan lets the learner study. The Free plan opens no new lesson, so none. */
+function nextCourseOf(courses: PathCourse[], plan: PlanView): PathCourse | null {
+  if (plan.mode === 'free') return null;
+  const open = courses.filter((course) => !course.planLocked);
+  return open.find((course) => course.status === 'IN_PROGRESS') ?? open.find((course) => course.status === 'AVAILABLE') ?? null;
+}
+
+export function courseDetail(state: PersonalState, course: CatalogCourse, plan: PlanView = FULL_PLAN_VIEW): PersonalCourseDetail {
   const levels = competencyLevels(state);
-  const path = buildPath(state);
+  const path = buildPath(state, plan);
   const inPath = path.stages.some((stage) => stage.courses.some((item) => item.id === course.id));
   const exempt = path.exempt.some((item) => item.id === course.id);
   const done = state.lessons[course.id] ?? {};
+  const flags = planFlags(state, plan, course.id, exempt);
+  // What the plan does not open never leaves the server: a locked course, or on the Free plan a lesson not yet learned,
+  // comes without its content (the title stays, so the outline is still readable).
+  const closed = (completed: boolean) => plan.mode !== 'full' && (flags.planLocked || (plan.mode === 'free' && !completed));
   const modules = courseModules(course).map((module) => ({
     ...module,
-    lessons: module.lessons.map((lesson) => ({ ...lesson, completed: Boolean(done[lesson.id]) })),
+    lessons: module.lessons.map((lesson) => {
+      const completed = Boolean(done[lesson.id]);
+      return closed(completed)
+        ? { ...lesson, completed, summary: '', body: [], takeaways: [], practice: undefined }
+        : { ...lesson, completed };
+    }),
   }));
   const lessons = modules.flatMap((module) => module.lessons);
   const requirements = new Map(gapItems(state, levels).map((item) => [item.code, item.requiredLevel]));
@@ -333,6 +374,7 @@ export function courseDetail(state: PersonalState, course: CatalogCourse): Perso
     status: courseStatus(state, course, levels),
     inPath,
     exempt,
+    ...flags,
     modules,
     lessonCount: lessons.length,
     completedLessons: lessons.filter((lesson) => lesson.completed).length,
@@ -452,14 +494,23 @@ export function tasks(state: PersonalState): PersonalTask[] {
 
 export const certificateIdOf = (courseId: string) => `cert-${courseId.replace('crs-', '')}`;
 
-export function certificates(state: PersonalState, recipientName: string): PersonalCertificate[] {
+/**
+ * Certificates of the courses passed. With the full plan they are issued: the code carries the issue date, which is
+ * the pass date or, for a pass made during a trial or on the Free plan, the day the paid period started (BR-12).
+ * Otherwise they wait as PENDING_UPGRADE, with no code and no issue date.
+ */
+export function certificates(
+  state: PersonalState, recipientName: string, plan: PlanView = FULL_PLAN_VIEW, paidStartedAt?: string,
+): PersonalCertificate[] {
   return [...completedCourses(state).entries()]
     .map(([courseId, attempt]) => {
       const course = COURSE_BY_ID.get(courseId)!;
-      const date = attempt.at.slice(0, 10).replace(/-/g, '');
+      const issued = plan.mode === 'full';
+      const issuedAt = issued && paidStartedAt && paidStartedAt > attempt.at ? paidStartedAt : attempt.at;
       return {
         id: certificateIdOf(courseId),
-        code: `DTC-${date}-${course.code}`,
+        status: issued ? 'ISSUED' : 'PENDING_UPGRADE',
+        code: issued ? `DTC-${issuedAt.slice(0, 10).replace(/-/g, '')}-${course.code}` : null,
         courseId,
         courseCode: course.code,
         courseTitle: course.title,
@@ -467,16 +518,17 @@ export function certificates(state: PersonalState, recipientName: string): Perso
         domainName: courseDomain(course).name,
         competencies: competencyCodesOf(course).map((code) => ({ code, name: TT02_COMPETENCY_NAMES[code] })),
         recipientName,
-        issuedAt: attempt.at,
+        passedAt: attempt.at,
+        issuedAt: issued ? issuedAt : null,
         scorePercent: Math.round((attempt.correct / attempt.total) * 100),
-      };
+      } satisfies PersonalCertificate;
     })
-    .sort((a, b) => b.issuedAt.localeCompare(a.issuedAt));
+    .sort((a, b) => b.passedAt.localeCompare(a.passedAt));
 }
 
 // ── Activity, milestones ──
 
-export function activity(state: PersonalState, limit = 8): PersonalActivity[] {
+export function activity(state: PersonalState, limit = 8, plan: PlanView = FULL_PLAN_VIEW): PersonalActivity[] {
   const items: PersonalActivity[] = [];
   const push = (kind: ActivityKind, at: string, title: string, detail?: string) =>
     items.push({ id: `${kind}-${at}-${items.length}`, kind, at, title, detail });
@@ -501,7 +553,10 @@ export function activity(state: PersonalState, limit = 8): PersonalActivity[] {
   });
   completedCourses(state).forEach((attempt, courseId) => {
     const course = COURSE_BY_ID.get(courseId)!;
-    push('CERTIFICATE', attempt.at, `Nhận chứng nhận ${course.code}`, `${course.title} · ${levelLabelVi(course.level)}`);
+    // A pass made on a trial or the Free plan is not a certificate yet: it waits for the upgrade.
+    if (plan.mode === 'full') {
+      push('CERTIFICATE', attempt.at, `Nhận chứng nhận ${course.code}`, `${course.title} · ${levelLabelVi(course.level)}`);
+    }
   });
 
   Object.entries(state.submissions).forEach(([taskId, submission]) => {

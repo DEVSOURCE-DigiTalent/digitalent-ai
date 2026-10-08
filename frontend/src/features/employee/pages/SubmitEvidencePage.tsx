@@ -148,7 +148,7 @@ export function SubmitEvidencePage() {
             <textarea
               rows={6}
               {...register('content', { required: true })}
-              placeholder="Trình bày chi tiết cách bạn đã giải quyết tình huống, các công cụ số đã sử dụng, quy trình tuân thủ Thông tư 02..."
+              placeholder="Trình bày chi tiết cách bạn đã giải quyết tình huống, các công cụ số đã sử dụng, quy trình tuân thủ chuẩn năng lực số..."
               className="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>

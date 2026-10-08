@@ -162,7 +162,7 @@ export function InternalCourseEditorPage() {
         <AlertCircle className="size-5 text-amber-600 shrink-0 mt-0.5" />
         <div className="text-sm text-amber-800">
           <span className="font-semibold">Lưu ý giáo trình:</span> Khóa học nội bộ là giáo trình riêng của doanh nghiệp (sections, tài liệu SOP, video, trắc nghiệm nhanh),{' '}
-          <strong>không can thiệp vào chuẩn giáo trình 18 khóa Thông tư 02</strong> và không tự động tăng bậc năng lực số chuẩn quốc gia.
+          <strong>không can thiệp vào giáo trình 18 khóa học chuẩn năng lực số</strong> và không tự động tăng bậc năng lực số trên Khung chuẩn.
         </div>
       </div>
 

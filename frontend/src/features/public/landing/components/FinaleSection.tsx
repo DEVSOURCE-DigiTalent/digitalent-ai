@@ -23,7 +23,7 @@ export function FinaleSection() {
         <div ref={contentRef} data-in={inView || undefined} className="relative z-10 flex flex-col items-center px-6 py-24 text-center">
           <h2
             id="lp-finale-title"
-            className="lp-reveal-up max-w-[62rem] text-balance font-landing-serif text-[clamp(44px,7.4vw,104px)] font-normal leading-[1.02] tracking-[-0.03em] text-cream"
+            className="lp-reveal-up max-w-[62rem] text-balance font-landing-serif text-[clamp(36px,5.2vw,72px)] font-normal leading-[1.02] tracking-[-0.03em] text-cream"
           >
             {FINALE.lead} <em className="not-italic text-cream/50">{FINALE.leadMuted}</em> {FINALE.tail}{' '}
             <em className="not-italic text-cream/50">{FINALE.tailMuted}</em>
@@ -34,7 +34,7 @@ export function FinaleSection() {
           <div className="lp-reveal-up mt-12" style={delay(0.4)}>
             <Link
               to={cta.to}
-              className="lp-glass inline-block rounded-full px-16 py-6 text-lg text-cream transition-transform duration-300 ease-cinematic motion-safe:hover:scale-[1.03]"
+              className="lp-glass lp-finale-btn inline-block rounded-full px-16 py-6 text-lg text-cream transition-all duration-300 ease-cinematic motion-safe:hover:scale-[1.03]"
             >
               {cta.isSignedIn ? 'Vào hệ thống' : ctaCopy.finaleLabel}
             </Link>

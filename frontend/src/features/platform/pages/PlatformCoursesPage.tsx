@@ -133,7 +133,7 @@ export function PlatformCoursesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Danh mục khóa học chuẩn nền tảng"
-        subtitle="18 khóa học chuẩn theo Thông tư 02/2025/TT-BGDĐT phục vụ đào tạo và thu hẹp khoảng trống năng lực"
+        subtitle="18 khóa học chuẩn hóa phục vụ đào tạo và thu hẹp khoảng trống năng lực số"
       />
 
       {/* Filter bar */}

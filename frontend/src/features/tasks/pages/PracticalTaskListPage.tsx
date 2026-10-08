@@ -44,7 +44,7 @@ export function PracticalTaskListPage() {
     },
     {
       key: 'competencies',
-      header: 'Năng lực chuẩn TT02',
+      header: 'Năng lực mục tiêu',
       cell: (row: PracticalTaskDto) => (
         <div className="flex flex-wrap gap-1 max-w-xs">
           {row.competencyIds.map((code) => (
@@ -127,7 +127,7 @@ export function PracticalTaskListPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <PageHeader
           title="Nhiệm vụ & Bài tập thực hành"
-          subtitle="Giao bài tập tình huống, dự án thực tế để nhân viên áp dụng khung năng lực số TT 02/2025 vào công việc hàng ngày."
+          subtitle="Giao bài tập tình huống, dự án thực tế để nhân viên áp dụng Khung chuẩn năng lực số vào công việc hàng ngày."
         />
         <div className="flex items-center gap-3 shrink-0">
           <Link

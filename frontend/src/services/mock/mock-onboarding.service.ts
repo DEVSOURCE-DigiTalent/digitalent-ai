@@ -1,4 +1,5 @@
 import { ENTITLEMENTS } from '../../lib/entitlements';
+import { isSubscriptionUsable } from '../../lib/personal-access';
 import { REFERENCE_POSITIONS } from '../../lib/reference-positions';
 import { ROLES } from '../../lib/roles';
 import type {
@@ -24,7 +25,8 @@ function admin(): StoredUser | undefined {
 
 /** The setup wizard comes after payment: without an active plan nothing here may change. */
 function isPaid(user: StoredUser): boolean {
-  return subscriptionOf(user)?.status === 'active';
+  const status = subscriptionOf(user)?.status;
+  return status !== undefined && isSubscriptionUsable(status);
 }
 
 function organizationOf(user: StoredUser): StoredOrganization | undefined {

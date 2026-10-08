@@ -1,6 +1,6 @@
 import type { PageRegistry } from '../build-routes';
 
-import { MyDevelopmentDashboardPage } from '../../../features/employee/pages/MyDevelopmentDashboardPage';
+import { TrialAwareEmployeeDashboardPage } from '../../../features/experience/enterprise-trial/TrialAwareDashboardPages';
 import { MyCompetencyProfilePage } from '../../../features/employee/pages/MyCompetencyProfilePage';
 import { MySkillGapPage } from '../../../features/employee/pages/MySkillGapPage';
 import { EvidencePortfolioPage } from '../../../features/employee/pages/EvidencePortfolioPage';
@@ -22,7 +22,7 @@ import { MyCertificatesPage } from '../../../features/employee/pages/MyCertifica
 /** EMPLOYEE page registry mapping screen IDs (EM-*) and legacy IDs (EMP-*) to components. */
 export const EMPLOYEE_PAGES: PageRegistry = {
   // v2.1 IDs
-  'EM-01': MyDevelopmentDashboardPage,
+  'EM-01': TrialAwareEmployeeDashboardPage,
   'EM-02': MyCompetencyProfilePage,
   'EM-03': MySkillGapPage,
   'EM-04': EvidencePortfolioPage,
@@ -42,7 +42,7 @@ export const EMPLOYEE_PAGES: PageRegistry = {
   'EM-18': MyCertificatesPage,
 
   // Legacy EMP IDs for backward compatibility
-  'EMP-01': MyDevelopmentDashboardPage,
+  'EMP-01': TrialAwareEmployeeDashboardPage,
   'EMP-02': MyCompetencyProfilePage,
   'EMP-03': MySkillGapPage,
   'EMP-04': MyLearningPage,

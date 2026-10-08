@@ -1,6 +1,6 @@
 import type { PageRegistry } from '../build-routes';
 
-import { OrganizationOverviewPage } from '../../../features/organization/pages/OrganizationOverviewPage';
+import { TrialAwareOwnerDashboardPage } from '../../../features/experience/enterprise-trial/TrialAwareDashboardPages';
 import { MembersPage } from '../../../features/members/pages/MembersPage';
 import { MemberDetailPage } from '../../../features/members/pages/MemberDetailPage';
 import { DepartmentListPage } from '../../../features/organization/pages/DepartmentListPage';
@@ -42,7 +42,7 @@ import { ReportsPage } from '../../../features/reports/pages/ReportsPage';
 /** OWNER page registry mapping screen IDs (OW-*) to components. */
 export const OWNER_PAGES: PageRegistry = {
   // v2.1 IDs
-  'OW-01': OrganizationOverviewPage,
+  'OW-01': TrialAwareOwnerDashboardPage,
   'OW-02': MembersPage,
   'OW-03': MemberDetailPage,
   'OW-06': DepartmentListPage,

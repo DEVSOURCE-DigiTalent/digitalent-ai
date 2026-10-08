@@ -29,7 +29,7 @@ export function PlatformCompetencyDetailPage() {
   }, [comp]);
 
   if (isLoading) {
-    return <div className="p-8 text-center text-slate-500">Đang tải dữ liệu chuẩn năng lực TT02…</div>;
+    return <div className="p-8 text-center text-slate-500">Đang tải dữ liệu chuẩn năng lực số…</div>;
   }
 
   if (isError || !comp) {
@@ -78,13 +78,13 @@ export function PlatformCompetencyDetailPage() {
           onClick={() => navigate('/platform/framework')}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900"
         >
-          <ArrowLeft className="size-4" /> Danh sách khung TT02
+          <ArrowLeft className="size-4" /> Danh sách năng lực chuẩn
         </button>
       </div>
 
       <PageHeader
-        title={`${comp.code}: ${comp.name}`}
-        subtitle={`Quản lý định nghĩa chuẩn (Source-of-truth) thuộc ${comp.domainName} theo Thông tư 02/2025/TT-BGDĐT`}
+        title={`${comp.code.startsWith('CMP-') ? comp.code : `CMP-${comp.code.replace(/^TT02-/, '')}`}: ${comp.name}`}
+        subtitle={`Quản lý định nghĩa chuẩn (Source-of-truth) thuộc ${comp.domainName} theo Khung chuẩn năng lực số`}
       />
 
       {successMsg && (
@@ -111,13 +111,13 @@ export function PlatformCompetencyDetailPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="comp-code" className="block text-xs font-semibold uppercase text-slate-500 mb-1">
-              Mã khung chuẩn TT02
+              Mã năng lực
             </label>
             <input
               id="comp-code"
               type="text"
               disabled
-              value={comp.code}
+              value={comp.code.startsWith('CMP-') ? comp.code : `CMP-${comp.code.replace(/^TT02-/, '')}`}
               className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-mono text-slate-600 cursor-not-allowed"
             />
           </div>
@@ -178,7 +178,7 @@ export function PlatformCompetencyDetailPage() {
         <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
           <Layers className="size-5 text-primary-600" />
           <h2 className="text-base font-semibold text-slate-900">
-            Tiêu chuẩn trình độ & 8 bậc năng lực theo Thông tư 02/2025/TT-BGDĐT
+            Tiêu chuẩn trình độ & các bậc năng lực theo Khung chuẩn
           </h2>
         </div>
 

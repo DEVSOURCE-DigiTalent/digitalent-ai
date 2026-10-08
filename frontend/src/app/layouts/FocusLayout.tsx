@@ -39,7 +39,7 @@ export function FocusLayout({
       <header className="h-14 flex items-center justify-between px-4 md:px-6 border-b border-ent-line bg-[var(--ent-topbar)] backdrop-blur-sm shrink-0">
         <div className="flex items-center gap-3">
           <Link to={exitPath} className="hover:opacity-90 transition-opacity inline-flex items-center">
-            <Wordmark withMark={true} className="text-sm [--wordmark-on:var(--ent-bg,#111110)]" />
+            <Wordmark withMark={true} className="text-sm [--wordmark-on:var(--ent-bg,#0C0E12)]" />
           </Link>
           {title && (
             <>
@@ -54,11 +54,11 @@ export function FocusLayout({
             <div className="hidden sm:flex items-center gap-2">
               <div className="w-32 h-1.5 bg-ent-raised rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-ent-accent transition-all duration-300"
+                  className="h-full bg-gradient-to-r from-[#F5CA65] to-[#D4982F] transition-all duration-300"
                   style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
                 />
               </div>
-              <span className="text-xs text-ent-fg-3">{Math.round(progress)}%</span>
+              <span className="text-xs text-[#F5CA65] font-mono">{Math.round(progress)}%</span>
             </div>
           )}
 

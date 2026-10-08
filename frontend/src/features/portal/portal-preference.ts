@@ -8,6 +8,11 @@ export const PORTAL_HOME: Record<PortalChoice, string> = {
   individual: '/individual',
 };
 
+export const PORTAL_PRICING: Record<PortalChoice, string> = {
+  enterprise: '/business/pricing',
+  individual: '/individual/pricing',
+};
+
 export function getPortalChoice(): PortalChoice | null {
   try {
     const value = localStorage.getItem(STORAGE_KEY);

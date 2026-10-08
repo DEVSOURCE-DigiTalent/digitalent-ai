@@ -9,7 +9,7 @@ export function TeamCompetencyMatrixPage() {
   return (
     <WorkforceCompetencyMatrix
       title="Ma trận năng lực nhóm"
-      subtitle="So sánh trực quan trình độ hiện tại, yêu cầu vị trí và khoảng trống năng lực của nhân sự trong nhóm theo Thông tư 02/2025"
+      subtitle="So sánh trực quan trình độ hiện tại, yêu cầu vị trí và khoảng trống năng lực của nhân sự trong nhóm theo Khung chuẩn năng lực số"
       readOnly={true}
       hideDepartmentFilter={true}
     />

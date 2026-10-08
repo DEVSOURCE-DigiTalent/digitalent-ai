@@ -9,7 +9,7 @@ export function TeamSkillGapAnalyticsPage() {
   return (
     <SkillGapAnalyticsView
       title="Khoảng trống năng lực nhóm (Skill Gap)"
-      subtitle="Phân tích mức độ chênh lệch giữa năng lực thực tế của nhân viên trong nhóm và yêu cầu vị trí việc làm theo Thông tư 02/2025"
+      subtitle="Phân tích mức độ chênh lệch giữa năng lực thực tế của nhân viên trong nhóm và yêu cầu vị trí việc làm theo Khung chuẩn năng lực số"
       readOnly={true}
       hideDepartmentFilter={true}
     />

@@ -7,19 +7,26 @@ import { LevelBadge } from '@/components/shared/LevelBadge';
 import { useCertificates } from '@/hooks/use-learning';
 import { useMyTasks } from '@/hooks/use-tasks';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { useTrialDiagnostic, useTrialPath, useTrialResult } from '@/hooks/use-enterprise-trial';
 
 export function MyDevelopmentDashboardPage() {
   const user = useCurrentUser((s) => s.user);
   const { data: certData } = useCertificates();
   const { data: taskData } = useMyTasks();
+  const diagnostic = useTrialDiagnostic();
+  const result = useTrialResult();
+  const path = useTrialPath();
 
   const certificates = certData?.items ?? [];
   const tasks = taskData?.items ?? [];
   const activeTasks = tasks.filter((t) => !t.submission || t.submission.status === 'REVISION_REQUESTED');
 
-  const initialAssessmentKey = user ? `dt_initial_assessment_${user.id}` : 'dt_initial_assessment';
-  const savedAssessment = typeof window !== 'undefined' ? localStorage.getItem(initialAssessmentKey) : null;
-  const assessmentData = savedAssessment ? JSON.parse(savedAssessment) : null;
+  const assessmentSubmitted = Boolean(result.data);
+  const measured = result.data?.items.filter((item) => item.currentLevel !== null).length ?? 0;
+  const totalMeasured = result.data?.items.length ?? diagnostic.data?.questions.length ?? 0;
+  const pathProgress = path.data?.items.length
+    ? Math.round(path.data.items.reduce((sum, item) => sum + item.progressPercent, 0) / path.data.items.length)
+    : 0;
 
   return (
     <div className="space-y-6 pb-16">
@@ -33,13 +40,13 @@ export function MyDevelopmentDashboardPage() {
             Bảng phát triển của tôi
           </h1>
           <p className="text-sm text-blue-100 leading-relaxed">
-            Xin chào, {user?.fullName || 'Học viên'}! Hệ thống đang đồng bộ tiến độ học tập và bài thực hành thực tế của bạn theo chuẩn khung năng lực số Thông tư 02/2025.
+            Xin chào, {user?.fullName || 'Học viên'}! Hệ thống đang đồng bộ tiến độ học tập và bài thực hành thực tế của bạn theo Khung chuẩn năng lực số.
           </p>
         </div>
       </div>
 
       {/* Initial Assessment Banner */}
-      {!assessmentData ? (
+      {!assessmentSubmitted ? (
         <div className="bg-amber-50 border-2 border-amber-300 rounded-3xl p-6 sm:p-7 text-amber-950 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 shadow-sm">
           <div className="space-y-1.5 max-w-2xl">
             <div className="flex items-center gap-2">
@@ -65,7 +72,7 @@ export function MyDevelopmentDashboardPage() {
           <div className="flex items-center gap-2.5">
             <span className="size-2 rounded-full bg-emerald-600 shrink-0" />
             <span>
-              Đã hoàn thành đánh giá năng lực đầu vào ({assessmentData.score}/{assessmentData.total} câu đạt - {assessmentData.percentage}%). Lộ trình đào tạo đã được thiết lập.
+              Đã hoàn thành đánh giá năng lực đầu vào. Backend đã đo {measured}/{totalMeasured} năng lực và lưu lộ trình học tập.
             </span>
           </div>
           <Link
@@ -124,7 +131,7 @@ export function MyDevelopmentDashboardPage() {
             <span className="text-xs font-semibold uppercase tracking-wider">Mức độ sẵn sàng</span>
             <TrendingUp className="size-5 text-purple-600" />
           </div>
-          <div className="text-3xl font-black text-purple-600">82%</div>
+          <div className="text-3xl font-black text-purple-600">{pathProgress}%</div>
           <Link
             to="/enterprise/me/skill-gap"
             className="text-xs font-semibold text-blue-600 hover:underline inline-block"

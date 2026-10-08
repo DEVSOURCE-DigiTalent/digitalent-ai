@@ -111,7 +111,7 @@ export function LessonViewerPage() {
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg">
             <Sparkles className="size-4 text-emerald-600" />
-            <span>Video bài giảng chính thức: Chuẩn Thông tư 02/2025/TT-BGDĐT</span>
+            <span>Video bài giảng chính thức: Khung chuẩn năng lực số</span>
           </div>
           <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black border border-slate-800 shadow-lg">
             <video

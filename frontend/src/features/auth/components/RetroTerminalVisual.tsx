@@ -72,7 +72,7 @@ export function RetroTerminalVisual({ scene = 'ember' }: RetroTerminalVisualProp
 
             {/* Status lines */}
             <div className="mt-1 font-mono text-[9px] tracking-wider uppercase opacity-85 leading-tight">
-              <div>TT 02/2025/TT-BGDĐT</div>
+              <div>KHUNG CHUẨN NĂNG LỰC SỐ</div>
               <div className="text-[8px] opacity-70 mt-0.5">● CORE ENGINE ACTIVE</div>
             </div>
           </div>

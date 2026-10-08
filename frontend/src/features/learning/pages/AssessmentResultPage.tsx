@@ -82,7 +82,7 @@ export function AssessmentResultPage() {
             {passed ? 'Chúc mừng bạn đã hoàn thành bài thi!' : 'Hãy ôn tập và thử lại nhé!'}
           </h1>
           <p className="text-sm text-slate-600">
-            {assessment?.courseTitle ?? 'Bài đánh giá năng lực số Thông tư 02'}
+            {assessment?.courseTitle ?? 'Bài đánh giá Khung chuẩn năng lực số'}
           </p>
         </div>
 
@@ -171,7 +171,7 @@ export function AssessmentResultPage() {
                         Câu {idx + 1}: {q.questionText}
                       </p>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        Chuẩn năng lực: TT02-{q.competencyCode}
+                        Mã năng lực: CMP-{q.competencyCode}
                       </p>
                     </div>
                   </div>

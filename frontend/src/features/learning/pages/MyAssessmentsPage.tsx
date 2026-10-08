@@ -89,7 +89,7 @@ export function MyAssessmentsPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <PageHeader
           title="Danh sách bài đánh giá năng lực"
-          subtitle="Các bài kiểm tra trắc nghiệm và đánh giá chuẩn hóa năng lực số theo Thông tư 02/2025."
+          subtitle="Các bài kiểm tra trắc nghiệm và đánh giá theo Khung chuẩn năng lực số."
         />
         <Link
           to="/enterprise/me/assessments/history"

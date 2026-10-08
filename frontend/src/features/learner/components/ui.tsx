@@ -4,18 +4,18 @@ import { cn } from '@/lib/utils';
 import { levelLabelVi } from '@/lib/competency-levels';
 import type { GapSeverity } from '@/services/personal-learning.service';
 
-/** Building blocks of the personal workspace, in the landing page's language: big light type, soft cards, pill buttons. */
+/** Shared theme primitives. Personal pages use the compact header; public flows retain PageIntro. */
 
 export const PT_BUTTON =
-  'inline-flex items-center justify-center gap-2 rounded-full bg-pt-accent px-5 py-2.5 text-sm font-medium text-pt-on-accent transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45';
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-pt-accent text-pt-on-accent font-semibold px-5 py-2.5 text-sm transition-colors hover:bg-pt-accent/85 disabled:cursor-not-allowed disabled:opacity-45';
 
 export const PT_BUTTON_SECONDARY =
-  'inline-flex items-center justify-center gap-2 rounded-full border border-pt-line px-5 py-2.5 text-sm text-pt-fg transition-colors hover:border-pt-fg/45 hover:bg-pt-fg/5 disabled:cursor-not-allowed disabled:opacity-45';
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-pt-line px-5 py-2.5 text-sm font-medium text-pt-fg transition-colors hover:border-pt-accent/60 hover:bg-pt-accent/5 disabled:cursor-not-allowed disabled:opacity-45';
 
-export const PT_LINK = 'text-pt-fg underline decoration-pt-fg/30 underline-offset-4 transition-colors hover:decoration-pt-fg';
+export const PT_LINK = 'text-pt-fg underline decoration-pt-fg/30 underline-offset-4 transition-colors hover:decoration-pt-accent hover:text-pt-accent';
 
 export const PT_INPUT =
-  'w-full rounded-xl border border-pt-line bg-pt-raised/60 px-4 py-3 text-sm text-pt-fg placeholder:text-pt-fg-3 outline-none transition-colors focus:border-pt-fg/50 aria-[invalid=true]:border-pt-bad';
+  'w-full rounded-xl border border-pt-line bg-pt-raised/60 px-4 py-3 text-sm text-pt-fg placeholder:text-pt-fg-3 outline-none transition-colors focus:border-pt-accent focus:ring-1 focus:ring-pt-accent/40 aria-[invalid=true]:border-pt-bad';
 
 export const PT_EYEBROW = 'text-[11px] uppercase tracking-[0.16em] text-pt-fg-3';
 
@@ -50,6 +50,19 @@ export function PageIntro({ label, title, accent, lead, actions, className }: Pa
   );
 }
 
+export function PersonalPageHeader({ label, title, accent, lead, actions, className }: PageIntroProps) {
+  return (
+    <header className={cn('flex min-w-0 flex-col gap-4 md:flex-row md:items-start md:justify-between', className)}>
+      <div className="min-w-0 max-w-3xl">
+        <p className="mb-2 text-xs font-medium text-pt-fg-3">{label}</p>
+        <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-pt-fg md:text-[30px]">{title}{accent && <> <span>{accent}</span></>}</h1>
+        {lead && <p className="mt-2 max-w-[72ch] text-sm leading-relaxed text-pt-fg-2">{lead}</p>}
+      </div>
+      {actions && <div className="flex flex-wrap items-center gap-2 md:max-w-[45%]">{actions}</div>}
+    </header>
+  );
+}
+
 interface CardProps {
   as?: ElementType;
   className?: string;
@@ -59,7 +72,7 @@ interface CardProps {
 
 export function Card({ as: Component = 'section', className, children, ...rest }: CardProps) {
   return (
-    <Component className={cn('rounded-card border border-pt-line bg-pt-card', className)} {...rest}>
+    <Component className={cn('rounded-2xl border border-pt-line bg-pt-card', className)} {...rest}>
       {children}
     </Component>
   );
@@ -203,3 +216,13 @@ export function EmptyState({ title, body, action, className }: { title: string; 
   );
 }
 
+
+/**
+ * Gold roles of the trial and plan screens, shared with the public individual pages: gold for the main action
+ * (upgrade, next step), the mint `pt-ok` for state. Both are readable in the light and the dark theme.
+ */
+export {
+  GOLD_BUTTON as PT_BUTTON_GOLD,
+  GOLD_OUTLINE_BUTTON as PT_BUTTON_GOLD_OUTLINE,
+  GOLD_TEXT as PT_TEXT_GOLD,
+} from '@/features/experience/individual-trial/trial-style';

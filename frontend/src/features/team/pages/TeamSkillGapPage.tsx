@@ -21,11 +21,11 @@ export function TeamSkillGapPage() {
   const columns = [
     {
       key: 'competency',
-      header: 'Năng lực số (TT 02/2025)',
+      header: 'Năng lực số',
       cell: (row: CompetencyGapRow) => (
         <div>
           <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-            {row.frameworkCode}
+            {row.frameworkCode.startsWith('CMP-') ? row.frameworkCode : `CMP-${row.frameworkCode.replace(/^TT02-/, '')}`}
           </span>
           <p className="font-semibold text-sm text-slate-900 mt-1">{row.name}</p>
         </div>
@@ -72,7 +72,7 @@ export function TeamSkillGapPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <PageHeader
           title="Khoảng trống năng lực của nhóm (Skill Gap)"
-          subtitle="Phân tích mức độ chênh lệch giữa năng lực thực tế của nhân viên và yêu cầu vị trí việc làm theo Thông tư 02."
+          subtitle="Phân tích mức độ chênh lệch giữa năng lực thực tế của nhân viên và yêu cầu vị trí việc làm theo Khung chuẩn năng lực số."
         />
         <Link
           to="/enterprise/tasks/new"

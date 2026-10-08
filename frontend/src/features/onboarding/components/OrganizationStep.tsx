@@ -77,8 +77,8 @@ export function OrganizationStep({ setup, onDone }: OrganizationStepProps) {
       )}
 
       {/* Header Preview card */}
-      <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 text-slate-400">
+      <div className="flex items-center gap-4 rounded-xl border border-ent-line bg-ent-card p-4 shadow-md ring-1 ring-amber-400/10">
+        <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-ent-line bg-ent-raised text-ent-fg-3">
           {logoUrl ? (
             <img
               src={logoUrl}
@@ -89,21 +89,21 @@ export function OrganizationStep({ setup, onDone }: OrganizationStepProps) {
               }}
             />
           ) : (
-            <Building2 className="size-8 text-slate-400" />
+            <Building2 className="size-8 text-[#F5CA65]" />
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-base font-semibold text-slate-900 truncate">
+          <p className="text-base font-semibold text-ent-fg truncate">
             {orgName || 'Tên doanh nghiệp của bạn'}
           </p>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-ent-fg-3">
             Logo & thương hiệu doanh nghiệp trên hệ thống DigiTalent AI
           </p>
         </div>
       </div>
 
       <div className="grid gap-1.5">
-        <label htmlFor="org-name" className="text-sm font-medium text-slate-700">
+        <label htmlFor="org-name" className="text-sm font-medium text-ent-fg">
           Tên tổ chức
         </label>
         <input
@@ -113,39 +113,39 @@ export function OrganizationStep({ setup, onDone }: OrganizationStepProps) {
           className={INPUT_CLASS}
           {...register('name')}
         />
-        {errors.name && <p role="alert" className="text-xs text-red-600">{errors.name.message}</p>}
+        {errors.name && <p role="alert" className="text-xs text-red-400">{errors.name.message}</p>}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-1.5">
-          <label htmlFor="org-industry" className="text-sm font-medium text-slate-700">
+          <label htmlFor="org-industry" className="text-sm font-medium text-ent-fg">
             Ngành hoạt động
           </label>
           <select id="org-industry" aria-invalid={!!errors.industry} className={INPUT_CLASS} {...register('industry')}>
-            <option value="">Chọn ngành…</option>
+            <option value="" className="bg-[#11151E] text-cream">Chọn ngành…</option>
             {ORGANIZATION_INDUSTRIES.map((industry) => (
-              <option key={industry} value={industry}>{industry}</option>
+              <option key={industry} value={industry} className="bg-[#11151E] text-cream">{industry}</option>
             ))}
           </select>
-          {errors.industry && <p role="alert" className="text-xs text-red-600">{errors.industry.message}</p>}
+          {errors.industry && <p role="alert" className="text-xs text-red-400">{errors.industry.message}</p>}
         </div>
 
         <div className="grid gap-1.5">
-          <label htmlFor="org-size" className="text-sm font-medium text-slate-700">
+          <label htmlFor="org-size" className="text-sm font-medium text-ent-fg">
             Quy mô
           </label>
           <select id="org-size" aria-invalid={!!errors.size} className={INPUT_CLASS} {...register('size')}>
-            <option value="">Chọn quy mô…</option>
+            <option value="" className="bg-[#11151E] text-cream">Chọn quy mô…</option>
             {ORGANIZATION_SIZES.map((size) => (
-              <option key={size.value} value={size.value}>{size.label}</option>
+              <option key={size.value} value={size.value} className="bg-[#11151E] text-cream">{size.label}</option>
             ))}
           </select>
-          {errors.size && <p role="alert" className="text-xs text-red-600">{errors.size.message}</p>}
+          {errors.size && <p role="alert" className="text-xs text-red-400">{errors.size.message}</p>}
         </div>
       </div>
 
       <div className="grid gap-1.5">
-        <label htmlFor="org-logo" className="text-sm font-medium text-slate-700">
+        <label htmlFor="org-logo" className="text-sm font-medium text-ent-fg">
           Đường dẫn ảnh Logo (tùy chọn)
         </label>
         <input
@@ -156,24 +156,24 @@ export function OrganizationStep({ setup, onDone }: OrganizationStepProps) {
           className={INPUT_CLASS}
           {...register('logoUrl')}
         />
-        {errors.logoUrl && <p role="alert" className="text-xs text-red-600">{errors.logoUrl.message}</p>}
-        <p className="text-xs text-slate-500">
+        {errors.logoUrl && <p role="alert" className="text-xs text-red-400">{errors.logoUrl.message}</p>}
+        <p className="text-xs text-ent-fg-3">
           Nhập liên kết ảnh PNG/SVG logo tổ chức. Bạn có thể cập nhật lại trong Cài đặt tổ chức.
         </p>
       </div>
 
       <div className="grid gap-1.5">
-        <label htmlFor="org-timezone" className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-          <Globe className="size-4 text-slate-400" />
-          Múi giờ làm việc <span className="text-red-500">*</span>
+        <label htmlFor="org-timezone" className="text-sm font-medium text-ent-fg flex items-center gap-1.5">
+          <Globe className="size-4 text-[#F5CA65]" />
+          Múi giờ làm việc <span className="text-amber-400">*</span>
         </label>
         <select id="org-timezone" aria-invalid={!!errors.timezone} className={INPUT_CLASS} {...register('timezone')}>
           {TIMEZONES.map((tz) => (
-            <option key={tz.value} value={tz.value}>{tz.label}</option>
+            <option key={tz.value} value={tz.value} className="bg-[#11151E] text-cream">{tz.label}</option>
           ))}
         </select>
-        {errors.timezone && <p role="alert" className="text-xs text-red-600">{errors.timezone.message}</p>}
-        <p className="text-xs text-slate-500">
+        {errors.timezone && <p role="alert" className="text-xs text-red-400">{errors.timezone.message}</p>}
+        <p className="text-xs text-ent-fg-3">
           Dùng để tính thời hạn nhiệm vụ, lịch thi đánh giá năng lực và các báo cáo đào tạo.
         </p>
       </div>

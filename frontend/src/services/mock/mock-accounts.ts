@@ -1,5 +1,6 @@
 import { ROLES, WORKSPACES, type Workspace } from '../../lib/roles';
 import { ENTITLEMENTS } from '../../lib/entitlements';
+import { freeSubscription, trialSubscription } from '../../lib/personal-access';
 import type { OrganizationContext, SessionUser, SubscriptionContext } from '../../types/session';
 import { PERSONAL_PERMISSIONS, permissionsForRoles } from './mock-rbac';
 
@@ -48,6 +49,14 @@ const PERSONAL_PLAN: SubscriptionContext = {
   renewsAt: '2027-01-15',
 };
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** trial@: day 5 of 7 when the module loads, so the demo always has a trial that is still running. */
+const TRIAL_DEMO_PLAN: SubscriptionContext = trialSubscription(new Date(Date.now() - 5 * DAY_MS));
+
+/** free@: the trial started 10 days ago and ended 3 days ago. */
+const FREE_DEMO_PLAN: SubscriptionContext = freeSubscription(trialSubscription(new Date(Date.now() - 10 * DAY_MS)));
+
 const enterprise = (
   id: string,
   email: string,
@@ -60,7 +69,7 @@ const enterprise = (
 });
 
 /**
- * 8 demo accounts per spec v2.1 §1.6:
+ * 10 demo accounts: the 8 of spec v2.1 §1.6 plus the two individual trial states (trial@, free@):
  * - owner@ (Acme with Managers)
  * - owner2@ (Small org without Manager)
  * - manager@ (Manager of 1-2 departments)
@@ -68,6 +77,8 @@ const enterprise = (
  * - starter@ (Starter plan owner)
  * - expired@ (Expired plan owner)
  * - personal@ (Personal workspace)
+ * - trial@ (Personal, day 5 of a 7-day trial)
+ * - free@ (Personal, trial ended: Free plan)
  * - platform@ (Platform admin)
  */
 const SEEDS: MockAccountSeed[] = [
@@ -84,6 +95,14 @@ const SEEDS: MockAccountSeed[] = [
   {
     id: 'mock-personal', email: 'personal@digitalent.demo', fullName: 'Bùi Thị Cá Nhân',
     roles: [], workspace: WORKSPACES.PERSONAL, subscription: PERSONAL_PLAN,
+  },
+  {
+    id: 'mock-trial', email: 'trial@digitalent.demo', fullName: 'Lý Văn Dùng Thử',
+    roles: [], workspace: WORKSPACES.PERSONAL, subscription: TRIAL_DEMO_PLAN,
+  },
+  {
+    id: 'mock-free', email: 'free@digitalent.demo', fullName: 'Mai Thị Miễn Phí',
+    roles: [], workspace: WORKSPACES.PERSONAL, subscription: FREE_DEMO_PLAN,
   },
   {
     id: 'mock-platform', email: 'platform@digitalent.demo', fullName: 'Ngô Văn Nền Tảng',

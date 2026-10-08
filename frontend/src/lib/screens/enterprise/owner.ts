@@ -89,7 +89,7 @@ export const OWNER_SCREENS: ScreenDef[] = [
   // ── Năng lực ──
   {
     id: 'OW-14',
-    title: 'Khung năng lực TT 02/2025',
+    title: 'Khung chuẩn năng lực số',
     path: '/enterprise/framework',
     roles: OWNER_ROLES,
     permission: P.COMPETENCY_READ,

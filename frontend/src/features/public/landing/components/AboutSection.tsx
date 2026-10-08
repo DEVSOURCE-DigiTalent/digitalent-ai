@@ -3,6 +3,7 @@ import { SECTION_IDS } from '../landing-content';
 import { useLandingContent } from '../landing-content-context';
 import { ScrollRevealText } from './ScrollRevealText';
 import { WordsPullUp } from './WordsPullUp';
+import { LP_KICKER, LP_LABEL, LP_TITLE } from '../landing-type';
 
 function SpecGroup({
   label,
@@ -17,14 +18,16 @@ function SpecGroup({
 }) {
   return (
     <div className="px-2 md:px-6">
-      {label && <p className="mb-6 text-xs uppercase tracking-[0.14em] text-stone-500">{label}</p>}
+      {label && <p className={cn('mb-6', LP_KICKER)}>{label}</p>}
       <ul className={cn('grid gap-x-4 gap-y-8', columns)}>
         {specs.map((spec) => (
           <li key={spec.value}>
             <span
               className={cn(
-                'block whitespace-nowrap text-[clamp(32px,3.8vw,50px)] font-light leading-none tracking-[-0.04em] tabular-nums',
-                accent ? 'font-landing-serif italic text-cream-soft' : 'text-cream'
+                'lp-num block whitespace-nowrap text-[clamp(32px,3.8vw,52px)] font-normal leading-none tracking-[-0.04em] tabular-nums',
+                accent
+                  ? 'font-landing-serif italic bg-gradient-to-br from-[#FFF6E2] via-[#F5CA65] to-[#D4982F] bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(245,202,101,0.25)]'
+                  : 'bg-gradient-to-br from-[#F5CA65] via-[#E5A93C] to-[#D4982F] bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(245,202,101,0.25)]'
               )}
             >
               {spec.value}
@@ -42,14 +45,16 @@ export function AboutSection() {
   const hasConfigured = Boolean(about.configured);
 
   return (
-    <section id={SECTION_IDS.about} tabIndex={-1} aria-labelledby="lp-about-title" className="scroll-mt-24 py-2 outline-none">
+    <section id={SECTION_IDS.about} tabIndex={-1} aria-labelledby="lp-about-title" className="scroll-mt-24 py-14 outline-none md:py-20">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-8 rounded-2xl bg-landing-panel px-5 py-[72px] text-center md:gap-10 md:rounded-[2rem] md:px-12 md:py-28">
-        <p className="text-[10px] uppercase tracking-[0.16em] text-cream-soft sm:text-xs">{about.label}</p>
+        <p className={cn(LP_LABEL, '!border-amber-400/35 !text-[#F5CA65] !bg-amber-500/10 shadow-[0_0_14px_rgba(245,202,101,0.12)]')}>
+          {about.label}
+        </p>
 
         {/* Vietnamese stacked diacritics need more leading than the 0.9 of the Latin reference. */}
         <h2
           id="lp-about-title"
-          className="max-w-[50rem] text-balance text-[clamp(30px,5.2vw,72px)] font-normal leading-[1.02] tracking-[-0.03em] text-cream"
+          className={cn('max-w-[50rem]', LP_TITLE)}
         >
           <WordsPullUp segments={about.title} />
         </h2>

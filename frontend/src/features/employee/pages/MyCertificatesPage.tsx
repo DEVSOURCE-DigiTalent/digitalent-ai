@@ -74,14 +74,14 @@ export function MyCertificatesPage() {
                 </div>
 
                 <div className="space-y-1.5 pt-1">
-                  <p className="text-xs font-medium text-slate-500">Năng lực số xác nhận theo TT 02/2025:</p>
+                  <p className="text-xs font-medium text-slate-500">Năng lực số xác nhận:</p>
                   <div className="flex flex-wrap gap-1.5">
                     {cert.frameworkCompetencyCodes.map((code) => (
                       <span
                         key={code}
                         className="text-xs font-mono px-2 py-0.5 bg-slate-100 text-slate-800 rounded font-medium"
                       >
-                        TT02-{code}
+                        CMP-{code.replace(/^TT02-/, '')}
                       </span>
                     ))}
                   </div>

@@ -58,7 +58,7 @@ export function ActivateInvitationPage() {
       {invitation.data?.status === 'accepted' && (
         <div className="mt-6 grid gap-4">
           <p className="text-sm text-stone-400">Lời mời này đã được kích hoạt.</p>
-          <Link to="/business/login" className="text-sm text-cream underline underline-offset-4">
+          <Link to="/login" className="text-sm text-cream underline underline-offset-4">
             Đăng nhập
           </Link>
         </div>

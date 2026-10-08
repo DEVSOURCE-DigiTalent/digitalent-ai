@@ -43,11 +43,20 @@ function PlanPanel({ plan }: { plan: Plan }) {
   return (
     <article
       aria-label={`Gói ${plan.name}`}
-      className={cn('flex flex-col rounded-[20px] bg-landing-panel p-7 ring-1 md:p-8', plan.recommended ? 'ring-cream/50' : 'ring-cream/10')}
+      className={cn(
+        'group flex flex-col rounded-[20px] bg-landing-panel p-7 ring-1 transition-all duration-300 md:p-8 hover:-translate-y-1.5',
+        plan.recommended
+          ? 'ring-amber-400/50 shadow-[0_12px_36px_rgba(245,202,101,0.12)] hover:ring-amber-400/80 hover:shadow-[0_20px_48px_rgba(245,202,101,0.22)]'
+          : 'ring-white/10 hover:ring-amber-400/40 hover:shadow-[0_16px_40px_rgba(0,0,0,0.5)]',
+      )}
     >
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-xl font-medium tracking-[-0.02em]">{plan.name}</h3>
-        {plan.recommended && <span className="rounded-full bg-cream-soft px-3 py-1 text-[11px] font-medium text-black">Nên chọn</span>}
+        <h3 className="text-xl font-medium tracking-[-0.02em] transition-colors group-hover:text-cream">{plan.name}</h3>
+        {plan.recommended && (
+          <span className="rounded-full bg-gradient-to-r from-[#F5CA65] to-[#D4982F] px-3 py-1 text-[11px] font-semibold text-stone-950 shadow-sm shadow-amber-500/20">
+            Nên chọn
+          </span>
+        )}
       </div>
       <p className="mt-2 min-h-[2.8em] text-sm leading-[1.5] text-stone-400">{plan.tagline}</p>
 
@@ -64,7 +73,7 @@ function PlanPanel({ plan }: { plan: Plan }) {
       <ul className="mt-6 grid flex-1 content-start gap-2.5 text-sm text-cream/85">
         {plan.highlights.map((point) => (
           <li key={point} className="grid grid-cols-[16px_minmax(0,1fr)] gap-2.5 leading-[1.45]">
-            <Check className="mt-[3px] size-3.5 text-cream-soft" strokeWidth={2.5} aria-hidden="true" />
+            <Check className="mt-[3px] size-3.5 text-[#79E0C2]" strokeWidth={2.5} aria-hidden="true" />
             {point}
           </li>
         ))}
@@ -73,12 +82,14 @@ function PlanPanel({ plan }: { plan: Plan }) {
       <Link
         to={choose}
         className={cn(
-          'group mt-8 inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-opacity hover:opacity-90',
-          plan.recommended ? 'bg-cream-soft text-black' : 'border border-cream/30 text-cream',
+          'group/btn mt-8 inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all duration-300',
+          plan.recommended
+            ? 'bg-gradient-to-r from-[#F5CA65] to-[#D4982F] text-stone-950 font-semibold shadow-md shadow-amber-500/20 hover:brightness-105'
+            : 'border border-cream/30 text-cream hover:border-amber-400/60 hover:text-amber-300 hover:bg-white/[0.04]',
         )}
       >
         Chọn gói {plan.name}
-        <ArrowRight className="size-4 transition-transform duration-300 ease-cinematic motion-safe:group-hover:translate-x-0.5" aria-hidden="true" />
+        <ArrowRight className="size-4 transition-transform duration-300 ease-cinematic group-hover/btn:translate-x-1" aria-hidden="true" />
       </Link>
     </article>
   );

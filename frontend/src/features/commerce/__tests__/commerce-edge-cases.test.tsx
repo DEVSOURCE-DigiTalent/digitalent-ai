@@ -217,12 +217,12 @@ describe('commerce edge cases (T5, T6, T7, T14, T15, T17, T18)', () => {
     expect(pricingLinks.length).toBeGreaterThan(0);
     expect(pricingLinks[0]).toHaveAttribute('href', '/business/pricing');
 
-    renderApp('/business/login');
+    renderApp('/login');
     const registerCta = screen.getByRole('link', { name: 'Đăng ký' });
-    expect(registerCta).toHaveAttribute('href', '/business/pricing');
+    expect(registerCta).toHaveAttribute('href', '/portal?intent=register');
 
-    const registerPromptLink = screen.getByRole('link', { name: 'Chọn gói và đăng ký' });
-    expect(registerPromptLink).toHaveAttribute('href', '/business/pricing');
+    const registerPromptLink = screen.getByRole('link', { name: 'Đăng ký ngay' });
+    expect(registerPromptLink).toHaveAttribute('href', '/portal?intent=register');
   });
 
   it('T18: contact plan (ENT_CUSTOM) triggers mailto link, not register', async () => {

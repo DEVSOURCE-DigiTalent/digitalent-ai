@@ -26,7 +26,7 @@ export function WorkforceCompetencyMatrix({
   departmentId: fixedDeptId,
   hideDepartmentFilter = false,
   title = 'Ma trận năng lực nhân sự',
-  subtitle = 'So sánh trực quan trình độ hiện tại, yêu cầu vị trí và khoảng trống năng lực theo chuẩn Thông tư 02/2025',
+  subtitle = 'So sánh trực quan trình độ hiện tại, yêu cầu vị trí và khoảng trống năng lực theo Khung chuẩn năng lực số',
   readOnly: _readOnly = false,
 }: WorkforceCompetencyMatrixProps) {
   const [search, setSearch] = useState('');

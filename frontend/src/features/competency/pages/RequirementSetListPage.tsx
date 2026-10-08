@@ -164,7 +164,7 @@ export function RequirementSetListPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
           title="Yêu cầu năng lực theo vị trí"
-          subtitle="Quản lý và thiết lập bộ chuẩn năng lực Thông tư 02/2025 cho từng vị trí công việc trong tổ chức"
+          subtitle="Quản lý và thiết lập bộ chuẩn năng lực cho từng vị trí công việc trong tổ chức"
         />
         <Link
           to="/enterprise/requirements/builder"

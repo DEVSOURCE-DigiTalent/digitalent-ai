@@ -61,7 +61,7 @@ export function BusinessRegisterPage() {
       const nextPath = draftId ? `/enterprise/contract?draft=${draftId}` : home;
       navigate(nextPath, { replace: true });
     } catch {
-      navigate('/business/login', { replace: true });
+      navigate('/login', { replace: true });
     }
   };
 
@@ -87,7 +87,7 @@ export function BusinessRegisterPage() {
         onSubmit={handleSubmit}
         submitError={submitError}
         emailTaken={emailTaken}
-        loginPath="/business/login"
+        loginPath="/login"
       />
     </AuthShell>
   );

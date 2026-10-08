@@ -53,7 +53,8 @@ describe('Personal track (demo learner: Marketing, entry assessment done)', () =
     expect(await screen.findByText(/Mục tiêu: Marketing/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Học tiếp/ })).toHaveAttribute('href', expect.stringContaining('/personal/classroom/crs-A3-I'));
     expect(screen.getByText('Hoạt động gần đây')).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: /Radar năng lực theo 6 miền/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Tóm tắt năng lực' })).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: /Radar năng lực theo 6 miền/ })).not.toBeInTheDocument();
   });
 
   it('target page previews another position before saving it', async () => {
@@ -90,8 +91,8 @@ describe('Personal track (demo learner: Marketing, entry assessment done)', () =
   it('path lists stages in prerequisite order and the exempt courses', async () => {
     renderPage(<LearnerPathPage />);
 
-    expect(await screen.findByRole('heading', { level: 2, name: 'Chặng 1 · Nền tảng' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: 'Chặng 3 · Chuyên sâu' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Nền tảng' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Chuyên sâu' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ứng dụng AI cơ bản' })).toBeInTheDocument();
     expect(screen.getAllByText('Được miễn').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Chờ khóa tiên quyết').length).toBeGreaterThan(0);
@@ -137,8 +138,8 @@ describe('Personal track (demo learner: Marketing, entry assessment done)', () =
   it('progress shows the 24-competency profile and milestones', async () => {
     renderPage(<LearnerProgressPage />);
 
-    expect(await screen.findByText('24 năng lực theo 6 miền')).toBeInTheDocument();
-    expect(screen.getByText('Cột mốc')).toBeInTheDocument();
+    expect(await screen.findByText('Bằng chứng năng lực')).toBeInTheDocument();
+    expect(screen.getByText('Lịch sử hoàn thành')).toBeInTheDocument();
     expect(screen.getByText('Khóa học đầu tiên')).toBeInTheDocument();
     expect(screen.queryByText(/\/6\b/)).not.toBeInTheDocument();
   });
@@ -147,9 +148,9 @@ describe('Personal track (demo learner: Marketing, entry assessment done)', () =
     renderPage(<LearnerCertificatesPage />);
 
     expect(await screen.findByRole('heading', { level: 2, name: 'Ứng dụng AI cơ bản' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Xem chứng chỉ' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Xem chứng nhận' }));
 
-    const dialog = screen.getByRole('dialog', { name: 'Chứng nhận năng lực số' });
+    const dialog = screen.getByRole('dialog', { name: 'Chứng nhận hoàn thành khóa học' });
     expect(within(dialog).getByText('Bùi Thị Cá Nhân')).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: /In chứng nhận/ })).toBeInTheDocument();
     expect(within(dialog).queryByText(/Quét để xác thực|\/verify/)).not.toBeInTheDocument();

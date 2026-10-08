@@ -25,14 +25,14 @@ interface FormValues {
 }
 
 const COMMON_COMPETENCIES = [
-  { id: 'cmp-1-1', code: 'TT02-1.1', name: 'Duyệt, tìm kiếm và lọc dữ liệu' },
-  { id: 'cmp-1-3', code: 'TT02-1.3', name: 'Quản lý dữ liệu và nội dung số' },
-  { id: 'cmp-2-1', code: 'TT02-2.1', name: 'Tương tác thông qua công nghệ số' },
-  { id: 'cmp-2-2', code: 'TT02-2.2', name: 'Chia sẻ thông tin và nội dung số' },
-  { id: 'cmp-3-1', code: 'TT02-3.1', name: 'Phát triển nội dung số' },
-  { id: 'cmp-4-1', code: 'TT02-4.1', name: 'Bảo vệ thiết bị' },
-  { id: 'cmp-4-2', code: 'TT02-4.2', name: 'Bảo vệ dữ liệu cá nhân và quyền riêng tư' },
-  { id: 'cmp-5-1', code: 'TT02-5.1', name: 'Giải quyết các vấn đề kỹ thuật' },
+  { id: 'cmp-1-1', code: 'CMP-1.1', name: 'Duyệt, tìm kiếm và lọc dữ liệu' },
+  { id: 'cmp-1-3', code: 'CMP-1.3', name: 'Quản lý dữ liệu và nội dung số' },
+  { id: 'cmp-2-1', code: 'CMP-2.1', name: 'Tương tác thông qua công nghệ số' },
+  { id: 'cmp-2-2', code: 'CMP-2.2', name: 'Chia sẻ thông tin và nội dung số' },
+  { id: 'cmp-3-1', code: 'CMP-3.1', name: 'Phát triển nội dung số' },
+  { id: 'cmp-4-1', code: 'CMP-4.1', name: 'Bảo vệ thiết bị' },
+  { id: 'cmp-4-2', code: 'CMP-4.2', name: 'Bảo vệ dữ liệu cá nhân và quyền riêng tư' },
+  { id: 'cmp-5-1', code: 'CMP-5.1', name: 'Giải quyết các vấn đề kỹ thuật' },
 ];
 
 export function CreatePracticalTaskPage() {
@@ -64,7 +64,7 @@ export function CreatePracticalTaskPage() {
       rubricCriteria: [
         { id: 'rc-1', label: 'Tính đầy đủ và chính xác của giải pháp', maxPoints: 40, description: 'Bám sát yêu cầu đề bài và chuẩn hóa' },
         { id: 'rc-2', label: 'Khả năng ứng dụng thực tế vào công việc', maxPoints: 35, description: 'Quy trình khả thi, tài liệu rõ ràng' },
-        { id: 'rc-3', label: 'Bảo mật và an toàn dữ liệu số', maxPoints: 25, description: 'Tuân thủ bảo vệ dữ liệu theo TT02' },
+        { id: 'rc-3', label: 'Bảo mật và an toàn dữ liệu số', maxPoints: 25, description: 'Tuân thủ bảo vệ dữ liệu số' },
       ],
     },
   });
@@ -88,7 +88,7 @@ export function CreatePracticalTaskPage() {
 
   const onSubmit = async (values: FormValues) => {
     if (selectedCompetencies.length === 0) {
-      toast.error('Vui lòng chọn ít nhất một năng lực số TT02');
+      toast.error('Vui lòng chọn ít nhất một năng lực số');
       return;
     }
 
@@ -128,7 +128,7 @@ export function CreatePracticalTaskPage() {
 
       <PageHeader
         title="Giao bài tập thực hành & Dự án năng lực"
-        subtitle="Thiết lập nhiệm vụ thực tế gắn với chuẩn năng lực số Thông tư 02/2025 và tiêu chí chấm điểm minh chứng (Rubric)."
+        subtitle="Thiết lập nhiệm vụ thực tế gắn với Khung chuẩn năng lực số và tiêu chí chấm điểm minh chứng (Rubric)."
       />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -178,7 +178,7 @@ export function CreatePracticalTaskPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label htmlFor="task-level" className="block text-sm font-semibold text-slate-800">
-                Cấp độ năng lực hướng tới (TT 02/2025)
+                Cấp độ năng lực hướng tới
               </label>
               <select
                 id="task-level"
@@ -207,10 +207,10 @@ export function CreatePracticalTaskPage() {
           </div>
         </div>
 
-        {/* Card 2: Khung năng lực TT02 gắn kèm */}
+        {/* Card 2: Khung năng lực gắn kèm */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-4">
           <div>
-            <h2 className="text-base font-bold text-slate-900">2. Năng lực số chuẩn TT 02/2025 liên kết</h2>
+            <h2 className="text-base font-bold text-slate-900">2. Năng lực số liên kết</h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Khi Manager duyệt minh chứng bài tập này, nhân viên sẽ được ghi nhận điểm thực hành cho các năng lực được chọn.
             </p>
