@@ -5,6 +5,8 @@ import type { PracticalTaskRecord } from '@/services/mock/server/types-work';
 
 interface TasksTabProps {
   tasks?: PracticalTaskRecord[];
+  /** Competency id → Circular 02/2025 code ("4.2"), to show the task targets by code. */
+  competencyCodes?: Record<string, string>;
   readOnly?: boolean;
 }
 
@@ -13,9 +15,13 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   SUBMITTED: { label: 'Đã nộp', color: 'bg-amber-50 text-amber-700 ring-amber-600/20' },
   EVALUATED: { label: 'Đã đánh giá', color: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20' },
   OVERDUE: { label: 'Quá hạn', color: 'bg-red-50 text-red-700 ring-red-600/20' },
+  NEEDS_REVISION: { label: 'Cần chỉnh sửa', color: 'bg-amber-50 text-amber-700 ring-amber-600/20' },
+  PASSED: { label: 'Đã đạt', color: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20' },
+  FAILED: { label: 'Không đạt', color: 'bg-red-50 text-red-700 ring-red-600/20' },
+  CANCELLED: { label: 'Đã hủy', color: 'bg-slate-50 text-slate-700 ring-slate-600/20' },
 };
 
-export const TasksTab: React.FC<TasksTabProps> = ({ tasks = [] }) => {
+export const TasksTab: React.FC<TasksTabProps> = ({ tasks = [], competencyCodes }) => {
   if (tasks.length === 0) {
     return (
       <EmptyState
@@ -59,7 +65,9 @@ export const TasksTab: React.FC<TasksTabProps> = ({ tasks = [] }) => {
 
               <div className="mt-4 border-t border-slate-100 pt-2 flex items-center justify-between text-xs text-slate-500">
                 <span>Hạn chót: {formatDate(task.dueDate)}</span>
-                <span className="font-mono text-slate-400">{task.competencyIds?.join(', ')}</span>
+                <span className="font-mono text-slate-400">
+                  {task.competencyIds?.map((id) => competencyCodes?.[id] ?? id).join(', ')}
+                </span>
               </div>
             </div>
           );

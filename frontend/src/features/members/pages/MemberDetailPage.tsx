@@ -6,6 +6,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { useMember } from '@/hooks/use-members';
 import { useEmployeeCapability } from '@/hooks/use-workforce';
 import { PERMISSIONS } from '@/hooks/use-permission';
+import { competencyCodeMap } from '@/lib/competency-levels';
 import { assignableRoles, canManageMember } from '@/lib/role-policy';
 import { SECONDARY_BUTTON } from '@/features/onboarding/components/styles';
 import { ConfirmLevelDialog } from '@/features/intelligence/components/ConfirmLevelDialog';
@@ -213,7 +214,7 @@ export function MemberDetailPage() {
           <AssessmentsTab attempts={capData?.assessments} />
         )}
         {tab === 'tasks' && (
-          <TasksTab tasks={capData?.tasks} />
+          <TasksTab tasks={capData?.tasks} competencyCodes={competencyCodeMap(capData?.competencies)} />
         )}
         {tab === 'evidence' && (
           <EvidencesTab
