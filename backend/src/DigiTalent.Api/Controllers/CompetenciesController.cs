@@ -34,6 +34,17 @@ public class CompetenciesController : ControllerBase
         return Ok(ApiResponse<GetCompetencyByIdUseCaseOutput>.Ok(result));
     }
 
+    // GET api/v1/competencies/{id}/usage
+    [HttpGet("{id:guid}/usage")]
+    [HasPermission(Permissions.Competency.Read)]
+    public async Task<ActionResult<ApiResponse<GetCompetencyUsageUseCaseOutput>>> GetUsage(
+        Guid id,
+        [FromServices] IUseCase<GetCompetencyUsageUseCaseInput, GetCompetencyUsageUseCaseOutput> useCase)
+    {
+        var result = await useCase.ExecuteAsync(new GetCompetencyUsageUseCaseInput { CompetencyId = id });
+        return Ok(ApiResponse<GetCompetencyUsageUseCaseOutput>.Ok(result));
+    }
+
     // POST api/v1/competencies
     [HttpPost]
     [HasPermission(Permissions.Competency.CreateUpdate)]
