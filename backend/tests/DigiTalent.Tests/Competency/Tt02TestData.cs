@@ -14,19 +14,7 @@ internal static class Tt02TestData
     /// <summary>24 năng lực theo thứ tự mã 1.1 … 6.3.</summary>
     public static async Task<IReadOnlyList<Domain.Entities.Competency>> SeedMappedCompetenciesAsync(AppDbContext context, Guid organizationId)
     {
-        var framework = await context.CompetencyFrameworks.FirstOrDefaultAsync(f =>
-            f.Code == CompetencyFrameworks.Tt02.Code && f.Version == CompetencyFrameworks.Tt02.Version);
-        if (framework == null)
-        {
-            framework = new CompetencyFramework
-            {
-                Code = CompetencyFrameworks.Tt02.Code,
-                Version = CompetencyFrameworks.Tt02.Version,
-                Name = "Khung năng lực số",
-                IsActive = true,
-            };
-            context.CompetencyFrameworks.Add(framework);
-        }
+        var framework = await FrameworkAsync(context);
 
         var category = new CompetencyCategory
         {
@@ -62,6 +50,46 @@ internal static class Tt02TestData
 
         await context.SaveChangesAsync();
         return competencies;
+    }
+
+    /// <summary>Maps existing competencies to Circular 02/2025 codes (competency id → code such as "4.2").</summary>
+    public static async Task MapAsync(AppDbContext context, IReadOnlyDictionary<Guid, string> codes)
+    {
+        var framework = await FrameworkAsync(context);
+        foreach (var (competencyId, sourceCode) in codes)
+        {
+            context.CompetencyFrameworkMappings.Add(new CompetencyFrameworkMapping
+            {
+                CompetencyId = competencyId,
+                FrameworkId = framework.Id,
+                SourceAreaCode = sourceCode[..1],
+                SourceCode = sourceCode,
+                Relationship = "DIRECT",
+                IsPrimary = true,
+            });
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    /// <summary>The shared TT02_2025 framework (unique code + version), created on first use.</summary>
+    private static async Task<CompetencyFramework> FrameworkAsync(AppDbContext context)
+    {
+        var framework = await context.CompetencyFrameworks.FirstOrDefaultAsync(f =>
+            f.Code == CompetencyFrameworks.Tt02.Code && f.Version == CompetencyFrameworks.Tt02.Version);
+        if (framework == null)
+        {
+            framework = new CompetencyFramework
+            {
+                Code = CompetencyFrameworks.Tt02.Code,
+                Version = CompetencyFrameworks.Tt02.Version,
+                Name = "Khung năng lực số",
+                IsActive = true,
+            };
+            context.CompetencyFrameworks.Add(framework);
+        }
+
+        return framework;
     }
 
     /// <summary>Một dòng cho mỗi năng lực, cùng mức; trọng số 23 × 4.17 + 4.09 = 100.</summary>
