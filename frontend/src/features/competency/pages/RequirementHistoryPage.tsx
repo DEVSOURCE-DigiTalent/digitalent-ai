@@ -80,7 +80,7 @@ export function RequirementHistoryPage() {
         <EmptyState
           title="Vị trí này chưa có phiên bản nào"
           description="Đặt yêu cầu năng lực để tạo phiên bản đầu tiên."
-          action={<Link to={`/enterprise/positions/requirements?positionId=${positionId}`} className={PRIMARY_BUTTON}>Đặt yêu cầu năng lực</Link>}
+          action={<Link to={`/enterprise/requirements/builder?positionId=${positionId}`} className={PRIMARY_BUTTON}>Đặt yêu cầu năng lực</Link>}
         />
       )}
 

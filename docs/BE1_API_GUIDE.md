@@ -115,7 +115,7 @@ Ví dụ response:
     "setup": [
       { "key": "departments", "label": "Phòng ban", "done": true, "detail": "1 phòng ban", "path": "/enterprise/departments" },
       { "key": "positions", "label": "Vị trí công việc", "done": true, "detail": "5 vị trí", "path": "/enterprise/positions" },
-      { "key": "requirements", "label": "Yêu cầu năng lực theo vị trí", "done": true, "detail": "5/5 vị trí đã có yêu cầu đang áp dụng", "path": "/enterprise/positions/requirements" },
+      { "key": "requirements", "label": "Yêu cầu năng lực theo vị trí", "done": true, "detail": "5/5 vị trí đã có yêu cầu đang áp dụng", "path": "/enterprise/requirements" },
       { "key": "members", "label": "Thành viên", "done": true, "detail": "2 đang hoạt động, 2 chờ kích hoạt", "path": "/enterprise/members" }
     ],
     "setupCompleted": true,
