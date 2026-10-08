@@ -1,0 +1,2560 @@
+[
+  {
+    "id": "TC01",
+    "screen": "OW-02 Thành viên",
+    "title": "Danh sách thành viên lấy từ API thật",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/members",
+    "precondition": "DB mới, seed Development: 5 tài khoản (admin@, hr@, manager@, trainer@, employee@)",
+    "steps": [
+      "Đăng nhập hr@digitalent.ai",
+      "Mở Tổ chức > Thành viên"
+    ],
+    "expected": "Bảng hiện 5 thành viên của tổ chức; admin@ hiển thị vai trò Chủ doanh nghiệp, chưa có phòng ban (tài khoản chưa có hồ sơ nhân viên).",
+    "actual": "Hiển thị 5 thành viên; admin@ là Chủ doanh nghiệp, chưa có phòng ban.",
+    "notes": [
+      "1. Bảng thành viên: 5 dòng trả về từ GET /api/v1/members (dữ liệu seed, không phải mock)",
+      "2. admin@: Vai trò Chủ doanh nghiệp (SYSTEM_ADMIN → OWNER), phòng ban \"—\" vì chưa có hồ sơ nhân viên"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:20:59.022Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members?pageIndex=1&pageSize=15",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC02",
+    "screen": "OW-02 Thành viên",
+    "title": "Mời thành viên: 1 lời mời hợp lệ, 1 email đã có tài khoản",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/members → Mời thành viên",
+    "precondition": "Email kiemthu.fe@digitalent.ai chưa có tài khoản; employee@digitalent.ai đã có tài khoản",
+    "steps": [
+      "Bấm \"Mời thành viên\"",
+      "Nhập Nguyễn Văn Kiểm Thử / kiemthu.fe@digitalent.ai, vai trò Quản lý, phòng ban Operations → \"Thêm vào danh sách\"",
+      "Nhập \"Nhân viên trùng\" / employee@digitalent.ai → \"Thêm vào danh sách\"",
+      "Bấm \"Gửi 2 lời mời\""
+    ],
+    "expected": "1 lời mời được tạo, có liên kết kích hoạt (Development trả token); email đã có tài khoản bị từ chối với lý do tiếng Việt \"Email đã có tài khoản hoặc đã được mời.\"",
+    "actual": "1 lời mời được tạo (có liên kết kích hoạt), employee@ bị từ chối: \"Email đã có tài khoản hoặc đã được mời.\"",
+    "notes": [
+      "1. Lời mời đã tạo: POST /members/invitations trả created[1] kèm token → hiện liên kết kích hoạt (chỉ Development)",
+      "2. Dòng bị từ chối: rejected[].reason tiếng Việt do backend trả, hiển thị nguyên văn"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:21:01.843Z",
+    "api": [
+      {
+        "method": "POST",
+        "path": "/api/v1/members/invitations",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members?pageIndex=1&pageSize=15",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC03",
+    "screen": "OW-02 Thành viên",
+    "title": "Lời mời chờ kích hoạt xuất hiện trong danh sách",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/members",
+    "precondition": "Đã chạy TC02",
+    "steps": [
+      "Đóng modal mời",
+      "Xem danh sách thành viên"
+    ],
+    "expected": "Có dòng kiemthu.fe@digitalent.ai trạng thái \"Chờ kích hoạt\" ở cuối danh sách (lời mời xếp sau thành viên).",
+    "actual": "Dòng lời mời \"Chờ kích hoạt\" hiển thị ở cuối danh sách.",
+    "notes": [
+      "1. Lời mời: kind = invitation, status = PENDING → nhãn \"Chờ kích hoạt\", nằm cuối danh sách"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:21:09.114Z",
+    "api": []
+  },
+  {
+    "id": "TC04",
+    "screen": "AUTH-05 Kích hoạt lời mời",
+    "title": "Mở liên kết kích hoạt (chưa đăng nhập)",
+    "role": "Ẩn danh",
+    "url": "/activate/{token}",
+    "precondition": "Token lấy từ liên kết ở TC02; đã đăng xuất",
+    "steps": [
+      "Mở liên kết kích hoạt trong trình duyệt chưa đăng nhập"
+    ],
+    "expected": "Trang hiện tên tổ chức, vai trò Quản lý, email được mời ở ô chỉ đọc (dữ liệu từ GET /invitations/{token}).",
+    "actual": "Trang kích hoạt hiện đúng tổ chức, vai trò Quản lý và email được mời.",
+    "notes": [
+      "1. Thông tin lời mời: organizationName + role từ GET /api/v1/invitations/{token} (trước đây service chỉ có mock)",
+      "2. Email: Email được mời, readonly"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:21:12.345Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/invitations/{token}",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC05",
+    "screen": "AUTH-05 Kích hoạt lời mời",
+    "title": "Đặt mật khẩu và kích hoạt tài khoản",
+    "role": "Ẩn danh → Quản lý mới",
+    "url": "/activate/{token}",
+    "precondition": "Đã chạy TC04",
+    "steps": [
+      "Nhập mật khẩu ≥ 12 ký tự và nhập lại",
+      "Bấm \"Kích hoạt và vào hệ thống\""
+    ],
+    "expected": "POST /invitations/activate thành công, tự đăng nhập (POST /auth/login) và chuyển tới trang đánh giá đầu vào.",
+    "actual": "Kích hoạt thành công, tự đăng nhập và vào trang đánh giá đầu vào.",
+    "notes": [
+      "1. Đã vào hệ thống: Tài khoản mới đăng nhập được, chuyển tới /enterprise/initial-assessment"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:21:14.632Z",
+    "api": [
+      {
+        "method": "POST",
+        "path": "/api/v1/invitations/activate",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/auth/login",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/intelligence/skill-gaps/me/latest",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC06",
+    "screen": "AUTH-05 Kích hoạt lời mời",
+    "title": "Dùng lại liên kết đã kích hoạt",
+    "role": "Ẩn danh",
+    "url": "/activate/{token}",
+    "precondition": "Đã chạy TC05",
+    "steps": [
+      "Mở lại đúng liên kết kích hoạt cũ"
+    ],
+    "expected": "Backend trả 404; trang báo bằng tiếng Việt \"Liên kết mời không hợp lệ hoặc đã hết hạn.\" (dịch từ thông báo tiếng Anh của backend).",
+    "actual": "Hiện \"Liên kết mời không hợp lệ hoặc đã hết hạn.\"",
+    "notes": [
+      "1. Thông báo lỗi: GET /invitations/{token} = 404 → organizationErrorMessage dịch sang tiếng Việt"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:21:17.719Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/invitations/{token}",
+        "status": 404
+      }
+    ]
+  },
+  {
+    "id": "TC07",
+    "screen": "OW-03 Chi tiết thành viên",
+    "title": "Thành viên vừa kích hoạt: vai trò, phòng ban, lịch sử",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/members/{id}",
+    "precondition": "Đã chạy TC05",
+    "steps": [
+      "Mở chi tiết Nguyễn Văn Kiểm Thử từ danh sách thành viên"
+    ],
+    "expected": "Vai trò Quản lý, phòng ban Operations; lịch sử có \"Kích hoạt lời mời\" (nhãn mới cho INVITATION_ACCEPTED). Log \"Mời thành viên\" gắn với id lời mời nên không thuộc lịch sử thành viên (BE1 guide §3.2).",
+    "actual": "Vai trò Quản lý, phòng ban Operations; lịch sử có \"Kích hoạt lời mời\".",
+    "notes": [
+      "1. Hồ sơ: Vai trò Quản lý, phòng ban Operations (hồ sơ nhân viên tạo khi kích hoạt)",
+      "2. INVITATION_ACCEPTED: Nhãn tiếng Việt mới thêm trong member-labels.ts"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:21:23.434Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members?pageIndex=1&pageSize=15",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members/6e2c55ab-8111-4486-a78f-99a5320580fa",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/workforce/094e209e-134f-47d3-b97b-e217e303607c",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC08",
+    "screen": "OW-03 Chi tiết thành viên",
+    "title": "Đổi vai trò Quản lý → Nhân viên",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/members/{id} → Đổi vai trò",
+    "precondition": "Đang ở chi tiết thành viên của TC07",
+    "steps": [
+      "Bấm \"Đổi vai trò\"",
+      "Chọn \"Nhân viên\"",
+      "Bấm \"Lưu vai trò\""
+    ],
+    "expected": "PUT /members/{id} thành công; toast xác nhận; vai trò hiển thị Nhân viên; lịch sử thêm \"Đổi vai trò\".",
+    "actual": "Đổi vai trò thành công, vai trò hiển thị Nhân viên, lịch sử có \"Đổi vai trò\".",
+    "notes": [
+      "1. Toast: Thông báo đổi vai trò thành công",
+      "2. Vai trò: Dữ liệu tải lại sau khi invalidate cache: Nhân viên",
+      "3. ROLE_CHANGED: Lịch sử ghi nhận đổi vai trò"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:21:26.540Z",
+    "api": [
+      {
+        "method": "PUT",
+        "path": "/api/v1/members/6e2c55ab-8111-4486-a78f-99a5320580fa",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members/6e2c55ab-8111-4486-a78f-99a5320580fa",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/workforce/094e209e-134f-47d3-b97b-e217e303607c",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC09",
+    "screen": "OW-03 Chi tiết thành viên",
+    "title": "Đổi phòng ban & vị trí (gán vị trí Kế toán)",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/members/{id} → Phòng ban & vị trí",
+    "precondition": "Đã chạy TC08",
+    "steps": [
+      "Bấm \"Phòng ban & vị trí\"",
+      "Giữ phòng ban Operations (bắt buộc), chọn vị trí \"Kế toán\"",
+      "Bấm \"Lưu\""
+    ],
+    "expected": "PUT /members/{id} thành công; vị trí công việc hiển thị Kế toán; lịch sử có \"Đổi phòng ban / vị trí\".",
+    "actual": "Vị trí cập nhật thành Kế toán, lịch sử có \"Đổi phòng ban / vị trí\".",
+    "notes": [
+      "[Ảnh TC09a] 1. Phòng ban *: Bắt buộc (mọi hồ sơ nhân viên thuộc 1 phòng ban); nút Lưu bị khóa nếu trống",
+      "[Ảnh TC09a] 2. Vị trí: Chọn Kế toán",
+      "1. Toast: Cập nhật thành công",
+      "2. Vị trí: Kế toán",
+      "3. MEMBER_PLACEMENT_CHANGED: Lịch sử ghi nhận"
+    ],
+    "extraImages": [
+      "TC09a"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:21:28.424Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "PUT",
+        "path": "/api/v1/members/6e2c55ab-8111-4486-a78f-99a5320580fa",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members/6e2c55ab-8111-4486-a78f-99a5320580fa",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/workforce/094e209e-134f-47d3-b97b-e217e303607c",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC10",
+    "screen": "OW-03 Chi tiết thành viên",
+    "title": "Vô hiệu hóa thành viên (có lý do)",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/members/{id} → Vô hiệu hóa",
+    "precondition": "Đã chạy TC09",
+    "steps": [
+      "Bấm \"Vô hiệu hóa\"",
+      "Nhập lý do \"Nghỉ phép dài hạn (kiểm thử)\"",
+      "Xác nhận \"Vô hiệu hóa\""
+    ],
+    "expected": "POST /members/{id}/deactivate thành công; trạng thái \"Đã vô hiệu hóa\" và banner hiện lý do.",
+    "actual": "Trạng thái Đã vô hiệu hóa, banner hiện lý do \"Nghỉ phép dài hạn (kiểm thử)\".",
+    "notes": [
+      "1. Trạng thái: status = INACTIVE",
+      "2. Lý do: deactivatedReason do backend lưu và trả về"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:21:31.396Z",
+    "api": [
+      {
+        "method": "POST",
+        "path": "/api/v1/members/6e2c55ab-8111-4486-a78f-99a5320580fa/deactivate",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members/6e2c55ab-8111-4486-a78f-99a5320580fa",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/workforce/094e209e-134f-47d3-b97b-e217e303607c",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC11",
+    "screen": "OW-03 Chi tiết thành viên",
+    "title": "Kích hoạt lại thành viên",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/members/{id} → Kích hoạt lại",
+    "precondition": "Đã chạy TC10",
+    "steps": [
+      "Bấm \"Kích hoạt lại\"",
+      "Xác nhận \"Kích hoạt lại\""
+    ],
+    "expected": "POST /members/{id}/reactivate thành công; trạng thái \"Đang hoạt động\", banner vô hiệu hóa biến mất.",
+    "actual": "Trạng thái trở lại Đang hoạt động.",
+    "notes": [
+      "1. Toast: Kích hoạt lại thành công",
+      "2. Trạng thái: status = ACTIVE"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:21:34.720Z",
+    "api": [
+      {
+        "method": "POST",
+        "path": "/api/v1/members/6e2c55ab-8111-4486-a78f-99a5320580fa/reactivate",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members/6e2c55ab-8111-4486-a78f-99a5320580fa",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/workforce/094e209e-134f-47d3-b97b-e217e303607c",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC12",
+    "screen": "OW-03 Chi tiết thành viên",
+    "title": "Tài khoản chưa có hồ sơ nhân viên (admin@)",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/members/{id admin}",
+    "precondition": "admin@ là tài khoản không có hồ sơ nhân viên (employeeId = null)",
+    "steps": [
+      "Mở chi tiết System Admin từ danh sách thành viên"
+    ],
+    "expected": "Không gọi API năng lực bằng user id (trước đây trả 404); hiện thông báo \"chưa có hồ sơ nhân viên\" và chỉ còn tab Tổng quan.",
+    "actual": "Hiện thông báo chưa có hồ sơ, chỉ có tab Tổng quan; không có request /workforce lỗi 404.",
+    "notes": [
+      "1. Thông báo: employeeId = null → không tải dữ liệu năng lực, hướng dẫn tạo hồ sơ",
+      "2. Tabs: Chỉ còn tab Tổng quan"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:21:37.055Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members?pageIndex=1&pageSize=15",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members/3f36b83c-e0ca-4ebf-b5d8-72cb6d58e312",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC13",
+    "screen": "OW-13 Phân quyền",
+    "title": "Ba vai trò và số người giữ từ GET /roles",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/access",
+    "precondition": "Đã chạy TC01–TC12",
+    "steps": [
+      "Mở Tổ chức > Phân quyền"
+    ],
+    "expected": "3 thẻ vai trò Chủ doanh nghiệp / Quản lý / Nhân viên với số người do backend đếm (Owner gồm cả System Admin).",
+    "actual": "Hiện 3 thẻ vai trò kèm số người giữ vai trò.",
+    "notes": [
+      "1. 3 vai trò: name, summary, can, memberCount từ GET /api/v1/roles"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:21:39.795Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members?status=ACTIVE&pageIndex=1&pageSize=15",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members?status=ACTIVE&role=MANAGER&pageSize=100",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/roles",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC14",
+    "screen": "OW-13 Phân quyền",
+    "title": "Owner tự hạ vai trò của chính mình (Owner cuối cùng)",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/access → Đổi vai trò",
+    "precondition": "hr@ là HR_MANAGER đang hoạt động duy nhất",
+    "steps": [
+      "Ở dòng hr@digitalent.ai bấm \"Đổi vai trò\"",
+      "Chọn \"Nhân viên\" → \"Lưu vai trò\""
+    ],
+    "expected": "Backend trả 409; toast tiếng Việt \"Tổ chức phải còn ít nhất một Chủ doanh nghiệp đang hoạt động.\"; vai trò giữ nguyên.",
+    "actual": "Hiện toast \"Tổ chức phải còn ít nhất một Chủ doanh nghiệp đang hoạt động.\"",
+    "notes": [
+      "1. Toast lỗi 409: \"The organization must keep at least one active Owner.\" được dịch sang tiếng Việt"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:21:42.263Z",
+    "api": [
+      {
+        "method": "PUT",
+        "path": "/api/v1/members/c10c9637-9741-4d67-a588-5dec468425b8",
+        "status": 409
+      }
+    ]
+  },
+  {
+    "id": "TC15",
+    "screen": "OW-06 Phòng ban",
+    "title": "Tạo phòng ban con có mô tả",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/departments → Tạo phòng ban",
+    "precondition": "Phòng ban OPS (Operations) có sẵn",
+    "steps": [
+      "Bấm \"Tạo phòng ban\"",
+      "Mã QA, tên \"Kiểm thử chất lượng\", mô tả, cấp trên Operations",
+      "Bấm \"Lưu\""
+    ],
+    "expected": "POST /departments thành công; phòng ban QA xuất hiện trong danh sách, trực thuộc Operations.",
+    "actual": "Tạo được phòng ban QA trực thuộc Operations.",
+    "notes": [
+      "1. Toast: Tạo thành công",
+      "2. Phòng ban mới: QA trực thuộc Operations"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:21:45.971Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageIndex=1&pageSize=10&search=",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageIndex=1&pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members?pageIndex=1&pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/departments",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageIndex=1&pageSize=10&search=",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageIndex=1&pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members?pageIndex=1&pageSize=100&status=ACTIVE",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC16",
+    "screen": "OW-13 Phân quyền",
+    "title": "Phân công phòng ban cho Quản lý",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/access → Phân công Quản lý phòng ban",
+    "precondition": "manager@ đang quản lý OPS; đã có QA (TC15)",
+    "steps": [
+      "Mở tab \"Phân công Quản lý phòng ban\"",
+      "Ở Department Manager bấm \"Phân công phòng ban\"",
+      "Kiểm tra OPS đã được tích sẵn, tích thêm \"Kiểm thử chất lượng\"",
+      "Bấm \"Lưu phân công\""
+    ],
+    "expected": "Modal tích sẵn phòng ban đang quản lý (OPS); lưu xong tab hiện 2 phòng ban OPS và QA cho Department Manager.",
+    "actual": "Modal tích sẵn OPS; sau khi lưu, Department Manager quản lý OPS và QA.",
+    "notes": [
+      "[Ảnh TC16a] 1. OPS tích sẵn: Trạng thái ban đầu lấy theo danh sách phòng ban đã tải (sửa lỗi state khởi tạo rỗng)",
+      "[Ảnh TC16a] 2. QA: Tích thêm phòng ban mới",
+      "1. Toast: Lưu phân công thành công",
+      "2. Phạm vi quản lý: Department Manager quản lý OPS và QA"
+    ],
+    "extraImages": [
+      "TC16a"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:21:51.108Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/roles",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members?status=ACTIVE&role=MANAGER&pageSize=100",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members?status=ACTIVE&pageIndex=1&pageSize=15",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments/ca8e77c7-c7a4-4cf3-b14b-9a08c0718b88",
+        "status": 200
+      },
+      {
+        "method": "PUT",
+        "path": "/api/v1/departments/ca8e77c7-c7a4-4cf3-b14b-9a08c0718b88",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/roles",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members?status=ACTIVE&pageIndex=1&pageSize=15",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members?status=ACTIVE&role=MANAGER&pageSize=100",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC17",
+    "screen": "OW-07 Chi tiết phòng ban",
+    "title": "Gán quản lý không làm mất phòng ban cấp trên và mô tả",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/departments/{id QA}",
+    "precondition": "Đã chạy TC16 (PUT /departments/{id} khi gán quản lý)",
+    "steps": [
+      "Mở Phòng ban > Kiểm thử chất lượng"
+    ],
+    "expected": "Quản lý = Department Manager; Phòng ban cấp trên vẫn là Operations; Mô tả vẫn giữ nguyên (trước đây bị xóa vì PUT thay toàn bộ).",
+    "actual": "Quản lý Department Manager; cấp trên Operations và mô tả giữ nguyên.",
+    "notes": [
+      "1. Quản lý: Department Manager (vừa gán ở TC16)",
+      "2. Cấp trên: Vẫn là Operations",
+      "3. Mô tả: Vẫn giữ nguyên",
+      "4. Cấp bậc: Tên cấp bậc theo tổ chức từ GET /job-grades (trước đây ghi cứng \"G1 - Nhân viên\"…)"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:21:55.692Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageIndex=1&pageSize=10&search=",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments/ca8e77c7-c7a4-4cf3-b14b-9a08c0718b88",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members?departmentId=ca8e77c7-c7a4-4cf3-b14b-9a08c0718b88&pageSize=50",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?departmentId=ca8e77c7-c7a4-4cf3-b14b-9a08c0718b88&pageSize=50",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-grades",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC18",
+    "screen": "OW-06 Phòng ban",
+    "title": "Sửa phòng ban từ danh sách: form tải đủ dữ liệu",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/departments → Sửa",
+    "precondition": "Danh sách phòng ban không trả mô tả",
+    "steps": [
+      "Ở dòng \"Kiểm thử chất lượng\" bấm biểu tượng Sửa"
+    ],
+    "expected": "Form tải GET /departments/{id}: mô tả, người quản lý, phòng ban cấp trên điền sẵn (lưu sẽ không xóa mô tả).",
+    "actual": "Form điền sẵn mô tả, quản lý Department Manager, cấp trên Operations.",
+    "notes": [
+      "1. Mô tả: Điền sẵn từ GET /departments/{id}",
+      "2. Quản lý: Department Manager; danh sách chỉ gồm thành viên có hồ sơ nhân viên",
+      "3. Cấp trên: Operations"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:21:58.784Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageIndex=1&pageSize=10&search=",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageIndex=1&pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments/ca8e77c7-c7a4-4cf3-b14b-9a08c0718b88",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members?pageIndex=1&pageSize=100&status=ACTIVE",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC19",
+    "screen": "OW-09 Vị trí công việc",
+    "title": "Sửa vị trí: gán phòng ban, cấp bậc và mô tả",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/positions → Sửa ACCOUNTANT",
+    "precondition": "ACCOUNTANT chưa có phòng ban, cấp bậc, mô tả",
+    "steps": [
+      "Ở dòng ACCOUNTANT bấm Sửa",
+      "Phòng ban Operations, Cấp bậc G1, mô tả \"Hạch toán và báo cáo tài chính\"",
+      "Bấm \"Lưu\""
+    ],
+    "expected": "PUT /job-positions/{id} gửi jobGrade; danh sách hiện Phòng ban Operations và cột Cấp bậc \"Cấp Tác nghiệp / Chuyên viên G1\".",
+    "actual": "ACCOUNTANT hiển thị Operations và cấp bậc G1 với tên của tổ chức.",
+    "notes": [
+      "[Ảnh TC19a] 1. Cấp bậc: Trường mới: nhãn lấy tên cấp bậc của tổ chức từ GET /job-grades",
+      "1. Toast: Cập nhật thành công",
+      "2. ACCOUNTANT: Phòng ban Operations, cấp bậc \"Cấp Tác nghiệp / Chuyên viên G1\", mô tả hiển thị dưới tên"
+    ],
+    "extraImages": [
+      "TC19a"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:02.132Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-grades",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?pageIndex=1&pageSize=10&search=",
+        "status": 200
+      },
+      {
+        "method": "PUT",
+        "path": "/api/v1/job-positions/e3ef3152-221f-4b51-ba2c-85ac82f9d4ab",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?pageIndex=1&pageSize=10&search=",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-grades",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC20",
+    "screen": "OW-09 Vị trí công việc",
+    "title": "Mở lại form sửa: giữ mô tả, phòng ban, cấp bậc",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/positions → Sửa ACCOUNTANT",
+    "precondition": "Đã chạy TC19",
+    "steps": [
+      "Ở dòng ACCOUNTANT bấm Sửa lần nữa"
+    ],
+    "expected": "Form điền sẵn mô tả, phòng ban, cấp bậc hiện có (trước đây mô tả để trống và không có cấp bậc → PUT xóa dữ liệu).",
+    "actual": "Form điền sẵn Operations, G1 và mô tả.",
+    "notes": [
+      "1. Phòng ban: Operations",
+      "2. Cấp bậc: G1 giữ nguyên",
+      "3. Mô tả: Giữ nguyên"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:06.112Z",
+    "api": []
+  },
+  {
+    "id": "TC21",
+    "screen": "OW-09 Vị trí công việc",
+    "title": "Lọc vị trí theo Cấp bậc",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/positions?jobGrade=G1",
+    "precondition": "Chỉ ACCOUNTANT có cấp bậc G1",
+    "steps": [
+      "Chọn bộ lọc \"Lọc theo Cấp bậc\" = G1"
+    ],
+    "expected": "GET /job-positions?…jobGrade=G1; bảng chỉ còn ACCOUNTANT.",
+    "actual": "Chỉ còn 1 dòng ACCOUNTANT.",
+    "notes": [
+      "1. Bộ lọc: Bộ lọc mới, gửi jobGrade=G1",
+      "2. Kết quả: Chỉ còn ACCOUNTANT"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:08.574Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?pageIndex=1&pageSize=10&search=&jobGrade=G1",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC22",
+    "screen": "OW-12 Cấu hình cấp bậc",
+    "title": "Đổi tên cấp bậc G1, tên mới hiện ở danh sách vị trí",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/positions/grades",
+    "precondition": "Màn OW-12 vào bằng URL (sitemap đánh dấu \"Đã bỏ\")",
+    "steps": [
+      "Mở /enterprise/positions/grades",
+      "Ở thẻ G1 bấm sửa, đổi tên \"Chuyên viên kế toán\"",
+      "Bấm \"Lưu thay đổi\"",
+      "Mở lại Vị trí công việc"
+    ],
+    "expected": "PUT /job-grades/G1 thành công; cột Cấp bậc của ACCOUNTANT hiện tên mới (cache vị trí được làm mới).",
+    "actual": "Tên G1 đổi thành \"Chuyên viên kế toán\" và hiện ở danh sách vị trí.",
+    "notes": [
+      "[Ảnh TC22a] 1. Toast: Cập nhật thành công",
+      "[Ảnh TC22a] 2. Thẻ G1: Tên mới, số vị trí áp dụng = 1",
+      "1. ACCOUNTANT: Cột Cấp bậc hiện tên mới \"Chuyên viên kế toán G1\""
+    ],
+    "extraImages": [
+      "TC22a"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:09.730Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-grades",
+        "status": 200
+      },
+      {
+        "method": "PUT",
+        "path": "/api/v1/job-grades/G1",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-grades",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-grades",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?pageIndex=1&pageSize=10&search=",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC23",
+    "screen": "OW-07 Chi tiết phòng ban",
+    "title": "Phân bố cấp bậc của phòng ban sau khi gán cấp bậc cho vị trí",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/departments/{id OPS}",
+    "precondition": "ACCOUNTANT = G1 (TC19); employee@ và thành viên mới giữ vị trí Kế toán ở Operations (TC09); G1 đã đổi tên (TC22)",
+    "steps": [
+      "Mở Phòng ban > Operations"
+    ],
+    "expected": "Khối \"Cơ cấu Cấp bậc\" đếm 2 nhân sự G1 và hiển thị tên G1 mới \"Chuyên viên kế toán\" (cache phòng ban được làm mới sau khi sửa vị trí/cấp bậc).",
+    "actual": "Operations có 2 nhân sự G1, tên cấp bậc hiển thị \"Chuyên viên kế toán\".",
+    "notes": [
+      "1. G1: 2 nhân sự giữ vị trí cấp G1 (employee@ và thành viên mới), tên theo cấu hình tổ chức"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:15.038Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageIndex=1&pageSize=10&search=",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments/dd13775c-a010-4978-ad45-54da4d76335f",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-grades",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?departmentId=dd13775c-a010-4978-ad45-54da4d76335f&pageSize=50",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members?departmentId=dd13775c-a010-4978-ad45-54da4d76335f&pageSize=50",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC24",
+    "screen": "OW-01 Tổng quan",
+    "title": "Hoạt động gần đây hiển thị thao tác vừa làm",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/dashboard",
+    "precondition": "Đã chạy các ca trên",
+    "steps": [
+      "Mở Tổng quan tổ chức, xem khối \"Hoạt động gần đây\""
+    ],
+    "expected": "recentActivity từ GET /organization/overview hiện bằng nhãn tiếng Việt (VD \"Cập nhật cấp bậc\"), có người thực hiện (null → \"Hệ thống\").",
+    "actual": "Khối hoạt động gần đây hiện các thao tác vừa làm với nhãn tiếng Việt.",
+    "notes": [
+      "1. Hoạt động gần đây: 5 hoạt động mới nhất; JOB_GRADE_UPDATED hiện \"Cập nhật cấp bậc\""
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:18.088Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/organization/overview",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/intelligence/dashboard",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC25",
+    "screen": "OW-02 Thành viên",
+    "title": "Quản lý (manager@) không vào được màn Thành viên",
+    "role": "MANAGER (manager@)",
+    "url": "/enterprise/members",
+    "precondition": "manager@ là DEPARTMENT_MANAGER (không có user.read)",
+    "steps": [
+      "Đăng nhập manager@digitalent.ai",
+      "Mở trực tiếp /enterprise/members"
+    ],
+    "expected": "Bị chặn bởi guard vai trò/quyền (trang không có quyền), không hiện dữ liệu thành viên.",
+    "actual": "Manager bị chặn, không thấy danh sách thành viên.",
+    "notes": [
+      "1. Bị chặn: Quản lý không có quyền xem danh sách thành viên của tổ chức"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:20.239Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/course-assignments/summary",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC26",
+    "screen": "OW-21 Khoảng trống năng lực",
+    "title": "Tính lại khoảng trống cho toàn bộ nhân sự",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/skill-gap",
+    "precondition": "Nhân viên có vị trí và bộ yêu cầu ACTIVE: employee@, manager@, Nguyễn Văn Kiểm Thử (Kế toán, TC09)",
+    "steps": [
+      "Mở Năng lực > Khoảng trống năng lực",
+      "Bấm \"Tính lại toàn bộ\""
+    ],
+    "expected": "POST /intelligence/skill-gaps/calculate-batch tính cho 3 nhân viên; thẻ tổng quan và bảng theo phòng ban lấy từ GET /intelligence/analytics/overview (API mới).",
+    "actual": "Tính lại cho 3 nhân viên; thẻ và bảng tổng quan hiện số liệu từ API.",
+    "notes": [
+      "1. Toast: Tính được 3 nhân viên",
+      "2. Thẻ tổng quan: Số nhân sự được phân tích, tỷ lệ đáp ứng, tổng khoảng trống, khoảng trống mức cao — GET /intelligence/analytics/overview",
+      "3. Theo phòng ban: Nhóm theo phòng ban, đáp ứng thấp nhất trước"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:33.723Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/intelligence/analytics/competencies",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/intelligence/skill-gaps?pageIndex=1&pageSize=10",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/intelligence/analytics/overview?groupBy=department",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/intelligence/skill-gaps/calculate-batch",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/intelligence/analytics/overview?groupBy=department",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/intelligence/skill-gaps?pageIndex=1&pageSize=10",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/intelligence/analytics/competencies",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC27",
+    "screen": "OW-21 Khoảng trống năng lực",
+    "title": "Khoảng trống theo từng năng lực TT02",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/skill-gap → Theo năng lực TT02",
+    "precondition": "Đã chạy TC26",
+    "steps": [
+      "Chọn tab \"Theo năng lực TT02\""
+    ],
+    "expected": "Bảng năng lực từ GET /intelligence/analytics/competencies (API mới): số người yêu cầu, số người thiếu, số mức cao, mức trung bình; nhiều mức cao trước.",
+    "actual": "Bảng hiện 22 năng lực có khoảng trống.",
+    "notes": [
+      "1. Tab: Theo năng lực TT02",
+      "2. Bảng năng lực: Mỗi dòng là 1 năng lực TT02 với số người thiếu và số mức cao"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:35.550Z",
+    "api": []
+  },
+  {
+    "id": "TC28",
+    "screen": "OW-22 Chi tiết khoảng trống",
+    "title": "Khoảng trống của một nhân viên",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/skill-gap/{employeeId}",
+    "precondition": "Đã chạy TC26",
+    "steps": [
+      "Chọn tab \"Theo nhân viên\"",
+      "Bấm vào Employee"
+    ],
+    "expected": "Trang chi tiết của Employee (snapshot mới nhất): vị trí Kế toán, phiên bản yêu cầu v1, độ đáp ứng 62.0%, danh sách năng lực thiếu.",
+    "actual": "Trang chi tiết khoảng trống của Employee hiện độ đáp ứng 62% và các năng lực thiếu.",
+    "notes": [
+      "[Ảnh TC28a] 1. Employee: 15 khoảng trống, 4 mức cao, đáp ứng 62.0%",
+      "1. Nhân viên: Kế toán · Operations · phiên bản yêu cầu v1",
+      "2. Độ đáp ứng: 62.0% (backend 62.03%) — khớp spec §8"
+    ],
+    "extraImages": [
+      "TC28a"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:36.577Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/intelligence/skill-gaps?employeeId=c0a25677-2f53-4f87-9445-34aa96148f0e&latestOnly=true&pageIndex=1&pageSize=1",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/intelligence/skill-gaps/75dfb7b9-d23e-45f3-a85c-ce36244a7c58",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/intelligence/recommendations?employeeId=c0a25677-2f53-4f87-9445-34aa96148f0e",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC29",
+    "screen": "OW-14 Khung năng lực TT 02/2025",
+    "title": "Khung năng lực số 24 năng lực",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/framework",
+    "precondition": "Seed TT02_2025",
+    "steps": [
+      "Mở Năng lực > Khung năng lực TT 02/2025"
+    ],
+    "expected": "6 miền, 24 năng lực thành phần theo mã 1.1 … 6.3.",
+    "actual": "Hiện khung 6 miền; trang đầu 10 năng lực theo mã TT02.",
+    "notes": [
+      "1. Khung TT02: 6 miền, 24 năng lực thành phần (Thông tư 02/2025/TT-BGDĐT)",
+      "2. Danh sách: Năng lực theo mã 1.1 … 6.3 (GET /competencies), có phân trang"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:38.267Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/competency-categories",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/competencies?pageIndex=1&pageSize=10",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC30",
+    "screen": "OW-15 Chi tiết năng lực",
+    "title": "Năng lực 4.2 được dùng ở đâu",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/framework/{id}",
+    "precondition": "Đã chạy TC29",
+    "steps": [
+      "Bấm năng lực \"Bảo vệ dữ liệu cá nhân và quyền riêng tư\""
+    ],
+    "expected": "Khối \"Nhân viên theo mức đã xác nhận\" và \"Vị trí đang yêu cầu năng lực này\" lấy từ GET /competencies/{id}/usage (API mới).",
+    "actual": "Hiện phân bố mức năng lực và các vị trí yêu cầu năng lực 4.2.",
+    "notes": [
+      "1. Phân bố mức: levelDistribution: số nhân viên ACTIVE theo mức 0–3",
+      "2. Vị trí yêu cầu: positions: mức yêu cầu và số nhân viên của từng vị trí"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:39.641Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/competencies?pageIndex=1&pageSize=10&search=B%E1%BA%A3o+v%E1%BB%87+d%E1%BB%AF+li%E1%BB%87u",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/competencies/1d4657b1-f522-4d85-bc1d-96c1c7080eaa",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/competencies/1d4657b1-f522-4d85-bc1d-96c1c7080eaa/usage",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC31",
+    "screen": "OW-16 Yêu cầu theo vị trí",
+    "title": "Tình trạng bộ yêu cầu của các vị trí",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/requirements",
+    "precondition": "ACCOUNTANT đã gắn Operations (TC19); các vị trí khác chưa có phòng ban",
+    "steps": [
+      "Mở Năng lực > Yêu cầu theo vị trí"
+    ],
+    "expected": "GET /position-requirements/summaries (API mới): 5 vị trí đang áp dụng v1; ACCOUNTANT thuộc Operations; vị trí chưa có phòng ban hiện \"—\".",
+    "actual": "5 vị trí đang áp dụng; phòng ban hiển thị đúng, vị trí chưa có phòng ban hiện \"—\".",
+    "notes": [
+      "1. Thống kê: 5 vị trí đã áp dụng bộ yêu cầu",
+      "2. ACCOUNTANT: Phòng ban Operations, phiên bản 1, 21 năng lực",
+      "3. CEO: Chưa gắn phòng ban → \"—\" (đã sửa, trước đây để trống)"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:41.279Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageSize=100",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/position-requirements/summaries",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC32",
+    "screen": "OW-17 Thiết lập yêu cầu năng lực",
+    "title": "Tạo bản nháp phiên bản 2 cho Sales / CRM",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/requirements/builder?positionId=…",
+    "precondition": "SALES_CRM đang áp dụng v1",
+    "steps": [
+      "Ở dòng SALES_CRM bấm \"Chỉnh sửa\"",
+      "Đổi trình độ yêu cầu của năng lực 1.1",
+      "Bấm \"Lưu bản nháp\""
+    ],
+    "expected": "POST /position-requirements tạo bản nháp v2; trang chuyển sang v2 trạng thái nháp.",
+    "actual": "Tạo bản nháp v2 cho Sales / CRM, đổi mức \"1.1 Duyệt, tìm kiếm và lọc dữ liệu, thông tin và nội dung số\" từ 2 sang 3.",
+    "notes": [
+      "1. Toast: Bản nháp v2 đã lưu",
+      "2. Phiên bản: Đang xem v2 (nháp)",
+      "3. Mức đã đổi: 1.1 Duyệt, tìm kiếm và lọc dữ liệu, thông tin và nội dung số: 2 → 3"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:42.592Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?pageSize=100",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/competencies?pageSize=100",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/position-requirements?positionId=5c029571-b8ea-4e81-a5ef-c46cae680db9",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/position-requirements",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/position-requirements?positionId=5c029571-b8ea-4e81-a5ef-c46cae680db9",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/position-requirements?positionId=5c029571-b8ea-4e81-a5ef-c46cae680db9&versionNo=2",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC33",
+    "screen": "OW-17 Thiết lập yêu cầu năng lực",
+    "title": "Kích hoạt phiên bản 2 (kèm lý do)",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/requirements/builder?positionId=…",
+    "precondition": "Đã chạy TC32",
+    "steps": [
+      "Bấm \"Kích hoạt phiên bản\"",
+      "Nhập lý do \"Nâng chuẩn năng lực 1.1 cho vị trí Sales / CRM (kiểm thử)\"",
+      "Bấm \"Kích hoạt\""
+    ],
+    "expected": "POST /position-requirements/{id}/activate; v2 thành phiên bản đang áp dụng, skill gap của manager@ (Sales / CRM) được tính lại.",
+    "actual": "Kích hoạt v2 thành công.",
+    "notes": [
+      "[Ảnh TC33a] 1. Xác nhận kích hoạt: Nhập lý do thay đổi phiên bản",
+      "1. Toast: v2 đã kích hoạt",
+      "2. Phiên bản: v2 đang áp dụng"
+    ],
+    "extraImages": [
+      "TC33a"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:44.408Z",
+    "api": [
+      {
+        "method": "POST",
+        "path": "/api/v1/position-requirements/5888937e-66fc-4c9d-8236-1d734bb031f2/activate",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/position-requirements?positionId=5c029571-b8ea-4e81-a5ef-c46cae680db9&versionNo=2",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC34",
+    "screen": "OW-18 Lịch sử phiên bản yêu cầu",
+    "title": "Lịch sử phiên bản của Sales / CRM",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/requirements/history",
+    "precondition": "Đã chạy TC33",
+    "steps": [
+      "Mở Năng lực > Lịch sử phiên bản",
+      "Chọn vị trí Sales / CRM"
+    ],
+    "expected": "Có 2 phiên bản: v2 đang áp dụng (lý do vừa nhập), v1 đã được thay thế; phần so sánh chỉ ra năng lực đã đổi mức.",
+    "actual": "Lịch sử có v2 (đang áp dụng) và v1; phần so sánh hiện thay đổi.",
+    "notes": [
+      "1. Phiên bản: v2 đang áp dụng, v1 đã thay thế",
+      "2. So sánh: Năng lực đổi mức giữa v1 và v2"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:46.735Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/position-requirements?positionId=5c029571-b8ea-4e81-a5ef-c46cae680db9",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/position-requirements?positionId=5c029571-b8ea-4e81-a5ef-c46cae680db9&versionNo=2",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/position-requirements?positionId=5c029571-b8ea-4e81-a5ef-c46cae680db9&versionNo=1",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC35",
+    "screen": "OW-19 Hồ sơ năng lực (ma trận)",
+    "title": "Ma trận năng lực, lọc theo vị trí Kế toán",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/competency-profiles",
+    "precondition": "Đã chạy TC26",
+    "steps": [
+      "Mở Năng lực > Hồ sơ năng lực",
+      "Chọn vị trí \"Kế toán\""
+    ],
+    "expected": "GET /competency-profiles/matrix (API mới): mỗi ô là mức hiện tại/mức yêu cầu; lọc Kế toán còn Employee và Nguyễn Văn Kiểm Thử.",
+    "actual": "Ma trận hiện 2 nhân viên vị trí Kế toán với mức hiện tại/yêu cầu từng năng lực.",
+    "notes": [
+      "1. Lọc vị trí: Kế toán (gửi jobPositionId)",
+      "2. Ma trận: Ô = mức hiện tại / mức yêu cầu; % đáp ứng theo snapshot mới nhất"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:48.421Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?pageSize=100",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageSize=100",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/competency-profiles/matrix",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/competency-profiles/matrix?jobPositionId=e3ef3152-221f-4b51-ba2c-85ac82f9d4ab",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC36",
+    "screen": "OW-20 Chi tiết hồ sơ năng lực",
+    "title": "Hồ sơ năng lực của Employee",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/competency-profiles/{employeeId}",
+    "precondition": "Đã chạy TC35",
+    "steps": [
+      "Bấm vào Employee trong ma trận"
+    ],
+    "expected": "GET /workforce/{employeeId} (API mới): tỷ lệ đáp ứng 62.0%, 15 khoảng trống (4 mức cao), 2 khóa đang học; tab trình độ năng lực theo 6 miền.",
+    "actual": "Hồ sơ Employee: 62.0% đáp ứng, 15 khoảng trống (4 cao), 2 khóa đang học.",
+    "notes": [
+      "1. Chỉ số: Đáp ứng 62.0%, 15 khoảng trống (4 mức cao), 2 khóa đang học",
+      "2. Tabs: Trình độ, khoảng trống, minh chứng (26), học tập (2), bài đánh giá"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:50.110Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/workforce/c0a25677-2f53-4f87-9445-34aa96148f0e",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC37",
+    "screen": "OW-20 Chi tiết hồ sơ năng lực",
+    "title": "Owner xác nhận mức năng lực 4.2, skill gap tính lại",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/competency-profiles/{employeeId} → Xác nhận trình độ",
+    "precondition": "Employee đang ở mức Cơ bản với 4.2 (yêu cầu Nâng cao)",
+    "steps": [
+      "Bấm \"Xác nhận trình độ năng lực\"",
+      "Chọn năng lực \"Bảo vệ dữ liệu cá nhân…\", mức Nâng cao, ghi chú",
+      "Bấm \"Xác nhận mức\""
+    ],
+    "expected": "POST /competency-evidences/manual; skill gap tính lại tự động: tỷ lệ đáp ứng tăng, số khoảng trống giảm; nguồn xác nhận = MANUAL.",
+    "actual": "Xác nhận thành công; chỉ số cập nhật (Tỷ lệ đáp ứng năng lực65.7%).",
+    "notes": [
+      "[Ảnh TC37a] 1. Xác nhận mức: 4.2 Bảo vệ dữ liệu cá nhân → Nâng cao, kèm minh chứng",
+      "1. Toast: Skill gap đã được tính lại",
+      "2. Chỉ số mới: Trước: 62.0%; sau: tỷ lệ đáp ứng tăng, khoảng trống giảm"
+    ],
+    "extraImages": [
+      "TC37a"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:51.134Z",
+    "api": [
+      {
+        "method": "POST",
+        "path": "/api/v1/competency-evidences/manual",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/workforce/c0a25677-2f53-4f87-9445-34aa96148f0e",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/workforce/c0a25677-2f53-4f87-9445-34aa96148f0e",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC38",
+    "screen": "OW-03 Chi tiết thành viên",
+    "title": "Tab Nhiệm vụ và Minh chứng của Employee",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/members/{id} → Nhiệm vụ, Minh chứng",
+    "precondition": "Seed có 3 nhiệm vụ thực tế và 2 bài nộp của employee@",
+    "steps": [
+      "Mở chi tiết thành viên Employee",
+      "Chọn tab \"Nhiệm vụ\"",
+      "Chọn tab \"Minh chứng\""
+    ],
+    "expected": "GET /workforce/{employeeId}: trạng thái nhiệm vụ hiện tiếng Việt (Đã giao / Cần chỉnh sửa / Đã đạt), năng lực mục tiêu hiện mã TT02; tab Minh chứng có bài nộp và nhật ký xác nhận (có mục 4.2 vừa xác nhận tay).",
+    "actual": "Tab Nhiệm vụ hiện trạng thái tiếng Việt và mã năng lực; tab Minh chứng hiện bài nộp và nhật ký xác nhận.",
+    "notes": [
+      "[Ảnh TC38a] 1. Nhiệm vụ: Trạng thái tiếng Việt (đã sửa từ mã thô NEEDS_REVISION/PASSED), năng lực mục tiêu theo mã TT02 (đã sửa từ GUID)",
+      "1. Bài nộp: Bài nộp và kết quả chấm (Đã duyệt / Yêu cầu sửa)",
+      "2. Nhật ký xác nhận: Mức đang xác nhận của từng năng lực, mới nhất trước"
+    ],
+    "extraImages": [
+      "TC38a"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:54.083Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members?pageIndex=1&pageSize=15",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/members/48482bce-4241-463f-bc65-cc710870dcc0",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/workforce/c0a25677-2f53-4f87-9445-34aa96148f0e",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC39",
+    "screen": "OW-10 Chi tiết vị trí",
+    "title": "Nhân sự giữ vị trí Kế toán",
+    "role": "OWNER (hr@)",
+    "url": "/enterprise/positions/{id} → Nhân sự",
+    "precondition": "Employee và Nguyễn Văn Kiểm Thử giữ vị trí Kế toán",
+    "steps": [
+      "Mở Vị trí công việc > ACCOUNTANT",
+      "Chọn tab \"Nhân sự\""
+    ],
+    "expected": "GET /workforce?jobPositionId= (API mới): 2 người, kèm độ đáp ứng và số khoảng trống mức cao.",
+    "actual": "Tab Nhân sự hiện 2 người giữ vị trí Kế toán kèm độ đáp ứng.",
+    "notes": [
+      "1. Tab Nhân sự: 2 người giữ vị trí",
+      "2. Danh sách: Độ đáp ứng và số khoảng trống mức cao của từng người"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:22:56.967Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions?pageIndex=1&pageSize=10&search=",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/departments?pageSize=100&status=ACTIVE",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-grades",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/position-requirements?positionId=e3ef3152-221f-4b51-ba2c-85ac82f9d4ab",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/job-positions/e3ef3152-221f-4b51-ba2c-85ac82f9d4ab",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/workforce?jobPositionId=e3ef3152-221f-4b51-ba2c-85ac82f9d4ab&pageSize=100",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/courses?status=PUBLISHED",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/course-assignments?jobPositionId=e3ef3152-221f-4b51-ba2c-85ac82f9d4ab&pageSize=100",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC40",
+    "screen": "EM-01 Bảng phát triển của tôi",
+    "title": "Bảng phát triển cá nhân",
+    "role": "EMPLOYEE (employee@)",
+    "url": "/enterprise/me",
+    "precondition": "Đăng nhập employee@digitalent.ai",
+    "steps": [
+      "Mở /enterprise/me"
+    ],
+    "expected": "GET /me/dashboard: mục tiêu vị trí, việc cần làm, khóa học và tiến độ phát triển của chính mình.",
+    "actual": "Hiện bảng phát triển của employee@.",
+    "notes": [
+      "1. Bảng phát triển: Dữ liệu của chính employee@"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:23:04.204Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/me/dashboard",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC41",
+    "screen": "EM-02 Hồ sơ năng lực của tôi",
+    "title": "Mức năng lực đã xác nhận so với chuẩn vị trí",
+    "role": "EMPLOYEE (employee@)",
+    "url": "/enterprise/me/competency",
+    "precondition": "Đã chạy TC37",
+    "steps": [
+      "Mở /enterprise/me/competency"
+    ],
+    "expected": "GET /me/competency-profile: 4.2 hiện mức Nâng cao vừa được Owner xác nhận ở TC37.",
+    "actual": "Hồ sơ năng lực hiện 4.2 ở mức mới.",
+    "notes": [
+      "1. Hồ sơ: Mức xác nhận so với chuẩn vị trí Kế toán",
+      "2. 4.2: Mức mới sau khi Owner xác nhận (TC37)"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:23:06.097Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/me/competency-profile",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC42",
+    "screen": "EM-03 Khoảng trống năng lực của tôi",
+    "title": "Khoảng trống so với yêu cầu vị trí",
+    "role": "EMPLOYEE (employee@)",
+    "url": "/enterprise/me/skill-gap",
+    "precondition": "Đăng nhập employee@digitalent.ai",
+    "steps": [
+      "Mở /enterprise/me/skill-gap"
+    ],
+    "expected": "GET /me/skill-gap: độ đáp ứng và danh sách năng lực còn thiếu kèm mức độ.",
+    "actual": "Hiện khoảng trống năng lực của employee@.",
+    "notes": [
+      "1. Khoảng trống: Độ đáp ứng và năng lực còn thiếu của chính mình"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:23:07.987Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/me/skill-gap",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC43",
+    "screen": "EM-04 Dòng thời gian minh chứng",
+    "title": "Minh chứng và phản hồi đánh giá",
+    "role": "EMPLOYEE (employee@)",
+    "url": "/enterprise/me/evidence",
+    "precondition": "Đăng nhập employee@digitalent.ai",
+    "steps": [
+      "Mở /enterprise/me/evidence"
+    ],
+    "expected": "GET /me/evidence-timeline: bài nộp nhiệm vụ, phản hồi và minh chứng năng lực đã ghi nhận (có xác nhận tay 4.2).",
+    "actual": "Hiện dòng thời gian minh chứng.",
+    "notes": [
+      "1. Dòng thời gian: Minh chứng của chính mình, mới nhất trước"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:23:09.754Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/me/evidence",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC44",
+    "screen": "EM-05 Lộ trình học tập của tôi",
+    "title": "Lộ trình học gắn với mục tiêu năng lực",
+    "role": "EMPLOYEE (employee@)",
+    "url": "/enterprise/me/learning-path",
+    "precondition": "Đăng nhập employee@digitalent.ai",
+    "steps": [
+      "Mở /enterprise/me/learning-path"
+    ],
+    "expected": "GET /me/learning-path: các chặng học theo khoảng trống năng lực, khóa tiên quyết trước.",
+    "actual": "Hiện lộ trình học tập.",
+    "notes": [
+      "1. Lộ trình: Khóa học theo thứ tự tiên quyết"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:23:11.580Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/me/learning-path",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC45",
+    "screen": "EM-06 Khóa học của tôi",
+    "title": "Khóa được giao / đang học / đã xong",
+    "role": "EMPLOYEE (employee@)",
+    "url": "/enterprise/me/courses",
+    "precondition": "Đăng nhập employee@digitalent.ai",
+    "steps": [
+      "Mở /enterprise/me/courses"
+    ],
+    "expected": "GET /me/courses: 2 khóa được giao kèm tiến độ.",
+    "actual": "Hiện các khóa học của employee@.",
+    "notes": [
+      "1. Khóa học: Khóa được giao và tiến độ"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:23:13.391Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/me/courses",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC46",
+    "screen": "EM-09 Danh sách bài đánh giá",
+    "title": "Bài đánh giá có thể làm",
+    "role": "EMPLOYEE (employee@)",
+    "url": "/enterprise/me/assessments",
+    "precondition": "Đăng nhập employee@digitalent.ai",
+    "steps": [
+      "Mở /enterprise/me/assessments"
+    ],
+    "expected": "GET /me/assessments: bài đánh giá của các khóa đang học, trạng thái và điểm đạt.",
+    "actual": "Hiện danh sách bài đánh giá.",
+    "notes": [
+      "1. Bài đánh giá: Bài kiểm tra và bài cuối khóa"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:23:15.296Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/me/assessments",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC47",
+    "screen": "EM-13 Lịch sử bài đánh giá",
+    "title": "Các lần làm bài trước",
+    "role": "EMPLOYEE (employee@)",
+    "url": "/enterprise/me/assessments/history",
+    "precondition": "Đăng nhập employee@digitalent.ai",
+    "steps": [
+      "Mở /enterprise/me/assessments/history"
+    ],
+    "expected": "GET /me/assessment-attempts: 1 lần làm bài đã nộp kèm điểm và kết quả.",
+    "actual": "Hiện lịch sử làm bài.",
+    "notes": [
+      "1. Lịch sử: Lần làm bài, điểm, đạt/không đạt"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:23:17.093Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/me/assessment-attempts?pageIndex=1&pageSize=10",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC48",
+    "screen": "EM-18 Thành tựu & Chứng nhận",
+    "title": "Chứng nhận đã đạt",
+    "role": "EMPLOYEE (employee@)",
+    "url": "/enterprise/me/achievements",
+    "precondition": "Đăng nhập employee@digitalent.ai",
+    "steps": [
+      "Mở /enterprise/me/achievements"
+    ],
+    "expected": "GET /me/achievements: chứng chỉ đã cấp kèm mã và ngày cấp.",
+    "actual": "Hiện chứng nhận của employee@.",
+    "notes": [
+      "1. Thành tựu: Chứng chỉ của chính mình"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:23:18.890Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/me/achievements",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC49",
+    "screen": "EM-14/EM-15 Nhiệm vụ của tôi",
+    "title": "Danh sách nhiệm vụ và chi tiết nhiệm vụ chưa nộp",
+    "role": "EMPLOYEE (employee@)",
+    "url": "/enterprise/me/tasks → /enterprise/me/tasks/{id}",
+    "precondition": "Seed có nhiệm vụ \"Rà soát quyền truy cập thư mục chứng từ kế toán\" trạng thái Chưa nộp",
+    "steps": [
+      "Mở Nhiệm vụ của tôi",
+      "Bấm nhiệm vụ \"Rà soát quyền truy cập thư mục chứng từ kế toán\""
+    ],
+    "expected": "GET /me/tasks và /me/tasks/{id}: yêu cầu, tiêu chí chấm và nút \"Nộp minh chứng\".",
+    "actual": "Hiện danh sách nhiệm vụ và chi tiết nhiệm vụ chưa nộp.",
+    "notes": [
+      "[Ảnh TC49a] 1. Nhiệm vụ: Danh sách nhiệm vụ được giao và hạn",
+      "1. Nhiệm vụ: Rà soát quyền truy cập thư mục chứng từ kế toán",
+      "2. Nộp minh chứng: Nhiệm vụ đang chờ nộp"
+    ],
+    "extraImages": [
+      "TC49a"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:23:20.721Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/me/tasks",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/me/tasks/9ed886fc-476b-48d3-840a-130ac2518603",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC50",
+    "screen": "EM-16 Nộp minh chứng nhiệm vụ",
+    "title": "Nộp minh chứng (mô tả + đường dẫn)",
+    "role": "EMPLOYEE (employee@)",
+    "url": "/enterprise/me/tasks/{id}/submit",
+    "precondition": "Đã chạy TC49",
+    "steps": [
+      "Bấm \"Nộp minh chứng\"",
+      "Nhập mô tả kết quả và 1 đường dẫn",
+      "Bấm \"Gửi nộp minh chứng\""
+    ],
+    "expected": "POST /me/tasks/{id}/submissions: toast \"Đã nộp minh chứng (lần 1)\", nhiệm vụ chuyển sang chờ chấm, người chấm nhận thông báo.",
+    "actual": "Nộp minh chứng thành công (lần 1).",
+    "notes": [
+      "[Ảnh TC50a] 1. Mô tả: Kết quả thực hiện",
+      "[Ảnh TC50a] 2. Đường dẫn: Link sản phẩm",
+      "1. Toast: Đã nộp lần 1, người chấm được thông báo",
+      "2. Nhiệm vụ: Trở về chi tiết nhiệm vụ, trạng thái chờ chấm"
+    ],
+    "extraImages": [
+      "TC50a"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:23:23.032Z",
+    "api": [
+      {
+        "method": "POST",
+        "path": "/api/v1/me/tasks/9ed886fc-476b-48d3-840a-130ac2518603/submissions",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/me/tasks/9ed886fc-476b-48d3-840a-130ac2518603",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC51",
+    "screen": "MG-11 Hàng đợi đánh giá",
+    "title": "Bài nộp của Employee chờ Quản lý chấm",
+    "role": "MANAGER (manager@)",
+    "url": "/enterprise/reviews",
+    "precondition": "Đã chạy TC50; manager@ quản lý phòng Operations",
+    "steps": [
+      "Đăng nhập manager@digitalent.ai",
+      "Mở Đánh giá thực tế > Hàng chờ đánh giá"
+    ],
+    "expected": "Bài nộp \"Rà soát quyền truy cập thư mục chứng từ kế toán\" của Employee nằm trong hàng chờ.",
+    "actual": "Bài nộp của Employee có trong hàng chờ đánh giá.",
+    "notes": [
+      "1. Bài nộp mới: Bài nộp của Employee ở TC50, chờ chấm"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:23:30.786Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/review-queue?pageIndex=1&pageSize=15",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC52",
+    "screen": "MG-12 Đánh giá minh chứng",
+    "title": "Quản lý chấm và phê duyệt minh chứng",
+    "role": "MANAGER (manager@)",
+    "url": "/enterprise/reviews/{submissionId}",
+    "precondition": "Đã chạy TC51",
+    "steps": [
+      "Bấm vào bài nộp",
+      "Cho điểm từng tiêu chí, nhập nhận xét",
+      "Chọn \"Đạt chuẩn (Phê duyệt)\"",
+      "Bấm \"Hoàn tất đánh giá\""
+    ],
+    "expected": "POST /submissions/{id}/evaluate: toast \"Đã duyệt minh chứng và công nhận đạt chuẩn năng lực!\"; năng lực mục tiêu của nhiệm vụ được ghi nhận vào hồ sơ.",
+    "actual": "Quản lý phê duyệt minh chứng thành công.",
+    "notes": [
+      "[Ảnh TC52a] 1. Quyết định: Đạt chuẩn (Phê duyệt)",
+      "[Ảnh TC52a] 2. Nhận xét: Phản hồi cho nhân viên",
+      "1. Toast: Đã duyệt và công nhận đạt chuẩn năng lực"
+    ],
+    "extraImages": [
+      "TC52a"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:23:32.187Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/submissions/e5ccf2ff-6e7d-4f2c-96b7-3f99b17505b7",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/tasks/1005d090-8551-424b-8ccd-ebfb8eba909b",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/submissions/e5ccf2ff-6e7d-4f2c-96b7-3f99b17505b7/evaluate",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/submissions/e5ccf2ff-6e7d-4f2c-96b7-3f99b17505b7",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/tasks/1005d090-8551-424b-8ccd-ebfb8eba909b",
+        "status": 200
+      }
+    ]
+  },
+  {
+    "id": "TC53",
+    "screen": "EM-17 Phản hồi & Chỉnh sửa",
+    "title": "Nhân viên xem kết quả chấm và hồ sơ được cập nhật",
+    "role": "EMPLOYEE (employee@)",
+    "url": "/enterprise/me/tasks/{id}/feedback → /enterprise/me/evidence",
+    "precondition": "Đã chạy TC52",
+    "steps": [
+      "Mở lại nhiệm vụ đã nộp, xem phản hồi",
+      "Mở Dòng thời gian minh chứng"
+    ],
+    "expected": "Nhiệm vụ \"Đã đạt\" kèm nhận xét của Quản lý; dòng thời gian minh chứng có kết quả chấm mới (vòng nộp → chấm → hồ sơ khép kín).",
+    "actual": "Nhân viên thấy kết quả Đạt và minh chứng mới trên dòng thời gian.",
+    "notes": [
+      "[Ảnh TC53a] 1. Phản hồi: Kết luận Đạt và nhận xét của Quản lý",
+      "1. Minh chứng mới: Bài nộp vừa được duyệt xuất hiện trên dòng thời gian"
+    ],
+    "extraImages": [
+      "TC53a"
+    ],
+    "status": "PASS",
+    "at": "2026-10-08T05:23:40.083Z",
+    "api": [
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/me/tasks/9ed886fc-476b-48d3-840a-130ac2518603",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/auth/me",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/notifications",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/me/evidence",
+        "status": 200
+      }
+    ]
+  }
+]

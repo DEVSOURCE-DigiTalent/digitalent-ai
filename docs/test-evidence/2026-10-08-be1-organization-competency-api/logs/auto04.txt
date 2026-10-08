@@ -1,0 +1,7 @@
+$ dotnet build DigiTalent.sln
+    0 Error(s)
+    0 Warning(s)
+Build succeeded.
+
+$ dotnet test tests/DigiTalent.Tests   # DIGITALENT_TEST_POSTGRES_CONNECTION=…_test
+Passed!  - Failed:     0, Passed:   256, Skipped:     0, Total:   256, Duration: 25 s - DigiTalent.Tests.dll (net8.0)
