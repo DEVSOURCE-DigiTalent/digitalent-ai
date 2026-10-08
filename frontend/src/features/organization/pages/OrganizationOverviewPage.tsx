@@ -12,7 +12,7 @@ import { useOrganizationOverview } from '@/hooks/use-organization';
 import { useCapabilityDashboard } from '@/hooks/use-analytics';
 import { CompetencyRadarChart } from '@/features/intelligence/components/CompetencyRadarChart';
 import { formatDate, formatDateTime } from '@/lib/utils';
-import { auditActionLabel } from '@/features/members/member-labels';
+import { auditActionLabel, SYSTEM_ACTOR } from '@/features/members/member-labels';
 
 /**
  * OW-01: Organization Dashboard (UI/UX spec v2.1 §3.2, §10).
@@ -73,7 +73,7 @@ export function OrganizationOverviewPage() {
       )}
 
       {/* ── KPI Row ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-4">
         <ScoreCard
           label="Thành viên hoạt động"
           value={orgData.members.active}
@@ -326,7 +326,7 @@ export function OrganizationOverviewPage() {
                   {auditActionLabel(entry.action)}: {entry.targetLabel}
                 </p>
                 <p className="text-xs text-ent-fg-3 mt-1">
-                  {entry.actorName} · {formatDateTime(entry.at)}
+                  {entry.actorName ?? SYSTEM_ACTOR} · {formatDateTime(entry.at)}
                 </p>
               </li>
             ))}

@@ -27,13 +27,18 @@ export function useRoles() {
   });
 }
 
-/** Wraps a member call so lists, details, roles and the overview refresh afterwards. */
+/**
+ * Data a member change shows up in: member lists and details, roles, the overview, seats, workforce, and the
+ * headcounts of departments, positions and grades (placement and deactivation move people between them).
+ */
+const MEMBER_DEPENDENT_KEYS = [MEMBERS_KEY, ['organization'], ['subscription'], ['workforce'], ['departments'], ['job-positions'], ['job-grades']];
+
+/** Wraps a member call so everything that shows members refreshes afterwards. */
 function useMemberMutation<TInput, TResult>(call: (input: TInput) => Promise<{ data: { data: TResult | null } }>) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: TInput) => (await call(input)).data.data as TResult,
-    onSuccess: () =>
-      Promise.all([MEMBERS_KEY, ['organization'], ['subscription'], ['workforce']].map((queryKey) => queryClient.invalidateQueries({ queryKey }))),
+    onSuccess: () => Promise.all(MEMBER_DEPENDENT_KEYS.map((queryKey) => queryClient.invalidateQueries({ queryKey }))),
   });
 }
 

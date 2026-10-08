@@ -141,8 +141,13 @@ export interface InviteRow {
 }
 
 export interface InvitationSummary extends InviteRow {
-  /** Mock only: part of the activation link the invited person receives by email. */
-  token: string;
+  /** Invitation id: the id of the pending row in GET /members, used to resend or revoke it. */
+  id?: string;
+  /** Activation token of the emailed link. Only the mock and the Development backend return it (no email provider yet). */
+  token?: string | null;
+  /** Full activation link, Development backend only. */
+  debugLink?: string | null;
+  expiresAt?: string;
   status: 'pending' | 'accepted';
 }
 
@@ -170,13 +175,23 @@ export interface InvitationDetail {
   email: string;
   fullName: string;
   role: MemberRole;
+  /** The backend only answers for a usable link, so it is always 'pending' there (otherwise 404). */
   status: 'pending' | 'accepted';
+  expiresAt?: string;
 }
 
 export interface ActivateInvitationInput {
   token: string;
   fullName: string;
   password: string;
+}
+
+/** The account created from an invitation; the activation page then signs in with this email. */
+export interface ActivateInvitationResult {
+  email: string;
+  userId?: string;
+  /** null when the organization had no active department to place the new employee in. */
+  employeeId?: string | null;
 }
 
 export interface PasswordResetRequestResult {

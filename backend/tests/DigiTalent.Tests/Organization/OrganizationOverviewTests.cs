@@ -50,6 +50,7 @@ public class OrganizationOverviewTests
             ("requirements", false), // only Data Analyst has an ACTIVE requirement set
             ("members", true));
         result.Setup.Single(s => s.Key == "requirements").Detail.Should().Be("1/2 vị trí đã có yêu cầu đang áp dụng");
+        result.Setup.Single(s => s.Key == "requirements").Path.Should().Be("/enterprise/requirements"); // OW-16
     }
 
     [Fact]

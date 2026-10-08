@@ -84,7 +84,7 @@ route('GET', '/organization/overview', (context) => {
     setup: [
       { key: 'departments', label: 'Phòng ban', done: data.departments.some((d) => d.status === 'ACTIVE'), detail: `${data.departments.filter((d) => d.status === 'ACTIVE').length} phòng ban`, path: '/enterprise/departments' },
       { key: 'positions', label: 'Vị trí công việc', done: positions.length > 0, detail: `${positions.length} vị trí`, path: '/enterprise/positions' },
-      { key: 'requirements', label: 'Yêu cầu năng lực theo vị trí', done: positions.length > 0 && withRequirements === positions.length, detail: `${withRequirements}/${positions.length} vị trí đã có yêu cầu đang áp dụng`, path: '/enterprise/positions/requirements' },
+      { key: 'requirements', label: 'Yêu cầu năng lực theo vị trí', done: positions.length > 0 && withRequirements === positions.length, detail: `${withRequirements}/${positions.length} vị trí đã có yêu cầu đang áp dụng`, path: '/enterprise/requirements' },
       { key: 'members', label: 'Thành viên', done: count('ACTIVE') > 1, detail: `${count('ACTIVE')} đang hoạt động, ${count('PENDING')} chờ kích hoạt`, path: '/enterprise/members' },
     ],
     recentActivity: data.audit.slice(0, 5),

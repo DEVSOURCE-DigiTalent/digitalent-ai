@@ -7,9 +7,8 @@ import { useJobPositions } from '@/hooks/use-job-positions';
 import {
   useDeactivateMember, useReactivateMember, useResendInvitation, useRevokeInvitation, useUpdateMember,
 } from '@/hooks/use-members';
-import { assignableRoles } from '@/lib/role-policy';
-import { ROLE_DESCRIPTIONS } from '@/lib/role-policy';
-import { apiErrorMessage } from '@/lib/utils';
+import { organizationErrorMessage } from '@/lib/organization-errors';
+import { assignableRoles, ROLE_DESCRIPTIONS } from '@/lib/role-policy';
 import type { MemberListItem } from '@/services/member.service';
 import { INPUT_CLASS, PRIMARY_BUTTON, SECONDARY_BUTTON } from '@/features/onboarding/components/styles';
 import { roleLabel } from '../member-labels';
@@ -35,7 +34,7 @@ export function ChangeRoleModal({ member, open, onClose }: MemberDialogProps) {
       toast.success(`Đã đổi vai trò của ${member.fullName} thành ${roleLabel(selected)}.`);
       onClose();
     } catch (error) {
-      toast.error(apiErrorMessage(error, 'Không đổi được vai trò.'));
+      toast.error(organizationErrorMessage(error, 'Không đổi được vai trò.'));
     }
   };
 
@@ -90,7 +89,10 @@ export function ChangeRoleModal({ member, open, onClose }: MemberDialogProps) {
   );
 }
 
-/** Moves a member to another department and position. (OW-05) */
+/**
+ * Moves a member to another department and position (OW-05). Every employee profile belongs to a department, so one
+ * is required; for an account without a profile yet, saving creates the profile in that department.
+ */
 export function PlacementModal({ member, open, onClose }: MemberDialogProps) {
   const update = useUpdateMember();
   const base = useId();
@@ -98,14 +100,15 @@ export function PlacementModal({ member, open, onClose }: MemberDialogProps) {
   const positions = useJobPositions({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
   const [departmentId, setDepartmentId] = useState(member.departmentId ?? '');
   const [jobPositionId, setJobPositionId] = useState(member.jobPositionId ?? '');
+  const hasProfile = Boolean(member.employeeId);
 
   const save = async () => {
     try {
-      await update.mutateAsync({ id: member.id, data: { departmentId: departmentId || undefined, jobPositionId } });
+      await update.mutateAsync({ id: member.id, data: { departmentId, jobPositionId } });
       toast.success('Đã cập nhật phòng ban và vị trí.');
       onClose();
     } catch (error) {
-      toast.error(apiErrorMessage(error, 'Không cập nhật được.'));
+      toast.error(organizationErrorMessage(error, 'Không cập nhật được.'));
     }
   };
 
@@ -119,17 +122,22 @@ export function PlacementModal({ member, open, onClose }: MemberDialogProps) {
       footer={
         <>
           <button type="button" onClick={onClose} className={SECONDARY_BUTTON}>Hủy</button>
-          <button type="button" onClick={save} disabled={update.isPending} className={PRIMARY_BUTTON}>
+          <button type="button" onClick={save} disabled={!departmentId || update.isPending} className={PRIMARY_BUTTON}>
             {update.isPending ? 'Đang lưu…' : 'Lưu'}
           </button>
         </>
       }
     >
       <div className="grid gap-4">
+        {!hasProfile && (
+          <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+            Thành viên này chưa có hồ sơ nhân viên. Chọn phòng ban để tạo hồ sơ và bắt đầu theo dõi năng lực.
+          </p>
+        )}
         <div className="grid gap-1.5">
-          <label htmlFor={`${base}-department`} className="text-sm font-medium text-slate-700">Phòng ban</label>
+          <label htmlFor={`${base}-department`} className="text-sm font-medium text-slate-700">Phòng ban *</label>
           <select id={`${base}-department`} value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className={INPUT_CLASS}>
-            <option value="">Chưa xếp phòng ban</option>
+            <option value="" disabled>Chọn phòng ban</option>
             {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
           </select>
         </div>
@@ -163,7 +171,7 @@ export function DeactivateMemberDialog({ member, open, onClose }: MemberDialogPr
           await deactivate.mutateAsync({ id: member.id, reason });
           toast.success(`Đã vô hiệu hóa ${member.fullName}.`);
         } catch (error) {
-          toast.error(apiErrorMessage(error, 'Không vô hiệu hóa được.'));
+          toast.error(organizationErrorMessage(error, 'Không vô hiệu hóa được.'));
         }
       }}
     />
@@ -185,7 +193,7 @@ export function ReactivateMemberDialog({ member, open, onClose }: MemberDialogPr
           await reactivate.mutateAsync(member.id);
           toast.success(`Đã kích hoạt lại ${member.fullName}.`);
         } catch (error) {
-          toast.error(apiErrorMessage(error, 'Không kích hoạt lại được.'));
+          toast.error(organizationErrorMessage(error, 'Không kích hoạt lại được.'));
         }
       }}
     />
@@ -202,7 +210,7 @@ export function InvitationActions({ member }: { member: MemberListItem }) {
       await resend.mutateAsync(member.id);
       toast.success(`Đã gửi lại lời mời cho ${member.email}.`);
     } catch (error) {
-      toast.error(apiErrorMessage(error, 'Không gửi lại được lời mời.'));
+      toast.error(organizationErrorMessage(error, 'Không gửi lại được lời mời.'));
     }
   };
 
@@ -221,7 +229,7 @@ export function InvitationActions({ member }: { member: MemberListItem }) {
             await revoke.mutateAsync(member.id);
             toast.success('Đã thu hồi lời mời.');
           } catch (error) {
-            toast.error(apiErrorMessage(error, 'Không thu hồi được lời mời.'));
+            toast.error(organizationErrorMessage(error, 'Không thu hồi được lời mời.'));
           }
         }}
       />

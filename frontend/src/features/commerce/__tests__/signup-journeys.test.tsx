@@ -337,7 +337,7 @@ describe('employee activation (FLOW-02)', () => {
       await mockOnboardingService.inviteMembers([{ email: 'an@acme.vn', fullName: 'Lê An', role: 'EMPLOYEE' }])
     ).data.data!;
     localStorage.clear();
-    return result.created[0].token;
+    return result.created[0].token!;
   }
 
   it('lets an invited employee set a password and land in their workspace', async () => {

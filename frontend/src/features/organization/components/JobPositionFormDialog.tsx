@@ -4,9 +4,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateJobPosition, useUpdateJobPosition } from '@/hooks/use-job-positions';
 import { useDepartments } from '@/hooks/use-departments';
+import { useJobGradeLabel } from '@/hooks/use-job-grades';
 import type { JobPositionListItem } from '@/services/job-position.service';
 import { toast } from 'sonner';
-import { apiErrorMessage } from '@/lib/utils';
+import { organizationErrorMessage } from '@/lib/organization-errors';
+import { JOB_GRADES } from '@/lib/terms';
 import { INPUT_CLASS } from '@/features/onboarding/components/styles';
 
 const formSchema = z.object({
@@ -14,6 +16,8 @@ const formSchema = z.object({
   name: z.string().min(1, 'Vui lòng nhập tên'),
   description: z.string().optional(),
   departmentId: z.string().optional(),
+  /** '' = not graded yet. */
+  jobGrade: z.enum(['', ...JOB_GRADES]).optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 });
 
@@ -32,6 +36,7 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
 
   const { data: deptData } = useDepartments({ pageSize: 100, status: 'ACTIVE' });
   const departments = deptData?.items || [];
+  const gradeLabel = useJobGradeLabel();
 
   const {
     register,
@@ -45,6 +50,7 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
       name: '',
       description: '',
       departmentId: '',
+      jobGrade: '',
       status: 'ACTIVE',
     },
   });
@@ -55,8 +61,9 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
         reset({
           code: position.code,
           name: position.name,
-          description: '',
+          description: position.description ?? '',
           departmentId: position.departmentId || '',
+          jobGrade: position.jobGrade ?? '',
           status: position.status === 'ARCHIVED' ? 'ACTIVE' : position.status,
         });
       } else {
@@ -65,6 +72,7 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
           name: '',
           description: '',
           departmentId: '',
+          jobGrade: '',
           status: 'ACTIVE',
         });
       }
@@ -74,32 +82,29 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
   if (!open) return null;
 
   const onSubmit = async (data: FormData) => {
+    const fields = {
+      code: data.code.trim().toUpperCase(),
+      name: data.name.trim(),
+      description: data.description?.trim(),
+      departmentId: data.departmentId || undefined,
+      jobGrade: data.jobGrade || undefined,
+    };
     try {
       if (isEditing && position) {
         await updateMutation.mutateAsync({
           id: position.id,
-          data: {
-            code: data.code.trim().toUpperCase(),
-            name: data.name.trim(),
-            description: data.description?.trim(),
-            departmentId: data.departmentId || undefined,
-            status: data.status as 'ACTIVE' | 'INACTIVE',
-          },
+          // PUT replaces every field: the job family is not on this form, so it is sent back as it was.
+          data: { ...fields, jobFamilyId: position.jobFamilyId, status: data.status as 'ACTIVE' | 'INACTIVE' },
         });
         toast.success('Đã cập nhật vị trí công việc');
       } else {
-        await createMutation.mutateAsync({
-          code: data.code.trim().toUpperCase(),
-          name: data.name.trim(),
-          description: data.description?.trim(),
-          departmentId: data.departmentId || undefined,
-        });
+        await createMutation.mutateAsync(fields);
         toast.success('Đã tạo vị trí công việc');
       }
       onClose();
     } catch (error) {
       toast.error(
-        apiErrorMessage(
+        organizationErrorMessage(
           error,
           isEditing ? 'Không cập nhật được vị trí công việc' : 'Không tạo được vị trí công việc'
         )
@@ -154,6 +159,24 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
             </select>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Cấp bậc</label>
+            <select
+              {...register('jobGrade')}
+              className={INPUT_CLASS}
+              disabled={isSubmitting}
+            >
+              <option value="">Chưa xếp cấp bậc</option>
+              {JOB_GRADES.map((code) => (
+                <option key={code} value={code}>
+                  {gradeLabel(code)}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-2xs text-slate-500">
+              Nhân sự giữ vị trí này được tính theo cấp bậc đã chọn.
+            </p>
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Mô tả</label>

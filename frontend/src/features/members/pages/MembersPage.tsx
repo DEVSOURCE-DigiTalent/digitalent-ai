@@ -133,7 +133,7 @@ export function MembersPage() {
       key: 'learning',
       header: 'Học tập',
       cell: (m) =>
-        m.activeCourses !== undefined ? (
+        m.activeCourses !== undefined && m.activeCourses !== null ? (
           <span className="text-xs text-ent-fg-2 whitespace-nowrap">
             {m.activeCourses > 0 ? `${m.activeCourses} khóa đang học` : 'Chưa có khóa'}
           </span>

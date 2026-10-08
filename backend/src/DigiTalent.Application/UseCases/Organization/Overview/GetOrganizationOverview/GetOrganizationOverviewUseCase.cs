@@ -125,7 +125,7 @@ public class GetOrganizationOverviewUseCase : IUseCase<GetOrganizationOverviewUs
                 Label = "Yêu cầu năng lực theo vị trí",
                 Done = positions > 0 && withRequirements == positions,
                 Detail = $"{withRequirements}/{positions} vị trí đã có yêu cầu đang áp dụng",
-                Path = "/enterprise/positions/requirements",
+                Path = "/enterprise/requirements",
             },
             new()
             {

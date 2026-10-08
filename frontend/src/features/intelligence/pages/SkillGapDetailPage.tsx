@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, BadgeCheck, RefreshCw, AlertCircle, BookOpen } from 'lucide-react';
 import { PageHeader } from '@/components/shared';
 import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
-import { useSkillGapRun, useCalculateSkillGap } from '@/hooks/use-skill-gaps';
+import { useSkillGapRun, useSkillGapRuns, useCalculateSkillGap } from '@/hooks/use-skill-gaps';
 import { skillGapErrorMessage } from '@/lib/competency-levels';
 import { toast } from 'sonner';
 import { ConfirmLevelDialog } from '../components/ConfirmLevelDialog';
@@ -19,7 +19,12 @@ import { SkillGapDetailSkeleton, SkillGapDetailView } from '../components/SkillG
  */
 export function SkillGapDetailPage() {
   const { employeeId } = useParams();
-  const { data: run, isLoading, isError, refetch } = useSkillGapRun(employeeId);
+  // The route carries the employee: find their latest snapshot, then load its competency lines.
+  const latest = useSkillGapRuns({ employeeId, latestOnly: true, pageIndex: 1, pageSize: 1 }, !!employeeId);
+  const runQuery = useSkillGapRun(latest.data?.items[0]?.runId);
+  const run = runQuery.data;
+  const isLoading = latest.isLoading || runQuery.isLoading;
+  const isError = latest.isError || runQuery.isError;
   const { can } = usePermission();
   const canReadRecommendations = can(PERMISSIONS.LEARNING_RECOMMENDATION_READ);
   const canConfirmLevels = can(PERMISSIONS.EVIDENCE_CREATE_MANUAL);
@@ -33,7 +38,6 @@ export function SkillGapDetailPage() {
     try {
       await calculateMutation.mutateAsync({ employeeId: run.employeeId });
       toast.success(`Đã tính lại khoảng trống năng lực cho ${run.employeeName}`);
-      void refetch();
     } catch (error) {
       toast.error(skillGapErrorMessage(error, 'Không tính lại được khoảng trống năng lực'));
     }
@@ -42,7 +46,6 @@ export function SkillGapDetailPage() {
   const handleLevelConfirmed = () => {
     setIsConfirmOpen(false);
     toast.success('Đã xác nhận mức năng lực mới. Khoảng trống năng lực đã được cập nhật.');
-    void refetch();
   };
 
   if (isLoading) {

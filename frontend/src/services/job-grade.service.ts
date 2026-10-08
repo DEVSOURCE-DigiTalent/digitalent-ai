@@ -3,8 +3,11 @@ import type { ApiResponse } from '../types/api';
 
 export interface JobGradeItem {
   code: 'G1' | 'G2' | 'G3';
+  /** Organization's name for the grade, or the default one. */
   name: string;
-  description: string;
+  description: string | null;
+  /** Whether the organization renamed this grade. */
+  isCustomized?: boolean;
   positionCount: number;
   employeeCount: number;
 }

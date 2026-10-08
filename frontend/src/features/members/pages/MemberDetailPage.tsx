@@ -6,6 +6,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { useMember } from '@/hooks/use-members';
 import { useEmployeeCapability } from '@/hooks/use-workforce';
 import { PERMISSIONS } from '@/hooks/use-permission';
+import { competencyCodeMap } from '@/lib/competency-levels';
 import { assignableRoles, canManageMember } from '@/lib/role-policy';
 import { SECONDARY_BUTTON } from '@/features/onboarding/components/styles';
 import { ConfirmLevelDialog } from '@/features/intelligence/components/ConfirmLevelDialog';
@@ -67,7 +68,8 @@ export function MemberDetailPage() {
   const can = useCurrentUser((s) => s.hasPermission);
 
   const { data: member, isLoading: memberLoading, isError: memberError } = useMember(id);
-  const employeeId = member?.employeeId ?? id ?? '';
+  // Invitations and accounts without an employee profile have no capability data to load.
+  const employeeId = member?.employeeId ?? undefined;
   const { data: capData, isLoading: capLoading, refetch: refetchCap } = useEmployeeCapability(employeeId);
 
   const [tab, setTab] = useState('overview');
@@ -158,6 +160,13 @@ export function MemberDetailPage() {
         )}
       </PageHeader>
 
+      {member.kind === 'member' && !employeeId && (
+        <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Thành viên này chưa có hồ sơ nhân viên nên chưa có dữ liệu năng lực và học tập.
+          {canEdit && ' Chọn "Phòng ban & vị trí" để tạo hồ sơ.'}
+        </p>
+      )}
+
       {member.status === 'INACTIVE' && (
         <p
           role="status"
@@ -174,20 +183,24 @@ export function MemberDetailPage() {
         onChange={setTab}
         tabs={[
           { id: 'overview', label: 'Tổng quan' },
-          { id: 'competency', label: 'Năng lực' },
-          { id: 'skill-gap', label: 'Khoảng trống' },
-          { id: 'learning', label: 'Học tập', badge: capData?.learning?.length },
-          { id: 'assessments', label: 'Đánh giá', badge: capData?.assessments?.length },
-          { id: 'tasks', label: 'Nhiệm vụ', badge: capData?.tasks?.length },
-          { id: 'evidence', label: 'Minh chứng', badge: (capData?.evidence?.length ?? 0) + (capData?.submissions?.length ?? 0) },
-          { id: 'achievements', label: 'Thành tựu', badge: capData?.certificates?.length },
+          ...(employeeId
+            ? [
+                { id: 'competency', label: 'Năng lực' },
+                { id: 'skill-gap', label: 'Khoảng trống' },
+                { id: 'learning', label: 'Học tập', badge: capData?.learning?.length },
+                { id: 'assessments', label: 'Đánh giá', badge: capData?.assessments?.length },
+                { id: 'tasks', label: 'Nhiệm vụ', badge: capData?.tasks?.length },
+                { id: 'evidence', label: 'Minh chứng', badge: (capData?.evidence?.length ?? 0) + (capData?.submissions?.length ?? 0) },
+                { id: 'achievements', label: 'Thành tựu', badge: capData?.certificates?.length },
+              ]
+            : []),
         ]}
       >
         {tab === 'overview' && <OverviewTab member={member} />}
         {tab === 'competency' && capData && (
           <CompetencyTab rows={capData.competencies} hasRequirement={Boolean(run)} />
         )}
-        {tab === 'skill-gap' && (
+        {tab === 'skill-gap' && employeeId && (
           <SkillGapTab
             run={run}
             employeeId={employeeId}
@@ -201,7 +214,7 @@ export function MemberDetailPage() {
           <AssessmentsTab attempts={capData?.assessments} />
         )}
         {tab === 'tasks' && (
-          <TasksTab tasks={capData?.tasks} />
+          <TasksTab tasks={capData?.tasks} competencyCodes={competencyCodeMap(capData?.competencies)} />
         )}
         {tab === 'evidence' && (
           <EvidencesTab

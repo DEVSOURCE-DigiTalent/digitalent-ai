@@ -25,9 +25,9 @@ const PAGE_SIZE = 15;
  */
 export function RolesAccessPage() {
   const user = useCurrentUser((s) => s.user)!;
-  const canAssign =
-    useCurrentUser((s) => s.hasPermission)(PERMISSIONS.ROLE_ASSIGN_BUSINESS) &&
-    assignableRoles(user.roles).length > 0;
+  const can = useCurrentUser((s) => s.hasPermission);
+  const canAssign = can(PERMISSIONS.ROLE_ASSIGN_BUSINESS) && assignableRoles(user.roles).length > 0;
+  const canAssignDepartments = can(PERMISSIONS.DEPARTMENT_CREATE_UPDATE);
 
   const { data: roles } = useRoles();
   const [activeTab, setActiveTab] = useState('members');
@@ -43,12 +43,16 @@ export function RolesAccessPage() {
     pageSize: PAGE_SIZE,
   });
 
+  // Managers get their own query: the member table above is paged and may be filtered to another role.
+  const { data: managersData, isLoading: managersLoading } = useMembers({ status: 'ACTIVE', role: ROLES.MANAGER, pageSize: 100 });
+
   const { data: deptData } = useDepartments({ pageSize: 100, status: 'ACTIVE' });
   const allDepartments = deptData?.items || [];
 
   const members = membersData?.items ?? [];
-  const owners = members.filter((m) => m.roles.includes(ROLES.OWNER));
-  const isOnlyOneOwner = owners.length <= 1;
+  // Counted over the whole organization, not the current page (the backend still refuses removing the last Owner).
+  const ownerCount = roles?.find((role) => role.role === ROLES.OWNER)?.memberCount;
+  const isOnlyOneOwner = ownerCount !== undefined && ownerCount <= 1;
 
   const memberColumns: Column<MemberListItem>[] = [
     {
@@ -128,8 +132,7 @@ export function RolesAccessPage() {
     },
   ];
 
-  // List of all managers to manage department scopes
-  const managers = members.filter((m) => m.roles.includes(ROLES.MANAGER));
+  const managers = managersData?.items ?? [];
 
   const managerColumns: Column<MemberListItem>[] = [
     {
@@ -146,9 +149,7 @@ export function RolesAccessPage() {
       key: 'managedDepartments',
       header: 'Phòng ban được phân công quản lý',
       cell: (m) => {
-        const managed = allDepartments.filter(
-          (d) => d.managerEmployeeId === (m.employeeId ?? m.id)
-        );
+        const managed = allDepartments.filter((d) => m.employeeId && d.managerEmployeeId === m.employeeId);
         if (managed.length === 0) {
           return (
             <span className="text-xs text-amber-700 italic bg-amber-50 px-2 py-0.5 rounded-sm">
@@ -175,15 +176,16 @@ export function RolesAccessPage() {
       key: 'actions',
       header: '',
       className: 'text-right',
-      cell: (m) => (
-        <button
-          type="button"
-          onClick={() => setManagingDeptMember(m)}
-          className={SECONDARY_BUTTON}
-        >
-          Phân công phòng ban
-        </button>
-      ),
+      cell: (m) =>
+        canAssignDepartments ? (
+          <button
+            type="button"
+            onClick={() => setManagingDeptMember(m)}
+            className={SECONDARY_BUTTON}
+          >
+            Phân công phòng ban
+          </button>
+        ) : null,
     },
   ];
 
@@ -279,7 +281,7 @@ export function RolesAccessPage() {
               columns={managerColumns}
               data={managers}
               keyExtractor={(m) => m.id}
-              isLoading={membersLoading}
+              isLoading={managersLoading}
               emptyTitle="Chưa có Quản lý (Manager) nào"
               emptyDescription="Hãy gán vai trò Quản lý cho thành viên ở tab 'Thành viên & Vai trò' trước."
             />

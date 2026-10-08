@@ -5,7 +5,7 @@ import { PageHeader, Modal } from '@/components/shared';
 import { useJobGrades, useUpdateJobGrade } from '@/hooks/use-job-grades';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { toast } from 'sonner';
-import { apiErrorMessage } from '@/lib/utils';
+import { organizationErrorMessage } from '@/lib/organization-errors';
 import { INPUT_CLASS, PRIMARY_BUTTON, SECONDARY_BUTTON } from '@/features/onboarding/components/styles';
 import type { JobGradeItem } from '@/services/job-grade.service';
 
@@ -23,7 +23,7 @@ export function JobGradeConfigPage() {
   const handleEdit = (g: JobGradeItem) => {
     setEditingGrade(g);
     setName(g.name);
-    setDescription(g.description);
+    setDescription(g.description ?? '');
   };
 
   const handleSave = async () => {
@@ -41,7 +41,7 @@ export function JobGradeConfigPage() {
       toast.success(`Đã cập nhật Cấp bậc ${editingGrade.code}`);
       setEditingGrade(null);
     } catch (error) {
-      toast.error(apiErrorMessage(error, 'Không cập nhật được cấp bậc'));
+      toast.error(organizationErrorMessage(error, 'Không cập nhật được cấp bậc'));
     }
   };
 
