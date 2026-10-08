@@ -33,7 +33,7 @@ export function CourseAssignmentPage() {
 
   const departments = useDepartments({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
   const cancel = useCancelAssignment();
-  const { data, isLoading } = useAssignments({
+  const { data, isLoading, isError } = useAssignments({
     pageIndex: page,
     pageSize: PAGE_SIZE,
     search: search || undefined,
@@ -52,6 +52,7 @@ export function CourseAssignmentPage() {
         )}
       </PageHeader>
 
+      {isError && <p role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">Không tải được lượt giao khóa học. Vui lòng thử lại hoặc kiểm tra quyền truy cập.</p>}
       <AssignmentsTable
         rows={data?.items ?? []}
         isLoading={isLoading}

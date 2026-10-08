@@ -30,6 +30,34 @@ export function useCompetencies(params?: CompetencyListParams) {
   });
 }
 
+/** Load the complete active catalogue for controls that submit competency IDs. */
+export function useAllActiveCompetencies() {
+  return useQuery({
+    queryKey: [...COMPETENCIES_KEY, 'all-active'],
+    queryFn: async () => {
+      const pageSize = 100;
+      const first = (await competencyService.getList({ status: 'ACTIVE', pageIndex: 1, pageSize })).data.data!;
+      const remaining = await Promise.all(
+        Array.from({ length: Math.max(0, first.totalPages - 1) }, (_, index) =>
+          competencyService.getList({ status: 'ACTIVE', pageIndex: index + 2, pageSize }),
+        ),
+      );
+      return [...first.items, ...remaining.flatMap((response) => response.data.data?.items ?? [])];
+    },
+  });
+}
+
+/** Resolve the task's saved IDs, including competencies archived after assignment. */
+export function useTaskCompetencies(ids: string[]) {
+  return useQuery({
+    queryKey: [...COMPETENCIES_KEY, 'task', ids],
+    queryFn: async () => Promise.all(ids.map((id) =>
+      competencyService.getById(id).then((response) => response.data.data!),
+    )),
+    enabled: ids.length > 0,
+  });
+}
+
 /**
  * Fetch a single competency with its criteria.
  */

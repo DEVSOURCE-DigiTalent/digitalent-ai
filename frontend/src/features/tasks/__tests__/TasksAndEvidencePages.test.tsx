@@ -20,6 +20,7 @@ import { ReviewQueuePage } from '../pages/ReviewQueuePage';
 // Hooks
 import * as taskHooks from '@/hooks/use-tasks';
 import * as empHooks from '@/hooks/use-employees';
+import * as competencyHooks from '@/hooks/use-competencies';
 import * as jobHooks from '@/hooks/use-job-positions';
 import * as deptHooks from '@/hooks/use-departments';
 import * as analyticsHooks from '@/hooks/use-analytics';
@@ -56,7 +57,7 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12)', () => {
         email: 'manager@digitalent.demo',
         fullName: 'Trần Quản Lý',
         roles: ['MANAGER'],
-        permissions: ['team.manage', 'tasks.manage'],
+        permissions: ['team.manage', 'task.read', 'task.create', 'task.evaluate'],
       },
       isAuthenticated: true,
     });
@@ -193,6 +194,7 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12)', () => {
   // ==========================================
   describe('MGR-05: PracticalTaskListPage', () => {
     it('renders practical tasks list with badges and actions', () => {
+      vi.spyOn(competencyHooks, 'useAllActiveCompetencies').mockReturnValue({ data: [] } as any);
       vi.spyOn(taskHooks, 'usePracticalTasks').mockReturnValue({
         data: {
           items: [
@@ -231,12 +233,21 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12)', () => {
   // ==========================================
   describe('MGR-06: CreatePracticalTaskPage', () => {
     it('renders task creation form, rubric criteria, and handles submit', async () => {
+      const competencyId = 'e3f56e4a-744d-4a11-8f5c-f25696bd0a03';
+      const employeeId = 'c7c029cd-9255-446f-ac4b-560329e191b1';
       const mutateAsync = vi.fn().mockResolvedValue({ id: 'tsk-new' });
       vi.spyOn(deptHooks, 'useDepartments').mockReturnValue({
         data: { items: [{ id: 'd-1', name: 'Khối Công nghệ' }] },
       } as any);
-      vi.spyOn(empHooks, 'useEmployees').mockReturnValue({
-        data: { items: [{ id: 'e-1', fullName: 'Lê Văn An' }] },
+      vi.spyOn(empHooks, 'useAllEmployees').mockReturnValue({
+        data: [{ id: employeeId, fullName: 'Lê Văn An', employeeCode: 'NV021' }],
+        isLoading: false,
+        isError: false,
+      } as any);
+      vi.spyOn(competencyHooks, 'useAllActiveCompetencies').mockReturnValue({
+        data: [{ id: competencyId, frameworkCode: '4.2', code: 'TT02-4.2', name: 'Bảo vệ dữ liệu cá nhân' }],
+        isLoading: false,
+        isError: false,
       } as any);
       vi.spyOn(taskHooks, 'useCreatePracticalTask').mockReturnValue({
         mutateAsync,
@@ -256,6 +267,8 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12)', () => {
       fireEvent.change(screen.getByPlaceholderText(/VD: Bản tài liệu hướng dẫn SOP/i), {
         target: { value: 'File SOP PDF' },
       });
+      fireEvent.click(screen.getByRole('button', { name: /TT02-4.2/i }));
+      fireEvent.click(screen.getByRole('checkbox'));
 
       const submitBtn = screen.getByRole('button', { name: /Giao nhiệm vụ thực hành/i });
       fireEvent.click(submitBtn);
@@ -266,6 +279,8 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12)', () => {
             title: 'Dự án phân tích dữ liệu tự động',
             description: 'Yêu cầu nhân sự thiết kế luồng tự động',
             expectedOutput: 'File SOP PDF',
+            competencyIds: [competencyId],
+            assignedEmployeeIds: [employeeId],
           })
         );
       });
@@ -277,6 +292,7 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12)', () => {
   // ==========================================
   describe('MGR-08: TaskDetailPage', () => {
     it('renders task details, rubrics, and assigned submissions', () => {
+      vi.spyOn(competencyHooks, 'useTaskCompetencies').mockReturnValue({ data: [] } as any);
       vi.spyOn(taskHooks, 'usePracticalTask').mockReturnValue({
         data: {
           id: 'tsk-001',
@@ -386,7 +402,7 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12)', () => {
         expect(mutateAsync).toHaveBeenCalledWith({
           id: 'sub-001',
           payload: expect.objectContaining({
-            score: 100, // 50 + 50 default max
+            score: 0, // Reviewer must award points explicitly.
             feedback: 'Bài làm rất tốt và đầy đủ.',
             decision: 'APPROVED',
           }),

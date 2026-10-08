@@ -3,7 +3,6 @@ import {
   taskService,
   type CreatePracticalTaskPayload,
   type EvaluateSubmissionPayload,
-  type SubmitEvidencePayload,
   type PracticalTaskDto,
   type PracticalTaskDetailDto,
   type ReviewQueueItemDto,
@@ -82,20 +81,6 @@ export function useEvaluateSubmission() {
       queryClient.invalidateQueries({ queryKey: ['submissions'] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['my-evidence'] });
-    },
-  });
-}
-
-export function useSubmitTaskEvidence() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ taskId, payload }: { taskId: string; payload: SubmitEvidencePayload }) =>
-      taskService.submitTaskEvidence(taskId, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['my-evidence'] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['review-queue'] });
     },
   });
 }

@@ -109,12 +109,6 @@ export interface EvaluateSubmissionPayload {
   decision: 'APPROVED' | 'REVISION_REQUESTED' | 'REJECTED';
 }
 
-export interface SubmitEvidencePayload {
-  content: string;
-  linkUrls?: string[];
-  fileUrls?: string[];
-}
-
 /** BE2 stores rubric fields as JSON strings; the screens use structured values. */
 function parseJson<T>(value: T | string | null | undefined, fallback: T): T {
   if (typeof value !== 'string') return value ?? fallback;
@@ -187,10 +181,5 @@ export const taskService = {
       ...payload,
       rubricScores: JSON.stringify(payload.rubricScores),
     }).then((res) => mapData(res, normalizeSubmission));
-  },
-
-  submitTaskEvidence: (taskId: string, payload: SubmitEvidencePayload) => {
-    return apiClient.post<ApiResponse<TaskSubmissionDto>>(`/tasks/${taskId}/submit`, payload)
-      .then((res) => mapData(res, normalizeSubmission));
   },
 };

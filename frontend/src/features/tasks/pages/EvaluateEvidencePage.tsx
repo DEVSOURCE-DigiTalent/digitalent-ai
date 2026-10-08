@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/shared';
 import { LevelBadge } from '@/components/shared/LevelBadge';
 import { usePracticalTask, useSubmissionDetail, useEvaluateSubmission } from '@/hooks/use-tasks';
 import type { RubricCriterion } from '@/services/task.service';
-import { formatDate } from '@/lib/utils';
+import { apiErrorMessage, formatDate } from '@/lib/utils';
 
 export function EvaluateEvidencePage() {
   const { id: taskIdFromParam, submissionId } = useParams<{ id?: string; submissionId?: string }>();
@@ -31,7 +31,7 @@ export function EvaluateEvidencePage() {
     if (task?.rubricCriteria) {
       const initialScores: Record<string, number> = {};
       task.rubricCriteria.forEach((r: RubricCriterion) => {
-        initialScores[r.id] = r.maxPoints;
+        initialScores[r.id] = 0;
       });
       setRubricScores(initialScores);
     }
@@ -43,11 +43,16 @@ export function EvaluateEvidencePage() {
   };
 
   const totalScore = Object.values(rubricScores).reduce((sum, s) => sum + s, 0);
+  const alreadyEvaluated = submission?.status !== 'PENDING_REVIEW';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!targetSubId) {
       toast.error('Không tìm thấy bài nộp để chấm điểm');
+      return;
+    }
+    if (alreadyEvaluated) {
+      toast.error('Bài nộp này đã được đánh giá.');
       return;
     }
 
@@ -64,14 +69,14 @@ export function EvaluateEvidencePage() {
 
       toast.success(
         decision === 'APPROVED'
-          ? 'Đã duyệt minh chứng và công nhận đạt chuẩn năng lực!'
+          ? 'Đã duyệt đạt bài thực hành. Cấp năng lực cần được xác nhận riêng.'
           : decision === 'REVISION_REQUESTED'
           ? 'Đã gửi yêu cầu chỉnh sửa đến nhân viên'
           : 'Đã hoàn tất đánh giá không đạt',
       );
       navigate(`/enterprise/tasks/${taskId}`);
-    } catch {
-      toast.error('Có lỗi xảy ra khi lưu kết quả chấm điểm');
+    } catch (error) {
+      toast.error(apiErrorMessage(error, 'Không thể lưu kết quả chấm điểm.'));
     }
   };
 
@@ -144,23 +149,48 @@ export function EvaluateEvidencePage() {
                 Tài liệu & Đường dẫn đính kèm:
               </h4>
               <div className="space-y-1.5">
-                {submission.linkUrls.map((url: string, i: number) => (
+                {submission.linkUrls.map((url: string, i: number) => /^https?:\/\//i.test(url) ? (
                   <a
                     key={i}
                     href={url}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="flex items-center gap-2 p-2.5 bg-blue-50/60 hover:bg-blue-50 text-blue-700 rounded-lg text-xs font-medium transition border border-blue-200/60 truncate"
                   >
                     <ExternalLink className="size-3.5 shrink-0" />
                     <span className="truncate">{url}</span>
                   </a>
-                ))}
+                ) : <p key={i} className="text-xs text-slate-500">Đường dẫn {i + 1} không hợp lệ.</p>
+                )}
               </div>
             </div>
           )}
+          {submission.fileUrls && submission.fileUrls.length > 0 ? (
+            <div className="space-y-2 pt-2">
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Tệp minh chứng:</h4>
+              {submission.fileUrls.map((url, index) => {
+                const safeUrl = /^https?:\/\//i.test(url) ? url : null;
+                return safeUrl ? (
+                  <a key={`${url}-${index}`} href={safeUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-blue-700 underline break-all">
+                    <ExternalLink className="size-4 shrink-0" /> Tệp {index + 1}
+                  </a>
+                ) : <p key={`${url}-${index}`} className="text-sm text-slate-500">Tệp {index + 1} chưa có đường tải hợp lệ.</p>;
+              })}
+            </div>
+          ) : <p className="text-xs text-slate-500">Tệp đính kèm chưa có trong dữ liệu bài nộp dành cho người duyệt.</p>}
         </div>
 
+        {alreadyEvaluated && (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-2" role="status">
+            <p className="font-semibold text-slate-900">Bài nộp đã được đánh giá</p>
+            <p className="text-sm text-slate-700">Điểm: {submission.evaluation?.score ?? '—'} · Kết quả: {{ APPROVED: 'Đạt bài thực hành', REVISION_REQUESTED: 'Cần chỉnh sửa', REJECTED: 'Không đạt', PENDING_REVIEW: 'Chờ chấm' }[submission.status]}</p>
+            {submission.evaluation?.feedback && <p className="text-sm text-slate-700 whitespace-pre-line">{submission.evaluation.feedback}</p>}
+            <p className="text-xs text-slate-500">Kết quả này không tự xác nhận cấp năng lực.</p>
+          </div>
+        )}
+
+        {!alreadyEvaluated && <>
         {/* Card 2: Chấm điểm theo Rubric */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-5">
           <div className="flex items-center justify-between">
@@ -234,8 +264,8 @@ export function EvaluateEvidencePage() {
               >
                 <CheckCircle2 className={`size-5 ${decision === 'APPROVED' ? 'text-emerald-600' : 'text-slate-400'}`} />
                 <div>
-                  <p className="font-bold text-xs">Đạt chuẩn (Phê duyệt)</p>
-                  <p className="text-[11px] text-slate-500">Ghi nhận năng lực TT02</p>
+                  <p className="font-bold text-xs">Đạt bài thực hành</p>
+                  <p className="text-[11px] text-slate-500">Ghi nhận kết quả chấm bài</p>
                 </div>
               </button>
 
@@ -273,6 +303,7 @@ export function EvaluateEvidencePage() {
             </div>
           </div>
         </div>
+        </>}
 
         {/* Submit */}
         <div className="flex items-center justify-end gap-3 pt-2">
@@ -282,14 +313,14 @@ export function EvaluateEvidencePage() {
           >
             Hủy
           </Link>
-          <button
+          {!alreadyEvaluated && <button
             type="submit"
             disabled={evaluateMutation.isPending}
             className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-sm transition disabled:opacity-50"
           >
             <Send className="size-4" />
             <span>{evaluateMutation.isPending ? 'Đang lưu kết quả…' : 'Hoàn tất đánh giá'}</span>
-          </button>
+          </button>}
         </div>
       </form>
     </div>

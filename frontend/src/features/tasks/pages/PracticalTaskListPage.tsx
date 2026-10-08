@@ -4,6 +4,9 @@ import { Plus, Search, Clock, Users, ArrowRight, CheckCircle2 } from 'lucide-rea
 import { PageHeader, DataTable } from '@/components/shared';
 import { LevelBadge } from '@/components/shared/LevelBadge';
 import { usePracticalTasks } from '@/hooks/use-tasks';
+import { useAllActiveCompetencies } from '@/hooks/use-competencies';
+import { useCurrentUser } from '@/hooks/use-current-user';
+import { PERMISSIONS } from '@/hooks/use-permission';
 import { formatDate } from '@/lib/utils';
 import type { PracticalTaskDto } from '@/services/task.service';
 
@@ -12,12 +15,14 @@ export function PracticalTaskListPage() {
   const [status, setStatus] = useState<string>('');
   const [pageIndex, setPageIndex] = useState(1);
 
-  const { data, isLoading } = usePracticalTasks({
+  const { data, isLoading, isError } = usePracticalTasks({
     search: search || undefined,
     status: status || undefined,
     pageIndex,
     pageSize: 15,
   });
+  const { data: competencies = [] } = useAllActiveCompetencies();
+  const canCreate = useCurrentUser((state) => state.hasPermission(PERMISSIONS.TASK_CREATE));
 
   const columns = [
     {
@@ -44,17 +49,20 @@ export function PracticalTaskListPage() {
     },
     {
       key: 'competencies',
-      header: 'Năng lực chuẩn TT02',
+      header: 'Năng lực liên kết',
       cell: (row: PracticalTaskDto) => (
         <div className="flex flex-wrap gap-1 max-w-xs">
-          {row.competencyIds.map((code) => (
-            <span
-              key={code}
-              className="text-[10px] font-mono px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-medium"
-            >
-              {code.toUpperCase()}
-            </span>
-          ))}
+          {row.competencyIds.map((id) => {
+            const competency = competencies.find((item) => item.id === id);
+            return (
+              <span
+                key={id}
+                className="text-[10px] font-mono px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-medium"
+              >
+                {competency?.frameworkCode ? `TT02-${competency.frameworkCode}` : competency?.code ?? `Năng lực ${id.slice(0, 8)}…`}
+              </span>
+            );
+          })}
         </div>
       ),
     },
@@ -137,13 +145,13 @@ export function PracticalTaskListPage() {
             <CheckCircle2 className="size-4 text-emerald-600" />
             <span>Hàng chờ chấm điểm</span>
           </Link>
-          <Link
+          {canCreate && <Link
             to="/enterprise/tasks/new"
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl shadow-sm transition"
           >
             <Plus className="size-4" />
             <span>Giao bài tập mới</span>
-          </Link>
+          </Link>}
         </div>
       </div>
 
@@ -181,6 +189,7 @@ export function PracticalTaskListPage() {
       </div>
 
       {/* Table */}
+      {isError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">Không tải được danh sách nhiệm vụ. Vui lòng thử lại.</p>}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <DataTable
           columns={columns}
