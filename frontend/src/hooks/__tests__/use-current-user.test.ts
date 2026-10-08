@@ -12,7 +12,7 @@ const ACTIVE_PLAN: SubscriptionContext = {
 
 const baseUser: SessionUser = {
   id: 'u-1',
-  email: 'u@digitalent.demo',
+  email: 'u@digitalent.ai',
   fullName: 'User',
   roles: [ROLES.OWNER],
   permissions: ['skill_gap.read'],
@@ -25,24 +25,24 @@ const store = () => useCurrentUser.getState();
 describe('useCurrentUser', () => {
   beforeEach(() => store().clearUser());
 
-  it('normalizes legacy roles and derives the workspace when the backend sends none', () => {
-    store().setUser({ id: '1', email: 'a@b.c', fullName: 'A', roles: ['SYSTEM_ADMIN'], permissions: [] });
+  it('derives the platform workspace from the canonical role', () => {
+    store().setUser({ id: '1', email: 'a@b.c', fullName: 'A', roles: ['PLATFORM_ADMIN'], permissions: [] });
 
     expect(store().user?.roles).toContain('PLATFORM_ADMIN');
-    expect(store().user?.workspace).toBe('enterprise');
+    expect(store().user?.workspace).toBe('platform');
   });
 
-  it('puts a legacy trainer in the enterprise portal as an employee, never in the personal workspace', () => {
-    store().setUser({ id: '1', email: 't@b.c', fullName: 'T', roles: ['TRAINER'], permissions: [] });
+  it('keeps learner in the personal workspace', () => {
+    store().setUser({ id: '1', email: 't@b.c', fullName: 'T', roles: ['LEARNER'], permissions: [] });
 
-    expect(store().user?.roles).toEqual(['EMPLOYEE']);
-    expect(store().user?.workspace).toBe('enterprise');
+    expect(store().user?.roles).toEqual(['LEARNER']);
+    expect(store().user?.workspace).toBe('personal');
   });
 
-  it('keeps a user whose backend roles are all unknown out of the personal workspace', () => {
+  it('fails an unknown role into the personal workspace', () => {
     store().setUser({ id: '1', email: 'x@b.c', fullName: 'X', roles: ['MYSTERY'], permissions: [] });
 
-    expect(store().user?.workspace).toBe('enterprise');
+    expect(store().user?.workspace).toBe('personal');
   });
 
   it('ignores a platform workspace claimed by someone who is not platform staff', () => {
@@ -57,9 +57,9 @@ describe('useCurrentUser', () => {
     expect(store().user?.workspace).toBe('platform');
   });
 
-  it('lets platform admins pass every permission check, and nobody else', () => {
+  it('requires explicit permissions for platform admins and every other role', () => {
     store().setUser({ ...baseUser, roles: ['PLATFORM_ADMIN'], permissions: [], workspace: 'platform' });
-    expect(store().hasPermission('anything.at_all')).toBe(true);
+    expect(store().hasPermission('anything.at_all')).toBe(false);
 
     store().setUser(baseUser);
     expect(store().hasPermission('skill_gap.read')).toBe(true);

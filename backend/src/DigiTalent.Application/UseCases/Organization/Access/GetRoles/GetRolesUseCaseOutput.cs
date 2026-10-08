@@ -15,7 +15,7 @@ public class RoleSummary
     /// <summary>OWNER | MANAGER | EMPLOYEE.</summary>
     public string Role { get; set; } = string.Empty;
 
-    /// <summary>System role granted for it (HR_MANAGER | DEPARTMENT_MANAGER | EMPLOYEE).</summary>
+    /// <summary>System role granted for it (OWNER | MANAGER | EMPLOYEE).</summary>
     public string RoleCode { get; set; } = string.Empty;
 
     public string Name { get; set; } = string.Empty;

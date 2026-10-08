@@ -57,10 +57,10 @@ export function getCourseModules(courseId: string, courseCode: string, courseTit
           title: `Bài 1: ${m.title} — Lý thuyết & Quy chuẩn`,
           durationMinutes: 20,
           objective: `Nắm vững chuẩn năng lực ${m.competencyCode}: ${m.objectives.join('; ')}`,
-          summary: `Khung kiến thức chuẩn Thông tư 02/2025/TT-BGDĐT cho năng lực ${m.competencyCode}.`,
+          summary: `Khung kiến thức chuẩn năng lực số cho năng lực ${m.competencyCode}.`,
           content: [
             `Mục tiêu học tập: ${m.objectives.join('; ')}.`,
-            ...(m.definitions.length > 0 ? [`Quy chuẩn thuật ngữ (Thông tư 02/2025/TT-BGDĐT):`, ...m.definitions] : []),
+            ...(m.definitions.length > 0 ? [`Quy chuẩn thuật ngữ chuyên môn:`, ...m.definitions] : []),
             ...m.body,
           ],
           keyTakeaways: m.objectives.length > 0 ? m.objectives.slice(0, 3) : ['Hiểu rõ quy chuẩn năng lực.', 'Nắm vững khái niệm cốt lõi.'],
@@ -113,7 +113,7 @@ export function getCourseModules(courseId: string, courseCode: string, courseTit
         objective: 'Nắm vững khái niệm cốt lõi, quy chuẩn an toàn và yêu cầu thực tiễn trong môi trường doanh nghiệp.',
         summary: 'Bài học mở đầu giúp học viên định hình bối cảnh ứng dụng và các tiêu chuẩn tuân thủ.',
         content: [
-          'Trong kỷ nguyên số, việc chuẩn hóa năng lực theo Khung năng lực số (Thông tư 02/2025/TT-BGDĐT) là tiêu chuẩn bắt buộc cho mọi vị trí công việc.',
+          'Trong kỷ nguyên số, việc chuẩn hóa năng lực theo Khung chuẩn năng lực số là tiêu chuẩn cần thiết cho mọi vị trí công việc.',
           'Học viên cần nhận diện rõ trách nhiệm, các rủi ro tiềm ẩn về an toàn dữ liệu và các công cụ số được tổ chức phê duyệt sử dụng.',
           'Mỗi thao tác xử lý dữ liệu cần tuân thủ nguyên tắc tối thiểu hóa quyền truy cập và kiểm tra xác thực nhiều lớp.',
         ],
@@ -195,7 +195,7 @@ export function getCourseAssessment(courseId: string, courseCode: string, course
 
       {
         id: 'q-1',
-        questionText: 'Theo Thông tư 02/2025/TT-BGDĐT, hành động nào sau đây thể hiện đúng chuẩn mực bảo vệ dữ liệu cá nhân (TT02-4.2)?',
+        questionText: 'Theo Khung chuẩn năng lực số, hành động nào sau đây thể hiện đúng chuẩn mực bảo vệ dữ liệu cá nhân (CMP-4.2)?',
         options: [
           'Lưu trữ danh sách khách hàng chứa số điện thoại trên máy tính cá nhân không cài mật khẩu.',
           'Chia sẻ liên kết truy cập công khai không giới hạn người xem để tiện làm việc nhóm.',

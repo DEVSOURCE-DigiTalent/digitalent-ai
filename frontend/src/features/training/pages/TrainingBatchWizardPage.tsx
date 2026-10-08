@@ -227,7 +227,7 @@ export function TrainingBatchWizardPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="Ví dụ: Đợt 1/2026 - Phổ cập Năng lực số TT02 cho Khối Nghiệp vụ"
+                  placeholder="Ví dụ: Đợt 1/2026 - Phổ cập Năng lực số cho Khối Nghiệp vụ"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -334,7 +334,7 @@ export function TrainingBatchWizardPage() {
                       </div>
                       <div className="font-semibold text-sm text-slate-900 truncate">{c.title}</div>
                       <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-1">
-                        <span>{c.categoryName || 'Thông tư 02'}</span>
+                        <span>{c.categoryName || 'Năng lực số'}</span>
                         <span>·</span>
                         <span>{c.estimatedDurationMinutes == null ? 'Chưa cập nhật' : `${c.estimatedDurationMinutes} phút`}</span>
                       </div>

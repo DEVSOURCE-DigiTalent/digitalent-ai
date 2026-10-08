@@ -76,7 +76,7 @@ public class SkillGapEventIntegrationTests
         currentUser.Setup(c => c.OrganizationId).Returns(world.Organization.Id);
         currentUser.Setup(c => c.UserId).Returns(hrUserId);
         currentUser.Setup(c => c.IsAuthenticated).Returns(true);
-        currentUser.Setup(c => c.IsAdmin).Returns(true); // HR_MANAGER
+        currentUser.Setup(c => c.IsAdmin).Returns(true); // OWNER
 
         var notifications = new Mock<INotificationSender>();
         var configuration = new ConfigurationBuilder()

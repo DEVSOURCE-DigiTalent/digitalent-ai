@@ -15,26 +15,40 @@ function renderIndividual() {
   );
 }
 
-describe('Individual landing page: a paid product, framework kept apart from curriculum', () => {
+describe('Individual landing page: guided preview before a paid product', () => {
   beforeEach(() => {
     localStorage.clear();
     useCurrentUser.getState().clearUser();
   });
 
-  it('never offers anything for free: the plans are paid', () => {
+  it('offers a free guided preview while keeping the product plans paid', () => {
     const { container } = renderIndividual();
 
-    expect(container.textContent).not.toMatch(/miễn phí/i);
-    expect(container.textContent).not.toMatch(/\bfree\b/i);
+    expect(container.textContent).toMatch(/Trải nghiệm miễn phí/i);
+    expect(screen.getAllByRole('link', { name: /Trải nghiệm miễn phí/ }).length).toBeGreaterThanOrEqual(2);
+    expect(container.textContent).not.toMatch(/gói miễn phí|gói free/i);
   });
 
-  it('leads every main call to action to the personal pricing page', () => {
+  it('leads the main calls to action to the guided trial and keeps pricing available', () => {
     renderIndividual();
 
-    const ctas = screen.getAllByRole('link', { name: /Xem gói cá nhân/ });
+    const ctas = screen.getAllByRole('link', { name: /Trải nghiệm miễn phí/ });
     expect(ctas.length).toBeGreaterThanOrEqual(2);
-    ctas.forEach((link) => expect(link).toHaveAttribute('href', '/individual/pricing'));
-    expect(screen.queryByRole('link', { name: /Bắt đầu|Tạo tài khoản/ })).not.toBeInTheDocument();
+    ctas.forEach((link) => expect(link).toHaveAttribute('href', '/individual/try'));
+    expect(screen.getAllByRole('link', { name: /Xem gói cá nhân/ }).some((link) => link.getAttribute('href') === '/individual/pricing')).toBe(true);
+  });
+
+  it('gives a visitor a quieter way into the 7-day trial under the hero actions, and not a signed-in learner', () => {
+    const { unmount } = renderIndividual();
+    expect(screen.getByRole('link', { name: 'hoặc tạo tài khoản dùng thử 7 ngày' })).toHaveAttribute(
+      'href',
+      '/individual/register?trial=1&source=landing',
+    );
+    unmount();
+
+    localStorage.setItem('accessToken', 'mock-token:mock-personal');
+    renderIndividual();
+    expect(screen.queryByRole('link', { name: /dùng thử 7 ngày/ })).not.toBeInTheDocument();
   });
 
   it('separates the 8 tiers of the framework from the 3 programme tiers DigiTalent AI teaches', () => {
@@ -115,7 +129,7 @@ describe('Individual landing page: discovery sections (careers, how it works, fr
     expect(within(nav).getByRole('link', { name: 'Cách hoạt động' })).toHaveAttribute('href', '#cach-hoat-dong');
     expect(within(nav).getByRole('link', { name: 'Khung năng lực' })).toHaveAttribute('href', '#khung');
     expect(within(nav).getByRole('link', { name: 'Bảng giá' })).toHaveAttribute('href', '/individual/pricing');
-    expect(within(nav).getByRole('link', { name: 'Đăng nhập' })).toHaveAttribute('href', '/individual/login');
+    expect(within(nav).getByRole('link', { name: /Đăng nhập/ })).toHaveAttribute('href', '/login');
   });
 });
 
@@ -207,7 +221,7 @@ describe('Individual landing page: conversion (learning experience, pricing, FAQ
     const section = screen.getByRole('region', { name: /Câu hỏi thường gặp/ });
     for (const question of [
       /đánh giá năng lực số của tôi bằng cách nào/,
-      /Khung năng lực.*được dùng như thế nào/,
+      /Khung (chuẩn )?năng lực.*được dùng như thế nào/,
       /thay đổi vị trí nghề nghiệp mục tiêu/,
       /phải học lại/,
       /Mức được đánh giá.*nghĩa là gì/,
@@ -224,7 +238,7 @@ describe('Individual landing page: conversion (learning experience, pricing, FAQ
 
     const section = screen.getByRole('region', { name: /Câu hỏi thường gặp/ });
     expect(section.textContent).toMatch(/do DigiTalent AI xây dựng/);
-    expect(section.textContent).toMatch(/Thông tư không quy định vị trí việc làm/);
+    expect(section.textContent).toMatch(/Khung chuẩn năng lực số/);
   });
 
   it('keeps the section order of the proposal, ending with pricing, FAQ and the closing call to action', () => {

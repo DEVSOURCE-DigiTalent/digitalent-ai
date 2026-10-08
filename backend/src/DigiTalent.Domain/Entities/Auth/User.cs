@@ -18,6 +18,8 @@ public class User : BaseEntity
     public int FailedLoginCount { get; set; }
     public DateTimeOffset? LockedUntil { get; set; }          // LOCKED + null = admin khóa tay
     public DateTimeOffset? LastLoginAt { get; set; }
+    public DateTimeOffset? EmailVerifiedAt { get; set; }
+    public DateTimeOffset? TrialUsedAt { get; set; }
 
     /// <summary>Reason entered by an Owner when deactivating the member; cleared on reactivation.</summary>
     public string? DeactivatedReason { get; set; }

@@ -147,7 +147,7 @@ export function PlatformSettingsPage() {
               <option value="gpt-4o">OpenAI GPT-4o</option>
             </select>
             <p className="mt-1 text-xs text-slate-500">
-              Được dùng để phân tích văn bản bài tập thực hành theo barem rubric Thông tư 02.
+              Được dùng để phân tích văn bản bài tập thực hành theo barem rubric Khung chuẩn năng lực số.
             </p>
           </div>
         </div>

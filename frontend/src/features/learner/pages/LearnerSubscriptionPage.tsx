@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { usePersonalAccess } from '@/hooks/use-personal-learning';
+import { usePlanMode } from '@/hooks/use-plan-mode';
 import { formatVnd, getPlan, plansFor } from '@/lib/plans';
 import { cn } from '@/lib/utils';
-import { Card, EmptyState, PT_BUTTON, PT_BUTTON_SECONDARY, PT_EYEBROW, PageIntro, Tag } from '../components/ui';
+import { FreePlanCard, TrialPlanCard } from '../components/PlanOverviewCards';
+import { Card, EmptyState, LoadingBlock, PT_BUTTON, PT_BUTTON_SECONDARY, PT_EYEBROW, PersonalPageHeader, Tag } from '../components/ui';
 import { formatDate } from '../utils/format';
 
 const STATUS_LABEL: Record<string, { label: string; tone: 'ok' | 'warn' | 'bad' | 'neutral' }> = {
@@ -16,14 +19,23 @@ const STATUS_LABEL: Record<string, { label: string; tone: 'ok' | 'warn' | 'bad' 
 /** IND-17 "/personal/subscription": the learner's plan and the other individual plans. */
 export function LearnerSubscriptionPage() {
   const subscription = useCurrentUser((state) => state.user?.subscription);
+  const { data: access } = usePersonalAccess();
+  const planMode = usePlanMode();
   const plan = getPlan(subscription?.planCode);
   const status = STATUS_LABEL[subscription?.status ?? ''] ?? { label: subscription?.status ?? '', tone: 'neutral' as const };
 
   return (
     <div data-testid="learner-subscription-page" className="grid gap-10">
-      <PageIntro label="Gói cá nhân" title="Gói học" accent="của bạn." />
+      <PersonalPageHeader label="Gói & thanh toán" title="Gói học và quyền sử dụng" lead="Thông tin gói hiện tại, thời hạn và các quyền đang áp dụng cho tài khoản của bạn." />
 
-      {!subscription || !plan ? (
+      {access?.mode === 'trial' ? (
+        <TrialPlanCard access={access} />
+      ) : access?.mode === 'free' ? (
+        <FreePlanCard />
+      ) : planMode && planMode !== 'full' ? (
+        // On a trial or the Free plan, but the access data is not here yet: wait rather than show the paid card.
+        <LoadingBlock />
+      ) : !subscription || !plan ? (
         <EmptyState
           title="Chưa có gói đang dùng"
           body="Chọn một gói cá nhân để mở lộ trình học và toàn bộ giáo trình."
@@ -37,7 +49,7 @@ export function LearnerSubscriptionPage() {
                 <p className={PT_EYEBROW}>Gói hiện tại</p>
                 <Tag tone={status.tone}>{status.label}</Tag>
               </div>
-              <p className="mt-4 text-[clamp(36px,5vw,56px)] font-light leading-none tracking-[-0.04em]">{plan.name}</p>
+              <p className="mt-4 text-[28px] font-semibold leading-tight tracking-tight">{plan.name}</p>
               <p className="mt-3 text-[15px] text-pt-fg-2">{plan.tagline}</p>
             </div>
             <dl className="grid grid-cols-2 gap-5 border-t border-pt-line pt-6 text-sm">

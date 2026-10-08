@@ -89,6 +89,40 @@ export interface SubmissionDetailDto extends TaskSubmissionDto {
   departmentName?: string;
 }
 
+export interface LearnerTaskDto {
+  id: string;
+  title: string;
+  description: string;
+  expectedOutput: string;
+  competencyIds: string[];
+  targetLevel: number;
+  assignedByName: string;
+  dueDate: string;
+  rubricCriteria: RubricCriterion[];
+  submission: TaskSubmissionDto | null;
+}
+
+export interface SubmitEvidencePayload {
+  content: string;
+  linkUrls?: string[];
+  fileUrls?: string[];
+}
+
+export interface EvidenceItemDto {
+  id: string;
+  taskId: string;
+  taskTitle: string;
+  taskDescription?: string;
+  targetLevel: number;
+  competencyIds: string[];
+  submittedAt: string;
+  content: string;
+  linkUrls: string[];
+  fileUrls: string[];
+  status: 'PENDING_REVIEW' | 'REVISION_REQUESTED' | 'APPROVED' | 'REJECTED';
+  evaluation?: TaskSubmissionDto['evaluation'];
+}
+
 export interface CreatePracticalTaskPayload {
   title: string;
   description: string;
@@ -181,5 +215,18 @@ export const taskService = {
       ...payload,
       rubricScores: JSON.stringify(payload.rubricScores),
     }).then((res) => mapData(res, normalizeSubmission));
+  },
+
+  getMyTasks: () => {
+    return apiClient.get<ApiResponse<{ items: LearnerTaskDto[]; total: number }>>('/me/tasks');
+  },
+
+  submitTaskEvidence: (taskId: string, payload: SubmitEvidencePayload) => {
+    return apiClient.post<ApiResponse<TaskSubmissionDto>>(`/tasks/${taskId}/submit`, payload)
+      .then((res) => mapData(res, normalizeSubmission));
+  },
+
+  getMyEvidence: () => {
+    return apiClient.get<ApiResponse<{ items: EvidenceItemDto[]; total: number }>>('/me/evidence');
   },
 };

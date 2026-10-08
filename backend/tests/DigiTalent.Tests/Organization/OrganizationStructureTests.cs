@@ -267,8 +267,8 @@ public class OrganizationStructureTests
     public async Task GetRoles_CountsActiveHoldersAndListsPermissions()
     {
         var f = await Fixture.CreateAsync();
-        await f.CreateAccountAsync("manager@test.local", Roles.DepartmentManager, null);
-        await f.CreateAccountAsync("trainer@test.local", Roles.Trainer, null);
+        await f.CreateAccountAsync("manager@test.local", Roles.Manager, null);
+        await f.CreateAccountAsync("employee2@test.local", Roles.Employee, null);
 
         var permissionService = new Mock<IPermissionService>();
         permissionService.Setup(p => p.HasAnyAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<IReadOnlyCollection<string>>()))
@@ -281,7 +281,7 @@ public class OrganizationStructureTests
         roles.Select(r => (r.Role, r.MemberCount, r.Assignable)).Should().Equal(
             (MemberRoles.Owner, 1, true),
             (MemberRoles.Manager, 1, true),
-            (MemberRoles.Employee, 1, true)); // TRAINER counts as EMPLOYEE
+            (MemberRoles.Employee, 1, true));
         roles[0].Permissions.Should().Equal(Permissions.UserRole.UserRead);
     }
 
@@ -380,7 +380,7 @@ public class OrganizationStructureTests
     }
 
     /// <summary>
-    /// Test world + an Owner (HR_MANAGER) account calling the use cases, with the external services mocked.
+    /// Test world + an Owner account calling the use cases, with the external services mocked.
     /// </summary>
     private sealed class Fixture
     {
@@ -412,7 +412,7 @@ public class OrganizationStructureTests
             context.UserRoles.Add(new UserRole
             {
                 UserId = owner.Id,
-                RoleId = await context.Roles.Where(r => r.Code == Roles.HrManager).Select(r => r.Id).SingleAsync(),
+                RoleId = await context.Roles.Where(r => r.Code == Roles.Owner).Select(r => r.Id).SingleAsync(),
                 AssignedAt = DateTimeOffset.UtcNow,
             });
             await context.SaveChangesAsync();
@@ -421,7 +421,7 @@ public class OrganizationStructureTests
             currentUser.Setup(c => c.GetRequiredOrganizationId()).Returns(world.Organization.Id);
             currentUser.Setup(c => c.OrganizationId).Returns(world.Organization.Id);
             currentUser.Setup(c => c.UserId).Returns(owner.Id);
-            currentUser.Setup(c => c.Roles).Returns(new List<string> { Roles.HrManager });
+            currentUser.Setup(c => c.Roles).Returns(new List<string> { Roles.Owner });
             currentUser.Setup(c => c.IsAdmin).Returns(true);
 
             var fixture = new Fixture

@@ -240,7 +240,7 @@ export function buildTasks(): PracticalTaskRecord[] {
     {
       id: 'tsk-001',
       title: 'Xây dựng quy trình ứng dụng Prompt AI và bảo mật dữ liệu khách hàng trên CRM',
-      description: 'Áp dụng quy tắc ứng dụng Prompt AI (TT02-6.1) và bảo vệ dữ liệu khách hàng theo TT02-4.2 trên hệ thống CRM thực tế của phòng Kinh doanh.',
+      description: 'Áp dụng quy tắc ứng dụng Prompt AI (CMP-6.1) và bảo vệ dữ liệu khách hàng theo CMP-4.2 trên hệ thống CRM thực tế của phòng Kinh doanh.',
       expectedOutput: 'Bản đề xuất cấu trúc phân quyền dữ liệu và bộ Prompt mẫu ứng dụng trong bán hàng CRM.',
       competencyIds: ['cmp-6-1', 'cmp-4-2'],
       targetLevel: 2,
@@ -252,15 +252,15 @@ export function buildTasks(): PracticalTaskRecord[] {
       assignedAt: daysFromNow(-10),
       dueDate: dateFromNow(15),
       rubricCriteria: [
-        { id: 'rc-1', label: 'Bảo mật dữ liệu khách hàng (TT02-4.2)', maxPoints: 50, description: 'Phân quyền và bảo vệ dữ liệu nhạy cảm theo quy định' },
-        { id: 'rc-2', label: 'Ứng dụng Prompt AI chăm sóc khách hàng (TT02-6.1)', maxPoints: 50, description: 'Quy trình và câu lệnh prompt chuẩn hóa, hiệu quả cao' },
+        { id: 'rc-1', label: 'Bảo mật dữ liệu khách hàng (CMP-4.2)', maxPoints: 50, description: 'Phân quyền và bảo vệ dữ liệu nhạy cảm theo quy định' },
+        { id: 'rc-2', label: 'Ứng dụng Prompt AI chăm sóc khách hàng (CMP-6.1)', maxPoints: 50, description: 'Quy trình và câu lệnh prompt chuẩn hóa, hiệu quả cao' },
       ],
       status: 'ACTIVE',
     },
     {
       id: 'tsk-002',
       title: 'Xây dựng quy trình sao lưu và lưu trữ chứng từ số kế toán',
-      description: 'Thiết lập cơ chế kiểm tra tính toàn vẹn và mã hóa cho thư mục chứng từ điện tử (TT02-1.3, TT02-4.1).',
+      description: 'Thiết lập cơ chế kiểm tra tính toàn vẹn và mã hóa cho thư mục chứng từ điện tử (CMP-1.3, CMP-4.1).',
       expectedOutput: 'Quy trình vận hành chuẩn (SOP) kèm biên bản kiểm tra sao lưu thử nghiệm.',
       competencyIds: ['cmp-1-3', 'cmp-4-1'],
       targetLevel: 2,
@@ -280,7 +280,7 @@ export function buildTasks(): PracticalTaskRecord[] {
     {
       id: 'tsk-003',
       title: 'Ứng dụng AI sáng tạo nội dung truyền thông và chiến dịch số',
-      description: 'Sử dụng các công cụ GenAI để xây dựng bộ ấn phẩm truyền thông thương hiệu theo tiêu chuẩn TT02-3.1 và TT02-6.1.',
+      description: 'Sử dụng các công cụ GenAI để xây dựng bộ ấn phẩm truyền thông thương hiệu theo tiêu chuẩn CMP-3.1 và CMP-6.1.',
       expectedOutput: 'Kế hoạch nội dung đa kênh và 3 mẫu ấn phẩm truyền thông số ứng dụng AI.',
       competencyIds: ['cmp-3-1', 'cmp-6-1'],
       targetLevel: 2,
@@ -300,7 +300,7 @@ export function buildTasks(): PracticalTaskRecord[] {
     {
       id: 'tsk-004',
       title: 'Xây dựng ma trận đào tạo số và chuẩn hóa hồ sơ nhân sự điện tử',
-      description: 'Thiết lập danh mục năng lực và ma trận phân công theo dõi đào tạo cho các phòng ban (TT02-2.2, TT02-4.2).',
+      description: 'Thiết lập danh mục năng lực và ma trận phân công theo dõi đào tạo cho các phòng ban (CMP-2.2, CMP-4.2).',
       expectedOutput: 'Bảng theo dõi tiến độ đào tạo tập trung và quy trình quản lý hồ sơ bảo mật.',
       competencyIds: ['cmp-2-2', 'cmp-4-2'],
       targetLevel: 2,

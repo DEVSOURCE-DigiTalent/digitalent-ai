@@ -1,5 +1,8 @@
+import { useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { personalLearningService, type SubmitTaskInput } from '../services/personal-learning.service';
+import {
+  personalLearningService, type PersonalAccess, type SeenKey, type SubmitTaskInput,
+} from '../services/personal-learning.service';
 
 /** Personal workspace data (/personal/*). Every change refreshes the whole track: levels, path and tasks move together. */
 
@@ -15,6 +18,8 @@ export const PERSONAL_KEYS = {
   tasks: [...ROOT, 'tasks'] as const,
   certificates: [...ROOT, 'certificates'] as const,
   progress: [...ROOT, 'progress'] as const,
+  /** Plan mode, trial counters and the guidance state. Every mutation below invalidates it through ROOT. */
+  access: [...ROOT, 'access'] as const,
 };
 
 function useRefreshTrack() {
@@ -66,6 +71,44 @@ export function usePersonalProgress() {
   return useQuery({ queryKey: PERSONAL_KEYS.progress, queryFn: personalLearningService.getProgress });
 }
 
+/** How long the plan state is trusted before a page that shows it asks again (the app default is five minutes). */
+const ACCESS_STALE_MS = 30 * 1000;
+
+export function usePersonalAccess() {
+  const queryClient = useQueryClient();
+  const query = useQuery({ queryKey: PERSONAL_KEYS.access, queryFn: personalLearningService.getAccess, staleTime: ACCESS_STALE_MS });
+  const mode = query.data?.mode;
+  const lastMode = useRef(mode);
+
+  // A plan change (a trial that ended, a payment in another tab) changes what the path, courses and certificates
+  // answer, and those keep their data for minutes: read them again so no screen contradicts the plan label.
+  useEffect(() => {
+    if (mode && lastMode.current && mode !== lastMode.current) {
+      void queryClient.invalidateQueries({ queryKey: ROOT, predicate: (entry) => entry.queryKey[1] !== 'access' });
+    }
+    lastMode.current = mode ?? lastMode.current;
+  }, [mode, queryClient]);
+
+  return query;
+}
+
+/**
+ * Marks a hint as seen. The cache is updated at once so the hint closes without waiting for the server; the
+ * checklist is recomputed by the server, so the access query is refreshed when the call settles.
+ */
+export function useMarkSeen() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (key: SeenKey) => personalLearningService.markSeen(key),
+    onMutate: (key) => {
+      queryClient.setQueryData<PersonalAccess>(PERSONAL_KEYS.access, (access) =>
+        access && !access.seen[key] ? { ...access, seen: { ...access.seen, [key]: new Date().toISOString() } } : access,
+      );
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: PERSONAL_KEYS.access }),
+  });
+}
+
 export function useSetPersonalTarget() {
   const refresh = useRefreshTrack();
   return useMutation({ mutationFn: personalLearningService.setTarget, onSuccess: refresh });
@@ -113,28 +156,3 @@ export function useSubmitPersonalTask() {
     onSuccess: refresh,
   });
 }
-
-export function useDemoFastTrackCourse() {
-  const refresh = useRefreshTrack();
-  return useMutation({
-    mutationFn: (courseId: string) => personalLearningService.demoFastTrackCourse(courseId),
-    onSuccess: refresh,
-  });
-}
-
-export function useDemoFastTrackTarget() {
-  const refresh = useRefreshTrack();
-  return useMutation({
-    mutationFn: (positionCode?: string) => personalLearningService.demoFastTrackTarget(positionCode),
-    onSuccess: refresh,
-  });
-}
-
-export function useDemoReset() {
-  const refresh = useRefreshTrack();
-  return useMutation({
-    mutationFn: () => personalLearningService.demoReset(),
-    onSuccess: refresh,
-  });
-}
-

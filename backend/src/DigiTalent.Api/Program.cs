@@ -17,6 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();                              // use case + validator (tự động)
 builder.Services.AddInfrastructure(builder.Configuration);      // database, tạo token, mã hóa mật khẩu
 builder.Services.AddJwtAuthentication(builder.Configuration);   // đọc + kiểm tra token FE gửi lên
+builder.Services.AddEnterpriseTrial(builder.Configuration, builder.Environment);
 
 builder.Services.AddControllers();
 builder.Services.AddSwaggerWithJwt();
@@ -67,27 +68,35 @@ if (app.Environment.IsProduction())
     }
 }
 
-// Chạy migration & seed khi ở Development hoặc khi có cờ ApplyMigrations/--migrate
-var applyMigrations = app.Environment.IsDevelopment() ||
-                      string.Equals(app.Configuration["ApplyMigrations"], "true", StringComparison.OrdinalIgnoreCase) ||
-                      args.Contains("--migrate") ||
-                      args.Contains("--migrate-only");
+// Chạy migration & seed khi ở Development hoặc khi có cờ ApplyMigrations/--migrate (trừ khi cố ý tắt bằng ApplyMigrations=false)
+var applyMigrations = !string.Equals(app.Configuration["ApplyMigrations"], "false", StringComparison.OrdinalIgnoreCase) &&
+                      (app.Environment.IsDevelopment() ||
+                       string.Equals(app.Configuration["ApplyMigrations"], "true", StringComparison.OrdinalIgnoreCase) ||
+                       args.Contains("--migrate") ||
+                       args.Contains("--migrate-only"));
 
 if (applyMigrations)
 {
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
-    if (app.Environment.IsDevelopment())
+    try
     {
-        await DbSeeder.SeedAsync(
-            db,
-            scope.ServiceProvider.GetRequiredService<IPasswordHasher>(),
-            app.Configuration["DevelopmentSeed:Password"]);
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Database.MigrateAsync();
+        if (app.Environment.IsDevelopment())
+        {
+            await DbSeeder.SeedAsync(
+                db,
+                scope.ServiceProvider.GetRequiredService<IPasswordHasher>(),
+                app.Configuration["DevelopmentSeed:Password"]);
+        }
+        else
+        {
+            await DbSeeder.SeedReferenceDataAsync(db);
+        }
     }
-    else
+    catch (Exception ex)
     {
-        await DbSeeder.SeedReferenceDataAsync(db);
+        app.Logger.LogWarning(ex, "Chưa kết nối được cơ sở dữ liệu PostgreSQL cục bộ. Ứng dụng tiếp tục khởi động ở chế độ catalog/offline.");
     }
 }
 
@@ -111,6 +120,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("Frontend");
 app.UseAuthentication(); // đọc token → biết ai đang gọi (dùng trong [HasPermission] và ICurrentUser)
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 app.MapHub<DigiTalent.Api.Hubs.NotificationHub>("/hubs/notifications");

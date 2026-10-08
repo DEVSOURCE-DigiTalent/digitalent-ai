@@ -149,7 +149,7 @@ export function ReportsPage() {
     const curAssessment = assessmentStats;
     const curEvidence = evidenceStats;
     const csvRows = [
-      ['BÁO CÁO PHÂN TÍCH TỔNG THỂ NĂNG LỰC SỐ DOANH NGHIỆP (THÔNG TƯ 02/2025/TT-BGDĐT)'],
+      ['BÁO CÁO PHÂN TÍCH TỔNG THỂ NĂNG LỰC SỐ DOANH NGHIỆP'],
       ['Kỳ báo cáo', timeRange],
       ['Ngày xuất', new Date().toLocaleDateString('vi-VN')],
       [''],
@@ -161,7 +161,7 @@ export function ReportsPage() {
       ['Cấp bậc G2 (Phó phòng)', `${g2Count} (${g2Percent}%)`],
       ['Cấp bậc G3 (Trưởng phòng)', `${g3Count} (${g3Percent}%)`],
       [''],
-      ['2. NĂNG LỰC SỐ THEO 6 MIỀN TT02'],
+      ['2. NĂNG LỰC SỐ THEO 6 MIỀN'],
       ['Mã miền', 'Tên miền', 'Điểm trung bình hiện tại', 'Chuẩn yêu cầu'],
       ...tt02Domains.map((d) => [
         d.code,
@@ -219,7 +219,7 @@ export function ReportsPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <PageHeader
           title="Báo cáo & Phân tích tổng thể"
-          subtitle="Số liệu phân tích toàn diện về cơ cấu nhân sự, năng lực Thông tư 02, đào tạo, đánh giá và minh chứng thực tế"
+          subtitle="Số liệu phân tích toàn diện về cơ cấu nhân sự, năng lực số, đào tạo, đánh giá và minh chứng thực tế"
         />
         <button
           type="button"
@@ -307,7 +307,7 @@ export function ReportsPage() {
       <div className="border-b border-slate-200 flex flex-wrap gap-2 sm:gap-6">
         {[
           { key: 'workforce', label: 'Nhân sự', icon: Users },
-          { key: 'competency', label: 'Năng lực TT02', icon: Layers },
+          { key: 'competency', label: 'Năng lực chuẩn', icon: Layers },
           { key: 'training', label: 'Đào tạo', icon: GraduationCap },
           { key: 'assessment', label: 'Đánh giá', icon: Award },
           { key: 'evidence', label: 'Minh chứng & Nhiệm vụ', icon: ClipboardCheck },
@@ -425,7 +425,7 @@ export function ReportsPage() {
               label="Tỷ lệ đạt chuẩn chung"
               value={dashboard?.kpis.averageCoverage ? `${dashboard.kpis.averageCoverage}%` : '80%'}
               variant="success"
-              subtitle="Theo khung TT02"
+              subtitle="Theo Khung chuẩn"
             />
             <ScoreCard
               label="Khoảng trống cần bồi dưỡng"
@@ -444,13 +444,13 @@ export function ReportsPage() {
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
             <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
               <Layers className="size-4 text-blue-600" />
-              <span>Tiến độ đạt chuẩn theo 6 Miền năng lực Thông tư 02/2025/TT-BGDĐT</span>
+              <span>Tiến độ đạt chuẩn theo 6 Miền của Khung chuẩn năng lực số</span>
             </h3>
 
             {tt02Domains.length === 0 ? (
               <EmptyState
                 title="Chưa có dữ liệu miền năng lực"
-                description="Hệ thống chưa ghi nhận dữ liệu đánh giá năng lực theo các miền của Thông tư 02/2025."
+                description="Hệ thống chưa ghi nhận dữ liệu đánh giá năng lực theo các miền của Khung chuẩn năng lực số."
               />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
@@ -674,7 +674,7 @@ export function ReportsPage() {
                     <span>Chất lượng bài đánh giá trắc nghiệm</span>
                   </h3>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Ngân hàng câu hỏi trắc nghiệm được biên soạn theo đúng ma trận chuẩn đầu ra của 18 khóa học Thông tư 02. Đảm bảo tính khách quan và tự động chấm điểm tức thì.
+                    Ngân hàng câu hỏi trắc nghiệm được biên soạn theo đúng ma trận chuẩn đầu ra của 18 khóa học chuẩn hóa. Đảm bảo tính khách quan và tự động chấm điểm tức thì.
                   </p>
                   <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100 space-y-2 text-xs text-slate-700">
                     <p className="font-semibold text-blue-900">Thống kê vận hành:</p>

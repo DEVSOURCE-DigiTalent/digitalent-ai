@@ -9,6 +9,7 @@ import { useStageSequence } from '../hooks/use-stage-sequence';
 import { useLandingMotion } from '../landing-motion';
 import { BackgroundStage } from './BackgroundStage';
 import { SectionHeader } from './SectionHeader';
+import { LP_KICKER } from '../landing-type';
 
 type EvidenceSection = Extract<LandingSectionConfig, { kind: 'evidence' }>;
 
@@ -43,11 +44,11 @@ export function EvidenceSection({ section }: { section: EvidenceSection }) {
 
         <div className="rounded-[20px] bg-landing-card p-6 md:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs uppercase tracking-[0.14em] text-stone-500">Review minh chứng · Ví dụ minh họa</p>
+            <p className={LP_KICKER}>Review minh chứng · Ví dụ minh họa</p>
             <span
               className={cn(
-                'rounded-full border px-3 py-1 text-[11px] tracking-[0.06em] transition-colors duration-700',
-                confirmed ? 'border-[#A7C4A0]/50 bg-[#A7C4A0]/10 text-[#A7C4A0]' : 'border-cream/15 text-cream/50',
+                'rounded-full border px-3 py-1 text-[11px] font-medium tracking-[0.06em] transition-colors duration-700',
+                confirmed ? 'border-[#79E0C2]/50 bg-[#79E0C2]/10 text-[#79E0C2]' : 'border-amber-400/30 bg-amber-400/5 text-[#F5CA65]',
               )}
             >
               {confirmed ? 'ĐÃ XÁC NHẬN' : 'ĐANG XỬ LÝ'}
@@ -69,8 +70,8 @@ export function EvidenceSection({ section }: { section: EvidenceSection }) {
                 <span
                   aria-hidden="true"
                   className={cn(
-                    'relative z-10 block size-3 rounded-full border transition-colors duration-500 max-sm:absolute max-sm:left-0 max-sm:top-1 sm:mb-2',
-                    index <= stage ? 'border-cream bg-cream' : 'border-cream/30 bg-landing-card',
+                    'relative z-10 block size-3 rounded-full border transition-all duration-500 max-sm:absolute max-sm:left-0 max-sm:top-1 sm:mb-2',
+                    index <= stage ? 'border-[#F5CA65] bg-[#F5CA65] shadow-[0_0_8px_rgba(245,202,101,0.6)]' : 'border-cream/30 bg-landing-card',
                   )}
                 />
                 <span className={cn('block text-sm leading-[1.4] transition-colors duration-500 sm:pr-2', index <= stage ? 'text-cream' : 'text-stone-500')}>
@@ -84,7 +85,7 @@ export function EvidenceSection({ section }: { section: EvidenceSection }) {
             {sample.criteria.map((criterion, index) => (
               <li key={criterion} className="grid grid-cols-[1.25rem_minmax(0,1fr)] items-start gap-3 text-base leading-[1.45] text-cream/85">
                 <Check
-                  className={cn('mt-0.5 size-4 transition-opacity duration-700', reviewed ? 'text-[#A7C4A0] opacity-100' : 'text-cream opacity-20')}
+                  className={cn('mt-0.5 size-4 transition-opacity duration-700', reviewed ? 'text-[#79E0C2] opacity-100' : 'text-cream opacity-20')}
                   style={{ transitionDelay: `${index * 150}ms` }}
                   strokeWidth={2.5}
                   aria-hidden="true"
@@ -96,14 +97,14 @@ export function EvidenceSection({ section }: { section: EvidenceSection }) {
 
           <div className="mt-6 min-h-[10rem]">
             <div className={cn('transition-opacity duration-700', reviewed ? 'opacity-100' : 'opacity-0')}>
-              <p className="text-xs uppercase tracking-[0.12em] text-stone-500">Phản hồi</p>
+              <p className={LP_KICKER}>Phản hồi</p>
               <p className="mt-2 text-sm leading-[1.55] text-stone-400">{sample.feedback}</p>
-              <div className={cn('mt-5 grid gap-2 rounded-xl border border-[#A7C4A0]/30 bg-[#A7C4A0]/5 p-4 transition-opacity duration-700', confirmed ? 'opacity-100' : 'opacity-0')}>
+              <div className={cn('mt-5 grid gap-2 rounded-xl border border-amber-400/30 bg-amber-400/5 p-4 transition-opacity duration-700', confirmed ? 'opacity-100' : 'opacity-0')}>
                 <p className="text-base text-cream">
-                  Trình độ đã xác nhận: {TIER_LABELS[from]} → {TIER_LABELS[to]}
+                  Trình độ đã xác nhận: <span className="font-semibold text-[#F5CA65]">{TIER_LABELS[from]} → {TIER_LABELS[to]}</span>
                 </p>
                 <p className="text-sm text-stone-400">
-                  Khoảng trống {sample.competencyCode}: {gapBefore > 0 ? `còn thiếu ${gapBefore} tầng` : 'đã đạt'} → {gapAfter > 0 ? `còn thiếu ${gapAfter} tầng` : 'đã đạt'}
+                  Khoảng trống {sample.competencyCode}: {gapBefore > 0 ? `còn thiếu ${gapBefore} tầng` : 'đã đạt'} → {gapAfter > 0 ? `còn thiếu ${gapAfter} tầng` : <span className="font-medium text-[#79E0C2]">đã đạt</span>}
                 </p>
               </div>
             </div>

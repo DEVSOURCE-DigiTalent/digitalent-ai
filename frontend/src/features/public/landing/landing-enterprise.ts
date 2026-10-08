@@ -38,15 +38,15 @@ export const BUSINESS_HERO_FRAGMENTS: HeroFragments = {
 };
 
 export const BUSINESS_ABOUT: LandingContent['about'] = {
-  label: 'Khung năng lực số · Thông tư 02/2025',
+  label: 'Khung chuẩn năng lực số',
   title: [
     { text: 'Mỗi vị trí cần' },
     { text: 'một bộ năng lực số riêng.', className: SERIF_ITALIC },
-    { text: 'Thước đo là Khung năng lực số của Thông tư 02/2025.' },
+    { text: 'Thước đo là Khung chuẩn năng lực số 6 miền cốt lõi.' },
   ],
   body:
-    'Thông tư 02/2025/TT-BGDĐT cung cấp khung 6 miền, 24 năng lực thành phần, xếp theo 8 bậc. DigiTalent AI dùng khung này làm thước đo; chương trình hiện có 3 tầng, Cơ bản, Trung cấp và Nâng cao.',
-  specsLabel: 'Khung của Thông tư',
+    'Khung chuẩn năng lực số gồm 6 miền, 24 năng lực thành phần, xếp theo 8 bậc. DigiTalent AI dùng khung này làm thước đo; chương trình đào tạo triển khai 3 tầng: Cơ bản, Trung cấp và Nâng cao.',
+  specsLabel: 'Khung chuẩn tham chiếu',
   specs: [
     { value: '6', label: 'miền năng lực, gồm cả ứng dụng AI' },
     { value: '24', label: 'năng lực thành phần' },
@@ -291,7 +291,7 @@ const FAQ: LandingSectionConfig = {
     {
       question: 'Yêu cầu năng lực theo vị trí được thiết lập ra sao?',
       answer:
-        'Owner chọn từ 9 đến 24 trong 24 năng lực của Khung TT02 cho mỗi vị trí và đặt trình độ yêu cầu cho từng năng lực. Hai năng lực an toàn 4.1 và 4.2 luôn có mặt. Mỗi lần thay đổi được lưu thành một phiên bản để xem lại.',
+        'Owner chọn từ 9 đến 24 trong 24 năng lực của Khung chuẩn cho mỗi vị trí và đặt trình độ yêu cầu cho từng năng lực. Hai năng lực an toàn 4.1 và 4.2 luôn có mặt. Mỗi lần thay đổi được lưu thành một phiên bản để xem lại.',
     },
     {
       question: 'Hoàn thành khóa học có đồng nghĩa năng lực được xác nhận không?',
@@ -303,9 +303,9 @@ const FAQ: LandingSectionConfig = {
       answer: 'Có. Owner có thể nâng hoặc hạ gói trong phần Gói và thanh toán của tổ chức.',
     },
     {
-      question: 'Khung năng lực TT02 được dùng trong DigiTalent AI như thế nào?',
+      question: 'Khung chuẩn năng lực số được dùng trong DigiTalent AI như thế nào?',
       answer:
-        'Thông tư 02/2025/TT-BGDĐT cung cấp khung gồm 6 miền, 24 năng lực thành phần và 8 bậc; DigiTalent AI dùng khung này làm thước đo. Các vị trí tham chiếu và yêu cầu năng lực của từng vị trí do DigiTalent AI xây dựng dựa trên khung. Thông tư không quy định vị trí việc làm.',
+        'Khung chuẩn năng lực số gồm 6 miền, 24 năng lực thành phần và 8 bậc được DigiTalent AI vận dụng làm thước đo tham chiếu. Các vị trí công việc và yêu cầu năng lực của từng vị trí do doanh nghiệp và nền tảng thiết lập phù hợp với bối cảnh thực tế.',
     },
   ],
 };
@@ -328,14 +328,14 @@ export const BUSINESS_MAIN_NAV: LandingLink[] = [
   { label: 'Cách hoạt động', to: SECTION_IDS.process, kind: 'section' },
   { label: 'Vai trò', to: SECTION_IDS.roles, kind: 'section', wideOnly: true },
   { label: 'Bảng giá', to: '/business/pricing', kind: 'route', wideOnly: true },
-  { label: 'Đăng nhập', to: '/business/login', kind: 'route' },
+  { label: 'Đăng nhập', to: '/login', kind: 'route' },
 ];
 
 export const BUSINESS_DOCK_NAV: LandingLink[] = [
   { label: 'Cách hoạt động', to: SECTION_IDS.process, kind: 'section' },
   { label: 'Vai trò', to: SECTION_IDS.roles, kind: 'section' },
   { label: 'Bảng giá', to: '/business/pricing', kind: 'route' },
-  { label: 'Đăng nhập', to: '/business/login', kind: 'route' },
+  { label: 'Đăng nhập', to: '/login', kind: 'route' },
 ];
 
 export const BUSINESS_FOOTER_PRODUCT: LandingLink[] = [

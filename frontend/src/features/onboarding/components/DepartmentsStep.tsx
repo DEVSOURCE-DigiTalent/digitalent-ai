@@ -48,7 +48,7 @@ export function DepartmentsStep({ setup, onBack, onDone, onSkip }: DepartmentsSt
   return (
     <div className="grid max-w-xl gap-6">
       <div>
-        <p className="mb-2 text-sm font-medium text-slate-700">Gợi ý phổ biến</p>
+        <p className="mb-2 text-sm font-medium text-ent-fg">Gợi ý phổ biến</p>
         <div className="flex flex-wrap gap-2">
           {SUGGESTIONS.map((name) => {
             const selected = names.includes(name);
@@ -59,7 +59,9 @@ export function DepartmentsStep({ setup, onBack, onDone, onSkip }: DepartmentsSt
                 aria-pressed={selected}
                 onClick={() => toggleSuggestion(name)}
                 className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
-                  selected ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                  selected
+                    ? 'border-[#E5A93C] bg-amber-400/15 text-[#F5CA65] font-medium shadow-sm'
+                    : 'border-ent-line text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg'
                 }`}
               >
                 {name}
@@ -76,7 +78,7 @@ export function DepartmentsStep({ setup, onBack, onDone, onSkip }: DepartmentsSt
         }}
         className="grid gap-1.5"
       >
-        <label htmlFor="department-name" className="text-sm font-medium text-slate-700">
+        <label htmlFor="department-name" className="text-sm font-medium text-ent-fg">
           Thêm phòng ban hoặc nhóm khác
         </label>
         <div className="flex gap-2">
@@ -94,22 +96,22 @@ export function DepartmentsStep({ setup, onBack, onDone, onSkip }: DepartmentsSt
         </div>
       </form>
 
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
 
       <div>
-        <p className="mb-2 text-sm font-medium text-slate-700">Đã chọn ({names.length})</p>
+        <p className="mb-2 text-sm font-medium text-ent-fg">Đã chọn ({names.length})</p>
         {names.length === 0 ? (
-          <p className="text-sm text-slate-500">Chưa có phòng ban nào.</p>
+          <p className="text-sm text-ent-fg-3">Chưa có phòng ban nào.</p>
         ) : (
           <ul className="flex flex-wrap gap-2">
             {names.map((name) => (
-              <li key={name} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 py-1 pl-3 pr-1.5 text-sm text-slate-700">
+              <li key={name} className="inline-flex items-center gap-1.5 rounded-full bg-ent-raised border border-amber-400/20 py-1 pl-3 pr-1.5 text-sm text-ent-fg">
                 {name}
                 <button
                   type="button"
                   onClick={() => setNames(names.filter((n) => n !== name))}
                   aria-label={`Xóa ${name}`}
-                  className="grid size-5 place-items-center rounded-full hover:bg-slate-200"
+                  className="grid size-5 place-items-center rounded-full hover:bg-amber-400/20 text-ent-fg-3 hover:text-ent-fg"
                 >
                   <X className="size-3.5" aria-hidden="true" />
                 </button>

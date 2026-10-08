@@ -27,7 +27,7 @@ Lỗi trả `success: false`, HTTP status tương ứng (400/401/403/404/409).
 ### GET /organization/overview — Tổng quan tổ chức (trang OW-01)
 
 ```
-Quyền: dashboard.hr_company.read (HR_MANAGER; SYSTEM_ADMIN luôn qua)
+Quyền: dashboard.hr_company.read (OWNER)
 Không có query parameter. Dữ liệu tự lọc theo tổ chức của user đang login.
 ```
 
@@ -130,7 +130,7 @@ Lỗi:
 | HTTP | Khi nào |
 |------|---------|
 | 401 | Chưa đăng nhập, token hết hạn hoặc tài khoản bị khóa |
-| 403 | User không có quyền `dashboard.hr_company.read` (DEPARTMENT_MANAGER, TRAINER, EMPLOYEE) |
+| 403 | User không có quyền `dashboard.hr_company.read` (PLATFORM_ADMIN, MANAGER, EMPLOYEE) |
 | 404 | Không tìm thấy tổ chức của user (dữ liệu hỏng) |
 
 ---
@@ -179,7 +179,7 @@ Thay đổi database (SQL gốc `docs/database/DigiTalent_AI_Canonical_v2_3.sql`
 
 Quyền (permission) mới / bổ sung vào ma trận mặc định:
 
-| Mã quyền | Dùng cho | HR_MANAGER | DEPARTMENT_MANAGER | TRAINER / EMPLOYEE |
+| Mã quyền | Dùng cho | OWNER | MANAGER | EMPLOYEE |
 |----------|----------|:---:|:---:|:---:|
 | `user.read` | `GET /members`, `GET /members/{id}` | ✔ (mới) | | |
 | `user.create` | mời / gửi lại / thu hồi lời mời | ✔ (mới) | | |
@@ -190,7 +190,7 @@ Quyền (permission) mới / bổ sung vào ma trận mặc định:
 | `job_grade.read` (mã mới) | `GET /job-grades` | ✔ | ✔ | |
 | `job_grade.manage` (mã mới) | `PUT /job-grades/{code}` | ✔ | | |
 
-> `DbSeeder` tự thêm mã quyền và cặp role–quyền còn thiếu khi start Development. Môi trường khác phải chạy seed hoặc thêm tay vào `permissions` / `role_permissions`. SYSTEM_ADMIN luôn qua mọi kiểm tra quyền. FE đã có sẵn các mã này trong `hooks/use-permission.ts`.
+> `DbSeeder` tự thêm mã quyền và cặp role–quyền còn thiếu khi start Development. Môi trường khác phải chạy migration/seed để đồng bộ `permissions` / `role_permissions`. Mọi role, kể cả PLATFORM_ADMIN, đều cần quyền được gán tường minh. FE đã có sẵn các mã này trong `hooks/use-permission.ts`.
 
 Cấu hình mới (`appsettings.json`):
 
@@ -203,18 +203,14 @@ Cấu hình mới (`appsettings.json`):
 
 Chưa tích hợp dịch vụ email: link kích hoạt chỉ được ghi vào log backend. Khi `ExposeDebugLink = true` (Development) API trả thêm `token` và `debugLink` để FE/tester mở link; môi trường khác hai field này là `null` và link **không** được ghi ra log.
 
-### 3.1 Ánh xạ vai trò FE ↔ BE
+### 3.1 Vai trò chuẩn
 
-| FE (`roles[]`) | BE (bảng `roles`) | Ghi chú |
-|----------------|-------------------|---------|
-| `OWNER` | `HR_MANAGER` | `SYSTEM_ADMIN` cũng hiển thị là `OWNER` nhưng không thể sửa/vô hiệu hóa từ tổ chức (403) |
-| `MANAGER` | `DEPARTMENT_MANAGER` | |
-| `EMPLOYEE` | `EMPLOYEE` | `TRAINER` cũng hiển thị là `EMPLOYEE` |
+Backend và frontend dùng chung ba role doanh nghiệp `OWNER`, `MANAGER`, `EMPLOYEE`. `PLATFORM_ADMIN` chỉ thuộc workspace platform và không thể được cấp, sửa hoặc vô hiệu hóa từ API tổ chức.
 
-- API thành viên/lời mời/vai trò **luôn trả mã FE**, sắp theo thứ tự `OWNER > MANAGER > EMPLOYEE`, không trùng lặp.
-- Khi gửi lên (`role`, `roles[]`, query `role`) chấp nhận cả mã FE lẫn mã BE, không phân biệt hoa thường (`"owner"`, `"HR_MANAGER"` đều hợp lệ).
-- `PUT /members/{id}` chỉ cấp/thu 3 role `HR_MANAGER`, `DEPARTMENT_MANAGER`, `EMPLOYEE`; `TRAINER` và `SYSTEM_ADMIN` của tài khoản được giữ nguyên.
-- Tổ chức luôn phải còn **ít nhất 1 tài khoản HR_MANAGER không INACTIVE**.
+- API thành viên/lời mời/vai trò trả role theo thứ tự `OWNER > MANAGER > EMPLOYEE`, không trùng lặp.
+- Input `role`, `roles[]` và query `role` chấp nhận ba mã chuẩn, không phân biệt hoa thường.
+- `PUT /members/{id}` chỉ cấp/thu `OWNER`, `MANAGER`, `EMPLOYEE`.
+- Tổ chức luôn phải còn **ít nhất 1 tài khoản OWNER không INACTIVE**.
 
 ### 3.2 Thành viên — `/members`
 
@@ -244,7 +240,7 @@ Chưa tích hợp dịch vụ email: link kích hoạt chỉ được ghi vào l
 
 Danh sách gồm 3 nguồn:
 1. Hồ sơ nhân viên chưa `ARCHIVED` (kèm tài khoản nếu `employees.user_id` có giá trị).
-2. Tài khoản thuộc tổ chức nhưng chưa có hồ sơ nhân viên (VD `admin@`).
+2. Tài khoản thuộc tổ chức nhưng chưa có hồ sơ nhân viên (ví dụ Owner mới đăng ký trước khi hoàn tất hồ sơ).
 3. Lời mời `PENDING` — kể cả lời mời đã quá `expiresAt` (vẫn chiếm ghế cho tới khi gửi lại hoặc thu hồi).
 
 Thứ tự: thành viên trước, lời mời sau; trong mỗi nhóm sắp theo tên (collation tiếng Việt, không phân biệt hoa thường).
@@ -265,7 +261,7 @@ Query: pageIndex (≥1, mặc định 1), pageSize (1–100, mặc định 20), 
 |-------|-------|
 | search | Chứa (không phân biệt hoa thường) trong `fullName`, `email` hoặc `employeeCode` |
 | status | `ACTIVE` / `INACTIVE` / `PENDING`; bỏ trống = tất cả. Giá trị khác → 400 `Status must be ACTIVE, INACTIVE or PENDING.` |
-| role | `OWNER` / `MANAGER` / `EMPLOYEE` hoặc mã BE. `OWNER` khớp HR_MANAGER + SYSTEM_ADMIN; `EMPLOYEE` khớp EMPLOYEE + TRAINER + hồ sơ chưa có tài khoản |
+| role | `OWNER` / `MANAGER` / `EMPLOYEE`; hồ sơ chưa có tài khoản được xem là EMPLOYEE |
 | departmentId, jobPositionId | Lọc theo phòng ban / vị trí (áp dụng cả cho lời mời) |
 | jobGrade | `G1` / `G2` / `G3` (cấp bậc của vị trí). Giá trị khác → 400 `JobGrade must be G1, G2 or G3.` |
 
@@ -357,7 +353,7 @@ Thứ tự kiểm tra một dòng và `reason` trả về (tiếng Việt, hiể
 |---|-----------|--------|
 | 1 | Email sai định dạng hoặc >255 ký tự | `Email không hợp lệ.` |
 | 2 | Họ tên rỗng hoặc >200 ký tự | `Thiếu họ tên hoặc họ tên quá dài.` |
-| 3 | `role` không thuộc OWNER/MANAGER/EMPLOYEE (hoặc mã BE tương ứng) | `Vai trò không hợp lệ.` |
+| 3 | `role` không thuộc OWNER/MANAGER/EMPLOYEE | `Vai trò không hợp lệ.` |
 | 4 | Vai trò khác EMPLOYEE mà người mời không có `role.assign_business` | `Bạn không được cấp vai trò này.` |
 | 5 | Email đã có tài khoản (bất kỳ tổ chức nào), đang có lời mời PENDING trong tổ chức, hoặc trùng dòng trước trong cùng lô | `Email đã có tài khoản hoặc đã được mời.` |
 | 6 | `employeeCode` >50 ký tự hoặc trùng mã nhân viên của tổ chức / dòng trước trong lô | `Mã nhân viên không hợp lệ hoặc đã tồn tại.` |
@@ -443,7 +439,7 @@ Body (chỉ gửi field cần đổi):
 }
 ```
 
-- `roles`: thay toàn bộ nhóm role quản lý (HR_MANAGER / DEPARTMENT_MANAGER / EMPLOYEE) bằng danh sách gửi lên; TRAINER, SYSTEM_ADMIN giữ nguyên. Ghi audit `ROLE_CHANGED`.
+- `roles`: thay role doanh nghiệp hiện tại bằng danh sách gửi lên; tài khoản PLATFORM_ADMIN bị chặn khỏi API tổ chức. Ghi audit `ROLE_CHANGED`.
 - `departmentId` / `jobPositionId`: phải là phòng ban / vị trí **ACTIVE** của tổ chức. Ghi audit `MEMBER_PLACEMENT_CHANGED` khi có thay đổi.
 - Thành viên có tài khoản nhưng **chưa có hồ sơ nhân viên** (VD Owner tạo lúc đăng ký): gửi `departmentId` sẽ tạo hồ sơ mới (mã `NV###` tự sinh, `work_email` = email tài khoản, `joined_at` = hôm nay).
 - Response `data` = `MemberListItem` sau khi cập nhật (đã có chỉ số). Message `Member updated.`
@@ -456,10 +452,10 @@ Body (chỉ gửi field cần đổi):
 | 400 | `Department does not exist or is not active.` | `[{ field: "departmentId", message: "INVALID_DEPARTMENT" }]` | |
 | 400 | `Job position does not exist or is not active.` | `[{ field: "jobPositionId", message: "INVALID_JOB_POSITION" }]` | |
 | 403 | `You are not allowed to assign roles.` | | Gửi `roles` khi thiếu `role.assign_business` |
-| 403 | `Platform administrator accounts cannot be changed from the organization.` | | Thành viên là SYSTEM_ADMIN |
+| 403 | `Platform administrator accounts cannot be changed from the organization.` | | Thành viên là PLATFORM_ADMIN |
 | 404 | `Member '{id}' not found.` | | |
 | 409 | `The invitation has not been activated yet. Resend or revoke it instead.` | | `{id}` là lời mời |
-| 409 | `The organization must keep at least one active Owner.` | | Bỏ OWNER của HR_MANAGER đang hoạt động cuối cùng (kể cả tự hạ quyền mình) |
+| 409 | `The organization must keep at least one active Owner.` | | Bỏ OWNER của OWNER đang hoạt động cuối cùng (kể cả tự hạ quyền mình) |
 
 ---
 
@@ -478,7 +474,7 @@ Body: { "reason": "Nghỉ việc" }     // bắt buộc, ≤500, tự trim
 | HTTP | Khi nào |
 |------|---------|
 | 400 | `Validation failed.` — `reason` rỗng hoặc >500 |
-| 403 | Thành viên là SYSTEM_ADMIN |
+| 403 | Thành viên là PLATFORM_ADMIN |
 | 404 | `Member '{id}' not found.` |
 | 409 | `You cannot deactivate your own account.` / `The member is already deactivated.` / `The organization must keep at least one active Owner.` / `{id}` là lời mời |
 
@@ -496,7 +492,7 @@ Quyền: user.lock_unlock. Không có body.
 
 | HTTP | Khi nào |
 |------|---------|
-| 403 | Thành viên là SYSTEM_ADMIN |
+| 403 | Thành viên là PLATFORM_ADMIN |
 | 404 | `Member '{id}' not found.` |
 | 409 | `The member is already active.` / `No seats left on the plan. Upgrade the plan or free a seat first.` / `{id}` là lời mời |
 
@@ -559,12 +555,12 @@ Response `data` là **mảng 3 phần tử** theo thứ tự OWNER, MANAGER, EMP
 | Field | Type | Mô tả |
 |-------|------|-------|
 | role | string | `OWNER` / `MANAGER` / `EMPLOYEE` |
-| roleCode | string | Role BE được cấp: `HR_MANAGER` / `DEPARTMENT_MANAGER` / `EMPLOYEE` |
+| roleCode | string | Role BE được cấp: `OWNER` / `MANAGER` / `EMPLOYEE` |
 | name | string | `Chủ doanh nghiệp` / `Quản lý` / `Nhân viên` |
 | summary | string | Mô tả ngắn (giống `ROLE_DESCRIPTIONS` trong `lib/role-policy.ts`) |
 | can | string[] | Các việc vai trò làm được (giống FE) |
 | permissions | string[] | Mã quyền của `roleCode` đọc từ `role_permissions`, sắp xếp A→Z (thay đổi theo ma trận quyền thực tế trong DB) |
-| memberCount | number | Số tài khoản của tổ chức (không INACTIVE) giữ vai trò. OWNER đếm cả SYSTEM_ADMIN, EMPLOYEE đếm cả TRAINER |
+| memberCount | number | Số tài khoản của tổ chức (không INACTIVE) giữ vai trò tương ứng |
 | assignable | boolean | Người gọi có `role.assign_business` hay không |
 
 ```json
@@ -572,8 +568,8 @@ Response `data` là **mảng 3 phần tử** theo thứ tự OWNER, MANAGER, EMP
   "success": true,
   "message": "Success",
   "data": [
-    { "role": "OWNER", "roleCode": "HR_MANAGER", "name": "Chủ doanh nghiệp", "summary": "…", "can": ["…"], "permissions": ["account.change_own_password", "…"], "memberCount": 2, "assignable": true },
-    { "role": "MANAGER", "roleCode": "DEPARTMENT_MANAGER", "name": "Quản lý", "summary": "…", "can": ["…"], "permissions": ["…"], "memberCount": 1, "assignable": true },
+    { "role": "OWNER", "roleCode": "OWNER", "name": "Chủ doanh nghiệp", "summary": "…", "can": ["…"], "permissions": ["account.change_own_password", "…"], "memberCount": 2, "assignable": true },
+    { "role": "MANAGER", "roleCode": "MANAGER", "name": "Quản lý", "summary": "…", "can": ["…"], "permissions": ["…"], "memberCount": 1, "assignable": true },
     { "role": "EMPLOYEE", "roleCode": "EMPLOYEE", "name": "Nhân viên", "summary": "…", "can": ["…"], "permissions": ["…"], "memberCount": 2, "assignable": true }
   ],
   "errors": []
@@ -622,7 +618,7 @@ Lần đầu tạo dòng `job_grades`, các lần sau cập nhật dòng đó. G
 | HTTP | Khi nào |
 |------|---------|
 | 400 | `Validation failed.` — `code`: `Code must be G1, G2 or G3.`; `name` rỗng / >120; `description` >1000 |
-| 403 | Thiếu `job_grade.manage` (VD DEPARTMENT_MANAGER) |
+| 403 | Thiếu `job_grade.manage` (VD MANAGER) |
 
 ### 3.6 Phòng ban — `/departments` (OW-06, OW-07) — bổ sung
 
@@ -765,7 +761,7 @@ Hiện ở `recentActivity` của `GET /organization/overview` (OW-01) và `hist
 
 1. Chạy backend Development: `cd backend && dotnet run --project src/DigiTalent.Api` (migration + seed tự chạy, Swagger `http://localhost:5000/swagger`).
 2. `frontend/.env`: `VITE_USE_MOCK=false`. Vite proxy `/api`, `/hubs` → `http://localhost:5000`.
-3. Đăng nhập `hr@digitalent.ai` / `Admin@1234` (FE chuẩn hóa `HR_MANAGER` → `OWNER`).
+3. Đăng nhập `owner@digitalent.ai` / `Admin@1234`.
 
 Cơ chế: mọi service dùng `apiClient` (`services/api-client.ts`) tự gọi backend khi tắt mock (mock chỉ là `axios adapter`), nên `memberService`, `departmentService`, `jobPositionService`, `jobGradeService` **không cần sửa đường dẫn**. Ngoại lệ duy nhất: `invitationService` — khi tắt mock đang là `unavailableAdapter` (luôn lỗi), phải nối tay (mục 4.4).
 
@@ -820,7 +816,7 @@ export interface MemberDetail extends MemberListItem {
 
 export interface RoleSummary {
   role: string;
-  roleCode?: string;            // mới: HR_MANAGER | DEPARTMENT_MANAGER | EMPLOYEE
+  roleCode?: string;            // mới: OWNER | MANAGER | EMPLOYEE
   name: string;
   summary: string;
   can: string[];
@@ -902,7 +898,7 @@ export const invitationService: InvitationService = USE_MOCK ? lazyAdapter(loadM
 | ① | `features/members/components/AssignManagerDepartmentsModal.tsx` (vòng `toAssign` / `toUnassign`, ~dòng 49–70) | Gửi `PUT /departments/{id}` với `parentDepartmentId: undefined` và không có `description` → BE (PUT thay toàn bộ) **xóa phòng ban cha và mô tả** mỗi lần gán/bỏ quản lý | Gửi lại `parentDepartmentId: d.parentDepartmentId` (đã có trong list item) và `description` (lấy qua `departmentService.getById` hoặc thêm vào list nếu cần) |
 | ② | `features/members/components/InviteMembersModal.tsx` (~dòng 229–233) | Dùng `person.token` làm `key` và link "giả lập email"; ngoài Development BE trả `token: null` → key trùng, link hỏng | `key={person.id ?? person.email}`; chỉ render link khi `person.token`; có thể dùng `person.debugLink` |
 | ③ | `features/organization/pages/JobGradeConfigPage.tsx` (~dòng 26) | `setDescription(g.description)` với `null` → input controlled nhận `null` | `setDescription(g.description ?? '')` |
-| ④ | `features/members/pages/MemberDetailPage.tsx` (~dòng 70) | `employeeId = member?.employeeId ?? id`: tài khoản chưa có hồ sơ (VD `admin@`) dùng **user id** gọi capability API → 404 | Chỉ gọi `useEmployeeCapability` khi `member?.employeeId` có giá trị; hiển thị "Chưa có hồ sơ nhân viên" |
+| ④ | `features/members/pages/MemberDetailPage.tsx` (~dòng 70) | `employeeId = member?.employeeId ?? id`: tài khoản chưa có hồ sơ dùng **user id** gọi capability API → 404 | Chỉ gọi `useEmployeeCapability` khi `member?.employeeId` có giá trị; hiển thị "Chưa có hồ sơ nhân viên" |
 | ⑤ | `features/organization/components/DepartmentFormDialog.tsx` (~dòng 166) | Danh sách chọn trưởng phòng lấy từ `useMembers` với value `m.employeeId ?? m.id` → chọn tài khoản chưa có hồ sơ gửi user id → 400 `INVALID_MANAGER` | Lọc `members.filter(m => m.employeeId && m.status === 'ACTIVE')` và dùng `m.employeeId` |
 | ⑥ | `features/members/member-labels.ts` (`AUDIT_ACTION_LABELS`) | Thiếu nhãn cho 2 action mới → hiện mã thô | Thêm `INVITATION_ACCEPTED: 'Kích hoạt lời mời'`, `JOB_GRADE_UPDATED: 'Cập nhật cấp bậc'` |
 | ⑦ | `hooks/use-members.ts` (`useMemberMutation`) | Đổi phòng ban/vị trí, vô hiệu hóa thay đổi sĩ số phòng ban/vị trí/cấp bậc nhưng chỉ invalidate `members`, `organization`, `subscription`, `workforce` | Thêm `['departments']`, `['job-positions']`, `['job-grades']` vào danh sách invalidate |
@@ -938,7 +934,7 @@ Các lỗi 409 thường gặp nên có câu riêng ở dialog tương ứng: c�
 ### 4.7 Quy tắc hiển thị nên áp dụng
 
 - **Phân biệt 3 loại dòng thành viên:** `kind === 'invitation'` → lời mời; `employeeId == null` → tài khoản chưa có hồ sơ (ẩn tab năng lực/học tập, cho "Đổi phòng ban" để tạo hồ sơ); `email === ''` hoặc đổi vai trò trả `NO_ACCOUNT` → hồ sơ chưa có tài khoản.
-- **Nút theo quyền:** đổi vai trò cần `ROLE_ASSIGN_BUSINESS`; vô hiệu hóa/kích hoạt lại cần `USER_LOCK_UNLOCK`; mời/gửi lại/thu hồi cần `USER_CREATE`; sửa cấp bậc cần `JOB_GRADE_MANAGE`. Ẩn "Vô hiệu hóa" với chính mình và với `SYSTEM_ADMIN` (BE vẫn chặn).
+- **Nút theo quyền:** đổi vai trò cần `ROLE_ASSIGN_BUSINESS`; vô hiệu hóa/kích hoạt lại cần `USER_LOCK_UNLOCK`; mời/gửi lại/thu hồi cần `USER_CREATE`; sửa cấp bậc cần `JOB_GRADE_MANAGE`. Ẩn "Vô hiệu hóa" với chính mình và với `PLATFORM_ADMIN` (BE vẫn chặn).
 - **Ghế:** `seatsUsed` (FE lấy từ `/auth/me`) có thể chưa tính lời mời; số lời mời PENDING lấy từ `GET /members?status=PENDING&pageSize=1` → `totalItems`.
 - **Cấp bậc:** luôn hiển thị `jobGradeName` (tên theo tổ chức) thay vì mã `G1/G2/G3`.
 - **Chỉ số năng lực:** `coveragePercent === null` → "Chưa đánh giá" (MembersPage đã làm đúng).
@@ -948,16 +944,16 @@ Các lỗi 409 thường gặp nên có câu riêng ở dialog tương ứng: c�
 
 | # | Tài khoản | Thao tác | Kết quả mong đợi |
 |---|-----------|----------|------------------|
-| 1 | hr@ | Mở `/enterprise/members` | 5 thành viên seed; `admin@` là OWNER không có phòng ban |
-| 2 | hr@ | Mời 1 email mới vai trò MANAGER + 1 email sai | 1 created (có link ở Development), 1 rejected "Email không hợp lệ."; dòng lời mời PENDING ở cuối danh sách |
+| 1 | owner@ | Mở `/enterprise/members` | 3 thành viên seed: owner, manager, employee |
+| 2 | owner@ | Mời 1 email mới vai trò MANAGER + 1 email sai | 1 created (có link ở Development), 1 rejected "Email không hợp lệ."; dòng lời mời PENDING ở cuối danh sách |
 | 3 | (ẩn danh) | Mở link `/activate/{token}`, đặt mật khẩu ≥12 ký tự | Tạo tài khoản, tự đăng nhập, vào enterprise; link dùng lại → báo hết hạn |
-| 4 | hr@ | Chi tiết thành viên vừa kích hoạt → đổi vai trò EMPLOYEE, đổi vị trí | Vai trò, vị trí cập nhật; tab lịch sử có `INVITATION_ACCEPTED`, `ROLE_CHANGED` |
-| 5 | hr@ | Vô hiệu hóa thành viên đó (nhập lý do) rồi kích hoạt lại | Trạng thái + lý do hiển thị; người đó bị đăng xuất khi đang dùng; đăng nhập lại khi INACTIVE → 403 |
-| 6 | hr@ | Tự hạ vai trò của chính mình xuống EMPLOYEE | 409, giữ nguyên vai trò |
-| 7 | hr@ | `/enterprise/departments` → gán trưởng phòng | `managerName`, `headcount`, phân bố cấp bậc đúng; phòng ban cha **không bị mất** (sau khi sửa 4.5-①) |
-| 8 | hr@ | `/enterprise/positions` → gán phòng ban + cấp bậc G1 cho ACCOUNTANT | Lọc theo phòng ban/cấp bậc ra đúng; thành viên `employee@` hiện cấp bậc G1 |
-| 9 | hr@ | `/enterprise/positions/grades` → đổi tên G1 | Tên mới xuất hiện ở danh sách vị trí, thành viên |
-| 10 | hr@ | `/enterprise/access` | 3 vai trò, số người giữ đúng, `assignable = true` |
+| 4 | owner@ | Chi tiết thành viên vừa kích hoạt → đổi vai trò EMPLOYEE, đổi vị trí | Vai trò, vị trí cập nhật; tab lịch sử có `INVITATION_ACCEPTED`, `ROLE_CHANGED` |
+| 5 | owner@ | Vô hiệu hóa thành viên đó (nhập lý do) rồi kích hoạt lại | Trạng thái + lý do hiển thị; người đó bị đăng xuất khi đang dùng; đăng nhập lại khi INACTIVE → 403 |
+| 6 | owner@ | Tự hạ vai trò của chính mình xuống EMPLOYEE | 409, giữ nguyên vai trò |
+| 7 | owner@ | `/enterprise/departments` → gán trưởng phòng | `managerName`, `headcount`, phân bố cấp bậc đúng; phòng ban cha **không bị mất** (sau khi sửa 4.5-①) |
+| 8 | owner@ | `/enterprise/positions` → gán phòng ban + cấp bậc G1 cho ACCOUNTANT | Lọc theo phòng ban/cấp bậc ra đúng; thành viên `employee@` hiện cấp bậc G1 |
+| 9 | owner@ | `/enterprise/positions/grades` → đổi tên G1 | Tên mới xuất hiện ở danh sách vị trí, thành viên |
+| 10 | owner@ | `/enterprise/access` | 3 vai trò, số người giữ đúng, `assignable = true` |
 | 11 | manager@ | Mở `/enterprise/members` hoặc gọi `/roles` | 403; `GET /job-grades` vẫn 200 |
 | 12 | employee@ | Gọi bất kỳ API `/members` | 403 |
 
@@ -1102,14 +1098,14 @@ Trang OW-01 chỉ dùng `plan.name` và `plan.renewsAt`. Nếu nơi khác cần 
 
 Mật khẩu chung: `Admin@1234`.
 
-| Email | Vai trò BE | Vai trò FE (sau `normalizeRoles`) | `GET /organization/overview` | `/members`, `/roles`, `PUT /job-grades` | `GET /job-grades` |
+| Email | Vai trò | Workspace | `GET /organization/overview` | `/members`, `/roles`, `PUT /job-grades` | `GET /job-grades` |
 |-------|-----------|------------------------------------|------------------------------|------------------------------------------|-------------------|
-| hr@digitalent.ai | HR_MANAGER | OWNER | 200 | 200 | 200 |
-| admin@digitalent.ai | SYSTEM_ADMIN | PLATFORM_ADMIN + OWNER | 200 | 200 | 200 |
-| manager@digitalent.ai | DEPARTMENT_MANAGER | MANAGER | 403 | 403 | 200 |
-| trainer@ / employee@digitalent.ai | TRAINER / EMPLOYEE | EMPLOYEE | 403 | 403 | 403 |
+| owner@digitalent.ai | OWNER | enterprise | 200 | 200 | 200 |
+| platform@digitalent.ai | PLATFORM_ADMIN | platform | 403 | 403 | 403 |
+| manager@digitalent.ai | MANAGER | enterprise | 403 | 403 | 200 |
+| employee@digitalent.ai | EMPLOYEE | enterprise | 403 | 403 | 403 |
 
-> Quyền mới (`user.*`, `role.*`, `job_grade.*` cho HR_MANAGER; `job_grade.read` cho DEPARTMENT_MANAGER) được `DbSeeder` tự thêm khi chạy Development. Môi trường khác cần chạy seed hoặc thêm vào `role_permissions`.
+> Quyền mới (`user.*`, `role.*`, `job_grade.*` cho OWNER; `job_grade.read` cho MANAGER) được `DbSeeder` tự thêm khi chạy Development. Môi trường khác cần chạy migration/seed để đồng bộ `role_permissions`.
 
 Seed tạo sẵn cho tổ chức demo: gói `BUSINESS` 50 người dùng, 1 đợt đào tạo `BATCH-Q4-2026` trạng thái `ACTIVE`, `setupCompleted = true`.
 
@@ -1118,9 +1114,10 @@ Seed tạo sẵn cho tổ chức demo: gói `BUSINESS` 50 người dùng, 1 đ�
 ## Lưu ý quan trọng
 
 1. **Tất cả API đều scoped theo organization**: dữ liệu tự lọc theo org của user đang login.
-2. **Admin (SYSTEM_ADMIN)** bypass mọi permission check.
+2. **PLATFORM_ADMIN** chỉ có các quyền nền tảng được gán tường minh; không bypass quyền và không thuộc tổ chức demo.
 3. **Date format** trả về ISO 8601: `"2025-10-01T10:00:00+07:00"`.
 4. **ID** là UUID (guid), truyền dạng string `"550e8400-e29b-41d4-a716-446655440000"`.
 5. **Migration:** nếu trước đây đã tự tạo bằng tay một trong 6 bảng ở mục 2 trên DB local, hãy xóa các bảng đó (hoặc dựng DB mới) trước khi chạy backend, nếu không migration sẽ báo bảng đã tồn tại.
    Mục 3 thêm migration `AddOrganizationStructureAndInvitations` (2 bảng `job_grades`, `member_invitations` + 3 cột); Development tự áp dụng khi start, môi trường khác chạy `dotnet ef database update`.
 6. **Swagger** có sẵn tại `http://localhost:5000/swagger` khi chạy Development.
+7. **Bảo mật Refresh Token**: Token rotation ở backend đã được đảm bảo nguyên tử (atomic concurrency check). Phía frontend hiện lưu refresh token trong `localStorage` cho môi trường Dev/Demo để hỗ trợ single-flight refresh; với triển khai Production, kiến trúc mục tiêu sẽ chuyển refresh token sang `HttpOnly; Secure; SameSite` cookie kèm Anti-CSRF protection.

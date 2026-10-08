@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import { TT02_COMPETENCY_NAMES, getReferencePosition } from '@/lib/reference-positions';
 import { SECTION_IDS, TIER_LABELS, type LandingSectionConfig, type SkillPathSample } from '../landing-content';
 import { SectionHeader } from './SectionHeader';
+import { LP_KICKER } from '../landing-type';
 
 type SkillPathSection = Extract<LandingSectionConfig, { kind: 'skill-path' }>;
 
@@ -50,7 +51,7 @@ export function SkillPathSection({ section }: { section: SkillPathSection }) {
         </div>
 
         <div className="rounded-[20px] bg-landing-card p-6 md:p-8">
-          <p className="text-xs uppercase tracking-[0.14em] text-stone-500">Lộ trình đề xuất</p>
+          <p className={LP_KICKER}>Lộ trình đề xuất</p>
           <ol aria-label="Lộ trình học đề xuất" className="mt-6 grid gap-6">
             {sample.roadmap.map((step, index) => (
               <RoadmapStep key={step.courseCode} index={index} sample={sample} step={step} />
@@ -70,13 +71,13 @@ function GapRow({ code, current, required }: { code: string; current: number; re
   const gap = Math.max(0, required - current);
 
   return (
-    <li className="grid gap-2">
+    <li className="group grid gap-2 rounded-xl p-2 -mx-2 transition-colors duration-200 hover:bg-white/4">
       <div className="flex items-baseline justify-between gap-4">
-        <p className="min-w-0 text-sm leading-[1.35] text-cream/90">
+        <p className="min-w-0 text-sm leading-[1.35] text-cream/90 group-hover:text-white transition-colors">
           <span className="mr-2 text-stone-500 tabular-nums">{code}</span>
           {TT02_COMPETENCY_NAMES[code]}
         </p>
-        <span className={cn('shrink-0 text-xs tabular-nums', gap > 0 ? 'text-cream' : 'text-[#A7C4A0]')}>
+        <span className={cn('shrink-0 text-xs tabular-nums font-medium', gap > 0 ? 'text-amber-300' : 'text-[#79E0C2]')}>
           {gap > 0 ? `Còn thiếu ${gap} tầng` : 'Đã đạt'}
         </span>
       </div>
@@ -85,8 +86,8 @@ function GapRow({ code, current, required }: { code: string; current: number; re
           <i
             key={step}
             className={cn(
-              'block h-1.5 flex-1 rounded-full',
-              step <= current ? 'bg-cream' : step <= required ? 'border border-cream/70' : 'bg-cream/12',
+              'block h-1.5 flex-1 rounded-full transition-all duration-300',
+              step <= current ? 'bg-[#79E0C2]' : step <= required ? 'border border-amber-400/70 bg-amber-400/10' : 'bg-cream/12',
             )}
           />
         ))}
@@ -103,14 +104,14 @@ function RoadmapStep({ index, sample, step }: { index: number; sample: SkillPath
   const current = sample.rows.find((row) => row.code === step.competencyCode)?.current ?? 0;
 
   return (
-    <li className="grid grid-cols-[2rem_minmax(0,1fr)] gap-x-4">
-      <span aria-hidden="true" className="font-landing-serif text-2xl italic leading-none text-cream/35 tabular-nums">
+    <li className="group grid grid-cols-[2rem_minmax(0,1fr)] gap-x-4 rounded-xl p-3 -mx-3 transition-all duration-300 hover:bg-white/5 hover:translate-x-1.5">
+      <span aria-hidden="true" className="font-landing-serif text-2xl italic leading-none text-[#F5CA65] tabular-nums transition-transform duration-300 group-hover:scale-110">
         {index + 1}
       </span>
       <div>
-        <p className="font-mono text-[11px] tracking-[0.04em] text-stone-500">{step.courseCode}</p>
-        <p className="mt-1 text-base leading-[1.3] text-cream">{step.title}</p>
-        <p className="mt-2 text-sm leading-[1.5] text-stone-400">
+        <p className="font-mono text-[11px] tracking-[0.04em] text-amber-400/70">{step.courseCode}</p>
+        <p className="mt-1 text-base leading-[1.3] text-cream group-hover:text-white transition-colors">{step.title}</p>
+        <p className="mt-2 text-sm leading-[1.5] text-stone-400 group-hover:text-stone-300 transition-colors">
           Vị trí yêu cầu {TIER_LABELS[required]} ở năng lực {step.competencyCode}, kết quả hiện tại là {TIER_LABELS[current]}.
           {step.after ? ` Cần hoàn thành ${step.after} trước.` : ''}
         </p>

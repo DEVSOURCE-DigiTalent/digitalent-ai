@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -34,6 +34,10 @@ export interface AccountFormProps {
   submitError?: string;
   emailTaken?: boolean;
   loginPath: string;
+  /** Label of the submit button; defaults to the purchase flow's. */
+  submitLabel?: string;
+  /** Sentence added to the terms checkbox. */
+  consentNote?: ReactNode;
 }
 
 export function AccountForm({
@@ -42,6 +46,8 @@ export function AccountForm({
   submitError,
   emailTaken,
   loginPath,
+  submitLabel = 'Tạo tài khoản và thanh toán',
+  consentNote,
 }: AccountFormProps) {
   const isEnterprise = audience === 'enterprise';
   const nameInputRef = useRef<HTMLInputElement | null>(null);
@@ -161,6 +167,7 @@ export function AccountForm({
       <TermsCheckbox
         id="acceptTerms"
         error={errors.acceptTerms?.message}
+        note={consentNote}
         ref={termsFormRef}
         {...termsFieldProps}
       />
@@ -171,7 +178,7 @@ export function AccountForm({
         className={DARK_PRIMARY_BUTTON}
       >
         {isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-        Tạo tài khoản và thanh toán
+        {submitLabel}
       </button>
 
       <p className="text-center text-xs text-stone-400">

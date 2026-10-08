@@ -1,15 +1,17 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { ExternalLink, Lock } from 'lucide-react';
-import { usePersonalTasks, useSubmitPersonalTask } from '@/hooks/use-personal-learning';
+import { usePersonalAccess, usePersonalTasks, useSubmitPersonalTask } from '@/hooks/use-personal-learning';
+import { usePlanErrorHandler } from '@/hooks/use-plan-error-handler';
 import { levelLabelVi } from '@/lib/competency-levels';
 import { cn } from '@/lib/utils';
 import type { PersonalTask, TaskStatus } from '@/services/personal-learning.service';
 import { PtDialog } from '../components/PtDialog';
 import {
-  Card, EmptyState, ErrorBlock, LoadingBlock, PT_BUTTON, PT_BUTTON_SECONDARY, PT_EYEBROW, PT_INPUT, PageIntro, Tag
+  Card, EmptyState, ErrorBlock, LoadingBlock, PT_BUTTON, PT_BUTTON_SECONDARY, PT_EYEBROW, PT_INPUT, PersonalPageHeader, Tag
 } from '../components/ui';
-import { errorMessage } from '../utils/error-message';
+import { UpgradeLink } from '../components/UpgradeLink';
+import { errorMessage, planErrorOf } from '../utils/error-message';
 import { formatDate } from '../utils/format';
 
 type Filter = 'todo' | 'review' | 'done' | 'locked';
@@ -18,7 +20,7 @@ const FILTERS: { key: Filter; label: string; statuses: TaskStatus[] }[] = [
   { key: 'todo', label: 'Cần làm', statuses: ['OPEN', 'REVISION_REQUESTED'] },
   { key: 'review', label: 'Đang chấm', statuses: ['PENDING_REVIEW'] },
   { key: 'done', label: 'Đã duyệt', statuses: ['APPROVED'] },
-  { key: 'locked', label: 'Sắp mở', statuses: ['LOCKED'] },
+  { key: 'locked', label: 'Chưa bắt đầu khóa', statuses: ['LOCKED'] },
 ];
 
 const STATUS: Record<TaskStatus, { label: string; tone: 'neutral' | 'ok' | 'warn' | 'info' | 'bad' }> = {
@@ -26,7 +28,7 @@ const STATUS: Record<TaskStatus, { label: string; tone: 'neutral' | 'ok' | 'warn
   REVISION_REQUESTED: { label: 'Cần sửa', tone: 'bad' },
   PENDING_REVIEW: { label: 'Đang chấm', tone: 'info' },
   APPROVED: { label: 'Đã duyệt', tone: 'ok' },
-  LOCKED: { label: 'Sắp mở', tone: 'neutral' },
+  LOCKED: { label: 'Chưa bắt đầu khóa', tone: 'neutral' },
 };
 
 const CONTENT_MIN = 20;
@@ -42,11 +44,10 @@ export function LearnerTasksPage() {
 
   return (
     <div data-testid="learner-tasks-page" className="grid gap-10">
-      <PageIntro
+      <PersonalPageHeader
         label="Bài thực hành"
-        title="Minh chứng"
-        accent="từ công việc thật."
-        lead="Mỗi khóa có một bài thực hành gắn với công việc hằng ngày. Bài mở khi bạn bắt đầu khóa học và được chuyên gia DigiTalent nhận xét, chấm theo tiêu chí."
+        title="Bài thực hành"
+        lead="Xem yêu cầu đầu ra, nộp bài làm và theo dõi phản hồi hiện có."
       />
 
       {notice && <p role="status" className="rounded-2xl border border-pt-ok/40 bg-pt-ok/10 px-5 py-3 text-sm text-pt-ok">{notice}</p>}
@@ -104,6 +105,7 @@ export function LearnerTasksPage() {
 function TaskCard({ task, onSubmit }: { task: PersonalTask; onSubmit: () => void }) {
   const status = STATUS[task.status];
   const locked = task.status === 'LOCKED';
+  const freePlan = usePersonalAccess().data?.mode === 'free';
 
   return (
     <Card as="li" className={cn('flex flex-col gap-5 p-6', locked && 'bg-pt-card/60')}>
@@ -158,9 +160,16 @@ function TaskCard({ task, onSubmit }: { task: PersonalTask; onSubmit: () => void
       <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-pt-line pt-4">
         <span className="text-xs text-pt-fg-3">Năng lực {task.competencyCodes.join(', ')}</span>
         {locked ? (
-          <span className="inline-flex items-center gap-1.5 text-xs text-pt-fg-3"><Lock className="size-3.5" aria-hidden="true" />Mở khi bắt đầu khóa</span>
+          <span className="inline-flex items-center gap-1.5 text-xs text-pt-fg-3"><Lock className="size-3.5" aria-hidden="true" />Cần bắt đầu khóa {task.courseCode} trước</span>
         ) : (task.status === 'OPEN' || task.status === 'REVISION_REQUESTED') && (
-          <button type="button" onClick={onSubmit} className={PT_BUTTON}>Nộp bài làm</button>
+          freePlan ? (
+            <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-pt-fg-3">
+              <span className="inline-flex items-center gap-1.5"><Lock className="size-3.5" aria-hidden="true" />Gói Miễn phí không nộp bài mới</span>
+              <UpgradeLink placement="course" variant="text">Nâng cấp Plus</UpgradeLink>
+            </span>
+          ) : (
+            <button type="button" onClick={onSubmit} className={PT_BUTTON}>Nộp bài làm</button>
+          )
         )}
       </div>
     </Card>
@@ -169,6 +178,7 @@ function TaskCard({ task, onSubmit }: { task: PersonalTask; onSubmit: () => void
 
 function SubmitDialog({ task, onClose, onSubmitted }: { task: PersonalTask | null; onClose: () => void; onSubmitted: () => void }) {
   const submit = useSubmitPersonalTask();
+  const handlePlanError = usePlanErrorHandler();
   const [linkUrl, setLinkUrl] = useState('');
   const [content, setContent] = useState('');
   const [error, setError] = useState('');
@@ -201,6 +211,7 @@ function SubmitDialog({ task, onClose, onSubmitted }: { task: PersonalTask | nul
           setContent('');
           onSubmitted();
         },
+        onError: handlePlanError,
       },
     );
   };
@@ -239,7 +250,7 @@ function SubmitDialog({ task, onClose, onSubmitted }: { task: PersonalTask | nul
             />
             <p className="text-xs text-pt-fg-3">Không dán mật khẩu hay dữ liệu cá nhân của khách hàng; che thông tin nhạy cảm trước khi chia sẻ.</p>
           </div>
-          {(error || submit.isError) && <p role="alert" className="text-sm text-pt-bad">{error || errorMessage(submit.error)}</p>}
+          {(error || (submit.isError && !planErrorOf(submit.error))) && <p role="alert" className="text-sm text-pt-bad">{error || errorMessage(submit.error)}</p>}
           <div className="flex justify-end gap-2">
             <button type="button" onClick={close} className={PT_BUTTON_SECONDARY}>Hủy</button>
             <button type="submit" disabled={submit.isPending} className={PT_BUTTON}>

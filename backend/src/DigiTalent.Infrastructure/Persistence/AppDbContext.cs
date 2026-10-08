@@ -115,6 +115,21 @@ public class AppDbContext : DbContext, IApplicationDbContext
     // Learner Surface (SEP-09)
     public DbSet<LearnerProfile> LearnerProfiles => Set<LearnerProfile>();
 
+    public DbSet<TrialRegistration> TrialRegistrations => Set<TrialRegistration>();
+    public DbSet<TrialWorkspace> TrialWorkspaces => Set<TrialWorkspace>();
+    public DbSet<TrialInvitation> TrialInvitations => Set<TrialInvitation>();
+    public DbSet<PositionDiagnosticAttempt> PositionDiagnosticAttempts => Set<PositionDiagnosticAttempt>();
+
+    // Individual Commerce & Registration (v3.0)
+    public DbSet<IndividualRegistration> IndividualRegistrations => Set<IndividualRegistration>();
+    public DbSet<IndividualEmailVerificationChallenge> IndividualEmailVerificationChallenges => Set<IndividualEmailVerificationChallenge>();
+    public DbSet<IndividualTrialRedemption> IndividualTrialRedemptions => Set<IndividualTrialRedemption>();
+    public DbSet<UserSubscription> UserSubscriptions => Set<UserSubscription>();
+    public DbSet<PurchaseDraft> PurchaseDrafts => Set<PurchaseDraft>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<PaymentEvent> PaymentEvents => Set<PaymentEvent>();
+    public DbSet<EmailOutboxItem> EmailOutboxItems => Set<EmailOutboxItem>();
+
     // Billing
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<SubscriptionEntitlement> SubscriptionEntitlements => Set<SubscriptionEntitlement>();

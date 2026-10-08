@@ -4,18 +4,22 @@ import type { SessionUser } from '../types/session';
 
 /** Mock accounts (services/mock/mock-accounts.ts) per spec v2.1 §1.6 for tests that need a signed-in user. */
 export const MOCK_EMAILS = {
-  owner: 'owner@digitalent.demo',
-  owner2: 'owner2@digitalent.demo',
-  manager: 'manager@digitalent.demo',
-  employee: 'employee@digitalent.demo',
-  starterOwner: 'starter@digitalent.demo',
-  expiredOwner: 'expired@digitalent.demo',
-  personal: 'personal@digitalent.demo',
-  platform: 'platform@digitalent.demo',
+  owner: 'owner@digitalent.ai',
+  owner2: 'owner2@digitalent.ai',
+  manager: 'manager@digitalent.ai',
+  employee: 'employee@digitalent.ai',
+  starterOwner: 'starter@digitalent.ai',
+  expiredOwner: 'expired@digitalent.ai',
+  personal: 'personal@digitalent.ai',
+  /** Individual on day 5 of a 7-day trial (2 of 3 course slots used). */
+  trial: 'trial@digitalent.ai',
+  /** Individual whose trial ended three days ago (Free plan). */
+  free: 'free@digitalent.ai',
+  platform: 'platform@digitalent.ai',
   /** Legacy aliases for tests migrating to v2.1 */
-  orgAdmin: 'owner@digitalent.demo',
-  learningAdmin: 'owner@digitalent.demo',
-  learner: 'employee@digitalent.demo',
+  orgAdmin: 'owner@digitalent.ai',
+  learningAdmin: 'owner@digitalent.ai',
+  learner: 'employee@digitalent.ai',
 } as const;
 
 /** Signs in a mock account in the store and local storage, optionally overriding its fields. */

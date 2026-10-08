@@ -22,7 +22,7 @@ public class CompetencyCategoriesController : ControllerBase
     }
 
     [HttpGet]
-    [HasPermission(Permissions.Competency.Read)] 
+    [HasPermission(Permissions.Competency.Read)]
     public async Task<ActionResult<ApiResponse<IEnumerable<object>>>> GetCategories()
     {
         var organizationId = _currentUser.GetRequiredOrganizationId();

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Standard TT02 & DigComp Curriculum Dataset (Authentic Courseware).
  * Generated from comprehensive training documents in 'tai lieu/':
  * - giaotrinh-linhvuc1.docx to giaotrinh-mien6-AI.docx
@@ -71,9 +71,9 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Xác định được các chiến lược tìm kiếm đơn giản"
         ],
         "definitions": [
-          "Môi trường số (Điều 2, TT 02/2025/TT-BGDĐT): không gian ảo, nơi các hoạt động, dữ liệu, thông tin và nội dung được tạo ra, lưu trữ và trao đổi thông qua công nghệ số, như mạng Internet, phần mềm và các nền tảng trực tuyến",
-          "Điều hướng (Điều 2, TT 02/2025/TT-BGDĐT): quá trình định hướng và di chuyển trong một không gian vật lý hoặc kỹ thuật số nhằm xác định vị trí hiện tại và tìm ra đường đi đến đích mong muốn",
-          "Thông tin (Điều 2, TT 02/2025/TT-BGDĐT): dữ liệu đã được tổ chức, xử lý, hoặc phân tích để trở nên có ý nghĩa và có thể hiểu được và sử dụng để ra quyết định, giải quyết vấn đề hoặc truyền đạt ý tưởng",
+          "Môi trường số: không gian ảo, nơi các hoạt động, dữ liệu, thông tin và nội dung được tạo ra, lưu trữ và trao đổi thông qua công nghệ số, như mạng Internet, phần mềm và các nền tảng trực tuyến",
+          "Điều hướng: quá trình định hướng và di chuyển trong một không gian vật lý hoặc kỹ thuật số nhằm xác định vị trí hiện tại và tìm ra đường đi đến đích mong muốn",
+          "Thông tin: dữ liệu đã được tổ chức, xử lý, hoặc phân tích để trở nên có ý nghĩa và có thể hiểu được và sử dụng để ra quyết định, giải quyết vấn đề hoặc truyền đạt ý tưởng",
           "Công cụ tìm kiếm: dịch vụ khớp từ khóa người dùng nhập với chỉ mục các trang web đã thu thập sẵn, rồi xếp hạng kết quả theo mức độ liên quan",
           "Từ khóa: các từ mang ý nghĩa chính được dùng để tìm kiếm, thường là danh từ, số, hoặc tên riêng",
           "Kết quả tự nhiên (organic): kết quả được xếp hạng theo mức độ liên quan, không phải trả tiền",
@@ -82,7 +82,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
         "body": [
           "Duyệt, tìm kiếm và lọc dữ liệu, thông tin và nội dung số nghĩa là xác định được nhu cầu thông tin và tìm kiếm được chúng trong môi trường số — không gian ảo nơi dữ liệu, thông tin và nội dung được tạo ra, lưu trữ và trao đổi qua Internet, phần mềm và nền tảng trực tuyến.",
           "Công cụ tìm kiếm khớp từ khóa người dùng nhập với chỉ mục các trang đã thu thập sẵn, rồi xếp hạng theo mức độ liên quan — nó khớp CHỮ, không hiểu CÂU HỎI như con người. Vì vậy cần rút gọn câu hỏi thành 2–4 từ khóa mang nghĩa chính, thường là danh từ, số, hoặc tên riêng.",
-          "Điều hướng — quá trình định hướng và di chuyển trong không gian kỹ thuật số để tìm ra đường đi đến đích mong muốn — thể hiện qua việc đọc tiêu đề, đường dẫn, đoạn trích trên trang kết quả trước khi bấm vào. Kết quả tự nhiên khác với kết quả được tài trợ (quảng cáo trả phí). Khi lượt tìm đầu không ra kết quả phù hợp, cần biết cách đổi từ khóa — đây chính là chiến lược tìm kiếm đơn giản mà Thông tư 02/2025 yêu cầu người học xác định được ở bậc cơ bản."
+          "Điều hướng — quá trình định hướng và di chuyển trong không gian kỹ thuật số để tìm ra đường đi đến đích mong muốn — thể hiện qua việc đọc tiêu đề, đường dẫn, đoạn trích trên trang kết quả trước khi bấm vào. Kết quả tự nhiên khác với kết quả được tài trợ (quảng cáo trả phí). Khi lượt tìm đầu không ra kết quả phù hợp, cần biết cách đổi từ khóa — đây chính là chiến lược tìm kiếm đơn giản mà Khung chuẩn năng lực số yêu cầu người học xác định được ở bậc cơ bản."
         ],
         "examples": [],
         "practice": "Cấp trên nhắn bạn: “Tìm giúp anh mức lương tối thiểu vùng hiện tại, khu vực mình đang ở.” Hãy thực hiện: Viết từ khóa sẽ dùng Thực hiện tìm kiếm thật Nếu không ra kết quả tốt trong lần đầu, ghi lại đã đổi từ khóa như thế nào Ghi lại đường dẫn của trang chính thức (cơ quan nhà nước) tìm được Giới hạn: tối đa 3 lượt tìm",
@@ -176,8 +176,8 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Phát hiện được độ tin cậy và độ chính xác của các nguồn chung của dữ liệu, thông tin và nội dung số"
         ],
         "definitions": [
-          "Thông tin (Điều 2, TT 02/2025/TT-BGDĐT): dữ liệu đã được tổ chức, xử lý, hoặc phân tích để trở nên có ý nghĩa và có thể hiểu được và sử dụng để ra quyết định, giải quyết vấn đề hoặc truyền đạt ý tưởng",
-          "Dữ liệu (Điều 2, TT 02/2025/TT-BGDĐT): những con số hoặc dữ kiện rời rạc mà quan sát hoặc đo đếm được không cần có ngữ cảnh hay diễn giải; được thể hiện ra ngoài bằng cách mã hóa và dễ dàng truyền tải và được chuyển thành thông tin bằng cách thêm giá trị thông qua ngữ cảnh, phân loại, tính toán, hiệu chỉnh và đánh giá",
+          "Thông tin: dữ liệu đã được tổ chức, xử lý, hoặc phân tích để trở nên có ý nghĩa và có thể hiểu được và sử dụng để ra quyết định, giải quyết vấn đề hoặc truyền đạt ý tưởng",
+          "Dữ liệu: những con số hoặc dữ kiện rời rạc mà quan sát hoặc đo đếm được không cần có ngữ cảnh hay diễn giải; được thể hiện ra ngoài bằng cách mã hóa và dễ dàng truyền tải và được chuyển thành thông tin bằng cách thêm giá trị thông qua ngữ cảnh, phân loại, tính toán, hiệu chỉnh và đánh giá",
           "Tên miền (domain): phần địa chỉ chính của một trang web, cho biết ai là đơn vị đứng sau trang đó",
           "Đuôi tên miền: phần cuối của tên miền (.gov.vn, .com, .org…) thường gợi ý loại hình đơn vị sở hữu",
           "Ngày công bố: thời điểm nội dung được đăng tải hoặc cập nhật lần gần nhất"
@@ -279,8 +279,8 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Nhận biết được nơi để sắp xếp chúng một cách đơn giản trong môi trường có cấu trúc"
         ],
         "definitions": [
-          "Dữ liệu (Điều 2, TT 02/2025/TT-BGDĐT): những con số hoặc dữ kiện rời rạc mà quan sát hoặc đo đếm được không cần có ngữ cảnh hay diễn giải; được thể hiện ra ngoài bằng cách mã hóa và dễ dàng truyền tải và được chuyển thành thông tin bằng cách thêm giá trị thông qua ngữ cảnh, phân loại, tính toán, hiệu chỉnh và đánh giá",
-          "Môi trường có cấu trúc (Điều 2, TT 02/2025/TT-BGDĐT): một không gian hoặc hệ thống trong đó các yếu tố, thành phần hoặc dữ liệu được tổ chức và sắp xếp theo một cách rõ ràng và có quy tắc, giúp dễ dàng tìm kiếm, truy cập và xử lý",
+          "Dữ liệu: những con số hoặc dữ kiện rời rạc mà quan sát hoặc đo đếm được không cần có ngữ cảnh hay diễn giải; được thể hiện ra ngoài bằng cách mã hóa và dễ dàng truyền tải và được chuyển thành thông tin bằng cách thêm giá trị thông qua ngữ cảnh, phân loại, tính toán, hiệu chỉnh và đánh giá",
+          "Môi trường có cấu trúc: một không gian hoặc hệ thống trong đó các yếu tố, thành phần hoặc dữ liệu được tổ chức và sắp xếp theo một cách rõ ràng và có quy tắc, giúp dễ dàng tìm kiếm, truy cập và xử lý",
           "Định dạng tệp: loại tệp được xác định bởi phần đuôi sau dấu chấm trong tên tệp (.pdf, .xlsx…), quyết định phần mềm nào mở được và có sửa được không",
           "Thư mục: nơi chứa và tổ chức các tệp theo một cấu trúc nhất định",
           "Quy tắc đặt tên: cách thống nhất đặt tên tệp để dễ tìm và sắp xếp đúng thứ tự"
@@ -399,9 +399,9 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Tổ chức được các chiến lược tìm kiếm"
         ],
         "definitions": [
-          "Môi trường số (Điều 2, TT 02/2025/TT-BGDĐT): không gian ảo, nơi các hoạt động, dữ liệu, thông tin và nội dung được tạo ra, lưu trữ và trao đổi thông qua công nghệ số, như mạng Internet, phần mềm và các nền tảng trực tuyến",
-          "Điều hướng (Điều 2, TT 02/2025/TT-BGDĐT): quá trình định hướng và di chuyển trong một không gian vật lý hoặc kỹ thuật số nhằm xác định vị trí hiện tại và tìm ra đường đi đến đích mong muốn",
-          "Thông tin (Điều 2, TT 02/2025/TT-BGDĐT): dữ liệu đã được tổ chức, xử lý, hoặc phân tích để trở nên có ý nghĩa và có thể hiểu được và sử dụng để ra quyết định, giải quyết vấn đề hoặc truyền đạt ý tưởng",
+          "Môi trường số: không gian ảo, nơi các hoạt động, dữ liệu, thông tin và nội dung được tạo ra, lưu trữ và trao đổi thông qua công nghệ số, như mạng Internet, phần mềm và các nền tảng trực tuyến",
+          "Điều hướng: quá trình định hướng và di chuyển trong một không gian vật lý hoặc kỹ thuật số nhằm xác định vị trí hiện tại và tìm ra đường đi đến đích mong muốn",
+          "Thông tin: dữ liệu đã được tổ chức, xử lý, hoặc phân tích để trở nên có ý nghĩa và có thể hiểu được và sử dụng để ra quyết định, giải quyết vấn đề hoặc truyền đạt ý tưởng",
           "Nhu cầu thông tin: mô tả cụ thể về phạm vi, thời gian, mức chi tiết và sản phẩm đầu ra cần có trước khi bắt đầu tìm kiếm",
           "Ma trận từ khóa: bảng liệt kê từ khóa lõi cùng các từ đồng nghĩa, từ thu hẹp, từ mở rộng liên quan",
           "Toán tử tìm kiếm: ký hiệu đặc biệt (\" \", site:, filetype:…) giúp thu hẹp hoặc mở rộng kết quả tìm kiếm theo ý muốn"
@@ -503,8 +503,8 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Thực hiện phân tích, diễn giải và đánh giá được dữ liệu, thông tin và nội dung số"
         ],
         "definitions": [
-          "Thông tin (Điều 2, TT 02/2025/TT-BGDĐT): dữ liệu đã được tổ chức, xử lý, hoặc phân tích để trở nên có ý nghĩa và có thể hiểu được và sử dụng để ra quyết định, giải quyết vấn đề hoặc truyền đạt ý tưởng",
-          "Dữ liệu (Điều 2, TT 02/2025/TT-BGDĐT): những con số hoặc dữ kiện rời rạc mà quan sát hoặc đo đếm được không cần có ngữ cảnh hay diễn giải; được thể hiện ra ngoài bằng cách mã hóa và dễ dàng truyền tải và được chuyển thành thông tin bằng cách thêm giá trị thông qua ngữ cảnh, phân loại, tính toán, hiệu chỉnh và đánh giá",
+          "Thông tin: dữ liệu đã được tổ chức, xử lý, hoặc phân tích để trở nên có ý nghĩa và có thể hiểu được và sử dụng để ra quyết định, giải quyết vấn đề hoặc truyền đạt ý tưởng",
+          "Dữ liệu: những con số hoặc dữ kiện rời rạc mà quan sát hoặc đo đếm được không cần có ngữ cảnh hay diễn giải; được thể hiện ra ngoài bằng cách mã hóa và dễ dàng truyền tải và được chuyển thành thông tin bằng cách thêm giá trị thông qua ngữ cảnh, phân loại, tính toán, hiệu chỉnh và đánh giá",
           "Tiêu chí đánh giá nguồn tin: các yếu tố dùng để xét độ tin cậy của một nguồn — tác giả, thời điểm, mục đích, bằng chứng, khả năng kiểm chứng",
           "Nguồn sơ cấp: nơi số liệu hoặc thông tin được tạo ra lần đầu tiên",
           "Nguồn thứ cấp: nơi trích dẫn hoặc tổng hợp lại từ nguồn sơ cấp",
@@ -607,8 +607,8 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Tổ chức được thông tin, dữ liệu và nội dung trong một môi trường có cấu trúc"
         ],
         "definitions": [
-          "Dữ liệu (Điều 2, TT 02/2025/TT-BGDĐT): những con số hoặc dữ kiện rời rạc mà quan sát hoặc đo đếm được không cần có ngữ cảnh hay diễn giải; được thể hiện ra ngoài bằng cách mã hóa và dễ dàng truyền tải và được chuyển thành thông tin bằng cách thêm giá trị thông qua ngữ cảnh, phân loại, tính toán, hiệu chỉnh và đánh giá",
-          "Môi trường có cấu trúc (Điều 2, TT 02/2025/TT-BGDĐT): một không gian hoặc hệ thống trong đó các yếu tố, thành phần hoặc dữ liệu được tổ chức và sắp xếp theo một cách rõ ràng và có quy tắc, giúp dễ dàng tìm kiếm, truy cập và xử lý",
+          "Dữ liệu: những con số hoặc dữ kiện rời rạc mà quan sát hoặc đo đếm được không cần có ngữ cảnh hay diễn giải; được thể hiện ra ngoài bằng cách mã hóa và dễ dàng truyền tải và được chuyển thành thông tin bằng cách thêm giá trị thông qua ngữ cảnh, phân loại, tính toán, hiệu chỉnh và đánh giá",
+          "Môi trường có cấu trúc: một không gian hoặc hệ thống trong đó các yếu tố, thành phần hoặc dữ liệu được tổ chức và sắp xếp theo một cách rõ ràng và có quy tắc, giúp dễ dàng tìm kiếm, truy cập và xử lý",
           "Kiến trúc thông tin: cách tổ chức, phân nhóm và đặt tên tài liệu theo một logic nhất quán",
           "Sổ đăng ký tài liệu: bảng liệt kê thông tin về mọi tài liệu trong một dự án để dễ tìm và báo cáo",
           "Nguyên tắc quyền tối thiểu: chỉ cấp mức quyền truy cập thấp nhất đủ để hoàn thành công việc"
@@ -727,9 +727,9 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Sử dụng linh hoạt và đa dạng chiến lược tìm kiếm"
         ],
         "definitions": [
-          "Môi trường số (Điều 2, TT 02/2025/TT-BGDĐT): không gian ảo, nơi các hoạt động, dữ liệu, thông tin và nội dung được tạo ra, lưu trữ và trao đổi thông qua công nghệ số, như mạng Internet, phần mềm và các nền tảng trực tuyến",
-          "Điều hướng (Điều 2, TT 02/2025/TT-BGDĐT): quá trình định hướng và di chuyển trong một không gian vật lý hoặc kỹ thuật số nhằm xác định vị trí hiện tại và tìm ra đường đi đến đích mong muốn",
-          "Thông tin (Điều 2, TT 02/2025/TT-BGDĐT): dữ liệu đã được tổ chức, xử lý, hoặc phân tích để trở nên có ý nghĩa và có thể hiểu được và sử dụng để ra quyết định, giải quyết vấn đề hoặc truyền đạt ý tưởng",
+          "Môi trường số: không gian ảo, nơi các hoạt động, dữ liệu, thông tin và nội dung được tạo ra, lưu trữ và trao đổi thông qua công nghệ số, như mạng Internet, phần mềm và các nền tảng trực tuyến",
+          "Điều hướng: quá trình định hướng và di chuyển trong một không gian vật lý hoặc kỹ thuật số nhằm xác định vị trí hiện tại và tìm ra đường đi đến đích mong muốn",
+          "Thông tin: dữ liệu đã được tổ chức, xử lý, hoặc phân tích để trở nên có ý nghĩa và có thể hiểu được và sử dụng để ra quyết định, giải quyết vấn đề hoặc truyền đạt ý tưởng",
           "Tam giác hóa: phương pháp dùng từ ba nguồn độc lập trở lên để xác lập một khoảng giá trị đáng tin cậy",
           "Khoảng trống thông tin: phần dữ liệu cần thiết nhưng không có sẵn, cần được ước lượng có căn cứ hoặc thu thập thêm"
         ],
@@ -830,8 +830,8 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Đánh giá có tính phê phán được dữ liệu, thông tin và nội dung số"
         ],
         "definitions": [
-          "Thông tin (Điều 2, TT 02/2025/TT-BGDĐT): dữ liệu đã được tổ chức, xử lý, hoặc phân tích để trở nên có ý nghĩa và có thể hiểu được và sử dụng để ra quyết định, giải quyết vấn đề hoặc truyền đạt ý tưởng",
-          "Dữ liệu (Điều 2, TT 02/2025/TT-BGDĐT): những con số hoặc dữ kiện rời rạc mà quan sát hoặc đo đếm được không cần có ngữ cảnh hay diễn giải; được thể hiện ra ngoài bằng cách mã hóa và dễ dàng truyền tải và được chuyển thành thông tin bằng cách thêm giá trị thông qua ngữ cảnh, phân loại, tính toán, hiệu chỉnh và đánh giá",
+          "Thông tin: dữ liệu đã được tổ chức, xử lý, hoặc phân tích để trở nên có ý nghĩa và có thể hiểu được và sử dụng để ra quyết định, giải quyết vấn đề hoặc truyền đạt ý tưởng",
+          "Dữ liệu: những con số hoặc dữ kiện rời rạc mà quan sát hoặc đo đếm được không cần có ngữ cảnh hay diễn giải; được thể hiện ra ngoài bằng cách mã hóa và dễ dàng truyền tải và được chuyển thành thông tin bằng cách thêm giá trị thông qua ngữ cảnh, phân loại, tính toán, hiệu chỉnh và đánh giá",
           "Chất lượng dữ liệu: mức độ dữ liệu đáp ứng được sáu tiêu chí — chính xác, đầy đủ, nhất quán, kịp thời, hợp lệ, duy nhất",
           "Biện pháp phòng ngừa: hành động chặn dữ liệu sai ngay tại điểm nhập liệu",
           "Biện pháp phát hiện: hành động tìm ra dữ liệu sai sau khi đã được nhập vào hệ thống"
@@ -933,8 +933,8 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Điều chỉnh được thông tin, dữ liệu và nội dung để chúng được tổ chức và sắp xếp trong môi trường có cấu trúc phù hợp nhất"
         ],
         "definitions": [
-          "Dữ liệu (Điều 2, TT 02/2025/TT-BGDĐT): những con số hoặc dữ kiện rời rạc mà quan sát hoặc đo đếm được không cần có ngữ cảnh hay diễn giải; được thể hiện ra ngoài bằng cách mã hóa và dễ dàng truyền tải và được chuyển thành thông tin bằng cách thêm giá trị thông qua ngữ cảnh, phân loại, tính toán, hiệu chỉnh và đánh giá",
-          "Môi trường có cấu trúc (Điều 2, TT 02/2025/TT-BGDĐT): một không gian hoặc hệ thống trong đó các yếu tố, thành phần hoặc dữ liệu được tổ chức và sắp xếp theo một cách rõ ràng và có quy tắc, giúp dễ dàng tìm kiếm, truy cập và xử lý",
+          "Dữ liệu: những con số hoặc dữ kiện rời rạc mà quan sát hoặc đo đếm được không cần có ngữ cảnh hay diễn giải; được thể hiện ra ngoài bằng cách mã hóa và dễ dàng truyền tải và được chuyển thành thông tin bằng cách thêm giá trị thông qua ngữ cảnh, phân loại, tính toán, hiệu chỉnh và đánh giá",
+          "Môi trường có cấu trúc: một không gian hoặc hệ thống trong đó các yếu tố, thành phần hoặc dữ liệu được tổ chức và sắp xếp theo một cách rõ ràng và có quy tắc, giúp dễ dàng tìm kiếm, truy cập và xử lý",
           "Quản trị dữ liệu: hệ thống các quy tắc, vai trò và quy trình đảm bảo dữ liệu được định nghĩa, sử dụng và bảo vệ nhất quán trong tổ chức",
           "Từ điển dữ liệu: bảng mô tả chi tiết từng trường dữ liệu — định nghĩa, kiểu, giá trị hợp lệ, nguồn, chủ sở hữu",
           "Nguồn chân lý duy nhất: hệ thống được chỉ định là nguồn chính thức cho một chỉ tiêu, mọi bản sao khác chỉ mang tính tham khảo"
@@ -1051,7 +1051,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Xác định được các phương tiện giao tiếp đơn giản thích hợp cho một bối cảnh cụ thể"
         ],
         "definitions": [
-          "Phương tiện giao tiếp số (Điều 2, TT 02/2025/TT-BGDĐT): các nền tảng, công cụ và nội dung được tạo ra, lưu trữ, phân phối và truy cập thông qua công nghệ số, bao gồm mạng Internet, mạng xã hội, ứng dụng di động, các thiết bị điện tử",
+          "Phương tiện giao tiếp số: các nền tảng, công cụ và nội dung được tạo ra, lưu trữ, phân phối và truy cập thông qua công nghệ số, bao gồm mạng Internet, mạng xã hội, ứng dụng di động, các thiết bị điện tử",
           "Đến (To): người nhận chính, người cần hành động",
           "CC (Carbon Copy): người được thông báo để biết, không cần hành động",
           "BCC (Blind Carbon Copy): người nhận ẩn, các người nhận khác không thấy nhau",
@@ -1257,7 +1257,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Nhận biết được các công nghệ số đơn giản, phù hợp để nâng cao năng lực cho bản thân và tham gia vào xã hội với tư cách là một công dân"
         ],
         "definitions": [
-          "Dịch vụ số (Điều 2, TT 02/2025/TT-BGDĐT): các dịch vụ được cung cấp thông qua phương tiện giao tiếp số",
+          "Dịch vụ số: các dịch vụ được cung cấp thông qua phương tiện giao tiếp số",
           "Cổng dịch vụ công: trang web chính thức của cơ quan nhà nước cho phép thực hiện thủ tục hành chính trực tuyến",
           "Định danh điện tử: phương thức xác thực danh tính một cá nhân hoặc tổ chức trên môi trường số",
           "Chữ ký số: hình thức xác nhận điện tử có giá trị pháp lý tương đương chữ ký tay"
@@ -1460,7 +1460,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Phân biệt được các khía cạnh đơn giản của sự đa dạng về văn hóa và thế hệ"
         ],
         "definitions": [
-          "Nghi thức số (Điều 2, TT 02/2025/TT-BGDĐT): tập hợp các quy tắc, chuẩn mực và hành vi ứng xử phù hợp trong môi trường số, bao gồm giao tiếp qua mạng Internet, sử dụng mạng xã hội, email, ứng dụng và các nền tảng trực tuyến",
+          "Nghi thức số: tập hợp các quy tắc, chuẩn mực và hành vi ứng xử phù hợp trong môi trường số, bao gồm giao tiếp qua mạng Internet, sử dụng mạng xã hội, email, ứng dụng và các nền tảng trực tuyến",
           "Văn phong: cách diễn đạt, mức độ trang trọng trong giao tiếp",
           "Quấy rối trên môi trường số: hành vi lặp lại gây khó chịu, đe dọa hoặc xúc phạm qua kênh số"
         ],
@@ -1564,8 +1564,8 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Nhận biết được dữ liệu đơn giản do mình tạo ra thông qua các công cụ, môi trường hoặc dịch vụ số"
         ],
         "definitions": [
-          "Danh tính số (Điều 2, TT 02/2025/TT-BGDĐT): tổng hợp thông tin về một người tồn tại ở dạng kỹ thuật số để định danh và phân biệt với những người khác, có thể bao gồm các thông tin như giới tính, tính cách, sở thích, tín ngưỡng, quan điểm chính trị, họ tên, ngày tháng năm sinh, số điện thoại, địa chỉ nhà, địa chỉ thư điện tử và các thông tin cá nhân khác",
-          "Danh tiếng trực tuyến (Điều 2, TT 02/2025/TT-BGDĐT): sự đánh giá hoặc nhận thức của xã hội về giá trị, uy tín, hoặc hình ảnh của một cá nhân, tổ chức hay thương hiệu trên môi trường trực tuyến",
+          "Danh tính số: tổng hợp thông tin về một người tồn tại ở dạng kỹ thuật số để định danh và phân biệt với những người khác, có thể bao gồm các thông tin như giới tính, tính cách, sở thích, tín ngưỡng, quan điểm chính trị, họ tên, ngày tháng năm sinh, số điện thoại, địa chỉ nhà, địa chỉ thư điện tử và các thông tin cá nhân khác",
+          "Danh tiếng trực tuyến: sự đánh giá hoặc nhận thức của xã hội về giá trị, uy tín, hoặc hình ảnh của một cá nhân, tổ chức hay thương hiệu trên môi trường trực tuyến",
           "Dấu vết số (digital footprint): toàn bộ thông tin về một người còn lại trên môi trường số qua các hoạt động trực tuyến"
         ],
         "body": [
@@ -1680,7 +1680,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Lựa chọn được nhiều phương tiện giao tiếp số phù hợp cho một bối cảnh cụ thể"
         ],
         "definitions": [
-          "Phương tiện giao tiếp số (Điều 2, TT 02/2025/TT-BGDĐT): các nền tảng, công cụ và nội dung được tạo ra, lưu trữ, phân phối và truy cập thông qua công nghệ số, bao gồm mạng Internet, mạng xã hội, ứng dụng di động, các thiết bị điện tử",
+          "Phương tiện giao tiếp số: các nền tảng, công cụ và nội dung được tạo ra, lưu trữ, phân phối và truy cập thông qua công nghệ số, bao gồm mạng Internet, mạng xã hội, ứng dụng di động, các thiết bị điện tử",
           "Giao tiếp bất đồng bộ: giao tiếp không yêu cầu phản hồi ngay lập tức (email, bình luận)",
           "Giao tiếp đồng bộ: giao tiếp yêu cầu phản hồi tức thời (gọi điện, họp trực tuyến, chat trực tiếp)",
           "Biên bản họp: văn bản ghi lại nội dung, quyết định và việc cần làm sau cuộc họp"
@@ -1884,7 +1884,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Thảo luận về các công nghệ số phù hợp để nâng cao năng lực của bản thân và tham gia vào xã hội với tư cách là một công dân"
         ],
         "definitions": [
-          "Dịch vụ số (Điều 2, TT 02/2025/TT-BGDĐT): các dịch vụ được cung cấp thông qua phương tiện giao tiếp số",
+          "Dịch vụ số: các dịch vụ được cung cấp thông qua phương tiện giao tiếp số",
           "Hóa đơn điện tử: hóa đơn được lập, gửi và lưu trữ dưới dạng dữ liệu điện tử, có giá trị pháp lý như hóa đơn giấy",
           "Mã số hồ sơ: mã định danh dùng để tra cứu trạng thái xử lý của một hồ sơ đã nộp"
         ],
@@ -2087,7 +2087,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Thảo luận các khía cạnh đa dạng về văn hóa và thế hệ cần xem xét trong môi trường số"
         ],
         "definitions": [
-          "Nghi thức số (Điều 2, TT 02/2025/TT-BGDĐT): tập hợp các quy tắc, chuẩn mực và hành vi ứng xử phù hợp trong môi trường số, bao gồm giao tiếp qua mạng Internet, sử dụng mạng xã hội, email, ứng dụng và các nền tảng trực tuyến",
+          "Nghi thức số: tập hợp các quy tắc, chuẩn mực và hành vi ứng xử phù hợp trong môi trường số, bao gồm giao tiếp qua mạng Internet, sử dụng mạng xã hội, email, ứng dụng và các nền tảng trực tuyến",
           "Giao tiếp trực tiếp/gián tiếp: phong cách nói thẳng vấn đề (trực tiếp) so với diễn đạt vòng vo, ngụ ý (gián tiếp), khác nhau tùy văn hóa",
           "Vai trò người chứng kiến (bystander): người nhìn thấy hành vi không phù hợp nhưng không phải là người bị ảnh hưởng trực tiếp"
         ],
@@ -2190,8 +2190,8 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Thao tác dữ liệu cá nhân tạo ra thông qua các công cụ, môi trường hoặc dịch vụ số"
         ],
         "definitions": [
-          "Danh tính số (Điều 2, TT 02/2025/TT-BGDĐT): tổng hợp thông tin về một người tồn tại ở dạng kỹ thuật số để định danh và phân biệt với những người khác, có thể bao gồm các thông tin như giới tính, tính cách, sở thích, tín ngưỡng, quan điểm chính trị, họ tên, ngày tháng năm sinh, số điện thoại, địa chỉ nhà, địa chỉ thư điện tử và các thông tin cá nhân khác",
-          "Danh tiếng trực tuyến (Điều 2, TT 02/2025/TT-BGDĐT): sự đánh giá hoặc nhận thức của xã hội về giá trị, uy tín, hoặc hình ảnh của một cá nhân, tổ chức hay thương hiệu trên môi trường trực tuyến",
+          "Danh tính số: tổng hợp thông tin về một người tồn tại ở dạng kỹ thuật số để định danh và phân biệt với những người khác, có thể bao gồm các thông tin như giới tính, tính cách, sở thích, tín ngưỡng, quan điểm chính trị, họ tên, ngày tháng năm sinh, số điện thoại, địa chỉ nhà, địa chỉ thư điện tử và các thông tin cá nhân khác",
+          "Danh tiếng trực tuyến: sự đánh giá hoặc nhận thức của xã hội về giá trị, uy tín, hoặc hình ảnh của một cá nhân, tổ chức hay thương hiệu trên môi trường trực tuyến",
           "Hồ sơ nghề nghiệp trực tuyến: thông tin về quá trình làm việc, kỹ năng, thành tích được thể hiện công khai trên môi trường số",
           "Phát ngôn nhân danh doanh nghiệp: phát biểu được hiểu là đại diện cho quan điểm chính thức của tổ chức, không chỉ là ý kiến cá nhân"
         ],
@@ -2308,7 +2308,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Thích nghi được các phương tiện giao tiếp phù hợp nhất cho một bối cảnh cụ thể"
         ],
         "definitions": [
-          "Phương tiện giao tiếp số (Điều 2, TT 02/2025/TT-BGDĐT): các nền tảng, công cụ và nội dung được tạo ra, lưu trữ, phân phối và truy cập thông qua công nghệ số, bao gồm mạng Internet, mạng xã hội, ứng dụng di động, các thiết bị điện tử",
+          "Phương tiện giao tiếp số: các nền tảng, công cụ và nội dung được tạo ra, lưu trữ, phân phối và truy cập thông qua công nghệ số, bao gồm mạng Internet, mạng xã hội, ứng dụng di động, các thiết bị điện tử",
           "Kiến trúc kênh giao tiếp: hệ thống các kênh được xác định rõ mục đích sử dụng cho từng loại thông điệp trong tổ chức",
           "Phân tầng thông điệp: việc điều chỉnh cùng một nội dung theo cách phù hợp với từng nhóm đối tượng khác nhau"
         ],
@@ -2511,7 +2511,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Thay đổi được cách sử dụng các công nghệ số phù hợp nhất để nâng cao năng lực cho bản thân và tham gia vào xã hội với tư cách là một công dân"
         ],
         "definitions": [
-          "Dịch vụ số (Điều 2, TT 02/2025/TT-BGDĐT): các dịch vụ được cung cấp thông qua phương tiện giao tiếp số",
+          "Dịch vụ số: các dịch vụ được cung cấp thông qua phương tiện giao tiếp số",
           "Nghĩa vụ tuân thủ số: các yêu cầu pháp lý liên quan đến hoạt động số mà doanh nghiệp phải thực hiện (khai báo, báo cáo, lưu trữ)",
           "Đánh giá tác động quy định: quá trình phân tích một quy định mới sẽ ảnh hưởng thế nào đến hoạt động và quy trình hiện tại của doanh nghiệp"
         ],
@@ -2716,7 +2716,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Áp dụng được các khía cạnh đa dạng về văn hóa và thế hệ khác nhau trong môi trường số"
         ],
         "definitions": [
-          "Nghi thức số (Điều 2, TT 02/2025/TT-BGDĐT): tập hợp các quy tắc, chuẩn mực và hành vi ứng xử phù hợp trong môi trường số, bao gồm giao tiếp qua mạng Internet, sử dụng mạng xã hội, email, ứng dụng và các nền tảng trực tuyến",
+          "Nghi thức số: tập hợp các quy tắc, chuẩn mực và hành vi ứng xử phù hợp trong môi trường số, bao gồm giao tiếp qua mạng Internet, sử dụng mạng xã hội, email, ứng dụng và các nền tảng trực tuyến",
           "Khủng hoảng truyền thông: tình huống một sự việc lan truyền nhanh và rộng, gây ảnh hưởng tiêu cực đến uy tín tổ chức",
           "Ngưỡng leo thang: mức độ nghiêm trọng mà tại đó một vấn đề cần được chuyển lên cấp quản lý cao hơn xử lý"
         ],
@@ -2820,8 +2820,8 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Thay đổi được dữ liệu được tạo ra thông qua một số công cụ, môi trường và dịch vụ"
         ],
         "definitions": [
-          "Danh tính số (Điều 2, TT 02/2025/TT-BGDĐT): tổng hợp thông tin về một người tồn tại ở dạng kỹ thuật số để định danh và phân biệt với những người khác, có thể bao gồm các thông tin như giới tính, tính cách, sở thích, tín ngưỡng, quan điểm chính trị, họ tên, ngày tháng năm sinh, số điện thoại, địa chỉ nhà, địa chỉ thư điện tử và các thông tin cá nhân khác",
-          "Danh tiếng trực tuyến (Điều 2, TT 02/2025/TT-BGDĐT): sự đánh giá hoặc nhận thức của xã hội về giá trị, uy tín, hoặc hình ảnh của một cá nhân, tổ chức hay thương hiệu trên môi trường trực tuyến",
+          "Danh tính số: tổng hợp thông tin về một người tồn tại ở dạng kỹ thuật số để định danh và phân biệt với những người khác, có thể bao gồm các thông tin như giới tính, tính cách, sở thích, tín ngưỡng, quan điểm chính trị, họ tên, ngày tháng năm sinh, số điện thoại, địa chỉ nhà, địa chỉ thư điện tử và các thông tin cá nhân khác",
+          "Danh tiếng trực tuyến: sự đánh giá hoặc nhận thức của xã hội về giá trị, uy tín, hoặc hình ảnh của một cá nhân, tổ chức hay thương hiệu trên môi trường trực tuyến",
           "Hiện diện số của doanh nghiệp: tổng thể các kênh và nội dung mà doanh nghiệp xuất hiện trên môi trường số (website, mạng xã hội, đánh giá trực tuyến)",
           "Uy tín số (digital reputation): nhận thức và đánh giá chung của công chúng về doanh nghiệp trên môi trường số"
         ],
@@ -3037,7 +3037,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Chọn được các cách sửa đổi, tinh chỉnh, cải thiện và tích hợp các mục đơn giản có nội dung và thông tin mới để tạo ra những nội dung và thông tin mới và độc đáo"
         ],
         "definitions": [
-          "Tri thức (Điều 2, TT 02/2025/TT-BGDĐT): sự hiểu biết, nhận thức và kinh nghiệm được tích lũy qua quá trình học hỏi, nghiên cứu và trải nghiệm",
+          "Tri thức: sự hiểu biết, nhận thức và kinh nghiệm được tích lũy qua quá trình học hỏi, nghiên cứu và trải nghiệm",
           "Dán giữ định dạng: sao chép nội dung và giữ nguyên kiểu chữ, màu sắc gốc",
           "Dán văn bản thuần: sao chép chỉ lấy nội dung chữ, bỏ toàn bộ định dạng gốc",
           "Mẫu tài liệu (template): tài liệu có sẵn cấu trúc và định dạng để tái sử dụng nhiều lần"
@@ -3452,7 +3452,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Thảo luận các cách sửa đổi, tinh chỉnh, cải thiện và tích hợp nội dung và thông tin mới để tạo ra những nội dung và thông tin mới và độc đáo"
         ],
         "definitions": [
-          "Tri thức (Điều 2, TT 02/2025/TT-BGDĐT): sự hiểu biết, nhận thức và kinh nghiệm được tích lũy qua quá trình học hỏi, nghiên cứu và trải nghiệm",
+          "Tri thức: sự hiểu biết, nhận thức và kinh nghiệm được tích lũy qua quá trình học hỏi, nghiên cứu và trải nghiệm",
           "Trộn thư (mail merge): kỹ thuật tạo hàng loạt tài liệu cá nhân hóa từ một mẫu chung kết hợp với danh sách dữ liệu",
           "Liên kết dữ liệu: việc kết nối một bảng số liệu với văn bản để khi số liệu thay đổi, văn bản tự động cập nhật theo"
         ],
@@ -3864,7 +3864,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Đánh giá những cách phù hợp nhất để sửa đổi, sàng lọc, cải thiện và tích hợp các mục nội dung và thông tin cụ thể mới để tạo ra những nội dung và thông tin mới và độc đáo"
         ],
         "definitions": [
-          "Tri thức (Điều 2, TT 02/2025/TT-BGDĐT): sự hiểu biết, nhận thức và kinh nghiệm được tích lũy qua quá trình học hỏi, nghiên cứu và trải nghiệm",
+          "Tri thức: sự hiểu biết, nhận thức và kinh nghiệm được tích lũy qua quá trình học hỏi, nghiên cứu và trải nghiệm",
           "Tài sản nội dung: toàn bộ nội dung đã sản xuất (hình ảnh, văn bản, video) mà tổ chức sở hữu và có thể tái sử dụng"
         ],
         "body": [
@@ -4180,7 +4180,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Nhận biết được những cách thức đơn giản để quan tâm đến mức độ tin cậy và quyền riêng tư"
         ],
         "definitions": [
-          "Thiết bị số (Điều 2, TT 02/2025/TT-BGDĐT): thiết bị điện tử, máy tính, viễn thông, truyền dẫn, thu phát sóng vô tuyến điện và thiết bị tích hợp khác được sử dụng để sản xuất, truyền đưa, thu thập, xử lý, lưu trữ và trao đổi thông tin số",
+          "Thiết bị số: thiết bị điện tử, máy tính, viễn thông, truyền dẫn, thu phát sóng vô tuyến điện và thiết bị tích hợp khác được sử dụng để sản xuất, truyền đưa, thu thập, xử lý, lưu trữ và trao đổi thông tin số",
           "Mật khẩu mạnh: mật khẩu đủ dài (tối thiểu 12 ký tự), kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt, không trùng với mật khẩu dùng ở nơi khác",
           "Xác thực hai lớp (2FA): phương thức bảo mật yêu cầu thêm một bước xác nhận ngoài mật khẩu (mã gửi về điện thoại, ứng dụng xác thực)",
           "Trình quản lý mật khẩu: phần mềm lưu trữ và tự động điền mật khẩu an toàn, giúp không cần nhớ nhiều mật khẩu phức tạp"
@@ -4385,8 +4385,8 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Nhận biết được những công nghệ số đơn giản giúp tăng cường thịnh vượng xã hội và sự hòa hợp trong xã hội"
         ],
         "definitions": [
-          "An sinh số (Điều 2, TT 02/2025/TT-BGDĐT): trạng thái cân bằng giữa việc sử dụng công nghệ số và sức khỏe tinh thần, thể chất của người dùng trong việc sử dụng phương tiện kỹ thuật số",
-          "Bắt nạt trên mạng (Điều 2, TT 02/2025/TT-BGDĐT): những hành vi có chủ đích xấu được tiến hành bởi một người hoặc một nhóm người lên một cá nhân bằng cách đe dọa, xâm hại, làm nhục, làm ảnh hưởng, xúc phạm danh dự, nhân phẩm hoặc tra tấn tinh thần thông qua tin nhắn, mạng Internet, các trang mạng xã hội và qua các thiết bị điện tử",
+          "An sinh số: trạng thái cân bằng giữa việc sử dụng công nghệ số và sức khỏe tinh thần, thể chất của người dùng trong việc sử dụng phương tiện kỹ thuật số",
+          "Bắt nạt trên mạng: những hành vi có chủ đích xấu được tiến hành bởi một người hoặc một nhóm người lên một cá nhân bằng cách đe dọa, xâm hại, làm nhục, làm ảnh hưởng, xúc phạm danh dự, nhân phẩm hoặc tra tấn tinh thần thông qua tin nhắn, mạng Internet, các trang mạng xã hội và qua các thiết bị điện tử",
           "Tư thế làm việc đúng: cách bố trí màn hình, ghế, bàn phím giúp giảm căng thẳng cơ thể khi làm việc lâu với máy tính",
           "Quá tải thông tin: trạng thái tiếp nhận quá nhiều thông báo, tin nhắn, email cùng lúc gây khó tập trung và căng thẳng"
         ],
@@ -4604,7 +4604,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Giải thích được các cách thức để quan tâm đến mức độ tin cậy và quyền riêng tư"
         ],
         "definitions": [
-          "Thiết bị số (Điều 2, TT 02/2025/TT-BGDĐT): thiết bị điện tử, máy tính, viễn thông, truyền dẫn, thu phát sóng vô tuyến điện và thiết bị tích hợp khác được sử dụng để sản xuất, truyền đưa, thu thập, xử lý, lưu trữ và trao đổi thông tin số",
+          "Thiết bị số: thiết bị điện tử, máy tính, viễn thông, truyền dẫn, thu phát sóng vô tuyến điện và thiết bị tích hợp khác được sử dụng để sản xuất, truyền đưa, thu thập, xử lý, lưu trữ và trao đổi thông tin số",
           "Chính sách bảo mật doanh nghiệp: bộ quy định về cách nhân viên phải bảo vệ thông tin và hệ thống của công ty",
           "Sao lưu (backup): bản sao dữ liệu độc lập, không thay đổi theo bản gốc, dùng để khôi phục khi có sự cố",
           "Tấn công lừa đảo có chủ đích (spear phishing): hình thức lừa đảo được cá nhân hóa nhắm vào một người hoặc tổ chức cụ thể, thường có thông tin chính xác khiến nạn nhân dễ tin hơn"
@@ -4809,8 +4809,8 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Thảo luận về những công nghệ số giúp tăng cường thịnh vượng xã hội và sự hòa hợp trong xã hội"
         ],
         "definitions": [
-          "An sinh số (Điều 2, TT 02/2025/TT-BGDĐT): trạng thái cân bằng giữa việc sử dụng công nghệ số và sức khỏe tinh thần, thể chất của người dùng trong việc sử dụng phương tiện kỹ thuật số",
-          "Bắt nạt trên mạng (Điều 2, TT 02/2025/TT-BGDĐT): những hành vi có chủ đích xấu được tiến hành bởi một người hoặc một nhóm người lên một cá nhân bằng cách đe dọa, xâm hại, làm nhục, làm ảnh hưởng, xúc phạm danh dự, nhân phẩm hoặc tra tấn tinh thần thông qua tin nhắn, mạng Internet, các trang mạng xã hội và qua các thiết bị điện tử",
+          "An sinh số: trạng thái cân bằng giữa việc sử dụng công nghệ số và sức khỏe tinh thần, thể chất của người dùng trong việc sử dụng phương tiện kỹ thuật số",
+          "Bắt nạt trên mạng: những hành vi có chủ đích xấu được tiến hành bởi một người hoặc một nhóm người lên một cá nhân bằng cách đe dọa, xâm hại, làm nhục, làm ảnh hưởng, xúc phạm danh dự, nhân phẩm hoặc tra tấn tinh thần thông qua tin nhắn, mạng Internet, các trang mạng xã hội và qua các thiết bị điện tử",
           "Làm việc theo khối thời gian (time blocking): kỹ thuật dành các khoảng thời gian cố định trong lịch cho từng loại công việc cụ thể, giảm việc chuyển đổi liên tục giữa các nhiệm vụ",
           "Chi phí chuyển đổi ngữ cảnh: thời gian và năng lượng tinh thần bị mất khi chuyển đổi qua lại giữa các công việc khác nhau",
           "Kiệt sức nghề nghiệp (burnout): trạng thái kiệt quệ về thể chất và tinh thần do căng thẳng công việc kéo dài"
@@ -5030,7 +5030,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Đánh giá được các biện pháp để quan tâm đến mức độ tin cậy và quyền riêng tư một cách phù hợp nhất"
         ],
         "definitions": [
-          "Thiết bị số (Điều 2, TT 02/2025/TT-BGDĐT): thiết bị điện tử, máy tính, viễn thông, truyền dẫn, thu phát sóng vô tuyến điện và thiết bị tích hợp khác được sử dụng để sản xuất, truyền đưa, thu thập, xử lý, lưu trữ và trao đổi thông tin số",
+          "Thiết bị số: thiết bị điện tử, máy tính, viễn thông, truyền dẫn, thu phát sóng vô tuyến điện và thiết bị tích hợp khác được sử dụng để sản xuất, truyền đưa, thu thập, xử lý, lưu trữ và trao đổi thông tin số",
           "Đánh giá rủi ro an toàn thông tin: quá trình xác định các mối đe dọa, khả năng xảy ra và mức độ tác động lên hệ thống thông tin của tổ chức",
           "Kế hoạch khôi phục hoạt động: kế hoạch xác định cách tổ chức tiếp tục hoạt động và khôi phục hệ thống sau một sự cố nghiêm trọng"
         ],
@@ -5235,8 +5235,8 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Linh hoạt trong cách sử dụng những công nghệ số giúp tăng cường thịnh vượng xã hội và sự hòa hợp trong xã hội"
         ],
         "definitions": [
-          "An sinh số (Điều 2, TT 02/2025/TT-BGDĐT): trạng thái cân bằng giữa việc sử dụng công nghệ số và sức khỏe tinh thần, thể chất của người dùng trong việc sử dụng phương tiện kỹ thuật số",
-          "Bắt nạt trên mạng (Điều 2, TT 02/2025/TT-BGDĐT): những hành vi có chủ đích xấu được tiến hành bởi một người hoặc một nhóm người lên một cá nhân bằng cách đe dọa, xâm hại, làm nhục, làm ảnh hưởng, xúc phạm danh dự, nhân phẩm hoặc tra tấn tinh thần thông qua tin nhắn, mạng Internet, các trang mạng xã hội và qua các thiết bị điện tử",
+          "An sinh số: trạng thái cân bằng giữa việc sử dụng công nghệ số và sức khỏe tinh thần, thể chất của người dùng trong việc sử dụng phương tiện kỹ thuật số",
+          "Bắt nạt trên mạng: những hành vi có chủ đích xấu được tiến hành bởi một người hoặc một nhóm người lên một cá nhân bằng cách đe dọa, xâm hại, làm nhục, làm ảnh hưởng, xúc phạm danh dự, nhân phẩm hoặc tra tấn tinh thần thông qua tin nhắn, mạng Internet, các trang mạng xã hội và qua các thiết bị điện tử",
           "Quyền ngắt kết nối: khái niệm về quyền của nhân viên được không phải phản hồi công việc ngoài giờ làm việc đã thỏa thuận",
           "Khả năng tiếp cận (accessibility): mức độ công cụ và tài liệu số có thể được sử dụng bởi người có những khả năng khác nhau, bao gồm người khuyết tật"
         ],
@@ -5554,7 +5554,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Chọn được những cách đơn giản để điều chỉnh và tùy chỉnh môi trường số theo nhu cầu cá nhân"
         ],
         "definitions": [
-          "Giải pháp công nghệ (Điều 2, TT 02/2025/TT-BGDĐT): tập hợp các công cụ kỹ thuật có liên quan (phần mềm, phần cứng) hoặc dịch vụ hoặc kết hợp để giải quyết vấn đề đặt ra",
+          "Giải pháp công nghệ: tập hợp các công cụ kỹ thuật có liên quan (phần mềm, phần cứng) hoặc dịch vụ hoặc kết hợp để giải quyết vấn đề đặt ra",
           "Nhu cầu công việc: mô tả cụ thể về việc cần làm, kết quả mong muốn, và ai sẽ sử dụng kết quả đó",
           "Công cụ có sẵn của doanh nghiệp: phần mềm hoặc dịch vụ đã được doanh nghiệp cấp phép và phê duyệt sử dụng"
         ],
@@ -5755,7 +5755,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Xác định được nơi để tìm kiếm cơ hội phát triển bản thân và cập nhật sự phát triển số"
         ],
         "definitions": [
-          "Năng lực số (Điều 2, TT 02/2025/TT-BGDĐT): khả năng sử dụng công nghệ số để hoàn thành nhiệm vụ cụ thể hoặc để giải quyết vấn đề trong thực tiễn",
+          "Năng lực số: khả năng sử dụng công nghệ số để hoàn thành nhiệm vụ cụ thể hoặc để giải quyết vấn đề trong thực tiễn",
           "Khoảng trống năng lực: sự chênh lệch giữa năng lực hiện tại của một người và năng lực yêu cầu cho vị trí công việc",
           "Kế hoạch học tập cá nhân: lộ trình cụ thể xác định kỹ năng cần học, nguồn học, và thời gian hoàn thành"
         ],
@@ -5972,7 +5972,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Chọn được cách điều chỉnh và tùy chỉnh môi trường số theo nhu cầu cá nhân"
         ],
         "definitions": [
-          "Giải pháp công nghệ (Điều 2, TT 02/2025/TT-BGDĐT): tập hợp các công cụ kỹ thuật có liên quan (phần mềm, phần cứng) hoặc dịch vụ hoặc kết hợp để giải quyết vấn đề đặt ra",
+          "Giải pháp công nghệ: tập hợp các công cụ kỹ thuật có liên quan (phần mềm, phần cứng) hoặc dịch vụ hoặc kết hợp để giải quyết vấn đề đặt ra",
           "Chi phí toàn phần (total cost of ownership): tổng chi phí thực tế của một giải pháp công nghệ, bao gồm giá mua, đào tạo, chuyển đổi dữ liệu, không chỉ giá niêm yết",
           "Rủi ro phụ thuộc nhà cung cấp: rủi ro khi một tổ chức phụ thuộc quá nhiều vào một nhà cung cấp, khó chuyển sang giải pháp khác nếu cần"
         ],
@@ -6175,7 +6175,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Chỉ ra được nơi để tìm kiếm cơ hội phát triển bản thân và cập nhật sự phát triển số"
         ],
         "definitions": [
-          "Năng lực số (Điều 2, TT 02/2025/TT-BGDĐT): khả năng sử dụng công nghệ số để hoàn thành nhiệm vụ cụ thể hoặc để giải quyết vấn đề trong thực tiễn",
+          "Năng lực số: khả năng sử dụng công nghệ số để hoàn thành nhiệm vụ cụ thể hoặc để giải quyết vấn đề trong thực tiễn",
           "Bản đồ năng lực nhóm: tổng hợp mức năng lực số hiện tại của tất cả thành viên trong nhóm theo từng lĩnh vực",
           "Học qua việc: phương thức phát triển năng lực thông qua thực hành trực tiếp trong công việc, thay vì đào tạo tách rời"
         ],
@@ -6393,7 +6393,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Quyết định được những cách thích hợp nhất để điều chỉnh và tùy chỉnh môi trường số theo nhu cầu cá nhân"
         ],
         "definitions": [
-          "Giải pháp công nghệ (Điều 2, TT 02/2025/TT-BGDĐT): tập hợp các công cụ kỹ thuật có liên quan (phần mềm, phần cứng) hoặc dịch vụ hoặc kết hợp để giải quyết vấn đề đặt ra",
+          "Giải pháp công nghệ: tập hợp các công cụ kỹ thuật có liên quan (phần mềm, phần cứng) hoặc dịch vụ hoặc kết hợp để giải quyết vấn đề đặt ra",
           "Lộ trình công nghệ: kế hoạch có thứ tự ưu tiên về các khoản đầu tư và thay đổi công nghệ trong một khoảng thời gian, gắn với mục tiêu kinh doanh",
           "Mức độ sẵn sàng của tổ chức: khả năng của tổ chức (về hạ tầng, năng lực nhân sự, văn hóa) trong việc tiếp nhận một thay đổi công nghệ mới"
         ],
@@ -6595,7 +6595,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Lựa chọn được những cơ hội thích hợp nhất để phát triển bản thân và cập nhật những phát triển mới"
         ],
         "definitions": [
-          "Năng lực số (Điều 2, TT 02/2025/TT-BGDĐT): khả năng sử dụng công nghệ số để hoàn thành nhiệm vụ cụ thể hoặc để giải quyết vấn đề trong thực tiễn",
+          "Năng lực số: khả năng sử dụng công nghệ số để hoàn thành nhiệm vụ cụ thể hoặc để giải quyết vấn đề trong thực tiễn",
           "Đội ngũ nòng cốt: nhóm nhân sự được đào tạo chuyên sâu trước, đóng vai trò lan tỏa kiến thức và hỗ trợ đồng nghiệp trong tổ chức",
           "Lộ trình nghề nghiệp gắn với năng lực số: việc đưa yêu cầu và kết quả phát triển năng lực số vào quá trình đánh giá và thăng tiến của nhân viên"
         ],
@@ -6713,7 +6713,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           "Diễn giải được các thuật ngữ liên quan đến AI"
         ],
         "definitions": [
-          "Trí tuệ nhân tạo (AI): theo Thông tư 02/2025/TT-BGDĐT, là việc phát triển các hệ thống máy móc có khả năng thực hiện các nhiệm vụ đòi hỏi trí tuệ con người như học tập, suy luận và giải quyết vấn đề",
+          "Trí tuệ nhân tạo (AI): theo Khung chuẩn năng lực số, là việc phát triển các hệ thống máy móc có khả năng thực hiện các nhiệm vụ đòi hỏi trí tuệ con người như học tập, suy luận và giải quyết vấn đề",
           "Trí tuệ nhân tạo tạo sinh (Gen AI): một lĩnh vực thuộc AI tập trung vào việc tạo ra dữ liệu mới — văn bản, hình ảnh, âm thanh, video, mã nguồn — dựa trên dữ liệu đầu vào đã được huấn luyện trước đó",
           "Mô hình AI: hệ thống đã được huấn luyện trên một khối lượng lớn dữ liệu để nhận diện quy luật và đưa ra dự đoán hoặc tạo nội dung mới"
         ],
@@ -6731,7 +6731,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
         "questions": [
           {
             "number": 1,
-            "questionText": "Theo Thông tư 02/2025/TT-BGDĐT, AI được định nghĩa là gì?",
+            "questionText": "Theo Khung chuẩn năng lực số, AI được định nghĩa là gì?",
             "options": [
               "Một loại phần mềm diệt virus",
               "Hệ thống máy móc có khả năng thực hiện nhiệm vụ đòi hỏi trí tuệ con người",
@@ -6739,7 +6739,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
               "Thiết bị lưu trữ dữ liệu"
             ],
             "correctIndex": 1,
-            "explanation": "Đây là định nghĩa chính thức theo Thông tư.",
+            "explanation": "Đây là định nghĩa chính thức theo Khung chuẩn.",
             "competencyCode": "6.1",
             "level": 1
           },
@@ -6801,7 +6801,7 @@ export const CURRICULUM_DATA: Record<string, CurriculumCourse> = {
           }
         ],
         "rawQuestions": [
-          "1. Theo Thông tư 02/2025/TT-BGDĐT, AI được định nghĩa là gì? A. Một loại phần mềm diệt virus B. Hệ thống máy móc có khả năng thực hiện nhiệm vụ đòi hỏi trí tuệ con người C. Một loại mạng xã hội D. Thiết bị lưu trữ dữ liệu Đáp án: B — Đây là định nghĩa chính thức theo Thông tư.",
+          "1. Theo Khung chuẩn năng lực số, AI được định nghĩa là gì? A. Một loại phần mềm diệt virus B. Hệ thống máy móc có khả năng thực hiện nhiệm vụ đòi hỏi trí tuệ con người C. Một loại mạng xã hội D. Thiết bị lưu trữ dữ liệu Đáp án: B — Đây là định nghĩa chính thức theo Khung chuẩn.",
           "2. Gen AI (trí tuệ nhân tạo tạo sinh) tập trung vào việc gì? A. Lưu trữ dữ liệu B. Tạo ra dữ liệu mới như văn bản, hình ảnh, âm thanh dựa trên dữ liệu đã huấn luyện C. Sửa lỗi phần cứng D. Quản lý mạng máy tính Đáp án: B — Đây là đặc trưng phân biệt Gen AI với các dạng AI khác.",
           "3. Vì sao AI đôi khi đưa ra câu trả lời sai dù nghe rất tự tin? A. AI luôn cố ý nói sai B. AI dự đoán dựa trên xác suất và mẫu hình đã học, không thực sự “hiểu” như con người C. AI không có khả năng trả lời D. Do lỗi kết nối mạng Đáp án: B — Đây là bản chất của cách AI hoạt động, khác với suy luận logic của con người.",
           "4. Đâu là ví dụ về AI trong đời sống hằng ngày? A. Chỉ có robot công nghiệp mới là AI B. Gợi ý tự động hoàn thành khi gõ tin nhắn cũng là một dạng AI C. AI chỉ tồn tại trong phim khoa học viễn tưởng D. AI chỉ dùng trong nghiên cứu khoa học Đáp án: B — AI đã hiện diện trong nhiều công cụ quen thuộc hằng ngày.",

@@ -35,11 +35,10 @@ public class CurrentUser : ICurrentUser
     public bool IsInRole(string roleCode) =>
         Roles.Contains(roleCode, StringComparer.OrdinalIgnoreCase);
 
-    public bool IsAdmin =>
-        IsInRole(DomainRoles.SystemAdmin) || IsInRole(DomainRoles.HrManager);
+    public bool IsAdmin => IsInRole(DomainRoles.Owner);
 
     public bool IsDepartmentManager =>
-        IsInRole(DomainRoles.DepartmentManager);
+        IsInRole(DomainRoles.Manager);
 
     public Guid GetRequiredOrganizationId() =>
         OrganizationId ?? throw new ForbiddenException("Your account is not linked to an organization.");

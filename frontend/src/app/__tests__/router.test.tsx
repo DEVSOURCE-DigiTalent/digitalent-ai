@@ -33,6 +33,14 @@ describe('Router Configuration & Surface Separation', () => {
   });
 
   describe('Public Flow (Anonymous Access)', () => {
+    it('Anonymous can access the Individual guided trial without entering the paid workspace', async () => {
+      renderWithRouter('/individual/try', queryClient);
+
+      expect(await screen.findByTestId('individual-trial-page', {}, { timeout: 10_000 })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: /Trải nghiệm lộ trình cá nhân/ })).toBeInTheDocument();
+      expect(screen.queryByTestId('personal-layout')).not.toBeInTheDocument();
+    });
+
     it('Anonymous can access the enterprise landing page without login redirect', async () => {
       renderWithRouter('/business', queryClient);
 
@@ -88,7 +96,7 @@ describe('Router Configuration & Surface Separation', () => {
 
       expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
       expect(screen.getByTestId('learner-dashboard')).toBeInTheDocument();
-      expect(await screen.findByText(/đây là chặng đường của bạn/i, {}, { timeout: 10000 })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: /Tổng quan học tập/i }, { timeout: 10000 })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
@@ -114,7 +122,7 @@ describe('Router Configuration & Surface Separation', () => {
 
       expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
       expect(screen.getByTestId('learner-diagnostic-page')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 1, name: /Bài đánh giá/ })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: /Đánh giá năng lực/i })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
@@ -141,7 +149,7 @@ describe('Router Configuration & Surface Separation', () => {
 
       expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
       expect(screen.getByTestId('learner-progress-page')).toBeInTheDocument();
-      expect(screen.getByText(/Tiến độ tích lũy kỹ năng/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Hồ sơ năng lực' })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
@@ -150,7 +158,7 @@ describe('Router Configuration & Surface Separation', () => {
 
       expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
       expect(screen.getByTestId('learner-tasks-page')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 1, name: /Minh chứng/ })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Bài thực hành' })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
@@ -159,7 +167,7 @@ describe('Router Configuration & Surface Separation', () => {
 
       expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
       expect(screen.getByTestId('learner-certificates-page')).toBeInTheDocument();
-      expect(screen.getByText(/Chứng chỉ & Huy hiệu/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Chứng nhận hoàn thành khóa học' })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 

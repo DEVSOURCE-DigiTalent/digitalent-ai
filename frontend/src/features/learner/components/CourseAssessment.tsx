@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Award, Check, RotateCcw, X } from 'lucide-react';
-import { usePersonalAssessment, useSubmitCourseAssessment } from '@/hooks/use-personal-learning';
+import { usePersonalAccess, usePersonalAssessment, useSubmitCourseAssessment } from '@/hooks/use-personal-learning';
+import { usePlanErrorHandler } from '@/hooks/use-plan-error-handler';
+import { trackTrialEvent } from '@/features/experience/individual-trial/individual-trial-tracker';
+import { INDIVIDUAL_TRIAL } from '@/lib/plans';
 import { cn } from '@/lib/utils';
 import type { AssessmentOutcome, PersonalCourseDetail } from '@/services/personal-learning.service';
 import { Card, ErrorBlock, LoadingBlock, PT_BUTTON, PT_BUTTON_SECONDARY, PT_EYEBROW } from './ui';
-import { errorMessage } from '../utils/error-message';
+import { UpgradeLink } from './UpgradeLink';
+import { errorMessage, planErrorOf } from '../utils/error-message';
 
 /** End-of-course assessment: 4 questions of the course's domain; passing raises the levels and issues a certificate. */
 export function CourseAssessment({ course }: { course: PersonalCourseDetail }) {
@@ -14,7 +18,17 @@ export function CourseAssessment({ course }: { course: PersonalCourseDetail }) {
   const [outcome, setOutcome] = useState<AssessmentOutcome | null>(null);
   const assessment = usePersonalAssessment(course.id, started);
   const submit = useSubmitCourseAssessment();
+  const handlePlanError = usePlanErrorHandler();
+  const { data: access } = usePersonalAccess();
   const ready = course.completedLessons === course.lessonCount;
+
+  // The first pass of a trial is the activation the trial is measured by (spec §11).
+  const countFirstPass = (result: AssessmentOutcome) => {
+    const firstCourse = access?.checklist.find((item) => item.key === 'first-course');
+    if (result.passed && access?.mode === 'trial' && firstCourse?.done === false) {
+      trackTrialEvent('trial_first_course_passed', { daysSinceStart: INDIVIDUAL_TRIAL.days - (access.daysLeft ?? INDIVIDUAL_TRIAL.days) });
+    }
+  };
 
   const restart = () => {
     setAnswers({});
@@ -69,11 +83,19 @@ export function CourseAssessment({ course }: { course: PersonalCourseDetail }) {
             </p>
             <p className="mt-1 text-sm text-pt-fg-2">
               {outcome.correct}/{outcome.total} câu đúng.{' '}
-              {outcome.passed ? 'Mức năng lực của khóa đã được cập nhật vào hồ sơ.' : 'Xem giải thích bên dưới rồi thử lại.'}
+              {outcome.passed
+                ? outcome.certificatePending
+                  ? 'Đạt! Chứng nhận sẽ được cấp khi bạn nâng cấp gói. Mức năng lực của khóa đã được cập nhật vào hồ sơ.'
+                  : 'Mức năng lực của khóa đã được cập nhật vào hồ sơ.'
+                : 'Xem giải thích bên dưới rồi thử lại.'}
             </p>
           </div>
           {outcome.passed ? (
-            <Link to="/personal/certificates" className={PT_BUTTON}><Award className="size-4" aria-hidden="true" /> Xem chứng nhận</Link>
+            outcome.certificatePending ? (
+              <UpgradeLink placement="assessment">Nâng cấp Plus</UpgradeLink>
+            ) : (
+              <Link to="/personal/certificates" className={PT_BUTTON}><Award className="size-4" aria-hidden="true" /> Xem chứng nhận</Link>
+            )
           ) : (
             <button type="button" onClick={restart} className={PT_BUTTON_SECONDARY}><RotateCcw className="size-4" aria-hidden="true" /> Làm lại</button>
           )}
@@ -128,23 +150,18 @@ export function CourseAssessment({ course }: { course: PersonalCourseDetail }) {
       {!outcome && (
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-pt-line pt-6">
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                const filled = Object.fromEntries(questions.map((q) => [q.id, q.correctOptionIndex ?? 0]));
-                setAnswers(filled);
-              }}
-              className={PT_BUTTON_SECONDARY}
-              title="Tự động chọn đáp án đúng để hỗ trợ trình diễn demo nhanh"
-            >
-              ⚡ Điền đáp án chuẩn (Demo)
-            </button>
-            {submit.isError && <p role="alert" className="text-sm text-pt-bad">{errorMessage(submit.error)}</p>}
+            {submit.isError && !planErrorOf(submit.error) && <p role="alert" className="text-sm text-pt-bad">{errorMessage(submit.error)}</p>}
           </div>
           <button
             type="button"
             disabled={!allAnswered || submit.isPending}
-            onClick={() => submit.mutate({ courseId: course.id, answers }, { onSuccess: setOutcome })}
+            onClick={() => submit.mutate({ courseId: course.id, answers }, {
+              onSuccess: (result) => {
+                setOutcome(result);
+                countFirstPass(result);
+              },
+              onError: handlePlanError,
+            })}
             className={PT_BUTTON}
           >
             {submit.isPending ? 'Đang chấm…' : 'Nộp bài đánh giá'}

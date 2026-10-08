@@ -91,6 +91,21 @@ public interface IApplicationDbContext
     // Learner Surface (SEP-09)
     DbSet<LearnerProfile> LearnerProfiles { get; }
 
+    DbSet<TrialRegistration> TrialRegistrations { get; }
+    DbSet<TrialWorkspace> TrialWorkspaces { get; }
+    DbSet<TrialInvitation> TrialInvitations { get; }
+    DbSet<PositionDiagnosticAttempt> PositionDiagnosticAttempts { get; }
+
+    // Individual Commerce & Registration (v3.0)
+    DbSet<IndividualRegistration> IndividualRegistrations { get; }
+    DbSet<IndividualEmailVerificationChallenge> IndividualEmailVerificationChallenges { get; }
+    DbSet<IndividualTrialRedemption> IndividualTrialRedemptions { get; }
+    DbSet<UserSubscription> UserSubscriptions { get; }
+    DbSet<PurchaseDraft> PurchaseDrafts { get; }
+    DbSet<Order> Orders { get; }
+    DbSet<PaymentEvent> PaymentEvents { get; }
+    DbSet<EmailOutboxItem> EmailOutboxItems { get; }
+
     // Billing
     DbSet<Subscription> Subscriptions { get; }
     DbSet<SubscriptionEntitlement> SubscriptionEntitlements { get; }

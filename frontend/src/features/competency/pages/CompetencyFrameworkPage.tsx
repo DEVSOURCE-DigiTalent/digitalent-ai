@@ -42,11 +42,11 @@ export function CompetencyFrameworkPage() {
   const columns: Column<CompetencyListItem>[] = [
     {
       key: 'frameworkCode',
-      header: 'Mã TT 02/2025',
+      header: 'Mã năng lực',
       cell: (row) =>
         row.frameworkCode ? (
           <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">
-            {row.frameworkCode}
+            {row.frameworkCode.startsWith('CMP-') ? row.frameworkCode : `CMP-${row.frameworkCode.replace(/^TT02-/, '')}`}
           </span>
         ) : (
           <span className="text-xs text-slate-400">Chưa ánh xạ</span>
@@ -103,8 +103,8 @@ export function CompetencyFrameworkPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
-          title="Khung năng lực TT 02/2025"
-          subtitle="Khung chuẩn năng lực số gồm 6 miền và 24 năng lực theo Thông tư 02/2025/TT-BGDĐT. Dùng chung cho toàn bộ tổ chức làm căn cứ thiết lập yêu cầu vị trí"
+          title="Khung chuẩn năng lực số"
+          subtitle="Khung chuẩn năng lực số gồm 6 miền và 24 năng lực cốt lõi. Dùng chung cho toàn bộ tổ chức làm căn cứ thiết lập yêu cầu vị trí"
         />
         <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
           <button

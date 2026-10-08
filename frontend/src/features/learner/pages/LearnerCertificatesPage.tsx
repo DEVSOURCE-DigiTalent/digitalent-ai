@@ -2,27 +2,36 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Copy, Printer } from 'lucide-react';
 import { usePersonalCertificates } from '@/hooks/use-personal-learning';
-import { levelLabelVi, levelWithTier } from '@/lib/competency-levels';
+import { formatDmy } from '@/lib/personal-access';
+import { levelLabelVi } from '@/lib/competency-levels';
 import type { PersonalCertificate } from '@/services/personal-learning.service';
 import { PtDialog } from '../components/PtDialog';
+import { UpgradeLink } from '../components/UpgradeLink';
 import {
-  Card, EmptyState, ErrorBlock, LoadingBlock, PT_BUTTON, PT_BUTTON_SECONDARY, PT_EYEBROW, PageIntro, Tag
+  Card, EmptyState, ErrorBlock, LoadingBlock, PT_BUTTON, PT_BUTTON_SECONDARY, PT_EYEBROW, PersonalPageHeader, Tag
 } from '../components/ui';
 import { errorMessage } from '../utils/error-message';
 import { formatDate } from '../utils/format';
+import { CertificateDocument } from '../components/CertificateDocument';
+
+/** A certificate that has been issued: it has a code and a date, and can be shown and printed. */
+type IssuedCertificate = PersonalCertificate & { code: string; issuedAt: string };
+
+const isIssued = (certificate: PersonalCertificate): certificate is IssuedCertificate =>
+  certificate.status === 'ISSUED' && certificate.code !== null && certificate.issuedAt !== null;
 
 /** IND-13 "/personal/certificates": one certificate per course passed, naming the competencies it confirms. */
 export function LearnerCertificatesPage() {
   const { data, isLoading, isError, error, refetch } = usePersonalCertificates();
-  const [selected, setSelected] = useState<PersonalCertificate | null>(null);
+  const [selected, setSelected] = useState<IssuedCertificate | null>(null);
+  const pending = data?.filter((certificate) => !isIssued(certificate)).length ?? 0;
 
   return (
     <div data-testid="learner-certificates-page" className="grid gap-10">
-      <PageIntro
+      <PersonalPageHeader
         label="Chứng nhận"
-        title="Chứng chỉ & Huy hiệu"
-        accent="bạn đã đạt."
-        lead="Mỗi khóa học bạn vượt qua bài đánh giá cuối khóa được cấp một chứng nhận, ghi rõ các năng lực và mức đạt theo Khung năng lực số của Thông tư 02/2025."
+        title="Chứng nhận hoàn thành khóa học"
+        lead="Tài liệu ghi nhận khóa học đã hoàn thành và kết quả đánh giá liên quan."
       />
       {isLoading && <LoadingBlock />}
       {isError && <ErrorBlock message={errorMessage(error)} onRetry={() => refetch()} />}
@@ -33,13 +42,18 @@ export function LearnerCertificatesPage() {
           action={<Link to="/personal/path" className={PT_BUTTON}>Mở lộ trình</Link>}
         />
       )}
+      {pending > 0 && (
+        <Card className="flex flex-col gap-4 border-[#E5A93C]/50 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-pt-fg-2">
+            Bạn có {pending} chứng nhận chờ cấp. Nâng cấp để phát hành, không cần làm lại bài.
+          </p>
+          <UpgradeLink placement="certificates">Nâng cấp Plus</UpgradeLink>
+        </Card>
+      )}
       {data && data.length > 0 && (
         <ul className="grid gap-3 md:grid-cols-2">
           {data.map((certificate) => (
-            <Card as="li" key={certificate.id} className="relative flex flex-col justify-between gap-10 overflow-hidden p-7">
-              <span aria-hidden="true" className="pointer-events-none absolute -right-6 -top-10 font-landing-serif text-[160px] italic leading-none text-pt-fg/5">
-                {certificate.courseCode.split('-')[1]}
-              </span>
+            <Card as="li" key={certificate.id} className="relative flex flex-col justify-between gap-6 overflow-hidden p-6">
               <div className="relative">
                 <div className="flex flex-wrap gap-1.5">
                   <Tag>{levelLabelVi(certificate.level)}</Tag>
@@ -51,67 +65,106 @@ export function LearnerCertificatesPage() {
                 </p>
               </div>
               <div className="relative flex flex-wrap items-end justify-between gap-4 border-t border-pt-line pt-5">
-                <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
-                  <dt className="text-pt-fg-3">Mã chứng nhận</dt>
-                  <dt className="text-pt-fg-3">Ngày cấp</dt>
-                  <dd className="font-mono text-pt-fg">{certificate.code}</dd>
-                  <dd className="text-pt-fg">{formatDate(certificate.issuedAt)}</dd>
-                </dl>
-                <button type="button" onClick={() => setSelected(certificate)} className={PT_BUTTON_SECONDARY}>Xem chứng chỉ</button>
+                {isIssued(certificate) ? (
+                  <>
+                    <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
+                      <dt className="text-pt-fg-3">Mã chứng nhận</dt>
+                      <dt className="text-pt-fg-3">Ngày cấp</dt>
+                      <dd className="font-mono text-pt-fg">{certificate.code}</dd>
+                      <dd className="text-pt-fg">{formatDate(certificate.issuedAt)}</dd>
+                    </dl>
+                    <button type="button" onClick={() => setSelected(certificate)} className={PT_BUTTON_SECONDARY}>Xem chứng nhận</button>
+                  </>
+                ) : (
+                  <div className="grid gap-2">
+                    <Tag tone="warn" className="w-fit">Chờ cấp</Tag>
+                    <p className="text-xs text-pt-fg-2">Đạt ngày {formatDmy(certificate.passedAt)} · cấp khi nâng cấp gói</p>
+                  </div>
+                )}
               </div>
             </Card>
           ))}
         </ul>
       )}
 
-      <PtDialog open={Boolean(selected)} onClose={() => setSelected(null)} title="Chứng nhận năng lực số" className="max-w-3xl">
-        {selected && <CertificateSheet certificate={selected} />}
+      <PtDialog open={Boolean(selected)} onClose={() => setSelected(null)} title="Chứng nhận hoàn thành khóa học" className="max-w-4xl">
+        {selected && <CertificateModalContent certificate={selected} />}
       </PtDialog>
     </div>
   );
 }
 
-function CertificateSheet({ certificate }: { certificate: PersonalCertificate }) {
+function CertificateModalContent({ certificate }: { certificate: IssuedCertificate }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(certificate.code);
       setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
     } catch {
       setCopied(false);
     }
   };
 
+  const verifyPath = `/verify/${certificate.code}`;
+
   return (
     <div className="grid gap-5">
-      {/* A document: the same cream paper in both themes, and what gets printed. */}
-      <article className="pt-print relative overflow-hidden rounded-2xl bg-[#f4f1e6] px-7 py-10 text-center text-[#1c1b16] sm:px-12">
-        <div aria-hidden="true" className="pointer-events-none absolute inset-3 rounded-xl border border-[#1c1b16]/15" />
-        <p className="text-sm font-semibold tracking-[-0.04em]">DigiTalent<sup className="ml-[2px] text-[0.55em]">AI</sup></p>
-        <p className="mt-6 text-[11px] uppercase tracking-[0.22em] text-[#1c1b16]/60">Chứng nhận hoàn thành khóa học</p>
-        <p className="mt-6 text-sm text-[#1c1b16]/70">Trao cho</p>
-        <p className="mt-1 font-landing-serif text-[clamp(30px,5vw,44px)] italic leading-tight">{certificate.recipientName}</p>
-        <p className="mx-auto mt-5 max-w-[46ch] text-sm leading-relaxed text-[#1c1b16]/80">
-          đã hoàn thành khóa <span className="font-medium">{certificate.courseCode} · {certificate.courseTitle}</span> và đạt bài đánh giá cuối khóa
-          với {certificate.scorePercent}%, ở mức {levelWithTier(certificate.level, 'vi')} của miền {certificate.domainName}.
-        </p>
-        <ul className="mx-auto mt-6 grid max-w-md gap-1 text-left text-xs text-[#1c1b16]/75">
-          {certificate.competencies.map((competency) => (
-            <li key={competency.code} className="flex gap-2"><span className="w-7 shrink-0 tabular-nums text-[#1c1b16]/50">{competency.code}</span>{competency.name}</li>
-          ))}
-        </ul>
-        <div className="mt-8 flex flex-wrap items-end justify-between gap-4 border-t border-[#1c1b16]/15 pt-5 text-left text-[11px] text-[#1c1b16]/65">
-          <span>Mã: <span className="font-mono text-[#1c1b16]">{certificate.code}</span></span>
-          <span>Ngày cấp: {formatDate(certificate.issuedAt)}</span>
-          <span>Căn cứ Thông tư 02/2025/TT-BGDĐT</span>
-        </div>
-      </article>
-      <div className="flex flex-wrap justify-end gap-2">
-        <span role="status" className="mr-auto self-center text-xs text-pt-fg-3">{copied ? 'Đã sao chép mã chứng nhận.' : ''}</span>
-        <button type="button" onClick={copy} className={PT_BUTTON_SECONDARY}><Copy className="size-4" aria-hidden="true" /> Sao chép mã</button>
-        <button type="button" onClick={() => window.print()} className={PT_BUTTON}><Printer className="size-4" aria-hidden="true" /> In chứng nhận</button>
+      {/* Print CSS Injection specifically for this certificate modal */}
+      <style>{`
+        @media print {
+          @page {
+            size: A4 landscape;
+            margin: 0;
+          }
+          body * {
+            visibility: hidden;
+          }
+          .certificate-print-sheet, .certificate-print-sheet * {
+            visibility: visible;
+          }
+          .certificate-print-sheet {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 36px 48px !important;
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        }
+      `}</style>
+
+      {/* Chuẩn CertificateDocument A4 Landscape */}
+      <div className="overflow-x-auto pb-2">
+        <CertificateDocument certificate={certificate} />
       </div>
-      <p className={PT_EYEBROW}>Chứng nhận ghi nhận kết quả học trên DigiTalent AI, không phải văn bằng nhà nước.</p>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-pt-line pt-4">
+        <div className="flex items-center gap-2">
+          {copied && <span role="status" className="text-xs font-medium text-emerald-600">Đã sao chép mã chứng nhận vào bộ nhớ tạm.</span>}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link to={verifyPath} target="_blank" rel="noopener noreferrer" className={PT_BUTTON_SECONDARY}>
+            Tra cứu công khai
+          </Link>
+          <button type="button" onClick={copy} className={PT_BUTTON_SECONDARY}>
+            <Copy className="size-4" aria-hidden="true" /> Sao chép mã
+          </button>
+          <button type="button" onClick={() => window.print()} className={PT_BUTTON}>
+            <Printer className="size-4" aria-hidden="true" /> In / Tải PDF
+          </button>
+        </div>
+      </div>
+      <p className={PT_EYEBROW}>
+        Chứng chỉ số DigiTalent AI xác thực kỹ năng theo Khung chuẩn năng lực số Thông tư 02/2025/TT-BGDĐT. Dùng mã hoặc quét mã QR để tra cứu công khai mọi lúc.
+      </p>
     </div>
   );
 }

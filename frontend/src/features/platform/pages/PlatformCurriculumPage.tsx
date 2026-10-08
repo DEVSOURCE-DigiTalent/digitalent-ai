@@ -153,7 +153,7 @@ export function PlatformCurriculumPage() {
     <div className="space-y-6">
       <PageHeader
         title="Giáo trình chuẩn nền tảng"
-        subtitle="Quản lý danh mục 18 khóa đào tạo chuẩn hóa, phân bổ theo 6 miền năng lực số Thông tư 02/2025/TT-BGDĐT"
+        subtitle="Quản lý danh mục 18 khóa đào tạo chuẩn hóa, phân bổ theo 6 miền của Khung chuẩn năng lực số"
       />
 
       {/* Top Filter and View Switcher */}

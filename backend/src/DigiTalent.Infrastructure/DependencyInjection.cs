@@ -53,6 +53,18 @@ public static class DependencyInjection
         // Audit Logging
         services.AddScoped<IAuditService, AuditService>();
 
+        // Individual Commerce & Registration (v3.0)
+        services.Configure<DigiTalent.Application.IndividualCommerce.IndividualCommerceOptions>(
+            configuration.GetSection(DigiTalent.Application.IndividualCommerce.IndividualCommerceOptions.SectionName));
+        services.AddScoped<DigiTalent.Application.IndividualCommerce.IOtpHashingService, DigiTalent.Infrastructure.IndividualCommerce.OtpHashingService>();
+        services.AddSingleton<DigiTalent.Application.IndividualCommerce.IIndividualPlanCatalog, DigiTalent.Infrastructure.IndividualCommerce.IndividualPlanCatalog>();
+        services.AddScoped<DigiTalent.Application.IndividualCommerce.IIndividualEmailSender, DigiTalent.Infrastructure.IndividualCommerce.SmtpIndividualEmailSender>();
+        services.AddHttpClient<DigiTalent.Application.IndividualCommerce.IPayOSService, DigiTalent.Infrastructure.IndividualCommerce.PayOSService>();
+        services.AddScoped<DigiTalent.Application.IndividualCommerce.IndividualCommerceService>();
+
+        // Personal Learning (Learner Workspace)
+        services.AddScoped<DigiTalent.Application.PersonalLearning.Services.IPersonalLearningService, DigiTalent.Infrastructure.PersonalLearning.PersonalLearningService>();
+
         // Member invitations: activation link delivery (logged until an e-mail provider exists)
         var invitationSettings = configuration.GetSection("Invitations").Get<InvitationSettings>() ?? new InvitationSettings();
         services.AddSingleton(invitationSettings);

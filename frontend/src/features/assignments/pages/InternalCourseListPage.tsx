@@ -142,12 +142,12 @@ export function InternalCourseListPage() {
         BE2 chưa có trường phân loại khóa chuẩn và khóa nội bộ. Chỉ khóa có mã INT- được chỉnh sửa tại đây; các khóa còn lại mở ở danh mục chuẩn.
       </div>}
 
-      {/* Thông báo chuẩn nghiệp vụ Thông tư 02 */}
+      {/* Thông báo nghiệp vụ Khung chuẩn năng lực số */}
       {mock && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
         <AlertCircle className="size-5 text-amber-600 shrink-0 mt-0.5" />
         <div className="text-sm text-amber-800">
           <span className="font-semibold">Lưu ý nghiệp vụ:</span> Khóa học nội bộ dành riêng cho văn hóa, chính sách và quy trình nghiệp vụ nội bộ. Hoàn thành khóa học nội bộ{' '}
-          <strong className="underline">không tự động tăng bậc năng lực</strong> trong Khung năng lực số chuẩn Thông tư 02/2025/TT-BGDĐT.
+          <strong className="underline">không tự động tăng bậc năng lực</strong> trong Khung chuẩn năng lực số.
         </div>
       </div>}
 

@@ -1,9 +1,10 @@
+import { settleSubscription } from '../../../lib/personal-access';
 import { WORKSPACES } from '../../../lib/roles';
 import { entitlementKeys, getPlan } from '../../../lib/plans';
 import type { SessionUser, SubscriptionContext } from '../../../types/session';
 import { findMockAccountById } from '../mock-accounts';
 import { permissionsForRoles } from '../mock-rbac';
-import { findUserById, toSessionUser } from '../mock-store';
+import { findUserById, settleTrial, toSessionUser } from '../mock-store';
 import { seatsInUse } from './members-logic';
 import { getOrgData } from './org-store';
 import type { OrgData } from './types';
@@ -47,7 +48,13 @@ export function lookupSession(userId: string | undefined): SessionLookup {
   const seeded = findMockAccountById(userId);
   if (seeded) {
     const organizationId = seeded.organization?.id;
-    if (!organizationId) return { session: seeded };
+    if (!organizationId) {
+      // A demo learner who has paid has an account in the database: its plan wins over the seed's.
+      const stored = findUserById(userId);
+      if (stored) settleTrial(stored);
+      const subscription = settleSubscription(stored?.subscription ?? seeded.subscription, new Date());
+      return { session: subscription === seeded.subscription ? seeded : { ...seeded, subscription } };
+    }
     const data = getOrgData(organizationId);
     const override = data.memberOverrides[userId];
     if (override?.status === 'INACTIVE') return { error: 'INACTIVE' };

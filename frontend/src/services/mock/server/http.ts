@@ -17,6 +17,8 @@ export const conflict = (message: string) => new HttpError(409, message);
 export const badRequest = (message: string, code?: string, field?: string) =>
   new HttpError(400, message, code ? [{ field, message: code }] : []);
 export const forbidden = (message = 'Bạn không có quyền thực hiện thao tác này.') => new HttpError(403, message);
+/** The plan does not include the action: 403 with the machine code in `errors[0].message`, like `badRequest`. */
+export const planForbidden = (message: string, code: string) => new HttpError(403, message, [{ message: code }]);
 
 export function okBody<T>(data: T, message = 'OK'): ApiResponse<T> {
   return { success: true, message, data, errors: [] };

@@ -62,11 +62,11 @@ export function WizardShell({ steps, current, completed, onStepSelect, title, de
                 >
                   <span
                     className={cn(
-                      'grid size-6 shrink-0 place-items-center rounded-full text-xs font-medium',
+                      'grid size-6 shrink-0 place-items-center rounded-full text-xs font-medium transition-all',
                       isDone
                         ? 'bg-ent-ok text-white'
                         : isCurrent
-                        ? 'bg-ent-accent text-white'
+                        ? 'bg-gradient-to-br from-[#F5CA65] to-[#D4982F] text-[#0C0E12] font-bold ring-2 ring-amber-400/40 shadow-sm'
                         : 'bg-ent-raised text-ent-fg-3 border border-ent-line',
                     )}
                     aria-hidden="true"
@@ -85,12 +85,15 @@ export function WizardShell({ steps, current, completed, onStepSelect, title, de
         </ol>
       </nav>
 
-      <section aria-labelledby="wizard-step-title" className="rounded-xl border border-ent-line bg-ent-card p-6 shadow-sm sm:p-8">
-        <h2 id="wizard-step-title" ref={titleRef} tabIndex={-1} className="text-xl font-semibold text-ent-fg outline-none">
+      <section aria-labelledby="wizard-step-title" className="relative overflow-hidden rounded-2xl border border-ent-line bg-ent-card p-6 shadow-xl shadow-black/40 sm:p-8">
+        {/* Amber glowing subtle gradient matching 3D logo */}
+        <div className="pointer-events-none absolute -right-24 -top-24 size-64 rounded-full bg-amber-500/10 blur-3xl" />
+
+        <h2 id="wizard-step-title" ref={titleRef} tabIndex={-1} className="relative text-xl font-semibold text-ent-fg outline-none">
           {title}
         </h2>
-        {description && <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-ent-fg-2">{description}</p>}
-        <div className="mt-6 text-ent-fg">{children}</div>
+        {description && <p className="relative mt-1.5 max-w-[60ch] text-sm leading-relaxed text-ent-fg-2">{description}</p>}
+        <div className="relative mt-6 text-ent-fg">{children}</div>
       </section>
     </div>
   );

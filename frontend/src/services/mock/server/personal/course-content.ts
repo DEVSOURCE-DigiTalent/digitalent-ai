@@ -131,13 +131,13 @@ function lessonsFor(course: CatalogCourse, code: string, minutes: number): Lesso
       lesson1Body.push(`Mục tiêu học tập cốt lõi: ${modData.objectives.join('; ')}.`);
     }
     if (modData.definitions.length > 0) {
-      lesson1Body.push(`Quy chuẩn thuật ngữ theo Thông tư 02/2025/TT-BGDĐT:`);
+      lesson1Body.push(`Quy chuẩn thuật ngữ theo Khung chuẩn năng lực số:`);
       lesson1Body.push(...modData.definitions);
     }
     if (modData.body.length > 0) {
       lesson1Body.push(...modData.body);
     } else {
-      lesson1Body.push(`Thông tư 02/2025/TT-BGDĐT quy định năng lực ${code} "${name}". Ở mức ${label}, bạn ${LEVEL_DOING[course.level]}.`);
+      lesson1Body.push(`Khung chuẩn năng lực số xác định năng lực ${code} "${name}". Ở mức ${label}, bạn ${LEVEL_DOING[course.level]}.`);
     }
 
     const lesson2Body: string[] = [];
@@ -163,7 +163,7 @@ function lessonsFor(course: CatalogCourse, code: string, minutes: number): Lesso
         title: lesson1Title,
         kind: 'VIDEO',
         durationMinutes: Math.max(10, Math.round(minutes * 0.35)),
-        summary: `Năng lực ${code} ở mức ${label}: ${modData.title}. Khung kiến thức chuẩn Thông tư 02/2025/TT-BGDĐT.`,
+        summary: `Năng lực ${code} ở mức ${label}: ${modData.title}. Khung kiến thức Khung chuẩn năng lực số.`,
         body: lesson1Body,
         takeaways: modData.objectives.length > 0
           ? modData.objectives.slice(0, 3)
@@ -208,7 +208,7 @@ function lessonsFor(course: CatalogCourse, code: string, minutes: number): Lesso
       durationMinutes: minutes,
       summary: `Năng lực ${code} ở mức ${label}: ${focus}.`,
       body: [
-        `Thông tư 02/2025/TT-BGDĐT mô tả năng lực ${code} "${name}". Ở mức ${label}, bạn ${LEVEL_DOING[course.level]}.`,
+        `Khung chuẩn năng lực số mô tả năng lực ${code} "${name}". Ở mức ${label}, bạn ${LEVEL_DOING[course.level]}.`,
         `Bài này giải thích yêu cầu đó bằng ví dụ ở nơi làm việc: ${focus}.`,
         'Cuối bài, bạn tự kiểm tra bằng ba câu hỏi nhanh trước khi sang phần tình huống.',
       ],

@@ -15,8 +15,9 @@ export function useLogin() {
   return useMutation({
     mutationFn: async (data: LoginRequest) => {
       const loginRes = await authService.login(data);
-      const { accessToken } = loginRes.data.data!;
+      const { accessToken, refreshToken } = loginRes.data.data!;
       localStorage.setItem('accessToken', accessToken);
+      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
 
       const meRes = await authService.getMe();
       setUser(meRes.data.data!);
@@ -37,7 +38,8 @@ export function useLogout() {
   return useMutation({
     mutationFn: async () => {
       try {
-        await authService.logout();
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (refreshToken) await authService.logout(refreshToken);
       } catch {
         // Proceed with local cleanup even if server call fails
       }

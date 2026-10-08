@@ -5,12 +5,14 @@ import { OWNER_SIDEBAR } from './owner';
 import { MANAGER_SIDEBAR } from './manager';
 import { EMPLOYEE_SIDEBAR } from './employee';
 import { PLATFORM_SIDEBAR } from './platform';
+import { TRIAL_EMPLOYEE_SIDEBAR, TRIAL_MANAGER_SIDEBAR, TRIAL_OWNER_SIDEBAR } from './trial';
 
 export * from './types';
 export * from './owner';
 export * from './manager';
 export * from './employee';
 export * from './platform';
+export * from './trial';
 
 /**
  * Returns the task-oriented sidebar configuration tailored to the user's role.
@@ -23,17 +25,19 @@ export function sidebarFor(user?: SessionUser | null): SidebarConfig {
   }
 
   const role = primaryRole(user);
+  const isTrial = (user.enterpriseTrialStatus !== undefined && user.enterpriseTrialStatus !== 'converted')
+    || user.subscription?.planCode === 'ENT_TRIAL';
 
   if (role === ROLES.PLATFORM_ADMIN || user.roles.includes(ROLES.PLATFORM_ADMIN)) {
     return PLATFORM_SIDEBAR;
   }
   if (role === ROLES.OWNER || user.roles.includes(ROLES.OWNER)) {
-    return OWNER_SIDEBAR;
+    return isTrial ? TRIAL_OWNER_SIDEBAR : OWNER_SIDEBAR;
   }
   if (role === ROLES.MANAGER || user.roles.includes(ROLES.MANAGER)) {
-    return MANAGER_SIDEBAR;
+    return isTrial ? TRIAL_MANAGER_SIDEBAR : MANAGER_SIDEBAR;
   }
 
-  return EMPLOYEE_SIDEBAR;
+  return isTrial ? TRIAL_EMPLOYEE_SIDEBAR : EMPLOYEE_SIDEBAR;
 }
 

@@ -9,6 +9,7 @@ import { getPlan, isPurchasableOnline } from '@/lib/plans';
 import { registrationService } from '@/services/registration.service';
 import { useLogin } from '@/hooks/use-auth';
 import { rememberPortalChoice } from '../../portal/portal-preference';
+import { TrialRegisterPage } from './TrialRegisterPage';
 
 function getErrorMessage(error: unknown): { message: string; isTaken: boolean } {
   const response = (error as { response?: { status?: number; data?: { message?: string } } })?.response;
@@ -18,13 +19,22 @@ function getErrorMessage(error: unknown): { message: string; isTaken: boolean } 
   return { message: msg, isTaken };
 }
 
-export function IndividualRegisterPage() {
+import { OtpVerificationCard } from '../components/OtpVerificationCard';
+
+function PurchaseRegisterPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const login = useLogin();
 
   const [submitError, setSubmitError] = useState<string>();
   const [emailTaken, setEmailTaken] = useState(false);
+  const [pendingRegistration, setPendingRegistration] = useState<{
+    registrationId: string;
+    registrationAccessToken?: string;
+    maskedEmail?: string;
+    developmentOtp?: string;
+    email: string;
+  } | null>(null);
 
   const plan = parsePlanSelection(searchParams, 'individual');
   const planDetails = plan ? getPlan(plan.planCode) : undefined;
@@ -39,16 +49,15 @@ export function IndividualRegisterPage() {
     setEmailTaken(false);
     rememberPortalChoice('individual');
 
-    let draftId: string | undefined;
+    let res: any;
     try {
-      const res = await registrationService.registerIndividual({
+      res = await registrationService.registerIndividual({
         fullName: values.fullName,
         email: values.email,
         password: values.password,
         acceptTerms: values.acceptTerms,
         plan,
       });
-      draftId = res.data?.data?.draftId;
     } catch (err) {
       const { message, isTaken } = getErrorMessage(err);
       setSubmitError(message);
@@ -56,13 +65,34 @@ export function IndividualRegisterPage() {
       return;
     }
 
+    const regData = res?.data?.data;
+    if (regData?.registrationId) {
+      setPendingRegistration({
+        registrationId: regData.registrationId,
+        registrationAccessToken: regData.registrationAccessToken,
+        maskedEmail: regData.maskedEmail,
+        developmentOtp: regData.developmentOtp,
+        email: values.email,
+      });
+      return;
+    }
+
+    const draftId = regData?.draftId;
     try {
       const home = await login.mutateAsync({ email: values.email, password: values.password });
       const nextPath = draftId ? `/checkout?draft=${draftId}` : home;
       navigate(nextPath, { replace: true });
     } catch {
-      navigate('/individual/login', { replace: true });
+      navigate('/login', { replace: true });
     }
+  };
+
+  const handleOtpSuccess = (data: any) => {
+    if (data?.accessToken) {
+      localStorage.setItem('accessToken', data.accessToken);
+    }
+    const next = data?.nextPath || (data?.purchaseDraft?.id ? `/checkout?draft=${data.purchaseDraft.id}` : '/checkout');
+    navigate(next, { replace: true });
   };
 
   return (
@@ -72,23 +102,43 @@ export function IndividualRegisterPage() {
       title="Tạo tài khoản cá nhân"
       subtitle="Xây dựng hồ sơ năng lực số chuẩn hóa."
       headerSlot={
-        <div className="mb-6 space-y-4">
-          <PurchaseStepper
-            audience="individual"
-            currentStep={2}
-            changePlanPath="/individual/pricing"
-          />
-          <PlanSummary selection={plan} changeTo="/individual/pricing" />
-        </div>
+        !pendingRegistration && (
+          <div className="mb-6 space-y-4">
+            <PurchaseStepper
+              audience="individual"
+              currentStep={2}
+              changePlanPath="/individual/pricing"
+            />
+            <PlanSummary selection={plan} changeTo="/individual/pricing" />
+          </div>
+        )
       }
     >
-      <AccountForm
-        audience="individual"
-        onSubmit={handleSubmit}
-        submitError={submitError}
-        emailTaken={emailTaken}
-        loginPath="/individual/login"
-      />
+      {pendingRegistration ? (
+        <OtpVerificationCard
+          email={pendingRegistration.email}
+          maskedEmail={pendingRegistration.maskedEmail}
+          registrationId={pendingRegistration.registrationId}
+          registrationAccessToken={pendingRegistration.registrationAccessToken}
+          developmentOtp={pendingRegistration.developmentOtp}
+          onSuccess={handleOtpSuccess}
+          onCancel={() => setPendingRegistration(null)}
+        />
+      ) : (
+        <AccountForm
+          audience="individual"
+          onSubmit={handleSubmit}
+          submitError={submitError}
+          emailTaken={emailTaken}
+          loginPath="/login"
+        />
+      )}
     </AuthShell>
   );
+}
+
+/** `?trial=1` starts the 7-day trial instead of a purchase; everything else is the purchase sign-up. */
+export function IndividualRegisterPage() {
+  const [searchParams] = useSearchParams();
+  return searchParams.get('trial') === '1' ? <TrialRegisterPage /> : <PurchaseRegisterPage />;
 }

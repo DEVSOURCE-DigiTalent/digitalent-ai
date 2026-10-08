@@ -27,7 +27,7 @@ export function PlatformFrameworkPage() {
   if (isError || !data) {
     return (
       <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center text-red-700">
-        <p className="font-medium">Không thể tải dữ liệu khung năng lực Thông tư 02/2025.</p>
+        <p className="font-medium">Không thể tải dữ liệu Khung chuẩn năng lực số.</p>
         <button type="button" onClick={() => refetch()} className="mt-2 text-sm underline font-semibold">
           Thử lại
         </button>
@@ -60,7 +60,7 @@ export function PlatformFrameworkPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Quản lý khung năng lực số Thông tư 02/2025"
+        title="Quản lý Khung chuẩn năng lực số"
         subtitle="Chuẩn hóa 6 miền năng lực, 24 năng lực số và 3 bậc tiêu chuẩn hành vi áp dụng toàn hệ thống"
       />
 

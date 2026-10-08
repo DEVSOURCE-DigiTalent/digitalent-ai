@@ -11,13 +11,15 @@ interface AuthGuardProps {
 export function AuthGuard({ children }: AuthGuardProps) {
   const location = useLocation();
   const token = localStorage.getItem('accessToken');
+  const refreshToken = localStorage.getItem('refreshToken');
+  const hasSession = Boolean(token || refreshToken);
   const user = useCurrentUser((s) => s.user);
   const setUser = useCurrentUser((s) => s.setUser);
   const clearUser = useCurrentUser((s) => s.clearUser);
   const [isLoading, setIsLoading] = useState(!user);
 
   useEffect(() => {
-    if (!token) return;
+    if (!hasSession) return;
     if (user) {
       setIsLoading(false);
       return;
@@ -29,12 +31,13 @@ export function AuthGuard({ children }: AuthGuardProps) {
       })
       .catch(() => {
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
         clearUser();
       })
       .finally(() => setIsLoading(false));
-  }, [token, user, setUser, clearUser]);
+  }, [hasSession, user, setUser, clearUser]);
 
-  if (!token) {
+  if (!hasSession) {
     return <Navigate to={getLoginPath(location.pathname, location.search)} replace />;
   }
 

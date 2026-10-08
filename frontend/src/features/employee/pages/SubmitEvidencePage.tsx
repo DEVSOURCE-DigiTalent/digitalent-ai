@@ -188,7 +188,7 @@ export function SubmitEvidencePage() {
               id="evidence-content"
               rows={6}
               {...register('content')}
-              placeholder="Trình bày cách bạn đã giải quyết nhiệm vụ, công cụ số đã dùng và kết quả đạt được…"
+              placeholder="Trình bày chi tiết cách bạn đã giải quyết nhiệm vụ, công cụ số đã dùng, quy trình thực hiện và kết quả đạt được…"
               className="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
             {errors.content && <p className="text-xs text-rose-600">{errors.content.message}</p>}

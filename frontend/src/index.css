@@ -3,6 +3,14 @@
 @import "./styles/enterprise-theme.css";
 @import "./styles/enterprise-dark-compat.css";
 
+/*
+ * Viewport-height tiers. Width breakpoints alone cannot keep a one-screen page (the sign-in frame) from
+ * scrolling on a 1366x768 laptop or an iPhone SE, so these tighten spacing and drop decoration as height shrinks.
+ */
+@custom-variant short (@media (max-height: 860px));
+@custom-variant cramped (@media (max-height: 740px));
+@custom-variant tiny (@media (max-height: 560px));
+
 /* ───── DigiTalent AI Design Tokens ───── */
 @theme {
   /* Primary - Blue */
@@ -84,11 +92,14 @@
   --color-surface-card: #FFFFFF;
   --color-surface-sidebar: #0F172A;
 
-  /* Landing page ("/") - cream on black. Be Vietnam Pro / Newsreader cover Vietnamese; Almarai / Instrument Serif do not. */
-  --color-cream: #E1E0CC;
-  --color-cream-soft: #DEDBC8;
-  --color-landing-panel: #101010;
-  --color-landing-card: #212121;
+  /* Landing page & Public / Enterprise Shell - Obsidian & Royal Gold (inspired by 3D golden emblem) */
+  --color-cream: #F5F2E9;
+  --color-cream-soft: #EFEAD9;
+  --color-landing-panel: #11151E;
+  --color-landing-card: #171C26;
+  --color-brand-gold: #E5A93C;
+  --color-brand-gold-light: #F5CA65;
+  --color-brand-gold-dark: #D4982F;
   --font-landing: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-landing-serif: 'Newsreader', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
   --ease-cinematic: cubic-bezier(0.16, 1, 0.3, 1);
@@ -117,7 +128,26 @@
   --color-pt-ok: var(--pt-ok);
   --color-pt-warn: var(--pt-warn);
   --color-pt-bad: var(--pt-bad);
-  --color-pt-info: var(--pt-info);
+  --color-pt-spark: var(--pt-spark);
+  --color-pt-line-strong: var(--pt-line-strong);
+
+  /* Individual semantic tokens */
+  --color-ind-bg: var(--ind-bg);
+  --color-ind-panel: var(--ind-panel);
+  --color-ind-card: var(--ind-card);
+  --color-ind-raised: var(--ind-raised);
+  --color-ind-line-subtle: var(--ind-line-subtle);
+  --color-ind-line-strong: var(--ind-line-strong);
+  --color-ind-fg: var(--ind-fg);
+  --color-ind-fg-muted: var(--ind-fg-muted);
+  --color-ind-fg-subtle: var(--ind-fg-subtle);
+  --color-ind-accent: var(--ind-accent);
+  --color-ind-on-accent: var(--ind-on-accent);
+  --color-ind-spark: var(--ind-spark);
+  --color-ind-info: var(--ind-info);
+  --color-ind-success: var(--ind-success);
+  --color-ind-warning: var(--ind-warning);
+  --color-ind-danger: var(--ind-danger);
 
   /* Enterprise tokens - map từ CSS vars */
   --color-ent-bg: var(--ent-bg);

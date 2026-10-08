@@ -1,0 +1,13 @@
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Include>[DigiTalent.Application]DigiTalent.Application.Trial.*,[DigiTalent.Infrastructure]DigiTalent.Infrastructure.Trial.*,[DigiTalent.Domain]DigiTalent.Domain.Entities.Trial*,[DigiTalent.Domain]DigiTalent.Domain.Entities.PositionDiagnosticAttempt</Include>
+          <ExcludeByFile>**/Migrations/**</ExcludeByFile>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

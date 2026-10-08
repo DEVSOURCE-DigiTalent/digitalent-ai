@@ -49,4 +49,3 @@ INSERT INTO "__EFMigrationsHistory" (migration_id, product_version)
 VALUES ('20261005065801_AddCourseModulesAndLessons', '8.0.31');
 
 COMMIT;
-

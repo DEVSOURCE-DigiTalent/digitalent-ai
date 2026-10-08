@@ -39,7 +39,7 @@ function AssessmentAttemptDetailModal({
   const questions: QuestionReview[] = [
     {
       id: 'q1',
-      questionText: 'Theo chuẩn Khung năng lực số TT 02/2025/TT-BGDĐT, việc bảo vệ thông tin nhận dạng cá nhân khi làm việc trên môi trường mạng bao gồm những nguyên tắc nào?',
+      questionText: 'Theo Khung chuẩn năng lực số, việc bảo vệ thông tin nhận dạng cá nhân khi làm việc trên môi trường mạng bao gồm những nguyên tắc nào?',
       options: [
         { key: 'A', text: 'Chỉ chia sẻ dữ liệu khi cần thiết và kích hoạt xác thực 2 lớp (2FA).' },
         { key: 'B', text: 'Lưu trữ mật khẩu trên trình duyệt công cộng để tiện truy cập.' },
@@ -65,7 +65,7 @@ function AssessmentAttemptDetailModal({
     },
     {
       id: 'q3',
-      questionText: 'Trong hợp tác và giao tiếp số (Miền 2 TT02), khi điều phối dự án liên phòng ban, công cụ nào sau đây đảm bảo tính minh bạch và theo dõi tiến độ theo thời gian thực?',
+      questionText: 'Trong hợp tác và giao tiếp số (Miền 2), khi điều phối dự án liên phòng ban, công cụ nào sau đây đảm bảo tính minh bạch và theo dõi tiến độ theo thời gian thực?',
       options: [
         { key: 'A', text: 'Gửi tin nhắn riêng rẽ qua mạng xã hội cá nhân.' },
         { key: 'B', text: 'Nền tảng quản lý công việc số tích hợp (Digital Work Management / KanBan) có phân quyền.' },
@@ -359,7 +359,7 @@ export function AssessmentResultsOverviewPage() {
     <div className="space-y-6">
       <PageHeader
         title="Kết quả đánh giá năng lực"
-        subtitle="Theo dõi toàn bộ các đợt kiểm tra năng lực của nhân sự trong tổ chức theo Thông tư 02/2025/TT-BGDĐT."
+        subtitle="Theo dõi toàn bộ các đợt kiểm tra năng lực của nhân sự trong tổ chức theo Khung chuẩn năng lực số."
       />
 
       {/* KPI Cards */}

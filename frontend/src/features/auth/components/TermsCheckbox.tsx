@@ -1,12 +1,14 @@
-import { forwardRef, type InputHTMLAttributes } from 'react';
+import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface TermsCheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
   error?: string;
+  /** Extra sentence after the agreement, e.g. what the sign-up will email. */
+  note?: ReactNode;
 }
 
 export const TermsCheckbox = forwardRef<HTMLInputElement, TermsCheckboxProps>(
-  ({ className, error, id = 'acceptTerms', ...props }, ref) => {
+  ({ className, error, note, id = 'acceptTerms', ...props }, ref) => {
     return (
       <div className={cn('grid gap-1.5', className)}>
         <label htmlFor={id} className="flex items-start gap-3 cursor-pointer select-none">
@@ -36,7 +38,7 @@ export const TermsCheckbox = forwardRef<HTMLInputElement, TermsCheckboxProps>(
             >
               Chính sách bảo mật
             </a>{' '}
-            của DigiTalent AI.
+            của DigiTalent AI.{note && <> {note}</>}
           </span>
         </label>
         {error && (

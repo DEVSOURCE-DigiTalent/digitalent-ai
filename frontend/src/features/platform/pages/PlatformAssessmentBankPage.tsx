@@ -110,7 +110,7 @@ export function PlatformAssessmentBankPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <PageHeader
           title="Ngân hàng đề thi & bài đánh giá chuẩn"
-          subtitle="Quản lý câu hỏi trắc nghiệm, tình huống nghiệp vụ và barem chấm điểm thực hành chuẩn Thông tư 02"
+          subtitle="Quản lý câu hỏi trắc nghiệm, tình huống nghiệp vụ và barem chấm điểm thực hành theo Khung chuẩn năng lực số"
         />
 
         <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">

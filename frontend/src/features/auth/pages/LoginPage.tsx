@@ -6,12 +6,9 @@ import { useLogin } from '../../../hooks/use-auth';
 import { isSafeReturnTo } from '../auth-redirect';
 import { DemoAccountPicker } from '../components/DemoAccountPicker';
 import { AuthShell } from '../components/AuthShell';
-import { LOGIN_COPY, type LoginPortal } from '../login-copy';
+import { LOGIN_COPY } from '../login-copy';
+import { cn } from '@/lib/utils';
 import { DARK_INPUT_CLASS, DARK_PRIMARY_BUTTON, FormError } from '../../public/components/FormControls';
-
-interface LoginPageProps {
-  portal?: LoginPortal;
-}
 
 interface FieldErrors {
   email?: string;
@@ -20,6 +17,8 @@ interface FieldErrors {
 
 const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
 const FALLBACK_ERROR = 'Email hoặc mật khẩu không đúng. Kiểm tra lại rồi thử lần nữa.';
+/** Enterprise field frame on the teal canvas of the login page; 16px text on phones so iOS does not zoom in. */
+const INPUT_CLASS = cn(DARK_INPUT_CLASS, 'bg-[#0b2027]/80 text-base sm:text-sm');
 
 function validate(email: string, password: string): FieldErrors {
   const errors: FieldErrors = {};
@@ -34,9 +33,9 @@ function loginErrorMessage(error: unknown): string {
   return FALLBACK_ERROR;
 }
 
-/** One sign-in form, three entrances ("/login", "/business/login", "/individual/login"): only wording and links change. */
-export function LoginPage({ portal = 'default' }: LoginPageProps) {
-  const copy = LOGIN_COPY[portal];
+/** The only sign-in page, for businesses and individuals alike: the account decides which workspace opens. */
+export function LoginPage() {
+  const copy = LOGIN_COPY.default;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
@@ -63,20 +62,18 @@ export function LoginPage({ portal = 'default' }: LoginPageProps) {
 
   return (
     <AuthShell
-      portal={portal}
-      eyebrow={copy.eyebrow}
       title="Đăng nhập"
       subtitle={copy.subtitle}
       footerLink={
-        <p className="text-sm text-stone-400">
+        <p className="text-sm text-[#93aaa8]">
           Chưa có tài khoản?{' '}
-          <Link to={copy.registerPath} className="text-cream underline decoration-cream/40 underline-offset-4 transition-colors hover:decoration-cream">
+          <Link to={copy.registerPath} className="font-medium text-[#F5CA65] underline decoration-[#F5CA65]/40 underline-offset-4 transition-colors hover:decoration-[#F5CA65]">
             {copy.registerLabel}
           </Link>
         </p>
       }
     >
-      <form onSubmit={handleSubmit} noValidate className="grid gap-5">
+      <form onSubmit={handleSubmit} noValidate className="grid gap-5 short:gap-4 cramped:gap-3">
         <FormError message={error} />
 
         <div className="grid gap-1.5">
@@ -88,10 +85,10 @@ export function LoginPage({ portal = 'default' }: LoginPageProps) {
             autoComplete="username"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder={portal === 'enterprise' ? 'ban@congty.vn' : 'ban@email.com'}
+            placeholder="ban@email.com"
             aria-invalid={fieldErrors.email ? true : undefined}
             aria-describedby={fieldErrors.email ? 'email-error' : undefined}
-            className={DARK_INPUT_CLASS}
+            className={INPUT_CLASS}
           />
           {fieldErrors.email && <p id="email-error" role="alert" className="text-xs text-red-300">{fieldErrors.email}</p>}
         </div>
@@ -99,7 +96,7 @@ export function LoginPage({ portal = 'default' }: LoginPageProps) {
         <div className="grid gap-1.5">
           <div className="flex items-baseline justify-between gap-3">
             <label htmlFor="password" className="text-sm text-cream/90">Mật khẩu</label>
-            <Link to="/forgot-password" className="text-xs text-stone-400 underline-offset-4 transition-colors hover:text-cream hover:underline">
+            <Link to="/forgot-password" className="text-xs text-[#93aaa8] underline-offset-4 transition-colors hover:text-[#F5CA65] hover:underline">
               Quên mật khẩu?
             </Link>
           </div>
@@ -112,14 +109,14 @@ export function LoginPage({ portal = 'default' }: LoginPageProps) {
               onChange={(event) => setPassword(event.target.value)}
               aria-invalid={fieldErrors.password ? true : undefined}
               aria-describedby={fieldErrors.password ? 'password-error' : undefined}
-              className={`${DARK_INPUT_CLASS} pr-12`}
+              className={`${INPUT_CLASS} pr-12`}
             />
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
               aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               aria-pressed={showPassword}
-              className="absolute right-1.5 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-stone-400 transition-colors hover:text-cream"
+              className="absolute right-1.5 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-[#93aaa8] transition-colors hover:text-cream"
             >
               {showPassword ? <EyeOff className="size-[18px]" aria-hidden="true" /> : <Eye className="size-[18px]" aria-hidden="true" />}
             </button>

@@ -52,7 +52,7 @@ export function MyLearningPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <PageHeader
           title="Khóa học của tôi"
-          subtitle="Chương trình đào tạo và bồi dưỡng kỹ năng số bạn đang tham gia."
+          subtitle="Chương trình đào tạo và bồi dưỡng kỹ năng số theo Khung chuẩn năng lực số được giao cho bạn."
         />
         <Link
           to="/enterprise/me/achievements"

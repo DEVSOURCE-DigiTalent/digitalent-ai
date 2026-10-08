@@ -125,7 +125,21 @@ export function AssessmentIntroPage() {
           <ul className="space-y-2.5">
             <li className="flex items-start gap-2.5">
               <CheckCircle2 className="size-4 text-emerald-600 shrink-0 mt-0.5" />
-              <span><strong>Tự động lưu đáp án:</strong> lựa chọn của bạn được lưu trên hệ thống; mất kết nối hay đổi thiết bị vẫn làm tiếp đúng lượt.</span>
+              <span>
+                <strong>Tự động lưu đáp án:</strong> lựa chọn của bạn được lưu trên hệ thống; mất kết nối hay đổi thiết bị vẫn làm tiếp đúng lượt.
+              </span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <CheckCircle2 className="size-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span>
+                <strong>Cập nhật hồ sơ năng lực:</strong> Khi đạt điểm chuẩn, bậc năng lực của bạn theo Khung chuẩn năng lực số sẽ được hệ thống cập nhật chính thức.
+              </span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <CheckCircle2 className="size-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span>
+                <strong>Cấp chứng nhận nội bộ:</strong> Bạn sẽ nhận được chứng chỉ số có mã xác thực lưu vào Sổ chứng nhận.
+              </span>
             </li>
             <li className="flex items-start gap-2.5">
               <ShieldAlert className="size-4 text-amber-600 shrink-0 mt-0.5" />

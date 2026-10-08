@@ -13,6 +13,7 @@ using Xunit;
 namespace DigiTalent.Tests.Organization;
 
 [Collection("PostgresIntegration")]
+[Trait("Category", "Integration")]
 public class EmployeeTests
 {
     private static async Task<DigiTalent.Infrastructure.Persistence.AppDbContext> CreateDatabaseAsync()

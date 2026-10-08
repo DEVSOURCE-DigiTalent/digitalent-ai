@@ -36,12 +36,12 @@
 
   /* ── Shades that keep text readable over footage ── */
   .landing .lp-hero-shade {
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.38) 55%, rgba(0, 0, 0, 0.78));
+    background: linear-gradient(to bottom, rgba(12, 14, 18, 0.35), rgba(12, 14, 18, 0) 30%, rgba(12, 14, 18, 0.45) 55%, rgba(12, 14, 18, 0.88));
   }
   .landing .lp-finale-scrim {
     background:
-      linear-gradient(to top, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0) 45%),
-      radial-gradient(ellipse 75% 65% at 50% 55%, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0) 78%);
+      linear-gradient(to top, rgba(12, 14, 18, 0.6), rgba(12, 14, 18, 0) 45%),
+      radial-gradient(ellipse 75% 65% at 50% 55%, rgba(12, 14, 18, 0.65), rgba(12, 14, 18, 0) 78%);
   }
 
   /* ── Liquid glass ── */
@@ -70,14 +70,15 @@
     pointer-events: none;
   }
   .landing .lp-dock {
-    background: rgba(20, 20, 18, 0.6);
+    background: rgba(17, 21, 30, 0.75);
     -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
+    border: 1px solid rgba(245, 202, 101, 0.18);
   }
 
   /* ── Hanging nav: concave fillets join the pill to the frame's top edge ── */
   .landing .lp-pill {
-    background: #000;
+    background: #0C0E12;
     border-radius: 0 0 16px 16px;
   }
   .landing .lp-pill::before,
@@ -91,18 +92,18 @@
   }
   .landing .lp-pill::before {
     right: 100%;
-    background: radial-gradient(circle at 0 100%, transparent 15.5px, #000 16px);
+    background: radial-gradient(circle at 0 100%, transparent 15.5px, #0C0E12 16px);
   }
   .landing .lp-pill::after {
     left: 100%;
-    background: radial-gradient(circle at 100% 100%, transparent 15.5px, #000 16px);
+    background: radial-gradient(circle at 100% 100%, transparent 15.5px, #0C0E12 16px);
   }
   @media (min-width: 768px) {
     .landing .lp-pill { border-radius: 0 0 24px 24px; }
     .landing .lp-pill::before,
     .landing .lp-pill::after { width: 24px; height: 24px; }
-    .landing .lp-pill::before { background: radial-gradient(circle at 0 100%, transparent 23.5px, #000 24px); }
-    .landing .lp-pill::after { background: radial-gradient(circle at 100% 100%, transparent 23.5px, #000 24px); }
+    .landing .lp-pill::before { background: radial-gradient(circle at 0 100%, transparent 23.5px, #0C0E12 24px); }
+    .landing .lp-pill::after { background: radial-gradient(circle at 100% 100%, transparent 23.5px, #0C0E12 24px); }
   }
 
   /* ── Wordmark: "DigiTalent" fills the hero width ── */
@@ -209,3 +210,466 @@
  */
 .landing .text-stone-400 { color: rgba(225, 224, 204, 0.78); }
 .landing .text-stone-500 { color: rgba(225, 224, 204, 0.58); }
+
+/*
+ * Individual landing: Digital Dawn palette.
+ * Replaces pure black (#000000) with deep cyan-black (#07151B), uses mint (#79E0C2)
+ * for primary CTAs and progress, with subtle morning spark (#FFB978) highlights.
+ * Enterprise landing remains 100% untouched.
+ */
+.landing[data-variant='individual'] {
+  --ind-bg: #07151b;
+  --ind-panel: #0b2027;
+  --ind-card: #102c34;
+  --ind-raised: #183943;
+  --ind-line-subtle: #2b4d56;
+  --ind-line-strong: #607e84;
+  --ind-fg: #f2f7f5;
+  --ind-fg-muted: #c2d3d1;
+  --ind-fg-subtle: #93aaa8;
+  --ind-accent: #79e0c2;
+  --ind-on-accent: #062019;
+  --ind-gold: #f5ca65;
+  --ind-amber: #e5a93c;
+  --ind-amber-end: #d4982f;
+  --ind-spark: #f5ca65;
+  --ind-info: #77bef2;
+  --ind-success: #76d39a;
+  --ind-warning: #f1c66d;
+  --ind-danger: #ff9188;
+  background-color: var(--ind-bg);
+  color: var(--ind-fg);
+}
+
+.landing[data-variant='individual'] .text-cream {
+  color: var(--ind-fg);
+}
+.landing[data-variant='individual'] .text-cream-soft {
+  color: var(--ind-fg-muted);
+}
+.landing[data-variant='individual'] .text-stone-400 {
+  color: var(--ind-fg-muted);
+}
+.landing[data-variant='individual'] .text-stone-500 {
+  color: var(--ind-fg-subtle);
+}
+
+.landing[data-variant='individual'] .bg-black {
+  background-color: var(--ind-bg);
+}
+.landing[data-variant='individual'] .bg-landing-panel {
+  background: linear-gradient(180deg, rgba(11, 32, 39, 0.94) 0%, rgba(7, 21, 27, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+.landing[data-variant='individual'] .bg-landing-card {
+  background: linear-gradient(180deg, rgba(16, 44, 52, 0.92) 0%, rgba(11, 32, 39, 0.96) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.landing[data-variant='individual'] .border-cream\/10,
+.landing[data-variant='individual'] .border-cream\/15,
+.landing[data-variant='individual'] .border-cream\/20,
+.landing[data-variant='individual'] .border-cream\/25 {
+  border-color: var(--ind-line-subtle);
+}
+.landing[data-variant='individual'] .ring-cream\/10,
+.landing[data-variant='individual'] .ring-cream\/15,
+.landing[data-variant='individual'] .ring-cream\/20 {
+  --tw-ring-color: var(--ind-line-subtle);
+}
+.landing[data-variant='individual'] .ring-cream\/50 {
+  --tw-ring-color: rgba(245, 202, 101, 0.5);
+  box-shadow: 0 10px 30px -5px rgba(245, 202, 101, 0.1);
+}
+
+/* Primary CTA and button styling for Individual: Royal Amber Gold Gradient */
+.landing[data-variant='individual'] .bg-cream-soft {
+  background: linear-gradient(135deg, #F5CA65 0%, #D4982F 100%);
+  color: #0C0E12;
+  font-weight: 600;
+  box-shadow: 0 4px 20px -2px rgba(245, 202, 101, 0.28);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing[data-variant='individual'] .bg-cream-soft:hover {
+  filter: brightness(1.08);
+  transform: scale(1.02);
+  box-shadow: 0 6px 24px -2px rgba(245, 202, 101, 0.45);
+}
+.landing[data-variant='individual'] .bg-cream-soft:active {
+  transform: scale(0.98);
+}
+.landing[data-variant='individual'] .bg-cream-soft .bg-black {
+  background-color: #0C0E12;
+  color: #F5CA65;
+}
+
+/* Finale CTA button for Individual (isolated class, does NOT affect lp-dock) */
+.landing[data-variant='individual'] .lp-finale-btn {
+  background: rgba(245, 202, 101, 0.12);
+  border: 1.5px solid rgba(245, 202, 101, 0.55);
+  color: #F5CA65;
+  font-weight: 600;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 0 35px -5px rgba(245, 202, 101, 0.28), inset 0 0 20px rgba(245, 202, 101, 0.08);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing[data-variant='individual'] .lp-finale-btn:hover {
+  background: linear-gradient(135deg, #F5CA65 0%, #D4982F 100%);
+  color: #0C0E12;
+  font-weight: 600;
+  border-color: #F5CA65;
+  box-shadow: 0 0 45px 8px rgba(245, 202, 101, 0.45);
+  transform: scale(1.03);
+}
+
+/* Card interactive hover effects */
+.landing[data-variant='individual'] .lp-card,
+.landing[data-variant='individual'] .bg-landing-card {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing[data-variant='individual'] .lp-card:hover,
+.landing[data-variant='individual'] .bg-landing-card:hover {
+  transform: translateY(-2px); /* a small lift, so a card never touches the row above */
+  border-color: rgba(245, 202, 101, 0.32);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.55), 0 0 24px -4px rgba(245, 202, 101, 0.12);
+}
+
+/* Deep cyan-black scrims with warm golden morning undertones */
+.landing[data-variant='individual'] .lp-hero-shade {
+  background: linear-gradient(to bottom, rgba(7, 21, 27, 0.45), rgba(7, 21, 27, 0) 30%, rgba(7, 21, 27, 0.45) 55%, rgba(7, 21, 27, 0.88));
+}
+.landing[data-variant='individual'] .lp-finale-scrim {
+  background:
+    linear-gradient(to top, rgba(7, 21, 27, 0.65), rgba(7, 21, 27, 0) 45%),
+    radial-gradient(ellipse 75% 65% at 50% 55%, rgba(7, 21, 27, 0.65), rgba(7, 21, 27, 0) 78%);
+}
+
+.landing[data-variant='individual'] .lp-pill {
+  background: var(--ind-bg);
+}
+.landing[data-variant='individual'] .lp-pill::before {
+  background: radial-gradient(circle at 0 100%, transparent 15.5px, var(--ind-bg) 16px);
+}
+.landing[data-variant='individual'] .lp-pill::after {
+  background: radial-gradient(circle at 100% 100%, transparent 15.5px, var(--ind-bg) 16px);
+}
+@media (min-width: 768px) {
+  .landing[data-variant='individual'] .lp-pill::before {
+    background: radial-gradient(circle at 0 100%, transparent 23.5px, var(--ind-bg) 24px);
+  }
+  .landing[data-variant='individual'] .lp-pill::after {
+    background: radial-gradient(circle at 100% 100%, transparent 23.5px, var(--ind-bg) 24px);
+  }
+}
+
+/* Header & Dock Nav for Individual: Sleek dark glass, never turning yellow on hover */
+.landing[data-variant='individual'] .lp-dock {
+  background: rgba(7, 21, 27, 0.88) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6) !important;
+  color: var(--ind-fg) !important;
+}
+.landing[data-variant='individual'] .lp-dock:hover {
+  background: rgba(7, 21, 27, 0.96) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+/* Nav link underline after-element: amber→teal gradient sliding from left */
+.landing[data-variant='individual'] .lp-dock a::after,
+.landing[data-variant='individual'] .lp-pill a::after {
+  background-image: linear-gradient(to right, #F5CA65, #79E0C2);
+}
+
+
+/* Warm dawn gold aura in hero */
+.landing[data-variant='individual'] header#trang-chu .bg-\[\#0b0906\] {
+  background-color: var(--ind-panel);
+}
+.landing[data-variant='individual'] header#trang-chu {
+  position: relative;
+}
+.landing[data-variant='individual'] header#trang-chu::after {
+  content: "";
+  position: absolute;
+  top: 10%;
+  right: 8%;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 202, 101, 0.14) 0%, rgba(229, 169, 60, 0.05) 45%, transparent 70%);
+  pointer-events: none;
+  filter: blur(60px);
+}
+
+/* ── Section-specific Atmospheric Lighting (DigiTalent AI Dawn Theme) ── */
+/* Section label chips (both pages): see the shared type scale below. */
+
+/* 1. Career Explorer: subtle mint-cyan top aura */
+.landing[data-variant='individual'] section#vi-tri {
+  background: radial-gradient(ellipse 75% 45% at 50% 0%, rgba(121, 224, 194, 0.065), transparent 75%);
+}
+
+/* 2. Process / How it works: subtle warm amber center aura */
+.landing[data-variant='individual'] section#cach-hoat-dong {
+  background: radial-gradient(ellipse 70% 50% at 50% 45%, rgba(245, 202, 101, 0.055), transparent 75%);
+}
+.landing[data-variant='individual'] #cach-hoat-dong li span.font-landing-serif {
+  display: inline-block;
+  transition: color 0.3s ease, text-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing[data-variant='individual'] #cach-hoat-dong li:hover span.font-landing-serif {
+  text-shadow: 0 0 20px rgba(121, 224, 194, 0.35);
+}
+
+/* 3. Framework & Features: Dual-tone aura (cyan left, amber right) */
+.landing[data-variant='individual'] section#khung,
+.landing[data-variant='individual'] section#tinh-nang {
+  background:
+    radial-gradient(circle at 12% 35%, rgba(121, 224, 194, 0.06) 0%, transparent 55%),
+    radial-gradient(circle at 88% 65%, rgba(245, 202, 101, 0.05) 0%, transparent 55%);
+}
+
+/* 4. Skill Path: Cyan-sky depth with subtle divider */
+.landing[data-variant='individual'] section#lo-trinh {
+  background: radial-gradient(ellipse 80% 50% at 50% 25%, rgba(119, 190, 242, 0.055), transparent 75%);
+}
+
+/* 5. Learning Preview: Ambient study lighting */
+.landing[data-variant='individual'] section#trai-nghiem-hoc {
+  background: radial-gradient(ellipse 70% 50% at 50% 50%, rgba(121, 224, 194, 0.05), transparent 70%);
+}
+
+/* 6. Progress / History: Timeline dot pulse */
+.landing[data-variant='individual'] section#tien-bo {
+  background: radial-gradient(ellipse 75% 50% at 50% 40%, rgba(245, 202, 101, 0.05), transparent 75%);
+}
+@keyframes ind-dot-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(245, 202, 101, 0.6);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(245, 202, 101, 0.95), 0 0 24px rgba(121, 224, 194, 0.45);
+    transform: scale(1.3);
+  }
+}
+.landing[data-variant='individual'] #tien-bo ol li:hover i.rounded-full {
+  animation: ind-dot-pulse 1.5s ease-in-out infinite;
+}
+
+/* 7. Pricing: Golden dawn aura centering on the recommended tier */
+.landing[data-variant='individual'] section#bang-gia {
+  background: radial-gradient(ellipse 80% 60% at 50% 35%, rgba(245, 202, 101, 0.075), transparent 75%);
+}
+@keyframes ind-pulse-glow {
+  0%, 100% {
+    box-shadow: 0 12px 36px rgba(245, 202, 101, 0.12), 0 0 0 1px rgba(245, 202, 101, 0.35);
+  }
+  50% {
+    box-shadow: 0 18px 48px rgba(245, 202, 101, 0.28), 0 0 0 1px rgba(245, 202, 101, 0.65);
+  }
+}
+.landing[data-variant='individual'] #bang-gia .ring-amber-400\/50 {
+  animation: ind-pulse-glow 4s ease-in-out infinite;
+}
+
+/* 8. FAQ & Finale */
+.landing[data-variant='individual'] section#cau-hoi details {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing[data-variant='individual'] section#cau-hoi details:hover {
+  transform: translateY(-2px);
+  border-color: rgba(245, 202, 101, 0.35);
+  box-shadow: 0 8px 24px -5px rgba(0, 0, 0, 0.4);
+}
+
+/* ══ Shared type scale of the sections (landing-type.ts) ══ */
+
+/* Section label: a chip above every section title. */
+.landing .lp-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.9rem;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing[data-variant='enterprise'] .lp-label {
+  background: rgba(245, 202, 101, 0.07);
+  border: 1px solid rgba(245, 202, 101, 0.28);
+  color: #F5CA65;
+}
+.landing[data-variant='enterprise'] section:hover .lp-label {
+  border-color: rgba(245, 202, 101, 0.5);
+  box-shadow: 0 0 16px rgba(245, 202, 101, 0.16);
+}
+.landing[data-variant='individual'] .lp-label {
+  background: rgba(16, 44, 52, 0.7);
+  border: 1px solid rgba(121, 224, 194, 0.25);
+  color: #79E0C2;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.landing[data-variant='individual'] section:hover .lp-label {
+  border-color: rgba(245, 202, 101, 0.45);
+  color: #F5CA65;
+  box-shadow: 0 0 16px rgba(245, 202, 101, 0.18);
+  transform: translateY(-1px);
+}
+
+/* Emphasised words in titles: one soft tint of the product colour, no gradient, so titles stay easy on the eye. */
+.landing[data-variant='enterprise'] .lp-em { color: #E8C67C; }
+.landing[data-variant='individual'] .lp-em { color: #9DDCC8; }
+
+/* Kickers inside cards and previews. */
+.landing[data-variant='enterprise'] .lp-kicker { color: rgba(245, 202, 101, 0.75); }
+.landing[data-variant='individual'] .lp-kicker { color: rgba(121, 224, 194, 0.85); }
+
+/* Big figures (framework numbers). */
+.landing .lp-num {
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.landing[data-variant='enterprise'] .lp-num {
+  background-image: linear-gradient(180deg, #FFF6E2 0%, #F5CA65 55%, #D4982F 100%);
+  filter: drop-shadow(0 2px 16px rgba(245, 202, 101, 0.28));
+}
+.landing[data-variant='individual'] .lp-num {
+  background-image: linear-gradient(180deg, #FFF6E2 0%, #F5CA65 55%, #D4982F 100%);
+  filter: drop-shadow(0 2px 16px rgba(245, 202, 101, 0.28));
+}
+
+/* Primary CTA and button styling for Enterprise: Royal Amber Gold */
+.landing[data-variant='enterprise'] .bg-cream-soft {
+  background: linear-gradient(135deg, #F5CA65 0%, #D4982F 100%);
+  color: #0C0E12;
+  font-weight: 600;
+  box-shadow: 0 4px 20px -2px rgba(245, 202, 101, 0.28);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing[data-variant='enterprise'] .bg-cream-soft:hover {
+  filter: brightness(1.08);
+  transform: scale(1.02);
+  box-shadow: 0 6px 24px -2px rgba(245, 202, 101, 0.45);
+}
+.landing[data-variant='enterprise'] .bg-cream-soft:active {
+  transform: scale(0.98);
+}
+.landing[data-variant='enterprise'] .bg-cream-soft .bg-black {
+  background-color: #0C0E12;
+  color: #F5CA65;
+}
+
+/* Finale CTA button for Enterprise */
+.landing[data-variant='enterprise'] .lp-finale-btn {
+  background: rgba(245, 202, 101, 0.12);
+  border: 1.5px solid rgba(245, 202, 101, 0.55);
+  color: #F5CA65;
+  font-weight: 600;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 0 35px -5px rgba(245, 202, 101, 0.28), inset 0 0 20px rgba(245, 202, 101, 0.08);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing[data-variant='enterprise'] .lp-finale-btn:hover {
+  background: linear-gradient(135deg, #F5CA65 0%, #D4982F 100%);
+  color: #0C0E12;
+  font-weight: 600;
+  border-color: #F5CA65;
+  box-shadow: 0 0 45px 8px rgba(245, 202, 101, 0.45);
+  transform: scale(1.03);
+}
+
+/* Featured Plan Pulse Glow for Enterprise */
+.landing[data-variant='enterprise'] #bang-gia [data-featured] {
+  animation: ind-pulse-glow 4s ease-in-out infinite;
+}
+
+/* ══ Business page: ink black with gold light and a cool steel-blue counterpoint ══ */
+
+/* In the components layer so a card's own border or ring utilities (a highlighted plan) still win. */
+@layer components {
+  /* Cards get a hairline so the gold hover has something to light up. */
+.landing[data-variant='enterprise'] .bg-landing-card,
+.landing[data-variant='enterprise'] .bg-landing-panel {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.landing[data-variant='enterprise'] .lp-card,
+.landing[data-variant='enterprise'] .bg-landing-card {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing[data-variant='enterprise'] .lp-card:hover,
+.landing[data-variant='enterprise'] .bg-landing-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(245, 202, 101, 0.3);
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.6), 0 0 22px -6px rgba(245, 202, 101, 0.16);
+}
+}
+
+/* Section auras: warm gold and cool steel blue alternate down the page so it never reads as one flat black. */
+.landing[data-variant='enterprise'] section#van-de {
+  background: radial-gradient(ellipse 70% 55% at 50% 50%, rgba(245, 202, 101, 0.06), transparent 75%);
+}
+.landing[data-variant='enterprise'] section#cach-hoat-dong {
+  background: radial-gradient(ellipse 80% 40% at 50% 10%, rgba(119, 190, 242, 0.06), transparent 75%);
+}
+.landing[data-variant='enterprise'] section#khung > div {
+  background:
+    radial-gradient(circle at 15% 20%, rgba(245, 202, 101, 0.09) 0%, transparent 50%),
+    radial-gradient(circle at 85% 85%, rgba(119, 190, 242, 0.07) 0%, transparent 50%),
+    #11151E;
+}
+.landing[data-variant='enterprise'] section#khoang-trong {
+  background: radial-gradient(ellipse 75% 50% at 50% 30%, rgba(119, 190, 242, 0.055), transparent 75%);
+}
+.landing[data-variant='enterprise'] section#minh-chung {
+  background: radial-gradient(ellipse 75% 50% at 50% 40%, rgba(245, 202, 101, 0.055), transparent 75%);
+}
+.landing[data-variant='enterprise'] section#vai-tro {
+  background:
+    radial-gradient(circle at 10% 30%, rgba(245, 202, 101, 0.06) 0%, transparent 55%),
+    radial-gradient(circle at 90% 70%, rgba(121, 224, 194, 0.045) 0%, transparent 55%);
+}
+.landing[data-variant='enterprise'] section#trien-khai {
+  background: radial-gradient(ellipse 80% 45% at 50% 20%, rgba(119, 190, 242, 0.05), transparent 75%);
+}
+.landing[data-variant='enterprise'] section#bang-gia {
+  background: radial-gradient(ellipse 80% 60% at 50% 35%, rgba(245, 202, 101, 0.075), transparent 75%);
+}
+.landing[data-variant='enterprise'] section#cau-hoi details {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing[data-variant='enterprise'] section#cau-hoi details:hover {
+  transform: translateY(-2px);
+  border-color: rgba(245, 202, 101, 0.35);
+  box-shadow: 0 8px 24px -5px rgba(0, 0, 0, 0.5);
+}
+.landing[data-variant='enterprise'] section#cau-hoi details[open] summary {
+  color: #F5CA65;
+}
+
+/* Warm aura behind the hero headline, like the individual page's dawn. */
+.landing[data-variant='enterprise'] header#trang-chu {
+  position: relative;
+}
+.landing[data-variant='enterprise'] header#trang-chu::after {
+  content: "";
+  position: absolute;
+  top: 18%;
+  left: 6%;
+  width: 460px;
+  height: 460px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 202, 101, 0.12) 0%, rgba(229, 169, 60, 0.04) 45%, transparent 70%);
+  pointer-events: none;
+  filter: blur(60px);
+}

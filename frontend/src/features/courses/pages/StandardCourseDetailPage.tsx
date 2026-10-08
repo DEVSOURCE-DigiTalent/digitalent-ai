@@ -241,7 +241,9 @@ export function StandardCourseDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
               <h2 className="text-base font-semibold text-slate-900">Mục tiêu và chuẩn đầu ra</h2>
-              <p className="text-sm text-slate-600 leading-relaxed">{course.purpose || course.description || 'Chưa có mô tả khóa học.'}</p>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                {course.purpose || course.description || 'Khóa học được thiết kế bám sát Khung chuẩn năng lực số và trang bị kỹ năng số thực tiễn.'}
+              </p>
               
               <div className="rounded-lg bg-primary-50/60 border border-primary-100 p-4">
                 <div className="flex items-start gap-3">
@@ -317,7 +319,7 @@ export function StandardCourseDetailPage() {
           <div>
             <h2 className="text-base font-semibold text-slate-900">Bài kiểm tra & Tiêu chuẩn đạt</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Học viên hoàn thành bài đánh giá cuối khóa để được ghi nhận vào hồ sơ năng lực Thông tư 02
+              Học viên hoàn thành bài đánh giá cuối khóa để được ghi nhận vào hồ sơ năng lực số
             </p>
           </div>
 

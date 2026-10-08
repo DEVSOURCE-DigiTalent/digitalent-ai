@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  PLANS, clampSeats, formatVnd, getPlan, isPurchasableOnline, plansFor, priceFor,
+  IND_FREE_KEEPS, IND_FREE_LOCKED, PLANS, clampSeats, formatVnd, getPlan, isPurchasableOnline, plansFor, priceFor,
 } from '../plans';
 import { parsePlanSelection, planSelectionToQuery } from '../plan-query';
 import { ENTITLEMENTS } from '../entitlements';
@@ -9,9 +9,20 @@ const pro = getPlan('ENT_PRO')!;
 const starter = getPlan('ENT_STARTER')!;
 
 describe('plan catalog', () => {
-  it('sells every plan for money: Individual and Enterprise are both paid products', () => {
-    expect(getPlan('IND_FREE')).toBeUndefined();
-    for (const plan of PLANS) expect(plan.monthlyPrice === null || plan.monthlyPrice > 0).toBe(true);
+  it('sells every plan for money, except the Free plan an expired trial falls back to', () => {
+    for (const plan of PLANS.filter((candidate) => !candidate.free)) {
+      expect(plan.monthlyPrice === null || plan.monthlyPrice > 0).toBe(true);
+    }
+  });
+
+  it('keeps the Free plan out of every pricing list and out of online checkout', () => {
+    const free = getPlan('IND_FREE')!;
+    expect(free.audience).toBe('individual');
+    expect(free.monthlyPrice).toBe(0);
+    expect(isPurchasableOnline(free)).toBe(false);
+    expect(plansFor('individual').map((p) => p.code)).not.toContain('IND_FREE');
+    expect(free.highlights).toEqual(IND_FREE_KEEPS);
+    expect(IND_FREE_LOCKED.length).toBeGreaterThan(0);
   });
 
   it('has unique codes and the plan codes the seeded demo accounts use', () => {

@@ -44,6 +44,8 @@ export const enterpriseRoutes: RouteObject[] = [
     element: <EnterpriseLayout />,
     children: [
       { index: true, element: <EnterpriseHome /> },
+      // Backwards-compatible link: trial accounts now use the normal role dashboard and shell.
+      { path: '/enterprise/trial', element: <EnterpriseHome /> },
       { path: 'overview', element: <Navigate to="/enterprise/dashboard" replace /> },
       ...buildRoutes(
         ENTERPRISE_SCREENS.filter((s) => !FOCUS_SCREEN_IDS.has(s.id)),

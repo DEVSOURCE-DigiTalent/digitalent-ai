@@ -14,7 +14,7 @@ interface SidebarItemProps {
 }
 
 export function SidebarItem({ icon, label, isActive, isLocked, isRail, href, onClick }: SidebarItemProps) {
-  const lockTooltip = isLocked ? `${label} (Có trong gói Pro)` : undefined;
+  const lockTooltip = isLocked ? `${label} (Cần nâng cấp gói để mở)` : undefined;
 
   const innerContent = (
     <div

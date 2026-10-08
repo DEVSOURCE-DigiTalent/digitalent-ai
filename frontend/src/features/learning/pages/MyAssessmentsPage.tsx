@@ -68,7 +68,7 @@ export function MyAssessmentsPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <PageHeader
           title="Danh sách bài đánh giá năng lực"
-          subtitle="Bài kiểm tra và bài đánh giá cuối khóa của các khóa học bạn đang tham gia."
+          subtitle="Các bài kiểm tra năng lực và bài đánh giá cuối khóa theo Khung chuẩn năng lực số trong những khóa học bạn đang tham gia."
         />
         <Link
           to="/enterprise/me/assessments/history"

@@ -8,11 +8,12 @@ import { WORKSPACES } from '../../lib/roles';
 import { useCurrentUser } from '../../hooks/use-current-user';
 import { sidebarFor } from '../../lib/sidebars';
 import { useEnterpriseTheme } from '../../hooks/use-enterprise-theme';
+import { isSubscriptionUsable } from '../../lib/personal-access';
 
 export function EnterpriseLayout() {
   const user = useCurrentUser((s) => s.user);
   const subscriptionStatus = useCurrentUser((s) => s.getSubscriptionStatus)();
-  const isUnpaid = subscriptionStatus && subscriptionStatus !== 'active' ? true : undefined;
+  const isUnpaid = subscriptionStatus && !isSubscriptionUsable(subscriptionStatus) ? true : undefined;
   
   useEnterpriseTheme(); // Mount theme
 

@@ -102,6 +102,46 @@ describe('resolvePlanChoice (P7, §4.3, T16, T17, T18)', () => {
   });
 });
 
+describe('resolvePlanChoice for individual trial and Free learners (BR-17)', () => {
+  const plus: PlanSelection = { planCode: 'IND_PLUS', seats: 1, cycle: 'month' };
+  const learner = (subscription: SessionUser['subscription']): SessionUser => ({
+    id: 'u9', email: 'a@b.c', fullName: 'A', roles: [], permissions: [], workspace: 'personal', emailVerified: true, subscription,
+  });
+
+  it('opens a purchase draft for a learner on a trial, so the plan page is not a dead end', () => {
+    const trial = learner({
+      planCode: 'IND_PLUS', planName: 'Cá nhân Plus', status: 'trialing', entitlements: [],
+      trialStartedAt: '2026-10-06T00:00:00.000Z', trialEndsAt: '2026-10-13T00:00:00.000Z',
+    });
+
+    expect(resolvePlanChoice(trial, plus, 'individual')).toEqual({ type: 'checkout', draftAction: 'create', path: '/checkout' });
+  });
+
+  it('opens a purchase draft for a learner on the Free plan', () => {
+    const free = learner({ planCode: 'IND_FREE', planName: 'Miễn phí', status: 'active', entitlements: [] });
+
+    expect(resolvePlanChoice(free, plus, 'individual').type).toBe('checkout');
+  });
+
+  it('still tells a paying learner which plan they use', () => {
+    const paid = learner({ planCode: 'IND_PLUS', planName: 'Cá nhân Plus', status: 'active', entitlements: [] });
+
+    const result = resolvePlanChoice(paid, plus, 'individual');
+
+    expect(result.type).toBe('subscription');
+    if (result.type === 'subscription') expect(result.message).toBe('Bạn đang dùng gói Cá nhân Plus.');
+  });
+
+  it('never lets an enterprise account upgrade through the individual pricing page', () => {
+    const owner: SessionUser = {
+      id: 'u10', email: 'o@b.c', fullName: 'O', roles: ['OWNER'], permissions: [], workspace: 'enterprise', emailVerified: true,
+      subscription: { planCode: 'IND_FREE', planName: 'Miễn phí', status: 'active', entitlements: [] },
+    };
+
+    expect(resolvePlanChoice(owner, plus, 'individual').type).toBe('mismatch');
+  });
+});
+
 describe('resolveNextStep (P11, §4.7, T12, T14, T19, T20)', () => {
   it('directs unpaid accounts to checkout', () => {
     const user: SessionUser = {

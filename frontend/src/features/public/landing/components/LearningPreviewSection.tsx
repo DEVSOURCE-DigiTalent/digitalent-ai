@@ -4,6 +4,7 @@ import { SECTION_IDS, type LandingSectionConfig } from '../landing-content';
 import { useLandingContent } from '../landing-content-context';
 import { BackgroundStage } from './BackgroundStage';
 import { SectionHeader } from './SectionHeader';
+import { LP_KICKER } from '../landing-type';
 
 type LearningPreviewSection = Extract<LandingSectionConfig, { kind: 'learning-preview' }>;
 
@@ -89,13 +90,13 @@ export function LearningPreviewSection({ section }: { section: LearningPreviewSe
                     onClick={() => setActiveModule(index)}
                     aria-current={index === activeModule ? 'step' : undefined}
                     className={cn(
-                      'grid w-full grid-cols-[1.5rem_minmax(0,1fr)] items-center gap-x-3 rounded-xl px-3 py-2.5 text-left text-sm leading-[1.4] transition-colors',
+                      'grid w-full grid-cols-[1.5rem_minmax(0,1fr)] items-center gap-x-3 rounded-xl px-3 py-2.5 text-left text-sm leading-[1.4] transition-all duration-200',
                       index === activeModule
-                        ? 'bg-cream/15 font-medium text-cream shadow-xs'
-                        : 'text-cream/70 hover:bg-cream/10 hover:text-cream',
+                        ? 'bg-amber-400/15 font-medium text-white shadow-xs border-l-2 border-[#F5CA65] pl-2.5'
+                        : 'text-cream/70 hover:bg-white/10 hover:text-white',
                     )}
                   >
-                    <span className="tabular-nums text-cream/50">{index + 1}</span>
+                    <span className={cn('tabular-nums', index === activeModule ? 'text-[#F5CA65] font-semibold' : 'text-cream/50')}>{index + 1}</span>
                     <span>{title}</span>
                   </button>
                 </li>
@@ -105,7 +106,7 @@ export function LearningPreviewSection({ section }: { section: LearningPreviewSe
         </aside>
 
         <div key={activeModule} className="grid gap-6 rounded-[20px] bg-landing-card p-6 md:p-8">
-          <p className="text-xs uppercase tracking-[0.14em] text-stone-500">
+          <p className={LP_KICKER}>
             Module {activeModule + 1} · {sample.modules[activeModule]}
           </p>
 
@@ -117,7 +118,7 @@ export function LearningPreviewSection({ section }: { section: LearningPreviewSe
               <span className="block text-cream/90">{currentLesson.quiz.question}</span>
               <ul className="mt-3 grid gap-2">
                 {currentLesson.quiz.options.map((option) => (
-                  <li key={option} className="grid grid-cols-[1rem_minmax(0,1fr)] items-start gap-2.5 text-sm leading-[1.4]">
+                  <li key={option} className="grid grid-cols-[1rem_minmax(0,1fr)] items-start gap-2.5 text-sm leading-[1.4] rounded-lg p-1.5 -mx-1.5 transition-colors hover:bg-white/5 hover:text-white">
                     <i aria-hidden="true" className="mt-1 block size-3 rounded-full border border-cream/40" />
                     {option}
                   </li>
@@ -130,7 +131,7 @@ export function LearningPreviewSection({ section }: { section: LearningPreviewSe
             <Block title="Tiến độ">{currentLesson.progress}</Block>
             <div className="mt-4 flex gap-1" aria-hidden="true">
               {sample.modules.map((title, index) => (
-                <i key={title} className={cn('block h-1.5 flex-1 rounded-full', index <= activeModule ? 'bg-cream' : 'bg-cream/12')} />
+                <i key={title} className={cn('block h-1.5 flex-1 rounded-full transition-all duration-300', index <= activeModule ? 'bg-gradient-to-r from-[#79E0C2] to-[#F5CA65]' : 'bg-cream/12')} />
               ))}
             </div>
           </div>
@@ -143,7 +144,7 @@ export function LearningPreviewSection({ section }: { section: LearningPreviewSe
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="text-xs font-normal uppercase tracking-[0.12em] text-cream-soft">{title}</h3>
+      <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-[#79E0C2]/90">{title}</h3>
       <div className="mt-2 text-sm leading-[1.6] text-stone-400">{children}</div>
     </div>
   );

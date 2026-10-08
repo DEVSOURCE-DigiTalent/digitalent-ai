@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import { TIER_LABELS, type WorkflowPreview } from '../landing-content';
 import { TT02_DOMAINS, getReferencePosition, summarizeRequirements } from '@/lib/reference-positions';
 import { RadarChart } from './RadarChart';
+import { LP_KICKER } from '../landing-type';
 
 /** Small product mock-ups that go with each step of the competency loop. Sample data, decorative. */
 export function WorkflowPreviewView({ kind }: { kind: WorkflowPreview }) {
@@ -153,7 +154,7 @@ function AssignmentPreview() {
 function TaskPreview() {
   return (
     <div className={cn(ROW, 'grid-cols-1 gap-2')}>
-      <span className="text-[11px] uppercase tracking-[0.12em] text-stone-500">Nhiệm vụ · năng lực 4.2</span>
+      <span className={LP_KICKER}>Nhiệm vụ · năng lực 4.2</span>
       <span>Lập quy trình xử lý dữ liệu khách hàng</span>
       <span className="flex flex-wrap gap-2">
         <Chip>Đã nộp 1 minh chứng</Chip>

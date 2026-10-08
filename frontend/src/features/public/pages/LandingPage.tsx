@@ -14,6 +14,7 @@ import { SectionLink } from '../landing/components/LandingLinks';
 import { LandingMotionProvider } from '../landing/components/LandingMotionProvider';
 import { StickyDock } from '../landing/components/LandingNav';
 import { LandingAudioControl } from '../landing/components/LandingAudioControl';
+import { cn } from '@/lib/utils';
 
 interface LandingPageProps {
   /** Copy of the product shown; the enterprise one unless told otherwise. */
@@ -26,7 +27,8 @@ interface LandingPageProps {
  * remembers the choice, so the portal selector at "/" is asked only once.
  */
 export function LandingPage({ content = ENTERPRISE_CONTENT }: LandingPageProps) {
-  usePageBackground('#000');
+  const isIndividual = content.variant === 'individual';
+  usePageBackground(isIndividual ? '#07151b' : '#0C0E12');
 
   useEffect(() => {
     rememberPortalChoice(content.variant);
@@ -53,19 +55,28 @@ export function IndividualLandingPage() {
 
 function LandingShell() {
   const { reduced } = useLandingMotion();
-  const { sections } = useLandingContent();
+  const content = useLandingContent();
   const [heroMetaRef, scrolledPastHero] = useScrolledPast<HTMLDivElement>();
+  const isIndividual = content.variant === 'individual';
 
   return (
     <div
       data-testid="landing-page"
       lang="vi"
       data-motion={reduced ? 'off' : 'on'}
-      className="landing min-h-screen overflow-x-clip bg-black px-4 font-landing text-cream antialiased md:px-6"
+      data-variant={content.variant}
+      data-individual-theme={isIndividual ? 'dark' : undefined}
+      className={cn(
+        'landing min-h-screen overflow-x-clip px-4 font-landing antialiased md:px-6',
+        isIndividual ? 'bg-[#07151b] text-[#f2f7f5]' : 'bg-[#0C0E12] text-cream'
+      )}
     >
       <SectionLink
         sectionId={SECTION_IDS.main}
-        className="fixed -top-16 left-4 z-[100] rounded-full bg-cream-soft px-4 py-2.5 text-sm text-black transition-[top] focus:top-3"
+        className={cn(
+          'fixed -top-16 left-4 z-[100] rounded-full px-4 py-2.5 text-sm transition-[top] focus:top-3',
+          'bg-gradient-to-r from-[#F5CA65] to-[#D4982F] text-[#0C0E12] font-semibold shadow-md shadow-amber-500/20'
+        )}
       >
         Bỏ qua đến nội dung
       </SectionLink>
@@ -74,7 +85,7 @@ function LandingShell() {
 
       <HeroSection metaRef={heroMetaRef} />
       <main id={SECTION_IDS.main} tabIndex={-1} className="outline-none">
-        <LandingSections sections={sections} />
+        <LandingSections sections={content.sections} />
       </main>
       <LandingFooter />
     </div>

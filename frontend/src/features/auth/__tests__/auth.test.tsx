@@ -7,6 +7,7 @@ import apiClient from '../../../services/api-client';
 import { AuthGuard } from '../../../components/guards/AuthGuard';
 import { getLoginPath, isSafeReturnTo } from '../auth-redirect';
 import { useCurrentUser } from '../../../hooks/use-current-user';
+import { findMockAccountByEmail } from '../../../services/mock/mock-accounts';
 
 vi.mock('../../../services/api-client', () => {
   return {
@@ -35,11 +36,12 @@ describe('Authentication', () => {
     vi.stubGlobal('location', mockLocation);
   });
 
-  it('LoginStoresOnlyReturnedAccessToken', async () => {
+  it('LoginStoresReturnedTokenPair', async () => {
     (apiClient.post as any).mockResolvedValueOnce({
       data: {
         data: {
           accessToken: 'mock-access-token',
+          refreshToken: 'mock-refresh-token',
           expiresAt: '2026-10-01T00:00:00Z'
         }
       }
@@ -72,7 +74,7 @@ describe('Authentication', () => {
 
     await waitFor(() => {
       expect(localStorage.getItem('accessToken')).toBe('mock-access-token');
-      expect(localStorage.getItem('refreshToken')).toBeNull();
+      expect(localStorage.getItem('refreshToken')).toBe('mock-refresh-token');
     });
   });
 
@@ -164,5 +166,32 @@ describe('Authentication', () => {
 
     expect(screen.queryByText('Guarded Enterprise Secret Content')).not.toBeInTheDocument();
     expect(localStorage.getItem('accessToken')).toBeNull();
+  });
+
+  it('DemoAccountsListMatchesBackendCanonicalSeedAccounts', () => {
+    const expectedRoleAccounts = [
+      { email: 'platform@digitalent.ai', role: 'PLATFORM_ADMIN', workspace: 'platform' },
+      { email: 'owner@digitalent.ai', role: 'OWNER', workspace: 'enterprise' },
+      { email: 'manager@digitalent.ai', role: 'MANAGER', workspace: 'enterprise' },
+      { email: 'employee@digitalent.ai', role: 'EMPLOYEE', workspace: 'enterprise' },
+    ];
+    const expectedPersonalAccounts = [
+      'personal@digitalent.ai',
+      'trial@digitalent.ai',
+      'free@digitalent.ai',
+    ];
+
+    for (const item of expectedRoleAccounts) {
+      const acc = findMockAccountByEmail(item.email);
+      expect(acc).toBeDefined();
+      expect(acc?.roles).toContain(item.role);
+      expect(acc?.workspace).toBe(item.workspace);
+    }
+
+    for (const email of expectedPersonalAccounts) {
+      const acc = findMockAccountByEmail(email);
+      expect(acc).toBeDefined();
+      expect(acc?.workspace).toBe('personal');
+    }
   });
 });

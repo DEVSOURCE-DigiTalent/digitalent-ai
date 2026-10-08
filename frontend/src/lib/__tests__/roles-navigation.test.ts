@@ -3,31 +3,16 @@ import { inferWorkspace, normalizeRoles, resolveWorkspace } from '../roles';
 import { getHomePath } from '../navigation';
 
 describe('normalizeRoles', () => {
-  it('maps the legacy backend roles to the new model', () => {
-    expect(normalizeRoles(['SYSTEM_ADMIN'])).toEqual(['PLATFORM_ADMIN', 'OWNER']);
-    expect(normalizeRoles(['HR_MANAGER'])).toEqual(['OWNER']);
-    expect(normalizeRoles(['DEPARTMENT_MANAGER'])).toEqual(['MANAGER']);
-    expect(normalizeRoles(['EMPLOYEE'])).toEqual(['EMPLOYEE']);
-  });
-
-  it('turns TRAINER and LEARNER into employee', () => {
-    expect(normalizeRoles(['TRAINER'])).toEqual(['EMPLOYEE']);
-    expect(normalizeRoles(['LEARNER'])).toEqual(['EMPLOYEE']);
-  });
-
-  it('keeps unknown roles as they are', () => {
-    expect(normalizeRoles(['SOMETHING_NEW'])).toEqual(['SOMETHING_NEW']);
-  });
-
-  it('keeps new roles and removes duplicates', () => {
-    expect(normalizeRoles(['OWNER', 'HR_MANAGER', 'OWNER'])).toEqual(['OWNER']);
+  it('keeps canonical roles and removes duplicates', () => {
+    expect(normalizeRoles(['OWNER', 'OWNER'])).toEqual(['OWNER']);
+    expect(normalizeRoles(['LEARNER'])).toEqual(['LEARNER']);
   });
 });
 
 describe('workspace', () => {
   it('is platform for platform staff, enterprise for any other role, personal without roles', () => {
     expect(inferWorkspace(['PLATFORM_ADMIN'])).toBe('platform');
-    expect(inferWorkspace(normalizeRoles(['SYSTEM_ADMIN']))).toBe('enterprise');
+    expect(inferWorkspace(['LEARNER'])).toBe('personal');
     expect(inferWorkspace(['EMPLOYEE'])).toBe('enterprise');
     expect(inferWorkspace([])).toBe('personal');
   });
@@ -43,17 +28,15 @@ describe('getHomePath', () => {
     [['PLATFORM_ADMIN'], '/platform/dashboard'],
     [[], '/personal/dashboard'],
     [['OWNER'], '/enterprise/dashboard'],
-    [['ORG_ADMIN'], '/enterprise/dashboard'],
-    [['LEARNING_ADMIN'], '/enterprise/dashboard'],
     [['MANAGER'], '/enterprise/team'],
     [['EMPLOYEE'], '/enterprise/me'],
-    [['LEARNER'], '/enterprise/me'],
+    [['LEARNER'], '/personal/dashboard'],
   ])('sends %j to %s', (roles, expected) => {
     expect(getHomePath({ roles })).toBe(expected);
   });
 
   it('puts administration before learning for someone with several roles', () => {
-    expect(getHomePath({ roles: ['LEARNER', 'ORG_ADMIN'] })).toBe('/enterprise/dashboard');
+    expect(getHomePath({ roles: ['EMPLOYEE', 'OWNER'] })).toBe('/enterprise/dashboard');
   });
 
   it('follows an explicit workspace over the roles', () => {

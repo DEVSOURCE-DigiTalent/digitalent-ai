@@ -200,7 +200,7 @@ function MockInternalCourseDetailPage() {
         <AlertCircle className="size-5 text-amber-600 shrink-0 mt-0.5" />
         <div className="text-sm text-amber-800">
           <span className="font-semibold">Lưu ý nghiệp vụ:</span> Đây là khóa học nội bộ phục vụ quy trình và văn hóa của doanh nghiệp.{' '}
-          <strong>Hoàn thành khóa học nội bộ không tự động tăng bậc năng lực</strong> trong Khung năng lực số chuẩn Thông tư 02/2025/TT-BGDĐT.
+          <strong>Hoàn thành khóa học nội bộ không tự động tăng bậc năng lực</strong> trong Khung chuẩn năng lực số.
         </div>
       </div>
 

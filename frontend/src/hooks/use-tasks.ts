@@ -7,6 +7,9 @@ import {
   type PracticalTaskDetailDto,
   type ReviewQueueItemDto,
   type SubmissionDetailDto,
+  type LearnerTaskDto,
+  type EvidenceItemDto,
+  type SubmitEvidencePayload,
 } from '@/services/task.service';
 import type { PagedList } from '@/types/api';
 
@@ -81,6 +84,40 @@ export function useEvaluateSubmission() {
       queryClient.invalidateQueries({ queryKey: ['submissions'] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['my-evidence'] });
+    },
+  });
+}
+
+export function useMyTasks() {
+  return useQuery<{ items: LearnerTaskDto[]; total: number }>({
+    queryKey: ['my-tasks'],
+    queryFn: async () => {
+      const res = await taskService.getMyTasks();
+      return ((res.data as any)?.data ?? res.data) as { items: LearnerTaskDto[]; total: number };
+    },
+  });
+}
+
+export function useSubmitTaskEvidence() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, payload }: { taskId: string; payload: SubmitEvidencePayload }) =>
+      taskService.submitTaskEvidence(taskId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['my-evidence'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['review-queue'] });
+    },
+  });
+}
+
+export function useMyEvidence() {
+  return useQuery<{ items: EvidenceItemDto[]; total: number }>({
+    queryKey: ['my-evidence'],
+    queryFn: async () => {
+      const res = await taskService.getMyEvidence();
+      return ((res.data as any)?.data ?? res.data) as { items: EvidenceItemDto[]; total: number };
     },
   });
 }

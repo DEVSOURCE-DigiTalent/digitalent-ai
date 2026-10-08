@@ -5,7 +5,7 @@ export interface OrganizationContext {
   name: string;
 }
 
-export type SubscriptionStatus = 'active' | 'expired' | 'payment_required';
+export type SubscriptionStatus = 'active' | 'trialing' | 'expired' | 'payment_required';
 
 export interface SubscriptionContext {
   planCode: string;
@@ -17,6 +17,12 @@ export interface SubscriptionContext {
   seatsUsed?: number;
   /** ISO date of the next renewal or the expiry date. */
   renewsAt?: string;
+  /** ISO. Start of the current paid period (issue date of certificates that were waiting for an upgrade). */
+  startedAt?: string;
+  /** Only while `status` is 'trialing', or once the account has had a trial (dates are kept for history). */
+  trialStartedAt?: string;
+  trialEndsAt?: string;
+  trialCourseLimit?: number;
 }
 
 /**
@@ -34,6 +40,7 @@ export interface SessionUser {
   email: string;
   fullName: string;
   employeeId?: string;
+  organizationId?: string;
   roles: string[];
   permissions: string[];
   /** Missing when the backend predates workspaces: derived from the roles. */
@@ -42,6 +49,7 @@ export interface SessionUser {
   /** Missing when the backend predates subscriptions: gating is skipped. */
   subscription?: SubscriptionContext;
   onboardingStatus?: OnboardingStatus;
+  enterpriseTrialStatus?: 'trial_active' | 'trial_read_only' | 'converted';
   emailVerified?: boolean;
   contractSigned?: boolean;
 }

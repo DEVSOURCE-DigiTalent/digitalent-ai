@@ -62,13 +62,13 @@ export function GradesStep({ setup, onBack, onDone, onSkip }: GradesStepProps) {
 
   return (
     <div className="grid max-w-2xl gap-6">
-      <div className="rounded-xl border border-sky-200 bg-sky-50/70 p-4 text-sm text-sky-900">
+      <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-4 text-sm text-ent-fg ring-1 ring-amber-400/20">
         <div className="flex items-start gap-3">
-          <Info className="mt-0.5 size-5 shrink-0 text-sky-600" aria-hidden="true" />
+          <Info className="mt-0.5 size-5 shrink-0 text-[#F5CA65]" aria-hidden="true" />
           <div className="space-y-1">
-            <p className="font-semibold text-sky-950">Quy chuẩn Cấp bậc G1–G3</p>
-            <p className="text-xs text-sky-800 leading-relaxed">
-              Mã cấp bậc <strong>G1, G2, G3</strong> là bất biến trong hệ thống nhằm liên kết tự động với khung năng lực Thông tư 02/2025.
+            <p className="font-semibold text-[#F5CA65]">Quy chuẩn Cấp bậc G1–G3</p>
+            <p className="text-xs text-ent-fg-2 leading-relaxed">
+              Mã cấp bậc <strong>G1, G2, G3</strong> là bất biến trong hệ thống nhằm liên kết tự động với Khung chuẩn năng lực số.
               Bạn có thể điều chỉnh <strong>Tên hiển thị</strong> và <strong>Mô tả</strong> phù hợp với cơ cấu chức danh tại tổ chức của bạn.
             </p>
           </div>
@@ -79,15 +79,15 @@ export function GradesStep({ setup, onBack, onDone, onSkip }: GradesStepProps) {
         {grades.map((grade) => (
           <div
             key={grade.code}
-            className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs transition-colors hover:border-slate-300"
+            className="rounded-xl border border-ent-line bg-ent-card p-4 shadow-md ring-1 ring-amber-400/10 transition-colors"
           >
-            <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-2">
+            <div className="mb-3 flex items-center justify-between border-b border-ent-line pb-2">
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 rounded-md bg-primary-100 px-2.5 py-1 text-xs font-bold text-primary-700">
+                <span className="inline-flex items-center gap-1 rounded-md bg-amber-400/20 border border-amber-400/30 px-2.5 py-1 text-xs font-bold text-[#F5CA65]">
                   <ShieldCheck className="size-3.5" />
                   Mã: {grade.code}
                 </span>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-ent-fg-3">
                   {grade.code === 'G1'
                     ? '(Nhân viên / Chuyên viên)'
                     : grade.code === 'G2'
@@ -99,8 +99,8 @@ export function GradesStep({ setup, onBack, onDone, onSkip }: GradesStepProps) {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <label htmlFor={`grade-name-${grade.code}`} className="text-xs font-medium text-slate-700">
-                  Tên hiển thị cấp bậc <span className="text-red-500">*</span>
+                <label htmlFor={`grade-name-${grade.code}`} className="text-xs font-medium text-ent-fg">
+                  Tên hiển thị cấp bậc <span className="text-amber-400">*</span>
                 </label>
                 <input
                   id={`grade-name-${grade.code}`}
@@ -113,7 +113,7 @@ export function GradesStep({ setup, onBack, onDone, onSkip }: GradesStepProps) {
               </div>
 
               <div className="grid gap-1.5">
-                <label htmlFor={`grade-desc-${grade.code}`} className="text-xs font-medium text-slate-700">
+                <label htmlFor={`grade-desc-${grade.code}`} className="text-xs font-medium text-ent-fg">
                   Mô tả vai trò
                 </label>
                 <input

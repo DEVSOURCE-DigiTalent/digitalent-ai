@@ -170,7 +170,7 @@ function parseItems(raw: unknown): RequirementItemRecord[] {
   return raw.map((entry) => {
     const item = entry as Record<string, unknown>;
     const level = Number(item.requiredLevel);
-    if (!COMPETENCY_BY_ID.has(String(item.competencyId))) throw badRequest('Năng lực không thuộc khung Thông tư 02/2025.', 'COMPETENCY_NOT_IN_FRAMEWORK');
+    if (!COMPETENCY_BY_ID.has(String(item.competencyId))) throw badRequest('Năng lực không thuộc Khung chuẩn năng lực số.', 'COMPETENCY_NOT_IN_FRAMEWORK');
     if (![1, 2, 3].includes(level)) throw badRequest('Mức yêu cầu phải là 1, 2 hoặc 3.');
     return {
       id: newId('item'),

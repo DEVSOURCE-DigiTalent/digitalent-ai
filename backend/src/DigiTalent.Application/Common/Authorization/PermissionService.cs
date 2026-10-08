@@ -27,15 +27,19 @@ public class PermissionService : IPermissionService
             return cached;
         }
 
-        var permissions = roleCodes.Contains(Roles.SystemAdmin)
-            ? await _context.Permissions
-                .Select(p => p.Code)
-                .ToListAsync()
-            : await _context.RolePermissions
-                .Where(rp => roleCodes.Contains(rp.Role!.Code) && rp.Role.Status == Statuses.Simple.Active)
-                .Select(rp => rp.Permission!.Code)
-                .Distinct()
-                .ToListAsync();
+        var permissions = await _context.RolePermissions
+            .Where(rp => roleCodes.Contains(rp.Role!.Code) && rp.Role.Status == Statuses.Simple.Active)
+            .Select(rp => rp.Permission!.Code)
+            .Distinct()
+            .ToListAsync();
+
+        if (roleCodes.Contains("LEARNER") || !roleCodes.Any())
+        {
+            var list = permissions.ToList();
+            if (!list.Contains(Permissions.Account.ViewOwn)) list.Add(Permissions.Account.ViewOwn);
+            if (!list.Contains("learner.access")) list.Add("learner.access");
+            permissions = list;
+        }
 
         _cache[cacheKey] = permissions;
         return permissions;
@@ -43,11 +47,6 @@ public class PermissionService : IPermissionService
 
     public async Task<bool> HasAnyAsync(IReadOnlyCollection<string> roleCodes, IReadOnlyCollection<string> permissions)
     {
-        if (roleCodes.Contains(Roles.SystemAdmin))
-        {
-            return true;
-        }
-
         var granted = await GetPermissionsAsync(roleCodes);
         return permissions.Any(granted.Contains);
     }

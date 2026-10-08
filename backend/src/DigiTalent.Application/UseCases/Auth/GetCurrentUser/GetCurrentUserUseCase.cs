@@ -3,6 +3,7 @@ using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Domain.Constants;
+using DigiTalent.Domain.Constants.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Auth;
@@ -33,6 +34,8 @@ public class GetCurrentUserUseCase : IUseCase<GetCurrentUserUseCaseInput, GetCur
                 u.Id,
                 u.Email,
                 u.DisplayName,
+                u.OrganizationId,
+                u.EmailVerifiedAt,
                 Roles = u.UserRoles
                     .Where(ur => ur.Role!.Status == Statuses.Simple.Active)
                     .Select(ur => ur.Role!.Code)
@@ -49,8 +52,51 @@ public class GetCurrentUserUseCase : IUseCase<GetCurrentUserUseCaseInput, GetCur
             throw new NotFoundException("User not found.");
         }
 
+        var roles = user.Roles;
+        var isPlatform = roles.Contains(Roles.PlatformAdmin);
+        var isPersonal = user.OrganizationId == null && !isPlatform;
+        if (isPersonal)
+        {
+            roles = new List<string> { "LEARNER" };
+        }
+
         // 2. Đổi role → danh sách quyền (bảng role_permissions)
-        var permissions = await _permissionService.GetPermissionsAsync(user.Roles);
+        var permissions = await _permissionService.GetPermissionsAsync(roles);
+        var trial = user.OrganizationId == null ? null : await _context.TrialWorkspaces
+            .AsNoTracking().SingleOrDefaultAsync(x => x.OrganizationId == user.OrganizationId);
+
+        DigiTalent.Application.IndividualCommerce.IndividualSubscriptionDto? subDto = null;
+        string? onboardingStatus = null;
+
+        if (isPersonal)
+        {
+            var sub = await _context.UserSubscriptions
+                .Where(s => s.UserId == user.Id)
+                .OrderByDescending(s => s.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (sub != null)
+            {
+                var status = sub.Status;
+                if (status == DigiTalent.Domain.Entities.UserSubscriptionStatuses.Trialing && sub.TrialEndsAt.HasValue && sub.TrialEndsAt.Value <= DateTimeOffset.UtcNow)
+                {
+                    status = DigiTalent.Domain.Entities.UserSubscriptionStatuses.TrialExpired;
+                }
+                subDto = new DigiTalent.Application.IndividualCommerce.IndividualSubscriptionDto(
+                    PlanCode: sub.PlanCode,
+                    PlanName: sub.PlanCode == "IND_PRO" ? "Cá nhân Pro" : sub.PlanCode == "IND_PLUS" ? "Cá nhân Plus" : sub.PlanCode,
+                    Status: status,
+                    TrialStartedAt: sub.TrialStartedAt,
+                    TrialEndsAt: sub.TrialEndsAt,
+                    TrialCourseLimit: status == DigiTalent.Domain.Entities.UserSubscriptionStatuses.Trialing ? 3 : null,
+                    CurrentPeriodStart: sub.CurrentPeriodStart,
+                    CurrentPeriodEnd: sub.CurrentPeriodEnd
+                );
+            }
+
+            var hasLearner = await _context.LearnerProfiles.AnyAsync(lp => lp.UserId == user.Id);
+            onboardingStatus = (subDto?.Status == "trialing" || subDto?.Status == "active") ? (hasLearner ? "completed" : "setup") : "payment";
+        }
 
         return new GetCurrentUserUseCaseOutput
         {
@@ -58,7 +104,13 @@ public class GetCurrentUserUseCase : IUseCase<GetCurrentUserUseCaseInput, GetCur
             Email = user.Email,
             FullName = user.DisplayName,
             EmployeeId = user.EmployeeId,
-            Roles = user.Roles,
+            OrganizationId = user.OrganizationId,
+            Workspace = isPlatform ? "platform" : isPersonal ? "personal" : "enterprise",
+            EmailVerified = user.EmailVerifiedAt != null,
+            OnboardingStatus = onboardingStatus,
+            Subscription = subDto,
+            EnterpriseTrialStatus = trial == null ? null : trial.ConvertedAt != null ? "converted" : DateTimeOffset.UtcNow < trial.EndsAt ? "trial_active" : "trial_read_only",
+            Roles = roles,
             Permissions = permissions.ToList(),
         };
     }

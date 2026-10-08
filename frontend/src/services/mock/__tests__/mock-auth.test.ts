@@ -41,25 +41,25 @@ describe('mockAuthService', () => {
   beforeEach(() => localStorage.clear());
 
   it('logs in with the shared mock password and returns the matching session', async () => {
-    const login = await mockAuthService.login({ email: 'Employee@digitalent.demo', password: MOCK_PASSWORD });
+    const login = await mockAuthService.login({ email: 'Employee@digitalent.ai', password: MOCK_PASSWORD });
     localStorage.setItem('accessToken', login.data.data!.accessToken);
 
     const me = await mockAuthService.getMe();
-    expect(me.data.data?.email).toBe('employee@digitalent.demo');
+    expect(me.data.data?.email).toBe('employee@digitalent.ai');
     expect(me.data.data?.roles).toEqual(['EMPLOYEE']);
   });
 
   it('rejects a wrong password or unknown email with a 401 the login page can read', async () => {
-    await expect(mockAuthService.login({ email: 'employee@digitalent.demo', password: 'nope' })).rejects.toMatchObject({
+    await expect(mockAuthService.login({ email: 'employee@digitalent.ai', password: 'nope' })).rejects.toMatchObject({
       response: { status: 401, data: { message: 'Email hoặc mật khẩu không đúng.' } },
     });
-    await expect(mockAuthService.login({ email: 'ghost@digitalent.demo', password: MOCK_PASSWORD })).rejects.toMatchObject({
+    await expect(mockAuthService.login({ email: 'ghost@digitalent.ai', password: MOCK_PASSWORD })).rejects.toMatchObject({
       response: { status: 401 },
     });
   });
 
   it('keeps track of user session changes from the mock database', async () => {
-    const login = await mockAuthService.login({ email: 'owner@digitalent.demo', password: MOCK_PASSWORD });
+    const login = await mockAuthService.login({ email: 'owner@digitalent.ai', password: MOCK_PASSWORD });
     localStorage.setItem('accessToken', login.data.data!.accessToken);
 
     const me = await mockAuthService.getMe();

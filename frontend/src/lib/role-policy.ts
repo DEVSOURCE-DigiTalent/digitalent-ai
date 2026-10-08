@@ -39,8 +39,8 @@ export const ROLE_DESCRIPTIONS: RoleDescription[] = [
     can: [
       'Quản lý gói dịch vụ, thanh toán, quyền sử dụng và cài đặt tổ chức',
       'Thêm, gán vai trò và quản lý thành viên (có thể cấp quyền Chủ doanh nghiệp khác)',
-      'Quản lý phòng ban, vị trí, cấp bậc (G1–G3) và gán Quản lý phòng ban',
-      'Thiết lập yêu cầu năng lực theo vị trí (chuẩn TT 02/2025)',
+      'Quản lý phòng ban, vị trí công việc và gán Quản lý phòng ban',
+      'Thiết lập yêu cầu năng lực theo vị trí (Khung chuẩn năng lực số)',
       'Tạo đợt đào tạo, phân công khóa học và theo dõi toàn diện',
       'Giao nhiệm vụ thực tế và đánh giá minh chứng trên toàn tổ chức (khi không có Quản lý)',
     ],

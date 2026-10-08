@@ -1,20 +1,23 @@
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Check, Lock, Play } from 'lucide-react';
-import { useDemoFastTrackTarget, useDemoReset, usePersonalPath } from '@/hooks/use-personal-learning';
+import { useMarkSeen, usePersonalAccess, usePersonalPath } from '@/hooks/use-personal-learning';
 import { levelLabelVi } from '@/lib/competency-levels';
 import { cn } from '@/lib/utils';
-import type { PathCourse, PathCourseStatus, PersonalPath } from '@/services/personal-learning.service';
+import type { PathCourse, PathCourseStatus, PersonalAccess, PersonalPath } from '@/services/personal-learning.service';
 import {
-  Card, EmptyState, ErrorBlock, LoadingBlock, PT_BUTTON, PT_BUTTON_SECONDARY, PT_EYEBROW, PageIntro, ProgressBar, Stat,
+  Card, EmptyState, ErrorBlock, LoadingBlock, PT_BUTTON, PT_BUTTON_SECONDARY, PT_EYEBROW, PersonalPageHeader, ProgressBar, Stat,
   Tag
 } from '../components/ui';
+import { InlineTip } from '../components/InlineTip';
+import { UpgradeLink } from '../components/UpgradeLink';
 import { errorMessage } from '../utils/error-message';
 import { formatHours, formatMinutes } from '../utils/format';
 
 const STATUS_LABEL: Record<PathCourseStatus, string> = {
   COMPLETED: 'Đã hoàn thành',
   IN_PROGRESS: 'Đang học',
-  AVAILABLE: 'Sẵn sàng',
+  AVAILABLE: 'Có thể bắt đầu',
   LOCKED: 'Chờ khóa tiên quyết',
 };
 
@@ -23,12 +26,11 @@ export function LearnerPathPage() {
   const { data, isLoading, isError, error, refetch } = usePersonalPath();
 
   return (
-    <div data-testid="learner-path-page" className="grid gap-10">
-      <PageIntro
+    <div data-testid="learner-path-page" className="grid gap-6">
+      <PersonalPageHeader
         label="Lộ trình học tập"
-        title={data?.target ? 'Lộ trình đến' : 'Lộ trình học tập'}
-        accent={data?.target ? data.target.name : 'của riêng bạn.'}
-        lead="Mỗi miền đi từ mức bạn đang có lên mức vị trí yêu cầu, từng khóa một. Khóa ở chặng sau chỉ mở khi khóa tiên quyết của nó đã xong."
+        title="Lộ trình học"
+        lead={data?.target ? `Mục tiêu: ${data.target.name}. Các khóa học được sắp theo điều kiện tiên quyết.` : 'Chọn mục tiêu nghề nghiệp để xây dựng lộ trình học.'}
         actions={data?.target && <Link to="/personal/target" className={PT_BUTTON_SECONDARY}>Đổi mục tiêu</Link>}
       />
 
@@ -47,47 +49,35 @@ export function LearnerPathPage() {
 }
 
 function PathBody({ path }: { path: PersonalPath }) {
-  const fastTrackTarget = useDemoFastTrackTarget();
-  const demoReset = useDemoReset();
+  const { data: access } = usePersonalAccess();
+  const { mutate: markSeen } = useMarkSeen();
+  const seenPath = access?.seen.path;
+  const markedPath = useRef(false);
+  const limited = access !== undefined && access.mode !== 'full';
+  // Looking at the path after the entry assessment is step 2 of the trial checklist.
+  useEffect(() => {
+    if (!limited || !path.assessed || seenPath || markedPath.current) return;
+    markedPath.current = true;
+    markSeen('path');
+  }, [limited, path.assessed, seenPath, markSeen]);
 
+  const next = path.nextCourse;
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-pt-line bg-pt-raised p-5">
-        <div className="flex items-center gap-3">
-          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-pt-fg/10 text-pt-fg font-medium">⚡</span>
-          <div>
-            <p className="text-xs uppercase tracking-wider text-pt-fg-3">Công cụ Trình diễn Demo</p>
-            <p className="text-sm font-medium text-pt-fg">
-              Vị trí đang chọn: <span className="font-semibold">{path.target?.name}</span> ({path.target?.code})
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            disabled={fastTrackTarget.isPending}
-            onClick={() => fastTrackTarget.mutate(path.target?.code)}
-            className={PT_BUTTON}
-            title="Tự động hoàn thành tất cả các khóa học của vị trí này để xem kết quả 100%"
-          >
-            ⚡ {fastTrackTarget.isPending ? 'Đang hoàn tất…' : 'Hoàn thành 100% vị trí (Demo)'}
-          </button>
-          <button
-            type="button"
-            disabled={demoReset.isPending}
-            onClick={() => demoReset.mutate()}
-            className={PT_BUTTON_SECONDARY}
-            title="Khôi phục trạng thái ban đầu để demo lại"
-          >
-            🔄 {demoReset.isPending ? 'Đang đặt lại…' : 'Đặt lại Demo'}
-          </button>
-        </div>
-      </div>
-
+      {access && <PlanStrip access={access} />}
+      {next && (
+        <section aria-label="Khóa học tiếp theo" className="grid gap-3">
+          <h2 className="text-lg font-semibold">{next.status === 'IN_PROGRESS' ? 'Khóa đang học' : 'Khóa học tiếp theo'}</h2>
+          <ul><CourseRow course={next} isNext /></ul>
+          <InlineTip tipKey="tip-first-course" when={path.assessed && next.status !== 'LOCKED'}>
+            Khóa này đứng đầu vì bù khoảng thiếu lớn nhất và không cần khóa tiên quyết.
+          </InlineTip>
+        </section>
+      )}
       <Card className="grid gap-6 p-6 md:grid-cols-[1.4fr_repeat(3,1fr)] md:items-end md:p-8">
         <div className="grid gap-3">
           <p className={PT_EYEBROW}>Tiến độ lộ trình</p>
-          <p className="text-[44px] font-light leading-none tracking-[-0.04em] tabular-nums">
+          <p className="text-2xl font-semibold leading-none tracking-[-0.04em] tabular-nums">
             {path.progressPercent}<span className="text-xl text-pt-fg-3">%</span>
           </p>
           <ProgressBar value={path.progressPercent} label="Tiến độ lộ trình" />
@@ -114,12 +104,11 @@ function PathBody({ path }: { path: PersonalPath }) {
           action={<Link to="/personal/target" className={PT_BUTTON}>Chọn mục tiêu mới</Link>}
         />
       ) : (
-        <ol className="grid gap-12">
+        <ol className="grid gap-6">
           {path.stages.map((stage) => (
-            <li key={stage.level} className="grid gap-5 md:grid-cols-[200px_1fr] md:gap-8">
-              <div className="md:sticky md:top-28 md:self-start">
-                <p className="font-landing-serif text-[44px] italic leading-none text-pt-fg-3">{stage.level}</p>
-                <h2 className="mt-3 text-[20px] font-normal tracking-[-0.015em]">{stage.title}</h2>
+            <li key={stage.level} className="grid gap-3">
+              <div className="border-b border-pt-line pb-3">
+                <h2 className="mt-3 text-[20px] font-normal tracking-[-0.015em]">{stage.title.replace(/^Chặng \d+ · /, '')}</h2>
                 <p className="mt-1 text-xs text-pt-fg-3">
                   Mức {levelLabelVi(stage.level)} · {stage.courses.filter((c) => c.status === 'COMPLETED').length}/{stage.courses.length} khóa
                 </p>
@@ -135,8 +124,8 @@ function PathBody({ path }: { path: PersonalPath }) {
       )}
 
       {path.exempt.length > 0 && (
-        <Card className="p-6 md:p-8">
-          <p className={PT_EYEBROW}>Được miễn</p>
+        <Card as="details" className="p-6">
+          <summary className="cursor-pointer text-base font-semibold">Các khóa được miễn</summary>
           <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-pt-fg-2">
             Bài đánh giá đầu vào cho thấy bạn đã đạt các mức này, nên những khóa sau không có trong lộ trình. Bạn vẫn có thể mở để ôn lại.
           </p>
@@ -157,6 +146,35 @@ function PathBody({ path }: { path: PersonalPath }) {
       )}
     </>
   );
+}
+
+/** Trial: the three course slots as dots. Free: what the plan opens. Nothing for a paying plan. */
+function PlanStrip({ access }: { access: PersonalAccess }) {
+  if (access.mode === 'trial' && access.courseLimit !== null) {
+    const used = access.trialCourseIds.length;
+    return (
+      <Card className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+        <p className="flex items-center gap-3 text-sm text-pt-fg-2">
+          <span>Lượt học thử: đã dùng {used}/{access.courseLimit}</span>
+          <span className="flex gap-1.5" aria-hidden="true">
+            {Array.from({ length: access.courseLimit }, (_, slot) => (
+              <i key={slot} className={cn('block size-2.5 rounded-full', slot < used ? 'bg-[#E5A93C]' : 'bg-pt-fg/15')} />
+            ))}
+          </span>
+        </p>
+        <p className="text-xs text-pt-fg-3">Một khóa tính lượt khi bạn hoàn thành bài đầu tiên.</p>
+      </Card>
+    );
+  }
+  if (access.mode === 'free') {
+    return (
+      <Card className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+        <p className="text-sm text-pt-fg-2">Gói Miễn phí: xem lộ trình và hồ sơ. Nâng cấp để học các khóa còn lại.</p>
+        <UpgradeLink placement="path" variant="text">Nâng cấp</UpgradeLink>
+      </Card>
+    );
+  }
+  return null;
 }
 
 function StatusMark({ status }: { status: PathCourseStatus }) {
@@ -184,6 +202,8 @@ function CourseRow({ course, isNext }: { course: PathCourse; isNext: boolean }) 
           <span className="text-xs tabular-nums text-pt-fg-3">{course.code}</span>
           <Tag tone={course.status === 'COMPLETED' ? 'ok' : 'neutral'}>{STATUS_LABEL[course.status]}</Tag>
           {isNext && <Tag tone="solid">Tiếp theo</Tag>}
+          {course.trialSlot && <Tag tone="ok">Đang học thử</Tag>}
+          {course.planLocked && <Tag><Lock className="size-3" aria-hidden="true" />Mở khi nâng cấp</Tag>}
         </div>
         <Link to={`/personal/courses/${course.id}`} className={cn('mt-1.5 block text-[17px] leading-snug tracking-[-0.01em] hover:underline hover:underline-offset-4', locked ? 'text-pt-fg-2' : 'text-pt-fg')}>
           {course.title}
@@ -192,7 +212,7 @@ function CourseRow({ course, isNext }: { course: PathCourse; isNext: boolean }) 
           {course.domainName} · {formatMinutes(course.durationMinutes)}
           {course.closes.length > 0 && <> · nâng {course.closes.join(', ')}</>}
         </p>
-        {locked && course.prerequisiteTitle && <p className="mt-1 text-xs text-pt-fg-3">Cần xong: {course.prerequisiteTitle}</p>}
+        {locked && course.prerequisiteTitle && <p className="mt-1 text-xs text-pt-fg-3">Cần hoàn thành khóa {course.prerequisiteTitle} trước</p>}
         {course.status === 'IN_PROGRESS' && (
           <div className="mt-3 flex items-center gap-3">
             <ProgressBar value={course.progressPercent} label={`Tiến độ ${course.title}`} className="max-w-[240px]" />
@@ -201,10 +221,11 @@ function CourseRow({ course, isNext }: { course: PathCourse; isNext: boolean }) 
         )}
       </div>
       <div className="flex gap-2 sm:justify-end">
-        {course.status === 'IN_PROGRESS' && <Link to={`/personal/classroom/${course.id}`} className={PT_BUTTON}>Học tiếp</Link>}
-        {course.status === 'AVAILABLE' && <Link to={`/personal/classroom/${course.id}`} className={isNext ? PT_BUTTON : PT_BUTTON_SECONDARY}>Bắt đầu</Link>}
+        {course.planLocked && course.status !== 'COMPLETED' && <Link to={`/personal/courses/${course.id}`} className={PT_BUTTON_SECONDARY}>Xem</Link>}
+        {!course.planLocked && course.status === 'IN_PROGRESS' && <Link to={`/personal/classroom/${course.id}`} className={PT_BUTTON}>Học tiếp</Link>}
+        {!course.planLocked && course.status === 'AVAILABLE' && <Link to={`/personal/classroom/${course.id}`} className={isNext ? PT_BUTTON : PT_BUTTON_SECONDARY}>Bắt đầu</Link>}
         {course.status === 'COMPLETED' && <Link to={`/personal/courses/${course.id}`} className={PT_BUTTON_SECONDARY}>Ôn lại</Link>}
-        {locked && <Link to={`/personal/courses/${course.id}`} className={PT_BUTTON_SECONDARY}>Xem</Link>}
+        {locked && !course.planLocked && <Link to={`/personal/courses/${course.id}`} className={PT_BUTTON_SECONDARY}>Xem</Link>}
       </div>
     </Card>
   );

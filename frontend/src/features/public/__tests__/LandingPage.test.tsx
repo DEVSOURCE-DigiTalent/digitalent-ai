@@ -39,7 +39,7 @@ describe('LandingPage', () => {
   it('sends a signed-in user to the home of their workspace', () => {
     useCurrentUser.getState().setUser({
       id: 'u-1',
-      email: 'learning@digitalent.demo',
+      email: 'learning@digitalent.ai',
       fullName: 'Learning Admin',
       roles: [ROLES.OWNER],
       permissions: [],
@@ -63,7 +63,7 @@ describe('LandingPage', () => {
     renderLanding();
 
     const nav = screen.getByRole('navigation', { name: 'Điều hướng chính' });
-    expect(within(nav).getByRole('link', { name: 'Đăng nhập' })).toHaveAttribute('href', '/business/login');
+    expect(within(nav).getByRole('link', { name: 'Đăng nhập' })).toHaveAttribute('href', '/login');
     expect(within(nav).queryByRole('link', { name: 'Tra cứu chứng chỉ' })).not.toBeInTheDocument();
     expect(within(nav).getByRole('link', { name: 'Bảng giá' })).toHaveAttribute('href', '/business/pricing');
     expect(within(nav).getByRole('link', { name: 'Cách hoạt động' })).toHaveAttribute('href', '#cach-hoat-dong');

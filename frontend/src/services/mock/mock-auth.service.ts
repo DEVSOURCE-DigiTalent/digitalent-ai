@@ -27,6 +27,7 @@ export const mockAuthService = {
     if ('error' in found) return mockFail(found.error === 'INACTIVE' ? 403 : 401, found.error === 'INACTIVE' ? DEACTIVATED : WRONG_CREDENTIALS);
     const response: LoginResponse = {
       accessToken: `${TOKEN_PREFIX}${id}`,
+      refreshToken: `${TOKEN_PREFIX}${id}:refresh`,
       expiresAt: new Date(Date.now() + TOKEN_TTL_MS).toISOString(),
     };
     return mockOk(response);

@@ -444,7 +444,7 @@ describe('email verification & routes (AUTH-07, T20, T22)', () => {
 
   it('T22: redirects /register to /portal', async () => {
     renderApp('/register');
-    await heading('Bạn muốn dùng DigiTalent AI theo cách nào?');
+    await heading('Bạn dùng DigiTalent AI cho ai?');
   });
 
   it('T20: directs unverified user to /verify-email-required when blocked', async () => {

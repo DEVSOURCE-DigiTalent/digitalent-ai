@@ -1,12 +1,14 @@
 export type LoginPortal = 'default' | 'enterprise' | 'individual';
 
+/** The only sign-in route: businesses and individuals share one form, the account decides where it lands. */
+export const LOGIN_PATH = '/login';
+
 export interface LoginCopy {
-  /** Small label above the title; none on the neutral login page. */
+  /** Small label above the title; none on the shared login page. */
   eyebrow?: string;
   subtitle: string;
   homePath: string;
   pricingPath?: string;
-  loginPath: string;
   /**
    * Where "create an account" leads: the open sign-up form ("/register"). "/business/register" and
    * "/individual/register" need a plan in the query and send visitors without one back to pricing.
@@ -17,26 +19,27 @@ export interface LoginCopy {
   quoteLead: string;
   quoteEmphasis: string;
   quoteTail: string;
+  /** Puts the emphasis and tail on their own line (the lead is a sentence of its own). */
+  quoteBreak?: boolean;
 }
 
-/** Same form for everyone; only the wording and the links depend on the product the visitor chose. */
+/** 'default' is the login page; 'enterprise' and 'individual' are the two sign-up pages, which share the frame. */
 export const LOGIN_COPY: Record<LoginPortal, LoginCopy> = {
   default: {
     subtitle: 'Một tài khoản cho cả doanh nghiệp và cá nhân.',
     homePath: '/portal',
-    loginPath: '/login',
-    registerPath: '/portal',
-    registerLabel: 'Chọn hướng sử dụng',
-    quoteLead: 'Đo lường và phát triển ',
-    quoteEmphasis: 'năng lực số',
-    quoteTail: ' theo Thông tư 02/2025.',
+    registerPath: '/portal?intent=register',
+    registerLabel: 'Đăng ký ngay',
+    quoteLead: 'Chào mừng trở lại.',
+    quoteBreak: true,
+    quoteEmphasis: 'Hành trình số',
+    quoteTail: ' của bạn vẫn đang chờ.',
   },
   enterprise: {
     eyebrow: 'Doanh nghiệp',
     subtitle: 'Quản lý năng lực số của đội ngũ bạn.',
     homePath: '/business',
     pricingPath: '/business/pricing',
-    loginPath: '/business/login',
     registerPath: '/business/pricing',
     registerLabel: 'Chọn gói và đăng ký',
     quoteLead: 'Năng lực số của cả đội ngũ, ',
@@ -48,7 +51,6 @@ export const LOGIN_COPY: Record<LoginPortal, LoginCopy> = {
     subtitle: 'Tiếp tục lộ trình học của bạn.',
     homePath: '/individual',
     pricingPath: '/individual/pricing',
-    loginPath: '/individual/login',
     registerPath: '/individual/pricing',
     registerLabel: 'Chọn gói và đăng ký',
     quoteLead: 'Một mục tiêu, ',

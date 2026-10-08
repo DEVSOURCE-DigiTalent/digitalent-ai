@@ -1,3 +1,4 @@
+import { isIndividualUpgrader } from '../../lib/personal-access';
 import { WORKSPACES } from '../../lib/roles';
 import {
   entitlementKeys, getPlan, isPurchasableOnline, priceFor, clampSeats, type BillingCycle,
@@ -6,8 +7,11 @@ import type { Order, PaymentOutcome, PlanSelection } from '../../types/commerce'
 import type { SubscriptionContext } from '../../types/session';
 import { currentMockUserId } from './mock-auth.service';
 import { mockFail, mockOk } from './mock-http';
-import { findUserById, findUserByEmail, getDb, newId, newToken, updateDb, type StoredOrder } from './mock-store';
+import {
+  ensureStoredPersonal, findUserById, findUserByEmail, getDb, newId, newToken, settleTrial, updateDb, type StoredOrder,
+} from './mock-store';
 import { findMockAccountByEmail } from './mock-accounts';
+import { getPersonalState } from './server/personal/personal-store';
 
 const NOT_SIGNED_IN = 'Bạn cần đăng nhập để thanh toán.';
 const QR_VALID_MS = 15 * 60 * 1000;
@@ -36,10 +40,12 @@ export const mockCheckoutService = {
   },
 
   createOrder: async (selection: PlanSelection, draftId?: string) => {
-    const user = findUserById(currentMockUserId() ?? '');
+    const user = ensureStoredPersonal(currentMockUserId() ?? '');
     if (!user) return mockFail(401, NOT_SIGNED_IN);
 
-    if (user.onboardingStatus !== 'payment') {
+    settleTrial(user);
+    // An account still paying for its first plan, or a trial / Free learner upgrading (BR-17).
+    if (user.onboardingStatus !== 'payment' && !isIndividualUpgrader(user)) {
       return mockFail(409, 'Tài khoản này đã thanh toán.');
     }
 
@@ -130,9 +136,12 @@ export const mockCheckoutService = {
             entitlements: entitlementKeys(plan),
             seatLimit: plan.seatRange ? stored.seats : undefined,
             renewsAt: renewalDate(stored.cycle),
+            startedAt: stored.paidAt,
           };
           user.subscription = subscription;
-          user.onboardingStatus = 'setup';
+          // Someone who already chose a position (a trial or Free learner) goes straight in, not back to onboarding.
+          const hasTarget = user.workspace === WORKSPACES.PERSONAL && Boolean(getPersonalState(user.id).targetCode);
+          user.onboardingStatus = hasTarget ? undefined : 'setup';
 
           // For enterprise: carry company info from contract / draft into user.pendingOrganization
           if (user.workspace === WORKSPACES.ENTERPRISE) {

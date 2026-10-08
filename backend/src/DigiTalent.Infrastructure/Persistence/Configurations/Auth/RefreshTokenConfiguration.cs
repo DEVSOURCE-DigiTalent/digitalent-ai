@@ -16,6 +16,8 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
         builder.HasIndex(t => t.TokenHash).IsUnique();
         builder.Property(t => t.IpHash).HasMaxLength(128);
 
+        builder.Property(t => t.RevokedAt).IsConcurrencyToken();
+
         builder.HasOne<User>().WithMany().HasForeignKey(t => t.UserId);
         builder.HasOne<RefreshToken>().WithMany().HasForeignKey(t => t.ReplacedByTokenId);
 

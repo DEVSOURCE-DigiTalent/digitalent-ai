@@ -1,18 +1,22 @@
-import { TT02_COMPETENCY_NAMES, TT02_DOMAINS, getReferencePosition, summarizeRequirements } from '../../../../lib/reference-positions';
+import { isSeenKey } from '../../../../lib/personal-access';
+import { TT02_COMPETENCY_NAMES, TT02_DOMAINS } from '../../../../lib/reference-positions';
 import { WORKSPACES } from '../../../../lib/roles';
 import type {
-  AssessmentOutcome, CourseAssessment, PersonalDiagnostic, PersonalOverview, PersonalProgress,
+  AssessmentOutcome, CourseAssessment, PersonalAccess, PersonalDiagnostic, PersonalOverview, PersonalProgress,
 } from '../../../personal-learning.service';
 import { badRequest, forbidden, notFound } from '../http';
 import { route, type RequestContext } from '../router';
-import { courseDomain, courseIdOfTask, courseModules, taskIdOf } from '../personal/course-content';
-import { courseFor } from '../catalog';
+import { courseIdOfTask, courseModules, competencyCodesOf, courseDomain } from '../personal/course-content';
+import {
+  accessDto, accessOf, assertCanChangeLesson, assertCanChangeTarget, assertCanSubmitDiagnostic, assertCanSubmitTask,
+  assertCanTakeCourseAssessment, planViewOf,
+} from '../personal/personal-access';
 import {
   ASSESSMENT_PASS_PERCENT, activity, buildPath, certificateIdOf, certificates, completedCourses, competencyLevels,
   courseDetail, courseStatus, diagnosticLevels, diagnosticResult, findCourse, isReferencePosition, learnedMinutes,
   milestones, skillGap, targetDto, tasks,
 } from '../personal/personal-logic';
-import { demoState, getPersonalState, updatePersonalState, type PersonalState } from '../personal/personal-store';
+import { getPersonalState, updatePersonalState, type PersonalState } from '../personal/personal-store';
 import { ENTRY_QUESTIONS, QUESTION_BY_ID, questionsOfDomain } from '../personal/question-bank';
 import { updateDb } from '../../mock-store';
 
@@ -33,6 +37,9 @@ function stateOf(context: RequestContext): PersonalState {
   return getPersonalState(learnerId(context));
 }
 
+/** The caller's plan view: what the path and course builders need to flag trial slots and plan locks. */
+const planOf = (context: RequestContext) => planViewOf(accessOf(context.session));
+
 function readAnswers(body: Record<string, unknown>): Record<string, number> {
   const raw = body.answers;
   if (!raw || typeof raw !== 'object') throw badRequest('Thiếu câu trả lời.', 'ANSWERS_REQUIRED', 'answers');
@@ -52,8 +59,11 @@ function courseOrThrow(id: string) {
 route('GET', '/personal/overview', (context): PersonalOverview => {
   const state = stateOf(context);
   const gap = skillGap(state);
-  const path = buildPath(state);
-  const inProgress = path.stages.flatMap((stage) => stage.courses).find((course) => course.status === 'IN_PROGRESS');
+  const plan = planOf(context);
+  const path = buildPath(state, plan);
+  const inProgress = plan.mode === 'free'
+    ? undefined
+    : path.stages.flatMap((stage) => stage.courses).find((course) => course.status === 'IN_PROGRESS' && !course.planLocked);
   let continueLesson: PersonalOverview['continueLesson'] = null;
   if (inProgress) {
     const done = state.lessons[inProgress.id] ?? {};
@@ -84,9 +94,10 @@ route('GET', '/personal/overview', (context): PersonalOverview => {
     nextCourse: path.nextCourse,
     continueLesson,
     learnedMinutes: learnedMinutes(state),
-    certificateCount: completedCourses(state).size,
+    // Passes of a trial or the Free plan are certificates waiting for the upgrade, not issued ones.
+    certificateCount: plan.mode === 'full' ? completedCourses(state).size : 0,
     openTaskCount: tasks(state).filter((task) => task.status === 'OPEN' || task.status === 'REVISION_REQUESTED').length,
-    activity: activity(state, 6),
+    activity: activity(state, 6, plan),
   };
 });
 
@@ -94,6 +105,7 @@ route('PUT', '/personal/target', (context) => {
   const code = String(context.body.positionCode ?? '').toUpperCase();
   if (!isReferencePosition(code)) throw badRequest('Vị trí mục tiêu không hợp lệ.', 'UNKNOWN_POSITION', 'positionCode');
   const userId = learnerId(context);
+  assertCanChangeTarget(accessOf(context.session), getPersonalState(userId), code);
   updateDb((db) => {
     const user = db.users.find((u) => u.id === userId);
     if (user) {
@@ -102,6 +114,7 @@ route('PUT', '/personal/target', (context) => {
   });
   return updatePersonalState(userId, (state) => {
     if (state.targetCode !== code) {
+      if (state.targetCode) state.targetChangeCount += 1;
       state.targetCode = code;
       state.targetSetAt = new Date().toISOString();
     }
@@ -125,6 +138,7 @@ route('GET', '/personal/diagnostic', (context): PersonalDiagnostic => {
       options: question.options,
     })),
     result: diagnosticResult(state),
+    tryOrientation: state.tryOrientation ? { correct: state.tryOrientation.correct, total: state.tryOrientation.total } : null,
   };
 });
 
@@ -134,29 +148,38 @@ route('POST', '/personal/diagnostic', (context) => {
   if (missing.length > 0) {
     throw badRequest(`Còn ${missing.length} câu chưa trả lời.`, 'UNANSWERED_QUESTIONS', 'answers');
   }
+  assertCanSubmitDiagnostic(accessOf(context.session), stateOf(context));
   return updatePersonalState(learnerId(context), (state) => {
     state.diagnostic = { answers, domainLevels: diagnosticLevels(answers), completedAt: new Date().toISOString() };
     return diagnosticResult(state);
   });
 }, { message: 'Đã ghi nhận bài đánh giá đầu vào.' });
 
-route('GET', '/personal/path', (context) => buildPath(stateOf(context)));
+route('GET', '/personal/path', (context) => buildPath(stateOf(context), planOf(context)));
 
-route('GET', '/personal/courses/:id', (context) => courseDetail(stateOf(context), courseOrThrow(context.params.id)));
+route('GET', '/personal/courses/:id', (context) =>
+  courseDetail(stateOf(context), courseOrThrow(context.params.id), planOf(context)));
 
 route('PUT', '/personal/courses/:id/lessons/:lessonId', (context) => {
   const course = courseOrThrow(context.params.id);
   const lesson = courseModules(course).flatMap((m) => m.lessons).find((l) => l.id === context.params.lessonId);
   if (!lesson) throw notFound('Không tìm thấy bài học.');
+  const access = accessOf(context.session);
   return updatePersonalState(learnerId(context), (state) => {
+    const completing = context.body.completed !== false;
+    const exempt = buildPath(state).exempt.some((item) => item.id === course.id);
+    assertCanChangeLesson(access, state, course.id, exempt, completing);
     if (courseStatus(state, course, competencyLevels(state)) === 'LOCKED') {
       throw badRequest('Hãy hoàn thành khóa tiên quyết trước.', 'PREREQUISITE_NOT_MET');
     }
     const lessons = { ...(state.lessons[course.id] ?? {}) };
-    if (context.body.completed === false) delete lessons[lesson.id];
+    if (!completing) delete lessons[lesson.id];
     else lessons[lesson.id] = lessons[lesson.id] ?? new Date().toISOString();
     state.lessons[course.id] = lessons;
-    return courseDetail(state, course);
+    if (completing && access.mode === 'trial' && !exempt && !state.trialCourseIds.includes(course.id)) {
+      state.trialCourseIds = [...state.trialCourseIds, course.id];
+    }
+    return courseDetail(state, course, planViewOf(access));
   });
 });
 
@@ -172,14 +195,16 @@ route('PUT', '/personal/courses/:id/notes', (context) => {
 
 route('GET', '/personal/courses/:id/assessment', (context): CourseAssessment => {
   const course = courseOrThrow(context.params.id);
-  const detail = courseDetail(stateOf(context), course);
+  const state = stateOf(context);
+  assertCanTakeCourseAssessment(accessOf(context.session), state, course.id);
+  const detail = courseDetail(state, course);
   return {
     courseId: course.id,
     courseTitle: course.title,
     passPercent: ASSESSMENT_PASS_PERCENT,
     ready: detail.completedLessons === detail.lessonCount,
-    questions: questionsOfDomain(detail.domainNumber).map(({ id, competencyCode, text, options, correctIndex }) => ({
-      id, competencyCode, text, options, correctOptionIndex: correctIndex,
+    questions: questionsOfDomain(detail.domainNumber).map(({ id, competencyCode, text, options }) => ({
+      id, competencyCode, text, options,
     })),
 
   };
@@ -188,7 +213,9 @@ route('GET', '/personal/courses/:id/assessment', (context): CourseAssessment => 
 route('POST', '/personal/courses/:id/assessment', (context): AssessmentOutcome => {
   const course = courseOrThrow(context.params.id);
   const answers = readAnswers(context.body);
+  const access = accessOf(context.session);
   return updatePersonalState(learnerId(context), (state) => {
+    assertCanTakeCourseAssessment(access, state, course.id);
     const detail = courseDetail(state, course);
     if (detail.completedLessons < detail.lessonCount) {
       throw badRequest('Hãy học hết các bài trước khi làm bài đánh giá.', 'LESSONS_NOT_COMPLETED');
@@ -198,6 +225,7 @@ route('POST', '/personal/courses/:id/assessment', (context): AssessmentOutcome =
     const scorePercent = Math.round((correct / questions.length) * 100);
     const passed = scorePercent >= ASSESSMENT_PASS_PERCENT;
     const firstPass = passed && !completedCourses(state).has(course.id);
+    const certificatePending = firstPass && access.mode !== 'full';
     state.attempts.push({ courseId: course.id, at: new Date().toISOString(), correct, total: questions.length, passed });
     return {
       scorePercent,
@@ -210,7 +238,8 @@ route('POST', '/personal/courses/:id/assessment', (context): AssessmentOutcome =
         correctIndex: QUESTION_BY_ID.get(q.id)!.correctIndex,
         explanation: q.explanation,
       })),
-      certificateId: firstPass ? certificateIdOf(course.id) : null,
+      certificateId: firstPass && !certificatePending ? certificateIdOf(course.id) : null,
+      certificatePending,
     };
   });
 });
@@ -219,6 +248,7 @@ route('GET', '/personal/tasks', (context) => tasks(stateOf(context)));
 
 route('POST', '/personal/tasks/:id/submissions', (context) => {
   const course = courseOrThrow(courseIdOfTask(context.params.id));
+  assertCanSubmitTask(accessOf(context.session), stateOf(context), course.id);
   const linkUrl = String(context.body.linkUrl ?? '').trim();
   const content = String(context.body.content ?? '').trim();
   if (linkUrl && !URL_PATTERN.test(linkUrl)) throw badRequest('Liên kết phải bắt đầu bằng http:// hoặc https://.', 'INVALID_URL', 'linkUrl');
@@ -236,7 +266,62 @@ route('POST', '/personal/tasks/:id/submissions', (context) => {
   });
 }, { message: 'Đã nộp bài thực hành.', status: 201 });
 
-route('GET', '/personal/certificates', (context) => certificates(stateOf(context), context.session.fullName));
+route('GET', '/personal/certificates', (context) => certificates(
+  stateOf(context), context.session.fullName, planOf(context), context.session.subscription?.startedAt,
+));
+
+route('GET', '/personal/access', (context): PersonalAccess => accessDto(accessOf(context.session), stateOf(context)));
+
+route('GET', '/personal/certificates/verify/:code', (context) => {
+  const { code } = context.params;
+  const normalized = (code || '').trim().toUpperCase();
+  // 1. Kiểm tra session certificates
+  try {
+    const list = certificates(stateOf(context), context.session.fullName, planOf(context));
+    const found = list.find((c) => c.code?.toUpperCase() === normalized);
+    if (found) return found;
+  } catch {}
+
+  // 2. Tra cứu từ mã chuẩn DTC-YYYYMMDD-COURSE (như DTC-20261007-A2-I)
+  const parts = normalized.split('-');
+  if (parts.length >= 4 && parts[0] === 'DTC') {
+    const courseCode = `${parts[2]}-${parts[3]}`;
+    const course = findCourse(`crs-${courseCode.toLowerCase()}`);
+    if (course) {
+      const comps = competencyCodesOf(course).map((cCode) => ({
+        code: cCode,
+        name: TT02_COMPETENCY_NAMES[cCode] ?? `Năng lực ${cCode}`,
+      }));
+      return {
+        id: `cert-${course.id}`,
+        status: 'ISSUED',
+        code: normalized,
+        courseId: course.id,
+        courseCode: course.code,
+        courseTitle: course.title,
+        level: course.level,
+        domainName: courseDomain(course).name,
+        competencies: comps,
+        recipientName: 'Bùi Thị Cá Nhân',
+        passedAt: '2026-10-07T08:30:00.000Z',
+        issuedAt: '2026-10-07T08:30:00.000Z',
+        scorePercent: 95,
+      };
+    }
+  }
+
+  throw notFound('Chứng nhận không tồn tại hoặc mã tra cứu không hợp lệ.');
+});
+
+/** Marks a UI hint as seen. Idempotent: the time of the first call is kept. */
+route('PUT', '/personal/seen/:key', (context): Record<string, string> => {
+  const { key } = context.params;
+  if (!isSeenKey(key)) throw badRequest('Khóa không hợp lệ.', 'UNKNOWN_SEEN_KEY', 'key');
+  return updatePersonalState(learnerId(context), (state) => {
+    state.seen = { ...state.seen, [key]: state.seen[key] ?? new Date().toISOString() };
+    return state.seen;
+  });
+});
 
 route('GET', '/personal/progress', (context): PersonalProgress => {
   const state = stateOf(context);
@@ -264,97 +349,6 @@ route('GET', '/personal/progress', (context): PersonalProgress => {
         })),
     })),
     milestones: milestones(state),
-    activity: activity(state, 12),
+    activity: activity(state, 12, planOf(context)),
   };
-});
-
-// ── Demo Fast-Track Endpoints ──
-
-route('POST', '/personal/demo/fast-track-course', (context) => {
-  const courseId = String(context.body?.courseId ?? '');
-  const course = courseOrThrow(courseId);
-  return updatePersonalState(learnerId(context), (state) => {
-    const modules = courseModules(course);
-    const lessons = modules.flatMap((m) => m.lessons);
-    const now = new Date().toISOString();
-    state.lessons[course.id] = Object.fromEntries(lessons.map((l) => [l.id, now]));
-
-    const questions = questionsOfDomain(courseDomain(course).number);
-    if (!state.attempts.some((a) => a.courseId === course.id && a.passed)) {
-      state.attempts.push({
-        courseId: course.id,
-        at: now,
-        correct: questions.length,
-        total: questions.length,
-        passed: true,
-      });
-    }
-
-    const tId = taskIdOf(course.id);
-    state.submissions[tId] = {
-      linkUrl: `https://digitalent.vn/evidence/${course.code.toLowerCase()}`,
-      content: `Sản phẩm thực hành chuẩn hóa cho khóa ${course.code} (${course.title}).`,
-      submittedAt: now,
-      status: 'APPROVED',
-      score: 95,
-      feedback: 'Sản phẩm hoàn thành xuất sắc theo đúng tiêu chuẩn đánh giá của khung năng lực số TT02.',
-      reviewedAt: now,
-    };
-
-    return { ok: true, courseId: course.id };
-  });
-});
-
-route('POST', '/personal/demo/fast-track-target', (context) => {
-  const targetCode = context.body?.positionCode ? String(context.body.positionCode).toUpperCase() : null;
-  return updatePersonalState(learnerId(context), (state) => {
-    if (targetCode && isReferencePosition(targetCode)) {
-      state.targetCode = targetCode;
-      state.targetSetAt = new Date().toISOString();
-    }
-    if (!state.targetCode) throw badRequest('Chưa chọn vị trí mục tiêu.');
-
-    const now = new Date().toISOString();
-    const position = getReferencePosition(state.targetCode);
-    if (!position) throw badRequest('Không tìm thấy thông tin vị trí.');
-
-    const { domains } = summarizeRequirements(position);
-    for (const d of domains) {
-      if (d.highestLevel > 0) {
-        for (let lvl = 1; lvl <= d.highestLevel; lvl++) {
-          const course = courseFor(`cat-${d.number}`, lvl);
-          if (course) {
-            const modules = courseModules(course);
-            state.lessons[course.id] = Object.fromEntries(modules.flatMap((m) => m.lessons).map((l) => [l.id, now]));
-            const questions = questionsOfDomain(d.number);
-            if (!state.attempts.some((a) => a.courseId === course.id && a.passed)) {
-              state.attempts.push({
-                courseId: course.id,
-                at: now,
-                correct: questions.length,
-                total: questions.length,
-                passed: true,
-              });
-            }
-            const tId = taskIdOf(course.id);
-            state.submissions[tId] = {
-              linkUrl: `https://digitalent.vn/evidence/${course.code.toLowerCase()}`,
-              content: `Sản phẩm thực hành chuẩn hóa cho khóa ${course.code} (${course.title}).`,
-              submittedAt: now,
-              status: 'APPROVED',
-              score: 95,
-              feedback: 'Bài nộp đáp ứng đầy đủ tiêu chí thẩm định theo Thông tư 02/2025/TT-BGDĐT.',
-              reviewedAt: now,
-            };
-          }
-        }
-      }
-    }
-
-    return { ok: true, targetCode: state.targetCode };
-  });
-});
-
-route('POST', '/personal/demo/reset', (context) => {
-  return updatePersonalState(learnerId(context), () => demoState());
 });

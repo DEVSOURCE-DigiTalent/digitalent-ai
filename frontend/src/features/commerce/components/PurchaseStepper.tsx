@@ -77,10 +77,10 @@ export function PurchaseStepper({
               >
                 <span
                   className={cn(
-                    'grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold transition-colors',
-                    isDone && 'bg-cream-soft text-black',
-                    isCurrent && 'bg-cream text-black ring-2 ring-cream/40',
-                    !isDone && !isCurrent && 'border border-stone-700 bg-stone-900 text-stone-500',
+                    'grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold transition-all',
+                    isDone && 'bg-amber-400/20 text-[#F5CA65] border border-amber-400/40',
+                    isCurrent && 'bg-gradient-to-r from-[#F5CA65] to-[#D4982F] text-[#0C0E12] ring-4 ring-amber-400/25 shadow-md shadow-amber-500/20 font-bold',
+                    !isDone && !isCurrent && 'border border-white/15 bg-landing-card text-stone-400',
                   )}
                 >
                   {isDone ? <Check className="size-3.5" strokeWidth={3} aria-hidden="true" /> : step.id}
@@ -104,7 +104,7 @@ export function PurchaseStepper({
                   aria-hidden="true"
                   className={cn(
                     'h-px flex-1 min-w-4 transition-colors',
-                    isDone ? 'bg-cream/40' : 'bg-stone-800',
+                    isDone ? 'bg-amber-400/40' : 'bg-white/10',
                   )}
                 />
               )}

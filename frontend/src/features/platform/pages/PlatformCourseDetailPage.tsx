@@ -214,7 +214,7 @@ export function PlatformCourseDetailPage() {
         <div className="space-y-6">
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
             <h2 className="text-base font-semibold text-slate-900">
-              Năng lực số mục tiêu theo Thông tư 02/2025/TT-BGDĐT
+              Năng lực số mục tiêu theo Khung chuẩn năng lực số
             </h2>
             <div className="p-4 rounded-lg bg-primary-50/50 border border-primary-100 text-sm space-y-2">
               <div className="flex items-center gap-2">
@@ -318,7 +318,7 @@ export function PlatformCourseDetailPage() {
                   Xuất bản ngày 01/10/2026 bởi Ban Chuyên môn Đào tạo DigiTalent AI.
                 </p>
                 <p className="text-xs text-slate-700 mt-2">
-                  Đồng bộ chuẩn 24 năng lực số theo Thông tư 02/2025/TT-BGDĐT.
+                  Đồng bộ chuẩn 24 năng lực số theo Khung chuẩn năng lực số.
                 </p>
               </div>
             </div>

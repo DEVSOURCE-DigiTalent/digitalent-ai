@@ -48,7 +48,7 @@ export function CompetencyDetailPage() {
           className="mb-3 inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
-          Khung năng lực TT 02/2025
+          Khung chuẩn năng lực số
         </Link>
         <PageHeader
           title={c.name}

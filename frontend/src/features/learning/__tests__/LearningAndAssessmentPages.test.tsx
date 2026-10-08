@@ -42,7 +42,7 @@ describe('Learning & Assessment Flow (EMP-05..06 & LCA-14..17)', () => {
     useCurrentUser.setState({
       user: {
         id: 'usr-learner-01',
-        email: 'learner@digitalent.demo',
+        email: 'learner@digitalent.ai',
         fullName: 'Nguyễn Văn Học',
         roles: [ROLES.EMPLOYEE, ROLES.OWNER],
         permissions: ['learning.read', 'learning.manage', 'lesson.complete'],

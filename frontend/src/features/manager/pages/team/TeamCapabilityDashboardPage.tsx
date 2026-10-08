@@ -41,7 +41,7 @@ export function TeamCapabilityDashboardPage() {
       <div className="space-y-6 pb-12">
         <PageHeader
           title="Bảng năng lực của nhóm"
-          subtitle="Theo dõi tiến độ phát triển năng lực số chuẩn Thông tư 02/2025 và quản lý bài tập thực hành của đội ngũ."
+          subtitle="Theo dõi tiến độ phát triển năng lực số theo Khung chuẩn và quản lý bài tập thực hành của đội ngũ."
         />
         <div className="py-12 bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
           <EmptyState
@@ -59,7 +59,7 @@ export function TeamCapabilityDashboardPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <PageHeader
           title="Bảng năng lực của nhóm"
-          subtitle="Theo dõi tiến độ phát triển năng lực số chuẩn Thông tư 02/2025 và quản lý bài tập thực hành của đội ngũ."
+          subtitle="Theo dõi tiến độ phát triển năng lực số theo Khung chuẩn và quản lý bài tập thực hành của đội ngũ."
         />
         <div className="flex items-center gap-3 shrink-0">
           <Link
@@ -94,7 +94,7 @@ export function TeamCapabilityDashboardPage() {
         {/* Coverage */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
           <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Tỷ lệ đạt chuẩn TT02</span>
+            <span className="text-xs font-semibold uppercase tracking-wider">Tỷ lệ đạt chuẩn năng lực</span>
             <TrendingUp className="size-5 text-emerald-600" />
           </div>
           <div className="text-3xl font-black text-emerald-600">

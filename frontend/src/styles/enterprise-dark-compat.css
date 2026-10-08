@@ -4,57 +4,57 @@
  */
 
 html.ent-theme[data-theme='dark'] {
-  /* ── Đảo Slate ── */
-  --color-slate-50: #1A1916;
-  --color-slate-100: #212119;
-  --color-slate-200: #2A2924;
-  --color-slate-300: #3D3C35;
-  --color-slate-400: #8E8C80;
-  --color-slate-500: #B4B2A6;
-  --color-slate-600: #C8C6BA;
-  --color-slate-700: #D6D4C8;
-  --color-slate-800: #E2E0D4;
-  --color-slate-900: #EDEBE0;
-  --color-slate-950: #F7F5EB;
+  /* ── Đảo Slate (Obsidian than thạch anh & ngọc trai) ── */
+  --color-slate-50: #11151E;
+  --color-slate-100: #171C26;
+  --color-slate-200: #202634;
+  --color-slate-300: #2C3548;
+  --color-slate-400: #8893A8;
+  --color-slate-500: #ADB8CC;
+  --color-slate-600: #CAD2E0;
+  --color-slate-700: #DFE4ED;
+  --color-slate-800: #EEF1F6;
+  --color-slate-900: #F5F7FA;
+  --color-slate-950: #FFFFFF;
 
   /* ── Đảo Gray / Zinc / Neutral / Stone ── */
-  --color-gray-50: #1A1916;
-  --color-gray-100: #212119;
-  --color-gray-200: #2A2924;
-  --color-gray-300: #3D3C35;
-  --color-gray-400: #8E8C80;
-  --color-gray-500: #B4B2A6;
-  --color-gray-600: #C8C6BA;
-  --color-gray-700: #D6D4C8;
-  --color-gray-800: #E2E0D4;
-  --color-gray-900: #EDEBE0;
+  --color-gray-50: #11151E;
+  --color-gray-100: #171C26;
+  --color-gray-200: #202634;
+  --color-gray-300: #2C3548;
+  --color-gray-400: #8893A8;
+  --color-gray-500: #ADB8CC;
+  --color-gray-600: #CAD2E0;
+  --color-gray-700: #DFE4ED;
+  --color-gray-800: #EEF1F6;
+  --color-gray-900: #F5F7FA;
 
-  --color-zinc-50: #1A1916;
-  --color-zinc-100: #212119;
-  --color-zinc-200: #2A2924;
-  --color-zinc-300: #3D3C35;
-  --color-zinc-700: #D6D4C8;
-  --color-zinc-800: #E2E0D4;
-  --color-zinc-900: #EDEBE0;
+  --color-zinc-50: #11151E;
+  --color-zinc-100: #171C26;
+  --color-zinc-200: #202634;
+  --color-zinc-300: #2C3548;
+  --color-zinc-700: #DFE4ED;
+  --color-zinc-800: #EEF1F6;
+  --color-zinc-900: #F5F7FA;
 
-  --color-neutral-50: #1A1916;
-  --color-neutral-100: #212119;
-  --color-neutral-200: #2A2924;
-  --color-neutral-700: #D6D4C8;
-  --color-neutral-800: #E2E0D4;
-  --color-neutral-900: #EDEBE0;
+  --color-neutral-50: #11151E;
+  --color-neutral-100: #171C26;
+  --color-neutral-200: #202634;
+  --color-neutral-700: #DFE4ED;
+  --color-neutral-800: #EEF1F6;
+  --color-neutral-900: #F5F7FA;
 
-  --color-stone-50: #1A1916;
-  --color-stone-100: #212119;
-  --color-stone-200: #2A2924;
-  --color-stone-700: #D6D4C8;
-  --color-stone-800: #E2E0D4;
-  --color-stone-900: #EDEBE0;
+  --color-stone-50: #11151E;
+  --color-stone-100: #171C26;
+  --color-stone-200: #202634;
+  --color-stone-700: #DFE4ED;
+  --color-stone-800: #EEF1F6;
+  --color-stone-900: #F5F7FA;
 
   /* ── Đảo White / Black / Surface ── */
-  --color-white: #181816;
-  --color-surface: #111110;
-  --color-surface-card: #181816;
+  --color-white: #11151E;
+  --color-surface: #0C0E12;
+  --color-surface-card: #11151E;
 
   /* ── Primary & Blue (Accent xanh ấm) ── */
   --color-primary-50: rgba(124, 155, 230, 0.10);
