@@ -11,7 +11,7 @@ export function ReviewQueuePage() {
   const [search, setSearch] = useState('');
   const [pageIndex, setPageIndex] = useState(1);
 
-  const { data, isLoading } = useReviewQueue({
+  const { data, isLoading, isError } = useReviewQueue({
     search: search || undefined,
     pageIndex,
     pageSize: 15,
@@ -82,7 +82,7 @@ export function ReviewQueuePage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <PageHeader
           title="Hàng chờ đánh giá minh chứng"
-          subtitle="Danh sách các bài thực hành và dự án của nhân sự đang chờ Manager phê duyệt và ghi nhận năng lực số."
+          subtitle="Danh sách bài thực hành đang chờ chấm. Kết quả chấm không tự xác nhận cấp năng lực."
         />
         <Link
           to="/enterprise/tasks"
@@ -113,6 +113,7 @@ export function ReviewQueuePage() {
       </div>
 
       {/* Table */}
+      {isError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">Không tải được hàng chờ chấm. Vui lòng thử lại.</p>}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <DataTable
           columns={columns}
