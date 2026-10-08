@@ -7,6 +7,7 @@ import { useTrainingBatches, useTrainingBatchSummary } from '@/hooks/use-trainin
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import type { TrainingBatchStatus } from '@/services/mock/server/types';
+import { apiErrorMessage } from '@/lib/utils';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: 'Tất cả trạng thái' },
@@ -25,11 +26,14 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
 export function TrainingBatchListPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [pageIndex, setPageIndex] = useState(1);
 
   const { data: summary } = useTrainingBatchSummary();
-  const { data: batchesData, isLoading } = useTrainingBatches({
+  const { data: batchesData, isLoading, isError, error, refetch } = useTrainingBatches({
     search: search.trim() || undefined,
     status: statusFilter ? (statusFilter as TrainingBatchStatus) : undefined,
+    pageIndex,
+    pageSize: 20,
   });
 
   const batches = batchesData?.items || [];
@@ -69,7 +73,7 @@ export function TrainingBatchListPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <PageHeader
           title="Đợt đào tạo (Training Batches)"
-          subtitle="Tổ chức các đợt bồi dưỡng năng lực tập trung cho các phòng ban, vị trí công việc hoặc nhóm Cấp bậc G1–G3. Tự động giao khóa học và giám sát tiến độ hoàn thành."
+          subtitle="Tổ chức đợt bồi dưỡng, chọn học viên và theo dõi tiến độ. Việc giao khóa học cho học viên được thực hiện ở mục Giao khóa học."
         />
         <Link
           to="/enterprise/training-batches/new"
@@ -91,7 +95,7 @@ export function TrainingBatchListPage() {
           <div className="text-xl font-bold text-sky-800 mt-1">{summary?.running ?? 0}</div>
         </div>
         <div className="bg-white rounded-xl border border-amber-100 bg-amber-50/20 p-3.5 shadow-sm">
-          <div className="text-xs text-amber-700 font-medium">Đã lên lịch</div>
+          <div className="text-xs text-amber-700 font-medium">{import.meta.env.VITE_USE_MOCK === 'true' ? 'Đã lên lịch' : 'Bản nháp'}</div>
           <div className="text-xl font-bold text-amber-800 mt-1">{summary?.scheduled ?? 0}</div>
         </div>
         <div className="bg-white rounded-xl border border-emerald-100 bg-emerald-50/20 p-3.5 shadow-sm">
@@ -112,7 +116,7 @@ export function TrainingBatchListPage() {
             type="search"
             placeholder="Tìm theo tên đợt hoặc mã đợt..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPageIndex(1); }}
             className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
@@ -120,10 +124,10 @@ export function TrainingBatchListPage() {
           <select
             aria-label="Lọc trạng thái đợt đào tạo"
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => { setStatusFilter(e.target.value); setPageIndex(1); }}
             className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
-            {STATUS_OPTIONS.map((opt) => (
+            {STATUS_OPTIONS.filter((opt) => import.meta.env.VITE_USE_MOCK === 'true' || opt.value !== 'SCHEDULED').map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
@@ -134,7 +138,12 @@ export function TrainingBatchListPage() {
 
       {/* Bảng danh sách đợt đào tạo */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        {isLoading ? (
+        {isError ? (
+          <div role="alert" className="py-12 text-center text-sm text-rose-700">
+            Không tải được đợt đào tạo: {apiErrorMessage(error, 'Vui lòng thử lại.')}
+            <button type="button" onClick={() => void refetch()} className="ml-3 font-semibold underline">Thử lại</button>
+          </div>
+        ) : isLoading ? (
           <div className="py-20 text-center text-sm text-slate-500">Đang tải danh sách đợt đào tạo…</div>
         ) : batches.length === 0 ? (
           <div className="py-16 text-center">
@@ -158,7 +167,7 @@ export function TrainingBatchListPage() {
                   <th className="px-4 py-3">Mã / Tên đợt đào tạo</th>
                   <th className="px-4 py-3">Thời gian</th>
                   <th className="px-4 py-3">Quy mô</th>
-                  <th className="px-4 py-3">Tiến độ đợt</th>
+                  <th className="px-4 py-3">{import.meta.env.VITE_USE_MOCK === 'true' ? 'Tiến độ đợt' : 'Tỷ lệ hoàn thành'}</th>
                   <th className="px-4 py-3">Trạng thái</th>
                   <th className="px-4 py-3 text-right">Thao tác</th>
                 </tr>
@@ -225,6 +234,15 @@ export function TrainingBatchListPage() {
           </div>
         )}
       </div>
+      {(batchesData?.totalPages ?? 0) > 1 && (
+        <div className="flex items-center justify-end gap-3 text-sm">
+          <button type="button" disabled={pageIndex <= 1} onClick={() => setPageIndex((page) => page - 1)}
+            className="rounded border border-slate-300 px-3 py-1.5 disabled:opacity-40">Trang trước</button>
+          <span>Trang {pageIndex} / {batchesData?.totalPages}</span>
+          <button type="button" disabled={pageIndex >= (batchesData?.totalPages ?? 1)} onClick={() => setPageIndex((page) => page + 1)}
+            className="rounded border border-slate-300 px-3 py-1.5 disabled:opacity-40">Trang sau</button>
+        </div>
+      )}
     </div>
   );
 }

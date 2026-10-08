@@ -2,6 +2,7 @@ import { StatusBadge } from '@/components/shared';
 import type { AssignmentRow, AssignmentStatus } from '@/services/assignment.service';
 
 export const ASSIGNMENT_STATUS_LABELS: Record<AssignmentStatus, string> = {
+  ACTIVE: 'Đang hiệu lực',
   NOT_STARTED: 'Chưa bắt đầu',
   IN_PROGRESS: 'Đang học',
   READY_FOR_ASSESSMENT: 'Chờ đánh giá',
@@ -10,6 +11,7 @@ export const ASSIGNMENT_STATUS_LABELS: Record<AssignmentStatus, string> = {
 };
 
 const VARIANTS = {
+  ACTIVE: 'info',
   NOT_STARTED: 'default',
   IN_PROGRESS: 'info',
   READY_FOR_ASSESSMENT: 'purple',
@@ -18,7 +20,8 @@ const VARIANTS = {
 } as const;
 
 /** Status of an assignment; "Quá hạn" and "Sắp đến hạn" take over while the work is open. */
-export function AssignmentStatusBadge({ assignment }: { assignment: Pick<AssignmentRow, 'status' | 'overdue' | 'dueSoon'> }) {
+export function AssignmentStatusBadge({ assignment }: { assignment: Pick<AssignmentRow, 'status' | 'overdue' | 'dueSoon'> & Partial<Pick<AssignmentRow, 'completedAt'>> }) {
+  if (assignment.status === 'COMPLETED' || assignment.completedAt) return <StatusBadge label="Đã hoàn thành" variant="success" />;
   if (assignment.overdue) return <StatusBadge label="Quá hạn" variant="danger" />;
   if (assignment.dueSoon) return <StatusBadge label="Sắp đến hạn" variant="warning" />;
   return <StatusBadge label={ASSIGNMENT_STATUS_LABELS[assignment.status]} variant={VARIANTS[assignment.status]} />;

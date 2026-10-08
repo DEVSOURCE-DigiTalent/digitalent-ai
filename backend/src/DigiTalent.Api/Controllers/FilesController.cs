@@ -27,7 +27,7 @@ public class FilesController : ControllerBase
     [HttpPost("upload")]
     [Authorize]
     public async Task<ActionResult<ApiResponse<FileUploadResult>>> Upload(
-        [FromForm] IFormFile file,
+        IFormFile file,
         [FromQuery] string folder = "general",
         CancellationToken cancellationToken = default)
     {

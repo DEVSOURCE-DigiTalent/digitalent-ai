@@ -7,6 +7,23 @@
 -- configurations and migrations are written to match it; Report 4 Section 2 and
 -- docs/07 describe it. Change this file first, then the code and the documents.
 --
+-- Addendum 2026-10-06b (organization screens OW-02..OW-13) — 2 new tables, 3 new columns:
+--   * job_positions.department_id, job_positions.job_grade: a position belongs to a
+--     department and sits on one of the shared grades G1..G3 (position list/detail, grades).
+--   * job_grades: per-organization display name/description of the G1..G3 scale (OW-12).
+--     A grade without a row falls back to the default name, so no seeding is required.
+--   * member_invitations: invitations to join the organization (OW-02 "invite members").
+--     Only a SHA-256 hash of the activation token is stored.
+--   * users.deactivated_reason: why an Owner deactivated a member (offboarding).
+--
+-- Addendum 2026-10-06 (organization overview page OW-01 + BE2 tables) — 6 new tables, 2 new columns:
+--   * organizations.setup_completed_at: onboarding state ("setup not finished" banner).
+--   * audit_logs.entity_label: human-readable target shown in "recent activity".
+--   * subscriptions, subscription_entitlements, invoices, training_batches,
+--     training_batch_employees, recommendation_reviews: tables already used by the BE2
+--     module (entities existed, excluded from migrations, created by no script).
+--     Declared here so every database built from this repo has them.
+--
 -- Changes v2.2 -> v2.3:
 --   * employees.job_position_id is NULLABLE (new hire without a position ->
 --     skill gap returns NOT_ASSIGNED).
@@ -27,7 +44,7 @@
 --       Optional            : Intelligence extension
 --
 -- Scope created by this script:
---   * 55 core tables
+--   * 63 core tables (55 + 6 added by the 2026-10-06 addendum + 2 by the 2026-10-06b addendum)
 --   * 4 non-blocking Intelligence extension tables
 --   * password_reset_tokens is intentionally NOT created by default (conditional)
 --
@@ -60,11 +77,67 @@ CREATE TABLE organizations (
     name            varchar(200) NOT NULL,
     domain          varchar(255),
     status          varchar(30)  NOT NULL,
+    setup_completed_at timestamptz,          -- NULL = onboarding wizard not finished
     created_at      timestamptz  NOT NULL,
     updated_at      timestamptz  NOT NULL,
     CONSTRAINT ck_organizations_status
         CHECK (status IN ('ACTIVE','INACTIVE'))
 );
+
+-- Current plan of an organization (one row per organization).
+CREATE TABLE subscriptions (
+    id                    uuid PRIMARY KEY,
+    organization_id       uuid NOT NULL REFERENCES organizations(id),
+    plan_code             varchar(50)  NOT NULL,
+    plan_name             varchar(100) NOT NULL,
+    status                varchar(30)  NOT NULL,
+    cycle                 varchar(10)  NOT NULL,
+    seat_limit            integer,                  -- NULL = unlimited
+    seats_used            integer      NOT NULL,
+    amount_per_period     numeric(18,2) NOT NULL,
+    cancel_at_period_end  boolean      NOT NULL,
+    renews_at             timestamptz,
+    cancelled_at          timestamptz,
+    created_at            timestamptz  NOT NULL,
+    updated_at            timestamptz  NOT NULL,
+    CONSTRAINT ck_subscriptions_status
+        CHECK (status IN ('ACTIVE','EXPIRED','PAYMENT_REQUIRED','CANCELLED')),
+    CONSTRAINT ck_subscriptions_cycle
+        CHECK (cycle IN ('month','year'))
+);
+
+CREATE UNIQUE INDEX ux_subscriptions_org
+    ON subscriptions (organization_id);
+
+CREATE TABLE subscription_entitlements (
+    id                uuid PRIMARY KEY,
+    subscription_id   uuid NOT NULL REFERENCES subscriptions(id),
+    entitlement_key   varchar(100) NOT NULL,
+    created_at        timestamptz  NOT NULL,
+    updated_at        timestamptz  NOT NULL
+);
+
+CREATE UNIQUE INDEX ux_subscription_entitlements_sub_key
+    ON subscription_entitlements (subscription_id, entitlement_key);
+
+CREATE TABLE invoices (
+    id                uuid PRIMARY KEY,
+    subscription_id   uuid NOT NULL REFERENCES subscriptions(id),
+    organization_id   uuid NOT NULL REFERENCES organizations(id),
+    code              varchar(50)   NOT NULL,
+    description       varchar(500)  NOT NULL,
+    amount            numeric(18,2) NOT NULL,
+    status            varchar(30)   NOT NULL,
+    issued_at         timestamptz   NOT NULL,
+    created_at        timestamptz   NOT NULL,
+    updated_at        timestamptz   NOT NULL,
+    CONSTRAINT ck_invoices_status
+        CHECK (status IN ('PAID','PENDING','FAILED','REFUNDED'))
+);
+
+CREATE INDEX ix_invoices_org
+    ON invoices (organization_id);
+
 
 CREATE TABLE users (
     id                  uuid PRIMARY KEY,
@@ -77,6 +150,7 @@ CREATE TABLE users (
     failed_login_count  integer      NOT NULL DEFAULT 0,
     locked_until        timestamptz,
     last_login_at       timestamptz,
+    deactivated_reason  varchar(500),                         -- set when an Owner deactivates the member
     created_at          timestamptz  NOT NULL,
     updated_at          timestamptz  NOT NULL,
     CONSTRAINT ck_users_status
@@ -179,19 +253,39 @@ CREATE TABLE job_families (
         CHECK (status IN ('ACTIVE','INACTIVE','ARCHIVED'))
 );
 
+-- department_id is declared now but its FK is added after departments exists.
 CREATE TABLE job_positions (
     id              uuid PRIMARY KEY,
     organization_id uuid NOT NULL REFERENCES organizations(id),
     job_family_id   uuid REFERENCES job_families(id),
+    department_id   uuid,                                     -- owning department (optional)
     code            varchar(50)  NOT NULL,
     name            varchar(180) NOT NULL,
     description     text,
+    job_grade       varchar(10),                              -- G1 / G2 / G3 (see job_grades)
     status          varchar(30)  NOT NULL,
     created_at      timestamptz  NOT NULL,
     updated_at      timestamptz  NOT NULL,
     CONSTRAINT uq_job_positions_org_code UNIQUE (organization_id, code),
     CONSTRAINT ck_job_positions_status
-        CHECK (status IN ('ACTIVE','INACTIVE','ARCHIVED'))
+        CHECK (status IN ('ACTIVE','INACTIVE','ARCHIVED')),
+    CONSTRAINT ck_job_positions_job_grade
+        CHECK (job_grade IS NULL OR job_grade IN ('G1','G2','G3'))
+);
+
+-- Display name and description of the shared grade scale, per organization (OW-12).
+-- The codes are fixed (G1..G3); a missing row means "use the default name".
+CREATE TABLE job_grades (
+    id              uuid PRIMARY KEY,
+    organization_id uuid NOT NULL REFERENCES organizations(id),
+    code            varchar(10)  NOT NULL,
+    name            varchar(120) NOT NULL,
+    description     text,
+    created_at      timestamptz  NOT NULL,
+    updated_at      timestamptz  NOT NULL,
+    CONSTRAINT uq_job_grades_org_code UNIQUE (organization_id, code),
+    CONSTRAINT ck_job_grades_code
+        CHECK (code IN ('G1','G2','G3'))
 );
 
 -- manager_employee_id is declared now but its FK is added after employees exists.
@@ -238,6 +332,42 @@ CREATE TABLE employees (
 ALTER TABLE departments
     ADD CONSTRAINT fk_departments_manager_employee
     FOREIGN KEY (manager_employee_id) REFERENCES employees(id);
+
+ALTER TABLE job_positions
+    ADD CONSTRAINT fk_job_positions_department
+    FOREIGN KEY (department_id) REFERENCES departments(id);
+
+CREATE INDEX ix_job_positions_department
+    ON job_positions (department_id);
+
+-- Invitation to join an organization (OW-02). The account (users + employees + user_roles)
+-- is created only when the invitee activates it with the emailed token.
+CREATE TABLE member_invitations (
+    id                  uuid PRIMARY KEY,
+    organization_id     uuid NOT NULL REFERENCES organizations(id),
+    email               varchar(255) NOT NULL,                -- stored lower-case
+    full_name           varchar(200) NOT NULL,
+    employee_code       varchar(50),                          -- optional; generated on activation if empty
+    role_id             uuid NOT NULL REFERENCES roles(id),
+    department_id       uuid REFERENCES departments(id),
+    job_position_id     uuid REFERENCES job_positions(id),
+    token_hash          varchar(128) NOT NULL UNIQUE,         -- SHA-256 of the activation token
+    status              varchar(30)  NOT NULL,
+    invited_by_user_id  uuid REFERENCES users(id),
+    invited_at          timestamptz  NOT NULL,
+    expires_at          timestamptz  NOT NULL,
+    accepted_user_id    uuid REFERENCES users(id),
+    accepted_at         timestamptz,
+    created_at          timestamptz  NOT NULL,
+    updated_at          timestamptz  NOT NULL,
+    CONSTRAINT ck_member_invitations_status
+        CHECK (status IN ('PENDING','ACCEPTED','REVOKED'))
+);
+
+-- At most one pending invitation per e-mail in an organization.
+CREATE UNIQUE INDEX ux_member_invitations_pending_email
+    ON member_invitations (organization_id, email)
+    WHERE status = 'PENDING';
 
 CREATE UNIQUE INDEX ux_employees_work_email_per_org
     ON employees (organization_id, lower(work_email))
@@ -849,9 +979,35 @@ CREATE TABLE skill_gap_items (
         CHECK (severity IS NULL OR severity IN ('LOW','MEDIUM','HIGH'))
 );
 
+
 -- ============================================================================
 -- 8. LEARNING ASSIGNMENT / ENROLLMENT / PROGRESS  [Phase 3]
 -- ============================================================================
+
+CREATE TABLE training_batches (
+    id                  uuid PRIMARY KEY,
+    organization_id     uuid NOT NULL REFERENCES organizations(id),
+    code                varchar(50)   NOT NULL,
+    title               varchar(200)  NOT NULL,
+    description         varchar(2000),
+    course_id           uuid NOT NULL REFERENCES courses(id),
+    department_id       uuid REFERENCES departments(id),
+    job_position_id     uuid REFERENCES job_positions(id),
+    start_date          timestamptz NOT NULL,
+    end_date            timestamptz,
+    due_date            timestamptz,
+    status              varchar(30) NOT NULL,
+    created_by_user_id  uuid NOT NULL REFERENCES users(id),
+    created_at          timestamptz NOT NULL,
+    updated_at          timestamptz NOT NULL,
+    CONSTRAINT ck_training_batches_status
+        CHECK (status IN ('DRAFT','ACTIVE','COMPLETED','CANCELLED'))
+);
+
+CREATE INDEX ix_training_batches_org_status
+    ON training_batches (organization_id, status);
+CREATE UNIQUE INDEX ux_training_batches_org_code
+    ON training_batches (organization_id, code);
 
 CREATE TABLE course_assignments (
     id                       uuid PRIMARY KEY,
@@ -875,6 +1031,48 @@ CREATE TABLE course_assignments (
 
 CREATE INDEX ix_course_assignments_employee
     ON course_assignments (employee_id, status);
+
+CREATE TABLE training_batch_employees (
+    id                    uuid PRIMARY KEY,
+    training_batch_id     uuid NOT NULL REFERENCES training_batches(id),
+    employee_id           uuid NOT NULL REFERENCES employees(id),
+    course_assignment_id  uuid REFERENCES course_assignments(id),
+    status                varchar(30) NOT NULL,
+    created_at            timestamptz NOT NULL,
+    updated_at            timestamptz NOT NULL,
+    CONSTRAINT ck_training_batch_employees_status
+        CHECK (status IN ('ENROLLED','IN_PROGRESS','COMPLETED','DROPPED'))
+);
+
+CREATE UNIQUE INDEX ux_training_batch_employees_batch_emp
+    ON training_batch_employees (training_batch_id, employee_id);
+
+-- A recommended course awaiting (or after) a reviewer's decision; one row per employee and course.
+-- Reopening sets status back to PENDING instead of deleting the row.
+CREATE TABLE recommendation_reviews (
+    id                    uuid PRIMARY KEY,
+    organization_id       uuid NOT NULL REFERENCES organizations(id),
+    employee_id           uuid NOT NULL REFERENCES employees(id),
+    course_id             uuid NOT NULL REFERENCES courses(id),
+    skill_gap_run_id      uuid NOT NULL REFERENCES skill_gap_runs(id),
+    score                 numeric(8,4)  NOT NULL,
+    gaps_closed           integer       NOT NULL,
+    mandatory_closed      integer       NOT NULL,
+    high_closed           integer       NOT NULL,
+    explanation           varchar(2000) NOT NULL,
+    status                varchar(30)   NOT NULL,
+    decision_reason       varchar(500),
+    decided_at            timestamptz,
+    decided_by_user_id    uuid REFERENCES users(id),
+    course_assignment_id  uuid REFERENCES course_assignments(id),
+    created_at            timestamptz NOT NULL,
+    updated_at            timestamptz NOT NULL,
+    CONSTRAINT ck_recommendation_reviews_status
+        CHECK (status IN ('PENDING','ACCEPTED','DISMISSED'))
+);
+
+CREATE UNIQUE INDEX uq_recommendation_reviews_emp_course
+    ON recommendation_reviews (organization_id, employee_id, course_id);
 
 CREATE TABLE enrollments (
     id                    uuid PRIMARY KEY,
@@ -1162,6 +1360,7 @@ CREATE TABLE audit_logs (
     action           varchar(120) NOT NULL,
     entity_type      varchar(100) NOT NULL,
     entity_id        uuid,
+    entity_label     varchar(255),
     old_values       jsonb,
     new_values       jsonb,
     ip_hash          varchar(128),

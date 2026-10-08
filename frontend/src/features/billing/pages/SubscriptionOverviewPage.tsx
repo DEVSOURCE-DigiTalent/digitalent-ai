@@ -47,7 +47,7 @@ export function SubscriptionOverviewPage() {
     }
   };
 
-  const seatsFull = subscription.seatLimit !== undefined && subscription.seatsUsed >= subscription.seatLimit;
+  const seatsFull = subscription.seatLimit != null && subscription.seatsUsed >= subscription.seatLimit;
   const recentInvoices = (subscription.invoices ?? []).slice(0, 3);
 
   const invoiceColumns: Column<Invoice>[] = [
@@ -55,7 +55,7 @@ export function SubscriptionOverviewPage() {
     { key: 'issuedAt', header: 'Ngày phát hành', cell: (i) => formatDate(i.issuedAt) },
     { key: 'description', header: 'Nội dung', cell: (i) => i.description },
     { key: 'amount', header: 'Số tiền', cell: (i) => formatVnd(i.amount), className: 'text-right tabular-nums font-semibold' },
-    { key: 'status', header: 'Trạng thái', cell: () => <StatusBadge label="Đã thanh toán" variant="success" /> },
+    { key: 'status', header: 'Trạng thái', cell: (i) => <StatusBadge label={i.status} variant={i.status === 'PAID' ? 'success' : 'warning'} /> },
   ];
 
   return (
@@ -72,7 +72,7 @@ export function SubscriptionOverviewPage() {
             <div className="flex items-center gap-2">
               <span className="text-xs uppercase font-bold tracking-wider text-slate-500">Gói hiện tại</span>
               <StatusBadge
-                label={STATUS_LABELS[subscription.status]}
+                label={STATUS_LABELS[subscription.status] ?? subscription.status}
                 variant={subscription.status === 'active' ? 'success' : 'danger'}
               />
               {subscription.cancelAtPeriodEnd && <StatusBadge label="Sẽ ngừng gia hạn" variant="warning" />}
@@ -83,9 +83,11 @@ export function SubscriptionOverviewPage() {
           </div>
 
           <div className="flex flex-wrap gap-2.5">
-            <button type="button" onClick={() => setChanging(true)} className={PRIMARY_BUTTON}>
-              Nâng cấp / Đổi gói
-            </button>
+            {import.meta.env.VITE_USE_MOCK === 'true' && (
+              <button type="button" onClick={() => setChanging(true)} className={PRIMARY_BUTTON}>
+                Nâng cấp / Đổi gói
+              </button>
+            )}
             {subscription.cancelAtPeriodEnd ? (
               <button
                 type="button"
@@ -119,7 +121,7 @@ export function SubscriptionOverviewPage() {
           <div>
             <dt className="text-xs uppercase font-semibold text-slate-500">Người dùng đã kích hoạt</dt>
             <dd className={`mt-1 font-bold text-base ${seatsFull ? 'text-red-600' : 'text-slate-900'}`}>
-              {subscription.seatsUsed} {subscription.seatLimit !== undefined ? `/ ${subscription.seatLimit} người dùng đã kích hoạt` : 'người dùng đã kích hoạt (Không giới hạn)'}
+              {subscription.seatsUsed} {subscription.seatLimit != null ? `/ ${subscription.seatLimit} người dùng đã kích hoạt` : 'người dùng đã kích hoạt (Không giới hạn)'}
             </dd>
           </div>
           <div>
@@ -216,7 +218,9 @@ export function SubscriptionOverviewPage() {
         />
       </div>
 
-      {changing && <PlanChangeModal open onClose={() => setChanging(false)} subscription={subscription} />}
+      {import.meta.env.VITE_USE_MOCK === 'true' && changing && (
+        <PlanChangeModal open onClose={() => setChanging(false)} subscription={subscription} />
+      )}
 
       <ConfirmActionDialog
         open={confirmCancel}

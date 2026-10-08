@@ -122,3 +122,15 @@ export function useCreateInternalCourse() {
     },
   });
 }
+
+export function useUpdateInternalCourse() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: import('../services/learning.service').UpdateInternalCourseInput }) =>
+      learningService.updateInternalCourse(id, input).then((res) => res.data.data!),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['learning', 'internal-courses'] });
+      qc.invalidateQueries({ queryKey: LEARNING_KEYS.internalCourse(variables.id) });
+    },
+  });
+}

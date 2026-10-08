@@ -1,7 +1,7 @@
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { MyDevelopmentDashboardPage } from '@/features/employee/pages/MyDevelopmentDashboardPage';
+import { PersonalDashboardPage } from '@/features/manager/pages/ManagerPageSwitch';
 import { OrganizationOverviewPage } from '@/features/organization/pages/OrganizationOverviewPage';
-import { TeamCapabilityDashboardPage } from '@/features/team/pages/TeamCapabilityDashboardPage';
+import { TeamCapabilityDashboardPage } from '@/features/manager/pages/team/TeamCapabilityDashboardPage';
 import { TrialDashboardOverview } from './TrialDashboardOverview';
 
 function useIsEnterpriseTrial(): boolean {
@@ -22,5 +22,5 @@ export function TrialAwareManagerDashboardPage() {
 }
 
 export function TrialAwareEmployeeDashboardPage() {
-  return useIsEnterpriseTrial() ? <TrialDashboardOverview /> : <MyDevelopmentDashboardPage />;
+  return useIsEnterpriseTrial() ? <TrialDashboardOverview /> : <PersonalDashboardPage />;
 }

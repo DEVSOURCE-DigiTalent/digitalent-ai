@@ -14,7 +14,9 @@ import { AssignCourseModal } from '../components/AssignCourseModal';
 import { AssignmentsTable } from '../components/AssignmentsTable';
 
 const PAGE_SIZE = 15;
-const STATUSES: AssignmentStatus[] = ['NOT_STARTED', 'IN_PROGRESS', 'READY_FOR_ASSESSMENT', 'COMPLETED', 'CANCELLED'];
+const STATUSES: AssignmentStatus[] = import.meta.env.VITE_USE_MOCK === 'true'
+  ? ['NOT_STARTED', 'IN_PROGRESS', 'READY_FOR_ASSESSMENT', 'COMPLETED', 'CANCELLED']
+  : ['ACTIVE', 'CANCELLED'];
 
 /** LCA-12: give standard courses to employees, teams or positions, and cancel an assignment. */
 export function CourseAssignmentPage() {
@@ -59,7 +61,7 @@ export function CourseAssignmentPage() {
         filters={
           <>
             <select aria-label="Lọc theo trạng thái" value={status} onChange={(e) => { setStatus(e.target.value as AssignmentStatus | ''); setPage(1); }} className={INPUT_CLASS}>
-              <option value="">Đang hiệu lực</option>
+              <option value="">Tất cả trạng thái</option>
               {STATUSES.map((s) => <option key={s} value={s}>{ASSIGNMENT_STATUS_LABELS[s]}</option>)}
             </select>
             <select aria-label="Lọc theo phòng ban" value={departmentId} onChange={(e) => { setDepartmentId(e.target.value); setPage(1); }} className={INPUT_CLASS}>

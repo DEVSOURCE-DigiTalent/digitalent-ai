@@ -1,9 +1,9 @@
 import { useId, useMemo, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Modal } from '@/components/shared';
-import { useCreateAssignments, useCourses } from '@/hooks/use-assignments';
+import { useCourseCatalog, useCreateAssignments } from '@/hooks/use-assignments';
 import { useDepartments } from '@/hooks/use-departments';
-import { useEmployees } from '@/hooks/use-employees';
+import { useAllEmployees } from '@/hooks/use-employees';
 import { useJobPositions } from '@/hooks/use-job-positions';
 import { useSkillGapRuns } from '@/hooks/use-skill-gaps';
 import { apiErrorMessage } from '@/lib/utils';
@@ -14,6 +14,20 @@ import { INPUT_CLASS, PRIMARY_BUTTON, SECONDARY_BUTTON } from '@/features/onboar
 import { LEVEL_SUFFIX_LABELS, SKIP_REASON_LABELS } from '../assignment-labels';
 
 type TargetKind = 'employees' | 'department' | 'position' | 'grade' | 'gap';
+
+const TARGET_CHOICES: ReadonlyArray<readonly [TargetKind, string]> = import.meta.env.VITE_USE_MOCK === 'true'
+  ? [
+      ['employees', 'Từng nhân viên'],
+      ['department', 'Cả phòng ban'],
+      ['position', 'Mọi người ở một vị trí'],
+      ['grade', 'Theo Cấp bậc (G1–G3)'],
+      ['gap', 'Từ khoảng trống năng lực (Skill Gap)'],
+    ]
+  : [
+      ['employees', 'Từng nhân viên'],
+      ['department', 'Cả phòng ban'],
+      ['position', 'Mọi người ở một vị trí'],
+    ];
 
 interface AssignCourseModalProps {
   open: boolean;
@@ -36,11 +50,12 @@ interface AssignCourseModalProps {
 export function AssignCourseModal({ open, onClose, courseId: initialCourse, employeeIds: initialEmployees }: AssignCourseModalProps) {
   const base = useId();
   const create = useCreateAssignments();
-  const courses = (useCourses({ status: 'PUBLISHED' }).data?.items ?? []);
+  const courses = useCourseCatalog({ status: 'PUBLISHED' }, open).data?.items ?? [];
   const departments = useDepartments({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
   const positions = useJobPositions({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
-  const employees = useEmployees({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
-  const { data: skillGapsData } = useSkillGapRuns({ pageSize: 100 });
+  const { data: employeesData, isLoading: employeesLoading } = useAllEmployees({ status: 'ACTIVE' }, open);
+  const employees = employeesData ?? [];
+  const { data: skillGapsData } = useSkillGapRuns({ pageSize: 100 }, open && import.meta.env.VITE_USE_MOCK === 'true');
 
   const [courseId, setCourseId] = useState(initialCourse ?? '');
   const [kind, setKind] = useState<TargetKind>('employees');
@@ -141,7 +156,9 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
       onClose={onClose}
       size="lg"
       title="Giao khóa học"
-      description="Giao khóa học chuẩn theo nhân viên, phòng ban, vị trí, cấp bậc (G1–G3) hoặc tự động từ khoảng trống năng lực."
+      description={import.meta.env.VITE_USE_MOCK === 'true'
+        ? 'Giao khóa học chuẩn theo nhân viên, phòng ban, vị trí, cấp bậc hoặc khoảng trống năng lực.'
+        : 'Giao khóa học đã xuất bản cho nhân viên, phòng ban hoặc vị trí công việc.'}
       footer={
         <>
           <button type="button" onClick={onClose} className={SECONDARY_BUTTON}>{result ? 'Đóng' : 'Hủy'}</button>
@@ -180,13 +197,7 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
           <fieldset>
             <legend className="mb-2 text-sm font-medium text-slate-700">Giao cho</legend>
             <div className="flex flex-wrap gap-4 text-sm">
-              {([
-                ['employees', 'Từng nhân viên'],
-                ['department', 'Cả phòng ban'],
-                ['position', 'Mọi người ở một vị trí'],
-                ['grade', 'Theo Cấp bậc (G1–G3)'],
-                ['gap', 'Từ khoảng trống năng lực (Skill Gap)'],
-              ] as const).map(([value, label]) => (
+              {TARGET_CHOICES.map(([value, label]) => (
                 <label key={value} className="inline-flex items-center gap-2">
                   <input type="radio" name={`${base}-kind`} checked={kind === value} onChange={() => setKind(value)} className="size-4 accent-primary-600" />
                   {label}
@@ -211,6 +222,7 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
                 ))}
                 {visibleEmployees.length === 0 && <li className="px-3 py-4 text-sm text-slate-500">Không có nhân viên phù hợp.</li>}
               </ul>
+              {employeesLoading && <p className="text-xs text-slate-500">Đang tải danh sách nhân viên…</p>}
               <p className="text-xs text-slate-500">Đã chọn {employeeIds.length} người.</p>
             </div>
           )}

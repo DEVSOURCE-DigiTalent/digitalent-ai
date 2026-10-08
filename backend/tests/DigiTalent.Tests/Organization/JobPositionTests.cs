@@ -28,7 +28,7 @@ public class JobPositionTests
         var currentUser = new Mock<ICurrentUser>();
         currentUser.Setup(c => c.GetRequiredOrganizationId()).Returns(orgId);
 
-        var useCase = new CreateJobPositionUseCase(context, currentUser.Object);
+        var useCase = new CreateJobPositionUseCase(context, currentUser.Object, Mock.Of<IAuditService>());
         var input = new CreateJobPositionUseCaseInput
         {
             Code = "SWE",
@@ -65,7 +65,7 @@ public class JobPositionTests
         var currentUser = new Mock<ICurrentUser>();
         currentUser.Setup(c => c.GetRequiredOrganizationId()).Returns(orgId);
 
-        var useCase = new CreateJobPositionUseCase(context, currentUser.Object);
+        var useCase = new CreateJobPositionUseCase(context, currentUser.Object, Mock.Of<IAuditService>());
         var input = new CreateJobPositionUseCaseInput
         {
             Code = "swe", // Lowercase should be normalized and detected as duplicate
@@ -98,7 +98,7 @@ public class JobPositionTests
         var currentUserB = new Mock<ICurrentUser>();
         currentUserB.Setup(c => c.GetRequiredOrganizationId()).Returns(orgB);
 
-        var useCase = new CreateJobPositionUseCase(context, currentUserB.Object);
+        var useCase = new CreateJobPositionUseCase(context, currentUserB.Object, Mock.Of<IAuditService>());
         var input = new CreateJobPositionUseCaseInput
         {
             Code = "DEV",
@@ -183,7 +183,7 @@ public class JobPositionTests
         var currentUser = new Mock<ICurrentUser>();
         currentUser.Setup(c => c.GetRequiredOrganizationId()).Returns(orgId);
 
-        var useCase = new ArchiveJobPositionUseCase(context, currentUser.Object);
+        var useCase = new ArchiveJobPositionUseCase(context, currentUser.Object, Mock.Of<IAuditService>());
         await useCase.ExecuteAsync(new ArchiveJobPositionUseCaseInput { Id = posId });
 
         var archived = await context.JobPositions.FindAsync(posId);
@@ -224,7 +224,7 @@ public class JobPositionTests
         var currentUser = new Mock<ICurrentUser>();
         currentUser.Setup(c => c.GetRequiredOrganizationId()).Returns(orgId);
 
-        var useCase = new ArchiveJobPositionUseCase(context, currentUser.Object);
+        var useCase = new ArchiveJobPositionUseCase(context, currentUser.Object, Mock.Of<IAuditService>());
         var action = async () => await useCase.ExecuteAsync(new ArchiveJobPositionUseCaseInput { Id = posId });
 
         await action.Should().ThrowAsync<ConflictException>().WithMessage("*assigned to one or more active employees*");

@@ -6,5 +6,12 @@ namespace DigiTalent.Application.Common.Interfaces;
 /// </summary>
 public interface IAuditService
 {
-    Task LogAsync(string action, string entityType, Guid? entityId = null, object? oldValues = null, object? newValues = null, CancellationToken cancellationToken = default);
+    Task LogAsync(
+        string action,
+        string entityType,
+        Guid? entityId = null,
+        object? oldValues = null,
+        object? newValues = null,
+        string? entityLabel = null,
+        CancellationToken cancellationToken = default);
 }

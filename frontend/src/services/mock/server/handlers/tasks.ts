@@ -379,45 +379,6 @@ route('POST', '/submissions/:id/evaluate', ({ update, params, body, session }) =
   });
 }, { permission: P.TASK_EVALUATE, roles: [ROLES.OWNER, ROLES.MANAGER] });
 
-// 7. GET /me/tasks: Danh sách bài thực hành của nhân viên đăng nhập
-route('GET', '/me/tasks', ({ org, session }) => {
-  const data = org();
-  const callerEmp = findCallerEmployee(data, session);
-  if (!callerEmp) {
-    return { items: [], total: 0 };
-  }
-
-  const myTasks = (data.tasks ?? [])
-    .filter((t) => t.assignedEmployeeIds.includes(callerEmp.id) && t.status === 'ACTIVE')
-    .map((t) => {
-      const mySubmission = (data.submissions ?? []).find(
-        (s) => s.taskId === t.id && s.employeeId === callerEmp.id,
-      );
-
-      return {
-        id: t.id,
-        title: t.title,
-        description: t.description,
-        expectedOutput: t.expectedOutput,
-        competencyIds: t.competencyIds,
-        targetLevel: t.targetLevel,
-        assignedByName: t.assignedByName,
-        dueDate: t.dueDate,
-        rubricCriteria: t.rubricCriteria,
-        submission: mySubmission ? {
-          id: mySubmission.id,
-          submittedAt: mySubmission.submittedAt,
-          status: mySubmission.status,
-          content: mySubmission.content,
-          linkUrls: mySubmission.linkUrls,
-          evaluation: mySubmission.evaluation,
-        } : null,
-      };
-    });
-
-  return { items: myTasks, total: myTasks.length };
-}, { permission: P.TASK_READ });
-
 // 8. POST /tasks/:id/submit: Nhân viên nộp bài thực hành (chỉ người được giao)
 route('POST', '/tasks/:id/submit', ({ update, params, body, session }) => {
   const b = body as { content: string; linkUrls?: string[]; fileUrls?: string[] };
@@ -468,34 +429,3 @@ route('POST', '/tasks/:id/submit', ({ update, params, body, session }) => {
     return existingSub;
   });
 }, { permission: P.TASK_SUBMIT });
-
-// 9. GET /me/evidence: Danh sách minh chứng bài nộp của nhân viên đăng nhập
-route('GET', '/me/evidence', ({ org, session }) => {
-  const data = org();
-  const callerEmp = findCallerEmployee(data, session);
-  if (!callerEmp) {
-    return { items: [], total: 0 };
-  }
-
-  const mySubmissions = (data.submissions ?? [])
-    .filter((s) => s.employeeId === callerEmp.id)
-    .map((sub) => {
-      const task = (data.tasks ?? []).find((t) => t.id === sub.taskId);
-      return {
-        id: sub.id,
-        taskId: sub.taskId,
-        taskTitle: task?.title ?? 'Dự án thực hành',
-        taskDescription: task?.description,
-        targetLevel: task?.targetLevel ?? 1,
-        competencyIds: task?.competencyIds ?? [],
-        submittedAt: sub.submittedAt,
-        content: sub.content,
-        linkUrls: sub.linkUrls ?? [],
-        fileUrls: sub.fileUrls ?? [],
-        status: sub.status,
-        evaluation: sub.evaluation,
-      };
-    });
-
-  return { items: mySubmissions, total: mySubmissions.length };
-}, { permission: P.EVIDENCE_READ });

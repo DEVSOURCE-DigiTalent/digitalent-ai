@@ -13,5 +13,6 @@ public class UpdateDepartmentUseCaseInput
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public Guid? ParentDepartmentId { get; set; }
+    public Guid? ManagerEmployeeId { get; set; } // null = bỏ phân công trưởng phòng
     public string Status { get; set; } = string.Empty; // ACTIVE | INACTIVE (ARCHIVED dùng API DELETE)
 }

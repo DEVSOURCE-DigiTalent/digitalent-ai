@@ -11,11 +11,13 @@ public class CreateJobPositionUseCase : IUseCase<CreateJobPositionUseCaseInput, 
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUser _currentUser;
+    private readonly IAuditService _auditService;
 
-    public CreateJobPositionUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    public CreateJobPositionUseCase(IApplicationDbContext context, ICurrentUser currentUser, IAuditService auditService)
     {
         _context = context;
         _currentUser = currentUser;
+        _auditService = auditService;
     }
 
     public async Task<CreateJobPositionUseCaseOutput> ExecuteAsync(CreateJobPositionUseCaseInput input)
@@ -42,18 +44,25 @@ public class CreateJobPositionUseCase : IUseCase<CreateJobPositionUseCaseInput, 
             }
         }
 
+        await JobPositionRules.EnsureValidDepartmentAsync(_context, organizationId, input.DepartmentId);
+
         var position = new JobPosition
         {
             OrganizationId = organizationId,
             JobFamilyId = input.JobFamilyId,
+            DepartmentId = input.DepartmentId,
             Code = code,
             Name = input.Name.Trim(),
             Description = input.Description,
+            JobGrade = JobPositionRules.NormalizeGrade(input.JobGrade),
             Status = Statuses.MasterData.Active,
         };
 
         _context.JobPositions.Add(position);
         await _context.SaveChangesAsync();
+
+        await _auditService.LogAsync("POSITION_CREATED", "job_positions", position.Id,
+            newValues: new { position.Code, position.Name, position.DepartmentId, position.JobGrade }, entityLabel: position.Name);
 
         return new CreateJobPositionUseCaseOutput { Id = position.Id };
     }

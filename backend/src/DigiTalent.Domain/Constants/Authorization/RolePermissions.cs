@@ -16,12 +16,22 @@ public static class RolePermissions
             Permissions.Account.UpdateOwnProfile,
             Permissions.Account.ChangeOwnPassword,
 
+            // Members & roles (OW-02, OW-03, OW-13): HR_MANAGER is the enterprise "Owner"
+            Permissions.UserRole.UserRead,
+            Permissions.UserRole.UserCreate,
+            Permissions.UserRole.UserUpdate,
+            Permissions.UserRole.UserLockUnlock,
+            Permissions.UserRole.RoleRead,
+            Permissions.UserRole.RoleAssignBusiness,
+
             Permissions.Department.Read,
             Permissions.Department.CreateUpdate,
             Permissions.JobFamily.Read,
             Permissions.JobFamily.CreateUpdate,
             Permissions.JobPosition.Read,
             Permissions.JobPosition.CreateUpdate,
+            Permissions.JobGrade.Read,
+            Permissions.JobGrade.Manage,
             Permissions.Employee.Read,
             Permissions.Employee.CreateUpdate,
             Permissions.Employee.Transfer,
@@ -97,6 +107,7 @@ public static class RolePermissions
             Permissions.Department.Read,
             Permissions.JobFamily.Read,
             Permissions.JobPosition.Read,
+            Permissions.JobGrade.Read,
             Permissions.Employee.Read,
 
             Permissions.Competency.CategoryRead,
@@ -109,9 +120,15 @@ public static class RolePermissions
             Permissions.Learning.ReadCatalog,
             Permissions.Learning.ReadAssignment,
             Permissions.Learning.ReadProgress,
+            // Menu "Cá nhân" của Manager dùng lại trang Employee (EM-*): tự học, làm bài, nộp nhiệm vụ của chính mình
+            Permissions.Learning.CompleteLesson,
+            Permissions.Learning.DownloadViewMaterial,
 
             Permissions.Assessment.Read,
             Permissions.Assessment.ResultExport,
+            Permissions.Assessment.AttemptStart,
+            Permissions.Assessment.AttemptSubmit,
+            Permissions.Assessment.AttemptReadResult,
 
             Permissions.Certificate.Read,
             Permissions.Certificate.DownloadPdf,
@@ -131,8 +148,10 @@ public static class RolePermissions
             Permissions.Task.Reopen,
             Permissions.Task.Cancel,
             Permissions.Task.AttachmentDownload,
+            Permissions.Task.Submit,
 
             Permissions.Dashboard.DepartmentRead,
+            Permissions.Dashboard.EmployeeRead,
             Permissions.Dashboard.CompetencyHeatmapRead,
             Permissions.Dashboard.ReportExport,
 
@@ -159,8 +178,12 @@ public static class RolePermissions
             Permissions.Competency.CategoryRead,
             Permissions.Competency.Read,
             Permissions.Competency.PositionRequirementRead,
+            // Frontend xếp TRAINER vào nhóm EMPLOYEE: các trang cá nhân (EM-*) cần quyền trên dữ liệu của chính mình
+            Permissions.Competency.ProfileRead,
+            Permissions.Competency.EvidenceRead,
 
             Permissions.Learning.ReadCatalog,
+            Permissions.Learning.CompleteLesson,
             Permissions.Learning.Create,
             Permissions.Learning.Update,
             Permissions.Learning.PublishUnpublish,
@@ -179,6 +202,8 @@ public static class RolePermissions
             Permissions.Assessment.Read,
             Permissions.Assessment.CreateUpdate,
             Permissions.Assessment.PublishClose,
+            Permissions.Assessment.AttemptStart,
+            Permissions.Assessment.AttemptSubmit,
             Permissions.Assessment.AttemptReadResult,
             Permissions.Assessment.AttemptRegradeOverride,
             Permissions.Assessment.ResultExport,
@@ -186,18 +211,24 @@ public static class RolePermissions
             Permissions.Certificate.Read,
             Permissions.Certificate.DownloadPdf,
 
+            Permissions.Intelligence.SkillGapRead,
             Permissions.Intelligence.RecommendationRead,
+            Permissions.Intelligence.ReadinessRead,
 
             Permissions.Task.Read,
+            Permissions.Task.UpdateProgress,
+            Permissions.Task.Submit,
             Permissions.Task.AttachmentDownload,
 
             Permissions.Dashboard.TrainerRead,
+            Permissions.Dashboard.EmployeeRead,
 
             Permissions.Notification.ReadOwn,
             Permissions.Notification.MarkRead,
             Permissions.Notification.SignalRConnect,
 
             Permissions.System.FileUploadMaterial,
+            Permissions.System.FileUploadTaskSubmission,
             Permissions.System.FileDownloadAuthorized,
         },
 

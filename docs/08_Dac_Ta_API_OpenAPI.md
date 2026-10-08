@@ -127,7 +127,9 @@ Route gốc `api/v1`, mỗi module một controller trong `Api/Controllers/V1/`.
 | `CertificatesController` | `GET /certificates`, `GET /certificates/mine`, `GET /certificates/{code}/verify`, `POST /certificates/{id}/revoke`, `GET /certificates/{id}/pdf` | HR/Employee/Public | `verify` công khai, rate-limit |
 | `TasksController` | `GET/POST/PUT /task-templates`, `/task-assignments`, `/task-submissions`, `/task-evaluations` | Dept Manager/Employee | WMS-lite |
 | `IntelligenceController` | `GET /skill-gap/mine`, `/skill-gap/team`, `/skill-gap/analytics`, `POST /skill-gap/recalculate`, `GET /readiness`, `/risk` | HR/Manager/Employee | Đọc snapshot |
-| `DashboardController` | `GET /dashboard/executive`, `/department`, `/trainer`, `/my-learning` | Theo vai trò | — |
+| `OrganizationController` | `GET /organization`, `PUT /organization/settings`, `GET /organization/audit-log`, `GET /organization/overview` ✅ | HR/Admin | `overview` (OW-01): thành viên, người dùng/hạn mức và gói (`subscriptions`), đợt đào tạo `ACTIVE` (`training_batches`), nhiệm vụ chờ duyệt, tiến độ thiết lập, hoạt động gần đây. Quyền `dashboard.hr_company.read` |
+| `ReportsController` | `GET /intelligence/dashboard`, `GET /intelligence/reports/overview` | HR/Admin, Dept Manager | `dashboard` (OW-01, LCA-01) trả `DashboardDto` (`kpis`, `domains`, `atRisk`). Quyền `dashboard.hr_company.read` hoặc `dashboard.department.read` |
+| `DashboardController` | `GET /dashboard/department`, `/trainer`, `/employee` | Theo vai trò | Chưa làm. Mỗi endpoint một quyền `dashboard.*.read` |
 | `ScoringConfigsController` | `GET/PUT /scoring-configs` | Admin | Weights versioned |
 | `NotificationsController` | `GET /notifications`, `POST /notifications/{id}/read` | Tất cả | SignalR realtime |
 | `AuditLogsController` | `GET /audit-logs` | Admin | Chỉ đọc |

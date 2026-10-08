@@ -1,11 +1,11 @@
 import type { PageRegistry } from '../build-routes';
 
 import { TrialAwareEmployeeDashboardPage } from '../../../features/experience/enterprise-trial/TrialAwareDashboardPages';
+import { PersonalLearningPathPage } from '../../../features/manager/pages/ManagerPageSwitch';
 import { MyCompetencyProfilePage } from '../../../features/employee/pages/MyCompetencyProfilePage';
 import { MySkillGapPage } from '../../../features/employee/pages/MySkillGapPage';
 import { EvidencePortfolioPage } from '../../../features/employee/pages/EvidencePortfolioPage';
 import { MyLearningPage } from '../../../features/employee/pages/MyLearningPage';
-import { MyLearningPathPage } from '../../../features/employee/pages/MyLearningPathPage';
 import { CourseDetailPage } from '../../../features/learning/pages/CourseDetailPage';
 import { LessonViewerPage } from '../../../features/learning/pages/LessonViewerPage';
 import { MyAssessmentsPage } from '../../../features/learning/pages/MyAssessmentsPage';
@@ -26,7 +26,7 @@ export const EMPLOYEE_PAGES: PageRegistry = {
   'EM-02': MyCompetencyProfilePage,
   'EM-03': MySkillGapPage,
   'EM-04': EvidencePortfolioPage,
-  'EM-05': MyLearningPathPage,
+  'EM-05': PersonalLearningPathPage,
   'EM-06': MyLearningPage,
   'EM-07': CourseDetailPage,
   'EM-08': LessonViewerPage,

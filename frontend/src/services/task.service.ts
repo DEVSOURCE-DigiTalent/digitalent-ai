@@ -1,5 +1,5 @@
 import apiClient from './api-client';
-import type { PagedList } from '../types/api';
+import type { ApiResponse, PagedList } from '../types/api';
 
 export interface RubricCriterion {
   id: string;
@@ -19,7 +19,7 @@ export interface PracticalTaskDto {
   departmentName?: string;
   jobPositionId?: string;
   jobPositionName?: string;
-  assignedEmployeeIds: string[];
+  assignedEmployeeIds?: string[];
   assignedEmployeesCount: number;
   assignedByEmployeeId: string;
   assignedByName: string;
@@ -143,40 +143,90 @@ export interface SubmitEvidencePayload {
   fileUrls?: string[];
 }
 
+/** BE2 stores rubric fields as JSON strings; the screens use structured values. */
+function parseJson<T>(value: T | string | null | undefined, fallback: T): T {
+  if (typeof value !== 'string') return value ?? fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeSubmission<T extends TaskSubmissionDto>(submission: T): T {
+  return {
+    ...submission,
+    evaluation: submission.evaluation ? {
+      ...submission.evaluation,
+      rubricScores: parseJson(submission.evaluation.rubricScores, {}),
+    } : undefined,
+  };
+}
+
+function normalizeTask<T extends PracticalTaskDto>(task: T): T {
+  return {
+    ...task,
+    rubricCriteria: parseJson(task.rubricCriteria, []),
+    ...('submissions' in task ? {
+      submissions: (task as unknown as PracticalTaskDetailDto).submissions.map(normalizeSubmission),
+    } : {}),
+  };
+}
+
+function mapData<T, U>(response: { data: ApiResponse<T> }, mapper: (value: T) => U) {
+  const body = response.data;
+  return { ...response, data: { ...body, data: body.data === null ? null : mapper(body.data) } as ApiResponse<U> };
+}
+
 export const taskService = {
   getTasks: (params?: { departmentId?: string; search?: string; status?: string; pageIndex?: number; pageSize?: number }) => {
-    return apiClient.get<PagedList<PracticalTaskDto>>('/tasks', { params });
+    return apiClient.get<ApiResponse<PagedList<PracticalTaskDto>>>('/tasks', { params })
+      .then((res) => mapData(res, (page) => ({ ...page, items: page.items.map(normalizeTask) })));
   },
 
   getTaskDetail: (id: string) => {
-    return apiClient.get<PracticalTaskDetailDto>(`/tasks/${id}`);
+    return apiClient.get<ApiResponse<PracticalTaskDetailDto>>(`/tasks/${id}`)
+      .then((res) => mapData(res, normalizeTask));
   },
 
   createTask: (payload: CreatePracticalTaskPayload) => {
-    return apiClient.post<PracticalTaskDto>('/tasks', payload);
+    return apiClient.post<ApiResponse<PracticalTaskDetailDto>>('/tasks', {
+      ...payload,
+      dueDate: payload.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(payload.dueDate)
+        ? `${payload.dueDate}T00:00:00Z` : payload.dueDate,
+      rubricCriteria: JSON.stringify(payload.rubricCriteria),
+    }).then((res) => mapData(res, normalizeTask));
   },
 
   getReviewQueue: (params?: { search?: string; pageIndex?: number; pageSize?: number }) => {
-    return apiClient.get<PagedList<ReviewQueueItemDto>>('/review-queue', { params });
+    return apiClient.get<ApiResponse<PagedList<ReviewQueueItemDto>>>('/review-queue', { params });
   },
 
   getSubmissionDetail: (id: string) => {
-    return apiClient.get<SubmissionDetailDto>(`/submissions/${id}`);
+    return apiClient.get<ApiResponse<SubmissionDetailDto>>(`/submissions/${id}`)
+      .then((res) => mapData(res, (submission) => ({
+        ...normalizeSubmission(submission),
+        rubricCriteria: parseJson(submission.rubricCriteria, []),
+      })));
   },
 
   evaluateSubmission: (id: string, payload: EvaluateSubmissionPayload) => {
-    return apiClient.post<TaskSubmissionDto>(`/submissions/${id}/evaluate`, payload);
+    return apiClient.post<ApiResponse<TaskSubmissionDto>>(`/submissions/${id}/evaluate`, {
+      ...payload,
+      rubricScores: JSON.stringify(payload.rubricScores),
+    }).then((res) => mapData(res, normalizeSubmission));
   },
 
   getMyTasks: () => {
-    return apiClient.get<{ items: LearnerTaskDto[]; total: number }>('/me/tasks');
+    return apiClient.get<ApiResponse<{ items: LearnerTaskDto[]; total: number }>>('/me/tasks');
   },
 
   submitTaskEvidence: (taskId: string, payload: SubmitEvidencePayload) => {
-    return apiClient.post<TaskSubmissionDto>(`/tasks/${taskId}/submit`, payload);
+    return apiClient.post<ApiResponse<TaskSubmissionDto>>(`/tasks/${taskId}/submit`, payload)
+      .then((res) => mapData(res, normalizeSubmission));
   },
 
   getMyEvidence: () => {
-    return apiClient.get<{ items: EvidenceItemDto[]; total: number }>('/me/evidence');
+    return apiClient.get<ApiResponse<{ items: EvidenceItemDto[]; total: number }>>('/me/evidence');
   },
 };

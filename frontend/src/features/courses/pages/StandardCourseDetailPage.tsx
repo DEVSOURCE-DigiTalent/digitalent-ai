@@ -6,9 +6,12 @@ import {
   PlayCircle
 } from 'lucide-react';
 import { useCourse, useAssignments } from '@/hooks/use-assignments';
+import { useCompetencyCategories } from '@/hooks/use-competencies';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { LevelBadge } from '@/components/shared/LevelBadge';
 import { CoursePathwayManager } from '../components/CoursePathwayManager';
+import { ApiCoursePathway } from '../components/ApiCoursePathway';
+import { categoryDomain, courseCategories, courseCodeMetadata } from '../course-catalog';
 
 type DetailTab = 'overview' | 'pathway' | 'assessment' | 'learners';
 
@@ -32,6 +35,7 @@ export function StandardCourseDetailPage() {
       ? tabParam
       : 'overview'
   );
+  const [learnerPage, setLearnerPage] = useState(1);
 
   useEffect(() => {
     if (tabParam && ['overview', 'pathway', 'assessment', 'learners'].includes(tabParam)) {
@@ -40,10 +44,13 @@ export function StandardCourseDetailPage() {
   }, [tabParam]);
 
   const { data: course, isLoading: courseLoading } = useCourse(id);
+  const { data: apiCategories = [] } = useCompetencyCategories();
+  const categories = courseCategories(apiCategories);
   const { data: assignmentsData } = useAssignments({
-    courseId: id,
+    courseId: course?.id,
+    pageIndex: learnerPage,
     pageSize: 100,
-  });
+  }, Boolean(course?.id));
 
   if (courseLoading) {
     return <div className="py-20 text-center text-sm text-slate-500">Đang tải chi tiết khóa học…</div>;
@@ -70,6 +77,11 @@ export function StandardCourseDetailPage() {
   const assignedEmployees = assignmentsData?.items || [];
   const completedEmployees = assignedEmployees.filter((a) => a.status === 'COMPLETED');
   const modules = course.modules || [];
+  const codeMetadata = courseCodeMetadata(course.code);
+  const displayLevel = codeMetadata?.level ?? course.level;
+  const displayCategory = course.categoryName
+    || categories.find((category) => categoryDomain(category) === codeMetadata?.domain)?.name
+    || 'Chưa có miền năng lực';
 
   return (
     <div className="space-y-6">
@@ -88,15 +100,15 @@ export function StandardCourseDetailPage() {
               <span className="font-mono text-xs font-bold text-primary-700 bg-primary-50 border border-primary-200 px-2 py-0.5 rounded">
                 {course.code}
               </span>
-              <LevelBadge level={course.level} />
+              <LevelBadge level={displayLevel} />
               <StatusBadge
-                label={course.status === 'PUBLISHED' ? 'Chuẩn hóa TT02' : 'Bản nháp'}
+                label={course.status === 'PUBLISHED' ? 'Chuẩn hóa TT02' : course.status === 'ARCHIVED' ? 'Đã lưu trữ' : 'Bản nháp'}
                 variant={course.status === 'PUBLISHED' ? 'success' : 'default'}
               />
             </div>
             <h1 className="text-2xl font-bold text-slate-900">{course.title}</h1>
             <p className="text-sm text-slate-500">
-              Thuộc miền năng lực: <strong className="text-slate-700">{course.categoryName || 'Năng lực số'}</strong>
+              Thuộc miền năng lực: <strong className="text-slate-700">{displayCategory}</strong>
             </p>
           </div>
 
@@ -141,7 +153,7 @@ export function StandardCourseDetailPage() {
           </div>
           <div>
             <div className="text-xs text-slate-500">Thời lượng</div>
-            <div className="text-base font-bold text-slate-900">{course.estimatedDurationMinutes || 180} phút</div>
+            <div className="text-base font-bold text-slate-900">{course.estimatedDurationMinutes == null ? 'Chưa cập nhật' : `${course.estimatedDurationMinutes} phút`}</div>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -150,7 +162,7 @@ export function StandardCourseDetailPage() {
           </div>
           <div>
             <div className="text-xs text-slate-500">Cấu trúc</div>
-            <div className="text-base font-bold text-slate-900">{Array.isArray(modules) ? modules.length : (course.modules || 3)} chương học</div>
+            <div className="text-base font-bold text-slate-900">{modules.length} chương học</div>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -159,7 +171,7 @@ export function StandardCourseDetailPage() {
           </div>
           <div>
             <div className="text-xs text-slate-500">Đã giao</div>
-            <div className="text-base font-bold text-slate-900">{assignedEmployees.length} nhân viên</div>
+            <div className="text-base font-bold text-slate-900">{assignmentsData?.totalItems ?? 0} nhân viên</div>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -167,7 +179,7 @@ export function StandardCourseDetailPage() {
             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
           </div>
           <div>
-            <div className="text-xs text-slate-500">Đã hoàn thành</div>
+            <div className="text-xs text-slate-500">Đã hoàn thành trên trang</div>
             <div className="text-base font-bold text-emerald-700">{completedEmployees.length} nhân viên</div>
           </div>
         </div>
@@ -218,7 +230,7 @@ export function StandardCourseDetailPage() {
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            Nhân viên đang học ({assignedEmployees.length})
+            Nhân viên đang học ({assignmentsData?.totalItems ?? 0})
           </button>
         </nav>
       </div>
@@ -230,7 +242,7 @@ export function StandardCourseDetailPage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
               <h2 className="text-base font-semibold text-slate-900">Mục tiêu và chuẩn đầu ra</h2>
               <p className="text-sm text-slate-600 leading-relaxed">
-                Khóa học được thiết kế bám sát Khung chuẩn năng lực số nhằm trang bị cho nhân sự kiến thức thực tiễn và kỹ năng số cốt lõi. Sau khi hoàn thành khóa học, nhân viên được chứng nhận trình độ tương ứng và tự động cập nhật vào Hồ sơ năng lực số của doanh nghiệp.
+                {course.purpose || course.description || 'Khóa học được thiết kế bám sát Khung chuẩn năng lực số và trang bị kỹ năng số thực tiễn.'}
               </p>
               
               <div className="rounded-lg bg-primary-50/60 border border-primary-100 p-4">
@@ -249,12 +261,12 @@ export function StandardCourseDetailPage() {
               <div className="rounded-lg border border-slate-200 p-4 flex items-center justify-between">
                 <div>
                   <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Miền năng lực</div>
-                  <div className="text-sm font-bold text-slate-900 mt-0.5">{course.categoryName || 'Khai thác dữ liệu và thông tin'}</div>
+                  <div className="text-sm font-bold text-slate-900 mt-0.5">{displayCategory}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Trình độ đầu ra đạt được</div>
                   <div className="mt-0.5">
-                    <LevelBadge level={course.level} />
+                    <LevelBadge level={displayLevel} />
                   </div>
                 </div>
               </div>
@@ -272,7 +284,7 @@ export function StandardCourseDetailPage() {
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
                   <span className="text-slate-500">Trình độ đầu vào yêu cầu:</span>
                   <span className="font-medium text-slate-800">
-                    {course.entryLevel === 0 ? 'Không yêu cầu (Nhập môn)' : `Mức ${course.entryLevel}`}
+                    {course.entryLevel == null || course.entryLevel === 0 ? 'Không yêu cầu (Nhập môn)' : `Mức ${course.entryLevel}`}
                   </span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
@@ -283,7 +295,7 @@ export function StandardCourseDetailPage() {
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
                   <span className="text-slate-500">Trạng thái phát hành:</span>
-                  <StatusBadge label={course.status === 'PUBLISHED' ? 'Đã xuất bản' : 'Bản nháp'} variant="success" />
+                  <StatusBadge label={course.status === 'PUBLISHED' ? 'Đã xuất bản' : course.status === 'ARCHIVED' ? 'Đã lưu trữ' : 'Bản nháp'} variant={course.status === 'PUBLISHED' ? 'success' : 'default'} />
                 </div>
               </div>
             </div>
@@ -292,11 +304,14 @@ export function StandardCourseDetailPage() {
       )}
 
       {activeTab === 'pathway' && (
-        <CoursePathwayManager
-          course={course}
-          batchId={batchId}
-          batchName={batchName}
-        />
+        import.meta.env.VITE_USE_MOCK === 'true'
+          ? <CoursePathwayManager course={{
+              ...course,
+              level: displayLevel,
+              estimatedDurationMinutes: course.estimatedDurationMinutes ?? undefined,
+              categoryName: displayCategory,
+            }} batchId={batchId} batchName={batchName} />
+          : <ApiCoursePathway course={course} />
       )}
 
       {activeTab === 'assessment' && (
@@ -308,7 +323,7 @@ export function StandardCourseDetailPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {import.meta.env.VITE_USE_MOCK === 'true' ? <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="rounded-lg border border-slate-200 p-4 bg-slate-50/50">
               <div className="text-xs text-slate-500 font-medium">Số lượng câu hỏi</div>
               <div className="text-xl font-bold text-slate-900 mt-1">15 câu hỏi tình huống</div>
@@ -321,14 +336,14 @@ export function StandardCourseDetailPage() {
               <div className="text-xs text-emerald-700 font-medium">Điểm đạt tối thiểu</div>
               <div className="text-xl font-bold text-emerald-800 mt-1">70% (11/15 câu)</div>
             </div>
-          </div>
+          </div> : <p className="text-sm text-slate-500">Chưa có thông tin bài đánh giá trong chi tiết khóa học.</p>}
         </div>
       )}
 
       {activeTab === 'learners' && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-slate-900">Nhân viên đã được phân công ({assignedEmployees.length})</h2>
+            <h2 className="text-base font-semibold text-slate-900">Nhân viên đã được phân công ({assignmentsData?.totalItems ?? 0})</h2>
             <button
               type="button"
               onClick={() => navigate(`/enterprise/assignments?courseId=${course.id}`)}
@@ -377,10 +392,10 @@ export function StandardCourseDetailPage() {
                         <StatusBadge
                           label={
                             asg.status === 'COMPLETED' ? 'Đã xong' :
-                            asg.status === 'IN_PROGRESS' ? 'Đang học' :
+                            asg.status === 'IN_PROGRESS' || (asg.status === 'ACTIVE' && asg.progressPercent > 0) ? 'Đang học' :
                             asg.status === 'READY_FOR_ASSESSMENT' ? 'Chờ thi' : 'Chưa bắt đầu'
                           }
-                          variant={asg.status === 'COMPLETED' ? 'success' : asg.status === 'IN_PROGRESS' ? 'info' : 'default'}
+                          variant={asg.status === 'COMPLETED' ? 'success' : asg.status === 'IN_PROGRESS' || (asg.status === 'ACTIVE' && asg.progressPercent > 0) ? 'info' : 'default'}
                         />
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-500">
@@ -394,6 +409,15 @@ export function StandardCourseDetailPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+          {(assignmentsData?.totalPages ?? 0) > 1 && (
+            <div className="flex items-center justify-end gap-3 border-t border-slate-100 p-4 text-sm">
+              <button type="button" disabled={learnerPage <= 1} onClick={() => setLearnerPage((page) => page - 1)}
+                className="rounded border border-slate-300 px-3 py-1.5 disabled:opacity-40">Trang trước</button>
+              <span>Trang {learnerPage} / {assignmentsData?.totalPages}</span>
+              <button type="button" disabled={learnerPage >= (assignmentsData?.totalPages ?? 1)} onClick={() => setLearnerPage((page) => page + 1)}
+                className="rounded border border-slate-300 px-3 py-1.5 disabled:opacity-40">Trang sau</button>
             </div>
           )}
         </div>

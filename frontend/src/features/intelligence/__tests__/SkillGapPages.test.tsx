@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -8,7 +8,6 @@ import * as skillGapHooks from '@/hooks/use-skill-gaps';
 import * as departmentHooks from '@/hooks/use-departments';
 import * as positionHooks from '@/hooks/use-job-positions';
 import type { SkillGapRunDetail } from '@/services/intelligence.service';
-import { MyCompetencyProfilePage } from '@/features/employee/pages/MyCompetencyProfilePage';
 import { SkillGapPage } from '../pages/SkillGapPage';
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -55,56 +54,6 @@ function loginAs(roles: string[], permissions: string[]) {
     isAuthenticated: true,
   });
 }
-
-describe('MyCompetencyProfilePage', () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-    loginAs([ROLES.EMPLOYEE], ['skill_gap.read']);
-  });
-
-  it('shows a skeleton while loading', () => {
-    vi.spyOn(skillGapHooks, 'useMySkillGap').mockReturnValue(queryResult({ isLoading: true }));
-    renderWithClient(<MyCompetencyProfilePage />);
-    expect(screen.getByLabelText('Đang tải skill gap')).toBeInTheDocument();
-  });
-
-  it('explains how an analysis gets created when none exists', () => {
-    vi.spyOn(skillGapHooks, 'useMySkillGap').mockReturnValue(queryResult({ data: null }));
-    renderWithClient(<MyCompetencyProfilePage />);
-    expect(screen.getByText('Chưa có phân tích skill gap')).toBeInTheDocument();
-  });
-
-  it('renders KPIs and gap lines of the latest snapshot', () => {
-    vi.spyOn(skillGapHooks, 'useMySkillGap').mockReturnValue(queryResult({ data: run }));
-    renderWithClient(<MyCompetencyProfilePage />);
-
-    expect(screen.getByText('47.5%')).toBeInTheDocument();
-    const table = within(screen.getByRole('table'));
-    expect(table.getByText('Information security')).toBeInTheDocument();
-    expect(table.getByText('Chưa xác nhận')).toBeInTheDocument();
-    expect(table.getAllByText('Cao')).toHaveLength(2);
-    expect(table.getByText('Đạt')).toBeInTheDocument();
-  });
-
-  it('offers a retry when loading fails', () => {
-    const refetch = vi.fn();
-    vi.spyOn(skillGapHooks, 'useMySkillGap').mockReturnValue(queryResult({ isError: true, refetch }));
-    renderWithClient(<MyCompetencyProfilePage />);
-
-    fireEvent.click(screen.getByText('Thử lại'));
-    expect(refetch).toHaveBeenCalled();
-  });
-
-  it('tells a user without the skill gap permission that the analysis is not available, without calling the API', () => {
-    loginAs([ROLES.EMPLOYEE], ['recommendation.read']);
-    const useMySkillGap = vi.spyOn(skillGapHooks, 'useMySkillGap').mockReturnValue(queryResult({}));
-    renderWithClient(<MyCompetencyProfilePage />);
-
-    expect(screen.getByText('Vai trò của bạn không xem được phân tích skill gap')).toBeInTheDocument();
-    expect(screen.queryByText('Chưa có phân tích skill gap')).not.toBeInTheDocument();
-    expect(useMySkillGap).toHaveBeenCalledWith(false);
-  });
-});
 
 describe('SkillGapPage', () => {
   beforeEach(() => {

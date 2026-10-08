@@ -244,6 +244,14 @@ describe('Router Configuration & Surface Separation', () => {
       expect(await screen.findByRole('heading', { name: 'Bảng năng lực của nhóm' })).toBeInTheDocument();
     });
 
+    it('redirects the old manager learning link to a registered enterprise course page', async () => {
+      signInAsMock(MOCK_EMAILS.manager);
+      renderWithRouter('/enterprise/me/learning', queryClient);
+
+      expect(await screen.findByRole('heading', { name: 'Khóa học của tôi' })).toBeInTheDocument();
+      expect(screen.getByTestId('enterprise-layout')).toBeInTheDocument();
+    });
+
     it('shows access denied to a role the screen is not meant for', async () => {
       signInAsMock(MOCK_EMAILS.learner);
       renderWithRouter('/enterprise/members', queryClient);

@@ -9,8 +9,15 @@ import { SetupWizardPage } from '../../features/onboarding/pages/SetupWizardPage
 import { PersonalOnboardingPage } from '../../features/learner/pages/PersonalOnboardingPage';
 import { VerifyEmailRequiredPage } from '../../features/auth/pages/VerifyEmailRequiredPage';
 import { EmployeeInitialAssessmentPage } from '../../features/employee/pages/EmployeeInitialAssessmentPage';
+import { ManagerAssessmentPage } from '../../features/manager/pages/ManagerAssessmentPage';
+import { useCurrentUser } from '../../hooks/use-current-user';
 import { ROLES, WORKSPACES } from '../../lib/roles';
 import { FocusLayout } from '../layouts/FocusLayout';
+
+function EnterpriseAssessmentPage() {
+  const isManager = useCurrentUser((state) => state.hasRole(ROLES.MANAGER));
+  return isManager ? <ManagerAssessmentPage /> : <EmployeeInitialAssessmentPage />;
+}
 
 /** Steps a new paying customer goes through after signing up: pay, sign contract, set up organization or personal path. */
 export const onboardingRoutes: RouteObject[] = [
@@ -96,7 +103,7 @@ export const onboardingRoutes: RouteObject[] = [
             exitLabel="Vào trang cá nhân"
             title="Đánh giá năng lực đầu vào"
           >
-            <EmployeeInitialAssessmentPage />
+            <EnterpriseAssessmentPage />
           </FocusLayout>
         </RequireWorkspace>
       </AuthGuard>

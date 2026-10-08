@@ -4,16 +4,25 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
-/// <summary>
-/// Map entity LearningMaterial với bảng "learning_materials".
-/// Database là gốc: tên cột tự đổi sang snake_case, không khai báo lại ở đây.
-/// </summary>
+/// <summary>Học liệu của bài học: đúng 1 nguồn — tệp (FILE) hoặc đường dẫn (LINK).</summary>
 public class LearningMaterialConfiguration : IEntityTypeConfiguration<LearningMaterial>
 {
     public void Configure(EntityTypeBuilder<LearningMaterial> builder)
     {
-        // Chưa có config đầy đủ theo SQL v2.3 → chưa tạo bảng. Người phụ trách module viết config rồi bỏ ExcludeFromMigrations.
-        builder.ToTable("learning_materials", table => table.ExcludeFromMigrations());
+        builder.ToTable("learning_materials", table =>
+        {
+            table.HasCheckConstraint("ck_learning_materials_type", "material_type IN ('FILE','LINK')");
+            table.HasCheckConstraint(
+                "ck_learning_materials_exactly_one_source",
+                "(material_type = 'FILE' AND file_object_id IS NOT NULL AND external_url IS NULL) OR " +
+                "(material_type = 'LINK' AND external_url IS NOT NULL AND file_object_id IS NULL)");
+        });
         builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Title).IsRequired().HasMaxLength(250);
+        builder.Property(x => x.MaterialType).IsRequired().HasMaxLength(30);
+
+        builder.HasOne<Lesson>().WithMany().HasForeignKey(x => x.LessonId);
+        builder.HasOne<FileObject>().WithMany().HasForeignKey(x => x.FileObjectId);
     }
 }

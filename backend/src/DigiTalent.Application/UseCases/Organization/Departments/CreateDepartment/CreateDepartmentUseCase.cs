@@ -14,11 +14,13 @@ public class CreateDepartmentUseCase : IUseCase<CreateDepartmentUseCaseInput, Cr
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUser _currentUser;
+    private readonly IAuditService _auditService;
 
-    public CreateDepartmentUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    public CreateDepartmentUseCase(IApplicationDbContext context, ICurrentUser currentUser, IAuditService auditService)
     {
         _context = context;
         _currentUser = currentUser;
+        _auditService = auditService;
     }
 
     public async Task<CreateDepartmentUseCaseOutput> ExecuteAsync(CreateDepartmentUseCaseInput input)
@@ -50,11 +52,18 @@ public class CreateDepartmentUseCase : IUseCase<CreateDepartmentUseCaseInput, Cr
             }
         }
 
-        // 5. Tạo entity và lưu xuống database
+        // 5. Trưởng phòng (nếu có) phải là nhân viên ACTIVE cùng tổ chức
+        if (input.ManagerEmployeeId.HasValue)
+        {
+            await DepartmentRules.EnsureValidManagerAsync(_context, organizationId, input.ManagerEmployeeId.Value);
+        }
+
+        // 6. Tạo entity và lưu xuống database
         var department = new Department
         {
             OrganizationId = organizationId,
             ParentDepartmentId = input.ParentDepartmentId,
+            ManagerEmployeeId = input.ManagerEmployeeId,
             Code = code,
             Name = input.Name.Trim(),
             Description = input.Description,
@@ -64,7 +73,11 @@ public class CreateDepartmentUseCase : IUseCase<CreateDepartmentUseCaseInput, Cr
         _context.Departments.Add(department);
         await _context.SaveChangesAsync();
 
-        // 6. Trả kết quả
+        // 7. Ghi nhật ký (sau khi lưu xong — AuditService tự SaveChanges)
+        await _auditService.LogAsync("DEPARTMENT_CREATED", "departments", department.Id,
+            newValues: new { department.Code, department.Name, department.ManagerEmployeeId }, entityLabel: department.Name);
+
+        // 8. Trả kết quả
         return new CreateDepartmentUseCaseOutput { Id = department.Id };
     }
 }

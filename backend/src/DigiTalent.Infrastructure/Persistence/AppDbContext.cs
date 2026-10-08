@@ -48,7 +48,9 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<Department> Departments => Set<Department>();
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<JobFamily> JobFamilies => Set<JobFamily>();
+    public DbSet<JobGrade> JobGrades => Set<JobGrade>();
     public DbSet<JobPosition> JobPositions => Set<JobPosition>();
+    public DbSet<MemberInvitation> MemberInvitations => Set<MemberInvitation>();
     public DbSet<Organization> Organizations => Set<Organization>();
 
     // Competency & Position Requirements
@@ -75,6 +77,8 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<Lesson> Lessons => Set<Lesson>();
     public DbSet<LessonLearningOutcome> LessonLearningOutcomes => Set<LessonLearningOutcome>();
     public DbSet<LessonProgress> LessonProgresses => Set<LessonProgress>();
+    public DbSet<TrainingBatch> TrainingBatches => Set<TrainingBatch>();
+    public DbSet<TrainingBatchEmployee> TrainingBatchEmployees => Set<TrainingBatchEmployee>();
 
     // Task (bài tập thực hành)
     public DbSet<AssignedTaskTarget> AssignedTaskTargets => Set<AssignedTaskTarget>();
@@ -106,6 +110,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<SkillGapItem> SkillGapItems => Set<SkillGapItem>();
     public DbSet<SkillGapRun> SkillGapRuns => Set<SkillGapRun>();
     public DbSet<TrainingRiskScore> TrainingRiskScores => Set<TrainingRiskScore>();
+    public DbSet<RecommendationReview> RecommendationReviews => Set<RecommendationReview>();
 
     // Learner Surface (SEP-09)
     public DbSet<LearnerProfile> LearnerProfiles => Set<LearnerProfile>();
@@ -124,6 +129,11 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<PaymentEvent> PaymentEvents => Set<PaymentEvent>();
     public DbSet<EmailOutboxItem> EmailOutboxItems => Set<EmailOutboxItem>();
+
+    // Billing
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<SubscriptionEntitlement> SubscriptionEntitlements => Set<SubscriptionEntitlement>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
 
     // Shared
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();

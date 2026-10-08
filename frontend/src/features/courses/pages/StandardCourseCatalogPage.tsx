@@ -4,10 +4,11 @@ import {
   BookOpen, Search, Clock, Layers,
   Users, UserCheck, ArrowRight, CheckCircle2
 } from 'lucide-react';
-import { useCourses } from '@/hooks/use-assignments';
+import { useCourseCatalog } from '@/hooks/use-assignments';
 import { useCompetencyCategories } from '@/hooks/use-competencies';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
+import { categoryDomain, courseCategories, courseCodeMetadata, filterCourseCatalog } from '../course-catalog';
 
 /**
  * OW-23: Standard Course Catalog (/enterprise/courses hoặc /enterprise/catalog)
@@ -19,15 +20,40 @@ export function StandardCourseCatalogPage() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedLevel, setSelectedLevel] = useState<string>('');
+  const [pageIndex, setPageIndex] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+  const [sortBy, setSortBy] = useState('code-asc');
 
-  const { data: categories = [] } = useCompetencyCategories();
-  const { data: coursesData, isLoading } = useCourses({
+  const { data: apiCategories = [] } = useCompetencyCategories();
+  const categories = useMemo(() => courseCategories(apiCategories), [apiCategories]);
+  const { data: coursesData, isLoading, isError, refetch } = useCourseCatalog({
     search: search.trim() || undefined,
-    categoryId: selectedCategory || undefined,
-    level: selectedLevel ? Number(selectedLevel) : undefined,
   });
 
-  const courses = coursesData?.items || [];
+  const selectedCategoryData = categories.find((category) => category.id === selectedCategory);
+  const filteredCourses = useMemo(
+    () => filterCourseCatalog(coursesData?.items ?? [], selectedCategoryData, selectedLevel ? Number(selectedLevel) : undefined),
+    [coursesData?.items, selectedCategoryData, selectedLevel],
+  );
+  const courses = useMemo(() => {
+    const items = [...filteredCourses];
+    const collator = new Intl.Collator('vi', { numeric: true, sensitivity: 'base' });
+    return items.sort((a, b) => {
+      switch (sortBy) {
+        case 'title-asc': return collator.compare(a.title, b.title) || collator.compare(a.code, b.code);
+        case 'title-desc': return collator.compare(b.title, a.title) || collator.compare(a.code, b.code);
+        case 'duration-asc': return (a.estimatedDurationMinutes ?? Number.MAX_SAFE_INTEGER) - (b.estimatedDurationMinutes ?? Number.MAX_SAFE_INTEGER) || collator.compare(a.code, b.code);
+        case 'newest': return (Date.parse(b.createdAt ?? '') || 0) - (Date.parse(a.createdAt ?? '') || 0) || collator.compare(a.code, b.code);
+        default: return collator.compare(a.code, b.code);
+      }
+    });
+  }, [filteredCourses, sortBy]);
+  const totalPages = Math.max(1, Math.ceil(courses.length / pageSize));
+  const currentPage = Math.min(pageIndex, totalPages);
+  const visibleCourses = courses.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pageButtons = [1, currentPage - 1, currentPage, currentPage + 1, totalPages]
+    .filter((page, index, pages) => page > 0 && page <= totalPages && pages.indexOf(page) === index)
+    .sort((a, b) => a - b);
 
   const stats = useMemo(() => {
     const total = courses.length;
@@ -94,7 +120,7 @@ export function StandardCourseCatalogPage() {
             </div>
             <div>
               <div className="text-2xl font-bold text-slate-900">{stats.published}</div>
-              <div className="text-xs text-slate-500 font-medium">Khóa sẵn sàng giảng dạy</div>
+              <div className="text-xs text-slate-500 font-medium">Khóa đã xuất bản trong kết quả</div>
             </div>
           </div>
         </div>
@@ -105,7 +131,7 @@ export function StandardCourseCatalogPage() {
             </div>
             <div>
               <div className="text-2xl font-bold text-slate-900">{stats.totalAssigned}</div>
-              <div className="text-xs text-slate-500 font-medium">Lượt giao khóa trong tổ chức</div>
+              <div className="text-xs text-slate-500 font-medium">Lượt giao khóa trong kết quả</div>
             </div>
           </div>
         </div>
@@ -119,7 +145,7 @@ export function StandardCourseCatalogPage() {
             type="search"
             placeholder="Tìm theo tên khóa học hoặc mã (ví dụ: A1-F, A4-I, AI...)"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPageIndex(1); }}
             className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
@@ -128,7 +154,7 @@ export function StandardCourseCatalogPage() {
             <select
               aria-label="Lọc theo miền năng lực"
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              onChange={(e) => { setSelectedCategory(e.target.value); setPageIndex(1); }}
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">Tất cả 6 miền năng lực</option>
@@ -143,7 +169,7 @@ export function StandardCourseCatalogPage() {
             <select
               aria-label="Lọc theo trình độ"
               value={selectedLevel}
-              onChange={(e) => setSelectedLevel(e.target.value)}
+              onChange={(e) => { setSelectedLevel(e.target.value); setPageIndex(1); }}
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">Mọi trình độ</option>
@@ -152,12 +178,30 @@ export function StandardCourseCatalogPage() {
               <option value="3">Nâng cao (Bậc 5–6)</option>
             </select>
           </div>
+          <div className="w-48">
+            <select
+              aria-label="Sắp xếp khóa học"
+              value={sortBy}
+              onChange={(event) => { setSortBy(event.target.value); setPageIndex(1); }}
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="code-asc">Mã khóa học A–Z</option>
+              <option value="title-asc">Tên A–Z</option>
+              <option value="title-desc">Tên Z–A</option>
+              <option value="duration-asc">Thời lượng ngắn trước</option>
+              <option value="newest">Tạo gần đây</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Grid Khóa học */}
       {isLoading ? (
         <div className="py-20 text-center text-sm text-slate-500">Đang tải danh mục khóa học chuẩn…</div>
+      ) : isError ? (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-8 text-center text-sm text-rose-800">
+          Không tải được danh mục khóa học. <button type="button" className="font-semibold underline" onClick={() => refetch()}>Thử lại</button>
+        </div>
       ) : courses.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white p-12 text-center shadow-sm">
           <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
@@ -168,7 +212,7 @@ export function StandardCourseCatalogPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {courses.map((course) => (
+          {visibleCourses.map((course) => (
             <div
               key={course.id}
               className="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-primary-300 hover:shadow-md transition-all"
@@ -178,10 +222,10 @@ export function StandardCourseCatalogPage() {
                   <span className="font-mono text-xs font-bold text-primary-700 bg-primary-50 border border-primary-200 px-2 py-0.5 rounded">
                     {course.code}
                   </span>
-                  {levelBadge(course.level)}
+                  {levelBadge(courseCodeMetadata(course.code)?.level ?? course.level)}
                 </div>
                 <StatusBadge
-                  label={course.status === 'PUBLISHED' ? 'Chuẩn' : 'Bản nháp'}
+                  label={course.status === 'PUBLISHED' ? 'Chuẩn' : course.status === 'ARCHIVED' ? 'Đã lưu trữ' : 'Bản nháp'}
                   variant={course.status === 'PUBLISHED' ? 'success' : 'default'}
                 />
               </div>
@@ -191,17 +235,17 @@ export function StandardCourseCatalogPage() {
               </h3>
 
               <div className="mt-2 text-xs text-slate-500 font-medium">
-                {course.categoryName || 'Miền năng lực số'}
+                {course.categoryName || categories.find((category) => categoryDomain(category) === courseCodeMetadata(course.code)?.domain)?.name || 'Miền năng lực số'}
               </div>
 
               <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  <span>{course.estimatedDurationMinutes} phút</span>
+                  <span>{course.estimatedDurationMinutes == null ? 'Chưa cập nhật' : `${course.estimatedDurationMinutes} phút`}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Layers className="w-3.5 h-3.5 text-slate-400" />
-                  <span>{Array.isArray(course.modules) ? course.modules.length : (course.modules || 3)} chương học</span>
+                  <span>{course.modules} chương học</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5 text-slate-400" />
@@ -226,6 +270,37 @@ export function StandardCourseCatalogPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+      {!isLoading && !isError && courses.length > 0 && (
+        <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 text-slate-600">
+            <span>Hiển thị <strong>{(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, courses.length)}</strong> / <strong>{courses.length}</strong> khóa học</span>
+            <select
+              aria-label="Số khóa học mỗi trang"
+              value={pageSize}
+              onChange={(event) => { setPageSize(Number(event.target.value)); setPageIndex(1); }}
+              className="rounded-lg border border-slate-300 bg-white px-2 py-1.5"
+            >
+              <option value={12}>12 / trang</option>
+              <option value={24}>24 / trang</option>
+              <option value={48}>48 / trang</option>
+            </select>
+          </div>
+          <nav className="flex items-center gap-1" aria-label="Phân trang khóa học">
+            <button type="button" disabled={currentPage <= 1} onClick={() => setPageIndex(currentPage - 1)}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 disabled:opacity-40">Trước</button>
+            {pageButtons.map((page, index) => (
+              <span key={page} className="flex items-center gap-1">
+                {index > 0 && page - pageButtons[index - 1] > 1 && <span className="px-1 text-slate-400">…</span>}
+                <button type="button" aria-label={`Trang ${page}`} aria-current={page === currentPage ? 'page' : undefined}
+                  onClick={() => setPageIndex(page)}
+                  className={`min-w-9 rounded-lg border px-2 py-1.5 ${page === currentPage ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-300 hover:bg-slate-50'}`}>{page}</button>
+              </span>
+            ))}
+            <button type="button" disabled={currentPage >= totalPages} onClick={() => setPageIndex(currentPage + 1)}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 disabled:opacity-40">Sau</button>
+          </nav>
         </div>
       )}
     </div>

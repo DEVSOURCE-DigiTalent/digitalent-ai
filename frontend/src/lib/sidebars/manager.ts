@@ -10,6 +10,10 @@ import {
   BookOpen,
   UserCheck,
   CheckSquare,
+  Award,
+  Trophy,
+  History,
+  Route,
 } from 'lucide-react';
 import type { SidebarConfig } from './types';
 
@@ -79,22 +83,47 @@ export const MANAGER_SIDEBAR: SidebarConfig = [
         icon: Compass,
       },
       {
-        label: 'Học tập của tôi',
-        screenId: 'EM-06',
-        icon: BookOpen,
-        activeFor: ['EM-05', 'EM-07', 'EM-08'],
-      },
-      {
         label: 'Năng lực của tôi',
         screenId: 'EM-02',
         icon: UserCheck,
-        activeFor: ['EM-03', 'EM-04'],
+      },
+      {
+        label: 'Khoảng trống năng lực',
+        screenId: 'EM-03',
+        icon: TrendingUp,
+      },
+      {
+        label: 'Minh chứng của tôi',
+        screenId: 'EM-04',
+        icon: History,
+      },
+      {
+        label: 'Lộ trình của tôi',
+        screenId: 'EM-05',
+        icon: Route,
+      },
+      {
+        label: 'Học tập của tôi',
+        screenId: 'EM-06',
+        icon: BookOpen,
+        activeFor: ['EM-07', 'EM-08'],
+      },
+      {
+        label: 'Bài đánh giá của tôi',
+        screenId: 'EM-09',
+        icon: Award,
+        activeFor: ['EM-10', 'EM-11', 'EM-12', 'EM-13'],
       },
       {
         label: 'Nhiệm vụ của tôi',
         screenId: 'EM-14',
         icon: CheckSquare,
         activeFor: ['EM-15', 'EM-16', 'EM-17'],
+      },
+      {
+        label: 'Thành tựu của tôi',
+        screenId: 'EM-18',
+        icon: Trophy,
       },
     ],
   },

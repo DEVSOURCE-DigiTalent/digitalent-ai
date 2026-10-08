@@ -14,11 +14,13 @@ public class ArchiveDepartmentUseCase : IUseCase<ArchiveDepartmentUseCaseInput, 
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUser _currentUser;
+    private readonly IAuditService _auditService;
 
-    public ArchiveDepartmentUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    public ArchiveDepartmentUseCase(IApplicationDbContext context, ICurrentUser currentUser, IAuditService auditService)
     {
         _context = context;
         _currentUser = currentUser;
+        _auditService = auditService;
     }
 
     public async Task<ArchiveDepartmentUseCaseOutput> ExecuteAsync(ArchiveDepartmentUseCaseInput input)
@@ -53,9 +55,19 @@ public class ArchiveDepartmentUseCase : IUseCase<ArchiveDepartmentUseCaseInput, 
             throw new ConflictException("Department still has sub-departments. Archive or move them first.");
         }
 
-        // 4. Đổi trạng thái rồi lưu
+        // 4. Còn vị trí công việc đang thuộc phòng ban → không cho archive
+        var hasPositions = await _context.JobPositions
+            .AnyAsync(p => p.DepartmentId == department.Id && p.Status != Statuses.MasterData.Archived);
+        if (hasPositions)
+        {
+            throw new ConflictException("Department still has job positions. Move or archive them first.");
+        }
+
+        // 5. Đổi trạng thái rồi lưu
         department.Status = Statuses.MasterData.Archived;
         await _context.SaveChangesAsync();
+
+        await _auditService.LogAsync("DEPARTMENT_ARCHIVED", "departments", department.Id, entityLabel: department.Name);
 
         return new ArchiveDepartmentUseCaseOutput { Id = department.Id };
     }

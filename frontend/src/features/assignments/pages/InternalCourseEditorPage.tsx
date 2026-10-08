@@ -5,6 +5,7 @@ import { ArrowLeft, Save, Plus, Trash2, BookOpen, AlertCircle, FileText } from '
 import { toast } from 'sonner';
 import { PageHeader, StickyActionBar } from '@/components/shared';
 import { useInternalCourse, useCreateInternalCourse } from '@/hooks/use-learning';
+import { LiveInternalCourseEditorPage } from '@/features/courses/pages/LiveInternalCourseEditorPage';
 
 interface ModuleItem {
   id: string;
@@ -24,6 +25,12 @@ interface FormValues {
 }
 
 export function InternalCourseEditorPage() {
+  return import.meta.env.VITE_USE_MOCK === 'true'
+    ? <MockInternalCourseEditorPage />
+    : <LiveInternalCourseEditorPage />;
+}
+
+function MockInternalCourseEditorPage() {
   const { id } = useParams<{ id: string }>();
   const isNew = !id || id === 'new';
   const navigate = useNavigate();

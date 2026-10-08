@@ -16,6 +16,24 @@ export function useEmployees(params?: EmployeeListParams) {
   });
 }
 
+/** Load every active employee for selection controls; the API caps one page at 100. */
+export function useAllEmployees(params?: Omit<EmployeeListParams, 'pageIndex' | 'pageSize'>, enabled = true) {
+  return useQuery({
+    queryKey: ['employees', 'all', params],
+    enabled,
+    queryFn: async () => {
+      const pageSize = 100;
+      const first = (await employeeService.getList({ ...params, pageIndex: 1, pageSize })).data.data!;
+      const remaining = await Promise.all(
+        Array.from({ length: Math.max(0, first.totalPages - 1) }, (_, index) =>
+          employeeService.getList({ ...params, pageIndex: index + 2, pageSize }),
+        ),
+      );
+      return [...first.items, ...remaining.flatMap((response) => response.data.data?.items ?? [])];
+    },
+  });
+}
+
 /**
  * Fetch a single employee by ID.
  */

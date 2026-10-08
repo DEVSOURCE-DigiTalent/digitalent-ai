@@ -21,6 +21,9 @@ public class User : BaseEntity
     public DateTimeOffset? EmailVerifiedAt { get; set; }
     public DateTimeOffset? TrialUsedAt { get; set; }
 
+    /// <summary>Reason entered by an Owner when deactivating the member; cleared on reactivation.</summary>
+    public string? DeactivatedReason { get; set; }
+
     /// <summary>
     /// Concurrency token = cột hệ thống xmin của PostgreSQL (không tạo cột mới).
     /// Chặn 2 request đăng nhập song song ghi đè bộ đếm sai mật khẩu của nhau.

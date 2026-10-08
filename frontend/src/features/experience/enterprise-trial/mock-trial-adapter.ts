@@ -82,6 +82,7 @@ export const mockEnterpriseTrialService: EnterpriseTrialService = {
     return mockOk({ state: 'verification_pending', expiresAt, developmentLink: link('verify', token) });
   },
   verify: async (token, pass) => {
+    if (!pass) fail('Vui lòng đặt mật khẩu để kích hoạt workspace dùng thử.');
     password(pass);
     const state = read(); const registration = state.registrations[token];
     if (!registration || registration.used || Date.now() >= Date.parse(registration.expiresAt)) fail('Liên kết không hợp lệ, đã dùng hoặc hết hạn.');

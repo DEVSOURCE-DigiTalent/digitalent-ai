@@ -20,5 +20,9 @@ public class UpdateJobPositionUseCaseValidator : AbstractValidator<UpdateJobPosi
         RuleFor(x => x.Status)
             .Must(s => s == Statuses.MasterData.Active || s == Statuses.MasterData.Inactive)
             .WithMessage("Status must be ACTIVE or INACTIVE.");
+
+        RuleFor(x => x.JobGrade)
+            .Must(grade => string.IsNullOrWhiteSpace(grade) || JobGrades.IsValid(grade.Trim().ToUpperInvariant()))
+            .WithMessage("JobGrade must be G1, G2 or G3.");
     }
 }

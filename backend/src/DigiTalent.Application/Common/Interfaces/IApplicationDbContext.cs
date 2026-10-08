@@ -24,7 +24,9 @@ public interface IApplicationDbContext
     DbSet<Department> Departments { get; }
     DbSet<Employee> Employees { get; }
     DbSet<JobFamily> JobFamilies { get; }
+    DbSet<JobGrade> JobGrades { get; }
     DbSet<JobPosition> JobPositions { get; }
+    DbSet<MemberInvitation> MemberInvitations { get; }
     DbSet<Organization> Organizations { get; }
 
     // Competency & Position Requirements
@@ -51,6 +53,8 @@ public interface IApplicationDbContext
     DbSet<Lesson> Lessons { get; }
     DbSet<LessonLearningOutcome> LessonLearningOutcomes { get; }
     DbSet<LessonProgress> LessonProgresses { get; }
+    DbSet<TrainingBatch> TrainingBatches { get; }
+    DbSet<TrainingBatchEmployee> TrainingBatchEmployees { get; }
 
     // Task (bài tập thực hành)
     DbSet<AssignedTaskTarget> AssignedTaskTargets { get; }
@@ -82,6 +86,7 @@ public interface IApplicationDbContext
     DbSet<SkillGapItem> SkillGapItems { get; }
     DbSet<SkillGapRun> SkillGapRuns { get; }
     DbSet<TrainingRiskScore> TrainingRiskScores { get; }
+    DbSet<RecommendationReview> RecommendationReviews { get; }
 
     // Learner Surface (SEP-09)
     DbSet<LearnerProfile> LearnerProfiles { get; }
@@ -100,6 +105,11 @@ public interface IApplicationDbContext
     DbSet<Order> Orders { get; }
     DbSet<PaymentEvent> PaymentEvents { get; }
     DbSet<EmailOutboxItem> EmailOutboxItems { get; }
+
+    // Billing
+    DbSet<Subscription> Subscriptions { get; }
+    DbSet<SubscriptionEntitlement> SubscriptionEntitlements { get; }
+    DbSet<Invoice> Invoices { get; }
 
     // Shared
     DbSet<AuditLog> AuditLogs { get; }
