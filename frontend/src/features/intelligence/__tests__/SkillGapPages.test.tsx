@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { ROLES } from '@/lib/roles';
 import * as skillGapHooks from '@/hooks/use-skill-gaps';
 import * as departmentHooks from '@/hooks/use-departments';
 import * as positionHooks from '@/hooks/use-job-positions';
 import type { SkillGapRunDetail } from '@/services/intelligence.service';
+import { SkillGapDetailPage } from '../pages/SkillGapDetailPage';
 import { SkillGapPage } from '../pages/SkillGapPage';
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -92,5 +94,42 @@ describe('SkillGapPage', () => {
 
     expect(screen.getByRole('dialog', { name: 'Chi tiết skill gap' })).toBeInTheDocument();
     expect(screen.getByText('Tính lại')).toBeInTheDocument();
+  });
+});
+
+describe('SkillGapDetailPage', () => {
+  const renderDetail = () =>
+    renderWithClient(
+      <MemoryRouter initialEntries={['/enterprise/skill-gap/emp-1']}>
+        <Routes>
+          <Route path="/enterprise/skill-gap/:employeeId" element={<SkillGapDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    loginAs([ROLES.OWNER], ['skill_gap.read', 'skill_gap.calculate']);
+    vi.spyOn(skillGapHooks, 'useCalculateSkillGap').mockReturnValue(mutationResult());
+  });
+
+  it('shows the latest snapshot of the employee in the route', () => {
+    const runs = vi.spyOn(skillGapHooks, 'useSkillGapRuns').mockReturnValue(queryResult({ data: { items: [run], totalItems: 1, pageIndex: 1, pageSize: 1, totalPages: 1 } }));
+    const detail = vi.spyOn(skillGapHooks, 'useSkillGapRun').mockReturnValue(queryResult({ data: run }));
+    renderDetail();
+
+    expect(runs).toHaveBeenCalledWith({ employeeId: 'emp-1', latestOnly: true, pageIndex: 1, pageSize: 1 }, true);
+    expect(detail).toHaveBeenCalledWith('run-1');
+    expect(screen.getByRole('heading', { name: 'Employee' })).toBeInTheDocument();
+    expect(screen.getByText('47.5%')).toBeInTheDocument();
+  });
+
+  it('explains that the employee has no snapshot yet', () => {
+    vi.spyOn(skillGapHooks, 'useSkillGapRuns').mockReturnValue(queryResult({ data: { items: [], totalItems: 0, pageIndex: 1, pageSize: 1, totalPages: 0 } }));
+    const detail = vi.spyOn(skillGapHooks, 'useSkillGapRun').mockReturnValue(queryResult({}));
+    renderDetail();
+
+    expect(detail).toHaveBeenCalledWith(undefined);
+    expect(screen.getByRole('alert')).toHaveTextContent('Không tìm thấy thông tin khoảng trống năng lực');
   });
 });

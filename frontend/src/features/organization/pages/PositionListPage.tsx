@@ -4,10 +4,12 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { PageHeader, DataTable, StatusBadge, getStatusVariant, ConfirmActionDialog, type Column } from '@/components/shared';
 import { useJobPositions, useDeleteJobPosition } from '@/hooks/use-job-positions';
 import { useDepartments } from '@/hooks/use-departments';
+import { useJobGradeLabel } from '@/hooks/use-job-grades';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { JobPositionFormDialog } from '../components/JobPositionFormDialog';
 import { toast } from 'sonner';
-import { apiErrorMessage } from '@/lib/utils';
+import { organizationErrorMessage } from '@/lib/organization-errors';
+import { JOB_GRADES } from '@/lib/terms';
 import { INPUT_CLASS, PRIMARY_BUTTON } from '@/features/onboarding/components/styles';
 import type { JobPositionListItem, JobPositionStatus } from '@/services/job-position.service';
 
@@ -16,8 +18,8 @@ const STATUS_LABELS: Record<string, string> = { ACTIVE: 'Đang dùng', INACTIVE:
 /**
  * OW-09: Position List (UI/UX spec v2.1 §3.2, §10).
  * - Removed Job Family tab (hidden from UI per frozen design decision §9).
- * - Filters: Department · Status.
- * - Columns: Code · Position Name · Department · Headcount · Requirement Status · Status.
+ * - Filters: Department · Grade · Status.
+ * - Columns: Code · Position Name · Department · Grade · Headcount · Requirement Status · Status.
  * - Actions: Add Position (OW-11), Edit, Archive.
  */
 export function PositionListPage() {
@@ -30,9 +32,11 @@ export function PositionListPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<JobPositionStatus | undefined>(undefined);
   const [departmentId, setDepartmentId] = useState('');
+  const [jobGrade, setJobGrade] = useState('');
 
   const { data: deptData } = useDepartments({ pageSize: 100, status: 'ACTIVE' });
   const departments = deptData?.items || [];
+  const gradeLabel = useJobGradeLabel();
 
   const { data, isLoading } = useJobPositions({
     pageIndex: page,
@@ -40,6 +44,7 @@ export function PositionListPage() {
     search,
     status,
     departmentId: departmentId || undefined,
+    jobGrade: jobGrade || undefined,
   });
 
   const deletePosMutation = useDeleteJobPosition();
@@ -64,7 +69,7 @@ export function PositionListPage() {
       await deletePosMutation.mutateAsync(archivingPosition.id);
       toast.success('Đã lưu trữ vị trí công việc');
     } catch (error) {
-      toast.error(apiErrorMessage(error, 'Không lưu trữ được vị trí công việc'));
+      toast.error(organizationErrorMessage(error, 'Không lưu trữ được vị trí công việc'));
     } finally {
       setIsPosArchiveOpen(false);
       setArchivingPosition(null);
@@ -91,6 +96,19 @@ export function PositionListPage() {
       key: 'department',
       header: 'Phòng ban',
       cell: (row) => row.departmentName || (row as any).jobFamilyName || <span className="text-slate-400">Chưa gắn</span>,
+    },
+    {
+      key: 'jobGrade',
+      header: 'Cấp bậc',
+      cell: (row) =>
+        row.jobGrade ? (
+          <span className="text-slate-900">
+            {row.jobGradeName ?? row.jobGrade} <span className="font-mono text-xs text-slate-400">{row.jobGrade}</span>
+          </span>
+        ) : (
+          <span className="text-slate-400">Chưa xếp</span>
+        ),
+      hideOnMobile: true,
     },
     {
       key: 'headcount',
@@ -209,6 +227,19 @@ export function PositionListPage() {
               {departments.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label="Lọc theo Cấp bậc"
+              value={jobGrade}
+              onChange={(e) => resetPage(setJobGrade)(e.target.value)}
+              className={INPUT_CLASS}
+            >
+              <option value="">Mọi Cấp bậc</option>
+              {JOB_GRADES.map((code) => (
+                <option key={code} value={code}>
+                  {gradeLabel(code)}
                 </option>
               ))}
             </select>

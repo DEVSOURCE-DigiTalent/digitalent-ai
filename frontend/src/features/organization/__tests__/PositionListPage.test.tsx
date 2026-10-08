@@ -196,6 +196,7 @@ describe('PositionListPage', () => {
 
   it('FilterByGradeAndDepartmentWorks', async () => {
     mockUserWithPermissions();
+    const useJobPositions = vi.spyOn(posHooks, 'useJobPositions').mockReturnValue({ data: undefined, isLoading: false } as any);
 
     render(
       <QueryClientProvider client={queryClient}>
@@ -205,10 +206,10 @@ describe('PositionListPage', () => {
 
     // According to spec v2.1 OW-09, Job Family tab is removed in favor of Grade & Department filters
     expect(screen.getByLabelText('Lọc theo phòng ban')).toBeInTheDocument();
-    expect(screen.getByLabelText('Lọc theo Cấp bậc')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Cấu hình Cấp bậc/i })).toHaveAttribute(
-      'href',
-      '/enterprise/positions/grades',
-    );
+    fireEvent.change(screen.getByLabelText('Lọc theo Cấp bậc'), { target: { value: 'G2' } });
+
+    await waitFor(() => {
+      expect(useJobPositions).toHaveBeenLastCalledWith(expect.objectContaining({ jobGrade: 'G2', pageIndex: 1 }));
+    });
   });
 });

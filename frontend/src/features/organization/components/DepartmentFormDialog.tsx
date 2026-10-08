@@ -2,11 +2,11 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useDepartments, useCreateDepartment, useUpdateDepartment } from '@/hooks/use-departments';
+import { useDepartment, useDepartments, useCreateDepartment, useUpdateDepartment } from '@/hooks/use-departments';
 import { useMembers } from '@/hooks/use-members';
 import type { DepartmentDto } from '@/services/department.service';
 import { toast } from 'sonner';
-import { apiErrorMessage } from '@/lib/utils';
+import { organizationErrorMessage } from '@/lib/organization-errors';
 
 const formSchema = z.object({
   code: z.string().min(1, 'Vui lòng nhập mã'),
@@ -31,12 +31,27 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
   const updateMutation = useUpdateDepartment();
 
   // For parent department dropdown
-  const { data: parentData } = useDepartments({ pageIndex: 1, pageSize: 100, status: 'ACTIVE' });
+  const { data: parentData, isLoading: loadingParents } = useDepartments({ pageIndex: 1, pageSize: 100, status: 'ACTIVE' });
   const parents = parentData?.items || [];
 
-  // For manager selection
-  const { data: memberData } = useMembers({ pageIndex: 1, pageSize: 100, status: 'ACTIVE' });
-  const eligibleManagers = (memberData?.items ?? []).filter((m) => m.kind === 'member');
+  // A manager must be an active employee: accounts without an employee profile cannot be chosen.
+  const { data: memberData, isLoading: loadingMembers } = useMembers({ pageIndex: 1, pageSize: 100, status: 'ACTIVE' });
+  const eligibleManagers = (memberData?.items ?? []).flatMap((m) =>
+    m.kind === 'member' && m.employeeId ? [{ employeeId: m.employeeId, label: `${m.fullName} (${m.email})` }] : [],
+  );
+
+  // A list row has no description and PUT replaces every field, so editing starts from the full department.
+  const { data: current, isLoading: loadingCurrent } = useDepartment(department?.id ?? '');
+
+  // The current manager stays selectable even when outside the first page of members, so saving keeps them.
+  const managerOptions =
+    current?.managerEmployeeId && !eligibleManagers.some((m) => m.employeeId === current.managerEmployeeId)
+      ? [...eligibleManagers, { employeeId: current.managerEmployeeId, label: current.managerName ?? 'Quản lý hiện tại' }]
+      : eligibleManagers;
+
+  // A native <select> drops a value it has no option for yet: an edited department fills the form once its
+  // manager and parent options are listed.
+  const loadingOptions = isEditing && (loadingMembers || loadingParents);
 
   const {
     register,
@@ -56,15 +71,16 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
   });
 
   useEffect(() => {
-    if (open) {
-      if (department) {
+    if (open && !loadingOptions) {
+      const source = current ?? department;
+      if (source) {
         reset({
-          code: department.code,
-          name: department.name,
-          description: department.description ?? '',
-          parentDepartmentId: department.parentDepartmentId ?? '',
-          managerEmployeeId: department.managerEmployeeId ?? '',
-          status: (department.status as 'ACTIVE' | 'INACTIVE') ?? 'ACTIVE',
+          code: source.code,
+          name: source.name,
+          description: source.description ?? '',
+          parentDepartmentId: source.parentDepartmentId ?? '',
+          managerEmployeeId: source.managerEmployeeId ?? '',
+          status: (source.status as 'ACTIVE' | 'INACTIVE') ?? 'ACTIVE',
         });
       } else {
         reset({
@@ -77,7 +93,7 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
         });
       }
     }
-  }, [open, department, reset]);
+  }, [open, department, current, reset, loadingOptions]);
 
 
   if (!open) return null;
@@ -109,7 +125,7 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
       }
       onClose();
     } catch (error) {
-      toast.error(apiErrorMessage(error, isEditing ? 'Không cập nhật được phòng ban' : 'Không tạo được phòng ban'));
+      toast.error(organizationErrorMessage(error, isEditing ? 'Không cập nhật được phòng ban' : 'Không tạo được phòng ban'));
     }
   };
 
@@ -162,9 +178,9 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
               disabled={isSubmitting}
             >
               <option value="">Chưa phân công Manager</option>
-              {eligibleManagers.map((m) => (
-                <option key={m.employeeId ?? m.id} value={m.employeeId ?? m.id}>
-                  {m.fullName} ({m.email})
+              {managerOptions.map((m) => (
+                <option key={m.employeeId} value={m.employeeId}>
+                  {m.label}
                 </option>
               ))}
             </select>
@@ -216,7 +232,7 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
             <button
               type="submit"
               className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
-              disabled={isSubmitting}
+              disabled={isSubmitting || loadingCurrent || loadingOptions}
             >
               {isSubmitting ? 'Đang lưu…' : 'Lưu'}
             </button>

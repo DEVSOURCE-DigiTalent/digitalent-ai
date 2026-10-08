@@ -3,9 +3,11 @@ using DigiTalent.Application.Common.Events;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.Services.Intelligence.Recommendation;
 using DigiTalent.Application.Services.Intelligence.SkillGap;
+using DigiTalent.Application.UseCases.Intelligence.Analytics;
 using DigiTalent.Application.UseCases.Intelligence.SkillGap.Common;
 using DigiTalent.Application.UseCases.Me;
 using DigiTalent.Application.UseCases.Organization.Members;
+using DigiTalent.Application.UseCases.Organization.Workforce;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -53,6 +55,9 @@ public static class DependencyInjection
         services.AddScoped<SkillGapRunReader>();
         services.AddScoped<RecommendationWeightsProvider>();
         services.AddScoped<MemberDirectory>();
+        services.AddScoped<WorkforceReader>();
+        services.AddScoped<LatestSkillGapRuns>();
+        services.AddScoped<AnalyzedEmployees>();
 
         // 6. Trang cá nhân của nhân viên (/me/*, EM-01..EM-18)
         services.AddScoped<MyEmployeeContext>();

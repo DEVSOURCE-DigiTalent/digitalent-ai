@@ -7,9 +7,8 @@ import { useDepartments } from '@/hooks/use-departments';
 import { useJobPositions } from '@/hooks/use-job-positions';
 import { useInviteMembers } from '@/hooks/use-members';
 import { ENTITLEMENTS } from '@/lib/entitlements';
+import { organizationErrorMessage } from '@/lib/organization-errors';
 import { assignableRoles } from '@/lib/role-policy';
-import { apiErrorMessage } from '@/lib/utils';
-import { USE_MOCK } from '@/services/mock/mock-config';
 import type { InviteResult, InviteRow, MemberRole } from '@/types/commerce';
 import { CsvImport } from '@/features/onboarding/components/CsvImport';
 import { INPUT_CLASS, PRIMARY_BUTTON, SECONDARY_BUTTON } from '@/features/onboarding/components/styles';
@@ -75,6 +74,7 @@ export function InviteMembersModal({ open, onClose }: InviteMembersModalProps) {
           key: row.email,
           fullName: row.fullName,
           email: row.email,
+          employeeCode: row.employeeCode,
           role: row.role,
           departmentId: departments.find((d) => d.name === row.departmentName)?.id ?? '',
           jobPositionId: positions.find((p) => p.name === row.positionName)?.id ?? '',
@@ -87,6 +87,7 @@ export function InviteMembersModal({ open, onClose }: InviteMembersModalProps) {
       const outcome = await invite.mutateAsync(
         queue.map(({ key: _key, ...person }) => ({
           ...person,
+          employeeCode: person.employeeCode?.trim() || undefined,
           departmentId: person.departmentId || undefined,
           jobPositionId: person.jobPositionId || undefined,
         })),
@@ -94,7 +95,7 @@ export function InviteMembersModal({ open, onClose }: InviteMembersModalProps) {
       setResult(outcome);
       setQueue([]);
     } catch (error) {
-      setSubmitError(apiErrorMessage(error, 'Không gửi được lời mời. Vui lòng thử lại.'));
+      setSubmitError(organizationErrorMessage(error, 'Không gửi được lời mời. Vui lòng thử lại.'));
     }
   };
 
@@ -107,6 +108,8 @@ export function InviteMembersModal({ open, onClose }: InviteMembersModalProps) {
     onClose();
   };
 
+  // No email provider yet: the mock and the Development backend return the activation token so it can be tested here.
+  const testLinks = result?.created.filter((person) => person.token) ?? [];
   const seatsLeft = user.subscription?.seatLimit === undefined ? undefined : user.subscription.seatLimit - (user.subscription.seatsUsed ?? 0) - queue.length;
 
   return (
@@ -224,10 +227,10 @@ export function InviteMembersModal({ open, onClose }: InviteMembersModalProps) {
             {result.created.length > 0 && (
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
                 <p className="font-medium">Đã gửi {result.created.length} lời mời.</p>
-                {USE_MOCK && (
+                {testLinks.length > 0 && (
                   <ul className="mt-2 grid gap-1">
-                    {result.created.map((person) => (
-                      <li key={person.token}>
+                    {testLinks.map((person) => (
+                      <li key={person.id ?? person.email}>
                         {person.email}:{' '}
                         <Link to={`/activate/${person.token}`} className="font-medium underline underline-offset-4">liên kết kích hoạt (giả lập email)</Link>
                       </li>

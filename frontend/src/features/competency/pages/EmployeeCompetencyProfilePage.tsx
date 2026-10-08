@@ -5,6 +5,7 @@ import { PageHeader, ScoreCard, StatusBadge, Tabs } from '@/components/shared';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useEmployeeCapability } from '@/hooks/use-workforce';
 import { PERMISSIONS } from '@/hooks/use-permission';
+import { competencyCodeMap } from '@/lib/competency-levels';
 import { BLOCKER_LABELS } from '@/services/workforce.service';
 import type { SkillGapRunDetail } from '@/services/intelligence.service';
 import type { EmployeeCapability } from '@/services/workforce.service';
@@ -172,7 +173,7 @@ export function EmployeeCompetencyProfilePage() {
           <AssessmentsTab attempts={data.assessments} />
         )}
         {tab === 'tasks' && (
-          <TasksTab tasks={data.tasks} />
+          <TasksTab tasks={data.tasks} competencyCodes={competencyCodeMap(data.competencies)} />
         )}
       </Tabs>
 

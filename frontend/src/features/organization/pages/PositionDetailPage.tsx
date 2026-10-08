@@ -85,7 +85,7 @@ export function PositionDetailPage() {
             {!hasSet && (
               <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                 Vị trí này chưa có yêu cầu năng lực, nên chưa tính được skill gap cho người giữ vị trí.{' '}
-                <Link to={`/enterprise/positions/requirements?positionId=${id}`} className="font-medium underline">Đặt yêu cầu năng lực</Link>
+                <Link to={`/enterprise/requirements/builder?positionId=${id}`} className="font-medium underline">Đặt yêu cầu năng lực</Link>
               </p>
             )}
           </div>
@@ -93,7 +93,7 @@ export function PositionDetailPage() {
 
         {tab === 'requirements' &&
           (!hasSet ? (
-            <EmptyState title="Chưa có yêu cầu năng lực" description="Chọn từ 9 đến 24 năng lực của Khung chuẩn năng lực số và đặt trình độ yêu cầu cho từng năng lực." action={<Link to={`/enterprise/positions/requirements?positionId=${id}`} className={PRIMARY_BUTTON}>Đặt yêu cầu năng lực</Link>} />
+            <EmptyState title="Chưa có yêu cầu năng lực" description="Chọn từ 9 đến 24 năng lực của Thông tư 02/2025 và đặt trình độ yêu cầu cho từng năng lực." action={<Link to={`/enterprise/requirements/builder?positionId=${id}`} className={PRIMARY_BUTTON}>Đặt yêu cầu năng lực</Link>} />
           ) : (
             <div className="grid gap-5">
               {domains.map((group) => (

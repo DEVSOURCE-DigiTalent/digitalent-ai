@@ -81,7 +81,7 @@ export function RequirementSetListPage() {
     {
       key: 'department',
       header: 'Phòng ban',
-      cell: (row) => <span className="text-slate-600">{row.departmentName}</span>,
+      cell: (row) => <span className="text-slate-600">{row.departmentName ?? '—'}</span>,
     },
     {
       key: 'employees',

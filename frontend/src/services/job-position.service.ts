@@ -16,6 +16,8 @@ export interface JobPositionDto {
   jobGradeName?: string;
   headcount?: number;
   hasRequirementSet?: boolean;
+  /** Version of the active requirement set; null when there is none. */
+  activeRequirementSetVersionNo?: number | null;
   status: JobPositionStatus;
   createdAt: string;
   updatedAt: string;
@@ -53,6 +55,7 @@ export interface CreateJobPositionRequest {
   jobFamilyId?: string;
 }
 
+/** PUT replaces every field: one left out is cleared (department, grade, job family, description). */
 export interface UpdateJobPositionRequest extends CreateJobPositionRequest {
   status: Exclude<JobPositionStatus, 'ARCHIVED'>;
 }

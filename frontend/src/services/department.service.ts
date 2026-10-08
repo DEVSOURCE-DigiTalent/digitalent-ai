@@ -16,6 +16,10 @@ export interface DepartmentDto {
   managerName?: string;
   headcount?: number;
   gradeDistribution?: Record<string, number>;
+  /** Positions (not archived) owned by the department. */
+  positionCount?: number;
+  /** Child departments (not archived). */
+  subDepartmentCount?: number;
   status: DepartmentStatus;
   createdAt: string;
   updatedAt: string;
@@ -26,6 +30,7 @@ export interface DepartmentListItem {
   id: string;
   code: string;
   name: string;
+  parentDepartmentId?: string;
   parentDepartmentName?: string;
   managerEmployeeId?: string;
   managerName?: string;
@@ -46,6 +51,7 @@ export interface CreateDepartmentRequest {
   managerEmployeeId?: string;
 }
 
+/** PUT replaces every field: one left out is cleared (parent, description, manager). */
 export interface UpdateDepartmentRequest extends CreateDepartmentRequest {
   status: Exclude<DepartmentStatus, 'ARCHIVED'>; // archive dùng remove()
 }

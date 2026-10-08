@@ -142,8 +142,9 @@ export interface PositionRequirementSummary {
   jobPositionCode: string;
   jobPositionName: string;
   jobGrade?: string;
-  departmentId?: string;
-  departmentName: string;
+  departmentId?: string | null;
+  /** null when the position belongs to no department. */
+  departmentName: string | null;
   employeeCount: number;
   activeSet: {
     id: string;

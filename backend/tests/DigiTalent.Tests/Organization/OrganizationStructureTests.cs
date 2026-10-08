@@ -225,6 +225,21 @@ public class OrganizationStructureTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task GetMember_FindsAnAccountByItsEmployeeProfileId()
+    {
+        var f = await Fixture.CreateAsync();
+        var account = await f.CreateAccountAsync("profiled@test.local", Roles.Employee, f.World.Analyst);
+
+        var byEmployee = await f.GetMember(f.World.Analyst.Id);
+
+        byEmployee.Id.Should().Be(account.Id);
+        byEmployee.EmployeeId.Should().Be(f.World.Analyst.Id);
+        var unknown = () => f.GetMember(Guid.NewGuid());
+        await unknown.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task DeactivateAndReactivate_ToggleAccessAndKeepTheReason()
     {
         var f = await Fixture.CreateAsync();

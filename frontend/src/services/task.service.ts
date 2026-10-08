@@ -102,6 +102,12 @@ export interface LearnerTaskDto {
   submission: TaskSubmissionDto | null;
 }
 
+export interface SubmitEvidencePayload {
+  content: string;
+  linkUrls?: string[];
+  fileUrls?: string[];
+}
+
 export interface EvidenceItemDto {
   id: string;
   taskId: string;
@@ -135,12 +141,6 @@ export interface EvaluateSubmissionPayload {
   feedback: string;
   rubricScores: Record<string, number>;
   decision: 'APPROVED' | 'REVISION_REQUESTED' | 'REJECTED';
-}
-
-export interface SubmitEvidencePayload {
-  content: string;
-  linkUrls?: string[];
-  fileUrls?: string[];
 }
 
 /** BE2 stores rubric fields as JSON strings; the screens use structured values. */

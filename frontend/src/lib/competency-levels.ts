@@ -72,3 +72,8 @@ export function skillGapErrorMessage(error: unknown, fallback: string): string {
   }
   return fallback;
 }
+
+/** Competency id → Circular 02/2025 code (e.g. "4.2") from rows that carry both, for showing task targets by code. */
+export function competencyCodeMap(rows: { competencyId: string; frameworkCode: string }[] | undefined): Record<string, string> {
+  return Object.fromEntries((rows ?? []).filter((row) => row.frameworkCode).map((row) => [row.competencyId, row.frameworkCode]));
+}

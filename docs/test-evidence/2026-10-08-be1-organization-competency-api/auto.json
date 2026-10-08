@@ -1,0 +1,102 @@
+[
+  {
+    "screen": "Kiểm thử tự động",
+    "title": "Vitest: các test frontend liên quan tới nhánh",
+    "role": "—",
+    "url": "npx vitest run <các file liên quan> --reporter=verbose",
+    "precondition": "Nhánh feature/DT-be1-competency-apis; test chạy với VITE_USE_MOCK=false",
+    "steps": [
+      "Chạy vitest cho lib/__tests__/organization-errors, services/__tests__/be1-organization-contract, hooks/__tests__/use-departments, use-skill-gaps, use-notification-hub, features/organization/__tests__, features/intelligence/__tests__/SkillGapPages, services/mock/__tests__/mock-flows (kích hoạt lời mời)"
+    ],
+    "expected": "Tất cả pass, gồm các test mới của nhánh: helper lỗi, hợp đồng /invitations, useSetDepartmentManager, làm mới cache sau khi tính lại skill gap, form sửa phòng ban giữ quản lý, trang chi tiết khoảng trống OW-22.",
+    "actual": "10 file / 62 test pass (0 fail), gồm các test mới của nhánh.",
+    "status": "PASS",
+    "notes": [
+      "Khung đỏ: các test mới / đã sửa của nhánh và dòng tổng kết Test Files / Tests"
+    ],
+    "id": "AUTO01",
+    "at": "2026-10-08T05:28:04.274Z",
+    "api": []
+  },
+  {
+    "screen": "Kiểm thử tự động",
+    "title": "Toàn bộ test suite frontend: không có regression so với develop",
+    "role": "—",
+    "url": "npx vitest run",
+    "precondition": "Chạy toàn bộ suite trên origin/develop và trên nhánh",
+    "steps": [
+      "Chạy toàn bộ suite trên develop, lưu danh sách test fail",
+      "Chạy toàn bộ suite trên nhánh",
+      "So sánh hai danh sách (comm)"
+    ],
+    "expected": "Không có test fail mới trên nhánh so với develop.",
+    "actual": "develop: 23 fail / 777 test; nhánh: 22 fail / 789 test (+12 test mới). Không có test fail mới; nhánh sửa được PositionListPage › FilterByGradeAndDepartmentWorks. 22 test còn fail đã fail sẵn trên develop (mock server admin/structure/tasks, MainLayout, commerce) – ngoài phạm vi nhánh.",
+    "status": "PASS",
+    "notes": [
+      "Khung đỏ: tổng số test của hai lần chạy, danh sách fail mới (rỗng) và test được nhánh sửa"
+    ],
+    "id": "AUTO02",
+    "at": "2026-10-08T05:28:04.888Z",
+    "api": []
+  },
+  {
+    "screen": "Kiểm thử tự động",
+    "title": "Frontend: tsc -b, lint, build",
+    "role": "—",
+    "url": "npx tsc -b; npm run lint; npm run build",
+    "precondition": "Nhánh feature/DT-be1-competency-apis",
+    "steps": [
+      "npx tsc -b",
+      "npm run lint",
+      "npm run build"
+    ],
+    "expected": "tsc không lỗi; lint không lỗi và không có cảnh báo ở file thay đổi; build thành công.",
+    "actual": "tsc -b exit 0; lint 0 lỗi, 0 cảnh báo ở 45 file frontend thay đổi (75 cảnh báo có sẵn ở file khác); vite build thành công (1268 modules).",
+    "status": "PASS",
+    "notes": [
+      "Khung đỏ: exit code tsc, tổng kết lint, số cảnh báo ở file thay đổi, dòng build thành công"
+    ],
+    "id": "AUTO03",
+    "at": "2026-10-08T05:28:05.392Z",
+    "api": []
+  },
+  {
+    "screen": "Kiểm thử tự động",
+    "title": "Backend: dotnet build và toàn bộ test",
+    "role": "—",
+    "url": "dotnet build DigiTalent.sln; dotnet test tests/DigiTalent.Tests",
+    "precondition": "DIGITALENT_TEST_POSTGRES_CONNECTION trỏ tới DB kiểm thử digitalent_be1_test (Host=127.0.0.1)",
+    "steps": [
+      "dotnet build DigiTalent.sln",
+      "dotnet test tests/DigiTalent.Tests (unit InMemory + tích hợp PostgreSQL)"
+    ],
+    "expected": "Build không lỗi; toàn bộ test pass (gồm các test tích hợp PostgreSQL).",
+    "actual": "Build succeeded – 0 Error(s), 0 Warning(s); dotnet test 256/256 pass, 0 skipped (unit + tích hợp PostgreSQL 17).",
+    "status": "PASS",
+    "notes": [
+      "Khung đỏ: kết quả build và dòng tổng kết dotnet test"
+    ],
+    "id": "AUTO04",
+    "at": "2026-10-08T05:28:05.891Z",
+    "api": []
+  },
+  {
+    "screen": "Kiểm thử tự động",
+    "title": "Backend: test mới cho /workforce, ma trận, usage, summaries, analytics",
+    "role": "—",
+    "url": "dotnet test --filter WorkforceTests|WorkforceValidatorTests|CompetencyInsightTests|SkillGapAnalyticsTests",
+    "precondition": "Như AUTO04",
+    "steps": [
+      "Chạy riêng 4 lớp test mới, in từng test"
+    ],
+    "expected": "Tất cả test mới pass: lọc/sắp xếp/phân trang workforce, phạm vi EmployeeScope (Department Manager chỉ thấy phòng mình, ngoài phạm vi → 404), ma trận, usage, summaries, analytics, validator 400.",
+    "actual": "22/22 test mới pass: WorkforceTests 4, WorkforceValidatorTests 10, CompetencyInsightTests 5, SkillGapAnalyticsTests 3.",
+    "status": "PASS",
+    "notes": [
+      "Mỗi dòng là một test; khung đỏ: dòng tổng kết"
+    ],
+    "id": "AUTO05",
+    "at": "2026-10-08T05:28:06.362Z",
+    "api": []
+  }
+]

@@ -5,11 +5,13 @@ import {
 import { PageHeader, StatusBadge } from '@/components/shared';
 import { LevelBadge } from '@/components/shared/LevelBadge';
 import { usePracticalTask } from '@/hooks/use-tasks';
+import { useTaskCompetencies } from '@/hooks/use-competencies';
 import { formatDate } from '@/lib/utils';
 
 export function TaskDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: task, isLoading, isError } = usePracticalTask(id);
+  const { data: competencies = [] } = useTaskCompetencies(task?.competencyIds ?? []);
 
   if (isLoading) {
     return (
@@ -109,16 +111,16 @@ export function TaskDetailPage() {
         {/* Right column: Competencies & Info */}
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
-            <h3 className="font-bold text-slate-900 text-base">Chuẩn năng lực liên kết</h3>
+            <h3 className="font-bold text-slate-900 text-base">Năng lực liên kết</h3>
             <div className="flex flex-wrap gap-2">
-              {task.competencyIds.map((code: string) => {
-                const cleanCode = code.toUpperCase().replace(/^TT02-/, '').replace(/^CMP-/, '');
+              {task.competencyIds.map((competencyId) => {
+                const competency = competencies.find((item) => item.id === competencyId);
                 return (
                   <span
-                    key={code}
+                    key={competencyId}
                     className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-mono font-bold"
                   >
-                    CMP-{cleanCode}
+                    {competency ? `${competency.code} · ${competency.name}` : `Năng lực ${competencyId.slice(0, 8)}…`}
                   </span>
                 );
               })}

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "PH-01",
+    "severity": "Cao",
+    "title": "Backend thiếu 7 API mà frontend nhóm Năng lực đang gọi (/workforce, /workforce/{id}, /competency-profiles/matrix, /competencies/{id}/usage, /position-requirements/summaries, /intelligence/analytics/overview|competencies)",
+    "evidence": "Quét route FE ↔ controller BE; trước khi sửa GET /workforce/{employeeId} → 404",
+    "impact": "OW-03 (các tab), OW-10, OW-15, OW-16, OW-19, OW-20, OW-21 trống khi chạy backend thật",
+    "action": "ĐÃ XỬ LÝ trong nhánh: thêm 7 endpoint BE1 + test PostgreSQL (TC26–TC39, AUTO04–AUTO05)"
+  },
+  {
+    "id": "PH-02",
+    "severity": "Trung bình",
+    "title": "OW-21: sau \"Tính lại toàn bộ\" các thẻ tổng quan vẫn hiện 0 nhân sự",
+    "evidence": "Lần chạy E2E đầu: tính được 3 nhân viên nhưng thẻ hiện 0 cho tới khi tải lại trang",
+    "impact": "Owner tưởng việc tính lại không có tác dụng",
+    "action": "ĐÃ XỬ LÝ trong nhánh: invalidateSkillGapViews làm mới analytics, workforce, ma trận, thành viên, tổng quan (TC26, TC37)"
+  },
+  {
+    "id": "PH-05",
+    "severity": "Cao",
+    "title": "OW-22 Chi tiết khoảng trống luôn báo \"Không tìm thấy thông tin khoảng trống năng lực\"",
+    "evidence": "TC28 (lần chạy đầu): route /enterprise/skill-gap/{employeeId} nhưng trang gọi GET /intelligence/skill-gaps/{runId} bằng employeeId → 404 (lỗi có sẵn trên develop)",
+    "impact": "Owner không xem được chi tiết khoảng trống, không xác nhận mức năng lực từ OW-22",
+    "action": "ĐÃ XỬ LÝ trong nhánh: tìm snapshot mới nhất của nhân viên (GET /intelligence/skill-gaps?employeeId=&latestOnly=true) rồi mới tải chi tiết (TC28 + test SkillGapDetailPage)"
+  },
+  {
+    "id": "PH-06",
+    "severity": "Trung bình",
+    "title": "OW-06 Sửa phòng ban: ô \"Người quản lý\" hiện \"Chưa phân công\" dù phòng ban đã có quản lý",
+    "evidence": "TC18 (lần chạy trên DB mới): form đã điền mô tả nhưng danh sách thành viên tải sau, <select> không có option tương ứng nên mất giá trị",
+    "impact": "Owner thấy phòng ban như chưa có quản lý và có thể chọn lại sai; quản lý ngoài 100 thành viên đầu không bao giờ hiện",
+    "action": "ĐÃ XỬ LÝ trong nhánh: chỉ nạp form khi đã có danh sách quản lý/phòng ban cấp trên, luôn giữ quản lý hiện tại trong danh sách (TC18 + 2 test DepartmentFormDialog)"
+  },
+  {
+    "id": "PH-03",
+    "severity": "Cao",
+    "title": "appsettings.json chứa mật khẩu DB thật",
+    "evidence": "backend/src/DigiTalent.Api/appsettings.json (ConnectionStrings.DefaultConnection) trên develop",
+    "impact": "Mật khẩu nằm trong lịch sử git",
+    "action": "CẦN XỬ LÝ (ngoài phạm vi nhánh): đổi mật khẩu DB, đưa chuỗi kết nối vào user-secrets / biến môi trường"
+  },
+  {
+    "id": "PH-04",
+    "severity": "Thấp",
+    "title": "Màn OW-12 Cấu hình cấp bậc vẫn đánh dấu \"Đã bỏ\"",
+    "evidence": "TC22: route /enterprise/positions/grades vẫn hoạt động, tiêu đề \"Cấu hình cấp bậc (Đã bỏ)\"; file phân công ghi OW-12 là P0 của FE1",
+    "impact": "Owner chỉ vào được bằng URL",
+    "action": "CẦN CHỐT: mở lại OW-12 (lib/screens/enterprise/owner.ts + liên kết ở trang Vị trí) hoặc bỏ hẳn"
+  }
+]

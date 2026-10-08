@@ -3,8 +3,7 @@ import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useCurrentUser } from './use-current-user';
-import { SKILL_GAPS_KEY } from './use-skill-gaps';
-import { RECOMMENDATIONS_KEY } from './use-recommendations';
+import { invalidateSkillGapViews } from './use-skill-gaps';
 
 /** Payload of "ReceiveNotification" — khớp Api/Services/SignalRNotificationSender.cs */
 export interface HubNotification {
@@ -43,8 +42,7 @@ export function useNotificationHub() {
     connection.on(RECEIVE_NOTIFICATION, (notification: HubNotification) => {
       toast.info(notification.title, { description: notification.message });
       if (notification.type === 'SKILL_GAP_UPDATED') {
-        queryClient.invalidateQueries({ queryKey: SKILL_GAPS_KEY });
-        queryClient.invalidateQueries({ queryKey: RECOMMENDATIONS_KEY });
+        void invalidateSkillGapViews(queryClient);
       }
     });
 

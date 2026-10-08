@@ -5,8 +5,10 @@ import { ArrowLeft, Plus, Trash2, Save, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/shared';
 import { useCreatePracticalTask } from '@/hooks/use-tasks';
-import { useDepartments } from '@/hooks/use-departments';
-import { useEmployees } from '@/hooks/use-employees';
+import { useAllEmployees } from '@/hooks/use-employees';
+import { useAllActiveCompetencies } from '@/hooks/use-competencies';
+import { apiErrorMessage } from '@/lib/utils';
+import { levelWithTier } from '@/lib/competency-levels';
 
 interface FormValues {
   title: string;
@@ -24,25 +26,15 @@ interface FormValues {
   }[];
 }
 
-const COMMON_COMPETENCIES = [
-  { id: 'cmp-1-1', code: 'CMP-1.1', name: 'Duyệt, tìm kiếm và lọc dữ liệu' },
-  { id: 'cmp-1-3', code: 'CMP-1.3', name: 'Quản lý dữ liệu và nội dung số' },
-  { id: 'cmp-2-1', code: 'CMP-2.1', name: 'Tương tác thông qua công nghệ số' },
-  { id: 'cmp-2-2', code: 'CMP-2.2', name: 'Chia sẻ thông tin và nội dung số' },
-  { id: 'cmp-3-1', code: 'CMP-3.1', name: 'Phát triển nội dung số' },
-  { id: 'cmp-4-1', code: 'CMP-4.1', name: 'Bảo vệ thiết bị' },
-  { id: 'cmp-4-2', code: 'CMP-4.2', name: 'Bảo vệ dữ liệu cá nhân và quyền riêng tư' },
-  { id: 'cmp-5-1', code: 'CMP-5.1', name: 'Giải quyết các vấn đề kỹ thuật' },
-];
-
 export function CreatePracticalTaskPage() {
   const navigate = useNavigate();
   const createMutation = useCreatePracticalTask();
 
-  const { data: deptData } = useDepartments({ pageSize: 100 });
-  const { data: empData } = useEmployees();
+  const { data: employees = [], isLoading: employeesLoading, isError: employeesError } = useAllEmployees({ status: 'ACTIVE' });
+  const { data: competencies = [], isLoading: competenciesLoading, isError: competenciesError } = useAllActiveCompetencies();
 
-  const [selectedCompetencies, setSelectedCompetencies] = useState<string[]>(['cmp-1-3', 'cmp-4-2']);
+  const [selectedCompetencies, setSelectedCompetencies] = useState<string[]>([]);
+  const [employeeSearch, setEmployeeSearch] = useState('');
 
   const defaultDueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
@@ -75,10 +67,16 @@ export function CreatePracticalTaskPage() {
   });
 
   const selectedDepartmentId = watch('departmentId');
-  const employees = empData?.items ?? [];
-  const filteredEmployees = selectedDepartmentId
-    ? employees.filter((e: any) => e.departmentId === selectedDepartmentId)
-    : employees;
+  const selectedEmployeeIds = watch('assignedEmployeeIds') ?? [];
+  const rubricCriteria = watch('rubricCriteria');
+  const rubricMaxPoints = rubricCriteria.reduce((sum, criterion) => sum + (Number(criterion.maxPoints) || 0), 0);
+  const departments = [...new Map(employees.filter((employee) => employee.departmentId)
+    .map((employee) => [employee.departmentId, employee.departmentName ?? 'Phòng ban chưa đặt tên'])).entries()];
+  const filteredEmployees = employees.filter((employee) =>
+    (!selectedDepartmentId || employee.departmentId === selectedDepartmentId)
+    && (!employeeSearch || `${employee.fullName} ${employee.employeeCode} ${employee.workEmail ?? ''}`
+      .toLocaleLowerCase('vi').includes(employeeSearch.toLocaleLowerCase('vi').trim())),
+  );
 
   const toggleCompetency = (id: string) => {
     setSelectedCompetencies((prev) =>
@@ -87,8 +85,17 @@ export function CreatePracticalTaskPage() {
   };
 
   const onSubmit = async (values: FormValues) => {
-    if (selectedCompetencies.length === 0) {
-      toast.error('Vui lòng chọn ít nhất một năng lực số');
+    if (selectedCompetencies.length === 0 || selectedCompetencies.some((id) => !competencies.some((item) => item.id === id))) {
+      toast.error('Vui lòng chọn ít nhất một năng lực đang hoạt động từ danh mục');
+      return;
+    }
+    const assignedEmployeeIds = [...new Set(values.assignedEmployeeIds ?? [])];
+    if (assignedEmployeeIds.length === 0 || assignedEmployeeIds.some((id) => !employees.some((employee) => employee.id === id))) {
+      toast.error('Vui lòng chọn ít nhất một nhân viên đang hoạt động trong danh sách');
+      return;
+    }
+    if (values.rubricCriteria.length === 0 || values.rubricCriteria.some((criterion) => !Number.isFinite(Number(criterion.maxPoints)) || Number(criterion.maxPoints) <= 0) || rubricMaxPoints !== 100) {
+      toast.error('Tổng điểm tối đa của các tiêu chí phải bằng 100.');
       return;
     }
 
@@ -98,10 +105,9 @@ export function CreatePracticalTaskPage() {
         description: values.description,
         expectedOutput: values.expectedOutput,
         targetLevel: Number(values.targetLevel),
-        departmentId: values.departmentId || undefined,
         dueDate: values.dueDate,
         competencyIds: selectedCompetencies,
-        assignedEmployeeIds: values.assignedEmployeeIds || [],
+        assignedEmployeeIds,
         rubricCriteria: values.rubricCriteria.map((r, idx) => ({
           ...r,
           id: r.id || `rc-${idx + 1}`,
@@ -111,8 +117,8 @@ export function CreatePracticalTaskPage() {
 
       toast.success('Đã tạo và giao nhiệm vụ thực hành thành công!');
       navigate('/enterprise/tasks');
-    } catch {
-      toast.error('Có lỗi xảy ra khi tạo nhiệm vụ. Vui lòng thử lại.');
+    } catch (error) {
+      toast.error(apiErrorMessage(error, 'Không thể tạo nhiệm vụ. Vui lòng thử lại.'));
     }
   };
 
@@ -185,11 +191,7 @@ export function CreatePracticalTaskPage() {
                 {...register('targetLevel', { valueAsNumber: true })}
                 className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
               >
-                <option value={1}>Cấp độ 1 - Cơ bản (Nhận biết)</option>
-                <option value={2}>Cấp độ 2 - Cơ sở (Vận dụng cơ bản)</option>
-                <option value={3}>Cấp độ 3 - Trung cấp (Áp dụng độc lập)</option>
-                <option value={4}>Cấp độ 4 - Nâng cao (Tối ưu hóa & Hướng dẫn)</option>
-                <option value={5}>Cấp độ 5 - Chuyên gia (Chiến lược & Đổi mới)</option>
+                {[1, 2, 3].map((level) => <option key={level} value={level}>{levelWithTier(level)}</option>)}
               </select>
             </div>
 
@@ -210,14 +212,14 @@ export function CreatePracticalTaskPage() {
         {/* Card 2: Khung năng lực gắn kèm */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-4">
           <div>
-            <h2 className="text-base font-bold text-slate-900">2. Năng lực số liên kết</h2>
+            <h2 className="text-base font-bold text-slate-900">2. Năng lực liên kết</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Khi Manager duyệt minh chứng bài tập này, nhân viên sẽ được ghi nhận điểm thực hành cho các năng lực được chọn.
+              Chọn năng lực liên quan đến nhiệm vụ. Kết quả chấm bài chưa tự xác nhận cấp độ năng lực.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-            {COMMON_COMPETENCIES.map((c) => {
+            {competencies.map((c) => {
               const active = selectedCompetencies.includes(c.id);
               return (
                 <button
@@ -238,13 +240,16 @@ export function CreatePracticalTaskPage() {
                     {active && <CheckCircle2 className="size-3.5" />}
                   </div>
                   <div>
-                    <span className="font-mono text-xs font-bold text-blue-700">{c.code}</span>
+                    <span className="font-mono text-xs font-bold text-blue-700">{c.frameworkCode ? `TT02-${c.frameworkCode}` : c.code}</span>
                     <p className="text-xs font-medium mt-0.5">{c.name}</p>
                   </div>
                 </button>
               );
             })}
           </div>
+          {competenciesLoading && <p className="text-sm text-slate-500">Đang tải danh mục năng lực…</p>}
+          {competenciesError && <p role="alert" className="text-sm text-rose-600">Không tải được danh mục năng lực. Vui lòng thử lại sau.</p>}
+          {!competenciesLoading && !competenciesError && competencies.length === 0 && <p className="text-sm text-amber-700">Chưa có năng lực ACTIVE để giao nhiệm vụ.</p>}
         </div>
 
         {/* Card 3: Phân công nhân viên */}
@@ -266,9 +271,9 @@ export function CreatePracticalTaskPage() {
               className="w-full sm:w-72 px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
             >
               <option value="">Tất cả phòng ban</option>
-              {deptData?.items?.map((d: any) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
+              {departments.map(([departmentId, departmentName]) => (
+                <option key={departmentId} value={departmentId}>
+                  {departmentName}
                 </option>
               ))}
             </select>
@@ -276,10 +281,18 @@ export function CreatePracticalTaskPage() {
 
           <div className="space-y-2 pt-2">
             <label className="block text-sm font-semibold text-slate-800">
-              Chọn nhân viên được giao ({filteredEmployees.length} nhân sự)
+              Chọn nhân viên được giao ({filteredEmployees.length} phù hợp · {selectedEmployeeIds.length} đã chọn)
             </label>
+            <input
+              type="search"
+              aria-label="Tìm nhân viên được giao"
+              value={employeeSearch}
+              onChange={(event) => setEmployeeSearch(event.target.value)}
+              placeholder="Tìm tên, mã hoặc email nhân viên"
+              className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto p-2 border border-slate-200 rounded-xl bg-slate-50/50">
-              {filteredEmployees.map((emp: any) => (
+              {filteredEmployees.map((emp) => (
                 <label
                   key={emp.id}
                   className="flex items-center gap-2.5 p-2 bg-white rounded-lg border border-slate-200 hover:border-slate-300 cursor-pointer text-xs"
@@ -297,6 +310,9 @@ export function CreatePracticalTaskPage() {
                 </label>
               ))}
             </div>
+            {employeesLoading && <p className="text-sm text-slate-500">Đang tải nhân viên…</p>}
+            {employeesError && <p role="alert" className="text-sm text-rose-600">Không tải được danh sách nhân viên. Vui lòng thử lại sau.</p>}
+            {!employeesLoading && !employeesError && filteredEmployees.length === 0 && <p className="text-sm text-slate-500">Không có nhân viên phù hợp.</p>}
           </div>
         </div>
 
@@ -306,7 +322,10 @@ export function CreatePracticalTaskPage() {
             <div>
               <h2 className="text-base font-bold text-slate-900">4. Bảng tiêu chí chấm điểm (Rubric)</h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Thiết lập các tiêu chí cụ thể để Manager đánh giá minh chứng của nhân viên một cách minh bạch.
+                Thiết lập các tiêu chí để người duyệt đánh giá minh chứng của nhân viên.
+              </p>
+              <p className={`text-xs mt-1 ${rubricMaxPoints === 100 ? 'text-emerald-700' : 'text-amber-700'}`}>
+                Tổng điểm tối đa: {rubricMaxPoints}/100
               </p>
             </div>
             <button
@@ -347,6 +366,8 @@ export function CreatePracticalTaskPage() {
                       {...register(`rubricCriteria.${index}.maxPoints` as const, {
                         valueAsNumber: true,
                         required: true,
+                        min: 1,
+                        max: 100,
                       })}
                       className="w-16 px-2 py-1.5 text-sm text-center border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white font-bold"
                     />
@@ -363,7 +384,7 @@ export function CreatePracticalTaskPage() {
                 </div>
                 <input
                   {...register(`rubricCriteria.${index}.description` as const)}
-                  placeholder="Mô tả hướng dẫn cho Manager khi chấm tiêu chí này..."
+                  placeholder="Mô tả hướng dẫn cho người duyệt khi chấm tiêu chí này..."
                   className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white text-slate-600"
                 />
               </div>
@@ -381,7 +402,7 @@ export function CreatePracticalTaskPage() {
           </Link>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || createMutation.isPending || competenciesLoading || employeesLoading || competenciesError || employeesError}
             className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-sm transition disabled:opacity-50"
           >
             <Save className="size-4" />

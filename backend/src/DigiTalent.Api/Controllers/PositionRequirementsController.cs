@@ -22,6 +22,16 @@ public class PositionRequirementsController : ControllerBase
         return Ok(ApiResponse<GetPositionRequirementsUseCaseOutput>.Ok(result));
     }
 
+    // GET api/v1/position-requirements/summaries
+    [HttpGet("summaries")]
+    [HasPermission(Permissions.PositionRequirement.Read)]
+    public async Task<ActionResult<ApiResponse<GetPositionRequirementSummariesUseCaseOutput>>> GetSummaries(
+        [FromServices] IUseCase<GetPositionRequirementSummariesUseCaseInput, GetPositionRequirementSummariesUseCaseOutput> useCase)
+    {
+        var result = await useCase.ExecuteAsync(new GetPositionRequirementSummariesUseCaseInput());
+        return Ok(ApiResponse<GetPositionRequirementSummariesUseCaseOutput>.Ok(result));
+    }
+
     // POST api/v1/position-requirements
     [HttpPost]
     [HasPermission(Permissions.PositionRequirement.CreateUpdate)]
