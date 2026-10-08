@@ -3,7 +3,7 @@
 > Base URL: `http://localhost:5000/api/v1`
 > Auth: Tất cả API cần header `Authorization: Bearer <accessToken>`
 > Lấy token: `POST /api/v1/auth/login` với `{ email, password }`
-> Phạm vi: các API do nhánh `feature/DT-overview-dashboard-api` (PR #49, mục 1–2) và `feature/DT-organization-api` (mục 3 — API nhóm Tổ chức, mục 4 — hướng dẫn tích hợp frontend) thêm vào. Hướng dẫn chi tiết cho trang OW-01: `docs/integration/OW-01_Tong_Quan_FE_Integration.md`.
+> Phạm vi: các API do nhánh `feature/DT-overview-dashboard-api` (PR #49, mục 1–2), `feature/DT-organization-api` (mục 3 — API nhóm Tổ chức, mục 4 — hướng dẫn tích hợp frontend) và `feature/DT-be1-competency-apis` (mục 5 — năng lực & nhân sự) thêm vào. Hướng dẫn chi tiết cho trang OW-01: `docs/integration/OW-01_Tong_Quan_FE_Integration.md`.
 
 ## Response chung
 
@@ -960,6 +960,117 @@ Các lỗi 409 thường gặp nên có câu riêng ở dialog tương ứng: c�
 | 10 | hr@ | `/enterprise/access` | 3 vai trò, số người giữ đúng, `assignable = true` |
 | 11 | manager@ | Mở `/enterprise/members` hoặc gọi `/roles` | 403; `GET /job-grades` vẫn 200 |
 | 12 | employee@ | Gọi bất kỳ API `/members` | 403 |
+
+---
+
+## 5. NĂNG LỰC & NHÂN SỰ (OW-03, OW-10, OW-15, OW-16, OW-19, OW-20, OW-21)
+
+> Nhánh `feature/DT-be1-competency-apis`. Trước đây 7 endpoint dưới đây chỉ có ở mock FE (`services/mock/server/handlers/{workforce,competency,analytics}.ts`), nên với backend thật các màn này trống (`/workforce/{id}` trả 404). Đường dẫn và shape giữ đúng kiểu TS trong `services/{workforce,competency,analytics}.service.ts`; FE không phải đổi code gọi API.
+
+| Endpoint | Quyền | Màn |
+|----------|-------|-----|
+| `GET /workforce` | `employee.read` | OW-10 (tab Nhân sự), OW-19 |
+| `GET /workforce/{employeeId}` | `employee_competency_profile.read` | OW-03 (các tab), OW-20 |
+| `GET /competency-profiles/matrix` | `employee_competency_profile.read` | OW-19, MG-04 |
+| `GET /competencies/{id}/usage` | `competency.read` | OW-15 |
+| `GET /position-requirements/summaries` | `position_requirement.read` | OW-16 |
+| `GET /intelligence/analytics/overview` | `skill_gap.read` | OW-21 |
+| `GET /intelligence/analytics/competencies` | `skill_gap.read` | OW-21, OW-40 |
+
+**Phạm vi dữ liệu:** mọi số liệu theo nhân viên đi qua `EmployeeScope` — HR/Admin: cả tổ chức; Department Manager: phòng ban của mình; vai trò khác: chính mình. Nhân viên ngoài phạm vi → 404. Không cần migration, không thêm mã quyền.
+
+**"Snapshot mới nhất":** lần tính skill gap gần nhất (`skill_gap_runs`) của mỗi nhân viên. Nhân viên chưa từng tính thì không có snapshot (`hasSnapshot = false`, các chỉ số `null`) và không được tính vào analytics. Tính bằng `POST /intelligence/skill-gaps/calculate` hoặc `calculate-batch`.
+
+### 5.1 GET /workforce — Danh sách nhân sự
+
+```
+Query: pageIndex (≥1), pageSize (1–100, mặc định 20), search (họ tên / mã NV),
+       departmentId, jobPositionId,
+       status   ACTIVE | INACTIVE | TRANSFERRED | ARCHIVED (bỏ trống = ACTIVE + INACTIVE),
+       gap      HIGH (có khoảng trống HIGH) | ANY (có khoảng trống) | NONE (đã tính, không thiếu) | UNKNOWN (chưa tính),
+       learning OVERDUE (có khóa quá hạn) | ACTIVE (có khóa chưa xong) | NONE (không có khóa đang học)
+Giá trị sai (status/gap/learning, pageSize) → 400 Validation failed.
+```
+
+`data` = `PagedList<WorkforceRow>`. Mỗi dòng = các field của `EmployeeListItem` (như `GET /employees`) cộng:
+
+| Field | Mô tả |
+|-------|-------|
+| hasSnapshot | Đã có snapshot skill gap |
+| blocker | Lý do không tính được skill gap: `EMPLOYEE_NOT_ACTIVE` / `NO_JOB_POSITION` / `NO_ACTIVE_REQUIREMENT_SET`; `null` khi tính được |
+| coveragePercent, gapCount, highCount | Của snapshot mới nhất; `null` khi chưa có snapshot |
+| activeCourses, completedCourses, overdueCourses | Phân công khóa học (bỏ CANCELLED): chưa hoàn thành / đã hoàn thành / quá hạn mà chưa hoàn thành |
+
+Thứ tự: nhiều khoảng trống HIGH trước, rồi nhiều khoảng trống, rồi họ tên (collation tiếng Việt). Lọc `gap`/`learning` cần số liệu đã tính nên danh sách được dựng cho cả phạm vi rồi mới phân trang.
+
+### 5.2 GET /workforce/{employeeId} — Hồ sơ năng lực một nhân viên
+
+`{employeeId}` là **employee id** (không phải user id). Ngoài phạm vi / không tồn tại → 404.
+
+| Field | Mô tả |
+|-------|-------|
+| employee | `EmployeeListItem` |
+| summary | `WorkforceRow` (như 5.1) |
+| competencies[] | Mọi năng lực ACTIVE của tổ chức có mapping Thông tư 02/2025, cộng năng lực vị trí yêu cầu hoặc nhân viên đang giữ. `{ competencyId, frameworkCode, name, categoryName, categorySortOrder, currentLevel (null = chưa xác nhận), requiredLevel (0 = vị trí không yêu cầu), source, confirmedAt, note }`; sắp theo miền rồi mã TT02 (1.2 trước 1.10) |
+| skillGap | `{ runId, generatedAt, requirementSetVersionNo, summary, items }` của snapshot mới nhất (giống `GET /intelligence/skill-gaps/{runId}`); `null` nếu chưa tính |
+| recommendations | Luôn `[]` — gợi ý khóa học lấy qua `GET /intelligence/recommendations?employeeId=` (tab Khoảng trống đã gọi API này) |
+| learning[] | Phân công khóa học (bỏ CANCELLED), mới nhất trước — cùng shape `AssignmentRow` của `GET /course-assignments` |
+| evidence[] | Mức đang xác nhận của từng năng lực: `{ competencyId, competencyName, frameworkCode, level, source, confirmedAt, note }`, mới nhất trước |
+| tasks[] | Nhiệm vụ thực tế (bỏ CANCELLED): `{ id, title, description, dueDate, status, competencyIds }` — status `ASSIGNED / SUBMITTED / NEEDS_REVISION / PASSED / FAILED` |
+| submissions[] | Bài nộp: `{ id, taskTitle, content (ghi chú hoặc link đầu tiên), status, submittedAt, evaluatorName }` — status `EVALUATED` (đạt) / `REJECTED` (cần sửa hoặc không đạt) / trạng thái bài nộp khi chưa chấm |
+| assessments[] | Lần làm bài đã nộp: `{ id, assessmentId, courseTitle, score, totalQuestions, correctAnswers, passed, submittedAt }` |
+| certificates[] | `{ id, certificateCode, courseTitle, issueDate, expiryDate, status }` |
+
+`source` của mức năng lực: `MIGRATION` (dữ liệu ban đầu), `TASK` (từ nhiệm vụ thực tế), `MANUAL` (Owner xác nhận tay).
+
+### 5.3 GET /competency-profiles/matrix — Ma trận năng lực
+
+```
+Query: departmentId, jobPositionId, jobGrade (G1|G2|G3, sai → 400), categoryId (chỉ cột của miền này), search
+```
+
+| Field | Mô tả |
+|-------|-------|
+| categories[] | `{ id, code, name, sortOrder }` — các miền có cột |
+| competencies[] | Cột: năng lực ACTIVE có mapping TT02 `{ id, code, frameworkCode, name, categoryId }`, theo miền rồi mã |
+| employees[] | Nhân viên ACTIVE trong phạm vi, theo họ tên: `{ employeeId, employeeCode, fullName, departmentId, departmentName, jobPositionId, jobPositionName, jobGrade, coveragePercent (snapshot mới nhất, null nếu chưa tính), totalGaps (số cột current < required), cells }` |
+| cells | Object theo competency id: `{ currentLevel (0 = chưa xác nhận), requiredLevel (0 = không yêu cầu), gap = max(0, required − current), evidenceSource, evidenceStatus (CONFIRMED / NONE), confirmedAt }` |
+
+### 5.4 GET /competencies/{id}/usage — Năng lực được dùng ở đâu
+
+Năng lực không thuộc tổ chức → 404.
+
+| Field | Mô tả |
+|-------|-------|
+| positions[] | Vị trí ACTIVE có bộ yêu cầu ACTIVE chứa năng lực: `{ positionId, positionName, requiredLevel, isMandatory, weightPercent, employees (nhân viên ACTIVE trong phạm vi) }` |
+| courses[] | Khóa PUBLISHED (bản mới nhất của mỗi mã) dạy năng lực: `{ id, code, title, level (target_level), assigned (phân công chưa hủy) }` |
+| levelDistribution | `{ "0": n, "1": n, "2": n, "3": n }` — nhân viên ACTIVE trong phạm vi theo mức xác nhận |
+| employeesWithGap[] | Nhân viên ACTIVE trong phạm vi có mức < mức vị trí yêu cầu: `{ employeeId, fullName, email, departmentName, jobPositionName, jobGrade, currentLevel, requiredLevel, gap }`, gap lớn trước |
+
+### 5.5 GET /position-requirements/summaries — Tình trạng yêu cầu theo vị trí
+
+Mảng, mỗi vị trí chưa ARCHIVED (theo mã): `{ jobPositionId, jobPositionCode, jobPositionName, jobGrade, departmentId, departmentName (null nếu chưa gắn phòng ban), employeeCount (nhân viên ACTIVE), activeSet, draftSet, totalVersions, status }`.
+
+- `activeSet` / `draftSet`: `{ id, versionNo, effectiveFrom, activatedAt, competencyCount }` hoặc `null` (draft lấy bản mới nhất).
+- `status`: `ACTIVE` (có bộ đang áp dụng) / `DRAFT` (chỉ có nháp) / `NOT_CONFIGURED`.
+- Không có `changeReason` (bảng `position_requirement_sets` không có cột này).
+
+### 5.6 GET /intelligence/analytics/overview — Tổng quan khoảng trống
+
+```
+Query: groupBy department (mặc định) | position | grade (sai → 400), departmentId, jobPositionId, jobGrade
+```
+
+`data = { groupBy, totals, groups[] }`. `totals` và mỗi nhóm có `{ employees, averageCoverage, totalGaps, highCount, mediumCount, lowCount, employeesWithHigh }` tính trên snapshot mới nhất của nhân viên ACTIVE trong phạm vi. Nhóm: `{ id, name }` + chỉ số — phòng ban/vị trí ACTIVE hoặc cấp bậc G1–G3 (tên theo cấu hình tổ chức, mục 3.5); bỏ nhóm không có ai được phân tích; độ đáp ứng thấp nhất trước.
+
+### 5.7 GET /intelligence/analytics/competencies — Khoảng trống theo năng lực
+
+Cùng bộ lọc (trừ `groupBy`). Mảng `{ competencyId, frameworkCode, name, categoryName, employeesRequired, employeesWithGap, highCount, mediumCount, lowCount, averageRequiredLevel, averageCurrentLevel (chưa xác nhận tính là 0) }`, nhiều HIGH trước, rồi nhiều người thiếu, rồi mã TT02.
+
+### 5.8 Kiểm thử
+
+- `tests/DigiTalent.Tests/Organization/WorkforceTests.cs`, `Competency/CompetencyInsightTests.cs`, `Intelligence/SkillGapAnalyticsTests.cs` (PostgreSQL), `Organization/WorkforceValidatorTests.cs`.
+- Seed Development sau `POST /intelligence/skill-gaps/calculate-batch`: `employee@` (Kế toán) có 21 năng lực yêu cầu, 15 khoảng trống, 4 HIGH, độ đáp ứng 62.03% — khớp spec `docs/specs/2026-09-29-tt02-position-competency-matrix.md` §8.
 
 ---
 
