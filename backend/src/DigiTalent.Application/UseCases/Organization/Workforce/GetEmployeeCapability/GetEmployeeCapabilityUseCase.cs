@@ -196,7 +196,7 @@ public class GetEmployeeCapabilityUseCase : IUseCase<GetEmployeeCapabilityUseCas
                     CourseTitle = course.Title,
                     AssignedAt = assignment.AssignedAt,
                     AssignedByName = assignedBy != null ? assignedBy.DisplayName : string.Empty,
-                    DueDate = assignment.DueDate != null ? assignment.DueDate.Value.ToString("yyyy-MM-dd") : null,
+                    DueDate = assignment.DueDate != null ? assignment.DueDate!.Value.ToString("yyyy-MM-dd") : null,
                     Status = assignment.Status,
                     ProgressPercent = enrollment != null ? (int)enrollment.ProgressPercent : 0,
                     CompletedAt = enrollment != null ? enrollment.CompletedAt : null,
