@@ -91,6 +91,16 @@ public interface IApplicationDbContext
     DbSet<TrialInvitation> TrialInvitations { get; }
     DbSet<PositionDiagnosticAttempt> PositionDiagnosticAttempts { get; }
 
+    // Individual Commerce & Registration (v3.0)
+    DbSet<IndividualRegistration> IndividualRegistrations { get; }
+    DbSet<IndividualEmailVerificationChallenge> IndividualEmailVerificationChallenges { get; }
+    DbSet<IndividualTrialRedemption> IndividualTrialRedemptions { get; }
+    DbSet<UserSubscription> UserSubscriptions { get; }
+    DbSet<PurchaseDraft> PurchaseDrafts { get; }
+    DbSet<Order> Orders { get; }
+    DbSet<PaymentEvent> PaymentEvents { get; }
+    DbSet<EmailOutboxItem> EmailOutboxItems { get; }
+
     // Shared
     DbSet<AuditLog> AuditLogs { get; }
     DbSet<FileObject> FileObjects { get; }

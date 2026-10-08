@@ -37,6 +37,14 @@ public class PermissionService : IPermissionService
                 .Distinct()
                 .ToListAsync();
 
+        if (roleCodes.Contains("LEARNER") || !roleCodes.Any())
+        {
+            var list = permissions.ToList();
+            if (!list.Contains(Permissions.Account.ViewOwn)) list.Add(Permissions.Account.ViewOwn);
+            if (!list.Contains("learner.access")) list.Add("learner.access");
+            permissions = list;
+        }
+
         _cache[cacheKey] = permissions;
         return permissions;
     }

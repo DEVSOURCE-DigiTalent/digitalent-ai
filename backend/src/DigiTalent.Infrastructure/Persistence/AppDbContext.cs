@@ -115,6 +115,16 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<TrialInvitation> TrialInvitations => Set<TrialInvitation>();
     public DbSet<PositionDiagnosticAttempt> PositionDiagnosticAttempts => Set<PositionDiagnosticAttempt>();
 
+    // Individual Commerce & Registration (v3.0)
+    public DbSet<IndividualRegistration> IndividualRegistrations => Set<IndividualRegistration>();
+    public DbSet<IndividualEmailVerificationChallenge> IndividualEmailVerificationChallenges => Set<IndividualEmailVerificationChallenge>();
+    public DbSet<IndividualTrialRedemption> IndividualTrialRedemptions => Set<IndividualTrialRedemption>();
+    public DbSet<UserSubscription> UserSubscriptions => Set<UserSubscription>();
+    public DbSet<PurchaseDraft> PurchaseDrafts => Set<PurchaseDraft>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<PaymentEvent> PaymentEvents => Set<PaymentEvent>();
+    public DbSet<EmailOutboxItem> EmailOutboxItems => Set<EmailOutboxItem>();
+
     // Shared
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<FileObject> FileObjects => Set<FileObject>();

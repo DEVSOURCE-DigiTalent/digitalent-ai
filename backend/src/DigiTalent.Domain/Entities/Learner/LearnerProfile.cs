@@ -26,4 +26,16 @@ public class LearnerProfile : BaseEntity
 
     /// <summary>Danh sách lĩnh vực quan tâm (PostgreSQL text[]).</summary>
     public string[] Interests { get; set; } = [];
+
+    /// <summary>Mã vị trí mục tiêu chuẩn TT02 (VD: ACCOUNTANT, MARKETING, AI_ENGINEER).</summary>
+    public string? TargetPositionCode { get; set; }
+
+    /// <summary>Thời điểm thiết lập vị trí mục tiêu gần nhất.</summary>
+    public DateTimeOffset? TargetSetAt { get; set; }
+
+    /// <summary>Số lần đổi vị trí mục tiêu sau lần chọn đầu tiên (áp dụng BR-10 trong kỳ trial).</summary>
+    public int TargetChangeCount { get; set; }
+
+    /// <summary>Dữ liệu trạng thái học tập cá nhân (tiến độ bài học, ghi chú, đánh giá đầu vào, bài nộp, UI seen).</summary>
+    public string? WorkspaceStateJson { get; set; }
 }

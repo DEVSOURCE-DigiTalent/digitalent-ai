@@ -3,6 +3,7 @@ using System;
 using DigiTalent.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DigiTalent.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261007162952_AddIndividualCommerceV3")]
+    partial class AddIndividualCommerceV3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2295,24 +2298,9 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasColumnType("text[]")
                         .HasColumnName("interests");
 
-                    b.Property<int>("TargetChangeCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasColumnName("target_change_count");
-
-                    b.Property<string>("TargetPositionCode")
-                        .HasMaxLength(80)
-                        .HasColumnType("character varying(80)")
-                        .HasColumnName("target_position_code");
-
                     b.Property<Guid?>("TargetRoleId")
                         .HasColumnType("uuid")
                         .HasColumnName("target_role_id");
-
-                    b.Property<DateTimeOffset?>("TargetSetAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("target_set_at");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -2321,10 +2309,6 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
-
-                    b.Property<string>("WorkspaceStateJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("workspace_state_json");
 
                     b.HasKey("Id")
                         .HasName("pk_learner_profiles");

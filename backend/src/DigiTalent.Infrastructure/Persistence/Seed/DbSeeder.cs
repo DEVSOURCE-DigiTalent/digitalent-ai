@@ -25,6 +25,14 @@ public static class DbSeeder
         await SeedReferenceDataAsync(db);
         await SeedUsersAsync(db, passwordHasher, organization.Id, developmentPassword ?? DefaultPassword);
         await SkillGapSeeder.SeedDemoAsync(db, organization.Id);
+
+        var authorUser = await db.Users.FirstOrDefaultAsync(u => u.Email == "trainer@digitalent.ai")
+                         ?? await db.Users.FirstOrDefaultAsync(u => u.Email == "hr@digitalent.ai");
+        if (authorUser != null)
+        {
+            await CourseContentSeeder.SeedCourseContentAsync(db, organization.Id, authorUser.Id);
+            await CourseContentSeeder.SeedDemoLearnerProfilesAsync(db, organization.Id);
+        }
     }
 
     public static async Task SeedReferenceDataAsync(AppDbContext db)
@@ -127,7 +135,10 @@ public static class DbSeeder
         var manager = CreateUser("manager@digitalent.ai", "Department Manager", Roles.DepartmentManager);
         var trainer = CreateUser("trainer@digitalent.ai", "Trainer", Roles.Trainer);
         var employee = CreateUser("employee@digitalent.ai", "Employee", Roles.Employee);
-        db.Users.AddRange(admin, hr, manager, trainer, employee);
+        var personal = CreateUser("personal@digitalent.ai", "Bùi Thị Cá Nhân", Roles.Employee);
+        var trial = CreateUser("trial@digitalent.ai", "Lý Văn Dùng Thử", Roles.Employee);
+        var free = CreateUser("free@digitalent.ai", "Mai Thị Miễn Phí", Roles.Employee);
+        db.Users.AddRange(admin, hr, manager, trainer, employee, personal, trial, free);
         await db.SaveChangesAsync();
 
         await SeedDemoOrganizationStructureAsync(db, organizationId, hr, manager, trainer, employee);

@@ -24,5 +24,14 @@ public class LearnerProfileConfiguration : IEntityTypeConfiguration<LearnerProfi
         // PostgreSQL text[] for interests
         builder.Property(p => p.Interests)
                .HasColumnType("text[]");
+
+        builder.Property(p => p.TargetPositionCode)
+               .HasMaxLength(80);
+
+        builder.Property(p => p.TargetChangeCount)
+               .HasDefaultValue(0);
+
+        builder.Property(p => p.WorkspaceStateJson)
+               .HasColumnType("jsonb");
     }
 }

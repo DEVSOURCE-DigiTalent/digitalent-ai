@@ -76,19 +76,26 @@ var applyMigrations = app.Environment.IsDevelopment() ||
 
 if (applyMigrations)
 {
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
-    if (app.Environment.IsDevelopment())
+    try
     {
-        await DbSeeder.SeedAsync(
-            db,
-            scope.ServiceProvider.GetRequiredService<IPasswordHasher>(),
-            app.Configuration["DevelopmentSeed:Password"]);
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Database.MigrateAsync();
+        if (app.Environment.IsDevelopment())
+        {
+            await DbSeeder.SeedAsync(
+                db,
+                scope.ServiceProvider.GetRequiredService<IPasswordHasher>(),
+                app.Configuration["DevelopmentSeed:Password"]);
+        }
+        else
+        {
+            await DbSeeder.SeedReferenceDataAsync(db);
+        }
     }
-    else
+    catch (Exception ex)
     {
-        await DbSeeder.SeedReferenceDataAsync(db);
+        app.Logger.LogWarning(ex, "Chưa kết nối được cơ sở dữ liệu PostgreSQL cục bộ. Ứng dụng tiếp tục khởi động ở chế độ catalog/offline.");
     }
 }
 

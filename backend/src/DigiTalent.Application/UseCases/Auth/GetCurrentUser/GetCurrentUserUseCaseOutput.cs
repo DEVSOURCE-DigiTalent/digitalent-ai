@@ -12,6 +12,10 @@ public class GetCurrentUserUseCaseOutput
     public Guid? EmployeeId { get; set; } // null = tài khoản không gắn hồ sơ nhân sự (VD: admin)
     public Guid? OrganizationId { get; set; }
     public string? EnterpriseTrialStatus { get; set; }
+    public string Workspace { get; set; } = "enterprise";
+    public bool EmailVerified { get; set; } = true;
+    public string? OnboardingStatus { get; set; }
+    public DigiTalent.Application.IndividualCommerce.IndividualSubscriptionDto? Subscription { get; set; }
     public List<string> Roles { get; set; } = new();
     public List<string> Permissions { get; set; } = new();
 }
