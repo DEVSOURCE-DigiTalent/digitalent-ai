@@ -4,6 +4,7 @@ import { ArrowLeft, Edit2, GraduationCap } from 'lucide-react';
 import { PageHeader, StatusBadge, getStatusVariant, Tabs, DataTable, type Column } from '@/components/shared';
 import { useDepartment } from '@/hooks/use-departments';
 import { useMembers } from '@/hooks/use-members';
+import { useJobGradeLabel } from '@/hooks/use-job-grades';
 import { useJobPositions } from '@/hooks/use-job-positions';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { DepartmentFormDialog } from '../components/DepartmentFormDialog';
@@ -25,6 +26,9 @@ export function DepartmentDetailPage() {
     departmentId: id,
     pageSize: 50,
   });
+
+  // Grade names configured by the organization (OW-12), not hard-coded defaults.
+  const gradeLabel = useJobGradeLabel();
 
   const [tab, setTab] = useState('overview');
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -184,15 +188,15 @@ export function DepartmentDetailPage() {
               </h3>
               <div className="grid grid-cols-3 gap-4">
                 <div className="rounded-lg bg-teal-50 p-4 border border-teal-100">
-                  <span className="text-xs font-medium text-teal-800">G1 - Nhân viên</span>
+                  <span className="text-xs font-medium text-teal-800">{gradeLabel('G1')}</span>
                   <p className="text-2xl font-bold text-teal-900 mt-1">{gd.G1 ?? 0}</p>
                 </div>
                 <div className="rounded-lg bg-blue-50 p-4 border border-blue-100">
-                  <span className="text-xs font-medium text-blue-800">G2 - Phó phòng</span>
+                  <span className="text-xs font-medium text-blue-800">{gradeLabel('G2')}</span>
                   <p className="text-2xl font-bold text-blue-900 mt-1">{gd.G2 ?? 0}</p>
                 </div>
                 <div className="rounded-lg bg-purple-50 p-4 border border-purple-100">
-                  <span className="text-xs font-medium text-purple-800">G3 - Trưởng phòng</span>
+                  <span className="text-xs font-medium text-purple-800">{gradeLabel('G3')}</span>
                   <p className="text-2xl font-bold text-purple-900 mt-1">{gd.G3 ?? 0}</p>
                 </div>
               </div>
