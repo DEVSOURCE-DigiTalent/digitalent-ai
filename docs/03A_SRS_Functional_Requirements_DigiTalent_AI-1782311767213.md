@@ -1,3 +1,5 @@
+> **LEGACY / ARCHIVED — NOT CANONICAL.** This older SRS volume may contain superseded actors, use cases, screens, and public verification rules. Use `03A_SRS_Yeu_Cau_Chuc_Nang.md` and the current Report 3 v2.2 baseline.
+
 **DIGITAL TALENT AI**
 
 **SOFTWARE REQUIREMENT SPECIFICATION (SRS)**

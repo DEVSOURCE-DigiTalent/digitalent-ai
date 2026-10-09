@@ -134,6 +134,56 @@ public class SmtpIndividualEmailSender : IIndividualEmailSender
         await SendAndRecordAsync(recipientEmail, "PAYMENT_RECEIPT", subject, bodyHtml, cancellationToken);
     }
 
+    public async Task SendPasswordResetEmailAsync(
+        string recipientEmail,
+        string recipientName,
+        string resetLink,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = "Yêu cầu đặt lại mật khẩu tài khoản DigiTalent AI";
+        var bodyHtml = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b; }}
+        .card {{ max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }}
+        .header {{ text-align: center; margin-bottom: 24px; }}
+        .brand {{ font-size: 24px; font-weight: 700; color: #4338ca; }}
+        .btn {{ display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: 600; margin-top: 20px; text-align: center; }}
+        .footer {{ font-size: 13px; color: #64748b; margin-top: 32px; text-align: center; line-height: 1.5; }}
+        .notice {{ background-color: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; padding: 14px; margin-top: 20px; font-size: 13px; color: #92400e; }}
+    </style>
+</head>
+<body>
+    <div class='card'>
+        <div class='header'>
+            <div class='brand'>DigiTalent AI</div>
+            <p style='color: #64748b; margin-top: 4px;'>Nền tảng Phát triển Năng lực & Đào tạo AI</p>
+        </div>
+        <p>Xin chào <strong>{WebUtility.HtmlEncode(recipientName)}</strong>,</p>
+        <p>Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn tại DigiTalent AI.</p>
+        <p>Để tạo mật khẩu mới, vui lòng nhấp vào nút bên dưới:</p>
+
+        <div style='text-align: center;'>
+            <a href='{resetLink}' class='btn'>Đặt lại mật khẩu</a>
+        </div>
+
+        <div class='notice'>
+            <strong>Lưu ý:</strong> Liên kết đặt lại mật khẩu có hiệu lực trong vòng <strong>30 phút</strong>. Nếu bạn không yêu cầu hành động này, bạn có thể yên tâm bỏ qua email này. Mật khẩu hiện tại của bạn vẫn an toàn.
+        </div>
+
+        <div class='footer'>
+            &copy; {DateTime.UtcNow.Year} DigiTalent AI. All rights reserved.
+        </div>
+    </div>
+</body>
+</html>";
+
+        await SendAndRecordAsync(recipientEmail, "PASSWORD_RESET", subject, bodyHtml, cancellationToken);
+    }
+
     private async Task SendAndRecordAsync(
         string recipientEmail,
         string templateName,

@@ -29,7 +29,8 @@ public sealed record StartIndividualRegistrationResponse(
 public sealed record VerifyIndividualRegistrationRequest(
     string? RegistrationAccessToken,
     string? Otp,
-    string? MagicLinkToken);
+    string? MagicLinkToken,
+    string? Token = null);
 
 public sealed record IndividualUserSessionDto(
     Guid Id,

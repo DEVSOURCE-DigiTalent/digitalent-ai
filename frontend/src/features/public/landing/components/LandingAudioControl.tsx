@@ -81,7 +81,7 @@ export function LandingAudioControl() {
         aria-pressed={isPlaying}
         aria-busy={playback === 'starting'}
         title={`${label} · ${LANDING_AUDIO.title} — ${LANDING_AUDIO.artist}`}
-        className="lp-glass fixed bottom-[calc(env(safe-area-inset-bottom,0px)+1rem)] right-4 z-50 flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 rounded-full px-3.5 text-xs font-medium text-cream transition-colors hover:text-cream-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream md:right-6"
+        className="lp-glass fixed bottom-[calc(env(safe-area-inset-bottom,0px)+1rem)] right-4 z-50 flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 rounded-full px-3.5 text-xs font-medium text-cream transition-colors hover:text-cream-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream md:right-6 [[data-theme=light]_&]:text-pt-fg [[data-theme=light]_&]:hover:text-pt-accent"
       >
         <Icon
           className={playback === 'starting' ? 'size-4 motion-safe:animate-spin' : 'size-4'}

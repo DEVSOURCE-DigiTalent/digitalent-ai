@@ -51,6 +51,7 @@ function fillForm(email: string) {
   type('Họ và tên', 'Nguyễn Văn Thử');
   type(/Email/, email);
   type('Mật khẩu', PASSWORD);
+  type('Xác nhận mật khẩu', PASSWORD);
   fireEvent.click(screen.getByRole('checkbox'));
 }
 
@@ -129,8 +130,8 @@ describe('trial sign-up page (spec §8.3)', () => {
     fillForm('thu.nghiem@example.vn');
     fireEvent.click(screen.getByRole('button', { name: /Tạo tài khoản và bắt đầu/ }));
 
-    // Unfinished onboarding comes first: the new account is sent to /personal/onboarding.
-    await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/personal/onboarding'), { timeout: 10000 });
+    // The registration submits and directs the learner to the verification step:
+    await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/individual/register/verify'), { timeout: 10000 });
     const stored = findUserByEmail('thu.nghiem@example.vn')!;
     expect(stored.subscription).toMatchObject({ planCode: 'IND_PLUS', status: 'trialing' });
     expect(stored.onboardingStatus).toBe('setup');
@@ -156,7 +157,7 @@ describe('trial sign-up page (spec §8.3)', () => {
     fillForm('khac.vi.tri@example.vn');
     fireEvent.click(screen.getByRole('button', { name: /Tạo tài khoản và bắt đầu/ }));
 
-    await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/personal/onboarding'), { timeout: 10000 });
+    await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/individual/register/verify'), { timeout: 10000 });
     const state = getPersonalState(findUserByEmail('khac.vi.tri@example.vn')!.id);
     expect(state.targetCode).toBe('MARKETING');
     expect(state.tryOrientation).toBeNull();
@@ -173,6 +174,20 @@ describe('trial sign-up page (spec §8.3)', () => {
     expect(alert).toHaveTextContent('Email này đã có tài khoản');
     expect(alert.querySelector('a')).toHaveAttribute('href', '/login');
     expect(events.some((event) => event.event === 'trial_account_created')).toBe(false);
+  });
+
+  it('rejects form submission when password and confirm password do not match', async () => {
+    renderRegister('?trial=1&source=pricing');
+    await screen.findByRole('heading', { name: 'Tạo tài khoản dùng thử' });
+
+    type('Họ và tên', 'Nguyễn Văn Thử');
+    type(/Email/, 'test.mismatch@example.vn');
+    type('Mật khẩu', 'MatKhau123456!');
+    type('Xác nhận mật khẩu', 'KhongKhop123456!');
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: /Tạo tài khoản và bắt đầu/ }));
+
+    expect(await screen.findByText('Mật khẩu xác nhận không khớp')).toBeInTheDocument();
   });
 
   it('sends a signed-in learner to where they belong instead of starting another trial (BR-02)', async () => {

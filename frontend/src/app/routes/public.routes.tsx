@@ -7,6 +7,7 @@ import { LoginPage } from '../../features/auth/pages/LoginPage';
 import { BusinessRegisterPage } from '../../features/auth/pages/BusinessRegisterPage';
 import { TrialAcceptPage as EnterpriseTrialAcceptPage, TrialRegisterPage as EnterpriseTrialRegisterPage, TrialVerifyPage as EnterpriseTrialVerifyPage } from '../../features/experience/enterprise-trial/PublicTrialPages';
 import { IndividualRegisterPage } from '../../features/auth/pages/IndividualRegisterPage';
+import { IndividualVerifyPage } from '../../features/auth/pages/IndividualVerifyPage';
 import { ActivateInvitationPage } from '../../features/auth/pages/ActivateInvitationPage';
 import { ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage } from '../../features/auth/pages/PasswordPages';
 import { PublicVerifyPage } from '../../features/public/pages/PublicVerifyPage';
@@ -15,8 +16,11 @@ const ExperienceRoute = lazy(() => import('../../features/experience/pages/Exper
 const IndividualTrialPage = lazy(() => import('../../features/experience/pages/IndividualTrialPage').then(module => ({ default: module.IndividualTrialPage })));
 const EnterpriseLandingPage = lazy(() => import('../../features/public/pages/LandingPage').then(module => ({ default: module.EnterpriseLandingPage })));
 const IndividualLandingPage = lazy(() => import('../../features/public/pages/LandingPage').then(module => ({ default: module.IndividualLandingPage })));
+const V2LandingPage = lazy(() => import('../../features/preview-v2/pages/V2LandingPage').then(module => ({ default: module.V2LandingPage })));
+const V2IndividualPage = lazy(() => import('../../features/preview-v2/pages/V2IndividualPage').then(module => ({ default: module.V2IndividualPage })));
 
 const landingFallback = <div className="min-h-screen bg-black" />;
+const v2Fallback = <div className="min-h-screen bg-[#FAF7F2]" />;
 
 /** Old bookmarks and emails still point at /business/login and /individual/login; keep their returnTo. */
 function LegacyLoginRedirect() {
@@ -39,6 +43,11 @@ export const publicRoutes: RouteObject[] = [
   { path: '/individual', element: <Suspense fallback={landingFallback}><IndividualLandingPage /></Suspense> },
   { path: '/individual/try', element: <Suspense fallback={landingFallback}><IndividualTrialPage /></Suspense> },
 
+  // ── Version 2.0 (Warm Human EdTech Theme Preview) ──
+  { path: '/v2', element: <Navigate to="/v2/landing" replace /> },
+  { path: '/v2/landing', element: <Suspense fallback={v2Fallback}><V2LandingPage /></Suspense> },
+  { path: '/v2/individual', element: <Suspense fallback={v2Fallback}><V2IndividualPage /></Suspense> },
+
   { path: '/business/pricing', element: <PricingPage audience="enterprise" /> },
   { path: '/individual/pricing', element: <PricingPage audience="individual" /> },
 
@@ -49,6 +58,8 @@ export const publicRoutes: RouteObject[] = [
   { path: '/register', element: <Navigate to="/portal?intent=register" replace /> },
   { path: '/business/register', element: <BusinessRegisterPage /> },
   { path: '/individual/register', element: <IndividualRegisterPage /> },
+  { path: '/individual/register/verify', element: <IndividualVerifyPage /> },
+  { path: '/individual/verify', element: <IndividualVerifyPage /> },
   { path: '/activate/:token', element: <ActivateInvitationPage /> },
   { path: '/forgot-password', element: <ForgotPasswordPage /> },
   { path: '/reset-password/:token', element: <ResetPasswordPage /> },

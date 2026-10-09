@@ -50,4 +50,44 @@ public class AuthController : ControllerBase
         await useCase.ExecuteAsync(input);
         return Ok(ApiResponse<object?>.Ok(null, "Logged out."));
     }
+
+    // POST api/v1/auth/forgot-password
+    [HttpPost("forgot-password")]
+    public async Task<ActionResult<ApiResponse<ForgotPasswordOutput>>> ForgotPassword(
+        [FromBody] ForgotPasswordInput input,
+        [FromServices] IUseCase<ForgotPasswordInput, ForgotPasswordOutput> useCase)
+    {
+        var result = await useCase.ExecuteAsync(input);
+        return Ok(ApiResponse<ForgotPasswordOutput>.Ok(result, "Nếu email này có tài khoản trên hệ thống, chúng tôi đã gửi liên kết đặt lại mật khẩu."));
+    }
+
+    // GET api/v1/auth/reset-password/validate?token=...
+    [HttpGet("reset-password/validate")]
+    public async Task<ActionResult<ApiResponse<bool>>> ValidateResetToken(
+        [FromQuery] string token,
+        [FromServices] IUseCase<ValidateResetTokenInput, bool> useCase)
+    {
+        var result = await useCase.ExecuteAsync(new ValidateResetTokenInput { Token = token });
+        return Ok(ApiResponse<bool>.Ok(result, "Token hợp lệ."));
+    }
+
+    // POST api/v1/auth/reset-password
+    [HttpPost("reset-password")]
+    public async Task<ActionResult<ApiResponse<bool>>> ResetPassword(
+        [FromBody] ResetPasswordInput input,
+        [FromServices] IUseCase<ResetPasswordInput, bool> useCase)
+    {
+        var result = await useCase.ExecuteAsync(input);
+        return Ok(ApiResponse<bool>.Ok(result, "Đã đặt lại mật khẩu thành công."));
+    }
+
+    // POST api/v1/auth/verify-email
+    [HttpPost("verify-email")]
+    public async Task<ActionResult<ApiResponse<bool>>> VerifyEmail(
+        [FromBody] VerifyEmailInput input,
+        [FromServices] IUseCase<VerifyEmailInput, bool> useCase)
+    {
+        var result = await useCase.ExecuteAsync(input);
+        return Ok(ApiResponse<bool>.Ok(result, "Đã xác minh email thành công."));
+    }
 }

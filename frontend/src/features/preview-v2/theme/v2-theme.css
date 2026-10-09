@@ -1,0 +1,90 @@
+/* 
+ * DigiTalent AI - Theme V2 (Warm Human-Centric EdTech)
+ * Palette: Warm Linen Canvas, Terracotta Ember, Deep Slate Navy, Sage Green
+ * Inspired by modern organic education design (NOVA EDU aesthetic)
+ */
+
+@layer components {
+  .v2-theme {
+    --v2-bg: #FAF7F2;
+    --v2-bg-card: #FFFFFF;
+    --v2-bg-soft: #F4EBE1;
+    --v2-bg-peach: #FBF2EB;
+    --v2-terracotta: #D96B43;
+    --v2-terracotta-hover: #C25630;
+    --v2-terracotta-light: #F9EDE6;
+    --v2-terracotta-border: #E8BCA9;
+    --v2-navy: #152238;
+    --v2-navy-card: #1D2B44;
+    --v2-sage: #537565;
+    --v2-sage-light: #EBF2EE;
+    --v2-sand: #F1DEC9;
+    --v2-text-main: #1D252C;
+    --v2-text-muted: #5E6973;
+    --v2-border: #EFE4D6;
+    --v2-border-strong: #E2D1BF;
+    
+    font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--v2-bg);
+    color: var(--v2-text-main);
+  }
+
+  /* Handwritten accent font using serif italic fallback with warmth */
+  .v2-handwriting {
+    font-family: 'Newsreader', Georgia, serif;
+    font-style: italic;
+    letter-spacing: -0.01em;
+  }
+
+  /* Organic blob decoration */
+  .v2-blob-peach {
+    background: radial-gradient(circle at 50% 50%, rgba(243, 213, 192, 0.75) 0%, rgba(250, 247, 242, 0) 70%);
+  }
+  
+  .v2-blob-sage {
+    background: radial-gradient(circle at 50% 50%, rgba(206, 226, 216, 0.6) 0%, rgba(250, 247, 242, 0) 70%);
+  }
+
+  .v2-blob-terracotta {
+    background: radial-gradient(circle at 50% 50%, rgba(217, 107, 67, 0.15) 0%, rgba(250, 247, 242, 0) 70%);
+  }
+
+  /* Smooth card elevation */
+  .v2-card-shadow {
+    box-shadow: 0 4px 20px -2px rgba(85, 60, 40, 0.05), 0 2px 6px -1px rgba(85, 60, 40, 0.03);
+  }
+
+  .v2-card-hover {
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+  }
+
+  .v2-card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 32px -4px rgba(217, 107, 67, 0.12), 0 4px 12px -2px rgba(40, 30, 20, 0.04);
+    border-color: var(--v2-terracotta-border);
+  }
+
+  /* Button ripple & spring */
+  .v2-btn-primary {
+    background-color: var(--v2-terracotta);
+    color: #FFFFFF;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .v2-btn-primary:hover {
+    background-color: var(--v2-terracotta-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -4px rgba(217, 107, 67, 0.35);
+  }
+
+  .v2-btn-secondary {
+    background-color: var(--v2-bg-soft);
+    color: var(--v2-text-main);
+    transition: all 0.2s ease;
+  }
+
+  .v2-btn-secondary:hover {
+    background-color: #EBDDCE;
+    color: #111827;
+  }
+}

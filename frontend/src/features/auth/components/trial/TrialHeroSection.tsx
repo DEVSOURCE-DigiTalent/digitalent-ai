@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, Compass } from 'lucide-react';
 import { INDIVIDUAL_TRIAL } from '@/lib/plans';
-import { TrialLiveSimulator } from './TrialLiveSimulator';
+import { TrialHeroVisual } from './TrialHeroVisual';
 
 interface PositionInfo {
   code: string;
@@ -95,9 +95,9 @@ export function TrialHeroSection({
             </div>
           </div>
 
-          {/* Right Column: Interactive Workspace Simulator */}
+          {/* Right Column: Hero Visual Showcase */}
           <div className="lg:col-span-6 xl:col-span-6 lg:sticky lg:top-24">
-            <TrialLiveSimulator positionName={position?.name} fromTry={fromTry} />
+            <TrialHeroVisual position={position} fromTry={fromTry} />
           </div>
         </div>
       </div>

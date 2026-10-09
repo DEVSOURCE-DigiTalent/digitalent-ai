@@ -19,6 +19,7 @@ public interface IApplicationDbContext
     DbSet<RolePermission> RolePermissions { get; }
     DbSet<User> Users { get; }
     DbSet<UserRole> UserRoles { get; }
+    DbSet<PasswordResetToken> PasswordResetTokens { get; }
 
     // Organization & Job Architecture
     DbSet<Department> Departments { get; }

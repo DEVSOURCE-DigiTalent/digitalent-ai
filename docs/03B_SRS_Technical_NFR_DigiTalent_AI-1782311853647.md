@@ -1,3 +1,5 @@
+> **LEGACY / ARCHIVED — NOT CANONICAL.** This older SRS volume may contain superseded technical, scoring, and public endpoint requirements. Use `03B_SRS_Yeu_Cau_Phi_Chuc_Nang.md` and the current Report 3 v2.2 baseline.
+
 **DIGITAL TALENT AI**
 
 **SOFTWARE REQUIREMENT SPECIFICATION (SRS)**

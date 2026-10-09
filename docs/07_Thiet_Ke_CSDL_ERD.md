@@ -1,20 +1,10 @@
 # 07 — Thiết Kế CSDL & ERD
 
-> Nguồn gốc: Report 3 §3.1.5 (18 entity) + thiết kế bảng thực tế. Phiên bản docs_v3, tiếng Việt.
+> Nguồn gốc: Report 3 v2.3 §3.1.5 (35 conceptual entities). Logical/physical schema remains separate. Phiên bản tiếng Việt.
 
-> ⚠️ **Thiết kế vật lý đã được thay thế (26/09/2026).** Schema chuẩn duy nhất hiện là
-> [`docs/database/DigiTalent_AI_Canonical_v2_3.sql`](database/DigiTalent_AI_Canonical_v2_3.sql) — 59 bảng (55 lõi + 4 Intelligence), gắn nhãn Phase 1–4, đã kiểm tra chạy được trên PostgreSQL.
-> Tài liệu này chỉ còn giá trị ở mức **khái niệm** (ERD tổng quan, quy tắc nghiệp vụ). Khi hai bên khác nhau, **file SQL thắng**. Những điểm đã khác:
->
-> | Tài liệu này (v3.0) | SQL v2.3 (chuẩn) |
-> |---|---|
-> | `competency_levels` (bảng) | Không có bảng; mức năng lực là `smallint` 1..3 + CHECK |
-> | `position_competency_requirements`, `is_current` | `position_requirement_sets` (DRAFT/ACTIVE/ARCHIVED, `version_no`) + `position_requirement_items` |
-> | Weight `numeric(6,4)` (0.3500) | `weight_percent numeric(5,2)`, tổng = 100.00 khi kích hoạt |
-> | `attempt_answers`, `task_templates`, `skill_gap_snapshots` | `assessment_answers`, `practical_task_templates` (+ `practical_task_targets`), `skill_gap_runs` + `skill_gap_items` |
-> | `users.status` ACTIVE/LOCKED/DISABLED/PENDING | ACTIVE/INACTIVE/LOCKED + `locked_until` |
-> | Role `DEPT_MANAGER` | `DEPARTMENT_MANAGER` |
-> | `employees.job_position_id` | Cho phép NULL (chưa gán vị trí → skill gap trả NOT_ASSIGNED) |
+> **Baseline 09/10/2026 — ưu tiên khi có mâu thuẫn:** Repository copy is Report 3 v2.3, while the Master Overview cites v2.2. Use v2.3 for compatible conceptual ERD detail; the overview controls conflicts. The old physical-schema text is not authoritative and does not prove current database state. `GRADE-01` remains **PENDING DECISION**. The v2.3 statements for 1–3 storage, grade-raising Owner override and late submissions not scored conflict with the overview; do not infer columns, constraints or migrations from them. No Requirement weight, risk/readiness, Job Family/Job Grade, public registry or certificate expiry. QR is authenticated and same-organization.
+
+> **Phân lớp thiết kế:** conceptual ERD theo Report 3 v2.3; logical/physical schema ở Report 4 sau khi chốt các pending decisions. File SQL cũ và các bảng/cột phía dưới không được xem là chuẩn thắng thế hoặc bằng chứng về trạng thái repository hiện tại. Không suy luận constraint hoặc migration từ tài liệu legacy.
 
 ---
 
@@ -58,8 +48,8 @@ Thiết kế dữ liệu ở mức **entity quan hệ (ERD)** và **từ điển
 | Nguyên tắc | Diễn giải |
 |-----------|-----------|
 | Competency-first | Mọi luồng bắt đầu/kết thúc ở competency record |
-| Single 3-level scale | **Một thang 3 mức duy nhất** (Basic/Intermediate/Advanced) cho cả lưu trữ lẫn hiển thị — bỏ trục Career Grade và bỏ thang 5 mức research |
-| Explainable scores | Lưu component score + snapshot nguồn + version trọng số |
+| Level/Grade | 3 Level là nhóm đào tạo; bậc lưu trữ 1–6 theo Report 3 đang chờ GRADE-01 |
+| Skill Gap | Lưu kết quả truy vết requirement/evidence; không có risk/readiness score hoặc trọng số |
 | File ngoài DB | Metadata ở `file_objects`, bytes ở MinIO |
 | Retire không xóa | Bản ghi nghiệp vụ đổi status, không xóa cứng (BR-11) |
 
@@ -74,56 +64,42 @@ Thiết kế dữ liệu ở mức **entity quan hệ (ERD)** và **từ điển
 | Khóa chính | `id uuid PK` (gen app-side) |
 | Cột chung | `created_at`, `updated_at` (timestamptz), `status` (varchar) |
 | Score | `numeric(5,2)` / `numeric(6,2)` — tránh float |
-| Weight | `numeric(6,4)` (vd `0.3500`) |
+| Weight | Không áp dụng cho Requirement Item trong baseline |
 | Enum | `varchar(30/80)` + `HasConversion<string>()`; thêm CHECK constraint khi status ổn định |
 
 ---
 
-## 6. ERD tổng quan (17 entity cốt lõi)
+## 6. Conceptual ERD entities (Report 3 v2.3 §3.1.5)
 
-```mermaid
-erDiagram
-  DEPARTMENT ||--o{ EMPLOYEE : "has"
-  JOB_FAMILY ||--o{ JOB_POSITION : "groups"
-  JOB_POSITION ||--o{ POSITION_REQUIREMENT : "defines"
-  JOB_POSITION ||--o{ EMPLOYEE : "assigns"
-  COMPETENCY ||--o{ COMPETENCY_LEVEL : "has levels"
-  COMPETENCY ||--o{ POSITION_REQUIREMENT : "required by"
-  COMPETENCY ||--o{ COMPETENCY_EVIDENCE : "evidenced"
-  EMPLOYEE ||--o{ COMPETENCY_EVIDENCE : "holds"
-  EMPLOYEE ||--o{ ENROLLMENT : "enrolls"
-  COURSE ||--o{ ENROLLMENT : "enrolled in"
-  COURSE ||--o{ ASSESSMENT : "contains"
-  ASSESSMENT ||--o{ CERTIFICATE : "passes to"
-  EMPLOYEE ||--o{ CERTIFICATE : "earns"
-  EMPLOYEE ||--o{ TASK_SUBMISSION : "submits"
-  PRACTICAL_TASK ||--o{ TASK_SUBMISSION : "assigned"
-  EMPLOYEE ||--o{ CAPABILITY_SCORE : "scored"
-  EMPLOYEE ||--o{ NOTIFICATION : "receives"
-  USER_ACCOUNT ||--o{ SYSTEM_ROLE : "granted"
-```
+Report 3 v2.3 lists 35 conceptual entities in five readable ERD parts. The diagrams show entities and relationships only, not columns, keys or constraints. Report 4 owns the logical schema. The v2.3 change record and §5.4 state that competency levels are stored 1–3; this conflicts with the Master Overview's `GRADE-01 PENDING DECISION`. This document preserves the conceptual model but does not adopt that storage scale, constraints or migration implications until GRADE-01 is resolved.
+
+| Part | Conceptual entities |
+|---|---|
+| 1. Organization, members and access | Organization; Department; Position; Member Profile; User Account; Invitation; Manager Assignment; Login Session; Audit Log |
+| 2. TT02 framework, requirements, competency and gap | TT02 Version; Domain; Competency; Level Criteria; Requirement Set; Requirement Item; Confirmed Competency; Competency History; Skill Gap Result |
+| 3. Learning content and assignment | Course; Module; Lesson; Course Version; Course Assignment; Learning Progress |
+| 4. Assessment and certificate | Assessment; Assessment Version; Question; Assessment Attempt; Certificate |
+| 5. Practical task, evidence and notification | Practical Task Template; Task Assignment; Submission; Review; Evidence Record; Notification |
+
+The conceptual model excludes Job Family/Job Grade, risk/readiness scores and public certificate registry/expiry. Course Version and Assessment Version are explicit entities; assignments/attempts retain the versions used. The figures in Report 3 v2.3 are authoritative for conceptual relationships; this summary does not add physical schema detail.
+
+### 6.1 Course recommendation and Practical Task evaluation semantics
+
+- **Recommended Course** is a system-produced, explainable result from a Skill Gap competency and the competency coverage of a published standard course. It is distinct from **Course Assignment**: an employee may start learning from a recommendation, while an OWNER-created assignment is a separate, directed requirement for organizational updates or retraining. Whether recommendations are persisted or derived on read, their refresh/history policy, and how they relate to enrollment are **PENDING logical-schema decisions**.
+- Practical Task submission, AI evaluation proposal, reviewer decision, and Confirmed Competency are separate concepts. AI evaluation, if included in approved scope, references the rubric version and authorized evidence; its result can include criterion proposals, numeric task score, rationale, evidence references, unmet criteria, and model/provider/version when available. Reviewer decision and human edits must be traceable.
+- Numeric task score is not a competency grade/level. Only an approved reviewer decision may produce verified competency evidence and may update Confirmed Competency under the approved competency rules. AI output by itself, course completion, and course assessment do not confirm workplace competency.
+- The conceptual model needs to support audit information for rubric version, AI proposal, evidence references, reviewer decision and amendments. This is a data requirement, not a finalized entity/table/column design; Report 4 must decide whether these are separate entities, immutable revisions, or another audited representation.
+- For OWNER-directed course updates/retraining, whether reevaluation is assessment-only or also requires a Practical Task remains **PENDING DECISION**.
 
 ---
 
-## 7. Nhóm schema và tổng quan entity
+## 7. Logical and physical design boundary
 
-| Nhóm | Bảng chính | Entity cốt lõi (Report 3) |
-|------|-----------|---------------------------|
-| Identity & Access | `users`, `roles`, `permissions`, `user_roles`, `role_permissions`, `refresh_tokens` | User Account, System Role |
-| Organization | `departments`, `job_families`, `job_positions`, `employees` | Department, Employee, Job Position |
-| Competency | `competency_categories`, `competencies`, `competency_levels`, `position_requirement_sets`, `position_competency_requirements`, `employee_competency_profiles`, `competency_evidences` | Competency, Competency Level, Position Requirement, Competency Evidence |
-| Learning | `courses`, `course_modules`, `lessons`, `learning_materials`, `course_competencies`, `enrollments`, `lesson_progress` | Course, Enrollment |
-| Assessment | `questions`, `assessments`, `assessment_questions`, `assessment_attempts`, `attempt_answers` | Assessment |
-| Certificate | `certificates`, `certificate_verification_logs` | Certificate |
-| WMS-lite | `task_templates`, `task_assignments`, `task_submissions`, `task_evaluations` | Practical Task, Task Submission |
-| Intelligence | `skill_gap_snapshots`, `training_risk_scores`, `readiness_scores`, `scoring_configs` | Capability Score |
-| File & Notification | `file_objects`, `notifications`, `audit_logs` | Notification |
-
-> ⚠️ **Chuyển đổi 18 → 17 entity:** Report 3 gốc có entity "Career Grade" (G1–G5). docs_v3 **loại bỏ bảng `career_grades`** và mọi khóa ngoại tới nó; thang mức duy nhất là `competency_levels` (3 mức). `position_requirement_sets` khóa theo **job_position** (bỏ `career_grade_id`). Xem `00_INDEX` §3.5.
+The entity names above are conceptual, not table names. Report 4 must define primary/foreign keys, unique constraints, tenant scope, version snapshots, audit/history persistence, transaction boundaries and status constraints. Do not treat the legacy data dictionary in §8 as authoritative physical schema. In particular, do not derive a 1–3 grade constraint or migration while GRADE-01 is pending.
 
 ---
 
-## 8. Từ điển dữ liệu (cột chính)
+## 8. Từ điển dữ liệu legacy (không phải logical/physical schema)
 
 ### 8.1 Auth & RBAC
 
@@ -257,13 +233,14 @@ erDiagram
 | BR-01 | Gap đo theo active requirement set của position; snapshot ghi `requirement_version_id` |
 | BR-02 | `position_requirement_sets.status` chỉ DRAFT → ACTIVE → ARCHIVED |
 | BR-03 | Một active set/position; kích hoạt mới archive cũ cùng transaction |
-| BR-04 | Confirm evaluation tạo N evidence (mỗi competency 1 dòng) |
+| BR-04 | Chỉ reviewer decision hợp lệ đã được approve mới có thể tạo verified competency evidence; AI proposal không tự sinh evidence được xác nhận |
 | BR-05 | `employee_competency_profiles.confirmed_level` không hạ nếu không override + audit |
 | BR-06 | Certificate chỉ tạo khi có attempt PASSED của final assessment |
 | BR-08 | `scoring_configs` một active/key |
-| BR-09 | `employees.job_position_id` NULL → loại khỏi gap/risk/readiness |
+| BR-09 | No position or no Active Requirement Set → Not Assessed; do not infer Gap |
 | BR-11 | Bản ghi nghiệp vụ đổi status, không DELETE |
 | BR-12 | Scope department ở tầng query, không chỉ ẩn menu |
+| BR-13 | Course recommendation và directed course assignment là hai khái niệm riêng; course assessment và numeric task score không tự cập nhật Confirmed Competency |
 
 ---
 
@@ -275,7 +252,7 @@ erDiagram
 | enrollment | ASSIGNED → IN_PROGRESS → COMPLETED/FAILED/OVERDUE/CANCELLED |
 | assessment_attempt | STARTED → SUBMITTED → SCORED → PASSED/FAILED |
 | certificate | VALID → EXPIRED/REVOKED |
-| task_assignment | DRAFT → ASSIGNED → IN_PROGRESS → SUBMITTED → EVALUATED → CLOSED |
+| task_assignment | DRAFT → ASSIGNED → IN_PROGRESS → SUBMITTED → EVALUATED → CLOSED; nếu có AI thì proposal chưa phải reviewer decision |
 | competency_evidence | PENDING → VERIFIED/REJECTED/SUPERSEDED |
 | position_requirement_set | DRAFT → ACTIVE → ARCHIVED |
 
@@ -286,7 +263,7 @@ erDiagram
 - Index trên mọi FK; unique trên `email`, `employee_code`, `code` (theo scope).
 - Index `(employee_id, calculated_at DESC)` trên snapshot/score để xem lịch sử.
 - `certificate_verification_logs(certificate_id, checked_at)` cho rate-limit và tra cứu.
-- Dashboard đọc từ snapshot (`skill_gap_snapshots`, `readiness_scores`) — không tính lại khi xem.
+- Skill Gap result/run records should expose calculation status and freshness; no readiness snapshot is in MVP scope.
 
 ---
 

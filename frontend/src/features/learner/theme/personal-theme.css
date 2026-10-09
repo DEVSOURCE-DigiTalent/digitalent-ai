@@ -147,6 +147,44 @@
   }
 }
 
+/*
+ * Signed-in workspace: the accent is the gold of the login page and the landing CTAs, so the teal canvas is not
+ * mint on mint. Mint stays for state (pt-ok: done, correct, passed). Public individual pages keep their own accent.
+ */
+@layer base {
+  .personal-theme.pt-workspace[data-theme='dark'],
+  .personal-theme.pt-workspace:not([data-theme]) {
+    --ind-accent: #f5ca65;
+    --ind-on-accent: #1d1403;
+    /* Calmer surfaces: cards read by lightness, not by a bright outline; tertiary text stays legible. */
+    --ind-line-subtle: #1f3b44;
+    --ind-fg-subtle: #a6bab8;
+  }
+  .personal-theme.pt-workspace[data-theme='light'] {
+    --ind-accent: #8a5a12;
+    --ind-on-accent: #ffffff;
+    --ind-gold: #8a5a12;
+    --pt-gold: #8a5a12;
+    --ind-line-subtle: #d3e0dc;
+  }
+}
+
+/* Warm light from the top right corner, behind the content (the page itself stays the flat teal canvas). */
+.pt-workspace { position: relative; isolation: isolate; }
+.pt-workspace::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 38% at 92% 0%, color-mix(in oklab, var(--ind-gold, #f5ca65) 11%, transparent), transparent 70%),
+    radial-gradient(40% 30% at 0% 100%, color-mix(in oklab, var(--ind-gold, #f5ca65) 6%, transparent), transparent 70%);
+}
+.pt-workspace[data-theme='light']::before {
+  background: radial-gradient(55% 38% at 92% 0%, color-mix(in oklab, #d4982f 14%, transparent), transparent 70%);
+}
+
 /* Printing a certificate prints only the certificate sheet. */
 /* Workspace geometry is scoped so the public preview keeps its own shell. */
 .pt-workspace { overflow-wrap: anywhere; }

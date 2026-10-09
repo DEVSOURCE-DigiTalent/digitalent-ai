@@ -1,6 +1,6 @@
 # 14 — DevOps & Triển Khai
 
-> Nguồn gốc: Report 2 §6.3 (triển khai) + `docker/`, `infra/`, `.github/workflows/` (code thực tế). Phiên bản docs_v3, tiếng Việt.
+> Nguồn gốc: Report 2 v2.5 §6.3 và Master System Overview 09/10/2026 §9–10. Đây là hướng dẫn triển khai; cấu hình và deployment cần xác minh theo commit.
 
 ---
 
@@ -9,22 +9,23 @@
 | Mục | Giá trị |
 |-----|---------|
 | Tên tài liệu | DevOps & triển khai |
-| Phiên bản | 3.0 |
+| Phiên bản | 3.1 |
 | Trạng thái | Bản nháp |
 | Chủ sở hữu | Trần Văn Linh (Leader) |
-| Căn cứ | Report 2 §6.3 + docker/infra/workflows |
+| Căn cứ | Report 2 v2.5 §6.3; Master System Overview §9–10, §14 |
 
 **Lịch sử chỉnh sửa**
 
 | Ngày | Phiên bản | Mô tả |
 |------|-----------|-------|
 | 16/09/2026 | 3.0 | Chuyển ngữ; Docker Compose + GitHub Actions theo repo thực tế |
+| 09/10/2026 | 3.1 | Gỡ SignalR/scoring weights khỏi baseline bắt buộc; phân biệt hướng dẫn với trạng thái triển khai |
 
 ---
 
 ## 2. Mục đích và phạm vi
 
-Quy trình đóng gói, CI/CD và triển khai hệ thống từ môi trường dev lên production. Đảm bảo build nhất quán, test tự động và deploy lặp lại được.
+Hướng dẫn đóng gói, CI/CD và triển khai môi trường. Docker Compose, OpenAPI/Swagger, basic CI/audit là deployment approach trong baseline, không phải xác nhận đã cấu hình hoặc triển khai.
 
 **Ngoài phạm vi:** chiến lược test (13), quy ước git (12).
 
@@ -32,10 +33,9 @@ Quy trình đóng gói, CI/CD và triển khai hệ thống từ môi trường 
 
 ## 3. Tài liệu tham chiếu
 
-- Report 2 §6.3 — Deployment Plan
-- `docker/docker-compose.yml`, `infra/` (Nginx)
-- `.github/workflows/backend-ci.yml`, `frontend-ci.yml`
-- `.env.example` (root)
+- Report 2 v2.5 §6.3 — Deployment Plan
+- Master System Overview §9–10 — architecture and quality baseline
+- Verify actual Docker/infra/workflow files and `.env.example` before treating them as active configuration
 
 ---
 
@@ -43,30 +43,27 @@ Quy trình đóng gói, CI/CD và triển khai hệ thống từ môi trường 
 
 | Container | Vai trò | Ghi chú |
 |-----------|---------|---------|
-| `backend-api` | ASP.NET Core 11 API | Route `api/v1`, Swagger |
-| `nginx` | Web server + reverse proxy | Phục vụ SPA, proxy `/api` + `/hubs` |
-| `postgres` | PostgreSQL 16 | Dữ liệu nghiệp vụ |
-| `minio` | Object storage S3 | File học liệu/task/cert |
-| `redis` | Cache | **Tùy chọn**, off by default |
+| `backend-api` | ASP.NET Core API | Version, route and OpenAPI are governed by current reports/source |
+| `web` / reverse proxy | SPA hosting and proxy if configured | No `/hubs` dependency; in-app/browser polling is the MVP notification baseline |
+| `postgres` | PostgreSQL | Relational business data |
+| File storage | Local for development; S3-compatible/MinIO when integrated | Learning materials, evidence and certificate PDF |
+| Redis | Not an MVP dependency | Add only with approved architecture/scope |
 
 ```mermaid
 flowchart LR
   CLIENT[Browser] -->|HTTPS| NGINX[Nginx]
-  NGINX -->|/api /hubs| API[backend-api]
-  API --> DB[(PostgreSQL 16)]
-  API --> MINIO[(MinIO)]
-  API -.-> REDIS[(Redis optional)]
+  NGINX -->|/api| API[backend-api]
+  API --> DB[(PostgreSQL)]
+  API -.-> STORAGE[Local or integrated S3-compatible storage]
 ```
 
 ---
 
 ## 5. Docker Compose (local dev)
 
-- Nguồn cấu hình: `.env.example` → `.env` (Postgres, MinIO, JWT, Redis, frontend URL).
-- `docker compose up` khởi động postgres + minio + redis(optional) + nginx + backend-api.
-- Backend config: `backend/src/DigiTalent.Api/appsettings.json` (connection string, JWT, MinIO buckets, scoring weights).
-- Frontend config: `frontend/.env` (`VITE_API_BASE_URL`).
-- Postgres mặc định: `Host=localhost;Port=5432;Database=digitalent;Username=digitalent_app;Password=changeme`.
+- Read the current `.env.example` and compose files to identify required settings and services; keep `.env` local and out of Git.
+- Do not assume Redis, SignalR, MinIO or scoring-weight configuration is required.
+- Backend/frontend configuration must follow schemas verified in the repository; do not publish default passwords in this guide.
 
 ---
 
@@ -74,21 +71,21 @@ flowchart LR
 
 | Workflow | Vai trò |
 |----------|---------|
-| `backend-ci.yml` | Restore → build → test (`dotnet test`) backend |
-| `frontend-ci.yml` | `npm ci` → build (`tsc -b && vite build`) → lint (`oxlint`) |
+| Backend workflow | If present, restore/build and configured tests |
+| Frontend workflow | If present, install/build/type/lint checks configured in the repository |
 
 **Chuỗi CI chuẩn:**
 
 ```
-push/PR → backend-ci (build + test) + frontend-ci (build + lint) → green → merge
+push/PR → run configured checks → record results for that commit → merge by repository policy
 ```
 
 | Giai đoạn | Backend | Frontend |
 |-----------|---------|----------|
 | Install | `dotnet restore` | `npm ci` |
 | Build | `dotnet build` | `tsc -b && vite build` |
-| Test | `dotnet test` | — |
-| Lint | — | `oxlint` |
+| Test | Configured test commands; record evidence | As configured |
+| Lint | As configured | Configured lint/type checks; record evidence |
 
 ---
 
@@ -96,7 +93,7 @@ push/PR → backend-ci (build + test) + frontend-ci (build + lint) → green →
 
 | Môi trường | Mục đích | Cấu hình |
 |-----------|----------|----------|
-| Development | Dev local | `appsettings.Development.json`, seed tự động |
+| Development | Dev local | Local configuration and synthetic seed data, if configured |
 | Staging | Kiểm thử trước release | DB riêng, log chi tiết |
 | Production | Người dùng thật | Secret qua secret manager, log tối giản |
 
@@ -104,11 +101,11 @@ push/PR → backend-ci (build + test) + frontend-ci (build + lint) → green →
 
 ## 8. Triển khai production (tóm tắt)
 
-1. Build image backend + build SPA → copy vào Nginx.
-2. Áp migration: `dotnet ef database update`.
-3. Seed role/permission/competency gốc.
-4. Cấu hình Nginx: phục vụ SPA, proxy `/api` + `/hubs`, HTTPS.
-5. Health check `GET /health` để giám sát.
+1. Build and tag artifacts from the reviewed commit using the repository's verified pipeline.
+2. Review and apply migrations with a backup and rollback plan.
+3. Load approved TT02/reference seed data; use synthetic demo records, never real personal data.
+4. Configure TLS, proxy, file storage, authentication secrets and tenant isolation for the target environment.
+5. Configure health checks only for endpoints/services confirmed to exist; record deployment evidence separately.
 
 ---
 
@@ -131,8 +128,8 @@ push/PR → backend-ci (build + test) + frontend-ci (build + lint) → green →
 ## 11. Giám sát & log
 
 - Log backend ghi chi tiết server-side (không lộ stack/SQL ra client).
-- Health check endpoint `GET /health`.
-- Theo dõi P95 API < 500 ms (Report 2 §1.2).
+- Configure/monitor health checks only for verified endpoints.
+- Measure API P95 under a documented workload according to Report 3; this document does not claim a target is met.
 
 ---
 

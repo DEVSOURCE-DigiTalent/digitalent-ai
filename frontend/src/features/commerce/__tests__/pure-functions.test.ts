@@ -6,20 +6,20 @@ import type { SessionUser } from '@/types/session';
 import type { PlanSelection } from '@/types/commerce';
 
 describe('passwordSchema (P13, §4.10, T21)', () => {
-  it('rejects passwords shorter than 12 characters', () => {
-    const result = passwordSchema.safeParse('short12345');
+  it('rejects passwords shorter than 8 characters', () => {
+    const result = passwordSchema.safeParse('short12');
     expect(result.success).toBe(false);
   });
 
-  it('rejects common weak passwords even if length >= 12', () => {
-    expect(passwordSchema.safeParse('123456789012').success).toBe(false);
-    expect(passwordSchema.safeParse('matkhau12345').success).toBe(false);
-    expect(passwordSchema.safeParse('password1234').success).toBe(false);
-    expect(passwordSchema.safeParse('qwertyuiop12').success).toBe(false);
+  it('rejects common weak passwords even if length >= 8', () => {
+    expect(passwordSchema.safeParse('12345678').success).toBe(false);
+    expect(passwordSchema.safeParse('matkhau1').success).toBe(false);
+    expect(passwordSchema.safeParse('password').success).toBe(false);
+    expect(passwordSchema.safeParse('qwertyui').success).toBe(false);
   });
 
-  it('accepts a 12-character lowercase-only password without complexity requirements', () => {
-    const result = passwordSchema.safeParse('abcdefghijkl');
+  it('accepts an 8-character lowercase-only password without complexity requirements', () => {
+    const result = passwordSchema.safeParse('abcdefgh');
     expect(result.success).toBe(true);
   });
 

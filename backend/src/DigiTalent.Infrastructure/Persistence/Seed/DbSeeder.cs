@@ -230,7 +230,8 @@ public static class DbSeeder
 
         async Task<Employee> EnsureEmployee(User user, string code, Guid? directManagerId = null)
         {
-            var profile = await db.Employees.FirstOrDefaultAsync(item => item.UserId == user.Id);
+            var profile = await db.Employees.FirstOrDefaultAsync(item => item.UserId == user.Id)
+                       ?? await db.Employees.FirstOrDefaultAsync(item => item.OrganizationId == organizationId && item.EmployeeCode == code);
             if (profile == null)
             {
                 profile = new Employee
@@ -242,6 +243,13 @@ public static class DbSeeder
                     WorkEmail = user.Email,
                 };
                 db.Employees.Add(profile);
+            }
+            else
+            {
+                profile.UserId = user.Id;
+                profile.FullName = user.DisplayName;
+                profile.WorkEmail = user.Email;
+                profile.EmployeeCode = code;
             }
             profile.DepartmentId = department.Id;
             profile.DirectManagerId = directManagerId;

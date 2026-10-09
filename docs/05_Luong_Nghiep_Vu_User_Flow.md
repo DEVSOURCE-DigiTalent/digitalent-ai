@@ -2,6 +2,8 @@
 
 > Nguồn gốc: Report 3 §3 (functional flows) + cấu trúc flow F00–F23. Phiên bản docs_v3, tiếng Việt.
 
+> **Baseline alignment 09/10/2026:** Các F00–F23 bên dưới có flow legacy và không phải acceptance criteria; Golden Path §3.1 là target flow. Baseline có bốn role `PLATFORM_ADMIN`, `OWNER`, `MANAGER` (optional), `EMPLOYEE`. Hệ thống tự đề xuất standard course theo Skill Gap và competency-course mapping; Employee có thể bắt đầu học từ đề xuất. OWNER cũng có thể chủ động giao course khi có cập nhật tổ chức/đào tạo lại; hai cơ chế cùng tồn tại. Course/Assessment version được giữ theo assignment/attempt. Chỉ course eligible mới cấp certificate sau required lessons + final assessment pass; chứng chỉ không expiry. QR verification yêu cầu OWNER/MANAGER đăng nhập cùng organization, không public. Evidence review theo target competency; AI-assisted evaluation là target requirement chờ xác nhận scope Report 1/2, chỉ hỗ trợ gợi ý theo rubric; human reviewer quyết định. OWNER chỉ được giảm/reset grade khi sửa lỗi, có reason/audit và no-self-correction; late submission vẫn được review và có thể xác nhận evidence. `GRADE-01` vẫn PENDING DECISION. Đây là target requirements, không phải báo cáo implementation.
+
 ---
 
 ## 1. Kiểm soát tài liệu
@@ -24,7 +26,7 @@
 
 ## 2. Mục đích và phạm vi
 
-Mô tả **luồng nghiệp vụ end-to-end** ở mức thao tác — ai làm gì, theo thứ tự nào, chuyển trạng thái ra sao. Tài liệu này kết nối 46 use case (file 04) thành chuỗi công việc và làm rõ **state transition** (nơi phần lớn bug xảy ra khi record chuyển sang trạng thái không hợp lệ).
+Mô tả **luồng nghiệp vụ end-to-end** ở mức thao tác — ai làm gì, theo thứ tự nào, chuyển trạng thái ra sao. Tài liệu này kết nối danh mục 44 UC entries của Report 3 v2.2 (file 04; trong đó UC-24 và UC-31 là internal functions) thành chuỗi công việc và làm rõ **state transition**. Các mã actor/flow legacy còn lại cần được map lại trước khi dùng làm acceptance criteria.
 
 **Ngoài phạm vi:** chi tiết chức năng (03A), đặc tả UC (04), thiết kế màn hình (10).
 
@@ -37,13 +39,27 @@ Mô tả **luồng nghiệp vụ end-to-end** ở mức thao tác — ai làm g�
 - `03A_SRS_Yeu_Cau_Chuc_Nang.md`
 - `00_INDEX_Tong_Quan_Tai_Lieu.md`
 
+### Golden path Enterprise MVP (baseline xác nhận)
+
+| Bước | Actor / System | Hoạt động và kết quả |
+|------|----------------|----------------------|
+| 1 | PLATFORM_ADMIN | Duy trì TT02 reference, standard curriculum, question bank, assessment và reference positions. |
+| 2 | OWNER | Cấu hình organization, departments, positions, members; tạo/copy Draft Position Requirement Set rồi activate. |
+| 3 | System | Đối chiếu Active Requirement với Confirmed Competency. Nếu thiếu position hoặc active set, trả `Not Assessed`; không suy diễn thành Gap. Từ Gap/Partial Gap, đối chiếu competency-course mapping và cập nhật recommendations có giải thích. |
+| 4 | EMPLOYEE / OWNER / System | Employee xem recommendation và có thể bắt đầu course; course recommendation không tự tạo Owner assignment. Khi có cập nhật tổ chức/đào tạo lại, Owner có thể chủ động giao course riêng, nêu reason/deadline khi phù hợp. Hai loại được phân biệt trong danh sách học. Employee hoàn tất lesson và final assessment. Chỉ course eligible, đủ required lessons và đạt assessment mới phát sinh Internal Employee Certificate. Course/Assessment versions được giữ trong enrollment/assignment/attempt. |
+| 5 | OWNER hoặc MANAGER trong scope / EMPLOYEE | Giao Practical Task gắn một hay nhiều competency; employee gửi evidence. Submission trễ vẫn được nhận, đánh dấu `IsLate` và reviewer vẫn đánh giá. |
+| 6 | AI (nếu scope được duyệt) / OWNER hoặc MANAGER trong scope | (Target requirement, AI scope pending Report 1/2) AI đối chiếu evidence được phép truy cập với rubric version và đề xuất kết quả theo tiêu chí, điểm, rationale, evidence references và phần thiếu. Reviewer xem ngữ cảnh, chỉnh sửa, approve hoặc yêu cầu bổ sung. Chỉ review hợp lệ được con người approve mới xác nhận evidence/competency; lưu rubric version, AI result/model version nếu có, quyết định và edits. Điểm task không tự động là competency level. |
+| 7 | System / OWNER / MANAGER / EMPLOYEE | Sau khi review được approve, hệ thống cập nhật Confirmed Competency theo rubric/level rule có thẩm quyền và tính lại Skill Gap để làm mới recommendation. Certificate QR verification chỉ cho OWNER/MANAGER đăng nhập thuộc đúng organization phát hành. |
+
+> Đây là target requirement flow, không xác nhận trạng thái triển khai. `GRADE-01` vẫn PENDING DECISION; không kết luận Grade có 3 hay 6 mức lưu trữ. Chưa chốt khi Owner giao retraining thì chỉ cần final course assessment hay bắt buộc Practical Task bổ sung. Report 3 inventory cần reconcile course recommendation/assignment và AI evaluation; AI evaluation còn cần phê duyệt scope/effort ở Report 1/2. Enterprise MVP không có public verification, certificate expiry, Training Risk Score hoặc Workforce Readiness Score.
+
 ---
 
 ## 4. Ký hiệu luồng (Flow Notation)
 
 | Ký hiệu | Ý nghĩa |
 |---------|---------|
-| **Actor** | Vai trò thực hiện bước (HR, Dept Manager, Trainer, Employee, Admin, Public, Scheduler) |
+| **Actor** | Vai trò thực hiện bước (`PLATFORM_ADMIN`, `OWNER`, `MANAGER`, `EMPLOYEE`) hoặc Account Holder chưa đăng nhập |
 | **Precondition** | Điều kiện phải đúng trước khi luồng chạy |
 | **Steps** | Các bước tuần tự |
 | **Postcondition** | Trạng thái sau khi luồng thành công |
@@ -54,15 +70,14 @@ Mô tả **luồng nghiệp vụ end-to-end** ở mức thao tác — ai làm g�
 
 ## 5. Bản đồ actor và ranh giới trách nhiệm
 
-| Actor | Trách nhiệm | Phạm vi dữ liệu | Flow |
-|-------|-------------|-----------------|------|
-| System Admin | Tài khoản, vai trò, quyền, master data, cấu hình, audit | Toàn hệ thống | F01, F02, F22 |
-| HR / Training Manager | Đào tạo, nhân viên, khung năng lực, gán khóa học, chứng chỉ, analytics công ty | Toàn công ty | F00, F02, F03, F04, F07, F12, F19 |
-| Department Manager | Theo dõi nhân viên phòng ban, gap, giao task, đánh giá bằng chứng | Chỉ phòng ban mình | F12, F15, F16, F18, F19 |
-| Internal Trainer | Khóa học, bài học, ngân hàng câu hỏi, assessment, nháp AI | Nội dung khóa mình viết | F05, F06, F09 |
-| Employee | Học, thi, nhận chứng chỉ, nộp task | Bản thân | F08, F09, F13, F16 |
-| Public Visitor | Xác minh chứng chỉ công khai | Chỉ kết quả xác minh | F13 |
-| System / Scheduler | Tính risk/readiness, nhắc hết hạn, expire cert, notification | Quy tắc dịch vụ | F12, F14, F18, F20 |
+| Actor | Trách nhiệm | Phạm vi dữ liệu |
+|-------|-------------|-----------------|
+| `PLATFORM_ADMIN` | Quản lý organizations/platform users, TT02, standard content, reference positions, settings và audit | Platform; không mặc định đọc private evidence của organization |
+| `OWNER` | Quản trị organization; chủ động giao course khi cần, giao task; review evidence; quản lý certificate và xem dashboard | Organization của Owner |
+| `MANAGER` (optional) | Theo dõi learning, giao/review task và xác nhận evidence | Assigned departments; không giao course hoặc sửa cấu trúc organization |
+| `EMPLOYEE` | Xem/bắt đầu course được đề xuất hoặc giao, thi, xem gap cá nhân, nộp evidence và xem certificate của mình | Bản thân |
+
+`Account Holder` là actor chưa đăng nhập cho sign-in/password recovery. System functions không phải role. Không có Trainer, HR Manager, Public Visitor, risk score hoặc readiness score trong baseline Enterprise MVP.
 
 ---
 
@@ -79,6 +94,8 @@ Mô tả **luồng nghiệp vụ end-to-end** ở mức thao tác — ai làm g�
 ---
 
 ## 7. Luồng nghiệp vụ chi tiết (F00–F23)
+
+> **LEGACY FLOW DETAILS:** Các F00–F23 dưới đây là bản flow cũ. Chúng còn dùng role, scope, public QR, expiry, risk/readiness, và các business rules không còn phù hợp. Dùng Golden Path §3.1 làm luồng chuẩn; không dùng F00–F23 làm acceptance criteria trước khi map lại với Report 3 v2.3 và các quy tắc đã xác nhận.
 
 ### F00 — Job Architecture Setup
 
@@ -186,6 +203,8 @@ Mô tả **luồng nghiệp vụ end-to-end** ở mức thao tác — ai làm g�
 | Exception | Không có active set → bỏ qua + báo cáo (BR-01); chưa gán vị trí → bỏ qua + báo "chưa có yêu cầu" (BR-09) |
 
 ### F11 — Learning Recommendation
+
+> Flow legacy; behavior target hiện hành nằm ở Golden Path §3.1 và Use Case target addendum trong file 04. Cách HR duyệt/override ở bảng cũ không còn là baseline.
 
 | Mục | Nội dung |
 |------|----------|

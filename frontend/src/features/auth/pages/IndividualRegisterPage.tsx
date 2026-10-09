@@ -66,25 +66,16 @@ function PurchaseRegisterPage() {
     }
 
     const regData = res?.data?.data;
-    if (regData?.registrationId) {
-      setPendingRegistration({
-        registrationId: regData.registrationId,
-        registrationAccessToken: regData.registrationAccessToken,
-        maskedEmail: regData.maskedEmail,
-        developmentOtp: regData.developmentOtp,
-        email: values.email,
-      });
-      return;
-    }
-
-    const draftId = regData?.draftId;
-    try {
-      const home = await login.mutateAsync({ email: values.email, password: values.password });
-      const nextPath = draftId ? `/checkout?draft=${draftId}` : home;
-      navigate(nextPath, { replace: true });
-    } catch {
-      navigate('/login', { replace: true });
-    }
+    const regId = regData?.registrationId || regData?.draftId || 'reg-individual';
+    sessionStorage.setItem('dt-pending-registration', JSON.stringify({
+      registrationId: regId,
+      registrationAccessToken: regData?.registrationAccessToken,
+      maskedEmail: regData?.maskedEmail,
+      email: values.email,
+      intent: 'PURCHASE',
+      draftId: regData?.draftId,
+    }));
+    navigate(`/individual/register/verify?registrationId=${regId}&email=${encodeURIComponent(values.email)}&intent=PURCHASE`, { replace: true });
   };
 
   const handleOtpSuccess = (data: any) => {

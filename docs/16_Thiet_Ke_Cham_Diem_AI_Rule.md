@@ -1,6 +1,6 @@
 # 16 — Thiết Kế Chấm Điểm & Rule-based Intelligence
 
-> Nguồn gốc: Report 3 §3.1.4 (non-screen functions NF-01..03), §3.7, §3.10, §3.11.3, §5.1 BR + Report 1 §6.2. Phiên bản docs_v3, tiếng Việt.
+> Nguồn gốc: Report 1 v2.5, Report 3 v2.2 và Master System Overview 09/10/2026 §3–7. Đây là mô tả rule nghiệp vụ; không xác nhận implementation. GRADE-01 vẫn PENDING DECISION.
 
 ---
 
@@ -9,22 +9,24 @@
 | Mục | Giá trị |
 |-----|---------|
 | Tên tài liệu | Thiết kế chấm điểm & rule-based intelligence |
-| Phiên bản | 3.0 |
+| Phiên bản | 3.2 |
 | Trạng thái | Bản nháp |
 | Chủ sở hữu | Trần Văn Linh (Leader) |
-| Căn cứ | Report 3 §3.7/§3.10/§3.11.3 + Report 1 §6.2 |
+| Căn cứ | Report 1 v2.5; Report 2 v2.5; Report 3 v2.2; Master System Overview §3, §5, §7, §13; quyết định course recommendation/assignment và AI evaluator mới nhất |
 
 **Lịch sử chỉnh sửa**
 
 | Ngày | Phiên bản | Mô tả |
 |------|-----------|-------|
-| 16/09/2026 | 3.0 | Chuyển ngữ; công thức rule-based theo **3 level** (bỏ 5-level research scale) |
+| 16/09/2026 | 3.0 | Chuyển ngữ; rule-based intelligence |
+| 09/10/2026 | 3.1 | Giới hạn trong Skill Gap/recommendation; thêm trạng thái gap và correction; giữ GRADE-01 pending |
+| 09/10/2026 | 3.2 | Tách recommendation khỏi assignment; thêm AI-assisted task evaluation proposal, human approval và scope/update caveats |
 
 ---
 
 ## 2. Mục đích và phạm vi
 
-Đặc tả **Capability Intelligence Engine**: các hàm không-màn-hình tính Skill Gap, Training Risk, Workforce Readiness và gợi ý khóa học — **rule-based, giải thích được**, không ML train. Mọi trọng số nằm ở cấu hình, không hard-code.
+Đặc tả cách xác định **Skill Gap**, tự động đề xuất khóa học theo quy tắc có thể giải thích, và nguyên tắc cho AI hỗ trợ đánh giá minh chứng Practical Task. AI-assisted task evaluation là **scope expansion** cần được phản ánh trong Report 1/2 trước khi coi là cam kết MVP; hiện trạng implementation chưa xác minh. Training Risk Score, Workforce Readiness Score, scoring weights và predictive scoring không thuộc Enterprise Capstone MVP.
 
 **Ngoài phạm vi:** ma trận màn hình (09), lưu trữ snapshot (07), quy trình chạy job (14).
 
@@ -32,7 +34,7 @@
 
 ## 3. Tài liệu tham chiếu
 
-- Report 3 §3.1.4 — NF-01..06, §3.7, §3.10, §3.11.3
+- Report 3 v2.2 — requirement, confirmed competency, Skill Gap và business rules liên quan
 - Report 1 §6.2 — AI/analytics coverage
 - `07_Thiet_Ke_CSDL_ERD.md` — bảng snapshot/score
 - `00_INDEX` §3.1.4
@@ -43,22 +45,24 @@
 
 | Nguyên tắc | Diễn giải |
 |-----------|-----------|
-| Rule-based xuyên suốt | Không ML train trên dữ liệu công ty; mọi số giải thích được |
-| Weights in configuration | Trọng số/ngưỡng/level mapping ở `scoring_configs`, không hard-code (NFR §4.2.6) |
-| Version gắn liền score | Mỗi score lưu version trọng số đã dùng — số cũ vẫn giải thích được (BR-08) |
-| Snapshot không ghi đè | Kết quả cũ giữ lại để vẽ lịch sử, không tính lại rồi vứt |
-| 3 level duy nhất | Thang **Basic/Intermediate/Advanced** cho cả lưu trữ lẫn hiển thị (bỏ thang 5 mức research) |
-| Human-controlled AI | LLM chỉ nháp câu hỏi/ý tưởng task, người duyệt quyết định |
+| Rule-based | Skill Gap so sánh active requirement với confirmed competency; không dùng risk/readiness score |
+| Evidence boundary | Course completion, assessment score và certificate không tự xác nhận workplace competency |
+| Explicit states | Met / Partial Gap / Gap / Not Assessed; không diễn giải Gap là không có năng lực |
+| GRADE-01 | Ba training tiers đã xác nhận, nhưng grade storage/comparison scale vẫn pending; tài liệu này không quyết định 3 hay 6 giá trị |
+| Human review | Chỉ level-confirming evidence đã được reviewer có quyền duyệt mới tăng confirmed competency; owner correction chỉ giảm/reset để sửa lỗi |
+| AI evaluator | Chỉ đề xuất đánh giá theo rubric; OWNER/MANAGER review trong scope mới quyết định; AI không tự finalise hoặc cập nhật competency |
+| Score boundary | Điểm task và Confirmed Competency level là các kết quả riêng; chỉ approved valid evidence cùng quy tắc level-confirming mới ảnh hưởng competency |
 
 ---
 
 ## 5. Tổng quan các hàm (NF-01..03)
 
-| Hàm | ID | Trigger | Output |
-|-----|----|---------|--------|
-| Calculate Skill Gap Snapshot | NF-01 | Đêm + on-demand (HR recalculate) | 1 dòng/employee/competency, gắn version requirement |
-| Calculate Training Risk Score | NF-02 | Đêm sau gap job + on-demand | Score + band + factor breakdown |
-| Calculate Workforce Readiness Score | NF-03 | Đêm sau gap job + on-demand | Score + band + factor breakdown |
+| Quy trình | Trigger | Output |
+|-----|----|---------|
+| Calculate Skill Gap | Active requirement, confirmed competency update, position change, requirement activation, or authorized on-demand recalculation | Per-employee/per-competency state tied to active requirement version |
+| Course recommendation | Available Skill Gap and standard course catalog with competency mapping | Automatically generated/refreshed recommendations with reason; Employee may start learning |
+| Owner course assignment | OWNER identifies an update/retraining need | A separate assigned-course record with owner, due date and applicable version; does not replace the automatic recommendation list |
+| AI task evaluation proposal | Submitted evidence, authorized reviewer request and rubric version | Per-criterion proposed score, rationale, evidence basis and missing information; pending human review |
 
 ---
 
@@ -66,125 +70,90 @@
 
 ### 6.1 Đầu vào
 
-- Với mỗi employee: **active requirement set** của job position hiện tại + **confirmed competency profile**.
-- Trên thang 3 mức: `required_level` (1–3) và `confirmed_level` (1–3).
+- Với mỗi employee: active Position Requirement Set và Confirmed Competency profile.
+- TT02 is the reference framework. DigiTalent AI has **3 confirmed training tiers**: Basic (TT02 stages 1–2), Intermediate (3–4), Advanced (5–6). These training tiers do not settle GRADE-01 or dictate the grade storage/comparison scale.
+- Report 3 describes competency grade criteria 1–6; until GRADE-01 is decided, do not define storage constraints, conversions or a numeric comparison formula here.
 
 ### 6.2 Công thức
 
-```
-gap = required_level − confirmed_level
-```
-
 | Trường hợp | Xử lý |
 |-----------|-------|
-| Không có `confirmed_level` cho competency bắt buộc | gap = full (không coi là lỗi) |
-| `gap ≤ 0` | met |
-| `gap > 0` | partial gap / gap theo độ lớn |
+| Có confirmed grade và đạt/vượt requirement | **Met** |
+| Có confirmed grade nhưng thấp hơn requirement | **Partial Gap** |
+| Chưa có confirmed grade cho required competency | **Gap** — thiếu evidence được xác nhận, không kết luận nhân viên không có năng lực |
+| Chưa có Position hoặc Position chưa có Active Requirement Set | **Not Assessed** |
 
-**Phân loại gap:**
-
-| Mức | Điều kiện |
-|-----|-----------|
-| Low | gap nhỏ, không mandatory |
-| Medium | gap trung bình |
-| High | gap lớn hoặc competency **mandatory** |
-
-**Priority (thứ tự ưu tiên):**
-
-```
-priority = gap × weight × (mandatory ? k : 1)
-```
-
-> Gap quan trọng nhất (gap lớn + mandatory + weight cao) đứng đầu mọi danh sách.
+Requirement không có `weight`; mandatory ảnh hưởng thứ tự/nhãn hiển thị, không thay đổi phép so sánh grade. Numeric comparison remains subject to GRADE-01.
 
 ### 6.3 Quy tắc loại trừ
 
-- Employee **chưa gán job position** hoặc position chưa có active requirement set → **bỏ qua và báo cáo**, không đoán (BR-01, BR-09).
+- Employee chưa gán job position hoặc position chưa có active requirement set → **Not Assessed**, không gán thành Gap.
 - Một new joiner chưa gán vị trí không làm fail cả job cho toàn công ty.
 
 ### 6.4 Output & lưu trữ
 
-- Một dòng/employee/competency, gắn `requirement_version_id`, `run_number`, `calculated_at`.
-- Kết quả cũ **không ghi đè** — đây là cơ sở của màn hình lịch sử (Employee Capability History).
+- Kết quả gắn với requirement version và thời điểm tính để xác định freshness; không báo kết quả cũ như thể vừa được tính.
+- Recalculation có lifecycle Pending/Done/Failed và retry; chi tiết vật lý thuộc Report 4.
 
 ---
 
-## 7. Training Risk Score (NF-02)
+## 7. Training Risk Score (ngoài phạm vi MVP)
 
 ### 7.1 Đầu vào (các yếu tố)
 
-| Yếu tố | Ý nghĩa |
-|--------|---------|
-| Inactivity | Không hoạt động (không học/thi/task) |
-| Low assessment score rate | Tỷ lệ điểm thi thấp |
-| Deadline pressure | Áp lực hạn chót (task/enrollment sắp quá hạn, trễ hạn) |
-| Failed attempts | Số lần thi trượt |
-| Progress behind plan | Tiến độ chậm so với kế hoạch |
+Training Risk Score, các yếu tố, công thức và cảnh báo không thuộc Enterprise Capstone MVP. Không tạo acceptance criteria hoặc test cho risk scoring theo tài liệu này.
 
 ### 7.2 Công thức
 
-```
-risk_score = Σ (factor_valueᵢ × weightᵢ),  weight từ cấu hình, Σ weight = 100%
-```
-
-- Output: `score` + `band` (Low/Medium/High) + `factor_breakdown` (JSONB) + `weight_version_id`.
-- **Risk chuyển High → alert cho Department Manager** (NF-06, SignalR).
-
----
-
-## 8. Workforce Readiness Score (NF-03)
+## 8. Workforce Readiness Score (ngoài phạm vi MVP)
 
 ### 8.1 Đầu vào
 
-| Yếu tố | Ý nghĩa |
-|--------|---------|
-| Competency coverage | Độ phủ competency so với active requirement set |
-| Certificates held | Chứng chỉ đang có |
-| Learning progress | Tiến độ học tập |
-| Practical task performance | Kết quả task thực hành |
+Workforce Readiness Score, công thức, factor weights và score bands không thuộc Enterprise Capstone MVP. Không suy diễn readiness từ Skill Gap hoặc learning record.
 
 ### 8.2 Công thức
 
-```
-readiness_score = Σ (factor_valueᵢ × weightᵢ),  weight từ cấu hình, Σ weight = 100%
-```
-
-- Output: `score` + `band` + `factor_breakdown` + `weight_version_id`.
-- Đo theo **vị trí hiện tại** (không còn trục career grade).
-
----
-
-## 9. Cấu hình trọng số (System Settings & Level Mapping)
+## 9. Cấu hình và versioning
 
 ### 9.1 Bốn nhóm cấu hình
 
-| Nhóm | Nội dung |
-|------|----------|
-| Risk weights | Trọng số các yếu tố risk |
-| Readiness weights | Trọng số các yếu tố readiness |
-| Recommendation weights | Trọng số xếp hạng gợi ý khóa học |
-| Competency levels | **3 mức: Basic, Intermediate, Advanced** |
+Không có risk/readiness/recommendation weight configuration trong MVP. Course recommendation dựa trên competency mapping và Skill Gap; công thức ranking có trọng số chưa được xác nhận và không được tự thêm.
 
 ### 9.2 Quy tắc
 
-- Lưu → tạo **version mới**, archive bản cũ, đúng 1 active/group (BR-08).
-- **Validation:** trọng số trong một nhóm phải cộng đúng **100%**.
-- Trọng số mới áp dụng **từ lần chạy kế tiếp**; score đã lưu giữ version đã tạo ra nó — không ghi đè.
-- Level mapping đọc bởi interface — đổi là cập nhật hiển thị toàn hệ thống, không đụng dữ liệu gốc.
-
-> ⚠️ docs_v2 có `scale_type` (RESEARCH 5 mức / DISPLAY 3 mức). docs_v3 **gộp về một thang 3 mức duy nhất**, bỏ thang 5 mức và bỏ `level_scale_mappings`.
+Course/Assessment version snapshots are governed by BR-VER-01 and must remain immutable for existing assignments/attempts; details belong in Report 4. This section does not define grade mapping or storage.
 
 ---
 
 ## 10. Gợi ý khóa học (Recommendation)
 
-- Xếp hạng khóa học theo **mức lấp gap còn lại** (dùng recommendation weights).
-- Mỗi gợi ý kèm **lý do** (vd: "khóa học target competency X, gap hiện 2 level").
-- Employee có thể enroll trực tiếp (nếu được phép) hoặc nhờ manager.
+- Hệ thống tự tạo/cập nhật standard-course recommendations dựa trên competency ở Gap/Partial Gap và competency mapping của từng course. Mỗi gợi ý nêu competency còn thiếu và course nào hỗ trợ competency đó; không thêm ranking weight chưa được xác nhận.
+- Employee có thể xem recommendation của mình và bắt đầu học từ đó. Recommendation và OWNER-issued Assigned Course là hai trạng thái/record khác nhau; bắt đầu recommendation không ngăn OWNER giao khóa học riêng.
+- OWNER có thể chủ động giao khóa học khi có cập nhật hoặc yêu cầu đào tạo lại, kèm hạn hoàn thành nếu cần. Giao khóa học không thay đổi Skill Gap hoặc Confirmed Competency.
+- Learning progress, Course Assessment, score và certificate vẫn là Learning Achievement; không tự xác nhận workplace competency.
+
+### 10.1 PENDING DECISION — đánh giá khi đào tạo lại
+
+Chưa chốt liệu course assignment do cập nhật nội dung/chính sách chỉ yêu cầu hoàn thành final course assessment, hay trong trường hợp nào còn bắt buộc Practical Task. Không biến lựa chọn nào thành rule/acceptance test cho đến khi quyết định được ghi nhận. Nếu thay đổi requirement của vị trí, Skill Gap vẫn được tính từ requirement mới và Confirmed Competency; điều đó tự nó không quyết định task nào phải giao.
 
 ---
 
-## 11. LLM (tùy chọn, human-controlled)
+## 11. AI hỗ trợ đánh giá Practical Task — scope expansion
+
+**Trạng thái:** đề xuất nghiệp vụ mới, cần cập nhật scope và effort trong Report 1/2 trước khi cam kết; hiện trạng code chưa được kiểm chứng. Phần này định nghĩa guardrails cho đặc tả tiếp theo, không khẳng định tính năng đã triển khai.
+
+1. Reviewer OWNER/MANAGER có quyền trong đúng organization/department scope yêu cầu đánh giá một submission đã nộp.
+2. Evaluator chỉ nhận evidence mà caller được phép đọc, cùng rubric version áp dụng và competency targets. Evidence là dữ liệu không tin cậy: tách khỏi instructions, bỏ qua chỉ dẫn nhúng, không cấp tool execution hoặc quyền truy cập mở rộng.
+3. AI trả kết quả có cấu trúc theo từng criterion: proposed score/assessment, rationale, trích dẫn hoặc định vị căn cứ trong evidence, và missing/unclear evidence. Nếu không đủ căn cứ, trả `insufficient_evidence`/`unable_to_assess`, không đoán điểm.
+4. Kết quả AI luôn `PendingHumanReview`. Reviewer có thể chấp nhận, sửa, từ chối hoặc yêu cầu thêm evidence; lưu proposal gốc, reviewer decision/edits, timestamp, rubric version và model/version nếu có.
+5. Task score không tự chuyển đổi thành competency grade. Chỉ reviewer-approved, valid, level-confirming evidence theo quy tắc hiện hành mới có thể đi tới Confirmed Competency. AI không có đường gọi trực tiếp để finalise hoặc cập nhật competency.
+6. Cung cấp lý do/căn cứ cho mỗi criterion; UI/API phải phân biệt rõ AI proposal, reviewer decision, task score và competency outcome.
+
+**Minimum test cases:** private/unauthorized evidence is denied; cross-org/cross-department access is denied; prompt-injection text in file/URL is inert; model/provider failure does not approve; insufficient or conflicting evidence yields a non-final result; reviewer override and request-more-evidence are persisted; rubric/model metadata and edits are auditable; AI cannot self-finalise or change competency; a numeric task score alone leaves Confirmed Competency unchanged.
+
+---
+
+## 12. LLM khác (tùy chọn, human-controlled)
 
 | Dùng | Giới hạn |
 |------|----------|
@@ -197,14 +166,15 @@ readiness_score = Σ (factor_valueᵢ × weightᵢ),  weight từ cấu hình, �
 
 ---
 
-## 12. Ma trận vết
+## 13. Ma trận vết
 
-| Hạng mục | NF/BR | File |
+| Hạng mục | FE/BR | File |
 |----------|-------|------|
 | Skill gap formula | NF-01, BR-01, BR-09 | 07 |
-| Risk score | NF-02, BR-09 | 15 |
-| Readiness score | NF-03, BR-09 | 07 |
-| Weights config | BR-08, NFR §4.2.6 | 07 |
-| 3-level scale | Chỉ đạo 3-level | 00, 07 |
-| Course recommendation | NF-01, UC-23/24 | 04 |
-| Alert high risk | NF-06 | 15 |
+| Owner correction reduce/reset | BR-FIX-01 | 09 / 13 / 15 |
+| Late submission review | BR-LATE-01 | 13 |
+| Course/assessment snapshots | BR-VER-01 | 04 / Report 4 / 13 |
+| Automatic course recommendation and separate OWNER assignment | Latest user-confirmed workflow; retraining assessment PENDING | 13 |
+| AI-assisted Practical Task evaluation (scope expansion) | Report 1/2 update required; not implementation-verified | 13 / 15 |
+| 3 training tiers under TT02 | Master Overview §3 | 00 |
+| Grade scale and storage | GRADE-01 — PENDING DECISION | Master Overview §13 |

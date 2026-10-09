@@ -1,3 +1,5 @@
+> **LEGACY / ARCHIVED — NOT CANONICAL.** Retained as historical context. Use `01_Project_Overview_DigiTalent_AI.md` and `DigiTalent_AI_MASTER_SYSTEM_OVERVIEW_2026-10-09.md` for the current Enterprise Capstone baseline.
+
 # 01 — Tổng Quan Dự Án DigiTalent AI
 
 > Nguồn gốc: Report 1 — *Project Introduction*. Phiên bản docs_v3, ngôn ngữ tiếng Việt.

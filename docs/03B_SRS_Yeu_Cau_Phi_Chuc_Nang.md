@@ -2,6 +2,8 @@
 
 > Nguồn gốc: Report 3 — *Software Requirement Specification* §4–§5. Phiên bản docs_v3, tiếng Việt.
 
+> **Baseline alignment 09/10/2026:** Ưu tiên Report 3 v2.2 và `DigiTalent_AI_MASTER_SYSTEM_OVERVIEW_2026-10-09.md`. Nội dung cũ bên dưới về public endpoint, SignalR bắt buộc, grade storage ba mức, risk/readiness hoặc scoring weights không còn là Enterprise MVP baseline. Đây là yêu cầu, không xác nhận implementation. Certificate verification là endpoint/screen đã đăng nhập và chỉ dành cho OWNER/MANAGER của đúng tổ chức phát hành. Hệ thống tự đề xuất khóa học từ Skill Gap và mapping; OWNER cũng có thể giao khóa khi có cập nhật/đào tạo lại. AI đánh giá Practical Task là target requirement chờ xác nhận scope Report 1/2; yêu cầu bảo mật bên dưới chỉ áp dụng nếu được phê duyệt. `GRADE-01` vẫn **PENDING DECISION**.
+
 ---
 
 ## 1. Kiểm soát tài liệu
@@ -47,8 +49,8 @@ DigiTalent AI giao tiếp với 4 bên ngoài. **Không có** payment gateway, S
 |---|-----------|-------|----------|----------|
 | 1 | SMTP mail server | Outbound | Link reset mật khẩu, (tùy chọn) thông báo giao việc | SMTP over TLS |
 | 2 | MinIO object storage | Hai chiều | Học liệu, bài nộp task, PDF chứng chỉ. File không vào DB | S3 API over HTTPS |
-| 3 | LLM API (tùy chọn) | Outbound | Nháp câu hỏi / ý tưởng task. Hệ thống chạy đủ nếu thiếu; mọi draft cần người duyệt | HTTPS REST |
-| 4 | Browser client | Hai chiều | Toàn bộ tương tác người dùng, gồm notification realtime | HTTPS REST + WebSocket (SignalR) |
+| 3 | LLM API (tùy chọn; AI evaluation scope pending) | Outbound | Trong scope hiện tại: nháp câu hỏi / ý tưởng task, mọi draft cần người duyệt. Nếu AI-assisted Practical Task evaluation được phê duyệt, có thể gửi evidence được phép truy cập và rubric để lấy đánh giá sơ bộ; hệ thống chạy đủ luồng review nếu LLM thiếu | HTTPS REST |
+| 4 | Browser client | Hai chiều | Tương tác người dùng; notification in-app dùng browser polling trong MVP | HTTPS REST; không mặc định SignalR/WebSocket |
 
 ---
 
@@ -70,18 +72,21 @@ DigiTalent AI giao tiếp với 4 bên ngoài. **Không có** payment gateway, S
 
 ### 5.3 Performance (Hiệu năng)
 
-- **95%** API response ≤ **2 giây** với 50 user đồng thời.
-- Dashboard load ≤ **3 giây** ở khối lượng seed ~200 nhân viên.
-- Snapshot tính đêm cho toàn bộ nhân viên ≤ **5 phút**.
+- **95%** list, detail và save API responses hoàn tất trong **2 giây** với **50 concurrent users**, đo trong 10 phút sau ramp-up 1 phút.
+- Dashboard load ≤ **3 giây** với seed khoảng 200 nhân viên, 20 positions, 6 requirement sets và standard demo content; ghi cấu hình máy và browser trong kết quả đo.
+- Skill Gap recalculation sau một confirmation hoàn tất ≤ **5 giây**; recalculation toàn organization với 200 nhân viên hoàn tất ≤ **5 phút**.
+- Queued recalculation có trạng thái Pending/Done/Failed và retry theo quy tắc Report 3.
 - List paginated trên server; không endpoint trả tập kết quả không giới hạn.
 
 ### 5.4 Security (Bảo mật)
 
 - Mật khẩu chỉ lưu dạng salted hash, không xuất hiện trong log/audit.
 - Access token hết hạn ≤ **30 phút**, refresh token ≤ **7 ngày**.
-- Endpoint xác minh công khai giới hạn **20 yêu cầu/phút/requester**, không lộ định danh nội bộ.
+- Endpoint QR verification yêu cầu đăng nhập và OWNER/MANAGER của organization phát hành, tối đa **20 requests/phút/user**; chỉ trả holder name, course/competency, issue date và status, không lộ evidence, assessment attempt hoặc internal employee ID.
 - File upload kiểm tra extension, size, content type; chỉ phục vụ người có quyền với record cha.
 - Mọi hành động nhạy cảm (BR list §9 file 03A) ghi audit log.
+- Nếu AI-assisted Practical Task evaluation được đưa vào scope, chỉ gửi evidence tối thiểu mà reviewer được phép truy cập; tenant/organization access scope phải được áp dụng trước khi xử lý. Không dùng evidence của organization cho huấn luyện nhà cung cấp; bảo vệ dữ liệu nhạy cảm khi truyền/lưu và ghi nhận provider/model, rubric version, AI output, reviewer decision/edits. AI response không được tự ghi Confirmed Competency.
+- Giữ liên kết evaluation với submission và rubric version; giới hạn quyền xem AI output/reviewer notes theo cùng scope evidence, và log truy cập/thay đổi để truy vết.
 
 ### 5.5 Compatibility & Portability (Tương thích & Khả chuyển)
 
@@ -101,11 +106,13 @@ DigiTalent AI giao tiếp với 4 bên ngoài. **Không có** payment gateway, S
 
 ### 6.1 Thang mức năng lực
 
-> **docs_v3:** Dùng **một thang 3 mức duy nhất** — Basic / Intermediate / Advanced (tham chiếu DigComp 3.0). Report 3 gốc đề cập một thang nghiên cứu 5 mức và một thang hiển thị 3 mức; theo chỉ đạo 16/09/2026, bộ tài liệu chuẩn hóa về **một thang 3 mức** cho cả lưu trữ lẫn hiển thị, loại bỏ trục Career Grade. Xem `00_INDEX` §3.1.3.
+> **GRADE-01 — PENDING DECISION:** Report 3 v2.2 mô tả Grade 1–6 theo TT02; ba Level đào tạo Basic/Intermediate/Advanced là nhóm khóa học, chưa đủ căn cứ để kết luận grade lưu trữ có 3 hay 6 mức. Không tự thay đổi ERD, constraint hoặc phép tính trước quyết định.
 
 ### 6.2 Ranh giới phạm vi
 
-Loại trừ khỏi bản này (đã cân nhắc có chủ đích): native mobile app, payroll/attendance, learning marketplace thu phí, project-management board tổng quát, SSO corporate directory, và mọi mô hình ML train trên dữ liệu công ty. Scoring là **rule-based xuyên suốt** — mọi con số giải thích được cho người nó mô tả.
+Loại trừ khỏi Enterprise Capstone MVP: native mobile app, payroll/attendance, learning marketplace thu phí, project-management board tổng quát, enterprise SSO/LDAP, public certificate verification, certificate expiry/renewal, risk/readiness scoring và scoring weights. Skill Gap là rule-based theo Met / Partial Gap / Gap / Not Assessed; đây không phải risk/readiness score.
+
+> **AI evaluation scope gate:** AI-assisted Practical Task evaluation expands beyond AI content drafting described in Report 1. The functional and security statements about AI evaluation in 03A/03B are proposed target requirements only; reconcile scope, effort, data handling and acceptance criteria in Report 1/2 before implementation. No model/provider is selected here. Course recommendations remain deterministic/explainable mapping rules and do not require AI.
 
 ---
 

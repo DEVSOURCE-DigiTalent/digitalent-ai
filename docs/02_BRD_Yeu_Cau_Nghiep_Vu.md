@@ -1,3 +1,5 @@
+> **LEGACY / ARCHIVED — NOT CANONICAL.** Retained as historical context. Use `02_BRD_Business_Requirement_DigiTalent_AI.md` and `DigiTalent_AI_MASTER_SYSTEM_OVERVIEW_2026-10-09.md` for the current Enterprise Capstone baseline.
+
 # 02 — BRD: Tài liệu Yêu Cầu Nghiệp Vụ
 
 > Nguồn gốc: Report 1 (§2–4) + Report 2 (PMP). Phiên bản docs_v3, tiếng Việt.

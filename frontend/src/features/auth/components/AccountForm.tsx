@@ -14,6 +14,7 @@ const accountFormSchema = z
     fullName: requiredText('Họ và tên'),
     email: z.string().trim().min(1, 'Nhập email').email('Email không hợp lệ'),
     password: passwordSchema,
+    confirmPassword: z.string().min(1, 'Vui lòng xác nhận mật khẩu'),
     acceptTerms: z.boolean().refine((val) => val === true, 'Bạn cần đồng ý với điều khoản để tiếp tục'),
   })
   .superRefine((data, ctx) => {
@@ -22,6 +23,13 @@ const accountFormSchema = z
         code: 'custom',
         path: ['password'],
         message: 'Mật khẩu không được trùng với email',
+      });
+    }
+    if (data.password && data.confirmPassword && data.password !== data.confirmPassword) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['confirmPassword'],
+        message: 'Mật khẩu xác nhận không khớp',
       });
     }
   });
@@ -63,6 +71,7 @@ export function AccountForm({
       fullName: '',
       email: '',
       password: '',
+      confirmPassword: '',
       acceptTerms: false,
     },
   });
@@ -70,9 +79,11 @@ export function AccountForm({
   const { ref: nameFormRef, ...nameFieldProps } = register('fullName');
   const { ref: emailFormRef, ...emailFieldProps } = register('email');
   const { ref: passwordFormRef, ...passwordFieldProps } = register('password');
+  const { ref: confirmPasswordFormRef, ...confirmPasswordFieldProps } = register('confirmPassword');
   const { ref: termsFormRef, ...termsFieldProps } = register('acceptTerms');
 
   const passwordValue = watch('password');
+  const confirmPasswordValue = watch('confirmPassword');
 
   useEffect(() => {
     nameInputRef.current?.focus();
@@ -149,7 +160,7 @@ export function AccountForm({
         </label>
         <PasswordField
           id="password"
-          placeholder="Tối thiểu 12 ký tự"
+          placeholder="Tối thiểu 8 ký tự"
           error={errors.password?.message}
           value={passwordValue}
           ref={passwordFormRef}
@@ -159,6 +170,28 @@ export function AccountForm({
         {errors.password && (
           <p id="password-error" role="alert" className="text-xs text-red-300">
             {errors.password.message}
+          </p>
+        )}
+      </div>
+
+      {/* Field: Confirm Password */}
+      <div className="grid gap-1.5">
+        <label htmlFor="confirmPassword" className="text-sm text-cream/90">
+          Xác nhận mật khẩu
+        </label>
+        <PasswordField
+          id="confirmPassword"
+          placeholder="Nhập lại mật khẩu"
+          showMinHint={false}
+          error={errors.confirmPassword?.message}
+          value={confirmPasswordValue}
+          ref={confirmPasswordFormRef}
+          aria-describedby={errors.confirmPassword ? 'confirmPassword-error' : undefined}
+          {...confirmPasswordFieldProps}
+        />
+        {errors.confirmPassword && (
+          <p id="confirmPassword-error" role="alert" className="text-xs text-red-300">
+            {errors.confirmPassword.message}
           </p>
         )}
       </div>
