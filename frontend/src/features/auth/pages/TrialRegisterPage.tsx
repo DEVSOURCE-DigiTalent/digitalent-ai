@@ -102,26 +102,19 @@ export function TrialRegisterPage() {
       return;
     }
 
-    const regData = res?.data?.data;
-    if (regData?.registrationId) {
-      setPendingRegistration({
-        registrationId: regData.registrationId,
-        registrationAccessToken: regData.registrationAccessToken,
-        maskedEmail: regData.maskedEmail,
-        developmentOtp: regData.developmentOtp,
-        email: values.email,
-      });
-      return;
-    }
-
     clearTryHandoff();
     trackTrialEvent('trial_account_created', { source, positionCode: position?.code ?? null });
-    try {
-      const home = await login.mutateAsync({ email: values.email, password: values.password });
-      navigate(home, { replace: true });
-    } catch {
-      navigate('/login', { replace: true });
-    }
+    const regData = res?.data?.data;
+    const regId = regData?.registrationId || 'reg-trial';
+    sessionStorage.setItem('dt-pending-registration', JSON.stringify({
+      registrationId: regId,
+      registrationAccessToken: regData?.registrationAccessToken,
+      maskedEmail: regData?.maskedEmail,
+      email: values.email,
+      intent: 'TRIAL',
+      positionCode: position?.code,
+    }));
+    navigate(`/individual/register/verify?registrationId=${regId}&email=${encodeURIComponent(values.email)}&intent=TRIAL`, { replace: true });
   };
 
   const handleOtpSuccess = (data: any) => {

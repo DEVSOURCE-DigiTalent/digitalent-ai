@@ -49,6 +49,7 @@ export function OtpVerificationCard({
     try {
       const res = await registrationService.verifyIndividual(registrationId, {
         otp: otp.trim(),
+        registrationAccessToken,
       });
       const data = res.data?.data;
       onSuccess(data);

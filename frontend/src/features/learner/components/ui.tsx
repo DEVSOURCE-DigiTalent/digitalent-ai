@@ -54,7 +54,7 @@ export function PersonalPageHeader({ label, title, accent, lead, actions, classN
   return (
     <header className={cn('flex min-w-0 flex-col gap-4 md:flex-row md:items-start md:justify-between', className)}>
       <div className="min-w-0 max-w-3xl">
-        <p className="mb-2 text-xs font-medium text-pt-fg-3">{label}</p>
+        <p className="mb-2 text-xs font-medium uppercase tracking-[0.12em] text-pt-accent">{label}</p>
         <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-pt-fg md:text-[30px]">{title}{accent && <> <span>{accent}</span></>}</h1>
         {lead && <p className="mt-2 max-w-[72ch] text-sm leading-relaxed text-pt-fg-2">{lead}</p>}
       </div>
@@ -72,7 +72,7 @@ interface CardProps {
 
 export function Card({ as: Component = 'section', className, children, ...rest }: CardProps) {
   return (
-    <Component className={cn('rounded-2xl border border-pt-line bg-pt-card', className)} {...rest}>
+    <Component className={cn('rounded-2xl border border-pt-line/80 bg-pt-card', className)} {...rest}>
       {children}
     </Component>
   );
@@ -138,7 +138,7 @@ export function LevelPips({ level, required = 0, className, showLabel = false }:
             key={step}
             className={cn(
               'block h-2 w-5 rounded-full',
-              step <= level ? 'bg-pt-fg' : step <= required ? 'border border-dashed border-pt-fg/55' : 'bg-pt-fg/12',
+              step <= level ? 'bg-pt-accent' : step <= required ? 'border border-dashed border-pt-fg/55' : 'bg-pt-fg/12',
             )}
           />
         ))}
@@ -160,7 +160,7 @@ export function ProgressBar({ value, label, className, tone = 'fg' }: { value: n
       className={cn('h-1.5 w-full overflow-hidden rounded-full bg-pt-fg/10', className)}
     >
       <div
-        className={cn('h-full rounded-full transition-[width] duration-700 ease-cinematic', tone === 'ok' ? 'bg-pt-ok' : 'bg-pt-fg')}
+        className={cn('h-full rounded-full transition-[width] duration-700 ease-cinematic', tone === 'ok' ? 'bg-pt-ok' : 'bg-pt-accent')}
         style={{ width: `${clamped}%` }}
       />
     </div>

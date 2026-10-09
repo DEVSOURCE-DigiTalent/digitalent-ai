@@ -144,7 +144,7 @@ describe('Personal track (demo learner: Marketing, entry assessment done)', () =
     expect(screen.queryByText(/\/6\b/)).not.toBeInTheDocument();
   });
 
-  it('certificates open a printable sheet without a public verification link', async () => {
+  it('certificates open a printable sheet with print and public verification options', async () => {
     renderPage(<LearnerCertificatesPage />);
 
     expect(await screen.findByRole('heading', { level: 2, name: 'Ứng dụng AI cơ bản' })).toBeInTheDocument();
@@ -152,8 +152,8 @@ describe('Personal track (demo learner: Marketing, entry assessment done)', () =
 
     const dialog = screen.getByRole('dialog', { name: 'Chứng nhận hoàn thành khóa học' });
     expect(within(dialog).getByText('Bùi Thị Cá Nhân')).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: /In chứng nhận/ })).toBeInTheDocument();
-    expect(within(dialog).queryByText(/Quét để xác thực|\/verify/)).not.toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: /In \/ Tải PDF|In chứng nhận/ })).toBeInTheDocument();
+    expect(within(dialog).getByRole('link', { name: 'Tra cứu công khai' })).toBeInTheDocument();
   });
 
   it('tasks: submits evidence for the open task of the course in progress', async () => {

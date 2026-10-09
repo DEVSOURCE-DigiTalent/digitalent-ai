@@ -2,6 +2,10 @@
 
 > Nguồn gốc: Report 3 — *Software Requirement Specification* §2–§3, §5. Phiên bản docs_v3, tiếng Việt.
 
+> **Baseline alignment 09/10/2026:** Tài liệu này dùng inventory UC/screen từ Report 3 v2.3; Master Overview hiện dẫn v2.2, nên version mismatch được ghi rõ trong file 04. Các nội dung cũ trái với Enterprise baseline (DigComp 3.0, năm role, public verification, certificate expiry, risk/readiness, weights, Trainer-owned content) không còn là yêu cầu. Requirement và implementation status là hai thông tin riêng; file này không xác nhận code đã triển khai. Report 3 v2.3 có **44 UC entries (UC-24 và UC-31 là internal functions)** và **42 screens**. `GRADE-01` vẫn **PENDING DECISION**.
+
+> **Yêu cầu xác nhận để áp dụng khi đọc các mục dưới đây:** Enterprise có đúng bốn role nghiệp vụ `PLATFORM_ADMIN`, `OWNER`, `MANAGER` (optional), `EMPLOYEE`; PLATFORM_ADMIN sở hữu standard content. Hệ thống tự đề xuất course từ Skill Gap và competency-course mapping; OWNER cũng có thể chủ động giao course cho cập nhật tổ chức/đào tạo lại, hai cơ chế cùng tồn tại. Chỉ cấp Internal Employee Certificate cho course eligible, sau khi hoàn thành required lessons và đạt final assessment; certificate không hết hạn. QR chỉ mở verification đã đăng nhập cho OWNER/MANAGER thuộc đúng tổ chức phát hành, không có public verification. OWNER correction chỉ giảm/reset grade để sửa lỗi, cần reason + audit, không tự sửa grade của mình; tăng grade phải qua approved level-confirming evidence. Late submission được nhận, gắn `IsLate`, và vẫn được review. Assignment/attempt phải giữ Course/Assessment Version cùng snapshot. AI-assisted Practical Task evaluation là target requirement đang chờ xác nhận phạm vi Report 1/2; AI chỉ hỗ trợ đề xuất, người có quyền quyết định cuối. Các quy tắc này là yêu cầu, không xác nhận implementation.
+
 ---
 
 ## 1. Kiểm soát tài liệu
@@ -44,18 +48,18 @@
 
 DigiTalent AI là nền tảng web nội bộ giúp doanh nghiệp IT vừa và nhỏ (~80–200 nhân sự) trả lời câu hỏi: **nhân viên có thực sự đủ năng lực mà vị trí công việc yêu cầu không, và có bằng chứng chứng minh điều đó không.** Hệ thống khép vòng 4 mảnh thường bị quản lý rời rạc: kiến trúc công việc, khung năng lực số, học tập–đánh giá nội bộ, và task thực hành sau đào tạo — thành một luồng duy nhất từ "vị trí này cần gì" đến "đây là sản phẩm công việc chứng minh nhân viên làm được".
 
-**Vòng lặp nghiệp vụ lõi:**
+**Vòng lặp nghiệp vụ lõi (legacy wording; dùng baseline alignment bên dưới khi có khác biệt):**
 
 1. **Position Requirement Set** định nghĩa năng lực + mức yêu cầu cho một vị trí.
 2. Hệ thống so sánh yêu cầu với hồ sơ năng lực đã xác nhận → **Skill Gap**.
-3. Gap thúc đẩy **gợi ý khóa học** (HR chấp nhận/override).
-4. Nhân viên học → **thi cuối** → đạt → cấp **chứng chỉ QR** xác minh công khai.
-5. Quản lý giao **task thực hành** → nhân viên nộp → duyệt → xác nhận **bằng chứng năng lực**.
-6. Bằng chứng cập nhật hồ sơ → phản hồi lại gap, risk, readiness.
+3. Hệ thống tự đề xuất khóa học chuẩn theo competency còn thiếu và mapping competency-course có thể giải thích; nhân viên xem và có thể bắt đầu học. OWNER có thể giao khóa học rõ ràng khi có cập nhật hoặc yêu cầu đào tạo lại; recommendation và assignment là hai trạng thái/cơ chế riêng.
+4. Nhân viên học course và làm final assessment. Certificate chỉ được cấp nếu course eligible, đủ required lessons và assessment đạt; kết quả học tập/chứng chỉ không tự xác nhận năng lực. QR verification là nội bộ, có đăng nhập và cùng organization.
+5. OWNER/MANAGER trong scope giao **Practical Task**; nhân viên nộp evidence. (Target requirement, chờ xác nhận scope Report 1/2) AI có thể đối chiếu evidence được phép truy cập với rubric và đề xuất kết quả theo tiêu chí, lý do, căn cứ và phần thiếu; OWNER/MANAGER review, chỉnh sửa, approve hoặc yêu cầu bổ sung.
+6. Chỉ review hợp lệ được approve mới cập nhật Confirmed Competency và kích hoạt tính lại Skill Gap. Điểm số task không đồng nghĩa competency level. Không có Training Risk/Workforce Readiness score trong Enterprise MVP.
 
-Mọi điểm số đều **rule-based và giải thích được**; trọng số lưu ở cấu hình, không ghi cứng trong code.
+Skill Gap dùng quy tắc xác định và giải thích được; Enterprise MVP không có Training Risk / Workforce Readiness scoring hoặc scoring weights.
 
-> **Mô hình mức năng lực (docs_v3):** dùng duy nhất **3 mức Basic / Intermediate / Advanced** (tham chiếu DigComp 3.0). Không dùng trục Career Grade (G1–G5) — xem `00_INDEX` §3.1.3. `Position Requirement Set` khóa theo **Job Position**, không còn "Position + Career Grade".
+> **GRADE-01 — PENDING DECISION:** Dùng TT02 làm khung tham chiếu; Report 3 v2.2 mô tả Grade 1–6. Basic / Intermediate / Advanced là ba Level đào tạo, chưa kết luận số mức lưu trữ. Không dùng Job Grade G1–G3. Requirement Set theo Position; không gắn Job Grade.
 
 ---
 
@@ -63,424 +67,154 @@ Mọi điểm số đều **rule-based và giải thích được**; trọng s�
 
 | # | Actor | Loại | Mô tả |
 |---|-------|------|-------|
-| 1 | System Administrator | Primary | Quản lý tài khoản, phân quyền, cấu hình trọng số/level mapping, audit |
-| 2 | HR / Training Manager | Primary | Sở hữu quản trị năng lực: job architecture, requirement set, competency library, giao khóa học, chứng chỉ, analytics |
-| 3 | Department Manager | Primary | Theo dõi gap đội, giao task, duyệt bằng chứng — chỉ trong phòng ban mình quản lý |
-| 4 | Internal Trainer | Primary | Xây khóa học/bài học, ngân hàng câu hỏi, assessment, xem kết quả |
-| 5 | Employee | Primary | Học, thi, nộp bằng chứng, giữ chứng chỉ |
-| 6 | Public Visitor | Primary | Xác minh chứng chỉ công khai, không đăng nhập |
-| 7 | Scheduled system process | Supporting (không phải actor) | Tính gap/risk/readiness, hết hạn chứng chỉ, gửi nhắc/alert |
+| 1 | `PLATFORM_ADMIN` (Platform Admin) | Primary | Quản lý organizations, platform users, TT02 framework, standard curriculum/question bank/assessment, reference positions, settings và platform audit; không mặc định truy cập private evidence của organization. |
+| 2 | `OWNER` (Owner) | Primary | Quản trị một organization; members, departments, positions, requirements; giao course khi có yêu cầu tổ chức/đào tạo lại; giao practical tasks; review evidence; quản lý certificate registry; correction grade có kiểm soát. |
+| 3 | `MANAGER` (Manager, optional) | Primary | Theo dõi learning; giao/review task và xác nhận evidence trong các department được phân công; không giao course hoặc sửa organization structure. |
+| 4 | `EMPLOYEE` (Employee) | Primary | Xem course được đề xuất hoặc giao, tự bắt đầu course được đề xuất, làm assessment, nộp task evidence và xem hồ sơ cá nhân. |
+
+`Account Holder` là người chưa đăng nhập, chỉ dùng cho Log In và Recover Forgotten Password; không phải role. System/internal functions không phải actor role. Enterprise MVP không có HR Manager, Trainer, Public Visitor, Training Risk hoặc Workforce Readiness actor/function.
 
 ---
 
-## 6. Bản đồ chức năng — 8 package, 46 use case, 44 màn hình
+## 6. Bản đồ chức năng — 8 package, 44 UC entries, 42 screens
 
-### 6.1 Gộp nhóm use case theo package
+Report 3 v2.3 là nguồn chi tiết cho package/use-case inventory; phần vết chuẩn đã được chép vào `04_Use_Case_Danh_Sach_Dac_Ta.md` §§4–6. Danh mục có 44 entries, trong đó UC-24 Recalculate Affected Skill Gap và UC-31 Issue Certificate là internal functions; tổng screens là 42. Không dùng bảng 46 UC / 44 screens của bản docs_v3 cũ.
 
-| Package | Use case | Primary actor | Mục SRS |
-|---------|----------|---------------|---------|
-| PKG-01 Account, Session & Administration | UC-01..06, UC-08..13 | Tất cả + System Administrator | §3.2, §3.11 |
-| PKG-02 Organization & Competency Governance | UC-14..22 | HR / Training Manager (+ Dept Manager read) | §3.3, §3.4 |
-| PKG-03 Competency-Linked Learning | UC-24, 35, 41, 42 | HR, Trainer, Employee | §3.5 |
-| PKG-04 Assessment & Question Bank | UC-36, 37, 38, 43 | Trainer, Employee | §3.6 |
-| PKG-05 Skill Gap Analysis & Capability Insight | UC-25, 26, 29, 40 | HR, Dept Manager, Employee (+ Scheduler) | §3.7 |
-| PKG-06 Digital Certificate & Public Verification | UC-27, 45, 46 | HR, Employee, Public Visitor | §3.8 |
-| PKG-07 Practical Task & Competency Evidence | UC-30..33, 44 | Dept Manager, Employee | §3.9 |
-| PKG-08 Dashboards, Analytics & Notifications | UC-07, 23, 28, 34, 39 | HR, Dept Manager, Trainer, Employee | §3.10 |
+| Package | UC entries | Phạm vi | Internal functions |
+|---------|------------|---------|--------------------|
+| AUTH | UC-01–06 | Authentication, workspace and account | — |
+| MOD-01 — Platform Administration & Standard Content | UC-07–14 | TT02, standard curriculum/question bank/assessment, reference positions, platform users, audit/settings | — |
+| MOD-02 — Organization, Positions & TT02 Requirements | UC-15–19 | TT02 reference, members, departments, positions, requirement sets | — |
+| MOD-03 — Skill Gap & Competency | UC-20–24 | Own/team gap, analytics/history and recalculation | UC-24 |
+| MOD-04 — Learning | UC-25–28 | Course assignment/monitoring, learner course list and study | — |
+| MOD-05 — Assessment & Certificates | UC-29–34 | Assessment, results, certificate issuance/list/verification | UC-31 |
+| MOD-06 — Practical Task & Evidence | UC-35–39 | Templates, task assignment/submission/review, evidence portfolio | — |
+| MOD-07 — Dashboards & Notifications | UC-40–44 | Role dashboards and notifications | Notification creation is a system function |
 
-### 6.2 Danh sách 46 use case (user-goal level)
+UC-01 and UC-03 use the unsigned Account Holder actor; UC-24/UC-31 have no human actor. The four Enterprise roles are `PLATFORM_ADMIN`, `OWNER`, optional `MANAGER`, and `EMPLOYEE`. The exact 44 names, actor mappings, Report 1 trace, and all 42 screen names/roles are maintained in file 04; do not duplicate the old 46-entry list here.
 
-| # | Use case | Actor | Mô tả |
-|---|----------|-------|-------|
-| UC-01 | Log In | Tất cả signed-in | Xác thực email + password, nhận session theo role |
-| UC-02 | Log Out | Tất cả | Kết thúc session, hủy token |
-| UC-03 | Recover Forgotten Password | Tất cả | Gửi link reset qua email, đặt mật khẩu mới |
-| UC-04 | Update My Profile | Tất cả | Xem/sửa thông tin cơ bản của bản thân |
-| UC-05 | Change My Password | Tất cả | Đổi mật khẩu sau khi xác nhận mật khẩu cũ |
-| UC-06 | Manage My Active Sessions | Tất cả | Xem thiết bị đăng nhập, thu hồi session lạ |
-| UC-07 | View Notifications | Tất cả | Đọc thông báo về giao việc, feedback, hết hạn, risk |
-| UC-08 | Manage User Accounts | System Administrator | Tạo/khóa/mở tài khoản, gán 1 trong 5 role |
-| UC-09 | Configure RBAC Permission Matrix | System Administrator | Xem/chỉnh quyền theo role-module |
-| UC-10 | Configure Competency Level Display Mapping | System Administrator | Cấu hình 3 mức hiển thị Basic/Intermediate/Advanced |
-| UC-11 | Configure Scoring Weights | System Administrator | Chỉnh trọng số risk/readiness/recommendation không đổi code |
-| UC-12 | View and Search Audit Logs | System Administrator | Truy vết ai đổi gì, khi nào |
-| UC-13 | Manage System Settings | System Administrator | Chỉnh cấu hình chung (vd thời hạn chứng chỉ mặc định) |
-| UC-14 | Manage Job Families | HR | Tạo/sửa/archive 5 job family |
-| UC-15 | Manage Job Positions | HR | Duy trì 7 vị trí, gắn job family + external reference |
-| UC-16 | Maintain Position Requirement Set | HR | Nháp yêu cầu năng lực cho vị trí, kích hoạt phiên bản |
-| UC-17 | Manage Departments | HR | Cây phòng ban + người quản lý |
-| UC-18 | Manage Employee Profiles | HR | Hồ sơ nhân viên: phòng ban, vị trí, quản lý trực tiếp |
-| UC-19 | Manage Competency Categories | HR | Nhóm năng lực để duyệt/báo cáo |
-| UC-20 | Manage Competencies | HR | Competency library (~40), 4 loại |
-| UC-21 | Define Competency Level Criteria | HR | Viết hành vi quan sát được cho 3 mức |
-| UC-22 | View Capability Executive Dashboard | HR | Readiness/risk/gap toàn công ty theo job family |
-| UC-23 | View Workforce Analytics and Gap Heatmap | HR | Heatmap nơi năng lực mỏng |
-| UC-24 | Assign Course to Employees | HR | Giao khóa học cho 1/nhiều nhân viên |
-| UC-25 | View Employee Capability History | HR | Diễn biến readiness/risk theo thời gian |
-| UC-26 | Manage Certificate Registry | HR | Liệt kê/lọc/thu hồi chứng chỉ |
-| UC-27 | View Department Capability Dashboard | Dept Manager | Readiness/risk phòng ban mình |
-| UC-28 | View Team Skill Gap Matrix | Dept Manager | So từng thành viên với yêu cầu vị trí |
-| UC-29 | Manage Practical Task Templates | Dept Manager | Template task tái sử dụng, gắn năng lực |
-| UC-30 | Assign Practical Task to Employee | Dept Manager | Giao task từ template/ad hoc, hạn + người duyệt |
-| UC-31 | Review Submission and Confirm Evidence | Dept Manager | Chấm theo rubric, quyết định có là bằng chứng |
-| UC-32 | View Team Evidence Portfolio | Dept Manager | Bằng chứng tích lũy của đội |
-| UC-33 | View Trainer Dashboard | Trainer | Enrolment/completion/pass rate khóa của mình |
-| UC-34 | Manage Course and Curriculum | Trainer | Xây khóa học, gắn năng lực, prerequisite |
-| UC-35 | Manage Question Bank | Trainer | Câu hỏi theo topic/competency/difficulty |
-| UC-36 | Set Up an Assessment | Trainer | Lắp quiz từ bank, publish (AI draft phải duyệt) |
-| UC-37 | Review Learner Assessment Results | Trainer | Lịch sử attempt + câu hay sai |
-| UC-38 | View My Learning Dashboard | Employee | Readiness, khóa đang học, task chờ |
-| UC-39 | View My Competency Profile and Skill Gap | Employee | So mức đã xác nhận với yêu cầu vị trí |
-| UC-40 | View and Enrol in My Courses | Employee | Khóa được giao, tiến độ, tự đăng ký (nếu cho phép) |
-| UC-41 | Study a Course | Employee | Học lesson/material, resume đúng chỗ |
-| UC-42 | Take an Assessment | Employee | Làm quiz trong giới hạn thời gian, nhận đạt/trượt |
-| UC-43 | Submit Practical Task Evidence | Employee | Nộp file/link, nộp lại khi cần sửa |
-| UC-44 | View and Download My Certificates | Employee | Xem/tải PDF chứng chỉ QR |
-| UC-45 | Verify a Certificate | Public Visitor | Nhập mã/QR → holder, competency/course, ngày cấp, trạng thái |
+## 6.1 Screen groups
 
-> **Ghi chú đánh số:** Report 3 đánh UC không liên tục theo thứ tự liệt kê (vd UC-22, 23 thuộc mục §3.4 nhưng mô tả dashboard thuộc §3.10). File này giữ nguyên **mã UC theo Report 3** (UC-01..46) và dùng §6.1 làm nguồn gộp package chuẩn; danh sách trên đã sắp lại theo thứ tự nghiệp vụ để dễ đọc.
-
-### 6.3 Bốn mươi bốn màn hình — 7 khu vực
-
-| Khu vực | Số màn hình | Màn hình |
-|---------|-------------|----------|
-| Common & Auth | 6 | Login, Forgot/Reset Password, Profile & Security Settings, Notification Center, 403 Access Denied, 404 Not Found |
-| Administration | 4 | User Account Management, RBAC Permission Matrix, System Settings & Level Mapping, Audit Logs |
-| Job Architecture | 5 | Job Families Catalogue, Job Positions Management, Position Requirement Editor, Competency Framework Library, Competency Detail & Indicators |
-| Organization | 2 | Departments Management, Employee Master Roster |
-| HR | 5 | Capability Executive Dashboard, Course Assignment & Tracking, Capability Analytics & Gap Heatmap, Employee Capability History, Certificate Registry |
-| Manager | 6 | Department Capability Dashboard, Team Skill Gap Matrix, Practical Task Assignment, Submission Review & Evidence Approval, Team Evidence Portfolio, Practical Task Template Library |
-| Trainer | 5 | Trainer Dashboard, Course & Lesson Builder, Question Bank Management, Assessment Setup, Learner Results & Grading Review |
-| Employee | 7 | My Learning Dashboard, My Competency Profile & Gap, My Courses & Learning Path, Course Player, Assessment Interface, My Tasks & Evidence Submission, My Certificates |
-| Public | 3 | Certificate Verification, Invalid/Expired/Revoked State, Rate Limit Notice |
-
-> Chi tiết từng màn hình, mô tả và phân quyền: file `10_Dac_Ta_UI_UX.md` và `09_Ma_Tran_Phan_Quyen_RBAC.md`.
-
----
+The 42-screen inventory and authorization mapping are in `04_Use_Case_Danh_Sach_Dac_Ta.md` §6 and Report 3 v2.3 §§3.1.2–3.1.3. Three screens have no use case of their own: 403 Access Denied, 404 Not Found, and My Team. Screens are distinct from non-screen functions NS-1 to NS-6.
 
 ## 7. Đặc tả chức năng theo nhóm
 
-### 7.1 Authentication & Authorization (§3.2)
+> Lưu ý: các mục 7.1–7.5 và 7.7–7.9 dưới đây là mô tả từ bản SRS cũ; khi khác với inventory Report 3 v2.3 tại §6, business rules tại §9 hoặc Master Overview, các nguồn đó được ưu tiên. Trạng thái implementation không được suy ra từ nội dung yêu cầu.
 
-**7.1.1 Sign In** (UC-01)
-- Dữ liệu: email + password; không lưu giữa các lần truy cập.
-- Validation: bắt buộc, email đúng định dạng; client kiểm tra trước, server là nguồn quyết định.
-- Thành công: cấp access token + refresh token, ghi nhận đăng nhập, mở dashboard theo role.
-- Sai credentials: chỉ báo "email hoặc mật khẩu không đúng", không tiết lộ cái nào sai.
-- 5 lần sai liên tiếp → khóa 15 phút; đăng nhập đúng reset bộ đếm.
-- Tài khoản khóa/inactive: từ chối kể cả đúng mật khẩu.
-- Liên quan: BR-12.
+### 7.1 Authentication, Workspace and Authorization (§3.2)
 
-**7.1.2 Recover Forgotten Password** (UC-03)
-- Hai trạng thái: yêu cầu link reset / đặt mật khẩu mới.
-- Link dùng một lần, hết hạn theo cấu hình.
-- Trạng thái yêu cầu **luôn báo thành công** (không tiết lộ email nào tồn tại).
-- Đặt mật khẩu mới → kết thúc mọi session hiện có.
-- Link hết hạn/đã dùng → từ chối, có nút xin link mới.
+- Each of the four Enterprise roles signs in to a workspace scoped to its role. Account Holder is the unsigned actor for sign-in and password recovery, not a role.
+- Profile, password and active-session actions apply to the signed-in user's own account. The server enforces authentication and permission for every request.
+- Role names are `PLATFORM_ADMIN`, `OWNER`, `MANAGER` (optional), and `EMPLOYEE`; do not use the old System Administrator / HR / Trainer / Public Visitor model.
 
-**7.1.3 Manage My Profile and Sessions** (UC-04, 05, 06)
-- Hiển thị: tên, email, phòng ban, vị trí. Chỉ tên hiển thị sửa được; còn lại HR duy trì (read-only).
-- Đổi mật khẩu cần mật khẩu hiện tại; giữ thiết bị hiện tại, kết thúc session khác.
-- Danh sách session: thiết bị, địa chỉ, hoạt động cuối; thu hồi được mọi session trừ session hiện tại.
+### 7.2 Organization, Members and Departments (§3.3)
 
-### 7.2 Organization & Employee (§3.3)
+- OWNER manages departments, members/invitations and organization positions; member records carry role, department and position.
+- OWNER records Manager responsibility by department. MANAGER sees and acts only within currently assigned departments; assignment history supports scope and audit.
+- EMPLOYEE sees only personal records. An absent position or Active Requirement Set produces `Not Assessed`, not an inferred gap.
 
-**7.2.1 Manage Departments** (UC-17)
-- Dữ liệu: code, name, parent, description, status, manager.
-- Code duy nhất; không đặt phòng ban dưới chính nó/con của nó.
-- Xóa phòng ban còn nhân viên → từ chối, gợi ý archive.
-- Đổi manager → đóng assignment cũ bằng end-date (giữ lịch sử).
-- Liên quan: BR-11, BR-12.
+### 7.3 TT02 Framework, Positions and Requirements (§3.4)
 
-**7.2.2 Manage Employee Profiles** (UC-18)
-- Dữ liệu: code, họ tên, email, phòng ban, vị trí, quản lý trực tiếp, ngày vào, status.
-- Code + email duy nhất; phòng ban, vị trí, quản lý bắt buộc.
-- Nhân viên chưa gán vị trí (hoặc vị trí chưa có requirement set active) → hiển thị "Chưa có yêu cầu" với ghi chú rằng gap/readiness chưa tính được.
-- Chống vòng lặp quản lý (tự làm manager của mình, trực tiếp/gián tiếp).
-- Liên quan: BR-09.
+- PLATFORM_ADMIN maintains versioned TT02 reference data, platform reference positions and level criteria. OWNER maintains organization positions and requirement sets, optionally copied from a reference position.
+- An Active Requirement Set is versioned by position and TT02 version. It defines required competencies, TT02 level and mandatory flag. There is no requirement weight or extra-evidence flag in the MVP. Mandatory affects labeling/order, not the gap state calculation.
+- A position may select the competencies relevant to its work; do not impose the legacy 9–14 or 9–24 count, or require an invented fixed competency list.
+- `GRADE-01` remains PENDING DECISION. TT02 has grades 1–6 in Report 3; Basic/Intermediate/Advanced are training groupings. Do not conclude how grades are stored or compared until the decision is recorded.
 
-### 7.3 Competency Framework & Position Requirements (§3.4)
+### 7.4 Learning Content, Course Recommendation and Assignment (§3.6)
 
-**7.3.1 Manage Job Families** (UC-14)
-- 5 job family: Leadership, HR/Admin, Finance, Sales & Marketing, Operations.
-- Code duy nhất, name không rỗng.
-- Archive family còn position active → từ chối kèm danh sách phải di chuyển.
+- PLATFORM_ADMIN owns and versions the standard curriculum, modules, lessons, course materials and competency-course mappings. The system automatically maintains explainable recommended courses from current Skill Gap and mappings; each recommendation identifies the gap competency and mapped course coverage. It does not enroll the employee automatically. Employee can view the recommendation and start learning.
+- OWNER may explicitly assign a standard course to employees for an organization update or retraining. Recommendation and assignment coexist; the UI and records distinguish their source, and an explicit assignment may include a due date/reason. MANAGER monitors progress but does not assign courses in this release.
+- Assignments retain the Course Version selected at assignment time. A published course already in use is changed through a new version; prior learning records remain tied to their original version. Course learning records arising from recommendations are distinguishable from explicit assignments.
+- Employee course list/API returns both current recommendations and active assignments with source, covered competency, course version, progress and due date when applicable. A server-authorized Employee action starts a recommendation; only an Owner-authorized assignment action creates an explicit assigned-course record. Detailed endpoint paths and screen layouts belong in the API/UI design documents and must be reconciled with Report 3 before implementation.
+- Learning completion and assessment result remain learning records, not Confirmed Competency.
 
-**7.3.2 Manage Job Positions** (UC-15)
-- 7 vị trí tham chiếu; mỗi vị trí gắn job family + external reference (ESCO/SFIA — chỉ để tham khảo, không thay thế thang nội bộ).
-- Job family bắt buộc; code duy nhất.
+### 7.5 Assessment, Question Bank and Results (§3.7)
 
-**7.3.3 Maintain Position Requirement Set** (UC-16) — màn hình cốt lõi
-- Dữ liệu theo phiên bản: position, version, status, effective date, review date. Mỗi dòng: competency, required level, weight, mandatory?, cần evidence thực hành?
-- Validation *(đổi 30/09/2026 theo Thông tư 02/2025, D-B7 — thay D-B4 "đủ 24" của ngày 29/09)*: mỗi vị trí **chọn 9–24 năng lực của Khung năng lực số (Thông tư 02/2025/TT-BGDĐT) phù hợp công việc, mỗi năng lực một mức yêu cầu riêng**. Mọi dòng phải là năng lực có mapping tới khung `TT02_2025` đang active (nếu không: 400 `COMPETENCY_NOT_IN_FRAMEWORK`); dưới 9 năng lực → 400 `REQUIREMENT_COUNT_OUT_OF_RANGE` (MSG07); thiếu năng lực lõi 4.1 hoặc 4.2 → 400 `CORE_COMPETENCY_MISSING` kèm mã thiếu (MSG07b); tổng trọng số = 100%. Màn hình luôn liệt kê đủ 24 năng lực theo 6 miền; mỗi dòng chọn mức Basic / Intermediate / Advanced hoặc **Not required**; có thể đặt mức cho cả miền; chỉ lưu các dòng được chọn. Thay quy tắc "9–14 competency" cũ.
-- Draft: sửa tự do, vô hình với gap cho đến khi activate.
-- Activate: draft → active, version cũ → archived trong cùng bước; DB chỉ cho 1 active version mỗi vị trí.
-- Archive không đụng kết quả gap đã tính (mỗi kết quả ghi version đã dùng).
-- Liên quan: BR-01, 02, 03.
+- PLATFORM_ADMIN maintains the standard question bank and standard assessments. AI-drafted items remain drafts until a human approves them.
+- A published assessment with attempts is versioned. An attempt retains its Assessment Version; the assignment retains both Course Version and Assessment Version.
+- A final assessment pass is required for course completion and, for certificate-eligible courses, certificate issuance. Assessment scores do not increase Confirmed Competency.
 
-**7.3.4 Manage the Competency Library** (UC-19, 20)
-- ~40 competency, 4 loại: **core digital, professional, internal, behavioural**.
-- Quy tắc đặt tên: competency gọi tên **năng lực**, không gọi tên công cụ (vd "Secure software development", không phải "React").
-- Name duy nhất trong category.
-- Archive competency đang dùng bởi active requirement set → từ chối.
+### 7.6 Competency Profile and Skill Gap
 
-**7.3.5 Define Competency Level Criteria** (UC-21)
-- Mỗi mức ghi: behaviour indicator, cách đánh giá, bằng chứng xác nhận.
-- 3 mức Basic/Intermediate/Advanced; mức nào chưa viết hiển thị rõ.
-- Indicator hiện làm tham chiếu ở màn hình duyệt bằng chứng.
+**7.6.1 Recalculate Skill Gap (UC-24; internal function)**
+- Compare each affected employee's active Position Requirement Set with Confirmed Competency.
+- `Met`: confirmed level is at or above required level. `Partial Gap`: a confirmed level exists but is below requirement. `Gap`: no confirmed level exists for a required competency; this records missing confirmation, not inability.
+- Use `Not Assessed` if the employee has no position or its position has no Active Requirement Set. Do not report these cases as Gap.
+- Recalculate after evidence confirmation, requirement activation or position change; Owner may request it organization-wide and Manager only within assigned departments. The recalculation is queued and reports Pending/Done/Failed with retry; retain prior result and history.
+- Training completion, assessment results and certificates are shown as learning records and do not alter Confirmed Competency.
+- Do not specify a grade-storage formula or number of stored levels while `GRADE-01` is pending.
 
-### 7.4 Competency-Linked Learning (§3.5)
+**7.6.2 View My Competency Profile and Gap (UC-20)**
+- Show the employee's position requirements, Confirmed Competency, gap states, learning and assessment status.
+- Employee can view only their own records; recalculation is not available to Employee.
 
-**7.4.1 Build a Course and Curriculum** (UC-34)
-- Dữ liệu: code, title, description, difficulty, completion rule, thời hạn chứng chỉ, status. Material: title, type (file/link/text), order, required?
-- Bắt buộc ≥1 competency mapping trước khi publish.
-- Prerequisite: 0..n khóa; file lưu ngoài DB (chỉ giữ reference).
-- Publish thiếu competency mapping → từ chối kèm giải thích.
+**7.6.3 View Team Skill Gap Matrix (UC-21)**
+- Owner sees the organization; Manager sees assigned departments only. Enforce scope on the server.
+- Compare members against their position requirements and show the time/current state of the result.
 
-**7.4.2 Assign a Course to Employees** (UC-24)
-- Dữ liệu: course, danh sách nhân viên, due date, lý do (manual / skill gap / department-wide / position-wide).
-- Validation: ≥1 nhân viên, due date tương lai.
-- Mỗi người → enrollment "Not Started" + notification.
-- Đã enroll → hiển thị & bỏ qua.
-- Thiếu prerequisite → cảnh báo (không chặn).
+**7.6.4 View Workforce Analytics and Gap Heatmap (UC-22)**
+- Owner sees organization-wide coverage; Manager sees assigned departments. Support filtering by department, position or TT02 domain.
 
-**7.4.3 View My Courses and Learning Path** (UC-40)
-- Hiển thị: title, competency đích, progress, status, due date, có cấp chứng chỉ?
-- Thứ tự: In Progress → Not Started → Completed; overdue đánh dấu rõ.
-- Chưa có gì → empty state có giải thích.
+**7.6.5 View Confirmed Competency History (UC-23)**
+- Show prior/new level, source, responsible person, time and reason for correction. Evidence and Manual Override are distinct sources.
 
-**7.4.4 Study a Course** (UC-41)
-- Layout: danh sách material trái + nội dung phải; quiz cuối là item cuối sau khi đủ material.
-- Progress chỉ tính material bắt buộc.
-- Resume ở material chưa xong đầu tiên.
-- Material lỗi load → trạng thái lỗi + retry / download link.
-- Liên quan: BR-07.
+**7.6.6 Course Suggestions**
+- The system proposes published standard courses by matching each Gap/Partial Gap competency to the versioned competency-course mapping. Show which gap competency is addressed and the mapped coverage; no hidden AI decision, risk/readiness score, weight, or unsupported ranking formula is required. Recommendations update when relevant requirement, confirmed competency, mapping or course version changes.
+- Employee can start a recommended course; this creates/records learner participation without implying that OWNER assigned it. Do not create duplicate active learning records for the same employee and course version; if already assigned or started, show that status alongside the recommendation.
+- OWNER assignment remains available as an explicit organization action, including course updates and retraining. Keep assignment source/reason, due date when supplied, and selected course version. Whether Owner-triggered retraining requires only final course assessment or also a Practical Task is **PENDING DECISION**.
 
-### 7.5 Assessment & Question Bank (§3.6)
+**7.6.7 AI-assisted Practical Task evaluation (target requirement; scope pending)**
+- When enabled by an approved AI scope, an evaluator may read only evidence the reviewer/task is authorized to access and compare it with the task's rubric version. Return proposed per-criterion outcome/score, rationale, evidence references and unmet/unclear criteria. The output is advisory and must remain distinguishable from a human decision.
+- OWNER/MANAGER reviewer checks the evidence and AI output, may edit the evaluation, approve the result or request more evidence. Only a valid, approved human review can create/update Confirmed Competency; preserve the submitted evidence and prior evaluation/review history.
+- Keep task numeric score separate from TT02 competency level. A rubric-to-level rule must be explicit and versioned before an approved review can confirm a level; the `GRADE-01` storage decision remains pending.
+- Record the rubric version, AI evaluation result, model/version when available, reviewer decision, edits and timestamps for audit. Do not send evidence to an external evaluator unless the evidence is permitted for that processor and the AI scope/data handling is approved.
 
-**7.5.1 Manage the Question Bank** (UC-35)
-- Dữ liệu: type (MC/True-False), câu hỏi, options + đáp án đúng, giải thích, competency, difficulty, status.
-- MC cần ≥2 option, đúng 1 đáp án đúng.
-- Câu AI-drafted: gắn cờ, chỉ vào assessment sau khi trainer duyệt; cờ giữ nguyên sau duyệt (minh bạch nguồn gốc).
+## 8. Non-screen functions
 
-**7.5.2 Set Up an Assessment** (UC-36)
-- Dữ liệu: title, final?, pass score, time limit, max attempts, danh sách câu hỏi + điểm + thứ tự.
-- Validation: ≥1 câu trước publish; pass score trong [0, tổng điểm].
-- Không đặt max attempts = không giới hạn.
-- Sửa assessment đã có attempt → từ chối đổi câu hỏi, gợi ý tạo version mới.
-- Liên quan: BR-06.
+| ID | System function | Mô tả |
+|----|-----------------|------|
+| NS-1 | Recalculate Skill Gap | Recalculate affected members after evidence confirmation, requirement activation, position change or authorized request; queued with Pending/Done/Failed and retry. |
+| NS-2 | Update Confirmed Competency | Update when level-confirming evidence is confirmed; write history. |
+| NS-3 | Issue Certificate | Create a private certificate when a certificate-eligible course is complete and its final assessment is passed. |
+| NS-4 | Create Notification | Write in-app notifications for assignments, feedback, confirmations, certificates and invitations; client polling. |
+| NS-5 | Send Email | Send password resets, invitations and optional assignment notices through SMTP. |
+| NS-6 | Record Audit Entry | Append an audit entry for sensitive actions. |
+| NS-7 | Refresh Course Recommendations | Recompute explainable course recommendations when Skill Gap or competency-course mapping/course availability changes; recommendation does not enroll the employee. |
+| NS-8 | Evaluate Practical Task Evidence (scope pending) | Produce advisory criterion-level evaluation against a retained rubric version; never updates Confirmed Competency without valid human approval. |
 
-**7.5.3 Take an Assessment** (UC-42)
-- Một câu mỗi lần, progress bar, đếm ngược, bước review câu chưa trả lời.
-- Kiểm tra attempt limit **trước khi bắt đầu**.
-- Deadline tính trên server lúc bắt đầu (chống reload/đổi thiết bị).
-- Hết giờ → nộp tự động, câu chưa trả lời = 0.
-- Mất kết nối → giữ đáp án, resume đúng attempt.
-- Đạt quiz cuối của khóa hoàn thành → cấp chứng chỉ (§7.6.1).
-
-**7.5.4 Review Learner Results** (UC-37)
-- Lịch sử attempt + thống kê câu hay sai.
-- Trainer chỉ xem khóa của mình; phân tích toàn công ty thuộc HR.
-
-### 7.6 Skill Gap & Course Recommendation (§3.7)
-
-**7.6.1 Calculate Skill Gap** (NF-01 — on-demand + tự động theo sự kiện; job hằng đêm: xem §13)
-- Input: active requirement set của vị trí hiện tại (hoặc một active set khác được chọn để so sánh) + hồ sơ năng lực đã xác nhận (`employee_competency_profiles`).
-- Tính cho từng năng lực yêu cầu:
-  - `gap = max(0, required − confirmed)`; chưa có mức xác nhận → `confirmed = 0` (full gap, không coi là lỗi), lưu `current_level = NULL`.
-  - `priority = gap × weight_percent × (mandatory ? k : 1)`, k mặc định 1.5 (cấu hình `system_settings`), làm tròn 2 chữ số (AwayFromZero).
-  - Mức nghiêm trọng: đạt → không xếp mức; `gap ≥ 2` hoặc năng lực bắt buộc → **High**; `gap = 1` và trọng số ≥ 20% → **Medium**; còn lại **Low**.
-  - Mức đáp ứng chuẩn vị trí: `coverage = Σ(weight × min(current, required)/required) / Σ weight × 100%`.
-- Nhân viên không ACTIVE / chưa có vị trí / vị trí chưa có active set → không tính, trả lý do (`EMPLOYEE_NOT_ACTIVE`, `NO_JOB_POSITION`, `NO_ACTIVE_REQUIREMENT_SET`); tính hàng loạt thì liệt kê người bị bỏ qua, không làm fail cả đợt.
-- Output: 1 snapshot (`skill_gap_runs`) + 1 dòng mỗi năng lực (`skill_gap_items`), ghi version công thức (`SG-1.0`), tham số đã dùng, thời điểm và nguồn (`USER_REQUEST` / `SYSTEM`); **không ghi đè** snapshot cũ.
-- Tính hàng loạt tối đa 500 nhân viên mỗi lần (lọc theo phòng ban/vị trí).
-- **Tự tính lại** (nguồn `SYSTEM`) khi: một cấp độ năng lực được xác nhận, kích hoạt bộ tiêu chuẩn mới cho vị trí, nhân viên đổi vị trí. Chạy cùng transaction với thay đổi gốc; người được tính lại nhận thông báo in-app + realtime.
-- Ví dụ kiểm chứng: vị trí Data Analyst (5 năng lực) → gap 3, priority 90/75/15, coverage 47.5%.
-- Liên quan: BR-01, 08, 09.
-
-**7.6.2 View My Competency Profile and Gap** (UC-39)
-- Thẻ KPI: số năng lực yêu cầu, đã đạt, còn thiếu (theo mức High/Medium/Low), mức đáp ứng chuẩn vị trí.
-- Biểu đồ radar mức yêu cầu vs mức đã xác nhận (dưới 3 năng lực → biểu đồ cột).
-- Bảng: năng lực, bắt buộc?, required level, current level (hoặc "Not confirmed"), số bậc thiếu, trọng số, priority, mức nghiêm trọng; sắp theo priority giảm dần.
-- Hiển thị trên thang 3 mức (Basic/Intermediate/Advanced).
-- Tab "Recommended courses": khóa học xếp theo độ lấp gap, kèm lý do (§7.6.4).
-- Chưa có snapshot → ghi chú rõ ràng (HR/quản lý chạy phân tích; tự làm mới khi năng lực được xác nhận).
-- Nhân viên chỉ xem được snapshot của chính mình (server-enforced); không tự bấm tính lại.
-
-**7.6.3 View Team Skill Gap** (UC-28)
-- Danh sách snapshot mới nhất của từng nhân viên trong phạm vi: HR toàn tổ chức; Dept Manager chỉ phòng ban mình (server-enforced, ngoài phạm vi → 404).
-- Lọc phòng ban (ẩn với Dept Manager), vị trí, tìm theo tên/mã; sắp theo số năng lực còn thiếu.
-- Mở một nhân viên → panel chi tiết (như §7.6.2) + khóa học gợi ý + "Recalculate"; HR có thêm "Confirm level" (§7.6.5).
-- "Recalculate all" tính lại cả phạm vi đang lọc; hiện danh sách người bị bỏ qua kèm lý do.
-- Lưới người × competency tô màu (heatmap) **chưa hiện thực** — xem §13.
-- Liên quan: BR-12.
-
-**7.6.4 Recommend Courses** (UC-39, UC-28 — non-screen API, tính trực tiếp)
-- Dựa trên snapshot mới nhất; ứng viên: khóa **PUBLISHED**, **version PUBLISHED mới nhất** của mỗi mã khóa, dạy năng lực đang thiếu với cấp đích > cấp hiện tại; loại khóa nhân viên đã **COMPLETED** (khóa đang học vẫn hiện, kèm trạng thái).
-- Điểm 0–100 = 70 × độ lấp tổng priority + 20 × tỉ lệ năng lực bắt buộc được lấp + 10 × phù hợp trình độ đầu vào (trọng số cấu hình `scoring_configs` RECOMMENDATION_WEIGHTS, tổng 100; cấu hình hỏng → mặc định).
-- Mỗi gợi ý kèm điểm từng thành phần, lý do theo từng năng lực (từ → đến, yêu cầu, bắt buộc?) và cảnh báo khi trình độ đầu vào cao hơn mức hiện tại.
-- Danh sách rỗng luôn có lý do: chưa có snapshot / không còn gap / không khóa nào phù hợp / tài khoản không gắn nhân viên.
-- Ví dụ kiểm chứng: DA-ADVANCED 55.00 > SEC-BASIC 49.17 > DA-EXCEL-PBI 39.25; khóa DRAFT bị loại.
-
-**7.6.5 Confirm Competency Level Manually** (HR override — BR-05)
-- HR xác nhận cấp độ cho một năng lực của nhân viên từ căn cứ ngoài bài thực hành (dự án, chứng chỉ ngoài…): chọn năng lực, cấp độ 1–3, **ghi chú căn cứ bắt buộc** (≤ 2000 ký tự).
-- Tạo bằng chứng `MANUAL_OVERRIDE` đã xác nhận; bằng chứng xác nhận cũ chuyển **superseded** (giữ lịch sử); cập nhật hồ sơ năng lực; ghi audit log; skill gap tự tính lại (§7.6.1).
-- Không cho tự xác nhận năng lực của chính mình (nguyên tắc 4 mắt); nhân viên phải ACTIVE; năng lực phải ACTIVE và thuộc tổ chức.
-- Hai người sửa cùng lúc → người sau nhận thông báo xung đột (409), không ghi đè âm thầm.
-
-**7.6.4 View Analytics and Capability History** (UC-22, 23, 25)
-- Heatmap: competency × job family, % đạt yêu cầu.
-- Filter: job family, department, competency type.
-- History: readiness/risk theo thời gian + sự kiện làm thay đổi (cert, evidence, trễ hạn).
-- Mỗi biểu đồ ghi thời điểm tính.
-
-### 7.7 Digital Certificate & Public Verification (§3.8)
-
-**7.7.1 Issue a Certificate** (non-screen)
-- Điều kiện: khóa hoàn thành + quiz cuối đạt. Task evidence riêng lẻ không tự cấp.
-- Sinh: mã duy nhất, link xác minh, QR, ngày cấp, ngày hết hạn (nếu khóa cấu hình).
-- Chép holder name/course/competency tại thời điểm cấp (đổi tên sau không ảnh hưởng chứng chỉ đã cấp).
-- PDF ghi vào storage; fail PDF không hủy chứng chỉ (sinh lại khi cần).
-- Liên quan: BR-06.
-
-**7.7.2 View My Certificates** (UC-44)
-- Mỗi cert: course, competency, ngày cấp, hết hạn, status valid/expired/revoked.
-- Download PDF, copy link, hiện QR toàn màn hình.
-- Expired/revoked vẫn hiện rõ status.
-- Download chỉ holder + HR.
-
-**7.7.3 Manage the Certificate Registry** (UC-26)
-- Filter: status, sắp hết hạn (30 ngày), course, department.
-- Thu hồi: chỉ HR + Admin, cần lý do + xác nhận.
-- Revoked → public check trả revoked ngay; ghi audit.
-- Thu hồi không undo được từ màn hình này.
-
-**7.7.4 Verify a Certificate Publicly** (UC-45)
-- Input: mã (gõ tay hoặc từ QR).
-- Trả về **chỉ**: holder name, competency/course, ngày cấp, status. Không thông tin nội bộ.
-- Unknown code → thông báo không phơi bày mã nào tồn tại.
-- Expired/revoked → nêu status, không nêu lý do thu hồi.
-- Rate limit: 20 yêu cầu/phút/requester.
-- Log mọi lần check với địa chỉ **đã hash**.
-- Liên quan: BR-10.
-
-### 7.8 Practical Task & Competency Evidence (§3.9)
-
-**7.8.1 Manage Practical Task Templates** (UC-29)
-- Dữ liệu: title, description, expected output, marking criteria, competency đích + mức đích, status.
-- Một template gắn nhiều competency (công việc thật hiếm khi chỉ dùng 1 kỹ năng).
-- Validation: ≥1 competency đích.
-- AI-drafted template = draft, phải duyệt trước khi dùng.
-
-**7.8.2 Assign a Practical Task** (UC-30)
-- Dữ liệu: task (template/ad hoc), nhân viên, due date, reviewer, khóa gợi ý (tùy chọn).
-- Reviewer mặc định = manager giao, có thể đổi.
-- Danh sách nhân viên chỉ trong phòng ban manager.
-- Giao ngoài phòng ban → server từ chối.
-- Liên quan: BR-12.
-
-**7.8.3 Submit Task Evidence** (UC-43)
-- Nộp: note + file +/hoặc link (PR/repo cho engineering).
-- Validation: có file hoặc link; note riêng không là bằng chứng.
-- Nộp lại → giữ version cũ (superseded).
-- Nộp trễ → cho phép, đánh dấu late, đưa vào risk.
-
-**7.8.4 Review a Submission and Confirm Evidence** (UC-31) — điểm quyết định
-- Hiển thị: brief + output kỳ vọng, bài nộp, competency đích + level criteria, version trước.
-- Chấm: score, verdict (passed / needs revision / failed), có là evidence?, level xác nhận, feedback.
-- Confirmed → tạo **1 evidence cho mỗi competency** task nhắm tới; profile nâng level.
-- Needs revision → trả về, không tạo evidence.
-- Không tự hạ level; hạ cần HR override + audit.
-- Liên quan: BR-04, 05, 12.
-
-**7.8.5 View Team Evidence Portfolio** (UC-32)
-- Mỗi record: employee, competency, level, nguồn (bài thực hành / ghi nhận thủ công của HR / dữ liệu chuyển đổi ban đầu), ai xác nhận, khi nào.
-- **Bài thi trắc nghiệm không phải nguồn xác nhận cấp độ năng lực** (quyết định D-S3-08, 28/09/2026): quiz đo hiểu biết và là điều kiện hoàn thành khóa/cấp chứng chỉ (BR-06, 07); cấp độ năng lực chỉ được xác nhận qua bài thực hành được chấm hoặc ghi nhận thủ công có căn cứ (khớp `competency_evidences.source_type` trong schema v2.3).
-- Evidence cũ bị thay thế → giữ, đánh dấu superseded.
-- Liên quan: BR-11.
-
-### 7.9 Dashboards, Analytics & Notifications (§3.10)
-
-**7.9.1 Calculate Risk and Readiness Scores** (non-screen)
-- Training risk: inactivity, tỷ lệ điểm thấp, áp lực deadline, lần trượt, chậm tiến độ.
-- Workforce readiness: competency coverage, certificates, learning progress, task performance.
-- Cả hai là weighted sum; trọng số ở settings, mỗi kết quả ghi version trọng số.
-- Nhân viên không có yêu cầu → bỏ qua.
-- Risk chuyển high → alert manager.
-- Liên quan: BR-09.
-
-**7.9.2 View Role Dashboards** (UC-22, 27, 33, 38)
-- HR: readiness toàn công ty, số người risk cao, gap sâu nhất theo family, cert sắp hết hạn.
-- Dept Manager: tương tự cho phòng ban mình + submission chờ duyệt.
-- Trainer: enrolment/completion/pass rate khóa của mình.
-- Employee: readiness bản thân, khóa đang học, task tới hạn, feedback gần đây.
-- Mọi số gắn thời điểm tính; click xuyên vào record gốc.
-- Trước run đầu: card giải thích thay vì hiện 0.
-
-**7.9.3 Receive and Read Notifications** (UC-07)
-- Nguồn: giao khóa/task/assessment, feedback, cấp chứng chỉ, sắp hết hạn, risk high (tới manager).
-- Hiển thị type, message, record, thời gian; click mở record + đánh dấu đã đọc.
-- Chỉ thấy notification gửi cho mình.
-
-### 7.10 Administration & Master Data (§3.11)
-
-**7.10.1 Manage User Accounts** (UC-08)
-- Tài khoản có thể tồn tại độc lập với hồ sơ nhân viên.
-- Tạo tài khoản → gửi activation link (không gửi mật khẩu).
-- Khóa tài khoản hiệu lực ngay, kết thúc mọi session.
-- Admin không tự gỡ role admin của chính mình.
-
-**7.10.2 Configure the Permission Matrix** (UC-09)
-- Lưới role × module, mỗi ô liệt kê action.
-- Data scope hiển thị cạnh permission nhưng không sửa theo role (là cấu trúc).
-- Đổi hiệu lực ở request kế tiếp + ghi audit.
-- Không gỡ quyền admin khỏi role admin.
-
-**7.10.3 Configure Scoring and Level Mapping** (UC-10, 11, 13)
-- 4 nhóm chỉnh: risk weights, readiness weights, recommendation weights, 3 mức hiển thị.
-- Lưu → version mới + archive cũ; 1 version active mỗi group.
-- Weights trong nhóm phải cộng đủ 100%.
-- Áp dụng từ run kế tiếp; level mapping đổi hiển thị tức thời không đụng dữ liệu gốc.
-- Liên quan: BR-08.
-
-**7.10.4 Search the Audit Log** (UC-12)
-- Luôn ghi: đổi job architecture, activate/archive requirement set, đổi scoring, cấp/thu hồi chứng chỉ, xác nhận evidence, đổi role/permission.
-- Mật khẩu không bao giờ xuất hiện.
-- Log chỉ được thêm, không sửa/xóa.
-
----
-
-## 8. Non-screen functions (tổng hợp)
-
-| # | System function | Mô tả |
-|---|-----------------|-------|
-| NF-01 | Calculate Skill Gap Snapshot | So active requirement set với confirmed profile, lưu snapshot/competency (không ghi đè). Kích hoạt: on-demand (HR/Dept Manager, đơn lẻ hoặc hàng loạt ≤ 500) và tự động khi xác nhận cấp độ / kích hoạt bộ tiêu chuẩn / đổi vị trí. Chi tiết §7.6.1 |
-| NF-02 | Calculate Training Risk Score | Tổ hợp inactivity, low score, deadline, failed attempts, delay theo trọng số |
-| NF-03 | Calculate Workforce Readiness Score | Tổ hợp coverage, certificates, learning progress, task performance |
-| NF-04 | Expire Certificates | Đặt expired khi hết hạn |
-| NF-05 | Send Certificate Expiry Reminder | Nhắc holder 30 ngày trước hết hạn |
-| NF-06 | Send Training Risk Alert | Alert manager khi risk chuyển high |
-
----
+UC-24 maps to NS-1 and UC-31 maps to NS-3. NS-7/NS-8 are target system functions requiring Report 3 inventory/scope reconciliation; they do not assert implementation. Remaining NS functions are system behavior, not additional user-goal use cases.
 
 ## 9. Business Rules (BR)
 
 | ID | Quy tắc |
 |----|---------|
-| BR-01 | Skill gap luôn đo theo **active requirement set** của vị trí hiện tại; không có active set → bỏ qua và báo cáo, không đoán |
-| BR-02 | Requirement set chỉ chuyển draft → active → archived; không nhảy draft → archived |
-| BR-03 | Activate set mới tự archive set cũ cùng vị trí trong cùng transaction |
-| BR-04 | Xác nhận task tạo **một evidence cho mỗi competency** task nhắm tới |
-| BR-05 | Level đã xác nhận chỉ đổi qua evidence level-confirming; không tự hạ nếu không có override ghi audit |
-| BR-06 | Chứng chỉ cần **đạt quiz cuối**; task evidence riêng lẻ không tự cấp |
-| BR-07 | Hoàn thành khóa = đủ material bắt buộc **và** đạt quiz cuối |
-| BR-08 | Cấu hình scoring: một version active mỗi key |
-| BR-09 | Nhân viên không có vị trí (hoặc vị trí chưa có active requirement set) → báo "Chưa có yêu cầu", loại khỏi gap/risk/readiness, không làm fail đợt tính |
-| BR-10 | Xác minh công khai không cần tài khoản, chỉ trả holder + competency/course + ngày cấp + status |
-| BR-11 | Bản ghi nghiệp vụ "nghỉ hưu" bằng đổi status, không xóa cứng |
-| BR-12 | Dept Manager chỉ thao tác nhân viên trong phòng ban mình đang quản lý (theo lịch sử assignment) |
-
----
+| BR-01 | Skill Gap is measured against the active requirement set of the employee's current position and Confirmed Competency. If none is active, skip and report; `Gap` means no confirmed level is available. |
+| BR-02 | A requirement set moves Draft → Active → Archived; it cannot jump from Draft to Archived. |
+| BR-03 | Activating a requirement set archives the previously active version for that position and starts recalculation. |
+| BR-04 | Each requirement item references a competency in its TT02 version and a level supported by that version; the storage scale remains subject to GRADE-01. |
+| BR-05 | Review creates evidence only for target competencies marked Passed. A Not Passed target has no evidence and does not change Confirmed Competency. |
+| BR-06 | Confirmed Competency increases through authorized, level-confirming evidence. An Owner may decrease or reset it only to correct a data error, with reason and audit; Owner cannot correct their own grade. |
+| BR-07 | Assessment results, course completion and certificates never change Confirmed Competency. |
+| BR-08 | Course completion requires all required lessons and a passed final assessment. Certificate issuance additionally requires a certificate-eligible course. |
+| BR-09 | A certificate is private to one employee, has Valid/Revoked status and no expiry. Only an eligible completed-and-passed course issues one. |
+| BR-10 | Certificate QR verification requires a signed-in Owner or Manager of the issuing organization; only holder name, course/competency, issue date and status are returned. No public verification. |
+| BR-11 | Business records are retired by status change, not hard delete. |
+| BR-12 | Owner acts across their organization; Manager acts only on employees in currently assigned departments; Employee sees own records. The server enforces scope. |
+| BR-13 | Platform Admin alone maintains TT02 versions, standard curriculum, question bank, standard assessments and reference positions. |
+| BR-14 | The system recommends courses from Skill Gap and competency-course mapping; Employee may start a recommendation. Owner may also explicitly assign standard courses for organization updates/retraining. Manager may monitor training progress but does not assign courses in this release. |
+| BR-15 | AI drafts require human approval before use; retain the AI-origin flag. |
+| BR-16 | Published TT02 versions are immutable; a change creates a new version and requirement sets retain their framework version. |
+| BR-17 | A member without a position or active requirement set is Not Assessed and excluded from gap calculation. |
+| BR-18 | Editing a published course already assigned creates a new Course Version; an assignment retains its version. |
+| BR-19 | Email delivery status is separate from the business record; a failed message is not reported as sent and can be resent. |
+| BR-20 | Gap recalculation runs as a queued job after its triggering transaction; retry/failure does not undo confirmed evidence or history. |
+| BR-21 | An assessment attempt retains its Assessment Version; assignment retains Course Version and Assessment Version. |
+| BR-22 | System recommendations are derived from Skill Gap and versioned competency-course mappings; they are not enrollments or assignments. Employee may start a recommendation. |
+| BR-23 | OWNER may separately assign courses for organization updates/retraining. Recommendation and assignment coexist and remain distinguishable; MANAGER has no course-assignment right in this baseline. |
+| BR-24 | Course completion/assessment/certificate do not change Confirmed Competency. Whether an Owner-triggered retraining assignment additionally requires a Practical Task is PENDING DECISION. |
+| BR-25 | AI Practical Task evaluation is advisory and scope-pending. Only a valid human-approved review may update Confirmed Competency; task score is distinct from competency level. Retain rubric version, AI output/model version when available, reviewer decision and edits. |
+| BR-26 | Report 3 v2.3 does not yet inventory the recommendation/assignment distinction or AI-assisted evaluation consistently; reconcile UC, screens, API and permissions and Report 1/2 AI scope before treating these target requirements as implementation scope. |
+| BR-LATE-01 | Late submissions are accepted, marked `IsLate`, and remain eligible for review and scoring. If a target competency passes, the review may create evidence under the normal confirmation rules. This confirmed rule supersedes Report 3 v2.3 §3.8.3, which says late submissions are not scored. |
 
 ## 10. Common Requirements (CR)
 
@@ -541,42 +275,33 @@ Mọi điểm số đều **rule-based và giải thích được**; trọng s�
 
 ## 12. Ma trận vết (Traceability)
 
-| Feature (Report 1) | Mục SRS | UC | BR | CR |
-|--------------------|---------|-----|-----|-----|
-| FE-01 Auth & RBAC | §3.2, §3.11 | UC-01..13 | BR-12 | CR-02, 04, 06 |
-| FE-02 Org & Employee | §3.3 | UC-17, 18 | BR-09, 11, 12 | CR-01..05 |
-| FE-03 Competency & Requirement | §3.4 | UC-14..16, 19..21 | BR-01, 02, 03, 11 | CR-04 |
-| FE-04 Learning | §3.5 | UC-24, 34, 40, 41 | BR-07 | CR-07 |
-| FE-05 Assessment & Quiz | §3.6 | UC-35..37, 42 | BR-06, 07 | CR-02, 05 |
-| FE-06 Skill Gap & Recommend | §3.7 | UC-22, 23, 25, 28, 39 | BR-01, 05, 08, 09, 12 | CR-01, 06, 07 |
-| FE-07 Certificate & QR | §3.8 | UC-26, 44, 45 | BR-06, 10, 11 | CR-04, 06 |
-| FE-08 Task & Evidence | §3.9 | UC-29..32, 43 | BR-04, 05, 12 | CR-02, 04 |
-| FE-09 Dashboard & Notify | §3.10 | UC-07, 22, 27, 33, 38 | BR-09 | CR-07 |
+| Feature (Report 1) | UC entries (Report 3 v2.3) |
+|--------------------|----------------------------|
+| FE-01 Authentication & Workspace | UC-01–06 |
+| FE-02 Organization, Departments, Positions & Members | UC-16–18 |
+| FE-03 TT02 Framework & Reference Positions | UC-07, UC-11, UC-15 |
+| FE-04 Position Competency Requirements | UC-19 |
+| FE-05 Competency Profile, Skill Gap & History | UC-20–24 |
+| FE-06 Standard Learning, Assessment & Certificates | UC-08–10, UC-25–34 |
+| FE-07 Practical Task & Evidence | UC-35–39 |
+| FE-08 Dashboards & Notifications | UC-40–43 |
+| FE-09 Platform Administration | UC-12–14, UC-44 |
 
----
+Detailed UC-to-screen and Report 1 traceability is in `04_Use_Case_Danh_Sach_Dac_Ta.md` §8. The source report's course eligibility, private QR verification, role scope, version retention, evidence rules and the confirmed overrides are summarized in §9 above.
 
-## 13. Trạng thái hiện thực sau Sprint 3 & điểm mở
+## 13. Trạng thái implementation và điểm mở
 
-**Đã hiện thực (Sprint 3, 29/09/2026):**
+Các trạng thái “Đã hiện thực” dưới đây không được xác minh lại theo một commit cụ thể và đã được gỡ khỏi SRS để tránh nhầm requirement với implementation. Master Overview xác định requirement; trạng thái code cần kiểm tra source và test evidence riêng.
 
-| Chức năng | Mục SRS | API / màn hình | Kiểm chứng |
-|-----------|---------|----------------|------------|
-| Tính skill gap (NF-01) đơn lẻ, hàng loạt, lịch sử | §7.6.1 | `POST /intelligence/skill-gaps/calculate`, `/calculate-batch`, `GET /intelligence/skill-gaps`, `/{runId}`, `/me/latest` | Test tự động trên PostgreSQL + gọi API thật khớp ví dụ tính tay |
-| My Competency Profile & Gap | §7.6.2 (UC-39) | `/enterprise/my-competency-profile` | Test FE + kiểm tra trên trình duyệt |
-| Team Skill Gap (danh sách + panel chi tiết) | §7.6.3 (UC-28) | `/enterprise/intelligence/skill-gap` | Test FE + kiểm tra trên trình duyệt |
-| Gợi ý khóa học có giải thích | §7.6.4 | `GET /intelligence/recommendations` | Test + p95 36 ms trên dữ liệu seed |
-| Ghi nhận cấp độ thủ công (HR) + tự tính lại + thông báo realtime | §7.6.5 | `POST /competency-evidences/manual`, dialog "Confirm level", SignalR `/hubs/notifications` | Test PostgreSQL (rollback, supersede, xung đột) + kịch bản demo trên trình duyệt |
-| Activate bộ tiêu chuẩn: tổng trọng số = 100% | §7.3.3 | `POST /position-requirements/{id}/activate` | Test |
+| Khu vực | Requirement | Trạng thái implementation |
+|---------|-------------|----------------------------|
+| 4 Enterprise roles và server-side scope | Theo §§5–7 và file 04 | Not verified |
+| TT02, Position Requirement và Skill Gap states | Theo BR-01–04, BR-17 | Not verified |
+| Course/Assessment version retention | Theo BR-18, BR-21 | Not verified |
+| Eligible-course certificate, no expiry, same-org QR | Theo BR-08–10 | Not verified |
+| Owner correction and late submission | Theo BR-06, BR-LATE-01 | Not verified |
+| Recalculation queue, history, notifications and audit | Theo NS-1–NS-6 | Not verified |
+| Course recommendation + explicit assignment coexistence | Theo BR-22–24; target inventory in file 04 §5.2 | Not verified; reconcile Report 3 |
+| AI-assisted Practical Task evaluation | Theo BR-25–26; scope pending Report 1/2 | Scope not approved; implementation not verified |
 
-**Điểm mở cần quyết định / chưa hiện thực:**
-
-| # | Nội dung | Hiện trạng | Đề xuất |
-|---|----------|-----------|---------|
-| O-1 | §7.3.3 & MSG07: bộ tiêu chuẩn cần **9–14 năng lực** mới được activate | **Đã đóng 30/09/2026** — thay bằng quy tắc "9–24 năng lực của Thông tư 02/2025, mỗi năng lực một mức, luôn có lõi 4.1 và 4.2" (D-B7), đã hiện thực và có test; seed demo 5 vị trí, mỗi vị trí 20–23 năng lực | Leader / chuyên gia rà từng ô của ma trận (`docs/specs/2026-09-29-tt02-position-competency-matrix.md` §4.1) |
-| O-2 | §7.6.1 job tính skill gap **hằng đêm** | Chưa có; thay đổi dữ liệu đã tự tính lại theo sự kiện | Đánh giá lại nhu cầu ở Sprint 5 (cùng NF-02/03 chạy theo lịch) |
-| O-3 | §7.6.3 **heatmap** người × năng lực, giao khóa/task từ ô | Chưa hiện thực (đã cắt khỏi Sprint 3) | Sprint 4–5 cùng UC-23 (Workforce Analytics) |
-| O-4 | §7.6.2 xem bằng chứng / version tạo nên mức hiện tại | Chưa có màn hình bằng chứng (dữ liệu đã lưu đủ) | Sprint 4 cùng Evidence Portfolio (UC-32) |
-| O-5 | Tuyến người học cá nhân `/learn`: skill gap thật | **Đã đóng phần hiển thị 29/09/2026** (D-B5): mọi nhãn learner/public hiển thị 3 mức Cơ bản / Trung cấp / Nâng cao (bậc 1–2 / 3–4 / 5–6); dữ liệu demo vẫn lưu thang 1–6 và được quy đổi khi hiển thị | Skill gap thật cho learner và danh mục nghề theo 5 vị trí Thông tư: Sprint 4 |
-| O-6 | Quy chế thi lại (cooldown, hiển thị đáp án) — S3-T024 | Chờ Mentor duyệt SQL v2.4 (D-S3-13) và engine thi của module Assessment | Chuyển phần tích hợp sang Sprint 4 |
-| O-7 | Bỏ vị trí của nhân viên không tạo snapshot mới | Snapshot cũ vẫn hiển thị kèm tên vị trí cũ | Chấp nhận (giới hạn đã biết, spec E15) |
-| O-8 | **Đánh giá đầu vào** (placement) cho cả nhân viên doanh nghiệp và người học tự do | Chưa hiện thực. Hiện mức năng lực chỉ có khi HR / quản lý xác nhận; nhân viên mới chưa có hồ sơ thì mọi năng lực tính là thiếu toàn bộ | Sprint 4 cùng module Assessment (D-B8): bài đánh giá đầu vào theo năng lực vị trí yêu cầu, kết quả là **mức tạm** tách khỏi mức đã xác nhận. Cần thay đổi SQL (v2.4) → chờ Mentor duyệt. Thiết kế: tài liệu ma trận §10 |
+`GRADE-01` remains **PENDING DECISION**. Report 3 v2.3's Record of Changes and §5.4 choose storage values 1–3; Master Overview says not to close that choice. Resolve it through a decision record before changing ERD, constraints, migrations or calculation logic.

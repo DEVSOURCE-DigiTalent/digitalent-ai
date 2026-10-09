@@ -74,7 +74,7 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
             </div>
             <div className="flex justify-between items-center text-[10px] text-stone-400">
               <span>Độ bảo mật: <strong className="text-cream">{strength.label}</strong></span>
-              {length < 12 && <span>{length}/12 ký tự tối thiểu</span>}
+              {length < 8 && <span>{length}/8 ký tự tối thiểu</span>}
             </div>
           </div>
         )}

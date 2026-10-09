@@ -2,19 +2,19 @@
 
 **Coding Convention & Development Guideline**
 
-Document 11 - Development Standard for ReactJS, ASP.NET Core, PostgreSQL, MinIO, SignalR and Docker
+Document 11 - Development Guideline for React, ASP.NET Core, PostgreSQL and deployment tooling
 
 | **Item** | **Value** |
 | --- | --- |
 | Project | DigiTalent AI - Digital Competency Training, Internal Certification and Work-Based Assessment Platform |
 | Document Type | Coding Convention / Development Guideline |
 | Primary Audience | Frontend developers, Backend developers, QA, Technical Lead, DevOps owner |
-| Technology Stack | ReactJS, TypeScript, TailwindCSS, ShadCN/UI, ASP.NET Core/C#, PostgreSQL, MinIO, Redis optional, SignalR, Docker, Nginx, GitHub Actions |
+| Technology Stack | Baseline: React + TypeScript, ASP.NET Core/C#, PostgreSQL. File storage: local for development; S3-compatible/MinIO when integrated. Other tools are implementation choices to verify in the repository. |
 | Architecture Direction | Modular Monolith with Clean Architecture boundaries and permission-based RBAC |
-| Version | 1.0 |
-| Status | Ready for development planning and team onboarding |
+| Version | 1.2 |
+| Status | Working guideline; align with Report 1 v2.5, Report 3 v2.2 and Master System Overview dated 09/10/2026 |
 
-**Mentor note:** This document is written as an implementation contract. The team should follow it before creating repositories, branches, API controllers, database migrations, React components and pull requests.
+**Document status:** This is guidance, not evidence that a technology, endpoint, test, CI workflow or deployment is implemented. For conflicts, follow the approved Reports and Master System Overview; retain unresolved items such as GRADE-01 as pending.
 
 # Table of Contents
 
@@ -40,9 +40,9 @@ Document 11 - Development Standard for ReactJS, ASP.NET Core, PostgreSQL, MinIO,
 
 11\. Authentication, RBAC and Security Guideline
 
-12\. File Storage, MinIO and Upload Convention
+12\. Object Storage and Upload Convention
 
-13\. SignalR Notification Convention
+13\. Notification Delivery Convention
 
 14\. AI, Scoring and Rule-Based Logic Convention
 
@@ -83,14 +83,14 @@ The guideline covers backend, frontend, database, API, file storage, security, t
 | DevOps | Docker Compose, environment variables, GitHub Actions, branch workflow and deployment readiness. |
 | Quality | Testing scope, code review checklist, Definition of Ready and Definition of Done. |
 
-**Project baseline:** The guideline assumes the approved scope: RBAC, organization management, competency framework, learning/assessment, certificate QR, capability analysis, WMS-lite task evidence, dashboard and optional AI support.
+**Project baseline:** Enterprise MVP includes RBAC, organization management, TT02 reference framework, position requirements, Skill Gap, platform-owned standard learning/assessment, eligible internal certificates, practical-task evidence review and dashboards.
 
 # 2\. Development Principles
 
 | **Principle** | **Meaning for DigiTalent AI** |
 | --- | --- |
-| Business first | Do not code isolated screens. Every feature must support a business flow: position requirement -> competency -> learning -> assessment -> certificate -> task evidence -> readiness. |
-| MVP controlled | Core functions must be completed before bonus AI features. Rule-based scoring is prioritized over complex AI automation. |
+| Business first | Support the flow: position requirement -> Skill Gap -> automatic course recommendation and/or separate OWNER assignment -> learning/assessment -> certificate when eligible -> practical evidence review -> confirmed competency -> recalculated gap. |
+| MVP controlled | Rule-based recommendations are part of the learning flow. AI-assisted Practical Task evaluation is a proposed scope expansion requiring Report 1/2 updates before commitment; implementation is unverified. |
 | Clean but practical | Use clear layers and feature boundaries, but avoid over-engineering microservices or unnecessary abstract patterns. |
 | Secure by default | Every protected API must validate authentication, permission and data scope. Frontend hiding is not security. |
 | Observable changes | Important actions such as certificate issue/revoke, task evaluation and competency update must create audit logs. |
@@ -155,7 +155,7 @@ README.md
 | --- | --- | --- |
 | Api | Controllers, request binding, authentication middleware, response mapping, Swagger annotations. | Do not contain business calculations or EF Core query logic. |
 | Application | Use cases, DTOs, service interfaces, validators, commands/queries, application rules. | Do not depend directly on ASP.NET HttpContext or concrete infrastructure implementation. |
-| Domain | Core entities, value objects, domain enums, domain constants and domain-level methods. | Do not call database, MinIO, SignalR, OpenAI/Gemini or external services. |
+| Domain | Core entities, value objects, domain enums, domain constants and domain-level methods. | Do not call database, object storage, notification providers, LLMs or external services. |
 | Infrastructure | EF Core DbContext, repositories/query services, MinIO, email/notification providers, external APIs. | Do not place controller logic or UI-specific DTOs here. |
 | SharedKernel | Common base entities, result types, pagination, errors and reusable primitives. | Do not become a dumping ground for unrelated helpers. |
 
@@ -166,12 +166,13 @@ README.md
 | Auth | Login, refresh token, logout, password change, role and permission checks. | Backend security owner |
 | Organization | Departments, job positions, employee profiles and manager assignments. | Backend business owner |
 | Competency | Competency categories, levels, position requirements and employee competency profile. | Backend business owner |
-| Learning | Courses, modules, lessons, materials, enrollment and progress. | Backend learning owner |
+| Learning | Courses, modules, lessons, materials, enrollment and progress; distinguish automatic recommendations from separate OWNER assignments for updates/retraining. | Backend learning owner |
 | Assessment | Question bank, assessments, attempts, answer scoring and pass/fail logic. | Backend learning owner |
-| Certificate | Certificate issue, PDF generation metadata, QR verification, revoke and expiry. | Backend certificate owner |
-| Task | WMS-lite task assignment, submission, evaluation and task evidence. | Backend task owner |
-| Intelligence | Skill gap, learning recommendation, risk score, readiness score and AI explanation logs. | Backend analytics owner |
-| Dashboard | Aggregated data for HR, Manager, Trainer and Employee views. | Backend analytics owner |
+| Certificate | Eligible-course issue, PDF metadata, authenticated same-organization QR verification and revoke. No expiry in the MVP. | Backend certificate owner |
+| Task | Practical-task assignment, submission, per-competency review and evidence. | Backend task owner |
+| Intelligence | Skill Gap states and explainable course recommendations from competency mapping; employee can start recommended learning. Risk/readiness scoring and scoring weights are outside the Enterprise MVP. | Backend analytics owner |
+| AI Task Evaluation | If scope is approved: rubric-versioned, per-criterion proposal for authorized submission evidence; human review remains authoritative. | Proposed scope expansion; Report 1/2 updates required before implementation commitment |
+| Dashboard | Aggregated views for PLATFORM_ADMIN, OWNER, scoped MANAGER and EMPLOYEE. | Backend analytics owner |
 
 ## 4.3 C# Naming Convention
 
@@ -179,13 +180,13 @@ README.md
 | --- | --- | --- |
 | Class / Record / Enum | PascalCase | CourseEnrollment, CertificateStatus |
 | Method | PascalCase; async method ends with Async | IssueCertificateAsync |
-| Local variable | camelCase | employeeId, readinessScore |
+| Local variable | camelCase | employeeId, skillGapState |
 | Private field | \_camelCase | \_dbContext, \_clock |
 | Interface | I + PascalCase | ICertificateService |
 | DTO | Action + Entity + Request/Response | CreateCourseRequest, CourseDetailResponse |
 | Validator | DTO name + Validator | CreateCourseRequestValidator |
 | Controller | Plural resource name + Controller | CoursesController, CertificatesController |
-| Constant | PascalCase in static class | CertificateRules.DefaultValidityMonths |
+| Constant | PascalCase in static class | CertificateRules.EligibleCourseRequired |
 
 ## 4.4 Controller and Service Standard
 
@@ -214,15 +215,15 @@ return CreatedAtAction(nameof(GetByIdAsync), new { id = result.Data!.Id }, resul
 
 | **Rule** | **Explanation** |
 | --- | --- |
-| Controller should be thin | Only validate route/body binding, call service/use case, return mapped response. |
+| Controller should be thin | Only validate route/body binding, call service/use case, return mapped response. Standard course content is managed by PLATFORM_ADMIN; OWNER assigns courses and does not edit the shared catalog. |
 | Always pass CancellationToken | API calls, EF Core queries, MinIO operations and external calls must support cancellation. |
 | Do not return EF entity directly | Always return DTO/Response objects. This protects internal schema and avoids circular serialization. |
 | Use policy-based authorization | Do not check role string manually in every controller unless there is a data-scope rule. |
-| Use service-level transaction when needed | For certificate issue, task evaluation or scoring updates, use transaction boundaries. |
+| Use service-level transaction when needed | For certificate issue/revoke, task review, evidence history and recalculation state, use transaction boundaries where consistency requires it. |
 
 # 5\. Database and EF Core Convention
 
-PostgreSQL is the source of truth for relational business data. MinIO stores large files; PostgreSQL stores metadata and object keys only.
+PostgreSQL is the source of truth for relational business data. Use local file storage in development and S3-compatible/MinIO storage when integrated; PostgreSQL stores metadata and object keys only. This guidance does not assert which provider is currently configured.
 
 | **Topic** | **Convention** |
 | --- | --- |
@@ -396,7 +397,7 @@ The UI must follow the UI/UX Design Specification. Developers should not create 
 | Table | Use consistent header, search, filter, pagination, loading skeleton and row action menu. |
 | Badge/Status Chip | Use fixed status color mapping from UI/UX spec. Do not choose colors per screen. |
 | Toast | Use success for completed action, destructive for failed action, neutral for informational result. |
-| Empty State | Always show next action when possible: Create course, Assign course, Add employee. |
+| Empty State | Show actions allowed to the current role, such as manage standard course (PLATFORM_ADMIN), assign course (OWNER), or add employee (OWNER). |
 | Loading State | Use skeleton for tables/cards; spinner only for local short actions. |
 
 <Button type="submit" disabled={isSubmitting}>  
@@ -416,10 +417,10 @@ Revoke certificate
 | **State Type** | **Recommended Tool** | **Examples** |
 | --- | --- | --- |
 | Server state | TanStack Query / React Query | Course list, employee detail, dashboard metrics, certificate verification result. |
-| Form state | React Hook Form + Zod | Create course, update employee, evaluate task, configure scoring threshold. |
+| Form state | React Hook Form + Zod | OWNER assigns course, update employee, review task evidence, configure position requirement. |
 | Auth/session state | Small auth store plus secure token handling | Current user, permissions, refresh flow. |
 | UI state | Local useState or small store | Sidebar collapsed, dialog open, selected table rows. |
-| Derived state | Compute from query data using memoization when needed | Risk level label, progress percent, visible actions by permission. |
+| Derived state | Compute from query data using memoization when needed | Skill Gap state, progress percent, visible actions by permission. |
 
 **Frontend rule:** Do not duplicate server state into global stores unless there is a strong reason. Prefer React Query cache for data returned from APIs.
 
@@ -448,11 +449,15 @@ competencyIds: z.array(z.string().uuid()).min(1),
 | Access token | Short-lived JWT used for API requests. Do not store sensitive information beyond claims needed for identity and permissions. |
 | Refresh token | Stored and rotated securely. Backend must support revoke/logout behavior. |
 | Password | Hash using secure password hasher. Never store plain text password. |
-| Permission | Use permission keys rather than hard-coded role-only checks. |
-| Data scope | Department Manager must only access employees/tasks in assigned scope. Employee can only access own learning/tasks/certificates. |
+| Permission | Use permission keys for PLATFORM_ADMIN, OWNER, MANAGER and EMPLOYEE; enforce role grants and resource scope server-side. |
+| Data scope | OWNER is organization-scoped; MANAGER is limited to assigned departments; EMPLOYEE is limited to own records. PLATFORM_ADMIN access to private organization evidence is not implied. |
 | Frontend guard | Hide unavailable UI actions, but backend must enforce the rule again. |
 | Sensitive data | Do not log password, token, personal phone/email beyond required audit metadata. |
-| File upload | Validate extension, MIME type, size and user permission before uploading to MinIO. |
+| Certificate verification | QR verification requires authenticated OWNER/MANAGER in the issuing organization; enforce same-org and no-self checks and return only minimum verification fields. |
+| Private evidence / AI evaluator | Re-check task, submission and file permissions server-side before each read or evaluator request; keep organization/department scope; treat evidence content as untrusted input, never as instructions. AI evaluation remains a proposal for human review. |
+| Owner correction | OWNER may decrease/reset a confirmed grade only to correct data, with reason and immutable audit/history; block self-correction and manual increases. |
+| Learning evidence boundary | Course completion, assessment score and certificate do not automatically change confirmed workplace competency. |
+| File upload | Validate extension, MIME type, size and record-level permission before storing in configured file storage. |
 
 public static class Permissions  
 {  
@@ -464,15 +469,15 @@ public const string TasksEvaluateDepartment = "tasks.evaluate.department";
 
 **Critical rule:** A passed frontend route guard does not mean the request is authorized. Every protected backend endpoint must validate permission and data scope.
 
-# 12\. File Storage, MinIO and Upload Convention
+# 12\. Object Storage and Upload Convention
 
-Files uploaded by users or generated by the system must be stored in MinIO or compatible object storage. PostgreSQL stores only metadata such as object key, bucket, content type, size, checksum and owner.
+Files uploaded by users or generated by the system use local storage in development and S3-compatible/MinIO storage when integrated. PostgreSQL stores only metadata such as object key, bucket, content type, size, checksum and owner. This guidance does not assert which provider is currently configured.
 
 | **File Type** | **Storage Rule** | **Example Object Key** |
 | --- | --- | --- |
-| Lesson material | Stored under course/lesson path. Only Trainer/HR/Admin can upload. | courses/{courseId}/lessons/{lessonId}/materials/{fileId}.pdf |
-| Task submission | Stored under task assignment path. Employee can upload only for own task. | tasks/{assignmentId}/submissions/{submissionId}/{fileName} |
-| Certificate PDF | Generated by backend and stored as immutable object when issued. | certificates/{certificateId}/certificate.pdf |
+| Standard lesson material | Platform Admin manages standard course content and materials. | courses/{courseId}/versions/{versionId}/lessons/{lessonId}/materials/{fileId}.pdf |
+| Task submission | Employee can upload only for own task; reviewers access only within assigned scope. | tasks/{assignmentId}/submissions/{submissionId}/{fileId} |
+| Certificate PDF | Generated by backend and stored as immutable object when issued; certificate has no expiry in the MVP. | certificates/{certificateId}/certificate.pdf |
 | Evidence attachment | Linked to competency evidence record. Access follows evidence permission. | evidence/{evidenceId}/{fileId} |
 
 | **Validation** | **Requirement** |
@@ -483,20 +488,20 @@ Files uploaded by users or generated by the system must be stored in MinIO or co
 | Download | Use short-lived pre-signed URLs when possible. |
 | Delete | Prefer soft-delete metadata or mark unavailable; avoid deleting evidence unless policy allows. |
 
-# 13\. SignalR Notification Convention
+# 13\. Notification Delivery Convention
 
 | **Event** | **Triggered When** | **Recipients** |
 | --- | --- | --- |
-| course.assigned | HR/Manager assigns course to employee or department. | Affected employees. |
-| assessment.completed | Employee submits final assessment. | Employee, Trainer/Manager depending on course ownership. |
-| certificate.issued | Certificate is issued successfully. | Employee, HR/Manager if relevant. |
-| certificate.expiring | Certificate is near expiry. | Employee and HR/Manager. |
-| task.assigned | Manager assigns WMS-lite practical task. | Employee. |
-| task.submitted | Employee submits task evidence. | Manager/Trainer evaluator. |
-| task.evaluated | Manager evaluates task. | Employee and HR if high impact. |
-| training.risk.high | Training risk score crosses configured threshold. | Employee and responsible Manager. |
+| course.recommended | Skill Gap/course competency mapping creates or refreshes a recommendation. | Affected employee. |
+| course.assigned | OWNER separately assigns a standard course to an employee, including update/retraining cases. | Affected employee. |
+| assessment.completed | Employee submits final assessment. | Employee and authorized organization reviewers as required. |
+| certificate.issued | Eligible-course completion and final assessment pass issue a certificate. | Employee. |
+| certificate.revoked | OWNER revokes a certificate with reason. | Holder and authorized organization viewers as applicable. |
+| task.assigned | OWNER/MANAGER assigns a practical task within scope. | Employee. |
+| task.submitted | Employee submits evidence, including late submissions. | Authorized reviewer in scope. |
+| task.evaluated | Reviewer evaluates each target competency. | Employee. |
 
-**SignalR rule:** SignalR is for notification delivery, not for core business transaction correctness. The database must remain the source of truth.
+**Delivery rule:** Notifications are secondary to persisted business state. Use the delivery mechanism in the approved architecture (in-app notifications with browser polling are the MVP baseline); SignalR is not required. Failed notification delivery must not be reported as successful delivery.
 
 # 14\. AI, Scoring and Rule-Based Logic Convention
 
@@ -504,27 +509,26 @@ Core scoring in DigiTalent AI must remain explainable and testable. LLM features
 
 | **Feature** | **MVP Implementation** | **Code Ownership Rule** |
 | --- | --- | --- |
-| Skill Gap Analysis | Rule-based comparison: required level minus current level. | Implemented in deterministic service with unit tests. |
-| Learning Recommendation | Rule-based mapping from skill gaps to courses and learning paths. | Recommendation reason must be saved or returned. |
-| Training Risk Score | Weighted formula based on progress, low scores, failed attempts, inactivity and deadlines. | Weights must come from configuration, not hard-code. |
-| Workforce Readiness Score | Weighted formula combining competency, certificate, progress, compliance and task performance. | Store score snapshot for audit/reporting. |
-| AI Question Draft | LLM generates draft questions for Trainer review. | Never publish directly without human review. |
-| AI Task Suggestion | LLM suggests task ideas and criteria based on skill gap/course. | Manager edits and approves before assignment. |
+| Skill Gap Analysis | Compare active position requirement with confirmed competency; return Met, Partial Gap, Gap or Not Assessed. | No requirement weight. Keep grade-scale logic pending GRADE-01; learning records do not confirm workplace competency. |
+| Learning Recommendation | Automatically suggest standard courses mapped to competency gaps; Employee may start a recommendation. | Keep recommendation separate from OWNER-issued course assignment; neither updates competency. |
+| OWNER course assignment | OWNER can assign a course separately for updates/retraining, with a due date where needed. | Persist assignment and applicable course version separately; whether retraining requires final assessment only or also Practical Task is PENDING DECISION. |
+| Owner correction | Data correction may decrease or reset confirmed grade, with reason and audit history. | Never use for increase; block self-correction by the OWNER. Reset means not assessed/unconfirmed, not grade zero. |
+| Course/Assessment versioning | Existing assignment and attempt retain their versions/snapshots. | Do not mutate historical course/assessment content in place. |
+| Optional AI draft | LLM may suggest quiz/task drafts where approved for the workflow. | Authorized human reviews before use; AI never confirms competency. |
+| AI Practical Task evaluation | Proposed scope expansion: evaluator reads only authorized evidence and the applicable rubric, then proposes criterion scores, rationale, evidence basis and missing information. | Update Report 1/2 before commitment. OWNER/MANAGER must review, edit, approve, reject or request more evidence. Persist rubric version, AI output and model/version if available. Task score is not competency level; AI cannot self-finalize or update competency. Implementation is unverified. |
 
-ReadinessScore =  
-CompetencyScore \* 0.35  
-\+ CertificateScore \* 0.20  
-\+ LearningProgressScore \* 0.15  
-\+ ComplianceScore \* 0.15  
-\+ WorkTaskPerformanceScore \* 0.15  
+For AI evaluation, treat submitted files, links and descriptions as untrusted data. Keep evidence separate from system instructions, do not execute embedded instructions or grant model/tool access, validate structured output, and return an insufficient-evidence state rather than inventing a score. Do not log raw evidence or sensitive prompts. Only a valid, reviewer-approved level-confirming evidence decision may affect Confirmed Competency.
+
+Training Risk Score, Workforce Readiness Score, predictive scoring and configurable scoring weights are outside the Enterprise MVP; do not add their formula, UI, storage or acceptance criteria without an approved scope change.
 
 | **AI Log Field** | **Reason** |
 | --- | --- |
 | feature\_name | Identify which AI/scoring feature produced the result. |
 | input\_snapshot | Support explainability and debugging. |
 | output\_text | Store generated explanation/suggestion when needed. |
-| model\_name | Track provider/model for reproducibility. |
-| review\_status | Pending, approved, rejected when human review is required. |
+| model\_name / model\_version | Track provider/model version when available for reproducibility. |
+| rubric\_version | Identify the exact task evaluation rubric used. |
+| review\_status / reviewer\_decision / edits | Preserve pending/approved/rejected/request-more-evidence and reviewer changes. |
 | created\_by / created\_at | Audit who requested the AI output and when. |
 
 # 15\. Logging, Audit and Observability
@@ -532,33 +536,35 @@ CompetencyScore \* 0.35
 | **Type** | **Examples** | **Storage** |
 | --- | --- | --- |
 | Application log | API error, external service timeout, failed PDF generation. | Structured logs / console / file depending on environment. |
-| Audit log | User role changed, certificate revoked, task evaluated, competency updated. | PostgreSQL audit\_logs table. |
-| Business event | Course assigned, certificate issued, risk score high. | Notification/events table if needed. |
+| Audit log | User role changed, certificate revoked, AI proposal requested/failed, reviewer decision/edit, task evaluated, competency updated. | PostgreSQL audit\_logs table. |
+| Business event | Course assigned, certificate issued/revoked, task submitted/evaluated. | Notification/events table if needed. |
 | Security event | Failed login, refresh token reuse, forbidden access attempt. | Security log + audit log when relevant. |
 
 | **Do Log** | **Do Not Log** |
 | --- | --- |
 | Request ID, user ID, action name, resource ID, status code, exception type. | Password, raw JWT, refresh token, secret keys, full personal profile when not needed. |
-| Certificate code action, task evaluation action, permission denial reason. | Uploaded file content, raw AI prompt containing sensitive data unless intentionally logged with masking. |
+| Certificate code action, task evaluation action, permission denial reason, AI run/rubric/model identifiers and reviewer decision metadata. | Uploaded file content, full raw AI prompts, tokens, or private evidence; store only necessary masked metadata. |
 
 # 16\. Testing Guideline
 
 | **Test Type** | **What to Cover** | **Priority** |
 | --- | --- | --- |
-| Unit test | Scoring formulas, validation rules, service logic, permission helper, state transition. | High |
-| Integration test | Login, course assignment, assessment submit, certificate issue, task evaluation. | High |
+| Unit test | Skill Gap states, recommendation mapping, validation rules, service logic, permission helper, state transition. | High |
+| Integration test | Login, recommendation start, separate OWNER course assignment, assessment submit, certificate issue, task evaluation. | High |
 | API contract test | Request/response format, error format, status codes. | Medium |
 | Frontend component test | Complex forms, permission-based action visibility, status chips. | Medium |
 | Manual QA | End-to-end demo flow and role-based screens. | High |
-| Security test | Unauthorized/forbidden access, department scope, employee-own-resource access. | High |
+| Security test | Unauthorized/forbidden access, organization/department scope, same-organization certificate verification, no-self and employee-own-resource checks; AI evaluator authorization and prompt/data boundary if approved. | High |
 
 | **Module** | **Must-Have Tests** |
 | --- | --- |
 | Auth/RBAC | Login success/failure, expired token, forbidden action, department-scope denial. |
 | Assessment | Score calculation, pass/fail, multiple attempts, invalid answer format. |
-| Certificate | Issue only when conditions met, verify by code, revoked/expired not valid. |
-| Task | Employee submit own task, Manager evaluate department task, cannot evaluate pending task. |
-| Intelligence | Skill gap formula, risk thresholds, readiness formula, config-driven weights. |
+| Certificate | Issue only for eligible course after required lessons and final assessment pass; authenticated same-organization OWNER/MANAGER verification; revoked is not valid. |
+| Task | Employee submits own task (late submissions remain reviewable); OWNER/MANAGER reviews assigned scope and competency targets. |
+| Course recommendation/assignment | Recommendation refreshes from Skill Gap and competency mapping; Employee can start; OWNER assignment remains separate and does not replace recommendations. |
+| AI task evaluation (only after scope approval) | Deny unauthorized/private evidence; ignore prompt injection; handle insufficient/conflicting evidence and provider failure; persist rubric/model metadata, reviewer override/request-more-evidence and history; verify task score alone never changes competency and AI cannot finalise. |
+| Skill Gap | Met / Partial Gap / Gap / Not Assessed; grade-scale assertions wait for GRADE-01. |
 
 # 17\. Git Workflow and Pull Request Standard
 
@@ -602,7 +608,6 @@ Minio\_\_SecretKey=\*\*\*
   
 \# Frontend  
 VITE\_API\_BASE\_URL=http://localhost:8080/api/v1  
-VITE\_SIGNALR\_HUB\_URL=http://localhost:8080/hubs/notifications  
 
 | **CI Step** | **Required Check** |
 | --- | --- |
@@ -652,7 +657,7 @@ VITE\_SIGNALR\_HUB\_URL=http://localhost:8080/hubs/notifications
 | **Anti-pattern** | **Why It Is Dangerous** | **Correct Approach** |
 | --- | --- | --- |
 | Role-only security | Department Manager may access data outside department. | Use permission + data scope checks. |
-| Hard-coded scoring weights | Difficult to tune and defend during evaluation. | Store weights in configuration or scoring rules table. |
+| Invented scoring weights | Weights and risk/readiness scoring are outside the MVP and can misrepresent the baseline. | Do not add weights or risk/readiness formulas without an approved scope change. |
 | Returning EF entities to frontend | Leaks schema and causes serialization issues. | Use DTO responses. |
 | Business logic in React | Backend and dashboard data become inconsistent. | Backend computes authoritative results; frontend displays. |
 | One giant service class | Difficult to test and maintain. | Split by use case or module service. |
@@ -668,9 +673,9 @@ VITE\_SIGNALR\_HUB\_URL=http://localhost:8080/hubs/notifications
 | Phase 2 - Auth and RBAC | Implement JWT, refresh token, roles, permissions, route guards and policy-based authorization. |
 | Phase 3 - Core master data | Implement departments, job positions, employees, competency framework and position requirements. |
 | Phase 4 - Learning and assessment | Implement course, lesson, material upload, enrollment, progress, question bank and scoring. |
-| Phase 5 - Certificate and task evidence | Implement certificate QR verification, WMS-lite task, submission, evaluation and evidence portfolio. |
-| Phase 6 - Intelligence and dashboard | Implement skill gap, recommendation, risk, readiness and dashboards. |
-| Phase 7 - Bonus AI and hardening | Add AI question/task suggestion, explanation logs, stronger tests and deployment polishing. |
+| Phase 5 - Certificate and task evidence | Implement eligible-course internal certificate, authenticated same-organization QR verification, practical task submission/review and evidence history. |
+| Phase 6 - Skill Gap and dashboard | Implement Met/Partial Gap/Gap/Not Assessed and rule-based course recommendations; exclude risk/readiness scores and weights from MVP. |
+| Phase 7 - Approved AI scope and hardening | Only after Report 1/2 scope and effort are updated, consider AI Practical Task evaluation; add authorization/data-boundary controls, reviewer workflow, audit/history, focused tests and deployment polishing. Current implementation is unverified. |
 
 # Appendix A. Naming Cheat Sheet
 
@@ -724,12 +729,12 @@ feat(competency): add position requirement mapping
 feat(course): implement course assignment workflow  
 feat(certificate): add QR verification endpoint  
 feat(task): add task submission and evaluation  
-feat(intelligence): calculate workforce readiness score  
+feat(intelligence): calculate skill gap states
 fix(rbac): restrict manager access to department employees  
 fix(assessment): prevent submitting completed attempt twice  
 docs(api): update certificate endpoint specification  
-test(readiness): add readiness score formula unit tests  
-chore(docker): add postgres and minio services  
+test(intelligence): cover skill gap states and recalculation
+chore(docker): configure local development dependencies
 
 # Final Development Recommendation
 

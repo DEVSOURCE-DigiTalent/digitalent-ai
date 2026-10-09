@@ -1,3 +1,5 @@
+> **LEGACY / ARCHIVED — NOT CANONICAL.** Retained as historical API design. Verify all endpoints against `08_Dac_Ta_API_OpenAPI.md` and current source before implementation claims.
+
 **DigiTalent AI**
 
 **08\. API Specification / OpenAPI Design**

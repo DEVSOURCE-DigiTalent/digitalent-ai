@@ -7,6 +7,8 @@ import type { ApiResponse } from '../types/api';
 export interface VerifyRegistrationInput {
   otp?: string;
   token?: string;
+  magicLinkToken?: string;
+  registrationAccessToken?: string;
 }
 
 export interface VerifyRegistrationResponseData {
@@ -31,17 +33,8 @@ const loadMock = (): Promise<RegistrationService> =>
     ? import('./mock/mock-registration.service').then((module) => ({
         registerEnterprise: module.mockRegistrationService.registerEnterprise,
         registerIndividual: module.mockRegistrationService.registerIndividual,
-        verifyIndividual: async () => ({
-          data: {
-            success: true,
-            message: 'Verified',
-            data: { accessToken: 'mock-token', expiresAt: '', user: {}, nextPath: '/personal' },
-            errors: [],
-          },
-        }),
-        resendVerification: async () => ({
-          data: { success: true, message: 'Resent', data: {}, errors: [] },
-        }),
+        verifyIndividual: module.mockRegistrationService.verifyIndividual as any,
+        resendVerification: module.mockRegistrationService.resendVerification as any,
         getRegistrationStatus: async () => ({
           data: { success: true, message: 'Status', data: { state: 'verified' }, errors: [] },
         }),
@@ -78,7 +71,12 @@ const apiRegistrationService: RegistrationService = {
   },
 
   verifyIndividual: async (id: string, input: VerifyRegistrationInput) => {
-    const res = await apiClient.post<ApiResponse<VerifyRegistrationResponseData>>(`/individual-registrations/${id}/verify`, input);
+    const payload = {
+      otp: input.otp,
+      magicLinkToken: input.magicLinkToken || input.token,
+      registrationAccessToken: input.registrationAccessToken,
+    };
+    const res = await apiClient.post<ApiResponse<VerifyRegistrationResponseData>>(`/individual-registrations/${id}/verify`, payload);
     if (res.data?.data?.accessToken) {
       localStorage.setItem('accessToken', res.data.data.accessToken);
     }

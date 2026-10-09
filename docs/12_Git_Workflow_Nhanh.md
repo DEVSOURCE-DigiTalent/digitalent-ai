@@ -1,6 +1,6 @@
 # 12 — Git Workflow & Quy Trình Nhánh
 
-> Nguồn gốc: Report 2 §6 (quản lý cấu hình & quy trình) + `CLAUDE.md` (Git Conventions). Phiên bản docs_v3, tiếng Việt.
+> Nguồn gốc: Report 2 v2.5 §6, repository Git conventions và Master System Overview 09/10/2026. Hướng dẫn quy trình; không xác nhận trạng thái branch protection, CI hay release.
 
 ---
 
@@ -9,16 +9,17 @@
 | Mục | Giá trị |
 |-----|---------|
 | Tên tài liệu | Git workflow & quy trình nhánh |
-| Phiên bản | 3.0 |
+| Phiên bản | 3.1 |
 | Trạng thái | Bản nháp |
 | Chủ sở hữu | Trần Văn Linh (Leader) |
-| Căn cứ | Report 2 §6 + CLAUDE.md |
+| Căn cứ | Report 2 v2.5 §6; repository Git conventions; Master System Overview §0, §10, §14 |
 
 **Lịch sử chỉnh sửa**
 
 | Ngày | Phiên bản | Mô tả |
 |------|-----------|-------|
 | 16/09/2026 | 3.0 | Chuyển ngữ; nhánh/conventional commits/PR theo repo thực tế |
+| 09/10/2026 | 3.1 | Làm rõ hướng dẫn không đồng nghĩa CI/branch protection đã được xác minh |
 
 ---
 
@@ -42,8 +43,8 @@ Quy trình làm việc với Git: mô hình nhánh, chu kỳ làm việc hằng 
 
 | Nhánh | Mục đích |
 |-------|----------|
-| `main` | Production — luôn deployable |
-| `develop` | Tích hợp — nơi hợp nhất các feature |
+| `main` | Nhánh chuẩn/release theo quy ước repo; không suy ra đã deploy hoặc luôn deployable |
+| `develop` | Nhánh tích hợp nếu repository/team hiện đang dùng |
 | `feature/*` | Tính năng mới |
 | `fix/*` | Sửa lỗi |
 | `release/*` | Chuẩn bị phát hành |
@@ -111,7 +112,7 @@ git push -u origin feature/DT-014-position-requirement-editor
 | 1 | Commit đầy đủ, push nhánh `-u origin feature/...` |
 | 2 | Mở PR vào `main` (default target) |
 | 3 | Điền mô tả: mục đích, thay đổi, test plan, TODO |
-| 4 | CI/CD chạy (backend-ci, frontend-ci) phải xanh |
+| 4 | Chạy các CI checks hiện có trong repository; chỉ ghi pass khi có kết quả của commit/PR đó |
 | 5 | Resolve conflict nếu có |
 | 6 | Ít nhất 1 reviewer approve |
 | 7 | Merge (squash/rebase tùy quy ước team) |
@@ -162,6 +163,6 @@ Các file quan trọng do team lead sở hữu — phải phối hợp trước 
 | Hạng mục | Liên quan | File |
 |----------|-----------|------|
 | Conventional commits | Quy ước code | 11 |
-| CI/CD xanh trước merge | DevOps | 14 |
+| CI checks khi được cấu hình | DevOps | 14 |
 | File single-owner | Kiến trúc | 06 |
 | Quy trình sprint | Report 2 | — |

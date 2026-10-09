@@ -1,6 +1,8 @@
 # 09 — Ma Trận Phân Quyền RBAC
 
-> Nguồn gốc: Report 3 §3.1.3 (screen authorization) + `PermissionConstants.cs` (code thực tế). Phiên bản docs_v3, tiếng Việt.
+> Nguồn gốc: Report 3 v2.3 §2.1 and §3.1.3. Permission-key list retained from earlier draft is marked legacy and unverified.
+
+> **Baseline 09/10/2026:** The repository contains Report 3 v2.3, while the Master Overview cites v2.2. Use v2.3 for compatible role scope and 42-screen authorization. The overview controls conflicts: GRADE-01 pending; OWNER correction decrease/reset only with reason/audit and no-self; late submission remains reviewable. The v2.3 storage-scale, grade-raising override and late-not-scored statements are not adopted. Permission keys below are legacy proposals, not verified implementation.
 
 ---
 
@@ -19,13 +21,13 @@
 | Ngày | Phiên bản | Mô tả |
 |------|-----------|-------|
 | 16/09/2026 | 3.0 | Chuyển ngữ; ma trận theo 5 vai trò + public verify |
-| 26/09/2026 | 3.1 | Chốt: đúng 5 role (bỏ `CERTIFICATE_VERIFIER` — verify là public); ma trận lưu trong database; mã quyền ở `Domain/Constants/Authorization/Permissions.cs` |
+| 09/10/2026 | 3.2 | Đồng bộ baseline Enterprise 4 role; authenticated same-org QR; platform-owned standard content |
 
 ---
 
 ## 2. Mục đích và phạm vi
 
-Đặc tả mô hình phân quyền **Role-Based Access Control (RBAC)**: 5 vai trò đăng nhập, ma trận màn hình, danh sách permission key (mirror `PermissionConstants` backend) và quy tắc data scope. Đây là **nguồn sự thật** cho cả backend (`[HasPermission]`) lẫn frontend (`RequirePermission`).
+Đặc tả mục tiêu cho mô hình RBAC bốn vai trò, ma trận màn hình và data scope. Permission key/implementation cần đối chiếu source trước khi xem là hiện trạng.
 
 **Ngoài phạm vi:** chi tiết bảo mật (15).
 
@@ -39,7 +41,7 @@
 - `docs/database/DigiTalent_AI_Canonical_v2_3.sql` — bảng `roles`, `user_roles`, `permissions`, `role_permissions`
 - `hooks/use-permission.ts` (frontend mirror)
 
-**Cách lưu trữ (chốt 26/09/2026):** role và quyền nằm trong database. Lúc chạy, `[HasPermission]` tra bảng `role_permissions` (qua `IPermissionService`); `SYSTEM_ADMIN` luôn qua. Seeder chỉ **thêm** mã/cặp còn thiếu, không ghi đè ma trận admin đã chỉnh trên màn `permission.manage`. Không có role riêng cho xác minh chứng chỉ.
+**Ghi chú hiện trạng:** các câu về role seeding, database-backed permission lookup và `SYSTEM_ADMIN` bypass là mô tả legacy chưa xác minh; không thay thế baseline 4 role hoặc scope policy đầu tài liệu.
 - `00_INDEX` §3.2
 
 ---
@@ -48,54 +50,24 @@
 
 | Vai trò | Hằng số | Phạm vi dữ liệu (scope) | Mô tả |
 |---------|---------|-------------------------|-------|
-| System Administrator | `SYSTEM_ADMIN` | GLOBAL | Tài khoản, quyền, master data, cấu hình, audit |
-| HR / Training Manager | `HR_MANAGER` | ORGANIZATION | Quản trị năng lực toàn công ty |
-| Department Manager | `DEPARTMENT_MANAGER` | DEPARTMENT | Chỉ phòng ban mình quản lý |
-| Internal Trainer | `TRAINER` | SELF (course của mình) | Nội dung học + đánh giá |
-| Employee | `EMPLOYEE` | SELF | Học, thi, nộp bằng chứng |
-| Public Visitor | *(không đăng nhập)* | PUBLIC | Chỉ xác minh chứng chỉ công khai |
+| PLATFORM_ADMIN | `PLATFORM_ADMIN` | Platform modules | Quản lý reference framework và standard learning content |
+| OWNER | `OWNER` | Organization | Quản trị organization; quản lý yêu cầu; giao khóa học khi có cập nhật/đào tạo lại; theo dõi tiến độ; giao Practical Task và review trong phạm vi tổ chức |
+| MANAGER | `MANAGER` | Assigned departments | Xem team trong phạm vi được giao; giao và review Practical Task theo phạm vi; không giao standard course trong baseline này |
+| EMPLOYEE | `EMPLOYEE` | Self | Xem Recommended Course và bắt đầu học; hoàn thành course được giao; làm assessment; xem hồ sơ và nộp evidence |
 
-> **Ghi chú:** Public Visitor **không phải vai trò hệ thống** — xác minh chứng chỉ là endpoint công khai, không auth. `SYSTEM_ADMIN` luôn vượt qua mọi kiểm tra `can()`.
+> QR verification is an authenticated OWNER/MANAGER flow constrained to the issuing organization. No public route or implicit administrator bypass is specified by this baseline.
 
 ---
 
-## 5. Ma trận phân quyền màn hình (Report 3 §3.1.3)
+## 5. Ma trận phân quyền màn hình (Report 3 v2.3 §3.1.3)
 
-> ✓ = role mở được màn hình. Đến màn hình **không** đồng nghĩa thấy mọi record — Department Manager chỉ thấy phòng ban mình, Employee chỉ thấy bản thân (scope áp ở server, không phải ẩn menu).
+Report 3 v2.3 defines access for the 42 screens listed in `10_Dac_Ta_UI_UX.md`. Shared screens 1–8 are available to all signed-in roles. Platform Admin has screens 9–17; Owner has organization screens 18–31 and screen 34; Manager has screens 32–34 and scoped access to Owner screens 23–31 as specified in the report; Employee has screens 35–41; certificate verification (screen 42) is available to Owner and Manager.
 
-| Màn hình | Admin | HR | Dept Mgr | Trainer | Employee | Public |
-|----------|:---:|:--:|:---:|:---:|:--:|:--:|
-| Login / Forgot / 403 / 404 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Profile & Security Settings | ✓ | ✓ | ✓ | ✓ | ✓ | — |
-| Notification Center | ✓ | ✓ | ✓ | ✓ | ✓ | — |
-| User Account Management | ✓ | — | — | — | — | — |
-| RBAC Permission Matrix | ✓ | — | — | — | — | — |
-| System Settings & Level Mapping | ✓ | — | — | — | — | — |
-| Audit Logs | ✓ | — | — | — | — | — |
-| Capability Executive Dashboard | ✓ | ✓ | — | — | — | — |
-| Job Families / Career Grades† / Job Positions / Requirement Editor | ✓ | ✓ | — | — | — | — |
-| Departments / Employee Roster | ✓ | ✓ | — | — | — | — |
-| Competency Library / Level Criteria | ✓ | ✓ | — | view | — | — |
-| Course Assignment & Tracking | ✓ | ✓ | — | — | — | — |
-| Capability Analytics & Gap Heatmap | ✓ | ✓ | — | — | — | — |
-| Employee Capability History | ✓ | ✓ | — | — | — | — |
-| Certificate Registry | ✓ | ✓ | — | — | — | — |
-| Department Capability Dashboard | — | — | ✓ | — | — | — |
-| Team Skill Gap Matrix | — | — | ✓ | — | — | — |
-| Practical Task Assignment / Template Library | — | — | ✓ | — | — | — |
-| Submission Review & Evidence Approval | — | — | ✓ | — | — | — |
-| Team Evidence Portfolio | — | — | ✓ | — | — | — |
-| Trainer Dashboard | — | — | — | ✓ | — | — |
-| Course & Lesson Builder / Question Bank / Assessment Setup / Learner Results | — | — | — | ✓ | — | — |
-| My Learning Dashboard | — | — | — | — | ✓ | — |
-| My Competency Profile & Gap / My Courses / Course Player / Assessment Interface / My Tasks / My Certificates | — | — | — | — | ✓ | — |
-| Certificate Verification / Invalid / Rate Limit | — | — | — | — | — | ✓ |
-
-> † **Career Grades Management** (màn hình 13) **đã gỡ** theo chỉ đạo 3-level — xem `00_INDEX` §3.1.3.
+`scoped` means limited to the Manager's assigned departments; `view` means read-only. Owner access is limited to the organization, Manager access to assigned departments, and Employee access to their own records. Platform Admin has no default access to private organization evidence or submissions. The server enforces scope on each request; frontend menu visibility is not an authorization control.
 
 ---
 
-## 6. Danh mục permission key (mirror `PermissionConstants`)
+## 6. Danh mục permission key (legacy proposal; implementation chưa xác minh)
 
 > Nguồn sự thật backend. Frontend mirror ở `hooks/use-permission.ts`. Mỗi endpoint gắn `[HasPermission(PermissionConstants.X)]`.
 
@@ -145,37 +117,39 @@
 
 ---
 
-## 7. Gán vai trò → quyền (tóm tắt)
+## 7. Gán vai trò → quyền (ma trận năng lực mục tiêu; permission keys vẫn là legacy proposal)
 
-| Nhóm module | Admin | HR | Dept Mgr | Trainer | Employee |
-|-------------|:---:|:--:|:---:|:---:|:--:|
-| Auth / Account (own) | ✓ | ✓ | ✓ | ✓ | ✓ |
-| User/Role/Config/Audit (system) | ✓ | — | — | — | — |
-| Organization (department/position/employee) | ✓ | ✓ | — | — | — |
-| Competency & Requirement | ✓ | ✓ | — | view | — |
-| Course authoring | — | — | — | ✓ | — |
-| Course assignment | ✓ | ✓ | — | — | — |
-| Assessment setup | — | — | — | ✓ | — |
-| Attempt (start/submit) | — | — | — | — | ✓ |
-| Certificate (issue/revoke) | ✓ | ✓ | — | — | — |
-| Certificate (read own / download) | — | — | — | — | ✓ |
-| Skill gap / readiness (read) | ✓ | ✓ | dept | — | own |
-| Task (assign/evaluate) | — | — | ✓ | — | — |
-| Task (submit) | — | — | — | — | ✓ |
-| Dashboard | ✓ | company | dept | own | own |
+| Nhóm năng lực | PLATFORM_ADMIN | OWNER | MANAGER | EMPLOYEE |
+|----------------|:---:|:---:|:---:|:---:|
+| Quản trị standard content / TT02 reference | ✓ | — | — | — |
+| Quản trị organization, members, positions, requirements | — | organization | — | — |
+| Đọc Skill Gap / competency history | platform reference only | organization | assigned departments | own |
+| Xem và bắt đầu Recommended Course | — | — | — | own |
+| Tạo Assigned Course cho update/retraining | — | organization | — | — |
+| Theo dõi learning progress | — | organization | assigned departments as scoped read | own |
+| Làm course assessment | — | — | — | own |
+| Giao / review Practical Task | — | organization | assigned departments | — |
+| Nộp Practical Task evidence | — | — | — | own |
+| Review certificate QR | — | same issuing org | same issuing org | — |
+
+> Permission key cụ thể vẫn là proposal, chưa xác minh/đóng băng. Các key legacy như `certificate.verify_public`, Trainer access, risk/readiness, hoặc SignalR không biểu thị quyền thuộc baseline hiện hành. Recommendation không phải assignment bắt buộc. Quyền OWNER tạo course assignment không tự cấp cho PLATFORM_ADMIN hoặc MANAGER.
+
+Trong Practical Task review, AI (nếu được bật theo scope đã duyệt) chỉ trả assessment proposal có căn cứ theo rubric. OWNER/MANAGER có quyền theo data scope để xác nhận, điều chỉnh, từ chối hoặc yêu cầu bổ sung evidence. Chỉ reviewer decision đã approve mới có thể dẫn tới cập nhật Confirmed Competency; numeric task score không phải competency grade. Model/version, rubric version, evidence references, proposal, reviewer decision và edits cần truy vết, nhưng permission keys và endpoint cụ thể chưa được chốt.
+
+OWNER-directed course update/retraining reevaluation remains **PENDING DECISION**: course assessment only, or course assessment plus Practical Task. Không mặc định cấp thêm quyền/luồng cho đến khi quyết định được ghi vào baseline.
 
 ---
 
-## 8. Quy tắc data scope (bắt buộc ở server)
+## 8. Quy tắc data scope (bắt buộc ở server; mục tiêu baseline)
 
 | Quy tắc | Áp dụng |
 |---------|---------|
-| `EnsureGlobalAccess` | Admin/HR — toàn công ty |
-| `EnsureDepartmentAccess` | Department Manager — chỉ phòng ban đang quản lý (BR-12) |
-| `EnsureOwnership` | Employee — chỉ bản thân |
-| `EnsureTrainerAccess` | Trainer — chỉ khóa học mình viết |
+| Platform scope | PLATFORM_ADMIN — reference framework và standard content; không mặc định đọc evidence riêng tư của tổ chức |
+| Organization scope | OWNER — dữ liệu của tổ chức |
+| Department scope | MANAGER — chỉ phòng ban được giao (BR-12) |
+| Self scope | EMPLOYEE — dữ liệu cá nhân; recommendation/read/start only for self |
 
-> Scope áp ở **server** (qua `ResourceScopeAuthorizationService`), không phải ẩn menu — kể cả request build bằng tay cũng bị từ chối.
+> Scope áp ở **server**, không phải ẩn menu — kể cả request build bằng tay cũng bị từ chối. Tên helper/service implementation nêu trong tài liệu legacy chưa được xác minh. AI evaluator phải chỉ nhận evidence mà reviewer có quyền truy cập.
 
 ---
 

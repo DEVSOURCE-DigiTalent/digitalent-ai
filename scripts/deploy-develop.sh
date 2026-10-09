@@ -18,6 +18,9 @@ fi
 if [ -f docker/nginx/conf.d/default.conf ]; then
     cp docker/nginx/conf.d/default.conf /tmp/default.conf.bak
 fi
+if [ -f scripts/deploy-develop.sh ]; then
+    cp scripts/deploy-develop.sh /tmp/deploy-develop.sh.bak
+fi
 
 # 2. Pull latest code from develop branch
 echo "--> Pulling latest code from develop branch..."
@@ -34,6 +37,10 @@ if [ -f /tmp/.env.docker.bak ]; then
 fi
 if [ -f /tmp/default.conf.bak ]; then
     cp /tmp/default.conf.bak docker/nginx/conf.d/default.conf
+fi
+if [ -f /tmp/deploy-develop.sh.bak ]; then
+    cp /tmp/deploy-develop.sh.bak scripts/deploy-develop.sh
+    chmod +x scripts/deploy-develop.sh
 fi
 
 # 4. Apply compatibility & SSL fixes to docker-compose.yml
@@ -56,7 +63,11 @@ docker run --rm \
 # 6. Build and restart Docker containers
 echo "--> Rebuilding and launching Docker containers..."
 cd /opt/digitalent-ai/docker
-docker compose up -d --build
+docker compose build backend-api
+docker compose stop backend-api || true
+docker compose rm -f backend-api || true
+docker compose up -d --remove-orphans
+docker exec digitalent-nginx nginx -s reload || true
 
 # 7. Verify health
 echo "--> Checking API health status..."

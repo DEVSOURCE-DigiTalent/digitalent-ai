@@ -1,4 +1,6 @@
-﻿DigiTalent AI - User Flow / Business Flow Document
+> **LEGACY / ARCHIVED — NOT CANONICAL.** Retained as historical context. Use `05_Luong_Nghiep_Vu_User_Flow.md` for the current Enterprise MVP flow.
+
+DigiTalent AI - User Flow / Business Flow Document
 
 \
 \

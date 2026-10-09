@@ -1,3 +1,5 @@
+> **LEGACY / ARCHIVED — NOT CANONICAL.** Retained as historical context. Use `04_Use_Case_Danh_Sach_Dac_Ta.md` aligned to Report 3 v2.2.
+
 
 
 **DIGITAL COMPETENCY TRAINING, INTERNAL CERTIFICATION AND WORK-BASED ASSESSMENT PLATFORM**

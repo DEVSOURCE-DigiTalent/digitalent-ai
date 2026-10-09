@@ -9,9 +9,9 @@
 
 Document Code: 01\_Project\_Overview  
 Version: 1.0  
-Status: Draft for Team Review  
+Status: Working baseline aligned to Master System Overview
 Prepared for: Capstone Project Implementation  
-Date: 19/06/2026
+Date: 09/10/2026
 
 # **Document Control**
 
@@ -24,7 +24,7 @@ Date: 19/06/2026
 | Status | Draft for team alignment before coding |
 | Primary Source | Capstone\_Project\_Register\_DigiTalent\_AI\_Revised\_Scope.docx |
 | Supporting Sources | Capstone\_Project\_Register\_DigiTalent\_AI.docx; De\_tai\_DigiTalent\_AI\_Mo\_ta\_cap\_nhat\_14\_he\_thong.docx |
-| Main Technology Stack | ReactJS, TypeScript, TailwindCSS, ShadCN/UI, ASP.NET Core/C\#, PostgreSQL, MinIO, Redis optional, SignalR, Docker, Docker Compose, Nginx, GitHub Actions |
+| Main Technology Stack | React + TypeScript, ASP.NET Core/C#, PostgreSQL; responsive UI; local file storage for development and S3-compatible/MinIO when integrated; Docker Compose/OpenAPI as deployment and documentation directions. Redis and SignalR are not required MVP dependencies. |
 | Intended Readers | Project team, mentor, reviewers, developers, testers and stakeholders involved in the Capstone project |
 
 ## **Revision History**
@@ -32,6 +32,7 @@ Date: 19/06/2026
 | Version | Date | Author/Role | Summary |
 | ----- | ----- | ----- | ----- |
 | 1.0 | 19/06/2026 | Project Team / Technical Mentor Support | Initial Project Overview based on the revised registered scope and supporting analysis documents. |
+| 1.1 | 09/10/2026 | Project Team | Aligned Enterprise Capstone scope, roles, competency framework, certificate rules and evidence review with the Master System Overview; unresolved GRADE-01 remains pending. |
 
 # **Purpose of This Document**
 
@@ -47,13 +48,13 @@ Vì đây là đồ án tốt nghiệp quan trọng, tài liệu được viết
 
 # **1\. Executive Summary**
 
-DigiTalent AI là nền tảng web dành cho doanh nghiệp nhằm quản lý đào tạo nội bộ, đánh giá năng lực số, cấp chứng chỉ nội bộ có thể xác minh và giao task thực hành sau đào tạo. Trọng tâm của hệ thống không chỉ là quản lý khóa học như một LMS thông thường, mà là quản lý vòng đời phát triển năng lực của nhân viên từ yêu cầu năng lực theo vị trí công việc đến bằng chứng năng lực thực tế.
+DigiTalent AI là nền tảng web Enterprise Capstone giúp doanh nghiệp quản lý yêu cầu năng lực theo vị trí, khoảng cách năng lực đã được xác nhận, đào tạo, đánh giá học tập, chứng chỉ nội bộ và minh chứng công việc được con người duyệt. Hoàn thành khóa học, điểm assessment hay chứng chỉ là Learning Achievement, không tự xác nhận Confirmed Workplace Competency.
 
-Hệ thống hỗ trợ HR/Training Manager, Department Manager, Internal Trainer, Employee, System Admin và Certificate Verifier. Mỗi nhóm người dùng có mục tiêu riêng: HR cần nhìn năng lực toàn doanh nghiệp; Manager cần biết đội của mình yếu ở đâu và ai có rủi ro đào tạo; Trainer cần quản lý nội dung học và assessment; Employee cần học, làm bài kiểm tra, nhận chứng chỉ và nộp task thực hành; Verifier cần xác minh chứng chỉ mà không truy cập dữ liệu nhạy cảm.
+MVP có bốn role nghiệp vụ: PLATFORM_ADMIN, OWNER, MANAGER (optional) và EMPLOYEE. PLATFORM_ADMIN quản lý framework TT02 và nội dung học chuẩn; OWNER quản trị tổ chức và toàn bộ phạm vi doanh nghiệp; MANAGER chỉ thao tác trong phòng ban được phân công; EMPLOYEE dùng các chức năng học tập và hồ sơ của chính mình. Không có Internal Trainer hoặc Public Visitor role trong baseline này.
 
-MVP của DigiTalent AI sẽ tập trung vào core web application với RBAC, quản lý tổ chức và nhân viên, khung năng lực, khóa học, assessment, chứng chỉ QR, phân tích năng lực cơ bản bằng rule-based scoring, WMS-lite task workflow, dashboard mức cơ bản và chuẩn bị triển khai bằng Docker. Các phần AI nâng cao như AI Learning Assistant, semantic knowledge search, custom machine learning hoặc talent marketplace đầy đủ được đưa vào optional/future scope để đảm bảo khả thi cho nhóm 5 thành viên.
+Enterprise MVP gồm FE-01 đến FE-09: authentication/workspace/RBAC; tổ chức, phòng ban, vị trí và thành viên; framework TT02; position requirements; confirmed competency và skill gap; learning/assessment; practical task/evidence review; dashboard/thông báo; platform administration. Risk/readiness scoring, Individual/B2C, public certificate verification và các role ngoài bốn role trên không thuộc baseline Capstone. Không suy ra trạng thái triển khai từ mô tả yêu cầu trong tài liệu này.
 
-| Câu định vị ngắn gọnDigiTalent AI giúp doanh nghiệp biết nhân viên đang có năng lực gì, còn thiếu gì, cần học gì, có nguy cơ không hoàn thành đào tạo hay không, đã đủ sẵn sàng làm việc chưa và có bằng chứng thực tế chứng minh năng lực đó hay chưa. |
+| Câu định vị ngắn gọnDigiTalent AI giúp doanh nghiệp quản lý năng lực theo vị trí, nhận biết Skill Gap, tự đề xuất khóa học phù hợp và hỗ trợ review evidence áp dụng thực tế dưới quyết định của người có thẩm quyền. |
 | :---- |
 
 # **2\. Background and Business Context**
@@ -70,38 +71,39 @@ Cách làm này tạo ra một khoảng trống lớn giữa việc “đã tham
 | P-02 | Course completion does not equal competency | Việc học xong khóa học chưa chứng minh nhân viên đã đạt đúng level năng lực mà vị trí công việc yêu cầu. |
 | P-03 | Weak competency mapping | Khóa học không phải lúc nào cũng được gắn rõ với competency, level, job position hoặc department requirement. |
 | P-04 | Manual and weak certificate verification | Chứng chỉ nội bộ thường thiếu mã xác minh, QR, trạng thái hết hạn/thu hồi và audit trail. |
-| P-05 | Limited manager visibility | Manager thiếu dashboard để theo dõi tiến độ, risk, task evidence và readiness của nhân viên trong phòng ban. |
+| P-05 | Limited manager visibility | Manager thiếu dashboard để theo dõi tiến độ, certificate status, task evidence và competency gap của nhân viên trong phạm vi. |
 | P-06 | Post-training work evidence is poorly tracked | Task thực hành sau đào tạo nếu có thường xử lý qua email/chat, khó liên kết với hồ sơ năng lực. |
 
 ## **2.2. Opportunity for DigiTalent AI**
 
-DigiTalent AI có cơ hội tạo khác biệt bằng cách kết nối ba mảng thường bị tách rời: quản trị năng lực số, đào tạo nội bộ và xác minh năng lực sau đào tạo bằng evidence. Khi kết hợp thêm chứng chỉ QR, dashboard quản trị và scoring có thể giải thích, hệ thống có thể trở thành một nền tảng capability governance gọn nhẹ, phù hợp với đồ án tốt nghiệp nhưng vẫn có tính thực tế doanh nghiệp.
+DigiTalent AI có cơ hội tạo khác biệt bằng cách kết nối quản trị năng lực số, đào tạo nội bộ và review evidence sau đào tạo. Chứng chỉ QR nội bộ, dashboard theo quyền và Skill Gap minh bạch giúp doanh nghiệp tách learning achievement khỏi năng lực công việc đã được xác nhận.
 
 # **3\. Product Vision and Positioning**
 
 ## **3.1. Vision Statement**
 
-Xây dựng một nền tảng web giúp doanh nghiệp quản lý vòng đời năng lực số của nhân viên từ yêu cầu vị trí công việc, học tập, assessment, chứng chỉ, task thực hành, evidence đến dashboard readiness. Hệ thống hướng tới sự minh bạch, dễ triển khai, có thể mở rộng và phù hợp với môi trường doanh nghiệp vừa và nhỏ hoặc đơn vị nội bộ cần quản trị đào tạo có kiểm chứng.
+Xây dựng nền tảng web giúp doanh nghiệp quản lý năng lực số từ yêu cầu vị trí đến học tập, assessment, chứng chỉ nội bộ và review evidence công việc. Dashboard tập trung vào requirement, learning, certificate và Skill Gap theo phạm vi quyền.
 
 ## **3.2. Product Positioning**
 
-DigiTalent AI không được định vị là bản clone của Moodle, Docebo, SAP SuccessFactors hoặc một hệ thống HRM đầy đủ. Hệ thống được định vị là Lightweight Workforce Capability Platform: một nền tảng gọn hơn enterprise suite, nhưng có đủ luồng đào tạo \- assessment \- chứng chỉ \- task evidence \- readiness để chứng minh năng lực nhân viên theo dữ liệu.
+DigiTalent AI không được định vị là bản clone của LMS hoặc HRM đầy đủ. Hệ thống kết nối position requirement, Skill Gap, học tập, chứng chỉ nội bộ và evidence review để phân biệt learning achievement với workplace competency đã xác nhận.
 
 | Aspect | Traditional LMS | DigiTalent AI |
 | ----- | ----- | ----- |
-| Main focus | Quản lý khóa học, bài học, quiz và completion. | Quản lý năng lực theo vị trí, skill gap, learning, certificate, task evidence và readiness. |
+| Main focus | Quản lý khóa học, bài học, quiz và completion. | Quản lý requirement theo vị trí, confirmed competency, skill gap, learning, certificate và task evidence. |
 | Success question | Ai đã học xong? | Ai đã đủ năng lực, còn thiếu gì, cần học gì và có evidence chưa? |
-| Certificate | Thường là chứng nhận hoàn thành. | Chứng chỉ có mã, QR, trạng thái hiệu lực, expiry/revocation và verification log. |
+| Certificate | Thường là chứng nhận hoàn thành. | Chứng chỉ nội bộ cho course eligible, có code/QR nội bộ, Valid/Revoked; không expiry. |
 | Post-training validation | Không phải trọng tâm hoặc xử lý ngoài hệ thống. | Có WMS-lite task để kiểm chứng khả năng áp dụng vào công việc. |
-| AI/Intelligence | Có thể là recommendation hoặc chatbot. | Core score rule-based, AI chỉ hỗ trợ gợi ý/giải thích/task/question dưới human review. |
+| AI/Intelligence | Có thể gồm recommendation hoặc chatbot. | Course recommendation và Skill Gap dùng quy tắc giải thích được; AI có thể hỗ trợ phân tích Practical Task evidence theo rubric, nhưng OWNER/MANAGER quyết định cuối; risk/readiness scoring không thuộc Enterprise MVP. |
 
 ## **3.3. Product Principles**
 
 * Competency-first: mọi khóa học, assessment, certificate và task nên liên kết được với competency cụ thể.  
-* Explainable by design: các điểm số quan trọng như skill gap, risk và readiness phải có công thức/logic minh bạch.  
-* Human-in-the-loop: AI hỗ trợ đề xuất và nội dung nháp; quyết định chính thức vẫn do HR, Trainer hoặc Manager kiểm soát.  
-* Scope-controlled: ưu tiên hoàn thành MVP có thể demo end-to-end trước khi mở rộng AI nâng cao.  
-* Enterprise-ready mindset: thiết kế có RBAC, audit log, file permission, cấu hình threshold và triển khai bằng Docker.
+* Explainable by design: Skill Gap và course recommendation phải có logic minh bạch; không có risk/readiness score trong Enterprise MVP.
+* Human review: OWNER/MANAGER review evidence trong phạm vi; AI evaluator chỉ đề xuất, không quyết định competency; nội dung học chuẩn do PLATFORM_ADMIN quản lý.
+* Explainable learning: hệ thống tự đề xuất khóa học theo Skill Gap và competency-course mapping; OWNER cũng có thể chủ động giao khóa học khi tổ chức cập nhật hoặc yêu cầu đào tạo lại.
+* Scope-controlled: AI-assisted Practical Task Evaluation là mở rộng scope/effort cần được ghi nhận trong Report 1/2; tài liệu yêu cầu không xác nhận tính năng đã được triển khai.
+* Enterprise-ready mindset: thiết kế có RBAC, audit log, file permission, version history và triển khai bằng Docker.
 
 # **4\. Goals, Objectives and Success Criteria**
 
@@ -111,31 +113,31 @@ DigiTalent AI không được định vị là bản clone của Moodle, Docebo,
 * Giúp HR và Manager đo được khoảng cách năng lực theo phòng ban/vị trí công việc.  
 * Tạo cơ chế cấp chứng chỉ nội bộ có thể xác minh bằng QR/mã chứng chỉ.  
 * Liên kết kết quả đào tạo với task thực hành để tạo bằng chứng năng lực.  
-* Cung cấp dashboard giúp theo dõi tiến độ, risk, certificate status, task evidence và readiness.
+* Cung cấp dashboard theo dõi requirement, Skill Gap, learning, certificate và task evidence theo quyền.
 
 ## **4.2. Product Objectives**
 
 | Objective | MVP Direction | Expected Result |
 | ----- | ----- | ----- |
-| Digital Competency Management | Core | Quản lý competency category, competency, level và requirement theo job position/department. |
+| Digital Competency Management | Core | Framework TT02 gồm 6 miền/24 năng lực; đào tạo nhóm bậc 1–6 thành 3 Training Level. GRADE-01 về lưu Grade 1–6 so với Level 1–3 vẫn pending. |
 | Internal Learning & Assessment | Core | Quản lý course, lesson, material, quiz, assessment attempt và learning progress. |
 | Skill Gap Analysis | Core \- rule-based | So sánh required level với current level để xác định năng lực thiếu và mức độ ưu tiên. |
 | Learning Recommendation | Core \- rule-based | Đề xuất course/path dựa trên skill gap và course-competency mapping. |
-| Training Risk Score | Core \- rule-based | Cảnh báo người học có khả năng trễ hoặc không đạt đào tạo dựa trên progress, score, attempts và deadline. |
-| Workforce Readiness Score | Core \- rule-based | Tổng hợp competency, certificate, progress và task performance để đo readiness. |
-| Digital Certificate Verification | Core | Cấp chứng chỉ có code, QR URL, trạng thái valid/expired/revoked và verification log. |
-| Work-Based Competency Assessment | Core | Giao task thực hành, nộp kết quả, đánh giá và lưu competency evidence. |
-| Career & Promotion Readiness | Optional/Bonus | So sánh nhân viên với vị trí mục tiêu nếu core scope hoàn thành sớm. |
+| Training Risk Score | Out of Enterprise Capstone MVP | Không thuộc baseline hiện tại. |
+| Workforce Readiness Score | Out of Enterprise Capstone MVP | Không thuộc baseline hiện tại. |
+| Digital Certificate Verification | Core | Course eligible + required lessons + đỗ final assessment; QR verification nội bộ yêu cầu OWNER/MANAGER cùng tổ chức đăng nhập; Valid/Revoked, không expiry. |
+| Work-Based Competency Assessment | Core workflow; AI evaluator expansion pending scope alignment | Giao task, nộp evidence; OWNER/MANAGER review theo rubric. Nếu được duyệt, AI-assisted evaluation đề xuất điểm theo tiêu chí, rationale, căn cứ và gaps; chỉ reviewer approval hợp lệ mới có thể cập nhật Confirmed Competency. Điểm task tách biệt Competency Level. |
+| Individual/B2C workspace, trial, payment | Out of Enterprise Capstone MVP | Roadmap sản phẩm riêng, không gộp vào Capstone baseline. |
 | AI Learning Assistant / Knowledge Search | Future | Hỗ trợ học tập và tìm kiếm ngữ nghĩa trong giai đoạn mở rộng, không bắt buộc MVP. |
 
 ## **4.3. Success Criteria**
 
 | Category | Criteria |
 | ----- | ----- |
-| Functional completeness | MVP chạy được end-to-end: tạo position requirement, gán course, employee học/làm assessment, cấp certificate, giao task, manager đánh giá, dashboard cập nhật. |
+| Functional completeness | MVP chạy được end-to-end: tạo position requirement, tự đề xuất course và OWNER có thể giao course, employee học/làm assessment, cấp certificate, giao task, AI hỗ trợ nếu nằm trong scope được duyệt, manager review, dashboard cập nhật. |
 | Scope control | Không triển khai lan man sang full HRM, full LMS, talent marketplace hoặc microservices phức tạp trước khi core flow hoàn thành. |
 | Data integrity | Các dữ liệu nhạy cảm như assessment score, certificate status, competency profile và task evaluation không được sửa trái quyền. |
-| Explainability | Skill gap, risk score, readiness score và recommendation có logic hoặc lý do giải thích được. |
+| Explainability | Skill Gap và course recommendation có logic/lý do giải thích được. |
 | Usability | Mỗi role có dashboard và navigation rõ ràng; người dùng có thể hoàn thành tác vụ chính mà không cần thao tác quá phức tạp. |
 | Deployment readiness | Hệ thống có Docker Compose, cấu hình môi trường, Swagger/OpenAPI và hướng dẫn deploy cơ bản. |
 | Defense readiness | Có demo scenario rõ ràng chứng minh khác biệt so với LMS thông thường. |
@@ -146,20 +148,17 @@ DigiTalent AI phục vụ nhiều vai trò trong doanh nghiệp. Mỗi vai trò 
 
 | Role | Main Goal | Key Permissions / Responsibilities |
 | ----- | ----- | ----- |
-| System Admin | Vận hành và cấu hình hệ thống. | Quản lý users, roles, permissions, master data, audit logs, system settings, scoring thresholds và backup/deployment settings. |
-| HR / Training Manager | Quản trị đào tạo và năng lực toàn công ty. | Quản lý employee, department, job position, competency framework, course assignment, certificates, dashboards và readiness/risk overview. |
-| Department Manager | Theo dõi và phát triển năng lực nhân viên trong phòng ban. | Xem nhân viên thuộc department, xem progress/risk/readiness, giao task thực hành, đánh giá task và xác nhận competency evidence. |
-| Internal Trainer | Tạo và quản lý nội dung đào tạo/assessment. | Quản lý course, lesson, material, question bank, assessment, review AI question draft và theo dõi performance học viên. |
-| Employee | Học tập, làm assessment, nhận chứng chỉ và nộp task. | Xem course được gán, học lesson, làm quiz/assessment, xem certificate, xem recommendation, nộp task và xem feedback. |
-| Certificate Verifier | Xác minh tính hợp lệ của chứng chỉ. | Tra cứu certificate bằng code/QR và chỉ xem thông tin cần thiết để xác minh validity. |
-| Company Leadership | Theo dõi năng lực số ở cấp quản trị. | Xem insight tổng quan về readiness, department strengths/weaknesses, risk và training effectiveness nếu được phân quyền. |
+| PLATFORM_ADMIN | Quản trị cấu hình nền tảng và nội dung tham chiếu. | Quản lý tổ chức/platform users; TT02 version, grade criteria; standard course/lesson, question bank, assessment và reference positions. Không mặc định xem private evidence của doanh nghiệp. |
+| OWNER | Quản trị tổ chức. | Quản lý thành viên, phòng ban, vị trí, requirement set; theo dõi đề xuất và tiến độ khóa học; chủ động giao course khi có cập nhật/đào tạo lại; giao task, review/duyệt AI-assisted task evaluation trong phạm vi; quản lý và thu hồi chứng chỉ. Không sửa standard content và không tự sửa grade của mình. |
+| MANAGER (optional) | Theo dõi nhân viên trong phòng ban được phân công. | Xem gap, learning và certificate trong phạm vi; giao Practical Task và review/chỉnh sửa/duyệt AI-assisted evaluation. Không quản lý standard content, organization setup, requirement hoặc revoke certificate. |
+| EMPLOYEE | Học, thi, xem kết quả/chứng chỉ và nộp evidence. | Chỉ truy cập dữ liệu của chính mình; không tự xác nhận workplace competency. |
 
 ## **5.1. Key Access Control Notes**
 
-* Employee không được tự chỉnh sửa assessment score, certificate status hoặc competency level của mình.  
-* Department Manager chỉ xem và đánh giá nhân viên thuộc phạm vi phòng ban được phân quyền.  
-* Certificate Verifier không được truy cập hồ sơ nhân viên đầy đủ; chỉ xem thông tin cần thiết của certificate.  
-* Các thao tác cấp/thu hồi certificate, đánh giá task, thay đổi competency và cấu hình score phải có audit log.
+* Backend phải thực thi role và data scope; MANAGER chỉ truy cập phòng ban được phân công.
+* Chỉ OWNER/MANAGER trong đúng tổ chức được đăng nhập để xác minh QR chứng chỉ. Verification chỉ trả holder name, course/competency, issue date và status.
+* Evidence Passed, được reviewer duyệt theo từng competency và đánh dấu level-confirming mới có thể tăng Confirmed Competency. Correction có kiểm soát có thể giảm/reset grade. Learning score/chứng chỉ không tự đổi grade.
+* OWNER Override chỉ giảm/reset grade để sửa lỗi dữ liệu, có reason/audit, không cho OWNER tự sửa grade của mình.
 
 # **6\. Scope Definition**
 
@@ -172,23 +171,21 @@ MVP cần đủ để chứng minh vòng đời năng lực từ yêu cầu vị
 | Authentication & Authorization | Login, logout, refresh token, password management cơ bản, RBAC, protected API, role-based navigation. |
 | Organization & Employee Management | Department, job position, employee profile, manager assignment, employee status. |
 | Competency Framework Management | Competency category, competency, level, position requirement, employee competency profile. |
-| Course & Learning Management | Course, module/lesson, learning material, course-competency mapping, course assignment, progress tracking. |
+| Course & Learning Management | Standard course, module/lesson, learning material, competency mapping, tự đề xuất theo gap, OWNER assignment và progress tracking. |
 | Assessment & Question Bank | Question bank, quiz/final assessment, attempt, scoring, pass/fail rule. |
-| Capability Analysis | Skill gap, learning recommendation, training risk score và workforce readiness score ở mức rule-based. |
-| Certificate Management | Certificate generation, certificate code, QR verification URL, valid/expired/revoked status, verification page/log. |
-| WMS-lite Practical Task | Task suggestion/manual task, assignment, deadline, expected output, submission, evaluation, feedback và evidence. |
-| Dashboard & Analytics | Dashboard cơ bản cho HR, Manager, Trainer và Employee. |
-| Notification & Reminder | In-app/SignalR notification cho course assignment, deadlines, certificate expiry, task update và risk alert ở mức cơ bản. |
-| Admin & Master Data | Users, roles, permissions, master data, scoring thresholds, certificate expiry rules và audit logs. |
+| Capability Analysis & Learning Recommendation | Tính Confirmed Competency/Skill Gap; tự đề xuất standard course theo competency thiếu và course mapping; EMPLOYEE có thể bắt đầu từ đề xuất. OWNER có thể giao course riêng khi có cập nhật/đào tạo lại. Khi chưa có Position/Active Requirement Set, trạng thái là Not Assessed. |
+| Certificate Management | Chỉ cấp cho course đánh dấu certificate-eligible khi hoàn thành required lessons và đỗ final assessment; trạng thái Valid/Revoked, không expiry. |
+| WMS-lite Practical Task | OWNER/MANAGER giao task, gắn competency và rubric; submission, feedback, AI-assisted per-criterion evaluation proposal (nếu nằm trong scope được duyệt), reviewer edit/approval, evidence và audit history. Chỉ review hợp lệ được duyệt mới có thể cập nhật Confirmed Competency; task score không đồng nhất với competency level. |
+| Dashboard & Analytics | Dashboard theo PLATFORM_ADMIN, OWNER, MANAGER và EMPLOYEE trong đúng data scope. |
+| Notification & Reminder | Thông báo assignment, deadline, task update và các sự kiện MVP phù hợp; không có nhắc expiry chứng chỉ. |
+| Admin & Master Data | Quản lý reference data, audit và cấu hình theo FE-09; không đưa risk/readiness score hay certificate expiry rules thành scope mặc định. |
 
 ## **6.2. Optional / Bonus Scope**
 
-* AI Question Draft cho Trainer tạo câu hỏi nháp và Trainer duyệt trước khi publish.  
-* AI Task Suggestion tạo task thực hành và evaluation criteria dựa trên skill gap hoặc course đã hoàn thành.  
-* Career & Promotion Readiness so sánh employee với target position.  
-* Competency Heatmap nâng cao theo department/job position.  
-* Learning ROI hoặc training improvement analysis nếu có đủ dữ liệu demo.  
-* AI Explanation chi tiết cho recommendation, risk và readiness.
+* AI Question Draft và AI Task Suggestion chưa thuộc Enterprise Capstone MVP; chỉ xem xét ở roadmap riêng sau khi có quyết định phạm vi.
+* AI-assisted Practical Task Evaluation là mở rộng AI scope so với baseline Reports 1/2 cần được cập nhật scope, estimate/effort, use case, data/security controls và test coverage trước khi coi là cam kết MVP. Không suy ra rằng source code hiện có đã triển khai chức năng này.
+* Career & Promotion Readiness, Competency Heatmap và Learning ROI là roadmap tương lai, cần quyết định phạm vi riêng.
+* AI Explanation cho risk/readiness là roadmap tương lai; không tạo giải thích cho hai điểm số này vì chúng ngoài scope. AI hỗ trợ đánh giá evidence theo rubric được mô tả riêng tại §11 và không tự ra quyết định competency.
 
 ## **6.3. Out of Scope for MVP**
 
@@ -208,38 +205,39 @@ Luồng nghiệp vụ cốt lõi của DigiTalent AI cần được triển khai
 
 | Step | Stage | Description |
 | ----- | ----- | ----- |
-| 1 | Setup Organization | Admin/HR tạo department, job position và employee profile. |
-| 2 | Define Competency Requirements | HR tạo competency framework và map required competencies cho từng job position. |
-| 3 | Create Training Content | Trainer tạo course, lesson, material, question bank và assessment; course được gắn với competency. |
-| 4 | Assign Learning | HR/Manager gán course cho employee, department hoặc job position. |
-| 5 | Analyze Skill Gap | System so sánh current competency với required competency để xác định gap. |
-| 6 | Recommend Learning Path | System đề xuất course/path phù hợp dựa trên skill gap và course-competency mapping. |
-| 7 | Learn and Assess | Employee học lesson, làm quiz/final assessment và hệ thống ghi nhận progress/score. |
-| 8 | Issue Certificate | Nếu đạt điều kiện, hệ thống cấp certificate có code, QR và trạng thái hiệu lực. |
-| 9 | Assign Practical Task | Manager giao task thực hành để kiểm chứng năng lực sau đào tạo. |
+| 1 | Setup Organization | OWNER tạo organization structure, position và member records. |
+| 2 | Define Competency Requirements | PLATFORM_ADMIN quản lý TT02/reference data; OWNER tạo và kích hoạt versioned position requirement set. |
+| 3 | Maintain Standard Learning | PLATFORM_ADMIN quản lý standard course, lesson, question bank và assessment. |
+| 4 | Analyze Skill Gap | System so sánh Confirmed Competency với Active Requirement; khi chưa đủ cấu hình là Not Assessed. |
+| 5 | Recommend Learning | System tự đề xuất standard course theo competency gap và course-competency mapping; EMPLOYEE có thể mở/bắt đầu khóa học từ danh sách này. |
+| 6 | Assign Course When Needed | OWNER có thể giao course chủ động khi tổ chức cập nhật nội dung/yêu cầu hoặc yêu cầu đào tạo lại; cơ chế này tồn tại cùng course recommendation. OWNER theo dõi tiến độ. |
+| 7 | Learn and Assess | Employee học lesson, làm quiz/final assessment và hệ thống ghi nhận progress/score. Course assessment/certificate không tự xác nhận workplace competency. |
+| 8 | Issue Certificate | Nếu course eligible, required lessons hoàn tất và final assessment đỗ, hệ thống cấp certificate Valid có code và QR nội bộ. |
+| 9 | Assign Practical Task | OWNER hoặc MANAGER trong phạm vi giao task gắn với một hay nhiều competency cần chứng minh và rubric tương ứng. |
 | 10 | Submit Evidence | Employee cập nhật tiến độ và nộp file/link/kết quả task. |
-| 11 | Evaluate Task | Manager đánh giá score, feedback và xác nhận competency evidence. |
-| 12 | Update Readiness Dashboard | System cập nhật competency profile, evidence portfolio, risk/readiness score và dashboard. |
+| 11 | AI-Assisted Evaluation and Human Review | AI có thể đề xuất điểm theo rubric, rationale, evidence citations và gaps. OWNER/MANAGER kiểm tra, chỉnh sửa hoặc yêu cầu bổ sung; người review quyết định cuối. |
+| 12 | Confirm Competency and Recalculate Gap | Chỉ review hợp lệ đã được duyệt, được đánh dấu level-confirming, mới có thể cập nhật Confirmed Competency. Task score khác Competency Level; system ghi audit rồi tính lại Skill Gap. |
 
-| Core demo loopPosition Requirement → Skill Gap → Course Recommendation → Learning → Assessment → Certificate → Practical Task → Manager Evaluation → Competency Evidence → Readiness Dashboard |
+| Core demo loopPosition Requirement → Skill Gap → Course Suggestion → Learning → Assessment → Eligible Certificate → Practical Task → Human Review → Confirmed Competency → Recalculated Skill Gap |
 | :---- |
 
 ## **7.1. Certificate Verification Flow**
 
-1. Employee hoàn thành course và đạt final assessment theo điều kiện.  
+1. EMPLOYEE hoàn thành required lessons và đỗ final assessment của course certificate-eligible.
 2. System tạo certificate code duy nhất và QR verification URL.  
 3. System sinh PDF certificate và lưu thông tin certificate vào database.  
 4. Employee tải hoặc xem certificate.  
-5. Verifier quét QR hoặc nhập certificate code để kiểm tra validity.  
-6. System hiển thị trạng thái VALID, EXPIRED hoặc REVOKED và ghi verification log nếu cần.
+5. OWNER/MANAGER của đúng tổ chức phát hành đăng nhập rồi quét QR để kiểm tra.
+6. System hiển thị trạng thái Valid hoặc Revoked; certificate không có expiry và verification không tiết lộ hồ sơ nội bộ.
 
 ## **7.2. WMS-lite Task Evidence Flow**
 
-7. System/AI hoặc Manager xác định nhân viên cần task thực hành để kiểm chứng competency.  
-8. Manager tạo/giao task với mô tả, deadline, expected output và evaluation criteria.  
+7. OWNER/MANAGER xác định task thực hành cần giao cho nhân viên trong phạm vi.
+8. OWNER/MANAGER tạo/giao task với mô tả, deadline, expected output và evaluation criteria.
 9. Employee nhận task, cập nhật tiến độ và nộp evidence.  
-10. Manager đánh giá task score, ghi feedback và xác nhận competency impact.  
-11. System lưu Competency Evidence và tính lại readiness score nếu thỏa điều kiện.
+10. Nếu nằm trong scope được duyệt, AI đề xuất đánh giá từng rubric criterion kèm lý do, căn cứ evidence và gaps; OWNER/MANAGER review, chỉnh sửa, duyệt hoặc yêu cầu bổ sung.
+11. Chỉ kết quả review hợp lệ được duyệt và đánh dấu level-confirming mới cập nhật Confirmed Competency. Điểm task lưu riêng với Competency Level; rubric/AI/model version (nếu có), reviewer decision và edit history được truy vết.
+12. System lưu Competency Evidence/Review History và tính lại Skill Gap nếu evidence level-confirming được duyệt.
 
 # **8\. High-Level Functional Modules**
 
@@ -248,15 +246,15 @@ Luồng nghiệp vụ cốt lõi của DigiTalent AI cần được triển khai
 | M01 | Authentication & Authorization | Xác thực, JWT, refresh token, RBAC, permission check, session control, audit log. |
 | M02 | Organization & Employee Management | Quản lý phòng ban, vị trí công việc, hồ sơ nhân viên và manager assignment. |
 | M03 | Competency Framework | Quản lý nhóm năng lực, năng lực, level, criteria, position requirements và employee competency. |
-| M04 | Course & Learning Management | Quản lý khóa học, bài học, tài liệu, course assignment, progress và course-competency mapping. |
+| M04 | Course & Learning Management | Quản lý khóa học, bài học, tài liệu, course-competency mapping, tự đề xuất theo gap, OWNER assignment và progress. |
 | M05 | Assessment & Question Bank | Quản lý câu hỏi, quiz/final assessment, attempt, scoring và pass rule. |
-| M06 | Certificate Management | Cấp chứng chỉ, QR verification, expiry/revocation và certificate audit. |
-| M07 | Capability Intelligence Engine | Skill gap, recommendation, training risk, readiness score và optional AI explanation. |
-| M08 | WMS-lite Task Management | Giao task thực hành, submission, evaluation, feedback và competency evidence. |
-| M09 | Dashboard & Analytics | Dashboard theo role: HR, Manager, Trainer, Employee; KPI và overview. |
-| M10 | Notification & Reminder | SignalR/in-app notifications cho assignment, deadline, expiry, feedback và risk. |
-| M11 | File Storage | Upload/download lesson materials, task evidence files và generated certificate PDFs qua MinIO. |
-| M12 | Admin & Configuration | Master data, score threshold, readiness weights, certificate rules, audit log và system settings. |
+| M06 | Certificate Management | Cấp certificate-eligible internal certificate; QR verification yêu cầu đăng nhập OWNER/MANAGER cùng tổ chức; Valid/Revoked, không expiry. |
+| M07 | Competency Analysis | Confirmed Competency, Skill Gap và course suggestion theo quy tắc; không có risk/readiness scoring trong Enterprise MVP. |
+| M08 | WMS-lite Task Management | Giao task/rubric, submission, AI evaluation proposal nếu được scope duyệt, reviewer decision/edit, feedback, evidence và audit. Task score tách biệt competency level. |
+| M09 | Dashboard & Analytics | Dashboard theo PLATFORM_ADMIN, OWNER, MANAGER và EMPLOYEE trong đúng data scope. |
+| M10 | Notification & Reminder | In-app notifications cho assignment, deadline và feedback; không có expiry/risk alert. |
+| M11 | File Storage | Upload/download lesson materials, task evidence and certificate PDFs through local storage in development or S3-compatible storage when integrated. |
+| M12 | Platform Administration | TT02/reference content, platform users, audit và settings theo FE-09; không cấu hình risk/readiness weights hoặc certificate expiry. |
 
 ## **8.1. Module Dependency Notes**
 
@@ -270,21 +268,21 @@ Tài liệu này chưa thay thế ERD, nhưng cần xác định trước các n
 | ----- | ----- | ----- |
 | Auth & Security | User, Role, Permission, UserRole, RefreshToken, AuditLog | Nền tảng bảo mật, phân quyền và truy vết thao tác. |
 | Organization | Department, JobPosition, EmployeeProfile, ManagerAssignment | Dùng để giới hạn dữ liệu theo phòng ban/vị trí. |
-| Competency | CompetencyCategory, Competency, CompetencyLevel, PositionCompetencyRequirement, EmployeeCompetencyProfile | Nền tảng để tính skill gap và readiness. |
+| Competency | TT02 version/criteria, RequirementSet, ConfirmedCompetency, Evidence/Review History | Nền tảng để tính Skill Gap và lưu lịch sử xác nhận/correction. |
 | Learning | Course, CourseModule, Lesson, LearningMaterial, CourseCompetency, Enrollment, LessonProgress | Theo dõi quá trình học và mapping với competency. |
 | Assessment | QuestionBank, Question, Option, Assessment, AssessmentQuestion, Attempt, Answer | Lưu câu hỏi, attempt, scoring và pass/fail. |
-| Certificate | CertificateTemplate, Certificate, CertificateVerificationLog | Cấp và xác minh certificate bằng code/QR. |
-| Task Evidence | PracticalTask, TaskAssignment, TaskSubmission, TaskEvaluation, CompetencyEvidence | Lưu task thực hành và evidence liên quan competency. |
-| Intelligence | SkillGapResult, LearningRecommendation, TrainingRiskScore, ReadinessScore, AIExplanationLog | Lưu kết quả tính toán và explanation snapshot. |
-| Notification | Notification, NotificationRecipient, ReminderJob | Thông báo assignment, deadline, expiry, feedback và risk. |
+| Certificate | Certificate, code, internal QR, issue date, status and revocation reason | Cấp và xác minh nội bộ; không lưu expiry theo baseline. |
+| Task Evidence | PracticalTask, TaskAssignment, TaskSubmission, RubricVersion, AIEvaluation, ReviewerDecision/Edit, CompetencyEvidence | Lưu task/evidence và đầy đủ lịch sử đánh giá; AI/model version khi áp dụng; task score tách competency level. |
+| Competency Analysis | RequirementSet version, ConfirmedCompetency, SkillGapResult, LearningRecommendation, CourseAssignment | Lưu requirement, evidence-confirmed competency, kết quả gap/recommendation và course assignment/reason. |
+| Notification | Notification, NotificationRecipient | Thông báo assignment, deadline và feedback. |
 
 ## **9.1. Data Governance Principles**
 
 * Không hard delete dữ liệu nghiệp vụ quan trọng như certificate, assessment attempt, task evaluation và competency evidence.  
 * Các bảng quan trọng cần có created\_at, updated\_at, created\_by, updated\_by và status nếu phù hợp.  
-* Score threshold, readiness weights, certificate expiry rule và risk threshold nên lưu cấu hình, không hard-code trong code.  
-* Các thao tác nhạy cảm cần audit log: cấp/thu hồi certificate, thay đổi competency, đánh giá task, chỉnh cấu hình score.  
-* File upload cần lưu metadata, owner, permission scope và object path trong MinIO thay vì lưu file trực tiếp vào database.
+* Không xác định readiness weights, risk threshold hoặc certificate expiry rule trong Enterprise MVP.
+* Các thao tác nhạy cảm cần audit log: cấp/thu hồi certificate, thay đổi competency, đánh giá task, chỉnh cấu hình score và AI/reviewer evaluation history.
+* File upload metadata includes owner, permission scope and object path; use local development storage or the configured S3-compatible provider rather than assuming MinIO is already deployed.
 
 # **10\. Technical Overview**
 
@@ -293,11 +291,11 @@ Tài liệu này chưa thay thế ERD, nhưng cần xác định trước các n
 | Layer | Technology | Purpose |
 | ----- | ----- | ----- |
 | Frontend | ReactJS, TypeScript, TailwindCSS, ShadCN/UI | Xây dựng giao diện enterprise dashboard, forms, tables, role-based portal và responsive UI. |
-| Backend | ASP.NET Core / C\# | Triển khai RESTful API, business logic, RBAC, scoring, certificate, learning, assessment và task workflow. |
+| Backend | ASP.NET Core / C# | REST API, business logic, RBAC, explainable Skill Gap, certificate, learning, assessment and task workflow. |
 | Database | PostgreSQL | Lưu dữ liệu quan hệ, competency records, learning metadata, assessment results, certificate records và dashboard queries. |
-| File Storage | MinIO hoặc object storage tương thích S3 | Lưu lesson materials, task submission files và generated certificate PDFs. |
-| Cache / Background Jobs | Redis optional | Cache dashboard, queue/reminder jobs và performance optimization nếu cần. |
-| Realtime | SignalR | In-app notifications cho course assignment, task updates, deadline reminders và risk alerts. |
+| File Storage | Local for development; S3-compatible/MinIO when integrated | Lesson materials, task evidence and certificate PDFs; verify the configured provider separately. |
+| Cache / Background Jobs | No dedicated cache provider required | Recalculation queue/job follows the approved design; Redis is not an assumed dependency. |
+| Notifications | In-app + browser polling | Assignment, deadline and task feedback notices; SignalR/WebSocket is not required in the MVP. |
 | API Documentation | Swagger/OpenAPI | Tài liệu hóa API, request/response, auth và validation. |
 | Deployment | Docker, Docker Compose, Nginx | Đóng gói và triển khai frontend/backend/database/storage/cache/reverse proxy. |
 | CI/CD | GitHub Actions | Build/test/deploy pipeline cơ bản. |
@@ -311,7 +309,7 @@ DigiTalent AI nên triển khai theo hướng Modular Monolith trong giai đoạ
 | Presentation/API Layer | Controllers, request validation, authentication/authorization attributes, response mapping. |
 | Application/Service Layer | Business use cases, orchestration, scoring rules, transaction handling, permission checks. |
 | Domain Layer | Core entities, enums, domain rules, status transitions, validation rules độc lập với infrastructure. |
-| Infrastructure Layer | PostgreSQL access, MinIO file service, Redis/cache, SignalR hub, email/notification adapters, external AI adapters. |
+| Infrastructure Layer | PostgreSQL access, configured file storage, email/notification adapters, queued recalculation and optional external AI adapters. |
 | Frontend Layer | Role-based routes, layout, forms, tables, API clients, validation, loading/error states và reusable components. |
 
 ## **10.3. Security Direction**
@@ -319,22 +317,24 @@ DigiTalent AI nên triển khai theo hướng Modular Monolith trong giai đoạ
 * JWT access token kết hợp refresh token để quản lý phiên đăng nhập.  
 * Password hashing an toàn; không lưu password plain text.  
 * RBAC kết hợp permission check theo module/action và department-level data access.  
-* File upload cần validate extension, size, MIME type và permission trước khi download.  
+* File upload metadata includes owner, permission scope and object path; use local development storage or the configured S3-compatible provider rather than assuming MinIO is already deployed.
 * Certificate verification endpoint phải giới hạn dữ liệu trả về, tránh lộ thông tin nội bộ.  
 * CORS, environment variables, secret management và rate limit cơ bản cần được cấu hình đúng khi deploy.
 
 # **11\. AI and Rule-Based Intelligence Overview**
 
-Để đảm bảo tính khả thi và khả năng giải thích khi bảo vệ, DigiTalent AI sẽ không phụ thuộc hoàn toàn vào AI/LLM cho các quyết định quan trọng. MVP dùng rule-based scoring cho các chỉ số chính; LLM nếu tích hợp sẽ hỗ trợ gợi ý nội dung, giải thích hoặc tạo draft dưới sự duyệt của con người.
+Skill Gap và course recommendation là các quyết định rule-based có thể giải thích. AI-assisted Practical Task Evaluation là vai trò trợ lý đánh giá: đọc evidence được phép truy cập, đối chiếu rubric và đề xuất điểm theo từng tiêu chí, lý do, căn cứ evidence và tiêu chí còn thiếu. AI không quyết định cuối và không cập nhật Confirmed Competency. Đây là phần mở rộng AI scope/effort so với Reports 1/2; cần cập nhật các report và đặc tả liên quan trước khi xem là cam kết MVP. Tài liệu này không xác nhận source code đã triển khai chức năng.
 
 | Feature | MVP Level | Implementation Direction |
 | ----- | ----- | ----- |
-| Skill Gap Analysis | Core \- rule-based | Required Competency Level \- Current Competency Level; ưu tiên gap theo weight/mandatory flag. |
+| Skill Gap Analysis | Core \- rule-based | So sánh confirmed grade với required grade; trạng thái Met/Partial Gap/Gap; Not Assessed khi chưa có position hoặc Active Requirement Set. Không có requirement weight. |
 | Learning Recommendation | Core \- rule-based | Map skill gap với course competencies, prerequisite, priority và employee history. |
-| Training Risk Score | Core \- rule-based | Tính risk dựa trên inactivity, low score rate, deadline pressure, failed attempts và progress delay. |
-| Workforce Readiness Score | Core \- rule-based | Tổng hợp competency, certificate, learning progress, compliance/task performance theo weight cấu hình. |
-| AI Task Suggestion | Optional/Bonus | LLM đề xuất task và criteria; Manager duyệt/chỉnh trước khi giao. |
-| AI Question Draft | Optional/Bonus | LLM tạo câu hỏi nháp; Trainer duyệt trước khi publish. |
+| OWNER Course Assignment | Core business capability | OWNER có thể chủ động giao standard course khi tổ chức cập nhật hoặc yêu cầu đào tạo lại; coexist với đề xuất tự động; theo dõi progress theo quyền. |
+| AI-assisted Practical Task Evaluation | Scope expansion requiring Report 1/2 update | Đề xuất per-criterion score, rationale, evidence citations và missing criteria theo rubric; OWNER/MANAGER review/edit/approve. Ghi rubric version, AI result và model/version nếu có, reviewer decision và edit history. Task score tách biệt competency level. |
+| Training Risk Score | Out of Enterprise Capstone MVP | Không đưa risk scoring vào scope/acceptance của baseline này. |
+| Workforce Readiness Score | Out of Enterprise Capstone MVP | Không đưa readiness scoring vào scope/acceptance của baseline này; competency confirmation dựa trên evidence review. |
+| AI Task Suggestion | Optional/Bonus | LLM đề xuất task và criteria; Manager duyệt/chỉnh trước khi giao. Đây là khác với AI evaluation của submission. |
+| AI Question Draft | Out of Enterprise Capstone MVP | Chỉ xem xét theo quyết định phạm vi riêng; PLATFORM_ADMIN chịu trách nhiệm nội dung chuẩn. |
 | AI Learning Assistant | Future | Hỏi đáp/tóm tắt bài học/giải thích đáp án sai khi có thời gian và dữ liệu nội dung ổn định. |
 | AI Knowledge Search | Future | Semantic search/pgvector nếu core scope hoàn tất và có dữ liệu tài liệu đủ tốt. |
 
@@ -342,9 +342,11 @@ DigiTalent AI nên triển khai theo hướng Modular Monolith trong giai đoạ
 
 * AI không tự cấp certificate.  
 * AI không tự thay đổi competency level nếu không có rule hoặc người duyệt.  
-* Trainer phải duyệt AI-generated questions trước khi sử dụng chính thức.  
-* Manager/HR phải duyệt task, evaluation hoặc quyết định phát triển nhân sự.  
-* Các output AI quan trọng nên lưu explanation/input snapshot để audit và phục vụ bảo vệ.
+* Nội dung chuẩn do PLATFORM_ADMIN quản lý.
+* OWNER/MANAGER duyệt evidence theo từng target competency; Passed, level-confirming evidence mới có thể tăng confirmed grade. Correction có kiểm soát có thể giảm/reset.
+* Điểm Practical Task là đánh giá theo tiêu chí của task, không tự ánh xạ thành Competency Level. Chỉ reviewer approval hợp lệ và business rule level-confirming mới cập nhật Confirmed Competency.
+* Lưu rubric version, AI evaluation result, model/version (nếu có), căn cứ evidence, reviewer decision và mọi edit để audit; bảo vệ evidence theo tổ chức/phòng ban và chỉ gửi cho AI provider đã được cấu hình/cho phép.
+* **PENDING DECISION:** Khi OWNER giao course do cập nhật/đào tạo lại, required reevaluation là final course assessment hay phải thêm Practical Task? Quy tắc có thể khác giữa content update và thay đổi competency requirement.
 
 # **12\. Non-Functional Requirements Direction**
 
@@ -353,7 +355,7 @@ DigiTalent AI nên triển khai theo hướng Modular Monolith trong giai đoạ
 | Usability | Giao diện rõ role, sidebar dễ hiểu, form/table nhất quán, trạng thái loading/empty/error đầy đủ. |
 | Maintainability | Code chia module rõ ràng, đặt tên tiếng Anh, không hard-code business thresholds, có convention cho backend/frontend. |
 | Security | JWT, RBAC, password hashing, audit log, file permission và department-level access control. |
-| Performance | Pagination/filter/sort cho bảng lớn; dashboard query tối ưu; Redis optional cho cache nếu cần. |
+| Performance | Server pagination/filter/sort and measured dashboard queries; use cache only when the measured need and provider are verified. |
 | Reliability | Transaction cho nghiệp vụ quan trọng như submit assessment, issue certificate, evaluate task. |
 | Scalability | Modular Monolith có boundary rõ, có thể tách module về sau nếu cần. |
 | Observability | Logging cơ bản cho API errors, auth events, certificate/task/competency changes. |
@@ -382,10 +384,10 @@ DigiTalent AI nên triển khai theo hướng Modular Monolith trong giai đoạ
 
 | Dependency | Usage | Risk / Note |
 | ----- | ----- | ----- |
-| OpenAI API / Gemini API optional | AI suggestion/explanation/draft nếu triển khai bonus. | Có thể tốn chi phí hoặc lỗi quota; không phụ thuộc cho core scoring. |
-| MinIO / S3-compatible storage | File upload/download và certificate PDF. | Cần cấu hình bucket, access key, policy và backup. |
-| SignalR | Realtime notification. | Có thể làm polling/in-app notification trước nếu SignalR chưa kịp. |
-| Redis optional | Cache/dashboard/background reminder. | Có thể defer nếu MVP chưa cần performance optimization. |
+| External AI provider (optional, if approved) | AI-assisted task evidence evaluation proposal after Report 1/2 scope/effort alignment. | Cost, reliability and evidence privacy must be assessed; rule-based Skill Gap/course recommendation works independently. |
+| S3-compatible storage | File upload/download and certificate PDF when integrated. | Configure bucket, credentials, access policy and backup for the selected provider. |
+| Browser polling | In-app notification delivery in the MVP. | Verify implementation separately; SignalR is not required. |
+| Redis | Not a required MVP dependency. | Consider only after measuring a need and confirming the deployment choice. |
 | GitHub Actions | CI/CD. | Cần cấu hình secrets và branch protection. |
 
 # **14\. Key Risks and Mitigation**
@@ -394,11 +396,11 @@ DigiTalent AI nên triển khai theo hướng Modular Monolith trong giai đoạ
 | ----- | ----- | ----- |
 | Scope creep do nhiều module và nhiều ý tưởng AI. | Trễ tiến độ, core flow không hoàn thành. | Chốt MVP theo revised scope; AI advanced để optional/future; demo end-to-end trước. |
 | Thiết kế database chưa kỹ. | Code backend khó sửa, frontend bị ảnh hưởng, dashboard sai dữ liệu. | Làm ERD và business rules trước khi code; review quan hệ chính. |
-| RBAC sai hoặc thiếu kiểm soát department-level. | Rủi ro bảo mật và lỗi nghiệp vụ nghiêm trọng. | Viết permission matrix; test các case Manager/Employee/Verifier. |
-| Score formulas hard-code. | Khó giải thích, khó chỉnh khi mentor hỏi. | Đưa threshold/weights vào configuration hoặc bảng settings. |
+| RBAC sai hoặc thiếu kiểm soát organization/department scope. | Rủi ro bảo mật và lỗi nghiệp vụ nghiêm trọng. | Xác định permission matrix và kiểm tra scope PLATFORM_ADMIN/OWNER/MANAGER/EMPLOYEE. |
+| GRADE-01 chưa được quyết định. | Có thể lệch giữa báo cáo và biểu diễn grade trong thiết kế. | Giữ pending; không tự sửa schema, constraint, thuật toán hoặc migration. |
 | Dashboard làm trước khi dữ liệu lõi ổn định. | Hiển thị số liệu giả hoặc khó maintain. | Làm dashboard sau khi course/assessment/certificate/task đã có dữ liệu thật. |
 | Frontend/backend lệch API contract. | Mất thời gian tích hợp. | Chốt API spec, Swagger, shared DTO examples và review PR. |
-| AI API không ổn định hoặc tốn phí. | Demo lỗi nếu phụ thuộc AI. | Core rule-based luôn chạy độc lập; AI chỉ là bonus có fallback. |
+| AI evaluation is unreliable, costly or exposes evidence. | Incorrect proposed assessment, privacy impact or demo failure. | AI evaluation remains optional until Report 1/2 alignment; constrain evidence access, show rationale/citations, require human decision, retain audit trail and provide fallback. Core Skill Gap/recommendation remains rule-based. |
 | Deploy phức tạp. | Không demo được bản online/staging. | Docker Compose từ sớm; có local/staging environment và README setup. |
 
 # **15\. Readiness Checklist Before Coding**
@@ -423,11 +425,11 @@ Trước khi bắt đầu coding từng module, nhóm nên đảm bảo module �
 15. Competency: category, competency, level, position requirement, employee competency profile.  
 16. Learning: course, lesson, material upload, course-competency mapping, enrollment/progress.  
 17. Assessment: question bank, assessment, attempt, scoring and pass rule.  
-18. Certificate: issue certificate, generate PDF/QR, verify by code/QR, revoke/expire.  
-19. Capability Analysis: skill gap, recommendation, risk, readiness based on real data.  
-20. WMS-lite Task: assign, submit, evaluate, evidence, update readiness.  
-21. Dashboard & Notification: role dashboards, SignalR/in-app notifications, final polish.  
-22. Bonus AI: question draft, task suggestion, AI explanation, career readiness if core flow is stable.
+18. Certificate: issue eligible-course certificate, generate PDF/QR, verify internally after same-organization login, revoke.
+19. Competency Analysis: Confirmed Competency, Skill Gap and rule-based course suggestion.
+20. WMS-lite Task: assign, submit, review evidence per competency, update confirmed grade only when level-confirming.
+21. Dashboard & Notification: role dashboards and in-app notifications delivered by browser polling.
+22. AI-assisted Practical Task Evaluation requires Report 1/2 scope and effort alignment; AI content drafting and Individual/B2C features remain subject to separate scope decisions.
 
 # **16\. Defense-Oriented Demo Scenario**
 
@@ -435,38 +437,42 @@ Demo nên kể một câu chuyện doanh nghiệp đơn giản, có dữ liệu 
 
 | Demo Step | What to Show | Value Demonstrated |
 | ----- | ----- | ----- |
-| 1\. Create position requirement | HR cấu hình vị trí Marketing Executive cần Data Literacy level 3 và AI Productivity level 2\. | Hệ thống quản trị năng lực theo vị trí. |
+| 1\. Create position requirement | OWNER kích hoạt requirement set của Marketing Executive theo TT02; dải grade tuân theo GRADE-01 sau khi được quyết định. | Hệ thống quản trị năng lực theo vị trí. |
 | 2\. View employee gap | Employee A hiện thiếu Data Literacy. | Skill Gap Analysis trả lời nhân viên thiếu gì. |
 | 3\. Recommend course | System đề xuất Data Analytics Basic. | Learning Recommendation có căn cứ từ competency mapping. |
-| 4\. Assign and learn | HR/Manager gán course; Employee học và làm assessment. | Internal Learning & Assessment. |
+| 4\. Learn from recommendation or assignment | EMPLOYEE bắt đầu khóa được hệ thống đề xuất theo gap; OWNER cũng có thể giao course khi có cập nhật/đào tạo lại và theo dõi tiến độ. Reassessment requirement remains PENDING DECISION. | Automatic course recommendation and OWNER course assignment coexist. |
 | 5\. Issue certificate | Employee đạt điều kiện và được cấp certificate có QR. | Digital Certificate Verification. |
-| 6\. Assign task | Manager giao task tạo báo cáo chiến dịch marketing. | WMS-lite kiểm chứng áp dụng thực tế. |
-| 7\. Evaluate evidence | Employee nộp file; Manager đánh giá và xác nhận competency evidence. | Competency Evidence Portfolio. |
-| 8\. Dashboard update | Readiness score và dashboard phòng ban cập nhật. | Quản trị năng lực bằng dữ liệu, không chỉ course completion. |
+| 6\. Assign task | OWNER/assigned MANAGER giao task tạo báo cáo chiến dịch marketing, gắn competency và rubric. | WMS-lite kiểm chứng áp dụng thực tế. |
+| 7\. Evaluate and review evidence | Nếu nằm trong scope được duyệt, AI đề xuất điểm từng tiêu chí, lý do, căn cứ và thiếu sót; OWNER/MANAGER quyết định sau khi review/edit. Task score không đồng nhất competency level. | Competency Evidence History records rubric, AI and reviewer history. |
+| 8\. Dashboard update | Scoped learning, certificate, evidence và Skill Gap views cập nhật sau khi review hợp lệ được duyệt. | Theo dõi năng lực đã xác nhận, không nhầm course completion hoặc task score với competency. |
 
 # **17\. Glossary**
 
 | Term | Meaning in DigiTalent AI |
 | ----- | ----- |
 | Competency | Một năng lực cụ thể mà nhân viên cần có, ví dụ AI Literacy, Data Literacy, Cybersecurity Awareness. |
-| Competency Level | Cấp độ thành thạo của competency, ví dụ level 1-5 hoặc beginner/intermediate/advanced. |
+| Competency Grade | Grade theo tiêu chí TT02 được Report 3 mô tả ở dải 1–6; cách lưu grade so với 3 Level đào tạo đang là PENDING DECISION GRADE-01. |
 | Position Requirement | Bộ competency và level yêu cầu cho một vị trí công việc. |
 | Skill Gap | Khoảng cách giữa level yêu cầu và level hiện tại của nhân viên. |
-| Learning Recommendation | Đề xuất course/path dựa trên skill gap và mapping giữa course với competency. |
-| Training Risk Score | Điểm cảnh báo nguy cơ nhân viên chậm/trượt/không hoàn thành đào tạo. |
-| Workforce Readiness Score | Điểm tổng hợp phản ánh mức độ sẵn sàng làm việc dựa trên competency, certificate, progress và task performance. |
+| Learning Recommendation | Hệ thống tự đề xuất course/path dựa trên skill gap và competency mapping; employee có thể bắt đầu học. OWNER có thể đồng thời giao course. |
+| AI-assisted Practical Task Evaluation | AI đề xuất đánh giá rubric/evidence, còn OWNER/MANAGER review và quyết định; cần được ghi nhận trong scope/effort Report 1/2 trước khi cam kết MVP. |
+| Practical Task Score | Điểm task theo rubric; không phải competency level đã xác nhận. |
+| Learning Achievement | Course completion, assessment result hoặc certificate; không tự xác nhận workplace competency. |
+| Confirmed Workplace Competency | Năng lực được xác nhận từ minh chứng thực tế được người có quyền review; không đồng nhất với learning completion hay certificate. |
 | WMS-lite | Luồng giao task thực hành sau đào tạo, không phải hệ thống quản lý công việc đầy đủ. |
-| Competency Evidence | Bằng chứng chứng minh năng lực, gồm assessment, certificate, task submission, manager review hoặc manual evidence. |
-| Certificate Verifier | Người kiểm tra chứng chỉ bằng code hoặc QR mà không truy cập dữ liệu nội bộ nhạy cảm. |
+| Competency Evidence | Minh chứng được review theo competency; certificate và learning score là Learning Achievement, không tự xác nhận workplace competency. |
+| Internal QR Verification | Xác minh QR yêu cầu OWNER/MANAGER của đúng tổ chức phát hành đăng nhập; hiển thị thông tin giới hạn và trạng thái Valid/Revoked. |
 
 # **18\. Source Traceability**
 
-Tài liệu này được tổng hợp và chuẩn hóa từ các tài liệu đầu vào nội bộ của đề tài. Bản Revised Scope được ưu tiên làm nguồn chính vì đây là phạm vi đã đăng ký chính thức với hội đồng.
+Tài liệu này được căn chỉnh theo Master System Overview ngày 09/10/2026 cho Enterprise Capstone MVP. Reports 1–3 là baseline theo thứ tự ưu tiên trong Overview; Capstone Project Register là hồ sơ lịch sử, không tự thay thế scope hiện tại. Tài liệu này mô tả yêu cầu, không xác nhận trạng thái triển khai của source code.
 
 | Source Document | How It Is Used |
 | ----- | ----- |
-| Capstone\_Project\_Register\_DigiTalent\_AI\_Revised\_Scope.docx | Nguồn chính cho tên đề tài, mô tả, scope MVP, objective, expected deliverables, technology stack và AI integration strategy. |
+| DigiTalent\_AI\_MASTER\_SYSTEM\_OVERVIEW\_2026-10-09.md | Working baseline hiện tại và hướng dẫn xử lý xung đột tài liệu; điểm GRADE-01 vẫn pending. |
+| Reports 1 v2.5, 2 v2.5, 3 v2.2 | Baseline về phạm vi, kế hoạch và chi tiết yêu cầu theo thứ tự ưu tiên nêu trong Master System Overview. |
+| Capstone\_Project\_Register | Hồ sơ đăng ký lịch sử; khác biệt với scope hiện tại cần minh bạch với mentor. |
 | Capstone\_Project\_Register\_DigiTalent\_AI.docx | Nguồn tham khảo cho bản scope mở rộng, capability intelligence và một số feature bonus. |
 | De\_tai\_DigiTalent\_AI\_Mo\_ta\_cap\_nhat\_14\_he\_thong.docx | Nguồn tham khảo cho định vị sau khảo sát 14 hệ thống, điểm khác biệt, risk, WMS-lite, evidence portfolio và demo script. |
 
-Khi các tài liệu BRD, SRS, ERD, API Specification hoặc UI/UX Specification được tạo tiếp theo, mọi nội dung nên trace ngược được về Project Overview và Revised Scope để đảm bảo thống nhất phạm vi.
+Các tài liệu chi tiết cần trace về Enterprise Capstone baseline trong Master System Overview và Reports 1–3; các điểm pending phải được giữ nguyên nhãn chờ quyết định.

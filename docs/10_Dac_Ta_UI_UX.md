@@ -1,6 +1,8 @@
 # 10 — Đặc Tả UI/UX
 
-> Nguồn gốc: Report 3 §3.1.2 (44 màn hình / 7 khu vực) + design system frontend. Phiên bản docs_v3, tiếng Việt.
+> Nguồn gốc: Report 3 v2.3 §3.1.2–3.1.3 (42 screens and authorization matrix).
+
+> **Baseline 09/10/2026:** Repository copy is Report 3 v2.3, while the Master Overview cites v2.2. The v2.3 §3.1.2–3.1.3 42-screen inventory and authorization below are compatible details. The Master Overview controls conflicts: GRADE-01 remains pending; Owner correction only decreases/resets with reason/audit and no-self; late submissions remain reviewable. The v2.3 statements for 1–3 stored levels, grade-raising Owner override and late submissions not scored are not adopted.
 
 ---
 
@@ -12,19 +14,19 @@
 | Phiên bản | 3.0 |
 | Trạng thái | Bản nháp |
 | Chủ sở hữu | Trần Văn Linh (Leader) |
-| Căn cứ | Report 3 §3.1.2 |
+| Căn cứ | Report 3 v2.3 §3.1.2–3.1.3 |
 
 **Lịch sử chỉnh sửa**
 
 | Ngày | Phiên bản | Mô tả |
 |------|-----------|-------|
-| 16/09/2026 | 3.0 | Chuyển ngữ; 44 màn hình / 7 khu vực; design token theo shadcn/ui + Tailwind 4 |
+| 09/10/2026 | 3.1 | Thay inventory legacy bằng 42 screens và screen authorization theo Report 3 v2.3; giữ các quyết định mới hơn trong Master Overview |
 
 ---
 
 ## 2. Mục đích và phạm vi
 
-Đặc tả trải nghiệm người dùng và cấu trúc 44 màn hình (nhóm 7 khu vực) cùng design token, nguyên tắc UI, trạng thái màn hình. Tài liệu để frontend triển khai đồng bộ và để UAT (file 13).
+Đặc tả trải nghiệm người dùng, screen authorization, design token, nguyên tắc UI và trạng thái màn hình theo baseline Enterprise MVP. Danh mục màn hình theo Report 3 v2.3.
 
 **Ngoài phạm vi:** ma trận phân quyền màn hình (09), chi tiết từng component code (11).
 
@@ -32,7 +34,7 @@
 
 ## 3. Tài liệu tham chiếu
 
-- Report 3 §3.1.1–§3.1.2
+- Report 3 v2.3 §3.1.1–§3.1.3
 - `09_Ma_Tran_Phan_Quyen_RBAC.md`
 - shadcn/ui + TailwindCSS 4 (frontend)
 - `00_INDEX` §3.4
@@ -43,7 +45,7 @@
 
 | Nguyên tắc | Yêu cầu |
 |-----------|---------|
-| First-time ease | HR giao khóa học cho 5 nhân viên trong 5 phút, không cần hướng dẫn viết |
+| First-time ease | OWNER có thể giao khóa học cập nhật/đào tạo lại cho nhóm nhân viên trong 5 phút; nhân viên tự bắt đầu từ Course Recommendation |
 | Confirm destructive | Mọi revoke/archive/delete cần bước xác nhận nêu tên record |
 | List đầy đủ | Search + sort + pagination (mặc định 20 dòng) |
 | Ba trạng thái | Mọi màn hình có loading / empty / error state — không vùng trống |
@@ -58,16 +60,14 @@ Mô hình tương tác: **centralized auth gateway** → route theo vai trò →
 
 | Vai trò | Màu | Điểm khởi đầu |
 |---------|-----|----------------|
-| System Admin | Đỏ | User Account Management → RBAC → Settings → Audit |
-| HR / Training Manager | Xanh dương | Capability Executive Dashboard → 6 khu vực quản trị |
-| Department Manager | Xanh lá | Department Capability Dashboard → gap/task/evidence |
-| Internal Trainer | Cam | Trainer Dashboard → course/question/assessment |
-| Employee | Nâu | My Learning Dashboard → học/thi/task/chứng chỉ |
-| Public | Tím | Certificate Verification (dưới ranh giới access control, không đăng nhập) |
+| PLATFORM_ADMIN | Đỏ | Platform administration, TT02/reference and standard content |
+| OWNER | Xanh dương | Organization workspace: members, requirements, course recommendations/progress, directed assignments, certificates |
+| MANAGER | Xanh lá | Assigned department workspace: team view and practical-task review |
+| EMPLOYEE | Nâu | Personal learning, assessment and evidence workspace |
 
 ---
 
-## 6. Danh mục 44 màn hình / 7 khu vực
+## 6. Danh mục 42 screens (Report 3 v2.3 §3.1.2)
 
 | # | Khu vực | Màn hình |
 |---|---------|----------|
@@ -77,34 +77,34 @@ Mô hình tương tác: **centralized auth gateway** → route theo vai trò →
 | 4 | Common & Auth | Notification Center |
 | 5 | Common & Auth | 403 Access Denied |
 | 6 | Common & Auth | 404 Not Found |
-| 7 | Administration | User Account Management |
-| 8 | Administration | RBAC Permission Matrix |
-| 9 | Administration | System Settings & Level Mapping |
-| 10 | Administration | Audit Logs |
-| 11 | HR Capability | Capability Executive Dashboard |
-| 12 | Job Architecture | Job Families Catalogue |
-| 13 | ~~Job Architecture~~ | ~~Career Grades Management~~ (đã gỡ — 3-level) |
-| 14 | Job Architecture | Job Positions Management |
-| 15 | Job Architecture | Position Requirement Editor |
-| 16 | Organization | Departments Management |
-| 17 | Organization | Employee Master Roster |
-| 18 | Competency | Competency Framework Library |
-| 19 | Competency | Competency Detail & Indicators |
-| 20 | HR Learning | Course Assignment & Tracking |
-| 21 | HR Analytics | Capability Analytics & Gap Heatmap |
-| 22 | HR Certificate | Certificate Registry |
-| 23 | HR Analytics | Employee Capability History |
-| 24 | Manager | Department Capability Dashboard |
-| 25 | Manager | Team Skill Gap Matrix |
-| 26 | Manager | Practical Task Assignment |
-| 27 | Manager | Submission Review & Evidence Approval |
-| 28 | Manager | Team Evidence Portfolio |
-| 29 | Manager | Practical Task Template Library |
-| 30 | Trainer | Trainer Dashboard |
-| 31 | Trainer | Course & Lesson Builder |
-| 32 | Trainer | Question Bank Management |
-| 33 | Trainer | Assessment Setup |
-| 34 | Trainer | Learner Results & Grading Review |
+| 7 | TT02 Reference | TT02 Framework Explorer |
+| 8 | TT02 Reference | TT02 Competency Detail |
+| 9 | Platform Admin | Platform Dashboard |
+| 10 | Platform Admin | Organizations & Users |
+| 11 | Platform Admin | TT02 Framework Management |
+| 12 | Standard Content | Standard Curriculum Builder |
+| 13 | Standard Content | Question Bank Management |
+| 14 | Standard Content | Assessment Setup |
+| 15 | Platform Admin | Reference Positions |
+| 16 | Platform Admin | Audit Logs |
+| 17 | Platform Admin | System Settings |
+| 18 | Owner | Owner Dashboard |
+| 19 | Organization | Members & Invitations |
+| 20 | Organization | Departments |
+| 21 | Organization | Positions |
+| 22 | Requirements | Position Requirement Editor |
+| 23 | Competency | Skill Gap Analytics & Heatmap |
+| 24 | Competency | Employee Competency History |
+| 25 | Learning | Course Recommendations & Assignment / Training Monitor |
+| 26 | Assessment | Assessment Results |
+| 27 | Practical Task | Practical Task Template Library |
+| 28 | Practical Task | Practical Task Assignment |
+| 29 | Practical Task | Submission Review & Evidence Approval |
+| 30 | Practical Task | Team Evidence Portfolio |
+| 31 | Certificate | Certificate Registry |
+| 32 | Manager | Team Dashboard |
+| 33 | Manager | My Team |
+| 34 | Manager | Team Skill Gap Matrix |
 | 35 | Employee | My Learning Dashboard |
 | 36 | Employee | My Competency Profile & Gap |
 | 37 | Employee | My Courses & Learning Path |
@@ -112,11 +112,9 @@ Mô hình tương tác: **centralized auth gateway** → route theo vai trò →
 | 39 | Employee | Assessment Interface |
 | 40 | Employee | My Tasks & Evidence Submission |
 | 41 | Employee | My Certificates |
-| 42 | Public | Certificate Verification |
-| 43 | Public | Invalid / Expired / Revoked State |
-| 44 | Public | Rate Limit Notice |
+| 42 | Certificate | Certificate Verification |
 
-> ⚠️ **Chuyển đổi 3-level:** màn hình 13 "Career Grades Management" bị gỡ. Tổng màn hình hiệu dụng docs_v3 = **43** (44 theo Report 3, trừ màn hình 13). Mô tả màn hình 25/36 bỏ "career grade".
+No public section, Trainer screen, Career Grade screen or separate invalid/expired/rate-limit screen is in the 42-screen inventory. Verification is a signed-in Owner/Manager of the issuing organization. Screen access is limited by role and server-enforced data scope.
 
 ---
 
@@ -129,7 +127,7 @@ Mô hình tương tác: **centralized auth gateway** → route theo vai trò →
 | Màu | shadcn theme tokens (`--background`, `--primary`, `--destructive`…), hỗ trợ dark mode |
 | Khoảng cách | Spacing 4px grid (Tailwind `space-*`) |
 | Breakpoint | Desktop ≥1280px, tablet 768px, mobile 375px |
-| Trạng thái | `StatusBadge` cho VALID/EXPIRED/REVOKED, ACTIVE/ARCHIVED… |
+| Trạng thái | `StatusBadge` cho VALID/REVOKED, ACTIVE/ARCHIVED… |
 
 ---
 
@@ -160,22 +158,38 @@ Mô hình tương tác: **centralized auth gateway** → route theo vai trò →
 
 ### 9.2 Position Requirement Editor (Job Architecture)
 
-- Mỗi dòng = một competency: required level (Basic/Intermediate/Advanced), weight, bắt buộc, cần evidence thực hành.
+- Mỗi dòng = một competency, required training level theo TT02 và mandatory flag. Không có weight hoặc cờ extra-evidence-required trong baseline.
 - Banner hiển thị version đang active.
-- 9–14 competency mới được kích hoạt (MSG07). Kích hoạt bản mới → xác nhận archive bản cũ (MSG25).
+- At least one requirement item is needed before activation; activating the new version archives the previous active version after confirmation.
 
 ### 9.3 My Competency Profile & Gap (Employee)
 
-- Hiển thị vị trí hiện tại, mỗi competency: required level, current level, trạng thái (met / partial gap / gap) trên **thang 3 mức**.
-- Dưới bảng: khóa học xếp hạng theo mức lấp gap, kèm lý do gợi ý.
+- Hiển thị vị trí hiện tại, competency requirement, confirmed competency và trạng thái Met / Partial Gap / Gap / Not Assessed. GRADE-01 vẫn pending; không chốt cách lưu/so sánh grade từ màn hình.
+- Dưới bảng: Recommended Courses được xếp theo competency đang thiếu và mức course coverage; hiển thị lý do gợi ý rõ ràng. Recommendation không phải yêu cầu bắt buộc và không tạo due date.
+- Nhân viên có thể mở và bắt đầu học từ recommendation. Course Assignment do OWNER giao phải có nhãn riêng, lý do/yêu cầu tổ chức và due date nếu có; không gộp hai trạng thái này thành một.
 - Mở rộng từng trạng thái → xem evidence nào xác nhận mức hiện tại, requirement version nào đặt mục tiêu.
 - Chưa gán vị trí / chưa có active set → hiển thị ghi chú thay vì bảng trống.
 
-### 9.4 Certificate Verification (Public)
+### 9.4 Certificate Verification (authenticated same-organization)
 
-- Nhập mã hoặc quét QR.
-- Chỉ trả: holder name, competency/course, issue date, status — không định danh nội bộ (BR-10).
-- >20 check/phút → Rate Limit Notice (MSG13).
+- OWNER/MANAGER đã đăng nhập cùng tổ chức phát hành mở QR/mã chứng chỉ.
+- Chỉ hiển thị holder name, course/competency, issue date, status; không lộ evidence, assessment attempt hoặc internal employee ID.
+- Không có public route hoặc Public Visitor role; trạng thái certificate là Valid/Revoked, không expiry.
+
+### 9.5 Course Recommendations and OWNER-directed assignment (screens 25, 37)
+
+- Employee sees system-generated recommendations tied to current Skill Gap. Each item explains the missing competency and how the course covers it; employee can start learning from the item.
+- OWNER sees recommendation/progress monitoring and can separately assign a standard course for organizational updates or retraining, with due date and an explicit reason when applicable. OWNER monitors completion; MANAGER does not assign standard courses in this baseline.
+- Label the two paths `Recommended` and `Assigned`; a recommendation alone is optional learning, while an assignment is an organizational requirement. Course assessment result and certificate are shown separately from Confirmed Competency.
+- Reevaluation after an OWNER-directed update/retraining assignment is **PENDING DECISION**: final course assessment only, or assessment plus Practical Task. Do not show a mandatory Practical Task until this rule is decided.
+
+### 9.6 Practical Task evidence review (screens 28–30, 40)
+
+- Employee submits work evidence and sees submission/review status. Late submissions remain eligible for review under the current baseline.
+- If AI-assisted evaluation is enabled under an approved scope, show it as a proposal: rubric version, criterion-level proposed result, numeric task score, rationale, linked evidence references, unmet criteria, and model/version when available. Keep AI proposal visually distinct from reviewer decision.
+- OWNER/MANAGER reviewer checks the evidence and context and may approve, edit, reject, or request more evidence within the applicable scope. Show reviewer decision and edits/history separately.
+- Explain that the numeric task score is not a competency grade. Only an approved reviewer decision can update Confirmed Competency; then show the updated competency profile and recalculated Skill Gap.
+- The UI/API must respect organization and assigned-department scope. Do not expose evidence references or AI results to roles lacking access.
 
 ---
 
@@ -202,6 +216,6 @@ Mô hình tương tác: **centralized auth gateway** → route theo vai trò →
 | Competency | UC-20, 21, 22 | 04 |
 | HR Learning / Certificate | UC-24, 27 | 04, 15 |
 | Manager | UC-28..33 | 04 |
-| Trainer | UC-34..38 | 04 |
-| Employee | UC-39..45 | 04 |
-| Public | UC-46 | 15 |
+| Platform Admin | Platform administration / standard content use cases | Report 3 v2.3 §2.2, §3.11 |
+| Owner / Manager | Organization, learning, certificate and evidence use cases | Report 3 v2.3 §3.3–3.10 |
+| Employee | Personal learning, assessment and evidence use cases | Report 3 v2.3 §3.5–3.9 |

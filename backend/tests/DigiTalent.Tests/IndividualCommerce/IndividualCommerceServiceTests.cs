@@ -325,5 +325,10 @@ public sealed class IndividualCommerceServiceTests
             SentReceiptEmails.Add((email, name, orderCode, amount, plan));
             return Task.CompletedTask;
         }
+
+        public Task SendPasswordResetEmailAsync(string email, string name, string resetLink, CancellationToken ct = default)
+        {
+            return Task.CompletedTask;
+        }
     }
 }

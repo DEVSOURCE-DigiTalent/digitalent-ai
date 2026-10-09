@@ -130,7 +130,7 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
           <ol className="mt-3 grid gap-4">
             {course.modules.map((item) => (
               <li key={item.id}>
-                <p className="mb-1.5 text-xs text-pt-fg-3">{item.title}</p>
+                <p className="mb-1.5 px-2.5 text-[11px] font-medium uppercase tracking-[0.1em] text-pt-fg-3">{item.title}</p>
                 <ul className="grid gap-0.5">
                   {item.lessons.map((entry) => (
                     <li key={entry.id}>
@@ -140,7 +140,7 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
                         aria-current={entry.id === lesson.id ? 'true' : undefined}
                         className={cn(
                           'flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] transition-colors',
-                          entry.id === lesson.id ? 'bg-pt-fg/10 text-pt-fg' : 'text-pt-fg-2 hover:bg-pt-fg/5 hover:text-pt-fg',
+                          entry.id === lesson.id ? 'bg-pt-accent/10 font-medium text-pt-fg shadow-[inset_2px_0_0_var(--pt-accent)]' : 'text-pt-fg-2 hover:bg-pt-fg/5 hover:text-pt-fg',
                         )}
                       >
                         <span className={cn('grid size-5 shrink-0 place-items-center rounded-full border', entry.completed ? 'border-pt-ok/50 bg-pt-ok/15 text-pt-ok' : 'border-pt-line')}>
@@ -171,7 +171,7 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
                 className={cn('relative px-3 py-3.5 text-sm transition-colors', tab === key ? 'text-pt-fg' : 'text-pt-fg-3 hover:text-pt-fg')}
               >
                 {key === 'content' ? 'Nội dung bài học' : 'Ghi chú của tôi'}
-                {tab === key && <span className="absolute inset-x-3 bottom-0 h-px bg-pt-fg" aria-hidden="true" />}
+                {tab === key && <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-pt-accent" aria-hidden="true" />}
               </button>
             ))}
           </div>
@@ -260,25 +260,32 @@ function ClosedLesson({ lesson }: { lesson: PersonalLesson }) {
   );
 }
 
+/** A short "Term: definition" line gets the term set apart, so a list of terms scans instead of reading as one block. */
+function BodyParagraph({ text }: { text: string }) {
+  const split = text.indexOf(': ');
+  if (split <= 0 || split > 48) return <p>{text}</p>;
+  return <p><strong className="font-medium text-pt-fg">{text.slice(0, split)}:</strong> {text.slice(split + 2)}</p>;
+}
+
 function LessonContent({ lesson }: { lesson: PersonalLesson }) {
   return (
-    <article className="mx-auto grid max-w-[72ch] gap-6">
+    <article className="mx-auto grid max-w-[68ch] gap-7">
       {lesson.kind === 'VIDEO' && <h1 className="text-[clamp(22px,2.6vw,30px)] font-normal leading-tight tracking-[-0.02em]">{lesson.title}</h1>}
-      <p className="text-[17px] leading-relaxed text-pt-fg">{lesson.summary}</p>
-      <div className="grid gap-4 text-base leading-[1.65] text-pt-fg-2">
-        {lesson.body.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+      <p className="border-l-2 border-pt-accent/70 pl-4 text-[17px] font-medium leading-relaxed text-pt-fg">{lesson.summary}</p>
+      <div className="grid gap-3.5 text-[15px] leading-[1.75] text-pt-fg-2">
+        {lesson.body.map((paragraph) => <BodyParagraph key={paragraph} text={paragraph} />)}
       </div>
-      <div className="rounded-2xl border border-pt-line p-5">
-        <p className={PT_EYEBROW}>Ghi nhớ</p>
-        <ul className="mt-3 grid gap-2">
+      <div className="rounded-2xl bg-pt-raised/50 p-5">
+        <p className="text-xs font-medium uppercase tracking-[0.12em] text-pt-accent">Ghi nhớ</p>
+        <ul className="mt-3 grid gap-2.5">
           {lesson.takeaways.map((item) => (
-            <li key={item} className="flex gap-2.5 text-sm text-pt-fg-2"><Check className="mt-0.5 size-4 shrink-0 text-pt-fg-3" aria-hidden="true" />{item}</li>
+            <li key={item} className="flex gap-2.5 text-sm leading-relaxed text-pt-fg"><Check className="mt-0.5 size-4 shrink-0 text-pt-ok" aria-hidden="true" />{item}</li>
           ))}
         </ul>
       </div>
       {lesson.practice && (
-        <div className="flex gap-3 rounded-2xl bg-pt-fg/6 p-5 text-sm leading-relaxed text-pt-fg">
-          <Lightbulb className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+        <div className="flex gap-3 rounded-2xl border border-pt-accent/30 bg-pt-accent/8 p-5 text-sm leading-relaxed text-pt-fg">
+          <Lightbulb className="mt-0.5 size-4 shrink-0 text-pt-accent" aria-hidden="true" />
           <p><span className="font-medium">Thực hành: </span>{lesson.practice}</p>
         </div>
       )}

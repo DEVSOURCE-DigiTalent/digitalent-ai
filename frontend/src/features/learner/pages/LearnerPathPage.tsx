@@ -181,8 +181,8 @@ function StatusMark({ status }: { status: PathCourseStatus }) {
   const base = 'grid size-10 shrink-0 place-items-center rounded-full border';
   if (status === 'COMPLETED') return <span className={cn(base, 'border-pt-ok/40 bg-pt-ok/15 text-pt-ok')}><Check className="size-4" aria-hidden="true" /></span>;
   if (status === 'LOCKED') return <span className={cn(base, 'border-pt-line text-pt-fg-3')}><Lock className="size-4" aria-hidden="true" /></span>;
-  if (status === 'IN_PROGRESS') return <span className={cn(base, 'border-pt-fg bg-pt-fg text-pt-bg')}><Play className="size-4" aria-hidden="true" /></span>;
-  return <span className={cn(base, 'border-pt-fg/50 text-pt-fg')}><ArrowRight className="size-4" aria-hidden="true" /></span>;
+  if (status === 'IN_PROGRESS') return <span className={cn(base, 'border-pt-accent bg-pt-accent text-pt-on-accent')}><Play className="size-4" aria-hidden="true" /></span>;
+  return <span className={cn(base, 'border-pt-accent/50 text-pt-accent')}><ArrowRight className="size-4" aria-hidden="true" /></span>;
 }
 
 function CourseRow({ course, isNext }: { course: PathCourse; isNext: boolean }) {
@@ -192,7 +192,7 @@ function CourseRow({ course, isNext }: { course: PathCourse; isNext: boolean }) 
       as="li"
       className={cn(
         'grid gap-4 p-5 transition-colors sm:grid-cols-[auto_1fr_auto] sm:items-center',
-        isNext && 'border-pt-fg/60',
+        isNext && 'border-pt-accent/50',
         locked && 'bg-pt-card/60',
       )}
     >
@@ -200,8 +200,8 @@ function CourseRow({ course, isNext }: { course: PathCourse; isNext: boolean }) 
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs tabular-nums text-pt-fg-3">{course.code}</span>
-          <Tag tone={course.status === 'COMPLETED' ? 'ok' : 'neutral'}>{STATUS_LABEL[course.status]}</Tag>
-          {isNext && <Tag tone="solid">Tiếp theo</Tag>}
+          {(course.status === 'COMPLETED' || course.status === 'LOCKED') && <Tag tone={course.status === 'COMPLETED' ? 'ok' : 'neutral'}>{STATUS_LABEL[course.status]}</Tag>}
+          {isNext && course.status !== 'IN_PROGRESS' && <Tag tone="solid">Tiếp theo</Tag>}
           {course.trialSlot && <Tag tone="ok">Đang học thử</Tag>}
           {course.planLocked && <Tag><Lock className="size-3" aria-hidden="true" />Mở khi nâng cấp</Tag>}
         </div>

@@ -235,7 +235,7 @@ public static class CourseContentSeeder
                         TaskTemplateId = taskTemplate.Id,
                         CompetencyId = compEntity.Id,
                         TargetLevel = courseLevel,
-                        RubricCriteria = $"Đánh giá mức độ thành thạo năng lực {compCode} ở cấp độ {levelName}.",
+                        RubricCriteria = JsonSerializer.Serialize(new { description = $"Đánh giá mức độ thành thạo năng lực {compCode} ở cấp độ {levelName}." }),
                         SortOrder = targetSort++,
                         CreatedAt = now,
                         UpdatedAt = now,

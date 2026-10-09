@@ -1,6 +1,8 @@
 # 08 — Đặc Tả API & OpenAPI
 
-> Nguồn gốc: code thực tế (`DigiTalent.Shared.ApiResponse`, controllers V1) + Report 3. Phiên bản docs_v3, tiếng Việt.
+> Nguồn gốc: API design proposal; Report 3 v2.3 §4.1 and §4.2.6 require HTTPS REST and a maintained OpenAPI definition, without prescribing route or payload details.
+
+> **Report 3 version/alignment:** Repository copy is v2.3 while the Master Overview cites v2.2. It requires OpenAPI kept current and specifies HTTPS REST, role/data scope, version snapshots and authenticated same-organization certificate verification; it does not define routes, response envelope or DTO schemas. Paths/envelope below are API-design proposals, not Report 3 requirements or verified implementation. The overview controls conflicts: GRADE-01 pending; OWNER correction decreases/resets only with reason/audit and no-self; late submissions remain reviewable. The v2.3 grade-storage, grade-raising override and late-not-scored statements are not adopted. Four roles only; no public certificate route/expiry, risk/readiness APIs or SignalR dependency.
 
 ---
 
@@ -12,7 +14,7 @@
 | Phiên bản | 3.0 |
 | Trạng thái | Bản nháp |
 | Chủ sở hữu | Trần Văn Linh (Leader) |
-| Căn cứ | Code thực tế + Report 3 §3 |
+| Căn cứ | API design proposal; Report 3 v2.3 §4.1, §4.2.6 and relevant business rules |
 
 **Lịch sử chỉnh sửa**
 
@@ -32,9 +34,8 @@
 
 ## 3. Tài liệu tham chiếu
 
-- `DigiTalent.Shared/ApiResponse/ApiResponse.cs`
-- `DigiTalent.Api/Controllers/V1/*.cs`
-- Report 3 §3
+- Report 3 v2.3 §4.1–4.2.6: REST interaction, OpenAPI maintainability, external interfaces
+- Enterprise business rules in the Master System Overview and Report 3 v2.3, subject to documented conflicts above
 - OpenAPI 3.1
 
 ---
@@ -47,7 +48,7 @@
 | Định dạng | JSON (UTF-8), `application/json` |
 | Envelope | Mọi response bọc `ApiResponse<T>` (xem §5) |
 | Lỗi | Exception → middleware map mã HTTP (xem §6) |
-| Auth | `Authorization: Bearer <access token>`; endpoint công khai không cần |
+| Auth | `Authorization: Bearer <access token>`; unauthenticated access only for auth flows and health where applicable |
 | Pagination | Query `page`, `pageSize` (mặc định 20), trả `PagedList<T>` |
 | Định danh | `uuid` |
 | Ngày giờ | ISO 8601 UTC (`Timestamptz`) |
@@ -112,29 +113,30 @@ Không lộ stack trace / SQL / đường dẫn file trong response; chi tiết 
 
 ---
 
-## 7. Nhóm endpoint (theo controller thực tế)
+## 7. Nhóm endpoint (đề xuất theo domain; Report 3 không quy định route)
 
 Route gốc `api/v1`, mỗi module một controller trong `Api/Controllers/V1/`.
 
 | Controller | Endpoint (đại diện) | Actor chính | Ghi chú |
 |-----------|---------------------|-------------|---------|
-| `AuthController` | `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/forgot-password`, `POST /auth/reset-password` | Tất cả | Login công khai; lockout 5 lần |
+| Authentication API | Login, refresh/logout, forgot/reset password | All account holders | Login and recovery flows are unauthenticated; implementation needs verification |
 | `UsersController` | `GET/POST/PUT /users`, `POST /users/{id}/lock`, `/unlock`, `POST /users/{id}/roles` | Admin | Gán vai trò |
-| `OrganizationsController` | `GET/POST/PUT /departments`, `/job-families`, `/job-positions`, `/employees` | HR/Admin | Org tree |
-| `CompetenciesController` | `GET/POST/PUT /competencies`, `/competency-categories`, `/competency-levels`, `/position-requirements` | HR | Requirement set versioned |
-| `CoursesController` | `GET/POST/PUT /courses`, `/courses/{id}/lessons`, `/courses/{id}/materials`, `/assignments` | Trainer/HR | — |
-| `AssessmentsController` | `GET/POST/PUT /assessments`, `/questions`, `/assessments/{id}/attempts`, `POST /attempts/{id}/submit` | Trainer/Employee | Chấm server |
-| `CertificatesController` | `GET /certificates`, `GET /certificates/mine`, `GET /certificates/{code}/verify`, `POST /certificates/{id}/revoke`, `GET /certificates/{id}/pdf` | HR/Employee/Public | `verify` công khai, rate-limit |
-| `TasksController` | `GET/POST/PUT /task-templates`, `/task-assignments`, `/task-submissions`, `/task-evaluations` | Dept Manager/Employee | WMS-lite |
-| `IntelligenceController` | `GET /skill-gap/mine`, `/skill-gap/team`, `/skill-gap/analytics`, `POST /skill-gap/recalculate`, `GET /readiness`, `/risk` | HR/Manager/Employee | Đọc snapshot |
-| `OrganizationController` | `GET /organization`, `PUT /organization/settings`, `GET /organization/audit-log`, `GET /organization/overview` ✅ | HR/Admin | `overview` (OW-01): thành viên, người dùng/hạn mức và gói (`subscriptions`), đợt đào tạo `ACTIVE` (`training_batches`), nhiệm vụ chờ duyệt, tiến độ thiết lập, hoạt động gần đây. Quyền `dashboard.hr_company.read` |
-| `ReportsController` | `GET /intelligence/dashboard`, `GET /intelligence/reports/overview` | HR/Admin, Dept Manager | `dashboard` (OW-01, LCA-01) trả `DashboardDto` (`kpis`, `domains`, `atRisk`). Quyền `dashboard.hr_company.read` hoặc `dashboard.department.read` |
-| `DashboardController` | `GET /dashboard/department`, `/trainer`, `/employee` | Theo vai trò | Chưa làm. Mỗi endpoint một quyền `dashboard.*.read` |
-| `ScoringConfigsController` | `GET/PUT /scoring-configs` | Admin | Weights versioned |
-| `NotificationsController` | `GET /notifications`, `POST /notifications/{id}/read` | Tất cả | SignalR realtime |
+| Organization API | Organization, departments, positions, members, manager assignments | OWNER; MANAGER scoped reads | No Job Family / Job Grade baseline |
+| Competency API | TT02 references and Position Requirement versions | PLATFORM_ADMIN manages reference; OWNER manages requirements | Grade storage remains GRADE-01 pending |
+| Course/Curriculum API | Standard courses, versions, lessons, recommendations, directed assignments | PLATFORM_ADMIN authors; system derives recommendations from Skill Gap/course coverage; OWNER creates separate update/retraining assignments; EMPLOYEE starts recommended learning or completes assignments | Recommendation is not a mandatory assignment; assignment retains course version |
+| Assessment API | Assessment versions, question snapshots, attempts, results | PLATFORM_ADMIN configures; EMPLOYEE takes | Attempt retains assessment version snapshot |
+| Certificate API | Registry, `/certificates/{code}/verify`, revoke, PDF | OWNER/MANAGER same-org verify; OWNER revoke; EMPLOYEE own | Verify is authenticated and same-org; no public route |
+| Practical Task API | Templates, assignment, submission, optional AI evaluation proposal, reviewer decision/evidence | OWNER/MANAGER scoped; EMPLOYEE submits | Late submission remains reviewable; AI proposal is distinct from human decision; only approved review can update Confirmed Competency |
+| Skill Gap API | Mine/team/analytics/recalculate | Role and scope limited | Met / Partial Gap / Gap / Not Assessed; no risk/readiness |
+| Dashboard API | Role-scoped organization, team and personal dashboard data | OWNER/MANAGER/EMPLOYEE | No subscription, Trainer or risk/readiness dashboard baseline |
+| Notifications API | List/mark own notifications | All authenticated roles | Browser polling in MVP |
 | `AuditLogsController` | `GET /audit-logs` | Admin | Chỉ đọc |
 | `FilesController` | `POST /files/upload`, `GET /files/{id}/download` | Theo quyền | File lên MinIO |
 | `HealthController` | `GET /health` | Ops | Health check |
+
+**Contract boundary for learning recommendations and AI review:** the domain capabilities above are target design only. The exact routes, request/response schemas, persistence semantics, error codes, retry/idempotency behavior, and permission keys have not been established by Report 3 or this design; do not treat an illustrative endpoint or field as a committed API. At minimum, a recommendation view should explain which gap competency and course coverage caused the suggestion, and an OWNER-directed assignment should remain distinguishable from that suggestion. An employee may start recommended learning; OWNER can separately assign courses for updates/retraining and monitor progress.
+
+If AI-assisted Practical Task evaluation is approved in Report 1/2 scope, keep the API result as a preliminary proposal tied to the rubric version and authorized evidence references. Include model/provider/version only when available. Reviewer decision, reviewer edits, and any request for more evidence are separate actions and must be auditable. A numeric task score is not a competency grade. No AI endpoint, payload, or database contract is finalized here. OWNER-directed course reevaluation remains **PENDING DECISION**: assessment-only or assessment plus Practical Task.
 
 ---
 
@@ -149,7 +151,7 @@ Route gốc `api/v1`, mỗi module một controller trong `Api/Controllers/V1/`.
 | `POST /resource/{id}/<action>` | Hành động domain | `POST /certificates/{id}/revoke` |
 
 - `my-*` route: auth bắt buộc, không cần permission (dữ liệu bản thân).
-- `/verify` và `/health`: công khai, không auth.
+- Certificate `/verify` requires an authenticated OWNER/MANAGER scoped to the issuing organization; no public certificate route. Health endpoint exposure follows deployment policy.
 - Mọi endpoint khác gắn `[HasPermission(PermissionConstants.X)]`.
 
 ---

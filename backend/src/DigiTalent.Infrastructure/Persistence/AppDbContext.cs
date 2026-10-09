@@ -43,6 +43,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<User> Users => Set<User>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
     // Organization & Job Architecture
     public DbSet<Department> Departments => Set<Department>();

@@ -187,9 +187,10 @@ public class IndividualCommerceService
         // 1. Kiểm tra xác thực token/OTP
         IndividualEmailVerificationChallenge? activeChallenge;
 
-        if (!string.IsNullOrWhiteSpace(request.MagicLinkToken))
+        var magicToken = !string.IsNullOrWhiteSpace(request.MagicLinkToken) ? request.MagicLinkToken : request.Token;
+        if (!string.IsNullOrWhiteSpace(magicToken))
         {
-            var magicHash = _otpHashing.HashToken(request.MagicLinkToken);
+            var magicHash = _otpHashing.HashToken(magicToken);
             activeChallenge = await _context.IndividualEmailVerificationChallenges
                 .Where(c => c.RegistrationId == registrationId && c.MagicTokenHash == magicHash && c.ConsumedAt == null && c.InvalidatedAt == null)
                 .FirstOrDefaultAsync(cancellationToken);

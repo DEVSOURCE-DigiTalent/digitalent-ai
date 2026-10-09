@@ -7,7 +7,7 @@ import type {
 } from '../../types/commerce';
 import { findMockAccountByEmail } from './mock-accounts';
 import { mockFail, mockOk } from './mock-http';
-import { findUserByEmail, newId, newToken, updateDb, type StoredUser } from './mock-store';
+import { findUserByEmail, newId, newToken, updateDb, getDb, toSessionUser, type StoredUser } from './mock-store';
 import { updatePersonalState, type TryOrientation } from './server/personal/personal-store';
 
 const EMAIL_TAKEN = 'Email này đã được đăng ký.';
@@ -16,6 +16,13 @@ const MAX_ORIENTATION_TOTAL = 100;
 
 function emailTaken(email: string): boolean {
   return Boolean(findMockAccountByEmail(email) || findUserByEmail(email));
+}
+
+function maskEmail(email: string): string {
+  const [name, domain] = email.split('@');
+  if (!name || !domain) return email;
+  if (name.length <= 2) return `${name[0]}***@${domain}`;
+  return `${name.slice(0, 2)}***${name.slice(-1)}@${domain}`;
 }
 
 function verifyLinkFor(user: StoredUser): RegistrationResult {
@@ -65,7 +72,21 @@ function registerTrial(input: RegisterIndividualInput) {
       state.tryOrientation = cleanOrientation(input.tryOrientation);
     });
   }
-  return mockOk<RegistrationResult>(verifyLinkFor(user), 'Đã tạo tài khoản.');
+
+  const registrationId = newId('reg');
+  const registrationAccessToken = newToken();
+  const demoOtp = '123456';
+
+  return mockOk({
+    registrationId,
+    registrationAccessToken,
+    maskedEmail: maskEmail(user.email),
+    state: 'verification_pending',
+    developmentOtp: demoOtp,
+    developmentVerifyLink: `/individual/register/verify?registrationId=${registrationId}&token=${registrationAccessToken}`,
+    intent: 'TRIAL',
+    ...verifyLinkFor(user),
+  }, 'Đã gửi mã xác thực email.');
 }
 
 export const mockRegistrationService = {
@@ -171,6 +192,63 @@ export const mockRegistrationService = {
       db.purchaseDrafts.push(draft);
     });
 
-    return mockOk({ draftId: draft.id, ...verifyLinkFor(user) }, 'Đã tạo tài khoản.');
+    const registrationId = newId('reg');
+    const registrationAccessToken = newToken();
+    const demoOtp = '123456';
+
+    return mockOk({
+      registrationId,
+      registrationAccessToken,
+      maskedEmail: maskEmail(user.email),
+      state: 'verification_pending',
+      draftId: draft.id,
+      developmentOtp: demoOtp,
+      developmentVerifyLink: `/individual/register/verify?registrationId=${registrationId}&token=${registrationAccessToken}`,
+      intent: 'PURCHASE',
+      ...verifyLinkFor(user),
+    }, 'Đã gửi mã xác thực email.');
+  },
+
+  verifyIndividual: async (_id: string, input: { otp?: string; token?: string }) => {
+    const otp = input.otp?.trim();
+    const token = input.token?.trim();
+
+    // Trong môi trường mock, chấp nhận token từ magic link hoặc bất kỳ mã OTP 6 số (hoặc mã 123456 / 686868)
+    if (!token && (!otp || otp.length < 6)) {
+      return mockFail(400, 'Vui lòng nhập mã xác thực OTP gồm 6 chữ số.');
+    }
+
+    const db = getDb();
+    const user = db.users[db.users.length - 1];
+    if (user) {
+      user.emailVerified = true;
+    }
+
+    const sessionUser = user ? toSessionUser(user) : {
+      id: 'usr-trial',
+      email: 'learner@digitalent.ai',
+      fullName: 'Học viên Cá nhân',
+      roles: [],
+      permissions: [],
+      workspace: WORKSPACES.PERSONAL,
+      subscription: trialSubscription(new Date()),
+    };
+
+    localStorage.setItem('accessToken', `mock-token:${sessionUser.id}`);
+
+    const isPurchase = user?.pendingPlan !== undefined;
+    const draft = db.purchaseDrafts?.[db.purchaseDrafts.length - 1];
+    const nextPath = isPurchase && draft ? `/checkout?draft=${draft.id}` : '/personal/onboarding';
+
+    return mockOk({
+      accessToken: `mock-token:${sessionUser.id}`,
+      user: sessionUser,
+      nextPath,
+      purchaseDraft: draft ? { id: draft.id } : undefined,
+    }, 'Xác thực tài khoản thành công.');
+  },
+
+  resendVerification: async () => {
+    return mockOk({ sent: true }, 'Đã gửi lại mã xác thực OTP mới.');
   },
 };

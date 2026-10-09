@@ -20,10 +20,10 @@ export function TrialBenefitsSection({ positionName, fromTry = false }: TrialBen
             ĐẶC QUYỀN TRẢI NGHIỆM
           </p>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-normal tracking-tight text-cream">
-            Quyền lợi dùng thử gói <span className="font-landing-serif italic text-cream-soft">Individual Plus</span>
+            Quyền lợi dùng thử <span className="font-landing-serif italic text-cream-soft">7 ngày miễn phí</span>
           </h2>
           <p className="text-sm sm:text-base text-stone-300 leading-relaxed">
-            Trải nghiệm toàn diện nền tảng mà không phải chi trả bất kỳ khoản phí nào trong 7 ngày đầu tiên.
+            Khám phá trọn vẹn lộ trình năng lực số cá nhân và học thử 3 khóa đầu tiên mà không phải chi trả bất kỳ khoản phí nào.
           </p>
 
           {positionName && (

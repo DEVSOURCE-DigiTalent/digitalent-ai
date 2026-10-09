@@ -1,3 +1,5 @@
+> **LEGACY / ARCHIVED — NOT CANONICAL.** Retained as historical coding guidance. Use `11_Coding_Convention_Development_Guideline_DigiTalent_AI.md` after alignment with the current role and module baseline.
+
 # 11 — Quy Ước Code & Phát Triển
 
 > Nguồn gốc: `CLAUDE.md` (repo) + `backend/DEVELOPER_GUIDE.md` + `frontend/DEVELOPER_GUIDE.md` (thực tế). Phiên bản docs_v3, tiếng Việt.
