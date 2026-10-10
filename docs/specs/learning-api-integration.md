@@ -1,15 +1,64 @@
 # Learning Flow — API Integration Guide (FE)
 
+> Tài liệu dành cho FE (Quang) tích hợp luồng học tập.
+> Cập nhật: 2026-10-10
+
 Base URL: `/api/v1/learning`
 Auth: JWT Bearer token (tất cả endpoint cần đăng nhập)
 
-## Luồng tổng quan
+---
+
+## Tổng quan hệ thống
+
+### 18 khóa học = 6 năng lực × 3 cấp độ
+
+| Lĩnh vực | Cơ bản (F) | Trung cấp (I) | Nâng cao (A) |
+|-----------|-----------|---------------|-------------|
+| M1 — Tìm kiếm & lưu trữ thông tin | M1-F | M1-I | M1-A |
+| M2 — Giao tiếp & hợp tác | M2-F | M2-I | M2-A |
+| M3 — Sáng tạo nội dung số | M3-F | M3-I | M3-A |
+| M4 — An toàn & bảo mật | M4-F | M4-I | M4-A |
+| M5 — Giải quyết vấn đề | M5-F | M5-I | M5-A |
+| M6 — Phát triển nghề nghiệp | M6-F | M6-I | M6-A |
+
+Tiên quyết: F → I → A trong cùng lĩnh vực. Phải PASSED khóa F mới được ghi danh khóa I.
+
+### Cấu trúc mỗi khóa
+
+Mỗi khóa gồm N chương thường (3–6 tùy lĩnh vực) + 1 chương FINAL:
+
+**Chương thường** (mỗi chương có 4 bài):
+- Bài 1: Mục tiêu và khái niệm (TEXT)
+- Bài 2: Nội dung lý thuyết (TEXT)
+- Bài 3: Bài thực hành (TEXT)
+- Bài 4: Trắc nghiệm tự kiểm tra (QUIZ) — 5 câu, chấm tự động, chỉ để tự kiểm tra
+
+**Chương FINAL**:
+- Bài đánh giá cuối khóa (ASSIGNMENT) — Manager chấm thủ công
+
+### Dữ liệu đã seed (production)
+
+| Bảng | Số lượng | Giải thích |
+|------|---------|-----------|
+| course_modules | 90 | 6 lĩnh vực × số chương khác nhau (3–6) + FINAL, tổng = 90 |
+| lessons | 306 | 72 chương thường × 4 bài + 18 FINAL × 1 bài = 306 |
+| questions | 360 | 72 quiz × 5 câu = 360 (FINAL không có câu hỏi) |
+| question_options | 1,440 | 360 câu × 4 đáp án |
+| assessments | 90 | 72 QUIZ + 18 FINAL = 90 |
+
+Nội dung câu hỏi là **dữ liệu thật** từ 6 file giáo trình TT02/2025, không phải placeholder.
+
+---
+
+## Luồng học tập (Giai đoạn I)
 
 ```
-Employee xem catalog → Ghi danh (kiểm tra tiên quyết) → Đọc bài TEXT → Làm Quiz tự kiểm tra
-→ Hoàn thành các chương → Nộp bài cuối khóa → Manager đánh giá
-→ PASSED → Cấp certificate + nâng cấp năng lực
-→ FAILED → Quay lại IN_PROGRESS, học và nộp lại
+Staff xem catalog → Ghi danh khóa cơ bản
+→ Đọc bài TEXT từng chương → Làm quiz tự kiểm tra (không bắt buộc)
+→ Hoàn thành tất cả chương → Nộp bài cuối khóa (assignment)
+→ Manager đánh giá (+ AI gợi ý — chưa làm)
+→ PASSED → Cấp chứng chỉ + nâng năng lực + mở cấp tiếp theo
+→ FAILED → Quay lại ôn tập, nộp lại (tối đa 2 lần — chưa làm)
 ```
 
 ### Trạng thái Enrollment
@@ -20,9 +69,13 @@ NOT_STARTED → IN_PROGRESS → READY_FOR_ASSESSMENT → COMPLETED
                     └──────────────┘
 ```
 
+> **Chưa làm:** trạng thái `NEEDS_SUPPORT` (khi hết lượt nộp lại), giới hạn 2 lần nộp lại.
+
 ---
 
-## 1. Danh sách khóa học (Catalog)
+## API Endpoints (10 endpoint — đã hoàn thành)
+
+### 1. Danh sách khóa học (Catalog)
 
 ```
 GET /api/v1/learning/courses
@@ -55,11 +108,10 @@ Permission: `course.read_catalog` (EMPLOYEE, TRAINER, HR, MANAGER, ADMIN)
 **Lưu ý FE:**
 - `prerequisitesMet = false` → disable nút Ghi danh, hiện tooltip "Cần hoàn thành khóa tiên quyết trước"
 - `isEnrolled = true` → đổi nút thành "Tiếp tục học"
-- Tiên quyết: F → I → A trong cùng lĩnh vực (VD: M1-F → M1-I → M1-A)
 
 ---
 
-## 2. Ghi danh khóa học
+### 2. Ghi danh khóa học
 
 ```
 POST /api/v1/learning/courses/{courseId}/enroll
@@ -81,7 +133,7 @@ Permission: `enrollment.self_enroll` (EMPLOYEE)
 }
 ```
 
-**Lỗi có thể xảy ra:**
+**Lỗi:**
 | HTTP | errors[].message | Ý nghĩa |
 |------|-----------------|----------|
 | 400 | `PREREQUISITES_NOT_MET` | Chưa hoàn thành khóa tiên quyết |
@@ -89,7 +141,7 @@ Permission: `enrollment.self_enroll` (EMPLOYEE)
 
 ---
 
-## 3. Danh sách khóa đang học
+### 3. Danh sách khóa đang học
 
 ```
 GET /api/v1/learning/my-enrollments
@@ -121,7 +173,7 @@ Permission: `learning_progress.read` (EMPLOYEE)
 
 ---
 
-## 4. Cấu trúc khóa học (Modules + Lessons + Assessments)
+### 4. Cấu trúc khóa học (Modules + Lessons + Assessments)
 
 ```
 GET /api/v1/learning/courses/{courseId}/structure
@@ -216,25 +268,15 @@ Permission: `course.read_catalog`
 }
 ```
 
-**Cấu trúc mỗi khóa (18 khóa):**
-- N chương thường (3–6 tùy lĩnh vực), mỗi chương:
-  - Bài 1: Mục tiêu và khái niệm (TEXT)
-  - Bài 2: Nội dung lý thuyết (TEXT)
-  - Bài 3: Bài thực hành (TEXT)
-  - Bài 4: Trắc nghiệm tự kiểm tra (QUIZ) — 5 câu, chỉ để tự kiểm tra
-- 1 chương FINAL:
-  - Bài đánh giá cuối khóa (ASSIGNMENT) — Manager chấm
-
 **Lưu ý FE:**
 - `enrollmentId = null` → chưa ghi danh, chỉ xem cấu trúc
-- `lessonType = "TEXT"` → render HTML từ content_body (GET lesson detail cần thêm API nếu cần)
-- `lessonType = "QUIZ"` → nút "Làm bài" gọi Start Quiz
-- `lessonType = "ASSIGNMENT"` → nút "Nộp bài" gọi Submit For Evaluation
-- `assessmentType = "QUIZ"` → link với lesson QUIZ cùng chương (match bằng code pattern `{course}-CH{n}-QUIZ`)
+- `lessonType = "TEXT"` → render HTML content
+- `lessonType = "QUIZ"` → nút "Làm bài" gọi Start Quiz (endpoint 6)
+- `lessonType = "ASSIGNMENT"` → nút "Nộp bài" gọi Submit For Evaluation (endpoint 8)
 
 ---
 
-## 5. Hoàn thành bài học TEXT
+### 5. Hoàn thành bài học TEXT
 
 ```
 POST /api/v1/learning/lessons/{lessonId}/complete
@@ -258,12 +300,11 @@ Permission: `lesson.complete` (EMPLOYEE)
 
 **Lưu ý FE:**
 - Gọi khi user bấm "Hoàn thành bài học" ở cuối bài TEXT
-- `courseProgressPercent` cập nhật progress bar tổng khóa
-- Gọi lại `GET .../structure` sau khi complete để cập nhật UI, hoặc update local state
+- `courseProgressPercent` dùng cập nhật progress bar tổng khóa
 
 ---
 
-## 6. Bắt đầu Quiz (tự kiểm tra)
+### 6. Bắt đầu Quiz (tự kiểm tra)
 
 ```
 POST /api/v1/learning/assessments/{assessmentId}/start
@@ -302,12 +343,12 @@ Permission: `attempt.start` (EMPLOYEE)
 **Lưu ý FE:**
 - `options` KHÔNG có `isCorrect` — chỉ hiện sau khi submit
 - `timeLimitMinutes = null` → không giới hạn thời gian
-- `maxAttempts = null` (ở assessment) → làm lại bao nhiêu lần cũng được
 - Quiz chỉ để TỰ KIỂM TRA, không ảnh hưởng enrollment status
+- Làm lại bao nhiêu lần cũng được
 
 ---
 
-## 7. Nộp bài Quiz
+### 7. Nộp bài Quiz
 
 ```
 POST /api/v1/learning/attempts/{attemptId}/submit
@@ -319,7 +360,6 @@ Permission: `attempt.submit` (EMPLOYEE)
 ```json
 {
   "answers": [
-    { "questionId": "uuid", "selectedOptionId": "uuid" },
     { "questionId": "uuid", "selectedOptionId": "uuid" }
   ]
 }
@@ -356,14 +396,14 @@ Permission: `attempt.submit` (EMPLOYEE)
 ```
 
 **Lưu ý FE:**
-- Hiện kết quả: đúng/sai từng câu, điểm tổng, đạt/không đạt
+- Hiện kết quả: đúng/sai từng câu, điểm tổng
 - `correctOptionId` → highlight đáp án đúng cho câu sai
-- Quiz KHÔNG thay đổi enrollment status (chỉ tự kiểm tra)
+- Quiz KHÔNG thay đổi enrollment status
 - Nút "Làm lại" → gọi Start Quiz tạo attempt mới
 
 ---
 
-## 8. Nộp bài cuối khóa (Employee → Manager)
+### 8. Nộp bài cuối khóa (Staff → Manager)
 
 ```
 POST /api/v1/learning/enrollments/{enrollmentId}/submit
@@ -385,12 +425,12 @@ Permission: `task.submit` (EMPLOYEE)
 
 **Lưu ý FE:**
 - Chỉ gọi khi enrollment đang `IN_PROGRESS`
-- Sau khi submit → UI hiện trạng thái "Đang chờ Manager đánh giá"
+- Sau khi submit → UI hiện "Đang chờ Manager đánh giá"
 - Disable các nút học/nộp bài
 
 ---
 
-## 9. Danh sách chờ đánh giá (Manager view)
+### 9. Danh sách chờ đánh giá (Manager view)
 
 ```
 GET /api/v1/learning/pending-evaluations
@@ -422,11 +462,10 @@ Permission: `task.evaluate` (DEPARTMENT_MANAGER, ADMIN)
 **Lưu ý FE:**
 - DEPARTMENT_MANAGER chỉ thấy nhân viên trong phòng ban mình
 - SYSTEM_ADMIN thấy toàn bộ tổ chức
-- Sắp xếp theo `submittedAt` (cũ nhất trước)
 
 ---
 
-## 10. Manager đánh giá
+### 10. Manager đánh giá
 
 ```
 POST /api/v1/learning/enrollments/{enrollmentId}/evaluate
@@ -482,8 +521,8 @@ Permission: `task.evaluate` (DEPARTMENT_MANAGER, ADMIN)
 
 **Lưu ý FE:**
 - PASSED → hiện certificate code, danh sách năng lực được nâng cấp
-- FAILED → enrollment quay về IN_PROGRESS, employee có thể nộp lại
-- `feedback` hiển thị cho employee trong chi tiết enrollment
+- FAILED → enrollment quay về IN_PROGRESS, staff có thể nộp lại
+- `feedback` hiển thị cho staff trong chi tiết enrollment
 
 ---
 
@@ -491,7 +530,7 @@ Permission: `task.evaluate` (DEPARTMENT_MANAGER, ADMIN)
 
 | Email | Password | Role | Ghi chú |
 |-------|----------|------|---------|
-| employee@digitalent.ai | Admin@1234 | EMPLOYEE | Vị trí ACCOUNTANT, dùng để test luồng học |
+| employee@digitalent.ai | Admin@1234 | EMPLOYEE (Staff) | Vị trí ACCOUNTANT, dùng để test luồng học |
 | manager@digitalent.ai | Admin@1234 | DEPARTMENT_MANAGER | Trưởng phòng OPS, dùng để đánh giá |
 | admin@digitalent.ai | Admin@1234 | SYSTEM_ADMIN | Toàn quyền |
 
@@ -506,3 +545,36 @@ Permission: `task.evaluate` (DEPARTMENT_MANAGER, ADMIN)
 7. Login `manager@` → `GET /pending-evaluations` → thấy enrollment
 8. Đánh giá → `POST /enrollments/{id}/evaluate` với verdict PASSED
 9. Kiểm tra certificate được cấp + năng lực được nâng
+
+---
+
+## Tính năng chưa làm (backlog)
+
+Các tính năng dưới đây nằm trong thiết kế luồng vận hành nhưng chưa có API:
+
+### Ưu tiên cao (liên quan luồng học)
+
+| Tính năng | Mô tả | Giai đoạn |
+|-----------|-------|-----------|
+| **AI phân tích bài** | AI gợi ý điểm + điểm yếu cho Manager khi chấm assignment | I — bước 8 |
+| **Giới hạn nộp lại** | Tối đa 2 lần nộp lại assignment, mỗi lần cách vài ngày | I — bước 11 |
+| **Trạng thái NEEDS_SUPPORT** | Khi hết lượt nộp, chuyển enrollment sang trạng thái cần hỗ trợ. Manager chọn: cho học lại / kèm cặp / tạm dừng | I — bước 11 |
+| **Gói ôn tập khi FAILED** | AI gom điểm yếu thành gói ôn tập gồm vài mục cụ thể, không phải học lại cả khóa | I — bước 11 |
+
+### Ưu tiên trung bình (quản trị doanh nghiệp)
+
+| Tính năng | Mô tả | Giai đoạn |
+|-----------|-------|-----------|
+| **Admin DN tạo Manager/Staff** | Admin doanh nghiệp tạo phòng ban, tạo Manager, thêm Staff, gán khóa học | I — bước 3–5 |
+| **Báo cáo dùng thử** | Số liệu kết quả dùng thử: tỷ lệ đạt, điểm yếu theo năng lực/phòng ban | I — bước 13 |
+| **Trần nhà & lộ trình** | Ma trận 6×3, trần DN ≤ trần Digital AI, trần phòng ban ≤ trần DN | II, III |
+| **Chốt lộ trình & báo giá** | Chọn khóa trong lộ trình, tính chi phí theo số khóa × số Staff | II |
+
+### Ưu tiên thấp (admin Digital AI, nâng cấp)
+
+| Tính năng | Mô tả | Giai đoạn |
+|-----------|-------|-----------|
+| **Admin Digital AI dashboard** | Tổng quan DN đang dùng thử/trả phí, tỷ lệ chuyển đổi | A |
+| **Quản lý nội dung khóa** | CRUD 18 khóa, câu hỏi, rubric chấm | A |
+| **Phiên bản nội dung** | Phát hành bản mới, Staff đang học giữ bản cũ | IV |
+| **Chứng chỉ ghi phiên bản** | Khi cần làm mới, chỉ học phần thay đổi | IV |
