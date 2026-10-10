@@ -210,6 +210,7 @@ public static class RolePermissions
             Permissions.Learning.ReadAssignment,
             Permissions.Learning.ReadProgress,
             Permissions.Learning.CompleteLesson,
+            Permissions.Learning.SelfEnroll,
             Permissions.Learning.DownloadViewMaterial,
 
             Permissions.Assessment.Read,

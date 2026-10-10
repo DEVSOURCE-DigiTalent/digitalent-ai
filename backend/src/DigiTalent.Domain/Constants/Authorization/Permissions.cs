@@ -100,6 +100,7 @@ public static class Permissions
         public const string CancelAssignment = "course_assignment.cancel";
         public const string ReadProgress = "learning_progress.read";
         public const string CompleteLesson = "lesson.complete";
+        public const string SelfEnroll = "enrollment.self_enroll";
     }
 
     public static class Assessment

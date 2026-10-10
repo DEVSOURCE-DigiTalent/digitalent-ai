@@ -10,7 +10,8 @@ public class QuestionBankConfiguration : IEntityTypeConfiguration<QuestionBank>
     {
         builder.ToTable("question_banks", table =>
         {
-            table.HasCheckConstraint("ck_question_banks_status", "status IN ('ACTIVE','ARCHIVED')");
+            table.HasCheckConstraint("ck_question_banks_status",
+                "status IN ('ACTIVE','ARCHIVED')");
         });
         builder.HasKey(x => x.Id);
 
