@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>DigiTalent AI — 3 hướng thiết kế toàn hệ thống</title>
+  <style>
+    *{box-sizing:border-box}
+    html{font-family:"Be Vietnam Pro",Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:#edf0f5;color:#162038}
+    body{margin:0}
+    button{font:inherit;cursor:pointer}
+    .wrap{max-width:1690px;margin:auto;padding:38px 24px 70px}
+    .eyebrow{margin:0 0 12px;font-size:12px;font-weight:900;letter-spacing:.2em;color:#515d77;text-transform:uppercase}
+    h1{max-width:940px;font-size:clamp(32px,4.3vw,62px);line-height:1.08;letter-spacing:-.055em;margin:0 0 15px}
+    .intro{max-width:900px;margin:0;color:#536079;font-size:15px;line-height:1.7}
+    .toolbar{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;margin:28px 0 18px}
+    .tabs{display:flex;flex-wrap:wrap;gap:5px;border:1px solid #d7dce7;background:#fff;border-radius:13px;padding:5px}
+    .tabs button{background:transparent;color:#47536b;border:0;border-radius:9px;padding:10px 13px;font-size:12px;font-weight:800;min-height:39px}
+    .tabs button[aria-pressed=true]{background:#172347;color:white}
+    .explain{font-size:12px;color:#617089;margin:0 0 24px}
+    .directions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:start}
+    .direction{--canvas:#f7f8ff;--surface:#fff;--surface2:#ecedfc;--ink:#17213b;--muted:#4b5874;--primary:#3446c8;--onprimary:#fff;--accent:#c43d2b;--accent-bright:#ff785e;--accent-soft:#ffede7;--support:#0f8a78;--support-soft:#e6f6f1;--spark:#c9f16b;--border:#e1e5f3;--hero-a:#f7f8ff;--hero-b:#eaeaff;--halo:#dad9ff;background:#fff;border:1px solid #d7dce7;border-radius:23px;padding:14px;box-shadow:0 16px 45px #1a255010}
+    .direction.orbit{--canvas:#f8f7ff;--surface:#fff;--surface2:#f0eaff;--ink:#241b3e;--muted:#5d5373;--primary:#6033ba;--onprimary:#fff;--accent:#5b7519;--accent-bright:#c7ee63;--accent-soft:#f1f8d9;--support:#bf5260;--support-soft:#ffe7e8;--spark:#c7ee63;--border:#e8e1f3;--hero-a:#f8f7ff;--hero-b:#efe6ff;--halo:#e0caff}
+    .direction.bloom{--canvas:#f5fbf8;--surface:#fff;--surface2:#e5f5ef;--ink:#11343a;--muted:#46676b;--primary:#087486;--onprimary:#fff;--accent:#bd4b67;--accent-bright:#ffc4aa;--accent-soft:#fff0ec;--support:#368054;--support-soft:#e6f6e9;--spark:#ffd2b8;--border:#d8eae5;--hero-a:#f5fbf8;--hero-b:#dff7ed;--halo:#cbede1}
+    body[data-mode=dark] .direction.pulse{--canvas:#10172b;--surface:#19233a;--surface2:#232e4d;--ink:#f6f7ff;--muted:#bdc9db;--primary:#9eb0ff;--onprimary:#132347;--accent:#ff9a84;--accent-bright:#ff9a84;--accent-soft:#3c2b38;--support:#74e2c6;--support-soft:#203b43;--spark:#d7f490;--border:#34415b;--hero-a:#131b35;--hero-b:#23284b;--halo:#38417d}
+    body[data-mode=dark] .direction.orbit{--canvas:#181227;--surface:#271d3b;--surface2:#36264d;--ink:#faf8ff;--muted:#c9c2d6;--primary:#c5a6ff;--onprimary:#281a42;--accent:#dbf58b;--accent-bright:#dbf58b;--accent-soft:#354237;--support:#ffa2aa;--support-soft:#463343;--spark:#dbf58b;--border:#4b3b62;--hero-a:#1b1530;--hero-b:#31214a;--halo:#533c78}
+    body[data-mode=dark] .direction.bloom{--canvas:#0a1c25;--surface:#142c36;--surface2:#1e3d45;--ink:#f3fafb;--muted:#bbd0d4;--primary:#76d8e2;--onprimary:#0a1c25;--accent:#ff9db0;--accent-bright:#ffb999;--accent-soft:#433744;--support:#93e1a7;--support-soft:#20433f;--spark:#ffcfab;--border:#31515b;--hero-a:#0f2730;--hero-b:#1a3e43;--halo:#2c5b57}
+    .direction-head{padding:7px 7px 15px}
+    .direction-head h2{font-size:21px;margin:0 0 5px;letter-spacing:-.035em}
+    .direction-head p{margin:0;font-size:12px;line-height:1.55;color:#647089;min-height:37px}
+    .direction-head .badge{font-size:10px;font-weight:900;color:#3446c8;background:#ecedff;border-radius:100px;padding:6px 8px;float:right}
+    .scene{background:var(--canvas);color:var(--ink);border:1px solid var(--border);border-radius:16px;overflow:hidden;min-height:423px}
+    .landing{min-height:423px;background:radial-gradient(circle at 91% 38%,var(--halo) 0,transparent 37%),linear-gradient(130deg,var(--hero-a),var(--hero-b));position:relative;overflow:hidden}
+    .landing-nav{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:19px 20px 0;font-size:10px;color:var(--muted)}
+    .logo{display:inline-flex;align-items:center;gap:7px;color:var(--ink);font-weight:950;font-size:13px;letter-spacing:-.05em}
+    .logo-mark{width:24px;height:24px;display:grid;place-items:center;border-radius:8px;background:var(--primary);color:var(--onprimary);font-size:14px;font-weight:1000;box-shadow:4px 4px 0 var(--spark)}
+    .nav-links{display:flex;gap:11px;align-items:center}
+    .nav-cta{padding:7px 9px;border-radius:7px;background:var(--primary);color:var(--onprimary);font-size:9px;font-weight:800}
+    .landing-body{padding:42px 23px 0;position:relative;z-index:2;max-width:83%}
+    .pill{display:inline-block;border:1px solid var(--border);border-radius:100px;padding:6px 9px;font-size:9px;font-weight:850;background:var(--surface);color:var(--primary)}
+    .landing h3{margin:17px 0 12px;font-size:clamp(29px,3vw,42px);line-height:1.02;letter-spacing:-.055em;max-width:370px}
+    .landing h3 em{color:var(--primary);font-style:normal}
+    .landing p{margin:0;color:var(--muted);font-size:11px;line-height:1.6;max-width:300px}
+    .ctas{display:flex;gap:7px;align-items:center;margin-top:20px}
+    .cta-primary,.cta-secondary{display:inline-block;border-radius:9px;padding:10px 12px;font-size:9px;font-weight:900}
+    .cta-primary{background:var(--primary);color:var(--onprimary)}
+    .cta-secondary{background:var(--surface);border:1px solid var(--border);color:var(--ink)}
+    .orbit-visual{position:absolute;right:-39px;bottom:-64px;width:228px;height:228px;border-radius:50%;border:1px solid var(--primary);opacity:.9;transform:rotate(-23deg)}
+    .orbit-visual:before{content:"";position:absolute;inset:27px;border:1px dashed var(--accent);border-radius:50%}
+    .orbit-visual:after{content:"06\A MIỀN";white-space:pre;position:absolute;inset:67px;border-radius:50%;background:var(--primary);color:var(--onprimary);display:grid;place-items:center;text-align:center;font-size:24px;line-height:1;font-weight:1000;box-shadow:9px 9px 0 var(--spark)}
+    .dot{position:absolute;width:32px;height:32px;background:var(--accent-bright);border:5px solid var(--surface);border-radius:11px;z-index:2;box-shadow:0 7px 18px #0002}
+    .dot.one{left:-9px;top:66px}.dot.two{right:15px;top:0;background:var(--spark)}.dot.three{right:-7px;bottom:56px;background:var(--support)}
+    .landing-footer{display:flex;gap:8px;position:absolute;left:20px;bottom:15px;z-index:2}
+    .landing-footer span{font-size:9px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 9px}
+    .landing-footer b{color:var(--ink)}
+    .app{display:none;min-height:423px;grid-template-columns:82px 1fr;background:var(--canvas)}
+    .app-side{background:var(--surface);border-right:1px solid var(--border);padding:14px 8px}
+    .app-side .logo{font-size:10px;margin:1px 0 23px}
+    .app-side .logo-mark{width:18px;height:18px;font-size:10px;border-radius:5px;box-shadow:2px 2px 0 var(--spark)}
+    .side-item{color:var(--muted);font-size:9px;line-height:1.2;padding:8px 5px;border-radius:6px;margin-bottom:4px}
+    .side-item.active{background:var(--surface2);color:var(--primary);font-weight:900}
+    .app-main{min-width:0;padding:14px 13px 17px}
+    .app-top{display:flex;align-items:center;justify-content:space-between;font-size:9px;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:11px}
+    .user-dot{width:18px;height:18px;background:var(--accent-bright);border-radius:50%;display:inline-block}
+    .app-main h3{margin:17px 0 3px;font-size:20px;letter-spacing:-.04em;line-height:1.1}
+    .app-sub{color:var(--muted);font-size:9px;line-height:1.4;margin:0 0 15px}
+    .stat-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+    .stat{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:9px 7px;min-width:0}
+    .stat span{display:block;color:var(--muted);font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .stat strong{display:block;font-size:20px;line-height:1.15;margin-top:6px}
+    .stat:nth-child(2) strong{color:var(--accent)}
+    .app-card{margin-top:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px}
+    .app-card-head{display:flex;justify-content:space-between;align-items:center;gap:5px}
+    .app-card-head strong{font-size:11px}
+    .app-card-head small{font-size:8px;color:var(--muted)}
+    .list-row{display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--border);padding:9px 0;font-size:9px}
+    .list-row:last-child{border-bottom:0;padding-bottom:3px}
+    .list-row .bullet{width:7px;height:7px;border-radius:50%;background:var(--primary);flex:none}
+    .list-row:nth-child(3) .bullet{background:var(--accent-bright)}
+    .list-row span:nth-child(2){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .list-row b{color:var(--accent);font-size:9px}
+    .app-button{display:inline-block;background:var(--primary);color:var(--onprimary);padding:8px 10px;border-radius:7px;font-size:9px;font-weight:900;margin-top:10px}
+    .mini-palette{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;padding:15px 5px 5px}
+    .color{min-width:0;color:#667086;font-size:9px}
+    .color i{display:block;height:25px;border-radius:7px;background:var(--color);border:1px solid #00000012;margin-bottom:5px}
+    .color b{display:block;color:#1b2945;font-size:9px}
+    .character{font-size:12px;line-height:1.55;color:#56647a;padding:0 7px 4px;margin:7px 0 0;min-height:58px}
+    .references{margin-top:32px;border-top:1px solid #d1d9e5;padding-top:19px;color:#58667e;font-size:13px;line-height:1.65}
+    .references a{color:#3446c8}
+    body[data-screen=landing] .landing{display:block}
+    body:not([data-screen=landing]) .landing{display:none}
+    body:not([data-screen=landing]) .app{display:grid}
+    @media(max-width:1150px){.directions{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:740px){.wrap{padding:26px 13px 50px}.directions{grid-template-columns:1fr}.direction-head p{min-height:0}.landing-body{max-width:78%}.toolbar{align-items:flex-start}.tabs button{padding:8px 10px}}
+  </style>
+</head>
+<body data-screen="landing" data-mode="light">
+  <main class="wrap">
+    <p class="eyebrow">DigiTalent AI · Design exploration</p>
+    <h1>Ba diện mạo mới cho toàn bộ hệ thống.</h1>
+    <p class="intro">Xem cùng một màn hình ở cả ba hướng màu. Chuyển giữa landing page, Owner, Staff, Manager và Platform Admin để thấy màu sắc vận hành trên luồng thật. Đây là bản thử nhận diện và bố cục; chức năng trong ứng dụng chưa thay đổi.</p>
+    <div class="toolbar">
+      <div class="tabs" role="group" aria-label="Chọn loại trang">
+        <button type="button" data-screen="landing" aria-pressed="true">Landing</button>
+        <button type="button" data-screen="owner" aria-pressed="false">Owner</button>
+        <button type="button" data-screen="employee" aria-pressed="false">Staff</button>
+        <button type="button" data-screen="manager" aria-pressed="false">Manager</button>
+        <button type="button" data-screen="platform" aria-pressed="false">Platform Admin</button>
+      </div>
+      <div class="tabs" role="group" aria-label="Chọn nền sáng hoặc tối">
+        <button type="button" data-mode="light" aria-pressed="true">Nền sáng</button>
+        <button type="button" data-mode="dark" aria-pressed="false">Nền tối</button>
+      </div>
+    </div>
+    <p class="explain">Nền sáng là hướng mặc định. Màu sáng mạnh được dành cho điểm nhấn và hành động; các khu vực đọc bài, bảng dữ liệu và biểu mẫu giữ độ tương phản cao. Mã màu dưới mỗi bản mẫu là màu cho nền sáng, ô cuối là nền tối.</p>
+    <div class="directions">
+      <article class="direction pulse">
+        <header class="direction-head"><span class="badge">Đề xuất</span><h2>01 · Pulse</h2><p>Xanh điện + san hô + một nhịp chanh sáng. Tự tin, trẻ, nổi bật ngay từ landing.</p></header>
+        <div class="scene">
+          <section class="landing" aria-label="Landing Pulse">
+            <div class="landing-nav"><span class="logo"><span class="logo-mark">D</span>DigiTalent</span><span class="nav-links"><span>Giải pháp</span><span>Khóa học</span><span class="nav-cta">Dùng thử →</span></span></div>
+            <div class="landing-body"><span class="pill">Năng lực số • Tăng trưởng thật</span><h3>Năng lực số, <em>nhìn thấy được.</em></h3><p>Đánh giá rõ năng lực, học đúng điều còn thiếu và biến tiến bộ thành kết quả của cả doanh nghiệp.</p><div class="ctas"><span class="cta-primary">Bắt đầu dùng thử ↗</span><span class="cta-secondary">Khám phá lộ trình</span></div></div>
+            <div class="orbit-visual"><span class="dot one"></span><span class="dot two"></span><span class="dot three"></span></div>
+            <div class="landing-footer"><span><b>06</b> miền năng lực</span><span><b>18</b> khóa học chuẩn</span></div>
+          </section>
+          <section class="app" aria-label="Workspace Pulse">
+            <aside class="app-side"><span class="logo"><span class="logo-mark">D</span>DT</span><div class="side-item active">Tổng quan</div><div class="side-item">Năng lực</div><div class="side-item">Học tập</div><div class="side-item">Nhiệm vụ</div><div class="side-item">Báo cáo</div></aside>
+            <div class="app-main"><div class="app-top"><span>DigiTalent / Workspace</span><span class="user-dot"></span></div><h3 class="role-title"></h3><p class="app-sub role-sub"></p><div class="stat-row"></div><div class="app-card"><div class="app-card-head"><strong class="card-title"></strong><small>Hôm nay</small></div><div class="card-list"></div><span class="app-button role-action"></span></div></div>
+          </section>
+        </div>
+        <div class="mini-palette"><span class="color" style="--color:#F7F8FF"><i></i><b>Nền</b>#F7F8FF</span><span class="color" style="--color:#3446C8"><i></i><b>Chính</b>#3446C8</span><span class="color" style="--color:#C43D2B"><i></i><b>Nhấn</b>#C43D2B</span><span class="color" style="--color:#C9F16B"><i></i><b>Sáng</b>#C9F16B</span><span class="color" style="--color:#10172B"><i></i><b>Tối</b>#10172B</span></div>
+        <p class="character">Dành cho một thương hiệu công nghệ giáo dục muốn có nhận diện rất riêng mà dashboard vẫn mạch lạc.</p>
+      </article>
+      <article class="direction orbit">
+        <header class="direction-head"><h2>02 · Orbit</h2><p>Tím chàm + xanh chanh. Táo bạo nhất, giàu cảm giác khám phá và tiến bộ.</p></header>
+        <div class="scene">
+          <section class="landing" aria-label="Landing Orbit">
+            <div class="landing-nav"><span class="logo"><span class="logo-mark">D</span>DigiTalent</span><span class="nav-links"><span>Giải pháp</span><span>Khóa học</span><span class="nav-cta">Dùng thử →</span></span></div>
+            <div class="landing-body"><span class="pill">Năng lực số • Tăng trưởng thật</span><h3>Năng lực số, <em>nhìn thấy được.</em></h3><p>Đánh giá rõ năng lực, học đúng điều còn thiếu và biến tiến bộ thành kết quả của cả doanh nghiệp.</p><div class="ctas"><span class="cta-primary">Bắt đầu dùng thử ↗</span><span class="cta-secondary">Khám phá lộ trình</span></div></div>
+            <div class="orbit-visual"><span class="dot one"></span><span class="dot two"></span><span class="dot three"></span></div>
+            <div class="landing-footer"><span><b>06</b> miền năng lực</span><span><b>18</b> khóa học chuẩn</span></div>
+          </section>
+          <section class="app" aria-label="Workspace Orbit">
+            <aside class="app-side"><span class="logo"><span class="logo-mark">D</span>DT</span><div class="side-item active">Tổng quan</div><div class="side-item">Năng lực</div><div class="side-item">Học tập</div><div class="side-item">Nhiệm vụ</div><div class="side-item">Báo cáo</div></aside>
+            <div class="app-main"><div class="app-top"><span>DigiTalent / Workspace</span><span class="user-dot"></span></div><h3 class="role-title"></h3><p class="app-sub role-sub"></p><div class="stat-row"></div><div class="app-card"><div class="app-card-head"><strong class="card-title"></strong><small>Hôm nay</small></div><div class="card-list"></div><span class="app-button role-action"></span></div></div>
+          </section>
+        </div>
+        <div class="mini-palette"><span class="color" style="--color:#F8F7FF"><i></i><b>Nền</b>#F8F7FF</span><span class="color" style="--color:#6033BA"><i></i><b>Chính</b>#6033BA</span><span class="color" style="--color:#5B7519"><i></i><b>Nhấn</b>#5B7519</span><span class="color" style="--color:#C7EE63"><i></i><b>Sáng</b>#C7EE63</span><span class="color" style="--color:#181227"><i></i><b>Tối</b>#181227</span></div>
+        <p class="character">Phù hợp nếu muốn thương hiệu trẻ và khác biệt rõ. Cần tiết chế xanh chanh trong màn hình nhiều số liệu.</p>
+      </article>
+      <article class="direction bloom">
+        <header class="direction-head"><h2>03 · Bloom</h2><p>Xanh ngọc sâu + hồng đào. Mềm hơn, thân thiện với nhân viên và hành trình học.</p></header>
+        <div class="scene">
+          <section class="landing" aria-label="Landing Bloom">
+            <div class="landing-nav"><span class="logo"><span class="logo-mark">D</span>DigiTalent</span><span class="nav-links"><span>Giải pháp</span><span>Khóa học</span><span class="nav-cta">Dùng thử →</span></span></div>
+            <div class="landing-body"><span class="pill">Năng lực số • Tăng trưởng thật</span><h3>Năng lực số, <em>nhìn thấy được.</em></h3><p>Đánh giá rõ năng lực, học đúng điều còn thiếu và biến tiến bộ thành kết quả của cả doanh nghiệp.</p><div class="ctas"><span class="cta-primary">Bắt đầu dùng thử ↗</span><span class="cta-secondary">Khám phá lộ trình</span></div></div>
+            <div class="orbit-visual"><span class="dot one"></span><span class="dot two"></span><span class="dot three"></span></div>
+            <div class="landing-footer"><span><b>06</b> miền năng lực</span><span><b>18</b> khóa học chuẩn</span></div>
+          </section>
+          <section class="app" aria-label="Workspace Bloom">
+            <aside class="app-side"><span class="logo"><span class="logo-mark">D</span>DT</span><div class="side-item active">Tổng quan</div><div class="side-item">Năng lực</div><div class="side-item">Học tập</div><div class="side-item">Nhiệm vụ</div><div class="side-item">Báo cáo</div></aside>
+            <div class="app-main"><div class="app-top"><span>DigiTalent / Workspace</span><span class="user-dot"></span></div><h3 class="role-title"></h3><p class="app-sub role-sub"></p><div class="stat-row"></div><div class="app-card"><div class="app-card-head"><strong class="card-title"></strong><small>Hôm nay</small></div><div class="card-list"></div><span class="app-button role-action"></span></div></div>
+          </section>
+        </div>
+        <div class="mini-palette"><span class="color" style="--color:#F5FBF8"><i></i><b>Nền</b>#F5FBF8</span><span class="color" style="--color:#087486"><i></i><b>Chính</b>#087486</span><span class="color" style="--color:#BD4B67"><i></i><b>Nhấn</b>#BD4B67</span><span class="color" style="--color:#FFC4AA"><i></i><b>Sáng</b>#FFC4AA</span><span class="color" style="--color:#0A1C25"><i></i><b>Tối</b>#0A1C25</span></div>
+        <p class="character">Ấm áp và hiện đại, hợp sản phẩm phát triển con người. Nét nổi bật đến từ kiểu chữ và minh họa hơn là neon.</p>
+      </article>
+    </div>
+    <p class="references">Tham khảo hướng nhận diện và hệ thống: <a href="https://www.behance.net/gallery/249183183/Branding-Visual-Identity-EdTech-Design">The Grade. trên Behance</a> · <a href="https://www.behance.net/gallery/254496113/Elvora-EdTech-Brand">Elvora trên Behance</a> · <a href="https://www.behance.net/gallery/234711583/SaaS-Platform-UIUX-Design-Branding-and-Development">RelatioHub trên Behance</a> · <a href="https://dribbble.com/shots/25860030-HR-Dashboard-UI-Clear-Metrics-Human-Centered-Design">HR Dashboard trên Dribbble</a>. Cả ba bản mẫu trong file này là thiết kế gốc cho việc lựa chọn hướng DigiTalent AI, không sao chép bố cục hay hình ảnh từ mẫu tham khảo.</p>
+  </main>
+  <script>
+    const roleData={
+      owner:{title:"Năng lực toàn doanh nghiệp",sub:"Từ khoảng trống năng lực tới lộ trình đào tạo",stats:[["Nhân sự","128"],["Đang học","46"],["Đạt mục tiêu","72%"]],card:"Khoảng trống cần ưu tiên",rows:[["Giao tiếp số","Gap 2"],["Thông tin & dữ liệu","Gap 1"],["An toàn số","Gap 1"]],action:"Tạo đợt đào tạo"},
+      employee:{title:"Lộ trình của tôi",sub:"Học đúng kỹ năng, thấy rõ từng bước tiến",stats:[["Khóa được giao","03"],["Đã hoàn thành","68%"],["Chứng chỉ","02"]],card:"Tiếp tục học hôm nay",rows:[["M1-F · Tìm kiếm thông tin","Bài 3/4"],["Quiz chương 2","Sẵn sàng"],["Nhiệm vụ thực tế","1 việc"]],action:"Tiếp tục học"},
+      manager:{title:"Nhóm của tôi",sub:"Đánh giá đúng lúc, hỗ trợ đúng người",stats:[["Thành viên","24"],["Chờ đánh giá","05"],["Quá hạn","03"]],card:"Việc cần xử lý",rows:[["Minh chứng của Trần B","Mới"],["Bài cuối khóa của Lê C","Chờ chấm"],["Nhắc nhóm hoàn thành học","3 người"]],action:"Mở hàng chờ"},
+      platform:{title:"Toàn cảnh nền tảng",sub:"Theo dõi khách hàng và phát hành nội dung chuẩn",stats:[["Doanh nghiệp","42"],["Khóa chuẩn","18"],["Đăng ký mới","06"]],card:"Hoạt động gần đây",rows:[["Doanh nghiệp Minh Phát","Dùng thử"],["Khóa M2-I","Chờ duyệt"],["Ngân hàng câu hỏi","Bản mới"]],action:"Xem tổ chức"}
+    };
+    const update=()=>{
+      const screen=document.body.dataset.screen;
+      if(screen==="landing")return;
+      const data=roleData[screen];
+      document.querySelectorAll(".direction").forEach(card=>{
+        card.querySelector(".role-title").textContent=data.title;
+        card.querySelector(".role-sub").textContent=data.sub;
+        card.querySelector(".card-title").textContent=data.card;
+        card.querySelector(".role-action").textContent=data.action;
+        card.querySelector(".stat-row").innerHTML=data.stats.map(([label,value])=>`<div class="stat"><span>${label}</span><strong>${value}</strong></div>`).join("");
+        card.querySelector(".card-list").innerHTML=data.rows.map(([name,status])=>`<div class="list-row"><i class="bullet"></i><span>${name}</span><b>${status}</b></div>`).join("");
+      });
+    };
+    document.querySelectorAll("button[data-screen]").forEach(button=>button.addEventListener("click",()=>{
+      document.body.dataset.screen=button.dataset.screen;
+      document.querySelectorAll("button[data-screen]").forEach(item=>item.setAttribute("aria-pressed",String(item===button)));
+      update();
+    }));
+    document.querySelectorAll("button[data-mode]").forEach(button=>button.addEventListener("click",()=>{
+      document.body.dataset.mode=button.dataset.mode;
+      document.querySelectorAll("button[data-mode]").forEach(item=>item.setAttribute("aria-pressed",String(item===button)));
+    }));
+    update();
+  </script>
+</body>
+</html>

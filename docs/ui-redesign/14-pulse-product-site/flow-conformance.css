@@ -1,0 +1,5 @@
+.flow-manager-picker{display:grid;gap:7px;margin:18px 0 12px;padding:14px 12px;border:1px solid #dce4f1;border-radius:13px;background:#f8faff;color:#465779;font-size:10px;font-weight:850;letter-spacing:.04em;text-transform:uppercase;white-space:normal}
+.flow-manager-picker select{width:100%;min-width:0;padding:9px 8px;border:1px solid #cbd6eb;border-radius:8px;background:#fff;color:#192746;font-size:11px;font-weight:750;letter-spacing:normal;text-transform:none}
+.flow-manager-picker small{color:#73809a;font-size:10px;font-weight:500;letter-spacing:normal;line-height:1.4;text-transform:none}
+.pulse-cap-caption{line-height:1.4}
+@media(max-width:760px){.flow-manager-picker{flex:none;width:190px;margin:0;padding:8px 10px;align-self:center}.flow-manager-picker small{display:none}}

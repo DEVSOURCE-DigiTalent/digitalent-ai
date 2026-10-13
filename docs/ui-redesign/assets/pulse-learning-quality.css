@@ -1,0 +1,15 @@
+/* Keep the learning home within the mobile viewport and surface today's work sooner. */
+.page .panel,.page .split>*{min-width:0}
+.micro-road{max-width:100%}
+.page .qu-small-control{font-size:12px!important;min-height:30px}
+.page .qu-small-text{font-size:12px!important}
+.page .qu-small-paragraph{font-size:13px!important;line-height:1.5}
+@media(max-width:550px){
+  .welcome-copy{padding:25px}
+  .welcome h1{font-size:clamp(34px,10vw,40px);line-height:1.03}
+  .welcome .lead{font-size:14px;line-height:1.5}
+  .welcome-visual{min-height:205px}
+  .welcome-visual .visual-caption{bottom:13px;left:13px;padding:9px 11px}
+  .page .section{margin-top:25px}
+  .today-card,.continue-card{min-height:0}
+}

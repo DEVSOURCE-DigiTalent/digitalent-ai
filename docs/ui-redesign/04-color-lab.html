@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DigiTalent AI · Ba hướng màu mới</title>
+  <style>
+    *{box-sizing:border-box}
+    :root{font-family:"Be Vietnam Pro",Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#20243a;background:#eef0f4}
+    body{margin:0}
+    button{font:inherit;cursor:pointer}
+    .shell{max-width:1660px;margin:auto;padding:34px 22px 70px}
+    .topline{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.19em;color:#6c7183;margin:0 0 13px}
+    h1{font-size:clamp(33px,4vw,59px);line-height:1.05;letter-spacing:-.055em;margin:0 0 12px;max-width:870px}
+    .lead{font-size:14px;line-height:1.7;color:#5c6475;max-width:950px;margin:0 0 26px}
+    .other-previews{display:flex;flex-wrap:wrap;gap:9px;margin:-11px 0 23px}
+    .other-previews a{font-size:11px;font-weight:850;color:#35467b;text-decoration:none;background:#fff;border:1px solid #dbe0e7;border-radius:9px;padding:9px 11px}
+    .other-previews a:hover{text-decoration:underline}
+    .controls{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 18px}
+    .control{display:flex;flex-wrap:wrap;gap:5px;background:#fff;border:1px solid #dbe0e7;border-radius:14px;padding:5px}
+    .control button{border:0;background:transparent;color:#51596a;border-radius:9px;padding:9px 13px;min-height:38px;font-size:12px;font-weight:800}
+    .control button[aria-pressed=true]{color:white;background:#262c3c}
+    .hint{font-size:12px;color:#6b7181;margin:0 0 19px}
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+    .concept{--bg:#fff9f2;--surface:#fff;--ink:#2d251f;--muted:#5d514b;--primary:#b53f16;--onprimary:#fff;--accent:#2e43a3;--onaccent:#fff;--light:#ffd67e;--line:#eaded0;--soft:#fff0dc;--soft2:#e8ecff;background:#fff;border:1px solid #dbe0e7;border-radius:21px;padding:13px;box-shadow:0 15px 40px #1d29400d}
+    .concept.muse{--bg:#fcf7fb;--surface:#fff;--ink:#332539;--muted:#67556b;--primary:#a12473;--onprimary:#fff;--accent:#215666;--onaccent:#fff;--light:#ffc6df;--line:#eddfeb;--soft:#ffebf5;--soft2:#e8f5f6}
+    .concept.circuit{--bg:#f8faf0;--surface:#fff;--ink:#213027;--muted:#526157;--primary:#285a40;--onprimary:#fff;--accent:#6241b7;--onaccent:#fff;--light:#dfef7a;--line:#dee7d5;--soft:#eff7ce;--soft2:#f0eaff}
+    body[data-mode=dark] .concept.solar{--bg:#211a19;--surface:#302522;--ink:#fff4e8;--muted:#d6bfb2;--primary:#ffa67c;--onprimary:#2c1813;--accent:#b2bfff;--onaccent:#17224c;--light:#e9b85a;--line:#503b35;--soft:#3c2c25;--soft2:#343953}
+    body[data-mode=dark] .concept.muse{--bg:#211723;--surface:#302132;--ink:#fff3fb;--muted:#d7c0d4;--primary:#ff9bd0;--onprimary:#341527;--accent:#8ed4df;--onaccent:#14353d;--light:#a93a79;--line:#523850;--soft:#42263b;--soft2:#263c42}
+    body[data-mode=dark] .concept.circuit{--bg:#14211b;--surface:#22342b;--ink:#f3fbea;--muted:#c5d8c7;--primary:#9ee4ae;--onprimary:#123323;--accent:#c4a8ff;--onaccent:#2a1c48;--light:#c9e66f;--line:#395343;--soft:#30402a;--soft2:#392c4b}
+    .concept-head{padding:4px 5px 13px;min-height:112px}
+    .concept-head .number{font-size:11px;font-weight:900;letter-spacing:.16em;color:#7c8290}
+    .concept-head h2{font-size:24px;letter-spacing:-.04em;margin:4px 0}
+    .concept-head p{font-size:12px;line-height:1.5;color:#667081;margin:0}
+    .mock{height:420px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:15px;overflow:hidden;position:relative}
+    .landing{height:100%;position:relative;overflow:hidden}
+    .nav{height:58px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 20px;position:relative;z-index:3}
+    .brand{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:950;letter-spacing:-.04em}
+    .brandmark{width:27px;height:27px;background:var(--primary);color:var(--onprimary);border-radius:8px;display:grid;place-items:center;font-size:16px;font-weight:1000}
+    .nav-right{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:9px;font-weight:800}
+    .nav-right b{background:var(--primary);color:var(--onprimary);padding:8px;border-radius:7px}
+    .eyebrow{position:relative;z-index:2;display:inline-block;margin:37px 0 13px 22px;padding:6px 9px;background:var(--surface);border:1px solid var(--line);border-radius:100px;color:var(--primary);font-size:9px;font-weight:950;letter-spacing:.05em}
+    .headline{position:relative;z-index:2;font-size:clamp(29px,3vw,42px);line-height:1.02;letter-spacing:-.06em;margin:0 20px 12px;max-width:300px}
+    .headline em{font-style:normal;color:var(--primary)}
+    .landing-copy{position:relative;z-index:2;font-size:11px;line-height:1.55;color:var(--muted);max-width:270px;margin:0 20px}
+    .action{position:relative;z-index:2;display:inline-block;background:var(--primary);color:var(--onprimary);font-size:10px;font-weight:900;padding:10px 12px;border-radius:8px;margin:17px 20px}
+    .signature{position:absolute;z-index:2;bottom:14px;left:20px;font-size:9px;font-weight:900;color:var(--muted);background:var(--surface);padding:7px 9px;border:1px solid var(--line);border-radius:7px}
+    .art{position:absolute;right:-28px;bottom:-43px;width:210px;height:210px;pointer-events:none}
+    .art span{position:absolute;display:block}
+    .solar .landing{background:linear-gradient(138deg,var(--bg) 0%,var(--bg) 67%,var(--soft) 100%)}
+    .solar .headline{font-weight:930;max-width:310px}
+    .solar .headline em{font-family:Georgia,serif;font-style:italic;font-weight:700}
+    .solar .art{right:-42px;bottom:-63px;width:226px;height:226px;transform:rotate(-20deg)}
+    .solar .art .one{inset:0;border-radius:50%;background:var(--light)}
+    .solar .art .two{width:110px;height:110px;left:35px;top:43px;border:18px solid var(--accent);border-radius:50%}
+    .solar .art .three{width:74px;height:74px;right:9px;top:-4px;background:var(--primary);border-radius:18px;transform:rotate(25deg)}
+    .solar .art .four{width:68px;height:26px;left:-25px;top:70px;background:var(--accent);border-radius:20px}
+    .muse .landing{background:radial-gradient(circle at 91% 73%,var(--soft) 0%,transparent 46%),var(--bg)}
+    .muse .brandmark{border-radius:50% 50% 45% 5%;transform:rotate(-15deg)}
+    .muse .headline{font-weight:790;letter-spacing:-.05em}
+    .muse .headline em{font-family:Georgia,serif;font-style:italic;font-weight:700}
+    .muse .art{right:-23px;bottom:-56px;width:207px;height:212px;transform:rotate(-18deg)}
+    .muse .art .one{inset:0;border:31px solid var(--primary);border-radius:55% 47% 55% 47%}
+    .muse .art .two{width:115px;height:115px;right:4px;top:30px;background:var(--light);border-radius:50% 20% 50% 20%;transform:rotate(26deg)}
+    .muse .art .three{width:47px;height:47px;left:-9px;top:8px;background:var(--accent);border-radius:50%}
+    .muse .art .four{width:80px;height:13px;left:-25px;bottom:45px;background:var(--accent);border-radius:20px;transform:rotate(-24deg)}
+    .circuit .landing{background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:35px 35px;background-position:-1px -1px}
+    .circuit .landing:before{content:"";position:absolute;inset:58px 0 0;background:linear-gradient(90deg,var(--bg) 0%,var(--bg) 45%,transparent 95%)}
+    .circuit .brandmark{box-shadow:4px 4px 0 var(--light);border-radius:4px}
+    .circuit .headline{text-transform:uppercase;font-weight:980;font-size:clamp(28px,2.8vw,38px)}
+    .circuit .art{right:-5px;bottom:-25px;width:185px;height:199px}
+    .circuit .art .one{width:120px;height:120px;right:4px;bottom:18px;background:var(--primary);border-radius:20px}
+    .circuit .art .two{width:74px;height:74px;right:53px;top:15px;background:var(--light);border-radius:50%}
+    .circuit .art .three{width:55px;height:55px;right:0;top:3px;background:var(--accent);border-radius:10px}
+    .circuit .art .four{width:80px;height:80px;left:0;bottom:-10px;border:18px solid var(--surface);border-radius:50%}
+    .workspace{display:none;height:100%;grid-template-columns:80px minmax(0,1fr)}
+    .sidebar{background:var(--surface);border-right:1px solid var(--line);padding:13px 8px}
+    .sidebar .brand{font-size:10px;margin-bottom:25px}
+    .sidebar .brandmark{width:20px;height:20px;font-size:11px;border-radius:5px}
+    .menu{font-size:9px;color:var(--muted);padding:9px 5px;border-radius:6px;margin-bottom:4px}
+    .menu.selected{background:var(--soft);color:var(--primary);font-weight:900}
+    .workmain{min-width:0;padding:17px 14px}
+    .worktop{border-bottom:1px solid var(--line);font-size:9px;color:var(--muted);padding-bottom:11px;display:flex;justify-content:space-between}
+    .workmain h3{font-size:21px;letter-spacing:-.045em;line-height:1.08;margin:17px 0 5px}
+    .workmain .sub{font-size:9px;line-height:1.4;color:var(--muted);margin:0 0 15px}
+    .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+    .stat{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:9px 7px;min-width:0}
+    .stat small{display:block;font-size:8px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .stat b{display:block;font-size:20px;line-height:1;margin-top:7px}
+    .stat:first-child b{color:var(--primary)}
+    .feature{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-top:8px;padding:11px}
+    .feature strong{font-size:11px}
+    .item{display:flex;align-items:center;gap:6px;padding:10px 0;border-bottom:1px solid var(--line);font-size:9px}
+    .item:last-of-type{border:0}
+    .item i{display:block;flex:none;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+    .item span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+    .item b{color:var(--primary);white-space:nowrap}
+    .feature .mini-action{display:inline-block;background:var(--primary);color:var(--onprimary);font-size:9px;font-weight:900;padding:7px 9px;border-radius:6px;margin-top:5px}
+    .solar .worktop{border-top:3px solid var(--light);padding-top:6px}
+    .solar .stat:first-child{background:var(--soft)}
+    .solar .feature{border-left:3px solid var(--accent)}
+    .muse .sidebar{border-top:5px solid var(--primary)}
+    .muse .stat:first-child{background:var(--soft);border-radius:16px 6px 16px 6px}
+    .muse .feature{border-radius:16px 6px 16px 6px}
+    .circuit .sidebar{background:var(--soft)}
+    .circuit .stat:first-child{background:var(--light);color:#202a19;border-color:transparent}
+    .circuit .stat:first-child small,.circuit .stat:first-child b{color:#202a19}
+    .circuit .feature{box-shadow:4px 4px 0 var(--soft2);border-radius:4px}
+    body:not([data-screen=landing]) .landing{display:none}
+    body:not([data-screen=landing]) .workspace{display:grid}
+    .palette{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:13px 4px 8px}
+    .swatch{font-size:9px;color:#667085;min-width:0}
+    .swatch i{display:block;height:25px;border-radius:6px;background:var(--swatch);border:1px solid #0002;margin-bottom:5px}
+    .swatch b{display:block;color:#252c3a;font-size:9px}
+    .distinct{font-size:12px;line-height:1.55;color:#596476;margin:0 5px 5px;min-height:56px}
+    .references{margin:30px 0 0;border-top:1px solid #d7dde7;padding-top:16px;color:#657083;font-size:12px;line-height:1.6}
+    .references a{color:#3446aa}
+    @media(max-width:1140px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:700px){.shell{padding:25px 12px 50px}.grid{grid-template-columns:1fr}.concept-head{min-height:0}.control button{padding:8px 10px}.mock{height:410px}}
+  </style>
+</head>
+<body data-screen="landing" data-mode="light">
+  <main class="shell">
+    <p class="topline">DigiTalent AI / Color Lab 02</p>
+    <h1>Ba sắc thái mới. Ba dấu ấn riêng.</h1>
+    <p class="lead">Mỗi hướng có màu sắc, hình khối và nhịp chữ khác nhau. Chọn cùng một màn hình để so sánh cách chúng vận hành từ trang giới thiệu đến không gian làm việc. Nền sáng vẫn là mặc định.</p>
+    <nav class="other-previews" aria-label="Xem các bộ màu đã thiết kế"><a href="03-bold-directions.html">Xem Pulse · Orbit · Bloom ↗</a><a href="02-color-preview.html">Xem 3 hướng màu ban đầu ↗</a></nav>
+    <div class="controls">
+      <div class="control" role="group" aria-label="Chọn loại trang">
+        <button type="button" data-screen="landing" aria-pressed="true">Landing</button>
+        <button type="button" data-screen="owner" aria-pressed="false">Owner</button>
+        <button type="button" data-screen="employee" aria-pressed="false">Staff</button>
+        <button type="button" data-screen="manager" aria-pressed="false">Manager</button>
+        <button type="button" data-screen="platform" aria-pressed="false">Platform Admin</button>
+      </div>
+      <div class="control" role="group" aria-label="Chọn chế độ màu">
+        <button type="button" data-mode="light" aria-pressed="true">Nền sáng</button>
+        <button type="button" data-mode="dark" aria-pressed="false">Nền tối</button>
+      </div>
+    </div>
+    <p class="hint">Các mã bên dưới là màu của nền sáng; ô cuối cùng là nền tối.</p>
+    <div class="grid">
+      <article class="concept solar">
+        <header class="concept-head"><span class="number">01 / WARM TECH</span><h2>Solar</h2><p>Cam đất sáng + lam sâu + vàng bơ. Năng lượng học tập với nét editorial.</p></header>
+        <div class="mock">
+          <section class="landing" aria-label="Landing Solar">
+            <div class="nav"><span class="brand"><span class="brandmark">D</span>DigiTalent</span><span class="nav-right"><span>Giải pháp</span><b>Dùng thử ↗</b></span></div>
+            <span class="eyebrow">HỌC · LÀM · TIẾN BỘ</span><h3 class="headline">Khơi mở <em>năng lực</em> số.</h3><p class="landing-copy">Đánh giá đúng điểm xuất phát. Học đúng điều cần. Thấy rõ bước tiến của mỗi người.</p><span class="action">Bắt đầu dùng thử →</span>
+            <div class="art" aria-hidden="true"><span class="one"></span><span class="two"></span><span class="three"></span><span class="four"></span></div><span class="signature">06 miền năng lực · 18 khóa học</span>
+          </section>
+          <section class="workspace" aria-label="Workspace Solar">
+            <aside class="sidebar"><span class="brand"><span class="brandmark">D</span>DT</span><div class="menu selected">Tổng quan</div><div class="menu">Năng lực</div><div class="menu">Học tập</div><div class="menu">Nhiệm vụ</div><div class="menu">Báo cáo</div></aside>
+            <div class="workmain"><div class="worktop"><span>DigiTalent / Workspace</span><span>Hôm nay</span></div><h3 class="role-title"></h3><p class="sub role-sub"></p><div class="stats"></div><div class="feature"><strong class="feature-title"></strong><div class="items"></div><span class="mini-action role-action"></span></div></div>
+          </section>
+        </div>
+        <div class="palette"><span class="swatch" style="--swatch:#FFF9F2"><i></i><b>Nền</b>#FFF9F2</span><span class="swatch" style="--swatch:#B53F16"><i></i><b>Chính</b>#B53F16</span><span class="swatch" style="--swatch:#2E43A3"><i></i><b>Phụ</b>#2E43A3</span><span class="swatch" style="--swatch:#FFD67E"><i></i><b>Điểm sáng</b>#FFD67E</span><span class="swatch" style="--swatch:#211A19"><i></i><b>Nền tối</b>#211A19</span></div>
+        <p class="distinct">Dấu ấn: mặt trời hình học, chữ nghiêng editorial và dải màu ấm. Hợp thương hiệu giàu năng lượng.</p>
+      </article>
+      <article class="concept muse">
+        <header class="concept-head"><span class="number">02 / HUMAN FUTURE</span><h2>Muse</h2><p>Hồng mận + xanh biển trầm + hồng phấn. Hiện đại, nhân văn, giàu cảm xúc.</p></header>
+        <div class="mock">
+          <section class="landing" aria-label="Landing Muse">
+            <div class="nav"><span class="brand"><span class="brandmark">D</span>DigiTalent</span><span class="nav-right"><span>Giải pháp</span><b>Dùng thử ↗</b></span></div>
+            <span class="eyebrow">MỖI NGƯỜI MỘT BƯỚC TIẾN</span><h3 class="headline">Học để <em>lớn lên</em> cùng nhau.</h3><p class="landing-copy">Một hành trình năng lực rõ ràng cho doanh nghiệp, quản lý và từng nhân viên.</p><span class="action">Khám phá hành trình →</span>
+            <div class="art" aria-hidden="true"><span class="one"></span><span class="two"></span><span class="three"></span><span class="four"></span></div><span class="signature">Từ đánh giá đến thành tựu</span>
+          </section>
+          <section class="workspace" aria-label="Workspace Muse">
+            <aside class="sidebar"><span class="brand"><span class="brandmark">D</span>DT</span><div class="menu selected">Tổng quan</div><div class="menu">Năng lực</div><div class="menu">Học tập</div><div class="menu">Nhiệm vụ</div><div class="menu">Báo cáo</div></aside>
+            <div class="workmain"><div class="worktop"><span>DigiTalent / Workspace</span><span>Hôm nay</span></div><h3 class="role-title"></h3><p class="sub role-sub"></p><div class="stats"></div><div class="feature"><strong class="feature-title"></strong><div class="items"></div><span class="mini-action role-action"></span></div></div>
+          </section>
+        </div>
+        <div class="palette"><span class="swatch" style="--swatch:#FCF7FB"><i></i><b>Nền</b>#FCF7FB</span><span class="swatch" style="--swatch:#A12473"><i></i><b>Chính</b>#A12473</span><span class="swatch" style="--swatch:#215666"><i></i><b>Phụ</b>#215666</span><span class="swatch" style="--swatch:#FFC6DF"><i></i><b>Điểm sáng</b>#FFC6DF</span><span class="swatch" style="--swatch:#211723"><i></i><b>Nền tối</b>#211723</span></div>
+        <p class="distinct">Dấu ấn: cánh hoa chuyển động và thẻ mềm bất đối xứng. Hợp trải nghiệm học tập gần gũi.</p>
+      </article>
+      <article class="concept circuit">
+        <header class="concept-head"><span class="number">03 / ORGANIC SYSTEM</span><h2>Circuit</h2><p>Xanh thông + tím điện + vàng chanh. Gọn, sắc nét và có nhịp công nghệ riêng.</p></header>
+        <div class="mock">
+          <section class="landing" aria-label="Landing Circuit">
+            <div class="nav"><span class="brand"><span class="brandmark">D</span>DigiTalent</span><span class="nav-right"><span>Giải pháp</span><b>Dùng thử ↗</b></span></div>
+            <span class="eyebrow">HỆ ĐIỀU HÀNH NĂNG LỰC SỐ</span><h3 class="headline">Thấy rõ năng lực. Tạo đà bứt phá.</h3><p class="landing-copy">Một hệ thống từ đánh giá, học tập đến thực hành và chứng minh kết quả.</p><span class="action">Khởi tạo doanh nghiệp →</span>
+            <div class="art" aria-hidden="true"><span class="one"></span><span class="two"></span><span class="three"></span><span class="four"></span></div><span class="signature">Đo lường → Học tập → Áp dụng</span>
+          </section>
+          <section class="workspace" aria-label="Workspace Circuit">
+            <aside class="sidebar"><span class="brand"><span class="brandmark">D</span>DT</span><div class="menu selected">Tổng quan</div><div class="menu">Năng lực</div><div class="menu">Học tập</div><div class="menu">Nhiệm vụ</div><div class="menu">Báo cáo</div></aside>
+            <div class="workmain"><div class="worktop"><span>DigiTalent / Workspace</span><span>Hôm nay</span></div><h3 class="role-title"></h3><p class="sub role-sub"></p><div class="stats"></div><div class="feature"><strong class="feature-title"></strong><div class="items"></div><span class="mini-action role-action"></span></div></div>
+          </section>
+        </div>
+        <div class="palette"><span class="swatch" style="--swatch:#F8FAF0"><i></i><b>Nền</b>#F8FAF0</span><span class="swatch" style="--swatch:#285A40"><i></i><b>Chính</b>#285A40</span><span class="swatch" style="--swatch:#6241B7"><i></i><b>Phụ</b>#6241B7</span><span class="swatch" style="--swatch:#DFEF7A"><i></i><b>Điểm sáng</b>#DFEF7A</span><span class="swatch" style="--swatch:#14211B"><i></i><b>Nền tối</b>#14211B</span></div>
+        <p class="distinct">Dấu ấn: lưới mô đun và hình khối kết nối. Hợp dashboard doanh nghiệp và báo cáo.</p>
+      </article>
+    </div>
+    <p class="references">Nguồn tham khảo xu hướng và hệ nhận diện: <a href="https://www.behance.net/gallery/255915111/Brand-Identity-Design-for-EdTech-SaaS-Platform">True Progress · EdTech/SaaS</a>, <a href="https://www.behance.net/gallery/254496113/Elvora-EdTech-Brand">Elvora · EdTech</a>, <a href="https://www.behance.net/gallery/244392405/Education-Platform-Branding-Web">Next Chapter · Education Platform</a>. Ba phương án là thiết kế gốc cho DigiTalent AI, không sao chép hình ảnh hoặc bố cục của các dự án tham khảo.</p>
+  </main>
+  <script>
+    const roleData={
+      owner:{title:"Năng lực toàn doanh nghiệp",sub:"Từ khoảng trống đến lộ trình đào tạo",stats:[["Nhân sự","128"],["Đang học","46"],["Đạt mục tiêu","72%"]],feature:"Khoảng trống cần ưu tiên",items:[["Giao tiếp số","Gap 2"],["Thông tin & dữ liệu","Gap 1"],["An toàn số","Gap 1"]],action:"Xem phân tích"},
+      employee:{title:"Lộ trình của tôi",sub:"Học đúng kỹ năng, thấy rõ bước tiến",stats:[["Khóa được giao","03"],["Hoàn thành","68%"],["Chứng chỉ","02"]],feature:"Tiếp tục học",items:[["Tìm kiếm thông tin","Bài 3/4"],["Quiz chương 2","Sẵn sàng"],["Nhiệm vụ thực tế","1 việc"]],action:"Tiếp tục học"},
+      manager:{title:"Nhóm của tôi",sub:"Đánh giá đúng lúc, hỗ trợ đúng người",stats:[["Thành viên","24"],["Chờ đánh giá","05"],["Quá hạn","03"]],feature:"Việc cần xử lý",items:[["Bài cuối khóa của Lê C","Chờ chấm"],["Minh chứng của Trần B","Mới"],["Nhắc nhóm hoàn thành","3 người"]],action:"Mở hàng chờ"},
+      platform:{title:"Toàn cảnh nền tảng",sub:"Theo dõi khách hàng và nội dung chuẩn",stats:[["Doanh nghiệp","42"],["Khóa chuẩn","18"],["Đăng ký mới","06"]],feature:"Hoạt động gần đây",items:[["Doanh nghiệp Minh Phát","Dùng thử"],["Khóa học chuẩn","18 khóa"],["Ngân hàng câu hỏi","Cập nhật"]],action:"Xem tổ chức"}
+    };
+    function updateScreen(){
+      const data=roleData[document.body.dataset.screen];
+      if(!data)return;
+      document.querySelectorAll(".concept").forEach(card=>{
+        card.querySelector(".role-title").textContent=data.title;
+        card.querySelector(".role-sub").textContent=data.sub;
+        card.querySelector(".feature-title").textContent=data.feature;
+        card.querySelector(".role-action").textContent=data.action;
+        const stats=card.querySelector(".stats");stats.replaceChildren();
+        data.stats.forEach(([label,value])=>{const box=document.createElement("div");box.className="stat";const small=document.createElement("small");small.textContent=label;const strong=document.createElement("b");strong.textContent=value;box.append(small,strong);stats.append(box)});
+        const items=card.querySelector(".items");items.replaceChildren();
+        data.items.forEach(([label,status])=>{const row=document.createElement("div");row.className="item";const dot=document.createElement("i");const name=document.createElement("span");name.textContent=label;const value=document.createElement("b");value.textContent=status;row.append(dot,name,value);items.append(row)});
+      });
+    }
+    document.querySelectorAll("button[data-screen]").forEach(button=>button.addEventListener("click",()=>{
+      document.body.dataset.screen=button.dataset.screen;
+      document.querySelectorAll("button[data-screen]").forEach(item=>item.setAttribute("aria-pressed",String(item===button)));
+      updateScreen();
+    }));
+    document.querySelectorAll("button[data-mode]").forEach(button=>button.addEventListener("click",()=>{
+      document.body.dataset.mode=button.dataset.mode;
+      document.querySelectorAll("button[data-mode]").forEach(item=>item.setAttribute("aria-pressed",String(item===button)));
+    }));
+    updateScreen();
+  </script>
+</body>
+</html>

@@ -1,0 +1,326 @@
+/* Visual identity for each workspace. No interaction or business state is changed here. */
+.app-shell.role-owner {
+  --role-accent: #3856db;
+  --role-strong: #233aaf;
+  --role-tint: #edf1ff;
+  --role-warm: #f1816b;
+  --role-canvas: #f6f8fe;
+}
+.app-shell.role-manager {
+  --role-accent: #137b84;
+  --role-strong: #0e5968;
+  --role-tint: #e8f6f4;
+  --role-warm: #e8a17f;
+  --role-canvas: #f3f8f8;
+}
+.app-shell.role-admin {
+  --role-accent: #916525;
+  --role-strong: #714a1d;
+  --role-tint: #fbf2df;
+  --role-warm: #8aa7c9;
+  --role-canvas: #f8f7f4;
+}
+.employee-shell.role-employee {
+  --role-accent: #5547c6;
+  --role-strong: #4035a4;
+  --role-tint: #f1efff;
+  --role-warm: #eb8b75;
+  --role-canvas: #f8f7fc;
+}
+
+.app-shell.role-owner .main-area,
+.app-shell.role-manager .main-area {
+  background:
+    radial-gradient(ellipse 760px 380px at 94% 0, color-mix(in srgb, var(--role-accent) 10%, transparent), transparent 70%),
+    var(--role-canvas);
+}
+.app-shell .page-head { position: relative; }
+.app-shell .page-head .eyebrow { color: var(--role-accent); }
+.app-shell .page-head .eyebrow:before { background: var(--role-warm); }
+.app-shell .page-head h1 { text-wrap: balance; }
+.app-shell .page-head p { color: #5f6e88; }
+.app-shell .mini-label { color: var(--role-accent); }
+.app-shell .bar i { background: linear-gradient(90deg, var(--role-accent), color-mix(in srgb, var(--role-accent) 72%, white)); }
+.app-shell .avatar { background: var(--role-tint); color: var(--role-strong); }
+.app-shell .btn-primary {
+  background: linear-gradient(130deg, var(--role-accent), var(--role-strong));
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--role-accent) 20%, transparent);
+}
+.app-shell .btn-primary:hover { box-shadow: 0 16px 28px color-mix(in srgb, var(--role-accent) 25%, transparent); }
+.app-shell .btn-outline,
+.app-shell .btn-ghost { color: var(--role-strong); }
+.app-shell .btn-outline:hover { border-color: var(--role-accent); background: var(--role-tint); }
+.app-shell .pill:not(.green):not(.coral):not(.gray) { background: var(--role-tint); color: var(--role-strong); }
+.app-shell .process-track a.current { background: var(--role-tint); border-color: color-mix(in srgb, var(--role-accent) 38%, white); }
+.app-shell .process-track b,
+.app-shell .gap-row .value.target { color: var(--role-accent); }
+.app-shell .path-step .node { color: var(--role-strong); border-color: color-mix(in srgb, var(--role-accent) 30%, white); background: var(--role-tint); }
+.app-shell .surface.pad { border-radius: 22px; }
+.app-shell .surface.kpi {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  box-shadow: 0 11px 30px rgba(29, 48, 102, .035);
+}
+.app-shell .surface.kpi:before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--role-accent);
+}
+.app-shell .surface.kpi:nth-child(2):before { background: var(--role-warm); }
+.app-shell .surface.kpi:nth-child(3):before { background: #67b6ad; }
+.app-shell .surface.kpi:nth-child(4):before { background: #a48ce3; }
+.app-shell .surface.kpi strong { color: var(--role-strong); }
+.app-shell .surface.kpi:nth-child(2) strong { color: #d36f5b; }
+.app-shell .surface.kpi:nth-child(3) strong { color: #218e86; }
+.app-shell .surface.kpi:nth-child(4) strong { color: #826bc5; }
+.app-shell .pu-overview-stats>div {
+  border-color: #e0e7f4;
+  box-shadow: 0 11px 28px rgba(29, 48, 102, .04);
+}
+.app-shell .pu-overview-stats>div:first-child { border-top: 3px solid var(--role-accent); }
+.app-shell .pu-overview-stats>div:nth-child(2) { border-top: 3px solid var(--role-warm); }
+.app-shell .pu-overview-stats>div:nth-child(3) { border-top: 3px solid #6db8ac; }
+.app-shell .pu-overview-stats strong { color: var(--role-strong); }
+.app-shell .pu-overview-stats>div:nth-child(2) strong { color: #c96f5a; }
+.app-shell .pu-overview-stats>div:nth-child(3) strong { color: #248c81; }
+.app-shell .pu-overview-hero .pu-hero-buttons .btn,
+.app-shell .flow-banner .btn {
+  background: #fff;
+  color: var(--role-strong);
+  border-color: #fff;
+  box-shadow: 0 10px 23px rgba(11, 29, 70, .14);
+}
+.app-shell .pu-overview-hero .pu-hero-buttons .btn.secondary,
+.app-shell .flow-banner .btn-outline {
+  color: #fff;
+  background: transparent;
+  border-color: rgba(231, 240, 255, .65);
+  box-shadow: none;
+}
+.app-shell .pu-overview-hero .pu-hero-buttons .btn.secondary:hover,
+.app-shell .flow-banner .btn-outline:hover { background: rgba(255, 255, 255, .12); }
+.app-shell .course-card { border-radius: 20px; }
+.app-shell .course-card .course-art { border-radius: 14px; }
+.app-shell .course-card .btn { margin-top: 4px; }
+
+/* Owner: crisp blue planning surfaces with small coral milestones. */
+.role-owner .sidebar {
+  background: linear-gradient(180deg, #fff 0, #f9fbff 100%);
+  border-right-color: #d9e2f5;
+}
+.role-owner .side-label { color: #8495bb; }
+.role-owner .side-link.active {
+  background: linear-gradient(100deg, #e8eeff, #f5f6ff);
+  color: #2945c2;
+  box-shadow: inset 3px 0 #ee8a72;
+}
+.role-owner .side-foot {
+  background: #f8faff;
+  border-color: #dfe6f6;
+}
+.role-owner .pulse-role-overview .pu-overview-hero {
+  background:
+    radial-gradient(circle at 38% 0, rgba(110, 137, 233, .25), transparent 43%),
+    linear-gradient(125deg, #172b65, #263f8c);
+  border-color: #304fa1;
+}
+.role-owner .pulse-role-overview .pu-overview-hero h2 em { color: #ffb097; }
+.role-owner .pulse-role-overview .pu-overview-hero img { object-position: 53% center; }
+.role-owner .pulse-role-overview .pu-overview-cards button:nth-child(2) { background: #fff8f4; }
+.role-owner .pulse-role-overview .pu-overview-cards button:nth-child(3) { background: #f4f8ff; }
+.role-owner .pulse-role-overview .pu-overview-cards button:nth-child(4) { background: #f8f6ff; }
+.role-owner .pulse-role-overview .pu-overview-cards button strong { color: #172852; }
+.role-owner .pulse-role-overview .pu-overview-cards button em,
+.role-owner .pulse-role-overview .pu-overview-cards button b { color: #304bc6; }
+.role-owner .pulse-people-hero {
+  background: radial-gradient(circle at 100% 0, rgba(255, 174, 140, .18), transparent 35%), linear-gradient(115deg, #1b2c67, #2b4699);
+}
+.role-owner .pulse-people-hero .eyebrow { color: #ffd1be; }
+.role-owner .report-cover { background: linear-gradient(115deg, #1b2b61, #294489); }
+.role-owner .report-cover .report-mark { color: #ffc1a6; }
+
+/* Manager: calm ink and sea glass. The review surfaces carry a warmer urgency cue. */
+.role-manager .sidebar {
+  background: linear-gradient(180deg, #173b46, #1b3440 78%, #223745);
+  border-right-color: #1b414c;
+}
+.role-manager .side-label { color: #9dbec4; }
+.role-manager .side-link { color: #d4e4e5; }
+.role-manager .side-link b { color: #a5d7d4; }
+.role-manager .side-link:hover { color: #fff; background: rgba(197, 236, 228, .11); }
+.role-manager .side-link.active {
+  color: #143e47;
+  background: #dff2ed;
+  box-shadow: inset 3px 0 #e7a283, 0 6px 16px rgba(8, 30, 38, .13);
+}
+.role-manager .side-link.active b { color: #156c70; }
+.role-manager .side-foot {
+  color: #c3d8db;
+  background: rgba(255, 255, 255, .055);
+  border-color: rgba(216, 240, 239, .18);
+}
+.role-manager .side-foot b { color: #f4ffff; }
+.role-manager .page-head .eyebrow:before { background: #df987a; }
+.role-manager .pu-manager-overview .pu-overview-hero {
+  background:
+    radial-gradient(circle at 38% 0, rgba(96, 162, 169, .22), transparent 45%),
+    linear-gradient(120deg, #173d49, #275967);
+  border-color: #356c75;
+}
+.role-manager .pu-manager-overview .pu-overview-hero h2 em { color: #b8eadc; }
+.role-manager .pu-manager-overview .pu-overview-hero>div>span { color: #c1e8df; }
+.role-manager .pu-manager-overview .pu-overview-hero p { color: #d4e8e9; }
+.role-manager .pu-manager-overview .pu-overview-cards button { background: #fff; }
+.role-manager .pu-manager-overview .pu-overview-cards button:nth-child(2) { background: #f3f9f7; }
+.role-manager .pu-manager-overview .pu-overview-cards button:nth-child(3) { background: #fff8f4; }
+.role-manager .pu-manager-overview .pu-overview-cards button b,
+.role-manager .pu-manager-overview .pu-overview-cards button em { color: #136d73; }
+.role-manager .pu-manager-overview .pu-overview-cards button:before { background: #16838b; }
+.role-manager .pu-manager-overview .pu-overview-cards button:nth-child(2):before { background: #67b6aa; }
+.role-manager .pu-manager-overview .pu-overview-cards button:nth-child(3):before { background: #e5a07e; }
+.role-manager .pulse-review-queue,
+.role-manager .pulse-people-hero,
+.role-manager .flow-banner {
+  background: radial-gradient(circle at 94% 0, rgba(238, 175, 139, .17), transparent 32%), linear-gradient(120deg, #193e49, #285b67);
+}
+.role-manager .pulse-review-queue .mini-label,
+.role-manager .flow-banner .mini-label { color: #c6e9e0; }
+.role-manager .notice { background: #edf8f7; border-color: #d6eae7; color: #215b64; }
+.role-manager .notice.warning { background: #fff5ee; border-color: #f4dece; color: #96533c; }
+.role-manager .notice.success { background: #f0f9eb; border-color: #dbeac5; color: #487336; }
+.role-manager .report-cover { background: linear-gradient(120deg, #173d49, #2d606b); }
+.role-manager .report-cover:before { background: linear-gradient(90deg, #173d49, rgba(23, 61, 73, .03)), url('../assets/competency-architecture.png') center/cover; }
+.role-manager .report-cover .eyebrow,
+.role-manager .report-cover .report-mark { color: #b9e6d8; }
+
+/* Platform Admin: a quiet operations console with brass and slate accents. */
+.role-admin .sidebar {
+  background: linear-gradient(180deg, #263247, #202c3f);
+  border-right-color: #354257;
+}
+.role-admin .side-label { color: #b8c5d9; }
+.role-admin .side-link { color: #dbe3ef; }
+.role-admin .side-link b { color: #e7c787; }
+.role-admin .side-link:hover { color: #fff; background: rgba(255, 255, 255, .1); }
+.role-admin .side-link.active {
+  background: #fcf0d9;
+  color: #694b22;
+  box-shadow: inset 3px 0 #d9aa55, 0 6px 16px rgba(12, 23, 41, .13);
+}
+.role-admin .side-link.active b { color: #916525; }
+.role-admin .side-foot {
+  color: #bdc9db;
+  background: rgba(255, 255, 255, .06);
+  border-color: rgba(222, 230, 242, .2);
+}
+.role-admin .side-foot b { color: #fff; }
+.role-admin .page-head h1 { max-width: 960px; }
+.role-admin .page-head .eyebrow:before { background: #d3a657; }
+.role-admin .surface.kpi { background: linear-gradient(145deg, #fff, #fbfaf6); }
+.role-admin .surface.kpi:nth-child(2) strong { color: #976c31; }
+.role-admin .surface.kpi:nth-child(3) strong { color: #517b90; }
+.role-admin .sideflow-admin-links a {
+  position: relative;
+  overflow: hidden;
+  border-color: #e6e0d5;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #fff, #fdfbf7);
+  box-shadow: 0 12px 29px rgba(48, 52, 67, .045);
+}
+.role-admin .sideflow-admin-links a:before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: #bb8e46;
+}
+.role-admin .sideflow-admin-links a:nth-child(2n):before { background: #829ab5; }
+.role-admin .sideflow-admin-links a:hover { border-color: #d5bb8b; box-shadow: 0 18px 37px rgba(48, 52, 67, .1); }
+.role-admin .sideflow-admin-links em,
+.role-admin .sideflow-admin-links .mini-label { color: #916525; }
+.role-admin .data-table thead { background: #f7f2e8; }
+.role-admin .notice { background: #fcf5e9; border-color: #eddec2; color: #745226; }
+
+/* Employee: spacious lavender paper, cobalt learning route and coral progress. */
+.role-employee {
+  background:
+    radial-gradient(ellipse 700px 420px at 92% 4%, rgba(209, 208, 252, .35), transparent 72%),
+    radial-gradient(ellipse 530px 300px at 3% 25%, rgba(255, 226, 210, .3), transparent 74%),
+    var(--role-canvas);
+}
+.role-employee .employee-main { max-width: 1190px; }
+.role-employee .pulse-employee-hero {
+  background: radial-gradient(circle at 2% 2%, rgba(255, 224, 209, .54), transparent 43%), #fffaf6;
+  border: 1px solid #eee4e7;
+  border-radius: 32px;
+  box-shadow: 0 30px 65px rgba(56, 53, 115, .13);
+}
+.role-employee .pulse-employee-hero h1 { color: #1d2445; }
+.role-employee .pulse-employee-hero h1 em {
+  background: linear-gradient(100deg, #4e56d7, #a56ec2 57%, #eb8771);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.role-employee .pulse-employee-art { background: #e8e8ff; }
+.role-employee .pulse-art-note { border-color: #f7f4ff; border-radius: 17px; }
+.role-employee .pulse-employee-intro .eyebrow { color: #5547c6; }
+.role-employee .pulse-employee-intro .eyebrow:before { background: #ec8b73; }
+.role-employee .pulse-employee-cards article { border-radius: 24px; }
+.role-employee .pulse-employee-cards .pulse-continue {
+  background:
+    radial-gradient(circle at 95% 4%, rgba(229, 181, 206, .23), transparent 40%),
+    linear-gradient(130deg, #363fbb, #5744ad);
+  border-color: #5551bf;
+  box-shadow: 0 20px 40px rgba(62, 57, 164, .16);
+}
+.role-employee .pulse-employee-cards .pulse-continue .bar i { background: #ffbd9e; }
+.role-employee .pulse-employee-cards article:nth-child(2) { background: #fff9f5; border-color: #f1e6e0; }
+.role-employee .pulse-employee-cards article:nth-child(3) { background: #f4f3ff; border-color: #e3dff7; }
+.role-employee .pulse-employee-cards article:nth-child(3) .mini-label { color: #6552bb; }
+.role-employee .pulse-employee-cards .pulse-continue .mini-label { color: #ffd7bc; }
+.role-employee .pulse-path-hero {
+  background: radial-gradient(circle at 95% 0, rgba(255, 183, 151, .28), transparent 30%), linear-gradient(120deg, #333ba2, #5c4dae);
+  box-shadow: 0 22px 43px rgba(60, 55, 160, .17);
+}
+.role-employee .pulse-path-hero .eyebrow,
+.role-employee .pulse-path-hero h2 b { color: #ffcfb5; }
+.role-employee .pulse-gap-summary>div:nth-child(2) { background: #fff5ef; }
+.role-employee .surface { border-color: #e6e2f1; }
+.role-employee .surface.pad { border-radius: 22px; }
+.role-employee .mini-label { color: #6250bb; }
+.role-employee .btn-primary { background: linear-gradient(135deg, #4d57d9, #5140b5); box-shadow: 0 12px 25px rgba(79, 74, 188, .2); }
+.role-employee .btn-outline,
+.role-employee .btn-ghost { color: #4b42ad; border-color: #d6d1f2; }
+.role-employee .btn-outline:hover { border-color: #9e93dd; background: #f7f4ff; }
+.role-employee .bar i { background: linear-gradient(90deg, #5655c9, #eb927d); }
+.role-employee .pill:not(.green):not(.coral):not(.gray) { color: #5744ad; background: #f1efff; }
+.role-employee .path-step .node { background: #f0efff; border-color: #d7d1f6; color: #5c4dae; }
+
+body:has(.role-owner) .app-header { border-top: 3px solid #3c55d8; }
+body:has(.role-manager) .app-header { border-top: 3px solid #177781; }
+body:has(.role-employee) .app-header { border-top: 3px solid #6153c0; }
+body:has(.role-admin) .app-header { border-top: 3px solid #bd924e; }
+body:has(.role-manager) .brand em { color: #137b84; }
+body:has(.role-employee) .brand em { color: #5b4bc4; }
+body:has(.role-admin) .brand em { color: #936925; }
+body:has(.role-manager) .employee-nav a.active { background: #173e49; }
+body:has(.role-employee) .employee-nav a.active { background: #483fa4; }
+
+@media (max-width: 760px) {
+  .role-manager .sidebar { background: #183d47; border-bottom: 1px solid #2e5d66; }
+  .role-manager .side-link { color: #d4e7e8; }
+  .role-manager .side-link.active { color: #173f47; }
+  .role-admin .sidebar { background: #263247; border-bottom: 1px solid #3b495d; }
+  .role-admin .side-link.active { color: #694b22; }
+  .app-shell.role-owner .main-area,
+  .app-shell.role-manager .main-area { background: var(--role-canvas); }
+  .role-employee .pulse-employee-hero { border-radius: 24px; box-shadow: 0 18px 38px rgba(56, 53, 115, .1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell .surface.kpi, .role-employee .pulse-employee-cards article { transition: none; }
+}
