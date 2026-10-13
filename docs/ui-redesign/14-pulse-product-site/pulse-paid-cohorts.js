@@ -72,7 +72,7 @@
   function nextPathCourse(person) {
     const target = position(person)?.target || [];
     for (let domain = 0; domain < DOMAINS.length; domain++) {
-      if (!person.assessed || !person.current?.[domain] || target[domain] <= person.current[domain]) continue;
+      if (!person.assessed || !target[domain] || (person.current?.[domain] && target[domain] <= person.current[domain])) continue;
       for (let tier = 1; tier <= target[domain]; tier++) {
         const cid = courseId(domain, tier);
         if (enrollment(cid, person)?.status !== 'approved') return cid;

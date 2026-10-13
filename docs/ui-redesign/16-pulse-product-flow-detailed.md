@@ -129,10 +129,10 @@ Employee mở `#/assessment` từ Today hoặc Path. Trên bản thiết kế, n
 ### 7.2 So sánh năng lực
 
 - Owner mở `#/gap` để chọn Employee trong doanh nghiệp; Manager mở cùng trang nhưng chỉ thấy người thuộc phòng ban của mình; Employee xem bản cá nhân ở `#/path` và Today.
-- Mỗi lĩnh vực đặt Current cạnh **Position target**, cùng chú thích chuỗi Digital AI ≥ Business ≥ Department ≥ Position.
+- Mỗi lĩnh vực đặt **Baseline đầu vào → Current đã xác nhận → Position target** cạnh nhau, cùng chú thích chuỗi Digital AI ≥ Business ≥ Department ≥ Position.
 - `Current = 0` hoặc chưa assessed là **Pending**, không được tô như một gap đo được. `0 < Current < Target` là gap xác nhận; `Current ≥ Target` là đã đạt hoặc vượt mục tiêu.
 - Đề xuất khóa ưu tiên lĩnh vực có gap xác nhận và vẫn nằm trong target của vị trí. Nếu chưa có gap đo được, giao diện chỉ cung cấp khóa nền tảng trong vị trí; không tự khẳng định năng lực đã thiếu.
-- Việc học xong một khóa **không tự cập nhật Current**. Muốn khẳng định gap đã khép phải có đánh giá lại hoặc minh chứng thực tế được Manager duyệt theo nhánh riêng.
+- Xem slide, qua quiz hoặc nộp bài cuối khóa **chưa** cập nhật Current. Khi Manager đúng phòng ban duyệt final assignment, cấp của khóa được ghi vào `courseLevels` và có thể nâng Current đã xác nhận tới cấp đó; Baseline đầu vào (`baselineCurrent`) giữ nguyên. Minh chứng thực tế được Manager duyệt cũng có thể nâng Current. Gap còn lại tính từ Current đã xác nhận tới Position target. Khóa Basic cấp 1 không làm mức L1 đầu vào tăng lên; khóa Intermediate cấp 2 được duyệt có thể đưa L1 → L2. Bài bị trả lại, chờ chấm hoặc gắn cờ không làm tăng mức năng lực.
 
 ## 8. Danh mục, quyền truy cập và lộ trình theo vị trí
 
@@ -225,7 +225,7 @@ Trong preview, Employee nộp một ghi chú bằng văn bản. Không có đín
 - Từng Employee: phòng ban/vị trí, khóa Basic hay trả phí, baseline có bao nhiêu lĩnh vực được xác nhận, Position target, tiến độ module và số lần nộp.
 - Bằng chứng/nhận xét quyết định của Manager, mốc hoạt động và gợi ý bước tiếp.
 - Bảng cả cohort: người đã xong, đang học, chờ quyết định hoặc cần hỗ trợ nằm cùng một bức tranh.
-- Current cạnh Target và nhắc rõ: duyệt một khóa **không đồng nghĩa** năng lực Current đã tăng.
+- Baseline đầu vào, Current đã xác nhận và Target được so sánh rõ. Chỉ khóa có cấp **cao hơn** mức đã xác nhận mới làm Current tăng khi final assignment được Manager duyệt; việc hoàn thành module hoặc mua suất không đủ. Báo cáo giữ Baseline gốc để thấy tiến bộ và gap còn lại.
 - Nhánh minh chứng công việc được duyệt nằm trong khu vực liên kết riêng.
 
 Khóa Intermediate/Advanced mua thêm đi qua **cùng** enrollment → module → quiz → final assignment → Manager review → report. Mua quyền truy cập không thay đổi tiêu chí đánh giá. Nút Print ở bản preview dùng chức năng in của trình duyệt; dữ liệu báo cáo chưa được kiểm toán server.
