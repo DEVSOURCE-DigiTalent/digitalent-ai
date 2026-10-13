@@ -1,0 +1,19 @@
+.capability-progress{margin:16px 0 18px;padding:18px;border:1px solid #dce5fa;border-radius:18px;background:linear-gradient(115deg,#f8fbff,#f8f7ff)}
+.capability-progress-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline;margin-bottom:12px}
+.capability-progress-head strong{font-size:16px;color:#182748}
+.capability-progress-head span{font-size:12px;color:#536583}
+.capability-progress-list{display:grid;gap:8px}
+.capability-progress-row{display:grid;grid-template-columns:minmax(145px,1fr) minmax(260px,1.6fr) auto;align-items:center;gap:12px;padding:11px 13px;border-radius:12px;background:#fff;border:1px solid #e4eafa}
+.capability-progress-name strong,.capability-progress-name small{display:block}
+.capability-progress-name strong{color:#182748;font-size:13px}
+.capability-progress-name small{color:#61718e;font-size:11px;margin-top:3px}
+.capability-progress-levels{display:flex;align-items:center;gap:10px;color:#65728c;font-size:11px}
+.capability-progress-levels span{white-space:nowrap}
+.capability-progress-levels b{font-size:13px;color:#1b315d;margin-left:3px}
+.capability-progress-levels span:nth-of-type(2) b{color:#3150c8}
+.capability-progress-levels i{font-style:normal;color:#8998b7}
+.capability-progress-result{padding:6px 9px;border-radius:99px;white-space:nowrap;font-size:11px;font-weight:800}
+.capability-progress-result.met{background:#e8f6e8;color:#21603b}
+.capability-progress-result.open{background:#fff0e9;color:#a9442c}
+.capability-progress-result.pending{background:#edf1f8;color:#536583}
+@media(max-width:760px){.capability-progress-head,.capability-progress-row{display:block}.capability-progress-head span{display:block;margin-top:4px}.capability-progress-levels{flex-wrap:wrap;margin:11px 0}.capability-progress-result{display:inline-block}}
