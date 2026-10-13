@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>DigiTalent AI · So sánh hệ màu</title>
+  <style>
+    *{box-sizing:border-box}
+    :root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#17243a;background:#f1f4f7}
+    body{margin:0}
+    .page{max-width:1500px;margin:auto;padding:42px 24px 72px}
+    .eyebrow{margin:0 0 8px;color:#526177;font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+    h1{font-size:clamp(30px,4vw,48px);line-height:1.1;margin:0 0 13px;letter-spacing:-.04em}
+    .intro{max-width:850px;margin:0;color:#526177;line-height:1.65}
+    .toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin:28px 0 23px}
+    .toolbar p{margin:0;color:#526177;font-size:14px}
+    .switch{display:flex;background:#fff;border:1px solid #d6dfe9;padding:4px;border-radius:12px}
+    .switch button{border:0;border-radius:8px;padding:9px 15px;background:transparent;color:#425167;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+    .switch button[aria-pressed="true"]{background:#17243a;color:white}
+    .options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+    .option{min-width:0;background:white;border:1px solid #dce3eb;border-radius:20px;padding:18px;box-shadow:0 12px 36px #1c2c440b}
+    .option.recommended{border-color:#96a9e7;box-shadow:0 0 0 2px #dce5ff,0 14px 40px #1c2c4410}
+    .option-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin:0 0 12px}
+    .option-head h2{margin:0;font-size:20px;letter-spacing:-.025em}
+    .option-head p{margin:4px 0 0;font-size:13px;color:#637189;line-height:1.45}
+    .tag{white-space:nowrap;border-radius:100px;background:#e9edff;color:#2942aa;padding:5px 9px;font-size:11px;font-weight:800}
+    .mini{--bg:#fff;--side:#eee;--surface:#fff;--text:#111;--muted:#666;--primary:#333;--on:#fff;--accent:#777;--border:#ddd;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin:12px 0;min-height:265px;display:grid;grid-template-columns:84px minmax(0,1fr)}
+    .mini aside{background:var(--side);border-right:1px solid var(--border);padding:13px 8px}
+    .brand{font-size:11px;font-weight:900;letter-spacing:-.05em;margin:0 0 22px}
+    .nav{border-radius:6px;padding:7px 5px;margin:4px 0;color:var(--muted);font-size:9px;line-height:1.1}
+    .nav.active{background:var(--primary);color:var(--on);font-weight:800}
+    .content{padding:12px;min-width:0}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:5px;margin:0 0 16px;font-size:9px;color:var(--muted)}
+    .avatar{width:21px;height:21px;border-radius:50%;background:var(--accent);display:inline-block}
+    .content h3{margin:0 0 4px;font-size:16px;letter-spacing:-.03em}
+    .content .sub{margin:0 0 13px;font-size:9px;color:var(--muted)}
+    .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+    .metric,.chart{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px}
+    .metric small{display:block;font-size:8px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .metric strong{display:block;margin:4px 0 0;font-size:17px}
+    .metric:nth-child(2) strong{color:var(--accent)}
+    .chart{margin:7px 0 0;min-height:74px}
+    .chart-title{display:flex;justify-content:space-between;font-size:9px;font-weight:750}
+    .bars{height:35px;display:flex;align-items:end;gap:5px;margin-top:7px}
+    .bars i{display:block;flex:1;min-height:8px;background:var(--primary);border-radius:3px 3px 0 0;opacity:.7}
+    .bars i:nth-child(2),.bars i:nth-child(5){background:var(--accent)}
+    .button{display:inline-block;background:var(--primary);color:var(--on);border-radius:6px;padding:7px 9px;font-size:9px;font-weight:800;margin-top:8px}
+    .mini.light{--bg:#f7f9fc;--side:#eef3fa;--surface:#fff;--text:#17243a;--muted:#526177;--primary:#2448c4;--on:#fff;--accent:#087f74;--border:#dde5f0}
+    .mini.dark{--bg:#0d1728;--side:#101c30;--surface:#152238;--text:#f3f7ff;--muted:#b3c0d3;--primary:#8fa7ff;--on:#0b1630;--accent:#5dd8c3;--border:#2c3b54}
+    .palette-b .mini.light{--bg:#f4f9f7;--side:#eaf4ef;--surface:#fff;--text:#12332e;--muted:#47645e;--primary:#087768;--on:#fff;--accent:#a64a1c;--border:#d5e5df}
+    .palette-b .mini.dark{--bg:#0b1d1c;--side:#102723;--surface:#14302d;--text:#f1faf6;--muted:#b6d0c8;--primary:#70dec4;--on:#06231b;--accent:#ffad7d;--border:#2d5049}
+    .palette-c .mini.light{--bg:#faf8f3;--side:#f2eee7;--surface:#fff;--text:#24213b;--muted:#625e73;--primary:#4c3fc2;--on:#fff;--accent:#98610b;--border:#e6e0d7}
+    .palette-c .mini.dark{--bg:#171628;--side:#1c1b30;--surface:#23223a;--text:#f8f5ff;--muted:#c6c1d5;--primary:#b3a8ff;--on:#211b4d;--accent:#f0c46a;--border:#45415c}
+    .scheme-label{font-size:11px;font-weight:800;color:#66758a;margin:12px 0 4px}
+    .swatches{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:16px}
+    .swatch{min-width:0;font-size:10px;color:#526177}
+    .swatch i{display:block;height:28px;border-radius:6px;border:1px solid #00000012;margin:0 0 4px;background:var(--swatch)}
+    .swatch b{display:block;color:#17243a;font-size:10px}
+    .sources{margin-top:28px;border-top:1px solid #dce3eb;padding-top:20px;font-size:13px;color:#526177;line-height:1.7}
+    .sources a{color:#2448c4}
+    body[data-view="light"] .mini.dark,body[data-view="dark"] .mini.light{display:none}
+    @media(max-width:1050px){.options{grid-template-columns:1fr 1fr}}
+    @media(max-width:720px){.options{grid-template-columns:1fr}.page{padding:28px 14px 48px}}
+  </style>
+</head>
+<body data-view="both">
+  <main class="page">
+    <p class="eyebrow">DigiTalent AI · Color directions</p>
+    <h1>Chọn hệ màu trước khi thiết kế trang</h1>
+    <p class="intro">Ba hướng màu cùng hiển thị một dashboard mẫu để dễ so sánh. Giao diện sáng sẽ là mặc định trên toàn bộ website; bản tối là lựa chọn bổ sung. Đây là bản thử màu, chưa thay đổi sản phẩm.</p>
+    <div class="toolbar">
+      <p>Chọn A, B hoặc C sau khi xem cả hai nền.</p>
+      <div class="switch" role="group" aria-label="Xem chế độ màu">
+        <button type="button" data-view="both" aria-pressed="true">Cả hai</button>
+        <button type="button" data-view="light" aria-pressed="false">Nền sáng</button>
+        <button type="button" data-view="dark" aria-pressed="false">Nền tối</button>
+      </div>
+    </div>
+    <div class="options">
+      <article class="option palette-a recommended">
+        <header class="option-head"><div><h2>A · Xanh tin cậy</h2><p>Rõ ràng, chuyên nghiệp, hợp dashboard nhiều dữ liệu.</p></div><span class="tag">Đề xuất</span></header>
+        <p class="scheme-label">Nền sáng · mặc định</p>
+        <div class="mini light"><aside><div class="brand">DigiTalent</div><div class="nav active">Tổng quan</div><div class="nav">Nhân sự</div><div class="nav">Học tập</div><div class="nav">Báo cáo</div></aside><div class="content"><div class="top"><span>Tổng quan / Doanh nghiệp</span><span class="avatar"></span></div><h3>Xin chào, Minh</h3><p class="sub">Năng lực và tiến độ của đội ngũ</p><div class="metrics"><div class="metric"><small>Nhân viên</small><strong>128</strong></div><div class="metric"><small>Đang học</small><strong>46</strong></div><div class="metric"><small>Đạt mục tiêu</small><strong>72%</strong></div></div><div class="chart"><div class="chart-title"><span>Tiến độ học tập</span><span>6 tháng</span></div><div class="bars"><i style="height:35%"></i><i style="height:48%"></i><i style="height:55%"></i><i style="height:64%"></i><i style="height:72%"></i><i style="height:90%"></i></div></div><span class="button">Xem báo cáo</span></div></div>
+        <p class="scheme-label">Nền tối · tùy chọn</p>
+        <div class="mini dark"><aside><div class="brand">DigiTalent</div><div class="nav active">Tổng quan</div><div class="nav">Nhân sự</div><div class="nav">Học tập</div><div class="nav">Báo cáo</div></aside><div class="content"><div class="top"><span>Tổng quan / Doanh nghiệp</span><span class="avatar"></span></div><h3>Xin chào, Minh</h3><p class="sub">Năng lực và tiến độ của đội ngũ</p><div class="metrics"><div class="metric"><small>Nhân viên</small><strong>128</strong></div><div class="metric"><small>Đang học</small><strong>46</strong></div><div class="metric"><small>Đạt mục tiêu</small><strong>72%</strong></div></div><div class="chart"><div class="chart-title"><span>Tiến độ học tập</span><span>6 tháng</span></div><div class="bars"><i style="height:35%"></i><i style="height:48%"></i><i style="height:55%"></i><i style="height:64%"></i><i style="height:72%"></i><i style="height:90%"></i></div></div><span class="button">Xem báo cáo</span></div></div>
+        <div class="swatches"><span class="swatch" style="--swatch:#F7F9FC"><i></i><b>Nền</b>#F7F9FC</span><span class="swatch" style="--swatch:#2448C4"><i></i><b>Chính</b>#2448C4</span><span class="swatch" style="--swatch:#087F74"><i></i><b>Nhấn</b>#087F74</span></div>
+      </article>
+      <article class="option palette-b">
+        <header class="option-head"><div><h2>B · Xanh ngọc học tập</h2><p>Thân thiện, bình tĩnh, nổi bật tiến độ cá nhân.</p></div></header>
+        <p class="scheme-label">Nền sáng · mặc định</p>
+        <div class="mini light"><aside><div class="brand">DigiTalent</div><div class="nav active">Tổng quan</div><div class="nav">Nhân sự</div><div class="nav">Học tập</div><div class="nav">Báo cáo</div></aside><div class="content"><div class="top"><span>Tổng quan / Doanh nghiệp</span><span class="avatar"></span></div><h3>Xin chào, Minh</h3><p class="sub">Năng lực và tiến độ của đội ngũ</p><div class="metrics"><div class="metric"><small>Nhân viên</small><strong>128</strong></div><div class="metric"><small>Đang học</small><strong>46</strong></div><div class="metric"><small>Đạt mục tiêu</small><strong>72%</strong></div></div><div class="chart"><div class="chart-title"><span>Tiến độ học tập</span><span>6 tháng</span></div><div class="bars"><i style="height:35%"></i><i style="height:48%"></i><i style="height:55%"></i><i style="height:64%"></i><i style="height:72%"></i><i style="height:90%"></i></div></div><span class="button">Xem báo cáo</span></div></div>
+        <p class="scheme-label">Nền tối · tùy chọn</p>
+        <div class="mini dark"><aside><div class="brand">DigiTalent</div><div class="nav active">Tổng quan</div><div class="nav">Nhân sự</div><div class="nav">Học tập</div><div class="nav">Báo cáo</div></aside><div class="content"><div class="top"><span>Tổng quan / Doanh nghiệp</span><span class="avatar"></span></div><h3>Xin chào, Minh</h3><p class="sub">Năng lực và tiến độ của đội ngũ</p><div class="metrics"><div class="metric"><small>Nhân viên</small><strong>128</strong></div><div class="metric"><small>Đang học</small><strong>46</strong></div><div class="metric"><small>Đạt mục tiêu</small><strong>72%</strong></div></div><div class="chart"><div class="chart-title"><span>Tiến độ học tập</span><span>6 tháng</span></div><div class="bars"><i style="height:35%"></i><i style="height:48%"></i><i style="height:55%"></i><i style="height:64%"></i><i style="height:72%"></i><i style="height:90%"></i></div></div><span class="button">Xem báo cáo</span></div></div>
+        <div class="swatches"><span class="swatch" style="--swatch:#F4F9F7"><i></i><b>Nền</b>#F4F9F7</span><span class="swatch" style="--swatch:#087768"><i></i><b>Chính</b>#087768</span><span class="swatch" style="--swatch:#A64A1C"><i></i><b>Nhấn</b>#A64A1C</span></div>
+      </article>
+      <article class="option palette-c">
+        <header class="option-head"><div><h2>C · Chàm và vàng ấm</h2><p>Nét EdTech sáng tạo, giữ chút vàng hiện có.</p></div></header>
+        <p class="scheme-label">Nền sáng · mặc định</p>
+        <div class="mini light"><aside><div class="brand">DigiTalent</div><div class="nav active">Tổng quan</div><div class="nav">Nhân sự</div><div class="nav">Học tập</div><div class="nav">Báo cáo</div></aside><div class="content"><div class="top"><span>Tổng quan / Doanh nghiệp</span><span class="avatar"></span></div><h3>Xin chào, Minh</h3><p class="sub">Năng lực và tiến độ của đội ngũ</p><div class="metrics"><div class="metric"><small>Nhân viên</small><strong>128</strong></div><div class="metric"><small>Đang học</small><strong>46</strong></div><div class="metric"><small>Đạt mục tiêu</small><strong>72%</strong></div></div><div class="chart"><div class="chart-title"><span>Tiến độ học tập</span><span>6 tháng</span></div><div class="bars"><i style="height:35%"></i><i style="height:48%"></i><i style="height:55%"></i><i style="height:64%"></i><i style="height:72%"></i><i style="height:90%"></i></div></div><span class="button">Xem báo cáo</span></div></div>
+        <p class="scheme-label">Nền tối · tùy chọn</p>
+        <div class="mini dark"><aside><div class="brand">DigiTalent</div><div class="nav active">Tổng quan</div><div class="nav">Nhân sự</div><div class="nav">Học tập</div><div class="nav">Báo cáo</div></aside><div class="content"><div class="top"><span>Tổng quan / Doanh nghiệp</span><span class="avatar"></span></div><h3>Xin chào, Minh</h3><p class="sub">Năng lực và tiến độ của đội ngũ</p><div class="metrics"><div class="metric"><small>Nhân viên</small><strong>128</strong></div><div class="metric"><small>Đang học</small><strong>46</strong></div><div class="metric"><small>Đạt mục tiêu</small><strong>72%</strong></div></div><div class="chart"><div class="chart-title"><span>Tiến độ học tập</span><span>6 tháng</span></div><div class="bars"><i style="height:35%"></i><i style="height:48%"></i><i style="height:55%"></i><i style="height:64%"></i><i style="height:72%"></i><i style="height:90%"></i></div></div><span class="button">Xem báo cáo</span></div></div>
+        <div class="swatches"><span class="swatch" style="--swatch:#FAF8F3"><i></i><b>Nền</b>#FAF8F3</span><span class="swatch" style="--swatch:#4C3FC2"><i></i><b>Chính</b>#4C3FC2</span><span class="swatch" style="--swatch:#98610B"><i></i><b>Nhấn</b>#98610B</span></div>
+      </article>
+    </div>
+    <div class="sources">
+      <strong>Mẫu tham khảo:</strong> <a href="https://dribbble.com/shots/26388093-SaaS-Analytics-Dashboard-UI">SaaS Analytics</a> · <a href="https://dribbble.com/shots/25625957-LMS-Dashboard-UI-Modern-Intuitive">LMS Dashboard</a> · <a href="https://dribbble.com/shots/25860030-HR-Dashboard-UI-Clear-Metrics-Human-Centered-Design">HR Dashboard</a> · <a href="https://dribbble.com/shots/26444007-LMS-Admin-Dashboard-Clean-Modern-UI-UX">LMS Admin</a>. Các bảng màu trên là phương án riêng cho DigiTalent AI. Xem toàn bộ mã ở <a href="./02-color-directions.md">tài liệu màu</a>.
+    </div>
+  </main>
+  <script>
+    document.querySelectorAll('.switch button').forEach(button => {
+      button.addEventListener('click', () => {
+        document.body.dataset.view = button.dataset.view;
+        document.querySelectorAll('.switch button').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+      });
+    });
+  </script>
+</body>
+</html>
