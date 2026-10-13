@@ -1,0 +1,97 @@
+/* Owner course discovery, Basic full access and paid preview states. */
+.om-course-market .om-section-head p{max-width:630px}
+.om-course-intro{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(270px,.85fr);align-items:center;overflow:hidden;min-height:215px;margin:17px 0 18px;border:1px solid #d5dffa;border-radius:22px;background:linear-gradient(115deg,#edf2ff,#f9fbff 65%,#eef5ea)}
+.om-course-intro>div{padding:31px 36px}
+.om-course-intro h3{max-width:620px;font-size:clamp(25px,2.4vw,36px);letter-spacing:-.06em;margin:9px 0;color:#172a61}
+.om-course-intro p{max-width:580px;font-size:11px;line-height:1.6;color:#697a9b}
+.om-course-intro>div>div{display:flex;gap:7px;flex-wrap:wrap;margin-top:18px}
+.om-course-intro>div>div span{border:1px solid #ccd8f3;border-radius:99px;background:#fff;padding:7px 10px;font-size:9px;font-weight:850;color:#4057a0}
+.om-course-intro>div>div span:first-child{border-color:#d9e9bd;background:#f2f9e8;color:#5d8534}
+.om-course-intro img{width:100%;height:230px;object-fit:cover;object-position:right center}
+.om-course-picker{padding:24px}
+.om-course-picker .om-panel-top{align-items:start}
+.om-course-domains{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;margin:22px 0 15px}
+.om-course-domains button{min-height:66px;border:1px solid #e0e6f1;border-radius:13px;background:#fff;padding:10px;text-align:left;color:#52637f;cursor:pointer}
+.om-course-domains button b{display:block;color:#8fa0c2;font-size:10px}
+.om-course-domains button span{display:block;margin-top:6px;font-size:10px;font-weight:850;line-height:1.15}
+.om-course-domains button:hover,.om-course-domains button.active{border-color:#7f91dc;background:#f0f3ff;color:#2b43a3}
+.om-course-domains button.active b{color:#4d66c1}
+.om-course-levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.om-course-levels button{position:relative;overflow:hidden;min-height:126px;border:1px solid #dfe5f0;border-radius:15px;background:#fbfcff;padding:17px;text-align:left;color:#24345e;cursor:pointer}
+.om-course-levels button.free{background:#f4f9ed;border-color:#d9e7ca}
+.om-course-levels button.active{border-color:#536bd1;box-shadow:inset 0 0 0 1px #536bd1,0 10px 21px rgba(47,70,160,.09)}
+.om-course-levels button.free.active{border-color:#7aa449;box-shadow:inset 0 0 0 1px #7aa449,0 10px 21px rgba(91,135,44,.08)}
+.om-course-levels button>span{display:block;color:#6e81ae;font-size:9px;font-weight:900;letter-spacing:.1em}
+.om-course-levels button.free>span{color:#688b43}
+.om-course-levels strong{display:block;font-size:19px;letter-spacing:-.045em;margin:15px 0 4px}
+.om-course-levels small{display:block;max-width:210px;color:#7b89a0;font-size:10px}
+.om-course-levels i{position:absolute;right:18px;top:15px;font-size:21px;color:#5369bf;font-style:normal}
+.om-course-levels .free i{color:#7eaa43}
+.om-course-stage{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(245px,.65fr);gap:15px;margin-top:18px;align-items:start}
+.om-course-detail{padding:0;overflow:hidden}
+.om-course-detail-head{display:grid;grid-template-columns:minmax(0,1fr) 125px;gap:20px;align-items:center;padding:28px 29px 25px;background:linear-gradient(105deg,#f7f9ff,#eef3ff)}
+.om-course-detail-head h3{margin:8px 0 8px;font-size:clamp(25px,2.3vw,34px);letter-spacing:-.055em;color:#192955}
+.om-course-detail-head h3 span{color:#5266bc}
+.om-course-detail-head p{max-width:570px;color:#6f7d99;font-size:11px}
+.om-course-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px}
+.om-course-badges span{padding:6px 8px;border:1px solid #d8e1f3;border-radius:7px;background:#fff;color:#5e70a0;font-size:9px;font-weight:850}
+.om-course-badges span:first-child{background:#eaf4db;border-color:#d6e9bd;color:#5b8139}
+.om-course-emblem{position:relative;display:grid;place-items:center;width:116px;height:116px;border-radius:27px;transform:rotate(9deg);background:linear-gradient(145deg,#3446c8,#7187e7);box-shadow:0 18px 27px rgba(49,69,164,.18);color:#fff}
+.om-course-emblem span{position:absolute;top:13px;left:15px;font-size:10px;font-weight:850;opacity:.75}
+.om-course-emblem b{font-size:52px;line-height:1}
+.om-course-emblem i{position:absolute;right:-14px;bottom:-11px;width:42px;height:42px;border:9px solid #c9f16b;border-radius:50%}
+.om-course-outcomes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid #e6ebf3}
+.om-course-outcomes>div{padding:16px 19px;border-right:1px solid #e6ebf3}
+.om-course-outcomes>div:last-child{border-right:0}
+.om-course-outcomes small,.om-course-outcomes strong,.om-course-outcomes span{display:block}
+.om-course-outcomes small{font-size:9px;color:#8592a9;font-weight:900;letter-spacing:.08em}
+.om-course-outcomes strong{margin:7px 0 3px;font-size:12px;color:#24345e}
+.om-course-outcomes span{font-size:10px;color:#8592a9;line-height:1.4}
+.om-course-reader-layout{display:grid;grid-template-columns:minmax(235px,.86fr) minmax(0,1.14fr)}
+.om-course-outline{border-right:1px solid #e7ecf4;padding:21px 15px 21px 21px}
+.om-course-outline h4{font-size:17px;margin:8px 0 6px}
+.om-course-outline>p{color:#79879e;font-size:10px;line-height:1.5;margin-bottom:16px}
+.om-course-outline button{display:grid;grid-template-columns:27px minmax(0,1fr) auto;gap:9px;align-items:center;width:100%;border:1px solid transparent;border-radius:10px;background:transparent;padding:11px 8px;text-align:left;color:#24345e;cursor:pointer}
+.om-course-outline button+button{margin-top:4px}
+.om-course-outline button:hover:not(:disabled),.om-course-outline button.active{border-color:#cad7f7;background:#f2f5ff}
+.om-course-outline button.locked{cursor:not-allowed;opacity:.67}
+.om-lesson-index{display:grid;place-items:center;width:26px;height:26px;border-radius:7px;background:#e9edfb;color:#526bc0;font-size:9px;font-weight:900}
+.om-course-outline button strong,.om-course-outline button small{display:block}
+.om-course-outline button strong{font-size:10px;line-height:1.25}
+.om-course-outline button small{color:#8996aa;font-size:9px;margin-top:4px;line-height:1.35}
+.om-course-outline button em{font-size:8px;font-style:normal;font-weight:900;color:#7388bc}
+.om-course-outline button.locked em{color:#a6817b}
+.om-course-reader{padding:22px}
+.om-reader-visual{position:relative;overflow:hidden;height:140px;margin:13px 0 18px;border-radius:14px;background:radial-gradient(circle at 75% 35%,#7c8fe1 0,#3349b6 30%,#182a6b 75%);color:#fff}
+.om-reader-visual:before{content:"";position:absolute;right:21%;top:-50px;width:220px;height:220px;border:20px solid rgba(201,241,107,.65);border-radius:50%;transform:rotate(-25deg)}
+.om-reader-visual:after{content:"";position:absolute;right:10%;bottom:-45px;width:90px;height:90px;border:17px solid rgba(255,255,255,.3);border-radius:18px;transform:rotate(20deg)}
+.om-reader-visual span{position:absolute;left:20px;top:17px;font-size:11px;font-weight:900;opacity:.75}
+.om-reader-visual b{position:absolute;left:20px;bottom:17px;font-size:10px;letter-spacing:.14em}
+.om-course-reader h4{font-size:22px;line-height:1.15;letter-spacing:-.04em;margin:0 0 10px}
+.om-course-reader p{font-size:11px;color:#64728d;line-height:1.65}
+.om-reader-practice{border-left:3px solid #c9f16b;border-radius:0 10px 10px 0;background:#f4f8ed;padding:12px 15px;margin-top:18px}
+.om-reader-practice small,.om-reader-practice strong{display:block}
+.om-reader-practice small{color:#688e3f;font-size:9px;font-weight:900}
+.om-reader-practice strong{font-size:11px;color:#364c35;margin-top:5px;font-weight:700;line-height:1.5}
+.om-reader-foot{display:block;margin-top:13px;color:#8b98ac;font-size:9px}
+.om-course-access{position:sticky;top:88px;padding:23px}
+.om-access-seal{display:block;width:max-content;border-radius:99px;background:#fff0e8;color:#a36152;padding:7px 10px;margin:15px 0;font-size:9px;font-weight:900;letter-spacing:.08em}
+.om-access-seal.free{background:#ebf5dd;color:#5f813b}
+.om-course-access>strong{display:block;font-size:29px;letter-spacing:-.06em;color:#253b99}
+.om-course-access>strong small{color:#8a97ad;font-size:11px;letter-spacing:0}
+.om-course-access>p{font-size:11px;color:#6f7e98;line-height:1.6}
+.om-access-divider{height:1px;background:#e5eaf2;margin:19px 0}
+.om-course-access ul{padding-left:17px;margin:14px 0 24px;color:#4d5d7a;font-size:10px;line-height:1.9}
+.om-course-access .btn{width:100%;justify-content:center;box-shadow:none;text-align:center}
+.om-access-subtle{display:block;border:0;background:transparent;color:#3e55b0;font-size:10px;font-weight:850;margin:13px auto 0;cursor:pointer}
+.om-course-feedback{margin-top:17px;padding:24px}
+.om-course-feedback .om-panel-top p{font-size:10px;color:#8895a9;margin-top:6px}
+.om-feedback-label{border-radius:99px;padding:7px 10px;background:#eef2fc;color:#536aa9;font-size:9px;font-weight:850}
+.om-feedback-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:18px}
+.om-feedback-grid article{min-height:155px;border:1px solid #e1e7f2;border-radius:14px;padding:18px;background:linear-gradient(140deg,#fff,#f8faff)}
+.om-feedback-grid article>span{font-size:9px;font-weight:900;letter-spacing:.08em;color:#556bb3}
+.om-feedback-grid blockquote{font-size:13px;line-height:1.5;letter-spacing:-.01em;color:#273a69;margin:17px 0}
+.om-feedback-grid small{font-size:9px;color:#8c98ad}
+@media(max-width:1100px){.om-course-stage{grid-template-columns:1fr}.om-course-access{position:static}.om-course-access .btn{max-width:310px}.om-course-domains{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:780px){.om-course-intro{grid-template-columns:1fr}.om-course-intro img{height:170px;object-position:center}.om-course-outcomes{grid-template-columns:1fr}.om-course-outcomes>div{border-right:0;border-bottom:1px solid #e6ebf3}.om-course-reader-layout{grid-template-columns:1fr}.om-course-outline{border-right:0;border-bottom:1px solid #e7ecf4}.om-feedback-grid{grid-template-columns:1fr}}
+@media(max-width:580px){.om-course-intro>div{padding:24px}.om-course-picker{padding:16px}.om-course-domains{grid-template-columns:repeat(2,1fr)}.om-course-levels{grid-template-columns:1fr}.om-course-levels button{min-height:100px}.om-course-detail-head{grid-template-columns:1fr;padding:23px}.om-course-emblem{display:none}.om-course-feedback{padding:17px}.om-feedback-label{display:none}}

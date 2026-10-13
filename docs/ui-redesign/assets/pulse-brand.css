@@ -1,0 +1,12 @@
+.brand.pulse-brand{display:inline-flex;align-items:center;gap:12px;min-width:0;font-size:initial;font-weight:initial;letter-spacing:normal;text-decoration:none;white-space:nowrap}
+.pulse-brand .pulse-mark{display:block;flex:none;width:43px;height:43px;border-radius:14px;box-shadow:0 8px 18px rgba(31,48,130,.19),0 2px 4px rgba(20,34,92,.1)}
+.pulse-brand .pulse-brand-copy{display:flex;flex-direction:column;justify-content:center;min-width:0}
+.pulse-brand .pulse-wordmark{display:flex;align-items:baseline;gap:.32em;color:#17213B;font-family:Inter,'Be Vietnam Pro',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;font-size:17px;font-weight:770;line-height:1.12;letter-spacing:-.048em}
+.pulse-brand .pulse-wordmark .pulse-name{font-weight:680;color:#3446C8}
+.pulse-brand .pulse-caption{margin-top:4px;color:#74809B;font-size:10px;font-weight:550;line-height:1.2;letter-spacing:.005em}
+.pulse-brand.on-dark .pulse-wordmark{color:#fff}
+.pulse-brand.on-dark .pulse-wordmark .pulse-name{color:#B5C0FF}
+.pulse-brand.on-dark .pulse-caption{color:#CAD3FA}
+.pulse-brand.compact .pulse-mark{width:34px;height:34px;border-radius:11px}
+.pulse-brand.compact .pulse-wordmark{font-size:15px}
+@media(max-width:520px){.brand.pulse-brand{gap:9px}.pulse-brand .pulse-mark{width:37px;height:37px;border-radius:12px}.pulse-brand .pulse-wordmark{font-size:15px}.pulse-brand .pulse-caption{display:none}}
