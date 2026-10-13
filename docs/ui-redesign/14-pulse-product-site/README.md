@@ -20,6 +20,8 @@ The main visitor → trial → blueprint → baseline → course → Manager ass
 
 Use **Explore sample business**, then the role selector to move between Owner, Manager, Employee and Platform Admin. The Employee primary navigation stays **Today / Path / Practice**; practical tasks and outcome links sit inside those spaces rather than adding more primary tabs. All supporting records use the same `localStorage` state as the main flow. **Reset sample** clears both.
 
+Each signed-in role has a **My profile** entry beside the role selector. The profile shows the available account details, scope, responsibilities and relevant live preview counts. The Employee profile also compares current capability with the assigned position target. Manager profiles stay within the selected department; the preview does not invent a Manager email or Platform Admin personal identity. `pulse-profiles.js` and `pulse-profiles.css` provide this view without changing learning or review actions.
+
 The source wireframe includes older alternatives that later user decisions replaced. This preview keeps the approved unlimited trial with ten Employee seats, the business → department → position ceiling hierarchy, free Basic courses, paid seats per higher course, and Manager grading of final course assignments. Older trial durations, automatic final grading, removal of department ceilings and service packages are not reintroduced.
 
 Practical file inputs show the selected file name only; there is no upload, malware scan or storage. Email recovery, invitation tokens, payments, admin enforcement, question bank releases and certificates are design simulations. Production would require server-side permissions, versioning, audit, document storage and verification.
