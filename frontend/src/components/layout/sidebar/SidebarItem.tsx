@@ -21,7 +21,7 @@ export function SidebarItem({ icon, label, isActive, isLocked, isRail, href, onC
       className={cn(
         'flex items-center gap-3 px-3 py-2 rounded-md transition-colors',
         isActive
-          ? 'bg-[var(--ent-sidebar-active)] border-l-2 border-ent-accent text-ent-sidebar-fg font-medium'
+          ? 'bg-[var(--ent-sidebar-active)] border-l-2 border-[var(--ent-sidebar-active-border,var(--ent-accent))] text-ent-sidebar-fg font-medium'
           : 'text-ent-sidebar-muted hover:bg-[var(--ent-sidebar-hover)] hover:text-ent-sidebar-fg',
         isRail && 'justify-center',
       )}
