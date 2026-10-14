@@ -58,13 +58,13 @@ describe('Platform Portal Tests (PA-01..21 according to UI/UX Spec v2.1)', () =>
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Danh sách tổ chức khách hàng' })).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/Tìm theo tên tổ chức, email chủ doanh nghiệp/i)).toBeInTheDocument();
-    expect(await screen.findByText('Công ty Cổ phần Acme')).toBeInTheDocument();
+    expect(await screen.findByText('DigiTalent AI')).toBeInTheDocument();
   });
 
   it('PA-03: Admin can access Organization Detail page', async () => {
     renderWithRouter('/platform/organizations/org-acme');
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Công ty Cổ phần Acme' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'DigiTalent AI' })).toBeInTheDocument();
     expect(await screen.findByText('Thông tin doanh nghiệp')).toBeInTheDocument();
     expect(await screen.findByText(/Điều chỉnh hạn mức người dùng/i)).toBeInTheDocument();
   });
@@ -179,7 +179,7 @@ describe('Platform Portal Tests (PA-01..21 according to UI/UX Spec v2.1)', () =>
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Giám sát gói đăng ký & thanh toán' })).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/Tìm theo tên khách hàng, email/i)).toBeInTheDocument();
-    expect(await screen.findByText('Công ty Cổ phần Acme')).toBeInTheDocument();
+    expect(await screen.findByText('DigiTalent AI')).toBeInTheDocument();
   });
 
   it('PA-19: Admin can access Subscription Detail page', async () => {

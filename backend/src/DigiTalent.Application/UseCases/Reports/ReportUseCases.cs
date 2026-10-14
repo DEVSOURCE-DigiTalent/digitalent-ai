@@ -1,5 +1,6 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.Intelligence.SkillGap.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Reports;
@@ -9,11 +10,13 @@ public class GetDashboardUseCase : IUseCase<GetDashboardInput, DashboardDto>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUser _currentUser;
+    private readonly LatestSkillGapRuns _latestRuns;
 
-    public GetDashboardUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    public GetDashboardUseCase(IApplicationDbContext context, ICurrentUser currentUser, LatestSkillGapRuns latestRuns)
     {
         _context = context;
         _currentUser = currentUser;
+        _latestRuns = latestRuns;
     }
 
     public async Task<DashboardDto> ExecuteAsync(GetDashboardInput input)
@@ -40,60 +43,111 @@ public class GetDashboardUseCase : IUseCase<GetDashboardInput, DashboardDto>
             ? Math.Round((decimal)completedAssignments / totalAssignments * 100, 1)
             : 0;
 
-        var orgEmployeeIds = _context.Employees.AsNoTracking()
-            .Where(e => e.OrganizationId == orgId)
-            .Select(e => e.Id);
+        // ── Skill gap snapshots for all active employees ──
+        var orgEmployeeIds = await _context.Employees.AsNoTracking()
+            .Where(e => e.OrganizationId == orgId && e.Status == "ACTIVE")
+            .Select(e => e.Id)
+            .ToListAsync();
 
-        var highGapEmployees = await (
-            from item in _context.SkillGapItems.AsNoTracking()
-            join run in _context.SkillGapRuns.AsNoTracking() on item.SkillGapRunId equals run.Id
-            where orgEmployeeIds.Contains(run.EmployeeId) && item.Severity == "HIGH"
-            select run.EmployeeId
-        ).Distinct().CountAsync();
+        var snapshots = await _latestRuns.LoadAsync(orgEmployeeIds);
+        var coverages = snapshots.Values
+            .Where(s => s.Summary != null)
+            .Select(s => s.Summary!.CoveragePercent)
+            .ToList();
+        var averageCoverage = coverages.Count > 0
+            ? Math.Round(coverages.Average(), 1)
+            : 0m;
+
+        var highGapEmployees = snapshots.Values
+            .Count(s => s.Summary != null && s.Summary.HighCount > 0);
+
+        // ── Domain-level averages from latest run items ──
+        var latestRunIds = snapshots.Values.Select(s => s.RunId).ToList();
+        var domainAverages = latestRunIds.Count > 0
+            ? await (
+                from item in _context.SkillGapItems.AsNoTracking()
+                where latestRunIds.Contains(item.SkillGapRunId)
+                join comp in _context.Competencies.AsNoTracking() on item.CompetencyId equals comp.Id
+                group item by comp.CategoryId into g
+                select new
+                {
+                    CategoryId = g.Key,
+                    AverageRequired = g.Average(i => (decimal)i.RequiredLevel),
+                    AverageCurrent = g.Average(i => (decimal)Math.Min(i.CurrentLevel ?? 0, i.RequiredLevel)),
+                }
+            ).ToListAsync()
+            : new();
 
         var categories = await _context.CompetencyCategories.AsNoTracking()
-            .Select(cc => new DomainStats
+            .OrderBy(cc => cc.SortOrder)
+            .Select(cc => new { cc.Id, cc.Name, cc.SortOrder })
+            .ToListAsync();
+
+        var domains = categories.Select(cc =>
+        {
+            var avg = domainAverages.FirstOrDefault(d => d.CategoryId == cc.Id);
+            return new DomainStats
             {
                 CategoryId = cc.Id.ToString(),
                 Name = cc.Name,
                 SortOrder = cc.SortOrder,
-                AverageRequired = 0,
-                AverageCurrent = 0,
-            })
-            .OrderBy(d => d.SortOrder)
-            .ToListAsync();
+                AverageRequired = avg != null ? Math.Round(avg.AverageRequired, 2) : 0,
+                AverageCurrent = avg != null ? Math.Round(avg.AverageCurrent, 2) : 0,
+            };
+        }).ToList();
 
-        var atRisk = await (
-            from item in _context.SkillGapItems.AsNoTracking()
-            join run in _context.SkillGapRuns.AsNoTracking() on item.SkillGapRunId equals run.Id
-            join emp in _context.Employees.AsNoTracking() on run.EmployeeId equals emp.Id
-            join dept in _context.Departments.AsNoTracking() on emp.DepartmentId equals dept.Id into deptJoin
-            from dept in deptJoin.DefaultIfEmpty()
-            where emp.OrganizationId == orgId && item.Severity == "HIGH"
-            group new { item, dept } by new { run.EmployeeId, emp.FullName, DeptName = dept != null ? dept.Name : null } into g
-            orderby g.Count() descending
-            select new AtRiskEmployee
+        // ── At-risk employees (highest HIGH gap count) ──
+        var atRiskSnapshots = snapshots.Values
+            .Where(s => s.Summary != null && s.Summary.HighCount > 0)
+            .OrderByDescending(s => s.Summary!.HighCount)
+            .ThenBy(s => s.Summary!.CoveragePercent)
+            .Take(10)
+            .ToList();
+
+        var atRiskEmployeeIds = atRiskSnapshots.Select(s => s.EmployeeId).ToList();
+        var atRiskEmployees = atRiskEmployeeIds.Count > 0
+            ? await (
+                from emp in _context.Employees.AsNoTracking()
+                where atRiskEmployeeIds.Contains(emp.Id)
+                join dept in _context.Departments.AsNoTracking() on emp.DepartmentId equals dept.Id into deptJoin
+                from dept in deptJoin.DefaultIfEmpty()
+                select new { emp.Id, emp.FullName, DeptName = dept != null ? dept.Name : (string?)null }
+            ).ToListAsync()
+            : new();
+        var empLookup = atRiskEmployees.ToDictionary(e => e.Id);
+
+        var atRisk = atRiskSnapshots
+            .Where(s => empLookup.ContainsKey(s.EmployeeId))
+            .Select(s =>
             {
-                EmployeeId = g.Key.EmployeeId.ToString(),
-                Name = g.Key.FullName,
-                DepartmentName = g.Key.DeptName,
-                HighCount = g.Count(),
-                CoveragePercent = 0,
-            }
-        ).Take(10).ToListAsync();
+                var emp = empLookup[s.EmployeeId];
+                return new AtRiskEmployee
+                {
+                    EmployeeId = s.EmployeeId.ToString(),
+                    Name = emp.FullName,
+                    DepartmentName = emp.DeptName,
+                    HighCount = s.Summary!.HighCount,
+                    CoveragePercent = Math.Round(s.Summary.CoveragePercent, 1),
+                };
+            })
+            .ToList();
+
+        // ── Pending recommendations ──
+        var pendingRecommendations = await _context.RecommendationReviews.AsNoTracking()
+            .CountAsync(r => r.OrganizationId == orgId && r.Status == "PENDING");
 
         return new DashboardDto
         {
             Kpis = new DashboardKpis
             {
                 Employees = employeeCount,
-                AverageCoverage = 0,
+                AverageCoverage = averageCoverage,
                 EmployeesWithHigh = highGapEmployees,
                 OverdueAssignments = overdueAssignments,
                 CompletionRate = completionRate,
-                PendingRecommendations = 0,
+                PendingRecommendations = pendingRecommendations,
             },
-            Domains = categories,
+            Domains = domains,
             AtRisk = atRisk,
         };
     }
