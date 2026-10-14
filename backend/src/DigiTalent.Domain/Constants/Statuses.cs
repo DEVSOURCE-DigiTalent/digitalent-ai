@@ -139,4 +139,12 @@ public static class Statuses
         public const string InProgress = "IN_PROGRESS";
         public const string Completed = "COMPLETED";
     }
+
+    /// <summary>member_invitations.status</summary>
+    public static class MemberInvitation
+    {
+        public const string Pending = "PENDING";
+        public const string Accepted = "ACCEPTED";
+        public const string Revoked = "REVOKED";
+    }
 }
