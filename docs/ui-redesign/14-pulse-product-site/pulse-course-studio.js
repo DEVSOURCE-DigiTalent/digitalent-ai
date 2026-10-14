@@ -5,38 +5,38 @@
   const art='../assets/learning-journey-abstract.png';
   const architecture='../assets/competency-architecture.png';
   const contexts=[
-    {source:'the original data report',scenario:'Two totals in a finance report do not agree.',action:'compare each total with the original report and show the calculation',deliverable:'an annotated report with the source, calculation and a supported conclusion'},
-    {source:'the customer request and its audience',scenario:'A team update leaves the next owner unsure what to do.',action:'clarify the audience, purpose and requested next step',deliverable:'a concise update that names the audience, decision and next action'},
-    {source:'the approved content brief',scenario:'A draft asset uses an old template and is hard to read.',action:'check the brief, use the current template and improve accessibility',deliverable:'an accessible one-page asset with a short design rationale'},
-    {source:'the security policy and the original message',scenario:'A message asks you to open an unfamiliar link urgently.',action:'verify the sender through a trusted route and report the suspicious request',deliverable:'a short incident note with the signal, safe action and escalation'},
-    {source:'the process log and the people involved',scenario:'A recurring handoff delay affects the same task each week.',action:'separate the symptom from the cause and test one practical option',deliverable:'a comparison of the cause, tested option and observed result'},
-    {source:'the source documents behind an AI response',scenario:'An AI summary contains a claim that is missing from the source.',action:'check the claim against the source and revise or remove unsupported text',deliverable:'an annotated AI-use note showing the prompt, verification and final decision'}
+    {source:'báo cáo dữ liệu gốc',scenario:'Hai tổng số trong báo cáo tài chính không khớp nhau.',action:'đối chiếu từng tổng số với báo cáo gốc và trình bày phép tính',deliverable:'báo cáo có chú thích nguồn, phép tính và kết luận có căn cứ'},
+    {source:'yêu cầu của khách hàng và nhóm người nhận',scenario:'Bản cập nhật của đội khiến người phụ trách tiếp theo chưa biết cần làm gì.',action:'làm rõ người nhận, mục đích và bước tiếp theo cần thực hiện',deliverable:'bản cập nhật ngắn nêu rõ người nhận, quyết định và hành động tiếp theo'},
+    {source:'bản định hướng nội dung đã duyệt',scenario:'Bản nháp dùng mẫu cũ và khó đọc.',action:'kiểm tra định hướng, dùng mẫu hiện tại và cải thiện khả năng tiếp cận',deliverable:'sản phẩm nội dung một trang dễ tiếp cận kèm lý do thiết kế ngắn gọn'},
+    {source:'chính sách an toàn và tin nhắn gốc',scenario:'Một tin nhắn yêu cầu bạn mở gấp liên kết lạ.',action:'xác minh người gửi qua kênh tin cậy và báo cáo yêu cầu đáng ngờ',deliverable:'ghi chú sự cố ngắn nêu dấu hiệu, hành động an toàn và bước báo cáo'},
+    {source:'nhật ký quy trình và những người liên quan',scenario:'Việc bàn giao chậm lặp lại hằng tuần ở cùng một nhiệm vụ.',action:'tách biểu hiện khỏi nguyên nhân rồi thử một phương án thực tế',deliverable:'bảng so sánh nguyên nhân, phương án thử và kết quả quan sát'},
+    {source:'tài liệu nguồn của câu trả lời AI',scenario:'Bản tóm tắt AI có một thông tin không xuất hiện trong nguồn.',action:'đối chiếu thông tin với nguồn rồi sửa hoặc bỏ nội dung thiếu căn cứ',deliverable:'ghi chú sử dụng AI có câu lệnh, bước kiểm chứng và quyết định cuối'}
   ];
   const moduleDetails=(cid)=>{
     const {domain,tier}=parseCourse(cid),topic=DOMAINS[domain],level=TIERS[tier-1],context=contexts[domain],lessons=lessonsFor(cid);
     return lessons.map((lesson,index)=>{
       const slides=index===0?[
-        {tag:'01 / Observe',title:`What ${topic.toLowerCase()} means in your role`,body:`At ${level.toLowerCase()} level, begin with a real task and a source that another person can inspect. In this course, start with ${context.source}.`,prompt:'Notice the purpose before choosing a tool.'},
-        {tag:'02 / Connect',title:'Find the context',body:`Imagine this situation: ${context.scenario} Ask who needs the result, what has changed and which record establishes the starting point.`,prompt:'Context makes a digital action useful.'},
-        {tag:'03 / Prepare',title:'Name a checkable result',body:`A strong outcome is ${context.deliverable}. Keep the source close to the result so the next person can follow your reasoning.`,prompt:'You are ready for the module quiz.'}
+        {tag:'01 / Quan sát',title:`${topic} trong vị trí của bạn`,body:`Ở mức ${level}, hãy bắt đầu bằng nhiệm vụ thật và nguồn mà người khác có thể kiểm tra. Trong khóa này, dùng ${context.source}.`,prompt:'Hiểu mục tiêu trước khi chọn công cụ.'},
+        {tag:'02 / Kết nối',title:'Xác định bối cảnh',body:`Tình huống: ${context.scenario} Hãy xác định ai cần kết quả, điều gì đã thay đổi và hồ sơ nào cho biết điểm khởi đầu.`,prompt:'Bối cảnh giúp hành động số có ý nghĩa.'},
+        {tag:'03 / Chuẩn bị',title:'Nêu kết quả có thể kiểm tra',body:`Kết quả cần tạo: ${context.deliverable}. Giữ nguồn đi cùng kết quả để người tiếp theo hiểu cách bạn lập luận.`,prompt:'Bạn đã sẵn sàng làm câu hỏi ôn tập mô đun.'}
       ]:index===1?[
-        {tag:'01 / Scenario',title:'A decision starts with evidence',body:context.scenario,prompt:`Find ${context.source} before choosing an action.`},
-        {tag:'02 / Method',title:'Choose the next useful action',body:`In this situation, ${context.action}. Explain why this action is safer or more useful than a quick guess.`,prompt:'A decision should be easy to check.'},
-        {tag:'03 / Reason',title:'Make your reasoning visible',body:`Connect the source, the action and the conclusion. This gives your Manager enough context to inspect the work rather than only its final result.`,prompt:'Use the quiz to check the method.'}
+        {tag:'01 / Tình huống',title:'Bắt đầu quyết định từ minh chứng',body:context.scenario,prompt:`Tìm ${context.source} trước khi chọn hành động.`},
+        {tag:'02 / Cách làm',title:'Chọn hành động tiếp theo',body:`Trong tình huống này, hãy ${context.action}. Giải thích vì sao cách làm đó an toàn hoặc hữu ích hơn phỏng đoán.`,prompt:'Quyết định cần dễ kiểm tra.'},
+        {tag:'03 / Lý do',title:'Làm rõ cách lập luận',body:'Kết nối nguồn, cách làm và kết luận. Quản lý cần bối cảnh để kiểm tra công việc, không chỉ xem kết quả cuối.',prompt:'Dùng câu hỏi ôn tập để kiểm tra cách làm.'}
       ]:[
-        {tag:'01 / Apply',title:'Make an outcome for your role',body:`Use ${context.source} and create ${context.deliverable}. Keep the work small enough to finish and clear enough to review.`,prompt:'This is practice for the final assignment.'},
-        {tag:'02 / Review',title:'Check before you submit',body:`Confirm the source is named, the action can be followed and the conclusion is supported. If a detail cannot be checked, revise it.`,prompt:'A clear trail helps your reviewer.'},
-        {tag:'03 / Hand off',title:'Prepare the final assignment',body:`The end-of-course assignment asks you to explain what you did and why. Your department Manager, with AI suggestions as support, records the final decision.`,prompt:'Pass this module quiz to open the assignment.'}
+        {tag:'01 / Áp dụng',title:'Tạo kết quả cho vị trí của bạn',body:`Dùng ${context.source} để tạo ${context.deliverable}. Giữ phạm vi đủ nhỏ để hoàn thành và đủ rõ để đánh giá.`,prompt:'Đây là bước luyện tập cho bài cuối khóa.'},
+        {tag:'02 / Rà soát',title:'Kiểm tra trước khi nộp',body:'Xác nhận đã nêu nguồn, mô tả được cách làm và có kết luận có căn cứ. Sửa lại chi tiết chưa thể kiểm tra.',prompt:'Dấu vết rõ ràng giúp người chấm đánh giá.'},
+        {tag:'03 / Bàn giao',title:'Chuẩn bị bài cuối khóa',body:'Bài cuối khóa yêu cầu bạn giải thích đã làm gì và vì sao. Quản lý phòng ban ghi quyết định cuối với gợi ý AI hỗ trợ.',prompt:'Đạt câu hỏi mô đun để mở bài cuối khóa.'}
       ];
       const questions=index===0?[
-        {text:`Which source should you inspect first for ${topic.toLowerCase()}?`,options:['An unsupported guess',context.source,'Only the final claim'],answer:1,reason:'Start from a source or context that another person can inspect.'},
-        {text:'What makes the skill meaningful at work?',options:['Connecting a real task, action and result','Using a tool without a purpose','Copying a result without checking it'],answer:0,reason:'A skill is useful when it has a clear context, action and result.'}
+        {text:`Với ${topic}, bạn cần kiểm tra nguồn nào trước?`,options:['Một phỏng đoán chưa có căn cứ',context.source,'Chỉ kết luận cuối cùng'],answer:1,reason:'Bắt đầu từ nguồn hoặc bối cảnh mà người khác có thể kiểm tra.'},
+        {text:'Điều gì giúp kỹ năng có ích trong công việc?',options:['Gắn nhiệm vụ thật với cách làm và kết quả','Dùng công cụ khi chưa có mục đích','Sao chép kết quả mà không kiểm tra'],answer:0,reason:'Kỹ năng cần có bối cảnh, cách làm và kết quả rõ ràng.'}
       ]:index===1?[
-        {text:`What is the most useful response to this scenario: ${context.scenario}`,options:['Approve the first result without checking',context.action,'Avoid making a decision'],answer:1,reason:'A checkable action addresses the situation and its source.'},
-        {text:'Which note lets a reviewer understand the decision?',options:['Only the final answer','The source, action and reason','A confident claim without evidence'],answer:1,reason:'The reviewer needs the source, action and reason together.'}
+        {text:`Bạn nên xử lý tình huống này thế nào? ${context.scenario}`,options:['Duyệt kết quả đầu tiên mà không kiểm tra',context.action,'Tránh đưa ra quyết định'],answer:1,reason:'Cách làm kiểm tra được phải giải quyết đúng tình huống và nguồn.'},
+        {text:'Ghi chú nào giúp người chấm hiểu quyết định?',options:['Chỉ câu trả lời cuối','Nguồn, cách làm và lý do','Khẳng định chắc chắn nhưng không có minh chứng'],answer:1,reason:'Người chấm cần thấy nguồn, cách làm và lý do.'}
       ]:[
-        {text:`Which deliverable fits this ${topic.toLowerCase()} course?`,options:['An unexplained result',context.deliverable,'A note that omits the source'],answer:1,reason:'The deliverable must make the work traceable.'},
-        {text:'What should your final assignment contain?',options:['Source, checkable action and supported conclusion','Only an opinion about the topic','A screenshot without an explanation'],answer:0,reason:'The Manager grades evidence that can be checked.'}
+        {text:`Sản phẩm nào phù hợp với khóa ${topic}?`,options:['Kết quả không giải thích được',context.deliverable,'Ghi chú không nêu nguồn'],answer:1,reason:'Sản phẩm cần cho phép truy vết công việc.'},
+        {text:'Bài cuối khóa cần có gì?',options:['Nguồn, cách làm kiểm tra được và kết luận có căn cứ','Chỉ ý kiến cá nhân','Ảnh chụp màn hình không có giải thích'],answer:0,reason:'Quản lý chấm minh chứng có thể kiểm tra.'}
       ];
       return {...lesson,slides,questions,minutes:index===2?8:6};
     });

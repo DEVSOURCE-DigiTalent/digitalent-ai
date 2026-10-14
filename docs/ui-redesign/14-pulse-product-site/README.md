@@ -1,33 +1,38 @@
-# DigiTalent Pulse — connected product website preview
+# DigiTalent Pulse · Hướng dẫn bản xem trước
 
-Open [index.html](index.html) in Edge or Chrome. This is a local, English-language interactive design preview. It does not call production APIs, send email, invite real people, take payments, or change company records.
+Mở [index.html](index.html) bằng Edge hoặc Chrome. Đây là **web thiết kế tương tác bằng tiếng Việt**, chạy bằng `localStorage` trong trình duyệt. Bản này không gọi API của ứng dụng chính, không gửi email, không thanh toán hoặc thay đổi dữ liệu doanh nghiệp thật.
 
-The connected flow now reuses the earlier Pulse visual language instead of opening separate, disconnected mockups. Owner and Manager use the approved Pulse overview composition; Employee Today uses the learning hero and action cards. Blueprint, people, current-versus-target capability, position path, Manager review, course catalog, lesson reader and cycle report carry those same visual patterns while reading one shared preview state. `pulse-reuse.js` and `pulse-reuse.css` contain this visual integration; the existing flow actions remain in `app.js`.
+Tài liệu nghiệp vụ đầy đủ: [Đặc tả luồng chi tiết](../16-pulse-product-flow-detailed.md). Route và một số khóa dữ liệu trong mã giữ tên kỹ thuật bằng tiếng Anh; nội dung người dùng nhìn thấy đã được Việt hóa.
 
-The latest [flow conformance audit](../15-flow-conformance-audit.md) records the source precedence, journey checks, prototype limits and remaining production work. `flow-conformance.js` enforces the latest design rules at the preview interaction layer; `flow-conformance.css` styles the department Manager account selector and capability hierarchy captions.
+## Chọn hành trình để xem
 
-## Supporting branches from the User Flow and Wireframe
+- **Dùng thử miễn phí:** doanh nghiệp mẫu *Northstar Studio* có khung năng lực, phòng ban, quản lý, nhân viên và tiến độ khóa Cơ bản để duyệt từng vai trò. Doanh nghiệp mới được kích hoạt ngay sau bước xác minh email mô phỏng; không có hàng chờ duyệt, không giới hạn thời gian và có tối đa **10 nhân viên trên tất cả phòng ban**.
+- **Đã mua khóa:** doanh nghiệp mẫu *Northstar Growth* có **ba suất** Dữ liệu và thông tin · Trung cấp. Mia đã có quyền học đầy đủ; hai suất còn lại dành cho nhân viên đủ điều kiện. Đây là suất của **một khóa**, không phải gói mở toàn bộ danh mục.
+- **Bắt đầu từ đầu:** tạo doanh nghiệp tại `#/register`, xác minh tại `#/verify`, thiết lập và công bố khung tại `#/setup`, rồi gán quản lý và thêm nhân viên tại `#/people`. Bản xem trước không gửi lời mời thật.
 
-The main visitor → trial → blueprint → baseline → course → Manager assignment review → report journey remains the center of the site. `secondary-flows.js` and `secondary-flows.css` add the connected branches described in *DigiTalent AI User Flow và Wireframe.html*:
+## Luồng mua và tự mở khóa có phí
 
-| Branch | Where to review it | Browser-local behavior |
-| --- | --- | --- |
-| Practical task and evidence | Owner **Practical tasks** → Employee **Practice** → Manager **Practical evidence** | Owner sets domain, level, rubric, recipient and due date. Employee submits a note or link. Manager approves, requests revision or rejects with a reason. Approved evidence records its source and can confirm a current level; the original baseline is retained. This is separate from the two-attempt final course assignment. |
-| Training cohorts and team follow-up | Owner **Training cohorts** → Manager **Team training** | Assign one free or purchased course to a position or person, check prerequisites and available seats, then follow each learner and due date. |
-| Content release | **Platform Admin** → Framework / Curriculum | Edit draft domain descriptions, courses, questions, price and sales status; publish versioned framework or course content. Business users see the published source as read-only. |
-| Customer lifecycle | **Platform Admin** → Organizations / Users / Orders / Audit | See the sample organization and its people, grant a paid seat, suspend or restore access, lock or unlock an Employee, and record reasons in an audit view. |
-| Account and outcomes | Sign in → **Forgot password** / **Activate invitation**; Owner **Certificates**; Employee Today → **Verified outcomes** / **Activity** | Preview recovery and activation, inspect traceable course or practical-evidence certificates, and read activity. No message is sent. |
+1. Chủ doanh nghiệp có thể xem đề cương, bài mẫu và đánh giá minh họa của khóa Trung cấp/Nâng cao, rồi mua mô phỏng một hoặc nhiều **suất theo khóa**. Có thể mua **trước** khi thiết lập/công bố khung năng lực.
+2. Chủ doanh nghiệp đặt mục tiêu cho từng vị trí theo quy tắc **mục tiêu vị trí ≤ trần phòng ban ≤ trần doanh nghiệp ≤ trần Digital AI**, rồi công bố khung. Phòng ban xác định phạm vi phân bổ suất; vị trí xác định lĩnh vực và cấp khóa mà nhân viên cần học.
+3. Nếu lượt mua chưa chọn phòng ban và chỉ một phòng ban có vị trí phù hợp, bản xem trước tự gắn suất vào phòng ấy. Nếu nhiều phòng ban phù hợp, chủ doanh nghiệp chọn tại trang khóa. Khi có nhân viên đúng phòng ban và vị trí, hệ thống **giữ suất** cho người phù hợp; nếu thiếu suất, chủ doanh nghiệp thấy số thiếu và có thể mua thêm hoặc ưu tiên người nhận trước khi kích hoạt.
+4. Nhân viên làm **bài đầu vào dạng câu hỏi tình huống** theo mục tiêu vị trí, xem mức đầu vào so với mục tiêu và học khóa Cơ bản miễn phí. Khóa Trung cấp cần khóa Cơ bản **cùng lĩnh vực** được quản lý duyệt; khóa Nâng cao cần Trung cấp được duyệt.
+5. Khi đã công bố khung, làm bài đầu vào, đủ điều kiện khóa cấp trước và có suất giữ đúng người/phòng ban, hệ thống **tự kích hoạt suất**, tạo lượt học và mở **toàn bộ** mô đun, câu hỏi, bài cuối khóa có phí. Chủ doanh nghiệp không phải cấp suất thêm lần nữa. Mỗi suất phục vụ một người trong một khóa; suất đã kích hoạt không chuyển sang phòng ban khác.
 
-Use **Explore sample business**, then the role selector to move between Owner, Manager, Employee and Platform Admin. The Employee primary navigation stays **Today / Path / Practice**; practical tasks and outcome links sit inside those spaces rather than adding more primary tabs. All supporting records use the same `localStorage` state as the main flow. **Reset sample** clears both.
+Chủ doanh nghiệp cũng có thể vào **Nhóm đào tạo** để chọn cả phòng ban hoặc nhiều nhân viên, giao một khóa chung hoặc khóa tiếp theo trên lộ trình riêng của từng người. Giao diện hiện người sẵn sàng/người bị loại và lý do, kiểm tra bài đầu vào, mục tiêu vị trí, khóa cấp trước và số suất đúng phòng ban trước khi gán. Đây là cách quản lý nhóm, không phải bước bắt buộc để kích hoạt suất đã tự giữ.
 
-The source wireframe includes older alternatives that later user decisions replaced. This preview keeps the approved unlimited trial with ten Employee seats, the business → department → position ceiling hierarchy, free Basic courses, paid seats per higher course, and Manager grading of final course assignments. Older trial durations, automatic final grading, removal of department ceilings and service packages are not reintroduced.
+## Học, đánh giá và báo cáo
 
-Practical file inputs show the selected file name only; there is no upload, malware scan or storage. Email recovery, invitation tokens, payments, admin enforcement, question bank releases and certificates are design simulations. Production would require server-side permissions, versioning, audit, document storage and verification.
+Mỗi khóa mẫu có **ba mô đun**; mỗi mô đun có ba trang nội dung và hai câu ôn tập. Cần đạt 2/2 câu để hoàn thành mô đun; sau ba mô đun, nhân viên nộp **bài cuối của đúng khóa**. Quản lý phòng ban xem minh chứng và gợi ý AI minh họa, rồi tự quyết định duyệt hoặc yêu cầu sửa, kèm lý do. Lần đầu chưa đạt có thời gian chờ **48 giờ** và hạn nộp lại **7 ngày sau khi mở** theo cấu hình mẫu; lần hai chưa đạt tạo cờ hỗ trợ.
 
-The preview covers landing, sign in, free business registration, verification, a four-layer capability blueprint, department and position routing, invitations and CSV preview, baseline assessment, current-versus-target gap, the Employee learning path, course details and lessons, a final assignment, AI-assisted Manager review, two-submission policy, and a course-cycle report. Paid courses reuse the same learning and reporting flow after a simulated purchase and seat assignment.
+Ba mốc năng lực được giữ riêng: **mức đầu vào → mức đã xác nhận → mục tiêu vị trí**. Mua suất, xem bài, qua câu hỏi hoặc gửi bài cuối **không** nâng mức đã xác nhận. Khi quản lý duyệt bài cuối khóa, cấp khóa có thể nâng mức đã xác nhận nếu cao hơn mức cũ; mức đầu vào không đổi. Chủ doanh nghiệp thấy báo cáo toàn doanh nghiệp sau khi có khóa được duyệt, còn quản lý chỉ thấy phòng ban mình. Khóa Cơ bản và khóa đã mua dùng cùng luồng học, chấm và báo cáo.
 
-Use **Explore sample business** on the landing page to start with a configured Accounting team. The role switcher in the header lets a reviewer follow one course from Owner through Employee and Manager. State is stored only in this browser with `localStorage`; **Reset sample** clears it. A newly registered business starts with an unpublished blueprint. The free trial has no expiry, offers all Basic lessons, and allows ten Employee seats across departments. The sample second-submission policy is a 48-hour wait and a seven-day deadline; both values are Owner-configurable and are not finalized business policy.
+Nhân viên dùng ba mục điều hướng chính **Hôm nay / Lộ trình / Thực hành**; trang chi tiết khóa và trang học mở theo ngữ cảnh. Chủ doanh nghiệp, quản lý và quản trị nền tảng có hồ sơ vai trò và các màn phù hợp phạm vi. Nhiệm vụ thực tế/minh chứng là nhánh riêng với bài cuối khóa.
 
-The course-cycle report unlocks when a Manager approves a final course assignment. It derives participation, baseline, targets, activity and review outcome from the preview state. It shows trial and later paid courses in one report space. Production will require backend authorization, persistence, payment, assessment and reporting logic before this design can be applied to the main app.
+## Giới hạn bản xem trước
 
-Owner course details include illustrative feedback cards so the review area can be assessed before purchase. They are clearly labeled as samples; production should show only verified learner reviews. The AI suggestion in Manager review is also an illustrative text check, while the final decision always belongs to the Manager.
+- Câu hỏi đầu vào, nội dung 18 khóa, gợi ý AI, đánh giá người học và thanh toán đều là dữ liệu/tương tác minh họa. Hiện có slide; chưa có video thật.
+- CSV được đọc tại máy; lời mời, xác minh, phục hồi tài khoản, tệp minh chứng và chứng nhận không có dịch vụ thật. Phân quyền bằng trạng thái trình duyệt không thay thế quyền ở máy chủ.
+- Dữ liệu lưu trong **một trình duyệt**. Tải lại tab sau khi mã web thay đổi; thao tác đặt lại dữ liệu mẫu sẽ xóa trạng thái xem trước cục bộ.
+- Khi triển khai ứng dụng chính cần kiểm tra quyền học theo suất, phân quyền quản lý, kết quả bài đầu vào, quyết định chấm và lịch sử năng lực tại API/máy chủ.
+
+Kiểm tra luồng hiện tại bằng `node docs/ui-redesign/14-pulse-product-site/audit-vi.cjs` từ gốc repository. Bộ kiểm tra duyệt các route chính và luồng mua → giữ suất → bài đầu vào → duyệt khóa Cơ bản → tự mở khóa Trung cấp → quản lý duyệt → cập nhật năng lực/báo cáo.
