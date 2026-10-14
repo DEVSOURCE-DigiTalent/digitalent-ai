@@ -1,9 +1,9 @@
 # Đặc tả luồng chi tiết của web DigiTalent Pulse
 
-**Phiên bản tài liệu:** 13/10/2026  
+**Phiên bản tài liệu:** 14/10/2026
 **Phạm vi:** bản thiết kế tương tác tại [Pulse product site](14-pulse-product-site/index.html#/welcome) trên nhánh `design/ui-flow-redesign`.  
 **Đối tượng đọc:** Product Owner, UI/UX, frontend, backend, QA và người duyệt nghiệp vụ.  
-**Ngôn ngữ giao diện:** tiếng Anh. Tài liệu giải thích bằng tiếng Việt và giữ nguyên nhãn nút/trang tiếng Anh để dễ đối chiếu.
+**Ngôn ngữ giao diện:** tiếng Việt. Các tên route, khóa dữ liệu và trạng thái kỹ thuật vẫn giữ nguyên trong mã để bảo toàn luồng đã có.
 
 > Đây là **đặc tả của web Pulse đã thiết kế**, không phải xác nhận các chức năng tương ứng đã hoạt động trong ứng dụng chính. Bản Pulse chạy bằng dữ liệu trong trình duyệt; những giới hạn ở mục 13 là một phần của tài liệu.
 
@@ -40,7 +40,7 @@ flowchart LR
     N --> R[Next eligible course]
 ```
 
-Luồng dùng thử và luồng khóa mua thêm dùng cùng cấu trúc học, nộp bài, chấm và báo cáo. Khác biệt nằm ở **quyền truy cập**: Basic miễn phí; Intermediate và Advanced phải đủ điều kiện cấp trước và có suất đã mua, được Owner gán.
+Luồng dùng thử và luồng khóa mua thêm dùng cùng cấu trúc học, nộp bài, chấm và báo cáo. Khác biệt nằm ở **quyền truy cập**: Cơ bản miễn phí; Trung cấp và Nâng cao cần cấp trước được duyệt và suất đã mua cho đúng phòng ban. Suất được giữ khi công bố lộ trình và tự kích hoạt khi nhân viên đủ điều kiện.
 
 ## 3. Vai trò, phạm vi nhìn và điều hướng
 
@@ -122,9 +122,9 @@ Owner tải mẫu CSV và nhập các cột `email,full_name,department,position
 
 ### 7.1 Employee làm bài đầu vào
 
-Employee mở `#/assessment` từ Today hoặc Path. Trên bản thiết kế, người học tự chọn một mức hiện tại cho mỗi trong sáu lĩnh vực; có thể giữ **Not confirmed / Pending**. Khi nộp, bản preview ghi Current và đánh dấu `assessed=true`, sau đó mở Path.
+Employee mở `#/assessment` từ Hôm nay hoặc Lộ trình. Bài đầu vào hiện hỏi các tình huống ngắn **chỉ ở những lĩnh vực và mức thuộc mục tiêu vị trí của nhân viên**. Mỗi mức chỉ được ghi nhận khi trả lời đúng mức đó và các mức thấp hơn. Khi nộp, bản preview lưu mức đầu vào và mở lộ trình cá nhân.
 
-Đây là **mô phỏng màn đánh giá đầu vào**, chưa phải bộ câu hỏi và thuật toán chấm điểm thật. Owner/Manager có thể xem kết quả và trạng thái Pending, nhưng thao tác xác nhận đầu vào thuộc Employee.
+Đây là **bộ câu hỏi minh họa cho bản xem trước**, chưa phải ngân hàng câu hỏi được kiểm định hay thuật toán chấm điểm chính thức. Owner/Manager xem được kết quả và trạng thái chờ; nhân viên tự làm bài của mình.
 
 ### 7.2 So sánh năng lực
 
@@ -144,12 +144,12 @@ Employee mở `#/assessment` từ Today hoặc Path. Trên bản thiết kế, n
 | Basic ngoài Position target | Nội dung Basic vẫn đọc miễn phí | Không ghi tiến độ cho lộ trình của vị trí đó. |
 | Chưa baseline | Xem thông tin khóa; nội dung Basic có thể đọc | Phải làm baseline trước khi ghi tiến độ. |
 | Intermediate/Advanced chưa có suất | Outline, tiêu chí cuối khóa và **slide mẫu đầu tiên của module 1** | Không mở các slide còn lại/quiz, không ghi tiến độ. |
-| Intermediate/Advanced đã có suất Owner gán | Nội dung khóa đầy đủ | Vẫn cần cấp trước Approved và cấp khóa không vượt Position target. |
+| Trung cấp/Nâng cao đã được giữ suất theo phòng ban | Đề cương và bài mẫu trong lúc chờ; toàn bộ nội dung sau khi tự kích hoạt | Cần bài đầu vào, cấp trước được duyệt và cấp khóa không vượt mục tiêu vị trí. |
 | Khóa trả phí bị Platform Admin tạm ngừng bán | Thông tin đang công bố vẫn xem được | Không tạo lượt mua mới; suất đã cấp có thể tiếp tục dùng. |
 
-Owner có thể xem outline, kết quả mong đợi, bài mẫu và khu vực review **được gắn nhãn dữ liệu minh họa** trước khi mua. Owner mô phỏng mua thêm một suất của khóa trả phí, rồi chọn Employee hợp lệ để gán. Khóa Basic cũng có thao tác gán cho Employee. Bộ chọn đào tạo theo nhóm ở nhánh Cohorts kiểm tra từng người trước khi tạo cohort.
+Owner có thể xem đề cương, kết quả mong đợi, bài mẫu và khu vực đánh giá **được gắn nhãn dữ liệu minh họa** trước khi mua. Tại trang khóa, Owner mua mô phỏng một hoặc nhiều suất và chọn phòng ban, hoặc để trống để phân bổ sau. Khi lộ trình được công bố và chỉ một phòng ban có vị trí phù hợp, hệ thống tự gắn suất cho phòng ban đó. Suất được giữ cho nhân viên thuộc đúng phòng ban **và** vị trí có mục tiêu bao gồm khóa này, kể cả khi nhân viên chưa hoàn thành khóa Cơ bản. Nếu số người phù hợp vượt số suất, Owner thấy số thiếu, có thể mua thêm hoặc chọn người ưu tiên trước khi suất được kích hoạt. Người đã mở khóa giữ nguyên suất. Nhánh Nhóm đào tạo vẫn cho phép giao khóa cho cả phòng ban hoặc chọn nhiều nhân viên, nhưng chỉ dùng suất thuộc đúng phòng ban.
 
-**Điều kiện gán khóa:** blueprint Published, Employee đã làm baseline, cấp khóa không vượt target của Position trong lĩnh vực tương ứng; Intermediate cần Basic của cùng lĩnh vực Approved, Advanced cần Intermediate Approved; khóa trả phí cần đủ suất chưa dùng. Việc chọn theo Department giúp quản lý nhóm, nhưng **Position mới quyết định đích và khóa hợp lệ**.
+**Điều kiện tự mở khóa:** khung năng lực đã công bố, nhân viên đã làm bài đầu vào, cấp khóa không vượt mục tiêu vị trí; Trung cấp cần khóa Cơ bản cùng lĩnh vực được duyệt, Nâng cao cần Trung cấp được duyệt; suất đã mua phải thuộc phòng ban nhân viên và chưa được người khác sử dụng. Hoàn thành điều kiện trước sẽ tự tạo lượt học mà không cần Owner gán lại. **Phòng ban quyết định phạm vi suất; vị trí quyết định khóa nào thuộc lộ trình.**
 
 ## 9. Cấu trúc khóa học Employee mới
 
@@ -240,7 +240,7 @@ Owner tạo nhiệm vụ với tiêu đề, bối cảnh, lĩnh vực, cấp c�
 
 ### 12.2 Training cohorts
 
-**Owner `#/cohorts` → Manager `#/team-training`.** Owner chọn tên nhóm, Position hoặc một người, khóa và ngày cần hoàn thành. Trước khi gán, bản preview kiểm tra baseline, khóa cấp trước, Position target, khóa có tạm dừng bán không và số suất trả phí đủ **cho toàn bộ nhóm**. Manager chỉ theo dõi những người thuộc phòng ban mình: tiến độ module, trạng thái và hạn. Manager không đổi cohort hoặc tự mua suất.
+**Owner `#/cohorts` → Manager `#/team-training`.** Owner chọn tên nhóm, cả phòng ban hoặc nhiều nhân viên, khóa và ngày cần hoàn thành. Trước khi gán, bản preview kiểm tra bài đầu vào, khóa cấp trước, mục tiêu vị trí, trạng thái bán và **suất đã mua cho đúng phòng ban**. Một phòng ban không thể mượn suất của phòng ban khác. Manager chỉ theo dõi người thuộc phòng ban mình: tiến độ mô đun, trạng thái và hạn. Manager không đổi nhóm hoặc tự mua suất.
 
 ### 12.3 Đề xuất trần từ Manager
 
@@ -301,6 +301,6 @@ Nút **Reset sample** xóa dữ liệu preview trong trình duyệt và trở l�
 5. Mở assignment của chính khóa đó, viết nguồn, hành động kiểm tra được và kết luận → Submit.
 6. Chuyển Manager đúng phòng ban → Final assignments → chọn verdict và ghi lý do.
 7. Nếu Approved, chuyển Owner → Cycle reports. Nếu Not yet, xem thời gian chờ/hạn cuối, nộp lần 2 hoặc mở ca hỗ trợ quá hạn; lần 2 không đạt tạo cờ.
-8. Với khóa cấp cao, Owner xem outline/slide mẫu/review minh họa → mô phỏng mua suất → gán người đủ điều kiện → lặp cùng chu kỳ học và báo cáo.
+8. Với khóa cấp cao, Owner xem đề cương/bài mẫu/đánh giá minh họa → mua mô phỏng số suất cho phòng ban → công bố lộ trình → hệ thống giữ suất cho đúng người → sau khi khóa mức trước được quản lý duyệt, khóa đã mua tự mở → lặp cùng chu kỳ học và báo cáo.
 
 **Nguồn đối chiếu trong repo:** [mã web Pulse](14-pulse-product-site/index.html), [hướng dẫn preview](14-pulse-product-site/README.md), [đối chiếu luồng trước đó](15-flow-conformance-audit.md). Hai HTML mô tả luồng do người dùng cung cấp là tài liệu yêu cầu; các hành vi được ghi ở đây đã được đối chiếu với mã của bản Pulse, và các quyết định mới nhất của người dùng được ưu tiên khi tài liệu nguồn có phương án cũ khác nhau.
