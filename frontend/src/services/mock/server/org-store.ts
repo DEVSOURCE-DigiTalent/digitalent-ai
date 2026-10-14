@@ -6,7 +6,7 @@ import { ACME_ORGANIZATION_ID, buildAcmeData } from './seed-acme';
 import type { DepartmentRecord, JobPositionRecord, OrgData } from './types';
 
 /**
- * Persisted data of each organization the mock server knows. The demo organization (Acme) is seeded in code;
+ * Persisted data of each organization the mock server knows. The demo organization (DigiTalent AI) is seeded in code;
  * an organization created through the sign-up flow starts from what its owner entered in the setup wizard.
  * Kept in localStorage so edits survive reloads; clear `dt-mock-org-data` (or the mock database) to start over.
  */
