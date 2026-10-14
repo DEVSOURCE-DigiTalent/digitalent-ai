@@ -16,4 +16,14 @@
 .capability-progress-result.met{background:#e8f6e8;color:#21603b}
 .capability-progress-result.open{background:#fff0e9;color:#a9442c}
 .capability-progress-result.pending{background:#edf1f8;color:#536583}
+.pulse-level-outcome{display:flex;justify-content:space-between;align-items:center;gap:24px;margin:18px 0 30px;padding:22px 26px;border:1px solid #c7d7f9;border-radius:20px;background:linear-gradient(115deg,#eaf0ff 0%,#f8faff 68%,#fff1e9 100%);box-shadow:0 14px 35px rgba(43,68,132,.08)}
+.pulse-level-outcome .mini-label{color:#3855b1}
+.pulse-level-outcome h2{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:8px 0 6px;color:#142547;font-size:clamp(18px,2vw,25px)}
+.pulse-level-outcome h2 strong{color:#3150c8;white-space:nowrap}
+.pulse-level-outcome h2 i{font-style:normal;color:#e36f52}
+.pulse-level-outcome p{margin:0;color:#495b79;font-size:13px;line-height:1.5}
+.pulse-level-outcome-actions{display:grid;justify-items:end;gap:10px;flex:none}
+.pulse-level-outcome-actions>span{padding:8px 12px;border-radius:99px;background:#dce8ff;color:#2446ad;font-size:12px;font-weight:800}
+.pulse-level-outcome.confirmed{background:#f6f8fd}
 @media(max-width:760px){.capability-progress-head,.capability-progress-row{display:block}.capability-progress-head span{display:block;margin-top:4px}.capability-progress-levels{flex-wrap:wrap;margin:11px 0}.capability-progress-result{display:inline-block}}
+@media(max-width:760px){.pulse-level-outcome{display:block;padding:20px}.pulse-level-outcome-actions{justify-items:start;margin-top:16px}}

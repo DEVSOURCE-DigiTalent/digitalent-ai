@@ -6,6 +6,7 @@
   const previousReportPage = reportPage;
   const previousEmployeeHome = employeeHome;
   const previousPathPage = pathPage;
+  const previousActivePerson = activePerson;
 
   const level = value => Math.max(0, Math.min(3, Number(value) || 0));
   const label = value => level(value) ? `L${level(value)}` : 'Pending';
@@ -59,6 +60,24 @@
     }).join('')}</div></section>`;
   }
 
+  function latestCourseOutcome(person) {
+    if (!person?.assessed) return '';
+    const approvedCourses = state.enrollments
+      .filter(record => record.employeeId === person.id && record.status === 'approved')
+      .sort((a, b) => (b.attempts?.at(-1)?.reviewedAt || b.assignedAt || 0) - (a.attempts?.at(-1)?.reviewedAt || a.assignedAt || 0));
+    const latest = approvedCourses[0];
+    if (!latest) return '';
+    const { domain, tier } = parseCourse(latest.courseId);
+    const baseline = level(person.baselineCurrent?.[domain]);
+    const verified = level(person.current?.[domain]);
+    const target = level(position(person)?.target?.[domain]);
+    const gained = tier > baseline && verified === tier && level(person.courseLevels?.[domain]) >= tier;
+    return `<section class="pulse-level-outcome ${gained ? 'advanced' : 'confirmed'}" aria-label="Latest Manager-approved course outcome">
+      <div><span class="mini-label">Latest Manager-approved outcome</span><h2>${esc(DOMAINS[domain])} <strong>${label(baseline)} <i aria-hidden="true">→</i> ${label(verified)}</strong></h2><p>${esc(TIERS[tier - 1])} assignment approved. ${gained ? `Your verified capability reached ${label(verified)}; your position target is ${label(target)}.` : `This course confirms ${label(tier)}, which is already within your verified level. The entry baseline remains ${label(baseline)}.`}</p></div>
+      <div class="pulse-level-outcome-actions"><span>${gained ? `+${verified - baseline} level${verified - baseline === 1 ? '' : 's'} since baseline` : 'Course complete · level confirmed'}</span>${link('path', 'See my capability path →', 'btn-outline btn-small')}</div>
+    </section>`;
+  }
+
   // A Manager can only approve a final assignment inside their department.
   document.addEventListener('submit', eventObject => {
     const form = eventObject.target.closest('form[data-form="review"]');
@@ -74,6 +93,11 @@
   render = function () {
     syncVerifiedCapability();
     return previousRender();
+  };
+
+  // The Employee baseline must belong to the same account shown on Today and Path.
+  activePerson = function () {
+    return state.role === 'employee' ? employee() : previousActivePerson();
   };
 
   gapPanel = function (person) {
@@ -93,9 +117,10 @@
   };
 
   employeeHome = function () {
-    return previousEmployeeHome()
+    const html = previousEmployeeHome()
       .replace('your tested ', 'your verified ')
       .replace('Each marker compares your confirmed starting level with your position target.', 'Each marker compares your verified level with your position target. The entry baseline stays recorded.');
+    return html.replace('<div class="pulse-employee-intro">', `${latestCourseOutcome(employee())}<div class="pulse-employee-intro">`);
   };
 
   pathPage = function () {

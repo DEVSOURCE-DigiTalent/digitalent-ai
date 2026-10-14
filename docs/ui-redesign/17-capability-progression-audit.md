@@ -18,6 +18,8 @@ Ví dụ từ account trả phí: Mia ở Data & information có **Baseline L1, 
 | Manager đúng phòng ban chấm, AI gợi ý | Đạt trong prototype | Manager ghi quyết định và lý do; gửi form chấm từ phòng ban khác bị chặn. Gợi ý AI chỉ là kiểm tra văn bản mẫu. |
 | Basic đạt khi đầu vào đã là L1 | Đạt | Khóa hoàn thành, báo cáo có kết quả; Current vẫn L1 vì không thể cộng cấp trùng. |
 | Intermediate đạt từ L1 với Target L2 | Đạt | Current L1 → L2, gap lĩnh vực 1 → 0; baseline L1 giữ nguyên; Owner, Manager, Employee và report hiển thị cùng kết quả. |
+| Mở lại tab sau khi Manager đã duyệt Intermediate | Đạt | Dữ liệu duyệt cũ trong `localStorage` được đối chiếu lại, Mia hiển thị L1 → L2 trên Employee Today sau khi tải lại trang. |
+| Nhân viên xem Today, Path và test đầu vào | Đạt sau sửa | Ba màn dùng cùng một Employee đang được chọn trong bản preview; không ghi bài test của người khác. |
 | Lần 1 chưa đạt → chờ → hạn nộp lần 2 → lần 2 chưa đạt | Đạt | Không tăng Current; sau hai lần có cờ hỗ trợ và không mở cấp tiếp. |
 | Employee có đầu vào `Pending` nhưng đã hoàn thành test | Đạt sau sửa | Khi gán lộ trình cho nhóm, người này có thể bắt đầu Basic; `Pending` vẫn không hiển thị như gap đo được. |
 | Mua suất → gán cả phòng ban/nhiều người → học tiếp | Đạt | Chặn thiếu suất, ngoài target vị trí, thiếu prerequisite; mua suất không tự nâng năng lực. |
