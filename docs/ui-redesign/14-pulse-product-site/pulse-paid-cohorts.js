@@ -38,7 +38,9 @@
   ownerHome = function () {
     const html = previousOwner();
     if (state.demoAccess !== 'purchased-course') return html;
-    return `${html}<section class="paid-demo-banner"><div><span class="mini-label">Purchased course sample</span><h2>Full Intermediate content is ready to review.</h2><p>Three simulated seats for Data & information · Intermediate: Mia is learning, two seats remain. Basic prerequisites for Mia and Ben are already approved. No payment was taken.</p></div><div>${link('course/0-2', 'Review full course →', 'btn-primary')}${link('cohorts', 'Assign a group', 'btn-outline')}</div></section>`;
+    const purchased = Number(state.purchases[paidCourse] || 0);
+    const assigned = state.enrollments.filter(item => item.courseId === paidCourse).length;
+    return `${html}<section class="paid-demo-banner"><div><span class="mini-label">Doanh nghiệp đã mua khóa</span><h2>Toàn bộ khóa Trung cấp đã sẵn sàng.</h2><p>${purchased} suất mô phỏng cho ${esc(courseName(paidCourse))}: ${assigned} đã mở, ${Math.max(0, purchased - assigned)} còn lại. Nhân viên có suất được tự mở khi khóa Cơ bản được duyệt. Không có thanh toán thật.</p></div><div>${link('course/0-2', 'Xem toàn bộ khóa →', 'btn-primary')}${link('cohorts', 'Phân bổ cho nhóm', 'btn-outline')}</div></section>`;
   };
 
   coursePage = function (value) {
@@ -100,14 +102,29 @@
       else if ((position(person)?.target?.[parseCourse(cid).domain] || 0) < parseCourse(cid).tier) reason = 'Outside this position target';
       else if (!courseEligible(cid, person)) reason = 'Prior course level not approved';
       else if (parseCourse(cid).tier > 1 && state.secondary?.courseMeta?.[cid]?.open === false) reason = 'Paid course paused';
+      else if (parseCourse(cid).tier > 1 && state.seatPlans?.some(item => item.cid === cid) &&
+        !state.seatPlans.some(item => item.cid === cid && item.department === person.dept))
+        reason = 'No purchased seats allocated to this department';
       (reason ? excluded : ready).push({ person, cid, reason });
     }
     const needed = new Map();
-    for (const item of ready) if (parseCourse(item.cid).tier > 1) needed.set(item.cid, (needed.get(item.cid) || 0) + 1);
-    const shortages = [...needed].map(([cid, count]) => {
-      const used = state.enrollments.filter(item => item.courseId === cid).length;
-      const available = Math.max(0, Number(state.purchases[cid] || 0) - used);
-      return { cid, count, available };
+    for (const item of ready) if (parseCourse(item.cid).tier > 1) {
+      const key = `${item.cid}|${item.person.dept}`;
+      const value = needed.get(key) || { cid: item.cid, department: item.person.dept, count: 0 };
+      value.count++;
+      needed.set(key, value);
+    }
+    const shortages = [...needed.values()].map(({cid, department, count}) => {
+      const scoped = state.seatPlans?.some(item => item.cid === cid);
+      const purchased = scoped
+        ? state.seatPlans.filter(item => item.cid === cid && item.department === department)
+          .reduce((sum, item) => sum + item.seats, 0)
+        : Number(state.purchases[cid] || 0);
+      const used = state.enrollments.filter(item =>
+        item.courseId === cid && (!scoped ||
+          state.employees.find(person => person.id === item.employeeId)?.dept === department)).length;
+      const available = Math.max(0, purchased - used);
+      return { cid, department, count, available };
     }).filter(item => item.available < item.count);
     return { selected, ready, excluded, shortages };
   }
@@ -118,7 +135,7 @@
     host.innerHTML = `<div class="bulk-preview-top"><strong>${result.ready.length} ready · ${result.excluded.length} excluded</strong><span>${result.selected.length} selected Employee${result.selected.length === 1 ? '' : 's'}</span></div>
       ${result.ready.length ? `<div class="bulk-preview-list">${result.ready.map(item => `<div><span>${esc(item.person.name)} <small>${esc(item.person.dept)} / ${esc(item.person.position)}</small></span><b>${esc(courseName(item.cid))}</b></div>`).join('')}</div>` : '<p>Select Employees with a confirmed baseline and eligible path to preview assignment.</p>'}
       ${result.excluded.length ? `<div class="bulk-preview-excluded"><strong>Not assigned in this batch</strong>${result.excluded.map(item => `<span>${esc(item.person.name)} · ${esc(item.reason)}</span>`).join('')}</div>` : ''}
-      ${result.shortages.length ? `<div class="bulk-preview-shortage">${result.shortages.map(item => `${esc(courseName(item.cid))}: ${item.count} seat${item.count === 1 ? '' : 's'} needed, ${item.available} available`).join('<br>')}</div>` : ''}`;
+      ${result.shortages.length ? `<div class="bulk-preview-shortage">${result.shortages.map(item => `${esc(courseName(item.cid))} · ${esc(item.department)}: cần ${item.count} suất, còn ${item.available}`).join('<br>')}</div>` : ''}`;
     form.querySelector('button[type="submit"]').disabled = !result.ready.length || Boolean(result.shortages.length);
     return result;
   }
