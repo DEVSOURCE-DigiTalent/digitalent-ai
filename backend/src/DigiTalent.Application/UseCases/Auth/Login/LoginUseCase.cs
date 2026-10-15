@@ -80,6 +80,13 @@ public class LoginUseCase : IUseCase<LoginUseCaseInput, LoginUseCaseOutput>
             throw new ForbiddenException("Account is inactive.");
         }
 
+        // 4b. Tổ chức bị quản trị nền tảng tạm khóa → thành viên không đăng nhập được
+        if (user.OrganizationId != null && await _context.Organizations.AnyAsync(o =>
+                o.Id == user.OrganizationId && o.Status == Statuses.Organization.Suspended))
+        {
+            throw new ForbiddenException("Tổ chức của bạn đang bị tạm ngưng. Vui lòng liên hệ bộ phận hỗ trợ DigiTalent.");
+        }
+
         // 5. Đúng → reset bộ đếm, lấy thông tin nhân viên (nếu có), tạo token chứa các role đang ACTIVE
         user.RegisterSuccessfulLogin(now);
 
