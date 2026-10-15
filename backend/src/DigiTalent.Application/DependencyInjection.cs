@@ -8,8 +8,10 @@ using DigiTalent.Application.UseCases.Intelligence.SkillGap.Common;
 using DigiTalent.Application.UseCases.Me;
 using DigiTalent.Application.UseCases.Organization.Members;
 using DigiTalent.Application.UseCases.Organization.Workforce;
+using DigiTalent.Application.UseCases.Pulse;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace DigiTalent.Application;
 
@@ -69,6 +71,18 @@ public static class DependencyInjection
         services.AddScoped<MyCourseReader>();
         services.AddScoped<MyEnrollmentRules>();
         services.AddScoped<MyAttemptPresenter>();
+
+        // 7. Trang nhân viên Pulse (/me/pulse/*) và hàng chờ chấm bài cuối khóa (/pulse/final-reviews)
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddScoped<PulseModuleReader>();
+        services.AddScoped<PulseLearnerReader>();
+        services.AddScoped<PulseRetryPolicyProvider>();
+        services.AddScoped<PulseBaselineReader>();
+        services.AddScoped<PulseCourseWorkspace>();
+        services.AddScoped<PulseQuizReader>();
+        services.AddScoped<PulseFinalReader>();
+        services.AddScoped<PulseOutcomeReader>();
+        services.AddScoped<PulseReviewScope>();
 
         return services;
     }
