@@ -25,7 +25,7 @@ describe('Foundation v2.1 Verification Suite (A1, A2, A3)', () => {
   });
 
   // ── Role & Sidebar Tree Tests ──
-  it('renders Owner sidebar with 7 business sections', async () => {
+  it('renders Owner sidebar with Pulse flat layout', async () => {
     signInAsMock(MOCK_EMAILS.owner);
 
     render(
@@ -37,13 +37,15 @@ describe('Foundation v2.1 Verification Suite (A1, A2, A3)', () => {
     );
 
     const nav = await screen.findByRole('navigation', { name: 'Điều hướng chính' });
-    expect(within(nav).getByText('Tổ chức')).toBeInTheDocument();
-    expect(within(nav).getByText('Năng lực')).toBeInTheDocument();
-    expect(within(nav).getByText('Đào tạo')).toBeInTheDocument();
-    expect(within(nav).getByText('Đánh giá & Minh chứng')).toBeInTheDocument();
-    expect(within(nav).getByText('Báo cáo')).toBeInTheDocument();
-    expect(within(nav).getByText('Gói dịch vụ')).toBeInTheDocument();
-    expect(within(nav).getByText('Cài đặt')).toBeInTheDocument();
+    expect(within(nav).getByText('Tổng quan')).toBeInTheDocument();
+    expect(within(nav).getByText('Khung năng lực')).toBeInTheDocument();
+    expect(within(nav).getByText('Nhân sự')).toBeInTheDocument();
+    expect(within(nav).getByText('Năng lực Khoảng cách')).toBeInTheDocument();
+    expect(within(nav).getByText('Khóa học')).toBeInTheDocument();
+    expect(within(nav).getByText('Báo cáo chu kỳ')).toBeInTheDocument();
+    expect(within(nav).getByText('Khung năng lực chung')).toBeInTheDocument();
+    expect(within(nav).getByText('Chứng nhận')).toBeInTheDocument();
+    expect(within(nav).getByText('Hoạt động')).toBeInTheDocument();
   });
 
   it('renders Manager sidebar with team scope and practical evaluation', async () => {
