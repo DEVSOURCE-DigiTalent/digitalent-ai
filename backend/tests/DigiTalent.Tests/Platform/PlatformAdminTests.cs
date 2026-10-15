@@ -260,6 +260,48 @@ public class PlatformAdminTests
     }
 
     [Fact]
+    public async Task OrganizationsShowThePlan_TheCoursesInUseByLevel_AndWhoTakesPart()
+    {
+        await using var context = await CreateSeededContextAsync();
+        var organization = await AddOrganizationAsync(context);
+        context.Subscriptions.Add(new Subscription
+        {
+            OrganizationId = organization.Id, PlanCode = "BUSINESS", PlanName = "Gói Doanh nghiệp", Status = "ACTIVE", Cycle = "year", SeatLimit = 50,
+            RenewsAt = DateTimeOffset.UtcNow.AddMonths(6),
+        });
+        var department = new Department { OrganizationId = organization.Id, Code = "OPS", Name = "Vận hành" };
+        context.Departments.Add(department);
+        var employees = Enumerable.Range(1, 3)
+            .Select(i => new Employee { OrganizationId = organization.Id, DepartmentId = department.Id, EmployeeCode = $"E{i}", FullName = $"Nhân viên {i}" })
+            .ToList();
+        context.Employees.AddRange(employees);
+        var courses = new[] { "A1-F", "A2-F", "A1-I", "AI-OFFICE" }
+            .ToDictionary(code => code, code => new Course { OrganizationId = organization.Id, Code = code, Title = code, Status = "PUBLISHED" });
+        context.Courses.AddRange(courses.Values);
+        void Enroll(Employee employee, string code, string status) =>
+            context.Enrollments.Add(new Enrollment { EmployeeId = employee.Id, CourseId = courses[code].Id, Status = status });
+        Enroll(employees[0], "A1-F", Statuses.Enrollment.Completed);
+        Enroll(employees[1], "A1-F", Statuses.Enrollment.InProgress);
+        Enroll(employees[1], "A2-F", Statuses.Enrollment.InProgress);
+        Enroll(employees[0], "A1-I", Statuses.Enrollment.NotStarted);
+        Enroll(employees[2], "A1-I", Statuses.Enrollment.Cancelled); // cancelled: not taking part
+        Enroll(employees[2], "AI-OFFICE", Statuses.Enrollment.InProgress); // not a platform course
+        await context.SaveChangesAsync();
+
+        var list = await new GetPlatformOrganizationsUseCase(context).ExecuteAsync(new GetPlatformOrganizationsUseCaseInput());
+        var item = list.Items.Single(o => o.Id == organization.Id);
+        item.PlanName.Should().Be("Gói Doanh nghiệp");
+        item.PlanCycle.Should().Be("year");
+        item.SeatLimit.Should().Be(50);
+        item.CoursesInUseByLevel.Should().Equal(2, 1, 0);
+        item.ParticipantCount.Should().Be(2);
+
+        var detail = await new GetPlatformOrganizationDetailUseCase(context).ExecuteAsync(new GetPlatformOrganizationDetailUseCaseInput { Id = organization.Id });
+        detail.CoursesInUse.Select(c => (c.CourseCode, c.Participants, c.Completed)).Should().Equal(("A1-F", 2, 1), ("A2-F", 1, 0), ("A1-I", 1, 0));
+        detail.CoursesInUse[0].LevelName.Should().Be("Cơ bản");
+    }
+
+    [Fact]
     public void PlatformAdminCanReadItsOwnNotifications()
     {
         RolePermissions.Defaults[Roles.PlatformAdmin].Should().Contain(new[] { Permissions.Notification.ReadOwn, Permissions.Notification.MarkRead });
