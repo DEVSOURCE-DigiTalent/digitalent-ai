@@ -8,7 +8,7 @@ interface OwnerProcessTrackProps {
 }
 
 const STEPS = [
-  { key: 'setup', label: 'Thiết lập', to: '/setup' },
+  { key: 'setup', label: 'Thiết lập', to: '/enterprise/setup' },
   { key: 'people', label: 'Nhân sự', to: '/enterprise/members' },
   { key: 'baseline', label: 'Đánh giá', to: '/enterprise/competency-profiles' },
   { key: 'gap', label: 'Khoảng trống & lộ trình', to: '/enterprise/skill-gap' },

@@ -14,12 +14,11 @@ describe('buildBreadcrumbs', () => {
     expect(crumbs[crumbs.length - 1].label).toBe('Tổng quan tổ chức');
   });
 
-  it('returns group + screen for a grouped item (Thành viên)', () => {
+  it('returns the screen title for Thành viên (flat sidebar, no group)', () => {
     const crumbs = buildBreadcrumbs('/enterprise/members', ENTERPRISE_SCREENS, OWNER_SIDEBAR);
-    expect(crumbs.length).toBe(2);
-    expect(crumbs[0].label).toBe('Tổ chức');
-    expect(crumbs[1].label).toBe('Thành viên');
-    expect(crumbs[1].href).toBe('/enterprise/members');
+    expect(crumbs.length).toBe(1);
+    expect(crumbs[0].label).toBe('Thành viên');
+    expect(crumbs[0].href).toBe('/enterprise/members');
   });
 
   it('matches dynamic route /enterprise/members/:id', () => {
@@ -29,11 +28,10 @@ describe('buildBreadcrumbs', () => {
     expect(lastCrumb.label).toBeTruthy();
   });
 
-  it('returns group + screen for Khoảng trống năng lực', () => {
+  it('returns screen title for Khoảng trống năng lực (flat sidebar)', () => {
     const crumbs = buildBreadcrumbs('/enterprise/skill-gap', ENTERPRISE_SCREENS, OWNER_SIDEBAR);
-    expect(crumbs.length).toBe(2);
-    expect(crumbs[0].label).toBe('Năng lực');
-    expect(crumbs[1].label).toBe('Khoảng trống năng lực');
+    expect(crumbs.length).toBe(1);
+    expect(crumbs[0].label).toBe('Khoảng trống năng lực');
   });
 
   it('returns correct breadcrumbs for departments path', () => {
