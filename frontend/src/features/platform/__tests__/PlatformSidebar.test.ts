@@ -1,75 +1,37 @@
 import { describe, it, expect } from 'vitest';
 import { PLATFORM_SIDEBAR } from '@/lib/sidebars/platform';
 import { PLATFORM_SCREENS } from '@/lib/screens/platform';
+import { PLATFORM_NAV } from '../platform-nav';
 
-describe('PLATFORM_SIDEBAR Configuration', () => {
-  const registeredScreenIds = new Set([
-    ...PLATFORM_SCREENS.map((s) => s.id),
-    ...PLATFORM_SCREENS.flatMap((s) => s.aliases || []),
-  ]);
-
-  it('declares 5 main sections according to spec v2.1 section 5', () => {
-    expect(PLATFORM_SIDEBAR).toHaveLength(5);
-    const labels = PLATFORM_SIDEBAR.map((sec) => sec.label);
-    expect(labels).toEqual([
+describe('Platform Admin navigation (Pulse)', () => {
+  it('lists the seven console areas in the Pulse order', () => {
+    expect(PLATFORM_SIDEBAR.map((s) => s.label)).toEqual([
       'Tổng quan',
-      'Doanh nghiệp',
-      'Nội dung nền tảng',
-      'Thương mại',
-      'Hệ thống',
+      'Khung chuẩn',
+      'Chương trình học',
+      'Tổ chức',
+      'Người dùng',
+      'Đơn hàng và giá',
+      'Nhật ký kiểm tra',
     ]);
+    expect(PLATFORM_NAV.map((n) => n.label)).toEqual(PLATFORM_SIDEBAR.map((s) => s.label));
   });
 
-  it('has valid screen IDs for all single-item sections and sub-items', () => {
+  it('points every sidebar entry and console link at a real screen', () => {
+    const ids = new Set(PLATFORM_SCREENS.map((s) => s.id));
+    const paths = new Set(PLATFORM_SCREENS.map((s) => s.path));
     for (const section of PLATFORM_SIDEBAR) {
-      if (section.screenId) {
-        expect(registeredScreenIds.has(section.screenId)).toBe(true);
-      }
-      if (section.items) {
-        for (const item of section.items) {
-          expect(registeredScreenIds.has(item.screenId)).toBe(true);
-        }
-      }
+      expect(ids.has(section.screenId!)).toBe(true);
+    }
+    for (const link of PLATFORM_NAV) {
+      expect(paths.has(link.to)).toBe(true);
     }
   });
 
-  it('has icons for all sections and items', () => {
-    for (const section of PLATFORM_SIDEBAR) {
-      expect(section.icon).toBeDefined();
-      if (section.items) {
-        for (const item of section.items) {
-          expect(item.icon).toBeDefined();
-        }
-      }
+  it('guards every console screen with a platform permission', () => {
+    for (const screen of PLATFORM_SCREENS.filter((s) => s.id.startsWith('PA-'))) {
+      expect(screen.permission, screen.id).toBeTruthy();
+      expect(screen.roles).toEqual(['PLATFORM_ADMIN']);
     }
-  });
-
-  it('verifies enterprise section contains Doanh nghiệp and Người dùng', () => {
-    const orgSection = PLATFORM_SIDEBAR.find((sec) => sec.label === 'Doanh nghiệp');
-    expect(orgSection?.items).toBeDefined();
-    const itemIds = orgSection?.items?.map((i) => i.screenId);
-    expect(itemIds).toContain('PA-02');
-    expect(itemIds).toContain('PA-04');
-  });
-
-  it('verifies platform content section contains TT02 framework, standard curriculum, assessment bank, and reference positions', () => {
-    const contentSection = PLATFORM_SIDEBAR.find((sec) => sec.label === 'Nội dung nền tảng');
-    expect(contentSection?.items).toBeDefined();
-    const itemIds = contentSection?.items?.map((i) => i.screenId);
-    expect(itemIds).toEqual(['PA-06', 'PA-08', 'PA-11', 'PA-14']);
-  });
-
-  it('verifies commerce section contains plans and subscriptions', () => {
-    const commerceSection = PLATFORM_SIDEBAR.find((sec) => sec.label === 'Thương mại');
-    expect(commerceSection?.items).toBeDefined();
-    const itemIds = commerceSection?.items?.map((i) => i.screenId);
-    expect(itemIds).toEqual(['PA-16', 'PA-18']);
-  });
-
-  it('verifies system section contains audit log and settings', () => {
-    const systemSection = PLATFORM_SIDEBAR.find((sec) => sec.label === 'Hệ thống');
-    expect(systemSection?.items).toBeDefined();
-    const itemIds = systemSection?.items?.map((i) => i.screenId);
-    expect(itemIds).toEqual(['PA-20', 'PA-21']);
   });
 });

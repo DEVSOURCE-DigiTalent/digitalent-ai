@@ -1,122 +1,76 @@
-import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter, useRoutes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { routes } from '@/app/router';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { useSidebarState } from '@/hooks/use-sidebar-state';
 import { MOCK_EMAILS, signInAsMock } from '@/test/session';
-import apiClient from '@/services/api-client';
-import { mockAdapter } from '@/services/mock/server/mock-adapter';
+
+const service = vi.hoisted(() => ({
+  getOverview: vi.fn(),
+  getFramework: vi.fn(),
+  getOrganizations: vi.fn(),
+  getAuditLogs: vi.fn(),
+}));
+
+vi.mock('@/services/platform-admin.service', () => ({ platformAdminService: service }));
 
 function App() {
   return useRoutes(routes);
 }
 
-describe('Platform Admin Sidebar Navigation', () => {
-  let queryClient: QueryClient;
+const emptyPage = { items: [], pageIndex: 1, pageSize: 20, totalItems: 0, totalPages: 0 };
 
-  beforeAll(() => {
-    apiClient.defaults.adapter = mockAdapter;
-  });
+describe('Platform Admin sidebar navigation (Pulse)', () => {
+  let queryClient: QueryClient;
 
   beforeEach(() => {
     localStorage.clear();
     useCurrentUser.getState().clearUser();
     signInAsMock(MOCK_EMAILS.platform);
-    useSidebarState.setState({ state: 'open', isMobileOpen: false });
-    queryClient = new QueryClient({
-      defaultOptions: {
-        queries: {
-          retry: false,
-          refetchOnWindowFocus: false,
-        },
-      },
-    });
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } } });
     vi.clearAllMocks();
+    service.getOverview.mockReturnValue(new Promise(() => {})); // stays loading: only the shell matters here
+    service.getOrganizations.mockResolvedValue(emptyPage);
+    service.getAuditLogs.mockResolvedValue(emptyPage);
+    service.getFramework.mockResolvedValue({ currentVersion: 1, hasDraft: false, levelCount: 3, domains: [], releases: [] });
   });
 
-  const renderWithRouter = (initialPath: string = '/platform/dashboard') => {
-    return render(
+  const renderAt = (path = '/platform/dashboard') =>
+    render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={[initialPath]}>
+        <MemoryRouter initialEntries={[path]}>
           <App />
         </MemoryRouter>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
-  };
 
-  it('renders sidebar with valid platform routes and no "#" fallback links', async () => {
-    renderWithRouter('/platform/dashboard');
+  const sidebar = () => screen.getByRole('complementary', { name: 'Điều hướng quản trị nền tảng' });
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Bảng điều khiển nền tảng' })).toBeInTheDocument();
+  it('links every sidebar item to a /platform route and marks the current page', async () => {
+    renderAt();
+    await screen.findByRole('heading', { level: 1, name: 'Duy trì chuẩn chung và hỗ trợ khách hàng.' });
 
-    const nav = screen.getByRole('navigation', { name: 'Điều hướng chính' });
-    expect(nav).toBeInTheDocument();
-
-    // Verify all sidebar links have non-# hrefs
-    const links = nav.querySelectorAll('a');
-    expect(links.length).toBeGreaterThan(0);
-    links.forEach((link) => {
-      const href = link.getAttribute('href');
-      expect(href).not.toBe('#');
-      expect(href).toMatch(/^\/platform\//);
-    });
-
-    // Check specific navigation items
-    const dashboardLink = screen.getByRole('link', { name: 'Tổng quan' });
-    expect(dashboardLink).toHaveAttribute('href', '/platform/dashboard');
-
-    const orgsLink = screen.getByRole('link', { name: 'Doanh nghiệp' });
-    expect(orgsLink).toHaveAttribute('href', '/platform/organizations');
-
-    const usersLink = screen.getByRole('link', { name: 'Người dùng' });
-    expect(usersLink).toHaveAttribute('href', '/platform/users');
-
-    const frameworkLink = screen.getByRole('link', { name: 'Khung năng lực TT02' });
-    expect(frameworkLink).toHaveAttribute('href', '/platform/framework');
-
-    const plansLink = screen.getByRole('link', { name: 'Gói dịch vụ' });
-    expect(plansLink).toHaveAttribute('href', '/platform/plans');
+    const links = within(sidebar()).getAllByRole('link');
+    expect(links).toHaveLength(7);
+    links.forEach((link) => expect(link.getAttribute('href')).toMatch(/^\/platform\//));
+    expect(within(sidebar()).getByRole('link', { name: /Tổng quan/ })).toHaveClass('active');
   });
 
-  it('navigates to Organizations page when clicking Doanh nghiệp link in sidebar', async () => {
-    renderWithRouter('/platform/dashboard');
+  it('opens Tổ chức from the sidebar', async () => {
+    renderAt();
+    fireEvent.click(within(sidebar()).getByRole('link', { name: /Tổ chức/ }));
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Bảng điều khiển nền tảng' })).toBeInTheDocument();
-
-    const orgsLink = screen.getByRole('link', { name: 'Doanh nghiệp' });
-    fireEvent.click(orgsLink);
-
-    expect(await screen.findByRole('heading', { level: 1, name: 'Danh sách tổ chức khách hàng' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Tìm doanh nghiệp và hỗ trợ với lý do rõ ràng.' })).toBeInTheDocument();
+    expect(await screen.findByText('Không có tổ chức nào khớp bộ lọc.')).toBeInTheDocument();
   });
 
-  it('navigates to Framework page when clicking Khung năng lực TT02 link in sidebar', async () => {
-    renderWithRouter('/platform/dashboard');
+  it('opens Khung chuẩn and Nhật ký kiểm tra from the sidebar', async () => {
+    renderAt();
+    fireEvent.click(within(sidebar()).getByRole('link', { name: /Khung chuẩn/ }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Một chuẩn đã công bố cho mọi doanh nghiệp.' })).toBeInTheDocument();
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Bảng điều khiển nền tảng' })).toBeInTheDocument();
-
-    const frameworkLink = screen.getByRole('link', { name: 'Khung năng lực TT02' });
-    fireEvent.click(frameworkLink);
-
-    expect(await screen.findByRole('heading', { level: 1, name: 'Quản lý khung năng lực số Thông tư 02/2025' })).toBeInTheDocument();
-  });
-
-  it('navigates to Plans page when clicking Gói dịch vụ link in sidebar', async () => {
-    renderWithRouter('/platform/dashboard');
-
-    expect(await screen.findByRole('heading', { level: 1, name: 'Bảng điều khiển nền tảng' })).toBeInTheDocument();
-
-    const plansLink = screen.getByRole('link', { name: 'Gói dịch vụ' });
-    fireEvent.click(plansLink);
-
-    expect(await screen.findByRole('heading', { level: 1, name: 'Gói dịch vụ & Quyền tính năng' })).toBeInTheDocument();
-  });
-
-  it('displays DigiTalent Platform and Quản trị hệ thống in the sidebar org block', async () => {
-    renderWithRouter('/platform/dashboard');
-
-    expect(await screen.findByText('DigiTalent Platform')).toBeInTheDocument();
-    expect(screen.getByText('Quản trị hệ thống')).toBeInTheDocument();
+    fireEvent.click(within(sidebar()).getByRole('link', { name: /Nhật ký kiểm tra/ }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Mỗi thao tác nhạy cảm đều có lý do.' })).toBeInTheDocument();
   });
 });

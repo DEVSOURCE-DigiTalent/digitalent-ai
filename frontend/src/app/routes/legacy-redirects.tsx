@@ -82,6 +82,6 @@ export const legacyRedirectRoutes: RouteObject[] = [
 
   // ── Platform legacy paths ──
   { path: '/platform/courses', element: <RedirectWithQuery to="/platform/curriculum" /> },
-  { path: '/platform/assessment-bank', element: <RedirectWithQuery to="/platform/questions" /> },
+  { path: '/platform/assessment-bank', element: <RedirectWithQuery to="/platform/curriculum" /> },
 ];
 
