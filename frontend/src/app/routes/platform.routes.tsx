@@ -8,7 +8,8 @@ import { NotificationsPage } from '../../features/notifications/pages/Notificati
 import { PulseAdminLayout } from '../../features/platform/PulseAdminLayout';
 import { PlatformOverviewPage } from '../../features/platform/console/PlatformOverviewPage';
 import { PlatformFrameworkPage } from '../../features/platform/console/PlatformFrameworkPage';
-import { PlatformCurriculumPage } from '../../features/platform/console/PlatformCurriculumPage';
+import { PlatformVersionsPage } from '../../features/platform/console/PlatformVersionsPage';
+import { PlatformCourseBuilderPage } from '../../features/platform/console/PlatformCourseBuilderPage';
 import { PlatformOrganizationsPage } from '../../features/platform/console/PlatformOrganizationsPage';
 import { PlatformOrganizationDetailPage } from '../../features/platform/console/PlatformOrganizationDetailPage';
 import { PlatformUsersPage } from '../../features/platform/console/PlatformUsersPage';
@@ -18,7 +19,7 @@ import { PlatformAuditLogPage } from '../../features/platform/console/PlatformAu
 import { PlatformProfilePage } from '../../features/platform/console/PlatformProfilePage';
 
 /**
- * Built pages by screen ID — Platform Admin console (Pulse redesign, PA-01..10), its profile (SHR-01 = mock `#/profile`
+ * Built pages by screen ID — Platform Admin console (Pulse redesign PA-01..10, Platform Admin v2 PA-12), its profile (SHR-01 = mock `#/profile`
  * of the Platform Admin) + shared account screens.
  */
 const PLATFORM_PAGES: PageRegistry = {
@@ -28,8 +29,9 @@ const PLATFORM_PAGES: PageRegistry = {
 
   'PA-01': PlatformOverviewPage,
   'PA-02': PlatformFrameworkPage,
-  'PA-03': PlatformCurriculumPage,
-  'PA-04': PlatformCurriculumPage,
+  'PA-03': PlatformVersionsPage,
+  'PA-12': PlatformVersionsPage,
+  'PA-04': PlatformCourseBuilderPage,
   'PA-05': PlatformOrganizationsPage,
   'PA-06': PlatformOrganizationDetailPage,
   'PA-07': PlatformUsersPage,
@@ -40,15 +42,20 @@ const PLATFORM_PAGES: PageRegistry = {
 
 /** Paths of the previous platform portal, kept as redirects so old links still land somewhere useful. */
 const RETIRED_PATHS: [string, string][] = [
-  ['courses', '/platform/curriculum'],
-  ['courses/:id', '/platform/curriculum'],
-  ['courses/:id/edit', '/platform/curriculum'],
-  ['framework/:id', '/platform/framework'],
-  ['questions', '/platform/curriculum'],
-  ['questions/:id', '/platform/curriculum'],
-  ['assessment-templates', '/platform/curriculum'],
-  ['positions', '/platform/framework'],
-  ['positions/:id/requirements', '/platform/framework'],
+  // Before catalog versions (Platform Admin v2): one framework page and a per-course curriculum editor
+  ['framework', '/platform/frameworks'],
+  ['frameworks/:frameworkId', '/platform/frameworks'],
+  ['framework/:id', '/platform/frameworks'],
+  ['curriculum', '/platform/versions'],
+  ['curriculum/:code', '/platform/versions'],
+  ['courses', '/platform/versions'],
+  ['courses/:id', '/platform/versions'],
+  ['courses/:id/edit', '/platform/versions'],
+  ['questions', '/platform/versions'],
+  ['questions/:id', '/platform/versions'],
+  ['assessment-templates', '/platform/versions'],
+  ['positions', '/platform/frameworks'],
+  ['positions/:id/requirements', '/platform/frameworks'],
   ['plans', '/platform/commerce'],
   ['plans/:code', '/platform/commerce'],
   ['subscriptions', '/platform/commerce'],

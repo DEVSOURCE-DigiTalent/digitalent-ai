@@ -8,12 +8,14 @@ import { MOCK_EMAILS, signInAsMock } from '@/test/session';
 
 const service = vi.hoisted(() => ({
   getOverview: vi.fn(),
-  getFramework: vi.fn(),
   getOrganizations: vi.fn(),
   getAuditLogs: vi.fn(),
 }));
 
+const catalog = vi.hoisted(() => ({ getFrameworks: vi.fn() }));
+
 vi.mock('@/services/platform-admin.service', () => ({ platformAdminService: service }));
+vi.mock('@/services/platform-catalog.service', () => ({ platformCatalogService: catalog, assetUrl: () => '' }));
 
 function App() {
   return useRoutes(routes);
@@ -33,7 +35,7 @@ describe('Platform Admin sidebar navigation (Pulse)', () => {
     service.getOverview.mockReturnValue(new Promise(() => {})); // stays loading: only the shell matters here
     service.getOrganizations.mockResolvedValue(emptyPage);
     service.getAuditLogs.mockResolvedValue(emptyPage);
-    service.getFramework.mockResolvedValue({ currentVersion: 1, hasDraft: false, levelCount: 3, domains: [], releases: [] });
+    catalog.getFrameworks.mockResolvedValue({ items: [], currentCatalogVersionNo: 1, draftCatalogVersionNo: null });
   });
 
   const renderAt = (path = '/platform/dashboard') =>
@@ -49,7 +51,7 @@ describe('Platform Admin sidebar navigation (Pulse)', () => {
 
   it('links every sidebar item to a /platform route and marks the current page', async () => {
     renderAt();
-    await screen.findByRole('heading', { level: 1, name: 'Duy trì chuẩn chung và hỗ trợ khách hàng.' });
+    await screen.findByRole('heading', { level: 1, name: 'Toàn cảnh nền tảng hôm nay.' });
 
     const links = within(sidebar()).getAllByRole('link');
     expect(links).toHaveLength(7);
@@ -61,14 +63,14 @@ describe('Platform Admin sidebar navigation (Pulse)', () => {
     renderAt();
     fireEvent.click(within(sidebar()).getByRole('link', { name: /Tổ chức/ }));
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Tìm doanh nghiệp và hỗ trợ với lý do rõ ràng.' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Doanh nghiệp đang dùng nền tảng.' })).toBeInTheDocument();
     expect(await screen.findByText('Không có tổ chức nào khớp bộ lọc.')).toBeInTheDocument();
   });
 
   it('opens Khung chuẩn and Nhật ký kiểm tra from the sidebar', async () => {
     renderAt();
     fireEvent.click(within(sidebar()).getByRole('link', { name: /Khung chuẩn/ }));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Một chuẩn đã công bố cho mọi doanh nghiệp.' })).toBeInTheDocument();
+    expect(await screen.findByText('Chưa có khung chuẩn.')).toBeInTheDocument();
 
     fireEvent.click(within(sidebar()).getByRole('link', { name: /Nhật ký kiểm tra/ }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Mỗi thao tác nhạy cảm đều có lý do.' })).toBeInTheDocument();

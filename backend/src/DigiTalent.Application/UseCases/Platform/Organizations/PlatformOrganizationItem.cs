@@ -21,4 +21,17 @@ public class PlatformOrganizationItem
     public long Revenue { get; set; }
     public bool SetupCompleted { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+
+    /// <summary>The organization's subscription (latest), null when it has none.</summary>
+    public string? PlanCode { get; set; }
+    public string? PlanName { get; set; }
+    public string? PlanStatus { get; set; }
+    public string? PlanCycle { get; set; }
+    public int? SeatLimit { get; set; }
+    public DateTimeOffset? PlanRenewsAt { get; set; }
+
+    /// <summary>Platform courses the organization's employees are enrolled in, as [Cơ bản, Trung cấp, Nâng cao].</summary>
+    public int[] CoursesInUseByLevel { get; set; } = new int[3];
+    /// <summary>Employees with at least one (not cancelled) enrollment in a platform course.</summary>
+    public int ParticipantCount { get; set; }
 }

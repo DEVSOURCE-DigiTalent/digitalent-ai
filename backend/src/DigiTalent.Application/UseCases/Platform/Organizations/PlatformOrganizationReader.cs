@@ -40,12 +40,18 @@ public static class PlatformOrganizationReader
             .GroupBy(o => new { o.OrganizationId, o.Kind })
             .Select(g => new { g.Key.OrganizationId, g.Key.Kind, Seats = g.Sum(o => o.Seats), Amount = g.Sum(o => o.TotalAmount) })
             .ToListAsync();
+        var subscriptions = (await context.Subscriptions.AsNoTracking().ToListAsync())
+            .GroupBy(s => s.OrganizationId)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(s => s.CreatedAt).First());
+        var usage = await ReadCourseUsageAsync(context, null);
 
         return organizations.Select(o =>
         {
             var members = userRoles.Where(u => u.OrganizationId == o.Id).ToList();
             var owner = members.Where(u => u.RoleCode == Roles.Owner).OrderBy(u => u.CreatedAt).FirstOrDefault();
             var purchased = seatTotals.Where(s => s.OrganizationId == o.Id && s.Kind == PlatformCatalog.SeatOrderKind.Purchase).ToList();
+            var subscription = subscriptions.GetValueOrDefault(o.Id);
+            var used = usage.Where(u => u.OrganizationId == o.Id).ToList();
             return new PlatformOrganizationItem
             {
                 Id = o.Id,
@@ -64,8 +70,39 @@ public static class PlatformOrganizationReader
                 Revenue = purchased.Sum(s => s.Amount),
                 SetupCompleted = o.SetupCompletedAt != null,
                 CreatedAt = o.CreatedAt,
+                PlanCode = subscription?.PlanCode,
+                PlanName = subscription?.PlanName,
+                PlanStatus = subscription?.Status,
+                PlanCycle = subscription?.Cycle,
+                SeatLimit = subscription?.SeatLimit,
+                PlanRenewsAt = subscription?.RenewsAt,
+                CoursesInUseByLevel = Enumerable.Range(PlatformCatalog.MinLevel, PlatformCatalog.MaxLevel)
+                    .Select(level => used.Where(u => u.Level == level).Select(u => u.CourseCode).Distinct().Count())
+                    .ToArray(),
+                ParticipantCount = used.Select(u => u.EmployeeId).Distinct().Count(),
             };
         }).ToList();
+    }
+
+    private sealed record CourseUsageRow(Guid OrganizationId, Guid EmployeeId, string CourseCode, string CourseTitle, int Level, string Status);
+
+    /// <summary>
+    /// Enrollments of employees in platform courses (matched by course code; cancelled ones and archived employees
+    /// left out), for one organization or all of them.
+    /// </summary>
+    private static async Task<List<CourseUsageRow>> ReadCourseUsageAsync(IApplicationDbContext context, Guid? organizationId)
+    {
+        var rows = await (
+                from enrollment in context.Enrollments.AsNoTracking()
+                join employee in context.Employees on enrollment.EmployeeId equals employee.Id
+                join course in context.Courses on enrollment.CourseId equals course.Id
+                join platformCourse in context.PlatformCourses on course.Code equals platformCourse.Code
+                where enrollment.Status != Statuses.Enrollment.Cancelled
+                      && employee.Status != Statuses.Employee.Archived
+                      && (organizationId == null || employee.OrganizationId == organizationId)
+                select new { employee.OrganizationId, EmployeeId = employee.Id, platformCourse.Code, platformCourse.Title, platformCourse.Level, enrollment.Status })
+            .ToListAsync();
+        return rows.Select(r => new CourseUsageRow(r.OrganizationId, r.EmployeeId, r.Code, r.Title, r.Level, r.Status)).ToList();
     }
 
     public static async Task<PlatformOrganizationDetailOutput> ReadDetailAsync(IApplicationDbContext context, Guid organizationId)
@@ -141,6 +178,20 @@ public static class PlatformOrganizationReader
             .Take(50)
             .ToListAsync();
 
+        var coursesInUse = (await ReadCourseUsageAsync(context, organizationId))
+            .GroupBy(u => u.CourseCode)
+            .Select(g => new PlatformOrganizationCourseUsageItem
+            {
+                CourseCode = g.Key,
+                CourseTitle = g.First().CourseTitle,
+                Level = g.First().Level,
+                LevelName = PlatformCatalog.LevelName((short)g.First().Level),
+                Participants = g.Select(u => u.EmployeeId).Distinct().Count(),
+                Completed = g.Where(u => u.Status == Statuses.Enrollment.Completed).Select(u => u.EmployeeId).Distinct().Count(),
+            })
+            .OrderBy(c => c.Level).ThenBy(c => c.CourseCode)
+            .ToList();
+
         return new PlatformOrganizationDetailOutput
         {
             Organization = organization,
@@ -154,6 +205,7 @@ public static class PlatformOrganizationReader
             People = people,
             Seats = seats,
             Orders = orders,
+            CoursesInUse = coursesInUse,
         };
     }
 }

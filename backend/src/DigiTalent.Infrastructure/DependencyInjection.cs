@@ -50,6 +50,10 @@ public static class DependencyInjection
         services.AddSingleton(fileStorageSettings);
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
+        // Platform course builder: rich text sanitizer and signed links to uploaded media
+        services.AddSingleton<IHtmlContentSanitizer, DigiTalent.Infrastructure.Content.HtmlContentSanitizer>();
+        services.AddSingleton<IPlatformAssetUrlSigner, DigiTalent.Infrastructure.Content.PlatformAssetUrlSigner>();
+
         // Audit Logging
         services.AddScoped<IAuditService, AuditService>();
 

@@ -3,8 +3,9 @@ using DigiTalent.Domain.Common;
 namespace DigiTalent.Domain.Entities;
 
 /// <summary>
-/// Table platform_courses: one of the 18 standard courses (domain x level). The published fields are what
-/// organizations see; the Draft* fields hold unpublished edits (all null = no pending draft).
+/// Table platform_courses: the stable identity of a standard course (its code) and a mirror of the course as it
+/// is in the CURRENT catalog version (domain, level, title, price…). VersionNo = the catalog version in use.
+/// The mirror is updated only when a catalog version is published; drafts live in platform_catalog_courses.
 /// </summary>
 public class PlatformCourse : BaseEntity
 {
@@ -16,53 +17,9 @@ public class PlatformCourse : BaseEntity
     public string Outcome { get; set; } = string.Empty;
     public long PricePerSeat { get; set; }
     public string SalesStatus { get; set; } = string.Empty;
-    public string? DraftTitle { get; set; }
-    public string? DraftOutcome { get; set; }
-    public long? DraftPricePerSeat { get; set; }
-    public string? DraftSalesStatus { get; set; }
     public DateTimeOffset? PublishedAt { get; set; }
 
     public PlatformFrameworkDomain? Domain { get; set; }
-
-    public bool HasDraft => DraftTitle != null || DraftOutcome != null || DraftPricePerSeat != null || DraftSalesStatus != null;
-
-    public void ClearDraft()
-    {
-        DraftTitle = null;
-        DraftOutcome = null;
-        DraftPricePerSeat = null;
-        DraftSalesStatus = null;
-    }
-}
-
-/// <summary>
-/// Table platform_course_releases: the published fields of a course at each version, so learners and
-/// orders keep a traceable course reference.
-/// </summary>
-public class PlatformCourseRelease : BaseEntity
-{
-    public Guid CourseId { get; set; }
-    public int VersionNo { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string Outcome { get; set; } = string.Empty;
-    public long PricePerSeat { get; set; }
-    public string SalesStatus { get; set; } = string.Empty;
-    public Guid? PublishedByUserId { get; set; }
-    public DateTimeOffset PublishedAt { get; set; }
-}
-
-/// <summary>
-/// Table platform_course_questions: question bank of a standard course. New questions are DRAFT and are
-/// published together with the next course release.
-/// </summary>
-public class PlatformCourseQuestion : BaseEntity
-{
-    public Guid CourseId { get; set; }
-    public string QuestionText { get; set; } = string.Empty;
-    public string CorrectAnswer { get; set; } = string.Empty;
-    public string Explanation { get; set; } = string.Empty;
-    public string Status { get; set; } = string.Empty;
-    public Guid? CreatedByUserId { get; set; }
 }
 
 /// <summary>

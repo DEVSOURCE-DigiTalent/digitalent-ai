@@ -4,11 +4,28 @@ import { toast } from 'sonner';
 import { useOrganizationAction, usePlatformCourses, usePlatformOrganization } from '@/hooks/use-platform-admin';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { Box, Footer, Kpi, ListItem, LoadError, Loading, PageHead, Pill, ReasonField } from '../components/pulse-ui';
-import { ORDER_KIND, ORG_STATUS, ROLE_LABELS, STAGE_LABELS, USER_STATUS, errorMessage, formatDateTime, formatMoney, isReasonValid } from '../components/pulse-format';
+import {
+  LEVEL_NAMES,
+  ORDER_KIND,
+  ORG_STATUS,
+  PLAN_CYCLE,
+  PLAN_STATUS,
+  ROLE_LABELS,
+  STAGE_LABELS,
+  USER_STATUS,
+  errorMessage,
+  formatDate,
+  formatDateTime,
+  formatMoney,
+  isReasonValid,
+} from '../components/pulse-format';
 
 type SupportAction = 'grant' | 'suspend' | 'restore';
 
-/** PA-06 · Toàn cảnh tổ chức (mock `#/admin/customers`): KPIs, one support form with a required reason, people. */
+/**
+ * PA-06 · Toàn cảnh tổ chức (mock `#/admin/customers`): plan, KPIs, the courses employees learn by level, one support
+ * form with a required reason, people, seats and orders.
+ */
 export function PlatformOrganizationDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = usePlatformOrganization(id);
@@ -70,11 +87,62 @@ export function PlatformOrganizationDetailPage() {
         description="Cấp suất có phí hoặc tạm ngưng truy cập sẽ tạo mục nhật ký."
         actions={<Pill tone={statusPill.tone}>{statusPill.label}</Pill>}
       />
-      <div className="grid-3">
-        <Kpi label="Tổ chức" value={o.name} hint={`Chủ doanh nghiệp: ${o.ownerEmail ?? 'chưa có'}`} small />
-        <Kpi label="Nhân sự" value={o.employeeCount} hint={`Trên ${o.departmentCount} phòng ban · ${o.managerCount} quản lý`} />
+      <div className="grid-4">
+        <Kpi label="Tổ chức" value={o.name} hint={`Chủ doanh nghiệp: ${o.ownerEmail ?? 'chưa có'} · tạo ${formatDate(o.createdAt)}`} small />
+        <Kpi
+          label="Gói đang dùng"
+          value={o.planName ?? 'Chưa có gói'}
+          hint={[o.planStatus ? PLAN_STATUS[o.planStatus] ?? o.planStatus : null, o.planCycle ? PLAN_CYCLE[o.planCycle] ?? o.planCycle : null, o.seatLimit ? `tối đa ${o.seatLimit} nhân viên` : null, o.planRenewsAt ? `gia hạn ${formatDate(o.planRenewsAt)}` : null]
+            .filter(Boolean)
+            .join(' · ')}
+          small
+        />
+        <Kpi label="Nhân viên tham gia" value={`${o.participantCount} / ${o.employeeCount}`} hint={`Trên ${o.departmentCount} phòng ban · ${o.managerCount} quản lý`} />
         <Kpi label="Suất có phí" value={o.seatsPurchased + o.seatsGranted} hint={`${o.seatsPurchased} đã mua / ${o.seatsGranted} quản trị cấp`} />
       </div>
+      <Box className="pa-gap-top">
+        <div className="pa-row-between">
+          <span className="mini-label">Khóa đang dùng theo cấp</span>
+          <div className="pa-chips">
+            {o.coursesInUseByLevel.map((n, i) => (
+              <span key={i} className={`pa-level pa-level-${i + 1}`}>
+                {LEVEL_NAMES[i + 1]} · {n}
+              </span>
+            ))}
+          </div>
+        </div>
+        {data.coursesInUse.length === 0 ? (
+          <p className="pa-empty">Nhân viên chưa ghi danh khóa nào.</p>
+        ) : (
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Khóa học</th>
+                  <th>Cấp</th>
+                  <th className="num">Nhân viên tham gia</th>
+                  <th className="num">Đã hoàn thành</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.coursesInUse.map((c) => (
+                  <tr key={c.courseCode}>
+                    <td>
+                      <strong className="pa-cell-title">{c.courseTitle}</strong>
+                      <small className="pa-cell-sub">{c.courseCode}</small>
+                    </td>
+                    <td>
+                      <span className={`pa-level pa-level-${c.level}`}>{c.levelName}</span>
+                    </td>
+                    <td className="num">{c.participants}</td>
+                    <td className="num">{c.completed}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Box>
       {canManage && (
         <Box>
           <span className="mini-label">Thao tác hỗ trợ · Lý do bắt buộc</span>

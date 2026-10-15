@@ -81,7 +81,7 @@ export const legacyRedirectRoutes: RouteObject[] = [
   { path: '/enterprise/reviews/evidence/:id', element: <RedirectWithQuery to="/enterprise/reviews" /> },
 
   // ── Platform legacy paths ──
-  { path: '/platform/courses', element: <RedirectWithQuery to="/platform/curriculum" /> },
-  { path: '/platform/assessment-bank', element: <RedirectWithQuery to="/platform/curriculum" /> },
+  { path: '/platform/courses', element: <RedirectWithQuery to="/platform/versions" /> },
+  { path: '/platform/assessment-bank', element: <RedirectWithQuery to="/platform/versions" /> },
 ];
 

@@ -20,4 +20,11 @@ public class PlatformUserItem
     public DateTimeOffset? LockedUntil { get; set; }
     public DateTimeOffset? LastLoginAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+
+    /// <summary>Personal plan: IND_PLUS / IND_PRO, IND_FREE once the trial ended; null for organization accounts.</summary>
+    public string? PlanCode { get; set; }
+    /// <summary>ACTIVE (in the 7-day trial) or ENDED (trial over, now on the Free plan); null without a trial.</summary>
+    public string? TrialState { get; set; }
+    public DateTimeOffset? TrialStartedAt { get; set; }
+    public DateTimeOffset? TrialEndsAt { get; set; }
 }

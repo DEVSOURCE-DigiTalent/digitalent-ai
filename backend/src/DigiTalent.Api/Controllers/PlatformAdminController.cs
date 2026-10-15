@@ -2,7 +2,6 @@ using DigiTalent.Api.Authorization;
 using DigiTalent.Api.Common;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.UseCases.Platform.Courses;
-using DigiTalent.Application.UseCases.Platform.Framework;
 using DigiTalent.Application.UseCases.Platform.Organizations;
 using DigiTalent.Application.UseCases.Platform.Overview;
 using DigiTalent.Application.UseCases.Platform.Users;
@@ -29,43 +28,9 @@ public class PlatformAdminController : ControllerBase
         return Ok(ApiResponse<GetPlatformOverviewUseCaseOutput>.Ok(result));
     }
 
-    // ----- Framework ---------------------------------------------------------------------------
-
-    // GET api/v1/platform/framework
-    [HttpGet("framework")]
-    [HasPermission(Permissions.Platform.CatalogRead)]
-    public async Task<ActionResult<ApiResponse<PlatformFrameworkOutput>>> GetFramework(
-        [FromServices] IUseCase<GetPlatformFrameworkUseCaseInput, PlatformFrameworkOutput> useCase)
-    {
-        var result = await useCase.ExecuteAsync(new GetPlatformFrameworkUseCaseInput());
-        return Ok(ApiResponse<PlatformFrameworkOutput>.Ok(result));
-    }
-
-    // PUT api/v1/platform/framework/draft — body { domains: [{ code, description }] }
-    [HttpPut("framework/draft")]
-    [HasPermission(Permissions.Platform.CatalogManage)]
-    public async Task<ActionResult<ApiResponse<PlatformFrameworkOutput>>> SaveFrameworkDraft(
-        [FromBody] SavePlatformFrameworkDraftUseCaseInput input,
-        [FromServices] IUseCase<SavePlatformFrameworkDraftUseCaseInput, PlatformFrameworkOutput> useCase)
-    {
-        var result = await useCase.ExecuteAsync(input);
-        return Ok(ApiResponse<PlatformFrameworkOutput>.Ok(result, "Framework draft saved."));
-    }
-
-    // POST api/v1/platform/framework/publish — body { releaseNote? }
-    [HttpPost("framework/publish")]
-    [HasPermission(Permissions.Platform.CatalogManage)]
-    public async Task<ActionResult<ApiResponse<PlatformFrameworkOutput>>> PublishFramework(
-        [FromBody] PublishPlatformFrameworkUseCaseInput input,
-        [FromServices] IUseCase<PublishPlatformFrameworkUseCaseInput, PlatformFrameworkOutput> useCase)
-    {
-        var result = await useCase.ExecuteAsync(input);
-        return Ok(ApiResponse<PlatformFrameworkOutput>.Ok(result, "Framework published."));
-    }
-
     // ----- Courses -----------------------------------------------------------------------------
 
-    // GET api/v1/platform/courses
+    // GET api/v1/platform/courses — published courses with prices and seat totals (frameworks and versions: PlatformCatalogController)
     [HttpGet("courses")]
     [HasPermission(Permissions.Platform.CatalogRead)]
     public async Task<ActionResult<ApiResponse<GetPlatformCoursesUseCaseOutput>>> GetCourses(
@@ -73,54 +38,6 @@ public class PlatformAdminController : ControllerBase
     {
         var result = await useCase.ExecuteAsync(new GetPlatformCoursesUseCaseInput());
         return Ok(ApiResponse<GetPlatformCoursesUseCaseOutput>.Ok(result));
-    }
-
-    // GET api/v1/platform/courses/{code}
-    [HttpGet("courses/{code}")]
-    [HasPermission(Permissions.Platform.CatalogRead)]
-    public async Task<ActionResult<ApiResponse<PlatformCourseDetailOutput>>> GetCourse(
-        string code,
-        [FromServices] IUseCase<GetPlatformCourseDetailUseCaseInput, PlatformCourseDetailOutput> useCase)
-    {
-        var result = await useCase.ExecuteAsync(new GetPlatformCourseDetailUseCaseInput { Code = code });
-        return Ok(ApiResponse<PlatformCourseDetailOutput>.Ok(result));
-    }
-
-    // PUT api/v1/platform/courses/{code}/draft — body { title, outcome, pricePerSeat, salesStatus }
-    [HttpPut("courses/{code}/draft")]
-    [HasPermission(Permissions.Platform.CatalogManage)]
-    public async Task<ActionResult<ApiResponse<PlatformCourseDetailOutput>>> SaveCourseDraft(
-        string code,
-        [FromBody] SavePlatformCourseDraftUseCaseInput input,
-        [FromServices] IUseCase<SavePlatformCourseDraftUseCaseInput, PlatformCourseDetailOutput> useCase)
-    {
-        input.Code = code;
-        var result = await useCase.ExecuteAsync(input);
-        return Ok(ApiResponse<PlatformCourseDetailOutput>.Ok(result, "Course draft saved."));
-    }
-
-    // POST api/v1/platform/courses/{code}/publish
-    [HttpPost("courses/{code}/publish")]
-    [HasPermission(Permissions.Platform.CatalogManage)]
-    public async Task<ActionResult<ApiResponse<PlatformCourseDetailOutput>>> PublishCourse(
-        string code,
-        [FromServices] IUseCase<PublishPlatformCourseUseCaseInput, PlatformCourseDetailOutput> useCase)
-    {
-        var result = await useCase.ExecuteAsync(new PublishPlatformCourseUseCaseInput { Code = code });
-        return Ok(ApiResponse<PlatformCourseDetailOutput>.Ok(result, "Course published."));
-    }
-
-    // POST api/v1/platform/courses/{code}/questions — body { questionText, correctAnswer, explanation }
-    [HttpPost("courses/{code}/questions")]
-    [HasPermission(Permissions.Platform.CatalogManage)]
-    public async Task<ActionResult<ApiResponse<PlatformCourseDetailOutput>>> AddCourseQuestion(
-        string code,
-        [FromBody] AddPlatformCourseQuestionUseCaseInput input,
-        [FromServices] IUseCase<AddPlatformCourseQuestionUseCaseInput, PlatformCourseDetailOutput> useCase)
-    {
-        input.Code = code;
-        var result = await useCase.ExecuteAsync(input);
-        return Ok(ApiResponse<PlatformCourseDetailOutput>.Ok(result, "Question added to the draft."));
     }
 
     // ----- Organizations -----------------------------------------------------------------------
@@ -193,7 +110,7 @@ public class PlatformAdminController : ControllerBase
 
     // ----- Users -------------------------------------------------------------------------------
 
-    // GET api/v1/platform/users?search=&role=&status=&organizationId=&pageIndex=&pageSize=
+    // GET api/v1/platform/users?search=&role=&status=&trial=&organizationId=&pageIndex=&pageSize=
     [HttpGet("users")]
     [HasPermission(Permissions.Platform.UserRead)]
     public async Task<ActionResult<ApiResponse<GetPlatformUsersUseCaseOutput>>> GetUsers(

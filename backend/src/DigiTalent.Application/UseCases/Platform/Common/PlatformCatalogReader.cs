@@ -8,20 +8,29 @@ namespace DigiTalent.Application.UseCases.Platform.Common;
 public static class PlatformCatalogReader
 {
     /// <summary>
-    /// All 18 courses in domain then level order, with question counts and seat totals
-    /// (optionally limited to one organization's orders).
+    /// Published courses (those in the catalog version in use), by framework, domain then level, with content size,
+    /// draft price and seat totals (optionally limited to one organization's orders).
     /// </summary>
     public static async Task<List<PlatformCourseItem>> ReadCoursesAsync(IApplicationDbContext context, Guid? organizationId = null)
     {
-        var courses = await context.PlatformCourses.AsNoTracking()
-            .Include(c => c.Domain)
-            .OrderBy(c => c.Domain!.SortOrder).ThenBy(c => c.Level)
+        var courses = await (
+                from course in context.PlatformCourses.AsNoTracking()
+                join domain in context.PlatformFrameworkDomains on course.DomainId equals domain.Id
+                join framework in context.PlatformFrameworks on domain.FrameworkId equals framework.Id
+                where course.PublishedAt != null
+                orderby framework.SortOrder, domain.SortOrder, course.Level, course.Code
+                select new { Course = course, Domain = domain, Framework = framework })
             .ToListAsync();
 
-        var questionCounts = await context.PlatformCourseQuestions.AsNoTracking()
-            .GroupBy(q => new { q.CourseId, q.Status })
-            .Select(g => new { g.Key.CourseId, g.Key.Status, Count = g.Count() })
-            .ToListAsync();
+        var current = await context.PlatformCatalogVersions.AsNoTracking()
+            .Where(v => v.Status == Statuses.PlatformCatalogVersion.Current).Select(v => (Guid?)v.Id).FirstOrDefaultAsync();
+        var draft = await context.PlatformCatalogVersions.AsNoTracking()
+            .Where(v => v.Status == Statuses.PlatformCatalogVersion.Draft).Select(v => (Guid?)v.Id).FirstOrDefaultAsync();
+        var sizes = current is { } currentId ? await ContentSizesAsync(context, currentId) : new Dictionary<Guid, (int, int)>();
+        var draftPrices = draft is { } draftId
+            ? await context.PlatformCatalogCourses.AsNoTracking().Where(c => c.VersionId == draftId)
+                .ToDictionaryAsync(c => c.CourseId, c => (c.PricePerSeat, c.SalesStatus))
+            : new Dictionary<Guid, (long PricePerSeat, string SalesStatus)>();
 
         var orders = context.CourseSeatOrders.AsNoTracking();
         if (organizationId.HasValue) orders = orders.Where(o => o.OrganizationId == organizationId.Value);
@@ -30,16 +39,19 @@ public static class PlatformCatalogReader
             .Select(g => new { g.Key.CourseId, g.Key.Kind, Seats = g.Sum(o => o.Seats), Amount = g.Sum(o => o.TotalAmount) })
             .ToListAsync();
 
-        return courses.Select(c =>
+        return courses.Select(row =>
         {
-            int Questions(string status) => questionCounts.Where(q => q.CourseId == c.Id && q.Status == status).Sum(q => q.Count);
+            var c = row.Course;
             var purchased = seatTotals.Where(s => s.CourseId == c.Id && s.Kind == PlatformCatalog.SeatOrderKind.Purchase).ToList();
+            var size = sizes.GetValueOrDefault(c.Id);
             return new PlatformCourseItem
             {
                 Id = c.Id,
                 Code = c.Code,
-                DomainCode = c.Domain!.Code,
-                DomainName = c.Domain.Name,
+                FrameworkId = row.Framework.Id,
+                FrameworkName = row.Framework.Name,
+                DomainCode = row.Domain.Code,
+                DomainName = row.Domain.Name,
                 Level = c.Level,
                 LevelName = PlatformCatalog.LevelName(c.Level),
                 VersionNo = c.VersionNo,
@@ -47,24 +59,35 @@ public static class PlatformCatalogReader
                 Outcome = c.Outcome,
                 PricePerSeat = c.PricePerSeat,
                 SalesStatus = c.SalesStatus,
-                HasDraft = c.HasDraft,
-                Draft = c.HasDraft
-                    ? new PlatformCourseDraft
-                    {
-                        Title = c.DraftTitle ?? c.Title,
-                        Outcome = c.DraftOutcome ?? c.Outcome,
-                        PricePerSeat = c.DraftPricePerSeat ?? c.PricePerSeat,
-                        SalesStatus = c.DraftSalesStatus ?? c.SalesStatus,
-                    }
-                    : null,
+                DraftPricePerSeat = draftPrices.TryGetValue(c.Id, out var draftCourse) ? draftCourse.PricePerSeat : null,
+                DraftSalesStatus = draftPrices.TryGetValue(c.Id, out var draftSales) ? draftSales.SalesStatus : null,
                 PublishedAt = c.PublishedAt,
-                PublishedQuestionCount = Questions(Statuses.PlatformCourseQuestion.Published),
-                DraftQuestionCount = Questions(Statuses.PlatformCourseQuestion.Draft),
+                ModuleCount = size.Item1,
+                QuestionCount = size.Item2,
                 SeatsPurchased = purchased.Sum(s => s.Seats),
                 SeatsGranted = seatTotals.Where(s => s.CourseId == c.Id && s.Kind == PlatformCatalog.SeatOrderKind.AdminGrant).Sum(s => s.Seats),
                 Revenue = purchased.Sum(s => s.Amount),
             };
         }).ToList();
+    }
+
+    /// <summary>Module and review-question counts of every course in a catalog version, by platform course id.</summary>
+    public static async Task<Dictionary<Guid, (int Modules, int Questions)>> ContentSizesAsync(IApplicationDbContext context, Guid versionId)
+    {
+        var modules = await (
+                from catalogCourse in context.PlatformCatalogCourses.AsNoTracking()
+                join module in context.PlatformCourseModules on catalogCourse.Id equals module.CatalogCourseId
+                where catalogCourse.VersionId == versionId
+                select new { catalogCourse.CourseId, module.Id })
+            .ToListAsync();
+        var moduleIds = modules.Select(m => m.Id).ToList();
+        var questions = await context.PlatformModuleQuestions.AsNoTracking()
+            .Where(q => moduleIds.Contains(q.ModuleId))
+            .GroupBy(q => q.ModuleId)
+            .Select(g => new { ModuleId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.ModuleId, g => g.Count);
+        return modules.GroupBy(m => m.CourseId)
+            .ToDictionary(g => g.Key, g => (g.Count(), g.Sum(m => questions.GetValueOrDefault(m.Id))));
     }
 
     /// <summary>
@@ -93,10 +116,12 @@ public static class PlatformCatalogReader
             CreatedAt = order.CreatedAt,
         };
 
+    /// <summary>A published course by code (seat grants only apply to courses in the version in use).</summary>
     public static async Task<PlatformCourse> FindCourseAsync(IApplicationDbContext context, string code)
     {
         var normalized = code.Trim().ToUpperInvariant();
-        return await context.PlatformCourses.Include(c => c.Domain).FirstOrDefaultAsync(c => c.Code == normalized)
-            ?? throw new DigiTalent.Application.Common.Exceptions.NotFoundException($"Course '{code}' not found.");
+        return await context.PlatformCourses.Include(c => c.Domain)
+                   .FirstOrDefaultAsync(c => c.Code == normalized && c.PublishedAt != null)
+               ?? throw new DigiTalent.Application.Common.Exceptions.NotFoundException($"Course '{code}' not found.");
     }
 }

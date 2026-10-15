@@ -36,6 +36,23 @@ export const REFERENCE_POSITIONS: ReferencePosition[] = [
   { code: 'ACCOUNTANT', name: 'Kế toán', description: 'Xử lý chứng từ, báo cáo và bảo mật dữ liệu tài chính.', levels: [2, 3, 3, 2, 2, 3, 2, 1, 2, 1, 0, 0, 2, 2, 3, 1, 0, 1, 2, 2, 1, 1, 2, 2] },
 ];
 
+/**
+ * Reference level of each domain (1 … 6) per position, defined by DigiTalent AI: 1 = Cơ bản, 2 = Trung cấp,
+ * 3 = Nâng cao. Shown to organizations as a starting point; each organization sets its own position requirements.
+ * Domain 6 (AI) is new and has not been surveyed yet.
+ */
+export const REFERENCE_DOMAIN_LEVELS: Record<string, readonly number[]> = {
+  CEO: [3, 3, 2, 3, 3, 2],
+  HR: [2, 3, 2, 3, 2, 1],
+  MARKETING: [3, 3, 3, 2, 3, 3],
+  SALES_CRM: [2, 3, 2, 2, 2, 1],
+  ACCOUNTANT: [3, 2, 1, 3, 2, 1],
+};
+
+export function referenceDomainLevel(positionCode: string, domain: number): number {
+  return REFERENCE_DOMAIN_LEVELS[positionCode]?.[domain - 1] ?? 0;
+}
+
 /** Names of the 24 competencies of Circular 02/2025, by code ("1.1" … "6.3"). */
 export const TT02_COMPETENCY_NAMES: Record<string, string> = {
   '1.1': 'Duyệt, tìm kiếm và lọc dữ liệu, thông tin và nội dung số',

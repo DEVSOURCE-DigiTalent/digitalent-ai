@@ -4,14 +4,14 @@ import { PLATFORM_SCREENS } from '@/lib/screens/platform';
 import { PLATFORM_NAV } from '../platform-nav';
 
 describe('Platform Admin navigation (Pulse)', () => {
-  it('lists the seven console areas in the Pulse order', () => {
+  it('lists the seven console areas in the Platform Admin v2 order', () => {
     expect(PLATFORM_SIDEBAR.map((s) => s.label)).toEqual([
       'Tổng quan',
       'Khung chuẩn',
-      'Chương trình học',
+      'Phiên bản khóa học',
       'Tổ chức',
       'Người dùng',
-      'Đơn hàng và giá',
+      'Đơn giá',
       'Nhật ký kiểm tra',
     ]);
     expect(PLATFORM_NAV.map((n) => n.label)).toEqual(PLATFORM_SIDEBAR.map((s) => s.label));

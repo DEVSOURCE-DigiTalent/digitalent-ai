@@ -2,7 +2,9 @@ import apiClient from './api-client';
 import type { ApiResponse, PagedList } from '../types/api';
 
 /**
- * Platform Admin console (Pulse redesign) — mirrors DigiTalent.Api/Controllers/PlatformAdminController.cs.
+ * Platform Admin console (Pulse redesign) — mirrors DigiTalent.Api/Controllers/PlatformAdminController.cs
+ * (overview, organizations, users, commerce, audit). Frameworks, catalog versions and the course builder live in
+ * platform-catalog.service.ts.
  * Levels: 1 = Cơ bản (always free), 2 = Trung cấp, 3 = Nâng cao.
  */
 
@@ -10,75 +12,33 @@ export type SalesStatus = 'OPEN' | 'PAUSED';
 export type OrganizationStage = 'TRIAL' | 'PAID';
 export type SeatOrderKind = 'PURCHASE' | 'ADMIN_GRANT';
 
-export interface PlatformCourseDraft {
-  title: string;
-  outcome: string;
-  pricePerSeat: number;
-  salesStatus: SalesStatus;
-}
-
+/** A published course (in the catalog version in use) with prices, content size and seat totals. */
 export interface PlatformCourse {
   id: string;
   code: string;
+  frameworkId: string;
+  frameworkName: string;
   domainCode: string;
   domainName: string;
   level: number;
   levelName: string;
+  /** Catalog version in use. */
   versionNo: number;
   title: string;
   outcome: string;
   pricePerSeat: number;
   salesStatus: SalesStatus;
   isFree: boolean;
-  hasDraft: boolean;
-  draft: PlatformCourseDraft | null;
+  /** Price in the draft catalog version, null when there is no draft. */
+  draftPricePerSeat: number | null;
+  /** Sales status in the draft catalog version, null when there is no draft. */
+  draftSalesStatus: SalesStatus | null;
   publishedAt: string | null;
-  publishedQuestionCount: number;
-  draftQuestionCount: number;
+  moduleCount: number;
+  questionCount: number;
   seatsPurchased: number;
   seatsGranted: number;
   revenue: number;
-}
-
-export interface PlatformCourseQuestion {
-  id: string;
-  questionText: string;
-  correctAnswer: string;
-  explanation: string;
-  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
-  createdAt: string;
-}
-
-export interface PlatformCourseRelease {
-  versionNo: number;
-  title: string;
-  pricePerSeat: number;
-  salesStatus: SalesStatus;
-  publishedByEmail: string | null;
-  publishedAt: string;
-}
-
-export interface PlatformCourseDetail {
-  course: PlatformCourse;
-  questions: PlatformCourseQuestion[];
-  releases: PlatformCourseRelease[];
-}
-
-export interface PlatformFrameworkDomain {
-  code: string;
-  name: string;
-  sortOrder: number;
-  publishedDescription: string;
-  draftDescription: string;
-  hasDraft: boolean;
-}
-
-export interface PlatformFramework {
-  currentVersion: number;
-  hasDraft: boolean;
-  levelCount: number;
-  domains: PlatformFrameworkDomain[];
-  releases: { versionNo: number; releaseNote: string | null; publishedByEmail: string | null; publishedAt: string }[];
 }
 
 export interface PlatformOrganization {
@@ -98,6 +58,17 @@ export interface PlatformOrganization {
   revenue: number;
   setupCompleted: boolean;
   createdAt: string;
+  /** Latest subscription of the organization (null fields when it has none). */
+  planCode: string | null;
+  planName: string | null;
+  planStatus: string | null;
+  planCycle: string | null;
+  seatLimit: number | null;
+  planRenewsAt: string | null;
+  /** Platform courses the employees are enrolled in: [Cơ bản, Trung cấp, Nâng cao]. */
+  coursesInUseByLevel: number[];
+  /** Employees with at least one enrollment in a platform course. */
+  participantCount: number;
 }
 
 export interface PlatformSeatOrder {
@@ -129,6 +100,7 @@ export interface PlatformOrganizationDetail {
   }[];
   seats: { courseCode: string; courseTitle: string; seatsPurchased: number; seatsGranted: number }[];
   orders: PlatformSeatOrder[];
+  coursesInUse: { courseCode: string; courseTitle: string; level: number; levelName: string; participants: number; completed: number }[];
 }
 
 export interface PlatformUser {
@@ -146,6 +118,20 @@ export interface PlatformUser {
   lockedUntil: string | null;
   lastLoginAt: string | null;
   createdAt: string;
+  /** Personal plan (IND_PLUS / IND_PRO, IND_FREE once the trial ended); null for organization accounts. */
+  planCode: string | null;
+  /** ACTIVE = in the 7-day trial, ENDED = trial over (Free plan); null without a trial. */
+  trialState: TrialState | null;
+  trialStartedAt: string | null;
+  trialEndsAt: string | null;
+}
+
+export type TrialState = 'ACTIVE' | 'ENDED';
+export type TrialFilter = 'ACTIVE' | 'ENDING_SOON' | 'ENDED' | 'ANY';
+
+export interface PlatformUsersPage extends PagedList<PlatformUser> {
+  /** Trial counts over every personal account (not limited by the filters). */
+  trials: { active: number; endingSoon: number; ended: number };
 }
 
 export interface PlatformUserDetail {
@@ -177,14 +163,20 @@ export interface PlatformOverview {
   userCount: number;
   employeeCount: number;
   lockedUserCount: number;
-  frameworkVersion: number;
+  trialUserCount: number;
+  trialEndingSoonCount: number;
+  frameworkCount: number;
+  draftFrameworkCount: number;
   frameworkHasDraft: boolean;
   domainCount: number;
+  currentVersionNo: number | null;
+  currentVersionPublishedAt: string | null;
+  draftVersionNo: number | null;
+  draftNewCourseCount: number;
+  draftEditedCourseCount: number;
   courseCount: number;
   pausedCourseCount: number;
-  coursesWithDraft: number;
-  publishedQuestionCount: number;
-  draftQuestionCount: number;
+  questionCount: number;
   seatsPurchased: number;
   seatsGranted: number;
   revenue: number;
@@ -219,19 +211,8 @@ function params<T extends object>(query: T): Partial<T> {
 export const platformAdminService = {
   getOverview: () => unwrap<PlatformOverview>(apiClient.get('/platform/overview')),
 
-  getFramework: () => unwrap<PlatformFramework>(apiClient.get('/platform/framework')),
-  saveFrameworkDraft: (domains: { code: string; description: string }[]) =>
-    unwrap<PlatformFramework>(apiClient.put('/platform/framework/draft', { domains })),
-  publishFramework: (releaseNote?: string) =>
-    unwrap<PlatformFramework>(apiClient.post('/platform/framework/publish', { releaseNote })),
-
+  /** Published courses with prices and seat totals (frameworks, versions and the builder: platform-catalog.service). */
   getCourses: () => unwrap<{ items: PlatformCourse[] }>(apiClient.get('/platform/courses')).then((r) => r.items),
-  getCourse: (code: string) => unwrap<PlatformCourseDetail>(apiClient.get(`/platform/courses/${code}`)),
-  saveCourseDraft: (code: string, draft: PlatformCourseDraft) =>
-    unwrap<PlatformCourseDetail>(apiClient.put(`/platform/courses/${code}/draft`, draft)),
-  publishCourse: (code: string) => unwrap<PlatformCourseDetail>(apiClient.post(`/platform/courses/${code}/publish`)),
-  addCourseQuestion: (code: string, question: { questionText: string; correctAnswer: string; explanation: string }) =>
-    unwrap<PlatformCourseDetail>(apiClient.post(`/platform/courses/${code}/questions`, question)),
 
   getOrganizations: (query: PageQuery & { status?: string; stage?: string } = {}) =>
     unwrap<PagedList<PlatformOrganization>>(apiClient.get('/platform/organizations', { params: params(query) })),
@@ -243,8 +224,8 @@ export const platformAdminService = {
   restoreOrganization: (id: string, reason: string) =>
     unwrap<PlatformOrganizationDetail>(apiClient.post(`/platform/organizations/${id}/restore`, { reason })),
 
-  getUsers: (query: PageQuery & { role?: string; status?: string; organizationId?: string } = {}) =>
-    unwrap<PagedList<PlatformUser>>(apiClient.get('/platform/users', { params: params(query) })),
+  getUsers: (query: PageQuery & { role?: string; status?: string; trial?: TrialFilter | ''; organizationId?: string } = {}) =>
+    unwrap<PlatformUsersPage>(apiClient.get('/platform/users', { params: params(query) })),
   getUser: (id: string) => unwrap<PlatformUserDetail>(apiClient.get(`/platform/users/${id}`)),
   lockUser: (id: string, reason: string) => unwrap<PlatformUserDetail>(apiClient.post(`/platform/users/${id}/lock`, { reason })),
   unlockUser: (id: string, reason: string) => unwrap<PlatformUserDetail>(apiClient.post(`/platform/users/${id}/unlock`, { reason })),
