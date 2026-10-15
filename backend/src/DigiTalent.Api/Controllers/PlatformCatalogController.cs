@@ -185,4 +185,183 @@ public class PlatformCatalogController : ControllerBase
         [FromServices] IUseCase<RemovePlatformCatalogCourseUseCaseInput, PlatformCatalogVersionDetail> useCase) =>
         Ok(ApiResponse<PlatformCatalogVersionDetail>.Ok(
             await useCase.ExecuteAsync(new RemovePlatformCatalogCourseUseCaseInput { VersionNo = versionNo, CourseId = courseId }), "Course removed from the draft."));
+
+    // PUT api/v1/platform/catalog/versions/{versionNo}/courses/{courseId}/final — body { title, promptHtml, criteria: [] }
+    [HttpPut("catalog/versions/{versionNo:int}/courses/{courseId:guid}/final")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogCourseDetail>>> UpdateFinal(
+        int versionNo,
+        Guid courseId,
+        [FromBody] UpdatePlatformCourseFinalUseCaseInput input,
+        [FromServices] IUseCase<UpdatePlatformCourseFinalUseCaseInput, PlatformCatalogCourseDetail> useCase)
+    {
+        input.VersionNo = versionNo;
+        input.CourseId = courseId;
+        return Ok(ApiResponse<PlatformCatalogCourseDetail>.Ok(await useCase.ExecuteAsync(input)));
+    }
+
+    // ----- Modules -----------------------------------------------------------------------------
+
+    // POST …/courses/{courseId}/modules — body { title }
+    [HttpPost("catalog/versions/{versionNo:int}/courses/{courseId:guid}/modules")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogCourseDetail>>> AddModule(
+        int versionNo,
+        Guid courseId,
+        [FromBody] AddPlatformCourseModuleUseCaseInput input,
+        [FromServices] IUseCase<AddPlatformCourseModuleUseCaseInput, PlatformCatalogCourseDetail> useCase)
+    {
+        input.VersionNo = versionNo;
+        input.CourseId = courseId;
+        return Ok(ApiResponse<PlatformCatalogCourseDetail>.Ok(await useCase.ExecuteAsync(input)));
+    }
+
+    // PUT …/courses/{courseId}/modules/{moduleId} — body { title, quizTitle? }
+    [HttpPut("catalog/versions/{versionNo:int}/courses/{courseId:guid}/modules/{moduleId:guid}")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogCourseDetail>>> UpdateModule(
+        int versionNo,
+        Guid courseId,
+        Guid moduleId,
+        [FromBody] UpdatePlatformCourseModuleUseCaseInput input,
+        [FromServices] IUseCase<UpdatePlatformCourseModuleUseCaseInput, PlatformCatalogCourseDetail> useCase)
+    {
+        input.VersionNo = versionNo;
+        input.CourseId = courseId;
+        input.ModuleId = moduleId;
+        return Ok(ApiResponse<PlatformCatalogCourseDetail>.Ok(await useCase.ExecuteAsync(input)));
+    }
+
+    // DELETE …/courses/{courseId}/modules/{moduleId}
+    [HttpDelete("catalog/versions/{versionNo:int}/courses/{courseId:guid}/modules/{moduleId:guid}")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogCourseDetail>>> RemoveModule(
+        int versionNo,
+        Guid courseId,
+        Guid moduleId,
+        [FromServices] IUseCase<RemovePlatformCourseModuleUseCaseInput, PlatformCatalogCourseDetail> useCase) =>
+        Ok(ApiResponse<PlatformCatalogCourseDetail>.Ok(
+            await useCase.ExecuteAsync(new RemovePlatformCourseModuleUseCaseInput { VersionNo = versionNo, CourseId = courseId, ModuleId = moduleId })));
+
+    // POST …/courses/{courseId}/modules/{moduleId}/move — body { toIndex }
+    [HttpPost("catalog/versions/{versionNo:int}/courses/{courseId:guid}/modules/{moduleId:guid}/move")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogCourseDetail>>> MoveModule(
+        int versionNo,
+        Guid courseId,
+        Guid moduleId,
+        [FromBody] MovePlatformCourseModuleUseCaseInput input,
+        [FromServices] IUseCase<MovePlatformCourseModuleUseCaseInput, PlatformCatalogCourseDetail> useCase)
+    {
+        input.VersionNo = versionNo;
+        input.CourseId = courseId;
+        input.ModuleId = moduleId;
+        return Ok(ApiResponse<PlatformCatalogCourseDetail>.Ok(await useCase.ExecuteAsync(input)));
+    }
+
+    // ----- Blocks ------------------------------------------------------------------------------
+
+    // POST …/courses/{courseId}/modules/{moduleId}/blocks — body { type: TEXT|SLIDE|IMAGE|VIDEO, position? }
+    [HttpPost("catalog/versions/{versionNo:int}/courses/{courseId:guid}/modules/{moduleId:guid}/blocks")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogCourseDetail>>> AddBlock(
+        int versionNo,
+        Guid courseId,
+        Guid moduleId,
+        [FromBody] AddPlatformModuleBlockUseCaseInput input,
+        [FromServices] IUseCase<AddPlatformModuleBlockUseCaseInput, PlatformCatalogCourseDetail> useCase)
+    {
+        input.VersionNo = versionNo;
+        input.CourseId = courseId;
+        input.ModuleId = moduleId;
+        return Ok(ApiResponse<PlatformCatalogCourseDetail>.Ok(await useCase.ExecuteAsync(input)));
+    }
+
+    // PUT …/courses/{courseId}/blocks/{blockId} — body { bodyHtml?, assetId?, caption?, altText?, items?: [{ assetId, caption }] }
+    [HttpPut("catalog/versions/{versionNo:int}/courses/{courseId:guid}/blocks/{blockId:guid}")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogCourseDetail>>> UpdateBlock(
+        int versionNo,
+        Guid courseId,
+        Guid blockId,
+        [FromBody] UpdatePlatformModuleBlockUseCaseInput input,
+        [FromServices] IUseCase<UpdatePlatformModuleBlockUseCaseInput, PlatformCatalogCourseDetail> useCase)
+    {
+        input.VersionNo = versionNo;
+        input.CourseId = courseId;
+        input.BlockId = blockId;
+        return Ok(ApiResponse<PlatformCatalogCourseDetail>.Ok(await useCase.ExecuteAsync(input)));
+    }
+
+    // DELETE …/courses/{courseId}/blocks/{blockId}
+    [HttpDelete("catalog/versions/{versionNo:int}/courses/{courseId:guid}/blocks/{blockId:guid}")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogCourseDetail>>> RemoveBlock(
+        int versionNo,
+        Guid courseId,
+        Guid blockId,
+        [FromServices] IUseCase<RemovePlatformModuleBlockUseCaseInput, PlatformCatalogCourseDetail> useCase) =>
+        Ok(ApiResponse<PlatformCatalogCourseDetail>.Ok(
+            await useCase.ExecuteAsync(new RemovePlatformModuleBlockUseCaseInput { VersionNo = versionNo, CourseId = courseId, BlockId = blockId })));
+
+    // POST …/courses/{courseId}/blocks/{blockId}/move — body { toIndex }
+    [HttpPost("catalog/versions/{versionNo:int}/courses/{courseId:guid}/blocks/{blockId:guid}/move")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogCourseDetail>>> MoveBlock(
+        int versionNo,
+        Guid courseId,
+        Guid blockId,
+        [FromBody] MovePlatformModuleBlockUseCaseInput input,
+        [FromServices] IUseCase<MovePlatformModuleBlockUseCaseInput, PlatformCatalogCourseDetail> useCase)
+    {
+        input.VersionNo = versionNo;
+        input.CourseId = courseId;
+        input.BlockId = blockId;
+        return Ok(ApiResponse<PlatformCatalogCourseDetail>.Ok(await useCase.ExecuteAsync(input)));
+    }
+
+    // ----- Review questions --------------------------------------------------------------------
+
+    // POST …/courses/{courseId}/modules/{moduleId}/questions — body { text?, explanation?, blockId?, options? }
+    [HttpPost("catalog/versions/{versionNo:int}/courses/{courseId:guid}/modules/{moduleId:guid}/questions")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogCourseDetail>>> AddQuestion(
+        int versionNo,
+        Guid courseId,
+        Guid moduleId,
+        [FromBody] AddPlatformModuleQuestionUseCaseInput input,
+        [FromServices] IUseCase<AddPlatformModuleQuestionUseCaseInput, PlatformCatalogCourseDetail> useCase)
+    {
+        input.VersionNo = versionNo;
+        input.CourseId = courseId;
+        input.ModuleId = moduleId;
+        return Ok(ApiResponse<PlatformCatalogCourseDetail>.Ok(await useCase.ExecuteAsync(input)));
+    }
+
+    // PUT …/courses/{courseId}/questions/{questionId} — body { text, explanation, blockId, options: [{ text, isCorrect }] }
+    [HttpPut("catalog/versions/{versionNo:int}/courses/{courseId:guid}/questions/{questionId:guid}")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogCourseDetail>>> UpdateQuestion(
+        int versionNo,
+        Guid courseId,
+        Guid questionId,
+        [FromBody] UpdatePlatformModuleQuestionUseCaseInput input,
+        [FromServices] IUseCase<UpdatePlatformModuleQuestionUseCaseInput, PlatformCatalogCourseDetail> useCase)
+    {
+        input.VersionNo = versionNo;
+        input.CourseId = courseId;
+        input.QuestionId = questionId;
+        return Ok(ApiResponse<PlatformCatalogCourseDetail>.Ok(await useCase.ExecuteAsync(input)));
+    }
+
+    // DELETE …/courses/{courseId}/questions/{questionId}
+    [HttpDelete("catalog/versions/{versionNo:int}/courses/{courseId:guid}/questions/{questionId:guid}")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogCourseDetail>>> RemoveQuestion(
+        int versionNo,
+        Guid courseId,
+        Guid questionId,
+        [FromServices] IUseCase<RemovePlatformModuleQuestionUseCaseInput, PlatformCatalogCourseDetail> useCase) =>
+        Ok(ApiResponse<PlatformCatalogCourseDetail>.Ok(
+            await useCase.ExecuteAsync(new RemovePlatformModuleQuestionUseCaseInput { VersionNo = versionNo, CourseId = courseId, QuestionId = questionId })));
 }
