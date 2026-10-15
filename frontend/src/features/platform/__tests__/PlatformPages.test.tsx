@@ -553,6 +553,26 @@ describe('Platform Admin console (v2)', () => {
     expect(service.getUsers).toHaveBeenCalledWith(expect.objectContaining({ trial: 'ENDING_SOON' }));
   });
 
+  it('PA-09 saves draft prices without touching the price in use', async () => {
+    service.getCommerce.mockResolvedValue({
+      courses: [course('A1-F', 1), course('A1-I', 2)].map((c) => ({ ...c, draftPricePerSeat: c.pricePerSeat, draftSalesStatus: 'OPEN' })),
+      seatsPurchased: 3, seatsGranted: 0, revenue: 1197000,
+      orders: { items: [], pageIndex: 1, pageSize: 20, totalItems: 0, totalPages: 0 },
+    });
+    catalog.updatePrices.mockResolvedValue(versionDetail(4));
+    renderAt('/platform/commerce');
+
+    const input = await screen.findByRole('spinbutton', { name: 'Giá bản nháp của A1-I' });
+    expect(screen.queryByRole('spinbutton', { name: 'Giá bản nháp của A1-F' })).not.toBeInTheDocument();
+    const save = screen.getByRole('button', { name: 'Lưu giá vào bản nháp v4' });
+    expect(save).toBeDisabled();
+    fireEvent.change(input, { target: { value: '520000' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Trạng thái bán của A1-I' }), { target: { value: 'PAUSED' } });
+    fireEvent.click(save);
+
+    await waitFor(() => expect(catalog.updatePrices).toHaveBeenCalledWith(4, [{ courseId: 'c-A1-I', pricePerSeat: 520000, salesStatus: 'PAUSED' }]));
+  });
+
   it('SHR-01 is the Platform Admin profile, opened from the header', async () => {
     service.getAuditLogs.mockResolvedValue({ items: [], pageIndex: 1, pageSize: 1, totalItems: 9, totalPages: 9 });
     renderAt('/platform/account');
