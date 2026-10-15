@@ -41,6 +41,14 @@ public static class Statuses
         public const string Inactive = "INACTIVE";
     }
 
+    /// <summary>organizations.status — SUSPENDED is set by Platform Admin and blocks sign-in for the members.</summary>
+    public static class Organization
+    {
+        public const string Active = "ACTIVE";
+        public const string Inactive = "INACTIVE";
+        public const string Suspended = "SUSPENDED";
+    }
+
     /// <summary>subscriptions.status</summary>
     public static class Subscription
     {
@@ -303,11 +311,43 @@ public static class Statuses
         public const string Failed = "FAILED";
     }
 
+    /// <summary>platform_courses.sales_status, platform_course_releases.sales_status</summary>
+    public static class PlatformCourseSales
+    {
+        public const string Open = "OPEN";
+        public const string Paused = "PAUSED";
+
+        public static bool IsValid(string? value) => value is Open or Paused;
+    }
+
+    /// <summary>platform_course_questions.status</summary>
+    public static class PlatformCourseQuestion
+    {
+        public const string Draft = "DRAFT";
+        public const string Published = "PUBLISHED";
+        public const string Archived = "ARCHIVED";
+    }
+
     /// <summary>file_objects.access_level</summary>
     public static class FileAccessLevel
     {
         public const string Private = "PRIVATE";
         public const string Internal = "INTERNAL";
         public const string PublicVerify = "PUBLIC_VERIFY";
+    }
+
+    /// <summary>course_final_submissions.decision</summary>
+    public static class FinalSubmissionDecision
+    {
+        public const string Passed = "PASSED";
+        public const string NotYet = "NOT_YET";
+    }
+
+    /// <summary>course_final_submissions.support_action</summary>
+    public static class FinalSupportAction
+    {
+        public const string Coaching = "COACHING";
+        public const string FreshCycle = "FRESH_CYCLE";
+        public const string Pause = "PAUSE";
     }
 }

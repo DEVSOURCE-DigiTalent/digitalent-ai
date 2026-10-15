@@ -39,7 +39,7 @@ describe('8 Canonical Demo Accounts E2E Test Suite', () => {
     vi.clearAllMocks();
   });
 
-  it('1. Owner (Acme Corp): lands on /enterprise/dashboard, has owner sidebar, redirects legacy workforce, and views OW-20', async () => {
+  it('1. Owner (DigiTalent AI): lands on /enterprise/dashboard, has owner sidebar, redirects legacy workforce, and views OW-20', async () => {
     const session = signInAsMock(MOCK_EMAILS.owner);
     expect(getHomePath(session)).toBe('/enterprise/dashboard');
 
@@ -75,7 +75,7 @@ describe('8 Canonical Demo Accounts E2E Test Suite', () => {
     expect(getHomePath(session)).toBe('/enterprise/dashboard');
   });
 
-  it('3. Manager (Acme Corp): lands on /enterprise/team', async () => {
+  it('3. Manager (DigiTalent AI): lands on /enterprise/team', async () => {
     const session = signInAsMock(MOCK_EMAILS.manager);
     expect(getHomePath(session)).toBe('/enterprise/team');
 
@@ -90,7 +90,7 @@ describe('8 Canonical Demo Accounts E2E Test Suite', () => {
     expect(screen.getByTestId('location-display').textContent).toBe('/enterprise/team');
   });
 
-  it('4. Employee (Acme Corp): lands on /enterprise/me and is forbidden from /enterprise/dashboard', async () => {
+  it('4. Employee (DigiTalent AI): lands on /enterprise/me and is forbidden from /enterprise/dashboard', async () => {
     const session = signInAsMock(MOCK_EMAILS.employee);
     expect(getHomePath(session)).toBe('/enterprise/me');
 

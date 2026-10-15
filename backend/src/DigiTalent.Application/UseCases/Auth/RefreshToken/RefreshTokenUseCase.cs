@@ -83,6 +83,13 @@ public class RefreshTokenUseCase : IUseCase<RefreshTokenUseCaseInput, RefreshTok
             throw new UnauthorizedException("User account is inactive.");
         }
 
+        // Tổ chức bị quản trị nền tảng tạm khóa → không cấp phiên mới
+        if (user.OrganizationId != null && await _context.Organizations.AnyAsync(o =>
+                o.Id == user.OrganizationId && o.Status == Statuses.Organization.Suspended))
+        {
+            throw new UnauthorizedException("Tổ chức của bạn đang bị tạm ngưng.");
+        }
+
         // Lấy thông tin nhân viên
         var employee = await _context.Employees
             .Where(e => e.UserId == user.Id)

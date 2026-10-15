@@ -10,7 +10,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_lesson_progress_enrollments_enrollment_id",
                 table: "lesson_progress",
                 column: "enrollment_id",
@@ -18,7 +18,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_lesson_progress_lessons_lesson_id",
                 table: "lesson_progress",
                 column: "lesson_id",

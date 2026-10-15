@@ -1,88 +1,69 @@
 import { Navigate, type RouteObject } from 'react-router-dom';
-import { PlatformLayout } from '../layouts/PlatformLayout';
 import { PLATFORM_SCREENS } from '../../lib/screens/platform';
 import { buildRoutes, type PageRegistry } from './build-routes';
 
-import { AccountProfilePage } from '../../features/account/pages/AccountProfilePage';
 import { SecuritySettingsPage } from '../../features/account/pages/SecuritySettingsPage';
 import { NotificationsPage } from '../../features/notifications/pages/NotificationsPage';
 
-import { PlatformDashboardPage } from '../../features/platform/pages/PlatformDashboardPage';
-import { PlatformOrganizationsPage } from '../../features/platform/pages/PlatformOrganizationsPage';
-import { PlatformOrgDetailPage } from '../../features/platform/pages/PlatformOrgDetailPage';
-import { PlatformUsersPage } from '../../features/platform/pages/PlatformUsersPage';
-import { PlatformUserDetailPage } from '../../features/platform/pages/PlatformUserDetailPage';
-import { PlatformFrameworkPage } from '../../features/platform/pages/PlatformFrameworkPage';
-import { PlatformCompetencyDetailPage } from '../../features/platform/pages/PlatformCompetencyDetailPage';
-import { PlatformCurriculumPage } from '../../features/platform/pages/PlatformCurriculumPage';
-import { PlatformCourseDetailPage } from '../../features/platform/pages/PlatformCourseDetailPage';
-import { PlatformCourseEditorPage } from '../../features/platform/pages/PlatformCourseEditorPage';
-import { PlatformAssessmentBankPage } from '../../features/platform/pages/PlatformAssessmentBankPage';
-import { PlatformQuestionEditorPage } from '../../features/platform/pages/PlatformQuestionEditorPage';
-import { PlatformAssessmentTemplatePage } from '../../features/platform/pages/PlatformAssessmentTemplatePage';
-import { PlatformPositionsPage } from '../../features/platform/pages/PlatformPositionsPage';
-import { PlatformPositionRequirementsPage } from '../../features/platform/pages/PlatformPositionRequirementsPage';
-import { PlatformPlansPage } from '../../features/platform/pages/PlatformPlansPage';
-import { PlatformPlanDetailPage } from '../../features/platform/pages/PlatformPlanDetailPage';
-import { PlatformSubscriptionsPage } from '../../features/platform/pages/PlatformSubscriptionsPage';
-import { PlatformSubscriptionDetailPage } from '../../features/platform/pages/PlatformSubscriptionDetailPage';
-import { PlatformAuditLogPage } from '../../features/platform/pages/PlatformAuditLogPage';
-import { PlatformSettingsPage } from '../../features/platform/pages/PlatformSettingsPage';
+import { PulseAdminLayout } from '../../features/platform/PulseAdminLayout';
+import { PlatformOverviewPage } from '../../features/platform/console/PlatformOverviewPage';
+import { PlatformFrameworkPage } from '../../features/platform/console/PlatformFrameworkPage';
+import { PlatformCurriculumPage } from '../../features/platform/console/PlatformCurriculumPage';
+import { PlatformOrganizationsPage } from '../../features/platform/console/PlatformOrganizationsPage';
+import { PlatformOrganizationDetailPage } from '../../features/platform/console/PlatformOrganizationDetailPage';
+import { PlatformUsersPage } from '../../features/platform/console/PlatformUsersPage';
+import { PlatformUserDetailPage } from '../../features/platform/console/PlatformUserDetailPage';
+import { PlatformCommercePage } from '../../features/platform/console/PlatformCommercePage';
+import { PlatformAuditLogPage } from '../../features/platform/console/PlatformAuditLogPage';
+import { PlatformProfilePage } from '../../features/platform/console/PlatformProfilePage';
 
-/** Built pages by screen ID according to UI/UX spec v2.1 (PA-01..21, SHR-01..03). */
+/**
+ * Built pages by screen ID — Platform Admin console (Pulse redesign, PA-01..10), its profile (SHR-01 = mock `#/profile`
+ * of the Platform Admin) + shared account screens.
+ */
 const PLATFORM_PAGES: PageRegistry = {
-  // Shared Account and Notification screens for Platform portal
-  'SHR-01': AccountProfilePage,
+  'SHR-01': PlatformProfilePage,
   'SHR-02': SecuritySettingsPage,
   'SHR-03': NotificationsPage,
 
-  // PA-01..21 Primary IDs
-  'PA-01': PlatformDashboardPage,
-  'PA-02': PlatformOrganizationsPage,
-  'PA-03': PlatformOrgDetailPage,
-  'PA-04': PlatformUsersPage,
-  'PA-05': PlatformUserDetailPage,
-  'PA-06': PlatformFrameworkPage,
-  'PA-07': PlatformCompetencyDetailPage,
-  'PA-08': PlatformCurriculumPage,
-  'PA-09': PlatformCourseDetailPage,
-  'PA-10': PlatformCourseEditorPage,
-  'PA-11': PlatformAssessmentBankPage,
-  'PA-12': PlatformQuestionEditorPage,
-  'PA-13': PlatformAssessmentTemplatePage,
-  'PA-14': PlatformPositionsPage,
-  'PA-15': PlatformPositionRequirementsPage,
-  'PA-16': PlatformPlansPage,
-  'PA-17': PlatformPlanDetailPage,
-  'PA-18': PlatformSubscriptionsPage,
-  'PA-19': PlatformSubscriptionDetailPage,
-  'PA-20': PlatformAuditLogPage,
-  'PA-21': PlatformSettingsPage,
-
-  // Backward compatibility aliases
-  'PLT-01': PlatformDashboardPage,
-  'PLT-02': PlatformOrganizationsPage,
-  'PLT-03': PlatformOrgDetailPage,
-  'PLT-04': PlatformFrameworkPage,
-  'PLT-05': PlatformCurriculumPage,
-  'PLT-06': PlatformCurriculumPage,
-  'PLT-06E': PlatformCourseEditorPage,
-  'PLT-07': PlatformAssessmentBankPage,
-  'PLT-08': PlatformPositionsPage,
-  'PLT-09': PlatformPositionRequirementsPage,
-  'PLT-10': PlatformPlansPage,
-  'PLT-11': PlatformSubscriptionsPage,
-  'PLT-12': PlatformAuditLogPage,
-  'PLT-13': PlatformSettingsPage,
+  'PA-01': PlatformOverviewPage,
+  'PA-02': PlatformFrameworkPage,
+  'PA-03': PlatformCurriculumPage,
+  'PA-04': PlatformCurriculumPage,
+  'PA-05': PlatformOrganizationsPage,
+  'PA-06': PlatformOrganizationDetailPage,
+  'PA-07': PlatformUsersPage,
+  'PA-08': PlatformUserDetailPage,
+  'PA-09': PlatformCommercePage,
+  'PA-10': PlatformAuditLogPage,
 };
+
+/** Paths of the previous platform portal, kept as redirects so old links still land somewhere useful. */
+const RETIRED_PATHS: [string, string][] = [
+  ['courses', '/platform/curriculum'],
+  ['courses/:id', '/platform/curriculum'],
+  ['courses/:id/edit', '/platform/curriculum'],
+  ['framework/:id', '/platform/framework'],
+  ['questions', '/platform/curriculum'],
+  ['questions/:id', '/platform/curriculum'],
+  ['assessment-templates', '/platform/curriculum'],
+  ['positions', '/platform/framework'],
+  ['positions/:id/requirements', '/platform/framework'],
+  ['plans', '/platform/commerce'],
+  ['plans/:code', '/platform/commerce'],
+  ['subscriptions', '/platform/commerce'],
+  ['subscriptions/:id', '/platform/commerce'],
+  ['settings', '/platform/dashboard'],
+];
 
 export const platformRoutes: RouteObject[] = [
   {
     path: '/platform',
-    element: <PlatformLayout />,
+    element: <PulseAdminLayout />,
     children: [
       { index: true, element: <Navigate to="/platform/dashboard" replace /> },
       ...buildRoutes(PLATFORM_SCREENS, PLATFORM_PAGES, '/platform'),
+      ...RETIRED_PATHS.map(([path, to]) => ({ path, element: <Navigate to={to} replace /> })),
     ],
   },
 ];

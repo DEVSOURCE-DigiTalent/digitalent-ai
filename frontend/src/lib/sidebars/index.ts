@@ -25,7 +25,7 @@ export function sidebarFor(user?: SessionUser | null): SidebarConfig {
   }
 
   const role = primaryRole(user);
-  const isTrial = (user.enterpriseTrialStatus !== undefined && user.enterpriseTrialStatus !== 'converted')
+  const isTrial = (user.enterpriseTrialStatus != null && user.enterpriseTrialStatus !== 'converted')
     || user.subscription?.planCode === 'ENT_TRIAL';
 
   if (role === ROLES.PLATFORM_ADMIN || user.roles.includes(ROLES.PLATFORM_ADMIN)) {

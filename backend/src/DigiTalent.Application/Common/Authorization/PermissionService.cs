@@ -56,10 +56,17 @@ public class PermissionService : IPermissionService
         var now = DateTimeOffset.UtcNow;
         var account = await _context.Users
             .Where(u => u.Id == userId)
-            .Select(u => new { u.Status, u.LockedUntil })
+            .Select(u => new
+            {
+                u.Status,
+                u.LockedUntil,
+                // Organization suspended by Platform Admin → its members lose their sessions
+                OrganizationSuspended = _context.Organizations.Any(o =>
+                    o.Id == u.OrganizationId && o.Status == Statuses.Organization.Suspended),
+            })
             .FirstOrDefaultAsync();
 
-        if (account == null || account.Status == Statuses.User.Inactive)
+        if (account == null || account.Status == Statuses.User.Inactive || account.OrganizationSuspended)
         {
             return false;
         }

@@ -49,7 +49,8 @@ export interface SessionUser {
   /** Missing when the backend predates subscriptions: gating is skipped. */
   subscription?: SubscriptionContext;
   onboardingStatus?: OnboardingStatus;
-  enterpriseTrialStatus?: 'trial_active' | 'trial_read_only' | 'converted';
+  /** null from the real backend when the organization has no enterprise trial. */
+  enterpriseTrialStatus?: 'trial_active' | 'trial_read_only' | 'converted' | null;
   emailVerified?: boolean;
   contractSigned?: boolean;
 }

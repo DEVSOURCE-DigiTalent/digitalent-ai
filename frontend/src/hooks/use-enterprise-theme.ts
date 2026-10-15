@@ -12,14 +12,14 @@ interface ThemeStore {
 const STORAGE_KEY = 'dt-enterprise-theme';
 
 function getInitialTheme(): Theme {
-  if (typeof window === 'undefined') return 'dark';
+  if (typeof window === 'undefined') return 'light';
   try {
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
     if (stored === 'light' || stored === 'dark') return stored;
   } catch {
     //
   }
-  return 'dark'; // Default as per specs
+  return 'light';
 }
 
 export const useEnterpriseThemeStore = create<ThemeStore>((set) => ({

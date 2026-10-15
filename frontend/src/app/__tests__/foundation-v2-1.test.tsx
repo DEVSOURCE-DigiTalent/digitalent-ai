@@ -63,7 +63,7 @@ describe('Foundation v2.1 Verification Suite (A1, A2, A3)', () => {
     expect(within(nav).getByText('Cá nhân')).toBeInTheDocument();
   });
 
-  it('renders Employee sidebar centered on personal development', async () => {
+  it('renders the Pulse employee navigation centered on personal development', async () => {
     signInAsMock(MOCK_EMAILS.employee);
 
     render(
@@ -74,12 +74,10 @@ describe('Foundation v2.1 Verification Suite (A1, A2, A3)', () => {
       </QueryClientProvider>
     );
 
-    const nav = await screen.findByRole('navigation', { name: 'Điều hướng chính' });
-    expect(within(nav).getByText('Năng lực của tôi')).toBeInTheDocument();
-    expect(within(nav).getByText('Học tập')).toBeInTheDocument();
-    expect(within(nav).getByText('Đánh giá')).toBeInTheDocument();
-    expect(within(nav).getByText('Nhiệm vụ thực tế')).toBeInTheDocument();
-    expect(within(nav).getByText('Thành tựu')).toBeInTheDocument();
+    const nav = await screen.findByRole('navigation', { name: 'Học tập của tôi' });
+    expect(within(nav).getByRole('link', { name: 'Hôm nay' })).toHaveClass('active');
+    expect(within(nav).getByRole('link', { name: 'Lộ trình' })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: 'Thực hành' })).toBeInTheDocument();
   });
 
   // ── Last Owner Invariant Tests ──

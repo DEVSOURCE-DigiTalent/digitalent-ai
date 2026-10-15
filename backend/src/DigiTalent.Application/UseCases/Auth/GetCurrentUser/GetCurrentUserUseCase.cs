@@ -77,25 +77,34 @@ public class GetCurrentUserUseCase : IUseCase<GetCurrentUserUseCaseInput, GetCur
 
             if (sub != null)
             {
-                var status = sub.Status;
-                if (status == DigiTalent.Domain.Entities.UserSubscriptionStatuses.Trialing && sub.TrialEndsAt.HasValue && sub.TrialEndsAt.Value <= DateTimeOffset.UtcNow)
-                {
-                    status = DigiTalent.Domain.Entities.UserSubscriptionStatuses.TrialExpired;
-                }
-                subDto = new DigiTalent.Application.IndividualCommerce.IndividualSubscriptionDto(
-                    PlanCode: sub.PlanCode,
-                    PlanName: sub.PlanCode == "IND_PRO" ? "Cá nhân Pro" : sub.PlanCode == "IND_PLUS" ? "Cá nhân Plus" : sub.PlanCode,
-                    Status: status,
-                    TrialStartedAt: sub.TrialStartedAt,
-                    TrialEndsAt: sub.TrialEndsAt,
-                    TrialCourseLimit: status == DigiTalent.Domain.Entities.UserSubscriptionStatuses.Trialing ? 3 : null,
-                    CurrentPeriodStart: sub.CurrentPeriodStart,
-                    CurrentPeriodEnd: sub.CurrentPeriodEnd
-                );
+                var trialEnded = sub.Status == DigiTalent.Domain.Entities.UserSubscriptionStatuses.TrialExpired
+                    || (sub.Status == DigiTalent.Domain.Entities.UserSubscriptionStatuses.Trialing
+                        && sub.TrialEndsAt.HasValue && sub.TrialEndsAt.Value <= DateTimeOffset.UtcNow);
+                // Hết 7 ngày dùng thử → về gói Miễn phí và vẫn vào không gian cá nhân (như settleTrial của frontend).
+                // Trạng thái trả về chữ thường như frontend dùng (SubscriptionStatus: trialing | active | expired).
+                subDto = trialEnded
+                    ? new DigiTalent.Application.IndividualCommerce.IndividualSubscriptionDto(
+                        PlanCode: "IND_FREE",
+                        PlanName: "Miễn phí",
+                        Status: "active",
+                        TrialStartedAt: sub.TrialStartedAt,
+                        TrialEndsAt: sub.TrialEndsAt)
+                    : new DigiTalent.Application.IndividualCommerce.IndividualSubscriptionDto(
+                        PlanCode: sub.PlanCode,
+                        PlanName: sub.PlanCode == "IND_PRO" ? "Cá nhân Pro" : sub.PlanCode == "IND_PLUS" ? "Cá nhân Plus" : sub.PlanCode,
+                        Status: sub.Status.ToLowerInvariant(),
+                        TrialStartedAt: sub.TrialStartedAt,
+                        TrialEndsAt: sub.TrialEndsAt,
+                        TrialCourseLimit: sub.Status == DigiTalent.Domain.Entities.UserSubscriptionStatuses.Trialing ? sub.TrialCourseLimit : null,
+                        CurrentPeriodStart: sub.CurrentPeriodStart,
+                        CurrentPeriodEnd: sub.CurrentPeriodEnd
+                    );
             }
 
+            // Chưa có gói (đăng ký để mua, chưa thanh toán) → bước thanh toán; có gói nhưng chưa chọn vị trí → khởi tạo học tập;
+            // xong hết → null (frontend coi mọi giá trị khác null là còn bước onboarding).
             var hasLearner = await _context.LearnerProfiles.AnyAsync(lp => lp.UserId == user.Id);
-            onboardingStatus = (subDto?.Status == "trialing" || subDto?.Status == "active") ? (hasLearner ? "completed" : "setup") : "payment";
+            onboardingStatus = subDto?.Status is "trialing" or "active" ? (hasLearner ? null : "setup") : "payment";
         }
 
         return new GetCurrentUserUseCaseOutput

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" role="img" aria-labelledby="title">
+  <title id="title">DigiTalent Pulse symbol</title>
+  <defs>
+    <linearGradient id="surface" x1="4" y1="2" x2="44" y2="47" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5266E5"/>
+      <stop offset="0.5" stop-color="#3446C8"/>
+      <stop offset="1" stop-color="#182663"/>
+    </linearGradient>
+    <linearGradient id="letter" x1="15" y1="12" x2="33" y2="37" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E7ECFF"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="46" height="46" rx="14" fill="url(#surface)"/>
+  <path d="M5 12.5C12 4.5 22 2 33 4" fill="none" stroke="#FFFFFF" stroke-opacity="0.26" stroke-width="1.2" stroke-linecap="round"/>
+  <rect x="1.5" y="1.5" width="45" height="45" rx="13.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.24"/>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M13.5 12H23.7C31.9 12 37.4 16.8 37.4 24C37.4 31.2 31.9 36 23.7 36H13.5V12ZM20.8 18.8V29.2H23.5C27.8 29.2 30.3 27.3 30.3 24C30.3 20.7 27.8 18.8 23.5 18.8H20.8Z" fill="url(#letter)"/>
+  <circle cx="38" cy="11" r="2.7" fill="#E27A68"/>
+</svg>

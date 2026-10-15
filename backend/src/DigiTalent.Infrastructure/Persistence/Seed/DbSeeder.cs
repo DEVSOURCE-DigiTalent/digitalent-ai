@@ -32,6 +32,7 @@ public static class DbSeeder
         {
             await CourseContentSeeder.SeedCourseContentAsync(db, organization.Id, authorUser.Id);
             await CourseContentSeeder.SeedDemoLearnerProfilesAsync(db, organization.Id);
+            await PulseContentSeeder.SeedAsync(db, organization.Id, authorUser.Id);
         }
 
         await SeedDemoSubscriptionAsync(db, organization);
@@ -44,6 +45,7 @@ public static class DbSeeder
         await SeedPermissionsAsync(db);
         await SeedRolePermissionsAsync(db);
         await SkillGapSeeder.SeedReferenceAsync(db);
+        await PlatformCatalogSeeder.SeedAsync(db);
     }
 
     private static async Task<Organization> SeedOrganizationAsync(AppDbContext db)
@@ -204,12 +206,50 @@ public static class DbSeeder
         var owner = EnsureUser("owner@digitalent.ai", "Enterprise Owner", organizationId, Roles.Owner);
         var manager = EnsureUser("manager@digitalent.ai", "Department Manager", organizationId, Roles.Manager);
         var employee = EnsureUser("employee@digitalent.ai", "Employee", organizationId, Roles.Employee);
-        EnsureUser("personal@digitalent.ai", "Bùi Thị Cá Nhân", null, null);
-        EnsureUser("trial@digitalent.ai", "Lý Văn Dùng Thử", null, null);
-        EnsureUser("free@digitalent.ai", "Mai Thị Miễn Phí", null, null);
+        var personal = EnsureUser("personal@digitalent.ai", "Bùi Thị Cá Nhân", null, null);
+        var trial = EnsureUser("trial@digitalent.ai", "Lý Văn Dùng Thử", null, null);
+        var free = EnsureUser("free@digitalent.ai", "Mai Thị Miễn Phí", null, null);
         await db.SaveChangesAsync();
 
         await SeedDemoOrganizationStructureAsync(db, organizationId, owner, manager, employee);
+        await SeedDemoPersonalSubscriptionsAsync(db, personal, trial, free, now);
+    }
+
+    /// <summary>
+    /// Gói của 3 tài khoản cá nhân demo (giống mock frontend) để chúng vào thẳng không gian cá nhân thay vì kẹt ở bước
+    /// thanh toán: personal@ đã mua Plus theo năm, trial@ đang ở ngày 5/7 dùng thử, free@ hết dùng thử 3 ngày trước
+    /// (/auth/me trả gói Miễn phí). Chỉ thêm cho tài khoản chưa có gói nào.
+    /// </summary>
+    private static async Task SeedDemoPersonalSubscriptionsAsync(AppDbContext db, User personal, User trial, User free, DateTimeOffset now)
+    {
+        var userIds = new[] { personal.Id, trial.Id, free.Id };
+        var subscribed = await db.UserSubscriptions
+            .Where(s => userIds.Contains(s.UserId))
+            .Select(s => s.UserId)
+            .ToListAsync();
+
+        void Add(User user, string status, string billingCycle, DateTimeOffset startedAt, DateTimeOffset endsAt)
+        {
+            if (subscribed.Contains(user.Id)) return;
+            var isTrial = status == UserSubscriptionStatuses.Trialing;
+            db.UserSubscriptions.Add(new UserSubscription
+            {
+                UserId = user.Id,
+                PlanCode = "IND_PLUS",
+                Status = status,
+                BillingCycle = billingCycle,
+                StartedAt = startedAt,
+                CurrentPeriodStart = startedAt,
+                CurrentPeriodEnd = endsAt,
+                TrialStartedAt = isTrial ? startedAt : null,
+                TrialEndsAt = isTrial ? endsAt : null,
+            });
+        }
+
+        Add(personal, UserSubscriptionStatuses.Active, "YEAR", now.AddDays(-30), now.AddDays(335));
+        Add(trial, UserSubscriptionStatuses.Trialing, "TRIAL", now.AddDays(-4), now.AddDays(3));
+        Add(free, UserSubscriptionStatuses.Trialing, "TRIAL", now.AddDays(-10), now.AddDays(-3));
+        await db.SaveChangesAsync();
     }
 
     /// <summary>

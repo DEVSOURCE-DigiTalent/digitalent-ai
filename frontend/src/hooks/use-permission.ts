@@ -184,4 +184,13 @@ export const PERMISSIONS = {
   SYSTEM_CONFIG_MANAGE: 'system_config.manage',
   BUSINESS_CONFIG_MANAGE: 'business_config.manage',
   MASTER_DATA_MANAGE: 'master_data.manage',
+
+  // Platform Admin console (Pulse redesign)
+  PLATFORM_ORGANIZATION_READ: 'platform.organization.read',
+  PLATFORM_ORGANIZATION_MANAGE: 'platform.organization.manage',
+  PLATFORM_USER_READ: 'platform.user.read',
+  PLATFORM_USER_MANAGE: 'platform.user.manage',
+  PLATFORM_CATALOG_READ: 'platform.catalog.read',
+  PLATFORM_CATALOG_MANAGE: 'platform.catalog.manage',
+  PLATFORM_COMMERCE_READ: 'platform.commerce.read',
 } as const;

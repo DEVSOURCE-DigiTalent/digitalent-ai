@@ -10,7 +10,6 @@ import {
   LockKeyhole,
   Route,
   TrendingUp,
-  UserCheck,
   Users,
 } from 'lucide-react';
 import type { SidebarConfig } from './types';
@@ -65,14 +64,6 @@ export const TRIAL_MANAGER_SIDEBAR: SidebarConfig = [
 
 export const TRIAL_EMPLOYEE_SIDEBAR: SidebarConfig = [
   { label: 'Tổng quan', icon: Compass, screenId: 'EM-01' },
-  { label: 'Đánh giá đầu vào', icon: ClipboardCheck, screenId: 'EM-09', activeFor: ['EM-10', 'EM-11', 'EM-12', 'EM-13'] },
-  {
-    label: 'Kết quả của tôi',
-    icon: UserCheck,
-    items: [
-      { label: 'Hồ sơ năng lực', icon: UserCheck, screenId: 'EM-02' },
-      { label: 'Khoảng trống năng lực', icon: TrendingUp, screenId: 'EM-03' },
-      { label: 'Lộ trình học', icon: Route, screenId: 'EM-05' },
-    ],
-  },
+  { label: 'Đánh giá đầu vào', icon: ClipboardCheck, screenId: 'EM-04' },
+  { label: 'Lộ trình học', icon: Route, screenId: 'EM-02', activeFor: ['EM-05', 'EM-06', 'EM-07'] },
 ];

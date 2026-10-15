@@ -244,12 +244,12 @@ describe('Router Configuration & Surface Separation', () => {
       expect(await screen.findByRole('heading', { name: 'Bảng năng lực của nhóm' })).toBeInTheDocument();
     });
 
-    it('redirects the old manager learning link to a registered enterprise course page', async () => {
+    it('redirects the old manager learning link to the Pulse learning path', async () => {
       signInAsMock(MOCK_EMAILS.manager);
       renderWithRouter('/enterprise/me/learning', queryClient);
 
-      expect(await screen.findByRole('heading', { name: 'Khóa học của tôi' })).toBeInTheDocument();
-      expect(screen.getByTestId('enterprise-layout')).toBeInTheDocument();
+      expect(await screen.findByTestId('pulse-employee-layout')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Lộ trình' })).toHaveClass('active');
     });
 
     it('shows access denied to a role the screen is not meant for', async () => {

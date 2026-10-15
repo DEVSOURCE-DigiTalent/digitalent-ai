@@ -10,7 +10,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_assessment_answers_assessment_attempts_attempt_id",
                 table: "assessment_answers",
                 column: "attempt_id",
@@ -18,7 +18,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_assessment_answers_question_options_selected_option_id",
                 table: "assessment_answers",
                 column: "selected_option_id",
@@ -26,7 +26,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_assessment_answers_questions_question_id",
                 table: "assessment_answers",
                 column: "question_id",
@@ -34,7 +34,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_assessment_attempts_assessments_assessment_id",
                 table: "assessment_attempts",
                 column: "assessment_id",
@@ -42,7 +42,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_assessment_attempts_enrollments_enrollment_id",
                 table: "assessment_attempts",
                 column: "enrollment_id",
@@ -50,7 +50,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_assessment_questions_assessments_assessment_id",
                 table: "assessment_questions",
                 column: "assessment_id",
@@ -58,7 +58,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_assessment_questions_questions_question_id",
                 table: "assessment_questions",
                 column: "question_id",
@@ -66,7 +66,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_assessments_assessments_supersedes_assessment_id",
                 table: "assessments",
                 column: "supersedes_assessment_id",
@@ -74,7 +74,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_assessments_courses_course_id",
                 table: "assessments",
                 column: "course_id",
@@ -82,7 +82,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_assessments_users_created_by_user_id",
                 table: "assessments",
                 column: "created_by_user_id",
@@ -90,7 +90,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_question_banks_organizations_organization_id",
                 table: "question_banks",
                 column: "organization_id",
@@ -98,7 +98,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_question_banks_users_owner_user_id",
                 table: "question_banks",
                 column: "owner_user_id",
@@ -106,7 +106,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_question_options_questions_question_id",
                 table: "question_options",
                 column: "question_id",
@@ -114,7 +114,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_questions_competencies_competency_id",
                 table: "questions",
                 column: "competency_id",
@@ -122,7 +122,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_questions_question_banks_bank_id",
                 table: "questions",
                 column: "bank_id",
@@ -130,7 +130,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
-            migrationBuilder.AddForeignKey(
+            migrationBuilder.AddForeignKeyIfMissing(
                 name: "fk_questions_users_created_by_user_id",
                 table: "questions",
                 column: "created_by_user_id",

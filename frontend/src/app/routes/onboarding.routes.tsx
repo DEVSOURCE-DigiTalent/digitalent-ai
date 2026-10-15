@@ -1,4 +1,4 @@
-import type { RouteObject } from 'react-router-dom';
+import { Navigate, type RouteObject } from 'react-router-dom';
 import { AuthGuard } from '../../components/guards/AuthGuard';
 import { RequireRole } from '../../components/guards/RequireRole';
 import { RequireWorkspace } from '../../components/guards/RequireWorkspace';
@@ -8,15 +8,15 @@ import { EnterpriseContractPage } from '../../features/commerce/pages/Enterprise
 import { SetupWizardPage } from '../../features/onboarding/pages/SetupWizardPage';
 import { PersonalOnboardingPage } from '../../features/learner/pages/PersonalOnboardingPage';
 import { VerifyEmailRequiredPage } from '../../features/auth/pages/VerifyEmailRequiredPage';
-import { EmployeeInitialAssessmentPage } from '../../features/employee/pages/EmployeeInitialAssessmentPage';
 import { ManagerAssessmentPage } from '../../features/manager/pages/ManagerAssessmentPage';
 import { useCurrentUser } from '../../hooks/use-current-user';
 import { ROLES, WORKSPACES } from '../../lib/roles';
 import { FocusLayout } from '../layouts/FocusLayout';
 
+/** Sau kích hoạt lời mời: nhân viên làm bài đầu vào của cổng Pulse (/enterprise/me/baseline); quản lý giữ trang đánh giá của mình. */
 function EnterpriseAssessmentPage() {
   const isManager = useCurrentUser((state) => state.hasRole(ROLES.MANAGER));
-  return isManager ? <ManagerAssessmentPage /> : <EmployeeInitialAssessmentPage />;
+  return isManager ? <ManagerAssessmentPage /> : <Navigate to="/enterprise/me/baseline" replace />;
 }
 
 /** Steps a new paying customer goes through after signing up: pay, sign contract, set up organization or personal path. */
