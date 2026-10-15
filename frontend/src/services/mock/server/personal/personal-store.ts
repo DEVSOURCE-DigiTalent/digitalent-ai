@@ -19,6 +19,12 @@ export interface StoredSubmission {
   score?: number;
   feedback?: string;
   reviewedAt?: string;
+  /** Rubric criteria and whether the review found them met. */
+  criteria?: { label: string; met: boolean }[];
+  /** Who reviewed: the rubric reviewer (AI in the real product) or a mentor (Pro). */
+  reviewer?: 'AI_RUBRIC' | 'MENTOR';
+  /** Times of every submission of this task, for the daily attempt limit. */
+  history?: string[];
 }
 
 export interface StoredAttempt {
@@ -101,11 +107,15 @@ export function withDefaults(stored: Partial<PersonalState>): PersonalState {
   };
 }
 
-/** Answers that reach the given level in each domain: right up to the level, wrong after it. */
-function answersForLevels(levels: number[]): Record<string, number> {
+/**
+ * Answers of an adaptive entry assessment that reaches the given level in each domain: both questions right up to
+ * the level, both wrong at the next one, nothing asked above it.
+ */
+export function answersForLevels(levels: number[]): Record<string, number> {
   const answers: Record<string, number> = {};
   ENTRY_QUESTIONS.forEach((question) => {
     const reached = levels[question.domainNumber - 1];
+    if (question.level > reached + 1) return;
     answers[question.id] = question.level <= reached ? question.correctIndex : (question.correctIndex + 1) % question.options.length;
   });
   return answers;

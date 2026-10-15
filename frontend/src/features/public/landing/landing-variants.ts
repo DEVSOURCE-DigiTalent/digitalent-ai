@@ -329,7 +329,7 @@ export const INDIVIDUAL_CONTENT: LandingContent = {
       title: 'Tiến bộ có thể thấy được.',
       visual: 'progress',
       points: [
-        'Bài đánh giá sau mỗi khóa',
+        'Bài kiểm tra và bài thực hành sau mỗi khóa',
         'Hồ sơ năng lực cập nhật theo kết quả',
         'Thành tựu cá nhân cho mỗi mốc hoàn thành',
       ],
@@ -340,7 +340,7 @@ export const INDIVIDUAL_CONTENT: LandingContent = {
     leadMuted: 'một lộ trình.',
     tail: 'Mỗi bài học',
     tailMuted: 'một bước tiến.',
-    guestBody: 'Chọn một trong 5 vị trí, làm khảo sát định hướng và học thử một phần trước khi chọn gói.',
+    guestBody: `Chọn một trong 5 vị trí để xem lộ trình mẫu, rồi học thử ${INDIVIDUAL_TRIAL.days} ngày miễn phí trước khi chọn gói.`,
     memberBody: 'Lộ trình học và hồ sơ năng lực của bạn đang chờ trong hệ thống.',
   },
   footerText: {
@@ -354,7 +354,7 @@ export const INDIVIDUAL_CONTENT: LandingContent = {
     trialLabel: `hoặc tạo tài khoản dùng thử ${INDIVIDUAL_TRIAL.days} ngày`,
     trialTo: '/individual/register?trial=1&source=landing',
     heroLabel: 'Trải nghiệm miễn phí',
-    dockLabel: 'Học thử',
+    dockLabel: 'Xem lộ trình',
     finaleLabel: 'Trải nghiệm miễn phí',
     signedInTo: '/personal',
     loginPath: '/login',

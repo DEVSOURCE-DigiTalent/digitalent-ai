@@ -1,11 +1,10 @@
 import { REFERENCE_POSITIONS } from '@/lib/reference-positions';
 import type { TryOrientationInput } from '@/types/commerce';
-import { TRIAL_QUESTIONS } from './individual-trial-data';
-
 /**
- * What the no-account "thử nhanh" flow hands to the trial sign-up: the position the visitor tried and, when they
- * took the short survey, how many orientation answers were right. Kept in sessionStorage so it does not outlive
- * the browser session, and never carries an answer, a name or an email.
+ * What the no-account "thử nhanh" flow hands to the trial sign-up: the position the visitor chose. Kept in
+ * sessionStorage so it does not outlive the browser session, and never carries a name or an email.
+ * The quick try no longer asks orientation questions; `correct`/`total` are still read so a hand-over written by the
+ * earlier five-step version keeps working until the orientation plumbing is removed (plan 2026-10-09, A3).
  */
 
 const STORAGE_KEY = 'dt-try-handoff';
@@ -23,17 +22,9 @@ export interface TryHandoff {
 const isPosition = (code: unknown): code is string =>
   typeof code === 'string' && REFERENCE_POSITIONS.some((position) => position.code === code);
 
-/** The hand-over for a finished quick try. The orientation counts only exist for a completed survey. */
-export function buildTryHandoff(
-  positionCode: string,
-  answers: Record<string, number>,
-  diagnosticMode: 'completed' | 'skipped' | null,
-  now: Date = new Date(),
-): TryHandoff {
-  const base = { positionCode, completedAt: now.toISOString() };
-  if (diagnosticMode !== 'completed') return base;
-  const correct = TRIAL_QUESTIONS.filter((question) => answers[question.id] === question.correctIndex).length;
-  return { ...base, correct, total: TRIAL_QUESTIONS.length };
+/** The hand-over for a quick try that ends on the sample path of a position. */
+export function buildTryHandoff(positionCode: string, now: Date = new Date()): TryHandoff {
+  return { positionCode, completedAt: now.toISOString() };
 }
 
 export function writeTryHandoff(handoff: TryHandoff): void {

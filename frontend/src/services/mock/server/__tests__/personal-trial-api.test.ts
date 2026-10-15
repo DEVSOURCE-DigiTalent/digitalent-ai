@@ -291,7 +291,7 @@ describe('Free plan (BR-06, BR-07, BR-08, BR-11, AC-06)', () => {
   it('refuses a new practical task submission', async () => {
     await trialThenFree();
 
-    const refused = await failure(api.submitTask('tsk-A1-F', { linkUrl: '', content: 'Mô tả bài làm đủ dài để hợp lệ.' }));
+    const refused = await failure(api.submitTask('tsk-A1-F', { linkUrl: '', content: 'Mô tả bài làm đủ dài để hợp lệ.', checks: [] }));
 
     expect(refused.codes).toEqual(['PLAN_REQUIRED']);
   });
@@ -312,10 +312,11 @@ describe('trial practical tasks (BR-08)', () => {
     await registerTrial();
     await completeFirstLesson('crs-A1-F');
 
-    const task = await api.submitTask('tsk-A1-F', { linkUrl: '', content: 'Mô tả bài làm đủ dài để hợp lệ.' });
-    expect(task.status).toBe('PENDING_REVIEW');
+    const task = await api.submitTask('tsk-A1-F', { linkUrl: '', content: 'Mô tả bài làm đủ dài để hợp lệ.', checks: [] });
+    // Reviewed at once against the rubric; this short draft needs revision.
+    expect(task.status).toBe('REVISION_REQUESTED');
 
-    const refused = await failure(api.submitTask('tsk-A2-F', { linkUrl: '', content: 'Mô tả bài làm đủ dài để hợp lệ.' }));
+    const refused = await failure(api.submitTask('tsk-A2-F', { linkUrl: '', content: 'Mô tả bài làm đủ dài để hợp lệ.', checks: [] }));
     expect(refused.codes).toEqual(['PLAN_REQUIRED']);
   });
 });

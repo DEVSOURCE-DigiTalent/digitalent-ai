@@ -1,5 +1,8 @@
 import type { CompetencyCriterion } from '../../competency.service';
 import { REFERENCE_POSITIONS, TT02_COMPETENCY_NAMES } from '../../../lib/reference-positions';
+import {
+  MODULES_PER_DOMAIN, STANDARD_COURSE_TITLES, standardCourseCode, standardCourseMinutes,
+} from '../../../lib/standard-courses';
 
 /**
  * Standard content of the platform: the 24 competencies of Circular 02/2025/TT-BGDĐT, the five reference
@@ -105,34 +108,17 @@ export interface CatalogCourse {
   status: 'PUBLISHED' | 'DRAFT';
 }
 
-const COURSE_TITLES: Record<number, [string, string, string]> = {
-  1: ['Tìm kiếm và lưu trữ thông tin cơ bản', 'Chiến lược tìm kiếm và quản lý thông tin', 'Phân tích thông tin và quản trị dữ liệu'],
-  2: ['Giao tiếp số cơ bản nơi công sở', 'Giao tiếp và cộng tác chuyên nghiệp', 'Lãnh đạo giao tiếp và cộng tác số'],
-  3: ['Tạo lập nội dung số cơ bản', 'Tạo lập nội dung chuyên nghiệp', 'Chiến lược nội dung và giải pháp số'],
-  4: ['An toàn số cơ bản', 'An toàn thông tin trong công việc', 'Quản trị an toàn và trách nhiệm số'],
-  5: ['Xử lý sự cố và tự học công nghệ', 'Giải quyết vấn đề trong công việc số', 'Đổi mới và dẫn dắt chuyển đổi số'],
-  6: ['Ứng dụng AI cơ bản', 'Ứng dụng AI trung cấp', 'Ứng dụng AI nâng cao'],
-};
-
-const MODULES_PER_DOMAIN: Record<number, number> = { 1: 3, 2: 6, 3: 4, 4: 4, 5: 4, 6: 3 };
-const MINUTES_PER_MODULE: Record<number, number> = { 1: 60, 2: 90, 3: 120 };
-const LEVEL_SUFFIX: Record<number, string> = { 1: 'F', 2: 'I', 3: 'A' };
-
-function courseCode(domain: number, level: number): string {
-  return `${domain === 6 ? 'M6' : `A${domain}`}-${LEVEL_SUFFIX[level]}`;
-}
-
 export const COURSES: CatalogCourse[] = [1, 2, 3, 4, 5, 6].flatMap((domain) =>
   [1, 2, 3].map((level): CatalogCourse => ({
-    id: `crs-${courseCode(domain, level)}`,
-    code: courseCode(domain, level),
-    title: COURSE_TITLES[domain][level - 1],
+    id: `crs-${standardCourseCode(domain, level)}`,
+    code: standardCourseCode(domain, level),
+    title: STANDARD_COURSE_TITLES[domain][level - 1],
     categoryId: `cat-${domain}`,
     level,
     entryLevel: level - 1,
     modules: MODULES_PER_DOMAIN[domain],
-    estimatedDurationMinutes: MODULES_PER_DOMAIN[domain] * MINUTES_PER_MODULE[level],
-    prerequisiteCourseId: level > 1 ? `crs-${courseCode(domain, level - 1)}` : undefined,
+    estimatedDurationMinutes: standardCourseMinutes(domain, level),
+    prerequisiteCourseId: level > 1 ? `crs-${standardCourseCode(domain, level - 1)}` : undefined,
     status: 'PUBLISHED',
   })),
 );

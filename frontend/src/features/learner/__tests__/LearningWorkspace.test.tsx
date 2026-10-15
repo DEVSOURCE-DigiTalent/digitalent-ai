@@ -19,7 +19,7 @@ describe('Learning workspace', () => {
   it('preserves diagnostic answers when cancelling exit and only warns with unsaved answers', async () => {
     renderPage(<LearnerDiagnosticPage />, '/personal/diagnostic', '*');
     fireEvent.click(await screen.findByRole('button', { name: /Làm lại/ }));
-    const option = screen.getAllByRole('radio')[0];
+    const option = (await screen.findAllByRole('radio'))[0];
     fireEvent.click(option);
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     fireEvent.click(screen.getByRole('button', { name: 'Thoát' }));

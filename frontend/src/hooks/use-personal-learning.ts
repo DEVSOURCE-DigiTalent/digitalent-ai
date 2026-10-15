@@ -39,6 +39,20 @@ export function usePersonalDiagnostic() {
   return useQuery({ queryKey: PERSONAL_KEYS.diagnostic, queryFn: personalLearningService.getDiagnostic });
 }
 
+/**
+ * Adaptive entry assessment: which questions to ask given the answers so far. Keyed on the answers, so the list
+ * follows every change; the previous list stays on screen while the next one loads.
+ */
+export function useDiagnosticPlan(answers: Record<string, number>, enabled = true) {
+  return useQuery({
+    queryKey: [...PERSONAL_KEYS.diagnostic, 'plan', answers],
+    queryFn: () => personalLearningService.planDiagnostic(answers),
+    placeholderData: (previous) => previous,
+    staleTime: Infinity,
+    enabled,
+  });
+}
+
 export function usePersonalPath() {
   return useQuery({ queryKey: PERSONAL_KEYS.path, queryFn: personalLearningService.getPath });
 }

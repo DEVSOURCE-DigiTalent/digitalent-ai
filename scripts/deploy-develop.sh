@@ -1,6 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 
+LOCKFILE="/tmp/digitalent-deploy.lock"
+exec 200>"$LOCKFILE"
+if ! flock -n 200; then
+    echo "--> Another deployment process is currently running. Waiting for it to finish..."
+    flock 200
+    echo "--> Previous deployment finished. Continuing..."
+fi
+
 echo "=========================================="
 echo "Starting Continuous Deployment to Develop"
 echo "Timestamp: $(date)"

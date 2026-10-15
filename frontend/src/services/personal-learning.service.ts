@@ -83,6 +83,8 @@ export interface PathCourse {
   planLocked: boolean;
   /** The course uses one of the learner's trial slots. */
   trialSlot: boolean;
+  /** Assessment passed, but the practice task (needed from Trung cấp up) is not approved yet. */
+  awaitingTask: boolean;
 }
 
 export interface PathStage {
@@ -183,6 +185,9 @@ export interface TaskSubmission {
   score?: number;
   feedback?: string;
   reviewedAt?: string;
+  /** Rubric criteria and whether the review found them met. */
+  criteria?: { label: string; met: boolean }[];
+  reviewer?: 'AI_RUBRIC' | 'MENTOR';
 }
 
 export interface PersonalTask {
@@ -199,6 +204,10 @@ export interface PersonalTask {
   competencyCodes: string[];
   status: TaskStatus;
   submission?: TaskSubmission;
+  /** Completing the course needs this task approved (Trung cấp and Nâng cao). */
+  required: boolean;
+  /** Submissions still allowed in the last 24 hours. */
+  attemptsLeft: number;
 }
 
 export interface CourseAssessmentSummary {
@@ -224,6 +233,10 @@ export interface PersonalCourseDetail {
   status: PathCourseStatus;
   inPath: boolean;
   exempt: boolean;
+  /** Assessment passed, practice task not approved yet. */
+  awaitingTask: boolean;
+  /** Completing the course needs the practice task approved (Trung cấp and Nâng cao). */
+  taskRequired: boolean;
   planLocked: boolean;
   trialSlot: boolean;
   modules: PersonalModule[];
@@ -262,6 +275,8 @@ export interface AssessmentOutcome {
   certificateId: string | null;
   /** Passed, but the certificate waits for an upgrade (trial or Free plan). */
   certificatePending: boolean;
+  /** Passed, but the course completes only once its practice task is approved (Trung cấp and Nâng cao). */
+  taskRequired: boolean;
 }
 
 export type CertificateStatus = 'ISSUED' | 'PENDING_UPGRADE';
@@ -367,6 +382,15 @@ export interface PersonalProgress {
 export interface SubmitTaskInput {
   linkUrl: string;
   content: string;
+  /** Indexes of the rubric criteria the learner says the work meets. */
+  checks: number[];
+}
+
+/** Which entry questions to ask next, given the answers so far (adaptive assessment). */
+export interface DiagnosticPlan {
+  askedIds: string[];
+  done: boolean;
+  domainsDone: number;
 }
 
 const BASE = '/personal';
@@ -378,6 +402,8 @@ export const personalLearningService = {
   setTarget: (positionCode: string) => data<PersonalTarget>(apiClient.put(`${BASE}/target`, { positionCode })),
   getSkillGap: () => data<PersonalSkillGap>(apiClient.get(`${BASE}/skill-gap`)),
   getDiagnostic: () => data<PersonalDiagnostic>(apiClient.get(`${BASE}/diagnostic`)),
+  planDiagnostic: (answers: Record<string, number>) =>
+    data<DiagnosticPlan>(apiClient.post(`${BASE}/diagnostic/plan`, { answers })),
   submitDiagnostic: (answers: Record<string, number>) =>
     data<DiagnosticResult>(apiClient.post(`${BASE}/diagnostic`, { answers })),
   getPath: () => data<PersonalPath>(apiClient.get(`${BASE}/path`)),

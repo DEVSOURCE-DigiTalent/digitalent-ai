@@ -47,9 +47,13 @@ export function CourseAssessment({ course }: { course: PersonalCourseDetail }) {
               : `${course.assessment.questionCount} câu tình huống · cần đúng từ ${course.assessment.passPercent}%`}
           </p>
           <p className="mt-2 text-sm text-pt-fg-2">
-            {ready
-              ? 'Đạt bài đánh giá để nâng mức các năng lực của khóa và nhận chứng nhận.'
-              : `Học hết ${course.lessonCount - course.completedLessons} bài còn lại để mở bài đánh giá.`}
+            {!ready
+              ? `Học hết ${course.lessonCount - course.completedLessons} bài còn lại để mở bài đánh giá.`
+              : course.awaitingTask
+                ? 'Bạn đã đạt bài đánh giá. Khóa hoàn thành khi bài thực hành được duyệt.'
+                : course.taskRequired
+                  ? 'Đạt bài đánh giá và bài thực hành để nâng mức các năng lực của khóa và nhận chứng nhận.'
+                  : 'Đạt bài đánh giá để nâng mức các năng lực của khóa và nhận chứng nhận.'}
           </p>
         </div>
         {started && assessment.isLoading && <LoadingBlock className="w-40" />}
@@ -84,14 +88,18 @@ export function CourseAssessment({ course }: { course: PersonalCourseDetail }) {
             <p className="mt-1 text-sm text-pt-fg-2">
               {outcome.correct}/{outcome.total} câu đúng.{' '}
               {outcome.passed
-                ? outcome.certificatePending
-                  ? 'Đạt! Chứng nhận sẽ được cấp khi bạn nâng cấp gói. Mức năng lực của khóa đã được cập nhật vào hồ sơ.'
-                  : 'Mức năng lực của khóa đã được cập nhật vào hồ sơ.'
+                ? outcome.taskRequired
+                  ? 'Bước tiếp theo: nộp bài thực hành của khóa. Mức năng lực và chứng nhận được ghi nhận khi bài thực hành được duyệt.'
+                  : outcome.certificatePending
+                    ? 'Đạt! Chứng nhận sẽ được cấp khi bạn nâng cấp gói. Mức năng lực của khóa đã được cập nhật vào hồ sơ.'
+                    : 'Mức năng lực của khóa đã được cập nhật vào hồ sơ.'
                 : 'Xem giải thích bên dưới rồi thử lại.'}
             </p>
           </div>
           {outcome.passed ? (
-            outcome.certificatePending ? (
+            outcome.taskRequired ? (
+              <Link to="/personal/tasks" className={PT_BUTTON}>Nộp bài thực hành</Link>
+            ) : outcome.certificatePending ? (
               <UpgradeLink placement="assessment">Nâng cấp Plus</UpgradeLink>
             ) : (
               <Link to="/personal/certificates" className={PT_BUTTON}><Award className="size-4" aria-hidden="true" /> Xem chứng nhận</Link>

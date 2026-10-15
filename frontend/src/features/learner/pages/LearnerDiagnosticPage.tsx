@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { Link, UNSAFE_DataRouterContext, useBlocker } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, RotateCcw, X } from 'lucide-react';
-import { usePersonalAccess, usePersonalDiagnostic, useSubmitDiagnostic } from '@/hooks/use-personal-learning';
+import { useDiagnosticPlan, usePersonalAccess, usePersonalDiagnostic, useSubmitDiagnostic } from '@/hooks/use-personal-learning';
 import { usePlanErrorHandler } from '@/hooks/use-plan-error-handler';
 import { trackTrialEvent } from '@/features/experience/individual-trial/individual-trial-tracker';
 import { formatDmy } from '@/lib/personal-access';
@@ -21,7 +21,10 @@ import { formatDate } from '../utils/format';
 
 type Mode = 'intro' | 'quiz' | 'result';
 
-/** IND-06 "/personal/diagnostic": 18 workplace questions, 3 per domain, one per level. */
+/**
+ * IND-06 "/personal/diagnostic": adaptive placement. Two workplace questions per level and domain; a level counts
+ * when both are right, and the first level missed ends the domain (up to 36 questions, usually fewer).
+ */
 export function LearnerDiagnosticPage() {
   const { data, isLoading, isError, error, refetch } = usePersonalDiagnostic();
   const [mode, setMode] = useState<Mode | null>(null);
@@ -34,7 +37,7 @@ export function LearnerDiagnosticPage() {
       {current !== 'quiz' && <PersonalPageHeader
         label="Đánh giá đầu vào"
         title="Đánh giá năng lực"
-        lead="Mỗi miền năng lực có ba câu tình huống, lần lượt ở mức Cơ bản, Trung cấp và Nâng cao. Mức của bạn trong một miền là mức cao nhất bạn trả lời đúng liên tiếp từ câu Cơ bản."
+        lead="Mỗi miền bắt đầu từ mức Cơ bản. Mỗi mức có hai câu tình huống: đúng cả hai thì sang mức tiếp theo, sai một câu thì dừng ở miền đó. Đây là bài xếp lớp sơ bộ; năng lực được xác nhận qua khóa học và bài thực hành."
       />}
 
       {isLoading && <LoadingBlock />}
@@ -56,9 +59,9 @@ export function LearnerDiagnosticPage() {
 
 function Intro({ data, onStart }: { data: PersonalDiagnostic; onStart: () => void }) {
   const facts = [
-    { value: String(data.questions.length), label: 'câu tình huống công việc' },
-    { value: '6', label: 'miền của Khung chuẩn năng lực số' },
-    { value: '~10', label: 'phút ước tính' },
+    { value: `≤${data.questions.length}`, label: 'câu tình huống, hỏi theo mức của bạn' },
+    { value: '6', label: 'miền của Khung năng lực số' },
+    { value: '~15', label: 'phút ước tính' },
   ];
   return (
     <Card className="grid gap-10 p-7 md:grid-cols-[1.2fr_1fr] md:p-10">
@@ -69,11 +72,9 @@ function Intro({ data, onStart }: { data: PersonalDiagnostic; onStart: () => voi
             Kết quả cho biết mức hiện tại của bạn ở từng miền, thay vì mặc định bằng không. Lộ trình sẽ miễn các khóa
             bạn đã đạt và chỉ giữ phần còn thiếu so với vị trí mục tiêu.
           </p>
-          {data.tryOrientation && (
-            <p className="mt-4 max-w-[48ch] text-sm leading-relaxed text-pt-fg-2">
-              Ở bài thử nhanh bạn đúng {data.tryOrientation.correct}/{data.tryOrientation.total} câu định hướng. Bài này {data.questions.length} câu, đo mức chính xác ở 6 miền.
-            </p>
-          )}
+          <p className="mt-4 max-w-[48ch] text-sm leading-relaxed text-pt-fg-2">
+            Bài hỏi tối đa {data.questions.length} câu ở 6 miền, thường ít hơn: câu khó hơn chỉ xuất hiện khi bạn trả lời đúng cả hai câu ở mức trước.
+          </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <button type="button" onClick={onStart} className={PT_BUTTON}>
@@ -103,15 +104,21 @@ interface QuizProps {
   onDone: () => void;
 }
 
-function Quiz({ questions, access, previousCompletedAt, onCancel, onDone }: QuizProps) {
+function Quiz({ questions: bank, access, previousCompletedAt, onCancel, onDone }: QuizProps) {
   const submit = useSubmitDiagnostic();
   const handlePlanError = usePlanErrorHandler();
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
-  const question = questions[index];
-  const answered = Object.keys(answers).length;
-  const isLast = index === questions.length - 1;
-  const allAnswered = answered === questions.length;
+  // The server decides which questions come next from the answers so far (it alone knows which are right).
+  const plan = useDiagnosticPlan(answers);
+  const byId = new Map(bank.map((item) => [item.id, item]));
+  const questions = (plan.data?.askedIds ?? []).map((id) => byId.get(id)).filter((item): item is DiagnosticQuestion => Boolean(item));
+  const question = questions[Math.min(index, questions.length - 1)];
+  const answered = questions.filter((item) => answers[item.id] !== undefined).length;
+  const isLast = index >= questions.length - 1;
+  const done = Boolean(plan.data?.done) && !plan.isPlaceholderData;
+  const allAnswered = done && answered === questions.length;
+  const domainsDone = plan.data?.domainsDone ?? 0;
   const dataRouter = useContext(UNSAFE_DataRouterContext);
   const dirty = answered > 0 && !submit.isSuccess;
   useEffect(() => {
@@ -139,11 +146,13 @@ function Quiz({ questions, access, previousCompletedAt, onCancel, onDone }: Quiz
     onError: handlePlanError,
   });
 
+  if (!question) return <LoadingBlock />;
+
   return (
     <div className="grid gap-6 lg:grid-cols-[180px_minmax(0,1fr)]">
       {dataRouter && <QuizNavigationGuard dirty={dirty} />}
       <aside aria-label="Các câu hỏi" className="order-2 lg:order-1">
-        <p className="mb-3 text-xs text-pt-fg-3">{answered}/{questions.length} câu đã trả lời</p>
+        <p className="mb-3 text-xs text-pt-fg-3">{answered} câu đã trả lời · xong {domainsDone}/6 miền</p>
         <ol className="grid grid-cols-9 gap-1.5 lg:grid-cols-3">
           {questions.map((item, position) => (
             <li key={item.id}>
@@ -170,10 +179,10 @@ function Quiz({ questions, access, previousCompletedAt, onCancel, onDone }: Quiz
 
       <Card className="order-1 p-6 md:p-9 lg:order-2">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className={PT_EYEBROW}>Câu {index + 1} / {questions.length} · Miền {question.domainNumber}</p>
+          <p className={PT_EYEBROW}>Câu {index + 1} · Miền {question.domainNumber}/6 · Mức {levelLabelVi(question.level)}</p>
           <Tag>{question.domainName}</Tag>
         </div>
-        <ProgressBar className="mt-4" value={(answered / questions.length) * 100} label="Tiến độ làm bài" />
+        <ProgressBar className="mt-4" value={(domainsDone / 6) * 100} label="Tiến độ làm bài theo miền" />
 
         <fieldset key={question.id} className="pt-rise mt-8">
           <legend className="text-balance text-[clamp(20px,2.4vw,26px)] font-normal leading-[1.3] tracking-[-0.015em]">{question.text}</legend>
@@ -214,9 +223,14 @@ function Quiz({ questions, access, previousCompletedAt, onCancel, onDone }: Quiz
             </button>
             <button type="button" onClick={cancel} className="px-3 text-sm text-pt-fg-3 hover:text-pt-fg">Thoát</button>
           </div>
-          {isLast || allAnswered ? (
-            <button type="button" onClick={handleSubmit} disabled={!allAnswered || submit.isPending} className={PT_BUTTON}>
-              {submit.isPending ? 'Đang chấm…' : allAnswered ? 'Nộp bài' : `Còn ${questions.length - answered} câu`}
+          {isLast && (done || answers[question.id] === undefined || plan.isFetching) ? (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!allAnswered || submit.isPending}
+              className={PT_BUTTON}
+            >
+              {submit.isPending ? 'Đang chấm…' : allAnswered ? 'Nộp bài' : plan.isFetching ? 'Đang tải câu tiếp…' : 'Chọn một đáp án'}
             </button>
           ) : (
             <button type="button" onClick={() => setIndex(index + 1)} className={PT_BUTTON}>
@@ -294,7 +308,7 @@ function Result({ data, result, access, onRetake }: { data: PersonalDiagnostic; 
         </div>
       </Card>
 
-      <p className="text-sm leading-relaxed text-pt-fg-2">Kết quả dựa trên các câu trả lời trong bài đánh giá này, dùng để đề xuất lộ trình. Mức của mỗi miền là mức cao nhất trả lời đúng liên tiếp từ Cơ bản; kết quả không thay thế đánh giá toàn diện qua công việc thực tế.</p>
+      <p className="text-sm leading-relaxed text-pt-fg-2">Kết quả dựa trên các câu trả lời trong bài đánh giá này, dùng để đề xuất lộ trình. Mức của mỗi miền là mức cao nhất bạn trả lời đúng cả hai câu, tính liên tiếp từ Cơ bản. Đây là xếp lớp sơ bộ: năng lực được xác nhận khi bạn hoàn thành khóa học và bài thực hành.</p>
       <Card className="p-6 md:p-8">
         <SectionTitle title="Theo từng miền" aside="Thang 3 mức: Cơ bản · Trung cấp · Nâng cao" />
         <ul className="mt-6 grid gap-x-10 md:grid-cols-2">

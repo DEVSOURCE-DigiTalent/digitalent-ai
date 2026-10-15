@@ -90,22 +90,12 @@ describe('individual reverse trial, from the quick try to a paid plan', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(START);
 
-    // 1. Quick try: Kế toán, a survey answered right, one lesson. The result offers a 7-day trial.
+    // 1. Quick try: Kế toán, its sample path, then the 7-day trial.
     renderApp('/individual/try');
     fireEvent.click(await screen.findByRole('radio', { name: /Kế toán/ }));
-    click(/Tiếp tục với Kế toán/);
-    for (let index = 0; index < 6; index += 1) {
-      const question = screen.getByRole('group', { name: new RegExp(`Câu ${index + 1}`) });
-      fireEvent.click(within(question).getAllByRole('radio')[1]);
-      click(index === 5 ? /Xem lộ trình mẫu/ : /Câu tiếp/);
-    }
-    click(/Học bài miễn phí/);
-    fireEvent.click(screen.getByRole('radio', { name: /Đối chiếu dữ liệu nguồn/ }));
-    click(/Xem phản hồi/);
-    fireEvent.click(screen.getByRole('radio', { name: /Nguồn và kỳ dữ liệu/ }));
-    click(/Hoàn thành bài thử/);
-    expect(await heading(/Bạn đã hoàn thành phần trải nghiệm/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('link', { name: /Lưu kết quả và học tiếp 7 ngày miễn phí/ }));
+    click(/Xem lộ trình cho Kế toán/);
+    expect(await heading('Lộ trình năng lực số cho Kế toán')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('link', { name: /Bắt đầu 7 ngày miễn phí/ }));
 
     // 2. Trial sign-up with the position carried over.
     await heading('Tạo tài khoản dùng thử');
@@ -137,10 +127,10 @@ describe('individual reverse trial, from the quick try to a paid plan', () => {
     expect(await screen.findByRole('heading', { name: /Bắt đầu trong 4 bước · 0\/4/ })).toBeInTheDocument();
     expect(screen.getByText(/Mục tiêu: Kế toán/)).toBeInTheDocument();
 
-    // 5. The assessment intro mentions the quick try (AC-01).
+    // 5. The entry assessment is the first real measure: the quick try no longer asks questions.
     fireEvent.click(screen.getByRole('link', { name: 'Bắt đầu' }));
-    expect(await screen.findByText(/Ở bài thử nhanh bạn đúng 6\/6 câu định hướng/)).toBeInTheDocument();
-    expect(screen.getByText(/Bài này 18 câu, đo mức chính xác ở 6 miền/)).toBeInTheDocument();
+    expect(await screen.findByText(/Bài này 18 câu, đo mức chính xác ở 6 miền/)).toBeInTheDocument();
+    expect(screen.queryByText(/câu định hướng/)).not.toBeInTheDocument();
 
     // The assessment, answered from level 0 so the whole path is open, then one course passed (AC-04).
     await api.submitDiagnostic(Object.fromEntries(ENTRY_QUESTIONS.map((q) => [q.id, (q.correctIndex + 1) % q.options.length])));
