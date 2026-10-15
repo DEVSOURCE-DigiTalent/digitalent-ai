@@ -84,6 +84,11 @@ public static class DependencyInjection
         services.AddScoped<PulseOutcomeReader>();
         services.AddScoped<PulseReviewScope>();
 
+        // 8. Quản trị nền tảng: phiên bản chương trình và trình soạn khóa học (/platform/catalog/*)
+        services.AddScoped<DigiTalent.Application.UseCases.Platform.Catalog.PlatformCatalogEditor>();
+        services.AddScoped<DigiTalent.Application.UseCases.Platform.Catalog.PlatformCourseContentReader>();
+        services.AddScoped<DigiTalent.Application.UseCases.Platform.Catalog.PlatformPublishChecker>();
+
         return services;
     }
 }

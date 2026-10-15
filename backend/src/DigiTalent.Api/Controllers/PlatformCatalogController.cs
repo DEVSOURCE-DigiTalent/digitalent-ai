@@ -1,6 +1,7 @@
 using DigiTalent.Api.Authorization;
 using DigiTalent.Api.Common;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.Platform.Catalog;
 using DigiTalent.Application.UseCases.Platform.Framework;
 using DigiTalent.Domain.Constants.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -93,4 +94,95 @@ public class PlatformCatalogController : ControllerBase
         Ok(ApiResponse<PlatformFrameworkDetail>.Ok(
             await useCase.ExecuteAsync(new ArchivePlatformFrameworkDomainUseCaseInput { FrameworkId = id, DomainId = domainId }),
             "Domain archived."));
+
+    // ----- Catalog versions --------------------------------------------------------------------
+
+    // GET api/v1/platform/catalog/versions
+    [HttpGet("catalog/versions")]
+    [HasPermission(Permissions.Platform.CatalogRead)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogVersionsOutput>>> GetVersions(
+        [FromServices] IUseCase<GetPlatformCatalogVersionsUseCaseInput, PlatformCatalogVersionsOutput> useCase) =>
+        Ok(ApiResponse<PlatformCatalogVersionsOutput>.Ok(await useCase.ExecuteAsync(new GetPlatformCatalogVersionsUseCaseInput())));
+
+    // POST api/v1/platform/catalog/versions — creates the draft from the version in use
+    [HttpPost("catalog/versions")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogVersionDetail>>> CreateDraft(
+        [FromServices] IUseCase<CreatePlatformCatalogDraftUseCaseInput, PlatformCatalogVersionDetail> useCase) =>
+        Ok(ApiResponse<PlatformCatalogVersionDetail>.Ok(await useCase.ExecuteAsync(new CreatePlatformCatalogDraftUseCaseInput()), "Draft created."));
+
+    // GET api/v1/platform/catalog/versions/{versionNo}
+    [HttpGet("catalog/versions/{versionNo:int}")]
+    [HasPermission(Permissions.Platform.CatalogRead)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogVersionDetail>>> GetVersion(
+        int versionNo,
+        [FromServices] IUseCase<GetPlatformCatalogVersionUseCaseInput, PlatformCatalogVersionDetail> useCase) =>
+        Ok(ApiResponse<PlatformCatalogVersionDetail>.Ok(await useCase.ExecuteAsync(new GetPlatformCatalogVersionUseCaseInput { VersionNo = versionNo })));
+
+    // GET api/v1/platform/catalog/versions/{versionNo}/publish-check
+    [HttpGet("catalog/versions/{versionNo:int}/publish-check")]
+    [HasPermission(Permissions.Platform.CatalogRead)]
+    public async Task<ActionResult<ApiResponse<PlatformPublishCheck>>> GetPublishCheck(
+        int versionNo,
+        [FromServices] IUseCase<GetPlatformCatalogPublishCheckUseCaseInput, PlatformPublishCheck> useCase) =>
+        Ok(ApiResponse<PlatformPublishCheck>.Ok(await useCase.ExecuteAsync(new GetPlatformCatalogPublishCheckUseCaseInput { VersionNo = versionNo })));
+
+    // POST api/v1/platform/catalog/versions/{versionNo}/publish — body { releaseNote? }
+    [HttpPost("catalog/versions/{versionNo:int}/publish")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogVersionDetail>>> PublishVersion(
+        int versionNo,
+        [FromBody] PublishPlatformCatalogVersionUseCaseInput input,
+        [FromServices] IUseCase<PublishPlatformCatalogVersionUseCaseInput, PlatformCatalogVersionDetail> useCase)
+    {
+        input.VersionNo = versionNo;
+        return Ok(ApiResponse<PlatformCatalogVersionDetail>.Ok(await useCase.ExecuteAsync(input), "Version published."));
+    }
+
+    // ----- Courses in a version ----------------------------------------------------------------
+
+    // POST api/v1/platform/catalog/versions/{versionNo}/courses — body { code, title, domainId, level }
+    [HttpPost("catalog/versions/{versionNo:int}/courses")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogCourseDetail>>> CreateCourse(
+        int versionNo,
+        [FromBody] CreatePlatformCatalogCourseUseCaseInput input,
+        [FromServices] IUseCase<CreatePlatformCatalogCourseUseCaseInput, PlatformCatalogCourseDetail> useCase)
+    {
+        input.VersionNo = versionNo;
+        return Ok(ApiResponse<PlatformCatalogCourseDetail>.Ok(await useCase.ExecuteAsync(input), "Course added to the draft."));
+    }
+
+    // GET api/v1/platform/catalog/versions/{versionNo}/courses/{courseId}
+    [HttpGet("catalog/versions/{versionNo:int}/courses/{courseId:guid}")]
+    [HasPermission(Permissions.Platform.CatalogRead)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogCourseDetail>>> GetCourse(
+        int versionNo,
+        Guid courseId,
+        [FromServices] IUseCase<GetPlatformCatalogCourseUseCaseInput, PlatformCatalogCourseDetail> useCase) =>
+        Ok(ApiResponse<PlatformCatalogCourseDetail>.Ok(await useCase.ExecuteAsync(new GetPlatformCatalogCourseUseCaseInput { VersionNo = versionNo, CourseId = courseId })));
+
+    // PUT api/v1/platform/catalog/versions/{versionNo}/courses/{courseId} — body { code?, title, outcome, domainId, level, pricePerSeat, salesStatus }
+    [HttpPut("catalog/versions/{versionNo:int}/courses/{courseId:guid}")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogCourseDetail>>> UpdateCourse(
+        int versionNo,
+        Guid courseId,
+        [FromBody] UpdatePlatformCatalogCourseUseCaseInput input,
+        [FromServices] IUseCase<UpdatePlatformCatalogCourseUseCaseInput, PlatformCatalogCourseDetail> useCase)
+    {
+        input.VersionNo = versionNo;
+        input.CourseId = courseId;
+        return Ok(ApiResponse<PlatformCatalogCourseDetail>.Ok(await useCase.ExecuteAsync(input)));
+    }
+
+    // DELETE api/v1/platform/catalog/versions/{versionNo}/courses/{courseId} — only a course added in this draft
+    [HttpDelete("catalog/versions/{versionNo:int}/courses/{courseId:guid}")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogVersionDetail>>> RemoveCourse(
+        int versionNo,
+        Guid courseId,
+        [FromServices] IUseCase<RemovePlatformCatalogCourseUseCaseInput, PlatformCatalogVersionDetail> useCase) =>
+        Ok(ApiResponse<PlatformCatalogVersionDetail>.Ok(
+            await useCase.ExecuteAsync(new RemovePlatformCatalogCourseUseCaseInput { VersionNo = versionNo, CourseId = courseId }), "Course removed from the draft."));
 }
