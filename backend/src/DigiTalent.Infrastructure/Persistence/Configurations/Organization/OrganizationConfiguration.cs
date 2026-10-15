@@ -9,7 +9,7 @@ public class OrganizationConfiguration : IEntityTypeConfiguration<Organization>
     public void Configure(EntityTypeBuilder<Organization> builder)
     {
         builder.ToTable("organizations", table =>
-            table.HasCheckConstraint("ck_organizations_status", "status IN ('ACTIVE','INACTIVE')"));
+            table.HasCheckConstraint("ck_organizations_status", "status IN ('ACTIVE','INACTIVE','SUSPENDED')"));
 
         builder.HasKey(o => o.Id);
 

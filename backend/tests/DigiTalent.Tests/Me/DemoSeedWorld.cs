@@ -20,7 +20,6 @@ internal sealed class DemoSeedWorld : IDisposable
 {
     public const string EmployeeEmail = "employee@digitalent.ai";
     public const string ManagerEmail = "manager@digitalent.ai";
-    public const string AdminEmail = "admin@digitalent.ai";
 
     public required AppDbContext Context { get; init; }
 
@@ -42,6 +41,26 @@ internal sealed class DemoSeedWorld : IDisposable
     {
         var user = await UserAsync(email);
         return await Context.Employees.SingleAsync(e => e.UserId == user.Id);
+    }
+
+    /// <summary>
+    /// Thêm một tài khoản thuộc tổ chức demo nhưng không có hồ sơ nhân viên (seed không còn tài khoản như vậy:
+    /// owner@, manager@, employee@ đều có hồ sơ) và trả về email của nó.
+    /// </summary>
+    public async Task<string> AddAccountWithoutProfileAsync()
+    {
+        const string email = "no-profile@digitalent.ai";
+        var employee = await UserAsync(EmployeeEmail);
+        Context.Users.Add(new User
+        {
+            OrganizationId = employee.OrganizationId,
+            Email = email,
+            DisplayName = "No Profile",
+            PasswordHash = "hashed",
+        });
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
+        return email;
     }
 
     /// <summary>Use case /me/* dựng như DI trong Application.DependencyInjection, đăng nhập bằng <paramref name="email"/>.</summary>

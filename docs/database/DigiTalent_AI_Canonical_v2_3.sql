@@ -7,6 +7,16 @@
 -- configurations and migrations are written to match it; Report 4 Section 2 and
 -- docs/07 describe it. Change this file first, then the code and the documents.
 --
+-- Addendum 2026-10-14 (platform admin console, Pulse redesign) — 6 new tables, 1 changed CHECK:
+--   * platform_framework_domains, platform_framework_releases: the six-domain Digital AI
+--     standard (the outer "ceiling"), edited as a draft and published as numbered versions.
+--   * platform_courses, platform_course_releases, platform_course_questions: the 18 standard
+--     courses (6 domains x Basic / Intermediate / Advanced) with per-seat price, sales status,
+--     draft fields, release history and a draft question bank.
+--   * course_seat_orders: paid course seats bought by, or granted by Platform Admin to, an
+--     organization (one seat = one employee in one course).
+--   * organizations.status also accepts SUSPENDED (Platform Admin suspends / restores access).
+--
 -- Addendum 2026-10-06b (organization screens OW-02..OW-13) — 2 new tables, 3 new columns:
 --   * job_positions.department_id, job_positions.job_grade: a position belongs to a
 --     department and sits on one of the shared grades G1..G3 (position list/detail, grades).
@@ -81,7 +91,7 @@ CREATE TABLE organizations (
     created_at      timestamptz  NOT NULL,
     updated_at      timestamptz  NOT NULL,
     CONSTRAINT ck_organizations_status
-        CHECK (status IN ('ACTIVE','INACTIVE'))
+        CHECK (status IN ('ACTIVE','INACTIVE','SUSPENDED'))
 );
 
 -- Current plan of an organization (one row per organization).
@@ -1469,6 +1479,118 @@ CREATE TABLE readiness_scores (
     created_at                timestamptz NOT NULL DEFAULT now(),
     updated_at                timestamptz NOT NULL DEFAULT now()
 );
+
+-- ============================================================================
+-- 12A. PLATFORM CATALOG — DIGITAL AI CEILING, STANDARD COURSES, SEATS  [Addendum 2026-10-14]
+-- ============================================================================
+-- Owned by Platform Admin, shared by every organization (no organization_id except on
+-- course_seat_orders). Level 1/2/3 = Basic/Intermediate/Advanced; Basic is always free.
+
+CREATE TABLE platform_framework_domains (
+    id                     uuid PRIMARY KEY,
+    code                   varchar(10)  NOT NULL UNIQUE,     -- TT02_D1..TT02_D6 = competency_categories.code of each organization
+    name                   varchar(150) NOT NULL,
+    sort_order             int          NOT NULL,
+    published_description  text         NOT NULL,
+    draft_description      text         NOT NULL,
+    created_at             timestamptz  NOT NULL,
+    updated_at             timestamptz  NOT NULL
+);
+
+-- One row per published version; snapshot = the six domain descriptions at that time.
+CREATE TABLE platform_framework_releases (
+    id                    uuid PRIMARY KEY,
+    version_no            int           NOT NULL UNIQUE,
+    snapshot              jsonb         NOT NULL,
+    release_note          varchar(1000),
+    published_by_user_id  uuid REFERENCES users(id),
+    published_at          timestamptz   NOT NULL,
+    created_at            timestamptz   NOT NULL,
+    updated_at            timestamptz   NOT NULL,
+    CONSTRAINT ck_platform_framework_releases_version CHECK (version_no >= 1)
+);
+
+CREATE TABLE platform_courses (
+    id                     uuid PRIMARY KEY,
+    code                   varchar(20)  NOT NULL UNIQUE,     -- A1-F .. M6-A = courses.code of the TT02 catalog in each organization
+    domain_id              uuid         NOT NULL REFERENCES platform_framework_domains(id),
+    level                  smallint     NOT NULL,
+    version_no             int          NOT NULL,            -- published version
+    title                  varchar(250) NOT NULL,
+    outcome                text         NOT NULL,
+    price_per_seat         bigint       NOT NULL,            -- VND
+    sales_status           varchar(20)  NOT NULL,
+    draft_title            varchar(250),                     -- NULL draft_* = no pending draft
+    draft_outcome          text,
+    draft_price_per_seat   bigint,
+    draft_sales_status     varchar(20),
+    published_at           timestamptz,
+    created_at             timestamptz  NOT NULL,
+    updated_at             timestamptz  NOT NULL,
+    CONSTRAINT uq_platform_courses_domain_level UNIQUE (domain_id, level),
+    CONSTRAINT ck_platform_courses_level CHECK (level BETWEEN 1 AND 3),
+    CONSTRAINT ck_platform_courses_version CHECK (version_no >= 1),
+    CONSTRAINT ck_platform_courses_price CHECK (price_per_seat >= 0 AND (level > 1 OR price_per_seat = 0)),
+    CONSTRAINT ck_platform_courses_draft_price
+        CHECK (draft_price_per_seat IS NULL OR (draft_price_per_seat >= 0 AND (level > 1 OR draft_price_per_seat = 0))),
+    CONSTRAINT ck_platform_courses_sales_status CHECK (sales_status IN ('OPEN','PAUSED')),
+    CONSTRAINT ck_platform_courses_draft_sales_status
+        CHECK (draft_sales_status IS NULL OR draft_sales_status IN ('OPEN','PAUSED'))
+);
+
+CREATE TABLE platform_course_releases (
+    id                    uuid PRIMARY KEY,
+    course_id             uuid         NOT NULL REFERENCES platform_courses(id),
+    version_no            int          NOT NULL,
+    title                 varchar(250) NOT NULL,
+    outcome               text         NOT NULL,
+    price_per_seat        bigint       NOT NULL,
+    sales_status          varchar(20)  NOT NULL,
+    published_by_user_id  uuid REFERENCES users(id),
+    published_at          timestamptz  NOT NULL,
+    created_at            timestamptz  NOT NULL,
+    updated_at            timestamptz  NOT NULL,
+    CONSTRAINT uq_platform_course_releases_course_version UNIQUE (course_id, version_no),
+    CONSTRAINT ck_platform_course_releases_sales_status CHECK (sales_status IN ('OPEN','PAUSED'))
+);
+
+-- Draft questions are published together with the next course release.
+CREATE TABLE platform_course_questions (
+    id                  uuid PRIMARY KEY,
+    course_id           uuid          NOT NULL REFERENCES platform_courses(id),
+    question_text       varchar(1000) NOT NULL,
+    correct_answer      varchar(1000) NOT NULL,
+    explanation         varchar(1000) NOT NULL,
+    status              varchar(20)   NOT NULL,
+    created_by_user_id  uuid REFERENCES users(id),
+    created_at          timestamptz   NOT NULL,
+    updated_at          timestamptz   NOT NULL,
+    CONSTRAINT ck_platform_course_questions_status CHECK (status IN ('DRAFT','PUBLISHED','ARCHIVED'))
+);
+
+CREATE INDEX ix_platform_course_questions_course ON platform_course_questions (course_id, status);
+
+-- PURCHASE = bought by the organization; ADMIN_GRANT = given by Platform Admin with a reason.
+CREATE TABLE course_seat_orders (
+    id                  uuid PRIMARY KEY,
+    organization_id     uuid          NOT NULL REFERENCES organizations(id),
+    course_id           uuid          NOT NULL REFERENCES platform_courses(id),
+    seats               int           NOT NULL,
+    kind                varchar(20)   NOT NULL,
+    unit_price          bigint        NOT NULL,
+    total_amount        bigint        NOT NULL,
+    reason              varchar(1000),
+    created_by_user_id  uuid REFERENCES users(id),
+    created_at          timestamptz   NOT NULL,
+    updated_at          timestamptz   NOT NULL,
+    CONSTRAINT ck_course_seat_orders_seats CHECK (seats > 0),
+    CONSTRAINT ck_course_seat_orders_kind CHECK (kind IN ('PURCHASE','ADMIN_GRANT')),
+    CONSTRAINT ck_course_seat_orders_amount CHECK (unit_price >= 0 AND total_amount >= 0),
+    CONSTRAINT ck_course_seat_orders_grant_reason CHECK (kind <> 'ADMIN_GRANT' OR reason IS NOT NULL)
+);
+
+CREATE INDEX ix_course_seat_orders_org_created ON course_seat_orders (organization_id, created_at DESC);
+CREATE INDEX ix_course_seat_orders_course ON course_seat_orders (course_id);
 
 -- ============================================================================
 -- 13. CONDITIONAL AUTH TABLE — NOT CREATED BY DEFAULT

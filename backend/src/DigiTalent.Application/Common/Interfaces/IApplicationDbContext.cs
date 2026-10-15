@@ -41,6 +41,8 @@ public interface IApplicationDbContext
     DbSet<EmployeeCompetencyProfile> EmployeeCompetencyProfiles { get; }
     DbSet<PositionRequirementItem> PositionRequirementItems { get; }
     DbSet<PositionRequirementSet> PositionRequirementSets { get; }
+    DbSet<CapabilityBaseline> CapabilityBaselines { get; }
+    DbSet<CapabilityBaselineAnswer> CapabilityBaselineAnswers { get; }
 
     // Learning (khóa học)
     DbSet<Course> Courses { get; }
@@ -49,6 +51,7 @@ public interface IApplicationDbContext
     DbSet<CourseLearningOutcome> CourseLearningOutcomes { get; }
     DbSet<CourseModule> CourseModules { get; }
     DbSet<CoursePrerequisite> CoursePrerequisites { get; }
+    DbSet<CourseFinalSubmission> CourseFinalSubmissions { get; }
     DbSet<Enrollment> Enrollments { get; }
     DbSet<LearningMaterial> LearningMaterials { get; }
     DbSet<Lesson> Lessons { get; }
@@ -111,6 +114,14 @@ public interface IApplicationDbContext
     DbSet<Subscription> Subscriptions { get; }
     DbSet<SubscriptionEntitlement> SubscriptionEntitlements { get; }
     DbSet<Invoice> Invoices { get; }
+
+    // Platform catalog (Digital AI ceiling, 18 standard courses, seats)
+    DbSet<PlatformFrameworkDomain> PlatformFrameworkDomains { get; }
+    DbSet<PlatformFrameworkRelease> PlatformFrameworkReleases { get; }
+    DbSet<PlatformCourse> PlatformCourses { get; }
+    DbSet<PlatformCourseRelease> PlatformCourseReleases { get; }
+    DbSet<PlatformCourseQuestion> PlatformCourseQuestions { get; }
+    DbSet<CourseSeatOrder> CourseSeatOrders { get; }
 
     // Shared
     DbSet<AuditLog> AuditLogs { get; }

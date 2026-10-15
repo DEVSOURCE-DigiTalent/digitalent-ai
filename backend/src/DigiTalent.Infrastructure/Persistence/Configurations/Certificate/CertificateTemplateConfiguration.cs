@@ -19,6 +19,8 @@ public class CertificateTemplateConfiguration : IEntityTypeConfiguration<Certifi
         builder.Property(x => x.Name).IsRequired().HasMaxLength(255);
         builder.Property(x => x.TemplateHtml).IsRequired();
         builder.Property(x => x.Status).IsRequired().HasMaxLength(30).HasDefaultValue("DRAFT");
+        // version_no integer NOT NULL DEFAULT 1 (SQL v2_3): an unset VersionNo (0) takes the database default
+        builder.Property(x => x.VersionNo).HasDefaultValue(1);
 
         builder.HasIndex(x => new { x.OrganizationId, x.Name, x.VersionNo })
             .IsUnique()

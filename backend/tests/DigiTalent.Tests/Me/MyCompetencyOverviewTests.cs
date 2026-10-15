@@ -101,10 +101,10 @@ public class MyCompetencyOverviewTests
     public async Task AccountWithoutEmployeeProfile_IsForbidden()
     {
         using var world = await DemoSeedWorld.CreateAsync();
-        var admin = await world.AsAsync(DemoSeedWorld.AdminEmail);
+        var account = await world.AsAsync(await world.AddAccountWithoutProfileAsync());
 
-        var dashboard = () => admin.Dashboard.ExecuteAsync(new GetMyDashboardUseCaseInput());
-        var profile = () => admin.Profile.ExecuteAsync(new GetMyCompetencyProfileUseCaseInput());
+        var dashboard = () => account.Dashboard.ExecuteAsync(new GetMyDashboardUseCaseInput());
+        var profile = () => account.Profile.ExecuteAsync(new GetMyCompetencyProfileUseCaseInput());
 
         await dashboard.Should().ThrowAsync<ForbiddenException>();
         await profile.Should().ThrowAsync<ForbiddenException>();

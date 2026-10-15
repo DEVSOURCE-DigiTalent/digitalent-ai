@@ -1,14 +1,14 @@
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { PersonalDashboardPage } from '@/features/manager/pages/ManagerPageSwitch';
 import { OwnerOverviewPage } from '@/features/organization/pages/OwnerOverviewPage';
 import { TeamCapabilityDashboardPage } from '@/features/manager/pages/team/TeamCapabilityDashboardPage';
+import { PulseTodayPage } from '@/features/pulse-employee/pages/PulseTodayPage';
 import { TrialDashboardOverview } from './TrialDashboardOverview';
 
 function useIsEnterpriseTrial(): boolean {
   return useCurrentUser((state) => {
     const user = state.user;
     if (!user) return false;
-    return (user.enterpriseTrialStatus !== undefined && user.enterpriseTrialStatus !== 'converted')
+    return (user.enterpriseTrialStatus != null && user.enterpriseTrialStatus !== 'converted')
       || user.subscription?.planCode === 'ENT_TRIAL';
   });
 }
@@ -21,6 +21,7 @@ export function TrialAwareManagerDashboardPage() {
   return useIsEnterpriseTrial() ? <TrialDashboardOverview /> : <TeamCapabilityDashboardPage />;
 }
 
-export function TrialAwareEmployeeDashboardPage() {
-  return useIsEnterpriseTrial() ? <TrialDashboardOverview /> : <PersonalDashboardPage />;
+/** Hôm nay của nhân viên Pulse; tài khoản dùng thử doanh nghiệp (luồng hướng dẫn cũ) vẫn thấy tổng quan dùng thử. */
+export function TrialAwarePulseTodayPage() {
+  return useIsEnterpriseTrial() ? <TrialDashboardOverview /> : <PulseTodayPage />;
 }

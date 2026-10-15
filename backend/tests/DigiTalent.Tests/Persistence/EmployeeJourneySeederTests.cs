@@ -42,7 +42,8 @@ public class EmployeeJourneySeederTests
         });
 
         (await context.Certificates.CountAsync(c => c.EmployeeId == employee.Id)).Should().Be(1);
-        (await context.Assessments.CountAsync(a => a.Status == Statuses.Assessment.Published)).Should().Be(4);
+        // Bài cấp khóa của hành trình demo; bài ôn tập theo mô đun (module_id) là của PulseContentSeeder.
+        (await context.Assessments.CountAsync(a => a.Status == Statuses.Assessment.Published && a.ModuleId == null)).Should().Be(4);
         (await context.Assessments.CountAsync(a => a.IsFinal)).Should().Be(3, "one published final per course");
         (await context.CertificateTemplates.CountAsync(t => t.Status == Statuses.CertificateTemplate.Active)).Should().Be(1);
     }

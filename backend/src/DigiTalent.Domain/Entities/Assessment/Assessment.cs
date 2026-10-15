@@ -9,6 +9,7 @@ public class Assessment : IHasTimestamps
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid CourseId { get; set; }
+    public Guid? ModuleId { get; set; }                 // v3.1: câu hỏi ôn tập của một mô đun (QUIZ)
     public string Code { get; set; } = string.Empty;   // v2.3: mã ổn định qua các phiên bản
     public int VersionNo { get; set; }
     public Guid? SupersedesAssessmentId { get; set; }

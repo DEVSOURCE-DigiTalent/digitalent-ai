@@ -1,13 +1,9 @@
 import { Navigate, type RouteObject } from 'react-router-dom';
 import { EnterpriseLayout } from '../layouts/EnterpriseLayout';
-import { FocusLayout } from '../layouts/FocusLayout';
-import { AuthGuard } from '../../components/guards/AuthGuard';
-import { RequireOnboarded } from '../../components/guards/RequireOnboarded';
-import { RequireWorkspace } from '../../components/guards/RequireWorkspace';
-import { WORKSPACES } from '../../lib/roles';
+import { PulseEmployeeLayout } from '../layouts/PulseEmployeeLayout';
 import { useCurrentUser } from '../../hooks/use-current-user';
 import { getHomePath } from '../../lib/navigation';
-import { ENTERPRISE_SCREENS } from '../../lib/screens/enterprise';
+import { EMPLOYEE_SCREENS, ENTERPRISE_SCREENS } from '../../lib/screens/enterprise';
 import { buildRoutes } from './build-routes';
 import { ENTERPRISE_PAGES } from './enterprise-pages';
 
@@ -16,24 +12,15 @@ function EnterpriseHome() {
   return <Navigate to={user ? getHomePath(user) : '/login'} replace />;
 }
 
-/** Immersive learning experiences without sidebar (assessment attempt, lesson viewer). */
-const FOCUS_SCREEN_IDS = new Set(['EM-08', 'EM-11', 'EMP-06', 'EMP-08']);
+/** Cổng nhân viên Pulse: khung riêng (PulseEmployeeLayout, thanh đầu trang), không dùng menu bên của doanh nghiệp. */
+const PULSE_EMPLOYEE_SCREEN_IDS = new Set(EMPLOYEE_SCREENS.map((s) => s.id));
 
 export const enterpriseRoutes: RouteObject[] = [
-  // Immersive / Focused pages (no sidebar, minimal topbar with Exit button)
   {
     path: '/enterprise',
-    element: (
-      <AuthGuard>
-        <RequireWorkspace workspace={WORKSPACES.ENTERPRISE}>
-          <RequireOnboarded>
-            <FocusLayout exitPath="/enterprise/me" />
-          </RequireOnboarded>
-        </RequireWorkspace>
-      </AuthGuard>
-    ),
+    element: <PulseEmployeeLayout />,
     children: buildRoutes(
-      ENTERPRISE_SCREENS.filter((s) => FOCUS_SCREEN_IDS.has(s.id)),
+      ENTERPRISE_SCREENS.filter((s) => PULSE_EMPLOYEE_SCREEN_IDS.has(s.id)),
       ENTERPRISE_PAGES,
       '/enterprise',
     ),
@@ -48,7 +35,7 @@ export const enterpriseRoutes: RouteObject[] = [
       { path: '/enterprise/trial', element: <EnterpriseHome /> },
       { path: 'overview', element: <Navigate to="/enterprise/dashboard" replace /> },
       ...buildRoutes(
-        ENTERPRISE_SCREENS.filter((s) => !FOCUS_SCREEN_IDS.has(s.id)),
+        ENTERPRISE_SCREENS.filter((s) => !PULSE_EMPLOYEE_SCREEN_IDS.has(s.id)),
         ENTERPRISE_PAGES,
         '/enterprise',
       ),

@@ -6,161 +6,97 @@ const P = PERMISSIONS;
 const EMPLOYEE_ROLES = [ROLES.EMPLOYEE, ROLES.MANAGER];
 
 /**
- * EMPLOYEE screens according to UI/UX spec v2.1 (§8, §3.4).
- * Accessible by EMPLOYEE and MANAGER (for personal learning and growth).
+ * Cổng nhân viên Pulse (docs/ui-redesign/16-pulse-product-flow-detailed.md §3, §14): điều hướng chính chỉ có
+ * Hôm nay / Lộ trình / Thực hành; chi tiết khóa, trang học mô đun và bài cuối khóa mở theo ngữ cảnh.
+ * Các màn này dùng khung PulseEmployeeLayout (không có menu bên). Quản lý vẫn vào được để tự học.
  */
 export const EMPLOYEE_SCREENS: ScreenDef[] = [
-  // ── Tổng quan ──
   {
     id: 'EM-01',
-    title: 'Bảng phát triển của tôi',
+    title: 'Hôm nay',
     path: '/enterprise/me',
     roles: EMPLOYEE_ROLES,
+    permission: P.EMPLOYEE_COMPETENCY_PROFILE_READ,
     priority: 'P0',
   },
-
-  // ── Năng lực của tôi ──
   {
     id: 'EM-02',
-    title: 'Hồ sơ năng lực của tôi',
-    path: '/enterprise/me/competency',
+    title: 'Lộ trình của tôi',
+    path: '/enterprise/me/path',
     roles: EMPLOYEE_ROLES,
     permission: P.EMPLOYEE_COMPETENCY_PROFILE_READ,
     priority: 'P0',
   },
   {
     id: 'EM-03',
-    title: 'Khoảng trống năng lực của tôi',
-    path: '/enterprise/me/skill-gap',
+    title: 'Thực hành',
+    path: '/enterprise/me/practice',
     roles: EMPLOYEE_ROLES,
-    permission: P.SKILL_GAP_READ,
+    permission: P.LEARNING_PROGRESS_READ,
     priority: 'P0',
   },
   {
     id: 'EM-04',
-    title: 'Dòng thời gian minh chứng',
-    path: '/enterprise/me/evidence',
+    title: 'Kiểm tra đầu vào',
+    path: '/enterprise/me/baseline',
     roles: EMPLOYEE_ROLES,
-    permission: P.EVIDENCE_READ,
+    permission: P.ASSESSMENT_READ,
     priority: 'P0',
   },
-
-  // ── Học tập ──
   {
     id: 'EM-05',
-    title: 'Lộ trình học tập của tôi',
-    path: '/enterprise/me/learning-path',
+    title: 'Chi tiết khóa học',
+    path: '/enterprise/me/courses/:courseId',
     roles: EMPLOYEE_ROLES,
+    permission: P.COURSE_READ_CATALOG,
     priority: 'P0',
   },
   {
     id: 'EM-06',
-    title: 'Khóa học của tôi',
-    path: '/enterprise/me/courses',
+    title: 'Học mô đun',
+    path: '/enterprise/me/courses/:courseId/modules/:moduleId',
     roles: EMPLOYEE_ROLES,
     permission: P.COURSE_READ_CATALOG,
     priority: 'P0',
   },
   {
     id: 'EM-07',
-    title: 'Chi tiết khóa học',
-    path: '/enterprise/me/courses/:id',
+    title: 'Bài cuối khóa',
+    path: '/enterprise/me/courses/:courseId/final',
     roles: EMPLOYEE_ROLES,
-    permission: P.COURSE_READ_CATALOG,
+    permission: P.ASSESSMENT_READ,
     priority: 'P0',
   },
   {
     id: 'EM-08',
-    title: 'Nội dung bài học',
-    path: '/enterprise/me/courses/:id/lessons/:lessonId',
-    roles: EMPLOYEE_ROLES,
-    permission: P.COURSE_READ_CATALOG,
-    priority: 'P0',
-  },
-
-  // ── Đánh giá ──
-  {
-    id: 'EM-09',
-    title: 'Danh sách bài đánh giá',
-    path: '/enterprise/me/assessments',
-    roles: EMPLOYEE_ROLES,
-    permission: P.ASSESSMENT_READ,
-    priority: 'P0',
-  },
-  {
-    id: 'EM-10',
-    title: 'Giới thiệu bài đánh giá',
-    path: '/enterprise/me/assessments/:id',
-    roles: EMPLOYEE_ROLES,
-    permission: P.ASSESSMENT_READ,
-    priority: 'P0',
-  },
-  {
-    id: 'EM-11',
-    title: 'Làm bài đánh giá',
-    path: '/enterprise/me/assessments/:id/attempt',
-    roles: EMPLOYEE_ROLES,
-    permission: P.ATTEMPT_START,
-    priority: 'P0',
-  },
-  {
-    id: 'EM-12',
-    title: 'Kết quả đánh giá',
-    path: '/enterprise/me/assessments/:id/result',
-    roles: EMPLOYEE_ROLES,
-    permission: P.ATTEMPT_READ_RESULT,
-    priority: 'P0',
-  },
-  {
-    id: 'EM-13',
-    title: 'Lịch sử đánh giá',
-    path: '/enterprise/me/assessments/history',
-    roles: EMPLOYEE_ROLES,
-    permission: P.ATTEMPT_READ_RESULT,
-    priority: 'P0',
-  },
-
-  // ── Nhiệm vụ thực tế ──
-  {
-    id: 'EM-14',
-    title: 'Nhiệm vụ của tôi',
-    path: '/enterprise/me/tasks',
-    roles: EMPLOYEE_ROLES,
-    permission: P.TASK_READ,
-    priority: 'P0',
-  },
-  {
-    id: 'EM-15',
-    title: 'Chi tiết nhiệm vụ',
-    path: '/enterprise/me/tasks/:id',
-    roles: EMPLOYEE_ROLES,
-    permission: P.TASK_READ,
-    priority: 'P0',
-  },
-  {
-    id: 'EM-16',
-    title: 'Nộp minh chứng nhiệm vụ',
-    path: '/enterprise/me/tasks/:id/submit',
-    roles: EMPLOYEE_ROLES,
-    permission: P.TASK_SUBMIT,
-    priority: 'P0',
-  },
-  {
-    id: 'EM-17',
-    title: 'Phản hồi & Chỉnh sửa',
-    path: '/enterprise/me/tasks/:id/feedback',
-    roles: EMPLOYEE_ROLES,
-    permission: P.TASK_READ,
-    priority: 'P0',
-  },
-
-  // ── Thành tựu ──
-  {
-    id: 'EM-18',
-    title: 'Thành tựu & Chứng nhận',
-    path: '/enterprise/me/achievements',
+    title: 'Kết quả đã xác nhận',
+    path: '/enterprise/me/outcomes',
     roles: EMPLOYEE_ROLES,
     permission: P.CERTIFICATE_READ,
     priority: 'P0',
+  },
+  {
+    id: 'EM-09',
+    title: 'Chi tiết kết quả',
+    path: '/enterprise/me/outcomes/:outcomeId',
+    roles: EMPLOYEE_ROLES,
+    permission: P.CERTIFICATE_READ,
+    priority: 'P1',
+  },
+  {
+    id: 'EM-10',
+    title: 'Hoạt động',
+    path: '/enterprise/me/activity',
+    roles: EMPLOYEE_ROLES,
+    allowUnpaid: true,
+    priority: 'P1',
+  },
+  {
+    id: 'EM-11',
+    title: 'Hồ sơ của tôi',
+    path: '/enterprise/me/profile',
+    roles: EMPLOYEE_ROLES,
+    allowUnpaid: true,
+    priority: 'P1',
   },
 ];
