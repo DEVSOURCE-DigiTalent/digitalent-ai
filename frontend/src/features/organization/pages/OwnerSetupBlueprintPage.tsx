@@ -6,6 +6,7 @@ import { useCapabilityDashboard } from '@/hooks/use-analytics';
 import { BlueprintFlow } from '../components/BlueprintFlow';
 import { BlueprintTierCard } from '../components/BlueprintTierCard';
 import { PositionMapping } from '../components/PositionMapping';
+import { CapabilityCeilingMatrix } from '../components/CapabilityCeilingMatrix';
 
 const PULSE_TOKENS = {
   '--po-canvas': '#f7f9fd',
@@ -359,6 +360,11 @@ export function OwnerSetupBlueprintPage() {
               </Link>
             </div>
           </section>
+        </div>
+
+        {/* Ceiling matrix: Digital AI ⊇ organization ⊇ department (Lý thuyết trần nhà) */}
+        <div className="mt-10" id="ceilings">
+          <CapabilityCeilingMatrix />
         </div>
 
         {/* Domain level mapping */}

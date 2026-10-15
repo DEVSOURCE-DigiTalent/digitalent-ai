@@ -547,6 +547,66 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                     b.ToTable("capability_baseline_answers", (string)null);
                 });
 
+            modelBuilder.Entity("DigiTalent.Domain.Entities.CapabilityCeiling", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<short>("CeilingLevel")
+                        .HasColumnType("smallint")
+                        .HasColumnName("ceiling_level");
+
+                    b.Property<Guid>("CompetencyCategoryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("competency_category_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_capability_ceilings");
+
+                    b.HasIndex("CompetencyCategoryId")
+                        .HasDatabaseName("ix_capability_ceilings_competency_category_id");
+
+                    b.HasIndex("UpdatedByUserId")
+                        .HasDatabaseName("ix_capability_ceilings_updated_by_user_id");
+
+                    b.HasIndex("DepartmentId", "CompetencyCategoryId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_capability_ceilings_department_category")
+                        .HasFilter("department_id IS NOT NULL");
+
+                    b.HasIndex("OrganizationId", "CompetencyCategoryId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_capability_ceilings_organization_category")
+                        .HasFilter("department_id IS NULL");
+
+                    b.ToTable("capability_ceilings", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_capability_ceilings_level", "ceiling_level BETWEEN 0 AND 3");
+                        });
+                });
+
             modelBuilder.Entity("DigiTalent.Domain.Entities.Certificate", b =>
                 {
                     b.Property<Guid>("Id")
@@ -6559,6 +6619,35 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_capability_baseline_answers_question_options_selected_optio");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.CapabilityCeiling", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.CompetencyCategory", null)
+                        .WithMany()
+                        .HasForeignKey("CompetencyCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_capability_ceilings_competency_categories_competency_catego");
+
+                    b.HasOne("DigiTalent.Domain.Entities.Department", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_capability_ceilings_departments_department_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_capability_ceilings_organizations_organization_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_capability_ceilings_users_updated_by_user_id");
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.Certificate", b =>
