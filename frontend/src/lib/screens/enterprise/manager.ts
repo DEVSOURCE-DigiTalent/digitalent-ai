@@ -69,4 +69,13 @@ export const MANAGER_SCREENS: ScreenDef[] = [
     permission: P.LEARNING_PROGRESS_READ,
     priority: 'P1',
   },
+  // ── Bài cuối khóa (Pulse, mock #/review): hàng chờ chấm của phòng ban ──
+  {
+    id: 'MG-13',
+    title: 'Bài cuối khóa',
+    path: '/enterprise/team/final-reviews',
+    roles: MANAGER_ROLES,
+    permission: P.TASK_EVALUATE,
+    priority: 'P0',
+  },
 ];
