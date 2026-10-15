@@ -16,7 +16,9 @@ export type PulseBlockReason =
   | 'SEAT_REQUIRED'
   | 'PRIOR_LEVEL_REQUIRED'
   | 'PREVIOUS_MODULE_REQUIRED'
-  | 'SLIDES_NOT_VIEWED';
+  | 'SLIDES_NOT_VIEWED'
+  | 'REVIEW_REQUIRED'
+  | 'QUIZ_CHANGED';
 export type PulseSlotStatus =
   | 'COMPLETED'
   | 'IN_REVIEW'
@@ -209,6 +211,29 @@ export interface PulseQuizResultSummary {
   at: string;
 }
 
+/** Trang phải mở lại sau lần ôn tập chưa đạt (câu 2k-1, 2k của ngân hàng ↔ trang k). */
+export interface PulseQuizReviewPage {
+  lessonId: string;
+  index: number;
+  title: string;
+  done: boolean;
+}
+
+export interface PulseQuizReview {
+  attemptNo: number;
+  failedAt: string;
+  /** true = đã mở lại mọi trang cần xem, câu hỏi của lần tiếp theo đã mở. */
+  done: boolean;
+  pages: PulseQuizReviewPage[];
+}
+
+/** Bộ câu của một lần làm, rút từ ngân hàng của mô đun; lần sau là câu khác. */
+export interface PulseModuleQuiz {
+  assessmentId: string;
+  attemptNo: number;
+  questions: { questionId: string; content: string; options: PulseOption[] }[];
+}
+
 export interface PulseModuleDetail {
   course: PulseCourseSummary;
   module: { moduleId: string; index: number; title: string; description?: string | null; estimatedMinutes?: number | null };
@@ -218,7 +243,8 @@ export interface PulseModuleDetail {
   viewed: boolean;
   quizPassed: boolean;
   lastQuiz?: PulseQuizResultSummary | null;
-  quiz?: { assessmentId: string; questions: { questionId: string; content: string; options: PulseOption[] }[] } | null;
+  quiz?: PulseModuleQuiz | null;
+  review?: PulseQuizReview | null;
   quizBlockReason?: PulseBlockReason | null;
   nextModuleId?: string | null;
   allModulesPassed: boolean;
@@ -228,7 +254,9 @@ export interface PulseQuizResult {
   score: number;
   total: number;
   passed: boolean;
-  wrong: { questionId: string; explanation?: string | null }[];
+  /** Câu chưa đúng và trang liên quan — không kèm đáp án. */
+  wrong: { questionId: string; lessonId?: string | null; pageIndex?: number | null; pageTitle?: string | null }[];
+  review?: PulseQuizReview | null;
   modulePassed: boolean;
   nextModuleId?: string | null;
   allModulesPassed: boolean;
@@ -320,8 +348,12 @@ export const pulseService = {
     apiClient.post<ApiResponse<{ enrollmentId: string; viewed: boolean; modulePassed: boolean }>>(
       `/me/pulse/courses/${courseId}/modules/${moduleId}/viewed`,
     ),
-  submitModuleQuiz: (courseId: string, moduleId: string, answers: PulseAnswer[]) =>
-    apiClient.post<ApiResponse<PulseQuizResult>>(`/me/pulse/courses/${courseId}/modules/${moduleId}/quiz`, { answers }),
+  markPageViewed: (courseId: string, moduleId: string, lessonId: string) =>
+    apiClient.post<ApiResponse<{ lessonId: string; viewedAt: string; review?: PulseQuizReview | null }>>(
+      `/me/pulse/courses/${courseId}/modules/${moduleId}/pages/${lessonId}/viewed`,
+    ),
+  submitModuleQuiz: (courseId: string, moduleId: string, answers: PulseAnswer[], attemptNo?: number) =>
+    apiClient.post<ApiResponse<PulseQuizResult>>(`/me/pulse/courses/${courseId}/modules/${moduleId}/quiz`, { attemptNo, answers }),
   getFinal: (courseId: string) => apiClient.get<ApiResponse<PulseFinal>>(`/me/pulse/courses/${courseId}/final`),
   submitFinal: (courseId: string, evidenceText: string) =>
     apiClient.post<ApiResponse<PulseSubmitFinalResult>>(`/me/pulse/courses/${courseId}/final`, { evidenceText }),

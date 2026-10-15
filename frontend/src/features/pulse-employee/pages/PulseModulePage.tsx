@@ -3,15 +3,18 @@ import { Link, useParams } from 'react-router-dom';
 import { Check, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import journeyArt from '@/assets/pulse/learning-journey-abstract.webp';
-import { useMarkPulseModuleViewed, usePulseModule, usePulseOverview, useSubmitPulseModuleQuiz } from '@/hooks/use-pulse';
-import type { PulseModuleDetail, PulseQuizResult } from '@/services/pulse.service';
+import { useMarkPulseModuleViewed, useMarkPulsePageViewed, usePulseModule, usePulseOverview, useSubmitPulseModuleQuiz } from '@/hooks/use-pulse';
+import type { PulseModuleDetail, PulseModuleQuiz, PulseQuizResult } from '@/services/pulse.service';
 import { RichText } from '../components/RichText';
 import { Bar, Eyebrow, LoadError, Mini, Notice, PageSkeleton, PuLink } from '../components/ui';
 import { btn } from '../lib/button';
 import { BLOCK_MESSAGES, LESSON_TYPE_LABELS, levelName, pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 
-/** Trang học mô đun (§9.2): các trang nội dung, câu hỏi ôn tập mở sau trang cuối, cần đúng tất cả câu. */
+/**
+ * Trang học mô đun (§9.2): các trang nội dung, câu hỏi ôn tập mở sau trang cuối, cần đúng tất cả câu. Mỗi lần làm là
+ * một bộ câu khác; chưa đạt thì phải mở lại trang của câu chưa đúng rồi mới làm tiếp.
+ */
 export function PulseModulePage() {
   const { courseId, moduleId } = useParams<{ courseId: string; moduleId: string }>();
   const { data, isLoading, error, refetch } = usePulseModule(courseId, moduleId);
@@ -25,17 +28,37 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
   const courseId = course.courseId;
   const [index, setIndex] = useState(0);
   const markViewed = useMarkPulseModuleViewed();
+  const markPage = useMarkPulsePageViewed();
   const marked = useRef(detail.viewed);
+  const playerRef = useRef<HTMLDivElement>(null);
   const { data: overview } = usePulseOverview();
   const canRecord = !detail.sample && course.canWork;
   const slide = slides[index];
   const isLast = index === slides.length - 1;
   const total = detail.modules.length;
+  const review = detail.review && !detail.review.done ? detail.review : null;
   const status = detail.quizPassed ? 'Đã đạt câu hỏi ôn tập'
     : detail.sample ? 'Trang mẫu'
     : detail.quizBlockReason === 'PREVIOUS_MODULE_REQUIRED' ? 'Cần đạt mô đun trước'
+    : review ? 'Xem lại trang trước khi làm lại'
     : detail.viewed ? 'Sẵn sàng làm câu hỏi ôn tập'
     : 'Đang đọc nội dung';
+
+  // Chuyển tới một trang. Trang đang chờ xem lại (sau lần chưa đạt) được ghi nhận khi nhân viên chủ động mở nó —
+  // không tính trang đang hiện sẵn lúc nộp bài.
+  const goTo = (target: number) => {
+    setIndex(target);
+    const page = slides[target];
+    if (!page || !canRecord || !review?.pages.some((p) => p.lessonId === page.lessonId && !p.done) || markPage.isPending) return;
+    markPage.mutate(
+      { courseId, moduleId: module.moduleId, lessonId: page.lessonId },
+      { onError: (err) => toast.error(pulseErrorMessage(err, 'Chưa ghi nhận được trang đã xem lại.')) },
+    );
+  };
+  const openPage = (target: number) => {
+    goTo(target);
+    playerRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  };
 
   // Đọc tới trang cuối → ghi nhận đã xem (mở câu hỏi ôn tập). Chỉ khi được ghi tiến độ, một lần.
   useEffect(() => {
@@ -98,7 +121,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
           </div>
 
           {slide ? (
-            <div className="pu-player" aria-label="Trang nội dung của mô đun">
+            <div className="pu-player" aria-label="Trang nội dung của mô đun" ref={playerRef}>
               <div className="pu-player-bar">
                 <span>Trang nội dung bài học</span>
                 <span aria-live="polite">{pad2(index + 1)} / {pad2(slides.length)}</span>
@@ -119,10 +142,10 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                   {slides.map((s, i) => <i key={s.lessonId} className={i === index ? 'active' : ''} />)}
                 </div>
                 <div className="pu-row">
-                  <button type="button" className={btn('outline', true)} onClick={() => setIndex((i) => i - 1)} disabled={index === 0}>
+                  <button type="button" className={btn('outline', true)} onClick={() => goTo(index - 1)} disabled={index === 0}>
                     ← Trước đó
                   </button>
-                  <button type="button" className={btn('outline', true)} onClick={() => setIndex((i) => i + 1)} disabled={isLast}>
+                  <button type="button" className={btn('outline', true)} onClick={() => goTo(index + 1)} disabled={isLast}>
                     Trang tiếp theo →
                   </button>
                 </div>
@@ -140,22 +163,33 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
             </p>
           </div>
 
-          <QuizArea detail={detail} viewed={detail.viewed || (markViewed.isSuccess && canRecord)} reachedEnd={isLast} />
+          <QuizArea
+            detail={detail}
+            viewed={detail.viewed || (markViewed.isSuccess && canRecord)}
+            reachedEnd={isLast}
+            onOpenPage={openPage}
+            opening={markPage.isPending}
+          />
         </main>
       </div>
     </div>
   );
 }
 
-function QuizArea({ detail, viewed, reachedEnd }: { detail: PulseModuleDetail; viewed: boolean; reachedEnd: boolean }) {
-  const { course, module } = detail;
-  const submit = useSubmitPulseModuleQuiz();
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [result, setResult] = useState<PulseQuizResult | null>(null);
+interface QuizAreaProps {
+  detail: PulseModuleDetail;
+  viewed: boolean;
+  reachedEnd: boolean;
+  onOpenPage: (index: number) => void;
+  opening: boolean;
+}
+
+function QuizArea({ detail, viewed, reachedEnd, onOpenPage, opening }: QuizAreaProps) {
+  const { course } = detail;
   const nextPath = detail.nextModuleId ? PULSE_PATHS.module(course.courseId, detail.nextModuleId) : PULSE_PATHS.final(course.courseId);
   const nextLabel = detail.nextModuleId ? 'Mô đun tiếp theo →' : 'Đến bài cuối khóa →';
 
-  if (detail.quizPassed || (!detail.quiz && viewed && !detail.sample && course.canWork)) {
+  if (detail.quizPassed || (!detail.quiz && !detail.quizBlockReason && viewed && !detail.sample && course.canWork)) {
     const score = detail.lastQuiz;
     return (
       <div className="pu-passed">
@@ -167,6 +201,10 @@ function QuizArea({ detail, viewed, reachedEnd }: { detail: PulseModuleDetail; v
         <PuLink to={nextPath} small>{nextLabel}</PuLink>
       </div>
     );
+  }
+
+  if (detail.review && !detail.review.done) {
+    return <ReviewPanel detail={detail} onOpenPage={onOpenPage} opening={opening} />;
   }
 
   if (detail.sample || detail.quizBlockReason || !detail.quiz) {
@@ -181,12 +219,59 @@ function QuizArea({ detail, viewed, reachedEnd }: { detail: PulseModuleDetail; v
     );
   }
 
-  const questions = detail.quiz.questions;
+  // key: mỗi lần làm là một bộ câu mới, câu trả lời của lần trước không được giữ lại.
+  return <QuizForm key={detail.quiz.attemptNo} detail={detail} quiz={detail.quiz} viewed={viewed} reachedEnd={reachedEnd} />;
+}
+
+/** Sau lần chưa đạt: các trang của câu chưa đúng, mở lại đủ thì câu hỏi của lần tiếp theo (câu khác) mới hiện. */
+function ReviewPanel({ detail, onOpenPage, opening }: { detail: PulseModuleDetail; onOpenPage: (index: number) => void; opening: boolean }) {
+  const review = detail.review!;
+  const last = detail.lastQuiz;
+  return (
+    <section className="pu-quiz" aria-labelledby="pu-quiz-title">
+      <Mini>Kiểm tra kiến thức của bạn</Mini>
+      <h2 id="pu-quiz-title">Xem lại trước lần làm thứ {review.attemptNo + 1}</h2>
+      <div className="pu-quiz-feedback" role="status">
+        Lần {review.attemptNo} chưa đạt{last ? ` (đúng ${last.score}/${last.total})` : ''}. Mở lại trang nội dung của câu chưa đúng
+        bên dưới — đáp án không được hiện ra. Lần làm tiếp theo sẽ là câu hỏi khác.
+      </div>
+      <ul className="pu-review-pages" aria-label="Trang cần xem lại">
+        {review.pages.map((page) => (
+          <li key={page.lessonId} className={page.done ? 'done' : ''}>
+            <span>
+              <b>Trang {pad2(page.index + 1)}</b>
+              {page.title}
+            </span>
+            {page.done ? (
+              <small><Check size={14} aria-hidden /> Đã mở lại</small>
+            ) : (
+              <button type="button" className={btn('outline', true)} onClick={() => onOpenPage(page.index)} disabled={opening}>
+                Mở lại trang {pad2(page.index + 1)} →
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function QuizForm({ detail, quiz, viewed, reachedEnd }: { detail: PulseModuleDetail; quiz: PulseModuleQuiz; viewed: boolean; reachedEnd: boolean }) {
+  const { course, module } = detail;
+  const submit = useSubmitPulseModuleQuiz();
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [result, setResult] = useState<PulseQuizResult | null>(null);
+  const questions = quiz.questions;
   const answered = questions.filter((q) => answers[q.questionId]).length;
   const onSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     submit.mutate(
-      { courseId: course.courseId, moduleId: module.moduleId, answers: questions.map((q) => ({ questionId: q.questionId, optionId: answers[q.questionId]! })) },
+      {
+        courseId: course.courseId,
+        moduleId: module.moduleId,
+        attemptNo: quiz.attemptNo,
+        answers: questions.map((q) => ({ questionId: q.questionId, optionId: answers[q.questionId]! })),
+      },
       {
         onSuccess: (res) => {
           setResult(res);
@@ -199,9 +284,12 @@ function QuizArea({ detail, viewed, reachedEnd }: { detail: PulseModuleDetail; v
 
   return (
     <section className="pu-quiz" aria-labelledby="pu-quiz-title">
-      <Mini>Kiểm tra kiến thức của bạn</Mini>
+      <Mini>Kiểm tra kiến thức của bạn{quiz.attemptNo > 1 ? ` · lần làm thứ ${quiz.attemptNo}` : ''}</Mini>
       <h2 id="pu-quiz-title">Câu hỏi ôn tập mô đun {pad2(module.index + 1)}</h2>
-      <p>Trả lời đúng tất cả {questions.length} câu để hoàn thành mô đun. Bạn có thể làm lại.</p>
+      <p>
+        Trả lời đúng tất cả {questions.length} câu để hoàn thành mô đun. Chưa đạt thì mở lại trang liên quan rồi làm lại với
+        câu hỏi khác.
+      </p>
       {!viewed ? (
         <p className="pu-quiz-intro">{reachedEnd ? 'Đang lưu tiến độ đọc…' : 'Đọc hết các trang nội dung để mở câu hỏi ôn tập.'}</p>
       ) : (
@@ -225,8 +313,7 @@ function QuizArea({ detail, viewed, reachedEnd }: { detail: PulseModuleDetail; v
           ))}
           {result && !result.passed && (
             <div className="pu-quiz-feedback" role="alert">
-              Đúng {result.score}/{result.total}. Xem lại ví dụ trên các trang và thử lại:
-              <ul>{result.wrong.map((w) => <li key={w.questionId}>{w.explanation ?? 'Đọc lại phần nội dung liên quan.'}</li>)}</ul>
+              Đúng {result.score}/{result.total}. Lần làm tiếp theo sẽ là câu hỏi khác.
             </div>
           )}
           <button type="submit" className={btn()} disabled={answered < questions.length || submit.isPending}>
