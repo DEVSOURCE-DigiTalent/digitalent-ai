@@ -1,8 +1,6 @@
 using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
-using DigiTalent.Application.UseCases.Platform.Courses;
-using DigiTalent.Application.UseCases.Platform.Framework;
 using DigiTalent.Application.UseCases.Platform.Organizations;
 using DigiTalent.Application.UseCases.Platform.Overview;
 using DigiTalent.Application.UseCases.Platform.Users;
@@ -92,82 +90,6 @@ public class PlatformAdminTests
         var intermediate = await context.PlatformCourses.SingleAsync(c => c.Code == "A1-I");
         intermediate.Title.Should().Be(Tt02Catalog.Domains[0].CourseTitles[1]);
         intermediate.Level.Should().Be(2);
-    }
-
-    [Fact]
-    public async Task FrameworkPublishRequiresADraftChangeAndBumpsVersion()
-    {
-        await using var context = await CreateSeededContextAsync();
-        var publish = new PublishPlatformFrameworkUseCase(context, Admin(), Mock.Of<IAuditService>());
-
-        var noChange = () => publish.ExecuteAsync(new PublishPlatformFrameworkUseCaseInput());
-        await noChange.Should().ThrowAsync<BadRequestException>();
-
-        var save = new SavePlatformFrameworkDraftUseCase(context, Mock.Of<IAuditService>());
-        var draft = await save.ExecuteAsync(new SavePlatformFrameworkDraftUseCaseInput
-        {
-            Domains = { new PlatformFrameworkDomainDraftInput { Code = "TT02_D6", Description = "Dùng AI có trách nhiệm và kiểm chứng kết quả trước khi bàn giao." } },
-        });
-        draft.HasDraft.Should().BeTrue();
-        draft.CurrentVersion.Should().Be(1);
-
-        var published = await publish.ExecuteAsync(new PublishPlatformFrameworkUseCaseInput { ReleaseNote = "Cập nhật năng lực AI" });
-        published.CurrentVersion.Should().Be(2);
-        published.HasDraft.Should().BeFalse();
-        published.Domains.Single(d => d.Code == "TT02_D6").PublishedDescription.Should().StartWith("Dùng AI có trách nhiệm");
-    }
-
-    [Fact]
-    public async Task BasicCourseCannotHaveAPrice()
-    {
-        await using var context = await CreateSeededContextAsync();
-        var save = new SavePlatformCourseDraftUseCase(context, Mock.Of<IAuditService>());
-
-        var act = () => save.ExecuteAsync(new SavePlatformCourseDraftUseCaseInput
-        {
-            Code = "A1-F",
-            Title = "Dữ liệu và thông tin · Cơ bản",
-            Outcome = "Áp dụng dữ liệu ở mức cơ bản với minh chứng truy vết được.",
-            PricePerSeat = 100_000,
-            SalesStatus = Statuses.PlatformCourseSales.Open,
-        });
-
-        (await act.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("BASIC_COURSE_IS_FREE");
-    }
-
-    [Fact]
-    public async Task CoursePublishAppliesDraftAndPublishesDraftQuestions()
-    {
-        await using var context = await CreateSeededContextAsync();
-        var audit = Mock.Of<IAuditService>();
-        await new SavePlatformCourseDraftUseCase(context, audit).ExecuteAsync(new SavePlatformCourseDraftUseCaseInput
-        {
-            Code = "a1-i",
-            Title = "Dữ liệu và thông tin · Trung cấp (bản mới)",
-            Outcome = "Phân tích dữ liệu nhiều nguồn và nêu được độ tin cậy của kết luận.",
-            PricePerSeat = 450_000,
-            SalesStatus = Statuses.PlatformCourseSales.Paused,
-        });
-        var withQuestion = await new AddPlatformCourseQuestionUseCase(context, Admin(), audit).ExecuteAsync(new AddPlatformCourseQuestionUseCaseInput
-        {
-            Code = "A1-I",
-            QuestionText = "Khi hai nguồn dữ liệu mâu thuẫn, bạn kiểm tra điều gì trước tiên?",
-            CorrectAnswer = "Thời điểm và cách thu thập của từng nguồn.",
-            Explanation = "Hai nguồn chỉ so được khi cùng định nghĩa và cùng kỳ.",
-        });
-        withQuestion.Course.VersionNo.Should().Be(1);
-        withQuestion.Course.HasDraft.Should().BeTrue();
-        withQuestion.Course.DraftQuestionCount.Should().Be(1);
-
-        var published = await new PublishPlatformCourseUseCase(context, Admin(), audit).ExecuteAsync(new PublishPlatformCourseUseCaseInput { Code = "A1-I" });
-
-        published.Course.VersionNo.Should().Be(2);
-        published.Course.HasDraft.Should().BeFalse();
-        published.Course.PricePerSeat.Should().Be(450_000);
-        published.Course.SalesStatus.Should().Be(Statuses.PlatformCourseSales.Paused);
-        published.Course.PublishedQuestionCount.Should().Be(2);
-        published.Course.DraftQuestionCount.Should().Be(0);
-        published.Releases.Select(r => r.VersionNo).Should().Equal(2, 1);
     }
 
     [Fact]
@@ -265,7 +187,7 @@ public class PlatformAdminTests
         });
         await context.SaveChangesAsync();
 
-        var overview = await new GetPlatformOverviewUseCase(context).ExecuteAsync(new GetPlatformOverviewUseCaseInput());
+        var overview = await new GetPlatformOverviewUseCase(context, TimeProvider.System).ExecuteAsync(new GetPlatformOverviewUseCaseInput());
 
         overview.OrganizationCount.Should().Be(2);
         overview.TrialOrganizationCount.Should().Be(1);
@@ -274,7 +196,9 @@ public class PlatformAdminTests
         overview.SeatsPurchased.Should().Be(3);
         overview.Revenue.Should().Be(course.PricePerSeat * 3);
         overview.CourseCount.Should().Be(18);
-        overview.FrameworkVersion.Should().Be(1);
+        overview.CurrentVersionNo.Should().Be(1);
+        overview.FrameworkCount.Should().Be(1);
+        overview.QuestionCount.Should().BeGreaterThan(0);
         trial.Should().NotBeNull();
     }
 

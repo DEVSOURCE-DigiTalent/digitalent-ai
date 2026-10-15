@@ -311,7 +311,7 @@ public static class Statuses
         public const string Failed = "FAILED";
     }
 
-    /// <summary>platform_courses.sales_status, platform_course_releases.sales_status</summary>
+    /// <summary>platform_courses.sales_status, platform_catalog_courses.sales_status</summary>
     public static class PlatformCourseSales
     {
         public const string Open = "OPEN";
@@ -320,12 +320,27 @@ public static class Statuses
         public static bool IsValid(string? value) => value is Open or Paused;
     }
 
-    /// <summary>platform_course_questions.status</summary>
-    public static class PlatformCourseQuestion
+    /// <summary>platform_frameworks.status</summary>
+    public static class PlatformFramework
     {
         public const string Draft = "DRAFT";
         public const string Published = "PUBLISHED";
         public const string Archived = "ARCHIVED";
+    }
+
+    /// <summary>platform_framework_domains.status — "xóa lĩnh vực" archives it (only while it has no course).</summary>
+    public static class PlatformFrameworkDomain
+    {
+        public const string Active = "ACTIVE";
+        public const string Archived = "ARCHIVED";
+    }
+
+    /// <summary>platform_catalog_versions.status — one DRAFT and one CURRENT at most.</summary>
+    public static class PlatformCatalogVersion
+    {
+        public const string Draft = "DRAFT";
+        public const string Current = "CURRENT";
+        public const string Retired = "RETIRED";
     }
 
     /// <summary>file_objects.access_level</summary>

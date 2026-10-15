@@ -115,12 +115,19 @@ public interface IApplicationDbContext
     DbSet<SubscriptionEntitlement> SubscriptionEntitlements { get; }
     DbSet<Invoice> Invoices { get; }
 
-    // Platform catalog (Digital AI ceiling, 18 standard courses, seats)
+    // Platform catalog (frameworks, catalog versions, course builder, seats) — SQL v3.2 sections 12A + 18
+    DbSet<PlatformFramework> PlatformFrameworks { get; }
     DbSet<PlatformFrameworkDomain> PlatformFrameworkDomains { get; }
     DbSet<PlatformFrameworkRelease> PlatformFrameworkReleases { get; }
     DbSet<PlatformCourse> PlatformCourses { get; }
-    DbSet<PlatformCourseRelease> PlatformCourseReleases { get; }
-    DbSet<PlatformCourseQuestion> PlatformCourseQuestions { get; }
+    DbSet<PlatformCatalogVersion> PlatformCatalogVersions { get; }
+    DbSet<PlatformCatalogCourse> PlatformCatalogCourses { get; }
+    DbSet<PlatformCourseModule> PlatformCourseModules { get; }
+    DbSet<PlatformModuleBlock> PlatformModuleBlocks { get; }
+    DbSet<PlatformSlideItem> PlatformSlideItems { get; }
+    DbSet<PlatformModuleQuestion> PlatformModuleQuestions { get; }
+    DbSet<PlatformQuestionOption> PlatformQuestionOptions { get; }
+    DbSet<PlatformAsset> PlatformAssets { get; }
     DbSet<CourseSeatOrder> CourseSeatOrders { get; }
 
     // Shared
