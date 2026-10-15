@@ -32,6 +32,7 @@ public static class DbSeeder
         {
             await CourseContentSeeder.SeedCourseContentAsync(db, organization.Id, authorUser.Id);
             await CourseContentSeeder.SeedDemoLearnerProfilesAsync(db, organization.Id);
+            await PulseContentSeeder.SeedAsync(db, organization.Id, authorUser.Id);
         }
 
         await SeedDemoSubscriptionAsync(db, organization);
