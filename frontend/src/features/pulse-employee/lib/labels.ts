@@ -71,6 +71,8 @@ export const BLOCK_MESSAGES: Record<PulseBlockReason, string> = {
   PRIOR_LEVEL_REQUIRED: 'Bạn đã có suất. Khóa sẽ mở toàn bộ khi khóa cấp trước cùng lĩnh vực được quản lý duyệt.',
   PREVIOUS_MODULE_REQUIRED: 'Hãy đạt câu hỏi ôn tập của mô đun trước để mở câu hỏi của mô đun này.',
   SLIDES_NOT_VIEWED: 'Đọc hết các trang nội dung để mở câu hỏi ôn tập.',
+  REVIEW_REQUIRED: 'Mở lại trang nội dung của câu chưa đúng để làm lần tiếp theo — lần sau là câu hỏi khác.',
+  QUIZ_CHANGED: 'Bộ câu hỏi đã đổi sang lần làm mới. Hãy tải lại trang để làm với câu hỏi mới.',
 };
 
 export const SUPPORT_LABELS: Record<PulseSupportAction, string> = {

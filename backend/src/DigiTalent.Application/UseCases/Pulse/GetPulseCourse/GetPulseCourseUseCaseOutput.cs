@@ -26,6 +26,7 @@ public class PulseCourseModuleDto
     public int? EstimatedMinutes { get; set; }
     public int SlideCount { get; set; }
     public bool HasQuiz { get; set; }
+    /// <summary>Số câu của mỗi lần làm (rút từ ngân hàng của mô đun), không phải cỡ ngân hàng.</summary>
     public int QuizQuestionCount { get; set; }
     public bool Viewed { get; set; }
     public bool Passed { get; set; }

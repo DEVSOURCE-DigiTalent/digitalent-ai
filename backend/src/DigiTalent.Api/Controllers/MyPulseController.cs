@@ -81,6 +81,19 @@ public class MyPulseController : ControllerBase
         return Ok(ApiResponse<MarkPulseModuleViewedUseCaseOutput>.Ok(result));
     }
 
+    // POST api/v1/me/pulse/courses/{courseId}/modules/{moduleId}/pages/{lessonId}/viewed — mở lại một trang (xem lại sau lần ôn tập chưa đạt)
+    [HttpPost("courses/{courseId:guid}/modules/{moduleId:guid}/pages/{lessonId:guid}/viewed")]
+    [HasPermission(Permissions.Learning.CompleteLesson)]
+    public async Task<ActionResult<ApiResponse<MarkPulsePageViewedUseCaseOutput>>> MarkPageViewed(
+        Guid courseId,
+        Guid moduleId,
+        Guid lessonId,
+        [FromServices] IUseCase<MarkPulsePageViewedUseCaseInput, MarkPulsePageViewedUseCaseOutput> useCase)
+    {
+        var result = await useCase.ExecuteAsync(new MarkPulsePageViewedUseCaseInput { CourseId = courseId, ModuleId = moduleId, LessonId = lessonId });
+        return Ok(ApiResponse<MarkPulsePageViewedUseCaseOutput>.Ok(result));
+    }
+
     // POST api/v1/me/pulse/courses/{courseId}/modules/{moduleId}/quiz — câu hỏi ôn tập mô đun
     [HttpPost("courses/{courseId:guid}/modules/{moduleId:guid}/quiz")]
     [HasPermission(Permissions.Assessment.AttemptSubmit)]

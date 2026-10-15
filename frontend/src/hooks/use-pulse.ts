@@ -56,14 +56,24 @@ export function useMarkPulseModuleViewed() {
   });
 }
 
+/** Mở lại một trang của mô đun (xem lại sau lần ôn tập chưa đạt). */
+export function useMarkPulsePageViewed() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ courseId, moduleId, lessonId }: { courseId: string; moduleId: string; lessonId: string }) =>
+      pulseService.markPageViewed(courseId, moduleId, lessonId).then((r) => r.data.data!),
+    onSuccess: (_, { courseId, moduleId }) => qc.invalidateQueries({ queryKey: PULSE_KEYS.module(courseId, moduleId) }),
+  });
+}
+
 export function useSubmitPulseModuleQuiz() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ courseId, moduleId, answers }: { courseId: string; moduleId: string; answers: PulseAnswer[] }) =>
-      pulseService.submitModuleQuiz(courseId, moduleId, answers).then((r) => r.data.data!),
-    onSuccess: (result) => {
-      if (result.passed) qc.invalidateQueries({ queryKey: PULSE_KEYS.all });
-    },
+    mutationFn: ({ courseId, moduleId, answers, attemptNo }: { courseId: string; moduleId: string; answers: PulseAnswer[]; attemptNo?: number }) =>
+      pulseService.submitModuleQuiz(courseId, moduleId, answers, attemptNo).then((r) => r.data.data!),
+    // Đạt: tiến độ khóa đổi. Chưa đạt hoặc bộ câu đã đổi (QUIZ_CHANGED): tải lại mô đun để thấy trang cần xem lại / câu mới.
+    onSettled: (result, _error, { courseId, moduleId }) =>
+      qc.invalidateQueries({ queryKey: result?.passed ? PULSE_KEYS.all : PULSE_KEYS.module(courseId, moduleId) }),
   });
 }
 

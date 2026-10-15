@@ -28,6 +28,11 @@ Dữ liệu: `services/pulse.service.ts` + `hooks/use-pulse.ts` (chưa có mock 
 - **Đầu vào** (`capability_baselines`): làm một lần, mức Lk chỉ ghi khi đúng liên tiếp L1..Lk; không đổi về sau.
 - **Mức đã xác nhận** = max(đầu vào, cấp khóa được duyệt, mức minh chứng thực tế được xác nhận).
 - **Mô đun** = `course_modules`; trang = `lessons`; câu hỏi ôn tập = `assessments` QUIZ có `module_id`, phải đúng 2/2.
+- **Câu hỏi ôn tập**: ngân hàng của mô đun gắn câu với trang theo `assessment_questions.sort_order` (câu 2k-1, 2k ↔ trang k).
+  Mỗi lần làm rút 2 câu (`PulseQuizReader.Draw`: xếp ngẫu nhiên một lần theo nhân viên + bài, lần thứ n lấy nhóm câu kế tiếp,
+  phương án trộn theo lần làm), nên `GET …/modules/{mid}` và lúc chấm thấy cùng một bộ câu. Chưa đạt: kết quả chỉ trả câu
+  sai + trang liên quan (không có lời giải); lần tiếp theo chỉ mở khi mọi trang đó có `lesson_progress.last_accessed_at`
+  sau thời điểm nộp (`POST …/pages/{lessonId}/viewed`). `GET` mô đun trả `quiz: null`, `review` và `quizBlockReason = REVIEW_REQUIRED`.
 - **Suất học**: khóa Cơ bản miễn phí; cấp cao hơn cần suất (enrollment) — không có suất thì chỉ xem trước trang đầu.
 - **Bài cuối khóa** (`course_final_submissions`): tối đa 2 lần. Lần 1 NOT_YET → chờ `cooldownHours`, nộp lại trong `deadlineDays`
   (system_settings `pulse.final_retry_policy`, mặc định `{"cooldownHours":48,"deadlineDays":7}`, theo tổ chức hoặc toàn hệ thống;
@@ -84,15 +89,17 @@ Hàng chờ: bài chờ chấm, đang trong cửa sổ nộp lại, quá hạn, 
 
 ## API nhân viên — `api/v1/me/pulse` (tham khảo)
 
-`GET overview` · `GET|POST baseline` · `GET courses/{id}` · `GET courses/{id}/modules/{mid}` · `POST …/viewed` · `POST …/quiz`
+`GET overview` · `GET|POST baseline` · `GET courses/{id}` · `GET courses/{id}/modules/{mid}` · `POST …/viewed`
+· `POST …/modules/{mid}/pages/{lessonId}/viewed` · `POST …/quiz` (body `{ attemptNo, answers }`)
 · `GET|POST courses/{id}/final` · `GET practice` · `GET outcomes` · `GET outcomes/{outcomeId}` (id dạng `final-…`, `cert-…`, `task-…`).
 
 Lỗi nghiệp vụ trả `errors[].message` là mã máy: `NO_POSITION`, `NOT_ASSESSED`, `OUTSIDE_PATH`, `SEAT_REQUIRED`,
-`PRIOR_LEVEL_REQUIRED`, `PREVIOUS_MODULE_REQUIRED`, `SLIDES_NOT_VIEWED`.
+`PRIOR_LEVEL_REQUIRED`, `PREVIOUS_MODULE_REQUIRED`, `SLIDES_NOT_VIEWED`, `REVIEW_REQUIRED` (chưa mở lại trang sau lần ôn tập
+chưa đạt), `QUIZ_CHANGED` (câu trả lời thuộc bộ câu của lần làm khác — tải lại mô đun).
 
 ## Cơ sở dữ liệu
 
 `docs/database/DigiTalent_AI_Canonical_v3_1.sql` (bổ sung v3_0): `assessments.module_id`, `capability_baselines`,
 `capability_baseline_answers`, `course_final_submissions`. Migration `20261014141359_AddPulseEmployeeLearning`
 (kèm `password_reset_tokens` còn thiếu migration từ PR #62). Seed Development: `PulseContentSeeder` (18 câu đầu vào,
-câu hỏi ôn tập cho từng mô đun).
+ngân hàng 6 câu ôn tập cho từng mô đun; bài ôn tập cũ 2 câu được bổ sung đủ khi khởi động Development).

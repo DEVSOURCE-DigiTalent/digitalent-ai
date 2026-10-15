@@ -3,6 +3,7 @@ using DigiTalent.Application.UseCases.Pulse;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Constants.Authorization;
 using DigiTalent.Domain.Entities;
+using DigiTalent.Infrastructure.Persistence.Seed;
 using FluentAssertions;
 using Xunit;
 using Microsoft.EntityFrameworkCore;
@@ -91,7 +92,8 @@ public class PulseEmployeeFlowTests
 
         var module = await uc.GetModule.ExecuteAsync(new GetPulseModuleUseCaseInput { CourseId = course.CourseId, ModuleId = first.ModuleId });
         module.Slides.Should().NotBeEmpty().And.OnlyContain(s => !string.IsNullOrEmpty(s.ContentBody));
-        module.Quiz!.Questions.Should().HaveCount(2);
+        module.Quiz!.Questions.Should().HaveCount(PulseRules.ModuleQuizDrawSize);
+        module.Quiz.AttemptNo.Should().Be(1);
         var wrongAnswers = new List<PulseAnswerInput>();
         foreach (var question in module.Quiz.Questions)
         {
@@ -110,8 +112,16 @@ public class PulseEmployeeFlowTests
         world.Context.ChangeTracker.Clear();
         var failed = await uc.SubmitQuiz.ExecuteAsync(new SubmitPulseModuleQuizUseCaseInput { CourseId = course.CourseId, ModuleId = first.ModuleId, Answers = wrongAnswers });
         failed.Passed.Should().BeFalse();
-        failed.Wrong.Should().HaveCount(2).And.OnlyContain(w => !string.IsNullOrEmpty(w.Explanation));
+        failed.Wrong.Should().HaveCount(2).And.OnlyContain(w => w.LessonId != null && !string.IsNullOrEmpty(w.PageTitle), "chỉ báo trang cần xem lại");
+        failed.Review!.Pages.Select(p => p.LessonId).Should().BeEquivalentTo(failed.Wrong.Select(w => w.LessonId!.Value).Distinct());
         world.Context.ChangeTracker.Clear();
+
+        world.Clock.Advance(TimeSpan.FromMinutes(5));
+        foreach (var page in failed.Review.Pages)
+        {
+            await uc.MarkPage.ExecuteAsync(new MarkPulsePageViewedUseCaseInput { CourseId = course.CourseId, ModuleId = first.ModuleId, LessonId = page.LessonId });
+            world.Context.ChangeTracker.Clear();
+        }
 
         var passed = await world.PassModuleAsync(uc, course.CourseId, first.ModuleId);
         passed.Passed.Should().BeTrue();
@@ -121,6 +131,123 @@ public class PulseEmployeeFlowTests
         enrollment.Status.Should().Be(Statuses.Enrollment.InProgress, "khóa Cơ bản tự mở lượt học khi bắt đầu");
         enrollment.ProgressPercent.Should().BeGreaterThan(0);
         (await world.Context.AssessmentAttempts.CountAsync(a => a.EnrollmentId == enrollment.Id)).Should().Be(2, "mỗi lần làm đều được lưu");
+    }
+
+    [Fact]
+    public async Task ModuleQuiz_AfterAWrongAttempt_NeedsTheRelatedPageReopened_ThenDrawsOtherQuestions()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var uc = await world.AsAsync(PulseTestWorld.EmployeeEmail);
+        await world.SubmitBaselineAsync(uc, new Dictionary<int, int> { [1] = 1 });
+        var course = await world.CourseAsync(uc, "A1-F");
+        var moduleId = (await uc.GetCourse.ExecuteAsync(new GetPulseCourseUseCaseInput { CourseId = course.CourseId })).Modules[0].ModuleId;
+        Task<GetPulseModuleUseCaseOutput> Module() => uc.GetModule.ExecuteAsync(new GetPulseModuleUseCaseInput { CourseId = course.CourseId, ModuleId = moduleId });
+        Task<SubmitPulseModuleQuizUseCaseOutput> Submit(List<PulseAnswerInput> answers, int? attemptNo) =>
+            uc.SubmitQuiz.ExecuteAsync(new SubmitPulseModuleQuizUseCaseInput { CourseId = course.CourseId, ModuleId = moduleId, AttemptNo = attemptNo, Answers = answers });
+        async Task<List<PulseAnswerInput>> Answers(PulseQuizDto quiz, int wrongCount)
+        {
+            var answers = new List<PulseAnswerInput>();
+            foreach (var (question, i) in quiz.Questions.Select((q, i) => (q, i)))
+            {
+                answers.Add(new PulseAnswerInput
+                {
+                    QuestionId = question.QuestionId,
+                    OptionId = i < wrongCount ? await world.WrongOptionAsync(question.QuestionId) : await world.CorrectOptionAsync(question.QuestionId),
+                });
+            }
+
+            return answers;
+        }
+
+        await uc.MarkViewed.ExecuteAsync(new MarkPulseModuleViewedUseCaseInput { CourseId = course.CourseId, ModuleId = moduleId });
+        world.Context.ChangeTracker.Clear();
+        var first = (await Module()).Quiz!;
+        var firstAnswers = await Answers(first, wrongCount: 1);
+        world.Clock.Advance(TimeSpan.FromMinutes(1));
+        var failed = await Submit(firstAnswers, first.AttemptNo);
+        world.Context.ChangeTracker.Clear();
+        failed.Score.Should().Be(1);
+        var wrongPage = failed.Wrong.Single().LessonId!.Value;
+        failed.Review!.Pages.Should().ContainSingle(p => p.LessonId == wrongPage);
+
+        // Chưa mở lại trang: không có câu hỏi, nộp cũng bị chặn — kể cả khi trang đã đọc trước lần làm.
+        var blocked = await Module();
+        blocked.Quiz.Should().BeNull();
+        blocked.QuizBlockReason.Should().Be(PulseBlockReason.ReviewRequired);
+        blocked.Review!.Done.Should().BeFalse();
+        blocked.Review.Pages.Single().LessonId.Should().Be(wrongPage);
+        (await FluentActions.Awaiting(() => Submit(firstAnswers, first.AttemptNo)).Should().ThrowAsync<BadRequestException>())
+            .Which.Errors.Single().Code.Should().Be(PulseBlockReason.ReviewRequired);
+        world.Context.ChangeTracker.Clear();
+
+        world.Clock.Advance(TimeSpan.FromMinutes(3));
+        var otherPage = blocked.Slides.Select(s => s.LessonId).FirstOrDefault(id => id != wrongPage);
+        if (otherPage != Guid.Empty)
+        {
+            var other = await uc.MarkPage.ExecuteAsync(new MarkPulsePageViewedUseCaseInput { CourseId = course.CourseId, ModuleId = moduleId, LessonId = otherPage });
+            other.Review!.Done.Should().BeFalse("mở trang khác không thay cho trang của câu chưa đúng");
+            world.Context.ChangeTracker.Clear();
+        }
+
+        var reviewed = await uc.MarkPage.ExecuteAsync(new MarkPulsePageViewedUseCaseInput { CourseId = course.CourseId, ModuleId = moduleId, LessonId = wrongPage });
+        world.Context.ChangeTracker.Clear();
+        reviewed.Review!.Done.Should().BeTrue();
+
+        var second = (await Module()).Quiz!;
+        second.AttemptNo.Should().Be(2);
+        second.Questions.Select(q => q.QuestionId).Should().NotIntersectWith(first.Questions.Select(q => q.QuestionId), "lần sau là câu khác");
+        (await FluentActions.Awaiting(() => Submit(firstAnswers, first.AttemptNo)).Should().ThrowAsync<BadRequestException>())
+            .Which.Errors.Single().Code.Should().Be(PulseBlockReason.QuizChanged);
+        world.Context.ChangeTracker.Clear();
+
+        var passed = await Submit(await Answers(second, wrongCount: 0), second.AttemptNo);
+        world.Context.ChangeTracker.Clear();
+        passed.Passed.Should().BeTrue();
+        passed.Review.Should().BeNull();
+        var after = await Module();
+        after.QuizPassed.Should().BeTrue();
+        after.Review.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ModuleQuizBank_HasTwoQuestionsPerPage_AndTopsUpALegacyTwoQuestionQuiz()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var db = world.Context;
+        var quizIds = await db.Assessments.AsNoTracking()
+            .Where(a => a.ModuleId != null && a.AssessmentType == Statuses.AssessmentType.Quiz)
+            .Select(a => a.Id)
+            .ToListAsync();
+        var sortOrdersByQuiz = (await db.AssessmentQuestions.AsNoTracking().Where(l => quizIds.Contains(l.AssessmentId)).ToListAsync())
+            .GroupBy(l => l.AssessmentId)
+            .Select(g => g.Select(l => l.SortOrder).Order().ToList())
+            .ToList();
+        quizIds.Should().NotBeEmpty();
+        sortOrdersByQuiz.Should().HaveCount(quizIds.Count).And.OnlyContain(orders => orders.SequenceEqual(new[] { 1, 2, 3, 4, 5, 6 }));
+
+        // Bản cũ: mô đun thứ 2 của khóa chỉ có cặp câu tình huống (nay là câu 3–4), xếp ở vị trí 1–2.
+        var course = await db.Courses.AsNoTracking().SingleAsync(c => c.Code == "A1-F");
+        var module = await db.CourseModules.AsNoTracking()
+            .Where(m => m.CourseId == course.Id && m.Status == Statuses.CourseContent.Active)
+            .OrderBy(m => m.SortOrder).Skip(1).FirstAsync();
+        var quizId = await db.Assessments.AsNoTracking().Where(a => a.ModuleId == module.Id).Select(a => a.Id).SingleAsync();
+        var links = await db.AssessmentQuestions.Where(l => l.AssessmentId == quizId).ToListAsync();
+        var legacy = links.Where(l => l.SortOrder is 3 or 4).OrderBy(l => l.SortOrder).ToList();
+        legacy[0].SortOrder = 1;
+        legacy[1].SortOrder = 2;
+        db.AssessmentQuestions.RemoveRange(links.Except(legacy));
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+
+        var author = await db.Users.AsNoTracking().FirstAsync(u => u.Email == PulseTestWorld.OwnerEmail);
+        await PulseContentSeeder.SeedAsync(db, course.OrganizationId, author.Id);
+        await PulseContentSeeder.SeedAsync(db, course.OrganizationId, author.Id);
+        db.ChangeTracker.Clear();
+
+        var topped = await db.AssessmentQuestions.AsNoTracking().Where(l => l.AssessmentId == quizId).ToListAsync();
+        topped.Select(l => l.SortOrder).Order().Should().Equal(1, 2, 3, 4, 5, 6);
+        topped.Where(l => l.SortOrder is 3 or 4).Select(l => l.QuestionId)
+            .Should().BeEquivalentTo(legacy.Select(l => l.QuestionId), "câu cũ được giữ và về đúng trang tình huống");
     }
 
     [Fact]

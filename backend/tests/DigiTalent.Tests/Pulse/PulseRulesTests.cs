@@ -20,6 +20,55 @@ public class PulseRulesTests
     public void ChainLevel_CountsOnlyConsecutiveCorrectLevelsFromL1(bool[] correct, int target, int expected) =>
         PulseRules.ChainLevel(correct, target).Should().Be(expected);
 
+    [Theory]
+    [InlineData(1, 3, 0)]
+    [InlineData(2, 3, 0)]
+    [InlineData(3, 3, 1)]
+    [InlineData(6, 3, 2)]
+    [InlineData(7, 3, 2)] // câu ngoài số trang gắn với trang cuối
+    [InlineData(4, 1, 0)]
+    [InlineData(1, 0, -1)]
+    public void QuizPageIndex_PairsTwoQuestionsWithEachPage(int sortOrder, int pageCount, int expected) =>
+        PulseRules.QuizPageIndex(sortOrder, pageCount).Should().Be(expected);
+
+    [Fact]
+    public void QuizDraw_GivesEachAttemptOtherQuestions_AndTheSameDrawForTheSameAttempt()
+    {
+        var pool = Enumerable.Range(1, 6).Select(n => QuizQuestion(n)).ToList();
+        var employee = Guid.NewGuid();
+        var assessment = Guid.NewGuid();
+        var draws = Enumerable.Range(1, 4).Select(attempt => PulseQuizReader.Draw(pool, employee, assessment, attempt)).ToList();
+
+        draws.Should().OnlyContain(d => d.Count == PulseRules.ModuleQuizDrawSize);
+        draws.Take(3).SelectMany(d => d.Select(q => q.QuestionId)).Should().OnlyHaveUniqueItems()
+            .And.BeEquivalentTo(pool.Select(q => q.QuestionId), "ba lần đầu đi hết ngân hàng 6 câu, không lặp câu nào");
+        draws[3].Select(q => q.QuestionId).Should().Equal(draws[0].Select(q => q.QuestionId), "hết ngân hàng thì quay lại từ đầu");
+
+        var again = PulseQuizReader.Draw(pool, employee, assessment, 2);
+        again.Select(q => q.QuestionId).Should().Equal(draws[1].Select(q => q.QuestionId), "trang học và lúc chấm thấy cùng một bộ câu");
+        again.Select(q => q.Options.Select(o => o.OptionId)).Should().BeEquivalentTo(draws[1].Select(q => q.Options.Select(o => o.OptionId)), o => o.WithStrictOrdering());
+        foreach (var question in draws.SelectMany(d => d))
+        {
+            question.Options.Select(o => o.OptionId).Should().BeEquivalentTo(pool.Single(q => q.QuestionId == question.QuestionId).Options.Select(o => o.OptionId));
+        }
+    }
+
+    [Fact]
+    public void QuizDraw_ShufflesOptionsBetweenAttempts()
+    {
+        var pool = new[] { QuizQuestion(1, optionCount: 4), QuizQuestion(2, optionCount: 4) };
+        var orders = Enumerable.Range(1, 12)
+            .Select(attempt => string.Join(",", PulseQuizReader.Draw(pool, Guid.NewGuid(), Guid.NewGuid(), attempt)
+                .OrderBy(q => q.SortOrder).SelectMany(q => q.Options.Select(o => o.Content))))
+            .Distinct()
+            .Count();
+        orders.Should().BeGreaterThan(1, "thứ tự phương án đổi theo lần làm");
+    }
+
+    private static PulseQuizQuestion QuizQuestion(int sortOrder, int optionCount = 3) =>
+        new(Guid.NewGuid(), $"Câu {sortOrder}", null, sortOrder,
+            Enumerable.Range(1, optionCount).Select(o => new PulseQuizOption(Guid.NewGuid(), $"{sortOrder}.{o}", o == 1)).ToList());
+
     [Fact]
     public void FinalStatus_FollowsTheSubmissionLifecycle()
     {
