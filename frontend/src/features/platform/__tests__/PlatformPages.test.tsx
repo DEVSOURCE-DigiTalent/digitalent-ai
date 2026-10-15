@@ -465,6 +465,9 @@ describe('Platform Admin console (v2)', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Hỗ trợ doanh nghiệp với lý do rõ ràng.' })).toBeInTheDocument();
     expect(await screen.findByText('Northstar Studio')).toBeInTheDocument();
+    expect(screen.getByText('Gói Doanh nghiệp')).toBeInTheDocument();
+    expect(screen.getByText('4 / 6')).toBeInTheDocument();
+    expect(screen.getByText('Dữ liệu · Cơ bản')).toBeInTheDocument();
     const submit = screen.getByRole('button', { name: 'Ghi nhận thao tác hỗ trợ →' });
     await waitFor(() => expect(screen.getByRole('combobox', { name: 'Khóa có phí để cấp suất' })).toHaveValue('A1-I'));
     expect(submit).toBeDisabled();
@@ -512,6 +515,21 @@ describe('Platform Admin console (v2)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Khóa tài khoản →' }));
 
     await waitFor(() => expect(service.lockUser).toHaveBeenCalledWith('u-1', 'Tài khoản bị chia sẻ'));
+  });
+
+  it('PA-05 lists the plan, the courses in use by level and who takes part', async () => {
+    service.getOrganizations.mockResolvedValue({ items: [organization], pageIndex: 1, pageSize: 20, totalItems: 1, totalPages: 1 });
+    renderAt('/platform/organizations');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Doanh nghiệp đang dùng nền tảng.' })).toBeInTheDocument();
+    const row = (await screen.findByText('Northstar Studio')).closest('tr')!;
+    expect(within(row).getByText('Gói Doanh nghiệp')).toBeInTheDocument();
+    expect(within(row).getByText('Cơ bản · 3')).toBeInTheDocument();
+    expect(within(row).getByText('Trung cấp · 1')).toBeInTheDocument();
+    expect(row).toHaveTextContent('4 / 6');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tạm ngưng' }));
+    await waitFor(() => expect(service.getOrganizations).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'SUSPENDED' })));
   });
 
   it('SHR-01 is the Platform Admin profile, opened from the header', async () => {

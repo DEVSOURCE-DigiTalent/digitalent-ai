@@ -63,7 +63,7 @@ describe('Platform Admin sidebar navigation (Pulse)', () => {
     renderAt();
     fireEvent.click(within(sidebar()).getByRole('link', { name: /Tổ chức/ }));
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Tìm doanh nghiệp và hỗ trợ với lý do rõ ràng.' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Doanh nghiệp đang dùng nền tảng.' })).toBeInTheDocument();
     expect(await screen.findByText('Không có tổ chức nào khớp bộ lọc.')).toBeInTheDocument();
   });
 
