@@ -8,16 +8,18 @@ import { findScreen } from '@/lib/screens';
 import { matchPath } from '@/lib/breadcrumbs';
 import { WORKSPACES, type Workspace } from '@/lib/roles';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { SidebarItem } from './SidebarItem';
+import { SidebarItem, type SidebarVariant } from './SidebarItem';
 
 interface SidebarNavProps {
   config: SidebarConfig;
   isRail: boolean;
   onItemClick?: () => void;
   workspace?: Workspace;
+  variant?: SidebarVariant;
 }
 
-export function SidebarNav({ config, isRail, onItemClick, workspace }: SidebarNavProps) {
+export function SidebarNav({ config, isRail, onItemClick, workspace, variant = 'default' }: SidebarNavProps) {
+  const pulseManager = variant === 'pulse-manager';
   const { pathname } = useLocation();
   const hasEntitlement = useCurrentUser((s) => s.hasEntitlement);
   const hasPermission = useCurrentUser((s) => s.hasPermission);
@@ -80,11 +82,14 @@ export function SidebarNav({ config, isRail, onItemClick, workspace }: SidebarNa
   }, [activeGroupLabel]);
 
   return (
-    <nav aria-label="Điều hướng chính" className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
+    <nav aria-label="Điều hướng chính" className={cn('flex-1 overflow-y-auto', !pulseManager && 'py-2 px-2 space-y-0.5')}>
       {config.map((section) => {
         // Label-only group header (Pulse flat sidebar)
         if (!section.screenId && (!section.items || section.items.length === 0)) {
           if (isRail) return null;
+          if (pulseManager) {
+            return <span key={`label-${section.label}`} className="pm-side-label">{section.label}</span>;
+          }
           return (
             <div key={`label-${section.label}`} className="mt-5 first:mt-0 px-3 pb-1.5">
               <span className="text-[10px] font-black tracking-[0.14em] uppercase text-ent-sidebar-muted">
@@ -103,15 +108,16 @@ export function SidebarNav({ config, isRail, onItemClick, workspace }: SidebarNa
           const Icon = section.icon as LucideIcon | undefined;
           const isActive = isScreenActive(section.screenId, section.activeFor);
           return (
-            <div key={section.label} className="py-0.5">
+            <div key={section.label} className={pulseManager ? undefined : 'py-0.5'}>
               <SidebarItem
                 href={path}
                 label={section.label}
-                icon={Icon ? <Icon className="w-4 h-4 shrink-0" strokeWidth={1.5} /> : undefined}
+                icon={Icon ? <Icon className={pulseManager ? undefined : 'w-4 h-4 shrink-0'} strokeWidth={pulseManager ? 1.8 : 1.5} /> : undefined}
                 isActive={isActive}
                 isLocked={locked}
                 isRail={isRail}
                 onClick={onItemClick}
+                variant={variant}
               />
             </div>
           );

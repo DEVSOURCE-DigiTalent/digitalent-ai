@@ -2,6 +2,7 @@
 @import "./features/learner/theme/personal-theme.css";
 @import "./styles/enterprise-theme.css";
 @import "./styles/enterprise-dark-compat.css";
+@import "./styles/pulse-manager-shell.css";
 
 /*
  * Viewport-height tiers. Width breakpoints alone cannot keep a one-screen page (the sign-in frame) from

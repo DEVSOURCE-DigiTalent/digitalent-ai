@@ -5,6 +5,7 @@ import type { PortalConfig } from '@/lib/portals';
 import type { SidebarConfig } from '@/lib/sidebars/types';
 import { sidebarFor } from '@/lib/sidebars';
 import { OWNER_SIDEBAR } from '@/lib/sidebars/owner';
+import { MANAGER_SIDEBAR } from '@/lib/sidebars/manager';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useSidebarState } from '@/hooks/use-sidebar-state';
 import { useDialogFocus } from '@/hooks/use-dialog-focus';
@@ -13,6 +14,7 @@ import { SidebarOrgBlock } from './SidebarOrgBlock';
 import { SidebarNav } from './SidebarNav';
 import { SidebarFooter } from './SidebarFooter';
 import { SidebarPulseOrgCard } from './SidebarPulseOrgCard';
+import { SidebarManagerCard } from './SidebarManagerCard';
 import { PLATFORM_SIDEBAR } from '@/lib/sidebars/platform';
 
 interface RoleSidebarProps {
@@ -49,6 +51,8 @@ export function RoleSidebar({
 
   const isOwner = user.roles.includes(ROLES.OWNER);
   const isPulseOwner = activeConfig === OWNER_SIDEBAR;
+  const isPulseManager = activeConfig === MANAGER_SIDEBAR;
+  const isPulse = isPulseOwner || isPulseManager;
   const usedSeats = user.subscription?.seatsUsed;
   const totalSeats = user.subscription?.seatLimit;
 
@@ -60,22 +64,25 @@ export function RoleSidebar({
       className={cn(
         'fixed inset-y-0 left-0 z-40 flex flex-col h-dvh',
         'transition-[width,transform] duration-200 ease-in-out',
-        isPulseOwner ? 'sidebar-pulse-owner' : 'bg-[var(--ent-sidebar)]',
-        isRail ? 'w-16' : isPulseOwner ? 'w-[230px]' : 'w-[248px] sm:w-[248px]',
+        isPulseOwner ? 'sidebar-pulse-owner' : isPulseManager ? 'sidebar-pulse-manager' : 'bg-[var(--ent-sidebar)]',
+        isRail ? 'w-16' : isPulse ? 'w-[230px]' : 'w-[248px] sm:w-[248px]',
         'md:translate-x-0',
         isMobileOpen ? 'translate-x-0 w-[288px]' : '-translate-x-full md:translate-x-0',
       )}
       aria-label="Thanh điều hướng"
       aria-hidden={!isMobileOpen && isMobile ? true : undefined}
     >
-      {!isPulseOwner && <SidebarOrgBlock isRail={isRail && !isMobileOpen} />}
+      {!isPulse && <SidebarOrgBlock isRail={isRail && !isMobileOpen} />}
       <SidebarNav
         config={activeConfig}
         isRail={isRail && !isMobileOpen}
         onItemClick={onMobileClose}
         workspace={portal.workspace}
+        variant={isPulseManager ? 'pulse-manager' : 'default'}
       />
-      {isPulseOwner ? (
+      {isPulseManager ? (
+        <SidebarManagerCard isRail={isRail && !isMobileOpen} onToggleCollapsed={isMobileOpen ? undefined : toggleCollapsed} />
+      ) : isPulseOwner ? (
         <SidebarPulseOrgCard isRail={isRail && !isMobileOpen} />
       ) : (
         <SidebarFooter
