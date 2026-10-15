@@ -142,6 +142,18 @@ public class PlatformCatalogController : ControllerBase
         return Ok(ApiResponse<PlatformCatalogVersionDetail>.Ok(await useCase.ExecuteAsync(input), "Version published."));
     }
 
+    // PUT api/v1/platform/catalog/versions/{versionNo}/prices — body { items: [{ courseId, pricePerSeat, salesStatus }] }
+    [HttpPut("catalog/versions/{versionNo:int}/prices")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogVersionDetail>>> UpdatePrices(
+        int versionNo,
+        [FromBody] UpdatePlatformCatalogPricesUseCaseInput input,
+        [FromServices] IUseCase<UpdatePlatformCatalogPricesUseCaseInput, PlatformCatalogVersionDetail> useCase)
+    {
+        input.VersionNo = versionNo;
+        return Ok(ApiResponse<PlatformCatalogVersionDetail>.Ok(await useCase.ExecuteAsync(input), "Draft prices saved."));
+    }
+
     // ----- Courses in a version ----------------------------------------------------------------
 
     // POST api/v1/platform/catalog/versions/{versionNo}/courses — body { code, title, domainId, level }
@@ -401,4 +413,5 @@ public class PlatformCatalogController : ControllerBase
         var result = await useCase.ExecuteAsync(new GetPlatformAssetContentUseCaseInput { AssetId = id, ExpiresAt = exp, Signature = sig });
         Response.Headers.CacheControl = "private, max-age=3600";
         return File(result.Content, result.ContentType, enableRangeProcessing: true);
-    }}
+    }
+}
