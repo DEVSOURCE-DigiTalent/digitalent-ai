@@ -26,6 +26,8 @@ public class AssessmentConfiguration : IEntityTypeConfiguration<Assessment>
             table.HasCheckConstraint("ck_assessments_not_self_supersede",
                 "supersedes_assessment_id IS NULL OR supersedes_assessment_id <> id");
             table.HasCheckConstraint("ck_assessments_row_version", "row_version > 0");
+            table.HasCheckConstraint("ck_assessments_module_quiz",
+                "module_id IS NULL OR (assessment_type = 'QUIZ' AND NOT is_final)");
         });
         builder.HasKey(x => x.Id);
 
@@ -46,6 +48,7 @@ public class AssessmentConfiguration : IEntityTypeConfiguration<Assessment>
             .HasDatabaseName("ux_assessments_one_published_final");
 
         builder.HasOne<Course>().WithMany().HasForeignKey(x => x.CourseId);
+        builder.HasOne<CourseModule>().WithMany().HasForeignKey(x => x.ModuleId);
         builder.HasOne<Assessment>().WithMany().HasForeignKey(x => x.SupersedesAssessmentId);
         builder.HasOne<User>().WithMany().HasForeignKey(x => x.CreatedByUserId);
     }

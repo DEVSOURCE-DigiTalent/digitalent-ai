@@ -41,6 +41,8 @@ public interface IApplicationDbContext
     DbSet<EmployeeCompetencyProfile> EmployeeCompetencyProfiles { get; }
     DbSet<PositionRequirementItem> PositionRequirementItems { get; }
     DbSet<PositionRequirementSet> PositionRequirementSets { get; }
+    DbSet<CapabilityBaseline> CapabilityBaselines { get; }
+    DbSet<CapabilityBaselineAnswer> CapabilityBaselineAnswers { get; }
 
     // Learning (khóa học)
     DbSet<Course> Courses { get; }
@@ -49,6 +51,7 @@ public interface IApplicationDbContext
     DbSet<CourseLearningOutcome> CourseLearningOutcomes { get; }
     DbSet<CourseModule> CourseModules { get; }
     DbSet<CoursePrerequisite> CoursePrerequisites { get; }
+    DbSet<CourseFinalSubmission> CourseFinalSubmissions { get; }
     DbSet<Enrollment> Enrollments { get; }
     DbSet<LearningMaterial> LearningMaterials { get; }
     DbSet<Lesson> Lessons { get; }

@@ -310,4 +310,19 @@ public static class Statuses
         public const string Internal = "INTERNAL";
         public const string PublicVerify = "PUBLIC_VERIFY";
     }
+
+    /// <summary>course_final_submissions.decision</summary>
+    public static class FinalSubmissionDecision
+    {
+        public const string Passed = "PASSED";
+        public const string NotYet = "NOT_YET";
+    }
+
+    /// <summary>course_final_submissions.support_action</summary>
+    public static class FinalSupportAction
+    {
+        public const string Coaching = "COACHING";
+        public const string FreshCycle = "FRESH_CYCLE";
+        public const string Pause = "PAUSE";
+    }
 }

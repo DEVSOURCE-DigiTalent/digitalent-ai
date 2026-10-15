@@ -65,6 +65,8 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<EmployeeCompetencyProfile> EmployeeCompetencyProfiles => Set<EmployeeCompetencyProfile>();
     public DbSet<PositionRequirementItem> PositionRequirementItems => Set<PositionRequirementItem>();
     public DbSet<PositionRequirementSet> PositionRequirementSets => Set<PositionRequirementSet>();
+    public DbSet<CapabilityBaseline> CapabilityBaselines => Set<CapabilityBaseline>();
+    public DbSet<CapabilityBaselineAnswer> CapabilityBaselineAnswers => Set<CapabilityBaselineAnswer>();
 
     // Learning (khóa học)
     public DbSet<Course> Courses => Set<Course>();
@@ -73,6 +75,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<CourseLearningOutcome> CourseLearningOutcomes => Set<CourseLearningOutcome>();
     public DbSet<CourseModule> CourseModules => Set<CourseModule>();
     public DbSet<CoursePrerequisite> CoursePrerequisites => Set<CoursePrerequisite>();
+    public DbSet<CourseFinalSubmission> CourseFinalSubmissions => Set<CourseFinalSubmission>();
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
     public DbSet<LearningMaterial> LearningMaterials => Set<LearningMaterial>();
     public DbSet<Lesson> Lessons => Set<Lesson>();
