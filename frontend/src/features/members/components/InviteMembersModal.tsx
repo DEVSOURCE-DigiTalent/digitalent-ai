@@ -49,6 +49,7 @@ export function InviteMembersModal({ open, onClose }: InviteMembersModalProps) {
   const base = useId();
   const [queue, setQueue] = useState<QueuedPerson[]>([]);
   const [draft, setDraft] = useState<Draft>(EMPTY);
+  const visiblePositions = positions.filter((position) => !position.departmentId || position.departmentId === draft.departmentId);
   const [draftError, setDraftError] = useState<string>();
   const [submitError, setSubmitError] = useState<string>();
   const [result, setResult] = useState<InviteResult>();
@@ -59,6 +60,9 @@ export function InviteMembersModal({ open, onClose }: InviteMembersModalProps) {
     const email = draft.email.trim().toLowerCase();
     if (!draft.fullName.trim()) return setDraftError('Nhập họ tên.');
     if (!EMAIL_PATTERN.test(email)) return setDraftError('Email không hợp lệ.');
+    if (draft.role !== 'OWNER' && !draft.departmentId) return setDraftError('Chọn phòng ban trước khi gửi lời mời.');
+    if (draft.role === 'EMPLOYEE' && !draft.jobPositionId) return setDraftError('Chọn vị trí công việc để xác định lộ trình học.');
+    if (draft.jobPositionId && !visiblePositions.some((position) => position.id === draft.jobPositionId)) return setDraftError('Vị trí không thuộc phòng ban đã chọn.');
     if (queue.some((q) => q.email === email)) return setDraftError('Email này đã có trong danh sách chờ gửi.');
     setDraftError(undefined);
     setQueue([...queue, { ...draft, email, key: email }]);
@@ -108,7 +112,7 @@ export function InviteMembersModal({ open, onClose }: InviteMembersModalProps) {
     onClose();
   };
 
-  // No email provider yet: the mock and the Development backend return the activation token so it can be tested here.
+  // The development backend may return the activation token for local testing.
   const testLinks = result?.created.filter((person) => person.token) ?? [];
   const seatsLeft = user.subscription?.seatLimit === undefined ? undefined : user.subscription.seatLimit - (user.subscription.seatsUsed ?? 0) - queue.length;
 
@@ -118,7 +122,7 @@ export function InviteMembersModal({ open, onClose }: InviteMembersModalProps) {
       onClose={close}
       size="lg"
       title="Mời thành viên"
-      description="Mỗi người nhận một lời mời, tự đặt mật khẩu và vào tổ chức với vai trò bạn chọn."
+      description="Mỗi người nhận email mời, xác nhận rồi tự đặt mật khẩu. Phòng ban và vị trí xác định đúng không gian làm việc, lộ trình học."
       footer={
         <>
           <button type="button" onClick={close} className={SECONDARY_BUTTON}>Đóng</button>
@@ -158,17 +162,17 @@ export function InviteMembersModal({ open, onClose }: InviteMembersModalProps) {
               </select>
             </div>
             <div className="grid gap-1.5">
-              <label htmlFor={`${base}-department`} className="text-sm font-medium text-slate-700">Phòng ban</label>
-              <select id={`${base}-department`} value={draft.departmentId} onChange={(e) => set('departmentId', e.target.value)} className={INPUT_CLASS}>
+              <label htmlFor={`${base}-department`} className="text-sm font-medium text-slate-700">Phòng ban {draft.role !== 'OWNER' ? '*' : ''}</label>
+              <select id={`${base}-department`} value={draft.departmentId} onChange={(e) => setDraft(current => ({ ...current, departmentId: e.target.value, jobPositionId: '' }))} className={INPUT_CLASS}>
                 <option value="">Chưa xếp</option>
                 {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
             </div>
             <div className="grid gap-1.5">
-              <label htmlFor={`${base}-position`} className="text-sm font-medium text-slate-700">Vị trí công việc</label>
+              <label htmlFor={`${base}-position`} className="text-sm font-medium text-slate-700">Vị trí công việc {draft.role === 'EMPLOYEE' ? '*' : ''}</label>
               <select id={`${base}-position`} value={draft.jobPositionId} onChange={(e) => set('jobPositionId', e.target.value)} className={INPUT_CLASS}>
                 <option value="">Chưa xếp</option>
-                {positions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                {visiblePositions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
           </div>

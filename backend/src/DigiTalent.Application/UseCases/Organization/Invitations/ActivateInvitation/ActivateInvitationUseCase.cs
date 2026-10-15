@@ -56,6 +56,7 @@ public class ActivateInvitationUseCase : IUseCase<ActivateInvitationUseCaseInput
             PasswordHash = _passwordHasher.Hash(input.Password),
             DisplayName = fullName,
             Status = Statuses.User.Active,
+            EmailVerifiedAt = now,
         };
         _context.Users.Add(user);
         _context.UserRoles.Add(new UserRole
@@ -108,6 +109,10 @@ public class ActivateInvitationUseCase : IUseCase<ActivateInvitationUseCaseInput
             && e.WorkEmail.ToLower() == invitation.Email);
         if (existing != null)
         {
+            if (invitation.DepartmentId.HasValue && existing.DepartmentId != invitation.DepartmentId.Value)
+                throw new ConflictException("Hồ sơ nhân viên đang ở phòng ban khác lời mời. Hãy nhờ doanh nghiệp kiểm tra lại.");
+            if (invitation.JobPositionId.HasValue && existing.JobPositionId != invitation.JobPositionId.Value)
+                throw new ConflictException("Vị trí trên hồ sơ nhân viên khác lời mời. Hãy nhờ doanh nghiệp kiểm tra lại.");
             existing.UserId = user.Id;
             return existing;
         }
@@ -115,8 +120,11 @@ public class ActivateInvitationUseCase : IUseCase<ActivateInvitationUseCaseInput
         var activeDepartments = _context.Departments
             .Where(d => d.OrganizationId == invitation.OrganizationId && d.Status == Statuses.MasterData.Active);
 
-        var department = await activeDepartments.FirstOrDefaultAsync(d => d.Id == invitation.DepartmentId)
-            ?? await activeDepartments.OrderBy(d => d.Code).FirstOrDefaultAsync();
+        var department = invitation.DepartmentId.HasValue
+            ? await activeDepartments.FirstOrDefaultAsync(d => d.Id == invitation.DepartmentId.Value)
+            : await activeDepartments.OrderBy(d => d.Code).FirstOrDefaultAsync();
+        if (invitation.DepartmentId.HasValue && department == null)
+            throw new ConflictException("Phòng ban trong lời mời không còn hoạt động. Hãy nhờ doanh nghiệp gửi lại lời mời.");
         if (department == null)
         {
             // employees.department_id is NOT NULL: the Owner places the member later (UpdateMember creates the profile)

@@ -29,8 +29,6 @@ public class LoggingInvitationSender : IInvitationSender
             return Task.FromResult<string?>(link);
         }
 
-        _logger.LogInformation("Invitation created for {Email} to {Organization} (e-mail delivery not configured).",
-            message.Email, message.OrganizationName);
-        return Task.FromResult<string?>(null);
+        throw new InvalidOperationException("Email delivery for member invitations is not configured.");
     }
 }

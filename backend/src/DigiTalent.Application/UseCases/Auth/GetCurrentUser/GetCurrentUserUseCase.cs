@@ -52,7 +52,11 @@ public class GetCurrentUserUseCase : IUseCase<GetCurrentUserUseCaseInput, GetCur
             throw new NotFoundException("User not found.");
         }
 
-        var roles = user.Roles;
+        var roles = user.Roles
+            .Select(Roles.Canonicalize)
+            .Where(r => !string.IsNullOrEmpty(r))
+            .Distinct()
+            .ToList();
         var isPlatform = roles.Contains(Roles.PlatformAdmin);
         var isPersonal = user.OrganizationId == null && !isPlatform;
         if (isPersonal)

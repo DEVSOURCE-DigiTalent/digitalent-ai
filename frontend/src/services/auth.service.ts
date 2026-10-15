@@ -4,10 +4,23 @@ import type { LoginRequest, LoginResponse } from '../types/auth';
 import type { ApiResponse } from '../types/api';
 import type { SessionUser } from '../types/session';
 
+export interface SendEmailVerificationResponse {
+  debugOtp?: string | null;
+}
+
+export interface VerifyBusinessEmailResponse {
+  verified: boolean;
+  email: string;
+}
+
 interface AuthService {
   login: (data: LoginRequest) => Promise<{ data: ApiResponse<LoginResponse> }>;
   logout: (refreshToken: string) => Promise<unknown>;
   getMe: () => Promise<{ data: ApiResponse<SessionUser> }>;
+  /** Gửi OTP 6 số qua email xác minh cho Business Owner mới đăng ký. */
+  sendEmailVerification: (email: string) => Promise<{ data: ApiResponse<SendEmailVerificationResponse> }>;
+  /** Xác minh OTP 6 số để kích hoạt tài khoản Business Owner. */
+  verifyBusinessEmail: (email: string, otp: string) => Promise<{ data: ApiResponse<VerifyBusinessEmailResponse> }>;
 }
 
 /** Authentication API service. All endpoints relative to /auth base path. */
@@ -15,6 +28,10 @@ const apiAuthService: AuthService = {
   login: (data) => apiClient.post<ApiResponse<LoginResponse>>('/auth/login', data),
   logout: (refreshToken) => apiClient.post('/auth/logout', { refreshToken }),
   getMe: () => apiClient.get<ApiResponse<SessionUser>>('/auth/me'),
+  sendEmailVerification: (email) =>
+    apiClient.post<ApiResponse<SendEmailVerificationResponse>>('/auth/send-email-verification', { email }),
+  verifyBusinessEmail: (email, otp) =>
+    apiClient.post<ApiResponse<VerifyBusinessEmailResponse>>('/auth/verify-business-email', { email, otp }),
 };
 
 /**
@@ -31,6 +48,17 @@ const mockAuthAdapter: AuthService = {
   login: (data) => loadMock().then((mock) => mock.login(data)),
   logout: () => loadMock().then((mock) => mock.logout()),
   getMe: () => loadMock().then((mock) => mock.getMe()),
+  sendEmailVerification: async (_email) => {
+    await new Promise((r) => setTimeout(r, 800));
+    return { data: { success: true, message: 'Mock OTP sent', data: { debugOtp: '123456' }, errors: [] } };
+  },
+  verifyBusinessEmail: async (_email, otp) => {
+    await new Promise((r) => setTimeout(r, 800));
+    if (otp === '123456') {
+      return { data: { success: true, message: 'Verified', data: { verified: true, email: _email }, errors: [] } };
+    }
+    throw { response: { status: 400, data: { message: 'OTP không đúng hoặc đã hết hạn.' } } };
+  },
 };
 
 /** With VITE_USE_MOCK=true the service answers from services/mock instead of the backend. */

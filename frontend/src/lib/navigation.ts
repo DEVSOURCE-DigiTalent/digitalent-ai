@@ -30,9 +30,32 @@ export function resolveNextStep(user: SessionUser | null | undefined): string {
     if (resolved === WORKSPACES.PERSONAL) return '/personal/onboarding';
   }
 
-  if (user.emailVerified === false) {
-    return '/verify-email-required';
+  if (requiresOwnerEmailVerification(user)) {
+    return `/business/verify-email?email=${encodeURIComponent(user.email)}`;
   }
+
+  if (resolved === WORKSPACES.PLATFORM || normalized.includes(ROLES.PLATFORM_ADMIN)) {
+    return '/platform/dashboard';
+  }
+  if (resolved === WORKSPACES.PERSONAL) return '/personal/dashboard';
+  if (normalized.includes(ROLES.OWNER)) return '/enterprise/dashboard';
+  if (normalized.includes(ROLES.MANAGER)) return '/enterprise/team';
+  return '/enterprise/me';
+}
+
+/** The OTP page belongs to newly registered business owners. Legacy staff and platform accounts use their own workspaces. */
+export function requiresOwnerEmailVerification(user: Pick<SessionUser, 'roles' | 'emailVerified'>): boolean {
+  return user.emailVerified === false && normalizeRoles(user.roles ?? []).includes(ROLES.OWNER);
+}
+
+/**
+ * Trả về trang dashboard chính theo vai trò của người dùng.
+ * Dùng cho nút "Vào hệ thống" trên Landing page và Solution page để đưa người dùng thẳng vào không gian làm việc.
+ */
+export function getDashboardPath(user: SessionUser | null | undefined): string {
+  if (!user) return '/login';
+  const normalized = normalizeRoles(user.roles ?? []);
+  const resolved = user.workspace ?? inferWorkspace(normalized);
 
   if (resolved === WORKSPACES.PLATFORM || normalized.includes(ROLES.PLATFORM_ADMIN)) {
     return '/platform/dashboard';

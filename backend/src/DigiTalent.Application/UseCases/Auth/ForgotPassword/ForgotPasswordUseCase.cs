@@ -37,9 +37,9 @@ public class ForgotPasswordUseCase : IUseCase<ForgotPasswordInput, ForgotPasswor
         var now = DateTimeOffset.UtcNow;
         var expiresAt = now.AddMinutes(30);
 
-        // Vô hiệu hóa các token cũ chưa sử dụng của user này
+        // Vô hiệu hóa các token reset mật khẩu cũ chưa sử dụng của user này
         var oldTokens = await _context.PasswordResetTokens
-            .Where(t => t.UserId == user.Id && t.UsedAt == null)
+            .Where(t => t.UserId == user.Id && t.UsedAt == null && t.Purpose == Domain.Entities.TokenPurpose.ResetPassword)
             .ToListAsync();
         foreach (var t in oldTokens)
         {

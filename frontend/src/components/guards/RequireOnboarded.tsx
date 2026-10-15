@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useCurrentUser } from '../../hooks/use-current-user';
-import { resolveNextStep } from '../../lib/navigation';
+import { requiresOwnerEmailVerification, resolveNextStep } from '../../lib/navigation';
 
 /**
  * Keeps a new account in its onboarding: until it has paid, signed contract (enterprise),
@@ -11,7 +11,7 @@ export function RequireOnboarded({ children }: { children: React.ReactNode }) {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  if (user.onboardingStatus || user.emailVerified === false) {
+  if (user.onboardingStatus || requiresOwnerEmailVerification(user)) {
     return <Navigate to={resolveNextStep(user)} replace />;
   }
 

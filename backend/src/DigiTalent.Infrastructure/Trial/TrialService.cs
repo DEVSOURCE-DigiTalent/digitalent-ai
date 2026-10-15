@@ -66,16 +66,17 @@ public sealed partial class TrialService
         if (await db.Users.AnyAsync(x => x.Email == email) || await db.TrialRegistrations.AnyAsync(x => x.Email == email))
             throw new ConflictException("A registration for this email already exists. Check the verification email or contact support.");
         var token = Token();
+        var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
         var registration = new TrialRegistration
         {
             Email = email, OrganizationName = orgName, OwnerName = ownerName, PasswordHash = passwords.Hash(request.Password),
-            Industry = industry, Size = size, Goal = goal, TokenHash = Hash(token), ExpiresAt = Now.AddHours(options.VerificationHours)
+            Industry = industry, Size = size, Goal = goal, TokenHash = Hash(token), OtpHash = passwords.Hash(code), ExpiresAt = Now.AddHours(options.VerificationHours)
         };
         db.TrialRegistrations.Add(registration);
         await db.SaveChangesAsync();
         try
         {
-            await mail.SendAsync(email, "verify", token);
+            await mail.SendVerificationCodeAsync(email, token, code);
         }
         catch
         {
@@ -84,7 +85,27 @@ public sealed partial class TrialService
             await db.SaveChangesAsync();
             throw;
         }
-        return new("verification_pending", registration.ExpiresAt, DevelopmentLink("verify", token));
+        return new("verification_pending", registration.ExpiresAt, DevelopmentLink("verify", token),
+            options.DevelopmentEnvironment && options.EnableDevelopmentCapture ? code : null);
+    }
+
+    public async Task<TrialAccountDto> VerifyCodeAsync(TrialCodeRequest request)
+    {
+        var email = NormalizeEmail(request.Email);
+        var registration = await db.TrialRegistrations.SingleOrDefaultAsync(x => x.Email == email);
+        if (registration == null || registration.UsedAt != null || Now >= registration.ExpiresAt || registration.OtpHash == null)
+            throw new BadRequestException("Mã xác minh không hợp lệ hoặc đã hết hạn.");
+        if (registration.OtpFailedAttempts >= 5)
+            throw new BadRequestException("Đã vượt quá số lần nhập mã. Vui lòng liên hệ hỗ trợ.");
+        if (request.Code == null || request.Code.Length != 6 || request.Code.Any(c => !char.IsAsciiDigit(c)) ||
+            !passwords.Verify(request.Code, registration.OtpHash))
+        {
+            registration.OtpFailedAttempts++;
+            registration.Revision++;
+            await db.SaveChangesAsync();
+            throw new BadRequestException("Mã xác minh không hợp lệ hoặc đã hết hạn.");
+        }
+        return await CompleteVerificationAsync(registration);
     }
 
     public async Task<TrialAccountDto> VerifyAsync(string token)
@@ -94,9 +115,14 @@ public sealed partial class TrialService
         var registration = await db.TrialRegistrations.SingleOrDefaultAsync(x => x.TokenHash == hash);
         if (registration == null || registration.UsedAt != null || Now >= registration.ExpiresAt)
             throw new BadRequestException("This verification link is invalid, expired or already used.");
+        return await CompleteVerificationAsync(registration);
+    }
+
+    private async Task<TrialAccountDto> CompleteVerificationAsync(TrialRegistration registration)
+    {
         if (await db.Users.AnyAsync(x => x.Email == registration.Email)) throw new ConflictException("This email is already registered.");
         var organization = new Organization { Code = "TRIAL-" + Guid.NewGuid().ToString("N"), Name = registration.OrganizationName };
-        var owner = new User { Email = registration.Email, DisplayName = registration.OwnerName, PasswordHash = registration.PasswordHash, OrganizationId = organization.Id };
+        var owner = new User { Email = registration.Email, DisplayName = registration.OwnerName, PasswordHash = registration.PasswordHash, OrganizationId = organization.Id, EmailVerifiedAt = Now };
         db.Organizations.Add(organization); db.Users.Add(owner);
         await AssignRole(owner, "OWNER");
         var trial = new TrialWorkspace
@@ -197,8 +223,10 @@ public sealed partial class TrialService
         var employee = new Employee { OrganizationId = invitation.OrganizationId, DepartmentId = invitation.DepartmentId, JobPositionId = invitation.PositionId,
             UserId = user.Id, FullName = invitation.Name, WorkEmail = invitation.Email, EmployeeCode = "TRIAL-" + Guid.NewGuid().ToString("N") };
         db.Users.Add(user); db.Employees.Add(employee);
-        await AssignRole(user, invitation.Role == "Manager" ? "MANAGER" : "EMPLOYEE");
-        if (invitation.Role == "Manager")
+        var isManager = string.Equals(invitation.Role, "Manager", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(invitation.Role, "MANAGER", StringComparison.OrdinalIgnoreCase);
+        await AssignRole(user, isManager ? "MANAGER" : "EMPLOYEE");
+        if (isManager)
         {
             var department = await db.Departments.SingleAsync(x => x.Id == invitation.DepartmentId && x.OrganizationId == invitation.OrganizationId);
             if (department.ManagerEmployeeId != null) throw new ConflictException("The trial department already has a manager.");

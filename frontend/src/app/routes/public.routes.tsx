@@ -6,20 +6,19 @@ import { PricingPage } from '../../features/commerce/pages/PricingPage';
 import { LoginPage } from '../../features/auth/pages/LoginPage';
 import { BusinessRegisterPage } from '../../features/auth/pages/BusinessRegisterPage';
 import { TrialAcceptPage as EnterpriseTrialAcceptPage, TrialRegisterPage as EnterpriseTrialRegisterPage, TrialVerifyPage as EnterpriseTrialVerifyPage } from '../../features/experience/enterprise-trial/PublicTrialPages';
-import { IndividualRegisterPage } from '../../features/auth/pages/IndividualRegisterPage';
 import { IndividualVerifyPage } from '../../features/auth/pages/IndividualVerifyPage';
 import { ActivateInvitationPage } from '../../features/auth/pages/ActivateInvitationPage';
+import { BusinessVerifyEmailPage } from '../../features/auth/pages/BusinessVerifyEmailPage';
 import { ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage } from '../../features/auth/pages/PasswordPages';
 import { PublicVerifyPage } from '../../features/public/pages/PublicVerifyPage';
 
 const ExperienceRoute = lazy(() => import('../../features/experience/pages/ExperienceRoute').then(module => ({ default: module.ExperienceRoute })));
-const IndividualTrialPage = lazy(() => import('../../features/experience/pages/IndividualTrialPage').then(module => ({ default: module.IndividualTrialPage })));
-const EnterpriseLandingPage = lazy(() => import('../../features/public/pages/LandingPage').then(module => ({ default: module.EnterpriseLandingPage })));
-const IndividualLandingPage = lazy(() => import('../../features/public/pages/LandingPage').then(module => ({ default: module.IndividualLandingPage })));
+const EnterpriseLandingPage = lazy(() => import('../../features/public/pulse-landing/PulseBusinessLandingPage').then(module => ({ default: module.PulseBusinessLandingPage })));
+const EnterpriseSolutionPage = lazy(() => import('../../features/public/pulse-landing/PulseBusinessSolutionPage').then(module => ({ default: module.PulseBusinessSolutionPage })));
 const V2LandingPage = lazy(() => import('../../features/preview-v2/pages/V2LandingPage').then(module => ({ default: module.V2LandingPage })));
 const V2IndividualPage = lazy(() => import('../../features/preview-v2/pages/V2IndividualPage').then(module => ({ default: module.V2IndividualPage })));
 
-const landingFallback = <div className="min-h-screen bg-black" />;
+const landingFallback = <div className="min-h-screen bg-[#f6f8fd]" />;
 const v2Fallback = <div className="min-h-screen bg-[#FAF7F2]" />;
 
 /** Old bookmarks and emails still point at /business/login and /individual/login; keep their returnTo. */
@@ -31,33 +30,35 @@ function LegacyLoginRedirect() {
 export const publicRoutes: RouteObject[] = [
   { path: '/experience', element: <Suspense fallback={<div>Đang tải giao diện mẫu…</div>}><ExperienceRoute /></Suspense> },
 
-  // Portal selector: "/" asks once and then remembers; /portal always shows it (spec section 2).
+  // Old neutral entry points now open the enterprise landing or its registration form.
   { path: '/', element: <RootRoute /> },
   { path: '/portal', element: <PortalSelectorPage /> },
 
-  // The landing pages have their own navigation and footer, so they sit outside PublicLayout.
+  // The enterprise landing has its own navigation and footer.
   { path: '/business', element: <Suspense fallback={landingFallback}><EnterpriseLandingPage /></Suspense> },
   { path: '/business/try', element: <EnterpriseTrialRegisterPage /> },
   { path: '/business/try/verify', element: <EnterpriseTrialVerifyPage /> },
   { path: '/business/try/accept', element: <EnterpriseTrialAcceptPage /> },
-  { path: '/individual', element: <Suspense fallback={landingFallback}><IndividualLandingPage /></Suspense> },
-  { path: '/individual/try', element: <Suspense fallback={landingFallback}><IndividualTrialPage /></Suspense> },
+  { path: '/individual', element: <Navigate to="/business" replace /> },
+  { path: '/individual/try', element: <Navigate to="/business/try" replace /> },
 
   // ── Version 2.0 (Warm Human EdTech Theme Preview) ──
   { path: '/v2', element: <Navigate to="/v2/landing" replace /> },
   { path: '/v2/landing', element: <Suspense fallback={v2Fallback}><V2LandingPage /></Suspense> },
   { path: '/v2/individual', element: <Suspense fallback={v2Fallback}><V2IndividualPage /></Suspense> },
 
+  { path: '/business/solution', element: <Suspense fallback={landingFallback}><EnterpriseSolutionPage /></Suspense> },
   { path: '/business/pricing', element: <PricingPage audience="enterprise" /> },
-  { path: '/individual/pricing', element: <PricingPage audience="individual" /> },
+  { path: '/individual/pricing', element: <Navigate to="/business/solution" replace /> },
 
-  // Sign-in and sign-up. One login page for businesses and individuals; the old per-product addresses forward to it.
+  // Existing accounts share one login. New public registration is enterprise only.
   { path: '/login', element: <LoginPage /> },
   { path: '/business/login', element: <LegacyLoginRedirect /> },
   { path: '/individual/login', element: <LegacyLoginRedirect /> },
-  { path: '/register', element: <Navigate to="/portal?intent=register" replace /> },
+  { path: '/register', element: <Navigate to="/business/try" replace /> },
   { path: '/business/register', element: <BusinessRegisterPage /> },
-  { path: '/individual/register', element: <IndividualRegisterPage /> },
+  { path: '/business/verify-email', element: <BusinessVerifyEmailPage /> },
+  { path: '/individual/register', element: <Navigate to="/business/try" replace /> },
   { path: '/individual/register/verify', element: <IndividualVerifyPage /> },
   { path: '/individual/verify', element: <IndividualVerifyPage /> },
   { path: '/activate/:token', element: <ActivateInvitationPage /> },

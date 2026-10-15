@@ -2,6 +2,7 @@ using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Domain.Constants;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Auth;
@@ -21,7 +22,8 @@ public class ValidateResetTokenUseCase : IUseCase<ValidateResetTokenInput, bool>
             throw new BadRequestException("Token không hợp lệ.", "token", "INVALID_TOKEN");
 
         var tokenRecord = await _context.PasswordResetTokens
-            .FirstOrDefaultAsync(t => t.TokenHash == input.Token.Trim());
+            .FirstOrDefaultAsync(t => t.TokenHash == input.Token.Trim()
+                && t.Purpose == TokenPurpose.ResetPassword);
 
         if (tokenRecord == null || tokenRecord.UsedAt != null || tokenRecord.ExpiresAt < DateTimeOffset.UtcNow)
         {
@@ -53,7 +55,8 @@ public class ResetPasswordUseCase : IUseCase<ResetPasswordInput, bool>
 
         var tokenRecord = await _context.PasswordResetTokens
             .Include(t => t.User)
-            .FirstOrDefaultAsync(t => t.TokenHash == input.Token.Trim());
+            .FirstOrDefaultAsync(t => t.TokenHash == input.Token.Trim()
+                && t.Purpose == TokenPurpose.ResetPassword);
 
         var now = DateTimeOffset.UtcNow;
         if (tokenRecord == null || tokenRecord.UsedAt != null || tokenRecord.ExpiresAt < now)
@@ -77,9 +80,17 @@ public class ResetPasswordUseCase : IUseCase<ResetPasswordInput, bool>
             user.LockedUntil = null;
         }
 
-        // Đánh dấu token đã dùng
+        // Đánh dấu token đã dùng và cập nhật Status nếu tài khoản chưa verify
         tokenRecord.UsedAt = now;
         tokenRecord.UpdatedAt = now;
+
+        // Nếu user chưa verify email (trường hợp reset trước khi verify) → cũng activate
+        if (user.EmailVerifiedAt == null)
+        {
+            user.EmailVerifiedAt = now;
+            if (user.Status == Statuses.User.Inactive)
+                user.Status = Statuses.User.Active;
+        }
 
         // Thu hồi toàn bộ refresh token cũ để bảo vệ tài khoản
         var activeTokens = await _context.RefreshTokens
