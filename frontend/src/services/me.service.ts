@@ -1,5 +1,5 @@
 import apiClient from './api-client';
-import type { ApiResponse, PagedList } from '../types/api';
+import type { ApiResponse } from '../types/api';
 
 /**
  * Trang cá nhân của nhân viên (EM-01..EM-18) — chỉ dữ liệu của chính người đăng nhập.
@@ -680,45 +680,11 @@ export interface MyAchievements {
 
 // ── API ───────────────────────────────────────────────────────────────────────
 
+/**
+ * Nhiệm vụ thực tế của nhân viên (api/v1/me/tasks), dùng ở trang Thực hành của cổng Pulse. Các kiểu dữ liệu khác của
+ * api/v1/me/* ở trên vẫn được máy chủ mock (services/mock/server/handlers/me.ts) dùng.
+ */
 export const meService = {
-  getDashboard: () => apiClient.get<ApiResponse<MyDashboard>>('/me/dashboard'),
-  getCompetencyProfile: () => apiClient.get<ApiResponse<MyCompetencyProfile>>('/me/competency-profile'),
-  getSkillGap: () => apiClient.get<ApiResponse<MySkillGap>>('/me/skill-gap'),
-  getEvidence: () => apiClient.get<ApiResponse<MyEvidenceTimeline>>('/me/evidence'),
-  getLearningPath: () => apiClient.get<ApiResponse<MyLearningPath>>('/me/learning-path'),
-  getAchievements: () => apiClient.get<ApiResponse<MyAchievements>>('/me/achievements'),
-
-  getCourses: () => apiClient.get<ApiResponse<MyCourses>>('/me/courses'),
-  getCourse: (courseId: string) => apiClient.get<ApiResponse<MyCourseDetail>>(`/me/courses/${courseId}`),
-  enroll: (courseId: string) =>
-    apiClient.post<ApiResponse<{ enrollmentId: string; courseId: string; status: EnrollmentStatus }>>(`/me/courses/${courseId}/enroll`),
-  getLesson: (courseId: string, lessonId: string) =>
-    apiClient.get<ApiResponse<MyLesson>>(`/me/courses/${courseId}/lessons/${lessonId}`),
-  startLesson: (courseId: string, lessonId: string) =>
-    apiClient.post<ApiResponse<{ lessonStatus: LessonProgressStatus; enrollmentStatus: EnrollmentStatus }>>(
-      `/me/courses/${courseId}/lessons/${lessonId}/start`),
-  completeLesson: (courseId: string, lessonId: string) =>
-    apiClient.post<ApiResponse<CompleteLessonResult>>(`/me/courses/${courseId}/lessons/${lessonId}/complete`),
-  downloadMaterial: (courseId: string, lessonId: string, materialId: string) =>
-    apiClient.get<Blob>(`/me/courses/${courseId}/lessons/${lessonId}/materials/${materialId}/download`, { responseType: 'blob' })
-      .then((response) => response.data),
-
-  getAssessments: () => apiClient.get<ApiResponse<MyAssessments>>('/me/assessments'),
-  getAssessment: (assessmentId: string) => apiClient.get<ApiResponse<MyAssessmentDetail>>(`/me/assessments/${assessmentId}`),
-  startAttempt: (assessmentId: string) =>
-    apiClient.post<ApiResponse<MyAttemptSession>>(`/me/assessments/${assessmentId}/attempts`),
-  getAttemptSession: (attemptId: string) =>
-    apiClient.get<ApiResponse<MyAttemptSession>>(`/me/assessment-attempts/${attemptId}`),
-  saveAnswers: (attemptId: string, answers: Record<string, string | null>) =>
-    apiClient.put<ApiResponse<{ savedCount: number; deadline?: string | null; serverNow: string }>>(
-      `/me/assessment-attempts/${attemptId}/answers`, { answers }),
-  submitAttempt: (attemptId: string, answers: Record<string, string | null>) =>
-    apiClient.post<ApiResponse<MyAttemptResult>>(`/me/assessment-attempts/${attemptId}/submit`, { answers }),
-  getAttemptResult: (attemptId: string) =>
-    apiClient.get<ApiResponse<MyAttemptResult>>(`/me/assessment-attempts/${attemptId}/result`),
-  getAttemptHistory: (params: AttemptHistoryParams) =>
-    apiClient.get<ApiResponse<PagedList<MyAttemptHistoryRow>>>('/me/assessment-attempts', { params }),
-
   getTasks: () => apiClient.get<ApiResponse<MyTasks>>('/me/tasks'),
   getTask: (assignmentId: string) => apiClient.get<ApiResponse<MyTaskDetail>>(`/me/tasks/${assignmentId}`),
   submitTask: (assignmentId: string, payload: SubmitTaskPayload) =>

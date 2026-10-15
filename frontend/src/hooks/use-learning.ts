@@ -15,42 +15,6 @@ export const LEARNING_KEYS = {
   internalCourse: (id?: string) => ['learning', 'internal-course', id] as const,
 };
 
-export function useCourseDetail(id?: string) {
-  return useQuery({
-    queryKey: LEARNING_KEYS.course(id),
-    queryFn: () => learningService.getCourseDetail(id!).then((res) => res.data.data!),
-    enabled: Boolean(id),
-  });
-}
-
-export function useLesson(courseId?: string, lessonId?: string) {
-  return useQuery({
-    queryKey: LEARNING_KEYS.lesson(courseId, lessonId),
-    queryFn: () => learningService.getLesson(courseId!, lessonId!).then((res) => res.data.data!),
-    enabled: Boolean(courseId && lessonId),
-  });
-}
-
-export function useCompleteLesson() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ courseId, lessonId }: { courseId: string; lessonId: string }) =>
-      learningService.completeLesson(courseId, lessonId).then((res) => res.data.data!),
-    onSuccess: (_data, variables) => {
-      qc.invalidateQueries({ queryKey: LEARNING_KEYS.course(variables.courseId) });
-      qc.invalidateQueries({ queryKey: ['course-assignments'] });
-    },
-  });
-}
-
-export function useAssessment(id?: string) {
-  return useQuery({
-    queryKey: LEARNING_KEYS.assessment(id),
-    queryFn: () => learningService.getAssessment(id!).then((res) => res.data.data!),
-    enabled: Boolean(id),
-  });
-}
-
 export function useSubmitAttempt() {
   const qc = useQueryClient();
   return useMutation({
@@ -76,19 +40,6 @@ export function useAssessmentHistory(params?: {
   return useQuery({
     queryKey: LEARNING_KEYS.assessments(params),
     queryFn: () => learningService.getAssessmentHistory(params).then((res) => res.data.data!),
-  });
-}
-
-export function useCertificates(params?: {
-  employeeId?: string;
-  status?: string;
-  search?: string;
-  pageIndex?: number;
-  pageSize?: number;
-}) {
-  return useQuery({
-    queryKey: LEARNING_KEYS.certificates(params),
-    queryFn: () => learningService.getCertificates(params).then((res) => res.data.data!),
   });
 }
 
