@@ -3,3 +3,4 @@ export { SidebarNav } from './SidebarNav';
 export { SidebarItem } from './SidebarItem';
 export { SidebarOrgBlock } from './SidebarOrgBlock';
 export { SidebarFooter } from './SidebarFooter';
+export { SidebarPulseOrgCard } from './SidebarPulseOrgCard';

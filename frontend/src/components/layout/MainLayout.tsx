@@ -42,10 +42,9 @@ export function MainLayout({ portal, sidebarConfig, isUnpaid = false }: MainLayo
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isMobileOpen, setMobileOpen, toggleCollapsed]);
 
-  // Determine sidebar width based on state: on desktop (>= md), rail is 64px, open is 248px
-  const sidebarWidth = state === 'collapsed' ? '64px' : '248px';
   const user = useCurrentUser((s) => s.user);
   const isOwner = Boolean(user?.roles?.includes(ROLES.OWNER));
+  const sidebarWidth = state === 'collapsed' ? '64px' : isOwner ? '230px' : '248px';
 
   return (
     <div 

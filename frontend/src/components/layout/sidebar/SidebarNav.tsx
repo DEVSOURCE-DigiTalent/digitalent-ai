@@ -71,6 +71,18 @@ export function SidebarNav({ config, isRail, onItemClick, workspace }: SidebarNa
   return (
     <nav aria-label="Điều hướng chính" className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
       {config.map((section) => {
+        // Label-only group header (Pulse flat sidebar)
+        if (!section.screenId && (!section.items || section.items.length === 0)) {
+          if (isRail) return null;
+          return (
+            <div key={`label-${section.label}`} className="mt-5 first:mt-0 px-3 pb-1.5">
+              <span className="text-[10px] font-black tracking-[0.14em] uppercase text-ent-sidebar-muted">
+                {section.label}
+              </span>
+            </div>
+          );
+        }
+
         // Single top-level link (e.g. Tổng quan, Báo cáo)
         if (section.screenId && !section.items?.length) {
           if (!isVisible(section.screenId)) return null;
