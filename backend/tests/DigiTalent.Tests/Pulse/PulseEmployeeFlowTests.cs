@@ -153,6 +153,7 @@ public class PulseEmployeeFlowTests
         var queue = await manager.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput());
         var item = queue.Items.Single(i => i.Status == PulseFinalStatus.Pending);
         item.AiHint!.Checks.Should().Equal(true, true, true);
+        item.DomainName.Should().Be(course.DomainName, "the queue names a domain like the employee pages, without the \"1. \" of the category");
         await manager.Decide.ExecuteAsync(new DecidePulseFinalUseCaseInput { SubmissionId = item.SubmissionId, Decision = Statuses.FinalSubmissionDecision.NotYet, Reason = CommentReason });
         world.Context.ChangeTracker.Clear();
 

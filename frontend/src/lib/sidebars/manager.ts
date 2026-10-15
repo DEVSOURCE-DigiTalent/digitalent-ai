@@ -10,6 +10,7 @@ import {
   CheckSquare,
   Award,
   Route,
+  FileCheck2,
 } from 'lucide-react';
 import type { SidebarConfig } from './types';
 
@@ -22,6 +23,12 @@ export const MANAGER_SIDEBAR: SidebarConfig = [
     label: 'Tổng quan nhóm',
     icon: LayoutDashboard,
     screenId: 'MG-01',
+  },
+  {
+    // Mock #/review: quản lý chấm bài cuối của mỗi khóa (có lý do, hai lần nộp, cờ hỗ trợ).
+    label: 'Bài cuối khóa',
+    icon: FileCheck2,
+    screenId: 'MG-13',
   },
   {
     label: 'Nhóm của tôi',

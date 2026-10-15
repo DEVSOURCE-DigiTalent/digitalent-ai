@@ -3,7 +3,7 @@
 Ngày: 2026-10-14 · Đặc tả gốc: `docs/ui-redesign/16-pulse-product-flow-detailed.md`, mock `docs/ui-redesign/14-pulse-product-site/index.html`.
 
 Cổng nhân viên Pulse thay các màn EM-01..EM-18 cũ (liên kết cũ được chuyển hướng trong `app/routes/legacy-redirects.tsx`).
-Màn chấm bài cuối khóa của quản lý **chưa có UI** — tài liệu này là hợp đồng API cho người làm màn đó.
+Màn chấm bài cuối khóa của quản lý là **MG-13** `/enterprise/team/final-reviews` (`features/pulse-manager/pages/PulseFinalReviewsPage.tsx`, mock `#/review`); tài liệu này là hợp đồng API của màn đó.
 
 ## Màn hình nhân viên (FE)
 

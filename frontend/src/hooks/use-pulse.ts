@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { pulseService, type PulseAnswer } from '../services/pulse.service';
+import { pulseReviewService, pulseService, type PulseAnswer, type PulseDecision, type PulseSupportAction } from '../services/pulse.service';
 
 /** Query keys của trang nhân viên Pulse — mọi dữ liệu dưới ['pulse'] để làm mới cùng lúc sau mỗi thao tác. */
 export const PULSE_KEYS = {
@@ -12,6 +12,7 @@ export const PULSE_KEYS = {
   practice: ['pulse', 'practice'] as const,
   outcomes: ['pulse', 'outcomes'] as const,
   outcome: (outcomeId?: string) => ['pulse', 'outcomes', outcomeId] as const,
+  finalReviews: ['pulse', 'final-reviews'] as const,
 };
 
 export function usePulseOverview() {
@@ -96,5 +97,28 @@ export function usePulseOutcome(outcomeId?: string) {
     queryKey: PULSE_KEYS.outcome(outcomeId),
     queryFn: () => pulseService.getOutcome(outcomeId!).then((r) => r.data.data!),
     enabled: Boolean(outcomeId),
+  });
+}
+
+/** Hàng chờ bài cuối khóa của phòng ban (quản lý). */
+export function usePulseFinalReviews() {
+  return useQuery({ queryKey: PULSE_KEYS.finalReviews, queryFn: () => pulseReviewService.getQueue().then((r) => r.data.data!) });
+}
+
+export function useDecidePulseFinal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ submissionId, decision, reason }: { submissionId: string; decision: PulseDecision; reason: string }) =>
+      pulseReviewService.decide(submissionId, decision, reason).then((r) => r.data.data!),
+    onSuccess: () => qc.invalidateQueries({ queryKey: PULSE_KEYS.all }),
+  });
+}
+
+export function useRecordPulseSupport() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ submissionId, action, note }: { submissionId: string; action: PulseSupportAction; note?: string }) =>
+      pulseReviewService.recordSupport(submissionId, action, note).then((r) => r.data.data!),
+    onSuccess: () => qc.invalidateQueries({ queryKey: PULSE_KEYS.all }),
   });
 }

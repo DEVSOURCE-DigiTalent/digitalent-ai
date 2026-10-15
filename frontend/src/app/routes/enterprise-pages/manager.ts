@@ -7,6 +7,7 @@ import { TeamCompetencyMatrixPage } from '../../../features/manager/pages/team/T
 import { TeamSkillGapAnalyticsPage } from '../../../features/manager/pages/team/TeamSkillGapAnalyticsPage';
 import { TrainingMonitorPage } from '../../../features/assignments/pages/TrainingMonitorPage';
 import { TrainingAssignmentDetailPage } from '../../../features/manager/pages/team/TrainingAssignmentDetailPage';
+import { PulseFinalReviewsPage } from '../../../features/pulse-manager/pages/PulseFinalReviewsPage';
 
 /** MANAGER page registry mapping screen IDs (MG-*) to components. */
 export const MANAGER_PAGES: PageRegistry = {
@@ -18,4 +19,5 @@ export const MANAGER_PAGES: PageRegistry = {
   'MG-05': TeamSkillGapAnalyticsPage,
   'MG-06': TrainingMonitorPage,
   'MG-07': TrainingAssignmentDetailPage,
+  'MG-13': PulseFinalReviewsPage,
 };
