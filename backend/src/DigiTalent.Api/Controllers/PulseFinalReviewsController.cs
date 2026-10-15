@@ -8,8 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace DigiTalent.Api.Controllers;
 
 /// <summary>
-/// Hàng chờ bài cuối khóa Pulse cho quản lý phòng ban / chủ doanh nghiệp (§10). Chưa có màn hình — API để màn quản lý
-/// gọi: quyết định có lý do, hai lần nộp, cửa sổ nộp lại theo chính sách doanh nghiệp, cờ hỗ trợ.
+/// Hàng chờ bài cuối khóa Pulse cho quản lý phòng ban / chủ doanh nghiệp (§10), dùng bởi màn MG-13 /enterprise/team/final-reviews
+/// (frontend PulseFinalReviewsPage): quyết định có lý do, hai lần nộp, cửa sổ nộp lại theo chính sách doanh nghiệp, cờ hỗ trợ.
 /// </summary>
 [ApiController]
 [Route("api/v1/pulse/final-reviews")]
