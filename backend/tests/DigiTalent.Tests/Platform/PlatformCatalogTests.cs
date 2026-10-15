@@ -372,4 +372,35 @@ public class PlatformCatalogTests
 
         new UpdatePlatformFrameworkDomainUseCaseValidator().Validate(new UpdatePlatformFrameworkDomainUseCaseInput { Name = "A" }).IsValid.Should().BeFalse();
     }
+
+    [Fact]
+    public async Task Assets_AreTypedAndSized_AndServedOnlyThroughAValidSignedLink()
+    {
+        await using var world = await CreateWorldAsync();
+        var storage = new Mock<IFileStorageService>();
+        storage.Setup(s => s.UploadAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<string>(), "platform-assets", default))
+            .ReturnsAsync("platform-assets/2026/10/a.png");
+        storage.Setup(s => s.DownloadAsync("platform-assets/2026/10/a.png", default)).ReturnsAsync(() => new MemoryStream(Encoding.UTF8.GetBytes("png")));
+        var upload = new UploadPlatformAssetUseCase(world.Context, storage.Object, Admin(), world.Reader);
+
+        var asset = await upload.ExecuteAsync(new UploadPlatformAssetUseCaseInput { Content = new MemoryStream(new byte[10]), FileName = "C:\\fakepath\\so-do.png", ContentType = "image/png", Length = 10 });
+        asset.Kind.Should().Be(PlatformCatalog.AssetKind.Image);
+        asset.FileName.Should().Be("so-do.png");
+        asset.Url.Should().StartWith($"platform/assets/{asset.AssetId}/content?exp=");
+
+        var pdf = () => upload.ExecuteAsync(new UploadPlatformAssetUseCaseInput { Content = Stream.Null, FileName = "a.pdf", ContentType = "application/pdf", Length = 10 });
+        (await pdf.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("UNSUPPORTED_FILE_TYPE");
+        var big = () => upload.ExecuteAsync(new UploadPlatformAssetUseCaseInput { Content = Stream.Null, FileName = "a.jpg", ContentType = "image/jpeg", Length = PlatformCatalog.AssetKind.MaxImageBytes + 1 });
+        (await big.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("FILE_TOO_LARGE");
+
+        var query = System.Web.HttpUtility.ParseQueryString(asset.Url[(asset.Url.IndexOf('?') + 1)..]);
+        var content = new GetPlatformAssetContentUseCase(world.Context, storage.Object, world.Signer);
+        var file = await content.ExecuteAsync(new GetPlatformAssetContentUseCaseInput { AssetId = asset.AssetId, ExpiresAt = long.Parse(query["exp"]!), Signature = query["sig"] });
+        file.ContentType.Should().Be("image/png");
+
+        var tampered = () => content.ExecuteAsync(new GetPlatformAssetContentUseCaseInput { AssetId = asset.AssetId, ExpiresAt = long.Parse(query["exp"]!) + 3600, Signature = query["sig"] });
+        await tampered.Should().ThrowAsync<NotFoundException>();
+        var expired = () => content.ExecuteAsync(new GetPlatformAssetContentUseCaseInput { AssetId = asset.AssetId, ExpiresAt = 1, Signature = query["sig"] });
+        await expired.Should().ThrowAsync<NotFoundException>();
+    }
 }

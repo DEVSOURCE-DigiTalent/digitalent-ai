@@ -17,6 +17,9 @@ namespace DigiTalent.Api.Controllers;
 [Route("api/v1/platform")]
 public class PlatformCatalogController : ControllerBase
 {
+    /// <summary>Largest upload accepted (a 500 MB video plus multipart overhead).</summary>
+    private const long MaxUploadBytes = 520L * 1024 * 1024;
+
     // ----- Frameworks --------------------------------------------------------------------------
 
     // GET api/v1/platform/frameworks
@@ -364,4 +367,38 @@ public class PlatformCatalogController : ControllerBase
         [FromServices] IUseCase<RemovePlatformModuleQuestionUseCaseInput, PlatformCatalogCourseDetail> useCase) =>
         Ok(ApiResponse<PlatformCatalogCourseDetail>.Ok(
             await useCase.ExecuteAsync(new RemovePlatformModuleQuestionUseCaseInput { VersionNo = versionNo, CourseId = courseId, QuestionId = questionId })));
-}
+
+    // ----- Media -------------------------------------------------------------------------------
+
+    // POST api/v1/platform/assets — multipart/form-data, field "file" (image ≤ 10 MB, video ≤ 500 MB)
+    [HttpPost("assets")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    [RequestSizeLimit(MaxUploadBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = MaxUploadBytes)]
+    public async Task<ActionResult<ApiResponse<PlatformAssetDto>>> UploadAsset(
+        IFormFile file,
+        [FromServices] IUseCase<UploadPlatformAssetUseCaseInput, PlatformAssetDto> useCase)
+    {
+        await using var stream = file.OpenReadStream();
+        var result = await useCase.ExecuteAsync(new UploadPlatformAssetUseCaseInput
+        {
+            Content = stream,
+            FileName = file.FileName,
+            ContentType = file.ContentType,
+            Length = file.Length,
+        });
+        return Ok(ApiResponse<PlatformAssetDto>.Ok(result, "File uploaded."));
+    }
+
+    // GET api/v1/platform/assets/{id}/content?exp=&sig= — signed link (no permission check: <img>/<video> send no token)
+    [HttpGet("assets/{id:guid}/content")]
+    public async Task<IActionResult> GetAssetContent(
+        Guid id,
+        [FromQuery] long exp,
+        [FromQuery] string? sig,
+        [FromServices] IUseCase<GetPlatformAssetContentUseCaseInput, GetPlatformAssetContentUseCaseOutput> useCase)
+    {
+        var result = await useCase.ExecuteAsync(new GetPlatformAssetContentUseCaseInput { AssetId = id, ExpiresAt = exp, Signature = sig });
+        Response.Headers.CacheControl = "private, max-age=3600";
+        return File(result.Content, result.ContentType, enableRangeProcessing: true);
+    }}
