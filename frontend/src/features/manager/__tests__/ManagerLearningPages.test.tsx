@@ -16,9 +16,9 @@ function signIn(role: string) {
 describe('manager personal screens', () => {
   beforeEach(() => signIn(ROLES.MANAGER));
 
-  it('sends the manager’s own learning to the Pulse employee portal', () => {
-    const personal = MANAGER_SIDEBAR.find((section) => section.label === 'Cá nhân');
-    expect(personal?.items?.map((item) => item.screenId)).toEqual(['EM-01', 'EM-02', 'EM-03', 'EM-08']);
+  it('keeps the manager’s own learning (Pulse employee portal) out of the primary team sidebar', () => {
+    const ids = MANAGER_SIDEBAR.flatMap((section) => [section.screenId, ...(section.items ?? []).map((item) => item.screenId)]);
+    expect(ids.filter((id) => id?.startsWith('EM-'))).toEqual([]);
   });
 
   it('returns the signed-in manager to the team home from 404', () => {
