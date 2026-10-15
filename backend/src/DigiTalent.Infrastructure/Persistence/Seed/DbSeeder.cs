@@ -45,6 +45,7 @@ public static class DbSeeder
         await SeedPermissionsAsync(db);
         await SeedRolePermissionsAsync(db);
         await SkillGapSeeder.SeedReferenceAsync(db);
+        await PlatformCatalogSeeder.SeedAsync(db);
     }
 
     private static async Task<Organization> SeedOrganizationAsync(AppDbContext db)
