@@ -714,7 +714,9 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasColumnName("updated_at");
 
                     b.Property<int>("VersionNo")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
+                        .HasDefaultValue(1)
                         .HasColumnName("version_no");
 
                     b.HasKey("Id")
