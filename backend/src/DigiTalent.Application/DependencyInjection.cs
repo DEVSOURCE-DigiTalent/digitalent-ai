@@ -3,6 +3,7 @@ using DigiTalent.Application.Common.Events;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.Services.Intelligence.Recommendation;
 using DigiTalent.Application.Services.Intelligence.SkillGap;
+using DigiTalent.Application.UseCases.Competency.Ceilings;
 using DigiTalent.Application.UseCases.Intelligence.Analytics;
 using DigiTalent.Application.UseCases.Intelligence.SkillGap.Common;
 using DigiTalent.Application.UseCases.Me;
@@ -83,6 +84,9 @@ public static class DependencyInjection
         services.AddScoped<PulseFinalReader>();
         services.AddScoped<PulseOutcomeReader>();
         services.AddScoped<PulseReviewScope>();
+
+        // 8. Trần nhà năng lực của doanh nghiệp / phòng ban (OW-05)
+        services.AddScoped<CapabilityCeilingReader>();
 
         return services;
     }
