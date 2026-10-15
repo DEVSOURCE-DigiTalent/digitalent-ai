@@ -2,7 +2,8 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { platformAdminService, type PageQuery, type PlatformCourseDraft } from '@/services/platform-admin.service';
 
 /** React Query hooks of the Platform Admin console (Pulse). Every mutation refreshes the whole console cache. */
-const KEY = ['platform-admin'] as const;
+export const PLATFORM_ADMIN_KEY = ['platform-admin'] as const;
+const KEY = PLATFORM_ADMIN_KEY;
 
 function useInvalidateConsole() {
   const queryClient = useQueryClient();
