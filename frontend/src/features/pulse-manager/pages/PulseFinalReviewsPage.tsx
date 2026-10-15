@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { ClipboardCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import '@/features/pulse-employee/pulse.css';
 import { useDecidePulseFinal, usePulseFinalReviews, useRecordPulseSupport } from '@/hooks/use-pulse';
 import type {
   PulseCriterion,
@@ -15,6 +14,8 @@ import { formatDateTime } from '@/lib/utils';
 import { Empty, LoadError, Mini, Notice, PageHead, PageSkeleton, Pill, PuLink } from '@/features/pulse-employee/components/ui';
 import { btn } from '@/features/pulse-employee/lib/button';
 import { SUPPORT_LABELS, levelName, pulseErrorMessage, timeLeft } from '@/features/pulse-employee/lib/labels';
+import { ManagerPage } from '../components/ManagerUi';
+import { MANAGER_PATHS } from '../lib/paths';
 
 const MIN_REASON = 10;
 
@@ -60,16 +61,16 @@ export function PulseFinalReviewsPage() {
 
   if (isLoading) {
     return (
-      <div className="pu pu-embedded">
+      <ManagerPage>
         <PageSkeleton blocks={[140, 110, 420]} />
-      </div>
+      </ManagerPage>
     );
   }
   if (error || !data) {
     return (
-      <div className="pu pu-embedded">
+      <ManagerPage>
         <LoadError message={pulseErrorMessage(error, 'Không tải được hàng chờ bài cuối khóa.')} onRetry={() => refetch()} />
-      </div>
+      </ManagerPage>
     );
   }
 
@@ -78,15 +79,27 @@ export function PulseFinalReviewsPage() {
   const visible = data.items.filter((item) => active.match(item.status));
 
   return (
-    <div className="pu pu-embedded" data-testid="pulse-final-reviews">
+    <ManagerPage testId="pulse-final-reviews">
       <PageHead
-        eyebrow={`Chấm bài cuối khóa${department ? ` · ${department}` : ''}`}
-        title="Quyết định với minh chứng trước mặt."
-        description="Mỗi khóa, mỗi nhân viên có một bài cuối khóa. Gợi ý AI chỉ để tham khảo — quản lý ghi quyết định cuối cùng và lý do."
-        actions={<Pill>{data.pendingCount} cần chấm</Pill>}
+        eyebrow={`Quản lý đánh giá${department ? ` · ${department}` : ''}`}
+        title="Ra quyết định dựa trên minh chứng."
+        description="Mỗi người học có một bài cuối cho mỗi khóa. Gợi ý AI chỉ để tham khảo — quản lý ghi quyết định cuối cùng và lý do."
+        actions={<Pill>{data.pendingCount} bài chờ đánh giá</Pill>}
       />
 
-      <section className="pu-metrics pu-review-kpis" aria-label="Tình trạng hàng chờ">
+      <section className="pm-banner" aria-label="Nguyên tắc chấm bài cuối khóa">
+        <div>
+          <span className="pu-mini">{department ? `${department} / ` : ''}Đánh giá khóa học</span>
+          <h2>Một người học. Một khóa. Một quyết định rõ ràng.</h2>
+          <p>AI gợi ý điểm cần xem; quản lý đọc minh chứng và ghi đạt hoặc chưa đạt kèm lý do.</p>
+        </div>
+        <div className="pm-banner-count">
+          <strong>{data.pendingCount}</strong>
+          <span>chờ bạn quyết định</span>
+        </div>
+      </section>
+
+      <section className="pu-metrics pu-review-kpis" aria-label="Tình trạng hàng chờ" style={{ marginTop: 16 }}>
         <div><strong>{data.pendingCount}</strong><span>Chờ quyết định</span></div>
         <div><strong>{data.retryCount}</strong><span>Chờ nộp lại</span></div>
         <div className="warn"><strong>{data.deadlineMissedCount}</strong><span>Quá hạn nộp lại</span></div>
@@ -98,7 +111,7 @@ export function PulseFinalReviewsPage() {
           <Empty
             icon={<ClipboardCheck size={24} />}
             title="Chưa có bài nào cần quyết định."
-            action={<PuLink to="/enterprise/team" kind="outline">Về tổng quan nhóm</PuLink>}
+            action={<PuLink to={MANAGER_PATHS.overview} kind="outline">Quay lại đội ngũ</PuLink>}
           >
             Khi nhân viên trong phòng ban nộp bài cuối khóa, bài sẽ xuất hiện ở đây cho quản lý phòng ban chấm.
           </Empty>
@@ -122,15 +135,15 @@ export function PulseFinalReviewsPage() {
       )}
 
       <section className="pu-surface pu-pad" style={{ marginTop: 18 }}>
-        <Mini>Một luồng minh chứng riêng</Mini>
+        <Mini>Luồng minh chứng riêng</Mini>
         <h2 className="pu-panel-title">Nhiệm vụ thực tế không phải bài cuối khóa.</h2>
         <p className="pu-panel-desc">
           Minh chứng công việc được duyệt trong lúc học, ở hàng chờ nhiệm vụ thực tế. Quy tắc hai lần nộp chỉ áp dụng cho bài cuối
           sau mỗi khóa.
         </p>
-        <PuLink to="/enterprise/reviews" kind="outline" small>Mở hàng chờ nhiệm vụ thực tế →</PuLink>
+        <PuLink to={MANAGER_PATHS.evidence} kind="outline" small>Mở minh chứng thực tế →</PuLink>
       </section>
-    </div>
+    </ManagerPage>
   );
 }
 

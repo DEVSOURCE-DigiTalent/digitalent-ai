@@ -43,6 +43,20 @@ export function useAssessmentHistory(params?: {
   });
 }
 
+/** Owner certificate pages (OW-35/OW-36) still read the organization's certificates through this hook. */
+export function useCertificates(params?: {
+  employeeId?: string;
+  status?: string;
+  search?: string;
+  pageIndex?: number;
+  pageSize?: number;
+}) {
+  return useQuery({
+    queryKey: LEARNING_KEYS.certificates(params),
+    queryFn: () => learningService.getCertificates(params).then((res) => res.data.data!),
+  });
+}
+
 export function useInternalCourses(params?: {
   status?: string;
   search?: string;

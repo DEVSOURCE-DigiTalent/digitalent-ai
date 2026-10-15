@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserCircle, Shield, Settings, LogOut, ChevronDown, Sun, Moon } from 'lucide-react';
+import { UserCircle, Shield, Settings, LogOut, ChevronDown, Sun, Moon, GraduationCap } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useLogout } from '@/hooks/use-auth';
 import { ROLE_LABELS, type Role } from '@/lib/roles';
@@ -11,12 +11,15 @@ interface UserAvatarMenuProps {
   accountPath: string;
   settingsPath?: string;
   canManageSettings?: boolean;
+  /** Link to the user's own learning workspace (shown for managers). */
+  learningPath?: string;
 }
 
 export function UserAvatarMenu({
   accountPath,
   settingsPath,
   canManageSettings = false,
+  learningPath,
 }: UserAvatarMenuProps) {
   const navigate = useNavigate();
   const user = useCurrentUser((s) => s.user);
@@ -102,6 +105,17 @@ export function UserAvatarMenu({
               <Shield className="w-4 h-4 text-ent-fg-3" />
               Bảo mật tài khoản
             </button>
+
+            {learningPath && (
+              <button
+                type="button"
+                onClick={() => { navigate(learningPath); setIsOpen(false); }}
+                className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg transition-colors"
+              >
+                <GraduationCap className="w-4 h-4 text-ent-fg-3" />
+                Học tập của tôi
+              </button>
+            )}
 
             {canManageSettings && settingsPath && (
               <button

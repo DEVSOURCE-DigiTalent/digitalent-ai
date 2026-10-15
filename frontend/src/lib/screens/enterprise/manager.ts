@@ -78,4 +78,22 @@ export const MANAGER_SCREENS: ScreenDef[] = [
     permission: P.TASK_EVALUATE,
     priority: 'P0',
   },
+  // ── Pulse mock #/report: báo cáo chu kỳ khóa học của phòng ban (OW-40 là báo cáo toàn doanh nghiệp) ──
+  {
+    id: 'MG-14',
+    title: 'Báo cáo chu kỳ',
+    path: '/enterprise/team/reports',
+    roles: MANAGER_ROLES,
+    permission: P.DASHBOARD_DEPARTMENT_READ,
+    priority: 'P1',
+  },
+  // ── Pulse mock #/framework: khung năng lực chung, chỉ đọc (OW-14 là màn quản trị của chủ doanh nghiệp) ──
+  {
+    id: 'MG-15',
+    title: 'Khung năng lực chung',
+    path: '/enterprise/team/framework',
+    roles: MANAGER_ROLES,
+    permission: P.COMPETENCY_READ,
+    priority: 'P1',
+  },
 ];

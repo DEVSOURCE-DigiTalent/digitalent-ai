@@ -4,3 +4,4 @@ export { SidebarItem } from './SidebarItem';
 export { SidebarOrgBlock } from './SidebarOrgBlock';
 export { SidebarFooter } from './SidebarFooter';
 export { SidebarPulseOrgCard } from './SidebarPulseOrgCard';
+export { SidebarManagerCard } from './SidebarManagerCard';

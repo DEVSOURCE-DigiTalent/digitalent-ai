@@ -92,7 +92,7 @@ describe('PulseFinalReviewsPage (MG-13, mock #/review)', () => {
 
     renderPage();
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Quyết định với minh chứng trước mặt.' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Ra quyết định dựa trên minh chứng.' })).toBeTruthy();
     const kpis = screen.getByRole('region', { name: 'Tình trạng hàng chờ' });
     expect(within(kpis).getByText('Chờ quyết định').previousElementSibling).toHaveTextContent('1');
     expect(within(kpis).getByText('Cần hỗ trợ').previousElementSibling).toHaveTextContent('1');
@@ -179,11 +179,11 @@ describe('manager sidebar', () => {
   it('highlights only the most specific item: Bài cuối khóa, not the team overview', () => {
     renderNav('/enterprise/team/final-reviews');
     expect(screen.getByRole('link', { name: /Bài cuối khóa/ })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: /Tổng quan nhóm/ })).not.toHaveAttribute('aria-current');
+    expect(screen.getByRole('link', { name: /^Tổng quan$/ })).not.toHaveAttribute('aria-current');
   });
 
   it('still highlights the overview on its own page', () => {
     renderNav('/enterprise/team');
-    expect(screen.getByRole('link', { name: /Tổng quan nhóm/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: /^Tổng quan$/ })).toHaveAttribute('aria-current', 'page');
   });
 });
