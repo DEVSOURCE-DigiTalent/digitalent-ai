@@ -139,6 +139,14 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<SubscriptionEntitlement> SubscriptionEntitlements => Set<SubscriptionEntitlement>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
 
+    // Platform catalog (Digital AI ceiling, 18 standard courses, seats)
+    public DbSet<PlatformFrameworkDomain> PlatformFrameworkDomains => Set<PlatformFrameworkDomain>();
+    public DbSet<PlatformFrameworkRelease> PlatformFrameworkReleases => Set<PlatformFrameworkRelease>();
+    public DbSet<PlatformCourse> PlatformCourses => Set<PlatformCourse>();
+    public DbSet<PlatformCourseRelease> PlatformCourseReleases => Set<PlatformCourseRelease>();
+    public DbSet<PlatformCourseQuestion> PlatformCourseQuestions => Set<PlatformCourseQuestion>();
+    public DbSet<CourseSeatOrder> CourseSeatOrders => Set<CourseSeatOrder>();
+
     // Shared
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<FileObject> FileObjects => Set<FileObject>();

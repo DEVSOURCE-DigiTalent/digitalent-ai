@@ -1849,6 +1849,81 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("DigiTalent.Domain.Entities.CourseSeatOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("course_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("reason");
+
+                    b.Property<int>("Seats")
+                        .HasColumnType("integer")
+                        .HasColumnName("seats");
+
+                    b.Property<long>("TotalAmount")
+                        .HasColumnType("bigint")
+                        .HasColumnName("total_amount");
+
+                    b.Property<long>("UnitPrice")
+                        .HasColumnType("bigint")
+                        .HasColumnName("unit_price");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_course_seat_orders");
+
+                    b.HasIndex("CourseId")
+                        .HasDatabaseName("ix_course_seat_orders_course");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_course_seat_orders_created_by_user_id");
+
+                    b.HasIndex("OrganizationId", "CreatedAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_course_seat_orders_org_created");
+
+                    b.ToTable("course_seat_orders", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_course_seat_orders_amount", "unit_price >= 0 AND total_amount >= 0");
+
+                            t.HasCheckConstraint("ck_course_seat_orders_grant_reason", "kind <> 'ADMIN_GRANT' OR reason IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_course_seat_orders_kind", "kind IN ('PURCHASE','ADMIN_GRANT')");
+
+                            t.HasCheckConstraint("ck_course_seat_orders_seats", "seats > 0");
+                        });
+                });
+
             modelBuilder.Entity("DigiTalent.Domain.Entities.Department", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3432,7 +3507,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
 
                     b.ToTable("organizations", null, t =>
                         {
-                            t.HasCheckConstraint("ck_organizations_status", "status IN ('ACTIVE','INACTIVE')");
+                            t.HasCheckConstraint("ck_organizations_status", "status IN ('ACTIVE','INACTIVE','SUSPENDED')");
                         });
                 });
 
@@ -3599,6 +3674,343 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_permissions_code");
 
                     b.ToTable("permissions", (string)null);
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformCourse", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("DomainId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("domain_id");
+
+                    b.Property<string>("DraftOutcome")
+                        .HasColumnType("text")
+                        .HasColumnName("draft_outcome");
+
+                    b.Property<long?>("DraftPricePerSeat")
+                        .HasColumnType("bigint")
+                        .HasColumnName("draft_price_per_seat");
+
+                    b.Property<string>("DraftSalesStatus")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("draft_sales_status");
+
+                    b.Property<string>("DraftTitle")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)")
+                        .HasColumnName("draft_title");
+
+                    b.Property<short>("Level")
+                        .HasColumnType("smallint")
+                        .HasColumnName("level");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("outcome");
+
+                    b.Property<long>("PricePerSeat")
+                        .HasColumnType("bigint")
+                        .HasColumnName("price_per_seat");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_at");
+
+                    b.Property<string>("SalesStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("sales_status");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int>("VersionNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("version_no");
+
+                    b.HasKey("Id")
+                        .HasName("pk_platform_courses");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ix_platform_courses_code");
+
+                    b.HasIndex("DomainId", "Level")
+                        .IsUnique()
+                        .HasDatabaseName("uq_platform_courses_domain_level");
+
+                    b.ToTable("platform_courses", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_platform_courses_draft_price", "draft_price_per_seat IS NULL OR (draft_price_per_seat >= 0 AND (level > 1 OR draft_price_per_seat = 0))");
+
+                            t.HasCheckConstraint("ck_platform_courses_draft_sales_status", "draft_sales_status IS NULL OR draft_sales_status IN ('OPEN','PAUSED')");
+
+                            t.HasCheckConstraint("ck_platform_courses_level", "level BETWEEN 1 AND 3");
+
+                            t.HasCheckConstraint("ck_platform_courses_price", "price_per_seat >= 0 AND (level > 1 OR price_per_seat = 0)");
+
+                            t.HasCheckConstraint("ck_platform_courses_sales_status", "sales_status IN ('OPEN','PAUSED')");
+
+                            t.HasCheckConstraint("ck_platform_courses_version", "version_no >= 1");
+                        });
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformCourseQuestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CorrectAnswer")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("correct_answer");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("course_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Explanation")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("explanation");
+
+                    b.Property<string>("QuestionText")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("question_text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_platform_course_questions");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_platform_course_questions_created_by_user_id");
+
+                    b.HasIndex("CourseId", "Status")
+                        .HasDatabaseName("ix_platform_course_questions_course");
+
+                    b.ToTable("platform_course_questions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_platform_course_questions_status", "status IN ('DRAFT','PUBLISHED','ARCHIVED')");
+                        });
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformCourseRelease", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("course_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("outcome");
+
+                    b.Property<long>("PricePerSeat")
+                        .HasColumnType("bigint")
+                        .HasColumnName("price_per_seat");
+
+                    b.Property<DateTimeOffset>("PublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_at");
+
+                    b.Property<Guid?>("PublishedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("published_by_user_id");
+
+                    b.Property<string>("SalesStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("sales_status");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int>("VersionNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("version_no");
+
+                    b.HasKey("Id")
+                        .HasName("pk_platform_course_releases");
+
+                    b.HasIndex("PublishedByUserId")
+                        .HasDatabaseName("ix_platform_course_releases_published_by_user_id");
+
+                    b.HasIndex("CourseId", "VersionNo")
+                        .IsUnique()
+                        .HasDatabaseName("uq_platform_course_releases_course_version");
+
+                    b.ToTable("platform_course_releases", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_platform_course_releases_sales_status", "sales_status IN ('OPEN','PAUSED')");
+                        });
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformFrameworkDomain", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DraftDescription")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("draft_description");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("PublishedDescription")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("published_description");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_platform_framework_domains");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ix_platform_framework_domains_code");
+
+                    b.ToTable("platform_framework_domains", (string)null);
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformFrameworkRelease", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("PublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_at");
+
+                    b.Property<Guid?>("PublishedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("published_by_user_id");
+
+                    b.Property<string>("ReleaseNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("release_note");
+
+                    b.Property<string>("Snapshot")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("snapshot");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int>("VersionNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("version_no");
+
+                    b.HasKey("Id")
+                        .HasName("pk_platform_framework_releases");
+
+                    b.HasIndex("PublishedByUserId")
+                        .HasDatabaseName("ix_platform_framework_releases_published_by_user_id");
+
+                    b.HasIndex("VersionNo")
+                        .IsUnique()
+                        .HasDatabaseName("ix_platform_framework_releases_version_no");
+
+                    b.ToTable("platform_framework_releases", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_platform_framework_releases_version", "version_no >= 1");
+                        });
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.PositionDiagnosticAttempt", b =>
@@ -6457,6 +6869,29 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_course_prerequisites_courses_prerequisite_course_id");
                 });
 
+            modelBuilder.Entity("DigiTalent.Domain.Entities.CourseSeatOrder", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.PlatformCourse", null)
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_course_seat_orders_platform_courses_course_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_course_seat_orders_users_created_by_user_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_course_seat_orders_organizations_organization_id");
+                });
+
             modelBuilder.Entity("DigiTalent.Domain.Entities.Department", b =>
                 {
                     b.HasOne("DigiTalent.Domain.Entities.Employee", null)
@@ -6804,6 +7239,59 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_password_reset_tokens_users_user_id");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformCourse", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.PlatformFrameworkDomain", "Domain")
+                        .WithMany()
+                        .HasForeignKey("DomainId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_platform_courses_platform_framework_domains_domain_id");
+
+                    b.Navigation("Domain");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformCourseQuestion", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.PlatformCourse", null)
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_platform_course_questions_platform_courses_course_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_platform_course_questions_users_created_by_user_id");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformCourseRelease", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.PlatformCourse", null)
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_platform_course_releases_platform_courses_course_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("PublishedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_platform_course_releases_users_published_by_user_id");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformFrameworkRelease", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("PublishedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_platform_framework_releases_users_published_by_user_id");
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.PositionDiagnosticAttempt", b =>
