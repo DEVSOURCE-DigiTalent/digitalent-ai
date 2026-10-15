@@ -7,6 +7,7 @@ import { BlueprintFlow } from '../components/BlueprintFlow';
 import { BlueprintTierCard } from '../components/BlueprintTierCard';
 import { PositionMapping } from '../components/PositionMapping';
 import { CapabilityCeilingMatrix } from '../components/CapabilityCeilingMatrix';
+import { PositionReferenceMatrix } from '../components/PositionReferenceMatrix';
 
 const PULSE_TOKENS = {
   '--po-canvas': '#f7f9fd',
@@ -365,6 +366,11 @@ export function OwnerSetupBlueprintPage() {
         {/* Ceiling matrix: Digital AI ⊇ organization ⊇ department (Lý thuyết trần nhà) */}
         <div className="mt-10" id="ceilings">
           <CapabilityCeilingMatrix />
+        </div>
+
+        {/* DigiTalent reference levels per sample position, to guide the levels set above */}
+        <div className="mt-4">
+          <PositionReferenceMatrix />
         </div>
 
         {/* Domain level mapping */}
