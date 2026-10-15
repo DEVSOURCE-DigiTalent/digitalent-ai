@@ -32,7 +32,7 @@ export function VerifyEmailRequiredPage() {
 
   useEffect(() => {
     if (USE_MOCK && user?.email) {
-      passwordService.getVerifyLink(user.email).then((res) => {
+      passwordService.getVerifyLink?.(user.email).then((res) => {
         if (res.data?.data?.debugVerifyLink) {
           setVerifyLink(res.data.data.debugVerifyLink);
         }
@@ -53,7 +53,8 @@ export function VerifyEmailRequiredPage() {
     setResending(true);
     setResendSuccess(false);
     try {
-      const res = await passwordService.resendVerificationEmail(user.email);
+      const res = await passwordService.resendVerificationEmail?.(user.email);
+      if (!res) return;
       setResendSuccess(true);
       if (res.data?.data?.debugVerifyLink) {
         setVerifyLink(res.data.data.debugVerifyLink);

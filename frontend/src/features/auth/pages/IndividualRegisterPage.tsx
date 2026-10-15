@@ -7,7 +7,6 @@ import { PlanSummary } from '../../commerce/components/PlanSummary';
 import { parsePlanSelection } from '@/lib/plan-query';
 import { getPlan, isPurchasableOnline } from '@/lib/plans';
 import { registrationService } from '@/services/registration.service';
-import { useLogin } from '@/hooks/use-auth';
 import { rememberPortalChoice } from '../../portal/portal-preference';
 import { TrialRegisterPage } from './TrialRegisterPage';
 
@@ -24,7 +23,6 @@ import { OtpVerificationCard } from '../components/OtpVerificationCard';
 function PurchaseRegisterPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const login = useLogin();
 
   const [submitError, setSubmitError] = useState<string>();
   const [emailTaken, setEmailTaken] = useState(false);

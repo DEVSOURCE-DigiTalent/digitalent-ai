@@ -14,7 +14,6 @@ import { rememberPortalChoice } from '../../portal/portal-preference';
 import { trackTrialEvent } from '../../experience/individual-trial/individual-trial-tracker';
 import { clearTryHandoff, readTryHandoff, toTryOrientation } from '../../experience/individual-trial/try-handoff';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { useLogin } from '@/hooks/use-auth';
 import { INDIVIDUAL_TRIAL } from '@/lib/plans';
 import { resolveNextStep } from '@/lib/navigation';
 import { getReferencePosition } from '@/lib/reference-positions';
@@ -42,7 +41,6 @@ function getErrorMessage(error: unknown): { message: string; isTaken: boolean } 
 export function TrialRegisterPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const login = useLogin();
   const user = useCurrentUser((s) => s.user);
   const theme = usePersonalTheme((s) => s.theme);
   usePageBackground(PERSONAL_PUBLIC_BACKGROUND[theme]);
