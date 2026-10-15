@@ -11,8 +11,13 @@ public class GetPulseModuleUseCaseOutput
     public bool Viewed { get; set; }
     public bool QuizPassed { get; set; }
     public PulseQuizResultDto? LastQuiz { get; set; }
-    /// <summary>Câu hỏi ôn tập (không kèm đáp án). null khi mô đun không có câu hỏi hoặc nhân viên chưa được làm.</summary>
+    /// <summary>
+    /// Câu hỏi của lần làm kế tiếp (không kèm đáp án). null khi mô đun không có câu hỏi, nhân viên chưa được làm, hoặc
+    /// còn phải xem lại trang sau lần chưa đạt (xem <see cref="Review"/>).
+    /// </summary>
     public PulseQuizDto? Quiz { get; set; }
+    /// <summary>Trang phải mở lại sau lần làm chưa đạt gần nhất; null khi không cần (chưa làm, đã đạt).</summary>
+    public PulseQuizReviewDto? Review { get; set; }
     /// <summary>Lý do chưa làm được câu hỏi ôn tập (xem PulseBlockReason), null = làm được (sau khi đọc hết trang).</summary>
     public string? QuizBlockReason { get; set; }
     public Guid? NextModuleId { get; set; }
@@ -50,7 +55,29 @@ public class PulseSlideDto
 public class PulseQuizDto
 {
     public Guid AssessmentId { get; set; }
+    /// <summary>Lần làm mà bộ câu này thuộc về; gửi lại khi nộp để phát hiện bộ câu đã đổi (QUIZ_CHANGED).</summary>
+    public int AttemptNo { get; set; }
     public List<PulseQuizQuestionDto> Questions { get; set; } = new();
+}
+
+public class PulseQuizReviewDto
+{
+    /// <summary>Lần làm chưa đạt gần nhất.</summary>
+    public int AttemptNo { get; set; }
+    public DateTimeOffset FailedAt { get; set; }
+    /// <summary>true = đã mở lại mọi trang cần xem, được làm lần tiếp theo.</summary>
+    public bool Done { get; set; }
+    public List<PulseQuizReviewPageDto> Pages { get; set; } = new();
+}
+
+public class PulseQuizReviewPageDto
+{
+    public Guid LessonId { get; set; }
+    /// <summary>Vị trí trang trong mô đun (0-based).</summary>
+    public int Index { get; set; }
+    public string Title { get; set; } = string.Empty;
+    /// <summary>Đã mở lại sau lần chưa đạt.</summary>
+    public bool Done { get; set; }
 }
 
 public class PulseQuizQuestionDto

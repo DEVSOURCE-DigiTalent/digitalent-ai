@@ -1,0 +1,113 @@
+/*
+ * Khung không gian Quản lý theo Pulse (docs/ui-redesign/14-pulse-product-site, pulse-role-design.css `.role-manager`):
+ * thanh đầu trang sáng toàn chiều ngang, menu bên mực xanh biển và nền nội dung xanh xám rất nhạt.
+ * Luôn sáng như bản thiết kế; chỉ áp dụng khi khung có lớp .pm-shell, không đụng tới Owner / Employee / Platform.
+ */
+.pm-shell {
+  --pm-accent: #137b84;
+  --pm-strong: #0e5968;
+  --pm-tint: #e8f6f4;
+  --pm-warm: #e8a17f;
+  --pm-canvas: #f3f8f8;
+  --pm-ink: #17243f;
+  --pm-muted: #62718d;
+  --pm-line: #dfe7ee;
+  --pm-topbar-h: 72px;
+}
+
+/* ── Thanh đầu trang ─────────────────────────────────────────────────────── */
+.pm-topbar {
+  position: sticky; top: 0; z-index: 30;
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 16px;
+  height: var(--pm-topbar-h); padding: 0 clamp(14px, 4vw, 64px);
+  border-top: 3px solid var(--pm-accent); border-bottom: 1px solid rgba(214, 223, 236, .9);
+  background: rgba(255, 255, 255, .94); backdrop-filter: blur(18px);
+  box-shadow: 0 8px 25px rgba(22, 39, 92, .035);
+  color: var(--pm-ink);
+}
+.pm-brand { display: flex; align-items: center; gap: 10px; color: var(--pm-ink); font-weight: 850; letter-spacing: -.035em; white-space: nowrap; }
+.pm-brand img { width: 32px; height: 32px; filter: drop-shadow(0 6px 10px rgba(40, 67, 189, .22)); }
+.pm-brand span { font-size: 16px; }
+.pm-brand em { font-style: normal; color: var(--pm-accent); }
+.pm-topnav { display: flex; justify-content: center; gap: 4px; }
+.pm-topnav a { padding: 9px 14px; border-radius: 999px; color: #44516c; font-size: 13px; font-weight: 750; white-space: nowrap; transition: background .2s, color .2s; }
+.pm-topnav a:hover { background: var(--pm-tint); color: var(--pm-strong); }
+.pm-topnav a[aria-current='page'] { background: var(--pm-tint); color: var(--pm-strong); }
+.pm-top-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; }
+.pm-preview-chip {
+  padding: 8px 12px; border-radius: 999px; background: #e8ebfb; color: #4a5594;
+  font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap;
+}
+.pm-icon-btn {
+  display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 10px; border-radius: 12px;
+  color: #4b5a74; font-size: 12px; transition: background .2s, color .2s;
+}
+.pm-icon-btn:hover { background: var(--pm-tint); color: var(--pm-strong); }
+.pm-menu-btn { display: none; }
+/* Các nút dùng chung (thông báo, tài khoản) đọc token ent-*; trong thanh Pulse chúng luôn sáng. */
+.pm-topbar {
+  --ent-fg: #17243f; --ent-fg-2: #4b5a74; --ent-fg-3: #7b88a1; --ent-raised: #e8f6f4; --ent-card: #fff;
+  --ent-line: #dfe7ee; --ent-accent: #137b84; --ent-accent-soft: #e8f6f4; --ent-bad: #b13a2c; --ent-bad-soft: #fbeae7;
+}
+
+@media (max-width: 1100px) {
+  .pm-preview-chip { display: none; }
+}
+@media (max-width: 900px) {
+  .pm-topbar { grid-template-columns: auto 1fr; }
+  .pm-topnav { display: none; }
+}
+@media (max-width: 767px) {
+  .pm-shell { --pm-topbar-h: 60px; }
+  .pm-menu-btn { display: inline-flex; }
+  .pm-brand span { font-size: 15px; }
+  .pm-brand img { width: 28px; height: 28px; }
+}
+@media (max-width: 380px) {
+  .pm-brand span { display: none; }
+}
+
+/* ── Menu bên ───────────────────────────────────────────────────────────── */
+.sidebar-pulse-manager {
+  background: linear-gradient(180deg, #173b46, #1b3440 78%, #223745);
+  border-right: 1px solid #1b414c;
+  color: #d4e4e5;
+}
+@media (min-width: 768px) {
+  .sidebar-pulse-manager { top: calc(var(--pm-topbar-h) + var(--pm-banner-h, 0px)); height: calc(100dvh - var(--pm-topbar-h) - var(--pm-banner-h, 0px)); }
+}
+.sidebar-pulse-manager nav { padding: 22px 14px 12px; scrollbar-width: thin; scrollbar-color: rgba(197, 236, 228, .25) transparent; }
+.pm-side-label { display: block; padding: 0 10px 8px; color: #9dbec4; font-size: 10px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+.pm-side-label:not(:first-child) { margin-top: 22px; }
+.pm-side-link {
+  display: flex; align-items: center; gap: 11px; min-height: 40px; margin: 3px 0; padding: 9px 11px;
+  border-radius: 10px; color: #d4e4e5; font-size: 12.5px; font-weight: 750;
+  transition: background .2s, color .2s, transform .2s;
+}
+.pm-side-link svg { flex: none; width: 17px; height: 17px; color: #a5d7d4; }
+.pm-side-link:hover { color: #fff; background: rgba(197, 236, 228, .11); transform: translateX(2px); }
+.pm-side-link.active { color: #143e47; background: #dff2ed; box-shadow: inset 3px 0 #e7a283, 0 6px 16px rgba(8, 30, 38, .13); transform: none; }
+.pm-side-link.active svg { color: #156c70; }
+.pm-side-link.rail { justify-content: center; padding: 9px 0; }
+a:focus-visible > .pm-side-link { outline: 3px solid #ec8d79; outline-offset: 2px; }
+
+.pm-side-foot { margin: 0 14px 12px; padding: 13px 14px; border: 1px solid rgba(216, 240, 239, .18); border-radius: 14px; background: rgba(255, 255, 255, .055); color: #c3d8db; font-size: 11px; line-height: 1.55; }
+.pm-side-foot dt { margin-top: 8px; color: #9dbec4; font-size: 9px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.pm-side-foot dt:first-child { margin-top: 0; }
+.pm-side-foot dd { margin: 1px 0 0; color: #f4ffff; font-size: 12px; font-weight: 750; overflow-wrap: anywhere; }
+.pm-side-foot dd small { display: block; color: #c3d8db; font-size: 11px; font-weight: 500; }
+.pm-side-toggle {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: calc(100% - 28px); margin: 0 14px 14px; padding: 8px;
+  border: 1px solid rgba(216, 240, 239, .14); border-radius: 10px; background: transparent; color: #9dbec4; font-size: 11px; font-weight: 750; cursor: pointer;
+}
+.pm-side-toggle:hover { color: #fff; background: rgba(197, 236, 228, .08); }
+.pm-side-avatar { display: grid; place-items: center; width: 34px; height: 34px; margin: 0 auto 12px; border-radius: 10px; background: #dff2ed; color: #156c70; font-size: 12px; font-weight: 900; }
+
+/* ── Vùng nội dung ──────────────────────────────────────────────────────── */
+.pm-main {
+  background:
+    radial-gradient(ellipse 760px 380px at 94% 0, rgba(19, 123, 132, .1), transparent 70%),
+    var(--pm-canvas);
+  color: var(--pm-ink);
+}
+.pm-main-inner { max-width: 1210px; margin: 0 auto; padding: clamp(24px, 4vw, 56px) clamp(16px, 4vw, 56px) 72px; }

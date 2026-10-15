@@ -8,6 +8,10 @@ const ERROR_CODE_MESSAGES = new Map<string, string>([
   ['INVALID_JOB_POSITION', 'Vị trí công việc không tồn tại hoặc không còn hoạt động.'],
   ['INVALID_MANAGER', 'Trưởng phòng phải là nhân viên đang hoạt động của tổ chức.'],
   ['PASSWORD_SAME_AS_EMAIL', 'Mật khẩu không được trùng với email.'],
+  ['CEILING_ABOVE_ORGANIZATION', 'Trần phòng ban không được cao hơn trần doanh nghiệp ở bất kỳ năng lực nào.'],
+  ['ORGANIZATION_CEILING_REQUIRED', 'Hãy lưu trần doanh nghiệp trước khi đặt trần cho phòng ban.'],
+  ['CEILINGS_INCOMPLETE', 'Cần đặt trần cho đủ mọi năng lực của ma trận.'],
+  ['CATEGORY_NOT_IN_MATRIX', 'Năng lực không thuộc ma trận trần nhà.'],
 ]);
 
 /** Fixed backend messages that carry no machine code (mostly 403/404/409), shown in Vietnamese. */

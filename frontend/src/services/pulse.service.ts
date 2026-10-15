@@ -16,7 +16,9 @@ export type PulseBlockReason =
   | 'SEAT_REQUIRED'
   | 'PRIOR_LEVEL_REQUIRED'
   | 'PREVIOUS_MODULE_REQUIRED'
-  | 'SLIDES_NOT_VIEWED';
+  | 'SLIDES_NOT_VIEWED'
+  | 'REVIEW_REQUIRED'
+  | 'QUIZ_CHANGED';
 export type PulseSlotStatus =
   | 'COMPLETED'
   | 'IN_REVIEW'
@@ -209,6 +211,29 @@ export interface PulseQuizResultSummary {
   at: string;
 }
 
+/** Trang phải mở lại sau lần ôn tập chưa đạt (câu 2k-1, 2k của ngân hàng ↔ trang k). */
+export interface PulseQuizReviewPage {
+  lessonId: string;
+  index: number;
+  title: string;
+  done: boolean;
+}
+
+export interface PulseQuizReview {
+  attemptNo: number;
+  failedAt: string;
+  /** true = đã mở lại mọi trang cần xem, câu hỏi của lần tiếp theo đã mở. */
+  done: boolean;
+  pages: PulseQuizReviewPage[];
+}
+
+/** Bộ câu của một lần làm, rút từ ngân hàng của mô đun; lần sau là câu khác. */
+export interface PulseModuleQuiz {
+  assessmentId: string;
+  attemptNo: number;
+  questions: { questionId: string; content: string; options: PulseOption[] }[];
+}
+
 export interface PulseModuleDetail {
   course: PulseCourseSummary;
   module: { moduleId: string; index: number; title: string; description?: string | null; estimatedMinutes?: number | null };
@@ -218,7 +243,8 @@ export interface PulseModuleDetail {
   viewed: boolean;
   quizPassed: boolean;
   lastQuiz?: PulseQuizResultSummary | null;
-  quiz?: { assessmentId: string; questions: { questionId: string; content: string; options: PulseOption[] }[] } | null;
+  quiz?: PulseModuleQuiz | null;
+  review?: PulseQuizReview | null;
   quizBlockReason?: PulseBlockReason | null;
   nextModuleId?: string | null;
   allModulesPassed: boolean;
@@ -228,7 +254,9 @@ export interface PulseQuizResult {
   score: number;
   total: number;
   passed: boolean;
-  wrong: { questionId: string; explanation?: string | null }[];
+  /** Câu chưa đúng và trang liên quan — không kèm đáp án. */
+  wrong: { questionId: string; lessonId?: string | null; pageIndex?: number | null; pageTitle?: string | null }[];
+  review?: PulseQuizReview | null;
   modulePassed: boolean;
   nextModuleId?: string | null;
   allModulesPassed: boolean;
@@ -320,12 +348,76 @@ export const pulseService = {
     apiClient.post<ApiResponse<{ enrollmentId: string; viewed: boolean; modulePassed: boolean }>>(
       `/me/pulse/courses/${courseId}/modules/${moduleId}/viewed`,
     ),
-  submitModuleQuiz: (courseId: string, moduleId: string, answers: PulseAnswer[]) =>
-    apiClient.post<ApiResponse<PulseQuizResult>>(`/me/pulse/courses/${courseId}/modules/${moduleId}/quiz`, { answers }),
+  markPageViewed: (courseId: string, moduleId: string, lessonId: string) =>
+    apiClient.post<ApiResponse<{ lessonId: string; viewedAt: string; review?: PulseQuizReview | null }>>(
+      `/me/pulse/courses/${courseId}/modules/${moduleId}/pages/${lessonId}/viewed`,
+    ),
+  submitModuleQuiz: (courseId: string, moduleId: string, answers: PulseAnswer[], attemptNo?: number) =>
+    apiClient.post<ApiResponse<PulseQuizResult>>(`/me/pulse/courses/${courseId}/modules/${moduleId}/quiz`, { attemptNo, answers }),
   getFinal: (courseId: string) => apiClient.get<ApiResponse<PulseFinal>>(`/me/pulse/courses/${courseId}/final`),
   submitFinal: (courseId: string, evidenceText: string) =>
     apiClient.post<ApiResponse<PulseSubmitFinalResult>>(`/me/pulse/courses/${courseId}/final`, { evidenceText }),
   getPractice: () => apiClient.get<ApiResponse<PulsePractice>>('/me/pulse/practice'),
   getOutcomes: () => apiClient.get<ApiResponse<{ items: PulseOutcome[] }>>('/me/pulse/outcomes'),
   getOutcome: (outcomeId: string) => apiClient.get<ApiResponse<PulseOutcome>>(`/me/pulse/outcomes/${encodeURIComponent(outcomeId)}`),
+};
+
+// ── Hàng chờ chấm bài cuối khóa của quản lý (api/v1/pulse/final-reviews, quyền task.evaluate) ──
+
+/** Trạng thái một bài trong hàng chờ: chờ chấm, chờ nộp lại, quá hạn nộp lại, cần hỗ trợ. */
+export type PulseReviewStatus = 'PENDING' | 'RETRY_WAIT' | 'RETRY_READY' | 'DEADLINE_MISSED' | 'FLAGGED';
+
+/** Gợi ý minh họa dựa trên văn bản cho lần nộp đang chờ: một dấu cho mỗi tiêu chí. Chỉ để tham khảo. */
+export interface PulseAiHint {
+  checks: boolean[];
+  summary: string;
+}
+
+export interface PulseFinalReviewItem {
+  /** Lần nộp mới nhất — dùng cho quyết định và hướng hỗ trợ. */
+  submissionId: string;
+  status: PulseReviewStatus;
+  employeeId: string;
+  employeeName: string;
+  departmentName?: string | null;
+  positionName?: string | null;
+  courseId: string;
+  courseCode: string;
+  courseTitle: string;
+  domainName?: string | null;
+  tier?: number | null;
+  attemptNo: number;
+  maxAttempts: number;
+  attempts: PulseFinalAttempt[];
+  aiHint?: PulseAiHint | null;
+}
+
+export interface PulseFinalReviewQueue {
+  pendingCount: number;
+  retryCount: number;
+  deadlineMissedCount: number;
+  flaggedCount: number;
+  criteria: PulseCriterion[];
+  items: PulseFinalReviewItem[];
+}
+
+export interface PulseDecisionResult {
+  submissionId: string;
+  decision: PulseDecision;
+  /** APPROVED | RETRY_WAIT | FLAGGED */
+  status: PulseFinalStatus;
+  enrollmentStatus: string;
+  retryOpensAt?: string | null;
+  retryDueAt?: string | null;
+}
+
+export const pulseReviewService = {
+  getQueue: () => apiClient.get<ApiResponse<PulseFinalReviewQueue>>('/pulse/final-reviews'),
+  decide: (submissionId: string, decision: PulseDecision, reason: string) =>
+    apiClient.post<ApiResponse<PulseDecisionResult>>(`/pulse/final-reviews/${submissionId}/decision`, { decision, reason }),
+  recordSupport: (submissionId: string, action: PulseSupportAction, note?: string) =>
+    apiClient.post<ApiResponse<{ submissionId: string; action: PulseSupportAction; recordedAt: string }>>(
+      `/pulse/final-reviews/${submissionId}/support`,
+      { action, note: note || null },
+    ),
 };

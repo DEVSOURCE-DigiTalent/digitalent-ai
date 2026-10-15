@@ -19,13 +19,14 @@ export function usePracticalTasks(params?: {
   status?: string;
   pageIndex?: number;
   pageSize?: number;
-}) {
+}, enabled = true) {
   return useQuery<PagedList<PracticalTaskDto>>({
     queryKey: ['tasks', params],
     queryFn: async () => {
       const res = await taskService.getTasks(params);
       return ((res.data as any)?.data ?? res.data) as PagedList<PracticalTaskDto>;
     },
+    enabled,
   });
 }
 
@@ -52,13 +53,14 @@ export function useCreatePracticalTask() {
   });
 }
 
-export function useReviewQueue(params?: { search?: string; pageIndex?: number; pageSize?: number }) {
+export function useReviewQueue(params?: { search?: string; pageIndex?: number; pageSize?: number }, enabled = true) {
   return useQuery<PagedList<ReviewQueueItemDto>>({
     queryKey: ['review-queue', params],
     queryFn: async () => {
       const res = await taskService.getReviewQueue(params);
       return ((res.data as any)?.data ?? res.data) as PagedList<ReviewQueueItemDto>;
     },
+    enabled,
   });
 }
 

@@ -15,6 +15,19 @@ public static class PulseRules
     public const int MaxEvidenceLength = 8000;
     public const int MinDecisionReasonLength = 10;
 
+    /// <summary>Số câu rút cho mỗi lần làm câu hỏi ôn tập mô đun; phải đúng tất cả (§9.2).</summary>
+    public const int ModuleQuizDrawSize = 2;
+
+    /// <summary>
+    /// Ngân hàng ôn tập của mô đun gắn câu hỏi với trang nội dung theo thứ tự: câu thứ 2k-1 và 2k (sort_order) ↔ trang k.
+    /// Câu ngoài số trang thì gắn với trang cuối.
+    /// </summary>
+    public const int ModuleQuizQuestionsPerPage = 2;
+
+    /// <summary>Trang (0-based) của câu hỏi ôn tập có <paramref name="sortOrder"/>; -1 khi mô đun không có trang.</summary>
+    public static int QuizPageIndex(int sortOrder, int pageCount) =>
+        pageCount == 0 ? -1 : Math.Clamp((sortOrder - 1) / ModuleQuizQuestionsPerPage, 0, pageCount - 1);
+
     /// <summary>Ngân hàng câu hỏi của bài đầu vào (mỗi tổ chức một ngân hàng, câu hỏi gắn năng lực + độ khó L1..L3).</summary>
     public const string BaselineBankTitle = "Pulse · Bài kiểm tra đầu vào";
 
@@ -154,6 +167,10 @@ public static class PulseBlockReason
     public const string PriorLevelRequired = "PRIOR_LEVEL_REQUIRED";
     public const string PreviousModuleRequired = "PREVIOUS_MODULE_REQUIRED";
     public const string SlidesNotViewed = "SLIDES_NOT_VIEWED";
+    /// <summary>Lần làm trước chưa đạt: mở lại trang của câu chưa đúng rồi mới làm lần tiếp theo.</summary>
+    public const string ReviewRequired = "REVIEW_REQUIRED";
+    /// <summary>Câu trả lời gửi lên thuộc bộ câu hỏi của một lần làm khác (đã làm ở tab khác): tải lại để nhận câu mới.</summary>
+    public const string QuizChanged = "QUIZ_CHANGED";
 }
 
 /// <summary>Trạng thái một lĩnh vực trên lộ trình.</summary>

@@ -3,11 +3,12 @@ import { workforceService, type WorkforceListParams } from '../services/workforc
 
 export const WORKFORCE_KEY = ['workforce'] as const;
 
-export function useWorkforce(params?: WorkforceListParams) {
+export function useWorkforce(params?: WorkforceListParams, enabled = true) {
   return useQuery({
     queryKey: [...WORKFORCE_KEY, 'list', params],
     queryFn: async () => (await workforceService.getList(params)).data.data!,
     placeholderData: (previous) => previous,
+    enabled,
   });
 }
 

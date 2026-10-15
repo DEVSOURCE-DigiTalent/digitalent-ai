@@ -5,7 +5,8 @@ namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
 /// GET /me/pulse/courses/{courseId}/modules/{moduleId} — trang học mô đun (§9.2): các trang nội dung theo thứ tự và
-/// câu hỏi ôn tập (không kèm đáp án). Khóa có phí chưa có suất chỉ xem trang đầu tiên của mô đun 1 (§8).
+/// bộ câu ôn tập của lần làm kế tiếp (không kèm đáp án). Sau lần chưa đạt, câu hỏi chỉ hiện lại khi đã mở lại các trang
+/// liên quan. Khóa có phí chưa có suất chỉ xem trang đầu tiên của mô đun 1 (§8).
 /// </summary>
 public class GetPulseModuleUseCase : IUseCase<GetPulseModuleUseCaseInput, GetPulseModuleUseCaseOutput>
 {
@@ -20,7 +21,7 @@ public class GetPulseModuleUseCase : IUseCase<GetPulseModuleUseCaseInput, GetPul
 
     public async Task<GetPulseModuleUseCaseOutput> ExecuteAsync(GetPulseModuleUseCaseInput input)
     {
-        var (_, state) = await _workspace.ResolveAsync(input.CourseId);
+        var (snapshot, state) = await _workspace.ResolveAsync(input.CourseId);
         var module = PulseCourseWorkspace.FindModule(state, input.ModuleId);
         var sample = state.Access == PulseCourseAccess.Preview;
         if (sample && module.Index > 0)
@@ -37,12 +38,17 @@ public class GetPulseModuleUseCase : IUseCase<GetPulseModuleUseCaseInput, GetPul
         var quizBlock = state.BlockReason
                         ?? (previousPassed ? null : PulseBlockReason.PreviousModuleRequired);
         PulseQuizDto? quiz = null;
+        PulseQuizReviewDto? review = null;
         if (!sample && quizBlock == null && module.QuizAssessmentId is { } assessmentId)
         {
-            var questions = await _quiz.LoadQuestionsAsync(assessmentId);
-            quiz = new PulseQuizDto
+            var pool = await _quiz.LoadQuestionsAsync(assessmentId);
+            review = state.Enrollment != null ? await _quiz.ReviewAsync(state.Enrollment.Id, module, pool) : null;
+            var attemptNo = await _quiz.NextAttemptNoAsync(assessmentId, state.Enrollment?.Id);
+            var questions = PulseQuizReader.Draw(pool, snapshot.Employee.Id, assessmentId, attemptNo);
+            quiz = review is { Done: false } ? null : new PulseQuizDto
             {
                 AssessmentId = assessmentId,
+                AttemptNo = attemptNo,
                 Questions = questions.Select(q => new PulseQuizQuestionDto
                 {
                     QuestionId = q.QuestionId,
@@ -88,7 +94,8 @@ public class GetPulseModuleUseCase : IUseCase<GetPulseModuleUseCaseInput, GetPul
             QuizPassed = progress?.QuizPassed ?? false,
             LastQuiz = lastQuiz,
             Quiz = quiz,
-            QuizBlockReason = sample ? PulseBlockReason.SeatRequired : quizBlock,
+            Review = review,
+            QuizBlockReason = sample ? PulseBlockReason.SeatRequired : quizBlock ?? (review is { Done: false } ? PulseBlockReason.ReviewRequired : null),
             NextModuleId = module.Index + 1 < state.Modules.Count ? state.Modules[module.Index + 1].ModuleId : null,
             AllModulesPassed = state.AllModulesPassed,
         };

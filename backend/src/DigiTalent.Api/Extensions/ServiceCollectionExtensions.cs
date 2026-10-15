@@ -69,6 +69,11 @@ public static class ServiceCollectionExtensions
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
         {
+            // Several feature areas contain DTOs with the same short name
+            // (for example, Learning.LessonDto and Learning.Courses.LessonDto).
+            // Use the fully-qualified type name so Swagger can register both.
+            options.CustomSchemaIds(type => type.FullName?.Replace("+", ".") ?? type.Name);
+
             var bearerScheme = new OpenApiSecurityScheme
             {
                 Name = "Authorization",

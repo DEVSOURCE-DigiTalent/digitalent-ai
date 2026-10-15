@@ -9,8 +9,9 @@ namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
 /// POST /me/pulse/courses/{courseId}/modules/{moduleId}/quiz — câu hỏi ôn tập mô đun (§9.2). Chỉ mở khi đã đọc hết
-/// trang và mô đun trước đã qua. Phải đúng tất cả câu (2/2) để qua mô đun; sai thì trả lý do và cho làm lại.
-/// Mỗi lần làm lưu thành một assessment_attempt đã chấm.
+/// trang và mô đun trước đã qua. Mỗi lần làm là một bộ câu rút từ ngân hàng của mô đun (<see cref="PulseQuizReader.Draw"/>);
+/// phải đúng tất cả câu để qua. Chưa đạt thì chỉ báo câu nào sai và trang liên quan (không lộ đáp án); phải mở lại các
+/// trang đó mới được làm lần tiếp theo, với câu khác. Mỗi lần làm lưu thành một assessment_attempt đã chấm.
 /// </summary>
 public class SubmitPulseModuleQuizUseCase : IUseCase<SubmitPulseModuleQuizUseCaseInput, SubmitPulseModuleQuizUseCaseOutput>
 {
@@ -44,24 +45,34 @@ public class SubmitPulseModuleQuizUseCase : IUseCase<SubmitPulseModuleQuizUseCas
             throw new BadRequestException(PulseCourseWorkspace.BlockMessage(PulseBlockReason.SlidesNotViewed), "moduleId", PulseBlockReason.SlidesNotViewed);
         }
 
-        var questions = await _quiz.LoadQuestionsAsync(assessmentId);
+        var pool = await _quiz.LoadQuestionsAsync(assessmentId);
+        if (state.Enrollment != null
+            && await _quiz.ReviewAsync(state.Enrollment.Id, module, pool) is { Done: false })
+        {
+            throw new BadRequestException(PulseCourseWorkspace.BlockMessage(PulseBlockReason.ReviewRequired), "moduleId", PulseBlockReason.ReviewRequired);
+        }
+
+        var attemptNo = await _quiz.NextAttemptNoAsync(assessmentId, state.Enrollment?.Id);
+        var questions = PulseQuizReader.Draw(pool, snapshot.Employee.Id, assessmentId, attemptNo);
         var answers = input.Answers.ToDictionary(a => a.QuestionId, a => a.OptionId);
         if (questions.Count == 0 || answers.Count != questions.Count || questions.Any(q => !answers.ContainsKey(q.QuestionId)))
         {
+            if (input.AttemptNo is { } shown && shown != attemptNo)
+            {
+                throw new BadRequestException(PulseCourseWorkspace.BlockMessage(PulseBlockReason.QuizChanged), "answers", PulseBlockReason.QuizChanged);
+            }
+
             throw new BadRequestException("Hãy trả lời đủ các câu hỏi ôn tập.", "answers", "INCOMPLETE_ANSWERS");
         }
 
         var enrollment = await _workspace.EnsureEnrollmentAsync(snapshot, state);
         var now = _workspace.Now;
-        var lastNo = await _context.AssessmentAttempts
-            .Where(a => a.AssessmentId == assessmentId && a.EnrollmentId == enrollment.Id)
-            .MaxAsync(a => (int?)a.AttemptNo) ?? 0;
 
         var attempt = new AssessmentAttempt
         {
             AssessmentId = assessmentId,
             EnrollmentId = enrollment.Id,
-            AttemptNo = lastNo + 1,
+            AttemptNo = attemptNo,
             Status = Statuses.AssessmentAttempt.Scored,
             StartedAt = now,
             SubmittedAt = now,
@@ -69,7 +80,7 @@ public class SubmitPulseModuleQuizUseCase : IUseCase<SubmitPulseModuleQuizUseCas
         };
         _context.AssessmentAttempts.Add(attempt);
 
-        var wrong = new List<PulseWrongAnswerDto>();
+        var wrongIds = new List<Guid>();
         var score = 0;
         foreach (var question in questions)
         {
@@ -82,7 +93,7 @@ public class SubmitPulseModuleQuizUseCase : IUseCase<SubmitPulseModuleQuizUseCas
             }
             else
             {
-                wrong.Add(new PulseWrongAnswerDto { QuestionId = question.QuestionId, Explanation = question.Explanation });
+                wrongIds.Add(question.QuestionId);
             }
 
             _context.AssessmentAnswers.Add(new AssessmentAnswer
@@ -116,12 +127,22 @@ public class SubmitPulseModuleQuizUseCase : IUseCase<SubmitPulseModuleQuizUseCas
             throw new ConflictException("Bài ôn tập đang được chấm, vui lòng tải lại trang.");
         }
 
+        var sortOrders = pool.ToDictionary(q => q.QuestionId, q => q.SortOrder);
+        var wrong = wrongIds.Select(id =>
+        {
+            var page = PulseRules.QuizPageIndex(sortOrders[id], module.Slides.Count);
+            var slide = page >= 0 ? module.Slides[page] : null;
+            return new PulseWrongAnswerDto { QuestionId = id, LessonId = slide?.LessonId, PageIndex = slide == null ? null : page, PageTitle = slide?.Title };
+        }).ToList();
+        var reviewPages = modulePassed ? new List<PulseQuizReviewPageDto>() : PulseQuizReader.ReviewPages(module, pool, wrongIds);
+
         return new SubmitPulseModuleQuizUseCaseOutput
         {
             Score = score,
             Total = questions.Count,
             Passed = passed,
             Wrong = wrong,
+            Review = reviewPages.Count == 0 ? null : new PulseQuizReviewDto { AttemptNo = attemptNo, FailedAt = now, Pages = reviewPages, Done = false },
             ModulePassed = modulePassed,
             NextModuleId = module.Index + 1 < state.Modules.Count ? state.Modules[module.Index + 1].ModuleId : null,
             AllModulesPassed = state.Modules.Count > 0 && passedCount == state.Modules.Count,

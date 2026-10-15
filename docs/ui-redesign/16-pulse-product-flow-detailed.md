@@ -179,11 +179,11 @@ Mỗi suất chỉ dành cho **một nhân viên và một khóa**. Nếu số n
 
 | Module | Vai trò nội dung | Thành phần của trang |
 | --- | --- | --- |
-| 01 · Hiểu năng lực trong công việc | Nhận biết bối cảnh, nguồn dữ liệu và kết quả cần có | 3 trang nội dung: Quan sát → Kết nối → Chuẩn bị; 2 câu ôn tập. |
-| 02 · Đưa ra quyết định có căn cứ | Dùng tình huống công việc để chọn hành động có căn cứ | 3 trang nội dung: Tình huống → Phương pháp → Lý do; 2 câu ôn tập. |
-| 03 · Áp dụng vào vị trí của bạn | Tạo kết quả gắn với vị trí, kiểm tra trước khi bàn giao | 3 trang nội dung: Áp dụng → Đánh giá → Bàn giao; 2 câu ôn tập. |
+| 01 · Hiểu năng lực trong công việc | Nhận biết bối cảnh, nguồn dữ liệu và kết quả cần có | 3 trang nội dung: Quan sát → Kết nối → Chuẩn bị; mỗi lần làm 2 câu ôn tập. |
+| 02 · Đưa ra quyết định có căn cứ | Dùng tình huống công việc để chọn hành động có căn cứ | 3 trang nội dung: Tình huống → Phương pháp → Lý do; mỗi lần làm 2 câu ôn tập. |
+| 03 · Áp dụng vào vị trí của bạn | Tạo kết quả gắn với vị trí, kiểm tra trước khi bàn giao | 3 trang nội dung: Áp dụng → Đánh giá → Bàn giao; mỗi lần làm 2 câu ôn tập. |
 
-Các trang nội dung dùng ví dụ theo sáu lĩnh vực, hình minh họa trừu tượng và phần áp dụng vào vị trí công việc. Câu hỏi ôn tập chỉ mở sau khi nhân viên đi tới trang cuối của mô đun. Cần đúng **2/2** câu để đánh dấu mô đun hoàn thành; trả lời sai hiện lý do và cho làm lại. Mô đun sau chỉ ghi nhận kết quả khi mô đun trước đã hoàn thành. Mỗi bài đạt ghi điểm và thời điểm trong trạng thái xem trước.
+Các trang nội dung dùng ví dụ theo sáu lĩnh vực, hình minh họa trừu tượng và phần áp dụng vào vị trí công việc. Câu hỏi ôn tập chỉ mở sau khi nhân viên đi tới trang cuối của mô đun. Mỗi mô đun có **ngân hàng 6 câu, 2 câu gắn với mỗi trang nội dung** (câu 1–2 ↔ trang 1, 3–4 ↔ trang 2, 5–6 ↔ trang 3); mỗi lần làm rút **2 câu** và trộn thứ tự phương án, lần sau là câu khác (ba lần đầu không lặp câu nào). Cần đúng **2/2** câu để đánh dấu mô đun hoàn thành. Trả lời sai **không hiện đáp án hay lời giải**: trang chỉ báo câu nào chưa đúng và trang nội dung liên quan; nhân viên phải **chủ động mở lại** các trang đó (nút “Mở lại trang” hoặc chuyển trang — trang đang hiện sẵn lúc nộp không tính) thì câu hỏi của lần tiếp theo mới mở. Không giới hạn số lần làm; mọi lần làm đều được lưu. Mô đun sau chỉ ghi nhận kết quả khi mô đun trước đã hoàn thành. Mỗi bài đạt ghi điểm và thời điểm trong trạng thái xem trước.
 
 Dữ liệu Northstar Studio được tạo trước khi trang ôn tập mô đun mới có mặt, nên khóa Dữ liệu và thông tin · Cơ bản của Mia đã có sẵn **1/3 mô đun hoàn thành**. Đây là tiến độ mẫu để duyệt màn hình, không phải kết quả câu hỏi mới được chấm trong phiên hiện tại.
 
@@ -266,7 +266,7 @@ Chủ doanh nghiệp tạo nhiệm vụ với tiêu đề, bối cảnh, lĩnh v
 
 **Quản trị nền tảng `#/admin/framework`, `#/admin/curriculum/<courseId>` → chủ doanh nghiệp/quản lý `#/framework`, Khung năng lực và Khóa học.** Quản trị lưu nháp, phát hành phiên bản mô tả sáu lĩnh vực; với khóa có thể sửa tên, kết quả học, giá mỗi suất và trạng thái bán. Có nơi thêm câu hỏi vào ngân hàng câu hỏi nháp. Doanh nghiệp xem nguồn chuẩn đã công bố rồi thiết kế trần riêng bên dưới.
 
-**Giới hạn quan trọng:** hai câu ôn tập trong mô đun nhân viên hiện là nội dung mẫu nằm trong `pulse-course-studio.js`, **chưa lấy động từ ngân hàng câu hỏi quản trị**. Giao diện có phiên bản phát hành, nhưng chưa bảo đảm ảnh chụp phiên bản nội dung cũ cho người đang học khi quản trị phát hành bản mới. Đây là việc cần giải quyết khi tích hợp máy chủ/hệ quản trị nội dung.
+**Giới hạn quan trọng:** câu ôn tập trong mô đun nhân viên hiện là nội dung mẫu (bản HTML: `pulse-course-studio.js`; máy chủ: ngân hàng 6 câu/mô đun do `PulseContentSeeder` sinh theo mẫu), **chưa lấy động từ ngân hàng câu hỏi quản trị**. Giao diện có phiên bản phát hành, nhưng chưa bảo đảm ảnh chụp phiên bản nội dung cũ cho người đang học khi quản trị phát hành bản mới. Đây là việc cần giải quyết khi tích hợp máy chủ/hệ quản trị nội dung.
 
 ### 12.5 Chứng nhận và kết quả đã xác nhận
 

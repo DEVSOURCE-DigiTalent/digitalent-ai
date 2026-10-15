@@ -1,136 +1,181 @@
-import { useState } from 'react';
-import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle2, ShieldAlert } from 'lucide-react';
-import { PageHeader } from '@/components/shared';
+import { Bell, CheckCheck } from 'lucide-react';
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/hooks/use-platform';
 import { formatDateTime } from '@/lib/utils';
-import type { NotificationDto } from '@/services/platform.service';
+
+const PULSE_TOKENS = {
+  '--po-canvas': '#f7f9fd',
+  '--po-surface': '#fff',
+  '--po-ink': '#172442',
+  '--po-muted': '#62718d',
+  '--po-accent': '#304bdf',
+  '--po-accent-strong': '#203bbf',
+  '--po-coral': '#ef735c',
+  '--po-line': '#dfe6f3',
+  '--po-soft': '#eef2ff',
+  '--po-tint': '#edf1ff',
+} as React.CSSProperties;
 
 export function NotificationsPage() {
-  const [unreadOnly, setUnreadOnly] = useState(false);
-
-  const { data: notifications, isLoading, isError, refetch } = useNotifications({
-    unreadOnly: unreadOnly ? true : undefined,
-  });
-
+  const { data: notifications = [], isLoading, isError, refetch } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
 
-  const handleMarkItem = (id: string, isRead: boolean) => {
-    if (!isRead) {
-      markRead.mutate(id);
-    }
-  };
-
-  if (isLoading) {
-    return <div className="p-8 text-center text-slate-500">Đang tải thông báo hệ thống…</div>;
-  }
-
-  if (isError || !notifications) {
-    return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center text-red-700">
-        <p className="font-medium">Không thể tải thông báo.</p>
-        <button type="button" onClick={() => refetch()} className="mt-2 text-sm underline font-semibold">
-          Thử lại
-        </button>
-      </div>
-    );
-  }
-
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  const renderIcon = (type: NotificationDto['type']) => {
-    switch (type) {
-      case 'success':
-        return <CheckCircle2 className="size-5 text-emerald-600 shrink-0" />;
-      case 'warning':
-        return <AlertTriangle className="size-5 text-amber-500 shrink-0" />;
-      case 'alert':
-        return <ShieldAlert className="size-5 text-red-600 shrink-0" />;
-      default:
-        return <Info className="size-5 text-blue-500 shrink-0" />;
-    }
+  const handleMarkItem = (id: string, isRead: boolean) => {
+    if (!isRead) markRead.mutate(id);
   };
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <PageHeader
-          title="Trung tâm thông báo"
-          subtitle="Cập nhật tin tức hệ thống, biến động tài khoản và các hoạt động đào tạo quan trọng"
-        />
+    <div
+      className="-m-4 md:-m-6 min-h-screen"
+      style={{
+        ...PULSE_TOKENS,
+        background: 'var(--po-canvas)',
+        backgroundImage:
+          'radial-gradient(ellipse 80% 55% at 50% 0%, #dce5ff 0%, transparent 65%)',
+      }}
+    >
+      {/* ── Page header ── */}
+      <section
+        className="px-4 md:px-6 pt-8 pb-2 mx-auto"
+        style={{ maxWidth: 1220 }}
+      >
+        <p
+          className="text-[10px] font-black uppercase tracking-[0.12em]"
+          style={{ color: 'var(--po-muted)' }}
+        >
+          Hoạt động
+          <span
+            className="ml-[7px] inline-block size-1.5 rounded-full align-middle"
+            style={{ background: 'var(--po-coral)' }}
+          />
+        </p>
+        <h1
+          className="mt-[11px] text-[clamp(26px,3.4vw,42px)] font-bold leading-[1.08]"
+          style={{ color: 'var(--po-ink)', letterSpacing: '-0.045em' }}
+        >
+          Trung tâm hoạt động.
+        </h1>
+        <p
+          className="mt-2 text-sm leading-relaxed max-w-[58ch]"
+          style={{ color: 'var(--po-muted)' }}
+        >
+          Bài được giao, đánh giá, phê duyệt và thay đổi tổ chức đều có thể theo
+          dõi tại đây.
+        </p>
 
         {unreadCount > 0 && (
-          <button
-            type="button"
-            onClick={() => markAllRead.mutate()}
-            disabled={markAllRead.isPending}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 shrink-0 shadow-sm"
-          >
-            <CheckCheck className="size-4 text-primary-600" />
-            Đánh dấu tất cả là đã đọc
-          </button>
-        )}
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-slate-200 pb-2">
-        <button
-          type="button"
-          onClick={() => setUnreadOnly(false)}
-          className={`rounded-lg px-3.5 py-1.5 text-xs font-medium ${
-            !unreadOnly ? 'bg-primary-600 text-white' : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          Tất cả thông báo ({notifications.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setUnreadOnly(true)}
-          className={`rounded-lg px-3.5 py-1.5 text-xs font-medium ${
-            unreadOnly ? 'bg-primary-600 text-white' : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          Chưa đọc ({unreadCount})
-        </button>
-      </div>
-
-      {notifications.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 p-12 text-center text-slate-500 bg-white">
-          <Bell className="size-8 text-slate-300 mx-auto mb-2" />
-          <p className="font-medium text-sm">Không có thông báo nào.</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {notifications.map((item) => (
-            <div
-              key={item.id}
-              onClick={() => handleMarkItem(item.id, item.isRead)}
-              className={`p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-3.5 ${
-                item.isRead
-                  ? 'bg-white border-slate-200 hover:border-slate-300'
-                  : 'bg-primary-50/40 border-primary-200 hover:border-primary-300'
-              }`}
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => markAllRead.mutate()}
+              disabled={markAllRead.isPending}
+              className="inline-flex items-center gap-2 rounded-[11px] border px-4 py-2.5 text-xs font-extrabold transition-transform hover:-translate-y-0.5"
+              style={{
+                borderColor: 'var(--po-line)',
+                color: 'var(--po-ink)',
+                background: 'var(--po-surface)',
+              }}
             >
-              <div className="mt-0.5">{renderIcon(item.type)}</div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className={`text-sm font-semibold ${item.isRead ? 'text-slate-800' : 'text-slate-900'}`}>
-                    {item.title}
-                  </h3>
-                  <span className="text-[11px] text-slate-400 font-mono shrink-0">
-                    {formatDateTime(item.createdAt)}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">{item.message}</p>
-              </div>
+              <CheckCheck className="size-4" style={{ color: 'var(--po-accent)' }} />
+              Đánh dấu tất cả đã đọc
+            </button>
+          </div>
+        )}
+      </section>
 
-              {!item.isRead && (
-                <span className="size-2 rounded-full bg-primary-600 shrink-0 mt-2" title="Chưa đọc" />
-              )}
+      {/* ── Activity list ── */}
+      <div className="px-4 md:px-6 py-5 mx-auto" style={{ maxWidth: 1220 }}>
+        <section
+          className="rounded-[22px] border p-6"
+          style={{
+            borderColor: 'var(--po-line)',
+            background: 'var(--po-surface)',
+            boxShadow: '0 10px 35px rgba(29,48,102,.025)',
+          }}
+        >
+          {isLoading ? (
+            <p className="text-xs py-8 text-center" style={{ color: 'var(--po-muted)' }}>
+              Đang tải hoạt động…
+            </p>
+          ) : isError ? (
+            <div className="py-8 text-center">
+              <p className="text-xs font-medium" style={{ color: 'var(--po-coral)' }}>
+                Không thể tải thông báo.
+              </p>
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="mt-2 text-xs underline font-semibold"
+                style={{ color: 'var(--po-accent)' }}
+              >
+                Thử lại
+              </button>
             </div>
-          ))}
-        </div>
-      )}
+          ) : notifications.length === 0 ? (
+            <div className="py-12 text-center">
+              <Bell
+                className="size-8 mx-auto mb-2"
+                style={{ color: 'var(--po-line)' }}
+              />
+              <p className="text-xs" style={{ color: 'var(--po-muted)' }}>
+                Hoạt động sẽ hiển thị khi tổ chức vận hành hệ thống.
+              </p>
+            </div>
+          ) : (
+            <div className="grid">
+              {notifications.map((item, idx) => (
+                <div
+                  key={item.id}
+                  onClick={() => handleMarkItem(item.id, item.isRead)}
+                  className="flex items-center gap-[15px] py-[15px] cursor-pointer"
+                  style={{
+                    borderBottom:
+                      idx < notifications.length - 1
+                        ? '1px solid var(--po-line)'
+                        : 'none',
+                  }}
+                >
+                  <span
+                    className="shrink-0 size-[9px] rounded-full"
+                    style={{
+                      background: item.isRead
+                        ? 'var(--po-line)'
+                        : 'var(--po-accent)',
+                    }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <strong
+                      className="block text-xs"
+                      style={{
+                        color: 'var(--po-ink)',
+                        opacity: item.isRead ? 0.6 : 1,
+                      }}
+                    >
+                      {item.title}
+                    </strong>
+                    <small
+                      className="block mt-1 text-[10px] leading-[1.45]"
+                      style={{ color: 'var(--po-muted)' }}
+                    >
+                      {item.message} · {formatDateTime(item.createdAt)}
+                    </small>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!isLoading && notifications.length > 0 && (
+            <p className="mt-4 text-[11px]" style={{ color: '#789' }}>
+              {unreadCount > 0
+                ? 'Có hoạt động mới chưa được đánh dấu đã đọc.'
+                : `Đã đọc đến ${formatDateTime(notifications[0]?.createdAt)}.`}
+            </p>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

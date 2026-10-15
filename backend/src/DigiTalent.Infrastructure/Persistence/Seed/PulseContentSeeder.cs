@@ -10,12 +10,16 @@ namespace DigiTalent.Infrastructure.Persistence.Seed;
 /// Chạy SAU CourseContentSeeder (cần khóa TT02 có mô đun và bài học).
 ///   1. Ngân hàng "Pulse · Bài kiểm tra đầu vào": mỗi lĩnh vực 3 câu tình huống L1..L3, 2 phương án
 ///      (docs/ui-redesign/14-pulse-product-site/pulse-path-entitlements.js).
-///   2. Mỗi mô đun một bài ôn tập (QUIZ, module_id, cần đúng 2/2) với 2 câu theo bối cảnh của lĩnh vực
-///      (pulse-course-studio.js). Đây là học liệu minh họa, cần biên tập trước khi dùng thật (§13).
+///   2. Mỗi mô đun một bài ôn tập (QUIZ, module_id) với ngân hàng 6 câu theo bối cảnh của lĩnh vực, 2 câu cho mỗi
+///      trang; mỗi lần làm rút 2 câu và phải đúng cả hai (pulse-course-studio.js, §9.2). Đây là học liệu minh họa,
+///      cần biên tập trước khi dùng thật (§13).
 /// </summary>
 public static class PulseContentSeeder
 {
     private const string ModuleQuizBankTitle = "Pulse · Câu hỏi ôn tập mô đun";
+
+    private const string ModuleQuizBankDescription =
+        "Câu hỏi ôn tập minh họa của từng mô đun: 6 câu, 2 câu cho mỗi trang nội dung; mỗi lần làm rút 2 câu, cần đúng cả hai — bản thiết kế Pulse.";
 
     /// <summary>Tình huống ngắn theo lĩnh vực, thứ tự Khai thác dữ liệu → Giao tiếp → Nội dung → An toàn → Giải quyết vấn đề → AI.</summary>
     private static readonly (string Prompt, string Right, string Wrong)[][] BaselineQuestions =
@@ -164,6 +168,12 @@ public static class PulseContentSeeder
         await db.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Mỗi mô đun một bài ôn tập (QUIZ) với ngân hàng <see cref="PoolTemplates"/>: 2 câu cho mỗi trang (lý thuyết,
+    /// tình huống, thực hành) theo sort_order, mỗi lần làm rút 2 câu (PulseQuizReader.Draw). Bài ôn tập có từ bản cũ
+    /// (2 câu) được bổ sung đủ ngân hàng: câu trùng nội dung được giữ và xếp đúng trang, câu thiếu được thêm. Bài ôn tập
+    /// có câu không thuộc ngân hàng minh họa (do người khác soạn) thì để nguyên.
+    /// </summary>
     private static async Task SeedModuleQuizzesAsync(
         AppDbContext db, Guid organizationId, Guid authorUserId, List<(Guid CategoryId, int Number, string Name, Guid CompetencyId)> domains)
     {
@@ -187,15 +197,19 @@ public static class PulseContentSeeder
             .Select(m => new { m.Id, m.CourseId, m.Code, m.Title })
             .ToListAsync();
         var moduleIds = modules.Select(m => m.Id).ToList();
-        var withQuiz = (await db.Assessments
-                .Where(a => a.ModuleId != null && moduleIds.Contains(a.ModuleId.Value))
-                .Select(a => a.ModuleId!.Value)
+        var quizByModule = (await db.Assessments
+                .Where(a => a.ModuleId != null && moduleIds.Contains(a.ModuleId.Value) && a.AssessmentType == Statuses.AssessmentType.Quiz)
+                .Select(a => new { a.Id, ModuleId = a.ModuleId!.Value, a.VersionNo })
                 .ToListAsync())
-            .ToHashSet();
-        if (modules.All(m => withQuiz.Contains(m.Id)))
-        {
-            return;
-        }
+            .GroupBy(a => a.ModuleId)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(a => a.VersionNo).First().Id);
+        var quizIds = quizByModule.Values.ToList();
+        var links = await (
+                from link in db.AssessmentQuestions
+                join question in db.Questions on link.QuestionId equals question.Id
+                where quizIds.Contains(link.AssessmentId)
+                select new { Link = link, question.Content, question.BankId })
+            .ToListAsync();
 
         var bank = await db.QuestionBanks.FirstOrDefaultAsync(b => b.OrganizationId == organizationId && b.Title == ModuleQuizBankTitle);
         if (bank == null)
@@ -204,11 +218,15 @@ public static class PulseContentSeeder
             {
                 OrganizationId = organizationId,
                 Title = ModuleQuizBankTitle,
-                Description = "Câu hỏi ôn tập minh họa của từng mô đun (2 câu, cần đúng cả hai) — bản thiết kế Pulse.",
+                Description = ModuleQuizBankDescription,
                 OwnerUserId = authorUserId,
                 Status = Statuses.QuestionBank.Active,
             };
             db.QuestionBanks.Add(bank);
+        }
+        else if (bank.Description != ModuleQuizBankDescription)
+        {
+            bank.Description = ModuleQuizBankDescription;
         }
 
         foreach (var courseModules in modules.GroupBy(m => m.CourseId))
@@ -224,57 +242,47 @@ public static class PulseContentSeeder
             var index = 0;
             foreach (var module in courseModules)
             {
-                if (withQuiz.Contains(module.Id))
+                var pool = PoolTemplates(index, domain.Name, module.Title, context);
+                if (!quizByModule.TryGetValue(module.Id, out var assessmentId))
                 {
-                    index++;
-                    continue;
-                }
-
-                var assessment = new Assessment
-                {
-                    CourseId = course.Id,
-                    ModuleId = module.Id,
-                    Code = Truncate($"{module.Code ?? $"{course.Code}-M{index + 1}"}-QZ", 50),
-                    VersionNo = 1,
-                    Title = Truncate($"Câu hỏi ôn tập · {module.Title}", 250),
-                    AssessmentType = Statuses.AssessmentType.Quiz,
-                    IsFinal = false,
-                    PassingScore = 100m,
-                    Status = Statuses.Assessment.Published,
-                    CreatedByUserId = authorUserId,
-                    RowVersion = 1,
-                };
-                db.Assessments.Add(assessment);
-
-                var templates = Templates(index, domain.Name, module.Title, context);
-                for (var q = 0; q < templates.Length; q++)
-                {
-                    var template = templates[q];
-                    var question = new Question
+                    var assessment = new Assessment
                     {
-                        BankId = bank.Id,
-                        CompetencyId = domain.CompetencyId,
-                        QuestionType = Statuses.QuestionType.MultipleChoice,
-                        Difficulty = "MODULE",
-                        Content = template.Question,
-                        Explanation = template.Explanation,
-                        Status = Statuses.Question.Approved,
+                        CourseId = course.Id,
+                        ModuleId = module.Id,
+                        Code = Truncate($"{module.Code ?? $"{course.Code}-M{index + 1}"}-QZ", 50),
+                        VersionNo = 1,
+                        Title = Truncate($"Câu hỏi ôn tập · {module.Title}", 250),
+                        AssessmentType = Statuses.AssessmentType.Quiz,
+                        IsFinal = false,
+                        PassingScore = 100m,
+                        Status = Statuses.Assessment.Published,
                         CreatedByUserId = authorUserId,
+                        RowVersion = 1,
                     };
-                    db.Questions.Add(question);
-                    var rotation = (index + q) % template.Options.Length;
-                    for (var o = 0; o < template.Options.Length; o++)
+                    db.Assessments.Add(assessment);
+                    for (var p = 0; p < pool.Length; p++)
                     {
-                        db.QuestionOptions.Add(new QuestionOption
-                        {
-                            QuestionId = question.Id,
-                            Content = template.Options[o],
-                            IsCorrect = o == template.Answer,
-                            SortOrder = (o + rotation) % template.Options.Length + 1,
-                        });
+                        AddQuestion(db, bank.Id, domain.CompetencyId, authorUserId, assessment.Id, pool[p], p);
                     }
-
-                    db.AssessmentQuestions.Add(new AssessmentQuestion { AssessmentId = assessment.Id, QuestionId = question.Id, Points = 1, SortOrder = q + 1 });
+                }
+                else
+                {
+                    var existing = links.Where(l => l.Link.AssessmentId == assessmentId).ToList();
+                    if (existing.All(l => l.BankId == bank.Id))
+                    {
+                        for (var p = 0; p < pool.Length; p++)
+                        {
+                            var match = existing.FirstOrDefault(l => l.Content == pool[p].Question);
+                            if (match == null)
+                            {
+                                AddQuestion(db, bank.Id, domain.CompetencyId, authorUserId, assessmentId, pool[p], p);
+                            }
+                            else if (match.Link.SortOrder != p + 1)
+                            {
+                                match.Link.SortOrder = p + 1;
+                            }
+                        }
+                    }
                 }
 
                 index++;
@@ -284,36 +292,109 @@ public static class PulseContentSeeder
         await db.SaveChangesAsync();
     }
 
-    /// <summary>Hai câu cho mô đun thứ <paramref name="index"/>: hiểu bối cảnh → quyết định có căn cứ → áp dụng (lặp lại theo chu kỳ 3).</summary>
-    private static QuizTemplate[] Templates(int index, string domainName, string moduleTitle, DomainContext context) => (index % 3) switch
+    private static void AddQuestion(AppDbContext db, Guid bankId, Guid competencyId, Guid authorUserId, Guid assessmentId, QuizTemplate template, int position)
     {
-        0 => new[]
+        var question = new Question
         {
-            new QuizTemplate($"Với chủ đề \"{moduleTitle}\", bạn cần kiểm tra nguồn nào trước?",
-                new[] { "Một phỏng đoán chưa có căn cứ", Capitalize(context.Source), "Chỉ kết luận cuối cùng" }, 1,
-                "Bắt đầu từ nguồn hoặc bối cảnh mà người khác có thể kiểm tra."),
-            new QuizTemplate("Điều gì giúp kỹ năng có ích trong công việc?",
-                new[] { "Gắn nhiệm vụ thật với cách làm và kết quả", "Dùng công cụ khi chưa có mục đích", "Sao chép kết quả mà không kiểm tra" }, 0,
-                "Kỹ năng cần có bối cảnh, cách làm và kết quả rõ ràng."),
-        },
-        1 => new[]
+            BankId = bankId,
+            CompetencyId = competencyId,
+            QuestionType = Statuses.QuestionType.MultipleChoice,
+            Difficulty = "MODULE",
+            Content = template.Question,
+            Explanation = template.Explanation,
+            Status = Statuses.Question.Approved,
+            CreatedByUserId = authorUserId,
+        };
+        db.Questions.Add(question);
+        for (var o = 0; o < template.Options.Length; o++)
         {
-            new QuizTemplate($"Bạn nên xử lý tình huống này thế nào? {context.Scenario}",
-                new[] { "Duyệt kết quả đầu tiên mà không kiểm tra", Capitalize(context.Action), "Tránh đưa ra quyết định" }, 1,
-                "Cách làm kiểm tra được phải giải quyết đúng tình huống và nguồn."),
-            new QuizTemplate("Ghi chú nào giúp người chấm hiểu quyết định?",
-                new[] { "Chỉ câu trả lời cuối", "Nguồn, cách làm và lý do", "Khẳng định chắc chắn nhưng không có minh chứng" }, 1,
-                "Người chấm cần thấy nguồn, cách làm và lý do."),
-        },
-        _ => new[]
+            // Thứ tự phương án được trộn lại ở mỗi lần làm (PulseQuizReader.Draw).
+            db.QuestionOptions.Add(new QuestionOption
+            {
+                QuestionId = question.Id,
+                Content = template.Options[o],
+                IsCorrect = o == template.Answer,
+                SortOrder = o + 1,
+            });
+        }
+
+        db.AssessmentQuestions.Add(new AssessmentQuestion { AssessmentId = assessmentId, QuestionId = question.Id, Points = 1, SortOrder = position + 1 });
+    }
+
+    /// <summary>
+    /// Ngân hàng 6 câu của mô đun thứ <paramref name="index"/>, 2 câu cho mỗi trang theo thứ tự: lý thuyết nền tảng →
+    /// tình huống thực tế → thực hành và sản phẩm đầu ra. Trang thứ (index mod 3) giữ cặp câu của bản cũ (mỗi mô đun
+    /// từng có đúng 2 câu đó), hai trang còn lại dùng câu gắn tên mô đun để các mô đun không lặp nhau.
+    /// </summary>
+    private static QuizTemplate[] PoolTemplates(int index, string domainName, string moduleTitle, DomainContext context)
+    {
+        var legacy = index % 3;
+        return new[]
         {
-            new QuizTemplate($"Sản phẩm nào phù hợp với lĩnh vực {domainName}?",
-                new[] { "Kết quả không giải thích được", Capitalize(context.Deliverable), "Ghi chú không nêu nguồn" }, 1,
-                "Sản phẩm cần cho phép truy vết công việc."),
-            new QuizTemplate("Bài cuối khóa cần có gì?",
-                new[] { "Nguồn, cách làm kiểm tra được và kết luận có căn cứ", "Chỉ ý kiến cá nhân", "Ảnh chụp màn hình không có giải thích" }, 0,
-                "Quản lý chấm minh chứng có thể kiểm tra."),
-        },
+            legacy == 0 ? FoundationLegacy(moduleTitle, context) : Foundation(moduleTitle),
+            legacy == 1 ? ScenarioLegacy(context) : Scenario(moduleTitle),
+            legacy == 2 ? PracticeLegacy(domainName, context) : Practice(moduleTitle),
+        }.SelectMany(pair => pair).ToArray();
+    }
+
+    private static QuizTemplate[] FoundationLegacy(string moduleTitle, DomainContext context) => new[]
+    {
+        new QuizTemplate($"Với chủ đề \"{moduleTitle}\", bạn cần kiểm tra nguồn nào trước?",
+            new[] { "Một phỏng đoán chưa có căn cứ", Capitalize(context.Source), "Chỉ kết luận cuối cùng" }, 1,
+            "Bắt đầu từ nguồn hoặc bối cảnh mà người khác có thể kiểm tra."),
+        new QuizTemplate("Điều gì giúp kỹ năng có ích trong công việc?",
+            new[] { "Gắn nhiệm vụ thật với cách làm và kết quả", "Dùng công cụ khi chưa có mục đích", "Sao chép kết quả mà không kiểm tra" }, 0,
+            "Kỹ năng cần có bối cảnh, cách làm và kết quả rõ ràng."),
+    };
+
+    private static QuizTemplate[] Foundation(string moduleTitle) => new[]
+    {
+        new QuizTemplate($"Phần lý thuyết của \"{moduleTitle}\" giúp bạn điều gì trước khi làm việc?",
+            new[] { "Hiểu quy chuẩn để áp dụng đúng vào công việc", "Bỏ qua bước kiểm tra nguồn", "Chỉ ghi nhớ thuật ngữ" }, 0,
+            "Lý thuyết đặt nền để áp dụng đúng quy chuẩn trong công việc."),
+        new QuizTemplate($"Vì sao cần nắm quy chuẩn của \"{moduleTitle}\" trước khi bắt tay vào việc?",
+            new[] { "Để người khác kiểm tra lại được cách làm", "Để làm nhanh mà không cần ghi chú", "Vì quy chuẩn thay cho kết quả" }, 0,
+            "Làm theo quy chuẩn giúp cách làm kiểm tra được."),
+    };
+
+    private static QuizTemplate[] ScenarioLegacy(DomainContext context) => new[]
+    {
+        new QuizTemplate($"Bạn nên xử lý tình huống này thế nào? {context.Scenario}",
+            new[] { "Duyệt kết quả đầu tiên mà không kiểm tra", Capitalize(context.Action), "Tránh đưa ra quyết định" }, 1,
+            "Cách làm kiểm tra được phải giải quyết đúng tình huống và nguồn."),
+        new QuizTemplate("Ghi chú nào giúp người chấm hiểu quyết định?",
+            new[] { "Chỉ câu trả lời cuối", "Nguồn, cách làm và lý do", "Khẳng định chắc chắn nhưng không có minh chứng" }, 1,
+            "Người chấm cần thấy nguồn, cách làm và lý do."),
+    };
+
+    private static QuizTemplate[] Scenario(string moduleTitle) => new[]
+    {
+        new QuizTemplate($"Gặp tình huống trong \"{moduleTitle}\", bước nào nên làm trước?",
+            new[] { "Xác định vấn đề và nguồn liên quan", "Chọn ngay cách làm quen thuộc", "Chờ người khác quyết định" }, 0,
+            "Hiểu đúng vấn đề và nguồn trước khi chọn cách làm."),
+        new QuizTemplate($"Tình huống trong \"{moduleTitle}\" lặp lại. Bạn làm gì?",
+            new[] { "Tìm nguyên nhân và cách phòng ngừa", "Xử lý như lần trước mà không xem xét", "Bỏ qua vì đã quen" }, 0,
+            "Tình huống lặp lại cần được tìm nguyên nhân."),
+    };
+
+    private static QuizTemplate[] PracticeLegacy(string domainName, DomainContext context) => new[]
+    {
+        new QuizTemplate($"Sản phẩm nào phù hợp với lĩnh vực {domainName}?",
+            new[] { "Kết quả không giải thích được", Capitalize(context.Deliverable), "Ghi chú không nêu nguồn" }, 1,
+            "Sản phẩm cần cho phép truy vết công việc."),
+        new QuizTemplate("Bài cuối khóa cần có gì?",
+            new[] { "Nguồn, cách làm kiểm tra được và kết luận có căn cứ", "Chỉ ý kiến cá nhân", "Ảnh chụp màn hình không có giải thích" }, 0,
+            "Quản lý chấm minh chứng có thể kiểm tra."),
+    };
+
+    private static QuizTemplate[] Practice(string moduleTitle) => new[]
+    {
+        new QuizTemplate($"Sản phẩm thực hành của \"{moduleTitle}\" cần cho người duyệt thấy gì?",
+            new[] { "Nguồn, cách làm và kết quả kiểm tra được", "Chỉ hình thức trình bày", "Thời gian đã làm" }, 0,
+            "Người duyệt cần kiểm tra lại được sản phẩm."),
+        new QuizTemplate($"Trước khi nộp sản phẩm của \"{moduleTitle}\", bạn tự kiểm tra gì?",
+            new[] { "Đối chiếu với yêu cầu và nguồn đã dùng", "Chỉ lỗi chính tả", "Không cần kiểm tra" }, 0,
+            "Tự đối chiếu với yêu cầu và nguồn trước khi nộp."),
     };
 
     private static string Capitalize(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];

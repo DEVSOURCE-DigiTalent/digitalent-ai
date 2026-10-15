@@ -46,7 +46,6 @@ function renderLayout(path = '/enterprise/dashboard') {
 describe('MainLayout navigation', () => {
   beforeEach(() => {
     localStorage.clear();
-    // Reset sidebar to open state for predictable test environment
     useSidebarState.setState({ state: 'open', isMobileOpen: false });
     loginAs([ROLES.OWNER], [
       PERMISSIONS.SKILL_GAP_READ,
@@ -62,8 +61,7 @@ describe('MainLayout navigation', () => {
     renderLayout();
     const nav = within(screen.getByRole('navigation', { name: /Điều hướng chính|Thanh điều hướng/i }));
 
-    expect(nav.getByText(/Khoảng trống năng lực/i)).toBeInTheDocument();
-    // Without audit.read, audit log is hidden
+    expect(nav.getByText(/Năng lực Khoảng cách/i)).toBeInTheDocument();
     expect(nav.queryByText('Nhật ký kiểm toán')).not.toBeInTheDocument();
   });
 
@@ -72,7 +70,6 @@ describe('MainLayout navigation', () => {
     renderLayout('/enterprise/me');
     const nav = within(screen.getByRole('navigation', { name: /Điều hướng chính|Thanh điều hướng/i }));
 
-    // Employees should not see Owner administration links
     expect(nav.queryByText('Phân quyền')).not.toBeInTheDocument();
     expect(nav.queryByText('Gói & Thanh toán')).not.toBeInTheDocument();
   });
@@ -81,35 +78,18 @@ describe('MainLayout navigation', () => {
     renderLayout();
 
     const nav = screen.getByRole('navigation', { name: /Điều hướng chính|Thanh điều hướng/i });
-    expect(within(nav).getByRole('link', { name: /Khoảng trống năng lực/i })).toHaveAttribute(
+    expect(within(nav).getByRole('link', { name: /Năng lực Khoảng cách/i })).toHaveAttribute(
       'href',
       '/enterprise/skill-gap',
     );
   });
 
-  it('keeps items that need a missing plan feature visible but locked', () => {
-    loginAs([ROLES.OWNER], [PERMISSIONS.COURSE_UPDATE], { ...PRO, entitlements: [] });
-    renderLayout();
+  it('marks the active item based on current route', () => {
+    renderLayout('/enterprise/skill-gap');
 
     const nav = screen.getByRole('navigation', { name: /Điều hướng chính|Thanh điều hướng/i });
-    const link = within(nav).getByRole('link', { name: /Khóa nội bộ/i });
-    expect(within(link).getByLabelText('Chưa có trong gói')).toBeInTheDocument();
-  });
-
-  it('does not lock items when the plan includes the feature', () => {
-    renderLayout();
-
-    const nav = screen.getByRole('navigation', { name: /Điều hướng chính|Thanh điều hướng/i });
-    const link = within(nav).getByRole('link', { name: /Khóa nội bộ/i });
-    expect(within(link).queryByLabelText('Chưa có trong gói')).not.toBeInTheDocument();
-  });
-
-  it('marks only the most specific item as the current page', () => {
-    renderLayout('/enterprise/requirements');
-
-    const nav = screen.getByRole('navigation', { name: /Điều hướng chính|Thanh điều hướng/i });
-    expect(within(nav).getByRole('link', { name: /Yêu cầu theo vị trí/i })).toHaveAttribute('aria-current', 'page');
-    expect(within(nav).getByRole('link', { name: /Vị trí & Cấp bậc/i })).not.toHaveAttribute('aria-current');
+    expect(within(nav).getByRole('link', { name: /Năng lực Khoảng cách/i })).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByRole('link', { name: /Tổng quan/i })).not.toHaveAttribute('aria-current');
   });
 
   it('opens the navigation drawer on small screens and closes it from the backdrop or after navigating', () => {
@@ -123,7 +103,7 @@ describe('MainLayout navigation', () => {
     expect(screen.queryByTestId('sidebar-backdrop')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Mở điều hướng' }));
-    fireEvent.click(screen.getByRole('link', { name: /Khoảng trống năng lực/i }));
+    fireEvent.click(screen.getByRole('link', { name: /Năng lực Khoảng cách/i }));
     expect(screen.queryByTestId('sidebar-backdrop')).not.toBeInTheDocument();
   });
 
@@ -133,6 +113,5 @@ describe('MainLayout navigation', () => {
     const topbar = within(screen.getByRole('banner'));
     expect(topbar.getByRole('button', { name: 'Tìm kiếm' })).toBeInTheDocument();
     expect(topbar.getByRole('button', { name: /Thông báo/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Thu gọn thanh bên' })).toBeInTheDocument();
   });
 });

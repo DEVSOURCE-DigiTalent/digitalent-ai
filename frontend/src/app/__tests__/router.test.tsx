@@ -241,7 +241,7 @@ describe('Router Configuration & Surface Separation', () => {
       signInAsMock(MOCK_EMAILS.manager);
       renderWithRouter('/enterprise', queryClient);
 
-      expect(await screen.findByRole('heading', { name: 'Bảng năng lực của nhóm' })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: 'Quyết định việc cần ưu tiên.' })).toBeInTheDocument();
     });
 
     it('redirects the old manager learning link to the Pulse learning path', async () => {

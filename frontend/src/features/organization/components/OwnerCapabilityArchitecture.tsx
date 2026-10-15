@@ -88,7 +88,7 @@ export function OwnerCapabilityArchitecture({
 
       <div className="mt-5 flex flex-wrap gap-3">
         <Link
-          to="/setup"
+          to="/enterprise/setup"
           className="rounded-xl border px-3 py-2 text-xs font-extrabold transition-colors hover:opacity-80"
           style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)' }}
         >

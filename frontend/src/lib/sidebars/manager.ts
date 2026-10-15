@@ -1,83 +1,34 @@
 import {
-  LayoutDashboard,
-  Users,
+  Bell,
+  ClipboardCheck,
+  FileBarChart,
+  FileCheck2,
+  GraduationCap,
   Layers,
+  LayoutDashboard,
   TrendingUp,
-  BarChart3,
-  ClipboardList,
-  Clock,
-  Compass,
-  CheckSquare,
-  Award,
-  Route,
 } from 'lucide-react';
 import type { SidebarConfig } from './types';
 
 /**
- * Manager Sidebar configuration according to UI/UX spec v2.1 (§7).
- * Team-scoped management, practical evaluation, and personal growth.
+ * Manager sidebar — Pulse prototype (docs/ui-redesign/14-pulse-product-site, vai trò Manager).
+ * Hai nhóm phẳng: việc quản lý đội và các công cụ khác. Chỉ màn hình thuộc phạm vi phòng ban;
+ * việc tự học của quản lý mở từ menu tài khoản (cổng nhân viên Pulse), không nằm ở đây.
+ *
+ * Nhiệm vụ thực tế dùng mã phụ MG-08..12: OW-35/OW-36 cũng là mã của màn chứng nhận trong owner.ts.
  */
 export const MANAGER_SIDEBAR: SidebarConfig = [
-  {
-    label: 'Tổng quan nhóm',
-    icon: LayoutDashboard,
-    screenId: 'MG-01',
-  },
-  {
-    label: 'Nhóm của tôi',
-    icon: Users,
-    items: [
-      {
-        label: 'Thành viên',
-        screenId: 'MG-02',
-        icon: Users,
-        activeFor: ['MG-03'],
-      },
-      {
-        label: 'Năng lực nhóm',
-        screenId: 'MG-04',
-        icon: Layers,
-      },
-      {
-        label: 'Khoảng trống năng lực',
-        screenId: 'MG-05',
-        icon: TrendingUp,
-      },
-      {
-        label: 'Tiến độ đào tạo',
-        screenId: 'MG-06',
-        icon: BarChart3,
-        activeFor: ['MG-07'],
-      },
-    ],
-  },
-  {
-    label: 'Đánh giá thực tế',
-    icon: ClipboardList,
-    items: [
-      {
-        label: 'Nhiệm vụ',
-        screenId: 'OW-35',
-        icon: ClipboardList,
-        activeFor: ['OW-36', 'OW-37', 'MG-08', 'MG-09', 'MG-10'],
-      },
-      {
-        label: 'Chờ đánh giá',
-        screenId: 'OW-38',
-        icon: Clock,
-        activeFor: ['OW-39', 'MG-11', 'MG-12'],
-      },
-    ],
-  },
-  {
-    label: 'Cá nhân',
-    icon: Compass,
-    // Cổng nhân viên Pulse: quản lý vẫn tự học trên lộ trình của chính mình.
-    items: [
-      { label: 'Hôm nay', screenId: 'EM-01', icon: Compass },
-      { label: 'Lộ trình của tôi', screenId: 'EM-02', icon: Route, activeFor: ['EM-04', 'EM-05', 'EM-06'] },
-      { label: 'Thực hành', screenId: 'EM-03', icon: CheckSquare, activeFor: ['EM-07'] },
-      { label: 'Kết quả đã xác nhận', screenId: 'EM-08', icon: Award, activeFor: ['EM-09'] },
-    ],
-  },
+  // ── QUẢN LÝ ĐỘI ──
+  { label: 'Quản lý đội' },
+  { label: 'Tổng quan', icon: LayoutDashboard, screenId: 'MG-01' },
+  { label: 'Năng lực đội ngũ', icon: TrendingUp, screenId: 'MG-05', activeFor: ['MG-02', 'MG-03', 'MG-04'] },
+  { label: 'Bài cuối khóa', icon: FileCheck2, screenId: 'MG-13' },
+  { label: 'Báo cáo chu kỳ', icon: FileBarChart, screenId: 'MG-14' },
+
+  // ── CÁC CÔNG CỤ KHÁC ──
+  { label: 'Các công cụ khác' },
+  { label: 'Khung năng lực chung', icon: Layers, screenId: 'MG-15' },
+  { label: 'Đào tạo đội ngũ', icon: GraduationCap, screenId: 'MG-06', activeFor: ['MG-07'] },
+  { label: 'Minh chứng thực tế', icon: ClipboardCheck, screenId: 'MG-11', activeFor: ['MG-12', 'MG-08', 'MG-09', 'MG-10'] },
+  { label: 'Hoạt động', icon: Bell, screenId: 'SHR-03' },
 ];

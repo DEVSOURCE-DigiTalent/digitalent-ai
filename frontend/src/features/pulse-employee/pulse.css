@@ -344,6 +344,12 @@
 .pu-quiz input[type="radio"], .pu-choice input[type="radio"] { flex: none; width: 16px; height: 16px; accent-color: #5747be; }
 .pu-quiz-feedback { margin: 13px 0; padding: 13px; border-radius: 11px; background: #fff0e8; color: #8f402e; font-size: 13px; line-height: 1.55; }
 .pu-quiz-feedback ul { margin: 6px 0 0; padding-left: 18px; }
+.pu-review-pages { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.pu-review-pages li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border: 1px solid #e1e3ef; border-radius: 13px; background: #fff; }
+.pu-review-pages li > span { display: grid; gap: 2px; min-width: 0; color: #20294b; font-size: 13.5px; font-weight: 700; }
+.pu-review-pages li b { color: #6552ba; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.pu-review-pages li.done { border-color: #bfe3cf; background: #f2fbf6; }
+.pu-review-pages li small { display: inline-flex; align-items: center; gap: 5px; color: #1f7a4d; font-size: 12.5px; font-weight: 800; }
 .pu-passed { display: flex; align-items: center; flex-wrap: wrap; gap: 13px; padding: 18px; border: 1px solid #ccead8; border-radius: 17px; background: #f3fbf6; }
 .pu-passed > span { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: #dcf6e5; color: #168052; }
 .pu-passed > div { flex: 1; min-width: 220px; }
@@ -527,6 +533,40 @@
   .pu-btn, .pu-cards > article, .pu-module-card, .pu-cert, .pu-bar > i { transition: none; }
   .pu-skeleton { animation: none; }
 }
+/* ── Quản lý: hàng chờ bài cuối khóa (mock #/review), nhúng trong khung doanh nghiệp ───────────── */
+.pu.pu-embedded { min-height: 0; padding: clamp(20px, 3vw, 36px); border-radius: 28px; }
+.pu-review-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.pu-review-kpis > div.warn { border-top-color: var(--pu-coral); }
+.pu-review-kpis > div.warn strong { color: var(--pu-coral-ink); }
+.pu-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 24px 0 16px; }
+.pu-tabs button { min-height: 36px; padding: 7px 14px; border: 1px solid #ddd9f1; border-radius: 999px; background: #fff; color: #4d5877; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.pu-tabs button[aria-pressed='true'] { border-color: var(--pu-violet); background: var(--pu-violet); color: #fff; }
+.pu-tabs button span { margin-left: 6px; opacity: .7; }
+.pu-review-card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.pu-review-card h2 { margin: 12px 0 4px; font-size: 24px; }
+.pu-review-meta { margin: 0; color: #7a84a0; font-size: 12px; font-weight: 650; }
+.pu-review-evidence { margin-top: 16px; padding: 16px 18px; border: 1px solid #e7e9f4; border-radius: 14px; background: #fbfcff; }
+.pu-review-evidence p { margin: 8px 0 0; color: #36415f; font-size: 14px; line-height: 1.65; white-space: pre-wrap; }
+.pu-review-grid { margin-top: 14px; }
+.pu-rubric .pu-check { flex: none; margin-left: auto; color: #b9bfd3; font-weight: 900; }
+.pu-rubric .pu-check.on { color: var(--pu-ok); }
+.pu-ai { padding: 16px 18px; border: 1px solid #e3dcff; border-radius: 14px; background: linear-gradient(135deg, #f6f3ff, #fff); }
+.pu-ai h3 { margin: 0 0 6px; color: var(--pu-violet); font-size: 14px; letter-spacing: -.01em; }
+.pu-ai p { margin: 0 0 8px; color: #3c4a66; font-size: 13px; line-height: 1.55; }
+.pu-ai small { color: var(--pu-faint); font-size: 11px; line-height: 1.5; }
+.pu-decision { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 0 16px; margin-top: 10px; }
+.pu-decision .pu-field { align-content: start; }
+.pu-decision .pu-field textarea { min-height: 96px; }
+.pu-field select { width: 100%; min-height: 46px; padding: 11px 13px; border: 1px solid #d9e0ee; border-radius: 12px; background: #fff; color: var(--pu-ink); font: inherit; font-size: 14px; font-weight: 600; }
+.pu-field select:focus { border-color: #6a5fd0; outline: 3px solid #e7e3ff; }
+.pu-support-options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.pu-support-options button[aria-pressed='true'] { border-color: var(--pu-violet); background: var(--pu-soft); color: var(--pu-violet); }
+.pu-review-history { display: grid; gap: 10px; margin-top: 14px; }
+@media (max-width: 760px) {
+  .pu-review-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pu-decision { grid-template-columns: 1fr; }
+}
+
 @media print {
   .pu-header, .pu-no-print { display: none !important; }
   .pu { background: #fff; }

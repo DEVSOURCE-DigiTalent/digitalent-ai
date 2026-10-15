@@ -67,6 +67,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<PositionRequirementSet> PositionRequirementSets => Set<PositionRequirementSet>();
     public DbSet<CapabilityBaseline> CapabilityBaselines => Set<CapabilityBaseline>();
     public DbSet<CapabilityBaselineAnswer> CapabilityBaselineAnswers => Set<CapabilityBaselineAnswer>();
+    public DbSet<CapabilityCeiling> CapabilityCeilings => Set<CapabilityCeiling>();
 
     // Learning (khóa học)
     public DbSet<Course> Courses => Set<Course>();
