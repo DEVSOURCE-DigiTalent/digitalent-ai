@@ -13,7 +13,7 @@ import type {
 
 /**
  * Demo organization behind the seeded accounts (owner@, manager@, employee@digitalent.ai):
- * "Công ty Cổ phần Acme".
+ * "DigiTalent AI".
  */
 
 export const ACME_ORGANIZATION_ID = 'org-acme';
@@ -235,7 +235,7 @@ function buildAudit(): AuditEntry[] {
     [-15, 'Nguyễn Văn Chủ', 'ROLE_CHANGED', 'Thành viên', 'Bùi Thanh Tùng', 'Học viên → Quản lý'],
     [-21, 'Lê Văn Học Tập', 'COURSE_ASSIGNED', 'Khóa học', 'A4-F cho Lý Mai Phương'],
     [-30, 'Lê Văn Học Tập', 'REQUIREMENT_ACTIVATED', 'Yêu cầu năng lực', 'Kinh doanh (CRM) v2'],
-    [-31, 'Nguyễn Văn Chủ', 'ORGANIZATION_UPDATED', 'Tổ chức', 'Công ty Cổ phần Acme', 'Cập nhật quy mô'],
+    [-31, 'Nguyễn Văn Chủ', 'ORGANIZATION_UPDATED', 'Tổ chức', 'DigiTalent AI', 'Cập nhật quy mô'],
     [-45, 'Nguyễn Văn Chủ', 'SUBSCRIPTION_PURCHASED', 'Gói dịch vụ', 'Doanh nghiệp Pro', '100 người dùng'],
   ];
   return rows.map(([days, actorName, action, targetType, targetLabel, detail], index) => ({
@@ -255,8 +255,8 @@ function buildInternalCourses(): InternalCourseRecord[] {
     {
       id: 'icrs-001',
       code: 'NB-01',
-      title: 'Văn hóa doanh nghiệp và Quy chuẩn làm việc số Acme',
-      description: 'Khóa nhập môn bắt buộc dành cho nhân sự mới gia nhập Công ty Cổ phần Acme.',
+      title: 'Văn hóa doanh nghiệp và Quy chuẩn làm việc số DigiTalent AI',
+      description: 'Khóa nhập môn bắt buộc dành cho nhân sự mới gia nhập DigiTalent AI.',
       category: 'Văn hóa & Hội nhập',
       modulesCount: 3,
       durationMinutes: 90,
@@ -393,7 +393,7 @@ export function buildAcmeData(): OrgData {
 
   const data: OrgData = {
     organizationId: ACME_ORGANIZATION_ID,
-    settings: { name: 'Công ty Cổ phần Acme', industry: 'Dịch vụ', size: '21-100', timezone: 'Asia/Ho_Chi_Minh', defaultAssignmentDays: 30 },
+    settings: { name: 'DigiTalent AI', industry: 'Dịch vụ', size: '21-100', timezone: 'Asia/Ho_Chi_Minh', defaultAssignmentDays: 30 },
     jobGrades: JOB_GRADES,
     departments,
     jobFamilies: [

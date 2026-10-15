@@ -16,7 +16,7 @@ interface MockAccountSeed {
   subscription?: SubscriptionContext;
 }
 
-const ACME: OrganizationContext = { id: 'org-acme', name: 'Công ty Cổ phần Acme' };
+const ACME: OrganizationContext = { id: 'org-acme', name: 'DigiTalent AI' };
 const SMALL_CO: OrganizationContext = { id: 'org-small', name: 'Công ty TNHH Giải Pháp Trẻ' };
 const STARTUP: OrganizationContext = { id: 'org-startup', name: 'Công ty TNHH Khởi Nghiệp Số' };
 const LEGACY_CO: OrganizationContext = { id: 'org-legacy', name: 'Công ty Cổ phần Cũ Kỹ' };
@@ -70,7 +70,7 @@ const enterprise = (
 
 /**
  * 10 demo accounts: the 8 of spec v2.1 §1.6 plus the two individual trial states (trial@, free@):
- * - owner@ (Acme with Managers)
+ * - owner@ (DigiTalent AI with Managers)
  * - owner2@ (Small org without Manager)
  * - manager@ (Manager of 1-2 departments)
  * - employee@ (Employee)

@@ -108,7 +108,7 @@ export function OrganizationStep({ setup, onDone }: OrganizationStepProps) {
         </label>
         <input
           id="org-name"
-          placeholder="Ví dụ: Công ty Cổ phần Acme Việt Nam"
+          placeholder="Ví dụ: Công ty Cổ phần DigiTalent Việt Nam"
           aria-invalid={!!errors.name}
           className={INPUT_CLASS}
           {...register('name')}

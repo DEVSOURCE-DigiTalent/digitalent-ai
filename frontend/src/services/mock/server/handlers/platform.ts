@@ -110,7 +110,7 @@ const platformState = {
       actorName: 'Quản trị viên Nền tảng',
       action: 'ORGANIZATION_APPROVED',
       targetType: 'Organization',
-      targetName: 'Acme Corporation',
+      targetName: 'DigiTalent AI',
       details: 'Kích hoạt gói dịch vụ Pro (10 người dùng)',
     },
     {
@@ -166,7 +166,7 @@ function getAllOrganizations(): PlatformOrganizationDto[] {
   const db = getDb();
   const orgs: PlatformOrganizationDto[] = [];
 
-  // Seed demo org: Acme Corporation
+  // Seed demo org: DigiTalent AI
   const acmeData = getOrgData(ACME_ORGANIZATION_ID);
   const acmeSuspended = platformState.suspendedOrgs.has(ACME_ORGANIZATION_ID);
   orgs.push({
@@ -375,7 +375,7 @@ const DEMO_PLATFORM_USERS: PlatformUserDto[] = [
     roles: ['OWNER'],
     workspace: 'enterprise',
     organizationId: ACME_ORGANIZATION_ID,
-    organizationName: 'Acme Corporation',
+    organizationName: 'DigiTalent AI',
     status: 'ACTIVE',
     emailVerified: true,
     createdAt: new Date(Date.now() - 86400000 * 60).toISOString(),
@@ -390,7 +390,7 @@ const DEMO_PLATFORM_USERS: PlatformUserDto[] = [
     roles: ['MANAGER'],
     workspace: 'enterprise',
     organizationId: ACME_ORGANIZATION_ID,
-    organizationName: 'Acme Corporation',
+    organizationName: 'DigiTalent AI',
     status: 'ACTIVE',
     emailVerified: true,
     createdAt: new Date(Date.now() - 86400000 * 45).toISOString(),
@@ -405,7 +405,7 @@ const DEMO_PLATFORM_USERS: PlatformUserDto[] = [
     roles: ['EMPLOYEE'],
     workspace: 'enterprise',
     organizationId: ACME_ORGANIZATION_ID,
-    organizationName: 'Acme Corporation',
+    organizationName: 'DigiTalent AI',
     status: 'ACTIVE',
     emailVerified: true,
     createdAt: new Date(Date.now() - 86400000 * 30).toISOString(),

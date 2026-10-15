@@ -1,5 +1,5 @@
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { OrganizationOverviewPage } from '@/features/organization/pages/OrganizationOverviewPage';
+import { OwnerOverviewPage } from '@/features/organization/pages/OwnerOverviewPage';
 import { TeamCapabilityDashboardPage } from '@/features/manager/pages/team/TeamCapabilityDashboardPage';
 import { PulseTodayPage } from '@/features/pulse-employee/pages/PulseTodayPage';
 import { TrialDashboardOverview } from './TrialDashboardOverview';
@@ -14,7 +14,7 @@ function useIsEnterpriseTrial(): boolean {
 }
 
 export function TrialAwareOwnerDashboardPage() {
-  return useIsEnterpriseTrial() ? <TrialDashboardOverview /> : <OrganizationOverviewPage />;
+  return useIsEnterpriseTrial() ? <TrialDashboardOverview /> : <OwnerOverviewPage />;
 }
 
 export function TrialAwareManagerDashboardPage() {
