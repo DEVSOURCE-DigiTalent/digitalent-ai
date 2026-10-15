@@ -19,6 +19,16 @@ export const OWNER_SCREENS: ScreenDef[] = [
     priority: 'P0',
   },
 
+  // ── Thiết lập ──
+  {
+    id: 'OW-05',
+    title: 'Thiết lập kiến trúc năng lực',
+    path: '/enterprise/setup',
+    roles: OWNER_ROLES,
+    permission: P.POSITION_REQUIREMENT_READ,
+    priority: 'P1',
+  },
+
   // ── Tổ chức ──
   {
     id: 'OW-02',
@@ -257,6 +267,24 @@ export const OWNER_SCREENS: ScreenDef[] = [
     path: '/enterprise/assessment-results',
     roles: OWNER_ROLES,
     permission: P.ATTEMPT_READ_RESULT,
+    priority: 'P1',
+  },
+
+  // ── Chứng nhận ──
+  {
+    id: 'OW-35',
+    title: 'Chứng nhận',
+    path: '/enterprise/certificates',
+    roles: OWNER_ROLES,
+    permission: P.CERTIFICATE_READ,
+    priority: 'P1',
+  },
+  {
+    id: 'OW-36',
+    title: 'Chi tiết chứng nhận',
+    path: '/enterprise/certificates/:id',
+    roles: OWNER_ROLES,
+    permission: P.CERTIFICATE_READ,
     priority: 'P1',
   },
 
