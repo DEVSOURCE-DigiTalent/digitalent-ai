@@ -64,8 +64,11 @@ const enterprise = (
   role: string,
   organization: OrganizationContext,
   subscription: SubscriptionContext,
+  /** Hồ sơ nhân viên trong dữ liệu mẫu (server/seed-acme.ts), như `employeeId` của /auth/me thật. */
+  employeeId?: string,
 ): MockAccountSeed => ({
   id, email, fullName, roles: [role], workspace: WORKSPACES.ENTERPRISE, organization, subscription,
+  ...(employeeId ? { employeeId } : {}),
 });
 
 /**
@@ -82,10 +85,10 @@ const enterprise = (
  * - platform@ (Platform admin)
  */
 const SEEDS: MockAccountSeed[] = [
-  enterprise('mock-owner', 'owner@digitalent.ai', 'Nguyễn Văn Chủ', ROLES.OWNER, ACME, PRO_PLAN),
+  enterprise('mock-owner', 'owner@digitalent.ai', 'Nguyễn Văn Chủ', ROLES.OWNER, ACME, PRO_PLAN, 'emp-03'),
   enterprise('mock-owner2', 'owner2@digitalent.ai', 'Trần Văn Chủ Nhỏ', ROLES.OWNER, SMALL_CO, PRO_PLAN),
-  enterprise('mock-manager', 'manager@digitalent.ai', 'Phạm Thị Quản Lý', ROLES.MANAGER, ACME, PRO_PLAN),
-  enterprise('mock-employee', 'employee@digitalent.ai', 'Hoàng Văn Nhân Viên', ROLES.EMPLOYEE, ACME, PRO_PLAN),
+  enterprise('mock-manager', 'manager@digitalent.ai', 'Phạm Thị Quản Lý', ROLES.MANAGER, ACME, PRO_PLAN, 'emp-02'),
+  enterprise('mock-employee', 'employee@digitalent.ai', 'Hoàng Văn Nhân Viên', ROLES.EMPLOYEE, ACME, PRO_PLAN, 'emp-01'),
   // Starter plan: no internal learning or advanced analytics, to see the "feature unavailable" screen.
   enterprise('mock-starter', 'starter@digitalent.ai', 'Đặng Văn Starter', ROLES.OWNER, STARTUP, STARTER_PLAN),
   // Expired plan: to see read-only / payment required state.

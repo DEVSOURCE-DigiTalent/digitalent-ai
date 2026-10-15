@@ -55,6 +55,8 @@ const MANAGER = [
   P.EVIDENCE_APPROVE_CONFIRM,
   P.EVIDENCE_EVALUATE,
   P.LEARNING_PROGRESS_READ,
+  // Backend RolePermissions: Manager has Learning.ReadAssignment (team training progress, MG-06).
+  P.COURSE_ASSIGNMENT_READ,
   P.CERTIFICATE_READ,
   P.ASSESSMENT_READ,
   P.SKILL_GAP_READ,
