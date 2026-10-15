@@ -7,12 +7,8 @@ import {
   ClipboardList,
   Clock,
   Compass,
-  BookOpen,
-  UserCheck,
   CheckSquare,
   Award,
-  Trophy,
-  History,
   Route,
 } from 'lucide-react';
 import type { SidebarConfig } from './types';
@@ -76,55 +72,12 @@ export const MANAGER_SIDEBAR: SidebarConfig = [
   {
     label: 'Cá nhân',
     icon: Compass,
+    // Cổng nhân viên Pulse: quản lý vẫn tự học trên lộ trình của chính mình.
     items: [
-      {
-        label: 'Bảng phát triển',
-        screenId: 'EM-01',
-        icon: Compass,
-      },
-      {
-        label: 'Năng lực của tôi',
-        screenId: 'EM-02',
-        icon: UserCheck,
-      },
-      {
-        label: 'Khoảng trống năng lực',
-        screenId: 'EM-03',
-        icon: TrendingUp,
-      },
-      {
-        label: 'Minh chứng của tôi',
-        screenId: 'EM-04',
-        icon: History,
-      },
-      {
-        label: 'Lộ trình của tôi',
-        screenId: 'EM-05',
-        icon: Route,
-      },
-      {
-        label: 'Học tập của tôi',
-        screenId: 'EM-06',
-        icon: BookOpen,
-        activeFor: ['EM-07', 'EM-08'],
-      },
-      {
-        label: 'Bài đánh giá của tôi',
-        screenId: 'EM-09',
-        icon: Award,
-        activeFor: ['EM-10', 'EM-11', 'EM-12', 'EM-13'],
-      },
-      {
-        label: 'Nhiệm vụ của tôi',
-        screenId: 'EM-14',
-        icon: CheckSquare,
-        activeFor: ['EM-15', 'EM-16', 'EM-17'],
-      },
-      {
-        label: 'Thành tựu của tôi',
-        screenId: 'EM-18',
-        icon: Trophy,
-      },
+      { label: 'Hôm nay', screenId: 'EM-01', icon: Compass },
+      { label: 'Lộ trình của tôi', screenId: 'EM-02', icon: Route, activeFor: ['EM-04', 'EM-05', 'EM-06'] },
+      { label: 'Thực hành', screenId: 'EM-03', icon: CheckSquare, activeFor: ['EM-07'] },
+      { label: 'Kết quả đã xác nhận', screenId: 'EM-08', icon: Award, activeFor: ['EM-09'] },
     ],
   },
 ];

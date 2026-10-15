@@ -1,7 +1,7 @@
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { PersonalDashboardPage } from '@/features/manager/pages/ManagerPageSwitch';
 import { OrganizationOverviewPage } from '@/features/organization/pages/OrganizationOverviewPage';
 import { TeamCapabilityDashboardPage } from '@/features/manager/pages/team/TeamCapabilityDashboardPage';
+import { PulseTodayPage } from '@/features/pulse-employee/pages/PulseTodayPage';
 import { TrialDashboardOverview } from './TrialDashboardOverview';
 
 function useIsEnterpriseTrial(): boolean {
@@ -21,6 +21,7 @@ export function TrialAwareManagerDashboardPage() {
   return useIsEnterpriseTrial() ? <TrialDashboardOverview /> : <TeamCapabilityDashboardPage />;
 }
 
-export function TrialAwareEmployeeDashboardPage() {
-  return useIsEnterpriseTrial() ? <TrialDashboardOverview /> : <PersonalDashboardPage />;
+/** Hôm nay của nhân viên Pulse; tài khoản dùng thử doanh nghiệp (luồng hướng dẫn cũ) vẫn thấy tổng quan dùng thử. */
+export function TrialAwarePulseTodayPage() {
+  return useIsEnterpriseTrial() ? <TrialDashboardOverview /> : <PulseTodayPage />;
 }
