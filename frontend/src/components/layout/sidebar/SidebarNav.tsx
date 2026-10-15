@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -34,13 +34,24 @@ export function SidebarNav({ config, isRail, onItemClick, workspace }: SidebarNa
     return screen.roles.some((r) => user?.roles.includes(r));
   };
 
-  const isScreenActive = (screenId: string, activeFor?: string[]) => {
-    const allFor = [screenId, ...(activeFor ?? [])];
-    return allFor.some((id) => {
-      const s = findScreen(id, currentWorkspace);
-      return s?.path && matchPath(s.path, pathname);
-    });
-  };
+  // The most specific matching screen of this sidebar wins: /enterprise/team/final-reviews highlights its own item,
+  // not also the /enterprise/team overview whose path is a prefix of it.
+  const activeScreenId = useMemo(() => {
+    let best: { id: string; length: number } | null = null;
+    for (const section of config) {
+      for (const entry of [section, ...(section.items ?? [])]) {
+        if (!entry.screenId) continue;
+        for (const id of [entry.screenId, ...(entry.activeFor ?? [])]) {
+          const s = findScreen(id, currentWorkspace);
+          if (s?.path && matchPath(s.path, pathname) && (!best || s.path.length > best.length)) best = { id, length: s.path.length };
+        }
+      }
+    }
+    return best?.id ?? null;
+  }, [config, pathname, currentWorkspace]);
+
+  const isScreenActive = (screenId: string, activeFor?: string[]) =>
+    activeScreenId != null && [screenId, ...(activeFor ?? [])].includes(activeScreenId);
 
   // Determine which group contains the active page
   const getActiveGroupLabel = () => {
