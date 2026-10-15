@@ -532,6 +532,27 @@ describe('Platform Admin console (v2)', () => {
     await waitFor(() => expect(service.getOrganizations).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'SUSPENDED' })));
   });
 
+  it('PA-07 follows personal trials', async () => {
+    const soon = new Date(Date.now() + 36 * 3600 * 1000).toISOString();
+    service.getUsers.mockResolvedValue({
+      items: [
+        {
+          id: 'u-9', email: 'trial@gmail.com', displayName: 'Học viên thử', role: 'LEARNER', roles: [], organizationId: null, organizationName: null,
+          departmentName: null, positionName: null, status: 'ACTIVE', isManuallyLocked: false, lockedUntil: null, lastLoginAt: null,
+          createdAt: '2026-10-10T08:00:00Z', planCode: 'IND_PLUS', trialState: 'ACTIVE', trialStartedAt: '2026-10-10T08:00:00Z', trialEndsAt: soon,
+        },
+      ],
+      pageIndex: 1, pageSize: 20, totalItems: 1, totalPages: 1,
+      trials: { active: 3, endingSoon: 1, ended: 2 },
+    });
+    renderAt('/platform/users?trial=ENDING_SOON');
+
+    expect(await screen.findByText('Dùng thử · còn 2 ngày')).toBeInTheDocument();
+    expect(screen.getByText('Hết hạn trong 2 ngày').nextElementSibling).toHaveTextContent('1');
+    expect(screen.getByRole('button', { name: 'Sắp hết hạn' })).toHaveAttribute('aria-pressed', 'true');
+    expect(service.getUsers).toHaveBeenCalledWith(expect.objectContaining({ trial: 'ENDING_SOON' }));
+  });
+
   it('SHR-01 is the Platform Admin profile, opened from the header', async () => {
     service.getAuditLogs.mockResolvedValue({ items: [], pageIndex: 1, pageSize: 1, totalItems: 9, totalPages: 9 });
     renderAt('/platform/account');
