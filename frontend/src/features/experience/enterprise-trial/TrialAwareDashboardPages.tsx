@@ -8,7 +8,7 @@ function useIsEnterpriseTrial(): boolean {
   return useCurrentUser((state) => {
     const user = state.user;
     if (!user) return false;
-    return (user.enterpriseTrialStatus !== undefined && user.enterpriseTrialStatus !== 'converted')
+    return (user.enterpriseTrialStatus != null && user.enterpriseTrialStatus !== 'converted')
       || user.subscription?.planCode === 'ENT_TRIAL';
   });
 }
