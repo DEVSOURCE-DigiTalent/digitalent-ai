@@ -101,8 +101,8 @@ export function usePulseOutcome(outcomeId?: string) {
 }
 
 /** Hàng chờ bài cuối khóa của phòng ban (quản lý). */
-export function usePulseFinalReviews() {
-  return useQuery({ queryKey: PULSE_KEYS.finalReviews, queryFn: () => pulseReviewService.getQueue().then((r) => r.data.data!) });
+export function usePulseFinalReviews(enabled = true) {
+  return useQuery({ queryKey: PULSE_KEYS.finalReviews, queryFn: () => pulseReviewService.getQueue().then((r) => r.data.data!), enabled });
 }
 
 export function useDecidePulseFinal() {
