@@ -61,7 +61,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
         var categoryIds = catalog.Select(c => c.CategoryId).Distinct().ToList();
         var categoryNames = await _context.CompetencyCategories.AsNoTracking()
             .Where(c => categoryIds.Contains(c.Id))
-            .ToDictionaryAsync(c => c.Id, c => c.Name);
+            .ToDictionaryAsync(c => c.Id, c => PulseLearnerReader.DisplayName(c.Name));
         var byCode = catalog.ToDictionary(c => c.Code, StringComparer.OrdinalIgnoreCase);
 
         var now = _learner.Now;
