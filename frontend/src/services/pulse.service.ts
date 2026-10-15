@@ -329,3 +329,63 @@ export const pulseService = {
   getOutcomes: () => apiClient.get<ApiResponse<{ items: PulseOutcome[] }>>('/me/pulse/outcomes'),
   getOutcome: (outcomeId: string) => apiClient.get<ApiResponse<PulseOutcome>>(`/me/pulse/outcomes/${encodeURIComponent(outcomeId)}`),
 };
+
+// ── Hàng chờ chấm bài cuối khóa của quản lý (api/v1/pulse/final-reviews, quyền task.evaluate) ──
+
+/** Trạng thái một bài trong hàng chờ: chờ chấm, chờ nộp lại, quá hạn nộp lại, cần hỗ trợ. */
+export type PulseReviewStatus = 'PENDING' | 'RETRY_WAIT' | 'RETRY_READY' | 'DEADLINE_MISSED' | 'FLAGGED';
+
+/** Gợi ý minh họa dựa trên văn bản cho lần nộp đang chờ: một dấu cho mỗi tiêu chí. Chỉ để tham khảo. */
+export interface PulseAiHint {
+  checks: boolean[];
+  summary: string;
+}
+
+export interface PulseFinalReviewItem {
+  /** Lần nộp mới nhất — dùng cho quyết định và hướng hỗ trợ. */
+  submissionId: string;
+  status: PulseReviewStatus;
+  employeeId: string;
+  employeeName: string;
+  departmentName?: string | null;
+  positionName?: string | null;
+  courseId: string;
+  courseCode: string;
+  courseTitle: string;
+  domainName?: string | null;
+  tier?: number | null;
+  attemptNo: number;
+  maxAttempts: number;
+  attempts: PulseFinalAttempt[];
+  aiHint?: PulseAiHint | null;
+}
+
+export interface PulseFinalReviewQueue {
+  pendingCount: number;
+  retryCount: number;
+  deadlineMissedCount: number;
+  flaggedCount: number;
+  criteria: PulseCriterion[];
+  items: PulseFinalReviewItem[];
+}
+
+export interface PulseDecisionResult {
+  submissionId: string;
+  decision: PulseDecision;
+  /** APPROVED | RETRY_WAIT | FLAGGED */
+  status: PulseFinalStatus;
+  enrollmentStatus: string;
+  retryOpensAt?: string | null;
+  retryDueAt?: string | null;
+}
+
+export const pulseReviewService = {
+  getQueue: () => apiClient.get<ApiResponse<PulseFinalReviewQueue>>('/pulse/final-reviews'),
+  decide: (submissionId: string, decision: PulseDecision, reason: string) =>
+    apiClient.post<ApiResponse<PulseDecisionResult>>(`/pulse/final-reviews/${submissionId}/decision`, { decision, reason }),
+  recordSupport: (submissionId: string, action: PulseSupportAction, note?: string) =>
+    apiClient.post<ApiResponse<{ submissionId: string; action: PulseSupportAction; recordedAt: string }>>(
+      `/pulse/final-reviews/${submissionId}/support`,
+      { action, note: note || null },
+    ),
+};
