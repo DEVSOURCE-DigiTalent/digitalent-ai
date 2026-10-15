@@ -3,6 +3,7 @@ using DigiTalent.Application.Common.Events;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.Services.Intelligence.Recommendation;
 using DigiTalent.Application.Services.Intelligence.SkillGap;
+using DigiTalent.Application.UseCases.Competency.Ceilings;
 using DigiTalent.Application.UseCases.Intelligence.Analytics;
 using DigiTalent.Application.UseCases.Intelligence.SkillGap.Common;
 using DigiTalent.Application.UseCases.Me;
@@ -84,7 +85,10 @@ public static class DependencyInjection
         services.AddScoped<PulseOutcomeReader>();
         services.AddScoped<PulseReviewScope>();
 
-        // 8. Quản trị nền tảng: phiên bản chương trình và trình soạn khóa học (/platform/catalog/*)
+        // 8. Trần nhà năng lực của doanh nghiệp / phòng ban (OW-05)
+        services.AddScoped<CapabilityCeilingReader>();
+
+        // 9. Quản trị nền tảng: phiên bản chương trình và trình soạn khóa học (/platform/catalog/*)
         services.AddScoped<DigiTalent.Application.UseCases.Platform.Catalog.PlatformCatalogEditor>();
         services.AddScoped<DigiTalent.Application.UseCases.Platform.Catalog.PlatformCourseContentReader>();
         services.AddScoped<DigiTalent.Application.UseCases.Platform.Catalog.PlatformPublishChecker>();

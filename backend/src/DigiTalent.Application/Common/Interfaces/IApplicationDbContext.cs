@@ -43,6 +43,7 @@ public interface IApplicationDbContext
     DbSet<PositionRequirementSet> PositionRequirementSets { get; }
     DbSet<CapabilityBaseline> CapabilityBaselines { get; }
     DbSet<CapabilityBaselineAnswer> CapabilityBaselineAnswers { get; }
+    DbSet<CapabilityCeiling> CapabilityCeilings { get; }
 
     // Learning (khóa học)
     DbSet<Course> Courses { get; }

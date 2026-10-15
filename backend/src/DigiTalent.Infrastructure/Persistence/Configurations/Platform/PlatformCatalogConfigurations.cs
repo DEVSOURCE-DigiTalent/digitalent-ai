@@ -120,7 +120,7 @@ public class CourseSeatOrderConfiguration : IEntityTypeConfiguration<CourseSeatO
 }
 
 /// <summary>
-/// Table "platform_catalog_versions" — SQL v3.2 section 18.
+/// Table "platform_catalog_versions" — SQL v3.2 section 19.
 /// </summary>
 public class PlatformCatalogVersionConfiguration : IEntityTypeConfiguration<PlatformCatalogVersion>
 {

@@ -1,12 +1,22 @@
 -- ============================================================================
 -- DigiTalent AI — Canonical Database Schema v3.2
 -- Target: PostgreSQL 16+
--- Source: DigiTalent_AI_Canonical_v3_1.sql + Platform catalog v2 (Platform Admin rebuild)
+-- Source: DigiTalent_AI_Canonical_v3_1.sql + trần năng lực doanh nghiệp / phòng ban
+--         + Platform catalog v2 (Platform Admin rebuild)
 --
 -- This file is the SINGLE SOURCE OF TRUTH for the data model in v3.2.
 -- EF Core entities, configurations and migrations are written to match it.
 --
--- Changes v3.1 -> v3.2 (docs/specs/2026-10-15-platform-admin-v2.md):
+-- Changes v3.1 -> v3.2:
+--   Capability ceilings (Lý thuyết trần nhà — QuyTD13/Luồng vận hành Digital AI.html §III):
+--   * Section 18: CAPABILITY CEILINGS
+--       1. capability_ceilings: cấp cao nhất (0–3) doanh nghiệp, hoặc một phòng ban, mở cho từng lĩnh vực
+--          năng lực (competency_categories). Ma trận 6 lĩnh vực × 3 cấp = 18 khóa là trần Digital AI;
+--          các ô nằm dưới trần chính là lộ trình.
+--          Quy tắc (kiểm tra ở tầng ứng dụng vì là ràng buộc giữa nhiều dòng):
+--          trần phòng ban ≤ trần doanh nghiệp ≤ trần Digital AI (3), xét riêng từng lĩnh vực.
+--          Phòng ban không có dòng nào ở một lĩnh vực thì kế thừa trần doanh nghiệp.
+--   Platform catalog v2 (docs/specs/2026-10-15-platform-admin-v2.md):
 --   * Section 12A (platform catalog) is reworked:
 --       - platform_frameworks: several competency frameworks; each owns its domains and release history.
 --       - platform_framework_domains.framework_id, wider code, status (ACTIVE / ARCHIVED = xóa lĩnh vực);
@@ -15,7 +25,7 @@
 --       - platform_courses keeps the stable identity of a course (code) and mirrors the course as it is in
 --         the CURRENT catalog version; draft_* columns and the (domain, level) uniqueness are dropped.
 --       - platform_course_releases and platform_course_questions are dropped (replaced by catalog versions).
---   * Section 18: PLATFORM CATALOG VERSIONS & COURSE BUILDER
+--   * Section 19: PLATFORM CATALOG VERSIONS & COURSE BUILDER
 --       1. platform_catalog_versions: one version of the whole curriculum; one DRAFT and one CURRENT at most.
 --       2. platform_catalog_courses: a course as it is in one version (info, price, final assessment).
 --       3. platform_course_modules: modules of a course in a version, with the title of its review quiz.
@@ -27,6 +37,10 @@
 --   Published versions are never edited: creating a draft deep-copies the CURRENT version; edits of a
 --   DRAFT change its own rows only.
 -- ============================================================================
+
+\i DigiTalent_AI_Canonical_v3_1.sql
+
+BEGIN;
 
 -- ============================================================================
 -- 12A. PLATFORM CATALOG — rework
@@ -80,7 +94,39 @@ DROP TABLE platform_course_questions;
 DROP TABLE platform_course_releases;
 
 -- ============================================================================
--- 18. PLATFORM CATALOG VERSIONS & COURSE BUILDER
+-- 18. CAPABILITY CEILINGS
+-- ============================================================================
+
+-- 18.1. Trần năng lực theo lĩnh vực.
+--   department_id IS NULL      → trần của doanh nghiệp (một dòng cho mỗi lĩnh vực).
+--   department_id IS NOT NULL  → trần riêng của phòng ban (≤ trần doanh nghiệp cùng lĩnh vực).
+--   ceiling_level: 0 = không mở lĩnh vực, 1 Cơ bản, 2 Trung cấp, 3 Nâng cao.
+CREATE TABLE capability_ceilings (
+    id                      uuid PRIMARY KEY,
+    organization_id         uuid NOT NULL REFERENCES organizations(id),
+    department_id           uuid REFERENCES departments(id),
+    competency_category_id  uuid NOT NULL REFERENCES competency_categories(id),
+    ceiling_level           smallint NOT NULL,
+    updated_by_user_id      uuid REFERENCES users(id),
+    created_at              timestamptz NOT NULL DEFAULT now(),
+    updated_at              timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT ck_capability_ceilings_level
+        CHECK (ceiling_level BETWEEN 0 AND 3)
+);
+
+CREATE UNIQUE INDEX uq_capability_ceilings_organization_category
+    ON capability_ceilings(organization_id, competency_category_id)
+    WHERE department_id IS NULL;
+CREATE UNIQUE INDEX uq_capability_ceilings_department_category
+    ON capability_ceilings(department_id, competency_category_id)
+    WHERE department_id IS NOT NULL;
+CREATE INDEX ix_capability_ceilings_competency_category_id
+    ON capability_ceilings(competency_category_id);
+CREATE INDEX ix_capability_ceilings_updated_by_user_id
+    ON capability_ceilings(updated_by_user_id);
+
+-- ============================================================================
+-- 19. PLATFORM CATALOG VERSIONS & COURSE BUILDER
 -- ============================================================================
 
 CREATE TABLE platform_catalog_versions (
@@ -213,3 +259,5 @@ CREATE TABLE platform_question_options (
 CREATE INDEX ix_platform_question_options_question ON platform_question_options (question_id, sort_order);
 -- Exactly one correct option per question (at most one here; "at least one" is checked before publishing).
 CREATE UNIQUE INDEX ux_platform_question_options_correct ON platform_question_options (question_id) WHERE is_correct;
+
+COMMIT;

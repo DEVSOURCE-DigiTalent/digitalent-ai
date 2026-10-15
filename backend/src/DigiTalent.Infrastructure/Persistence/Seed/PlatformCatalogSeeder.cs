@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Infrastructure.Persistence.Seed;
 
 /// <summary>
-/// Reference data of the platform catalog (SQL v3.2 sections 12A and 18): the Circular 02/2025 framework with its
+/// Reference data of the platform catalog (SQL v3.2 sections 12A and 19): the Circular 02/2025 framework with its
 /// six domains (published as v1), its 18 standard courses (6 domains x Basic / Intermediate / Advanced) and catalog
 /// version v1 in use. Each v1 course gets illustrative content: one module per TT02 competency of its domain, three
 /// text blocks (foundations, workplace case, guided practice) and six review questions, two per block.
