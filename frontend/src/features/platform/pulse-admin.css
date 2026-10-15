@@ -1,0 +1,36 @@
+/*
+ * Platform Admin console — additions on top of pulse-mock.css (the Pulse mock's own stylesheets, scoped under
+ * .pulse-ui). Keep the mock look: only restore what the app's Tailwind preflight resets, and style the few
+ * elements real data needs that the mock never had (filters, pager, loading, errors).
+ */
+
+/* Browser defaults the mock relies on (Tailwind preflight zeroes them) */
+.pulse-ui { min-height: 100vh; line-height: normal; }
+:where(.pulse-ui) h1 { font-size: 2em; margin-block-end: .67em; font-weight: bold; }
+:where(.pulse-ui) h2 { font-size: 1.5em; margin-block-end: .83em; font-weight: bold; }
+:where(.pulse-ui) h3 { font-size: 1.17em; margin-block-end: 1em; font-weight: bold; }
+:where(.pulse-ui) p { margin-block-end: 1em; }
+:where(.pulse-ui) :is(button, input, select, textarea) { font: inherit; }
+:where(.pulse-ui) table { border-collapse: collapse; }
+
+/* Header: sign-out next to the profile link */
+.pulse-ui .header-actions .btn-small { min-height: 34px; }
+/* The mock hides outline header buttons on phones (it only had a role picker there); keep sign-out reachable */
+@media (max-width: 520px) { .pulse-ui .header-actions .btn-outline.pa-logout { display: inline-flex; } }
+
+/* Filters and paging above / below tables */
+.pulse-ui .pa-filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.pulse-ui .pa-filters input,
+.pulse-ui .pa-filters select { min-height: 42px; border: 1px solid #d9e0ee; border-radius: 10px; background: #fff; padding: 10px 12px; color: var(--ink); font-size: 12px; }
+.pulse-ui .pa-filters input { flex: 1; min-width: 220px; }
+.pulse-ui .pa-filters :is(input, select):focus { border-color: var(--role-accent, #916525); outline: 3px solid #f3e6cc; }
+.pulse-ui .pa-pager { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 14px; font-size: 11px; color: var(--muted); }
+.pulse-ui .data-table tbody tr.pa-row-link { cursor: pointer; }
+.pulse-ui .data-table tbody tr.pa-row-link:hover { background: #fdfaf3; }
+.pulse-ui .data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Loading, errors, field errors */
+.pulse-ui .pa-skeleton { height: 120px; border-radius: 18px; background: linear-gradient(90deg, #f1eee8, #faf8f4, #f1eee8); background-size: 200% 100%; animation: pa-shimmer 1.2s infinite; }
+.pulse-ui .pa-error { color: #bd5a43; font-weight: 700; }
+.pulse-ui .stack > .notice { margin: 0; }
+@keyframes pa-shimmer { to { background-position: -200% 0; } }
