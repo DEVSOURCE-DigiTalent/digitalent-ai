@@ -110,7 +110,7 @@ public class PlatformAdminController : ControllerBase
 
     // ----- Users -------------------------------------------------------------------------------
 
-    // GET api/v1/platform/users?search=&role=&status=&organizationId=&pageIndex=&pageSize=
+    // GET api/v1/platform/users?search=&role=&status=&trial=&organizationId=&pageIndex=&pageSize=
     [HttpGet("users")]
     [HasPermission(Permissions.Platform.UserRead)]
     public async Task<ActionResult<ApiResponse<GetPlatformUsersUseCaseOutput>>> GetUsers(

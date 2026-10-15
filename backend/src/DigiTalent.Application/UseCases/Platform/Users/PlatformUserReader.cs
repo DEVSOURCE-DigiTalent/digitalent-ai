@@ -16,7 +16,7 @@ public static class PlatformUserReader
     /// Accounts matching the list filters, as a query (filtered, sorted and paged in the database). Role filters on
     /// the highest persisted role, like <see cref="PlatformUserItem.Role"/>; LEARNER = no persisted role.
     /// </summary>
-    public static IQueryable<User> Query(IApplicationDbContext context, GetPlatformUsersUseCaseInput input)
+    public static IQueryable<User> Query(IApplicationDbContext context, GetPlatformUsersUseCaseInput input, DateTimeOffset now)
     {
         var users = context.Users.AsNoTracking();
 
@@ -56,6 +56,15 @@ public static class PlatformUserReader
             }
         }
 
+        if (!string.IsNullOrWhiteSpace(input.Trial))
+        {
+            // Trial follow-up: the trial that ends first comes first
+            users = PlatformUserTrials.Filter(context, users, input.Trial.Trim().ToUpperInvariant(), now);
+            return users
+                .OrderBy(u => context.UserSubscriptions.Where(s => s.UserId == u.Id).Min(s => s.TrialEndsAt))
+                .ThenBy(u => u.Email);
+        }
+
         // Accounts of an organization grouped by organization name, personal accounts last
         return users
             .OrderBy(u => context.Organizations.Where(o => o.Id == u.OrganizationId).Select(o => o.Name).FirstOrDefault() ?? "~")
@@ -63,8 +72,12 @@ public static class PlatformUserReader
     }
 
     /// <summary>The given accounts with role, organization and placement, in the order of <paramref name="userIds"/>.</summary>
-    public static async Task<List<PlatformUserItem>> ReadAsync(IApplicationDbContext context, IReadOnlyCollection<Guid> userIds)
+    public static async Task<List<PlatformUserItem>> ReadAsync(IApplicationDbContext context, IReadOnlyCollection<Guid> userIds, DateTimeOffset? now = null)
     {
+        var at = now ?? DateTimeOffset.UtcNow;
+        var subscriptions = (await context.UserSubscriptions.AsNoTracking().Where(s => userIds.Contains(s.UserId)).ToListAsync())
+            .GroupBy(s => s.UserId)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(s => s.CreatedAt).First());
         var rows = await (
             from user in context.Users.AsNoTracking()
             join organization in context.Organizations on user.OrganizationId equals organization.Id into organizations
@@ -102,6 +115,12 @@ public static class PlatformUserReader
         {
             var codes = roles.Where(x => x.UserId == r.Id).Select(x => x.Code).Distinct().ToList();
             var employee = employees.FirstOrDefault(e => e.UserId == r.Id);
+            var subscription = subscriptions.GetValueOrDefault(r.Id);
+            var trialEnded = subscription != null && PlatformUserTrials.IsEnded(subscription, at);
+            var trialState = subscription == null ? null
+                : PlatformUserTrials.IsActive(subscription, at) ? PlatformUserTrials.Active
+                : trialEnded ? PlatformUserTrials.Ended
+                : null;
             return new PlatformUserItem
             {
                 Id = r.Id,
@@ -118,6 +137,10 @@ public static class PlatformUserReader
                 LockedUntil = r.LockedUntil,
                 LastLoginAt = r.LastLoginAt,
                 CreatedAt = r.CreatedAt,
+                PlanCode = subscription == null ? null : trialEnded ? PlatformUserTrials.FreePlan : subscription.PlanCode,
+                TrialState = trialState,
+                TrialStartedAt = subscription?.TrialStartedAt,
+                TrialEndsAt = subscription?.TrialEndsAt,
             };
         }).ToList();
     }

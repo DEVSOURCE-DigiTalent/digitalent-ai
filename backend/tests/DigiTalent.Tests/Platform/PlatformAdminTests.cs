@@ -243,7 +243,7 @@ public class PlatformAdminTests
         context.UserRoles.Add(new UserRole { UserId = owner.Id, RoleId = (await context.Roles.SingleAsync(r => r.Code == Roles.Employee)).Id });
         context.Users.Add(new User { Email = "learner@gmail.com", DisplayName = "Học viên cá nhân", PasswordHash = "x" });
         await context.SaveChangesAsync();
-        var list = new GetPlatformUsersUseCase(context);
+        var list = new GetPlatformUsersUseCase(context, TimeProvider.System);
 
         var employees = await list.ExecuteAsync(new GetPlatformUsersUseCaseInput { Role = Roles.Employee });
         employees.Items.Select(u => u.Email).Should().Equal("an@northstar.vn", "binh@northstar.vn", "chi@northstar.vn");
@@ -299,6 +299,48 @@ public class PlatformAdminTests
         var detail = await new GetPlatformOrganizationDetailUseCase(context).ExecuteAsync(new GetPlatformOrganizationDetailUseCaseInput { Id = organization.Id });
         detail.CoursesInUse.Select(c => (c.CourseCode, c.Participants, c.Completed)).Should().Equal(("A1-F", 2, 1), ("A2-F", 1, 0), ("A1-I", 1, 0));
         detail.CoursesInUse[0].LevelName.Should().Be("Cơ bản");
+    }
+
+    [Fact]
+    public async Task UsersListFollowsPersonalTrials_SoonestEndFirst()
+    {
+        await using var context = await CreateSeededContextAsync();
+        var now = DateTimeOffset.UtcNow;
+        User Learner(string email, string status, DateTimeOffset? trialEnds)
+        {
+            var user = new User { Email = email, DisplayName = email, PasswordHash = "x" };
+            context.Users.Add(user);
+            context.UserSubscriptions.Add(new UserSubscription
+            {
+                UserId = user.Id, PlanCode = "IND_PLUS", Status = status, StartedAt = now.AddDays(-6),
+                TrialStartedAt = trialEnds == null ? null : trialEnds.Value.AddDays(-7), TrialEndsAt = trialEnds,
+            });
+            return user;
+        }
+        Learner("week@gmail.com", UserSubscriptionStatuses.Trialing, now.AddDays(5));
+        Learner("soon@gmail.com", UserSubscriptionStatuses.Trialing, now.AddHours(20));
+        Learner("over@gmail.com", UserSubscriptionStatuses.Trialing, now.AddDays(-3)); // lazily expired
+        Learner("paid@gmail.com", UserSubscriptionStatuses.Active, null);
+        await context.SaveChangesAsync();
+        var list = new GetPlatformUsersUseCase(context, TimeProvider.System);
+
+        var active = await list.ExecuteAsync(new GetPlatformUsersUseCaseInput { Trial = "ACTIVE" });
+        active.Items.Select(u => u.Email).Should().Equal("soon@gmail.com", "week@gmail.com");
+        active.Items.Should().OnlyContain(u => u.TrialState == PlatformUserTrials.Active && u.PlanCode == "IND_PLUS");
+
+        var soon = await list.ExecuteAsync(new GetPlatformUsersUseCaseInput { Trial = "ending_soon" });
+        soon.Items.Should().ContainSingle(u => u.Email == "soon@gmail.com");
+
+        var ended = await list.ExecuteAsync(new GetPlatformUsersUseCaseInput { Trial = "ENDED" });
+        ended.Items.Should().ContainSingle(u => u.Email == "over@gmail.com" && u.TrialState == PlatformUserTrials.Ended && u.PlanCode == "IND_FREE");
+
+        var all = await list.ExecuteAsync(new GetPlatformUsersUseCaseInput());
+        all.Trials.Active.Should().Be(2);
+        all.Trials.EndingSoon.Should().Be(1);
+        all.Trials.Ended.Should().Be(1);
+        all.Items.Single(u => u.Email == "paid@gmail.com").TrialState.Should().BeNull();
+
+        new GetPlatformUsersUseCaseValidator().Validate(new GetPlatformUsersUseCaseInput { Trial = "SOMETIMES" }).IsValid.Should().BeFalse();
     }
 
     [Fact]
