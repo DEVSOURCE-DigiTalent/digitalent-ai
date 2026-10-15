@@ -85,6 +85,8 @@ public class PulseCourseWorkspace
         PulseBlockReason.PriorLevelRequired => "Cần được quản lý duyệt khóa ở cấp trước của cùng lĩnh vực.",
         PulseBlockReason.PreviousModuleRequired => "Hãy đạt câu hỏi ôn tập của mô đun trước.",
         PulseBlockReason.SlidesNotViewed => "Hãy đọc hết các trang nội dung của mô đun trước khi làm câu hỏi ôn tập.",
+        PulseBlockReason.ReviewRequired => "Hãy mở lại trang nội dung của câu chưa đúng trước khi làm lần tiếp theo.",
+        PulseBlockReason.QuizChanged => "Bộ câu hỏi đã đổi sang lần làm mới. Hãy tải lại trang để làm với câu hỏi mới.",
         _ => "Bạn chưa thể thực hiện thao tác này.",
     };
 

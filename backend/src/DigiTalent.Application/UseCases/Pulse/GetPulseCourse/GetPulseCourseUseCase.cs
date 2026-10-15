@@ -45,7 +45,7 @@ public class GetPulseCourseUseCase : IUseCase<GetPulseCourseUseCaseInput, GetPul
                 EstimatedMinutes = m.EstimatedMinutes,
                 SlideCount = m.Slides.Count,
                 HasQuiz = m.QuizAssessmentId.HasValue,
-                QuizQuestionCount = m.QuizQuestionCount,
+                QuizQuestionCount = Math.Min(PulseRules.ModuleQuizDrawSize, m.QuizQuestionCount),
                 Viewed = progress?.Viewed ?? false,
                 Passed = progress?.Passed(m) ?? false,
                 Unlocked = previousPassed,
