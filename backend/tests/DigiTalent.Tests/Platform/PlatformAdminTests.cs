@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Application.UseCases.Platform.Framework;
 using DigiTalent.Application.UseCases.Platform.Organizations;
 using DigiTalent.Application.UseCases.Platform.Overview;
 using DigiTalent.Application.UseCases.Platform.Users;
@@ -90,6 +91,33 @@ public class PlatformAdminTests
         var intermediate = await context.PlatformCourses.SingleAsync(c => c.Code == "A1-I");
         intermediate.Title.Should().Be(Tt02Catalog.Domains[0].CourseTitles[1]);
         intermediate.Level.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task FrameworkPublishRequiresADraftChangeAndBumpsVersion()
+    {
+        await using var context = await CreateSeededContextAsync();
+        var framework = await context.PlatformFrameworks.SingleAsync(f => f.Code == PlatformCatalog.Tt02FrameworkCode);
+        var publish = new PublishPlatformFrameworkUseCase(context, Admin(), Mock.Of<IAuditService>(), TimeProvider.System);
+
+        var noChange = () => publish.ExecuteAsync(new PublishPlatformFrameworkUseCaseInput { FrameworkId = framework.Id });
+        (await noChange.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("NO_DRAFT_CHANGES");
+
+        var d6 = await context.PlatformFrameworkDomains.SingleAsync(d => d.Code == "TT02_D6");
+        var save = new SavePlatformFrameworkDraftUseCase(context, Mock.Of<IAuditService>());
+        var draft = await save.ExecuteAsync(new SavePlatformFrameworkDraftUseCaseInput
+        {
+            FrameworkId = framework.Id,
+            Domains = { new PlatformFrameworkDomainDraftInput { DomainId = d6.Id, Description = "Dùng AI có trách nhiệm và kiểm chứng kết quả trước khi bàn giao." } },
+        });
+        draft.HasDraft.Should().BeTrue();
+        draft.CurrentVersionNo.Should().Be(1);
+
+        var published = await publish.ExecuteAsync(new PublishPlatformFrameworkUseCaseInput { FrameworkId = framework.Id, ReleaseNote = "Cập nhật năng lực AI" });
+        published.CurrentVersionNo.Should().Be(2);
+        published.HasDraft.Should().BeFalse();
+        published.Domains.Single(d => d.Code == "TT02_D6").PublishedDescription.Should().StartWith("Dùng AI có trách nhiệm");
+        published.Releases.Select(r => r.VersionNo).Should().Equal(2, 1);
     }
 
     [Fact]
