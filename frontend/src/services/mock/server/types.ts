@@ -233,6 +233,15 @@ export interface InternalCourseRecord {
   updatedAt: string;
 }
 
+/** Ceiling matrix (OW-05 "Lý thuyết trần nhà"): levels 0–3 per competency category id. */
+export interface CapabilityCeilingRecord {
+  organization: Record<string, number>;
+  /** A department's own ceilings; a category missing here inherits the organization ceiling. */
+  departments: Record<string, Record<string, number>>;
+  updatedAt: string;
+  updatedByName: string;
+}
+
 export interface OrgData {
   organizationId: string;
   settings: OrgSettingsRecord;
@@ -258,6 +267,8 @@ export interface OrgData {
   openAttempts?: OpenAttemptRecord[];
   taskFiles?: TaskFileRecord[];
   internalCourses?: InternalCourseRecord[];
+  /** Absent = not saved yet (the organization ceiling shown is the suggestion). */
+  capabilityCeilings?: CapabilityCeilingRecord;
   /** Plan changes made after sign-up (seeded organizations have their plan in code). */
   subscriptionOverride?: {
     planCode: string;
