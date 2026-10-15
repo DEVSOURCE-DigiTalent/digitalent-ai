@@ -50,7 +50,7 @@ export function PlatformCommercePage() {
                         <Pill tone={SALES_STATUS[c.salesStatus]?.tone}>{SALES_STATUS[c.salesStatus]?.label}</Pill>
                       </td>
                       <td>
-                        <Link to={`/platform/curriculum/${c.code}`}>v{c.versionNo}.0 ↗</Link>
+                        <Link to={`/platform/versions/${c.versionNo}/courses/${c.id}`}>v{c.versionNo} ↗</Link>
                       </td>
                     </tr>
                   ))}

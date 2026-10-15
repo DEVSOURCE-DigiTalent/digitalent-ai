@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { platformAdminService, type PageQuery, type PlatformCourseDraft } from '@/services/platform-admin.service';
+import { platformAdminService, type PageQuery, type TrialFilter } from '@/services/platform-admin.service';
 
 /** React Query hooks of the Platform Admin console (Pulse). Every mutation refreshes the whole console cache. */
 export const PLATFORM_ADMIN_KEY = ['platform-admin'] as const;
@@ -13,47 +13,9 @@ function useInvalidateConsole() {
 export const usePlatformOverview = () =>
   useQuery({ queryKey: [...KEY, 'overview'], queryFn: platformAdminService.getOverview });
 
-export const usePlatformFramework = () =>
-  useQuery({ queryKey: [...KEY, 'framework'], queryFn: platformAdminService.getFramework });
-
-export function useSaveFrameworkDraft() {
-  const invalidate = useInvalidateConsole();
-  return useMutation({ mutationFn: platformAdminService.saveFrameworkDraft, onSuccess: invalidate });
-}
-
-export function usePublishFramework() {
-  const invalidate = useInvalidateConsole();
-  return useMutation({ mutationFn: (note?: string) => platformAdminService.publishFramework(note), onSuccess: invalidate });
-}
-
+/** Published courses with prices and seat totals (frameworks and versions: use-platform-catalog). */
 export const usePlatformCourses = () =>
   useQuery({ queryKey: [...KEY, 'courses'], queryFn: platformAdminService.getCourses });
-
-export const usePlatformCourse = (code: string | undefined) =>
-  useQuery({
-    queryKey: [...KEY, 'course', code],
-    queryFn: () => platformAdminService.getCourse(code!),
-    enabled: Boolean(code),
-  });
-
-export function useSaveCourseDraft(code: string) {
-  const invalidate = useInvalidateConsole();
-  return useMutation({ mutationFn: (draft: PlatformCourseDraft) => platformAdminService.saveCourseDraft(code, draft), onSuccess: invalidate });
-}
-
-export function usePublishCourse(code: string) {
-  const invalidate = useInvalidateConsole();
-  return useMutation({ mutationFn: () => platformAdminService.publishCourse(code), onSuccess: invalidate });
-}
-
-export function useAddCourseQuestion(code: string) {
-  const invalidate = useInvalidateConsole();
-  return useMutation({
-    mutationFn: (question: { questionText: string; correctAnswer: string; explanation: string }) =>
-      platformAdminService.addCourseQuestion(code, question),
-    onSuccess: invalidate,
-  });
-}
 
 export const usePlatformOrganizations = (query: PageQuery & { status?: string; stage?: string }) =>
   useQuery({
@@ -82,7 +44,7 @@ export function useOrganizationAction(id: string) {
   });
 }
 
-export const usePlatformUsers = (query: PageQuery & { role?: string; status?: string; organizationId?: string }) =>
+export const usePlatformUsers = (query: PageQuery & { role?: string; status?: string; trial?: TrialFilter | ''; organizationId?: string }) =>
   useQuery({
     queryKey: [...KEY, 'users', query],
     queryFn: () => platformAdminService.getUsers(query),
