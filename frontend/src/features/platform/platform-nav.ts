@@ -1,18 +1,18 @@
-/** Sidebar of the Platform Admin console, with the glyphs of the Pulse mock (docs/ui-redesign/16 §12.6). */
+/** Sidebar of the Platform Admin console (Platform Admin v2, docs/specs/2026-10-15-platform-admin-v2.md). */
 export const PLATFORM_NAV = [
   { to: '/platform/dashboard', label: 'Tổng quan', glyph: '◫' },
-  { to: '/platform/framework', label: 'Khung chuẩn', glyph: '◇' },
-  { to: '/platform/curriculum', label: 'Chương trình học', glyph: '▤' },
-  { to: '/platform/organizations', label: 'Tổ chức', glyph: '♙' },
+  { to: '/platform/frameworks', label: 'Khung chuẩn', glyph: '◇' },
+  { to: '/platform/versions', label: 'Phiên bản khóa học', glyph: '⚓' },
+  { to: '/platform/organizations', label: 'Tổ chức', glyph: '▦' },
   { to: '/platform/users', label: 'Người dùng', glyph: '♙' },
-  { to: '/platform/commerce', label: 'Đơn hàng và giá', glyph: '▥' },
+  { to: '/platform/commerce', label: 'Đơn giá', glyph: '▥' },
   { to: '/platform/audit-log', label: 'Nhật ký kiểm tra', glyph: '◎' },
 ] as const;
 
-/** Header links of the mock's platform workspace. */
+/** Header links of the platform workspace. */
 export const PLATFORM_TOP_LINKS = [
   { to: '/platform/dashboard', label: 'Nền tảng' },
-  { to: '/platform/curriculum', label: 'Chương trình học' },
+  { to: '/platform/versions', label: 'Phiên bản khóa học' },
   { to: '/platform/organizations', label: 'Khách hàng' },
   { to: '/platform/audit-log', label: 'Nhật ký' },
 ] as const;

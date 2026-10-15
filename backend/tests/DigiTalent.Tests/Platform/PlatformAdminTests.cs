@@ -1,7 +1,6 @@
 using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
-using DigiTalent.Application.UseCases.Platform.Courses;
 using DigiTalent.Application.UseCases.Platform.Framework;
 using DigiTalent.Application.UseCases.Platform.Organizations;
 using DigiTalent.Application.UseCases.Platform.Overview;
@@ -98,75 +97,26 @@ public class PlatformAdminTests
     public async Task FrameworkPublishRequiresADraftChangeAndBumpsVersion()
     {
         await using var context = await CreateSeededContextAsync();
-        var publish = new PublishPlatformFrameworkUseCase(context, Admin(), Mock.Of<IAuditService>());
+        var framework = await context.PlatformFrameworks.SingleAsync(f => f.Code == PlatformCatalog.Tt02FrameworkCode);
+        var publish = new PublishPlatformFrameworkUseCase(context, Admin(), Mock.Of<IAuditService>(), TimeProvider.System);
 
-        var noChange = () => publish.ExecuteAsync(new PublishPlatformFrameworkUseCaseInput());
-        await noChange.Should().ThrowAsync<BadRequestException>();
+        var noChange = () => publish.ExecuteAsync(new PublishPlatformFrameworkUseCaseInput { FrameworkId = framework.Id });
+        (await noChange.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("NO_DRAFT_CHANGES");
 
+        var d6 = await context.PlatformFrameworkDomains.SingleAsync(d => d.Code == "TT02_D6");
         var save = new SavePlatformFrameworkDraftUseCase(context, Mock.Of<IAuditService>());
         var draft = await save.ExecuteAsync(new SavePlatformFrameworkDraftUseCaseInput
         {
-            Domains = { new PlatformFrameworkDomainDraftInput { Code = "TT02_D6", Description = "Dùng AI có trách nhiệm và kiểm chứng kết quả trước khi bàn giao." } },
+            FrameworkId = framework.Id,
+            Domains = { new PlatformFrameworkDomainDraftInput { DomainId = d6.Id, Description = "Dùng AI có trách nhiệm và kiểm chứng kết quả trước khi bàn giao." } },
         });
         draft.HasDraft.Should().BeTrue();
-        draft.CurrentVersion.Should().Be(1);
+        draft.CurrentVersionNo.Should().Be(1);
 
-        var published = await publish.ExecuteAsync(new PublishPlatformFrameworkUseCaseInput { ReleaseNote = "Cập nhật năng lực AI" });
-        published.CurrentVersion.Should().Be(2);
+        var published = await publish.ExecuteAsync(new PublishPlatformFrameworkUseCaseInput { FrameworkId = framework.Id, ReleaseNote = "Cập nhật năng lực AI" });
+        published.CurrentVersionNo.Should().Be(2);
         published.HasDraft.Should().BeFalse();
         published.Domains.Single(d => d.Code == "TT02_D6").PublishedDescription.Should().StartWith("Dùng AI có trách nhiệm");
-    }
-
-    [Fact]
-    public async Task BasicCourseCannotHaveAPrice()
-    {
-        await using var context = await CreateSeededContextAsync();
-        var save = new SavePlatformCourseDraftUseCase(context, Mock.Of<IAuditService>());
-
-        var act = () => save.ExecuteAsync(new SavePlatformCourseDraftUseCaseInput
-        {
-            Code = "A1-F",
-            Title = "Dữ liệu và thông tin · Cơ bản",
-            Outcome = "Áp dụng dữ liệu ở mức cơ bản với minh chứng truy vết được.",
-            PricePerSeat = 100_000,
-            SalesStatus = Statuses.PlatformCourseSales.Open,
-        });
-
-        (await act.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("BASIC_COURSE_IS_FREE");
-    }
-
-    [Fact]
-    public async Task CoursePublishAppliesDraftAndPublishesDraftQuestions()
-    {
-        await using var context = await CreateSeededContextAsync();
-        var audit = Mock.Of<IAuditService>();
-        await new SavePlatformCourseDraftUseCase(context, audit).ExecuteAsync(new SavePlatformCourseDraftUseCaseInput
-        {
-            Code = "a1-i",
-            Title = "Dữ liệu và thông tin · Trung cấp (bản mới)",
-            Outcome = "Phân tích dữ liệu nhiều nguồn và nêu được độ tin cậy của kết luận.",
-            PricePerSeat = 450_000,
-            SalesStatus = Statuses.PlatformCourseSales.Paused,
-        });
-        var withQuestion = await new AddPlatformCourseQuestionUseCase(context, Admin(), audit).ExecuteAsync(new AddPlatformCourseQuestionUseCaseInput
-        {
-            Code = "A1-I",
-            QuestionText = "Khi hai nguồn dữ liệu mâu thuẫn, bạn kiểm tra điều gì trước tiên?",
-            CorrectAnswer = "Thời điểm và cách thu thập của từng nguồn.",
-            Explanation = "Hai nguồn chỉ so được khi cùng định nghĩa và cùng kỳ.",
-        });
-        withQuestion.Course.VersionNo.Should().Be(1);
-        withQuestion.Course.HasDraft.Should().BeTrue();
-        withQuestion.Course.DraftQuestionCount.Should().Be(1);
-
-        var published = await new PublishPlatformCourseUseCase(context, Admin(), audit).ExecuteAsync(new PublishPlatformCourseUseCaseInput { Code = "A1-I" });
-
-        published.Course.VersionNo.Should().Be(2);
-        published.Course.HasDraft.Should().BeFalse();
-        published.Course.PricePerSeat.Should().Be(450_000);
-        published.Course.SalesStatus.Should().Be(Statuses.PlatformCourseSales.Paused);
-        published.Course.PublishedQuestionCount.Should().Be(2);
-        published.Course.DraftQuestionCount.Should().Be(0);
         published.Releases.Select(r => r.VersionNo).Should().Equal(2, 1);
     }
 
@@ -265,7 +215,7 @@ public class PlatformAdminTests
         });
         await context.SaveChangesAsync();
 
-        var overview = await new GetPlatformOverviewUseCase(context).ExecuteAsync(new GetPlatformOverviewUseCaseInput());
+        var overview = await new GetPlatformOverviewUseCase(context, TimeProvider.System).ExecuteAsync(new GetPlatformOverviewUseCaseInput());
 
         overview.OrganizationCount.Should().Be(2);
         overview.TrialOrganizationCount.Should().Be(1);
@@ -274,7 +224,9 @@ public class PlatformAdminTests
         overview.SeatsPurchased.Should().Be(3);
         overview.Revenue.Should().Be(course.PricePerSeat * 3);
         overview.CourseCount.Should().Be(18);
-        overview.FrameworkVersion.Should().Be(1);
+        overview.CurrentVersionNo.Should().Be(1);
+        overview.FrameworkCount.Should().Be(1);
+        overview.QuestionCount.Should().BeGreaterThan(0);
         trial.Should().NotBeNull();
     }
 
@@ -291,7 +243,7 @@ public class PlatformAdminTests
         context.UserRoles.Add(new UserRole { UserId = owner.Id, RoleId = (await context.Roles.SingleAsync(r => r.Code == Roles.Employee)).Id });
         context.Users.Add(new User { Email = "learner@gmail.com", DisplayName = "Học viên cá nhân", PasswordHash = "x" });
         await context.SaveChangesAsync();
-        var list = new GetPlatformUsersUseCase(context);
+        var list = new GetPlatformUsersUseCase(context, TimeProvider.System);
 
         var employees = await list.ExecuteAsync(new GetPlatformUsersUseCaseInput { Role = Roles.Employee });
         employees.Items.Select(u => u.Email).Should().Equal("an@northstar.vn", "binh@northstar.vn", "chi@northstar.vn");
@@ -305,6 +257,90 @@ public class PlatformAdminTests
         var secondPage = await list.ExecuteAsync(new GetPlatformUsersUseCaseInput { Search = "STUDIO", PageIndex = 2, PageSize = 2 });
         secondPage.TotalItems.Should().Be(5);
         secondPage.Items.Select(u => u.Email).Should().Equal("chi@northstar.vn", "lead@northstar.vn");
+    }
+
+    [Fact]
+    public async Task OrganizationsShowThePlan_TheCoursesInUseByLevel_AndWhoTakesPart()
+    {
+        await using var context = await CreateSeededContextAsync();
+        var organization = await AddOrganizationAsync(context);
+        context.Subscriptions.Add(new Subscription
+        {
+            OrganizationId = organization.Id, PlanCode = "BUSINESS", PlanName = "Gói Doanh nghiệp", Status = "ACTIVE", Cycle = "year", SeatLimit = 50,
+            RenewsAt = DateTimeOffset.UtcNow.AddMonths(6),
+        });
+        var department = new Department { OrganizationId = organization.Id, Code = "OPS", Name = "Vận hành" };
+        context.Departments.Add(department);
+        var employees = Enumerable.Range(1, 3)
+            .Select(i => new Employee { OrganizationId = organization.Id, DepartmentId = department.Id, EmployeeCode = $"E{i}", FullName = $"Nhân viên {i}" })
+            .ToList();
+        context.Employees.AddRange(employees);
+        var courses = new[] { "A1-F", "A2-F", "A1-I", "AI-OFFICE" }
+            .ToDictionary(code => code, code => new Course { OrganizationId = organization.Id, Code = code, Title = code, Status = "PUBLISHED" });
+        context.Courses.AddRange(courses.Values);
+        void Enroll(Employee employee, string code, string status) =>
+            context.Enrollments.Add(new Enrollment { EmployeeId = employee.Id, CourseId = courses[code].Id, Status = status });
+        Enroll(employees[0], "A1-F", Statuses.Enrollment.Completed);
+        Enroll(employees[1], "A1-F", Statuses.Enrollment.InProgress);
+        Enroll(employees[1], "A2-F", Statuses.Enrollment.InProgress);
+        Enroll(employees[0], "A1-I", Statuses.Enrollment.NotStarted);
+        Enroll(employees[2], "A1-I", Statuses.Enrollment.Cancelled); // cancelled: not taking part
+        Enroll(employees[2], "AI-OFFICE", Statuses.Enrollment.InProgress); // not a platform course
+        await context.SaveChangesAsync();
+
+        var list = await new GetPlatformOrganizationsUseCase(context).ExecuteAsync(new GetPlatformOrganizationsUseCaseInput());
+        var item = list.Items.Single(o => o.Id == organization.Id);
+        item.PlanName.Should().Be("Gói Doanh nghiệp");
+        item.PlanCycle.Should().Be("year");
+        item.SeatLimit.Should().Be(50);
+        item.CoursesInUseByLevel.Should().Equal(2, 1, 0);
+        item.ParticipantCount.Should().Be(2);
+
+        var detail = await new GetPlatformOrganizationDetailUseCase(context).ExecuteAsync(new GetPlatformOrganizationDetailUseCaseInput { Id = organization.Id });
+        detail.CoursesInUse.Select(c => (c.CourseCode, c.Participants, c.Completed)).Should().Equal(("A1-F", 2, 1), ("A2-F", 1, 0), ("A1-I", 1, 0));
+        detail.CoursesInUse[0].LevelName.Should().Be("Cơ bản");
+    }
+
+    [Fact]
+    public async Task UsersListFollowsPersonalTrials_SoonestEndFirst()
+    {
+        await using var context = await CreateSeededContextAsync();
+        var now = DateTimeOffset.UtcNow;
+        User Learner(string email, string status, DateTimeOffset? trialEnds)
+        {
+            var user = new User { Email = email, DisplayName = email, PasswordHash = "x" };
+            context.Users.Add(user);
+            context.UserSubscriptions.Add(new UserSubscription
+            {
+                UserId = user.Id, PlanCode = "IND_PLUS", Status = status, StartedAt = now.AddDays(-6),
+                TrialStartedAt = trialEnds == null ? null : trialEnds.Value.AddDays(-7), TrialEndsAt = trialEnds,
+            });
+            return user;
+        }
+        Learner("week@gmail.com", UserSubscriptionStatuses.Trialing, now.AddDays(5));
+        Learner("soon@gmail.com", UserSubscriptionStatuses.Trialing, now.AddHours(20));
+        Learner("over@gmail.com", UserSubscriptionStatuses.Trialing, now.AddDays(-3)); // lazily expired
+        Learner("paid@gmail.com", UserSubscriptionStatuses.Active, null);
+        await context.SaveChangesAsync();
+        var list = new GetPlatformUsersUseCase(context, TimeProvider.System);
+
+        var active = await list.ExecuteAsync(new GetPlatformUsersUseCaseInput { Trial = "ACTIVE" });
+        active.Items.Select(u => u.Email).Should().Equal("soon@gmail.com", "week@gmail.com");
+        active.Items.Should().OnlyContain(u => u.TrialState == PlatformUserTrials.Active && u.PlanCode == "IND_PLUS");
+
+        var soon = await list.ExecuteAsync(new GetPlatformUsersUseCaseInput { Trial = "ending_soon" });
+        soon.Items.Should().ContainSingle(u => u.Email == "soon@gmail.com");
+
+        var ended = await list.ExecuteAsync(new GetPlatformUsersUseCaseInput { Trial = "ENDED" });
+        ended.Items.Should().ContainSingle(u => u.Email == "over@gmail.com" && u.TrialState == PlatformUserTrials.Ended && u.PlanCode == "IND_FREE");
+
+        var all = await list.ExecuteAsync(new GetPlatformUsersUseCaseInput());
+        all.Trials.Active.Should().Be(2);
+        all.Trials.EndingSoon.Should().Be(1);
+        all.Trials.Ended.Should().Be(1);
+        all.Items.Single(u => u.Email == "paid@gmail.com").TrialState.Should().BeNull();
+
+        new GetPlatformUsersUseCaseValidator().Validate(new GetPlatformUsersUseCaseInput { Trial = "SOMETIMES" }).IsValid.Should().BeFalse();
     }
 
     [Fact]

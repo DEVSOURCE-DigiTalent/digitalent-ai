@@ -5,18 +5,18 @@ import { Footer, LoadError, Loading } from '../components/pulse-ui';
 import { formatNumber, initials } from '../components/pulse-format';
 
 const ROUTES = [
-  { to: '/platform/framework', label: 'Khung năng lực chung' },
-  { to: '/platform/curriculum', label: 'Chương trình học' },
+  { to: '/platform/frameworks', label: 'Khung chuẩn' },
+  { to: '/platform/versions', label: 'Phiên bản khóa học' },
   { to: '/platform/audit-log', label: 'Nhật ký kiểm tra' },
 ];
 
 const RESPONSIBILITIES = [
-  ['01', 'Công bố nguồn chuẩn', 'Duy trì chuẩn sáu lĩnh vực làm trần chung cho mọi doanh nghiệp.'],
-  ['02', 'Phát hành khóa học', 'Quản lý bản nháp chương trình học, câu hỏi, giá và các phiên bản đã công bố.'],
+  ['01', 'Duy trì khung chuẩn', 'Thêm khung và lĩnh vực năng lực, mô tả rõ từng lĩnh vực trước khi công bố.'],
+  ['02', 'Công bố phiên bản khóa học', 'Thêm, sửa khóa học trong bản nháp (mô đun, nội dung, câu hỏi, bài cuối khóa) rồi công bố để chuyển neo.'],
   ['03', 'Hỗ trợ tài khoản', 'Xem tổ chức và người dùng; ghi lý do khi thực hiện thao tác hỗ trợ nhạy cảm.'],
 ] as const;
 
-/** PA-11 · Hồ sơ của tôi (mock `#/profile` of the Platform Admin): identity, scope, responsibilities and numbers. */
+/** SHR-01 · Hồ sơ của tôi (mock `#/profile` of the Platform Admin): identity, scope, responsibilities and numbers. */
 export function PlatformProfilePage() {
   const user = useCurrentUser((s) => s.user);
   const overview = usePlatformOverview();
@@ -36,7 +36,7 @@ export function PlatformProfilePage() {
               <strong>Nền tảng Digital AI</strong>
             </div>
           </div>
-          <p>Duy trì khung Digital AI chung, phát hành chương trình học và ghi lý do cho thao tác hỗ trợ khách hàng.</p>
+          <p>Duy trì khung chuẩn, công bố phiên bản khóa học và ghi lý do cho thao tác hỗ trợ khách hàng.</p>
           <div className="profile-hero-actions">
             {ROUTES.map((route) => (
               <Link key={route.to} className="btn btn-outline btn-small" to={route.to}>{route.label}</Link>
@@ -54,7 +54,7 @@ export function PlatformProfilePage() {
         <Fact label="Không gian làm việc" value="Vận hành nền tảng" />
         <Fact label="Phạm vi" value="Chuẩn chung và hỗ trợ khách hàng" />
         <Fact label="Email đăng nhập" value={user?.email ?? '—'} />
-        <Fact label="Khung chuẩn" value={overview.data ? `Đã công bố v${overview.data.frameworkVersion}.0` : '—'} />
+        <Fact label="Phiên bản khóa học đang dùng" value={overview.data?.currentVersionNo ? `⚓ v${overview.data.currentVersionNo}` : '—'} />
       </section>
 
       {overview.isLoading && <Loading />}
@@ -85,7 +85,7 @@ export function PlatformProfilePage() {
           <span className="mini-label">Phạm vi quyết định của bạn</span>
           <h2>Một nguồn chuẩn, nhiều khung doanh nghiệp.</h2>
           <p>Quản trị nền tảng công bố trần Digital AI và khóa chuẩn. Chủ doanh nghiệp thiết kế mục tiêu các cấp trong giới hạn này.</p>
-          <Link className="btn btn-outline btn-small" to="/platform/framework">Mở khung năng lực chung →</Link>
+          <Link className="btn btn-outline btn-small" to="/platform/frameworks">Mở khung chuẩn →</Link>
         </section>
       </div>
       <p className="profile-preview-note">Mọi thao tác hỗ trợ nhạy cảm (cấp suất, tạm ngưng tổ chức, khóa tài khoản) đều cần lý do và được ghi vào nhật ký kiểm tra.</p>

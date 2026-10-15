@@ -9,6 +9,7 @@ import { PLATFORM_NAV, PLATFORM_TOP_LINKS } from './platform-nav';
 import pulseMark from './assets/pulse-mark.svg';
 import './pulse-mock.css';
 import './pulse-admin.css';
+import './pulse-catalog.css';
 
 /** Header + navy sidebar of the Pulse mock's Platform Admin workspace (`app-shell role-admin`). */
 function PulseAdminShell() {

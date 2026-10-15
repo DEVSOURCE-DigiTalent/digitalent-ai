@@ -3,22 +3,47 @@ using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.UseCases.Platform.Common;
 using DigiTalent.Application.UseCases.Platform.Organizations;
 using DigiTalent.Domain.Constants;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Platform.Overview;
 
 public class GetPlatformOverviewUseCase : IUseCase<GetPlatformOverviewUseCaseInput, GetPlatformOverviewUseCaseOutput>
 {
-    private readonly IApplicationDbContext _context;
+    private static readonly TimeSpan EndingSoon = TimeSpan.FromDays(2);
 
-    public GetPlatformOverviewUseCase(IApplicationDbContext context) => _context = context;
+    private readonly IApplicationDbContext _context;
+    private readonly TimeProvider _clock;
+
+    public GetPlatformOverviewUseCase(IApplicationDbContext context, TimeProvider clock)
+    {
+        _context = context;
+        _clock = clock;
+    }
 
     public async Task<GetPlatformOverviewUseCaseOutput> ExecuteAsync(GetPlatformOverviewUseCaseInput input)
     {
+        var now = _clock.GetUtcNow();
         var organizations = await PlatformOrganizationReader.ReadAllAsync(_context);
         var courses = await PlatformCatalogReader.ReadCoursesAsync(_context);
-        var domains = await _context.PlatformFrameworkDomains.AsNoTracking().ToListAsync();
-        var frameworkVersion = await _context.PlatformFrameworkReleases.Select(r => (int?)r.VersionNo).MaxAsync() ?? 0;
+        var frameworks = await _context.PlatformFrameworks.AsNoTracking()
+            .Where(f => f.Status != Statuses.PlatformFramework.Archived).ToListAsync();
+        var frameworkIds = frameworks.Select(f => f.Id).ToList();
+        var domains = await _context.PlatformFrameworkDomains.AsNoTracking()
+            .Where(d => frameworkIds.Contains(d.FrameworkId) && d.Status == Statuses.PlatformFrameworkDomain.Active).ToListAsync();
+        var versions = await _context.PlatformCatalogVersions.AsNoTracking()
+            .Where(v => v.Status != Statuses.PlatformCatalogVersion.Retired).ToListAsync();
+        var current = versions.FirstOrDefault(v => v.Status == Statuses.PlatformCatalogVersion.Current);
+        var draft = versions.FirstOrDefault(v => v.Status == Statuses.PlatformCatalogVersion.Draft);
+        var draftChanges = draft == null
+            ? new List<string>()
+            : await _context.PlatformCatalogCourses.AsNoTracking()
+                .Where(c => c.VersionId == draft.Id && c.ChangeKind != PlatformCatalog.ChangeKind.Unchanged)
+                .Select(c => c.ChangeKind).ToListAsync();
+        var trials = await _context.UserSubscriptions.AsNoTracking()
+            .Where(s => s.Status == UserSubscriptionStatuses.Trialing && s.TrialEndsAt != null && s.TrialEndsAt > now)
+            .Select(s => s.TrialEndsAt!.Value)
+            .ToListAsync();
         var paid = organizations.Count(o => o.Stage == PlatformOrganizationStages.Paid);
 
         return new GetPlatformOverviewUseCaseOutput
@@ -31,14 +56,20 @@ public class GetPlatformOverviewUseCase : IUseCase<GetPlatformOverviewUseCaseInp
             UserCount = await _context.Users.CountAsync(),
             EmployeeCount = organizations.Sum(o => o.EmployeeCount),
             LockedUserCount = await _context.Users.CountAsync(u => u.Status == Statuses.User.Locked && u.LockedUntil == null),
-            FrameworkVersion = frameworkVersion,
+            TrialUserCount = trials.Count,
+            TrialEndingSoonCount = trials.Count(end => end - now <= EndingSoon),
+            FrameworkCount = frameworks.Count,
+            DraftFrameworkCount = frameworks.Count(f => f.Status == Statuses.PlatformFramework.Draft),
             FrameworkHasDraft = domains.Any(d => d.DraftDescription != d.PublishedDescription),
             DomainCount = domains.Count,
+            CurrentVersionNo = current?.VersionNo,
+            CurrentVersionPublishedAt = current?.PublishedAt,
+            DraftVersionNo = draft?.VersionNo,
+            DraftNewCourseCount = draftChanges.Count(c => c == PlatformCatalog.ChangeKind.New),
+            DraftEditedCourseCount = draftChanges.Count(c => c == PlatformCatalog.ChangeKind.Edited),
             CourseCount = courses.Count,
             PausedCourseCount = courses.Count(c => c.SalesStatus == Statuses.PlatformCourseSales.Paused),
-            CoursesWithDraft = courses.Count(c => c.HasDraft || c.DraftQuestionCount > 0),
-            PublishedQuestionCount = courses.Sum(c => c.PublishedQuestionCount),
-            DraftQuestionCount = courses.Sum(c => c.DraftQuestionCount),
+            QuestionCount = courses.Sum(c => c.QuestionCount),
             SeatsPurchased = courses.Sum(c => c.SeatsPurchased),
             SeatsGranted = courses.Sum(c => c.SeatsGranted),
             Revenue = courses.Sum(c => c.Revenue),
