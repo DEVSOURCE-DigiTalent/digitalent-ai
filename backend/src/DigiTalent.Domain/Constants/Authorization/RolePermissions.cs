@@ -184,10 +184,20 @@ public static class RolePermissions
         [Roles.PlatformAdmin] = new[]
         {
             Permissions.Account.ViewOwn,
+            Permissions.Notification.ReadOwn,
+            Permissions.Notification.MarkRead,
             Permissions.Account.UpdateOwnProfile,
             Permissions.Account.ChangeOwnPassword,
             Permissions.System.AuditLogReadSystem,
             Permissions.System.SystemConfigManage,
+
+            Permissions.Platform.OrganizationRead,
+            Permissions.Platform.OrganizationManage,
+            Permissions.Platform.UserRead,
+            Permissions.Platform.UserManage,
+            Permissions.Platform.CatalogRead,
+            Permissions.Platform.CatalogManage,
+            Permissions.Platform.CommerceRead,
         },
 
         [Roles.Employee] = new[]

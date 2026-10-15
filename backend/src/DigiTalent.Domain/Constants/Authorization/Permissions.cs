@@ -181,6 +181,21 @@ public static class Permissions
         public const string SignalRConnect = "signalr.connect";
     }
 
+    /// <summary>
+    /// Platform Admin console (Pulse redesign): organizations, users, the Digital AI standard,
+    /// the 18 standard courses and seat orders across every organization.
+    /// </summary>
+    public static class Platform
+    {
+        public const string OrganizationRead = "platform.organization.read";
+        public const string OrganizationManage = "platform.organization.manage";
+        public const string UserRead = "platform.user.read";
+        public const string UserManage = "platform.user.manage";
+        public const string CatalogRead = "platform.catalog.read";
+        public const string CatalogManage = "platform.catalog.manage";
+        public const string CommerceRead = "platform.commerce.read";
+    }
+
     public static class System
     {
         public const string FileUploadMaterial = "file.upload_material";

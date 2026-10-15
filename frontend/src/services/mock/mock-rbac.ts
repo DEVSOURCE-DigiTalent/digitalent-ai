@@ -180,10 +180,20 @@ const MATRIX: Record<Role, string[]> = {
   [ROLES.OWNER]: OWNER,
   [ROLES.MANAGER]: MANAGER,
   [ROLES.EMPLOYEE]: EMPLOYEE,
-  [ROLES.PLATFORM_ADMIN]: [],
+  // Platform Admin console (Pulse) — same keys as the backend default matrix
+  [ROLES.PLATFORM_ADMIN]: [
+    'platform.organization.read',
+    'platform.organization.manage',
+    'platform.user.read',
+    'platform.user.manage',
+    'platform.catalog.read',
+    'platform.catalog.manage',
+    'platform.commerce.read',
+    'audit_log.read_system',
+  ],
 };
 
-/** Permissions for a role set (PLATFORM_ADMIN bypasses checks, so it carries none). */
+/** Permissions for a role set. */
 export function permissionsForRoles(roles: readonly string[]): string[] {
   return [...new Set(roles.flatMap((role) => MATRIX[role as Role] ?? []))];
 }
