@@ -7,12 +7,12 @@ import { useLogout } from '@/hooks/use-auth';
 import { useNotifications } from '@/hooks/use-platform';
 import { ROLES, normalizeRoles } from '@/lib/roles';
 import { initials } from '../lib/labels';
-import { PULSE_PATHS } from '../lib/paths';
+import { PULSE_PATHS, isExamPath } from '../lib/paths';
 
 /** Mục điều hướng chính của nhân viên chỉ có Hôm nay / Lộ trình / Thực hành (§3). */
 const NAV = [
   { to: PULSE_PATHS.today, label: 'Hôm nay', end: true, match: [PULSE_PATHS.today] },
-  { to: PULSE_PATHS.path, label: 'Lộ trình', match: [PULSE_PATHS.path, PULSE_PATHS.baseline, '/enterprise/me/courses'] },
+  { to: PULSE_PATHS.path, label: 'Lộ trình', match: [PULSE_PATHS.path, '/enterprise/me/courses'] },
   { to: PULSE_PATHS.practice, label: 'Thực hành', match: [PULSE_PATHS.practice] },
 ];
 
@@ -44,8 +44,8 @@ export function PulseHeader() {
     };
   }, [open]);
 
-  // Bài cuối khóa thuộc "Thực hành" dù đường dẫn nằm dưới khóa học.
-  const onFinal = pathname.endsWith('/final');
+  // Bài đánh giá trước khi học và bài cuối khóa thuộc "Thực hành" dù đường dẫn nằm dưới khóa học.
+  const onFinal = isExamPath(pathname);
   const isActive = (match: string[], end?: boolean) =>
     onFinal
       ? match.includes(PULSE_PATHS.practice)

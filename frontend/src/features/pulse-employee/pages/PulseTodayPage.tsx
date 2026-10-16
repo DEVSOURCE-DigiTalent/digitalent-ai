@@ -1,133 +1,76 @@
-import { ArrowUpRight, Compass, Target, UserX } from 'lucide-react';
-import journeyArt from '@/assets/pulse/learning-journey-abstract.webp';
+import { useState } from 'react';
+import { BriefcaseBusiness, ChevronDown, Clock, Compass, Flag, UserX } from 'lucide-react';
 import { usePulseOverview } from '@/hooks/use-pulse';
-import type { PulseOverview } from '@/services/pulse.service';
-import { RoadmapTile } from '../components/blocks';
-import { Bar, Empty, Eyebrow, LoadError, Mini, PageSkeleton, Pill, PuLink } from '../components/ui';
-import { levelName, levelShort, pulseErrorMessage } from '../lib/labels';
+import type { PulseCourseSummary, PulseDomain, PulseOverview } from '@/services/pulse.service';
+import { formatDate } from '@/lib/utils';
+import { CapNote, CourseAction, CourseRow, DomainTrack, RoadmapPlan } from '../components/roadmap';
+import { Bar, Empty, Eyebrow, LoadError, Mini, PageSkeleton, PuLink } from '../components/ui';
+import { domainSummary, initials, levelName, pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 
-/** Hôm nay — một bước có ý nghĩa: khóa nên học tiếp, thực hành và mục tiêu vị trí (§3, pulse-reuse.js employeeHome). */
+/**
+ * Hôm nay (EM-01): vị trí và người đánh giá, lộ trình doanh nghiệp đặt (chỉ tên khóa và cấp độ), việc nên làm tiếp,
+ * rồi các lĩnh vực cần học — mở một lĩnh vực ra các khóa với trạng thái, % đã học và bài đánh giá trước khi học.
+ */
 export function PulseTodayPage() {
   const { data, isLoading, error, refetch } = usePulseOverview();
-  if (isLoading) return <PageSkeleton blocks={[420, 260, 380]} />;
+  const [open, setOpen] = useState<string | null | undefined>(undefined);
+  if (isLoading) return <PageSkeleton blocks={[240, 420, 520]} />;
   if (error || !data) return <LoadError message={pulseErrorMessage(error, 'Không tải được không gian học của bạn.')} onRetry={() => refetch()} />;
   if (!data.hasPosition || !data.hasTargets) return <NoPath overview={data} />;
 
-  const { person, assessed, nextCourse: next, stats } = data;
-  const position = person.positionName ?? 'vị trí của bạn';
-  const nextDomain = next ? data.domains.find((d) => d.categoryId === next.categoryId) : undefined;
-  const nextProgress = next && next.moduleCount ? (next.modulesPassed / next.moduleCount) * 100 : 0;
-  const targetDomains = data.domains.filter((d) => d.target > 0);
-
-  const heroAction = !assessed
-    ? { to: PULSE_PATHS.baseline, label: 'Làm bài đầu vào →' }
-    : next
-      ? { to: PULSE_PATHS.course(next.courseId), label: next.enrollmentId ? 'Tiếp tục khóa học →' : 'Xem khóa tiếp theo →' }
-      : { to: PULSE_PATHS.path, label: 'Xem lộ trình →' };
+  const domains = data.domains.filter((d) => d.target > 0);
+  const firstActive = data.nextSteps[0]?.categoryId ?? domains[0]?.categoryId ?? null;
+  const openId = open === undefined ? firstActive : open;
 
   return (
-    <div className="pu-today">
-      <section className="pu-hero">
-        <div>
-          <Eyebrow>Không gian học của {person.fullName}</Eyebrow>
-          <h1>Tạo một bước tiến có ý nghĩa <em>hôm nay.</em></h1>
-          <p>
-            {!assessed
-              ? `Bắt đầu với bài kiểm tra đầu vào. Kết quả được so với mục tiêu của vị trí ${position} trước khi lộ trình khóa học mở.`
-              : next && nextDomain
-                ? `Tiếp tục bài học để đưa năng lực ${nextDomain.name.toLowerCase()} của bạn gần hơn với mục tiêu vị trí ${position}.`
-                : `Bạn đã đi hết các khóa hiện có trong lộ trình ${position}. Xem lại kết quả và áp dụng vào công việc.`}
-          </p>
-          <div className="pu-row">
-            <PuLink to={heroAction.to}>{heroAction.label}</PuLink>
-            <PuLink to={PULSE_PATHS.path} kind="outline">Khám phá lộ trình của tôi</PuLink>
-          </div>
-        </div>
-        <div className="pu-art">
-          <img src={journeyArt} alt="Các bệ kính nối với nhau bằng một lộ trình học màu xanh" />
-          <div className="pu-art-note">
-            <strong>{assessed ? (next ? 'Bước tiếp theo đã sẵn sàng' : 'Lộ trình đã hoàn thành') : 'Bắt đầu bằng mức khởi điểm'}</strong>
-            <small>{assessed && next ? `${next.domainName} · ${levelName(next.tier)}` : 'Mức hiện tại → mục tiêu vị trí'}</small>
-          </div>
-        </div>
+    <div className="pu-home">
+      <section className="pu-home-top">
+        <Greeting overview={data} />
+        <RoleCard overview={data} />
       </section>
 
-      {data.latestOutcome && <LatestOutcome overview={data} />}
-
-      <div className="pu-intro">
-        <div>
-          <Eyebrow>Một hành động rõ ràng</Eyebrow>
-          <h2>Việc gì quan trọng hôm nay?</h2>
-        </div>
-        <Pill>Vị trí {position}</Pill>
-      </div>
-
-      <div className="pu-cards">
-        <article className="pu-continue">
-          <Mini>{!assessed ? 'Bắt đầu hành trình học' : next?.enrollmentId ? 'Tiếp tục từ bước bạn dừng' : 'Bước tiếp theo trên lộ trình'}</Mini>
-          <h3>{!assessed ? 'Tìm mức khởi điểm của bạn' : next ? next.title : 'Lộ trình hiện tại đã xong'}</h3>
-          <p>
-            {!assessed
-              ? 'Hoàn thành bài kiểm tra đầu vào trước khi lộ trình khóa học của vị trí mở.'
-              : next
-                ? `${next.enrollmentId ? `Đã qua ${next.modulesPassed}/${next.moduleCount} mô đun. ` : ''}${next.tier === 1 ? 'Khóa Cơ bản mở miễn phí toàn bộ.' : next.access === 'PREVIEW' ? 'Cấp độ này cần suất học do chủ doanh nghiệp phân bổ.' : 'Suất học của bạn đã sẵn sàng.'}`
-                : 'Mọi khóa trong mục tiêu vị trí đã được duyệt hoặc đang chờ chấm.'}
-          </p>
-          <Bar value={nextProgress} label="Tiến độ khóa học" />
-          <PuLink to={!assessed ? PULSE_PATHS.baseline : next ? PULSE_PATHS.course(next.courseId) : PULSE_PATHS.outcomes} kind="light" small>
-            {!assessed ? 'Làm bài đầu vào →' : next ? (next.enrollmentId ? 'Mở khóa học →' : 'Xem khóa học →') : 'Xem kết quả đã xác nhận →'}
-          </PuLink>
+      <section className="pu-home-plan">
+        <article className="pu-plan-card" aria-labelledby="pu-plan-title">
+          <header>
+            <div>
+              <Mini>Lộ trình doanh nghiệp đặt</Mini>
+              <h2 id="pu-plan-title">{data.stats.pathCourses} khóa cho vị trí {data.person.positionName ?? 'của bạn'}</h2>
+              <p>Mỗi hàng là một lĩnh vực, mỗi cột là một cấp độ. Tiến độ và kết quả của bạn ở danh sách lĩnh vực bên dưới.</p>
+            </div>
+            <PuLink to={PULSE_PATHS.path} kind="outline" small>Xem chi tiết lộ trình →</PuLink>
+          </header>
+          <RoadmapPlan overview={data} caption={`Lộ trình doanh nghiệp đặt cho vị trí ${data.person.positionName ?? ''}: tên khóa theo lĩnh vực và cấp độ`} />
+          <PlanFoot overview={data} />
         </article>
+        <NextSteps overview={data} />
+      </section>
 
-        <article className="pu-practice-card">
-          <span className="pu-card-symbol" aria-hidden><ArrowUpRight size={18} /></span>
-          <Mini>Thực hành</Mini>
-          <h3>Trình bày cách tạo ra kết quả.</h3>
-          <p>
-            {stats.inReview
-              ? `${stats.inReview} bài cuối khóa đang chờ quản lý chấm. Quyết định và lý do sẽ hiện ở mục Thực hành.`
-              : 'Nộp minh chứng theo ba tiêu chí hiển thị sẵn. Quản lý phòng ban đưa ra quyết định cuối cùng.'}
-          </p>
-          <PuLink to={PULSE_PATHS.practice} kind="outline" small>Xem bài cuối khóa ↗</PuLink>
-        </article>
-
-        <article className="pu-target-card">
-          <span className="pu-card-symbol" aria-hidden><Target size={18} /></span>
-          <Mini>Mục tiêu vị trí của bạn</Mini>
-          <h3>{assessed ? (stats.gapCount ? `Còn ${stats.gapCount} khoảng cách năng lực cần cải thiện.` : 'Không còn khoảng cách đã đo.') : 'Mục tiêu của bạn đã sẵn sàng.'}</h3>
-          <p>{person.departmentName ? `Phòng ${person.departmentName} giới hạn mục tiêu vị trí. ` : ''}Những mức chưa kiểm tra vẫn ở trạng thái chờ, không bị tính là khoảng cách.</p>
-          <PuLink to={PULSE_PATHS.path} kind="outline" small>So sánh hiện tại → mục tiêu ↗</PuLink>
-        </article>
-      </div>
-
-      <section className="pu-roadmap" aria-labelledby="pu-roadmap-title">
+      <section aria-labelledby="pu-domains-title" className="pu-stack" style={{ gap: 14 }}>
         <div className="pu-section-head">
           <div>
-            <Mini>Lộ trình học của bạn</Mini>
-            <h2 id="pu-roadmap-title">Biết mức hiện tại và mục tiêu.</h2>
-            <p>{position}{person.departmentName ? ` · ${person.departmentName}` : ''}. Mỗi chỉ dấu so mức đã xác nhận với mục tiêu vị trí; mức đầu vào vẫn được lưu.</p>
+            <Eyebrow>Lĩnh vực cần học</Eyebrow>
+            <h2 id="pu-domains-title">{domains.length} lĩnh vực, {data.stats.pathCourses} khóa trong lộ trình</h2>
+            <p>Mở một lĩnh vực để xem các khóa, trạng thái và phần đã học của bạn.</p>
           </div>
-          <PuLink to={PULSE_PATHS.path} kind="outline">Xem toàn bộ lộ trình →</PuLink>
+          <span className="pu-count">{data.stats.approvedPathCourses}/{data.stats.pathCourses} khóa đã đạt</span>
         </div>
-        <div className="pu-roadmap-grid">
-          {targetDomains.map((domain) => <RoadmapTile key={domain.categoryId} domain={domain} assessed={assessed} />)}
-        </div>
-        <div className="pu-roadmap-footer">
-          <span>
-            {assessed
-              ? `${stats.gapCount} khoảng cách đã xác nhận · ${stats.pendingCount} lĩnh vực chờ đo · ${stats.metCount} đã đạt`
-              : 'Làm bài kiểm tra đầu vào để thấy khoảng cách đã đo.'}
-          </span>
-          {assessed
-            ? <PuLink to={PULSE_PATHS.path} kind="outline" small>Xem khóa học theo thứ tự →</PuLink>
-            : <PuLink to={PULSE_PATHS.baseline} small>Làm bài đầu vào →</PuLink>}
+        <div className="pu-domains">
+          {domains.map((domain) => (
+            <DomainItem
+              key={domain.categoryId}
+              domain={domain}
+              overview={data}
+              open={openId === domain.categoryId}
+              onToggle={() => setOpen(openId === domain.categoryId ? null : domain.categoryId)}
+            />
+          ))}
         </div>
       </section>
 
       <nav className="pu-more-links" aria-label="Thêm cho hành trình của bạn">
         <span>Thêm cho hành trình của bạn</span>
-        <PuLink to={PULSE_PATHS.activity} kind="outline" small>Hoạt động</PuLink>
+        <PuLink to={PULSE_PATHS.practice} kind="outline" small>Bài đã nộp</PuLink>
         <PuLink to={PULSE_PATHS.outcomes} kind="outline" small>Kết quả đã xác nhận</PuLink>
         <PuLink to={PULSE_PATHS.profile} kind="outline" small>Hồ sơ của tôi</PuLink>
       </nav>
@@ -135,30 +78,154 @@ export function PulseTodayPage() {
   );
 }
 
-function LatestOutcome({ overview }: { overview: PulseOverview }) {
-  const outcome = overview.latestOutcome!;
+const firstName = (fullName: string) => fullName.trim().split(/\s+/).pop() || fullName;
+
+const today = () => new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit' }).format(new Date());
+
+function Greeting({ overview }: { overview: PulseOverview }) {
+  const { person, stats } = overview;
+  const started = stats.approvedPathCourses > 0 || overview.courses.some((c) => c.enrollmentId || c.preAssessment);
+  const position = person.positionName ?? 'của bạn';
   return (
-    <section className={`pu-outcome-band${outcome.gained ? ' advanced' : ''}`} aria-label="Kết quả mới nhất được quản lý duyệt">
-      <div>
-        <Mini>Kết quả mới nhất được quản lý duyệt</Mini>
-        <h2>
-          {outcome.domainName}
-          <strong>{levelShort(outcome.baseline)} → {levelShort(outcome.verified)}</strong>
-        </h2>
+    <div className="pu-greeting">
+      <Eyebrow>Hôm nay · {today()}</Eyebrow>
+      {started ? (
+        <>
+          <h1>Chào {firstName(person.fullName)}, lộ trình <em>{position}</em> của bạn đã đạt {stats.approvedPathCourses}/{stats.pathCourses} khóa.</h1>
+          <p>Mỗi khóa bắt đầu bằng bài đánh giá trước khi học: đạt thì khóa được công nhận ngay, chưa đạt thì bạn học khóa đó rồi làm bài cuối khóa.</p>
+        </>
+      ) : (
+        <>
+          <h1>Chào {firstName(person.fullName)}, lộ trình <em>{position}</em> của bạn đã sẵn sàng.</h1>
+          <p>
+            Doanh nghiệp đặt {stats.pathCourses} khóa cho vị trí của bạn. Mỗi khóa có một bài đánh giá trước khi học: đạt thì khóa được
+            công nhận, không cần học; chưa đạt thì bạn học khóa đó.
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+function RoleCard({ overview }: { overview: PulseOverview }) {
+  const { person, reviewer, stats } = overview;
+  return (
+    <aside className="pu-role-card" aria-label="Vị trí và người đánh giá">
+      <div className="pu-role-row">
+        <span className="pu-role-icon" aria-hidden><BriefcaseBusiness size={20} /></span>
+        <div>
+          <Mini>Vị trí của bạn</Mini>
+          <strong>{person.positionName ?? 'Chưa gán vị trí'}</strong>
+          <span>{[person.departmentName && `Phòng ${person.departmentName}`, person.organizationName].filter(Boolean).join(' · ')}</span>
+        </div>
+      </div>
+      <div className="pu-role-row">
+        <span className="pu-role-icon reviewer" aria-hidden>{initials(reviewer?.name)}</span>
+        <div>
+          <Mini>Người đánh giá quá trình của bạn</Mini>
+          <strong>{reviewer?.name ?? 'Chưa có người chấm'}</strong>
+          <span>
+            {reviewer
+              ? `${reviewer.role}. Chấm bài đánh giá trước khi học và bài cuối khóa của bạn.`
+              : 'Phòng ban của bạn chưa có quản lý. Hãy liên hệ chủ doanh nghiệp.'}
+          </span>
+        </div>
+      </div>
+      <div className="pu-role-row">
+        <span className="pu-role-icon plan" aria-hidden><Flag size={20} /></span>
+        <div>
+          <Mini>Lộ trình doanh nghiệp đặt</Mini>
+          <span>
+            {stats.requiredCompetencies} năng lực của Khung năng lực số TT02/2025, thành {stats.pathCourses} khóa trong lộ trình
+            {stats.optionalCourses ? ` và ${stats.optionalCourses} khóa tùy chọn` : ''}.
+          </span>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function PlanFoot({ overview }: { overview: PulseOverview }) {
+  const { stats } = overview;
+  return (
+    <footer className="pu-plan-foot">
+      <span>{stats.requiredCompetencies} năng lực · Khung năng lực số TT02/2025</span>
+      {stats.optionalCourses > 0 && <span>+{stats.optionalCourses} khóa tùy chọn trong trần của phòng ban</span>}
+      {stats.aboveCeilingCourses > 0 && <span>{stats.aboveCeilingCourses} khóa vị trí yêu cầu nhưng phòng ban chưa mở</span>}
+    </footer>
+  );
+}
+
+const stepKicker = (course: PulseCourseSummary) =>
+  course.slotStatus === 'FINAL_READY' ? 'Bài cuối khóa · đã học 100%'
+    : course.slotStatus === 'IN_PROGRESS' ? `Đang học · ${course.progressPercent}%`
+    : course.slotStatus === 'PRE_ASSESSMENT' ? `Đánh giá trước khi học · ${levelName(course.tier)}`
+    : `Cần học · ${levelName(course.tier)}`;
+
+function NextSteps({ overview }: { overview: PulseOverview }) {
+  const steps = overview.nextSteps;
+  const waiting = overview.courses.filter((c) => c.slotStatus === 'PRE_REVIEW' || c.slotStatus === 'IN_REVIEW');
+  const fresh = steps.length > 0 && overview.stats.approvedPathCourses === 0 && steps.every((s) => s.slotStatus === 'PRE_ASSESSMENT');
+  const reviewer = overview.reviewer?.name;
+  return (
+    <aside className="pu-next" aria-labelledby="pu-next-title">
+      <Mini>Việc tiếp theo</Mini>
+      <h2 id="pu-next-title">
+        {steps.length === 0 ? 'Không còn việc đang mở' : fresh ? 'Bắt đầu bằng bài đánh giá' : 'Việc nên làm tiếp'}
+      </h2>
+      {fresh && (
         <p>
-          Bài cuối khóa {levelName(outcome.tier)} đã được duyệt.{' '}
-          {outcome.gained
-            ? `Mức đã xác nhận của bạn đạt ${levelShort(outcome.verified)}; mục tiêu vị trí là L${outcome.target}.`
-            : `Khóa xác nhận mức ${levelShort(outcome.tier)}, vẫn nằm trong mức đã xác nhận của bạn. Mức đầu vào giữ nguyên ${levelShort(outcome.baseline)}.`}
+          {overview.stats.preAssessmentsOpen} bài đánh giá Cơ bản đang mở. Làm theo thứ tự bạn muốn; bài làm được ghi hình rồi
+          {reviewer ? ` ${reviewer}` : ' người chấm'} chấm.
         </p>
-      </div>
-      <div>
-        <Pill tone={outcome.gained ? 'green' : ''}>
-          {outcome.gained ? `+${outcome.verified - outcome.baseline} mức kể từ bài đầu vào` : 'Hoàn thành khóa · đã xác nhận mức'}
-        </Pill>
-        <PuLink to={PULSE_PATHS.path} kind="outline" small>Xem lộ trình năng lực →</PuLink>
-      </div>
-    </section>
+      )}
+      {steps.length === 0 && (
+        <p>{waiting.length ? 'Các bài đã nộp đang chờ chấm. Kết quả sẽ hiện ở đây.' : 'Mọi khóa trong lộ trình đã đạt hoặc đang chờ mở.'}</p>
+      )}
+      {steps.map((course) => (
+        <div className="pu-next-item" key={course.courseId}>
+          <small>{stepKicker(course)}</small>
+          <strong>{course.code} · {course.title}</strong>
+          {course.slotStatus === 'IN_PROGRESS' && <Bar value={course.progressPercent} label={`Tiến độ học ${course.code}`} />}
+          <CourseAction course={course} tone="dark" />
+        </div>
+      ))}
+      {waiting.length > 0 && (
+        <p className="pu-next-wait">
+          <Clock size={15} aria-hidden style={{ flex: 'none', marginTop: 2 }} />
+          <span>
+            Đang chờ {reviewer ?? 'người chấm'} chấm:{' '}
+            {waiting.map((c) => `${c.code} ${c.title}`).join('; ')}
+            {waiting.length === 1 && waiting[0]!.preAssessment ? `, nộp ${formatDate(waiting[0]!.preAssessment.submittedAt)}` : ''}.
+          </span>
+        </p>
+      )}
+    </aside>
+  );
+}
+
+function DomainItem({ domain, overview, open, onToggle }: { domain: PulseDomain; overview: PulseOverview; open: boolean; onToggle: () => void }) {
+  const courses = overview.courses.filter((c) => c.categoryId === domain.categoryId).sort((a, b) => a.tier - b.tier);
+  const bodyId = `pu-domain-${domain.categoryId}`;
+  const code = courses[0]?.code.split('-')[0] ?? domain.code;
+  return (
+    <article className="pu-domain" data-open={open}>
+      <button type="button" className="pu-domain-head" aria-expanded={open} aria-controls={bodyId} onClick={onToggle}>
+        <span className="pu-domain-num">{pad2(domain.number)}</span>
+        <span className="pu-domain-title">
+          <strong>{code} · {domain.name}</strong>
+          <small>{domainSummary(domain, overview.courses)}</small>
+        </span>
+        <DomainTrack courses={courses} />
+        <span className="pu-domain-chevron" aria-hidden><ChevronDown size={16} /></span>
+      </button>
+      {open && (
+        <div className="pu-domain-body" id={bodyId}>
+          <CapNote domain={domain} overview={overview} />
+          {courses.map((course) => <CourseRow key={course.courseId} course={course} overview={overview} />)}
+        </div>
+      )}
+    </article>
   );
 }
 
@@ -166,10 +233,10 @@ function NoPath({ overview }: { overview: PulseOverview }) {
   return (
     <Empty
       icon={overview.hasPosition ? <Compass size={24} /> : <UserX size={24} />}
-      title={overview.hasPosition ? 'Vị trí của bạn chưa có mục tiêu năng lực' : 'Bạn chưa được gán vị trí công việc'}
+      title={overview.hasPosition ? 'Vị trí của bạn chưa có lộ trình' : 'Bạn chưa được gán vị trí công việc'}
     >
       {overview.hasPosition
-        ? `Chủ doanh nghiệp chưa công bố mục tiêu năng lực cho vị trí ${overview.person.positionName ?? ''}. Lộ trình học sẽ mở khi khung năng lực được công bố.`
+        ? `Chủ doanh nghiệp chưa công bố yêu cầu năng lực cho vị trí ${overview.person.positionName ?? ''}, hoặc chưa mở lĩnh vực nào cho phòng ban của bạn. Lộ trình sẽ hiện khi được thiết lập.`
         : 'Lộ trình học đi theo phòng ban và vị trí của bạn. Hãy liên hệ chủ doanh nghiệp để được xếp vào đúng vị trí.'}
     </Empty>
   );

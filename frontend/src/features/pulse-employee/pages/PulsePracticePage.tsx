@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ClipboardList, Paperclip, X } from 'lucide-react';
+import { Check, ClipboardList, Paperclip, ScanEye, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePulsePractice } from '@/hooks/use-pulse';
 import { useMyTasks, useSubmitMyTask, useUploadTaskAttachment } from '@/hooks/use-me';
@@ -10,10 +10,13 @@ import { formatDate, formatDateTime } from '@/lib/utils';
 import { CriteriaRubric, FinalStatusPill } from '../components/blocks';
 import { Empty, LoadError, Mini, Notice, PageHead, PageSkeleton, Pill, PuLink } from '../components/ui';
 import { btn } from '../lib/button';
-import { SUPPORT_LABELS, levelName, pulseErrorMessage, timeLeft } from '../lib/labels';
+import { PRE_LABELS, SUPPORT_LABELS, levelName, pulseErrorMessage, timeLeft } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 
-/** Thực hành: bài cuối của các khóa đang học + nhánh minh chứng thực tế riêng (§9.3, §12.1). */
+/**
+ * Bài làm: bài đánh giá trước khi học đã nộp, bài cuối của các khóa đang học (cả hai có giám sát) + nhánh minh chứng
+ * thực tế riêng (§9.3, §12.1).
+ */
 export function PulsePracticePage() {
   const practice = usePulsePractice();
   const tasks = useMyTasks();
@@ -23,15 +26,31 @@ export function PulsePracticePage() {
       <PageHead
         eyebrow="Thực hành"
         title="Trình bày điều bạn đã học."
-        description="Quản lý phòng ban chấm bài cuối của mỗi khóa. Gợi ý AI chỉ để tham khảo — quản lý đưa ra quyết định cuối cùng."
+        description="Người chấm xem bài đánh giá trước khi học và bài cuối khóa cùng bản ghi màn hình, camera và micro. Gợi ý AI chỉ để tham khảo — người chấm đưa ra quyết định cuối cùng."
       />
+
+      {practice.data && practice.data.preAssessments.length > 0 && (
+        <section aria-labelledby="pu-pre-title">
+          <div className="pu-section-head">
+            <div>
+              <Mini>Đánh giá trước khi học</Mini>
+              <h2 id="pu-pre-title">Bài bạn làm trước khi vào khóa.</h2>
+              <p>Đạt thì khóa được công nhận, không cần học. Chưa đạt thì học khóa rồi làm bài cuối khóa.</p>
+            </div>
+            <span className="pu-count">{practice.data.preAssessments.length} bài</span>
+          </div>
+          <div className="pu-final-list">
+            {practice.data.preAssessments.map((item) => <PreAssessmentItem key={item.course.courseId} item={item} />)}
+          </div>
+        </section>
+      )}
 
       <section aria-labelledby="pu-finals-title">
         <div className="pu-section-head">
           <div>
             <Mini>Bài cuối khóa</Mini>
             <h2 id="pu-finals-title">Mỗi khóa kết thúc bằng một bài làm thật.</h2>
-            <p>Đạt câu hỏi ôn tập của mọi mô đun để mở bài cuối. Mỗi khóa có tối đa hai lần nộp.</p>
+            <p>Đạt câu hỏi ôn tập của mọi mô đun để mở bài cuối. Bài làm có giám sát, mỗi khóa tối đa hai lần nộp.</p>
           </div>
         </div>
         {practice.isLoading ? (
@@ -86,13 +105,33 @@ export function PulsePracticePage() {
   );
 }
 
+function PreAssessmentItem({ item }: { item: PulsePracticeItem }) {
+  const { course } = item;
+  const status = course.preStatus;
+  const detail = status === 'PENDING' ? `Đã nộp lúc ${formatDateTime(item.lastSubmittedAt)} — chờ chấm.`
+    : status === 'PASSED' ? `Đạt${item.lastReviewedAt ? ` ngày ${formatDate(item.lastReviewedAt)}` : ''} — khóa được công nhận.`
+    : status === 'NOT_YET' ? 'Chưa đạt — học khóa rồi làm bài cuối khóa.'
+    : PRE_LABELS[status];
+  const tone = status === 'PASSED' ? 'green' : status === 'NOT_YET' ? 'coral' : '';
+  return (
+    <Link to={PULSE_PATHS.preAssessment(course.courseId)} className="pu-final-item">
+      <div className="pu-final-symbol" aria-hidden>{status === 'PASSED' ? <Check size={22} strokeWidth={3} /> : <ScanEye size={20} />}</div>
+      <div>
+        <h3>{course.title}</h3>
+        <p>{course.domainName} · {levelName(course.tier)} · {detail}</p>
+      </div>
+      <Pill tone={tone}>{PRE_LABELS[status]}</Pill>
+    </Link>
+  );
+}
+
 function FinalItem({ item }: { item: PulsePracticeItem }) {
   const { course } = item;
   const detail = (() => {
     switch (course.finalStatus) {
       case 'READY': return `Đã qua ${course.modulesPassed}/${course.moduleCount} mô đun — sẵn sàng nộp.`;
       case 'LEARNING': return `Đã qua ${course.modulesPassed}/${course.moduleCount} mô đun.`;
-      case 'PENDING': return `Đã nộp lần ${course.finalAttempts} lúc ${formatDateTime(item.lastSubmittedAt)} — chờ quản lý chấm.`;
+      case 'PENDING': return `Đã nộp lần ${course.finalAttempts} lúc ${formatDateTime(item.lastSubmittedAt)} — chờ chấm.`;
       case 'RETRY_WAIT': return `Lần nộp cuối mở lúc ${formatDateTime(item.retryOpensAt)} (${timeLeft(item.retryOpensAt)}).`;
       case 'RETRY_READY': return `Hạn nộp lần cuối ${formatDateTime(item.retryDueAt)} (${timeLeft(item.retryDueAt)}).`;
       case 'DEADLINE_MISSED': return item.supportAction ? SUPPORT_LABELS[item.supportAction] : 'Đã quá hạn nộp lần cuối — quản lý sẽ sắp xếp hỗ trợ.';

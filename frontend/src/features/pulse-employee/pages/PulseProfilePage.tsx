@@ -1,14 +1,13 @@
 import { usePulseOverview } from '@/hooks/use-pulse';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { formatDate } from '@/lib/utils';
 import { Eyebrow, LoadError, Mini, PageSkeleton, PuLink } from '../components/ui';
 import { initials, levelShort, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 
 const RESPONSIBILITIES = [
-  ['01', 'Biết mức khởi điểm của bạn', 'Hoàn thành bài kiểm tra đầu vào để xem mức hiện tại bên cạnh mục tiêu của vị trí.'],
-  ['02', 'Theo dõi lộ trình của bạn', 'Học qua mô đun, trang nội dung và câu hỏi ôn tập. Khóa Cơ bản miễn phí toàn bộ.'],
-  ['03', 'Trình bày bài làm', 'Nộp bài cuối khóa rồi xem quyết định và phản hồi của quản lý phòng ban.'],
+  ['01', 'Đánh giá trước khi học', 'Mỗi khóa bắt đầu bằng một bài đánh giá có giám sát. Đạt thì khóa được công nhận, không cần học.'],
+  ['02', 'Theo dõi lộ trình của bạn', 'Học qua mô đun, trang nội dung và câu hỏi ôn tập khi bài đánh giá chưa đạt. Khóa Cơ bản miễn phí toàn bộ.'],
+  ['03', 'Trình bày bài làm', 'Làm bài cuối khóa có giám sát rồi xem quyết định và phản hồi của người chấm.'],
 ] as const;
 
 /** Hồ sơ của tôi (§3): danh tính, phạm vi, trách nhiệm và mức hiện tại so với mục tiêu vị trí. */
@@ -18,7 +17,7 @@ export function PulseProfilePage() {
   if (isLoading) return <PageSkeleton blocks={[340, 90, 120, 360]} />;
   if (error || !data) return <LoadError message={pulseErrorMessage(error, 'Không tải được hồ sơ.')} onRetry={() => refetch()} />;
 
-  const { person, assessed, stats } = data;
+  const { person, reviewer, stats } = data;
   const name = person.fullName || user?.fullName || 'Nhân viên';
   const scope = [person.departmentName, person.positionName].filter(Boolean).join(' · ');
 
@@ -34,11 +33,11 @@ export function PulseProfilePage() {
               <strong>{scope || person.organizationName || 'Không gian học tập'}</strong>
             </div>
           </div>
-          <p>Không gian học theo mục tiêu vị trí của bạn. Bắt đầu với bài đầu vào, hoàn thành các mô đun và nộp bài cuối khóa cho quản lý.</p>
+          <p>Không gian học theo lộ trình doanh nghiệp đặt cho vị trí của bạn. Mỗi khóa bắt đầu bằng bài đánh giá trước khi học; chưa đạt thì học các mô đun rồi làm bài cuối khóa.</p>
           <div className="pu-row">
-            <PuLink to={assessed ? PULSE_PATHS.path : PULSE_PATHS.baseline} kind="on-dark" small>{assessed ? 'Lộ trình học của tôi' : 'Làm bài đầu vào'}</PuLink>
+            <PuLink to={PULSE_PATHS.path} kind="on-dark" small>Lộ trình học của tôi</PuLink>
             <PuLink to={PULSE_PATHS.today} kind="on-dark" small>Hôm nay</PuLink>
-            <PuLink to={PULSE_PATHS.practice} kind="on-dark" small>Thực hành</PuLink>
+            <PuLink to={PULSE_PATHS.practice} kind="on-dark" small>Bài đã nộp</PuLink>
           </div>
         </div>
         <div className="pu-profile-art" aria-hidden><span>{initials(name)}</span></div>
@@ -48,13 +47,13 @@ export function PulseProfilePage() {
         <div><span>Email công việc</span><strong title={person.workEmail ?? user?.email}>{person.workEmail ?? user?.email ?? '—'}</strong></div>
         <div><span>Phòng ban</span><strong>{person.departmentName ?? 'Chưa gán'}</strong></div>
         <div><span>Vị trí</span><strong>{person.positionName ?? 'Chưa gán'}</strong></div>
-        <div><span>Bài đầu vào</span><strong>{assessed ? `Hoàn thành ${formatDate(data.assessedAt)}` : 'Chưa làm'}</strong></div>
+        <div><span>Người đánh giá</span><strong>{reviewer?.name ?? 'Chưa có'}</strong></div>
       </section>
 
       <section className="pu-metrics" aria-label="Tóm tắt">
-        <div><strong>{assessed ? `${stats.gapCount} khoảng cách` : 'Chờ đầu vào'}</strong><span>Hiện tại → mục tiêu</span></div>
-        <div><strong>{stats.assignedCourses}</strong><span>Khóa học đang có</span></div>
-        <div><strong>{stats.approvedCourses}</strong><span>Khóa học đã duyệt</span></div>
+        <div><strong>{stats.approvedPathCourses}/{stats.pathCourses}</strong><span>Khóa trong lộ trình đã đạt</span></div>
+        <div><strong>{stats.learningCourses}</strong><span>Khóa đang học</span></div>
+        <div><strong>{stats.inReview}</strong><span>Bài chờ chấm</span></div>
       </section>
 
       <div className="pu-grid-2" style={{ alignItems: 'start' }}>
@@ -69,13 +68,13 @@ export function PulseProfilePage() {
         </section>
         <section className="pu-surface pu-pad" style={{ background: 'linear-gradient(145deg,#f7f5ff,#fff)' }}>
           <Mini>Lộ trình năng lực của bạn</Mini>
-          <h2 className="pu-panel-title">Mức hiện tại bên cạnh mục tiêu vị trí.</h2>
-          <p className="pu-panel-desc">Kết quả chưa có sẽ hiển thị là đang chờ, không bị tính là khoảng cách năng lực.</p>
+          <h2 className="pu-panel-title">Mức đã xác nhận bên cạnh đỉnh lộ trình.</h2>
+          <p className="pu-panel-desc">Đỉnh lộ trình là mức thấp hơn giữa mục tiêu vị trí và trần doanh nghiệp đặt cho phòng ban. Mức tăng khi một khóa được công nhận.</p>
           <div className="pu-domain-list">
-            {data.domains.filter((d) => d.target > 0).map((domain) => (
+            {data.domains.filter((d) => d.pathTop > 0).map((domain) => (
               <div key={domain.categoryId}>
                 <span>{domain.name}</span>
-                <strong>{assessed ? levelShort(domain.verified) : 'Đang chờ'} <i>→</i> L{domain.target}</strong>
+                <strong>{levelShort(domain.verified)} <i>→</i> L{domain.pathTop}</strong>
               </div>
             ))}
           </div>

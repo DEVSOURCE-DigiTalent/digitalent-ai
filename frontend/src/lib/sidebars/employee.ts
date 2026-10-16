@@ -7,7 +7,7 @@ import type { SidebarConfig } from './types';
  */
 export const EMPLOYEE_SIDEBAR: SidebarConfig = [
   { label: 'Hôm nay', icon: Compass, screenId: 'EM-01' },
-  { label: 'Lộ trình', icon: Route, screenId: 'EM-02', activeFor: ['EM-04', 'EM-05', 'EM-06'] },
+  { label: 'Lộ trình', icon: Route, screenId: 'EM-02', activeFor: ['EM-05', 'EM-06', 'EM-12'] },
   { label: 'Thực hành', icon: ClipboardCheck, screenId: 'EM-03', activeFor: ['EM-07'] },
   { label: 'Kết quả đã xác nhận', icon: Award, screenId: 'EM-08', activeFor: ['EM-09'] },
   { label: 'Hoạt động', icon: Bell, screenId: 'EM-10' },

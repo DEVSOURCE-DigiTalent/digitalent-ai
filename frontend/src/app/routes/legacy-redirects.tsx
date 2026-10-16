@@ -72,8 +72,10 @@ export const legacyRedirectRoutes: RouteObject[] = [
   { path: '/enterprise/me/courses/:id/lessons/:lessonId', element: <LegacyParamRedirect toPrefix="/enterprise/me/courses" /> },
   { path: '/enterprise/me/evidence', element: <RedirectWithQuery to="/enterprise/me/outcomes" /> },
   { path: '/enterprise/me/achievements', element: <RedirectWithQuery to="/enterprise/me/outcomes" /> },
-  { path: '/enterprise/me/assessments', element: <RedirectWithQuery to="/enterprise/me/baseline" /> },
-  { path: '/enterprise/me/assessments/*', element: <RedirectWithQuery to="/enterprise/me/baseline" /> },
+  // Bài kiểm tra đầu vào đã bỏ: mỗi khóa có bài đánh giá trước khi học riêng, mở từ trang Hôm nay.
+  { path: '/enterprise/me/baseline', element: <RedirectWithQuery to="/enterprise/me" /> },
+  { path: '/enterprise/me/assessments', element: <RedirectWithQuery to="/enterprise/me" /> },
+  { path: '/enterprise/me/assessments/*', element: <RedirectWithQuery to="/enterprise/me" /> },
   { path: '/enterprise/me/tasks', element: <RedirectWithQuery to="/enterprise/me/practice" /> },
   { path: '/enterprise/me/tasks/*', element: <RedirectWithQuery to="/enterprise/me/practice" /> },
   { path: '/enterprise/positions/grades', element: <RedirectWithQuery to="/enterprise/positions" /> },
