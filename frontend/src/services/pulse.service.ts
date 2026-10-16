@@ -278,10 +278,20 @@ export interface PulseFinalAttempt {
   supportRecordedAt?: string | null;
 }
 
+export interface PulseFinalAssignment {
+  title: string;
+  description: string;
+  expectedOutput: string;
+  track: string;
+  rubric: { title: string; points: number }[];
+  passScore: number;
+}
+
 export interface PulseFinal {
   course: PulseCourseSummary;
   domain: PulseDomain;
   positionName?: string | null;
+  assignment?: PulseFinalAssignment | null;
   criteria: PulseCriterion[];
   status: PulseFinalStatus;
   canSubmit: boolean;
@@ -384,6 +394,7 @@ export interface PulseFinalReviewItem {
   courseId: string;
   courseCode: string;
   courseTitle: string;
+  assignment?: PulseFinalAssignment | null;
   domainName?: string | null;
   tier?: number | null;
   attemptNo: number;

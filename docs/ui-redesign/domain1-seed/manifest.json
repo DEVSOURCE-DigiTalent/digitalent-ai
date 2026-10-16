@@ -1,0 +1,11 @@
+{
+  "courses": 3,
+  "contentModules": 9,
+  "coreSlides": 99,
+  "tracks": 6,
+  "roleQuestions": 225,
+  "roleAssignments": 15,
+  "uniqueImages": 135,
+  "contentVersion": "domain1.v1",
+  "sha256": "ebe2591c8091f4a9277e678f2e4930aac2091ef4ff757e897edda28694fe84f9"
+}

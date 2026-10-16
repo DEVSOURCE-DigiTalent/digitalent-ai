@@ -6,6 +6,7 @@ import journeyArt from '@/assets/pulse/learning-journey-abstract.webp';
 import { useMarkPulseModuleViewed, useMarkPulsePageViewed, usePulseModule, usePulseOverview, useSubmitPulseModuleQuiz } from '@/hooks/use-pulse';
 import type { PulseModuleDetail, PulseModuleQuiz, PulseQuizResult } from '@/services/pulse.service';
 import { RichText } from '../components/RichText';
+import { domain1SlideArt } from '../lib/domain1-art';
 import { Bar, Eyebrow, LoadError, Mini, Notice, PageSkeleton, PuLink } from '../components/ui';
 import { btn } from '../lib/button';
 import { BLOCK_MESSAGES, LESSON_TYPE_LABELS, levelName, pad2, pulseErrorMessage } from '../lib/labels';
@@ -34,6 +35,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
   const { data: overview } = usePulseOverview();
   const canRecord = !detail.sample && course.canWork;
   const slide = slides[index];
+  const slideArt = domain1SlideArt(course.code, module.index, index, slides.length);
   const isLast = index === slides.length - 1;
   const total = detail.modules.length;
   const review = detail.review && !detail.review.done ? detail.review : null;
@@ -132,7 +134,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                   <h2>{slide.title}</h2>
                   {slide.estimatedMinutes ? <small>Khoảng {slide.estimatedMinutes} phút</small> : null}
                 </div>
-                <img src={journeyArt} alt="" />
+                <img src={slideArt ?? journeyArt} alt={slideArt ? `Minh họa cho trang: ${slide.title}` : ''} />
               </div>
               <div className="pu-slide-body">
                 <RichText body={slide.contentBody} />

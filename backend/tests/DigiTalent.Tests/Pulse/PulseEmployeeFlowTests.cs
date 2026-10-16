@@ -20,6 +20,83 @@ public class PulseEmployeeFlowTests
     private const string Evidence = "Nguồn: sổ cái tháng 9. Tôi đối chiếu từng tổng số với báo cáo gốc và kết luận bước tiếp theo.";
 
     [Fact]
+    public async Task PublishedNewVersion_DoesNotReplaceContentOfExistingEnrollment()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var original = await world.Context.Courses.SingleAsync(c => c.Code == "A1-I");
+        var newer = new Course
+        {
+            OrganizationId = original.OrganizationId,
+            Code = original.Code,
+            VersionNo = original.VersionNo + 1,
+            SupersedesCourseId = original.Id,
+            Title = "Nội dung mới của khóa Trung cấp",
+            Description = "Mô tả phiên bản mới",
+            EntryLevel = original.EntryLevel,
+            Status = Statuses.Course.Published,
+            CreatedByUserId = original.CreatedByUserId,
+        };
+        world.Context.Courses.Add(newer);
+        foreach (var competency in await world.Context.CourseCompetencies.Where(c => c.CourseId == original.Id).ToListAsync())
+        {
+            world.Context.CourseCompetencies.Add(new CourseCompetency
+            {
+                CourseId = newer.Id,
+                CompetencyId = competency.CompetencyId,
+                TargetLevel = competency.TargetLevel,
+                CoverageType = competency.CoverageType,
+            });
+        }
+        await world.Context.SaveChangesAsync();
+        world.Context.ChangeTracker.Clear();
+
+        var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
+        var enrolled = (await employee.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput())).Courses.Single(c => c.Code == "A1-I");
+        enrolled.CourseId.Should().Be(original.Id);
+        enrolled.Title.Should().Be(original.Title);
+        var oldDetail = await employee.GetCourse.ExecuteAsync(new GetPulseCourseUseCaseInput { CourseId = original.Id });
+        var newRouteDetail = await employee.GetCourse.ExecuteAsync(new GetPulseCourseUseCaseInput { CourseId = newer.Id });
+        newRouteDetail.Course.CourseId.Should().Be(original.Id);
+        newRouteDetail.Modules.Select(m => m.ModuleId).Should().Equal(oldDetail.Modules.Select(m => m.ModuleId));
+
+        var manager = await world.AsAsync(PulseTestWorld.ManagerEmail);
+        var newLearnerCourse = (await manager.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput())).Courses.Single(c => c.Code == "A1-I");
+        newLearnerCourse.CourseId.Should().Be(newer.Id);
+    }
+
+    [Fact]
+    public async Task FinalAssignment_UsesCourseAndPosition_WithGeneralFallback()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var course = await world.Context.Courses.SingleAsync(c => c.Code == "A1-I");
+        var author = course.CreatedByUserId;
+        world.Context.PracticalTaskTemplates.AddRange(
+            new PracticalTaskTemplate
+            {
+                OrganizationId = course.OrganizationId, RelatedCourseId = course.Id,
+                Title = "Đề chung", Description = "Tình huống chung", ExpectedOutput = "Báo cáo",
+                GeneralMarkingCriteria = "{\"track\":\"general\",\"rubric\":[[\"Nguồn\",40],[\"Kết quả\",60]],\"pass\":70}",
+                SourceType = "MANUAL", Status = "ACTIVE", CreatedByUserId = author,
+            },
+            new PracticalTaskTemplate
+            {
+                OrganizationId = course.OrganizationId, RelatedCourseId = course.Id,
+                Title = "Đề kế toán", Description = "Đối chiếu chứng từ", ExpectedOutput = "Bảng đối chiếu",
+                GeneralMarkingCriteria = "{\"track\":\"accounting\",\"rubric\":[[\"Chứng từ\",50],[\"Phép tính\",50]],\"pass\":75}",
+                SourceType = "MANUAL", Status = "ACTIVE", CreatedByUserId = author,
+            });
+        await world.Context.SaveChangesAsync();
+        world.Context.ChangeTracker.Clear();
+        var reader = new PulseFinalReader(world.Context);
+
+        var accounting = await reader.AssignmentAsync(course.Id, "Nhân viên Kế toán");
+        accounting!.Title.Should().Be("Đề kế toán");
+        accounting.PassScore.Should().Be(75);
+        accounting.Rubric.Select(r => r.Points).Should().Equal(50, 50);
+        (await reader.AssignmentAsync(course.Id, "Vận hành"))!.Title.Should().Be("Đề chung");
+    }
+
+    [Fact]
     public async Task Baseline_ServesTargetLevelsOnly_ScoresConsecutiveLevels_AndCannotBeRetaken()
     {
         using var world = await PulseTestWorld.CreateAsync();

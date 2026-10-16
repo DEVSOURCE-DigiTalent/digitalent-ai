@@ -66,6 +66,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
 
         var now = _learner.Now;
         var attemptDtos = await _final.MapByIdAsync(rows.Select(r => r.Submission).ToList());
+        var assignments = await _final.AssignmentsAsync(rows.Select(r => r.CourseId).Distinct().ToList());
         var items = new List<PulseFinalReviewItemDto>();
         foreach (var group in rows.GroupBy(r => r.Enrollment.Id))
         {
@@ -90,6 +91,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                 CourseId = first.CourseId,
                 CourseCode = first.Code,
                 CourseTitle = first.Title,
+                Assignment = PulseFinalReader.SelectAssignment(assignments, first.CourseId, first.PositionName),
                 DomainName = catalogCourse != null ? categoryNames.GetValueOrDefault(catalogCourse.CategoryId) : null,
                 Tier = catalogCourse?.Tier,
                 AttemptNo = last.AttemptNo,

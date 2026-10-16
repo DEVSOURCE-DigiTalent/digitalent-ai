@@ -23,6 +23,7 @@ public class PulseFinalReviewItemDto
     public Guid CourseId { get; set; }
     public string CourseCode { get; set; } = string.Empty;
     public string CourseTitle { get; set; } = string.Empty;
+    public PulseFinalAssignmentDto? Assignment { get; set; }
     public string? DomainName { get; set; }
     public int? Tier { get; set; }
     public int AttemptNo { get; set; }

@@ -5,6 +5,7 @@ public class GetPulseFinalUseCaseOutput
     public PulseCourseSummaryDto Course { get; set; } = new();
     public PulseDomainDto Domain { get; set; } = new();
     public string? PositionName { get; set; }
+    public PulseFinalAssignmentDto? Assignment { get; set; }
     public List<PulseCriterionDto> Criteria { get; set; } = new();
     /// <summary>Xem PulseFinalStatus.</summary>
     public string Status { get; set; } = string.Empty;

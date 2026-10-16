@@ -12,6 +12,7 @@ import type {
 } from '@/services/pulse.service';
 import { formatDateTime } from '@/lib/utils';
 import { Empty, LoadError, Mini, Notice, PageHead, PageSkeleton, Pill, PuLink } from '@/features/pulse-employee/components/ui';
+import { RichText } from '@/features/pulse-employee/components/RichText';
 import { btn } from '@/features/pulse-employee/lib/button';
 import { SUPPORT_LABELS, levelName, pulseErrorMessage, timeLeft } from '@/features/pulse-employee/lib/labels';
 import { ManagerPage } from '../components/ManagerUi';
@@ -168,6 +169,18 @@ function ReviewCard({ item, criteria }: { item: PulseFinalReviewItem; criteria: 
         <Pill tone={pill.tone}>{pill.label}</Pill>
       </header>
       <p className="pu-panel-desc" style={{ marginTop: 10 }}>{STATUS_HINT[item.status]}</p>
+
+      {item.assignment && (
+        <section className="pu-review-assignment" aria-label="Đề và thang chấm của khóa học">
+          <Mini>Đề cuối khóa theo vị trí · {item.positionName ?? 'Chung'}</Mini>
+          <h3>{item.assignment.title}</h3>
+          <RichText body={item.assignment.description} />
+          <strong>Sản phẩm cần nộp</strong>
+          <RichText body={item.assignment.expectedOutput} />
+          <strong>Thang chấm · đạt từ {item.assignment.passScore}/100 điểm</strong>
+          <ul>{item.assignment.rubric.map((criterion) => <li key={criterion.title}>{criterion.title}: {criterion.points} điểm</li>)}</ul>
+        </section>
+      )}
 
       {latest && (
         <div className="pu-review-evidence">

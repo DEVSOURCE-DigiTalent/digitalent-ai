@@ -30,6 +30,7 @@ public class GetPulseFinalUseCase : IUseCase<GetPulseFinalUseCaseInput, GetPulse
             Course = PulseMapping.Course(state),
             Domain = PulseMapping.Domain(state.Domain),
             PositionName = snapshot.PositionName,
+            Assignment = await _final.AssignmentAsync(state.Enrollment?.CourseId ?? state.Course.CourseId, snapshot.PositionName),
             Criteria = PulseRules.FinalCriteria.ToList(),
             Status = state.FinalStatus,
             CanSubmit = state.CanWork && PulseRules.CanSubmitFinal(state.FinalStatus),

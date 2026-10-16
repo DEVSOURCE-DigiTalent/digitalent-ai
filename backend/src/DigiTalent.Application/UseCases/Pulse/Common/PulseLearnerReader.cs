@@ -41,6 +41,8 @@ public sealed class PulseCourseRef
 public sealed class PulseCourseState
 {
     public PulseCourseRef Course { get; init; } = null!;
+    /// <summary>Bản mới nhất trong danh mục; Course có thể là bản cũ của lượt học đang tiếp diễn.</summary>
+    public Guid CatalogCourseId { get; init; }
     public PulseDomainState Domain { get; init; } = null!;
     public bool InPath { get; init; }
     public string Access { get; init; } = PulseCourseAccess.FreeFull;
@@ -73,7 +75,7 @@ public sealed class PulseLearnerSnapshot
 
     public bool HasTargets => Domains.Any(d => d.Target > 0);
 
-    public PulseCourseState? FindCourse(Guid courseId) => Courses.FirstOrDefault(c => c.Course.CourseId == courseId);
+    public PulseCourseState? FindCourse(Guid courseId) => Courses.FirstOrDefault(c => c.Course.CourseId == courseId || c.CatalogCourseId == courseId);
 
     public PulseCourseState? Slot(Guid categoryId, int tier) =>
         Courses.FirstOrDefault(c => c.Course.CategoryId == categoryId && c.Course.Tier == tier);
@@ -202,6 +204,30 @@ public class PulseLearnerReader
                     .First().Enrollment,
                 StringComparer.OrdinalIgnoreCase);
 
+        // Giữ nguyên bản nội dung mà lượt học đang trỏ tới. Danh mục có thể đã xuất bản v2,
+        // nhưng việc đó không đổi bài, quiz, tiêu đề hoặc mô tả của người đang học v1.
+        var enrolledCourseIds = enrollmentByCode.Values.Select(e => e.CourseId).Distinct().ToList();
+        var enrolledCourseRows = await _context.Courses.AsNoTracking()
+            .Where(c => enrolledCourseIds.Contains(c.Id))
+            .Select(c => new { c.Id, c.Code, c.Title, c.Description, c.Purpose, c.EstimatedDurationMinutes, c.VersionNo })
+            .ToListAsync();
+        var enrolledCourseRefs = enrolledCourseRows.ToDictionary(c => c.Id, c =>
+        {
+            var catalog = courses.First(latest => latest.Code.Equals(c.Code, StringComparison.OrdinalIgnoreCase));
+            return new PulseCourseRef
+            {
+                CourseId = c.Id,
+                Code = c.Code,
+                Title = c.Title,
+                Description = c.Description,
+                Purpose = c.Purpose,
+                EstimatedMinutes = c.EstimatedDurationMinutes,
+                VersionNo = c.VersionNo,
+                CategoryId = catalog.CategoryId,
+                Tier = catalog.Tier,
+            };
+        });
+
         var enrollmentIds = enrollmentByCode.Values.Select(e => e.Id).ToList();
         var submissions = await _context.CourseFinalSubmissions
             .AsNoTracking()
@@ -256,6 +282,8 @@ public class PulseLearnerReader
             {
                 var domain = domains.First(d => d.CategoryId == course.CategoryId);
                 var enrollment = enrollmentByCode.GetValueOrDefault(course.Code);
+                var effectiveCourse = enrollment != null && enrolledCourseRefs.TryGetValue(enrollment.CourseId, out var enrolledCourse)
+                    ? enrolledCourse : course;
                 var approved = approvedCodes.Contains(course.Code);
                 var prior = courses.FirstOrDefault(c => c.CategoryId == course.CategoryId && c.Tier == course.Tier - 1);
                 var prereqApproved = course.Tier == 1 || prior == null || approvedCodes.Contains(prior.Code);
@@ -289,7 +317,8 @@ public class PulseLearnerReader
                     : PulseSlotStatus.AfterPriorLevel;
                 return new PulseCourseState
                 {
-                    Course = course,
+                    Course = effectiveCourse,
+                    CatalogCourseId = course.CourseId,
                     Domain = domain,
                     InPath = inPath,
                     Access = access,

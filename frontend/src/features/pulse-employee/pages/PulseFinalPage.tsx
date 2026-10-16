@@ -5,6 +5,7 @@ import { usePulseFinal, useSubmitPulseFinal } from '@/hooks/use-pulse';
 import type { PulseFinal, PulseFinalAttempt } from '@/services/pulse.service';
 import { formatDateTime } from '@/lib/utils';
 import { CriteriaRubric, FinalStatusPill } from '../components/blocks';
+import { RichText } from '../components/RichText';
 import { LoadError, Mini, Notice, PageHead, PageSkeleton, Pill, PuLink } from '../components/ui';
 import { btn } from '../lib/button';
 import { BLOCK_MESSAGES, SUPPORT_LABELS, levelName, pulseErrorMessage, timeLeft } from '../lib/labels';
@@ -57,11 +58,21 @@ function FinalView({ final }: { final: PulseFinal }) {
 
       <section className="pu-surface pu-pad">
         <Mini>{course.domainName} · {levelName(course.tier)} · bài cuối khóa</Mini>
-        <h2 className="pu-panel-title">Tạo ghi chú công việc có thể kiểm tra.</h2>
-        <p className="pu-panel-desc">
-          Mô tả một nhiệm vụ thực tế của vị trí {position}: nêu nguồn, hành động hoặc phép tính người khác kiểm tra lại được,
-          kết luận và bước tiếp theo.
-        </p>
+        <h2 className="pu-panel-title">{final.assignment?.title ?? 'Tạo ghi chú công việc có thể kiểm tra.'}</h2>
+        {final.assignment ? (
+          <>
+            <RichText body={final.assignment.description} />
+            <h3>Sản phẩm cần nộp</h3>
+            <RichText body={final.assignment.expectedOutput} />
+            <h3>Tiêu chí đánh giá · đạt từ {final.assignment.passScore}/100 điểm</h3>
+            <ul>{final.assignment.rubric.map((criterion) => <li key={criterion.title}>{criterion.title} · {criterion.points} điểm</li>)}</ul>
+          </>
+        ) : (
+          <p className="pu-panel-desc">
+            Mô tả một nhiệm vụ thực tế của vị trí {position}: nêu nguồn, hành động hoặc phép tính người khác kiểm tra lại được,
+            kết luận và bước tiếp theo.
+          </p>
+        )}
         <CriteriaRubric criteria={final.criteria} />
       </section>
 
