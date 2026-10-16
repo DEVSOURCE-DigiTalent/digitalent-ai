@@ -365,4 +365,53 @@ public static class Statuses
         public const string FreshCycle = "FRESH_CYCLE";
         public const string Pause = "PAUSE";
     }
+
+    /// <summary>proctoring_sessions.kind — loại bài làm có giám sát.</summary>
+    public static class ProctoringKind
+    {
+        public const string PreAssessment = "PRE_ASSESSMENT";
+        public const string Final = "FINAL";
+
+        public static readonly string[] All = { PreAssessment, Final };
+    }
+
+    /// <summary>proctoring_sessions.status</summary>
+    public static class ProctoringSession
+    {
+        public const string Recording = "RECORDING";
+        public const string Submitted = "SUBMITTED";
+        public const string Abandoned = "ABANDONED";
+    }
+
+    /// <summary>proctoring_recordings.track — SCREEN: toàn bộ màn hình; CAMERA: camera kèm âm thanh micro.</summary>
+    public static class ProctoringTrack
+    {
+        public const string Screen = "SCREEN";
+        public const string Camera = "CAMERA";
+
+        public static readonly string[] All = { Screen, Camera };
+    }
+
+    /// <summary>proctoring_events.kind</summary>
+    public static class ProctoringEvent
+    {
+        public const string Started = "STARTED";
+        public const string TabHidden = "TAB_HIDDEN";
+        public const string FocusLost = "FOCUS_LOST";
+        public const string ShareStopped = "SHARE_STOPPED";
+        public const string ShareResumed = "SHARE_RESUMED";
+        public const string CameraStopped = "CAMERA_STOPPED";
+        public const string CameraResumed = "CAMERA_RESUMED";
+        public const string MicStopped = "MIC_STOPPED";
+        public const string MicResumed = "MIC_RESUMED";
+        public const string Submitted = "SUBMITTED";
+
+        public static readonly string[] All =
+        {
+            Started, TabHidden, FocusLost, ShareStopped, ShareResumed, CameraStopped, CameraResumed, MicStopped, MicResumed, Submitted,
+        };
+
+        /// <summary>Sự kiện người chấm cần xem (rời bài làm hoặc mất một nguồn ghi).</summary>
+        public static readonly string[] Flagged = { TabHidden, FocusLost, ShareStopped, CameraStopped, MicStopped };
+    }
 }

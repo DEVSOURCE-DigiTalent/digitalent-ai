@@ -45,6 +45,19 @@ public class PulseReviewScope
         return (row.submission, row.enrollment, row.employee);
     }
 
+    /// <summary>Bài đánh giá trước khi học (được theo dõi) + nhân viên, nếu nhân viên nằm trong phạm vi chấm.</summary>
+    public async Task<(CoursePreAssessment PreAssessment, Employee Employee)> LoadPreAssessmentAsync(Guid preAssessmentId)
+    {
+        var row = await (
+                from preAssessment in _context.CoursePreAssessments
+                join employee in ReviewableEmployees() on preAssessment.EmployeeId equals employee.Id
+                where preAssessment.Id == preAssessmentId
+                select new { preAssessment, employee })
+            .FirstOrDefaultAsync()
+            ?? throw new NotFoundException("Không tìm thấy bài đánh giá trước khi học trong phạm vi chấm của bạn.");
+        return (row.preAssessment, row.employee);
+    }
+
     public Task<List<CourseFinalSubmission>> AttemptsAsync(Guid enrollmentId) =>
         _context.CourseFinalSubmissions
             .Where(s => s.EnrollmentId == enrollmentId)

@@ -4,7 +4,8 @@ namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
 /// GET /me/pulse/practice — mục "Thực hành": bài cuối của mọi khóa nhân viên đang/đã học, việc cần làm trước
-/// (nộp được, nộp lại, chờ chấm, cần hỗ trợ, đã duyệt). Nhiệm vụ thực tế là nhánh riêng (GET /me/tasks).
+/// (nộp được, nộp lại, chờ chấm, cần hỗ trợ, đã duyệt), và các bài đánh giá trước khi học đã nộp.
+/// Nhiệm vụ thực tế là nhánh riêng (GET /me/tasks).
 /// </summary>
 public class GetPulsePracticeUseCase : IUseCase<GetPulsePracticeUseCaseInput, GetPulsePracticeUseCaseOutput>
 {
@@ -47,7 +48,21 @@ public class GetPulsePracticeUseCase : IUseCase<GetPulsePracticeUseCaseInput, Ge
             })
             .ToList();
 
-        return new GetPulsePracticeUseCaseOutput { Finals = finals, Criteria = PulseRules.FinalCriteria.ToList() };
+        var preAssessments = snapshot.Courses
+            .Where(c => c.PreAssessment != null)
+            .OrderBy(c => c.PreAssessment!.Decision == null ? 0 : 1)
+            .ThenByDescending(c => c.PreAssessment!.SubmittedAt)
+            .Select(c => new PulsePracticeItemDto
+            {
+                Course = PulseMapping.Course(c),
+                LastSubmittedAt = c.PreAssessment!.SubmittedAt,
+                LastDecision = c.PreAssessment.Decision,
+                LastDecisionReason = c.PreAssessment.DecisionReason,
+                LastReviewedAt = c.PreAssessment.ReviewedAt,
+            })
+            .ToList();
+
+        return new GetPulsePracticeUseCaseOutput { Finals = finals, PreAssessments = preAssessments, Criteria = PulseRules.FinalCriteria.ToList() };
     }
 
     private static int Rank(string status)

@@ -22,7 +22,7 @@ export const MANAGER_SIDEBAR: SidebarConfig = [
   { label: 'Quản lý đội' },
   { label: 'Tổng quan', icon: LayoutDashboard, screenId: 'MG-01' },
   { label: 'Năng lực đội ngũ', icon: TrendingUp, screenId: 'MG-05', activeFor: ['MG-02', 'MG-03', 'MG-04'] },
-  { label: 'Bài cuối khóa', icon: FileCheck2, screenId: 'MG-13' },
+  { label: 'Chấm bài', icon: FileCheck2, screenId: 'MG-13' },
   { label: 'Báo cáo chu kỳ', icon: FileBarChart, screenId: 'MG-14' },
 
   // ── CÁC CÔNG CỤ KHÁC ──

@@ -8,14 +8,15 @@ using Microsoft.AspNetCore.Mvc;
 namespace DigiTalent.Api.Controllers;
 
 /// <summary>
-/// Hàng chờ bài cuối khóa Pulse cho quản lý phòng ban / chủ doanh nghiệp (§10), dùng bởi màn MG-13 /enterprise/team/final-reviews
-/// (frontend PulseFinalReviewsPage): quyết định có lý do, hai lần nộp, cửa sổ nộp lại theo chính sách doanh nghiệp, cờ hỗ trợ.
+/// Hàng chờ chấm bài Pulse cho quản lý phòng ban / chủ doanh nghiệp (§10), dùng bởi màn MG-13 /enterprise/team/final-reviews
+/// (frontend PulseFinalReviewsPage): bài đánh giá trước khi học và bài cuối khóa kèm bản ghi màn hình / camera và nhật ký
+/// giám sát; quyết định có lý do, hai lần nộp bài cuối, cửa sổ nộp lại theo chính sách doanh nghiệp, cờ hỗ trợ.
 /// </summary>
 [ApiController]
 [Route("api/v1/pulse/final-reviews")]
 public class PulseFinalReviewsController : ControllerBase
 {
-    // GET api/v1/pulse/final-reviews — chờ chấm, đang trong cửa sổ nộp lại, quá hạn, cờ hỗ trợ
+    // GET api/v1/pulse/final-reviews — bài đánh giá trước khi học và bài cuối khóa chờ chấm, cửa sổ nộp lại, quá hạn, cờ hỗ trợ
     [HttpGet]
     [HasPermission(Permissions.Task.Evaluate)]
     public async Task<ActionResult<ApiResponse<GetPulseFinalReviewsUseCaseOutput>>> GetQueue(
@@ -36,6 +37,19 @@ public class PulseFinalReviewsController : ControllerBase
         input.SubmissionId = submissionId;
         var result = await useCase.ExecuteAsync(input);
         return Ok(ApiResponse<DecidePulseFinalUseCaseOutput>.Ok(result, "Đã ghi quyết định."));
+    }
+
+    // POST api/v1/pulse/final-reviews/pre-assessments/{preAssessmentId}/decision — { decision: PASSED | NOT_YET, reason }
+    [HttpPost("pre-assessments/{preAssessmentId:guid}/decision")]
+    [HasPermission(Permissions.Task.Evaluate)]
+    public async Task<ActionResult<ApiResponse<DecidePulsePreAssessmentUseCaseOutput>>> DecidePreAssessment(
+        Guid preAssessmentId,
+        [FromBody] DecidePulsePreAssessmentUseCaseInput input,
+        [FromServices] IUseCase<DecidePulsePreAssessmentUseCaseInput, DecidePulsePreAssessmentUseCaseOutput> useCase)
+    {
+        input.PreAssessmentId = preAssessmentId;
+        var result = await useCase.ExecuteAsync(input);
+        return Ok(ApiResponse<DecidePulsePreAssessmentUseCaseOutput>.Ok(result, "Đã ghi quyết định."));
     }
 
     // POST api/v1/pulse/final-reviews/{submissionId}/support — { action: COACHING | FRESH_CYCLE | PAUSE, note }

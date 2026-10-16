@@ -2,6 +2,10 @@
 
 Ngày: 2026-10-14 · Đặc tả gốc: `docs/ui-redesign/16-pulse-product-flow-detailed.md`, mock `docs/ui-redesign/14-pulse-product-site/index.html`.
 
+> **Cập nhật 2026-10-16:** bài kiểm tra đầu vào đã bỏ; mỗi khóa có bài đánh giá trước khi học, bài cuối khóa và bài đánh giá
+> đều có giám sát (màn hình + camera + micro), lộ trình bị giới hạn bởi trần năng lực của phòng ban. Xem
+> `docs/specs/2026-10-16-pulse-employee-roadmap-proctoring.md` — phần đó thay các mục đầu vào bên dưới.
+
 Cổng nhân viên Pulse thay các màn EM-01..EM-18 cũ (liên kết cũ được chuyển hướng trong `app/routes/legacy-redirects.tsx`).
 Màn chấm bài cuối khóa của quản lý là **MG-13** `/enterprise/team/final-reviews` (`features/pulse-manager/pages/PulseFinalReviewsPage.tsx`, mock `#/review`); tài liệu này là hợp đồng API của màn đó.
 
@@ -11,11 +15,11 @@ Màn chấm bài cuối khóa của quản lý là **MG-13** `/enterprise/team/f
 |----|-----------|-------|
 | EM-01 | `/enterprise/me` | Hôm nay |
 | EM-02 | `/enterprise/me/path` | Lộ trình |
-| EM-03 | `/enterprise/me/practice` | Thực hành (bài cuối khóa + nhiệm vụ thực tế) |
-| EM-04 | `/enterprise/me/baseline` | Bài kiểm tra đầu vào |
+| EM-03 | `/enterprise/me/practice` | Thực hành (bài đánh giá trước khi học, bài cuối khóa + nhiệm vụ thực tế) |
 | EM-05 | `/enterprise/me/courses/:courseId` | Tổng quan khóa |
 | EM-06 | `/enterprise/me/courses/:courseId/modules/:moduleId` | Trang học mô đun + câu hỏi ôn tập |
-| EM-07 | `/enterprise/me/courses/:courseId/final` | Bài cuối khóa |
+| EM-07 | `/enterprise/me/courses/:courseId/final` | Bài cuối khóa (có giám sát) |
+| EM-12 | `/enterprise/me/courses/:courseId/pre-assessment` | Đánh giá trước khi học (có giám sát) |
 | EM-08 / EM-09 | `/enterprise/me/outcomes`, `/outcomes/:outcomeId` | Kết quả đã xác nhận |
 | EM-10 / EM-11 | `/enterprise/me/activity`, `/profile` | Hoạt động, hồ sơ |
 
@@ -25,8 +29,8 @@ Dữ liệu: `services/pulse.service.ts` + `hooks/use-pulse.ts` (chưa có mock 
 ## Quy tắc nghiệp vụ (backend `UseCases/Pulse/Common/PulseRules.cs`)
 
 - **Lĩnh vực** = nhóm năng lực có khóa PUBLISHED; **cấp khóa** = max `course_competencies.target_level`; **mục tiêu** = max `RequiredLevel` của bộ yêu cầu ACTIVE của vị trí.
-- **Đầu vào** (`capability_baselines`): làm một lần, mức Lk chỉ ghi khi đúng liên tiếp L1..Lk; không đổi về sau.
-- **Mức đã xác nhận** = max(đầu vào, cấp khóa được duyệt, mức minh chứng thực tế được xác nhận).
+- **Đánh giá trước khi học** (`course_pre_assessments`, thay bài đầu vào `capability_baselines`): xem đặc tả 2026-10-16.
+- **Mức đã xác nhận** = max(cấp khóa được công nhận — qua bài đánh giá trước khi học hoặc bài cuối khóa, mức minh chứng thực tế được xác nhận).
 - **Mô đun** = `course_modules`; trang = `lessons`; câu hỏi ôn tập = `assessments` QUIZ có `module_id`, phải đúng 2/2.
 - **Câu hỏi ôn tập**: ngân hàng của mô đun gắn câu với trang theo `assessment_questions.sort_order` (câu 2k-1, 2k ↔ trang k).
   Mỗi lần làm rút 2 câu (`PulseQuizReader.Draw`: xếp ngẫu nhiên một lần theo nhân viên + bài, lần thứ n lấy nhóm câu kế tiếp,
@@ -45,7 +49,8 @@ ngoài phạm vi → 404.
 
 ### `GET /pulse/final-reviews`
 
-Hàng chờ: bài chờ chấm, đang trong cửa sổ nộp lại, quá hạn, cần hỗ trợ.
+Hàng chờ: bài chờ chấm, đang trong cửa sổ nộp lại, quá hạn, cần hỗ trợ. Từ 2026-10-16 có cả bài đánh giá trước khi học
+(`kind`, `recording`, `preAssessmentCount` — xem đặc tả 2026-10-16).
 
 ```jsonc
 {
@@ -89,17 +94,20 @@ Hàng chờ: bài chờ chấm, đang trong cửa sổ nộp lại, quá hạn, 
 
 ## API nhân viên — `api/v1/me/pulse` (tham khảo)
 
-`GET overview` · `GET|POST baseline` · `GET courses/{id}` · `GET courses/{id}/modules/{mid}` · `POST …/viewed`
+`GET overview` · `GET courses/{id}` · `GET courses/{id}/modules/{mid}` · `POST …/viewed`
 · `POST …/modules/{mid}/pages/{lessonId}/viewed` · `POST …/quiz` (body `{ attemptNo, answers }`)
-· `GET|POST courses/{id}/final` · `GET practice` · `GET outcomes` · `GET outcomes/{outcomeId}` (id dạng `final-…`, `cert-…`, `task-…`).
+· `GET|POST courses/{id}/pre-assessment` · `GET|POST courses/{id}/final` · `POST courses/{id}/proctoring` + `proctoring/{sid}/…`
+· `GET practice` · `GET outcomes` · `GET outcomes/{outcomeId}` (id dạng `pre-…`, `final-…`, `cert-…`, `task-…`).
 
-Lỗi nghiệp vụ trả `errors[].message` là mã máy: `NO_POSITION`, `NOT_ASSESSED`, `OUTSIDE_PATH`, `SEAT_REQUIRED`,
-`PRIOR_LEVEL_REQUIRED`, `PREVIOUS_MODULE_REQUIRED`, `SLIDES_NOT_VIEWED`, `REVIEW_REQUIRED` (chưa mở lại trang sau lần ôn tập
+Lỗi nghiệp vụ trả `errors[].message` là mã máy: `NO_POSITION`, `OUTSIDE_PATH`, `ABOVE_CEILING`, `SEAT_REQUIRED`,
+`PRIOR_LEVEL_REQUIRED`, `PRE_ASSESSMENT_REQUIRED`, `PRE_ASSESSMENT_PENDING`, `PREVIOUS_MODULE_REQUIRED`, `SLIDES_NOT_VIEWED`, `REVIEW_REQUIRED` (chưa mở lại trang sau lần ôn tập
 chưa đạt), `QUIZ_CHANGED` (câu trả lời thuộc bộ câu của lần làm khác — tải lại mô đun).
 
 ## Cơ sở dữ liệu
 
 `docs/database/DigiTalent_AI_Canonical_v3_1.sql` (bổ sung v3_0): `assessments.module_id`, `capability_baselines`,
 `capability_baseline_answers`, `course_final_submissions`. Migration `20261014141359_AddPulseEmployeeLearning`
-(kèm `password_reset_tokens` còn thiếu migration từ PR #62). Seed Development: `PulseContentSeeder` (18 câu đầu vào,
-ngân hàng 6 câu ôn tập cho từng mô đun; bài ôn tập cũ 2 câu được bổ sung đủ khi khởi động Development).
+(kèm `password_reset_tokens` còn thiếu migration từ PR #62). Seed Development: `PulseContentSeeder` (ngân hàng 6 câu ôn tập
+cho từng mô đun; bài ôn tập cũ 2 câu được bổ sung đủ khi khởi động Development; ngân hàng 18 câu đầu vào không còn được tạo).
+v3.3 (`DigiTalent_AI_Canonical_v3_3.sql`, migration `20261015205317_PulsePreAssessmentProctoring`): `proctoring_sessions`,
+`proctoring_recordings`, `proctoring_events`, `course_pre_assessments`, `course_final_submissions.proctoring_session_id`.

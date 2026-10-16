@@ -11,11 +11,15 @@ import { PULSE_PATHS } from '../lib/paths';
 
 const KIND_LABELS: Record<PulseOutcomeKind, string> = {
   COURSE: 'Digital AI / Khóa học đã duyệt',
+  PRE_ASSESSMENT: 'Digital AI / Đạt đánh giá trước khi học',
   CERTIFICATE: 'Digital AI / Chứng chỉ khóa học',
   PRACTICAL_TASK: 'Digital AI / Minh chứng thực tế',
 };
 
-/** Kết quả đã xác nhận (§12.5): mỗi bản ghi gắn với bài cuối khóa hoặc minh chứng thực tế được quản lý duyệt. */
+/**
+ * Kết quả đã xác nhận (§12.5): mỗi bản ghi gắn với bài đánh giá trước khi học, bài cuối khóa hoặc minh chứng thực tế
+ * được người chấm duyệt.
+ */
 export function PulseOutcomesPage() {
   const { data, isLoading, error, refetch } = usePulseOutcomes();
   return (
@@ -23,7 +27,7 @@ export function PulseOutcomesPage() {
       <PageHead
         eyebrow="Kết quả đã xác nhận"
         title="Chứng nhận có nguồn có thể truy vết."
-        description="Mỗi kết quả gắn với bài cuối khóa hoặc minh chứng thực tế được quản lý duyệt. Hoàn thành khóa không thay đổi điểm đầu vào."
+        description="Mỗi kết quả gắn với bài đánh giá trước khi học, bài cuối khóa hoặc minh chứng thực tế được người chấm duyệt."
       />
       {isLoading ? (
         <PageSkeleton blocks={[180]} />

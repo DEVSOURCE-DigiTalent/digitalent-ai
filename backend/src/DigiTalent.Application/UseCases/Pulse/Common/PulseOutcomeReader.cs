@@ -9,6 +9,8 @@ public static class PulseOutcomeKind
 {
     /// <summary>Bài cuối khóa được quản lý duyệt.</summary>
     public const string Course = "COURSE";
+    /// <summary>Bài đánh giá trước khi học đạt: khóa được công nhận không cần học.</summary>
+    public const string PreAssessment = "PRE_ASSESSMENT";
     /// <summary>Chứng chỉ đã cấp từ luồng học trước (không có bài cuối khóa Pulse).</summary>
     public const string Certificate = "CERTIFICATE";
     /// <summary>Nhiệm vụ thực tế được quản lý duyệt.</summary>
@@ -17,7 +19,7 @@ public static class PulseOutcomeKind
 
 public class PulseOutcomeDto
 {
-    /// <summary>"final-{submissionId}" | "cert-{certificateId}" | "task-{evaluationId}".</summary>
+    /// <summary>"final-{submissionId}" | "pre-{preAssessmentId}" | "cert-{certificateId}" | "task-{evaluationId}".</summary>
     public string Id { get; set; } = string.Empty;
     public string Kind { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
@@ -36,7 +38,8 @@ public class PulseOutcomeDto
 }
 
 /// <summary>
-/// Kết quả đã xác nhận của nhân viên (§12.5): bài cuối khóa được quản lý duyệt, nhiệm vụ thực tế được duyệt,
+/// Kết quả đã xác nhận của nhân viên (§12.5): bài cuối khóa được quản lý duyệt, bài đánh giá trước khi học đạt,
+/// nhiệm vụ thực tế được duyệt,
 /// và chứng chỉ đã cấp ở luồng học trước. Không có chữ ký số hay tra cứu công khai.
 /// </summary>
 public class PulseOutcomeReader
@@ -97,7 +100,52 @@ public class PulseOutcomeReader
             });
         }
 
-        var pulseEnrollmentIds = finals.Select(f => f.EnrollmentId).ToHashSet();
+        var preAssessments = await (
+                from preAssessment in _context.CoursePreAssessments.AsNoTracking()
+                join course in _context.Courses.AsNoTracking() on preAssessment.CourseId equals course.Id
+                where preAssessment.EmployeeId == employee.Id && preAssessment.Decision == Statuses.FinalSubmissionDecision.Passed
+                select new
+                {
+                    preAssessment.Id,
+                    preAssessment.ReviewedAt,
+                    preAssessment.DecisionReason,
+                    preAssessment.ReviewedByUserId,
+                    preAssessment.EnrollmentId,
+                    CourseId = course.Id,
+                    course.Code,
+                    course.Title,
+                })
+            .ToListAsync();
+        var preReviewerIds = preAssessments.Where(p => p.ReviewedByUserId.HasValue).Select(p => p.ReviewedByUserId!.Value).Except(reviewers.Keys).Distinct().ToList();
+        foreach (var reviewer in await _context.Users.AsNoTracking().Where(u => preReviewerIds.Contains(u.Id)).Select(u => new { u.Id, u.DisplayName }).ToListAsync())
+        {
+            reviewers[reviewer.Id] = reviewer.DisplayName;
+        }
+
+        foreach (var preAssessment in preAssessments)
+        {
+            var label = courseLabel.GetValueOrDefault(preAssessment.Code);
+            outcomes.Add(new PulseOutcomeDto
+            {
+                Id = $"pre-{preAssessment.Id}",
+                Kind = PulseOutcomeKind.PreAssessment,
+                Title = preAssessment.Title,
+                Subtitle = label.Name == null ? null : $"{label.Name} · {PulseRules.LevelName(label.Tier)}",
+                Level = label.Name == null ? null : label.Tier,
+                IssuedAt = preAssessment.ReviewedAt ?? DateTimeOffset.MinValue,
+                Source = "Bài đánh giá trước khi học được quản lý công nhận — không cần học khóa",
+                Reference = $"{preAssessment.Code}-{preAssessment.Id.ToString("N")[..8].ToUpperInvariant()}",
+                ReviewerName = preAssessment.ReviewedByUserId is { } reviewer ? reviewers.GetValueOrDefault(reviewer) : null,
+                ReviewNote = preAssessment.DecisionReason,
+                HolderName = employee.FullName,
+                OrganizationName = snapshot.OrganizationName,
+                CourseId = preAssessment.CourseId,
+            });
+        }
+
+        var pulseEnrollmentIds = finals.Select(f => f.EnrollmentId)
+            .Concat(preAssessments.Where(p => p.EnrollmentId.HasValue).Select(p => p.EnrollmentId!.Value))
+            .ToHashSet();
         var certificates = await _context.Certificates
             .AsNoTracking()
             .Where(c => c.EmployeeId == employee.Id && c.Status == Statuses.Certificate.Valid)

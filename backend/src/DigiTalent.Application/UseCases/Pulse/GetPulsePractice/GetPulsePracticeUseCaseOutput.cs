@@ -3,6 +3,8 @@ namespace DigiTalent.Application.UseCases.Pulse;
 public class GetPulsePracticeUseCaseOutput
 {
     public List<PulsePracticeItemDto> Finals { get; set; } = new();
+    /// <summary>Bài đánh giá trước khi học đã nộp (chờ chấm trước, rồi mới nhất).</summary>
+    public List<PulsePracticeItemDto> PreAssessments { get; set; } = new();
     public List<PulseCriterionDto> Criteria { get; set; } = new();
 }
 

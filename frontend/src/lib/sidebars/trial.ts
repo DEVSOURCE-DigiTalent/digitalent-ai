@@ -64,6 +64,5 @@ export const TRIAL_MANAGER_SIDEBAR: SidebarConfig = [
 
 export const TRIAL_EMPLOYEE_SIDEBAR: SidebarConfig = [
   { label: 'Tổng quan', icon: Compass, screenId: 'EM-01' },
-  { label: 'Đánh giá đầu vào', icon: ClipboardCheck, screenId: 'EM-04' },
   { label: 'Lộ trình học', icon: Route, screenId: 'EM-02', activeFor: ['EM-05', 'EM-06', 'EM-07'] },
 ];

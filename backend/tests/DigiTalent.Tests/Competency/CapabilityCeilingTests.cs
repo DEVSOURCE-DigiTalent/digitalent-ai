@@ -38,8 +38,7 @@ public class CapabilityCeilingTests : IDisposable
         _context.Departments.Add(new Department { Id = _deptId, OrganizationId = _orgId, Code = "KT", Name = "Kế toán" });
         _context.SaveChanges();
 
-        var me = new MyEmployeeContext(_context, _currentUser.Object);
-        _reader = new CapabilityCeilingReader(_context, new PulseLearnerReader(_context, me, new PulseModuleReader(_context), TimeProvider.System));
+        _reader = new CapabilityCeilingReader(_context, new PulseCatalogReader(_context));
     }
 
     public void Dispose() => _context.Dispose();

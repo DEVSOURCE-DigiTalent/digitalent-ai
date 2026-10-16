@@ -73,17 +73,21 @@ public static class DependencyInjection
         services.AddScoped<MyEnrollmentRules>();
         services.AddScoped<MyAttemptPresenter>();
 
-        // 7. Trang nhân viên Pulse (/me/pulse/*) và hàng chờ chấm bài cuối khóa (/pulse/final-reviews)
+        // 7. Trang nhân viên Pulse (/me/pulse/*: lộ trình, bài đánh giá trước khi học, bài làm có giám sát)
+        //    và hàng chờ chấm bài (/pulse/final-reviews)
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<PulseModuleReader>();
+        services.AddScoped<PulseCatalogReader>();
         services.AddScoped<PulseLearnerReader>();
         services.AddScoped<PulseRetryPolicyProvider>();
-        services.AddScoped<PulseBaselineReader>();
         services.AddScoped<PulseCourseWorkspace>();
         services.AddScoped<PulseQuizReader>();
+        services.AddScoped<PulseExamPaper>();
         services.AddScoped<PulseFinalReader>();
         services.AddScoped<PulseOutcomeReader>();
         services.AddScoped<PulseReviewScope>();
+        services.AddScoped<PulseProctoring>();
+        services.AddScoped<PulseRecordingReader>();
 
         // 8. Trần nhà năng lực của doanh nghiệp / phòng ban (OW-05)
         services.AddScoped<CapabilityCeilingReader>();

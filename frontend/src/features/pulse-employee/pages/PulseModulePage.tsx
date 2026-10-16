@@ -214,7 +214,9 @@ function QuizArea({ detail, viewed, reachedEnd, onOpenPage, opening }: QuizAreaP
         <Notice tone="warning">
           {reason ? BLOCK_MESSAGES[reason] : detail.sample ? BLOCK_MESSAGES.SEAT_REQUIRED : 'Mô đun này chưa có câu hỏi ôn tập.'}
         </Notice>
-        {reason === 'NOT_ASSESSED' && <div><PuLink to={PULSE_PATHS.baseline} kind="outline" small>Làm bài đầu vào →</PuLink></div>}
+        {(reason === 'PRE_ASSESSMENT_REQUIRED' || reason === 'PRE_ASSESSMENT_PENDING') && (
+          <div><PuLink to={PULSE_PATHS.preAssessment(course.courseId)} kind="outline" small>Đánh giá trước khi học →</PuLink></div>
+        )}
       </div>
     );
   }
