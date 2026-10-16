@@ -20,14 +20,14 @@ const shortCode = (domain: PulseDomain, courses: PulseCourseSummary[]) =>
 
 /**
  * Lộ trình doanh nghiệp đặt cho vị trí: mỗi lĩnh vực một hàng, mỗi cấp độ một cột, mỗi ô là tên khóa trong lộ trình
- * (Cơ bản → min(mục tiêu vị trí, trần phòng ban)). Khóa tùy chọn (trên mục tiêu, trong trần) hiện nhạt, khóa vượt trần viền
- * đứt. Chỉ là kế hoạch — không có tiến độ hay đạt / chưa đạt.
+ * (Cơ bản → min(mục tiêu vị trí, trần phòng ban)). Chỉ khóa bắt buộc: khóa tùy chọn nằm ở danh sách khóa bên dưới, khóa vượt
+ * trần không hiện. Chỉ là kế hoạch — không có tiến độ hay đạt / chưa đạt.
  */
-export function RoadmapPlan({ overview, variant = 'light', caption }: { overview: PulseOverview; variant?: 'light' | 'blueprint'; caption: string }) {
+export function RoadmapPlan({ overview, variant = 'regular', caption }: { overview: PulseOverview; variant?: 'regular' | 'compact'; caption: string }) {
   const domains = overview.domains.filter((d) => d.pathTop > 0);
   return (
     <div className="pu-plan-scroll">
-      <table className={`pu-plan${variant === 'blueprint' ? ' blueprint' : ''}`}>
+      <table className={`pu-plan${variant === 'compact' ? ' compact' : ''}`}>
         <caption className="sr-only">{caption}</caption>
         <thead>
           <tr>
@@ -40,7 +40,7 @@ export function RoadmapPlan({ overview, variant = 'light', caption }: { overview
         <tbody>
           {domains.map((domain) => {
             const row = [1, 2, 3].map((tier) =>
-              overview.courses.find((c) => c.categoryId === domain.categoryId && c.tier === tier && c.zone !== 'OUTSIDE_PATH'));
+              overview.courses.find((c) => c.categoryId === domain.categoryId && c.tier === tier && c.zone === 'PATH'));
             return (
               <tr key={domain.categoryId}>
                 <th scope="row">
@@ -51,8 +51,8 @@ export function RoadmapPlan({ overview, variant = 'light', caption }: { overview
                 </th>
                 {row.map((course, index) => (
                   <td key={index}>
-                    {course ? <PlanCell course={course} domain={domain} joined={course.zone === 'PATH' && row[index + 1]?.zone === 'PATH'} /> : (
-                      <span className="pu-plan-empty">Không có khóa</span>
+                    {course ? <PlanCell course={course} domain={domain} joined={Boolean(row[index + 1])} /> : (
+                      <span className="pu-plan-empty"><span className="sr-only">Không có khóa trong lộ trình</span></span>
                     )}
                   </td>
                 ))}
@@ -66,13 +66,9 @@ export function RoadmapPlan({ overview, variant = 'light', caption }: { overview
 }
 
 function PlanCell({ course, domain, joined }: { course: PulseCourseSummary; domain: PulseDomain; joined: boolean }) {
-  const zone = course.zone === 'OPTIONAL' ? ' optional' : course.zone === 'ABOVE_CEILING' ? ' beyond' : '';
-  const tag = course.zone === 'OPTIONAL' ? 'Tùy chọn'
-    : course.zone === 'ABOVE_CEILING' ? 'Ngoài trần'
-    : course.tier === domain.pathTop ? (domain.pathTop < domain.target ? 'Trần phòng ban' : 'Mục tiêu')
-    : null;
+  const tag = course.tier !== domain.pathTop ? null : domain.pathTop < domain.target ? 'Trần phòng ban' : 'Mục tiêu';
   return (
-    <span className={`pu-plan-course lv${course.tier}${zone}${joined ? ' joined' : ''}`}>
+    <span className={`pu-plan-course lv${course.tier}${joined ? ' joined' : ''}`}>
       <b>
         {course.code}
         {tag && <span className="pu-plan-goal">{tag}</span>}
@@ -129,9 +125,8 @@ export function AssessFirstNote() {
 
 /** Một khóa trong danh sách lĩnh vực: cấp độ, tên, trạng thái, % đã học và nút hành động. */
 export function CourseRow({ course, overview }: { course: PulseCourseSummary; overview: PulseOverview }) {
-  const zoneClass = course.zone === 'OPTIONAL' ? ' optional' : course.zone === 'ABOVE_CEILING' ? ' beyond' : '';
   return (
-    <div className={`pu-course-row${zoneClass}`}>
+    <div className={`pu-course-row${course.zone === 'OPTIONAL' ? ' optional' : ''}`}>
       <span className="pu-course-level">
         <b>{levelName(course.tier)}</b>
         <LevelDots level={course.tier} />

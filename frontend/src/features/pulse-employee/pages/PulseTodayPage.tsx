@@ -4,6 +4,7 @@ import { usePulseOverview } from '@/hooks/use-pulse';
 import type { PulseCourseSummary, PulseDomain, PulseOverview } from '@/services/pulse.service';
 import { formatDate } from '@/lib/utils';
 import { CapNote, CourseAction, CourseRow, DomainTrack, RoadmapPlan } from '../components/roadmap';
+import { withinCeiling } from '../lib/course-state';
 import { Bar, Empty, Eyebrow, LoadError, Mini, PageSkeleton, PuLink } from '../components/ui';
 import { domainSummary, initials, levelName, pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
@@ -150,8 +151,7 @@ function PlanFoot({ overview }: { overview: PulseOverview }) {
   return (
     <footer className="pu-plan-foot">
       <span>{stats.requiredCompetencies} năng lực · Khung năng lực số TT02/2025</span>
-      {stats.optionalCourses > 0 && <span>+{stats.optionalCourses} khóa tùy chọn trong trần của phòng ban</span>}
-      {stats.aboveCeilingCourses > 0 && <span>{stats.aboveCeilingCourses} khóa vị trí yêu cầu nhưng phòng ban chưa mở</span>}
+      {stats.optionalCourses > 0 && <span>+{stats.optionalCourses} khóa tùy chọn trong trần phòng ban, ở danh sách bên dưới</span>}
     </footer>
   );
 }
@@ -205,7 +205,7 @@ function NextSteps({ overview }: { overview: PulseOverview }) {
 }
 
 function DomainItem({ domain, overview, open, onToggle }: { domain: PulseDomain; overview: PulseOverview; open: boolean; onToggle: () => void }) {
-  const courses = overview.courses.filter((c) => c.categoryId === domain.categoryId).sort((a, b) => a.tier - b.tier);
+  const courses = withinCeiling(overview.courses).filter((c) => c.categoryId === domain.categoryId).sort((a, b) => a.tier - b.tier);
   const bodyId = `pu-domain-${domain.categoryId}`;
   const code = courses[0]?.code.split('-')[0] ?? domain.code;
   return (

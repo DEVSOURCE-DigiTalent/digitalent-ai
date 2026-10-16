@@ -52,40 +52,18 @@
 .pu-plan-course a:hover { text-decoration: underline; }
 .pu-plan-goal { align-self: flex-start; padding: 3px 8px; border-radius: 999px; background: var(--pu-ink); color: #fff; font-size: 10px; font-weight: 800; }
 .pu-plan-course.lv3 .pu-plan-goal { background: #d7f8a8; color: #17294d; }
-/* Khóa tùy chọn (trên mục tiêu vị trí, trong trần): nhạt hơn; khóa vượt trần phòng ban: viền đứt. */
-.pu-plan-course.optional { border: 1.5px solid #e2def5; background: #fbfaff; color: #59617a; }
-.pu-plan-course.beyond { border: 1.5px dashed #d3d1e3; background: transparent; color: #8b93ab; }
-.pu-plan-course.optional .pu-plan-goal { background: #eceaf8; color: #4b42ad; }
-.pu-plan-course.beyond .pu-plan-goal { background: #f1f0f6; color: #6b7390; }
-.pu-plan-course.optional .pu-level-dots i.on, .pu-plan-course.beyond .pu-level-dots i.on { background: #b9b2ea; }
-.pu-plan-empty { display: grid; place-items: center; min-height: 76px; height: 100%; box-sizing: border-box; border: 1.5px dashed #dddbe9; border-radius: 14px; color: #8b93ab; font-size: 11.5px; }
+/* Ô trống: vị trí không yêu cầu cấp độ này (hoặc nằm ngoài trần) — chỉ một khung mờ, không chữ. */
+.pu-plan-empty { position: relative; display: block; min-height: 76px; height: 100%; box-sizing: border-box; border: 1.5px dashed #e6e3f1; border-radius: 14px; }
 .pu-plan-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; padding-top: 14px; border-top: 1px solid #eeedf6; color: #5f6b86; font-size: 12px; }
 .pu-plan-foot span { display: inline-flex; align-items: center; gap: 7px; }
 .pu-level-dots { display: inline-flex; gap: 3px; }
 .pu-level-dots i { width: 7px; height: 7px; border-radius: 50%; background: #d3d0ea; }
 .pu-level-dots i.on { background: var(--pu-violet); }
 
-/* Bản vẽ lộ trình trên nền xanh (trang Lộ trình) */
-.pu-plan.blueprint { min-width: 540px; border-spacing: 8px 7px; margin: -7px -8px; }
-.pu-plan.blueprint .pu-plan-course { padding: 9px 10px; }
-.pu-plan.blueprint .pu-plan-course.joined::after { right: -8px; width: 8px; }
-.pu-plan.blueprint th { color: rgba(255, 255, 255, .82); }
-.pu-plan.blueprint .pu-plan-domain b { color: #d7f8a8; }
-.pu-plan.blueprint .pu-plan-domain span { color: #fff; }
-.pu-plan.blueprint .pu-plan-course { border: 1.5px solid rgba(255, 255, 255, .85); color: #fff; }
-.pu-plan.blueprint .pu-plan-course.lv1 { background: rgba(255, 255, 255, .06); }
-.pu-plan.blueprint .pu-plan-course.lv2 { background: rgba(255, 255, 255, .16); }
-.pu-plan.blueprint .pu-plan-course.lv3 { border-color: #d7f8a8; background: #d7f8a8; color: #17294d; }
-.pu-plan.blueprint .pu-level-dots i { background: rgba(255, 255, 255, .3); }
-.pu-plan.blueprint .pu-level-dots i.on { background: #fff; }
-.pu-plan.blueprint .pu-plan-course.lv3 .pu-level-dots i { background: rgba(23, 41, 77, .25); }
-.pu-plan.blueprint .pu-plan-course.lv3 .pu-level-dots i.on { background: #17294d; }
-.pu-plan.blueprint .pu-plan-course.joined::after { background: rgba(255, 255, 255, .7); }
-.pu-plan.blueprint .pu-plan-goal { background: #f09a85; color: #2a1610; }
-.pu-plan.blueprint .pu-plan-empty { border-color: rgba(255, 255, 255, .3); color: rgba(255, 255, 255, .7); }
-.pu-plan.blueprint .pu-plan-course.optional { border: 1.5px solid rgba(255, 255, 255, .4); background: transparent; color: rgba(255, 255, 255, .86); }
-.pu-plan.blueprint .pu-plan-course.beyond { border: 1.5px dashed rgba(255, 255, 255, .32); background: transparent; color: rgba(255, 255, 255, .6); }
-.pu-plan.blueprint .pu-plan-course.optional .pu-plan-goal, .pu-plan.blueprint .pu-plan-course.beyond .pu-plan-goal { background: rgba(255, 255, 255, .16); color: #fff; }
+/* Bảng gọn hơn trong khung bản vẽ của trang Lộ trình — cùng màu với trang Hôm nay. */
+.pu-plan.compact { min-width: 540px; border-spacing: 8px 7px; margin: -7px -8px; }
+.pu-plan.compact .pu-plan-course { padding: 9px 10px; }
+.pu-plan.compact .pu-plan-course.joined::after { right: -8px; width: 8px; }
 
 /* ── Việc tiếp theo ──────────────────────────────────────────────────── */
 .pu-next { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding: 22px; border-radius: 28px; background: radial-gradient(circle at 95% 4%, rgba(229, 181, 206, .23), transparent 40%), linear-gradient(130deg, #363fbb, #5744ad); color: #fff; box-shadow: 0 20px 40px rgba(62, 57, 164, .16); }
@@ -142,7 +120,6 @@
 .pu-course-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 16px 0; border-bottom: 1px solid #f0eff7; }
 .pu-course-row:last-child { border-bottom: 0; }
 .pu-course-row.optional { margin-top: 10px; padding: 14px 16px; border: 1.5px dotted #cfc9f0; border-radius: 14px; background: #faf9ff; }
-.pu-course-row.beyond { margin-top: 10px; padding: 14px 16px; border: 1.5px dashed #ccd0de; border-radius: 14px; }
 .pu-course-level { display: grid; flex: none; gap: 5px; width: 96px; }
 .pu-course-level b { color: var(--pu-violet-2); font-size: 10.5px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
 .pu-course-main { display: grid; flex: 1 1 340px; gap: 7px; min-width: 0; }
@@ -173,15 +150,15 @@
 .pu-path-reviewer > span:last-child { display: grid; gap: 2px; }
 .pu-path-reviewer small { color: var(--pu-muted); font-size: 12.5px; }
 
-.pu-blueprint { display: flex; flex-direction: column; gap: 16px; min-width: 0; padding: 22px 22px 18px; border-radius: 26px; background-color: #2b3cb5; background-image: linear-gradient(rgba(255, 255, 255, .075) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .075) 1px, transparent 1px); background-size: 22px 22px; color: #fff; }
+/* Khung bản vẽ: giấy trắng kẻ ô tím rất nhạt, bảng lộ trình cùng màu với trang Hôm nay. */
+.pu-blueprint { display: flex; flex-direction: column; gap: 16px; min-width: 0; padding: 22px 22px 18px; border: 1px solid #e6e2f3; border-radius: 26px; background-color: #fff; background-image: linear-gradient(rgba(85, 68, 184, .045) 1px, transparent 1px), linear-gradient(90deg, rgba(85, 68, 184, .045) 1px, transparent 1px); background-size: 22px 22px; color: var(--pu-ink); box-shadow: 0 18px 40px rgba(47, 47, 113, .07); }
 .pu-blueprint-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 14px; }
-.pu-blueprint-head b { color: #d7f8a8; font-size: 11px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
-.pu-blueprint-head span { color: rgba(255, 255, 255, .82); font-size: 11.5px; }
-.pu-blueprint .pu-plan-scroll { scrollbar-color: rgba(255, 255, 255, .4) transparent; }
-.pu-titleblock { display: grid; align-self: flex-end; grid-template-columns: repeat(2, minmax(0, auto)); border: 1px solid rgba(255, 255, 255, .55); background: rgba(19, 27, 80, .28); font-size: 11px; line-height: 1.35; }
+.pu-blueprint-head b { color: var(--pu-violet); font-size: 11px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+.pu-blueprint-head span { color: var(--pu-muted); font-size: 11.5px; }
+.pu-titleblock { display: grid; align-self: flex-end; grid-template-columns: repeat(2, minmax(0, auto)); border: 1px solid #dcd8ec; background: #fbfaff; color: #4a5571; font-size: 11px; line-height: 1.35; }
 .pu-titleblock span { padding: 7px 10px; }
-.pu-titleblock span:nth-child(odd) { border-right: 1px solid rgba(255, 255, 255, .55); }
-.pu-titleblock span:nth-child(-n+2) { border-bottom: 1px solid rgba(255, 255, 255, .55); }
+.pu-titleblock span:nth-child(odd) { border-right: 1px solid #dcd8ec; }
+.pu-titleblock span:nth-child(-n+2) { border-bottom: 1px solid #dcd8ec; }
 .pu-titleblock span:first-child { font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
 
 /* Cách mỗi khóa được công nhận */
@@ -247,7 +224,6 @@
 .pu-station-card { display: flex; flex: 1; flex-direction: column; gap: 12px; box-sizing: border-box; padding: 18px; border: 1px solid #e6e2f1; border-radius: 18px; background: #fff; box-shadow: 0 10px 26px rgba(29, 48, 102, .05); }
 .pu-station-card.active { border: 1.5px solid #b9b0ee; box-shadow: 0 16px 34px rgba(62, 57, 164, .1); }
 .pu-station-card.optional { border: 1.5px dotted #c6bfee; background: #fbfaff; box-shadow: none; }
-.pu-station-card.beyond { border: 1.5px dashed #ccd0de; background: transparent; box-shadow: none; }
 .pu-station-card > header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .pu-station-title { display: grid; gap: 3px; }
 .pu-station-title > span { color: var(--pu-violet); font-size: 12px; font-weight: 900; }

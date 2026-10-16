@@ -30,8 +30,9 @@ Với mỗi lĩnh vực (nhóm năng lực có khóa PUBLISHED):
 
 **Hiển thị (theo phản hồi duyệt thiết kế):** bảng lộ trình ở Hôm nay (EM-01) và bản vẽ ở Lộ trình (EM-02) chỉ có **tên khóa và cấp
 độ** của các khóa `PATH` (thẻ "Mục tiêu" hoặc "Trần phòng ban" ở ô cuối). Trạng thái, % đã học và đạt / chưa đạt chỉ nằm trong
-danh sách khóa bên dưới (accordion lĩnh vực ở EM-01, năng lực → khóa ở EM-02). Khóa `OPTIONAL` hiện nhạt hơn, khóa
-`ABOVE_CEILING` viền đứt.
+danh sách khóa bên dưới (accordion lĩnh vực ở EM-01, năng lực → khóa ở EM-02). Ô không có khóa `PATH` là khung mờ, không
+chữ. Khóa `OPTIONAL` không vào bảng, chỉ nằm trong danh sách khóa (thẻ "Tùy chọn"). Khóa `ABOVE_CEILING` không hiện ở đâu trong
+cổng nhân viên (`withinCeiling`); trang Lộ trình dùng cùng màu bảng với trang Hôm nay.
 
 ## 3. Đánh giá trước khi học (`course_pre_assessments`)
 

@@ -11,7 +11,7 @@ import {
   RoadmapPlan,
   StatePill,
 } from '../components/roadmap';
-import { courseStatusText, courseTone, showsProgress } from '../lib/course-state';
+import { courseStatusText, courseTone, showsProgress, withinCeiling } from '../lib/course-state';
 import { Bar, Eyebrow, LoadError, Mini, PageSkeleton, PuLink } from '../components/ui';
 import { initials, levelName, pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
@@ -105,7 +105,7 @@ function Hero({ overview }: { overview: PulseOverview }) {
         </div>
         <RoadmapPlan
           overview={overview}
-          variant="blueprint"
+          variant="compact"
           caption={`Bản vẽ lộ trình ${position}: tên khóa theo lĩnh vực và cấp độ`}
         />
         <div className="pu-titleblock" aria-hidden>
@@ -153,7 +153,7 @@ function HowItWorks({ reviewerName }: { reviewerName?: string | null }) {
 }
 
 function CompetencyItem({ domain, overview, open, onToggle }: { domain: PulseDomain; overview: PulseOverview; open: boolean; onToggle: () => void }) {
-  const courses = overview.courses.filter((c) => c.categoryId === domain.categoryId).sort((a, b) => a.tier - b.tier);
+  const courses = withinCeiling(overview.courses).filter((c) => c.categoryId === domain.categoryId).sort((a, b) => a.tier - b.tier);
   const path = courses.filter((c) => c.zone === 'PATH');
   const optional = courses.filter((c) => c.zone === 'OPTIONAL').length;
   const code = courses[0]?.code.split('-')[0] ?? domain.code;
@@ -222,7 +222,6 @@ function Station({ course, overview, last }: { course: PulseCourseSummary; overv
   const tone = courseTone(course);
   const progress = showsProgress(course);
   const card = course.zone === 'OPTIONAL' ? 'optional'
-    : course.zone === 'ABOVE_CEILING' ? 'beyond'
     : ['PRE_ASSESSMENT', 'TO_LEARN', 'IN_PROGRESS', 'FINAL_READY'].includes(course.slotStatus) ? 'active'
     : '';
   return (

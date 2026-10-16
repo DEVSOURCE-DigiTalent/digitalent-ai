@@ -20,6 +20,9 @@ export const showsProgress = (course: PulseCourseSummary) =>
   || (course.slotStatus === 'COMPLETED' && course.approvedVia === 'FINAL');
 
 /** Một câu mô tả trạng thái của khóa cho nhân viên. */
+/** Khóa vượt trần doanh nghiệp đặt cho phòng ban không hiện trong danh sách khóa của nhân viên. */
+export const withinCeiling = (courses: PulseCourseSummary[]) => courses.filter((c) => c.zone !== 'ABOVE_CEILING');
+
 export function courseStatusText(course: PulseCourseSummary, courses: PulseCourseSummary[], reviewerName?: string | null, departmentName?: string | null): string {
   const reviewer = reviewerName ?? 'Người chấm';
   const modules = course.moduleCount;
