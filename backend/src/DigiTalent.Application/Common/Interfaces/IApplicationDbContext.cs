@@ -54,6 +54,7 @@ public interface IApplicationDbContext
     DbSet<CoursePrerequisite> CoursePrerequisites { get; }
     DbSet<CourseFinalSubmission> CourseFinalSubmissions { get; }
     DbSet<CoursePreAssessment> CoursePreAssessments { get; }
+    DbSet<ExamChoiceAnswer> ExamChoiceAnswers { get; }
     DbSet<ProctoringSession> ProctoringSessions { get; }
     DbSet<ProctoringRecording> ProctoringRecordings { get; }
     DbSet<ProctoringEvent> ProctoringEvents { get; }

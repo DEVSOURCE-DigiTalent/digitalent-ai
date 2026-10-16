@@ -9,8 +9,9 @@ namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
 /// POST /me/pulse/courses/{courseId}/pre-assessment — nộp bài đánh giá trước khi học (một bài cho mỗi khóa), kèm phiên
-/// làm bài có giám sát đã ghi toàn bộ màn hình, camera và micro. Phiên được đóng; người chấm (quản lý phòng ban, hoặc
-/// chủ doanh nghiệp khi nhân viên là quản lý) nhận thông báo.
+/// làm bài có giám sát đã ghi toàn bộ màn hình, camera và micro. Phần trắc nghiệm được chấm ngay (<see cref="PulseExamPaper"/>)
+/// nhưng nhân viên chỉ thấy sau khi có quyết định. Phiên được đóng; người chấm (quản lý phòng ban, hoặc chủ doanh nghiệp khi
+/// nhân viên là quản lý) nhận thông báo.
 /// </summary>
 public class SubmitPulsePreAssessmentUseCase : IUseCase<SubmitPulsePreAssessmentUseCaseInput, SubmitPulsePreAssessmentUseCaseOutput>
 {
@@ -20,12 +21,15 @@ public class SubmitPulsePreAssessmentUseCase : IUseCase<SubmitPulsePreAssessment
     private readonly IApplicationDbContext _context;
     private readonly PulseCourseWorkspace _workspace;
     private readonly PulseProctoring _proctoring;
+    private readonly PulseExamPaper _paper;
 
-    public SubmitPulsePreAssessmentUseCase(IApplicationDbContext context, PulseCourseWorkspace workspace, PulseProctoring proctoring)
+    public SubmitPulsePreAssessmentUseCase(
+        IApplicationDbContext context, PulseCourseWorkspace workspace, PulseProctoring proctoring, PulseExamPaper paper)
     {
         _context = context;
         _workspace = workspace;
         _proctoring = proctoring;
+        _paper = paper;
     }
 
     public async Task<SubmitPulsePreAssessmentUseCaseOutput> ExecuteAsync(SubmitPulsePreAssessmentUseCaseInput input)
@@ -39,15 +43,25 @@ public class SubmitPulsePreAssessmentUseCase : IUseCase<SubmitPulsePreAssessment
         var now = _workspace.Now;
         var session = await _proctoring.CloseForSubmitAsync(
             input.ProctoringSessionId, snapshot.Employee.Id, Statuses.ProctoringKind.PreAssessment, state.Course.CourseId, now);
+        var paper = await _paper.DrawAsync(
+            state.Modules, snapshot.Employee.Id, state.Course.CourseId, PulseExamPaper.SlotOf(Statuses.ProctoringKind.PreAssessment, 1));
+        var grade = PulseExamPaper.Grade(paper, input.Answers);
         var preAssessment = new CoursePreAssessment
         {
             EmployeeId = snapshot.Employee.Id,
             CourseId = state.Course.CourseId,
             ProctoringSessionId = session.Id,
             EvidenceText = input.EvidenceText.Trim(),
+            ChoiceScore = grade?.Score,
+            ChoiceTotal = grade?.Total,
             SubmittedAt = now,
         };
         _context.CoursePreAssessments.Add(preAssessment);
+        foreach (var answer in grade?.Answers ?? Array.Empty<ExamChoiceAnswer>())
+        {
+            answer.PreAssessmentId = preAssessment.Id;
+            _context.ExamChoiceAnswers.Add(answer);
+        }
 
         foreach (var reviewerUserId in await PulseReviewers.UserIdsAsync(_context, snapshot.Employee))
         {

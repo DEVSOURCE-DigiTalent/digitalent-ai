@@ -321,6 +321,36 @@ export interface PulseFinalAttempt {
   supportNote?: string | null;
   supportRecordedAt?: string | null;
   proctoringSessionId?: string | null;
+  /** Phần trắc nghiệm: nhân viên chỉ thấy sau khi bài được chấm; người chấm thấy cả từng câu. */
+  choice?: PulseChoiceResult | null;
+}
+
+/** Kết quả phần trắc nghiệm của một bài làm. */
+export interface PulseChoiceResult {
+  score: number;
+  total: number;
+  /** Số câu đúng tối thiểu để phần trắc nghiệm đạt. */
+  passMark: number;
+  passed: boolean;
+  /** Từng câu — chỉ người chấm thấy. */
+  items?: PulseChoiceItem[] | null;
+}
+
+export interface PulseChoiceItem {
+  number: number;
+  question: string;
+  /** Phương án nhân viên đã chọn. */
+  selected: string;
+  correct: string;
+  isCorrect: boolean;
+}
+
+/** Một câu trắc nghiệm của đề (không kèm đáp án), phát lúc bắt đầu phiên có giám sát. */
+export interface PulseExamQuestion {
+  questionId: string;
+  number: number;
+  content: string;
+  options: PulseOption[];
 }
 
 export interface PulseFinal {
@@ -329,6 +359,9 @@ export interface PulseFinal {
   positionName?: string | null;
   reviewer?: PulseReviewer | null;
   criteria: PulseCriterion[];
+  /** Số câu trắc nghiệm của đề (0 khi khóa chưa có câu ôn tập) và số câu đúng tối thiểu. */
+  choiceCount: number;
+  choicePassMark: number;
   status: PulseFinalStatus;
   /** Bắt đầu được bài làm có giám sát và nộp bài ngay bây giờ. */
   canSubmit: boolean;
@@ -370,6 +403,8 @@ export interface PulsePreAssessmentSubmission {
   reviewerName?: string | null;
   reviewedAt?: string | null;
   proctoringSessionId?: string | null;
+  /** Phần trắc nghiệm — chỉ có sau khi bài được chấm. */
+  choice?: PulseChoiceResult | null;
 }
 
 export interface PulsePreAssessment {
@@ -378,6 +413,8 @@ export interface PulsePreAssessment {
   positionName?: string | null;
   reviewer?: PulseReviewer | null;
   criteria: PulseCriterion[];
+  choiceCount: number;
+  choicePassMark: number;
   status: PulsePreStatus;
   canStart: boolean;
   closedMessage?: string | null;
@@ -427,6 +464,8 @@ export interface PulseProctoringSession {
   kind: PulseExamKind;
   startedAt: string;
   maxChunkBytes: number;
+  /** Phần trắc nghiệm của đề (rỗng khi khóa chưa có câu ôn tập); gửi câu trả lời khi nộp bài. */
+  questions: PulseExamQuestion[];
 }
 
 export interface PulseRecordingSegmentStart {
@@ -458,11 +497,11 @@ export const pulseService = {
   submitModuleQuiz: (courseId: string, moduleId: string, answers: PulseAnswer[], attemptNo?: number) =>
     apiClient.post<ApiResponse<PulseQuizResult>>(`/me/pulse/courses/${courseId}/modules/${moduleId}/quiz`, { attemptNo, answers }),
   getPreAssessment: (courseId: string) => apiClient.get<ApiResponse<PulsePreAssessment>>(`/me/pulse/courses/${courseId}/pre-assessment`),
-  submitPreAssessment: (courseId: string, evidenceText: string, proctoringSessionId: string) =>
-    apiClient.post<ApiResponse<PulseSubmitPreAssessmentResult>>(`/me/pulse/courses/${courseId}/pre-assessment`, { evidenceText, proctoringSessionId }),
+  submitPreAssessment: (courseId: string, evidenceText: string, proctoringSessionId: string, answers: PulseAnswer[]) =>
+    apiClient.post<ApiResponse<PulseSubmitPreAssessmentResult>>(`/me/pulse/courses/${courseId}/pre-assessment`, { evidenceText, proctoringSessionId, answers }),
   getFinal: (courseId: string) => apiClient.get<ApiResponse<PulseFinal>>(`/me/pulse/courses/${courseId}/final`),
-  submitFinal: (courseId: string, evidenceText: string, proctoringSessionId: string) =>
-    apiClient.post<ApiResponse<PulseSubmitFinalResult>>(`/me/pulse/courses/${courseId}/final`, { evidenceText, proctoringSessionId }),
+  submitFinal: (courseId: string, evidenceText: string, proctoringSessionId: string, answers: PulseAnswer[]) =>
+    apiClient.post<ApiResponse<PulseSubmitFinalResult>>(`/me/pulse/courses/${courseId}/final`, { evidenceText, proctoringSessionId, answers }),
   getPractice: () => apiClient.get<ApiResponse<PulsePractice>>('/me/pulse/practice'),
   getOutcomes: () => apiClient.get<ApiResponse<{ items: PulseOutcome[] }>>('/me/pulse/outcomes'),
   getOutcome: (outcomeId: string) => apiClient.get<ApiResponse<PulseOutcome>>(`/me/pulse/outcomes/${encodeURIComponent(outcomeId)}`),

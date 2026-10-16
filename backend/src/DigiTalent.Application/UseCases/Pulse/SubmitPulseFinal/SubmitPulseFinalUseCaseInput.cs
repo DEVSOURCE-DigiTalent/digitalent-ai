@@ -9,4 +9,7 @@ public class SubmitPulseFinalUseCaseInput
 
     /// <summary>Phiên làm bài có giám sát (POST …/proctoring với kind FINAL) đã ghi màn hình, camera và micro.</summary>
     public Guid ProctoringSessionId { get; set; }
+
+    /// <summary>Phần trắc nghiệm: một phương án cho mỗi câu của đề phát lúc bắt đầu phiên.</summary>
+    public List<PulseAnswerInput> Answers { get; set; } = new();
 }

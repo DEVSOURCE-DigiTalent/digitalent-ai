@@ -118,7 +118,8 @@ internal sealed class PulseTestWorld : IDisposable
         var policy = new PulseRetryPolicyProvider(Context, NullLogger<PulseRetryPolicyProvider>.Instance);
         var workspace = new PulseCourseWorkspace(Context, learner);
         var quiz = new PulseQuizReader(Context);
-        var final = new PulseFinalReader(Context);
+        var paper = new PulseExamPaper(Context, quiz);
+        var final = new PulseFinalReader(Context, paper);
         var outcomes = new PulseOutcomeReader(Context);
         var scope = new PulseReviewScope(Context, new EmployeeScope(Context, current.Object), current.Object);
         var proctoring = new PulseProctoring(Context, me, Clock);
@@ -134,20 +135,20 @@ internal sealed class PulseTestWorld : IDisposable
             new MarkPulsePageViewedUseCase(Context, workspace, quiz),
             new SubmitPulseModuleQuizUseCase(Context, workspace, quiz),
             new GetPulsePreAssessmentUseCase(Context, workspace),
-            new SubmitPulsePreAssessmentUseCase(Context, workspace, proctoring),
+            new SubmitPulsePreAssessmentUseCase(Context, workspace, proctoring, paper),
             new DecidePulsePreAssessmentUseCase(Context, scope, audit, Clock),
-            new StartPulseProctoringUseCase(Context, workspace, proctoring),
+            new StartPulseProctoringUseCase(Context, workspace, proctoring, paper),
             new StartPulseRecordingUseCase(Context, proctoring),
             new AppendPulseRecordingChunkUseCase(Context, proctoring, Storage),
             new EndPulseRecordingUseCase(Context, proctoring),
             new RecordPulseProctoringEventsUseCase(Context, proctoring),
             new GetPulseRecordingContentUseCase(Context, Storage, signer),
             new GetPulseFinalUseCase(workspace, final, policy),
-            new SubmitPulseFinalUseCase(Context, workspace, proctoring),
+            new SubmitPulseFinalUseCase(Context, workspace, proctoring, paper),
             new GetPulsePracticeUseCase(learner),
             new GetPulseOutcomesUseCase(learner, outcomes),
             new GetPulseOutcomeUseCase(learner, outcomes),
-            new GetPulseFinalReviewsUseCase(Context, scope, catalog, final, recordings, current.Object, Clock),
+            new GetPulseFinalReviewsUseCase(Context, scope, catalog, final, recordings, paper, current.Object, Clock),
             new DecidePulseFinalUseCase(Context, scope, policy, audit, Clock),
             new RecordPulseFinalSupportUseCase(Context, scope, Clock));
     }
@@ -159,12 +160,31 @@ internal sealed class PulseTestWorld : IDisposable
     public Task<Guid> WrongOptionAsync(Guid questionId) =>
         Context.QuestionOptions.AsNoTracking().Where(o => o.QuestionId == questionId && !o.IsCorrect).Select(o => o.Id).FirstAsync();
 
+    /// <summary>Phần trắc nghiệm của phiên bắt đầu gần nhất (đề phát lúc bắt đầu phiên).</summary>
+    public List<PulseExamQuestionDto> LastPaper { get; private set; } = new();
+
+    /// <summary>Câu trả lời cho đề <paramref name="paper"/>: <paramref name="correct"/> câu đầu đúng (mặc định tất cả), còn lại sai.</summary>
+    public async Task<List<PulseAnswerInput>> AnswersAsync(IReadOnlyList<PulseExamQuestionDto> paper, int? correct = null)
+    {
+        var answers = new List<PulseAnswerInput>();
+        foreach (var (question, index) in paper.Select((q, i) => (q, i)))
+        {
+            var optionId = index < (correct ?? paper.Count)
+                ? await CorrectOptionAsync(question.QuestionId)
+                : await WrongOptionAsync(question.QuestionId);
+            answers.Add(new PulseAnswerInput { QuestionId = question.QuestionId, OptionId = optionId });
+        }
+
+        return answers;
+    }
+
     /// <summary>
     /// Một phiên làm bài có giám sát đầy đủ: bắt đầu phiên, ghi một mẩu toàn bộ màn hình và một mẩu camera (kèm micro).
     /// </summary>
     public async Task<Guid> ProctorAsync(UseCases uc, Guid courseId, string kind)
     {
         var session = await uc.StartProctoring.ExecuteAsync(new StartPulseProctoringUseCaseInput { CourseId = courseId, Kind = kind });
+        LastPaper = session.Questions;
         Context.ChangeTracker.Clear();
         foreach (var track in Statuses.ProctoringTrack.All)
         {
@@ -191,8 +211,11 @@ internal sealed class PulseTestWorld : IDisposable
         return session.SessionId;
     }
 
-    /// <summary>Làm và nộp bài đánh giá trước khi học của khóa <paramref name="code"/>.</summary>
-    public async Task<SubmitPulsePreAssessmentUseCaseOutput> SubmitPreAssessmentAsync(UseCases uc, string code)
+    /// <summary>
+    /// Làm và nộp bài đánh giá trước khi học của khóa <paramref name="code"/>; <paramref name="correct"/> câu trắc nghiệm đúng
+    /// (mặc định tất cả).
+    /// </summary>
+    public async Task<SubmitPulsePreAssessmentUseCaseOutput> SubmitPreAssessmentAsync(UseCases uc, string code, int? correct = null)
     {
         var course = await CourseAsync(uc, code);
         var sessionId = await ProctorAsync(uc, course.CourseId, Statuses.ProctoringKind.PreAssessment);
@@ -201,6 +224,7 @@ internal sealed class PulseTestWorld : IDisposable
             CourseId = course.CourseId,
             EvidenceText = Evidence,
             ProctoringSessionId = sessionId,
+            Answers = await AnswersAsync(LastPaper, correct),
         });
         Context.ChangeTracker.Clear();
         return result;
@@ -227,11 +251,17 @@ internal sealed class PulseTestWorld : IDisposable
         return await CourseAsync(employee, code);
     }
 
-    /// <summary>Làm bài cuối khóa có giám sát và nộp.</summary>
-    public async Task<SubmitPulseFinalUseCaseOutput> SubmitFinalAsync(UseCases uc, Guid courseId, string evidence = Evidence)
+    /// <summary>Làm bài cuối khóa có giám sát và nộp; <paramref name="correct"/> câu trắc nghiệm đúng (mặc định tất cả).</summary>
+    public async Task<SubmitPulseFinalUseCaseOutput> SubmitFinalAsync(UseCases uc, Guid courseId, string evidence = Evidence, int? correct = null)
     {
         var sessionId = await ProctorAsync(uc, courseId, Statuses.ProctoringKind.Final);
-        var result = await uc.SubmitFinal.ExecuteAsync(new SubmitPulseFinalUseCaseInput { CourseId = courseId, EvidenceText = evidence, ProctoringSessionId = sessionId });
+        var result = await uc.SubmitFinal.ExecuteAsync(new SubmitPulseFinalUseCaseInput
+        {
+            CourseId = courseId,
+            EvidenceText = evidence,
+            ProctoringSessionId = sessionId,
+            Answers = await AnswersAsync(LastPaper, correct),
+        });
         Context.ChangeTracker.Clear();
         return result;
     }

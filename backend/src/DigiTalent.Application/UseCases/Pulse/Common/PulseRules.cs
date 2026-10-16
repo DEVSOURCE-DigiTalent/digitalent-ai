@@ -25,6 +25,19 @@ public static class PulseRules
     /// </summary>
     public const int ModuleQuizQuestionsPerPage = 2;
 
+    /// <summary>Số câu trắc nghiệm của bài làm có giám sát (đánh giá trước khi học, bài cuối khóa), rút từ câu ôn tập của khóa.</summary>
+    public const int ExamChoiceCount = 10;
+
+    /// <summary>Tỉ lệ câu đúng tối thiểu (phần mười) để phần trắc nghiệm đạt: 10 câu → 7 câu.</summary>
+    public const int ExamChoicePassTenths = 7;
+
+    /// <summary>Số câu đúng tối thiểu của đề <paramref name="total"/> câu.</summary>
+    public static int ChoicePassMark(int total) => (total * ExamChoicePassTenths + 9) / 10;
+
+    /// <summary>Phần trắc nghiệm đạt ngưỡng; bài nộp trước khi có trắc nghiệm (null) không bị chặn.</summary>
+    public static bool ChoicePassed(int? score, int? total) =>
+        score is not { } s || total is not { } t || s >= ChoicePassMark(t);
+
     /// <summary>Dung lượng tối đa của một mẩu ghi hình tải lên (trình duyệt gửi mỗi vài giây một mẩu).</summary>
     public const int MaxRecordingChunkBytes = 16 * 1024 * 1024;
 

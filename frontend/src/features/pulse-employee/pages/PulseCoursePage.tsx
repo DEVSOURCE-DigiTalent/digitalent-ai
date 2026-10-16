@@ -169,7 +169,7 @@ function PreAssessmentStrip({ detail, reviewer }: { detail: PulseCourseDetail; r
   const status = course.preStatus;
   const tone = status === 'PASSED' ? 'green' : status === 'NOT_YET' ? 'coral' : status === 'LOCKED' ? 'gray' : '';
   const text = status === 'REQUIRED'
-    ? 'Làm một bài theo đề cuối khóa trước khi học. Đạt thì khóa được công nhận và khóa tiếp theo mở ngay. Bạn vẫn đọc được nội dung, nhưng tiến độ chỉ được ghi sau bài đánh giá.'
+    ? 'Làm một bài theo đề cuối khóa (trắc nghiệm và tự luận) trước khi học. Đạt thì khóa được công nhận và khóa tiếp theo mở ngay. Bạn vẫn đọc được nội dung, nhưng tiến độ chỉ được ghi sau bài đánh giá.'
     : status === 'PENDING' ? `Bài đã nộp, đang chờ ${reviewer} chấm cùng bản ghi màn hình, camera và micro.`
     : status === 'PASSED' ? 'Bạn đã đạt bài đánh giá trước khi học; khóa được công nhận mà không cần học.'
     : status === 'NOT_YET' ? 'Chưa đạt: học các mô đun của khóa rồi làm bài cuối khóa.'

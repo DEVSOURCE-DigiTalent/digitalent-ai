@@ -103,6 +103,9 @@ public class CoursePreAssessmentConfiguration : IEntityTypeConfiguration<CourseP
                 "AND reviewed_by_user_id IS NOT NULL AND reviewed_at IS NOT NULL)");
             table.HasCheckConstraint("ck_course_pre_assessments_reviewed_after_submit", "reviewed_at IS NULL OR reviewed_at >= submitted_at");
             table.HasCheckConstraint("ck_course_pre_assessments_enrollment", "enrollment_id IS NULL OR decision = 'PASSED'");
+            table.HasCheckConstraint("ck_course_pre_assessments_choice",
+                "(choice_score IS NULL AND choice_total IS NULL) " +
+                "OR (choice_total BETWEEN 1 AND 50 AND choice_score BETWEEN 0 AND choice_total)");
         });
         builder.HasKey(x => x.Id);
 
@@ -131,5 +134,37 @@ public class CoursePreAssessmentConfiguration : IEntityTypeConfiguration<CourseP
             .HasDatabaseName("ix_course_pre_assessments_reviewed_by_user_id");
         builder.HasIndex(x => x.EnrollmentId)
             .HasDatabaseName("ix_course_pre_assessments_enrollment_id");
+    }
+}
+
+/// <summary>Map ExamChoiceAnswer với bảng "exam_choice_answers" (canonical v3.3 §20.7).</summary>
+public class ExamChoiceAnswerConfiguration : IEntityTypeConfiguration<ExamChoiceAnswer>
+{
+    public void Configure(EntityTypeBuilder<ExamChoiceAnswer> builder)
+    {
+        builder.ToTable("exam_choice_answers", table =>
+        {
+            table.HasCheckConstraint("ck_exam_choice_answers_owner", "(final_submission_id IS NULL) <> (pre_assessment_id IS NULL)");
+            table.HasCheckConstraint("ck_exam_choice_answers_sort_order", "sort_order >= 1");
+        });
+        builder.HasKey(x => x.Id);
+
+        builder.HasOne<CourseFinalSubmission>().WithMany().HasForeignKey(x => x.FinalSubmissionId);
+        builder.HasOne<CoursePreAssessment>().WithMany().HasForeignKey(x => x.PreAssessmentId);
+        builder.HasOne<Question>().WithMany().HasForeignKey(x => x.QuestionId);
+        builder.HasOne<QuestionOption>().WithMany().HasForeignKey(x => x.SelectedOptionId);
+
+        builder.HasIndex(x => new { x.FinalSubmissionId, x.QuestionId })
+            .IsUnique()
+            .HasFilter("final_submission_id IS NOT NULL")
+            .HasDatabaseName("uq_exam_choice_answers_final_question");
+        builder.HasIndex(x => new { x.PreAssessmentId, x.QuestionId })
+            .IsUnique()
+            .HasFilter("pre_assessment_id IS NOT NULL")
+            .HasDatabaseName("uq_exam_choice_answers_pre_question");
+        builder.HasIndex(x => x.QuestionId)
+            .HasDatabaseName("ix_exam_choice_answers_question_id");
+        builder.HasIndex(x => x.SelectedOptionId)
+            .HasDatabaseName("ix_exam_choice_answers_selected_option_id");
     }
 }

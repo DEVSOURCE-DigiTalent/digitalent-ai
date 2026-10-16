@@ -3,6 +3,7 @@ import {
   pulseService,
   type PulseExamKind,
   type PulseProctoringEventInput,
+  type PulseProctoringSession,
   type PulseProctoringEventKind,
   type PulseRecordingTrack,
 } from '@/services/pulse.service';
@@ -315,7 +316,8 @@ export class ProctorController {
   // ── Phiên ghi hình ──
 
   /** Bắt đầu phiên trên máy chủ, mở hai đoạn ghi và bắt đầu theo dõi tab / cửa sổ. */
-  async start(): Promise<void> {
+  /** Bắt đầu phiên và hai đoạn ghi; trả về phiên kèm phần trắc nghiệm của đề. */
+  async start(): Promise<PulseProctoringSession> {
     if (!this.ready) throw new Error('Thiết bị chưa sẵn sàng.');
     this.set({ phase: 'starting' });
     try {
@@ -328,6 +330,7 @@ export class ProctorController {
       window.addEventListener('blur', this.onBlur);
       window.addEventListener('focus', this.onFocus);
       this.flushTimer = setInterval(() => void this.flushEvents(), EVENT_FLUSH_MS);
+      return session;
     } catch (error) {
       this.set({ phase: 'setup', sessionId: null, startedAt: null });
       throw error;

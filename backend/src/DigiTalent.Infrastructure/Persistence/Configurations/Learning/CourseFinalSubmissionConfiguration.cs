@@ -23,6 +23,9 @@ public class CourseFinalSubmissionConfiguration : IEntityTypeConfiguration<Cours
             table.HasCheckConstraint("ck_course_final_submissions_retry_window",
                 "(retry_opens_at IS NULL AND retry_due_at IS NULL) " +
                 "OR (attempt_no = 1 AND decision = 'NOT_YET' AND retry_due_at > retry_opens_at)");
+            table.HasCheckConstraint("ck_course_final_submissions_choice",
+                "(choice_score IS NULL AND choice_total IS NULL) " +
+                "OR (choice_total BETWEEN 1 AND 50 AND choice_score BETWEEN 0 AND choice_total)");
             table.HasCheckConstraint("ck_course_final_submissions_support_action",
                 "support_action IS NULL OR support_action IN ('COACHING','FRESH_CYCLE','PAUSE')");
             table.HasCheckConstraint("ck_course_final_submissions_support_complete",

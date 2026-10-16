@@ -7,8 +7,9 @@ namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
 /// GET /pulse/final-reviews — hàng chờ chấm bài của quản lý (§10): bài đánh giá trước khi học chờ quyết định, bài cuối
-/// khóa chờ quyết định, người đang trong cửa sổ nộp lại, ca quá hạn và cờ hai lần chưa đạt. Mỗi bài có giám sát kèm bản
-/// ghi (đoạn ghi màn hình / camera với link đã ký, nhật ký giám sát). Phạm vi theo <see cref="PulseReviewScope"/>.
+/// khóa chờ quyết định, người đang trong cửa sổ nộp lại, ca quá hạn và cờ hai lần chưa đạt. Mỗi bài kèm kết quả phần trắc
+/// nghiệm (từng câu) và, khi có giám sát, bản ghi (đoạn ghi màn hình / camera với link đã ký, nhật ký giám sát). Phạm vi
+/// theo <see cref="PulseReviewScope"/>.
 /// </summary>
 public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseInput, GetPulseFinalReviewsUseCaseOutput>
 {
@@ -23,6 +24,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
     private readonly PulseCatalogReader _catalog;
     private readonly PulseFinalReader _final;
     private readonly PulseRecordingReader _recordings;
+    private readonly PulseExamPaper _paper;
     private readonly ICurrentUser _currentUser;
     private readonly TimeProvider _clock;
 
@@ -32,6 +34,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
         PulseCatalogReader catalog,
         PulseFinalReader final,
         PulseRecordingReader recordings,
+        PulseExamPaper paper,
         ICurrentUser currentUser,
         TimeProvider clock)
     {
@@ -40,6 +43,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
         _catalog = catalog;
         _final = final;
         _recordings = recordings;
+        _paper = paper;
         _currentUser = currentUser;
         _clock = clock;
     }
@@ -95,7 +99,11 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
         var byCode = catalog.ToDictionary(c => c.Code, StringComparer.OrdinalIgnoreCase);
 
         var now = _clock.GetUtcNow();
-        var attemptDtos = await _final.MapByIdAsync(rows.Select(r => r.Submission).ToList());
+        var attemptDtos = await _final.MapByIdAsync(rows.Select(r => r.Submission).ToList(), forReviewer: true);
+        var preChoiceItems = await _paper.LoadItemsAsync(preRows
+            .Where(r => r.PreAssessment.ChoiceTotal != null)
+            .Select(r => r.PreAssessment.Id)
+            .ToList());
         var items = new List<PulseFinalReviewItemDto>();
         foreach (var group in rows.GroupBy(r => r.Enrollment.Id))
         {
@@ -160,6 +168,8 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                         EvidenceText = preAssessment.EvidenceText,
                         SubmittedAt = preAssessment.SubmittedAt,
                         ProctoringSessionId = preAssessment.ProctoringSessionId,
+                        Choice = PulseExamPaper.Result(
+                            preAssessment.ChoiceScore, preAssessment.ChoiceTotal, null, true, preChoiceItems.GetValueOrDefault(preAssessment.Id)),
                     },
                 },
                 AiHint = PulseRules.AiHint(preAssessment.EvidenceText),

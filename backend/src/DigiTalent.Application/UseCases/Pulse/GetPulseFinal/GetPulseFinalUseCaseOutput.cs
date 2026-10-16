@@ -7,6 +7,9 @@ public class GetPulseFinalUseCaseOutput
     public string? PositionName { get; set; }
     public PulseReviewerDto? Reviewer { get; set; }
     public List<PulseCriterionDto> Criteria { get; set; } = new();
+    /// <summary>Số câu trắc nghiệm của đề (0 khi khóa chưa có câu ôn tập) và số câu đúng tối thiểu.</summary>
+    public int ChoiceCount { get; set; }
+    public int ChoicePassMark { get; set; }
     /// <summary>Xem PulseFinalStatus.</summary>
     public string Status { get; set; } = string.Empty;
     /// <summary>Bắt đầu được bài làm có giám sát và nộp bài ngay bây giờ.</summary>

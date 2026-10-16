@@ -7,6 +7,7 @@ namespace DigiTalent.Domain.Entities;
 /// đề và tiêu chí như bài cuối khóa, làm một lần, có giám sát (ProctoringSessionId), quản lý phòng ban chấm.
 /// Decision = null là đang chờ chấm. PASSED: khóa được công nhận — lượt học COMPLETED (EnrollmentId) và mở cấp kế tiếp.
 /// NOT_YET: nhân viên học khóa rồi làm bài cuối khóa như bình thường.
+/// ChoiceScore / ChoiceTotal: số câu trắc nghiệm đúng / số câu của đề (§20.6), null với bài nộp trước khi có trắc nghiệm.
 /// </summary>
 public class CoursePreAssessment : BaseEntity
 {
@@ -14,6 +15,8 @@ public class CoursePreAssessment : BaseEntity
     public Guid CourseId { get; set; }
     public Guid? ProctoringSessionId { get; set; }
     public string EvidenceText { get; set; } = string.Empty;
+    public short? ChoiceScore { get; set; }
+    public short? ChoiceTotal { get; set; }
     public DateTimeOffset SubmittedAt { get; set; }
     public string? Decision { get; set; }
     public string? DecisionReason { get; set; }

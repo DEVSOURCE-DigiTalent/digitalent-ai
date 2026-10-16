@@ -4,18 +4,18 @@ import { useQueryClient } from '@tanstack/react-query';
 import { PULSE_KEYS, usePulseFinal } from '@/hooks/use-pulse';
 import { pulseService, type PulseFinal, type PulseFinalAttempt } from '@/services/pulse.service';
 import { formatDateTime } from '@/lib/utils';
-import { CriteriaRubric, FinalStatusPill } from '../components/blocks';
+import { ChoiceScore, CriteriaRubric, FinalStatusPill } from '../components/blocks';
 import { LoadError, Mini, Notice, PageSkeleton, Pill, PuLink } from '../components/ui';
 import { ExamShell } from '../exam/ExamShell';
 import { ProctoredExam } from '../exam/ProctoredExam';
-import { BLOCK_MESSAGES, SUPPORT_LABELS, levelName, pulseErrorMessage, timeLeft } from '../lib/labels';
+import { BLOCK_MESSAGES, SUPPORT_LABELS, examStructure, levelName, pulseErrorMessage, timeLeft } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 
 const LABEL = 'Bài cuối khóa';
 
 /**
  * EM-07 · Bài cuối khóa trên trang riêng (§9.3, §10): khi mở, nhân viên làm bài có giám sát (toàn bộ màn hình + camera +
- * micro) và nộp ghi chú minh chứng; người chấm quyết định kèm lý do. Lần 1 chưa đạt → chờ rồi nộp lần cuối trong hạn;
+ * micro): phần trắc nghiệm và ghi chú minh chứng; người chấm quyết định kèm lý do, kết quả chỉ hiện sau khi chấm. Lần 1 chưa đạt → chờ rồi nộp lần cuối trong hạn;
  * lần 2 chưa đạt → cờ hỗ trợ. Khi chưa / không làm được bài, trang cho thấy trạng thái và các lần nộp.
  */
 export function PulseFinalPage() {
@@ -52,6 +52,8 @@ export function PulseFinalPage() {
         positionName={data.positionName}
         reviewer={data.reviewer}
         criteria={data.criteria}
+        choiceCount={data.choiceCount}
+        choicePassMark={data.choicePassMark}
         attemptLabel={`Lần nộp ${attemptNo}/${data.maxAttempts}`}
         outcomes={{
           pass: `${code} đạt, mức ${levelName(data.course.tier)} của lĩnh vực được xác nhận và khóa tiếp theo mở.`,
@@ -64,8 +66,8 @@ export function PulseFinalPage() {
             <strong>Nhận xét lần {last.attemptNo}:</strong> {last.decisionReason} Đây là lần nộp cuối, hạn {formatDateTime(last.retryDueAt)} ({timeLeft(last.retryDueAt)}).
           </Notice>
         ) : undefined}
-        onSubmit={async (evidenceText, sessionId) => {
-          const result = (await pulseService.submitFinal(data.course.courseId, evidenceText, sessionId)).data.data!;
+        onSubmit={async (evidenceText, sessionId, answers) => {
+          const result = (await pulseService.submitFinal(data.course.courseId, evidenceText, sessionId, answers)).data.data!;
           await qc.invalidateQueries({ queryKey: PULSE_KEYS.all });
           return { durationMs: result.durationMs };
         }}
@@ -117,10 +119,11 @@ function FinalView({ final }: { final: PulseFinal }) {
 
       <section className="pu-surface pu-pad">
         <Mini>{course.domainName} · {levelName(course.tier)} · bài cuối khóa</Mini>
-        <h2 className="pu-panel-title">Tạo ghi chú công việc có thể kiểm tra.</h2>
+        <h2 className="pu-panel-title">{final.choiceCount > 0 ? 'Trắc nghiệm và ghi chú công việc có thể kiểm tra.' : 'Tạo ghi chú công việc có thể kiểm tra.'}</h2>
         <p className="pu-panel-desc">
-          Mô tả một nhiệm vụ thực tế của vị trí {position}: nêu nguồn, hành động hoặc phép tính người khác kiểm tra lại được,
-          kết luận và bước tiếp theo. Khi làm bài, bạn chia sẻ toàn bộ màn hình, bật camera và micro.
+          {examStructure(final.choiceCount, final.choicePassMark)} Phần tự luận: mô tả một nhiệm vụ thực tế của vị trí {position}, nêu nguồn,
+          hành động hoặc phép tính người khác kiểm tra lại được, kết luận và bước tiếp theo. Khi làm bài, bạn chia sẻ toàn bộ màn hình,
+          bật camera và micro.
         </p>
         <CriteriaRubric criteria={final.criteria} />
       </section>
@@ -243,6 +246,7 @@ function AttemptCard({ attempt, max }: { attempt: PulseFinalAttempt; max: number
           {attempt.decision === 'PASSED' ? 'Đã duyệt' : attempt.decision === 'NOT_YET' ? 'Chưa đạt · cần sửa' : 'Chờ người chấm'}
         </Pill>
       </header>
+      <ChoiceScore choice={attempt.choice} />
       <blockquote>{attempt.evidenceText}</blockquote>
       {attempt.decisionReason && (
         <div className={`pu-feedback${attempt.decision === 'PASSED' ? ' ok' : ''}`}>

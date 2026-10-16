@@ -144,6 +144,40 @@ public class PulseFinalAttemptDto
     public DateTimeOffset? SupportRecordedAt { get; set; }
     /// <summary>Phiên làm bài có giám sát của lần nộp (null với bài nộp trước khi có giám sát).</summary>
     public Guid? ProctoringSessionId { get; set; }
+    /// <summary>Phần trắc nghiệm. Nhân viên chỉ thấy sau khi bài được chấm; người chấm thấy cả từng câu.</summary>
+    public PulseChoiceResultDto? Choice { get; set; }
+}
+
+/// <summary>Kết quả phần trắc nghiệm của một bài làm.</summary>
+public class PulseChoiceResultDto
+{
+    public int Score { get; set; }
+    public int Total { get; set; }
+    /// <summary>Số câu đúng tối thiểu để phần trắc nghiệm đạt.</summary>
+    public int PassMark { get; set; }
+    public bool Passed { get; set; }
+    /// <summary>Từng câu — chỉ người chấm thấy (null với nhân viên).</summary>
+    public List<PulseChoiceItemDto>? Items { get; set; }
+}
+
+public class PulseChoiceItemDto
+{
+    public int Number { get; set; }
+    public string Question { get; set; } = string.Empty;
+    /// <summary>Phương án nhân viên đã chọn.</summary>
+    public string Selected { get; set; } = string.Empty;
+    /// <summary>Đáp án đúng.</summary>
+    public string Correct { get; set; } = string.Empty;
+    public bool IsCorrect { get; set; }
+}
+
+/// <summary>Một câu trắc nghiệm của đề (không kèm đáp án), phát lúc bắt đầu phiên có giám sát.</summary>
+public class PulseExamQuestionDto
+{
+    public Guid QuestionId { get; set; }
+    public int Number { get; set; }
+    public string Content { get; set; } = string.Empty;
+    public List<PulseOptionDto> Options { get; set; } = new();
 }
 
 /// <summary>Một phương án của câu hỏi trắc nghiệm (không kèm đáp án).</summary>

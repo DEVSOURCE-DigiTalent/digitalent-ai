@@ -154,6 +154,13 @@ export function capNote(domain: PulseDomain, positionName: string | null | undef
   return `Vị trí ${positionName ?? 'của bạn'} yêu cầu mức ${levelName(domain.target)}, nhưng doanh nghiệp đặt trần cho ${departmentName ? `phòng ${departmentName}` : 'phòng ban của bạn'} ở mức ${levelName(domain.ceiling)}, nên lộ trình dừng ở mức ${levelName(domain.pathTop)}.`;
 }
 
+/** "Đề gồm 10 câu trắc nghiệm (đúng từ 7 câu) và một bài tự luận…" — mô tả đề trên trang trạng thái. */
+export function examStructure(choiceCount: number, passMark: number): string {
+  return choiceCount > 0
+    ? `Đề gồm ${choiceCount} câu trắc nghiệm (đúng từ ${passMark} câu) và một bài tự luận chấm theo ba tiêu chí dưới đây.`
+    : 'Đề gồm một bài tự luận chấm theo ba tiêu chí dưới đây.';
+}
+
 /** "41 phút 12 giây", "45 giây". */
 export function formatDuration(ms: number | null | undefined): string {
   const total = Math.max(0, Math.round((ms ?? 0) / 1000));

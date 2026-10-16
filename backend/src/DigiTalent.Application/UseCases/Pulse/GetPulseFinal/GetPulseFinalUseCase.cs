@@ -3,8 +3,9 @@ using DigiTalent.Application.Common.UseCases;
 namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
-/// GET /me/pulse/courses/{courseId}/final — bài cuối của đúng khóa (§9.3, §10): ba tiêu chí, trạng thái nộp,
-/// nhận xét của quản lý, cửa sổ nộp lần 2, cờ hỗ trợ và việc có bắt đầu được bài làm có giám sát hay không.
+/// GET /me/pulse/courses/{courseId}/final — bài cuối của đúng khóa (§9.3, §10): số câu trắc nghiệm của đề, ba tiêu chí
+/// phần tự luận, trạng thái nộp, nhận xét của quản lý (kèm số câu trắc nghiệm đúng khi đã chấm), cửa sổ nộp lần 2, cờ hỗ
+/// trợ và việc có bắt đầu được bài làm có giám sát hay không.
 /// </summary>
 public class GetPulseFinalUseCase : IUseCase<GetPulseFinalUseCaseInput, GetPulseFinalUseCaseOutput>
 {
@@ -24,6 +25,7 @@ public class GetPulseFinalUseCase : IUseCase<GetPulseFinalUseCaseInput, GetPulse
         var (snapshot, state) = await _workspace.ResolveAsync(input.CourseId);
         var policy = await _policy.GetAsync(snapshot.Employee.OrganizationId);
         var firstOpen = state.Modules.FirstOrDefault(m => !(state.Progress?.GetValueOrDefault(m.ModuleId)?.Passed(m) ?? false));
+        var choiceCount = PulseExamPaper.SizeOf(state.Modules);
 
         return new GetPulseFinalUseCaseOutput
         {
@@ -32,6 +34,8 @@ public class GetPulseFinalUseCase : IUseCase<GetPulseFinalUseCaseInput, GetPulse
             PositionName = snapshot.PositionName,
             Reviewer = PulseMapping.Reviewer(snapshot),
             Criteria = PulseRules.FinalCriteria.ToList(),
+            ChoiceCount = choiceCount,
+            ChoicePassMark = PulseRules.ChoicePassMark(choiceCount),
             Status = state.FinalStatus,
             CanSubmit = state.CanStartFinal,
             ClosedMessage = state.CanStartFinal ? null

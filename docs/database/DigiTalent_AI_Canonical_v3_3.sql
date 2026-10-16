@@ -19,6 +19,9 @@
 --          như bài cuối khóa, quản lý phòng ban chấm. PASSED: khóa được công nhận (lượt học COMPLETED,
 --          enrollment_id trỏ tới lượt đó), không cần học. NOT_YET: nhân viên học khóa rồi làm bài cuối khóa.
 --   * course_final_submissions.proctoring_session_id: phiên có giám sát của lần nộp (null với bài nộp cũ).
+--   * Phần trắc nghiệm của bài làm (20.6, 20.7): bài đánh giá trước khi học và bài cuối khóa gồm 10 câu trắc nghiệm
+--     rút từ câu ôn tập các mô-đun của khóa + phần tự luận. Trắc nghiệm tự chấm lúc nộp (choice_score / choice_total,
+--     exam_choice_answers); nhân viên chỉ thấy kết quả sau khi người chấm quyết định; "Đạt" cần đúng ít nhất 70% số câu.
 --   Bài kiểm tra đầu vào (capability_baselines, capability_baseline_answers) không còn được dùng ở cổng
 --   nhân viên; bảng được giữ nguyên để không mất dữ liệu cũ.
 -- ============================================================================
@@ -166,5 +169,53 @@ ALTER TABLE course_final_submissions
 CREATE UNIQUE INDEX uq_course_final_submissions_session
     ON course_final_submissions(proctoring_session_id)
     WHERE proctoring_session_id IS NOT NULL;
+
+-- 20.6. Điểm phần trắc nghiệm của bài làm.
+--   Đề = tối đa 10 câu rút từ câu ôn tập các mô-đun của khóa (assessments QUIZ có module_id), rải đều các mô-đun;
+--   bài đánh giá trước khi học và từng lần nộp bài cuối rút nhóm câu khác nhau. Chấm tự động lúc nộp.
+--   choice_score / choice_total: số câu đúng / số câu của đề; null với bài nộp trước khi có trắc nghiệm hoặc khóa
+--   chưa có câu ôn tập. Quyết định PASSED cần choice_score >= ceil(choice_total * 0.7) (10 câu → 7).
+ALTER TABLE course_final_submissions
+    ADD COLUMN choice_score smallint,
+    ADD COLUMN choice_total smallint,
+    ADD CONSTRAINT ck_course_final_submissions_choice
+        CHECK ((choice_score IS NULL AND choice_total IS NULL)
+            OR (choice_total BETWEEN 1 AND 50 AND choice_score BETWEEN 0 AND choice_total));
+
+ALTER TABLE course_pre_assessments
+    ADD COLUMN choice_score smallint,
+    ADD COLUMN choice_total smallint,
+    ADD CONSTRAINT ck_course_pre_assessments_choice
+        CHECK ((choice_score IS NULL AND choice_total IS NULL)
+            OR (choice_total BETWEEN 1 AND 50 AND choice_score BETWEEN 0 AND choice_total));
+
+-- 20.7. Câu trả lời trắc nghiệm của một bài làm: thuộc đúng một lần nộp bài cuối khóa hoặc một bài đánh giá
+--   trước khi học. sort_order = số thứ tự câu trong đề (1-based).
+CREATE TABLE exam_choice_answers (
+    id                   uuid PRIMARY KEY,
+    final_submission_id  uuid REFERENCES course_final_submissions(id),
+    pre_assessment_id    uuid REFERENCES course_pre_assessments(id),
+    question_id          uuid NOT NULL REFERENCES questions(id),
+    selected_option_id   uuid NOT NULL REFERENCES question_options(id),
+    is_correct           boolean NOT NULL,
+    sort_order           smallint NOT NULL,
+    created_at           timestamptz NOT NULL DEFAULT now(),
+    updated_at           timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT ck_exam_choice_answers_owner
+        CHECK ((final_submission_id IS NULL) <> (pre_assessment_id IS NULL)),
+    CONSTRAINT ck_exam_choice_answers_sort_order
+        CHECK (sort_order >= 1)
+);
+
+CREATE UNIQUE INDEX uq_exam_choice_answers_final_question
+    ON exam_choice_answers(final_submission_id, question_id)
+    WHERE final_submission_id IS NOT NULL;
+CREATE UNIQUE INDEX uq_exam_choice_answers_pre_question
+    ON exam_choice_answers(pre_assessment_id, question_id)
+    WHERE pre_assessment_id IS NOT NULL;
+CREATE INDEX ix_exam_choice_answers_question_id
+    ON exam_choice_answers(question_id);
+CREATE INDEX ix_exam_choice_answers_selected_option_id
+    ON exam_choice_answers(selected_option_id);
 
 COMMIT;

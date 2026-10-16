@@ -130,12 +130,12 @@ function HowItWorks({ reviewerName }: { reviewerName?: string | null }) {
         <li>
           <span className="pu-howto-num">1</span>
           <strong>Làm bài đánh giá trước khi học</strong>
-          <span>Đề giống bài cuối khóa. Bạn chia sẻ toàn bộ màn hình, bật camera và micro; cả ba được ghi lại.</span>
+          <span>Đề như bài cuối khóa: 10 câu trắc nghiệm và một bài tự luận. Bạn chia sẻ toàn bộ màn hình, bật camera và micro; cả ba được ghi lại.</span>
         </li>
         <li>
           <span className="pu-howto-num">2</span>
           <strong>{reviewerName ?? 'Người chấm'} chấm cùng bản ghi</strong>
-          <span>Ba tiêu chí: nguồn có thể truy vết, hành động có thể kiểm tra, kết luận có căn cứ.</span>
+          <span>Trắc nghiệm đúng từ 7/10 câu và tự luận đạt ba tiêu chí. Bạn biết kết quả khi chấm xong.</span>
         </li>
         <li className="ok">
           <span className="pu-howto-tag"><Check size={13} strokeWidth={3} aria-hidden />Đạt</span>

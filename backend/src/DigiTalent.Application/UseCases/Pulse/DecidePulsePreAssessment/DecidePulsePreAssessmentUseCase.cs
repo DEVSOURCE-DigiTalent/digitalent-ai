@@ -9,7 +9,7 @@ namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
 /// POST /pulse/final-reviews/pre-assessments/{preAssessmentId}/decision — người chấm ghi quyết định cho bài đánh giá
-/// trước khi học đang chờ:
+/// trước khi học đang chờ ("Đạt" cần phần trắc nghiệm đủ số câu đúng, <see cref="PulseExamPaper.BelowPass"/>):
 ///   - PASSED: khóa được công nhận — lượt học của mã khóa chuyển COMPLETED (tạo mới nếu chưa có, không cần suất học),
 ///     mức đã xác nhận có thể tăng và cấp kế tiếp mở.
 ///   - NOT_YET: nhân viên học khóa rồi làm bài cuối khóa như bình thường (khóa có phí vẫn cần suất học).
@@ -39,6 +39,8 @@ public class DecidePulsePreAssessmentUseCase : IUseCase<DecidePulsePreAssessment
         {
             throw new ConflictException("Bài đánh giá này đã có quyết định.");
         }
+
+        PulseExamPaper.EnsureCanPass(input.Decision, preAssessment.ChoiceScore, preAssessment.ChoiceTotal);
 
         var now = _clock.GetUtcNow();
         var reason = input.Reason.Trim();

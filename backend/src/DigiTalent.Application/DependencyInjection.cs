@@ -82,6 +82,7 @@ public static class DependencyInjection
         services.AddScoped<PulseRetryPolicyProvider>();
         services.AddScoped<PulseCourseWorkspace>();
         services.AddScoped<PulseQuizReader>();
+        services.AddScoped<PulseExamPaper>();
         services.AddScoped<PulseFinalReader>();
         services.AddScoped<PulseOutcomeReader>();
         services.AddScoped<PulseReviewScope>();

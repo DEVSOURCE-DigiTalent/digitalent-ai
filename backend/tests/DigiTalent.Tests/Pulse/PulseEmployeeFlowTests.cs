@@ -324,7 +324,7 @@ public class PulseEmployeeFlowTests
         world.Clock.Advance(TimeSpan.FromMinutes(3));
         await employee.SubmitPreAssessment.ExecuteAsync(new SubmitPulsePreAssessmentUseCaseInput
         {
-            CourseId = course.CourseId, EvidenceText = Evidence, ProctoringSessionId = session.SessionId,
+            CourseId = course.CourseId, EvidenceText = Evidence, ProctoringSessionId = session.SessionId, Answers = await world.AnswersAsync(session.Questions),
         });
         world.Context.ChangeTracker.Clear();
 
@@ -515,6 +515,94 @@ public class PulseEmployeeFlowTests
         topped.Select(l => l.SortOrder).Order().Should().Equal(1, 2, 3, 4, 5, 6);
         topped.Where(l => l.SortOrder is 3 or 4).Select(l => l.QuestionId)
             .Should().BeEquivalentTo(legacy.Select(l => l.QuestionId), "câu cũ được giữ và về đúng trang tình huống");
+    }
+
+    [Fact]
+    public async Task ExamChoice_TenCourseQuizQuestions_HiddenUntilReviewed_AndBelowTheMarkCannotPass()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
+        var manager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
+        var course = await world.CourseAsync(employee, "A1-F");
+
+        var info = await employee.GetPreAssessment.ExecuteAsync(new GetPulsePreAssessmentUseCaseInput { CourseId = course.CourseId });
+        info.ChoiceCount.Should().Be(10);
+        info.ChoicePassMark.Should().Be(7);
+
+        // Đề phát lúc bắt đầu phiên: 10 câu rút từ câu ôn tập của các mô đun, rải đều mọi mô đun.
+        var sessionId = await world.ProctorAsync(employee, course.CourseId, Statuses.ProctoringKind.PreAssessment);
+        var paper = world.LastPaper;
+        paper.Select(q => q.Number).Should().Equal(Enumerable.Range(1, 10));
+        paper.Select(q => q.QuestionId).Should().OnlyHaveUniqueItems();
+        paper.Select(q => q.Content).Should().OnlyHaveUniqueItems("câu mẫu lặp giữa các mô đun chỉ vào đề một lần");
+        var bank = await (
+                from assessment in world.Context.Assessments.AsNoTracking()
+                join link in world.Context.AssessmentQuestions.AsNoTracking() on assessment.Id equals link.AssessmentId
+                where assessment.CourseId == course.CourseId && assessment.ModuleId != null
+                select new { link.QuestionId, ModuleId = assessment.ModuleId!.Value })
+            .ToListAsync();
+        var drawn = bank.Where(b => paper.Any(q => q.QuestionId == b.QuestionId)).ToList();
+        drawn.Should().HaveCount(10, "mọi câu của đề đều là câu ôn tập của khóa");
+        drawn.Select(b => b.ModuleId).Distinct().Should().HaveCount(bank.Select(b => b.ModuleId).Distinct().Count());
+
+        var nine = (await world.AnswersAsync(paper)).Take(9).ToList();
+        var incomplete = () => employee.SubmitPreAssessment.ExecuteAsync(new SubmitPulsePreAssessmentUseCaseInput
+        {
+            CourseId = course.CourseId, EvidenceText = Evidence, ProctoringSessionId = sessionId, Answers = nine,
+        });
+        (await incomplete.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be(PulseExamPaper.AnswersInvalid);
+        world.Context.ChangeTracker.Clear();
+
+        var submitted = await employee.SubmitPreAssessment.ExecuteAsync(new SubmitPulsePreAssessmentUseCaseInput
+        {
+            CourseId = course.CourseId, EvidenceText = Evidence, ProctoringSessionId = sessionId, Answers = await world.AnswersAsync(paper, correct: 6),
+        });
+        world.Context.ChangeTracker.Clear();
+        (await employee.GetPreAssessment.ExecuteAsync(new GetPulsePreAssessmentUseCaseInput { CourseId = course.CourseId }))
+            .Submission!.Choice.Should().BeNull("nhân viên chỉ biết kết quả khi người chấm chấm xong");
+
+        var item = (await manager.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).Items.Single(i => i.Kind == Statuses.ProctoringKind.PreAssessment);
+        var choice = item.Attempts.Single().Choice!;
+        (choice.Score, choice.Total, choice.PassMark, choice.Passed).Should().Be((6, 10, 7, false));
+        choice.Items!.Select(i => i.Number).Should().Equal(Enumerable.Range(1, 10));
+        choice.Items!.Select(i => i.IsCorrect).Should().Equal(true, true, true, true, true, true, false, false, false, false);
+        choice.Items![0].Selected.Should().Be(choice.Items[0].Correct);
+        choice.Items![9].Selected.Should().NotBe(choice.Items[9].Correct);
+        choice.Items![0].Question.Should().NotBeNullOrWhiteSpace();
+
+        var pass = () => manager.DecidePreAssessment.ExecuteAsync(new DecidePulsePreAssessmentUseCaseInput
+        {
+            PreAssessmentId = submitted.PreAssessmentId, Decision = Statuses.FinalSubmissionDecision.Passed, Reason = "Đạt đủ ba tiêu chí, nguồn rõ ràng.",
+        });
+        (await pass.Should().ThrowAsync<BadRequestException>("6/10 câu trắc nghiệm chưa đủ 7 câu"))
+            .Which.Errors.Single().Code.Should().Be(PulseExamPaper.BelowPass);
+        world.Context.ChangeTracker.Clear();
+        await manager.DecidePreAssessment.ExecuteAsync(new DecidePulsePreAssessmentUseCaseInput
+        {
+            PreAssessmentId = submitted.PreAssessmentId, Decision = Statuses.FinalSubmissionDecision.NotYet, Reason = "Trắc nghiệm 6/10, hãy học khóa.",
+        });
+        world.Context.ChangeTracker.Clear();
+        var decided = (await employee.GetPreAssessment.ExecuteAsync(new GetPulsePreAssessmentUseCaseInput { CourseId = course.CourseId })).Submission!.Choice!;
+        (decided.Score, decided.Total, decided.Passed).Should().Be((6, 10, false));
+        decided.Items.Should().BeNull("nhân viên không thấy đáp án");
+
+        // Bài cuối khóa: đề khác bài đánh giá; đủ 7 câu đúng thì người chấm cho đạt được.
+        await world.PassAllModulesAsync(employee, course.CourseId);
+        (await employee.GetFinal.ExecuteAsync(new GetPulseFinalUseCaseInput { CourseId = course.CourseId })).ChoiceCount.Should().Be(10);
+        var final = await world.SubmitFinalAsync(employee, course.CourseId, correct: 7);
+        world.LastPaper.Select(q => q.QuestionId).Intersect(paper.Select(q => q.QuestionId)).Should().HaveCountLessThanOrEqualTo(2, "ngân hàng 18 câu: lần làm sau rút nhóm câu kế tiếp");
+        (await employee.GetFinal.ExecuteAsync(new GetPulseFinalUseCaseInput { CourseId = course.CourseId })).Attempts.Single().Choice.Should().BeNull();
+        var finalChoice = (await manager.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).Items
+            .Single(i => i.Kind == Statuses.ProctoringKind.Final).Attempts.Single().Choice!;
+        (finalChoice.Score, finalChoice.Passed).Should().Be((7, true));
+        await manager.Decide.ExecuteAsync(new DecidePulseFinalUseCaseInput
+        {
+            SubmissionId = final.SubmissionId, Decision = Statuses.FinalSubmissionDecision.Passed, Reason = "Trắc nghiệm 7/10, tự luận đủ ba tiêu chí.",
+        });
+        world.Context.ChangeTracker.Clear();
+        var approved = await employee.GetFinal.ExecuteAsync(new GetPulseFinalUseCaseInput { CourseId = course.CourseId });
+        approved.Status.Should().Be(PulseFinalStatus.Approved);
+        approved.Attempts.Single().Choice!.Score.Should().Be(7);
     }
 
     [Fact]

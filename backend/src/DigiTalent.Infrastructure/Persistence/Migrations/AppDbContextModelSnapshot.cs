@@ -1631,6 +1631,14 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasColumnType("smallint")
                         .HasColumnName("attempt_no");
 
+                    b.Property<short?>("ChoiceScore")
+                        .HasColumnType("smallint")
+                        .HasColumnName("choice_score");
+
+                    b.Property<short?>("ChoiceTotal")
+                        .HasColumnType("smallint")
+                        .HasColumnName("choice_total");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -1723,6 +1731,8 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                     b.ToTable("course_final_submissions", null, t =>
                         {
                             t.HasCheckConstraint("ck_course_final_submissions_attempt_no", "attempt_no BETWEEN 1 AND 2");
+
+                            t.HasCheckConstraint("ck_course_final_submissions_choice", "(choice_score IS NULL AND choice_total IS NULL) OR (choice_total BETWEEN 1 AND 50 AND choice_score BETWEEN 0 AND choice_total)");
 
                             t.HasCheckConstraint("ck_course_final_submissions_decision", "decision IS NULL OR decision IN ('PASSED','NOT_YET')");
 
@@ -1905,6 +1915,14 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<short?>("ChoiceScore")
+                        .HasColumnType("smallint")
+                        .HasColumnName("choice_score");
+
+                    b.Property<short?>("ChoiceTotal")
+                        .HasColumnType("smallint")
+                        .HasColumnName("choice_total");
+
                     b.Property<Guid>("CourseId")
                         .HasColumnType("uuid")
                         .HasColumnName("course_id");
@@ -1982,6 +2000,8 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
 
                     b.ToTable("course_pre_assessments", null, t =>
                         {
+                            t.HasCheckConstraint("ck_course_pre_assessments_choice", "(choice_score IS NULL AND choice_total IS NULL) OR (choice_total BETWEEN 1 AND 50 AND choice_score BETWEEN 0 AND choice_total)");
+
                             t.HasCheckConstraint("ck_course_pre_assessments_decision", "decision IS NULL OR decision IN ('PASSED', 'NOT_YET')");
 
                             t.HasCheckConstraint("ck_course_pre_assessments_enrollment", "enrollment_id IS NULL OR decision = 'PASSED'");
@@ -2471,6 +2491,72 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_enrollments_completion_time", "completed_at IS NULL OR started_at IS NULL OR completed_at >= started_at");
 
                             t.HasCheckConstraint("ck_enrollments_status", "status IN ('NOT_STARTED','IN_PROGRESS','READY_FOR_ASSESSMENT','COMPLETED','CANCELLED')");
+                        });
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.ExamChoiceAnswer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("FinalSubmissionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("final_submission_id");
+
+                    b.Property<bool>("IsCorrect")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_correct");
+
+                    b.Property<Guid?>("PreAssessmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pre_assessment_id");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("question_id");
+
+                    b.Property<Guid>("SelectedOptionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("selected_option_id");
+
+                    b.Property<short>("SortOrder")
+                        .HasColumnType("smallint")
+                        .HasColumnName("sort_order");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_exam_choice_answers");
+
+                    b.HasIndex("QuestionId")
+                        .HasDatabaseName("ix_exam_choice_answers_question_id");
+
+                    b.HasIndex("SelectedOptionId")
+                        .HasDatabaseName("ix_exam_choice_answers_selected_option_id");
+
+                    b.HasIndex("FinalSubmissionId", "QuestionId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_exam_choice_answers_final_question")
+                        .HasFilter("final_submission_id IS NOT NULL");
+
+                    b.HasIndex("PreAssessmentId", "QuestionId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_exam_choice_answers_pre_question")
+                        .HasFilter("pre_assessment_id IS NOT NULL");
+
+                    b.ToTable("exam_choice_answers", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_exam_choice_answers_owner", "(final_submission_id IS NULL) <> (pre_assessment_id IS NULL)");
+
+                            t.HasCheckConstraint("ck_exam_choice_answers_sort_order", "sort_order >= 1");
                         });
                 });
 
@@ -7877,6 +7963,35 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_enrollments_employees_employee_id");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.ExamChoiceAnswer", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.CourseFinalSubmission", null)
+                        .WithMany()
+                        .HasForeignKey("FinalSubmissionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_exam_choice_answers_course_final_submissions_final_submissi");
+
+                    b.HasOne("DigiTalent.Domain.Entities.CoursePreAssessment", null)
+                        .WithMany()
+                        .HasForeignKey("PreAssessmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_exam_choice_answers_course_pre_assessments_pre_assessment_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.Question", null)
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_exam_choice_answers_questions_question_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.QuestionOption", null)
+                        .WithMany()
+                        .HasForeignKey("SelectedOptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_exam_choice_answers_question_options_selected_option_id");
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.FileObject", b =>

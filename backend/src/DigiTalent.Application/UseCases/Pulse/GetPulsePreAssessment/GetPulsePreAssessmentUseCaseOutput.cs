@@ -7,6 +7,9 @@ public class GetPulsePreAssessmentUseCaseOutput
     public string? PositionName { get; set; }
     public PulseReviewerDto? Reviewer { get; set; }
     public List<PulseCriterionDto> Criteria { get; set; } = new();
+    /// <summary>Số câu trắc nghiệm của đề (0 khi khóa chưa có câu ôn tập) và số câu đúng tối thiểu.</summary>
+    public int ChoiceCount { get; set; }
+    public int ChoicePassMark { get; set; }
     /// <summary>REQUIRED | LOCKED | PENDING | PASSED | NOT_YET | NOT_NEEDED — xem PulsePreStatus.</summary>
     public string Status { get; set; } = string.Empty;
     public bool CanStart { get; set; }
@@ -26,4 +29,6 @@ public class PulsePreAssessmentSubmissionDto
     public string? ReviewerName { get; set; }
     public DateTimeOffset? ReviewedAt { get; set; }
     public Guid? ProctoringSessionId { get; set; }
+    /// <summary>Phần trắc nghiệm — chỉ có sau khi bài được chấm.</summary>
+    public PulseChoiceResultDto? Choice { get; set; }
 }

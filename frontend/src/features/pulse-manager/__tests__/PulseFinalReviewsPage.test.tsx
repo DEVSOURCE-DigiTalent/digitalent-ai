@@ -92,7 +92,10 @@ const pre = item({
   courseCode: 'A2-F',
   courseTitle: 'Giao tiếp số cơ bản',
   maxAttempts: 1,
-  attempts: [{ submissionId: 'pa-1', attemptNo: 1, evidenceText: 'Soạn email gửi khách hàng có nguồn số liệu.', submittedAt: '2026-10-15T08:20:00Z', proctoringSessionId: 'ps-1' }],
+  attempts: [{
+    submissionId: 'pa-1', attemptNo: 1, evidenceText: 'Soạn email gửi khách hàng có nguồn số liệu.', submittedAt: '2026-10-15T08:20:00Z', proctoringSessionId: 'ps-1',
+    choice: { score: 8, total: 10, passMark: 7, passed: true, items: [] },
+  }],
   proctoringSessionId: 'ps-1',
   recording,
 });
@@ -241,6 +244,36 @@ describe('PulseFinalReviewsPage · pre-assessments and recordings', () => {
 
     await waitFor(() => expect(decidePre).toHaveBeenCalledWith('pa-1', 'PASSED', 'Bài đạt cả ba tiêu chí, có nguồn.'));
     expect(decideFinal).not.toHaveBeenCalled();
+  });
+
+  it('shows the multiple-choice result question by question and cannot pass a paper below the mark', async () => {
+    const below = item({
+      attempts: [{
+        submissionId: 'sub-1', attemptNo: 1, evidenceText: 'Nguồn: sổ cái tháng 9; đối chiếu 120 hóa đơn.', submittedAt: '2026-10-14T08:00:00Z',
+        choice: {
+          score: 6, total: 10, passMark: 7, passed: false,
+          items: [
+            { number: 1, question: 'Nguồn nào truy vết được?', selected: 'Sổ cái tháng 9', correct: 'Sổ cái tháng 9', isCorrect: true },
+            { number: 2, question: 'Bước kiểm tra lại là gì?', selected: 'Hỏi đồng nghiệp', correct: 'Đối chiếu từng hóa đơn', isCorrect: false },
+          ],
+        },
+      }],
+    });
+    vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok(queue([below])));
+
+    renderPage();
+
+    const choice = await screen.findByRole('region', { name: 'Phần trắc nghiệm' });
+    expect(within(choice).getByText('Đúng 6/10 câu')).toBeTruthy();
+    expect(within(choice).getByText('Chưa đạt · cần từ 7 câu')).toBeTruthy();
+    expect(within(choice).getByText('Xem từng câu · 1 câu sai')).toBeTruthy();
+    expect(within(choice).getByText('Đáp án đúng: Đối chiếu từng hóa đơn')).toBeTruthy();
+    expect(within(choice).queryByText('Đáp án đúng: Sổ cái tháng 9')).toBeNull();
+    expect(screen.getByText('Phần tự luận · minh chứng đã nộp')).toBeTruthy();
+
+    const pass = within(screen.getByRole('combobox', { name: 'Quyết định của quản lý' })).getByRole('option', { name: /Duyệt khóa học/ }) as HTMLOptionElement;
+    expect(pass.disabled).toBe(true);
+    expect(screen.getByText(/Phần trắc nghiệm đúng 6\/10 câu, chưa đủ 7 câu: bài chỉ có thể chưa đạt\./)).toBeTruthy();
   });
 
   it('filters the queue by kind of test', async () => {

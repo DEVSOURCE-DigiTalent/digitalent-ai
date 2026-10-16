@@ -126,6 +126,8 @@ const final = (overrides: Partial<PulseFinal> = {}): PulseFinal => ({
   positionName: 'Kế toán',
   reviewer,
   criteria,
+  choiceCount: 10,
+  choicePassMark: 7,
   status: 'READY',
   canSubmit: true,
   closedMessage: null,
@@ -146,6 +148,8 @@ const preAssessment = (overrides: Partial<PulsePreAssessment> = {}): PulsePreAss
   positionName: 'Kế toán',
   reviewer,
   criteria,
+  choiceCount: 10,
+  choicePassMark: 7,
   status: 'REQUIRED',
   canStart: true,
   closedMessage: null,
@@ -314,6 +318,7 @@ describe('PulsePreAssessmentPage', () => {
     // jsdom không có getDisplayMedia / MediaRecorder: trang báo trình duyệt không hỗ trợ và không cho bắt đầu.
     expect(screen.getByRole('alert').textContent).toMatch(/không hỗ trợ ghi màn hình/);
     expect((screen.getByRole('button', { name: /Bắt đầu làm bài/ }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText('10 câu trắc nghiệm + tự luận')).toBeTruthy();
   });
 
   it('shows the waiting state once submitted', async () => {
@@ -328,6 +333,9 @@ describe('PulsePreAssessmentPage', () => {
     expect(await screen.findByText('Bài của bạn đang chờ Trần Quản Lý chấm.')).toBeTruthy();
     expect(screen.getByText('Đối chiếu 120 hóa đơn với sổ cái tháng 9.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Bắt đầu làm bài/ })).toBeNull();
+    expect(screen.getByText(/Đề gồm 10 câu trắc nghiệm \(đúng từ 7 câu\) và một bài tự luận/)).toBeTruthy();
+    // Kết quả trắc nghiệm chỉ có sau khi người chấm quyết định.
+    expect(screen.queryByText(/Trắc nghiệm: đúng/)).toBeNull();
   });
 
   it('sends the employee to learn the course after a NOT_YET decision', async () => {
@@ -337,12 +345,15 @@ describe('PulsePreAssessmentPage', () => {
       submission: {
         preAssessmentId: 'pa-1', evidenceText: 'Bài làm', submittedAt: '2026-10-15T08:00:00Z',
         decision: 'NOT_YET', decisionReason: 'Chưa nêu nguồn dữ liệu.', reviewerName: 'Trần Quản Lý',
+        choice: { score: 6, total: 10, passMark: 7, passed: false },
       },
     })));
 
     renderAt(PULSE_PATHS.preAssessment('course-1'), <PulsePreAssessmentPage />);
 
     expect(await screen.findByText('Chưa đạt — hãy học khóa này.')).toBeTruthy();
+    expect(screen.getByText('Trắc nghiệm: đúng 6/10 câu')).toBeTruthy();
+    expect(screen.getByText('Chưa đạt · cần từ 7 câu')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Bắt đầu học →' }).getAttribute('href')).toBe(PULSE_PATHS.course('course-1'));
     expect(screen.getByText(/Chưa nêu nguồn dữ liệu\./)).toBeTruthy();
   });
@@ -378,12 +389,14 @@ describe('PulseFinalPage', () => {
         submissionId: 's1', attemptNo: 1, evidenceText: 'Bản nộp đầu tiên của tôi', submittedAt: '2026-10-12T08:00:00Z',
         decision: 'NOT_YET', decisionReason: 'Cần nêu rõ phép tính kiểm tra được.', reviewerName: 'Trưởng phòng', reviewedAt: '2026-10-13T08:00:00Z',
         retryOpensAt: opensAt, retryDueAt: dueAt,
+        choice: { score: 8, total: 10, passMark: 7, passed: true },
       }],
     })));
 
     renderAt(PULSE_PATHS.final('course-1'), <PulseFinalPage />);
 
     expect(await screen.findByText('Lần nộp đầu chưa đạt.')).toBeTruthy();
+    expect(screen.getByText('Trắc nghiệm: đúng 8/10 câu')).toBeTruthy();
     expect(screen.getByText('còn 47 giờ')).toBeTruthy();
     expect(screen.getByText('còn 9 ngày')).toBeTruthy();
     expect(screen.getByText(/Cần nêu rõ phép tính kiểm tra được\./)).toBeTruthy();

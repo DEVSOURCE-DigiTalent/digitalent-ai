@@ -5,8 +5,9 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
-/// GET /me/pulse/courses/{courseId}/pre-assessment — bài đánh giá trước khi học của một khóa: đề và ba tiêu chí như bài
-/// cuối khóa, trạng thái (cần làm / chờ chấm / đạt / chưa đạt / chưa mở), bài đã nộp và nhận xét của người chấm.
+/// GET /me/pulse/courses/{courseId}/pre-assessment — bài đánh giá trước khi học của một khóa: đề như bài cuối khóa (số câu
+/// trắc nghiệm, ba tiêu chí phần tự luận), trạng thái (cần làm / chờ chấm / đạt / chưa đạt / chưa mở), bài đã nộp và nhận
+/// xét của người chấm (kèm số câu trắc nghiệm đúng khi đã chấm).
 /// </summary>
 public class GetPulsePreAssessmentUseCase : IUseCase<GetPulsePreAssessmentUseCaseInput, GetPulsePreAssessmentUseCaseOutput>
 {
@@ -23,6 +24,7 @@ public class GetPulsePreAssessmentUseCase : IUseCase<GetPulsePreAssessmentUseCas
     {
         var (snapshot, state) = await _workspace.ResolveAsync(input.CourseId);
         var pre = state.PreAssessment;
+        var choiceCount = PulseExamPaper.SizeOf(state.Modules);
         string? reviewerName = null;
         if (pre?.ReviewedByUserId is { } reviewerId)
         {
@@ -36,6 +38,8 @@ public class GetPulsePreAssessmentUseCase : IUseCase<GetPulsePreAssessmentUseCas
             PositionName = snapshot.PositionName,
             Reviewer = PulseMapping.Reviewer(snapshot),
             Criteria = PulseRules.FinalCriteria.ToList(),
+            ChoiceCount = choiceCount,
+            ChoicePassMark = PulseRules.ChoicePassMark(choiceCount),
             Status = state.PreStatus,
             CanStart = state.CanStartPreAssessment,
             ClosedMessage = state.CanStartPreAssessment ? null : PulseCourseWorkspace.PreAssessmentClosedMessage(state),
@@ -49,6 +53,7 @@ public class GetPulsePreAssessmentUseCase : IUseCase<GetPulsePreAssessmentUseCas
                 ReviewerName = reviewerName,
                 ReviewedAt = pre.ReviewedAt,
                 ProctoringSessionId = pre.ProctoringSessionId,
+                Choice = PulseExamPaper.Result(pre.ChoiceScore, pre.ChoiceTotal, pre.Decision, false, null),
             },
         };
     }

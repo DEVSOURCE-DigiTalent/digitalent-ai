@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, useState, useSyncExternalStore, type Rea
 import { Link, UNSAFE_DataRouterContext, useBlocker, useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, ExternalLink, Mic, Monitor, MonitorOff, ShieldAlert, Upload, Video } from 'lucide-react';
 import pulseMark from '@/assets/pulse/pulse-mark.svg';
-import type { PulseCourseSummary, PulseCriterion, PulseExamKind, PulseReviewer } from '@/services/pulse.service';
+import type { PulseAnswer, PulseCourseSummary, PulseCriterion, PulseExamKind, PulseExamQuestion, PulseReviewer } from '@/services/pulse.service';
 import { btn } from '../lib/button';
 import { PROCTORING_EVENT_LABELS, clock, formatDuration, levelName, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
@@ -18,10 +18,13 @@ export interface ProctoredExamProps {
   positionName?: string | null;
   reviewer?: PulseReviewer | null;
   criteria: PulseCriterion[];
+  /** Số câu trắc nghiệm của đề (0 = chỉ có tự luận) và số câu đúng tối thiểu. */
+  choiceCount: number;
+  choicePassMark: number;
   /** "Một lần làm" hoặc "Lần nộp 1/2". */
   attemptLabel: string;
   outcomes: { pass: string; fail: string };
-  onSubmit: (evidenceText: string, proctoringSessionId: string) => Promise<{ durationMs: number }>;
+  onSubmit: (evidenceText: string, proctoringSessionId: string, answers: PulseAnswer[]) => Promise<{ durationMs: number }>;
   /** Nội dung hiện trước khi bắt đầu (trạng thái, bài đã nộp…) — chỉ ở bước chuẩn bị. */
   intro?: ReactNode;
 }
@@ -41,7 +44,8 @@ function useProctor(courseId: string, kind: PulseExamKind) {
 /**
  * Trang làm bài có giám sát (đánh giá trước khi học / bài cuối khóa): bước chuẩn bị bật chia sẻ toàn bộ màn hình, camera,
  * micro và cam kết; khi làm bài, màn hình + camera + micro được ghi và tải lên dần, rời tab / ngừng chia sẻ được ghi vào
- * nhật ký; mất một nguồn thì bài tạm khóa tới khi bật lại; nộp bài kèm phiên ghi hình.
+ * nhật ký; mất một nguồn thì bài tạm khóa tới khi bật lại. Đề gồm phần trắc nghiệm (phát khi phiên bắt đầu) và phần tự luận;
+ * nộp bài kèm câu trả lời và phiên ghi hình. Kết quả chỉ hiện khi người chấm chấm xong.
  */
 export function ProctoredExam(props: ProctoredExamProps) {
   const { kind, course } = props;
@@ -49,6 +53,8 @@ export function ProctoredExam(props: ProctoredExamProps) {
   const navigate = useNavigate();
   const [stage, setStage] = useState<'check' | 'work' | 'submitting' | 'done'>('check');
   const [text, setText] = useState('');
+  const [questions, setQuestions] = useState<PulseExamQuestion[]>([]);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [agree, setAgree] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -74,7 +80,8 @@ export function ProctoredExam(props: ProctoredExamProps) {
   const start = async () => {
     setStartError(null);
     try {
-      await controller.start();
+      const session = await controller.start();
+      setQuestions(session.questions ?? []);
       setStage('work');
     } catch (error) {
       setStartError(pulseErrorMessage(error, 'Chưa bắt đầu được bài làm. Hãy kiểm tra thiết bị và thử lại.'));
@@ -91,7 +98,8 @@ export function ProctoredExam(props: ProctoredExamProps) {
         setSubmitError('Bản ghi chưa tải hết lên máy chủ. Kiểm tra kết nối mạng rồi bấm Nộp lại.');
         return;
       }
-      const response = await props.onSubmit(text.trim(), result.sessionId);
+      const chosen = questions.map((q) => ({ questionId: q.questionId, optionId: answers[q.questionId]! }));
+      const response = await props.onSubmit(text.trim(), result.sessionId, chosen);
       controller.markFinished();
       setDoneDuration(response.durationMs || result.durationMs);
       setStage('done');
@@ -106,6 +114,8 @@ export function ProctoredExam(props: ProctoredExamProps) {
   };
 
   const length = text.trim().length;
+  const unanswered = questions.filter((q) => !answers[q.questionId]).length;
+  const essayShort = length < MIN_EVIDENCE;
 
   return (
     <div className="pu-exam" data-testid="pulse-exam">
@@ -145,8 +155,33 @@ export function ProctoredExam(props: ProctoredExamProps) {
       {(stage === 'work' || stage === 'submitting') && (
         <main className="pu-exam-body pu-work-grid">
           <div className="pu-work">
-            <Brief {...props} />
-            <section className="pu-surface pu-pad pu-answer" aria-labelledby="pu-answer-label">
+            <Brief {...props} choiceCount={questions.length} />
+            {questions.length > 0 && (
+              <ChoicePart
+                questions={questions}
+                answers={answers}
+                passMark={props.choicePassMark}
+                disabled={snapshot.phase !== 'recording'}
+                onChoose={(questionId, optionId) => setAnswers((prev) => ({ ...prev, [questionId]: optionId }))}
+              />
+            )}
+            <section className="pu-surface pu-pad pu-answer" aria-labelledby="pu-essay-title">
+              <div>
+                <span className="pu-mini">{questions.length > 0 ? 'Phần 2 · Tự luận' : 'Tự luận'}</span>
+                <h2 id="pu-essay-title" className="pu-panel-title">Tạo ghi chú công việc có thể kiểm tra.</h2>
+                <p className="pu-panel-desc">
+                  Mô tả một nhiệm vụ thực tế của vị trí {props.positionName ?? 'của bạn'} thuộc lĩnh vực {props.domainName.toLowerCase()}: nêu nguồn,
+                  hành động hoặc phép tính người khác kiểm tra lại được, kết luận và bước tiếp theo.
+                </p>
+              </div>
+              <ol className="pu-brief-criteria" aria-label="Ba tiêu chí chấm phần tự luận">
+                {props.criteria.map((criterion) => (
+                  <li key={criterion.number}>
+                    <b>{criterion.number}</b>
+                    <span><strong>{criterion.title}</strong><small>{criterion.description}</small></span>
+                  </li>
+                ))}
+              </ol>
               <label id="pu-answer-label" htmlFor="pu-evidence" className="pu-answer-label">Ghi chú minh chứng</label>
               <textarea
                 id="pu-evidence"
@@ -158,16 +193,17 @@ export function ProctoredExam(props: ProctoredExamProps) {
                 aria-describedby="pu-evidence-hint"
               />
               <div className="pu-answer-foot">
-                <small id="pu-evidence-hint" className={length > 0 && length < MIN_EVIDENCE ? 'error' : undefined}>
-                  {length > 0 && length < MIN_EVIDENCE
+                <small id="pu-evidence-hint" className={length > 0 && essayShort ? 'error' : undefined}>
+                  {length > 0 && essayShort
                     ? `Cần ít nhất ${MIN_EVIDENCE} ký tự (hiện có ${length}).`
                     : `Ít nhất ${MIN_EVIDENCE} ký tự · ${length}/${MAX_EVIDENCE} · ${props.attemptLabel}`}
+                  {unanswered > 0 && <span className="pu-answer-missing"> · Còn {unanswered} câu trắc nghiệm chưa chọn</span>}
                 </small>
                 {stage === 'work' && (
                   <button
                     type="button"
                     className={btn()}
-                    disabled={length < MIN_EVIDENCE || snapshot.phase !== 'recording'}
+                    disabled={essayShort || unanswered > 0 || snapshot.phase !== 'recording'}
                     onClick={() => setConfirmSubmit(true)}
                   >
                     Nộp bài
@@ -215,8 +251,8 @@ export function ProctoredExam(props: ProctoredExamProps) {
             <span className="pu-exam-done-icon" aria-hidden><Check size={26} strokeWidth={2.6} /></span>
             <h1 id="pu-done-title">Đã nộp {KIND_LABEL[kind].toLowerCase()} {course.code}.</h1>
             <p>
-              Bài làm và bản ghi {formatDuration(doneDuration)} đã gửi cho {props.reviewer?.name ?? 'người chấm'}. Kết quả và nhận xét sẽ hiện ở
-              trang Hôm nay và trong lộ trình.
+              Bài làm và bản ghi {formatDuration(doneDuration)} đã gửi cho {props.reviewer?.name ?? 'người chấm'}. Kết quả
+              {questions.length > 0 ? ' phần trắc nghiệm, phần tự luận' : ''} và nhận xét chỉ hiện khi người chấm chấm xong, ở trang Hôm nay và trong lộ trình.
             </p>
             <div className="pu-exam-upload">
               <span><Upload size={15} aria-hidden /> Bản ghi màn hình, camera và micro <strong>Đã tải lên</strong></span>
@@ -416,6 +452,7 @@ function DeviceCheck(props: ProctoredExamProps & {
           <span>{props.domainName} · {levelName(course.tier)}</span>
           <dl>
             <div><dt>Loại bài</dt><dd>{KIND_LABEL[props.kind]}</dd></div>
+            <div><dt>Đề bài</dt><dd>{props.choiceCount > 0 ? `${props.choiceCount} câu trắc nghiệm + tự luận` : 'Tự luận'}</dd></div>
             <div><dt>Số lần</dt><dd>{props.attemptLabel}</dd></div>
             <div><dt>Người chấm</dt><dd>{props.reviewer?.name ?? '—'}</dd></div>
             <div><dt>Ghi hình</dt><dd>Màn hình, camera, micro</dd></div>
@@ -430,23 +467,69 @@ function DeviceCheck(props: ProctoredExamProps & {
   );
 }
 
-function Brief({ kind, course, domainName, positionName, criteria }: ProctoredExamProps) {
+/** Đầu bài: hai phần của đề và cách chấm. */
+function Brief({ kind, course, domainName, reviewer, choiceCount, choicePassMark }: ProctoredExamProps) {
   return (
-    <section className="pu-surface pu-pad" aria-labelledby="pu-brief-title">
+    <section className="pu-surface pu-pad pu-exam-brief" aria-labelledby="pu-brief-title">
       <span className="pu-mini">{KIND_LABEL[kind]} · {domainName} · {levelName(course.tier)}</span>
-      <h1 id="pu-brief-title" className="pu-panel-title">Tạo ghi chú công việc có thể kiểm tra.</h1>
-      <p className="pu-panel-desc">
-        Mô tả một nhiệm vụ thực tế của vị trí {positionName ?? 'của bạn'} thuộc lĩnh vực {domainName.toLowerCase()}: nêu nguồn, hành động hoặc
-        phép tính người khác kiểm tra lại được, kết luận và bước tiếp theo.
-      </p>
-      <ol className="pu-brief-criteria">
-        {criteria.map((criterion) => (
-          <li key={criterion.number}>
-            <b>{criterion.number}</b>
-            <span><strong>{criterion.title}</strong><small>{criterion.description}</small></span>
+      <h1 id="pu-brief-title" className="pu-panel-title">
+        {choiceCount > 0 ? `Đề gồm ${choiceCount} câu trắc nghiệm và một bài tự luận.` : 'Đề gồm một bài tự luận.'}
+      </h1>
+      {choiceCount > 0 && (
+        <ol className="pu-brief-criteria" aria-label="Các phần của đề">
+          <li>
+            <b>1</b>
+            <span><strong>Trắc nghiệm</strong><small>{choiceCount} câu từ nội dung khóa, mỗi câu một đáp án. Đúng từ {choicePassMark} câu thì phần này đạt.</small></span>
           </li>
-        ))}
-      </ol>
+          <li>
+            <b>2</b>
+            <span><strong>Tự luận</strong><small>Một ghi chú công việc có thể kiểm tra, chấm theo ba tiêu chí.</small></span>
+          </li>
+        </ol>
+      )}
+      <p className="pu-panel-desc">
+        Bài đạt khi {choiceCount > 0 ? 'cả hai phần đạt' : 'phần tự luận đạt'}. Kết quả chỉ hiện khi {reviewer?.name ?? 'người chấm'} chấm xong.
+      </p>
+    </section>
+  );
+}
+
+/** Phần 1 · Trắc nghiệm: mỗi câu một nhóm phương án; không cho biết đúng sai khi đang làm. */
+function ChoicePart({ questions, answers, passMark, disabled, onChoose }: {
+  questions: PulseExamQuestion[];
+  answers: Record<string, string>;
+  passMark: number;
+  disabled: boolean;
+  onChoose: (questionId: string, optionId: string) => void;
+}) {
+  const answered = questions.filter((q) => answers[q.questionId]).length;
+  return (
+    <section className="pu-quiz pu-exam-choice" aria-labelledby="pu-choice-title">
+      <div className="pu-exam-choice-head">
+        <div>
+          <span className="pu-mini">Phần 1 · Trắc nghiệm</span>
+          <h2 id="pu-choice-title">Chọn một đáp án cho mỗi câu.</h2>
+          <p>{questions.length} câu, đúng từ {passMark} câu thì phần này đạt.</p>
+        </div>
+        <span className="pu-exam-choice-count" aria-live="polite">{answered}/{questions.length} đã chọn</span>
+      </div>
+      {questions.map((question) => (
+        <fieldset key={question.questionId} disabled={disabled}>
+          <legend><span>{String(question.number).padStart(2, '0')}</span>{question.content}</legend>
+          {question.options.map((option) => (
+            <label key={option.optionId}>
+              <input
+                type="radio"
+                name={`choice-${question.questionId}`}
+                value={option.optionId}
+                checked={answers[question.questionId] === option.optionId}
+                onChange={() => onChoose(question.questionId, option.optionId)}
+              />
+              <span>{option.content}</span>
+            </label>
+          ))}
+        </fieldset>
+      ))}
     </section>
   );
 }

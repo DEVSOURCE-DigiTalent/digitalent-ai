@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { ClipboardCheck } from 'lucide-react';
+import { Check, ClipboardCheck, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDecidePulseFinal, useDecidePulsePreAssessment, usePulseFinalReviews, useRecordPulseSupport } from '@/hooks/use-pulse';
 import type {
+  PulseChoiceResult,
   PulseCriterion,
   PulseDecision,
   PulseExamKind,
@@ -12,6 +13,7 @@ import type {
   PulseSupportAction,
 } from '@/services/pulse.service';
 import { formatDateTime } from '@/lib/utils';
+import { ChoiceScore } from '@/features/pulse-employee/components/blocks';
 import { Empty, LoadError, Mini, Notice, PageHead, PageSkeleton, Pill, PuLink } from '@/features/pulse-employee/components/ui';
 import { btn } from '@/features/pulse-employee/lib/button';
 import { SUPPORT_LABELS, levelName, pulseErrorMessage, timeLeft } from '@/features/pulse-employee/lib/labels';
@@ -52,14 +54,14 @@ const STATUS_PILL: Record<PulseReviewStatus, { label: string; tone: 'gray' | 'co
 };
 
 const STATUS_HINT: Record<PulseReviewStatus, string> = {
-  PENDING: 'Đọc ghi chú của nhân viên theo cả ba tiêu chí của khóa, rồi ghi quyết định kèm lý do.',
+  PENDING: 'Xem kết quả trắc nghiệm, đọc phần tự luận theo ba tiêu chí, rồi ghi quyết định kèm lý do. Đạt cần cả hai phần đạt.',
   RETRY_WAIT: 'Nhân viên đang đọc nhận xét; lần nộp cuối chưa mở.',
   RETRY_READY: 'Lần nộp cuối đang mở, nhân viên cần nộp trước hạn.',
   DEADLINE_MISSED: 'Đã quá hạn nộp lần cuối. Chọn cách hỗ trợ trước khi lộ trình tiếp tục.',
   FLAGGED: 'Hai lần nộp chưa đạt. Chọn kèm cặp, một chu kỳ học mới hoặc tạm dừng lộ trình.',
 };
 
-const PRE_HINT = 'Bài làm trước khi học, theo đề cuối khóa. Đạt: khóa được công nhận, nhân viên không cần học. Chưa đạt: nhân viên học khóa rồi làm bài cuối khóa.';
+const PRE_HINT = 'Bài làm trước khi học, theo đề cuối khóa (trắc nghiệm và tự luận). Đạt: khóa được công nhận, nhân viên không cần học. Chưa đạt: nhân viên học khóa rồi làm bài cuối khóa.';
 
 const SUPPORT_OPTIONS: { action: PulseSupportAction; label: string }[] = [
   { action: 'COACHING', label: 'Sắp xếp kèm cặp' },
@@ -213,16 +215,18 @@ function ReviewCard({ item, criteria }: { item: PulseFinalReviewItem; criteria: 
         <div className="pu-rplayer-missing" style={{ marginTop: 16 }}>Không tải được bản ghi của bài này.</div>
       ) : null}
 
+      {latest?.choice && <ChoiceReview choice={latest.choice} />}
+
       {latest && (
         <div className="pu-review-evidence">
-          <Mini>Minh chứng đã nộp</Mini>
+          <Mini>{latest.choice ? 'Phần tự luận · minh chứng đã nộp' : 'Minh chứng đã nộp'}</Mini>
           <p>{latest.evidenceText}</p>
         </div>
       )}
 
       {item.status === 'PENDING' && (
         <div className="pu-grid-2 pu-review-grid">
-          <div className="pu-rubric" aria-label="Ba tiêu chí của bài cuối khóa">
+          <div className="pu-rubric" aria-label="Ba tiêu chí của phần tự luận">
             {criteria.map((criterion, index) => {
               const met = item.aiHint?.checks[index] ?? false;
               return (
@@ -268,6 +272,43 @@ function ReviewCard({ item, criteria }: { item: PulseFinalReviewItem; criteria: 
   );
 }
 
+/**
+ * Phần trắc nghiệm của bài (tự chấm lúc nộp): số câu đúng so với ngưỡng, từng câu với phương án đã chọn và đáp án đúng.
+ * Nhân viên chưa thấy kết quả này cho tới khi người chấm quyết định.
+ */
+function ChoiceReview({ choice }: { choice: PulseChoiceResult }) {
+  const items = choice.items ?? [];
+  const wrong = items.filter((item) => !item.isCorrect).length;
+  return (
+    <section className="pu-review-choice" aria-label="Phần trắc nghiệm">
+      <div className="pu-review-choice-head">
+        <Mini>Phần trắc nghiệm · tự chấm</Mini>
+        <strong>Đúng {choice.score}/{choice.total} câu</strong>
+        <Pill tone={choice.passed ? 'green' : 'coral'}>{choice.passed ? 'Đạt' : 'Chưa đạt'} · cần từ {choice.passMark} câu</Pill>
+      </div>
+      {items.length > 0 && (
+        <details>
+          <summary>Xem từng câu{wrong ? ` · ${wrong} câu sai` : ' · không sai câu nào'}</summary>
+          <ol className="pu-review-choice-list">
+            {items.map((item) => (
+              <li key={item.number} className={item.isCorrect ? 'ok' : 'no'}>
+                <span className="pu-review-choice-mark" aria-label={item.isCorrect ? 'Đúng' : 'Sai'}>
+                  {item.isCorrect ? <Check size={14} strokeWidth={3} aria-hidden /> : <X size={14} strokeWidth={3} aria-hidden />}
+                </span>
+                <div>
+                  <strong>Câu {item.number}. {item.question}</strong>
+                  <span>Đã chọn: {item.selected}</span>
+                  {!item.isCorrect && <span className="correct">Đáp án đúng: {item.correct}</span>}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </details>
+      )}
+    </section>
+  );
+}
+
 function AttemptHistory({ attempt, max }: { attempt: PulseFinalAttempt; max: number }) {
   return (
     <div className="pu-attempt">
@@ -275,6 +316,7 @@ function AttemptHistory({ attempt, max }: { attempt: PulseFinalAttempt; max: num
         <span>Lần nộp {attempt.attemptNo}/{max} · {formatDateTime(attempt.submittedAt)}</span>
         <Pill tone={attempt.decision === 'PASSED' ? 'green' : 'coral'}>{attempt.decision === 'PASSED' ? 'Đã duyệt' : 'Chưa đạt'}</Pill>
       </header>
+      <ChoiceScore choice={attempt.choice} />
       <blockquote>{attempt.evidenceText}</blockquote>
       {attempt.decisionReason && (
         <div className="pu-feedback">
@@ -292,6 +334,8 @@ function DecisionForm({ item }: { item: PulseFinalReviewItem }) {
   const length = reason.trim().length;
   const isLastAttempt = item.attemptNo >= item.maxAttempts;
   const fieldId = `reason-${item.submissionId}`;
+  const latest = item.attempts[item.attempts.length - 1];
+  const choiceFails = Boolean(latest?.choice && !latest.choice.passed);
 
   const onSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -320,7 +364,7 @@ function DecisionForm({ item }: { item: PulseFinalReviewItem }) {
           Quyết định của quản lý
           <select value={decision} onChange={(e) => setDecision(e.target.value as PulseDecision | '')} required>
             <option value="">Chọn quyết định</option>
-            <option value="PASSED">Duyệt khóa học</option>
+            <option value="PASSED" disabled={choiceFails}>Duyệt khóa học{choiceFails ? ' · trắc nghiệm chưa đạt' : ''}</option>
             <option value="NOT_YET">Chưa đạt · cần sửa</option>
           </select>
         </label>
@@ -340,6 +384,13 @@ function DecisionForm({ item }: { item: PulseFinalReviewItem }) {
           </small>
         </label>
       </div>
+      {choiceFails && (
+        <div style={{ marginBottom: 12 }}>
+          <Notice tone="warning">
+            Phần trắc nghiệm đúng {latest!.choice!.score}/{latest!.choice!.total} câu, chưa đủ {latest!.choice!.passMark} câu: bài chỉ có thể chưa đạt.
+          </Notice>
+        </div>
+      )}
       {isLastAttempt && decision === 'NOT_YET' && (
         <div style={{ marginBottom: 12 }}>
           <Notice tone="warning">Đây là lần nộp cuối: chưa đạt sẽ bật cờ hỗ trợ và không mở cấp tiếp theo.</Notice>
@@ -358,6 +409,8 @@ function PreAssessmentDecisionForm({ item }: { item: PulseFinalReviewItem }) {
   const [reason, setReason] = useState('');
   const length = reason.trim().length;
   const fieldId = `pre-reason-${item.submissionId}`;
+  const latest = item.attempts[item.attempts.length - 1];
+  const choiceFails = Boolean(latest?.choice && !latest.choice.passed);
 
   const onSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -384,7 +437,7 @@ function PreAssessmentDecisionForm({ item }: { item: PulseFinalReviewItem }) {
           Quyết định của quản lý
           <select value={decision} onChange={(e) => setDecision(e.target.value as PulseDecision | '')} required>
             <option value="">Chọn quyết định</option>
-            <option value="PASSED">Đạt · công nhận khóa, không cần học</option>
+            <option value="PASSED" disabled={choiceFails}>Đạt · công nhận khóa, không cần học{choiceFails ? ' · trắc nghiệm chưa đạt' : ''}</option>
             <option value="NOT_YET">Chưa đạt · nhân viên học khóa</option>
           </select>
         </label>
@@ -404,6 +457,13 @@ function PreAssessmentDecisionForm({ item }: { item: PulseFinalReviewItem }) {
           </small>
         </label>
       </div>
+      {choiceFails && (
+        <div style={{ marginBottom: 12 }}>
+          <Notice tone="warning">
+            Phần trắc nghiệm đúng {latest!.choice!.score}/{latest!.choice!.total} câu, chưa đủ {latest!.choice!.passMark} câu: bài chỉ có thể chưa đạt.
+          </Notice>
+        </div>
+      )}
       <button type="submit" className={btn()} disabled={!decision || length < MIN_REASON || decide.isPending}>
         {decide.isPending ? 'Đang ghi…' : 'Ghi quyết định cuối cùng →'}
       </button>
