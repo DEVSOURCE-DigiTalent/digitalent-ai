@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { trialDashboardModel } from '../enterprise-trial/trial-dashboard-model';
 import { TrialDashboardOverview } from '../enterprise-trial/TrialDashboardOverview';
-import { sidebarFor } from '@/lib/sidebars';
+import { OWNER_SIDEBAR, sidebarFor } from '@/lib/sidebars';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import type { TrialContextDto } from '@/services/enterprise-trial.service';
 
@@ -151,14 +151,14 @@ describe('enterprise trial dashboard UI', () => {
 });
 
 describe('trial sidebar', () => {
-  it('uses a reduced owner navigation and leaves premium learning visibly locked', () => {
+  it('keeps the Owner navigation for a trial account', () => {
     const config = sidebarFor({
       id: 'owner-1', email: 'owner@example.test', fullName: 'Owner', roles: ['OWNER'], permissions: [],
       workspace: 'enterprise', enterpriseTrialStatus: 'trial_active',
       subscription: { planCode: 'ENT_TRIAL', planName: 'Dùng thử Enterprise', status: 'trialing', entitlements: [] },
     });
 
-    expect(config.map((item) => item.label)).toEqual(['Tổng quan', 'Thiết lập', 'Kết quả', 'Khám phá thêm', 'Nâng cấp']);
-    expect(config.flatMap((item) => item.items ?? []).some((item) => item.screenId === 'OW-31')).toBe(true);
+    expect(config).toBe(OWNER_SIDEBAR);
+    expect(config.some((item) => item.screenId === 'OW-23')).toBe(true);
   });
 });

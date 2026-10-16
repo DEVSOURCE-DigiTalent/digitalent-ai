@@ -49,8 +49,8 @@ describe('getHomePath', () => {
     expect(getHomePath({ roles: ['EMPLOYEE', 'OWNER'] })).toBe('/enterprise/dashboard');
   });
 
-  it('follows an explicit workspace over the roles', () => {
-    expect(getHomePath({ roles: [], workspace: 'enterprise' })).toBe('/enterprise/me');
+  it('does not treat an enterprise account without a role as an Employee', () => {
+    expect(getHomePath({ roles: [], workspace: 'enterprise' })).toBe('/forbidden');
   });
 
   it.each([
@@ -67,5 +67,16 @@ describe('getHomePath', () => {
 
   it('sends only an unverified Owner to the business email check', () => {
     expect(getHomePath({ roles: ['OWNER'], emailVerified: false })).toBe('/business/verify-email?email=');
+  });
+
+  it('opens a trial Manager in team management even when a previous Employee deep link is saved', () => {
+    const manager: SessionUser = {
+      id: 'manager-new', email: 'manager@company.test', fullName: 'Manager',
+      roles: ['MANAGER'], permissions: [], workspace: 'enterprise',
+      enterpriseTrialStatus: 'trial_active', emailVerified: true,
+    };
+
+    expect(getHomePath(manager)).toBe('/enterprise/team');
+    expect(getPostLoginPath('/enterprise/me/path', manager)).toBe('/enterprise/team');
   });
 });

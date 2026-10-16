@@ -1,6 +1,6 @@
 import type { PageRegistry } from '../build-routes';
 
-import { TrialAwarePulseTodayPage } from '../../../features/experience/enterprise-trial/TrialAwareDashboardPages';
+import { PulseTodayPage } from '../../../features/pulse-employee/pages/PulseTodayPage';
 import { PulsePathPage } from '../../../features/pulse-employee/pages/PulsePathPage';
 import { PulsePracticePage } from '../../../features/pulse-employee/pages/PulsePracticePage';
 import { PulseBaselinePage } from '../../../features/pulse-employee/pages/PulseBaselinePage';
@@ -13,7 +13,7 @@ import { PulseProfilePage } from '../../../features/pulse-employee/pages/PulsePr
 
 /** Cổng nhân viên Pulse — trang theo screen ID (lib/screens/enterprise/employee.ts). */
 export const EMPLOYEE_PAGES: PageRegistry = {
-  'EM-01': TrialAwarePulseTodayPage,
+  'EM-01': PulseTodayPage,
   'EM-02': PulsePathPage,
   'EM-03': PulsePracticePage,
   'EM-04': PulseBaselinePage,

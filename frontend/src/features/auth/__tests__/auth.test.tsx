@@ -163,6 +163,62 @@ describe('Authentication', () => {
     expect(screen.queryByText('Manager workspace')).not.toBeInTheDocument();
   });
 
+  it('ManagerLoginIgnoresEmployeeReturnToAndOpensTeam', async () => {
+    (apiClient.post as any).mockResolvedValueOnce({
+      data: { data: { accessToken: 'token' } },
+    });
+    (apiClient.get as any).mockResolvedValueOnce({
+      data: { data: { id: 'manager-1', email: 'manager@company.test', roles: ['MANAGER'], permissions: [], workspace: 'enterprise', enterpriseTrialStatus: 'trial_active' } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/login?returnTo=%2Fenterprise%2Fme%2Fpath']}>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/enterprise/team" element={<div>Manager team workspace</div>} />
+            <Route path="/enterprise/me/path" element={<div>Employee learning space</div>} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'manager@company.test' } });
+    fireEvent.change(screen.getByLabelText('Mật khẩu'), { target: { value: 'valid-password' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập' }));
+
+    expect(await screen.findByText('Manager team workspace')).toBeInTheDocument();
+    expect(screen.queryByText('Employee learning space')).not.toBeInTheDocument();
+  });
+
+  it('FailedProfileLoadClearsPreviousEmployeeSessionDuringManagerLogin', async () => {
+    useCurrentUser.getState().setUser({
+      id: 'old-employee', email: 'employee@company.test', fullName: 'Employee',
+      roles: ['EMPLOYEE'], permissions: [], workspace: 'enterprise',
+    });
+    localStorage.setItem('accessToken', 'old-employee-token');
+    (apiClient.post as any).mockResolvedValueOnce({
+      data: { data: { accessToken: 'new-manager-token' } },
+    });
+    (apiClient.get as any).mockRejectedValueOnce(new Error('Profile unavailable'));
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/login']}>
+          <LoginPage />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'manager@company.test' } });
+    fireEvent.change(screen.getByLabelText('Mật khẩu'), { target: { value: 'valid-password' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập' }));
+
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+    expect(useCurrentUser.getState().user).toBeNull();
+    expect(localStorage.getItem('accessToken')).toBeNull();
+  });
+
   it('FailedAuthMeNeverRendersGuardedContentEvenWithExpiredTokenInStorage', async () => {
     localStorage.setItem('accessToken', 'expired-jwt-token');
 

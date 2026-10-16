@@ -7,7 +7,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { ROLES } from '@/lib/roles';
 import { MANAGER_SIDEBAR, sidebarFor } from '@/lib/sidebars';
 import { EMPLOYEE_SCREENS } from '@/lib/screens/enterprise/employee';
-import { TrialAwarePulseTodayPage } from '@/features/experience/enterprise-trial/TrialAwareDashboardPages';
+import { PulseTodayPage } from '../pages/PulseTodayPage';
 import {
   pulseService,
   type PulseBaseline,
@@ -162,10 +162,17 @@ describe('enterprise trial detection', () => {
     signIn({ enterpriseTrialStatus: null });
     vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(overview()));
 
-    renderAt(PULSE_PATHS.today, <TrialAwarePulseTodayPage />);
+    renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
     expect(await screen.findByRole('link', { name: 'Tiếp tục khóa học →' })).toBeTruthy();
     expect(sidebarFor({ id: 'm', email: 'm@x.test', fullName: 'M', roles: [ROLES.MANAGER], permissions: [], enterpriseTrialStatus: null })).toBe(MANAGER_SIDEBAR);
+  });
+
+  it('keeps the Manager navigation when the enterprise is using a trial', () => {
+    expect(sidebarFor({
+      id: 'm', email: 'm@x.test', fullName: 'M', roles: [ROLES.MANAGER], permissions: [],
+      enterpriseTrialStatus: 'trial_active',
+    })).toBe(MANAGER_SIDEBAR);
   });
 });
 
@@ -173,7 +180,7 @@ describe('PulseTodayPage', () => {
   it('sends an employee who has not taken the entry test to the baseline', async () => {
     vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(overview({ assessed: false, assessedAt: null, nextCourse: null })));
 
-    renderAt(PULSE_PATHS.today, <TrialAwarePulseTodayPage />);
+    renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
     const links = await screen.findAllByRole('link', { name: 'Làm bài đầu vào →' });
     expect(links.length).toBeGreaterThan(0);
@@ -183,7 +190,7 @@ describe('PulseTodayPage', () => {
   it('continues the next course once the baseline is recorded', async () => {
     vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(overview()));
 
-    renderAt(PULSE_PATHS.today, <TrialAwarePulseTodayPage />);
+    renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
     const hero = await screen.findByRole('link', { name: 'Tiếp tục khóa học →' });
     expect(hero.getAttribute('href')).toBe(PULSE_PATHS.course('course-1'));
@@ -193,7 +200,7 @@ describe('PulseTodayPage', () => {
   it('explains a missing position instead of an empty path', async () => {
     vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(overview({ hasPosition: false, hasTargets: false, domains: [], courses: [], nextCourse: null })));
 
-    renderAt(PULSE_PATHS.today, <TrialAwarePulseTodayPage />);
+    renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
     expect(await screen.findByText('Bạn chưa được gán vị trí công việc')).toBeTruthy();
   });

@@ -1,6 +1,6 @@
 import { matchPath } from 'react-router-dom';
 import { getHomePath, requiresOwnerEmailVerification } from '../../lib/navigation';
-import { ROLES, WORKSPACES, normalizeRoleCode, normalizeRoles, resolveWorkspace } from '../../lib/roles';
+import { ROLES, WORKSPACES, normalizeRoleCode, normalizeRoles, primaryRole, resolveWorkspace } from '../../lib/roles';
 import { ENTERPRISE_SCREENS } from '../../lib/screens/enterprise';
 import { PLATFORM_SCREENS } from '../../lib/screens/platform';
 import type { ScreenDef } from '../../lib/screens/types';
@@ -55,6 +55,15 @@ export function getPostLoginPath(returnTo: string | null, user: SessionUser): st
   );
 
   if (pathname.startsWith('/enterprise/')) {
+    const role = primaryRole(user);
+    const sharedAccountPage = pathname === '/enterprise/account'
+      || pathname.startsWith('/enterprise/account/')
+      || pathname === '/enterprise/notifications';
+    if (!sharedAccountPage) {
+      if (role === ROLES.MANAGER && !pathname.startsWith('/enterprise/team/')) return home;
+      if (role === ROLES.EMPLOYEE && !pathname.startsWith('/enterprise/me/')) return home;
+      if (role === ROLES.OWNER && (pathname.startsWith('/enterprise/team/') || pathname.startsWith('/enterprise/me/'))) return home;
+    }
     return workspace === WORKSPACES.ENTERPRISE && canOpenScreen(ENTERPRISE_SCREENS) ? returnTo : home;
   }
   if (pathname.startsWith('/platform/')) {
