@@ -134,6 +134,7 @@ public sealed partial class TrialService
         registration.UsedAt = Now; registration.OrganizationId = organization.Id; registration.Revision++;
         // A single SaveChanges transaction commits owner, tenant, policy and consumed token together.
         await db.SaveChangesAsync();
+        await DigiTalent.Infrastructure.Persistence.Seed.SkillGapSeeder.EnsureOrganizationFrameworkAndCoursesAsync(db, organization.Id, owner.Id);
         return new(owner.Id, organization.Id, owner.Email, "Owner");
     }
 

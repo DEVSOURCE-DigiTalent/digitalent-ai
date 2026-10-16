@@ -84,6 +84,29 @@ public class GetCourseByIdUseCase : IUseCase<GetCourseByIdUseCaseInput, CourseDe
             select new { pc.Id, pc.Title }
         ).FirstOrDefaultAsync();
 
+        var calculatedLevel = level > 0 ? level : (course.EntryLevel.HasValue ? course.EntryLevel.Value + 1 : 1);
+
+        var platformCourse = await _context.PlatformCourses.AsNoTracking()
+            .FirstOrDefaultAsync(pc => pc.Code == course.Code);
+
+        var seatOrders = platformCourse == null ? new List<CourseSeatOrder>() : await _context.CourseSeatOrders.AsNoTracking()
+            .Where(o => o.OrganizationId == organizationId && o.CourseId == platformCourse.Id)
+            .ToListAsync();
+
+        var seatsPurchased = seatOrders.Where(o => o.Kind == DigiTalent.Domain.Constants.PlatformCatalog.SeatOrderKind.Purchase).Sum(o => o.Seats);
+        var seatsGranted = seatOrders.Where(o => o.Kind == DigiTalent.Domain.Constants.PlatformCatalog.SeatOrderKind.AdminGrant).Sum(o => o.Seats);
+        var totalSeats = seatsPurchased + seatsGranted;
+
+        var courseVersionIds = await _context.Courses.AsNoTracking()
+            .Where(c => c.OrganizationId == organizationId && c.Code == course.Code)
+            .Select(c => c.Id).ToListAsync();
+        var usedSeats = await _context.CourseAssignments.AsNoTracking()
+            .Where(ca => courseVersionIds.Contains(ca.CourseId)
+                && ca.Status == DigiTalent.Domain.Constants.Statuses.CourseAssignment.Active)
+            .Select(ca => ca.EmployeeId).Distinct().CountAsync();
+
+        var hasLicense = calculatedLevel == 1 || totalSeats > 0;
+
         return new CourseDetailDto
         {
             Id = course.Id,
@@ -91,7 +114,7 @@ public class GetCourseByIdUseCase : IUseCase<GetCourseByIdUseCaseInput, CourseDe
             Title = course.Title,
             Description = course.Description,
             Purpose = course.Purpose,
-            Level = level > 0 ? level : (course.EntryLevel.HasValue ? course.EntryLevel.Value + 1 : 1),
+            Level = calculatedLevel,
             EntryLevel = course.EntryLevel,
             EstimatedDurationMinutes = course.EstimatedDurationMinutes,
             CertificateEnabled = course.CertificateEnabled,
@@ -102,6 +125,10 @@ public class GetCourseByIdUseCase : IUseCase<GetCourseByIdUseCaseInput, CourseDe
             PrerequisiteCourseId = prerequisite?.Id,
             PrerequisiteTitle = prerequisite?.Title,
             CreatedAt = course.CreatedAt,
+            SeatsPurchased = seatsPurchased,
+            SeatsGranted = seatsGranted,
+            SeatsAvailable = Math.Max(0, totalSeats - usedSeats),
+            HasLicense = hasLicense,
             Modules = modules
         };
     }

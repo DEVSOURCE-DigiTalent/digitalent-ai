@@ -100,6 +100,27 @@ public class MyEnrollmentRules
             return new EnrollCheck(false, "Bạn đã ghi danh khóa học này.", prerequisites);
         }
 
+        var isPaidCourse = course.Code.EndsWith("-I", StringComparison.OrdinalIgnoreCase) ||
+                           course.Code.EndsWith("-A", StringComparison.OrdinalIgnoreCase);
+        if (isPaidCourse)
+        {
+            var purchasedSeats = await (
+                from o in _context.CourseSeatOrders.AsNoTracking()
+                join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
+                where o.OrganizationId == employee.OrganizationId && pc.Code == course.Code
+                select (int?)o.Seats
+            ).SumAsync() ?? 0;
+
+            var usedSeats = await _context.CourseAssignments.AsNoTracking()
+                .CountAsync(ca => ca.CourseId == course.Id && ca.Status == "ACTIVE");
+
+            if (purchasedSeats <= usedSeats)
+            {
+                var price = course.Code.EndsWith("-A", StringComparison.OrdinalIgnoreCase) ? "699.000 ₫" : "399.000 ₫";
+                return new EnrollCheck(false, $"Khóa học này thuộc gói bản quyền có phí ({price}/suất). Doanh nghiệp cần trang bị suất học để nhân viên có thể tham gia.", prerequisites);
+            }
+        }
+
         var eligibility = await EligibilityAsync(employee.Id, course.Id, prerequisites);
         if (!eligibility.IsMet)
         {

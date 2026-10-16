@@ -29,8 +29,12 @@ public static class CourseContentSeeder
 
         if (publishedCourses.Count == 0) return;
 
-        var competencies = await db.Competencies
-            .ToDictionaryAsync(c => c.Code, c => c);
+        var competencyRows = await db.Competencies
+            .Where(c => c.Category != null && c.Category.OrganizationId == organizationId)
+            .ToListAsync();
+        var competencies = competencyRows
+            .GroupBy(c => c.Code)
+            .ToDictionary(g => g.Key, g => g.First());
 
         var now = DateTimeOffset.UtcNow;
 

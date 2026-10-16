@@ -102,20 +102,73 @@ public static class SkillGapSeeder
         await db.SaveChangesAsync();
     }
 
-    /// <summary>Khung TT02_2025, 6 nhóm = 6 miền, 24 năng lực (3 tiêu chí/mức) và 24 mapping DIRECT. Key = mã Thông tư ("4.2").</summary>
-    private static Dictionary<string, Competency> SeedFramework(AppDbContext db, Guid organizationId)
+    /// <summary>
+    /// Đảm bảo bất kỳ tổ chức nào (kể cả doanh nghiệp đăng ký mới) cũng có đầy đủ:
+    ///   - 6 lĩnh vực Thông tư 02/2025 (CompetencyCategories)
+    ///   - 24 năng lực thành phần (Competencies)
+    ///   - 18 khóa học chuẩn (Courses F · Cơ bản, I · Trung cấp, A · Nâng cao)
+    ///   - Nội dung học phần (CourseModules, Lessons)
+    /// </summary>
+    public static async Task EnsureOrganizationFrameworkAndCoursesAsync(AppDbContext db, Guid organizationId, Guid? authorUserId = null)
     {
-        var framework = new CompetencyFramework
+        var hasCategories = await db.CompetencyCategories.AnyAsync(c => c.OrganizationId == organizationId);
+        var hasCourses = await db.Courses.AnyAsync(c => c.OrganizationId == organizationId);
+
+        if (hasCategories && hasCourses)
         {
-            Code = Tt02Catalog.FrameworkCode,
-            Version = Tt02Catalog.FrameworkVersion,
-            Name = Tt02Catalog.FrameworkName,
-            Authority = Tt02Catalog.FrameworkAuthority,
-            Jurisdiction = "VN",
-            SourceUrl = Tt02Catalog.FrameworkSourceUrl,
-            IsActive = true,
-        };
-        db.CompetencyFrameworks.Add(framework);
+            return;
+        }
+
+        var effectiveAuthorId = authorUserId
+            ?? await db.Users.Where(u => u.OrganizationId == organizationId).Select(u => (Guid?)u.Id).FirstOrDefaultAsync()
+            ?? await db.Users.Select(u => (Guid?)u.Id).FirstOrDefaultAsync()
+            ?? Guid.NewGuid();
+
+        Dictionary<string, Competency> competencies;
+        if (!hasCategories)
+        {
+            competencies = SeedFramework(db, organizationId);
+            await db.SaveChangesAsync();
+        }
+        else
+        {
+            var comps = await db.Competencies
+                .Include(c => c.Category)
+                .Where(c => c.Category != null && c.Category.OrganizationId == organizationId)
+                .ToListAsync();
+            competencies = comps
+                .GroupBy(c => c.Code.Replace("TT02-", ""))
+                .ToDictionary(g => g.Key, g => g.First());
+        }
+
+        if (!hasCourses)
+        {
+            SeedCourses(db, organizationId, effectiveAuthorId, competencies);
+            await db.SaveChangesAsync();
+
+            await CourseContentSeeder.SeedCourseContentAsync(db, organizationId, effectiveAuthorId);
+            await db.SaveChangesAsync();
+        }
+    }
+
+    /// <summary>Khung TT02_2025, 6 nhóm = 6 miền, 24 năng lực (3 tiêu chí/mức) và 24 mapping DIRECT. Key = mã Thông tư ("4.2").</summary>
+    public static Dictionary<string, Competency> SeedFramework(AppDbContext db, Guid organizationId)
+    {
+        var framework = db.CompetencyFrameworks.FirstOrDefault(f => f.Code == Tt02Catalog.FrameworkCode);
+        if (framework == null)
+        {
+            framework = new CompetencyFramework
+            {
+                Code = Tt02Catalog.FrameworkCode,
+                Version = Tt02Catalog.FrameworkVersion,
+                Name = Tt02Catalog.FrameworkName,
+                Authority = Tt02Catalog.FrameworkAuthority,
+                Jurisdiction = "VN",
+                SourceUrl = Tt02Catalog.FrameworkSourceUrl,
+                IsActive = true,
+            };
+            db.CompetencyFrameworks.Add(framework);
+        }
 
         var result = new Dictionary<string, Competency>();
         foreach (var domain in Tt02Catalog.Domains)

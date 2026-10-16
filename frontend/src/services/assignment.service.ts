@@ -19,6 +19,10 @@ export interface CourseListItem {
   status: 'PUBLISHED' | 'DRAFT' | 'ARCHIVED';
   assignedCount: number;
   createdAt?: string;
+  seatsPurchased?: number;
+  seatsGranted?: number;
+  seatsAvailable?: number;
+  hasLicense?: boolean;
 }
 
 export interface CourseDetailDto {
@@ -33,6 +37,10 @@ export interface CourseDetailDto {
   status: string;
   categoryName?: string | null;
   prerequisiteTitle?: string | null;
+  seatsPurchased?: number;
+  seatsGranted?: number;
+  seatsAvailable?: number;
+  hasLicense?: boolean;
   modules: {
     id: string;
     code?: string | null;
@@ -115,6 +123,18 @@ export interface CreateAssignmentResult {
   skipped: { employeeId: string; employeeName: string; reason: SkipReason }[];
 }
 
+export interface PurchaseCourseSeatsResult {
+  orderId: string;
+  courseCode?: string;
+  courseTitle?: string;
+  seats: number;
+  unitPrice?: number;
+  totalAmount: number;
+  totalSeatsPurchased: number;
+  totalSeatsAvailable: number;
+  createdAt?: string;
+}
+
 /** Standard course catalog and course assignments (spec LCA-12, LCA-13). */
 export const assignmentService = {
   getCourses: (params?: { search?: string; status?: string; categoryId?: string; level?: number; pageIndex?: number; pageSize?: number }) =>
@@ -127,4 +147,9 @@ export const assignmentService = {
   getSummary: () => apiClient.get<ApiResponse<AssignmentSummary>>('/course-assignments/summary'),
   create: (data: CreateAssignmentRequest) => apiClient.post<ApiResponse<CreateAssignmentResult>>('/course-assignments', data),
   cancel: (id: string, reason?: string) => apiClient.delete<ApiResponse<{ id: string }>>(`/course-assignments/${id}`, { data: { reason } }),
+  purchaseSeats: (courseId: string, seats: number, note?: string) =>
+    apiClient.post<ApiResponse<PurchaseCourseSeatsResult>>(
+      `/courses/${courseId}/purchase-seats`,
+      { courseId, seats, note }
+    ),
 };

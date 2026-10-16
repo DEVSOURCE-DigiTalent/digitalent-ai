@@ -228,10 +228,35 @@ public class CreateTrainingBatchUseCase : IUseCase<CreateTrainingBatchInput, Cre
         var orgId = _currentUser.GetRequiredOrganizationId();
         var userId = _currentUser.UserId ?? throw new ForbiddenException("User not authenticated.");
 
-        var courseExists = await _context.Courses.AsNoTracking()
-            .AnyAsync(c => c.Id == input.CourseId && c.OrganizationId == orgId);
-        if (!courseExists)
+        var course = await _context.Courses.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == input.CourseId && c.OrganizationId == orgId);
+        if (course == null)
             throw new BadRequestException("Course not found.");
+
+        var isPaidCourse = course.Code.EndsWith("-I", StringComparison.OrdinalIgnoreCase) ||
+                           course.Code.EndsWith("-A", StringComparison.OrdinalIgnoreCase) ||
+                           course.EntryLevel >= 2;
+        if (isPaidCourse)
+        {
+            var purchasedSeats = await (
+                from o in _context.CourseSeatOrders.AsNoTracking()
+                join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
+                where o.OrganizationId == orgId && pc.Code == course.Code
+                select (int?)o.Seats
+            ).SumAsync() ?? 0;
+
+            var usedSeats = await _context.CourseAssignments.AsNoTracking()
+                .CountAsync(ca => ca.CourseId == course.Id && ca.Status == "ACTIVE");
+
+            var availableSeats = Math.Max(0, purchasedSeats - usedSeats);
+            var requestedEmployeesCount = input.EmployeeIds.Distinct().Count();
+            if (availableSeats < requestedEmployeesCount)
+            {
+                var price = course.Code.EndsWith("-A", StringComparison.OrdinalIgnoreCase) ? "699.000 ₫" : "399.000 ₫";
+                throw new BadRequestException(
+                    $"Khóa học '{course.Title}' là khóa học có phí ({price}/suất). Tổ chức hiện có {purchasedSeats} suất ({usedSeats} đã phân công, còn {availableSeats} suất). Cần mua thêm suất học trước khi tạo đợt đào tạo cho {requestedEmployeesCount} nhân viên.");
+            }
+        }
 
         var codeExists = await _context.TrainingBatches.AsNoTracking()
             .AnyAsync(b => b.OrganizationId == orgId && b.Code == input.Code.Trim());

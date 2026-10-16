@@ -19,8 +19,15 @@ public class CapabilityCeilingsController : ControllerBase
     [HttpGet]
     [HasPermission(Permissions.PositionRequirement.Read)]
     public async Task<ActionResult<ApiResponse<GetCapabilityCeilingsUseCaseOutput>>> Get(
-        [FromServices] IUseCase<GetCapabilityCeilingsUseCaseInput, GetCapabilityCeilingsUseCaseOutput> useCase)
+        [FromServices] IUseCase<GetCapabilityCeilingsUseCaseInput, GetCapabilityCeilingsUseCaseOutput> useCase,
+        [FromServices] DigiTalent.Infrastructure.Persistence.AppDbContext db,
+        [FromServices] DigiTalent.Application.Common.Interfaces.ICurrentUser currentUser)
     {
+        var orgId = currentUser.OrganizationId;
+        if (orgId.HasValue)
+        {
+            await DigiTalent.Infrastructure.Persistence.Seed.SkillGapSeeder.EnsureOrganizationFrameworkAndCoursesAsync(db, orgId.Value, currentUser.UserId);
+        }
         var result = await useCase.ExecuteAsync(new GetCapabilityCeilingsUseCaseInput());
         return Ok(ApiResponse<GetCapabilityCeilingsUseCaseOutput>.Ok(result));
     }

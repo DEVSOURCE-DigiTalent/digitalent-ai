@@ -103,3 +103,12 @@ export function useCancelAssignment() {
     onSuccess: refresh,
   });
 }
+
+export function usePurchaseCourseSeats() {
+  const refresh = useRefreshLearningData();
+  return useMutation({
+    mutationFn: async ({ courseId, seats, note }: { courseId: string; seats: number; note?: string }) =>
+      (await assignmentService.purchaseSeats(courseId, seats, note)).data.data!,
+    onSuccess: refresh,
+  });
+}

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronRight, Search, X } from 'lucide-react';
-import { useCourseCatalog } from '@/hooks/use-assignments';
+import { useCourseCatalog, usePurchaseCourseSeats } from '@/hooks/use-assignments';
 import { useCompetencyCategories } from '@/hooks/use-competencies';
 import { courseCategories } from '@/features/courses/course-catalog';
 import type { CourseListItem } from '@/services/assignment.service';
@@ -11,6 +11,7 @@ import {
   courseLevel,
   formatDuration,
   levelName,
+  levelPricing,
   matchesSearch,
   type DomainBranch,
 } from '../components/course-tree';
@@ -40,6 +41,7 @@ export function OwnerCourseCatalogPage() {
   const [levelFilter, setLevelFilter] = useState(0);
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
   const [selection, setSelection] = useState<Selection>(null);
+  const [purchaseModalCourse, setPurchaseModalCourse] = useState<CourseListItem | null>(null);
 
   const { data: apiCategories = [] } = useCompetencyCategories();
   const categories = useMemo(() => courseCategories(apiCategories), [apiCategories]);
@@ -88,8 +90,8 @@ export function OwnerCourseCatalogPage() {
               Cây khóa học <span style={{ color: 'var(--po-accent)' }}>6 miền × 3 bậc.</span>
             </h1>
             <p className="mt-3 text-[13px] leading-relaxed" style={{ color: 'var(--po-muted)', maxWidth: 640 }}>
-              Mỗi miền năng lực là một nhánh, học lần lượt Cơ bản → Trung cấp → Nâng cao. Khóa Cơ bản mở toàn bộ; khóa
-              Trung cấp và Nâng cao mở khi được phân công hoặc đưa vào đợt đào tạo.
+              Mỗi miền năng lực là một nhánh, học lần lượt Cơ bản → Trung cấp → Nâng cao. Khóa Cơ bản mở dùng thử miễn phí toàn bộ;
+              khóa Trung cấp (399.000 ₫/suất) và Nâng cao (699.000 ₫/suất) là khóa trả phí, cần mua bản quyền / suất học để đào tạo (tài khoản dùng thử xem trước toàn bộ mô tả).
             </p>
           </div>
           <dl className="grid grid-cols-3 gap-2 text-center">
@@ -222,7 +224,12 @@ export function OwnerCourseCatalogPage() {
             {/* ── Detail ── */}
             <aside className="lg:sticky lg:top-[72px]">
               {selectedCourse ? (
-                <CourseDetail course={selectedCourse} branch={selectedBranch} onClose={() => setSelection(null)} />
+                <CourseDetail
+                  course={selectedCourse}
+                  branch={selectedBranch}
+                  onClose={() => setSelection(null)}
+                  onBuySeats={(c) => setPurchaseModalCourse(c)}
+                />
               ) : selectedBranch ? (
                 <DomainDetail branch={selectedBranch} onSelect={setSelection} onClose={() => setSelection(null)} />
               ) : (
@@ -230,6 +237,16 @@ export function OwnerCourseCatalogPage() {
               )}
             </aside>
           </div>
+        )}
+
+        {purchaseModalCourse && (
+          <CourseSeatPurchaseModal
+            course={purchaseModalCourse}
+            onClose={() => setPurchaseModalCourse(null)}
+            onSuccess={() => {
+              refetch();
+            }}
+          />
         )}
       </div>
     </div>
@@ -341,6 +358,7 @@ interface LevelSlotNodeProps {
 function LevelSlotNode({ slot, arrow, query, levelFilter, selection, onSelect }: LevelSlotNodeProps) {
   const tone = LEVEL_TONES[slot.level];
   const level = LEVELS.find((l) => l.level === slot.level)!;
+  const pricing = levelPricing(slot.level);
   return (
     <>
       {arrow && (
@@ -356,6 +374,8 @@ function LevelSlotNode({ slot, arrow, query, levelFilter, selection, onSelect }:
           const selected = selection?.kind === 'course' && selection.id === course.id;
           const dimmed = (levelFilter && levelFilter !== slot.level) || (query && !courseMatches(course, query));
           const duration = formatDuration(course.estimatedDurationMinutes);
+          const totalSeats = (course.seatsPurchased ?? 0) + (course.seatsGranted ?? 0);
+          const isLicensed = level.level === 1 || course.hasLicense || totalSeats > 0;
           return (
             <button
               key={course.id}
@@ -373,6 +393,15 @@ function LevelSlotNode({ slot, arrow, query, levelFilter, selection, onSelect }:
               <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.08em]">
                 <span className="rounded px-1.5 py-0.5" style={{ background: tone.bg, color: tone.fg }}>{level.code} · {level.name}</span>
                 <span style={{ color: 'var(--po-muted)' }}>{course.code}</span>
+                <span className={`ml-auto rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                  pricing.isFree
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : isLicensed
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : 'bg-slate-100 text-slate-700 border border-slate-200'
+                }`}>
+                  {pricing.isFree ? pricing.badge : isLicensed ? `Đã có ${totalSeats} suất` : pricing.badge}
+                </span>
                 {course.status === 'DRAFT' && <span className="rounded px-1.5 py-0.5" style={{ background: '#f0f2f6', color: '#66748d' }}>Nháp</span>}
               </span>
               <span className="mt-1.5 line-clamp-2 text-[13px] font-semibold leading-snug" style={{ color: 'var(--po-ink)' }}>{course.title}</span>
@@ -409,18 +438,43 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-function CourseDetail({ course, branch, onClose }: { course: CourseListItem; branch?: DomainBranch; onClose: () => void }) {
+function CourseDetail({
+  course,
+  branch,
+  onClose,
+  onBuySeats,
+}: {
+  course: CourseListItem;
+  branch?: DomainBranch;
+  onClose: () => void;
+  onBuySeats: (course: CourseListItem) => void;
+}) {
   const level = courseLevel(course);
   const tone = LEVEL_TONES[level] ?? LEVEL_TONES[1];
+  const pricing = levelPricing(level);
   const next = branch?.slots.find((slot) => slot.level === level + 1)?.courses[0];
+  const totalSeats = (course.seatsPurchased ?? 0) + (course.seatsGranted ?? 0);
+  const isLicensed = level === 1 || course.hasLicense || totalSeats > 0;
+
   return (
     <Panel onClose={onClose}>
       <p className="pr-8 text-[11px] font-bold" style={{ color: 'var(--po-muted)' }}>
         {branch ? `Miền ${String(branch.domain).padStart(2, '0')} · ${branch.category.name}` : 'Ngoài khung TT02'}
       </p>
-      <span className="mt-3 inline-block rounded px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em]" style={{ background: tone.bg, color: tone.fg }}>
-        Bậc {level} · {levelName(level)}
-      </span>
+      <div className="mt-3 flex items-center gap-2">
+        <span className="inline-block rounded px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em]" style={{ background: tone.bg, color: tone.fg }}>
+          Bậc {level} · {levelName(level)}
+        </span>
+        <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+          level === 1
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+            : isLicensed
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+            : 'bg-amber-50 text-amber-800 border border-amber-200'
+        }`}>
+          {level === 1 ? pricing.formatted : isLicensed ? `Đã có ${totalSeats} suất` : pricing.formatted}
+        </span>
+      </div>
       <h2 className="mt-2 text-[20px] font-bold leading-tight" style={{ color: 'var(--po-ink)', letterSpacing: '-0.03em' }}>{course.title}</h2>
 
       <dl className="mt-4">
@@ -429,25 +483,55 @@ function CourseDetail({ course, branch, onClose }: { course: CourseListItem; bra
         {formatDuration(course.estimatedDurationMinutes) && <Row label="Thời lượng">{formatDuration(course.estimatedDurationMinutes)}</Row>}
         <Row label="Học trước">{course.prerequisiteTitle ?? 'Không yêu cầu'}</Row>
         <Row label="Học tiếp">{next?.title ?? (level >= 3 ? 'Bậc cao nhất' : '—')}</Row>
-        <Row label="Quyền truy cập">{level === 1 ? 'Mở toàn bộ' : 'Khi được phân công'}</Row>
+        <Row label="Đơn giá">{pricing.formatted}</Row>
+        <Row label="Quyền truy cập">
+          {level === 1
+            ? 'Mở dùng thử miễn phí toàn bộ'
+            : isLicensed
+            ? `Đã sở hữu ${totalSeats} suất (${course.seatsAvailable ?? totalSeats} suất khả dụng)`
+            : 'Chưa mua suất (Chỉ xem mô tả & đề cương)'}
+        </Row>
         <Row label="Đang phân công">{course.assignedCount} nhân viên</Row>
       </dl>
 
       <div className="mt-4 grid gap-2">
         <Link
           to={`/enterprise/courses/${course.id}`}
-          className="rounded-[11px] px-3 py-2.5 text-center text-xs font-bold text-white"
+          className="rounded-[11px] px-3 py-2.5 text-center text-xs font-bold text-white shadow-sm"
           style={{ background: 'var(--po-accent)' }}
         >
-          Xem chi tiết khóa học →
+          {isLicensed ? 'Xem chi tiết khóa học →' : 'Xem mô tả khóa học →'}
         </Link>
-        <Link
-          to="/enterprise/training-batches/new"
-          className="rounded-[11px] border px-3 py-2.5 text-center text-xs font-bold"
-          style={{ borderColor: '#cdd7f5', color: 'var(--po-accent)' }}
-        >
-          Đưa vào đợt đào tạo
-        </Link>
+        {isLicensed ? (
+          <>
+            <Link
+              to={`/enterprise/training-batches/new?courseId=${course.id}`}
+              className="rounded-[11px] border px-3 py-2.5 text-center text-xs font-bold transition-all hover:bg-slate-50"
+              style={{ borderColor: '#cdd7f5', color: 'var(--po-accent)' }}
+            >
+              Đưa vào đợt đào tạo
+            </Link>
+            {level > 1 && (
+              <button
+                type="button"
+                onClick={() => onBuySeats(course)}
+                className="rounded-[11px] border px-3 py-2 text-center text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all"
+                style={{ borderColor: 'var(--po-line)' }}
+              >
+                + Mua thêm suất học cho khóa này
+              </button>
+            )}
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onBuySeats(course)}
+            className="rounded-[11px] border px-3 py-2.5 text-center text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm hover:brightness-95"
+            style={{ borderColor: '#f59e0b', color: '#b45309', background: '#fffbeb' }}
+          >
+            <span>🔒 Mua suất học ({pricing.formatted})</span>
+          </button>
+        )}
       </div>
     </Panel>
   );
@@ -504,5 +588,186 @@ function Legend() {
         Chọn một miền hoặc một khóa để xem lộ trình và phân công.
       </p>
     </Panel>
+  );
+}
+
+function CourseSeatPurchaseModal({
+  course,
+  onClose,
+  onSuccess,
+}: {
+  course: CourseListItem;
+  onClose: () => void;
+  onSuccess?: () => void;
+}) {
+  const level = courseLevel(course);
+  const pricing = levelPricing(level);
+  const [seats, setSeats] = useState(10);
+  const [result, setResult] = useState<{
+    orderId: string;
+    totalAmount: number;
+    seats: number;
+    createdAt?: string;
+  } | null>(null);
+
+  const purchaseMutation = usePurchaseCourseSeats();
+  const totalAmount = seats * pricing.price;
+
+  const handlePurchase = () => {
+    purchaseMutation.mutate(
+      { courseId: course.id, seats },
+      {
+        onSuccess: (data) => {
+          setResult({
+            orderId: data.orderId,
+            totalAmount: data.totalAmount,
+            seats: data.seats,
+            createdAt: data.createdAt,
+          });
+          onSuccess?.();
+        },
+      }
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+        <div className="flex items-start justify-between border-b pb-4">
+          <div>
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
+              🔒 Bản quyền khóa học thương mại
+            </span>
+            <h2 className="mt-2 text-lg font-bold text-slate-900">{course.title}</h2>
+            <p className="text-xs text-slate-500 font-mono mt-0.5">{course.code} · Bậc {level} ({levelName(level)})</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+
+        {result ? (
+          <div className="py-8 text-center space-y-3">
+            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 font-bold text-xl">
+              ✓
+            </div>
+            <h3 className="text-base font-bold text-slate-900">Kích hoạt suất học thành công!</h3>
+            <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
+              Bạn đã trang bị thành công <b>{result.seats} suất</b> cho khóa học <b>{course.code}</b>.
+              Khóa học đã được mở bản quyền ngay lập tức và đồng bộ vào hệ thống quản lý Platform Admin.
+            </p>
+            <div className="mx-auto max-w-sm rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-left text-xs space-y-1">
+              <div className="flex justify-between text-slate-600">
+                <span>Mã giao dịch:</span>
+                <span className="font-mono font-semibold text-slate-800">{result.orderId.substring(0, 8)}...</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Tổng chi phí:</span>
+                <span className="font-bold text-emerald-800">{result.totalAmount.toLocaleString('vi-VN')} ₫</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Thời gian:</span>
+                <span className="text-slate-700">{result.createdAt ? new Date(result.createdAt).toLocaleString('vi-VN') : new Date().toLocaleString('vi-VN')}</span>
+              </div>
+            </div>
+            <div className="pt-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-sm"
+                style={{ background: 'var(--po-accent)' }}
+              >
+                Hoàn tất & Bắt đầu đào tạo
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4 py-4">
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 text-xs text-slate-700 leading-relaxed">
+              💡 Doanh nghiệp của bạn đang dùng thử và được <b>miễn phí 100% toàn bộ khóa Cơ bản</b>.
+              Khóa Trung cấp & Nâng cao cung cấp kỹ năng thực chiến và cấp chứng chỉ chuẩn TT02 theo từng đầu người (1 suất = 1 nhân viên).
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Số lượng suất cần trang bị cho nhân sự:
+              </label>
+              <div className="flex items-center gap-2 mb-2">
+                {[5, 10, 20, 50].map((count) => (
+                  <button
+                    key={count}
+                    type="button"
+                    onClick={() => setSeats(count)}
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
+                      seats === count
+                        ? 'border-primary-600 bg-primary-50 text-primary-700'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    {count} suất
+                  </button>
+                ))}
+              </div>
+              <input
+                type="number"
+                min={1}
+                max={500}
+                value={seats}
+                onChange={(e) => setSeats(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary-600"
+              />
+            </div>
+
+            <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 space-y-2 text-xs">
+              <div className="flex justify-between text-slate-600">
+                <span>Đơn giá niêm yết:</span>
+                <span className="font-semibold text-slate-900">{pricing.formatted}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Số lượng nhân viên đào tạo:</span>
+                <span className="font-semibold text-slate-900">{seats} nhân viên</span>
+              </div>
+              <div className="flex justify-between border-t border-amber-200/60 pt-2 text-sm font-bold text-slate-900">
+                <span>Tổng chi phí đầu tư:</span>
+                <span className="text-primary-700 font-extrabold">{totalAmount.toLocaleString('vi-VN')} ₫</span>
+              </div>
+            </div>
+
+            {purchaseMutation.isError && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
+                {(purchaseMutation.error as any)?.response?.data?.message ||
+                  (purchaseMutation.error as any)?.message ||
+                  'Có lỗi xảy ra khi thực hiện mua suất học.'}
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={purchaseMutation.isPending}
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Để sau
+              </button>
+              <button
+                type="button"
+                onClick={handlePurchase}
+                disabled={purchaseMutation.isPending}
+                className="rounded-xl px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:brightness-105 disabled:opacity-50 flex items-center gap-1.5"
+                style={{ background: 'var(--po-accent)' }}
+              >
+                {purchaseMutation.isPending && <span className="animate-spin inline-block size-3.5 border-2 border-white border-t-transparent rounded-full" />}
+                <span>{purchaseMutation.isPending ? 'Đang xử lý...' : `Xác nhận mua suất học (${totalAmount.toLocaleString('vi-VN')} ₫)`}</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

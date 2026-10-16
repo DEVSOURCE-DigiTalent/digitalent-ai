@@ -48,6 +48,23 @@ public class GetLessonUseCase : IUseCase<GetLessonInput, LessonContentOutput>
         if (result == null)
             throw new NotFoundException($"Lesson '{input.Id}' not found.");
 
+        var isPaidCourse = result.CourseCode.EndsWith("-I", StringComparison.OrdinalIgnoreCase) ||
+                           result.CourseCode.EndsWith("-A", StringComparison.OrdinalIgnoreCase);
+        if (isPaidCourse)
+        {
+            var hasLicense = await (
+                from o in _context.CourseSeatOrders.AsNoTracking()
+                join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
+                where o.OrganizationId == organizationId && pc.Code == result.CourseCode && o.Seats > 0
+                select o.Id
+            ).AnyAsync();
+            if (!hasLicense)
+            {
+                var price = result.CourseCode.EndsWith("-A", StringComparison.OrdinalIgnoreCase) ? "699.000 ₫" : "399.000 ₫";
+                result.ContentBody = $"🔒 Nội dung bài học '{result.Title}' thuộc gói bản quyền có phí ({price}/suất).\n\nTài khoản dùng thử của doanh nghiệp chỉ xem trước mục tiêu và cấu trúc bài giảng. Vui lòng liên hệ mua suất học cho tổ chức để mở toàn bộ bài giảng, học liệu chi tiết và bài tập thực hành.";
+            }
+        }
+
         return result;
     }
 }

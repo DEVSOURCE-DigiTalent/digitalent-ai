@@ -67,6 +67,16 @@ export function courseLevel(course: CourseListItem): number {
   return courseCodeMetadata(course.code)?.level ?? course.level;
 }
 
+export const LEVEL_PRICING: Record<number, { price: number; formatted: string; isFree: boolean; badge: string }> = {
+  1: { price: 0, formatted: 'Miễn phí', isFree: true, badge: 'Miễn phí (Trial)' },
+  2: { price: 399000, formatted: '399.000 ₫ / suất', isFree: false, badge: '399.000 ₫ / suất' },
+  3: { price: 699000, formatted: '699.000 ₫ / suất', isFree: false, badge: '699.000 ₫ / suất' },
+};
+
+export function levelPricing(level: number) {
+  return LEVEL_PRICING[level] ?? { price: 0, formatted: 'Miễn phí', isFree: true, badge: 'Miễn phí' };
+}
+
 export function levelName(level: number): string {
   return LEVELS.find((l) => l.level === level)?.name ?? `Bậc ${level}`;
 }
