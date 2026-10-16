@@ -60,7 +60,7 @@ export function ManagerCycleReportPage() {
   const events: TimelineEvent[] = [
     ...completed
       .filter((l) => l.completedAt)
-      .map((l) => ({ at: l.completedAt!, title: `${l.employeeName} hoàn thành ${l.courseTitle}`, detail: 'Bài cuối khóa đã được duyệt' })),
+      .map((l) => ({ at: l.completedAt!, title: `${l.employeeName} hoàn thành ${l.courseTitle}`, detail: 'Khóa học đã được công nhận' })),
     ...queue.flatMap((item) =>
       item.attempts
         .filter((a) => a.reviewedAt && a.decision)

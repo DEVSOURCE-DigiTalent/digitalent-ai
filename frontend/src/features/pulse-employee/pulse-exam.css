@@ -1,0 +1,225 @@
+/*
+ * Bài làm có giám sát (EM-07 bài cuối khóa, EM-12 đánh giá trước khi học) và trình phát bản ghi cho người chấm (MG-13).
+ * docs/specs/2026-10-16-pulse-employee-roadmap-proctoring.md
+ */
+
+/* ── Khung trang làm bài (không có thanh điều hướng chính) ───────────── */
+.pu-exam-main { min-height: 100vh; }
+.pu-exam { min-height: 100vh; }
+.pu-exam-bar { position: sticky; top: 0; z-index: 30; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 18px; min-height: 64px; box-sizing: border-box; padding: 10px clamp(16px, 4vw, 40px); background: #161d3d; color: #fff; }
+.pu-exam-bar-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pu-exam-bar-title img { flex: none; width: 30px; height: 30px; }
+.pu-exam-bar-title > span { display: grid; gap: 1px; min-width: 0; }
+.pu-exam-bar-title small { color: #d7f8a8; font-size: 10.5px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+.pu-exam-bar-title strong { overflow: hidden; color: #fff; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.pu-exam-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pu-rec { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid rgba(255, 90, 95, .45); border-radius: 999px; background: rgba(255, 90, 95, .16); font-size: 12.5px; font-weight: 800; }
+.pu-rec i { width: 9px; height: 9px; border-radius: 50%; background: #ff5a5f; animation: pu-blink 1.2s steps(2, start) infinite; }
+.pu-rec time { color: #ffd0ce; font-variant-numeric: tabular-nums; }
+@keyframes pu-blink { to { visibility: hidden; } }
+.pu-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid rgba(215, 248, 168, .35); border-radius: 999px; background: rgba(215, 248, 168, .12); color: #d7f8a8; font-size: 12px; font-weight: 700; }
+.pu-chip.off { border-color: rgba(255, 90, 95, .55); background: rgba(255, 90, 95, .2); color: #ffc2bf; }
+.pu-exam-leaves { color: rgba(255, 255, 255, .78); font-size: 12px; }
+.pu-exam-leave { display: inline-flex; align-items: center; min-height: 38px; box-sizing: border-box; padding: 8px 14px; border: 1px solid rgba(255, 255, 255, .35); border-radius: 10px; background: transparent; color: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.pu-exam-leave:hover { background: rgba(255, 255, 255, .1); }
+.pu-exam-confirm { display: grid; gap: 10px; max-width: 760px; margin: 16px auto 0; padding: 16px 18px; border: 1.5px solid #cfc8f3; border-radius: 16px; background: #f7f5ff; color: #3c4a66; font-size: 13px; line-height: 1.55; }
+.pu-exam-confirm strong { color: var(--pu-ink); font-size: 15px; }
+.pu-exam-confirm.inline { max-width: none; margin: 4px 0 0; }
+.pu-exam-body { display: grid; gap: 22px; max-width: 1240px; box-sizing: border-box; margin: 0 auto; padding: 28px clamp(16px, 4vw, 40px) 56px; }
+.pu-exam-narrow { max-width: 900px; }
+.pu-exam-head { display: grid; gap: 10px; max-width: 760px; }
+.pu-exam-head h1 { margin: 0; font-size: clamp(30px, 4vw, 44px); line-height: 1.08; letter-spacing: -.055em; text-wrap: balance; }
+.pu-exam-head p { margin: 0; color: #586782; font-size: 15px; line-height: 1.65; }
+
+/* ── Chuẩn bị: ba thiết bị + cam kết ─────────────────────────────────── */
+.pu-check-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); align-items: start; gap: 22px; }
+.pu-device { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; box-sizing: border-box; padding: 18px 20px; border: 1px solid #e6e2f1; border-radius: 20px; background: #fff; box-shadow: 0 10px 26px rgba(29, 48, 102, .04); }
+.pu-device.on { border: 1.5px solid #bfe3c9; }
+.pu-device.error { border: 1.5px solid #f1c9bd; }
+.pu-device-icon { display: grid; flex: none; place-items: center; width: 46px; height: 46px; border-radius: 14px; background: var(--pu-soft); color: var(--pu-violet); }
+.pu-device.on .pu-device-icon { background: #e4f5e8; color: var(--pu-ok); }
+.pu-device-text { display: grid; flex: 1 1 260px; gap: 4px; min-width: 0; }
+.pu-device-text strong { font-size: 15.5px; letter-spacing: -.02em; }
+.pu-device-text span { color: var(--pu-muted); font-size: 13px; line-height: 1.55; }
+.pu-device-text b { font-size: 12.5px; }
+.pu-device-text b.ok { color: var(--pu-ok); }
+.pu-device-text b.bad { color: #9a4835; }
+.pu-preview { flex: none; width: 128px; height: 80px; border-radius: 10px; background: #1b2448; object-fit: cover; }
+.pu-preview.mirrored { transform: scaleX(-1); }
+.pu-meter { display: inline-flex; align-items: flex-end; gap: 3px; height: 24px; }
+.pu-meter i { display: block; width: 4px; border-radius: 2px; background: #9f95ec; transition: height .1s linear; }
+.pu-rules { display: grid; gap: 10px; margin: 4px 0 0; padding: 16px 18px; border-radius: 18px; background: #f1effe; color: #3c4a66; font-size: 13px; line-height: 1.55; list-style: none; }
+.pu-rules li { display: flex; align-items: flex-start; gap: 10px; }
+.pu-rules svg { flex: none; margin-top: 2px; color: var(--pu-violet); }
+.pu-commit { display: flex; align-items: flex-start; gap: 10px; margin-top: 4px; font-size: 13.5px; line-height: 1.5; cursor: pointer; }
+.pu-commit input { flex: none; width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--pu-violet); }
+.pu-check-hint { color: var(--pu-muted); font-size: 12.5px; }
+.pu-exam-summary { display: grid; gap: 14px; min-width: 0; padding: 22px; border: 1px solid #e6e2f1; border-radius: 24px; background: #fff; box-shadow: var(--pu-shadow); }
+.pu-exam-summary > strong { font-size: 18px; line-height: 1.3; letter-spacing: -.03em; }
+.pu-exam-summary > span:not(.pu-mini) { margin-top: -10px; color: var(--pu-muted); font-size: 12.5px; }
+.pu-exam-summary dl { display: grid; gap: 10px; margin: 0; padding-top: 12px; border-top: 1px solid #eeedf6; font-size: 13px; }
+.pu-exam-summary dl > div { display: flex; justify-content: space-between; gap: 12px; }
+.pu-exam-summary dt { color: var(--pu-muted); }
+.pu-exam-summary dd { margin: 0; font-weight: 700; text-align: right; }
+.pu-exam-outcomes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px; }
+.pu-exam-outcomes > div { display: grid; align-content: start; gap: 6px; padding: 16px; border-radius: 16px; font-size: 13.5px; line-height: 1.55; }
+.pu-exam-outcomes .ok { border: 1px solid #d6ecd9; background: #eef8ee; color: #24402f; }
+.pu-exam-outcomes .no { border: 1px solid #f6dcd2; background: #fff4ef; color: #5e3428; }
+.pu-exam-outcomes b { justify-self: start; padding: 3px 9px; border-radius: 999px; color: #fff; font-size: 11.5px; }
+.pu-exam-outcomes .ok b { background: var(--pu-ok); }
+.pu-exam-outcomes .no b { background: var(--pu-coral-ink); }
+.pu-exam-outcomes.compact { grid-template-columns: 1fr; gap: 8px; padding-top: 12px; border-top: 1px solid #eeedf6; }
+.pu-exam-outcomes.compact > div { padding: 0; border: 0; background: none; color: #3c4a66; font-size: 12.5px; grid-template-columns: auto 1fr; align-items: start; }
+
+/* ── Đang làm bài ────────────────────────────────────────────────────── */
+.pu-work-grid { grid-template-columns: minmax(0, 1fr) 320px; align-items: start; }
+.pu-work { position: relative; display: grid; gap: 16px; min-width: 0; }
+.pu-brief-criteria { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.pu-brief-criteria li { display: flex; gap: 10px; padding: 12px 14px; border: 1px solid #e5e7f1; border-radius: 13px; font-size: 13px; line-height: 1.45; }
+.pu-brief-criteria b { color: var(--pu-violet); }
+.pu-brief-criteria small { display: block; color: #66708a; font-size: 12px; }
+.pu-answer { display: grid; gap: 12px; }
+.pu-answer-label { color: var(--pu-ink); font-size: 14px; font-weight: 800; }
+.pu-answer textarea { width: 100%; min-height: 240px; box-sizing: border-box; padding: 14px 16px; border: 1px solid #d9e0ee; border-radius: 14px; background: #fff; color: var(--pu-ink); font: inherit; font-size: 14px; line-height: 1.65; resize: vertical; }
+.pu-answer textarea:focus { border-color: #6a5fd0; outline: 3px solid #e7e3ff; }
+.pu-answer textarea:disabled { background: #f6f6fb; }
+.pu-answer-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.pu-answer-foot small { color: #66708a; font-size: 12px; font-variant-numeric: tabular-nums; }
+.pu-answer-foot small.error { color: #b04a33; }
+.pu-lock { position: absolute; inset: 0; z-index: 5; display: flex; align-items: flex-start; justify-content: center; box-sizing: border-box; padding: 90px 16px 16px; border-radius: 24px; background: rgba(247, 247, 253, .86); backdrop-filter: blur(4px); }
+.pu-lock-card { display: grid; justify-items: start; gap: 12px; width: 100%; max-width: 460px; box-sizing: border-box; padding: 26px; border: 1px solid #f1c9bd; border-radius: 22px; background: #fff; box-shadow: 0 30px 60px rgba(27, 36, 72, .18); }
+.pu-lock-card strong { font-size: 20px; letter-spacing: -.035em; }
+.pu-lock-card > span:not(.pu-lock-icon) { color: #3c4a66; font-size: 13.5px; line-height: 1.6; }
+.pu-lock-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 15px; background: #fff0e9; color: var(--pu-coral-ink); }
+.pu-lock-error { color: #9a4835 !important; font-weight: 700; }
+.pu-proctor { position: sticky; top: 84px; display: grid; gap: 12px; min-width: 0; padding: 16px; border-radius: 24px; background: #1b2448; color: #fff; box-shadow: 0 24px 50px rgba(27, 36, 72, .22); }
+.pu-proctor-camera { position: relative; overflow: hidden; aspect-ratio: 4 / 3; max-width: 100%; border-radius: 16px; background: radial-gradient(circle at 50% 38%, #46518a, #1f2750); }
+.pu-proctor-camera .pu-preview { width: 100%; height: 100%; border-radius: 0; }
+.pu-proctor-off { display: grid; place-items: center; height: 100%; color: #ffc2bf; font-size: 13px; font-weight: 700; }
+.pu-proctor-tag { position: absolute; top: 10px; left: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 999px; background: rgba(0, 0, 0, .35); font-size: 11px; font-weight: 700; }
+.pu-proctor-tag i { width: 7px; height: 7px; border-radius: 50%; background: #ff5a5f; animation: pu-blink 1.2s steps(2, start) infinite; }
+.pu-proctor-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, .06); font-size: 12.5px; }
+.pu-proctor-row > span { flex: 1; }
+.pu-proctor-row b { font-size: 12px; }
+.pu-proctor-row.off { background: rgba(255, 90, 95, .18); color: #ffc2bf; }
+.pu-proctor-row .pu-meter i { background: #d7f8a8; }
+.pu-proctor-log { display: grid; gap: 8px; padding: 12px; border-radius: 14px; background: rgba(255, 255, 255, .06); }
+.pu-proctor-log .pu-mini { color: #d7f8a8; }
+.pu-proctor-log ol { display: grid; gap: 8px; max-height: 260px; overflow-y: auto; margin: 0; padding: 0; list-style: none; }
+.pu-proctor-log li { display: flex; align-items: flex-start; gap: 10px; color: rgba(255, 255, 255, .9); font-size: 12px; line-height: 1.45; }
+.pu-proctor-log li time { flex: none; width: 40px; color: rgba(255, 255, 255, .7); font-variant-numeric: tabular-nums; }
+.pu-proctor-log li.flagged { color: #ffc9bd; }
+.pu-proctor > small { color: rgba(255, 255, 255, .72); font-size: 11.5px; line-height: 1.5; }
+
+/* ── Đã nộp ──────────────────────────────────────────────────────────── */
+.pu-exam-done { display: grid; gap: 18px; box-sizing: border-box; padding: clamp(22px, 4vw, 36px); border: 1px solid #e6e2f1; border-radius: 30px; background: #fff; box-shadow: 0 30px 65px rgba(56, 53, 115, .1); }
+.pu-exam-done h1 { margin: 0; font-size: clamp(28px, 3.6vw, 40px); line-height: 1.1; letter-spacing: -.055em; text-wrap: balance; }
+.pu-exam-done > p { margin: 0; color: #586782; font-size: 15px; line-height: 1.65; }
+.pu-exam-done-icon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #e4f5e8; color: var(--pu-ok); }
+.pu-exam-upload { display: grid; gap: 6px; padding: 14px 16px; border-radius: 16px; background: #f6f5fd; color: #3c4a66; font-size: 13px; }
+.pu-exam-upload > span:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pu-exam-upload strong { margin-left: auto; color: var(--pu-ok); }
+
+/* ── Trình phát bản ghi cho người chấm (MG-13) ───────────────────────── */
+.pu-rplayer { display: grid; gap: 12px; margin-top: 16px; padding: 16px; border: 1px solid #e6e2f1; border-radius: 20px; background: #fff; }
+.pu-rplayer-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 14px; }
+.pu-rplayer-head h3 { margin: 0; font-size: 16px; letter-spacing: -.03em; }
+.pu-rplayer-head span { color: var(--pu-muted); font-size: 12px; }
+.pu-rplayer-stage { position: relative; overflow: hidden; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; background: #0f1430; }
+.pu-rplayer-stage video.screen { width: 100%; height: 100%; object-fit: contain; background: #0f1430; }
+.pu-rplayer-camera { position: absolute; top: 4%; right: 3%; overflow: hidden; width: 24%; aspect-ratio: 4 / 3; border: 2px solid rgba(255, 255, 255, .85); border-radius: 12px; background: radial-gradient(circle at 50% 38%, #46518a, #1f2750); }
+.pu-rplayer-camera video { width: 100%; height: 100%; object-fit: cover; }
+.pu-rplayer-gap { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(15, 20, 48, .92); color: #ffc2bf; font-size: 14px; font-weight: 800; text-align: center; }
+.pu-rplayer-gap small { display: block; margin-top: 6px; color: rgba(255, 255, 255, .78); font-size: 12px; font-weight: 500; }
+.pu-rplayer-camera .pu-rplayer-gap { font-size: 11px; }
+.pu-rplayer-time { position: absolute; bottom: 4%; left: 3%; padding: 4px 9px; border-radius: 8px; background: rgba(0, 0, 0, .5); color: #fff; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pu-rplayer-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.pu-rplayer-play { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--pu-violet); color: #fff; cursor: pointer; }
+.pu-rplayer-controls > span { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pu-rplayer-speed { display: inline-flex; margin-left: auto; padding: 3px; border-radius: 10px; background: #f0eff8; }
+.pu-rplayer-speed button { min-width: 44px; min-height: 32px; border: 0; border-radius: 8px; background: transparent; color: var(--pu-muted); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.pu-rplayer-speed button[aria-pressed='true'] { background: #fff; color: #3f33a3; box-shadow: 0 2px 6px rgba(27, 36, 72, .12); }
+.pu-timeline { position: relative; height: 22px; }
+.pu-timeline input[type='range'] { position: absolute; inset: 0; width: 100%; height: 22px; margin: 0; opacity: 0; cursor: pointer; }
+.pu-timeline-track { position: absolute; top: 50%; right: 0; left: 0; height: 6px; margin-top: -3px; border-radius: 99px; background: #e7e6f2; pointer-events: none; }
+.pu-timeline-fill { position: absolute; top: 50%; left: 0; height: 6px; margin-top: -3px; border-radius: 99px; background: var(--pu-violet); pointer-events: none; }
+.pu-timeline-gap { position: absolute; top: 50%; height: 12px; margin-top: -6px; border-radius: 3px; background: #ff8f7a; pointer-events: none; }
+.pu-timeline-mark { position: absolute; top: 50%; width: 10px; height: 10px; padding: 0; transform: translate(-50%, -50%); border: 0; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px #8f86e0; cursor: pointer; }
+.pu-timeline-mark.flagged { width: 14px; height: 14px; background: #ff8f7a; box-shadow: 0 0 0 3px #fff; }
+.pu-timeline-head { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--pu-ink); pointer-events: none; }
+.pu-lanes { display: grid; grid-template-columns: 74px minmax(0, 1fr); align-items: center; gap: 6px 10px; color: var(--pu-muted); font-size: 11.5px; }
+.pu-lane { position: relative; height: 10px; border-radius: 3px; background: #ecebf5; }
+.pu-lane i { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+.pu-lane.screen i { background: #b5adf0; }
+.pu-lane.camera i { background: #c9c3ef; }
+.pu-rplayer-events { display: grid; gap: 4px; margin: 0; padding: 12px 0 0; border-top: 1px solid #eeedf6; list-style: none; }
+.pu-rplayer-events button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 10px; border: 0; border-radius: 10px; background: transparent; color: var(--pu-ink); font: inherit; text-align: left; cursor: pointer; }
+.pu-rplayer-events button:hover, .pu-rplayer-events button[aria-current='true'] { background: #f1effe; }
+.pu-rplayer-events time { flex: none; width: 52px; font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.pu-rplayer-events .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #b5adf0; }
+.pu-rplayer-events .flagged .dot { background: #ff8f7a; }
+.pu-rplayer-events span.text { flex: 1; font-size: 13px; }
+.pu-rplayer-events .tag { padding: 3px 8px; border-radius: 999px; background: #fff0e9; color: #8c4430; font-size: 11px; font-weight: 800; }
+.pu-rplayer-missing { padding: 14px 16px; border: 1px dashed #d6d1f2; border-radius: 14px; color: var(--pu-muted); font-size: 13px; }
+.pu-kind-tag { display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 800; }
+.pu-kind-tag.pre { background: #e8ecff; color: #2a3cb8; }
+.pu-kind-tag.final { background: #fff0e9; color: #9a4835; }
+.pu-manager .pu-review-kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.pu-manager .pu-tabs + .pu-tabs { margin-top: -6px; }
+.pu-review-recording { margin-top: 16px; }
+.pu-review-recording > summary { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid var(--pu-line-2); border-radius: 12px; background: #fff; color: #4b42ad; font-size: 13px; font-weight: 800; cursor: pointer; list-style: none; }
+.pu-review-recording > summary::-webkit-details-marker { display: none; }
+.pu-review-recording[open] > summary { background: var(--pu-soft); }
+
+/* Đầu bài: hai phần của đề và cách chấm */
+.pu-exam-brief { display: grid; gap: 12px; }
+.pu-exam-brief > * { margin: 0; }
+
+/* Phần trắc nghiệm: khi làm bài (dùng lại khung câu hỏi ôn tập .pu-quiz) */
+.pu-exam-choice { display: grid; gap: 4px; }
+.pu-exam-choice-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 16px; }
+.pu-exam-choice-head h2 { margin: 8px 0 4px; font-size: 22px; }
+.pu-exam-choice-head p { margin: 0; color: #5f6b86; font-size: 13px; }
+.pu-exam-choice-count { padding: 6px 12px; border-radius: 999px; background: #fff; color: #4b42ad; font-size: 12.5px; font-weight: 850; font-variant-numeric: tabular-nums; box-shadow: inset 0 0 0 1px #dcd7f6; }
+.pu-exam-choice fieldset:disabled { opacity: .6; }
+.pu-answer-missing { color: #b04a33; }
+
+/* Kết quả trắc nghiệm của bài đã chấm (nhân viên) */
+.pu-choice-score { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 10px; padding: 10px 14px; border-radius: 11px; background: #fff5ee; color: #8a4a35; font-size: 13px; }
+.pu-choice-score.ok { background: #f2faf5; color: #2f6b50; }
+.pu-choice-score span { font-size: 12px; font-weight: 700; }
+
+/* Kết quả trắc nghiệm khi chấm (người chấm thấy từng câu) */
+.pu-review-choice { display: grid; gap: 10px; margin-top: 16px; padding: 16px 18px; border: 1px solid #e7e9f4; border-radius: 14px; background: #fbfcff; }
+.pu-review-choice-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.pu-review-choice-head strong { color: var(--pu-ink); font-size: 17px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.pu-review-choice > details > summary { color: #4b42ad; font-size: 13px; font-weight: 800; cursor: pointer; }
+.pu-review-choice-list { display: grid; gap: 8px; margin: 10px 0 0; padding: 0; list-style: none; }
+.pu-review-choice-list li { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid #e8e9f2; border-radius: 11px; background: #fff; font-size: 13px; line-height: 1.5; }
+.pu-review-choice-list li > div { display: grid; gap: 3px; min-width: 0; }
+.pu-review-choice-list strong { color: #20294b; font-weight: 800; }
+.pu-review-choice-list span { color: #4d5875; }
+.pu-review-choice-list .correct { color: #2f6b50; font-weight: 750; }
+.pu-review-choice-mark { display: grid; flex: none; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #e6f4ec; color: #2f6b50; }
+.pu-review-choice-list li.no { border-color: #f3d9cf; }
+.pu-review-choice-list li.no .pu-review-choice-mark { background: #fbe4dc; color: #b04a33; }
+
+@media (max-width: 1050px) {
+  .pu-work-grid { grid-template-columns: 1fr; }
+  .pu-proctor { position: static; }
+  .pu-proctor-camera { max-width: 360px; }
+}
+@media (max-width: 900px) {
+  .pu-check-grid { grid-template-columns: 1fr; }
+  .pu-manager .pu-review-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .pu-exam-status .pu-chip { display: none; }
+  .pu-lanes { grid-template-columns: 60px minmax(0, 1fr); }
+  .pu-rplayer-speed { margin-left: 0; }
+  .pu-manager .pu-review-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pu-rec i, .pu-proctor-tag i { animation: none; }
+  .pu-meter i { transition: none; }
+}

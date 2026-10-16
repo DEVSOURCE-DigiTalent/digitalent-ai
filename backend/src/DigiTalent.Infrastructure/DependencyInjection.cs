@@ -53,6 +53,7 @@ public static class DependencyInjection
         // Platform course builder: rich text sanitizer and signed links to uploaded media
         services.AddSingleton<IHtmlContentSanitizer, DigiTalent.Infrastructure.Content.HtmlContentSanitizer>();
         services.AddSingleton<IPlatformAssetUrlSigner, DigiTalent.Infrastructure.Content.PlatformAssetUrlSigner>();
+        services.AddSingleton<IProctoringRecordingUrlSigner, DigiTalent.Infrastructure.Content.ProctoringRecordingUrlSigner>();
 
         // Audit Logging
         services.AddScoped<IAuditService, AuditService>();

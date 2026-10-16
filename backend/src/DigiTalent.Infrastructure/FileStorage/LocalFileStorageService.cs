@@ -31,6 +31,20 @@ public class LocalFileStorageService : IFileStorageService
         return relativePath;
     }
 
+    public async Task AppendAsync(string storagePath, Stream content, CancellationToken cancellationToken = default)
+    {
+        var sanitized = storagePath.Replace("..", "").TrimStart('/', '\\');
+        var fullPath = Path.Combine(AppContext.BaseDirectory, _settings.LocalBasePath, sanitized);
+
+        if (!File.Exists(fullPath))
+        {
+            throw new NotFoundException($"Storage file '{storagePath}' not found.");
+        }
+
+        await using var fileStream = new FileStream(fullPath, FileMode.Append, FileAccess.Write, FileShare.Read, 4096, true);
+        await content.CopyToAsync(fileStream, cancellationToken);
+    }
+
     public Task<Stream> DownloadAsync(string storagePath, CancellationToken cancellationToken = default)
     {
         var sanitized = storagePath.Replace("..", "").TrimStart('/', '\\');

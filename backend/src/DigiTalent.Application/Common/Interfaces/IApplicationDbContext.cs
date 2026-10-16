@@ -53,6 +53,11 @@ public interface IApplicationDbContext
     DbSet<CourseModule> CourseModules { get; }
     DbSet<CoursePrerequisite> CoursePrerequisites { get; }
     DbSet<CourseFinalSubmission> CourseFinalSubmissions { get; }
+    DbSet<CoursePreAssessment> CoursePreAssessments { get; }
+    DbSet<ExamChoiceAnswer> ExamChoiceAnswers { get; }
+    DbSet<ProctoringSession> ProctoringSessions { get; }
+    DbSet<ProctoringRecording> ProctoringRecordings { get; }
+    DbSet<ProctoringEvent> ProctoringEvents { get; }
     DbSet<Enrollment> Enrollments { get; }
     DbSet<LearningMaterial> LearningMaterials { get; }
     DbSet<Lesson> Lessons { get; }

@@ -27,16 +27,23 @@ const course: PulseCourseSummary = {
   domainNumber: 6,
   domainName: 'Ứng dụng trí tuệ nhân tạo',
   tier: 1,
+  zone: 'PATH',
   inPath: true,
   access: 'FREE_FULL',
   canWork: true,
   slotStatus: 'IN_PROGRESS',
   finalStatus: 'LEARNING',
+  preStatus: 'NOT_YET',
+  canStartPreAssessment: false,
+  canStartFinal: false,
+  approved: false,
   enrollmentId: 'enr-1',
   enrollmentStatus: 'IN_PROGRESS',
   moduleCount: 3,
   modulesPassed: 0,
+  progressPercent: 0,
   finalAttempts: 0,
+  modules: [],
 };
 
 const slides = [

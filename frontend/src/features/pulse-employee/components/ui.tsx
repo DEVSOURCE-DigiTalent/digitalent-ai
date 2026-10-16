@@ -37,16 +37,6 @@ export function Bar({ value, label }: { value: number; label?: string }) {
   );
 }
 
-/** Vạch mức hiện tại → mục tiêu (0..3). */
-export function LevelTrack({ current, target, label }: { current: number; target: number; label: string }) {
-  return (
-    <div className="pu-track" role="img" aria-label={label}>
-      <i style={{ width: `${(Math.max(0, current) / 3) * 100}%` }} />
-      {target > 0 && <b style={{ left: `${(target / 3) * 100}%` }} />}
-    </div>
-  );
-}
-
 export function PageHead({ eyebrow, title, description, actions }: { eyebrow: string; title: string; description?: ReactNode; actions?: ReactNode }) {
   return (
     <div className="pu-page-head">

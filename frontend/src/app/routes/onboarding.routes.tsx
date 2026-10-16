@@ -13,10 +13,10 @@ import { useCurrentUser } from '../../hooks/use-current-user';
 import { ROLES, WORKSPACES } from '../../lib/roles';
 import { FocusLayout } from '../layouts/FocusLayout';
 
-/** Sau kích hoạt lời mời: nhân viên làm bài đầu vào của cổng Pulse (/enterprise/me/baseline); quản lý giữ trang đánh giá của mình. */
+/** Sau kích hoạt lời mời: nhân viên vào trang Hôm nay của cổng Pulse (bài đánh giá trước khi học của từng khóa); quản lý giữ trang đánh giá của mình. */
 function EnterpriseAssessmentPage() {
   const isManager = useCurrentUser((state) => state.hasRole(ROLES.MANAGER));
-  return isManager ? <ManagerAssessmentPage /> : <Navigate to="/enterprise/me/baseline" replace />;
+  return isManager ? <ManagerAssessmentPage /> : <Navigate to="/enterprise/me" replace />;
 }
 
 /** Steps a new paying customer goes through after signing up: pay, sign contract, set up organization or personal path. */

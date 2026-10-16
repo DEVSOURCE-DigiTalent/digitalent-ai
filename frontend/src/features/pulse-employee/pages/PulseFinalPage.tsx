@@ -1,29 +1,85 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { toast } from 'sonner';
-import { usePulseFinal, useSubmitPulseFinal } from '@/hooks/use-pulse';
-import type { PulseFinal, PulseFinalAttempt } from '@/services/pulse.service';
+import { useQueryClient } from '@tanstack/react-query';
+import { PULSE_KEYS, usePulseFinal } from '@/hooks/use-pulse';
+import { pulseService, type PulseFinal, type PulseFinalAttempt } from '@/services/pulse.service';
 import { formatDateTime } from '@/lib/utils';
-import { CriteriaRubric, FinalStatusPill } from '../components/blocks';
-import { RichText } from '../components/RichText';
-import { LoadError, Mini, Notice, PageHead, PageSkeleton, Pill, PuLink } from '../components/ui';
-import { btn } from '../lib/button';
-import { BLOCK_MESSAGES, SUPPORT_LABELS, levelName, pulseErrorMessage, timeLeft } from '../lib/labels';
+import { ChoiceScore, CriteriaRubric, FinalStatusPill } from '../components/blocks';
+import { LoadError, Mini, Notice, PageSkeleton, Pill, PuLink } from '../components/ui';
+import { ExamShell } from '../exam/ExamShell';
+import { ProctoredExam } from '../exam/ProctoredExam';
+import { BLOCK_MESSAGES, SUPPORT_LABELS, examStructure, levelName, pulseErrorMessage, timeLeft } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 
-const MIN_EVIDENCE = 30;
-const MAX_EVIDENCE = 8000;
+const LABEL = 'Bài cuối khóa';
 
 /**
- * Bài cuối của đúng khóa (§9.3, §10): ba tiêu chí, ghi chú minh chứng, quản lý chấm kèm lý do;
- * lần 1 chưa đạt → chờ rồi nộp lần cuối trong hạn; lần 2 chưa đạt → cờ hỗ trợ.
+ * EM-07 · Bài cuối khóa trên trang riêng (§9.3, §10): khi mở, nhân viên làm bài có giám sát (toàn bộ màn hình + camera +
+ * micro): phần trắc nghiệm và ghi chú minh chứng; người chấm quyết định kèm lý do, kết quả chỉ hiện sau khi chấm. Lần 1 chưa đạt → chờ rồi nộp lần cuối trong hạn;
+ * lần 2 chưa đạt → cờ hỗ trợ. Khi chưa / không làm được bài, trang cho thấy trạng thái và các lần nộp.
  */
 export function PulseFinalPage() {
   const { courseId } = useParams<{ courseId: string }>();
   const { data, isLoading, error, refetch } = usePulseFinal(courseId);
-  if (isLoading) return <PageSkeleton blocks={[140, 80, 280, 220]} />;
-  if (error || !data) return <LoadError message={pulseErrorMessage(error, 'Không tải được bài cuối khóa.')} onRetry={() => refetch()} />;
-  return <FinalView final={data} />;
+  const qc = useQueryClient();
+  // Giữ trang làm bài sau khi nộp (dữ liệu tải lại sẽ không còn "nộp được") để nhân viên thấy màn hình đã nộp.
+  const [keepExam, setKeepExam] = useState(false);
+  useEffect(() => {
+    if (data?.canSubmit) setKeepExam(true);
+  }, [data?.canSubmit]);
+
+  const backTo = courseId ? PULSE_PATHS.course(courseId) : PULSE_PATHS.today;
+  if (isLoading) {
+    return <ExamShell label={LABEL} backTo={backTo}><PageSkeleton blocks={[140, 80, 280]} /></ExamShell>;
+  }
+  if (error || !data) {
+    return (
+      <ExamShell label={LABEL} backTo={backTo}>
+        <LoadError message={pulseErrorMessage(error, 'Không tải được bài cuối khóa.')} onRetry={() => refetch()} />
+      </ExamShell>
+    );
+  }
+
+  if (data.canSubmit || keepExam) {
+    const attemptNo = Math.min(data.attempts.length + 1, data.maxAttempts);
+    const code = data.course.code;
+    const last = data.attempts[data.attempts.length - 1];
+    return (
+      <ProctoredExam
+        kind="FINAL"
+        course={data.course}
+        domainName={data.domain.name}
+        positionName={data.positionName}
+        reviewer={data.reviewer}
+        criteria={data.criteria}
+        choiceCount={data.choiceCount}
+        choicePassMark={data.choicePassMark}
+        attemptLabel={`Lần nộp ${attemptNo}/${data.maxAttempts}`}
+        outcomes={{
+          pass: `${code} đạt, mức ${levelName(data.course.tier)} của lĩnh vực được xác nhận và khóa tiếp theo mở.`,
+          fail: attemptNo < data.maxAttempts
+            ? 'Bạn đọc nhận xét, sửa bài và nộp lần cuối sau thời gian chờ.'
+            : 'Đây là lần nộp cuối: chưa đạt thì quản lý sắp xếp hỗ trợ trước khi lộ trình tiếp tục.',
+        }}
+        intro={last?.decisionReason ? (
+          <Notice tone="warning">
+            <strong>Nhận xét lần {last.attemptNo}:</strong> {last.decisionReason} Đây là lần nộp cuối, hạn {formatDateTime(last.retryDueAt)} ({timeLeft(last.retryDueAt)}).
+          </Notice>
+        ) : undefined}
+        onSubmit={async (evidenceText, sessionId, answers) => {
+          const result = (await pulseService.submitFinal(data.course.courseId, evidenceText, sessionId, answers)).data.data!;
+          await qc.invalidateQueries({ queryKey: PULSE_KEYS.all });
+          return { durationMs: result.durationMs };
+        }}
+      />
+    );
+  }
+
+  return (
+    <ExamShell label={LABEL} title={`${data.course.code} · ${data.course.title}`} backTo={backTo}>
+      <FinalView final={data} />
+    </ExamShell>
+  );
 }
 
 function FinalView({ final }: { final: PulseFinal }) {
@@ -34,12 +90,17 @@ function FinalView({ final }: { final: PulseFinal }) {
 
   return (
     <div className="pu-stack">
-      <PageHead
-        eyebrow="Bài cuối khóa"
-        title="Trình bày điều bạn đã học."
-        description="Quản lý phòng ban chấm bài cuối của mỗi khóa. Gợi ý AI chỉ để tham khảo — quản lý đưa ra quyết định cuối cùng và ghi lý do."
-        actions={<><FinalStatusPill status={status} /><Pill>{submitted}/{final.maxAttempts} lần nộp</Pill></>}
-      />
+      <div className="pu-page-head">
+        <div>
+          <span className="pu-eyebrow">{LABEL}</span>
+          <h1>Trình bày điều bạn đã học.</h1>
+          <p>
+            {final.reviewer?.name ?? 'Người chấm'} chấm bài cuối của mỗi khóa cùng bản ghi màn hình, camera và micro. Gợi ý AI chỉ để tham
+            khảo — người chấm đưa ra quyết định cuối cùng và ghi lý do.
+          </p>
+        </div>
+        <div className="pu-row"><FinalStatusPill status={status} /><Pill>{submitted}/{final.maxAttempts} lần nộp</Pill></div>
+      </div>
 
       <section className="pu-sequence" aria-label="Trình tự của khóa học">
         <div className={allPassed ? 'done' : 'current'}>
@@ -48,31 +109,22 @@ function FinalView({ final }: { final: PulseFinal }) {
         </div>
         <div className={status === 'APPROVED' || status === 'PENDING' ? 'done' : allPassed ? 'current' : ''}>
           <b>02</b>
-          <span>Bài cuối khóa<small>{submitted}/{final.maxAttempts} lần nộp</small></span>
+          <span>Bài cuối khóa có giám sát<small>{submitted}/{final.maxAttempts} lần nộp</small></span>
         </div>
         <div className={status === 'APPROVED' ? 'done' : status === 'PENDING' ? 'current' : ''}>
           <b>03</b>
-          <span>Quản lý quyết định<small>{status === 'APPROVED' ? 'Đã duyệt' : 'Minh chứng được đánh giá kèm lý do'}</small></span>
+          <span>Người chấm quyết định<small>{status === 'APPROVED' ? 'Đã duyệt' : 'Minh chứng và bản ghi được đánh giá kèm lý do'}</small></span>
         </div>
       </section>
 
       <section className="pu-surface pu-pad">
         <Mini>{course.domainName} · {levelName(course.tier)} · bài cuối khóa</Mini>
-        <h2 className="pu-panel-title">{final.assignment?.title ?? 'Tạo ghi chú công việc có thể kiểm tra.'}</h2>
-        {final.assignment ? (
-          <>
-            <RichText body={final.assignment.description} />
-            <h3>Sản phẩm cần nộp</h3>
-            <RichText body={final.assignment.expectedOutput} />
-            <h3>Tiêu chí đánh giá · đạt từ {final.assignment.passScore}/100 điểm</h3>
-            <ul>{final.assignment.rubric.map((criterion) => <li key={criterion.title}>{criterion.title} · {criterion.points} điểm</li>)}</ul>
-          </>
-        ) : (
-          <p className="pu-panel-desc">
-            Mô tả một nhiệm vụ thực tế của vị trí {position}: nêu nguồn, hành động hoặc phép tính người khác kiểm tra lại được,
-            kết luận và bước tiếp theo.
-          </p>
-        )}
+        <h2 className="pu-panel-title">{final.choiceCount > 0 ? 'Trắc nghiệm và ghi chú công việc có thể kiểm tra.' : 'Tạo ghi chú công việc có thể kiểm tra.'}</h2>
+        <p className="pu-panel-desc">
+          {examStructure(final.choiceCount, final.choicePassMark)} Phần tự luận: mô tả một nhiệm vụ thực tế của vị trí {position}, nêu nguồn,
+          hành động hoặc phép tính người khác kiểm tra lại được, kết luận và bước tiếp theo. Khi làm bài, bạn chia sẻ toàn bộ màn hình,
+          bật camera và micro.
+        </p>
         <CriteriaRubric criteria={final.criteria} />
       </section>
 
@@ -83,7 +135,7 @@ function FinalView({ final }: { final: PulseFinal }) {
       {attempts.length > 0 && (
         <section className="pu-surface pu-pad" aria-labelledby="pu-attempts-title">
           <Mini>Lịch sử nộp bài</Mini>
-          <h2 className="pu-panel-title" id="pu-attempts-title">Bài đã nộp và phản hồi của quản lý.</h2>
+          <h2 className="pu-panel-title" id="pu-attempts-title">Bài đã nộp và phản hồi của người chấm.</h2>
           <div className="pu-attempts">
             {[...attempts].reverse().map((attempt) => <AttemptCard key={attempt.submissionId} attempt={attempt} max={final.maxAttempts} />)}
           </div>
@@ -92,7 +144,7 @@ function FinalView({ final }: { final: PulseFinal }) {
 
       <div className="pu-course-footer">
         <PuLink to={PULSE_PATHS.course(course.courseId)} kind="ghost" small>← Tổng quan khóa học</PuLink>
-        <PuLink to={PULSE_PATHS.practice} kind="ghost" small>Tất cả bài thực hành →</PuLink>
+        <PuLink to={PULSE_PATHS.practice} kind="ghost" small>Tất cả bài đã nộp →</PuLink>
       </div>
     </div>
   );
@@ -108,8 +160,8 @@ function FinalState({ final }: { final: PulseFinal }) {
       <div className="pu-stack" style={{ gap: 12 }}>
         <Notice tone="warning">{BLOCK_MESSAGES[final.blockReason]}</Notice>
         <div className="pu-row">
-          {final.blockReason === 'NOT_ASSESSED'
-            ? <PuLink to={PULSE_PATHS.baseline}>Làm bài đầu vào →</PuLink>
+          {final.blockReason === 'PRE_ASSESSMENT_REQUIRED'
+            ? <PuLink to={PULSE_PATHS.preAssessment(course.courseId)}>Làm bài đánh giá trước khi học →</PuLink>
             : <PuLink to={PULSE_PATHS.course(course.courseId)} kind="outline">Xem khóa học →</PuLink>}
         </div>
       </div>
@@ -119,6 +171,7 @@ function FinalState({ final }: { final: PulseFinal }) {
   switch (status) {
     case 'NOT_STARTED':
     case 'LEARNING':
+    case 'READY':
       return (
         <div className="pu-stack" style={{ gap: 14 }}>
           <Notice tone="warning">Hoàn thành câu hỏi ôn tập của tất cả mô đun trước. Hiện đạt {final.modulesPassed}/{final.moduleCount}.</Notice>
@@ -129,14 +182,11 @@ function FinalState({ final }: { final: PulseFinal }) {
           </div>
         </div>
       );
-    case 'READY':
-    case 'RETRY_READY':
-      return <SubmitForm final={final} />;
     case 'PENDING':
       return (
         <Notice>
-          <strong>Bài của bạn đang chờ quản lý phòng ban chấm.</strong> Quyết định và lý do sẽ hiện ở đây. Cấp tiếp theo vẫn khóa cho tới khi
-          khóa được duyệt; trong lúc chờ bạn không nộp thêm được.
+          <strong>Bài của bạn đang chờ {final.reviewer?.name ?? 'người chấm'} chấm.</strong> Quyết định và lý do sẽ hiện ở đây. Cấp tiếp theo vẫn
+          khóa cho tới khi khóa được duyệt; trong lúc chờ bạn không nộp thêm được.
         </Notice>
       );
     case 'RETRY_WAIT':
@@ -174,7 +224,7 @@ function FinalState({ final }: { final: PulseFinal }) {
       return (
         <div className="pu-stack" style={{ gap: 14 }}>
           <Notice tone="success">
-            <strong>Quản lý đã duyệt khóa học.</strong> Kết quả được ghi vào hồ sơ năng lực; cấp kế tiếp có thể mở khi có suất học phù hợp.
+            <strong>Khóa học đã được duyệt.</strong> Kết quả được ghi vào hồ sơ năng lực; khóa tiếp theo của lĩnh vực đã mở trên lộ trình.
           </Notice>
           <div className="pu-row">
             <PuLink to={PULSE_PATHS.outcomes}>Xem kết quả đã xác nhận →</PuLink>
@@ -183,59 +233,8 @@ function FinalState({ final }: { final: PulseFinal }) {
         </div>
       );
     default:
-      return null;
+      return final.closedMessage ? <Notice>{final.closedMessage}</Notice> : null;
   }
-}
-
-function SubmitForm({ final }: { final: PulseFinal }) {
-  const submit = useSubmitPulseFinal();
-  const [text, setText] = useState('');
-  const isRetry = final.status === 'RETRY_READY';
-  const first = final.attempts.find((a) => a.attemptNo === 1);
-  const length = text.trim().length;
-  const tooShort = length > 0 && length < MIN_EVIDENCE;
-
-  const onSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (length < MIN_EVIDENCE || length > MAX_EVIDENCE) return;
-    submit.mutate(
-      { courseId: final.course.courseId, evidenceText: text.trim() },
-      {
-        onSuccess: () => toast.success('Đã gửi bài cuối khóa cho quản lý phòng ban.'),
-        onError: (err) => toast.error(pulseErrorMessage(err, 'Chưa gửi được bài cuối khóa.')),
-      },
-    );
-  };
-
-  return (
-    <form onSubmit={onSubmit}>
-      <Mini>{isRetry ? `Lần nộp cuối (${final.maxAttempts}/${final.maxAttempts})` : `Lần nộp 1/${final.maxAttempts}`}</Mini>
-      <h2 className="pu-panel-title">Làm cho minh chứng của bạn dễ kiểm tra.</h2>
-      {isRetry && (
-        <Notice tone="warning">
-          Đây là lần nộp cuối. Hạn nộp {formatDateTime(first?.retryDueAt)} ({timeLeft(first?.retryDueAt)}). Hãy sửa theo nhận xét của quản lý.
-        </Notice>
-      )}
-      <label className="pu-field">
-        Ghi chú minh chứng
-        <textarea
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          maxLength={MAX_EVIDENCE}
-          placeholder="Nêu nguồn, trình bày hành động hoặc phép tính của bạn, rồi giải thích kết luận và bước tiếp theo."
-          aria-invalid={tooShort}
-          aria-describedby="pu-evidence-hint"
-          required
-        />
-        <small id="pu-evidence-hint" className={tooShort ? 'error' : undefined}>
-          {tooShort ? `Cần ít nhất ${MIN_EVIDENCE} ký tự (hiện có ${length}).` : `Ít nhất ${MIN_EVIDENCE} ký tự · ${length}/${MAX_EVIDENCE}. Bài cuối khóa nhận ghi chú văn bản.`}
-        </small>
-      </label>
-      <button type="submit" className={btn()} disabled={length < MIN_EVIDENCE || submit.isPending}>
-        {submit.isPending ? 'Đang gửi…' : isRetry ? 'Nộp lần cuối →' : 'Nộp bài cuối khóa →'}
-      </button>
-    </form>
-  );
 }
 
 function AttemptCard({ attempt, max }: { attempt: PulseFinalAttempt; max: number }) {
@@ -244,13 +243,14 @@ function AttemptCard({ attempt, max }: { attempt: PulseFinalAttempt; max: number
       <header>
         <span>Lần nộp {attempt.attemptNo}/{max} · {formatDateTime(attempt.submittedAt)}</span>
         <Pill tone={attempt.decision === 'PASSED' ? 'green' : attempt.decision === 'NOT_YET' ? 'coral' : 'gray'}>
-          {attempt.decision === 'PASSED' ? 'Đã duyệt' : attempt.decision === 'NOT_YET' ? 'Chưa đạt · cần sửa' : 'Chờ quản lý'}
+          {attempt.decision === 'PASSED' ? 'Đã duyệt' : attempt.decision === 'NOT_YET' ? 'Chưa đạt · cần sửa' : 'Chờ người chấm'}
         </Pill>
       </header>
+      <ChoiceScore choice={attempt.choice} />
       <blockquote>{attempt.evidenceText}</blockquote>
       {attempt.decisionReason && (
         <div className={`pu-feedback${attempt.decision === 'PASSED' ? ' ok' : ''}`}>
-          <strong>Nhận xét của {attempt.reviewerName ?? 'quản lý'}</strong>
+          <strong>Nhận xét của {attempt.reviewerName ?? 'người chấm'}</strong>
           {attempt.reviewedAt ? ` · ${formatDateTime(attempt.reviewedAt)}` : ''}: {attempt.decisionReason}
         </div>
       )}

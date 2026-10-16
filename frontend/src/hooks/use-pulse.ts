@@ -5,9 +5,9 @@ import { pulseReviewService, pulseService, type PulseAnswer, type PulseDecision,
 export const PULSE_KEYS = {
   all: ['pulse'] as const,
   overview: ['pulse', 'overview'] as const,
-  baseline: ['pulse', 'baseline'] as const,
   course: (courseId?: string) => ['pulse', 'courses', courseId] as const,
   module: (courseId?: string, moduleId?: string) => ['pulse', 'courses', courseId, 'modules', moduleId] as const,
+  preAssessment: (courseId?: string) => ['pulse', 'courses', courseId, 'pre-assessment'] as const,
   final: (courseId?: string) => ['pulse', 'courses', courseId, 'final'] as const,
   practice: ['pulse', 'practice'] as const,
   outcomes: ['pulse', 'outcomes'] as const,
@@ -17,18 +17,6 @@ export const PULSE_KEYS = {
 
 export function usePulseOverview() {
   return useQuery({ queryKey: PULSE_KEYS.overview, queryFn: () => pulseService.getOverview().then((r) => r.data.data!) });
-}
-
-export function usePulseBaseline() {
-  return useQuery({ queryKey: PULSE_KEYS.baseline, queryFn: () => pulseService.getBaseline().then((r) => r.data.data!) });
-}
-
-export function useSubmitPulseBaseline() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (answers: PulseAnswer[]) => pulseService.submitBaseline(answers).then((r) => r.data.data!),
-    onSuccess: () => qc.invalidateQueries({ queryKey: PULSE_KEYS.all }),
-  });
 }
 
 export function usePulseCourse(courseId?: string) {
@@ -77,20 +65,20 @@ export function useSubmitPulseModuleQuiz() {
   });
 }
 
+/** Bài đánh giá trước khi học của một khóa. */
+export function usePulsePreAssessment(courseId?: string) {
+  return useQuery({
+    queryKey: PULSE_KEYS.preAssessment(courseId),
+    queryFn: () => pulseService.getPreAssessment(courseId!).then((r) => r.data.data!),
+    enabled: Boolean(courseId),
+  });
+}
+
 export function usePulseFinal(courseId?: string) {
   return useQuery({
     queryKey: PULSE_KEYS.final(courseId),
     queryFn: () => pulseService.getFinal(courseId!).then((r) => r.data.data!),
     enabled: Boolean(courseId),
-  });
-}
-
-export function useSubmitPulseFinal() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ courseId, evidenceText }: { courseId: string; evidenceText: string }) =>
-      pulseService.submitFinal(courseId, evidenceText).then((r) => r.data.data!),
-    onSuccess: () => qc.invalidateQueries({ queryKey: PULSE_KEYS.all }),
   });
 }
 
@@ -110,7 +98,7 @@ export function usePulseOutcome(outcomeId?: string) {
   });
 }
 
-/** Hàng chờ bài cuối khóa của phòng ban (quản lý). */
+/** Hàng chờ chấm bài của phòng ban (quản lý): bài đánh giá trước khi học và bài cuối khóa. */
 export function usePulseFinalReviews(enabled = true) {
   return useQuery({ queryKey: PULSE_KEYS.finalReviews, queryFn: () => pulseReviewService.getQueue().then((r) => r.data.data!), enabled });
 }
@@ -120,6 +108,15 @@ export function useDecidePulseFinal() {
   return useMutation({
     mutationFn: ({ submissionId, decision, reason }: { submissionId: string; decision: PulseDecision; reason: string }) =>
       pulseReviewService.decide(submissionId, decision, reason).then((r) => r.data.data!),
+    onSuccess: () => qc.invalidateQueries({ queryKey: PULSE_KEYS.all }),
+  });
+}
+
+export function useDecidePulsePreAssessment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ preAssessmentId, decision, reason }: { preAssessmentId: string; decision: PulseDecision; reason: string }) =>
+      pulseReviewService.decidePreAssessment(preAssessmentId, decision, reason).then((r) => r.data.data!),
     onSuccess: () => qc.invalidateQueries({ queryKey: PULSE_KEYS.all }),
   });
 }

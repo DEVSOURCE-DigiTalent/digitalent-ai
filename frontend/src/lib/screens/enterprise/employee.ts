@@ -7,7 +7,8 @@ const EMPLOYEE_ROLES = [ROLES.EMPLOYEE, ROLES.MANAGER];
 
 /**
  * Cổng nhân viên Pulse (docs/ui-redesign/16-pulse-product-flow-detailed.md §3, §14): điều hướng chính chỉ có
- * Hôm nay / Lộ trình / Thực hành; chi tiết khóa, trang học mô đun và bài cuối khóa mở theo ngữ cảnh.
+ * Hôm nay / Lộ trình / Thực hành; chi tiết khóa, trang học mô đun, bài đánh giá trước khi học và bài cuối khóa (hai
+ * trang làm bài có giám sát, docs/specs/2026-10-16-pulse-employee-roadmap-proctoring.md) mở theo ngữ cảnh.
  * Các màn này dùng khung PulseEmployeeLayout (không có menu bên). Quản lý vẫn vào được để tự học.
  */
 export const EMPLOYEE_SCREENS: ScreenDef[] = [
@@ -36,14 +37,6 @@ export const EMPLOYEE_SCREENS: ScreenDef[] = [
     priority: 'P0',
   },
   {
-    id: 'EM-04',
-    title: 'Kiểm tra đầu vào',
-    path: '/enterprise/me/baseline',
-    roles: EMPLOYEE_ROLES,
-    permission: P.ASSESSMENT_READ,
-    priority: 'P0',
-  },
-  {
     id: 'EM-05',
     title: 'Chi tiết khóa học',
     path: '/enterprise/me/courses/:courseId',
@@ -63,6 +56,14 @@ export const EMPLOYEE_SCREENS: ScreenDef[] = [
     id: 'EM-07',
     title: 'Bài cuối khóa',
     path: '/enterprise/me/courses/:courseId/final',
+    roles: EMPLOYEE_ROLES,
+    permission: P.ASSESSMENT_READ,
+    priority: 'P0',
+  },
+  {
+    id: 'EM-12',
+    title: 'Đánh giá trước khi học',
+    path: '/enterprise/me/courses/:courseId/pre-assessment',
     roles: EMPLOYEE_ROLES,
     permission: P.ASSESSMENT_READ,
     priority: 'P0',

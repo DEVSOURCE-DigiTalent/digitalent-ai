@@ -35,21 +35,9 @@ function renderHtml(body: string): ReactNode {
 /** **đậm** trong một dòng Markdown. */
 function inline(text: string): ReactNode {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((part, index) => {
-    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
-      return <strong key={index}>{part.slice(2, -2)}</strong>;
-    }
-    return part.split(/(https?:\/\/[^\s]+)/g).map((segment, segmentIndex) => {
-      if (!/^https?:\/\//.test(segment)) return segment;
-      try {
-        const url = new URL(segment);
-        if (url.protocol !== 'https:' && url.protocol !== 'http:') return segment;
-        return <a key={`${index}-${segmentIndex}`} href={url.toString()} target="_blank" rel="noopener noreferrer">{segment}</a>;
-      } catch {
-        return segment;
-      }
-    });
-  });
+  return parts.map((part, index) =>
+    part.startsWith('**') && part.endsWith('**') && part.length > 4 ? <strong key={index}>{part.slice(2, -2)}</strong> : part,
+  );
 }
 
 type Block =

@@ -1631,6 +1631,14 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasColumnType("smallint")
                         .HasColumnName("attempt_no");
 
+                    b.Property<short?>("ChoiceScore")
+                        .HasColumnType("smallint")
+                        .HasColumnName("choice_score");
+
+                    b.Property<short?>("ChoiceTotal")
+                        .HasColumnType("smallint")
+                        .HasColumnName("choice_total");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -1652,6 +1660,10 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("evidence_text");
+
+                    b.Property<Guid?>("ProctoringSessionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("proctoring_session_id");
 
                     b.Property<DateTimeOffset?>("RetryDueAt")
                         .HasColumnType("timestamp with time zone")
@@ -1697,6 +1709,11 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_course_final_submissions");
 
+                    b.HasIndex("ProctoringSessionId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_course_final_submissions_session")
+                        .HasFilter("proctoring_session_id IS NOT NULL");
+
                     b.HasIndex("ReviewedByUserId")
                         .HasDatabaseName("ix_course_final_submissions_reviewed_by_user_id");
 
@@ -1714,6 +1731,8 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                     b.ToTable("course_final_submissions", null, t =>
                         {
                             t.HasCheckConstraint("ck_course_final_submissions_attempt_no", "attempt_no BETWEEN 1 AND 2");
+
+                            t.HasCheckConstraint("ck_course_final_submissions_choice", "(choice_score IS NULL AND choice_total IS NULL) OR (choice_total BETWEEN 1 AND 50 AND choice_score BETWEEN 0 AND choice_total)");
 
                             t.HasCheckConstraint("ck_course_final_submissions_decision", "decision IS NULL OR decision IN ('PASSED','NOT_YET')");
 
@@ -1886,6 +1905,112 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_course_modules_estimated_minutes", "estimated_minutes IS NULL OR estimated_minutes >= 0");
 
                             t.HasCheckConstraint("ck_course_modules_status", "status IN ('ACTIVE','ARCHIVED')");
+                        });
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.CoursePreAssessment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<short?>("ChoiceScore")
+                        .HasColumnType("smallint")
+                        .HasColumnName("choice_score");
+
+                    b.Property<short?>("ChoiceTotal")
+                        .HasColumnType("smallint")
+                        .HasColumnName("choice_total");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("course_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Decision")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("decision");
+
+                    b.Property<string>("DecisionReason")
+                        .HasColumnType("text")
+                        .HasColumnName("decision_reason");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.Property<Guid?>("EnrollmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("enrollment_id");
+
+                    b.Property<string>("EvidenceText")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("evidence_text");
+
+                    b.Property<Guid?>("ProctoringSessionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("proctoring_session_id");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reviewed_by_user_id");
+
+                    b.Property<DateTimeOffset>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("submitted_at");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_course_pre_assessments");
+
+                    b.HasIndex("CourseId")
+                        .HasDatabaseName("ix_course_pre_assessments_course_id");
+
+                    b.HasIndex("EnrollmentId")
+                        .HasDatabaseName("ix_course_pre_assessments_enrollment_id");
+
+                    b.HasIndex("ProctoringSessionId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_course_pre_assessments_session")
+                        .HasFilter("proctoring_session_id IS NOT NULL");
+
+                    b.HasIndex("ReviewedByUserId")
+                        .HasDatabaseName("ix_course_pre_assessments_reviewed_by_user_id");
+
+                    b.HasIndex("SubmittedAt")
+                        .HasDatabaseName("ix_course_pre_assessments_pending")
+                        .HasFilter("decision IS NULL");
+
+                    b.HasIndex("EmployeeId", "CourseId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_course_pre_assessments_employee_course");
+
+                    b.ToTable("course_pre_assessments", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_course_pre_assessments_choice", "(choice_score IS NULL AND choice_total IS NULL) OR (choice_total BETWEEN 1 AND 50 AND choice_score BETWEEN 0 AND choice_total)");
+
+                            t.HasCheckConstraint("ck_course_pre_assessments_decision", "decision IS NULL OR decision IN ('PASSED', 'NOT_YET')");
+
+                            t.HasCheckConstraint("ck_course_pre_assessments_enrollment", "enrollment_id IS NULL OR decision = 'PASSED'");
+
+                            t.HasCheckConstraint("ck_course_pre_assessments_evidence", "char_length(evidence_text) BETWEEN 30 AND 8000");
+
+                            t.HasCheckConstraint("ck_course_pre_assessments_review_complete", "(decision IS NULL AND decision_reason IS NULL AND reviewed_by_user_id IS NULL AND reviewed_at IS NULL) OR (decision IS NOT NULL AND char_length(decision_reason) >= 10 AND reviewed_by_user_id IS NOT NULL AND reviewed_at IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_course_pre_assessments_reviewed_after_submit", "reviewed_at IS NULL OR reviewed_at >= submitted_at");
                         });
                 });
 
@@ -2366,6 +2491,72 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_enrollments_completion_time", "completed_at IS NULL OR started_at IS NULL OR completed_at >= started_at");
 
                             t.HasCheckConstraint("ck_enrollments_status", "status IN ('NOT_STARTED','IN_PROGRESS','READY_FOR_ASSESSMENT','COMPLETED','CANCELLED')");
+                        });
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.ExamChoiceAnswer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("FinalSubmissionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("final_submission_id");
+
+                    b.Property<bool>("IsCorrect")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_correct");
+
+                    b.Property<Guid?>("PreAssessmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pre_assessment_id");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("question_id");
+
+                    b.Property<Guid>("SelectedOptionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("selected_option_id");
+
+                    b.Property<short>("SortOrder")
+                        .HasColumnType("smallint")
+                        .HasColumnName("sort_order");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_exam_choice_answers");
+
+                    b.HasIndex("QuestionId")
+                        .HasDatabaseName("ix_exam_choice_answers_question_id");
+
+                    b.HasIndex("SelectedOptionId")
+                        .HasDatabaseName("ix_exam_choice_answers_selected_option_id");
+
+                    b.HasIndex("FinalSubmissionId", "QuestionId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_exam_choice_answers_final_question")
+                        .HasFilter("final_submission_id IS NOT NULL");
+
+                    b.HasIndex("PreAssessmentId", "QuestionId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_exam_choice_answers_pre_question")
+                        .HasFilter("pre_assessment_id IS NOT NULL");
+
+                    b.ToTable("exam_choice_answers", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_exam_choice_answers_owner", "(final_submission_id IS NULL) <> (pre_assessment_id IS NULL)");
+
+                            t.HasCheckConstraint("ck_exam_choice_answers_sort_order", "sort_order >= 1");
                         });
                 });
 
@@ -4887,6 +5078,215 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("DigiTalent.Domain.Entities.ProctoringEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Detail")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("detail");
+
+                    b.Property<long?>("DurationMs")
+                        .HasColumnType("bigint")
+                        .HasColumnName("duration_ms");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<long>("OffsetMs")
+                        .HasColumnType("bigint")
+                        .HasColumnName("offset_ms");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("session_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_proctoring_events");
+
+                    b.HasIndex("SessionId", "OffsetMs")
+                        .HasDatabaseName("ix_proctoring_events_session_offset");
+
+                    b.ToTable("proctoring_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_proctoring_events_kind", "kind IN ('STARTED', 'TAB_HIDDEN', 'FOCUS_LOST', 'SHARE_STOPPED', 'SHARE_RESUMED', 'CAMERA_STOPPED', 'CAMERA_RESUMED', 'MIC_STOPPED', 'MIC_RESUMED', 'SUBMITTED')");
+
+                            t.HasCheckConstraint("ck_proctoring_events_offsets", "offset_ms >= 0 AND (duration_ms IS NULL OR duration_ms >= 0)");
+                        });
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.ProctoringRecording", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("ChunkCount")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("chunk_count");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("content_type");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DisplaySurface")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("display_surface");
+
+                    b.Property<long?>("EndOffsetMs")
+                        .HasColumnType("bigint")
+                        .HasColumnName("end_offset_ms");
+
+                    b.Property<short>("SegmentNo")
+                        .HasColumnType("smallint")
+                        .HasColumnName("segment_no");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("session_id");
+
+                    b.Property<long>("SizeBytes")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L)
+                        .HasColumnName("size_bytes");
+
+                    b.Property<long>("StartOffsetMs")
+                        .HasColumnType("bigint")
+                        .HasColumnName("start_offset_ms");
+
+                    b.Property<string>("StoragePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("storage_path");
+
+                    b.Property<string>("Track")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("track");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_proctoring_recordings");
+
+                    b.HasIndex("SessionId", "Track", "SegmentNo")
+                        .IsUnique()
+                        .HasDatabaseName("uq_proctoring_recordings_session_track_segment");
+
+                    b.ToTable("proctoring_recordings", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_proctoring_recordings_offsets", "start_offset_ms >= 0 AND (end_offset_ms IS NULL OR end_offset_ms >= start_offset_ms)");
+
+                            t.HasCheckConstraint("ck_proctoring_recordings_segment_no", "segment_no BETWEEN 1 AND 50");
+
+                            t.HasCheckConstraint("ck_proctoring_recordings_size", "chunk_count >= 0 AND size_bytes >= 0");
+
+                            t.HasCheckConstraint("ck_proctoring_recordings_track", "track IN ('SCREEN', 'CAMERA')");
+                        });
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.ProctoringSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("course_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<long?>("DurationMs")
+                        .HasColumnType("bigint")
+                        .HasColumnName("duration_ms");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ended_at");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_proctoring_sessions");
+
+                    b.HasIndex("CourseId")
+                        .HasDatabaseName("ix_proctoring_sessions_course_id");
+
+                    b.HasIndex("EmployeeId", "CourseId")
+                        .HasDatabaseName("ix_proctoring_sessions_employee_course");
+
+                    b.ToTable("proctoring_sessions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_proctoring_sessions_duration", "duration_ms IS NULL OR duration_ms >= 0");
+
+                            t.HasCheckConstraint("ck_proctoring_sessions_ended", "(status = 'RECORDING' AND ended_at IS NULL) OR (status <> 'RECORDING' AND ended_at IS NOT NULL AND ended_at >= started_at)");
+
+                            t.HasCheckConstraint("ck_proctoring_sessions_kind", "kind IN ('PRE_ASSESSMENT', 'FINAL')");
+
+                            t.HasCheckConstraint("ck_proctoring_sessions_status", "status IN ('RECORDING', 'SUBMITTED', 'ABANDONED')");
+                        });
+                });
+
             modelBuilder.Entity("DigiTalent.Domain.Entities.PurchaseDraft", b =>
                 {
                     b.Property<Guid>("Id")
@@ -7360,6 +7760,12 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_course_final_submissions_enrollments_enrollment_id");
 
+                    b.HasOne("DigiTalent.Domain.Entities.ProctoringSession", null)
+                        .WithMany()
+                        .HasForeignKey("ProctoringSessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_course_final_submissions_proctoring_sessions_proctoring_ses");
+
                     b.HasOne("DigiTalent.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("ReviewedByUserId")
@@ -7398,6 +7804,41 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_course_modules_courses_course_id");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.CoursePreAssessment", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.Course", null)
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_course_pre_assessments_courses_course_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_course_pre_assessments_employees_employee_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.Enrollment", null)
+                        .WithMany()
+                        .HasForeignKey("EnrollmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_course_pre_assessments_enrollments_enrollment_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.ProctoringSession", null)
+                        .WithMany()
+                        .HasForeignKey("ProctoringSessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_course_pre_assessments_proctoring_sessions_proctoring_sessi");
+
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_course_pre_assessments_users_reviewed_by_user_id");
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.CoursePrerequisite", b =>
@@ -7541,6 +7982,35 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_enrollments_employees_employee_id");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.ExamChoiceAnswer", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.CourseFinalSubmission", null)
+                        .WithMany()
+                        .HasForeignKey("FinalSubmissionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_exam_choice_answers_course_final_submissions_final_submissi");
+
+                    b.HasOne("DigiTalent.Domain.Entities.CoursePreAssessment", null)
+                        .WithMany()
+                        .HasForeignKey("PreAssessmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_exam_choice_answers_course_pre_assessments_pre_assessment_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.Question", null)
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_exam_choice_answers_questions_question_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.QuestionOption", null)
+                        .WithMany()
+                        .HasForeignKey("SelectedOptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_exam_choice_answers_question_options_selected_option_id");
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.FileObject", b =>
@@ -8067,6 +8537,43 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasForeignKey("RelatedCourseId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_practical_task_templates_courses_related_course_id");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.ProctoringEvent", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.ProctoringSession", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_proctoring_events_proctoring_sessions_session_id");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.ProctoringRecording", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.ProctoringSession", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_proctoring_recordings_proctoring_sessions_session_id");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.ProctoringSession", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.Course", null)
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_proctoring_sessions_courses_course_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_proctoring_sessions_employees_employee_id");
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.PurchaseDraft", b =>

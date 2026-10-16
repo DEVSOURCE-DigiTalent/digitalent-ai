@@ -15,9 +15,9 @@ public class CapabilityCeilingReader
     public static readonly string[] LevelNames = { "Cơ bản", "Trung cấp", "Nâng cao" };
 
     private readonly IApplicationDbContext _context;
-    private readonly PulseLearnerReader _catalog;
+    private readonly PulseCatalogReader _catalog;
 
-    public CapabilityCeilingReader(IApplicationDbContext context, PulseLearnerReader catalog)
+    public CapabilityCeilingReader(IApplicationDbContext context, PulseCatalogReader catalog)
     {
         _context = context;
         _catalog = catalog;
@@ -33,7 +33,7 @@ public class CapabilityCeilingReader
             .ToListAsync();
         if (withCourses == null)
         {
-            withCourses = (await _catalog.LoadCatalogAsync(organizationId)).Select(c => c.CategoryId).ToHashSet();
+            withCourses = (await _catalog.LoadAsync(organizationId)).Select(c => c.CategoryId).ToHashSet();
         }
 
         var covered = categories.Where(c => withCourses.Contains(c.Id)).ToList();
@@ -43,7 +43,7 @@ public class CapabilityCeilingReader
     public async Task<T> ReadAsync<T>(Guid organizationId)
         where T : CapabilityCeilingsDto, new()
     {
-        var catalog = await _catalog.LoadCatalogAsync(organizationId);
+        var catalog = await _catalog.LoadAsync(organizationId);
         var domains = await LoadDomainsAsync(organizationId, catalog.Select(c => c.CategoryId).ToHashSet());
         var domainIds = domains.Select(d => d.Id).ToList();
 
@@ -168,6 +168,59 @@ public class CapabilityCeilingReader
         }
 
         return output;
+    }
+
+    /// <summary>
+    /// Trần hiệu lực của một phòng ban theo lĩnh vực, cùng quy tắc với ma trận OW-05: trần riêng của phòng ban (không
+    /// vượt trần doanh nghiệp) → trần doanh nghiệp đã lưu → chưa lưu thì gợi ý từ yêu cầu vị trí của tổ chức (ít nhất
+    /// Cơ bản). Không có phòng ban thì là trần doanh nghiệp. Dùng cho lộ trình của nhân viên (Pulse).
+    /// </summary>
+    public async Task<Dictionary<Guid, int>> EffectiveForDepartmentAsync(Guid organizationId, Guid? departmentId, IReadOnlyCollection<Guid> categoryIds)
+    {
+        var ids = categoryIds.Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            return new Dictionary<Guid, int>();
+        }
+
+        var rows = await _context.CapabilityCeilings
+            .AsNoTracking()
+            .Where(c => c.OrganizationId == organizationId
+                        && ids.Contains(c.CompetencyCategoryId)
+                        && (c.DepartmentId == null || c.DepartmentId == departmentId))
+            .Select(c => new { c.DepartmentId, c.CompetencyCategoryId, c.CeilingLevel })
+            .ToListAsync();
+        var organizationRows = rows
+            .Where(r => r.DepartmentId == null)
+            .ToDictionary(r => r.CompetencyCategoryId, r => (int)r.CeilingLevel);
+        var departmentRows = departmentId == null
+            ? new Dictionary<Guid, int>()
+            : rows.Where(r => r.DepartmentId == departmentId).ToDictionary(r => r.CompetencyCategoryId, r => (int)r.CeilingLevel);
+
+        var unsaved = ids.Where(id => !organizationRows.ContainsKey(id)).ToList();
+        var suggested = new Dictionary<Guid, int>();
+        if (unsaved.Count > 0)
+        {
+            var requirements = await (
+                    from set in _context.PositionRequirementSets.AsNoTracking()
+                    join position in _context.JobPositions.AsNoTracking() on set.JobPositionId equals position.Id
+                    join item in _context.PositionRequirementItems.AsNoTracking() on set.Id equals item.RequirementSetId
+                    join competency in _context.Competencies.AsNoTracking() on item.CompetencyId equals competency.Id
+                    where position.OrganizationId == organizationId
+                          && set.Status == Statuses.PositionRequirementSet.Active
+                          && unsaved.Contains(competency.CategoryId)
+                    select new { competency.CategoryId, item.RequiredLevel })
+                .ToListAsync();
+            suggested = requirements
+                .GroupBy(r => r.CategoryId)
+                .ToDictionary(g => g.Key, g => Clamp(g.Max(r => (int)r.RequiredLevel)));
+        }
+
+        return ids.ToDictionary(id => id, id =>
+        {
+            var organization = organizationRows.TryGetValue(id, out var saved) ? saved : Math.Max(1, suggested.GetValueOrDefault(id));
+            return departmentRows.TryGetValue(id, out var custom) ? Math.Min(custom, organization) : organization;
+        });
     }
 
     private static int Clamp(int level) => Math.Clamp(level, 0, CapabilityCeiling.MaxLevel);
