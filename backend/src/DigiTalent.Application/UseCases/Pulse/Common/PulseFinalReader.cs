@@ -46,6 +46,7 @@ public class PulseFinalReader
             SupportAction = s.SupportAction,
             SupportNote = s.SupportNote,
             SupportRecordedAt = s.SupportRecordedAt,
+            ProctoringSessionId = s.ProctoringSessionId,
         }).ToList();
     }
 }

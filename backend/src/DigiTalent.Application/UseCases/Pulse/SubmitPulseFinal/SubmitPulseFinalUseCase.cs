@@ -8,9 +8,10 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
-/// POST /me/pulse/courses/{courseId}/final — nộp bài cuối khóa (§9.3, §10.1). Chỉ khi đã qua mọi mô đun và bài đang
-/// mở (lần 1, hoặc lần 2 trong cửa sổ sau lần 1 chưa đạt). Lượt học chuyển READY_FOR_ASSESSMENT; quản lý phòng ban
-/// của nhân viên nhận thông báo.
+/// POST /me/pulse/courses/{courseId}/final — nộp bài cuối khóa (§9.3, §10.1) kèm phiên làm bài có giám sát đã ghi toàn
+/// bộ màn hình, camera và micro. Chỉ khi đã qua mọi mô đun và bài đang mở (lần 1, hoặc lần 2 trong cửa sổ sau lần 1 chưa
+/// đạt). Lượt học chuyển READY_FOR_ASSESSMENT; người chấm (quản lý phòng ban, hoặc chủ doanh nghiệp khi nhân viên là quản
+/// lý) nhận thông báo.
 /// </summary>
 public class SubmitPulseFinalUseCase : IUseCase<SubmitPulseFinalUseCaseInput, SubmitPulseFinalUseCaseOutput>
 {
@@ -18,11 +19,13 @@ public class SubmitPulseFinalUseCase : IUseCase<SubmitPulseFinalUseCaseInput, Su
 
     private readonly IApplicationDbContext _context;
     private readonly PulseCourseWorkspace _workspace;
+    private readonly PulseProctoring _proctoring;
 
-    public SubmitPulseFinalUseCase(IApplicationDbContext context, PulseCourseWorkspace workspace)
+    public SubmitPulseFinalUseCase(IApplicationDbContext context, PulseCourseWorkspace workspace, PulseProctoring proctoring)
     {
         _context = context;
         _workspace = workspace;
+        _proctoring = proctoring;
     }
 
     public async Task<SubmitPulseFinalUseCaseOutput> ExecuteAsync(SubmitPulseFinalUseCaseInput input)
@@ -36,22 +39,17 @@ public class SubmitPulseFinalUseCase : IUseCase<SubmitPulseFinalUseCaseInput, Su
 
         if (!PulseRules.CanSubmitFinal(state.FinalStatus))
         {
-            throw new ConflictException(state.FinalStatus switch
-            {
-                PulseFinalStatus.Pending => "Bài của bạn đang chờ quản lý chấm, chưa thể nộp thêm.",
-                PulseFinalStatus.Approved => "Khóa học đã được quản lý duyệt.",
-                PulseFinalStatus.RetryWait => "Lần nộp cuối chưa mở. Hãy xem nhận xét và chờ tới thời điểm mở.",
-                PulseFinalStatus.DeadlineMissed => "Đã quá hạn nộp lần cuối. Quản lý sẽ sắp xếp hỗ trợ.",
-                PulseFinalStatus.Flagged => "Đã dùng hết hai lần nộp. Quản lý sẽ sắp xếp hỗ trợ.",
-                _ => "Bài cuối khóa chưa mở để nộp.",
-            });
+            throw new ConflictException(PulseCourseWorkspace.FinalClosedMessage(state));
         }
 
         var now = _workspace.Now;
+        var session = await _proctoring.CloseForSubmitAsync(
+            input.ProctoringSessionId, snapshot.Employee.Id, Statuses.ProctoringKind.Final, state.Enrollment.CourseId, now);
         var attemptNo = (short)(state.Submissions.Count + 1);
         var submission = new CourseFinalSubmission
         {
             EnrollmentId = state.Enrollment.Id,
+            ProctoringSessionId = session.Id,
             AttemptNo = attemptNo,
             EvidenceText = input.EvidenceText.Trim(),
             SubmittedAt = now,
@@ -62,17 +60,11 @@ public class SubmitPulseFinalUseCase : IUseCase<SubmitPulseFinalUseCaseInput, Su
         enrollment.Status = Statuses.Enrollment.ReadyForAssessment;
         enrollment.StartedAt ??= now;
 
-        var managerUserId = await (
-                from department in _context.Departments.AsNoTracking()
-                join manager in _context.Employees.AsNoTracking() on department.ManagerEmployeeId equals manager.Id
-                where department.Id == snapshot.Employee.DepartmentId && manager.Id != snapshot.Employee.Id
-                select manager.UserId)
-            .FirstOrDefaultAsync();
-        if (managerUserId.HasValue)
+        foreach (var reviewerUserId in await PulseReviewers.UserIdsAsync(_context, snapshot.Employee))
         {
             _context.Notifications.Add(new Notification
             {
-                RecipientUserId = managerUserId.Value,
+                RecipientUserId = reviewerUserId,
                 Type = NotificationType,
                 Title = "Có bài cuối khóa cần chấm",
                 Message = $"{snapshot.Employee.FullName} đã nộp bài cuối khóa \"{state.Course.Title}\" (lần {attemptNo}/{PulseRules.MaxFinalAttempts}).",
@@ -91,6 +83,12 @@ public class SubmitPulseFinalUseCase : IUseCase<SubmitPulseFinalUseCaseInput, Su
             throw new ConflictException("Bài cuối khóa đang được gửi, vui lòng tải lại trang.");
         }
 
-        return new SubmitPulseFinalUseCaseOutput { SubmissionId = submission.Id, AttemptNo = attemptNo, SubmittedAt = now };
+        return new SubmitPulseFinalUseCaseOutput
+        {
+            SubmissionId = submission.Id,
+            AttemptNo = attemptNo,
+            SubmittedAt = now,
+            DurationMs = session.DurationMs ?? 0,
+        };
     }
 }

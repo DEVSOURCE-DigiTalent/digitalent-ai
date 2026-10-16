@@ -5,10 +5,14 @@ public class GetPulseFinalUseCaseOutput
     public PulseCourseSummaryDto Course { get; set; } = new();
     public PulseDomainDto Domain { get; set; } = new();
     public string? PositionName { get; set; }
+    public PulseReviewerDto? Reviewer { get; set; }
     public List<PulseCriterionDto> Criteria { get; set; } = new();
     /// <summary>Xem PulseFinalStatus.</summary>
     public string Status { get; set; } = string.Empty;
+    /// <summary>Bắt đầu được bài làm có giám sát và nộp bài ngay bây giờ.</summary>
     public bool CanSubmit { get; set; }
+    /// <summary>Vì sao chưa làm được bài (null khi làm được).</summary>
+    public string? ClosedMessage { get; set; }
     /// <summary>Lý do chưa được làm bài cuối (PulseBlockReason), null nếu khóa cho phép.</summary>
     public string? BlockReason { get; set; }
     public int ModulesPassed { get; set; }

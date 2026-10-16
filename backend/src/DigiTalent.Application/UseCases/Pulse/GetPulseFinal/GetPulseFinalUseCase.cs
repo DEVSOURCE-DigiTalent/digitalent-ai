@@ -4,7 +4,7 @@ namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
 /// GET /me/pulse/courses/{courseId}/final — bài cuối của đúng khóa (§9.3, §10): ba tiêu chí, trạng thái nộp,
-/// nhận xét của quản lý, cửa sổ nộp lần 2 và cờ hỗ trợ.
+/// nhận xét của quản lý, cửa sổ nộp lần 2, cờ hỗ trợ và việc có bắt đầu được bài làm có giám sát hay không.
 /// </summary>
 public class GetPulseFinalUseCase : IUseCase<GetPulseFinalUseCaseInput, GetPulseFinalUseCaseOutput>
 {
@@ -30,9 +30,13 @@ public class GetPulseFinalUseCase : IUseCase<GetPulseFinalUseCaseInput, GetPulse
             Course = PulseMapping.Course(state),
             Domain = PulseMapping.Domain(state.Domain),
             PositionName = snapshot.PositionName,
+            Reviewer = PulseMapping.Reviewer(snapshot),
             Criteria = PulseRules.FinalCriteria.ToList(),
             Status = state.FinalStatus,
-            CanSubmit = state.CanWork && PulseRules.CanSubmitFinal(state.FinalStatus),
+            CanSubmit = state.CanStartFinal,
+            ClosedMessage = state.CanStartFinal ? null
+                : state.BlockReason != null ? PulseCourseWorkspace.BlockMessage(state.BlockReason)
+                : PulseCourseWorkspace.FinalClosedMessage(state),
             BlockReason = state.BlockReason,
             ModulesPassed = state.ModulesPassed,
             ModuleCount = state.Modules.Count,

@@ -8,11 +8,11 @@ public class GetPulseCourseUseCaseOutput
     public int? EstimatedMinutes { get; set; }
     public int VersionNo { get; set; }
     public PulseDomainDto Domain { get; set; } = new();
-    public bool Assessed { get; set; }
+    public PulseReviewerDto? Reviewer { get; set; }
     public List<string> LearningOutcomes { get; set; } = new();
     public List<PulseCourseModuleDto> Modules { get; set; } = new();
     public List<PulseCriterionDto> FinalCriteria { get; set; } = new();
-    /// <summary>Bước tiếp theo trên trang khóa: BASELINE | MODULE | FINAL | PREVIEW | DONE.</summary>
+    /// <summary>Bước tiếp theo trên trang khóa: PRE_ASSESSMENT | PRE_REVIEW | MODULE | FINAL | PREVIEW | LOCKED | DONE.</summary>
     public string NextAction { get; set; } = string.Empty;
     public Guid? NextModuleId { get; set; }
 }

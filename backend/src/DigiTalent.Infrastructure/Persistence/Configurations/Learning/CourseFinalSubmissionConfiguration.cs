@@ -36,6 +36,7 @@ public class CourseFinalSubmissionConfiguration : IEntityTypeConfiguration<Cours
         builder.Property(x => x.SupportAction).HasMaxLength(30);
 
         builder.HasOne<Enrollment>().WithMany().HasForeignKey(x => x.EnrollmentId);
+        builder.HasOne<ProctoringSession>().WithMany().HasForeignKey(x => x.ProctoringSessionId);
         builder.HasOne<User>().WithMany().HasForeignKey(x => x.ReviewedByUserId);
         builder.HasOne<User>().WithMany().HasForeignKey(x => x.SupportRecordedByUserId);
 
@@ -45,5 +46,9 @@ public class CourseFinalSubmissionConfiguration : IEntityTypeConfiguration<Cours
         builder.HasIndex(x => x.SubmittedAt)
             .HasFilter("decision IS NULL")
             .HasDatabaseName("ix_course_final_submissions_pending");
+        builder.HasIndex(x => x.ProctoringSessionId)
+            .IsUnique()
+            .HasFilter("proctoring_session_id IS NOT NULL")
+            .HasDatabaseName("uq_course_final_submissions_session");
     }
 }

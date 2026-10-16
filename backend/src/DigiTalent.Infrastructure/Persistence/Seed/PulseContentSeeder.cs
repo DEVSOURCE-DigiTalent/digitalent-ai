@@ -8,11 +8,9 @@ namespace DigiTalent.Infrastructure.Persistence.Seed;
 /// <summary>
 /// Dữ liệu minh họa cho trang nhân viên Pulse — chỉ Development, chạy lại nhiều lần vẫn an toàn.
 /// Chạy SAU CourseContentSeeder (cần khóa TT02 có mô đun và bài học).
-///   1. Ngân hàng "Pulse · Bài kiểm tra đầu vào": mỗi lĩnh vực 3 câu tình huống L1..L3, 2 phương án
-///      (docs/ui-redesign/14-pulse-product-site/pulse-path-entitlements.js).
-///   2. Mỗi mô đun một bài ôn tập (QUIZ, module_id) với ngân hàng 6 câu theo bối cảnh của lĩnh vực, 2 câu cho mỗi
-///      trang; mỗi lần làm rút 2 câu và phải đúng cả hai (pulse-course-studio.js, §9.2). Đây là học liệu minh họa,
-///      cần biên tập trước khi dùng thật (§13).
+/// Mỗi mô đun một bài ôn tập (QUIZ, module_id) với ngân hàng 6 câu theo bối cảnh của lĩnh vực, 2 câu cho mỗi trang;
+/// mỗi lần làm rút 2 câu và phải đúng cả hai (pulse-course-studio.js, §9.2). Đây là học liệu minh họa, cần biên tập
+/// trước khi dùng thật (§13). Bài kiểm tra đầu vào đã bỏ (v3.3): ngân hàng cũ trong DB được giữ nguyên, không seed mới.
 /// </summary>
 public static class PulseContentSeeder
 {
@@ -20,47 +18,6 @@ public static class PulseContentSeeder
 
     private const string ModuleQuizBankDescription =
         "Câu hỏi ôn tập minh họa của từng mô đun: 6 câu, 2 câu cho mỗi trang nội dung; mỗi lần làm rút 2 câu, cần đúng cả hai — bản thiết kế Pulse.";
-
-    /// <summary>Tình huống ngắn theo lĩnh vực, thứ tự Khai thác dữ liệu → Giao tiếp → Nội dung → An toàn → Giải quyết vấn đề → AI.</summary>
-    private static readonly (string Prompt, string Right, string Wrong)[][] BaselineQuestions =
-    {
-        new[]
-        {
-            ("Trước khi dùng bảng dữ liệu, bạn kiểm tra điều gì?", "Nguồn và độ cập nhật của dữ liệu", "Chỉ màu của bảng"),
-            ("Hai nguồn cho số liệu khác nhau. Bạn làm gì?", "Đối chiếu định nghĩa và kỳ đo", "Chọn số lớn hơn"),
-            ("Khi chia sẻ dữ liệu nhạy cảm, bạn làm gì?", "Giới hạn quyền và ghi rõ nguồn", "Gửi cho tất cả"),
-        },
-        new[]
-        {
-            ("Một yêu cầu chưa rõ. Bạn làm gì trước?", "Xác nhận mục tiêu và người nhận", "Trả lời theo phỏng đoán"),
-            ("Nhóm hiểu khác nhau về tiến độ. Bạn làm gì?", "Thống nhất đầu việc, hạn và người phụ trách", "Chờ cuộc họp kế tiếp"),
-            ("Phản hồi có nhiều ý kiến trái chiều. Bạn làm gì?", "Tóm tắt bằng chứng và quyết định tiếp theo", "Chọn ý kiến nói to nhất"),
-        },
-        new[]
-        {
-            ("Trước khi đăng nội dung số, bạn kiểm tra gì?", "Mục tiêu, nguồn và quyền sử dụng", "Chỉ kích thước ảnh"),
-            ("Bài đăng chưa đạt mục tiêu. Bạn làm gì?", "Xem chỉ số và thử điều chỉnh có kiểm soát", "Đăng lại y nguyên"),
-            ("Nhiều kênh có kết quả khác nhau. Bạn làm gì?", "So sánh theo cùng mục tiêu và nhóm người xem", "Chọn kênh có nhiều lượt xem nhất"),
-        },
-        new[]
-        {
-            ("Nhận liên kết lạ yêu cầu mật khẩu. Bạn làm gì?", "Kiểm tra nguồn và không nhập thông tin", "Mở ngay để kịp hạn"),
-            ("Tài liệu có dữ liệu cá nhân. Bạn làm gì?", "Chỉ cấp quyền cho người cần dùng", "Đặt liên kết công khai"),
-            ("Phát hiện truy cập bất thường. Bạn làm gì?", "Báo cáo theo quy trình và bảo toàn dấu vết", "Tự xóa mọi nhật ký"),
-        },
-        new[]
-        {
-            ("Khi gặp một vấn đề mới, bước đầu là gì?", "Mô tả vấn đề và kết quả mong muốn", "Chọn giải pháp quen thuộc"),
-            ("Giải pháp chưa hiệu quả. Bạn làm gì?", "Đo kết quả và xem lại giả định", "Bỏ qua số liệu"),
-            ("Có nhiều phương án. Bạn chọn thế nào?", "So sánh tác động, rủi ro và bằng chứng", "Chọn phương án nhanh nhất"),
-        },
-        new[]
-        {
-            ("Kết quả AI trông hợp lý. Bạn làm gì?", "Kiểm chứng trước khi sử dụng", "Dùng ngay không cần kiểm tra"),
-            ("Bạn đưa dữ liệu vào công cụ AI. Cần lưu ý gì?", "Quyền riêng tư và chính sách dữ liệu", "Chỉ tốc độ trả lời"),
-            ("AI gợi ý quyết định có tác động lớn. Ai chịu trách nhiệm?", "Người có thẩm quyền kiểm tra và quyết định", "Công cụ AI"),
-        },
-    };
 
     private sealed record DomainContext(string Source, string Scenario, string Action, string Deliverable);
 
@@ -91,7 +48,6 @@ public static class PulseContentSeeder
                 return; // Chưa có khung TT02 demo
             }
 
-            await SeedBaselineBankAsync(db, organizationId, authorUserId, domains);
             await SeedModuleQuizzesAsync(db, organizationId, authorUserId, domains);
         });
 
@@ -120,52 +76,6 @@ public static class PulseContentSeeder
             .Where(c => c.FirstCompetencyId != Guid.Empty)
             .Select((c, index) => (c.Id, index + 1, c.Name, c.FirstCompetencyId))
             .ToList();
-    }
-
-    private static async Task SeedBaselineBankAsync(
-        AppDbContext db, Guid organizationId, Guid authorUserId, List<(Guid CategoryId, int Number, string Name, Guid CompetencyId)> domains)
-    {
-        if (await db.QuestionBanks.AnyAsync(b => b.OrganizationId == organizationId && b.Title == PulseRules.BaselineBankTitle))
-        {
-            return;
-        }
-
-        var bank = new QuestionBank
-        {
-            OrganizationId = organizationId,
-            Title = PulseRules.BaselineBankTitle,
-            Description = "Câu hỏi tình huống minh họa theo lĩnh vực và mức L1–L3 cho bài kiểm tra đầu vào (bản thiết kế Pulse).",
-            OwnerUserId = authorUserId,
-            Status = Statuses.QuestionBank.Active,
-        };
-        db.QuestionBanks.Add(bank);
-
-        foreach (var domain in domains.Where(d => d.Number <= BaselineQuestions.Length))
-        {
-            var questions = BaselineQuestions[domain.Number - 1];
-            for (var level = 1; level <= questions.Length; level++)
-            {
-                var (prompt, right, wrong) = questions[level - 1];
-                var question = new Question
-                {
-                    BankId = bank.Id,
-                    CompetencyId = domain.CompetencyId,
-                    QuestionType = Statuses.QuestionType.MultipleChoice,
-                    Difficulty = PulseRules.DifficultyOf(level),
-                    Content = prompt,
-                    Explanation = $"Mức {PulseRules.LevelName(level)} của lĩnh vực {domain.Name}.",
-                    Status = Statuses.Question.Approved,
-                    CreatedByUserId = authorUserId,
-                };
-                db.Questions.Add(question);
-                // Đảo vị trí phương án đúng theo mức để không luôn là phương án đầu.
-                var rightFirst = (domain.Number + level) % 2 == 0;
-                db.QuestionOptions.Add(new QuestionOption { QuestionId = question.Id, Content = right, IsCorrect = true, SortOrder = rightFirst ? 1 : 2 });
-                db.QuestionOptions.Add(new QuestionOption { QuestionId = question.Id, Content = wrong, IsCorrect = false, SortOrder = rightFirst ? 2 : 1 });
-            }
-        }
-
-        await db.SaveChangesAsync();
     }
 
     /// <summary>

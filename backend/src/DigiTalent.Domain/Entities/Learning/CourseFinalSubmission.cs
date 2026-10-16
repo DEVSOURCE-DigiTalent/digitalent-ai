@@ -6,10 +6,12 @@ namespace DigiTalent.Domain.Entities;
 /// Bảng course_final_submissions. Một lần nộp bài cuối khóa (ghi chú minh chứng), tối đa 2 lần mỗi lượt học.
 /// Decision = null là đang chờ quản lý phòng ban chấm. Lần 1 chưa đạt mở lần nộp cuối trong cửa sổ
 /// RetryOpensAt → RetryDueAt (chụp chính sách lúc chấm); lần 2 chưa đạt là cờ cần hỗ trợ (Support*).
+/// ProctoringSessionId: phiên làm bài có giám sát (v3.3), null với bài nộp trước khi có giám sát.
 /// </summary>
 public class CourseFinalSubmission : BaseEntity
 {
     public Guid EnrollmentId { get; set; }
+    public Guid? ProctoringSessionId { get; set; }
     public short AttemptNo { get; set; }
     public string EvidenceText { get; set; } = string.Empty;
     public DateTimeOffset SubmittedAt { get; set; }

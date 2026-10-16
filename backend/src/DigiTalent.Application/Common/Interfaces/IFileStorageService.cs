@@ -7,6 +7,10 @@ namespace DigiTalent.Application.Common.Interfaces;
 public interface IFileStorageService
 {
     Task<string> UploadAsync(Stream content, string fileName, string contentType, string folder = "general", CancellationToken cancellationToken = default);
+
+    /// <summary>Ghép thêm nội dung vào cuối một tệp đã tải lên (ghi hình bài làm được tải lên từng mẩu).</summary>
+    Task AppendAsync(string storagePath, Stream content, CancellationToken cancellationToken = default);
+
     Task<Stream> DownloadAsync(string storagePath, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(string storagePath, CancellationToken cancellationToken = default);
     Task<string> GetDownloadUrlAsync(string storagePath, TimeSpan? expiresIn = null, CancellationToken cancellationToken = default);
