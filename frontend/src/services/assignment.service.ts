@@ -1,4 +1,5 @@
 import apiClient from './api-client';
+import type { LessonMedia, CourseFinalContent } from '@/types/learning-content';
 import type { ApiResponse, PagedList } from '../types/api';
 
 export type AssignmentStatus = 'ACTIVE' | 'NOT_STARTED' | 'IN_PROGRESS' | 'READY_FOR_ASSESSMENT' | 'COMPLETED' | 'CANCELLED';
@@ -26,6 +27,7 @@ export interface CourseListItem {
 }
 
 export interface CourseDetailDto {
+  final?: CourseFinalContent | null;
   id: string;
   code: string;
   title: string;
@@ -47,11 +49,16 @@ export interface CourseDetailDto {
     title: string;
     description?: string | null;
     sortOrder?: number;
+    quizQuestionCount?: number;
     lessons: { id: string; code?: string | null; title: string; lessonType: string; estimatedMinutes?: number | null; sortOrder?: number }[];
   }[];
 }
 
 export interface CourseLessonDto {
+  moduleIndex?: number;
+  courseCode?: string;
+  contentLocked?: boolean;
+  media?: LessonMedia[];
   id: string;
   title: string;
   lessonType: string;

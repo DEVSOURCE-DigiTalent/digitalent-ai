@@ -122,6 +122,28 @@ beforeEach(() => {
 });
 
 describe('Câu hỏi ôn tập mô đun (§9.2)', () => {
+  it('changes the artwork with the lesson and preserves progress tracking in focus mode', async () => {
+    vi.spyOn(pulseService, 'getModule').mockResolvedValue(ok(detail({
+      course: { ...course, code: 'A1-F' }, viewed: false,
+      slides: [
+        { ...slides[0]!, title: 'Biết mình cần tìm gì', media: [{ kind: 'IMAGE', url: '/stored/m1-i-m01.png', alt: 'Minh họa bài một' }] },
+        { ...slides[1]!, title: 'Từ khóa thay cho câu hỏi dài', media: [{ kind: 'IMAGE', url: '/stored/m1-f-m01-s02.png', alt: 'Minh họa bài hai' }] },
+      ],
+    })));
+    renderModule();
+    const image = await screen.findByRole('img');
+    const firstSource = image.getAttribute('src');
+    expect(firstSource).toContain('m1-i-m01.png');
+    expect(pulseService.markModuleViewed).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Tập trung' }));
+    expect(screen.getByRole('button', { name: 'Hiện mục lục' }).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: 'Trang tiếp theo →' }));
+    expect(screen.getByRole('img').getAttribute('src')).toContain('m1-f-m01-s02.png');
+    expect(screen.getByRole('button', { name: /Trang 02:/ }).getAttribute('aria-current')).toBe('step');
+    await waitFor(() => expect(pulseService.markModuleViewed).toHaveBeenCalledWith('course-1', 'mod-1'));
+    expect(screen.getByRole('button', { name: 'Đến phần ôn tập' })).toBeTruthy();
+  });
+
   it('sends the attempt number and, after a wrong attempt, points to the page to reopen instead of the answer', async () => {
     vi.spyOn(pulseService, 'getModule').mockResolvedValueOnce(ok(detail())).mockResolvedValue(ok(reviewing()));
     const result: PulseQuizResult = {

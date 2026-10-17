@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { learningContentQueryOptions } from '@/lib/learning-content-query';
 import {
   assignmentService, type AssignmentListParams, type CreateAssignmentRequest,
 } from '../services/assignment.service';
@@ -8,6 +9,7 @@ export const ASSIGNMENTS_KEY = ['assignments'] as const;
 export function useCourses(params?: { search?: string; status?: string; categoryId?: string; level?: number; pageIndex?: number; pageSize?: number }, enabled = true) {
   return useQuery({
     queryKey: [...ASSIGNMENTS_KEY, 'courses', params],
+    ...learningContentQueryOptions,
     queryFn: async () => (await assignmentService.getCourses(params)).data.data!,
     enabled,
   });
@@ -17,6 +19,7 @@ export function useCourses(params?: { search?: string; status?: string; category
 export function useCourseCatalog(params: { search?: string; status?: string; categoryId?: string; level?: number }, enabled = true) {
   return useQuery({
     queryKey: [...ASSIGNMENTS_KEY, 'catalog', params],
+    ...learningContentQueryOptions,
     enabled,
     queryFn: async () => {
       const pageSize = 100;
@@ -37,6 +40,7 @@ export function useCourseCatalog(params: { search?: string; status?: string; cat
 export function useCourse(id: string | undefined) {
   return useQuery({
     queryKey: [...ASSIGNMENTS_KEY, 'courses', id],
+    ...learningContentQueryOptions,
     queryFn: async () => {
       let courseId = id!;
       // Deployed demo URLs use crs-A1-F; BE2 detail routes require GUIDs.
@@ -59,6 +63,7 @@ export function useCourse(id: string | undefined) {
 export function useCourseLesson(id: string | undefined) {
   return useQuery({
     queryKey: [...ASSIGNMENTS_KEY, 'lesson', id],
+    ...learningContentQueryOptions,
     queryFn: async () => (await assignmentService.getLesson(id!)).data.data!,
     enabled: !!id,
   });

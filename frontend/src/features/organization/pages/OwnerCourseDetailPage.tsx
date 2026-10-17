@@ -10,6 +10,7 @@ import {
 } from '@/features/courses/course-catalog';
 import { CourseModules } from '../components/CourseModules';
 import { CourseEnrollment } from '../components/CourseEnrollment';
+import { CourseFinalBrief } from '@/components/shared/CourseFinalBrief';
 
 const PULSE_TOKENS = {
   '--po-canvas': '#f7f9fd',
@@ -342,7 +343,7 @@ export function OwnerCourseDetailPage() {
               chứng để Manager kiểm tra.
             </p>
             <div className="mt-4 grid gap-2.5">
-              {RUBRIC.map((text, i) => (
+              {(course.final?.criteria.length ? course.final.criteria : RUBRIC).map((text, i) => (
                 <div
                   key={i}
                   className="flex items-center gap-3 rounded-[10px] border p-3 text-xs"
@@ -398,7 +399,8 @@ export function OwnerCourseDetailPage() {
         </div>
 
         {/* Course modules */}
-        <CourseModules modules={modules} />
+        <CourseModules modules={modules} courseCode={course.code} />
+        {course.final && <div className="pu" style={{ minHeight: 0, background: 'transparent' }}><CourseFinalBrief content={course.final} /></div>}
 
         {/* Before buying (paid courses) */}
         {!isBasic && !hasLicense && (

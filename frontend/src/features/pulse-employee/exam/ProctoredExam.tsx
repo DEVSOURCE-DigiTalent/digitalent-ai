@@ -27,6 +27,7 @@ export interface ProctoredExamProps {
   onSubmit: (evidenceText: string, proctoringSessionId: string, answers: PulseAnswer[]) => Promise<{ durationMs: number }>;
   /** Nội dung hiện trước khi bắt đầu (trạng thái, bài đã nộp…) — chỉ ở bước chuẩn bị. */
   intro?: ReactNode;
+  assignmentContent?: ReactNode;
 }
 
 const KIND_LABEL: Record<PulseExamKind, string> = {
@@ -174,6 +175,7 @@ export function ProctoredExam(props: ProctoredExamProps) {
                   hành động hoặc phép tính người khác kiểm tra lại được, kết luận và bước tiếp theo.
                 </p>
               </div>
+              {props.assignmentContent}
               <ol className="pu-brief-criteria" aria-label="Ba tiêu chí chấm phần tự luận">
                 {props.criteria.map((criterion) => (
                   <li key={criterion.number}>
@@ -382,6 +384,7 @@ function DeviceCheck(props: ProctoredExamProps & {
         </p>
       </div>
       {props.intro}
+      {props.assignmentContent}
       {!supported && (
         <div className="pu-notice warning" role="alert">
           Trình duyệt này không hỗ trợ ghi màn hình. Hãy mở trang bằng Chrome hoặc Edge bản mới trên máy tính.

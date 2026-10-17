@@ -1,10 +1,14 @@
 import type { CourseDetailDto } from '@/services/assignment.service';
+import { useState } from 'react';
+import { CourseLessonPreview } from './CourseLessonPreview';
 
 interface CourseModulesProps {
   modules: CourseDetailDto['modules'];
+  courseCode?: string;
 }
 
-export function CourseModules({ modules }: CourseModulesProps) {
+export function CourseModules({ modules, courseCode }: CourseModulesProps) {
+  const [selected, setSelected] = useState<{ id: string; module: number; index: number; count: number } | null>(null);
   return (
     <section
       className="rounded-[22px] border p-6"
@@ -14,6 +18,7 @@ export function CourseModules({ modules }: CourseModulesProps) {
         boxShadow: '0 10px 35px rgba(29,48,102,.025)',
       }}
     >
+      {selected && courseCode && <CourseLessonPreview lessonId={selected.id} courseCode={courseCode} moduleIndex={selected.module} index={selected.index} count={selected.count} onClose={() => setSelected(null)} />}
       <span
         className="text-[10px] font-black uppercase tracking-[0.12em]"
         style={{ color: 'var(--po-accent)' }}
@@ -70,15 +75,15 @@ export function CourseModules({ modules }: CourseModulesProps) {
                   className="text-[10px] font-bold"
                   style={{ color: 'var(--po-muted)' }}
                 >
-                  {mod.lessons.length} bài
+                  {mod.lessons.length} bài{mod.quizQuestionCount ? ` · Ngân hàng ${mod.quizQuestionCount} câu` : ''}
                 </span>
               </div>
 
               {mod.lessons.map((lesson, li) => (
-                <div
+                <button type="button" onClick={() => setSelected({ id: lesson.id, module: mi, index: li, count: mod.lessons.length })}
                   key={lesson.id}
-                  className="flex items-center gap-3 py-3 pl-4"
-                  style={{ borderBottom: '1px solid var(--po-line)' }}
+                  className="flex w-full items-center gap-3 py-3 pl-4 text-left"
+                  style={{ border: 0, borderBottom: '1px solid var(--po-line)', background: 'transparent', cursor: 'pointer' }}
                 >
                   <span
                     className="grid place-items-center shrink-0 rounded-[12px] text-[10px] font-black"
@@ -110,7 +115,8 @@ export function CourseModules({ modules }: CourseModulesProps) {
                       {lesson.estimatedMinutes ? ` · ${lesson.estimatedMinutes} phút` : ''}
                     </small>
                   </div>
-                </div>
+                  <span className="text-xs" style={{ color: 'var(--po-accent)' }}>Xem bài →</span>
+                </button>
               ))}
             </div>
           ))}
