@@ -1,0 +1,794 @@
+[
+  {
+    "course": "A1-F",
+    "moduleIndex": 0,
+    "moduleTitle": "Tìm kiếm thông tin bằng từ khóa",
+    "title": "Biết mình cần tìm gì",
+    "image": "domain1-accounting/m1-i-m01.png",
+    "alt": "Ba ô nối tiếp mô tả cách chuyển một yêu cầu công việc thành truy vấn có thể lặp lại."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 0,
+    "moduleTitle": "Tìm kiếm thông tin bằng từ khóa",
+    "title": "Từ khóa thay cho câu hỏi dài",
+    "image": "domain1-accounting/m1-f-m01-s02.png",
+    "alt": "Minh họa truy vấn mơ hồ và truy vấn được thu hẹp bằng đối tượng, chỉ tiêu, thời gian."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 0,
+    "moduleTitle": "Tìm kiếm thông tin bằng từ khóa",
+    "title": "Đến tài liệu gốc",
+    "image": "domain1-accounting/m1-i-m01-s05.png",
+    "alt": "Sơ đồ lần ngược từ kết quả tìm kiếm về tài liệu gốc và nhật ký nguồn."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 0,
+    "moduleTitle": "Tìm kiếm thông tin bằng từ khóa",
+    "title": "Biến lời nhờ mơ hồ thành câu hỏi tìm",
+    "image": "domain1-accounting/m1-i-m01-v2.png",
+    "alt": "So sánh lời nhờ mơ hồ với câu hỏi công việc có phạm vi kiểm tra được."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 0,
+    "moduleTitle": "Tìm kiếm thông tin bằng từ khóa",
+    "title": "Tạo nhóm từ khóa rồi tinh chỉnh",
+    "image": "domain1-accounting/m1-f-m01-s05.png",
+    "alt": "Ba bước phản hồi cho thấy truy vấn được điều chỉnh dựa trên kết quả, không tìm tùy tiện."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 0,
+    "moduleTitle": "Tìm kiếm thông tin bằng từ khóa",
+    "title": "Không chọn nguồn vì đứng đầu danh sách",
+    "image": "domain1-accounting/m1-f-m01-s06.png",
+    "alt": "Thẻ kết quả tìm kiếm minh họa thông tin hiện ra và thông tin phải kiểm tra tiếp."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 0,
+    "moduleTitle": "Tìm kiếm thông tin bằng từ khóa",
+    "title": "Tìm đúng hồ sơ của công việc mình",
+    "image": "domain1-accounting/m1-f-m01-v3.png",
+    "alt": "Bảng dữ kiện giả lập của đúng vị trí được dùng để luyện tập, không phải số liệu doanh nghiệp thật."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 0,
+    "moduleTitle": "Tìm kiếm thông tin bằng từ khóa",
+    "title": "Nộp nhật ký tìm ngắn gọn",
+    "image": "domain1-accounting/m1-i-m01-s08.png",
+    "alt": "Ba thành phần của nhật ký tìm là câu hỏi, truy vấn và nguồn được chọn có lý do."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 0,
+    "moduleTitle": "Tìm kiếm thông tin bằng từ khóa",
+    "title": "Làm mẫu · Lập nhật ký tìm và truy nguồn",
+    "image": "domain1-accounting/m1-f-m02-s08.png",
+    "alt": "Dữ kiện giả lập của Vị trí khác dùng để minh họa cách xử lý trong mô đun."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 0,
+    "moduleTitle": "Tìm kiếm thông tin bằng từ khóa",
+    "title": "Tự làm · Lập nhật ký tìm và truy nguồn",
+    "image": "domain1-accounting/m1-i-m01-s10.png",
+    "alt": "Quy trình thực hành lập nhật ký tìm và truy nguồn có sản phẩm kiểm tra được."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 0,
+    "moduleTitle": "Tìm kiếm thông tin bằng từ khóa",
+    "title": "So sản phẩm với tiêu chí",
+    "image": "domain1-accounting/m1-i-m01-s11.png",
+    "alt": "Ba tiêu chí kiểm tra kết quả thực hành trước khi nộp bài cuối khóa."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 1,
+    "moduleTitle": "Nhận biết nguồn đáng tin cậy",
+    "title": "Ai đứng sau thông tin?",
+    "image": "domain1-accounting/m1-f-m02.png",
+    "alt": "Phiếu kiểm nguồn gồm tác giả, kỳ dữ liệu và mục đích công bố."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 1,
+    "moduleTitle": "Nhận biết nguồn đáng tin cậy",
+    "title": "Thông tin có còn phù hợp?",
+    "image": "domain1-accounting/m1-f-m02-s02.png",
+    "alt": "Hai nguồn được so theo ngày xuất và kỳ dữ liệu, cho thấy ngày xuất mới không tự bảo đảm phù hợp."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 1,
+    "moduleTitle": "Nhận biết nguồn đáng tin cậy",
+    "title": "Hai trang chưa chắc là hai nguồn",
+    "image": "domain1-accounting/m1-f-m02-s03.png",
+    "alt": "Hai trang dẫn cùng báo cáo X được gom về một nguồn gốc thay vì đếm thành hai bằng chứng độc lập."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 1,
+    "moduleTitle": "Nhận biết nguồn đáng tin cậy",
+    "title": "Tách người đăng khỏi người tạo dữ liệu",
+    "image": "domain1-accounting/m1-f-m02-v2.png",
+    "alt": "Ba lớp thể hiện số liệu có thể bị diễn giải qua từng lần đăng lại."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 1,
+    "moduleTitle": "Nhận biết nguồn đáng tin cậy",
+    "title": "So ngày công bố với kỳ dữ liệu",
+    "image": "domain1-accounting/m1-f-m02-s05.png",
+    "alt": "Trục thời gian cho thấy bài mới xuất nhưng dữ liệu bên trong cũ hơn một năm."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 1,
+    "moduleTitle": "Nhận biết nguồn đáng tin cậy",
+    "title": "Hai đường link có thể cùng một bằng chứng",
+    "image": "domain1-accounting/m1-f-m02-s06.png",
+    "alt": "Hai bài A/B quy về cùng báo cáo X; sơ đồ không đếm thành hai xác nhận độc lập."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 1,
+    "moduleTitle": "Nhận biết nguồn đáng tin cậy",
+    "title": "Chấm độ tin cậy trước khi dùng",
+    "image": "domain1-accounting/m1-f-m02-v3.png",
+    "alt": "Bảng dữ kiện giả lập của đúng vị trí được dùng để luyện tập, không phải số liệu doanh nghiệp thật."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 1,
+    "moduleTitle": "Nhận biết nguồn đáng tin cậy",
+    "title": "Viết nhận xét nguồn không tuyệt đối hóa",
+    "image": "domain1-accounting/m1-f-m02-s08.png",
+    "alt": "Khung nhận xét nguồn có phần dùng được, lý do và giới hạn chưa kiểm tra."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 1,
+    "moduleTitle": "Nhận biết nguồn đáng tin cậy",
+    "title": "Làm mẫu · Chấm độ phù hợp của ba nguồn",
+    "image": "domain1-accounting/m1-f-m02-v4.png",
+    "alt": "Dữ kiện giả lập của Vị trí khác dùng để minh họa cách xử lý trong mô đun."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 1,
+    "moduleTitle": "Nhận biết nguồn đáng tin cậy",
+    "title": "Tự làm · Chấm độ phù hợp của ba nguồn",
+    "image": "domain1-accounting/m1-f-m02-s10.png",
+    "alt": "Quy trình thực hành chấm độ phù hợp của ba nguồn có sản phẩm kiểm tra được."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 1,
+    "moduleTitle": "Nhận biết nguồn đáng tin cậy",
+    "title": "So sản phẩm với tiêu chí",
+    "image": "domain1-accounting/m1-f-m02-s11.png",
+    "alt": "Ba tiêu chí kiểm tra kết quả thực hành trước khi nộp bài cuối khóa."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 2,
+    "moduleTitle": "Lưu trữ và sắp xếp tài liệu",
+    "title": "Chọn tệp đúng việc",
+    "image": "domain1-accounting/m1-i-m03.png",
+    "alt": "Hai thẻ minh họa chọn định dạng theo mục đích xử lý tiếp hay chia sẻ bản cố định."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 2,
+    "moduleTitle": "Lưu trữ và sắp xếp tài liệu",
+    "title": "Tên tệp mô tả được nội dung",
+    "image": "domain1-accounting/m1-f-m03-s02.png",
+    "alt": "Tên tệp được ghép từ kỳ, chủ đề và phiên bản để sắp xếp, tra cứu."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 2,
+    "moduleTitle": "Lưu trữ và sắp xếp tài liệu",
+    "title": "Giữ phiên bản và đường dẫn",
+    "image": "domain1-accounting/m1-f-m03-s03.png",
+    "alt": "Sơ đồ lưu bản gốc, tạo bản làm việc có phiên bản và chia sẻ đúng quyền."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 2,
+    "moduleTitle": "Lưu trữ và sắp xếp tài liệu",
+    "title": "Sắp theo một quy tắc mà cả nhóm hiểu",
+    "image": "domain1-accounting/m1-i-m03-v2.png",
+    "alt": "Cây thư mục minh họa một kỳ và ba trạng thái tài liệu thay vì nhiều bản rải rác."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 2,
+    "moduleTitle": "Lưu trữ và sắp xếp tài liệu",
+    "title": "Đừng dùng tên “final_final”",
+    "image": "domain1-accounting/m1-f-m03-s05.png",
+    "alt": "Trục phiên bản phân biệt số phiên bản với trạng thái phê duyệt."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 2,
+    "moduleTitle": "Lưu trữ và sắp xếp tài liệu",
+    "title": "Chia sẻ theo nhiệm vụ",
+    "image": "domain1-accounting/m1-f-m03-s06.png",
+    "alt": "Ba ví dụ gắn quyền với nhu cầu, theo nguyên tắc quyền tối thiểu."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 2,
+    "moduleTitle": "Lưu trữ và sắp xếp tài liệu",
+    "title": "Bàn giao một bộ hồ sơ tìm được",
+    "image": "domain1-accounting/m1-f-m03-v3.png",
+    "alt": "Bảng dữ kiện giả lập của đúng vị trí được dùng để luyện tập, không phải số liệu doanh nghiệp thật."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 2,
+    "moduleTitle": "Lưu trữ và sắp xếp tài liệu",
+    "title": "Thử tìm lại bằng mắt của đồng nghiệp",
+    "image": "domain1-accounting/m1-f-m03-s08.png",
+    "alt": "Ba bước kiểm thử cho thấy một người khác có thể tìm và kiểm tra tài liệu."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 2,
+    "moduleTitle": "Lưu trữ và sắp xếp tài liệu",
+    "title": "Làm mẫu · Thiết kế thư mục bàn giao có phiên bản",
+    "image": "domain1-accounting/m1-i-m03-v4.png",
+    "alt": "Dữ kiện giả lập của Vị trí khác dùng để minh họa cách xử lý trong mô đun."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 2,
+    "moduleTitle": "Lưu trữ và sắp xếp tài liệu",
+    "title": "Tự làm · Thiết kế thư mục bàn giao có phiên bản",
+    "image": "domain1-accounting/m1-f-m03-s10.png",
+    "alt": "Quy trình thực hành thiết kế thư mục bàn giao có phiên bản có sản phẩm kiểm tra được."
+  },
+  {
+    "course": "A1-F",
+    "moduleIndex": 2,
+    "moduleTitle": "Lưu trữ và sắp xếp tài liệu",
+    "title": "So sản phẩm với tiêu chí",
+    "image": "domain1-accounting/m1-f-m03-s11.png",
+    "alt": "Ba tiêu chí kiểm tra kết quả thực hành trước khi nộp bài cuối khóa."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 0,
+    "moduleTitle": "Chiến lược tìm kiếm và toán tử",
+    "title": "Đặt câu hỏi trước khi tìm",
+    "image": "domain1-accounting/m1-i-m01.png",
+    "alt": "Ba giai đoạn tạo kế hoạch tìm trước khi mở công cụ."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 0,
+    "moduleTitle": "Chiến lược tìm kiếm và toán tử",
+    "title": "Dùng toán tử có chủ đích",
+    "image": "domain1-accounting/m1-i-m01-s02.png",
+    "alt": "Ba dòng ví dụ phân biệt lọc cụm từ, miền và định dạng trong truy vấn."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 0,
+    "moduleTitle": "Chiến lược tìm kiếm và toán tử",
+    "title": "Cho người khác lặp lại việc tìm",
+    "image": "domain1-accounting/m1-i-m01-s03.png",
+    "alt": "Trục thời gian cho thấy truy vấn được chỉnh và lý do dừng tìm."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 0,
+    "moduleTitle": "Chiến lược tìm kiếm và toán tử",
+    "title": "Tìm bằng các nhóm thuật ngữ",
+    "image": "domain1-accounting/m1-i-m01-v2.png",
+    "alt": "Phiếu ma trận chứa ba nhóm từ giúp truy vấn vừa đủ rộng vừa đúng phạm vi."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 0,
+    "moduleTitle": "Chiến lược tìm kiếm và toán tử",
+    "title": "Dùng cú pháp để thu hẹp, không để xác thực",
+    "image": "domain1-accounting/m1-i-m01-s05.png",
+    "alt": "Ba thành phần hợp thành truy vấn; hình không khẳng định kết quả tìm được là đúng."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 0,
+    "moduleTitle": "Chiến lược tìm kiếm và toán tử",
+    "title": "Lưu cả kết quả không được chọn",
+    "image": "domain1-accounting/m1-i-m01-s06.png",
+    "alt": "Trục nhật ký thể hiện mỗi lần đổi truy vấn đều có lý do và kết quả."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 0,
+    "moduleTitle": "Chiến lược tìm kiếm và toán tử",
+    "title": "Lập kế hoạch tìm phục vụ quyết định",
+    "image": "domain1-accounting/m1-i-m01-v3.png",
+    "alt": "Bảng dữ kiện giả lập của đúng vị trí được dùng để luyện tập, không phải số liệu doanh nghiệp thật."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 0,
+    "moduleTitle": "Chiến lược tìm kiếm và toán tử",
+    "title": "Biết khi nào ngừng tìm",
+    "image": "domain1-accounting/m1-i-m01-s08.png",
+    "alt": "Ba ô quyết định cho biết khi nào kết thúc hoặc lặp lại quá trình tìm."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 0,
+    "moduleTitle": "Chiến lược tìm kiếm và toán tử",
+    "title": "Làm mẫu · Lập chiến lược tìm kiếm phục vụ quyết định",
+    "image": "domain1-accounting/m1-i-m01-v4.png",
+    "alt": "Dữ kiện giả lập của Vị trí khác dùng để minh họa cách xử lý trong mô đun."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 0,
+    "moduleTitle": "Chiến lược tìm kiếm và toán tử",
+    "title": "Tự làm · Lập chiến lược tìm kiếm phục vụ quyết định",
+    "image": "domain1-accounting/m1-i-m01-s10.png",
+    "alt": "Quy trình thực hành lập chiến lược tìm kiếm phục vụ quyết định có sản phẩm kiểm tra được."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 0,
+    "moduleTitle": "Chiến lược tìm kiếm và toán tử",
+    "title": "So sản phẩm với tiêu chí",
+    "image": "domain1-accounting/m1-i-m01-s11.png",
+    "alt": "Ba tiêu chí kiểm tra kết quả thực hành trước khi nộp bài cuối khóa."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá và so sánh nguồn tin",
+    "title": "Phân biệt sơ cấp và thứ cấp",
+    "image": "domain1-accounting/m1-f-m02-s03.png",
+    "alt": "Sơ đồ phân biệt dữ liệu sơ cấp, báo cáo tổng hợp và bài diễn giải."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá và so sánh nguồn tin",
+    "title": "Hai số khác nhau vì sao?",
+    "image": "domain1-accounting/m1-f-m02-s02.png",
+    "alt": "Hai cột doanh thu có cùng kỳ nhưng định nghĩa khác nên chưa so trực tiếp."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá và so sánh nguồn tin",
+    "title": "Nêu con số kèm giới hạn",
+    "image": "domain1-accounting/m1-i-m02-s03.png",
+    "alt": "Ba trạng thái cho quyết định dùng, tạm giữ hoặc kiểm tra thêm một chỉ số."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá và so sánh nguồn tin",
+    "title": "So những thuộc tính tạo ra khác biệt",
+    "image": "domain1-accounting/m1-a-m02-s03.png",
+    "alt": "Bảng so nhấn mạnh khác biệt định nghĩa trước khi tính chênh lệch."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá và so sánh nguồn tin",
+    "title": "Không đồng nhất nhấp, phiên và người dùng",
+    "image": "domain1-accounting/m1-f-m02-s08.png",
+    "alt": "Ba ô số giả lập dùng ba đơn vị đếm khác nhau, không phải ba giai đoạn của cùng một phễu đã đối soát."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá và so sánh nguồn tin",
+    "title": "Giả thuyết phải có phép kiểm tra",
+    "image": "domain1-accounting/m1-a-m02-s08.png",
+    "alt": "Phiếu giả thuyết buộc người phân tích nêu phép thử thay vì đoán nguyên nhân."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá và so sánh nguồn tin",
+    "title": "Chọn số phù hợp câu hỏi quản lý",
+    "image": "domain1-accounting/m1-i-m02-v3.png",
+    "alt": "Bảng dữ kiện giả lập của đúng vị trí được dùng để luyện tập, không phải số liệu doanh nghiệp thật."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá và so sánh nguồn tin",
+    "title": "Viết một brief không che giấu bất định",
+    "image": "domain1-accounting/m1-i-m02-s08.png",
+    "alt": "Ba phần cốt lõi của brief kết nối nguồn, phân tích và hành động."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá và so sánh nguồn tin",
+    "title": "Làm mẫu · Lập bảng so hai báo cáo không đồng nhất",
+    "image": "domain1-accounting/m1-f-m02-v4.png",
+    "alt": "Dữ kiện giả lập của Vị trí khác dùng để minh họa cách xử lý trong mô đun."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá và so sánh nguồn tin",
+    "title": "Tự làm · Lập bảng so hai báo cáo không đồng nhất",
+    "image": "domain1-accounting/m1-i-m02-s10.png",
+    "alt": "Quy trình thực hành lập bảng so hai báo cáo không đồng nhất có sản phẩm kiểm tra được."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá và so sánh nguồn tin",
+    "title": "So sản phẩm với tiêu chí",
+    "image": "domain1-accounting/m1-i-m02-s11.png",
+    "alt": "Ba tiêu chí kiểm tra kết quả thực hành trước khi nộp bài cuối khóa."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 2,
+    "moduleTitle": "Tổ chức và quản lý kho thông tin",
+    "title": "Một nguyên tắc phân loại",
+    "image": "domain1-accounting/m1-i-m03.png",
+    "alt": "Cây thư mục ví dụ được sắp theo một nguyên tắc từ nguồn tới bản duyệt."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 2,
+    "moduleTitle": "Tổ chức và quản lý kho thông tin",
+    "title": "Thư mục chưa đủ để quản lý",
+    "image": "domain1-accounting/m1-i-m03-s02.png",
+    "alt": "Ba trường mẫu trong sổ đăng ký liên kết tệp với nguồn và phiên bản."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 2,
+    "moduleTitle": "Tổ chức và quản lý kho thông tin",
+    "title": "Cấp đúng người, đúng mục đích",
+    "image": "domain1-accounting/m1-i-m03-s03.png",
+    "alt": "Ba mức quyền minh họa nguyên tắc chỉ cấp quyền cần cho công việc."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 2,
+    "moduleTitle": "Tổ chức và quản lý kho thông tin",
+    "title": "Một kho thông tin cần quy ước chung",
+    "image": "domain1-accounting/m1-i-m03-v2.png",
+    "alt": "Cây thư mục thể hiện một bản chính và các trạng thái xử lý."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 2,
+    "moduleTitle": "Tổ chức và quản lý kho thông tin",
+    "title": "Sổ đăng ký giúp tìm bằng thuộc tính",
+    "image": "domain1-accounting/m1-i-m03-s05.png",
+    "alt": "Dòng metadata mẫu làm rõ nguồn, người phụ trách và phiên bản của báo cáo."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 2,
+    "moduleTitle": "Tổ chức và quản lý kho thông tin",
+    "title": "Quyền xem không đồng nghĩa quyền sửa",
+    "image": "domain1-accounting/m1-i-m03-s06.png",
+    "alt": "Ba hàng quyền được gắn với nhiệm vụ cụ thể, không cấp quản trị cho mọi người."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 2,
+    "moduleTitle": "Tổ chức và quản lý kho thông tin",
+    "title": "Tổ chức hồ sơ để người khác kiểm tra",
+    "image": "domain1-accounting/m1-i-m03-v3.png",
+    "alt": "Bảng dữ kiện giả lập của đúng vị trí được dùng để luyện tập, không phải số liệu doanh nghiệp thật."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 2,
+    "moduleTitle": "Tổ chức và quản lý kho thông tin",
+    "title": "Thử tình huống bàn giao nhóm",
+    "image": "domain1-accounting/m1-i-m03-s08.png",
+    "alt": "Ba bước kiểm thử giúp đánh giá kho thông tin có dùng được bởi người khác."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 2,
+    "moduleTitle": "Tổ chức và quản lý kho thông tin",
+    "title": "Làm mẫu · Tạo sổ đăng ký nguồn và ma trận quyền",
+    "image": "domain1-accounting/m1-i-m03-v4.png",
+    "alt": "Dữ kiện giả lập của Vị trí khác dùng để minh họa cách xử lý trong mô đun."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 2,
+    "moduleTitle": "Tổ chức và quản lý kho thông tin",
+    "title": "Tự làm · Tạo sổ đăng ký nguồn và ma trận quyền",
+    "image": "domain1-accounting/m1-i-m03-s10.png",
+    "alt": "Quy trình thực hành tạo sổ đăng ký nguồn và ma trận quyền có sản phẩm kiểm tra được."
+  },
+  {
+    "course": "A1-I",
+    "moduleIndex": 2,
+    "moduleTitle": "Tổ chức và quản lý kho thông tin",
+    "title": "So sản phẩm với tiêu chí",
+    "image": "domain1-accounting/m1-i-m03-s11.png",
+    "alt": "Ba tiêu chí kiểm tra kết quả thực hành trước khi nộp bài cuối khóa."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 0,
+    "moduleTitle": "Nghiên cứu phức hợp đa nguồn",
+    "title": "Bắt đầu bằng quyết định cần hỗ trợ",
+    "image": "domain1-accounting/m1-i-m01.png",
+    "alt": "Khung quyết định xác định câu hỏi, tiêu chí và hạn trước khi thu thập."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 0,
+    "moduleTitle": "Nghiên cứu phức hợp đa nguồn",
+    "title": "Phối hợp nội bộ và bên ngoài",
+    "image": "domain1-accounting/m1-a-m01-s02.png",
+    "alt": "Hai nhóm nguồn ngoài/nội bộ cùng đi vào bước đối chiếu; bản sao cùng nguồn không được tính độc lập."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 0,
+    "moduleTitle": "Nghiên cứu phức hợp đa nguồn",
+    "title": "Trình bày khoảng trống và giả định",
+    "image": "domain1-accounting/m1-i-m01-s03.png",
+    "alt": "Ba ô tách dữ liệu đã xác nhận, giả định và khoảng trống cần bổ sung."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 0,
+    "moduleTitle": "Nghiên cứu phức hợp đa nguồn",
+    "title": "Phân rã quyết định thành câu hỏi dữ liệu",
+    "image": "domain1-accounting/m1-i-m01-s08.png",
+    "alt": "Ba nhánh quyết định gắn điều kiện dữ liệu và lựa chọn hành động."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 0,
+    "moduleTitle": "Nghiên cứu phức hợp đa nguồn",
+    "title": "Phối hợp nguồn nhưng không đếm bản sao",
+    "image": "domain1-accounting/m1-a-m01-s05.png",
+    "alt": "Sơ đồ ba nguồn đi vào cùng quyết định nhưng giữ rõ nguồn gốc từng hệ thống."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 0,
+    "moduleTitle": "Nghiên cứu phức hợp đa nguồn",
+    "title": "Tính độ nhạy của kết luận",
+    "image": "domain1-accounting/m1-a-m01-s06.png",
+    "alt": "Ba thẻ so hai kịch bản và chỉ ra điểm mà khuyến nghị có thể thay đổi."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 0,
+    "moduleTitle": "Nghiên cứu phức hợp đa nguồn",
+    "title": "Lập bản đồ nguồn cho đúng quyết định",
+    "image": "domain1-accounting/m1-a-m01-v3.png",
+    "alt": "Bảng dữ kiện giả lập của đúng vị trí được dùng để luyện tập, không phải số liệu doanh nghiệp thật."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 0,
+    "moduleTitle": "Nghiên cứu phức hợp đa nguồn",
+    "title": "Để lãnh đạo thấy cả điều chưa biết",
+    "image": "domain1-accounting/m1-a-m01-s08.png",
+    "alt": "Ba phần của báo cáo điều hành giúp quyết định và giới hạn cùng hiện ra."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 0,
+    "moduleTitle": "Nghiên cứu phức hợp đa nguồn",
+    "title": "Làm mẫu · Thiết kế bản đồ nguồn cho một quyết định",
+    "image": "domain1-accounting/m1-i-m01-s11.png",
+    "alt": "Dữ kiện giả lập của Vị trí khác dùng để minh họa cách xử lý trong mô đun."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 0,
+    "moduleTitle": "Nghiên cứu phức hợp đa nguồn",
+    "title": "Tự làm · Thiết kế bản đồ nguồn cho một quyết định",
+    "image": "domain1-accounting/m1-i-m03-s10.png",
+    "alt": "Quy trình thực hành thiết kế bản đồ nguồn cho một quyết định có sản phẩm kiểm tra được."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 0,
+    "moduleTitle": "Nghiên cứu phức hợp đa nguồn",
+    "title": "So sản phẩm với tiêu chí",
+    "image": "domain1-accounting/m1-a-m01-s11.png",
+    "alt": "Ba tiêu chí kiểm tra kết quả thực hành trước khi nộp bài cuối khóa."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá chất lượng dữ liệu",
+    "title": "Dữ liệu có đủ tốt cho mục đích?",
+    "image": "domain1-accounting/m1-a-m01-s08.png",
+    "alt": "Lưới sáu chiều giúp người học phân loại lỗi trước khi tính tỷ lệ."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá chất lượng dữ liệu",
+    "title": "Phòng ngừa trước, phát hiện sau",
+    "image": "domain1-accounting/m1-a-m02-s02.png",
+    "alt": "Sơ đồ đi từ ngăn lỗi mới tới phát hiện lỗi cũ và giao xử lý."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá chất lượng dữ liệu",
+    "title": "Không che giấu dữ liệu yếu",
+    "image": "domain1-accounting/m1-i-m02-s11.png",
+    "alt": "Ba ô số chỉ rõ mẫu số 100, hai lỗi thiếu mã và tỷ lệ đủ 98%."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá chất lượng dữ liệu",
+    "title": "Mỗi chiều phải có phép đo",
+    "image": "domain1-accounting/m1-i-m02-s03.png",
+    "alt": "Ba ô số giả lập thể hiện tử số, mẫu số và tỷ lệ đầy đủ mã chứng từ."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá chất lượng dữ liệu",
+    "title": "Hợp lệ chưa chắc chính xác",
+    "image": "domain1-accounting/m1-f-m02-s08.png",
+    "alt": "Ba thẻ phân biệt kiểm tra định dạng, đối chiếu thực tế và tín hiệu bất thường."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá chất lượng dữ liệu",
+    "title": "Chặn lỗi mới, tìm lỗi cũ",
+    "image": "domain1-accounting/m1-a-m02-s06.png",
+    "alt": "Sơ đồ ba bước cho thấy kiểm soát phòng ngừa và phát hiện cần bước xử lý cuối."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá chất lượng dữ liệu",
+    "title": "Ưu tiên lỗi ảnh hưởng quyết định",
+    "image": "domain1-accounting/m1-a-m02-v3.png",
+    "alt": "Bảng dữ kiện giả lập của đúng vị trí được dùng để luyện tập, không phải số liệu doanh nghiệp thật."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá chất lượng dữ liệu",
+    "title": "Đọc bảng điểm như một quyết định",
+    "image": "domain1-accounting/m1-a-m02-s08.png",
+    "alt": "Ba trạng thái sử dụng dữ liệu dựa trên kết quả đo, không dựa vào màu sắc đơn thuần."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá chất lượng dữ liệu",
+    "title": "Làm mẫu · Tính bảng điểm chất lượng có mẫu số",
+    "image": "domain1-accounting/m1-i-m03-v4.png",
+    "alt": "Dữ kiện giả lập của Vị trí khác dùng để minh họa cách xử lý trong mô đun."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá chất lượng dữ liệu",
+    "title": "Tự làm · Tính bảng điểm chất lượng có mẫu số",
+    "image": "domain1-accounting/m1-a-m03-s11.png",
+    "alt": "Quy trình thực hành tính bảng điểm chất lượng có mẫu số có sản phẩm kiểm tra được."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 1,
+    "moduleTitle": "Đánh giá chất lượng dữ liệu",
+    "title": "So sản phẩm với tiêu chí",
+    "image": "domain1-accounting/m1-a-m02-s11.png",
+    "alt": "Ba tiêu chí kiểm tra kết quả thực hành trước khi nộp bài cuối khóa."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 2,
+    "moduleTitle": "Quản trị dữ liệu và vòng đời thông tin",
+    "title": "Một chỉ số cần một cách hiểu",
+    "image": "domain1-accounting/m1-a-m03.png",
+    "alt": "Phiếu từ điển dữ liệu làm rõ tên, định nghĩa và nguồn chính thức của chỉ số."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 2,
+    "moduleTitle": "Quản trị dữ liệu và vòng đời thông tin",
+    "title": "Ai quyết, ai giữ chất lượng?",
+    "image": "domain1-accounting/m1-a-m03-s02.png",
+    "alt": "Ba vai trò tách quyền phê duyệt, vận hành chất lượng và sử dụng dữ liệu."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 2,
+    "moduleTitle": "Quản trị dữ liệu và vòng đời thông tin",
+    "title": "Giữ dữ liệu đúng thời hạn và mục đích",
+    "image": "domain1-accounting/m1-a-m03-s03.png",
+    "alt": "Trục vòng đời đi từ tạo đến hủy; không ngụ ý một thời hạn lưu giữ chung cho mọi dữ liệu."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 2,
+    "moduleTitle": "Quản trị dữ liệu và vòng đời thông tin",
+    "title": "Định nghĩa chỉ số đủ để người khác tính lại",
+    "image": "domain1-accounting/m1-a-m03-v2.png",
+    "alt": "Phiếu từ điển kết nối tên chỉ số với phép tính, nguồn và trách nhiệm."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 2,
+    "moduleTitle": "Quản trị dữ liệu và vòng đời thông tin",
+    "title": "Phân vai để lỗi có người giải quyết",
+    "image": "domain1-accounting/m1-a-m03-s05.png",
+    "alt": "Ba vai trò tách quyết định chuẩn, theo dõi chất lượng và cập nhật dữ liệu."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 2,
+    "moduleTitle": "Quản trị dữ liệu và vòng đời thông tin",
+    "title": "Phiên bản hóa định nghĩa, không sửa âm thầm",
+    "image": "domain1-accounting/m1-a-m03-s06.png",
+    "alt": "Trục phiên bản cho thấy định nghĩa mới cần phê duyệt và ngày áp dụng."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 2,
+    "moduleTitle": "Quản trị dữ liệu và vòng đời thông tin",
+    "title": "Thiết kế chuẩn cho bộ dữ liệu đang dùng",
+    "image": "domain1-accounting/m1-a-m03-v3.png",
+    "alt": "Bảng dữ kiện giả lập của đúng vị trí được dùng để luyện tập, không phải số liệu doanh nghiệp thật."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 2,
+    "moduleTitle": "Quản trị dữ liệu và vòng đời thông tin",
+    "title": "Kiểm tra toàn vòng đời",
+    "image": "domain1-accounting/m1-a-m03-s08.png",
+    "alt": "Trục vòng đời chỉ vị trí cần kiểm soát, không tự quy định số năm lưu giữ."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 2,
+    "moduleTitle": "Quản trị dữ liệu và vòng đời thông tin",
+    "title": "Làm mẫu · Tạo từ điển chỉ số và kiểm soát thay đổi",
+    "image": "domain1-accounting/m1-a-m03-v4.png",
+    "alt": "Dữ kiện giả lập của Vị trí khác dùng để minh họa cách xử lý trong mô đun."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 2,
+    "moduleTitle": "Quản trị dữ liệu và vòng đời thông tin",
+    "title": "Tự làm · Tạo từ điển chỉ số và kiểm soát thay đổi",
+    "image": "domain1-accounting/m1-i-m03-s10.png",
+    "alt": "Quy trình thực hành tạo từ điển chỉ số và kiểm soát thay đổi có sản phẩm kiểm tra được."
+  },
+  {
+    "course": "A1-A",
+    "moduleIndex": 2,
+    "moduleTitle": "Quản trị dữ liệu và vòng đời thông tin",
+    "title": "So sản phẩm với tiêu chí",
+    "image": "domain1-accounting/m1-a-m03-s11.png",
+    "alt": "Ba tiêu chí kiểm tra kết quả thực hành trước khi nộp bài cuối khóa."
+  }
+]

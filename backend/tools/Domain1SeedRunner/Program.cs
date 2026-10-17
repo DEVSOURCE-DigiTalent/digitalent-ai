@@ -3,9 +3,9 @@ using DigiTalent.Infrastructure.Persistence.Seed;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
-if (args.Length != 2 || args[0] is not ("--dry-run" or "--apply" or "--import-sql"))
+if (args.Length != 2 || args[0] is not ("--dry-run" or "--apply" or "--import-sql" or "--check-platform-content" or "--check-slide-images" or "--import-slide-images"))
 {
-    Console.Error.WriteLine("Usage: Domain1SeedRunner --dry-run|--apply <organization-id> | --import-sql <generated-sql-file>");
+    Console.Error.WriteLine("Usage: Domain1SeedRunner --dry-run|--apply <organization-id> | --import-sql <generated-sql-file> | --check-platform-content <version> | --check-slide-images|--import-slide-images <manifest.json>");
     return 2;
 }
 
@@ -14,6 +14,14 @@ if (string.IsNullOrWhiteSpace(connectionString))
 {
     Console.Error.WriteLine("Set DIGITALENT_DB_CONNECTION in the current process.");
     return 2;
+}
+
+if (args[0] is "--check-slide-images" or "--import-slide-images")
+{
+    var imageOptions = new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(connectionString).UseSnakeCaseNamingConvention().Options;
+    await using var imageDb = new AppDbContext(imageOptions);
+    await Domain1SlideImageImporter.RunAsync(imageDb, args[1], args[0] == "--import-slide-images");
+    return 0;
 }
 
 if (args[0] == "--import-sql")
@@ -44,6 +52,22 @@ if (args[0] == "--import-sql")
     await using var command = new NpgsqlCommand(statement, connection) { CommandTimeout = 120 };
     await command.ExecuteNonQueryAsync();
     Console.WriteLine($"Domain I SQL {mode} completed.");
+    return 0;
+}
+
+if (args[0] == "--check-platform-content")
+{
+    if (!int.TryParse(args[1], out var versionNo)) return 2;
+    var checkOptions = new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(connectionString).UseSnakeCaseNamingConvention().Options;
+    await using var checkDb = new AppDbContext(checkOptions);
+    var version = await checkDb.PlatformCatalogVersions.SingleAsync(v => v.VersionNo == versionNo);
+    await using var checkTransaction = await checkDb.Database.BeginTransactionAsync();
+    var before = await checkDb.Courses.CountAsync();
+    await new DigiTalent.Application.UseCases.Platform.Catalog.PlatformLearningPublisher(checkDb)
+        .PublishAsync(version.Id, version.CreatedByUserId, DateTimeOffset.UtcNow);
+    await checkDb.SaveChangesAsync();
+    Console.WriteLine($"Catalog v{versionNo}: {await checkDb.Courses.CountAsync() - before} Learning revisions validated against PostgreSQL; ROLLBACK.");
+    await checkTransaction.RollbackAsync();
     return 0;
 }
 

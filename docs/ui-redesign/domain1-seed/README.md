@@ -38,6 +38,22 @@ node docs/ui-redesign/domain1-seed/build-current-sql.cjs --dry-run
 node docs/ui-redesign/domain1-seed/build-current-sql.cjs --apply
 ```
 
+## Nhập vào bản nháp của Platform Admin
+
+Learning course v2 của một doanh nghiệp và Platform catalog v2 là hai lớp dữ liệu khác nhau. Admin đọc
+`platform_catalog_*`, vì vậy cần nhập học liệu vào catalog `DRAFT` trước khi công bố. Script dưới đây chỉ thay nội
+dung A1-F/I/A trong đúng một bản nháp, đánh dấu ba khóa là `EDITED` và không sửa phiên bản `CURRENT`.
+
+```powershell
+node docs/ui-redesign/domain1-seed/build-platform-draft-sql.cjs --dry-run
+node docs/ui-redesign/domain1-seed/build-platform-draft-sql.cjs --apply
+dotnet run --project backend/tools/Domain1SeedRunner/Domain1SeedRunner.csproj -- --import-sql docs/ui-redesign/domain1-seed/domain1-platform-draft-v2.dry-run.sql
+dotnet run --project backend/tools/Domain1SeedRunner/Domain1SeedRunner.csproj -- --import-sql docs/ui-redesign/domain1-seed/domain1-platform-draft-v2.apply.sql
+```
+
+Sau khi import, Admin thấy 3 khóa đã sửa trong bản nháp cùng 9 mô đun, 99 khối nội dung và 45 câu hỏi. Owner vẫn
+dùng catalog `CURRENT`; nội dung chỉ đi sang luồng doanh nghiệp khi Admin chủ động công bố bản nháp.
+
 `--dry-run` và `--apply` xuất SQL riêng; script tự từ chối nếu checksum JSON khác manifest, thiếu 3 khóa/3 mô đun hoặc quiz không có đáp án. SQL có ID xác định, kiểm đúng tổ chức/khóa nguồn, kiểm số lượng sau import, dùng một transaction và `ON CONFLICT DO NOTHING`. Không chạy `--apply` trên DB khác trước khi kiểm course code, version và các quyền.
 
 ## Đường đọc và giới hạn hiện tại
