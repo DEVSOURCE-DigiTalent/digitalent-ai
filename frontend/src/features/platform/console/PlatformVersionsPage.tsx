@@ -30,7 +30,9 @@ export function PlatformVersionsPage() {
   const createDraft = useCreateDraft();
   const { can } = usePermission();
   const canManage = can(PERMISSIONS.PLATFORM_CATALOG_MANAGE);
-  const selected = param !== undefined ? Number(param) : (versions.data?.currentVersionNo ?? versions.data?.draftVersionNo ?? undefined);
+  // The Admin's working view should open the editable draft first. Explicit version URLs still
+  // preserve history/current inspection, while organizations continue to consume CURRENT only.
+  const selected = param !== undefined ? Number(param) : (versions.data?.draftVersionNo ?? versions.data?.currentVersionNo ?? undefined);
   const version = useCatalogVersion(Number.isFinite(selected) ? selected : undefined);
   const data = versions.data;
   const nextNo = data ? Math.max(0, ...data.items.map((v) => v.versionNo)) + 1 : null;

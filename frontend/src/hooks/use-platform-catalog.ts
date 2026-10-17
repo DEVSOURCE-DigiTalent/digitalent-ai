@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { platformCatalogService, type CatalogCourseDetail } from '@/services/platform-catalog.service';
 import { PLATFORM_ADMIN_KEY } from './use-platform-admin';
+import { ASSIGNMENTS_KEY } from './use-assignments';
+import { PULSE_KEYS } from './use-pulse';
+import { learningContentQueryOptions } from '@/lib/learning-content-query';
 
 /**
  * React Query hooks of Platform Admin v2: frameworks, catalog versions and the course builder. Keys live under the
@@ -93,7 +96,15 @@ export function useCreateDraft() {
 
 export function usePublishVersion(versionNo: number) {
   const refresh = useRefreshCatalog();
-  return useMutation({ mutationFn: (note?: string) => platformCatalogService.publishVersion(versionNo, note), onSuccess: () => refresh(versionNo) });
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: (note?: string) => platformCatalogService.publishVersion(versionNo, note), onSuccess: async () => {
+    await Promise.all([
+      refresh(versionNo),
+      queryClient.invalidateQueries({ queryKey: ASSIGNMENTS_KEY }),
+      queryClient.invalidateQueries({ queryKey: PULSE_KEYS.all }),
+      queryClient.invalidateQueries({ queryKey: catalogKeys.course(versionNo, undefined).slice(0, 4) }),
+    ]);
+  } });
 }
 
 export function useUpdatePrices(versionNo: number) {
@@ -124,6 +135,7 @@ export function useRemoveCatalogCourse(versionNo: number) {
 export const useCatalogCourse = (versionNo: number | undefined, courseId: string | undefined) =>
   useQuery({
     queryKey: catalogKeys.course(versionNo, courseId),
+    ...learningContentQueryOptions,
     queryFn: () => platformCatalogService.getCourse(versionNo!, courseId!),
     enabled: versionNo != null && Boolean(courseId),
   });
