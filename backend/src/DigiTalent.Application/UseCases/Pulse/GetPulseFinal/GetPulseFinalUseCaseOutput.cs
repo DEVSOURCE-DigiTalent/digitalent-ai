@@ -2,6 +2,7 @@ namespace DigiTalent.Application.UseCases.Pulse;
 
 public class GetPulseFinalUseCaseOutput
 {
+    public DigiTalent.Application.UseCases.Platform.Catalog.PlatformCourseFinalDto? Assignment { get; set; }
     public PulseCourseSummaryDto Course { get; set; } = new();
     public PulseDomainDto Domain { get; set; } = new();
     public string? PositionName { get; set; }

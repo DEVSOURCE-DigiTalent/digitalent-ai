@@ -43,6 +43,8 @@ public class GetCourseByIdUseCase : IUseCase<GetCourseByIdUseCaseInput, CourseDe
                 EstimatedMinutes = x.EstimatedMinutes,
                 SortOrder = x.SortOrder,
                 IsRequired = x.IsRequired,
+                QuizQuestionCount = _context.Assessments.Where(a => a.ModuleId == x.Id && a.AssessmentType == "QUIZ" && a.Status == "PUBLISHED")
+                    .OrderByDescending(a => a.VersionNo).Select(a => _context.AssessmentQuestions.Count(q => q.AssessmentId == a.Id)).FirstOrDefault(),
                 LessonsCount = _context.Lessons.Count(l => l.ModuleId == x.Id),
                 Lessons = _context.Lessons
                     .Where(l => l.ModuleId == x.Id)
@@ -109,6 +111,7 @@ public class GetCourseByIdUseCase : IUseCase<GetCourseByIdUseCaseInput, CourseDe
 
         return new CourseDetailDto
         {
+            Final = hasLicense ? (await new DigiTalent.Application.UseCases.Learning.Content.LearningContentReader(_context).FinalsAsync(new[] { course.Id })).GetValueOrDefault(course.Id) : null,
             Id = course.Id,
             Code = course.Code,
             Title = course.Title,

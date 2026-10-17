@@ -732,6 +732,12 @@ public class PulseEmployeeFlowTests
         var detail = await uc.GetCourse.ExecuteAsync(new GetPulseCourseUseCaseInput { CourseId = course.CourseId });
         detail.NextAction.Should().Be("PRE_ASSESSMENT");
 
+        foreach (var item in detail.Modules.Where(m => m.HasQuiz))
+        {
+            item.QuizBankQuestionCount.Should().BeGreaterThanOrEqualTo(item.QuizQuestionCount);
+            item.QuizQuestionCount.Should().Be(Math.Min(2, item.QuizBankQuestionCount));
+        }
+
         var module = await uc.GetModule.ExecuteAsync(new GetPulseModuleUseCaseInput { CourseId = course.CourseId, ModuleId = detail.Modules[0].ModuleId });
         module.Slides.Should().HaveCountGreaterThan(1);
         module.QuizBlockReason.Should().Be(PulseBlockReason.PreAssessmentRequired);

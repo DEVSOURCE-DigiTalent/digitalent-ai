@@ -19,6 +19,7 @@ public class LessonDto
 
 public class CourseModuleDto
 {
+    public int QuizQuestionCount { get; set; }
     public Guid Id { get; set; }
     public string? Code { get; set; }
     public string Title { get; set; } = string.Empty;
@@ -32,6 +33,7 @@ public class CourseModuleDto
 
 public class CourseDetailDto
 {
+    public DigiTalent.Application.UseCases.Platform.Catalog.PlatformCourseFinalDto? Final { get; set; }
     public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;

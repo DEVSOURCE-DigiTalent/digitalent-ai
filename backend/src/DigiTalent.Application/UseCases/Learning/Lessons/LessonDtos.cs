@@ -9,6 +9,9 @@ public class GetLessonInput
 
 public class LessonContentOutput
 {
+    public int ModuleIndex { get; set; }
+    public bool ContentLocked { get; set; }
+    public List<DigiTalent.Application.UseCases.Learning.Content.LessonMediaDto> Media { get; set; } = new();
     public Guid Id { get; set; }
     public Guid ModuleId { get; set; }
     public string? Code { get; set; }

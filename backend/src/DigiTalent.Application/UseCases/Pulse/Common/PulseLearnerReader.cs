@@ -220,6 +220,20 @@ public class PulseLearnerReader
                     .First().Enrollment,
                 StringComparer.OrdinalIgnoreCase);
 
+        // Display the same revision as the enrollment's modules/questions, rather than a new title with old lessons.
+        var enrolledCourseIds = enrollmentByCode.Values.Select(e => e.CourseId).Distinct().ToList();
+        var enrolledCourses = await _context.Courses.AsNoTracking().Where(c => enrolledCourseIds.Contains(c.Id)).ToDictionaryAsync(c => c.Id);
+        courses = courses.Select(course =>
+        {
+            var enrollment = enrollmentByCode.GetValueOrDefault(course.Code);
+            if (enrollment == null || !enrolledCourses.TryGetValue(enrollment.CourseId, out var enrolled)) return course;
+            return new PulseCourseRef
+            {
+                CourseId = enrolled.Id, Code = enrolled.Code, Title = enrolled.Title, Description = enrolled.Description,
+                Purpose = enrolled.Purpose, EstimatedMinutes = enrolled.EstimatedDurationMinutes, VersionNo = enrolled.VersionNo,
+                CategoryId = course.CategoryId, Tier = course.Tier,
+            };
+        }).ToList();
         var enrollmentIds = enrollmentByCode.Values.Select(e => e.Id).ToList();
         var submissions = await _context.CourseFinalSubmissions
             .AsNoTracking()
