@@ -8,7 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
-/// POST /pulse/final-reviews/{submissionId}/decision — quản lý ghi quyết định cho bài cuối khóa đang chờ (§10):
+/// POST /pulse/final-reviews/{submissionId}/decision — quản lý ghi quyết định cho bài cuối khóa đang chờ (§10). "Đạt" cần
+/// phần trắc nghiệm đủ số câu đúng (<see cref="PulseExamPaper.BelowPass"/>):
 ///   - PASSED: lượt học COMPLETED → khóa được xác nhận, cấp khóa có thể nâng mức đã xác nhận, mở cấp kế tiếp.
 ///   - NOT_YET lần 1: chụp cửa sổ nộp lại theo chính sách doanh nghiệp (chờ cooldown, hạn deadline).
 ///   - NOT_YET lần 2: cờ cần hỗ trợ, không mở cấp tiếp.
@@ -49,6 +50,8 @@ public class DecidePulseFinalUseCase : IUseCase<DecidePulseFinalUseCaseInput, De
         {
             throw new ConflictException("Chỉ chấm được lần nộp mới nhất.");
         }
+
+        PulseExamPaper.EnsureCanPass(input.Decision, submission.ChoiceScore, submission.ChoiceTotal);
 
         var now = _clock.GetUtcNow();
         var reason = input.Reason.Trim();

@@ -5,6 +5,7 @@ import type { SessionUser } from '../../../types/session';
 
 interface DemoAccountPickerProps {
   onPick: (email: string, password: string) => void;
+  enterpriseOnly?: boolean;
 }
 
 interface DemoAccounts {
@@ -36,7 +37,7 @@ function describeAccount(account: SessionUser): string {
  * when VITE_SHOW_DEMO_ACCOUNTS=true in a development build.
  * Folded into an accessible collapsible details panel so it doesn't take form space.
  */
-export function DemoAccountPicker({ onPick }: DemoAccountPickerProps) {
+export function DemoAccountPicker({ onPick, enterpriseOnly = false }: DemoAccountPickerProps) {
   const [demo, setDemo] = useState<DemoAccounts | null>(null);
 
   useEffect(() => {
@@ -67,7 +68,7 @@ export function DemoAccountPicker({ onPick }: DemoAccountPickerProps) {
           Mật khẩu chung: <code className="text-cream/90 font-mono">{demo.password}</code>
         </p>
         <ul className="grid gap-1 max-h-48 overflow-y-auto pr-1">
-          {demo.accounts.map((account) => (
+          {demo.accounts.filter(account => !enterpriseOnly || account.workspace !== 'personal').map((account) => (
             <li key={account.id}>
               <button
                 type="button"

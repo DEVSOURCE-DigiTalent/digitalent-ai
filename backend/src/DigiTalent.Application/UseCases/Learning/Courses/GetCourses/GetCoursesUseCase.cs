@@ -22,7 +22,10 @@ public class GetCoursesUseCase : IUseCase<GetCoursesUseCaseInput, GetCoursesUseC
 
         var query = _context.Courses
             .AsNoTracking()
-            .Where(x => x.OrganizationId == organizationId);
+            .Where(x => x.OrganizationId == organizationId
+                && !_context.Courses.Any(newer => newer.OrganizationId == organizationId
+                    && newer.Code == x.Code && newer.Status == Domain.Constants.Statuses.Course.Published
+                    && newer.VersionNo > x.VersionNo));
 
         if (!string.IsNullOrWhiteSpace(input.Search))
         {
@@ -127,6 +130,24 @@ public class GetCoursesUseCase : IUseCase<GetCoursesUseCaseInput, GetCoursesUseC
                     .FirstOrDefault(),
             })
             .ToListAsync();
+
+        var seatOrders = await (
+            from o in _context.CourseSeatOrders.AsNoTracking()
+            join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
+            where o.OrganizationId == organizationId
+            group o by new { pc.Code, o.Kind } into g
+            select new { g.Key.Code, g.Key.Kind, Seats = g.Sum(x => x.Seats) }
+        ).ToListAsync();
+
+        foreach (var item in items)
+        {
+            item.SeatsPurchased = seatOrders
+                .Where(s => s.Code == item.Code && s.Kind == Domain.Constants.PlatformCatalog.SeatOrderKind.Purchase)
+                .Sum(s => s.Seats);
+            item.SeatsGranted = seatOrders
+                .Where(s => s.Code == item.Code && s.Kind == Domain.Constants.PlatformCatalog.SeatOrderKind.AdminGrant)
+                .Sum(s => s.Seats);
+        }
 
         return new GetCoursesUseCaseOutput
         {

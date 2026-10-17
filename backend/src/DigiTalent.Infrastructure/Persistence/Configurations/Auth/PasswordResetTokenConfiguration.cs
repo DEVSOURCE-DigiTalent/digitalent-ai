@@ -8,12 +8,18 @@ public class PasswordResetTokenConfiguration : IEntityTypeConfiguration<Password
 {
     public void Configure(EntityTypeBuilder<PasswordResetToken> builder)
     {
-        builder.ToTable("password_reset_tokens");
+        builder.ToTable("password_reset_tokens", table =>
+            table.HasCheckConstraint(
+                "ck_password_reset_tokens_purpose",
+                "purpose IN ('RESET_PASSWORD','VERIFY_EMAIL')"));
+
         builder.HasKey(t => t.Id);
 
         builder.Property(t => t.Id).HasColumnName("id");
         builder.Property(t => t.UserId).HasColumnName("user_id").IsRequired();
         builder.Property(t => t.TokenHash).HasColumnName("token_hash").IsRequired();
+        builder.Property(t => t.Purpose).HasColumnName("purpose").IsRequired().HasMaxLength(30)
+            .HasDefaultValue("RESET_PASSWORD");
         builder.Property(t => t.ExpiresAt).HasColumnName("expires_at").IsRequired();
         builder.Property(t => t.UsedAt).HasColumnName("used_at");
         builder.Property(t => t.CreatedAt).HasColumnName("created_at").IsRequired();

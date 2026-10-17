@@ -1,11 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { inferWorkspace, normalizeRoles, resolveWorkspace } from '../roles';
 import { getHomePath } from '../navigation';
+import { getPostLoginPath } from '../../features/auth/auth-redirect';
+import type { SessionUser } from '../../types/session';
 
 describe('normalizeRoles', () => {
   it('keeps canonical roles and removes duplicates', () => {
     expect(normalizeRoles(['OWNER', 'OWNER'])).toEqual(['OWNER']);
     expect(normalizeRoles(['LEARNER'])).toEqual(['LEARNER']);
+  });
+
+  it('normalizes casing and legacy role aliases', () => {
+    expect(normalizeRoles(['manager'])).toEqual(['MANAGER']);
+    expect(normalizeRoles(['DEPARTMENT_MANAGER'])).toEqual(['MANAGER']);
+    expect(normalizeRoles(['hr_manager'])).toEqual(['OWNER']);
+    expect(normalizeRoles(['admin'])).toEqual(['PLATFORM_ADMIN']);
+    expect(normalizeRoles(['trainer'])).toEqual(['EMPLOYEE']);
   });
 });
 
@@ -39,7 +49,34 @@ describe('getHomePath', () => {
     expect(getHomePath({ roles: ['EMPLOYEE', 'OWNER'] })).toBe('/enterprise/dashboard');
   });
 
-  it('follows an explicit workspace over the roles', () => {
-    expect(getHomePath({ roles: [], workspace: 'enterprise' })).toBe('/enterprise/me');
+  it('does not treat an enterprise account without a role as an Employee', () => {
+    expect(getHomePath({ roles: [], workspace: 'enterprise' })).toBe('/forbidden');
+  });
+
+  it.each([
+    ['trainer@digitalent.ai', 'EMPLOYEE', 'enterprise', false, '/enterprise/me'],
+    ['employee@digitalent.ai', 'EMPLOYEE', 'enterprise', true, '/enterprise/me'],
+    ['admin@digitalent.ai', 'PLATFORM_ADMIN', 'platform', false, '/platform/dashboard'],
+    ['owner@digitalent.ai', 'OWNER', 'enterprise', true, '/enterprise/dashboard'],
+    ['hr@digitalent.ai', 'OWNER', 'enterprise', true, '/enterprise/dashboard'],
+  ] as const)('opens the correct workspace for %s', (email, role, workspace, emailVerified, path) => {
+    const user: SessionUser = { id: email, email, fullName: email, roles: [role], permissions: [], workspace, emailVerified };
+    expect(getHomePath(user)).toBe(path);
+    expect(getPostLoginPath('/enterprise/skill-gap', user)).toBe(path);
+  });
+
+  it('sends only an unverified Owner to the business email check', () => {
+    expect(getHomePath({ roles: ['OWNER'], emailVerified: false })).toBe('/business/verify-email?email=');
+  });
+
+  it('opens a trial Manager in team management even when a previous Employee deep link is saved', () => {
+    const manager: SessionUser = {
+      id: 'manager-new', email: 'manager@company.test', fullName: 'Manager',
+      roles: ['MANAGER'], permissions: [], workspace: 'enterprise',
+      enterpriseTrialStatus: 'trial_active', emailVerified: true,
+    };
+
+    expect(getHomePath(manager)).toBe('/enterprise/team');
+    expect(getPostLoginPath('/enterprise/me/path', manager)).toBe('/enterprise/team');
   });
 });

@@ -27,6 +27,11 @@ public class CompetencyCategoriesController : ControllerBase
     {
         var organizationId = _currentUser.GetRequiredOrganizationId();
 
+        if (_context is DigiTalent.Infrastructure.Persistence.AppDbContext db)
+        {
+            await DigiTalent.Infrastructure.Persistence.Seed.SkillGapSeeder.EnsureOrganizationFrameworkAndCoursesAsync(db, organizationId, _currentUser.UserId);
+        }
+
         var categories = await _context.CompetencyCategories
             .AsNoTracking()
             .Where(x => x.OrganizationId == organizationId && x.Status == Statuses.MasterData.Active)

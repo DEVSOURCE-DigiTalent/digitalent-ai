@@ -3,6 +3,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useSearchParams } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LoginPage } from '../pages/LoginPage';
+import { BusinessVerifyEmailPage } from '../pages/BusinessVerifyEmailPage';
 import apiClient from '../../../services/api-client';
 import { AuthGuard } from '../../../components/guards/AuthGuard';
 import { getLoginPath, isSafeReturnTo } from '../auth-redirect';
@@ -99,20 +100,20 @@ describe('Authentication', () => {
       .toBe('/login?returnTo=%2Fenterprise%2Forganization%2Fdepartments%3Fpage%3D2');
   });
 
-  it('LoginRedirectRespectsSafeInternalReturnTo', async () => {
+  it('LoginRedirectRespectsSafeInternalReturnToForEmployee', async () => {
     (apiClient.post as any).mockResolvedValueOnce({
       data: { data: { accessToken: 'token' } }
     });
     (apiClient.get as any).mockResolvedValueOnce({
-      data: { data: { id: '1', roles: ['EMPLOYEE'] } }
+      data: { data: { id: '1', roles: ['EMPLOYEE'], permissions: ['employee_competency_profile.read'] } }
     });
 
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/login?returnTo=/enterprise/organization/departments']}>
+        <MemoryRouter initialEntries={['/login?returnTo=/enterprise/me']}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/enterprise/organization/departments" element={<div>Returned to departments</div>} />
+            <Route path="/enterprise/me" element={<div>Returned to employee Pulse</div>} />
           </Routes>
         </MemoryRouter>
       </QueryClientProvider>
@@ -127,11 +128,95 @@ describe('Authentication', () => {
     fireEvent.click(submitBtn);
     
     await waitFor(() => {
-      expect(screen.getByText('Returned to departments')).toBeInTheDocument();
+      expect(screen.getByText('Returned to employee Pulse')).toBeInTheDocument();
     });
 
     expect(isSafeReturnTo('//external.example')).toBe(false);
     expect(isSafeReturnTo('/\\external.example')).toBe(false);
+  });
+
+  it('EmployeeLoginIgnoresManagerReturnToAndOpensPulse', async () => {
+    (apiClient.post as any).mockResolvedValueOnce({
+      data: { data: { accessToken: 'token' } },
+    });
+    (apiClient.get as any).mockResolvedValueOnce({
+      data: { data: { id: 'employee-1', roles: ['EMPLOYEE'], permissions: ['employee_competency_profile.read'] } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/login?returnTo=%2Fenterprise%2Fteam']}>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/enterprise/team" element={<div>Manager workspace</div>} />
+            <Route path="/enterprise/me" element={<div>Employee Pulse</div>} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'employee@digitalent.ai' } });
+    fireEvent.change(screen.getByLabelText('Mật khẩu'), { target: { value: 'Admin@1234' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập' }));
+
+    expect(await screen.findByText('Employee Pulse')).toBeInTheDocument();
+    expect(screen.queryByText('Manager workspace')).not.toBeInTheDocument();
+  });
+
+  it('ManagerLoginIgnoresEmployeeReturnToAndOpensTeam', async () => {
+    (apiClient.post as any).mockResolvedValueOnce({
+      data: { data: { accessToken: 'token' } },
+    });
+    (apiClient.get as any).mockResolvedValueOnce({
+      data: { data: { id: 'manager-1', email: 'manager@company.test', roles: ['MANAGER'], permissions: [], workspace: 'enterprise', enterpriseTrialStatus: 'trial_active' } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/login?returnTo=%2Fenterprise%2Fme%2Fpath']}>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/enterprise/team" element={<div>Manager team workspace</div>} />
+            <Route path="/enterprise/me/path" element={<div>Employee learning space</div>} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'manager@company.test' } });
+    fireEvent.change(screen.getByLabelText('Mật khẩu'), { target: { value: 'valid-password' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập' }));
+
+    expect(await screen.findByText('Manager team workspace')).toBeInTheDocument();
+    expect(screen.queryByText('Employee learning space')).not.toBeInTheDocument();
+  });
+
+  it('FailedProfileLoadClearsPreviousEmployeeSessionDuringManagerLogin', async () => {
+    useCurrentUser.getState().setUser({
+      id: 'old-employee', email: 'employee@company.test', fullName: 'Employee',
+      roles: ['EMPLOYEE'], permissions: [], workspace: 'enterprise',
+    });
+    localStorage.setItem('accessToken', 'old-employee-token');
+    (apiClient.post as any).mockResolvedValueOnce({
+      data: { data: { accessToken: 'new-manager-token' } },
+    });
+    (apiClient.get as any).mockRejectedValueOnce(new Error('Profile unavailable'));
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/login']}>
+          <LoginPage />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'manager@company.test' } });
+    fireEvent.change(screen.getByLabelText('Mật khẩu'), { target: { value: 'valid-password' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập' }));
+
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+    expect(useCurrentUser.getState().user).toBeNull();
+    expect(localStorage.getItem('accessToken')).toBeNull();
   });
 
   it('FailedAuthMeNeverRendersGuardedContentEvenWithExpiredTokenInStorage', async () => {
@@ -193,5 +278,17 @@ describe('Authentication', () => {
       expect(acc).toBeDefined();
       expect(acc?.workspace).toBe('personal');
     }
+  });
+
+  it('OwnerEmailVerificationRequiresOtpBeforeEnteringWorkspace', () => {
+    render(
+      <MemoryRouter initialEntries={['/business/verify-email?email=owner@example.com']}>
+        <BusinessVerifyEmailPage />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('group', { name: 'Mã OTP 6 số' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Xác minh tài khoản' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /Bỏ qua xác minh/ })).not.toBeInTheDocument();
   });
 });

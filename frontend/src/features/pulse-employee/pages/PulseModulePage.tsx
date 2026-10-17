@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Check, Lock } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Focus, List, Lock } from 'lucide-react';
 import { toast } from 'sonner';
-import journeyArt from '@/assets/pulse/learning-journey-abstract.webp';
 import { useMarkPulseModuleViewed, useMarkPulsePageViewed, usePulseModule, usePulseOverview, useSubmitPulseModuleQuiz } from '@/hooks/use-pulse';
 import type { PulseModuleDetail, PulseModuleQuiz, PulseQuizResult } from '@/services/pulse.service';
-import { RichText } from '../components/RichText';
+import { LessonSlide } from '../components/LessonSlide';
 import { Bar, Eyebrow, LoadError, Mini, Notice, PageSkeleton, PuLink } from '../components/ui';
 import { btn } from '../lib/button';
-import { BLOCK_MESSAGES, LESSON_TYPE_LABELS, levelName, pad2, pulseErrorMessage } from '../lib/labels';
+import { BLOCK_MESSAGES, levelName, pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
+import '../pulse-lesson.css';
 
 /**
  * Trang học mô đun (§9.2): các trang nội dung, câu hỏi ôn tập mở sau trang cuối, cần đúng tất cả câu. Mỗi lần làm là
@@ -27,6 +27,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
   const { course, module, slides } = detail;
   const courseId = course.courseId;
   const [index, setIndex] = useState(0);
+  const [focused, setFocused] = useState(false);
   const markViewed = useMarkPulseModuleViewed();
   const markPage = useMarkPulsePageViewed();
   const marked = useRef(detail.viewed);
@@ -47,6 +48,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
   // Chuyển tới một trang. Trang đang chờ xem lại (sau lần chưa đạt) được ghi nhận khi nhân viên chủ động mở nó —
   // không tính trang đang hiện sẵn lúc nộp bài.
   const goTo = (target: number) => {
+    if (target < 0 || target >= slides.length) return;
     setIndex(target);
     const page = slides[target];
     if (!page || !canRecord || !review?.pages.some((p) => p.lessonId === page.lessonId && !p.done) || markPage.isPending) return;
@@ -71,7 +73,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
   }, [isLast, canRecord, courseId, module.moduleId, markViewed]);
 
   return (
-    <div>
+    <div className={`pu-learning-space ${focused ? 'is-focused' : ''}`}>
       <div className="pu-crumb">
         <PuLink to={PULSE_PATHS.course(courseId)} kind="ghost" small>← Tổng quan khóa học</PuLink>
         <span>{course.domainName} · {levelName(course.tier)}</span>
@@ -121,35 +123,45 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
           </div>
 
           {slide ? (
-            <div className="pu-player" aria-label="Trang nội dung của mô đun" ref={playerRef}>
-              <div className="pu-player-bar">
-                <span>Trang nội dung bài học</span>
-                <span aria-live="polite">{pad2(index + 1)} / {pad2(slides.length)}</span>
+            <div className="pu-lesson-player" aria-label="Trang nội dung của mô đun" ref={playerRef} tabIndex={0}
+              onKeyDown={event => {
+                if (event.target !== event.currentTarget || event.altKey || event.ctrlKey || event.metaKey) return;
+                if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                  event.preventDefault();
+                  goTo(index + (event.key === 'ArrowRight' ? 1 : -1));
+                }
+              }}>
+              <div className="pu-lesson-toolbar">
+                <span><span className="pu-lesson-live-dot" /> Không gian học tập</span>
+                <button type="button" onClick={() => setFocused(!focused)} aria-pressed={focused}>
+                  {focused ? <List size={15} /> : <Focus size={15} />}{focused ? 'Hiện mục lục' : 'Tập trung'}
+                </button>
               </div>
-              <div className="pu-slide-head">
-                <div>
-                  <span>{pad2(index + 1)} / {LESSON_TYPE_LABELS[slide.lessonType] ?? 'Nội dung'}</span>
-                  <h2>{slide.title}</h2>
-                  {slide.estimatedMinutes ? <small>Khoảng {slide.estimatedMinutes} phút</small> : null}
-                </div>
-                <img src={journeyArt} alt="" />
-              </div>
-              <div className="pu-slide-body">
-                <RichText body={slide.contentBody} />
-              </div>
-              <div className="pu-player-bar">
-                <div className="pu-slide-dots" aria-hidden>
-                  {slides.map((s, i) => <i key={s.lessonId} className={i === index ? 'active' : ''} />)}
-                </div>
-                <div className="pu-row">
-                  <button type="button" className={btn('outline', true)} onClick={() => goTo(index - 1)} disabled={index === 0}>
-                    ← Trước đó
+              <LessonSlide key={slide.lessonId} slide={slide} courseCode={course.code} moduleIndex={module.index} index={index} count={slides.length} />
+              <div className="pu-lesson-navigation">
+                <button type="button" className="pu-lesson-prev" onClick={() => openPage(index - 1)} disabled={index === 0} aria-label="← Trước đó">
+                  <ArrowLeft size={16} /><span>Bài trước</span>
+                </button>
+                <span aria-live="polite">{pad2(index + 1)} <span>/ {pad2(slides.length)}</span></span>
+                {isLast ? (
+                  <button type="button" className="pu-lesson-next" onClick={() => document.getElementById('pu-module-quiz')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+                    Đến phần ôn tập <ArrowRight size={16} />
                   </button>
-                  <button type="button" className={btn('outline', true)} onClick={() => goTo(index + 1)} disabled={isLast}>
-                    Trang tiếp theo →
+                ) : (
+                  <button type="button" className="pu-lesson-next" onClick={() => openPage(index + 1)} aria-label="Trang tiếp theo →">
+                    <span>Bài tiếp theo</span><ArrowRight size={16} />
                   </button>
-                </div>
+                )}
               </div>
+              <nav className="pu-lesson-pages" aria-label="Các trang trong mô đun">
+                {slides.map((page, pageIndex) => (
+                  <button key={page.lessonId} type="button" onClick={() => openPage(pageIndex)}
+                    aria-current={pageIndex === index ? 'step' : undefined}
+                    aria-label={`Trang ${pad2(pageIndex + 1)}: ${page.title}`} title={page.title}>
+                    {pad2(pageIndex + 1)}
+                  </button>
+                ))}
+              </nav>
             </div>
           ) : (
             <Notice>Mô đun này chưa có trang nội dung.</Notice>
@@ -163,13 +175,13 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
             </p>
           </div>
 
-          <QuizArea
+          <div id="pu-module-quiz" className="pu-lesson-quiz-anchor"><QuizArea
             detail={detail}
             viewed={detail.viewed || (markViewed.isSuccess && canRecord)}
             reachedEnd={isLast}
             onOpenPage={openPage}
             opening={markPage.isPending}
-          />
+          /></div>
         </main>
       </div>
     </div>
@@ -214,7 +226,9 @@ function QuizArea({ detail, viewed, reachedEnd, onOpenPage, opening }: QuizAreaP
         <Notice tone="warning">
           {reason ? BLOCK_MESSAGES[reason] : detail.sample ? BLOCK_MESSAGES.SEAT_REQUIRED : 'Mô đun này chưa có câu hỏi ôn tập.'}
         </Notice>
-        {reason === 'NOT_ASSESSED' && <div><PuLink to={PULSE_PATHS.baseline} kind="outline" small>Làm bài đầu vào →</PuLink></div>}
+        {(reason === 'PRE_ASSESSMENT_REQUIRED' || reason === 'PRE_ASSESSMENT_PENDING') && (
+          <div><PuLink to={PULSE_PATHS.preAssessment(course.courseId)} kind="outline" small>Đánh giá trước khi học →</PuLink></div>
+        )}
       </div>
     );
   }
@@ -286,6 +300,7 @@ function QuizForm({ detail, quiz, viewed, reachedEnd }: { detail: PulseModuleDet
     <section className="pu-quiz" aria-labelledby="pu-quiz-title">
       <Mini>Kiểm tra kiến thức của bạn{quiz.attemptNo > 1 ? ` · lần làm thứ ${quiz.attemptNo}` : ''}</Mini>
       <h2 id="pu-quiz-title">Câu hỏi ôn tập mô đun {pad2(module.index + 1)}</h2>
+      {module.quizBankQuestionCount != null && <p>Lượt này gồm {questions.length} câu được rút từ ngân hàng {module.quizBankQuestionCount} câu của mô đun.</p>}
       <p>
         Trả lời đúng tất cả {questions.length} câu để hoàn thành mô đun. Chưa đạt thì mở lại trang liên quan rồi làm lại với
         câu hỏi khác.

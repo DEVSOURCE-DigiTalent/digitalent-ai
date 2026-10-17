@@ -55,10 +55,13 @@ public class VerifyEmailUseCase : IUseCase<VerifyEmailInput, bool>
             return true;
         }
 
-        // 2. Kiểm tra token trong password reset / verify token
+        // 2. Kiểm tra token trong password reset (chỉ Purpose = RESET_PASSWORD)
         var resetToken = await _context.PasswordResetTokens
             .Include(t => t.User)
-            .FirstOrDefaultAsync(t => t.TokenHash == token && t.UsedAt == null && t.ExpiresAt >= now);
+            .FirstOrDefaultAsync(t => t.TokenHash == token
+                && t.Purpose == DigiTalent.Domain.Entities.TokenPurpose.ResetPassword
+                && t.UsedAt == null
+                && t.ExpiresAt >= now);
 
         if (resetToken != null)
         {

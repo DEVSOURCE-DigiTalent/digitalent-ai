@@ -91,10 +91,10 @@ export function ManagerEvidencePage() {
       <PageHead
         eyebrow={`Quản lý / ${department.name}`}
         title="Đánh giá riêng minh chứng công việc."
-        description="Bài cuối khóa có hàng chờ riêng. Tại đây, hãy duyệt, yêu cầu sửa hoặc từ chối nhiệm vụ thực tế theo tiêu chí của chủ doanh nghiệp."
+        description="Bài đánh giá trước khi học và bài cuối khóa có hàng chờ riêng. Tại đây, hãy duyệt, yêu cầu sửa hoặc từ chối nhiệm vụ thực tế theo tiêu chí của chủ doanh nghiệp."
         actions={
           <>
-            <PuLink to={MANAGER_PATHS.finalReviews} kind="outline">Bài cuối khóa</PuLink>
+            <PuLink to={MANAGER_PATHS.finalReviews} kind="outline">Chấm bài</PuLink>
             {canCreate && <PuLink to={MANAGER_PATHS.newTask}>Giao nhiệm vụ</PuLink>}
           </>
         }

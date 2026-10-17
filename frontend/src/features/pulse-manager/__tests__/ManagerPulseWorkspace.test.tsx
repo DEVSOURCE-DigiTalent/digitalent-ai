@@ -82,7 +82,7 @@ const labelsOf = (config: typeof MANAGER_SIDEBAR) => config.map((section) => sec
 describe('Manager sidebar (Pulse)', () => {
   it('has the two prototype groups with the eight items in order', () => {
     expect(labelsOf(MANAGER_SIDEBAR)).toEqual([
-      'Quản lý đội', 'Tổng quan', 'Năng lực đội ngũ', 'Bài cuối khóa', 'Báo cáo chu kỳ',
+      'Quản lý đội', 'Tổng quan', 'Năng lực đội ngũ', 'Chấm bài', 'Báo cáo chu kỳ',
       'Các công cụ khác', 'Khung năng lực chung', 'Đào tạo đội ngũ', 'Minh chứng thực tế', 'Hoạt động',
     ]);
   });
@@ -107,7 +107,7 @@ describe('Manager sidebar (Pulse)', () => {
     ['/enterprise/team/skill-gap', 'Năng lực đội ngũ'],
     ['/enterprise/team/members/emp-1', 'Năng lực đội ngũ'],
     ['/enterprise/team/competency', 'Năng lực đội ngũ'],
-    ['/enterprise/team/final-reviews', 'Bài cuối khóa'],
+    ['/enterprise/team/final-reviews', 'Chấm bài'],
     ['/enterprise/team/reports', 'Báo cáo chu kỳ'],
     ['/enterprise/team/framework', 'Khung năng lực chung'],
     ['/enterprise/team/training', 'Đào tạo đội ngũ'],
@@ -134,7 +134,7 @@ describe('Manager sidebar (Pulse)', () => {
         <SidebarNav config={MANAGER_SIDEBAR} isRail={false} variant="pulse-manager" />
       </MemoryRouter>,
     );
-    expect(screen.queryByRole('link', { name: 'Bài cuối khóa' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Chấm bài' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Minh chứng thực tế' })).toBeNull();
   });
 });
@@ -159,9 +159,9 @@ describe('Manager route access', () => {
 });
 
 describe('Evidence and final assignment are separate flows', () => {
-  it('routes "Minh chứng thực tế" and "Bài cuối khóa" to different screens', () => {
+  it('routes "Minh chứng thực tế" and "Chấm bài" to different screens', () => {
     const evidence = MANAGER_SIDEBAR.find((s) => s.label === 'Minh chứng thực tế')!;
-    const finals = MANAGER_SIDEBAR.find((s) => s.label === 'Bài cuối khóa')!;
+    const finals = MANAGER_SIDEBAR.find((s) => s.label === 'Chấm bài')!;
     expect(findEnterpriseScreen(evidence.screenId!)!.path).toBe('/enterprise/reviews');
     expect(findEnterpriseScreen(finals.screenId!)!.path).toBe('/enterprise/team/final-reviews');
     expect(evidence.activeFor).not.toContain(finals.screenId);
@@ -188,7 +188,7 @@ describe('Evidence and final assignment are separate flows', () => {
     expect(within(card).getByRole('link', { name: 'Đánh giá minh chứng →' })).toHaveAttribute('href', '/enterprise/reviews/sub-ops');
     expect(screen.queryByText('Phòng Khác', { exact: false })).toBeNull();
     expect(screen.queryByRole('article', { name: 'Việc của phòng khác' })).toBeNull();
-    expect(screen.getByRole('link', { name: 'Bài cuối khóa' })).toHaveAttribute('href', '/enterprise/team/final-reviews');
+    expect(screen.getByRole('link', { name: 'Chấm bài' })).toHaveAttribute('href', '/enterprise/team/final-reviews');
     expect(getQueue).toHaveBeenCalled();
   });
 });

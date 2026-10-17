@@ -8,11 +8,11 @@ public class GetPulseCourseUseCaseOutput
     public int? EstimatedMinutes { get; set; }
     public int VersionNo { get; set; }
     public PulseDomainDto Domain { get; set; } = new();
-    public bool Assessed { get; set; }
+    public PulseReviewerDto? Reviewer { get; set; }
     public List<string> LearningOutcomes { get; set; } = new();
     public List<PulseCourseModuleDto> Modules { get; set; } = new();
     public List<PulseCriterionDto> FinalCriteria { get; set; } = new();
-    /// <summary>Bước tiếp theo trên trang khóa: BASELINE | MODULE | FINAL | PREVIEW | DONE.</summary>
+    /// <summary>Bước tiếp theo trên trang khóa: PRE_ASSESSMENT | PRE_REVIEW | MODULE | FINAL | PREVIEW | LOCKED | DONE.</summary>
     public string NextAction { get; set; } = string.Empty;
     public Guid? NextModuleId { get; set; }
 }
@@ -28,6 +28,8 @@ public class PulseCourseModuleDto
     public bool HasQuiz { get; set; }
     /// <summary>Số câu của mỗi lần làm (rút từ ngân hàng của mô đun), không phải cỡ ngân hàng.</summary>
     public int QuizQuestionCount { get; set; }
+    /// <summary>Tổng số câu trong ngân hàng đã công bố của mô đun.</summary>
+    public int QuizBankQuestionCount { get; set; }
     public bool Viewed { get; set; }
     public bool Passed { get; set; }
     /// <summary>Đã qua mô đun trước (mô đun 1 luôn mở theo thứ tự).</summary>

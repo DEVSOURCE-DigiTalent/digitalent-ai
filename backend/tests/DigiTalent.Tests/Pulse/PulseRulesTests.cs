@@ -11,14 +11,30 @@ public class PulseRulesTests
     private static readonly DateTimeOffset Now = new(2026, 10, 14, 8, 0, 0, TimeSpan.Zero);
 
     [Theory]
-    [InlineData(new[] { true, true, true }, 3, 3)]
-    [InlineData(new[] { true, true, false }, 3, 2)]
-    [InlineData(new[] { true, false, true }, 3, 1)] // sai L2 chặn L3 dù L3 đúng
-    [InlineData(new[] { false, true, true }, 3, 0)]
-    [InlineData(new[] { true, true, true }, 2, 2)] // không vượt mục tiêu
-    [InlineData(new[] { true }, 3, 1)]              // thiếu câu ở mức cao hơn → dừng
-    public void ChainLevel_CountsOnlyConsecutiveCorrectLevelsFromL1(bool[] correct, int target, int expected) =>
-        PulseRules.ChainLevel(correct, target).Should().Be(expected);
+    [InlineData(1, 0, 3, PulseCourseZone.OutsidePath)]   // vị trí không yêu cầu lĩnh vực
+    [InlineData(1, 3, 3, PulseCourseZone.Path)]
+    [InlineData(3, 3, 3, PulseCourseZone.Path)]
+    [InlineData(3, 3, 2, PulseCourseZone.AboveCeiling)]  // mục tiêu Nâng cao nhưng phòng ban chỉ mở tới Trung cấp
+    [InlineData(3, 2, 3, PulseCourseZone.Optional)]      // trên mục tiêu, trong trần
+    [InlineData(3, 2, 2, PulseCourseZone.AboveCeiling)]
+    [InlineData(1, 2, 0, PulseCourseZone.AboveCeiling)]  // phòng ban không mở lĩnh vực
+    public void ZoneOf_CapsThePositionTargetByTheDepartmentCeiling(int tier, int target, int ceiling, string expected) =>
+        PulseRules.ZoneOf(tier, target, ceiling).Should().Be(expected);
+
+    [Fact]
+    public void ProgressPercent_CountsReadingAndTheReviewQuizOfEveryModule()
+    {
+        var withQuiz = new PulseModuleInfo { ModuleId = Guid.NewGuid(), QuizAssessmentId = Guid.NewGuid() };
+        var reading = new PulseModuleInfo { ModuleId = Guid.NewGuid() };
+        var modules = new[] { withQuiz, reading };
+        PulseRules.ProgressPercent(modules, null).Should().Be(0);
+        PulseRules.ProgressPercent(modules, new Dictionary<Guid, PulseModuleProgress> { [withQuiz.ModuleId] = new(true, false) }).Should().Be(33);
+        PulseRules.ProgressPercent(modules, new Dictionary<Guid, PulseModuleProgress>
+        {
+            [withQuiz.ModuleId] = new(true, true),
+            [reading.ModuleId] = new(true, false),
+        }).Should().Be(100);
+    }
 
     [Theory]
     [InlineData(1, 3, 0)]

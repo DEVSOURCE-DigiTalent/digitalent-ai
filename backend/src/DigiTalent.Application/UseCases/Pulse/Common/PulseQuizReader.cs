@@ -169,7 +169,7 @@ public class PulseQuizReader
     }
 
     /// <summary>Hạt giống ổn định giữa các lần chạy (không dùng string.GetHashCode, vốn đổi theo tiến trình).</summary>
-    private static int Seed(Guid a, Guid b, int salt)
+    internal static int Seed(Guid a, Guid b, int salt)
     {
         var x = a.ToByteArray();
         var y = b.ToByteArray();
@@ -185,7 +185,7 @@ public class PulseQuizReader
         }
     }
 
-    private static List<T> Shuffle<T>(List<T> items, Random random)
+    internal static List<T> Shuffle<T>(List<T> items, Random random)
     {
         for (var i = items.Count - 1; i > 0; i--)
         {

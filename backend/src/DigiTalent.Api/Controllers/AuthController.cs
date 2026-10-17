@@ -90,4 +90,24 @@ public class AuthController : ControllerBase
         var result = await useCase.ExecuteAsync(input);
         return Ok(ApiResponse<bool>.Ok(result, "Đã xác minh email thành công."));
     }
+
+    // POST api/v1/auth/send-email-verification — Gửi OTP 6 số cho Business Owner mới đăng ký
+    [HttpPost("send-email-verification")]
+    public async Task<ActionResult<ApiResponse<SendEmailVerificationOutput>>> SendEmailVerification(
+        [FromBody] SendEmailVerificationInput input,
+        [FromServices] IUseCase<SendEmailVerificationInput, SendEmailVerificationOutput> useCase)
+    {
+        var result = await useCase.ExecuteAsync(input);
+        return Ok(ApiResponse<SendEmailVerificationOutput>.Ok(result, "Mã OTP đã được gửi. Kiểm tra hộp thư của bạn."));
+    }
+
+    // POST api/v1/auth/verify-business-email — Xác minh OTP để kích hoạt tài khoản Business Owner
+    [HttpPost("verify-business-email")]
+    public async Task<ActionResult<ApiResponse<VerifyBusinessEmailOutput>>> VerifyBusinessEmail(
+        [FromBody] VerifyBusinessEmailInput input,
+        [FromServices] IUseCase<VerifyBusinessEmailInput, VerifyBusinessEmailOutput> useCase)
+    {
+        var result = await useCase.ExecuteAsync(input);
+        return Ok(ApiResponse<VerifyBusinessEmailOutput>.Ok(result, "Tài khoản đã được xác minh thành công."));
+    }
 }

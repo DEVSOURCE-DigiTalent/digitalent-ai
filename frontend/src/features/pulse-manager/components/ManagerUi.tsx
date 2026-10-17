@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Users } from 'lucide-react';
 import '@/features/pulse-employee/pulse.css';
+import '@/features/pulse-employee/pulse-exam.css';
 import '../manager.css';
 import { Empty } from '@/features/pulse-employee/components/ui';
 

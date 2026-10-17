@@ -77,6 +77,11 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<CourseModule> CourseModules => Set<CourseModule>();
     public DbSet<CoursePrerequisite> CoursePrerequisites => Set<CoursePrerequisite>();
     public DbSet<CourseFinalSubmission> CourseFinalSubmissions => Set<CourseFinalSubmission>();
+    public DbSet<CoursePreAssessment> CoursePreAssessments => Set<CoursePreAssessment>();
+    public DbSet<ExamChoiceAnswer> ExamChoiceAnswers => Set<ExamChoiceAnswer>();
+    public DbSet<ProctoringSession> ProctoringSessions => Set<ProctoringSession>();
+    public DbSet<ProctoringRecording> ProctoringRecordings => Set<ProctoringRecording>();
+    public DbSet<ProctoringEvent> ProctoringEvents => Set<ProctoringEvent>();
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
     public DbSet<LearningMaterial> LearningMaterials => Set<LearningMaterial>();
     public DbSet<Lesson> Lessons => Set<Lesson>();

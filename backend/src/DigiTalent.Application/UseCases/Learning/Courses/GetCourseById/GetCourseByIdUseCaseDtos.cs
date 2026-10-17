@@ -19,6 +19,7 @@ public class LessonDto
 
 public class CourseModuleDto
 {
+    public int QuizQuestionCount { get; set; }
     public Guid Id { get; set; }
     public string? Code { get; set; }
     public string Title { get; set; } = string.Empty;
@@ -32,6 +33,7 @@ public class CourseModuleDto
 
 public class CourseDetailDto
 {
+    public DigiTalent.Application.UseCases.Platform.Catalog.PlatformCourseFinalDto? Final { get; set; }
     public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
@@ -48,6 +50,11 @@ public class CourseDetailDto
     public Guid? PrerequisiteCourseId { get; set; }
     public string? PrerequisiteTitle { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+    public int SeatsPurchased { get; set; }
+    public int SeatsGranted { get; set; }
+    public int TotalSeats => SeatsPurchased + SeatsGranted;
+    public int SeatsAvailable { get; set; }
+    public bool HasLicense { get; set; }
 
     public List<CourseModuleDto> Modules { get; set; } = new();
 }

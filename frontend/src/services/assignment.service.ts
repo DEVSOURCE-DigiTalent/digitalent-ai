@@ -1,4 +1,5 @@
 import apiClient from './api-client';
+import type { LessonMedia, CourseFinalContent } from '@/types/learning-content';
 import type { ApiResponse, PagedList } from '../types/api';
 
 export type AssignmentStatus = 'ACTIVE' | 'NOT_STARTED' | 'IN_PROGRESS' | 'READY_FOR_ASSESSMENT' | 'COMPLETED' | 'CANCELLED';
@@ -19,9 +20,14 @@ export interface CourseListItem {
   status: 'PUBLISHED' | 'DRAFT' | 'ARCHIVED';
   assignedCount: number;
   createdAt?: string;
+  seatsPurchased?: number;
+  seatsGranted?: number;
+  seatsAvailable?: number;
+  hasLicense?: boolean;
 }
 
 export interface CourseDetailDto {
+  final?: CourseFinalContent | null;
   id: string;
   code: string;
   title: string;
@@ -33,17 +39,26 @@ export interface CourseDetailDto {
   status: string;
   categoryName?: string | null;
   prerequisiteTitle?: string | null;
+  seatsPurchased?: number;
+  seatsGranted?: number;
+  seatsAvailable?: number;
+  hasLicense?: boolean;
   modules: {
     id: string;
     code?: string | null;
     title: string;
     description?: string | null;
     sortOrder?: number;
+    quizQuestionCount?: number;
     lessons: { id: string; code?: string | null; title: string; lessonType: string; estimatedMinutes?: number | null; sortOrder?: number }[];
   }[];
 }
 
 export interface CourseLessonDto {
+  moduleIndex?: number;
+  courseCode?: string;
+  contentLocked?: boolean;
+  media?: LessonMedia[];
   id: string;
   title: string;
   lessonType: string;
@@ -115,6 +130,18 @@ export interface CreateAssignmentResult {
   skipped: { employeeId: string; employeeName: string; reason: SkipReason }[];
 }
 
+export interface PurchaseCourseSeatsResult {
+  orderId: string;
+  courseCode?: string;
+  courseTitle?: string;
+  seats: number;
+  unitPrice?: number;
+  totalAmount: number;
+  totalSeatsPurchased: number;
+  totalSeatsAvailable: number;
+  createdAt?: string;
+}
+
 /** Standard course catalog and course assignments (spec LCA-12, LCA-13). */
 export const assignmentService = {
   getCourses: (params?: { search?: string; status?: string; categoryId?: string; level?: number; pageIndex?: number; pageSize?: number }) =>
@@ -127,4 +154,9 @@ export const assignmentService = {
   getSummary: () => apiClient.get<ApiResponse<AssignmentSummary>>('/course-assignments/summary'),
   create: (data: CreateAssignmentRequest) => apiClient.post<ApiResponse<CreateAssignmentResult>>('/course-assignments', data),
   cancel: (id: string, reason?: string) => apiClient.delete<ApiResponse<{ id: string }>>(`/course-assignments/${id}`, { data: { reason } }),
+  purchaseSeats: (courseId: string, seats: number, note?: string) =>
+    apiClient.post<ApiResponse<PurchaseCourseSeatsResult>>(
+      `/courses/${courseId}/purchase-seats`,
+      { courseId, seats, note }
+    ),
 };

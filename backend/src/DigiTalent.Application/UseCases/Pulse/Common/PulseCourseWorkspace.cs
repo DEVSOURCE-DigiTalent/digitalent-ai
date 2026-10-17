@@ -27,8 +27,15 @@ public class PulseCourseWorkspace
     {
         var snapshot = await _learner.LoadAsync(includeContent);
         var state = snapshot.FindCourse(courseId)
-                    ?? snapshot.Courses.FirstOrDefault(c => c.Enrollment?.CourseId == courseId)
-                    ?? throw new NotFoundException("Không tìm thấy khóa học trong lộ trình của bạn.");
+                    ?? snapshot.Courses.FirstOrDefault(c => c.Enrollment?.CourseId == courseId);
+        if (state == null)
+        {
+            var code = await _context.Courses.AsNoTracking()
+                .Where(c => c.Id == courseId && c.OrganizationId == snapshot.Employee.OrganizationId)
+                .Select(c => c.Code).FirstOrDefaultAsync();
+            state = code == null ? null : snapshot.Courses.FirstOrDefault(c => c.Course.Code == code);
+        }
+        if (state == null) throw new NotFoundException("Không tìm thấy khóa học trong lộ trình của bạn.");
         return (snapshot, state);
     }
 
@@ -79,15 +86,40 @@ public class PulseCourseWorkspace
     public static string BlockMessage(string reason) => reason switch
     {
         PulseBlockReason.NoPosition => "Bạn chưa được gán vị trí công việc nên chưa có lộ trình học.",
-        PulseBlockReason.NotAssessed => "Hãy hoàn thành bài kiểm tra đầu vào trước khi ghi tiến độ khóa học.",
-        PulseBlockReason.OutsidePath => "Khóa học nằm ngoài mục tiêu vị trí của bạn nên không ghi tiến độ lộ trình.",
+        PulseBlockReason.OutsidePath => "Vị trí của bạn không yêu cầu lĩnh vực này nên khóa học không nằm trong lộ trình.",
+        PulseBlockReason.AboveCeiling => "Doanh nghiệp chưa mở cấp độ này của lĩnh vực cho phòng ban của bạn.",
+        PulseBlockReason.PriorLevelRequired => "Cần đạt khóa ở cấp trước của cùng lĩnh vực trước.",
+        PulseBlockReason.PreAssessmentRequired => "Hãy làm bài đánh giá trước khi học của khóa này trước. Đạt thì khóa được công nhận, chưa đạt thì bạn học khóa.",
+        PulseBlockReason.PreAssessmentPending => "Bài đánh giá trước khi học đang chờ quản lý chấm. Khóa mở để học nếu bài chưa đạt.",
         PulseBlockReason.SeatRequired => "Khóa học có phí cần suất học do chủ doanh nghiệp phân bổ trước khi mở toàn bộ nội dung.",
-        PulseBlockReason.PriorLevelRequired => "Cần được quản lý duyệt khóa ở cấp trước của cùng lĩnh vực.",
         PulseBlockReason.PreviousModuleRequired => "Hãy đạt câu hỏi ôn tập của mô đun trước.",
         PulseBlockReason.SlidesNotViewed => "Hãy đọc hết các trang nội dung của mô đun trước khi làm câu hỏi ôn tập.",
         PulseBlockReason.ReviewRequired => "Hãy mở lại trang nội dung của câu chưa đúng trước khi làm lần tiếp theo.",
         PulseBlockReason.QuizChanged => "Bộ câu hỏi đã đổi sang lần làm mới. Hãy tải lại trang để làm với câu hỏi mới.",
         _ => "Bạn chưa thể thực hiện thao tác này.",
+    };
+
+    /// <summary>Vì sao bài đánh giá trước khi học không mở cho nhân viên lúc này.</summary>
+    public static string PreAssessmentClosedMessage(PulseCourseState state) => state.PreStatus switch
+    {
+        PulsePreStatus.Pending => "Bài đánh giá trước khi học của khóa này đang chờ quản lý chấm.",
+        PulsePreStatus.Passed => "Bạn đã đạt bài đánh giá trước khi học của khóa này.",
+        PulsePreStatus.NotYet => "Mỗi khóa có một bài đánh giá trước khi học. Bài của bạn chưa đạt — hãy học khóa rồi làm bài cuối khóa.",
+        PulsePreStatus.NotNeeded => "Khóa này không cần bài đánh giá trước khi học: khóa đã được công nhận hoặc bạn đã bắt đầu học.",
+        _ => state.BlockReason is { } reason && reason is not PulseBlockReason.PreAssessmentRequired and not PulseBlockReason.SeatRequired
+            ? BlockMessage(reason)
+            : "Bài đánh giá trước khi học của khóa này chưa mở.",
+    };
+
+    /// <summary>Vì sao bài cuối khóa không mở để làm lúc này.</summary>
+    public static string FinalClosedMessage(PulseCourseState state) => state.FinalStatus switch
+    {
+        PulseFinalStatus.Pending => "Bài của bạn đang chờ quản lý chấm, chưa thể nộp thêm.",
+        PulseFinalStatus.Approved => "Khóa học đã được quản lý duyệt.",
+        PulseFinalStatus.RetryWait => "Lần nộp cuối chưa mở. Hãy xem nhận xét và chờ tới thời điểm mở.",
+        PulseFinalStatus.DeadlineMissed => "Đã quá hạn nộp lần cuối. Quản lý sẽ sắp xếp hỗ trợ.",
+        PulseFinalStatus.Flagged => "Đã dùng hết hai lần nộp. Quản lý sẽ sắp xếp hỗ trợ.",
+        _ => "Hãy đạt câu hỏi ôn tập của tất cả mô đun trước khi làm bài cuối khóa.",
     };
 
     /// <summary>Tiến độ lượt học = số mô đun đã qua / tổng số mô đun (không đặt COMPLETED — chỉ quản lý duyệt mới hoàn thành).</summary>

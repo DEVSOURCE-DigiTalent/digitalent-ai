@@ -95,7 +95,7 @@ export function ManagerOverviewPage() {
       <KpiRow
         label="Tình hình phòng ban"
         items={[
-          { value: reviewsReady ? pending : '—', label: 'Bài cuối khóa chờ quyết định', muted: !reviewsReady },
+          { value: reviewsReady ? pending : '—', label: 'Bài chờ quyết định', muted: !reviewsReady },
           { value: reviewsReady ? flagged : '—', label: 'Cờ hỗ trợ sau hai lần chưa đạt', muted: !reviewsReady },
           { value: headcount ?? '—', label: `Nhân viên đang làm việc · ${department.name}`, muted: headcount == null },
         ]}
@@ -105,11 +105,11 @@ export function ManagerOverviewPage() {
       <h2 className="pm-section-title">Việc cụ thể, bước tiếp theo cụ thể.</h2>
       <div className="pm-cards">
         <Link className="pm-card" to={canReview ? MANAGER_PATHS.finalReviews : MANAGER_PATHS.training}>
-          <b>01 / Bài cuối khóa</b>
+          <b>01 / Chấm bài</b>
           <h3>Xem bài nộp của khóa tiếp theo</h3>
           <small>
             {!reviewsReady
-              ? 'Hàng chờ chưa tải được; mở trang bài cuối khóa để xem.'
+              ? 'Hàng chờ chưa tải được; mở trang chấm bài để xem.'
               : pending > 0
                 ? `${pending} bài đang chờ bạn quyết định.`
                 : 'Hiện chưa có việc chờ xử lý.'}
@@ -173,13 +173,13 @@ export function ManagerOverviewPage() {
         <section className="pm-panel" aria-labelledby="pm-queue-title">
           <div className="pm-panel-head">
             <div>
-              <Mini>Hàng chờ bài cuối khóa</Mini>
+              <Mini>Hàng chờ chấm bài</Mini>
               <h2 id="pm-queue-title">Bài nộp cần bạn đọc.</h2>
-              <p>Bài cuối khóa tách riêng khỏi minh chứng thực tế trong lúc học.</p>
+              <p>Bài đánh giá trước khi học và bài cuối khóa tách riêng khỏi minh chứng thực tế trong lúc học.</p>
             </div>
           </div>
           {!canReview ? (
-            <p className="pu-panel-desc">Tài khoản của bạn chưa có quyền chấm bài cuối khóa.</p>
+            <p className="pu-panel-desc">Tài khoản của bạn chưa có quyền chấm bài.</p>
           ) : reviews.isLoading ? (
             <PageSkeleton blocks={[56, 56]} />
           ) : reviews.isError ? (

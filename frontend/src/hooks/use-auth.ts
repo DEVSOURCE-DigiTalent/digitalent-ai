@@ -11,18 +11,30 @@ import type { LoginRequest } from '../types/auth';
  */
 export function useLogin() {
   const setUser = useCurrentUser((s) => s.setUser);
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: LoginRequest) => {
       const loginRes = await authService.login(data);
       const { accessToken, refreshToken } = loginRes.data.data!;
+      // A different account may have been open in this tab. Never reuse its role or cached data.
+      queryClient.clear();
+      useCurrentUser.getState().clearUser();
       localStorage.setItem('accessToken', accessToken);
       if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+      else localStorage.removeItem('refreshToken');
 
-      const meRes = await authService.getMe();
-      setUser(meRes.data.data!);
-
-      return getHomePath(useCurrentUser.getState().user!);
+      try {
+        const meRes = await authService.getMe();
+        const user = meRes.data.data!;
+        setUser(user);
+        return getHomePath(user);
+      } catch (error) {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        useCurrentUser.getState().clearUser();
+        throw error;
+      }
     },
   });
 }

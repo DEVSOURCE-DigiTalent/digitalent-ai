@@ -9,6 +9,8 @@ public class GetInvitationUseCaseOutput
     public string Email { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty; // OWNER | MANAGER | EMPLOYEE
+    public string? DepartmentName { get; set; }
+    public string? PositionName { get; set; }
     public string Status { get; set; } = "pending";
     public DateTimeOffset ExpiresAt { get; set; }
 }

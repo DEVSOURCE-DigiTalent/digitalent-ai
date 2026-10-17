@@ -35,19 +35,51 @@ export const ROLE_HIERARCHY: readonly Role[] = [
   ROLES.EMPLOYEE,
 ];
 
+/**
+ * Chuẩn hóa một mã vai trò về một trong 4 roles chuẩn: PLATFORM_ADMIN, OWNER, MANAGER, EMPLOYEE.
+ * Chấp nhận cả chữ thường/hoa và các mã định danh lịch sử (DEPARTMENT_MANAGER, HR_MANAGER, SYSTEM_ADMIN, TRAINER).
+ */
+export function normalizeRoleCode(role: string): string {
+  if (!role || typeof role !== 'string') return '';
+  const upper = role.trim().toUpperCase();
+  switch (upper) {
+    case 'PLATFORM_ADMIN':
+    case 'SYSTEM_ADMIN':
+    case 'ADMIN':
+      return ROLES.PLATFORM_ADMIN;
+    case 'OWNER':
+    case 'HR_MANAGER':
+    case 'BUSINESS_OWNER':
+      return ROLES.OWNER;
+    case 'MANAGER':
+    case 'DEPARTMENT_MANAGER':
+      return ROLES.MANAGER;
+    case 'EMPLOYEE':
+    case 'TRAINER':
+    case 'STAFF':
+      return ROLES.EMPLOYEE;
+    default:
+      return upper;
+  }
+}
+
+/** Removes duplicates while ensuring canonical 4-role codes. */
+export function normalizeRoles(roles: readonly string[]): string[] {
+  if (!roles || !Array.isArray(roles)) return [];
+  const normalized = roles.map(normalizeRoleCode).filter(Boolean);
+  return [...new Set(normalized)];
+}
+
 /** Returns the highest ranking primary role of a user */
 export function primaryRole(user?: { roles: readonly string[] } | null): Role | undefined {
   if (!user?.roles || user.roles.length === 0) return undefined;
+  const normalized = normalizeRoles(user.roles);
   for (const role of ROLE_HIERARCHY) {
-    if (user.roles.includes(role)) return role;
+    if (normalized.includes(role)) return role;
   }
   return undefined;
 }
 
-/** Removes duplicates while preserving the backend's canonical role codes. */
-export function normalizeRoles(roles: readonly string[]): string[] {
-  return [...new Set(roles)];
-}
 
 /**
  * Workspace implied by a role list when the backend does not send one.

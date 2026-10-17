@@ -1,14 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useLogin } from '../../../hooks/use-auth';
-import { isSafeReturnTo } from '../auth-redirect';
+import { getPostLoginPath } from '../auth-redirect';
 import { DemoAccountPicker } from '../components/DemoAccountPicker';
-import { AuthShell } from '../components/AuthShell';
-import { LOGIN_COPY } from '../login-copy';
-import { cn } from '@/lib/utils';
-import { DARK_INPUT_CLASS, DARK_PRIMARY_BUTTON, FormError } from '../../public/components/FormControls';
+import { PulseAuthLayout } from '@/features/public/pulse-landing/PulseAuthLayout';
+import { useCurrentUser } from '../../../hooks/use-current-user';
 
 interface FieldErrors {
   email?: string;
@@ -17,8 +15,6 @@ interface FieldErrors {
 
 const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
 const FALLBACK_ERROR = 'Email hoặc mật khẩu không đúng. Kiểm tra lại rồi thử lần nữa.';
-/** Enterprise field frame on the teal canvas of the login page; 16px text on phones so iOS does not zoom in. */
-const INPUT_CLASS = cn(DARK_INPUT_CLASS, 'bg-[#0b2027]/80 text-base sm:text-sm');
 
 function validate(email: string, password: string): FieldErrors {
   const errors: FieldErrors = {};
@@ -33,12 +29,12 @@ function loginErrorMessage(error: unknown): string {
   return FALLBACK_ERROR;
 }
 
-/** The only sign-in page, for businesses and individuals alike: the account decides which workspace opens. */
+/** Shared authentication still routes an existing account to its authorized workspace. */
 export function LoginPage() {
-  const copy = LOGIN_COPY.default;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [email, setEmail] = useState('');
+  const isVerified = searchParams.get('verified') === '1';
+  const [email, setEmail] = useState(searchParams.get('email') ?? '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -52,32 +48,36 @@ export function LoginPage() {
     setFieldErrors(errors);
     if (errors.email || errors.password) return;
     try {
-      const home = await login.mutateAsync({ email: email.trim(), password });
+      await login.mutateAsync({ email: email.trim(), password });
       const returnTo = searchParams.get('returnTo');
-      navigate(isSafeReturnTo(returnTo) ? returnTo : home, { replace: true });
+      navigate(getPostLoginPath(returnTo, useCurrentUser.getState().user!), { replace: true });
     } catch (failure) {
       setError(loginErrorMessage(failure));
     }
   };
 
   return (
-    <AuthShell
+    <PulseAuthLayout
+      mode="login"
+      eyebrow="Chào mừng trở lại"
       title="Đăng nhập"
-      subtitle={copy.subtitle}
-      footerLink={
-        <p className="text-sm text-[#93aaa8]">
-          Chưa có tài khoản?{' '}
-          <Link to={copy.registerPath} className="font-medium text-[#F5CA65] underline decoration-[#F5CA65]/40 underline-offset-4 transition-colors hover:decoration-[#F5CA65]">
-            {copy.registerLabel}
-          </Link>
-        </p>
-      }
+      subtitle="Đăng nhập để tiếp tục hành trình phát triển năng lực của đội ngũ."
+      asideTitle="Tiếp nối từ đúng nơi bạn dừng lại."
+      asideText="Mục tiêu của doanh nghiệp, tiến độ học và các quyết định đánh giá luôn ở cùng một nơi."
+      asidePoints={['Mỗi vai trò mở đúng không gian làm việc', 'Lộ trình và minh chứng luôn theo sát tiến độ']}
+      footer={<p>Chưa có tài khoản doanh nghiệp? <Link to="/business/try">Bắt đầu dùng thử miễn phí</Link></p>}
     >
-      <form onSubmit={handleSubmit} noValidate className="grid gap-5 short:gap-4 cramped:gap-3">
-        <FormError message={error} />
+      <form onSubmit={handleSubmit} noValidate className="pulse-auth-fields">
+        {isVerified && (
+          <div role="status" className="pulse-auth-success" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <CheckCircle2 size={19} style={{ color: '#16a34a', flexShrink: 0 }} aria-hidden="true" />
+            <span>Email đã xác minh thành công! Đăng nhập để vào trang doanh nghiệp.</span>
+          </div>
+        )}
+        {error && <div role="alert" className="pulse-auth-error">{error}</div>}
 
-        <div className="grid gap-1.5">
-          <label htmlFor="email" className="text-sm text-cream/90">Email</label>
+        <div className="pulse-auth-field">
+          <label htmlFor="email">Email</label>
           <input
             id="email"
             type="email"
@@ -85,22 +85,22 @@ export function LoginPage() {
             autoComplete="username"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="ban@email.com"
+            placeholder="ten@doanhnghiep.vn"
             aria-invalid={fieldErrors.email ? true : undefined}
             aria-describedby={fieldErrors.email ? 'email-error' : undefined}
-            className={INPUT_CLASS}
+            className="pulse-auth-input"
           />
-          {fieldErrors.email && <p id="email-error" role="alert" className="text-xs text-red-300">{fieldErrors.email}</p>}
+          {fieldErrors.email && <p id="email-error" role="alert" className="pulse-auth-inline-error">{fieldErrors.email}</p>}
         </div>
 
-        <div className="grid gap-1.5">
-          <div className="flex items-baseline justify-between gap-3">
-            <label htmlFor="password" className="text-sm text-cream/90">Mật khẩu</label>
-            <Link to="/forgot-password" className="text-xs text-[#93aaa8] underline-offset-4 transition-colors hover:text-[#F5CA65] hover:underline">
+        <div className="pulse-auth-field">
+          <div className="pulse-auth-field-heading">
+            <label htmlFor="password">Mật khẩu</label>
+            <Link to="/forgot-password" className="pulse-auth-link">
               Quên mật khẩu?
             </Link>
           </div>
-          <div className="relative">
+          <div className="pulse-auth-input-wrap">
             <input
               id="password"
               type={showPassword ? 'text' : 'password'}
@@ -109,34 +109,35 @@ export function LoginPage() {
               onChange={(event) => setPassword(event.target.value)}
               aria-invalid={fieldErrors.password ? true : undefined}
               aria-describedby={fieldErrors.password ? 'password-error' : undefined}
-              className={`${INPUT_CLASS} pr-12`}
+              className="pulse-auth-input"
             />
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
               aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               aria-pressed={showPassword}
-              className="absolute right-1.5 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-[#93aaa8] transition-colors hover:text-cream"
+              className="pulse-auth-icon-button"
             >
-              {showPassword ? <EyeOff className="size-[18px]" aria-hidden="true" /> : <Eye className="size-[18px]" aria-hidden="true" />}
+              {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
             </button>
           </div>
-          {fieldErrors.password && <p id="password-error" role="alert" className="text-xs text-red-300">{fieldErrors.password}</p>}
+          {fieldErrors.password && <p id="password-error" role="alert" className="pulse-auth-inline-error">{fieldErrors.password}</p>}
         </div>
 
-        <button type="submit" disabled={login.isPending} className={`${DARK_PRIMARY_BUTTON} mt-1`}>
-          {login.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+        <button type="submit" disabled={login.isPending} className="pulse-auth-primary">
+          {login.isPending ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <ArrowRight size={17} aria-hidden="true" />}
           {login.isPending ? 'Đang đăng nhập…' : 'Đăng nhập'}
         </button>
       </form>
 
-      <DemoAccountPicker
+      <div className="pulse-auth-demo"><DemoAccountPicker
+        enterpriseOnly
         onPick={(pickedEmail, pickedPassword) => {
           setEmail(pickedEmail);
           setPassword(pickedPassword);
           setFieldErrors({});
         }}
-      />
-    </AuthShell>
+      /></div>
+    </PulseAuthLayout>
   );
 }

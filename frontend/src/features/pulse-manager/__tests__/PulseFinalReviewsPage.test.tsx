@@ -6,7 +6,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { ROLES } from '@/lib/roles';
 import { MANAGER_SIDEBAR } from '@/lib/sidebars';
 import { SidebarNav } from '@/components/layout/sidebar/SidebarNav';
-import { pulseReviewService, type PulseFinalReviewItem, type PulseFinalReviewQueue } from '@/services/pulse.service';
+import { pulseReviewService, type PulseFinalReviewItem, type PulseFinalReviewQueue, type PulseRecording } from '@/services/pulse.service';
 import { PulseFinalReviewsPage } from '../pages/PulseFinalReviewsPage';
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -20,6 +20,7 @@ const criteria = [
 ];
 
 const item = (overrides: Partial<PulseFinalReviewItem> = {}): PulseFinalReviewItem => ({
+  kind: 'FINAL',
   submissionId: 'sub-1',
   status: 'PENDING',
   employeeId: 'emp-1',
@@ -40,6 +41,7 @@ const item = (overrides: Partial<PulseFinalReviewItem> = {}): PulseFinalReviewIt
 
 const queue = (items: PulseFinalReviewItem[]): PulseFinalReviewQueue => ({
   pendingCount: items.filter((i) => i.status === 'PENDING').length,
+  preAssessmentCount: items.filter((i) => i.kind === 'PRE_ASSESSMENT').length,
   retryCount: items.filter((i) => i.status === 'RETRY_WAIT' || i.status === 'RETRY_READY').length,
   deadlineMissedCount: items.filter((i) => i.status === 'DEADLINE_MISSED').length,
   flaggedCount: items.filter((i) => i.status === 'FLAGGED').length,
@@ -59,6 +61,43 @@ const flagged = item({
     { submissionId: 'sub-2', attemptNo: 1, evidenceText: 'Lần một', submittedAt: '2026-10-01T08:00:00Z', decision: 'NOT_YET', decisionReason: 'Thiếu nguồn cụ thể.', reviewerName: 'Trưởng phòng' },
     { submissionId: 'sub-3', attemptNo: 2, evidenceText: 'Lần hai', submittedAt: '2026-10-05T08:00:00Z', decision: 'NOT_YET', decisionReason: 'Vẫn thiếu kết luận.' },
   ],
+});
+
+const recording: PulseRecording = {
+  sessionId: 'ps-1',
+  kind: 'PRE_ASSESSMENT',
+  status: 'SUBMITTED',
+  startedAt: '2026-10-15T08:00:00Z',
+  endedAt: '2026-10-15T08:20:00Z',
+  durationMs: 20 * 60_000,
+  flaggedCount: 2,
+  segments: [
+    { recordingId: 'r-s1', track: 'SCREEN', segmentNo: 1, contentType: 'video/webm', displaySurface: 'monitor', startOffsetMs: 0, endOffsetMs: 6 * 60_000, sizeBytes: 900, contentPath: 'pulse/recordings/r-s1/content?exp=1&sig=a' },
+    { recordingId: 'r-s2', track: 'SCREEN', segmentNo: 2, contentType: 'video/webm', displaySurface: 'monitor', startOffsetMs: 7 * 60_000, endOffsetMs: 20 * 60_000, sizeBytes: 900, contentPath: 'pulse/recordings/r-s2/content?exp=1&sig=b' },
+    { recordingId: 'r-c1', track: 'CAMERA', segmentNo: 1, contentType: 'video/webm', startOffsetMs: 0, endOffsetMs: 20 * 60_000, sizeBytes: 900, contentPath: 'pulse/recordings/r-c1/content?exp=1&sig=c' },
+  ],
+  events: [
+    { kind: 'STARTED', offsetMs: 0, flagged: false },
+    { kind: 'TAB_HIDDEN', offsetMs: 3 * 60_000, durationMs: 12_000, flagged: true },
+    { kind: 'SHARE_STOPPED', offsetMs: 6 * 60_000, durationMs: 60_000, flagged: true },
+    { kind: 'SHARE_RESUMED', offsetMs: 7 * 60_000, flagged: false },
+    { kind: 'SUBMITTED', offsetMs: 20 * 60_000, flagged: false },
+  ],
+};
+
+const pre = item({
+  kind: 'PRE_ASSESSMENT',
+  submissionId: 'pa-1',
+  employeeName: 'Phạm Dung',
+  courseCode: 'A2-F',
+  courseTitle: 'Giao tiếp số cơ bản',
+  maxAttempts: 1,
+  attempts: [{
+    submissionId: 'pa-1', attemptNo: 1, evidenceText: 'Soạn email gửi khách hàng có nguồn số liệu.', submittedAt: '2026-10-15T08:20:00Z', proctoringSessionId: 'ps-1',
+    choice: { score: 8, total: 10, passMark: 7, passed: true, items: [] },
+  }],
+  proctoringSessionId: 'ps-1',
+  recording,
 });
 
 function renderPage() {
@@ -168,6 +207,90 @@ describe('PulseFinalReviewsPage (MG-13, mock #/review)', () => {
   });
 });
 
+describe('PulseFinalReviewsPage · pre-assessments and recordings', () => {
+  it('shows a pre-assessment with its recording, gaps and proctoring log', async () => {
+    vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok(queue([pre, item()])));
+
+    renderPage();
+
+    const card = await screen.findByRole('article', { name: 'Phạm Dung · Giao tiếp số cơ bản' });
+    expect(within(card).getByRole('heading', { level: 2, name: 'Đánh giá trước khi học' })).toBeTruthy();
+    const player = within(card).getByRole('region', { name: 'Bản ghi bài làm' });
+    expect(within(player).getByText(/2 sự kiện cần xem/)).toBeTruthy();
+    const log = within(player).getByRole('list', { name: 'Nhật ký giám sát' });
+    expect(within(log).getByText(/Rời tab bài làm/)).toBeTruthy();
+    expect(within(log).getAllByText('Cần xem')).toHaveLength(2);
+
+    // Tua tới lúc dừng chia sẻ: khung màn hình báo khoảng trống thay vì phát video.
+    fireEvent.change(within(player).getByRole('slider', { name: 'Vị trí trong bản ghi' }), { target: { value: String(6 * 60_000 + 30_000) } });
+    expect(within(player).getByText('Màn hình không được chia sẻ')).toBeTruthy();
+
+    const kpis = screen.getByRole('region', { name: 'Tình trạng hàng chờ' });
+    expect(within(kpis).getByText('Đánh giá trước khi học').previousElementSibling).toHaveTextContent('1');
+  });
+
+  it('records a pre-assessment decision through its own endpoint', async () => {
+    vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok(queue([pre])));
+    const decideFinal = vi.spyOn(pulseReviewService, 'decide');
+    const decidePre = vi.spyOn(pulseReviewService, 'decidePreAssessment').mockResolvedValue(ok({ preAssessmentId: 'pa-1', decision: 'PASSED', status: 'PASSED', enrollmentId: 'enr-9' }));
+
+    renderPage();
+
+    const select = await screen.findByRole('combobox', { name: 'Quyết định của quản lý' });
+    expect(within(select).getByRole('option', { name: 'Đạt · công nhận khóa, không cần học' })).toBeTruthy();
+    fireEvent.change(select, { target: { value: 'PASSED' } });
+    fireEvent.change(screen.getByLabelText(/Lý do gửi nhân viên/), { target: { value: 'Bài đạt cả ba tiêu chí, có nguồn.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ghi quyết định cuối cùng →' }));
+
+    await waitFor(() => expect(decidePre).toHaveBeenCalledWith('pa-1', 'PASSED', 'Bài đạt cả ba tiêu chí, có nguồn.'));
+    expect(decideFinal).not.toHaveBeenCalled();
+  });
+
+  it('shows the multiple-choice result question by question and cannot pass a paper below the mark', async () => {
+    const below = item({
+      attempts: [{
+        submissionId: 'sub-1', attemptNo: 1, evidenceText: 'Nguồn: sổ cái tháng 9; đối chiếu 120 hóa đơn.', submittedAt: '2026-10-14T08:00:00Z',
+        choice: {
+          score: 6, total: 10, passMark: 7, passed: false,
+          items: [
+            { number: 1, question: 'Nguồn nào truy vết được?', selected: 'Sổ cái tháng 9', correct: 'Sổ cái tháng 9', isCorrect: true },
+            { number: 2, question: 'Bước kiểm tra lại là gì?', selected: 'Hỏi đồng nghiệp', correct: 'Đối chiếu từng hóa đơn', isCorrect: false },
+          ],
+        },
+      }],
+    });
+    vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok(queue([below])));
+
+    renderPage();
+
+    const choice = await screen.findByRole('region', { name: 'Phần trắc nghiệm' });
+    expect(within(choice).getByText('Đúng 6/10 câu')).toBeTruthy();
+    expect(within(choice).getByText('Chưa đạt · cần từ 7 câu')).toBeTruthy();
+    expect(within(choice).getByText('Xem từng câu · 1 câu sai')).toBeTruthy();
+    expect(within(choice).getByText('Đáp án đúng: Đối chiếu từng hóa đơn')).toBeTruthy();
+    expect(within(choice).queryByText('Đáp án đúng: Sổ cái tháng 9')).toBeNull();
+    expect(screen.getByText('Phần tự luận · minh chứng đã nộp')).toBeTruthy();
+
+    const pass = within(screen.getByRole('combobox', { name: 'Quyết định của quản lý' })).getByRole('option', { name: /Duyệt khóa học/ }) as HTMLOptionElement;
+    expect(pass.disabled).toBe(true);
+    expect(screen.getByText(/Phần trắc nghiệm đúng 6\/10 câu, chưa đủ 7 câu: bài chỉ có thể chưa đạt\./)).toBeTruthy();
+  });
+
+  it('filters the queue by kind of test', async () => {
+    vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok(queue([pre, item()])));
+
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: /^Bài cuối khóa/ }));
+    expect(screen.queryByRole('article', { name: /Phạm Dung/ })).toBeNull();
+    expect(screen.getByRole('article', { name: /Nguyễn An/ })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: /^Đánh giá trước khi học/ }));
+    expect(screen.getByRole('article', { name: /Phạm Dung/ })).toBeTruthy();
+    expect(screen.queryByRole('article', { name: /Nguyễn An/ })).toBeNull();
+  });
+});
+
 describe('manager sidebar', () => {
   const renderNav = (path: string) =>
     render(
@@ -176,9 +299,9 @@ describe('manager sidebar', () => {
       </MemoryRouter>,
     );
 
-  it('highlights only the most specific item: Bài cuối khóa, not the team overview', () => {
+  it('highlights only the most specific item: Chấm bài, not the team overview', () => {
     renderNav('/enterprise/team/final-reviews');
-    expect(screen.getByRole('link', { name: /Bài cuối khóa/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: /Chấm bài/ })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: /^Tổng quan$/ })).not.toHaveAttribute('aria-current');
   });
 

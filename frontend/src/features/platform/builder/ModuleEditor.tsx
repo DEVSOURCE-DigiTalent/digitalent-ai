@@ -153,6 +153,8 @@ export function ModuleEditor({
             <div key={block.blockId} className="pa-block-slot">
               {addBar(block.index)}
               <BlockCard
+                courseCode={course.code}
+                moduleIndex={module.index}
                 block={block}
                 count={module.blocks.length}
                 linkedQuestions={module.questions.filter((q) => q.blockId === block.blockId).length}

@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Navigate, useSearchParams, useNavigate } from 'react-router-dom';
-import { AuthShell } from '../components/AuthShell';
+import { PulseAuthLayout } from '@/features/public/pulse-landing/PulseAuthLayout';
 import { AccountForm, type AccountFormValues } from '../components/AccountForm';
 import { PurchaseStepper } from '../../commerce/components/PurchaseStepper';
 import { PlanSummary } from '../../commerce/components/PlanSummary';
 import { parsePlanSelection } from '@/lib/plan-query';
 import { getPlan, isPurchasableOnline } from '@/lib/plans';
 import { registrationService } from '@/services/registration.service';
-import { useLogin } from '@/hooks/use-auth';
+import { authService } from '@/services/auth.service';
 import { rememberPortalChoice } from '../../portal/portal-preference';
 
 function getErrorMessage(error: unknown): { message: string; isTaken: boolean } {
@@ -21,7 +21,6 @@ function getErrorMessage(error: unknown): { message: string; isTaken: boolean } 
 export function BusinessRegisterPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const login = useLogin();
 
   const [submitError, setSubmitError] = useState<string>();
   const [emailTaken, setEmailTaken] = useState(false);
@@ -56,23 +55,30 @@ export function BusinessRegisterPage() {
       return;
     }
 
+    // Gửi OTP xác minh email rồi chuyển sang trang nhập OTP
+    let deliveryFailed = false;
     try {
-      const home = await login.mutateAsync({ email: values.email, password: values.password });
-      const nextPath = draftId ? `/enterprise/contract?draft=${draftId}` : home;
-      navigate(nextPath, { replace: true });
+      await authService.sendEmailVerification(values.email);
     } catch {
-      navigate('/login', { replace: true });
+      deliveryFailed = true;
     }
+
+    const params = new URLSearchParams({ email: values.email });
+    if (draftId) params.set('draft', draftId);
+    if (deliveryFailed) params.set('delivery', 'failed');
+    navigate(`/business/verify-email?${params.toString()}`, { replace: true });
   };
 
   return (
-    <AuthShell
-      portal="enterprise"
-      eyebrow="Doanh nghiệp"
+    <PulseAuthLayout
+      eyebrow="Tài khoản doanh nghiệp · Gói đã chọn"
       title="Tạo tài khoản doanh nghiệp"
-      subtitle="Tổ chức đo lường & đào tạo năng lực số đội ngũ."
-      headerSlot={
-        <div className="mb-6 space-y-4">
+      subtitle="Hoàn tất tài khoản chủ sở hữu trước khi tiếp tục hợp đồng và thiết lập tổ chức."
+      asideTitle="Bắt đầu bằng một mục tiêu chung."
+      asideText="Sau khi tạo tài khoản, doanh nghiệp sẽ hoàn tất gói đã chọn rồi thiết kế khung năng lực phù hợp với đội ngũ."
+      asidePoints={['Thiết lập theo tổ chức, phòng ban và vị trí', 'Giao khóa học và theo dõi tiến độ', 'Đánh giá kết quả bằng minh chứng cuối khóa']}
+    >
+        <div className="pulse-auth-paid-plan">
           <PurchaseStepper
             audience="enterprise"
             currentStep={2}
@@ -80,15 +86,13 @@ export function BusinessRegisterPage() {
           />
           <PlanSummary selection={plan} changeTo="/business/pricing" />
         </div>
-      }
-    >
-      <AccountForm
-        audience="enterprise"
-        onSubmit={handleSubmit}
-        submitError={submitError}
-        emailTaken={emailTaken}
-        loginPath="/login"
-      />
-    </AuthShell>
+        <div className="pulse-auth-paid-form"><AccountForm
+          audience="enterprise"
+          onSubmit={handleSubmit}
+          submitError={submitError}
+          emailTaken={emailTaken}
+          loginPath="/login"
+        /></div>
+    </PulseAuthLayout>
   );
 }

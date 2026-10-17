@@ -12,8 +12,11 @@ import { errorMessage } from '../components/pulse-format';
 import { RichTextEditor } from './RichTextEditor';
 import { BLOCK_TYPES, type CourseEdit } from './builder-types';
 import { IMAGE_ACCEPT, VIDEO_ACCEPT, fileProblem, formatSize, useAssetUpload } from './use-asset-upload';
+import { CatalogLessonContent } from './CatalogLessonContent';
 
 interface BlockCardProps {
+  courseCode?: string;
+  moduleIndex?: number;
   block: CatalogBlock;
   count: number;
   linkedQuestions: number;
@@ -24,8 +27,9 @@ interface BlockCardProps {
 }
 
 /** One content block of a module: a preview card, opened in place to edit it. */
-export function BlockCard({ block, count, linkedQuestions, editable, editing, onToggle, edit }: BlockCardProps) {
+export function BlockCard({ block, count, linkedQuestions, editable, editing, onToggle, edit, courseCode, moduleIndex }: BlockCardProps) {
   const type = BLOCK_TYPES[block.type];
+  const clickToEdit = editable && block.type === 'TEXT';
   const [confirmDelete, setConfirmDelete] = useState(false);
   const save = (body: BlockInput) => edit((v, c) => platformCatalogService.updateBlock(v, c, block.blockId, body));
   const move = (delta: number) =>
@@ -71,14 +75,14 @@ export function BlockCard({ block, count, linkedQuestions, editable, editing, on
         </div>
       ) : (
         <div
-          className={`pa-block-preview${editable ? ' clickable' : ''}`}
-          onClick={editable ? onToggle : undefined}
-          onKeyDown={editable ? (e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onToggle()) : undefined}
-          role={editable ? 'button' : undefined}
-          tabIndex={editable ? 0 : undefined}
-          aria-label={editable ? `Sửa khối ${block.index + 1}` : undefined}
+          className={`pa-block-preview${clickToEdit ? ' clickable' : ''}`}
+          onClick={clickToEdit ? (e) => { if (!(e.target as HTMLElement).closest('a, button, video')) onToggle(); } : undefined}
+          onKeyDown={clickToEdit ? (e) => e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onToggle()) : undefined}
+          role={clickToEdit ? 'button' : undefined}
+          tabIndex={clickToEdit ? 0 : undefined}
+          aria-label={clickToEdit ? `Sửa khối ${block.index + 1}` : undefined}
         >
-          <BlockPreview block={block} />
+          <BlockPreview block={block} courseCode={courseCode} moduleIndex={moduleIndex} count={count} />
         </div>
       )}
     </article>
@@ -86,8 +90,9 @@ export function BlockCard({ block, count, linkedQuestions, editable, editing, on
 }
 
 /** How a block looks (also used by the learner preview). HTML comes from the server, which sanitizes it on save. */
-export function BlockPreview({ block, learner = false }: { block: CatalogBlock; learner?: boolean }) {
+export function BlockPreview({ block, learner = false, courseCode, moduleIndex = 0, count = 1 }: { block: CatalogBlock; learner?: boolean; courseCode?: string; moduleIndex?: number; count?: number }) {
   if (block.type === 'TEXT') {
+    if (learner && block.bodyHtml && courseCode) return <CatalogLessonContent block={block} courseCode={courseCode} moduleIndex={moduleIndex} count={count} />;
     return block.bodyHtml
       ? <div className="pa-rich" dangerouslySetInnerHTML={{ __html: block.bodyHtml }} />
       : <p className="pa-empty">Chưa có nội dung chữ.</p>;
@@ -110,9 +115,7 @@ export function BlockPreview({ block, learner = false }: { block: CatalogBlock; 
     <figure className="pa-media">
       {block.type === 'IMAGE'
         ? <img src={assetUrl(block.asset)} alt={block.altText ?? ''} />
-        : learner
-          ? <video src={assetUrl(block.asset)} controls preload="metadata" />
-          : <div className="pa-video-chip"><span aria-hidden="true">▶</span><b>{block.asset.fileName}</b><small>{formatSize(block.asset.sizeBytes)}</small></div>}
+        : <video src={assetUrl(block.asset)} controls preload="metadata" />}
       {block.caption && <figcaption>{block.caption}</figcaption>}
     </figure>
   );

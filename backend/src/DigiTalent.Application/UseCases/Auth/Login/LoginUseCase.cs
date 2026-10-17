@@ -2,6 +2,7 @@ using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Domain.Constants;
+using DigiTalent.Domain.Constants.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Auth;
@@ -97,7 +98,9 @@ public class LoginUseCase : IUseCase<LoginUseCaseInput, LoginUseCaseOutput>
 
         var roleCodes = user.UserRoles
             .Where(ur => ur.Role!.Status == Statuses.Simple.Active)
-            .Select(ur => ur.Role!.Code)
+            .Select(ur => Roles.Canonicalize(ur.Role!.Code))
+            .Where(r => !string.IsNullOrEmpty(r))
+            .Distinct()
             .ToList();
 
         var token = _jwtTokenService.CreateToken(user, roleCodes, employee?.Id, employee?.DepartmentId);

@@ -56,7 +56,7 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
             .ToDictionaryAsync(d => d.Id, d => d.Name);
         var positions = await _context.JobPositions
             .Where(p => p.OrganizationId == organizationId && p.Status == Statuses.MasterData.Active)
-            .ToDictionaryAsync(p => p.Id, p => p.Name);
+            .ToDictionaryAsync(p => p.Id, p => new PositionInfo(p.Name, p.DepartmentId));
         var canGrantRoles = await _permissionService.HasAnyAsync(_currentUser.Roles, new[] { Permissions.UserRole.RoleAssignBusiness });
 
         var emails = input.Rows.Select(r => NormalizeEmail(r.Email)).ToList();
@@ -139,7 +139,19 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
 
         foreach (var (invitation, token, role) in accepted)
         {
-            var link = await _invitationSender.SendAsync(new InvitationMessage(invitation.Email, invitation.FullName, organizationName, token));
+            string? link;
+            try
+            {
+                link = await _invitationSender.SendAsync(new InvitationMessage(invitation.Email, invitation.FullName, organizationName, token));
+            }
+            catch
+            {
+                // A failed email must not leave a reserved seat or a misleading "sent" invitation.
+                invitation.Status = Statuses.MemberInvitation.Revoked;
+                await _context.SaveChangesAsync();
+                output.Rejected.Add(new RejectedInvitation { Email = invitation.Email, Reason = "Không gửi được email mời. Kiểm tra cấu hình email và thử lại." });
+                continue;
+            }
             output.Created.Add(new InvitationSummary
             {
                 Id = invitation.Id,
@@ -148,7 +160,7 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
                 Role = role,
                 EmployeeCode = invitation.EmployeeCode,
                 DepartmentName = invitation.DepartmentId.HasValue ? departments[invitation.DepartmentId.Value] : null,
-                PositionName = invitation.JobPositionId.HasValue ? positions[invitation.JobPositionId.Value] : null,
+                PositionName = invitation.JobPositionId.HasValue ? positions[invitation.JobPositionId.Value].Name : null,
                 ExpiresAt = invitation.ExpiresAt,
                 Token = link == null ? null : token,
                 DebugLink = link,
@@ -176,7 +188,7 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
         HashSet<string> takenEmails,
         HashSet<string> takenCodes,
         Dictionary<Guid, string> departments,
-        Dictionary<Guid, string> positions)
+        Dictionary<Guid, PositionInfo> positions)
     {
         if (!IsValidEmail(email))
         {
@@ -214,15 +226,33 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
             return "Phòng ban không hợp lệ.";
         }
 
+        if ((roleCode == Roles.Employee || roleCode == Roles.Manager) && !row.DepartmentId.HasValue)
+        {
+            return "Chọn phòng ban trước khi mời nhân viên hoặc quản lý.";
+        }
+
+        if (roleCode == Roles.Employee && !row.JobPositionId.HasValue)
+        {
+            return "Chọn vị trí công việc để xác định lộ trình học của nhân viên.";
+        }
+
         if (row.JobPositionId.HasValue && !positions.ContainsKey(row.JobPositionId.Value))
         {
             return "Vị trí công việc không hợp lệ.";
+        }
+
+        if (row.JobPositionId.HasValue && positions.TryGetValue(row.JobPositionId.Value, out var position)
+            && position.DepartmentId.HasValue && position.DepartmentId != row.DepartmentId)
+        {
+            return "Vị trí công việc không thuộc phòng ban đã chọn.";
         }
 
         return null;
     }
 
     private static string NormalizeEmail(string? email) => email?.Trim().ToLowerInvariant() ?? string.Empty;
+
+    private sealed record PositionInfo(string Name, Guid? DepartmentId);
 
     private static bool IsValidEmail(string email) =>
         email.Length is > 0 and <= 255

@@ -79,7 +79,13 @@ export const mockEnterpriseTrialService: EnterpriseTrialService = {
     const token = newToken(); const expiresAt = later(limits.verificationHours);
     const { password: _password, ...safeForm } = form;
     persist({ ...state, registrations: { ...state.registrations, [token]: { form: { ...safeForm, email: address }, expiresAt, used: false } } });
-    return mockOk({ state: 'verification_pending', expiresAt, developmentLink: link('verify', token) });
+    return mockOk({ state: 'verification_pending', expiresAt, developmentLink: link('verify', token), developmentCode: '123456' });
+  },
+  verifyCode: async (address, code, pass) => {
+    if (code !== '123456') fail('Mã xác minh không hợp lệ hoặc đã hết hạn.');
+    const registration = Object.entries(read().registrations).find(([, value]) => value.form.email === email(address));
+    if (!registration) fail('Mã xác minh không hợp lệ hoặc đã hết hạn.');
+    return mockEnterpriseTrialService.verify(registration![0], pass);
   },
   verify: async (token, pass) => {
     if (!pass) fail('Vui lòng đặt mật khẩu để kích hoạt workspace dùng thử.');

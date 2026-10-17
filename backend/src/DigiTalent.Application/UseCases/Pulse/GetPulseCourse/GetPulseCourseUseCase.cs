@@ -6,7 +6,7 @@ namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
 /// GET /me/pulse/courses/{courseId} — trang chi tiết khóa (§9.1): quyền truy cập, tiến độ, mô đun theo thứ tự,
-/// tiêu chí bài cuối khóa và nút hành động theo trạng thái.
+/// tiêu chí bài cuối khóa và nút hành động theo trạng thái (bài đánh giá trước khi học đi trước khi học).
 /// </summary>
 public class GetPulseCourseUseCase : IUseCase<GetPulseCourseUseCaseInput, GetPulseCourseUseCaseOutput>
 {
@@ -46,6 +46,7 @@ public class GetPulseCourseUseCase : IUseCase<GetPulseCourseUseCaseInput, GetPul
                 SlideCount = m.Slides.Count,
                 HasQuiz = m.QuizAssessmentId.HasValue,
                 QuizQuestionCount = Math.Min(PulseRules.ModuleQuizDrawSize, m.QuizQuestionCount),
+                QuizBankQuestionCount = m.QuizQuestionCount,
                 Viewed = progress?.Viewed ?? false,
                 Passed = progress?.Passed(m) ?? false,
                 Unlocked = previousPassed,
@@ -55,7 +56,9 @@ public class GetPulseCourseUseCase : IUseCase<GetPulseCourseUseCaseInput, GetPul
 
         var firstOpen = modules.FirstOrDefault(m => !m.Passed);
         var nextAction = state.Approved ? "DONE"
-            : !snapshot.Assessed ? "BASELINE"
+            : state.BlockReason is PulseBlockReason.NoPosition or PulseBlockReason.OutsidePath or PulseBlockReason.AboveCeiling or PulseBlockReason.PriorLevelRequired ? "LOCKED"
+            : state.PreStatus == PulsePreStatus.Required ? "PRE_ASSESSMENT"
+            : state.PreStatus == PulsePreStatus.Pending ? "PRE_REVIEW"
             : !full ? "PREVIEW"
             : state.AllModulesPassed ? "FINAL"
             : "MODULE";
@@ -68,7 +71,7 @@ public class GetPulseCourseUseCase : IUseCase<GetPulseCourseUseCaseInput, GetPul
             EstimatedMinutes = state.Course.EstimatedMinutes,
             VersionNo = state.Course.VersionNo,
             Domain = PulseMapping.Domain(state.Domain),
-            Assessed = snapshot.Assessed,
+            Reviewer = PulseMapping.Reviewer(snapshot),
             LearningOutcomes = outcomes,
             Modules = modules,
             FinalCriteria = PulseRules.FinalCriteria.ToList(),
