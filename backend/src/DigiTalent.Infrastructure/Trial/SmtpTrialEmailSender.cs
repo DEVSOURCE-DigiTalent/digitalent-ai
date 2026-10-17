@@ -27,7 +27,13 @@ public sealed class SmtpTrialEmailSender : ITrialEmailSender
         _logger = logger;
     }
 
-    public async Task SendAsync(string email, string kind, string token, CancellationToken ct = default)
+    public Task SendAsync(string email, string kind, string token, CancellationToken ct = default)
+        => SendCoreAsync(email, kind, token, null, ct);
+
+    public Task SendVerificationCodeAsync(string email, string token, string code, CancellationToken ct = default)
+        => SendCoreAsync(email, "verify", token, code, ct);
+
+    private async Task SendCoreAsync(string email, string kind, string token, string? code, CancellationToken ct)
     {
         if (!IsReady)
         {
@@ -49,8 +55,11 @@ public sealed class SmtpTrialEmailSender : ITrialEmailSender
             : "Lời mời tham gia không gian doanh nghiệp";
 
         var bodyContent = isVerify
-            ? "Cảm ơn bạn đã đăng ký trải nghiệm dùng thử DigiTalent AI cho doanh nghiệp. Vui lòng nhấn vào nút bên dưới để xác minh tài khoản và bắt đầu thiết lập tổ chức của bạn:"
+            ? "Cảm ơn bạn đã đăng ký trải nghiệm dùng thử DigiTalent AI cho doanh nghiệp. Nhập mã xác minh bên dưới hoặc nhấn vào nút để xác minh email:"
             : "Bạn vừa nhận được lời mời tham gia vào không gian dùng thử DigiTalent AI của tổ chức. Nhấn vào nút bên dưới để chấp nhận lời mời và truy cập:";
+        var codeHtml = isVerify && code != null
+            ? $"<p style='text-align:center;font-size:28px;font-weight:700;letter-spacing:8px;color:#344bce'>{code}</p><p>Mã chỉ dùng một lần và hết hạn theo thời hạn đăng ký.</p>"
+            : "";
 
         var buttonText = isVerify ? "Xác minh tài khoản ngay" : "Tham gia không gian dùng thử";
 
@@ -77,6 +86,7 @@ public sealed class SmtpTrialEmailSender : ITrialEmailSender
         </div>
         <h3>{heading}</h3>
         <p>{bodyContent}</p>
+        {codeHtml}
         <div style='text-align: center;'>
             <a href='{actionUrl}' class='btn'>{buttonText}</a>
         </div>

@@ -27,8 +27,15 @@ public class PulseCourseWorkspace
     {
         var snapshot = await _learner.LoadAsync(includeContent);
         var state = snapshot.FindCourse(courseId)
-                    ?? snapshot.Courses.FirstOrDefault(c => c.Enrollment?.CourseId == courseId)
-                    ?? throw new NotFoundException("Không tìm thấy khóa học trong lộ trình của bạn.");
+                    ?? snapshot.Courses.FirstOrDefault(c => c.Enrollment?.CourseId == courseId);
+        if (state == null)
+        {
+            var code = await _context.Courses.AsNoTracking()
+                .Where(c => c.Id == courseId && c.OrganizationId == snapshot.Employee.OrganizationId)
+                .Select(c => c.Code).FirstOrDefaultAsync();
+            state = code == null ? null : snapshot.Courses.FirstOrDefault(c => c.Course.Code == code);
+        }
+        if (state == null) throw new NotFoundException("Không tìm thấy khóa học trong lộ trình của bạn.");
         return (snapshot, state);
     }
 

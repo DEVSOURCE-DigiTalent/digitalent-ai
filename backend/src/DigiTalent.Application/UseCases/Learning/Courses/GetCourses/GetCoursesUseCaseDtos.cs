@@ -28,6 +28,11 @@ public class CourseListItem
     public string Status { get; set; } = string.Empty;
     public int AssignedCount { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+    public int SeatsPurchased { get; set; }
+    public int SeatsGranted { get; set; }
+    public int TotalSeats => SeatsPurchased + SeatsGranted;
+    public int SeatsAvailable => Math.Max(0, TotalSeats - AssignedCount);
+    public bool HasLicense => TotalSeats > 0 || Code.EndsWith("-F");
 }
 
 public class GetCoursesUseCaseOutput

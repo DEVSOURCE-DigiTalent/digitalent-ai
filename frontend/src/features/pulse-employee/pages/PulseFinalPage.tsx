@@ -10,6 +10,7 @@ import { ExamShell } from '../exam/ExamShell';
 import { ProctoredExam } from '../exam/ProctoredExam';
 import { BLOCK_MESSAGES, SUPPORT_LABELS, examStructure, levelName, pulseErrorMessage, timeLeft } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
+import { CourseFinalBrief } from '@/components/shared/CourseFinalBrief';
 
 const LABEL = 'Bài cuối khóa';
 
@@ -54,6 +55,7 @@ export function PulseFinalPage() {
         criteria={data.criteria}
         choiceCount={data.choiceCount}
         choicePassMark={data.choicePassMark}
+        assignmentContent={data.assignment ? <CourseFinalBrief content={data.assignment} /> : undefined}
         attemptLabel={`Lần nộp ${attemptNo}/${data.maxAttempts}`}
         outcomes={{
           pass: `${code} đạt, mức ${levelName(data.course.tier)} của lĩnh vực được xác nhận và khóa tiếp theo mở.`,
@@ -119,6 +121,7 @@ function FinalView({ final }: { final: PulseFinal }) {
 
       <section className="pu-surface pu-pad">
         <Mini>{course.domainName} · {levelName(course.tier)} · bài cuối khóa</Mini>
+        {final.assignment && <CourseFinalBrief content={final.assignment} />}
         <h2 className="pu-panel-title">{final.choiceCount > 0 ? 'Trắc nghiệm và ghi chú công việc có thể kiểm tra.' : 'Tạo ghi chú công việc có thể kiểm tra.'}</h2>
         <p className="pu-panel-desc">
           {examStructure(final.choiceCount, final.choicePassMark)} Phần tự luận: mô tả một nhiệm vụ thực tế của vị trí {position}, nêu nguồn,

@@ -8,7 +8,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import publicRoutesSource from '@/app/routes/public.routes.tsx?raw';
 import enterpriseRoutesSource from '@/app/routes/enterprise.routes.tsx?raw';
 
-const api = vi.hoisted(() => Object.fromEntries(['readiness', 'catalog', 'register', 'verify', 'accept', 'login', 'currentUser', 'context', 'selectPosition', 'invitations', 'invite', 'resendInvitation', 'diagnostic', 'startDiagnostic', 'saveAnswers', 'submitDiagnostic', 'result', 'path', 'startPathItem', 'progressPathItem', 'pathContent', 'results', 'requestConversion'].map(key => [key, vi.fn()])));
+const api = vi.hoisted(() => Object.fromEntries(['readiness', 'catalog', 'register', 'verify', 'verifyCode', 'accept', 'login', 'currentUser', 'context', 'selectPosition', 'invitations', 'invite', 'resendInvitation', 'diagnostic', 'startDiagnostic', 'saveAnswers', 'submitDiagnostic', 'result', 'path', 'startPathItem', 'progressPathItem', 'pathContent', 'results', 'requestConversion'].map(key => [key, vi.fn()])));
 vi.mock('@/services/enterprise-trial.service', () => ({ enterpriseTrialService: api }));
 vi.mock('@/features/auth/components/AuthShell', () => ({ AuthShell: ({ title, children }: { title: string; children: React.ReactNode }) => <main><h1>{title}</h1>{children}</main> }));
 const ok = (data: unknown) => ({ data: { success: true, data, message: '', errors: [] } });
@@ -51,25 +51,37 @@ describe('guided enterprise trial', () => {
     mount(<TrialRegisterPage />);
     await screen.findByText(/CRM skills/);
     for (const [label, value] of [['Tên tổ chức', 'Acme'], ['Tên chủ sở hữu', 'Owner'], ['Email', 'owner@acme.test'], ['Mật khẩu', 'long-password-123']]) fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    for (const [label, value] of [['Ngành doanh nghiệp', 'Công nghệ thông tin'], ['Quy mô', '1-20'], ['Mục tiêu trước mắt', 'digital-skills']]) fireEvent.change(screen.getByLabelText(label), { target: { value } });
     fireEvent.click(screen.getByLabelText(/Tôi đồng ý/));
     fireEvent.click(screen.getByRole('button', { name: 'Tạo không gian dùng thử' }));
-    expect(await screen.findByText(/Development-only/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Tiếp tục xác minh' })).toHaveAttribute('href', '/business/try/verify?token=abc');
+    await waitFor(() => expect(api.register).toHaveBeenCalledWith(expect.objectContaining({ organizationName: 'Acme', ownerName: 'Owner', email: 'owner@acme.test', industry: 'Công nghệ thông tin', size: '1-20', goal: 'digital-skills', acceptedTerms: true })));
+    expect(await screen.findByText(/Chỉ dành cho môi trường phát triển/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Nhập mã xác minh' })).toHaveAttribute('href', '/business/try/verify?email=owner%40acme.test');
+    expect(screen.getByRole('link', { name: 'mở liên kết mô phỏng email' })).toHaveAttribute('href', '/business/try/verify?token=abc');
   });
   it('verifies only once and logs in before opening workspace', async () => {
     api.verify.mockResolvedValue(ok({ email: 'owner@acme.test', role: 'Owner' })); api.login.mockResolvedValue(ok({ accessToken: 'token' })); api.currentUser.mockResolvedValue(ok({ id: 'owner', email: 'owner@acme.test', fullName: 'Owner', roles: ['OWNER'], permissions: [] }));
     mount(<TrialVerifyPage />, '/business/try/verify?token=abc');
     fireEvent.change(screen.getByLabelText('Mật khẩu'), { target: { value: 'long-password-123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập vào trial' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Xác minh và đăng nhập' }));
     await waitFor(() => expect(api.login).toHaveBeenCalledWith('owner@acme.test', 'long-password-123'));
     expect(api.verify).toHaveBeenCalledWith('abc', 'long-password-123');
     expect(api.verify).toHaveBeenCalledTimes(1);
+  });
+  it('verifies owner email with a one-time code before login', async () => {
+    api.verifyCode.mockResolvedValue(ok({ email: 'owner@acme.test', role: 'Owner' })); api.login.mockResolvedValue(ok({ accessToken: 'token' })); api.currentUser.mockResolvedValue(ok({ id: 'owner', email: 'owner@acme.test', fullName: 'Owner', roles: ['OWNER'], permissions: [] }));
+    mount(<TrialVerifyPage />, '/business/try/verify?email=owner%40acme.test');
+    fireEvent.change(screen.getByLabelText('Mã xác minh email'), { target: { value: '123456' } });
+    fireEvent.change(screen.getByLabelText('Mật khẩu'), { target: { value: 'long-password-123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Xác minh và đăng nhập' }));
+    await waitFor(() => expect(api.verifyCode).toHaveBeenCalledWith('owner@acme.test', '123456', 'long-password-123'));
+    expect(api.login).toHaveBeenCalledWith('owner@acme.test', 'long-password-123');
   });
   it('accepts invitation once and authenticates with its server email', async () => {
     api.accept.mockResolvedValue(ok({ email: 'employee@acme.test', role: 'Employee' })); api.login.mockResolvedValue(ok({ accessToken: 'token' })); api.currentUser.mockResolvedValue(ok({ id: 'e', email: 'employee@acme.test', fullName: 'Employee', roles: ['EMPLOYEE'], permissions: [] }));
     mount(<TrialAcceptPage />, '/business/try/accept?token=abc');
     fireEvent.change(screen.getByLabelText('Mật khẩu'), { target: { value: 'long-password-123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Tham gia trial' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tham gia dùng thử' }));
     await waitFor(() => expect(api.login).toHaveBeenCalledWith('employee@acme.test', 'long-password-123'));
     expect(api.accept).toHaveBeenCalledWith('abc', 'long-password-123');
   });

@@ -7,7 +7,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { ROLES } from '@/lib/roles';
 import { MANAGER_SIDEBAR, sidebarFor } from '@/lib/sidebars';
 import { EMPLOYEE_SCREENS } from '@/lib/screens/enterprise/employee';
-import { TrialAwarePulseTodayPage } from '@/features/experience/enterprise-trial/TrialAwareDashboardPages';
+import { PulseTodayPage } from '../pages/PulseTodayPage';
 import {
   pulseService,
   type PulseCourseSummary,
@@ -214,7 +214,7 @@ describe('enterprise trial detection', () => {
     signIn({ enterpriseTrialStatus: null });
     vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(overview()));
 
-    renderAt(PULSE_PATHS.today, <TrialAwarePulseTodayPage />);
+    renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
     expect((await screen.findAllByRole('link', { name: 'Học tiếp' })).length).toBeGreaterThan(0);
     expect(sidebarFor({ id: 'm', email: 'm@x.test', fullName: 'M', roles: [ROLES.MANAGER], permissions: [], enterpriseTrialStatus: null })).toBe(MANAGER_SIDEBAR);
@@ -240,7 +240,7 @@ describe('PulseTodayPage', () => {
       stats: { ...stats, pathCourses: 2, approvedPathCourses: 1, aboveCeilingCourses: 1 },
     })));
 
-    renderAt(PULSE_PATHS.today, <TrialAwarePulseTodayPage />);
+    renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
     const roleCard = await screen.findByRole('complementary', { name: 'Vị trí và người đánh giá' });
     expect(within(roleCard).getByText('Kế toán')).toBeTruthy();
@@ -274,7 +274,7 @@ describe('PulseTodayPage', () => {
       courses: [fresh], nextSteps: [fresh], stats: { ...stats, preAssessmentsOpen: 1, learningCourses: 0 },
     })));
 
-    renderAt(PULSE_PATHS.today, <TrialAwarePulseTodayPage />);
+    renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
     expect(await screen.findByText('Bắt đầu bằng bài đánh giá')).toBeTruthy();
     expect(screen.getByText('Bạn cần làm bài đánh giá năng lực trước khi học khóa này.')).toBeTruthy();
@@ -287,7 +287,7 @@ describe('PulseTodayPage', () => {
   it('expands and collapses a domain to show its courses', async () => {
     vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(overview()));
 
-    renderAt(PULSE_PATHS.today, <TrialAwarePulseTodayPage />);
+    renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
     const toggle = await screen.findByRole('button', { name: /A1 · Khai thác dữ liệu và thông tin/ });
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
@@ -301,7 +301,7 @@ describe('PulseTodayPage', () => {
   it('explains a missing position instead of an empty path', async () => {
     vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(overview({ hasPosition: false, hasTargets: false, domains: [], courses: [], nextCourse: null, nextSteps: [] })));
 
-    renderAt(PULSE_PATHS.today, <TrialAwarePulseTodayPage />);
+    renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
     expect(await screen.findByText('Bạn chưa được gán vị trí công việc')).toBeTruthy();
   });

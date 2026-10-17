@@ -2,10 +2,13 @@ import { useEffect, useRef } from 'react';
 import type { CatalogCourseDetail } from '@/services/platform-catalog.service';
 import { QUESTIONS_MIN } from '../components/pulse-format';
 import { BlockPreview } from './BlockCard';
+import { CatalogLessonContent } from './CatalogLessonContent';
+import { catalogPages } from './catalog-pages';
 
 /** "Xem như nhân viên": one module rendered the way the learner reads it (slides scroll, videos play). */
 export function LearnerPreview({ course, moduleIndex, onClose }: { course: CatalogCourseDetail; moduleIndex: number; onClose: () => void }) {
   const module = course.modules[moduleIndex] ?? course.modules[0];
+  const pages = catalogPages(module?.blocks ?? []);
   const closeButton = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -31,9 +34,12 @@ export function LearnerPreview({ course, moduleIndex, onClose }: { course: Catal
             <>
               <span className="mini-label">Mô đun {module.index + 1}</span>
               <h2>{module.title}</h2>
-              {module.blocks.map((block) => (
-                <BlockPreview key={block.blockId} block={block} learner />
-              ))}
+              {pages.map((parts, index) => {
+                const block = parts.find(part => part.type === 'TEXT') ?? parts[0]!;
+                return block.type === 'TEXT'
+                  ? <CatalogLessonContent key={block.blockId} block={block} pageBlocks={parts} courseCode={course.code} moduleIndex={module.index} count={pages.length} pageIndex={index} />
+                  : <BlockPreview key={block.blockId} block={block} learner />;
+              })}
               <div className="notice">
                 Sau phần nội dung:{' '}
                 {module.questions.length

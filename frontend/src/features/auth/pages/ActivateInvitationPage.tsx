@@ -4,14 +4,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
-import { PublicShell } from '../../public/components/PublicShell';
-import { DARK_INPUT_CLASS, DARK_PRIMARY_BUTTON, Field, FormError } from '../../public/components/FormControls';
+import { PulseAuthLayout } from '@/features/public/pulse-landing/PulseAuthLayout';
 import { useLogin } from '@/hooks/use-auth';
 import { organizationErrorMessage } from '@/lib/organization-errors';
 import { ROLE_LABELS, type Role } from '@/lib/roles';
 import { invitationService } from '@/services/invitation.service';
 import { passwordSchema, requiredText } from '../validation';
-import { PasswordField } from '../components/PasswordField';
 
 const schema = z
   .object({
@@ -38,25 +36,31 @@ export function ActivateInvitationPage() {
   });
 
   return (
-    <PublicShell>
-      <h1 className="text-[clamp(28px,4vw,40px)] font-normal leading-[1.1] tracking-[-0.03em]">Kích hoạt tài khoản</h1>
+    <PulseAuthLayout
+      eyebrow="Lời mời từ doanh nghiệp"
+      title="Tham gia không gian làm việc."
+      subtitle="Xác nhận email nhận lời mời, tự đặt mật khẩu và vào đúng phòng ban, vị trí của bạn."
+      asideTitle="Lộ trình học bắt đầu từ đúng vị trí."
+      asideText="Doanh nghiệp đã chọn vai trò, phòng ban và vị trí. Sau khi kích hoạt, bạn sẽ thấy mục tiêu năng lực dành cho mình."
+      asidePoints={['Email mời chỉ dùng một lần', 'Bạn tự đặt mật khẩu, doanh nghiệp không biết mật khẩu của bạn']}
+    >
 
-      {invitation.isLoading && <p className="mt-6 text-sm text-stone-400">Đang kiểm tra lời mời…</p>}
+      {invitation.isLoading && <p role="status" className="pulse-auth-info">Đang kiểm tra lời mời…</p>}
 
       {invitation.isError && (
-        <div className="mt-6 grid gap-4">
-          <FormError message={errorMessage(invitation.error)} />
-          <p className="text-sm text-stone-400">Hãy nhờ quản trị tổ chức gửi lại lời mời, hoặc đăng nhập nếu bạn đã kích hoạt.</p>
-          <Link to="/login" className="text-sm text-cream underline underline-offset-4">
+        <div className="pulse-auth-fields">
+          <p role="alert" className="pulse-auth-error">{errorMessage(invitation.error)}</p>
+          <p>Hãy nhờ doanh nghiệp gửi lại lời mời, hoặc đăng nhập nếu bạn đã kích hoạt.</p>
+          <Link to="/login" className="pulse-auth-link">
             Đến trang đăng nhập
           </Link>
         </div>
       )}
 
       {invitation.data?.status === 'accepted' && (
-        <div className="mt-6 grid gap-4">
-          <p className="text-sm text-stone-400">Lời mời này đã được kích hoạt.</p>
-          <Link to="/login" className="text-sm text-cream underline underline-offset-4">
+        <div className="pulse-auth-fields">
+          <p className="pulse-auth-info">Lời mời này đã được kích hoạt.</p>
+          <Link to="/login" className="pulse-auth-link">
             Đăng nhập
           </Link>
         </div>
@@ -69,9 +73,11 @@ export function ActivateInvitationPage() {
           fullName={invitation.data.fullName}
           organizationName={invitation.data.organizationName}
           roleLabel={ROLE_LABELS[invitation.data.role as Role] ?? invitation.data.role}
+          departmentName={invitation.data.departmentName}
+          positionName={invitation.data.positionName}
         />
       )}
-    </PublicShell>
+    </PulseAuthLayout>
   );
 }
 
@@ -81,9 +87,11 @@ interface ActivationFormProps {
   fullName: string;
   organizationName: string;
   roleLabel: string;
+  departmentName?: string | null;
+  positionName?: string | null;
 }
 
-function ActivationForm({ token, email, fullName, organizationName, roleLabel }: ActivationFormProps) {
+function ActivationForm({ token, email, fullName, organizationName, roleLabel, departmentName, positionName }: ActivationFormProps) {
   const navigate = useNavigate();
   const login = useLogin();
   const [submitError, setSubmitError] = useState<string>();
@@ -95,56 +103,36 @@ function ActivationForm({ token, email, fullName, organizationName, roleLabel }:
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(undefined);
+    let activated = false;
     try {
       await invitationService.activate({ token, fullName: values.fullName, password: values.password });
-      await login.mutateAsync({ email, password: values.password });
-      navigate('/enterprise/initial-assessment', { replace: true });
+      activated = true;
+      const home = await login.mutateAsync({ email, password: values.password });
+      navigate(home, { replace: true });
     } catch (error) {
+      if (activated) {
+        navigate(`/login?email=${encodeURIComponent(email)}&verified=1`, { replace: true });
+        return;
+      }
       setSubmitError(errorMessage(error));
     }
   });
 
   return (
     <>
-      <p className="mt-3 text-sm leading-[1.6] text-stone-400">
-        Bạn được mời tham gia <strong className="font-medium text-cream">{organizationName}</strong> với vai trò{' '}
-        <strong className="font-medium text-cream">{roleLabel}</strong>. Đặt mật khẩu để bắt đầu.
+      <p className="pulse-auth-info">
+        <strong>{organizationName}</strong> mời bạn với vai trò <strong>{roleLabel}</strong>
+        {departmentName ? <> · Phòng ban <strong>{departmentName}</strong></> : null}
+        {positionName ? <> · Vị trí <strong>{positionName}</strong></> : null}.
       </p>
 
-      <form onSubmit={onSubmit} noValidate className="mt-7 grid gap-4">
-        <FormError message={submitError} />
-
-        <Field label="Email" htmlFor="email" hint="Địa chỉ nhận lời mời, không thể thay đổi.">
-          <input id="email" type="email" value={email} readOnly className={DARK_INPUT_CLASS} />
-        </Field>
-
-        <Field label="Họ và tên" htmlFor="fullName" error={errors.fullName?.message}>
-          <input id="fullName" autoComplete="name" aria-invalid={!!errors.fullName} className={DARK_INPUT_CLASS} {...register('fullName')} />
-        </Field>
-
-        <Field label="Mật khẩu" htmlFor="password" error={errors.password?.message} hint="Mật khẩu cần ít nhất 12 ký tự.">
-          <PasswordField
-            id="password"
-            autoComplete="new-password"
-            placeholder="Tối thiểu 12 ký tự"
-            showMinHint={false}
-            error={errors.password?.message}
-            {...register('password')}
-          />
-        </Field>
-
-        <Field label="Nhập lại mật khẩu" htmlFor="confirmPassword" error={errors.confirmPassword?.message}>
-          <PasswordField
-            id="confirmPassword"
-            autoComplete="new-password"
-            placeholder="Nhập lại mật khẩu"
-            showMinHint={false}
-            error={errors.confirmPassword?.message}
-            {...register('confirmPassword')}
-          />
-        </Field>
-
-        <button type="submit" disabled={isSubmitting} className={`${DARK_PRIMARY_BUTTON} mt-2 cursor-pointer`}>
+      <form onSubmit={onSubmit} noValidate className="pulse-auth-fields">
+        {submitError && <p role="alert" className="pulse-auth-error">{submitError}</p>}
+        <div className="pulse-auth-field"><label htmlFor="email">Email nhận lời mời</label><input id="email" type="email" value={email} readOnly /><span className="pulse-auth-field-hint">Địa chỉ này sẽ dùng để đăng nhập.</span></div>
+        <div className="pulse-auth-field"><label htmlFor="fullName">Họ và tên</label><input id="fullName" autoComplete="name" aria-invalid={!!errors.fullName} {...register('fullName')} />{errors.fullName && <p role="alert" className="pulse-auth-inline-error">{errors.fullName.message}</p>}</div>
+        <div className="pulse-auth-field"><label htmlFor="password">Mật khẩu mới</label><input id="password" type="password" autoComplete="new-password" placeholder="Tối thiểu 12 ký tự" aria-invalid={!!errors.password} {...register('password')} /><span className="pulse-auth-field-hint">Từ 12 đến 128 ký tự.</span>{errors.password && <p role="alert" className="pulse-auth-inline-error">{errors.password.message}</p>}</div>
+        <div className="pulse-auth-field"><label htmlFor="confirmPassword">Nhập lại mật khẩu</label><input id="confirmPassword" type="password" autoComplete="new-password" aria-invalid={!!errors.confirmPassword} {...register('confirmPassword')} />{errors.confirmPassword && <p role="alert" className="pulse-auth-inline-error">{errors.confirmPassword.message}</p>}</div>
+        <button type="submit" disabled={isSubmitting} className="pulse-auth-primary">
           {isSubmitting ? 'Đang kích hoạt…' : 'Kích hoạt và vào hệ thống'}
         </button>
       </form>

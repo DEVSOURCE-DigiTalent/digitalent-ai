@@ -1,4 +1,6 @@
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Application.UseCases.Learning.Content;
 
 namespace DigiTalent.Application.UseCases.Pulse;
 
@@ -12,12 +14,14 @@ public class GetPulseFinalUseCase : IUseCase<GetPulseFinalUseCaseInput, GetPulse
     private readonly PulseCourseWorkspace _workspace;
     private readonly PulseFinalReader _final;
     private readonly PulseRetryPolicyProvider _policy;
+    private readonly LearningContentReader? _content;
 
-    public GetPulseFinalUseCase(PulseCourseWorkspace workspace, PulseFinalReader final, PulseRetryPolicyProvider policy)
+    public GetPulseFinalUseCase(PulseCourseWorkspace workspace, PulseFinalReader final, PulseRetryPolicyProvider policy, IApplicationDbContext? context = null)
     {
         _workspace = workspace;
         _final = final;
         _policy = policy;
+        _content = context == null ? null : new LearningContentReader(context);
     }
 
     public async Task<GetPulseFinalUseCaseOutput> ExecuteAsync(GetPulseFinalUseCaseInput input)
@@ -26,6 +30,8 @@ public class GetPulseFinalUseCase : IUseCase<GetPulseFinalUseCaseInput, GetPulse
         var policy = await _policy.GetAsync(snapshot.Employee.OrganizationId);
         var firstOpen = state.Modules.FirstOrDefault(m => !(state.Progress?.GetValueOrDefault(m.ModuleId)?.Passed(m) ?? false));
         var choiceCount = PulseExamPaper.SizeOf(state.Modules);
+        var courseId = state.Enrollment?.CourseId ?? state.Course.CourseId;
+        var assignment = _content == null ? null : (await _content.FinalsAsync(new[] { courseId })).GetValueOrDefault(courseId);
 
         return new GetPulseFinalUseCaseOutput
         {
@@ -33,6 +39,7 @@ public class GetPulseFinalUseCase : IUseCase<GetPulseFinalUseCaseInput, GetPulse
             Domain = PulseMapping.Domain(state.Domain),
             PositionName = snapshot.PositionName,
             Reviewer = PulseMapping.Reviewer(snapshot),
+            Assignment = assignment,
             Criteria = PulseRules.FinalCriteria.ToList(),
             ChoiceCount = choiceCount,
             ChoicePassMark = PulseRules.ChoicePassMark(choiceCount),

@@ -188,6 +188,8 @@ export interface InvitationDetail {
   email: string;
   fullName: string;
   role: MemberRole;
+  departmentName?: string | null;
+  positionName?: string | null;
   /** The backend only answers for a usable link, so it is always 'pending' there (otherwise 404). */
   status: 'pending' | 'accepted';
   expiresAt?: string;

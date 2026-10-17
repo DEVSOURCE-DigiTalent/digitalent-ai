@@ -1,5 +1,7 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Application.UseCases.Learning.Content;
 
 namespace DigiTalent.Application.UseCases.Pulse;
 
@@ -12,11 +14,13 @@ public class GetPulseModuleUseCase : IUseCase<GetPulseModuleUseCaseInput, GetPul
 {
     private readonly PulseCourseWorkspace _workspace;
     private readonly PulseQuizReader _quiz;
+    private readonly LearningContentReader? _content;
 
-    public GetPulseModuleUseCase(PulseCourseWorkspace workspace, PulseQuizReader quiz)
+    public GetPulseModuleUseCase(PulseCourseWorkspace workspace, PulseQuizReader quiz, IApplicationDbContext? context = null, IPlatformAssetUrlSigner? urls = null)
     {
         _workspace = workspace;
         _quiz = quiz;
+        _content = context == null ? null : new LearningContentReader(context, urls);
     }
 
     public async Task<GetPulseModuleUseCaseOutput> ExecuteAsync(GetPulseModuleUseCaseInput input)
@@ -31,6 +35,7 @@ public class GetPulseModuleUseCase : IUseCase<GetPulseModuleUseCaseInput, GetPul
 
         var slides = sample ? module.Slides.Take(1).ToList() : module.Slides.ToList();
         var content = await _quiz.LoadSlideContentAsync(slides.Select(s => s.LessonId).ToList());
+        var media = _content == null ? new Dictionary<Guid, List<LessonMediaDto>>() : await _content.MediaAsync(slides.Select(s => s.LessonId).ToList());
         var progress = state.Progress?.GetValueOrDefault(module.ModuleId);
         var previous = module.Index == 0 ? null : state.Modules[module.Index - 1];
         var previousPassed = previous == null || (state.Progress?.GetValueOrDefault(previous.ModuleId) is { } p && p.Passed(previous));
@@ -67,6 +72,7 @@ public class GetPulseModuleUseCase : IUseCase<GetPulseModuleUseCaseInput, GetPul
             Course = PulseMapping.Course(state),
             Module = new PulseModuleDetailDto
             {
+                QuizBankQuestionCount = module.QuizQuestionCount,
                 ModuleId = module.ModuleId,
                 Index = module.Index,
                 Title = module.Title,
@@ -89,6 +95,7 @@ public class GetPulseModuleUseCase : IUseCase<GetPulseModuleUseCaseInput, GetPul
                 LessonType = s.LessonType,
                 ContentBody = content.GetValueOrDefault(s.LessonId),
                 EstimatedMinutes = s.EstimatedMinutes,
+                Media = media.GetValueOrDefault(s.LessonId) ?? new(),
             }).ToList(),
             Viewed = progress?.Viewed ?? false,
             QuizPassed = progress?.QuizPassed ?? false,

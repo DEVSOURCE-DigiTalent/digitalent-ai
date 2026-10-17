@@ -1,6 +1,6 @@
 export type LoginPortal = 'default' | 'enterprise' | 'individual';
 
-/** The only sign-in route: businesses and individuals share one form, the account decides where it lands. */
+/** The sign-in route authenticates existing accounts; public registration is enterprise only. */
 export const LOGIN_PATH = '/login';
 
 export interface LoginCopy {
@@ -26,9 +26,9 @@ export interface LoginCopy {
 /** 'default' is the login page; 'enterprise' and 'individual' are the two sign-up pages, which share the frame. */
 export const LOGIN_COPY: Record<LoginPortal, LoginCopy> = {
   default: {
-    subtitle: 'Một tài khoản cho cả doanh nghiệp và cá nhân.',
-    homePath: '/portal',
-    registerPath: '/portal?intent=register',
+    subtitle: 'Tiếp tục hành trình phát triển năng lực của đội ngũ.',
+    homePath: '/business',
+    registerPath: '/business/try',
     registerLabel: 'Đăng ký ngay',
     quoteLead: 'Chào mừng trở lại.',
     quoteBreak: true,

@@ -20,6 +20,7 @@ export interface TrialRegistrationDto {
   state: string;
   expiresAt: string;
   developmentLink: string | null;
+  developmentCode?: string | null;
 }
 
 export interface TrialAccountDto {
@@ -176,6 +177,7 @@ export const apiEnterpriseTrialService = {
   catalog: () => apiClient.get<ApiResponse<TrialEligiblePositionDto[]>>('/enterprise-trial/catalog', transport),
   register: (data: TrialRegistrationRequest) => apiClient.post<ApiResponse<TrialRegistrationDto>>('/enterprise-trial/register', data, transport),
   verify: (token: string, _password?: string) => apiClient.post<ApiResponse<TrialAccountDto>>('/enterprise-trial/verify', { token }, transport),
+  verifyCode: (email: string, code: string, _password?: string) => apiClient.post<ApiResponse<TrialAccountDto>>('/enterprise-trial/verify-code', { email, code }, transport),
   accept: (token: string, password: string) => apiClient.post<ApiResponse<TrialAccountDto>>('/enterprise-trial/accept', { token, password }, transport),
   login: (email: string, password: string) => apiClient.post<ApiResponse<LoginResponse>>('/auth/login', { email, password }, transport),
   currentUser: () => apiClient.get<ApiResponse<SessionUser>>('/auth/me', transport),

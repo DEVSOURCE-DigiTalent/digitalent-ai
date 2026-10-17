@@ -13,6 +13,7 @@ import type {
   PulseSupportAction,
 } from '@/services/pulse.service';
 import { formatDateTime } from '@/lib/utils';
+import { CourseFinalBrief } from '@/components/shared/CourseFinalBrief';
 import { ChoiceScore } from '@/features/pulse-employee/components/blocks';
 import { Empty, LoadError, Mini, Notice, PageHead, PageSkeleton, Pill, PuLink } from '@/features/pulse-employee/components/ui';
 import { btn } from '@/features/pulse-employee/lib/button';
@@ -216,6 +217,7 @@ function ReviewCard({ item, criteria }: { item: PulseFinalReviewItem; criteria: 
       ) : null}
 
       {latest?.choice && <ChoiceReview choice={latest.choice} />}
+      {item.assignment && <CourseFinalBrief content={item.assignment} />}
 
       {latest && (
         <div className="pu-review-evidence">

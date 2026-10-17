@@ -12,6 +12,8 @@ public sealed class TrialRegistration : BaseEntity
     public string Size { get; set; } = "";
     public string Goal { get; set; } = "";
     public string TokenHash { get; set; } = "";
+    public string? OtpHash { get; set; }
+    public int OtpFailedAttempts { get; set; }
     public DateTimeOffset ExpiresAt { get; set; }
     public DateTimeOffset? UsedAt { get; set; }
     public Guid? OrganizationId { get; set; }

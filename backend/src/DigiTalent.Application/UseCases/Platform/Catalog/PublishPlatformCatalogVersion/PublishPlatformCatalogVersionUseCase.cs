@@ -86,6 +86,7 @@ public class PublishPlatformCatalogVersionUseCase : IUseCase<PublishPlatformCata
                     framework, domains, _editor.UserId, $"Công bố cùng chương trình học v{draft.VersionNo}.", now));
             }
 
+            await new PlatformLearningPublisher(_context).PublishAsync(draft.Id, _editor.UserId, now);
             await _context.SaveChangesAsync();
         });
 

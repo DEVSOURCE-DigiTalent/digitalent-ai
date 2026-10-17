@@ -213,7 +213,7 @@ function ModuleCard({ module, detail, isNext }: { module: PulseCourseModule; det
       {module.description && <p>{module.description}</p>}
       <div className="pu-module-format">
         <span><FileText size={13} /> {module.slideCount} trang{module.estimatedMinutes ? ` · ${module.estimatedMinutes} phút` : ''}</span>
-        {module.hasQuiz && <span><HelpCircle size={13} /> {module.quizQuestionCount} câu ôn tập</span>}
+        {module.hasQuiz && <span><HelpCircle size={13} /> {module.quizBankQuestionCount != null ? `Ngân hàng ${module.quizBankQuestionCount} câu · ` : ''}{module.quizQuestionCount} câu / lượt</span>}
       </div>
       {module.viewable ? (
         <PuLink to={PULSE_PATHS.module(course.courseId, module.moduleId)} kind="outline" small>

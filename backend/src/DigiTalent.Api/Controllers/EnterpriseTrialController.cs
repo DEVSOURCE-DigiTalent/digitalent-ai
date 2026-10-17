@@ -25,6 +25,9 @@ public sealed class EnterpriseTrialController(TrialService trial) : ControllerBa
     [HttpPost("verify"), AllowAnonymous]
     public async Task<IActionResult> Verify(TrialTokenRequest request) => Ok(ApiResponse<TrialAccountDto>.Ok(await trial.VerifyAsync(request.Token)));
 
+    [HttpPost("verify-code"), AllowAnonymous]
+    public async Task<IActionResult> VerifyCode(TrialCodeRequest request) => Ok(ApiResponse<TrialAccountDto>.Ok(await trial.VerifyCodeAsync(request)));
+
     [HttpPost("accept"), AllowAnonymous]
     public async Task<IActionResult> Accept(TrialAcceptRequest request) => Ok(ApiResponse<TrialAccountDto>.Ok(await trial.AcceptAsync(request)));
 

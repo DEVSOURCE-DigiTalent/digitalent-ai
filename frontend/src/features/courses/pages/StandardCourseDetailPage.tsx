@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, Clock, Layers, Users,
   CheckCircle2, AlertCircle, UserCheck, ShieldCheck,
-  PlayCircle
+  PlayCircle, Lock, X
 } from 'lucide-react';
 import { useCourse, useAssignments } from '@/hooks/use-assignments';
 import { useCompetencyCategories } from '@/hooks/use-competencies';
@@ -12,6 +12,7 @@ import { LevelBadge } from '@/components/shared/LevelBadge';
 import { CoursePathwayManager } from '../components/CoursePathwayManager';
 import { ApiCoursePathway } from '../components/ApiCoursePathway';
 import { categoryDomain, courseCategories, courseCodeMetadata } from '../course-catalog';
+import { levelPricing } from '@/features/organization/components/course-tree';
 
 type DetailTab = 'overview' | 'pathway' | 'assessment' | 'learners';
 
@@ -36,6 +37,7 @@ export function StandardCourseDetailPage() {
       : 'overview'
   );
   const [learnerPage, setLearnerPage] = useState(1);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
 
   useEffect(() => {
     if (tabParam && ['overview', 'pathway', 'assessment', 'learners'].includes(tabParam)) {
@@ -96,11 +98,14 @@ export function StandardCourseDetailPage() {
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="font-mono text-xs font-bold text-primary-700 bg-primary-50 border border-primary-200 px-2 py-0.5 rounded">
                 {course.code}
               </span>
               <LevelBadge level={displayLevel} />
+              <span className={`px-2 py-0.5 rounded text-xs font-bold ${levelPricing(displayLevel).isFree ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}`}>
+                {levelPricing(displayLevel).badge}
+              </span>
               <StatusBadge
                 label={course.status === 'PUBLISHED' ? 'Chuẩn hóa TT02' : course.status === 'ARCHIVED' ? 'Đã lưu trữ' : 'Bản nháp'}
                 variant={course.status === 'PUBLISHED' ? 'success' : 'default'}
@@ -112,7 +117,7 @@ export function StandardCourseDetailPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setActiveTab('pathway')}
@@ -125,25 +130,83 @@ export function StandardCourseDetailPage() {
               <PlayCircle className="size-4 text-primary-600" />
               Xem luồng đào tạo
             </button>
-            <button
-              type="button"
-              onClick={() => navigate(`/enterprise/training-batches/new?courseId=${course.id}`)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 shadow-sm"
-            >
-              <Layers className="size-4 text-primary-600" />
-              Thêm vào đợt đào tạo
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(`/enterprise/assignments?courseId=${course.id}`)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 shadow-sm transition-colors"
-            >
-              <UserCheck className="size-4" />
-              Giao khóa học này
-            </button>
+
+            {displayLevel > 1 ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowPurchaseModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-lg text-white bg-amber-600 hover:bg-amber-700 shadow-sm transition-all"
+                >
+                  <Lock className="size-4" />
+                  Mua suất học ({levelPricing(displayLevel).formatted})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPurchaseModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg text-slate-400 bg-slate-100 border border-slate-200 hover:bg-slate-200"
+                  title="Yêu cầu mua suất học để đưa vào đợt đào tạo"
+                >
+                  <Layers className="size-4" />
+                  Thêm vào đợt (Cần mua suất)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPurchaseModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg text-slate-400 bg-slate-100 border border-slate-200 hover:bg-slate-200"
+                  title="Yêu cầu mua suất học để giao khóa học"
+                >
+                  <UserCheck className="size-4" />
+                  Giao khóa học (Cần mua suất)
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/enterprise/training-batches/new?courseId=${course.id}`)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 shadow-sm"
+                >
+                  <Layers className="size-4 text-primary-600" />
+                  Thêm vào đợt đào tạo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/enterprise/assignments?courseId=${course.id}`)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 shadow-sm transition-colors"
+                >
+                  <UserCheck className="size-4" />
+                  Giao khóa học này
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
+
+      {displayLevel > 1 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-900">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-amber-100 text-amber-700 shrink-0">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-bold text-sm">Khóa học trả phí theo suất · Bậc {displayLevel} ({levelPricing(displayLevel).formatted})</div>
+              <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                Doanh nghiệp dùng thử được miễn phí toàn bộ khóa Cơ bản và được xem trước toàn bộ mô tả, chuẩn đầu ra TT02 của khóa học này.
+                Để mở trọn bộ bài giảng và giao bài cho nhân viên, doanh nghiệp cần trang bị suất học bản quyền.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowPurchaseModal(true)}
+            className="shrink-0 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all"
+          >
+            Mua suất học ngay
+          </button>
+        </div>
+      )}
 
       {/* Quick stat banner */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
@@ -422,6 +485,142 @@ export function StandardCourseDetailPage() {
           )}
         </div>
       )}
+      {showPurchaseModal && course && (
+        <CourseDetailPurchaseModal
+          course={{
+            code: course.code,
+            title: course.title,
+            level: displayLevel,
+          }}
+          onClose={() => setShowPurchaseModal(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function CourseDetailPurchaseModal({
+  course,
+  onClose,
+}: {
+  course: { code: string; title: string; level: number };
+  onClose: () => void;
+}) {
+  const pricing = levelPricing(course.level);
+  const [seats, setSeats] = useState(10);
+  const [requested, setRequested] = useState(false);
+  const totalAmount = seats * pricing.price;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+        <div className="flex items-start justify-between border-b pb-4">
+          <div>
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
+              🔒 Bản quyền khóa học thương mại
+            </span>
+            <h2 className="mt-2 text-lg font-bold text-slate-900">{course.title}</h2>
+            <p className="text-xs text-slate-500 font-mono mt-0.5">{course.code} · Bậc {course.level}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+
+        {requested ? (
+          <div className="py-8 text-center space-y-3">
+            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 font-bold text-xl">
+              ✓
+            </div>
+            <h3 className="text-base font-bold text-slate-900">Đã ghi nhận yêu cầu trang bị suất học</h3>
+            <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
+              Yêu cầu mua <b>{seats} suất</b> cho khóa học <b>{course.code}</b> (Dự toán: {totalAmount.toLocaleString('vi-VN')} ₫) đã được gửi đến ban quản trị nền tảng DigiTalent. Đội ngũ chuyên gia sẽ liên hệ và cấp suất đào tạo cho doanh nghiệp.
+            </p>
+            <div className="pt-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-xl px-5 py-2.5 text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 shadow-sm"
+              >
+                Đã hiểu
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4 py-4">
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 text-xs text-slate-700 leading-relaxed">
+              💡 Doanh nghiệp của bạn đang dùng thử và được <b>miễn phí toàn bộ khóa Cơ bản</b>.
+              Khóa Trung cấp & Nâng cao cung cấp kỹ năng thực chiến và bài thi cấp chứng chỉ chuẩn TT02 theo từng đầu người (1 suất = 1 nhân viên).
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Số lượng suất cần trang bị cho nhân sự:
+              </label>
+              <div className="flex items-center gap-2 mb-2">
+                {[5, 10, 20, 50].map((count) => (
+                  <button
+                    key={count}
+                    type="button"
+                    onClick={() => setSeats(count)}
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
+                      seats === count
+                        ? 'border-primary-600 bg-primary-50 text-primary-700'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    {count} suất
+                  </button>
+                ))}
+              </div>
+              <input
+                type="number"
+                min={1}
+                max={500}
+                value={seats}
+                onChange={(e) => setSeats(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary-600"
+              />
+            </div>
+
+            <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 space-y-2 text-xs">
+              <div className="flex justify-between text-slate-600">
+                <span>Đơn giá niêm yết:</span>
+                <span className="font-semibold text-slate-900">{pricing.formatted}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Số lượng nhân viên đào tạo:</span>
+                <span className="font-semibold text-slate-900">{seats} nhân viên</span>
+              </div>
+              <div className="flex justify-between border-t border-amber-200/60 pt-2 text-sm font-bold text-slate-900">
+                <span>Tổng chi phí đầu tư:</span>
+                <span className="text-primary-700 font-extrabold">{totalAmount.toLocaleString('vi-VN')} ₫</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Để sau
+              </button>
+              <button
+                type="button"
+                onClick={() => setRequested(true)}
+                className="rounded-xl px-4 py-2.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-sm transition-all"
+              >
+                Gửi yêu cầu mua suất học ({totalAmount.toLocaleString('vi-VN')} ₫)
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -45,6 +45,12 @@ public class GetInvitationUseCase : IUseCase<GetInvitationUseCaseInput, GetInvit
             Email = row.Invitation.Email,
             FullName = row.Invitation.FullName,
             Role = MemberRoles.FromRoleCode(row.RoleCode) ?? MemberRoles.Employee,
+            DepartmentName = row.Invitation.DepartmentId.HasValue
+                ? await _context.Departments.Where(d => d.Id == row.Invitation.DepartmentId.Value && d.OrganizationId == row.Invitation.OrganizationId).Select(d => d.Name).FirstOrDefaultAsync()
+                : null,
+            PositionName = row.Invitation.JobPositionId.HasValue
+                ? await _context.JobPositions.Where(p => p.Id == row.Invitation.JobPositionId.Value && p.OrganizationId == row.Invitation.OrganizationId).Select(p => p.Name).FirstOrDefaultAsync()
+                : null,
             Status = "pending",
             ExpiresAt = row.Invitation.ExpiresAt,
         };

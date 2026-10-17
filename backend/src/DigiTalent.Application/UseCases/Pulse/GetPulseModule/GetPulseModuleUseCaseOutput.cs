@@ -26,6 +26,7 @@ public class GetPulseModuleUseCaseOutput
 
 public class PulseModuleDetailDto
 {
+    public int QuizBankQuestionCount { get; set; }
     public Guid ModuleId { get; set; }
     public int Index { get; set; }
     public string Title { get; set; } = string.Empty;
@@ -44,6 +45,7 @@ public class PulseModuleNavDto
 
 public class PulseSlideDto
 {
+    public List<DigiTalent.Application.UseCases.Learning.Content.LessonMediaDto> Media { get; set; } = new();
     public Guid LessonId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string LessonType { get; set; } = string.Empty;

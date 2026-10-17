@@ -28,6 +28,8 @@ public class PulseCourseModuleDto
     public bool HasQuiz { get; set; }
     /// <summary>Số câu của mỗi lần làm (rút từ ngân hàng của mô đun), không phải cỡ ngân hàng.</summary>
     public int QuizQuestionCount { get; set; }
+    /// <summary>Tổng số câu trong ngân hàng đã công bố của mô đun.</summary>
+    public int QuizBankQuestionCount { get; set; }
     public bool Viewed { get; set; }
     public bool Passed { get; set; }
     /// <summary>Đã qua mô đun trước (mô đun 1 luôn mở theo thứ tự).</summary>

@@ -15,6 +15,7 @@ public class GetPulseFinalReviewsUseCaseOutput
 
 public class PulseFinalReviewItemDto
 {
+    public DigiTalent.Application.UseCases.Platform.Catalog.PlatformCourseFinalDto? Assignment { get; set; }
     /// <summary>PRE_ASSESSMENT (đánh giá trước khi học) | FINAL (bài cuối khóa).</summary>
     public string Kind { get; set; } = string.Empty;
     /// <summary>

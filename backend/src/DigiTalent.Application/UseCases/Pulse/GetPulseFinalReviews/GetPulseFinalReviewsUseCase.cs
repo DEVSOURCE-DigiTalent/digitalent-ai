@@ -105,6 +105,8 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
             .Select(r => r.PreAssessment.Id)
             .ToList());
         var items = new List<PulseFinalReviewItemDto>();
+        var assignmentContent = await new DigiTalent.Application.UseCases.Learning.Content.LearningContentReader(_context)
+            .FinalsAsync(rows.Select(r => r.CourseId).Distinct().ToList());
         foreach (var group in rows.GroupBy(r => r.Enrollment.Id))
         {
             var first = group.First();
@@ -120,6 +122,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
             items.Add(new PulseFinalReviewItemDto
             {
                 Kind = Statuses.ProctoringKind.Final,
+                Assignment = assignmentContent.GetValueOrDefault(first.CourseId),
                 SubmissionId = last.Id,
                 Status = status,
                 EmployeeId = first.EmployeeId,

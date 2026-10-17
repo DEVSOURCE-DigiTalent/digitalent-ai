@@ -1,6 +1,6 @@
 import type { PageRegistry } from '../build-routes';
 
-import { TrialAwareManagerDashboardPage } from '../../../features/experience/enterprise-trial/TrialAwareDashboardPages';
+import { ManagerOverviewPage } from '../../../features/pulse-manager/pages/ManagerOverviewPage';
 import { TeamMembersPage } from '../../../features/manager/pages/team/TeamMembersPage';
 import { TeamMemberDetailPage } from '../../../features/manager/pages/team/TeamMemberDetailPage';
 import { TeamCompetencyMatrixPage } from '../../../features/manager/pages/team/TeamCompetencyMatrixPage';
@@ -14,7 +14,7 @@ import { ManagerFrameworkPage } from '../../../features/pulse-manager/pages/Mana
 /** MANAGER page registry mapping screen IDs (MG-*) to components. Pulse pages: features/pulse-manager. */
 export const MANAGER_PAGES: PageRegistry = {
   // v2.1 IDs
-  'MG-01': TrialAwareManagerDashboardPage,
+  'MG-01': ManagerOverviewPage,
   'MG-02': TeamMembersPage,
   'MG-03': TeamMemberDetailPage,
   'MG-04': TeamCompetencyMatrixPage,

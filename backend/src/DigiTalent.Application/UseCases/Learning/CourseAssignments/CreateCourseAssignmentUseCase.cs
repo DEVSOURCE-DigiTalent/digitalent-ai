@@ -32,18 +32,45 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
             throw new BadRequestException("Chỉ giao được khóa học đã xuất bản.");
 
         var targetEmployees = await ResolveTargetEmployees(organizationId, input.Targets);
-
+        var targetIds = targetEmployees.Select(e => e.Id).ToList();
+        var versionIds = await _context.Courses.AsNoTracking()
+            .Where(c => c.OrganizationId == organizationId && c.Code == course.Code)
+            .Select(c => c.Id).ToListAsync();
         var existingAssignments = await _context.CourseAssignments.AsNoTracking()
-            .Where(ca => ca.CourseId == input.CourseId && ca.Status == "ACTIVE"
-                && targetEmployees.Select(e => e.Id).Contains(ca.EmployeeId))
-            .Select(ca => ca.EmployeeId)
-            .ToListAsync();
-
+            .Where(ca => versionIds.Contains(ca.CourseId) && ca.Status == Statuses.CourseAssignment.Active
+                && targetIds.Contains(ca.EmployeeId))
+            .Select(ca => ca.EmployeeId).Distinct().ToListAsync();
         var completedEnrollments = await _context.Enrollments.AsNoTracking()
-            .Where(e => e.CourseId == input.CourseId && e.Status == Statuses.Enrollment.Completed
-                && targetEmployees.Select(t => t.Id).Contains(e.EmployeeId))
-            .Select(e => e.EmployeeId)
-            .ToListAsync();
+            .Where(e => versionIds.Contains(e.CourseId) && e.Status == Statuses.Enrollment.Completed
+                && targetIds.Contains(e.EmployeeId))
+            .Select(e => e.EmployeeId).Distinct().ToListAsync();
+
+        var isPaidCourse = course.Code.EndsWith("-I", StringComparison.OrdinalIgnoreCase) ||
+                           course.Code.EndsWith("-A", StringComparison.OrdinalIgnoreCase) ||
+                           course.EntryLevel >= 2;
+        if (isPaidCourse)
+        {
+            var purchasedSeats = await (
+                from o in _context.CourseSeatOrders.AsNoTracking()
+                join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
+                where o.OrganizationId == organizationId && pc.Code == course.Code
+                select (int?)o.Seats
+            ).SumAsync() ?? 0;
+
+            var usedSeats = await _context.CourseAssignments.AsNoTracking()
+                .Where(ca => versionIds.Contains(ca.CourseId) && ca.Status == Statuses.CourseAssignment.Active)
+                .Select(ca => ca.EmployeeId).Distinct().CountAsync();
+
+            var availableSeats = Math.Max(0, purchasedSeats - usedSeats);
+            var neededSeats = targetEmployees.Count(e => e.Status == Statuses.Employee.Active
+                && !existingAssignments.Contains(e.Id) && !completedEnrollments.Contains(e.Id));
+            if (availableSeats < neededSeats)
+            {
+                var price = course.Code.EndsWith("-A", StringComparison.OrdinalIgnoreCase) ? "699.000 ₫" : "399.000 ₫";
+                throw new BadRequestException(
+                    $"Khóa học '{course.Title}' là khóa học có phí ({price}/suất). Tổ chức hiện có {purchasedSeats} suất ({usedSeats} đã phân công, còn {availableSeats} suất). Cần mua thêm suất học để phân công cho nhân viên.");
+            }
+        }
 
         DateOnly? dueDate = null;
         if (!string.IsNullOrWhiteSpace(input.DueDate) && DateOnly.TryParse(input.DueDate, out var parsed))

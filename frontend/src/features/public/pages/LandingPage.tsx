@@ -43,11 +43,6 @@ export function LandingPage({ content = ENTERPRISE_CONTENT }: LandingPageProps) 
   );
 }
 
-/** PUB-02, "/business". */
-export function EnterpriseLandingPage() {
-  return <LandingPage content={ENTERPRISE_CONTENT} />;
-}
-
 /** PUB-03, "/individual". */
 export function IndividualLandingPage() {
   return <LandingPage content={INDIVIDUAL_CONTENT} />;

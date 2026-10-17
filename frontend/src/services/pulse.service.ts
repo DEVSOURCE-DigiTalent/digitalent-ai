@@ -1,4 +1,5 @@
 import apiClient from './api-client';
+import type { LessonMedia, CourseFinalContent } from '@/types/learning-content';
 import type { ApiResponse } from '../types/api';
 
 /**
@@ -217,6 +218,8 @@ export interface PulseCourseModule {
   slideCount: number;
   hasQuiz: boolean;
   quizQuestionCount: number;
+  /** Bank size; quizQuestionCount remains the number drawn per attempt. */
+  quizBankQuestionCount?: number;
   viewed: boolean;
   passed: boolean;
   unlocked: boolean;
@@ -241,6 +244,7 @@ export interface PulseCourseDetail {
 }
 
 export interface PulseSlide {
+  media?: LessonMedia[];
   lessonId: string;
   title: string;
   lessonType: string;
@@ -280,7 +284,7 @@ export interface PulseModuleQuiz {
 
 export interface PulseModuleDetail {
   course: PulseCourseSummary;
-  module: { moduleId: string; index: number; title: string; description?: string | null; estimatedMinutes?: number | null };
+  module: { moduleId: string; index: number; title: string; description?: string | null; estimatedMinutes?: number | null; quizBankQuestionCount?: number };
   modules: { moduleId: string; index: number; title: string; passed: boolean; viewable: boolean }[];
   sample: boolean;
   slides: PulseSlide[];
@@ -354,6 +358,7 @@ export interface PulseExamQuestion {
 }
 
 export interface PulseFinal {
+  assignment?: CourseFinalContent | null;
   course: PulseCourseSummary;
   domain: PulseDomain;
   positionName?: string | null;
@@ -572,6 +577,7 @@ export interface PulseRecording {
 }
 
 export interface PulseFinalReviewItem {
+  assignment?: CourseFinalContent | null;
   /** PRE_ASSESSMENT (đánh giá trước khi học) | FINAL (bài cuối khóa). */
   kind: PulseExamKind;
   /** FINAL: lần nộp mới nhất; PRE_ASSESSMENT: id bài đánh giá. */

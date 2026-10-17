@@ -378,15 +378,14 @@ describe('Platform Admin console (v2)', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Chuẩn năng lực số TT02' })).toBeInTheDocument();
   });
 
-  it('PA-03 shows the anchor on the version in use, read-only', async () => {
+  it('PA-03 keeps the current anchor visible and opens the working draft by default', async () => {
     renderAt('/platform/versions');
 
     expect(await screen.findByText('Phiên bản v3')).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { level: 2, name: 'Khóa học của v3' })).toBeInTheDocument();
-    expect(screen.getByText('Đang dùng — chỉ xem. Muốn sửa, mở bản nháp.')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Công bố v3/ })).not.toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'Xem' })).toHaveLength(2);
-    expect(screen.getByRole('link', { name: 'Mở bản nháp v4' })).toHaveAttribute('href', '/platform/versions/4');
+    expect(await screen.findByRole('heading', { level: 2, name: 'Khóa học của v4' })).toBeInTheDocument();
+    expect(screen.getByText('Bản nháp chép từ v3: 1 khóa mới, 0 khóa đã sửa.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Công bố v4' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Sửa' })).toHaveLength(3);
   });
 
   it('PA-12 blocks publishing a draft while the publish check has blocking items', async () => {

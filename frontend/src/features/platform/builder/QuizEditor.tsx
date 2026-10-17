@@ -38,14 +38,14 @@ export function QuizEditor({ module, editable, edit }: { module: CatalogModule; 
     <section className="surface pad pa-quiz" aria-labelledby={`quiz-${module.moduleId}`}>
       <div className="pa-card-head">
         <div>
-          <h2 id={`quiz-${module.moduleId}`} className="panel-title">Câu hỏi ôn tập của mô đun</h2>
+          <h2 id={`quiz-${module.moduleId}`} className="panel-title">Ngân hàng câu hỏi ôn tập của mô đun</h2>
           <p className="panel-desc">
-            Mỗi lần làm rút {QUESTIONS_MIN} câu; sai thì nhân viên phải mở lại khối gắn với câu đó. Nên có {QUESTIONS_RECOMMENDED} câu để mỗi lần
-            làm là câu khác.
+            Ngân hàng hiện có {count} câu. Mỗi lượt nhân viên làm {Math.min(QUESTIONS_MIN, count)} câu được rút từ ngân hàng;
+            sai thì phải xem lại nội dung liên quan. Nên có ít nhất {QUESTIONS_RECOMMENDED} câu để thay đổi bộ câu giữa các lượt.
           </p>
         </div>
         <span className={`pill ${tone}`}>
-          {count} / {QUESTIONS_RECOMMENDED} câu
+          {count} câu trong ngân hàng
         </span>
       </div>
       <label className="field">

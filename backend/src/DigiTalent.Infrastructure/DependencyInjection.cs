@@ -70,10 +70,20 @@ public static class DependencyInjection
         // Personal Learning (Learner Workspace)
         services.AddScoped<DigiTalent.Application.PersonalLearning.Services.IPersonalLearningService, DigiTalent.Infrastructure.PersonalLearning.PersonalLearningService>();
 
-        // Member invitations: activation link delivery (logged until an e-mail provider exists)
+        // Member invitations reuse the configured SMTP sender. Local debug links are explicit only.
         var invitationSettings = configuration.GetSection("Invitations").Get<InvitationSettings>() ?? new InvitationSettings();
         services.AddSingleton(invitationSettings);
-        services.AddScoped<IInvitationSender, LoggingInvitationSender>();
+        var smtp = configuration.GetSection("IndividualCommerce:Smtp");
+        services.AddScoped<IInvitationSender>(provider =>
+            !string.IsNullOrWhiteSpace(smtp["Host"]) &&
+            !string.IsNullOrWhiteSpace(smtp["UserName"]) &&
+            !string.IsNullOrWhiteSpace(smtp["Password"]) &&
+            !string.IsNullOrWhiteSpace(smtp["FromEmail"])
+                ? ActivatorUtilities.CreateInstance<SmtpInvitationSender>(provider)
+                : ActivatorUtilities.CreateInstance<LoggingInvitationSender>(provider));
+
+        // Email OTP verification for Business Owner registration
+        services.AddScoped<IEmailVerificationSender, EmailVerificationSender>();
 
         return services;
     }
