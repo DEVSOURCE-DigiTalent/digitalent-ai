@@ -102,7 +102,10 @@ function TrialAccountPage({ kind }: { kind: 'verify' | 'accept' }) {
   const [search] = useSearchParams(); const token = search.get('token') ?? ''; const email = search.get('email') ?? ''; const navigate = useNavigate(); const cache = useQueryClient();
   const [code, setCode] = useState('');
   const [account, setAccount] = useState<TrialAccountDto | null>(null); const [password, setPassword] = useState('');
-  const verify = useMutation({ mutationFn: () => data(token ? service.verify(token, password) : service.verifyCode(email, code, password)), onSuccess: setAccount });
+  const verify = useMutation({
+    mutationFn: (): Promise<TrialAccountDto> => data(token ? service.verify(token, password) : service.verifyCode(email, code, password)),
+    onSuccess: verifiedAccount => setAccount(verifiedAccount),
+  });
   const login = useMutation({ mutationFn: async () => {
     let verifiedAccount = account;
     if (!verifiedAccount) {
