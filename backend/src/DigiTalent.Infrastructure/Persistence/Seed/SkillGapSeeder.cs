@@ -148,6 +148,14 @@ public static class SkillGapSeeder
 
             await CourseContentSeeder.SeedCourseContentAsync(db, organizationId, effectiveAuthorId);
             await db.SaveChangesAsync();
+            var currentCatalog = await db.PlatformCatalogVersions.AsNoTracking()
+                .Where(v => v.Status == Statuses.PlatformCatalogVersion.Current).Select(v => (Guid?)v.Id).FirstOrDefaultAsync();
+            if (currentCatalog is { } versionId)
+            {
+                await new DigiTalent.Application.UseCases.Platform.Catalog.PlatformLearningPublisher(db)
+                    .PublishAsync(versionId, effectiveAuthorId, DateTimeOffset.UtcNow, organizationId, includeUnchanged: true);
+                await db.SaveChangesAsync();
+            }
         }
     }
 
