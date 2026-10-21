@@ -48,6 +48,38 @@ public sealed class TrialLifecycleTests
     }
 
     [Fact]
+    public async Task Resending_verification_rotates_the_link_and_recovers_an_expired_registration()
+    {
+        using var world = new World();
+        await world.Service.RegisterAsync(world.Registration("owner@example.test"));
+        var firstToken = world.Mail.LatestToken;
+        await Assert.ThrowsAsync<ConflictException>(() => world.Service.ResendVerificationAsync("owner@example.test"));
+
+        world.Clock.Now = world.Clock.Now.AddDays(2);
+        var resent = await world.Service.ResendVerificationAsync("owner@example.test");
+        Assert.Null(resent.DevelopmentLink);
+        Assert.Null(resent.DevelopmentCode);
+        await Assert.ThrowsAsync<BadRequestException>(() => world.Service.VerifyAsync(firstToken));
+        Assert.Equal("owner@example.test", (await world.Service.VerifyAsync(world.Mail.LatestToken)).Email);
+    }
+
+    [Fact]
+    public async Task Failed_invitation_delivery_releases_its_seat_until_a_successful_resend()
+    {
+        using var world = new World(new TrialOptions { MaxAccounts = 2 });
+        await world.CreateOwnerAndPosition();
+        world.Mail.FailNext = true;
+        var failed = await world.Service.InviteAsync(new("First", "first@example.test", "Employee"));
+        Assert.Equal("send_failed", failed.State);
+        Assert.Equal(0, (await world.Service.ContextAsync()).Usage.PendingInvitations);
+
+        var active = await world.Service.InviteAsync(new("Second", "second@example.test", "Employee"));
+        Assert.Equal("pending", active.State);
+        world.Clock.Now = world.Clock.Now.AddMinutes(2);
+        await Assert.ThrowsAsync<ConflictException>(() => world.Service.ResendAsync(failed.Id));
+    }
+
+    [Fact]
     public async Task Seat_reservations_normalized_email_resend_and_single_use_invitation()
     {
         using var world = new World(new TrialOptions { MaxAccounts = 2 });
@@ -368,8 +400,14 @@ public sealed class TrialLifecycleTests
     private sealed class CapturingEmail : ITrialEmailSender
     {
         public bool IsReady => true;
+        public bool FailNext;
         public string LatestToken = "";
-        public Task SendAsync(string email, string kind, string token, CancellationToken ct = default) { LatestToken = token; return Task.CompletedTask; }
+        public Task SendAsync(string email, string kind, string token, CancellationToken ct = default)
+        {
+            if (FailNext) { FailNext = false; throw new InvalidOperationException("delivery failed"); }
+            LatestToken = token;
+            return Task.CompletedTask;
+        }
     }
     private sealed class ThrowingEmail : ITrialEmailSender
     {

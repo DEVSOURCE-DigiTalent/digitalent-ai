@@ -86,7 +86,34 @@ public sealed partial class TrialService
             throw;
         }
         return new("verification_pending", registration.ExpiresAt, DevelopmentLink("verify", token),
-            options.DevelopmentEnvironment && options.EnableDevelopmentCapture ? code : null);
+            options.DevelopmentEnvironment && mail.IsDevelopmentCapture ? code : null);
+    }
+
+    public async Task<TrialRegistrationDto> ResendVerificationAsync(string address)
+    {
+        if (!Readiness().CanRegister) throw new ForbiddenException("Enterprise trial registration is currently unavailable.");
+        var email = NormalizeEmail(address);
+        var registration = await db.TrialRegistrations.SingleOrDefaultAsync(x => x.Email == email);
+        // The public response does not confirm whether an email has a pending registration.
+        if (registration == null || registration.UsedAt != null)
+            return new("verification_pending", Now.AddHours(options.VerificationHours), null);
+
+        var issuedAt = registration.ExpiresAt.AddHours(-options.VerificationHours);
+        if (Now < issuedAt.AddSeconds(options.ResendCooldownSeconds))
+            throw new ConflictException("Vui lòng đợi trước khi yêu cầu mã xác minh mới.");
+
+        var token = Token();
+        var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+        // Keep the old code valid if email delivery fails.
+        await mail.SendVerificationCodeAsync(email, token, code);
+        registration.TokenHash = Hash(token);
+        registration.OtpHash = passwords.Hash(code);
+        registration.OtpFailedAttempts = 0;
+        registration.ExpiresAt = Now.AddHours(options.VerificationHours);
+        registration.Revision++;
+        await db.SaveChangesAsync();
+        return new("verification_pending", registration.ExpiresAt, DevelopmentLink("verify", token),
+            options.DevelopmentEnvironment && mail.IsDevelopmentCapture ? code : null);
     }
 
     public async Task<TrialAccountDto> VerifyCodeAsync(TrialCodeRequest request)
@@ -196,7 +223,7 @@ public sealed partial class TrialService
         var policy = Policy(trial);
         if (invitation.SendCount >= policy.MaxInvitationSends || Now < invitation.SentAt.AddSeconds(policy.ResendCooldownSeconds))
             throw new ConflictException("Invitation resend limit or cooldown reached.");
-        if (Now >= invitation.ExpiresAt)
+        if (invitation.SendFailed || Now >= invitation.ExpiresAt)
         {
             var usage = await Usage(trial);
             TrialPolicy.EnsureSeat(usage.Accounts, usage.PendingInvitations, policy.MaxAccounts);
@@ -220,7 +247,8 @@ public sealed partial class TrialService
         TrialPolicy.EnsureWritable(trial, Now);
         if (trial!.DepartmentId != invitation.DepartmentId || trial.PositionId != invitation.PositionId) throw new ForbiddenException("Invitation scope no longer matches the trial.");
         if (await db.Users.AnyAsync(x => x.Email == invitation.Email)) throw new ConflictException("An account already exists for this email.");
-        var user = new User { OrganizationId = invitation.OrganizationId, Email = invitation.Email, DisplayName = invitation.Name, PasswordHash = passwords.Hash(request.Password) };
+        var user = new User { OrganizationId = invitation.OrganizationId, Email = invitation.Email, DisplayName = invitation.Name,
+            PasswordHash = passwords.Hash(request.Password), EmailVerifiedAt = Now };
         var employee = new Employee { OrganizationId = invitation.OrganizationId, DepartmentId = invitation.DepartmentId, JobPositionId = invitation.PositionId,
             UserId = user.Id, FullName = invitation.Name, WorkEmail = invitation.Email, EmployeeCode = "TRIAL-" + Guid.NewGuid().ToString("N") };
         db.Users.Add(user); db.Employees.Add(employee);
@@ -273,7 +301,7 @@ public sealed partial class TrialService
         if (string.IsNullOrWhiteSpace(token) || token.Length != 64 || token.Any(c => !Uri.IsHexDigit(c))) throw new BadRequestException("Invalid link token.");
         return Hash(token);
     }
-    private string? DevelopmentLink(string kind, string token) => options.DevelopmentEnvironment && options.EnableDevelopmentCapture
+    private string? DevelopmentLink(string kind, string token) => options.DevelopmentEnvironment && mail.IsDevelopmentCapture
         ? options.PublicAppUrl.TrimEnd('/') + (kind == "verify" ? "/business/try/verify?token=" : "/business/try/accept?token=") + Uri.EscapeDataString(token) : null;
     private static string Json<T>(T value) => JsonSerializer.Serialize(value);
     private static T Read<T>(string json) => JsonSerializer.Deserialize<T>(json) ?? throw new InvalidOperationException("Trial snapshot is invalid.");
