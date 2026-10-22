@@ -3,6 +3,7 @@ namespace DigiTalent.Application.Trial;
 public sealed record TrialRegistrationRequest(string OrganizationName, string OwnerName, string Email, string Password, string Industry, string Size, string Goal, bool AcceptedTerms);
 public sealed record TrialTokenRequest(string Token);
 public sealed record TrialCodeRequest(string Email, string Code);
+public sealed record TrialResendVerificationRequest(string Email);
 public sealed record TrialAccountDto(Guid UserId, Guid OrganizationId, string Email, string Role);
 public sealed record TrialRegistrationDto(string State, DateTimeOffset ExpiresAt, string? DevelopmentLink, string? DevelopmentCode = null);
 public sealed record TrialSelectionRequest(string CatalogKey, string DepartmentName);
@@ -44,6 +45,7 @@ public interface ITrialCatalog
 public interface ITrialEmailSender
 {
     bool IsReady { get; }
+    bool IsDevelopmentCapture => false;
     Task SendAsync(string email, string kind, string token, CancellationToken ct = default);
     Task SendVerificationCodeAsync(string email, string token, string code, CancellationToken ct = default)
         => SendAsync(email, "verify", token, ct);

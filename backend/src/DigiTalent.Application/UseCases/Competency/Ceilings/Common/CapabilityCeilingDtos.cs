@@ -62,6 +62,8 @@ public class CeilingDepartmentDto
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public int EmployeeCount { get; set; }
+    /// <summary>False when no position in the department has active requirements or a supported reference mapping.</summary>
+    public bool HasSuggestion { get; set; }
 
     /// <summary>true khi phòng ban có ít nhất một trần riêng; false = kế thừa trần doanh nghiệp.</summary>
     public bool IsCustomized { get; set; }

@@ -10,6 +10,7 @@ using DigiTalent.Application.UseCases.Me;
 using DigiTalent.Application.UseCases.Organization.Members;
 using DigiTalent.Application.UseCases.Organization.Workforce;
 using DigiTalent.Application.UseCases.Pulse;
+using DigiTalent.Application.UseCases.Platform.References;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -91,6 +92,7 @@ public static class DependencyInjection
 
         // 8. Trần nhà năng lực của doanh nghiệp / phòng ban (OW-05)
         services.AddScoped<CapabilityCeilingReader>();
+        services.AddScoped<ReferencePositionMatrixService>();
 
         // 9. Quản trị nền tảng: phiên bản chương trình và trình soạn khóa học (/platform/catalog/*)
         services.AddScoped<DigiTalent.Application.UseCases.Platform.Catalog.PlatformCatalogEditor>();

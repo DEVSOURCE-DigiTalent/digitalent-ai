@@ -112,6 +112,23 @@ button.cc-cell:hover { box-shadow: 0 0 0 2px color-mix(in srgb, var(--cc-accent)
 .cc-btn:hover:not(:disabled) { border-color: var(--cc-accent); }
 .cc-btn:disabled { opacity: 0.45; cursor: default; }
 .cc-btn.primary { background: var(--cc-accent); border-color: var(--cc-accent); color: var(--cc-surface); }
+.cc-sources { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--cc-line); padding-top: 14px; }
+.cc-sources h3 { margin: 0; font-size: 15px; line-height: 1.35; }
+.cc-sources p, .cc-sources > small { margin: 0; font-size: 12.5px; color: var(--cc-muted); line-height: 1.5; }
+.cc-source-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.cc-source-option { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; border: 1px solid var(--cc-line); border-radius: 10px; background: color-mix(in srgb, var(--cc-bg) 60%, var(--cc-surface)); }
+.cc-source-option strong, .cc-source-option label { font-size: 12.5px; font-weight: 700; line-height: 1.35; }
+.cc-source-option small { flex: 1; color: var(--cc-muted); font-size: 12px; line-height: 1.45; }
+.cc-source-option select { width: 100%; min-width: 0; font: inherit; font-size: 12.5px; color: var(--cc-fg); background: var(--cc-surface); border: 1px solid var(--cc-line); border-radius: 8px; padding: 7px 10px; }
+.cc-source-status { color: var(--cc-warn) !important; }
+.cc-comparison-scroll { overflow-x: auto; }
+.cc-comparison { width: 100%; border-collapse: collapse; font-size: 12px; line-height: 1.35; }
+.cc-comparison caption { text-align: left; font-size: 12.5px; font-weight: 700; padding: 2px 0 7px; }
+.cc-comparison th, .cc-comparison td { border-top: 1px solid var(--cc-line); padding: 6px 8px; text-align: center; font-variant-numeric: tabular-nums; }
+.cc-comparison th:first-child { text-align: left; }
+.cc-comparison thead th { color: var(--cc-muted); font-weight: 600; white-space: nowrap; }
+.cc-comparison tbody th { font-weight: 500; }
+@media (max-width: 640px) { .cc-source-options { grid-template-columns: 1fr; } .cc-comparison { min-width: 500px; } }
 
 .cc-side { display: flex; flex-direction: column; gap: 14px; }
 .cc-side > p { margin: 0; font-size: 15px; }

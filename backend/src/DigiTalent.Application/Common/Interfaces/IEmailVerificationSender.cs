@@ -8,7 +8,7 @@ public interface IEmailVerificationSender
 {
     /// <summary>
     /// Gửi email chứa OTP 6 số đến <paramref name="toEmail"/>.
-    /// Trả về link debug (chỉ trong môi trường Development), null trong production.
+    /// Trả về OTP thử khi Development không có SMTP; trả null khi gửi email thật.
     /// </summary>
     Task<string?> SendOtpAsync(
         string toEmail,

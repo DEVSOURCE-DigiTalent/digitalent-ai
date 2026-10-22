@@ -24,7 +24,7 @@ const painPoints = [
     pain: 'Học đại trà, chung chung',
     painTag: 'Không sát nghiệp vụ',
     solution: 'Chuẩn hóa theo từng vị trí',
-    solutionTag: 'Vị trí ≤ Phòng ban ≤ Doanh nghiệp',
+    solutionTag: 'Mục tiêu theo vị trí · mở khóa theo doanh nghiệp',
     icon: Layers,
     color: 'coral',
   },

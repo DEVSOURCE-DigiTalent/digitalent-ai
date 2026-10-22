@@ -66,7 +66,7 @@ export function RoadmapPlan({ overview, variant = 'regular', caption }: { overvi
 }
 
 function PlanCell({ course, domain, joined }: { course: PulseCourseSummary; domain: PulseDomain; joined: boolean }) {
-  const tag = course.tier !== domain.pathTop ? null : domain.pathTop < domain.target ? 'Trần phòng ban' : 'Mục tiêu';
+  const tag = course.tier !== domain.pathTop ? null : domain.pathTop < domain.target ? 'Giới hạn khóa' : 'Mục tiêu';
   return (
     <span className={`pu-plan-course lv${course.tier}${joined ? ' joined' : ''}`}>
       <b>

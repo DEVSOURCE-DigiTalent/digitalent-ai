@@ -34,28 +34,23 @@ export function OwnerSetupBlueprintPage() {
   const deptCount = deptItem ? parseInt(deptItem.detail, 10) || 0 : 0;
   const posItem = orgData?.setup.find((s) => s.key === 'positions');
   const posCount = posItem ? parseInt(posItem.detail, 10) || 0 : 0;
-  const averageCoverage = capData?.kpis.averageCoverage ?? 0;
-
   const tierLevels = useMemo(
     () => [
-      { label: 'Digital AI', sublabel: 'Chuẩn nền tảng', percent: 100 },
+      { label: 'DigiTalent', sublabel: 'Danh mục khóa và 5 mẫu vị trí tham khảo' },
       {
         label: orgData?.name || 'Tổ chức',
-        sublabel: `${deptCount} phòng ban`,
-        percent: Math.min(85, Math.max(20, averageCoverage + 15)),
+        sublabel: 'Tự đặt giới hạn khóa và yêu cầu vị trí',
       },
       {
         label: 'Phòng ban',
-        sublabel: `${deptCount} đơn vị`,
-        percent: Math.min(70, Math.max(15, averageCoverage)),
+        sublabel: `${deptCount} đơn vị quản lý nhân viên và Manager`,
       },
       {
         label: 'Vị trí',
-        sublabel: `${posCount} vị trí`,
-        percent: Math.min(55, Math.max(10, averageCoverage - 10)),
+        sublabel: `${posCount} vị trí có mục tiêu năng lực riêng`,
       },
     ],
-    [orgData?.name, deptCount, posCount, averageCoverage],
+    [orgData?.name, deptCount, posCount],
   );
 
   const domains = useMemo(
@@ -153,8 +148,8 @@ export function OwnerSetupBlueprintPage() {
             color: '#385084',
           }}
         >
-          <strong>Thứ tự bắt buộc:</strong> mục tiêu vị trí ≤ trần phòng ban
-          ≤ trần doanh nghiệp ≤ Digital AI. Công bố trước khi mời nhân viên.
+          <strong>Phân biệt hai việc:</strong> vị trí xác định năng lực cần đạt của nhân viên;
+          doanh nghiệp quyết định khóa được mở. Phòng ban quản lý nhân viên và có thể giới hạn thêm khóa được mở.
         </div>
 
         {/* Blueprint flow + checklist */}
@@ -251,7 +246,7 @@ export function OwnerSetupBlueprintPage() {
               className="mt-[11px] text-xl font-semibold tracking-[-0.045em]"
               style={{ color: 'var(--po-ink)' }}
             >
-              Mỗi nhân viên đi qua phòng ban, rồi vị trí cụ thể.
+              Mục tiêu học theo vị trí công việc.
             </h2>
             <p
               className="text-xs leading-relaxed mt-1"
@@ -274,8 +269,8 @@ export function OwnerSetupBlueprintPage() {
                 className="block mt-0.5 text-[11px]"
                 style={{ color: 'var(--po-muted)' }}
               >
-                Vị trí ≤ Phòng ban ≤ {orgData?.name || 'Tổ chức'} ≤ Digital
-                AI
+                Mục tiêu vị trí quyết định đích học; phạm vi khóa mở do {orgData?.name || 'doanh nghiệp'}
+                {deptCount > 0 ? ' và phòng ban (nếu có giới hạn riêng)' : ''} quyết định.
               </small>
               <div
                 className="mt-3 h-[5px] rounded-full overflow-hidden"
@@ -346,7 +341,7 @@ export function OwnerSetupBlueprintPage() {
                 }}
               >
                 <Settings className="size-4" />
-                Thiết lập yêu cầu vị trí
+                Điều chỉnh yêu cầu riêng của doanh nghiệp
               </Link>
               <Link
                 to="/enterprise/members"

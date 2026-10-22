@@ -28,6 +28,10 @@ public sealed class EnterpriseTrialController(TrialService trial) : ControllerBa
     [HttpPost("verify-code"), AllowAnonymous]
     public async Task<IActionResult> VerifyCode(TrialCodeRequest request) => Ok(ApiResponse<TrialAccountDto>.Ok(await trial.VerifyCodeAsync(request)));
 
+    [HttpPost("verification/resend"), AllowAnonymous]
+    public async Task<IActionResult> ResendVerification(TrialResendVerificationRequest request) =>
+        Ok(ApiResponse<TrialRegistrationDto>.Ok(await trial.ResendVerificationAsync(request.Email)));
+
     [HttpPost("accept"), AllowAnonymous]
     public async Task<IActionResult> Accept(TrialAcceptRequest request) => Ok(ApiResponse<TrialAccountDto>.Ok(await trial.AcceptAsync(request)));
 

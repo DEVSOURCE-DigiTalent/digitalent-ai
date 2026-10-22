@@ -109,6 +109,11 @@ export function domainLevel(rows: DomainRow[]): number {
   return [...counts.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0])[0]?.[0] ?? NOT_REQUIRED;
 }
 
+/** Highest required competency level in a domain, matching the position-based ceiling suggestion. */
+export function domainTargetLevel(rows: DomainRow[]): number {
+  return requiredRows(rows).reduce((highest, row) => Math.max(highest, row.requiredLevel), NOT_REQUIRED);
+}
+
 /** Mandatory = competencies required at Advanced, plus the core safety competencies for every position. */
 export function isMandatoryFor(level: number, frameworkCode?: string | null): boolean {
   if (level === NOT_REQUIRED) return false;

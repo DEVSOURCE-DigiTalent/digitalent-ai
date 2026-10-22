@@ -85,27 +85,29 @@ Mỗi vai trò đã đăng nhập có lối vào **Hồ sơ của tôi** (`#/pro
 
 ## 5. Chủ doanh nghiệp thiết kế khung năng lực trước khi mời người
 
-### 5.1 Cấu trúc trần và đích
+### 5.1 Phân biệt phạm vi khóa học và mục tiêu vị trí
 
-Tại `#/setup`, chủ doanh nghiệp chọn phòng ban rồi vị trí; mỗi trong sáu lĩnh vực năng lực có bốn lớp mức:
+Ở phiên bản web hiện tại, doanh nghiệp có thể đặt giới hạn khóa học cho toàn tổ chức và giới hạn riêng cho phòng ban. Đây là **phạm vi khóa được mở**, không phải mức năng lực mà mọi nhân viên trong phòng ban phải đạt. Mục tiêu đào tạo lấy từ bộ yêu cầu đã công bố của **vị trí công việc** mà nhân viên đảm nhiệm:
 
 ```text
-Mục tiêu vị trí ≤ Trần phòng ban ≤ Trần doanh nghiệp ≤ Trần Digital AI
+Phạm vi khóa phòng ban ≤ Phạm vi khóa doanh nghiệp ≤ Danh mục DigiTalent
+Lộ trình nhân viên = các khóa đến min(mục tiêu vị trí, phạm vi khóa được mở)
 ```
 
 | Lớp | Ai quản lý | Tác dụng |
 | --- | --- | --- |
-| Trần Digital AI | Quản trị nền tảng | Trần ngoài cùng, sáu lĩnh vực và ba cấp Cơ bản / Trung cấp / Nâng cao; chủ doanh nghiệp chỉ xem. |
-| Trần doanh nghiệp | Chủ doanh nghiệp | Mức tối đa doanh nghiệp chọn trong từng lĩnh vực. |
-| Trần phòng ban | Chủ doanh nghiệp; quản lý được gửi đề xuất | Mức tối đa của một phòng ban, không vượt trần doanh nghiệp. |
-| Mục tiêu vị trí | Chủ doanh nghiệp | Đích học của một vị trí trong phòng ban, không vượt trần phòng ban. Nhân viên đi theo đúng đích này. |
+| Danh mục DigiTalent | Quản trị nền tảng | Sáu lĩnh vực và ba cấp Cơ bản / Trung cấp / Nâng cao; doanh nghiệp chỉ xem. |
+| Phạm vi khóa doanh nghiệp | Chủ doanh nghiệp | Cấp khóa cao nhất doanh nghiệp mở trong từng lĩnh vực. |
+| Phạm vi khóa phòng ban (tùy chọn) | Chủ doanh nghiệp | Giới hạn thêm khóa được mở cho nhân viên của phòng ban; không tạo một mục tiêu năng lực chung cho cả phòng. |
+| Mục tiêu vị trí | Chủ doanh nghiệp | Bộ năng lực cần đạt riêng của từng vị trí. Nhân viên có vị trí đó nhận lộ trình theo mục tiêu này trong phạm vi khóa được mở. |
+| Mẫu tham chiếu 5 vị trí | Quản trị nền tảng | CEO, HR, Marketing, Sales/CRM, Kế toán; Owner chỉ xem để tham khảo. Sửa mẫu không tự sửa bộ yêu cầu đã áp dụng của doanh nghiệp. |
 
 Sáu lĩnh vực là **Dữ liệu và thông tin, Giao tiếp và cộng tác, Nội dung số, An toàn số, Giải quyết vấn đề, Năng lực AI**. Mức 0 là chưa đặt/không yêu cầu trong các phép so sánh; mức 1/2/3 tương ứng Cơ bản/Trung cấp/Nâng cao. Bản xem trước có giá trị gợi ý ban đầu cho doanh nghiệp, phòng Kế toán và vị trí Kế toán viên; chủ doanh nghiệp có thể giữ hoặc chỉnh từng mức, thêm phòng ban và vị trí. Tên riêng trong dữ liệu mẫu có thể giữ nguyên để phân biệt các tài khoản mô phỏng.
 
 ### 5.2 Chỉnh sửa, kiểm tra và công bố
 
 1. Chủ doanh nghiệp chọn phòng ban và vị trí cần cấu hình. Khi chọn phòng ban khác, danh sách vị trí đổi theo phòng ban.
-2. Chủ doanh nghiệp chỉnh trần doanh nghiệp → trần phòng ban → mục tiêu vị trí cho từng lĩnh vực. Giao diện chặn mức con cao hơn mức cha và chặn hạ mức cha thấp hơn mức con hiện có; cần sửa theo thứ tự hợp lệ.
+2. Chủ doanh nghiệp đặt phạm vi khóa doanh nghiệp, có thể giới hạn thêm khóa cho phòng ban, và điều chỉnh bộ yêu cầu riêng cho từng vị trí. Giới hạn phòng ban không được cao hơn doanh nghiệp. Bộ yêu cầu vị trí là mục tiêu năng lực riêng, không bị ghi đè khi Admin sửa mẫu tham chiếu.
 3. Thêm phòng ban/vị trí hoặc đổi một mức sẽ đưa khung về **Bản nháp** (`published=false`). Đổi chính sách thời gian nộp lại cũng cần công bố lại.
 4. Nút **Công bố khung năng lực** kiểm tra mọi phòng ban và vị trí, rồi chuyển sang trạng thái **Đã công bố**. Sau đó mới mở bước tạo quản lý và mời nhân viên.
 5. Nếu quản lý đề xuất đổi trần phòng ban, chủ doanh nghiệp xem tại Tổng quan, chấp nhận đưa mức vào bản nháp nếu không xung đột hoặc từ chối. Chấp nhận chưa phải phát hành: phải công bố lại khung.
@@ -260,7 +262,7 @@ Chủ doanh nghiệp tạo nhiệm vụ với tiêu đề, bối cảnh, lĩnh v
 
 ### 12.3 Đề xuất trần từ quản lý
 
-**Quản lý `#/gap` → chủ doanh nghiệp `#/owner` → chủ doanh nghiệp `#/setup`.** Quản lý chọn lĩnh vực và mức trần phòng ban muốn đề xuất. Mức phải nằm trong trần doanh nghiệp và không thấp hơn các mục tiêu vị trí hiện có. Chủ doanh nghiệp chấp nhận hoặc từ chối; chấp nhận chỉ sửa **bản nháp**, rồi chủ doanh nghiệp công bố lại. Quản lý không tự công bố khung.
+**Quản lý `#/gap` → chủ doanh nghiệp `#/owner` → chủ doanh nghiệp `#/setup`.** Quản lý có thể đề xuất thay đổi phạm vi khóa được mở cho nhân viên phòng ban. Mức đề xuất không vượt giới hạn doanh nghiệp. Chủ doanh nghiệp chấp nhận hoặc từ chối; giới hạn này không sửa mục tiêu năng lực của vị trí. Quản lý không tự công bố khung.
 
 ### 12.4 Khung năng lực chung và phát hành nội dung
 

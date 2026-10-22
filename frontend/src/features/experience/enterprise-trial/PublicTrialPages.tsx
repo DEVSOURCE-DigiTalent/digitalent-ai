@@ -31,6 +31,7 @@ export function TrialRegisterPage() {
   >
     <div className="pulse-auth-fields">
       {requestError && <p role="alert" className="pulse-auth-error">{message(requestError)}</p>}
+      {register.error && form.email && <p className="pulse-auth-subtle">Đã đăng ký email này? <Link to={`/business/try/verify?email=${encodeURIComponent(form.email.trim())}`}>Xác minh hoặc gửi lại mã</Link>.</p>}
       {readiness.isPending && <p role="status" className="pulse-auth-info">Đang kiểm tra điều kiện dùng thử…</p>}
       {readiness.data?.developmentOnly && <p className="pulse-auth-info">Môi trường demo: dữ liệu và nội dung học được dùng để trải nghiệm thử, chưa phải bản phát hành chính thức.</p>}
       {readiness.data && !readiness.data.canRegister && <p role="alert" className="pulse-auth-error">Chưa thể đăng ký: {readiness.data.missingReasons.join(' · ')}</p>}
@@ -101,7 +102,9 @@ export function TrialRegisterPage() {
 function TrialAccountPage({ kind }: { kind: 'verify' | 'accept' }) {
   const [search] = useSearchParams(); const token = search.get('token') ?? ''; const email = search.get('email') ?? ''; const navigate = useNavigate(); const cache = useQueryClient();
   const [code, setCode] = useState('');
+  const [resendResult, setResendResult] = useState<TrialRegistrationDto | null>(null);
   const [account, setAccount] = useState<TrialAccountDto | null>(null); const [password, setPassword] = useState('');
+  const resend = useMutation({ mutationFn: () => data(service.resendVerification(email)), onSuccess: value => { setCode(''); setResendResult(value); } });
   const verify = useMutation({
     mutationFn: (): Promise<TrialAccountDto> => data(token ? service.verify(token, password) : service.verifyCode(email, code, password)),
     onSuccess: verifiedAccount => setAccount(verifiedAccount),
@@ -127,6 +130,11 @@ function TrialAccountPage({ kind }: { kind: 'verify' | 'accept' }) {
     <div className="pulse-auth-fields">
       {accountError && <p role="alert" className="pulse-auth-error">{message(accountError)}</p>}
       {verify.isPending && <p role="status" className="pulse-auth-info">Đang xác minh…</p>}
+      {kind === 'verify' && !token && email && !account && <div className="pulse-auth-fields">
+        {resend.error && <p role="alert" className="pulse-auth-error">{message(resend.error)}</p>}
+        {resendResult && <p role="status" className="pulse-auth-success">Nếu email đang chờ xác minh, mã mới đã được gửi. Kiểm tra cả thư rác.{resendResult.developmentCode && <> Mã thử: <strong>{resendResult.developmentCode}</strong></>}</p>}
+        <button type="button" className="pulse-auth-secondary" disabled={resend.isPending} onClick={() => resend.mutate()}>{resend.isPending ? 'Đang gửi lại…' : 'Gửi lại mã xác minh'}</button>
+      </div>}
       {account && <p role="status" className="pulse-auth-success">Tài khoản đã xác minh: {account.email}. Nếu đăng nhập lỗi, hãy thử lại bằng cùng tài khoản.</p>}
       <form className="pulse-auth-fields" onSubmit={event => { event.preventDefault(); if ((token || (kind === 'verify' && email && code.length === 6)) && !login.isPending) login.mutate(); }}>
         {kind === 'verify' && !token && <div className="pulse-auth-field"><label htmlFor="trial-code">Mã xác minh email</label><input id="trial-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required autoComplete="one-time-code" value={code} onChange={event => setCode(event.target.value.replace(/\D/g, ''))} placeholder="6 chữ số" /></div>}

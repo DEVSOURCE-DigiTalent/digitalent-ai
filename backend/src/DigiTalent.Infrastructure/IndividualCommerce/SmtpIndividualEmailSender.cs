@@ -181,7 +181,7 @@ public class SmtpIndividualEmailSender : IIndividualEmailSender
 </body>
 </html>";
 
-        await SendAndRecordAsync(recipientEmail, "PASSWORD_RESET", subject, bodyHtml, cancellationToken);
+        await SendAndRecordAsync(recipientEmail, "PASSWORD_RESET", subject, bodyHtml, cancellationToken, throwOnFailure: true);
     }
 
     private async Task SendAndRecordAsync(
@@ -189,7 +189,8 @@ public class SmtpIndividualEmailSender : IIndividualEmailSender
         string templateName,
         string subject,
         string bodyHtml,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool throwOnFailure = false)
     {
         var outboxItem = new EmailOutboxItem
         {
@@ -238,6 +239,7 @@ public class SmtpIndividualEmailSender : IIndividualEmailSender
             await _context.SaveChangesAsync(cancellationToken);
 
             _logger.LogError(ex, "Failed to send email {Template} to {Recipient}", templateName, recipientEmail);
+            if (throwOnFailure) throw;
         }
     }
 }

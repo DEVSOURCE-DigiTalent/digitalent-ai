@@ -160,7 +160,7 @@ function CompetencyItem({ domain, overview, open, onToggle }: { domain: PulseDom
   const bodyId = `pu-comp-${domain.categoryId}`;
   const summary = [
     `Mục tiêu ${levelName(domain.target)}`,
-    `trần phòng ban ${levelName(domain.ceiling)}`,
+    `khóa được mở đến ${levelName(domain.ceiling)}`,
     `${path.length} khóa trong lộ trình`,
     optional ? `${optional} khóa tùy chọn` : null,
   ].filter(Boolean).join(' · ');

@@ -4,6 +4,7 @@ using DigiTalent.Application.IndividualCommerce;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using System.Security.Cryptography;
 
 namespace DigiTalent.Application.UseCases.Auth;
 
@@ -32,26 +33,20 @@ public class ForgotPasswordUseCase : IUseCase<ForgotPasswordInput, ForgotPasswor
             return new ForgotPasswordOutput();
         }
 
-        // Tạo token đặt lại mật khẩu ngẫu nhiên an toàn
-        var rawToken = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
         var now = DateTimeOffset.UtcNow;
-        var expiresAt = now.AddMinutes(30);
+        if (await _context.PasswordResetTokens.AnyAsync(t => t.UserId == user.Id && t.Purpose == TokenPurpose.ResetPassword
+            && t.UsedAt == null && t.CreatedAt > now.AddMinutes(-1)))
+            return new ForgotPasswordOutput();
 
-        // Vô hiệu hóa các token reset mật khẩu cũ chưa sử dụng của user này
-        var oldTokens = await _context.PasswordResetTokens
-            .Where(t => t.UserId == user.Id && t.UsedAt == null && t.Purpose == Domain.Entities.TokenPurpose.ResetPassword)
-            .ToListAsync();
-        foreach (var t in oldTokens)
-        {
-            t.UsedAt = now;
-            t.UpdatedAt = now;
-        }
+        // Tạo token đặt lại mật khẩu ngẫu nhiên an toàn
+        var rawToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+        var expiresAt = now.AddMinutes(30);
 
         var resetToken = new PasswordResetToken
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
-            TokenHash = rawToken,
+            TokenHash = PasswordResetTokenHasher.Hash(rawToken),
             ExpiresAt = expiresAt,
             CreatedAt = now,
             UpdatedAt = now,
@@ -71,13 +66,21 @@ public class ForgotPasswordUseCase : IUseCase<ForgotPasswordInput, ForgotPasswor
         }
         catch
         {
-            // Bỏ qua lỗi gửi email để không chặn response người dùng, đã có log ở SmtpIndividualEmailSender
+            // A failed delivery cannot invalidate an older usable link.
+            _context.PasswordResetTokens.Remove(resetToken);
+            await _context.SaveChangesAsync();
+            return new ForgotPasswordOutput();
         }
 
-        var isDev = _configuration["ASPNETCORE_ENVIRONMENT"] == "Development" || _configuration["IndividualCommerce:Security:IsDevelopment"] == "true";
-        return new ForgotPasswordOutput
+        var oldTokens = await _context.PasswordResetTokens
+            .Where(t => t.UserId == user.Id && t.Id != resetToken.Id && t.UsedAt == null && t.Purpose == TokenPurpose.ResetPassword)
+            .ToListAsync();
+        foreach (var oldToken in oldTokens)
         {
-            DebugLink = isDev ? $"/reset-password/{rawToken}" : null
-        };
+            oldToken.UsedAt = now;
+            oldToken.UpdatedAt = now;
+        }
+        await _context.SaveChangesAsync();
+        return new ForgotPasswordOutput();
     }
 }

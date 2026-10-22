@@ -15,18 +15,22 @@ public static class EnterpriseTrialExtensions
         services.AddSingleton(options);
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<ITrialCatalog, DevelopmentTrialCatalog>();
-        if (options.DevelopmentEnvironment && options.EnableDevelopmentCapture)
+        var smtp = config.GetSection("IndividualCommerce:Smtp");
+        var smtpReady = !string.IsNullOrWhiteSpace(smtp["Host"]) &&
+                        !string.IsNullOrWhiteSpace(smtp["UserName"]) &&
+                        !string.IsNullOrWhiteSpace(smtp["Password"]) &&
+                        !string.IsNullOrWhiteSpace(smtp["FromEmail"]);
+        if (smtpReady)
+        {
+            services.AddSingleton<ITrialEmailSender, SmtpTrialEmailSender>();
+        }
+        else if (options.DevelopmentEnvironment && options.EnableDevelopmentCapture)
         {
             services.AddSingleton<ITrialEmailSender, DevelopmentCaptureTrialEmailSender>();
         }
         else
         {
-            var smtpHost = config["IndividualCommerce:Smtp:Host"] ?? config["EnterpriseTrial:Smtp:Host"];
-            var smtpUser = config["IndividualCommerce:Smtp:UserName"] ?? config["EnterpriseTrial:Smtp:UserName"];
-            if (!string.IsNullOrWhiteSpace(smtpHost) && !string.IsNullOrWhiteSpace(smtpUser))
-                services.AddSingleton<ITrialEmailSender, SmtpTrialEmailSender>();
-            else
-                services.AddSingleton<ITrialEmailSender, UnavailableTrialEmailSender>();
+            services.AddSingleton<ITrialEmailSender, UnavailableTrialEmailSender>();
         }
         services.AddScoped<TrialService>();
         services.AddRateLimiter(limits =>
@@ -35,6 +39,9 @@ public static class EnterpriseTrialExtensions
             limits.AddPolicy("enterprise-trial", context => RateLimitPartition.GetFixedWindowLimiter(
                 context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+            limits.AddPolicy("auth-email", context => RateLimitPartition.GetFixedWindowLimiter(
+                context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 12, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
         });
         return services;
     }

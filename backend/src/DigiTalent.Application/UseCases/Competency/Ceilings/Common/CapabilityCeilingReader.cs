@@ -1,5 +1,6 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Pulse;
+using DigiTalent.Application.UseCases.Platform.References;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -16,11 +17,13 @@ public class CapabilityCeilingReader
 
     private readonly IApplicationDbContext _context;
     private readonly PulseCatalogReader _catalog;
+    private readonly ReferencePositionMatrixService? _references;
 
-    public CapabilityCeilingReader(IApplicationDbContext context, PulseCatalogReader catalog)
+    public CapabilityCeilingReader(IApplicationDbContext context, PulseCatalogReader catalog, ReferencePositionMatrixService? references = null)
     {
         _context = context;
         _catalog = catalog;
+        _references = references;
     }
 
     /// <summary>Lĩnh vực của ma trận: lĩnh vực có khóa chuẩn đã xuất bản, không có thì mọi lĩnh vực ACTIVE.</summary>
@@ -67,6 +70,19 @@ public class CapabilityCeilingReader
             .Where(e => e.OrganizationId == organizationId && e.Status == Statuses.Employee.Active)
             .Select(e => new { e.DepartmentId, e.JobPositionId })
             .ToListAsync();
+        var positionsInOrganization = await _context.JobPositions.AsNoTracking()
+            .Where(p => p.OrganizationId == organizationId && p.Status == Statuses.MasterData.Active)
+            .Select(p => new { p.Id, p.DepartmentId, p.Code, p.Name })
+            .ToListAsync();
+        var reference = _references == null ? null : await _references.GetAsync();
+        var domainNumbers = domains.Select((domain, index) => new
+            { domain.Id, Number = domain.Code.StartsWith("TT02_D", StringComparison.OrdinalIgnoreCase)
+                && int.TryParse(domain.Code.AsSpan(6), out var number) && number is >= 1 and <= 6 ? number : index + 1 })
+            .ToDictionary(row => row.Id, row => row.Number);
+        var referenceByPosition = positionsInOrganization
+            .Select(position => new { position.Id, Code = ReferencePositionMatrixService.MatchPosition(position.Code, position.Name) })
+            .Where(position => position.Code != null && reference?.Levels.ContainsKey(position.Code) == true)
+            .ToDictionary(position => position.Id, position => reference!.Levels[position.Code!]);
 
         // Mức yêu cầu cao nhất theo (vị trí, lĩnh vực) trong các bộ yêu cầu ACTIVE.
         var requirementRows = await (
@@ -75,6 +91,7 @@ public class CapabilityCeilingReader
                 join item in _context.PositionRequirementItems.AsNoTracking() on set.Id equals item.RequirementSetId
                 join competency in _context.Competencies.AsNoTracking() on item.CompetencyId equals competency.Id
                 where position.OrganizationId == organizationId
+                      && position.Status == Statuses.MasterData.Active
                       && set.Status == Statuses.PositionRequirementSet.Active
                       && domainIds.Contains(competency.CategoryId)
                 select new { PositionId = position.Id, position.DepartmentId, competency.CategoryId, item.RequiredLevel })
@@ -86,11 +103,13 @@ public class CapabilityCeilingReader
                 g => g.GroupBy(r => r.CategoryId).ToDictionary(c => c.Key, c => Clamp(c.Max(r => (int)r.RequiredLevel))));
 
         int Suggest(IEnumerable<Guid> positionIds, Guid categoryId) => positionIds
-            .Select(id => requirementByPosition.TryGetValue(id, out var levels) && levels.TryGetValue(categoryId, out var level) ? level : 0)
+            .Select(id => requirementByPosition.TryGetValue(id, out var levels)
+                ? levels.GetValueOrDefault(categoryId)
+                : referenceByPosition.TryGetValue(id, out var sample) ? sample[domainNumbers[categoryId] - 1] : 0)
             .DefaultIfEmpty(0)
             .Max();
 
-        var allPositions = requirementByPosition.Keys.ToList();
+        var allPositions = requirementByPosition.Keys.Concat(referenceByPosition.Keys).Distinct().ToList();
         var output = new T
         {
             PlatformMaxLevel = CapabilityCeiling.MaxLevel,
@@ -129,7 +148,7 @@ public class CapabilityCeilingReader
             var positions = employees
                 .Where(e => e.DepartmentId == department.Id && e.JobPositionId.HasValue)
                 .Select(e => e.JobPositionId!.Value)
-                .Concat(requirementRows.Where(r => r.DepartmentId == department.Id).Select(r => r.PositionId))
+                .Concat(positionsInOrganization.Where(p => p.DepartmentId == department.Id).Select(p => p.Id))
                 .Distinct()
                 .ToList();
             deptRows.TryGetValue(department.Id, out var custom);
@@ -152,6 +171,7 @@ public class CapabilityCeilingReader
                 Code = department.Code,
                 Name = department.Name,
                 EmployeeCount = employees.Count(e => e.DepartmentId == department.Id),
+                HasSuggestion = domains.All(domain => Suggest(positions, domain.Id) > 0),
                 IsCustomized = values.Any(v => v.IsCustomized),
                 CourseCount = values.Sum(v => v.Level),
                 Ceilings = values,

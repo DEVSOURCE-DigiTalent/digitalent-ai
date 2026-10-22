@@ -74,6 +74,6 @@ public sealed class EmailVerificationSender : IEmailVerificationSender
         };
         await client.SendMailAsync(email, cancellationToken);
         _logger.LogInformation("[EmailVerificationSender] OTP sent to {Email}", toEmail);
-        return isDev ? otp : null;
+        return null;
     }
 }

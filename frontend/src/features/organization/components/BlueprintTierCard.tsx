@@ -1,7 +1,6 @@
 interface TierLevel {
   label: string;
   sublabel: string;
-  percent: number;
 }
 
 interface BlueprintTierCardProps {
@@ -32,18 +31,6 @@ export function BlueprintTierCard({ levels }: BlueprintTierCardProps) {
           >
             {level.sublabel}
           </small>
-          <div
-            className="mt-3 h-[5px] rounded-full overflow-hidden"
-            style={{ background: 'var(--po-line)' }}
-          >
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${level.percent}%`,
-                background: 'var(--po-accent)',
-              }}
-            />
-          </div>
         </div>
       ))}
     </div>

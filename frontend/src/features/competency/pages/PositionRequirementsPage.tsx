@@ -180,8 +180,8 @@ export function PositionRequirementsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Yêu cầu năng lực theo vị trí"
-        subtitle="Chọn các năng lực của Khung chuẩn năng lực số mà mỗi vị trí cần, kèm mức yêu cầu và trọng số"
+        title="Yêu cầu năng lực riêng theo vị trí"
+        subtitle="Doanh nghiệp chọn năng lực, mức cần đạt và trọng số cho từng vị trí. Bảng mẫu DigiTalent chỉ để tham khảo."
       />
 
       <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -300,7 +300,8 @@ export function PositionRequirementsPage() {
             <h3 className="font-semibold text-slate-900">Ma trận năng lực yêu cầu</h3>
             <p className="text-xs text-slate-500 mt-0.5">
               Nhóm theo 6 miền · chọn "Không yêu cầu" với năng lực vị trí không cần · Cơ bản / Trung cấp /
-              Nâng cao = bậc 1–2 / 3–4 / 5–6 của Thông tư · tổng trọng số 100%
+              Nâng cao = bậc 1–2 / 3–4 / 5–6 của Thông tư · tổng trọng số 100%.
+              Mức cao nhất của mỗi miền là mức dùng để tính gợi ý giới hạn khóa sau khi phiên bản này được kích hoạt.
             </p>
           </div>
           {canManage && (

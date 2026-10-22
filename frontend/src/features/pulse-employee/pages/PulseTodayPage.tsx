@@ -151,7 +151,7 @@ function PlanFoot({ overview }: { overview: PulseOverview }) {
   return (
     <footer className="pu-plan-foot">
       <span>{stats.requiredCompetencies} năng lực · Khung năng lực số TT02/2025</span>
-      {stats.optionalCourses > 0 && <span>+{stats.optionalCourses} khóa tùy chọn trong trần phòng ban, ở danh sách bên dưới</span>}
+      {stats.optionalCourses > 0 && <span>+{stats.optionalCourses} khóa tùy chọn trong phạm vi được mở, ở danh sách bên dưới</span>}
     </footer>
   );
 }
