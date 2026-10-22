@@ -784,6 +784,20 @@
   text-decoration: underline;
 }
 
+.pulse-auth-secondary {
+  align-self: flex-start;
+  border: 1px solid rgba(56, 88, 247, 0.25);
+  border-radius: var(--auth-radius-btn);
+  background: #fff;
+  color: var(--auth-blue);
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pulse-auth-secondary:hover { background: #f1f4ff; }
+.pulse-auth-secondary:disabled { opacity: 0.55; cursor: not-allowed; }
+
 /* ── Status Alerts & Banners (Glassmorphic) ── */
 .pulse-auth-info {
   padding: 14px 18px;

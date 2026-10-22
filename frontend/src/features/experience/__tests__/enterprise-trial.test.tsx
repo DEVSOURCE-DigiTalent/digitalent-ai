@@ -8,13 +8,13 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import publicRoutesSource from '@/app/routes/public.routes.tsx?raw';
 import enterpriseRoutesSource from '@/app/routes/enterprise.routes.tsx?raw';
 
-const api = vi.hoisted(() => Object.fromEntries(['readiness', 'catalog', 'register', 'verify', 'verifyCode', 'accept', 'login', 'currentUser', 'context', 'selectPosition', 'invitations', 'invite', 'resendInvitation', 'diagnostic', 'startDiagnostic', 'saveAnswers', 'submitDiagnostic', 'result', 'path', 'startPathItem', 'progressPathItem', 'pathContent', 'results', 'requestConversion'].map(key => [key, vi.fn()])));
+const api = vi.hoisted(() => Object.fromEntries(['readiness', 'catalog', 'register', 'verify', 'verifyCode', 'resendVerification', 'accept', 'login', 'currentUser', 'context', 'selectPosition', 'invitations', 'invite', 'resendInvitation', 'diagnostic', 'startDiagnostic', 'saveAnswers', 'submitDiagnostic', 'result', 'path', 'startPathItem', 'progressPathItem', 'pathContent', 'results', 'requestConversion'].map(key => [key, vi.fn()])));
 vi.mock('@/services/enterprise-trial.service', () => ({ enterpriseTrialService: api }));
 vi.mock('@/features/auth/components/AuthShell', () => ({ AuthShell: ({ title, children }: { title: string; children: React.ReactNode }) => <main><h1>{title}</h1>{children}</main> }));
 const ok = (data: unknown) => ({ data: { success: true, data, message: '', errors: [] } });
 const readiness = { canRegister: true, productionReady: false, developmentOnly: true, missingReasons: [] };
 const selectedPosition = { positionId: 'position', departmentId: 'department', name: 'CRM', requirementVersion: 'requirements-v1' };
-const context = { organizationId: 'org', status: 'trial_active', startedAt: '2026-10-06', endsAt: '2026-10-20', policyVersion: 'v1', limits: { durationDays: 14, maxAccounts: 5, maxDiagnosticAttempts: 1, dataPolicyNotice: 'Read only after expiry; contact owner to delete data.' }, usage: { accounts: 1, pendingInvitations: 0 }, selectedPosition, allowedActions: ['select_position', 'invite', 'view_results', 'request_conversion'], checklist: [{ key: 'position', complete: true, nextAction: 'invite' }], publicationReadiness: readiness };
+const context = { organizationId: 'org', status: 'trial_active', startedAt: new Date(Date.now() - 86400000).toISOString(), endsAt: new Date(Date.now() + 13 * 86400000).toISOString(), policyVersion: 'v1', limits: { durationDays: 14, maxAccounts: 5, maxDiagnosticAttempts: 1, dataPolicyNotice: 'Read only after expiry; contact owner to delete data.' }, usage: { accounts: 1, pendingInvitations: 0 }, selectedPosition, allowedActions: ['select_position', 'invite', 'view_results', 'request_conversion'], checklist: [{ key: 'position', complete: true, nextAction: 'invite' }], publicationReadiness: readiness };
 const catalog = [{ catalogKey: 'crm', name: 'CRM', eligible: true, requirementVersion: 'requirements-v1', assessmentVersion: 'assessment-v1', rubricVersion: 'rubric-v1', requirements: [{ competencyId: 'c1', name: 'CRM skills', requiredLevel: 2, minimumAnswers: 2 }], missingReasons: [], developmentOnly: true }];
 const diagnostic = { attemptId: 'attempt', employeeId: 'employee', positionId: 'position', status: 'in_progress', positionName: 'CRM', requirementVersion: 'requirements-v1', assessmentVersion: 'assessment-v1', rubricVersion: 'rubric-v1', revision: 3, questions: [{ id: 'q1', text: 'How do you record a contact?', competencyId: 'c1', options: [{ id: 'o1', text: 'Use CRM' }, { id: 'o2', text: 'Skip recording' }] }], savedAnswers: [], startedAt: '2026-10-06', submittedAt: null };
 const result = { sourceAttemptId: 'attempt', requirementVersion: 'requirements-v1', rubricVersion: 'rubric-v1', calculationVersion: 'calc-v1', measuredAt: '2026-10-06', items: [{ competencyId: 'c1', name: 'CRM skills', requiredLevel: 2, currentLevel: null, gapSteps: null, classification: 'insufficient_data', basis: 'Only one valid measurement' }] };
@@ -76,6 +76,14 @@ describe('guided enterprise trial', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Xác minh và đăng nhập' }));
     await waitFor(() => expect(api.verifyCode).toHaveBeenCalledWith('owner@acme.test', '123456', 'long-password-123'));
     expect(api.login).toHaveBeenCalledWith('owner@acme.test', 'long-password-123');
+  });
+  it('resends an expired verification code without losing the email context', async () => {
+    api.resendVerification.mockResolvedValue(ok({ state: 'verification_pending', expiresAt: '2026-10-20', developmentLink: null }));
+    mount(<TrialVerifyPage />, '/business/try/verify?email=owner%40acme.test');
+    fireEvent.click(screen.getByRole('button', { name: 'Gửi lại mã xác minh' }));
+    await waitFor(() => expect(api.resendVerification).toHaveBeenCalledWith('owner@acme.test'));
+    expect(screen.getByLabelText('Mã xác minh email')).toBeInTheDocument();
+    expect(await screen.findByText(/Nếu email đang chờ xác minh/)).toBeInTheDocument();
   });
   it('accepts invitation once and authenticates with its server email', async () => {
     api.accept.mockResolvedValue(ok({ email: 'employee@acme.test', role: 'Employee' })); api.login.mockResolvedValue(ok({ accessToken: 'token' })); api.currentUser.mockResolvedValue(ok({ id: 'e', email: 'employee@acme.test', fullName: 'Employee', roles: ['EMPLOYEE'], permissions: [] }));
