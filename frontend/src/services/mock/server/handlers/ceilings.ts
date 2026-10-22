@@ -5,6 +5,7 @@ import { CATEGORIES, COMPETENCY_BY_ID, courseFor } from '../catalog';
 import { ACME_ORGANIZATION_ID } from '../seed-acme';
 import type { CapabilityCeilingRecord, OrgData } from '../types';
 import { recordAudit } from './audit';
+import { readReferencePositionLevels } from './reference-positions';
 
 /**
  * Ceiling matrix of the organization (OW-05 "Lý thuyết trần nhà"), mirror of CapabilityCeilingsController:
@@ -53,12 +54,28 @@ function requirementLevels(data: OrgData): Map<string, Map<string, number>> {
 export function ceilingMatrixDto(data: OrgData) {
   const saved = ceilingsOf(data);
   const requirements = requirementLevels(data);
-  const suggest = (positionIds: Iterable<string>, categoryId: string) =>
-    Math.max(0, ...[...positionIds].map((id) => requirements.get(id)?.get(categoryId) ?? 0));
+  const reference = readReferencePositionLevels().levels;
+  const referenceCode = (code: string, name: string): string | undefined => {
+    const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const aliases: Record<string, string> = { CEO: 'CEO', GIAMDOC: 'CEO', HR: 'HR', NHANSU: 'HR', MARKETING: 'MARKETING',
+      SALES: 'SALES_CRM', SALE: 'SALES_CRM', SALESCRM: 'SALES_CRM', KINHDOANH: 'SALES_CRM',
+      ACCOUNTANT: 'ACCOUNTANT', ACCOUNTING: 'ACCOUNTANT', KETOAN: 'ACCOUNTANT', KETOANVIEN: 'ACCOUNTANT' };
+    return aliases[normalize(code)] ?? aliases[normalize(name)];
+  };
+  const positionReferences = new Map(data.positions.map((position) => [position.id, referenceCode(position.code, position.name)]));
+  const suggest = (positionIds: Iterable<string>, categoryId: string) => {
+    const index = CATEGORIES.findIndex((category) => category.id === categoryId);
+    return Math.max(0, ...[...positionIds].map((id) => {
+      const own = requirements.get(id);
+      if (own) return own.get(categoryId) ?? 0;
+      const code = positionReferences.get(id);
+      return code && index >= 0 ? reference[code]?.[index] ?? 0 : 0;
+    }));
+  };
 
   const domains = CATEGORIES.slice().sort((a, b) => a.sortOrder - b.sortOrder);
   const organizationCeiling = new Map(
-    domains.map((d) => [d.id, saved?.organization[d.id] ?? Math.max(1, suggest(requirements.keys(), d.id))]),
+    domains.map((d) => [d.id, saved?.organization[d.id] ?? Math.max(1, suggest(data.positions.map((position) => position.id), d.id))]),
   );
 
   const activeEmployees = data.employees.filter((e) => e.status === 'ACTIVE');
@@ -70,6 +87,7 @@ export function ceilingMatrixDto(data: OrgData) {
         ...activeEmployees.filter((e) => e.departmentId === department.id && e.jobPositionId).map((e) => e.jobPositionId!),
         ...data.positions.filter((p) => p.departmentId === department.id && p.status === 'ACTIVE').map((p) => p.id),
       ]);
+      const hasSuggestion = [...positionIds].some((id) => requirements.has(id) || Boolean(positionReferences.get(id)));
       const own = saved?.departments[department.id] ?? {};
       const ceilings = domains.map((d) => {
         const orgLevel = organizationCeiling.get(d.id)!;
@@ -86,6 +104,7 @@ export function ceilingMatrixDto(data: OrgData) {
         code: department.code,
         name: department.name,
         employeeCount: activeEmployees.filter((e) => e.departmentId === department.id).length,
+        hasSuggestion,
         isCustomized: ceilings.some((c) => c.isCustomized),
         courseCount: ceilings.reduce((sum, c) => sum + c.level, 0),
         ceilings,
