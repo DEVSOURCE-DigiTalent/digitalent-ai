@@ -137,21 +137,21 @@ export const LESSON_TYPE_LABELS: Record<string, string> = {
   ASSIGNMENT: 'Bài tập',
 };
 
-/** Tóm tắt một lĩnh vực trên lộ trình: mục tiêu, trần phòng ban (khi thấp hơn) và số khóa đã đạt. */
+/** Tóm tắt một lĩnh vực trên lộ trình: mục tiêu vị trí, phạm vi khóa được mở và số khóa đã đạt. */
 export function domainSummary(domain: PulseDomain, courses: PulseCourseSummary[]): string {
   const path = courses.filter((c) => c.categoryId === domain.categoryId && c.zone === 'PATH');
   const optional = courses.filter((c) => c.categoryId === domain.categoryId && c.zone === 'OPTIONAL').length;
   const parts = [`Mục tiêu ${levelName(domain.target)}`];
-  if (domain.ceiling < domain.target) parts.push(`trần phòng ban ${levelName(domain.ceiling)}`);
+  if (domain.ceiling < domain.target) parts.push(`khóa được mở đến ${levelName(domain.ceiling)}`);
   parts.push(`${path.filter((c) => c.approved).length}/${path.length} khóa đạt`);
   if (optional) parts.push(`${optional} khóa tùy chọn`);
   return parts.join(' · ');
 }
 
-/** Ghi chú khi trần phòng ban thấp hơn mục tiêu vị trí. */
+/** Ghi chú khi phạm vi khóa được mở thấp hơn mục tiêu vị trí. */
 export function capNote(domain: PulseDomain, positionName: string | null | undefined, departmentName: string | null | undefined): string | null {
   if (domain.target === 0 || domain.ceiling >= domain.target) return null;
-  return `Vị trí ${positionName ?? 'của bạn'} yêu cầu mức ${levelName(domain.target)}, nhưng doanh nghiệp đặt trần cho ${departmentName ? `phòng ${departmentName}` : 'phòng ban của bạn'} ở mức ${levelName(domain.ceiling)}, nên lộ trình dừng ở mức ${levelName(domain.pathTop)}.`;
+  return `Vị trí ${positionName ?? 'của bạn'} yêu cầu mức ${levelName(domain.target)}, nhưng khóa đang được mở cho ${departmentName ? `phòng ${departmentName}` : 'bạn'} đến mức ${levelName(domain.ceiling)}, nên lộ trình hiện dừng ở mức ${levelName(domain.pathTop)}.`;
 }
 
 /** "Đề gồm 10 câu trắc nghiệm (đúng từ 7 câu) và một bài tự luận…" — mô tả đề trên trang trạng thái. */

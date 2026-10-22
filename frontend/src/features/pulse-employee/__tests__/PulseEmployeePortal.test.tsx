@@ -250,7 +250,7 @@ describe('PulseTodayPage', () => {
     const plan = screen.getByRole('table');
     expect(within(plan).getByText('A1-F')).toBeTruthy();
     expect(within(plan).getByText('A1-I')).toBeTruthy();
-    expect(within(plan).getByText('Trần phòng ban')).toBeTruthy();
+    expect(within(plan).getByText('Giới hạn khóa')).toBeTruthy();
     expect(within(plan).getByText('Không có khóa trong lộ trình')).toBeTruthy();
     expect(within(plan).queryByText('Đã đạt')).toBeNull();
     expect(within(plan).queryByText('Đang học')).toBeNull();
