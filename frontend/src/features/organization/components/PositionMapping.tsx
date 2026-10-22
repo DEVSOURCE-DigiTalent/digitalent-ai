@@ -140,7 +140,7 @@ export function PositionMapping({ domains, isLoading }: PositionMappingProps) {
             boxShadow: '0 9px 18px rgba(52,72,207,.17)',
           }}
         >
-          Thiết lập yêu cầu →
+          Yêu cầu riêng của doanh nghiệp →
         </Link>
         <Link
           to="/enterprise/members"
