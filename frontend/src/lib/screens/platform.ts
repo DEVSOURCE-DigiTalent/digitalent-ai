@@ -12,6 +12,7 @@ const ADMIN = [ROLES.PLATFORM_ADMIN];
 export const PLATFORM_SCREENS: ScreenDef[] = [
   { id: 'PA-01', title: 'Tổng quan quản trị', path: '/platform/dashboard', roles: ADMIN, permission: 'platform.organization.read', priority: 'P0', aliases: ['PLT-01'] },
   { id: 'PA-02', title: 'Khung chuẩn', path: '/platform/frameworks', roles: ADMIN, permission: 'platform.catalog.read', priority: 'P0', aliases: ['PLT-04'] },
+  { id: 'PA-13', title: 'Mẫu vị trí tham chiếu', path: '/platform/reference-positions', roles: ADMIN, permission: 'platform.catalog.read', priority: 'P0' },
   { id: 'PA-03', title: 'Phiên bản khóa học', path: '/platform/versions', roles: ADMIN, permission: 'platform.catalog.read', priority: 'P0', aliases: ['PLT-05', 'PLT-06'] },
   { id: 'PA-12', title: 'Khóa học của phiên bản', path: '/platform/versions/:versionNo', roles: ADMIN, permission: 'platform.catalog.read', priority: 'P0' },
   { id: 'PA-04', title: 'Soạn khóa học', path: '/platform/versions/:versionNo/courses/:courseId', roles: ADMIN, permission: 'platform.catalog.read', priority: 'P0', aliases: ['PLT-06E'] },

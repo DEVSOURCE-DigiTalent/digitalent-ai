@@ -2,6 +2,7 @@
 export const PLATFORM_NAV = [
   { to: '/platform/dashboard', label: 'Tổng quan', glyph: '◫' },
   { to: '/platform/frameworks', label: 'Khung chuẩn', glyph: '◇' },
+  { to: '/platform/reference-positions', label: 'Mẫu vị trí', glyph: '♧' },
   { to: '/platform/versions', label: 'Phiên bản khóa học', glyph: '⚓' },
   { to: '/platform/organizations', label: 'Tổ chức', glyph: '▦' },
   { to: '/platform/users', label: 'Người dùng', glyph: '♙' },

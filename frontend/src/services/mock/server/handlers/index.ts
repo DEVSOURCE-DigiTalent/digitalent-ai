@@ -14,3 +14,4 @@ import './training-batches';
 import './personal';
 import './me';
 import './ceilings';
+import './reference-positions';
