@@ -4,8 +4,15 @@ using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace DigiTalent.Application.UseCases.Auth;
+
+internal static class PasswordResetTokenHasher
+{
+    public static string Hash(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+}
 
 public class ValidateResetTokenUseCase : IUseCase<ValidateResetTokenInput, bool>
 {
@@ -21,8 +28,10 @@ public class ValidateResetTokenUseCase : IUseCase<ValidateResetTokenInput, bool>
         if (string.IsNullOrWhiteSpace(input.Token))
             throw new BadRequestException("Token không hợp lệ.", "token", "INVALID_TOKEN");
 
+        var rawToken = input.Token.Trim();
+        var tokenHash = PasswordResetTokenHasher.Hash(rawToken);
         var tokenRecord = await _context.PasswordResetTokens
-            .FirstOrDefaultAsync(t => t.TokenHash == input.Token.Trim()
+            .FirstOrDefaultAsync(t => (t.TokenHash == tokenHash || t.TokenHash == rawToken)
                 && t.Purpose == TokenPurpose.ResetPassword);
 
         if (tokenRecord == null || tokenRecord.UsedAt != null || tokenRecord.ExpiresAt < DateTimeOffset.UtcNow)
@@ -53,9 +62,11 @@ public class ResetPasswordUseCase : IUseCase<ResetPasswordInput, bool>
         if (string.IsNullOrWhiteSpace(input.Password) || input.Password.Length < 8)
             throw new BadRequestException("Mật khẩu phải có ít nhất 8 ký tự.", "password", "PASSWORD_TOO_SHORT");
 
+        var rawToken = input.Token.Trim();
+        var tokenHash = PasswordResetTokenHasher.Hash(rawToken);
         var tokenRecord = await _context.PasswordResetTokens
             .Include(t => t.User)
-            .FirstOrDefaultAsync(t => t.TokenHash == input.Token.Trim()
+            .FirstOrDefaultAsync(t => (t.TokenHash == tokenHash || t.TokenHash == rawToken)
                 && t.Purpose == TokenPurpose.ResetPassword);
 
         var now = DateTimeOffset.UtcNow;
