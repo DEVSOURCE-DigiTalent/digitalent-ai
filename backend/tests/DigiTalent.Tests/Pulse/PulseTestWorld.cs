@@ -148,7 +148,7 @@ internal sealed class PulseTestWorld : IDisposable
             new GetPulsePracticeUseCase(learner),
             new GetPulseOutcomesUseCase(learner, outcomes),
             new GetPulseOutcomeUseCase(learner, outcomes),
-            new GetPulseFinalReviewsUseCase(Context, scope, catalog, final, recordings, paper, current.Object, Clock),
+            new GetPulseFinalReviewsUseCase(Context, scope, catalog, final, recordings, paper, current.Object, Clock, new StubGeminiService()),
             new DecidePulseFinalUseCase(Context, scope, policy, audit, Clock),
             new RecordPulseFinalSupportUseCase(Context, scope, Clock));
     }

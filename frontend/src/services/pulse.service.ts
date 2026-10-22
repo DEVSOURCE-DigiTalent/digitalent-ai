@@ -536,10 +536,25 @@ export const pulseService = {
 /** Trạng thái một bài trong hàng chờ: chờ chấm, chờ nộp lại, quá hạn nộp lại, cần hỗ trợ. */
 export type PulseReviewStatus = 'PENDING' | 'RETRY_WAIT' | 'RETRY_READY' | 'DEADLINE_MISSED' | 'FLAGGED';
 
-/** Gợi ý minh họa dựa trên văn bản cho lần nộp đang chờ: một dấu cho mỗi tiêu chí. Chỉ để tham khảo. */
+/** Gợi ý AI dựa trên Gemini cho lần nộp đang chờ. */
 export interface PulseAiHint {
   checks: boolean[];
   summary: string;
+  detail?: PulseAiDetail | null;
+}
+
+export interface PulseAiDetail {
+  plagiarismScore: number;
+  plagiarismNote: string;
+  aiGeneratedScore: number;
+  aiGeneratedNote: string;
+  relevanceScore: number;
+  relevanceNote: string;
+  depthScore: number;
+  depthNote: string;
+  clarityScore: number;
+  clarityNote: string;
+  verdict: string;
 }
 
 /** Một đoạn ghi trên dòng thời gian của phiên (một tệp), kèm đường dẫn đã ký để phát. */
