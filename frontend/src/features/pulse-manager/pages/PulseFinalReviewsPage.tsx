@@ -3,6 +3,7 @@ import { Check, ClipboardCheck, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDecidePulseFinal, useDecidePulsePreAssessment, usePulseFinalReviews, useRecordPulseSupport } from '@/hooks/use-pulse';
 import type {
+  PulseAiHint,
   PulseChoiceResult,
   PulseCriterion,
   PulseDecision,
@@ -227,7 +228,7 @@ function ReviewCard({ item, criteria }: { item: PulseFinalReviewItem; criteria: 
       )}
 
       {item.status === 'PENDING' && (
-        <div className="pu-grid-2 pu-review-grid">
+        <div className="pu-review-grid">
           <div className="pu-rubric" aria-label="Ba tiêu chí của phần tự luận">
             {criteria.map((criterion, index) => {
               const met = item.aiHint?.checks[index] ?? false;
@@ -240,11 +241,7 @@ function ReviewCard({ item, criteria }: { item: PulseFinalReviewItem; criteria: 
               );
             })}
           </div>
-          <div className="pu-ai">
-            <h3>✦ Gợi ý chấm của AI · minh họa</h3>
-            <p>{item.aiHint?.summary ?? 'Chưa có gợi ý cho bài này.'}</p>
-            <small>Đây là kiểm tra văn bản minh họa, không đọc được tệp thật và không thay quyết định của quản lý.</small>
-          </div>
+          <AiEvaluationPanel hint={item.aiHint} />
         </div>
       )}
 
@@ -271,6 +268,63 @@ function ReviewCard({ item, criteria }: { item: PulseFinalReviewItem; criteria: 
       )}
       {(item.status === 'FLAGGED' || item.status === 'DEADLINE_MISSED') && <SupportForm item={item} />}
     </article>
+  );
+}
+
+const AI_CRITERIA: { key: string; label: string; scoreKey: keyof import('@/services/pulse.service').PulseAiDetail; noteKey: keyof import('@/services/pulse.service').PulseAiDetail; invert?: boolean }[] = [
+  { key: 'plagiarism', label: 'Đạo văn / sao chép', scoreKey: 'plagiarismScore', noteKey: 'plagiarismNote', invert: true },
+  { key: 'ai', label: 'Nội dung do AI tạo', scoreKey: 'aiGeneratedScore', noteKey: 'aiGeneratedNote', invert: true },
+  { key: 'relevance', label: 'Đúng đề bài & liên quan', scoreKey: 'relevanceScore', noteKey: 'relevanceNote' },
+  { key: 'depth', label: 'Chiều sâu / chi tiết', scoreKey: 'depthScore', noteKey: 'depthNote' },
+  { key: 'clarity', label: 'Rõ ràng, mạch lạc', scoreKey: 'clarityScore', noteKey: 'clarityNote' },
+];
+
+function scoreColor(score: number, invert?: boolean): string {
+  const v = invert ? score : 100 - score;
+  if (v >= 70) return 'var(--pu-bad, #e74c3c)';
+  if (v >= 40) return 'var(--pu-warn, #f59e0b)';
+  return 'var(--pu-ok, #22c55e)';
+}
+
+function AiEvaluationPanel({ hint }: { hint?: PulseAiHint | null }) {
+  const d = hint?.detail;
+  return (
+    <div className="pu-ai">
+      <h3>✦ Đánh giá của AI (Gemini)</h3>
+      {d ? (
+        <>
+          <div className="pu-ai-scores">
+            {AI_CRITERIA.map(({ key, label, scoreKey, noteKey, invert }) => {
+              const score = d[scoreKey] as number;
+              const note = d[noteKey] as string;
+              return (
+                <div key={key} className="pu-ai-row">
+                  <div className="pu-ai-row-head">
+                    <span className="pu-ai-label">{label}</span>
+                    <span className="pu-ai-score" style={{ color: scoreColor(score, invert) }}>{score}/100</span>
+                  </div>
+                  <div className="pu-ai-bar">
+                    <div className="pu-ai-bar-fill" style={{ width: `${score}%`, background: scoreColor(score, invert) }} />
+                  </div>
+                  {note && <p className="pu-ai-note">{note}</p>}
+                </div>
+              );
+            })}
+          </div>
+          {d.verdict && (
+            <div className="pu-ai-verdict">
+              <strong>Kết luận:</strong> {d.verdict}
+            </div>
+          )}
+          <small>AI đánh giá tự động dựa trên đề bài và tiêu chí. Kết quả chỉ mang tính tham khảo.</small>
+        </>
+      ) : (
+        <>
+          <p>{hint?.summary ?? 'Chưa có gợi ý cho bài này.'}</p>
+          <small>AI đánh giá tự động dựa trên đề bài và tiêu chí. Kết quả chỉ mang tính tham khảo.</small>
+        </>
+      )}
+    </div>
   );
 }
 
