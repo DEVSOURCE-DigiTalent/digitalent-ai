@@ -174,6 +174,8 @@ public class PulseRecordingDto
     public DateTimeOffset? EndedAt { get; set; }
     public long? DurationMs { get; set; }
     public int FlaggedCount { get; set; }
+    /// <summary>Điểm rủi ro gian lận và các điểm đáng ngờ tổng hợp từ nhật ký (<see cref="PulseProctoringRisk"/>).</summary>
+    public PulseProctoringRiskDto Risk { get; set; } = new();
     public List<PulseRecordingSegmentDto> Segments { get; set; } = new();
     public List<PulseProctoringEventDto> Events { get; set; } = new();
 }
@@ -218,6 +220,7 @@ public class PulseRecordingReader
                 Detail = e.Detail,
                 Flagged = Statuses.ProctoringEvent.Flagged.Contains(e.Kind),
             }).ToList();
+            var sessionEnd = s.DurationMs ?? recordings.Where(r => r.SessionId == s.Id).Select(r => r.EndOffsetMs ?? r.StartOffsetMs).DefaultIfEmpty(0).Max();
             return new PulseRecordingDto
             {
                 SessionId = s.Id,
@@ -227,6 +230,7 @@ public class PulseRecordingReader
                 EndedAt = s.EndedAt,
                 DurationMs = s.DurationMs,
                 FlaggedCount = sessionEvents.Count(e => e.Flagged),
+                Risk = PulseProctoringRisk.Analyze(sessionEvents, sessionEnd),
                 Segments = recordings.Where(r => r.SessionId == s.Id).Select(r => new PulseRecordingSegmentDto
                 {
                     RecordingId = r.Id,
