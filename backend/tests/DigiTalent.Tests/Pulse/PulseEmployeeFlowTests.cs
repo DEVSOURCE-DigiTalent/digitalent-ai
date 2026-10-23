@@ -300,8 +300,11 @@ public class PulseEmployeeFlowTests
             SessionId = session.SessionId,
             Events =
             {
+                new PulseProctoringEventInput { Kind = Statuses.ProctoringEvent.FaceCheckOn, OffsetMs = 1_000 },
                 new PulseProctoringEventInput { Kind = Statuses.ProctoringEvent.ShareStopped, OffsetMs = 60_000 },
+                new PulseProctoringEventInput { Kind = Statuses.ProctoringEvent.ShareResumed, OffsetMs = 75_000 },
                 new PulseProctoringEventInput { Kind = Statuses.ProctoringEvent.TabHidden, OffsetMs = 90_000, DurationMs = 5_000 },
+                new PulseProctoringEventInput { Kind = Statuses.ProctoringEvent.MultipleFaces, OffsetMs = 120_000, DurationMs = 4_000, Detail = "2 khuôn mặt" },
             },
         });
         world.Context.ChangeTracker.Clear();
@@ -334,8 +337,13 @@ public class PulseEmployeeFlowTests
         world.Context.ChangeTracker.Clear();
 
         var recording = (await manager.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).Items.Single().Recording!;
-        recording.FlaggedCount.Should().Be(2);
-        recording.Events.Where(e => e.Flagged).Select(e => e.Kind).Should().Equal(Statuses.ProctoringEvent.ShareStopped, Statuses.ProctoringEvent.TabHidden);
+        recording.FlaggedCount.Should().Be(3);
+        recording.Events.Where(e => e.Flagged).Select(e => e.Kind).Should().Equal(
+            Statuses.ProctoringEvent.ShareStopped, Statuses.ProctoringEvent.TabHidden, Statuses.ProctoringEvent.MultipleFaces);
+        recording.Risk.FaceCheck.Should().Be(PulseProctoringRisk.FaceCheckOn);
+        recording.Risk.Score.Should().Be(33, "ngừng chia sẻ 15 giây (12) + rời tab (6) + hai khuôn mặt (15)");
+        recording.Risk.Level.Should().Be(PulseProctoringRisk.Medium);
+        recording.Risk.Moments.Select(m => m.StartMs).Should().Equal(60_000, 90_000, 120_000);
         var screens = recording.Segments.Where(s => s.Track == Statuses.ProctoringTrack.Screen).OrderBy(s => s.SegmentNo).ToList();
         screens.Should().HaveCount(2);
         screens[0].EndOffsetMs.Should().Be(75_000, "đoạn cũ khép tại lúc chia sẻ lại");
