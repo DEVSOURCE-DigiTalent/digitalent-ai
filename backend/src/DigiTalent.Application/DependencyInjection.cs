@@ -99,6 +99,10 @@ public static class DependencyInjection
         services.AddScoped<DigiTalent.Application.UseCases.Platform.Catalog.PlatformCourseContentReader>();
         services.AddScoped<DigiTalent.Application.UseCases.Platform.Catalog.PlatformPublishChecker>();
 
+        // 10. Chatbot trợ lý AI: các tool chỉ đọc theo phạm vi quyền của người hỏi
+        services.AddScoped<DigiTalent.Application.UseCases.Assistant.AssistantDataReader>();
+        services.AddScoped<DigiTalent.Application.UseCases.Assistant.AssistantToolbox>();
+
         return services;
     }
 }
