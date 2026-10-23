@@ -9,6 +9,7 @@ import type {
   PulseLevelSource,
   PulsePreStatus,
   PulseProctoringEventKind,
+  PulseRiskLevel,
   PulseSlotStatus,
   PulseSupportAction,
 } from '@/services/pulse.service';
@@ -124,6 +125,18 @@ export const PROCTORING_EVENT_LABELS: Record<PulseProctoringEventKind, string> =
   MIC_STOPPED: 'Mất micro, bài tạm khóa',
   MIC_RESUMED: 'Bật lại micro',
   SUBMITTED: 'Nộp bài, kết thúc ghi hình',
+  FACE_MISSING: 'Không thấy khuôn mặt trước camera',
+  MULTIPLE_FACES: 'Có nhiều người trước camera',
+  LOOKING_AWAY: 'Nhìn ra ngoài màn hình',
+  FACE_CHECK_ON: 'Bật nhận diện khuôn mặt trên máy',
+  FACE_CHECK_OFF: 'Không chạy được nhận diện khuôn mặt',
+};
+
+/** Mức rủi ro gian lận của phiên làm bài có giám sát (MG-13). */
+export const RISK_LEVEL_LABELS: Record<PulseRiskLevel, string> = {
+  LOW: 'Rủi ro thấp',
+  MEDIUM: 'Rủi ro trung bình',
+  HIGH: 'Rủi ro cao',
 };
 
 export const LESSON_TYPE_LABELS: Record<string, string> = {
