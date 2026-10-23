@@ -406,12 +406,29 @@ public static class Statuses
         public const string MicResumed = "MIC_RESUMED";
         public const string Submitted = "SUBMITTED";
 
+        // Nhận diện khuôn mặt chạy trên trình duyệt người làm bài (canonical v3.4): video không được gửi đi để phân tích,
+        // chỉ các khoảng đáng ngờ (bắt đầu + thời lượng) được ghi vào nhật ký.
+        /// <summary>Không thấy khuôn mặt trước camera.</summary>
+        public const string FaceMissing = "FACE_MISSING";
+        /// <summary>Có từ hai khuôn mặt trở lên trước camera.</summary>
+        public const string MultipleFaces = "MULTIPLE_FACES";
+        /// <summary>Quay đầu / nhìn ra ngoài màn hình kéo dài.</summary>
+        public const string LookingAway = "LOOKING_AWAY";
+        /// <summary>Nhận diện khuôn mặt đã chạy trên trình duyệt (mô hình tải xong).</summary>
+        public const string FaceCheckOn = "FACE_CHECK_ON";
+        /// <summary>Trình duyệt không chạy được nhận diện khuôn mặt (không tải được mô hình…): phiên không có lớp thị giác.</summary>
+        public const string FaceCheckOff = "FACE_CHECK_OFF";
+
         public static readonly string[] All =
         {
             Started, TabHidden, FocusLost, ShareStopped, ShareResumed, CameraStopped, CameraResumed, MicStopped, MicResumed, Submitted,
+            FaceMissing, MultipleFaces, LookingAway, FaceCheckOn, FaceCheckOff,
         };
 
-        /// <summary>Sự kiện người chấm cần xem (rời bài làm hoặc mất một nguồn ghi).</summary>
-        public static readonly string[] Flagged = { TabHidden, FocusLost, ShareStopped, CameraStopped, MicStopped };
+        /// <summary>Sự kiện người chấm cần xem (rời bài làm, mất một nguồn ghi hoặc khuôn mặt bất thường).</summary>
+        public static readonly string[] Flagged =
+        {
+            TabHidden, FocusLost, ShareStopped, CameraStopped, MicStopped, FaceMissing, MultipleFaces, LookingAway,
+        };
     }
 }
