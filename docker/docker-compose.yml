@@ -105,6 +105,8 @@ services:
       RAW_MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-changeme}
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-digitalent};Username=${POSTGRES_USER:-digitalent_app};Password=${POSTGRES_PASSWORD:-changeme}
+      Assistant__Provider: ${ASSISTANT_PROVIDER:-Gemini}
+      Assistant__ApiKey: ${ASSISTANT_API_KEY:-}
       Jwt__Issuer: ${JWT_ISSUER:-DigiTalentAI}
       Jwt__Audience: ${JWT_AUDIENCE:-DigiTalentAI.Web}
       Jwt__SigningKey: ${JWT_SIGNING_KEY:-YourSuperSecretKeyThatIsAtLeast64CharactersLong!}
