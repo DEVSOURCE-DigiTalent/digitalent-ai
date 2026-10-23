@@ -6,6 +6,7 @@ import { RequireWorkspace } from '../../components/guards/RequireWorkspace';
 import { WORKSPACES } from '../../lib/roles';
 import { PulseHeader } from '../../features/pulse-employee/components/PulseHeader';
 import { isExamPath } from '../../features/pulse-employee/lib/paths';
+import { AssistantWidget } from '../../features/assistant/components/AssistantWidget';
 import '../../features/pulse-employee/pulse.css';
 import '../../features/pulse-employee/pulse-roadmap.css';
 import '../../features/pulse-employee/pulse-exam.css';
@@ -32,6 +33,8 @@ export function PulseEmployeeLayout() {
             <main className={exam ? 'pu-exam-main' : 'pu-main'} id="main">
               <Outlet />
             </main>
+            {/* Không có trợ lý trong bài làm có giám sát. */}
+            {!exam && <AssistantWidget />}
           </div>
         </RequireOnboarded>
       </RequireWorkspace>
