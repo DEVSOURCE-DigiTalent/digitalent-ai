@@ -27,6 +27,7 @@ backend/**/*.suo
 
 # Docker / local volumes
 .docker-data/
+runtime/
 postgres-data/
 minio-data/
 redis-data/
