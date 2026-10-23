@@ -185,6 +185,9 @@ export const PERMISSIONS = {
   BUSINESS_CONFIG_MANAGE: 'business_config.manage',
   MASTER_DATA_MANAGE: 'master_data.manage',
 
+  // AI assistant chatbot (read-only, scoped to the caller)
+  ASSISTANT_CHAT: 'assistant.chat',
+
   // Platform Admin console (Pulse redesign)
   PLATFORM_ORGANIZATION_READ: 'platform.organization.read',
   PLATFORM_ORGANIZATION_MANAGE: 'platform.organization.manage',
