@@ -21,6 +21,7 @@ import { btn } from '@/features/pulse-employee/lib/button';
 import { SUPPORT_LABELS, levelName, pulseErrorMessage, timeLeft } from '@/features/pulse-employee/lib/labels';
 import { ManagerPage } from '../components/ManagerUi';
 import { RecordingPlayer } from '../components/RecordingPlayer';
+import { RiskTag } from '../components/ProctoringRiskPanel';
 import { MANAGER_PATHS } from '../lib/paths';
 
 const MIN_REASON = 10;
@@ -199,6 +200,7 @@ function ReviewCard({ item, criteria }: { item: PulseFinalReviewItem; criteria: 
         </div>
         <div className="pu-row">
           <span className={`pu-kind-tag ${isPre ? 'pre' : 'final'}`}>{KIND_LABELS[item.kind]}</span>
+          {item.recording?.risk && <RiskTag risk={item.recording.risk} />}
           <Pill tone={pill.tone}>{pill.label}</Pill>
         </div>
       </header>

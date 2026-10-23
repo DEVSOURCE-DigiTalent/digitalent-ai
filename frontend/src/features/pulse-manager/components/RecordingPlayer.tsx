@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pause, Play } from 'lucide-react';
 import { recordingUrl, type PulseRecording, type PulseRecordingSegment } from '@/services/pulse.service';
-import { PROCTORING_EVENT_LABELS, clock, formatDuration } from '@/features/pulse-employee/lib/labels';
+import { PROCTORING_EVENT_LABELS, RISK_LEVEL_LABELS, clock, formatDuration } from '@/features/pulse-employee/lib/labels';
+import { ProctoringRiskPanel, RiskTag } from './ProctoringRiskPanel';
 
 const SPEEDS = [1, 1.5, 2] as const;
 /** Lệch quá ngưỡng này (giây) giữa đồng hồ phiên và video thì tua video lại. */
@@ -72,7 +73,9 @@ function sync(video: HTMLVideoElement | null, span: Span | null, t: number, play
 
 /**
  * Bản ghi bài làm có giám sát cho người chấm (MG-13): màn hình (toàn bộ) + camera kèm micro trên một đồng hồ phiên.
- * Khoảng nhân viên dừng chia sẻ hiện là khoảng trống; mỗi lần rời tab / dừng chia sẻ là một mốc để tua tới.
+ * Khoảng nhân viên dừng chia sẻ hiện là khoảng trống; mỗi lần rời tab / dừng chia sẻ là một mốc để tua tới. Điểm rủi ro gian
+ * lận và các điểm đáng ngờ (máy chủ tổng hợp từ nhật ký, gồm cả nhận diện khuôn mặt trên máy nhân viên) hiện thành dải trên
+ * dòng thời gian và danh sách bấm để tua.
  */
 export function RecordingPlayer({ recording }: { recording: PulseRecording }) {
   const total = useMemo(() => Math.max(
@@ -85,6 +88,7 @@ export function RecordingPlayer({ recording }: { recording: PulseRecording }) {
   const cameras = useMemo(() => spansOf(recording.segments, 'CAMERA', total), [recording, total]);
   const screenGaps = useMemo(() => gapsOf(screens, total), [screens, total]);
   const events = useMemo(() => [...recording.events].sort((a, b) => a.offsetMs - b.offsetMs), [recording]);
+  const risk = recording.risk ?? null;
 
   const [t, setT] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -159,6 +163,7 @@ export function RecordingPlayer({ recording }: { recording: PulseRecording }) {
         <h3>Bản ghi màn hình, camera và micro</h3>
         <span>
           {formatDuration(recording.durationMs ?? total)} · {flagged ? `${flagged} sự kiện cần xem` : 'không có sự kiện cần xem'}
+          {risk && <> · <RiskTag risk={risk} /></>}
         </span>
       </div>
 
@@ -218,6 +223,17 @@ export function RecordingPlayer({ recording }: { recording: PulseRecording }) {
           <i key={g.start} className="pu-timeline-gap" style={{ left: percent(g.start), width: percent(g.end - g.start) }} />
         ))}
         <div className="pu-timeline-fill" style={{ width: percent(t) }} />
+        {risk?.moments.map((m) => (
+          <button
+            key={`risk-${m.startMs}`}
+            type="button"
+            className={`pu-timeline-risk ${m.severity.toLowerCase()}`}
+            style={{ left: percent(m.startMs), width: percent(Math.max(m.endMs - m.startMs, total / 200)) }}
+            onClick={() => seek(m.startMs - 2000)}
+            aria-label={`Điểm đáng ngờ lúc ${clock(m.startMs)} · ${RISK_LEVEL_LABELS[m.severity]}`}
+            title={`${clock(m.startMs)} · ${m.kinds.map((k) => PROCTORING_EVENT_LABELS[k]).join(' · ')}`}
+          />
+        ))}
         <input
           type="range"
           min={0}
@@ -253,6 +269,8 @@ export function RecordingPlayer({ recording }: { recording: PulseRecording }) {
         </div>
       </div>
 
+      {risk && <ProctoringRiskPanel risk={risk} t={t} onSeek={seek} />}
+
       {events.length > 0 && (
         <ol className="pu-rplayer-events" aria-label="Nhật ký giám sát">
           {events.map((e, index) => (
@@ -263,6 +281,7 @@ export function RecordingPlayer({ recording }: { recording: PulseRecording }) {
                 <span className="text">
                   {PROCTORING_EVENT_LABELS[e.kind]}
                   {e.durationMs ? ` · ${formatDuration(e.durationMs)}` : ''}
+                  {e.detail && e.kind !== 'FACE_CHECK_OFF' ? ` · ${e.detail}` : ''}
                 </span>
                 {e.flagged && <span className="tag">Cần xem</span>}
               </button>

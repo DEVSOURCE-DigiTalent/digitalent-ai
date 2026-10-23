@@ -2,6 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AxiosError, AxiosHeaders } from 'axios';
 import { pulseService } from '@/services/pulse.service';
 import { ProctorController } from '../exam/proctor';
+import type { FaceDetector } from '../exam/face-detector';
+import type { FaceObservation } from '../exam/face-signals';
+
+// Mô hình MediaPipe thật không chạy trong jsdom: mặc định bộ nhận diện không bao giờ tải xong (không sinh sự kiện khuôn mặt).
+vi.mock('../exam/face-detector', () => ({ loadFaceDetector: () => new Promise(() => undefined) }));
 
 const ok = <T,>(data: T) => ({ data: { success: true, message: 'Success', data } }) as never;
 
@@ -259,4 +264,78 @@ describe('ProctorController', () => {
     expect(result.complete).toBe(false);
     controller.dispose();
   }, 10_000);
+});
+
+describe('ProctorController · nhận diện khuôn mặt trên máy', () => {
+  let observation: FaceObservation;
+  const fakeDetector = (): FaceDetector => ({ detect: () => observation, close: vi.fn() });
+  const readyStateDescriptor = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'readyState');
+
+  beforeEach(() => {
+    observation = { faces: 1, yaw: 0, pitch: 0 };
+    Object.defineProperty(HTMLMediaElement.prototype, 'readyState', { configurable: true, get: () => 4 });
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    if (readyStateDescriptor) Object.defineProperty(HTMLMediaElement.prototype, 'readyState', readyStateDescriptor);
+  });
+
+  async function startedWith(load: () => Promise<FaceDetector>) {
+    const controller = new ProctorController('course-1', 'FINAL', { loadFaceDetector: load });
+    await controller.requestScreen();
+    await controller.requestCamera();
+    await controller.requestMic();
+    await controller.start();
+    await vi.advanceTimersByTimeAsync(0);
+    return controller;
+  }
+
+  it('logs an absence from the camera with its offset and duration, and warns the employee while it lasts', async () => {
+    const controller = await startedWith(async () => fakeDetector());
+    expect(controller.getSnapshot().faceCheck).toBe('on');
+
+    observation = { faces: 0 };
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(controller.getSnapshot().faceAlert).toBe('FACE_MISSING');
+
+    observation = { faces: 1, yaw: 0, pitch: 0 };
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(controller.getSnapshot().faceAlert).toBeNull();
+    const events = controller.getSnapshot().events;
+    expect(events.map((e) => e.kind)).toEqual(['STARTED', 'FACE_CHECK_ON', 'FACE_MISSING']);
+    expect(events[2]).toEqual(expect.objectContaining({ offsetMs: 500, durationMs: 4500 }));
+
+    observation = { faces: 2 };
+    await vi.advanceTimersByTimeAsync(2500);
+    // Nộp bài khép khoảng "nhiều người" đang diễn ra và gửi trong lần gửi nhật ký cuối.
+    await controller.finish(1_000);
+    const sent = vi.mocked(pulseService.recordProctoringEvents).mock.calls.flatMap(([, batch]) => batch);
+    expect(sent.map((e) => e.kind)).toEqual(['FACE_CHECK_ON', 'FACE_MISSING', 'MULTIPLE_FACES']);
+    expect(sent[2]).toEqual(expect.objectContaining({ detail: '2 khuôn mặt' }));
+    controller.dispose();
+  });
+
+  it('keeps the exam going when the model cannot load and records that faces were not checked', async () => {
+    const controller = await startedWith(() => Promise.reject(new Error('Không tải được mô hình')));
+
+    expect(controller.getSnapshot().faceCheck).toBe('off');
+    expect(controller.getSnapshot().phase).toBe('recording');
+    expect(controller.getSnapshot().events.at(-1)).toEqual(expect.objectContaining({ kind: 'FACE_CHECK_OFF', detail: 'Không tải được mô hình' }));
+    controller.dispose();
+  });
+
+  it('pauses face checks while the camera is off, so a lost camera is not also counted as an absence', async () => {
+    const controller = await startedWith(async () => fakeDetector());
+    observation = { faces: 0 };
+    await vi.advanceTimersByTimeAsync(2000);
+
+    cameraTracks[0]!.end();
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    expect(controller.getSnapshot().events.map((e) => e.kind)).toEqual(['STARTED', 'FACE_CHECK_ON', 'CAMERA_STOPPED']);
+    controller.dispose();
+  });
 });

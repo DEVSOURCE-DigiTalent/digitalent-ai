@@ -52,7 +52,9 @@ public sealed class GeminiService : IGeminiService
                 + string.Join("\n", lines) + "\n"
                 + "Giải thích: TAB_HIDDEN=rời tab bài làm, FOCUS_LOST=chuyển cửa sổ khác, "
                 + "CAMERA_STOPPED=tắt camera, MIC_STOPPED=tắt micro, "
-                + "SHARE_STOPPED=dừng chia sẻ màn hình, STARTED=bắt đầu, SUBMITTED=nộp bài.";
+                + "SHARE_STOPPED=dừng chia sẻ màn hình, STARTED=bắt đầu, SUBMITTED=nộp bài, "
+                + "FACE_MISSING=không thấy khuôn mặt trước camera, MULTIPLE_FACES=có nhiều người trước camera, "
+                + "LOOKING_AWAY=nhìn ra ngoài màn hình lâu, FACE_CHECK_ON/OFF=nhận diện khuôn mặt trên trình duyệt chạy / không chạy được.";
         }
 
         var prompt =

@@ -223,3 +223,37 @@
   .pu-rec i, .pu-proctor-tag i { animation: none; }
   .pu-meter i { transition: none; }
 }
+
+/* Phân tích rủi ro gian lận (MG-13): điểm do máy chủ tổng hợp từ nhật ký giám sát + nhận diện khuôn mặt trên máy nhân viên */
+.pu-risk-tag { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; background: #e4f5e8; color: var(--pu-ok); font-size: 11.5px; font-weight: 800; white-space: nowrap; }
+.pu-risk-tag.medium { background: #fff4d9; color: #8a5a00; }
+.pu-risk-tag.high { background: #ffe4dd; color: #9a3a26; }
+.pu-timeline-risk { position: absolute; top: 50%; min-width: 6px; height: 18px; margin-top: -9px; padding: 0; border: 0; border-radius: 4px; background: rgba(240, 180, 40, .4); cursor: pointer; }
+.pu-timeline-risk.low { background: rgba(143, 134, 224, .35); }
+.pu-timeline-risk.high { background: rgba(255, 110, 85, .45); }
+.pu-timeline-risk:hover, .pu-timeline-risk:focus-visible { outline: 2px solid var(--pu-ink); outline-offset: 1px; }
+.pu-risk { display: grid; gap: 12px; padding: 14px; border: 1px solid #e6e2f1; border-radius: 16px; background: #fbfaff; }
+.pu-risk.medium { border-color: #f2dca6; background: #fffcf3; }
+.pu-risk.high { border-color: #f6c3b6; background: #fff8f5; }
+.pu-risk-score { display: flex; align-items: center; gap: 14px; }
+.pu-risk-score strong { font-size: 15px; letter-spacing: -.02em; }
+.pu-risk-score p { margin: 2px 0 0; color: var(--pu-muted); font-size: 12.5px; }
+.pu-risk-gauge { display: grid; flex: none; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: conic-gradient(var(--risk-color, var(--pu-ok)) var(--risk), #ecebf5 0); }
+.pu-risk.medium .pu-risk-gauge { --risk-color: #e0a100; }
+.pu-risk.high .pu-risk-gauge { --risk-color: #e0573b; }
+.pu-risk-gauge b { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: #fff; color: var(--pu-ink); font-size: 15px; font-variant-numeric: tabular-nums; }
+.pu-risk-factors { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.pu-risk-factors li { display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 10px; border-radius: 10px; background: #fff; box-shadow: inset 0 0 0 1px #ebe8f6; font-size: 12.5px; }
+.pu-risk-factors small { color: var(--pu-muted); font-size: 11.5px; }
+.pu-risk-factors b { color: var(--pu-coral-ink); font-size: 12px; }
+.pu-risk-moments { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.pu-risk-moments button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 10px; border: 0; border-left: 4px solid #e0a100; border-radius: 10px; background: #fff; color: var(--pu-ink); font: inherit; text-align: left; cursor: pointer; }
+.pu-risk-moments button.low { border-left-color: #8f86e0; }
+.pu-risk-moments button.high { border-left-color: #e0573b; }
+.pu-risk-moments button:hover, .pu-risk-moments button[aria-current='true'] { background: #f1effe; }
+.pu-risk-moments time { flex: none; width: 52px; font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.pu-risk-moments .text { display: grid; flex: 1; min-width: 0; font-size: 13px; }
+.pu-risk-moments .text small { color: var(--pu-muted); font-size: 11.5px; }
+.pu-risk-moments b { flex: none; color: var(--pu-coral-ink); font-size: 12px; }
+.pu-risk-note { display: flex; gap: 8px; margin: 0; color: var(--pu-muted); font-size: 12px; line-height: 1.5; }
+.pu-risk-note svg { flex: none; margin-top: 1px; color: var(--pu-violet); }
