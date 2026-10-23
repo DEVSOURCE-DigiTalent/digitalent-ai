@@ -541,6 +541,19 @@ export interface PulseAiHint {
   checks: boolean[];
   summary: string;
   detail?: PulseAiDetail | null;
+  fraud?: PulseAiFraud | null;
+}
+
+export interface PulseAiFraud {
+  level: 'LOW' | 'MEDIUM' | 'HIGH';
+  summary: string;
+  items: PulseAiFraudItem[];
+}
+
+export interface PulseAiFraudItem {
+  time: string;
+  event: string;
+  note: string;
 }
 
 export interface PulseAiDetail {

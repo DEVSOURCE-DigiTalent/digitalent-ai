@@ -296,6 +296,21 @@ public sealed record PulseCriterionDto(string Number, string Title, string Descr
 public sealed record PulseAiHintDto(IReadOnlyList<bool> Checks, string Summary)
 {
     public PulseAiDetailDto? Detail { get; init; }
+    public PulseAiFraudDto? Fraud { get; init; }
+}
+
+public sealed record PulseAiFraudDto
+{
+    public string Level { get; init; } = "LOW";
+    public string Summary { get; init; } = "";
+    public List<PulseAiFraudItemDto> Items { get; init; } = new();
+}
+
+public sealed record PulseAiFraudItemDto
+{
+    public string Time { get; init; } = "";
+    public string Event { get; init; } = "";
+    public string Note { get; init; } = "";
 }
 
 public sealed record PulseAiDetailDto

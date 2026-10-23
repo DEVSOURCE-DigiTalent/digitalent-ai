@@ -181,7 +181,17 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
             });
         }
 
-        // AI evaluation: call Gemini in parallel for all pending items
+        // Load recordings trước để lấy events cho AI phân tích gian lận
+        var recordings = await _recordings.LoadAsync(items
+            .Where(i => i.ProctoringSessionId.HasValue)
+            .Select(i => i.ProctoringSessionId!.Value)
+            .ToList());
+        foreach (var item in items.Where(i => i.ProctoringSessionId.HasValue))
+        {
+            item.Recording = recordings.GetValueOrDefault(item.ProctoringSessionId!.Value);
+        }
+
+        // AI evaluation: gọi Gemini song song cho tất cả bài PENDING (đánh giá bài + phát hiện gian lận)
         var defaultCriteria = PulseRules.FinalCriteria.Select(c => c.Title).ToList();
         var aiTasks = items
             .Where(i => i.Status == PulseFinalStatus.Pending && i.Attempts.Count > 0)
@@ -192,19 +202,18 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                 var criteria = item.Assignment?.Criteria is { Count: > 0 }
                     ? item.Assignment.Criteria
                     : (IReadOnlyList<string>)defaultCriteria;
-                item.AiHint = await _gemini.EvaluateEvidenceAsync(evidence, prompt, criteria);
+
+                // Lấy events giám sát để AI phân tích gian lận
+                List<ProctoringEventInfo>? events = null;
+                if (item.Recording?.Events is { Count: > 0 } evts)
+                {
+                    events = evts.Select(e => new ProctoringEventInfo(e.Kind, e.OffsetMs, e.DurationMs)).ToList();
+                }
+
+                item.AiHint = await _gemini.EvaluateEvidenceAsync(evidence, prompt, criteria, events);
             })
             .ToList();
         await Task.WhenAll(aiTasks);
-
-        var recordings = await _recordings.LoadAsync(items
-            .Where(i => i.ProctoringSessionId.HasValue)
-            .Select(i => i.ProctoringSessionId!.Value)
-            .ToList());
-        foreach (var item in items.Where(i => i.ProctoringSessionId.HasValue))
-        {
-            item.Recording = recordings.GetValueOrDefault(item.ProctoringSessionId!.Value);
-        }
 
         items = items
             .OrderBy(i => Array.IndexOf(StatusOrder, i.Status))

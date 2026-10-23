@@ -8,5 +8,8 @@ public interface IGeminiService
         string evidenceText,
         string finalPrompt,
         IReadOnlyList<string> criteria,
+        IReadOnlyList<ProctoringEventInfo>? proctoringEvents = null,
         CancellationToken cancellationToken = default);
 }
+
+public sealed record ProctoringEventInfo(string Kind, long OffsetMs, long? DurationMs);

@@ -286,10 +286,48 @@ function scoreColor(score: number, invert?: boolean): string {
   return 'var(--pu-ok, #22c55e)';
 }
 
+function FraudLevelColor(level: string) {
+  if (level === 'HIGH') return 'var(--pu-bad, #e74c3c)';
+  if (level === 'MEDIUM') return 'var(--pu-warn, #f59e0b)';
+  return 'var(--pu-ok, #22c55e)';
+}
+
+function FraudLevelLabel(level: string) {
+  if (level === 'HIGH') return 'CAO';
+  if (level === 'MEDIUM') return 'TRUNG BÌNH';
+  return 'THẤP';
+}
+
 function AiEvaluationPanel({ hint }: { hint?: PulseAiHint | null }) {
   const d = hint?.detail;
+  const f = hint?.fraud;
   return (
     <div className="pu-ai">
+      {/* Phần cảnh báo gian lận */}
+      {f && f.items.length > 0 && (
+        <div className="pu-ai-fraud" style={{ borderColor: FraudLevelColor(f.level) }}>
+          <h3 style={{ color: FraudLevelColor(f.level) }}>
+            ⚠ Phát hiện nghi ngờ gian lận · Mức: {FraudLevelLabel(f.level)}
+          </h3>
+          <p className="pu-ai-fraud-summary">{f.summary}</p>
+          <div className="pu-ai-fraud-list">
+            {f.items.map((item, i) => (
+              <div key={i} className="pu-ai-fraud-item">
+                <span className="pu-ai-fraud-time">{item.time}</span>
+                <span className="pu-ai-fraud-event">{item.event}</span>
+                <span className="pu-ai-fraud-note">{item.note}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {f && f.items.length === 0 && (
+        <div className="pu-ai-fraud pu-ai-fraud--ok">
+          <p>✓ Không phát hiện hành vi bất thường trong quá trình làm bài.</p>
+        </div>
+      )}
+
+      {/* Phần đánh giá bài viết */}
       <h3>✦ Đánh giá của AI (Gemini)</h3>
       {d ? (
         <>

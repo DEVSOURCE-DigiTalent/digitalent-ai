@@ -9,6 +9,7 @@ internal sealed class StubGeminiService : IGeminiService
         string evidenceText,
         string finalPrompt,
         IReadOnlyList<string> criteria,
+        IReadOnlyList<ProctoringEventInfo>? proctoringEvents = null,
         CancellationToken cancellationToken = default)
     {
         return Task.FromResult(PulseRules.AiHint(evidenceText));
