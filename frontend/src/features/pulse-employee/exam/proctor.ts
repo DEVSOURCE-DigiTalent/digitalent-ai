@@ -7,6 +7,9 @@ import {
   type PulseProctoringEventKind,
   type PulseRecordingTrack,
 } from '@/services/pulse.service';
+import { loadFaceDetector, type FaceDetector } from './face-detector';
+import { FaceMonitor, type FaceCheckState } from './face-monitor';
+import type { FaceEpisode, FaceSignalKind } from './face-signals';
 
 /**
  * Bài làm có giám sát (docs/specs/2026-10-16-pulse-employee-roadmap-proctoring.md): toàn bộ màn hình, camera và micro.
@@ -15,6 +18,8 @@ import {
  *     lên lần lượt (thử lại khi lỗi mạng) nên bản ghi không mất khi trình duyệt đóng giữa chừng.
  *   - Rời tab / rời cửa sổ, ngừng chia sẻ, mất camera hay micro được ghi vào nhật ký; mất một nguồn thì bài tạm khóa cho tới
  *     khi bật lại (đoạn ghi mới).
+ *   - Nhận diện khuôn mặt chạy ngay trên máy (FaceMonitor): vắng mặt, nhiều người, nhìn ra ngoài được ghi vào nhật ký như các
+ *     sự kiện khác; không gửi video đi chỉ để phân tích. Không chạy được thì bài vẫn làm tiếp (ghi FACE_CHECK_OFF).
  */
 
 export type DeviceState = 'idle' | 'requesting' | 'on' | 'denied' | 'wrong-surface' | 'stopped';
@@ -25,6 +30,12 @@ export interface LocalEvent {
   kind: PulseProctoringEventKind;
   offsetMs: number;
   durationMs?: number | null;
+  detail?: string | null;
+}
+
+export interface ProctorOptions {
+  /** Nạp bộ nhận diện khuôn mặt; null = không nhận diện (mặc định: MediaPipe trên trình duyệt). */
+  loadFaceDetector?: (() => Promise<FaceDetector>) | null;
 }
 
 export interface ProctorSnapshot {
@@ -42,6 +53,10 @@ export interface ProctorSnapshot {
   pendingChunks: number;
   uploadError: string | null;
   micLevel: number;
+  /** Nhận diện khuôn mặt trên máy: idle (chưa / không dùng) → loading → on | off. */
+  faceCheck: FaceCheckState;
+  /** Tình trạng khuôn mặt bất thường đang diễn ra (để nhắc người làm bài). */
+  faceAlert: FaceSignalKind | null;
   /** Tăng mỗi khi luồng camera / màn hình đổi — để gắn lại vào thẻ <video>. */
   streamVersion: number;
 }
@@ -162,6 +177,8 @@ export class ProctorController {
     pendingChunks: 0,
     uploadError: null,
     micLevel: 0,
+    faceCheck: 'idle',
+    faceAlert: null,
     streamVersion: 0,
   };
 
@@ -178,12 +195,16 @@ export class ProctorController {
   private hiddenAt: number | null = null;
   private blurAt: number | null = null;
 
+  private face: FaceMonitor | null = null;
+
   private readonly courseId: string;
   private readonly kind: PulseExamKind;
+  private readonly loadFaceDetector: (() => Promise<FaceDetector>) | null;
 
-  constructor(courseId: string, kind: PulseExamKind) {
+  constructor(courseId: string, kind: PulseExamKind, options: ProctorOptions = {}) {
     this.courseId = courseId;
     this.kind = kind;
+    this.loadFaceDetector = options.loadFaceDetector === undefined ? loadFaceDetector : options.loadFaceDetector;
   }
 
   // ── Đăng ký cho React (useSyncExternalStore) ──
@@ -255,6 +276,7 @@ export class ProctorController {
       this.cameraStream?.getTracks().forEach((t) => t.stop());
       this.cameraStream = stream;
       stream.getVideoTracks()[0]?.addEventListener('ended', this.onCameraEnded);
+      this.face?.setStream(stream);
       this.set({ camera: 'on', streamVersion: this.snapshot.streamVersion + 1 });
       return true;
     } catch {
@@ -330,6 +352,7 @@ export class ProctorController {
       window.addEventListener('blur', this.onBlur);
       window.addEventListener('focus', this.onFocus);
       this.flushTimer = setInterval(() => void this.flushEvents(), EVENT_FLUSH_MS);
+      this.startFaceCheck();
       return session;
     } catch (error) {
       this.set({ phase: 'setup', sessionId: null, startedAt: null });
@@ -386,11 +409,33 @@ export class ProctorController {
     }
   }
 
+  // ── Nhận diện khuôn mặt trên máy ──
+
+  private startFaceCheck() {
+    if (!this.loadFaceDetector) return;
+    this.face = new FaceMonitor(this.loadFaceDetector, {
+      onEpisode: this.onFaceEpisode,
+      onState: (state, reason) => {
+        this.set({ faceCheck: state });
+        if (state === 'on') this.log('FACE_CHECK_ON', this.offset());
+        if (state === 'off') this.log('FACE_CHECK_OFF', this.offset(), undefined, reason);
+      },
+      onLive: (signal) => this.set({ faceAlert: signal }),
+    });
+    void this.face.start(this.cameraStream);
+  }
+
+  private onFaceEpisode = (episode: FaceEpisode) => {
+    const startedAt = this.snapshot.startedAt ?? episode.start;
+    this.log(episode.kind, Math.max(0, episode.start - startedAt), episode.durationMs, episode.detail);
+  };
+
   // ── Sự kiện giám sát ──
 
-  private log(kind: PulseProctoringEventInput['kind'], offsetMs: number, durationMs?: number) {
-    this.pendingEvents.push({ kind, offsetMs, durationMs: durationMs ?? null });
-    this.set({ events: [...this.snapshot.events, { kind, offsetMs, durationMs: durationMs ?? null }] });
+  private log(kind: PulseProctoringEventInput['kind'], offsetMs: number, durationMs?: number, detail?: string | null) {
+    const event = { kind, offsetMs, durationMs: durationMs ?? null, ...(detail ? { detail } : {}) };
+    this.pendingEvents.push(event);
+    this.set({ events: [...this.snapshot.events, event] });
   }
 
   async flushEvents(): Promise<void> {
@@ -448,6 +493,7 @@ export class ProctorController {
   };
 
   private onCameraEnded = () => {
+    this.face?.setStream(null);
     this.set({ camera: 'stopped' });
     if (this.snapshot.phase === 'recording' || this.snapshot.phase === 'locked') this.lock('CAMERA', 'CAMERA_STOPPED');
   };
@@ -481,6 +527,8 @@ export class ProctorController {
     if (!sessionId) throw new Error('Chưa bắt đầu phiên làm bài.');
     const durationMs = this.offset();
     this.set({ phase: 'finishing' });
+    // Khép các khoảng khuôn mặt đang theo dõi để chúng vào nhật ký trước lần gửi cuối.
+    this.face?.stop();
     await Promise.all([...this.segments.keys()].map((track) => this.stopSegment(track, durationMs)));
     const results = await Promise.all(this.finishedQueues.map((queue) => queue.drain(timeoutMs)));
     await this.flushEvents();
@@ -500,6 +548,8 @@ export class ProctorController {
     window.removeEventListener('focus', this.onFocus);
     if (this.flushTimer) clearInterval(this.flushTimer);
     this.flushTimer = null;
+    this.face?.stop();
+    this.face = null;
     this.stopMeter();
     for (const segment of this.segments.values()) {
       if (segment.recorder.state !== 'inactive') segment.recorder.stop();
