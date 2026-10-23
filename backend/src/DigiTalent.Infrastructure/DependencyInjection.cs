@@ -101,6 +101,9 @@ public static class DependencyInjection
         // Email OTP verification for Business Owner registration
         services.AddScoped<IEmailVerificationSender, EmailVerificationSender>();
 
+        // Gemini AI evaluation
+        services.AddHttpClient<IGeminiService, DigiTalent.Infrastructure.AI.GeminiService>();
+
         return services;
     }
 }

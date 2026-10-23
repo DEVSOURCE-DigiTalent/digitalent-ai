@@ -293,4 +293,37 @@ public static class PulseSlotStatus
 
 public sealed record PulseCriterionDto(string Number, string Title, string Description);
 
-public sealed record PulseAiHintDto(IReadOnlyList<bool> Checks, string Summary);
+public sealed record PulseAiHintDto(IReadOnlyList<bool> Checks, string Summary)
+{
+    public PulseAiDetailDto? Detail { get; init; }
+    public PulseAiFraudDto? Fraud { get; init; }
+}
+
+public sealed record PulseAiFraudDto
+{
+    public string Level { get; init; } = "LOW";
+    public string Summary { get; init; } = "";
+    public List<PulseAiFraudItemDto> Items { get; init; } = new();
+}
+
+public sealed record PulseAiFraudItemDto
+{
+    public string Time { get; init; } = "";
+    public string Event { get; init; } = "";
+    public string Note { get; init; } = "";
+}
+
+public sealed record PulseAiDetailDto
+{
+    public int PlagiarismScore { get; init; }
+    public string PlagiarismNote { get; init; } = "";
+    public int AiGeneratedScore { get; init; }
+    public string AiGeneratedNote { get; init; } = "";
+    public int RelevanceScore { get; init; }
+    public string RelevanceNote { get; init; } = "";
+    public int DepthScore { get; init; }
+    public string DepthNote { get; init; } = "";
+    public int ClarityScore { get; init; }
+    public string ClarityNote { get; init; } = "";
+    public string Verdict { get; init; } = "";
+}
