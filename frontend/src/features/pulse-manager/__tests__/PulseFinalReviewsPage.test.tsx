@@ -229,6 +229,55 @@ describe('PulseFinalReviewsPage · pre-assessments and recordings', () => {
     expect(within(kpis).getByText('Đánh giá trước khi học').previousElementSibling).toHaveTextContent('1');
   });
 
+  it('shows the cheating-risk score and jumps the recording to a suspicious moment', async () => {
+    const risky = {
+      ...pre,
+      recording: {
+        ...recording,
+        events: [
+          ...recording.events,
+          { kind: 'FACE_CHECK_ON', offsetMs: 1_000, flagged: false },
+          { kind: 'MULTIPLE_FACES', offsetMs: 12 * 60_000, durationMs: 4_000, detail: '2 khuôn mặt', flagged: true },
+        ],
+        risk: {
+          score: 33,
+          level: 'MEDIUM',
+          faceCheck: 'ON',
+          factors: [
+            { kind: 'MULTIPLE_FACES', count: 1, totalMs: 4_000, points: 15 },
+            { kind: 'SHARE_STOPPED', count: 1, totalMs: 60_000, points: 12 },
+            { kind: 'TAB_HIDDEN', count: 1, totalMs: 12_000, points: 6 },
+          ],
+          moments: [
+            { startMs: 3 * 60_000, endMs: 3 * 60_000 + 12_000, points: 6, severity: 'MEDIUM', eventCount: 1, kinds: ['TAB_HIDDEN'] },
+            { startMs: 6 * 60_000, endMs: 7 * 60_000, points: 12, severity: 'HIGH', eventCount: 1, kinds: ['SHARE_STOPPED'] },
+            { startMs: 12 * 60_000, endMs: 12 * 60_000 + 4_000, points: 15, severity: 'HIGH', eventCount: 1, kinds: ['MULTIPLE_FACES'] },
+          ],
+        },
+      },
+    } as PulseFinalReviewItem;
+    vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok(queue([risky])));
+
+    renderPage();
+
+    const card = await screen.findByRole('article', { name: 'Phạm Dung · Giao tiếp số cơ bản' });
+    expect(within(card).getAllByText('Rủi ro trung bình · 33').length).toBeGreaterThan(0);
+    const panel = within(card).getByRole('region', { name: 'Phân tích rủi ro gian lận' });
+    expect(within(panel).getByText('3 điểm đáng ngờ — bấm để tua bản ghi tới đúng đoạn.')).toBeTruthy();
+    expect(within(panel).getByRole('list', { name: 'Yếu tố đóng góp' }).children).toHaveLength(3);
+    expect(within(panel).getByText(/Nhận diện khuôn mặt chạy trên máy nhân viên/)).toBeTruthy();
+
+    fireEvent.click(within(panel).getByRole('button', { name: /12:00\s*Có nhiều người trước camera/ }));
+    const player = within(card).getByRole('region', { name: 'Bản ghi bài làm' });
+    expect(within(player).getAllByText('11:58 / 20:00').length).toBeGreaterThan(0);
+    expect(within(panel).getByRole('button', { name: /12:00/ })).toHaveAttribute('aria-current', 'true');
+    // Dải đáng ngờ trên dòng thời gian cũng tua được.
+    fireEvent.click(within(player).getByRole('button', { name: 'Điểm đáng ngờ lúc 06:00 · Rủi ro cao' }));
+    expect(within(player).getAllByText('05:58 / 20:00').length).toBeGreaterThan(0);
+    // Chi tiết của sự kiện khuôn mặt hiện trong nhật ký.
+    expect(within(player).getByText(/Có nhiều người trước camera · 4 giây · 2 khuôn mặt/)).toBeTruthy();
+  });
+
   it('records a pre-assessment decision through its own endpoint', async () => {
     vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok(queue([pre])));
     const decideFinal = vi.spyOn(pulseReviewService, 'decide');
