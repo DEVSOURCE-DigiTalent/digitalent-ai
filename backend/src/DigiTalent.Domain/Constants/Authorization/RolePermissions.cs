@@ -72,6 +72,7 @@ public static class RolePermissions
             Permissions.Assessment.QuestionApprovePublish,
             Permissions.Assessment.CreateUpdate,
             Permissions.Assessment.PublishClose,
+            Permissions.Assessment.AttemptReadResult,
             Permissions.Assessment.AttemptRegradeOverride,
             Permissions.Assessment.ResultExport,
 
@@ -96,6 +97,10 @@ public static class RolePermissions
             Permissions.Intelligence.AiExplanationRead,
             Permissions.Intelligence.ScoringConfigManage,
 
+            // Owner của SME không có Manager: tự giao nhiệm vụ và chấm minh chứng (OW-35..39).
+            Permissions.Task.Create,
+            Permissions.Task.Assign,
+            Permissions.Task.Evaluate,
             Permissions.Task.Read,
             Permissions.Task.AttachmentDownload,
 

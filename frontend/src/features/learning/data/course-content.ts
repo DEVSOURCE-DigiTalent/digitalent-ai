@@ -1,4 +1,5 @@
 import { CURRICULUM_DATA } from './standard-curriculum';
+import { getLessonMediaSpec, type LessonMediaSpec } from './course-media-specs';
 
 export interface LessonItem {
   id: string;
@@ -12,6 +13,7 @@ export interface LessonItem {
   content: string[];
   keyTakeaways: string[];
   practiceTask?: string;
+  mediaSpec?: LessonMediaSpec | null;
 }
 
 export interface CourseModuleContent {
@@ -48,8 +50,11 @@ export function getCourseModules(courseId: string, courseCode: string, courseTit
     return curr.modules.map((m) => {
       const moduleId = `mod-${courseId}-${m.moduleIndex}`;
       const moduleTitle = `Học phần ${m.moduleIndex}: ${m.title} (TT02-${m.competencyCode})`;
+      const spec1 = getLessonMediaSpec(courseCode, m.competencyCode, 0);
+      const spec2 = getLessonMediaSpec(courseCode, m.competencyCode, 1);
       const lessons: LessonItem[] = [
         {
+          mediaSpec: spec1,
           id: `les-${courseId}-${m.moduleIndex}-1`,
           moduleId,
           moduleTitle,
@@ -67,6 +72,7 @@ export function getCourseModules(courseId: string, courseCode: string, courseTit
           practiceTask: `Tự kiểm tra các khái niệm cốt lõi của năng lực ${m.competencyCode} tại doanh nghiệp của bạn.`,
         },
         {
+          mediaSpec: spec2,
           id: `les-${courseId}-${m.moduleIndex}-2`,
           moduleId,
           moduleTitle,

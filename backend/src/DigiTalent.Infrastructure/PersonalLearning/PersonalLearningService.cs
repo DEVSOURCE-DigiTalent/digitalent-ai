@@ -57,6 +57,15 @@ public sealed class PersonalLearningService : IPersonalLearningService
         public int? Score { get; set; }
         public string? Feedback { get; set; }
         public DateTimeOffset? ReviewedAt { get; set; }
+        public List<StoredCriterion>? Criteria { get; set; }
+        public string? Reviewer { get; set; }
+        public List<DateTimeOffset> History { get; set; } = new();
+    }
+
+    public sealed class StoredCriterion
+    {
+        public string Label { get; set; } = string.Empty;
+        public bool Met { get; set; }
     }
 
     public sealed class StoredTryOrientation
@@ -172,18 +181,19 @@ public sealed class PersonalLearningService : IPersonalLearningService
             levels[code] = (baseLvl, baseLvl > 0 ? "Đánh giá đầu vào" : null, baseLvl > 0 ? state.Diagnostic!.CompletedAt : null);
         }
 
-        var passedAttempts = state.Attempts.Where(a => a.Passed).OrderBy(a => a.At);
-        foreach (var attempt in passedAttempts)
+        // A course raises its competencies once completed: from Trung cấp up that needs the practice task approved.
+        var completed = PersonalLearningCatalog.Courses
+            .Select(course => (Course: course, At: PersonalLearningRules.CompletedAt(state, course)))
+            .Where(item => item.At != null)
+            .OrderBy(item => item.At);
+        foreach (var (course, at) in completed)
         {
-            var course = PersonalLearningCatalog.Courses.FirstOrDefault(c => c.Id == attempt.CourseId);
-            if (course == null) continue;
-
             foreach (var code in course.CompetencyCodes)
             {
                 var cur = levels[code];
                 if (course.Level > cur.Level)
                 {
-                    levels[code] = (course.Level, $"Khóa {course.Code} · {course.Title}", attempt.At);
+                    levels[code] = (course.Level, $"Khóa {course.Code} · {course.Title}", at);
                 }
             }
         }
@@ -330,14 +340,15 @@ public sealed class PersonalLearningService : IPersonalLearningService
                 var doneLessons = state.Lessons.TryGetValue(course.Id, out var dict) ? dict.Count : 0;
                 var totalLessons = course.CompetencyCodes.Length * 3;
                 var progressPercent = totalLessons > 0 ? (int)Math.Round((double)doneLessons / totalLessons * 100) : 0;
-                var hasPassed = state.Attempts.Any(a => a.CourseId == course.Id && a.Passed);
+                var isCompleted = PersonalLearningRules.IsCompleted(state, course);
+                var awaitingTask = PersonalLearningRules.AwaitingTask(state, course);
 
                 string status;
-                if (hasPassed) status = "COMPLETED";
-                else if (doneLessons > 0) status = "IN_PROGRESS";
+                if (isCompleted) status = "COMPLETED";
+                else if (doneLessons > 0 || awaitingTask) status = "IN_PROGRESS";
                 else
                 {
-                    var prereqMet = course.PrerequisiteId == null || state.Attempts.Any(a => a.CourseId == course.PrerequisiteId && a.Passed);
+                    var prereqMet = course.PrerequisiteId == null || PersonalLearningRules.IsCompleted(state, course.PrerequisiteId);
                     status = prereqMet ? "AVAILABLE" : "LOCKED";
                 }
 
@@ -367,7 +378,8 @@ public sealed class PersonalLearningService : IPersonalLearningService
                     PrerequisiteTitle: course.PrerequisiteTitle,
                     Closes: course.CompetencyCodes,
                     PlanLocked: planLocked,
-                    TrialSlot: isTrialSlot
+                    TrialSlot: isTrialSlot,
+                    AwaitingTask: awaitingTask
                 );
 
                 coursesInStage.Add(dto);
@@ -514,30 +526,14 @@ public sealed class PersonalLearningService : IPersonalLearningService
         var (_, state) = await LoadStateAsync(cancellationToken);
         var target = BuildTargetDto(state);
 
-        var questions = PersonalLearningCatalog.QuestionBank.Take(18).Select(q =>
+        // The whole entry bank (36): the client asks the plan endpoint which of them to show, pair by pair.
+        var questions = PersonalLearningCatalog.EntryQuestions.Select(q =>
         {
             var domain = PersonalLearningCatalog.Domains.First(d => d.Number == q.DomainNumber);
             return new DiagnosticQuestionDto(q.Id, q.DomainNumber, domain.Name, q.CompetencyCode, q.Level, q.Text, q.Options);
         }).ToList();
 
-        DiagnosticResultDto? result = null;
-        if (state.Diagnostic != null)
-        {
-            var domainResults = PersonalLearningCatalog.Domains.Select(d =>
-            {
-                var lvl = state.Diagnostic.DomainLevels[d.Number - 1];
-                return new DiagnosticDomainResultDto(d.Number, d.Name, lvl, lvl, 3);
-            }).ToList();
-
-            result = new DiagnosticResultDto(
-                CompletedAt: state.Diagnostic.CompletedAt,
-                Correct: state.Diagnostic.DomainLevels.Sum(),
-                Total: 18,
-                ScorePercent: (int)Math.Round((double)state.Diagnostic.DomainLevels.Sum() / 18 * 100),
-                Domains: domainResults,
-                Review: new List<DiagnosticReviewDto>()
-            );
-        }
+        var result = state.Diagnostic != null ? BuildDiagnosticResult(state.Diagnostic) : null;
 
         var tryOrientation = state.TryOrientation != null ? new TryOrientationDto(state.TryOrientation.Correct, state.TryOrientation.Total) : null;
         return new PersonalDiagnosticDto(target, questions, result, tryOrientation);
@@ -562,52 +558,50 @@ public sealed class PersonalLearningService : IPersonalLearningService
             }
         }
 
-        var domainScores = new int[6];
-        var domainTotals = new int[6];
-        var reviews = new List<DiagnosticReviewDto>();
-        var questions = PersonalLearningCatalog.QuestionBank.Take(18).ToList();
-
-        var totalCorrect = 0;
-        foreach (var q in questions)
+        // Adaptive placement (B1): every pair the path asks must be answered; the rest of the request is ignored.
+        var plan = PersonalLearningRules.PlanEntry(answers);
+        if (!plan.Done)
         {
-            var chosen = answers.TryGetValue(q.Id, out var val) ? (int?)val : null;
-            var isCorrect = chosen == q.CorrectIndex;
-            if (isCorrect)
-            {
-                domainScores[q.DomainNumber - 1]++;
-                totalCorrect++;
-            }
-            domainTotals[q.DomainNumber - 1]++;
-
-            reviews.Add(new DiagnosticReviewDto(q.Id, chosen, q.CorrectIndex, q.Explanation));
-        }
-
-        var domainLevels = new int[6];
-        for (var i = 0; i < 6; i++)
-        {
-            // Level is score out of 3: 0, 1, 2, or 3
-            domainLevels[i] = domainScores[i];
+            var missing = plan.AskedIds.Count(id => !answers.ContainsKey(id));
+            throw new BadRequestException($"Còn {missing} câu chưa trả lời.", "answers", "UNANSWERED_QUESTIONS");
         }
 
         state.Diagnostic = new StoredDiagnostic
         {
-            Answers = answers,
-            DomainLevels = domainLevels,
+            Answers = plan.AskedIds.ToDictionary(id => id, id => answers[id]),
+            DomainLevels = plan.Levels,
             CompletedAt = Now
         };
 
         await SaveStateAsync(profile, state, cancellationToken);
+        return BuildDiagnosticResult(state.Diagnostic);
+    }
 
-        var domainResults = PersonalLearningCatalog.Domains.Select(d =>
-            new DiagnosticDomainResultDto(d.Number, d.Name, domainLevels[d.Number - 1], domainScores[d.Number - 1], domainTotals[d.Number - 1])
-        ).ToList();
+    public DiagnosticPlanDto PlanDiagnostic(Dictionary<string, int> answers)
+    {
+        var plan = PersonalLearningRules.PlanEntry(answers);
+        return new DiagnosticPlanDto(plan.AskedIds, plan.Done, plan.DomainsDone);
+    }
+
+    /// <summary>Result over the questions the assessment asked (an answer exists for each of them).</summary>
+    private static DiagnosticResultDto BuildDiagnosticResult(StoredDiagnostic diagnostic)
+    {
+        var asked = PersonalLearningCatalog.EntryQuestions.Where(q => diagnostic.Answers.ContainsKey(q.Id)).ToList();
+        var correct = asked.Count(q => PersonalLearningRules.IsRight(diagnostic.Answers, q.Id));
+        var domains = PersonalLearningCatalog.Domains.Select(d =>
+        {
+            var own = asked.Where(q => q.DomainNumber == d.Number).ToList();
+            return new DiagnosticDomainResultDto(d.Number, d.Name, diagnostic.DomainLevels[d.Number - 1],
+                own.Count(q => PersonalLearningRules.IsRight(diagnostic.Answers, q.Id)), own.Count);
+        }).ToList();
+        var reviews = asked.Select(q => new DiagnosticReviewDto(q.Id, diagnostic.Answers[q.Id], q.CorrectIndex, q.Explanation)).ToList();
 
         return new DiagnosticResultDto(
-            CompletedAt: Now,
-            Correct: totalCorrect,
-            Total: 18,
-            ScorePercent: (int)Math.Round((double)totalCorrect / 18 * 100),
-            Domains: domainResults,
+            CompletedAt: diagnostic.CompletedAt,
+            Correct: correct,
+            Total: asked.Count,
+            ScorePercent: asked.Count == 0 ? 0 : (int)Math.Round((double)correct / asked.Count * 100),
+            Domains: domains,
             Review: reviews
         );
     }
@@ -686,7 +680,7 @@ public sealed class PersonalLearningService : IPersonalLearningService
             DurationMinutes: course.DurationMinutes,
             Description: course.Description,
             Outcomes: course.Outcomes,
-            Prerequisite: course.PrerequisiteId != null ? new PrerequisiteRefDto(course.PrerequisiteId, course.PrerequisiteTitle ?? string.Empty, state.Attempts.Any(a => a.CourseId == course.PrerequisiteId && a.Passed)) : null,
+            Prerequisite: course.PrerequisiteId != null ? new PrerequisiteRefDto(course.PrerequisiteId, course.PrerequisiteTitle ?? string.Empty, PersonalLearningRules.IsCompleted(state, course.PrerequisiteId)) : null,
             Status: pathCourse?.Status ?? "AVAILABLE",
             InPath: inPath,
             Exempt: isExempt,
@@ -699,7 +693,9 @@ public sealed class PersonalLearningService : IPersonalLearningService
             Competencies: compRefs,
             Assessment: assessmentSummary,
             Notes: notes,
-            Task: null
+            Task: BuildTask(state, course),
+            AwaitingTask: PersonalLearningRules.AwaitingTask(state, course),
+            TaskRequired: PersonalLearningRules.NeedsApprovedTask(course)
         );
     }
 
@@ -768,8 +764,7 @@ public sealed class PersonalLearningService : IPersonalLearningService
         var totalLessons = course.CompetencyCodes.Length * 3;
         var ready = doneLessons == totalLessons;
 
-        var questions = PersonalLearningCatalog.QuestionBank
-            .Where(q => q.DomainNumber == course.DomainNumber)
+        var questions = PersonalLearningCatalog.CourseQuestions(course.DomainNumber)
             .Select(q => new AssessmentQuestionDto(q.Id, q.CompetencyCode, q.Text, q.Options))
             .ToList();
 
@@ -792,7 +787,7 @@ public sealed class PersonalLearningService : IPersonalLearningService
         if (doneLessons < totalLessons)
             throw new BadRequestException("Hãy học hết các bài trước khi làm bài đánh giá.");
 
-        var questions = PersonalLearningCatalog.QuestionBank.Where(q => q.DomainNumber == course.DomainNumber).ToList();
+        var questions = PersonalLearningCatalog.CourseQuestions(course.DomainNumber).ToList();
         var correct = 0;
         var reviews = new List<DiagnosticReviewDto>();
 
@@ -806,7 +801,6 @@ public sealed class PersonalLearningService : IPersonalLearningService
         var scorePercent = (int)Math.Round((double)correct / questions.Count * 100);
         var passed = scorePercent >= AssessmentPassPercent;
         var firstPass = passed && state.Attempts.All(a => a.CourseId != course.Id || !a.Passed);
-        var certPending = firstPass && mode != "full";
 
         state.Attempts.Add(new StoredAttempt
         {
@@ -819,8 +813,12 @@ public sealed class PersonalLearningService : IPersonalLearningService
 
         await SaveStateAsync(profile, state, cancellationToken);
 
+        // From Trung cấp up the course and its certificate wait for the practice task (B2).
+        var completesNow = firstPass && PersonalLearningRules.IsCompleted(state, course);
+        var taskRequired = passed && !PersonalLearningRules.IsCompleted(state, course);
+        var certPending = completesNow && mode != "full";
         string? certId = null;
-        if (firstPass && !certPending)
+        if (completesNow && !certPending)
         {
             certId = $"dtc-{Now:yyyyMMdd}-{course.Code.ToLowerInvariant()}";
         }
@@ -832,7 +830,8 @@ public sealed class PersonalLearningService : IPersonalLearningService
             Passed: passed,
             Review: reviews,
             CertificateId: certId,
-            CertificatePending: certPending
+            CertificatePending: certPending,
+            TaskRequired: taskRequired
         );
     }
 
@@ -845,36 +844,44 @@ public sealed class PersonalLearningService : IPersonalLearningService
 
         foreach (var course in PersonalLearningCatalog.Courses)
         {
-            var taskId = $"task-{course.Id}";
-            var hasStarted = state.Lessons.ContainsKey(course.Id) && state.Lessons[course.Id].Count > 0;
-            var sub = state.Submissions.TryGetValue(taskId, out var s) ? s : null;
-
-            string status;
-            if (sub != null) status = sub.Status;
-            else status = hasStarted ? "OPEN" : "LOCKED";
-
-            TaskSubmissionDto? subDto = sub != null
-                ? new TaskSubmissionDto(sub.LinkUrl, sub.Content, sub.SubmittedAt, sub.Score, sub.Feedback, sub.ReviewedAt)
-                : null;
-
-            list.Add(new PersonalTaskDto(
-                Id: taskId,
-                CourseId: course.Id,
-                CourseCode: course.Code,
-                CourseTitle: course.Title,
-                DomainName: course.DomainName,
-                Level: course.Level,
-                Title: $"Bài thực hành: {course.Title}",
-                Brief: $"Áp dụng các kỹ năng đã học trong khóa {course.Title} vào dự án thực tế tại doanh nghiệp.",
-                Deliverable: "Bản báo cáo PDF hoặc liên kết tài liệu mô tả quy trình thực hiện kèm kết quả.",
-                Rubric: new[] { "Tính hoàn thiện của sản phẩm (40%)", "Áp dụng đúng chuẩn kỹ năng TT02 (40%)", "Hình thức và khả năng ứng dụng thực tiễn (20%)" },
-                CompetencyCodes: course.CompetencyCodes,
-                Status: status,
-                Submission: subDto
-            ));
+            list.Add(BuildTask(state, course));
         }
 
         return list;
+    }
+
+    private static readonly string[] TaskRubric =
+        { "Tính hoàn thiện của sản phẩm (40%)", "Áp dụng đúng chuẩn kỹ năng TT02 (40%)", "Hình thức và khả năng ứng dụng thực tiễn (20%)" };
+
+    private PersonalTaskDto BuildTask(LearnerWorkspaceState state, PersonalLearningCatalog.CourseDef course)
+    {
+        var taskId = PersonalLearningRules.TaskIdOf(course.Id);
+        var hasStarted = state.Lessons.TryGetValue(course.Id, out var lessons) && lessons.Count > 0;
+        var sub = state.Submissions.TryGetValue(taskId, out var s) ? s : null;
+        var status = sub?.Status ?? (hasStarted || PersonalLearningRules.AwaitingTask(state, course) ? "OPEN" : "LOCKED");
+
+        TaskSubmissionDto? subDto = sub != null
+            ? new TaskSubmissionDto(sub.LinkUrl, sub.Content, sub.SubmittedAt, sub.Score, sub.Feedback, sub.ReviewedAt,
+                sub.Criteria?.Select(c => new CriterionResultDto(c.Label, c.Met)).ToList(), sub.Reviewer)
+            : null;
+
+        return new PersonalTaskDto(
+            Id: taskId,
+            CourseId: course.Id,
+            CourseCode: course.Code,
+            CourseTitle: course.Title,
+            DomainName: course.DomainName,
+            Level: course.Level,
+            Title: $"Bài thực hành: {course.Title}",
+            Brief: $"Áp dụng các kỹ năng đã học trong khóa {course.Title} vào dự án thực tế tại doanh nghiệp.",
+            Deliverable: "Bản báo cáo PDF hoặc liên kết tài liệu mô tả quy trình thực hiện kèm kết quả.",
+            Rubric: TaskRubric,
+            CompetencyCodes: course.CompetencyCodes,
+            Status: status,
+            Submission: subDto,
+            Required: PersonalLearningRules.NeedsApprovedTask(course),
+            AttemptsLeft: PersonalLearningRules.AttemptsLeft(sub?.History ?? new List<DateTimeOffset>(), Now)
+        );
     }
 
     public async Task<PersonalTaskDto> SubmitTaskAsync(string taskId, SubmitTaskRequest request, CancellationToken cancellationToken = default)
@@ -893,20 +900,40 @@ public sealed class PersonalLearningService : IPersonalLearningService
         if (mode == "trial" && !state.TrialCourseIds.Contains(course.Id))
             throw new ForbiddenException("Chỉ nộp được bài thực hành cho các khóa học đã mở trong kỳ dùng thử.");
 
-        if (string.IsNullOrWhiteSpace(request.Content) || request.Content.Length < 20)
-            throw new BadRequestException("Mô tả bài làm tối thiểu 20 ký tự.");
+        var content = request.Content?.Trim() ?? string.Empty;
+        var linkUrl = request.LinkUrl?.Trim() ?? string.Empty;
+        if (content.Length < 20)
+            throw new BadRequestException("Mô tả bài làm tối thiểu 20 ký tự.", "content", "CONTENT_TOO_SHORT");
+        if (linkUrl.Length > 0 && !(Uri.TryCreate(linkUrl, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https"))
+            throw new BadRequestException("Liên kết phải bắt đầu bằng http:// hoặc https://.", "linkUrl", "INVALID_URL");
 
+        var current = BuildTask(state, course);
+        if (current.Status == "LOCKED")
+            throw new BadRequestException("Bắt đầu khóa học để mở bài thực hành.", "taskId", "TASK_LOCKED");
+        if (current.Status is "APPROVED" or "PENDING_REVIEW")
+            throw new BadRequestException("Bài thực hành này đã được nộp.", "taskId", "ALREADY_SUBMITTED");
+
+        var history = state.Submissions.TryGetValue(taskId, out var previous) ? previous.History : new List<DateTimeOffset>();
+        if (PersonalLearningRules.AttemptsLeft(history, Now) == 0)
+            throw new BadRequestException("Bạn đã nộp 3 lần trong 24 giờ qua. Hãy chỉnh bài theo nhận xét và nộp lại sau.", "taskId", "TASK_ATTEMPT_LIMIT");
+
+        var review = PersonalLearningRules.GradeTask(TaskRubric, linkUrl, content, (request.Checks ?? Array.Empty<int>()).ToHashSet());
         state.Submissions[taskId] = new StoredSubmission
         {
-            LinkUrl = request.LinkUrl,
-            Content = request.Content,
+            LinkUrl = linkUrl,
+            Content = content,
             SubmittedAt = Now,
-            Status = "PENDING_REVIEW"
+            ReviewedAt = Now,
+            Status = review.Status,
+            Score = review.Score,
+            Feedback = review.Feedback,
+            Criteria = review.Criteria.Select(c => new StoredCriterion { Label = c.Label, Met = c.Met }).ToList(),
+            Reviewer = PersonalLearningRules.ReviewerAiRubric,
+            History = history.Append(Now).ToList(),
         };
 
         await SaveStateAsync(profile, state, cancellationToken);
-        var tasks = await GetTasksAsync(cancellationToken);
-        return tasks.First(t => t.Id == taskId);
+        return BuildTask(state, course);
     }
 
     // ── 9. Certificates ──
@@ -919,17 +946,17 @@ public sealed class PersonalLearningService : IPersonalLearningService
         var recipientName = user?.DisplayName ?? "Học viên";
 
         var list = new List<PersonalCertificateDto>();
-        var passedAttempts = state.Attempts.Where(a => a.Passed).GroupBy(a => a.CourseId).Select(g => g.OrderBy(a => a.At).First());
-
-        foreach (var attempt in passedAttempts)
+        // A certificate exists once the course is completed (from Trung cấp up: assessment and approved task).
+        foreach (var course in PersonalLearningCatalog.Courses)
         {
-            var course = PersonalLearningCatalog.Courses.FirstOrDefault(c => c.Id == attempt.CourseId);
-            if (course == null) continue;
+            var completedAt = PersonalLearningRules.CompletedAt(state, course);
+            var attempt = PersonalLearningRules.FirstPassedAttempt(state, course.Id);
+            if (completedAt == null || attempt == null) continue;
 
             var isPending = mode != "full";
             var status = isPending ? "PENDING_UPGRADE" : "ISSUED";
-            var code = isPending ? null : $"DTC-{attempt.At:yyyyMMdd}-{course.Code}";
-            var issuedAt = isPending ? null : (DateTimeOffset?)attempt.At;
+            var code = isPending ? null : $"DTC-{completedAt:yyyyMMdd}-{course.Code}";
+            var issuedAt = isPending ? null : completedAt;
 
             var comps = course.CompetencyCodes.Select(c => new CompetencyRefDto(c, PersonalLearningCatalog.CompetencyNames[c])).ToList();
             var scorePercent = (int)Math.Round((double)attempt.Correct / attempt.Total * 100);

@@ -267,29 +267,47 @@ public class GetReportsOverviewUseCase : IUseCase<GetReportsOverviewInput, Repor
             ? Math.Round((decimal)approvedSubmissions / totalSubmissions * 100, 1)
             : 0;
 
-        var evidenceByDept = await (
-            from dept in _context.Departments.AsNoTracking()
-            where dept.OrganizationId == orgId
-            let deptEmpIds = _context.Employees.AsNoTracking().Where(e => e.DepartmentId == dept.Id).Select(e => e.Id)
-            let deptAssignments = _context.TaskAssignments.AsNoTracking()
-                .Where(ta => deptEmpIds.Contains(ta.EmployeeId) &&
-                    _context.PracticalTaskTemplates.Any(t => t.Id == ta.TaskTemplateId && t.OrganizationId == orgId))
-            let deptSubs = _context.TaskSubmissions.AsNoTracking()
-                .Where(s => s.Status != "SUPERSEDED" && deptAssignments.Any(ta => ta.Id == s.TaskAssignmentId))
-            let deptApproved = _context.TaskEvaluations.AsNoTracking()
-                .Count(ev => ev.Verdict == "PASSED" && deptSubs.Any(s => s.Id == ev.TaskSubmissionId))
-            select new DepartmentEvidenceSummary
+        // Hai bước (không lồng IQueryable trong phép chiếu) để EF dịch được sang SQL.
+        var orgDepartments = await _context.Departments.AsNoTracking()
+            .Where(d => d.OrganizationId == orgId)
+            .Select(d => new { d.Id, d.Name })
+            .ToListAsync();
+        var orgAssignments = await (
+            from ta in _context.TaskAssignments.AsNoTracking()
+            join e in _context.Employees.AsNoTracking() on ta.EmployeeId equals e.Id
+            where e.OrganizationId == orgId
+                && _context.PracticalTaskTemplates.Any(t => t.Id == ta.TaskTemplateId && t.OrganizationId == orgId)
+            select new { ta.Id, e.DepartmentId }
+        ).ToListAsync();
+        var orgSubmissions = await _context.TaskSubmissions.AsNoTracking()
+            .Where(s => s.Status != "SUPERSEDED"
+                && _context.TaskAssignments.Any(ta => ta.Id == s.TaskAssignmentId
+                    && _context.PracticalTaskTemplates.Any(t => t.Id == ta.TaskTemplateId && t.OrganizationId == orgId)))
+            .Select(s => new { s.Id, s.TaskAssignmentId })
+            .ToListAsync();
+        var passedSubmissionIds = (await _context.TaskEvaluations.AsNoTracking()
+            .Where(ev => ev.Verdict == "PASSED")
+            .Select(ev => ev.TaskSubmissionId)
+            .ToListAsync()).ToHashSet();
+        var assignmentDept = orgAssignments.ToDictionary(a => a.Id, a => a.DepartmentId);
+
+        var evidenceByDept = orgDepartments.Select(dept =>
+        {
+            var assigned = orgAssignments.Count(a => a.DepartmentId == dept.Id);
+            var subs = orgSubmissions
+                .Where(s => assignmentDept.TryGetValue(s.TaskAssignmentId, out var d) && d == dept.Id)
+                .ToList();
+            var approved = subs.Count(s => passedSubmissionIds.Contains(s.Id));
+            return new DepartmentEvidenceSummary
             {
                 DepartmentId = dept.Id.ToString(),
                 DepartmentName = dept.Name,
-                AssignedCount = deptAssignments.Count(),
-                SubmittedCount = deptSubs.Count(),
-                ApprovedCount = deptApproved,
-                ApprovalRate = deptSubs.Any()
-                    ? Math.Round((decimal)deptApproved / deptSubs.Count() * 100, 1)
-                    : 0,
-            }
-        ).ToListAsync();
+                AssignedCount = assigned,
+                SubmittedCount = subs.Count,
+                ApprovedCount = approved,
+                ApprovalRate = subs.Count > 0 ? Math.Round((decimal)approved / subs.Count * 100, 1) : 0,
+            };
+        }).ToList();
 
         return new ReportsOverviewDto
         {

@@ -77,7 +77,7 @@ export function OwnerNewTrainingBatchPage() {
   const { data: departmentsData } = useDepartments({ pageSize: 100 });
   const { data: positionsData } = useJobPositions({ pageSize: 100 });
   const { data: membersData } = useMembers({
-    pageSize: 200,
+    pageSize: 100,
     status: 'ACTIVE',
   });
 

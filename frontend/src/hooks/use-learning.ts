@@ -43,7 +43,7 @@ export function useAssessmentHistory(params?: {
   });
 }
 
-/** Owner certificate pages (OW-35/OW-36) still read the organization's certificates through this hook. */
+/** Owner certificate pages (OW-46/OW-47) still read the organization's certificates through this hook. */
 export function useCertificates(params?: {
   employeeId?: string;
   status?: string;

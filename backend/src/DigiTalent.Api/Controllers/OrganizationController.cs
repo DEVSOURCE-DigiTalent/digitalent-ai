@@ -42,7 +42,7 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpGet("audit-log")]
-    [HasPermission(Permissions.System.AuditLogReadSystem)]
+    [HasPermission(Permissions.System.AuditLogReadDepartment)]
     public async Task<ActionResult<ApiResponse<GetAuditLogOutput>>> GetAuditLog(
         [FromQuery] GetAuditLogInput input,
         [FromServices] IUseCase<GetAuditLogInput, GetAuditLogOutput> useCase)

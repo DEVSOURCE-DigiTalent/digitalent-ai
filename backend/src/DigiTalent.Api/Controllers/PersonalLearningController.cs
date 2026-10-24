@@ -51,6 +51,14 @@ public sealed class PersonalLearningController(IPersonalLearningService service)
         return Ok(ApiResponse<DiagnosticResultDto>.Ok(result, "Đã ghi nhận bài đánh giá đầu vào."));
     }
 
+    // POST api/v1/personal/diagnostic/plan
+    [HttpPost("diagnostic/plan")]
+    public IActionResult PlanDiagnostic([FromBody] SubmitDiagnosticRequest request)
+    {
+        var result = service.PlanDiagnostic(request.Answers ?? new Dictionary<string, int>());
+        return Ok(ApiResponse<DiagnosticPlanDto>.Ok(result));
+    }
+
     // GET api/v1/personal/path
     [HttpGet("path")]
     public async Task<IActionResult> GetPath(CancellationToken cancellationToken)
@@ -125,7 +133,7 @@ public sealed class PersonalLearningController(IPersonalLearningService service)
         CancellationToken cancellationToken)
     {
         var result = await service.SubmitTaskAsync(id, request, cancellationToken);
-        return StatusCode(201, ApiResponse<PersonalTaskDto>.Ok(result, "Đã nộp bài thực hành."));
+        return StatusCode(201, ApiResponse<PersonalTaskDto>.Ok(result, "Đã chấm bài thực hành."));
     }
 
     // GET api/v1/personal/certificates
