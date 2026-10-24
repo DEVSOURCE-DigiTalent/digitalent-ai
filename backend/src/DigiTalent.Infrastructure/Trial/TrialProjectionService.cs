@@ -76,7 +76,7 @@ public sealed partial class TrialService
 
     private async Task<TrialUsageDto> Usage(TrialWorkspace trial) => new(
         await db.Users.CountAsync(x => x.OrganizationId == trial.OrganizationId && x.Status == "ACTIVE"),
-        await db.TrialInvitations.CountAsync(x => x.OrganizationId == trial.OrganizationId && x.AcceptedAt == null && x.ExpiresAt > Now));
+        await db.TrialInvitations.CountAsync(x => x.OrganizationId == trial.OrganizationId && x.AcceptedAt == null && !x.SendFailed && x.ExpiresAt > Now));
 
     private TrialInvitationDto Invitation(TrialInvitation x, TrialOptions policy, string? token = null) => new(x.Id, x.Name, x.Email, x.Role, x.DepartmentId, x.PositionId,
         x.AcceptedAt != null ? "accepted" : x.SendFailed ? "send_failed" : Now >= x.ExpiresAt ? "expired" : "pending", x.SentAt, x.ExpiresAt,

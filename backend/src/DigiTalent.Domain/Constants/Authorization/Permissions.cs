@@ -182,6 +182,14 @@ public static class Permissions
     }
 
     /// <summary>
+    /// Chatbot trợ lý AI: chỉ đọc dữ liệu trong phạm vi quyền của người hỏi (mỗi tool tự kiểm tra quyền đọc tương ứng).
+    /// </summary>
+    public static class Assistant
+    {
+        public const string Chat = "assistant.chat";
+    }
+
+    /// <summary>
     /// Platform Admin console (Pulse redesign): organizations, users, the Digital AI standard,
     /// the 18 standard courses and seat orders across every organization.
     /// </summary>

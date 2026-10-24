@@ -44,6 +44,7 @@ export interface CeilingDepartment {
   code: string;
   name: string;
   employeeCount: number;
+  hasSuggestion: boolean;
   /** false = inherits the organization ceiling. */
   isCustomized: boolean;
   courseCount: number;

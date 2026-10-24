@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useReferencePositionLevels } from '@/hooks/use-reference-position-levels';
 import {
-  REFERENCE_DOMAIN_LEVELS,
   REFERENCE_POSITIONS,
   TT02_DOMAINS,
-  referenceDomainLevel,
 } from '@/lib/reference-positions';
 
 const LEVEL_TONES: Record<number, { bg: string; fg: string; name: string }> = {
@@ -21,9 +19,7 @@ const POSITION_SHORT: Record<string, string> = {
   ACCOUNTANT: 'Kế toán',
 };
 
-const COLUMNS = REFERENCE_POSITIONS
-  .filter((position) => REFERENCE_DOMAIN_LEVELS[position.code])
-  .map((position) => ({ code: position.code, name: position.name, label: POSITION_SHORT[position.code] ?? position.name }));
+const COLUMNS = REFERENCE_POSITIONS.map((position) => ({ code: position.code, name: position.name, label: POSITION_SHORT[position.code] ?? position.name }));
 
 function LevelChip({ level }: { level: number }) {
   const tone = LEVEL_TONES[level];
@@ -41,6 +37,7 @@ function LevelChip({ level }: { level: number }) {
  */
 export function PositionReferenceMatrix() {
   const [focused, setFocused] = useState<string | null>(null);
+  const { data: reference, isLoading, isError } = useReferencePositionLevels();
 
   return (
     <section
@@ -54,23 +51,19 @@ export function PositionReferenceMatrix() {
             Tham khảo · DigiTalent AI đề xuất
           </span>
           <h2 id="position-reference-title" className="mt-2 text-xl font-semibold" style={{ color: 'var(--po-ink)', letterSpacing: '-0.045em' }}>
-            Mức năng lực tham chiếu theo vị trí.
+            Mức năng lực tham chiếu theo vị trí{reference ? ` · v${reference.version}` : ''}.
           </h2>
           <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--po-muted)' }}>
-            Mức cần đạt ở mỗi miền cho 5 vị trí mẫu, dùng làm điểm xuất phát khi đặt mức cho doanh nghiệp. Doanh nghiệp
-            có thể tự điều chỉnh mức của từng năng lực cho phù hợp với vị trí của mình.
+            Mức tham khảo cho 5 vị trí mẫu do quản trị DigiTalent công bố. Doanh nghiệp tự đặt yêu cầu cho vị trí của mình;
+            thay đổi ở đây không tự đổi mục tiêu đã áp dụng cho nhân viên.
           </p>
         </div>
-        <Link
-          to="/enterprise/requirements/builder"
-          className="rounded-[11px] border px-3 py-2 text-xs font-bold"
-          style={{ borderColor: '#cdd7f5', color: 'var(--po-accent)' }}
-        >
-          Điều chỉnh yêu cầu theo vị trí →
-        </Link>
       </div>
 
-      <div className="mt-5 overflow-x-auto">
+      {isLoading && <p className="mt-4 text-sm">Đang tải mức tham chiếu…</p>}
+      {isError && <p className="mt-4 text-sm" role="alert">Chưa tải được mức tham chiếu. Vui lòng thử lại.</p>}
+
+      {reference && <div className="mt-5 overflow-x-auto">
         <table className="w-full min-w-[680px] border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
@@ -128,7 +121,7 @@ export function PositionReferenceMatrix() {
                         background: focused === column.code ? 'var(--po-soft)' : undefined,
                       }}
                     >
-                      <LevelChip level={referenceDomainLevel(column.code, domain.number)} />
+                      <LevelChip level={reference.levels[column.code]?.[domain.number - 1] ?? 0} />
                     </td>
                   ))}
                 </tr>
@@ -136,7 +129,7 @@ export function PositionReferenceMatrix() {
             })}
           </tbody>
         </table>
-      </div>
+      </div>}
     </section>
   );
 }

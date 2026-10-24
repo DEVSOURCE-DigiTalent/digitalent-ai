@@ -69,7 +69,13 @@ export type PulseProctoringEventKind =
   | 'CAMERA_RESUMED'
   | 'MIC_STOPPED'
   | 'MIC_RESUMED'
-  | 'SUBMITTED';
+  | 'SUBMITTED'
+  // Nhận diện khuôn mặt trên trình duyệt (canonical v3.4).
+  | 'FACE_MISSING'
+  | 'MULTIPLE_FACES'
+  | 'LOOKING_AWAY'
+  | 'FACE_CHECK_ON'
+  | 'FACE_CHECK_OFF';
 
 export interface PulsePerson {
   employeeId: string;
@@ -536,10 +542,38 @@ export const pulseService = {
 /** Trạng thái một bài trong hàng chờ: chờ chấm, chờ nộp lại, quá hạn nộp lại, cần hỗ trợ. */
 export type PulseReviewStatus = 'PENDING' | 'RETRY_WAIT' | 'RETRY_READY' | 'DEADLINE_MISSED' | 'FLAGGED';
 
-/** Gợi ý minh họa dựa trên văn bản cho lần nộp đang chờ: một dấu cho mỗi tiêu chí. Chỉ để tham khảo. */
+/** Gợi ý AI dựa trên Gemini cho lần nộp đang chờ. */
 export interface PulseAiHint {
   checks: boolean[];
   summary: string;
+  detail?: PulseAiDetail | null;
+  fraud?: PulseAiFraud | null;
+}
+
+export interface PulseAiFraud {
+  level: 'LOW' | 'MEDIUM' | 'HIGH';
+  summary: string;
+  items: PulseAiFraudItem[];
+}
+
+export interface PulseAiFraudItem {
+  time: string;
+  event: string;
+  note: string;
+}
+
+export interface PulseAiDetail {
+  plagiarismScore: number;
+  plagiarismNote: string;
+  aiGeneratedScore: number;
+  aiGeneratedNote: string;
+  relevanceScore: number;
+  relevanceNote: string;
+  depthScore: number;
+  depthNote: string;
+  clarityScore: number;
+  clarityNote: string;
+  verdict: string;
 }
 
 /** Một đoạn ghi trên dòng thời gian của phiên (một tệp), kèm đường dẫn đã ký để phát. */
@@ -564,6 +598,37 @@ export interface PulseProctoringEvent {
   flagged: boolean;
 }
 
+export type PulseRiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
+/** Nhận diện khuôn mặt trên trình duyệt: chạy suốt phiên / không chạy / một phần / không có thông tin (bài cũ). */
+export type PulseFaceCheck = 'ON' | 'OFF' | 'PARTIAL' | 'NONE';
+
+/** Đóng góp của một loại sự kiện vào điểm rủi ro. */
+export interface PulseRiskFactor {
+  kind: PulseProctoringEventKind;
+  count: number;
+  totalMs: number;
+  points: number;
+}
+
+/** Một điểm đáng ngờ trên dòng thời gian của phiên — bấm để tua bản ghi tới. */
+export interface PulseRiskMoment {
+  startMs: number;
+  endMs: number;
+  points: number;
+  severity: PulseRiskLevel;
+  eventCount: number;
+  kinds: PulseProctoringEventKind[];
+}
+
+/** Điểm rủi ro gian lận (0–100) do máy chủ tổng hợp từ nhật ký giám sát — chỉ để người chấm biết nên xem đoạn nào. */
+export interface PulseProctoringRisk {
+  score: number;
+  level: PulseRiskLevel;
+  faceCheck: PulseFaceCheck;
+  factors: PulseRiskFactor[];
+  moments: PulseRiskMoment[];
+}
+
 export interface PulseRecording {
   sessionId: string;
   kind: PulseExamKind;
@@ -572,6 +637,8 @@ export interface PulseRecording {
   endedAt?: string | null;
   durationMs?: number | null;
   flaggedCount: number;
+  /** Có từ backend v3.4. */
+  risk?: PulseProctoringRisk | null;
   segments: PulseRecordingSegment[];
   events: PulseProctoringEvent[];
 }

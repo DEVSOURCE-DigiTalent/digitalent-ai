@@ -31,5 +31,6 @@ public sealed class DevelopmentCaptureTrialEmailSender : ITrialEmailSender
 {
     // Tokens are returned only to the corresponding registration/invite response under explicit development options.
     public bool IsReady => true;
+    public bool IsDevelopmentCapture => true;
     public Task SendAsync(string email, string kind, string token, CancellationToken ct = default) => Task.CompletedTask;
 }

@@ -7,6 +7,7 @@ import {
   buildDraftRows,
   distributeWeightsByDomain,
   domainLevel,
+  domainTargetLevel,
   groupByDomain,
   mergeWithFramework,
   requiredRows,
@@ -93,6 +94,15 @@ describe('requirement editor helpers (Circular 02/2025, D-B7)', () => {
 
     expect(domainLevel(domain4.rows)).toBe(3);
     expect(requiredRows(domain4.rows).filter((r) => r.requiredLevel !== 3).map((r) => r.frameworkCode)).toEqual(['4.2']);
+  });
+
+  it('uses the highest required line for the domain target shown alongside the ceiling suggestion', () => {
+    const rows = setRowLevel(setRowLevel(rowsAt(1), 'c-3.3', 2), 'c-3.4', NOT_REQUIRED);
+    const domain3 = groupByDomain(rows)[2];
+
+    expect(domainLevel(domain3.rows)).toBe(1);
+    expect(domainTargetLevel(domain3.rows)).toBe(2);
+    expect(domainTargetLevel(domain3.rows.map((row) => ({ ...row, requiredLevel: NOT_REQUIRED })))).toBe(NOT_REQUIRED);
   });
 
   it('blocks activation below 9 competencies or without the core safety competencies', () => {

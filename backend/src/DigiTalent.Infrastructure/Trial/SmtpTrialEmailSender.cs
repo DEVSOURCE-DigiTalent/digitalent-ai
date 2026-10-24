@@ -15,7 +15,8 @@ public sealed class SmtpTrialEmailSender : ITrialEmailSender
 
     public bool IsReady => !string.IsNullOrWhiteSpace(_smtpOptions.Host) &&
                            !string.IsNullOrWhiteSpace(_smtpOptions.UserName) &&
-                           !string.IsNullOrWhiteSpace(_smtpOptions.Password);
+                           !string.IsNullOrWhiteSpace(_smtpOptions.Password) &&
+                           !string.IsNullOrWhiteSpace(_smtpOptions.FromEmail);
 
     public SmtpTrialEmailSender(
         IOptions<IndividualCommerceOptions> options,

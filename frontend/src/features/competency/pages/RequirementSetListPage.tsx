@@ -163,8 +163,8 @@ export function RequirementSetListPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
-          title="Yêu cầu năng lực theo vị trí"
-          subtitle="Quản lý và thiết lập bộ chuẩn năng lực cho từng vị trí công việc trong tổ chức"
+          title="Yêu cầu năng lực áp dụng tại doanh nghiệp"
+          subtitle="Thiết lập mục tiêu riêng cho từng vị trí công việc. Mức tham chiếu DigiTalent chỉ là gợi ý, không tự thay đổi yêu cầu đã công bố."
         />
         <Link
           to="/enterprise/requirements/builder"

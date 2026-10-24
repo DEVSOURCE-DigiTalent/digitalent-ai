@@ -42,6 +42,7 @@ public sealed class SmtpInvitationSender : IInvitationSender
             Credentials = new NetworkCredential(_smtp.UserName, _smtp.Password)
         };
         await client.SendMailAsync(email, cancellationToken);
-        return _links.ExposeDebugLink ? link : null;
+        // A delivered email should never echo its one-time activation link in the API response.
+        return null;
     }
 }

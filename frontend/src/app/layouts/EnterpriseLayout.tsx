@@ -9,6 +9,7 @@ import { useCurrentUser } from '../../hooks/use-current-user';
 import { sidebarFor } from '../../lib/sidebars';
 import { useEnterpriseTheme } from '../../hooks/use-enterprise-theme';
 import { isSubscriptionUsable } from '../../lib/personal-access';
+import { AssistantWidget } from '../../features/assistant/components/AssistantWidget';
 
 export function EnterpriseLayout() {
   const user = useCurrentUser((s) => s.user);
@@ -23,6 +24,7 @@ export function EnterpriseLayout() {
         <RequireOnboarded>
           <div data-testid="enterprise-layout">
             <MainLayout portal={ENTERPRISE_PORTAL} sidebarConfig={sidebarFor(user)} isUnpaid={isUnpaid} />
+            {!isUnpaid && <AssistantWidget />}
           </div>
         </RequireOnboarded>
       </RequireWorkspace>

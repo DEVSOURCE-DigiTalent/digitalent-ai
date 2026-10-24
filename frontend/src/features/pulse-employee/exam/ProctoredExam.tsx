@@ -1,12 +1,13 @@
 import { useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Link, UNSAFE_DataRouterContext, useBlocker, useNavigate } from 'react-router-dom';
-import { ArrowRight, Check, ExternalLink, Mic, Monitor, MonitorOff, ShieldAlert, Upload, Video } from 'lucide-react';
+import { ArrowRight, Check, ExternalLink, Mic, Monitor, MonitorOff, ScanFace, ShieldAlert, Upload, Video } from 'lucide-react';
 import pulseMark from '@/assets/pulse/pulse-mark.svg';
 import type { PulseAnswer, PulseCourseSummary, PulseCriterion, PulseExamKind, PulseExamQuestion, PulseReviewer } from '@/services/pulse.service';
 import { btn } from '../lib/button';
 import { PROCTORING_EVENT_LABELS, clock, formatDuration, levelName, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 import { ProctorController, proctoringSupported, type DeviceState, type LockReason, type ProctorSnapshot } from './proctor';
+import type { FaceSignalKind } from './face-signals';
 
 const MIN_EVIDENCE = 30;
 const MAX_EVIDENCE = 8000;
@@ -433,6 +434,10 @@ function DeviceCheck(props: ProctoredExamProps & {
           <ul className="pu-rules">
             <li><ExternalLink size={16} aria-hidden />Không rời khỏi tab bài làm. Mỗi lần rời tab hoặc rời cửa sổ trình duyệt được ghi vào nhật ký giám sát.</li>
             <li><MonitorOff size={16} aria-hidden />Nếu ngừng chia sẻ màn hình, tắt camera hoặc micro, bài tạm khóa cho tới khi bạn bật lại. Sự kiện này cũng được ghi lại.</li>
+            <li>
+              <ScanFace size={16} aria-hidden />Khuôn mặt được nhận diện ngay trên máy của bạn: vắng mặt, có người khác hoặc nhìn ra ngoài
+              màn hình lâu được ghi vào nhật ký. Hình camera không được gửi đi chỉ để phân tích.
+            </li>
             <li><Upload size={16} aria-hidden />Bản ghi được tải lên dần trong lúc làm và gửi cùng bài nộp để {props.reviewer?.name ?? 'người chấm'} xem lại.</li>
           </ul>
 
@@ -594,6 +599,30 @@ function LockOverlay({ controller, snapshot, elapsed }: { controller: ProctorCon
   );
 }
 
+const FLAGGED_KINDS: string[] = [
+  'TAB_HIDDEN', 'FOCUS_LOST', 'SHARE_STOPPED', 'CAMERA_STOPPED', 'MIC_STOPPED', 'FACE_MISSING', 'MULTIPLE_FACES', 'LOOKING_AWAY',
+];
+
+const FACE_ALERT_TEXT: Record<FaceSignalKind, string> = {
+  FACE_MISSING: 'Không thấy khuôn mặt — hãy ngồi vào khung hình',
+  MULTIPLE_FACES: 'Có nhiều người trong khung hình',
+  LOOKING_AWAY: 'Hãy nhìn vào màn hình bài làm',
+};
+
+/** Trạng thái nhận diện khuôn mặt trên máy, kèm lời nhắc khi đang có bất thường. */
+function FaceRow({ snapshot }: { snapshot: ProctorSnapshot }) {
+  if (snapshot.faceCheck === 'idle') return null;
+  const alert = snapshot.faceAlert;
+  const text = snapshot.faceCheck === 'loading' ? 'Đang tải…' : snapshot.faceCheck === 'off' ? 'Không chạy được' : alert ? 'Cần chú ý' : 'Bình thường';
+  return (
+    <div className={`pu-proctor-row${alert ? ' off' : ''}`} role={alert ? 'alert' : undefined}>
+      <ScanFace size={17} aria-hidden />
+      <span>{alert ? FACE_ALERT_TEXT[alert] : 'Nhận diện khuôn mặt'}</span>
+      <b>{text}</b>
+    </div>
+  );
+}
+
 function ProctorPanel({ controller, snapshot }: { controller: ProctorController; snapshot: ProctorSnapshot }) {
   const screenOff = snapshot.lockReasons.includes('SCREEN');
   return (
@@ -614,12 +643,13 @@ function ProctorPanel({ controller, snapshot }: { controller: ProctorController;
         <span>Toàn bộ màn hình</span>
         <b>{screenOff ? 'Đã ngừng' : 'Đang chia sẻ'}</b>
       </div>
+      <FaceRow snapshot={snapshot} />
       {snapshot.uploadError && <div className="pu-proctor-row off">{snapshot.uploadError}</div>}
       <div className="pu-proctor-log">
         <span className="pu-mini">Nhật ký giám sát</span>
         <ol>
           {snapshot.events.map((event, index) => {
-            const flagged = ['TAB_HIDDEN', 'FOCUS_LOST', 'SHARE_STOPPED', 'CAMERA_STOPPED', 'MIC_STOPPED'].includes(event.kind);
+            const flagged = FLAGGED_KINDS.includes(event.kind);
             return (
               <li key={`${event.kind}-${index}`} className={flagged ? 'flagged' : undefined}>
                 <time>{clock(event.offsetMs)}</time>

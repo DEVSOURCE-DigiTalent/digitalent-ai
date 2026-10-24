@@ -178,6 +178,7 @@ export const apiEnterpriseTrialService = {
   register: (data: TrialRegistrationRequest) => apiClient.post<ApiResponse<TrialRegistrationDto>>('/enterprise-trial/register', data, transport),
   verify: (token: string, _password?: string) => apiClient.post<ApiResponse<TrialAccountDto>>('/enterprise-trial/verify', { token }, transport),
   verifyCode: (email: string, code: string, _password?: string) => apiClient.post<ApiResponse<TrialAccountDto>>('/enterprise-trial/verify-code', { email, code }, transport),
+  resendVerification: (email: string) => apiClient.post<ApiResponse<TrialRegistrationDto>>('/enterprise-trial/verification/resend', { email }, transport),
   accept: (token: string, password: string) => apiClient.post<ApiResponse<TrialAccountDto>>('/enterprise-trial/accept', { token, password }, transport),
   login: (email: string, password: string) => apiClient.post<ApiResponse<LoginResponse>>('/auth/login', { email, password }, transport),
   currentUser: () => apiClient.get<ApiResponse<SessionUser>>('/auth/me', transport),

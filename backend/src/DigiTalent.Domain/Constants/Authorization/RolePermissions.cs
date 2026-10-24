@@ -117,6 +117,8 @@ public static class RolePermissions
             Permissions.System.FileUploadMaterial,
             Permissions.System.AuditLogReadDepartment,
             Permissions.System.BusinessConfigManage,
+
+            Permissions.Assistant.Chat,
         },
 
         [Roles.Manager] = new[]
@@ -184,6 +186,8 @@ public static class RolePermissions
             Permissions.System.FileUploadTaskSubmission,
             Permissions.System.FileDownloadAuthorized,
             Permissions.System.AuditLogReadDepartment,
+
+            Permissions.Assistant.Chat,
         },
 
         [Roles.PlatformAdmin] = new[]
@@ -254,6 +258,8 @@ public static class RolePermissions
 
             Permissions.System.FileUploadTaskSubmission,
             Permissions.System.FileDownloadAuthorized,
+
+            Permissions.Assistant.Chat,
         },
     };
 }

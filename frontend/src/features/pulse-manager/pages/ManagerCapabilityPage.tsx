@@ -98,7 +98,7 @@ export function ManagerCapabilityPage() {
               {selected && (
                 <div className="pm-person">
                   <strong>{selected.jobPositionName ?? 'Chưa gán vị trí'} / {department.name}</strong>
-                  <small>Mục tiêu vị trí ≤ Trần phòng ban ≤ Trần doanh nghiệp ≤ Digital AI</small>
+                  <small>Mục tiêu theo vị trí; khóa được mở theo phạm vi doanh nghiệp và phòng ban.</small>
                   <div style={{ marginTop: 12 }}>
                     <Bar
                       value={selected.coveragePercent ?? 0}

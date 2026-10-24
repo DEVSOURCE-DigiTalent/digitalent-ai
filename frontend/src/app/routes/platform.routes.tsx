@@ -8,6 +8,7 @@ import { NotificationsPage } from '../../features/notifications/pages/Notificati
 import { PulseAdminLayout } from '../../features/platform/PulseAdminLayout';
 import { PlatformOverviewPage } from '../../features/platform/console/PlatformOverviewPage';
 import { PlatformFrameworkPage } from '../../features/platform/console/PlatformFrameworkPage';
+import { PlatformReferencePositionsPage } from '../../features/platform/console/PlatformReferencePositions';
 import { PlatformVersionsPage } from '../../features/platform/console/PlatformVersionsPage';
 import { PlatformCourseBuilderPage } from '../../features/platform/console/PlatformCourseBuilderPage';
 import { PlatformOrganizationsPage } from '../../features/platform/console/PlatformOrganizationsPage';
@@ -29,6 +30,7 @@ const PLATFORM_PAGES: PageRegistry = {
 
   'PA-01': PlatformOverviewPage,
   'PA-02': PlatformFrameworkPage,
+  'PA-13': PlatformReferencePositionsPage,
   'PA-03': PlatformVersionsPage,
   'PA-12': PlatformVersionsPage,
   'PA-04': PlatformCourseBuilderPage,
@@ -54,7 +56,7 @@ const RETIRED_PATHS: [string, string][] = [
   ['questions', '/platform/versions'],
   ['questions/:id', '/platform/versions'],
   ['assessment-templates', '/platform/versions'],
-  ['positions', '/platform/frameworks'],
+  ['positions', '/platform/reference-positions'],
   ['positions/:id/requirements', '/platform/frameworks'],
   ['plans', '/platform/commerce'],
   ['plans/:code', '/platform/commerce'],

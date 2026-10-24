@@ -27,6 +27,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
     private readonly PulseExamPaper _paper;
     private readonly ICurrentUser _currentUser;
     private readonly TimeProvider _clock;
+    private readonly IGeminiService _gemini;
 
     public GetPulseFinalReviewsUseCase(
         IApplicationDbContext context,
@@ -36,7 +37,8 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
         PulseRecordingReader recordings,
         PulseExamPaper paper,
         ICurrentUser currentUser,
-        TimeProvider clock)
+        TimeProvider clock,
+        IGeminiService gemini)
     {
         _context = context;
         _scope = scope;
@@ -46,6 +48,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
         _paper = paper;
         _currentUser = currentUser;
         _clock = clock;
+        _gemini = gemini;
     }
 
     public async Task<GetPulseFinalReviewsUseCaseOutput> ExecuteAsync(GetPulseFinalReviewsUseCaseInput input)
@@ -137,7 +140,6 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                 AttemptNo = last.AttemptNo,
                 MaxAttempts = PulseRules.MaxFinalAttempts,
                 Attempts = submissions.Select(s => attemptDtos[s.Id]).ToList(),
-                AiHint = status == PulseFinalStatus.Pending ? PulseRules.AiHint(last.EvidenceText) : null,
                 ProctoringSessionId = last.ProctoringSessionId,
             });
         }
@@ -175,11 +177,11 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                             preAssessment.ChoiceScore, preAssessment.ChoiceTotal, null, true, preChoiceItems.GetValueOrDefault(preAssessment.Id)),
                     },
                 },
-                AiHint = PulseRules.AiHint(preAssessment.EvidenceText),
                 ProctoringSessionId = preAssessment.ProctoringSessionId,
             });
         }
 
+        // Load recordings trước để lấy events cho AI phân tích gian lận
         var recordings = await _recordings.LoadAsync(items
             .Where(i => i.ProctoringSessionId.HasValue)
             .Select(i => i.ProctoringSessionId!.Value)
@@ -188,6 +190,30 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
         {
             item.Recording = recordings.GetValueOrDefault(item.ProctoringSessionId!.Value);
         }
+
+        // AI evaluation: gọi Gemini song song cho tất cả bài PENDING (đánh giá bài + phát hiện gian lận)
+        var defaultCriteria = PulseRules.FinalCriteria.Select(c => c.Title).ToList();
+        var aiTasks = items
+            .Where(i => i.Status == PulseFinalStatus.Pending && i.Attempts.Count > 0)
+            .Select(async item =>
+            {
+                var evidence = item.Attempts[^1].EvidenceText ?? "";
+                var prompt = item.Assignment?.PromptHtml ?? "";
+                var criteria = item.Assignment?.Criteria is { Count: > 0 }
+                    ? item.Assignment.Criteria
+                    : (IReadOnlyList<string>)defaultCriteria;
+
+                // Lấy events giám sát để AI phân tích gian lận
+                List<ProctoringEventInfo>? events = null;
+                if (item.Recording?.Events is { Count: > 0 } evts)
+                {
+                    events = evts.Select(e => new ProctoringEventInfo(e.Kind, e.OffsetMs, e.DurationMs)).ToList();
+                }
+
+                item.AiHint = await _gemini.EvaluateEvidenceAsync(evidence, prompt, criteria, events);
+            })
+            .ToList();
+        await Task.WhenAll(aiTasks);
 
         items = items
             .OrderBy(i => Array.IndexOf(StatusOrder, i.Status))

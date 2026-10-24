@@ -72,7 +72,8 @@ public class ProctoringEventConfiguration : IEntityTypeConfiguration<ProctoringE
         {
             table.HasCheckConstraint("ck_proctoring_events_kind",
                 "kind IN ('STARTED', 'TAB_HIDDEN', 'FOCUS_LOST', 'SHARE_STOPPED', 'SHARE_RESUMED', " +
-                "'CAMERA_STOPPED', 'CAMERA_RESUMED', 'MIC_STOPPED', 'MIC_RESUMED', 'SUBMITTED')");
+                "'CAMERA_STOPPED', 'CAMERA_RESUMED', 'MIC_STOPPED', 'MIC_RESUMED', 'SUBMITTED', " +
+                "'FACE_MISSING', 'MULTIPLE_FACES', 'LOOKING_AWAY', 'FACE_CHECK_ON', 'FACE_CHECK_OFF')");
             table.HasCheckConstraint("ck_proctoring_events_offsets",
                 "offset_ms >= 0 AND (duration_ms IS NULL OR duration_ms >= 0)");
         });

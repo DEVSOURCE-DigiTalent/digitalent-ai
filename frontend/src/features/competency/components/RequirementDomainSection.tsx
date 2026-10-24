@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { levelWithTier } from '@/lib/competency-levels';
-import { NOT_REQUIRED, domainLevel, requiredRows, type DomainGroup, type DomainRow } from '../utils/requirement-domains';
+import { NOT_REQUIRED, domainTargetLevel, requiredRows, type DomainGroup, type DomainRow } from '../utils/requirement-domains';
 
 export interface EditableRequirementRow extends DomainRow {
   tempId: string;
@@ -33,9 +33,8 @@ export function RequirementDomainSection({
   onApplyDomainLevel,
 }: RequirementDomainSectionProps) {
   const required = requiredRows(group.rows);
-  const currentDomainLevel = domainLevel(group.rows);
+  const currentDomainLevel = domainTargetLevel(group.rows);
   const [pendingLevel, setPendingLevel] = useState<number | null>(null);
-  const levelToApply = pendingLevel ?? currentDomainLevel;
   const subtotal = Math.round(required.reduce((sum, r) => sum + (Number(r.weightPercent) || 0), 0) * 100) / 100;
   const domainName = group.domain.name;
 
@@ -49,15 +48,19 @@ export function RequirementDomainSection({
               <span className="ml-2 text-xs font-normal text-slate-500">
                 {required.length}/{group.rows.length} năng lực được yêu cầu · {subtotal}% tổng trọng số
               </span>
+              <span className="ml-2 inline-block rounded-full bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700">
+                Mức cao nhất: {levelOptionLabel(currentDomainLevel)}
+              </span>
             </div>
             {canEdit && (
               <div className="flex items-center gap-2 font-normal">
                 <select
-                  aria-label={`Mức cho cả miền ${domainName}`}
-                  value={levelToApply}
+                  aria-label={`Chọn mức áp hàng loạt cho miền ${domainName}`}
+                  value={pendingLevel ?? ''}
                   onChange={(e) => setPendingLevel(Number(e.target.value))}
                   className={inputClass}
                 >
+                  <option value="" disabled>Chọn mức áp hàng loạt</option>
                   {LEVEL_OPTIONS.map((level) => (
                     <option key={level} value={level}>
                       {levelOptionLabel(level)}
@@ -67,10 +70,12 @@ export function RequirementDomainSection({
                 <button
                   type="button"
                   onClick={() => {
-                    onApplyDomainLevel(group.domain.categoryId, levelToApply);
+                    if (pendingLevel === null) return;
+                    onApplyDomainLevel(group.domain.categoryId, pendingLevel);
                     setPendingLevel(null);
                   }}
-                  className="px-3 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-md"
+                  disabled={pendingLevel === null}
+                  className="px-3 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Áp mức cho cả miền
                 </button>
@@ -82,7 +87,7 @@ export function RequirementDomainSection({
       {group.rows.map((row) => {
         const label = row.frameworkCode ? `${row.frameworkCode} ${row.competencyName ?? ''}` : row.competencyName ?? row.competencyCode;
         const isRequired = row.requiredLevel > NOT_REQUIRED;
-        const differs = isRequired && row.requiredLevel !== currentDomainLevel;
+        const differs = isRequired && row.requiredLevel < currentDomainLevel;
         const canEditDetails = canEdit && isRequired;
         return (
           <tr key={row.tempId} className={`transition-colors ${isRequired ? 'hover:bg-slate-50/60' : 'bg-slate-50/40'}`}>
@@ -106,7 +111,7 @@ export function RequirementDomainSection({
               </select>
               {differs && (
                 <span className="mt-1 inline-block rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">
-                  Khác mức của miền
+                  Dưới mức cao nhất của miền
                 </span>
               )}
             </td>

@@ -8,7 +8,10 @@ public class RecordPulseProctoringEventsUseCaseInput
 
 public class PulseProctoringEventInput
 {
-    /// <summary>TAB_HIDDEN | FOCUS_LOST | SHARE_STOPPED | SHARE_RESUMED | CAMERA_STOPPED | CAMERA_RESUMED | MIC_STOPPED | MIC_RESUMED.</summary>
+    /// <summary>
+    /// TAB_HIDDEN | FOCUS_LOST | SHARE_STOPPED | SHARE_RESUMED | CAMERA_STOPPED | CAMERA_RESUMED | MIC_STOPPED | MIC_RESUMED
+    /// | FACE_MISSING | MULTIPLE_FACES | LOOKING_AWAY | FACE_CHECK_ON | FACE_CHECK_OFF.
+    /// </summary>
     public string Kind { get; set; } = string.Empty;
 
     /// <summary>ms từ lúc bắt đầu phiên.</summary>

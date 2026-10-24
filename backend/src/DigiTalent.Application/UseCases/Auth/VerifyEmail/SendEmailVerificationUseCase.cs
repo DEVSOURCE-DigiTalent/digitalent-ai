@@ -54,14 +54,12 @@ public class SendEmailVerificationUseCase : IUseCase<SendEmailVerificationInput,
         if (user.EmailVerifiedAt != null)
             throw new BadRequestException("Email này đã được xác minh.", "email", "ALREADY_VERIFIED");
 
-        // Vô hiệu hóa các OTP cũ (purpose = VERIFY_EMAIL) chưa dùng
-        await _context.PasswordResetTokens
-            .Where(t => t.UserId == user.Id
-                        && t.Purpose == TokenPurpose.VerifyEmail
-                        && t.UsedAt == null)
-            .ExecuteUpdateAsync(set => set
-                .SetProperty(t => t.UsedAt, now)
-                .SetProperty(t => t.UpdatedAt, now));
+        var latestCode = await _context.PasswordResetTokens
+            .Where(t => t.UserId == user.Id && t.Purpose == TokenPurpose.VerifyEmail && t.UsedAt == null)
+            .OrderByDescending(t => t.CreatedAt)
+            .FirstOrDefaultAsync();
+        if (latestCode != null && latestCode.CreatedAt.AddMinutes(1) > now)
+            throw new ConflictException("Vui lòng đợi 60 giây trước khi yêu cầu mã mới.");
 
         // Sinh OTP 6 số ngẫu nhiên an toàn (không dùng Random, dùng Guid để đủ ngẫu nhiên)
         var otp = GenerateOtp();
@@ -77,17 +75,26 @@ public class SendEmailVerificationUseCase : IUseCase<SendEmailVerificationInput,
             CreatedAt = now,
             UpdatedAt = now,
         };
+        // Send first; a delivery failure must leave the previous OTP usable.
+        var debugOtp = await _sender.SendOtpAsync(user.Email, user.DisplayName, otp);
+
+        var previousTokens = await _context.PasswordResetTokens
+            .Where(t => t.UserId == user.Id && t.Purpose == TokenPurpose.VerifyEmail && t.UsedAt == null)
+            .ToListAsync();
+        foreach (var previousToken in previousTokens)
+        {
+            previousToken.UsedAt = now;
+            previousToken.UpdatedAt = now;
+        }
         _context.PasswordResetTokens.Add(token);
         await _context.SaveChangesAsync();
-
-        var debugOtp = await _sender.SendOtpAsync(user.Email, user.DisplayName, otp);
 
         var isDev = _configuration["ASPNETCORE_ENVIRONMENT"] == "Development"
                     || _configuration["IndividualCommerce:Security:IsDevelopment"] == "true";
 
         return new SendEmailVerificationOutput
         {
-            DebugOtp = isDev ? (debugOtp ?? otp) : null,
+            DebugOtp = isDev ? debugOtp : null,
         };
     }
 

@@ -4,7 +4,8 @@ namespace DigiTalent.Domain.Entities;
 
 /// <summary>
 /// Bảng proctoring_events (canonical v3.3 §20.3). Một sự kiện giám sát của phiên làm bài: bắt đầu, rời tab, rời cửa
-/// sổ, ngừng / chia sẻ lại màn hình, mất / bật lại camera hoặc micro, nộp bài. OffsetMs tính từ lúc bắt đầu phiên.
+/// sổ, ngừng / chia sẻ lại màn hình, mất / bật lại camera hoặc micro, nộp bài, và (v3.4) các khoảng khuôn mặt bất thường
+/// do trình duyệt tự nhận diện: vắng mặt, nhiều người, nhìn ra ngoài. OffsetMs tính từ lúc bắt đầu phiên.
 /// </summary>
 public class ProctoringEvent : BaseEntity
 {

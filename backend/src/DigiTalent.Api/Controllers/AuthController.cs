@@ -4,6 +4,7 @@ using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.UseCases.Auth;
 using DigiTalent.Domain.Constants.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DigiTalent.Api.Controllers;
 
@@ -53,6 +54,7 @@ public class AuthController : ControllerBase
 
     // POST api/v1/auth/forgot-password
     [HttpPost("forgot-password")]
+    [EnableRateLimiting("auth-email")]
     public async Task<ActionResult<ApiResponse<ForgotPasswordOutput>>> ForgotPassword(
         [FromBody] ForgotPasswordInput input,
         [FromServices] IUseCase<ForgotPasswordInput, ForgotPasswordOutput> useCase)
@@ -93,6 +95,7 @@ public class AuthController : ControllerBase
 
     // POST api/v1/auth/send-email-verification — Gửi OTP 6 số cho Business Owner mới đăng ký
     [HttpPost("send-email-verification")]
+    [EnableRateLimiting("auth-email")]
     public async Task<ActionResult<ApiResponse<SendEmailVerificationOutput>>> SendEmailVerification(
         [FromBody] SendEmailVerificationInput input,
         [FromServices] IUseCase<SendEmailVerificationInput, SendEmailVerificationOutput> useCase)
@@ -103,6 +106,7 @@ public class AuthController : ControllerBase
 
     // POST api/v1/auth/verify-business-email — Xác minh OTP để kích hoạt tài khoản Business Owner
     [HttpPost("verify-business-email")]
+    [EnableRateLimiting("auth-email")]
     public async Task<ActionResult<ApiResponse<VerifyBusinessEmailOutput>>> VerifyBusinessEmail(
         [FromBody] VerifyBusinessEmailInput input,
         [FromServices] IUseCase<VerifyBusinessEmailInput, VerifyBusinessEmailOutput> useCase)

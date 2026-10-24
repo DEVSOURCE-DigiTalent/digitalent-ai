@@ -58,6 +58,22 @@ public static class DependencyInjection
         // Audit Logging
         services.AddScoped<IAuditService, AuditService>();
 
+        // Chatbot trợ lý AI (Assistant:Provider = Claude | Gemini). Khóa API lấy từ Assistant__ApiKey,
+        // hoặc ANTHROPIC_API_KEY (Claude) / GEMINI_API_KEY (Gemini).
+        var assistantSettings = configuration.GetSection("Assistant").Get<DigiTalent.Infrastructure.Assistant.AssistantSettings>()
+            ?? new DigiTalent.Infrastructure.Assistant.AssistantSettings();
+        services.AddSingleton(assistantSettings);
+        if (assistantSettings.IsGemini)
+        {
+            services.AddHttpClient<IAssistantChatModel, DigiTalent.Infrastructure.Assistant.GeminiAssistantChatModel>(
+                // Mỗi lượt gọi tối đa 45 s: mô hình quá tải thường treo thay vì trả 503 → sớm chuyển sang mô hình dự phòng.
+                client => client.Timeout = TimeSpan.FromSeconds(45));
+        }
+        else
+        {
+            services.AddSingleton<IAssistantChatModel, DigiTalent.Infrastructure.Assistant.ClaudeAssistantChatModel>();
+        }
+
         // Individual Commerce & Registration (v3.0)
         services.Configure<DigiTalent.Application.IndividualCommerce.IndividualCommerceOptions>(
             configuration.GetSection(DigiTalent.Application.IndividualCommerce.IndividualCommerceOptions.SectionName));
@@ -84,6 +100,9 @@ public static class DependencyInjection
 
         // Email OTP verification for Business Owner registration
         services.AddScoped<IEmailVerificationSender, EmailVerificationSender>();
+
+        // Gemini AI evaluation
+        services.AddHttpClient<IGeminiService, DigiTalent.Infrastructure.AI.GeminiService>();
 
         return services;
     }
