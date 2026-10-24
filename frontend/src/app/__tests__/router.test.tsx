@@ -37,7 +37,7 @@ describe('Router Configuration & Surface Separation', () => {
       renderWithRouter('/individual/try', queryClient);
 
       expect(await screen.findByTestId('individual-trial-page', {}, { timeout: 10_000 })).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 1, name: /Trải nghiệm lộ trình cá nhân/ })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: /Xem lộ trình cá nhân/ })).toBeInTheDocument();
       expect(screen.queryByTestId('personal-layout')).not.toBeInTheDocument();
     });
 

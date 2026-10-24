@@ -84,6 +84,28 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
     if (outlineOpen) closeOutline();
   };
 
+  const trackSlot = (updated: PersonalCourseDetail) => {
+    if (!course.trialSlot && updated.trialSlot && access) {
+      trackTrialEvent('trial_course_slot_used', { slotIndex: access.trialCourseIds.length + 1, courseCode: updated.code });
+    }
+  };
+
+  // Watching a video to the end counts as learning it; the learner stays on the lesson (no jump to the next one).
+  const markWatched = () => {
+    if (lesson.completed || lessonClosed || access?.mode === 'free' || setCompleted.isPending) return;
+    setCompleted.mutate(
+      { courseId: course.id, lessonId: lesson.id, completed: true },
+      { onSuccess: trackSlot, onError: handlePlanError },
+    );
+  };
+
+  const isLastLesson = index === lessons.length - 1;
+  const assessmentReady = course.completedLessons === course.lessonCount;
+  const openAssessment = () => {
+    open(lessons[lessons.length - 1]);
+    requestAnimationFrame(() => document.getElementById('course-assessment')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
+
   const toggle = () =>
     setCompleted.mutate(
       { courseId: course.id, lessonId: lesson.id, completed: !lesson.completed },
@@ -91,9 +113,7 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
         onSuccess: (updated) => {
           const next = updated.modules.flatMap((m) => m.lessons)[index + 1];
           if (!lesson.completed && next) open(next);
-          if (!course.trialSlot && updated.trialSlot && access) {
-            trackTrialEvent('trial_course_slot_used', { slotIndex: access.trialCourseIds.length + 1, courseCode: updated.code });
-          }
+          trackSlot(updated);
         },
         onError: handlePlanError,
       },
@@ -154,12 +174,25 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
               </li>
             ))}
           </ol>
+          {/* The end-of-course assessment closes the outline, so it is found where the lessons end. */}
+          <button
+            type="button"
+            onClick={openAssessment}
+            className="mt-4 flex w-full items-center justify-between gap-2 rounded-xl border border-pt-line px-3 py-2.5 text-left text-[13px] text-pt-fg-2 transition-colors hover:border-pt-accent/50 hover:text-pt-fg"
+          >
+            <span>Bài đánh giá cuối khóa</span>
+            <span className={cn('text-xs', course.awaitingTask ? 'text-pt-warn' : course.assessment.passed ? 'text-pt-ok' : assessmentReady ? 'text-pt-accent' : 'text-pt-fg-3')}>
+              {course.awaitingTask
+                ? 'Chờ bài thực hành'
+                : course.assessment.passed ? 'Đã đạt' : assessmentReady ? 'Sẵn sàng' : `còn ${course.lessonCount - course.completedLessons} bài`}
+            </span>
+          </button>
         </Card>
       </aside>
 
       <div className="min-w-0 grid content-start gap-4">
         <Card className="overflow-hidden">
-          <LessonMedia lesson={lesson} moduleTitle={module.title} closed={lessonClosed} />
+          <LessonMedia lesson={lesson} moduleTitle={module.title} closed={lessonClosed} onEnded={markWatched} />
           <div className="flex flex-wrap items-center gap-1 border-b border-pt-line px-4" role="tablist" aria-label="Bài học">
             {(['content', 'notes'] as const).map((key) => (
               <button
@@ -212,13 +245,15 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
           <Kind.icon className="size-3.5" aria-hidden="true" /> {Kind.label} · {lesson.durationMinutes} phút · bài {index + 1}/{lessons.length}
         </p>
 
-        <CourseAssessment course={course} />
+        {(isLastLesson || assessmentReady) && <div id="course-assessment" className="scroll-mt-24"><CourseAssessment course={course} /></div>}
       </div>
     </div>
   );
 }
 
-function LessonMedia({ lesson, moduleTitle, closed }: { lesson: PersonalLesson; moduleTitle: string; closed: boolean }) {
+function LessonMedia({ lesson, moduleTitle, closed, onEnded }: {
+  lesson: PersonalLesson; moduleTitle: string; closed: boolean; onEnded: () => void;
+}) {
   if (lesson.kind === 'VIDEO' && !closed) {
     let videoSrc = STUDY_CLIP;
     if (lesson.id.includes('A1-A') || lesson.id.includes('a1-a')) {
@@ -235,8 +270,12 @@ function LessonMedia({ lesson, moduleTitle, closed }: { lesson: PersonalLesson; 
 
     return (
       <figure className="relative bg-black">
-        <video key={lesson.id} src={videoSrc} controls preload="metadata" playsInline className="aspect-video w-full object-contain" aria-label={`Video bài học: ${lesson.title}`} />
+        <video key={lesson.id} src={videoSrc} controls preload="metadata" playsInline onEnded={onEnded} className="aspect-video w-full object-contain" aria-label={`Video bài học: ${lesson.title}`} />
         <figcaption className="pointer-events-none absolute left-5 top-4 text-xs uppercase tracking-[0.14em] text-white/70">{moduleTitle}</figcaption>
+        {/* Lessons without their own recording reuse one study clip; say so instead of passing it off as the lesson. */}
+        {videoSrc === STUDY_CLIP && (
+          <span className="pointer-events-none absolute right-4 top-3.5 rounded-full bg-black/55 px-2.5 py-1 text-[11px] text-white/80">Video minh họa</span>
+        )}
       </figure>
     );
   }

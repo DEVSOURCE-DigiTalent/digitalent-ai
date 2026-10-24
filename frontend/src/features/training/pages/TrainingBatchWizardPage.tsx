@@ -56,7 +56,7 @@ export function TrainingBatchWizardPage() {
   const { data: coursesPaged } = useCourses({ status: 'PUBLISHED', pageSize: 100 });
   const { data: departmentsData } = useDepartments({ pageSize: 100 });
   const { data: positionsData } = useJobPositions({ pageSize: 100 });
-  const { data: membersData } = useMembers({ pageSize: 200, status: 'ACTIVE' });
+  const { data: membersData } = useMembers({ pageSize: 100, status: 'ACTIVE' });
 
   const allCourses = coursesPaged?.items || [];
   const departments = departmentsData?.items || [];

@@ -174,7 +174,7 @@ export const PLANS: Plan[] = [
     code: 'IND_PLUS',
     audience: 'individual',
     name: 'Plus',
-    tagline: 'Lộ trình học theo khoảng trống kỹ năng của bạn.',
+    tagline: 'Nâng năng lực số cho vị trí bạn đang làm.',
     billing: {
       monthlyPrice: 149_000,
       annualPrice: 1_190_000,
@@ -188,11 +188,11 @@ export const PLANS: Plan[] = [
     seatRange: { min: 1, max: 1 },
     entitlements: [ENTITLEMENTS.PERSONAL_LEARNING_PATH],
     highlights: [
-      '1 tài khoản cá nhân',
-      'Chọn vị trí mục tiêu và làm bài đánh giá đầu vào',
-      'Lộ trình học theo thứ tự tiên quyết',
-      'Toàn bộ 6 bộ giáo trình',
-      'Bài đánh giá sau mỗi khóa',
+      '1 vị trí mục tiêu',
+      'Bài đánh giá đầu vào để bỏ qua phần đã biết',
+      'Toàn bộ 6 bộ giáo trình, theo thứ tự tiên quyết',
+      'Bài kiểm tra và bài thực hành chấm theo tiêu chí',
+      'Chứng nhận hoàn thành từng khóa',
       'Hồ sơ năng lực cá nhân',
     ],
     recommended: true,
@@ -214,7 +214,14 @@ export const PLANS: Plan[] = [
     monthlyPrice: 299_000,
     seatRange: { min: 1, max: 1 },
     entitlements: [ENTITLEMENTS.PERSONAL_LEARNING_PATH, ENTITLEMENTS.ADVANCED_ANALYTICS],
-    highlights: ['Mọi tính năng của Plus', 'So sánh với nhiều vị trí mục tiêu', 'Phân tích tiến bộ chi tiết'],
+    // Features marked "sắp ra mắt" are decided (plan 2026-10-09, C1) but not built yet; the label says so.
+    highlights: [
+      'Mọi tính năng của Plus',
+      'Mentor nhận xét bài thực hành khóa Nâng cao trong 48 giờ · sắp ra mắt',
+      '2 vị trí song song (hiện tại và mục tiêu), lộ trình gộp không trùng khóa · sắp ra mắt',
+      'Trang hồ sơ năng lực công khai và bản PDF gửi nhà tuyển dụng · sắp ra mắt',
+      'Phân tích tiến bộ chi tiết',
+    ],
   },
   {
     code: 'IND_FREE',

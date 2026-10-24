@@ -1,7 +1,7 @@
 /**
- * Question bank of the personal track: 4 workplace questions per domain of Circular 02/2025.
- * The first three of a domain are one per level (Cơ bản, Trung cấp, Nâng cao) and make up the entry assessment;
- * all four make up the end-of-course assessment of that domain's courses.
+ * Question bank of the personal track: workplace questions per domain of Circular 02/2025.
+ * QUESTION_BANK holds 4 per domain (one Cơ bản, two Trung cấp, one Nâng cao): the end-of-course assessment of that
+ * domain's courses. With ENTRY_EXTRA_QUESTIONS they make the entry assessment: two per level and domain.
  */
 
 export interface BankQuestion {
@@ -390,12 +390,223 @@ export const QUESTION_BANK: BankQuestion[] = [
   },
 ];
 
-export const ENTRY_QUESTIONS = [1, 2, 3, 4, 5, 6].flatMap((domain) =>
-  QUESTION_BANK.filter((question) => question.domainNumber === domain).slice(0, 3),
-);
+/**
+ * Second question at Cơ bản and at Nâng cao of each domain, so the entry assessment asks two per level (Trung cấp
+ * already has two). Entry assessment only: the end-of-course assessments keep their four questions.
+ * DRAFT (09/10/2026): written against the TT02 competency descriptions, not yet reviewed by a subject expert.
+ */
+export const ENTRY_EXTRA_QUESTIONS: BankQuestion[] = [
+  {
+    id: 'pq-1-5',
+    domainNumber: 1,
+    competencyCode: '1.1',
+    level: 1,
+    text: 'Bạn cần tìm lại một tệp báo cáo đã lưu trong ổ chung của công ty nhưng quên tên. Cách nhanh nhất?',
+    options: [
+      'Mở lần lượt từng thư mục cho đến khi thấy',
+      'Hỏi cả phòng xem ai còn giữ bản sao',
+      'Làm lại báo cáo từ đầu',
+      'Dùng ô tìm kiếm của ổ chung, lọc theo loại tệp, người tạo hoặc khoảng ngày sửa',
+    ],
+    correctIndex: 3,
+    explanation: 'Tìm kiếm cơ bản là dùng bộ lọc sẵn có (loại tệp, ngày, người tạo) thay vì dò thủ công.',
+  },
+  {
+    id: 'pq-1-6',
+    domainNumber: 1,
+    competencyCode: '1.2',
+    level: 3,
+    text: 'Sếp giao bạn tổng hợp thị trường từ 20 nguồn trái chiều để ra quyết định đầu tư. Cách làm phù hợp nhất?',
+    options: [
+      'Lập tiêu chí chấm độ tin cậy từng nguồn, đối chiếu số liệu chéo, ghi rõ giả định và mức chắc chắn của từng kết luận',
+      'Lấy số liệu trung bình của 20 nguồn',
+      'Chỉ dùng nguồn ủng hộ phương án sếp đang nghiêng về',
+      'Chọn nguồn mới nhất và bỏ qua phần còn lại',
+    ],
+    correctIndex: 0,
+    explanation: 'Mức nâng cao là có phương pháp đánh giá nguồn và nói rõ mức chắc chắn để người khác dùng kết quả.',
+  },
+  {
+    id: 'pq-2-5',
+    domainNumber: 2,
+    competencyCode: '2.2',
+    level: 1,
+    text: 'Bạn cần gửi cho đồng nghiệp một tệp thiết kế 200 MB. Cách chia sẻ phù hợp?',
+    options: [
+      'Đính kèm vào email nhiều lần cho đến khi gửi được',
+      'Nén tệp rồi chia thành nhiều phần gửi qua nhóm chat',
+      'Tải lên ổ lưu trữ của công ty và gửi liên kết chỉ cho người cần xem',
+      'Chép vào USB rồi gửi qua bưu điện',
+    ],
+    correctIndex: 2,
+    explanation: 'Tệp lớn nên chia sẻ qua liên kết từ kho lưu trữ, có kiểm soát người được xem.',
+  },
+  {
+    id: 'pq-2-6',
+    domainNumber: 2,
+    competencyCode: '2.4',
+    level: 3,
+    text: 'Bạn điều phối một dự án có thành viên ở ba văn phòng và hai múi giờ. Thiết lập nào giúp nhóm hợp tác tốt nhất?',
+    options: [
+      'Họp trực tuyến mỗi ngày với tất cả thành viên',
+      'Thống nhất kênh cho từng loại việc, một nơi theo dõi nhiệm vụ, quy tắc cập nhật không đồng bộ và khung giờ họp chung ngắn',
+      'Để mỗi văn phòng tự chọn công cụ quen dùng',
+      'Gửi email tổng hợp cho cả nhóm mỗi khi có thay đổi',
+    ],
+    correctIndex: 1,
+    explanation: 'Mức nâng cao là thiết kế cách làm việc cho cả nhóm: kênh, công cụ, nhịp cập nhật và giờ chung.',
+  },
+  {
+    id: 'pq-3-5',
+    domainNumber: 3,
+    competencyCode: '3.1',
+    level: 1,
+    text: 'Bạn soạn một thông báo nội bộ trên máy tính. Việc nào giúp người đọc nắm ý nhanh nhất?',
+    options: [
+      'Viết liền một đoạn dài để đủ ý',
+      'In đậm toàn bộ nội dung cho nổi bật',
+      'Dùng nhiều màu chữ khác nhau',
+      'Tiêu đề rõ, ý chính ở đầu, chia đoạn ngắn và gạch đầu dòng cho các bước cần làm',
+    ],
+    correctIndex: 3,
+    explanation: 'Nội dung số cơ bản: cấu trúc rõ ràng, ý chính trước, chi tiết sau.',
+  },
+  {
+    id: 'pq-3-6',
+    domainNumber: 3,
+    competencyCode: '3.3',
+    level: 3,
+    text: 'Phòng Marketing chuẩn bị cho nhiều cộng tác viên cùng sản xuất nội dung. Bạn đề xuất gì về bản quyền?',
+    options: [
+      'Quy định nguồn ảnh, nhạc, phông chữ được phép dùng, mẫu ghi nguồn, điều khoản sở hữu sản phẩm trong hợp đồng và bước kiểm tra trước khi đăng',
+      'Để cộng tác viên tự chịu trách nhiệm nếu bị khiếu nại',
+      'Chỉ dùng ảnh tự chụp để khỏi lo bản quyền',
+      'Gỡ bài khi có người phản ánh',
+    ],
+    correctIndex: 0,
+    explanation: 'Mức nâng cao là đặt quy trình bản quyền cho cả nhóm sản xuất, không chỉ xử lý từng trường hợp.',
+  },
+  {
+    id: 'pq-4-5',
+    domainNumber: 4,
+    competencyCode: '4.1',
+    level: 1,
+    text: 'Bạn rời bàn làm việc 15 phút để họp. Việc nên làm với máy tính?',
+    options: [
+      'Để nguyên vì văn phòng có camera',
+      'Tắt màn hình cho tiết kiệm điện',
+      'Khóa màn hình (Windows + L hoặc tương đương) để người khác không dùng được',
+      'Nhờ đồng nghiệp ngồi cạnh trông giúp',
+    ],
+    correctIndex: 2,
+    explanation: 'Khóa màn hình khi rời máy là thói quen bảo vệ thiết bị cơ bản.',
+  },
+  {
+    id: 'pq-4-6',
+    domainNumber: 4,
+    competencyCode: '4.1',
+    level: 3,
+    text: 'Một nhân viên báo máy tính bị mã độc mã hóa dữ liệu. Với vai trò người phụ trách, bạn làm gì trước tiên?',
+    options: [
+      'Trả tiền chuộc để lấy lại dữ liệu nhanh',
+      'Cách ly máy khỏi mạng, báo theo quy trình sự cố, xác định phạm vi ảnh hưởng rồi khôi phục từ bản sao lưu đã kiểm tra',
+      'Cài lại máy ngay để xóa mã độc',
+      'Gửi email cảnh báo toàn công ty kèm tệp bị nhiễm để mọi người nhận biết',
+    ],
+    correctIndex: 1,
+    explanation: 'Ứng phó sự cố ở mức nâng cao: cô lập, báo cáo, đánh giá phạm vi, khôi phục có kiểm soát.',
+  },
+  {
+    id: 'pq-5-5',
+    domainNumber: 5,
+    competencyCode: '5.1',
+    level: 1,
+    text: 'Phần mềm họp trực tuyến báo không nhận micro. Bạn kiểm tra gì trước?',
+    options: [
+      'Mua micro mới',
+      'Gỡ phần mềm và cài bản khác',
+      'Nhắn người khác nói thay trong cuộc họp',
+      'Micro có bị tắt tiếng không, phần mềm đã chọn đúng thiết bị chưa và đã cấp quyền dùng micro chưa',
+    ],
+    correctIndex: 3,
+    explanation: 'Xử lý sự cố cơ bản: kiểm tra cài đặt và quyền truy cập trước khi thay thiết bị.',
+  },
+  {
+    id: 'pq-5-6',
+    domainNumber: 5,
+    competencyCode: '5.2',
+    level: 3,
+    text: 'Ban giám đốc muốn số hóa quy trình duyệt chi phí đang làm trên giấy. Bạn đề xuất bước nào trước?',
+    options: [
+      'Mua ngay phần mềm mà đối thủ đang dùng',
+      'Scan toàn bộ phiếu giấy lưu vào ổ chung',
+      'Vẽ lại quy trình hiện tại, xác định điểm nghẽn và yêu cầu, chọn giải pháp theo tiêu chí rồi thử với một phòng trước khi mở rộng',
+      'Yêu cầu mọi người gửi phiếu qua email thay cho giấy',
+    ],
+    correctIndex: 2,
+    explanation: 'Mức nâng cao là dẫn dắt chuyển đổi: hiểu quy trình và nhu cầu trước, thử nghiệm trước khi áp dụng rộng.',
+  },
+  {
+    id: 'pq-6-5',
+    domainNumber: 6,
+    competencyCode: '6.2',
+    level: 1,
+    text: 'Bạn dùng AI để viết một đoạn giới thiệu sản phẩm. Trước khi gửi khách, bạn nên làm gì?',
+    options: [
+      'Đọc lại, kiểm tra thông số và giá với tài liệu chính thức, sửa giọng văn cho phù hợp',
+      'Gửi luôn vì AI viết trôi chảy',
+      'Ghi tên công cụ AI là tác giả',
+      'Nhờ AI viết lại thêm lần nữa cho chắc',
+    ],
+    correctIndex: 0,
+    explanation: 'Người dùng chịu trách nhiệm về nội dung AI tạo: luôn kiểm tra trước khi dùng.',
+  },
+  {
+    id: 'pq-6-6',
+    domainNumber: 6,
+    competencyCode: '6.2',
+    level: 3,
+    text: 'Công ty muốn cho nhân viên dùng AI trong công việc. Bạn soạn quy định gồm những gì?',
+    options: [
+      'Chỉ cần danh sách công cụ bị cấm',
+      'Cho dùng tự do, ai sai người đó chịu',
+      'Cấm dùng AI để tránh rủi ro',
+      'Công cụ được phép, loại dữ liệu không được đưa vào, khi nào phải có người duyệt, cách ghi nhận nội dung có AI hỗ trợ và đầu mối hỏi đáp',
+    ],
+    correctIndex: 3,
+    explanation: 'Mức nâng cao là xây khung sử dụng AI có trách nhiệm cho tổ chức, không chỉ cấm hay cho phép.',
+  },
+];
 
-export function questionsOfDomain(domainNumber: number): BankQuestion[] {
-  return QUESTION_BANK.filter((question) => question.domainNumber === domainNumber);
+/**
+ * Most original questions put the right answer second (B). Rotating each question's options by a fixed amount
+ * derived from its id spreads the right answers over A–D, so "always B" is no longer a strategy. Deterministic:
+ * the same question always shows the same order, and correctIndex follows the rotation.
+ */
+function rotate(question: BankQuestion): BankQuestion {
+  const shift = [...question.id].reduce((sum, char) => sum + char.charCodeAt(0), 0) % question.options.length;
+  if (shift === 0) return question;
+  const options = [...question.options.slice(shift), ...question.options.slice(0, shift)];
+  const correctIndex = (question.correctIndex - shift + options.length) % options.length;
+  return { ...question, options, correctIndex };
 }
 
-export const QUESTION_BY_ID = new Map(QUESTION_BANK.map((question) => [question.id, question]));
+const COURSE_QUESTIONS = QUESTION_BANK.map(rotate);
+const ALL_QUESTIONS = [...COURSE_QUESTIONS, ...ENTRY_EXTRA_QUESTIONS];
+
+/** Entry assessment: two questions per level (Cơ bản, Trung cấp, Nâng cao) in each domain, 36 in all. */
+export const ENTRY_QUESTIONS = [1, 2, 3, 4, 5, 6].flatMap((domain) =>
+  ALL_QUESTIONS.filter((question) => question.domainNumber === domain).sort((a, b) => a.level - b.level || a.id.localeCompare(b.id)),
+);
+
+/** The two entry questions of a domain at a level. */
+export function entryPair(domainNumber: number, level: number): BankQuestion[] {
+  return ENTRY_QUESTIONS.filter((question) => question.domainNumber === domainNumber && question.level === level);
+}
+
+/** End-of-course assessment of a domain: its four course questions. */
+export function questionsOfDomain(domainNumber: number): BankQuestion[] {
+  return COURSE_QUESTIONS.filter((question) => question.domainNumber === domainNumber);
+}
+
+export const QUESTION_BY_ID = new Map(ALL_QUESTIONS.map((question) => [question.id, question]));

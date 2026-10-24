@@ -81,7 +81,7 @@ describe('personal track mock API', () => {
     expect(path.stages[2].courses.find((c) => c.code === 'A2-A')?.status).toBe('LOCKED');
   });
 
-  it('scores the entry assessment per domain by consecutive levels', async () => {
+  it('scores the entry assessment adaptively: a level needs both of its questions right, a miss ends the domain', async () => {
     const answers = allCorrect();
     const wrong = ENTRY_QUESTIONS.find((q) => q.domainNumber === 4 && q.level === 2)!;
     answers[wrong.id] = (wrong.correctIndex + 1) % 4;
@@ -89,7 +89,22 @@ describe('personal track mock API', () => {
     const result = await api.submitDiagnostic(answers);
 
     expect(result.domains.map((d) => d.level)).toEqual([3, 3, 3, 1, 3, 3]);
-    expect(result.correct).toBe(ENTRY_QUESTIONS.length - 1);
+    // The two Nâng cao questions of domain 4 are never asked once Trung cấp is missed.
+    expect(result.total).toBe(ENTRY_QUESTIONS.length - 2);
+    expect(result.correct).toBe(ENTRY_QUESTIONS.length - 3);
+  });
+
+  it('plans the entry assessment pair by pair', async () => {
+    const first = await api.planDiagnostic({});
+    expect(first).toMatchObject({ done: false, domainsDone: 0 });
+    expect(first.askedIds).toHaveLength(2);
+
+    // One wrong answer at Cơ bản ends domain 1 and moves on to domain 2.
+    const [a, b] = first.askedIds;
+    const question = ENTRY_QUESTIONS.find((q) => q.id === a)!;
+    const next = await api.planDiagnostic({ [a]: (question.correctIndex + 1) % 4, [b]: 0 });
+    expect(next.domainsDone).toBe(1);
+    expect(next.askedIds.slice(2).every((id) => ENTRY_QUESTIONS.find((q) => q.id === id)!.domainNumber === 2)).toBe(true);
   });
 
   it('rejects an incomplete entry assessment', async () => {
@@ -109,8 +124,15 @@ describe('personal track mock API', () => {
     const answers = Object.fromEntries(questionsOfDomain(3).map((q) => [q.id, q.correctIndex]));
     const outcome = await api.submitAssessment('crs-A3-I', answers);
 
-    expect(outcome.passed).toBe(true);
-    expect(outcome.certificateId).toBe('cert-A3-I');
+    // A Trung cấp course waits for its practice task: no certificate, no level yet.
+    expect(outcome).toMatchObject({ passed: true, taskRequired: true, certificateId: null });
+    const waiting = await api.getCourse('crs-A3-I');
+    expect(waiting).toMatchObject({ status: 'IN_PROGRESS', awaitingTask: true });
+    expect((await api.getCertificates()).map((c) => c.courseCode)).not.toContain('A3-I');
+
+    const task = await api.submitTask('tsk-A3-I', { linkUrl: 'https://example.com/ke-hoach', content: `Kế hoạch nội dung tháng 10: chuyển thể 3 bài blog cũ thành infographic, cập nhật số liệu Q3 từ báo cáo nội bộ,
+kiểm tra giấy phép từng ảnh và ghi nguồn, lịch đăng 4 tuần với người duyệt cho từng bài. Mỗi tiêu chí có ví dụ trong tài liệu.`, checks: [0, 1, 2] });
+    expect(task.status).toBe('APPROVED');
     const after = await api.getCourse('crs-A3-I');
     expect(after.status).toBe('COMPLETED');
     expect(after.competencies.every((c) => c.currentLevel >= 2)).toBe(true);
@@ -122,18 +144,38 @@ describe('personal track mock API', () => {
   it('refuses lessons of a locked course and tasks of a course not started', async () => {
     const lesson = (await api.getCourse('crs-A2-A')).modules[0].lessons[0];
     expect((await failure(api.setLessonCompleted('crs-A2-A', lesson.id, true))).codes).toContain('PREREQUISITE_NOT_MET');
-    expect((await failure(api.submitTask('tsk-A2-I', { linkUrl: '', content: 'Mô tả đủ dài cho bài làm thực hành.' }))).codes)
+    expect((await failure(api.submitTask('tsk-A2-I', { linkUrl: '', content: 'Mô tả đủ dài cho bài làm thực hành.', checks: [] }))).codes)
       .toContain('TASK_LOCKED');
   });
 
-  it('accepts a practical task once the course is started', async () => {
-    const task = await api.submitTask('tsk-A3-I', {
+  it('reviews a practical task against its rubric at once: revision first, then approval', async () => {
+    const draft = await api.submitTask('tsk-A3-I', {
       linkUrl: 'https://example.com/ke-hoach-noi-dung',
       content: 'Chuyển thể 3 bài blog cũ thành infographic, cập nhật số liệu Q3.',
+      checks: [0],
     });
-    expect(task.status).toBe('PENDING_REVIEW');
-    expect((await failure(api.submitTask('tsk-A3-I', { linkUrl: '', content: 'Nộp lại lần nữa với mô tả đủ dài.' }))).codes)
+    expect(draft.status).toBe('REVISION_REQUESTED');
+    expect(draft.submission?.criteria?.filter((c) => !c.met)).toHaveLength(draft.rubric.length - 1);
+    expect(draft.submission?.reviewer).toBe('AI_RUBRIC');
+    expect(draft.required).toBe(true);
+    expect(draft.attemptsLeft).toBe(2);
+
+    const approved = await api.submitTask('tsk-A3-I', {
+      linkUrl: 'https://example.com/ke-hoach-noi-dung', content: `Kế hoạch nội dung tháng 10: chuyển thể 3 bài blog cũ thành infographic, cập nhật số liệu Q3 từ báo cáo nội bộ,
+kiểm tra giấy phép từng ảnh và ghi nguồn, lịch đăng 4 tuần với người duyệt cho từng bài. Mỗi tiêu chí có ví dụ trong tài liệu.`, checks: draft.rubric.map((_, index) => index),
+    });
+    expect(approved.status).toBe('APPROVED');
+    expect(approved.submission?.score).toBeGreaterThanOrEqual(80);
+    expect((await failure(api.submitTask('tsk-A3-I', { linkUrl: '', content: 'Nộp lại lần nữa với mô tả đủ dài.', checks: [] }))).codes)
       .toContain('ALREADY_SUBMITTED');
+  });
+
+  it('allows three submissions of a task in 24 hours', async () => {
+    const weak = { linkUrl: '', content: 'Bài làm còn sơ sài, chưa đủ ý.', checks: [] };
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      expect((await api.submitTask('tsk-A3-I', weak)).status).toBe('REVISION_REQUESTED');
+    }
+    expect((await failure(api.submitTask('tsk-A3-I', weak))).codes).toContain('TASK_ATTEMPT_LIMIT');
   });
 
   it('keeps enterprise accounts out of the personal track', async () => {

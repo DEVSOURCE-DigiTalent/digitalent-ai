@@ -120,14 +120,16 @@ public sealed class PersonalLearningServiceTests
         fixture.SetSubscription(UserSubscriptionStatuses.Trialing);
 
         var diag = await fixture.Service.GetDiagnosticAsync();
-        Assert.Equal(18, diag.Questions.Count);
+        Assert.Equal(36, diag.Questions.Count);
 
-        var answers = diag.Questions.ToDictionary(q => q.Id, _ => 1); // answer index 1 for all
+        // All right: every pair is asked and every domain reaches Nâng cao.
+        var answers = PersonalLearningCatalog.EntryQuestions.ToDictionary(q => q.Id, q => q.CorrectIndex);
         var result = await fixture.Service.SubmitDiagnosticAsync(answers);
 
         Assert.NotNull(result);
-        Assert.Equal(18, result.Total);
-        Assert.Equal(6, result.Domains.Count);
+        Assert.Equal(36, result.Total);
+        Assert.Equal(36, result.Correct);
+        Assert.All(result.Domains, d => Assert.Equal(3, d.Level));
 
         // Second diagnostic in trial: forbidden (BR-09)
         var ex = await Assert.ThrowsAsync<ForbiddenException>(() => fixture.Service.SubmitDiagnosticAsync(answers));
@@ -191,13 +193,7 @@ public sealed class PersonalLearningServiceTests
         }
 
         // Submit assessment with correct answers
-        var answers = new Dictionary<string, int>
-        {
-            ["pq-1-1"] = 1,
-            ["pq-1-2"] = 1,
-            ["pq-1-3"] = 1,
-            ["pq-1-4"] = 1
-        };
+        var answers = PersonalLearningCatalog.CourseQuestions(1).ToDictionary(q => q.Id, q => q.CorrectIndex);
 
         var outcome = await fixture.Service.SubmitCourseAssessmentAsync("crs-a1-f", answers);
         Assert.True(outcome.Passed);
@@ -230,11 +226,70 @@ public sealed class PersonalLearningServiceTests
             fixture.Service.SubmitTaskAsync("task-crs-a1-f", new SubmitTaskRequest("https://example.com/doc", "Ngắn quá")));
         Assert.Contains("20 ký tự", exShort.Message);
 
-        // Valid submission
-        var task = await fixture.Service.SubmitTaskAsync("task-crs-a1-f",
-            new SubmitTaskRequest("https://example.com/report", "Đây là bài làm thực hành áp dụng kiến thức vào thực tế doanh nghiệp"));
-        Assert.NotNull(task.Submission);
-        Assert.Equal("PENDING_REVIEW", task.Status);
+        // A short draft is reviewed at once against the rubric and sent back with the criteria it misses.
+        var draft = await fixture.Service.SubmitTaskAsync("task-crs-a1-f",
+            new SubmitTaskRequest("https://example.com/report", "Đây là bài làm thực hành áp dụng kiến thức vào thực tế doanh nghiệp", new[] { 0 }));
+        Assert.Equal("REVISION_REQUESTED", draft.Status);
+        Assert.Equal("AI_RUBRIC", draft.Submission!.Reviewer);
+        Assert.Equal(2, draft.Submission.Criteria!.Count(c => !c.Met));
+        Assert.Equal(2, draft.AttemptsLeft);
+
+        // Every criterion, a link and a full explanation: approved.
+        var approved = await fixture.Service.SubmitTaskAsync("task-crs-a1-f",
+            new SubmitTaskRequest("https://example.com/report", GoodExplanation, new[] { 0, 1, 2 }));
+        Assert.Equal("APPROVED", approved.Status);
+        Assert.True(approved.Submission!.Score >= 80);
+
+        var again = await Assert.ThrowsAsync<BadRequestException>(() =>
+            fixture.Service.SubmitTaskAsync("task-crs-a1-f", new SubmitTaskRequest("https://example.com/report", GoodExplanation, new[] { 0, 1, 2 })));
+        Assert.Contains("đã được nộp", again.Message);
+    }
+
+    private const string GoodExplanation =
+        "Báo cáo quy trình tìm kiếm và lưu trữ thông tin của phòng: bộ từ khóa chuẩn, nguồn ưu tiên, quy ước đặt tên tệp "
+        + "và cấu trúc thư mục dùng chung. Mỗi tiêu chí có ví dụ trong tài liệu kèm theo, đã thử với dữ liệu tháng 9.";
+
+    private static async Task CompleteAllLessonsAsync(TestFixture fixture, string courseId)
+    {
+        for (var m = 1; m <= 3; m++)
+        {
+            for (var l = 1; l <= 3; l++)
+            {
+                await fixture.Service.UpdateLessonProgressAsync(courseId, $"{courseId}-l{m}-{l}", true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task IntermediateCourse_CompletesOnlyOnceItsPracticeTaskIsApproved()
+    {
+        using var fixture = new TestFixture();
+        fixture.SetSubscription(UserSubscriptionStatuses.Trialing);
+        var domainOne = PersonalLearningCatalog.CourseQuestions(1).ToDictionary(q => q.Id, q => q.CorrectIndex);
+
+        // Cơ bản: the assessment alone completes it.
+        await CompleteAllLessonsAsync(fixture, "crs-a1-f");
+        var basic = await fixture.Service.SubmitCourseAssessmentAsync("crs-a1-f", domainOne);
+        Assert.False(basic.TaskRequired);
+
+        // Trung cấp: passed, but the course waits for the practice task.
+        await CompleteAllLessonsAsync(fixture, "crs-a1-i");
+        var intermediate = await fixture.Service.SubmitCourseAssessmentAsync("crs-a1-i", domainOne);
+        Assert.True(intermediate.Passed);
+        Assert.True(intermediate.TaskRequired);
+        Assert.Null(intermediate.CertificateId);
+
+        var waiting = await fixture.Service.GetCourseDetailAsync("crs-a1-i");
+        Assert.True(waiting.AwaitingTask);
+        Assert.Equal("IN_PROGRESS", waiting.Status);
+        Assert.Single(await fixture.Service.GetCertificatesAsync());
+
+        await fixture.Service.SubmitTaskAsync("task-crs-a1-i", new SubmitTaskRequest("https://example.com/report", GoodExplanation, new[] { 0, 1, 2 }));
+
+        var done = await fixture.Service.GetCourseDetailAsync("crs-a1-i");
+        Assert.False(done.AwaitingTask);
+        Assert.Equal("COMPLETED", done.Status);
+        Assert.Equal(2, (await fixture.Service.GetCertificatesAsync()).Count);
     }
 
     [Fact]

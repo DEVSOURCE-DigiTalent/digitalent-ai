@@ -67,7 +67,9 @@ public record PathCourseDto(
     string? PrerequisiteTitle,
     IReadOnlyList<string> Closes,
     bool PlanLocked,
-    bool TrialSlot
+    bool TrialSlot,
+    // Assessment passed, practice task (needed from Trung cấp up) not approved yet.
+    bool AwaitingTask = false
 );
 
 public record PathStageDto(
@@ -166,8 +168,12 @@ public record TaskSubmissionDto(
     DateTimeOffset SubmittedAt,
     int? Score = null,
     string? Feedback = null,
-    DateTimeOffset? ReviewedAt = null
+    DateTimeOffset? ReviewedAt = null,
+    IReadOnlyList<CriterionResultDto>? Criteria = null,
+    string? Reviewer = null // "AI_RUBRIC" | "MENTOR"
 );
+
+public record CriterionResultDto(string Label, bool Met);
 
 public record PersonalTaskDto(
     string Id,
@@ -182,7 +188,11 @@ public record PersonalTaskDto(
     IReadOnlyList<string> Rubric,
     IReadOnlyList<string> CompetencyCodes,
     string Status, // "LOCKED", "OPEN", "PENDING_REVIEW", "REVISION_REQUESTED", "APPROVED"
-    TaskSubmissionDto? Submission
+    TaskSubmissionDto? Submission,
+    // Completing the course needs this task approved (Trung cấp and Nâng cao).
+    bool Required = false,
+    // Submissions still allowed in the last 24 hours.
+    int AttemptsLeft = 3
 );
 
 public record CourseAssessmentSummaryDto(
@@ -230,7 +240,9 @@ public record PersonalCourseDetailDto(
     IReadOnlyList<CourseCompetencyRefDto> Competencies,
     CourseAssessmentSummaryDto Assessment,
     string Notes,
-    PersonalTaskDto? Task
+    PersonalTaskDto? Task,
+    bool AwaitingTask = false,
+    bool TaskRequired = false
 );
 
 public record AssessmentQuestionDto(
@@ -255,8 +267,13 @@ public record AssessmentOutcomeDto(
     bool Passed,
     IReadOnlyList<DiagnosticReviewDto> Review,
     string? CertificateId,
-    bool CertificatePending
+    bool CertificatePending,
+    // Passed, but the course completes only once its practice task is approved.
+    bool TaskRequired = false
 );
+
+// Adaptive entry assessment: the questions to ask given the answers so far.
+public record DiagnosticPlanDto(IReadOnlyList<string> AskedIds, bool Done, int DomainsDone);
 
 public record CompetencyRefDto(
     string Code,
@@ -382,4 +399,4 @@ public record UpdateLessonProgressRequest(bool Completed = true);
 public record SaveCourseNotesRequest(string Notes);
 public record CourseNotesDto(string Notes);
 public record SubmitCourseAssessmentRequest(Dictionary<string, int> Answers);
-public record SubmitTaskRequest(string LinkUrl, string Content);
+public record SubmitTaskRequest(string LinkUrl, string Content, IReadOnlyList<int>? Checks = null);

@@ -226,7 +226,7 @@ public static class PersonalLearningCatalog
         new("pq-6-2", 6, "6.2", 2,
             "Khi dùng ChatGPT để viết báo cáo tài chính, hành động nào tiềm ẩn rủi ro bảo mật nghiêm trọng?",
             new[] { "Nhập số liệu tài chính nhạy cảm chưa công bố của công ty vào prompt", "Yêu cầu định dạng bảng biểu", "Nhờ sửa lỗi chính tả", "Tóm tắt tài liệu công khai" },
-            1, "Dữ liệu nhạy cảm đưa vào AI công cộng có thể bị lưu trữ và rò rỉ thông tin."),
+            0, "Dữ liệu nhạy cảm đưa vào AI công cộng có thể bị lưu trữ và rò rỉ thông tin."),
         new("pq-6-3", 6, "6.3", 3,
             "Một mô hình AI đưa ra câu trả lời có vẻ thuyết phục nhưng sai sự thật (ảo giác - hallucination). Bạn kiểm soát thế nào?",
             new[] { "Tin tưởng hoàn toàn", "Luôn đối chiếu chéo (Cross-check) với nguồn dữ liệu gốc và chuyên gia xác nhận", "Xóa bỏ công cụ AI", "Chỉ dùng AI cho việc cá nhân" },
@@ -236,4 +236,94 @@ public static class PersonalLearningCatalog
             new[] { "Viết càng ngắn càng tốt", "Cung cấp rõ vai trò (Role), bối cảnh (Context), nhiệm vụ (Task) và định dạng đầu ra (Format)", "Viết mơ hồ để AI tự sáng tạo", "Chỉ dùng một từ khóa" },
             1, "Cấu trúc Prompt chuẩn: Vai trò, Bối cảnh, Yêu cầu cụ thể và Định dạng kết quả."),
     };
+
+    /// <summary>
+    /// Second question at Cơ bản and at Nâng cao of each domain, so the entry assessment asks two per level
+    /// (Trung cấp already has two in <see cref="QuestionBank"/>). Entry assessment only; course assessments keep
+    /// their four questions. DRAFT (09/10/2026): written against the TT02 competency descriptions, not yet
+    /// reviewed by a subject expert. Same content as the frontend mock (question-bank.ts).
+    /// </summary>
+    public static readonly IReadOnlyList<QuestionDef> EntryExtraQuestions = new List<QuestionDef>
+    {
+        new("pq-1-5", 1, "1.1", 1,
+            "Bạn cần tìm lại một tệp báo cáo đã lưu trong ổ chung của công ty nhưng quên tên. Cách nhanh nhất?",
+            new[] { "Mở lần lượt từng thư mục cho đến khi thấy", "Hỏi cả phòng xem ai còn giữ bản sao", "Làm lại báo cáo từ đầu", "Dùng ô tìm kiếm của ổ chung, lọc theo loại tệp, người tạo hoặc khoảng ngày sửa" },
+            3, "Tìm kiếm cơ bản là dùng bộ lọc sẵn có (loại tệp, ngày, người tạo) thay vì dò thủ công."),
+        new("pq-1-6", 1, "1.2", 3,
+            "Sếp giao bạn tổng hợp thị trường từ 20 nguồn trái chiều để ra quyết định đầu tư. Cách làm phù hợp nhất?",
+            new[] { "Lập tiêu chí chấm độ tin cậy từng nguồn, đối chiếu số liệu chéo, ghi rõ giả định và mức chắc chắn của từng kết luận", "Lấy số liệu trung bình của 20 nguồn", "Chỉ dùng nguồn ủng hộ phương án sếp đang nghiêng về", "Chọn nguồn mới nhất và bỏ qua phần còn lại" },
+            0, "Mức nâng cao là có phương pháp đánh giá nguồn và nói rõ mức chắc chắn để người khác dùng kết quả."),
+        new("pq-2-5", 2, "2.2", 1,
+            "Bạn cần gửi cho đồng nghiệp một tệp thiết kế 200 MB. Cách chia sẻ phù hợp?",
+            new[] { "Đính kèm vào email nhiều lần cho đến khi gửi được", "Nén tệp rồi chia thành nhiều phần gửi qua nhóm chat", "Tải lên ổ lưu trữ của công ty và gửi liên kết chỉ cho người cần xem", "Chép vào USB rồi gửi qua bưu điện" },
+            2, "Tệp lớn nên chia sẻ qua liên kết từ kho lưu trữ, có kiểm soát người được xem."),
+        new("pq-2-6", 2, "2.4", 3,
+            "Bạn điều phối một dự án có thành viên ở ba văn phòng và hai múi giờ. Thiết lập nào giúp nhóm hợp tác tốt nhất?",
+            new[] { "Họp trực tuyến mỗi ngày với tất cả thành viên", "Thống nhất kênh cho từng loại việc, một nơi theo dõi nhiệm vụ, quy tắc cập nhật không đồng bộ và khung giờ họp chung ngắn", "Để mỗi văn phòng tự chọn công cụ quen dùng", "Gửi email tổng hợp cho cả nhóm mỗi khi có thay đổi" },
+            1, "Mức nâng cao là thiết kế cách làm việc cho cả nhóm: kênh, công cụ, nhịp cập nhật và giờ chung."),
+        new("pq-3-5", 3, "3.1", 1,
+            "Bạn soạn một thông báo nội bộ trên máy tính. Việc nào giúp người đọc nắm ý nhanh nhất?",
+            new[] { "Viết liền một đoạn dài để đủ ý", "In đậm toàn bộ nội dung cho nổi bật", "Dùng nhiều màu chữ khác nhau", "Tiêu đề rõ, ý chính ở đầu, chia đoạn ngắn và gạch đầu dòng cho các bước cần làm" },
+            3, "Nội dung số cơ bản: cấu trúc rõ ràng, ý chính trước, chi tiết sau."),
+        new("pq-3-6", 3, "3.3", 3,
+            "Phòng Marketing chuẩn bị cho nhiều cộng tác viên cùng sản xuất nội dung. Bạn đề xuất gì về bản quyền?",
+            new[] { "Quy định nguồn ảnh, nhạc, phông chữ được phép dùng, mẫu ghi nguồn, điều khoản sở hữu sản phẩm trong hợp đồng và bước kiểm tra trước khi đăng", "Để cộng tác viên tự chịu trách nhiệm nếu bị khiếu nại", "Chỉ dùng ảnh tự chụp để khỏi lo bản quyền", "Gỡ bài khi có người phản ánh" },
+            0, "Mức nâng cao là đặt quy trình bản quyền cho cả nhóm sản xuất, không chỉ xử lý từng trường hợp."),
+        new("pq-4-5", 4, "4.1", 1,
+            "Bạn rời bàn làm việc 15 phút để họp. Việc nên làm với máy tính?",
+            new[] { "Để nguyên vì văn phòng có camera", "Tắt màn hình cho tiết kiệm điện", "Khóa màn hình (Windows + L hoặc tương đương) để người khác không dùng được", "Nhờ đồng nghiệp ngồi cạnh trông giúp" },
+            2, "Khóa màn hình khi rời máy là thói quen bảo vệ thiết bị cơ bản."),
+        new("pq-4-6", 4, "4.1", 3,
+            "Một nhân viên báo máy tính bị mã độc mã hóa dữ liệu. Với vai trò người phụ trách, bạn làm gì trước tiên?",
+            new[] { "Trả tiền chuộc để lấy lại dữ liệu nhanh", "Cách ly máy khỏi mạng, báo theo quy trình sự cố, xác định phạm vi ảnh hưởng rồi khôi phục từ bản sao lưu đã kiểm tra", "Cài lại máy ngay để xóa mã độc", "Gửi email cảnh báo toàn công ty kèm tệp bị nhiễm để mọi người nhận biết" },
+            1, "Ứng phó sự cố ở mức nâng cao: cô lập, báo cáo, đánh giá phạm vi, khôi phục có kiểm soát."),
+        new("pq-5-5", 5, "5.1", 1,
+            "Phần mềm họp trực tuyến báo không nhận micro. Bạn kiểm tra gì trước?",
+            new[] { "Mua micro mới", "Gỡ phần mềm và cài bản khác", "Nhắn người khác nói thay trong cuộc họp", "Micro có bị tắt tiếng không, phần mềm đã chọn đúng thiết bị chưa và đã cấp quyền dùng micro chưa" },
+            3, "Xử lý sự cố cơ bản: kiểm tra cài đặt và quyền truy cập trước khi thay thiết bị."),
+        new("pq-5-6", 5, "5.2", 3,
+            "Ban giám đốc muốn số hóa quy trình duyệt chi phí đang làm trên giấy. Bạn đề xuất bước nào trước?",
+            new[] { "Mua ngay phần mềm mà đối thủ đang dùng", "Scan toàn bộ phiếu giấy lưu vào ổ chung", "Vẽ lại quy trình hiện tại, xác định điểm nghẽn và yêu cầu, chọn giải pháp theo tiêu chí rồi thử với một phòng trước khi mở rộng", "Yêu cầu mọi người gửi phiếu qua email thay cho giấy" },
+            2, "Mức nâng cao là dẫn dắt chuyển đổi: hiểu quy trình và nhu cầu trước, thử nghiệm trước khi áp dụng rộng."),
+        new("pq-6-5", 6, "6.2", 1,
+            "Bạn dùng AI để viết một đoạn giới thiệu sản phẩm. Trước khi gửi khách, bạn nên làm gì?",
+            new[] { "Đọc lại, kiểm tra thông số và giá với tài liệu chính thức, sửa giọng văn cho phù hợp", "Gửi luôn vì AI viết trôi chảy", "Ghi tên công cụ AI là tác giả", "Nhờ AI viết lại thêm lần nữa cho chắc" },
+            0, "Người dùng chịu trách nhiệm về nội dung AI tạo: luôn kiểm tra trước khi dùng."),
+        new("pq-6-6", 6, "6.2", 3,
+            "Công ty muốn cho nhân viên dùng AI trong công việc. Bạn soạn quy định gồm những gì?",
+            new[] { "Chỉ cần danh sách công cụ bị cấm", "Cho dùng tự do, ai sai người đó chịu", "Cấm dùng AI để tránh rủi ro", "Công cụ được phép, loại dữ liệu không được đưa vào, khi nào phải có người duyệt, cách ghi nhận nội dung có AI hỗ trợ và đầu mối hỏi đáp" },
+            3, "Mức nâng cao là xây khung sử dụng AI có trách nhiệm cho tổ chức, không chỉ cấm hay cho phép."),
+    };
+
+    /// <summary>
+    /// Every original question puts its right answer second (B). Rotating each question's options by a fixed amount
+    /// derived from its id spreads the right answers over A–D, so "always B" stops working. Deterministic: the same
+    /// question always shows the same order, and the correct index follows the rotation.
+    /// </summary>
+    private static QuestionDef Rotate(QuestionDef question)
+    {
+        var count = question.Options.Length;
+        var shift = question.Id.Sum(ch => ch) % count;
+        if (shift == 0) return question;
+        var options = question.Options.Skip(shift).Concat(question.Options.Take(shift)).ToArray();
+        return question with { Options = options, CorrectIndex = (question.CorrectIndex - shift + count) % count };
+    }
+
+    private static readonly IReadOnlyList<QuestionDef> RotatedBank = QuestionBank.Select(Rotate).ToList();
+
+    /// <summary>End-of-course assessment of a domain: its four course questions.</summary>
+    public static IReadOnlyList<QuestionDef> CourseQuestions(int domainNumber) =>
+        RotatedBank.Where(q => q.DomainNumber == domainNumber).ToList();
+
+    /// <summary>Entry assessment: two questions per level (Cơ bản, Trung cấp, Nâng cao) in each domain, 36 in all.</summary>
+    public static readonly IReadOnlyList<QuestionDef> EntryQuestions = RotatedBank.Concat(EntryExtraQuestions)
+        .OrderBy(q => q.DomainNumber).ThenBy(q => q.Level).ThenBy(q => q.Id, StringComparer.Ordinal)
+        .ToList();
+
+    /// <summary>The two entry questions of a domain at a level.</summary>
+    public static IReadOnlyList<QuestionDef> EntryPair(int domainNumber, int level) =>
+        EntryQuestions.Where(q => q.DomainNumber == domainNumber && q.Level == level).ToList();
+
+    public static readonly IReadOnlyDictionary<string, QuestionDef> QuestionById =
+        RotatedBank.Concat(EntryExtraQuestions).ToDictionary(q => q.Id);
 }

@@ -13,9 +13,10 @@ import {
 } from '../personal/personal-access';
 import {
   ASSESSMENT_PASS_PERCENT, activity, buildPath, certificateIdOf, certificates, completedCourses, competencyLevels,
-  courseDetail, courseStatus, diagnosticLevels, diagnosticResult, findCourse, isReferencePosition, learnedMinutes,
-  milestones, skillGap, targetDto, tasks,
+  courseDetail, courseStatus, diagnosticResult, entryPlan, findCourse, isReferencePosition, learnedMinutes,
+  milestones, needsApprovedTask, passedAssessments, skillGap, targetDto, tasks,
 } from '../personal/personal-logic';
+import { attemptsLeft, gradeTask } from '../personal/task-grading';
 import { getPersonalState, updatePersonalState, type PersonalState } from '../personal/personal-store';
 import { ENTRY_QUESTIONS, QUESTION_BY_ID, questionsOfDomain } from '../personal/question-bank';
 import { updateDb } from '../../mock-store';
@@ -144,16 +145,26 @@ route('GET', '/personal/diagnostic', (context): PersonalDiagnostic => {
 
 route('POST', '/personal/diagnostic', (context) => {
   const answers = readAnswers(context.body);
-  const missing = ENTRY_QUESTIONS.filter((question) => answers[question.id] === undefined);
-  if (missing.length > 0) {
-    throw badRequest(`Còn ${missing.length} câu chưa trả lời.`, 'UNANSWERED_QUESTIONS', 'answers');
+  const plan = entryPlan(answers);
+  if (!plan.done) {
+    const missing = plan.askedIds.filter((id) => answers[id] === undefined).length;
+    throw badRequest(`Còn ${missing} câu chưa trả lời.`, 'UNANSWERED_QUESTIONS', 'answers');
   }
   assertCanSubmitDiagnostic(accessOf(context.session), stateOf(context));
+  // Only the questions the adaptive path asked are kept; anything else in the request is ignored.
+  const asked = Object.fromEntries(plan.askedIds.map((id) => [id, answers[id]]));
   return updatePersonalState(learnerId(context), (state) => {
-    state.diagnostic = { answers, domainLevels: diagnosticLevels(answers), completedAt: new Date().toISOString() };
+    state.diagnostic = { answers: asked, domainLevels: plan.levels, completedAt: new Date().toISOString() };
     return diagnosticResult(state);
   });
 }, { message: 'Đã ghi nhận bài đánh giá đầu vào.' });
+
+/** Adaptive entry assessment: the questions to ask given the answers so far (and whether it is finished). */
+route('POST', '/personal/diagnostic/plan', (context) => {
+  learnerId(context);
+  const { askedIds, done, domainsDone } = entryPlan(readAnswers(context.body));
+  return { askedIds, done, domainsDone };
+});
 
 route('GET', '/personal/path', (context) => buildPath(stateOf(context), planOf(context)));
 
@@ -224,9 +235,12 @@ route('POST', '/personal/courses/:id/assessment', (context): AssessmentOutcome =
     const correct = questions.filter((q) => answers[q.id] === q.correctIndex).length;
     const scorePercent = Math.round((correct / questions.length) * 100);
     const passed = scorePercent >= ASSESSMENT_PASS_PERCENT;
-    const firstPass = passed && !completedCourses(state).has(course.id);
-    const certificatePending = firstPass && access.mode !== 'full';
+    const firstPass = passed && !passedAssessments(state).has(course.id);
     state.attempts.push({ courseId: course.id, at: new Date().toISOString(), correct, total: questions.length, passed });
+    // From Trung cấp up the course (and its certificate) waits for the practice task to be approved.
+    const completesNow = firstPass && completedCourses(state).has(course.id);
+    const taskRequired = passed && needsApprovedTask(course) && !completedCourses(state).has(course.id);
+    const certificatePending = completesNow && access.mode !== 'full';
     return {
       scorePercent,
       correct,
@@ -238,8 +252,9 @@ route('POST', '/personal/courses/:id/assessment', (context): AssessmentOutcome =
         correctIndex: QUESTION_BY_ID.get(q.id)!.correctIndex,
         explanation: q.explanation,
       })),
-      certificateId: firstPass && !certificatePending ? certificateIdOf(course.id) : null,
+      certificateId: completesNow && !certificatePending ? certificateIdOf(course.id) : null,
       certificatePending,
+      taskRequired,
     };
   });
 });
@@ -251,6 +266,7 @@ route('POST', '/personal/tasks/:id/submissions', (context) => {
   assertCanSubmitTask(accessOf(context.session), stateOf(context), course.id);
   const linkUrl = String(context.body.linkUrl ?? '').trim();
   const content = String(context.body.content ?? '').trim();
+  const checks = Array.isArray(context.body.checks) ? context.body.checks.filter((value): value is number => Number.isInteger(value)) : [];
   if (linkUrl && !URL_PATTERN.test(linkUrl)) throw badRequest('Liên kết phải bắt đầu bằng http:// hoặc https://.', 'INVALID_URL', 'linkUrl');
   if (content.length < TASK_CONTENT_MIN_LENGTH) {
     throw badRequest(`Mô tả bài làm tối thiểu ${TASK_CONTENT_MIN_LENGTH} ký tự.`, 'CONTENT_TOO_SHORT', 'content');
@@ -261,10 +277,18 @@ route('POST', '/personal/tasks/:id/submissions', (context) => {
     if (task.status === 'APPROVED' || task.status === 'PENDING_REVIEW') {
       throw badRequest('Bài thực hành này đã được nộp.', 'ALREADY_SUBMITTED');
     }
-    state.submissions[task.id] = { linkUrl, content, submittedAt: new Date().toISOString(), status: 'PENDING_REVIEW' };
+    const history = state.submissions[task.id]?.history ?? [];
+    if (attemptsLeft(history) === 0) {
+      throw badRequest('Bạn đã nộp 3 lần trong 24 giờ qua. Hãy chỉnh bài theo nhận xét và nộp lại sau.', 'TASK_ATTEMPT_LIMIT');
+    }
+    const now = new Date().toISOString();
+    const review = gradeTask({ rubric: task.rubric, linkUrl, content, checks });
+    state.submissions[task.id] = {
+      linkUrl, content, submittedAt: now, reviewedAt: now, reviewer: 'AI_RUBRIC', history: [...history, now], ...review,
+    };
     return tasks(state).find((item) => item.id === task.id);
   });
-}, { message: 'Đã nộp bài thực hành.', status: 201 });
+}, { message: 'Đã chấm bài thực hành.', status: 201 });
 
 route('GET', '/personal/certificates', (context) => certificates(
   stateOf(context), context.session.fullName, planOf(context), context.session.subscription?.startedAt,

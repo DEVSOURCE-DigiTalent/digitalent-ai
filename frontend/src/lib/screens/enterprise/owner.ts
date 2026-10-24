@@ -192,7 +192,7 @@ export const OWNER_SCREENS: ScreenDef[] = [
     title: 'Đợt đào tạo',
     path: '/enterprise/training-batches',
     roles: OWNER_ROLES,
-    permission: P.TRAINING_BATCH_READ,
+    permission: P.COURSE_ASSIGNMENT_READ,
     priority: 'P0',
   },
   {
@@ -200,7 +200,7 @@ export const OWNER_SCREENS: ScreenDef[] = [
     title: 'Tạo đợt đào tạo',
     path: '/enterprise/training-batches/new',
     roles: OWNER_ROLES,
-    permission: P.TRAINING_BATCH_CREATE,
+    permission: P.COURSE_ASSIGNMENT_CREATE,
     priority: 'P0',
   },
   {
@@ -208,7 +208,7 @@ export const OWNER_SCREENS: ScreenDef[] = [
     title: 'Chi tiết đợt đào tạo',
     path: '/enterprise/training-batches/:id',
     roles: OWNER_ROLES,
-    permission: P.TRAINING_BATCH_READ,
+    permission: P.COURSE_ASSIGNMENT_READ,
     priority: 'P0',
   },
   {
@@ -272,7 +272,7 @@ export const OWNER_SCREENS: ScreenDef[] = [
 
   // ── Chứng nhận ──
   {
-    id: 'OW-35',
+    id: 'OW-46',
     title: 'Chứng nhận',
     path: '/enterprise/certificates',
     roles: OWNER_ROLES,
@@ -280,7 +280,7 @@ export const OWNER_SCREENS: ScreenDef[] = [
     priority: 'P1',
   },
   {
-    id: 'OW-36',
+    id: 'OW-47',
     title: 'Chi tiết chứng nhận',
     path: '/enterprise/certificates/:id',
     roles: OWNER_ROLES,
@@ -339,7 +339,7 @@ export const OWNER_SCREENS: ScreenDef[] = [
     title: 'Nhật ký tổ chức',
     path: '/enterprise/settings/audit-log',
     roles: OWNER_ROLES,
-    permission: P.AUDIT_LOG_READ_SYSTEM,
+    permission: P.AUDIT_LOG_READ_DEPARTMENT,
     allowUnpaid: true,
     priority: 'P1',
   },

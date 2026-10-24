@@ -15,7 +15,7 @@ import type { SidebarConfig } from './types';
  * Hai nhóm phẳng: việc quản lý đội và các công cụ khác. Chỉ màn hình thuộc phạm vi phòng ban;
  * việc tự học của quản lý mở từ menu tài khoản (cổng nhân viên Pulse), không nằm ở đây.
  *
- * Nhiệm vụ thực tế dùng mã phụ MG-08..12: OW-35/OW-36 cũng là mã của màn chứng nhận trong owner.ts.
+ * Nhiệm vụ thực tế dùng mã phụ MG-08..12 (cùng màn với OW-35..39).
  */
 export const MANAGER_SIDEBAR: SidebarConfig = [
   // ── QUẢN LÝ ĐỘI ──

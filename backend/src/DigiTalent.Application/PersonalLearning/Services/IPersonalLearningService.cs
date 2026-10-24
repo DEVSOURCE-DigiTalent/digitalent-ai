@@ -9,6 +9,8 @@ public interface IPersonalLearningService
     Task<PersonalSkillGapDto> GetSkillGapAsync(CancellationToken cancellationToken = default);
     Task<PersonalDiagnosticDto> GetDiagnosticAsync(CancellationToken cancellationToken = default);
     Task<DiagnosticResultDto> SubmitDiagnosticAsync(Dictionary<string, int> answers, CancellationToken cancellationToken = default);
+    /// <summary>Adaptive entry assessment: which questions to ask next, given the answers so far.</summary>
+    DiagnosticPlanDto PlanDiagnostic(Dictionary<string, int> answers);
     Task<PersonalPathDto> GetPathAsync(CancellationToken cancellationToken = default);
     Task<PersonalCourseDetailDto> GetCourseDetailAsync(string courseId, CancellationToken cancellationToken = default);
     Task<PersonalCourseDetailDto> UpdateLessonProgressAsync(string courseId, string lessonId, bool completed, CancellationToken cancellationToken = default);

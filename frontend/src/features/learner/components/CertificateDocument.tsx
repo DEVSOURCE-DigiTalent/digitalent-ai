@@ -14,7 +14,7 @@ interface CertificateDocumentProps {
 
 /**
  * CertificateDocument: Mẫu chứng chỉ năng lực số chuẩn A4 Landscape (297x210)
- * Tuân thủ chuẩn Khung năng lực số công dân TT02/2025/TT-BGDĐT.
+ * Nội dung tham chiếu Khung năng lực số cho người học (TT02/2025/TT-BGDĐT); không phải văn bằng do cơ quan nhà nước cấp.
  * Tích hợp: Khung viền Guilloche nghệ thuật, QR code xác thực trực tuyến,
  * Con dấu số vàng kim (Gold Digital Seal), và chữ ký số thẩm định.
  */
@@ -83,12 +83,12 @@ export function CertificateDocument({ certificate, showVerificationLink = true }
           <div className="flex items-center justify-center gap-2">
             <span className="h-[1px] w-12 bg-[#b89758]/60" />
             <p className="text-[10px] sm:text-[11px] font-semibold tracking-[0.25em] uppercase text-[#8c6d32]">
-              HỆ THỐNG PHÁT TRIỂN NĂNG LỰC SỐ QUỐC GIA · DIGITALENT AI
+              NỀN TẢNG PHÁT TRIỂN NĂNG LỰC SỐ · DIGITALENT AI
             </p>
             <span className="h-[1px] w-12 bg-[#b89758]/60" />
           </div>
           <p className="text-[9px] sm:text-[10px] tracking-wider text-[#666] font-medium">
-            Căn cứ Khung chuẩn năng lực số ban hành theo Thông tư số 02/2025/TT-BGDĐT
+            Tham chiếu Khung năng lực số cho người học (Thông tư số 02/2025/TT-BGDĐT)
           </p>
 
           <div className="pt-2 sm:pt-3">
@@ -114,7 +114,7 @@ export function CertificateDocument({ certificate, showVerificationLink = true }
           </div>
 
           <p className="mx-auto max-w-[620px] text-xs sm:text-sm leading-relaxed text-[#44403c] pt-2">
-            Đã hoàn thành xuất sắc chương trình đào tạo và đạt chuẩn sát hạch năng lực số của khóa học
+            Đã hoàn thành chương trình và đạt bài đánh giá cuối khóa học
           </p>
           <p className="text-sm sm:text-base font-bold text-[#1c1917] tracking-tight">
             {certificate.courseCode} · {certificate.courseTitle}
@@ -133,7 +133,7 @@ export function CertificateDocument({ certificate, showVerificationLink = true }
           {/* Competencies Verified */}
           <div className="mx-auto mt-3 max-w-xl rounded-lg bg-[#FAF7EE]/90 border border-[#b89758]/20 p-2 sm:p-2.5 text-left">
             <p className="text-[10px] font-bold uppercase tracking-wider text-[#8c6d32] mb-1 text-center">
-              Các năng lực số thành phần được xác nhận (Framework TT02)
+              Năng lực số thành phần của khóa học (tham chiếu Thông tư 02/2025)
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-[#44403c]">
               {certificate.competencies.map((c) => (

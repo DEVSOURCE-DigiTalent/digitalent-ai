@@ -43,10 +43,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface">
+      // Every portal opens on a dark canvas, so the wait before it is dark too (no white flash), with the brand gold.
+      <div role="status" className="flex min-h-screen items-center justify-center bg-[#0b1215]">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-sm text-slate-500">Loading...</p>
+          <div className="mx-auto mb-3 size-8 animate-spin rounded-full border-2 border-[#E5A93C] border-t-transparent" aria-hidden="true" />
+          <p className="text-sm text-[#c2d3d1]">Đang tải…</p>
         </div>
       </div>
     );

@@ -100,7 +100,9 @@ function PathBody({ path }: { path: PersonalPath }) {
       {path.totalCourses === 0 ? (
         <EmptyState
           title="Bạn đã đáp ứng mọi yêu cầu của vị trí"
-          body="Không còn khóa nào cần học cho mục tiêu này. Bạn có thể chọn một vị trí khác để tiếp tục phát triển."
+          body={path.exempt.length > 0
+            ? 'Bài đánh giá đầu vào cho thấy bạn đã đạt mọi mức vị trí này cần. Bạn có thể ôn lại các khóa bên dưới để có chứng nhận, hoặc chọn một vị trí đòi hỏi cao hơn.'
+            : 'Không còn khóa nào cần học cho mục tiêu này. Bạn có thể chọn một vị trí khác để tiếp tục phát triển.'}
           action={<Link to="/personal/target" className={PT_BUTTON}>Chọn mục tiêu mới</Link>}
         />
       ) : (
@@ -124,8 +126,11 @@ function PathBody({ path }: { path: PersonalPath }) {
       )}
 
       {path.exempt.length > 0 && (
-        <Card as="details" className="p-6">
-          <summary className="cursor-pointer text-base font-semibold">Các khóa được miễn</summary>
+        // With nothing left to learn, the exempt courses are what the page has to offer, so they start open.
+        <Card as="details" className="p-6" open={path.totalCourses === 0}>
+          <summary className="cursor-pointer text-base font-semibold">
+            {path.totalCourses === 0 ? 'Ôn tập tùy chọn · các khóa được miễn' : 'Các khóa được miễn'}
+          </summary>
           <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-pt-fg-2">
             Bài đánh giá đầu vào cho thấy bạn đã đạt các mức này, nên những khóa sau không có trong lộ trình. Bạn vẫn có thể mở để ôn lại.
           </p>
@@ -202,6 +207,7 @@ function CourseRow({ course, isNext }: { course: PathCourse; isNext: boolean }) 
           <span className="text-xs tabular-nums text-pt-fg-3">{course.code}</span>
           {(course.status === 'COMPLETED' || course.status === 'LOCKED') && <Tag tone={course.status === 'COMPLETED' ? 'ok' : 'neutral'}>{STATUS_LABEL[course.status]}</Tag>}
           {isNext && course.status !== 'IN_PROGRESS' && <Tag tone="solid">Tiếp theo</Tag>}
+          {course.awaitingTask && <Tag tone="warn">Chờ bài thực hành</Tag>}
           {course.trialSlot && <Tag tone="ok">Đang học thử</Tag>}
           {course.planLocked && <Tag><Lock className="size-3" aria-hidden="true" />Mở khi nâng cấp</Tag>}
         </div>
@@ -222,7 +228,8 @@ function CourseRow({ course, isNext }: { course: PathCourse; isNext: boolean }) 
       </div>
       <div className="flex gap-2 sm:justify-end">
         {course.planLocked && course.status !== 'COMPLETED' && <Link to={`/personal/courses/${course.id}`} className={PT_BUTTON_SECONDARY}>Xem</Link>}
-        {!course.planLocked && course.status === 'IN_PROGRESS' && <Link to={`/personal/classroom/${course.id}`} className={PT_BUTTON}>Học tiếp</Link>}
+        {!course.planLocked && course.awaitingTask && <Link to="/personal/tasks" className={PT_BUTTON}>Nộp bài thực hành</Link>}
+        {!course.planLocked && course.status === 'IN_PROGRESS' && !course.awaitingTask && <Link to={`/personal/classroom/${course.id}`} className={PT_BUTTON}>Học tiếp</Link>}
         {!course.planLocked && course.status === 'AVAILABLE' && <Link to={`/personal/classroom/${course.id}`} className={isNext ? PT_BUTTON : PT_BUTTON_SECONDARY}>Bắt đầu</Link>}
         {course.status === 'COMPLETED' && <Link to={`/personal/courses/${course.id}`} className={PT_BUTTON_SECONDARY}>Ôn lại</Link>}
         {locked && !course.planLocked && <Link to={`/personal/courses/${course.id}`} className={PT_BUTTON_SECONDARY}>Xem</Link>}

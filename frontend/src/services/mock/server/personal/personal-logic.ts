@@ -17,7 +17,8 @@ import { referenceRequirementLines } from '../requirements';
 import {
   competencyCodesOf, courseDescription, courseDomain, courseModules, courseOutcomes, taskIdOf, taskTemplate,
 } from './course-content';
-import { ENTRY_QUESTIONS, QUESTION_BY_ID } from './question-bank';
+import { ENTRY_QUESTIONS, QUESTION_BY_ID, entryPair } from './question-bank';
+import { attemptsLeft } from './task-grading';
 import type { PersonalState, StoredAttempt } from './personal-store';
 
 /** Pure rules of the personal track; handlers/personal.ts turns them into API answers. */
@@ -51,14 +52,47 @@ export interface LevelInfo {
   at: string | null;
 }
 
-/** First passed attempt of each course, in time order. */
-export function completedCourses(state: PersonalState): Map<string, StoredAttempt> {
+/** First passed end-of-course assessment of each course, in time order. */
+export function passedAssessments(state: PersonalState): Map<string, StoredAttempt> {
   const passed = state.attempts.filter((attempt) => attempt.passed).sort((a, b) => a.at.localeCompare(b.at));
   const result = new Map<string, StoredAttempt>();
   passed.forEach((attempt) => {
     if (!result.has(attempt.courseId)) result.set(attempt.courseId, attempt);
   });
   return result;
+}
+
+/** Cơ bản courses are completed by their assessment; Trung cấp and Nâng cao also need the practice task approved. */
+export const needsApprovedTask = (course: CatalogCourse) => course.level > 1;
+
+const approvedTaskAt = (state: PersonalState, courseId: string): string | null => {
+  const submission = state.submissions[taskIdOf(courseId)];
+  return submission?.status === 'APPROVED' ? submission.reviewedAt ?? submission.submittedAt : null;
+};
+
+/**
+ * Courses completed, in the order they were completed. A Trung cấp or Nâng cao course counts only once its practice
+ * task is approved as well: a multiple-choice test alone does not show the autonomy those levels describe (plan
+ * 2026-10-09, B2). The completion time is the later of the passed assessment and the approval.
+ */
+export function completedCourses(state: PersonalState): Map<string, StoredAttempt> {
+  const result = new Map<string, StoredAttempt>();
+  passedAssessments(state).forEach((attempt, courseId) => {
+    const course = COURSE_BY_ID.get(courseId);
+    if (!course) return;
+    if (!needsApprovedTask(course)) {
+      result.set(courseId, attempt);
+      return;
+    }
+    const approvedAt = approvedTaskAt(state, courseId);
+    if (approvedAt) result.set(courseId, { ...attempt, at: approvedAt > attempt.at ? approvedAt : attempt.at });
+  });
+  return new Map([...result.entries()].sort(([, a], [, b]) => a.at.localeCompare(b.at)));
+}
+
+/** Assessment passed, practice task not approved yet: the course waits on the task. */
+export function awaitingTask(state: PersonalState, course: CatalogCourse): boolean {
+  return passedAssessments(state).has(course.id) && !completedCourses(state).has(course.id);
 }
 
 /** Level of each competency: the entry assessment, raised by every course passed in its domain. */
@@ -244,6 +278,7 @@ function pathCourse(
     status: courseStatus(state, course, levels),
     prerequisiteTitle: course.prerequisiteCourseId ? COURSE_BY_ID.get(course.prerequisiteCourseId)?.title : undefined,
     closes,
+    awaitingTask: awaitingTask(state, course),
     ...planFlags(state, plan, course.id),
   };
 }
@@ -374,6 +409,8 @@ export function courseDetail(state: PersonalState, course: CatalogCourse, plan: 
     status: courseStatus(state, course, levels),
     inPath,
     exempt,
+    awaitingTask: awaitingTask(state, course),
+    taskRequired: needsApprovedTask(course),
     ...flags,
     modules,
     lessonCount: lessons.length,
@@ -390,7 +427,7 @@ export function courseDetail(state: PersonalState, course: CatalogCourse, plan: 
       passPercent: ASSESSMENT_PASS_PERCENT,
       attempts: attempts.length,
       bestScore: best,
-      passed: completedCourses(state).has(course.id),
+      passed: passedAssessments(state).has(course.id),
     },
     notes: state.notes[course.id] ?? '',
     task: taskOf(state, course, levels),
@@ -404,30 +441,61 @@ export function findCourse(id: string): CatalogCourse | undefined {
 
 // ── Diagnostic ──
 
-export function diagnosticLevels(answers: Record<string, number>): number[] {
-  return TT02_DOMAINS.map((domain) => {
-    const questions = ENTRY_QUESTIONS.filter((q) => q.domainNumber === domain.number).sort((a, b) => a.level - b.level);
+const isRight = (answers: Record<string, number>, id: string) => answers[id] === QUESTION_BY_ID.get(id)!.correctIndex;
+
+export interface EntryPlan {
+  /** Questions to ask given the answers so far, in order: the answered ones that still count, then the next pair. */
+  askedIds: string[];
+  /** Every domain has stopped: at a level not passed, or after Nâng cao. */
+  done: boolean;
+  /** Level reached in each domain so far (0–3). */
+  levels: number[];
+  /** Domains whose questions are finished. */
+  domainsDone: number;
+}
+
+/**
+ * Adaptive entry assessment (plan 2026-10-09, B1). Domain by domain, from Cơ bản up: a level is passed when both of
+ * its questions are right; the first level missed ends the domain. A lucky guess no longer skips a course (2 right
+ * answers out of 4 options each, about 6%), and nobody answers questions far above the level they just missed.
+ */
+export function entryPlan(answers: Record<string, number>): EntryPlan {
+  const askedIds: string[] = [];
+  const levels: number[] = [];
+  for (const domain of TT02_DOMAINS) {
     let level = 0;
-    for (const question of questions) {
-      if (answers[question.id] !== question.correctIndex) break;
-      level = question.level;
+    for (let next = 1; next <= 3; next += 1) {
+      const pair = entryPair(domain.number, next).map((question) => question.id);
+      askedIds.push(...pair);
+      if (pair.some((id) => answers[id] === undefined)) {
+        return { askedIds, done: false, levels: [...levels, level], domainsDone: levels.length };
+      }
+      if (!pair.every((id) => isRight(answers, id))) break;
+      level = next;
     }
-    return level;
-  });
+    levels.push(level);
+  }
+  return { askedIds, done: true, levels, domainsDone: TT02_DOMAINS.length };
+}
+
+export function diagnosticLevels(answers: Record<string, number>): number[] {
+  return entryPlan(answers).levels;
 }
 
 export function diagnosticResult(state: PersonalState): DiagnosticResult | null {
   const diagnostic = state.diagnostic;
   if (!diagnostic) return null;
-  const correctOf = (ids: string[]) => ids.filter((id) => diagnostic.answers[id] === QUESTION_BY_ID.get(id)!.correctIndex).length;
-  const correct = correctOf(ENTRY_QUESTIONS.map((q) => q.id));
+  // Only the questions the adaptive assessment asked count; an assessment stored before it asked all of them.
+  const asked = ENTRY_QUESTIONS.filter((q) => diagnostic.answers[q.id] !== undefined);
+  const correctOf = (ids: string[]) => ids.filter((id) => isRight(diagnostic.answers, id)).length;
+  const correct = correctOf(asked.map((q) => q.id));
   return {
     completedAt: diagnostic.completedAt,
     correct,
-    total: ENTRY_QUESTIONS.length,
-    scorePercent: Math.round((correct / ENTRY_QUESTIONS.length) * 100),
+    total: asked.length,
+    scorePercent: asked.length === 0 ? 0 : Math.round((correct / asked.length) * 100),
     domains: TT02_DOMAINS.map((domain) => {
-      const ids = ENTRY_QUESTIONS.filter((q) => q.domainNumber === domain.number).map((q) => q.id);
+      const ids = asked.filter((q) => q.domainNumber === domain.number).map((q) => q.id);
       return {
         number: domain.number,
         name: domain.name,
@@ -436,7 +504,7 @@ export function diagnosticResult(state: PersonalState): DiagnosticResult | null 
         total: ids.length,
       };
     }),
-    review: ENTRY_QUESTIONS.map((question) => ({
+    review: asked.map((question) => ({
       questionId: question.id,
       chosenIndex: diagnostic.answers[question.id] ?? null,
       correctIndex: question.correctIndex,
@@ -473,8 +541,12 @@ function taskOf(state: PersonalState, course: CatalogCourse, levels: Map<string,
           score: submission.score,
           feedback: submission.feedback,
           reviewedAt: submission.reviewedAt,
+          criteria: submission.criteria,
+          reviewer: submission.reviewer,
         }
       : undefined,
+    required: needsApprovedTask(course),
+    attemptsLeft: attemptsLeft(submission?.history ?? []),
   };
 }
 

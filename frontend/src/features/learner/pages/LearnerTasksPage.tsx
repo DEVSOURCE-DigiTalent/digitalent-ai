@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, Lock } from 'lucide-react';
+import { Check, ExternalLink, Lock, X } from 'lucide-react';
 import { usePersonalAccess, usePersonalTasks, useSubmitPersonalTask } from '@/hooks/use-personal-learning';
 import { usePlanErrorHandler } from '@/hooks/use-plan-error-handler';
 import { levelLabelVi } from '@/lib/competency-levels';
@@ -32,6 +32,8 @@ const STATUS: Record<TaskStatus, { label: string; tone: 'neutral' | 'ok' | 'warn
 };
 
 const CONTENT_MIN = 20;
+/** Explanation length the review asks for (mirror of TASK_EXPLANATION_MIN_LENGTH in the mock reviewer). */
+const EXPLANATION_TARGET = 150;
 
 /** IND-12 "/personal/tasks": one practical task per course, turned into evidence of the competency. */
 export function LearnerTasksPage() {
@@ -47,7 +49,7 @@ export function LearnerTasksPage() {
       <PersonalPageHeader
         label="Bài thực hành"
         title="Bài thực hành"
-        lead="Xem yêu cầu đầu ra, nộp bài làm và theo dõi phản hồi hiện có."
+        lead="Bài thực hành chứng minh bạn làm được việc, không chỉ trả lời đúng. Từ khóa Trung cấp trở lên, khóa học chỉ hoàn thành khi bài thực hành được duyệt."
       />
 
       {notice && <p role="status" className="rounded-2xl border border-pt-ok/40 bg-pt-ok/10 px-5 py-3 text-sm text-pt-ok">{notice}</p>}
@@ -92,10 +94,13 @@ export function LearnerTasksPage() {
       <SubmitDialog
         task={active}
         onClose={() => setActive(null)}
-        onSubmitted={() => {
+        onSubmitted={(task) => {
           setActive(null);
-          setFilter('review');
-          setNotice('Đã gửi nộp bài thực hành. Kết quả chấm và nhận xét sẽ hiện trong mục "Đang chấm".');
+          const approved = task.status === 'APPROVED';
+          setFilter(approved ? 'done' : 'todo');
+          setNotice(approved
+            ? `Bài thực hành ${task.courseCode} đã đạt ${task.submission?.score ?? ''}/100.`
+            : 'Bài thực hành cần chỉnh sửa. Xem nhận xét theo từng tiêu chí bên dưới rồi nộp lại.');
         }}
       />
     </div>
@@ -112,6 +117,7 @@ function TaskCard({ task, onSubmit }: { task: PersonalTask; onSubmit: () => void
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs text-pt-fg-3"><span className="tabular-nums">{task.courseCode}</span> · {task.courseTitle}</span>
         <div className="flex gap-1.5">
+          {task.required && task.status !== 'APPROVED' && <Tag tone="warn">Bắt buộc để hoàn thành khóa</Tag>}
           <Tag>{levelLabelVi(task.level)}</Tag>
           <Tag tone={status.tone}>{status.label}</Tag>
         </div>
@@ -150,8 +156,23 @@ function TaskCard({ task, onSubmit }: { task: PersonalTask; onSubmit: () => void
           )}
           {task.submission.score !== undefined && (
             <div className="mt-4 border-t border-pt-line pt-4">
-              <p className="text-[22px] font-light tracking-[-0.02em] text-pt-ok">{task.submission.score}/100</p>
+              <p className={cn('text-[22px] font-light tracking-[-0.02em]', task.status === 'APPROVED' ? 'text-pt-ok' : 'text-pt-bad')}>{task.submission.score}/100</p>
               {task.submission.feedback && <p className="mt-1 leading-relaxed text-pt-fg-2">{task.submission.feedback}</p>}
+              {task.submission.criteria && (
+                <ul className="mt-3 grid gap-1.5" aria-label="Kết quả theo tiêu chí">
+                  {task.submission.criteria.map((criterion) => (
+                    <li key={criterion.label} className="flex gap-2">
+                      {criterion.met
+                        ? <Check className="mt-0.5 size-4 shrink-0 text-pt-ok" aria-label="Đạt" />
+                        : <X className="mt-0.5 size-4 shrink-0 text-pt-bad" aria-label="Chưa đạt" />}
+                      <span className="text-pt-fg-2">{criterion.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {task.submission.reviewer === 'AI_RUBRIC' && (
+                <p className="mt-3 text-xs text-pt-fg-3">Chấm tự động theo tiêu chí (bản mô phỏng) · {formatDate(task.submission.reviewedAt ?? task.submission.submittedAt)}</p>
+              )}
             </div>
           )}
         </div>
@@ -167,8 +188,12 @@ function TaskCard({ task, onSubmit }: { task: PersonalTask; onSubmit: () => void
               <span className="inline-flex items-center gap-1.5"><Lock className="size-3.5" aria-hidden="true" />Gói Miễn phí không nộp bài mới</span>
               <UpgradeLink placement="course" variant="text">Nâng cấp Plus</UpgradeLink>
             </span>
+          ) : task.attemptsLeft === 0 ? (
+            <span className="text-xs text-pt-fg-3">Đã nộp 3 lần trong 24 giờ · nộp lại sau</span>
           ) : (
-            <button type="button" onClick={onSubmit} className={PT_BUTTON}>Nộp bài làm</button>
+            <button type="button" onClick={onSubmit} className={PT_BUTTON}>
+              {task.status === 'REVISION_REQUESTED' ? `Nộp lại (còn ${task.attemptsLeft} lần hôm nay)` : 'Nộp bài làm'}
+            </button>
           )
         )}
       </div>
@@ -176,16 +201,23 @@ function TaskCard({ task, onSubmit }: { task: PersonalTask; onSubmit: () => void
   );
 }
 
-function SubmitDialog({ task, onClose, onSubmitted }: { task: PersonalTask | null; onClose: () => void; onSubmitted: () => void }) {
+function SubmitDialog({ task, onClose, onSubmitted }: {
+  task: PersonalTask | null; onClose: () => void; onSubmitted: (task: PersonalTask) => void;
+}) {
   const submit = useSubmitPersonalTask();
   const handlePlanError = usePlanErrorHandler();
   const [linkUrl, setLinkUrl] = useState('');
   const [content, setContent] = useState('');
+  const [checks, setChecks] = useState<number[]>([]);
   const [error, setError] = useState('');
+
+  const toggleCheck = (index: number) =>
+    setChecks((current) => (current.includes(index) ? current.filter((value) => value !== index) : [...current, index]));
 
   const close = () => {
     setLinkUrl('');
     setContent('');
+    setChecks([]);
     setError('');
     submit.reset();
     onClose();
@@ -204,12 +236,14 @@ function SubmitDialog({ task, onClose, onSubmitted }: { task: PersonalTask | nul
     }
     setError('');
     submit.mutate(
-      { taskId: task.id, input: { linkUrl: linkUrl.trim(), content: content.trim() } },
+      { taskId: task.id, input: { linkUrl: linkUrl.trim(), content: content.trim(), checks } },
       {
-        onSuccess: () => {
+        onSuccess: (reviewed) => {
           setLinkUrl('');
           setContent('');
-          onSubmitted();
+          setChecks([]);
+          submit.reset();
+          onSubmitted(reviewed);
         },
         onError: handlePlanError,
       },
@@ -237,24 +271,35 @@ function SubmitDialog({ task, onClose, onSubmitted }: { task: PersonalTask | nul
               className={PT_INPUT}
             />
           </div>
+          <fieldset className="grid gap-2">
+            <legend className="mb-1 text-sm text-pt-fg-2">Bài làm của bạn đáp ứng tiêu chí nào? Bài được chấm theo đúng các tiêu chí này.</legend>
+            {task.rubric.map((criterion, index) => (
+              <label key={criterion} className="flex cursor-pointer items-start gap-3 rounded-xl border border-pt-line px-3 py-2.5 text-sm text-pt-fg-2 transition-colors hover:border-pt-accent/50">
+                <input type="checkbox" checked={checks.includes(index)} onChange={() => toggleCheck(index)} className="mt-0.5 accent-current" />
+                <span>{criterion}</span>
+              </label>
+            ))}
+          </fieldset>
           <div className="grid gap-1.5">
-            <label htmlFor="task-content" className="text-sm text-pt-fg-2">Mô tả bài làm</label>
+            <label htmlFor="task-content" className="text-sm text-pt-fg-2">Giải thích bài làm đáp ứng từng tiêu chí ra sao</label>
             <textarea
               id="task-content"
               value={content}
               onChange={(event) => setContent(event.target.value)}
               rows={5}
-              placeholder="Bạn đã làm gì, theo các bước nào, kết quả ra sao…"
+              placeholder="Với mỗi tiêu chí: bạn đã làm gì, ở phần nào của sản phẩm…"
               aria-invalid={Boolean(error) || undefined}
               className={PT_INPUT}
             />
-            <p className="text-xs text-pt-fg-3">Không dán mật khẩu hay dữ liệu cá nhân của khách hàng; che thông tin nhạy cảm trước khi chia sẻ.</p>
+            <p className={cn('text-xs tabular-nums', content.trim().length >= EXPLANATION_TARGET ? 'text-pt-ok' : 'text-pt-fg-3')}>
+              {content.trim().length}/{EXPLANATION_TARGET} ký tự nên có · Không dán mật khẩu hay dữ liệu cá nhân của khách hàng.
+            </p>
           </div>
           {(error || (submit.isError && !planErrorOf(submit.error))) && <p role="alert" className="text-sm text-pt-bad">{error || errorMessage(submit.error)}</p>}
           <div className="flex justify-end gap-2">
             <button type="button" onClick={close} className={PT_BUTTON_SECONDARY}>Hủy</button>
             <button type="submit" disabled={submit.isPending} className={PT_BUTTON}>
-              {submit.isPending ? 'Đang gửi…' : 'Gửi nộp bài đánh giá'}
+              {submit.isPending ? 'Đang chấm…' : 'Nộp và chấm bài'}
             </button>
           </div>
         </form>

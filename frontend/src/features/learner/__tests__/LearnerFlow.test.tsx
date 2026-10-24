@@ -77,15 +77,16 @@ describe('Personal track (demo learner: Marketing, entry assessment done)', () =
     expect(await screen.findByText('Theo từng miền')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Làm lại/ }));
 
+    // All right: the adaptive assessment asks every pair, in bank order.
     for (const [index, question] of ENTRY_QUESTIONS.entries()) {
-      const option = await screen.findByRole('radio', { name: question.options[question.correctIndex] });
-      fireEvent.click(option);
-      if (index < ENTRY_QUESTIONS.length - 1) fireEvent.click(screen.getByRole('button', { name: /Câu tiếp/ }));
+      expect(await screen.findByText(question.text)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('radio', { name: question.options[question.correctIndex] }));
+      if (index < ENTRY_QUESTIONS.length - 1) fireEvent.click(await screen.findByRole('button', { name: /Câu tiếp/ }));
     }
-    fireEvent.click(screen.getByRole('button', { name: 'Nộp bài' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Nộp bài' }));
 
     expect(await screen.findAllByText(/Đạt Nâng cao/, {}, { timeout: 4000 })).toHaveLength(6);
-    expect(screen.getByText('18', { selector: 'p' })).toBeInTheDocument();
+    expect(screen.getByText(String(ENTRY_QUESTIONS.length), { selector: 'p' })).toBeInTheDocument();
   });
 
   it('path lists stages in prerequisite order and the exempt courses', async () => {
@@ -131,8 +132,10 @@ describe('Personal track (demo learner: Marketing, entry assessment done)', () =
     }
     fireEvent.click(screen.getByRole('button', { name: 'Nộp bài đánh giá' }));
 
+    // A3-I is a Trung cấp course: passing the assessment leads to the practice task, not yet to a certificate.
     expect(await screen.findByText(/Đạt · 100%/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Xem chứng nhận/ })).toBeInTheDocument();
+    expect(screen.getByText(/Bước tiếp theo: nộp bài thực hành của khóa/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Nộp bài thực hành' })).toHaveAttribute('href', '/personal/tasks');
   });
 
   it('progress shows the 24-competency profile and milestones', async () => {
@@ -162,15 +165,32 @@ describe('Personal track (demo learner: Marketing, entry assessment done)', () =
     fireEvent.click(await screen.findByRole('button', { name: 'Nộp bài làm' }));
     const dialog = screen.getByRole('dialog', { name: 'Nộp minh chứng công việc thực tế' });
 
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Gửi nộp bài đánh giá' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Nộp và chấm bài' }));
     expect(within(dialog).getByRole('alert')).toHaveTextContent(/tối thiểu 20 ký tự/);
 
-    fireEvent.change(within(dialog).getByLabelText(/Liên kết bài làm/), { target: { value: 'https://example.com/infographic-q3' } });
-    fireEvent.change(within(dialog).getByLabelText('Mô tả bài làm'), { target: { value: 'Chuyển thể 3 bài blog cũ thành infographic, cập nhật số liệu Q3.' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Gửi nộp bài đánh giá' }));
+    // A short draft with one criterion: reviewed at once, sent back with the criteria it misses.
+    const link = within(dialog).getByLabelText(/Liên kết bài làm/);
+    const explanation = within(dialog).getByLabelText('Giải thích bài làm đáp ứng từng tiêu chí ra sao');
+    const criteria = within(dialog).getAllByRole('checkbox');
+    fireEvent.change(link, { target: { value: 'https://example.com/infographic-q3' } });
+    fireEvent.change(explanation, { target: { value: 'Chuyển thể 3 bài blog cũ thành infographic, cập nhật số liệu Q3.' } });
+    fireEvent.click(criteria[0]);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Nộp và chấm bài' }));
 
-    expect(await screen.findByText(/Đã gửi nộp bài thực hành/)).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /Đang chấm/ })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByText(/Chuyển thể 3 bài blog cũ/)).toBeInTheDocument();
+    expect(await screen.findByText(/Bài thực hành cần chỉnh sửa/)).toBeInTheDocument();
+    expect(screen.getAllByLabelText('Chưa đạt').length).toBe(criteria.length - 1);
+
+    // Every criterion and a full explanation: approved.
+    fireEvent.click(screen.getByRole('button', { name: /Nộp lại \(còn 2 lần hôm nay\)/ }));
+    const again = screen.getByRole('dialog', { name: 'Nộp minh chứng công việc thực tế' });
+    fireEvent.change(within(again).getByLabelText(/Liên kết bài làm/), { target: { value: 'https://example.com/infographic-q3' } });
+    fireEvent.change(within(again).getByLabelText('Giải thích bài làm đáp ứng từng tiêu chí ra sao'), {
+      target: { value: 'Chuyển thể 3 bài blog cũ thành infographic, cập nhật số liệu Q3 từ báo cáo nội bộ, kiểm tra giấy phép từng ảnh và ghi nguồn, lịch đăng 4 tuần có người duyệt cho từng bài.' },
+    });
+    within(again).getAllByRole('checkbox').forEach((box) => fireEvent.click(box));
+    fireEvent.click(within(again).getByRole('button', { name: 'Nộp và chấm bài' }));
+
+    expect(await screen.findByText(/Bài thực hành A3-I đã đạt/)).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Đã duyệt/ })).toHaveAttribute('aria-selected', 'true');
   });
 });

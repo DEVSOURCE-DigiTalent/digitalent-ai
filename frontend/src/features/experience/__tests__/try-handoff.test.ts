@@ -2,11 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildTryHandoff, clearTryHandoff, readTryHandoff, toTryOrientation, writeTryHandoff,
 } from '../individual-trial/try-handoff';
-import { TRIAL_QUESTIONS } from '../individual-trial/individual-trial-data';
 
 const KEY = 'dt-try-handoff';
 const NOW = new Date('2026-10-06T08:00:00.000Z');
-const allRight = Object.fromEntries(TRIAL_QUESTIONS.map((q) => [q.id, q.correctIndex]));
 
 beforeEach(() => {
   sessionStorage.clear();
@@ -14,26 +12,14 @@ beforeEach(() => {
 });
 
 describe('buildTryHandoff', () => {
-  it('counts the right orientation answers of a completed survey', () => {
-    const answers = { ...allRight, [TRIAL_QUESTIONS[0].id]: (TRIAL_QUESTIONS[0].correctIndex + 1) % 3 };
-
-    expect(buildTryHandoff('ACCOUNTANT', answers, 'completed', NOW)).toEqual({
-      positionCode: 'ACCOUNTANT',
-      completedAt: NOW.toISOString(),
-      correct: TRIAL_QUESTIONS.length - 1,
-      total: TRIAL_QUESTIONS.length,
-    });
-  });
-
-  it('carries only the position when the survey was skipped', () => {
-    expect(buildTryHandoff('HR', {}, 'skipped', NOW)).toEqual({ positionCode: 'HR', completedAt: NOW.toISOString() });
-    expect(buildTryHandoff('HR', allRight, null, NOW)).not.toHaveProperty('correct');
+  it('carries only the position and the time', () => {
+    expect(buildTryHandoff('ACCOUNTANT', NOW)).toEqual({ positionCode: 'ACCOUNTANT', completedAt: NOW.toISOString() });
   });
 });
 
 describe('write / read / clear', () => {
   it('round-trips through session storage', () => {
-    const handoff = buildTryHandoff('MARKETING', allRight, 'completed', NOW);
+    const handoff = buildTryHandoff('MARKETING', NOW);
 
     writeTryHandoff(handoff);
 
