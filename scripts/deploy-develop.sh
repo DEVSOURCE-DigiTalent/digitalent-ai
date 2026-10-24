@@ -32,6 +32,12 @@ fi
 if [ -f backend/src/DigiTalent.Api/appsettings.json ]; then
     cp backend/src/DigiTalent.Api/appsettings.json /tmp/appsettings.json.bak
 fi
+if [ -f frontend/.env ]; then
+    cp frontend/.env /tmp/.env.frontend.bak
+fi
+if [ -f frontend/.env.production ]; then
+    cp frontend/.env.production /tmp/.env.frontend.production.bak
+fi
 
 # 2. Pull latest code from develop branch
 echo "--> Pulling latest code from develop branch..."
@@ -56,6 +62,12 @@ fi
 if [ -f /tmp/appsettings.json.bak ]; then
     cp /tmp/appsettings.json.bak backend/src/DigiTalent.Api/appsettings.json
 fi
+if [ -f /tmp/.env.frontend.bak ]; then
+    cp /tmp/.env.frontend.bak frontend/.env
+fi
+if [ -f /tmp/.env.frontend.production.bak ]; then
+    cp /tmp/.env.frontend.production.bak frontend/.env.production
+fi
 
 # 4. Apply compatibility & SSL fixes to docker-compose.yml
 sed -i 's|image: minio/minio:latest|image: coollabsio/minio:latest|g' docker/docker-compose.yml
@@ -70,10 +82,13 @@ if ! grep -q "Gemini__ApiKey" docker/docker-compose.yml; then
 fi
 
 # 5. Build frontend inside container
-echo "--> Building frontend assets with node container..."
+echo "--> Building frontend assets with node container (VITE_USE_MOCK=false)..."
 docker run --rm \
     -v /opt/digitalent-ai/frontend:/app \
     -w /app \
+    -e VITE_USE_MOCK=false \
+    -e VITE_API_BASE_URL=/api/v1 \
+    -e VITE_SIGNALR_HUB_URL=/hubs/notifications \
     node:20-alpine \
     sh -c "npm install react-is@^19.0.0 --save --legacy-peer-deps && npm install --include=dev --legacy-peer-deps && npx vite build"
 
