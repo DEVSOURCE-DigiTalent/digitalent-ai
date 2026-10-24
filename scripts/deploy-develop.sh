@@ -29,6 +29,9 @@ fi
 if [ -f scripts/deploy-develop.sh ]; then
     cp scripts/deploy-develop.sh /tmp/deploy-develop.sh.bak
 fi
+if [ -f backend/src/DigiTalent.Api/appsettings.json ]; then
+    cp backend/src/DigiTalent.Api/appsettings.json /tmp/appsettings.json.bak
+fi
 
 # 2. Pull latest code from develop branch
 echo "--> Pulling latest code from develop branch..."
@@ -50,6 +53,9 @@ if [ -f /tmp/deploy-develop.sh.bak ]; then
     cp /tmp/deploy-develop.sh.bak scripts/deploy-develop.sh
     chmod +x scripts/deploy-develop.sh
 fi
+if [ -f /tmp/appsettings.json.bak ]; then
+    cp /tmp/appsettings.json.bak backend/src/DigiTalent.Api/appsettings.json
+fi
 
 # 4. Apply compatibility & SSL fixes to docker-compose.yml
 sed -i 's|image: minio/minio:latest|image: coollabsio/minio:latest|g' docker/docker-compose.yml
@@ -58,6 +64,9 @@ if ! grep -q "443:443" docker/docker-compose.yml; then
 fi
 if ! grep -q "/etc/letsencrypt" docker/docker-compose.yml; then
     sed -i '/html:ro/a \      - /etc/letsencrypt:/etc/letsencrypt:ro' docker/docker-compose.yml
+fi
+if ! grep -q "Gemini__ApiKey" docker/docker-compose.yml; then
+    sed -i '/Assistant__ApiKey:/a \      Gemini__ApiKey: ${GEMINI_API_KEY:-}\n      Gemini__Model: ${GEMINI_MODEL:-gemini-3-flash-preview}' docker/docker-compose.yml
 fi
 
 # 5. Build frontend inside container
