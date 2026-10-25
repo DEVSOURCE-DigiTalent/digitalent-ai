@@ -32,7 +32,7 @@ export function OwnerOverviewPage() {
   if (orgLoading || capLoading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <p className="text-sm text-ent-fg-3">Đang tải tổng quan...</p>
+        <p className="text-sm" style={{ color: 'var(--po-muted)' }}>Đang tải tổng quan...</p>
       </div>
     );
   }
@@ -40,7 +40,7 @@ export function OwnerOverviewPage() {
   if (orgError || !orgData) {
     return (
       <div className="flex items-center justify-center py-16">
-        <p className="text-sm text-ent-bad" role="alert">
+        <p className="text-sm text-red-600" role="alert">
           Không tải được thông tin tổng quan.
         </p>
       </div>
