@@ -1,0 +1,426 @@
+/* ── Onboarding & Tutorial Styles ─────────────────────────────── */
+
+:root {
+  --ob-accent: #304bdf;
+  --ob-accent-soft: rgba(48, 75, 223, 0.12);
+  --ob-coral: #ef735c;
+  --ob-coral-soft: rgba(239, 115, 92, 0.12);
+  --ob-surface: #ffffff;
+  --ob-surface-dark: #121826;
+  --ob-border: #e2e8f0;
+  --ob-ink: #0f172a;
+  --ob-muted: #64748b;
+  --ob-glow: rgba(48, 75, 223, 0.45);
+}
+
+/* ── 1. Spotlight Overlay ── */
+.ob-spotlight-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: auto;
+  transition: opacity 0.25s ease-out;
+}
+
+.ob-spotlight-svg {
+  position: absolute;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+}
+
+.ob-spotlight-ring {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  border-radius: 12px;
+  box-shadow: 0 0 0 3px var(--ob-accent), 0 0 24px var(--ob-glow);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: ob-pulse-ring 2.2s infinite ease-in-out;
+}
+
+@keyframes ob-pulse-ring {
+  0%, 100% {
+    box-shadow: 0 0 0 3px var(--ob-accent), 0 0 16px var(--ob-glow);
+  }
+  50% {
+    box-shadow: 0 0 0 5px var(--ob-accent), 0 0 28px rgba(48, 75, 223, 0.65);
+  }
+}
+
+/* ── 2. Tooltip Card ── */
+.ob-tooltip-card {
+  position: fixed;
+  z-index: 10000;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  background: var(--ob-surface);
+  color: var(--ob-ink);
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(15, 23, 42, 0.08);
+  font-family: inherit;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: ob-card-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ob-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.ob-tooltip-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--ob-accent-soft);
+  color: var(--ob-accent);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ob-tooltip-title {
+  margin: 10px 0 6px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ob-ink);
+  line-height: 1.35;
+}
+
+.ob-tooltip-desc {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ob-muted);
+  margin-bottom: 12px;
+}
+
+.ob-tooltip-tips {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #475569;
+  margin-bottom: 16px;
+}
+
+.ob-tooltip-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid var(--ob-border);
+}
+
+.ob-tooltip-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ob-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  transition: all 0.2s ease;
+}
+
+.ob-dot.active {
+  width: 20px;
+  border-radius: 999px;
+  background: var(--ob-accent);
+}
+
+.ob-tooltip-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ob-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+  outline: none;
+}
+
+.ob-btn-ghost {
+  background: transparent;
+  color: var(--ob-muted);
+}
+.ob-btn-ghost:hover {
+  background: #f1f5f9;
+  color: var(--ob-ink);
+}
+
+.ob-btn-outline {
+  background: #fff;
+  border: 1px solid var(--ob-border);
+  color: var(--ob-ink);
+}
+.ob-btn-outline:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.ob-btn-primary {
+  background: var(--ob-accent);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(48, 75, 223, 0.25);
+}
+.ob-btn-primary:hover {
+  background: #253dc7;
+  transform: translateY(-1px);
+}
+
+/* ── 3. Gamified Checklist Widget ── */
+.ob-widget-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9990;
+  font-family: inherit;
+  pointer-events: auto;
+}
+
+/* Minimized Floating Pill */
+.ob-pill-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--ob-ink);
+  box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.08);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(48, 75, 223, 0.15);
+}
+
+.ob-pill-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -4px rgba(48, 75, 223, 0.25), 0 0 0 1px var(--ob-accent);
+}
+
+.ob-pill-sparkle {
+  color: var(--ob-accent);
+  animation: ob-spin-slow 8s linear infinite;
+}
+
+@keyframes ob-spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.ob-pill-text {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ob-ink);
+}
+
+.ob-pill-progress {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ob-accent);
+  background: var(--ob-accent-soft);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* Expanded Checklist Card */
+.ob-checklist-card {
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--ob-border);
+  overflow: hidden;
+  animation: ob-card-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ob-checklist-header {
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #f8faff 0%, #f1f5ff 100%);
+  border-bottom: 1px solid var(--ob-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ob-checklist-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ob-checklist-header-title h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ob-ink);
+}
+
+.ob-checklist-sub {
+  font-size: 12px;
+  color: var(--ob-muted);
+  margin-top: 3px;
+}
+
+.ob-checklist-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.ob-checklist-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--ob-accent) 0%, #5d75f3 100%);
+  border-radius: 999px;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ob-checklist-items {
+  max-height: 290px;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ob-task-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.ob-task-row:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.ob-task-row.completed {
+  opacity: 0.72;
+  background: #fafafa;
+}
+
+.ob-task-check {
+  margin-top: 2px;
+  cursor: pointer;
+  color: var(--ob-accent);
+}
+
+.ob-task-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ob-task-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ob-ink);
+  line-height: 1.35;
+}
+
+.ob-task-row.completed .ob-task-title {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.ob-task-sub {
+  font-size: 11.5px;
+  color: var(--ob-muted);
+  margin-top: 2px;
+}
+
+.ob-task-action {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ob-accent);
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.ob-task-action:hover {
+  text-decoration: underline;
+}
+
+.ob-checklist-footer {
+  padding: 12px 18px;
+  background: #ffffff;
+  border-top: 1px solid var(--ob-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── Contextual Beacon Pulse ── */
+.ob-beacon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
+.ob-beacon-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ob-coral);
+}
+
+.ob-beacon-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--ob-coral);
+  animation: ob-beacon-pulse 1.8s infinite cubic-bezier(0.24, 0, 0.38, 1);
+}
+
+@keyframes ob-beacon-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
