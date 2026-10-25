@@ -1,19 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Award, Bell, BriefcaseBusiness, LogOut, UserRound } from 'lucide-react';
+import { Award, Bell, BriefcaseBusiness, LogOut, Sparkles, UserRound } from 'lucide-react';
 import pulseMark from '@/assets/pulse/pulse-mark.svg';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useLogout } from '@/hooks/use-auth';
 import { useNotifications } from '@/hooks/use-platform';
+import { useOnboardingStore } from '@/features/onboarding-tutorial';
 import { ROLES, normalizeRoles } from '@/lib/roles';
 import { initials } from '../lib/labels';
 import { PULSE_PATHS, isExamPath } from '../lib/paths';
 
 /** Mục điều hướng chính của nhân viên chỉ có Hôm nay / Lộ trình / Thực hành (§3). */
 const NAV = [
-  { to: PULSE_PATHS.today, label: 'Hôm nay', end: true, match: [PULSE_PATHS.today] },
-  { to: PULSE_PATHS.path, label: 'Lộ trình', match: [PULSE_PATHS.path, '/enterprise/me/courses'] },
-  { to: PULSE_PATHS.practice, label: 'Thực hành', match: [PULSE_PATHS.practice] },
+  { to: PULSE_PATHS.today, label: 'Hôm nay', end: true, match: [PULSE_PATHS.today], screenId: 'EM-01' },
+  { to: PULSE_PATHS.path, label: 'Lộ trình', match: [PULSE_PATHS.path, '/enterprise/me/courses'], screenId: 'EM-02' },
+  { to: PULSE_PATHS.practice, label: 'Thực hành', match: [PULSE_PATHS.practice], screenId: 'EM-03' },
 ];
 
 export function PulseHeader() {
@@ -63,13 +64,28 @@ export function PulseHeader() {
 
       <nav className="pu-nav" aria-label="Học tập của tôi">
         {NAV.map((item) => (
-          <NavLink key={item.to} to={item.to} end={item.end} className={isActive(item.match, item.end) ? 'active' : ''}>
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            data-tour={item.screenId}
+            className={isActive(item.match, item.end) ? 'active' : ''}
+          >
             {item.label}
           </NavLink>
         ))}
       </nav>
 
       <div className="pu-header-actions">
+        <button
+          type="button"
+          onClick={() => useOnboardingStore.getState().startTour('EMPLOYEE')}
+          className="pu-icon-btn"
+          aria-label="Xem lại hướng dẫn tân thủ"
+          title="Xem lại hướng dẫn tân thủ"
+        >
+          <Sparkles size={18} />
+        </button>
         <Link to={PULSE_PATHS.activity} className="pu-icon-btn" aria-label={unread?.length ? `Hoạt động, ${unread.length} chưa đọc` : 'Hoạt động'}>
           <Bell size={18} />
           {Boolean(unread?.length) && <span className="pu-dot" />}

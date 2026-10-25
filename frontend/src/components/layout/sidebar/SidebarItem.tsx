@@ -14,9 +14,10 @@ interface SidebarItemProps {
   href?: string;
   onClick?: () => void;
   variant?: SidebarVariant;
+  dataTour?: string;
 }
 
-export function SidebarItem({ icon, label, isActive, isLocked, isRail, href, onClick, variant = 'default' }: SidebarItemProps) {
+export function SidebarItem({ icon, label, isActive, isLocked, isRail, href, onClick, variant = 'default', dataTour }: SidebarItemProps) {
   const lockTooltip = isLocked ? `${label} (Cần nâng cấp gói để mở)` : undefined;
 
   const innerContent = (
@@ -46,6 +47,7 @@ export function SidebarItem({ icon, label, isActive, isLocked, isRail, href, onC
     'aria-label': label,
     'aria-current': isActive ? ('page' as const) : undefined,
     title: isRail ? (lockTooltip ?? label) : lockTooltip,
+    'data-tour': dataTour,
   };
 
   if (href) {

@@ -118,6 +118,7 @@ export function SidebarNav({ config, isRail, onItemClick, workspace, variant = '
                 isRail={isRail}
                 onClick={onItemClick}
                 variant={variant}
+                dataTour={section.screenId}
               />
             </div>
           );
@@ -162,6 +163,7 @@ export function SidebarNav({ config, isRail, onItemClick, workspace, variant = '
                       isLocked={locked}
                       isRail={isRail}
                       onClick={onItemClick}
+                      dataTour={item.screenId}
                     />
                   );
                 })}
