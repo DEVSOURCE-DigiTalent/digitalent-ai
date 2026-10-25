@@ -10,6 +10,7 @@ import { sidebarFor } from '../../lib/sidebars';
 import { useEnterpriseTheme } from '../../hooks/use-enterprise-theme';
 import { isSubscriptionUsable } from '../../lib/personal-access';
 import { AssistantWidget } from '../../features/assistant/components/AssistantWidget';
+import { RoleTutorialContainer } from '../../features/onboarding-tutorial';
 
 export function EnterpriseLayout() {
   const user = useCurrentUser((s) => s.user);
@@ -25,6 +26,7 @@ export function EnterpriseLayout() {
           <div data-testid="enterprise-layout">
             <MainLayout portal={ENTERPRISE_PORTAL} sidebarConfig={sidebarFor(user)} isUnpaid={isUnpaid} />
             {!isUnpaid && <AssistantWidget />}
+            <RoleTutorialContainer />
           </div>
         </RequireOnboarded>
       </RequireWorkspace>

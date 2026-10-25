@@ -1,45 +1,15 @@
-/* Enterprise theme token values */
+/* Enterprise theme token values — Unified Modern Pulse Theme */
 .ent-theme,
+.ent-theme[data-theme='light'],
 .ent-theme[data-theme='dark'] {
-  --ent-bg: #0C0E12;
-  --ent-sidebar: #080A0D;
-  --ent-sidebar-fg: #F5F2E9;
-  --ent-sidebar-muted: #A8A399;
-  --ent-sidebar-hover: rgba(245, 202, 101, 0.08);
-  --ent-sidebar-active: rgba(245, 202, 101, 0.14);
-  --ent-sidebar-active-border: #E5A93C;
-  --ent-topbar: rgba(12, 14, 18, 0.85);
-  --ent-card: #11151E;
-  --ent-raised: #171C26;
-  --ent-line: rgba(245, 202, 101, 0.12);
-  --ent-fg: #F5F2E9;
-  --ent-fg-2: #BFB9AC;
-  --ent-fg-3: #8C867A;
-  --ent-primary: #F5CA65;
-  --ent-on-primary: #0C0E12;
-  --ent-accent: #E5A93C;
-  --ent-accent-soft: rgba(229, 169, 60, 0.14);
-  --ent-ok: #7FC48C;
-  --ent-ok-soft: rgba(127,196,140,.14);
-  --ent-warn: #E3B65A;
-  --ent-warn-soft: rgba(227,182,90,.14);
-  --ent-bad: #EE8E80;
-  --ent-bad-soft: rgba(238,142,128,.14);
-  --ent-level-1: #3A4A72;
-  --ent-level-2: #5C7BCB;
-  --ent-level-3: #9DB6F0;
-  color-scheme: dark;
-}
-
-.ent-theme[data-theme='light'] {
   --ent-bg: #f7f9fd;
   --ent-sidebar: #fbfcff;
   --ent-sidebar-fg: #172442;
   --ent-sidebar-muted: #62718d;
   --ent-sidebar-hover: rgba(48, 75, 223, 0.06);
   --ent-sidebar-active: #e8eeff;
-  --ent-sidebar-active-border: #ee8a72;
-  --ent-topbar: rgba(255, 255, 255, 0.92);
+  --ent-sidebar-active-border: #304bdf;
+  --ent-topbar: rgba(255, 255, 255, 0.95);
   --ent-card: #ffffff;
   --ent-raised: #f8faff;
   --ent-line: #dfe6f3;

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Search, Menu, Plus } from 'lucide-react';
+import { Search, Menu, Plus, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { useOnboardingStore } from '@/features/onboarding-tutorial';
 import { PERMISSIONS } from '@/hooks/use-permission';
 import type { PortalConfig } from '@/lib/portals';
 import { buildBreadcrumbs } from '@/lib/breadcrumbs';
@@ -146,6 +147,16 @@ export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false }: Top
           >
             <Search className="w-4 h-4" />
             <span className="hidden lg:inline text-xs text-ent-fg-3">Ctrl+K</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => useOnboardingStore.getState().startTour()}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-xs font-semibold transition-colors"
+            title="Xem lại hướng dẫn tân thủ"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+            <span className="hidden sm:inline">Hướng dẫn</span>
           </button>
 
           <QuickCreateMenu />

@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { UserPlus, ChevronLeft, ChevronRight, Mail, Send } from 'lucide-react';
+import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useDepartments } from '@/hooks/use-departments';
 import { useJobPositions } from '@/hooks/use-job-positions';
-import { useMembers } from '@/hooks/use-members';
+import { useMembers, useResendInvitation } from '@/hooks/use-members';
 import { useOrganizationOverview } from '@/hooks/use-organization';
 import { PERMISSIONS } from '@/hooks/use-permission';
 import { ROLES } from '@/lib/roles';
 import { assignableRoles } from '@/lib/role-policy';
-import type { MemberStatus } from '@/services/member.service';
+import type { MemberListItem, MemberStatus } from '@/services/member.service';
 import { InviteMembersModal } from '@/features/members/components/InviteMembersModal';
 import { MEMBER_STATUS_LABELS } from '@/features/members/member-labels';
 import { MemberCard } from '../components/MemberCard';
@@ -65,6 +66,54 @@ export function OwnerMembersPage() {
     role: role || undefined,
     departmentId: departmentId || undefined,
   });
+
+  const resendInvitation = useResendInvitation();
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [isBulkInviting, setIsBulkInviting] = useState(false);
+
+  const pendingMembers =
+    data?.items.filter(
+      (m) => m.status === 'PENDING' || m.kind === 'invitation',
+    ) ?? [];
+  const selectedDept = departments.find((d) => d.id === departmentId);
+  const pendingInDept = departmentId
+    ? pendingMembers.filter((m) => m.departmentId === departmentId)
+    : pendingMembers;
+
+  const handleResendSingle = async (member: MemberListItem) => {
+    setResendingId(member.id);
+    try {
+      await resendInvitation.mutateAsync(member.id);
+      toast.success(`Đã gửi lời mời tới ${member.fullName}!`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : `Không thể gửi lời mời cho ${member.fullName}`;
+      toast.error(msg);
+    } finally {
+      setResendingId(null);
+    }
+  };
+
+  const handleInviteAllPending = async () => {
+    if (pendingInDept.length === 0) return;
+    setIsBulkInviting(true);
+    let successCount = 0;
+    for (const m of pendingInDept) {
+      try {
+        await resendInvitation.mutateAsync(m.id);
+        successCount++;
+      } catch {
+        // continue with next
+      }
+    }
+    setIsBulkInviting(false);
+    if (successCount > 0) {
+      toast.success(
+        `Đã gửi lời mời thành công tới ${successCount} nhân sự ${selectedDept ? `phòng ${selectedDept.name}` : ''}!`,
+      );
+    } else {
+      toast.error('Có lỗi xảy ra khi gửi lời mời hàng loạt.');
+    }
+  };
 
   const seats = user.subscription?.seatLimit;
   const seatsUsed = user.subscription?.seatsUsed;
@@ -462,6 +511,41 @@ export function OwnerMembersPage() {
             </select>
           </div>
 
+          {/* Bulk department invite banner if pending members exist */}
+          {pendingInDept.length > 0 && (
+            <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50/70 p-3.5 text-xs text-blue-900 shadow-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-blue-100 text-[#304bdf]">
+                  <Mail className="size-4" />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-900">
+                    Có {pendingInDept.length} nhân sự {selectedDept ? `phòng ${selectedDept.name}` : ''} đang ở trạng thái Chờ kích hoạt
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Gửi email mời tham gia và thiết lập mật khẩu một lần cho toàn bộ nhân sự này.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleInviteAllPending}
+                disabled={isBulkInviting}
+                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#304bdf] hover:bg-[#203bbf] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:scale-102 active:scale-98 disabled:opacity-50"
+              >
+                <Send className="size-3.5" />
+                <span>
+                  {isBulkInviting
+                    ? 'Đang gửi lời mời...'
+                    : selectedDept
+                      ? `Mời tất cả phòng ${selectedDept.name}`
+                      : `Gửi lời mời cho tất cả (${pendingInDept.length})`}
+                </span>
+              </button>
+            </div>
+          )}
+
           {/* List */}
           <div className="mt-4 grid gap-2">
             {isLoading ? (
@@ -502,6 +586,8 @@ export function OwnerMembersPage() {
                   key={m.id}
                   member={m}
                   onClick={() => navigate(`/enterprise/members/${m.id}`)}
+                  onResendInvite={handleResendSingle}
+                  isResending={resendingId === m.id}
                 />
               ))
             )}
@@ -547,7 +633,11 @@ export function OwnerMembersPage() {
         </section>
       </div>
 
-      <InviteMembersModal open={inviting} onClose={() => setInviting(false)} />
+      <InviteMembersModal
+        open={inviting}
+        onClose={() => setInviting(false)}
+        defaultDepartmentId={departmentId || undefined}
+      />
     </div>
   );
 }

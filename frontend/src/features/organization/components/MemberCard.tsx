@@ -1,12 +1,15 @@
+import { Mail } from 'lucide-react';
 import type { MemberListItem } from '@/services/member.service';
 import { rolesLabel, MEMBER_STATUS_LABELS } from '@/features/members/member-labels';
 
 interface MemberCardProps {
   member: MemberListItem;
   onClick?: () => void;
+  onResendInvite?: (member: MemberListItem) => void;
+  isResending?: boolean;
 }
 
-export function MemberCard({ member, onClick }: MemberCardProps) {
+export function MemberCard({ member, onClick, onResendInvite, isResending }: MemberCardProps) {
   const initials = member.fullName
     .split(' ')
     .map((w) => w[0])
@@ -86,6 +89,23 @@ export function MemberCard({ member, onClick }: MemberCardProps) {
         >
           {rolesLabel(member.roles)}
         </span>
+
+        {/* Nút gửi lời mời trực tiếp cho nhân viên chưa kích hoạt */}
+        {(member.status === 'PENDING' || member.kind === 'invitation') && onResendInvite && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onResendInvite(member);
+            }}
+            disabled={isResending}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50/80 hover:bg-blue-100 hover:border-blue-300 px-2.5 py-1 text-[11px] font-bold text-blue-700 transition-all hover:scale-102 active:scale-98 disabled:opacity-50"
+            title="Gửi email mời kích hoạt tài khoản cho nhân viên này"
+          >
+            <Mail className="size-3.5 text-blue-600" />
+            <span>{isResending ? 'Đang gửi...' : 'Gửi lời mời'}</span>
+          </button>
+        )}
       </div>
     </button>
   );
