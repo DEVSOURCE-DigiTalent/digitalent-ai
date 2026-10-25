@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
+import { Eye, EyeOff } from 'lucide-react';
 import { z } from 'zod';
 import { PulseAuthLayout } from '@/features/public/pulse-landing/PulseAuthLayout';
 import { useLogin } from '@/hooks/use-auth';
@@ -95,6 +96,8 @@ function ActivationForm({ token, email, fullName, organizationName, roleLabel, d
   const navigate = useNavigate();
   const login = useLogin();
   const [submitError, setSubmitError] = useState<string>();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const {
     register,
     handleSubmit,
@@ -128,10 +131,63 @@ function ActivationForm({ token, email, fullName, organizationName, roleLabel, d
 
       <form onSubmit={onSubmit} noValidate className="pulse-auth-fields">
         {submitError && <p role="alert" className="pulse-auth-error">{submitError}</p>}
-        <div className="pulse-auth-field"><label htmlFor="email">Email nhận lời mời</label><input id="email" type="email" value={email} readOnly /><span className="pulse-auth-field-hint">Địa chỉ này sẽ dùng để đăng nhập.</span></div>
-        <div className="pulse-auth-field"><label htmlFor="fullName">Họ và tên</label><input id="fullName" autoComplete="name" aria-invalid={!!errors.fullName} {...register('fullName')} />{errors.fullName && <p role="alert" className="pulse-auth-inline-error">{errors.fullName.message}</p>}</div>
-        <div className="pulse-auth-field"><label htmlFor="password">Mật khẩu mới</label><input id="password" type="password" autoComplete="new-password" placeholder="Tối thiểu 12 ký tự" aria-invalid={!!errors.password} {...register('password')} /><span className="pulse-auth-field-hint">Từ 12 đến 128 ký tự.</span>{errors.password && <p role="alert" className="pulse-auth-inline-error">{errors.password.message}</p>}</div>
-        <div className="pulse-auth-field"><label htmlFor="confirmPassword">Nhập lại mật khẩu</label><input id="confirmPassword" type="password" autoComplete="new-password" aria-invalid={!!errors.confirmPassword} {...register('confirmPassword')} />{errors.confirmPassword && <p role="alert" className="pulse-auth-inline-error">{errors.confirmPassword.message}</p>}</div>
+        <div className="pulse-auth-field">
+          <label htmlFor="email">Email nhận lời mời</label>
+          <input id="email" type="email" value={email} readOnly />
+          <span className="pulse-auth-field-hint">Địa chỉ này sẽ dùng để đăng nhập.</span>
+        </div>
+        <div className="pulse-auth-field">
+          <label htmlFor="fullName">Họ và tên</label>
+          <input id="fullName" autoComplete="name" aria-invalid={!!errors.fullName} {...register('fullName')} />
+          {errors.fullName && <p role="alert" className="pulse-auth-inline-error">{errors.fullName.message}</p>}
+        </div>
+        <div className="pulse-auth-field">
+          <label htmlFor="password">Mật khẩu mới</label>
+          <div className="pulse-auth-input-wrap">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              placeholder="Tối thiểu 12 ký tự"
+              aria-invalid={!!errors.password}
+              {...register('password')}
+            />
+            <button
+              type="button"
+              className="pulse-auth-icon-button"
+              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              onClick={() => setShowPassword((v) => !v)}
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+            </button>
+          </div>
+          <span className="pulse-auth-field-hint">Từ 12 đến 128 ký tự.</span>
+          {errors.password && <p role="alert" className="pulse-auth-inline-error">{errors.password.message}</p>}
+        </div>
+        <div className="pulse-auth-field">
+          <label htmlFor="confirmPassword">Nhập lại mật khẩu</label>
+          <div className="pulse-auth-input-wrap">
+            <input
+              id="confirmPassword"
+              type={showConfirmPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              placeholder="Nhập lại mật khẩu vừa đặt"
+              aria-invalid={!!errors.confirmPassword}
+              {...register('confirmPassword')}
+            />
+            <button
+              type="button"
+              className="pulse-auth-icon-button"
+              aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              onClick={() => setShowConfirmPassword((v) => !v)}
+              tabIndex={-1}
+            >
+              {showConfirmPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+            </button>
+          </div>
+          {errors.confirmPassword && <p role="alert" className="pulse-auth-inline-error">{errors.confirmPassword.message}</p>}
+        </div>
         <button type="submit" disabled={isSubmitting} className="pulse-auth-primary">
           {isSubmitting ? 'Đang kích hoạt…' : 'Kích hoạt và vào hệ thống'}
         </button>
