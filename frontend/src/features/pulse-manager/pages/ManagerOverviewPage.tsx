@@ -70,20 +70,24 @@ export function ManagerOverviewPage() {
   const flagged = queue.filter((item) => item.status === 'FLAGGED' || item.status === 'DEADLINE_MISSED').length;
   // Cùng cách đếm với số nhân sự của phòng ban: chỉ người đang làm việc.
   const headcount = team.isSuccess ? people.filter((row) => row.status === 'ACTIVE').length : department.headcount;
+  const measuredPeople = people.filter((p) => p.coveragePercent !== null && p.coveragePercent !== undefined);
+  const deptCoverage = measuredPeople.length > 0
+    ? Math.round(measuredPeople.reduce((acc, p) => acc + (p.coveragePercent ?? 0), 0) / measuredPeople.length)
+    : (team.isSuccess ? 0 : null);
 
   return (
     <ManagerPage testId="manager-overview">
       <PageHead
-        eyebrow={`Quản lý đội / ${department.name}`}
-        title="Quyết định việc cần ưu tiên."
-        description="Không gian làm việc chỉ hiển thị phòng ban của bạn, từ khoảng cách năng lực đến minh chứng khóa học."
+        eyebrow={`Quản lý đội ngũ · ${department.name}`}
+        title="Bàn làm việc Quản lý"
+        description="Theo dõi tiến độ học tập, thẩm định minh chứng và đánh giá độ phủ năng lực số của phòng ban theo Thông tư 02."
       />
 
       <section className="pm-hero" aria-label="Việc của quản lý hôm nay">
         <div>
-          <span className="pm-hero-eyebrow">Quản lý / {department.name}</span>
-          <h2>Đọc minh chứng. <em>Ghi quyết định rõ ràng.</em></h2>
-          <p>Chấm bài cuối mỗi khóa, theo dõi lượt nộp thứ hai có giới hạn thời gian và so với mục tiêu vị trí.</p>
+          <span className="pm-hero-eyebrow">Quản lý chuyên môn · {department.name}</span>
+          <h2>Thẩm định minh chứng. <em>Ra quyết định rõ ràng.</em></h2>
+          <p>Chấm bài tập thực hành cuối khóa, kiểm soát nguy cơ gian lận và đồng hành giúp nhân viên đạt chuẩn năng lực số theo Thông tư 02.</p>
           <div className="pu-row">
             {canReview && <Link to={MANAGER_PATHS.finalReviews} className={btn('light')}>Mở hàng chờ bài cuối khóa</Link>}
             <Link to={MANAGER_PATHS.capability} className={btn('on-dark')}>Xem năng lực đội ngũ</Link>
@@ -93,11 +97,12 @@ export function ManagerOverviewPage() {
       </section>
 
       <KpiRow
-        label="Tình hình phòng ban"
+        label="Chỉ số vận hành phòng ban"
         items={[
-          { value: reviewsReady ? pending : '—', label: 'Bài chờ quyết định', muted: !reviewsReady },
-          { value: reviewsReady ? flagged : '—', label: 'Cờ hỗ trợ sau hai lần chưa đạt', muted: !reviewsReady },
-          { value: headcount ?? '—', label: `Nhân viên đang làm việc · ${department.name}`, muted: headcount == null },
+          { value: reviewsReady ? pending : '—', label: 'Bài thi chờ quyết định', muted: !reviewsReady },
+          { value: reviewsReady ? flagged : '—', label: 'Cảnh báo & Quá hạn', muted: !reviewsReady },
+          { value: deptCoverage !== null ? `${deptCoverage}%` : '—', label: 'Độ phủ năng lực vị trí', muted: deptCoverage === null },
+          { value: headcount ?? '—', label: 'Nhân sự đang làm việc', muted: headcount == null },
         ]}
       />
 

@@ -151,28 +151,21 @@ export function OwnerMembersPage() {
               className="text-[10px] font-black uppercase tracking-[0.14em]"
               style={{ color: 'var(--po-accent)' }}
             >
-              02 / Nhân sự và lộ trình
+              Nhân sự & Phân quyền
               <i
                 className="ml-[7px] inline-block size-1.5 rounded-full align-middle"
                 style={{ background: 'var(--po-coral)' }}
               />
             </span>
             <h1
-              className="mt-3 font-bold leading-[1.05]"
-              style={{
-                fontSize: 'clamp(33px, 4vw, 55px)',
-                color: 'var(--po-ink)',
-                letterSpacing: '-0.06em',
-              }}
+              className="mt-2 text-2xl md:text-3xl font-bold tracking-tight text-slate-900"
             >
-              Đúng người, đúng vị trí, đúng mục tiêu.
+              Danh sách Thành viên
             </h1>
             <p
-              className="mt-2 text-[13px] leading-relaxed"
-              style={{ color: 'var(--po-muted)', maxWidth: 560 }}
+              className="mt-1 text-xs md:text-sm text-slate-600 max-w-xl leading-relaxed"
             >
-              Thiết lập Manager cho phòng ban, mời nhân viên theo vị trí.
-              Phòng ban xác định phạm vi; vị trí xác định mục tiêu học tập.
+              Quản lý danh sách nhân sự, phân quyền vai trò (Owner, Manager, Employee), gán phòng ban và vị trí công việc theo chuẩn năng lực số TT02.
             </p>
           </div>
           {seats != null && seatsUsed != null && (
@@ -213,7 +206,7 @@ export function OwnerMembersPage() {
           }
         >
           {published
-            ? 'Kiến trúc năng lực đã công bố. Mời nhân viên vào đúng phòng ban và vị trí để hệ thống định tuyến lộ trình học tập.'
+            ? 'Khung năng lực số đã được kích hoạt. Hãy phân công đúng phòng ban và vị trí để hệ thống thiết lập lộ trình học tập tự động cho từng nhân viên.'
             : 'Công bố kiến trúc năng lực trước khi gửi lời mời nhân viên.'}
         </div>
 
@@ -430,7 +423,7 @@ export function OwnerMembersPage() {
                 className="mt-2 text-xl font-semibold"
                 style={{ color: 'var(--po-ink)', letterSpacing: '-0.045em' }}
               >
-                Nhân viên theo phòng ban và vị trí.
+                Tất cả nhân sự trong tổ chức
               </h2>
             </div>
             <div className="flex items-center gap-2.5 flex-wrap">
@@ -469,7 +462,7 @@ export function OwnerMembersPage() {
               type="text"
               value={search}
               onChange={(e) => resetPage(setSearch)(e.target.value)}
-              placeholder="Tìm theo tên, email…"
+              placeholder="Tìm theo tên, email hoặc mã nhân viên..."
               className="rounded-lg border px-3 py-2 text-xs outline-none focus:ring-1"
               style={{
                 borderColor: 'var(--po-line)',

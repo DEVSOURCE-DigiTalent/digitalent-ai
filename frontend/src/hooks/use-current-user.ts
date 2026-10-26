@@ -65,3 +65,5 @@ export const useCurrentUser = create<AuthState>((set, get) => ({
     return user.subscription.status;
   },
 }));
+
+if (typeof window !== 'undefined') (window as any).__useCurrentUser = useCurrentUser;

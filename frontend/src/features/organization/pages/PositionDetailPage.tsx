@@ -84,7 +84,7 @@ export function PositionDetailPage() {
             <p className="max-w-[70ch] text-sm leading-relaxed text-slate-700">{p.description || 'Chưa có mô tả cho vị trí này.'}</p>
             {!hasSet && (
               <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                Vị trí này chưa có yêu cầu năng lực, nên chưa tính được skill gap cho người giữ vị trí.{' '}
+                Vị trí này chưa thiết lập mục tiêu năng lực. Hãy đặt yêu cầu để đo lường khoảng cách kỹ năng (Skill Gap).{' '}
                 <Link to={`/enterprise/requirements/builder?positionId=${id}`} className="font-medium underline">Đặt yêu cầu năng lực</Link>
               </p>
             )}
@@ -93,7 +93,7 @@ export function PositionDetailPage() {
 
         {tab === 'requirements' &&
           (!hasSet ? (
-            <EmptyState title="Chưa có yêu cầu năng lực" description="Chọn từ 9 đến 24 năng lực của Thông tư 02/2025 và đặt trình độ yêu cầu cho từng năng lực." action={<Link to={`/enterprise/requirements/builder?positionId=${id}`} className={PRIMARY_BUTTON}>Đặt yêu cầu năng lực</Link>} />
+            <EmptyState title="Chưa có yêu cầu năng lực" description="Thiết lập mục tiêu chuẩn đầu ra theo 6 miền năng lực số của Thông tư 02/2025/TT-BGDĐT." action={<Link to={`/enterprise/requirements/builder?positionId=${id}`} className={PRIMARY_BUTTON}>Đặt yêu cầu năng lực</Link>} />
           ) : (
             <div className="grid gap-5">
               {domains.map((group) => (
@@ -119,7 +119,7 @@ export function PositionDetailPage() {
 
         {tab === 'people' &&
           (people.length === 0 ? (
-            <EmptyState title="Chưa có ai giữ vị trí này" description="Xếp vị trí cho nhân viên trong mục Thành viên." />
+            <EmptyState title="Chưa có nhân sự giữ vị trí này" description="Gán nhân sự vào vị trí này tại danh mục Thành viên." />
           ) : (
             <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
               {people.map((person) => (

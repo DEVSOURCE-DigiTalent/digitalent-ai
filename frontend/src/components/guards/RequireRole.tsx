@@ -11,10 +11,16 @@ interface RequireRoleProps {
 
 /**
  * Route guard that checks if the current user has at least one of the given roles.
+ * Waits for session hydration if tokens exist before making an access decision.
  * Renders fallback (default: ForbiddenPage) when denied.
  */
 export function RequireRole({ roles, children, fallback }: RequireRoleProps) {
-  const { is } = usePermission();
+  const { is, user } = usePermission();
+  const hasSession = Boolean(localStorage.getItem('accessToken') || localStorage.getItem('refreshToken'));
+
+  if (hasSession && !user) {
+    return null;
+  }
 
   const allowed = roles.some((role) => is(role));
 
