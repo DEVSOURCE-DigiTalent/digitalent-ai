@@ -121,6 +121,8 @@
 .pm-kpi:nth-child(4) strong { color: #4f46e5; }
 .pm-kpi span { display: block; margin-top: 10px; color: #69758f; font-size: 11px; }
 .pm-kpi.muted strong { color: #9aa6b8; }
+.pm-kpi span.pm-kpi-label-row { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; color: #69758f; font-size: 11px; }
+.pm-kpi-info-icon { display: inline-grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: #e2e8f0; font-size: 9px; font-weight: 700; color: #64748b; line-height: 1; cursor: help; }
 
 /* ── Thẻ việc cụ thể ────────────────────────────────────────────────────── */
 .pm-section-title { margin: 6px 0 16px; font-size: clamp(25px, 3vw, 33px); line-height: 1.12; letter-spacing: -.055em; }

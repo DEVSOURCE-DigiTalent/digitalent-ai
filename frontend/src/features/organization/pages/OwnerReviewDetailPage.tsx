@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { EvidencePreviewModal } from '@/components/shared/EvidencePreviewModal';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, CheckCircle2, AlertTriangle, XCircle, ExternalLink, Send,
@@ -40,6 +41,8 @@ export function OwnerReviewDetailPage() {
   const [rubricScores, setRubricScores] = useState<Record<string, number>>({});
   const [feedback, setFeedback] = useState('');
   const [decision, setDecision] = useState<'APPROVED' | 'REVISION_REQUESTED' | 'REJECTED'>('APPROVED');
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const feedbackRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (task?.rubricCriteria) {
@@ -72,6 +75,43 @@ export function OwnerReviewDetailPage() {
       toast.error(apiErrorMessage(error, 'Không thể lưu kết quả.'));
     }
   };
+
+useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (previewUrl) {
+        if (e.key === 'Escape') setPreviewUrl(null);
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!alreadyEvaluated) {
+          const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+          handleSubmit(fakeEvent);
+        }
+        return;
+      }
+      if (e.altKey) {
+        if (e.key.toLowerCase() === 'a') {
+          e.preventDefault();
+          setDecision('APPROVED');
+          toast.info('Phím tắt [Alt+A]: Đã chọn Đạt bài thực hành');
+        } else if (e.key.toLowerCase() === 'r') {
+          e.preventDefault();
+          setDecision('REVISION_REQUESTED');
+          toast.info('Phím tắt [Alt+R]: Đã chọn Yêu cầu sửa lại');
+        } else if (e.key.toLowerCase() === 'j') {
+          e.preventDefault();
+          setDecision('REJECTED');
+          toast.info('Phím tắt [Alt+J]: Đã chọn Không đạt');
+        } else if (e.key.toLowerCase() === 'f') {
+          e.preventDefault();
+          feedbackRef.current?.focus();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [alreadyEvaluated, previewUrl, totalScore, feedback, rubricScores, decision]);
 
   if (subLoading || taskLoading) {
     return (
@@ -113,9 +153,9 @@ export function OwnerReviewDetailPage() {
   }
 
   const DECISIONS = [
-    { key: 'APPROVED' as const, label: 'Đạt bài thực hành', desc: 'Ghi nhận kết quả', Icon: CheckCircle2, colors: { active: '#16a34a', bg: '#ecfdf5', border: '#bbf7d0' } },
-    { key: 'REVISION_REQUESTED' as const, label: 'Yêu cầu sửa lại', desc: 'Cần bổ sung minh chứng', Icon: AlertTriangle, colors: { active: '#d97706', bg: '#fef3c7', border: '#fdddb6' } },
-    { key: 'REJECTED' as const, label: 'Không đạt', desc: 'Cần học tập lại', Icon: XCircle, colors: { active: '#dc2626', bg: '#fee2e2', border: '#fecaca' } },
+    { key: 'APPROVED' as const, label: 'Đạt bài thực hành', desc: 'Ghi nhận kết quả', shortcut: 'Alt+A', Icon: CheckCircle2, colors: { active: '#16a34a', bg: '#ecfdf5', border: '#bbf7d0' } },
+    { key: 'REVISION_REQUESTED' as const, label: 'Yêu cầu sửa lại', desc: 'Cần bổ sung minh chứng', shortcut: 'Alt+R', Icon: AlertTriangle, colors: { active: '#d97706', bg: '#fef3c7', border: '#fdddb6' } },
+    { key: 'REJECTED' as const, label: 'Không đạt', desc: 'Cần học tập lại', shortcut: 'Alt+J', Icon: XCircle, colors: { active: '#dc2626', bg: '#fee2e2', border: '#fecaca' } },
   ];
 
   return (
@@ -176,28 +216,84 @@ export function OwnerReviewDetailPage() {
               </div>
             </div>
 
-            {submission.linkUrls && submission.linkUrls.length > 0 && (
-              <div>
-                <span className="text-[10px] font-bold uppercase" style={{ color: 'var(--po-muted)' }}>
-                  Đường dẫn đính kèm
-                </span>
-                <div className="mt-1 space-y-1.5">
-                  {submission.linkUrls.map((url: string, i: number) =>
-                    /^https?:\/\//i.test(url) ? (
-                      <a
-                        key={i}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-[10px] font-medium truncate"
-                        style={{ background: 'var(--po-soft)', color: 'var(--po-accent)' }}
-                      >
-                        <ExternalLink className="size-3 shrink-0" />
-                        <span className="truncate">{url}</span>
-                      </a>
-                    ) : null,
-                  )}
-                </div>
+            {/* Tệp minh chứng & Liên kết */}
+            {((submission.fileUrls && submission.fileUrls.length > 0) || (submission.linkUrls && submission.linkUrls.length > 0)) && (
+              <div className="space-y-3 pt-2" style={{ borderTop: '1px solid var(--po-line)' }}>
+                {submission.fileUrls && submission.fileUrls.length > 0 && (
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: 'var(--po-muted)' }}>
+                      Tệp minh chứng đính kèm ({submission.fileUrls.length})
+                    </span>
+                    <div className="grid sm:grid-cols-2 gap-2">
+                      {submission.fileUrls.map((url: string, i: number) => {
+                        const name = url.split('/').pop()?.split('?')[0] || `Tệp minh chứng #${i + 1}`;
+                        const isImg = /\.(png|jpe?g|gif|webp|svg)$/i.test(url);
+                        return (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50/70 p-2.5 transition-all hover:bg-white hover:shadow-xs"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="grid size-7 place-items-center rounded-lg bg-blue-100 text-blue-700 text-xs shrink-0">
+                                {isImg ? '🖼️' : '📄'}
+                              </span>
+                              <span className="truncate text-xs font-medium text-slate-800" title={name}>
+                                {name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => setPreviewUrl(url)}
+                                className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 cursor-pointer"
+                              >
+                                Xem trước
+                              </button>
+                              <a
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded-lg p-1 text-slate-400 hover:text-slate-700"
+                                title="Mở liên kết"
+                              >
+                                <ExternalLink className="size-3.5" />
+                              </a>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {submission.linkUrls && submission.linkUrls.length > 0 && (
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: 'var(--po-muted)' }}>
+                      Đường dẫn đính kèm ({submission.linkUrls.length})
+                    </span>
+                    <div className="space-y-1.5">
+                      {submission.linkUrls.map((url: string, i: number) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-[11px] font-medium"
+                          style={{ background: 'var(--po-soft)', color: 'var(--po-accent)' }}
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <ExternalLink className="size-3.5 shrink-0" />
+                            <span className="truncate">{url}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setPreviewUrl(url)}
+                            className="shrink-0 text-[10px] font-bold underline hover:opacity-80 cursor-pointer ml-2"
+                          >
+                            Xem trước
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </section>
@@ -278,15 +374,19 @@ export function OwnerReviewDetailPage() {
                   Nhận xét & quyết định
                 </p>
 
-                <textarea
-                  rows={3}
+                <div className="relative">
+                  <textarea
+                    ref={feedbackRef}
+                    rows={3}
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
-                  placeholder="Điểm mạnh, điểm cần cải thiện, yêu cầu bổ sung…"
+                  placeholder="Điểm mạnh, điểm cần cải thiện, yêu cầu bổ sung… [Nhấn Alt+F để chuyển nhanh]"
                   required
                   className="w-full rounded-lg border px-3 py-2 text-xs outline-none resize-none"
                   style={inputStyle}
-                />
+                  />
+                  <span className="absolute bottom-2 right-2 text-[10px] text-slate-400 font-mono">Alt+F</span>
+                </div>
 
                 <div className="grid sm:grid-cols-3 gap-3">
                   {DECISIONS.map(({ key, label, desc, Icon, colors }) => (
@@ -339,6 +439,12 @@ export function OwnerReviewDetailPage() {
           </div>
         </form>
       </div>
+
+      <EvidencePreviewModal
+        open={Boolean(previewUrl)}
+        onClose={() => setPreviewUrl(null)}
+        url={previewUrl}
+      />
     </div>
   );
 }

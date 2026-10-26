@@ -99,10 +99,30 @@ export function ManagerOverviewPage() {
       <KpiRow
         label="Chỉ số vận hành phòng ban"
         items={[
-          { value: reviewsReady ? pending : '—', label: 'Bài thi chờ quyết định', muted: !reviewsReady },
-          { value: reviewsReady ? flagged : '—', label: 'Cảnh báo & Quá hạn', muted: !reviewsReady },
-          { value: deptCoverage !== null ? `${deptCoverage}%` : '—', label: 'Độ phủ năng lực vị trí', muted: deptCoverage === null },
-          { value: headcount ?? '—', label: 'Nhân sự đang làm việc', muted: headcount == null },
+          {
+            value: reviewsReady ? pending : '—',
+            label: 'Bài thi chờ quyết định',
+            tooltip: 'Số lượng bài đánh giá đầu vào hoặc bài thi cuối khóa của nhân sự phòng ban đang chờ thẩm định.',
+            muted: !reviewsReady,
+          },
+          {
+            value: reviewsReady ? flagged : '—',
+            label: 'Cảnh báo & Quá hạn',
+            tooltip: 'Nhân sự quá hạn nộp lại bài thi hoặc cần can thiệp kèm cặp (Coaching).',
+            muted: !reviewsReady,
+          },
+          {
+            value: deptCoverage !== null ? `${deptCoverage}%` : '—',
+            label: 'Độ phủ năng lực vị trí',
+            tooltip: 'Tỷ lệ % các miền năng lực số TT02 của nhân sự phòng ban đạt mức chuẩn chức danh yêu cầu.',
+            muted: deptCoverage === null,
+          },
+          {
+            value: headcount ?? '—',
+            label: 'Nhân sự đang làm việc',
+            tooltip: 'Tổng số nhân sự trực thuộc phòng ban đang hoạt động trên hệ thống.',
+            muted: headcount == null,
+          },
         ]}
       />
 
