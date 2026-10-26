@@ -14,6 +14,7 @@ import type { MemberListItem, MemberStatus } from '@/services/member.service';
 import { InviteMembersModal } from '@/features/members/components/InviteMembersModal';
 import { MEMBER_STATUS_LABELS } from '@/features/members/member-labels';
 import { MemberCard } from '../components/MemberCard';
+import { SendAnnouncementModal } from '../components/SendAnnouncementModal';
 
 const PULSE_TOKENS = {
   '--po-canvas': '#f7f9fd',
@@ -51,6 +52,7 @@ export function OwnerMembersPage() {
   const [departmentId, setDepartmentId] = useState('');
   const [page, setPage] = useState(1);
   const [inviting, setInviting] = useState(false);
+  const [announcing, setAnnouncing] = useState(false);
 
   const { data: orgData } = useOrganizationOverview();
   const departments =
@@ -429,12 +431,34 @@ export function OwnerMembersPage() {
                 Nhân viên theo phòng ban và vị trí.
               </h2>
             </div>
-            <p
-              className="text-xs tabular-nums"
-              style={{ color: 'var(--po-muted)' }}
-            >
-              {data?.totalItems ?? 0} thành viên
-            </p>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span
+                className="text-xs tabular-nums mr-1"
+                style={{ color: 'var(--po-muted)' }}
+              >
+                {data?.totalItems ?? 0} thành viên
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setAnnouncing(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100/70 text-[#304bdf] text-xs font-bold transition-all shadow-xs"
+              >
+                <Send className="size-3.5" />
+                Gửi thông báo & Hạn chót
+              </button>
+
+              {canInvite && (
+                <button
+                  type="button"
+                  onClick={() => setInviting(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#304bdf] hover:bg-[#203bbf] text-white text-xs font-bold transition-all shadow-xs"
+                >
+                  <UserPlus className="size-3.5" />
+                  Mời nhân sự
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Filters */}
@@ -638,6 +662,13 @@ export function OwnerMembersPage() {
         onClose={() => setInviting(false)}
         defaultDepartmentId={departmentId || undefined}
       />
+
+      {announcing && (
+        <SendAnnouncementModal
+          open={announcing}
+          onClose={() => setAnnouncing(false)}
+        />
+      )}
     </div>
   );
 }
