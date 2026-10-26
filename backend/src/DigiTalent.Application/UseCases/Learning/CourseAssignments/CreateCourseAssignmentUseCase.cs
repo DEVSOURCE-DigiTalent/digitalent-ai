@@ -4,6 +4,7 @@ using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace DigiTalent.Application.UseCases.Learning.CourseAssignments;
 
@@ -11,11 +12,22 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUser _currentUser;
+    private readonly INotificationSender _notificationSender;
+    private readonly IAppEmailSender _emailSender;
+    private readonly ILogger<CreateCourseAssignmentUseCase> _logger;
 
-    public CreateCourseAssignmentUseCase(IApplicationDbContext context, ICurrentUser currentUser)
+    public CreateCourseAssignmentUseCase(
+        IApplicationDbContext context,
+        ICurrentUser currentUser,
+        INotificationSender notificationSender,
+        IAppEmailSender emailSender,
+        ILogger<CreateCourseAssignmentUseCase> logger)
     {
         _context = context;
         _currentUser = currentUser;
+        _notificationSender = notificationSender;
+        _emailSender = emailSender;
+        _logger = logger;
     }
 
     public async Task<CreateCourseAssignmentOutput> ExecuteAsync(CreateCourseAssignmentInput input)
@@ -137,10 +149,94 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
                 ProgressPercent = 0,
                 Source = "MANUAL",
             });
+
+            if (emp.UserId.HasValue)
+            {
+                var notiTitle = $"Khóa học mới: {course.Title}";
+                var notiMsg = dueDate.HasValue
+                    ? $"Bạn vừa được phân công khóa học '{course.Title}'. Hạn hoàn thành: {dueDate.Value:dd/MM/yyyy}."
+                    : $"Bạn vừa được phân công khóa học '{course.Title}'.";
+
+                _context.Notifications.Add(new Notification
+                {
+                    RecipientUserId = emp.UserId.Value,
+                    Type = "COURSE_ASSIGNMENT",
+                    Title = notiTitle,
+                    Message = notiMsg,
+                    RelatedEntityType = "COURSE",
+                    RelatedEntityId = course.Id,
+                    IsRead = false,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    UpdatedAt = DateTimeOffset.UtcNow
+                });
+            }
         }
 
         if (output.Created.Count > 0)
+        {
             await _context.SaveChangesAsync();
+
+            // Gửi SignalR và Email ngầm sau khi lưu thành công vào database
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    foreach (var row in output.Created)
+                    {
+                        var emp = targetEmployees.FirstOrDefault(e => e.Id == row.EmployeeId);
+                        if (emp == null) continue;
+
+                        if (emp.UserId.HasValue)
+                        {
+                            try
+                            {
+                                await _notificationSender.SendNotificationToUserAsync(
+                                    emp.UserId.Value,
+                                    $"Khóa học mới: {course.Title}",
+                                    dueDate.HasValue
+                                        ? $"Bạn vừa được phân công khóa học '{course.Title}'. Hạn hoàn thành: {dueDate.Value:dd/MM/yyyy}."
+                                        : $"Bạn vừa được phân công khóa học '{course.Title}'.",
+                                    "COURSE_ASSIGNMENT");
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogWarning(ex, "[CreateCourseAssignmentUseCase] Realtime notification failed for user {UserId}", emp.UserId.Value);
+                            }
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(emp.WorkEmail))
+                        {
+                            var htmlBody = $@"
+<!DOCTYPE html>
+<html>
+<head><meta charset='utf-8'></head>
+<body style='font-family: sans-serif; background-color: #f7f9fd; padding: 24px; color: #172442;'>
+    <div style='max-width: 600px; margin: 0 auto; background: #fff; border-radius: 16px; padding: 32px; border: 1px solid #dfe6f3;'>
+        <h2 style='color: #304bdf; margin-top: 0;'>DigiTalent AI</h2>
+        <h3 style='color: #172442;'>Thông báo phân công khóa học</h3>
+        <p>Kính gửi <strong>{emp.FullName}</strong>,</p>
+        <p>Bạn vừa được phân công tham gia khóa học: <strong>{course.Code} · {course.Title}</strong>.</p>
+        {(dueDate.HasValue ? $"<div style='background: #fff7ed; border-left: 4px solid #f97316; padding: 12px; margin: 16px 0;'><strong>Hạn hoàn thành:</strong> {dueDate.Value:dd/MM/yyyy}</div>" : "")}
+        <p style='text-align: center; margin-top: 24px;'>
+            <a href='http://localhost:5173/enterprise/my-learning' style='background: #304bdf; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;'>Bắt đầu học ngay</a>
+        </p>
+    </div>
+</body>
+</html>";
+                            await _emailSender.SendEmailAsync(
+                                emp.WorkEmail,
+                                emp.FullName,
+                                $"[DigiTalent AI] Phân công khóa học: {course.Title}",
+                                htmlBody);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[CreateCourseAssignmentUseCase] Error during async notification dispatch.");
+                }
+            });
+        }
 
         return output;
     }
