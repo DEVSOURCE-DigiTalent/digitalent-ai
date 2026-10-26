@@ -110,6 +110,15 @@ public class CapabilityCeilingReader
             .Max();
 
         var allPositions = requirementByPosition.Keys.Concat(referenceByPosition.Keys).Distinct().ToList();
+
+        // Tải các đơn mua suất học của doanh nghiệp để xác định bản quyền đã mở
+        var seatOrders = await (
+            from o in _context.CourseSeatOrders.AsNoTracking()
+            join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
+            where o.OrganizationId == organizationId
+            select new { pc.Code, pc.Level, o.Seats, pc.PricePerSeat }
+        ).ToListAsync();
+
         var output = new T
         {
             PlatformMaxLevel = CapabilityCeiling.MaxLevel,
@@ -125,6 +134,39 @@ public class CapabilityCeilingReader
             // Chưa lưu: hiển thị gợi ý (ít nhất cấp Cơ bản) để doanh nghiệp xác nhận.
             var ceiling = orgRows.TryGetValue(domain.Id, out var row) ? row.CeilingLevel : Math.Max(1, suggested);
             organizationCeilings[domain.Id] = ceiling;
+
+            var domainCourses = Enumerable.Range(1, CapabilityCeiling.MaxLevel).Select(level =>
+            {
+                var course = catalog.FirstOrDefault(c => c.CategoryId == domain.Id && c.Tier == level);
+                var rawCode = course?.Code;
+                // Chuẩn hóa hiển thị tiền tố M (M1-F, M1-I, M1-A...) theo yêu cầu doanh nghiệp
+                var displayCode = rawCode;
+                if (!string.IsNullOrEmpty(displayCode) && displayCode.StartsWith("A", StringComparison.OrdinalIgnoreCase) && displayCode.Length > 2 && char.IsDigit(displayCode[1]))
+                {
+                    displayCode = "M" + displayCode[1..];
+                }
+
+                // Cấp 1 (Cơ bản) luôn mở miễn phí 100%. Cấp 2 và Cấp 3 mở khi có suất học hoặc đã thiết lập trần.
+                var seats = level == 1
+                    ? 999
+                    : seatOrders.Where(so => so.Level == level && (rawCode == null || so.Code == rawCode || (displayCode != null && so.Code == displayCode))).Sum(so => so.Seats);
+                var isUnlocked = level == 1 || seats > 0 || ceiling >= level;
+                var price = level == 3 ? 699000L : (level == 2 ? 399000L : 0L);
+
+                return new CeilingCourseDto
+                {
+                    Level = level,
+                    CourseId = course?.CourseId,
+                    Code = displayCode,
+                    Title = course?.Title,
+                    IsUnlocked = isUnlocked,
+                    SeatsPurchased = seats == 999 ? 0 : seats,
+                    PricePerSeat = price
+                };
+            }).ToList();
+
+            var maxAllowed = Math.Max(1, Math.Max(ceiling, domainCourses.Where(c => c.IsUnlocked).Select(c => c.Level).DefaultIfEmpty(1).Max()));
+
             output.Domains.Add(new CeilingDomainDto
             {
                 CategoryId = domain.Id,
@@ -132,12 +174,9 @@ public class CapabilityCeilingReader
                 Name = PulseLearnerReader.DisplayName(domain.Name),
                 SortOrder = domain.SortOrder,
                 OrganizationCeiling = ceiling,
+                MaxAllowedCeiling = maxAllowed,
                 SuggestedCeiling = suggested,
-                Courses = Enumerable.Range(1, CapabilityCeiling.MaxLevel).Select(level =>
-                {
-                    var course = catalog.FirstOrDefault(c => c.CategoryId == domain.Id && c.Tier == level);
-                    return new CeilingCourseDto { Level = level, CourseId = course?.CourseId, Code = course?.Code, Title = course?.Title };
-                }).ToList(),
+                Courses = domainCourses,
             });
         }
 

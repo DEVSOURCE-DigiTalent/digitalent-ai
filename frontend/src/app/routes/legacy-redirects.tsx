@@ -40,6 +40,8 @@ export const legacyRedirectRoutes: RouteObject[] = [
   { path: '/courses', element: <RedirectWithQuery to="/enterprise" /> },
 
   // ── Organization legacy paths ──
+  { path: '/organization/courses', element: <RedirectWithQuery to="/enterprise/courses" /> },
+  { path: '/organization/courses/:id', element: <LegacyParamRedirect toPrefix="/enterprise/courses" /> },
   { path: '/organization/departments', element: <RedirectWithQuery to="/enterprise/departments" /> },
   { path: '/organization/positions', element: <RedirectWithQuery to="/enterprise/positions" /> },
   { path: '/organization/employees', element: <RedirectWithQuery to="/enterprise/members" /> },

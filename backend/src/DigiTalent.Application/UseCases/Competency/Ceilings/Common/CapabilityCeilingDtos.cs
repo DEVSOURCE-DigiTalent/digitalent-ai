@@ -41,6 +41,9 @@ public class CeilingDomainDto
     /// <summary>Trần doanh nghiệp ở lĩnh vực này (0–3).</summary>
     public int OrganizationCeiling { get; set; }
 
+    /// <summary>Trần tối đa doanh nghiệp được phép thiết lập dựa trên bản quyền đã mua (mặc định 1 - Cơ bản trong gói dùng thử).</summary>
+    public int MaxAllowedCeiling { get; set; } = 1;
+
     /// <summary>Mức yêu cầu cao nhất của các vị trí đang có bộ yêu cầu ACTIVE.</summary>
     public int SuggestedCeiling { get; set; }
 
@@ -54,6 +57,11 @@ public class CeilingCourseDto
     public Guid? CourseId { get; set; }
     public string? Code { get; set; }
     public string? Title { get; set; }
+
+    /// <summary>Khóa học đã mở bản quyền cho doanh nghiệp (Cấp 1 luôn mở, Cấp 2/3 khi đã mua suất).</summary>
+    public bool IsUnlocked { get; set; } = true;
+    public int SeatsPurchased { get; set; }
+    public long PricePerSeat { get; set; }
 }
 
 public class CeilingDepartmentDto

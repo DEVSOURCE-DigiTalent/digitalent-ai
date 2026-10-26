@@ -17,6 +17,9 @@ export interface CeilingCourse {
   courseId: string | null;
   code: string | null;
   title: string | null;
+  isUnlocked?: boolean;
+  seatsPurchased?: number;
+  pricePerSeat?: number;
 }
 
 export interface CeilingDomain {
@@ -26,6 +29,8 @@ export interface CeilingDomain {
   sortOrder: number;
   /** Organization ceiling (0–3). */
   organizationCeiling: number;
+  /** Maximum ceiling allowed based on purchased licenses/seats (default 1 for free trial). */
+  maxAllowedCeiling?: number;
   /** Highest level required by the positions with an active requirement set. */
   suggestedCeiling: number;
   courses: CeilingCourse[];

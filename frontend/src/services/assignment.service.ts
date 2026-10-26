@@ -139,6 +139,8 @@ export interface PurchaseCourseSeatsResult {
   totalAmount: number;
   totalSeatsPurchased: number;
   totalSeatsAvailable: number;
+  checkoutUrl?: string;
+  qrCode?: string;
   createdAt?: string;
 }
 
