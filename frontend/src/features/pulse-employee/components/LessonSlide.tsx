@@ -18,7 +18,19 @@ function Sources({ body }: { body: string }) {
   })}</div>;
 }
 
-export function LessonSlide({ slide, index, count }: { slide: PulseSlide; courseCode: string; moduleIndex: number; index: number; count: number }) {
+export function LessonSlide({
+  slide,
+  courseCode = '',
+  moduleIndex = 1,
+  index,
+  count,
+}: {
+  slide: PulseSlide;
+  courseCode?: string;
+  moduleIndex?: number;
+  index: number;
+  count: number;
+}) {
   const headingId = useId();
   const uploaded = slide.media ?? [];
   const pictures = uploaded.filter(item => item.kind === 'IMAGE').map(item => ({ src: lessonMediaUrl(item.url), alt: item.alt || slide.title }));
@@ -31,7 +43,7 @@ export function LessonSlide({ slide, index, count }: { slide: PulseSlide; course
   const checks = sections.filter(section => /^Tự kiểm tra$/i.test(section.title.trim()));
   const sources = sections.filter(section => /^Nguồn tham khảo$/i.test(section.title.trim()));
 
-  const normalizedCourseCode = (slide.courseCode || courseCode || '').toUpperCase();
+  const normalizedCourseCode = (courseCode || '').toUpperCase();
   const courseSpecs = COURSE_MEDIA_SPECS[normalizedCourseCode] || COURSE_MEDIA_SPECS[normalizedCourseCode.replace(/^M/, 'A')];
   const specList = courseSpecs ? Object.values(courseSpecs)[moduleIndex - 1] || Object.values(courseSpecs)[0] : null;
   const mediaSpec = specList ? (specList[index] || specList[0]) : null;

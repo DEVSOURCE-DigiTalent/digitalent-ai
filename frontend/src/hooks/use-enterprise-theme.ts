@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { useEffect } from 'react';
 
-type Theme = 'light';
+export type Theme = 'light' | 'dark';
 
 interface ThemeStore {
   theme: Theme;
@@ -13,8 +13,8 @@ const STORAGE_KEY = 'dt-enterprise-theme';
 
 export const useEnterpriseThemeStore = create<ThemeStore>((set) => ({
   theme: 'light',
-  setTheme: () => set({ theme: 'light' }),
-  toggle: () => set({ theme: 'light' }),
+  setTheme: (theme) => set({ theme }),
+  toggle: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
 }));
 
 export function useEnterpriseTheme() {

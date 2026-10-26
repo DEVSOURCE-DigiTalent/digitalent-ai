@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
-  HelpCircle,
   Lightbulb,
   Sparkles,
   X,
