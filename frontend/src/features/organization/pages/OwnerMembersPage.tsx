@@ -39,10 +39,10 @@ const ROLE_LABELS: Record<string, string> = {
 
 export function OwnerMembersPage() {
   const navigate = useNavigate();
-  const user = useCurrentUser((s) => s.user)!;
+  const user = useCurrentUser((s) => s.user);
   const canInvite =
     useCurrentUser((s) => s.hasPermission)(PERMISSIONS.USER_CREATE) &&
-    assignableRoles(user.roles).length > 0;
+    assignableRoles(user?.roles ?? []).length > 0;
 
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<MemberStatus | ''>('');
@@ -66,8 +66,8 @@ export function OwnerMembersPage() {
     departmentId: departmentId || undefined,
   });
 
-  const seats = user.subscription?.seatLimit;
-  const seatsUsed = user.subscription?.seatsUsed;
+  const seats = user?.subscription?.seatLimit;
+  const seatsUsed = user?.subscription?.seatsUsed;
   const published = orgData?.setupCompleted ?? false;
 
   const totalPages = data ? Math.ceil(data.totalItems / PAGE_SIZE) : 0;

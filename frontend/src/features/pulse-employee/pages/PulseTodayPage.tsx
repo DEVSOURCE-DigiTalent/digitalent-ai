@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { BriefcaseBusiness, ChevronDown, Clock, Compass, Flag, UserX } from 'lucide-react';
 import { usePulseOverview } from '@/hooks/use-pulse';
 import type { PulseCourseSummary, PulseDomain, PulseOverview } from '@/services/pulse.service';
@@ -86,22 +86,19 @@ const today = () => new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: '2-
 function Greeting({ overview }: { overview: PulseOverview }) {
   const { person, stats } = overview;
   const started = stats.approvedPathCourses > 0 || overview.courses.some((c) => c.enrollmentId || c.preAssessment);
-  const position = person.positionName ?? 'của bạn';
+  const position = person.positionName ?? "của bạn";
   return (
     <div className="pu-greeting">
       <Eyebrow>Hôm nay · {today()}</Eyebrow>
       {started ? (
         <>
-          <h1>Chào {firstName(person.fullName)}, lộ trình <em>{position}</em> của bạn đã đạt {stats.approvedPathCourses}/{stats.pathCourses} khóa.</h1>
-          <p>Mỗi khóa bắt đầu bằng bài đánh giá trước khi học: đạt thì khóa được công nhận ngay, chưa đạt thì bạn học khóa đó rồi làm bài cuối khóa.</p>
+          <h1>Chào {firstName(person.fullName)}, lộ trình <em>{position}</em> đã đạt {stats.approvedPathCourses}/{stats.pathCourses} khóa.</h1>
+          <p>Tiếp tục hoàn thành các bài học và bài kiểm tra để chinh phục mục tiêu năng lực số.</p>
         </>
       ) : (
         <>
-          <h1>Chào {firstName(person.fullName)}, lộ trình <em>{position}</em> của bạn đã sẵn sàng.</h1>
-          <p>
-            Doanh nghiệp đặt {stats.pathCourses} khóa cho vị trí của bạn. Mỗi khóa có một bài đánh giá trước khi học: đạt thì khóa được
-            công nhận, không cần học; chưa đạt thì bạn học khóa đó.
-          </p>
+          <h1>Chào {firstName(person.fullName)}, lộ trình <em>{position}</em> đã sẵn sàng.</h1>
+          <p>Bắt đầu bài đánh giá hoặc bài học đầu tiên để kích hoạt lộ trình năng lực số của bạn.</p>
         </>
       )}
     </div>

@@ -68,11 +68,6 @@ export function RequirementSetListPage() {
             >
               {row.jobPositionName}
             </Link>
-            {row.jobGrade && (
-              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700">
-                {row.jobGrade}
-              </span>
-            )}
           </div>
           <div className="text-xs font-mono text-slate-400">{row.jobPositionCode}</div>
         </div>

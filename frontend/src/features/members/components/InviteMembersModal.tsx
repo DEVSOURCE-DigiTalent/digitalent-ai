@@ -39,10 +39,10 @@ interface InviteMembersModalProps {
 
 /** ADM-04: invite people to the organization one by one or from a file; each becomes a pending member. */
 export function InviteMembersModal({ open, onClose }: InviteMembersModalProps) {
-  const user = useCurrentUser((s) => s.user)!;
+  const user = useCurrentUser((s) => s.user);
   const hasEntitlement = useCurrentUser((s) => s.hasEntitlement);
   const invite = useInviteMembers();
-  const roles = assignableRoles(user.roles) as MemberRole[];
+  const roles = assignableRoles(user?.roles ?? []) as MemberRole[];
   const departments = useDepartments({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
   const positions = useJobPositions({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
 
@@ -114,7 +114,7 @@ export function InviteMembersModal({ open, onClose }: InviteMembersModalProps) {
 
   // The development backend may return the activation token for local testing.
   const testLinks = result?.created.filter((person) => person.token) ?? [];
-  const seatsLeft = user.subscription?.seatLimit === undefined ? undefined : user.subscription.seatLimit - (user.subscription.seatsUsed ?? 0) - queue.length;
+  const seatsLeft = user?.subscription?.seatLimit === undefined ? undefined : (user?.subscription?.seatLimit ?? 0) - (user?.subscription?.seatsUsed ?? 0) - queue.length;
 
   return (
     <Modal

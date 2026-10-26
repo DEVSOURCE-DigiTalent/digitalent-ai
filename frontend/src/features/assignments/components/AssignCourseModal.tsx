@@ -7,20 +7,17 @@ import { useAllEmployees } from '@/hooks/use-employees';
 import { useJobPositions } from '@/hooks/use-job-positions';
 import { useSkillGapRuns } from '@/hooks/use-skill-gaps';
 import { apiErrorMessage } from '@/lib/utils';
-import { JOB_GRADES } from '@/lib/roles';
-import { JOB_GRADE_DEFAULT_NAMES } from '@/lib/terms';
 import type { CreateAssignmentResult } from '@/services/assignment.service';
 import { INPUT_CLASS, PRIMARY_BUTTON, SECONDARY_BUTTON } from '@/features/onboarding/components/styles';
 import { LEVEL_SUFFIX_LABELS, SKIP_REASON_LABELS } from '../assignment-labels';
 
-type TargetKind = 'employees' | 'department' | 'position' | 'grade' | 'gap';
+type TargetKind = 'employees' | 'department' | 'position' | 'gap';
 
 const TARGET_CHOICES: ReadonlyArray<readonly [TargetKind, string]> = import.meta.env.VITE_USE_MOCK === 'true'
   ? [
       ['employees', 'Từng nhân viên'],
       ['department', 'Cả phòng ban'],
       ['position', 'Mọi người ở một vị trí'],
-      ['grade', 'Theo Cấp bậc (G1–G3)'],
       ['gap', 'Từ khoảng trống năng lực (Skill Gap)'],
     ]
   : [
@@ -62,7 +59,6 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
   const [employeeIds, setEmployeeIds] = useState<string[]>(initialEmployees ?? []);
   const [departmentId, setDepartmentId] = useState('');
   const [jobPositionId, setJobPositionId] = useState('');
-  const [selectedGrade, setSelectedGrade] = useState('G1');
   const [gapEmployees, setGapEmployees] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState('');
   const [search, setSearch] = useState('');
@@ -111,28 +107,21 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
     [employees, search],
   );
 
-  const gradeEmployees = useMemo(
-    () => employees.filter((e) => getEmployeeGrade(e) === selectedGrade),
-    [employees, selectedGrade, posGradeMap]
-  );
-
   const targets = useMemo(() => {
     if (kind === 'employees') return { employeeIds };
     if (kind === 'department') return { departmentId };
     if (kind === 'position') return { jobPositionId };
-    if (kind === 'grade') return { employeeIds: gradeEmployees.map((e) => e.id), jobGrade: selectedGrade };
     if (kind === 'gap') return { employeeIds: gapEmployees };
     return { employeeIds };
-  }, [kind, employeeIds, departmentId, jobPositionId, selectedGrade, gradeEmployees, gapEmployees]);
+  }, [kind, employeeIds, departmentId, jobPositionId, gapEmployees]);
 
   const hasTarget = useMemo(() => {
     if (kind === 'employees') return employeeIds.length > 0;
     if (kind === 'department') return Boolean(departmentId);
     if (kind === 'position') return Boolean(jobPositionId);
-    if (kind === 'grade') return gradeEmployees.length > 0;
     if (kind === 'gap') return gapEmployees.length > 0;
     return false;
-  }, [kind, employeeIds, departmentId, jobPositionId, gradeEmployees, gapEmployees]);
+  }, [kind, employeeIds, departmentId, jobPositionId, gapEmployees]);
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -216,7 +205,7 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
                     <label className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm hover:bg-slate-50">
                       <input type="checkbox" checked={employeeIds.includes(e.id)} onChange={() => toggle(e.id)} className="size-4 accent-primary-600" />
                       <span className="font-medium text-slate-900">{e.fullName}</span>
-                      <span className="text-xs text-slate-500">{e.employeeCode} · {e.positionName ?? 'Chưa có vị trí'} {getEmployeeGrade(e) && `(${getEmployeeGrade(e)})`}</span>
+                      <span className="text-xs text-slate-500">{e.employeeCode} · {e.positionName ?? 'Chưa có vị trí'}</span>
                     </label>
                   </li>
                 ))}
@@ -246,36 +235,6 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
               </select>
             </div>
           )}
-
-          {kind === 'grade' && (
-            <div className="grid gap-2">
-              <label className="text-sm font-medium text-slate-700">Chọn Cấp bậc (G1–G3)</label>
-              <div className="flex gap-2">
-                {JOB_GRADES.map((code) => {
-                  const name = JOB_GRADE_DEFAULT_NAMES[code];
-                  return (
-                    <button
-                      key={code}
-                      type="button"
-                      onClick={() => setSelectedGrade(code)}
-                      className={`flex-1 py-2 px-3 rounded-lg border text-xs font-semibold transition-all ${
-                        selectedGrade === code
-                          ? 'border-primary-600 bg-primary-50 text-primary-700 ring-1 ring-primary-500'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div>{code}</div>
-                      <div className="font-normal text-[11px] text-slate-500">{name}</div>
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Có <strong className="text-slate-800">{gradeEmployees.length}</strong> nhân sự thuộc cấp bậc {selectedGrade}.
-              </p>
-            </div>
-          )}
-
           {kind === 'gap' && (
             <div className="grid gap-2">
               <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">

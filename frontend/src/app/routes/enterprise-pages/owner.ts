@@ -1,4 +1,10 @@
+import React from 'react';
+import { Navigate } from 'react-router-dom';
 import type { PageRegistry } from '../build-routes';
+
+function RetiredJobGradeRedirect() {
+  return React.createElement(Navigate, { to: '/enterprise/positions', replace: true });
+}
 
 import { OwnerOverviewPage } from '../../../features/organization/pages/OwnerOverviewPage';
 import { OwnerMembersPage } from '../../../features/organization/pages/OwnerMembersPage';
@@ -7,7 +13,7 @@ import { DepartmentListPage } from '../../../features/organization/pages/Departm
 import { DepartmentDetailPage } from '../../../features/organization/pages/DepartmentDetailPage';
 import { PositionListPage } from '../../../features/organization/pages/PositionListPage';
 import { PositionDetailPage } from '../../../features/organization/pages/PositionDetailPage';
-import { JobGradeConfigPage } from '../../../features/organization/pages/JobGradeConfigPage';
+
 import { RolesAccessPage } from '../../../features/members/pages/RolesAccessPage';
 
 
@@ -54,7 +60,7 @@ export const OWNER_PAGES: PageRegistry = {
   'OW-09': PositionListPage,
 
   'OW-10': PositionDetailPage,
-  'OW-12': JobGradeConfigPage,
+  'OW-12': RetiredJobGradeRedirect,
 
   'OW-13': RolesAccessPage,
   'OW-14': OwnerFrameworkPage,

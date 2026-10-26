@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Check, ClipboardCheck, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDecidePulseFinal, useDecidePulsePreAssessment, usePulseFinalReviews, useRecordPulseSupport } from '@/hooks/use-pulse';
@@ -105,23 +105,11 @@ export function PulseFinalReviewsPage() {
   return (
     <ManagerPage testId="pulse-final-reviews">
       <PageHead
-        eyebrow={`Quản lý đánh giá${department ? ` · ${department}` : ''}`}
-        title="Ra quyết định dựa trên minh chứng."
-        description="Mỗi khóa có một bài đánh giá trước khi học và một bài cuối khóa, cả hai có bản ghi màn hình, camera và micro. Gợi ý AI chỉ để tham khảo — quản lý ghi quyết định cuối cùng và lý do."
+        eyebrow={department ? `Quản lý đánh giá · ${department}` : 'Quản lý đánh giá'}
+        title="Chấm điểm & Ra quyết định Minh chứng"
+        description="Đánh giá bài nộp cuối khóa, kiểm tra bản ghi giám sát thi (Proctoring) và ghi nhận kết quả cho nhân viên trong phòng ban."
         actions={<Pill>{data.pendingCount} bài chờ đánh giá</Pill>}
       />
-
-      <section className="pm-banner" aria-label="Nguyên tắc chấm bài cuối khóa">
-        <div>
-          <span className="pu-mini">{department ? `${department} / ` : ''}Đánh giá khóa học</span>
-          <h2>Một người học. Một khóa. Một quyết định rõ ràng.</h2>
-          <p>Xem bản ghi và các lần rời tab hoặc dừng chia sẻ, đọc minh chứng rồi ghi đạt hoặc chưa đạt kèm lý do.</p>
-        </div>
-        <div className="pm-banner-count">
-          <strong>{data.pendingCount}</strong>
-          <span>chờ bạn quyết định</span>
-        </div>
-      </section>
 
       <section className="pu-metrics pu-review-kpis" aria-label="Tình trạng hàng chờ" style={{ marginTop: 16 }}>
         <div><strong>{data.pendingCount}</strong><span>Chờ quyết định</span></div>

@@ -4,11 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateJobPosition, useUpdateJobPosition } from '@/hooks/use-job-positions';
 import { useDepartments } from '@/hooks/use-departments';
-import { useJobGradeLabel } from '@/hooks/use-job-grades';
 import type { JobPositionListItem } from '@/services/job-position.service';
 import { toast } from 'sonner';
 import { organizationErrorMessage } from '@/lib/organization-errors';
-import { JOB_GRADES } from '@/lib/terms';
 import { INPUT_CLASS } from '@/features/onboarding/components/styles';
 
 const formSchema = z.object({
@@ -17,7 +15,7 @@ const formSchema = z.object({
   description: z.string().optional(),
   departmentId: z.string().optional(),
   /** '' = not graded yet. */
-  jobGrade: z.enum(['', ...JOB_GRADES]).optional(),
+  jobGrade: z.string().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 });
 
@@ -36,7 +34,6 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
 
   const { data: deptData } = useDepartments({ pageSize: 100, status: 'ACTIVE' });
   const departments = deptData?.items || [];
-  const gradeLabel = useJobGradeLabel();
 
   const {
     register,
@@ -157,25 +154,6 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
                 </option>
               ))}
             </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Cấp bậc</label>
-            <select
-              {...register('jobGrade')}
-              className={INPUT_CLASS}
-              disabled={isSubmitting}
-            >
-              <option value="">Chưa xếp cấp bậc</option>
-              {JOB_GRADES.map((code) => (
-                <option key={code} value={code}>
-                  {gradeLabel(code)}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-2xs text-slate-500">
-              Nhân sự giữ vị trí này được tính theo cấp bậc đã chọn.
-            </p>
           </div>
 
           <div>

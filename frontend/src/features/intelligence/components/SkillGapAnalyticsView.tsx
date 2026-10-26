@@ -7,14 +7,13 @@ import { useDepartments } from '@/hooks/use-departments';
 import { useJobPositions } from '@/hooks/use-job-positions';
 import { useSkillGapRuns, useCalculateSkillGapBatch } from '@/hooks/use-skill-gaps';
 import { INPUT_CLASS } from '@/features/onboarding/components/styles';
-import { JOB_GRADES } from '@/lib/terms';
 import { formatDateTime } from '@/lib/utils';
 import { toast } from 'sonner';
 import { skillGapErrorMessage } from '@/lib/competency-levels';
 import type { SkillGapRunListItem, CalculateSkillGapBatchResult } from '@/services/intelligence.service';
 import { BatchResultPanel } from './BatchResultPanel';
 
-export type GroupBy = 'department' | 'position' | 'grade';
+export type GroupBy = 'department' | 'position';
 
 export interface SkillGapAnalyticsViewProps {
   departmentId?: string;
@@ -44,7 +43,6 @@ export function SkillGapAnalyticsView({
   const [groupBy, setGroupBy] = useState<GroupBy>('department');
   const [departmentId, setDepartmentId] = useState(fixedDeptId || '');
   const [jobPositionId, setJobPositionId] = useState('');
-  const [jobGrade, setJobGrade] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -58,7 +56,6 @@ export function SkillGapAnalyticsView({
   const filter = {
     departmentId: effectiveDeptId || undefined,
     jobPositionId: jobPositionId || undefined,
-    jobGrade: jobGrade || undefined,
   };
 
   const overview = useGapOverview({ groupBy, ...filter });
@@ -213,16 +210,6 @@ export function SkillGapAnalyticsView({
               >
                 Theo vị trí
               </button>
-              <button
-                type="button"
-                aria-pressed={groupBy === 'grade'}
-                onClick={() => setGroupBy('grade')}
-                className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
-                  groupBy === 'grade' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Theo Cấp bậc (G1–G3)
-              </button>
             </div>
           )}
 
@@ -254,20 +241,6 @@ export function SkillGapAnalyticsView({
                 {positions.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                aria-label="Lọc theo Cấp bậc"
-                value={jobGrade}
-                onChange={(e) => setJobGrade(e.target.value)}
-                className={INPUT_CLASS}
-              >
-                <option value="">Mọi cấp bậc</option>
-                {JOB_GRADES.map((g: string) => (
-                  <option key={g} value={g}>
-                    Cấp bậc {g}
                   </option>
                 ))}
               </select>

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+﻿import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Settings, ArrowRight } from 'lucide-react';
 import { useOrganizationOverview } from '@/hooks/use-organization';
@@ -98,22 +98,11 @@ export function OwnerSetupBlueprintPage() {
                 style={{ background: 'var(--po-coral)' }}
               />
             </span>
-            <h1
-              className="mt-3 font-bold leading-[1.05]"
-              style={{
-                fontSize: 'clamp(33px, 4vw, 55px)',
-                color: 'var(--po-ink)',
-                letterSpacing: '-0.06em',
-              }}
-            >
-              Blueprint phù hợp cho mọi vị trí.
+            <h1 className="mt-2 text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
+              Kiến trúc Năng lực & Trần Khóa học Doanh nghiệp
             </h1>
-            <p
-              className="mt-2 text-[13px] leading-relaxed"
-              style={{ color: 'var(--po-muted)', maxWidth: 560 }}
-            >
-              Digital AI đặt trần ngoài. Tổ chức chọn mức riêng, rồi phòng
-              ban và vị trí kế thừa mục tiêu bằng hoặc nhỏ hơn.
+            <p className="mt-1 text-sm text-slate-600 max-w-2xl">
+              Xác định cấp độ khóa học mở cho toàn công ty và từng phòng ban theo khung chuẩn Thông tư 02.
             </p>
           </div>
           <span
