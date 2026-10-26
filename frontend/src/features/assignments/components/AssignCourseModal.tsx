@@ -60,7 +60,7 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
   const [courseId, setCourseId] = useState(initialCourse ?? '');
   const [kind, setKind] = useState<TargetKind>('employees');
   const [employeeIds, setEmployeeIds] = useState<string[]>(initialEmployees ?? []);
-  const [departmentId, setDepartmentId] = useState('');
+  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>([]);
   const [jobPositionId, setJobPositionId] = useState('');
   const [selectedGrade, setSelectedGrade] = useState('G1');
   const [gapEmployees, setGapEmployees] = useState<string[]>([]);
@@ -116,23 +116,31 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
     [employees, selectedGrade, posGradeMap]
   );
 
+  const selectedDeptEmployees = useMemo(
+    () => employees.filter((e) => e.departmentId && selectedDepartmentIds.includes(e.departmentId)),
+    [employees, selectedDepartmentIds]
+  );
+
   const targets = useMemo(() => {
     if (kind === 'employees') return { employeeIds };
-    if (kind === 'department') return { departmentId };
+    if (kind === 'department') {
+      if (selectedDepartmentIds.length === 1) return { departmentId: selectedDepartmentIds[0] };
+      return { employeeIds: selectedDeptEmployees.map((e) => e.id) };
+    }
     if (kind === 'position') return { jobPositionId };
     if (kind === 'grade') return { employeeIds: gradeEmployees.map((e) => e.id), jobGrade: selectedGrade };
     if (kind === 'gap') return { employeeIds: gapEmployees };
     return { employeeIds };
-  }, [kind, employeeIds, departmentId, jobPositionId, selectedGrade, gradeEmployees, gapEmployees]);
+  }, [kind, employeeIds, selectedDepartmentIds, selectedDeptEmployees, jobPositionId, selectedGrade, gradeEmployees, gapEmployees]);
 
   const hasTarget = useMemo(() => {
     if (kind === 'employees') return employeeIds.length > 0;
-    if (kind === 'department') return Boolean(departmentId);
+    if (kind === 'department') return selectedDepartmentIds.length > 0 && selectedDeptEmployees.length > 0;
     if (kind === 'position') return Boolean(jobPositionId);
     if (kind === 'grade') return gradeEmployees.length > 0;
     if (kind === 'gap') return gapEmployees.length > 0;
     return false;
-  }, [kind, employeeIds, departmentId, jobPositionId, gradeEmployees, gapEmployees]);
+  }, [kind, employeeIds, selectedDepartmentIds, selectedDeptEmployees, jobPositionId, gradeEmployees, gapEmployees]);
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -228,12 +236,55 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
           )}
 
           {kind === 'department' && (
-            <div className="grid gap-1.5">
-              <label htmlFor={`${base}-department`} className="text-sm font-medium text-slate-700">Phòng ban</label>
-              <select id={`${base}-department`} value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className={INPUT_CLASS}>
-                <option value="">Chọn phòng ban…</option>
-                {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between text-xs text-slate-600">
+                <span className="font-medium text-slate-700">Chọn một hoặc nhiều phòng ban:</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDepartmentIds(departments.map((d) => d.id))}
+                    className="text-primary-600 hover:underline font-medium"
+                  >
+                    Chọn tất cả
+                  </button>
+                  <span>•</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDepartmentIds([])}
+                    className="text-slate-500 hover:underline"
+                  >
+                    Bỏ chọn
+                  </button>
+                </div>
+              </div>
+
+              <div className="max-h-52 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200 bg-white">
+                {departments.map((d) => {
+                  const empCount = employees.filter((e) => e.departmentId === d.id).length;
+                  const isChecked = selectedDepartmentIds.includes(d.id);
+                  return (
+                    <label key={d.id} className="flex cursor-pointer items-center justify-between px-3 py-2 text-sm hover:bg-slate-50">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() =>
+                            setSelectedDepartmentIds((prev) =>
+                              prev.includes(d.id) ? prev.filter((id) => id !== d.id) : [...prev, d.id]
+                            )
+                          }
+                          className="size-4 accent-primary-600"
+                        />
+                        <span className="font-medium text-slate-900">{d.name}</span>
+                      </div>
+                      <span className="text-xs text-slate-500">{empCount} nhân sự</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-slate-500">
+                Đã chọn <strong className="text-slate-800">{selectedDepartmentIds.length}</strong> phòng ban ({selectedDeptEmployees.length} nhân sự sẽ được giao).
+              </p>
             </div>
           )}
 
