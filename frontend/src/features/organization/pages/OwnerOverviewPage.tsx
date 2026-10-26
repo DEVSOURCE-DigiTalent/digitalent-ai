@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Send } from 'lucide-react';
 import { useOrganizationOverview } from '@/hooks/use-organization';
 import { useCapabilityDashboard } from '@/hooks/use-analytics';
 import { OwnerOverviewHero } from '../components/OwnerOverviewHero';
 import { OwnerProcessTrack } from '../components/OwnerProcessTrack';
 import { OwnerCapabilityArchitecture } from '../components/OwnerCapabilityArchitecture';
 import { OwnerTrainingCycle } from '../components/OwnerTrainingCycle';
+import { SendAnnouncementModal } from '../components/SendAnnouncementModal';
 
 const PULSE_TOKENS = {
   '--po-canvas': '#f7f9fd',
@@ -26,6 +28,7 @@ const KPI_ACCENTS = ['#3856db', '#f1816b', '#67b6ad', '#a48ce3'];
 const KPI_VALUE_COLORS = ['#233aaf', '#d36f5b', '#218e86', '#826bc5'];
 
 export function OwnerOverviewPage() {
+  const [announcing, setAnnouncing] = useState(false);
   const { data: orgData, isLoading: orgLoading, isError: orgError } = useOrganizationOverview();
   const { data: capData, isLoading: capLoading } = useCapabilityDashboard();
 
@@ -123,7 +126,15 @@ export function OwnerOverviewPage() {
               Mục tiêu, học tập và kết quả khóa học nằm trong một hành trình.
             </p>
           </div>
-          <div className="shrink-0">
+          <div className="shrink-0 flex items-center gap-2.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setAnnouncing(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#304bdf] px-[17px] py-[11px] text-[13px] font-extrabold text-white transition-all hover:bg-[#203bbf] shadow-xs"
+            >
+              <Send className="size-4" />
+              Gửi thông báo & Hạn chót
+            </button>
             <Link
               to="/enterprise/reports"
               className="inline-flex items-center gap-2 rounded-xl border px-[17px] py-[11px] text-[13px] font-extrabold transition-colors hover:opacity-80"
@@ -186,6 +197,13 @@ export function OwnerOverviewPage() {
           </div>
         </div>
       </div>
+
+      {announcing && (
+        <SendAnnouncementModal
+          open={announcing}
+          onClose={() => setAnnouncing(false)}
+        />
+      )}
     </div>
   );
 }
