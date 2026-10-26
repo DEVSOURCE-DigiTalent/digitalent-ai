@@ -41,7 +41,7 @@ public static class Tt02Catalog
 
     public static readonly DomainDefinition[] Domains =
     {
-        new(1, "Khai thác dữ liệu và thông tin", "A1",
+        new(1, "Khai thác dữ liệu và thông tin", "M1",
             new[] { "Tìm kiếm và lưu trữ thông tin cơ bản", "Chiến lược tìm kiếm và quản lý thông tin", "Phân tích thông tin và quản trị dữ liệu" },
             new CompetencyDefinition[]
             {
@@ -52,7 +52,7 @@ public static class Tt02Catalog
                 new("1.3", "Quản lý dữ liệu, thông tin và nội dung số",
                     new[] { "Lưu trữ và sắp xếp tài liệu", "Tổ chức và quản lý khối lượng thông tin lớn", "Quản trị dữ liệu và vòng đời thông tin" }),
             }),
-        new(2, "Giao tiếp và hợp tác trong môi trường số", "A2",
+        new(2, "Giao tiếp và hợp tác trong môi trường số", "M2",
             new[] { "Giao tiếp số cơ bản nơi công sở", "Giao tiếp và cộng tác chuyên nghiệp", "Lãnh đạo giao tiếp và cộng tác số" },
             new CompetencyDefinition[]
             {
@@ -69,7 +69,7 @@ public static class Tt02Catalog
                 new("2.6", "Quản lý danh tính số",
                     new[] { "Danh tính số cá nhân", "Quản lý danh tính nghề nghiệp", "Danh tính số của tổ chức" }),
             }),
-        new(3, "Sáng tạo nội dung số", "A3",
+        new(3, "Sáng tạo nội dung số", "M3",
             new[] { "Tạo lập nội dung số cơ bản", "Tạo lập nội dung chuyên nghiệp", "Chiến lược nội dung và giải pháp số" },
             new CompetencyDefinition[]
             {
@@ -82,7 +82,7 @@ public static class Tt02Catalog
                 new("3.4", "Lập trình",
                     new[] { "Làm quen tư duy tính toán", "Tự động hóa công việc lặp lại", "Thiết kế giải pháp số cho nghiệp vụ" }),
             }),
-        new(4, "An toàn", "A4",
+        new(4, "An toàn", "M4",
             new[] { "An toàn số cơ bản", "An toàn thông tin trong công việc", "Quản trị an toàn và trách nhiệm số" },
             new CompetencyDefinition[]
             {
@@ -95,7 +95,7 @@ public static class Tt02Catalog
                 new("4.4", "Bảo vệ môi trường",
                     new[] { "Sử dụng công nghệ có ý thức môi trường", "Vận hành số bền vững", "Chiến lược bền vững số" }),
             }),
-        new(5, "Giải quyết vấn đề", "A5",
+        new(5, "Giải quyết vấn đề", "M5",
             new[] { "Xử lý sự cố và tự học công nghệ", "Giải quyết vấn đề trong công việc số", "Đổi mới và dẫn dắt chuyển đổi số" },
             new CompetencyDefinition[]
             {

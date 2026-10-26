@@ -87,7 +87,7 @@ function useRefreshLearningData() {
   const queryClient = useQueryClient();
   return () =>
     Promise.all(
-      [ASSIGNMENTS_KEY, ['workforce'], ['analytics'], ['recommendations'], ['skill-gaps']].map((queryKey) =>
+      [ASSIGNMENTS_KEY, ['workforce'], ['analytics'], ['recommendations'], ['skill-gaps'], ['capability-ceilings']].map((queryKey) =>
         queryClient.invalidateQueries({ queryKey }),
       ),
     );

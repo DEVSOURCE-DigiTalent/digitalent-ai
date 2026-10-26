@@ -18,7 +18,19 @@ function Sources({ body }: { body: string }) {
   })}</div>;
 }
 
-export function LessonSlide({ slide, courseCode, moduleIndex = 1, index, count }: { slide: PulseSlide; courseCode?: string; moduleIndex?: number; index: number; count: number }) {
+export function LessonSlide({
+  slide,
+  courseCode = '',
+  moduleIndex = 1,
+  index,
+  count,
+}: {
+  slide: PulseSlide;
+  courseCode?: string;
+  moduleIndex?: number;
+  index: number;
+  count: number;
+}) {
   const headingId = useId();
   const uploaded = slide.media ?? [];
   const pictures = uploaded.filter(item => item.kind === 'IMAGE').map(item => ({ src: lessonMediaUrl(item.url), alt: item.alt || slide.title }));

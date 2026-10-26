@@ -92,7 +92,7 @@ export function OwnerSetupBlueprintPage() {
               className="text-[10px] font-black uppercase tracking-[0.14em]"
               style={{ color: 'var(--po-accent)' }}
             >
-              01 / Thiết lập chuẩn doanh nghiệp
+              Thiết lập chuẩn doanh nghiệp
               <i
                 className="ml-[7px] inline-block size-1.5 rounded-full align-middle"
                 style={{ background: 'var(--po-coral)' }}
@@ -128,18 +128,19 @@ export function OwnerSetupBlueprintPage() {
 
       {/* ── Content ── */}
       <div className="px-4 md:px-6 py-4 mx-auto" style={{ maxWidth: 1220 }}>
-        {/* Notice */}
-        <div
-          className="rounded-[11px] border p-4 text-xs mb-4"
-          style={{
-            borderColor: '#d9e5fb',
-            background: '#f0f4ff',
-            color: '#385084',
-          }}
-        >
-          <strong>Phân biệt hai việc:</strong> vị trí xác định năng lực cần đạt của nhân viên;
-          doanh nghiệp quyết định khóa được mở. Phòng ban quản lý nhân viên và có thể giới hạn thêm khóa được mở.
-        </div>
+        {/* Ghi chú cơ chế - Dạng thu gọn / xổ ra theo yêu cầu */}
+        <details className="group mb-4 rounded-xl border border-blue-100 bg-blue-50/60 p-3.5 text-xs text-blue-900 transition-all [&_summary::-webkit-details-marker]:hidden">
+          <summary className="flex cursor-pointer items-center justify-between font-semibold select-none">
+            <span className="flex items-center gap-2">
+              <span className="grid size-5 place-items-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold">ℹ️</span>
+              Ghi chú cơ chế: Phân cấp trần đào tạo & Chuẩn vị trí
+            </span>
+            <span className="text-xs text-blue-600 font-bold group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <p className="mt-2.5 text-xs leading-relaxed text-blue-800 pl-7 border-t border-blue-100/70 pt-2">
+            Vị trí công việc xác định năng lực cần đạt của nhân viên. Doanh nghiệp và phòng ban thiết lập trần tối đa các khóa học được mở để kiểm soát nội dung và chi phí đào tạo.
+          </p>
+        </details>
 
         {/* Blueprint flow + checklist */}
         <BlueprintFlow
@@ -347,20 +348,31 @@ export function OwnerSetupBlueprintPage() {
           </section>
         </div>
 
-        {/* Ceiling matrix: Digital AI ⊇ organization ⊇ department (Lý thuyết trần nhà) */}
-        <div className="mt-10" id="ceilings">
+        {/* Bảng trần năng lực chính (Bảng màu xanh cốt lõi) */}
+        <div className="mt-8" id="ceilings">
           <CapabilityCeilingMatrix />
         </div>
 
-        {/* DigiTalent reference levels per sample position, to guide the levels set above */}
-        <div className="mt-4">
-          <PositionReferenceMatrix />
-        </div>
-
-        {/* Domain level mapping */}
-        <div className="mt-4">
-          <PositionMapping domains={domains} isLoading={capLoading} />
-        </div>
+        {/* Nguồn tham khảo mở rộng: Thu gọn mặc định để bảng màu xanh là trung tâm */}
+        <details className="group mt-6 rounded-[22px] border border-slate-200 bg-white p-6 shadow-sm transition-all [&_summary::-webkit-details-marker]:hidden">
+          <summary className="flex cursor-pointer items-center justify-between select-none">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+                Nguồn tham chiếu mở rộng
+              </span>
+              <h3 className="text-base font-bold text-slate-800">
+                Mức năng lực 5 vị trí mẫu & Ánh xạ chi tiết (DigiTalent AI)
+              </h3>
+            </div>
+            <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 group-open:bg-slate-100 transition-colors">
+              Xem chi tiết / Thu gọn ▼
+            </span>
+          </summary>
+          <div className="mt-6 space-y-6 pt-4 border-t border-slate-100">
+            <PositionReferenceMatrix />
+            <PositionMapping domains={domains} isLoading={capLoading} />
+          </div>
+        </details>
       </div>
     </div>
   );

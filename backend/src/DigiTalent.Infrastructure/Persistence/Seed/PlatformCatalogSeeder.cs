@@ -91,6 +91,31 @@ public static class PlatformCatalogSeeder
 
         // 2. Eighteen standard courses (identity + mirror of the version in use)
         var courses = await db.PlatformCourses.ToListAsync();
+        foreach (var c in courses)
+        {
+            if (c.Code.StartsWith("A", StringComparison.OrdinalIgnoreCase) && c.Code.Length > 2 && char.IsDigit(c.Code[1]))
+            {
+                c.Code = "M" + c.Code[1..];
+            }
+            else if (c.Code.StartsWith("AI1-", StringComparison.OrdinalIgnoreCase))
+            {
+                c.Code = "M6-" + c.Code[4..];
+            }
+        }
+
+        var tenantCourses = await db.Courses.ToListAsync();
+        foreach (var tc in tenantCourses)
+        {
+            if (tc.Code.StartsWith("A", StringComparison.OrdinalIgnoreCase) && tc.Code.Length > 2 && char.IsDigit(tc.Code[1]))
+            {
+                tc.Code = "M" + tc.Code[1..];
+            }
+            else if (tc.Code.StartsWith("AI1-", StringComparison.OrdinalIgnoreCase))
+            {
+                tc.Code = "M6-" + tc.Code[4..];
+            }
+        }
+
         foreach (var definition in Tt02Catalog.Domains)
         {
             var domain = domains.Single(d => d.Code == definition.CategoryCode);

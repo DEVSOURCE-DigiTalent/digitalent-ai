@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Users, 
@@ -7,7 +8,8 @@ import {
   ArrowRight, 
   ChevronRight,
   TrendingUp,
-  UserPlus
+  UserPlus,
+  Send
 } from 'lucide-react';
 import { useOrganizationOverview } from '@/hooks/use-organization';
 import { useCapabilityDashboard } from '@/hooks/use-analytics';
@@ -15,8 +17,10 @@ import { OwnerOverviewHero } from '../components/OwnerOverviewHero';
 import { OwnerProcessTrack } from '../components/OwnerProcessTrack';
 import { OwnerCapabilityArchitecture } from '../components/OwnerCapabilityArchitecture';
 import { OwnerTrainingCycle } from '../components/OwnerTrainingCycle';
+import { SendAnnouncementModal } from '../components/SendAnnouncementModal';
 
 export function OwnerOverviewPage() {
+  const [announcing, setAnnouncing] = useState(false);
   const { data: orgData, isLoading: orgLoading, isError: orgError } = useOrganizationOverview();
   const { data: capData, isLoading: capLoading } = useCapabilityDashboard();
 
@@ -67,7 +71,15 @@ export function OwnerOverviewPage() {
           </h2>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setAnnouncing(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer"
+          >
+            <Send className="size-3.5 text-blue-600" />
+            <span>Gửi thông báo & Hạn chót</span>
+          </button>
           <Link
             to="/enterprise/members"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 hover:text-slate-900 transition-colors"
@@ -246,6 +258,13 @@ export function OwnerOverviewPage() {
           <OwnerTrainingCycle events={orgData.recentActivity} />
         </div>
       </div>
+
+      {announcing && (
+        <SendAnnouncementModal
+          open={announcing}
+          onClose={() => setAnnouncing(false)}
+        />
+      )}
     </div>
   );
 }

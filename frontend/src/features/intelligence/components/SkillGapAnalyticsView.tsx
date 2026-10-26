@@ -286,11 +286,7 @@ export function SkillGapAnalyticsView({
                     <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-600 border-b border-slate-200">
                       <tr>
                         <th className="px-4 py-3">
-                          {groupBy === 'department'
-                            ? 'Phòng ban'
-                            : groupBy === 'grade'
-                              ? 'Cấp bậc (Job Grade)'
-                              : 'Vị trí công việc'}
+                          {groupBy === 'department' ? 'Phòng ban' : 'Vị trí công việc'}
                         </th>
                         <th className="px-4 py-3 text-center">Nhân sự</th>
                         <th className="px-4 py-3 text-center">Tỷ lệ đáp ứng TB</th>

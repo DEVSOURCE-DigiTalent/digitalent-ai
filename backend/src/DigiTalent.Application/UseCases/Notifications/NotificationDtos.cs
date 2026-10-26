@@ -33,3 +33,25 @@ public class MarkNotificationReadOutput { public bool Success { get; set; } }
 
 public class MarkAllNotificationsReadInput { }
 public class MarkAllNotificationsReadOutput { public int MarkedCount { get; set; } }
+
+public class BroadcastNotificationInput
+{
+    public string Title { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public string Type { get; set; } = "ANNOUNCEMENT"; // ANNOUNCEMENT, ASSESSMENT, COURSE, TASK, DEADLINE
+    public string? DueDate { get; set; } // yyyy-MM-dd
+    public string? ActionUrl { get; set; }
+    public List<Guid>? TargetDepartmentIds { get; set; }
+    public List<Guid>? TargetEmployeeIds { get; set; }
+    public bool SendEmail { get; set; } = true;
+    public bool AutoRemind { get; set; } = true;
+}
+
+public class BroadcastNotificationOutput
+{
+    public int TotalRecipients { get; set; }
+    public int InAppNotificationCount { get; set; }
+    public int EmailsSentCount { get; set; }
+    public string? DueDate { get; set; }
+    public List<string> RecipientNames { get; set; } = new();
+}

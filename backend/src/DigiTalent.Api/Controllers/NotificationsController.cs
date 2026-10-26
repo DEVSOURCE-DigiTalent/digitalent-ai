@@ -39,4 +39,14 @@ public class NotificationsController : ControllerBase
         var result = await useCase.ExecuteAsync(new MarkAllNotificationsReadInput());
         return Ok(ApiResponse<MarkAllNotificationsReadOutput>.Ok(result));
     }
+
+    [HttpPost("broadcast")]
+    [HasPermission(Permissions.Employee.Read)]
+    public async Task<ActionResult<ApiResponse<BroadcastNotificationOutput>>> Broadcast(
+        [FromBody] BroadcastNotificationInput input,
+        [FromServices] IUseCase<BroadcastNotificationInput, BroadcastNotificationOutput> useCase)
+    {
+        var result = await useCase.ExecuteAsync(input);
+        return Ok(ApiResponse<BroadcastNotificationOutput>.Ok(result));
+    }
 }

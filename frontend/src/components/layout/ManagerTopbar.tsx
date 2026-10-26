@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, Search } from 'lucide-react';
+import { Menu, Search, Sparkles } from 'lucide-react';
 import pulseMark from '@/assets/pulse/pulse-mark.svg';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { useOnboardingStore } from '@/features/onboarding-tutorial';
 import type { PortalConfig } from '@/lib/portals';
 import { matchPath } from '@/lib/breadcrumbs';
 import { findScreen } from '@/lib/screens';
@@ -93,6 +94,15 @@ export function ManagerTopbar({ portal, onOpenMobileNav, isMobileNavOpen = false
 
         <div className="pm-top-actions">
           {USE_MOCK && <span className="pm-preview-chip">Bản xem trước tương tác</span>}
+          <button
+            type="button"
+            onClick={() => useOnboardingStore.getState().startTour('MANAGER')}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 text-xs font-semibold transition-colors"
+            title="Xem lại hướng dẫn quản lý"
+          >
+            <Sparkles className="size-3.5 text-indigo-600" />
+            <span className="hidden sm:inline">Hướng dẫn</span>
+          </button>
           <button
             type="button"
             onClick={() => setPaletteOpen(true)}

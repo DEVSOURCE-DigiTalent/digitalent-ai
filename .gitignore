@@ -51,6 +51,9 @@ doc_DigiTalentAI/
 .playwright-mcp/
 .pnpm-store/
 scratch/
+backend/scratch*
+scratch*
+*.local.ps1
 
 # Terraform
 **/.terraform/

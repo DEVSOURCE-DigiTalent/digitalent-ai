@@ -18,6 +18,8 @@ public sealed class SmtpTrialEmailSender : ITrialEmailSender
                            !string.IsNullOrWhiteSpace(_smtpOptions.Password) &&
                            !string.IsNullOrWhiteSpace(_smtpOptions.FromEmail);
 
+    public bool IsDevelopmentCapture => _trialOptions.DevelopmentEnvironment && _trialOptions.EnableDevelopmentCapture;
+
     public SmtpTrialEmailSender(
         IOptions<IndividualCommerceOptions> options,
         TrialOptions trialOptions,
@@ -118,7 +120,14 @@ public sealed class SmtpTrialEmailSender : ITrialEmailSender
         };
 
         message.To.Add(email);
-        await client.SendMailAsync(message, ct);
-        _logger.LogInformation("Sent trial {Kind} email to {Email}", kind, email);
+        try
+        {
+            await client.SendMailAsync(message, ct);
+            _logger.LogInformation("Sent trial {Kind} email to {Email}", kind, email);
+        }
+        catch (Exception ex) when (_trialOptions.DevelopmentEnvironment && _trialOptions.EnableDevelopmentCapture)
+        {
+            _logger.LogWarning(ex, "[SmtpTrialEmailSender] Failed to send trial {Kind} email to {Email} via SMTP. In Development mode, proceeding with fallback capture.", kind, email);
+        }
     }
 }

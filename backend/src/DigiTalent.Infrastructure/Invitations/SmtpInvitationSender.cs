@@ -3,6 +3,7 @@ using System.Net.Mail;
 using System.Text.Encodings.Web;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.IndividualCommerce;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace DigiTalent.Infrastructure.Invitations;
@@ -12,11 +13,16 @@ public sealed class SmtpInvitationSender : IInvitationSender
 {
     private readonly InvitationSettings _links;
     private readonly SmtpOptions _smtp;
+    private readonly ILogger<SmtpInvitationSender> _logger;
 
-    public SmtpInvitationSender(InvitationSettings links, IOptions<IndividualCommerceOptions> options)
+    public SmtpInvitationSender(
+        InvitationSettings links,
+        IOptions<IndividualCommerceOptions> options,
+        ILogger<SmtpInvitationSender> logger)
     {
         _links = links;
         _smtp = options.Value.Smtp;
+        _logger = logger;
     }
 
     public async Task<string?> SendAsync(InvitationMessage invitation, CancellationToken cancellationToken = default)
@@ -41,8 +47,20 @@ public sealed class SmtpInvitationSender : IInvitationSender
             EnableSsl = _smtp.EnableSsl,
             Credentials = new NetworkCredential(_smtp.UserName, _smtp.Password)
         };
-        await client.SendMailAsync(email, cancellationToken);
-        // A delivered email should never echo its one-time activation link in the API response.
-        return null;
+
+        try
+        {
+            await client.SendMailAsync(email, cancellationToken);
+            return _links.ExposeDebugLink ? link : null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[SmtpInvitationSender] Failed to send email to {Email} via SMTP ({Host}:{Port}).", invitation.Email, _smtp.Host, _smtp.Port);
+            if (_links.ExposeDebugLink)
+            {
+                return link;
+            }
+            throw;
+        }
     }
 }

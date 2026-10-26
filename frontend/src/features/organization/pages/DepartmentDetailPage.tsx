@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Edit2, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Edit2, GraduationCap, Mail, Send, UserPlus } from 'lucide-react';
+import { toast } from 'sonner';
 import { PageHeader, StatusBadge, getStatusVariant, Tabs, DataTable, type Column } from '@/components/shared';
 import { useDepartment } from '@/hooks/use-departments';
-import { useMembers } from '@/hooks/use-members';
+import { useMembers, useResendInvitation } from '@/hooks/use-members';
 import { useJobGradeLabel } from '@/hooks/use-job-grades';
 import { useJobPositions } from '@/hooks/use-job-positions';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { DepartmentFormDialog } from '../components/DepartmentFormDialog';
+import { InviteMembersModal } from '@/features/members/components/InviteMembersModal';
 import type { MemberListItem } from '@/services/member.service';
 import type { JobPositionListItem } from '@/services/job-position.service';
 import { MEMBER_STATUS_LABELS, MEMBER_STATUS_VARIANTS, rolesLabel } from '@/features/members/member-labels';
@@ -32,6 +34,44 @@ export function DepartmentDetailPage() {
 
   const [tab, setTab] = useState('overview');
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [isBulkInviting, setIsBulkInviting] = useState(false);
+
+  const resendInvitation = useResendInvitation();
+
+  const handleResendSingle = async (member: MemberListItem) => {
+    setResendingId(member.id);
+    try {
+      await resendInvitation.mutateAsync(member.id);
+      toast.success(`Đã gửi lời mời tới ${member.fullName}!`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : `Không thể gửi lời mời cho ${member.fullName}`;
+      toast.error(msg);
+    } finally {
+      setResendingId(null);
+    }
+  };
+
+  const handleInviteAllPending = async (pendingList: MemberListItem[]) => {
+    if (pendingList.length === 0) return;
+    setIsBulkInviting(true);
+    let successCount = 0;
+    for (const m of pendingList) {
+      try {
+        await resendInvitation.mutateAsync(m.id);
+        successCount++;
+      } catch {
+        // continue
+      }
+    }
+    setIsBulkInviting(false);
+    if (successCount > 0) {
+      toast.success(`Đã gửi lời mời thành công tới ${successCount} nhân sự phòng ${department?.name}!`);
+    } else {
+      toast.error('Có lỗi xảy ra khi gửi lời mời hàng loạt.');
+    }
+  };
 
   if (isLoading) return <p className="text-sm text-slate-500">Đang tải thông tin phòng ban…</p>;
   if (isError || !department) {
@@ -48,6 +88,7 @@ export function DepartmentDetailPage() {
   const members = membersData?.items || [];
   const positions = positionsData?.items || [];
   const gd = department.gradeDistribution ?? {};
+  const pendingMembers = members.filter((m) => m.status === 'PENDING' || m.kind === 'invitation');
 
   const memberColumns: Column<MemberListItem>[] = [
     {
@@ -84,6 +125,26 @@ export function DepartmentDetailPage() {
           variant={MEMBER_STATUS_VARIANTS[m.status]}
         />
       ),
+    },
+    {
+      key: 'actions',
+      header: '',
+      cell: (m) =>
+        m.status === 'PENDING' || m.kind === 'invitation' ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleResendSingle(m);
+            }}
+            disabled={resendingId === m.id}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50/90 hover:bg-blue-100 hover:border-blue-300 px-2.5 py-1 text-xs font-bold text-blue-700 transition-all disabled:opacity-50"
+            title="Gửi email mời kích hoạt tài khoản cho nhân viên này"
+          >
+            <Mail className="size-3.5 text-blue-600" />
+            <span>{resendingId === m.id ? 'Đang gửi...' : 'Gửi lời mời'}</span>
+          </button>
+        ) : null,
     },
   ];
 
@@ -206,6 +267,44 @@ export function DepartmentDetailPage() {
 
         {tab === 'members' && (
           <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div>
+                <p className="text-xs font-bold text-slate-900">
+                  Danh sách nhân sự phòng {department.name} ({members.length})
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  {pendingMembers.length > 0
+                    ? `Có ${pendingMembers.length} nhân sự đang ở trạng thái Chờ kích hoạt tài khoản.`
+                    : 'Toàn bộ nhân sự đã được kích hoạt tài khoản.'}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                {pendingMembers.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => handleInviteAllPending(pendingMembers)}
+                    disabled={isBulkInviting}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50/90 hover:bg-blue-100 hover:border-blue-300 px-3.5 py-2 text-xs font-bold text-blue-700 transition-all shadow-2xs disabled:opacity-50"
+                  >
+                    <Send className="size-3.5" />
+                    <span>
+                      {isBulkInviting ? 'Đang gửi...' : `Mời tất cả (${pendingMembers.length})`}
+                    </span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setIsInviteOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#304bdf] hover:bg-[#203bbf] px-4 py-2 text-xs font-bold text-white shadow-sm shadow-[#304bdf]/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <UserPlus className="size-3.5" />
+                  <span>Mời nhân sự vào phòng này</span>
+                </button>
+              </div>
+            </div>
+
             <DataTable
               columns={memberColumns}
               data={members}
@@ -252,6 +351,14 @@ export function DepartmentDetailPage() {
           open={isEditOpen}
           onClose={() => setIsEditOpen(false)}
           department={department}
+        />
+      )}
+
+      {isInviteOpen && (
+        <InviteMembersModal
+          open={isInviteOpen}
+          onClose={() => setIsInviteOpen(false)}
+          defaultDepartmentId={department.id}
         />
       )}
     </div>

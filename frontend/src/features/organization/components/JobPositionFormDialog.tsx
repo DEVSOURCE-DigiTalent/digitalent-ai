@@ -84,7 +84,7 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
       name: data.name.trim(),
       description: data.description?.trim(),
       departmentId: data.departmentId || undefined,
-      jobGrade: data.jobGrade || undefined,
+      jobGrade: (data.jobGrade as 'G1' | 'G2' | 'G3') || undefined,
     };
     try {
       if (isEditing && position) {

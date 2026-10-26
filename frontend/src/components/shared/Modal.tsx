@@ -43,15 +43,15 @@ export function Modal({ open, onClose, title, description, children, footer, siz
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
-        className={cn('relative flex max-h-[90vh] w-full flex-col rounded-xl bg-ent-card border border-ent-line shadow-2xl outline-none', SIZES[size])}
+        className={cn('relative flex max-h-[90vh] w-full flex-col rounded-2xl bg-white border border-slate-200 shadow-2xl outline-none text-slate-900', SIZES[size])}
       >
-        <header className="flex items-start justify-between gap-4 border-b border-ent-line px-6 py-4">
+        <header className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-4">
           <div>
-            <h2 id={titleId} className="text-lg font-semibold text-ent-fg">
+            <h2 id={titleId} className="text-lg font-bold text-slate-900">
               {title}
             </h2>
             {description && (
-              <div id={descriptionId} className="mt-1 text-sm text-ent-fg-2">
+              <div id={descriptionId} className="mt-1 text-xs text-slate-500 leading-relaxed">
                 {description}
               </div>
             )}
@@ -60,13 +60,13 @@ export function Modal({ open, onClose, title, description, children, footer, siz
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="-mr-2 rounded-md p-2 text-ent-fg-3 hover:bg-ent-raised hover:text-ent-fg transition-colors"
+            className="-mr-2 rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
           >
             <X className="size-4" aria-hidden="true" />
           </button>
         </header>
-        <div className="overflow-y-auto px-6 py-5 text-ent-fg">{children}</div>
-        {footer && <footer className="flex justify-end gap-3 border-t border-ent-line px-6 py-4">{footer}</footer>}
+        <div className="overflow-y-auto px-6 py-5 text-slate-800">{children}</div>
+        {footer && <footer className="flex justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-slate-50/70 rounded-b-2xl">{footer}</footer>}
       </div>
     </div>,
     document.body,
