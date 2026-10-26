@@ -1,18 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { X, Info, Building2, Users, ChevronDown, Check, Search } from 'lucide-react';
 import {
   useCapabilityCeilings,
   useUpdateDepartmentCeilings,
   useUpdateOrganizationCeilings,
 } from '@/hooks/use-capability-ceilings';
 import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
-import { useReferencePositionLevels } from '@/hooks/use-reference-position-levels';
 import { organizationErrorMessage } from '@/lib/organization-errors';
-import { REFERENCE_POSITIONS } from '@/lib/reference-positions';
-import { formatDateTime } from '@/lib/utils';
 import type { CapabilityCeilings, CeilingDomain } from '@/services/capability-ceiling.service';
-import { referenceCeilingDraft, referenceLevelForDomain, suggestedSampleForDepartment } from './reference-ceiling';
 import './capability-ceiling.css';
 
 /** Phạm vi đang xem: cả doanh nghiệp hoặc id của một phòng ban. */
@@ -32,29 +29,28 @@ function departmentLevels(matrix: CapabilityCeilings, departmentId: string): Lev
   return Object.fromEntries((department?.ceilings ?? []).map((c) => [c.categoryId, c.level]));
 }
 
-/**
- * "Lý thuyết trần nhà" (OW-05): ma trận 6 năng lực × 3 cấp = 18 khóa là trần Digital AI; doanh nghiệp chọn trần
- * cho từng năng lực, phòng ban có thể đặt trần riêng (≤ trần doanh nghiệp). Các ô dưới trần là lộ trình.
- * Bấm vào một ô để đặt trần đến cấp đó (bấm lại ô trên cùng để hạ một cấp), rồi lưu.
- */
 export function CapabilityCeilingMatrix() {
   const navigate = useNavigate();
   const { data: matrix, isLoading, isError } = useCapabilityCeilings();
-  const { data: reference, isError: referenceError } = useReferencePositionLevels();
   const { can } = usePermission();
   const canEdit = can(PERMISSIONS.POSITION_REQUIREMENT_MANAGE);
   const saveOrganization = useUpdateOrganizationCeilings();
   const saveDepartment = useUpdateDepartmentCeilings();
   const [scope, setScope] = useState<string>(ALL);
-  /** Bản nháp chưa lưu theo phạm vi. */
   const [drafts, setDrafts] = useState<Record<string, Levels>>({});
-  const [referenceChoices, setReferenceChoices] = useState<Record<string, string>>({});
+  const [showGuide, setShowGuide] = useState(false);
+  const [isDeptMenuOpen, setIsDeptMenuOpen] = useState(false);
+  const [deptSearch, setDeptSearch] = useState('');
 
   const department = matrix?.departments.find((d) => d.departmentId === scope);
   const activeScope = scope === ALL || department ? scope : ALL;
-  const referenceChoice = department
-    ? referenceChoices[department.departmentId] ?? suggestedSampleForDepartment(department.code, department.name)
-    : '';
+
+  const filteredDepartments = useMemo(() => {
+    if (!matrix?.departments) return [];
+    if (!deptSearch.trim()) return matrix.departments;
+    const q = deptSearch.toLowerCase().trim();
+    return matrix.departments.filter((d) => d.name.toLowerCase().includes(q));
+  }, [matrix?.departments, deptSearch]);
 
   const saved = useMemo(() => {
     if (!matrix) return {};
@@ -81,7 +77,6 @@ export function CapabilityCeilingMatrix() {
   const current = drafts[activeScope] ?? saved;
   const dirty = Boolean(drafts[activeScope]) && !sameLevels(current, saved);
   const saving = saveOrganization.isPending || saveDepartment.isPending;
-  /** Trần doanh nghiệp đang áp cho phạm vi: bản nháp khi xem cả doanh nghiệp, bản đã lưu khi xem phòng ban. */
   const orgCeiling = activeScope === ALL ? current : orgSaved;
   const routeCount = sumLevels(current);
   const orgCount = sumLevels(orgCeiling);
@@ -123,10 +118,6 @@ export function CapabilityCeilingMatrix() {
   };
 
   const applySuggestion = () => {
-    if (activeScope !== ALL && !department?.hasSuggestion) {
-      toast.info('Chưa đủ mức gợi ý cho mọi miền: hãy gắn vị trí thuộc 5 mẫu tham chiếu hoặc hoàn thiện yêu cầu vị trí.');
-      return;
-    }
     const suggestion: Levels =
       activeScope === ALL
         ? Object.fromEntries(matrix.domains.map((d) => [d.categoryId, Math.max(1, d.suggestedCeiling)]))
@@ -134,28 +125,20 @@ export function CapabilityCeilingMatrix() {
     setDraft(suggestion);
   };
 
-  const applyReference = () => {
-    if (!department || reference?.levels[referenceChoice]?.length !== 6) return;
-    const { draft, capped } = referenceCeilingDraft(matrix.domains, reference.levels[referenceChoice], orgSaved);
-    setDraft(draft);
-    if (capped) {
-      toast.info('Một số mức mẫu cao hơn giới hạn doanh nghiệp nên đã được hạ theo giới hạn hiện tại.');
-    }
-  };
-
   const save = async () => {
     const ceilings = Object.entries(current).map(([categoryId, level]) => ({ categoryId, level }));
     try {
       if (activeScope === ALL) {
         const result = await saveOrganization.mutateAsync(ceilings);
-        toast.success(
-          result?.adjustedDepartmentCount
-            ? `Đã lưu trần doanh nghiệp và hạ trần của ${result.adjustedDepartmentCount} phòng ban theo trần mới.`
-            : 'Đã lưu trần doanh nghiệp.',
-        );
+        const adjustedCount = (result as { adjustedDepartmentCount?: number } | null | undefined)?.adjustedDepartmentCount ?? 0;
+        if (adjustedCount > 0) {
+          toast.info(`Đã lưu trần doanh nghiệp. Hạ trần của ${adjustedCount} phòng ban vượt trần mới.`);
+        } else {
+          toast.success('Đã lưu trần năng lực của doanh nghiệp.');
+        }
       } else {
-        await saveDepartment.mutateAsync({ departmentId: activeScope, data: { ceilings } });
-        toast.success(`Đã lưu trần phòng ban ${department?.name ?? ''}.`.trim());
+        await saveDepartment.mutateAsync({ departmentId: activeScope, data: { inherit: false, ceilings } });
+        toast.success(`Đã lưu trần năng lực cho ${department?.name ?? 'phòng ban'}.`);
       }
       setDraft(null);
     } catch (error) {
@@ -174,50 +157,181 @@ export function CapabilityCeilingMatrix() {
     }
   };
 
-  const routeLabel = activeScope === ALL ? 'khóa trong phạm vi doanh nghiệp' : `khóa được mở cho phòng ban ${department?.name}`;
+  const routeLabel = activeScope === ALL ? 'Khóa mở (Doanh nghiệp)' : `Khóa mở (${department?.name})`;
   const blockedDepartments = activeScope !== ALL && !matrix.isConfigured;
-  const sampleLevels = reference?.levels[referenceChoice];
-  const sampleDraft = sampleLevels?.length === 6 ? referenceCeilingDraft(matrix.domains, sampleLevels, orgSaved).draft : null;
 
   return (
     <section className="cc-root" aria-labelledby="cc-title">
-      <div className="cc-head">
-        <div className="cc-title">
-          <span className="cc-code" title="Bước 02 Business ceiling và 03 Department ceiling">02–03</span>
-          <h2 id="cc-title">Giới hạn khóa học của doanh nghiệp và phòng ban</h2>
+      {/* ── Tiêu đề súc tích & Nút Hướng dẫn nổi ── */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-1">
+        <div className="flex items-center gap-3">
+          <h2 id="cc-title" className="text-xl font-bold tracking-tight text-slate-900">
+            Trần năng lực số
+          </h2>
           {matrix.isConfigured ? (
-            <span className="cc-tag ok">Đã lưu</span>
+            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
+              Đã lưu
+            </span>
           ) : (
-            <span className="cc-tag warn">Chưa lưu · đang hiển thị gợi ý</span>
+            <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 border border-amber-200">
+              Gợi ý · Chưa lưu
+            </span>
           )}
         </div>
-        <p>
-          Chọn cấp khóa học cao nhất doanh nghiệp mở cho từng miền. Có thể giới hạn thêm cho nhân viên một phòng ban;
-          mục tiêu năng lực và lộ trình cá nhân vẫn do vị trí công việc của từng người quyết định.
-        </p>
+
+        <button
+          type="button"
+          onClick={() => setShowGuide(true)}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 shadow-sm transition-all"
+        >
+          <Info className="size-3.5 text-slate-500" />
+          Quy tắc & Hướng dẫn
+        </button>
       </div>
 
+      {/* ── Ma trận trung tâm (Clean & Rõ ràng) ── */}
       <div className="cc-grid">
-        <div className="cc-card">
-          <div className="cc-seg" role="group" aria-label="Phạm vi lộ trình">
-            <button type="button" aria-pressed={activeScope === ALL} onClick={() => setScope(ALL)}>
-              Cả doanh nghiệp
-              {drafts[ALL] && <i aria-label="chưa lưu" />}
-            </button>
-            {matrix.departments.map((d) => (
+        <div className="cc-card shadow-sm border border-slate-200">
+          {/* ── Bộ chọn phạm vi tối giản, hiện đại (Segmented Scope Control) ── */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100">
+            <div className="relative inline-flex items-center rounded-xl bg-slate-100/90 p-1 border border-slate-200/60 shadow-inner">
+              {/* Nút 1: Toàn doanh nghiệp */}
               <button
-                key={d.departmentId}
                 type="button"
-                aria-pressed={activeScope === d.departmentId}
-                onClick={() => setScope(d.departmentId)}
-                title={d.isCustomized ? 'Có trần riêng' : 'Kế thừa trần doanh nghiệp'}
+                onClick={() => {
+                  setScope(ALL);
+                  setIsDeptMenuOpen(false);
+                }}
+                className={`relative flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 select-none ${
+                  activeScope === ALL
+                    ? 'bg-white text-emerald-800 shadow-sm border border-slate-200/50 font-bold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/40'
+                }`}
               >
-                {d.name}
-                {drafts[d.departmentId] && <i aria-label="chưa lưu" />}
+                <Building2 className="size-3.5 text-emerald-700" />
+                <span>Toàn doanh nghiệp</span>
+                {drafts[ALL] && <span className="size-1.5 rounded-full bg-amber-500" title="Chưa lưu" />}
               </button>
-            ))}
+
+              {/* Nút 2: Theo phòng ban (có Popover chọn) */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (activeScope === ALL && matrix.departments.length > 0) {
+                      setScope(matrix.departments[0].departmentId);
+                    }
+                    setIsDeptMenuOpen(!isDeptMenuOpen);
+                  }}
+                  className={`relative flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 select-none ${
+                    activeScope !== ALL
+                      ? 'bg-white text-emerald-800 shadow-sm border border-slate-200/50 font-bold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/40'
+                  }`}
+                >
+                  <Users className="size-3.5 text-emerald-700" />
+                  <span className="max-w-[170px] sm:max-w-[210px] truncate">
+                    {activeScope !== ALL && department ? department.name : 'Chọn phòng ban'}
+                  </span>
+                  {activeScope !== ALL && department?.isCustomized && (
+                    <span className="rounded bg-emerald-100 px-1.5 py-0.2 text-[9.5px] font-bold text-emerald-800">
+                      Trần riêng
+                    </span>
+                  )}
+                  {activeScope !== ALL && drafts[activeScope] && (
+                    <span className="size-1.5 rounded-full bg-amber-500" title="Chưa lưu" />
+                  )}
+                  <ChevronDown className={`size-3 text-slate-400 transition-transform duration-200 ${isDeptMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Popover danh sách phòng ban */}
+                {isDeptMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-20" onClick={() => setIsDeptMenuOpen(false)} />
+                    <div className="absolute left-0 sm:left-auto sm:right-0 top-full z-30 mt-2 w-80 rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-xl">
+                      <div className="flex items-center justify-between px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                        <span>Phòng ban ({matrix.departments.length})</span>
+                        <span>Trần áp dụng</span>
+                      </div>
+
+                      {matrix.departments.length > 4 && (
+                        <div className="relative pt-2 pb-1">
+                          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                          <input
+                            type="text"
+                            placeholder="Tìm kiếm phòng ban..."
+                            value={deptSearch}
+                            onChange={(e) => setDeptSearch(e.target.value)}
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none"
+                            onClick={(e) => e.stopPropagation()}
+                            autoFocus
+                          />
+                        </div>
+                      )}
+
+                      <div className="mt-1 max-h-64 overflow-y-auto space-y-1 pr-1">
+                        {filteredDepartments.map((d) => {
+                          const isSelected = activeScope === d.departmentId;
+                          const hasDraft = Boolean(drafts[d.departmentId]);
+                          return (
+                            <button
+                              key={d.departmentId}
+                              type="button"
+                              onClick={() => {
+                                setScope(d.departmentId);
+                                setIsDeptMenuOpen(false);
+                                setDeptSearch('');
+                              }}
+                              className={`flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-xs transition-colors ${
+                                isSelected
+                                  ? 'bg-emerald-50 text-emerald-900 font-bold border border-emerald-200/60'
+                                  : 'text-slate-700 hover:bg-slate-50 border border-transparent'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                {isSelected ? (
+                                  <Check className="size-3.5 text-emerald-600 shrink-0" />
+                                ) : (
+                                  <span className="size-1.5 rounded-full bg-slate-300 shrink-0 ml-1 mr-1" />
+                                )}
+                                <span className="truncate">{d.name}</span>
+                                {hasDraft && <span className="size-1.5 rounded-full bg-amber-500 shrink-0" title="Chưa lưu" />}
+                              </div>
+
+                              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                d.isCustomized
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : 'bg-slate-100 text-slate-500'
+                              }`}>
+                                {d.isCustomized ? 'Trần riêng' : 'Kế thừa DN'}
+                              </span>
+                            </button>
+                          );
+                        })}
+                        {filteredDepartments.length === 0 && (
+                          <p className="py-4 text-center text-xs text-slate-400">Không tìm thấy phòng ban</p>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Dòng trạng thái ngữ cảnh tinh tế */}
+            <div className="text-xs text-slate-500 flex items-center gap-2">
+              <span className={`size-2 rounded-full shrink-0 ${activeScope === ALL ? 'bg-emerald-500' : department?.isCustomized ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+              <span className="font-medium text-slate-600">
+                {activeScope === ALL
+                  ? 'Đang xem & thiết lập trần chung cho toàn doanh nghiệp'
+                  : department?.isCustomized
+                    ? `${department.name} đang áp dụng trần năng lực riêng`
+                    : `${department?.name ?? 'Phòng ban'} đang kế thừa trần từ doanh nghiệp`}
+              </span>
+            </div>
           </div>
 
+          {/* Ma trận màu xanh */}
           <div className="cc-mx" role="group" aria-label="Ma trận năng lực nhân cấp độ">
             <div />
             {matrix.levels.map((level) => (
@@ -244,140 +358,116 @@ export function CapabilityCeilingMatrix() {
             })}
           </div>
 
+          {/* Chú giải ngắn gọn */}
           <div className="cc-legend">
-            <span><i className="route" />Khóa được mở trong phạm vi đang xem</span>
+            <span><i className="route" />Được mở trong phạm vi</span>
             <span><i className="dn" />Trong trần doanh nghiệp</span>
             <span><i />Chỉ trong trần Digital AI</span>
           </div>
 
+          {/* Số liệu thống kê */}
           <div className="cc-stats">
             <div><b>{routeCount}</b><span>{routeLabel}</span></div>
-            <div><b>{orgCount}</b><span>khóa trong trần doanh nghiệp</span></div>
-            <div><b>{matrix.platformCourseCount}</b><span>khóa trong trần Digital AI</span></div>
+            <div><b>{orgCount}</b><span>Khóa trần doanh nghiệp</span></div>
+            <div><b>{matrix.platformCourseCount}</b><span>Tổng danh mục chuẩn (18)</span></div>
           </div>
 
-          <p className="cc-note">
-            Mã trong ô là khóa chuẩn của năng lực ở cấp đó (F, I, A là cơ bản, trung cấp, nâng cao).
-            {matrix.updatedAt && ` Cập nhật ${formatDateTime(matrix.updatedAt)}${matrix.updatedByName ? ` bởi ${matrix.updatedByName}` : ''}.`}
-          </p>
-
-          {canEdit && activeScope !== ALL && department && (
-            <div className="cc-sources">
-              <h3>Chọn nguồn tham khảo cho {department.name}</h3>
-              <p>Hai nguồn có thể khác nhau. Chọn một nguồn để đưa vào bản nháp, kiểm tra ma trận phía trên rồi lưu.</p>
-              <div className="cc-source-options">
-                <div className="cc-source-option">
-                  <strong>Yêu cầu vị trí của doanh nghiệp</strong>
-                  <small>Mức cao nhất của các năng lực trong từng miền, tổng hợp từ vị trí gắn với phòng ban. Ưu tiên yêu cầu đã công bố; vị trí chưa có yêu cầu dùng mẫu phù hợp.</small>
-                  <button type="button" className="cc-btn" onClick={applySuggestion} disabled={saving || blockedDepartments || !department.hasSuggestion}>
-                    Dùng gợi ý theo vị trí
-                  </button>
-                </div>
-                <div className="cc-source-option">
-                  <label htmlFor="cc-reference-sample">Mẫu DigiTalent do Admin quản lý</label>
-                  <small>Chọn trực tiếp một trong 5 mẫu. Không cần vị trí đã gắn với phòng ban.</small>
-                  <select
-                    id="cc-reference-sample"
-                    value={referenceChoice}
-                    onChange={(event) => setReferenceChoices((choices) => ({ ...choices, [department.departmentId]: event.target.value }))}
-                    disabled={saving || !reference}
-                  >
-                    <option value="">Chọn một trong 5 vị trí mẫu</option>
-                    {REFERENCE_POSITIONS.map((position) => <option key={position.code} value={position.code}>{position.name}</option>)}
-                  </select>
-                  <button type="button" className="cc-btn" onClick={applyReference}
-                    disabled={saving || blockedDepartments || !sampleDraft}>
-                    Dùng mẫu đã chọn
-                  </button>
-                </div>
-              </div>
-              {!department.hasSuggestion && <p className="cc-source-status">Chưa có đủ gợi ý theo vị trí cho 6 miền. Bạn có thể dùng mẫu Admin hoặc tự chọn mức.</p>}
-              {referenceError && <p className="cc-source-status">Chưa tải được mẫu Admin.</p>}
-              <div className="cc-comparison-scroll">
-                <table className="cc-comparison">
-                  <caption>So sánh mức theo miền trước khi lưu</caption>
-                  <thead><tr><th scope="col">Miền năng lực</th><th scope="col">Gợi ý vị trí</th><th scope="col">Mẫu Admin {reference ? `v${reference.version}` : ''}</th><th scope="col">Giới hạn DN</th><th scope="col">Đang xem</th></tr></thead>
-                  <tbody>
-                    {matrix.domains.map((domain, index) => {
-                      const raw = sampleLevels?.length === 6 ? referenceLevelForDomain(domain, index, sampleLevels) : null;
-                      const capped = sampleDraft?.[domain.categoryId];
-                      const suggested = department.ceilings.find((ceiling) => ceiling.categoryId === domain.categoryId)?.suggested;
-                      return (
-                        <tr key={domain.categoryId}>
-                          <th scope="row">{domain.name}</th>
-                          <td>{department.hasSuggestion ? suggested : '—'}</td>
-                          <td>{raw == null ? '—' : raw === capped ? raw : `${raw} → ${capped}`}</td>
-                          <td>{orgSaved[domain.categoryId] ?? 0}</td>
-                          <td>{current[domain.categoryId] ?? 0}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <small>0 = không mở; 1 = cơ bản; 2 = trung cấp; 3 = nâng cao. Gợi ý vị trí đã xét giới hạn DN; mẫu Admin vượt giới hạn hiện “mức mẫu → mức có thể áp dụng”. Thay đổi chỉ có hiệu lực sau khi lưu.</small>
-            </div>
-          )}
+          {/* Nút hành động */}
           {canEdit && (
             <div className="cc-actions">
               <span className="hint">
                 {blockedDepartments
-                  ? 'Lưu trần doanh nghiệp trước khi đặt giới hạn cho phòng ban.'
+                  ? 'Cần lưu trần doanh nghiệp trước.'
                   : activeScope === ALL
-                    ? 'Bấm vào ô để đặt giới hạn doanh nghiệp đến cấp đó.'
+                    ? 'Bấm trực tiếp vào ô để điều chỉnh trần.'
                     : department?.isCustomized
-                      ? 'Phòng ban đang có giới hạn riêng.'
-                      : 'Phòng ban đang kế thừa giới hạn doanh nghiệp.'}
+                      ? 'Đang dùng giới hạn riêng.'
+                      : 'Đang kế thừa trần doanh nghiệp.'}
               </span>
               <div className="btns">
-                {activeScope === ALL && <button type="button" className="cc-btn" onClick={applySuggestion} disabled={saving}>Dùng mức tổng hợp theo vị trí</button>}
-                {activeScope !== ALL && department?.isCustomized && (
-                  <button type="button" className="cc-btn" onClick={inherit} disabled={saving}>Kế thừa giới hạn doanh nghiệp</button>
+                {activeScope === ALL && (
+                  <button type="button" className="cc-btn" onClick={applySuggestion} disabled={saving}>
+                    Gợi ý theo vị trí
+                  </button>
                 )}
-                <button type="button" className="cc-btn" onClick={() => setDraft(null)} disabled={!dirty || saving}>Hủy</button>
-                <button type="button" className="cc-btn primary" onClick={save}
-                  disabled={saving || blockedDepartments || (!dirty && (activeScope !== ALL || matrix.isConfigured))}>
+                {activeScope !== ALL && department?.isCustomized && (
+                  <button type="button" className="cc-btn" onClick={inherit} disabled={saving}>
+                    Kế thừa trần doanh nghiệp
+                  </button>
+                )}
+                <button type="button" className="cc-btn" onClick={() => setDraft(null)} disabled={!dirty || saving}>
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  className="cc-btn primary"
+                  onClick={save}
+                  disabled={saving || blockedDepartments || (!dirty && (activeScope !== ALL || matrix.isConfigured))}
+                >
                   {saving ? 'Đang lưu…' : activeScope === ALL ? 'Lưu trần doanh nghiệp' : 'Lưu trần phòng ban'}
                 </button>
               </div>
             </div>
           )}
         </div>
+      </div>
 
-        <div className="cc-side">
-          <p>
-            Ma trận {matrix.domains.length} năng lực × {matrix.platformMaxLevel} cấp độ chứa đủ {matrix.platformCourseCount}{' '}
-            khóa và chính là trần năng lực số của Digital AI. Mỗi doanh nghiệp chọn trần riêng cho từng năng lực; doanh
-            nghiệp có thể giới hạn thêm khóa học mở cho nhân viên trong từng phòng ban. Đây là phạm vi khóa được mở;
-            lộ trình của mỗi nhân viên còn phụ thuộc mục tiêu của vị trí họ đảm nhiệm.
-          </p>
-          <div className="cc-box rule">
-            <h4>Quy tắc</h4>
-            <p><code>Giới hạn phòng ban ≤ Giới hạn doanh nghiệp ≤ Danh mục DigiTalent</code></p>
-            <p>
-              Xét riêng từng năng lực. Hệ thống chặn khi đặt trần phòng ban cao hơn trần doanh nghiệp ở bất kỳ năng lực
-              nào; hạ trần doanh nghiệp sẽ hạ theo trần phòng ban đang cao hơn.
-            </p>
-          </div>
-          <div className="cc-box warnbox">
-            <h4>Lưu ý về dữ liệu</h4>
-            <p>
-              Dùng thử chỉ có số liệu cấp cơ bản. Các ô cấp 2 và 3 trong lộ trình dựa trên mong muốn của doanh nghiệp,
-              chưa có số liệu đo thật.
-            </p>
-          </div>
-          <div className="cc-box info">
-            <h4>Hai nguồn tham khảo</h4>
-            <p>
-              “Gợi ý theo vị trí” ưu tiên yêu cầu doanh nghiệp đã công bố cho các vị trí gắn với nhân viên hoặc phòng ban,
-              rồi mới dùng mẫu cho vị trí chưa có yêu cầu; mức tổng hợp có thể khác bảng Admin. “Mẫu tham chiếu DigiTalent” lấy trực tiếp từ bảng 5 vị trí của Admin, do bạn
-              chọn rõ mẫu cần dùng. Cả hai đều không vượt giới hạn doanh nghiệp và chỉ đổi phạm vi khóa sau khi bạn lưu.
-              {' '}Mục tiêu học của nhân viên vẫn cần yêu cầu vị trí riêng.
-              {activeScope !== ALL && department && !department.hasSuggestion && ' Phòng ban này chưa có đủ yêu cầu vị trí đã công bố cho tất cả miền; bạn vẫn có thể chọn mẫu Admin.'}
-            </p>
+      {/* ── Modal Popup nổi: Quy tắc & Hướng dẫn ── */}
+      {showGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Info className="size-5 text-emerald-600" />
+                <h3 className="text-base font-bold text-slate-900">Quy tắc & Hướng dẫn trần năng lực</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGuide(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
+              <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/70">
+                <span className="font-bold text-slate-800 block mb-1">📐 Nguyên tắc cấp bậc:</span>
+                <code>Trần phòng ban ≤ Trần doanh nghiệp ≤ Danh mục DigiTalent (3 cấp)</code>
+                <p className="mt-1 text-slate-500">
+                  Phòng ban chỉ được mở khóa tối đa bằng trần doanh nghiệp. Hạ trần doanh nghiệp sẽ tự động hạ trần các phòng ban liên quan.
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-amber-50/70 p-3 border border-amber-200/60">
+                <span className="font-bold text-amber-900 block mb-1">🔒 Bản quyền khóa học thương mại:</span>
+                <p className="text-amber-800">
+                  - <b>Cấp 1 (Cơ bản - F):</b> Mở miễn phí 100% trong gói dùng thử cho toàn bộ doanh nghiệp.<br />
+                  - <b>Cấp 2 (Trung cấp - I) & Cấp 3 (Nâng cao - A):</b> Hiển thị biểu tượng 🔒 nếu chưa mua suất học. Khi doanh nghiệp mua suất học, trần năng lực sẽ được tự động mở tương ứng.
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-blue-50/70 p-3 border border-blue-200/60">
+                <span className="font-bold text-blue-900 block mb-1">👆 Cách thao tác:</span>
+                <p className="text-blue-800">
+                  Bấm trực tiếp vào từng ô mã khóa học để đặt trần đến cấp đó (bấm lại ô đang chọn để hạ 1 cấp). Bấm <b>Lưu trần</b> để áp dụng.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowGuide(false)}
+                className="rounded-xl px-4 py-2 text-xs font-bold text-white shadow-sm"
+                style={{ background: 'var(--po-accent)' }}
+              >
+                Đã hiểu
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </section>
   );
 }
