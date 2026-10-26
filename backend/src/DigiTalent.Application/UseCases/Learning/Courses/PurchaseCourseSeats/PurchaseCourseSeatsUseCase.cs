@@ -153,8 +153,8 @@ public class PurchaseCourseSeatsUseCase : IUseCase<PurchaseCourseSeatsInput, Pur
                     orderCode: orderCode,
                     amount: totalAmount,
                     description: $"DT {normalizedCode} {input.Seats}suat",
-                    returnUrl: "http://localhost:5173/organization/courses",
-                    cancelUrl: "http://localhost:5173/organization/courses"
+                    returnUrl: "http://localhost:5173/enterprise/courses",
+                    cancelUrl: "http://localhost:5173/enterprise/courses"
                 );
                 checkoutUrl = payResult.CheckoutUrl;
                 qrCode = payResult.QrCode;

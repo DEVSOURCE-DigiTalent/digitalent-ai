@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   useCapabilityCeilings,
@@ -37,6 +38,7 @@ function departmentLevels(matrix: CapabilityCeilings, departmentId: string): Lev
  * Bấm vào một ô để đặt trần đến cấp đó (bấm lại ô trên cùng để hạ một cấp), rồi lưu.
  */
 export function CapabilityCeilingMatrix() {
+  const navigate = useNavigate();
   const { data: matrix, isLoading, isError } = useCapabilityCeilings();
   const { data: reference, isError: referenceError } = useReferencePositionLevels();
   const { can } = usePermission();
@@ -110,7 +112,7 @@ export function CapabilityCeilingMatrix() {
           action: {
             label: 'Trang bị suất học',
             onClick: () => {
-              window.location.href = '/organization/courses';
+              navigate('/enterprise/courses');
             },
           },
         }
