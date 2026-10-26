@@ -100,6 +100,23 @@ export function CapabilityCeilingMatrix() {
       toast.error('Trần phòng ban không được cao hơn trần doanh nghiệp ở bất kỳ năng lực nào.');
       return;
     }
+    // Kiểm tra bản quyền: doanh nghiệp chưa mua bản quyền khóa học cấp cao hơn thì không được nâng trần
+    const courseAtLevel = domain.courses.find((c) => c.level === target);
+    const maxAllowed = domain.maxAllowedCeiling ?? 1;
+    if (activeScope === ALL && target > maxAllowed && courseAtLevel?.isUnlocked === false) {
+      toast.warning(
+        `Khóa học ${courseAtLevel.code ?? `cấp ${target}`} chưa được mở bản quyền. Vui lòng mua suất học để nâng trần doanh nghiệp lên bậc ${target}.`,
+        {
+          action: {
+            label: 'Trang bị suất học',
+            onClick: () => {
+              window.location.href = '/organization/courses';
+            },
+          },
+        }
+      );
+      return;
+    }
     setDraft({ ...current, [domain.categoryId]: target });
   };
 
@@ -387,9 +404,10 @@ function DomainRow({
       {domain.courses.map((course) => {
         const inRoute = course.level <= routeLevel;
         const inOrg = course.level <= dnLevel;
-        const state = inRoute ? 'trong lộ trình đang xem' : inOrg ? 'trong trần doanh nghiệp' : 'chỉ trong trần Digital AI';
-        const className = `cc-cell${inRoute ? ' route' : inOrg ? ' dn' : ''}${course.code ? '' : ' empty'}`;
-        const label = course.code ?? 'Chưa có khóa';
+        const isLocked = course.isUnlocked === false;
+        const state = inRoute ? 'trong lộ trình đang xem' : inOrg ? 'trong trần doanh nghiệp' : isLocked ? 'chưa mở bản quyền (cần mua suất)' : 'chỉ trong trần Digital AI';
+        const className = `cc-cell${inRoute ? ' route' : inOrg ? ' dn' : ''}${course.code ? '' : ' empty'}${isLocked ? ' opacity-75' : ''}`;
+        const label = course.code ? (isLocked ? `🔒 ${course.code}` : course.code) : 'Chưa có khóa';
         const title = `${course.code ? `${course.code} · ${course.title}` : 'Chưa có khóa'}: ${state}`;
         return editable ? (
           <button

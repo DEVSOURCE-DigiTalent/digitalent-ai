@@ -607,6 +607,8 @@ function CourseSeatPurchaseModal({
     orderId: string;
     totalAmount: number;
     seats: number;
+    checkoutUrl?: string;
+    qrCode?: string;
     createdAt?: string;
   } | null>(null);
 
@@ -622,6 +624,8 @@ function CourseSeatPurchaseModal({
             orderId: data.orderId,
             totalAmount: data.totalAmount,
             seats: data.seats,
+            checkoutUrl: data.checkoutUrl,
+            qrCode: data.qrCode,
             createdAt: data.createdAt,
           });
           onSuccess?.();
@@ -655,10 +659,10 @@ function CourseSeatPurchaseModal({
             <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 font-bold text-xl">
               ✓
             </div>
-            <h3 className="text-base font-bold text-slate-900">Kích hoạt suất học thành công!</h3>
+            <h3 className="text-base font-bold text-slate-900">Kích hoạt suất học & Mở trần thành công!</h3>
             <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
               Bạn đã trang bị thành công <b>{result.seats} suất</b> cho khóa học <b>{course.code}</b>.
-              Khóa học đã được mở bản quyền ngay lập tức và đồng bộ vào hệ thống quản lý Platform Admin.
+              Khóa học đã được mở bản quyền và trần năng lực của doanh nghiệp đã được nâng lên <b>Bậc {level} ({levelName(level)})</b>.
             </p>
             <div className="mx-auto max-w-sm rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-left text-xs space-y-1">
               <div className="flex justify-between text-slate-600">
@@ -674,7 +678,20 @@ function CourseSeatPurchaseModal({
                 <span className="text-slate-700">{result.createdAt ? new Date(result.createdAt).toLocaleString('vi-VN') : new Date().toLocaleString('vi-VN')}</span>
               </div>
             </div>
-            <div className="pt-3">
+            {result.checkoutUrl && (
+              <div className="pt-2">
+                <a
+                  href={result.checkoutUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:opacity-95"
+                  style={{ background: '#2563eb' }}
+                >
+                  💳 Mở cổng thanh toán VietQR / PayOS
+                </a>
+              </div>
+            )}
+            <div className="pt-2">
               <button
                 type="button"
                 onClick={onClose}
