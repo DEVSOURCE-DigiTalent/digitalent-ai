@@ -1,16 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Users, 
-  Building2, 
-  FileCheck2, 
-  GraduationCap, 
-  ArrowRight, 
-  ChevronRight,
-  TrendingUp,
-  UserPlus,
-  Send
-} from 'lucide-react';
+import { ArrowRight, Send } from 'lucide-react';
 import { useOrganizationOverview } from '@/hooks/use-organization';
 import { useCapabilityDashboard } from '@/hooks/use-analytics';
 import { OwnerOverviewHero } from '../components/OwnerOverviewHero';
@@ -19,6 +9,24 @@ import { OwnerCapabilityArchitecture } from '../components/OwnerCapabilityArchit
 import { OwnerTrainingCycle } from '../components/OwnerTrainingCycle';
 import { SendAnnouncementModal } from '../components/SendAnnouncementModal';
 
+const PULSE_TOKENS = {
+  '--po-canvas': '#f7f9fd',
+  '--po-surface': '#fff',
+  '--po-ink': '#172442',
+  '--po-muted': '#62718d',
+  '--po-accent': '#304bdf',
+  '--po-accent-strong': '#203bbf',
+  '--po-coral': '#ef735c',
+  '--po-lime': '#c6ec78',
+  '--po-line': '#dfe6f3',
+  '--po-soft': '#eef2ff',
+  '--po-tint': '#edf1ff',
+  '--po-warm': '#f1816b',
+} as React.CSSProperties;
+
+const KPI_ACCENTS = ['#3856db', '#f1816b', '#67b6ad', '#a48ce3'];
+const KPI_VALUE_COLORS = ['#233aaf', '#d36f5b', '#218e86', '#826bc5'];
+
 export function OwnerOverviewPage() {
   const [announcing, setAnnouncing] = useState(false);
   const { data: orgData, isLoading: orgLoading, isError: orgError } = useOrganizationOverview();
@@ -26,236 +34,167 @@ export function OwnerOverviewPage() {
 
   if (orgLoading || capLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="flex flex-col items-center gap-3">
-          <div className="size-8 animate-spin rounded-full border-3 border-blue-600 border-t-transparent" />
-          <p className="text-sm font-medium text-slate-500">Đang tải dữ liệu tổng quan doanh nghiệp...</p>
-        </div>
+      <div className="flex items-center justify-center py-16">
+        <p className="text-sm" style={{ color: 'var(--po-muted)' }}>Đang tải tổng quan...</p>
       </div>
     );
   }
 
   if (orgError || !orgData) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center max-w-md">
-          <p className="text-sm font-semibold text-rose-700" role="alert">
-            Không tải được thông tin tổng quan doanh nghiệp.
-          </p>
-          <p className="text-xs text-rose-500 mt-1">Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau.</p>
-        </div>
+      <div className="flex items-center justify-center py-16">
+        <p className="text-sm text-red-600" role="alert">
+          Không tải được thông tin tổng quan.
+        </p>
       </div>
     );
   }
 
   const deptItem = orgData.setup.find((s) => s.key === 'departments');
   const posItem = orgData.setup.find((s) => s.key === 'positions');
-  const departmentCount = deptItem ? parseInt(deptItem.detail, 10) || 0 : 0;
-  const positionCount = posItem ? parseInt(posItem.detail, 10) || 0 : 0;
+  const departmentCount = deptItem ? parseInt(deptItem.detail) || 0 : 0;
+  const positionCount = posItem ? parseInt(posItem.detail) || 0 : 0;
 
-  const seatsUsed = orgData.seats.used;
-  const seatsLimit = orgData.seats.limit ?? 50;
-  const seatsPercent = Math.min(100, Math.round((seatsUsed / seatsLimit) * 100));
+  const kpis = [
+    {
+      label: 'Tài khoản đang dùng',
+      value: orgData.seats.used,
+      suffix: orgData.seats.limit != null ? `/${orgData.seats.limit}` : '',
+      sublabel: 'Toàn bộ phòng ban',
+    },
+    {
+      label: 'Phòng ban',
+      value: departmentCount,
+      suffix: '',
+      sublabel: 'Với kiến trúc riêng',
+    },
+    {
+      label: 'Minh chứng chờ duyệt',
+      value: orgData.pendingReviews ?? 0,
+      suffix: '',
+      sublabel: 'Đánh giá cuối khóa học',
+    },
+    {
+      label: 'Đợt đào tạo đang chạy',
+      value: orgData.runningBatches ?? 0,
+      suffix: '',
+      sublabel: 'Theo dõi trong báo cáo',
+    },
+  ];
 
   return (
-    <div className="w-full space-y-6 pb-12">
-      {/* ── Top Bar Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/80 pb-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
-            <span className="size-2 rounded-full bg-blue-600" />
-            <span>Ban Giám Đốc · Tổng quan điều hành</span>
-          </div>
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-            Hệ thống Quản trị Năng lực Số
-          </h2>
-        </div>
-
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setAnnouncing(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer"
-          >
-            <Send className="size-3.5 text-blue-600" />
-            <span>Gửi thông báo & Hạn chót</span>
-          </button>
-          <Link
-            to="/enterprise/members"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 hover:text-slate-900 transition-colors"
-          >
-            <UserPlus className="size-3.5" />
-            <span>Thêm nhân sự</span>
-          </Link>
-          <Link
-            to="/enterprise/reports"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-blue-500 transition-colors"
-          >
-            <span>Báo cáo chu kỳ</span>
-            <ArrowRight className="size-3.5" />
-          </Link>
-        </div>
-      </div>
-
-      {/* ── Hero Executive Card ── */}
-      <OwnerOverviewHero org={orgData} cap={capData} />
-
-      {/* ── Bento KPI Cards Grid ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Seats Usage */}
-        <div className="bento-card p-5 flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div>
-              <span className="text-xs font-medium text-slate-500">Tài khoản bản quyền</span>
-              <div className="flex items-baseline gap-1 mt-1.5">
-                <span className="text-2xl font-bold text-slate-900 tabular-nums">{seatsUsed}</span>
-                <span className="text-sm font-medium text-slate-400">/{seatsLimit}</span>
-              </div>
-            </div>
-            <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
-              <Users className="size-5" />
-            </div>
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-slate-100">
-            <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
-              <span>Đã cấp phát</span>
-              <span className="font-semibold text-slate-700">{seatsPercent}%</span>
-            </div>
-            <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
-              <div 
-                className="h-full rounded-full bg-blue-600 transition-all duration-500" 
-                style={{ width: `${seatsPercent}%` }} 
+    <div
+      className="-m-4 md:-m-6 min-h-screen"
+      style={{
+        ...PULSE_TOKENS,
+        background:
+          'radial-gradient(ellipse 760px 380px at 94% 0, color-mix(in srgb, #3856db 10%, transparent), transparent 70%), var(--po-canvas)',
+        fontFamily: 'Inter, "Segoe UI", Arial, sans-serif',
+      }}
+    >
+      <div
+        className="mx-auto max-w-[1440px]"
+        style={{ padding: 'clamp(26px, 3.5vw, 50px) clamp(22px, 4vw, 62px) 90px' }}
+      >
+        {/* ── Page Header ── */}
+        <div className="mb-[27px] flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
+          <div>
+            <span
+              className="text-[11px] font-black uppercase tracking-[0.14em]"
+              style={{ color: 'var(--po-muted)' }}
+            >
+              <span
+                className="mr-[7px] inline-block size-1.5 rounded-full align-middle"
+                style={{ background: 'var(--po-coral)' }}
               />
-            </div>
-            <Link 
-              to="/enterprise/members"
-              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+              Chủ doanh nghiệp
+            </span>
+            <h1
+              className="mt-2 font-semibold leading-[1.05]"
+              style={{
+                color: 'var(--po-ink)',
+                fontSize: 'clamp(34px, 4vw, 55px)',
+                letterSpacing: '-0.055em',
+              }}
             >
-              <span>Quản lý thành viên</span>
-              <ChevronRight className="size-3" />
+              Hiển thị năng lực tại {orgData.name}.
+            </h1>
+            <p
+              className="mt-2 text-sm leading-relaxed max-w-xl"
+              style={{ color: 'var(--po-muted)' }}
+            >
+              Mục tiêu, học tập và kết quả khóa học nằm trong một hành trình.
+            </p>
+          </div>
+          <div className="shrink-0 flex items-center gap-2.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setAnnouncing(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#304bdf] px-[17px] py-[11px] text-[13px] font-extrabold text-white transition-all hover:bg-[#203bbf] shadow-xs"
+            >
+              <Send className="size-4" />
+              Gửi thông báo & Hạn chót
+            </button>
+            <Link
+              to="/enterprise/reports"
+              className="inline-flex items-center gap-2 rounded-xl border px-[17px] py-[11px] text-[13px] font-extrabold transition-colors hover:opacity-80"
+              style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)' }}
+            >
+              Xem báo cáo chu kỳ
+              <ArrowRight className="size-4" />
             </Link>
           </div>
         </div>
 
-        {/* Card 2: Departments */}
-        <div className="bento-card p-5 flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div>
-              <span className="text-xs font-medium text-slate-500">Phòng ban & Vị trí</span>
-              <div className="flex items-baseline gap-1.5 mt-1.5">
-                <span className="text-2xl font-bold text-slate-900 tabular-nums">{departmentCount}</span>
-                <span className="text-xs font-medium text-slate-500">phòng ban</span>
-              </div>
-            </div>
-            <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600">
-              <Building2 className="size-5" />
-            </div>
-          </div>
+        {/* ── Content Stack ── */}
+        <div className="flex flex-col gap-4">
+          <OwnerOverviewHero org={orgData} cap={capData} />
 
-          <div className="mt-4 pt-3 border-t border-slate-100">
-            <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
-              <span>Vị trí công việc:</span>
-              <span className="font-semibold text-slate-800 tabular-nums">{positionCount} vị trí</span>
-            </div>
-            <Link 
-              to="/enterprise/departments"
-              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
-            >
-              <span>Xem sơ đồ tổ chức</span>
-              <ChevronRight className="size-3" />
-            </Link>
-          </div>
-        </div>
-
-        {/* Card 3: Pending Reviews */}
-        <div className="bento-card p-5 flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div>
-              <span className="text-xs font-medium text-slate-500">Minh chứng chờ duyệt</span>
-              <div className="flex items-baseline gap-1 mt-1.5">
-                <span className="text-2xl font-bold text-amber-600 tabular-nums">
-                  {orgData.pendingReviews ?? 0}
+          {/* KPI Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[14px]">
+            {kpis.map((kpi, i) => (
+              <div
+                key={kpi.label}
+                className="relative rounded-[18px] border p-5 overflow-hidden"
+                style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)' }}
+              >
+                <div
+                  className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full"
+                  style={{ background: KPI_ACCENTS[i] }}
+                />
+                <span className="text-[11px] block" style={{ color: 'var(--po-muted)' }}>
+                  {kpi.label}
                 </span>
-                <span className="text-xs font-medium text-slate-500">bài nộp</span>
+                <strong
+                  className="text-[31px] font-light tracking-[-0.06em] tabular-nums block mt-1"
+                  style={{ color: KPI_VALUE_COLORS[i] }}
+                >
+                  {kpi.value}
+                  {kpi.suffix && (
+                    <small className="text-base font-normal" style={{ color: 'var(--po-muted)' }}>
+                      {kpi.suffix}
+                    </small>
+                  )}
+                </strong>
+                <small className="text-[11px] block mt-1" style={{ color: 'var(--po-muted)' }}>
+                  {kpi.sublabel}
+                </small>
               </div>
-            </div>
-            <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600">
-              <FileCheck2 className="size-5" />
-            </div>
+            ))}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100">
-            <div className="text-xs text-slate-500 mb-2">
-              {(orgData.pendingReviews ?? 0) > 0 ? (
-                <span className="text-amber-700 font-medium">Cần quản lý chuyên môn chấm điểm</span>
-              ) : (
-                <span className="text-emerald-600 font-medium">Tất cả bài tập đã được chấm</span>
-              )}
-            </div>
-            <Link 
-              to="/enterprise/tasks"
-              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-amber-600 hover:text-amber-700 transition-colors"
-            >
-              <span>Xem bài tập chờ duyệt</span>
-              <ChevronRight className="size-3" />
-            </Link>
+          <OwnerProcessTrack org={orgData} cap={capData} />
+
+          {/* Two-column: Capability Architecture + Training Cycle */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <OwnerCapabilityArchitecture
+              orgName={orgData.name}
+              departmentCount={departmentCount}
+              positionCount={positionCount}
+              averageCoverage={capData?.kpis.averageCoverage ?? 0}
+            />
+            <OwnerTrainingCycle events={orgData.recentActivity} />
           </div>
-        </div>
-
-        {/* Card 4: Running Batches */}
-        <div className="bento-card p-5 flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div>
-              <span className="text-xs font-medium text-slate-500">Đợt đào tạo kích hoạt</span>
-              <div className="flex items-baseline gap-1 mt-1.5">
-                <span className="text-2xl font-bold text-indigo-600 tabular-nums">
-                  {orgData.runningBatches ?? 0}
-                </span>
-                <span className="text-xs font-medium text-slate-500">chương trình</span>
-              </div>
-            </div>
-            <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600">
-              <GraduationCap className="size-5" />
-            </div>
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-slate-100">
-            <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
-              <span>Độ phủ trung bình:</span>
-              <span className="font-semibold text-indigo-700 flex items-center gap-1">
-                <TrendingUp className="size-3" />
-                {capData?.kpis.averageCoverage ?? 0}%
-              </span>
-            </div>
-            <Link 
-              to="/enterprise/batches"
-              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
-            >
-              <span>Quản lý đợt đào tạo</span>
-              <ChevronRight className="size-3" />
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Process Track (Quy trình chuẩn hóa 6 bước) ── */}
-      <div className="bento-card p-5">
-        <OwnerProcessTrack org={orgData} cap={capData} />
-      </div>
-
-      {/* ── Two-column Detail Stack ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bento-card p-6">
-          <OwnerCapabilityArchitecture
-            orgName={orgData.name}
-            departmentCount={departmentCount}
-            positionCount={positionCount}
-            averageCoverage={capData?.kpis.averageCoverage ?? 0}
-          />
-        </div>
-        <div className="bento-card p-6">
-          <OwnerTrainingCycle events={orgData.recentActivity} />
         </div>
       </div>
 

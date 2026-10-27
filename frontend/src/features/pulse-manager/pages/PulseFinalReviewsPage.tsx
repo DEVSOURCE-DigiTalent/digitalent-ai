@@ -1,5 +1,4 @@
-import { EvidencePreviewModal } from '@/components/shared/EvidencePreviewModal';
-﻿import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Check, ClipboardCheck, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDecidePulseFinal, useDecidePulsePreAssessment, usePulseFinalReviews, useRecordPulseSupport } from '@/hooks/use-pulse';
@@ -82,7 +81,6 @@ export function PulseFinalReviewsPage() {
   const { data, isLoading, error, refetch } = usePulseFinalReviews();
   const [filter, setFilter] = useState<Filter>('ALL');
   const [kind, setKind] = useState<KindFilter>('ALL');
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -107,11 +105,23 @@ export function PulseFinalReviewsPage() {
   return (
     <ManagerPage testId="pulse-final-reviews">
       <PageHead
-        eyebrow={department ? `Quản lý đánh giá · ${department}` : 'Quản lý đánh giá'}
-        title="Chấm điểm & Ra quyết định Minh chứng"
-        description="Đánh giá bài nộp cuối khóa, kiểm tra bản ghi giám sát thi (Proctoring) và ghi nhận kết quả cho nhân viên trong phòng ban."
+        eyebrow={`Quản lý đánh giá${department ? ` · ${department}` : ''}`}
+        title="Ra quyết định dựa trên minh chứng."
+        description="Mỗi khóa có một bài đánh giá trước khi học và một bài cuối khóa, cả hai có bản ghi màn hình, camera và micro. Gợi ý AI chỉ để tham khảo — quản lý ghi quyết định cuối cùng và lý do."
         actions={<Pill>{data.pendingCount} bài chờ đánh giá</Pill>}
       />
+
+      <section className="pm-banner" aria-label="Nguyên tắc chấm bài cuối khóa">
+        <div>
+          <span className="pu-mini">{department ? `${department} / ` : ''}Đánh giá khóa học</span>
+          <h2>Một người học. Một khóa. Một quyết định rõ ràng.</h2>
+          <p>Xem bản ghi và các lần rời tab hoặc dừng chia sẻ, đọc minh chứng rồi ghi đạt hoặc chưa đạt kèm lý do.</p>
+        </div>
+        <div className="pm-banner-count">
+          <strong>{data.pendingCount}</strong>
+          <span>chờ bạn quyết định</span>
+        </div>
+      </section>
 
       <section className="pu-metrics pu-review-kpis" aria-label="Tình trạng hàng chờ" style={{ marginTop: 16 }}>
         <div><strong>{data.pendingCount}</strong><span>Chờ quyết định</span></div>
@@ -150,12 +160,7 @@ export function PulseFinalReviewsPage() {
           <div className="pu-stack">
             {visible.length === 0 && <Notice>Không có bài nào ở trạng thái này.</Notice>}
             {visible.map((item) => (
-              <ReviewCard
-                key={`${item.kind}-${item.submissionId}`}
-                item={item}
-                criteria={data.criteria}
-                onPreview={(url) => setPreviewUrl(url)}
-              />
+              <ReviewCard key={`${item.kind}-${item.submissionId}`} item={item} criteria={data.criteria} />
             ))}
           </div>
         </>
@@ -170,17 +175,11 @@ export function PulseFinalReviewsPage() {
         </p>
         <PuLink to={MANAGER_PATHS.evidence} kind="outline" small>Mở minh chứng thực tế →</PuLink>
       </section>
-
-      <EvidencePreviewModal
-        open={Boolean(previewUrl)}
-        onClose={() => setPreviewUrl(null)}
-        url={previewUrl}
-      />
     </ManagerPage>
   );
 }
 
-function ReviewCard({ item, criteria, onPreview }: { item: PulseFinalReviewItem; criteria: PulseCriterion[]; onPreview: (url: string) => void }) {
+function ReviewCard({ item, criteria }: { item: PulseFinalReviewItem; criteria: PulseCriterion[] }) {
   const latest = item.attempts[item.attempts.length - 1];
   const earlier = item.attempts.slice(0, -1);
   const pill = STATUS_PILL[item.status];
@@ -223,43 +222,12 @@ function ReviewCard({ item, criteria, onPreview }: { item: PulseFinalReviewItem;
       {latest?.choice && <ChoiceReview choice={latest.choice} />}
       {item.assignment && <CourseFinalBrief content={item.assignment} />}
 
-      {latest && (() => {
-        const urls = (latest.evidenceText || '').match(/https?:\/\/[^\s"'<>\]]+/g) || [];
-        return (
-          <div className="pu-review-evidence">
-            <div className="pu-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-              <Mini>{latest.choice ? 'Phần tự luận · minh chứng đã nộp' : 'Minh chứng đã nộp'}</Mini>
-              {urls.length > 0 && (
-                <span className="pu-pill gray" style={{ fontSize: 10 }}>
-                  {urls.length} tài liệu / liên kết
-                </span>
-              )}
-            </div>
-            <p style={{ whiteSpace: 'pre-wrap' }}>{latest.evidenceText}</p>
-            {urls.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
-                {urls.map((url, uidx) => {
-                  const isMedia = /\.(pdf|png|jpe?g|webp|gif)/i.test(url);
-                  let domain = 'Tài liệu';
-                  try { domain = new URL(url).hostname; } catch {}
-                  return (
-                    <button
-                      key={uidx}
-                      type="button"
-                      onClick={() => onPreview(url)}
-                      className="pu-btn-outline pu-btn-small"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}
-                    >
-                      <span>{isMedia ? '📄' : '🔗'}</span>
-                      <span>Xem trước ({domain})</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        );
-      })()}
+      {latest && (
+        <div className="pu-review-evidence">
+          <Mini>{latest.choice ? 'Phần tự luận · minh chứng đã nộp' : 'Minh chứng đã nộp'}</Mini>
+          <p>{latest.evidenceText}</p>
+        </div>
+      )}
 
       {item.status === 'PENDING' && (
         <div className="pu-review-grid">
@@ -465,31 +433,6 @@ function DecisionForm({ item }: { item: PulseFinalReviewItem }) {
   const latest = item.attempts[item.attempts.length - 1];
   const choiceFails = Boolean(latest?.choice && !latest.choice.passed);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        if (decision && length >= MIN_REASON && !decide.isPending) {
-          e.preventDefault();
-          const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
-          onSubmit(fakeEvent);
-        }
-      }
-      if (e.altKey) {
-        if (e.key.toLowerCase() === 'a' && !choiceFails) {
-          e.preventDefault();
-          setDecision('PASSED');
-          toast.info('Phím tắt [Alt+A]: Đã chọn Duyệt khóa học');
-        } else if (e.key.toLowerCase() === 'r') {
-          e.preventDefault();
-          setDecision('NOT_YET');
-          toast.info('Phím tắt [Alt+R]: Đã chọn Chưa đạt · cần sửa');
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [decision, length, decide.isPending, choiceFails]);
-
   const onSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     if (!decision || length < MIN_REASON) return;
@@ -512,28 +455,6 @@ function DecisionForm({ item }: { item: PulseFinalReviewItem }) {
 
   return (
     <form onSubmit={onSubmit} style={{ marginTop: 16 }}>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-        <button
-          type="button"
-          onClick={() => setDecision('PASSED')}
-          disabled={choiceFails}
-          className={`pu-btn-${decision === 'PASSED' ? 'primary' : 'outline'} pu-btn-small`}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: choiceFails ? 'not-allowed' : 'pointer' }}
-        >
-          <span>✓ Duyệt khóa học</span>
-          <kbd style={{ fontSize: 9, opacity: 0.75, background: 'rgba(0,0,0,0.1)', padding: '2px 4px', borderRadius: 4 }}>Alt+A</kbd>
-        </button>
-        <button
-          type="button"
-          onClick={() => setDecision('NOT_YET')}
-          className={`pu-btn-${decision === 'NOT_YET' ? 'primary' : 'outline'} pu-btn-small`}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}
-        >
-          <span>✕ Chưa đạt · cần sửa</span>
-          <kbd style={{ fontSize: 9, opacity: 0.75, background: 'rgba(0,0,0,0.1)', padding: '2px 4px', borderRadius: 4 }}>Alt+R</kbd>
-        </button>
-      </div>
-
       <div className="pu-decision">
         <label className="pu-field">
           Quyết định của quản lý
@@ -572,8 +493,7 @@ function DecisionForm({ item }: { item: PulseFinalReviewItem }) {
         </div>
       )}
       <button type="submit" className={btn()} disabled={!decision || length < MIN_REASON || decide.isPending}>
-        <span>{decide.isPending ? 'Đang ghi…' : 'Ghi quyết định cuối cùng →'}</span>
-        <kbd style={{ fontSize: 10, opacity: 0.85, marginLeft: 8, background: 'rgba(255,255,255,0.2)', padding: '2px 5px', borderRadius: 4 }}>Ctrl+Enter</kbd>
+        {decide.isPending ? 'Đang ghi…' : 'Ghi quyết định cuối cùng →'}
       </button>
     </form>
   );

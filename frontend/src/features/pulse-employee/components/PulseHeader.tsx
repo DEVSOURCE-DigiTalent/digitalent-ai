@@ -6,7 +6,6 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { useLogout } from '@/hooks/use-auth';
 import { useNotifications } from '@/hooks/use-platform';
 import { useOnboardingStore } from '@/features/onboarding-tutorial';
-import { usePulseOverview } from '@/hooks/use-pulse';
 import { ROLES, normalizeRoles } from '@/lib/roles';
 import { initials } from '../lib/labels';
 import { PULSE_PATHS, isExamPath } from '../lib/paths';
@@ -20,8 +19,6 @@ const NAV = [
 
 export function PulseHeader() {
   const user = useCurrentUser((s) => s.user);
-  const { data: overview } = usePulseOverview();
-  const displayName = overview?.person?.fullName || user?.fullName || 'Nhân viên';
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const logout = useLogout();
@@ -101,9 +98,9 @@ export function PulseHeader() {
             aria-expanded={open}
             onClick={() => setOpen((value) => !value)}
           >
-            <span className="pu-avatar" aria-hidden>{initials(displayName)}</span>
+            <span className="pu-avatar" aria-hidden>{initials(user?.fullName)}</span>
             <div>
-              <b>{displayName}</b>
+              <b>{user?.fullName ?? 'Nhân viên'}</b>
               <small>{roleLabel}</small>
             </div>
           </button>

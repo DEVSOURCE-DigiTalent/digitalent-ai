@@ -43,7 +43,7 @@ export function LessonSlide({
   const checks = sections.filter(section => /^Tự kiểm tra$/i.test(section.title.trim()));
   const sources = sections.filter(section => /^Nguồn tham khảo$/i.test(section.title.trim()));
 
-  const normalizedCourseCode = ((slide as any).courseCode || courseCode || '').toUpperCase();
+  const normalizedCourseCode = (courseCode || '').toUpperCase();
   const courseSpecs = COURSE_MEDIA_SPECS[normalizedCourseCode] || COURSE_MEDIA_SPECS[normalizedCourseCode.replace(/^M/, 'A')];
   const specList = courseSpecs ? Object.values(courseSpecs)[moduleIndex - 1] || Object.values(courseSpecs)[0] : null;
   const mediaSpec = specList ? (specList[index] || specList[0]) : null;

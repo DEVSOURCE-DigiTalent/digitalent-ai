@@ -44,12 +44,6 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
   const edit: CourseEdit = (fn) => courseEdit.mutateAsync(fn);
   const [preview, setPreview] = useState(false);
   const [newModule, setNewModule] = useState(false);
-  const [showInspector, setShowInspector] = useState(true);
-
-  const totalBlocks = course.modules.reduce((sum, m) => sum + m.blocks.length, 0);
-  const totalQuestions = course.modules.reduce((sum, m) => sum + m.questions.length, 0);
-  const criteriaCount = course.final?.criteria?.length || 0;
-  const estimatedMinutes = Math.max(15, totalBlocks * 4 + totalQuestions * 2 + (criteriaCount > 0 ? 30 : 0));
 
   const raw = params.get('s');
   const section: Section =
@@ -74,14 +68,6 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
             <Link className="btn btn-outline" to={`/platform/versions/${course.versionNo}`}>
               ← Phiên bản v{course.versionNo}
             </Link>
-            <button
-              type="button"
-              className={`btn ${showInspector ? 'btn-outline' : 'btn-light'}`}
-              onClick={() => setShowInspector((v) => !v)}
-              title="Bật/tắt thanh thông số & chuẩn TT02"
-            >
-              {showInspector ? 'Chế độ tập trung (Zen)' : 'Hiện bảng thông số'}
-            </button>
             <button type="button" className="btn btn-outline" onClick={() => setPreview(true)} disabled={course.modules.length === 0}>
               Xem như nhân viên
             </button>
@@ -95,7 +81,7 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
           <span>{courseEdit.isPending ? 'Đang lưu…' : `Mọi thay đổi được lưu ngay vào bản nháp v${course.versionNo}.`}</span>
         </p>
       )}
-      <div className={`pa-builder ${showInspector ? '' : 'no-inspector'}`}>
+      <div className="pa-builder">
         <nav className="pa-outline" aria-label="Cấu trúc khóa học">
           <button type="button" className="pa-ol-item" aria-current={section === 'info' ? 'step' : undefined} onClick={() => go('info')}>
             <b>i</b>
@@ -168,113 +154,6 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
           )}
           {section === 'final' && <FinalEditor key={JSON.stringify(course.final)} course={course} editable={editable} edit={edit} />}
         </div>
-        {showInspector && (
-          <aside className="pa-inspector" aria-label="Bảng thông số khóa học và Chuẩn hóa TT02">
-            <div className="pa-inspector-head">
-              <div className="pa-inspector-title">
-                <span className="pa-inspector-dot" />
-                <strong>Thông số & Chuẩn TT02</strong>
-              </div>
-              <button
-                type="button"
-                className="pa-inspector-close"
-                onClick={() => setShowInspector(false)}
-                title="Thu gọn bảng thông số để mở rộng vùng soạn thảo"
-                aria-label="Đóng bảng thông số"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="pa-inspector-body">
-              {/* 1. Chuẩn Năng Lực Số TT02 */}
-              <div className="pa-inspector-section">
-                <span className="pa-ins-label">Chuẩn Năng Lực Số TT02</span>
-                <div className="pa-ins-badge-row">
-                  <span className="pa-badge-domain" title={course.domainName}>
-                    {course.domainName}
-                  </span>
-                  <span className={`pa-badge-level level-${course.level}`}>
-                    {course.levelName || LEVEL_NAMES[course.level]}
-                  </span>
-                </div>
-                <div className="pa-ins-meta-list">
-                  <div className="pa-ins-meta-row">
-                    <span className="pa-ins-meta-k">Khung chuẩn</span>
-                    <span className="pa-ins-meta-v">TT 02/2025/TT-BGDĐT</span>
-                  </div>
-                  <div className="pa-ins-meta-row">
-                    <span className="pa-ins-meta-k">Mã học phần</span>
-                    <code className="pa-ins-code">{course.code}</code>
-                  </div>
-                  <div className="pa-ins-meta-row">
-                    <span className="pa-ins-meta-k">Đơn giá / ghế</span>
-                    <span className="pa-ins-meta-v">{course.pricePerSeat ? formatMoney(course.pricePerSeat) : 'Miễn phí'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 2. Quy mô học liệu */}
-              <div className="pa-inspector-section">
-                <span className="pa-ins-label">Quy mô học liệu</span>
-                <div className="pa-ins-stats-grid">
-                  <div className="pa-ins-stat-box">
-                    <span className="pa-ins-stat-num">{course.modules.length}</span>
-                    <span className="pa-ins-stat-txt">Mô đun</span>
-                  </div>
-                  <div className="pa-ins-stat-box">
-                    <span className="pa-ins-stat-num">{totalBlocks}</span>
-                    <span className="pa-ins-stat-txt">Khối nội dung</span>
-                  </div>
-                  <div className="pa-ins-stat-box">
-                    <span className="pa-ins-stat-num">{totalQuestions}</span>
-                    <span className="pa-ins-stat-txt">Câu ôn tập</span>
-                  </div>
-                  <div className="pa-ins-stat-box">
-                    <span className="pa-ins-stat-num">{criteriaCount}</span>
-                    <span className="pa-ins-stat-txt">Tiêu chí rubric</span>
-                  </div>
-                </div>
-                <div className="pa-ins-time-est">
-                  <span>⏱ Thời lượng ước tính: <b>~{estimatedMinutes} phút</b></span>
-                </div>
-              </div>
-
-              {/* 3. Thẩm định đầu ra */}
-              <div className="pa-inspector-section">
-                <span className="pa-ins-label">Thẩm định đầu ra</span>
-                <div className="pa-ins-eval-card">
-                  <strong className="pa-ins-eval-title">{course.final?.title || 'Đánh giá năng lực cuối khóa'}</strong>
-                  <p className="pa-ins-eval-desc">
-                    Hình thức: <b>Quản lý phòng ban chấm thực hành</b> theo rubric {criteriaCount} tiêu chí.
-                  </p>
-                  {course.final?.criteria?.length > 0 && (
-                    <ul className="pa-ins-criteria-list">
-                      {course.final.criteria.slice(0, 3).map((c, idx) => (
-                        <li key={idx}>✓ {c}</li>
-                      ))}
-                      {course.final.criteria.length > 3 && (
-                        <li className="pa-ins-more">+{course.final.criteria.length - 3} tiêu chí khác...</li>
-                      )}
-                    </ul>
-                  )}
-                </div>
-              </div>
-
-              {/* 4. Đồng bộ bản nháp */}
-              <div className="pa-inspector-section">
-                <span className="pa-ins-label">Đồng bộ máy chủ</span>
-                <div className="pa-ins-sync-card">
-                  <div className="pa-ins-sync-status">
-                    <span className={`pa-ins-status-indicator ${courseEdit.isPending ? 'pending' : 'synced'}`} />
-                    <span>{courseEdit.isPending ? 'Đang đồng bộ...' : `Đã lưu tự động (v${course.versionNo})`}</span>
-                  </div>
-                  <small className="pa-ins-sync-sub">Mọi thao tác thay đổi khối, câu hỏi hoặc cấu trúc đều được đồng bộ tức thì.</small>
-                </div>
-              </div>
-            </div>
-          </aside>
-        )}
       </div>
       {preview && <LearnerPreview course={course} moduleIndex={typeof section === 'number' ? section : 0} onClose={() => setPreview(false)} />}
     </>

@@ -6,6 +6,7 @@ import { useCompetencyMatrix } from '@/hooks/use-workforce';
 import { useDepartments } from '@/hooks/use-departments';
 import { useJobPositions } from '@/hooks/use-job-positions';
 import { INPUT_CLASS } from '@/features/onboarding/components/styles';
+import { JOB_GRADES } from '@/lib/terms';
 
 export interface WorkforceCompetencyMatrixProps {
   /** Optional department ID to lock down scope (used by Agent 2 for Manager MG-04). */
@@ -31,6 +32,7 @@ export function WorkforceCompetencyMatrix({
   const [search, setSearch] = useState('');
   const [selectedDept, setSelectedDept] = useState(fixedDeptId || '');
   const [selectedPos, setSelectedPos] = useState('');
+  const [selectedGrade, setSelectedGrade] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
   const effectiveDeptId = fixedDeptId || selectedDept;
@@ -38,6 +40,7 @@ export function WorkforceCompetencyMatrix({
   const { data: matrixData, isLoading } = useCompetencyMatrix({
     departmentId: effectiveDeptId || undefined,
     jobPositionId: selectedPos || undefined,
+    jobGrade: selectedGrade || undefined,
     search: search.trim() || undefined,
   });
 
@@ -105,6 +108,22 @@ export function WorkforceCompetencyMatrix({
             {positions.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="w-36">
+          <select
+            aria-label="Lọc theo Cấp bậc G1-G3"
+            value={selectedGrade}
+            onChange={(e) => setSelectedGrade(e.target.value)}
+            className={INPUT_CLASS}
+          >
+            <option value="">Mọi cấp bậc</option>
+            {JOB_GRADES.map((g: string) => (
+              <option key={g} value={g}>
+                Cấp bậc {g}
               </option>
             ))}
           </select>
@@ -179,6 +198,11 @@ export function WorkforceCompetencyMatrix({
                             <span>{emp.departmentName}</span>
                             <span>·</span>
                             <span>{emp.jobPositionName}</span>
+                            {emp.jobGrade && (
+                              <span className="rounded bg-slate-100 px-1 py-0.2 font-semibold text-slate-700 text-[10px]">
+                                {emp.jobGrade}
+                              </span>
+                            )}
                           </div>
                         </div>
                         <Link

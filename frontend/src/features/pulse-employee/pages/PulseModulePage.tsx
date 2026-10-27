@@ -138,32 +138,30 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                 </button>
               </div>
               <LessonSlide key={slide.lessonId} slide={slide} courseCode={course.code} moduleIndex={module.index} index={index} count={slides.length} />
-              <div className="pu-lesson-sticky-bar">
-                <div className="pu-lesson-navigation">
-                  <button type="button" className="pu-lesson-prev" onClick={() => openPage(index - 1)} disabled={index === 0} aria-label="← Trước đó">
-                    <ArrowLeft size={16} /><span>Bài trước</span>
+              <div className="pu-lesson-navigation">
+                <button type="button" className="pu-lesson-prev" onClick={() => openPage(index - 1)} disabled={index === 0} aria-label="← Trước đó">
+                  <ArrowLeft size={16} /><span>Bài trước</span>
+                </button>
+                <span aria-live="polite">{pad2(index + 1)} <span>/ {pad2(slides.length)}</span></span>
+                {isLast ? (
+                  <button type="button" className="pu-lesson-next" onClick={() => document.getElementById('pu-module-quiz')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+                    Đến phần ôn tập <ArrowRight size={16} />
                   </button>
-                  <span aria-live="polite">{pad2(index + 1)} <span>/ {pad2(slides.length)}</span></span>
-                  {isLast ? (
-                    <button type="button" className="pu-lesson-next" onClick={() => document.getElementById('pu-module-quiz')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-                      Đến phần ôn tập <ArrowRight size={16} />
-                    </button>
-                  ) : (
-                    <button type="button" className="pu-lesson-next" onClick={() => openPage(index + 1)} aria-label="Trang tiếp theo →">
-                      <span>Bài tiếp theo</span><ArrowRight size={16} />
-                    </button>
-                  )}
-                </div>
-                <nav className="pu-lesson-pages" aria-label="Các trang trong mô đun">
-                  {slides.map((page, pageIndex) => (
-                    <button key={page.lessonId} type="button" onClick={() => openPage(pageIndex)}
-                      aria-current={pageIndex === index ? 'step' : undefined}
-                      aria-label={`Trang ${pad2(pageIndex + 1)}: ${page.title}`} title={page.title}>
-                      {pad2(pageIndex + 1)}
-                    </button>
-                  ))}
-                </nav>
+                ) : (
+                  <button type="button" className="pu-lesson-next" onClick={() => openPage(index + 1)} aria-label="Trang tiếp theo →">
+                    <span>Bài tiếp theo</span><ArrowRight size={16} />
+                  </button>
+                )}
               </div>
+              <nav className="pu-lesson-pages" aria-label="Các trang trong mô đun">
+                {slides.map((page, pageIndex) => (
+                  <button key={page.lessonId} type="button" onClick={() => openPage(pageIndex)}
+                    aria-current={pageIndex === index ? 'step' : undefined}
+                    aria-label={`Trang ${pad2(pageIndex + 1)}: ${page.title}`} title={page.title}>
+                    {pad2(pageIndex + 1)}
+                  </button>
+                ))}
+              </nav>
             </div>
           ) : (
             <Notice>Mô đun này chưa có trang nội dung.</Notice>

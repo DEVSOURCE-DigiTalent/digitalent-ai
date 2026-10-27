@@ -331,7 +331,8 @@ export function CapabilityCeilingMatrix() {
             </div>
           </div>
 
-          <div className="cc-mx-container"><div className="cc-mx" role="group" aria-label="Ma trận năng lực nhân cấp độ">
+          {/* Ma trận màu xanh */}
+          <div className="cc-mx" role="group" aria-label="Ma trận năng lực nhân cấp độ">
             <div />
             {matrix.levels.map((level) => (
               <div key={level.level} className="hd">
@@ -355,7 +356,7 @@ export function CapabilityCeilingMatrix() {
                 />
               );
             })}
-          </div></div>
+          </div>
 
           {/* Chú giải ngắn gọn */}
           <div className="cc-legend">

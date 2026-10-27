@@ -56,7 +56,7 @@ public static class DbSeeder
             return organization;
         }
 
-        organization = new Organization { Code = DefaultOrganizationCode, Name = "Công ty Cổ phần Công nghệ DigiTalent Việt Nam" };
+        organization = new Organization { Code = DefaultOrganizationCode, Name = "DigiTalent Demo Company" };
         db.Organizations.Add(organization);
         await db.SaveChangesAsync();
         return organization;
@@ -202,13 +202,13 @@ public static class DbSeeder
             return user;
         }
 
-        EnsureUser("platform@digitalent.ai", "Trần Minh Hoàng", null, Roles.PlatformAdmin);
-        var owner = EnsureUser("owner@digitalent.ai", "Nguyễn Thế Hùng", organizationId, Roles.Owner);
-        var manager = EnsureUser("manager@digitalent.ai", "Lê Thị Thu Trang", organizationId, Roles.Manager);
-        var employee = EnsureUser("employee@digitalent.ai", "Hoàng Anh Thư", organizationId, Roles.Employee);
-        var personal = EnsureUser("personal@digitalent.ai", "Đỗ Minh Trí", null, null);
-        var trial = EnsureUser("trial@digitalent.ai", "Nguyễn Hải Đăng", null, null);
-        var free = EnsureUser("free@digitalent.ai", "Võ Thanh Tùng", null, null);
+        EnsureUser("platform@digitalent.ai", "Platform Administrator", null, Roles.PlatformAdmin);
+        var owner = EnsureUser("owner@digitalent.ai", "Enterprise Owner", organizationId, Roles.Owner);
+        var manager = EnsureUser("manager@digitalent.ai", "Department Manager", organizationId, Roles.Manager);
+        var employee = EnsureUser("employee@digitalent.ai", "Employee", organizationId, Roles.Employee);
+        var personal = EnsureUser("personal@digitalent.ai", "Bùi Thị Cá Nhân", null, null);
+        var trial = EnsureUser("trial@digitalent.ai", "Lý Văn Dùng Thử", null, null);
+        var free = EnsureUser("free@digitalent.ai", "Mai Thị Miễn Phí", null, null);
         await db.SaveChangesAsync();
 
         await SeedDemoOrganizationStructureAsync(db, organizationId, owner, manager, employee);

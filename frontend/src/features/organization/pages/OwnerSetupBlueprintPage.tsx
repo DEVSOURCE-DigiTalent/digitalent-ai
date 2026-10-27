@@ -1,4 +1,4 @@
-﻿import { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Settings, ArrowRight } from 'lucide-react';
 import { useOrganizationOverview } from '@/hooks/use-organization';
@@ -98,11 +98,21 @@ export function OwnerSetupBlueprintPage() {
                 style={{ background: 'var(--po-coral)' }}
               />
             </span>
-            <h1 className="mt-2 text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
-              Kiến trúc Năng lực & Trần Khóa học Doanh nghiệp
+            <h1
+              className="mt-2 font-bold leading-[1.1]"
+              style={{
+                fontSize: 'clamp(28px, 3.2vw, 42px)',
+                color: 'var(--po-ink)',
+                letterSpacing: '-0.04em',
+              }}
+            >
+              Kiến trúc năng lực số
             </h1>
-            <p className="mt-1 text-sm text-slate-600 max-w-2xl">
-              Xác định cấp độ khóa học mở cho toàn công ty và từng phòng ban theo khung chuẩn Thông tư 02.
+            <p
+              className="mt-1 text-[13px] leading-relaxed"
+              style={{ color: 'var(--po-muted)', maxWidth: 560 }}
+            >
+              Chuẩn hóa khung năng lực và giới hạn khóa học theo vị trí & phòng ban.
             </p>
           </div>
           <span

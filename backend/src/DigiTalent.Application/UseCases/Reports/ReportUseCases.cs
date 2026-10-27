@@ -79,7 +79,6 @@ public class GetDashboardUseCase : IUseCase<GetDashboardInput, DashboardDto>
             : new();
 
         var categories = await _context.CompetencyCategories.AsNoTracking()
-            .Where(cc => cc.OrganizationId == orgId && cc.Status == "ACTIVE")
             .OrderBy(cc => cc.SortOrder)
             .Select(cc => new { cc.Id, cc.Name, cc.SortOrder })
             .ToListAsync();

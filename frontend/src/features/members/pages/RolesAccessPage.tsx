@@ -192,8 +192,8 @@ export function RolesAccessPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Phân quyền & Vai trò"
-        subtitle="Mô hình 3 vai trò chuẩn hóa theo Thông tư 02: Chủ doanh nghiệp (OWNER), Quản lý bộ phận (MANAGER) và Nhân viên (EMPLOYEE)"
+        title="Vai trò và phân quyền"
+        subtitle="Mô hình 3 vai trò chuẩn hóa của DigiTalent AI: Chủ doanh nghiệp, Quản lý và Nhân viên"
       />
 
       {/* Role Cards Summary */}

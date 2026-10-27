@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { PageHeader, ScoreCard } from '@/components/shared';
 import { useAssignmentSummary, useAssignments } from '@/hooks/use-assignments';
@@ -6,6 +6,7 @@ import { useDepartments } from '@/hooks/use-departments';
 import { useJobPositions } from '@/hooks/use-job-positions';
 import type { AssignmentStatus } from '@/services/assignment.service';
 import { INPUT_CLASS } from '@/features/onboarding/components/styles';
+import { JOB_GRADES, JOB_GRADE_DEFAULT_NAMES, type JobGradeCode } from '@/lib/terms';
 import { ASSIGNMENT_STATUS_LABELS } from '../assignment-labels';
 import { AssignmentsTable } from '../components/AssignmentsTable';
 
@@ -35,7 +36,11 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
   const [quick, setQuick] = useState<Quick>('');
   const [departmentId, setDepartmentId] = useState('');
   const [jobPositionId, setJobPositionId] = useState('');
+  const [jobGrade, setJobGrade] = useState<JobGradeCode | ''>('');
   const [page, setPage] = useState(1);
+
+  // Mock data supports a local grade filter; BE2 only accepts jobPositionId.
+  const positionByName = useMemo(() => new Map(positions.map((p) => [p.name, p])), [positions]);
 
   const { data, isLoading } = useAssignments({
     pageIndex: page,
@@ -53,7 +58,15 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
     setPage(1);
   };
 
-  const displayedRows = data?.items ?? [];
+  // Grade filtering is available only in mock mode; the live API has no grade filter.
+  const displayedRows = useMemo(() => {
+    const rows = data?.items ?? [];
+    if (import.meta.env.VITE_USE_MOCK !== 'true' || !jobGrade) return rows;
+    return rows.filter((r) => {
+      const pos = r.positionName ? positionByName.get(r.positionName) : undefined;
+      return pos?.jobGrade === jobGrade;
+    });
+  }, [data?.items, jobGrade, positionByName]);
 
   return (
     <div className="space-y-6">
@@ -182,6 +195,23 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
                 </option>
               ))}
             </select>
+
+            {import.meta.env.VITE_USE_MOCK === 'true' && <select
+              aria-label="Lọc theo cấp bậc"
+              value={jobGrade}
+              onChange={(e) => {
+                setJobGrade(e.target.value as JobGradeCode | '');
+                setPage(1);
+              }}
+              className={INPUT_CLASS}
+            >
+              <option value="">Mọi cấp bậc</option>
+              {JOB_GRADES.map((code) => (
+                <option key={code} value={code}>
+                  Cấp bậc {code} ({JOB_GRADE_DEFAULT_NAMES[code]})
+                </option>
+              ))}
+            </select>}
 
             <select
               aria-label="Lọc theo hạn"

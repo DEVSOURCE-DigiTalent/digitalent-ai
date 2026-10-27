@@ -61,12 +61,10 @@ interface InviteMembersModalProps {
   defaultDepartmentId?: string;
 }
 
-/** ADM-04: invite people to the organization one by one or from a file; each becomes a pending member. */
 export function InviteMembersModal({ open, onClose, defaultDepartmentId }: InviteMembersModalProps) {
-  if (!open) return null;
-  const user = useCurrentUser((s) => s.user);
-    const invite = useInviteMembers();
-  const roles = assignableRoles(user?.roles ?? []) as MemberRole[];
+  const user = useCurrentUser((s) => s.user)!;
+  const invite = useInviteMembers();
+  const roles = assignableRoles(user.roles) as MemberRole[];
   const departments = useDepartments({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
   const positions = useJobPositions({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
 
@@ -256,11 +254,10 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
   };
 
   const validPreviewCount = previewRows.filter((r) => r.isValid).length;
-  // The development backend may return the activation token for local testing.
-    const seatsLeft =
-    user?.subscription?.seatLimit === undefined
+  const seatsLeft =
+    user.subscription?.seatLimit === undefined
       ? undefined
-      : (user?.subscription?.seatLimit ?? 0) - (user?.subscription?.seatsUsed ?? 0) - queue.length;
+      : user.subscription.seatLimit - (user.subscription.seatsUsed ?? 0) - queue.length;
 
   return (
     <Modal
@@ -317,7 +314,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
           >
             {seatsLeft < 0
               ? `Danh sách vượt quá ${-seatsLeft} quyền sử dụng gói dịch vụ hiện tại.`
-              : `Gói ${user?.subscription?.planName || 'Doanh nghiệp'} còn ${seatsLeft} quyền sử dụng thành viên khả dụng.`}
+              : `Gói ${user.subscription?.planName || 'Doanh nghiệp'} còn ${seatsLeft} quyền sử dụng thành viên khả dụng.`}
           </div>
         )}
 
