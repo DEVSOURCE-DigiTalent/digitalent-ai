@@ -89,6 +89,7 @@ docker run --rm \
     -e VITE_USE_MOCK=false \
     -e VITE_API_BASE_URL=/api/v1 \
     -e VITE_SIGNALR_HUB_URL=/hubs/notifications \
+    -e VITE_SHOW_DEMO_ACCOUNTS=true \
     node:20-alpine \
     sh -c "npm install react-is@^19.0.0 --save --legacy-peer-deps && npm install --include=dev --legacy-peer-deps && npx vite build"
 
