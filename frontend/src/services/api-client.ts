@@ -37,6 +37,16 @@ function clearSessionAndRedirect() {
   }
 }
 
+/**
+ * Lấy access token mới ngay (vd. sau khi tài khoản được thêm role trên máy chủ); dùng chung với lần làm mới khi gặp 401.
+ */
+export function refreshSessionTokens(): Promise<string> {
+  refreshRequest ??= refreshAccessToken().finally(() => {
+    refreshRequest = null;
+  });
+  return refreshRequest;
+}
+
 async function refreshAccessToken(): Promise<string> {
   const refreshToken = localStorage.getItem('refreshToken');
   if (!refreshToken) throw new Error('No refresh token is available.');

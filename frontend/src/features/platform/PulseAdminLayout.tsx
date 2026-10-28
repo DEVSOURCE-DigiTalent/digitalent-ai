@@ -1,11 +1,11 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { AuthGuard } from '@/components/guards/AuthGuard';
 import { RequireWorkspace } from '@/components/guards/RequireWorkspace';
-import { WORKSPACES } from '@/lib/roles';
+import { ROLES, WORKSPACES } from '@/lib/roles';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useLogout } from '@/hooks/use-auth';
 import { initials } from './components/pulse-format';
-import { PLATFORM_NAV, PLATFORM_TOP_LINKS } from './platform-nav';
+import { MENTOR_NAV, PLATFORM_NAV, PLATFORM_TOP_LINKS } from './platform-nav';
 import pulseMark from './assets/pulse-mark.svg';
 import './pulse-mock.css';
 import './pulse-admin.css';
@@ -16,21 +16,26 @@ function PulseAdminShell() {
   const user = useCurrentUser((s) => s.user);
   const logout = useLogout();
   const navigate = useNavigate();
-  const name = user?.fullName || user?.email || 'Quản trị nền tảng';
+  // Mentor (nhân sự chấm bài dùng thử) dùng cùng khung, chỉ thấy trang chấm bài.
+  const mentor = Boolean(user?.roles.includes(ROLES.MENTOR) && !user.roles.includes(ROLES.PLATFORM_ADMIN));
+  const roleLabel = mentor ? 'Mentor' : 'Quản trị nền tảng';
+  const home = mentor ? '/platform/reviews' : '/platform/dashboard';
+  const nav = mentor ? MENTOR_NAV : PLATFORM_NAV;
+  const name = user?.fullName || user?.email || roleLabel;
 
   const signOut = () => logout.mutate(undefined, { onSettled: () => navigate('/login', { replace: true }) });
 
   return (
     <div className="pulse-ui" data-testid="platform-layout">
       <header className="app-header">
-        <NavLink className="brand" to="/platform/dashboard" aria-label="DigiTalent Pulse, trang tổng quan">
+        <NavLink className="brand" to={home} aria-label="DigiTalent Pulse, trang tổng quan">
           <img src={pulseMark} alt="" />
           <span>
             DigiTalent <em>Pulse</em>
           </span>
         </NavLink>
         <nav className="top-links" aria-label="Nền tảng">
-          {PLATFORM_TOP_LINKS.map((link) => (
+          {(mentor ? [] : PLATFORM_TOP_LINKS).map((link) => (
             <NavLink key={link.to} to={link.to} end={link.to === '/platform/dashboard'}>
               {link.label}
             </NavLink>
@@ -43,7 +48,7 @@ function PulseAdminShell() {
             </span>
             <span className="profile-header-text">
               <b>{name}</b>
-              <small>Quản trị nền tảng</small>
+              <small>{roleLabel}</small>
             </span>
           </NavLink>
           <button type="button" className="btn btn-outline btn-small pa-logout" onClick={signOut} disabled={logout.isPending}>
@@ -54,8 +59,8 @@ function PulseAdminShell() {
       <div className="app-shell role-admin">
         <aside className="sidebar" aria-label="Điều hướng quản trị nền tảng">
           <div className="side-group">
-            <span className="side-label">Quản trị nền tảng</span>
-            {PLATFORM_NAV.map((item) => (
+            <span className="side-label">{roleLabel}</span>
+            {nav.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -68,7 +73,7 @@ function PulseAdminShell() {
             ))}
           </div>
           <div className="side-foot">
-            <b>Không gian quản trị nền tảng</b>Chuẩn chung · hỗ trợ khách hàng
+            {mentor ? <><b>Không gian mentor</b>Chấm bài dùng thử</> : <><b>Không gian quản trị nền tảng</b>Chuẩn chung · hỗ trợ khách hàng</>}
           </div>
         </aside>
         <main className="main-area">

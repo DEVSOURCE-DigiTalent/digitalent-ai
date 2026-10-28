@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Pulse;
+using DigiTalent.Application.UseCases.TrialProgram;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -18,9 +19,30 @@ public sealed class GeminiService : IGeminiService
     public GeminiService(HttpClient http, IConfiguration config, ILogger<GeminiService> logger)
     {
         _http = http;
-        _apiKey = config["Gemini:ApiKey"] ?? "";
+        _apiKey = ResolveApiKey(config);
         _model = config["Gemini:Model"] ?? "gemini-3.8-flash";
         _logger = logger;
+    }
+
+    public bool IsConfigured => !string.IsNullOrWhiteSpace(_apiKey);
+
+    /// <summary>
+    /// Khóa Gemini: Gemini:ApiKey; không có thì dùng khóa trợ lý (Assistant:ApiKey = ASSISTANT_API_KEY trong .env) khi trợ lý
+    /// chạy Gemini — một khóa cho cả chatbot và chấm bài; cuối cùng GEMINI_API_KEY / GOOGLE_API_KEY.
+    /// </summary>
+    private static string ResolveApiKey(IConfiguration config)
+    {
+        var key = config["Gemini:ApiKey"];
+        if (!string.IsNullOrWhiteSpace(key)) return key.Trim();
+
+        var provider = config["Assistant:Provider"];
+        if (string.IsNullOrWhiteSpace(provider) || provider.Equals("Gemini", StringComparison.OrdinalIgnoreCase))
+        {
+            key = config["Assistant:ApiKey"];
+            if (!string.IsNullOrWhiteSpace(key)) return key.Trim();
+        }
+
+        return (Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? Environment.GetEnvironmentVariable("GOOGLE_API_KEY") ?? "").Trim();
     }
 
     public async Task<PulseAiHintDto> EvaluateEvidenceAsync(
@@ -97,41 +119,10 @@ public sealed class GeminiService : IGeminiService
 
         try
         {
-            var url = "https://generativelanguage.googleapis.com/v1beta/models/" + _model + ":generateContent?key=" + _apiKey;
-
-            var request = new GeminiRequest
-            {
-                Contents = new[]
-                {
-                    new GeminiContent
-                    {
-                        Parts = new[] { new GeminiPart { Text = prompt } }
-                    }
-                },
-                GenerationConfig = new GeminiGenerationConfig
-                {
-                    ResponseMimeType = "application/json"
-                }
-            };
-
-            HttpResponseMessage response = null!;
-            for (var attempt = 0; attempt < 3; attempt++)
-            {
-                response = await _http.PostAsJsonAsync(url, request, cancellationToken);
-                if (response.IsSuccessStatusCode) break;
-                var body = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogWarning("Gemini API attempt {Attempt} returned {Status}: {Body}", attempt + 1, (int)response.StatusCode, body);
-                if ((int)response.StatusCode != 503 && (int)response.StatusCode != 429) break;
-                await Task.Delay(2000 * (attempt + 1), cancellationToken);
-            }
-            if (!response.IsSuccessStatusCode) return PulseRules.AiHint(evidenceText);
-
-            var result = await response.Content.ReadFromJsonAsync<GeminiResponse>(cancellationToken: cancellationToken);
-
-            var text = result?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text;
+            var text = await GenerateJsonAsync(prompt, cancellationToken);
             if (string.IsNullOrWhiteSpace(text))
             {
-                _logger.LogWarning("Gemini returned empty response, falling back.");
+                _logger.LogWarning("Gemini returned no answer, falling back.");
                 return PulseRules.AiHint(evidenceText);
             }
 
@@ -190,6 +181,104 @@ public sealed class GeminiService : IGeminiService
         }
     }
 
+    public async Task<TrialEssayAiReviewDto?> EvaluateTrialEssaysAsync(
+        IReadOnlyList<TrialEssayAiInput> essays,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsConfigured || essays.Count == 0) return null;
+
+        var levels = new Dictionary<int, string> { [1] = "Cơ bản", [2] = "Trung cấp", [3] = "Nâng cao" };
+        var parts = essays.Select(e =>
+            "BÀI " + e.Tier + " — cấp " + levels.GetValueOrDefault(e.Tier, e.Tier.ToString()) + " · " + e.Title + "\n"
+            + "Đề: " + e.Prompt + "\n"
+            + "Bài làm:\n" + e.Answer.Trim());
+        var prompt =
+            "Bạn là mentor chấm bài đánh giá năng lực số (Khung năng lực số TT02/2025) của nhân viên doanh nghiệp. "
+            + "Chấm từng bài tự luận dưới đây theo thang 0–10 (đạt khi từ " + TrialProgramRules.EssayPassScore + " điểm), "
+            + "theo yêu cầu của đúng cấp bài đó: Cơ bản = làm được việc số hằng ngày; Trung cấp = tự giải quyết vấn đề của nhóm "
+            + "bằng công cụ số; Nâng cao = đề xuất cải tiến, quản trị rủi ro dữ liệu và đo hiệu quả.\n"
+            + "Tiêu chí: đúng trọng tâm đề; cụ thể (công cụ, các bước, dữ liệu); kiểm chứng được (cách kiểm tra hoặc đo kết quả); "
+            + "độ sâu phù hợp cấp. Bài sơ sài, chung chung, lạc đề hoặc chép lại đề thì dưới 5.\n\n"
+            + string.Join("\n\n", parts) + "\n\n"
+            + "Trả JSON thuần (không markdown): {\"essays\":[{\"tier\":1,\"score\":0,\"feedback\":\"...\"}],\"summary\":\"...\"}. "
+            + "feedback: 1–2 câu nêu điểm làm được và điều còn thiếu. summary: 1 câu nhận xét chung. Trả lời bằng tiếng Việt.";
+
+        try
+        {
+            var text = await GenerateJsonAsync(prompt, cancellationToken);
+            if (string.IsNullOrWhiteSpace(text)) return null;
+
+            var parsed = JsonSerializer.Deserialize<EssayReviewResponse>(text);
+            var byTier = (parsed?.Essays ?? new List<EssayScoreResponse>())
+                .GroupBy(e => e.Tier)
+                .ToDictionary(g => g.Key, g => g.First());
+            if (essays.Any(e => !byTier.ContainsKey(e.Tier)))
+            {
+                _logger.LogWarning("Gemini essay review is missing tiers, ignoring it.");
+                return null;
+            }
+
+            return new TrialEssayAiReviewDto
+            {
+                Essays = essays.Select(e =>
+                {
+                    var score = Math.Clamp(byTier[e.Tier].Score, 0, TrialProgramRules.EssayMaxScore);
+                    return new TrialEssayAiScoreDto
+                    {
+                        Tier = e.Tier,
+                        Score = score,
+                        Passed = score >= TrialProgramRules.EssayPassScore,
+                        Feedback = byTier[e.Tier].Feedback?.Trim() ?? "",
+                    };
+                }).ToList(),
+                Summary = parsed?.Summary?.Trim() ?? "",
+                Model = _model,
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Gemini essay review failed.");
+            return null;
+        }
+    }
+
+    /// <summary>Gọi generateContent (trả JSON), thử lại khi 429/503. Khóa gửi qua header, không nằm trong URL / log.</summary>
+    private async Task<string?> GenerateJsonAsync(string prompt, CancellationToken cancellationToken)
+    {
+        var url = "https://generativelanguage.googleapis.com/v1beta/models/" + _model + ":generateContent";
+        var request = new GeminiRequest
+        {
+            Contents = new[]
+            {
+                new GeminiContent
+                {
+                    Parts = new[] { new GeminiPart { Text = prompt } }
+                }
+            },
+            GenerationConfig = new GeminiGenerationConfig
+            {
+                ResponseMimeType = "application/json"
+            }
+        };
+
+        HttpResponseMessage? response = null;
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            using var message = new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent.Create(request) };
+            message.Headers.Add("x-goog-api-key", _apiKey);
+            response = await _http.SendAsync(message, cancellationToken);
+            if (response.IsSuccessStatusCode) break;
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            _logger.LogWarning("Gemini API attempt {Attempt} returned {Status}: {Body}", attempt + 1, (int)response.StatusCode, body);
+            if ((int)response.StatusCode != 503 && (int)response.StatusCode != 429) break;
+            await Task.Delay(2000 * (attempt + 1), cancellationToken);
+        }
+
+        if (response is not { IsSuccessStatusCode: true }) return null;
+        var result = await response.Content.ReadFromJsonAsync<GeminiResponse>(cancellationToken: cancellationToken);
+        return result?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text;
+    }
+
     private static int Clamp(int v) => Math.Clamp(v, 0, 100);
 
     private static string FormatMs(long ms)
@@ -218,6 +307,19 @@ public sealed class GeminiService : IGeminiService
         public AiDetailResponse? Detail { get; set; }
         [JsonPropertyName("fraud")]
         public AiFraudResponse? Fraud { get; set; }
+    }
+
+    private sealed class EssayReviewResponse
+    {
+        [JsonPropertyName("essays")] public List<EssayScoreResponse>? Essays { get; set; }
+        [JsonPropertyName("summary")] public string? Summary { get; set; }
+    }
+
+    private sealed class EssayScoreResponse
+    {
+        [JsonPropertyName("tier")] public int Tier { get; set; }
+        [JsonPropertyName("score")] public int Score { get; set; }
+        [JsonPropertyName("feedback")] public string? Feedback { get; set; }
     }
 
     private sealed class AiDetailResponse

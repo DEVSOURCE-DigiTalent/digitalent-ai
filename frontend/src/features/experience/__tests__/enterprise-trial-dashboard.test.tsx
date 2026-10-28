@@ -151,14 +151,20 @@ describe('enterprise trial dashboard UI', () => {
 });
 
 describe('trial sidebar', () => {
-  it('keeps the Owner navigation for a trial account', () => {
-    const config = sidebarFor({
+  it('gives a trial owner only Dùng thử and Học thử', () => {
+    const owner = {
       id: 'owner-1', email: 'owner@example.test', fullName: 'Owner', roles: ['OWNER'], permissions: [],
-      workspace: 'enterprise', enterpriseTrialStatus: 'trial_active',
-      subscription: { planCode: 'ENT_TRIAL', planName: 'Dùng thử Enterprise', status: 'trialing', entitlements: [] },
-    });
+      workspace: 'enterprise' as const, enterpriseTrialStatus: 'trial_active' as const,
+      subscription: { planCode: 'ENT_TRIAL', planName: 'Dùng thử Enterprise', status: 'trialing' as const, entitlements: [] },
+    };
 
-    expect(config).toBe(OWNER_SIDEBAR);
-    expect(config.some((item) => item.screenId === 'OW-23')).toBe(true);
+    // Chưa tham gia làm bài: Học thử = OW-T2 (cảnh báo làm bài test trước, khóa đang khóa, mua khóa).
+    expect(sidebarFor(owner).map((item) => [item.label, item.screenId])).toEqual([['Dùng thử', 'OW-T1'], ['Học thử', 'OW-T2']]);
+    // Đã tham gia (có role Nhân viên): Học thử = trang Học thử của cổng nhân viên; trang mua khóa vẫn thuộc mục này.
+    const joined = sidebarFor({ ...owner, roles: ['OWNER', 'EMPLOYEE'] });
+    expect(joined.map((item) => item.screenId)).toEqual(['OW-T1', 'EM-02']);
+    expect(joined[1].activeFor).toEqual(expect.arrayContaining(['EM-T1', 'OW-23']));
+    // Hết dùng thử: menu chủ doanh nghiệp đầy đủ.
+    expect(sidebarFor({ ...owner, enterpriseTrialStatus: 'converted' })).toEqual(OWNER_SIDEBAR);
   });
 });

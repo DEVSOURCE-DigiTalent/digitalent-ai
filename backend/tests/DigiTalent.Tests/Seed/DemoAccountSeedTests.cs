@@ -17,7 +17,7 @@ public class DemoAccountSeedTests
         await using var db = CreateContext();
         var organization = new DigiTalent.Domain.Entities.Organization { Code = "DIGITALENT", Name = "Demo" };
         db.Organizations.Add(organization);
-        foreach (var code in new[] { "PLATFORM_ADMIN", "OWNER", "MANAGER", "EMPLOYEE" })
+        foreach (var code in new[] { "PLATFORM_ADMIN", "MENTOR", "OWNER", "MANAGER", "EMPLOYEE" })
             db.Roles.Add(new Role { Code = code, Name = code, ScopeType = "ORGANIZATION" });
         var existing = new User
         {
@@ -35,13 +35,14 @@ public class DemoAccountSeedTests
         var users = await db.Users.Include(u => u.UserRoles).ToDictionaryAsync(u => u.Email);
         users.Keys.Should().BeEquivalentTo(new[]
         {
-            "platform@digitalent.ai", "owner@digitalent.ai", "manager@digitalent.ai",
+            "platform@digitalent.ai", "mentor@digitalent.ai", "owner@digitalent.ai", "manager@digitalent.ai",
             "employee@digitalent.ai", "personal@digitalent.ai", "trial@digitalent.ai", "free@digitalent.ai",
         });
         users["manager@digitalent.ai"].PasswordHash.Should().Be("existing-hash");
         users["manager@digitalent.ai"].DisplayName.Should().Be("Existing Manager");
         users["platform@digitalent.ai"].OrganizationId.Should().BeNull();
         users["platform@digitalent.ai"].EmailVerifiedAt.Should().NotBeNull();
+        users["mentor@digitalent.ai"].OrganizationId.Should().BeNull();
         foreach (var email in new[] { "personal@digitalent.ai", "trial@digitalent.ai", "free@digitalent.ai" })
         {
             users[email].OrganizationId.Should().BeNull();
@@ -51,7 +52,7 @@ public class DemoAccountSeedTests
         var roles = await db.Roles.ToDictionaryAsync(r => r.Id, r => r.Code);
         foreach (var (email, expected) in new[]
         {
-            ("platform@digitalent.ai", "PLATFORM_ADMIN"), ("owner@digitalent.ai", "OWNER"),
+            ("platform@digitalent.ai", "PLATFORM_ADMIN"), ("mentor@digitalent.ai", "MENTOR"), ("owner@digitalent.ai", "OWNER"),
             ("manager@digitalent.ai", "MANAGER"), ("employee@digitalent.ai", "EMPLOYEE"),
         })
             users[email].UserRoles.Select(r => roles[r.RoleId]).Should().Equal(expected);

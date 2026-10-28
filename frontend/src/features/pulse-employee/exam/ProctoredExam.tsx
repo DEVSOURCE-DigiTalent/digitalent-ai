@@ -6,7 +6,8 @@ import type { PulseAnswer, PulseCourseSummary, PulseCriterion, PulseExamKind, Pu
 import { btn } from '../lib/button';
 import { PROCTORING_EVENT_LABELS, clock, formatDuration, levelName, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
-import { ProctorController, proctoringSupported, type DeviceState, type LockReason, type ProctorSnapshot } from './proctor';
+import { ProctorController, proctoringSupported, type LockReason, type ProctorSnapshot } from './proctor';
+import { deviceText, useNow } from './exam-helpers';
 import type { FaceSignalKind } from './face-signals';
 
 const MIN_EVIDENCE = 30;
@@ -279,19 +280,8 @@ export function ProctoredExam(props: ProctoredExamProps) {
   );
 }
 
-function useNow(active: boolean) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!active) return;
-    setNow(Date.now());
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, [active]);
-  return now;
-}
-
 /** Hỏi lại trước khi rời trang trong lúc đang ghi hình (chỉ có trong data router). */
-function LeaveGuard({ active }: { active: boolean }) {
+export function LeaveGuard({ active }: { active: boolean }) {
   const blocker = useBlocker(active);
   useEffect(() => {
     if (blocker.state !== 'blocked') return;
@@ -341,17 +331,6 @@ function ExamBar({ kind, course, snapshot, elapsed, stage, onCancel }: {
       ) : null}
     </header>
   );
-}
-
-function deviceText(state: DeviceState, onText: string): { text: string; tone: 'ok' | 'bad' | '' } {
-  switch (state) {
-    case 'on': return { text: onText, tone: 'ok' };
-    case 'requesting': return { text: 'Đang chờ trình duyệt…', tone: '' };
-    case 'wrong-surface': return { text: 'Đã chọn cửa sổ hoặc tab — cần toàn bộ màn hình', tone: 'bad' };
-    case 'denied': return { text: 'Chưa được cho phép', tone: 'bad' };
-    case 'stopped': return { text: 'Đã ngừng', tone: 'bad' };
-    default: return { text: 'Chưa bật', tone: 'bad' };
-  }
 }
 
 function DeviceCheck(props: ProctoredExamProps & {
@@ -542,7 +521,7 @@ function ChoicePart({ questions, answers, passMark, disabled, onChoose }: {
   );
 }
 
-function StreamPreview({ stream, version, label, mirrored }: { stream: MediaStream | null; version: number; label: string; mirrored?: boolean }) {
+export function StreamPreview({ stream, version, label, mirrored }: { stream: MediaStream | null; version: number; label: string; mirrored?: boolean }) {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     const video = ref.current;
@@ -553,7 +532,7 @@ function StreamPreview({ stream, version, label, mirrored }: { stream: MediaStre
   return <video ref={ref} className={`pu-preview${mirrored ? ' mirrored' : ''}`} muted playsInline autoPlay aria-label={label} />;
 }
 
-function MicMeter({ level }: { level: number }) {
+export function MicMeter({ level }: { level: number }) {
   const bars = [0.35, 0.6, 0.85, 0.55, 1, 0.7, 0.45, 0.8, 0.5];
   return (
     <span className="pu-meter" role="meter" aria-label="Mức âm thanh của micro" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(level * 100)}>
@@ -570,7 +549,7 @@ const LOCK_TEXT: Record<LockReason, { title: string; action: string }> = {
   MIC: { title: 'Micro đã tắt', action: 'Bật lại micro' },
 };
 
-function LockOverlay({ controller, snapshot, elapsed }: { controller: ProctorController; snapshot: ProctorSnapshot; elapsed: number }) {
+export function LockOverlay({ controller, snapshot, elapsed }: { controller: ProctorController; snapshot: ProctorSnapshot; elapsed: number }) {
   const [busy, setBusy] = useState(false);
   const reason = snapshot.lockReasons[0];
   if (!reason) return null;
@@ -623,7 +602,7 @@ function FaceRow({ snapshot }: { snapshot: ProctorSnapshot }) {
   );
 }
 
-function ProctorPanel({ controller, snapshot }: { controller: ProctorController; snapshot: ProctorSnapshot }) {
+export function ProctorPanel({ controller, snapshot }: { controller: ProctorController; snapshot: ProctorSnapshot }) {
   const screenOff = snapshot.lockReasons.includes('SCREEN');
   return (
     <aside className="pu-proctor" aria-label="Giám sát bài làm">

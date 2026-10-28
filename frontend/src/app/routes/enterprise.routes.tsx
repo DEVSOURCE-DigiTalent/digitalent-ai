@@ -1,11 +1,13 @@
 import { Navigate, type RouteObject } from 'react-router-dom';
-import { EnterpriseLayout } from '../layouts/EnterpriseLayout';
-import { PulseEmployeeLayout } from '../layouts/PulseEmployeeLayout';
 import { useCurrentUser } from '../../hooks/use-current-user';
 import { getHomePath } from '../../lib/navigation';
 import { EMPLOYEE_SCREENS, ENTERPRISE_SCREENS } from '../../lib/screens/enterprise';
 import { buildRoutes } from './build-routes';
 import { ENTERPRISE_PAGES } from './enterprise-pages';
+import { lazyPage } from './lazy-page';
+
+const EnterpriseLayout = lazyPage(() => import('../layouts/EnterpriseLayout'), 'EnterpriseLayout');
+const PulseEmployeeLayout = lazyPage(() => import('../layouts/PulseEmployeeLayout'), 'PulseEmployeeLayout');
 
 function EnterpriseHome() {
   const user = useCurrentUser((s) => s.user);
@@ -31,8 +33,6 @@ export const enterpriseRoutes: RouteObject[] = [
     element: <EnterpriseLayout />,
     children: [
       { index: true, element: <EnterpriseHome /> },
-      // Backwards-compatible link: trial accounts now use the normal role dashboard and shell.
-      { path: '/enterprise/trial', element: <EnterpriseHome /> },
       { path: 'overview', element: <Navigate to="/enterprise/dashboard" replace /> },
       ...buildRoutes(
         ENTERPRISE_SCREENS.filter((s) => !PULSE_EMPLOYEE_SCREEN_IDS.has(s.id)),

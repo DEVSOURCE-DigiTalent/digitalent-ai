@@ -1,17 +1,23 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, useLocation, type RouteObject } from 'react-router-dom';
-import { CareerCatalogPage } from '../../features/public/career-catalog/CareerCatalogPage';
 import { PortalSelectorPage, RootRoute } from '../../features/portal/PortalSelectorPage';
-import { PricingPage } from '../../features/commerce/pages/PricingPage';
 import { LoginPage } from '../../features/auth/pages/LoginPage';
 import { ForbiddenPage } from '../../features/auth/pages/ForbiddenPage';
-import { BusinessRegisterPage } from '../../features/auth/pages/BusinessRegisterPage';
-import { TrialAcceptPage as EnterpriseTrialAcceptPage, TrialRegisterPage as EnterpriseTrialRegisterPage, TrialVerifyPage as EnterpriseTrialVerifyPage } from '../../features/experience/enterprise-trial/PublicTrialPages';
-import { IndividualVerifyPage } from '../../features/auth/pages/IndividualVerifyPage';
-import { ActivateInvitationPage } from '../../features/auth/pages/ActivateInvitationPage';
-import { BusinessVerifyEmailPage } from '../../features/auth/pages/BusinessVerifyEmailPage';
-import { ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage } from '../../features/auth/pages/PasswordPages';
-import { PublicVerifyPage } from '../../features/public/pages/PublicVerifyPage';
+import { lazyPage } from './lazy-page';
+
+const CareerCatalogPage = lazyPage(() => import('../../features/public/career-catalog/CareerCatalogPage'), 'CareerCatalogPage');
+const PricingPage = lazyPage(() => import('../../features/commerce/pages/PricingPage'), 'PricingPage');
+const BusinessRegisterPage = lazyPage(() => import('../../features/auth/pages/BusinessRegisterPage'), 'BusinessRegisterPage');
+const EnterpriseTrialAcceptPage = lazyPage(() => import('../../features/experience/enterprise-trial/PublicTrialPages'), 'TrialAcceptPage');
+const EnterpriseTrialRegisterPage = lazyPage(() => import('../../features/experience/enterprise-trial/PublicTrialPages'), 'TrialRegisterPage');
+const EnterpriseTrialVerifyPage = lazyPage(() => import('../../features/experience/enterprise-trial/PublicTrialPages'), 'TrialVerifyPage');
+const IndividualVerifyPage = lazyPage(() => import('../../features/auth/pages/IndividualVerifyPage'), 'IndividualVerifyPage');
+const ActivateInvitationPage = lazyPage(() => import('../../features/auth/pages/ActivateInvitationPage'), 'ActivateInvitationPage');
+const BusinessVerifyEmailPage = lazyPage(() => import('../../features/auth/pages/BusinessVerifyEmailPage'), 'BusinessVerifyEmailPage');
+const ForgotPasswordPage = lazyPage(() => import('../../features/auth/pages/PasswordPages'), 'ForgotPasswordPage');
+const ResetPasswordPage = lazyPage(() => import('../../features/auth/pages/PasswordPages'), 'ResetPasswordPage');
+const VerifyEmailPage = lazyPage(() => import('../../features/auth/pages/PasswordPages'), 'VerifyEmailPage');
+const PublicVerifyPage = lazyPage(() => import('../../features/public/pages/PublicVerifyPage'), 'PublicVerifyPage');
 
 const EnterpriseLandingPage = lazy(() => import('../../features/public/pulse-landing/PulseBusinessLandingPage').then(module => ({ default: module.PulseBusinessLandingPage })));
 const EnterpriseSolutionPage = lazy(() => import('../../features/public/pulse-landing/PulseBusinessSolutionPage').then(module => ({ default: module.PulseBusinessSolutionPage })));

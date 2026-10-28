@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ChevronDown, ChevronRight, Search, X } from 'lucide-react';
 import { useCourseCatalog, usePurchaseCourseSeats } from '@/hooks/use-assignments';
 import { useCompetencyCategories } from '@/hooks/use-competencies';
@@ -38,7 +38,12 @@ type Selection = { kind: 'course'; id: string } | { kind: 'domain'; domain: numb
 
 export function OwnerCourseCatalogPage() {
   const [search, setSearch] = useState('');
-  const [levelFilter, setLevelFilter] = useState(0);
+  // ?level=2 → mở sẵn bộ lọc bậc (nút "Mua khóa học" của doanh nghiệp dùng thử dẫn tới khóa Trung cấp).
+  const [searchParams] = useSearchParams();
+  const [levelFilter, setLevelFilter] = useState(() => {
+    const level = Number(searchParams.get('level'));
+    return LEVELS.some((l) => l.level === level) ? level : 0;
+  });
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
   const [selection, setSelection] = useState<Selection>(null);
   const [purchaseModalCourse, setPurchaseModalCourse] = useState<CourseListItem | null>(null);

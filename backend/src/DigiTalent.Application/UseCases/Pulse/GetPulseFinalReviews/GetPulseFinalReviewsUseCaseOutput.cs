@@ -27,6 +27,8 @@ public class PulseFinalReviewItemDto
     public string Status { get; set; } = string.Empty;
     public Guid EmployeeId { get; set; }
     public string EmployeeName { get; set; } = string.Empty;
+    /// <summary>Doanh nghiệp của người làm bài (mentor chấm cho nhiều doanh nghiệp dùng thử).</summary>
+    public string? OrganizationName { get; set; }
     public string? DepartmentName { get; set; }
     public string? PositionName { get; set; }
     public Guid CourseId { get; set; }

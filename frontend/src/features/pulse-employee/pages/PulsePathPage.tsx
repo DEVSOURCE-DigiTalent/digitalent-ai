@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ChevronDown } from 'lucide-react';
 import { usePulseOverview } from '@/hooks/use-pulse';
+import { useIsEnterpriseTrial } from '@/hooks/use-trial-program';
 import type { PulseCourseSummary, PulseDomain, PulseOverview } from '@/services/pulse.service';
 import {
   AssessFirstNote,
@@ -15,6 +16,7 @@ import { courseStatusText, courseTone, showsProgress, withinCeiling } from '../l
 import { Bar, Eyebrow, LoadError, Mini, PageSkeleton, PuLink } from '../components/ui';
 import { initials, levelName, pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
+import { TrialLearning } from '../components/TrialLearning';
 import { PulseTodayPage } from './PulseTodayPage';
 
 /**
@@ -24,8 +26,11 @@ import { PulseTodayPage } from './PulseTodayPage';
 export function PulsePathPage() {
   const { data, isLoading, error, refetch } = usePulseOverview();
   const [open, setOpen] = useState<string | null | undefined>(undefined);
+  const trial = useIsEnterpriseTrial();
   if (isLoading) return <PageSkeleton blocks={[520, 220, 640]} />;
   if (error || !data) return <LoadError message={pulseErrorMessage(error, 'Không tải được lộ trình của bạn.')} onRetry={() => refetch()} />;
+  // Doanh nghiệp dùng thử: chỉ sáu khóa Cơ bản để học thử, không có bản vẽ lộ trình.
+  if (trial) return <TrialLearning overview={data} />;
   if (!data.hasPosition || !data.hasTargets) return <PulseTodayPage />;
 
   const domains = data.domains.filter((d) => d.target > 0);

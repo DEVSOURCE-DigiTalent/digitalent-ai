@@ -37,6 +37,7 @@ public sealed class SmtpInvitationSender : IInvitationSender
             Subject = $"Lời mời tham gia {invitation.OrganizationName} · DigiTalent Pulse",
             IsBodyHtml = true,
             Body = $"<p>Xin chào {safeName},</p><p>{safeOrganization} đã mời bạn tham gia DigiTalent Pulse.</p>" +
+                   (string.IsNullOrWhiteSpace(invitation.Note) ? "" : $"<p><strong>{HtmlEncoder.Default.Encode(invitation.Note)}</strong></p>") +
                    $"<p><a href=\"{safeLink}\">Xác nhận lời mời và tự đặt mật khẩu</a></p>" +
                    $"<p>Liên kết chỉ dùng một lần và có thời hạn. Nếu bạn không mong đợi lời mời này, hãy bỏ qua email.</p>" +
                    $"<p>Liên kết: {safeLink}</p>"

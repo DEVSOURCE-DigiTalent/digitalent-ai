@@ -7,13 +7,24 @@ import { useLogout } from '@/hooks/use-auth';
 import { useNotifications } from '@/hooks/use-platform';
 import { useOnboardingStore } from '@/features/onboarding-tutorial';
 import { ROLES, normalizeRoles } from '@/lib/roles';
+import { isEnterpriseTrial } from '@/lib/navigation';
+import { useMyTrialAssessment } from '@/hooks/use-trial-program';
 import { initials } from '../lib/labels';
 import { PULSE_PATHS, isExamPath } from '../lib/paths';
 
+type NavItem = { to: string; label: string; end?: boolean; match: string[]; screenId: string };
+
 /** Mục điều hướng chính của nhân viên chỉ có Hôm nay / Lộ trình / Thực hành (§3). */
-const NAV = [
+const NAV: NavItem[] = [
   { to: PULSE_PATHS.today, label: 'Hôm nay', end: true, match: [PULSE_PATHS.today], screenId: 'EM-01' },
   { to: PULSE_PATHS.path, label: 'Lộ trình', match: [PULSE_PATHS.path, '/enterprise/me/courses'], screenId: 'EM-02' },
+  { to: PULSE_PATHS.practice, label: 'Thực hành', match: [PULSE_PATHS.practice], screenId: 'EM-03' },
+];
+
+/** Doanh nghiệp dùng thử: trang Học thử (sáu khóa Cơ bản), bài test tổng hợp ("Kết quả test" khi đã công bố) và bài đã nộp. */
+const TRIAL_NAV: NavItem[] = [
+  { to: PULSE_PATHS.path, label: 'Học thử', match: [PULSE_PATHS.path, '/enterprise/me/courses'], screenId: 'EM-02' },
+  { to: PULSE_PATHS.trialTest, label: 'Bài test', match: [PULSE_PATHS.trialTest], screenId: 'EM-T1' },
   { to: PULSE_PATHS.practice, label: 'Thực hành', match: [PULSE_PATHS.practice], screenId: 'EM-03' },
 ];
 
@@ -26,7 +37,14 @@ export function PulseHeader() {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const roles = normalizeRoles(user?.roles ?? []);
-  const workspaceHome = roles.includes(ROLES.OWNER) ? '/enterprise/dashboard' : roles.includes(ROLES.MANAGER) ? '/enterprise/team' : null;
+  const trial = Boolean(user && isEnterpriseTrial(user));
+  const { data: myTrial } = useMyTrialAssessment(trial);
+  const nav = trial
+    ? TRIAL_NAV.map((item) => (item.screenId === 'EM-T1' && myTrial?.reportPublished ? { ...item, label: 'Kết quả test' } : item))
+    : NAV;
+  const workspaceHome = roles.includes(ROLES.OWNER)
+    ? trial ? '/enterprise/trial' : '/enterprise/dashboard'
+    : roles.includes(ROLES.MANAGER) ? '/enterprise/team' : null;
   const roleLabel = roles.includes(ROLES.OWNER) ? 'Chủ doanh nghiệp' : roles.includes(ROLES.MANAGER) ? 'Quản lý' : 'Nhân viên';
 
   useEffect(() => {
@@ -63,7 +81,7 @@ export function PulseHeader() {
       </Link>
 
       <nav className="pu-nav" aria-label="Học tập của tôi">
-        {NAV.map((item) => (
+        {nav.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -77,15 +95,18 @@ export function PulseHeader() {
       </nav>
 
       <div className="pu-header-actions">
-        <button
-          type="button"
-          onClick={() => useOnboardingStore.getState().startTour('EMPLOYEE')}
-          className="pu-icon-btn"
-          aria-label="Xem lại hướng dẫn tân thủ"
-          title="Xem lại hướng dẫn tân thủ"
-        >
-          <Sparkles size={18} />
-        </button>
+        {/* Doanh nghiệp dùng thử không có hướng dẫn tân thủ (PulseEmployeeLayout không gắn RoleTutorialContainer). */}
+        {!trial && (
+          <button
+            type="button"
+            onClick={() => useOnboardingStore.getState().startTour('EMPLOYEE')}
+            className="pu-icon-btn"
+            aria-label="Xem lại hướng dẫn tân thủ"
+            title="Xem lại hướng dẫn tân thủ"
+          >
+            <Sparkles size={18} />
+          </button>
+        )}
         <Link to={PULSE_PATHS.activity} className="pu-icon-btn" aria-label={unread?.length ? `Hoạt động, ${unread.length} chưa đọc` : 'Hoạt động'}>
           <Bell size={18} />
           {Boolean(unread?.length) && <span className="pu-dot" />}

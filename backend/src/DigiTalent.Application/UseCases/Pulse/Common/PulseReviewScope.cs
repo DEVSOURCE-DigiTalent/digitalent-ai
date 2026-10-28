@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Domain.Constants.Authorization;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,7 +9,9 @@ namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
 /// Phạm vi chấm bài cuối khóa (§10.1): quản lý chỉ thấy nhân viên phòng ban mình, chủ doanh nghiệp thấy toàn tổ chức
-/// (EmployeeScope); không ai tự chấm bài của chính mình. Ngoài phạm vi → 404.
+/// (EmployeeScope); không ai tự chấm bài của chính mình. Doanh nghiệp dùng thử (docs/specs/2026-10-27-enterprise-trial-assessment.md)
+/// chỉ do mentor DigiTalent được phân công chấm: mentor thấy nhân viên của các doanh nghiệp đó, người trong doanh nghiệp
+/// không thấy. Ngoài phạm vi → 404.
 /// </summary>
 public class PulseReviewScope
 {
@@ -28,7 +31,16 @@ public class PulseReviewScope
     public IQueryable<Employee> ReviewableEmployees()
     {
         var reviewerUserId = ReviewerUserId;
-        return _scope.VisibleEmployees().Where(e => e.UserId == null || e.UserId != reviewerUserId);
+        var openTrials = _context.TrialWorkspaces.Where(t => t.ConvertedAt == null);
+        if (_currentUser.Roles.Contains(Roles.Mentor))
+        {
+            var assigned = openTrials.Where(t => t.MentorUserId == reviewerUserId).Select(t => t.OrganizationId);
+            return _context.Employees.Where(e => assigned.Contains(e.OrganizationId));
+        }
+
+        var trialOrganizations = openTrials.Select(t => t.OrganizationId);
+        return _scope.VisibleEmployees()
+            .Where(e => (e.UserId == null || e.UserId != reviewerUserId) && !trialOrganizations.Contains(e.OrganizationId));
     }
 
     /// <summary>Lần nộp (được theo dõi) + lượt học + nhân viên, nếu nhân viên nằm trong phạm vi chấm.</summary>

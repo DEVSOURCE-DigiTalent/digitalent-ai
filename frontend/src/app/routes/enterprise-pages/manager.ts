@@ -1,15 +1,16 @@
 import type { PageRegistry } from '../build-routes';
+import { lazyPage } from '../lazy-page';
 
-import { ManagerOverviewPage } from '../../../features/pulse-manager/pages/ManagerOverviewPage';
-import { TeamMembersPage } from '../../../features/manager/pages/team/TeamMembersPage';
-import { TeamMemberDetailPage } from '../../../features/manager/pages/team/TeamMemberDetailPage';
-import { TeamCompetencyMatrixPage } from '../../../features/manager/pages/team/TeamCompetencyMatrixPage';
-import { TrainingAssignmentDetailPage } from '../../../features/manager/pages/team/TrainingAssignmentDetailPage';
-import { PulseFinalReviewsPage } from '../../../features/pulse-manager/pages/PulseFinalReviewsPage';
-import { ManagerCapabilityPage } from '../../../features/pulse-manager/pages/ManagerCapabilityPage';
-import { ManagerTeamTrainingPage } from '../../../features/pulse-manager/pages/ManagerTeamTrainingPage';
-import { ManagerCycleReportPage } from '../../../features/pulse-manager/pages/ManagerCycleReportPage';
-import { ManagerFrameworkPage } from '../../../features/pulse-manager/pages/ManagerFrameworkPage';
+const ManagerOverviewPage = lazyPage(() => import('../../../features/pulse-manager/pages/ManagerOverviewPage'), 'ManagerOverviewPage');
+const TeamMembersPage = lazyPage(() => import('../../../features/manager/pages/team/TeamMembersPage'), 'TeamMembersPage');
+const TeamMemberDetailPage = lazyPage(() => import('../../../features/manager/pages/team/TeamMemberDetailPage'), 'TeamMemberDetailPage');
+const TeamCompetencyMatrixPage = lazyPage(() => import('../../../features/manager/pages/team/TeamCompetencyMatrixPage'), 'TeamCompetencyMatrixPage');
+const TrainingAssignmentDetailPage = lazyPage(() => import('../../../features/manager/pages/team/TrainingAssignmentDetailPage'), 'TrainingAssignmentDetailPage');
+const PulseFinalReviewsPage = lazyPage(() => import('../../../features/pulse-manager/pages/PulseFinalReviewsPage'), 'PulseFinalReviewsPage');
+const ManagerCapabilityPage = lazyPage(() => import('../../../features/pulse-manager/pages/ManagerCapabilityPage'), 'ManagerCapabilityPage');
+const ManagerTeamTrainingPage = lazyPage(() => import('../../../features/pulse-manager/pages/ManagerTeamTrainingPage'), 'ManagerTeamTrainingPage');
+const ManagerCycleReportPage = lazyPage(() => import('../../../features/pulse-manager/pages/ManagerCycleReportPage'), 'ManagerCycleReportPage');
+const ManagerFrameworkPage = lazyPage(() => import('../../../features/pulse-manager/pages/ManagerFrameworkPage'), 'ManagerFrameworkPage');
 
 /** MANAGER page registry mapping screen IDs (MG-*) to components. Pulse pages: features/pulse-manager. */
 export const MANAGER_PAGES: PageRegistry = {

@@ -8,6 +8,7 @@ vi.hoisted(() => {
 });
 
 import { routes } from '../app/router';
+import { preloadLazyPages } from '../app/routes/lazy-page';
 import { MOCK_EMAILS, signInAsMock, signOut } from './session';
 import { getHomePath } from '../lib/navigation';
 
@@ -31,6 +32,8 @@ function AppWithLocation() {
 }
 
 describe('8 Canonical Demo Accounts E2E Test Suite', () => {
+  // Pages and layouts are lazy chunks; load them once so each test only waits for its own render.
+  beforeAll(() => preloadLazyPages(), 120_000);
   let queryClient: QueryClient;
 
   beforeEach(() => {

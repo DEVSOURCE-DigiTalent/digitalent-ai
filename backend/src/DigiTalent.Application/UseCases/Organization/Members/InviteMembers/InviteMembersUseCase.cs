@@ -142,7 +142,7 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
             string? link;
             try
             {
-                link = await _invitationSender.SendAsync(new InvitationMessage(invitation.Email, invitation.FullName, organizationName, token));
+                link = await _invitationSender.SendAsync(new InvitationMessage(invitation.Email, invitation.FullName, organizationName, token, input.EmailNote));
             }
             catch
             {

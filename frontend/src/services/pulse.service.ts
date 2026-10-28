@@ -652,6 +652,8 @@ export interface PulseFinalReviewItem {
   status: PulseReviewStatus;
   employeeId: string;
   employeeName: string;
+  /** Doanh nghiệp của người làm bài (hàng chờ của mentor gồm nhiều doanh nghiệp dùng thử). */
+  organizationName?: string | null;
   departmentName?: string | null;
   positionName?: string | null;
   courseId: string;

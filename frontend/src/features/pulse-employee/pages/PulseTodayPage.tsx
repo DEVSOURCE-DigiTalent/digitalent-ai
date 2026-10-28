@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { BriefcaseBusiness, ChevronDown, Clock, Compass, Flag, UserX } from 'lucide-react';
 import { usePulseOverview } from '@/hooks/use-pulse';
+import { useIsEnterpriseTrial } from '@/hooks/use-trial-program';
 import type { PulseCourseSummary, PulseDomain, PulseOverview } from '@/services/pulse.service';
 import { formatDate } from '@/lib/utils';
 import { CapNote, CourseAction, CourseRow, DomainTrack, RoadmapPlan } from '../components/roadmap';
@@ -16,6 +18,9 @@ import { PULSE_PATHS } from '../lib/paths';
 export function PulseTodayPage() {
   const { data, isLoading, error, refetch } = usePulseOverview();
   const [open, setOpen] = useState<string | null | undefined>(undefined);
+  const trial = useIsEnterpriseTrial();
+  // Doanh nghiệp dùng thử: một trang Học thử duy nhất (Lộ trình).
+  if (trial) return <Navigate to={PULSE_PATHS.path} replace />;
   if (isLoading) return <PageSkeleton blocks={[240, 420, 520]} />;
   if (error || !data) return <LoadError message={pulseErrorMessage(error, 'Không tải được không gian học của bạn.')} onRetry={() => refetch()} />;
   if (!data.hasPosition || !data.hasTargets) return <NoPath overview={data} />;
