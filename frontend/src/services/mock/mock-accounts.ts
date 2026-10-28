@@ -111,6 +111,10 @@ const SEEDS: MockAccountSeed[] = [
     id: 'mock-platform', email: 'platform@digitalent.ai', fullName: 'Ngô Văn Nền Tảng',
     roles: [ROLES.PLATFORM_ADMIN], workspace: WORKSPACES.PLATFORM,
   },
+  {
+    id: 'mock-mentor', email: 'mentor@digitalent.ai', fullName: 'Mentor DigiTalent',
+    roles: [ROLES.MENTOR], workspace: WORKSPACES.PLATFORM,
+  },
 ];
 
 function toSessionUser(seed: MockAccountSeed): SessionUser {

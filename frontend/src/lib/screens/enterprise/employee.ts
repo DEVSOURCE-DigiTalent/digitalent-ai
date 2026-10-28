@@ -68,6 +68,25 @@ export const EMPLOYEE_SCREENS: ScreenDef[] = [
     permission: P.ASSESSMENT_READ,
     priority: 'P0',
   },
+  // Dùng thử doanh nghiệp: bài đánh giá tổng hợp ba cấp (trang giới thiệu + phòng thi có giám sát)
+  {
+    id: 'EM-T1',
+    title: 'Bài đánh giá năng lực',
+    path: '/enterprise/me/trial-test',
+    roles: EMPLOYEE_ROLES,
+    permission: P.ASSESSMENT_READ,
+    allowUnpaid: true,
+    priority: 'P0',
+  },
+  {
+    id: 'EM-T2',
+    title: 'Phòng thi',
+    path: '/enterprise/me/trial-test/exam',
+    roles: EMPLOYEE_ROLES,
+    permission: P.ASSESSMENT_READ,
+    allowUnpaid: true,
+    priority: 'P0',
+  },
   {
     id: 'EM-08',
     title: 'Kết quả đã xác nhận',

@@ -19,6 +19,27 @@ export const OWNER_SCREENS: ScreenDef[] = [
     priority: 'P0',
   },
 
+  // ── Dùng thử (docs/specs/2026-10-27-enterprise-trial-assessment.md) ──
+  {
+    id: 'OW-T1',
+    title: 'Dùng thử',
+    path: '/enterprise/trial',
+    roles: OWNER_ROLES,
+    permission: P.TRIAL_MANAGE,
+    allowUnpaid: true,
+    priority: 'P0',
+  },
+  {
+    // Chủ doanh nghiệp chưa tham gia làm bài: 6 khóa Cơ bản đang khóa, cảnh báo làm bài test trước, mua khóa.
+    id: 'OW-T2',
+    title: 'Học thử',
+    path: '/enterprise/trial/learning',
+    roles: OWNER_ROLES,
+    permission: P.TRIAL_MANAGE,
+    allowUnpaid: true,
+    priority: 'P0',
+  },
+
   // ── Thiết lập ──
   {
     id: 'OW-05',

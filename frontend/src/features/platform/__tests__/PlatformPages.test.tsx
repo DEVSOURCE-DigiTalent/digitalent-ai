@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, useRoutes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { routes } from '@/app/router';
+import { preloadLazyPages } from '@/app/routes/lazy-page';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { MOCK_EMAILS, signInAsMock } from '@/test/session';
 import type {
@@ -270,6 +271,8 @@ const courseDetail = (versionNo: number, overrides: Partial<CatalogCourseDetail>
 });
 
 describe('Platform Admin console (v2)', () => {
+  // Pages and layouts are lazy chunks; load them once so each test only waits for its own render.
+  beforeAll(() => preloadLazyPages(), 120_000);
   let queryClient: QueryClient;
 
   beforeEach(() => {

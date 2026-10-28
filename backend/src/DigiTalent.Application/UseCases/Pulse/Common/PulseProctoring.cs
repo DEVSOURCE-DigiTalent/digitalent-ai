@@ -49,10 +49,10 @@ public class PulseProctoring
     }
 
     /// <summary>
-    /// Đóng phiên khi nộp bài: đúng nhân viên, đúng loại bài, đúng khóa, còn đang ghi và đã có bản ghi toàn bộ màn hình
+    /// Đóng phiên khi nộp bài: đúng nhân viên, đúng loại bài, đúng khóa (null = bài dùng thử), còn đang ghi và đã có bản ghi toàn bộ màn hình
     /// lẫn camera. Đánh dấu SUBMITTED, khép các đoạn ghi còn mở và ghi sự kiện nộp bài. Không lưu — người gọi lưu cùng bài nộp.
     /// </summary>
-    public async Task<ProctoringSession> CloseForSubmitAsync(Guid sessionId, Guid employeeId, string kind, Guid courseId, DateTimeOffset now)
+    public async Task<ProctoringSession> CloseForSubmitAsync(Guid sessionId, Guid employeeId, string kind, Guid? courseId, DateTimeOffset now)
     {
         var session = await _context.ProctoringSessions.FirstOrDefaultAsync(s => s.Id == sessionId && s.EmployeeId == employeeId)
                       ?? throw new BadRequestException("Không tìm thấy phiên làm bài có giám sát của bạn.", "proctoringSessionId", SessionMismatch);
@@ -97,7 +97,7 @@ public class PulseProctoring
     }
 
     /// <summary>Bỏ các phiên còn đang ghi của cùng bài (mở bài làm lần nữa ở tab khác, tải lại trang…).</summary>
-    public async Task AbandonOpenAsync(Guid employeeId, Guid courseId, string kind, DateTimeOffset now)
+    public async Task AbandonOpenAsync(Guid employeeId, Guid? courseId, string kind, DateTimeOffset now)
     {
         var open = await _context.ProctoringSessions
             .Where(s => s.EmployeeId == employeeId && s.CourseId == courseId && s.Kind == kind && s.Status == Statuses.ProctoringSession.Recording)
@@ -111,11 +111,23 @@ public class PulseProctoring
     }
 }
 
-/// <summary>Người nhận thông báo khi nhân viên nộp bài: quản lý phòng ban, hoặc chủ doanh nghiệp khi nhân viên là quản lý.</summary>
+/// <summary>
+/// Người nhận thông báo khi nhân viên nộp bài: quản lý phòng ban, hoặc chủ doanh nghiệp khi nhân viên là quản lý; doanh
+/// nghiệp dùng thử → mentor được phân công (chưa phân công → không ai).
+/// </summary>
 public static class PulseReviewers
 {
     public static async Task<List<Guid>> UserIdsAsync(IApplicationDbContext context, Employee employee)
     {
+        var trial = await context.TrialWorkspaces.AsNoTracking()
+            .Where(t => t.OrganizationId == employee.OrganizationId && t.ConvertedAt == null)
+            .Select(t => new { t.MentorUserId })
+            .FirstOrDefaultAsync();
+        if (trial != null)
+        {
+            return trial.MentorUserId is { } mentor ? new List<Guid> { mentor } : new List<Guid>();
+        }
+
         var manager = await (
                 from department in context.Departments.AsNoTracking()
                 join head in context.Employees.AsNoTracking() on department.ManagerEmployeeId equals head.Id

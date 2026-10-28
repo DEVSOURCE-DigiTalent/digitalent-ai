@@ -18,7 +18,7 @@ public class PulseFinalReviewsController : ControllerBase
 {
     // GET api/v1/pulse/final-reviews — bài đánh giá trước khi học và bài cuối khóa chờ chấm, cửa sổ nộp lại, quá hạn, cờ hỗ trợ
     [HttpGet]
-    [HasPermission(Permissions.Task.Evaluate)]
+    [HasPermission(Permissions.Task.Evaluate, Permissions.Trial.Review)]
     public async Task<ActionResult<ApiResponse<GetPulseFinalReviewsUseCaseOutput>>> GetQueue(
         [FromServices] IUseCase<GetPulseFinalReviewsUseCaseInput, GetPulseFinalReviewsUseCaseOutput> useCase)
     {
@@ -28,7 +28,7 @@ public class PulseFinalReviewsController : ControllerBase
 
     // POST api/v1/pulse/final-reviews/{submissionId}/decision — { decision: PASSED | NOT_YET, reason }
     [HttpPost("{submissionId:guid}/decision")]
-    [HasPermission(Permissions.Task.Evaluate)]
+    [HasPermission(Permissions.Task.Evaluate, Permissions.Trial.Review)]
     public async Task<ActionResult<ApiResponse<DecidePulseFinalUseCaseOutput>>> Decide(
         Guid submissionId,
         [FromBody] DecidePulseFinalUseCaseInput input,
@@ -41,7 +41,7 @@ public class PulseFinalReviewsController : ControllerBase
 
     // POST api/v1/pulse/final-reviews/pre-assessments/{preAssessmentId}/decision — { decision: PASSED | NOT_YET, reason }
     [HttpPost("pre-assessments/{preAssessmentId:guid}/decision")]
-    [HasPermission(Permissions.Task.Evaluate)]
+    [HasPermission(Permissions.Task.Evaluate, Permissions.Trial.Review)]
     public async Task<ActionResult<ApiResponse<DecidePulsePreAssessmentUseCaseOutput>>> DecidePreAssessment(
         Guid preAssessmentId,
         [FromBody] DecidePulsePreAssessmentUseCaseInput input,
@@ -54,7 +54,7 @@ public class PulseFinalReviewsController : ControllerBase
 
     // POST api/v1/pulse/final-reviews/{submissionId}/support — { action: COACHING | FRESH_CYCLE | PAUSE, note }
     [HttpPost("{submissionId:guid}/support")]
-    [HasPermission(Permissions.Task.Evaluate)]
+    [HasPermission(Permissions.Task.Evaluate, Permissions.Trial.Review)]
     public async Task<ActionResult<ApiResponse<RecordPulseFinalSupportUseCaseOutput>>> RecordSupport(
         Guid submissionId,
         [FromBody] RecordPulseFinalSupportUseCaseInput input,

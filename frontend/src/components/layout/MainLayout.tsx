@@ -17,6 +17,8 @@ interface MainLayoutProps {
   portal: PortalConfig;
   sidebarConfig?: SidebarConfig;
   isUnpaid?: boolean;
+  /** Nội dung đặt trong khung (mặc định: trang của route con). */
+  children?: React.ReactNode;
 }
 
 function RealtimeNotifications() {
@@ -24,7 +26,7 @@ function RealtimeNotifications() {
   return null;
 }
 
-export function MainLayout({ portal, sidebarConfig, isUnpaid = false }: MainLayoutProps) {
+export function MainLayout({ portal, sidebarConfig, isUnpaid = false, children }: MainLayoutProps) {
   const { isMobileOpen, setMobileOpen, toggleCollapsed, state } = useSidebarState();
   const { pathname } = useLocation();
 
@@ -95,7 +97,7 @@ export function MainLayout({ portal, sidebarConfig, isUnpaid = false }: MainLayo
 
         <main id="main-content" className="pm-main min-w-0 min-h-[calc(100dvh-var(--pm-topbar-h))] md:pl-[var(--sidebar-w)] transition-[padding] duration-200">
           <div className="pm-main-inner">
-            <Outlet />
+            {children ?? <Outlet />}
           </div>
         </main>
       </div>
@@ -136,7 +138,7 @@ export function MainLayout({ portal, sidebarConfig, isUnpaid = false }: MainLayo
         </div>
         <main id="main-content" className="flex-1 bg-ent-bg text-ent-fg">
           <div className="p-4 md:p-6">
-            <Outlet />
+            {children ?? <Outlet />}
           </div>
         </main>
       </div>

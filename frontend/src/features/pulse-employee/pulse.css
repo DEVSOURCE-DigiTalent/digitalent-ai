@@ -68,6 +68,8 @@
 .pu-menu-panel a:hover, .pu-menu-panel button:hover { background: var(--pu-soft); color: var(--pu-violet); }
 .pu-menu-panel hr { margin: 6px 4px; border: 0; border-top: 1px solid var(--pu-line); }
 .pu-main { max-width: 1190px; margin: 0 auto; padding: 44px 24px 90px; }
+/* Trang Pulse đặt trong khung quản trị (chủ doanh nghiệp học thử): khung lo nền, lề và chiều cao. */
+.pu.pu-in-shell { min-height: 0; max-width: 1190px; margin: 0 auto; padding-bottom: 72px; background: transparent; }
 .pu-stack { display: grid; gap: 18px; }
 .pu-footer-note { margin-top: 28px; color: #8a94ab; font-size: 11px; }
 

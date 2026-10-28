@@ -20,6 +20,7 @@ export const formatDateTime = (value: string | null | undefined) =>
 
 export const ROLE_LABELS: Record<string, string> = {
   PLATFORM_ADMIN: 'Quản trị nền tảng',
+  MENTOR: 'Mentor',
   OWNER: 'Chủ doanh nghiệp',
   MANAGER: 'Quản lý phòng ban',
   EMPLOYEE: 'Nhân viên',

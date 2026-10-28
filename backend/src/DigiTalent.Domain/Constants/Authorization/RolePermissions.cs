@@ -119,6 +119,7 @@ public static class RolePermissions
             Permissions.System.BusinessConfigManage,
 
             Permissions.Assistant.Chat,
+            Permissions.Trial.Manage,
         },
 
         [Roles.Manager] = new[]
@@ -207,6 +208,19 @@ public static class RolePermissions
             Permissions.Platform.CatalogRead,
             Permissions.Platform.CatalogManage,
             Permissions.Platform.CommerceRead,
+            Permissions.Platform.TrialManage,
+        },
+
+        [Roles.Mentor] = new[]
+        {
+            Permissions.Account.ViewOwn,
+            Permissions.Account.UpdateOwnProfile,
+            Permissions.Account.ChangeOwnPassword,
+            Permissions.Notification.ReadOwn,
+            Permissions.Notification.MarkRead,
+            Permissions.Notification.SignalRConnect,
+
+            Permissions.Trial.Review,
         },
 
         [Roles.Employee] = new[]

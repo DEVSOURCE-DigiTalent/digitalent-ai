@@ -9,9 +9,10 @@ namespace DigiTalent.Infrastructure.Persistence.Seed;
 /// <summary>
 /// Tạo dữ liệu nền khi chạy môi trường Development. Chạy lại nhiều lần vẫn an toàn:
 ///   1. 1 tổ chức mặc định
-///   2. 4 persisted roles + mọi mã quyền trong Permissions.cs + ma trận RolePermissions.Defaults
+///   2. Các persisted roles (Roles.Definitions) + mọi mã quyền trong Permissions.cs + ma trận RolePermissions.Defaults
 ///      (chỉ THÊM phần còn thiếu — không ghi đè ma trận admin đã chỉnh)
-///   3. Bốn tài khoản theo role và ba tài khoản cá nhân, được backfill theo email. Mật khẩu chung: Admin@1234
+///   3. Năm tài khoản theo role (kể cả mentor@ chấm bài dùng thử) và ba tài khoản cá nhân, được backfill theo email.
+///      Mật khẩu chung: Admin@1234
 ///   4. Dữ liệu Skill Gap / gợi ý khóa học — xem SkillGapSeeder
 ///   5. Nội dung khóa học và hồ sơ học viên demo — xem CourseContentSeeder
 ///   6. Subscription, đợt đào tạo và hành trình học cho các trang cá nhân EM-*
@@ -203,6 +204,7 @@ public static class DbSeeder
         }
 
         EnsureUser("platform@digitalent.ai", "Platform Administrator", null, Roles.PlatformAdmin);
+        EnsureUser("mentor@digitalent.ai", "Mentor DigiTalent", null, Roles.Mentor);
         var owner = EnsureUser("owner@digitalent.ai", "Enterprise Owner", organizationId, Roles.Owner);
         var manager = EnsureUser("manager@digitalent.ai", "Department Manager", organizationId, Roles.Manager);
         var employee = EnsureUser("employee@digitalent.ai", "Employee", organizationId, Roles.Employee);

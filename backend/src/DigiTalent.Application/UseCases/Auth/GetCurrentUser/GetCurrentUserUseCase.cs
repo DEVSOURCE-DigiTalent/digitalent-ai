@@ -57,7 +57,8 @@ public class GetCurrentUserUseCase : IUseCase<GetCurrentUserUseCaseInput, GetCur
             .Where(r => !string.IsNullOrEmpty(r))
             .Distinct()
             .ToList();
-        var isPlatform = roles.Contains(Roles.PlatformAdmin);
+        // Mentor = nhân sự nền tảng (không thuộc tổ chức), dùng không gian platform như quản trị nền tảng.
+        var isPlatform = roles.Contains(Roles.PlatformAdmin) || roles.Contains(Roles.Mentor);
         var isPersonal = user.OrganizationId == null && !isPlatform;
         if (isPersonal)
         {

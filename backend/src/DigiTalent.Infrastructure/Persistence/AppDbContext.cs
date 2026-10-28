@@ -128,6 +128,8 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<TrialRegistration> TrialRegistrations => Set<TrialRegistration>();
     public DbSet<TrialWorkspace> TrialWorkspaces => Set<TrialWorkspace>();
     public DbSet<TrialInvitation> TrialInvitations => Set<TrialInvitation>();
+    public DbSet<TrialAssessment> TrialAssessments => Set<TrialAssessment>();
+    public DbSet<TrialAssessmentDomain> TrialAssessmentDomains => Set<TrialAssessmentDomain>();
     public DbSet<PositionDiagnosticAttempt> PositionDiagnosticAttempts => Set<PositionDiagnosticAttempt>();
 
     // Individual Commerce & Registration (v3.0)

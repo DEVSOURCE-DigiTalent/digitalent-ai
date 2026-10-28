@@ -1,0 +1,61 @@
+/* Học thử (doanh nghiệp dùng thử): sáu khóa Cơ bản + nút mua khóa của chủ doanh nghiệp. */
+.pu-tl { display: grid; gap: 22px; }
+
+.pu-tl-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px; }
+.pu-tl-head > div:first-child { display: grid; gap: 10px; max-width: 640px; }
+.pu-tl-head h1 { margin: 0; font-size: clamp(30px, 4vw, 44px); line-height: 1.05; }
+.pu-tl-head p { margin: 0; font-size: 14px; }
+.pu-tl-score { display: grid; gap: 6px; min-width: 200px; padding: 14px 16px; border: 1px solid var(--pu-line); border-radius: 16px; background: var(--pu-paper); box-shadow: var(--pu-shadow); }
+.pu-tl-score strong { font-size: 30px; font-weight: 850; letter-spacing: -.04em; line-height: 1; }
+.pu-tl-score strong small { font-size: 16px; font-weight: 700; color: var(--pu-faint); }
+.pu-tl-score span { font-size: 12px; color: var(--pu-muted); }
+
+.pu-tl-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 980px) { .pu-tl-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .pu-tl-grid { grid-template-columns: 1fr; } }
+.pu-tl-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 16px; border: 1px solid var(--pu-line); border-radius: 18px; background: var(--pu-paper); box-shadow: var(--pu-shadow); }
+.pu-tl-card.done { border-color: #cfe8d7; background: linear-gradient(180deg, #f3fbf5, #fff 60%); }
+.pu-tl-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pu-tl-code { display: inline-grid; place-items: center; min-width: 36px; height: 28px; padding: 0 8px; border-radius: 9px; background: var(--pu-soft); color: var(--pu-violet); font-size: 12px; font-weight: 900; }
+.pu-tl-domain { color: var(--pu-faint); font-size: 12px; font-weight: 600; }
+.pu-tl-card h3 { margin: 0; font-size: 17px; line-height: 1.3; letter-spacing: -.02em; }
+.pu-tl-card h3 a:hover { color: var(--pu-blue); }
+.pu-tl-meta { display: flex; align-items: center; gap: 8px; min-height: 18px; color: var(--pu-muted); font-size: 12px; font-weight: 600; }
+.pu-tl-meta .pu-bar { flex: 1; }
+.pu-tl-cta { margin-top: auto; padding-top: 6px; }
+.pu-tl-cta .pu-btn { width: 100%; }
+
+.pu-tl-locked { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; color: var(--pu-muted); }
+.pu-tl-upgrade { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 18px 20px; border-radius: 18px; color: #fff; background: linear-gradient(135deg, #4d57d9, #5140b5); box-shadow: 0 16px 34px rgba(79, 74, 188, .22); }
+.pu-tl-upgrade-icon { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 12px; background: rgba(255, 255, 255, .14); }
+.pu-tl-upgrade > div { display: grid; gap: 2px; flex: 1 1 240px; }
+.pu-tl-upgrade strong { font-size: 16px; }
+.pu-tl-upgrade span { font-size: 13px; color: #dcd9ff; }
+
+/* Cảnh báo trước khi học thử: làm bài test trước / chờ mentor chấm / bài test đã đóng */
+.pu-tl-notice { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 16px; padding: 18px 20px; border: 1px solid #f1d29f; border-radius: 18px; background: linear-gradient(135deg, #fff7e8, #fff 70%); box-shadow: var(--pu-shadow); }
+.pu-tl-notice.waiting { border-color: var(--pu-line-2); background: linear-gradient(135deg, #f3f1ff, #fff 70%); }
+.pu-tl-notice.closed { border-color: #e3e6ee; background: #f7f8fb; }
+.pu-tl-notice-icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 13px; background: #ffe7bf; color: #94560f; }
+.pu-tl-notice.waiting .pu-tl-notice-icon { background: #e9e5ff; color: var(--pu-violet); }
+.pu-tl-notice.closed .pu-tl-notice-icon { background: #eceff4; color: var(--pu-muted); }
+.pu-tl-notice > div { display: grid; flex: 1 1 260px; gap: 3px; }
+.pu-tl-notice strong { font-size: 17px; font-weight: 850; letter-spacing: -.02em; color: var(--pu-ink); }
+.pu-tl-notice > div > span { font-size: 13px; color: var(--pu-muted); }
+.pu-tl-notice small { font-size: 12px; font-weight: 700; color: #94560f; }
+.pu-tl-notice.waiting small { color: var(--pu-violet); }
+
+/* Chủ doanh nghiệp chưa tham gia: chọn phòng ban, vị trí rồi vào bài test */
+.pu-tl-join { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; width: 100%; }
+.pu-tl-join label { display: grid; flex: 1 1 180px; gap: 4px; font-size: 12px; font-weight: 700; color: var(--pu-muted); }
+.pu-tl-join input { min-height: 42px; padding: 8px 12px; border: 1px solid var(--pu-line-2); border-radius: 10px; background: #fff; color: var(--pu-ink); font: inherit; font-size: 14px; }
+.pu-tl-join input:focus-visible { outline: 2px solid var(--pu-blue); outline-offset: 1px; }
+
+/* Khóa chưa mở */
+.pu-tl-card.locked { background: #fbfbfe; box-shadow: none; }
+.pu-tl-card.locked h3 { color: var(--pu-ink-2); }
+.pu-tl-card.locked .pu-state { gap: 4px; }
+
+/* Trang khác của cổng nhân viên khi chưa có kết quả bài test */
+.pu-gate { display: grid; gap: 14px; max-width: 760px; margin: 24px auto 0; }
+.pu-gate h1 { margin: 0; font-size: clamp(26px, 3.4vw, 36px); line-height: 1.1; }

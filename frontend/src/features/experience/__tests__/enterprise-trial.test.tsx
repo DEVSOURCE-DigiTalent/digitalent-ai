@@ -6,7 +6,7 @@ import { TrialRegisterPage, TrialVerifyPage, TrialAcceptPage } from '../enterpri
 import { TrialWorkspacePage } from '../enterprise-trial/TrialWorkspacePage';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import publicRoutesSource from '@/app/routes/public.routes.tsx?raw';
-import enterpriseRoutesSource from '@/app/routes/enterprise.routes.tsx?raw';
+import ownerScreensSource from '@/lib/screens/enterprise/owner.ts?raw';
 
 const api = vi.hoisted(() => Object.fromEntries(['readiness', 'catalog', 'register', 'verify', 'verifyCode', 'resendVerification', 'accept', 'login', 'currentUser', 'context', 'selectPosition', 'invitations', 'invite', 'resendInvitation', 'diagnostic', 'startDiagnostic', 'saveAnswers', 'submitDiagnostic', 'result', 'path', 'startPathItem', 'progressPathItem', 'pathContent', 'results', 'requestConversion'].map(key => [key, vi.fn()])));
 vi.mock('@/services/enterprise-trial.service', () => ({ enterpriseTrialService: api }));
@@ -37,27 +37,27 @@ beforeEach(() => {
 describe('guided enterprise trial', () => {
   it('registers all four route paths', () => {
     for (const route of ['/business/try', '/business/try/verify', '/business/try/accept']) expect(publicRoutesSource).toContain(`path: '${route}'`);
-    expect(enterpriseRoutesSource).toContain("path: '/enterprise/trial'");
+    expect(ownerScreensSource).toContain("path: '/enterprise/trial'");
   });
   it('fails closed when server readiness denies registration', async () => {
     api.readiness.mockResolvedValue(ok({ ...readiness, canRegister: false, missingReasons: ['email_sender_unavailable'] }));
     mount(<TrialRegisterPage />);
-    expect(await screen.findByText(/email_sender_unavailable/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Tạo không gian dùng thử' })).toBeDisabled();
+    expect(await screen.findByText('Tạm chưa nhận đăng ký dùng thử.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tiếp tục' })).toBeDisabled();
     expect(api.register).not.toHaveBeenCalled();
   });
   it('labels registration continuation development-only and uses a safe app path', async () => {
     api.register.mockResolvedValue(ok({ state: 'verification_pending', expiresAt: '2026-10-07', developmentLink: 'http://localhost:5173/business/try/verify?token=abc' }));
     mount(<TrialRegisterPage />);
-    await screen.findByText(/CRM skills/);
-    for (const [label, value] of [['Tên tổ chức', 'Acme'], ['Tên chủ sở hữu', 'Owner'], ['Email', 'owner@acme.test'], ['Mật khẩu', 'long-password-123']]) fireEvent.change(screen.getByLabelText(label), { target: { value } });
-    for (const [label, value] of [['Ngành doanh nghiệp', 'Công nghệ thông tin'], ['Quy mô', '1-20'], ['Mục tiêu trước mắt', 'digital-skills']]) fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Tiếp tục' })).toBeInTheDocument());
+    for (const [label, value] of [['Tên doanh nghiệp', 'Acme'], ['Người liên hệ', 'Owner'], ['Email công việc', 'owner@acme.test'], ['Mật khẩu', 'long-password-123']]) fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    for (const [label, value] of [['Ngành', 'Công nghệ thông tin'], ['Quy mô', '1-20']]) fireEvent.change(screen.getByLabelText(label), { target: { value } });
     fireEvent.click(screen.getByLabelText(/Tôi đồng ý/));
-    fireEvent.click(screen.getByRole('button', { name: 'Tạo không gian dùng thử' }));
-    await waitFor(() => expect(api.register).toHaveBeenCalledWith(expect.objectContaining({ organizationName: 'Acme', ownerName: 'Owner', email: 'owner@acme.test', industry: 'Công nghệ thông tin', size: '1-20', goal: 'digital-skills', acceptedTerms: true })));
-    expect(await screen.findByText(/Chỉ dành cho môi trường phát triển/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Nhập mã xác minh' })).toHaveAttribute('href', '/business/try/verify?email=owner%40acme.test');
-    expect(screen.getByRole('link', { name: 'mở liên kết mô phỏng email' })).toHaveAttribute('href', '/business/try/verify?token=abc');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Tiếp tục' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Tiếp tục' }));
+    await waitFor(() => expect(api.register).toHaveBeenCalledWith(expect.objectContaining({ organizationName: 'Acme', ownerName: 'Owner', email: 'owner@acme.test', industry: 'Công nghệ thông tin', size: '1-20', goal: 'competency-assessment', acceptedTerms: true })));
+    expect(await screen.findByRole('link', { name: 'Nhập mã xác minh' })).toHaveAttribute('href', '/business/try/verify?email=owner%40acme.test');
+    expect(screen.getByRole('link', { name: 'Mở liên kết trong email (thử)' })).toHaveAttribute('href', '/business/try/verify?token=abc');
   });
   it('verifies only once and logs in before opening workspace', async () => {
     api.verify.mockResolvedValue(ok({ email: 'owner@acme.test', role: 'Owner' })); api.login.mockResolvedValue(ok({ accessToken: 'token' })); api.currentUser.mockResolvedValue(ok({ id: 'owner', email: 'owner@acme.test', fullName: 'Owner', roles: ['OWNER'], permissions: [] }));

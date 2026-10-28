@@ -53,7 +53,6 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
 
     public async Task<GetPulseFinalReviewsUseCaseOutput> ExecuteAsync(GetPulseFinalReviewsUseCaseInput input)
     {
-        var organizationId = _currentUser.GetRequiredOrganizationId();
         var rows = await (
                 from submission in _context.CourseFinalSubmissions.AsNoTracking()
                 join enrollment in _context.Enrollments.AsNoTracking() on submission.EnrollmentId equals enrollment.Id
@@ -66,6 +65,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                     Submission = submission,
                     Enrollment = enrollment,
                     EmployeeId = employee.Id,
+                    employee.OrganizationId,
                     employee.FullName,
                     DepartmentName = department.Name,
                     PositionName = _context.JobPositions.Where(p => p.Id == employee.JobPositionId).Select(p => p.Name).FirstOrDefault(),
@@ -85,6 +85,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                 {
                     PreAssessment = preAssessment,
                     EmployeeId = employee.Id,
+                    employee.OrganizationId,
                     employee.FullName,
                     DepartmentName = department.Name,
                     PositionName = _context.JobPositions.Where(p => p.Id == employee.JobPositionId).Select(p => p.Name).FirstOrDefault(),
@@ -94,12 +95,24 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                 })
             .ToListAsync();
 
-        var catalog = await _catalog.LoadAsync(organizationId);
-        var categoryIds = catalog.Select(c => c.CategoryId).Distinct().ToList();
+        // Danh mục khóa theo tổ chức của người làm bài (mentor chấm cho nhiều doanh nghiệp dùng thử).
+        var organizationIds = rows.Select(r => r.OrganizationId).Concat(preRows.Select(r => r.OrganizationId)).Distinct().ToList();
+        var byCode = new Dictionary<(Guid, string), PulseCourseRef>();
+        foreach (var organizationId in organizationIds)
+        {
+            foreach (var course in await _catalog.LoadAsync(organizationId))
+            {
+                byCode[(organizationId, course.Code.ToUpperInvariant())] = course;
+            }
+        }
+
+        var categoryIds = byCode.Values.Select(c => c.CategoryId).Distinct().ToList();
         var categoryNames = await _context.CompetencyCategories.AsNoTracking()
             .Where(c => categoryIds.Contains(c.Id))
             .ToDictionaryAsync(c => c.Id, c => PulseLearnerReader.DisplayName(c.Name));
-        var byCode = catalog.ToDictionary(c => c.Code, StringComparer.OrdinalIgnoreCase);
+        var organizationNames = await _context.Organizations.AsNoTracking()
+            .Where(o => organizationIds.Contains(o.Id))
+            .ToDictionaryAsync(o => o.Id, o => o.Name);
 
         var now = _clock.GetUtcNow();
         var attemptDtos = await _final.MapByIdAsync(rows.Select(r => r.Submission).ToList(), forReviewer: true);
@@ -121,7 +134,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
             }
 
             var last = submissions[^1];
-            var catalogCourse = byCode.GetValueOrDefault(first.Code);
+            var catalogCourse = byCode.GetValueOrDefault((first.OrganizationId, first.Code.ToUpperInvariant()));
             items.Add(new PulseFinalReviewItemDto
             {
                 Kind = Statuses.ProctoringKind.Final,
@@ -130,6 +143,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                 Status = status,
                 EmployeeId = first.EmployeeId,
                 EmployeeName = first.FullName,
+                OrganizationName = organizationNames.GetValueOrDefault(first.OrganizationId),
                 DepartmentName = first.DepartmentName,
                 PositionName = first.PositionName,
                 CourseId = first.CourseId,
@@ -146,7 +160,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
 
         foreach (var row in preRows)
         {
-            var catalogCourse = byCode.GetValueOrDefault(row.Code);
+            var catalogCourse = byCode.GetValueOrDefault((row.OrganizationId, row.Code.ToUpperInvariant()));
             var preAssessment = row.PreAssessment;
             items.Add(new PulseFinalReviewItemDto
             {
@@ -155,6 +169,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                 Status = PulseFinalStatus.Pending,
                 EmployeeId = row.EmployeeId,
                 EmployeeName = row.FullName,
+                OrganizationName = organizationNames.GetValueOrDefault(row.OrganizationId),
                 DepartmentName = row.DepartmentName,
                 PositionName = row.PositionName,
                 CourseId = row.CourseId,

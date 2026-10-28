@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useRoutes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { routes } from '../app/router';
+import { preloadLazyPages } from '../app/routes/lazy-page';
 import { useCurrentUser } from '../hooks/use-current-user';
 import { MOCK_EMAILS, signInAsMock } from './session';
 
@@ -11,6 +12,8 @@ function App() {
 }
 
 describe('End-to-End Foundation Smoke Tests (SEP-06)', () => {
+  // Pages and layouts are lazy chunks; load them once so each test only waits for its own render.
+  beforeAll(() => preloadLazyPages(), 120_000);
   let queryClient: QueryClient;
 
   beforeEach(() => {
@@ -46,8 +49,8 @@ describe('End-to-End Foundation Smoke Tests (SEP-06)', () => {
       </QueryClientProvider>
     );
 
-    expect(screen.getByRole('heading', { name: /Phòng ban/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Tạo phòng ban' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /Phòng ban/ })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Tạo phòng ban' })).toBeInTheDocument();
   });
 
   it('OwnerWithoutEditPermissionCannotSeeDepartmentCreateButton', async () => {
@@ -61,7 +64,7 @@ describe('End-to-End Foundation Smoke Tests (SEP-06)', () => {
       </QueryClientProvider>
     );
 
-    expect(screen.getByRole('heading', { name: /Phòng ban/ })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /Phòng ban/ })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Tạo phòng ban' })).not.toBeInTheDocument();
   });
 

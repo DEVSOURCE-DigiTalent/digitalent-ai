@@ -54,7 +54,7 @@ describe('Platform Admin sidebar navigation (Pulse)', () => {
     await screen.findByRole('heading', { level: 1, name: 'Toàn cảnh nền tảng hôm nay.' });
 
     const links = within(sidebar()).getAllByRole('link');
-    expect(links).toHaveLength(8);
+    expect(links).toHaveLength(9);
     links.forEach((link) => expect(link.getAttribute('href')).toMatch(/^\/platform\//));
     expect(within(sidebar()).getByRole('link', { name: /Tổng quan/ })).toHaveClass('active');
   });
