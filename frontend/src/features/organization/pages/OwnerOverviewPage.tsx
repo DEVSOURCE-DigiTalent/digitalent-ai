@@ -8,24 +8,10 @@ import { OwnerProcessTrack } from '../components/OwnerProcessTrack';
 import { OwnerCapabilityArchitecture } from '../components/OwnerCapabilityArchitecture';
 import { OwnerTrainingCycle } from '../components/OwnerTrainingCycle';
 import { SendAnnouncementModal } from '../components/SendAnnouncementModal';
+import { PULSE_TOKENS } from '../owner-theme';
 
-const PULSE_TOKENS = {
-  '--po-canvas': '#f7f9fd',
-  '--po-surface': '#fff',
-  '--po-ink': '#172442',
-  '--po-muted': '#62718d',
-  '--po-accent': '#304bdf',
-  '--po-accent-strong': '#203bbf',
-  '--po-coral': '#ef735c',
-  '--po-lime': '#c6ec78',
-  '--po-line': '#dfe6f3',
-  '--po-soft': '#eef2ff',
-  '--po-tint': '#edf1ff',
-  '--po-warm': '#f1816b',
-} as React.CSSProperties;
-
-const KPI_ACCENTS = ['#3856db', '#f1816b', '#67b6ad', '#a48ce3'];
-const KPI_VALUE_COLORS = ['#233aaf', '#d36f5b', '#218e86', '#826bc5'];
+const KPI_ACCENTS = ['#137b84', '#e8a17f', '#67b6ad', '#a48ce3'];
+const KPI_VALUE_COLORS = ['#0e5968', '#c96f5a', '#218e86', '#826bc5'];
 
 export function OwnerOverviewPage() {
   const [announcing, setAnnouncing] = useState(false);
@@ -84,11 +70,11 @@ export function OwnerOverviewPage() {
 
   return (
     <div
-      className="-m-4 md:-m-6 min-h-screen"
+      className="po-owner -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background:
-          'radial-gradient(ellipse 760px 380px at 94% 0, color-mix(in srgb, #3856db 10%, transparent), transparent 70%), var(--po-canvas)',
+          'radial-gradient(ellipse 760px 380px at 94% 0, color-mix(in srgb, #137b84 10%, transparent), transparent 70%), var(--po-canvas)',
         fontFamily: 'Inter, "Segoe UI", Arial, sans-serif',
       }}
     >
@@ -130,7 +116,7 @@ export function OwnerOverviewPage() {
             <button
               type="button"
               onClick={() => setAnnouncing(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#304bdf] px-[17px] py-[11px] text-[13px] font-extrabold text-white transition-all hover:bg-[#203bbf] shadow-xs"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#137b84] px-[17px] py-[11px] text-[13px] font-extrabold text-white transition-all hover:bg-[#0e5968] shadow-xs"
             >
               <Send className="size-4" />
               Gửi thông báo & Hạn chót
@@ -151,22 +137,18 @@ export function OwnerOverviewPage() {
           <OwnerOverviewHero org={orgData} cap={capData} />
 
           {/* KPI Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[14px]">
+          <div className="po-stagger grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {kpis.map((kpi, i) => (
               <div
                 key={kpi.label}
-                className="relative rounded-[18px] border p-5 overflow-hidden"
-                style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)' }}
+                className="po-kpi po-lift"
+                style={{ borderTopColor: KPI_ACCENTS[i] }}
               >
-                <div
-                  className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full"
-                  style={{ background: KPI_ACCENTS[i] }}
-                />
                 <span className="text-[11px] block" style={{ color: 'var(--po-muted)' }}>
                   {kpi.label}
                 </span>
                 <strong
-                  className="text-[31px] font-light tracking-[-0.06em] tabular-nums block mt-1"
+                  className="text-[34px] font-bold leading-none tracking-[-0.06em] tabular-nums block mt-2"
                   style={{ color: KPI_VALUE_COLORS[i] }}
                 >
                   {kpi.value}
