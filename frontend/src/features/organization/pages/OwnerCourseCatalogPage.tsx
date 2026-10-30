@@ -20,7 +20,7 @@ import { PULSE_TOKENS } from '../owner-theme';
 /** One color per level, used by the tree nodes, the legend and the detail panel. */
 const LEVEL_TONES: Record<number, { bg: string; fg: string; ring: string }> = {
   1: { bg: '#edf7dd', fg: '#557327', ring: '#b9dc8c' },
-  2: { bg: '#e8f6f4', fg: '#137b84', ring: '#aebcf6' },
+  2: { bg: 'var(--po-soft)', fg: '#137b84', ring: '#aebcf6' },
   3: { bg: '#fdeee9', fg: '#c4553f', ring: '#f4b6a6' },
 };
 
@@ -380,7 +380,7 @@ function LevelSlotNode({ slot, arrow, query, levelFilter, selection, onSelect }:
               className="flex h-full min-h-[96px] flex-col rounded-[14px] border px-3 py-2.5 text-left transition-all hover:-translate-y-px hover:shadow-md"
               style={{
                 borderColor: selected ? tone.fg : tone.ring,
-                background: selected ? tone.bg : '#fff',
+                background: selected ? tone.bg : 'var(--po-surface)',
                 boxShadow: selected ? `0 0 0 3px ${tone.bg}` : undefined,
                 opacity: dimmed ? 0.35 : 1,
               }}

@@ -89,7 +89,7 @@ export function CompetencyDetailPanel({
                     <span
                       className="rounded-lg px-2 py-1 text-[9px] font-extrabold"
                       style={{
-                        background: '#e8f6f4',
+                        background: 'var(--po-soft)',
                         color: 'var(--po-accent)',
                       }}
                     >
@@ -239,7 +239,7 @@ export function CompetencyDetailPanel({
                     <span
                       className="rounded-lg px-2 py-0.5 text-[9px] font-extrabold"
                       style={{
-                        background: '#e8f6f4',
+                        background: 'var(--po-soft)',
                         color: 'var(--po-accent)',
                       }}
                     >

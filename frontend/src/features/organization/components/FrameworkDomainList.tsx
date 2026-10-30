@@ -96,7 +96,7 @@ export function FrameworkDomainList({
                 <span
                   key={l.num}
                   className="rounded-lg px-2 py-1.5 text-[9px] font-extrabold"
-                  style={{ background: '#e8f6f4', color: '#0e5968' }}
+                  style={{ background: 'var(--po-soft)', color: 'var(--po-accent-strong)' }}
                 >
                   <b style={{ color: 'var(--po-accent)' }}>{l.num}</b>{' '}
                   {l.label}

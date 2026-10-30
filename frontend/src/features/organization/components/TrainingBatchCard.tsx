@@ -6,11 +6,11 @@ interface TrainingBatchCardProps {
 }
 
 const STATUS_MAP: Record<string, { label: string; bg: string; fg: string }> = {
-  RUNNING: { label: 'Đang diễn ra', bg: '#dff2ed', fg: '#0e5968' },
+  RUNNING: { label: 'Đang diễn ra', bg: 'var(--po-soft)', fg: 'var(--po-accent-strong)' },
   SCHEDULED: { label: 'Đã lên lịch', bg: '#fef3c7', fg: '#d97706' },
   COMPLETED: { label: 'Hoàn thành', bg: '#ecfdf5', fg: '#16a34a' },
   CANCELLED: { label: 'Đã hủy', bg: '#fee2e2', fg: '#dc2626' },
-  DRAFT: { label: 'Bản nháp', bg: '#f1f5f9', fg: '#64748b' },
+  DRAFT: { label: 'Bản nháp', bg: 'var(--po-raised)', fg: 'var(--po-muted)' },
 };
 
 export function TrainingBatchCard({ batch }: TrainingBatchCardProps) {

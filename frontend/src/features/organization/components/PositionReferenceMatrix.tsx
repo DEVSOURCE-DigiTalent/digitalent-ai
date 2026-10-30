@@ -7,7 +7,7 @@ import {
 
 const LEVEL_TONES: Record<number, { bg: string; fg: string; name: string }> = {
   1: { bg: '#edf7dd', fg: '#557327', name: 'Cơ bản' },
-  2: { bg: '#e8f6f4', fg: '#137b84', name: 'Trung cấp' },
+  2: { bg: 'var(--po-soft)', fg: '#137b84', name: 'Trung cấp' },
   3: { bg: '#fdeee9', fg: '#c4553f', name: 'Nâng cao' },
 };
 

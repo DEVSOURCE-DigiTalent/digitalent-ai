@@ -250,7 +250,7 @@ export function OwnerMembersPage() {
                     <span
                       className="grid size-7 shrink-0 place-items-center rounded-lg text-[10px] font-bold"
                       style={{
-                        background: '#e8f6f4',
+                        background: 'var(--po-soft)',
                         color: 'var(--po-accent)',
                       }}
                     >
@@ -428,7 +428,7 @@ export function OwnerMembersPage() {
               <button
                 type="button"
                 onClick={() => setAnnouncing(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-teal-200 bg-teal-50/70 hover:bg-teal-100/70 text-[#137b84] text-xs font-bold transition-all shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-teal-200 bg-teal-50/70 hover:bg-teal-100/70 text-[var(--po-accent)] text-xs font-bold transition-all shadow-xs"
               >
                 <Send className="size-3.5" />
                 Gửi thông báo & Hạn chót
@@ -525,7 +525,7 @@ export function OwnerMembersPage() {
           {pendingInDept.length > 0 && (
             <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-teal-200 bg-teal-50/70 p-3.5 text-xs text-teal-900 shadow-xs">
               <div className="flex items-center gap-2.5">
-                <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-teal-100 text-[#137b84]">
+                <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-teal-100 text-[var(--po-accent)]">
                   <Mail className="size-4" />
                 </div>
                 <div>
@@ -570,7 +570,7 @@ export function OwnerMembersPage() {
                 <div
                   className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl text-2xl"
                   style={{
-                    background: '#e8f6f4',
+                    background: 'var(--po-soft)',
                     color: 'var(--po-accent)',
                   }}
                 >

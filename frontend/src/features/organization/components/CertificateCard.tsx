@@ -14,12 +14,12 @@ export function CertificateCard({ title, employeeName, issueDate }: CertificateC
         minHeight: 190,
         border: '1px solid #dce4f3',
         background: 'linear-gradient(125deg, #fff, #f1f4ff)',
-        color: '#172241',
+        color: 'var(--po-ink)',
       }}
     >
       <span
         className="text-[10px] font-black uppercase tracking-[0.12em]"
-        style={{ color: '#5f6e88' }}
+        style={{ color: 'var(--po-muted)' }}
       >
         DIGITAL AI / XÁC MINH
       </span>

@@ -152,7 +152,7 @@ export function ReportDomainBreakdown({
                     </div>
                     <div
                       className="flex-1 h-1.5 rounded-full overflow-hidden"
-                      style={{ background: '#e8edf6' }}
+                      style={{ background: 'var(--po-raised)' }}
                     >
                       <div
                         className="h-full rounded-full"
@@ -176,7 +176,7 @@ export function ReportDomainBreakdown({
                     </div>
                     <div
                       className="flex-1 h-1.5 rounded-full overflow-hidden"
-                      style={{ background: '#e8edf6' }}
+                      style={{ background: 'var(--po-raised)' }}
                     >
                       <div
                         className="h-full rounded-full"

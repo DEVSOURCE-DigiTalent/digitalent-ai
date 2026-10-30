@@ -59,7 +59,7 @@ export function OwnerCourseDetailPage() {
         <div className="mx-auto text-center" style={{ maxWidth: 500 }}>
           <div
             className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl text-2xl"
-            style={{ background: '#e8f6f4', color: 'var(--po-accent)' }}
+            style={{ background: 'var(--po-soft)', color: 'var(--po-accent)' }}
           >
             ✕
           </div>
@@ -167,7 +167,7 @@ export function OwnerCourseDetailPage() {
                   }
                   className="inline-flex items-center gap-2 rounded-[11px] px-4 py-3 text-[13px] font-bold transition-transform hover:-translate-y-0.5"
                   style={{
-                    background: '#fff',
+                    background: 'var(--po-surface)',
                     color: 'var(--po-accent)',
                     boxShadow: '0 9px 18px rgba(19,123,132,.17)',
                   }}

@@ -145,7 +145,7 @@ export function OwnerReviewDetailPage() {
               </div>
               <span
                 className="text-[9px] font-black px-1.5 py-0.5 rounded"
-                style={{ background: '#e8f6f4', color: '#0e5968' }}
+                style={{ background: 'var(--po-soft)', color: 'var(--po-accent-strong)' }}
               >
                 LV{task.targetLevel}
               </span>

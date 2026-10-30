@@ -203,7 +203,7 @@ export function OwnerTrainingBatchesPage() {
                 <div
                   className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl text-2xl"
                   style={{
-                    background: '#e8f6f4',
+                    background: 'var(--po-soft)',
                     color: 'var(--po-accent)',
                   }}
                 >

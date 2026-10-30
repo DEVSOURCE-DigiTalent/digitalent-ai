@@ -11,7 +11,7 @@ import { SendAnnouncementModal } from '../components/SendAnnouncementModal';
 import { PULSE_TOKENS } from '../owner-theme';
 
 const KPI_ACCENTS = ['#137b84', '#e8a17f', '#67b6ad', '#a48ce3'];
-const KPI_VALUE_COLORS = ['#0e5968', '#c96f5a', '#218e86', '#826bc5'];
+const KPI_VALUE_COLORS = ['var(--po-accent-strong)', '#c96f5a', '#218e86', '#826bc5'];
 
 export function OwnerOverviewPage() {
   const [announcing, setAnnouncing] = useState(false);

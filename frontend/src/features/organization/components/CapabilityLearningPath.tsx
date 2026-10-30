@@ -174,7 +174,7 @@ export function CapabilityLearningPath({ competencies, isLoading }: CapabilityLe
                 >
                   <div
                     className="h-1.5 flex-1 rounded-full overflow-hidden"
-                    style={{ background: '#e8edf6' }}
+                    style={{ background: 'var(--po-raised)' }}
                   >
                     <div
                       className="h-full rounded-full"
@@ -187,7 +187,7 @@ export function CapabilityLearningPath({ competencies, isLoading }: CapabilityLe
                   </div>
                   <div
                     className="h-1.5 flex-1 rounded-full overflow-hidden"
-                    style={{ background: '#e8edf6' }}
+                    style={{ background: 'var(--po-raised)' }}
                   >
                     <div
                       className="h-full rounded-full"

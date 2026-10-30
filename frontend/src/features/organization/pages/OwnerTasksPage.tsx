@@ -35,7 +35,7 @@ function TaskCard({ task, competencyMap }: { task: PracticalTaskDto; competencyM
           <div className="flex flex-wrap gap-1.5 mt-1.5">
             <span
               className="text-[9px] font-black px-1.5 py-0.5 rounded"
-              style={{ background: '#e8f6f4', color: '#0e5968' }}
+              style={{ background: 'var(--po-soft)', color: 'var(--po-accent-strong)' }}
             >
               LV{task.targetLevel}
             </span>
@@ -51,7 +51,7 @@ function TaskCard({ task, competencyMap }: { task: PracticalTaskDto; competencyM
           style={
             task.status === 'ACTIVE'
               ? { background: '#ecfdf5', color: '#16a34a' }
-              : { background: '#f1f5f9', color: '#64748b' }
+              : { background: 'var(--po-raised)', color: 'var(--po-muted)' }
           }
         >
           {task.status === 'ACTIVE' ? 'Đang mở' : 'Đã đóng'}
@@ -224,7 +224,7 @@ export function OwnerTasksPage() {
               >
                 <div
                   className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl text-2xl"
-                  style={{ background: '#e8f6f4', color: 'var(--po-accent)' }}
+                  style={{ background: 'var(--po-soft)', color: 'var(--po-accent)' }}
                 >
                   ◉
                 </div>

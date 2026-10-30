@@ -97,7 +97,7 @@ export function OwnerCertificateDetailPage() {
           style={{
             padding: 'clamp(35px, 6vw, 70px)',
             border: '1px solid #cbd6ee',
-            background: '#fff',
+            background: 'var(--po-surface)',
             boxShadow: '0 30px 70px rgba(34,53,107,.08)',
           }}
         >
@@ -149,21 +149,21 @@ export function OwnerCertificateDetailPage() {
             className="flex flex-wrap gap-[30px] pt-5 mt-8"
             style={{ borderTop: '1px solid #dce4f3' }}
           >
-            <span className="min-w-[120px] text-[10px]" style={{ color: '#7e8ba0' }}>
+            <span className="min-w-[120px] text-[10px]" style={{ color: 'var(--po-muted)' }}>
               Tổ chức
-              <b className="mt-[5px] block text-xs" style={{ color: '#172241' }}>
+              <b className="mt-[5px] block text-xs" style={{ color: 'var(--po-ink)' }}>
                 {orgData?.name ?? 'DigiTalent AI'}
               </b>
             </span>
-            <span className="min-w-[120px] text-[10px]" style={{ color: '#7e8ba0' }}>
+            <span className="min-w-[120px] text-[10px]" style={{ color: 'var(--po-muted)' }}>
               Ngày cấp
-              <b className="mt-[5px] block text-xs" style={{ color: '#172241' }}>
+              <b className="mt-[5px] block text-xs" style={{ color: 'var(--po-ink)' }}>
                 {formatDate(cert.issueDate)}
               </b>
             </span>
-            <span className="min-w-[120px] text-[10px]" style={{ color: '#7e8ba0' }}>
+            <span className="min-w-[120px] text-[10px]" style={{ color: 'var(--po-muted)' }}>
               Mã tham chiếu
-              <b className="mt-[5px] block text-xs" style={{ color: '#172241' }}>
+              <b className="mt-[5px] block text-xs" style={{ color: 'var(--po-ink)' }}>
                 {cert.certificateCode}
               </b>
             </span>

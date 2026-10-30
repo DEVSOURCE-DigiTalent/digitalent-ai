@@ -13,11 +13,11 @@ import {
 import { PULSE_TOKENS } from '../owner-theme';
 
 const STATUS_MAP: Record<string, { label: string; bg: string; fg: string }> = {
-  RUNNING: { label: 'Đang diễn ra', bg: '#dff2ed', fg: '#0e5968' },
+  RUNNING: { label: 'Đang diễn ra', bg: 'var(--po-soft)', fg: 'var(--po-accent-strong)' },
   SCHEDULED: { label: 'Đã lên lịch', bg: '#fef3c7', fg: '#d97706' },
   COMPLETED: { label: 'Hoàn thành', bg: '#ecfdf5', fg: '#16a34a' },
   CANCELLED: { label: 'Đã hủy', bg: '#fee2e2', fg: '#dc2626' },
-  DRAFT: { label: 'Bản nháp', bg: '#f1f5f9', fg: '#64748b' },
+  DRAFT: { label: 'Bản nháp', bg: 'var(--po-raised)', fg: 'var(--po-muted)' },
 };
 
 type Tab = 'courses' | 'participants' | 'analytics';
@@ -53,7 +53,7 @@ export function OwnerTrainingBatchDetailPage() {
         <div className="mx-auto text-center" style={{ maxWidth: 500 }}>
           <div
             className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl text-2xl"
-            style={{ background: '#e8f6f4', color: 'var(--po-accent)' }}
+            style={{ background: 'var(--po-soft)', color: 'var(--po-accent)' }}
           >
             ✕
           </div>
@@ -344,7 +344,7 @@ export function OwnerTrainingBatchDetailPage() {
                     {crs.level > 0 && (
                       <span
                         className="text-[9px] font-black px-1.5 py-0.5 rounded"
-                        style={{ background: '#e8f6f4', color: '#0e5968' }}
+                        style={{ background: 'var(--po-soft)', color: 'var(--po-accent-strong)' }}
                       >
                         LV{crs.level}
                       </span>
@@ -502,8 +502,8 @@ export function OwnerTrainingBatchDetailPage() {
                             p.isFullyCompleted
                               ? { background: '#ecfdf5', color: '#16a34a' }
                               : p.progressPercent > 0
-                                ? { background: '#dff2ed', color: '#0e5968' }
-                                : { background: '#f1f5f9', color: '#64748b' }
+                                ? { background: 'var(--po-soft)', color: 'var(--po-accent-strong)' }
+                                : { background: 'var(--po-raised)', color: 'var(--po-muted)' }
                           }
                         >
                           {p.isFullyCompleted

@@ -228,7 +228,7 @@ export function SendAnnouncementModal({
                   key={tpl.label}
                   type="button"
                   onClick={() => applyTemplate(tpl)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-teal-50/60 hover:border-teal-200 hover:text-[#137b84] text-xs font-medium text-slate-700 transition-all"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-teal-50/60 hover:border-teal-200 hover:text-[var(--po-accent)] text-xs font-medium text-slate-700 transition-all"
                 >
                   <FileText className="size-3 text-slate-400" />
                   {tpl.label}
@@ -248,7 +248,7 @@ export function SendAnnouncementModal({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ví dụ: Thông báo hoàn thành đợt đánh giá năng lực Q4"
-                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#137b84]/30 focus:border-[#137b84]"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--po-accent)]/30 focus:border-[var(--po-accent)]"
               />
             </div>
 
@@ -257,7 +257,7 @@ export function SendAnnouncementModal({
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#137b84]/30 focus:border-[#137b84]"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-[var(--po-accent)]/30 focus:border-[var(--po-accent)]"
               >
                 <option value="ANNOUNCEMENT">Thông báo chung</option>
                 <option value="ASSESSMENT">Đánh giá / Test</option>
@@ -277,7 +277,7 @@ export function SendAnnouncementModal({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Nhập nội dung yêu cầu, mục đích và hướng dẫn nhân viên hoàn thành..."
-              className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#137b84]/30 focus:border-[#137b84] leading-relaxed"
+              className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--po-accent)]/30 focus:border-[var(--po-accent)] leading-relaxed"
             />
           </div>
 
@@ -285,28 +285,28 @@ export function SendAnnouncementModal({
           <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <Calendar className="size-3.5 text-[#137b84]" />
+                <Calendar className="size-3.5 text-[var(--po-accent)]" />
                 Thời hạn hoàn thành (Deadline):
               </span>
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setQuickDeadline(3)}
-                  className="px-2 py-1 text-[11px] rounded-md bg-white border border-slate-200 text-slate-700 hover:text-[#137b84] hover:border-teal-200"
+                  className="px-2 py-1 text-[11px] rounded-md bg-white border border-slate-200 text-slate-700 hover:text-[var(--po-accent)] hover:border-teal-200"
                 >
                   3 ngày
                 </button>
                 <button
                   type="button"
                   onClick={() => setQuickDeadline(7)}
-                  className="px-2 py-1 text-[11px] rounded-md bg-white border border-slate-200 text-slate-700 hover:text-[#137b84] hover:border-teal-200"
+                  className="px-2 py-1 text-[11px] rounded-md bg-white border border-slate-200 text-slate-700 hover:text-[var(--po-accent)] hover:border-teal-200"
                 >
                   7 ngày
                 </button>
                 <button
                   type="button"
                   onClick={setEndOfMonth}
-                  className="px-2 py-1 text-[11px] rounded-md bg-white border border-slate-200 text-slate-700 hover:text-[#137b84] hover:border-teal-200"
+                  className="px-2 py-1 text-[11px] rounded-md bg-white border border-slate-200 text-slate-700 hover:text-[var(--po-accent)] hover:border-teal-200"
                 >
                   Cuối tháng
                 </button>
@@ -319,7 +319,7 @@ export function SendAnnouncementModal({
                 value={dueDate}
                 min={new Date().toISOString().slice(0, 10)}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#137b84]/30"
+                className="px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-[var(--po-accent)]/30"
               />
               <span className="text-[11px] text-slate-500">
                 {dueDate
@@ -347,11 +347,11 @@ export function SendAnnouncementModal({
                 type="checkbox"
                 checked={sendEmail}
                 onChange={(e) => setSendEmail(e.target.checked)}
-                className="size-4 text-[#137b84] rounded-sm focus:ring-[#137b84]"
+                className="size-4 text-[var(--po-accent)] rounded-sm focus:ring-[var(--po-accent)]"
               />
               <div>
                 <span className="font-semibold text-slate-900 block flex items-center gap-1">
-                  <Mail className="size-3.5 text-[#137b84]" /> Gửi email thông báo
+                  <Mail className="size-3.5 text-[var(--po-accent)]" /> Gửi email thông báo
                 </span>
                 <span className="text-[10px] text-slate-400 block mt-0.5">
                   Bắn email định dạng chuẩn vào hòm thư nhân viên
@@ -364,7 +364,7 @@ export function SendAnnouncementModal({
                 type="checkbox"
                 checked={autoRemind}
                 onChange={(e) => setAutoRemind(e.target.checked)}
-                className="size-4 text-[#137b84] rounded-sm focus:ring-[#137b84]"
+                className="size-4 text-[var(--po-accent)] rounded-sm focus:ring-[var(--po-accent)]"
               />
               <div>
                 <span className="font-semibold text-slate-900 block flex items-center gap-1">

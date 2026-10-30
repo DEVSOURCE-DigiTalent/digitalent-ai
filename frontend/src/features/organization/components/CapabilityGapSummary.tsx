@@ -9,7 +9,7 @@ export function CapabilityGapSummary({ totals }: CapabilityGapSummaryProps) {
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-[10px]">
       <div
         className="grid gap-2 rounded-[17px] border p-5"
-        style={{ borderColor: '#dfe5f5', background: 'var(--po-surface)' }}
+        style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)' }}
       >
         <span
           className="text-[10px] font-black tracking-[0.1em]"
@@ -19,12 +19,12 @@ export function CapabilityGapSummary({ totals }: CapabilityGapSummaryProps) {
         </span>
         <strong
           className="text-[31px] font-light leading-none tracking-[-0.05em]"
-          style={{ color: '#202f62' }}
+          style={{ color: 'var(--po-ink)' }}
         >
           {totals.employees}
           <small
             className="ml-[5px] text-[11px] font-medium tracking-normal"
-            style={{ color: '#73809b' }}
+            style={{ color: 'var(--po-muted)' }}
           >
             nhân viên có snapshot
           </small>
@@ -43,13 +43,13 @@ export function CapabilityGapSummary({ totals }: CapabilityGapSummaryProps) {
         </span>
         <strong
           className="text-[31px] font-light leading-none tracking-[-0.05em]"
-          style={{ color: '#202f62' }}
+          style={{ color: 'var(--po-ink)' }}
         >
           {totals.totalGaps}
           {totals.highCount > 0 && (
             <small
               className="ml-[5px] text-[11px] font-medium tracking-normal"
-              style={{ color: '#73809b' }}
+              style={{ color: 'var(--po-muted)' }}
             >
               {totals.highCount} mức cao
             </small>
@@ -59,7 +59,7 @@ export function CapabilityGapSummary({ totals }: CapabilityGapSummaryProps) {
 
       <div
         className="grid gap-2 rounded-[17px] border p-5"
-        style={{ borderColor: '#dfe5f5', background: 'var(--po-surface)' }}
+        style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)' }}
       >
         <span
           className="text-[10px] font-black tracking-[0.1em]"
@@ -69,12 +69,12 @@ export function CapabilityGapSummary({ totals }: CapabilityGapSummaryProps) {
         </span>
         <strong
           className="text-[31px] font-light leading-none tracking-[-0.05em]"
-          style={{ color: '#202f62' }}
+          style={{ color: 'var(--po-ink)' }}
         >
           {totals.averageCoverage.toFixed(1)}
           <small
             className="ml-[5px] text-[11px] font-medium tracking-normal"
-            style={{ color: '#73809b' }}
+            style={{ color: 'var(--po-muted)' }}
           >
             % trung bình toàn tổ chức
           </small>

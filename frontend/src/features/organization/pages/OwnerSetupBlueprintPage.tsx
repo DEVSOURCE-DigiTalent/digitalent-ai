@@ -289,7 +289,7 @@ export function OwnerSetupBlueprintPage() {
                     style={{
                       borderColor: 'var(--po-line)',
                       color: 'var(--po-ink)',
-                      background: '#f6fbfa',
+                      background: 'var(--po-raised)',
                     }}
                   >
                     48 giờ
@@ -307,7 +307,7 @@ export function OwnerSetupBlueprintPage() {
                     style={{
                       borderColor: 'var(--po-line)',
                       color: 'var(--po-ink)',
-                      background: '#f6fbfa',
+                      background: 'var(--po-raised)',
                     }}
                   >
                     14 ngày

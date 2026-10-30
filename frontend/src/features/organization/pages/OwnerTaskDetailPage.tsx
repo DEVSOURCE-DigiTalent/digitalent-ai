@@ -7,7 +7,7 @@ import type { RubricCriterion } from '@/services/task.service';
 import { PULSE_TOKENS } from '../owner-theme';
 
 const SUB_STATUS: Record<string, { label: string; bg: string; fg: string }> = {
-  PENDING_REVIEW: { label: 'Chờ chấm', bg: '#dff2ed', fg: '#0e5968' },
+  PENDING_REVIEW: { label: 'Chờ chấm', bg: 'var(--po-soft)', fg: 'var(--po-accent-strong)' },
   APPROVED: { label: 'Đã duyệt', bg: '#ecfdf5', fg: '#16a34a' },
   REVISION_REQUESTED: { label: 'Cần sửa', bg: '#fef3c7', fg: '#d97706' },
   REJECTED: { label: 'Không đạt', bg: '#fee2e2', fg: '#dc2626' },
@@ -38,7 +38,7 @@ export function OwnerTaskDetailPage() {
         <div className="mx-auto text-center" style={{ maxWidth: 500 }}>
           <div
             className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl text-2xl"
-            style={{ background: '#e8f6f4', color: 'var(--po-accent)' }}
+            style={{ background: 'var(--po-soft)', color: 'var(--po-accent)' }}
           >
             ✕
           </div>
@@ -84,7 +84,7 @@ export function OwnerTaskDetailPage() {
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <span
                 className="text-[9px] font-black px-1.5 py-0.5 rounded"
-                style={{ background: '#e8f6f4', color: '#0e5968' }}
+                style={{ background: 'var(--po-soft)', color: 'var(--po-accent-strong)' }}
               >
                 LV{task.targetLevel}
               </span>
@@ -93,7 +93,7 @@ export function OwnerTaskDetailPage() {
                 style={
                   task.status === 'ACTIVE'
                     ? { background: '#ecfdf5', color: '#16a34a' }
-                    : { background: '#f1f5f9', color: '#64748b' }
+                    : { background: 'var(--po-raised)', color: 'var(--po-muted)' }
                 }
               >
                 {task.status === 'ACTIVE' ? 'Đang mở' : 'Đã đóng'}
