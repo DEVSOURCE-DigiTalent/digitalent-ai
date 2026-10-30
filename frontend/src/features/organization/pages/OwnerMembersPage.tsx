@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { UserPlus, ChevronLeft, ChevronRight, Mail, Send } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { UserPlus, ChevronLeft, ChevronRight, Mail, Send, FlaskConical, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useDepartments } from '@/hooks/use-departments';
@@ -215,6 +215,30 @@ export function OwnerMembersPage() {
             : 'Công bố kiến trúc năng lực trước khi gửi lời mời nhân viên.'}
         </div>
 
+        {/* Banner Hướng dẫn Đánh giá Năng lực Đội ngũ */}
+        <div className="rounded-[16px] border border-indigo-100 bg-gradient-to-r from-indigo-50/90 via-blue-50/50 to-white p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="size-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+              <FlaskConical className="size-4" />
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-[0.12em] text-indigo-600">
+                Bước 1 · Khởi động Đánh giá Năng lực Số
+              </span>
+              <p className="text-xs text-indigo-950 font-medium leading-relaxed mt-0.5">
+                Mời nhân viên vào đúng phòng ban và vị trí. Nhân viên sẽ tự động nhận đề test đánh giá năng lực ban đầu có giám sát, được <strong>Mentor DigiTalent</strong> trực tiếp thẩm định và chấm điểm.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/enterprise/trial"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-colors shrink-0 shadow-xs"
+          >
+            Đợt đánh giá & Lịch chấm
+            <ArrowRight className="size-3.5" />
+          </Link>
+        </div>
+
         {/* Grid-2: Manager + Invite */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           {/* Department Manager panel */}
@@ -356,21 +380,30 @@ export function OwnerMembersPage() {
                   Mời từng người hoặc nhập danh sách CSV. Hệ thống kiểm tra
                   trước khi thêm.
                 </p>
-                {canInvite && (
-                  <button
-                    type="button"
-                    onClick={() => setInviting(true)}
-                    className="inline-flex items-center gap-2 rounded-[11px] px-4 py-3 text-[13px] font-bold transition-transform hover:-translate-y-0.5"
-                    style={{
-                      background: 'var(--po-accent)',
-                      color: '#fff',
-                      boxShadow: '0 9px 18px rgba(52,72,207,.17)',
-                    }}
+                <div className="flex items-center justify-center gap-2 flex-wrap">
+                  {canInvite && (
+                    <button
+                      type="button"
+                      onClick={() => setInviting(true)}
+                      className="inline-flex items-center gap-2 rounded-[11px] px-4 py-2.5 text-[13px] font-bold transition-transform hover:-translate-y-0.5"
+                      style={{
+                        background: 'var(--po-accent)',
+                        color: '#fff',
+                        boxShadow: '0 9px 18px rgba(52,72,207,.17)',
+                      }}
+                    >
+                      <UserPlus className="size-4" />
+                      Mời thành viên
+                    </button>
+                  )}
+                  <Link
+                    to="/enterprise/trial"
+                    className="inline-flex items-center gap-1.5 rounded-[11px] px-3.5 py-2.5 text-[13px] font-bold border border-indigo-200 bg-white text-[#304bdf] hover:bg-indigo-50/70 transition-colors"
                   >
-                    <UserPlus className="size-4" />
-                    Mời thành viên
-                  </button>
-                )}
+                    <FlaskConical className="size-4" />
+                    Đợt test & Lịch chấm
+                  </Link>
+                </div>
               </div>
             </div>
 

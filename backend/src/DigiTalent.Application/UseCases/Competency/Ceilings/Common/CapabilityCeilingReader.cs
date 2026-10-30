@@ -131,9 +131,6 @@ public class CapabilityCeilingReader
         foreach (var domain in domains)
         {
             var suggested = Suggest(allPositions, domain.Id);
-            // Chưa lưu: hiển thị gợi ý (ít nhất cấp Cơ bản) để doanh nghiệp xác nhận.
-            var ceiling = orgRows.TryGetValue(domain.Id, out var row) ? row.CeilingLevel : Math.Max(1, suggested);
-            organizationCeilings[domain.Id] = ceiling;
 
             var domainCourses = Enumerable.Range(1, CapabilityCeiling.MaxLevel).Select(level =>
             {
@@ -146,11 +143,11 @@ public class CapabilityCeilingReader
                     displayCode = "M" + displayCode[1..];
                 }
 
-                // Cấp 1 (Cơ bản) luôn mở miễn phí 100%. Cấp 2 và Cấp 3 mở khi có suất học hoặc đã thiết lập trần.
+                // Cấp 1 (Cơ bản) luôn mở miễn phí 100%. Cấp 2 và Cấp 3 chỉ mở khi có suất học đã mua.
                 var seats = level == 1
                     ? 999
                     : seatOrders.Where(so => so.Level == level && (rawCode == null || so.Code == rawCode || (displayCode != null && so.Code == displayCode))).Sum(so => so.Seats);
-                var isUnlocked = level == 1 || seats > 0 || ceiling >= level;
+                var isUnlocked = level == 1 || seats > 0;
                 var price = level == 3 ? 699000L : (level == 2 ? 399000L : 0L);
 
                 return new CeilingCourseDto
@@ -165,7 +162,13 @@ public class CapabilityCeilingReader
                 };
             }).ToList();
 
-            var maxAllowed = Math.Max(1, Math.Max(ceiling, domainCourses.Where(c => c.IsUnlocked).Select(c => c.Level).DefaultIfEmpty(1).Max()));
+            var maxAllowed = domainCourses.Where(c => c.IsUnlocked).Select(c => c.Level).DefaultIfEmpty(1).Max();
+            // Chưa lưu trần: mặc định ở mức Cơ bản (1 - khóa học miễn phí).
+            // Đã lưu trần: không được vượt quá số cấp đã mở bản quyền (maxAllowed).
+            var ceiling = orgRows.TryGetValue(domain.Id, out var row)
+                ? Math.Min((int)row.CeilingLevel, maxAllowed)
+                : 1;
+            organizationCeilings[domain.Id] = ceiling;
 
             output.Domains.Add(new CeilingDomainDto
             {
