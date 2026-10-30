@@ -59,43 +59,99 @@ function TrialAccountPage({ kind }: { kind: 'verify' | 'accept' }) {
   const [resendResult, setResendResult] = useState<TrialRegistrationDto | null>(null);
   const [account, setAccount] = useState<TrialAccountDto | null>(null); const [password, setPassword] = useState('');
   const resend = useMutation({ mutationFn: () => data(service.resendVerification(email)), onSuccess: value => { setCode(''); setResendResult(value); } });
+  
+  const finishSession = async (verifiedAccount: TrialAccountDto) => {
+    if (verifiedAccount.accessToken) {
+      localStorage.setItem('accessToken', verifiedAccount.accessToken);
+      if (verifiedAccount.refreshToken) localStorage.setItem('refreshToken', verifiedAccount.refreshToken);
+    } else if (password) {
+      const response = await data(service.login(verifiedAccount.email, password));
+      localStorage.setItem('accessToken', response.accessToken);
+      if (response.refreshToken) localStorage.setItem('refreshToken', response.refreshToken);
+    }
+    const user = await data(service.currentUser());
+    cache.clear();
+    useCurrentUser.getState().setUser(user);
+    navigate(getHomePath(user), { replace: true });
+  };
+
   const verify = useMutation({
     mutationFn: (): Promise<TrialAccountDto> => data(token ? service.verify(token, password) : service.verifyCode(email, code, password)),
     onSuccess: verifiedAccount => setAccount(verifiedAccount),
   });
+
   const login = useMutation({ mutationFn: async () => {
     let verifiedAccount = account;
     if (!verifiedAccount) {
       verifiedAccount = kind === 'accept' ? await data(service.accept(token, password)) : await verify.mutateAsync();
       setAccount(verifiedAccount);
     }
-    const response = await data(service.login(verifiedAccount.email, password));
-    localStorage.setItem('accessToken', response.accessToken);
-    // Giữ cả refresh token: phiên dùng thử được làm mới khi hết hạn và sau khi thêm role (chủ doanh nghiệp tự làm bài).
-    if (response.refreshToken) localStorage.setItem('refreshToken', response.refreshToken);
-    const user = await data(service.currentUser()); cache.clear(); useCurrentUser.getState().setUser(user); navigate(getHomePath(user), { replace: true });
+    await finishSession(verifiedAccount);
   } });
+
   const accountError = !token && (kind === 'accept' || !email) ? new Error('Thiếu thông tin xác minh. Hãy mở lại email hoặc đăng ký lại.') : verify.error || login.error;
+  const isVerify = kind === 'verify';
+  const canSubmit = isVerify ? (token || code.length === 6) : (token && password.length >= 12);
+
   return <PulseAuthLayout
     eyebrow="Dùng thử miễn phí"
-    title={kind === 'verify' ? 'Xác minh email' : 'Tham gia dùng thử'}
-    subtitle={kind === 'verify' && !token ? `Nhập mã 6 số gửi tới ${email}.` : 'Nhập mật khẩu để tiếp tục.'}
+    title={isVerify ? 'Xác minh email' : 'Tham gia dùng thử'}
+    subtitle={isVerify ? `Nhập mã xác thực 6 số gửi tới ${email || 'email của bạn'}.` : 'Thiết lập mật khẩu để hoàn tất tham gia.'}
     asideTitle="Bước tiếp theo: mời nhân viên."
     asideText="Thêm nhân viên tay hoặc bằng file Excel, đặt hạn làm bài và giờ mong muốn chấm."
   >
     <div className="pulse-auth-fields">
       {accountError && <p role="alert" className="pulse-auth-error">{message(accountError)}</p>}
       {verify.isPending && <p role="status" className="pulse-auth-info">Đang xác minh…</p>}
-      {kind === 'verify' && !token && email && !account && <div className="pulse-auth-fields">
+      {isVerify && !token && email && !account && <div className="pulse-auth-fields">
         {resend.error && <p role="alert" className="pulse-auth-error">{message(resend.error)}</p>}
         {resendResult && <p role="status" className="pulse-auth-success">Nếu email đang chờ xác minh, mã mới đã được gửi. Kiểm tra cả thư rác.{resendResult.developmentCode && <> Mã thử: <strong>{resendResult.developmentCode}</strong></>}</p>}
         <button type="button" className="pulse-auth-secondary" disabled={resend.isPending} onClick={() => resend.mutate()}>{resend.isPending ? 'Đang gửi lại…' : 'Gửi lại mã xác minh'}</button>
       </div>}
-      {account && <p role="status" className="pulse-auth-success">Tài khoản đã xác minh: {account.email}. Nếu đăng nhập lỗi, hãy thử lại bằng cùng tài khoản.</p>}
-      <form className="pulse-auth-fields" onSubmit={event => { event.preventDefault(); if ((token || (kind === 'verify' && email && code.length === 6)) && !login.isPending) login.mutate(); }}>
-        {kind === 'verify' && !token && <div className="pulse-auth-field"><label htmlFor="trial-code">Mã xác minh email</label><input id="trial-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required autoComplete="one-time-code" value={code} onChange={event => setCode(event.target.value.replace(/\D/g, ''))} placeholder="6 chữ số" /></div>}
-        <div className="pulse-auth-field"><label htmlFor="trial-password">Mật khẩu</label><input id="trial-password" type="password" required minLength={12} maxLength={72} value={password} onChange={e => setPassword(e.target.value)} autoComplete={kind === 'accept' ? 'new-password' : 'current-password'} /><span className="pulse-auth-field-hint">{kind === 'accept' ? '12–72 ký tự.' : 'Mật khẩu vừa đăng ký.'}</span></div>
-        <button type="submit" className="pulse-auth-primary" disabled={(!token && (!email || code.length !== 6)) || verify.isPending || login.isPending || password.length < 12}>{login.isPending ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <ArrowRight size={17} aria-hidden="true" />}{kind === 'accept' ? 'Tham gia dùng thử' : 'Xác minh và đăng nhập'}</button>
+      {account && <p role="status" className="pulse-auth-success">Tài khoản đã xác minh: {account.email}. Đang chuyển vào hệ thống…</p>}
+      <form className="pulse-auth-fields" onSubmit={event => { event.preventDefault(); if (canSubmit && !login.isPending) login.mutate(); }}>
+        {isVerify && !token && (
+          <div className="pulse-auth-field">
+            <label htmlFor="trial-code">Mã xác minh email (OTP 6 số)</label>
+            <input
+              id="trial-code"
+              inputMode="numeric"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              required
+              autoFocus
+              autoComplete="one-time-code"
+              value={code}
+              onChange={event => {
+                const next = event.target.value.replace(/\D/g, '');
+                setCode(next);
+              }}
+              placeholder="Nhập 6 chữ số"
+            />
+            <span className="pulse-auth-field-hint">Chỉ cần nhập mã 6 số từ email để vào thẳng hệ thống.</span>
+          </div>
+        )}
+        {!isVerify && (
+          <div className="pulse-auth-field">
+            <label htmlFor="trial-password">Mật khẩu</label>
+            <input
+              id="trial-password"
+              type="password"
+              required
+              minLength={12}
+              maxLength={72}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              autoComplete="new-password"
+              placeholder="Tối thiểu 12 ký tự"
+            />
+            <span className="pulse-auth-field-hint">12–72 ký tự.</span>
+          </div>
+        )}
+        <button type="submit" className="pulse-auth-primary" disabled={!canSubmit || verify.isPending || login.isPending}>
+          {login.isPending || verify.isPending ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <ArrowRight size={17} aria-hidden="true" />}
+          {isVerify ? 'Xác minh và vào hệ thống' : 'Tham gia dùng thử'}
+        </button>
       </form>
     </div>
   </PulseAuthLayout>;

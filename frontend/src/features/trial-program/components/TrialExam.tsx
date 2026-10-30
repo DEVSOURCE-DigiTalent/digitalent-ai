@@ -145,13 +145,24 @@ export function TrialExam({ organizationName, deadline }: { organizationName: st
               return (
                 <section key={t} className="tp-exam-part pu-surface pu-pad" aria-label={`Phần ${t}`}>
                   <header>
-                    <h2>Phần {t} · {TIER_LABELS[t]}</h2>
-                    <span className="tp-muted">{items.filter((q) => answers[q.questionId]).length}/{items.length} câu</span>
+                    <div className="space-y-1">
+                      <h2>Phần {t} · Cấp độ {TIER_LABELS[t]}</h2>
+                      <p className="text-xs text-slate-500">Đánh giá 6 lĩnh vực năng lực số chuẩn Khung TT02 ở mức độ {TIER_LABELS[t]}.</p>
+                    </div>
+                    <span className="tp-muted font-bold text-xs">{items.filter((q) => answers[q.questionId]).length}/{items.length} câu đã trả lời</span>
                   </header>
                   {items.map((q) => (
                     <fieldset key={q.questionId} className="tp-q" disabled={snapshot.phase !== 'recording'}>
                       <legend>
-                        <span className="tp-q-title">{q.number}. {q.content} <span>· {q.domainName}</span></span>
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                          <span className="inline-flex items-center rounded-md bg-blue-100 text-blue-800 px-2 py-0.5 text-[11px] font-bold">
+                            Lĩnh vực {q.domainNumber}: {q.domainName}
+                          </span>
+                          <span className="inline-flex items-center rounded-md bg-slate-100 text-slate-700 px-2 py-0.5 text-[11px] font-medium">
+                            Mức {t}: {TIER_LABELS[t]}
+                          </span>
+                        </div>
+                        <span className="tp-q-title">Câu {q.number}: {q.content}</span>
                       </legend>
                       {q.options.map((o) => (
                         <label key={o.optionId}>

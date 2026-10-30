@@ -4,7 +4,7 @@ public sealed record TrialRegistrationRequest(string OrganizationName, string Ow
 public sealed record TrialTokenRequest(string Token);
 public sealed record TrialCodeRequest(string Email, string Code);
 public sealed record TrialResendVerificationRequest(string Email);
-public sealed record TrialAccountDto(Guid UserId, Guid OrganizationId, string Email, string Role);
+public sealed record TrialAccountDto(Guid UserId, Guid OrganizationId, string Email, string Role, string? AccessToken = null, string? RefreshToken = null);
 public sealed record TrialRegistrationDto(string State, DateTimeOffset ExpiresAt, string? DevelopmentLink, string? DevelopmentCode = null);
 public sealed record TrialSelectionRequest(string CatalogKey, string DepartmentName);
 public sealed record TrialInviteRequest(string Name, string Email, string Role);

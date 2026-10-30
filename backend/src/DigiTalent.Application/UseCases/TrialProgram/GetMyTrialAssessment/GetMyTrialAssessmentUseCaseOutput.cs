@@ -16,6 +16,22 @@ public class GetMyTrialAssessmentUseCaseOutput
     public bool ReportPublished { get; set; }
     /// <summary>Mức của từng lĩnh vực (thứ tự <see cref="Domains"/>) — chỉ có sau khi công bố.</summary>
     public List<int>? Levels { get; set; }
+    /// <summary>Chi tiết kết quả từng lĩnh vực kèm số câu đúng, giải thích và khóa học đề xuất.</summary>
+    public List<TrialReportEmployeeDomainDetailDto>? DomainDetails { get; set; }
     public string? ReviewNote { get; set; }
     public string? MentorName { get; set; }
+    /// <summary>Chi tiết 3 bài viết tự luận kèm điểm và đánh giá từ Mentor / AI.</summary>
+    public List<MyTrialEssayResultDto>? EssayResults { get; set; }
+    public string? EssaySummary { get; set; }
+}
+
+public class MyTrialEssayResultDto
+{
+    public int Tier { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Prompt { get; set; } = string.Empty;
+    public string Answer { get; set; } = string.Empty;
+    public int? Score { get; set; }
+    public bool? Passed { get; set; }
+    public string? Feedback { get; set; }
 }

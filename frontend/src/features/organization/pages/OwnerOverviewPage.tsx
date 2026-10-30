@@ -4,6 +4,7 @@ import { ArrowRight, Send } from 'lucide-react';
 import { useOrganizationOverview } from '@/hooks/use-organization';
 import { useCapabilityDashboard } from '@/hooks/use-analytics';
 import { OwnerOverviewHero } from '../components/OwnerOverviewHero';
+import { OwnerTrialAssessmentWidget } from '../components/OwnerTrialAssessmentWidget';
 import { OwnerProcessTrack } from '../components/OwnerProcessTrack';
 import { OwnerCapabilityArchitecture } from '../components/OwnerCapabilityArchitecture';
 import { OwnerTrainingCycle } from '../components/OwnerTrainingCycle';
@@ -135,6 +136,9 @@ export function OwnerOverviewPage() {
         {/* ── Content Stack ── */}
         <div className="flex flex-col gap-4">
           <OwnerOverviewHero org={orgData} cap={capData} />
+
+          {/* Đợt Đánh giá Năng lực Đội ngũ & Bức tranh Năng lực */}
+          <OwnerTrialAssessmentWidget />
 
           {/* KPI Grid */}
           <div className="po-stagger grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

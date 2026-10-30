@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.Pulse;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,17 +17,20 @@ public class UpdateOrganizationCeilingsUseCase : IUseCase<UpdateOrganizationCeil
     private readonly ICurrentUser _currentUser;
     private readonly IAuditService _auditService;
     private readonly CapabilityCeilingReader _reader;
+    private readonly PulseCatalogReader _catalog;
 
     public UpdateOrganizationCeilingsUseCase(
         IApplicationDbContext context,
         ICurrentUser currentUser,
         IAuditService auditService,
-        CapabilityCeilingReader reader)
+        CapabilityCeilingReader reader,
+        PulseCatalogReader catalog)
     {
         _context = context;
         _currentUser = currentUser;
         _auditService = auditService;
         _reader = reader;
+        _catalog = catalog;
     }
 
     public async Task<UpdateOrganizationCeilingsUseCaseOutput> ExecuteAsync(UpdateOrganizationCeilingsUseCaseInput input)
@@ -46,7 +50,26 @@ public class UpdateOrganizationCeilingsUseCase : IUseCase<UpdateOrganizationCeil
             throw new BadRequestException("Every competency domain needs a ceiling.", "ceilings", "CEILINGS_INCOMPLETE");
         }
 
-        // 2. Ghi trần doanh nghiệp
+        // 2. Ghi trần doanh nghiệp (không vượt quá bản quyền khóa học đã mở, tối thiểu Cấp 1)
+        var catalog = await _catalog.LoadAsync(organizationId);
+        var seatOrders = await (
+            from o in _context.CourseSeatOrders.AsNoTracking()
+            join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
+            where o.OrganizationId == organizationId && o.Seats > 0
+            select new { pc.Code, pc.Level }
+        ).ToListAsync();
+
+        var maxAllowedByDomain = new Dictionary<Guid, int>();
+        foreach (var order in seatOrders)
+        {
+            var matched = catalog.FirstOrDefault(c => c.Code.Equals(order.Code, StringComparison.OrdinalIgnoreCase));
+            if (matched != null)
+            {
+                var cur = maxAllowedByDomain.GetValueOrDefault(matched.CategoryId, 1);
+                maxAllowedByDomain[matched.CategoryId] = Math.Max(cur, order.Level);
+            }
+        }
+
         var rows = await _context.CapabilityCeilings
             .Where(c => c.OrganizationId == organizationId && domainIds.Contains(c.CompetencyCategoryId))
             .ToListAsync();
@@ -54,13 +77,16 @@ public class UpdateOrganizationCeilingsUseCase : IUseCase<UpdateOrganizationCeil
         var oldValues = orgRows.ToDictionary(r => r.Key.ToString(), r => r.Value.CeilingLevel);
         foreach (var (categoryId, level) in requested)
         {
+            var maxAllowed = Math.Max(1, maxAllowedByDomain.GetValueOrDefault(categoryId, 1));
+            var effectiveLevel = (short)Math.Min((int)level, maxAllowed);
+
             if (!orgRows.TryGetValue(categoryId, out var row))
             {
                 row = new CapabilityCeiling { OrganizationId = organizationId, CompetencyCategoryId = categoryId };
                 _context.CapabilityCeilings.Add(row);
             }
 
-            row.CeilingLevel = level;
+            row.CeilingLevel = effectiveLevel;
             row.UpdatedByUserId = _currentUser.UserId;
         }
 

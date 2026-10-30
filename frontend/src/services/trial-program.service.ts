@@ -36,12 +36,61 @@ export interface TrialParticipant {
   addedAt: string;
 }
 
+export interface TrialReportDomainSummary {
+  categoryId: string;
+  number: number;
+  name: string;
+  counts: number[];
+  average: number;
+  level: number;
+  statusText?: string;
+  gapSummary?: string;
+}
+
+export interface TrialEmployeeDomainDetail {
+  categoryId: string;
+  number: number;
+  name: string;
+  level: number;
+  levelLabel: string;
+  statusText: string;
+  gapText: string;
+  basicCorrect: number;
+  basicTotal: number;
+  intermediateCorrect: number;
+  intermediateTotal: number;
+  advancedCorrect: number;
+  advancedTotal: number;
+  suggestedLevel: number;
+  mentorLevel?: number | null;
+  recommendedCourse: string;
+}
+
+export interface TrialReportEmployee {
+  employeeId: string;
+  assessmentId?: string | null;
+  fullName: string;
+  email?: string | null;
+  departmentName?: string | null;
+  positionName?: string | null;
+  levels: number[];
+  choiceScore?: number;
+  choiceTotal?: number;
+  essayBasicScore?: number | null;
+  essayIntermediateScore?: number | null;
+  essayAdvancedScore?: number | null;
+  reviewNote?: string | null;
+  submittedAt?: string | null;
+  reviewedAt?: string | null;
+  domainDetails?: TrialEmployeeDomainDetail[];
+}
+
 export interface TrialReport {
   publishedAt?: string | null;
   assessed: number;
   domains: TrialDomain[];
-  summary: { categoryId: string; number: number; name: string; counts: number[]; average: number; level: number }[];
-  employees: { employeeId: string; fullName: string; departmentName?: string | null; positionName?: string | null; levels: number[] }[];
+  summary: TrialReportDomainSummary[];
+  employees: TrialReportEmployee[];
 }
 
 export interface TrialProgram {
@@ -100,8 +149,21 @@ export interface MyTrialAssessment {
   submittedAt?: string | null;
   reportPublished: boolean;
   levels?: number[] | null;
+  domainDetails?: TrialEmployeeDomainDetail[] | null;
+  essayResults?: MyTrialEssayResult[] | null;
+  essaySummary?: string | null;
   reviewNote?: string | null;
   mentorName?: string | null;
+}
+
+export interface MyTrialEssayResult {
+  tier: number;
+  title: string;
+  prompt: string;
+  answer: string;
+  score?: number | null;
+  passed?: boolean | null;
+  feedback?: string | null;
 }
 
 export interface TrialExamQuestion {

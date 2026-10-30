@@ -38,7 +38,9 @@ interface Draft {
   email: string;
   employeeCode?: string;
   departmentId: string;
+  departmentName?: string;
   jobPositionId: string;
+  positionName?: string;
   role: MemberRole;
 }
 
@@ -146,13 +148,17 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
 
         // Tự động cập nhật tên phòng ban và lọc lại vị trí nếu đổi phòng ban
         if (updates.departmentId !== undefined) {
-          const matchedDept = departments.find((d) => d.id === updates.departmentId);
-          updated.departmentName = matchedDept ? matchedDept.name : '';
+          if (updates.departmentId.startsWith('new:')) {
+            updated.departmentName = updates.departmentId.replace('new:', '');
+          } else {
+            const matchedDept = departments.find((d) => d.id === updates.departmentId);
+            updated.departmentName = matchedDept ? matchedDept.name : '';
+          }
           // Nếu vị trí hiện tại không thuộc phòng ban mới, reset vị trí
           const validPos = positions.some(
             (p) => p.id === updated.jobPositionId && (!p.departmentId || p.departmentId === updates.departmentId),
           );
-          if (!validPos) {
+          if (!validPos && !updated.jobPositionId?.startsWith('new:')) {
             updated.jobPositionId = '';
             updated.positionName = '';
           }
@@ -160,8 +166,12 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
 
         // Tự động cập nhật tên vị trí nếu đổi vị trí
         if (updates.jobPositionId !== undefined) {
-          const matchedPos = positions.find((p) => p.id === updates.jobPositionId);
-          updated.positionName = matchedPos ? matchedPos.name : '';
+          if (updates.jobPositionId.startsWith('new:')) {
+            updated.positionName = updates.jobPositionId.replace('new:', '');
+          } else {
+            const matchedPos = positions.find((p) => p.id === updates.jobPositionId);
+            updated.positionName = matchedPos ? matchedPos.name : '';
+          }
         }
 
         // Cập nhật trạng thái hợp lệ
@@ -212,7 +222,9 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
         email: r.email,
         employeeCode: r.employeeCode || undefined,
         departmentId: r.departmentId,
+        departmentName: r.departmentName,
         jobPositionId: r.jobPositionId,
+        positionName: r.positionName,
         role: r.role,
       }));
 
@@ -230,8 +242,10 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
         queue.map(({ key: _key, ...person }) => ({
           ...person,
           employeeCode: person.employeeCode?.trim() || undefined,
-          departmentId: person.departmentId || undefined,
-          jobPositionId: person.jobPositionId || undefined,
+          departmentId: person.departmentId?.startsWith('new:') ? undefined : person.departmentId || undefined,
+          departmentName: person.departmentName || (person.departmentId?.startsWith('new:') ? person.departmentId.replace('new:', '') : undefined),
+          jobPositionId: person.jobPositionId?.startsWith('new:') ? undefined : person.jobPositionId || undefined,
+          jobPositionName: person.positionName || (person.jobPositionId?.startsWith('new:') ? person.jobPositionId.replace('new:', '') : undefined),
         })),
       );
       setResult(outcome);
@@ -606,9 +620,14 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                                 }`}
                               >
                                 <option value="">-- Chưa chọn PB --</option>
+                                {row.departmentId?.startsWith('new:') && (
+                                  <option value={row.departmentId}>
+                                    {row.departmentName || row.departmentId.replace('new:', '')} (Mới từ file)
+                                  </option>
+                                )}
                                 {departments.map((d) => (
                                   <option key={d.id} value={d.id}>
-                                    {d.name}
+                                    {d.name} {d.code ? `(${d.code})` : ''}
                                   </option>
                                 ))}
                               </select>
@@ -620,9 +639,14 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                                 className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-800 outline-none"
                               >
                                 <option value="">-- Vị trí --</option>
+                                {row.jobPositionId?.startsWith('new:') && (
+                                  <option value={row.jobPositionId}>
+                                    {row.positionName || row.jobPositionId.replace('new:', '')} (Mới từ file)
+                                  </option>
+                                )}
                                 {deptPositions.map((p) => (
                                   <option key={p.id} value={p.id}>
-                                    {p.name}
+                                    {p.name} {p.code ? `(${p.code})` : ''}
                                   </option>
                                 ))}
                               </select>

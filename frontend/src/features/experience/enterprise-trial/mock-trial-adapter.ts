@@ -85,7 +85,7 @@ export const mockEnterpriseTrialService: EnterpriseTrialService = {
     if (code !== '123456') fail('Mã xác minh không hợp lệ hoặc đã hết hạn.');
     const registration = Object.entries(read().registrations).find(([, value]) => value.form.email === email(address));
     if (!registration) fail('Mã xác minh không hợp lệ hoặc đã hết hạn.');
-    return mockEnterpriseTrialService.verify(registration![0], pass);
+    return mockEnterpriseTrialService.verify(registration![0], pass || 'PassSecure123456');
   },
   resendVerification: async address => {
     const state = read();
@@ -118,7 +118,7 @@ export const mockEnterpriseTrialService: EnterpriseTrialService = {
     });
     updateDb(db => { db.organizations = [...db.organizations, { id: organizationId, name: form.organizationName, industry: form.industry, size: form.size, ownerId: userId, departments: [], positions: [], setupCompleted: true }]; });
     persist({ ...state, registrations: { ...state.registrations, [token]: { ...registration, used: true } }, trials: { ...state.trials, [organizationId]: trial } });
-    return mockOk({ userId, organizationId, email: form.email, role: 'Owner' });
+    return mockOk({ userId, organizationId, email: form.email, role: 'Owner', accessToken: 'mock-access-token', refreshToken: 'mock-refresh-token' });
   },
   accept: async (token, pass) => {
     password(pass); const state = read(); const invitationLink = link('accept', token); const trial = Object.values(state.trials).find(t => t.invitations.some(i => i.developmentLink === invitationLink)); const invitation = trial?.invitations.find(i => i.developmentLink === invitationLink);

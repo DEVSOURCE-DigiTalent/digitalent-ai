@@ -37,8 +37,21 @@ public class TrialProgramReader
     public async Task<TrialWorkspace> ForOwnerAsync()
     {
         var organizationId = _currentUser.GetRequiredOrganizationId();
-        return await _context.TrialWorkspaces.FirstOrDefaultAsync(t => t.OrganizationId == organizationId)
-               ?? throw new NotFoundException(NotTrialMessage);
+        var trial = await _context.TrialWorkspaces.FirstOrDefaultAsync(t => t.OrganizationId == organizationId);
+        if (trial == null)
+        {
+            var ownerUserId = _currentUser.UserId ?? Guid.Empty;
+            trial = new TrialWorkspace
+            {
+                OrganizationId = organizationId,
+                OwnerUserId = ownerUserId,
+                StartedAt = Now,
+                EndsAt = Now.AddDays(60),
+            };
+            _context.TrialWorkspaces.Add(trial);
+            await _context.SaveChangesAsync();
+        }
+        return trial;
     }
 
     /// <summary>Doanh nghiệp dùng thử được phân công cho mentor đang đăng nhập; không được phân công → 404.</summary>
@@ -49,18 +62,41 @@ public class TrialProgramReader
                ?? throw new NotFoundException("Không tìm thấy doanh nghiệp được phân công cho bạn.");
     }
 
-    /// <summary>Doanh nghiệp dùng thử của nhân viên; doanh nghiệp thường → 404.</summary>
-    public async Task<TrialWorkspace> ForEmployeeAsync(Employee employee) =>
-        await _context.TrialWorkspaces.FirstOrDefaultAsync(t => t.OrganizationId == employee.OrganizationId)
-        ?? throw new NotFoundException(NotTrialMessage);
+    /// <summary>Doanh nghiệp dùng thử của nhân viên; tự động đảm bảo có không gian đánh giá cho tổ chức.</summary>
+    public async Task<TrialWorkspace> ForEmployeeAsync(Employee employee)
+    {
+        var trial = await _context.TrialWorkspaces.FirstOrDefaultAsync(t => t.OrganizationId == employee.OrganizationId);
+        if (trial == null)
+        {
+            trial = new TrialWorkspace
+            {
+                OrganizationId = employee.OrganizationId,
+                OwnerUserId = Guid.Empty,
+                StartedAt = Now,
+                EndsAt = Now.AddDays(60),
+            };
+            _context.TrialWorkspaces.Add(trial);
+            await _context.SaveChangesAsync();
+        }
+        return trial;
+    }
 
     /// <summary>Vì sao nhân viên chưa vào phòng thi được lúc này (null = vào được).</summary>
-    public static string? ClosedReason(TrialWorkspace trial, TrialAssessment? assessment, DateTimeOffset now) =>
-        assessment != null ? "Bạn đã nộp bài đánh giá."
-        : trial.ReportPublishedAt != null ? "Kết quả dùng thử đã được công bố."
-        : trial.TestDeadline is not { } deadline ? "Doanh nghiệp chưa đặt hạn làm bài."
-        : now >= deadline ? "Đã quá hạn làm bài."
-        : null;
+    public static string? ClosedReason(TrialWorkspace trial, TrialAssessment? assessment, DateTimeOffset now)
+    {
+        if (assessment != null)
+        {
+            return "Bạn đã nộp bài đánh giá.";
+        }
+
+        // Đợt khảo sát ban đầu nếu chưa công bố và có đặt hạn chót
+        if (trial.ReportPublishedAt == null && trial.TestDeadline.HasValue && now >= trial.TestDeadline.Value)
+        {
+            return "Đã quá hạn làm bài của đợt khảo sát.";
+        }
+
+        return null;
+    }
 
     public Task<List<TrialDomainInfo>> LoadDomainsAsync(Guid organizationId) => _paper.LoadDomainsAsync(organizationId);
 
@@ -161,8 +197,25 @@ public class TrialProgramReader
         var reviewed = await (
                 from assessment in _context.TrialAssessments.AsNoTracking()
                 join employee in _context.Employees.AsNoTracking() on assessment.EmployeeId equals employee.Id
+                join user in _context.Users.AsNoTracking() on employee.UserId equals user.Id
                 where assessment.OrganizationId == trial.OrganizationId && assessment.ReviewedAt != null
-                select new { assessment.Id, EmployeeId = employee.Id, employee.FullName, employee.DepartmentId, employee.JobPositionId })
+                select new
+                {
+                    assessment.Id,
+                    EmployeeId = employee.Id,
+                    employee.FullName,
+                    user.Email,
+                    employee.DepartmentId,
+                    employee.JobPositionId,
+                    assessment.ChoiceScore,
+                    assessment.ChoiceTotal,
+                    assessment.EssayBasicScore,
+                    assessment.EssayIntermediateScore,
+                    assessment.EssayAdvancedScore,
+                    assessment.ReviewNote,
+                    assessment.SubmittedAt,
+                    assessment.ReviewedAt,
+                })
             .ToListAsync();
         var results = await LoadDomainResultsAsync(reviewed.Select(r => r.Id).ToList());
         var departmentIds = reviewed.Select(r => r.DepartmentId).Distinct().ToList();
@@ -174,15 +227,51 @@ public class TrialProgramReader
             .Select(r =>
             {
                 var byCategory = (results.GetValueOrDefault(r.Id) ?? new List<TrialAssessmentDomain>()).ToDictionary(d => d.CategoryId);
+                var domainDetails = domains.Select(domain =>
+                {
+                    byCategory.TryGetValue(domain.CategoryId, out var dResult);
+                    var lvl = (int)(dResult?.MentorLevel ?? dResult?.SuggestedLevel ?? 0);
+                    var (levelLabel, statusText, gapText, recCourse) = DescribeDomainResult(domain.Number, domain.Name, lvl, dResult);
+
+                    return new TrialReportEmployeeDomainDetailDto
+                    {
+                        CategoryId = domain.CategoryId,
+                        Number = domain.Number,
+                        Name = domain.Name,
+                        Level = lvl,
+                        LevelLabel = levelLabel,
+                        StatusText = statusText,
+                        GapText = gapText,
+                        BasicCorrect = dResult?.BasicCorrect ?? 0,
+                        BasicTotal = dResult?.BasicTotal ?? 0,
+                        IntermediateCorrect = dResult?.IntermediateCorrect ?? 0,
+                        IntermediateTotal = dResult?.IntermediateTotal ?? 0,
+                        AdvancedCorrect = dResult?.AdvancedCorrect ?? 0,
+                        AdvancedTotal = dResult?.AdvancedTotal ?? 0,
+                        SuggestedLevel = dResult?.SuggestedLevel ?? 0,
+                        MentorLevel = dResult?.MentorLevel,
+                        RecommendedCourse = recCourse,
+                    };
+                }).ToList();
+
                 return new TrialReportEmployeeDto
                 {
                     EmployeeId = r.EmployeeId,
+                    AssessmentId = r.Id,
                     FullName = r.FullName,
+                    Email = r.Email,
                     DepartmentName = departments.GetValueOrDefault(r.DepartmentId),
                     PositionName = r.JobPositionId is { } p ? positions.GetValueOrDefault(p) : null,
-                    Levels = domains.Select(domain => byCategory.TryGetValue(domain.CategoryId, out var result)
-                        ? (int)(result.MentorLevel ?? result.SuggestedLevel)
-                        : 0).ToList(),
+                    Levels = domainDetails.Select(d => d.Level).ToList(),
+                    ChoiceScore = r.ChoiceScore,
+                    ChoiceTotal = r.ChoiceTotal,
+                    EssayBasicScore = r.EssayBasicScore,
+                    EssayIntermediateScore = r.EssayIntermediateScore,
+                    EssayAdvancedScore = r.EssayAdvancedScore,
+                    ReviewNote = r.ReviewNote,
+                    SubmittedAt = r.SubmittedAt,
+                    ReviewedAt = r.ReviewedAt,
+                    DomainDetails = domainDetails,
                 };
             })
             .OrderBy(e => e.DepartmentName).ThenBy(e => e.FullName)
@@ -192,6 +281,9 @@ public class TrialProgramReader
         {
             var levels = employees.Select(e => e.Levels[index]).ToList();
             var average = levels.Count == 0 ? 0m : Math.Round((decimal)levels.Average(), 1, MidpointRounding.AwayFromZero);
+            var generalLevel = (int)Math.Round(average, MidpointRounding.AwayFromZero);
+            var (statusText, gapSummary) = DescribeEnterpriseDomainSummary(domain.Number, domain.Name, generalLevel);
+
             return new TrialReportDomainDto
             {
                 CategoryId = domain.CategoryId,
@@ -199,7 +291,9 @@ public class TrialProgramReader
                 Name = domain.Name,
                 Counts = Enumerable.Range(0, 4).Select(level => levels.Count(l => l == level)).ToList(),
                 Average = average,
-                Level = (int)Math.Round(average, MidpointRounding.AwayFromZero),
+                Level = generalLevel,
+                StatusText = statusText,
+                GapSummary = gapSummary,
             };
         }).ToList();
 
@@ -210,6 +304,49 @@ public class TrialProgramReader
             Domains = domains.Select(TrialDomainDto.From).ToList(),
             Summary = summary,
             Employees = employees,
+        };
+    }
+
+    public static (string LevelLabel, string StatusText, string GapText, string RecommendedCourse) DescribeDomainResult(
+        int domainNumber, string domainName, int level, TrialAssessmentDomain? dResult)
+    {
+        var basicInfo = dResult != null ? $" (đúng {dResult.BasicCorrect}/{dResult.BasicTotal} câu)" : "";
+        var interInfo = dResult != null ? $" (đúng {dResult.IntermediateCorrect}/{dResult.IntermediateTotal} câu)" : "";
+        var advInfo = dResult != null ? $" (đúng {dResult.AdvancedCorrect}/{dResult.AdvancedTotal} câu)" : "";
+
+        return level switch
+        {
+            0 => ("Chưa đạt",
+                "Chưa đạt mức Cơ bản",
+                $"Chưa đạt trắc nghiệm cấp Cơ bản{basicInfo}. Cần đạt tối thiểu từ 2/3 câu đúng để công nhận đạt chuẩn Cơ bản. Hãy bổ sung kiến thức nhập môn và hoàn thành khóa Cơ bản.",
+                $"M{domainNumber}-F: Khóa Cơ bản về {domainName}"),
+            1 => ("Cơ bản",
+                "Đạt Cơ bản · Chưa đạt Trung cấp",
+                $"Đã nắm vững kỹ năng Cơ bản{basicInfo}, nhưng chưa đạt trắc nghiệm Trung cấp{interInfo} (yêu cầu từ 2/3 câu). Cần nâng cao kỹ năng xử lý độc lập và học khóa Trung cấp.",
+                $"M{domainNumber}-I: Khóa Trung cấp về {domainName}"),
+            2 => ("Trung cấp",
+                "Đạt Trung cấp · Chưa đạt Nâng cao",
+                $"Thành thạo ứng dụng ở mức Trung cấp{interInfo}, nhưng chưa đạt trắc nghiệm Nâng cao{advInfo} (yêu cầu từ 2/3 câu). Cần tối ưu quy trình và học khóa Nâng cao.",
+                $"M{domainNumber}-A: Khóa Nâng cao về {domainName}"),
+            _ => ("Nâng cao",
+                "Đạt mức Nâng cao",
+                $"Xuất sắc làm chủ toàn diện năng lực về {domainName}{advInfo}. Bạn đã được miễn học cả 3 cấp độ và đạt chuẩn tối đa của khung năng lực.",
+                "Đã đạt mức tối đa của chuẩn khung năng lực"),
+        };
+    }
+
+    private static (string StatusText, string GapSummary) DescribeEnterpriseDomainSummary(int domainNumber, string domainName, int generalLevel)
+    {
+        return generalLevel switch
+        {
+            0 => ("Chưa đạt Cơ bản",
+                $"Đội ngũ chưa hoàn thiện kiến thức nền tảng về {domainName}. Cần ưu tiên học khóa Cơ bản (M{domainNumber}-F) để đồng bộ năng lực số ban đầu."),
+            1 => ("Đạt Cơ bản · Chưa đạt Trung cấp",
+                $"Đội ngũ đã nắm thao tác cơ bản nhưng đang thiếu hụt kỹ năng phân tích và phối hợp chuyên sâu ở mức Trung cấp (M{domainNumber}-I)."),
+            2 => ("Đạt Trung cấp · Chưa đạt Nâng cao",
+                $"Đội ngũ đáp ứng tốt công việc thường nhật, nhưng cần nâng cao năng lực tối ưu hóa, an toàn cấp cao và chiến lược ở mức Nâng cao (M{domainNumber}-A)."),
+            _ => ("Đạt chuẩn Nâng cao",
+                $"Đội ngũ đã xuất sắc làm chủ toàn diện các tiêu chuẩn và kỹ năng nâng cao trong lĩnh vực {domainName}."),
         };
     }
 
@@ -290,14 +427,47 @@ public class TrialReportDomainDto
     public List<int> Counts { get; set; } = new();
     public decimal Average { get; set; }
     public int Level { get; set; }
+    public string StatusText { get; set; } = string.Empty;
+    public string GapSummary { get; set; } = string.Empty;
 }
 
 public class TrialReportEmployeeDto
 {
     public Guid EmployeeId { get; set; }
+    public Guid? AssessmentId { get; set; }
     public string FullName { get; set; } = string.Empty;
+    public string? Email { get; set; }
     public string? DepartmentName { get; set; }
     public string? PositionName { get; set; }
     /// <summary>Mức theo thứ tự <see cref="TrialReportDto.Domains"/>.</summary>
     public List<int> Levels { get; set; } = new();
+    public int ChoiceScore { get; set; }
+    public int ChoiceTotal { get; set; }
+    public int? EssayBasicScore { get; set; }
+    public int? EssayIntermediateScore { get; set; }
+    public int? EssayAdvancedScore { get; set; }
+    public string? ReviewNote { get; set; }
+    public DateTimeOffset? SubmittedAt { get; set; }
+    public DateTimeOffset? ReviewedAt { get; set; }
+    public List<TrialReportEmployeeDomainDetailDto> DomainDetails { get; set; } = new();
+}
+
+public class TrialReportEmployeeDomainDetailDto
+{
+    public Guid CategoryId { get; set; }
+    public int Number { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public int Level { get; set; }
+    public string LevelLabel { get; set; } = string.Empty;
+    public string StatusText { get; set; } = string.Empty;
+    public string GapText { get; set; } = string.Empty;
+    public int BasicCorrect { get; set; }
+    public int BasicTotal { get; set; }
+    public int IntermediateCorrect { get; set; }
+    public int IntermediateTotal { get; set; }
+    public int AdvancedCorrect { get; set; }
+    public int AdvancedTotal { get; set; }
+    public int SuggestedLevel { get; set; }
+    public int? MentorLevel { get; set; }
+    public string RecommendedCourse { get; set; } = string.Empty;
 }

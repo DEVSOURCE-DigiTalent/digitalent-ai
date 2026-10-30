@@ -69,13 +69,11 @@ describe('guided enterprise trial', () => {
     expect(api.verify).toHaveBeenCalledTimes(1);
   });
   it('verifies owner email with a one-time code before login', async () => {
-    api.verifyCode.mockResolvedValue(ok({ email: 'owner@acme.test', role: 'Owner' })); api.login.mockResolvedValue(ok({ accessToken: 'token' })); api.currentUser.mockResolvedValue(ok({ id: 'owner', email: 'owner@acme.test', fullName: 'Owner', roles: ['OWNER'], permissions: [] }));
+    api.verifyCode.mockResolvedValue(ok({ email: 'owner@acme.test', role: 'Owner', accessToken: 'token' })); api.currentUser.mockResolvedValue(ok({ id: 'owner', email: 'owner@acme.test', fullName: 'Owner', roles: ['OWNER'], permissions: [] }));
     mount(<TrialVerifyPage />, '/business/try/verify?email=owner%40acme.test');
-    fireEvent.change(screen.getByLabelText('Mã xác minh email'), { target: { value: '123456' } });
-    fireEvent.change(screen.getByLabelText('Mật khẩu'), { target: { value: 'long-password-123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Xác minh và đăng nhập' }));
-    await waitFor(() => expect(api.verifyCode).toHaveBeenCalledWith('owner@acme.test', '123456', 'long-password-123'));
-    expect(api.login).toHaveBeenCalledWith('owner@acme.test', 'long-password-123');
+    fireEvent.change(screen.getByLabelText(/Mã xác minh email/), { target: { value: '123456' } });
+    fireEvent.click(screen.getByRole('button', { name: /Xác minh/ }));
+    await waitFor(() => expect(api.verifyCode).toHaveBeenCalledWith('owner@acme.test', '123456', ''));
   });
   it('resends an expired verification code without losing the email context', async () => {
     api.resendVerification.mockResolvedValue(ok({ state: 'verification_pending', expiresAt: '2026-10-20', developmentLink: null }));

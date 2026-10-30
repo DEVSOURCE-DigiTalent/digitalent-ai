@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Award, Bell, BriefcaseBusiness, LogOut, Sparkles, UserRound } from 'lucide-react';
+import { Award, Bell, BriefcaseBusiness, FileText, LogOut, Sparkles, UserRound } from 'lucide-react';
 import pulseMark from '@/assets/pulse/pulse-mark.svg';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useLogout } from '@/hooks/use-auth';
@@ -9,6 +9,7 @@ import { useOnboardingStore } from '@/features/onboarding-tutorial';
 import { ROLES, normalizeRoles } from '@/lib/roles';
 import { isEnterpriseTrial } from '@/lib/navigation';
 import { useMyTrialAssessment } from '@/hooks/use-trial-program';
+import { usePulseOverview } from '@/hooks/use-pulse';
 import { initials } from '../lib/labels';
 import { PULSE_PATHS, isExamPath } from '../lib/paths';
 
@@ -39,11 +40,19 @@ export function PulseHeader() {
   const roles = normalizeRoles(user?.roles ?? []);
   const trial = Boolean(user && isEnterpriseTrial(user));
   const { data: myTrial } = useMyTrialAssessment(trial);
-  const nav = trial
+  const { data: overview } = usePulseOverview();
+  const hasRoadmap = Boolean(overview?.hasTargets);
+
+  // Tài khoản mới vào làm bài test và chưa có công bố khung năng lực từ doanh nghiệp:
+  // Hiển thị thanh dùng thử (Học thử / Bài test / Thực hành).
+  // Khi đã có lộ trình từ doanh nghiệp (đã setup khung năng lực):
+  // Hiển thị thanh điều hướng chính thức: Hôm nay / Lộ trình / Thực hành.
+  const isPreRoadmapTrial = trial && !hasRoadmap;
+  const nav = isPreRoadmapTrial
     ? TRIAL_NAV.map((item) => (item.screenId === 'EM-T1' && myTrial?.reportPublished ? { ...item, label: 'Kết quả test' } : item))
     : NAV;
   const workspaceHome = roles.includes(ROLES.OWNER)
-    ? trial ? '/enterprise/trial' : '/enterprise/dashboard'
+    ? '/enterprise/dashboard'
     : roles.includes(ROLES.MANAGER) ? '/enterprise/team' : null;
   const roleLabel = roles.includes(ROLES.OWNER) ? 'Chủ doanh nghiệp' : roles.includes(ROLES.MANAGER) ? 'Quản lý' : 'Nhân viên';
 
@@ -129,6 +138,9 @@ export function PulseHeader() {
             <div className="pu-menu-panel" role="menu">
               <Link role="menuitem" to={PULSE_PATHS.profile}><UserRound size={16} /> Hồ sơ của tôi</Link>
               <Link role="menuitem" to={PULSE_PATHS.outcomes}><Award size={16} /> Kết quả đã xác nhận</Link>
+              {(myTrial?.status !== 'NOT_STARTED' || overview?.placementTest?.hasTaken) && (
+                <Link role="menuitem" to={PULSE_PATHS.trialTest}><FileText size={16} /> Kết quả đánh giá đầu vào</Link>
+              )}
               <Link role="menuitem" to={PULSE_PATHS.activity}><Bell size={16} /> Hoạt động</Link>
               {workspaceHome && (
                 <Link role="menuitem" to={workspaceHome}><BriefcaseBusiness size={16} /> Về không gian quản lý</Link>

@@ -2,6 +2,7 @@ using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Domain.Constants;
+using DigiTalent.Domain.Constants.Authorization;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,19 +21,25 @@ public class VerifyBusinessEmailOutput
 {
     public bool Verified { get; set; }
     public string Email { get; set; } = string.Empty;
+    public string? AccessToken { get; set; }
+    public string? RefreshToken { get; set; }
+    public DateTimeOffset? ExpiresAt { get; set; }
 }
 
 /// <summary>
 /// AUTH-OTP-02: Xác minh OTP 6 số cho Business Owner.
 /// Sau khi verify thành công: EmailVerifiedAt = now, Status = ACTIVE.
+/// Tự động sinh token đăng nhập ngay để người dùng không phải gõ lại mật khẩu.
 /// </summary>
 public class VerifyBusinessEmailUseCase : IUseCase<VerifyBusinessEmailInput, VerifyBusinessEmailOutput>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IJwtTokenService? _jwtTokenService;
 
-    public VerifyBusinessEmailUseCase(IApplicationDbContext context)
+    public VerifyBusinessEmailUseCase(IApplicationDbContext context, IJwtTokenService? jwtTokenService = null)
     {
         _context = context;
+        _jwtTokenService = jwtTokenService;
     }
 
     public async Task<VerifyBusinessEmailOutput> ExecuteAsync(VerifyBusinessEmailInput input)
@@ -76,7 +83,44 @@ public class VerifyBusinessEmailUseCase : IUseCase<VerifyBusinessEmailInput, Ver
         // Kích hoạt tài khoản
         user.EmailVerifiedAt = now;
         user.Status = Statuses.User.Active;
+        user.RegisterSuccessfulLogin(now);
         user.UpdatedAt = now;
+
+        string? accessToken = null;
+        string? refreshToken = null;
+        DateTimeOffset? expiresAt = null;
+
+        if (_jwtTokenService != null)
+        {
+            var rawRoleCodes = await _context.UserRoles
+                .Where(ur => ur.UserId == user.Id && ur.Role!.Status == Statuses.Simple.Active)
+                .Select(ur => ur.Role!.Code)
+                .ToListAsync();
+
+            var roleCodes = rawRoleCodes
+                .Select(code => Roles.Canonicalize(code))
+                .Where(r => !string.IsNullOrEmpty(r))
+                .Distinct()
+                .ToList();
+
+            if (roleCodes.Count == 0)
+            {
+                roleCodes = new List<string> { Roles.Owner };
+            }
+
+            var jwtToken = _jwtTokenService.CreateToken(user, roleCodes);
+            accessToken = jwtToken.AccessToken;
+            refreshToken = jwtToken.RefreshToken;
+            expiresAt = jwtToken.ExpiresAt;
+
+            var refreshTokenEntity = new Domain.Entities.RefreshToken
+            {
+                UserId = user.Id,
+                TokenHash = _jwtTokenService.HashRefreshToken(jwtToken.RefreshToken),
+                ExpiresAt = jwtToken.RefreshTokenExpiresAt,
+            };
+            _context.RefreshTokens.Add(refreshTokenEntity);
+        }
 
         await _context.SaveChangesAsync();
 
@@ -84,6 +128,9 @@ public class VerifyBusinessEmailUseCase : IUseCase<VerifyBusinessEmailInput, Ver
         {
             Verified = true,
             Email = user.Email,
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            ExpiresAt = expiresAt,
         };
     }
 }

@@ -196,7 +196,9 @@ public class PlatformCatalogEditor
         {
             var copy = new PlatformModuleBlock
             {
-                ModuleId = moduleMap[b.ModuleId], SortOrder = b.SortOrder, BlockType = b.BlockType, BodyHtml = b.BodyHtml,
+                ModuleId = moduleMap[b.ModuleId], SortOrder = b.SortOrder,
+                BlockType = string.IsNullOrWhiteSpace(b.BlockType) ? PlatformCatalog.BlockType.Text : b.BlockType.Trim().ToUpperInvariant(),
+                BodyHtml = b.BodyHtml,
                 AssetId = b.AssetId, Caption = b.Caption, AltText = b.AltText,
             };
             blockMap[b.Id] = copy.Id;

@@ -16,7 +16,20 @@ public class GetPulseOverviewUseCaseOutput
     public List<PulseCourseSummaryDto> NextSteps { get; set; } = new();
     /// <summary>Khóa được công nhận gần nhất (bài đánh giá trước khi học hoặc bài cuối khóa).</summary>
     public PulseLatestOutcomeDto? LatestOutcome { get; set; }
+    /// <summary>Trạng thái bài đánh giá phân loại năng lực đầu vào (Onboarding Placement Test).</summary>
+    public PulsePlacementTestDto? PlacementTest { get; set; }
     public PulseOverviewStatsDto Stats { get; set; } = new();
+}
+
+public class PulsePlacementTestDto
+{
+    public bool HasTaken { get; set; }
+    public Guid? AssessmentId { get; set; }
+    public DateTimeOffset? SubmittedAt { get; set; }
+    public int PassedDomains { get; set; }
+    public int TotalDomains { get; set; }
+    public int? ChoiceScore { get; set; }
+    public int? ChoiceTotal { get; set; }
 }
 
 public class PulseOverviewStatsDto
