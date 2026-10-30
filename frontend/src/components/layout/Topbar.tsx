@@ -151,7 +151,10 @@ export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false }: Top
 
           <button
             type="button"
-            onClick={() => useOnboardingStore.getState().startTour()}
+            onClick={() => {
+              const store = useOnboardingStore.getState();
+              store.startTour(store.currentRole || 'OWNER');
+            }}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-xs font-semibold transition-colors"
             title="Xem lại hướng dẫn tân thủ"
           >

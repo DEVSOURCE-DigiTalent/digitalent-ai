@@ -20,14 +20,15 @@ public sealed partial class TrialService
     private readonly ITrialEmailSender mail;
     private readonly ITrialCatalog catalog;
     private readonly TimeProvider clock;
+    private readonly IJwtTokenService? jwt;
     private DateTimeOffset Now => clock.GetUtcNow();
 
     public TrialService(AppDbContext db, ICurrentUser actor, IPasswordHasher passwords, TrialOptions options,
-        ITrialEmailSender mail, ITrialCatalog catalog, TimeProvider clock)
+        ITrialEmailSender mail, ITrialCatalog catalog, TimeProvider clock, IJwtTokenService? jwt = null)
     {
         options.Validate();
         this.db = db; this.actor = actor; this.passwords = passwords; this.options = options;
-        this.mail = mail; this.catalog = catalog; this.clock = clock;
+        this.mail = mail; this.catalog = catalog; this.clock = clock; this.jwt = jwt;
     }
 
     public TrialReadinessDto Readiness()
@@ -162,7 +163,25 @@ public sealed partial class TrialService
         // A single SaveChanges transaction commits owner, tenant, policy and consumed token together.
         await db.SaveChangesAsync();
         await DigiTalent.Infrastructure.Persistence.Seed.SkillGapSeeder.EnsureOrganizationFrameworkAndCoursesAsync(db, organization.Id, owner.Id);
-        return new(owner.Id, organization.Id, owner.Email, "Owner");
+
+        string? accessToken = null;
+        string? refreshToken = null;
+        if (jwt != null)
+        {
+            var token = jwt.CreateToken(owner, new[] { "OWNER" });
+            accessToken = token.AccessToken;
+            refreshToken = token.RefreshToken;
+            var refreshTokenEntity = new Domain.Entities.RefreshToken
+            {
+                UserId = owner.Id,
+                TokenHash = jwt.HashRefreshToken(token.RefreshToken),
+                ExpiresAt = token.RefreshTokenExpiresAt,
+            };
+            db.RefreshTokens.Add(refreshTokenEntity);
+            await db.SaveChangesAsync();
+        }
+
+        return new(owner.Id, organization.Id, owner.Email, "Owner", accessToken, refreshToken);
     }
 
     public async Task<TrialContextDto> SelectPositionAsync(TrialSelectionRequest request)

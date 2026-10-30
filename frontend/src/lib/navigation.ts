@@ -38,7 +38,7 @@ export function resolveNextStep(user: SessionUser | null | undefined): string {
     return normalized.includes(ROLES.MENTOR) && !normalized.includes(ROLES.PLATFORM_ADMIN) ? '/platform/reviews' : '/platform/dashboard';
   }
   if (resolved === WORKSPACES.PERSONAL) return '/personal/dashboard';
-  if (normalized.includes(ROLES.OWNER)) return isEnterpriseTrial(user) ? '/enterprise/trial' : '/enterprise/dashboard';
+  if (normalized.includes(ROLES.OWNER)) return '/enterprise/dashboard';
   if (normalized.includes(ROLES.MANAGER)) return '/enterprise/team';
   if (normalized.includes(ROLES.EMPLOYEE)) return '/enterprise/me';
   return '/forbidden';

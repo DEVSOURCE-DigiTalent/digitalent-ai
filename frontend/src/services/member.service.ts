@@ -72,6 +72,8 @@ export interface InviteRowInput {
   employeeCode?: string;
   departmentId?: string;
   jobPositionId?: string;
+  departmentName?: string;
+  jobPositionName?: string;
 }
 
 /** Only the fields sent are changed. */

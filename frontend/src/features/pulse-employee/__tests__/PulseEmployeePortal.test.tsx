@@ -226,6 +226,7 @@ describe('enterprise trial detection', () => {
 describe('enterprise trial learning', () => {
   // Doanh nghiệp dùng thử: chỉ khóa Cơ bản mở, cao hơn vượt trần (= 1).
   const trialOverview = () => overview({
+    hasTargets: false,
     courses: [
       course({ courseId: 'f1', code: 'M1-F', slotStatus: 'COMPLETED', finalStatus: 'APPROVED', approved: true, approvedVia: 'FINAL', progressPercent: 100 }),
       course({ courseId: 'f2', code: 'M2-F', title: 'Giao tiếp số cơ bản nơi công sở', categoryId: 'cat-2', domainNumber: 2, slotStatus: 'TO_LEARN', progressPercent: 0 }),

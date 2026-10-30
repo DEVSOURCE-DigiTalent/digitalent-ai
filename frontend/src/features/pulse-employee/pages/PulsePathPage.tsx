@@ -30,7 +30,8 @@ export function PulsePathPage() {
   if (isLoading) return <PageSkeleton blocks={[520, 220, 640]} />;
   if (error || !data) return <LoadError message={pulseErrorMessage(error, 'Không tải được lộ trình của bạn.')} onRetry={() => refetch()} />;
   // Doanh nghiệp dùng thử: chỉ sáu khóa Cơ bản để học thử, không có bản vẽ lộ trình.
-  if (trial) return <TrialLearning overview={data} />;
+  // Nếu đã có khung năng lực thật (hasTargets), hiện lộ trình đầy đủ thay vì học thử.
+  if (trial && !data.hasTargets) return <TrialLearning overview={data} />;
   if (!data.hasPosition || !data.hasTargets) return <PulseTodayPage />;
 
   const domains = data.domains.filter((d) => d.target > 0);

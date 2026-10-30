@@ -28,6 +28,8 @@ export interface TrialAccountDto {
   organizationId: string;
   email: string;
   role: string;
+  accessToken?: string | null;
+  refreshToken?: string | null;
 }
 
 export interface TrialOptions {

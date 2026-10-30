@@ -219,6 +219,7 @@ public static class PulsePreStatus
 /// <summary>Khóa được công nhận theo đường nào.</summary>
 public static class PulseApprovedVia
 {
+    public const string PlacementTest = "PLACEMENT_TEST";
     public const string PreAssessment = "PRE_ASSESSMENT";
     public const string Final = "FINAL";
     /// <summary>Lượt học đã hoàn thành ở luồng học trước (không có bài cuối khóa Pulse).</summary>

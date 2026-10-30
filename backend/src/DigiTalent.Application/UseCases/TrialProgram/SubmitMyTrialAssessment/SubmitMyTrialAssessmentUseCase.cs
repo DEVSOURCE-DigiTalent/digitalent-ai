@@ -72,6 +72,12 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
             _context.ExamChoiceAnswers.Add(answer);
         }
 
+        var isAutoReview = trial.ReportPublishedAt != null;
+        if (isAutoReview)
+        {
+            assessment.ReviewedAt = now;
+        }
+
         var correct = grade.Answers.ToDictionary(a => a.QuestionId, a => a.IsCorrect);
         foreach (var domain in paper.Domains)
         {
@@ -82,6 +88,7 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
                     return (Correct: items.Count(i => correct.GetValueOrDefault(i.Question.QuestionId)), Total: items.Count);
                 })
                 .ToList();
+            var suggested = TrialProgramRules.SuggestedLevel(cells);
             _context.TrialAssessmentDomains.Add(new TrialAssessmentDomain
             {
                 TrialAssessmentId = assessment.Id,
@@ -92,7 +99,8 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
                 IntermediateTotal = (short)cells[1].Total,
                 AdvancedCorrect = (short)cells[2].Correct,
                 AdvancedTotal = (short)cells[2].Total,
-                SuggestedLevel = TrialProgramRules.SuggestedLevel(cells),
+                SuggestedLevel = suggested,
+                MentorLevel = isAutoReview ? suggested : null,
             });
         }
 

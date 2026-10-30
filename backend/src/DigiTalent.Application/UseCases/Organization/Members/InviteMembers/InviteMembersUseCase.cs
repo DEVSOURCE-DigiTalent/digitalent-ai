@@ -51,13 +51,79 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
             .Select(o => o.Name)
             .FirstOrDefaultAsync() ?? string.Empty;
         var roleIds = await _context.Roles.ToDictionaryAsync(r => r.Code, r => r.Id);
-        var departments = await _context.Departments
+        var allDepartments = await _context.Departments
             .Where(d => d.OrganizationId == organizationId && d.Status == Statuses.MasterData.Active)
-            .ToDictionaryAsync(d => d.Id, d => d.Name);
-        var positions = await _context.JobPositions
+            .ToListAsync();
+        var departments = allDepartments.ToDictionary(d => d.Id, d => d.Name);
+
+        var allPositions = await _context.JobPositions
             .Where(p => p.OrganizationId == organizationId && p.Status == Statuses.MasterData.Active)
-            .ToDictionaryAsync(p => p.Id, p => new PositionInfo(p.Name, p.DepartmentId));
+            .ToListAsync();
+        var positions = allPositions.ToDictionary(p => p.Id, p => new PositionInfo(p.Name, p.DepartmentId));
         var canGrantRoles = await _permissionService.HasAnyAsync(_currentUser.Roles, new[] { Permissions.UserRole.RoleAssignBusiness });
+
+        // Auto-resolve or create department and job position for rows imported from file
+        foreach (var row in input.Rows)
+        {
+            if (!row.DepartmentId.HasValue && !string.IsNullOrWhiteSpace(row.DepartmentName))
+            {
+                var cleanDeptName = row.DepartmentName.Trim();
+                var matchedDept = allDepartments.FirstOrDefault(d =>
+                    d.Name.Equals(cleanDeptName, StringComparison.OrdinalIgnoreCase)
+                    || d.Code.Equals(cleanDeptName, StringComparison.OrdinalIgnoreCase));
+
+                if (matchedDept != null)
+                {
+                    row.DepartmentId = matchedDept.Id;
+                }
+                else
+                {
+                    var newDeptCode = $"PB-{Guid.NewGuid().ToString("N")[..4].ToUpper()}";
+                    var newDept = new Department
+                    {
+                        OrganizationId = organizationId,
+                        Code = newDeptCode,
+                        Name = cleanDeptName,
+                        Status = Statuses.MasterData.Active,
+                    };
+                    _context.Departments.Add(newDept);
+                    await _context.SaveChangesAsync();
+                    allDepartments.Add(newDept);
+                    departments[newDept.Id] = newDept.Name;
+                    row.DepartmentId = newDept.Id;
+                }
+            }
+
+            if (!row.JobPositionId.HasValue && !string.IsNullOrWhiteSpace(row.JobPositionName))
+            {
+                var cleanPosName = row.JobPositionName.Trim();
+                var matchedPos = allPositions.FirstOrDefault(p =>
+                    (p.Name.Equals(cleanPosName, StringComparison.OrdinalIgnoreCase) || p.Code.Equals(cleanPosName, StringComparison.OrdinalIgnoreCase))
+                    && (!p.DepartmentId.HasValue || p.DepartmentId == row.DepartmentId));
+
+                if (matchedPos != null)
+                {
+                    row.JobPositionId = matchedPos.Id;
+                }
+                else
+                {
+                    var newPosCode = $"VT-{Guid.NewGuid().ToString("N")[..4].ToUpper()}";
+                    var newPos = new JobPosition
+                    {
+                        OrganizationId = organizationId,
+                        DepartmentId = row.DepartmentId,
+                        Code = newPosCode,
+                        Name = cleanPosName,
+                        Status = Statuses.MasterData.Active,
+                    };
+                    _context.JobPositions.Add(newPos);
+                    await _context.SaveChangesAsync();
+                    allPositions.Add(newPos);
+                    positions[newPos.Id] = new PositionInfo(newPos.Name, newPos.DepartmentId);
+                    row.JobPositionId = newPos.Id;
+                }
+            }
+        }
 
         var emails = input.Rows.Select(r => NormalizeEmail(r.Email)).ToList();
         var takenEmails = (await _context.Users
@@ -137,12 +203,20 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
         // 3. Save all invitations at once, then deliver the links and log (outside the unit of work)
         await _context.SaveChangesAsync();
 
+        var trial = await _context.TrialWorkspaces.FirstOrDefaultAsync(t => t.OrganizationId == organizationId);
+        var assessmentNote = trial?.TestDeadline is { } deadline
+            ? $"Bài đánh giá năng lực số của đội ngũ cần hoàn thành trước {deadline:HH:mm dd/MM/yyyy}."
+            : "Sau khi kích hoạt tài khoản, bạn hãy đăng nhập để làm bài test đánh giá năng lực số ban đầu.";
+        var emailNote = string.IsNullOrWhiteSpace(input.EmailNote)
+            ? assessmentNote
+            : input.EmailNote.Contains("đánh giá") ? input.EmailNote : $"{input.EmailNote}\n\n{assessmentNote}";
+
         foreach (var (invitation, token, role) in accepted)
         {
             string? link;
             try
             {
-                link = await _invitationSender.SendAsync(new InvitationMessage(invitation.Email, invitation.FullName, organizationName, token, input.EmailNote));
+                link = await _invitationSender.SendAsync(new InvitationMessage(invitation.Email, invitation.FullName, organizationName, token, emailNote));
             }
             catch
             {
