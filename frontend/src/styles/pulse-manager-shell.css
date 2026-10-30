@@ -121,3 +121,16 @@ a:focus-visible > .pm-side-link { outline: 3px solid #ec8d79; outline-offset: 2p
   color: var(--pm-ink);
 }
 .pm-main-inner { max-width: 1210px; margin: 0 auto; padding: clamp(24px, 4vw, 56px) clamp(16px, 4vw, 56px) 72px; }
+
+/* ── Giao diện tối ──────────────────────────────────────────────────────── */
+html[data-theme='dark'] .pm-shell { --pm-canvas: #0e171c; --pm-ink: #e6eff0; --pm-muted: #9bb0b5; --pm-line: rgba(184, 234, 220, .13); --pm-tint: rgba(92, 194, 184, .14); --pm-strong: #8fd8cf; }
+html[data-theme='dark'] .pm-topbar {
+  border-bottom-color: var(--pm-line); background: rgba(14, 23, 28, .92); box-shadow: 0 8px 25px rgba(0, 0, 0, .25);
+  --ent-fg: #e6eff0; --ent-fg-2: #b3c4c8; --ent-fg-3: #84979d; --ent-raised: #1a2c33; --ent-card: #142228;
+  --ent-line: rgba(184, 234, 220, .12); --ent-accent: #5cc2b8; --ent-accent-soft: rgba(92, 194, 184, .14); --ent-bad: #ee8e80; --ent-bad-soft: rgba(238, 142, 128, .14);
+}
+html[data-theme='dark'] .pm-topnav a, html[data-theme='dark'] .pm-icon-btn { color: #b3c4c8; }
+html[data-theme='dark'] .pm-preview-chip { background: rgba(92, 194, 184, .14); color: #b8e0dc; }
+html[data-theme='dark'] .pm-main {
+  background: radial-gradient(ellipse 760px 380px at 94% 0, rgba(92, 194, 184, .08), transparent 70%), var(--pm-canvas);
+}
