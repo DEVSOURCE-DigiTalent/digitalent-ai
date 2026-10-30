@@ -35,10 +35,8 @@ describe('owner taking the trial test / learning', () => {
     renderAt('/enterprise/me/path');
 
     const nav = await screen.findByRole('navigation', { name: 'Điều hướng chính' });
-    expect(within(nav).getByRole('link', { name: /Dùng thử/ })).toBeInTheDocument();
-    expect(within(nav).getByRole('link', { name: /Học thử/ })).toHaveAttribute('href', '/enterprise/me/path');
-    // Dùng thử chỉ có hai mục: không còn menu quản trị đầy đủ.
-    expect(within(nav).queryByRole('link', { name: /Tổng quan/ })).not.toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: /Đánh giá đội ngũ/ })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: /Tổng quan/ })).toBeInTheDocument();
     expect(await screen.findByTestId('pulse-employee-layout')).toBeInTheDocument();
   });
 
@@ -47,9 +45,8 @@ describe('owner taking the trial test / learning', () => {
     renderAt('/enterprise/trial/learning');
 
     const nav = await screen.findByRole('navigation', { name: 'Điều hướng chính' });
-    expect(within(nav).getAllByRole('link')).toHaveLength(2);
-    expect(within(nav).getByRole('link', { name: /Dùng thử/ })).toBeInTheDocument();
-    expect(within(nav).getByRole('link', { name: /Học thử/ })).toHaveAttribute('href', '/enterprise/trial/learning');
+    expect(within(nav).getByRole('link', { name: /Đánh giá đội ngũ/ })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: /Tổng quan/ })).toBeInTheDocument();
     expect(await screen.findByRole('status', { name: 'Làm bài test trước khi học' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Tham gia làm bài test/ })).toBeDisabled();
     expect(screen.getByRole('link', { name: /Mua khóa học/ })).toHaveAttribute('href', '/enterprise/courses?level=2');

@@ -49,9 +49,9 @@ describe('trial navigation', () => {
     expect(getHomePath({ roles: ['PLATFORM_ADMIN'], workspace: 'platform' })).toBe('/platform/dashboard');
   });
 
-  it('sends the owner of a trial organization to the trial page', () => {
+  it('sends the owner of a trial organization to the dashboard with trial tracking', () => {
     const owner = { id: 'o', email: 'o@x.vn', fullName: 'O', roles: ['OWNER'], permissions: [], workspace: 'enterprise' as const };
-    expect(getHomePath({ ...owner, enterpriseTrialStatus: 'trial_active' })).toBe('/enterprise/trial');
+    expect(getHomePath({ ...owner, enterpriseTrialStatus: 'trial_active' })).toBe('/enterprise/dashboard');
     expect(getHomePath({ ...owner, enterpriseTrialStatus: 'converted' })).toBe('/enterprise/dashboard');
     expect(getHomePath(owner)).toBe('/enterprise/dashboard');
   });

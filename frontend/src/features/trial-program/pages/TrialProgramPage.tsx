@@ -38,10 +38,15 @@ function TrialProgramView({ program }: { program: TrialProgram }) {
     <>
       <header className="tp-head">
         <div>
-          <span className="tp-eyebrow">Dùng thử · {program.organizationName}</span>
+          <span className="tp-eyebrow">Đánh giá đội ngũ · {program.organizationName}</span>
           <h1>{program.stage === 'REPORTED' ? 'Bảng năng lực của doanh nghiệp' : 'Đánh giá năng lực đội ngũ'}</h1>
         </div>
-        <StageBadge stage={program.stage} />
+        <div className="tp-row" style={{ gap: 8, alignItems: 'center' }}>
+          <Link to="/enterprise/dashboard" className="tp-btn ghost small">
+            Về Tổng quan ➔
+          </Link>
+          <StageBadge stage={program.stage} />
+        </div>
       </header>
       <Steps steps={STEPS} current={current} />
       <OwnerParticipation program={program} />
