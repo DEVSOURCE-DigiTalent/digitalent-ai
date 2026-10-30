@@ -21,4 +21,5 @@ export const PULSE_TOKENS = {
   '--po-soft': '#e8f6f4',
   '--po-tint': '#e8f6f4',
   '--po-warm': '#e8a17f',
+  '--po-glow': '#cfe2e2',
 } as CSSProperties;

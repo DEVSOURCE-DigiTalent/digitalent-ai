@@ -350,7 +350,7 @@ export function OwnerCourseDetailPage() {
               className="mt-5 rounded-[10px] border p-4 flex items-start gap-3"
               style={{
                 borderColor: 'rgba(19,123,132,.15)',
-                background: 'rgba(238,242,255,.6)',
+                background: 'var(--po-raised)',
               }}
             >
               <ShieldCheck

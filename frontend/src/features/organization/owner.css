@@ -73,6 +73,7 @@ html[data-theme='dark'] .po-owner {
   --po-line: rgba(184, 234, 220, .13) !important;
   --po-soft: rgba(92, 194, 184, .13) !important;
   --po-tint: rgba(92, 194, 184, .13) !important;
+  --po-glow: rgba(92, 194, 184, .14) !important;
   color: var(--po-ink);
 }
 html[data-theme='dark'] .po-owner .po-kpi,

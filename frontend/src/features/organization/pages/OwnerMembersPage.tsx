@@ -121,7 +121,7 @@ export function OwnerMembersPage() {
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
         backgroundImage:
-          'radial-gradient(ellipse 80% 55% at 50% 0%, #cfe2e2 0%, transparent 65%)',
+          'radial-gradient(ellipse 80% 55% at 50% 0%, var(--po-glow) 0%, transparent 65%)',
       }}
     >
       {/* ── Page header ── */}
@@ -332,7 +332,7 @@ export function OwnerMembersPage() {
                 className="rounded-[13px] border p-4 text-center"
                 style={{
                   borderColor: 'var(--po-line)',
-                  background: 'rgba(238,242,255,.4)',
+                  background: 'var(--po-raised)',
                 }}
               >
                 <p

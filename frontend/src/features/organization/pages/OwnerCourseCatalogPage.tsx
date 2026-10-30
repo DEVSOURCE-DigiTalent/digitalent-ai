@@ -296,7 +296,7 @@ function BranchNode({ branch, last, open, onToggle, query, levelFilter, selectio
         className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[14px] border px-3 py-2.5 transition-colors"
         style={{
           borderColor: domainSelected ? 'var(--po-accent)' : 'var(--po-line)',
-          background: domainSelected ? 'var(--po-soft)' : '#fbfcff',
+          background: domainSelected ? 'var(--po-soft)' : 'var(--po-raised)',
         }}
       >
         <button
