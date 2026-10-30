@@ -33,7 +33,7 @@ export function CapabilityGapSummary({ totals }: CapabilityGapSummaryProps) {
 
       <div
         className="grid gap-2 rounded-[17px] border p-5"
-        style={{ borderColor: '#f3ddd1', background: '#fff7f1' }}
+        style={{ borderColor: 'color-mix(in srgb, var(--po-coral) 35%, var(--po-line))', background: 'color-mix(in srgb, var(--po-coral) 10%, var(--po-surface))' }}
       >
         <span
           className="text-[10px] font-black tracking-[0.1em]"

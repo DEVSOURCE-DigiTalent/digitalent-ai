@@ -379,7 +379,7 @@ export function OwnerCapabilityGapPage() {
           <div
             className="rounded-[18px] border p-5"
             style={{
-              borderColor: '#f3ddd1',
+              borderColor: 'color-mix(in srgb, var(--po-coral) 35%, var(--po-line))',
               background: 'linear-gradient(115deg, color-mix(in srgb, var(--po-coral) 8%, var(--po-surface)), var(--po-surface))',
             }}
           >
