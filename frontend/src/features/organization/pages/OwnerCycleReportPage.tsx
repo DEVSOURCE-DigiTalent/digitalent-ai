@@ -101,7 +101,7 @@ export function OwnerCycleReportPage() {
         className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-end gap-8"
         style={{
           padding: '36px',
-          background: 'linear-gradient(115deg, #1b2b61, #294489)',
+          background: 'linear-gradient(115deg, #173d49, #275967)',
           color: '#fff',
           boxShadow: '0 20px 42px rgba(29,48,102,.11)',
         }}
