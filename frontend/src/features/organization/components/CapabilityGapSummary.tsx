@@ -13,7 +13,7 @@ export function CapabilityGapSummary({ totals }: CapabilityGapSummaryProps) {
       >
         <span
           className="text-[10px] font-black tracking-[0.1em]"
-          style={{ color: '#5565bc' }}
+          style={{ color: 'var(--po-accent)' }}
         >
           NHÂN SỰ PHÂN TÍCH
         </span>
@@ -37,7 +37,7 @@ export function CapabilityGapSummary({ totals }: CapabilityGapSummaryProps) {
       >
         <span
           className="text-[10px] font-black tracking-[0.1em]"
-          style={{ color: '#5565bc' }}
+          style={{ color: 'var(--po-accent)' }}
         >
           KHOẢNG TRỐNG XÁC NHẬN
         </span>
@@ -63,7 +63,7 @@ export function CapabilityGapSummary({ totals }: CapabilityGapSummaryProps) {
       >
         <span
           className="text-[10px] font-black tracking-[0.1em]"
-          style={{ color: '#5565bc' }}
+          style={{ color: 'var(--po-accent)' }}
         >
           TỶ LỆ ĐÁP ỨNG
         </span>
