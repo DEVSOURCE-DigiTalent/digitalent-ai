@@ -54,7 +54,7 @@ function TrialGate({ pathname, children }: { pathname: string; children: ReactNo
  * để không mất các thao tác quản lý khi chuyển sang bài test và khóa học.
  */
 function OwnerLearningShell({ pathname }: { pathname: string }) {
-  useEnterpriseTheme();
+  useEnterpriseTheme({ lightOnly: true });
   const user = useCurrentUser((s) => s.user);
   return (
     <>
