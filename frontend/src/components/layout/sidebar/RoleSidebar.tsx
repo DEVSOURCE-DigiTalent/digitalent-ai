@@ -93,7 +93,7 @@ export function RoleSidebar({
         variant={isPulse ? 'pulse-manager' : 'default'}
       />
       {isPulseManager ? (
-        <SidebarManagerCard isRail={isRail && !isMobileOpen} />
+        <SidebarManagerCard isRail={isRail && !isMobileOpen} onToggleCollapsed={isMobileOpen ? undefined : toggleCollapsed} />
       ) : isPulseOwner ? (
         <SidebarPulseOrgCard isRail={isRail && !isMobileOpen} onToggleCollapsed={isMobileOpen ? undefined : toggleCollapsed} />
       ) : (
