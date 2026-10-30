@@ -69,7 +69,7 @@ export function OwnerOverviewHero({ org, cap }: OwnerOverviewHeroProps) {
               className={
                 action.variant === 'outline'
                   ? 'inline-flex items-center rounded-xl border border-[rgba(231,240,255,.65)] px-5 py-2.5 text-[13px] font-extrabold text-white transition-colors hover:bg-white/10'
-                  : 'inline-flex items-center rounded-xl bg-white px-5 py-2.5 text-[13px] font-extrabold text-[#0e5968] shadow-[0_12px_24px_rgba(0,0,0,.12)] transition-transform hover:-translate-y-0.5'
+                  : 'inline-flex items-center rounded-xl bg-[#fff] px-5 py-2.5 text-[13px] font-extrabold text-[#0e5968] shadow-[0_12px_24px_rgba(0,0,0,.12)] transition-transform hover:-translate-y-0.5'
               }
             >
               {action.label}
