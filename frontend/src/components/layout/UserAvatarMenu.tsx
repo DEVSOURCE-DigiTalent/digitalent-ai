@@ -26,7 +26,7 @@ export function UserAvatarMenu({
   const logout = useLogout();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { theme, toggle: toggleTheme } = useEnterpriseThemeStore();
+  const { theme, supportsDark, toggle: toggleTheme } = useEnterpriseThemeStore();
 
 
   useEffect(() => {
@@ -128,16 +128,19 @@ export function UserAvatarMenu({
               </button>
             )}
 
-            <button
-              type="button"
-              onClick={() => toggleTheme()}
-              className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg transition-colors"
-            >
-              {theme === 'dark'
-                ? <Sun className="w-4 h-4 text-ent-fg-3" />
-                : <Moon className="w-4 h-4 text-ent-fg-3" />}
-              {theme === 'dark' ? 'Chuyển giao diện sáng' : 'Chuyển giao diện tối'}
-            </button>
+            {/* Khung chỉ có bản sáng (cổng nhân viên, platform) không hiện nút chuyển. */}
+            {supportsDark && (
+              <button
+                type="button"
+                onClick={() => toggleTheme()}
+                className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg transition-colors"
+              >
+                {theme === 'dark'
+                  ? <Sun className="w-4 h-4 text-ent-fg-3" />
+                  : <Moon className="w-4 h-4 text-ent-fg-3" />}
+                {theme === 'dark' ? 'Chuyển giao diện sáng' : 'Chuyển giao diện tối'}
+              </button>
+            )}
           </div>
 
           <div className="border-t border-ent-line pt-1">

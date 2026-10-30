@@ -7,20 +7,7 @@ import { toast } from 'sonner';
 import { usePracticalTask, useSubmissionDetail, useEvaluateSubmission } from '@/hooks/use-tasks';
 import type { RubricCriterion } from '@/services/task.service';
 import { apiErrorMessage, formatDate } from '@/lib/utils';
-
-const PULSE_TOKENS = {
-  '--po-canvas': '#f7f9fd',
-  '--po-surface': '#fff',
-  '--po-ink': '#172442',
-  '--po-muted': '#62718d',
-  '--po-accent': '#304bdf',
-  '--po-coral': '#ef735c',
-  '--po-lime': '#c6ec78',
-  '--po-line': '#dfe6f3',
-  '--po-soft': '#eef2ff',
-  '--po-tint': '#edf1ff',
-  '--po-warm': '#f1816b',
-} as React.CSSProperties;
+import { PULSE_TOKENS } from '../owner-theme';
 
 const inputStyle: React.CSSProperties = {
   borderColor: 'var(--po-line)',
@@ -76,7 +63,7 @@ export function OwnerReviewDetailPage() {
   if (subLoading || taskLoading) {
     return (
       <div
-        className="-m-4 md:-m-6 min-h-screen flex items-center justify-center"
+        className="po-owner -m-4 md:-m-6 min-h-screen flex items-center justify-center"
         style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
       >
         <p className="text-sm" style={{ color: 'var(--po-muted)' }}>Đang tải…</p>
@@ -87,7 +74,7 @@ export function OwnerReviewDetailPage() {
   if (!task || !submission) {
     return (
       <div
-        className="-m-4 md:-m-6 min-h-screen px-4 md:px-6 py-20"
+        className="po-owner -m-4 md:-m-6 min-h-screen px-4 md:px-6 py-20"
         style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
       >
         <div className="mx-auto text-center" style={{ maxWidth: 500 }}>
@@ -120,11 +107,11 @@ export function OwnerReviewDetailPage() {
 
   return (
     <div
-      className="-m-4 md:-m-6 min-h-screen"
+      className="po-owner -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
-        backgroundImage: 'radial-gradient(ellipse 80% 55% at 50% 0%, #dce5ff 0%, transparent 65%)',
+        backgroundImage: 'radial-gradient(ellipse 80% 55% at 50% 0%, var(--po-glow) 0%, transparent 65%)',
       }}
     >
       <div className="px-4 md:px-6 pt-6 pb-8 mx-auto" style={{ maxWidth: 900 }}>
@@ -158,7 +145,7 @@ export function OwnerReviewDetailPage() {
               </div>
               <span
                 className="text-[9px] font-black px-1.5 py-0.5 rounded"
-                style={{ background: '#eef1ff', color: '#5364a6' }}
+                style={{ background: 'var(--po-soft)', color: 'var(--po-accent-strong)' }}
               >
                 LV{task.targetLevel}
               </span>

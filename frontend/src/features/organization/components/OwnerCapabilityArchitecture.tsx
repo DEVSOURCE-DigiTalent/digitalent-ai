@@ -64,7 +64,7 @@ export function OwnerCapabilityArchitecture({
             className="rounded-[13px] border p-[17px]"
             style={{
               borderColor: 'var(--po-line)',
-              background: 'linear-gradient(145deg, #fff, #f8faff)',
+              background: 'linear-gradient(145deg, var(--po-surface), var(--po-raised))',
             }}
           >
             <strong className="text-sm block" style={{ color: 'var(--po-ink)' }}>

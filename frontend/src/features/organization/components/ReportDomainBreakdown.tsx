@@ -67,14 +67,14 @@ export function ReportDomainBreakdown({
             <span className="inline-flex items-center gap-1.5">
               <i
                 className="inline-block size-[9px] rounded-full"
-                style={{ background: '#3448cf' }}
+                style={{ background: '#137b84' }}
               />
               Mức hiện tại TB
             </span>
             <span className="inline-flex items-center gap-1.5">
               <i
                 className="inline-block size-[9px] rounded-full"
-                style={{ background: '#ff997e' }}
+                style={{ background: '#eeb093' }}
               />
               Mức yêu cầu TB
             </span>
@@ -145,20 +145,20 @@ export function ReportDomainBreakdown({
                       className="flex items-center gap-1 text-[10px] shrink-0"
                       style={{ color: 'var(--po-muted)', minWidth: 55 }}
                     >
-                      <b style={{ color: '#3448cf' }}>
+                      <b style={{ color: '#137b84' }}>
                         L{d.averageCurrent.toFixed(1)}
                       </b>{' '}
                       hiện
                     </div>
                     <div
                       className="flex-1 h-1.5 rounded-full overflow-hidden"
-                      style={{ background: '#e8edf6' }}
+                      style={{ background: 'var(--po-raised)' }}
                     >
                       <div
                         className="h-full rounded-full"
                         style={{
                           width: `${currentPct}%`,
-                          background: '#3448cf',
+                          background: '#137b84',
                           transition: 'width .3s ease',
                         }}
                       />
@@ -169,20 +169,20 @@ export function ReportDomainBreakdown({
                       className="flex items-center gap-1 text-[10px] shrink-0"
                       style={{ color: 'var(--po-muted)', minWidth: 55 }}
                     >
-                      <b style={{ color: '#ff997e' }}>
+                      <b style={{ color: '#eeb093' }}>
                         L{d.averageRequired.toFixed(1)}
                       </b>{' '}
                       cần
                     </div>
                     <div
                       className="flex-1 h-1.5 rounded-full overflow-hidden"
-                      style={{ background: '#e8edf6' }}
+                      style={{ background: 'var(--po-raised)' }}
                     >
                       <div
                         className="h-full rounded-full"
                         style={{
                           width: `${requiredPct}%`,
-                          background: '#ff997e',
+                          background: '#eeb093',
                           transition: 'width .3s ease',
                         }}
                       />

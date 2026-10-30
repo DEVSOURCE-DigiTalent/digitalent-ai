@@ -13,13 +13,13 @@ export function CertificateCard({ title, employeeName, issueDate }: CertificateC
       style={{
         minHeight: 190,
         border: '1px solid #dce4f3',
-        background: 'linear-gradient(125deg, #fff, #f1f4ff)',
-        color: '#172241',
+        background: 'linear-gradient(125deg, var(--po-surface), var(--po-raised))',
+        color: 'var(--po-ink)',
       }}
     >
       <span
         className="text-[10px] font-black uppercase tracking-[0.12em]"
-        style={{ color: '#62718d' }}
+        style={{ color: 'var(--po-muted)' }}
       >
         DIGITAL AI / XÁC MINH
       </span>
@@ -34,7 +34,7 @@ export function CertificateCard({ title, employeeName, issueDate }: CertificateC
       </small>
       <em
         className="self-end text-[11px] font-[850] not-italic"
-        style={{ color: '#3448cf' }}
+        style={{ color: '#137b84' }}
       >
         Xem chứng nhận ↗
       </em>

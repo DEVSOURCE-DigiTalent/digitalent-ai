@@ -31,7 +31,7 @@ export function FocusLayout({
   title,
   children,
 }: FocusLayoutProps) {
-  useEnterpriseTheme();
+  useEnterpriseTheme({ lightOnly: true });
 
   return (
     <div className="min-h-screen bg-ent-bg text-ent-fg flex flex-col">

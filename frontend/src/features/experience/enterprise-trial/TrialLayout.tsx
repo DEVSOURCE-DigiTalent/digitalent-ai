@@ -11,7 +11,7 @@ import { data, ErrorText } from './trial-ui';
 
 /** This shell is admitted only by authenticated session + trial context from the selected adapter. */
 export function TrialLayout() {
-  useEnterpriseTheme(); const token = localStorage.getItem('accessToken'); const user = useCurrentUser(state => state.user);
+  useEnterpriseTheme({ lightOnly: true }); const token = localStorage.getItem('accessToken'); const user = useCurrentUser(state => state.user);
   const session = useQuery({ queryKey: ['enterprise-trial', 'session', token], queryFn: () => data(service.currentUser()), enabled: !!token, retry: false, refetchOnMount: 'always' });
   useEffect(() => { if (session.data) useCurrentUser.getState().setUser(session.data); }, [session.data]);
   const context = useQuery({ queryKey: ['enterprise-trial', session.data?.id, 'context'], queryFn: () => data(service.context()), enabled: !!session.data, retry: false, refetchOnMount: 'always' });

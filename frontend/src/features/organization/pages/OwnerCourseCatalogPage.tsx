@@ -15,22 +15,12 @@ import {
   matchesSearch,
   type DomainBranch,
 } from '../components/course-tree';
-
-const PULSE_TOKENS = {
-  '--po-canvas': '#f7f9fd',
-  '--po-surface': '#fff',
-  '--po-ink': '#172442',
-  '--po-muted': '#62718d',
-  '--po-accent': '#304bdf',
-  '--po-coral': '#ef735c',
-  '--po-line': '#dfe6f3',
-  '--po-soft': '#eef2ff',
-} as React.CSSProperties;
+import { PULSE_TOKENS } from '../owner-theme';
 
 /** One color per level, used by the tree nodes, the legend and the detail panel. */
 const LEVEL_TONES: Record<number, { bg: string; fg: string; ring: string }> = {
   1: { bg: '#edf7dd', fg: '#557327', ring: '#b9dc8c' },
-  2: { bg: '#e9edff', fg: '#304bdf', ring: '#aebcf6' },
+  2: { bg: 'var(--po-soft)', fg: '#137b84', ring: '#aebcf6' },
   3: { bg: '#fdeee9', fg: '#c4553f', ring: '#f4b6a6' },
 };
 
@@ -80,8 +70,8 @@ export function OwnerCourseCatalogPage() {
 
   return (
     <div
-      className="-m-4 md:-m-6 min-h-screen px-4 md:px-6 py-8"
-      style={{ ...PULSE_TOKENS, background: 'radial-gradient(ellipse at 50% 0%, #eef2ff 0%, var(--po-canvas) 60%)' }}
+      className="po-owner -m-4 md:-m-6 min-h-screen px-4 md:px-6 py-8"
+      style={{ ...PULSE_TOKENS, background: 'radial-gradient(ellipse at 50% 0%, var(--po-soft) 0%, var(--po-canvas) 60%)' }}
     >
       <div className="mx-auto" style={{ maxWidth: 1220 }}>
         {/* ── Header ── */}
@@ -306,7 +296,7 @@ function BranchNode({ branch, last, open, onToggle, query, levelFilter, selectio
         className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[14px] border px-3 py-2.5 transition-colors"
         style={{
           borderColor: domainSelected ? 'var(--po-accent)' : 'var(--po-line)',
-          background: domainSelected ? 'var(--po-soft)' : '#fbfcff',
+          background: domainSelected ? 'var(--po-soft)' : 'var(--po-raised)',
         }}
       >
         <button
@@ -390,7 +380,7 @@ function LevelSlotNode({ slot, arrow, query, levelFilter, selection, onSelect }:
               className="flex h-full min-h-[96px] flex-col rounded-[14px] border px-3 py-2.5 text-left transition-all hover:-translate-y-px hover:shadow-md"
               style={{
                 borderColor: selected ? tone.fg : tone.ring,
-                background: selected ? tone.bg : '#fff',
+                background: selected ? tone.bg : 'var(--po-surface)',
                 boxShadow: selected ? `0 0 0 3px ${tone.bg}` : undefined,
                 opacity: dimmed ? 0.35 : 1,
               }}

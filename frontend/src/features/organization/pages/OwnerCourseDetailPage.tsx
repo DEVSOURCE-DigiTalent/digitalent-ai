@@ -11,21 +11,7 @@ import {
 import { CourseModules } from '../components/CourseModules';
 import { CourseEnrollment } from '../components/CourseEnrollment';
 import { CourseFinalBrief } from '@/components/shared/CourseFinalBrief';
-
-const PULSE_TOKENS = {
-  '--po-canvas': '#f7f9fd',
-  '--po-surface': '#fff',
-  '--po-ink': '#172442',
-  '--po-muted': '#62718d',
-  '--po-accent': '#304bdf',
-  '--po-accent-strong': '#203bbf',
-  '--po-coral': '#ef735c',
-  '--po-lime': '#c6ec78',
-  '--po-line': '#dfe6f3',
-  '--po-soft': '#eef2ff',
-  '--po-tint': '#edf1ff',
-  '--po-warm': '#f1816b',
-} as React.CSSProperties;
+import { PULSE_TOKENS } from '../owner-theme';
 
 const TIER_LABELS = ['Cơ bản', 'Trung cấp', 'Nâng cao'];
 
@@ -54,7 +40,7 @@ export function OwnerCourseDetailPage() {
   if (isLoading) {
     return (
       <div
-        className="-m-4 md:-m-6 min-h-screen flex items-center justify-center"
+        className="po-owner -m-4 md:-m-6 min-h-screen flex items-center justify-center"
         style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
       >
         <p className="text-sm" style={{ color: 'var(--po-muted)' }}>
@@ -67,13 +53,13 @@ export function OwnerCourseDetailPage() {
   if (!course) {
     return (
       <div
-        className="-m-4 md:-m-6 min-h-screen px-4 md:px-6 py-20"
+        className="po-owner -m-4 md:-m-6 min-h-screen px-4 md:px-6 py-20"
         style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
       >
         <div className="mx-auto text-center" style={{ maxWidth: 500 }}>
           <div
             className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl text-2xl"
-            style={{ background: '#e9edff', color: 'var(--po-accent)' }}
+            style={{ background: 'var(--po-soft)', color: 'var(--po-accent)' }}
           >
             ✕
           </div>
@@ -127,7 +113,7 @@ export function OwnerCourseDetailPage() {
 
   return (
     <div
-      className="-m-4 md:-m-6 min-h-screen"
+      className="po-owner -m-4 md:-m-6 min-h-screen"
       style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
     >
       {/* ── Hero ── */}
@@ -146,7 +132,7 @@ export function OwnerCourseDetailPage() {
 
           <span
             className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em]"
-            style={{ color: '#c6ec78' }}
+            style={{ color: '#b8eadc' }}
           >
             <i
               className="inline-block size-[6px] rounded-full"
@@ -181,9 +167,9 @@ export function OwnerCourseDetailPage() {
                   }
                   className="inline-flex items-center gap-2 rounded-[11px] px-4 py-3 text-[13px] font-bold transition-transform hover:-translate-y-0.5"
                   style={{
-                    background: '#fff',
+                    background: 'var(--po-surface)',
                     color: 'var(--po-accent)',
-                    boxShadow: '0 9px 18px rgba(52,72,207,.17)',
+                    boxShadow: '0 9px 18px rgba(19,123,132,.17)',
                   }}
                 >
                   <UserCheck className="size-4" />
@@ -363,8 +349,8 @@ export function OwnerCourseDetailPage() {
             <div
               className="mt-5 rounded-[10px] border p-4 flex items-start gap-3"
               style={{
-                borderColor: 'rgba(48,75,223,.15)',
-                background: 'rgba(238,242,255,.6)',
+                borderColor: 'rgba(19,123,132,.15)',
+                background: 'var(--po-raised)',
               }}
             >
               <ShieldCheck

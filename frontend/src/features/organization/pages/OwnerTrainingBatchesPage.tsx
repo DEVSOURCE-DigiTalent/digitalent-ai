@@ -7,21 +7,7 @@ import {
 } from '@/hooks/use-training-batches';
 import type { TrainingBatchStatus } from '@/services/mock/server/types';
 import { TrainingBatchCard } from '../components/TrainingBatchCard';
-
-const PULSE_TOKENS = {
-  '--po-canvas': '#f7f9fd',
-  '--po-surface': '#fff',
-  '--po-ink': '#172442',
-  '--po-muted': '#62718d',
-  '--po-accent': '#304bdf',
-  '--po-accent-strong': '#203bbf',
-  '--po-coral': '#ef735c',
-  '--po-lime': '#c6ec78',
-  '--po-line': '#dfe6f3',
-  '--po-soft': '#eef2ff',
-  '--po-tint': '#edf1ff',
-  '--po-warm': '#f1816b',
-} as React.CSSProperties;
+import { PULSE_TOKENS } from '../owner-theme';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: 'Tất cả' },
@@ -51,12 +37,12 @@ export function OwnerTrainingBatchesPage() {
 
   return (
     <div
-      className="-m-4 md:-m-6 min-h-screen"
+      className="po-owner -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
         backgroundImage:
-          'radial-gradient(ellipse 80% 55% at 50% 0%, #dce5ff 0%, transparent 65%)',
+          'radial-gradient(ellipse 80% 55% at 50% 0%, var(--po-glow) 0%, transparent 65%)',
       }}
     >
       {/* ── Header ── */}
@@ -217,7 +203,7 @@ export function OwnerTrainingBatchesPage() {
                 <div
                   className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl text-2xl"
                   style={{
-                    background: '#e9edff',
+                    background: 'var(--po-soft)',
                     color: 'var(--po-accent)',
                   }}
                 >

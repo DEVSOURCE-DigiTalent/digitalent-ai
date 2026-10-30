@@ -4,23 +4,10 @@ import { usePracticalTask } from '@/hooks/use-tasks';
 import { useTaskCompetencies } from '@/hooks/use-competencies';
 import { formatDate } from '@/lib/utils';
 import type { RubricCriterion } from '@/services/task.service';
-
-const PULSE_TOKENS = {
-  '--po-canvas': '#f7f9fd',
-  '--po-surface': '#fff',
-  '--po-ink': '#172442',
-  '--po-muted': '#62718d',
-  '--po-accent': '#304bdf',
-  '--po-coral': '#ef735c',
-  '--po-lime': '#c6ec78',
-  '--po-line': '#dfe6f3',
-  '--po-soft': '#eef2ff',
-  '--po-tint': '#edf1ff',
-  '--po-warm': '#f1816b',
-} as React.CSSProperties;
+import { PULSE_TOKENS } from '../owner-theme';
 
 const SUB_STATUS: Record<string, { label: string; bg: string; fg: string }> = {
-  PENDING_REVIEW: { label: 'Chờ chấm', bg: '#dbeafe', fg: '#1d4ed8' },
+  PENDING_REVIEW: { label: 'Chờ chấm', bg: 'var(--po-soft)', fg: 'var(--po-accent-strong)' },
   APPROVED: { label: 'Đã duyệt', bg: '#ecfdf5', fg: '#16a34a' },
   REVISION_REQUESTED: { label: 'Cần sửa', bg: '#fef3c7', fg: '#d97706' },
   REJECTED: { label: 'Không đạt', bg: '#fee2e2', fg: '#dc2626' },
@@ -34,7 +21,7 @@ export function OwnerTaskDetailPage() {
   if (isLoading) {
     return (
       <div
-        className="-m-4 md:-m-6 min-h-screen flex items-center justify-center"
+        className="po-owner -m-4 md:-m-6 min-h-screen flex items-center justify-center"
         style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
       >
         <p className="text-sm" style={{ color: 'var(--po-muted)' }}>Đang tải…</p>
@@ -45,13 +32,13 @@ export function OwnerTaskDetailPage() {
   if (isError || !task) {
     return (
       <div
-        className="-m-4 md:-m-6 min-h-screen px-4 md:px-6 py-20"
+        className="po-owner -m-4 md:-m-6 min-h-screen px-4 md:px-6 py-20"
         style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
       >
         <div className="mx-auto text-center" style={{ maxWidth: 500 }}>
           <div
             className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl text-2xl"
-            style={{ background: '#e9edff', color: 'var(--po-accent)' }}
+            style={{ background: 'var(--po-soft)', color: 'var(--po-accent)' }}
           >
             ✕
           </div>
@@ -75,11 +62,11 @@ export function OwnerTaskDetailPage() {
 
   return (
     <div
-      className="-m-4 md:-m-6 min-h-screen"
+      className="po-owner -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
-        backgroundImage: 'radial-gradient(ellipse 80% 55% at 50% 0%, #dce5ff 0%, transparent 65%)',
+        backgroundImage: 'radial-gradient(ellipse 80% 55% at 50% 0%, var(--po-glow) 0%, transparent 65%)',
       }}
     >
       {/* ── Hero ── */}
@@ -97,7 +84,7 @@ export function OwnerTaskDetailPage() {
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <span
                 className="text-[9px] font-black px-1.5 py-0.5 rounded"
-                style={{ background: '#eef1ff', color: '#5364a6' }}
+                style={{ background: 'var(--po-soft)', color: 'var(--po-accent-strong)' }}
               >
                 LV{task.targetLevel}
               </span>
@@ -106,7 +93,7 @@ export function OwnerTaskDetailPage() {
                 style={
                   task.status === 'ACTIVE'
                     ? { background: '#ecfdf5', color: '#16a34a' }
-                    : { background: '#f1f5f9', color: '#64748b' }
+                    : { background: 'var(--po-raised)', color: 'var(--po-muted)' }
                 }
               >
                 {task.status === 'ACTIVE' ? 'Đang mở' : 'Đã đóng'}

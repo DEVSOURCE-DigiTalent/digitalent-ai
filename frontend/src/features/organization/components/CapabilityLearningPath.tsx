@@ -52,14 +52,14 @@ export function CapabilityLearningPath({ competencies, isLoading }: CapabilityLe
             <span className="inline-flex items-center gap-1.5">
               <i
                 className="inline-block size-[9px] rounded-full"
-                style={{ background: '#3448cf' }}
+                style={{ background: '#137b84' }}
               />
               Mức hiện tại TB
             </span>
             <span className="inline-flex items-center gap-1.5">
               <i
                 className="inline-block size-[9px] rounded-full"
-                style={{ background: '#ff997e' }}
+                style={{ background: '#eeb093' }}
               />
               Mức yêu cầu TB
             </span>
@@ -101,7 +101,7 @@ export function CapabilityLearningPath({ competencies, isLoading }: CapabilityLe
 
                 {/* Current level */}
                 <span className="text-center">
-                  <b className="text-[13px]" style={{ color: '#3448cf' }}>
+                  <b className="text-[13px]" style={{ color: '#137b84' }}>
                     L{comp.averageCurrentLevel.toFixed(1)}
                   </b>
                   <small
@@ -174,26 +174,26 @@ export function CapabilityLearningPath({ competencies, isLoading }: CapabilityLe
                 >
                   <div
                     className="h-1.5 flex-1 rounded-full overflow-hidden"
-                    style={{ background: '#e8edf6' }}
+                    style={{ background: 'var(--po-raised)' }}
                   >
                     <div
                       className="h-full rounded-full"
                       style={{
                         width: `${currentPct}%`,
-                        background: '#3448cf',
+                        background: '#137b84',
                         transition: 'width .3s ease',
                       }}
                     />
                   </div>
                   <div
                     className="h-1.5 flex-1 rounded-full overflow-hidden"
-                    style={{ background: '#e8edf6' }}
+                    style={{ background: 'var(--po-raised)' }}
                   >
                     <div
                       className="h-full rounded-full"
                       style={{
                         width: `${requiredPct}%`,
-                        background: '#ff997e',
+                        background: '#eeb093',
                         transition: 'width .3s ease',
                       }}
                     />

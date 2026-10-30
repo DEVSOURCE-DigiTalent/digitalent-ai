@@ -8,7 +8,7 @@ import { PLATFORM_SIDEBAR } from '../../lib/sidebars/platform';
 import { useEnterpriseTheme } from '../../hooks/use-enterprise-theme';
 
 export const PlatformLayout: React.FC = () => {
-  useEnterpriseTheme();
+  useEnterpriseTheme({ lightOnly: true });
 
   return (
     <AuthGuard>

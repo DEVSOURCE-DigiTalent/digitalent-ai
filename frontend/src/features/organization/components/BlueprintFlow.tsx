@@ -34,14 +34,14 @@ export function BlueprintFlow({ setup, setupCompleted }: BlueprintFlowProps) {
             <span
               className="flex flex-1 min-w-max items-center gap-[10px] rounded-xl border px-4 py-[13px] text-[11px] font-[850]"
               style={{
-                borderColor: '#dfe5f5',
-                background: '#fff',
+                borderColor: 'var(--po-line)',
+                background: 'var(--po-surface)',
                 color: '#28385a',
               }}
             >
               <b
                 className="grid size-[25px] shrink-0 place-items-center rounded-lg text-[10px] font-bold"
-                style={{ background: '#e9edff', color: '#3448cf' }}
+                style={{ background: 'var(--po-soft)', color: '#137b84' }}
               >
                 {tier.step}
               </b>
