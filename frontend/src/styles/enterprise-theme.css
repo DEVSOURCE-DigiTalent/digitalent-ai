@@ -1,7 +1,6 @@
 /* Enterprise theme token values — Unified Modern Pulse Theme */
 .ent-theme,
-.ent-theme[data-theme='light'],
-.ent-theme[data-theme='dark'] {
+.ent-theme[data-theme='light'] {
   --ent-bg: #f7f9fd;
   --ent-sidebar: #fbfcff;
   --ent-sidebar-fg: #172442;
@@ -30,6 +29,38 @@
   --ent-level-2: #7C9BE6;
   --ent-level-3: #304bdf;
   color-scheme: light;
+}
+
+/* Giao diện tối của khung doanh nghiệp: mực xanh biển, nhấn xanh ngọc như menu bên Pulse. */
+.ent-theme[data-theme='dark'] {
+  --ent-bg: #0e171c;
+  --ent-sidebar: #0b1418;
+  --ent-sidebar-fg: #e6eff0;
+  --ent-sidebar-muted: #84979d;
+  --ent-sidebar-hover: rgba(184, 234, 220, 0.08);
+  --ent-sidebar-active: rgba(92, 194, 184, 0.16);
+  --ent-sidebar-active-border: #5cc2b8;
+  --ent-topbar: rgba(14, 23, 28, 0.92);
+  --ent-card: #142228;
+  --ent-raised: #1a2c33;
+  --ent-line: rgba(184, 234, 220, 0.12);
+  --ent-fg: #e6eff0;
+  --ent-fg-2: #b3c4c8;
+  --ent-fg-3: #84979d;
+  --ent-primary: #4fb3aa;
+  --ent-on-primary: #08262a;
+  --ent-accent: #5cc2b8;
+  --ent-accent-soft: rgba(92, 194, 184, 0.14);
+  --ent-ok: #7fc48c;
+  --ent-ok-soft: rgba(127, 196, 140, 0.14);
+  --ent-warn: #e3b65a;
+  --ent-warn-soft: rgba(227, 182, 90, 0.14);
+  --ent-bad: #ee8e80;
+  --ent-bad-soft: rgba(238, 142, 128, 0.14);
+  --ent-level-1: #24464d;
+  --ent-level-2: #3f8c88;
+  --ent-level-3: #8fd8cf;
+  color-scheme: dark;
 }
 
 /* Font Enterprise */
