@@ -24,4 +24,6 @@ public class InviteMemberRow
     public string? EmployeeCode { get; set; }
     public Guid? DepartmentId { get; set; }
     public Guid? JobPositionId { get; set; }
+    public string? DepartmentName { get; set; }
+    public string? JobPositionName { get; set; }
 }

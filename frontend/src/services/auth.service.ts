@@ -11,6 +11,8 @@ export interface SendEmailVerificationResponse {
 export interface VerifyBusinessEmailResponse {
   verified: boolean;
   email: string;
+  accessToken?: string | null;
+  refreshToken?: string | null;
 }
 
 interface AuthService {

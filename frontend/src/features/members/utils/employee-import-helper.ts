@@ -98,23 +98,25 @@ function normalizeStr(s: string): string {
  */
 export function parseSmartEmployeeCsv(
   text: string,
-  departments: { id: string; name: string }[],
-  positions: { id: string; name: string; departmentId?: string }[],
+  departments: { id: string; name: string; code?: string }[],
+  positions: { id: string; name: string; code?: string; departmentId?: string }[],
 ): { rows: ParsedEmployeeRow[]; issues: string[] } {
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
   if (lines.length === 0) {
     return { rows: [], issues: ['File hoặc nội dung tải lên trống.'] };
   }
 
-  // Chuẩn bị map tìm kiếm phòng ban và vị trí
-  const deptMap = new Map<string, { id: string; name: string }>();
+  // Chuẩn bị map tìm kiếm phòng ban và vị trí (hỗ trợ cả tên và mã)
+  const deptMap = new Map<string, { id: string; name: string; code?: string }>();
   departments.forEach((d) => {
     deptMap.set(normalizeStr(d.name), d);
+    if (d.code) deptMap.set(normalizeStr(d.code), d);
   });
 
-  const posMap = new Map<string, { id: string; name: string; departmentId?: string }>();
+  const posMap = new Map<string, { id: string; name: string; code?: string; departmentId?: string }>();
   positions.forEach((p) => {
     posMap.set(normalizeStr(p.name), p);
+    if (p.code) posMap.set(normalizeStr(p.code), p);
   });
 
   // Kiểm tra dòng đầu tiên xem có phải là tiêu đề (header) không
@@ -200,26 +202,34 @@ export function parseSmartEmployeeCsv(
       seenEmails.add(email);
     }
 
-    // Khớp Phòng ban
+    // Khớp Phòng ban (hỗ trợ cả tìm mờ và theo mã)
     let matchedDept = deptRaw ? deptMap.get(normalizeStr(deptRaw)) : undefined;
     if (!matchedDept && deptRaw) {
-      // Thử tìm kiếm mờ (fuzzy)
       const target = normalizeStr(deptRaw);
-      matchedDept = departments.find((d) => normalizeStr(d.name).includes(target) || target.includes(normalizeStr(d.name)));
+      matchedDept = departments.find((d) =>
+        normalizeStr(d.name).includes(target) ||
+        target.includes(normalizeStr(d.name)) ||
+        (d.code && normalizeStr(d.code) === target),
+      );
     }
 
-    // Khớp Vị trí công việc
+    // Khớp Vị trí công việc (hỗ trợ cả tìm mờ và theo mã)
     let matchedPos = posRaw ? posMap.get(normalizeStr(posRaw)) : undefined;
     if (!matchedPos && posRaw) {
       const target = normalizeStr(posRaw);
-      matchedPos = positions.find((p) => normalizeStr(p.name).includes(target) || target.includes(normalizeStr(p.name)));
+      matchedPos = positions.find((p) =>
+        normalizeStr(p.name).includes(target) ||
+        target.includes(normalizeStr(p.name)) ||
+        (p.code && normalizeStr(p.code) === target),
+      );
     }
 
     // Khớp Vai trò
     const role: MemberRole = roleRaw ? ROLE_ALIASES[normalizeStr(roleRaw)] || 'EMPLOYEE' : 'EMPLOYEE';
 
-    if (!matchedDept && departments.length > 0) {
-      errors.push(deptRaw ? `Phòng ban "${deptRaw}" chưa khớp hệ thống` : 'Chưa chọn phòng ban');
+    // Không bắt buộc phải có sẵn phòng ban trong hệ thống — file có gì sẽ tự động tạo phòng ban đó
+    if (!matchedDept && !deptRaw && role !== 'OWNER') {
+      errors.push('Chưa có thông tin phòng ban');
     }
 
     rows.push({
@@ -227,9 +237,9 @@ export function parseSmartEmployeeCsv(
       fullName,
       email,
       employeeCode,
-      departmentId: matchedDept ? matchedDept.id : '',
+      departmentId: matchedDept ? matchedDept.id : (deptRaw ? `new:${deptRaw}` : ''),
       departmentName: matchedDept ? matchedDept.name : deptRaw,
-      jobPositionId: matchedPos ? matchedPos.id : '',
+      jobPositionId: matchedPos ? matchedPos.id : (posRaw ? `new:${posRaw}` : ''),
       positionName: matchedPos ? matchedPos.name : posRaw,
       role,
       isValid: errors.length === 0,
