@@ -13,7 +13,7 @@ export function CertificateCard({ title, employeeName, issueDate }: CertificateC
       style={{
         minHeight: 190,
         border: '1px solid #dce4f3',
-        background: 'linear-gradient(125deg, #fff, #f1f4ff)',
+        background: 'linear-gradient(125deg, var(--po-surface), var(--po-raised))',
         color: 'var(--po-ink)',
       }}
     >

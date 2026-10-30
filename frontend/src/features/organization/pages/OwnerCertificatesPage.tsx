@@ -78,7 +78,7 @@ export function OwnerCertificatesPage() {
                 key={i}
                 className="animate-pulse rounded-2xl"
                 style={{
-                  background: 'linear-gradient(125deg, #fff, #f1f4ff)',
+                  background: 'linear-gradient(125deg, var(--po-surface), var(--po-raised))',
                   border: '1px solid var(--po-line)',
                   minHeight: 190,
                 }}

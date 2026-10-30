@@ -71,7 +71,7 @@ export function OwnerCourseCatalogPage() {
   return (
     <div
       className="po-owner -m-4 md:-m-6 min-h-screen px-4 md:px-6 py-8"
-      style={{ ...PULSE_TOKENS, background: 'radial-gradient(ellipse at 50% 0%, #e8f6f4 0%, var(--po-canvas) 60%)' }}
+      style={{ ...PULSE_TOKENS, background: 'radial-gradient(ellipse at 50% 0%, var(--po-soft) 0%, var(--po-canvas) 60%)' }}
     >
       <div className="mx-auto" style={{ maxWidth: 1220 }}>
         {/* ── Header ── */}

@@ -76,7 +76,7 @@ export function CompetencyDetailPanel({
                   style={{
                     borderColor: 'var(--po-line)',
                     background:
-                      'linear-gradient(145deg, #fff, #f6fbfa)',
+                      'linear-gradient(145deg, var(--po-surface), var(--po-raised))',
                   }}
                 >
                   <div className="flex items-center justify-between mb-3">
@@ -162,7 +162,7 @@ export function CompetencyDetailPanel({
                   style={{
                     borderColor: 'var(--po-line)',
                     background:
-                      'linear-gradient(145deg, #fff, #f6fbfa)',
+                      'linear-gradient(145deg, var(--po-surface), var(--po-raised))',
                   }}
                 >
                   <span

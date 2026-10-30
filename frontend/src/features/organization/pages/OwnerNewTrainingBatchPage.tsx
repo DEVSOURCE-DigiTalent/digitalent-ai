@@ -609,7 +609,7 @@ export function OwnerNewTrainingBatchPage() {
                   className="rounded-[13px] border p-4 space-y-2 text-[11px]"
                   style={{
                     borderColor: 'var(--po-line)',
-                    background: 'linear-gradient(145deg, #fff, #f6fbfa)',
+                    background: 'linear-gradient(145deg, var(--po-surface), var(--po-raised))',
                   }}
                 >
                   <span
@@ -636,7 +636,7 @@ export function OwnerNewTrainingBatchPage() {
                   className="rounded-[13px] border p-4 space-y-2 text-[11px]"
                   style={{
                     borderColor: 'var(--po-line)',
-                    background: 'linear-gradient(145deg, #fff, #f6fbfa)',
+                    background: 'linear-gradient(145deg, var(--po-surface), var(--po-raised))',
                   }}
                 >
                   <span
