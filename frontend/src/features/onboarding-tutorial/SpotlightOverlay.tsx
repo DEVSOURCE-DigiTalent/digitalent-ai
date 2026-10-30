@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef, useLayoutEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  ExternalLink,
   Lightbulb,
   Sparkles,
   X,
@@ -13,12 +14,14 @@ import { TUTORIAL_CONFIGS } from './tutorial-configs';
 
 export function SpotlightOverlay() {
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     isTourActive,
     currentRole,
     currentStepIndex,
     nextStep,
     prevStep,
+    goToStep,
     skipTour,
   } = useOnboardingStore();
 
@@ -55,7 +58,7 @@ export function SpotlightOverlay() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isTourActive, nextStep, prevStep, skipTour]);
 
-  // Cập nhật vị trí của element mục tiêu
+  // Cập nhật vị trí của element mục tiêu với scroll listener
   useLayoutEffect(() => {
     if (!isTourActive || !currentStep) {
       setRect(null);
@@ -66,28 +69,46 @@ export function SpotlightOverlay() {
       const el = document.querySelector(currentStep.targetSelector);
       if (el) {
         const r = el.getBoundingClientRect();
-        // Chỉ lưu rect nếu phần tử có kích thước hiển thị
         if (r.width > 0 && r.height > 0) {
           setRect(r);
-          el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
           return;
         }
       }
       setRect(null);
     };
 
+    // Cuộn phần tử vào tâm nhìn êm ái
+    const targetEl = document.querySelector(currentStep.targetSelector);
+    if (targetEl) {
+      const preferred = currentStep.targetPosition || 'bottom';
+      const scrollBlock = preferred === 'bottom' ? 'start' : preferred === 'top' ? 'end' : 'center';
+      targetEl.scrollIntoView({ behavior: 'smooth', block: scrollBlock, inline: 'nearest' });
+    }
+
     updateRect();
-    const timeout = setTimeout(updateRect, 300);
-    return () => clearTimeout(timeout);
+    const t1 = setTimeout(updateRect, 100);
+    const t2 = setTimeout(updateRect, 350);
+    const t3 = setTimeout(updateRect, 650);
+
+    window.addEventListener('scroll', updateRect, true);
+    window.addEventListener('resize', updateRect);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      window.removeEventListener('scroll', updateRect, true);
+      window.removeEventListener('resize', updateRect);
+    };
   }, [isTourActive, currentStep, currentStepIndex]);
 
   if (!isTourActive || !config || !currentStep) return null;
 
-  // Tính toán vị trí Tooltip Card
+  // Tính toán vị trí Tooltip Card chuẩn xác, luôn vừa màn hình
   const getTooltipStyle = (): React.CSSProperties => {
-    const cardWidth = 380;
-    const cardHeight = 260;
-    const padding = 16;
+    const cardWidth = 430;
+    const cardHeight = 280;
+    const padding = 20;
 
     if (!rect) {
       // Nếu không tìm thấy target, đặt ở trung tâm
@@ -98,13 +119,13 @@ export function SpotlightOverlay() {
       };
     }
 
-    const preferred = currentStep.targetPosition || 'right';
+    const preferred = currentStep.targetPosition || 'bottom';
 
-    // Ưu tiên vị trí bên phải (Right) - thường dùng cho Sidebar
+    // 1. Bên phải (Right) - thường dùng cho Sidebar
     if (preferred === 'right' && rect.right + cardWidth + padding < windowSize.width) {
       const top = Math.max(
         padding,
-        Math.min(windowSize.height - cardHeight - padding, rect.top + rect.height / 2 - cardHeight / 3)
+        Math.min(windowSize.height - cardHeight - padding, rect.top + rect.height / 2 - cardHeight / 2)
       );
       return {
         top: `${top}px`,
@@ -112,7 +133,7 @@ export function SpotlightOverlay() {
       };
     }
 
-    // Ưu tiên vị trí bên dưới (Bottom)
+    // 2. Bên dưới (Bottom)
     if (preferred === 'bottom' && rect.bottom + cardHeight + padding < windowSize.height) {
       const left = Math.max(
         padding,
@@ -124,7 +145,7 @@ export function SpotlightOverlay() {
       };
     }
 
-    // Ưu tiên vị trí bên trên (Top)
+    // 3. Bên trên (Top)
     if (rect.top - cardHeight - padding > 0) {
       const left = Math.max(
         padding,
@@ -136,6 +157,14 @@ export function SpotlightOverlay() {
       };
     }
 
+    // 4. Nếu bên dưới vẫn còn chỗ tương đối
+    if (rect.bottom + cardHeight + padding < windowSize.height) {
+      return {
+        top: `${rect.bottom + padding}px`,
+        left: `${Math.max(padding, Math.min(windowSize.width - cardWidth - padding, rect.left))}px`,
+      };
+    }
+
     // Vị trí mặc định thông minh: đặt ở góc đối diện target
     return {
       top: rect.top > windowSize.height / 2 ? `${padding * 2}px` : `${windowSize.height - cardHeight - padding}px`,
@@ -143,7 +172,7 @@ export function SpotlightOverlay() {
     };
   };
 
-  const pad = 6;
+  const pad = 10;
   const spotX = rect ? Math.max(0, rect.left - pad) : 0;
   const spotY = rect ? Math.max(0, rect.top - pad) : 0;
   const spotW = rect ? rect.width + pad * 2 : 0;
@@ -155,6 +184,9 @@ export function SpotlightOverlay() {
     }
     nextStep();
   };
+
+  // Chỉ hiện nút hành động nếu route khác với URL hiện tại
+  const isDifferentRoute = currentStep.actionRoute && currentStep.actionRoute !== location.pathname;
 
   return (
     <>
@@ -175,8 +207,8 @@ export function SpotlightOverlay() {
                   y={spotY}
                   width={spotW}
                   height={spotH}
-                  rx="10"
-                  ry="10"
+                  rx="16"
+                  ry="16"
                   fill="black"
                 />
               )}
@@ -187,7 +219,7 @@ export function SpotlightOverlay() {
             y="0"
             width={windowSize.width}
             height={windowSize.height}
-            fill="rgba(11, 17, 32, 0.76)"
+            fill="rgba(15, 23, 42, 0.22)"
             mask="url(#spotlight-mask)"
           />
         </svg>
@@ -214,16 +246,21 @@ export function SpotlightOverlay() {
         className="ob-tooltip-card"
         style={getTooltipStyle()}
       >
-        <div className="flex items-center justify-between">
-          <span className="ob-tooltip-badge">
-            <Sparkles className="size-3" />
-            {currentStep.badge} · Bước {currentStepIndex + 1}/{totalSteps}
-          </span>
+        <div className="ob-tooltip-header">
+          <div className="ob-tooltip-badge">
+            <Sparkles className="size-3.5 text-indigo-600 shrink-0" />
+            <span>{currentStep.badge}</span>
+            <span className="ob-tooltip-badge-sep">·</span>
+            <span className="ob-tooltip-badge-step">
+              Bước {currentStepIndex + 1}/{totalSteps}
+            </span>
+          </div>
           <button
             type="button"
             onClick={skipTour}
-            aria-label="Bỏ qua hướng dẫn"
-            className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+            aria-label="Đóng hướng dẫn tân thủ (Esc)"
+            title="Đóng hướng dẫn (Esc)"
+            className="ob-tooltip-close"
           >
             <X className="size-4" />
           </button>
@@ -234,42 +271,62 @@ export function SpotlightOverlay() {
 
         {currentStep.tips && (
           <div className="ob-tooltip-tips">
-            <Lightbulb className="size-4 shrink-0 text-amber-500 mt-0.5" />
-            <span>{currentStep.tips}</span>
+            <div className="ob-tooltip-tips-icon">
+              <Lightbulb className="size-4 text-amber-600 shrink-0" />
+            </div>
+            <div className="ob-tooltip-tips-text">{currentStep.tips}</div>
           </div>
         )}
 
         <div className="ob-tooltip-footer">
-          {/* Progress dots */}
-          <div className="ob-tooltip-dots">
-            {config.steps.map((_, i) => (
-              <span
-                key={i}
-                className={`ob-dot ${i === currentStepIndex ? 'active' : ''}`}
-              />
-            ))}
+          {/* Progress dots với khả năng chuyển bước nhanh */}
+          <div className="ob-tooltip-progress-group">
+            <div className="ob-tooltip-dots">
+              {config.steps.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => goToStep(i)}
+                  className={`ob-dot ${i === currentStepIndex ? 'active' : i < currentStepIndex ? 'passed' : ''}`}
+                  aria-label={`Chuyển đến bước ${i + 1}`}
+                  title={`Bước ${i + 1}`}
+                />
+              ))}
+            </div>
+            <span className="ob-step-counter-text">
+              {currentStepIndex + 1} / {totalSteps}
+            </span>
           </div>
 
           {/* Action buttons */}
           <div className="ob-tooltip-actions">
-            {currentStepIndex > 0 && (
+            {currentStepIndex === 0 ? (
+              <button
+                type="button"
+                onClick={skipTour}
+                className="ob-btn ob-btn-ghost text-xs"
+              >
+                Bỏ qua
+              </button>
+            ) : (
               <button
                 type="button"
                 onClick={prevStep}
                 className="ob-btn ob-btn-ghost text-xs"
               >
                 <ArrowLeft className="size-3.5" />
-                Trước
+                Quay lại
               </button>
             )}
 
-            {currentStep.actionRoute && (
+            {isDifferentRoute && (
               <button
                 type="button"
                 onClick={handleAction}
                 className="ob-btn ob-btn-outline text-xs"
               >
-                {currentStep.actionText ?? 'Khám phá'}
+                <span>{currentStep.actionText ?? 'Khám phá'}</span>
+                <ExternalLink className="size-3 text-slate-400" />
               </button>
             )}
 
@@ -284,7 +341,7 @@ export function SpotlightOverlay() {
                 </>
               ) : (
                 <>
-                  <CheckCircle2 className="size-3.5" /> Hoàn tất
+                  <CheckCircle2 className="size-3.5" /> Bắt đầu ngay
                 </>
               )}
             </button>

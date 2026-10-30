@@ -23,9 +23,8 @@ export const showsProgress = (course: PulseCourseSummary) =>
 /** Khóa vượt trần doanh nghiệp đặt cho phòng ban không hiện trong danh sách khóa của nhân viên. */
 export const withinCeiling = (courses: PulseCourseSummary[]) => courses.filter((c) => c.zone !== 'ABOVE_CEILING');
 
-export function courseStatusText(course: PulseCourseSummary, courses: PulseCourseSummary[], reviewerName?: string | null, departmentName?: string | null): string {
-  const reviewer = reviewerName ?? 'Người chấm';
-  const modules = course.moduleCount;
+export function courseStatusText(course: PulseCourseSummary, courses: PulseCourseSummary[], _reviewerName?: string | null, departmentName?: string | null): string {
+    const modules = course.moduleCount;
   const prior = courses.find((c) => c.categoryId === course.categoryId && c.tier === course.tier - 1);
   const optional = course.zone === 'OPTIONAL' ? 'Tùy chọn: cao hơn mức vị trí yêu cầu nhưng nằm trong trần của phòng ban. ' : '';
   switch (course.slotStatus) {
@@ -38,7 +37,7 @@ export function courseStatusText(course: PulseCourseSummary, courses: PulseCours
     case 'PRE_ASSESSMENT':
       return `${optional}Đạt: khóa được công nhận và bạn lên khóa tiếp theo. Chưa đạt: học khóa này rồi làm bài cuối khóa.`;
     case 'PRE_REVIEW':
-      return `Đã nộp bài đánh giá trước khi học ngày ${formatDate(course.preAssessment?.submittedAt)}. ${reviewer} chấm cùng bản ghi màn hình, camera và micro.`;
+      return `Đã nộp bài đánh giá trước khi học ngày ${formatDate(course.preAssessment?.submittedAt)}. Đang chờ Mentor chấm điểm.`;
     case 'TO_LEARN':
       return course.preStatus === 'NOT_YET'
         ? `Bài đánh giá trước khi học ngày ${formatDate(course.preAssessment?.submittedAt)} chưa đạt. Học ${modules} mô-đun rồi làm bài cuối khóa.`
@@ -46,13 +45,13 @@ export function courseStatusText(course: PulseCourseSummary, courses: PulseCours
     case 'IN_PROGRESS':
       return `${optional}Đã qua ${course.modulesPassed}/${modules} mô-đun.`;
     case 'FINAL_READY':
-      return `Đã học hết ${modules} mô-đun. Bài cuối khóa được ghi hình màn hình, camera và micro để ${reviewer} chấm.`;
+      return `Đã học hết ${modules} mô-đun. Bài cuối khóa được ghi hình màn hình, camera và micro để Mentor chấm điểm.`;
     case 'IN_REVIEW':
-      return `Bài cuối khóa đang chờ ${reviewer} chấm.`;
+      return `Bài cuối khóa đang chờ Mentor chấm điểm.`;
     case 'RETRY_WAIT':
       return 'Lần nộp đầu chưa đạt. Xem nhận xét và chờ mở lần nộp cuối.';
     case 'NEEDS_SUPPORT':
-      return 'Quản lý sẽ sắp xếp hỗ trợ trước khi lộ trình tiếp tục.';
+      return 'Người hướng dẫn sẽ sắp xếp hỗ trợ trước khi lộ trình tiếp tục.';
     case 'SEAT_NEEDED':
       return 'Cần học khóa này. Cấp độ có phí cần suất học do chủ doanh nghiệp phân bổ; bạn xem trước được đề cương.';
     case 'AFTER_PRIOR_LEVEL':

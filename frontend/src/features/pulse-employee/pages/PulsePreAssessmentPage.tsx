@@ -98,7 +98,7 @@ function PreAssessmentStatus({ data }: { data: PulsePreAssessment }) {
         </p>
         <div className="pu-row">
           {status === 'NOT_YET' && <PuLink to={PULSE_PATHS.course(course.courseId)}>Bắt đầu học →</PuLink>}
-          <PuLink to={PULSE_PATHS.today} kind={status === 'NOT_YET' ? 'outline' : 'primary'}>Về trang Hôm nay</PuLink>
+          <PuLink to={PULSE_PATHS.today} kind={status === 'NOT_YET' ? 'outline' : 'primary'}>Về trang Tổng quan</PuLink>
           <PuLink to={PULSE_PATHS.path} kind="outline">Xem lộ trình</PuLink>
         </div>
       </section>

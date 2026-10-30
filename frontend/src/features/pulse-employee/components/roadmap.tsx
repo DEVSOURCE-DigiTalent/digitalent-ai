@@ -1,10 +1,19 @@
 import { Link } from 'react-router-dom';
-import { AlertTriangle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Lock, ShieldCheck } from 'lucide-react';
 import type { PulseCourseSummary, PulseDomain, PulseOverview } from '@/services/pulse.service';
 import { courseLabel, courseStatusText, courseTone, showsProgress } from '../lib/course-state';
 import { capNote, levelName } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 import { Bar, PuLink } from './ui';
+
+export function toSentenceCase(str: string): string {
+  if (!str) return '';
+  const s = str.trim();
+  if (s === s.toUpperCase() && s.length > 3) {
+    return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+  }
+  return s;
+}
 
 /** Ba chấm cấp độ: ●○○ Cơ bản, ●●○ Trung cấp, ●●● Nâng cao. */
 export function LevelDots({ level }: { level: number }) {
@@ -23,7 +32,17 @@ const shortCode = (domain: PulseDomain, courses: PulseCourseSummary[]) =>
  * (Cơ bản → min(mục tiêu vị trí, trần phòng ban)). Chỉ khóa bắt buộc: khóa tùy chọn nằm ở danh sách khóa bên dưới, khóa vượt
  * trần không hiện. Chỉ là kế hoạch — không có tiến độ hay đạt / chưa đạt.
  */
-export function RoadmapPlan({ overview, variant = 'regular', caption }: { overview: PulseOverview; variant?: 'regular' | 'compact'; caption: string }) {
+export function RoadmapPlan({
+  overview,
+  variant = 'regular',
+  caption,
+  onSelectCourse,
+}: {
+  overview: PulseOverview;
+  variant?: 'regular' | 'compact';
+  caption: string;
+  onSelectCourse?: (course: PulseCourseSummary) => void;
+}) {
   const domains = overview.domains.filter((d) => d.pathTop > 0);
   return (
     <div className="pu-plan-scroll">
@@ -46,13 +65,23 @@ export function RoadmapPlan({ overview, variant = 'regular', caption }: { overvi
                 <th scope="row">
                   <span className="pu-plan-domain">
                     <b>{shortCode(domain, overview.courses)}</b>
-                    <span>{domain.name}</span>
+                    <span>{toSentenceCase(domain.name)}</span>
                   </span>
                 </th>
                 {row.map((course, index) => (
                   <td key={index}>
-                    {course ? <PlanCell course={course} domain={domain} joined={Boolean(row[index + 1])} /> : (
-                      <span className="pu-plan-empty"><span className="sr-only">Không có khóa trong lộ trình</span></span>
+                    {course ? (
+                      <PlanCell
+                        course={course}
+                        domain={domain}
+                        joined={Boolean(row[index + 1])}
+                        onSelectCourse={onSelectCourse}
+                      />
+                    ) : (
+                      <div className="pu-plan-empty" aria-label="Không có khóa trong lộ trình">
+                        <span className="sr-only">Không có khóa trong lộ trình</span>
+                        <span className="pu-plan-empty-mark" aria-hidden>—</span>
+                      </div>
                     )}
                   </td>
                 ))}
@@ -65,15 +94,62 @@ export function RoadmapPlan({ overview, variant = 'regular', caption }: { overvi
   );
 }
 
-function PlanCell({ course, domain, joined }: { course: PulseCourseSummary; domain: PulseDomain; joined: boolean }) {
+function PlanCell({
+  course,
+  domain,
+  joined,
+  onSelectCourse,
+}: {
+  course: PulseCourseSummary;
+  domain: PulseDomain;
+  joined: boolean;
+  onSelectCourse?: (course: PulseCourseSummary) => void;
+}) {
   const tag = course.tier !== domain.pathTop ? null : domain.pathTop < domain.target ? 'Giới hạn khóa' : 'Mục tiêu';
   return (
-    <span className={`pu-plan-course lv${course.tier}${joined ? ' joined' : ''}`}>
+    <span
+      className={`pu-plan-course lv${course.tier}${joined ? ' joined' : ''}`}
+      style={onSelectCourse ? { cursor: 'pointer' } : undefined}
+      onClick={onSelectCourse ? () => onSelectCourse(course) : undefined}
+      role={onSelectCourse ? 'button' : undefined}
+      tabIndex={onSelectCourse ? 0 : undefined}
+      title={onSelectCourse ? 'Bấm để xem nhanh đề cương & điều kiện miễn học' : undefined}
+      onKeyDown={
+        onSelectCourse
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelectCourse(course);
+              }
+            }
+          : undefined
+      }
+    >
       <b>
-        {course.code}
-        {tag && <span className="pu-plan-goal">{tag}</span>}
+        <span className="pu-plan-code">{course.code}</span>
+        {tag && (
+          <span className={`pu-plan-goal ${tag === 'Giới hạn khóa' ? 'capped' : 'target'}`}>
+            {tag === 'Giới hạn khóa' && <Lock size={10} style={{ display: 'inline', marginRight: 3, verticalAlign: -1 }} />}
+            {tag}
+          </span>
+        )}
       </b>
-      <span><Link to={PULSE_PATHS.course(course.courseId)}>{course.title}</Link></span>
+      <span>
+        {onSelectCourse ? (
+          <button
+            type="button"
+            className="pu-plan-course-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectCourse(course);
+            }}
+          >
+            {toSentenceCase(course.title)}
+          </button>
+        ) : (
+          <Link to={PULSE_PATHS.course(course.courseId)}>{toSentenceCase(course.title)}</Link>
+        )}
+      </span>
     </span>
   );
 }
@@ -124,7 +200,15 @@ export function AssessFirstNote() {
 }
 
 /** Một khóa trong danh sách lĩnh vực: cấp độ, tên, trạng thái, % đã học và nút hành động. */
-export function CourseRow({ course, overview }: { course: PulseCourseSummary; overview: PulseOverview }) {
+export function CourseRow({
+  course,
+  overview,
+  onSelectCourse,
+}: {
+  course: PulseCourseSummary;
+  overview: PulseOverview;
+  onSelectCourse?: (course: PulseCourseSummary) => void;
+}) {
   return (
     <div className={`pu-course-row${course.zone === 'OPTIONAL' ? ' optional' : ''}`}>
       <span className="pu-course-level">
@@ -134,7 +218,18 @@ export function CourseRow({ course, overview }: { course: PulseCourseSummary; ov
       <div className="pu-course-main">
         <div className="pu-course-name">
           <span>{course.code}</span>
-          <Link to={PULSE_PATHS.course(course.courseId)}>{course.title}</Link>
+          {onSelectCourse ? (
+            <button
+              type="button"
+              className="pu-plan-course-btn"
+              onClick={() => onSelectCourse(course)}
+              title="Bấm để xem nhanh đề cương"
+            >
+              {toSentenceCase(course.title)}
+            </button>
+          ) : (
+            <Link to={PULSE_PATHS.course(course.courseId)}>{toSentenceCase(course.title)}</Link>
+          )}
           <StatePill course={course} />
         </div>
         {course.slotStatus === 'PRE_ASSESSMENT' && <AssessFirstNote />}
@@ -157,10 +252,15 @@ export function CapNote({ domain, overview }: { domain: PulseDomain; overview: P
   const note = capNote(domain, overview.person.positionName, overview.person.departmentName);
   if (!note) return null;
   return (
-    <p className="pu-cap-note">
-      <AlertTriangle size={16} aria-hidden />
-      <span>{note}</span>
-    </p>
+    <div className="pu-cap-alert" role="status">
+      <div className="pu-cap-alert-icon" aria-hidden="true">
+        <AlertTriangle size={18} />
+      </div>
+      <div className="pu-cap-alert-content">
+        <strong className="pu-cap-alert-title">Giới hạn trần năng lực của phòng ban</strong>
+        <p className="pu-cap-alert-desc">{note}</p>
+      </div>
+    </div>
   );
 }
 

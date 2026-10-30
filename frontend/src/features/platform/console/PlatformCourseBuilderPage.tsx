@@ -4,13 +4,19 @@ import { toast } from 'sonner';
 import { useCatalogCourse, useCatalogVersions, useCourseEdit, useCreateDraft } from '@/hooks/use-platform-catalog';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { platformCatalogService, type CatalogCourseDetail } from '@/services/platform-catalog.service';
-import { Footer, LoadError, Loading, PageHead, Pill } from '../components/pulse-ui';
+import { Footer, LoadError, Loading, Pill } from '../components/pulse-ui';
 import { CHANGE_KIND, LEVEL_NAMES, errorMessage, formatMoney } from '../components/pulse-format';
 import type { CourseEdit } from '../builder/builder-types';
 import { CourseInfoForm } from '../builder/CourseInfoForm';
 import { FinalEditor } from '../builder/FinalEditor';
 import { LearnerPreview } from '../builder/LearnerPreview';
 import { ModuleEditor } from '../builder/ModuleEditor';
+import {
+  ArrowLeft,
+  Eye,
+  Maximize2,
+  Minimize2,
+} from 'lucide-react';
 
 type Section = 'info' | 'final' | number;
 
@@ -65,35 +71,71 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
 
   return (
     <>
-      <PageHead
-        eyebrow={`${status} · ${course.changeKind === 'NEW' ? 'khóa mới' : course.code}`}
-        title={course.title || 'Khóa học mới'}
-        description={`${course.frameworkName} · ${course.domainName} · ${course.levelName}`}
-        actions={
-          <>
-            <Link className="btn btn-outline" to={`/platform/versions/${course.versionNo}`}>
-              ← Phiên bản v{course.versionNo}
+      <div className="pa-page-header">
+        <div className="pa-row-between" style={{ alignItems: 'flex-start' }}>
+          <div>
+            <div className="pa-header-eyebrow">
+              <span className="pa-eyebrow-dot" />
+              QUẢN TRỊ NỀN TẢNG / STUDIO BIÊN SOẠN KHÓA HỌC · {status}
+            </div>
+            <h1 className="pa-header-title">{course.title || 'Khóa học mới'}</h1>
+            <p className="pa-header-subtitle">
+              {course.frameworkName} · {course.domainName} · {course.levelName} · Mã học phần <strong>{course.code}</strong>
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <Link
+              className="btn btn-outline"
+              to={`/platform/versions/${course.versionNo}`}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            >
+              <ArrowLeft size={15} />
+              Phiên bản v{course.versionNo}
             </Link>
             <button
               type="button"
               className={`btn ${showInspector ? 'btn-outline' : 'btn-light'}`}
               onClick={() => setShowInspector((v) => !v)}
               title="Bật/tắt thanh thông số & chuẩn TT02"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
+              {showInspector ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
               {showInspector ? 'Chế độ tập trung (Zen)' : 'Hiện bảng thông số'}
             </button>
-            <button type="button" className="btn btn-outline" onClick={() => setPreview(true)} disabled={course.modules.length === 0}>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => setPreview(true)}
+              disabled={course.modules.length === 0}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            >
+              <Eye size={15} />
               Xem như nhân viên
             </button>
-          </>
-        }
-      />
+          </div>
+        </div>
+      </div>
+
       {!course.editable && <ReadOnlyBar course={course} />}
       {editable && (
-        <p className="pa-save-line" aria-live="polite">
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '8px 16px',
+            borderRadius: 8,
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            marginBottom: 16,
+            fontSize: 12,
+            color: '#475569',
+          }}
+          aria-live="polite"
+        >
           {kind && <Pill tone={kind.tone}>{kind.label}</Pill>}
-          <span>{courseEdit.isPending ? 'Đang lưu…' : `Mọi thay đổi được lưu ngay vào bản nháp v${course.versionNo}.`}</span>
-        </p>
+          <span>{courseEdit.isPending ? 'Đang tự động lưu…' : `Mọi thay đổi được tự động lưu ngay vào bản nháp v${course.versionNo}.`}</span>
+        </div>
       )}
       <div className={`pa-builder ${showInspector ? '' : 'no-inspector'}`}>
         <nav className="pa-outline" aria-label="Cấu trúc khóa học">

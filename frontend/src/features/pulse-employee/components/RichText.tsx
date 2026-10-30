@@ -13,8 +13,14 @@ const VOID = new Set(['br', 'hr']);
 
 const looksLikeHtml = (body: string) => /<\s*(p|ul|ol|li|h[1-6]|strong|em|table|div|br)\b[^>]*>/i.test(body);
 
+/** Chuẩn hóa dấu câu tiếng Việt: loại bỏ khoảng trắng thừa đứng trước dấu câu (ví dụ: 'bảng tính , ô là' -> 'bảng tính, ô là') */
+export function sanitizePunctuation(text: string): string {
+  if (!text) return '';
+  return text.replace(/\s+([,.;:?!])/g, '$1');
+}
+
 function renderNode(node: Node, key: number): ReactNode {
-  if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+  if (node.nodeType === Node.TEXT_NODE) return sanitizePunctuation(node.textContent ?? '');
   if (node.nodeType !== Node.ELEMENT_NODE) return null;
   const element = node as Element;
   const tag = element.tagName.toLowerCase();
@@ -34,7 +40,8 @@ function renderHtml(body: string): ReactNode {
 
 /** **đậm** trong một dòng Markdown. */
 function inline(text: string): ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  const clean = sanitizePunctuation(text);
+  const parts = clean.split(/(\*\*[^*]+\*\*)/g);
   return parts.map((part, index) =>
     part.startsWith('**') && part.endsWith('**') && part.length > 4 ? <strong key={index}>{part.slice(2, -2)}</strong> : part,
   );
@@ -107,5 +114,6 @@ export function RichText({ body }: { body: string | null | undefined }) {
   if (!body?.trim()) {
     return <p className="pu-prose">Trang này chưa có nội dung văn bản.</p>;
   }
-  return <div className="pu-prose">{looksLikeHtml(body) ? renderHtml(body) : renderMarkdown(body)}</div>;
+  const cleanBody = sanitizePunctuation(body);
+  return <div className="pu-prose">{looksLikeHtml(cleanBody) ? renderHtml(cleanBody) : renderMarkdown(cleanBody)}</div>;
 }

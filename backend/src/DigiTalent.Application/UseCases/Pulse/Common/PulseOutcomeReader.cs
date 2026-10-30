@@ -166,6 +166,31 @@ public class PulseOutcomeReader
                 OrganizationName = snapshot.OrganizationName,
             }));
 
+        var handledEnrollmentIds = pulseEnrollmentIds
+            .Concat(certificates.Select(c => c.EnrollmentId))
+            .ToHashSet();
+
+        foreach (var c in snapshot.Courses.Where(c => c.Approved && c.Enrollment != null && !handledEnrollmentIds.Contains(c.Enrollment.Id)))
+        {
+            var label = courseLabel.GetValueOrDefault(c.Course.Code);
+            outcomes.Add(new PulseOutcomeDto
+            {
+                Id = $"course-{c.Enrollment!.Id}",
+                Kind = PulseOutcomeKind.Course,
+                Title = c.Course.Title,
+                Subtitle = label.Name == null ? null : $"{label.Name} · {PulseRules.LevelName(label.Tier)}",
+                Level = label.Name == null ? null : label.Tier,
+                IssuedAt = c.Enrollment.CompletedAt ?? c.Enrollment.UpdatedAt,
+                Source = "Khóa học hoàn thành trong chương trình đào tạo doanh nghiệp",
+                Reference = $"{c.Course.Code}-{c.Enrollment.Id.ToString("N")[..8].ToUpperInvariant()}",
+                ReviewerName = snapshot.Reviewer?.Name,
+                ReviewNote = "Hoàn thành và công nhận năng lực theo lộ trình vị trí.",
+                HolderName = employee.FullName,
+                OrganizationName = snapshot.OrganizationName,
+                CourseId = c.Course.CourseId,
+            });
+        }
+
         var tasks = await (
                 from evaluation in _context.TaskEvaluations.AsNoTracking()
                 join submission in _context.TaskSubmissions.AsNoTracking() on evaluation.TaskSubmissionId equals submission.Id

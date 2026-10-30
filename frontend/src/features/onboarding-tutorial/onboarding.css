@@ -1,8 +1,8 @@
 /* ── Onboarding & Tutorial Styles ─────────────────────────────── */
 
 :root {
-  --ob-accent: #304bdf;
-  --ob-accent-soft: rgba(48, 75, 223, 0.12);
+  --ob-accent: #4f46e5;
+  --ob-accent-soft: rgba(79, 70, 229, 0.12);
   --ob-coral: #ef735c;
   --ob-coral-soft: rgba(239, 115, 92, 0.12);
   --ob-surface: #ffffff;
@@ -10,10 +10,10 @@
   --ob-border: #e2e8f0;
   --ob-ink: #0f172a;
   --ob-muted: #64748b;
-  --ob-glow: rgba(48, 75, 223, 0.45);
+  --ob-glow: rgba(79, 70, 229, 0.45);
 }
 
-/* ── 1. Spotlight Overlay ── */
+/* ── 1. Spotlight Overlay ────────────────────────────────────── */
 .ob-spotlight-backdrop {
   position: fixed;
   inset: 0;
@@ -34,32 +34,33 @@
   position: fixed;
   pointer-events: none;
   z-index: 9999;
-  border-radius: 12px;
-  box-shadow: 0 0 0 3px var(--ob-accent), 0 0 24px var(--ob-glow);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  animation: ob-pulse-ring 2.2s infinite ease-in-out;
+  border-radius: 16px;
+  box-shadow: 0 0 0 2.5px #4f46e5, 0 0 0 6px rgba(79, 70, 229, 0.18), 0 0 28px rgba(79, 70, 229, 0.45);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: ob-pulse-ring 2.4s infinite ease-in-out;
 }
 
 @keyframes ob-pulse-ring {
   0%, 100% {
-    box-shadow: 0 0 0 3px var(--ob-accent), 0 0 16px var(--ob-glow);
+    box-shadow: 0 0 0 2px #4f46e5, 0 0 0 5px rgba(79, 70, 229, 0.15), 0 0 20px rgba(79, 70, 229, 0.35);
   }
   50% {
-    box-shadow: 0 0 0 5px var(--ob-accent), 0 0 28px rgba(48, 75, 223, 0.65);
+    box-shadow: 0 0 0 3px #6366f1, 0 0 0 8px rgba(99, 102, 241, 0.25), 0 0 32px rgba(99, 102, 241, 0.55);
   }
 }
 
-/* ── 2. Tooltip Card ── */
+/* ── 2. Tooltip Card (Executive Corporate Standard) ───────────── */
 .ob-tooltip-card {
   position: fixed;
   z-index: 10000;
-  width: 380px;
+  width: 430px;
   max-width: calc(100vw - 32px);
-  background: var(--ob-surface);
-  color: var(--ob-ink);
-  border-radius: 18px;
-  padding: 22px 24px;
-  box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(15, 23, 42, 0.08);
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 20px;
+  padding: 24px 26px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(15, 23, 42, 0.05);
   font-family: inherit;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   animation: ob-card-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -76,74 +77,139 @@
   }
 }
 
+.ob-tooltip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
 .ob-tooltip-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
+  padding: 4px 11px;
   border-radius: 999px;
-  background: var(--ob-accent-soft);
-  color: var(--ob-accent);
-  font-size: 11px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 11.5px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
+  border: 1px solid #e0e7ff;
+}
+
+.ob-tooltip-badge-sep {
+  color: #a5b4fc;
+}
+
+.ob-tooltip-badge-step {
+  color: #3730a3;
+  font-weight: 800;
+}
+
+.ob-tooltip-close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ob-tooltip-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
 .ob-tooltip-title {
-  margin: 10px 0 6px;
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--ob-ink);
+  margin: 0 0 8px;
+  font-size: 17.5px;
+  font-weight: 800;
+  color: #0f172a;
   line-height: 1.35;
+  letter-spacing: -0.01em;
 }
 
 .ob-tooltip-desc {
   font-size: 13.5px;
-  line-height: 1.55;
-  color: var(--ob-muted);
-  margin-bottom: 12px;
+  line-height: 1.6;
+  color: #475569;
+  margin: 0 0 16px;
 }
 
 .ob-tooltip-tips {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  padding: 8px 12px;
-  background: #f8fafc;
-  border: 1px dashed #cbd5e1;
-  border-radius: 10px;
-  font-size: 12px;
-  color: #475569;
-  margin-bottom: 16px;
+  gap: 10px;
+  padding: 11px 14px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #92400e;
+  margin-bottom: 18px;
+}
+
+.ob-tooltip-tips-icon {
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.ob-tooltip-tips-text {
+  flex: 1;
 }
 
 .ob-tooltip-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 14px;
-  border-top: 1px solid var(--ob-border);
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.ob-tooltip-progress-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .ob-tooltip-dots {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .ob-dot {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: #cbd5e1;
-  transition: all 0.2s ease;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ob-dot:hover {
+  background: #94a3b8;
+}
+.ob-dot.passed {
+  background: #818cf8;
+}
+.ob-dot.active {
+  width: 22px;
+  border-radius: 999px;
+  background: #4f46e5;
+  cursor: default;
 }
 
-.ob-dot.active {
-  width: 20px;
-  border-radius: 999px;
-  background: var(--ob-accent);
+.ob-step-counter-text {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #64748b;
 }
 
 .ob-tooltip-actions {
@@ -157,10 +223,10 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 7px 14px;
+  padding: 8px 16px;
   border-radius: 10px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
   border: none;
@@ -169,34 +235,34 @@
 
 .ob-btn-ghost {
   background: transparent;
-  color: var(--ob-muted);
+  color: #64748b;
 }
 .ob-btn-ghost:hover {
   background: #f1f5f9;
-  color: var(--ob-ink);
+  color: #0f172a;
 }
 
 .ob-btn-outline {
-  background: #fff;
-  border: 1px solid var(--ob-border);
-  color: var(--ob-ink);
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #1e293b;
 }
 .ob-btn-outline:hover {
   background: #f8fafc;
-  border-color: #cbd5e1;
+  border-color: #94a3b8;
 }
 
 .ob-btn-primary {
-  background: var(--ob-accent);
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(48, 75, 223, 0.25);
+  background: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
 }
 .ob-btn-primary:hover {
-  background: #253dc7;
+  background: #1e293b;
   transform: translateY(-1px);
 }
 
-/* ── 3. Gamified Checklist Widget ── */
+/* ── 3. Gamified Checklist Widget ────────────────────────────── */
 .ob-widget-container {
   position: fixed;
   bottom: 24px;
@@ -218,12 +284,12 @@
   box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.08);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 1px solid rgba(48, 75, 223, 0.15);
+  border: 1px solid rgba(79, 70, 229, 0.15);
 }
 
 .ob-pill-badge:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 30px -4px rgba(48, 75, 223, 0.25), 0 0 0 1px var(--ob-accent);
+  box-shadow: 0 14px 30px -4px rgba(79, 70, 229, 0.25), 0 0 0 1px var(--ob-accent);
 }
 
 .ob-pill-sparkle {
@@ -302,7 +368,7 @@
 
 .ob-checklist-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--ob-accent) 0%, #5d75f3 100%);
+  background: linear-gradient(90deg, var(--ob-accent) 0%, #6366f1 100%);
   border-radius: 999px;
   transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -389,7 +455,7 @@
   justify-content: space-between;
 }
 
-/* ── Contextual Beacon Pulse ── */
+/* ── Contextual Beacon Pulse ─────────────────────────────────── */
 .ob-beacon {
   position: relative;
   display: inline-flex;
