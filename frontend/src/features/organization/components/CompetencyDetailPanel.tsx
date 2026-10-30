@@ -76,7 +76,7 @@ export function CompetencyDetailPanel({
                   style={{
                     borderColor: 'var(--po-line)',
                     background:
-                      'linear-gradient(145deg, #fff, #f8faff)',
+                      'linear-gradient(145deg, #fff, #f6fbfa)',
                   }}
                 >
                   <div className="flex items-center justify-between mb-3">
@@ -89,7 +89,7 @@ export function CompetencyDetailPanel({
                     <span
                       className="rounded-lg px-2 py-1 text-[9px] font-extrabold"
                       style={{
-                        background: '#eef1ff',
+                        background: '#e8f6f4',
                         color: 'var(--po-accent)',
                       }}
                     >
@@ -162,7 +162,7 @@ export function CompetencyDetailPanel({
                   style={{
                     borderColor: 'var(--po-line)',
                     background:
-                      'linear-gradient(145deg, #fff, #f8faff)',
+                      'linear-gradient(145deg, #fff, #f6fbfa)',
                   }}
                 >
                   <span
@@ -239,7 +239,7 @@ export function CompetencyDetailPanel({
                     <span
                       className="rounded-lg px-2 py-0.5 text-[9px] font-extrabold"
                       style={{
-                        background: '#eef1ff',
+                        background: '#e8f6f4',
                         color: 'var(--po-accent)',
                       }}
                     >

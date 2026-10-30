@@ -99,10 +99,10 @@ export function MemberCard({ member, onClick, onResendInvite, isResending }: Mem
               onResendInvite(member);
             }}
             disabled={isResending}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50/80 hover:bg-blue-100 hover:border-blue-300 px-2.5 py-1 text-[11px] font-bold text-blue-700 transition-all hover:scale-102 active:scale-98 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-teal-200 bg-teal-50/80 hover:bg-teal-100 hover:border-teal-300 px-2.5 py-1 text-[11px] font-bold text-teal-700 transition-all hover:scale-102 active:scale-98 disabled:opacity-50"
             title="Gửi email mời kích hoạt tài khoản cho nhân viên này"
           >
-            <Mail className="size-3.5 text-blue-600" />
+            <Mail className="size-3.5 text-teal-600" />
             <span>{isResending ? 'Đang gửi...' : 'Gửi lời mời'}</span>
           </button>
         )}

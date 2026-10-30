@@ -19,7 +19,7 @@ export function CertificateCard({ title, employeeName, issueDate }: CertificateC
     >
       <span
         className="text-[10px] font-black uppercase tracking-[0.12em]"
-        style={{ color: '#62718d' }}
+        style={{ color: '#5f6e88' }}
       >
         DIGITAL AI / XÁC MINH
       </span>
@@ -34,7 +34,7 @@ export function CertificateCard({ title, employeeName, issueDate }: CertificateC
       </small>
       <em
         className="self-end text-[11px] font-[850] not-italic"
-        style={{ color: '#3448cf' }}
+        style={{ color: '#137b84' }}
       >
         Xem chứng nhận ↗
       </em>

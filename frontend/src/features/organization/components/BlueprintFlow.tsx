@@ -41,7 +41,7 @@ export function BlueprintFlow({ setup, setupCompleted }: BlueprintFlowProps) {
             >
               <b
                 className="grid size-[25px] shrink-0 place-items-center rounded-lg text-[10px] font-bold"
-                style={{ background: '#e9edff', color: '#3448cf' }}
+                style={{ background: '#e8f6f4', color: '#137b84' }}
               >
                 {tier.step}
               </b>

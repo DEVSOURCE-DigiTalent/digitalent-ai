@@ -179,7 +179,7 @@ export function DepartmentAudienceSelector({
           onClick={() => setMode('all')}
           className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all ${
             value.mode === 'all'
-              ? 'bg-white text-[#304bdf] shadow-xs font-bold'
+              ? 'bg-white text-[#137b84] shadow-xs font-bold'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -192,7 +192,7 @@ export function DepartmentAudienceSelector({
           onClick={() => setMode('departments')}
           className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all ${
             value.mode === 'departments'
-              ? 'bg-white text-[#304bdf] shadow-xs font-bold'
+              ? 'bg-white text-[#137b84] shadow-xs font-bold'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -205,7 +205,7 @@ export function DepartmentAudienceSelector({
           onClick={() => setMode('custom')}
           className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all ${
             value.mode === 'custom'
-              ? 'bg-white text-[#304bdf] shadow-xs font-bold'
+              ? 'bg-white text-[#137b84] shadow-xs font-bold'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -216,8 +216,8 @@ export function DepartmentAudienceSelector({
 
       {/* NỘI DUNG TỪNG TAB */}
       {value.mode === 'all' && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4 text-xs text-blue-950 flex items-start gap-3">
-          <Globe className="size-5 text-[#304bdf] shrink-0 mt-0.5" />
+        <div className="rounded-xl border border-teal-200 bg-teal-50/60 p-4 text-xs text-teal-950 flex items-start gap-3">
+          <Globe className="size-5 text-[#137b84] shrink-0 mt-0.5" />
           <div className="space-y-1">
             <strong className="block text-slate-900 font-bold">
               Gửi tới toàn bộ nhân sự trong doanh nghiệp
@@ -238,7 +238,7 @@ export function DepartmentAudienceSelector({
               <button
                 type="button"
                 onClick={selectAllDepartments}
-                className="text-[#304bdf] hover:underline font-medium"
+                className="text-[#137b84] hover:underline font-medium"
               >
                 Chọn tất cả
               </button>
@@ -278,12 +278,12 @@ export function DepartmentAudienceSelector({
                           e.preventDefault();
                           toggleDepartment(dept.id);
                         }}
-                        className="text-[#304bdf] shrink-0"
+                        className="text-[#137b84] shrink-0"
                       >
                         {isAllSelected ? (
-                          <CheckSquare className="size-4.5 text-[#304bdf]" />
+                          <CheckSquare className="size-4.5 text-[#137b84]" />
                         ) : isPartiallySelected ? (
-                          <MinusSquare className="size-4.5 text-[#304bdf]" />
+                          <MinusSquare className="size-4.5 text-[#137b84]" />
                         ) : (
                           <Square className="size-4.5 text-slate-300 group-hover:text-slate-400" />
                         )}
@@ -324,7 +324,7 @@ export function DepartmentAudienceSelector({
                               type="checkbox"
                               checked={isChecked}
                               onChange={() => toggleEmployee(emp.id, dept.id)}
-                              className="size-3.5 text-[#304bdf] rounded-sm focus:ring-[#304bdf]"
+                              className="size-3.5 text-[#137b84] rounded-sm focus:ring-[#137b84]"
                             />
                             <span className="font-medium text-slate-800">{emp.fullName}</span>
                             {emp.employeeCode && (
@@ -359,7 +359,7 @@ export function DepartmentAudienceSelector({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo tên, email hoặc mã nhân viên..."
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#304bdf]/30 focus:border-[#304bdf]"
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#137b84]/30 focus:border-[#137b84]"
             />
           </div>
 
@@ -388,7 +388,7 @@ export function DepartmentAudienceSelector({
                       type="checkbox"
                       checked={isChecked}
                       onChange={() => toggleEmployee(emp.id, emp.departmentId)}
-                      className="size-4 text-[#304bdf] rounded-sm focus:ring-[#304bdf]"
+                      className="size-4 text-[#137b84] rounded-sm focus:ring-[#137b84]"
                     />
                     <div className="min-w-0">
                       <div className="font-semibold text-slate-900 truncate">{emp.fullName}</div>
@@ -400,7 +400,7 @@ export function DepartmentAudienceSelector({
                   </div>
 
                   {isChecked && (
-                    <span className="shrink-0 text-[#304bdf] font-semibold text-[11px] flex items-center gap-1">
+                    <span className="shrink-0 text-[#137b84] font-semibold text-[11px] flex items-center gap-1">
                       <Check className="size-3.5" /> Đã chọn
                     </span>
                   )}
@@ -414,7 +414,7 @@ export function DepartmentAudienceSelector({
       {/* LIVE COUNTER BAR: HIỂN THỊ SỐ LƯỢNG NGƯỜI ĐÃ CHỌN */}
       <div className="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs">
         <span className="text-slate-600 flex items-center gap-1.5">
-          <User className="size-3.5 text-[#304bdf]" />
+          <User className="size-3.5 text-[#137b84]" />
           Đã chọn: <strong className="text-slate-900 font-bold">{totalSelectedCount}</strong> nhân sự
           {value.mode === 'departments' && value.departmentIds.length > 0 && (
             <span>(từ {value.departmentIds.length} phòng ban)</span>
