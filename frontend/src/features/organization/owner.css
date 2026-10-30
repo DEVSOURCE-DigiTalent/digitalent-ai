@@ -54,9 +54,30 @@
 
 /* KPI tổng quan: viền trên màu như .pm-kpi. */
 .po-kpi {
-  padding: 19px 20px; border: 1px solid #e0e7f4; border-top: 3px solid var(--po-accent); border-radius: 18px;
-  background: #fff; box-shadow: 0 11px 28px rgba(29, 48, 102, .04);
+  padding: 19px 20px; border: 1px solid var(--po-line); border-top: 3px solid var(--po-accent); border-radius: 18px;
+  background: var(--po-surface); box-shadow: 0 11px 28px rgba(29, 48, 102, .04);
 }
+
+/*
+ * Giao diện tối: thay bảng màu gắn inline (PULSE_TOKENS) — cần !important vì biến inline thắng stylesheet.
+ * Chip trạng thái (xanh/đỏ/vàng nhạt) và nền nút xanh ngọc giữ nguyên, vẫn đọc tốt trên nền tối.
+ */
+html[data-theme='dark'] .po-owner {
+  --po-canvas: #0e171c !important;
+  --po-surface: #142228 !important;
+  --po-raised: #1a2c33 !important;
+  --po-ink: #e6eff0 !important;
+  --po-muted: #9bb0b5 !important;
+  --po-accent: #2f9d94 !important;
+  --po-accent-strong: #8fd8cf !important;
+  --po-line: rgba(184, 234, 220, .13) !important;
+  --po-soft: rgba(92, 194, 184, .13) !important;
+  --po-tint: rgba(92, 194, 184, .13) !important;
+  color: var(--po-ink);
+}
+html[data-theme='dark'] .po-owner .po-kpi,
+html[data-theme='dark'] .po-owner a[class*='rounded-[']:hover,
+html[data-theme='dark'] .po-owner .po-lift:hover { box-shadow: 0 16px 32px rgba(0, 0, 0, .28); }
 
 @media (prefers-reduced-motion: reduce) {
   .po-owner, .po-owner *, .po-owner-hero, .po-owner-hero img { animation: none !important; transition: none !important; }
