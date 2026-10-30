@@ -32,24 +32,6 @@
   color-scheme: light;
 }
 
-/* Pulse Owner sidebar — always light regardless of theme */
-.sidebar-pulse-owner {
-  --ent-sidebar: #fbfcff;
-  --ent-sidebar-fg: #172442;
-  --ent-sidebar-muted: #8495bb;
-  --ent-sidebar-hover: #eef1ff;
-  --ent-sidebar-active: #e8eeff;
-  --ent-sidebar-active-border: #ee8a72;
-  --ent-line: #dfe6f3;
-  --ent-accent: #3856db;
-  background: linear-gradient(180deg, #fff, #f9fbff);
-  border-right: 1px solid #d9e2f5;
-}
-
-.sidebar-pulse-owner a:hover > div {
-  transform: translateX(3px);
-}
-
 /* Font Enterprise */
 .ent-theme {
   font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
