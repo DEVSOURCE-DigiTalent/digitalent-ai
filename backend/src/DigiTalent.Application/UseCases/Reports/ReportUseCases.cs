@@ -79,9 +79,19 @@ public class GetDashboardUseCase : IUseCase<GetDashboardInput, DashboardDto>
             : new();
 
         var categories = await _context.CompetencyCategories.AsNoTracking()
+            .Where(cc => cc.OrganizationId == orgId)
             .OrderBy(cc => cc.SortOrder)
             .Select(cc => new { cc.Id, cc.Name, cc.SortOrder })
             .ToListAsync();
+
+        if (categories.Count == 0)
+        {
+            categories = await _context.CompetencyCategories.AsNoTracking()
+                .OrderBy(cc => cc.SortOrder)
+                .Take(6)
+                .Select(cc => new { cc.Id, cc.Name, cc.SortOrder })
+                .ToListAsync();
+        }
 
         var domains = categories.Select(cc =>
         {
