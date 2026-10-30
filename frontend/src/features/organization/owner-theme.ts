@@ -21,6 +21,3 @@ export const PULSE_TOKENS = {
   '--po-warm': '#e8a17f',
 } as CSSProperties;
 
-/** Nền trang: quầng xanh ngọc nhạt ở góc phải trên, như trang quản lý. */
-export const OWNER_CANVAS =
-  'radial-gradient(ellipse 760px 380px at 94% 0, color-mix(in srgb, #137b84 9%, transparent), transparent 70%), var(--po-canvas)';
