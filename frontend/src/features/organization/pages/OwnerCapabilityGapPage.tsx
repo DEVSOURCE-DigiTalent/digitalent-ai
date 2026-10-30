@@ -14,23 +14,10 @@ import { CapabilityGapSummary } from '../components/CapabilityGapSummary';
 import { CapabilityComparison } from '../components/CapabilityComparison';
 import { CapabilityLearningPath } from '../components/CapabilityLearningPath';
 import type { CalculateSkillGapBatchResult, SkillGapRunListItem } from '@/services/intelligence.service';
+import { PULSE_TOKENS } from '../owner-theme';
 
 type GroupBy = 'department' | 'position' | 'grade';
 
-const PULSE_TOKENS = {
-  '--po-canvas': '#f7f9fd',
-  '--po-surface': '#fff',
-  '--po-ink': '#172442',
-  '--po-muted': '#62718d',
-  '--po-accent': '#304bdf',
-  '--po-accent-strong': '#203bbf',
-  '--po-coral': '#ef735c',
-  '--po-lime': '#c6ec78',
-  '--po-line': '#dfe6f3',
-  '--po-soft': '#eef2ff',
-  '--po-tint': '#edf1ff',
-  '--po-warm': '#f1816b',
-} as React.CSSProperties;
 
 export function OwnerCapabilityGapPage() {
   const navigate = useNavigate();
@@ -80,11 +67,11 @@ export function OwnerCapabilityGapPage() {
 
   return (
     <div
-      className="-m-4 md:-m-6 min-h-screen"
+      className="po-owner -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background:
-          'radial-gradient(ellipse 760px 380px at 94% 0, color-mix(in srgb, #3856db 10%, transparent), transparent 70%), var(--po-canvas)',
+          'radial-gradient(ellipse 760px 380px at 94% 0, color-mix(in srgb, #137b84 10%, transparent), transparent 70%), var(--po-canvas)',
         fontFamily: 'Inter, "Segoe UI", Arial, sans-serif',
       }}
     >

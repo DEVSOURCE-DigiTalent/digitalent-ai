@@ -3,19 +3,7 @@ import { toast } from 'sonner';
 import { useCertificates } from '@/hooks/use-learning';
 import { useOrganizationOverview } from '@/hooks/use-organization';
 import { formatDate } from '@/lib/utils';
-
-const PULSE_TOKENS = {
-  '--po-canvas': '#f7f9fd',
-  '--po-surface': '#fff',
-  '--po-ink': '#172442',
-  '--po-muted': '#62718d',
-  '--po-accent': '#304bdf',
-  '--po-accent-strong': '#203bbf',
-  '--po-coral': '#ef735c',
-  '--po-line': '#dfe6f3',
-  '--po-soft': '#eef2ff',
-  '--po-tint': '#edf1ff',
-} as React.CSSProperties;
+import { PULSE_TOKENS } from '../owner-theme';
 
 export function OwnerCertificateDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -26,7 +14,7 @@ export function OwnerCertificateDetailPage() {
   if (!cert) {
     return (
       <div
-        className="-m-4 md:-m-6 min-h-screen"
+        className="po-owner -m-4 md:-m-6 min-h-screen"
         style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
       >
         <section className="px-4 md:px-6 pt-8 pb-2 mx-auto" style={{ maxWidth: 1220 }}>
@@ -63,12 +51,12 @@ export function OwnerCertificateDetailPage() {
 
   return (
     <div
-      className="-m-4 md:-m-6 min-h-screen"
+      className="po-owner -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
         backgroundImage:
-          'radial-gradient(ellipse 80% 55% at 50% 0%, #dce5ff 0%, transparent 65%)',
+          'radial-gradient(ellipse 80% 55% at 50% 0%, #cfe2e2 0%, transparent 65%)',
       }}
     >
       {/* ── Page header ── */}
@@ -140,7 +128,7 @@ export function OwnerCertificateDetailPage() {
             className="block"
             style={{
               fontSize: 'clamp(24px, 3vw, 37px)',
-              color: '#3448cf',
+              color: '#137b84',
             }}
           >
             {cert.employeeName}

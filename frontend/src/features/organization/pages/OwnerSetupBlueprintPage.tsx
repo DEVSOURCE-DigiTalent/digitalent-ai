@@ -8,21 +8,7 @@ import { BlueprintTierCard } from '../components/BlueprintTierCard';
 import { PositionMapping } from '../components/PositionMapping';
 import { CapabilityCeilingMatrix } from '../components/CapabilityCeilingMatrix';
 import { PositionReferenceMatrix } from '../components/PositionReferenceMatrix';
-
-const PULSE_TOKENS = {
-  '--po-canvas': '#f7f9fd',
-  '--po-surface': '#fff',
-  '--po-ink': '#172442',
-  '--po-muted': '#62718d',
-  '--po-accent': '#304bdf',
-  '--po-accent-strong': '#203bbf',
-  '--po-coral': '#ef735c',
-  '--po-lime': '#c6ec78',
-  '--po-line': '#dfe6f3',
-  '--po-soft': '#eef2ff',
-  '--po-tint': '#edf1ff',
-  '--po-warm': '#f1816b',
-} as React.CSSProperties;
+import { PULSE_TOKENS } from '../owner-theme';
 
 export function OwnerSetupBlueprintPage() {
   const { data: orgData, isLoading: orgLoading } = useOrganizationOverview();
@@ -64,7 +50,7 @@ export function OwnerSetupBlueprintPage() {
   if (isLoading) {
     return (
       <div
-        className="-m-4 md:-m-6 min-h-screen flex items-center justify-center"
+        className="po-owner -m-4 md:-m-6 min-h-screen flex items-center justify-center"
         style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
       >
         <p className="text-sm" style={{ color: 'var(--po-muted)' }}>
@@ -76,12 +62,12 @@ export function OwnerSetupBlueprintPage() {
 
   return (
     <div
-      className="-m-4 md:-m-6 min-h-screen"
+      className="po-owner -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
         backgroundImage:
-          'radial-gradient(ellipse 80% 55% at 50% 0%, #dce5ff 0%, transparent 65%)',
+          'radial-gradient(ellipse 80% 55% at 50% 0%, #cfe2e2 0%, transparent 65%)',
       }}
     >
       {/* ── Page header ── */}
@@ -139,15 +125,15 @@ export function OwnerSetupBlueprintPage() {
       {/* ── Content ── */}
       <div className="px-4 md:px-6 py-4 mx-auto" style={{ maxWidth: 1220 }}>
         {/* Ghi chú cơ chế - Dạng thu gọn / xổ ra theo yêu cầu */}
-        <details className="group mb-4 rounded-xl border border-blue-100 bg-blue-50/60 p-3.5 text-xs text-blue-900 transition-all [&_summary::-webkit-details-marker]:hidden">
+        <details className="group mb-4 rounded-xl border border-teal-100 bg-teal-50/60 p-3.5 text-xs text-teal-900 transition-all [&_summary::-webkit-details-marker]:hidden">
           <summary className="flex cursor-pointer items-center justify-between font-semibold select-none">
             <span className="flex items-center gap-2">
-              <span className="grid size-5 place-items-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold">ℹ️</span>
+              <span className="grid size-5 place-items-center rounded-full bg-teal-100 text-teal-700 text-xs font-bold">ℹ️</span>
               Ghi chú cơ chế: Phân cấp trần đào tạo & Chuẩn vị trí
             </span>
-            <span className="text-xs text-blue-600 font-bold group-open:rotate-180 transition-transform">▼</span>
+            <span className="text-xs text-teal-600 font-bold group-open:rotate-180 transition-transform">▼</span>
           </summary>
-          <p className="mt-2.5 text-xs leading-relaxed text-blue-800 pl-7 border-t border-blue-100/70 pt-2">
+          <p className="mt-2.5 text-xs leading-relaxed text-teal-800 pl-7 border-t border-teal-100/70 pt-2">
             Vị trí công việc xác định năng lực cần đạt của nhân viên. Doanh nghiệp và phòng ban thiết lập trần tối đa các khóa học được mở để kiểm soát nội dung và chi phí đào tạo.
           </p>
         </details>
@@ -259,7 +245,7 @@ export function OwnerSetupBlueprintPage() {
               className="mt-5 rounded-[13px] border p-[17px]"
               style={{
                 borderColor: 'var(--po-line)',
-                background: 'linear-gradient(145deg, #fff, #f8faff)',
+                background: 'linear-gradient(145deg, #fff, #f6fbfa)',
               }}
             >
               <strong className="text-sm block" style={{ color: 'var(--po-ink)' }}>
@@ -303,7 +289,7 @@ export function OwnerSetupBlueprintPage() {
                     style={{
                       borderColor: 'var(--po-line)',
                       color: 'var(--po-ink)',
-                      background: '#f8faff',
+                      background: '#f6fbfa',
                     }}
                   >
                     48 giờ
@@ -321,7 +307,7 @@ export function OwnerSetupBlueprintPage() {
                     style={{
                       borderColor: 'var(--po-line)',
                       color: 'var(--po-ink)',
-                      background: '#f8faff',
+                      background: '#f6fbfa',
                     }}
                   >
                     14 ngày
@@ -337,7 +323,7 @@ export function OwnerSetupBlueprintPage() {
                 style={{
                   background: 'var(--po-accent)',
                   color: '#fff',
-                  boxShadow: '0 9px 18px rgba(52,72,207,.17)',
+                  boxShadow: '0 9px 18px rgba(19,123,132,.17)',
                 }}
               >
                 <Settings className="size-4" />

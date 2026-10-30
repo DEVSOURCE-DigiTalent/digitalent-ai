@@ -9,21 +9,7 @@ import { useJobPositions } from '@/hooks/use-job-positions';
 import { useMembers } from '@/hooks/use-members';
 import { JOB_GRADES } from '@/lib/roles';
 import { JOB_GRADE_DEFAULT_NAMES } from '@/lib/terms';
-
-const PULSE_TOKENS = {
-  '--po-canvas': '#f7f9fd',
-  '--po-surface': '#fff',
-  '--po-ink': '#172442',
-  '--po-muted': '#62718d',
-  '--po-accent': '#304bdf',
-  '--po-accent-strong': '#203bbf',
-  '--po-coral': '#ef735c',
-  '--po-lime': '#c6ec78',
-  '--po-line': '#dfe6f3',
-  '--po-soft': '#eef2ff',
-  '--po-tint': '#edf1ff',
-  '--po-warm': '#f1816b',
-} as React.CSSProperties;
+import { PULSE_TOKENS } from '../owner-theme';
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -171,12 +157,12 @@ export function OwnerNewTrainingBatchPage() {
 
   return (
     <div
-      className="-m-4 md:-m-6 min-h-screen"
+      className="po-owner -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
         backgroundImage:
-          'radial-gradient(ellipse 80% 55% at 50% 0%, #dce5ff 0%, transparent 65%)',
+          'radial-gradient(ellipse 80% 55% at 50% 0%, #cfe2e2 0%, transparent 65%)',
       }}
     >
       <div
@@ -623,7 +609,7 @@ export function OwnerNewTrainingBatchPage() {
                   className="rounded-[13px] border p-4 space-y-2 text-[11px]"
                   style={{
                     borderColor: 'var(--po-line)',
-                    background: 'linear-gradient(145deg, #fff, #f8faff)',
+                    background: 'linear-gradient(145deg, #fff, #f6fbfa)',
                   }}
                 >
                   <span
@@ -650,7 +636,7 @@ export function OwnerNewTrainingBatchPage() {
                   className="rounded-[13px] border p-4 space-y-2 text-[11px]"
                   style={{
                     borderColor: 'var(--po-line)',
-                    background: 'linear-gradient(145deg, #fff, #f8faff)',
+                    background: 'linear-gradient(145deg, #fff, #f6fbfa)',
                   }}
                 >
                   <span

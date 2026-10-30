@@ -3,19 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useCertificates } from '@/hooks/use-learning';
 import { CertificateCard } from '../components/CertificateCard';
-
-const PULSE_TOKENS = {
-  '--po-canvas': '#f7f9fd',
-  '--po-surface': '#fff',
-  '--po-ink': '#172442',
-  '--po-muted': '#62718d',
-  '--po-accent': '#304bdf',
-  '--po-accent-strong': '#203bbf',
-  '--po-coral': '#ef735c',
-  '--po-line': '#dfe6f3',
-  '--po-soft': '#eef2ff',
-  '--po-tint': '#edf1ff',
-} as React.CSSProperties;
+import { PULSE_TOKENS } from '../owner-theme';
 
 export function OwnerCertificatesPage() {
   const [search, setSearch] = useState('');
@@ -24,12 +12,12 @@ export function OwnerCertificatesPage() {
 
   return (
     <div
-      className="-m-4 md:-m-6 min-h-screen"
+      className="po-owner -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
         backgroundImage:
-          'radial-gradient(ellipse 80% 55% at 50% 0%, #dce5ff 0%, transparent 65%)',
+          'radial-gradient(ellipse 80% 55% at 50% 0%, #cfe2e2 0%, transparent 65%)',
       }}
     >
       {/* ── Page header ── */}

@@ -10,24 +10,10 @@ import {
   useCancelTrainingBatch,
   useActivateTrainingBatch,
 } from '@/hooks/use-training-batches';
-
-const PULSE_TOKENS = {
-  '--po-canvas': '#f7f9fd',
-  '--po-surface': '#fff',
-  '--po-ink': '#172442',
-  '--po-muted': '#62718d',
-  '--po-accent': '#304bdf',
-  '--po-accent-strong': '#203bbf',
-  '--po-coral': '#ef735c',
-  '--po-lime': '#c6ec78',
-  '--po-line': '#dfe6f3',
-  '--po-soft': '#eef2ff',
-  '--po-tint': '#edf1ff',
-  '--po-warm': '#f1816b',
-} as React.CSSProperties;
+import { PULSE_TOKENS } from '../owner-theme';
 
 const STATUS_MAP: Record<string, { label: string; bg: string; fg: string }> = {
-  RUNNING: { label: 'Đang diễn ra', bg: '#dbeafe', fg: '#1d4ed8' },
+  RUNNING: { label: 'Đang diễn ra', bg: '#dff2ed', fg: '#0e5968' },
   SCHEDULED: { label: 'Đã lên lịch', bg: '#fef3c7', fg: '#d97706' },
   COMPLETED: { label: 'Hoàn thành', bg: '#ecfdf5', fg: '#16a34a' },
   CANCELLED: { label: 'Đã hủy', bg: '#fee2e2', fg: '#dc2626' },
@@ -48,7 +34,7 @@ export function OwnerTrainingBatchDetailPage() {
   if (isLoading) {
     return (
       <div
-        className="-m-4 md:-m-6 min-h-screen flex items-center justify-center"
+        className="po-owner -m-4 md:-m-6 min-h-screen flex items-center justify-center"
         style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
       >
         <p className="text-sm" style={{ color: 'var(--po-muted)' }}>
@@ -61,13 +47,13 @@ export function OwnerTrainingBatchDetailPage() {
   if (!batch) {
     return (
       <div
-        className="-m-4 md:-m-6 min-h-screen px-4 md:px-6 py-20"
+        className="po-owner -m-4 md:-m-6 min-h-screen px-4 md:px-6 py-20"
         style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
       >
         <div className="mx-auto text-center" style={{ maxWidth: 500 }}>
           <div
             className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl text-2xl"
-            style={{ background: '#e9edff', color: 'var(--po-accent)' }}
+            style={{ background: '#e8f6f4', color: 'var(--po-accent)' }}
           >
             ✕
           </div>
@@ -135,12 +121,12 @@ export function OwnerTrainingBatchDetailPage() {
 
   return (
     <div
-      className="-m-4 md:-m-6 min-h-screen"
+      className="po-owner -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
         backgroundImage:
-          'radial-gradient(ellipse 80% 55% at 50% 0%, #dce5ff 0%, transparent 65%)',
+          'radial-gradient(ellipse 80% 55% at 50% 0%, #cfe2e2 0%, transparent 65%)',
       }}
     >
       {/* ── Hero ── */}
@@ -358,7 +344,7 @@ export function OwnerTrainingBatchDetailPage() {
                     {crs.level > 0 && (
                       <span
                         className="text-[9px] font-black px-1.5 py-0.5 rounded"
-                        style={{ background: '#eef1ff', color: '#5364a6' }}
+                        style={{ background: '#e8f6f4', color: '#0e5968' }}
                       >
                         LV{crs.level}
                       </span>
@@ -516,7 +502,7 @@ export function OwnerTrainingBatchDetailPage() {
                             p.isFullyCompleted
                               ? { background: '#ecfdf5', color: '#16a34a' }
                               : p.progressPercent > 0
-                                ? { background: '#dbeafe', color: '#1d4ed8' }
+                                ? { background: '#dff2ed', color: '#0e5968' }
                                 : { background: '#f1f5f9', color: '#64748b' }
                           }
                         >

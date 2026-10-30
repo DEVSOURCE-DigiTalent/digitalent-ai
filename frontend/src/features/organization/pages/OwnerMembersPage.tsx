@@ -15,21 +15,7 @@ import { InviteMembersModal } from '@/features/members/components/InviteMembersM
 import { MEMBER_STATUS_LABELS } from '@/features/members/member-labels';
 import { MemberCard } from '../components/MemberCard';
 import { SendAnnouncementModal } from '../components/SendAnnouncementModal';
-
-const PULSE_TOKENS = {
-  '--po-canvas': '#f7f9fd',
-  '--po-surface': '#fff',
-  '--po-ink': '#172442',
-  '--po-muted': '#62718d',
-  '--po-accent': '#304bdf',
-  '--po-accent-strong': '#203bbf',
-  '--po-coral': '#ef735c',
-  '--po-lime': '#c6ec78',
-  '--po-line': '#dfe6f3',
-  '--po-soft': '#eef2ff',
-  '--po-tint': '#edf1ff',
-  '--po-warm': '#f1816b',
-} as React.CSSProperties;
+import { PULSE_TOKENS } from '../owner-theme';
 
 const PAGE_SIZE = 15;
 const ENTERPRISE_ROLES = [ROLES.OWNER, ROLES.MANAGER, ROLES.EMPLOYEE];
@@ -130,12 +116,12 @@ export function OwnerMembersPage() {
 
   return (
     <div
-      className="-m-4 md:-m-6 min-h-screen"
+      className="po-owner -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
         backgroundImage:
-          'radial-gradient(ellipse 80% 55% at 50% 0%, #dce5ff 0%, transparent 65%)',
+          'radial-gradient(ellipse 80% 55% at 50% 0%, #cfe2e2 0%, transparent 65%)',
       }}
     >
       {/* ── Page header ── */}
@@ -264,7 +250,7 @@ export function OwnerMembersPage() {
                     <span
                       className="grid size-7 shrink-0 place-items-center rounded-lg text-[10px] font-bold"
                       style={{
-                        background: '#e9edff',
+                        background: '#e8f6f4',
                         color: 'var(--po-accent)',
                       }}
                     >
@@ -364,7 +350,7 @@ export function OwnerMembersPage() {
                     style={{
                       background: 'var(--po-accent)',
                       color: '#fff',
-                      boxShadow: '0 9px 18px rgba(52,72,207,.17)',
+                      boxShadow: '0 9px 18px rgba(19,123,132,.17)',
                     }}
                   >
                     <UserPlus className="size-4" />
@@ -442,7 +428,7 @@ export function OwnerMembersPage() {
               <button
                 type="button"
                 onClick={() => setAnnouncing(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100/70 text-[#304bdf] text-xs font-bold transition-all shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-teal-200 bg-teal-50/70 hover:bg-teal-100/70 text-[#137b84] text-xs font-bold transition-all shadow-xs"
               >
                 <Send className="size-3.5" />
                 Gửi thông báo & Hạn chót
@@ -452,7 +438,7 @@ export function OwnerMembersPage() {
                 <button
                   type="button"
                   onClick={() => setInviting(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#304bdf] hover:bg-[#203bbf] text-white text-xs font-bold transition-all shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#137b84] hover:bg-[#0e5968] text-white text-xs font-bold transition-all shadow-xs"
                 >
                   <UserPlus className="size-3.5" />
                   Mời nhân sự
@@ -537,9 +523,9 @@ export function OwnerMembersPage() {
 
           {/* Bulk department invite banner if pending members exist */}
           {pendingInDept.length > 0 && (
-            <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50/70 p-3.5 text-xs text-blue-900 shadow-xs">
+            <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-teal-200 bg-teal-50/70 p-3.5 text-xs text-teal-900 shadow-xs">
               <div className="flex items-center gap-2.5">
-                <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-blue-100 text-[#304bdf]">
+                <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-teal-100 text-[#137b84]">
                   <Mail className="size-4" />
                 </div>
                 <div>
@@ -556,7 +542,7 @@ export function OwnerMembersPage() {
                 type="button"
                 onClick={handleInviteAllPending}
                 disabled={isBulkInviting}
-                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#304bdf] hover:bg-[#203bbf] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:scale-102 active:scale-98 disabled:opacity-50"
+                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#137b84] hover:bg-[#0e5968] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:scale-102 active:scale-98 disabled:opacity-50"
               >
                 <Send className="size-3.5" />
                 <span>
@@ -584,7 +570,7 @@ export function OwnerMembersPage() {
                 <div
                   className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl text-2xl"
                   style={{
-                    background: '#e9edff',
+                    background: '#e8f6f4',
                     color: 'var(--po-accent)',
                   }}
                 >

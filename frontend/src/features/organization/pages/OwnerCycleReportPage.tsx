@@ -8,21 +8,7 @@ import {
 import { ReportKpiSummary } from '../components/ReportKpiSummary';
 import { ReportDomainBreakdown } from '../components/ReportDomainBreakdown';
 import { CycleTimeline } from '../components/CycleTimeline';
-
-const PULSE_TOKENS = {
-  '--po-canvas': '#f7f9fd',
-  '--po-surface': '#fff',
-  '--po-ink': '#172442',
-  '--po-muted': '#62718d',
-  '--po-accent': '#304bdf',
-  '--po-accent-strong': '#203bbf',
-  '--po-coral': '#ef735c',
-  '--po-lime': '#c6ec78',
-  '--po-line': '#dfe6f3',
-  '--po-soft': '#eef2ff',
-  '--po-tint': '#edf1ff',
-  '--po-warm': '#f1816b',
-} as React.CSSProperties;
+import { PULSE_TOKENS } from '../owner-theme';
 
 export function OwnerCycleReportPage() {
   const { data: dashboard, isLoading: dashLoading } =
@@ -90,7 +76,7 @@ export function OwnerCycleReportPage() {
   if (isLoading) {
     return (
       <div
-        className="-m-4 md:-m-6 min-h-screen flex items-center justify-center"
+        className="po-owner -m-4 md:-m-6 min-h-screen flex items-center justify-center"
         style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
       >
         <p className="text-sm" style={{ color: 'var(--po-muted)' }}>
@@ -102,12 +88,12 @@ export function OwnerCycleReportPage() {
 
   return (
     <div
-      className="-m-4 md:-m-6 min-h-screen"
+      className="po-owner -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
         backgroundImage:
-          'radial-gradient(ellipse 80% 55% at 50% 0%, #dce5ff 0%, transparent 65%)',
+          'radial-gradient(ellipse 80% 55% at 50% 0%, #cfe2e2 0%, transparent 65%)',
       }}
     >
       {/* ── Report cover (hero) ── */}
@@ -174,7 +160,7 @@ export function OwnerCycleReportPage() {
           >
             <div
               className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl text-2xl"
-              style={{ background: '#e9edff', color: 'var(--po-accent)' }}
+              style={{ background: '#e8f6f4', color: 'var(--po-accent)' }}
             >
               <BarChart3 className="size-7" />
             </div>
@@ -198,7 +184,7 @@ export function OwnerCycleReportPage() {
                 style={{
                   background: 'var(--po-accent)',
                   color: '#fff',
-                  boxShadow: '0 9px 18px rgba(52,72,207,.17)',
+                  boxShadow: '0 9px 18px rgba(19,123,132,.17)',
                 }}
               >
                 <BarChart3 className="size-4" /> Xem khoảng cách
@@ -377,7 +363,7 @@ export function OwnerCycleReportPage() {
                     style={{
                       background: 'var(--po-accent)',
                       color: '#fff',
-                      boxShadow: '0 9px 18px rgba(52,72,207,.17)',
+                      boxShadow: '0 9px 18px rgba(19,123,132,.17)',
                     }}
                   >
                     Xem khoảng cách <ArrowRight className="size-4" />
