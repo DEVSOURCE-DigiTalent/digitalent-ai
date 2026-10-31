@@ -65,6 +65,13 @@ button.cc-cell:hover { box-shadow: 0 0 0 2px color-mix(in srgb, var(--cc-accent)
   color: var(--cc-fg);
 }
 .cc-cell.route { background: var(--cc-accent); border: 1.5px solid var(--cc-accent); color: var(--cc-surface); }
+.cc-cell.selected-to-buy {
+  background: #fffbeb !important;
+  border: 2px solid #f59e0b !important;
+  color: #b45309 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25) !important;
+}
 .cc-cell.empty { font-family: inherit; font-weight: 500; font-size: 12px; }
 @media (max-width: 560px) {
   .cc-mx { grid-template-columns: minmax(84px, 1.1fr) repeat(3, minmax(0, 1fr)); gap: 5px; }

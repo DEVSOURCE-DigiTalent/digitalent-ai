@@ -97,21 +97,15 @@ export function OwnerOverviewPage() {
               Chủ doanh nghiệp
             </span>
             <h1
-              className="mt-2 font-semibold leading-[1.05]"
+              className="mt-2 font-bold leading-[1.05]"
               style={{
                 color: 'var(--po-ink)',
-                fontSize: 'clamp(34px, 4vw, 55px)',
-                letterSpacing: '-0.055em',
+                fontSize: 'clamp(30px, 3.8vw, 48px)',
+                letterSpacing: '-0.05em',
               }}
             >
-              Hiển thị năng lực tại {orgData.name}.
+              Tổng quan Năng lực Số
             </h1>
-            <p
-              className="mt-2 text-sm leading-relaxed max-w-xl"
-              style={{ color: 'var(--po-muted)' }}
-            >
-              Mục tiêu, học tập và kết quả khóa học nằm trong một hành trình.
-            </p>
           </div>
           <div className="shrink-0 flex items-center gap-2.5 flex-wrap">
             <button
@@ -136,6 +130,9 @@ export function OwnerOverviewPage() {
         {/* ── Content Stack ── */}
         <div className="flex flex-col gap-4">
           <OwnerOverviewHero org={orgData} cap={capData} />
+
+          {/* Lộ trình 5 bước chuẩn hóa năng lực số theo tuần tự logic */}
+          <OwnerProcessTrack org={orgData} cap={capData} />
 
           {/* Đợt Đánh giá Năng lực Đội ngũ & Bức tranh Năng lực */}
           <OwnerTrialAssessmentWidget />
@@ -168,8 +165,6 @@ export function OwnerOverviewPage() {
               </div>
             ))}
           </div>
-
-          <OwnerProcessTrack org={orgData} cap={capData} />
 
           {/* Two-column: Capability Architecture + Training Cycle */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import type { GapGroup } from '@/services/analytics.service';
 
 type GroupBy = 'department' | 'position' | 'grade';
@@ -85,6 +86,15 @@ export function CapabilityComparison({
           <p className="mt-1 text-xs" style={{ color: 'var(--po-muted)' }}>
             Cần có nhân viên đã gán vị trí và vị trí đã có bộ yêu cầu năng lực đang áp dụng.
           </p>
+          <div className="mt-4 flex items-center justify-center">
+            <Link
+              to="/enterprise/positions"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:opacity-95"
+              style={{ background: 'var(--po-primary, #0c4a60)' }}
+            >
+              Thiết lập & kích hoạt yêu cầu vị trí →
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border" style={{ borderColor: 'var(--po-line)' }}>

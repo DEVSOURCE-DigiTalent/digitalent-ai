@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Search, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Search, Sparkles, X } from 'lucide-react';
 import { useCourseCatalog, usePurchaseCourseSeats } from '@/hooks/use-assignments';
 import { useCompetencyCategories } from '@/hooks/use-competencies';
 import { courseCategories } from '@/features/courses/course-catalog';
@@ -17,6 +17,16 @@ import {
 } from '../components/course-tree';
 import { PULSE_TOKENS } from '../owner-theme';
 
+/** Chuẩn hóa mã khóa học chuẩn (A1..A6 <-> M1..M6) để đối chiếu chính xác. */
+function canonicalCode(code?: string): string {
+  if (!code) return '';
+  const trimmed = code.trim().toUpperCase();
+  if ((trimmed.startsWith('A') || trimmed.startsWith('M')) && trimmed.length > 2 && !isNaN(Number(trimmed[1]))) {
+    return 'M' + trimmed.slice(1);
+  }
+  return trimmed;
+}
+
 /** One color per level, used by the tree nodes, the legend and the detail panel. */
 const LEVEL_TONES: Record<number, { bg: string; fg: string; ring: string }> = {
   1: { bg: '#edf7dd', fg: '#557327', ring: '#b9dc8c' },
@@ -28,8 +38,8 @@ type Selection = { kind: 'course'; id: string } | { kind: 'domain'; domain: numb
 
 export function OwnerCourseCatalogPage() {
   const [search, setSearch] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
   // ?level=2 → mở sẵn bộ lọc bậc (nút "Mua khóa học" của doanh nghiệp dùng thử dẫn tới khóa Trung cấp).
-  const [searchParams] = useSearchParams();
   const [levelFilter, setLevelFilter] = useState(() => {
     const level = Number(searchParams.get('level'));
     return LEVELS.some((l) => l.level === level) ? level : 0;
@@ -37,6 +47,18 @@ export function OwnerCourseCatalogPage() {
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
   const [selection, setSelection] = useState<Selection>(null);
   const [purchaseModalCourse, setPurchaseModalCourse] = useState<CourseListItem | null>(null);
+
+  // Danh sách mã khóa học được chọn trước từ trang Thiết lập Khung năng lực (?selected=M1-I,M2-A...)
+  const selectedParam = searchParams.get('selected');
+  const preselectedCodes = useMemo(() => {
+    if (!selectedParam) return new Set<string>();
+    return new Set(
+      selectedParam
+        .split(',')
+        .map((c) => canonicalCode(c))
+        .filter(Boolean)
+    );
+  }, [selectedParam]);
 
   const { data: apiCategories = [] } = useCompetencyCategories();
   const categories = useMemo(() => courseCategories(apiCategories), [apiCategories]);
@@ -68,6 +90,34 @@ export function OwnerCourseCatalogPage() {
     return next;
   });
 
+  // Tự động mở rộng các nhánh (miền) chứa khóa học được chọn trước từ Khung năng lực
+  useEffect(() => {
+    if (preselectedCodes.size > 0 && branches.length > 0) {
+      setCollapsed((current) => {
+        const next = new Set(current);
+        branches.forEach((b) => {
+          const hasPreselected = b.slots.some((s) =>
+            s.courses.some((c) => preselectedCodes.has(canonicalCode(c.code)))
+          );
+          if (hasPreselected) {
+            next.delete(b.domain);
+          }
+        });
+        return next;
+      });
+    }
+  }, [preselectedCodes, branches]);
+
+  // Tự động chọn khóa học đầu tiên trong danh sách chọn trước để hiện thông tin chi tiết ngay lập tức
+  useEffect(() => {
+    if (preselectedCodes.size > 0 && !selection && allCourses.length > 0) {
+      const match = allCourses.find((c) => preselectedCodes.has(canonicalCode(c.code)));
+      if (match) {
+        setSelection({ kind: 'course', id: match.id });
+      }
+    }
+  }, [preselectedCodes, selection, allCourses]);
+
   return (
     <div
       className="po-owner -m-4 md:-m-6 min-h-screen px-4 md:px-6 py-8"
@@ -81,13 +131,9 @@ export function OwnerCourseCatalogPage() {
               <i className="inline-block size-[6px] rounded-full" style={{ background: 'var(--po-coral)' }} />
               Chương trình chuẩn · Thông tư 02/2025
             </span>
-            <h1 className="mt-3 text-[clamp(30px,4.4vw,48px)] font-bold leading-[1.05]" style={{ color: 'var(--po-ink)', letterSpacing: '-0.05em' }}>
-              Cây khóa học <span style={{ color: 'var(--po-accent)' }}>6 miền × 3 bậc.</span>
+            <h1 className="mt-2 text-[clamp(28px,3.8vw,44px)] font-bold leading-[1.05]" style={{ color: 'var(--po-ink)', letterSpacing: '-0.05em' }}>
+              Kho Khóa học Chuẩn hóa Năng lực
             </h1>
-            <p className="mt-3 text-[13px] leading-relaxed" style={{ color: 'var(--po-muted)', maxWidth: 640 }}>
-              Mỗi miền năng lực là một nhánh, học lần lượt Cơ bản → Trung cấp → Nâng cao. Khóa Cơ bản mở dùng thử miễn phí toàn bộ;
-              khóa Trung cấp (399.000 ₫/suất) và Nâng cao (699.000 ₫/suất) là khóa trả phí, cần mua bản quyền / suất học để đào tạo (tài khoản dùng thử xem trước toàn bộ mô tả).
-            </p>
           </div>
           <dl className="grid grid-cols-3 gap-2 text-center">
             <Stat label="Miền" value={branches.length} />
@@ -95,6 +141,67 @@ export function OwnerCourseCatalogPage() {
             <Stat label="Đang phân công" value={totalAssigned} />
           </dl>
         </header>
+
+        {/* ── Banner làm nổi bật các khóa học đã chọn từ Khung năng lực ── */}
+        {preselectedCodes.size > 0 && (
+          <div className="mb-6 rounded-2xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 via-white to-amber-50 p-4 sm:p-5 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-sm">
+                <Sparkles className="size-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Khóa học đã chọn từ Thiết lập Khung năng lực ({preselectedCodes.size} khóa)
+                  </h3>
+                  <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10.5px] font-bold text-amber-800 border border-amber-300">
+                    Đang làm nổi bật
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-slate-600">
+                  Các khóa học bên dưới đã được phát sáng viền vàng và gắn nhãn <b className="text-amber-800 font-semibold">✨ Đã chọn</b>. Bấm vào từng khóa để mua suất học và mở trần cho doanh nghiệp.
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  {Array.from(preselectedCodes).map((code) => (
+                    <span
+                      key={code}
+                      className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-0.5 text-xs font-bold text-amber-800 border border-amber-200 shadow-xs"
+                    >
+                      <span>{code}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0 self-end md:self-center">
+              <Link
+                to="/enterprise/setup"
+                className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-xs"
+              >
+                ← Về Khung năng lực
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = new URLSearchParams(searchParams);
+                  next.delete('selected');
+                  setSearchParams(next, { replace: true });
+                }}
+                className="rounded-xl border border-amber-200 bg-amber-100/70 px-3 py-2 text-xs font-bold text-amber-800 hover:bg-amber-200 transition-colors"
+              >
+                Tắt làm nổi bật
+              </button>
+              <Link
+                to={`/enterprise/courses/checkout?courses=${encodeURIComponent(Array.from(preselectedCodes).join(','))}`}
+                className="rounded-xl px-4 py-2 text-xs font-bold text-white shadow-sm hover:brightness-105 transition-all flex items-center gap-1.5"
+                style={{ background: 'var(--po-accent)' }}
+              >
+                <span>Thanh toán & Ký online ({preselectedCodes.size} khóa) →</span>
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* ── Toolbar ── */}
         <div
@@ -191,6 +298,7 @@ export function OwnerCourseCatalogPage() {
                       levelFilter={levelFilter}
                       selection={selection}
                       onSelect={setSelection}
+                      preselectedCodes={preselectedCodes}
                     />
                   ))}
                 </ul>
@@ -279,9 +387,10 @@ interface BranchNodeProps {
   levelFilter: number;
   selection: Selection;
   onSelect: (selection: Selection) => void;
+  preselectedCodes: Set<string>;
 }
 
-function BranchNode({ branch, last, open, onToggle, query, levelFilter, selection, onSelect }: BranchNodeProps) {
+function BranchNode({ branch, last, open, onToggle, query, levelFilter, selection, onSelect, preselectedCodes }: BranchNodeProps) {
   const courseCount = branch.slots.reduce((sum, slot) => sum + slot.courses.length, 0);
   const domainSelected = selection?.kind === 'domain' && selection.domain === branch.domain;
   const panelId = `course-branch-${branch.domain}`;
@@ -333,6 +442,7 @@ function BranchNode({ branch, last, open, onToggle, query, levelFilter, selectio
               levelFilter={levelFilter}
               selection={selection}
               onSelect={onSelect}
+              preselectedCodes={preselectedCodes}
             />
           ))}
         </ol>
@@ -348,9 +458,10 @@ interface LevelSlotNodeProps {
   levelFilter: number;
   selection: Selection;
   onSelect: (selection: Selection) => void;
+  preselectedCodes: Set<string>;
 }
 
-function LevelSlotNode({ slot, arrow, query, levelFilter, selection, onSelect }: LevelSlotNodeProps) {
+function LevelSlotNode({ slot, arrow, query, levelFilter, selection, onSelect, preselectedCodes }: LevelSlotNodeProps) {
   const tone = LEVEL_TONES[slot.level];
   const level = LEVELS.find((l) => l.level === slot.level)!;
   const pricing = levelPricing(slot.level);
@@ -367,6 +478,7 @@ function LevelSlotNode({ slot, arrow, query, levelFilter, selection, onSelect }:
           </div>
         ) : slot.courses.map((course) => {
           const selected = selection?.kind === 'course' && selection.id === course.id;
+          const isPreselected = preselectedCodes.has(canonicalCode(course.code));
           const dimmed = (levelFilter && levelFilter !== slot.level) || (query && !courseMatches(course, query));
           const duration = formatDuration(course.estimatedDurationMinutes);
           const totalSeats = (course.seatsPurchased ?? 0) + (course.seatsGranted ?? 0);
@@ -379,20 +491,34 @@ function LevelSlotNode({ slot, arrow, query, levelFilter, selection, onSelect }:
               onClick={() => onSelect({ kind: 'course', id: course.id })}
               className="flex h-full min-h-[96px] flex-col rounded-[14px] border px-3 py-2.5 text-left transition-all hover:-translate-y-px hover:shadow-md"
               style={{
-                borderColor: selected ? tone.fg : tone.ring,
-                background: selected ? tone.bg : 'var(--po-surface)',
-                boxShadow: selected ? `0 0 0 3px ${tone.bg}` : undefined,
+                borderColor: isPreselected ? '#f59e0b' : selected ? tone.fg : tone.ring,
+                background: isPreselected ? '#fffdf7' : selected ? tone.bg : 'var(--po-surface)',
+                boxShadow: isPreselected
+                  ? '0 0 0 3px rgba(245, 158, 11, 0.4), 0 8px 22px -4px rgba(245, 158, 11, 0.25)'
+                  : selected
+                  ? `0 0 0 3px ${tone.bg}`
+                  : undefined,
                 opacity: dimmed ? 0.35 : 1,
               }}
             >
+              {isPreselected && (
+                <span className="mb-1.5 inline-flex w-fit items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-xs animate-pulse">
+                  <Sparkles className="size-2.5" />
+                  Đã chọn từ Khung năng lực
+                </span>
+              )}
               <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.08em]">
                 <span className="rounded px-1.5 py-0.5" style={{ background: tone.bg, color: tone.fg }}>{level.code} · {level.name}</span>
-                <span style={{ color: 'var(--po-muted)' }}>{course.code}</span>
+                <span style={{ color: isPreselected ? '#b45309' : 'var(--po-muted)', fontWeight: isPreselected ? 800 : undefined }}>
+                  {course.code}
+                </span>
                 <span className={`ml-auto rounded px-1.5 py-0.5 text-[10px] font-bold ${
                   pricing.isFree
                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                     : isLicensed
                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : isPreselected
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300 font-extrabold'
                     : 'bg-slate-100 text-slate-700 border border-slate-200'
                 }`}>
                   {pricing.isFree ? pricing.badge : isLicensed ? `Đã có ${totalSeats} suất` : pricing.badge}
@@ -507,25 +633,23 @@ function CourseDetail({
               Đưa vào đợt đào tạo
             </Link>
             {level > 1 && (
-              <button
-                type="button"
-                onClick={() => onBuySeats(course)}
-                className="rounded-[11px] border px-3 py-2 text-center text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all"
+              <Link
+                to={`/enterprise/courses/checkout?courses=${encodeURIComponent(course.code)}`}
+                className="rounded-[11px] border px-3 py-2 text-center text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all block"
                 style={{ borderColor: 'var(--po-line)' }}
               >
-                + Mua thêm suất học cho khóa này
-              </button>
+                + Mua thêm suất & Ký online
+              </Link>
             )}
           </>
         ) : (
-          <button
-            type="button"
-            onClick={() => onBuySeats(course)}
+          <Link
+            to={`/enterprise/courses/checkout?courses=${encodeURIComponent(course.code)}`}
             className="rounded-[11px] border px-3 py-2.5 text-center text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm hover:brightness-95"
             style={{ borderColor: '#f59e0b', color: '#b45309', background: '#fffbeb' }}
           >
-            <span>🔒 Mua suất học ({pricing.formatted})</span>
-          </button>
+            <span>🔒 Mua suất học & Ký online ({pricing.formatted}) →</span>
+          </Link>
         )}
       </div>
     </Panel>
