@@ -97,7 +97,6 @@ export const AUDIT_ACTIONS: Record<string, string> = {
   PLATFORM_CATALOG_COURSE_ADDED: 'Thêm khóa học vào bản nháp',
   PLATFORM_CATALOG_COURSE_REMOVED: 'Bỏ khóa học khỏi bản nháp',
   PLATFORM_CATALOG_PUBLISHED: 'Công bố phiên bản khóa học',
-  // Before catalog versions (kept so older log entries read well)
   PLATFORM_COURSE_DRAFT_SAVED: 'Lưu nháp khóa học',
   PLATFORM_COURSE_PUBLISHED: 'Phát hành khóa học',
   PLATFORM_COURSE_QUESTION_ADDED: 'Thêm câu hỏi nháp',
@@ -106,9 +105,21 @@ export const AUDIT_ACTIONS: Record<string, string> = {
   PLATFORM_ORGANIZATION_RESTORED: 'Khôi phục tổ chức',
   PLATFORM_USER_LOCKED: 'Khóa tài khoản',
   PLATFORM_USER_UNLOCKED: 'Mở khóa tài khoản',
+  TRIAL_MENTOR_ASSIGNED: 'Gán người hướng dẫn dùng thử',
+  MENTOR_CREATED: 'Tạo tài khoản chuyên gia hướng dẫn',
+  PLATFORM_REFERENCE_POSITIONS_UPDATED: 'Cập nhật chuẩn mẫu vị trí việc làm',
+  ORGANIZATION_CREATED: 'Tạo mới tổ chức',
+  ORGANIZATION_STATUS_CHANGED: 'Đổi trạng thái tổ chức',
+  USER_CREATED: 'Tạo tài khoản mới',
+  USER_PASSWORD_RESET_ASSISTED: 'Hỗ trợ cấp lại mật khẩu',
 };
 
-export const auditActionLabel = (action: string) => AUDIT_ACTIONS[action] ?? action.replace(/_/g, ' ').toLowerCase();
+export const auditActionLabel = (action: string) => {
+  if (!action) return 'Thao tác hệ thống';
+  const normalizedKey = action.trim().replace(/\s+/g, '_').toUpperCase();
+  return AUDIT_ACTIONS[normalizedKey] ?? AUDIT_ACTIONS[action] ?? action.replace(/_/g, ' ');
+};
+
 
 /** Reads `reason` from an audit entry's JSON new_values. */
 export function auditReason(newValues: string | null | undefined): string | null {
@@ -156,3 +167,23 @@ export function errorMessage(error: unknown): string {
   }
   return error instanceof Error ? error.message : 'Đã có lỗi xảy ra.';
 }
+
+export const PASTEL_PALETTES = [
+  { bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe' }, // blue
+  { bg: '#f5f3ff', text: '#6d28d9', border: '#ddd6fe' }, // purple
+  { bg: '#ecfdf5', text: '#047857', border: '#a7f3d0' }, // emerald
+  { bg: '#fffbeb', text: '#b45309', border: '#fde68a' }, // amber
+  { bg: '#f0fdfa', text: '#0f766e', border: '#99f6e4' }, // teal
+  { bg: '#fdf2f8', text: '#be185d', border: '#fbcfe8' }, // pink
+  { bg: '#f8fafc', text: '#334155', border: '#cbd5e1' }, // slate
+];
+
+export function getAvatarColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < (name || '').length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % PASTEL_PALETTES.length;
+  return PASTEL_PALETTES[index];
+}
+

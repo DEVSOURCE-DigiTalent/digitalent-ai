@@ -1180,8 +1180,8 @@
 .pulse-ui .role-admin .sideflow-admin-links a:nth-child(2n):before{ background: #829ab5; }
 .pulse-ui .role-admin .sideflow-admin-links a:hover{ border-color: #d5bb8b; box-shadow: 0 18px 37px rgba(48, 52, 67, .1); }
 .pulse-ui .role-admin .sideflow-admin-links em,.pulse-ui .role-admin .sideflow-admin-links .mini-label{ color: #916525; }
-.pulse-ui .role-admin .data-table thead{ background: #f7f2e8; }
-.pulse-ui .role-admin .notice{ background: #fcf5e9; border-color: #eddec2; color: #745226; }
+.pulse-ui .role-admin .data-table thead{ background: #f8fafc; }
+.pulse-ui .role-admin .notice{ background: #f8fafc; border-color: #e2e8f0; color: #334155; }
 .pulse-ui .role-employee{
   background:
     radial-gradient(ellipse 700px 420px at 92% 4%, rgba(209, 208, 252, .35), transparent 72%),

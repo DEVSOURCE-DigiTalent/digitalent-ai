@@ -95,7 +95,7 @@ export function MainLayout({ portal, sidebarConfig, isUnpaid = false, children }
 
         <RoleSidebar portal={portal} sidebarConfig={sidebarConfig} isMobileOpen={isMobileOpen} onMobileClose={() => setMobileOpen(false)} />
 
-        <main id="main-content" className="pm-main min-w-0 min-h-[calc(100dvh-var(--pm-topbar-h))] md:pl-[var(--sidebar-w)] transition-[padding] duration-200">
+        <main id="main-content" className="pm-main min-w-0 min-h-[calc(100dvh-var(--pm-topbar-h))] md:pl-[var(--sidebar-w)]">
           <div className="pm-main-inner">
             {children ?? <Outlet />}
           </div>
@@ -131,7 +131,7 @@ export function MainLayout({ portal, sidebarConfig, isUnpaid = false, children }
       
       <RoleSidebar portal={portal} sidebarConfig={sidebarConfig} isMobileOpen={isMobileOpen} onMobileClose={() => setMobileOpen(false)} />
       
-      <div className="flex flex-col min-w-0 min-h-screen md:pl-[var(--sidebar-w)] transition-[padding] duration-200">
+      <div className="flex flex-col min-w-0 min-h-screen md:pl-[var(--sidebar-w)]">
         <div className="sticky top-0 z-30">
           <Topbar portal={portal} isMobileNavOpen={isMobileOpen} onOpenMobileNav={() => setMobileOpen(true)} />
           {unpaidBanner}

@@ -75,7 +75,6 @@ export function PulsePreAssessmentPage() {
 
 function PreAssessmentStatus({ data }: { data: PulsePreAssessment }) {
   const { course, submission, status } = data;
-  const reviewer = submission?.reviewerName ?? data.reviewer?.name ?? 'người chấm';
   const tone = status === 'PASSED' ? 'green' : status === 'NOT_YET' ? 'coral' : status === 'PENDING' ? '' : 'gray';
   return (
     <div className="pu-stack">
@@ -85,20 +84,20 @@ function PreAssessmentStatus({ data }: { data: PulsePreAssessment }) {
           <Pill tone={tone}>{PRE_LABELS[status]}</Pill>
         </div>
         <h1 className="pu-panel-title">
-          {status === 'PENDING' ? `Bài của bạn đang chờ ${reviewer} chấm.`
+          {status === 'PENDING' ? 'Bài của bạn đang chờ Hội đồng khảo thí thẩm định.'
             : status === 'PASSED' ? `Đạt — ${course.code} được công nhận.`
             : status === 'NOT_YET' ? 'Chưa đạt — hãy học khóa này.'
             : 'Bài đánh giá chưa mở.'}
         </h1>
         <p className="pu-panel-desc">
-          {status === 'PENDING' ? 'Người chấm xem bài làm cùng bản ghi màn hình, camera và micro. Kết quả hai phần và nhận xét sẽ hiện ở đây khi chấm xong.'
+          {status === 'PENDING' ? 'Hội đồng khảo thí trực tiếp thẩm định bài làm cùng bản ghi màn hình, camera và micro. Kết quả đánh giá và nhận xét chi tiết sẽ hiện ở đây khi hoàn tất.'
             : status === 'PASSED' ? 'Bạn không cần học khóa này. Khóa tiếp theo của lĩnh vực đã mở trên lộ trình.'
             : status === 'NOT_YET' ? 'Học các mô-đun của khóa, rồi làm bài cuối khóa (cũng có giám sát, tối đa 2 lần nộp).'
             : data.closedMessage}
         </p>
         <div className="pu-row">
           {status === 'NOT_YET' && <PuLink to={PULSE_PATHS.course(course.courseId)}>Bắt đầu học →</PuLink>}
-          <PuLink to={PULSE_PATHS.today} kind={status === 'NOT_YET' ? 'outline' : 'primary'}>Về trang Hôm nay</PuLink>
+          <PuLink to={PULSE_PATHS.today} kind={status === 'NOT_YET' ? 'outline' : 'primary'}>Về trang Tổng quan</PuLink>
           <PuLink to={PULSE_PATHS.path} kind="outline">Xem lộ trình</PuLink>
         </div>
       </section>
@@ -112,7 +111,7 @@ function PreAssessmentStatus({ data }: { data: PulsePreAssessment }) {
             <blockquote>{submission.evidenceText}</blockquote>
             {submission.decisionReason && (
               <div className={`pu-feedback${submission.decision === 'PASSED' ? ' ok' : ''}`}>
-                <strong>Nhận xét của {submission.reviewerName ?? 'người chấm'}</strong>: {submission.decisionReason}
+                <strong>Nhận xét từ {submission.reviewerName ?? 'Hội đồng khảo thí'}</strong>: {submission.decisionReason}
               </div>
             )}
           </div>

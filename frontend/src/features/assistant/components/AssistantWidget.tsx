@@ -4,6 +4,7 @@ import {
   Award,
   BarChart3,
   BookOpen,
+  Bot,
   Check,
   ClipboardCheck,
   Copy,
@@ -44,13 +45,12 @@ const SUGGESTIONS: Record<string, Suggestion[]> = {
     { icon: Gauge, text: 'Mức năng lực trung bình của phòng tôi theo từng năng lực?' },
   ],
   [ROLES.EMPLOYEE]: [
-    { icon: BookOpen, text: 'Tôi đang học những khóa nào?' },
+    { icon: BookOpen, text: 'Khóa học tiếp theo của tôi?' },
     { icon: Gauge, text: 'Năng lực hiện tại của tôi ra sao?' },
-    { icon: Award, text: 'Tôi có những chứng chỉ nào?' },
+    { icon: Award, text: 'Điểm bài thi vừa nộp?' },
   ],
 };
 
-/** Vietnamese names put the given name last ("Trần Đình Quý" → "Quý"). */
 function givenName(fullName: string | undefined): string {
   const parts = (fullName ?? '').trim().split(/\s+/).filter(Boolean);
   return parts[parts.length - 1] ?? '';
@@ -75,7 +75,7 @@ function CopyButton({ text }: { text: string }) {
 }
 
 /**
- * Floating AI assistant (read-only): answers questions about the organization's data within the caller's scope.
+ * Floating AI assistant: answers questions about the organization's data within the caller's scope.
  * Mounted by the enterprise layouts for users holding assistant.chat; hidden during proctored exams.
  */
 export function AssistantWidget() {
@@ -122,9 +122,14 @@ export function AssistantWidget() {
 
   if (!open) {
     return (
-      <button type="button" className="as-fab" onClick={() => setOpen(true)} aria-label="Mở trợ lý AI" title="Trợ lý AI">
-        <Sparkles size={20} aria-hidden="true" />
-        <span className="as-fab-label">Hỏi trợ lý AI</span>
+      <button
+        type="button"
+        className="as-fab as-fab-compact"
+        onClick={() => setOpen(true)}
+        aria-label="Mở trợ lý hỗ trợ đào tạo"
+        title="Trợ lý AI"
+      >
+        <Bot size={22} aria-hidden="true" />
       </button>
     );
   }
@@ -140,13 +145,13 @@ export function AssistantWidget() {
     >
       <header className="as-head">
         <span className="as-avatar as-avatar-lg" aria-hidden="true">
-          <Sparkles size={18} />
+          <Bot size={18} />
         </span>
         <div className="as-head-text">
           <strong>Trợ lý DigiTalent</strong>
           <span>
             <i className="as-dot" aria-hidden="true" />
-            Chỉ đọc dữ liệu trong phạm vi quyền của bạn
+            Hỗ trợ tra cứu dữ liệu đào tạo
           </span>
         </div>
         {entries.length > 0 && (
@@ -170,12 +175,11 @@ export function AssistantWidget() {
         {entries.length === 0 && (
           <div className="as-empty">
             <span className="as-empty-mark" aria-hidden="true">
-              <Sparkles size={26} />
+              <Bot size={26} />
             </span>
             <h3>{name ? `Xin chào, ${name}!` : 'Xin chào!'}</h3>
             <p>
-              Hỏi tôi về nhân viên, phòng ban, khóa học, tiến độ học tập, năng lực, chứng chỉ hoặc nhiệm vụ — tôi tra cứu
-              dữ liệu thật của doanh nghiệp để trả lời.
+              Tôi hỗ trợ giải đáp nhanh về khóa học, tiến độ học tập và bài thi của bạn.
             </p>
             <div className="as-suggest-label">Gợi ý cho bạn</div>
             <div className="as-suggestions">
@@ -199,7 +203,7 @@ export function AssistantWidget() {
                 <div className="as-meta">
                   {entry.failed ? (
                     <button type="button" className="as-retry" onClick={() => chat.retry(entry)} disabled={pending}>
-                      <RotateCcw size={12} aria-hidden="true" /> Chưa gửi được · Gửi lại
+                      <RotateCcw size={12} aria-hidden="true" /> Chưa gửi được, gửi lại
                     </button>
                   ) : (
                     <time>{formatTime(entry.at)}</time>
@@ -213,7 +217,7 @@ export function AssistantWidget() {
           return (
             <div key={entry.id} className="as-msg as-msg-bot">
               <span className="as-avatar" aria-hidden="true">
-                <Sparkles size={13} />
+                <Bot size={13} />
               </span>
               <div className="as-msg-body">
                 <div className="as-bubble">
@@ -249,7 +253,7 @@ export function AssistantWidget() {
                 <span />
                 <span />
                 <span />
-                <em>Đang tra cứu dữ liệu…</em>
+                <em>Đang tra cứu dữ liệu...</em>
               </div>
             </div>
           </div>
@@ -269,7 +273,7 @@ export function AssistantWidget() {
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Hỏi về dữ liệu của doanh nghiệp…"
+            placeholder="Nhập câu hỏi cần hỗ trợ..."
             rows={1}
             maxLength={ASSISTANT_MAX_LENGTH}
             aria-label="Câu hỏi cho trợ lý AI"
@@ -278,7 +282,7 @@ export function AssistantWidget() {
             <ArrowUp size={17} strokeWidth={2.4} />
           </button>
         </div>
-        <p className="as-hint">Enter để gửi · Shift + Enter xuống dòng · AI có thể nhầm, hãy kiểm tra số liệu quan trọng.</p>
+        <p className="as-hint">Enter để gửi, Shift + Enter xuống dòng.</p>
       </form>
     </section>
   );

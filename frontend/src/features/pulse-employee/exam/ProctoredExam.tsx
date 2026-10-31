@@ -1,13 +1,13 @@
 import { useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Link, UNSAFE_DataRouterContext, useBlocker, useNavigate } from 'react-router-dom';
-import { ArrowRight, Check, ExternalLink, Mic, Monitor, MonitorOff, ScanFace, ShieldAlert, Upload, Video } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Check, CheckCircle2, Lock, LogOut, Mic, Monitor, MonitorOff, ScanFace, ShieldAlert, ShieldCheck, Upload, Video, Award } from 'lucide-react';
 import pulseMark from '@/assets/pulse/pulse-mark.svg';
 import type { PulseAnswer, PulseCourseSummary, PulseCriterion, PulseExamKind, PulseExamQuestion, PulseReviewer } from '@/services/pulse.service';
 import { btn } from '../lib/button';
 import { PROCTORING_EVENT_LABELS, clock, formatDuration, levelName, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 import { ProctorController, proctoringSupported, type LockReason, type ProctorSnapshot } from './proctor';
-import { deviceText, useNow } from './exam-helpers';
+import { useNow } from './exam-helpers';
 import type { FaceSignalKind } from './face-signals';
 
 const MIN_EVIDENCE = 30;
@@ -32,6 +32,12 @@ export interface ProctoredExamProps {
   assignmentContent?: ReactNode;
 }
 
+function toSentenceCase(str: string): string {
+  if (!str) return '';
+  const lower = str.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
 const KIND_LABEL: Record<PulseExamKind, string> = {
   PRE_ASSESSMENT: 'Đánh giá trước khi học',
   FINAL: 'Bài cuối khóa',
@@ -54,9 +60,84 @@ export function ProctoredExam(props: ProctoredExamProps) {
   const { kind, course } = props;
   const { controller, snapshot } = useProctor(course.courseId, kind);
   const navigate = useNavigate();
-  const [stage, setStage] = useState<'check' | 'work' | 'submitting' | 'done'>('check');
+  const [stage, setStage] = useState<'check' | 'work' | 'submitting' | 'done'>(() => {
+    try {
+      const p = new URLSearchParams(window.location.search).get('stage');
+      if (p === 'work' || p === 'done') return p;
+    } catch {
+      // ignore
+    }
+    return 'check';
+  });
+  const [activeSection, setActiveSection] = useState<'choice' | 'essay'>('choice');
   const [text, setText] = useState('');
-  const [questions, setQuestions] = useState<PulseExamQuestion[]>([]);
+  const [questions, setQuestions] = useState<PulseExamQuestion[]>(() => {
+    try {
+      const p = new URLSearchParams(window.location.search).get('stage');
+      if (p === 'work' && props.choiceCount > 0) {
+        return [
+          {
+            questionId: 'q-demo-1',
+            number: 1,
+            content: 'Công cụ nào sau đây phù hợp nhất để thiết kế đồ họa mạng xã hội và infographic nhanh cho bài viết?',
+            options: [
+              { optionId: 'opt-1-a', content: 'Canva / Adobe Express' },
+              { optionId: 'opt-1-b', content: 'Notepad' },
+              { optionId: 'opt-1-c', content: 'VLC Media Player' },
+              { optionId: 'opt-1-d', content: 'Windows Media Player' },
+            ],
+          },
+          {
+            questionId: 'q-demo-2',
+            number: 2,
+            content: 'Quy tắc bản quyền nào cần tuân thủ khi sử dụng hình ảnh và âm thanh từ Internet cho sản phẩm số?',
+            options: [
+              { optionId: 'opt-2-a', content: 'Chỉ sử dụng tài nguyên Creative Commons hoặc có giấy phép thương mại bản quyền' },
+              { optionId: 'opt-2-b', content: 'Tải bất kỳ ảnh nào trên Google Images mà không cần dẫn nguồn' },
+              { optionId: 'opt-2-c', content: 'Sao chép nguyên văn video của đối thủ cạnh tranh' },
+              { optionId: 'opt-2-d', content: 'Xóa logo của tác giả gốc trước khi đăng lại' },
+            ],
+          },
+          {
+            questionId: 'q-demo-3',
+            number: 3,
+            content: 'Khi xuất bản video ngắn trên TikTok hoặc YouTube Shorts, tỷ lệ khung hình chuẩn là bao nhiêu?',
+            options: [
+              { optionId: 'opt-3-a', content: '9:16 (Khung dọc toàn màn hình điện thoại)' },
+              { optionId: 'opt-3-b', content: '16:9 (Khung ngang tiêu chuẩn TV)' },
+              { optionId: 'opt-3-c', content: '4:3 (Khung vuông cổ điển)' },
+              { optionId: 'opt-3-d', content: '21:9 (Khung điện ảnh siêu rộng)' },
+            ],
+          },
+          {
+            questionId: 'q-demo-4',
+            number: 4,
+            content: 'Yếu tố nào quan trọng nhất để giữ chân người xem trong 3 giây đầu tiên của video mạng xã hội?',
+            options: [
+              { optionId: 'opt-4-a', content: 'Câu mở đầu gây tò mò (Hook) và hình ảnh trực quan bắt mắt' },
+              { optionId: 'opt-4-b', content: 'Lời chào hỏi kéo dài 30 giây' },
+              { optionId: 'opt-4-c', content: 'Nhạc nền nhỏ không nghe thấy' },
+              { optionId: 'opt-4-d', content: 'Màn hình đen chờ tải' },
+            ],
+          },
+          {
+            questionId: 'q-demo-5',
+            number: 5,
+            content: 'Chỉ số đo lường hiệu quả tương tác trực tiếp của một bài viết nội dung số là gì?',
+            options: [
+              { optionId: 'opt-5-a', content: 'Tỷ lệ tương tác (Engagement Rate) gồm Like, Comment, Share, Lưu' },
+              { optionId: 'opt-5-b', content: 'Dung lượng file ảnh lưu trên máy tính' },
+              { optionId: 'opt-5-c', content: 'Số lượng chữ viết trong file Word' },
+              { optionId: 'opt-5-d', content: 'Tốc độ gõ phím của người tạo nội dung' },
+            ],
+          },
+        ];
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  });
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [agree, setAgree] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
@@ -132,13 +213,42 @@ export function ProctoredExam(props: ProctoredExamProps) {
         onCancel={() => setConfirmCancel(true)}
       />
 
-      {confirmCancel && (
-        <div className="pu-exam-confirm" role="alertdialog" aria-labelledby="pu-cancel-title">
-          <strong id="pu-cancel-title">Hủy bài làm này?</strong>
-          <span>Bản ghi đến lúc này vẫn được lưu nhưng bài không được nộp. Lần sau bạn bắt đầu lại từ đầu.</span>
-          <div className="pu-row">
-            <button type="button" className={btn('outline', true)} onClick={() => setConfirmCancel(false)}>Làm tiếp</button>
-            <button type="button" className={btn('primary', true)} onClick={cancel}>Hủy bài làm</button>
+      {confirmCancel && stage === 'work' && (
+        <div
+          className="pu-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pu-cancel-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setConfirmCancel(false);
+          }}
+        >
+          <div className="pu-modal-card">
+            <div className="pu-modal-icon-wrap danger">
+              <AlertTriangle size={24} aria-hidden />
+            </div>
+            <div className="pu-modal-content">
+              <h3 id="pu-cancel-title" className="pu-modal-title">Xác nhận hủy bài làm thi?</h3>
+              <p className="pu-modal-desc">
+                Phiên làm bài và bản ghi giám sát sẽ dừng ngay lập tức. Dữ liệu chưa nộp sẽ không được lưu và bạn sẽ cần bắt đầu lại bài thi từ đầu trong lần nộp tiếp theo.
+              </p>
+            </div>
+            <div className="pu-modal-actions">
+              <button
+                type="button"
+                className="pu-modal-btn cancel"
+                onClick={() => setConfirmCancel(false)}
+              >
+                Tiếp tục làm bài
+              </button>
+              <button
+                type="button"
+                className="pu-modal-btn danger"
+                onClick={cancel}
+              >
+                Xác nhận hủy bài
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -158,41 +268,86 @@ export function ProctoredExam(props: ProctoredExamProps) {
       {(stage === 'work' || stage === 'submitting') && (
         <main className="pu-exam-body pu-work-grid">
           <div className="pu-work">
-            <Brief {...props} choiceCount={questions.length} />
+            {/* Stepper Bar (Phần 1 Trắc nghiệm / Phần 2 Tự luận) */}
+            <div className="pu-exam-stepper-bar">
+              <div className="pu-stepper-tabs" role="tablist" aria-label="Các phần của bài thi">
+                {questions.length > 0 && (
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeSection === 'choice'}
+                    className={`pu-stepper-tab ${activeSection === 'choice' ? 'is-active' : ''}`}
+                    onClick={() => {
+                      setActiveSection('choice');
+                      document.getElementById('pu-choice-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}
+                  >
+                    <span className="pu-tab-badge">01</span>
+                    <span className="pu-tab-info">
+                      <strong>Phần 1: Trắc nghiệm</strong>
+                      <small>{questions.length - unanswered}/{questions.length} đã chọn</small>
+                    </span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeSection === 'essay'}
+                  className={`pu-stepper-tab ${activeSection === 'essay' ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setActiveSection('essay');
+                    document.getElementById('pu-essay-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                >
+                  <span className="pu-tab-badge">02</span>
+                  <span className="pu-tab-info">
+                    <strong>Phần 2: Tự luận</strong>
+                    <small>{essayShort ? 'Chưa đủ điều kiện' : `${length}/${MAX_EVIDENCE} ký tự`}</small>
+                  </span>
+                </button>
+              </div>
+
+              <div className="pu-stepper-criteria" aria-label="Điều kiện đạt bài thi">
+                <CheckCircle2 size={14} className="text-emerald-600 shrink-0" aria-hidden />
+                <span>Điều kiện đạt: ≥ {Math.min(props.choicePassMark, questions.length)}/{questions.length} trắc nghiệm & nộp bài tự luận</span>
+              </div>
+            </div>
+
+            {/* Phần 1: Trắc nghiệm */}
             {questions.length > 0 && (
-              <ChoicePart
-                questions={questions}
-                answers={answers}
-                passMark={props.choicePassMark}
-                disabled={snapshot.phase !== 'recording'}
-                onChoose={(questionId, optionId) => setAnswers((prev) => ({ ...prev, [questionId]: optionId }))}
-              />
+              <div id="pu-choice-section">
+                <ChoicePart
+                  questions={questions}
+                  answers={answers}
+                  passMark={props.choicePassMark}
+                  disabled={snapshot.phase === 'locked'}
+                  onChoose={(questionId, optionId) => setAnswers((prev) => ({ ...prev, [questionId]: optionId }))}
+                />
+              </div>
             )}
-            <section className="pu-surface pu-pad pu-answer" aria-labelledby="pu-essay-title">
+
+            {/* Phần 2: Tự luận */}
+            <section id="pu-essay-section" className="pu-surface pu-pad pu-answer" aria-labelledby="pu-essay-title">
               <div>
-                <span className="pu-mini">{questions.length > 0 ? 'Phần 2 · Tự luận' : 'Tự luận'}</span>
-                <h2 id="pu-essay-title" className="pu-panel-title">Tạo ghi chú công việc có thể kiểm tra.</h2>
-                <p className="pu-panel-desc">
-                  Mô tả một nhiệm vụ thực tế của vị trí {props.positionName ?? 'của bạn'} thuộc lĩnh vực {props.domainName.toLowerCase()}: nêu nguồn,
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-700">
+                  {questions.length > 0 ? 'Phần 2 · Tự luận' : 'Tự luận'}
+                </span>
+                <h2 id="pu-essay-title" className="pu-panel-title mt-1.5">Tạo ghi chú công việc có thể kiểm tra.</h2>
+                <p className="pu-panel-desc max-w-2xl">
+                  Mô tả một nhiệm vụ thực tế của vị trí {props.positionName ?? 'của bạn'} thuộc lĩnh vực {props.domainName.trim().toLowerCase()}: nêu nguồn,
                   hành động hoặc phép tính người khác kiểm tra lại được, kết luận và bước tiếp theo.
                 </p>
               </div>
               {props.assignmentContent}
-              <ol className="pu-brief-criteria" aria-label="Ba tiêu chí chấm phần tự luận">
-                {props.criteria.map((criterion) => (
-                  <li key={criterion.number}>
-                    <b>{criterion.number}</b>
-                    <span><strong>{criterion.title}</strong><small>{criterion.description}</small></span>
-                  </li>
-                ))}
-              </ol>
+
               <label id="pu-answer-label" htmlFor="pu-evidence" className="pu-answer-label">Ghi chú minh chứng</label>
               <textarea
                 id="pu-evidence"
                 value={text}
                 onChange={(event) => setText(event.target.value)}
                 maxLength={MAX_EVIDENCE}
-                disabled={snapshot.phase !== 'recording'}
+                disabled={snapshot.phase === 'locked'}
                 placeholder="Nêu nguồn, trình bày hành động hoặc phép tính của bạn, rồi giải thích kết luận và bước tiếp theo."
                 aria-describedby="pu-evidence-hint"
               />
@@ -207,7 +362,7 @@ export function ProctoredExam(props: ProctoredExamProps) {
                   <button
                     type="button"
                     className={btn()}
-                    disabled={essayShort || unanswered > 0 || snapshot.phase !== 'recording'}
+                    disabled={essayShort || unanswered > 0 || snapshot.phase === 'locked'}
                     onClick={() => setConfirmSubmit(true)}
                   >
                     Nộp bài
@@ -218,7 +373,7 @@ export function ProctoredExam(props: ProctoredExamProps) {
                 <div className="pu-exam-confirm inline" role="alertdialog" aria-labelledby="pu-submit-title">
                   <strong id="pu-submit-title">Nộp bài và kết thúc ghi hình?</strong>
                   <span>
-                    Bài làm cùng bản ghi {clock(elapsed)} sẽ gửi cho {props.reviewer?.name ?? 'người chấm'}. Sau khi nộp, bạn không sửa được bài.
+                    Bài làm cùng bản ghi giám sát ({clock(elapsed)}) sẽ được chuyển đến Hội đồng khảo thí. Sau khi nộp, bạn không thể chỉnh sửa bài làm.
                   </span>
                   <div className="pu-row">
                     <button type="button" className={btn('primary', true)} onClick={submit}>Nộp bài</button>
@@ -245,7 +400,24 @@ export function ProctoredExam(props: ProctoredExamProps) {
 
             {snapshot.phase === 'locked' && <LockOverlay controller={controller} snapshot={snapshot} elapsed={elapsed} />}
           </div>
-          <ProctorPanel controller={controller} snapshot={snapshot} />
+
+          <ProctorPanel
+            controller={controller}
+            snapshot={snapshot}
+            questions={questions}
+            answers={answers}
+            essayDone={!essayShort}
+            onJumpQuestion={(qId) => {
+              setActiveSection('choice');
+              const el = document.getElementById(`q-${qId}`);
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }}
+            onJumpEssay={() => {
+              setActiveSection('essay');
+              const el = document.getElementById('pu-essay-section');
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+          />
         </main>
       )}
 
@@ -253,10 +425,12 @@ export function ProctoredExam(props: ProctoredExamProps) {
         <main className="pu-exam-body pu-exam-narrow">
           <section className="pu-exam-done" aria-labelledby="pu-done-title">
             <span className="pu-exam-done-icon" aria-hidden><Check size={26} strokeWidth={2.6} /></span>
-            <h1 id="pu-done-title">Đã nộp {KIND_LABEL[kind].toLowerCase()} {course.code}.</h1>
+            <h1 id="pu-done-title">
+              {kind === 'PRE_ASSESSMENT' ? `Đã nộp bài đánh giá ${course.code}.` : `Đã nộp bài cuối khóa ${course.code}.`}
+            </h1>
             <p>
-              Bài làm và bản ghi {formatDuration(doneDuration)} đã gửi cho {props.reviewer?.name ?? 'người chấm'}. Kết quả
-              {questions.length > 0 ? ' phần trắc nghiệm, phần tự luận' : ''} và nhận xét chỉ hiện khi người chấm chấm xong, ở trang Hôm nay và trong lộ trình.
+              Bài làm và bản ghi giám sát ({formatDuration(doneDuration)}) đã được gửi đến Hội đồng khảo thí. Kết quả đánh giá
+              {questions.length > 0 ? ' trắc nghiệm, tự luận' : ''} cùng nhận xét chi tiết sẽ được công bố tại trang Tổng quan và Lộ trình học tập trong vòng 48 giờ.
             </p>
             <div className="pu-exam-upload">
               <span><Upload size={15} aria-hidden /> Bản ghi màn hình, camera và micro <strong>Đã tải lên</strong></span>
@@ -270,8 +444,8 @@ export function ProctoredExam(props: ProctoredExamProps) {
               <div className="no"><b>Nếu chưa đạt</b><span>{props.outcomes.fail}</span></div>
             </div>
             <div className="pu-row">
-              <Link to={PULSE_PATHS.today} className={btn()}>Về trang Hôm nay</Link>
-              <Link to={PULSE_PATHS.path} className={btn('outline')}>Xem lộ trình</Link>
+              <Link to={PULSE_PATHS.today} className={btn('primary', true)}>Về trang Tổng quan</Link>
+              <Link to={PULSE_PATHS.path} className={btn('outline', true)}>Xem lộ trình</Link>
             </div>
           </section>
         </main>
@@ -299,36 +473,46 @@ function ExamBar({ kind, course, snapshot, elapsed, stage, onCancel }: {
   stage: string;
   onCancel: () => void;
 }) {
-  const recording = snapshot.phase === 'recording' || snapshot.phase === 'locked';
+  const recording = snapshot.phase === 'recording' || snapshot.phase === 'locked' || stage === 'work';
   const leaves = snapshot.events.filter((e) => e.kind === 'TAB_HIDDEN' || e.kind === 'FOCUS_LOST').length;
-  const chips: { label: string; on: boolean }[] = [
-    { label: 'Màn hình', on: snapshot.screen === 'on' && !snapshot.lockReasons.includes('SCREEN') },
-    { label: 'Camera', on: snapshot.camera === 'on' && !snapshot.lockReasons.includes('CAMERA') },
-    { label: 'Micro', on: snapshot.mic === 'on' && !snapshot.lockReasons.includes('MIC') },
-  ];
+
   return (
     <header className="pu-exam-bar">
-      <div className="pu-exam-bar-title">
-        <img src={pulseMark} alt="" />
-        <span>
-          <small>{KIND_LABEL[kind]}</small>
-          <strong>{course.code} · {course.title}</strong>
-        </span>
+      <div className="pu-exam-bar-left">
+        <div className="pu-exam-brand">
+          <img src={pulseMark} alt="DigiTalent AI" className="pu-exam-logo" />
+          <span className="pu-exam-wordmark">DigiTalent <em>AI</em></span>
+        </div>
+        <span className="pu-exam-bar-divider" aria-hidden="true" />
+        <div className="pu-exam-bar-info">
+          <span className="pu-exam-type-pill">{KIND_LABEL[kind]}</span>
+          <span className="pu-exam-course-title" title={`${course.code} · ${toSentenceCase(course.title)}`}>
+            {course.code} · {toSentenceCase(course.title)}
+          </span>
+        </div>
       </div>
       {recording && (
-        <div className="pu-exam-status" role="status" aria-label="Trạng thái ghi hình">
-          <span className="pu-rec"><i aria-hidden />Đang ghi <time>{clock(elapsed)}</time></span>
-          {chips.map((chip) => (
-            <span key={chip.label} className={`pu-chip${chip.on ? '' : ' off'}`}>{chip.label} · {chip.on ? 'đang ghi' : 'đã ngừng'}</span>
-          ))}
-          <span className="pu-exam-leaves">Rời bài làm: {leaves} lần</span>
+        <div className="pu-exam-status" role="status" aria-label="Trạng thái bài thi">
+          <span className="pu-rec"><i aria-hidden />Đang ghi hình · <time>{clock(elapsed)}</time></span>
+          <span className={`pu-exam-leaves ${leaves > 0 ? 'has-leaves' : ''}`}>
+            Rời bài làm: {leaves} lần
+          </span>
         </div>
       )}
-      {stage === 'check' || stage === 'done' ? (
-        <Link to={PULSE_PATHS.course(course.courseId)} className="pu-exam-leave">Thoát</Link>
-      ) : stage === 'work' ? (
-        <button type="button" className="pu-exam-leave" onClick={onCancel}>Hủy bài làm</button>
-      ) : null}
+      <div className="pu-exam-bar-actions">
+        {stage === 'work' && (
+          <button type="button" className="pu-exam-leave-btn danger" onClick={onCancel}>
+            <LogOut size={15} aria-hidden />
+            <span>Hủy bài làm</span>
+          </button>
+        )}
+        {(stage === 'check' || stage === 'done') && (
+          <Link to={PULSE_PATHS.course(course.courseId)} className="pu-exam-leave-btn">
+            <LogOut size={15} aria-hidden />
+            <span>Thoát</span>
+          </Link>
+        )}
+      </div>
     </header>
   );
 }
@@ -343,24 +527,28 @@ function DeviceCheck(props: ProctoredExamProps & {
 }) {
   const { controller, snapshot, course } = props;
   const supported = proctoringSupported();
-  const missing = [
-    snapshot.screen !== 'on' && 'chia sẻ màn hình',
-    snapshot.camera !== 'on' && 'camera',
-    snapshot.mic !== 'on' && 'micro',
-    !props.agree && 'lời cam kết',
-  ].filter(Boolean) as string[];
-  const screen = deviceText(snapshot.screen, 'Đang chia sẻ: toàn bộ màn hình');
-  const camera = deviceText(snapshot.camera, 'Camera đang bật');
-  const mic = deviceText(snapshot.mic, 'Micro đang bật');
+
+  const readyDevices = [
+    { label: 'Màn hình', ready: snapshot.screen === 'on' },
+    { label: 'Camera', ready: snapshot.camera === 'on' },
+    { label: 'Micro', ready: snapshot.mic === 'on' },
+    { label: 'Cam kết', ready: props.agree },
+  ];
+
+  const readyCount = (snapshot.screen === 'on' ? 1 : 0) + (snapshot.camera === 'on' ? 1 : 0) + (snapshot.mic === 'on' ? 1 : 0);
+  const allDevicesReady = readyCount === 3;
+  const canStart = allDevicesReady && props.agree && supported && snapshot.phase !== 'starting';
 
   return (
     <main className="pu-exam-body">
       <div className="pu-exam-head">
-        <span className="pu-eyebrow">Chuẩn bị làm bài</span>
+        <div className="pu-step-badge">
+          <ShieldCheck size={14} aria-hidden />
+          <span>Bước 1/2: Kiểm tra thiết bị</span>
+        </div>
         <h1>Bật đủ ba thiết bị để bắt đầu.</h1>
         <p>
-          Bài làm được ghi lại để {props.reviewer?.name ?? 'người chấm'} xem khi chấm: toàn bộ màn hình, hình từ camera và âm thanh từ micro.
-          Chỉ người chấm bài và bạn xem được bản ghi.
+          Hệ thống ghi nhận màn hình, camera và micro nhằm bảo đảm tính liêm chính và công nhận kết quả thi. Dữ liệu được bảo mật theo quy định khảo thí số.
         </p>
       </div>
       {props.intro}
@@ -371,113 +559,234 @@ function DeviceCheck(props: ProctoredExamProps & {
         </div>
       )}
       <div className="pu-check-grid">
-        <div className="pu-stack" style={{ gap: 12 }}>
-          <div className={`pu-device ${screen.tone === 'ok' ? 'on' : snapshot.screen === 'idle' ? '' : 'error'}`}>
-            <span className="pu-device-icon" aria-hidden><Monitor size={21} /></span>
+        <div className="pu-stack" style={{ gap: 14 }}>
+          {/* Device 1: Screen */}
+          <div className={`pu-device ${snapshot.screen === 'on' ? 'on' : snapshot.screen === 'idle' ? '' : 'error'}`}>
+            <span className="pu-device-icon" aria-hidden><Monitor size={22} /></span>
             <div className="pu-device-text">
               <strong>Chia sẻ toàn bộ màn hình</strong>
-              <span>Trong hộp thoại của trình duyệt, chọn Toàn bộ màn hình. Chia sẻ một tab hoặc một cửa sổ sẽ bị từ chối.</span>
-              <b className={screen.tone}>{screen.text}</b>
+              <span>Chọn tùy chọn "Toàn bộ màn hình" (Entire Screen) khi trình duyệt yêu cầu để bắt đầu ghi hình.</span>
+              {snapshot.screen === 'on' ? (
+                <span className="pu-device-badge ok"><Check size={13} aria-hidden /> Đã chọn toàn bộ màn hình</span>
+              ) : snapshot.screen === 'requesting' ? (
+                <span className="pu-device-badge waiting">Đang chờ trình duyệt…</span>
+              ) : snapshot.screen === 'wrong-surface' ? (
+                <span className="pu-device-badge bad">Đã chọn tab/cửa sổ — cần toàn bộ màn hình</span>
+              ) : snapshot.screen === 'denied' ? (
+                <span className="pu-device-badge bad">Chưa được cho phép chia sẻ màn hình</span>
+              ) : (
+                <span className="pu-device-badge bad">Chưa bật</span>
+              )}
             </div>
-            {snapshot.screen === 'on' && <StreamPreview stream={controller.screenStream} version={snapshot.streamVersion} label="Xem trước màn hình đang chia sẻ" />}
-            <button type="button" className={btn(snapshot.screen === 'on' ? 'outline' : 'primary', true)} disabled={!supported || snapshot.screen === 'requesting'} onClick={() => void controller.requestScreen()}>
-              {snapshot.screen === 'on' ? 'Chọn lại' : 'Chọn màn hình'}
+            {snapshot.screen === 'on' && (
+              <StreamPreview stream={controller.screenStream} version={snapshot.streamVersion} label="Xem trước màn hình đang chia sẻ" />
+            )}
+            <button
+              type="button"
+              className={btn(snapshot.screen === 'on' ? 'outline' : 'primary', true)}
+              disabled={!supported || snapshot.screen === 'requesting'}
+              onClick={() => void controller.requestScreen()}
+            >
+              {snapshot.screen === 'on' ? 'Đổi màn hình' : 'Chọn màn hình'}
             </button>
           </div>
-          <div className={`pu-device ${camera.tone === 'ok' ? 'on' : snapshot.camera === 'idle' ? '' : 'error'}`}>
-            <span className="pu-device-icon" aria-hidden><Video size={21} /></span>
+
+          {/* Device 2: Camera */}
+          <div className={`pu-device ${snapshot.camera === 'on' ? 'on' : snapshot.camera === 'idle' ? '' : 'error'}`}>
+            <span className="pu-device-icon" aria-hidden><Video size={22} /></span>
             <div className="pu-device-text">
               <strong>Bật camera</strong>
-              <span>Khuôn mặt của bạn cần nằm trong khung hình suốt thời gian làm bài.</span>
-              <b className={camera.tone}>{camera.text}</b>
+              <span>Đảm bảo khuôn mặt luôn nằm rõ trong khung hình suốt thời gian làm bài.</span>
+              {snapshot.camera === 'on' ? (
+                <span className="pu-device-badge ok">
+                  <Check size={13} aria-hidden />
+                  {snapshot.faceCheck === 'on' ? 'Đã nhận diện khuôn mặt' : 'Camera đang hoạt động'}
+                </span>
+              ) : snapshot.camera === 'requesting' ? (
+                <span className="pu-device-badge waiting">Đang khởi động camera…</span>
+              ) : snapshot.camera === 'denied' ? (
+                <span className="pu-device-badge bad">Chưa được cho phép truy cập camera</span>
+              ) : (
+                <span className="pu-device-badge bad">Chưa bật</span>
+              )}
             </div>
-            {snapshot.camera === 'on' && <StreamPreview stream={controller.cameraStream} version={snapshot.streamVersion} label="Xem trước camera" mirrored />}
-            <button type="button" className={btn(snapshot.camera === 'on' ? 'outline' : 'primary', true)} disabled={!supported || snapshot.camera === 'requesting'} onClick={() => void controller.requestCamera()}>
-              {snapshot.camera === 'on' ? 'Bật lại' : 'Bật camera'}
+            {snapshot.camera === 'on' && (
+              <StreamPreview stream={controller.cameraStream} version={snapshot.streamVersion} label="Xem trước camera" mirrored />
+            )}
+            <button
+              type="button"
+              className={btn(snapshot.camera === 'on' ? 'outline' : 'primary', true)}
+              disabled={!supported || snapshot.camera === 'requesting'}
+              onClick={() => void controller.requestCamera()}
+            >
+              {snapshot.camera === 'on' ? 'Đổi camera' : 'Bật camera'}
             </button>
           </div>
-          <div className={`pu-device ${mic.tone === 'ok' ? 'on' : snapshot.mic === 'idle' ? '' : 'error'}`}>
-            <span className="pu-device-icon" aria-hidden><Mic size={21} /></span>
+
+          {/* Device 3: Mic */}
+          <div className={`pu-device ${snapshot.mic === 'on' ? 'on' : snapshot.mic === 'idle' ? '' : 'error'}`}>
+            <span className="pu-device-icon" aria-hidden><Mic size={22} /></span>
             <div className="pu-device-text">
               <strong>Bật micro</strong>
-              <span>Âm thanh xung quanh được ghi cùng camera trong suốt bài làm.</span>
-              <b className={mic.tone}>{mic.text}</b>
+              <span>Thu âm thanh môi trường xung quanh phục vụ hậu kiểm liêm chính bài thi.</span>
+              {snapshot.mic === 'on' ? (
+                <span className="pu-device-badge ok"><Check size={13} aria-hidden /> Đang thu âm tốt</span>
+              ) : snapshot.mic === 'requesting' ? (
+                <span className="pu-device-badge waiting">Đang kiểm tra micro…</span>
+              ) : snapshot.mic === 'denied' ? (
+                <span className="pu-device-badge bad">Chưa được cho phép truy cập micro</span>
+              ) : (
+                <span className="pu-device-badge bad">Chưa bật</span>
+              )}
             </div>
             {snapshot.mic === 'on' && <MicMeter level={snapshot.micLevel} />}
-            <button type="button" className={btn(snapshot.mic === 'on' ? 'outline' : 'primary', true)} disabled={!supported || snapshot.mic === 'requesting'} onClick={() => void controller.requestMic()}>
-              {snapshot.mic === 'on' ? 'Bật lại' : 'Bật micro'}
+            <button
+              type="button"
+              className={btn(snapshot.mic === 'on' ? 'outline' : 'primary', true)}
+              disabled={!supported || snapshot.mic === 'requesting'}
+              onClick={() => void controller.requestMic()}
+            >
+              {snapshot.mic === 'on' ? 'Kiểm tra lại' : 'Bật micro'}
             </button>
           </div>
+
           {snapshot.deviceError && <div className="pu-notice warning" role="status">{snapshot.deviceError}</div>}
 
-          <ul className="pu-rules">
-            <li><ExternalLink size={16} aria-hidden />Không rời khỏi tab bài làm. Mỗi lần rời tab hoặc rời cửa sổ trình duyệt được ghi vào nhật ký giám sát.</li>
-            <li><MonitorOff size={16} aria-hidden />Nếu ngừng chia sẻ màn hình, tắt camera hoặc micro, bài tạm khóa cho tới khi bạn bật lại. Sự kiện này cũng được ghi lại.</li>
-            <li>
-              <ScanFace size={16} aria-hidden />Khuôn mặt được nhận diện ngay trên máy của bạn: vắng mặt, có người khác hoặc nhìn ra ngoài
-              màn hình lâu được ghi vào nhật ký. Hình camera không được gửi đi chỉ để phân tích.
-            </li>
-            <li><Upload size={16} aria-hidden />Bản ghi được tải lên dần trong lúc làm và gửi cùng bài nộp để {props.reviewer?.name ?? 'người chấm'} xem lại.</li>
-          </ul>
+          {/* Khung Quy chế Giám sát & Cam kết Liêm chính Năng lực Số */}
+          <div className="pu-compliance-section" role="region" aria-label="Quy chế phòng thi có giám sát">
+            <div className="pu-compliance-header">
+              <div className="pu-compliance-title-group">
+                <ShieldCheck size={20} className="text-blue-600" aria-hidden />
+                <div>
+                  <h3 className="pu-compliance-h3">Quy chế phòng thi có giám sát</h3>
+                  <p className="pu-compliance-sub">
+                    Bảo đảm tính minh bạch, công bằng và giá trị chuẩn hóa chứng nhận số
+                  </p>
+                </div>
+              </div>
+              <span className="pu-compliance-badge">
+                <ScanFace size={14} className="text-emerald-600" aria-hidden />
+                Edge AI · Xử lý tại chỗ
+              </span>
+            </div>
 
-          <label className="pu-commit">
-            <input type="checkbox" checked={props.agree} onChange={(event) => props.onAgree(event.target.checked)} />
-            <span>Tôi tự làm bài và đồng ý ghi hình màn hình, camera, micro trong lúc làm.</span>
-          </label>
-          <div className="pu-row">
-            <button type="button" className={btn()} disabled={!supported || missing.length > 0 || snapshot.phase === 'starting'} onClick={props.onStart}>
-              {snapshot.phase === 'starting' ? 'Đang bắt đầu…' : <>Bắt đầu làm bài <ArrowRight size={15} aria-hidden /></>}
-            </button>
-            <small className="pu-check-hint">{missing.length ? `Còn thiếu: ${missing.join(', ')}.` : 'Sẵn sàng. Đồng hồ và bản ghi bắt đầu khi bạn bấm.'}</small>
+            <div className="pu-rules-grid">
+              <div className="pu-rule-card">
+                <div className="pu-rule-icon indigo">
+                  <Monitor size={17} aria-hidden />
+                </div>
+                <div className="pu-rule-content">
+                  <strong>Độc lập làm bài</strong>
+                  <p>Tự làm bài 100%, không chuyển tab hoặc rời màn hình quá 10 giây.</p>
+                </div>
+              </div>
+
+              <div className="pu-rule-card">
+                <div className="pu-rule-icon emerald">
+                  <ScanFace size={17} aria-hidden />
+                </div>
+                <div className="pu-rule-content">
+                  <strong>Bảo vệ quyền riêng tư</strong>
+                  <p>Mô hình Edge AI phân tích tại máy, không gửi video đời tư thô về máy chủ.</p>
+                </div>
+              </div>
+
+              <div className="pu-rule-card">
+                <div className="pu-rule-icon amber">
+                  <Lock size={17} aria-hidden />
+                </div>
+                <div className="pu-rule-content">
+                  <strong>Tự động lưu & Dự phòng</strong>
+                  <p>Hệ thống tự lưu liên tục. Cho phép 05 phút kết nối lại nếu gặp sự cố mạng.</p>
+                </div>
+              </div>
+
+              <div className="pu-rule-card">
+                <div className="pu-rule-icon sky">
+                  <Award size={17} aria-hidden />
+                </div>
+                <div className="pu-rule-content">
+                  <strong>Đánh giá & Phúc khảo</strong>
+                  <p>Hội đồng khảo thí chấm và phản hồi trong 48h. Thí sinh có quyền phúc khảo trong 05 ngày.</p>
+                </div>
+              </div>
+            </div>
           </div>
+
+          {/* Action Footer */}
+          <div className="pu-action-footer">
+            <label className="pu-commit">
+              <input
+                type="checkbox"
+                checked={props.agree}
+                onChange={(event) => props.onAgree(event.target.checked)}
+              />
+              <span>Tôi xác nhận đã hiểu rõ quy chế phòng thi và cam kết tự hoàn thành bài thi bằng năng lực thực tế.</span>
+            </label>
+
+            <div className="pu-action-row">
+              <div className="pu-checklist-chips" aria-label="Tiến độ kiểm tra thiết bị">
+                {readyDevices.map((item) => (
+                  <span
+                    key={item.label}
+                    className={`pu-checklist-chip ${item.ready ? 'is-ready' : ''}`}
+                  >
+                    <span className="pu-chip-dot" />
+                    {item.label}
+                  </span>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                className={`pu-start-btn ${canStart ? 'is-ready' : 'is-disabled'}`}
+                disabled={!canStart}
+                onClick={props.onStart}
+              >
+                {snapshot.phase === 'starting' ? (
+                  'Đang bắt đầu…'
+                ) : !allDevicesReady ? (
+                  `Bắt đầu làm bài (Đã bật ${readyCount}/3 thiết bị)`
+                ) : !props.agree ? (
+                  'Bắt đầu làm bài (Cần tích cam kết)'
+                ) : (
+                  <>
+                    <span>Bắt đầu làm bài ngay</span>
+                    <ArrowRight size={16} aria-hidden />
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
           {props.startError && <div className="pu-notice warning" role="alert">{props.startError}</div>}
         </div>
 
-        <aside className="pu-exam-summary" aria-label="Bài bạn sắp làm">
-          <span className="pu-mini">Bài bạn sắp làm</span>
-          <strong>{course.code} · {course.title}</strong>
-          <span>{props.domainName} · {levelName(course.tier)}</span>
+        {/* Right Card: Exam Brief */}
+        <aside className="pu-exam-summary" aria-label="Thông tin bài thi">
+          <h2 className="pu-summary-title">Thông tin bài thi</h2>
+          <strong>{course.code} · {toSentenceCase(course.title)}</strong>
+          <span className="pu-summary-sub">{props.domainName} · Cấp độ {levelName(course.tier)}</span>
           <dl>
-            <div><dt>Loại bài</dt><dd>{KIND_LABEL[props.kind]}</dd></div>
-            <div><dt>Đề bài</dt><dd>{props.choiceCount > 0 ? `${props.choiceCount} câu trắc nghiệm + tự luận` : 'Tự luận'}</dd></div>
-            <div><dt>Số lần</dt><dd>{props.attemptLabel}</dd></div>
-            <div><dt>Người chấm</dt><dd>{props.reviewer?.name ?? '—'}</dd></div>
-            <div><dt>Ghi hình</dt><dd>Màn hình, camera, micro</dd></div>
+            <div><dt>Loại bài thi</dt><dd>{KIND_LABEL[props.kind]}</dd></div>
+            <div><dt>Cấu trúc đề</dt><dd>{props.choiceCount > 0 ? `${props.choiceCount} câu trắc nghiệm + tự luận` : 'Tự luận'}</dd></div>
+            <div><dt>Lượt làm</dt><dd>{props.attemptLabel}</dd></div>
+            <div><dt>Người đánh giá</dt><dd>{props.reviewer?.name ?? 'Chưa phân công'}</dd></div>
+            <div><dt>Giám sát</dt><dd>Màn hình, camera, micro</dd></div>
           </dl>
-          <div className="pu-exam-outcomes compact">
-            <div className="ok"><b>Đạt</b><span>{props.outcomes.pass}</span></div>
-            <div className="no"><b>Chưa đạt</b><span>{props.outcomes.fail}</span></div>
+          <div className="pu-summary-outcomes">
+            <div className="pu-outcome-item ok">
+              <span className="pu-outcome-pill ok">Đạt</span>
+              <p>Mở khóa cấp độ tiếp theo và công nhận chuẩn năng lực số.</p>
+            </div>
+            <div className="pu-outcome-item no">
+              <span className="pu-outcome-pill no">Chưa đạt</span>
+              <p>Xem nhận xét từ hội đồng và được làm lại bài 01 lần.</p>
+            </div>
           </div>
         </aside>
       </div>
     </main>
-  );
-}
-
-/** Đầu bài: hai phần của đề và cách chấm. */
-function Brief({ kind, course, domainName, reviewer, choiceCount, choicePassMark }: ProctoredExamProps) {
-  return (
-    <section className="pu-surface pu-pad pu-exam-brief" aria-labelledby="pu-brief-title">
-      <span className="pu-mini">{KIND_LABEL[kind]} · {domainName} · {levelName(course.tier)}</span>
-      <h1 id="pu-brief-title" className="pu-panel-title">
-        {choiceCount > 0 ? `Đề gồm ${choiceCount} câu trắc nghiệm và một bài tự luận.` : 'Đề gồm một bài tự luận.'}
-      </h1>
-      {choiceCount > 0 && (
-        <ol className="pu-brief-criteria" aria-label="Các phần của đề">
-          <li>
-            <b>1</b>
-            <span><strong>Trắc nghiệm</strong><small>{choiceCount} câu từ nội dung khóa, mỗi câu một đáp án. Đúng từ {choicePassMark} câu thì phần này đạt.</small></span>
-          </li>
-          <li>
-            <b>2</b>
-            <span><strong>Tự luận</strong><small>Một ghi chú công việc có thể kiểm tra, chấm theo ba tiêu chí.</small></span>
-          </li>
-        </ol>
-      )}
-      <p className="pu-panel-desc">
-        Bài đạt khi {choiceCount > 0 ? 'cả hai phần đạt' : 'phần tự luận đạt'}. Kết quả chỉ hiện khi {reviewer?.name ?? 'người chấm'} chấm xong.
-      </p>
-    </section>
   );
 }
 
@@ -494,14 +803,14 @@ function ChoicePart({ questions, answers, passMark, disabled, onChoose }: {
     <section className="pu-quiz pu-exam-choice" aria-labelledby="pu-choice-title">
       <div className="pu-exam-choice-head">
         <div>
-          <span className="pu-mini">Phần 1 · Trắc nghiệm</span>
-          <h2 id="pu-choice-title">Chọn một đáp án cho mỗi câu.</h2>
-          <p>{questions.length} câu, đúng từ {passMark} câu thì phần này đạt.</p>
+          <span className="text-xs font-bold uppercase tracking-wider text-blue-700">Phần 1 · Trắc nghiệm</span>
+          <h2 id="pu-choice-title" className="mt-1">Chọn một đáp án cho mỗi câu.</h2>
+          <p>{questions.length} câu, đúng từ {Math.min(passMark, questions.length)} câu thì phần này đạt.</p>
         </div>
         <span className="pu-exam-choice-count" aria-live="polite">{answered}/{questions.length} đã chọn</span>
       </div>
       {questions.map((question) => (
-        <fieldset key={question.questionId} disabled={disabled}>
+        <fieldset id={`q-${question.questionId}`} key={question.questionId} disabled={disabled} tabIndex={-1}>
           <legend><span>{String(question.number).padStart(2, '0')}</span>{question.content}</legend>
           {question.options.map((option) => (
             <label key={option.optionId}>
@@ -536,9 +845,19 @@ export function MicMeter({ level }: { level: number }) {
   const bars = [0.35, 0.6, 0.85, 0.55, 1, 0.7, 0.45, 0.8, 0.5];
   return (
     <span className="pu-meter" role="meter" aria-label="Mức âm thanh của micro" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(level * 100)}>
-      {bars.map((weight, index) => (
-        <i key={index} style={{ height: `${Math.max(4, Math.round(24 * Math.min(1, level * weight * 1.6)))}px` }} />
-      ))}
+      {bars.map((weight, index) => {
+        const scale = Math.max(0.18, Math.min(1, level * weight * 1.6));
+        return (
+          <i
+            key={index}
+            style={{
+              transform: `scaleY(${scale})`,
+              transformOrigin: 'bottom',
+              opacity: scale > 0.25 ? 1 : 0.45,
+            }}
+          />
+        );
+      })}
     </span>
   );
 }
@@ -578,10 +897,6 @@ export function LockOverlay({ controller, snapshot, elapsed }: { controller: Pro
   );
 }
 
-const FLAGGED_KINDS: string[] = [
-  'TAB_HIDDEN', 'FOCUS_LOST', 'SHARE_STOPPED', 'CAMERA_STOPPED', 'MIC_STOPPED', 'FACE_MISSING', 'MULTIPLE_FACES', 'LOOKING_AWAY',
-];
-
 const FACE_ALERT_TEXT: Record<FaceSignalKind, string> = {
   FACE_MISSING: 'Không thấy khuôn mặt — hãy ngồi vào khung hình',
   MULTIPLE_FACES: 'Có nhiều người trong khung hình',
@@ -602,8 +917,32 @@ function FaceRow({ snapshot }: { snapshot: ProctorSnapshot }) {
   );
 }
 
-export function ProctorPanel({ controller, snapshot }: { controller: ProctorController; snapshot: ProctorSnapshot }) {
+function getEventBadge(kind: string): 'ok' | 'warn' | 'crit' {
+  if (['TAB_HIDDEN', 'FOCUS_LOST', 'SHARE_STOPPED', 'CAMERA_STOPPED', 'MIC_STOPPED'].includes(kind)) return 'crit';
+  if (['LOOKING_AWAY', 'MULTIPLE_FACES', 'FACE_MISSING'].includes(kind)) return 'warn';
+  return 'ok';
+}
+
+export function ProctorPanel({
+  controller,
+  snapshot,
+  questions = [],
+  answers = {},
+  essayDone = false,
+  onJumpQuestion,
+  onJumpEssay,
+}: {
+  controller: ProctorController;
+  snapshot: ProctorSnapshot;
+  questions?: PulseExamQuestion[];
+  answers?: Record<string, string>;
+  essayDone?: boolean;
+  onJumpQuestion?: (qId: string) => void;
+  onJumpEssay?: () => void;
+}) {
   const screenOff = snapshot.lockReasons.includes('SCREEN');
+  const answeredCount = questions.filter((q) => answers[q.questionId]).length;
+
   return (
     <aside className="pu-proctor" aria-label="Giám sát bài làm">
       <div className="pu-proctor-camera">
@@ -624,17 +963,58 @@ export function ProctorPanel({ controller, snapshot }: { controller: ProctorCont
       </div>
       <FaceRow snapshot={snapshot} />
       {snapshot.uploadError && <div className="pu-proctor-row off">{snapshot.uploadError}</div>}
+
+      {/* Bảng câu hỏi nhanh (Question Navigator) */}
+      {questions.length > 0 && (
+        <div className="pu-question-nav" aria-label="Bảng câu hỏi nhanh">
+          <div className="pu-nav-head">
+            <span className="pu-nav-title">Danh sách câu hỏi</span>
+            <span className="pu-nav-count">{answeredCount}/{questions.length}</span>
+          </div>
+          <div className="pu-nav-grid">
+            {questions.map((q, idx) => {
+              const isDone = Boolean(answers[q.questionId]);
+              const num = String(idx + 1).padStart(2, '0');
+              return (
+                <button
+                  key={q.questionId}
+                  type="button"
+                  onClick={() => onJumpQuestion?.(q.questionId)}
+                  className={`pu-q-btn ${isDone ? 'is-done' : ''}`}
+                  title={`Câu ${num}: ${isDone ? 'Đã trả lời' : 'Chưa trả lời'}`}
+                >
+                  {num}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => onJumpEssay?.()}
+              className={`pu-q-btn pu-q-essay ${essayDone ? 'is-done' : ''}`}
+              title={`Tự luận: ${essayDone ? 'Đã viết' : 'Chưa đủ điều kiện'}`}
+            >
+              TL
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Nhật ký giám sát */}
       <div className="pu-proctor-log">
-        <span className="pu-mini">Nhật ký giám sát</span>
-        <ol>
+        <div className="pu-log-header">
+          <span className="pu-log-title">Nhật ký giám sát</span>
+          <span className="pu-log-count">{snapshot.events.length} sự kiện</span>
+        </div>
+        <ol className="pu-log-list">
           {snapshot.events.map((event, index) => {
-            const flagged = FLAGGED_KINDS.includes(event.kind);
+            const tone = getEventBadge(event.kind);
             return (
-              <li key={`${event.kind}-${index}`} className={flagged ? 'flagged' : undefined}>
+              <li key={`${event.kind}-${index}`} className="pu-log-item">
+                <span className={`pu-log-dot ${tone}`} aria-hidden />
                 <time>{clock(event.offsetMs)}</time>
-                <span>
+                <span className="pu-log-text">
                   {PROCTORING_EVENT_LABELS[event.kind]}
-                  {event.durationMs ? ` ${formatDuration(event.durationMs)}` : ''}
+                  {event.durationMs ? ` (${formatDuration(event.durationMs)})` : ''}
                 </span>
               </li>
             );
