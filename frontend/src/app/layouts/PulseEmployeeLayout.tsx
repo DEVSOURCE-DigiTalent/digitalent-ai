@@ -10,6 +10,7 @@ import { MainLayout } from '../../components/layout/MainLayout';
 import { useCurrentUser } from '../../hooks/use-current-user';
 import { useEnterpriseTheme } from '../../hooks/use-enterprise-theme';
 import { PulseHeader } from '../../features/pulse-employee/components/PulseHeader';
+import { PulseSidebar } from '../../features/pulse-employee/components/PulseSidebar';
 import { PULSE_PATHS, isExamPath } from '../../features/pulse-employee/lib/paths';
 import { TrialNotice } from '../../features/pulse-employee/components/TrialLearning';
 import { trialGateOf } from '../../features/pulse-employee/lib/trial-gate';
@@ -22,9 +23,9 @@ import '../../features/pulse-employee/pulse-roadmap.css';
 import '../../features/pulse-employee/pulse-exam.css';
 
 /**
- * Khung cổng nhân viên Pulse (docs/ui-redesign/16-pulse-product-flow-detailed.md §3): không có menu bên,
- * thanh đầu trang với Hôm nay / Lộ trình / Thực hành; chi tiết khóa và trang học mở theo ngữ cảnh. Trang làm bài có giám sát
- * (bài đánh giá trước khi học, bài cuối khóa) không có thanh điều hướng: trang tự hiện thanh ghi hình và nút Thoát.
+ * Khung Cổng Nhân viên Pulse (PulseEmployeeLayout)
+ * - Sidebar bên trái đồng bộ Personal Layout với tính năng Thu Phóng (68px ↔ 240px)
+ * - Tự động ẩn hoàn toàn (Zero Distraction Focus Mode) khi làm bài thi Proctored (Pre-assessment & Final).
  */
 /**
  * Doanh nghiệp dùng thử: trước khi mentor công bố kết quả, trang học (khóa học, thực hành, kết quả) hiện cảnh báo "làm bài
@@ -76,7 +77,6 @@ export function PulseEmployeeLayout() {
   const trial = useIsEnterpriseTrial();
   const owner = useCurrentUser((s) => Boolean(s.user?.roles.includes(ROLES.OWNER)));
   useEffect(() => {
-    // Khối lệnh (không trả về): scrollTo trả về Promise trên trình duyệt mới, React chỉ chấp nhận hàm dọn dẹp.
     window.scrollTo({ top: 0 });
   }, [pathname]);
 
@@ -87,17 +87,24 @@ export function PulseEmployeeLayout() {
           {owner && !exam ? (
             <OwnerLearningShell pathname={pathname} />
           ) : (
-          <div className={exam ? 'pu pu-exam-mode' : 'pu'} data-testid="pulse-employee-layout">
-            {!exam && <PulseHeader />}
-            <main className={exam ? 'pu-exam-main' : 'pu-main'} id="main">
-              <TrialGate pathname={pathname}>
-                <Outlet />
-              </TrialGate>
-            </main>
-            {/* Không có trợ lý trong bài làm có giám sát. */}
-            {!exam && <AssistantWidget />}
-            {!exam && !trial && <RoleTutorialContainer forcedRole="EMPLOYEE" />}
-          </div>
+            <div className={exam ? 'pu pu-exam-mode' : 'pu pu-workspace'} data-testid="pulse-employee-layout">
+              {/* 1. Header trên cùng toàn màn hình */}
+              {!exam && <PulseHeader />}
+
+              {/* 2. Vùng làm việc: Khung Sidebar dạng thẻ nhỏ gọn + Main content */}
+              <div className={exam ? 'pu-exam-container' : 'pu-workspace-content'}>
+                {!exam && <PulseSidebar />}
+                <main className={exam ? 'pu-exam-main' : 'pu-main-content'} id="main">
+                  <TrialGate pathname={pathname}>
+                    <Outlet />
+                  </TrialGate>
+                </main>
+              </div>
+
+              {/* Không có trợ lý trong bài làm có giám sát */}
+              {!exam && <AssistantWidget />}
+              {!exam && !trial && <RoleTutorialContainer forcedRole="EMPLOYEE" />}
+            </div>
           )}
         </RequireOnboarded>
       </RequireWorkspace>

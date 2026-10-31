@@ -1,21 +1,58 @@
-import { useParams } from 'react-router-dom';
-import { Check, FileText, HelpCircle, Lock, ScanEye } from 'lucide-react';
-import architectureArt from '@/assets/pulse/competency-architecture.webp';
+import { Link, useParams } from 'react-router-dom';
+import {
+  ArrowLeft,
+  BookOpen,
+  Check,
+  ChevronRight,
+  Clock,
+  FileText,
+  GraduationCap,
+  HelpCircle,
+  Lock,
+  PlayCircle,
+  RotateCcw,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  Zap,
+} from 'lucide-react';
 import { usePulseCourse } from '@/hooks/use-pulse';
-import type { PulseCourseDetail, PulseCourseModule } from '@/services/pulse.service';
-import { Bar, Eyebrow, LoadError, Mini, Notice, PageSkeleton, Pill, PuLink } from '../components/ui';
-import { ACCESS_LABELS, BLOCK_MESSAGES, PRE_LABELS, levelName, pad2, pulseErrorMessage } from '../lib/labels';
+import type { PulseCourseDetail } from '@/services/pulse.service';
+import { LoadError, PageSkeleton } from '../components/ui';
+import { ACCESS_LABELS, levelName, pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 
 /**
- * Trang chi tiết khóa (§9.1): giới thiệu, bài đánh giá trước khi học, quyền truy cập, % đã học, mô đun theo thứ tự và
- * bài cuối khóa (có giám sát).
+ * Chuyển đổi tiêu đề viết in hoa toàn bộ (ALL-CAPS) thành Sentence case thanh lịch
+ * Khắc phục triệt để lỗi đâm dấu tiếng Việt trên các ký tự hoa lớn (Ạ, Ự, Ậ...)
+ */
+function toSentenceCase(str: string): string {
+  if (!str) return '';
+  const trimmed = str.trim();
+  const isAllUpper = trimmed === trimmed.toUpperCase() && trimmed !== trimmed.toLowerCase();
+  if (!isAllUpper) return trimmed;
+  const lower = trimmed.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
+/**
+ * PulseCoursePage — Chi tiết Khóa học & Đề cương
+ * Nâng cấp theo Phương án 1 (Sequential Timeline Stepper):
+ * 1. Tiêu đề Canvas thanh thoát viết trực tiếp trên nền (loại bỏ Hero hộp đen cồng kềnh)
+ * 2. Cụm Badge tóm tắt nhanh (Thời lượng, Mô đun, Mini-quiz, Thi kết thúc môn)
+ * 3. Thẻ Hành động & Mục tiêu Trọng tâm (Chuẩn đầu ra thực tế + Tiến độ % + CTA ưu tiên)
+ * 4. Lộ trình Học tập Tuần tự Dọc (Timeline 01 -> 02 -> 03 -> Chặng đích: Kỳ thi Proctored)
+ * 5. Chuẩn Brand Blue (#1e40af), Zero emoji, icon SVG vector chuyên nghiệp
  */
 export function PulseCoursePage() {
   const { courseId } = useParams<{ courseId: string }>();
   const { data, isLoading, error, refetch } = usePulseCourse(courseId);
-  if (isLoading) return <PageSkeleton blocks={[372, 260, 420]} />;
-  if (error || !data) return <LoadError message={pulseErrorMessage(error, 'Không tải được khóa học.')} onRetry={() => refetch()} />;
+
+  if (isLoading) return <PageSkeleton blocks={[120, 240, 420]} />;
+  if (error || !data) {
+    return <LoadError message={pulseErrorMessage(error, 'Không tải được khóa học.')} onRetry={() => refetch()} />;
+  }
+
   return <CourseView detail={data} />;
 }
 
@@ -27,201 +64,507 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
   const tier = levelName(course.tier);
   const approved = course.approved;
   const viaPre = course.approvedVia === 'PRE_ASSESSMENT';
-  const reviewer = detail.reviewer?.name ?? 'người chấm';
   const preAssessmentPath = PULSE_PATHS.preAssessment(course.courseId);
-  const preBlocked = !approved && (course.blockReason === 'PRE_ASSESSMENT_REQUIRED' || course.blockReason === 'PRE_ASSESSMENT_PENDING');
+  const formattedTitle = toSentenceCase(course.title);
 
-  const action = (() => {
-    switch (detail.nextAction) {
-      case 'PRE_ASSESSMENT': return { to: preAssessmentPath, label: 'Đánh giá trước khi học →' };
-      case 'PRE_REVIEW': return { to: preAssessmentPath, label: 'Xem bài đánh giá đã nộp →' };
-      case 'LOCKED': return null;
-      case 'PREVIEW': return detail.nextModuleId ? { to: PULSE_PATHS.module(course.courseId, detail.nextModuleId), label: 'Xem trang mẫu đầu tiên →' } : null;
-      case 'FINAL': return { to: PULSE_PATHS.final(course.courseId), label: 'Làm bài cuối khóa →' };
-      case 'DONE': return viaPre
-        ? { to: preAssessmentPath, label: 'Xem bài đánh giá →' }
-        : { to: PULSE_PATHS.final(course.courseId), label: 'Xem kết quả bài cuối →' };
-      default:
-        return detail.nextModuleId
-          ? { to: PULSE_PATHS.module(course.courseId, detail.nextModuleId), label: passed ? 'Tiếp tục mô đun →' : `Bắt đầu mô đun ${pad2(1)} →` }
-          : null;
-    }
-  })();
+  // Tính tổng thời lượng ước tính
+  const totalMinutes = modules.reduce((sum, m) => sum + (m.estimatedMinutes || 60), 0);
+  const totalHours = Math.ceil(totalMinutes / 60);
 
-  const notice = approved
-    ? { tone: 'success' as const, text: viaPre
-      ? 'Khóa được công nhận qua bài đánh giá trước khi học. Bạn vẫn có thể đọc nội dung khi cần.'
-      : 'Khóa học đã được người chấm công nhận. Bạn vẫn có thể đọc lại nội dung bất cứ lúc nào.' }
-    : course.blockReason
-      ? { tone: 'warning' as const, text: BLOCK_MESSAGES[course.blockReason] }
-      : course.preStatus === 'NOT_YET'
-        ? { tone: undefined, text: 'Bài đánh giá trước khi học chưa đạt: học các mô đun của khóa rồi làm bài cuối khóa.' }
-        : course.access === 'FREE_FULL'
-          ? { tone: 'success' as const, text: 'Toàn bộ mô đun và câu hỏi ôn tập của khóa Cơ bản được mở miễn phí.' }
-          : { tone: 'success' as const, text: 'Suất học của bạn đã kích hoạt, mở toàn bộ mô đun, câu hỏi ôn tập và bài cuối khóa.' };
+  // Trạng thái hành động
+  const canPreAssess = course.preStatus === 'REQUIRED' || detail.nextAction === 'PRE_ASSESSMENT';
+  const isPrePending = course.preStatus === 'PENDING' || detail.nextAction === 'PRE_REVIEW';
+  const isFinalReady = detail.nextAction === 'FINAL' || (!approved && passed === modules.length && modules.length > 0);
 
   return (
-    <div className="pu-stack">
-      <section className="pu-cover">
-        <div>
-          <Eyebrow>{course.tier === 1 ? 'Nền tảng miễn phí' : `${tier} · ${course.access === 'PREVIEW' ? 'cần suất học' : 'suất đã kích hoạt'}`}</Eyebrow>
-          <h1>{course.title}</h1>
-          <p>
-            {detail.description?.trim()
-              || `Khóa gồm ${modules.length} mô đun; mỗi mô đun có các trang nội dung và câu hỏi ôn tập. Sau khi hoàn thành, bạn làm bài cuối khóa có giám sát để ${reviewer} chấm.`}
-          </p>
-          <div className="pu-cover-meta">
-            <span>{pad2(modules.length)} mô đun</span>
-            <span>{pad2(quizCount)} bài ôn tập mô đun</span>
-            <span>01 bài cuối khóa</span>
-          </div>
-          {action && <PuLink to={action.to} kind="lime">{action.label}</PuLink>}
+    <div className="pu-course-wrap">
+      {/* ── 1. Tiêu đề Canvas Tinh gọn (Viết trực tiếp trên nền) ────────── */}
+      <header className="pu-c-header-block">
+        <nav className="pu-c-breadcrumb" aria-label="Điều hướng lộ trình">
+          <Link to={PULSE_PATHS.path} className="pu-c-back-link">
+            <ArrowLeft size={14} />
+            <span>Lộ trình năng lực</span>
+          </Link>
+          <ChevronRight size={13} className="pu-c-bc-separator" aria-hidden />
+          <span className="pu-c-bc-domain">{detail.domain.name}</span>
+          <ChevronRight size={13} className="pu-c-bc-separator" aria-hidden />
+          <span className="pu-c-bc-tag">{course.code} · Cấp {course.tier} ({tier})</span>
+        </nav>
+
+        <h1 className="pu-c-main-title">{formattedTitle}</h1>
+
+        <p className="pu-c-main-desc">
+          {detail.description?.trim() ||
+            `Khóa học chuẩn hóa thuộc lĩnh vực ${detail.domain.name}, cấp độ ${tier}. Cung cấp các kiến thức và kỹ năng thực tế với hệ thống bài giảng tương tác, câu hỏi ôn tập và đánh giá có giám sát.`}
+        </p>
+
+        {/* Dải thông số tóm tắt nhanh */}
+        <div className="pu-c-meta-row">
+          <span className="pu-c-meta-pill">
+            <BookOpen size={13} className="text-blue-700" />
+            <span>{pad2(modules.length)} mô-đun bài giảng</span>
+          </span>
+          <span className="pu-c-meta-pill">
+            <Clock size={13} className="text-blue-700" />
+            <span>Ước tính ~{totalHours > 0 ? pad2(totalHours) : '08'} giờ ({totalMinutes} phút)</span>
+          </span>
+          <span className="pu-c-meta-pill">
+            <HelpCircle size={13} className="text-blue-700" />
+            <span>{pad2(quizCount)} bài mini-quiz ôn tập</span>
+          </span>
+          <span className="pu-c-meta-pill">
+            <GraduationCap size={13} className="text-blue-700" />
+            <span>01 kỳ thi proctored kết thúc môn</span>
+          </span>
+          <span className={`pu-c-meta-pill ${approved ? 'approved' : 'access'}`}>
+            <ShieldCheck size={13} className={approved ? 'text-emerald-700' : 'text-blue-700'} />
+            <span>{approved ? 'Đã công nhận năng lực' : ACCESS_LABELS[course.access] || 'Suất học đã kích hoạt'}</span>
+          </span>
         </div>
-        <img src={architectureArt} alt="Các khối kính xanh nối với nhau theo một con đường" />
-      </section>
+      </header>
 
-      {/* Khóa còn chờ bài đánh giá trước khi học: dải Bước 1 bên dưới đã nói điều đó. */}
-      {!preBlocked && <Notice tone={notice.tone}>{notice.text}</Notice>}
+      {/* ── 2. Thẻ Mục tiêu & Hành động Trọng tâm ──────────────────────── */}
+      <section className="pu-c-summary-card" aria-labelledby="pu-summary-heading">
+        {/* Cột trái: Chuẩn đầu ra thực tế */}
+        <div className="pu-c-outcomes-col">
+          <div className="pu-c-card-header">
+            <Target size={16} className="text-blue-700" />
+            <h2 id="pu-summary-heading" className="pu-c-card-heading">
+              Mục tiêu & Chuẩn đầu ra thực tế
+            </h2>
+          </div>
+          <p className="pu-c-card-subheading">
+            {detail.purpose?.trim() ||
+              `Áp dụng kiến thức ${detail.domain.name.toLowerCase()} ở cấp độ ${tier.toLowerCase()} với các kết quả công việc đo lường được trong nghiệp vụ thực tế:`}
+          </p>
 
-      {course.preStatus !== 'NOT_NEEDED' && <PreAssessmentStrip detail={detail} reviewer={reviewer} />}
+          <div className="pu-c-outcome-list">
+            {detail.learningOutcomes.length > 0 ? (
+              detail.learningOutcomes.slice(0, 3).map((outcome, idx) => (
+                <div key={idx} className="pu-c-outcome-pill">
+                  <span className="pu-c-outcome-idx">{pad2(idx + 1)}</span>
+                  <span className="pu-c-outcome-txt">{outcome}</span>
+                </div>
+              ))
+            ) : (
+              <>
+                <div className="pu-c-outcome-pill">
+                  <span className="pu-c-outcome-idx">01</span>
+                  <span className="pu-c-outcome-txt">
+                    <strong>Hiểu bối cảnh nghiệp vụ:</strong> Nhận diện đúng mục đích và đối tượng tiếp nhận trong môi trường số.
+                  </span>
+                </div>
+                <div className="pu-c-outcome-pill">
+                  <span className="pu-c-outcome-idx">02</span>
+                  <span className="pu-c-outcome-txt">
+                    <strong>Quyết định có kiểm chứng:</strong> Áp dụng công cụ và phương pháp số đúng quy chuẩn của doanh nghiệp.
+                  </span>
+                </div>
+                <div className="pu-c-outcome-pill">
+                  <span className="pu-c-outcome-idx">03</span>
+                  <span className="pu-c-outcome-txt">
+                    <strong>Minh chứng rõ ràng:</strong> Xây dựng sản phẩm đầu ra có thể đo lường và bàn giao trong công việc thực tế.
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
 
-      <div className="pu-overview">
-        <section className="pu-outcome-card">
-          <Mini>Kết quả</Mini>
-          <h2>Học, kiểm tra và áp dụng vào công việc.</h2>
-          <p>{detail.purpose?.trim() || `Áp dụng ${detail.domain.name.toLowerCase()} ở mức ${tier.toLowerCase()} với kết quả mà quản lý của bạn kiểm tra được.`}</p>
-          {detail.learningOutcomes.length > 0 ? (
-            <ul className="pu-outcome-list">
-              {detail.learningOutcomes.slice(0, 4).map((outcome) => <li key={outcome}>{outcome}</li>)}
-            </ul>
-          ) : (
-            <div className="pu-outcome-points">
-              <span><b>01</b> Hiểu bối cảnh thực tế</span>
-              <span><b>02</b> Đưa ra quyết định có thể kiểm tra</span>
-              <span><b>03</b> Trình bày minh chứng theo vị trí</span>
+        {/* Cột phải: Tiến độ học tập & Khối CTA hành động */}
+        <div className="pu-c-action-col">
+          <div className="pu-c-progress-box">
+            <div className="pu-c-prog-head">
+              <span className="pu-c-prog-label">Tiến độ học tập</span>
+              <span className="pu-c-prog-count">{passed}/{modules.length} mô-đun</span>
             </div>
-          )}
-        </section>
-        <section className="pu-access">
-          <Mini>Tiến độ của bạn</Mini>
-          <strong>{course.progressPercent}<small>% đã học · {passed}/{modules.length} mô đun</small></strong>
-          <Bar value={course.progressPercent} label="Phần trăm khóa học đã học" />
-          <p>
-            {approved ? 'Khóa đã hoàn thành và được ghi vào kết quả đã xác nhận.'
-              : detail.nextAction === 'PRE_ASSESSMENT' ? 'Bắt đầu bằng bài đánh giá trước khi học. Đạt thì không cần học khóa này.'
-              : detail.nextAction === 'PRE_REVIEW' ? `Bài đánh giá trước khi học đang chờ ${reviewer} chấm.`
-              : detail.nextAction === 'LOCKED' ? 'Khóa chưa mở trên lộ trình của bạn.'
-              : detail.nextAction === 'FINAL' ? 'Đã đạt câu hỏi ôn tập của mọi mô đun. Bài cuối khóa đã sẵn sàng.'
-              : course.access === 'PREVIEW' ? 'Quyền xem toàn bộ mở khi có suất học phù hợp.'
-              : 'Đạt câu hỏi ôn tập từng mô đun để đến bài cuối khóa.'}
-          </p>
-          <Pill tone={approved ? 'green' : course.access === 'PREVIEW' ? 'gray' : ''}>
-            {approved ? (viaPre ? 'Đạt đánh giá trước khi học' : 'Đã được công nhận') : ACCESS_LABELS[course.access]}
-          </Pill>
-        </section>
-      </div>
+            <div className="pu-c-prog-bar-wrap">
+              <div
+                className="pu-c-prog-bar-fill"
+                style={{
+                  width: `${course.progressPercent}%`,
+                  backgroundColor: course.progressPercent >= 100 || approved ? '#059669' : '#1e40af',
+                }}
+              />
+            </div>
+            <div className="pu-c-prog-sub">
+              <span className="pu-c-prog-pct">{course.progressPercent}%</span>
+              <span className="pu-c-prog-hint">
+                {approved
+                  ? 'Đã hoàn tất toàn bộ khóa học'
+                  : isFinalReady
+                  ? 'Đã sẵn sàng làm bài thi cuối khóa'
+                  : 'Đạt bài ôn tập từng mô-đun để mở khóa bài thi'}
+              </span>
+            </div>
+          </div>
 
-      <section className="pu-modules" aria-labelledby="pu-modules-title">
-        <div className="pu-section-head">
+          {/* Contextual Action CTA */}
+          <div className="pu-c-action-box">
+            {approved ? (
+              <div className="pu-c-action-done">
+                <div className="pu-c-act-head">
+                  <span className="pu-c-act-kicker">Trạng thái</span>
+                  <span className="pu-c-act-badge done">
+                    <Check size={11} strokeWidth={3} /> Đã hoàn thành
+                  </span>
+                </div>
+                <p className="pu-c-action-text">
+                  {viaPre
+                    ? 'Khóa học được công nhận đạt chuẩn qua bài đánh giá đầu vào.'
+                    : 'Khóa học đã được công nhận đạt chuẩn và đồng bộ vào hồ sơ năng lực.'}
+                </p>
+                <div className="pu-c-action-btns">
+                  <Link
+                    to={viaPre ? preAssessmentPath : PULSE_PATHS.final(course.courseId)}
+                    className="pu-c-btn-secondary"
+                  >
+                    <span>Xem hồ sơ bài thi</span>
+                  </Link>
+                  {modules[0] && (
+                    <Link
+                      to={PULSE_PATHS.module(course.courseId, modules[0].moduleId)}
+                      className="pu-c-btn-outline"
+                    >
+                      <span>Xem lại bài giảng</span>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ) : canPreAssess ? (
+              <div className="pu-c-action-pretest">
+                <div className="pu-c-act-head">
+                  <span className="pu-c-act-kicker">Nhiệm vụ ưu tiên</span>
+                  <span className="pu-c-act-badge pretest">Được miễn học</span>
+                </div>
+                <p className="pu-c-action-text">
+                  Làm bài kiểm tra đánh giá năng lực đầu vào (~20 phút). Đạt kết quả sẽ được xét miễn học ngay toàn bộ khóa học này.
+                </p>
+                <div className="pu-c-action-btns">
+                  <Link to={preAssessmentPath} className="pu-c-btn-primary">
+                    <Zap size={14} />
+                    <span>Làm test vượt cấp ngay</span>
+                    <ChevronRight size={14} />
+                  </Link>
+                  {detail.nextModuleId && (
+                    <Link
+                      to={PULSE_PATHS.module(course.courseId, detail.nextModuleId)}
+                      className="pu-c-btn-secondary"
+                    >
+                      <span>Học tuần tự Mô-đun 01</span>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ) : isPrePending ? (
+              <div className="pu-c-action-waiting">
+                <div className="pu-c-act-head">
+                  <span className="pu-c-act-kicker">Trạng thái bài thi</span>
+                  <span className="pu-c-act-badge waiting">Chờ xác nhận</span>
+                </div>
+                <p className="pu-c-action-text">
+                  Bài kiểm tra đầu vào đã nộp thành công và đang chờ xác nhận kết quả chấm thi kèm bản ghi giám sát.
+                </p>
+                <div className="pu-c-action-btns">
+                  <Link to={preAssessmentPath} className="pu-c-btn-secondary">
+                    <span>Xem lại bài đã nộp</span>
+                  </Link>
+                </div>
+              </div>
+            ) : isFinalReady ? (
+              <div className="pu-c-action-final">
+                <div className="pu-c-act-head">
+                  <span className="pu-c-act-kicker">Chặng cuối</span>
+                  <span className="pu-c-act-badge final">Sẵn sàng</span>
+                </div>
+                <p className="pu-c-action-text">
+                  Bạn đã hoàn thành toàn bộ bài ôn tập của các mô-đun. Hãy thực hiện kỳ thi cuối khóa có giám sát để hoàn tất khóa học.
+                </p>
+                <div className="pu-c-action-btns">
+                  <Link to={PULSE_PATHS.final(course.courseId)} className="pu-c-btn-primary final">
+                    <GraduationCap size={15} />
+                    <span>Làm bài thi cuối khóa ngay</span>
+                    <ChevronRight size={14} />
+                  </Link>
+                </div>
+              </div>
+            ) : detail.nextModuleId ? (
+              <div className="pu-c-action-study">
+                <div className="pu-c-act-head">
+                  <span className="pu-c-act-kicker">Mô-đun tiếp theo</span>
+                  <span className="pu-c-act-badge current">Cần học</span>
+                </div>
+                <p className="pu-c-action-text">
+                  {passed > 0
+                    ? `Tiếp tục bài giảng Mô-đun ${pad2(firstOpen ? firstOpen.index + 1 : 1)} để hoàn thành mục tiêu ôn tập.`
+                    : 'Bắt đầu Mô-đun 01 để xây dựng nền tảng kiến thức bài học.'}
+                </p>
+                <div className="pu-c-action-btns">
+                  <Link
+                    to={PULSE_PATHS.module(course.courseId, detail.nextModuleId)}
+                    className="pu-c-btn-primary"
+                  >
+                    <PlayCircle size={14} />
+                    <span>{passed > 0 ? 'Tiếp tục học ngay' : 'Bắt đầu Mô-đun 01'}</span>
+                    <ChevronRight size={14} />
+                  </Link>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 3. Lộ trình Học tập Tuần tự Dọc (Sequential Stepper) ───────── */}
+      <section className="pu-c-timeline-section" aria-labelledby="pu-timeline-heading">
+        <div className="pu-c-timeline-header">
           <div>
-            <Mini>Nội dung khóa học</Mini>
-            <h2 id="pu-modules-title">Học các mô đun theo thứ tự.</h2>
-            <p>Đọc các trang nội dung, áp dụng vào công việc và đạt câu hỏi ôn tập của từng mô đun.</p>
+            <h2 id="pu-timeline-heading" className="pu-c-section-title">
+              Lộ trình học tập tuần tự ({modules.length} mô-đun bài giảng & 01 kỳ thi tốt nghiệp)
+            </h2>
+            <p className="pu-c-section-subtitle">
+              Hoàn thành bài giảng và câu hỏi ôn tập theo thứ tự từ trên xuống dưới để mở khóa kỳ thi đánh giá năng lực cuối khóa.
+            </p>
           </div>
-          <span className="pu-count">{passed}/{modules.length} bài ôn tập đạt</span>
+          <div className="pu-c-timeline-badge">
+            <span>{passed}/{modules.length} mô-đun đạt chuẩn</span>
+          </div>
         </div>
-        <div className="pu-module-grid">
-          {modules.map((module) => (
-            <ModuleCard key={module.moduleId} module={module} detail={detail} isNext={module.moduleId === firstOpen?.moduleId} />
-          ))}
+
+        <div className="pu-c-timeline-flow">
+          {modules.map((module) => {
+            const isNext = module.moduleId === firstOpen?.moduleId;
+            const preview = course.access === 'PREVIEW';
+            const isPassed = module.passed;
+            const isLocked = !module.viewable || (!module.unlocked && !preview && !isPassed);
+
+            return (
+              <div
+                key={module.moduleId}
+                className={`pu-c-timeline-step ${
+                  isPassed ? 'passed' : isNext ? 'current' : isLocked ? 'locked' : 'ready'
+                }`}
+              >
+                {/* Trục chỉ báo Node & Đường kẻ nối dọc */}
+                <div className="pu-c-step-track">
+                  <div className="pu-c-step-node">
+                    {isPassed ? (
+                      <Check size={14} strokeWidth={3} className="text-emerald-700" />
+                    ) : isNext ? (
+                      <span className="pu-c-node-pulse" />
+                    ) : isLocked ? (
+                      <Lock size={12} className="text-slate-400" />
+                    ) : (
+                      <span className="pu-c-node-dot" />
+                    )}
+                  </div>
+                  <div className="pu-c-step-line" />
+                </div>
+
+                {/* Thẻ Nội dung Mô đun */}
+                <article className="pu-c-step-card">
+                  <div className="pu-c-card-main-info">
+                    <div className="pu-c-card-kicker-row">
+                      <span className="pu-c-card-kicker">Mô-đun {pad2(module.index + 1)}</span>
+                      <span
+                        className={`pu-c-step-status ${
+                          isPassed
+                            ? 'passed'
+                            : isNext
+                            ? 'current'
+                            : isLocked
+                            ? 'locked'
+                            : 'ready'
+                        }`}
+                      >
+                        {isPassed ? (
+                          <>
+                            <Check size={11} strokeWidth={3} />
+                            <span>Đã đạt</span>
+                          </>
+                        ) : isNext ? (
+                          <>
+                            <PlayCircle size={11} />
+                            <span>Đang học</span>
+                          </>
+                        ) : isLocked ? (
+                          <>
+                            <Lock size={10} />
+                            <span>Theo thứ tự</span>
+                          </>
+                        ) : (
+                          <span>Sẵn sàng</span>
+                        )}
+                      </span>
+                    </div>
+
+                    <h3 className="pu-c-step-title">{toSentenceCase(module.title)}</h3>
+
+                    {module.description && (
+                      <p className="pu-c-step-desc">{module.description}</p>
+                    )}
+
+                    {/* Thông số bài giảng */}
+                    <div className="pu-c-step-meta">
+                      <span className="pu-c-step-meta-item">
+                        <FileText size={13} className="text-slate-500" />
+                        <span>{module.slideCount} trang bài học</span>
+                      </span>
+                      {module.estimatedMinutes && (
+                        <>
+                          <span className="pu-c-meta-dot" />
+                          <span className="pu-c-step-meta-item">
+                            <Clock size={13} className="text-slate-500" />
+                            <span>~{module.estimatedMinutes} phút</span>
+                          </span>
+                        </>
+                      )}
+                      {module.hasQuiz && (
+                        <>
+                          <span className="pu-c-meta-dot" />
+                          <span className="pu-c-step-meta-item">
+                            <HelpCircle size={13} className="text-slate-500" />
+                            <span>
+                              {module.quizBankQuestionCount != null
+                                ? `Ngân hàng ${module.quizBankQuestionCount} câu · `
+                                : ''}
+                              Làm {module.quizQuestionCount} câu ôn tập
+                            </span>
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Cột Hành động của Thẻ */}
+                  <div className="pu-c-card-action-side">
+                    {module.viewable ? (
+                      <Link
+                        to={PULSE_PATHS.module(course.courseId, module.moduleId)}
+                        className={`pu-c-step-btn ${
+                          isNext || (!isPassed && !isLocked) ? 'primary' : 'outline'
+                        }`}
+                      >
+                        {preview ? (
+                          <span>Xem trang mẫu →</span>
+                        ) : isPassed ? (
+                          <>
+                            <RotateCcw size={12} />
+                            <span>Ôn lại bài</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Vào học mô-đun</span>
+                            <ChevronRight size={13} />
+                          </>
+                        )}
+                      </Link>
+                    ) : (
+                      <div className="pu-c-step-locked-hint">
+                        <Lock size={12} />
+                        <span>Khóa · Học Mô-đun {pad2(module.index)} trước</span>
+                      </div>
+                    )}
+                  </div>
+                </article>
+              </div>
+            );
+          })}
+
+          {/* Chặng Đích: Kỳ thi cuối khóa (Final Milestone Node) */}
+          <div
+            className={`pu-c-timeline-step final-milestone ${
+              approved ? 'passed' : isFinalReady ? 'current' : 'pending'
+            }`}
+          >
+            <div className="pu-c-step-track">
+              <div className="pu-c-step-node milestone">
+                <GraduationCap size={16} />
+              </div>
+            </div>
+
+            <article className="pu-c-step-card milestone">
+              <div className="pu-c-card-main-info">
+                <div className="pu-c-card-kicker-row">
+                  <span className="pu-c-card-kicker milestone">Chặng đích cuối môn</span>
+                  <span
+                    className={`pu-c-step-status ${
+                      approved ? 'passed' : isFinalReady ? 'current' : 'locked'
+                    }`}
+                  >
+                    {approved ? (
+                      <>
+                        <Check size={11} strokeWidth={3} />
+                        <span>Đã công nhận năng lực</span>
+                      </>
+                    ) : isFinalReady ? (
+                      <>
+                        <Sparkles size={11} />
+                        <span>Sẵn sàng thi</span>
+                      </>
+                    ) : (
+                      <>
+                        <Lock size={10} />
+                        <span>Mở sau khi xong {modules.length} mô-đun</span>
+                      </>
+                    )}
+                  </span>
+                </div>
+
+                <h3 className="pu-c-step-title">
+                  Kỳ thi đánh giá năng lực cuối khóa (Proctored Final Exam)
+                </h3>
+                <p className="pu-c-step-desc">
+                  Bài thi thực hiện trực tuyến có giám sát camera, mic và chia sẻ màn hình. Đánh giá toàn diện dựa trên 3 tiêu chí cốt lõi:
+                </p>
+
+                <div className="pu-c-rubric-chips">
+                  {detail.finalCriteria.map((c) => (
+                    <span key={c.number} className="pu-c-rubric-pill">
+                      <strong>{c.number}.</strong> {c.title}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pu-c-card-action-side">
+                {approved ? (
+                  <Link
+                    to={viaPre ? preAssessmentPath : PULSE_PATHS.final(course.courseId)}
+                    className="pu-c-step-btn outline"
+                  >
+                    <span>Xem kết quả bài thi</span>
+                  </Link>
+                ) : isFinalReady ? (
+                  <Link
+                    to={PULSE_PATHS.final(course.courseId)}
+                    className="pu-c-step-btn primary pulse"
+                  >
+                    <span>Làm bài thi cuối khóa</span>
+                    <ChevronRight size={13} />
+                  </Link>
+                ) : (
+                  <div className="pu-c-step-locked-hint">
+                    <Lock size={12} />
+                    <span>Chưa mở bài thi</span>
+                  </div>
+                )}
+              </div>
+            </article>
+          </div>
         </div>
       </section>
 
-      <section className="pu-final-strip">
-        <div className="pu-final-symbol" aria-hidden><Check size={30} strokeWidth={3} /></div>
-        <div>
-          <Mini>Sau các mô đun</Mini>
-          <h2>Bài cuối khóa</h2>
-          <p>
-            Trình bày nguồn, cách làm có thể kiểm tra và bước tiếp theo. Bài làm có giám sát: chia sẻ toàn bộ màn hình, bật
-            camera và micro trong suốt thời gian làm. {reviewer} chấm bài kèm lý do; kết quả được ghi vào hồ sơ năng lực.
-          </p>
-          <div className="pu-criteria-chips">
-            {detail.finalCriteria.map((criterion) => <span key={criterion.number}>{criterion.title}</span>)}
-          </div>
-        </div>
-        <PuLink to={PULSE_PATHS.final(course.courseId)} kind="outline">
-          {detail.nextAction === 'FINAL' ? 'Làm bài cuối khóa →' : 'Xem tiêu chí bài cuối →'}
-        </PuLink>
-      </section>
-
-      <div className="pu-course-footer">
-        <PuLink to={PULSE_PATHS.path} kind="ghost" small>← Quay lại lộ trình của tôi</PuLink>
-        <small>Khóa {course.code} · phiên bản v{detail.versionNo} · {detail.domain.name} / {tier}</small>
-      </div>
+      {/* ── 4. Điều hướng Chân trang ──────────────────────────────────── */}
+      <footer className="pu-c-footer-nav">
+        <Link to={PULSE_PATHS.path} className="pu-c-footer-back">
+          <ArrowLeft size={15} />
+          <span>Quay lại Bản đồ Lộ trình Năng lực</span>
+        </Link>
+        <span className="pu-c-footer-meta">
+          Khóa {course.code} · Phiên bản v{detail.versionNo} · Lĩnh vực {detail.domain.name} / Cấp độ {tier}
+        </span>
+      </footer>
     </div>
-  );
-}
-
-/** Bước đầu tiên của mỗi khóa: bài đánh giá trước khi học (đạt → công nhận khóa, chưa đạt → học khóa). */
-function PreAssessmentStrip({ detail, reviewer }: { detail: PulseCourseDetail; reviewer: string }) {
-  const { course } = detail;
-  const status = course.preStatus;
-  const tone = status === 'PASSED' ? 'green' : status === 'NOT_YET' ? 'coral' : status === 'LOCKED' ? 'gray' : '';
-  const text = status === 'REQUIRED'
-    ? 'Làm một bài theo đề cuối khóa (trắc nghiệm và tự luận) trước khi học. Đạt thì khóa được công nhận và khóa tiếp theo mở ngay. Bạn vẫn đọc được nội dung, nhưng tiến độ chỉ được ghi sau bài đánh giá.'
-    : status === 'PENDING' ? `Bài đã nộp, đang chờ ${reviewer} chấm cùng bản ghi màn hình, camera và micro.`
-    : status === 'PASSED' ? 'Bạn đã đạt bài đánh giá trước khi học; khóa được công nhận mà không cần học.'
-    : status === 'NOT_YET' ? 'Chưa đạt: học các mô đun của khóa rồi làm bài cuối khóa.'
-    : 'Bài mở khi khóa nằm trong lộ trình và khóa cấp trước đã đạt.';
-  return (
-    <section className="pu-pre-strip" aria-labelledby="pu-pre-strip-title">
-      <div className="pu-pre-strip-icon" aria-hidden><ScanEye size={22} /></div>
-      <div>
-        <div className="pu-row">
-          <Mini>Bước 1 · trước khi học</Mini>
-          <Pill tone={tone}>{PRE_LABELS[status]}</Pill>
-        </div>
-        <h2 id="pu-pre-strip-title">Đánh giá trước khi học</h2>
-        <p>{text}</p>
-      </div>
-      {status !== 'LOCKED' && (
-        <PuLink to={PULSE_PATHS.preAssessment(course.courseId)} kind={status === 'REQUIRED' ? 'primary' : 'outline'}>
-          {status === 'REQUIRED' ? 'Bắt đầu bài đánh giá →' : 'Xem bài đánh giá →'}
-        </PuLink>
-      )}
-    </section>
-  );
-}
-
-function ModuleCard({ module, detail, isNext }: { module: PulseCourseModule; detail: PulseCourseDetail; isNext: boolean }) {
-  const { course } = detail;
-  const preview = course.access === 'PREVIEW';
-  const badge = module.passed ? { text: 'Đã đạt câu ôn tập', tone: 'green' as const }
-    : !module.viewable ? { text: 'Chưa mở', tone: 'gray' as const }
-    : preview ? { text: 'Xem trước', tone: '' as const }
-    : !module.unlocked ? { text: 'Theo thứ tự', tone: 'gray' as const }
-    : { text: isNext ? 'Tiếp theo' : 'Sẵn sàng', tone: '' as const };
-
-  return (
-    <article className={`pu-module-card${module.passed ? ' passed' : ''}`}>
-      <div className="pu-module-top">
-        <span>Mô đun {pad2(module.index + 1)}</span>
-        <Pill tone={badge.tone}>{badge.text}</Pill>
-      </div>
-      <h3>{module.title}</h3>
-      {module.description && <p>{module.description}</p>}
-      <div className="pu-module-format">
-        <span><FileText size={13} /> {module.slideCount} trang{module.estimatedMinutes ? ` · ${module.estimatedMinutes} phút` : ''}</span>
-        {module.hasQuiz && <span><HelpCircle size={13} /> {module.quizBankQuestionCount != null ? `Ngân hàng ${module.quizBankQuestionCount} câu · ` : ''}{module.quizQuestionCount} câu / lượt</span>}
-      </div>
-      {module.viewable ? (
-        <PuLink to={PULSE_PATHS.module(course.courseId, module.moduleId)} kind="outline" small>
-          {preview ? 'Xem trang mẫu →' : module.passed ? 'Ôn lại mô đun →' : 'Mở mô đun →'}
-        </PuLink>
-      ) : (
-        <span className="pu-locked"><Lock size={13} /> Xem được đề cương · cần suất học</span>
-      )}
-    </article>
   );
 }

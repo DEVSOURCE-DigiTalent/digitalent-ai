@@ -1,4 +1,4 @@
-/* AI assistant widget (classes as-*): works on the enterprise shell (light/dark "Mực & Giấy") and the light Pulse portal. */
+﻿/* AI assistant widget (classes as-*): works on the enterprise shell (light/dark "Mực & Giấy") and the light Pulse portal. */
 
 .as-fab,
 .as-panel {
@@ -10,10 +10,10 @@
   --as-line: #e3e8f3;
   --as-raised: #ffffff;
   --as-soft: #eef2ff;
-  --as-accent: #304bdf;
-  --as-accent-2: #6250bb;
+  --as-accent: #1e40af;
+  --as-accent-2: #1e3a8a;
   --as-accent-fg: #ffffff;
-  --as-grad: linear-gradient(135deg, var(--as-accent) 0%, var(--as-accent-2) 100%);
+  --as-grad: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
   --as-ok: #2d9d5c;
   --as-bad: #b13a2c;
   --as-bad-soft: #fbeae7;
@@ -64,6 +64,7 @@ html.ent-theme[data-theme='dark'] .as-panel {
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
+.as-fab.as-fab-compact { width: 48px; height: 48px; padding: 0; justify-content: center; border-radius: 50%; }
 .as-fab::after {
   content: '';
   position: absolute;

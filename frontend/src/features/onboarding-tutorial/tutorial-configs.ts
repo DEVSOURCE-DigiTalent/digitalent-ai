@@ -142,7 +142,7 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
     steps: [
       {
         id: 'manager-step-1',
-        title: 'Bảng Điều hành Phòng ban (MG-01)',
+        title: 'Bảng Điều hành & Hàng chờ Quyết định',
         description:
           'Khu vực hiển thị các công việc nóng: bài thi cần duyệt quyết định, nhân viên cần hỗ trợ tháo gỡ khó khăn, và quy mô nhân sự phòng ban.',
         badge: 'Hàng chờ nóng',
@@ -154,7 +154,7 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
       },
       {
         id: 'manager-step-2',
-        title: 'Năng lực Đội ngũ & Ma trận Khoảng trống (MG-05)',
+        title: 'Năng lực Đội ngũ & Bản đồ Khoảng trống',
         description:
           'Xem bản đồ năng lực của từng thành viên trong nhóm so với chuẩn vị trí. Biết chính xác ai đã vững và ai cần bổ trợ kỹ năng gì.',
         badge: 'Bản đồ kỹ năng',
@@ -166,7 +166,7 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
       },
       {
         id: 'manager-step-3',
-        title: 'Chấm bài & Duyệt Đánh giá Minh chứng (MG-13)',
+        title: 'Chấm bài & Duyệt Đánh giá Minh chứng AI',
         description:
           'Chức năng trọng tâm của Quản lý: Xem lại video ghi hình thi có giám sát AI, kiểm tra phân tích gian lận, chấm tự luận và đưa ra quyết định Đạt / Cần cải thiện.',
         badge: 'Đánh giá thực tế',
@@ -178,7 +178,7 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
       },
       {
         id: 'manager-step-4',
-        title: 'Đào tạo & Báo cáo Chu kỳ Đội ngũ (MG-06 & MG-14)',
+        title: 'Tiến độ Đào tạo & Báo cáo Tăng trưởng',
         description:
           'Xem tiến độ hoàn thành các khóa học của nhóm và xuất báo cáo tăng trưởng năng lực theo từng đợt đào tạo.',
         badge: 'Tiến độ & Báo cáo',
@@ -226,72 +226,80 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
 
   EMPLOYEE: {
     role: 'EMPLOYEE',
-    roleName: 'Nhân viên (Cổng Pulse)',
-    welcomeTitle: 'Chào mừng bạn đến với Lộ trình Học tập Pulse',
+    roleName: 'Nhân viên',
+    welcomeTitle: 'Chào mừng bạn đến với DigiTalent AI',
     welcomeDescription:
-      'Tại đây, bạn được trang bị lộ trình phát triển năng lực số rõ ràng theo đúng chức danh công việc, với cơ chế đánh giá trước giúp miễn học phần đã vững.',
+      'Hệ thống theo dõi tiến độ đào tạo và bài kiểm tra theo chức danh công việc của bạn.',
     steps: [
       {
         id: 'emp-step-1',
-        title: 'Không gian "Hôm nay" & Vị trí Mục tiêu (EM-01)',
+        title: 'Bàn làm việc của bạn',
         description:
-          'Nơi hiển thị thông tin chức danh của bạn, người quản lý đồng hành đánh giá, và việc quan trọng nên thực hiện tiếp theo.',
-        badge: 'Trang chủ cá nhân',
-        targetSelector: '[data-tour="EM-01"]',
+          'Nơi theo dõi tiến độ hoàn thành các khóa học theo vị trí công tác và thời hạn đào tạo.',
+        badge: 'Tổng quan',
+        targetSelector: '[data-tour="emp-today-header"]',
         targetPosition: 'bottom',
-        actionRoute: '/enterprise/me',
-        actionText: 'Về trang Hôm nay',
-        tips: 'Mẹo: Bạn có thể biết ngay mình cần đạt bao nhiêu khóa học cho vị trí này.',
+        tips: 'Mẹo: Bạn có thể kiểm tra tỷ lệ hoàn thành các môn học ngay tại đây.',
       },
       {
         id: 'emp-step-2',
-        title: 'Lộ trình Doanh nghiệp đặt (EM-02)',
+        title: 'Nhiệm vụ cần làm',
         description:
-          'Bản đồ khóa học từ Cơ bản đến Nâng cao theo các lĩnh vực chuẩn. Mỗi ô đại diện cho một môn học được thiết kế sát thực tế.',
-        badge: 'Lộ trình chuẩn',
-        targetSelector: '[data-tour="EM-02"]',
+          'Danh sách các bài học tiếp theo, bài kiểm tra cần làm hoặc bài tập đang chờ chấm điểm.',
+        badge: 'Nhiệm vụ',
+        targetSelector: '[data-tour="emp-action-center"]',
         targetPosition: 'bottom',
-        actionRoute: '/enterprise/me/path',
-        actionText: 'Xem bản đồ lộ trình',
-        tips: 'Lộ trình được tính toán tự động dựa trên vị trí và trần phòng ban.',
+        tips: 'Mẹo: Bấm nút để vào học ngay hoặc làm bài kiểm tra.',
       },
       {
         id: 'emp-step-3',
-        title: 'Thực hành & Đánh giá Đầu vào (EM-03)',
+        title: 'Lộ trình môn học',
         description:
-          'Trước khi học, bạn có thể làm bài đánh giá trước (Pre-assessment) có giám sát. Nếu đạt $\\ge$ 70%, bạn được miễn học môn đó!',
-        badge: 'Thi & Đánh giá',
-        targetSelector: '[data-tour="EM-03"]',
-        targetPosition: 'bottom',
+          'Xem danh sách toàn bộ các môn học được phân bổ theo từng lĩnh vực chuyên môn của vị trí.',
+        badge: 'Lộ trình',
+        targetSelector: '[data-tour="side-EM-02"]',
+        targetPosition: 'right',
+        actionRoute: '/enterprise/me/path',
+        actionText: 'Xem lộ trình',
+        tips: 'Mẹo: Bấm vào tên môn để xem nhanh đề cương bài học.',
+      },
+      {
+        id: 'emp-step-4',
+        title: 'Sổ kiểm tra và bài tập',
+        description:
+          'Nơi nộp bài tập thực hành tình huống và theo dõi kết quả chấm điểm từ người hướng dẫn.',
+        badge: 'Kiểm tra',
+        targetSelector: '[data-tour="side-EM-03"]',
+        targetPosition: 'right',
         actionRoute: '/enterprise/me/practice',
-        actionText: 'Khám phá bài thi',
-        tips: 'Bài thi gồm 10 câu trắc nghiệm lấy từ ngân hàng câu hỏi mô-đun.',
+        actionText: 'Mở sổ kiểm tra',
+        tips: 'Mẹo: Xem lại lịch sử các bài thi đã hoàn thành tại đây.',
       },
     ],
     checklist: [
       {
         id: 'task-emp-1',
-        title: 'Kiểm tra chức danh & người đánh giá',
-        subtitle: 'Xem lộ trình được cấu hình riêng cho bạn',
+        title: 'Kiểm tra tiến độ chức danh',
+        subtitle: 'Xem tỷ lệ hoàn thành các môn học của bạn',
         route: '/enterprise/me',
-        targetSelector: '[data-tour="EM-01"]',
-        badge: 'Khởi đầu',
+        targetSelector: '[data-tour="emp-today-header"]',
+        badge: 'Tổng quan',
       },
       {
         id: 'task-emp-2',
-        title: 'Khám phá Lộ trình các môn học',
-        subtitle: 'Xem các khóa từ Cơ bản đến Nâng cao',
+        title: 'Xem lộ trình môn học',
+        subtitle: 'Khám phá các môn học theo từng cấp độ',
         route: '/enterprise/me/path',
-        targetSelector: '[data-tour="EM-02"]',
+        targetSelector: '[data-tour="side-EM-02"]',
         badge: 'Lộ trình',
       },
       {
         id: 'task-emp-3',
-        title: 'Tìm hiểu cơ chế Đánh giá trước (Pre-assessment)',
-        subtitle: 'Cơ chế vượt cấp thông minh giúp tiết kiệm thời gian',
+        title: 'Mở sổ nộp bài tập',
+        subtitle: 'Theo dõi các bài kiểm tra và bài tập thực hành',
         route: '/enterprise/me/practice',
-        targetSelector: '[data-tour="EM-03"]',
-        badge: 'Thực hành',
+        targetSelector: '[data-tour="side-EM-03"]',
+        badge: 'Kiểm tra',
       },
     ],
   },

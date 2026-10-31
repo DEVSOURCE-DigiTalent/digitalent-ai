@@ -40,11 +40,11 @@ export const ACCESS_LABELS: Record<PulseCourseAccess, string> = {
 export const SLOT_LABELS: Record<PulseSlotStatus, string> = {
   COMPLETED: 'Đã đạt',
   PRE_ASSESSMENT: 'Cần đánh giá',
-  PRE_REVIEW: 'Chờ quản lý chấm',
+  PRE_REVIEW: 'Chờ mentor chấm',
   TO_LEARN: 'Cần học',
   IN_PROGRESS: 'Đang học',
   FINAL_READY: 'Đã học xong',
-  IN_REVIEW: 'Chờ quản lý chấm',
+  IN_REVIEW: 'Chờ mentor chấm',
   RETRY_WAIT: 'Chờ mở lần nộp cuối',
   NEEDS_SUPPORT: 'Cần hỗ trợ',
   SEAT_NEEDED: 'Cần suất học',
@@ -68,9 +68,9 @@ export const slotTone = (status: PulseSlotStatus): 'passed' | 'ready' | 'review'
 export const PRE_LABELS: Record<PulsePreStatus, string> = {
   REQUIRED: 'Cần làm bài đánh giá',
   LOCKED: 'Chưa mở',
-  PENDING: 'Chờ quản lý chấm',
-  PASSED: 'Đạt — khóa được công nhận',
-  NOT_YET: 'Chưa đạt — học khóa',
+  PENDING: 'Chờ mentor chấm',
+  PASSED: 'Đạt · Khóa được công nhận',
+  NOT_YET: 'Chưa đạt · Cần học khóa',
   NOT_NEEDED: 'Không cần',
 };
 
@@ -78,7 +78,7 @@ export const FINAL_LABELS: Record<PulseFinalStatus, string> = {
   NOT_STARTED: 'Chưa bắt đầu',
   LEARNING: 'Đang học mô đun',
   READY: 'Sẵn sàng làm bài',
-  PENDING: 'Chờ quản lý chấm',
+  PENDING: 'Chờ mentor chấm',
   APPROVED: 'Đã duyệt',
   RETRY_WAIT: 'Chờ mở lần nộp cuối',
   RETRY_READY: 'Mở lần nộp cuối',
@@ -99,11 +99,11 @@ export const BLOCK_MESSAGES: Record<PulseBlockReason, string> = {
   ABOVE_CEILING: 'Doanh nghiệp chưa mở cấp độ này của lĩnh vực cho phòng ban của bạn.',
   PRIOR_LEVEL_REQUIRED: 'Khóa mở khi bạn đạt khóa ở cấp trước của cùng lĩnh vực.',
   PRE_ASSESSMENT_REQUIRED: 'Bạn cần làm bài đánh giá năng lực trước khi học khóa này. Đạt thì khóa được công nhận, chưa đạt thì bạn học khóa. Bạn vẫn đọc được nội dung, nhưng tiến độ chỉ được ghi sau bài đánh giá.',
-  PRE_ASSESSMENT_PENDING: 'Bài đánh giá trước khi học đang chờ quản lý chấm. Nếu chưa đạt, khóa sẽ mở để bạn học.',
+  PRE_ASSESSMENT_PENDING: 'Bài đánh giá đầu vào đang chờ mentor chấm điểm. Nếu chưa đạt, khóa sẽ mở để bạn tiếp tục học.',
   SEAT_REQUIRED: 'Cấp độ này cần suất học do chủ doanh nghiệp phân bổ. Bạn xem được đề cương và trang mẫu đầu tiên trước.',
   PREVIOUS_MODULE_REQUIRED: 'Hãy đạt câu hỏi ôn tập của mô đun trước để mở câu hỏi của mô đun này.',
   SLIDES_NOT_VIEWED: 'Đọc hết các trang nội dung để mở câu hỏi ôn tập.',
-  REVIEW_REQUIRED: 'Mở lại trang nội dung của câu chưa đúng để làm lần tiếp theo — lần sau là câu hỏi khác.',
+  REVIEW_REQUIRED: 'Mở lại trang nội dung của câu chưa đúng để làm lần tiếp theo.',
   QUIZ_CHANGED: 'Bộ câu hỏi đã đổi sang lần làm mới. Hãy tải lại trang để làm với câu hỏi mới.',
 };
 
@@ -164,7 +164,8 @@ export function domainSummary(domain: PulseDomain, courses: PulseCourseSummary[]
 /** Ghi chú khi phạm vi khóa được mở thấp hơn mục tiêu vị trí. */
 export function capNote(domain: PulseDomain, positionName: string | null | undefined, departmentName: string | null | undefined): string | null {
   if (domain.target === 0 || domain.ceiling >= domain.target) return null;
-  return `Vị trí ${positionName ?? 'của bạn'} yêu cầu mức ${levelName(domain.target)}, nhưng khóa đang được mở cho ${departmentName ? `phòng ${departmentName}` : 'bạn'} đến mức ${levelName(domain.ceiling)}, nên lộ trình hiện dừng ở mức ${levelName(domain.pathTop)}.`;
+  const dept = departmentName ? (departmentName.trim().toLowerCase().startsWith('phòng') ? departmentName.trim() : `phòng ${departmentName.trim()}`) : 'bạn';
+  return `Vị trí ${positionName ?? 'của bạn'} yêu cầu mức ${levelName(domain.target)}, nhưng khóa đang được mở cho ${dept} đến mức ${levelName(domain.ceiling)}, nên lộ trình hiện dừng ở mức ${levelName(domain.pathTop)}.`;
 }
 
 /** "Đề gồm 10 câu trắc nghiệm (đúng từ 7 câu) và một bài tự luận…" — mô tả đề trên trang trạng thái. */

@@ -58,10 +58,10 @@ export function PulseFinalPage() {
         assignmentContent={data.assignment ? <CourseFinalBrief content={data.assignment} /> : undefined}
         attemptLabel={`Lần nộp ${attemptNo}/${data.maxAttempts}`}
         outcomes={{
-          pass: `${code} đạt, mức ${levelName(data.course.tier)} của lĩnh vực được xác nhận và khóa tiếp theo mở.`,
+          pass: `Xác nhận đạt chuẩn ${code} (mức ${levelName(data.course.tier)}) và tự động mở khóa tiếp theo.`,
           fail: attemptNo < data.maxAttempts
-            ? 'Bạn đọc nhận xét, sửa bài và nộp lần cuối sau thời gian chờ.'
-            : 'Đây là lần nộp cuối: chưa đạt thì quản lý sắp xếp hỗ trợ trước khi lộ trình tiếp tục.',
+            ? 'Đọc nhận xét chi tiết từ hội đồng và hoàn thiện bài thi ở lần nộp tiếp theo.'
+            : 'Hội đồng khảo thí và quản lý phòng ban sẽ hỗ trợ định hướng trước khi tiếp tục lộ trình.',
         }}
         intro={last?.decisionReason ? (
           <Notice tone="warning">
@@ -94,11 +94,10 @@ function FinalView({ final }: { final: PulseFinal }) {
     <div className="pu-stack">
       <div className="pu-page-head">
         <div>
-          <span className="pu-eyebrow">{LABEL}</span>
-          <h1>Trình bày điều bạn đã học.</h1>
+          <span className="pu-eyebrow">{LABEL} · {course.code}</span>
+          <h1>Đánh giá năng lực cuối khóa</h1>
           <p>
-            {final.reviewer?.name ?? 'Người chấm'} chấm bài cuối của mỗi khóa cùng bản ghi màn hình, camera và micro. Gợi ý AI chỉ để tham
-            khảo — người chấm đưa ra quyết định cuối cùng và ghi lý do.
+            Hội đồng khảo thí trực tiếp thẩm định bài làm cùng bản ghi giám sát đa kênh (màn hình, camera, micro) nhằm bảo đảm tính liêm chính và công nhận năng lực thực tế.
           </p>
         </div>
         <div className="pu-row"><FinalStatusPill status={status} /><Pill>{submitted}/{final.maxAttempts} lần nộp</Pill></div>
@@ -107,26 +106,24 @@ function FinalView({ final }: { final: PulseFinal }) {
       <section className="pu-sequence" aria-label="Trình tự của khóa học">
         <div className={allPassed ? 'done' : 'current'}>
           <b>01</b>
-          <span>Học các mô đun<small>Đạt {final.modulesPassed}/{final.moduleCount} bài ôn tập</small></span>
+          <span>Hoàn thành các mô đun<small>Đạt {final.modulesPassed}/{final.moduleCount} bài ôn tập</small></span>
         </div>
         <div className={status === 'APPROVED' || status === 'PENDING' ? 'done' : allPassed ? 'current' : ''}>
           <b>02</b>
-          <span>Bài cuối khóa có giám sát<small>{submitted}/{final.maxAttempts} lần nộp</small></span>
+          <span>Bài thi cuối khóa<small>{submitted}/{final.maxAttempts} lần nộp</small></span>
         </div>
         <div className={status === 'APPROVED' ? 'done' : status === 'PENDING' ? 'current' : ''}>
           <b>03</b>
-          <span>Người chấm quyết định<small>{status === 'APPROVED' ? 'Đã duyệt' : 'Minh chứng và bản ghi được đánh giá kèm lý do'}</small></span>
+          <span>Hội đồng thẩm định<small>{status === 'APPROVED' ? 'Đã duyệt đạt chuẩn' : 'Thẩm định minh chứng & bản ghi'}</small></span>
         </div>
       </section>
 
       <section className="pu-surface pu-pad">
         <Mini>{course.domainName} · {levelName(course.tier)} · bài cuối khóa</Mini>
         {final.assignment && <CourseFinalBrief content={final.assignment} />}
-        <h2 className="pu-panel-title">{final.choiceCount > 0 ? 'Trắc nghiệm và ghi chú công việc có thể kiểm tra.' : 'Tạo ghi chú công việc có thể kiểm tra.'}</h2>
+        <h2 className="pu-panel-title">{final.choiceCount > 0 ? 'Trắc nghiệm & Tự luận thực hành có thể kiểm chứng' : 'Ghi chú công việc có thể kiểm tra'}</h2>
         <p className="pu-panel-desc">
-          {examStructure(final.choiceCount, final.choicePassMark)} Phần tự luận: mô tả một nhiệm vụ thực tế của vị trí {position}, nêu nguồn,
-          hành động hoặc phép tính người khác kiểm tra lại được, kết luận và bước tiếp theo. Khi làm bài, bạn chia sẻ toàn bộ màn hình,
-          bật camera và micro.
+          {examStructure(final.choiceCount, final.choicePassMark)} Phần tự luận yêu cầu giải quyết tình huống công việc thực tế của vị trí {position}, nêu rõ nguồn dữ liệu, quy trình xử lý và kết luận dựa trên minh chứng.
         </p>
         <CriteriaRubric criteria={final.criteria} />
       </section>
@@ -188,8 +185,7 @@ function FinalState({ final }: { final: PulseFinal }) {
     case 'PENDING':
       return (
         <Notice>
-          <strong>Bài của bạn đang chờ {final.reviewer?.name ?? 'người chấm'} chấm.</strong> Quyết định và lý do sẽ hiện ở đây. Cấp tiếp theo vẫn
-          khóa cho tới khi khóa được duyệt; trong lúc chờ bạn không nộp thêm được.
+          <strong>Bài của bạn đang được Hội đồng khảo thí thẩm định.</strong> Quyết định và nhận xét chi tiết sẽ được công bố tại đây trong vòng 48 giờ. Cấp tiếp theo sẽ tự động mở khi khóa học được công nhận đạt chuẩn.
         </Notice>
       );
     case 'RETRY_WAIT':
@@ -246,14 +242,14 @@ function AttemptCard({ attempt, max }: { attempt: PulseFinalAttempt; max: number
       <header>
         <span>Lần nộp {attempt.attemptNo}/{max} · {formatDateTime(attempt.submittedAt)}</span>
         <Pill tone={attempt.decision === 'PASSED' ? 'green' : attempt.decision === 'NOT_YET' ? 'coral' : 'gray'}>
-          {attempt.decision === 'PASSED' ? 'Đã duyệt' : attempt.decision === 'NOT_YET' ? 'Chưa đạt · cần sửa' : 'Chờ người chấm'}
+          {attempt.decision === 'PASSED' ? 'Đã duyệt' : attempt.decision === 'NOT_YET' ? 'Chưa đạt · cần sửa' : 'Chờ hội đồng chấm'}
         </Pill>
       </header>
       <ChoiceScore choice={attempt.choice} />
       <blockquote>{attempt.evidenceText}</blockquote>
       {attempt.decisionReason && (
         <div className={`pu-feedback${attempt.decision === 'PASSED' ? ' ok' : ''}`}>
-          <strong>Nhận xét của {attempt.reviewerName ?? 'người chấm'}</strong>
+          <strong>Nhận xét từ {attempt.reviewerName ?? 'Hội đồng khảo thí'}</strong>
           {attempt.reviewedAt ? ` · ${formatDateTime(attempt.reviewedAt)}` : ''}: {attempt.decisionReason}
         </div>
       )}

@@ -203,14 +203,6 @@ function CapabilityRadarChart({ summary }: { summary: TrialReport['summary'] }) 
   );
 }
 
-const DOMAIN_ICONS = [
-  FileText,
-  BookOpen,
-  Award,
-  Check,
-  Award,
-  Award,
-];
 
 /** Bảng năng lực của doanh nghiệp: phân bố mức theo lĩnh vực và mức của từng nhân viên. */
 export function CompetencyReport({ report }: { report: TrialReport }) {

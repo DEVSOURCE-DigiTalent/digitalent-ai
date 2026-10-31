@@ -14,14 +14,24 @@ import {
 } from '@/hooks/use-platform-catalog';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import type { CatalogCourseRow, CatalogVersionDetail, CatalogVersionSummary, CatalogVersionsOutput } from '@/services/platform-catalog.service';
-import { Footer, LoadError, Loading, PageHead, Pill } from '../components/pulse-ui';
+import { Footer, LoadError, Loading, Pill } from '../components/pulse-ui';
 import { CHANGE_KIND, LEVEL_NAMES, errorMessage, formatDate, formatMoney } from '../components/pulse-format';
+import {
+  Anchor,
+  Plus,
+  Search,
+  ArrowRight,
+  Edit3,
+  CheckCircle2,
+  Trash2,
+  X,
+  Sparkles,
+} from 'lucide-react';
 
 const CODE_PATTERN = /^[A-Z0-9][A-Z0-9-]{1,29}$/;
 
 /**
- * PA-03 / PA-12 · Phiên bản khóa học. Every change to the catalog is a version: the anchor (⚓) marks the version
- * organizations use; courses are added or edited in the draft, then publishing it moves the anchor.
+ * PA-03 / PA-12 · Phiên bản khóa học: catalog version management.
  */
 export function PlatformVersionsPage() {
   const { versionNo: param } = useParams<{ versionNo?: string }>();
@@ -30,8 +40,6 @@ export function PlatformVersionsPage() {
   const createDraft = useCreateDraft();
   const { can } = usePermission();
   const canManage = can(PERMISSIONS.PLATFORM_CATALOG_MANAGE);
-  // The Admin's working view should open the editable draft first. Explicit version URLs still
-  // preserve history/current inspection, while organizations continue to consume CURRENT only.
   const selected = param !== undefined ? Number(param) : (versions.data?.draftVersionNo ?? versions.data?.currentVersionNo ?? undefined);
   const version = useCatalogVersion(Number.isFinite(selected) ? selected : undefined);
   const data = versions.data;
@@ -48,27 +56,43 @@ export function PlatformVersionsPage() {
 
   return (
     <>
-      <PageHead
-        eyebrow="Nền tảng / Phiên bản khóa học"
-        title="Mỗi lần thêm hoặc sửa khóa là một phiên bản."
-        description="Phiên bản có neo ⚓ là bản các tổ chức đang dùng. Thêm, sửa khóa trong bản nháp rồi công bố để neo chuyển sang bản mới."
-        actions={
-          data &&
-          (data.draftVersionNo !== null ? (
-            selected !== data.draftVersionNo && (
-              <Link className="btn btn-primary" to={`/platform/versions/${data.draftVersionNo}`}>
-                Mở bản nháp v{data.draftVersionNo}
-              </Link>
-            )
-          ) : (
-            canManage && (
-              <button type="button" className="btn btn-primary" onClick={onCreateDraft} disabled={createDraft.isPending}>
-                {createDraft.isPending ? 'Đang tạo…' : `+ Tạo phiên bản v${nextNo}`}
-              </button>
-            )
-          ))
-        }
-      />
+      <div className="pa-page-header">
+        <div className="pa-row-between" style={{ alignItems: 'flex-start' }}>
+          <div>
+            <div className="pa-header-eyebrow">
+              <span className="pa-eyebrow-dot" />
+              QUẢN TRỊ NỀN TẢNG / PHIÊN BẢN KHÓA HỌC
+            </div>
+            <h1 className="pa-header-title">Mỗi lần thêm hoặc sửa khóa là một phiên bản.</h1>
+            <p className="pa-header-subtitle">
+              Phiên bản có neo ⚓ là bản các tổ chức đang dùng. Thêm, sửa khóa trong bản nháp rồi công bố để neo chuyển sang bản mới.
+            </p>
+          </div>
+          {data &&
+            (data.draftVersionNo !== null ? (
+              selected !== data.draftVersionNo && (
+                <Link className="btn btn-primary" to={`/platform/versions/${data.draftVersionNo}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Edit3 size={15} />
+                  Mở bản nháp v{data.draftVersionNo}
+                </Link>
+              )
+            ) : (
+              canManage && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={onCreateDraft}
+                  disabled={createDraft.isPending}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Plus size={16} />
+                  {createDraft.isPending ? 'Đang tạo…' : `Tạo phiên bản v${nextNo}`}
+                </button>
+              )
+            ))}
+        </div>
+      </div>
+
       {versions.isLoading && <Loading />}
       {versions.error && <LoadError error={versions.error} />}
       {data && (
@@ -93,52 +117,146 @@ function AnchorBar({ versions }: { versions: CatalogVersionsOutput }) {
   const current = versions.items.find((v) => v.status === 'CURRENT');
   if (!current) return <div className="notice warning">Chưa có phiên bản nào được công bố.</div>;
   return (
-    <div className="pa-anchor-bar">
-      <div className="pa-anchor-main">
-        <span className="pa-anchor-icon" aria-hidden="true">
-          ⚓
-        </span>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '16px 22px',
+        borderRadius: 14,
+        background: '#fff',
+        border: '1px solid #e2e8f0',
+        borderLeft: '4px solid #d97706',
+        marginBottom: 20,
+        boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            background: '#fef3c7',
+            color: '#d97706',
+            display: 'grid',
+            placeItems: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <Anchor size={20} />
+        </div>
         <div>
-          <small>Đang dùng</small>
-          <strong>Phiên bản v{current.versionNo}</strong>
-          <small>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#b45309', letterSpacing: '0.05em' }}>
+              PHIÊN BẢN NEO HIỆN TẠI
+            </span>
+            <span style={{ padding: '2px 8px', borderRadius: 6, background: '#fef3c7', color: '#b45309', fontSize: 11, fontWeight: 700 }}>
+              Đang áp dụng
+            </span>
+          </div>
+          <strong style={{ fontSize: 17, color: '#0f172a', display: 'block', marginTop: 2 }}>Phiên bản v{current.versionNo}</strong>
+          <small style={{ fontSize: 12, color: '#64748b' }}>
             {current.courseCount} khóa · {current.frameworkCount} khung · công bố {formatDate(current.publishedAt)}
-            {current.publishedByEmail ? ` · ${current.publishedByEmail}` : ''}
+            {current.publishedByEmail ? ` bởi ${current.publishedByEmail}` : ''}
           </small>
         </div>
       </div>
-      <Link className="btn btn-light" to={`/platform/versions/${current.versionNo}`}>
-        Xem khóa của v{current.versionNo} →
+      <Link
+        className="btn btn-light"
+        to={`/platform/versions/${current.versionNo}`}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+      >
+        Xem khóa của v{current.versionNo}
+        <ArrowRight size={14} />
       </Link>
     </div>
   );
 }
 
 function VersionStatus({ version }: { version: CatalogVersionSummary }) {
-  if (version.status === 'CURRENT') return <span className="pill pa-pill-gold">⚓ Đang dùng</span>;
-  if (version.status === 'DRAFT') return <span className="pill pa-pill-violet">Bản nháp</span>;
+  if (version.status === 'CURRENT')
+    return (
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 4,
+          padding: '2px 8px',
+          borderRadius: 6,
+          background: '#fef3c7',
+          color: '#b45309',
+          fontSize: 11,
+          fontWeight: 700,
+        }}
+      >
+        <Anchor size={11} /> Đang dùng
+      </span>
+    );
+  if (version.status === 'DRAFT')
+    return (
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 4,
+          padding: '2px 8px',
+          borderRadius: 6,
+          background: '#e0e7ff',
+          color: '#4338ca',
+          fontSize: 11,
+          fontWeight: 700,
+        }}
+      >
+        <Edit3 size={11} /> Bản nháp
+      </span>
+    );
   return <Pill tone="gray">Đã thay</Pill>;
 }
 
 function VersionList({ versions, selected }: { versions: CatalogVersionsOutput; selected: number | undefined }) {
   return (
-    <nav className="pa-ver-list" aria-label="Các phiên bản">
-      {versions.items.map((v) => (
-        <Link key={v.versionNo} to={`/platform/versions/${v.versionNo}`} className="pa-ver" aria-current={v.versionNo === selected ? 'page' : undefined}>
-          <span className="vn">
-            v{v.versionNo} <VersionStatus version={v} />
-          </span>
-          <small>
-            {v.courseCount} khóa · {v.status === 'DRAFT' ? `tạo ${formatDate(v.createdAt)}` : `công bố ${formatDate(v.publishedAt)}`}
-          </small>
-          {v.status === 'DRAFT' && (
-            <small>
-              {v.newCount} khóa mới · {v.editedCount} đã sửa
+    <nav className="pa-ver-list" aria-label="Các phiên bản" style={{ display: 'grid', gap: 8 }}>
+      {versions.items.map((v) => {
+        const isCurrent = v.versionNo === selected;
+        return (
+          <Link
+            key={v.versionNo}
+            to={`/platform/versions/${v.versionNo}`}
+            style={{
+              display: 'grid',
+              gap: 4,
+              padding: '14px 16px',
+              borderRadius: 12,
+              background: '#fff',
+              border: isCurrent ? '1px solid #0f172a' : '1px solid #e2e8f0',
+              borderLeft: isCurrent ? '4px solid #d97706' : '1px solid #e2e8f0',
+              boxShadow: isCurrent ? '0 2px 8px rgba(15, 23, 42, 0.08)' : 'none',
+              textDecoration: 'none',
+              color: '#0f172a',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 15, fontWeight: 700 }}>v{v.versionNo}</span>
+              <VersionStatus version={v} />
+            </div>
+            <small style={{ fontSize: 12, color: '#64748b' }}>
+              {v.courseCount} khóa · {v.status === 'DRAFT' ? `tạo ${formatDate(v.createdAt)}` : `công bố ${formatDate(v.publishedAt)}`}
             </small>
-          )}
-          {v.releaseNote && <small className="note">{v.releaseNote}</small>}
-        </Link>
-      ))}
+            {v.status === 'DRAFT' && (
+              <small style={{ fontSize: 11, color: '#d97706', fontWeight: 600 }}>
+                {v.newCount} khóa mới · {v.editedCount} đã sửa
+              </small>
+            )}
+            {v.releaseNote && (
+              <small style={{ fontSize: 11, color: '#64748b', fontStyle: 'italic', marginTop: 2 }}>
+                “{v.releaseNote}”
+              </small>
+            )}
+          </Link>
+        );
+      })}
     </nav>
   );
 }
@@ -167,53 +285,82 @@ function VersionCourses({ detail, canManage }: { detail: CatalogVersionDetail; c
     version.status === 'DRAFT'
       ? `Bản nháp chép từ v${version.basedOnVersionNo ?? '—'}: ${version.newCount} khóa mới, ${version.editedCount} khóa đã sửa.`
       : version.status === 'CURRENT'
-        ? 'Đang dùng — chỉ xem. Muốn sửa, mở bản nháp.'
-        : 'Đã được thay — chỉ xem.';
+        ? 'Phiên bản đang áp dụng chính thức toàn hệ thống. Mở bản nháp để thực hiện cập nhật hoặc bổ sung khóa học.'
+        : 'Phiên bản lưu trữ lịch sử (chỉ xem).';
 
   return (
     <>
       {adding && <AddCourseForm versionNo={version.versionNo} onClose={() => setAdding(false)} />}
-      <section className="surface pad" aria-labelledby="version-courses">
-        <div className="pa-card-head">
+      <section className="surface pad" style={{ borderRadius: 16, border: '1px solid #e2e8f0', background: '#fff' }} aria-labelledby="version-courses">
+        <div className="pa-card-head" style={{ marginBottom: 16 }}>
           <div>
-            <h2 id="version-courses" className="panel-title">
-              Khóa học của v{version.versionNo}
+            <h2 id="version-courses" className="panel-title" style={{ fontSize: 17, fontWeight: 700, color: '#0f172a' }}>
+              Danh mục khóa học thuộc v{version.versionNo}
             </h2>
-            <p className="panel-desc">{summary}</p>
+            <p className="panel-desc" style={{ fontSize: 13, color: '#64748b' }}>{summary}</p>
           </div>
           {editable && (
-            <div className="button-row">
+            <div className="button-row" style={{ display: 'flex', gap: 8 }}>
               {!adding && (
-                <button type="button" className="btn btn-outline" onClick={() => setAdding(true)}>
-                  + Thêm khóa học
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setAdding(true)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Plus size={15} />
+                  Thêm khóa học
                 </button>
               )}
-              <button type="button" className="btn btn-primary" onClick={() => setPublishing(true)}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setPublishing(true)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                <Sparkles size={15} />
                 Công bố v{version.versionNo}
               </button>
             </div>
           )}
         </div>
-        <div className="pa-filters">
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm theo tên, mã khóa hoặc lĩnh vực" aria-label="Tìm khóa học" />
+
+        {/* Filter bar */}
+        <div className="pa-row-between" style={{ marginBottom: 16, alignItems: 'center' }}>
+          <div style={{ position: 'relative', minWidth: 320, flex: 1 }}>
+            <Search size={15} style={{ position: 'absolute', left: 12, top: 12, color: '#94a3b8', pointerEvents: 'none' }} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm theo tên, mã khóa hoặc lĩnh vực..."
+              aria-label="Tìm khóa học"
+              style={{ paddingLeft: 34, height: 38, width: '100%', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13 }}
+            />
+          </div>
           {version.status === 'DRAFT' && (
-            <label className="pa-check">
-              <input type="checkbox" checked={changedOnly} onChange={(e) => setChangedOnly(e.target.checked)} />
-              Chỉ khóa đã thay đổi
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: '#334155', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={changedOnly}
+                onChange={(e) => setChangedOnly(e.target.checked)}
+                style={{ width: 16, height: 16, accentColor: '#d97706' }}
+              />
+              Chỉ khóa đã thay đổi ({detail.courses.filter((c) => c.changeKind !== 'UNCHANGED').length})
             </label>
           )}
         </div>
-        <div className="table-scroll">
-          <table className="data-table pa-course-table">
+
+        <div className="table-scroll" style={{ borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+          <table className="data-table pa-course-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr>
-                <th>Khóa học</th>
-                <th>Cấp</th>
-                <th className="num">Mô đun</th>
-                <th className="num">Câu hỏi</th>
-                <th className="num">Giá / suất</th>
-                <th>Thay đổi</th>
-                <th aria-label="Thao tác" />
+              <tr style={{ background: '#f8fafc' }}>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569' }}>KHÓA HỌC & LĨNH VỰC</th>
+                <th style={{ padding: '12px 12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>CẤP ĐỘ</th>
+                <th className="num" style={{ padding: '12px 12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>MÔ ĐUN</th>
+                <th className="num" style={{ padding: '12px 12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>CÂU HỎI</th>
+                <th className="num" style={{ padding: '12px 16px', textAlign: 'right', fontSize: 12, fontWeight: 700, color: '#475569' }}>ĐƠN GIÁ</th>
+                <th style={{ padding: '12px 12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>TRẠNG THÁI</th>
+                <th style={{ width: 110, padding: '12px 16px', textAlign: 'right', fontSize: 12, fontWeight: 700, color: '#475569' }}>THAO TÁC</th>
               </tr>
             </thead>
             <tbody>
@@ -222,8 +369,8 @@ function VersionCourses({ detail, canManage }: { detail: CatalogVersionDetail; c
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="pa-empty">
-                    {detail.courses.length === 0 ? 'Phiên bản chưa có khóa học.' : 'Không có khóa học khớp bộ lọc.'}
+                  <td colSpan={7} style={{ padding: '40px 16px', textAlign: 'center', color: '#64748b', fontSize: 13 }}>
+                    {detail.courses.length === 0 ? 'Phiên bản chưa có khóa học nào.' : 'Không có khóa học nào khớp bộ lọc.'}
                   </td>
                 </tr>
               )}
@@ -253,52 +400,103 @@ function CourseGroup({ name, courses, detail, editable }: { name: string; course
 
   return (
     <>
-      <tr className="pa-group-row">
-        <td colSpan={7}>{name}</td>
+      <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
+        <td colSpan={7} style={{ padding: '10px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#0f172a' }}>
+              {name}
+            </span>
+            <span style={{ padding: '2px 8px', borderRadius: 12, background: '#e2e8f0', color: '#475569', fontSize: 11, fontWeight: 600 }}>
+              {courses.length} khóa
+            </span>
+          </div>
+        </td>
       </tr>
       {courses.map((c) => {
         const kind = CHANGE_KIND[c.changeKind];
+        const levelStyle =
+          c.level === 1
+            ? { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0' }
+            : c.level === 2
+              ? { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' }
+              : { bg: '#fffbeb', color: '#d97706', border: '#fde68a' };
+
         return (
-          <tr key={c.courseId} className="pa-row-link" onClick={() => open(c)}>
-            <td>
-              <strong className="pa-cell-title">{c.title}</strong>
-              <small className="pa-cell-sub">
-                {c.code} · {c.domainName}
-              </small>
+          <tr key={c.courseId} className="pa-row-link" onClick={() => open(c)} style={{ borderTop: '1px solid #f1f5f9' }}>
+            <td style={{ padding: '12px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <code style={{ fontSize: 12, fontWeight: 700, color: '#0f172a', background: '#f1f5f9', padding: '2px 6px', borderRadius: 4 }}>
+                  {c.code}
+                </code>
+                <div>
+                  <strong style={{ fontSize: 13, color: '#0f172a', display: 'block' }}>{c.title}</strong>
+                  <small style={{ fontSize: 12, color: '#64748b' }}>{c.domainName}</small>
+                </div>
+              </div>
             </td>
-            <td>
-              <span className={`pa-level pa-level-${c.level}`}>{LEVEL_NAMES[c.level] ?? c.levelName}</span>
+            <td style={{ padding: '12px', textAlign: 'center' }}>
+              <span
+                style={{
+                  display: 'inline-block',
+                  padding: '3px 8px',
+                  borderRadius: 6,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  background: levelStyle.bg,
+                  color: levelStyle.color,
+                  border: `1px solid ${levelStyle.border}`,
+                }}
+              >
+                {LEVEL_NAMES[c.level] ?? c.levelName}
+              </span>
             </td>
-            <td className="num">{c.moduleCount}</td>
-            <td className="num">{c.questionCount}</td>
-            <td className="num">{c.level === 1 ? 'Miễn phí' : formatMoney(c.pricePerSeat)}</td>
-            <td>
+            <td className="num" style={{ padding: '12px', textAlign: 'center', fontSize: 13, fontWeight: 600 }}>
+              {c.moduleCount}
+            </td>
+            <td className="num" style={{ padding: '12px', textAlign: 'center', fontSize: 13, fontWeight: 600 }}>
+              {c.questionCount}
+            </td>
+            <td className="num" style={{ padding: '12px 16px', textAlign: 'right', fontSize: 13, fontWeight: 600 }}>
+              {c.level === 1 ? <span style={{ color: '#16a34a' }}>Miễn phí</span> : formatMoney(c.pricePerSeat)}
+            </td>
+            <td style={{ padding: '12px', textAlign: 'center' }}>
               <Pill tone={kind?.tone}>{kind?.label ?? c.changeKind}</Pill>
               {c.salesStatus === 'PAUSED' && (
-                <>
-                  {' '}
-                  <Pill tone="coral">Tạm ngưng bán</Pill>
-                </>
+                <span style={{ marginLeft: 4 }}>
+                  <Pill tone="coral">Tạm ngưng</Pill>
+                </span>
               )}
             </td>
-            <td className="pa-actions" onClick={(e) => e.stopPropagation()}>
+            <td style={{ padding: '12px 16px', textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
               {confirm === c.courseId ? (
-                <div className="button-row">
+                <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                   <button type="button" className="btn btn-small pa-danger" onClick={() => onRemove(c)} disabled={remove.isPending}>
-                    Bỏ khóa này
+                    Bỏ
                   </button>
                   <button type="button" className="btn btn-ghost btn-small" onClick={() => setConfirm(null)}>
                     Giữ
                   </button>
                 </div>
               ) : (
-                <div className="button-row">
-                  <button type="button" className={`btn btn-small ${editable ? 'btn-light' : 'btn-outline'}`} onClick={() => open(c)}>
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    className="btn btn-small btn-light"
+                    onClick={() => open(c)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 30, padding: '0 10px' }}
+                  >
                     {editable ? 'Sửa' : 'Xem'}
+                    <ArrowRight size={12} />
                   </button>
                   {editable && c.changeKind === 'NEW' && (
-                    <button type="button" className="btn btn-ghost btn-small pa-danger-text" onClick={() => setConfirm(c.courseId)} aria-label={`Bỏ ${c.code} khỏi bản nháp`}>
-                      Bỏ
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-small"
+                      onClick={() => setConfirm(c.courseId)}
+                      aria-label={`Bỏ ${c.code} khỏi bản nháp`}
+                      style={{ color: '#ef4444', height: 30, padding: '0 6px' }}
+                    >
+                      <Trash2 size={13} />
                     </button>
                   )}
                 </div>
@@ -432,48 +630,74 @@ function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onCl
     });
 
   return (
-    <div className="pa-overlay" onClick={onClose}>
-      <div className="pa-dialog" role="dialog" aria-modal="true" aria-labelledby="publish-title" onClick={(e) => e.stopPropagation()}>
-        <div className="pa-dialog-head">
-          <h2 id="publish-title">Công bố phiên bản v{versionNo}</h2>
-          <button ref={closeButton} type="button" className="btn btn-ghost btn-small" onClick={onClose}>
-            Đóng
+    <div className="pa-overlay" onClick={onClose} style={{ display: 'grid', placeItems: 'center', background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(4px)', zIndex: 1000, position: 'fixed', inset: 0 }}>
+      <div
+        className="pa-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="publish-title"
+        onClick={(e) => e.stopPropagation()}
+        style={{ width: '92%', maxWidth: 580, maxHeight: '90vh', overflowY: 'auto', borderRadius: 16, background: '#fff', border: '1px solid #e2e8f0', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid #f1f5f9' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#fef3c7', color: '#d97706', display: 'grid', placeItems: 'center' }}>
+              <Anchor size={18} />
+            </div>
+            <div>
+              <h2 id="publish-title" style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#0f172a' }}>
+                Công bố phiên bản v{versionNo}
+              </h2>
+              <small style={{ fontSize: 12, color: '#64748b' }}>Chuyển mốc neo chính thức của nền tảng</small>
+            </div>
+          </div>
+          <button ref={closeButton} type="button" className="btn btn-ghost btn-small" onClick={onClose} style={{ padding: 6, borderRadius: 8 }}>
+            <X size={18} />
           </button>
         </div>
-        <div className="pa-dialog-body">
-          <div className="notice">
-            Sau khi công bố, neo ⚓ chuyển {currentNo ? `từ v${currentNo} ` : ''}sang v{versionNo}.{currentNo ? ` v${currentNo} vẫn xem lại được nhưng không sửa.` : ''}
+
+        <div style={{ padding: '20px 24px', display: 'grid', gap: 18 }}>
+          <div style={{ padding: '12px 16px', borderRadius: 10, background: '#eff6ff', border: '1px solid #bfdbfe', fontSize: 13, color: '#1e40af' }}>
+            Sau khi công bố, mốc neo ⚓ sẽ chuyển {currentNo ? `từ v${currentNo} ` : ''}sang <strong>v{versionNo}</strong>. Các tổ chức doanh nghiệp sẽ ngay lập tức được truy cập danh mục khóa học mới.
           </div>
+
           <div>
-            <span className="mini-label">Thay đổi ({changed.length})</span>
-            <ul className="pa-check-list">
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569', display: 'block', marginBottom: 8 }}>
+              Các khóa có thay đổi ({changed.length})
+            </span>
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 8 }}>
               {changed.map((c) => (
-                <li key={c.courseId}>
-                  <Pill tone={CHANGE_KIND[c.changeKind]?.tone}>{CHANGE_KIND[c.changeKind]?.label}</Pill>
-                  <div>
-                    <b>{c.code}</b> · {c.title}
-                    <small>
-                      {c.moduleCount} mô đun · {c.questionCount} câu hỏi · {c.level === 1 ? 'Miễn phí' : formatMoney(c.pricePerSeat)}
-                    </small>
+                <li key={c.courseId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: 13 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Pill tone={CHANGE_KIND[c.changeKind]?.tone}>{CHANGE_KIND[c.changeKind]?.label}</Pill>
+                    <span style={{ fontWeight: 600, color: '#0f172a' }}>{c.code}</span> · {c.title}
                   </div>
+                  <small style={{ color: '#64748b' }}>
+                    {c.moduleCount} mô đun · {c.questionCount} câu hỏi
+                  </small>
                 </li>
               ))}
-              {changed.length === 0 && <li className="pa-empty">Chưa có khóa nào được thêm hay sửa.</li>}
+              {changed.length === 0 && <li style={{ padding: '8px 12px', fontSize: 13, color: '#64748b', fontStyle: 'italic' }}>Chưa có khóa nào được thêm hay sửa.</li>}
             </ul>
           </div>
+
           <div>
-            <span className="mini-label">Kiểm tra trước khi công bố</span>
-            {check.isLoading && <p className="pa-hint">Đang kiểm tra…</p>}
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569', display: 'block', marginBottom: 8 }}>
+              Kiểm tra điều kiện xuất bản
+            </span>
+            {check.isLoading && <p style={{ fontSize: 13, color: '#64748b' }}>Đang tự động rà soát nội dung…</p>}
             {check.error && <LoadError error={check.error} />}
             {check.data && (
-              <ul className="pa-check-list">
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 8 }}>
                 {check.data.items.map((item, i) => (
-                  <li key={i}>
-                    <Pill tone={item.level === 'BLOCK' ? 'coral' : undefined}>{item.level === 'BLOCK' ? 'Chặn' : 'Nên sửa'}</Pill>
-                    <div>
+                  <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 8, background: item.level === 'BLOCK' ? '#fff1f2' : '#fffbeb', border: item.level === 'BLOCK' ? '1px solid #fecdd3' : '1px solid #fde68a', fontSize: 13 }}>
+                    <span style={{ padding: '2px 6px', borderRadius: 4, background: item.level === 'BLOCK' ? '#e11d48' : '#d97706', color: '#fff', fontSize: 10, fontWeight: 800 }}>
+                      {item.level === 'BLOCK' ? 'CHẶN' : 'NÊN SỬA'}
+                    </span>
+                    <div style={{ flex: 1, color: item.level === 'BLOCK' ? '#9f1239' : '#92400e' }}>
                       {item.courseCode && item.courseId ? (
-                        <Link to={`/platform/versions/${versionNo}/courses/${item.courseId}`} onClick={onClose}>
-                          <b>{item.courseCode}</b>
+                        <Link to={`/platform/versions/${versionNo}/courses/${item.courseId}`} onClick={onClose} style={{ fontWeight: 700, color: 'inherit', textDecoration: 'underline' }}>
+                          {item.courseCode}
                         </Link>
                       ) : null}
                       {item.courseCode ? ' · ' : ''}
@@ -482,24 +706,42 @@ function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onCl
                   </li>
                 ))}
                 {check.data.items.length === 0 && (
-                  <li>
-                    <Pill tone="green">Ổn</Pill>
-                    <div>Mọi khóa thay đổi đã đủ nội dung, câu hỏi và đề bài cuối khóa.</div>
+                  <li style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: 13, color: '#166534' }}>
+                    <CheckCircle2 size={16} style={{ color: '#16a34a' }} />
+                    <div>Đạt chuẩn: Mọi khóa thay đổi đã đầy đủ nội dung, câu hỏi và đề bài kiểm tra cuối khóa.</div>
                   </li>
                 )}
               </ul>
             )}
           </div>
-          <label className="field">
-            Ghi chú phiên bản
-            <textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} placeholder="Phiên bản này thay đổi gì, vì sao." />
-            <small className="field-hint">Ghi vào nhật ký kiểm tra cùng người công bố.</small>
-          </label>
-          <div className="button-row">
-            <button type="button" className="btn btn-primary" onClick={onPublish} disabled={!check.data?.canPublish || publish.isPending}>
-              {publish.isPending ? 'Đang công bố…' : `Công bố v${versionNo} →`}
+
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#0f172a', marginBottom: 6 }}>
+              Ghi chú phát hành phiên bản
+            </label>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={1000}
+              placeholder="VD: Cập nhật học liệu Thông tư 02 theo lộ trình quý 4/2026..."
+              style={{ width: '100%', height: 70, padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13 }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid #f1f5f9' }}>
+            <button type="button" className="btn btn-ghost" onClick={onClose}>
+              Hủy bỏ
             </button>
-            {check.data && !check.data.canPublish && <small className="pa-hint">Sửa các mục "Chặn" trước khi công bố.</small>}
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={onPublish}
+              disabled={!check.data?.canPublish || publish.isPending}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            >
+              <Anchor size={15} />
+              {publish.isPending ? 'Đang xuất bản…' : `Xác nhận công bố v${versionNo}`}
+            </button>
           </div>
         </div>
       </div>
