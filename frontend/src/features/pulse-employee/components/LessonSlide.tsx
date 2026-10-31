@@ -1,5 +1,5 @@
-import { useEffect, useId, useRef, useState } from 'react';
-import { ArrowUpRight, BookOpen, Clock3, Lightbulb, Maximize2, Presentation, Video, X } from 'lucide-react';
+import { useId, useState } from 'react';
+import { ArrowUpRight, BookOpen, Clock3, Layers, Lightbulb, Maximize2, Presentation, Video, X } from 'lucide-react';
 import { COURSE_MEDIA_SPECS } from '@/features/learning/data/course-media-specs';
 import type { PulseSlide } from '@/services/pulse.service';
 import { lessonSections } from '../lib/lesson-sections';
@@ -8,7 +8,6 @@ import { RichText } from './RichText';
 import { lessonMediaUrl } from '@/types/learning-content';
 
 function Sources({ body }: { body: string }) {
-  // Plain URLs become links only in the source panel; unsupported markup stays sanitized by RichText.
   if (/<[a-z][^>]*>/i.test(body)) return <RichText body={body} />;
   return (
     <div className="pu-lesson-sources">
@@ -51,6 +50,7 @@ export function LessonSlide({
     .map((item) => ({ src: lessonMediaUrl(item.url), alt: item.alt || slide.title }));
   const videos = uploaded.filter((item) => item.kind === 'VIDEO');
   const [expanded, setExpanded] = useState<{ src: string; alt: string } | null>(null);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
   const sections = lessonSections(slide.contentBody).map((section) =>
     section.title.trim() === slide.title.trim() ? { ...section, title: '' } : section,
@@ -71,14 +71,14 @@ export function LessonSlide({
       <header className="pu-lesson-heading">
         <div className="pu-lesson-meta">
           <span className="pu-lesson-type-pill">
-            <BookOpen size={14} />
+            <BookOpen size={13} className="text-blue-700" />
             <span>{LESSON_TYPE_LABELS[slide.lessonType] ?? 'Nội dung bài học'}</span>
           </span>
           <span className="pu-lesson-page-pill">Bài {pad2(index + 1)} / {pad2(count)}</span>
           {slide.estimatedMinutes ? (
             <span className="pu-lesson-time-pill">
-              <Clock3 size={14} />
-              <span>{slide.estimatedMinutes} phút đọc</span>
+              <Clock3 size={13} className="text-slate-500" />
+              <span>~{slide.estimatedMinutes} phút đọc</span>
             </span>
           ) : null}
         </div>
@@ -109,7 +109,7 @@ export function LessonSlide({
             <figure className="pu-lesson-visual pu-takeaways-card">
               <div className="pu-takeaways-head">
                 <span className="pu-takeaways-badge">
-                  <Presentation size={15} className="text-indigo-600" />
+                  <Presentation size={14} className="text-blue-700" />
                   <span>Tóm tắt trực quan</span>
                 </span>
                 <span className="pu-takeaways-layout">
@@ -129,7 +129,7 @@ export function LessonSlide({
                 <div className="pu-takeaways-points">
                   {mediaSpec.keyPoints.map((pt, pti) => (
                     <div key={pti} className="pu-takeaways-point">
-                      <span className="pu-takeaways-num">{pti + 1}</span>
+                      <span className="pu-takeaways-num">{pad2(pti + 1)}</span>
                       <span>{pt}</span>
                     </div>
                   ))}
@@ -138,7 +138,7 @@ export function LessonSlide({
                 {mediaSpec.videoScript && (
                   <details className="pu-voiceover-details">
                     <summary className="pu-voiceover-summary">
-                      <Video size={14} />
+                      <Video size={13} />
                       <span>Lời thuyết minh tóm tắt bài giảng</span>
                     </summary>
                     <div className="pu-voiceover-content">
@@ -151,30 +151,68 @@ export function LessonSlide({
           </div>
         )}
 
-        {/* ── Uploaded Artwork or Video (nếu có) ───────────────────────── */}
+        {/* ── Uploaded Artwork or Video (Có fallback tự động chống lỗi vỡ ảnh) ── */}
         {(pictures.length > 0 || videos.length > 0) && (
           <div className="pu-lesson-visuals">
-            {pictures.map((artwork) => (
-              <figure className="pu-lesson-visual" key={artwork.src}>
-                <button
-                  type="button"
-                  className="pu-lesson-image-button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setExpanded(artwork);
-                  }}
-                  aria-label="Phóng to hình minh họa"
-                >
-                  <img src={artwork.src} alt={artwork.alt} decoding="async" loading="lazy" />
-                  <span>
-                    <Maximize2 size={14} /> Xem ảnh lớn
-                  </span>
-                </button>
-                <figcaption>
-                  <span>Góc nhìn trực quan:</span> {artwork.alt}
-                </figcaption>
-              </figure>
-            ))}
+            {pictures.map((artwork) => {
+              const isFailed = failedImages[artwork.src];
+              if (isFailed) {
+                return (
+                  <figure className="pu-lesson-visual pu-takeaways-card fallback" key={artwork.src}>
+                    <div className="pu-takeaways-head">
+                      <span className="pu-takeaways-badge">
+                        <Layers size={14} className="text-blue-700" />
+                        <span>Sơ đồ mô hình hóa</span>
+                      </span>
+                      <span className="pu-takeaways-layout">Khái niệm cốt lõi</span>
+                    </div>
+                    <div className="pu-takeaways-body">
+                      <h4 className="pu-takeaways-title">{slide.title}</h4>
+                      <p className="pu-fallback-desc">{artwork.alt}</p>
+                      {mediaSpec && mediaSpec.keyPoints.length > 0 && (
+                        <div className="pu-takeaways-points">
+                          {mediaSpec.keyPoints.map((pt, pti) => (
+                            <div key={pti} className="pu-takeaways-point">
+                              <span className="pu-takeaways-num">{pad2(pti + 1)}</span>
+                              <span>{pt}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </figure>
+                );
+              }
+
+              return (
+                <figure className="pu-lesson-visual" key={artwork.src}>
+                  <button
+                    type="button"
+                    className="pu-lesson-image-button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setExpanded(artwork);
+                    }}
+                    aria-label="Phóng to hình minh họa"
+                  >
+                    <img
+                      src={artwork.src}
+                      alt={artwork.alt}
+                      decoding="async"
+                      loading="lazy"
+                      onError={() => setFailedImages((prev) => ({ ...prev, [artwork.src]: true }))}
+                    />
+                    <span>
+                      <Maximize2 size={13} /> Xem ảnh lớn
+                    </span>
+                  </button>
+                  <figcaption>
+                    <span>Góc nhìn trực quan:</span> {artwork.alt}
+                  </figcaption>
+                </figure>
+              );
+            })}
+
             {videos.map((video) => (
               <figure className="pu-lesson-visual" key={video.url}>
                 <video controls preload="metadata" src={lessonMediaUrl(video.url)} style={{ width: '100%' }} />
@@ -189,7 +227,7 @@ export function LessonSlide({
       {checks.map((section, sectionIndex) => (
         <section className="pu-lesson-check" key={sectionIndex}>
           <span className="pu-lesson-check-icon">
-            <Lightbulb size={22} />
+            <Lightbulb size={20} className="text-amber-600" />
           </span>
           <div>
             <h3>Dừng một chút, thử nghĩ xem</h3>
@@ -199,45 +237,40 @@ export function LessonSlide({
         </section>
       ))}
 
-      {sources.length > 0 && (
-        <details className="pu-lesson-source-panel">
-          <summary>Nguồn tham khảo · Tìm hiểu sâu hơn</summary>
-          {sources.map((section, i) => (
-            <Sources key={i} body={section.body} />
-          ))}
-        </details>
+      {/* ── Sources and References ────────────────────────────────────── */}
+      {sources.map((section, sectionIndex) => (
+        <section className="pu-lesson-sources-block" key={sectionIndex}>
+          <h3>Tài liệu và nguồn tham khảo</h3>
+          <Sources body={section.body} />
+        </section>
+      ))}
+
+      {/* ── Fullscreen Lightbox ───────────────────────────────────────── */}
+      {expanded && (
+        <div
+          className="pu-lesson-lightbox"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setExpanded(null)}
+          onKeyDown={(event) => event.key === 'Escape' && setExpanded(null)}
+          tabIndex={-1}
+        >
+          <div className="pu-lightbox-inner" onClick={(e) => e.stopPropagation()}>
+            <img src={expanded.src} alt={expanded.alt} />
+            <div className="pu-lightbox-caption">
+              <p>{expanded.alt}</p>
+              <button
+                type="button"
+                className="pu-lightbox-close-btn"
+                onClick={() => setExpanded(null)}
+                aria-label="Đóng ảnh"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
       )}
-
-      {expanded && <ImageLightbox artwork={expanded} onClose={() => setExpanded(null)} />}
     </article>
-  );
-}
-
-function ImageLightbox({ artwork, onClose }: { artwork: { src: string; alt: string }; onClose: () => void }) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const element = dialog.current;
-    element?.showModal();
-    return () => element?.close();
-  }, []);
-  return (
-    <dialog
-      ref={dialog}
-      className="pu-lesson-lightbox"
-      aria-label="Hình minh họa bài học"
-      onCancel={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        onClose();
-      }}
-      onClick={(event) => event.stopPropagation()}
-      onKeyDown={(event) => event.stopPropagation()}
-    >
-      <button type="button" autoFocus onClick={onClose} aria-label="Đóng hình minh họa">
-        <X size={20} />
-      </button>
-      <img src={artwork.src} alt={artwork.alt} />
-      <p>{artwork.alt}</p>
-    </dialog>
   );
 }

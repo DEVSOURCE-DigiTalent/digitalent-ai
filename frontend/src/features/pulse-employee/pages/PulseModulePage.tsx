@@ -7,10 +7,14 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
-  Focus,
+  ChevronRight,
+  GraduationCap,
+  Lightbulb,
   List,
   Lock,
+  Maximize2,
   MessageSquare,
+  PlayCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -23,7 +27,7 @@ import {
 import type { PulseModuleDetail, PulseModuleQuiz, PulseQuizResult } from '@/services/pulse.service';
 import { LessonSlide } from '../components/LessonSlide';
 import { AskReviewerModal } from '../components/AskReviewerModal';
-import { Bar, LoadError, PageSkeleton, PuLink } from '../components/ui';
+import { LoadError, PageSkeleton, PuLink } from '../components/ui';
 import { btn } from '../lib/button';
 import { BLOCK_MESSAGES, levelName, pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
@@ -39,12 +43,13 @@ function toSentenceCase(str: string): string {
 }
 
 /**
- * PulseModulePage — Không gian học tập (Module Reader) V2
- * - Chuẩn hóa bố cục 2 cột thoáng đãng: giải phóng không gian chữ đọc (max-w-3xl, ~720px).
- * - Mục lục khóa học bên trái có độ tương phản cao (text-slate-600/700 >= 12px).
- * - Thanh điều hướng phân trang 1 hàng duy nhất ở chân bài đọc: Bài trước · 01/04 · Bài tiếp theo.
- * - Luồng học tập tuần tự: Đọc đủ các trang bài giảng mới mở khóa bài kiểm tra mini-quiz.
- * - Loại bỏ toàn bộ prompt kỹ thuật Canva/Figma thô, tập trung vào kiến thức cốt lõi.
+ * PulseModulePage — Không gian Học tập & Đọc bài giảng (Module Reader V2)
+ * Thiết kế Enterprise SaaS chuẩn Brand Blue (#1e40af), Zero Emoji, Vector SVG:
+ * 1. Header Canvas tinh gọn với Breadcrumb và Thanh tiến độ khóa học mini
+ * 2. Cột Đề cương bên trái dạng Curriculum Playlist (Active/Passed/Locked/Final Exam)
+ * 3. Trình đọc bài giảng tập trung, thanh công cụ hỏi hỗ trợ & phóng to
+ * 4. Thanh điều hướng phân trang mượt mà (Trang trước · Trang XX/YY · Trang sau / Làm quiz)
+ * 5. Khối ôn tập Mini-quiz tuần tự mở khóa sau khi đọc xong
  */
 export function PulseModulePage() {
   const { courseId, moduleId } = useParams<{ courseId: string; moduleId: string }>();
@@ -69,12 +74,13 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
   const marked = useRef(detail.viewed);
   const playerRef = useRef<HTMLDivElement>(null);
   const { data: overview } = usePulseOverview();
-  const reviewerName = overview?.reviewer?.name ?? 'Quản lý phụ trách';
-  const reviewerRole = overview?.reviewer?.role ?? 'Quản lý phòng ban · Người đánh giá';
+  const reviewerName = overview?.reviewer?.name ?? 'Người hướng dẫn chuyên môn';
+  const reviewerRole = overview?.reviewer?.role ?? 'Người đánh giá học tập';
   const canRecord = !detail.sample && course.canWork;
   const slide = slides[index];
   const isLast = index === slides.length - 1;
   const total = detail.modules.length;
+  const passedCount = detail.modules.filter((m) => m.passed).length;
   const review = detail.review && !detail.review.done ? detail.review : null;
 
   const status = detail.quizPassed
@@ -88,6 +94,10 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
     : detail.viewed
     ? 'Sẵn sàng làm câu hỏi ôn tập'
     : 'Đang đọc nội dung bài giảng';
+
+  const progressPct = Math.round(
+    ((module.index + (detail.quizPassed ? 1 : 0)) / Math.max(1, total)) * 100
+  );
 
   // Chuyển tới một trang bài đọc
   const goTo = (target: number) => {
@@ -127,67 +137,114 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
 
   return (
     <div className={`pu-learning-space ${focused ? 'is-focused' : ''}`}>
-      {/* ── 1. Breadcrumb & Progress Header ───────────────────────────── */}
-      <div className="pu-crumb">
-        <Link to={PULSE_PATHS.course(courseId)}>← Tổng quan khóa học</Link>
-        <span>·</span>
-        <span>{course.domainName}</span>
-        <span>·</span>
-        <span>Cấp độ {levelName(course.tier)}</span>
-      </div>
+      {/* ── 1. Header Canvas & Thanh tiến độ mini ───────────────────────── */}
+      <header className="pu-m-header-block">
+        <div className="pu-m-header-top">
+          <nav className="pu-m-breadcrumb" aria-label="Điều hướng">
+            <Link to={PULSE_PATHS.path} className="pu-m-back-link">
+              <ArrowLeft size={14} />
+              <span>Lộ trình năng lực</span>
+            </Link>
+            <ChevronRight size={13} className="pu-m-bc-separator" aria-hidden />
+            <Link to={PULSE_PATHS.course(courseId)} className="pu-m-bc-course">
+              {toSentenceCase(course.title)}
+            </Link>
+            <ChevronRight size={13} className="pu-m-bc-separator" aria-hidden />
+            <span className="pu-m-bc-tag">{course.domainName} · Cấp {course.tier}</span>
+          </nav>
+        </div>
 
-      <div className="pu-progress">
-        <span>Mô-đun {pad2(module.index + 1)} / {pad2(total)}</span>
-        <Bar
-          value={((module.index + (detail.quizPassed ? 1 : 0)) / Math.max(1, total)) * 100}
-          label="Tiến độ trong khóa"
-        />
-        <strong>{status}</strong>
-      </div>
+        <div className="pu-m-progress-strip">
+          <div className="pu-m-prog-left">
+            <span className="pu-m-prog-kicker">Mô-đun {pad2(module.index + 1)} / {pad2(total)}</span>
+            <span className="pu-m-prog-dot" />
+            <span className="pu-m-prog-status">{status}</span>
+          </div>
 
-      {/* ── 2. Course Layout (Sidebar + Reading Area) ─────────────────── */}
+          <div className="pu-m-prog-center">
+            <div className="pu-m-prog-bar-track">
+              <div
+                className="pu-m-prog-bar-fill"
+                style={{
+                  width: `${progressPct}%`,
+                  backgroundColor: detail.quizPassed ? '#059669' : '#1e40af',
+                }}
+              />
+            </div>
+            <span className="pu-m-prog-pct">{progressPct}%</span>
+          </div>
+        </div>
+      </header>
+
+      {/* ── 2. Bố cục 2 Cột: Mục lục Khóa học + Khu vực Đọc bài giảng ─── */}
       <div className="pu-module-layout">
-        {/* Left Course Outline Navigation */}
-        <nav className="pu-module-nav" aria-label="Đề cương các mô đun trong khóa học">
-          <div className="pu-nav-head">Đề cương khóa học</div>
+        {/* Cột Mục lục Đề cương bên trái (Curriculum Playlist) */}
+        <nav className="pu-module-nav" aria-label="Đề cương các mô-đun trong khóa học">
+          <div className="pu-nav-head">
+            <span>Đề cương khóa học</span>
+            <span className="pu-nav-count">{passedCount}/{total} đã đạt</span>
+          </div>
 
-          {detail.modules.map((item) => {
-            const isActive = item.moduleId === module.moduleId;
-            return item.viewable ? (
-              <Link
-                key={item.moduleId}
-                to={PULSE_PATHS.module(courseId, item.moduleId)}
-                className={`pu-nav-item ${isActive ? 'active' : ''} ${item.passed ? 'passed' : ''}`}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                <b className="pu-nav-num">
-                  {item.passed ? <Check size={13} strokeWidth={3} /> : pad2(item.index + 1)}
-                </b>
-                <span className="pu-nav-text">
-                  <strong>{toSentenceCase(item.title)}</strong>
-                  <small className={item.passed ? 'passed' : isActive ? 'active' : ''}>
-                    {item.passed ? '✓ Đã đạt bài ôn tập' : isActive ? '● Bạn đang học' : '4 bài đọc · 2 câu ôn tập'}
-                  </small>
-                </span>
-              </Link>
-            ) : (
-              <span key={item.moduleId} className="pu-nav-locked">
-                <b className="pu-nav-num"><Lock size={12} /></b>
-                <span className="pu-nav-text">
-                  <strong>{toSentenceCase(item.title)}</strong>
-                  <small>Học theo thứ tự</small>
-                </span>
-              </span>
-            );
-          })}
+          <div className="pu-nav-list">
+            {detail.modules.map((item) => {
+              const isActive = item.moduleId === module.moduleId;
+              const isPassed = item.passed;
 
+              return item.viewable ? (
+                <Link
+                  key={item.moduleId}
+                  to={PULSE_PATHS.module(courseId, item.moduleId)}
+                  className={`pu-nav-item ${isActive ? 'active' : ''} ${isPassed ? 'passed' : ''}`}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  <b className="pu-nav-num">
+                    {isPassed ? (
+                      <Check size={12} strokeWidth={3} className="text-emerald-700" />
+                    ) : isActive ? (
+                      <PlayCircle size={12} className="text-blue-700" />
+                    ) : (
+                      pad2(item.index + 1)
+                    )}
+                  </b>
+                  <span className="pu-nav-text">
+                    <strong>{toSentenceCase(item.title)}</strong>
+                    <span className="pu-nav-sub-meta">
+                      {isPassed ? (
+                        <span className="pu-nav-status passed">Đã đạt câu hỏi ôn tập</span>
+                      ) : isActive ? (
+                        <span className="pu-nav-status active">Đang học mô-đun này</span>
+                      ) : (
+                        <span className="pu-nav-status pending">Sẵn sàng học</span>
+                      )}
+                    </span>
+                  </span>
+                </Link>
+              ) : (
+                <div key={item.moduleId} className="pu-nav-item locked">
+                  <b className="pu-nav-num">
+                    <Lock size={11} className="text-slate-400" />
+                  </b>
+                  <span className="pu-nav-text">
+                    <strong>{toSentenceCase(item.title)}</strong>
+                    <span className="pu-nav-sub-meta">
+                      <span className="pu-nav-status locked">Khóa theo thứ tự</span>
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Chặng cuối: Kỳ thi đánh giá năng lực cuối khóa */}
           <div className="pu-nav-final">
-            <div className="pu-nav-item" style={{ cursor: 'default' }}>
-              <b className="pu-nav-num">{pad2(total + 1)}</b>
-              <span className="pu-nav-text">
-                <strong>Bài thi cuối khóa</strong>
-                <small>Giám sát trực tuyến · Quản lý chấm</small>
-              </span>
+            <div className="pu-nav-final-card">
+              <div className="pu-nav-final-icon">
+                <GraduationCap size={16} />
+              </div>
+              <div className="pu-nav-final-info">
+                <strong>Kỳ thi cuối khóa</strong>
+                <small>Giám sát trực tuyến · 3 tiêu chí</small>
+              </div>
             </div>
             <Link to={PULSE_PATHS.final(courseId)} className="pu-nav-final-btn">
               Xem tiêu chí bài cuối →
@@ -195,16 +252,20 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
           </div>
         </nav>
 
-        {/* Main Reading Main Area */}
+        {/* Khu vực Trình đọc Bài giảng Chính */}
         <main className="pu-module-main">
-          <header className="pu-module-title">
-            <span className="pu-eyebrow">
-              {course.domainName} · Cấp độ {levelName(course.tier)}
-              {detail.sample ? ' · Trang mẫu' : ''}
-            </span>
-            <h1>{formattedModuleTitle}</h1>
-            {module.description && <p>{module.description}</p>}
-          </header>
+          {/* Tiêu đề Mô-đun Canvas */}
+          <div className="pu-module-title-strip">
+            <div className="pu-eyebrow-row">
+              <span className="pu-eyebrow-pill">{course.domainName}</span>
+              <span className="pu-eyebrow-dot">·</span>
+              <span className="pu-eyebrow-tier">Cấp độ {levelName(course.tier)}</span>
+              {detail.sample && <span className="pu-eyebrow-sample">Trang mẫu</span>}
+            </div>
+
+            <h1 className="pu-module-heading">{formattedModuleTitle}</h1>
+            {module.description && <p className="pu-module-desc">{module.description}</p>}
+          </div>
 
           {slide ? (
             <div
@@ -220,35 +281,38 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                 }
               }}
             >
-              {/* Top Reading Toolbar */}
+              {/* Thanh công cụ đầu bài đọc */}
               <div className="pu-lesson-toolbar">
-                <span>
+                <div className="pu-toolbar-left">
                   <span className="pu-lesson-live-dot" />
-                  Không gian học tập chuẩn
-                </span>
+                  <span>Bài học trực tuyến</span>
+                </div>
+
                 <div className="pu-lesson-toolbar-actions">
                   <button
                     type="button"
                     className="pu-ask-reviewer-btn"
                     onClick={() => setAskOpen(true)}
-                    title={`Gửi câu hỏi trực tiếp tới ${reviewerName}`}
+                    title="Gửi câu hỏi nghiệp vụ tới người hướng dẫn"
                   >
-                    <MessageSquare size={14} />
-                    <span>Hỏi quản lý: {reviewerName}</span>
+                    <MessageSquare size={13} />
+                    <span>Hỏi người hướng dẫn</span>
                   </button>
+
                   <button
                     type="button"
+                    className="pu-focus-btn"
                     onClick={() => setFocused(!focused)}
                     aria-pressed={focused}
                     title={focused ? 'Mở lại mục lục khóa học' : 'Ẩn mục lục để tập trung đọc'}
                   >
-                    {focused ? <List size={15} /> : <Focus size={15} />}
+                    {focused ? <List size={13} /> : <Maximize2 size={13} />}
                     <span>{focused ? 'Hiện mục lục' : 'Tập trung đọc'}</span>
                   </button>
                 </div>
               </div>
 
-              {/* Lesson Slide Content & Key Takeaways */}
+              {/* Nội dung Slide bài giảng */}
               <LessonSlide
                 key={slide.lessonId}
                 slide={slide}
@@ -258,27 +322,18 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                 count={slides.length}
               />
 
-              {/* ── Single Unified Pagination Bar (Sticky to Viewport Bottom) ── */}
+              {/* Thanh điều hướng phân trang cố định dưới chân bài */}
               <div className="pu-lesson-nav-bar">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div className="pu-nav-bar-left">
                   <button
                     type="button"
                     className="pu-nav-action-btn prev"
                     onClick={() => openPage(index - 1)}
                     disabled={index === 0}
-                    aria-label="Bài trước"
+                    aria-label="Trang trước"
                   >
-                    <ArrowLeft size={16} />
-                    <span>Bài trước</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="pu-nav-ask-btn"
-                    onClick={() => setAskOpen(true)}
-                    title={`Gửi câu hỏi tới Quản lý ${reviewerName}`}
-                  >
-                    <MessageSquare size={14} />
-                    <span>Hỏi quản lý</span>
+                    <ArrowLeft size={14} />
+                    <span>Trang trước</span>
                   </button>
                 </div>
 
@@ -286,6 +341,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                   <span className="pu-nav-page-indicator">
                     Trang {pad2(index + 1)} / {pad2(slides.length)}
                   </span>
+
                   <nav className="pu-nav-pills" aria-label="Chọn nhanh trang bài học">
                     {slides.map((page, pageIndex) => (
                       <button
@@ -303,28 +359,30 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                   </nav>
                 </div>
 
-                {isLast ? (
-                  <button
-                    type="button"
-                    className="pu-nav-action-btn next quiz-cta"
-                    onClick={() => {
-                      document.getElementById('pu-module-quiz')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }}
-                  >
-                    <span>Làm bài ôn tập ({detail.quiz?.questions.length ?? 2} câu)</span>
-                    <ArrowDown size={16} />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="pu-nav-action-btn next"
-                    onClick={() => openPage(index + 1)}
-                    aria-label="Bài tiếp theo"
-                  >
-                    <span>Bài tiếp theo</span>
-                    <ArrowRight size={16} />
-                  </button>
-                )}
+                <div className="pu-nav-bar-right">
+                  {isLast ? (
+                    <button
+                      type="button"
+                      className="pu-nav-action-btn next quiz-cta"
+                      onClick={() => {
+                        document.getElementById('pu-module-quiz')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }}
+                    >
+                      <span>Làm bài ôn tập ({detail.quiz?.questions.length ?? 2} câu)</span>
+                      <ArrowDown size={14} />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="pu-nav-action-btn next"
+                      onClick={() => openPage(index + 1)}
+                      aria-label="Trang tiếp theo"
+                    >
+                      <span>Trang tiếp theo</span>
+                      <ArrowRight size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ) : (
@@ -334,10 +392,13 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
             </div>
           )}
 
-          {/* ── Callout: Gợi ý áp dụng cho vị trí nhân sự ──────────── */}
+          {/* Gợi ý áp dụng cho vị trí nhân sự */}
           <div className="pu-reflection-box">
             <div className="pu-reflection-head">
-              <span className="pu-reflection-badge">💡 Gợi ý áp dụng thực tế</span>
+              <span className="pu-reflection-badge">
+                <Lightbulb size={13} className="inline mr-1 text-amber-600" />
+                Gợi ý áp dụng thực tế
+              </span>
               <span className="pu-reflection-target">
                 Vị trí: {overview?.person.positionName ?? 'Chuyên viên Kế toán tài chính'}
               </span>
@@ -347,13 +408,13 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
             </p>
           </div>
 
-          {/* ── Sequential Quiz Flow: Mở khóa tuần tự ở trang cuối ──── */}
+          {/* Khu vực Ôn tập Mini-quiz */}
           <div id="pu-module-quiz" className="pu-lesson-quiz-anchor">
             {!isLast && !detail.quizPassed && !detail.review ? (
               <div className="pu-quiz-locked-card">
                 <div className="pu-quiz-locked-left">
                   <div className="pu-quiz-lock-icon">
-                    <Lock size={20} />
+                    <Lock size={18} />
                   </div>
                   <div>
                     <h4>Câu hỏi ôn tập mô-đun {pad2(module.index + 1)} ({detail.quiz?.questions.length ?? 2} câu trắc nghiệm)</h4>
@@ -367,7 +428,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                   className="pu-quiz-unlock-step-btn"
                   onClick={() => openPage(slides.length - 1)}
                 >
-                  Đến trang 4 để mở khóa →
+                  Đến trang {pad2(slides.length)} để mở khóa →
                 </button>
               </div>
             ) : (
@@ -419,7 +480,7 @@ function QuizArea({ detail, viewed, reachedEnd, onOpenPage, opening }: QuizAreaP
     return (
       <div className="pu-passed">
         <span aria-hidden>
-          <CheckCircle2 size={24} />
+          <CheckCircle2 size={24} className="text-emerald-700" />
         </span>
         <div>
           <strong>

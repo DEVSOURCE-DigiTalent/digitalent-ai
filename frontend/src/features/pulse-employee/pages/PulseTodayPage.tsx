@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
-  BriefcaseBusiness,
+  Award,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -12,13 +11,13 @@ import {
   LayoutGrid,
   Target,
   UserX,
-  BookOpen,
   ArrowRight,
   GraduationCap,
+  TrendingUp,
 } from 'lucide-react';
+import heroBgArt from '@/assets/pulse/enterprise-hero-bg.jpg';
 import { usePulseOverview } from '@/hooks/use-pulse';
-import type { PulseCourseSummary, PulseOverview } from '@/services/pulse.service';
-import { formatDate } from '@/lib/utils';
+import type { PulseCourseSummary, PulseDomain, PulseOverview } from '@/services/pulse.service';
 import { Bar, Empty, LoadError, PageSkeleton, PuLink } from '../components/ui';
 import { levelName, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
@@ -26,9 +25,11 @@ import { QuickSyllabusDrawer } from '../components/QuickSyllabusDrawer';
 
 /**
  * Hôm nay (EM-01) - Actionable Enterprise Dashboard
- * - Hero Summary: Lời chào cá nhân hóa, chỉ số khóa học rõ ràng, mục tiêu chuẩn hóa chức danh.
- * - Action Center (Việc nên làm tiếp): Băng chuyền tiêu điểm & chế độ hiển thị linh hoạt.
- * - Domain Progress Overview: Tóm tắt tiến độ 6 lĩnh vực năng lực, liên kết trực tiếp sang Lộ trình.
+ * - Hero Banner: Ảnh nền trừu tượng công nghệ, thông điệp ngắn gọn, trực quan.
+ * - 4 Quick Bento Stat Cards: Tiến độ 13%, Hàng đợi chờ chấm, Việc tiếp theo M5-F, Phủ 6 lĩnh vực.
+ * - Review Queue Widget: Widget hàng đợi chấm điểm trang nhã với các chip môn học bấm được.
+ * - Action Center (Việc nên làm tiếp): Tiêu điểm việc cần làm ngay.
+ * - Competency Radar Chart + 6 Lĩnh vực: Biểu đồ Radar 6 góc đối chiếu trực quan năng lực vị trí.
  * - Quick Syllabus Slide-over Drawer: Xem nhanh đề cương khóa học.
  */
 export function PulseTodayPage() {
@@ -41,19 +42,22 @@ export function PulseTodayPage() {
 
   return (
     <div className="pu-home">
-      {/* 1. Bento Summary Header */}
-      <section className="pu-home-top" data-tour="emp-today-header">
-        <GreetingCard overview={data} />
-        <RoleCard overview={data} />
-      </section>
+      {/* 1. Hero Banner tối giản với ảnh nền trừu tượng cao cấp */}
+      <EnterpriseHeroBanner overview={data} />
 
-      {/* 2. Action Center: Việc nên làm tiếp & Thông báo chờ chấm */}
+      {/* 2. Dải 4 Card nhỏ thông tin nhanh (Bento Stat Cards) */}
+      <QuickStatCards overview={data} onSelectCourse={setSelectedCourse} />
+
+      {/* 3. Review Queue Widget (Hàng đợi chờ chấm - Phương án A) */}
+      <ReviewQueueSection overview={data} onSelectCourse={setSelectedCourse} />
+
+      {/* 4. Action Center: Việc nên làm tiếp */}
       <ActionCenter overview={data} onSelectCourse={setSelectedCourse} />
 
-      {/* 3. Domain Progress Overview (thay thế ma trận lặp lại để trang tổng quan gọn gàng) */}
-      <DomainProgressOverview overview={data} onSelectCourse={setSelectedCourse} />
+      {/* 5. Phân mục Tiến độ: Biểu đồ Radar 6 góc & Lưới 6 lĩnh vực */}
+      <DomainRadarSection overview={data} onSelectCourse={setSelectedCourse} />
 
-      {/* 4. Quick Nav Links */}
+      {/* 6. Quick Nav Links */}
       <nav className="pu-more-links" aria-label="Truy cập nhanh">
         <span className="pu-more-links-title">Truy cập nhanh:</span>
         <PuLink to={PULSE_PATHS.path} kind="outline" small>Lộ trình đào tạo chi tiết →</PuLink>
@@ -62,7 +66,7 @@ export function PulseTodayPage() {
         <PuLink to={PULSE_PATHS.profile} kind="outline" small>Hồ sơ cá nhân →</PuLink>
       </nav>
 
-      {/* 5. Quick Syllabus Slide-over Drawer (540px Sheet) */}
+      {/* 7. Quick Syllabus Slide-over Drawer (540px Sheet) */}
       <QuickSyllabusDrawer
         course={selectedCourse}
         overview={data}
@@ -73,15 +77,8 @@ export function PulseTodayPage() {
   );
 }
 
-const firstName = (fullName: string) => fullName.trim().split(/\s+/).pop() || fullName;
-
 const todayDateString = () =>
   new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit' }).format(new Date());
-
-function cleanDomainCode(code: string): string {
-  if (!code) return '';
-  return code.replace(/^TT02_D(\d+)$/, 'Lĩnh vực 0$1').replace(/^TT02_/, '');
-}
 
 function toSentenceCase(str: string): string {
   if (!str) return '';
@@ -92,109 +89,195 @@ function toSentenceCase(str: string): string {
   return s;
 }
 
-/* ── 1. Bento Header Components ────────────────────────────────────────── */
-function GreetingCard({ overview }: { overview: PulseOverview }) {
-  const { person, stats, courses } = overview;
-  const position = person.positionName ?? 'của bạn';
-  const total = stats.pathCourses;
-  const approved = stats.approvedPathCourses;
-  const inReview = courses.filter((c) => c.slotStatus === 'PRE_REVIEW' || c.slotStatus === 'IN_REVIEW').length;
-  const remaining = Math.max(0, total - approved - inReview);
-  const pct = total > 0 ? Math.round((approved / total) * 100) : 0;
-
-  return (
-    <article className="pu-greeting-card">
-      <div className="pu-greeting-body">
-        <div className="pu-greeting-header">
-          <span className="pu-date-chip">{todayDateString()}</span>
-          <span className="pu-goal-pill">Kế hoạch đào tạo 2026</span>
-        </div>
-
-        <h1 className="pu-greeting-title">
-          Chào {firstName(person.fullName)}, bạn đang ở lộ trình <span>{position}</span>
-        </h1>
-
-        <p className="pu-greeting-subtitle">
-          Theo dõi tiến độ hoàn thành các khóa học và bài kiểm tra để đạt chuẩn năng lực vị trí.
-        </p>
-
-        <div className="pu-hero-stats-row">
-          <div className="pu-stat-pill success">
-            <Check size={14} />
-            <span><strong>{approved}</strong> hoàn thành</span>
-          </div>
-          {inReview > 0 && (
-            <div className="pu-stat-pill warning">
-              <Clock size={14} />
-              <span><strong>{inReview}</strong> chờ mentor chấm</span>
-            </div>
-          )}
-          <div className="pu-stat-pill neutral">
-            <BookOpen size={14} />
-            <span><strong>{remaining}</strong> cần học</span>
-          </div>
-        </div>
-
-        <div className="pu-hero-progress">
-          <div className="pu-hero-progress-meta">
-            <span>Tiến độ hoàn thành vị trí: <strong>{approved}/{total} khóa</strong></span>
-            <span className="pu-hero-pct">{pct}%</span>
-          </div>
-          <div className="pu-hero-bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-            <div className="pu-hero-bar-fill" style={{ width: `${pct}%` }} />
-          </div>
-        </div>
-      </div>
-
-      <div className="pu-greeting-visual" aria-hidden="true">
-        <div className="pu-visual-badge-wrap">
-          <div className="pu-visual-circle">
-            <GraduationCap size={36} className="pu-visual-icon" />
-          </div>
-          <div className="pu-visual-ring-label">
-            <span>Mục tiêu</span>
-            <strong>Chuẩn chức danh</strong>
-          </div>
-        </div>
-      </div>
-    </article>
-  );
+function cleanDomainCode(code: string): string {
+  if (!code) return '';
+  return code.replace(/^TT02_D(\d+)$/, 'Lĩnh vực 0$1').replace(/^TT02_/, '');
 }
 
-function RoleCard({ overview }: { overview: PulseOverview }) {
+/* ── 1. Enterprise Hero Banner (Ảnh nền + Text tối giản) ───────────────── */
+function EnterpriseHeroBanner({ overview }: { overview: PulseOverview }) {
   const { person } = overview;
+  const position = person.positionName ?? 'Chuyên viên Kế toán tài chính';
   const deptRaw = person.departmentName?.trim();
   const dept = deptRaw
     ? deptRaw.toLowerCase().startsWith('phòng')
       ? deptRaw
       : `Phòng ${deptRaw}`
-    : null;
-  const orgSub = [dept, person.organizationName].filter(Boolean).join(' · ');
+    : 'Phòng ban';
 
   return (
-    <aside className="pu-role-card" aria-label="Thông tin vị trí và mục tiêu">
-      <div className="pu-role-row">
-        <span className="pu-role-icon position" aria-hidden><BriefcaseBusiness size={20} /></span>
-        <div className="pu-role-content">
-          <small className="pu-role-label">VỊ TRÍ CÔNG VIỆC</small>
-          <strong>{person.positionName ?? 'Chưa gán vị trí'}</strong>
-          <span>{orgSub || 'Doanh nghiệp'}</span>
-        </div>
-      </div>
+    <header className="pu-enterprise-hero-wrap" data-tour="emp-today-header">
+      <div
+        className="pu-enterprise-hero-bg"
+        style={{ backgroundImage: `url(${heroBgArt})` }}
+        aria-hidden="true"
+      />
+      <div className="pu-enterprise-hero-overlay" aria-hidden="true" />
 
-      <div className="pu-role-row">
-        <span className="pu-role-icon goal" aria-hidden><Target size={20} /></span>
-        <div className="pu-role-content">
-          <small className="pu-role-label">MỤC TIÊU VỊ TRÍ</small>
-          <strong>Chuẩn hóa 6 lĩnh vực năng lực</strong>
-          <span>Chấm điểm và hướng dẫn bởi Mentor chuyên môn</span>
+      <div className="pu-enterprise-hero-inner">
+        <div className="pu-hero-badge-group">
+          <span className="pu-hero-chip date">{todayDateString()}</span>
+          <span className="pu-hero-chip dept">{dept}</span>
         </div>
+
+        <h1 className="pu-hero-main-title">
+          <span className="pu-hero-greeting-prefix">Chào,</span>
+          <span className="pu-hero-name-highlight">
+            {person.fullName || 'bạn'}
+          </span>
+          <span className="pu-hero-growth-badge" title="Lộ trình phát triển năng lực" aria-hidden="true">
+            <TrendingUp size={16} strokeWidth={2.4} />
+          </span>
+        </h1>
+
+        <p className="pu-hero-main-subtitle">
+          Lộ trình phát triển năng lực chức danh <strong>{position}</strong>
+        </p>
       </div>
-    </aside>
+    </header>
   );
 }
 
-/* ── 2. Action Center (Việc nên làm tiếp & Chờ chấm) ───────────────────── */
+/* ── 2. Dải 4 Card nhỏ thông tin nhanh (Bento Stat Cards) ──────────────── */
+function QuickStatCards({
+  overview,
+  onSelectCourse,
+}: {
+  overview: PulseOverview;
+  onSelectCourse: (course: PulseCourseSummary) => void;
+}) {
+  const { stats, courses, domains, nextSteps } = overview;
+  const total = stats.pathCourses;
+  const approved = stats.approvedPathCourses;
+  const pct = total > 0 ? Math.round((approved / total) * 100) : 0;
+
+  const completedDomains = domains.filter((d) => {
+    const domainCourses = courses.filter((c) => c.categoryId === d.categoryId && c.zone === 'PATH');
+    return domainCourses.length > 0 && domainCourses.every((c) => c.slotStatus === 'COMPLETED');
+  }).length;
+
+  const nextCourse = nextSteps[0];
+
+  return (
+    <section className="pu-quick-stats-grid" aria-label="Thống kê nhanh">
+      {/* Card 1: Tiến độ vị trí */}
+      <article className="pu-qstat-card">
+        <div className="pu-qstat-top">
+          <span className="pu-qstat-label">Tiến độ chức danh</span>
+          <div className="pu-qstat-icon-wrap blue" aria-hidden="true">
+            <GraduationCap size={14} />
+          </div>
+        </div>
+        <div className="pu-qstat-value">{pct}%</div>
+        <div className="pu-qstat-progress-bar">
+          <div className="pu-qstat-bar-fill" style={{ width: `${pct}%` }} />
+        </div>
+        <span className="pu-qstat-sub">{approved}/{total} khóa hoàn thành</span>
+      </article>
+
+      {/* Card 2: Huy hiệu đã đạt (Thay thế để không trùng lặp với hàng đợi chờ chấm bên dưới) */}
+      <article className="pu-qstat-card">
+        <div className="pu-qstat-top">
+          <span className="pu-qstat-label">Huy hiệu đã đạt</span>
+          <div className="pu-qstat-icon-wrap emerald" aria-hidden="true">
+            <Award size={14} />
+          </div>
+        </div>
+        <div className="pu-qstat-value">{approved} môn</div>
+        <div className="pu-qstat-status-badge emerald">
+          <span>{approved > 0 ? 'M1-I đạt chuẩn' : 'Chưa có'}</span>
+        </div>
+        <span className="pu-qstat-sub">Chứng nhận kỹ năng số</span>
+      </article>
+
+      {/* Card 3: Việc tiếp theo */}
+      <article className="pu-qstat-card">
+        <div className="pu-qstat-top">
+          <span className="pu-qstat-label">Ưu tiên làm tiếp</span>
+          <div className="pu-qstat-icon-wrap blue" aria-hidden="true">
+            <Target size={14} />
+          </div>
+        </div>
+        <div className="pu-qstat-value code">{nextCourse?.code || 'Xong'}</div>
+        {nextCourse ? (
+          <button
+            type="button"
+            className="pu-qstat-action-btn"
+            onClick={() => onSelectCourse(nextCourse)}
+          >
+            <span>Vào làm bài ngay</span>
+            <ArrowRight size={11} />
+          </button>
+        ) : (
+          <span className="pu-qstat-sub">Đã hoàn thành các việc mở</span>
+        )}
+      </article>
+
+      {/* Card 4: Độ phủ 6 lĩnh vực */}
+      <article className="pu-qstat-card">
+        <div className="pu-qstat-top">
+          <span className="pu-qstat-label">Độ phủ 6 lĩnh vực</span>
+          <div className="pu-qstat-icon-wrap purple" aria-hidden="true">
+            <Layers size={14} />
+          </div>
+        </div>
+        <div className="pu-qstat-value">{completedDomains}/6</div>
+        <div className="pu-qstat-status-badge slate">
+          <span>{domains.length} lĩnh vực yêu cầu</span>
+        </div>
+        <span className="pu-qstat-sub">{completedDomains} lĩnh vực đạt chuẩn</span>
+      </article>
+    </section>
+  );
+}
+
+/* ── 3. Review Queue Section (Phương án A: Hàng đợi chấm điểm) ─────────── */
+function ReviewQueueSection({
+  overview,
+  onSelectCourse,
+}: {
+  overview: PulseOverview;
+  onSelectCourse: (course: PulseCourseSummary) => void;
+}) {
+  const waiting = overview.courses.filter((c) => c.slotStatus === 'PRE_REVIEW' || c.slotStatus === 'IN_REVIEW');
+
+  if (waiting.length === 0) return null;
+
+  return (
+    <section className="pu-review-queue-widget" aria-label="Hàng đợi chờ mentor chấm điểm">
+      <div className="pu-review-queue-info">
+        <div className="pu-review-queue-icon-wrap" aria-hidden="true">
+          <Clock size={18} />
+        </div>
+        <div className="pu-review-queue-text">
+          <div className="pu-review-queue-head">
+            <strong>{waiting.length} bài kiểm tra đang chờ mentor chấm điểm</strong>
+          </div>
+          <p className="pu-review-queue-desc">
+            Bấm vào từng môn bên dưới để xem bài đã nộp và tiêu chí đánh giá.
+          </p>
+        </div>
+      </div>
+
+      <div className="pu-review-queue-chips" role="list">
+        {waiting.map((c) => (
+          <button
+            key={c.courseId}
+            type="button"
+            className="pu-review-chip-btn"
+            onClick={() => onSelectCourse(c)}
+            title={`Xem bài đã nộp của môn ${c.code} · ${c.title}`}
+          >
+            <span className="pu-review-chip-code">{c.code}</span>
+            <span className="pu-review-chip-title">{toSentenceCase(c.title)}</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ── 4. Action Center (Việc nên làm tiếp) ──────────────────────────────── */
 const stepKicker = (course: PulseCourseSummary) => {
   switch (course.slotStatus) {
     case 'FINAL_READY':
@@ -216,7 +299,6 @@ function ActionCenter({
   onSelectCourse: (course: PulseCourseSummary) => void;
 }) {
   const steps = overview.nextSteps;
-  const waiting = overview.courses.filter((c) => c.slotStatus === 'PRE_REVIEW' || c.slotStatus === 'IN_REVIEW');
   const fresh = steps.length > 0 && overview.stats.approvedPathCourses === 0 && steps.every((s) => s.slotStatus === 'PRE_ASSESSMENT');
 
   const [activeSlide, setActiveSlide] = useState(0);
@@ -229,20 +311,6 @@ function ActionCenter({
 
   return (
     <section className="pu-action-center" data-tour="emp-action-center" aria-labelledby="pu-action-title">
-      {/* Pending Reviews Amber Banner */}
-      {waiting.length > 0 && (
-        <div className="pu-pending-banner">
-          <Clock size={18} className="pu-pending-icon" aria-hidden />
-          <div className="pu-pending-content">
-            <strong>Đang chờ người hướng dẫn (Mentor) chấm điểm:</strong>{' '}
-            <span>{waiting.map((c) => `${c.code} · ${toSentenceCase(c.title)}`).join('; ')}</span>
-            {waiting.length === 1 && waiting[0]?.preAssessment && (
-              <small> (Nộp ngày {formatDate(waiting[0].preAssessment.submittedAt)})</small>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Action Header */}
       <div className="pu-action-head">
         <div>
@@ -251,7 +319,7 @@ function ActionCenter({
           </h2>
           <p className="pu-action-desc">
             {steps.length === 0
-              ? 'Tất cả các khóa hiện tại đã đạt hoặc đang chờ người hướng dẫn chấm duyệt.'
+              ? 'Tất cả các khóa hiện tại đã đạt hoặc đang chờ mentor chấm duyệt.'
               : fresh
                 ? 'Thực hiện bài đánh giá trước khi học để được miễn học lý thuyết nếu đã đạt năng lực.'
                 : 'Các khóa học và bài kiểm tra ưu tiên theo tiến trình của bạn.'}
@@ -260,7 +328,6 @@ function ActionCenter({
 
         {steps.length > 1 && (
           <div className="pu-action-controls">
-            {/* View Mode Toggle */}
             <div className="pu-view-toggle">
               <button
                 type="button"
@@ -282,7 +349,6 @@ function ActionCenter({
               </button>
             </div>
 
-            {/* Carousel navigation arrows */}
             {mode === 'carousel' && (
               <div className="pu-carousel-nav">
                 <button
@@ -314,7 +380,15 @@ function ActionCenter({
 
       {/* Mode 1: Carousel Slide */}
       {steps.length > 0 && mode === 'carousel' && currentCourse && (
-        <article className="pu-action-featured-slide">
+        <article
+          className="pu-action-featured-slide"
+          onClick={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('button, a, input, select, textarea')) return;
+            onSelectCourse(currentCourse);
+          }}
+          title="Bấm vào khoảng trống để xem nhanh đề cương"
+        >
           <div className="pu-featured-slide-top">
             <div className="pu-featured-kicker-group">
               <span className="pu-featured-priority-badge">
@@ -324,7 +398,6 @@ function ActionCenter({
               <span className="pu-action-tier">{levelName(currentCourse.tier)}</span>
             </div>
 
-            {/* Dots */}
             {steps.length > 1 && (
               <div className="pu-carousel-dots" role="tablist" aria-label="Danh sách việc cần làm">
                 {steps.map((s, idx) => (
@@ -397,7 +470,16 @@ function ActionCenter({
       {steps.length > 0 && mode === 'grid' && (
         <div className="pu-action-grid">
           {steps.map((course, idx) => (
-            <article key={course.courseId} className={`pu-action-card${idx === 0 ? ' priority' : ''}`}>
+            <article
+              key={course.courseId}
+              className={`pu-action-card${idx === 0 ? ' priority' : ''}`}
+              onClick={(e) => {
+                const target = e.target as HTMLElement;
+                if (target.closest('button, a, input, select, textarea')) return;
+                onSelectCourse(course);
+              }}
+              title="Bấm vào khoảng trống để xem nhanh đề cương"
+            >
               <div className="pu-action-card-top">
                 <span className="pu-action-kicker">{stepKicker(course)}</span>
                 <span className="pu-action-tier">{levelName(course.tier)}</span>
@@ -460,8 +542,8 @@ function ActionCardCTA({ course }: { course: PulseCourseSummary }) {
   }
 }
 
-/* ── 3. Domain Progress Overview (Gọn gàng, tránh lặp lại ma trận) ────────── */
-function DomainProgressOverview({
+/* ── 5. Biểu đồ Radar 6 góc & Tiến độ Lĩnh vực ────────────────────────── */
+function DomainRadarSection({
   overview,
   onSelectCourse,
 }: {
@@ -478,7 +560,7 @@ function DomainProgressOverview({
             Tiến độ theo lĩnh vực năng lực
           </h2>
           <p className="pu-domain-overview-desc">
-            Tổng hợp kết quả học tập và rèn luyện qua 6 lĩnh vực theo chuẩn vị trí công việc của bạn.
+            Đối chiếu trực quan mức năng lực số tích lũy so với chuẩn vị trí công việc.
           </p>
         </div>
         <PuLink to={PULSE_PATHS.path} kind="outline" small>
@@ -486,87 +568,275 @@ function DomainProgressOverview({
         </PuLink>
       </div>
 
-      <div className="pu-domain-grid">
-        {domains.map((domain) => {
-          const domainCourses = overview.courses.filter(
-            (c) => c.categoryId === domain.categoryId && c.zone === 'PATH'
-          );
-          const completedCount = domainCourses.filter((c) => c.slotStatus === 'COMPLETED').length;
-          const waitingCount = domainCourses.filter((c) => c.slotStatus === 'PRE_REVIEW' || c.slotStatus === 'IN_REVIEW').length;
-          const inProgressCount = domainCourses.filter((c) => c.slotStatus === 'IN_PROGRESS' || c.slotStatus === 'FINAL_READY').length;
-          const totalCourses = domainCourses.length;
-          const pct = totalCourses > 0 ? Math.round((completedCount / totalCourses) * 100) : 0;
+      <div className="pu-domain-radar-split">
+        {/* Cột trái: Biểu đồ Radar 6 góc */}
+        <div className="pu-radar-panel">
+          <div className="pu-radar-card">
+            <div className="pu-radar-head">
+              <span className="pu-radar-badge">Biểu đồ Radar Năng lực Số</span>
+              <span className="pu-radar-sub-note">6 Lĩnh vực</span>
+            </div>
+            <CompetencyRadarSvg domains={domains} courses={overview.courses} />
+            <div className="pu-radar-legend">
+              <div className="pu-legend-item">
+                <span className="pu-legend-color actual" />
+                <span>Năng lực đã đạt</span>
+              </div>
+              <div className="pu-legend-item">
+                <span className="pu-legend-color target" />
+                <span>Chuẩn vị trí yêu cầu</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-          const isFullyCompleted = completedCount === totalCourses && totalCourses > 0;
-          const isLearning = inProgressCount > 0 || waitingCount > 0;
+        {/* Cột phải: Lưới 6 thẻ lĩnh vực thu gọn */}
+        <div className="pu-domain-cards-compact-grid">
+          {domains.map((domain) => {
+            const domainCourses = overview.courses.filter(
+              (c) => c.categoryId === domain.categoryId && c.zone === 'PATH'
+            );
+            const completedCount = domainCourses.filter((c) => c.slotStatus === 'COMPLETED').length;
+            const waitingCount = domainCourses.filter((c) => c.slotStatus === 'PRE_REVIEW' || c.slotStatus === 'IN_REVIEW').length;
+            const inProgressCount = domainCourses.filter((c) => c.slotStatus === 'IN_PROGRESS' || c.slotStatus === 'FINAL_READY').length;
+            const totalCourses = domainCourses.length;
+            const pct = totalCourses > 0 ? Math.round((completedCount / totalCourses) * 100) : 0;
 
-          const statusClass = isFullyCompleted
-            ? 'completed'
-            : isLearning
-            ? 'learning'
-            : 'not-started';
+            const isFullyCompleted = completedCount === totalCourses && totalCourses > 0;
+            const isLearning = inProgressCount > 0 || waitingCount > 0;
 
-          const statusText = isFullyCompleted
-            ? 'Đã đạt'
-            : waitingCount > 0
-            ? 'Chờ chấm'
-            : isLearning
-            ? 'Đang học'
-            : 'Chưa bắt đầu';
+            const statusClass = isFullyCompleted
+              ? 'completed'
+              : isLearning
+              ? 'learning'
+              : 'not-started';
 
-          return (
-            <article key={domain.categoryId} className="pu-domain-card">
-              <div className="pu-domain-card-head">
-                <div className="pu-domain-card-info">
-                  <span className="pu-domain-card-code">{cleanDomainCode(domain.code)}</span>
-                  <h3 className="pu-domain-card-title">{domain.name}</h3>
+            const statusText = isFullyCompleted
+              ? 'Đã đạt'
+              : waitingCount > 0
+              ? 'Chờ chấm'
+              : isLearning
+              ? 'Đang học'
+              : 'Chưa bắt đầu';
+
+            return (
+              <article key={domain.categoryId} className="pu-domain-compact-card">
+                <div className="pu-domain-compact-head">
+                  <div className="pu-domain-compact-info">
+                    <span className="pu-domain-compact-code">{cleanDomainCode(domain.code)}</span>
+                    <h3 className="pu-domain-compact-title">{domain.name}</h3>
+                  </div>
+                  <span className={`pu-domain-status-badge ${statusClass}`}>{statusText}</span>
                 </div>
-                <span className={`pu-domain-status-badge ${statusClass}`}>{statusText}</span>
-              </div>
 
-              <div className="pu-domain-progress-row">
-                <div className="pu-domain-progress-meta">
-                  <strong>{completedCount}/{totalCourses} khóa đạt</strong>
-                  <span>{pct}%</span>
+                <div className="pu-domain-compact-prog">
+                  <div className="pu-domain-compact-meta">
+                    <strong>{completedCount}/{totalCourses} khóa đạt</strong>
+                    <span>{pct}%</span>
+                  </div>
+                  <div className="pu-hero-bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} style={{ height: 5 }}>
+                    <div className="pu-hero-bar-fill" style={{ width: `${pct}%` }} />
+                  </div>
                 </div>
-                <div className="pu-hero-bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} style={{ height: 6 }}>
-                  <div className="pu-hero-bar-fill" style={{ width: `${pct}%` }} />
+
+                <div className="pu-domain-compact-chips">
+                  {domainCourses.map((c) => {
+                    const isDone = c.slotStatus === 'COMPLETED';
+                    const isWait = c.slotStatus === 'PRE_REVIEW' || c.slotStatus === 'IN_REVIEW';
+                    const chipClass = isDone ? 'completed' : isWait ? 'waiting' : '';
+
+                    return (
+                      <button
+                        key={c.courseId}
+                        type="button"
+                        className={`pu-domain-course-chip ${chipClass}`}
+                        onClick={() => onSelectCourse(c)}
+                        title={`${c.code} · ${c.title} (${levelName(c.tier)})`}
+                      >
+                        {isDone && <Check size={11} />}
+                        {isWait && <Clock size={11} />}
+                        <span>{c.code}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-              </div>
-
-              <div className="pu-domain-courses-list">
-                {domainCourses.map((c) => {
-                  const isDone = c.slotStatus === 'COMPLETED';
-                  const isWait = c.slotStatus === 'PRE_REVIEW' || c.slotStatus === 'IN_REVIEW';
-                  const chipClass = isDone ? 'completed' : isWait ? 'waiting' : '';
-
-                  return (
-                    <button
-                      key={c.courseId}
-                      type="button"
-                      className={`pu-domain-course-chip ${chipClass}`}
-                      onClick={() => onSelectCourse(c)}
-                      title={`${c.code} · ${c.title} (${levelName(c.tier)})`}
-                    >
-                      {isDone && <Check size={11} />}
-                      {isWait && <Clock size={11} />}
-                      <span>{c.code}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="pu-domain-card-foot">
-                <Link to={PULSE_PATHS.path} className="pu-domain-link">
-                  <span>Chi tiết</span>
-                  <ArrowRight size={12} />
-                </Link>
-              </div>
-            </article>
-          );
-        })}
+              </article>
+            );
+          })}
+        </div>
       </div>
     </section>
+  );
+}
+
+/* ── SVG Radar Chart Component (Crisp, zero-dependency, WCAG AA) ──────── */
+const SHORT_DOMAIN_LABELS: Record<string, string> = {
+  'TT02_D1': '01. Dữ liệu',
+  'TT02_D2': '02. Giao tiếp',
+  'TT02_D3': '03. Nội dung',
+  'TT02_D4': '04. An toàn',
+  'TT02_D5': '05. Kỹ thuật',
+  'TT02_D6': '06. AI & Số',
+};
+
+function CompetencyRadarSvg({
+  domains,
+  courses,
+}: {
+  domains: PulseDomain[];
+  courses: PulseCourseSummary[];
+}) {
+  const cx = 150;
+  const cy = 135;
+  const maxR = 85;
+  const numAxes = 6;
+  const maxLevel = 3; // Cấp 1, 2, 3
+
+  // Tính mức đạt được và mức mục tiêu cho từng lĩnh vực (0 to 3)
+  const dataPoints = domains.slice(0, 6).map((d) => {
+    const domainCourses = courses.filter((c) => c.categoryId === d.categoryId && c.zone === 'PATH');
+    const completedTiers = domainCourses.filter((c) => c.slotStatus === 'COMPLETED').map((c) => c.tier);
+    const actualTier = completedTiers.length > 0 ? Math.max(...completedTiers) : 0;
+    const targetTier = Math.min(maxLevel, d.target || 2);
+    const label = SHORT_DOMAIN_LABELS[d.code] || cleanDomainCode(d.code);
+
+    return {
+      code: d.code,
+      name: d.name,
+      label,
+      actual: actualTier,
+      target: targetTier,
+    };
+  });
+
+  // Tọa độ các điểm theo góc và bán kính
+  const getCoordinates = (index: number, level: number) => {
+    const angle = -Math.PI / 2 + (index * 2 * Math.PI) / numAxes;
+    const r = (level / maxLevel) * maxR;
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    return { x, y, angle };
+  };
+
+  // Vẽ các đa giác lục giác đồng tâm (levels 1, 2, 3)
+  const gridLevels = [1, 2, 3];
+
+  const targetPoints = dataPoints
+    .map((d, i) => {
+      const { x, y } = getCoordinates(i, d.target);
+      return `${x},${y}`;
+    })
+    .join(' ');
+
+  const actualPoints = dataPoints
+    .map((d, i) => {
+      // Đảm bảo có tối thiểu bán kính nhỏ để biểu đồ không bẹp
+      const level = Math.max(0.15, d.actual);
+      const { x, y } = getCoordinates(i, level);
+      return `${x},${y}`;
+    })
+    .join(' ');
+
+  return (
+    <div className="pu-radar-svg-wrap">
+      <svg viewBox="0 0 300 270" className="pu-radar-svg" role="img" aria-label="Biểu đồ radar 6 lĩnh vực năng lực">
+        {/* Lưới các đa giác đồng tâm */}
+        {gridLevels.map((lvl) => {
+          const points = Array.from({ length: numAxes })
+            .map((_, i) => {
+              const { x, y } = getCoordinates(i, lvl);
+              return `${x},${y}`;
+            })
+            .join(' ');
+
+          return (
+            <polygon
+              key={lvl}
+              points={points}
+              fill={lvl % 2 === 0 ? 'rgba(241, 245, 249, 0.5)' : 'none'}
+              stroke="#e2e8f0"
+              strokeWidth="1"
+            />
+          );
+        })}
+
+        {/* Các trục nan hoa từ tâm ra 6 đỉnh */}
+        {Array.from({ length: numAxes }).map((_, i) => {
+          const { x, y } = getCoordinates(i, maxLevel);
+          return (
+            <line
+              key={i}
+              x1={cx}
+              y1={cy}
+              x2={x}
+              y2={y}
+              stroke="#e2e8f0"
+              strokeWidth="1"
+              strokeDasharray="2 2"
+            />
+          );
+        })}
+
+        {/* Đa giác Chuẩn chức danh yêu cầu (Target) */}
+        <polygon
+          points={targetPoints}
+          fill="rgba(148, 163, 184, 0.08)"
+          stroke="#94a3b8"
+          strokeWidth="1.5"
+          strokeDasharray="4 3"
+        />
+
+        {/* Đa giác Năng lực thực tế đạt được (Actual) */}
+        <polygon
+          points={actualPoints}
+          fill="rgba(30, 64, 175, 0.22)"
+          stroke="#1e40af"
+          strokeWidth="2.2"
+        />
+
+        {/* Các điểm tròn trên đa giác thực tế */}
+        {dataPoints.map((d, i) => {
+          const level = Math.max(0.15, d.actual);
+          const { x, y } = getCoordinates(i, level);
+          const hasPassed = d.actual > 0;
+          return (
+            <circle
+              key={d.code}
+              cx={x}
+              cy={y}
+              r={hasPassed ? 4.5 : 3}
+              fill={hasPassed ? '#1e40af' : '#94a3b8'}
+              stroke="#ffffff"
+              strokeWidth="1.5"
+            />
+          );
+        })}
+
+        {/* Nhãn 6 đỉnh */}
+        {dataPoints.map((d, i) => {
+          const { x, y, angle } = getCoordinates(i, maxLevel);
+          // Đẩy nhãn ra ngoài một chút
+          const labelDist = 18;
+          const lx = x + labelDist * Math.cos(angle);
+          const ly = y + labelDist * Math.sin(angle);
+
+          const textAnchor =
+            Math.abs(Math.cos(angle)) < 0.2 ? 'middle' : Math.cos(angle) > 0 ? 'start' : 'end';
+
+          return (
+            <text
+              key={d.code}
+              x={lx}
+              y={ly + 4}
+              textAnchor={textAnchor}
+              className="pu-radar-axis-label"
+            >
+              {d.label}
+            </text>
+          );
+        })}
+      </svg>
+    </div>
   );
 }
 

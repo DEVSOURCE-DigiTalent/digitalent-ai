@@ -1,80 +1,128 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, Compass, UserX, Target, FileText } from 'lucide-react';
-import { usePulseOverview } from '@/hooks/use-pulse';
-import type { PulseCourseSummary, PulseDomain, PulseOverview } from '@/services/pulse.service';
 import {
-  CourseAction,
-  DomainTrack,
-  RoadmapPlan,
-  StatePill,
-  toSentenceCase,
-} from '../components/roadmap';
-import { showsProgress, withinCeiling } from '../lib/course-state';
+  Award,
+  BookOpen,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Compass,
+  FileText,
+  GitBranch,
+  LayoutGrid,
+  Lock,
+  Sparkles,
+  Target,
+  UserX,
+  Zap,
+} from 'lucide-react';
+import { usePulseOverview } from '@/hooks/use-pulse';
+import type { PulseCourseSummary, PulseOverview } from '@/services/pulse.service';
+import { RoadmapPlan, toSentenceCase } from '../components/roadmap';
+import { showsProgress } from '../lib/course-state';
 import { Empty, LoadError, PageSkeleton } from '../components/ui';
 import { levelName, pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 import { QuickSyllabusDrawer } from '../components/QuickSyllabusDrawer';
-import { JobPathfinderSection } from '../components/JobPathfinderSection';
 
 /**
- * Lộ trình Năng lực (EM-02) - Enterprise Curriculum & Competency Spec
- * - Full-width Header: Thông tin chức danh, mục tiêu lộ trình, dải chỉ số inline gọn gàng.
- * - Job Fit Pathfinder: Chỉ số sẵn sàng năng lực số & tóm tắt 6 lĩnh vực.
- * - Full-width Blueprint: Bản vẽ lộ trình năng lực 100% chiều rộng.
- * - Modern Domain Accordion: Hiển thị thẻ khóa học trực quan, danh sách tiêu chí năng lực cô đọng.
- * - Quick Syllabus Slide-over Drawer: Bấm vào bất kỳ khóa nào để xem nhanh đề cương.
+ * Lộ trình Năng lực Chuẩn hóa (EM-02)
+ * Thiết kế tinh gọn, chuẩn Enterprise SaaS:
+ * 1. Khối Tiêu đề riêng biệt trên cùng (Chức danh & Đơn vị công tác)
+ * 2. Cụm 3 Card Thống kê nhanh (Tiến độ %, Số lĩnh vực, Số tiêu chuẩn năng lực)
+ * 3. Thẻ Nhiệm vụ ưu tiên tiếp theo (Đầy đủ ngữ cảnh, lợi ích & 2 nút CTA)
+ * 4. Bộ điều khiển góc nhìn: [Bản đồ Hành trình (Mindmap)] và [Bảng Ma trận (Matrix)]
+ * 5. Mindmap Lộ trình Tuần tự: Trạm 01 -> Trạm 06 với các hiệu ứng hover mượt mà
+ * 6. Quick Syllabus Drawer: Xem đề cương & điều kiện miễn học 1-click
  */
 export function PulsePathPage() {
   const { data, isLoading, error, refetch } = usePulseOverview();
-  const [open, setOpen] = useState<string | null | undefined>(undefined);
   const [selectedCourse, setSelectedCourse] = useState<PulseCourseSummary | null>(null);
+  const [viewMode, setViewMode] = useState<'mindmap' | 'matrix'>('mindmap');
+  const [expandedCriteria, setExpandedCriteria] = useState<Set<string>>(new Set());
 
-  if (isLoading) return <PageSkeleton blocks={[240, 420, 500]} />;
+  if (isLoading) return <PageSkeleton blocks={[100, 240, 400]} />;
   if (error || !data) return <LoadError message={pulseErrorMessage(error, 'Không tải được lộ trình của bạn.')} onRetry={() => refetch()} />;
   if (!data.hasPosition || !data.hasTargets) return <NoPath overview={data} />;
 
-  const domains = data.domains.filter((d) => d.target > 0);
-  const firstActive = data.nextSteps[0]?.categoryId ?? domains[0]?.categoryId ?? null;
-  const openId = open === undefined ? firstActive : open;
+  const toggleCriteria = (categoryId: string) => {
+    setExpandedCriteria((prev) => {
+      const next = new Set(prev);
+      if (next.has(categoryId)) next.delete(categoryId);
+      else next.add(categoryId);
+      return next;
+    });
+  };
 
   return (
     <div className="pu-path-container">
-      {/* 1. Full-width Header (Thông tin vị trí & Chỉ số) */}
-      <PathHeader overview={data} />
+      {/* 1. Tiêu đề riêng biệt, 3 Card thống kê & Thẻ nhiệm vụ ưu tiên tiếp theo */}
+      <PathHeaderSection overview={data} onSelectCourse={setSelectedCourse} />
 
-      {/* 2. Job Fit Pathfinder: Semi-Circle Gauge & 6 Domain Breakdown */}
-      <JobPathfinderSection overview={data} onSelectCourse={setSelectedCourse} />
-
-      {/* 3. Full-width Blueprint (Bản vẽ lộ trình 100% chiều rộng) */}
-      <BlueprintSection overview={data} onSelectCourse={setSelectedCourse} />
-
-      {/* 4. Chi tiết 6 lĩnh vực & các khóa học yêu cầu */}
-      <section aria-labelledby="pu-comp-title" className="pu-comp-section">
-        <header className="pu-comp-section-head">
-          <h2 id="pu-comp-title" className="pu-comp-section-title">
-            Chi tiết 6 lĩnh vực và khóa học yêu cầu
-          </h2>
-          <p className="pu-comp-section-desc">
-            Danh sách khóa học và tiêu chí năng lực chuẩn hóa theo từng lĩnh vực chuyên môn.
-          </p>
-        </header>
-
-        <div className="pu-comp-list">
-          {domains.map((domain) => (
-            <CompetencyItem
-              key={domain.categoryId}
-              domain={domain}
-              overview={data}
-              open={openId === domain.categoryId}
-              onToggle={() => setOpen(openId === domain.categoryId ? null : domain.categoryId)}
-              onSelectCourse={setSelectedCourse}
-            />
-          ))}
+      {/* 2. Thanh điều hướng góc nhìn & Chú giải */}
+      <div className="pu-path-controls-bar">
+        <div className="pu-view-switcher" role="tablist" aria-label="Chế độ hiển thị lộ trình">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={viewMode === 'mindmap'}
+            className={`pu-view-tab ${viewMode === 'mindmap' ? 'active' : ''}`}
+            onClick={() => setViewMode('mindmap')}
+          >
+            <GitBranch size={14} />
+            <span>Bản đồ Hành trình (Mindmap)</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={viewMode === 'matrix'}
+            className={`pu-view-tab ${viewMode === 'matrix' ? 'active' : ''}`}
+            onClick={() => setViewMode('matrix')}
+          >
+            <LayoutGrid size={14} />
+            <span>Bảng Ma trận Cấp độ</span>
+          </button>
         </div>
-      </section>
 
-      {/* 5. Quick Syllabus Slide-over Drawer (540px Sheet) */}
+        <div className="pu-view-legend" aria-hidden="true">
+          <span><i className="pu-legend-dot done" />Đã đạt chuẩn</span>
+          <span><i className="pu-legend-dot current" />Trạm ưu tiên</span>
+          <span><i className="pu-legend-dot learning" />Đang học</span>
+          <span><i className="pu-legend-dot pending" />Chưa học</span>
+        </div>
+      </div>
+
+      {/* 3. Nội dung lộ trình theo góc nhìn đã chọn */}
+      {viewMode === 'mindmap' ? (
+        <MindmapJourney
+          overview={data}
+          expandedCriteria={expandedCriteria}
+          onToggleCriteria={toggleCriteria}
+          onSelectCourse={setSelectedCourse}
+        />
+      ) : (
+        <section className="pu-matrix-section" aria-labelledby="pu-matrix-heading">
+          <header className="pu-matrix-head">
+            <div>
+              <h2 id="pu-matrix-heading" className="pu-matrix-title">
+                Bảng ma trận lộ trình năng lực số · {data.person.positionName ?? 'Vị trí'}
+              </h2>
+              <p className="pu-matrix-sub">
+                Đối chiếu 6 lĩnh vực năng lực theo 3 cấp độ chuẩn hóa chức danh chuyên môn.
+              </p>
+            </div>
+          </header>
+          <RoadmapPlan
+            overview={data}
+            variant="regular"
+            caption={`Bản vẽ lộ trình ${data.person.positionName}: tên khóa theo lĩnh vực và cấp độ`}
+            onSelectCourse={setSelectedCourse}
+          />
+        </section>
+      )}
+
+      {/* 4. Slide-over Drawer xem nhanh đề cương */}
       <QuickSyllabusDrawer
         course={selectedCourse}
         overview={data}
@@ -85,12 +133,25 @@ export function PulsePathPage() {
   );
 }
 
-/* ── 1. Full-width Header Component ────────────────────────────────────── */
-function PathHeader({ overview }: { overview: PulseOverview }) {
-  const { person, stats } = overview;
-  const position = person.positionName ?? 'Vị trí của bạn';
-  const domainCount = overview.domains.filter((d) => d.pathTop > 0).length;
-  const next = overview.nextSteps[0];
+/* ── 1. Page Header: Title Block + Quick Stats Cards + Priority Mission ───── */
+function PathHeaderSection({
+  overview,
+  onSelectCourse,
+}: {
+  overview: PulseOverview;
+  onSelectCourse: (course: PulseCourseSummary) => void;
+}) {
+  const { person, stats, nextSteps } = overview;
+  const position = person.positionName ?? 'Vị trí công việc';
+  const total = stats.pathCourses;
+  const approved = stats.approvedPathCourses;
+  const pct = total > 0 ? Math.round((approved / total) * 100) : 0;
+  const domains = overview.domains.filter((d) => d.target > 0);
+  const metDomainCount = domains.filter((d) => {
+    const domainCourses = overview.courses.filter((c) => c.categoryId === d.categoryId && c.zone === 'PATH');
+    return domainCourses.length > 0 && domainCourses.every((c) => c.approved);
+  }).length;
+  const nextCourse = nextSteps[0];
 
   const deptRaw = person.departmentName?.trim();
   const dept = deptRaw
@@ -100,274 +161,484 @@ function PathHeader({ overview }: { overview: PulseOverview }) {
     : null;
   const orgSub = [dept, person.organizationName].filter(Boolean).join(' · ');
 
+  // Thông tin trạm và phân loại của khóa học ưu tiên tiếp theo
+  const nextDomain = nextCourse
+    ? domains.find((d) => d.categoryId === nextCourse.categoryId)
+    : null;
+  const nextStationIdx = nextDomain
+    ? domains.findIndex((d) => d.categoryId === nextDomain.categoryId)
+    : -1;
+  const stationLabel = nextStationIdx >= 0 ? `Trạm 0${nextStationIdx + 1}` : null;
+
+  const isPreTest = nextCourse?.slotStatus === 'PRE_ASSESSMENT' || nextCourse?.canStartPreAssessment;
+  const isInProgress = nextCourse?.slotStatus === 'IN_PROGRESS';
+  const isWaitingReview = nextCourse?.slotStatus === 'PRE_REVIEW' || nextCourse?.slotStatus === 'IN_REVIEW';
+
   return (
-    <header className="pu-path-header">
-      <div className="pu-path-header-main">
-        <div className="pu-path-header-badge">
-          <span>Lộ trình năng lực chức danh · Chuẩn doanh nghiệp</span>
+    <header className="pu-path-header-group">
+      {/* Khối 1: Tiêu đề riêng biệt trên cùng (Không bọc khung, hiển thị trực tiếp trên nền) */}
+      <div className="pu-path-title-block">
+        <div className="pu-path-badge-pill">
+          <Award size={13} className="text-blue-700" />
+          <span>Lộ trình Chuẩn hóa Năng lực Số Doanh nghiệp</span>
         </div>
-        <h1 className="pu-path-title">{position}</h1>
-        <p className="pu-path-org">{orgSub || 'Doanh nghiệp'}</p>
-        <p className="pu-path-desc">
-          Doanh nghiệp yêu cầu vị trí này hoàn thành <strong>{domainCount} lĩnh vực</strong> với <strong>{stats.pathCourses} khóa học</strong> tương ứng <strong>{stats.requiredCompetencies} tiêu chí năng lực</strong> từ mức Cơ bản đến mức mục tiêu.
-        </p>
+        <h1 className="pu-path-main-title">{position}</h1>
+        <p className="pu-path-sub-title">{orgSub || 'Công ty Cổ phần Công nghệ DigiTalent Việt Nam'}</p>
       </div>
 
-      <div className="pu-path-header-side">
-        {/* Goal Card replacing Reviewer */}
-        <div className="pu-path-goal-box">
-          <div className="pu-path-goal-icon">
-            <Target size={18} />
+      {/* Khối 2: 3 Card Thống kê Nhanh */}
+      <div className="pu-path-stats-row">
+        {/* Card 1: Tiến độ chuẩn hóa */}
+        <div className="pu-path-stat-card">
+          <div className="pu-stat-card-header">
+            <span className="pu-stat-card-title">Tiến độ chuẩn hóa</span>
+            <span className={`pu-stat-badge ${pct >= 80 ? 'high' : 'med'}`}>
+              {pct}%
+            </span>
           </div>
-          <div className="pu-path-goal-info">
-            <small>MỤC TIÊU LỘ TRÌNH</small>
-            <strong>Chuẩn hóa 6 lĩnh vực năng lực</strong>
-            <span>Đạt chứng nhận hoàn thành chức danh</span>
-          </div>
-        </div>
-
-        {/* Inline Stats */}
-        <div className="pu-path-inline-stats">
-          <div className="pu-stat-chip">
-            <strong>{stats.pathCourses}</strong>
-            <span>Khóa học</span>
-          </div>
-          <div className="pu-stat-chip">
-            <strong>{stats.requiredCompetencies}</strong>
-            <span>Tiêu chí năng lực</span>
-          </div>
-          <div className="pu-stat-chip">
-            <strong>{domainCount}</strong>
-            <span>Lĩnh vực</span>
-          </div>
-          {stats.optionalCourses > 0 && (
-            <div className="pu-stat-chip">
-              <strong>{stats.optionalCourses}</strong>
-              <span>Tùy chọn</span>
+          <div className="pu-stat-card-body">
+            <div className="pu-stat-number-row">
+              <span className="pu-stat-big-number">{approved}</span>
+              <span className="pu-stat-total">/ {total} khóa học</span>
             </div>
-          )}
+            <div className="pu-stat-prog-track">
+              <div
+                className="pu-stat-prog-fill"
+                style={{
+                  width: `${pct}%`,
+                  backgroundColor: pct >= 80 ? '#059669' : '#1e40af',
+                }}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Primary CTA */}
-        {next && (
-          <div className="pu-path-header-cta">
-            <CourseAction course={next} />
+        {/* Card 2: Lĩnh vực hoàn thành */}
+        <div className="pu-path-stat-card">
+          <div className="pu-stat-card-header">
+            <span className="pu-stat-card-title">Lĩnh vực hoàn thành</span>
+            <span className="pu-stat-badge highlight">
+              {metDomainCount}/{domains.length}
+            </span>
           </div>
-        )}
+          <div className="pu-stat-card-body">
+            <div className="pu-stat-number-row">
+              <span className="pu-stat-big-number">{metDomainCount}</span>
+              <span className="pu-stat-total">/ {domains.length} lĩnh vực</span>
+            </div>
+            <p className="pu-stat-desc-note">
+              {metDomainCount === domains.length
+                ? 'Đã đạt toàn bộ lĩnh vực chuẩn hóa'
+                : `Còn ${domains.length - metDomainCount} lĩnh vực cần hoàn thiện`}
+            </p>
+          </div>
+        </div>
+
+        {/* Card 3: Tiêu chuẩn năng lực */}
+        <div className="pu-path-stat-card">
+          <div className="pu-stat-card-header">
+            <span className="pu-stat-card-title">Tiêu chuẩn năng lực</span>
+            <span className="pu-stat-badge neutral">Yêu cầu</span>
+          </div>
+          <div className="pu-stat-card-body">
+            <div className="pu-stat-number-row">
+              <span className="pu-stat-big-number">{stats.requiredCompetencies}</span>
+              <span className="pu-stat-total">tiêu chí năng lực</span>
+            </div>
+            <p className="pu-stat-desc-note">
+              Chuẩn hóa theo khung năng lực vị trí chuyên môn
+            </p>
+          </div>
+        </div>
       </div>
+
+      {/* Khối 3: Thẻ Nhiệm vụ ưu tiên tiếp theo (Chuẩn bộ màu Xanh thương hiệu) */}
+      {nextCourse && (
+        <div className="pu-priority-mission-card">
+          <div className="pu-pmission-indicator">
+            <Sparkles size={18} className="text-blue-700" />
+          </div>
+
+          <div className="pu-pmission-main">
+            <div className="pu-pmission-header-line">
+              <span className="pu-pmission-kicker">Nhiệm vụ ưu tiên tiếp theo</span>
+              {stationLabel && nextDomain && (
+                <span className="pu-pmission-station-chip">
+                  {stationLabel}: {nextDomain.name} · {levelName(nextCourse.tier)}
+                </span>
+              )}
+            </div>
+
+            <h2
+              className="pu-pmission-course-title"
+              onClick={() => onSelectCourse(nextCourse)}
+              title="Bấm để xem nhanh đề cương khóa học"
+            >
+              {toSentenceCase(nextCourse.title)}
+            </h2>
+
+            <p className="pu-pmission-explanation">
+              {isPreTest
+                ? 'Làm bài kiểm tra đánh giá năng lực đầu vào (~20 phút). Đạt kết quả sẽ được xét miễn học ngay toàn bộ khóa học này.'
+                : isInProgress
+                  ? `Khóa học đang học dở dang (đã hoàn thành ${nextCourse.progressPercent}%). Hãy tiếp tục bài học tiếp theo để hoàn thành trạm.`
+                  : isWaitingReview
+                    ? 'Bài kiểm tra của bạn đã nộp thành công và đang chờ xác nhận kết quả.'
+                    : 'Khóa học nền tảng bắt buộc tiếp theo. Bắt đầu ngay để xây dựng năng lực chuẩn.'}
+            </p>
+          </div>
+
+          <div className="pu-pmission-action-group">
+            {isPreTest ? (
+              <Link
+                to={PULSE_PATHS.preAssessment(nextCourse.courseId)}
+                className="pu-pmission-cta-btn primary pretest"
+              >
+                <Zap size={14} />
+                <span>Làm test vượt cấp ngay</span>
+                <ChevronRight size={14} className="pu-arrow-icon" />
+              </Link>
+            ) : isInProgress ? (
+              <Link
+                to={PULSE_PATHS.course(nextCourse.courseId)}
+                className="pu-pmission-cta-btn primary study"
+              >
+                <BookOpen size={14} />
+                <span>Tiếp tục học ngay</span>
+                <ChevronRight size={14} className="pu-arrow-icon" />
+              </Link>
+            ) : (
+              <Link
+                to={PULSE_PATHS.course(nextCourse.courseId)}
+                className="pu-pmission-cta-btn primary default"
+              >
+                <span>Bắt đầu học ngay</span>
+                <ChevronRight size={14} className="pu-arrow-icon" />
+              </Link>
+            )}
+
+            <button
+              type="button"
+              className="pu-pmission-cta-btn secondary"
+              onClick={() => onSelectCourse(nextCourse)}
+              title="Xem đề cương khóa học"
+            >
+              <FileText size={13} />
+              <span>Xem đề cương</span>
+            </button>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
 
-/* ── 2. Full-width Blueprint Section ───────────────────────────────────── */
-function BlueprintSection({
+/* ── 2. Mindmap Sequential Learning Journey ────────────────────────────── */
+function MindmapJourney({
   overview,
+  expandedCriteria,
+  onToggleCriteria,
   onSelectCourse,
 }: {
   overview: PulseOverview;
-  onSelectCourse?: (course: PulseCourseSummary) => void;
+  expandedCriteria: Set<string>;
+  onToggleCriteria: (categoryId: string) => void;
+  onSelectCourse: (course: PulseCourseSummary) => void;
 }) {
-  const position = overview.person.positionName ?? 'của bạn';
-  const { stats, person } = overview;
-  return (
-    <section className="pu-blueprint-section" aria-labelledby="pu-blueprint-heading">
-      <div className="pu-blueprint-head">
-        <div>
-          <h2 id="pu-blueprint-heading" className="pu-blueprint-title">
-            Bản vẽ lộ trình năng lực số · {position}
-          </h2>
-          <p className="pu-blueprint-sub">
-            Khóa học phân bổ theo 3 cấp độ (Cơ bản → Trung cấp → Nâng cao) phục vụ chuẩn hóa chức danh.
-          </p>
-        </div>
-        <div className="pu-titleblock" aria-hidden>
-          <span>Khung: Tiêu chuẩn vị trí</span>
-          <span>Vị trí: {position}</span>
-          <span>Quy mô: {stats.pathCourses} khóa</span>
-          <span>Trần: {person.departmentName ? (person.departmentName.trim().toLowerCase().startsWith('phòng') ? person.departmentName.trim() : `Phòng ${person.departmentName.trim()}`) : 'Phòng ban'}</span>
-        </div>
-      </div>
-
-      <RoadmapPlan
-        overview={overview}
-        variant="regular"
-        caption={`Bản vẽ lộ trình ${position}: tên khóa theo lĩnh vực và cấp độ`}
-        onSelectCourse={onSelectCourse}
-      />
-    </section>
-  );
-}
-
-/* ── 3. Redesigned Competency Accordion Item (Visual & Concise) ────────── */
-function CompetencyItem({
-  domain,
-  overview,
-  open,
-  onToggle,
-  onSelectCourse,
-}: {
-  domain: PulseDomain;
-  overview: PulseOverview;
-  open: boolean;
-  onToggle: () => void;
-  onSelectCourse?: (course: PulseCourseSummary) => void;
-}) {
-  const courses = withinCeiling(overview.courses).filter((c) => c.categoryId === domain.categoryId).sort((a, b) => a.tier - b.tier);
-  const path = courses.filter((c) => c.zone === 'PATH');
-  const code = courses[0]?.code.split('-')[0] ?? domain.code;
-  const bodyId = `pu-comp-${domain.categoryId}`;
-
-  const ceilingLimited = domain.ceiling < domain.target;
+  const domains = overview.domains.filter((d) => d.target > 0);
 
   return (
-    <article className="pu-comp-card" data-open={open}>
-      <button
-        type="button"
-        className="pu-comp-header-btn"
-        aria-expanded={open}
-        aria-controls={bodyId}
-        onClick={onToggle}
-      >
-        <span className="pu-comp-num-badge">{pad2(domain.number)}</span>
-        <div className="pu-comp-title-block">
-          <div className="pu-comp-title-row">
-            <span className="pu-comp-code-tag">{code}</span>
-            <strong className="pu-comp-name">{domain.name}</strong>
-          </div>
-          <span className="pu-comp-meta">
-            Mục tiêu vị trí: <strong>{levelName(domain.target)}</strong> · Phòng ban mở đến: <strong>{levelName(domain.ceiling)}</strong> · {path.length} khóa trong lộ trình
-          </span>
-        </div>
+    <div className="pu-mindmap-timeline" role="feed" aria-label="Dòng chảy lộ trình năng lực tuần tự">
+      {domains.map((domain, stationIdx) => {
+        const domainCourses = overview.courses
+          .filter((c) => c.categoryId === domain.categoryId && c.zone === 'PATH')
+          .sort((a, b) => a.tier - b.tier);
 
-        <div className="pu-comp-right-stats">
-          <DomainTrack courses={courses} />
-          <div className="pu-comp-progress-num">
-            <strong>{path.filter((c) => c.approved).length}/{path.length}</strong>
-            <small>khóa đã đạt</small>
-          </div>
-          <span className="pu-comp-chevron" aria-hidden>
-            <ChevronDown size={18} />
-          </span>
-        </div>
-      </button>
+        const approvedCourses = domainCourses.filter((c) => c.approved);
+        const isStationDone = approvedCourses.length === domainCourses.length && domainCourses.length > 0;
+        const hasActivePreTest = domainCourses.some(
+          (c) => c.slotStatus === 'PRE_ASSESSMENT' || c.canStartPreAssessment
+        );
+        const hasInProgress = domainCourses.some((c) => c.slotStatus === 'IN_PROGRESS');
+        const hasWaiting = domainCourses.some(
+          (c) => c.slotStatus === 'PRE_REVIEW' || c.slotStatus === 'IN_REVIEW'
+        );
+        const isCurrentStation = overview.nextSteps.some((ns) => ns.categoryId === domain.categoryId);
+        const code = domainCourses[0]?.code.split('-')[0] ?? domain.code;
+        const stationNumber = pad2(stationIdx + 1);
 
-      {/* Accordion Body: Concise Tags & Clean Course Cards */}
-      {open && (
-        <div className="pu-comp-body-clean" id={bodyId}>
-          {/* Competency Tags Row */}
-          <div className="pu-comp-tags-section">
-            <div className="pu-comp-tags-head">
-              <span className="pu-comp-tags-label">Tiêu chí năng lực cần đạt ({domain.competencies.length}):</span>
-              {ceilingLimited && (
-                <span className="pu-ceiling-tag">
-                  Giới hạn phòng ban: mở đến {levelName(domain.ceiling)}
-                </span>
+        const stationStatusClass = isStationDone
+          ? 'done'
+          : isCurrentStation || hasActivePreTest
+            ? 'current'
+            : hasInProgress
+              ? 'learning'
+              : hasWaiting
+                ? 'waiting'
+                : 'upcoming';
+
+        return (
+          <article
+            key={domain.categoryId}
+            className="pu-mindmap-station"
+            aria-label={`Trạm ${stationNumber}: ${domain.name}`}
+          >
+            {/* Cột mốc Timeline (Mindmap Node Marker) */}
+            <div className={`pu-station-indicator ${stationStatusClass}`}>
+              {isStationDone ? (
+                <Check size={18} strokeWidth={3} />
+              ) : isCurrentStation ? (
+                <Target size={18} />
+              ) : hasInProgress ? (
+                <BookOpen size={17} />
+              ) : hasWaiting ? (
+                <Clock size={17} />
+              ) : (
+                <span>{stationNumber}</span>
               )}
             </div>
-            <div className="pu-comp-tags-wrap">
-              {domain.competencies.map((comp) => (
-                <div key={comp.code} className="pu-comp-tag-item" title={comp.name}>
-                  <strong>{comp.code}</strong>
-                  <span>{comp.name}</span>
-                  <small className="pu-comp-tag-level">({levelName(comp.requiredLevel)})</small>
+
+            {/* Nội dung Trạm Lĩnh vực */}
+            <div className={`pu-station-card is-${stationStatusClass}`}>
+              {/* Đầu trạm: Tên lĩnh vực, mục tiêu & trạng thái */}
+              <div className="pu-station-head">
+                <div className="pu-station-title-group">
+                  <span className="pu-station-tag">{code}</span>
+                  <h2 className="pu-station-name">
+                    Trạm {stationNumber}: {domain.name}
+                  </h2>
                 </div>
-              ))}
+
+                <div className="pu-station-status-side">
+                  <span className="pu-station-meta">
+                    Mục tiêu: <strong>{levelName(domain.target)}</strong> · Hiện tại: <strong>{domain.verified > 0 ? levelName(domain.verified) : 'Chưa đạt'}</strong>
+                  </span>
+                  {isStationDone ? (
+                    <span className="pu-station-pill done">
+                      <Check size={11} strokeWidth={3} /> Đã đạt chuẩn
+                    </span>
+                  ) : isCurrentStation ? (
+                    <span className="pu-station-pill current">
+                      <Sparkles size={11} /> Trạm ưu tiên
+                    </span>
+                  ) : hasInProgress ? (
+                    <span className="pu-station-pill learning">
+                      Đang học ({approvedCourses.length}/{domainCourses.length})
+                    </span>
+                  ) : hasWaiting ? (
+                    <span className="pu-station-pill waiting">
+                      <Clock size={11} /> Chờ chấm bài
+                    </span>
+                  ) : (
+                    <span className="pu-station-pill upcoming">
+                      Chưa học ({domainCourses.length} khóa)
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Dòng chảy các khóa học trong trạm (L1 -> L2 -> L3) */}
+              <div className="pu-station-courses-flow">
+                {domainCourses.map((course, idx) => {
+                  const isDone = course.approved || course.slotStatus === 'COMPLETED';
+                  const isInProgress = course.slotStatus === 'IN_PROGRESS';
+                  const isPreTest = course.slotStatus === 'PRE_ASSESSMENT' || course.canStartPreAssessment;
+                  const isWaiting = course.slotStatus === 'PRE_REVIEW' || course.slotStatus === 'IN_REVIEW';
+                  const isLocked = course.slotStatus === 'AFTER_PRIOR_LEVEL' || course.zone === 'ABOVE_CEILING';
+
+                  return (
+                    <div key={course.courseId} className="pu-station-step-wrapper">
+                      {idx > 0 && (
+                        <div className="pu-station-step-arrow" aria-hidden="true">
+                          <ChevronRight size={18} />
+                        </div>
+                      )}
+                      <div
+                        className={`pu-station-course-card ${
+                          isDone
+                            ? 'done'
+                            : isInProgress
+                              ? 'learning'
+                              : isPreTest
+                                ? 'pretest'
+                                : isWaiting
+                                  ? 'waiting'
+                                  : isLocked
+                                    ? 'locked'
+                                    : ''
+                        }`}
+                      >
+                        <div className="pu-scard-top">
+                          <span className="pu-scard-code">{course.code}</span>
+                          <span className="pu-scard-tier">{levelName(course.tier)}</span>
+                          {isDone && (
+                            <span className="pu-scard-badge done">
+                              <Check size={10} strokeWidth={3} /> Đã đạt
+                            </span>
+                          )}
+                          {isInProgress && (
+                            <span className="pu-scard-badge learning">
+                              {course.progressPercent}%
+                            </span>
+                          )}
+                          {isPreTest && !isDone && (
+                            <span className="pu-scard-badge pretest">
+                              <Zap size={10} /> Test vượt cấp
+                            </span>
+                          )}
+                          {isWaiting && (
+                            <span className="pu-scard-badge waiting">
+                              Chờ chấm
+                            </span>
+                          )}
+                          {isLocked && (
+                            <span className="pu-scard-badge locked">
+                              <Lock size={10} /> Chưa mở
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          className="pu-scard-title"
+                          onClick={() => onSelectCourse(course)}
+                          title="Bấm để xem nhanh đề cương"
+                        >
+                          {toSentenceCase(course.title)}
+                        </button>
+
+                        <div className="pu-scard-meta">
+                          <span>{course.moduleCount || 3} mô đun</span>
+                          <span>·</span>
+                          <span>Ước tính ~06 giờ</span>
+                        </div>
+
+                        {isInProgress && showsProgress(course) && (
+                          <div className="pu-scard-prog-track">
+                            <div
+                              className="pu-scard-prog-fill"
+                              style={{ width: `${course.progressPercent}%` }}
+                            />
+                          </div>
+                        )}
+
+                        <div className="pu-scard-actions">
+                          {isDone ? (
+                            <span className="pu-scard-done-tag">
+                              <Check size={11} strokeWidth={3} /> Đã hoàn thành
+                            </span>
+                          ) : isPreTest ? (
+                            <Link
+                              to={PULSE_PATHS.preAssessment(course.courseId)}
+                              className="pu-scard-cta pretest"
+                            >
+                              <Zap size={12} /> Làm test vượt cấp →
+                            </Link>
+                          ) : isInProgress ? (
+                            <Link
+                              to={PULSE_PATHS.course(course.courseId)}
+                              className="pu-scard-cta study"
+                            >
+                              Học tiếp →
+                            </Link>
+                          ) : isWaiting ? (
+                            <Link
+                              to={PULSE_PATHS.preAssessment(course.courseId)}
+                              className="pu-scard-cta review"
+                            >
+                              Xem bài nộp
+                            </Link>
+                          ) : isLocked ? (
+                            <span className="pu-scard-locked-hint">
+                              Học sau khi đạt Cấp {course.tier - 1}
+                            </span>
+                          ) : (
+                            <Link
+                              to={PULSE_PATHS.course(course.courseId)}
+                              className="pu-scard-cta default"
+                            >
+                              Bắt đầu học →
+                            </Link>
+                          )}
+
+                          <button
+                            type="button"
+                            className="pu-scard-syllabus-btn"
+                            onClick={() => onSelectCourse(course)}
+                            title="Xem nhanh đề cương khóa học"
+                          >
+                            <FileText size={12} />
+                            <span>Đề cương</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Danh mục Tiêu chí Chuẩn hóa Lĩnh vực (Thu gọn tinh tế) */}
+              {domain.competencies.length > 0 && (
+                <div className="pu-station-criteria-area">
+                  <button
+                    type="button"
+                    className="pu-criteria-toggle-btn"
+                    onClick={() => onToggleCriteria(domain.categoryId)}
+                    aria-expanded={expandedCriteria.has(domain.categoryId)}
+                  >
+                    <FileText size={12} />
+                    <span>
+                      Tiêu chuẩn năng lực chi tiết ({domain.competencies.length} tiêu chí)
+                    </span>
+                    <ChevronDown
+                      size={14}
+                      className={`pu-criteria-chevron ${
+                        expandedCriteria.has(domain.categoryId) ? 'open' : ''
+                      }`}
+                    />
+                  </button>
+
+                  {expandedCriteria.has(domain.categoryId) && (
+                    <div className="pu-criteria-tags-flow">
+                      {domain.competencies.map((comp) => {
+                        const isMet = domain.verified >= comp.requiredLevel;
+                        return (
+                          <div
+                            key={comp.code}
+                            className={`pu-crit-pill ${isMet ? 'met' : 'gap'}`}
+                            title={`${comp.name} · Mức yêu cầu: ${levelName(comp.requiredLevel)}`}
+                          >
+                            <span className="pu-crit-code">{comp.code}</span>
+                            <span className="pu-crit-name">{comp.name}</span>
+                            <span className="pu-crit-level">
+                              ({levelName(comp.requiredLevel)})
+                            </span>
+                            {isMet ? (
+                              <span className="pu-crit-status met">
+                                <Check size={9} strokeWidth={3} /> Đạt
+                              </span>
+                            ) : (
+                              <span className="pu-crit-status gap">Cần học</span>
+                            )}
+                            {comp.core && (
+                              <span className="pu-crit-core">Cốt lõi</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
-
-          {/* Courses List as Clean Visual Cards */}
-          <div className="pu-comp-courses-section">
-            <h3 className="pu-comp-courses-heading">
-              Các khóa học trong lĩnh vực ({courses.length})
-            </h3>
-            <div className="pu-comp-cards-grid">
-              {courses.map((course) => (
-                <CourseVisualCard
-                  key={course.courseId}
-                  course={course}
-                  onSelectCourse={onSelectCourse}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-    </article>
-  );
-}
-
-function CourseVisualCard({
-  course,
-  onSelectCourse,
-}: {
-  course: PulseCourseSummary;
-  onSelectCourse?: (course: PulseCourseSummary) => void;
-}) {
-  const isDone = course.slotStatus === 'COMPLETED';
-  const isLearning = course.slotStatus === 'IN_PROGRESS';
-  const isWaiting = course.slotStatus === 'PRE_REVIEW' || course.slotStatus === 'IN_REVIEW';
-  const progress = showsProgress(course);
-
-  return (
-    <div className={`pu-path-course-card ${isDone ? 'is-done' : isLearning ? 'is-learning' : isWaiting ? 'is-waiting' : ''}`}>
-      <div className="pu-path-course-top">
-        <div className="pu-path-course-badges">
-          <span className="pu-path-course-code">{course.code}</span>
-          <span className="pu-station-tier-tag">{levelName(course.tier)}</span>
-        </div>
-        <StatePill course={course} />
-      </div>
-
-      <h4 className="pu-path-course-title">
-        {onSelectCourse ? (
-          <button
-            type="button"
-            className="pu-path-course-title-btn"
-            onClick={() => onSelectCourse(course)}
-            title="Bấm để xem nhanh đề cương"
-          >
-            {toSentenceCase(course.title)}
-          </button>
-        ) : (
-          <Link to={PULSE_PATHS.course(course.courseId)}>
-            {toSentenceCase(course.title)}
-          </Link>
-        )}
-      </h4>
-
-      <div className="pu-path-course-meta">
-        <span>{course.moduleCount || 3} mô đun kiến thức</span>
-        <span>·</span>
-        <span>Ước tính 06 giờ</span>
-      </div>
-
-      {progress && (
-        <div className="pu-path-course-prog">
-          <div className="pu-hero-bar" role="progressbar" aria-valuenow={course.progressPercent} aria-valuemin={0} aria-valuemax={100} style={{ height: 5 }}>
-            <div className="pu-hero-bar-fill" style={{ width: `${course.progressPercent}%` }} />
-          </div>
-          <small>{course.progressPercent}% đã học</small>
-        </div>
-      )}
-
-      <div className="pu-path-course-actions">
-        <CourseAction course={course} />
-        {onSelectCourse && (
-          <button
-            type="button"
-            className="pu-path-syllabus-btn"
-            onClick={() => onSelectCourse(course)}
-          >
-            <FileText size={13} />
-            <span>Đề cương</span>
-          </button>
-        )}
-      </div>
+          </article>
+        );
+      })}
     </div>
   );
 }
 
-/* ── Empty State ──────────────────────────────────────────────────────── */
+/* ── 3. Empty State ────────────────────────────────────────────────────── */
 function NoPath({ overview }: { overview: PulseOverview }) {
   return (
     <Empty
