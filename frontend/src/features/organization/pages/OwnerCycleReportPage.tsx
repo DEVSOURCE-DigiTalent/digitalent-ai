@@ -114,23 +114,21 @@ export function OwnerCycleReportPage() {
             Báo cáo chu kỳ học tập
           </span>
           <h1
-            className="mt-3 font-bold leading-[1.05]"
+            className="mt-2 font-bold leading-[1.05]"
             style={{
-              fontSize: 'clamp(33px, 4vw, 55px)',
-              letterSpacing: '-0.06em',
+              fontSize: 'clamp(28px, 3.8vw, 46px)',
+              letterSpacing: '-0.05em',
             }}
           >
-            {hasCycles
-              ? 'Một chu kỳ hoàn tất, đặt trong bối cảnh.'
-              : 'Báo cáo chu kỳ đầu tiên đang hình thành.'}
+            Báo cáo Chu kỳ Đào tạo & Năng lực
           </h1>
           <p
-            className="mt-3 text-[13px] leading-relaxed"
+            className="mt-2 text-[13px] leading-relaxed"
             style={{ color: '#dbe3ff', maxWidth: 520 }}
           >
             {hasCycles
               ? `${learners} học viên · ${approved + underway} khóa trong phạm vi · Tỷ lệ hoàn thành ${completionRate}%.`
-              : 'Khi nhân viên hoàn thành khóa học đầu tiên và Manager xác nhận, dữ liệu sẽ xuất hiện ở đây.'}
+              : 'Theo dõi tiến trình và tăng trưởng năng lực số theo từng chu kỳ đào tạo.'}
           </p>
         </div>
 

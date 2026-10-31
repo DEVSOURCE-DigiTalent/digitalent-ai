@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Camera, Lock, Mic, Monitor, Send } from 'lucide-react';
+import { ArrowRight, Camera, Compass, Mic, Monitor, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageContainer } from '@/components/shared/PageContainer';
 import { useInviteTrialParticipants, useJoinTrialAsParticipant, useResendTrialInvitation, useSubmitTrialRequest, useTrialProgram } from '@/hooks/use-trial-program';
@@ -9,7 +9,6 @@ import { apiErrorMessage } from '@/lib/utils';
 import { ParticipantsEditor } from '../components/ParticipantsEditor';
 import { CompetencyReport, ParticipantStatus, StageBadge, Steps } from '../components/TrialUi';
 import { emptyRows, isRowEmpty, rowError } from '../lib/participant-rows';
-import { BUY_COURSES_PATH } from '../lib/buy-courses';
 import { formatWhen, toLocalInput } from '../lib/trial-format';
 import '../trial-program.css';
 
@@ -165,25 +164,71 @@ function SetupView({ program, onInvited }: { program: TrialProgram; onInvited: (
 
   return (
     <>
-      <section className="tp-card">
-        <div className="tp-card-head">
-          <h2>1. Nhân viên tham gia</h2>
-          {existing > 0 && <span className="tp-badge info">Đã mời {existing}</span>}
+      <section
+        className="tp-card rounded-2xl border p-6 space-y-4 transition-all"
+        style={{
+          borderColor: 'var(--tp-line)',
+          background: 'var(--tp-card)',
+          boxShadow: '0 8px 30px rgba(29,48,102,.025)',
+        }}
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-slate-100">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span
+                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider"
+                style={{ background: '#e0f2f1', color: '#137b84' }}
+              >
+                Bước 1 / Khởi đầu
+              </span>
+              {existing > 0 && (
+                <span className="rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 text-[11px] font-bold">
+                  Đã mời {existing} nhân sự
+                </span>
+              )}
+            </div>
+            <h2 className="text-lg md:text-xl font-bold tracking-tight text-slate-900">
+              Danh sách nhân sự tham gia đánh giá năng lực số
+            </h2>
+          </div>
         </div>
         <ParticipantsEditor rows={rows} onChange={setRows} departments={program.departments} positions={program.positions} limit={program.maxParticipants - existing} />
         <InviteResult result={result} />
       </section>
 
-      <section className="tp-card">
-        <h2>2. Hạn làm bài & lịch chấm</h2>
+      <section
+        className="tp-card rounded-2xl border p-6 space-y-4 transition-all"
+        style={{
+          borderColor: 'var(--tp-line)',
+          background: 'var(--tp-card)',
+          boxShadow: '0 8px 30px rgba(29,48,102,.025)',
+        }}
+      >
+        <div className="pb-3 border-b border-slate-100">
+          <span
+            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider mb-1"
+            style={{ background: '#e0f2f1', color: '#137b84' }}
+          >
+            Bước 2 / Kế hoạch
+          </span>
+          <h2 className="text-lg md:text-xl font-bold tracking-tight text-slate-900">
+            Hạn làm bài & Lịch DigiTalent chấm bài
+          </h2>
+        </div>
         <ScheduleFields value={schedule} onChange={setSchedule} />
         <ExamSummary program={program} />
       </section>
 
-      <div className="tp-row" style={{ justifyContent: 'flex-end' }}>
-        {scheduleError && <span className="tp-muted">{scheduleError}</span>}
-        <button type="button" className="tp-btn" disabled={busy || invalid || !!scheduleError || existing + filled.length === 0} onClick={submit}>
-          <Send size={15} aria-hidden /> {busy ? 'Đang gửi…' : 'Gửi lời mời & đăng ký chấm'}
+      <div className="flex items-center justify-end gap-3 pt-2">
+        {scheduleError && <span className="text-xs font-semibold text-amber-600">{scheduleError}</span>}
+        <button
+          type="button"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#137b84] hover:bg-[#0e5f66] px-6 py-3 text-sm font-bold text-white shadow-md shadow-[#137b84]/20 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          disabled={busy || invalid || !!scheduleError || existing + filled.length === 0}
+          onClick={submit}
+        >
+          <Send className="size-4" />
+          {busy ? 'Đang gửi…' : 'Gửi lời mời & đăng ký chấm'}
         </button>
       </div>
     </>
@@ -225,7 +270,7 @@ function TrackView({ program }: { program: TrialProgram }) {
 
       {reported && program.report && (
         <>
-          <BuyCourses report={program.report} />
+          <SetupFramework report={program.report} />
           <CompetencyReport report={program.report} />
         </>
       )}
@@ -273,22 +318,21 @@ function TrackView({ program }: { program: TrialProgram }) {
 }
 
 /**
- * Sau khi có bảng năng lực: nhân viên đang học thử Cơ bản, doanh nghiệp mua khóa Trung cấp / Nâng cao để đi tiếp.
- * Gợi ý hai lĩnh vực thấp nhất còn dưới Trung cấp.
+ * Sau khi có bảng năng lực: nhân viên đã hoàn thành đánh giá, doanh nghiệp thiết lập khung năng lực số để đối soát khoảng trống trước khi mua/gán khóa học.
  */
-function BuyCourses({ report }: { report: TrialReport }) {
+function SetupFramework({ report }: { report: TrialReport }) {
   const weakest = [...report.summary].filter((d) => d.level < 2).sort((a, b) => a.average - b.average).slice(0, 2);
   return (
-    <section className="tp-buy" aria-labelledby="tp-buy-title">
-      <span className="tp-buy-icon" aria-hidden><Lock size={18} /></span>
+    <section className="tp-buy" aria-labelledby="tp-framework-title">
+      <span className="tp-buy-icon" aria-hidden><Compass size={18} /></span>
       <div>
-        <strong id="tp-buy-title">Nâng đội ngũ lên Trung cấp, Nâng cao</strong>
+        <strong id="tp-framework-title">Thiết lập Khung năng lực số</strong>
         <span>
-          Nhân viên đang học thử {report.summary.length} khóa Cơ bản.
-          {weakest.length > 0 && ` Nên ưu tiên: ${weakest.map((d) => d.name).join(', ')}.`}
+          Dựa trên kết quả đánh giá, thiết lập mức năng lực chuẩn cho từng vị trí để xác định chính xác khoảng trống.
+          {weakest.length > 0 && ` Cần ưu tiên: ${weakest.map((d) => d.name).join(', ')}.`}
         </span>
       </div>
-      <Link to={BUY_COURSES_PATH} className="tp-btn light">Mua khóa học <ArrowRight size={15} aria-hidden /></Link>
+      <Link to="/enterprise/setup" className="tp-btn light">Thiết lập khung năng lực <ArrowRight size={15} aria-hidden /></Link>
     </section>
   );
 }
@@ -334,12 +378,35 @@ function AddParticipants({ program, onDone }: { program: TrialProgram; onDone: (
       onError: (err) => toast.error(apiErrorMessage(err, 'Chưa mời được.')),
     });
   return (
-    <div className="tp" style={{ gap: 10 }}>
+    <div
+      className="rounded-2xl border p-5 space-y-4 mb-4 shadow-sm"
+      style={{
+        borderColor: 'var(--tp-line)',
+        background: 'var(--tp-card)',
+      }}
+    >
+      <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+        <h3 className="text-sm font-bold text-slate-900">
+          Mời thêm nhân viên tham gia đợt đánh giá
+        </h3>
+        <button
+          type="button"
+          onClick={onDone}
+          className="text-slate-400 hover:text-slate-600 text-xs font-semibold cursor-pointer"
+        >
+          Đóng
+        </button>
+      </div>
       <ParticipantsEditor rows={rows} onChange={setRows} departments={program.departments} positions={program.positions} limit={program.maxParticipants - program.participants.length} />
       <InviteResult result={result} />
-      <div className="tp-row" style={{ justifyContent: 'flex-end' }}>
-        <button type="button" className="tp-btn" disabled={invite.isPending || filled.length === 0 || filled.some((r) => rowError(r) !== null)} onClick={send}>
-          {invite.isPending ? 'Đang gửi…' : `Gửi lời mời (${filled.length})`}
+      <div className="flex justify-end pt-2">
+        <button
+          type="button"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#137b84] hover:bg-[#0e5f66] px-5 py-2.5 text-xs font-bold text-white shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          disabled={invite.isPending || filled.length === 0 || filled.some((r) => rowError(r) !== null)}
+          onClick={send}
+        >
+          {invite.isPending ? 'Đang gửi…' : `Gửi lời mời (${filled.length} người)`}
         </button>
       </div>
     </div>

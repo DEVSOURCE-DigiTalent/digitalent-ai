@@ -105,7 +105,6 @@ export function OwnerMembersPage() {
 
   const seats = user.subscription?.seatLimit;
   const seatsUsed = user.subscription?.seatsUsed;
-  const published = orgData?.setupCompleted ?? false;
 
   const totalPages = data ? Math.ceil(data.totalItems / PAGE_SIZE) : 0;
 
@@ -142,22 +141,15 @@ export function OwnerMembersPage() {
               />
             </span>
             <h1
-              className="mt-3 font-bold leading-[1.05]"
+              className="mt-2 font-bold leading-[1.05]"
               style={{
-                fontSize: 'clamp(33px, 4vw, 55px)',
+                fontSize: 'clamp(28px, 3.5vw, 44px)',
                 color: 'var(--po-ink)',
-                letterSpacing: '-0.06em',
+                letterSpacing: '-0.05em',
               }}
             >
-              Đúng người, đúng vị trí, đúng mục tiêu.
+              Nhân sự & Phân công Lộ trình
             </h1>
-            <p
-              className="mt-2 text-[13px] leading-relaxed"
-              style={{ color: 'var(--po-muted)', maxWidth: 560 }}
-            >
-              Thiết lập Manager cho phòng ban, mời nhân viên theo vị trí.
-              Phòng ban xác định phạm vi; vị trí xác định mục tiêu học tập.
-            </p>
           </div>
           {seats != null && seatsUsed != null && (
             <span
@@ -179,48 +171,28 @@ export function OwnerMembersPage() {
         className="px-4 md:px-6 py-4 mx-auto"
         style={{ maxWidth: 1220 }}
       >
-        {/* Notice */}
-        <div
-          className="rounded-[11px] border p-4 text-xs mb-4"
-          style={
-            published
-              ? {
-                  borderColor: '#dbeac5',
-                  background: '#f5faea',
-                  color: '#487336',
-                }
-              : {
-                  borderColor: '#f5dfcf',
-                  background: '#fff5ee',
-                  color: '#96533c',
-                }
-          }
-        >
-          {published
-            ? 'Kiến trúc năng lực đã công bố. Mời nhân viên vào đúng phòng ban và vị trí để hệ thống định tuyến lộ trình học tập.'
-            : 'Công bố kiến trúc năng lực trước khi gửi lời mời nhân viên.'}
-        </div>
-
-        {/* Banner Hướng dẫn Đánh giá Năng lực Đội ngũ */}
-        <div className="rounded-[16px] border border-indigo-100 bg-gradient-to-r from-indigo-50/90 via-blue-50/50 to-white p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-start gap-3">
-            <div className="size-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 mt-0.5">
-              <FlaskConical className="size-4" />
+        {/* Bước 1: Thêm nhân sự & kích hoạt test */}
+        <div className="rounded-[16px] border border-teal-200/80 bg-gradient-to-r from-teal-50/90 via-sky-50/60 to-white dark:from-teal-950/30 dark:via-sky-950/20 dark:to-slate-900 px-5 py-3.5 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="size-9 rounded-xl bg-[#137b84] text-white flex items-center justify-center shrink-0 shadow-xs">
+              <UserPlus className="size-5" />
             </div>
             <div>
-              <span className="text-[10px] font-black uppercase tracking-[0.12em] text-indigo-600">
-                Bước 1 · Khởi động Đánh giá Năng lực Số
-              </span>
-              <p className="text-xs text-indigo-950 font-medium leading-relaxed mt-0.5">
-                Mời nhân viên vào đúng phòng ban và vị trí. Nhân viên sẽ tự động nhận đề test đánh giá năng lực ban đầu có giám sát, được <strong>Mentor DigiTalent</strong> trực tiếp thẩm định và chấm điểm.
-              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-teal-800 dark:text-teal-300 bg-teal-100 dark:bg-teal-900/60 px-2 py-0.5 rounded-md">
+                  Bước 1 / 5
+                </span>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                  Thêm nhân viên làm bài test khảo sát 6 lĩnh vực số
+                </h3>
+              </div>
             </div>
           </div>
           <Link
-            to="/enterprise/trial"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-colors shrink-0 shadow-xs"
+            to="/enterprise/skill-gap"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-teal-200 bg-white hover:bg-teal-50 text-teal-800 text-xs font-bold transition-colors shrink-0"
           >
-            Đợt đánh giá & Lịch chấm
+            Bước 2: Khoảng trống Năng lực
             <ArrowRight className="size-3.5" />
           </Link>
         </div>
@@ -243,18 +215,11 @@ export function OwnerMembersPage() {
               Manager phòng ban
             </span>
             <h2
-              className="mt-2 text-xl font-semibold"
-              style={{ color: 'var(--po-ink)', letterSpacing: '-0.045em' }}
+              className="mt-1 text-lg font-bold"
+              style={{ color: 'var(--po-ink)', letterSpacing: '-0.03em' }}
             >
-              Phân công Manager trước.
+              Phân công Manager phòng ban
             </h2>
-            <p
-              className="mt-1 text-xs leading-relaxed"
-              style={{ color: 'var(--po-muted)' }}
-            >
-              Manager chỉ xem nhân viên và bài tập cuối khóa trong phạm vi
-              phòng ban mình.
-            </p>
 
             <div className="mt-4 grid gap-2">
               {departments.length === 0 ? (
@@ -338,20 +303,13 @@ export function OwnerMembersPage() {
               Mời nhân viên
             </span>
             <h2
-              className="mt-2 text-xl font-semibold"
-              style={{ color: 'var(--po-ink)', letterSpacing: '-0.045em' }}
+              className="mt-1 text-lg font-bold"
+              style={{ color: 'var(--po-ink)', letterSpacing: '-0.03em' }}
             >
-              Lộ trình trước, mời sau.
+              Thêm nhân viên mới
             </h2>
-            <p
-              className="mt-1 text-xs leading-relaxed"
-              style={{ color: 'var(--po-muted)' }}
-            >
-              Chọn phòng ban và vị trí cho nhân viên. Họ chỉ thấy mục tiêu
-              của vị trí được chỉ định.
-            </p>
 
-            <div className="mt-5">
+            <div className="mt-4">
               <div
                 className="rounded-[13px] border p-4 text-center"
                 style={{
@@ -359,13 +317,6 @@ export function OwnerMembersPage() {
                   background: 'var(--po-raised)',
                 }}
               >
-                <p
-                  className="text-xs mb-3"
-                  style={{ color: 'var(--po-muted)' }}
-                >
-                  Mời từng người hoặc nhập danh sách CSV. Hệ thống kiểm tra
-                  trước khi thêm.
-                </p>
                 <div className="flex items-center justify-center gap-2 flex-wrap">
                   {canInvite && (
                     <button

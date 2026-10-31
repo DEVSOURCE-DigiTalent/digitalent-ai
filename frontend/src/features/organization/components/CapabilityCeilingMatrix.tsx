@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { X, Info, Building2, Users, ChevronDown, Check, Search } from 'lucide-react';
+import { X, Info, Building2, Users, ChevronDown, Check, Search, ArrowRight, ShoppingCart } from 'lucide-react';
 import {
   useCapabilityCeilings,
   useUpdateDepartmentCeilings,
@@ -9,7 +9,7 @@ import {
 } from '@/hooks/use-capability-ceilings';
 import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
 import { organizationErrorMessage } from '@/lib/organization-errors';
-import type { CapabilityCeilings, CeilingDomain } from '@/services/capability-ceiling.service';
+import type { CapabilityCeilings, CeilingCourse, CeilingDomain } from '@/services/capability-ceiling.service';
 import './capability-ceiling.css';
 
 /** Phạm vi đang xem: cả doanh nghiệp hoặc id của một phòng ban. */
@@ -41,6 +41,7 @@ export function CapabilityCeilingMatrix() {
   const [showGuide, setShowGuide] = useState(false);
   const [isDeptMenuOpen, setIsDeptMenuOpen] = useState(false);
   const [deptSearch, setDeptSearch] = useState('');
+  const [selectedToBuy, setSelectedToBuy] = useState<Map<string, { code: string; title: string; level: number; domainName: string; price: number }>>(new Map());
 
   const department = matrix?.departments.find((d) => d.departmentId === scope);
   const activeScope = scope === ALL || department ? scope : ALL;
@@ -56,6 +57,29 @@ export function CapabilityCeilingMatrix() {
     if (!matrix) return {};
     return activeScope === ALL ? organizationLevels(matrix) : departmentLevels(matrix, activeScope);
   }, [matrix, activeScope]);
+
+  const toggleSelectToBuy = (course: CeilingCourse, domain: CeilingDomain) => {
+    const code = course.code || `M${domain.sortOrder}-${course.level === 2 ? 'I' : 'A'}`;
+    setSelectedToBuy((prev) => {
+      const next = new Map(prev);
+      if (next.has(code)) {
+        next.delete(code);
+        toast.info(`Đã bỏ chọn khóa ${code}`);
+      } else {
+        next.set(code, {
+          code,
+          title: course.title || `Khóa học ${code}`,
+          level: course.level,
+          domainName: domain.name,
+          price: course.pricePerSeat || (course.level === 3 ? 699000 : 399000),
+        });
+        toast.success(`Đã chọn khóa ${code} để mua bản quyền`, {
+          description: 'Bạn có thể chọn thêm nhiều khóa khác trước khi bấm Tiếp tục.',
+        });
+      }
+      return next;
+    });
+  };
 
   if (isLoading) {
     return (
@@ -91,28 +115,26 @@ export function CapabilityCeilingMatrix() {
 
   const pick = (domain: CeilingDomain, level: number) => {
     if (!canEdit || saving) return;
+    const courseAtLevel = domain.courses.find((c) => c.level === level);
+    // Nếu ô này là khóa học chưa mở bản quyền -> Chọn/hủy chọn vào danh sách mua
+    if (courseAtLevel?.isUnlocked === false) {
+      toggleSelectToBuy(courseAtLevel, domain);
+      return;
+    }
+
     const now = current[domain.categoryId] ?? 0;
     const target = level === now ? level - 1 : level;
     if (activeScope !== ALL && target > (orgSaved[domain.categoryId] ?? 0)) {
       toast.error('Trần phòng ban không được cao hơn trần doanh nghiệp ở bất kỳ năng lực nào.');
       return;
     }
-    // Kiểm tra bản quyền: doanh nghiệp chưa mua bản quyền khóa học cấp cao hơn thì không được nâng trần
-    const courseAtLevel = domain.courses.find((c) => c.level === target);
     const maxAllowed = domain.maxAllowedCeiling ?? 1;
-    if (activeScope === ALL && target > maxAllowed && courseAtLevel?.isUnlocked === false) {
-      toast.warning(
-        `Khóa học ${courseAtLevel.code ?? `cấp ${target}`} chưa được mở bản quyền. Vui lòng mua suất học để nâng trần doanh nghiệp lên bậc ${target}.`,
-        {
-          action: {
-            label: 'Trang bị suất học',
-            onClick: () => {
-              navigate('/enterprise/courses');
-            },
-          },
-        }
-      );
-      return;
+    if (activeScope === ALL && target > maxAllowed) {
+      const lockedCourse = domain.courses.find((c) => c.level === target && c.isUnlocked === false);
+      if (lockedCourse) {
+        toggleSelectToBuy(lockedCourse, domain);
+        return;
+      }
     }
     setDraft({ ...current, [domain.categoryId]: target });
   };
@@ -352,7 +374,9 @@ export function CapabilityCeilingMatrix() {
                   dnLevel={dnLevel}
                   isDepartment={activeScope !== ALL}
                   editable={canEdit && !blockedDepartments}
+                  selectedToBuy={selectedToBuy}
                   onPick={pick}
+                  onToggleBuy={toggleSelectToBuy}
                 />
               );
             })}
@@ -363,6 +387,7 @@ export function CapabilityCeilingMatrix() {
             <span><i className="route" />Được mở trong phạm vi</span>
             <span><i className="dn" />Trong trần doanh nghiệp</span>
             <span><i />Chỉ trong trần Digital AI</span>
+            <span><i style={{ background: '#fffbeb', border: '1.5px solid #f59e0b' }} />Đang chọn mua</span>
           </div>
 
           {/* Số liệu thống kê */}
@@ -379,7 +404,7 @@ export function CapabilityCeilingMatrix() {
                 {blockedDepartments
                   ? 'Cần lưu trần doanh nghiệp trước.'
                   : activeScope === ALL
-                    ? 'Bấm trực tiếp vào ô để điều chỉnh trần.'
+                    ? 'Bấm trực tiếp vào ô để điều chỉnh trần, hoặc bấm ô khóa (🔒) để chọn mua bản quyền.'
                     : department?.isCustomized
                       ? 'Đang dùng giới hạn riêng.'
                       : 'Đang kế thừa trần doanh nghiệp.'}
@@ -411,6 +436,85 @@ export function CapabilityCeilingMatrix() {
           )}
         </div>
       </div>
+
+      {/* ── Thanh thao tác mua nhiều khóa học đã chọn nổi bật (Floating Bar) ── */}
+      {selectedToBuy.size > 0 && (
+        <div className="sticky bottom-4 z-40 mt-4 rounded-2xl border-2 border-amber-400 bg-white/95 p-4 shadow-xl backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-white font-bold text-base shadow-sm">
+              {selectedToBuy.size}
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h4 className="font-bold text-slate-900 text-sm">
+                  Đã chọn {selectedToBuy.size} khóa học để mua bản quyền
+                </h4>
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800 border border-amber-300">
+                  Mở trần năng lực
+                </span>
+              </div>
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                {Array.from(selectedToBuy.values()).map((item) => (
+                  <span
+                    key={item.code}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-2 py-0.5 text-xs font-semibold text-slate-800 border border-amber-200 shadow-xs"
+                  >
+                    <span className="font-bold text-amber-800">{item.code}</span>
+                    <span className="text-slate-400">·</span>
+                    <span className="text-slate-600 max-w-[140px] truncate">{item.domainName}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedToBuy((prev) => {
+                          const next = new Map(prev);
+                          next.delete(item.code);
+                          return next;
+                        });
+                      }}
+                      className="ml-0.5 grid size-3.5 place-items-center rounded-full text-slate-400 hover:bg-amber-200 hover:text-slate-800"
+                      title="Bỏ chọn khóa này"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 w-full md:w-auto shrink-0 justify-end">
+            <button
+              type="button"
+              onClick={() => setSelectedToBuy(new Map())}
+              className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              Hủy chọn tất cả
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const codes = Array.from(selectedToBuy.keys()).join(',');
+                navigate(`/enterprise/courses?selected=${encodeURIComponent(codes)}`);
+              }}
+              className="rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800 hover:bg-amber-100 transition-colors"
+            >
+              Xem trên danh mục
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const codes = Array.from(selectedToBuy.keys()).join(',');
+                navigate(`/enterprise/courses/checkout?courses=${encodeURIComponent(codes)}`);
+              }}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:brightness-105 transition-all"
+            >
+              <span>Thanh toán & Ký online ({selectedToBuy.size})</span>
+              <ArrowRight className="size-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Modal Popup nổi: Quy tắc & Hướng dẫn ── */}
       {showGuide && (
@@ -478,14 +582,18 @@ function DomainRow({
   dnLevel,
   isDepartment,
   editable,
+  selectedToBuy,
   onPick,
+  onToggleBuy,
 }: {
   domain: CeilingDomain;
   routeLevel: number;
   dnLevel: number;
   isDepartment: boolean;
   editable: boolean;
+  selectedToBuy?: Map<string, { code: string; title: string; level: number; domainName: string; price: number }>;
   onPick: (domain: CeilingDomain, level: number) => void;
+  onToggleBuy?: (course: CeilingCourse, domain: CeilingDomain) => void;
 }) {
   return (
     <>
@@ -497,18 +605,48 @@ function DomainRow({
         const inRoute = course.level <= routeLevel;
         const inOrg = course.level <= dnLevel;
         const isLocked = course.isUnlocked === false;
-        const state = inRoute ? 'trong lộ trình đang xem' : inOrg ? 'trong trần doanh nghiệp' : isLocked ? 'chưa mở bản quyền (cần mua suất)' : 'chỉ trong trần Digital AI';
-        const className = `cc-cell${inRoute ? ' route' : inOrg ? ' dn' : ''}${course.code ? '' : ' empty'}${isLocked ? ' opacity-75' : ''}`;
-        const label = course.code ? (isLocked ? `🔒 ${course.code}` : course.code) : 'Chưa có khóa';
+        const isSelectedToBuy = Boolean(course.code && selectedToBuy?.has(course.code));
+        const state = isSelectedToBuy
+          ? 'đã chọn mua bản quyền (bấm để hủy chọn)'
+          : inRoute
+          ? 'trong lộ trình đang xem'
+          : inOrg
+          ? 'trong trần doanh nghiệp'
+          : isLocked
+          ? 'chưa mở bản quyền (bấm để chọn mua)'
+          : 'chỉ trong trần Digital AI';
+        const className = `cc-cell${isSelectedToBuy ? ' selected-to-buy' : inRoute ? ' route' : inOrg ? ' dn' : ''}${course.code ? '' : ' empty'}${isLocked && !isSelectedToBuy ? ' opacity-75' : ''}`;
+        const label = course.code ? (
+          isSelectedToBuy ? (
+            <span className="flex items-center justify-center gap-1 font-bold">
+              <Check className="size-3.5 text-amber-700 stroke-[3]" />
+              <span>{course.code}</span>
+            </span>
+          ) : isLocked ? (
+            `🔒 ${course.code}`
+          ) : (
+            course.code
+          )
+        ) : (
+          'Chưa có khóa'
+        );
         const title = `${course.code ? `${course.code} · ${course.title}` : 'Chưa có khóa'}: ${state}`;
+        const handleClick = () => {
+          if (isLocked && onToggleBuy) {
+            onToggleBuy(course, domain);
+          } else {
+            onPick(domain, course.level);
+          }
+        };
+
         return editable ? (
           <button
             key={course.level}
             type="button"
             className={className}
             title={title}
-            aria-label={`${domain.name}, cấp ${course.level}: ${state}. Bấm để đặt trần đến cấp này.`}
-            onClick={() => onPick(domain, course.level)}
+            aria-label={`${domain.name}, cấp ${course.level}: ${state}.`}
+            onClick={handleClick}
           >
             {label}
           </button>

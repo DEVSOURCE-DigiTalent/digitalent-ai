@@ -24,9 +24,6 @@ export function CapabilityLearningPath({ competencies, isLoading }: CapabilityLe
         >
           Mức đáp ứng từng năng lực trên toàn tổ chức
         </h2>
-        <p className="mt-1 text-xs" style={{ color: 'var(--po-muted)' }}>
-          Mỗi dòng so sánh mức yêu cầu trung bình với mức hiện tại trung bình. Pending không phải khoảng trống đã xác nhận.
-        </p>
       </div>
 
       {isLoading ? (
