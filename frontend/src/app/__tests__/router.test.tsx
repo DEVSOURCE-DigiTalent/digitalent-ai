@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useRoutes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { routes } from '../router';
+import { preloadLazyPages } from '../routes/lazy-page';
 import { isSafeReturnTo } from '../../features/auth/auth-redirect';
 import { MOCK_EMAILS, signInAsMock, signOut } from '../../test/session';
 import { usePersonalTheme } from '../../features/learner/theme/use-personal-theme';
@@ -27,6 +28,9 @@ function renderWithRouter(initialEntry: string, queryClient: QueryClient) {
 describe('Router Configuration & Surface Separation', () => {
   let queryClient: QueryClient;
 
+  // Pages and layouts are lazy chunks; load them once so each test only waits for its own render.
+  beforeAll(() => preloadLazyPages(), 120_000);
+
   beforeEach(() => {
     signOut();
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -37,7 +41,7 @@ describe('Router Configuration & Surface Separation', () => {
       renderWithRouter('/individual/try', queryClient);
 
       expect(await screen.findByTestId('individual-trial-page', {}, { timeout: 10_000 })).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 1, name: /Xem lộ trình cá nhân/ })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: /Xem lộ trình cá nhân/ })).toBeInTheDocument();
       expect(screen.queryByTestId('personal-layout')).not.toBeInTheDocument();
     });
 
@@ -47,7 +51,7 @@ describe('Router Configuration & Surface Separation', () => {
       // The landing page is lazy-loaded (first import is slow when the whole suite runs in parallel)
       // and brings its own navigation and footer.
       expect(await screen.findByTestId('landing-page', {}, { timeout: 10_000 })).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 1, name: 'DigiTalent AI' })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: 'DigiTalent AI' })).toBeInTheDocument();
       expect(screen.queryByTestId('public-layout')).not.toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
@@ -55,14 +59,14 @@ describe('Router Configuration & Surface Separation', () => {
     it('Anonymous can access the reference positions without login redirect', async () => {
       renderWithRouter('/careers', queryClient);
 
-      expect(screen.getByRole('heading', { level: 1, name: /Vị trí tham chiếu/ })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: /Vị trí tham chiếu/ })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
     it('Anonymous can open one reference position without login redirect', async () => {
       renderWithRouter('/careers/accountant', queryClient);
 
-      expect(screen.getByRole('heading', { level: 1, name: 'Kế toán' })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: 'Kế toán' })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
@@ -82,10 +86,10 @@ describe('Router Configuration & Surface Separation', () => {
     it('Direct load /personal/courses/crs-A3-I renders the personal layout and does NOT contain Enterprise shell', async () => {
       renderWithRouter('/personal/courses/crs-A3-I', queryClient);
 
-      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
-      expect(screen.getByTestId('learner-course-detail')).toBeInTheDocument();
+      expect(await screen.findByTestId('personal-layout')).toBeInTheDocument();
+      expect(await screen.findByTestId('learner-course-detail')).toBeInTheDocument();
       expect(await screen.findByText(/Mã: A3-I/i, {}, { timeout: 10000 })).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 1, name: 'Tạo lập nội dung chuyên nghiệp' })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: 'Tạo lập nội dung chuyên nghiệp' })).toBeInTheDocument();
 
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
       expect(screen.queryByRole('heading', { level: 1, name: 'Đăng nhập' })).not.toBeInTheDocument();
@@ -94,8 +98,8 @@ describe('Router Configuration & Surface Separation', () => {
     it('Direct load /personal renders learner dashboard directly', async () => {
       renderWithRouter('/personal', queryClient);
 
-      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
-      expect(screen.getByTestId('learner-dashboard')).toBeInTheDocument();
+      expect(await screen.findByTestId('personal-layout')).toBeInTheDocument();
+      expect(await screen.findByTestId('learner-dashboard')).toBeInTheDocument();
       expect(await screen.findByRole('heading', { level: 1, name: /Tổng quan học tập/i }, { timeout: 10000 })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
@@ -103,16 +107,16 @@ describe('Router Configuration & Surface Separation', () => {
     it('Direct load /personal/dashboard renders learner dashboard', async () => {
       renderWithRouter('/personal/dashboard', queryClient);
 
-      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
-      expect(screen.getByTestId('learner-dashboard')).toBeInTheDocument();
+      expect(await screen.findByTestId('personal-layout')).toBeInTheDocument();
+      expect(await screen.findByTestId('learner-dashboard')).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
     it('Direct load /personal/target renders the reference positions', async () => {
       renderWithRouter('/personal/target', queryClient);
 
-      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
-      expect(screen.getByTestId('learner-target-page')).toBeInTheDocument();
+      expect(await screen.findByTestId('personal-layout')).toBeInTheDocument();
+      expect(await screen.findByTestId('learner-target-page')).toBeInTheDocument();
       expect(await screen.findByRole('radio', { name: /Marketing/ })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
@@ -120,17 +124,17 @@ describe('Router Configuration & Surface Separation', () => {
     it('Direct load /personal/diagnostic renders diagnostic assessment page', async () => {
       renderWithRouter('/personal/diagnostic', queryClient);
 
-      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
-      expect(screen.getByTestId('learner-diagnostic-page')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 1, name: /Đánh giá năng lực/i })).toBeInTheDocument();
+      expect(await screen.findByTestId('personal-layout')).toBeInTheDocument();
+      expect(await screen.findByTestId('learner-diagnostic-page')).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: /Đánh giá năng lực/i })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
     it('Direct load /personal/path renders learning path roadmap', async () => {
       renderWithRouter('/personal/path', queryClient);
 
-      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
-      expect(screen.getByTestId('learner-path-page')).toBeInTheDocument();
+      expect(await screen.findByTestId('personal-layout')).toBeInTheDocument();
+      expect(await screen.findByTestId('learner-path-page')).toBeInTheDocument();
       expect(await screen.findByText(/Tiến độ lộ trình/i)).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
@@ -138,8 +142,8 @@ describe('Router Configuration & Surface Separation', () => {
     it('Direct load /personal/classroom/crs-A3-I renders the classroom', async () => {
       renderWithRouter('/personal/classroom/crs-A3-I', queryClient);
 
-      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
-      expect(screen.getByTestId('learner-classroom-page')).toBeInTheDocument();
+      expect(await screen.findByTestId('personal-layout')).toBeInTheDocument();
+      expect(await screen.findByTestId('learner-classroom-page')).toBeInTheDocument();
       expect(await screen.findByText(/Lớp học số: A3-I/i)).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
@@ -147,36 +151,36 @@ describe('Router Configuration & Surface Separation', () => {
     it('Direct load /personal/progress renders personal skill progress', async () => {
       renderWithRouter('/personal/progress', queryClient);
 
-      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
-      expect(screen.getByTestId('learner-progress-page')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 1, name: 'Hồ sơ năng lực' })).toBeInTheDocument();
+      expect(await screen.findByTestId('personal-layout')).toBeInTheDocument();
+      expect(await screen.findByTestId('learner-progress-page')).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: 'Hồ sơ năng lực' })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
     it('Direct load /personal/tasks renders practical tasks page', async () => {
       renderWithRouter('/personal/tasks', queryClient);
 
-      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
-      expect(screen.getByTestId('learner-tasks-page')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 1, name: 'Bài thực hành' })).toBeInTheDocument();
+      expect(await screen.findByTestId('personal-layout')).toBeInTheDocument();
+      expect(await screen.findByTestId('learner-tasks-page')).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: 'Bài thực hành' })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
     it('Direct load /personal/certificates renders certificates page', async () => {
       renderWithRouter('/personal/certificates', queryClient);
 
-      expect(screen.getByTestId('personal-layout')).toBeInTheDocument();
-      expect(screen.getByTestId('learner-certificates-page')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 1, name: 'Chứng nhận hoàn thành khóa học' })).toBeInTheDocument();
+      expect(await screen.findByTestId('personal-layout')).toBeInTheDocument();
+      expect(await screen.findByTestId('learner-certificates-page')).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: 'Chứng nhận hoàn thành khóa học' })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
     it('opens in the dark theme and remembers the light theme', async () => {
       renderWithRouter('/personal', queryClient);
 
-      const layout = screen.getByTestId('personal-layout');
+      const layout = await screen.findByTestId('personal-layout');
       expect(layout).toHaveAttribute('data-theme', 'dark');
-      screen.getByRole('button', { name: 'Chuyển sang giao diện sáng' }).click();
+      (await screen.findByRole('button', { name: 'Chuyển sang giao diện sáng' })).click();
       await waitFor(() => expect(layout).toHaveAttribute('data-theme', 'light'));
       expect(localStorage.getItem('dt-personal-theme')).toBe('light');
       usePersonalTheme.getState().setTheme('dark');
@@ -249,7 +253,7 @@ describe('Router Configuration & Surface Separation', () => {
       renderWithRouter('/enterprise/me/learning', queryClient);
 
       expect(await screen.findByTestId('pulse-employee-layout')).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: 'Lộ trình' })).toHaveClass('active');
+      expect(await screen.findByRole('link', { name: 'Lộ trình' })).toHaveClass('active');
     });
 
     it('shows access denied to a role the screen is not meant for', async () => {
@@ -287,7 +291,7 @@ describe('Router Configuration & Surface Separation', () => {
       renderWithRouter('/enterprise/billing', queryClient);
 
       expect(await screen.findByRole('heading', { name: /Gói dịch vụ doanh nghiệp|Gói và thanh toán/i }, { timeout: 5000 })).toBeInTheDocument();
-      expect(screen.getByTestId('enterprise-layout')).toBeInTheDocument();
+      expect(await screen.findByTestId('enterprise-layout')).toBeInTheDocument();
     });
 
     it('shows "feature unavailable" when the plan lacks the feature', async () => {

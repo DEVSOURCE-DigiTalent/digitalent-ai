@@ -4,14 +4,15 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
-/// <summary>Map ProctoringSession với bảng "proctoring_sessions" (canonical v3.3 §20.1).</summary>
+/// <summary>Map ProctoringSession với bảng "proctoring_sessions" (canonical v3.3 §20.1, v3.5: course_id NULL cho bài dùng thử).</summary>
 public class ProctoringSessionConfiguration : IEntityTypeConfiguration<ProctoringSession>
 {
     public void Configure(EntityTypeBuilder<ProctoringSession> builder)
     {
         builder.ToTable("proctoring_sessions", table =>
         {
-            table.HasCheckConstraint("ck_proctoring_sessions_kind", "kind IN ('PRE_ASSESSMENT', 'FINAL')");
+            table.HasCheckConstraint("ck_proctoring_sessions_kind", "kind IN ('PRE_ASSESSMENT', 'FINAL', 'TRIAL_ASSESSMENT')");
+            table.HasCheckConstraint("ck_proctoring_sessions_course", "(kind = 'TRIAL_ASSESSMENT') = (course_id IS NULL)");
             table.HasCheckConstraint("ck_proctoring_sessions_status", "status IN ('RECORDING', 'SUBMITTED', 'ABANDONED')");
             table.HasCheckConstraint("ck_proctoring_sessions_ended",
                 "(status = 'RECORDING' AND ended_at IS NULL) " +
@@ -145,13 +146,14 @@ public class ExamChoiceAnswerConfiguration : IEntityTypeConfiguration<ExamChoice
     {
         builder.ToTable("exam_choice_answers", table =>
         {
-            table.HasCheckConstraint("ck_exam_choice_answers_owner", "(final_submission_id IS NULL) <> (pre_assessment_id IS NULL)");
+            table.HasCheckConstraint("ck_exam_choice_answers_owner", "num_nonnulls(final_submission_id, pre_assessment_id, trial_assessment_id) = 1");
             table.HasCheckConstraint("ck_exam_choice_answers_sort_order", "sort_order >= 1");
         });
         builder.HasKey(x => x.Id);
 
         builder.HasOne<CourseFinalSubmission>().WithMany().HasForeignKey(x => x.FinalSubmissionId);
         builder.HasOne<CoursePreAssessment>().WithMany().HasForeignKey(x => x.PreAssessmentId);
+        builder.HasOne<TrialAssessment>().WithMany().HasForeignKey(x => x.TrialAssessmentId);
         builder.HasOne<Question>().WithMany().HasForeignKey(x => x.QuestionId);
         builder.HasOne<QuestionOption>().WithMany().HasForeignKey(x => x.SelectedOptionId);
 
@@ -163,6 +165,10 @@ public class ExamChoiceAnswerConfiguration : IEntityTypeConfiguration<ExamChoice
             .IsUnique()
             .HasFilter("pre_assessment_id IS NOT NULL")
             .HasDatabaseName("uq_exam_choice_answers_pre_question");
+        builder.HasIndex(x => new { x.TrialAssessmentId, x.QuestionId })
+            .IsUnique()
+            .HasFilter("trial_assessment_id IS NOT NULL")
+            .HasDatabaseName("uq_exam_choice_answers_trial_question");
         builder.HasIndex(x => x.QuestionId)
             .HasDatabaseName("ix_exam_choice_answers_question_id");
         builder.HasIndex(x => x.SelectedOptionId)

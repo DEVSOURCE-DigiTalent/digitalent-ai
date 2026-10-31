@@ -217,11 +217,15 @@ function QuestionForm({ question, module, onClose, edit }: { question: CatalogQu
           Gắn với khối nội dung
           <select value={blockId} onChange={(e) => setBlockId(e.target.value)}>
             <option value="">Chưa gắn khối</option>
-            {module.blocks.map((b) => (
-              <option key={b.blockId} value={b.blockId}>
-                Khối {b.index + 1} · {BLOCK_TYPES[b.type].label}
-              </option>
-            ))}
+            {module.blocks.map((b) => {
+              const bType = ((b.type || 'TEXT').toUpperCase() as keyof typeof BLOCK_TYPES);
+              const label = BLOCK_TYPES[bType]?.label ?? 'Chữ';
+              return (
+                <option key={b.blockId} value={b.blockId}>
+                  Khối {b.index + 1} · {label}
+                </option>
+              );
+            })}
           </select>
           <small className="field-hint">Sai câu này thì nhân viên phải mở lại khối đó.</small>
         </label>

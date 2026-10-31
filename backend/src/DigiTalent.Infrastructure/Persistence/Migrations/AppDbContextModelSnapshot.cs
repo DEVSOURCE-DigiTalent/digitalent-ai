@@ -2529,6 +2529,10 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasColumnType("smallint")
                         .HasColumnName("sort_order");
 
+                    b.Property<Guid?>("TrialAssessmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trial_assessment_id");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -2552,9 +2556,14 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("uq_exam_choice_answers_pre_question")
                         .HasFilter("pre_assessment_id IS NOT NULL");
 
+                    b.HasIndex("TrialAssessmentId", "QuestionId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_exam_choice_answers_trial_question")
+                        .HasFilter("trial_assessment_id IS NOT NULL");
+
                     b.ToTable("exam_choice_answers", null, t =>
                         {
-                            t.HasCheckConstraint("ck_exam_choice_answers_owner", "(final_submission_id IS NULL) <> (pre_assessment_id IS NULL)");
+                            t.HasCheckConstraint("ck_exam_choice_answers_owner", "num_nonnulls(final_submission_id, pre_assessment_id, trial_assessment_id) = 1");
 
                             t.HasCheckConstraint("ck_exam_choice_answers_sort_order", "sort_order >= 1");
                         });
@@ -5226,7 +5235,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<Guid>("CourseId")
+                    b.Property<Guid?>("CourseId")
                         .HasColumnType("uuid")
                         .HasColumnName("course_id");
 
@@ -5277,11 +5286,13 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
 
                     b.ToTable("proctoring_sessions", null, t =>
                         {
+                            t.HasCheckConstraint("ck_proctoring_sessions_course", "(kind = 'TRIAL_ASSESSMENT') = (course_id IS NULL)");
+
                             t.HasCheckConstraint("ck_proctoring_sessions_duration", "duration_ms IS NULL OR duration_ms >= 0");
 
                             t.HasCheckConstraint("ck_proctoring_sessions_ended", "(status = 'RECORDING' AND ended_at IS NULL) OR (status <> 'RECORDING' AND ended_at IS NOT NULL AND ended_at >= started_at)");
 
-                            t.HasCheckConstraint("ck_proctoring_sessions_kind", "kind IN ('PRE_ASSESSMENT', 'FINAL')");
+                            t.HasCheckConstraint("ck_proctoring_sessions_kind", "kind IN ('PRE_ASSESSMENT', 'FINAL', 'TRIAL_ASSESSMENT')");
 
                             t.HasCheckConstraint("ck_proctoring_sessions_status", "status IN ('RECORDING', 'SUBMITTED', 'ABANDONED')");
                         });
@@ -6801,6 +6812,195 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("DigiTalent.Domain.Entities.TrialAssessment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AiEssayReview")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("ai_essay_review");
+
+                    b.Property<DateTimeOffset?>("AiEssayReviewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ai_essay_reviewed_at");
+
+                    b.Property<short>("ChoiceScore")
+                        .HasColumnType("smallint")
+                        .HasColumnName("choice_score");
+
+                    b.Property<short>("ChoiceTotal")
+                        .HasColumnType("smallint")
+                        .HasColumnName("choice_total");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.Property<string>("EssayAdvanced")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("essay_advanced");
+
+                    b.Property<short?>("EssayAdvancedScore")
+                        .HasColumnType("smallint")
+                        .HasColumnName("essay_advanced_score");
+
+                    b.Property<string>("EssayBasic")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("essay_basic");
+
+                    b.Property<short?>("EssayBasicScore")
+                        .HasColumnType("smallint")
+                        .HasColumnName("essay_basic_score");
+
+                    b.Property<string>("EssayIntermediate")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("essay_intermediate");
+
+                    b.Property<short?>("EssayIntermediateScore")
+                        .HasColumnType("smallint")
+                        .HasColumnName("essay_intermediate_score");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<Guid>("ProctoringSessionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("proctoring_session_id");
+
+                    b.Property<string>("ReviewNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("review_note");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reviewed_by_user_id");
+
+                    b.Property<DateTimeOffset>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("submitted_at");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_trial_assessments");
+
+                    b.HasIndex("EmployeeId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_trial_assessments_employee");
+
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("ix_trial_assessments_organization_id");
+
+                    b.HasIndex("ProctoringSessionId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_trial_assessments_session");
+
+                    b.HasIndex("ReviewedByUserId")
+                        .HasDatabaseName("ix_trial_assessments_reviewed_by_user_id");
+
+                    b.ToTable("trial_assessments", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_trial_assessments_ai_review", "(ai_essay_review IS NULL) = (ai_essay_reviewed_at IS NULL)");
+
+                            t.HasCheckConstraint("ck_trial_assessments_choice", "choice_total >= 0 AND choice_score BETWEEN 0 AND choice_total");
+
+                            t.HasCheckConstraint("ck_trial_assessments_essay_scores", "(essay_basic_score IS NULL OR essay_basic_score BETWEEN 0 AND 10) AND (essay_intermediate_score IS NULL OR essay_intermediate_score BETWEEN 0 AND 10) AND (essay_advanced_score IS NULL OR essay_advanced_score BETWEEN 0 AND 10)");
+
+                            t.HasCheckConstraint("ck_trial_assessments_review", "(reviewed_at IS NULL) = (reviewed_by_user_id IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.TrialAssessmentDomain", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<short>("AdvancedCorrect")
+                        .HasColumnType("smallint")
+                        .HasColumnName("advanced_correct");
+
+                    b.Property<short>("AdvancedTotal")
+                        .HasColumnType("smallint")
+                        .HasColumnName("advanced_total");
+
+                    b.Property<short>("BasicCorrect")
+                        .HasColumnType("smallint")
+                        .HasColumnName("basic_correct");
+
+                    b.Property<short>("BasicTotal")
+                        .HasColumnType("smallint")
+                        .HasColumnName("basic_total");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("category_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<short>("IntermediateCorrect")
+                        .HasColumnType("smallint")
+                        .HasColumnName("intermediate_correct");
+
+                    b.Property<short>("IntermediateTotal")
+                        .HasColumnType("smallint")
+                        .HasColumnName("intermediate_total");
+
+                    b.Property<short?>("MentorLevel")
+                        .HasColumnType("smallint")
+                        .HasColumnName("mentor_level");
+
+                    b.Property<short>("SuggestedLevel")
+                        .HasColumnType("smallint")
+                        .HasColumnName("suggested_level");
+
+                    b.Property<Guid>("TrialAssessmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trial_assessment_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_trial_assessment_domains");
+
+                    b.HasIndex("CategoryId")
+                        .HasDatabaseName("ix_trial_assessment_domains_category_id");
+
+                    b.HasIndex("TrialAssessmentId", "CategoryId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_trial_assessment_domains_category");
+
+                    b.ToTable("trial_assessment_domains", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_trial_assessment_domains_counts", "basic_correct BETWEEN 0 AND basic_total AND intermediate_correct BETWEEN 0 AND intermediate_total AND advanced_correct BETWEEN 0 AND advanced_total");
+
+                            t.HasCheckConstraint("ck_trial_assessment_domains_levels", "suggested_level BETWEEN 0 AND 3 AND (mentor_level IS NULL OR mentor_level BETWEEN 0 AND 3)");
+                        });
+                });
+
             modelBuilder.Entity("DigiTalent.Domain.Entities.TrialInvitation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -7039,6 +7239,14 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("industry");
 
+                    b.Property<DateTimeOffset?>("MentorAssignedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("mentor_assigned_at");
+
+                    b.Property<Guid?>("MentorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("mentor_user_id");
+
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid")
                         .HasColumnName("organization_id");
@@ -7055,6 +7263,23 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("PositionId")
                         .HasColumnType("uuid")
                         .HasColumnName("position_id");
+
+                    b.Property<DateTimeOffset?>("PreferredReviewAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("preferred_review_at");
+
+                    b.Property<DateTimeOffset?>("ReportPublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("report_published_at");
+
+                    b.Property<string>("RequestNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("request_note");
+
+                    b.Property<DateTimeOffset?>("RequestedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at");
 
                     b.Property<DateTimeOffset?>("ResultsViewedAt")
                         .HasColumnType("timestamp with time zone")
@@ -7074,6 +7299,10 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("started_at");
 
+                    b.Property<DateTimeOffset?>("TestDeadline")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("test_deadline");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -7083,6 +7312,9 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("DepartmentId")
                         .HasDatabaseName("ix_trial_workspaces_department_id");
+
+                    b.HasIndex("MentorUserId")
+                        .HasDatabaseName("ix_trial_workspaces_mentor_user_id");
 
                     b.HasIndex("OrganizationId")
                         .IsUnique()
@@ -7095,7 +7327,14 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                     b.HasIndex("PositionId")
                         .HasDatabaseName("ix_trial_workspaces_position_id");
 
-                    b.ToTable("trial_workspaces", (string)null);
+                    b.ToTable("trial_workspaces", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_trial_workspaces_mentor", "(mentor_user_id IS NULL) = (mentor_assigned_at IS NULL)");
+
+                            t.HasCheckConstraint("ck_trial_workspaces_report", "report_published_at IS NULL OR mentor_user_id IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_trial_workspaces_request", "requested_at IS NULL OR test_deadline IS NOT NULL");
+                        });
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.User", b =>
@@ -8011,6 +8250,12 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_exam_choice_answers_question_options_selected_option_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.TrialAssessment", null)
+                        .WithMany()
+                        .HasForeignKey("TrialAssessmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_exam_choice_answers_trial_assessments_trial_assessment_id");
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.FileObject", b =>
@@ -8565,7 +8810,6 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
                         .HasConstraintName("fk_proctoring_sessions_courses_course_id");
 
                     b.HasOne("DigiTalent.Domain.Entities.Employee", null)
@@ -8957,6 +9201,53 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_training_batch_employees_training_batches_training_batch_id");
                 });
 
+            modelBuilder.Entity("DigiTalent.Domain.Entities.TrialAssessment", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_trial_assessments_employees_employee_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_trial_assessments_organizations_organization_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.ProctoringSession", null)
+                        .WithMany()
+                        .HasForeignKey("ProctoringSessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_trial_assessments_proctoring_sessions_proctoring_session_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_trial_assessments_users_reviewed_by_user_id");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.TrialAssessmentDomain", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.CompetencyCategory", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_trial_assessment_domains_competency_categories_category_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.TrialAssessment", null)
+                        .WithMany()
+                        .HasForeignKey("TrialAssessmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_trial_assessment_domains_trial_assessments_trial_assessment");
+                });
+
             modelBuilder.Entity("DigiTalent.Domain.Entities.TrialInvitation", b =>
                 {
                     b.HasOne("DigiTalent.Domain.Entities.Department", null)
@@ -9003,6 +9294,12 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_trial_workspaces_departments_department_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("MentorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_trial_workspaces_users_mentor_user_id");
 
                     b.HasOne("DigiTalent.Domain.Entities.Organization", null)
                         .WithMany()

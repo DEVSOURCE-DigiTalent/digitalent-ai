@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -37,7 +37,10 @@ function ThemedToaster() {
 export function AppProviders() {
   return (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      {/* Layouts and full-page screens are loaded on demand (app/routes/lazy-page.ts); portal pages have their own boundary. */}
+      <Suspense fallback={null}>
+        <RouterProvider router={router} />
+      </Suspense>
       <ThemedToaster />
     </QueryClientProvider>
   );

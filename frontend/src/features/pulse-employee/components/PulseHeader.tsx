@@ -8,6 +8,7 @@ import {
   BriefcaseBusiness,
   Compass,
   FileCheck,
+  FileText,
   LogOut,
   Search,
   Sparkles,
@@ -20,11 +21,16 @@ import { useLogout } from '@/hooks/use-auth';
 import { useNotifications } from '@/hooks/use-platform';
 import { useOnboardingStore } from '@/features/onboarding-tutorial';
 import { ROLES, normalizeRoles } from '@/lib/roles';
+import { isEnterpriseTrial } from '@/lib/navigation';
+import { useMyTrialAssessment } from '@/hooks/use-trial-program';
+import { usePulseOverview } from '@/hooks/use-pulse';
 import { initials } from '../lib/labels';
 import { PULSE_PATHS, isExamPath } from '../lib/paths';
 
-/** Mục điều hướng chính của nhân viên chỉ có Tổng quan / Lộ trình / Thực hành. */
-const NAV = [
+type NavItem = { to: string; label: string; end?: boolean; match: string[]; screenId: string };
+
+/** Mục điều hướng chính của nhân viên chỉ có Hôm nay / Lộ trình / Khảo thí. */
+const NAV: NavItem[] = [
   { to: PULSE_PATHS.today, label: 'Tổng quan', end: true, match: [PULSE_PATHS.today], screenId: 'EM-01' },
   { to: PULSE_PATHS.path, label: 'Lộ trình', match: [PULSE_PATHS.path, '/enterprise/me/courses'], screenId: 'EM-02' },
   { to: PULSE_PATHS.practice, label: 'Khảo thí', match: [PULSE_PATHS.practice], screenId: 'EM-03' },
@@ -47,9 +53,16 @@ const QUICK_SEARCH_ITEMS = [
   { title: 'Lộ trình Năng lực chức danh', category: 'Điều hướng', path: PULSE_PATHS.path, icon: BookOpen },
   { title: 'Khảo thí & Đánh giá Năng lực', category: 'Điều hướng', path: PULSE_PATHS.practice, icon: FileCheck },
   { title: 'Chứng chỉ năng lực số', category: 'Hồ sơ', path: PULSE_PATHS.outcomes, icon: Award },
-  { title: 'Hồ sơ năng lực cá nhân', category: 'Hồ sơ', path: PULSE_PATHS.profile, icon: UserRound },
+  { title: 'Hồ sơ cá nhân', category: 'Hồ sơ', path: PULSE_PATHS.profile, icon: UserRound },
   { title: 'M1-F Tìm kiếm và lưu trữ thông tin cơ bản', category: 'Khóa học', path: '/enterprise/me/courses/course-a1cd1c6e-1be2-4bf9-8f8b-eb1baacfa3f1', icon: BookOpen },
   { title: 'M5-F Xử lý sự cố và tự học công nghệ', category: 'Khóa học', path: '/enterprise/me/courses/course-e5cd1c6e-5be2-4bf9-8f8b-eb1baacfa3f5', icon: BookOpen },
+];
+
+/** Doanh nghiệp dùng thử: trang Học thử (sáu khóa Cơ bản), bài test tổng hợp ("Kết quả test" khi đã công bố) và bài đã nộp. */
+const TRIAL_NAV: NavItem[] = [
+  { to: PULSE_PATHS.path, label: 'Học thử', match: [PULSE_PATHS.path, '/enterprise/me/courses'], screenId: 'EM-02' },
+  { to: PULSE_PATHS.trialTest, label: 'Bài test', match: [PULSE_PATHS.trialTest], screenId: 'EM-T1' },
+  { to: PULSE_PATHS.practice, label: 'Thực hành', match: [PULSE_PATHS.practice], screenId: 'EM-03' },
 ];
 
 export function PulseHeader() {
@@ -64,7 +77,22 @@ export function PulseHeader() {
   const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const roles = normalizeRoles(user?.roles ?? []);
-  const workspaceHome = roles.includes(ROLES.OWNER) ? '/enterprise/dashboard' : roles.includes(ROLES.MANAGER) ? '/enterprise/team' : null;
+  const trial = Boolean(user && isEnterpriseTrial(user));
+  const { data: myTrial } = useMyTrialAssessment(trial);
+  const { data: overview } = usePulseOverview();
+  const hasRoadmap = Boolean(overview?.hasTargets);
+
+  // Tài khoản mới vào làm bài test và chưa có công bố khung năng lực từ doanh nghiệp:
+  // Hiển thị thanh dùng thử (Học thử / Bài test / Thực hành).
+  // Khi đã có lộ trình từ doanh nghiệp (đã setup khung năng lực):
+  // Hiển thị thanh điều hướng chính thức: Hôm nay / Lộ trình / Thực hành.
+  const isPreRoadmapTrial = trial && !hasRoadmap;
+  const nav = isPreRoadmapTrial
+    ? TRIAL_NAV.map((item) => (item.screenId === 'EM-T1' && myTrial?.reportPublished ? { ...item, label: 'Kết quả test' } : item))
+    : NAV;
+  const workspaceHome = roles.includes(ROLES.OWNER)
+    ? '/enterprise/dashboard'
+    : roles.includes(ROLES.MANAGER) ? '/enterprise/team' : null;
   const roleLabel = roles.includes(ROLES.OWNER) ? 'Chủ doanh nghiệp' : roles.includes(ROLES.MANAGER) ? 'Quản lý' : 'Nhân viên';
 
   useEffect(() => {
@@ -138,7 +166,7 @@ export function PulseHeader() {
 
           <span className="pu-header-divider" aria-hidden="true" />
 
-          {/* Tiêu đề trang (Đã bỏ thẻ Doanh nghiệp rườm rà) */}
+          {/* Tiêu đề trang */}
           <div className="pu-header-context" aria-label="Không gian làm việc hiện tại">
             <span className="pu-header-title">{pageTitle}</span>
           </div>
@@ -146,7 +174,7 @@ export function PulseHeader() {
 
         {/* Navigation cho tablet/mobile */}
         <nav className="pu-nav" aria-label="Học tập của tôi">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -172,15 +200,17 @@ export function PulseHeader() {
           </button>
 
           {/* Nút hướng dẫn */}
-          <button
-            type="button"
-            onClick={() => useOnboardingStore.getState().startTour('EMPLOYEE')}
-            className="pu-icon-btn pu-header-tour-btn"
-            aria-label="Xem lại hướng dẫn thao tác"
-            title="Xem lại hướng dẫn thao tác"
-          >
-            <Sparkles size={18} />
-          </button>
+          {!trial && (
+            <button
+              type="button"
+              onClick={() => useOnboardingStore.getState().startTour('EMPLOYEE')}
+              className="pu-icon-btn pu-header-tour-btn"
+              aria-label="Xem lại hướng dẫn thao tác"
+              title="Xem lại hướng dẫn thao tác"
+            >
+              <Sparkles size={18} />
+            </button>
+          )}
 
           {/* Nút thông báo hoạt động */}
           <Link
@@ -212,6 +242,9 @@ export function PulseHeader() {
               <div className="pu-menu-panel" role="menu">
                 <Link role="menuitem" to={PULSE_PATHS.profile}><UserRound size={16} /> Hồ sơ cá nhân</Link>
                 <Link role="menuitem" to={PULSE_PATHS.outcomes}><Award size={16} /> Chứng chỉ năng lực</Link>
+                {(myTrial?.status !== 'NOT_STARTED' || overview?.placementTest?.hasTaken) && (
+                  <Link role="menuitem" to={PULSE_PATHS.trialTest}><FileText size={16} /> Kết quả đánh giá đầu vào</Link>
+                )}
                 <Link role="menuitem" to={PULSE_PATHS.activity}><Bell size={16} /> Nhật ký hoạt động</Link>
                 {workspaceHome && (
                   <Link role="menuitem" to={workspaceHome}><BriefcaseBusiness size={16} /> Về không gian quản lý</Link>

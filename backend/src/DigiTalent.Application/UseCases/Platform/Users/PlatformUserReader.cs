@@ -10,7 +10,7 @@ public static class PlatformUserReader
 {
     public const string LearnerRole = "LEARNER";
 
-    private static readonly string[] RoleRank = { Roles.PlatformAdmin, Roles.Owner, Roles.Manager, Roles.Employee };
+    private static readonly string[] RoleRank = { Roles.PlatformAdmin, Roles.Mentor, Roles.Owner, Roles.Manager, Roles.Employee };
 
     /// <summary>
     /// Accounts matching the list filters, as a query (filtered, sorted and paged in the database). Role filters on

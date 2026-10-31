@@ -36,6 +36,8 @@ export interface LocalEvent {
 export interface ProctorOptions {
   /** Nạp bộ nhận diện khuôn mặt; null = không nhận diện (mặc định: MediaPipe trên trình duyệt). */
   loadFaceDetector?: (() => Promise<FaceDetector>) | null;
+  /** Mở phiên trên máy chủ (mặc định: bài của khóa). Bài dùng thử mở phiên ở /me/trial-assessment/proctoring. */
+  startSession?: () => Promise<PulseProctoringSession>;
 }
 
 export interface ProctorSnapshot {
@@ -200,11 +202,13 @@ export class ProctorController {
   private readonly courseId: string;
   private readonly kind: PulseExamKind;
   private readonly loadFaceDetector: (() => Promise<FaceDetector>) | null;
+  private readonly startSession: () => Promise<PulseProctoringSession>;
 
   constructor(courseId: string, kind: PulseExamKind, options: ProctorOptions = {}) {
     this.courseId = courseId;
     this.kind = kind;
     this.loadFaceDetector = options.loadFaceDetector === undefined ? loadFaceDetector : options.loadFaceDetector;
+    this.startSession = options.startSession ?? (async () => (await pulseService.startProctoring(this.courseId, this.kind)).data.data!);
   }
 
   // ── Đăng ký cho React (useSyncExternalStore) ──
@@ -343,7 +347,7 @@ export class ProctorController {
     if (!this.ready) throw new Error('Thiết bị chưa sẵn sàng.');
     this.set({ phase: 'starting' });
     try {
-      const session = (await pulseService.startProctoring(this.courseId, this.kind)).data.data!;
+      const session = await this.startSession();
       this.set({ sessionId: session.sessionId, startedAt: Date.now(), events: [{ kind: 'STARTED', offsetMs: 0 }] });
       await this.startSegment('SCREEN');
       await this.startSegment('CAMERA');

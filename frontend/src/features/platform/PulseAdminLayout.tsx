@@ -2,11 +2,11 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthGuard } from '@/components/guards/AuthGuard';
 import { RequireWorkspace } from '@/components/guards/RequireWorkspace';
-import { WORKSPACES } from '@/lib/roles';
+import { ROLES, WORKSPACES } from '@/lib/roles';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useLogout } from '@/hooks/use-auth';
 import { initials } from './components/pulse-format';
-import { PLATFORM_NAV } from './platform-nav';
+import { MENTOR_NAV, PLATFORM_NAV } from './platform-nav';
 import pulseMark from './assets/pulse-mark.svg';
 import {
   Search,
@@ -34,7 +34,12 @@ function PulseAdminShell() {
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const name = user?.fullName || user?.email || 'Quản trị nền tảng';
+  // Mentor (nhân sự chấm bài dùng thử) dùng cùng khung, chỉ thấy trang chấm bài.
+  const mentor = Boolean(user?.roles.includes(ROLES.MENTOR) && !user.roles.includes(ROLES.PLATFORM_ADMIN));
+  const roleLabel = mentor ? 'Mentor' : 'Quản trị nền tảng';
+  const home = mentor ? '/platform/reviews' : '/platform/dashboard';
+  const nav = mentor ? MENTOR_NAV : PLATFORM_NAV;
+  const name = user?.fullName || user?.email || roleLabel;
 
   // Close dropdown on click outside or escape key
   useEffect(() => {
@@ -68,13 +73,13 @@ function PulseAdminShell() {
     <div className="pulse-ui" data-testid="platform-layout">
       <header className="app-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <NavLink className="brand" to="/platform/dashboard" aria-label="DigiTalent Pulse, trang tổng quan">
+          <NavLink className="brand" to={home} aria-label="DigiTalent Pulse, trang tổng quan">
             <img src={pulseMark} alt="" />
             <span>
               DigiTalent <em>Pulse</em>
             </span>
           </NavLink>
-          <span className="pa-brand-badge">Console Nền tảng</span>
+          <span className="pa-brand-badge">{mentor ? 'Cổng Mentor' : 'Console Nền tảng'}</span>
         </div>
 
         {/* Quick Search trigger */}
@@ -216,14 +221,14 @@ function PulseAdminShell() {
       <div className="app-shell role-admin">
         <aside className="sidebar" aria-label="Điều hướng quản trị nền tảng">
           <div className="pa-side-nav-group">
-            <span className="pa-side-nav-title">Vận hành nền tảng</span>
-            {PLATFORM_NAV.map((item) => {
+            <span className="pa-side-nav-title">{roleLabel}</span>
+            {nav.map((item) => {
               const Icon = item.icon;
               return (
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  end={item.to === '/platform/dashboard'}
+                  end={item.to === '/platform/dashboard' || item.to === '/platform/reviews'}
                   className={({ isActive }) => `pa-side-nav-link${isActive ? ' active' : ''}`}
                   title={item.description}
                 >
@@ -236,13 +241,19 @@ function PulseAdminShell() {
 
           <div className="pa-sidebar-footer-card">
             <div className="pa-sidebar-footer-title">
-              <span style={{ color: '#d97706', fontSize: 14 }}>⚓</span>
-              <span>DigiTalent Platform</span>
+              <span style={{ color: '#d97706', fontSize: 14 }}>{mentor ? '✎' : '⚓'}</span>
+              <span>{mentor ? 'Không gian Mentor' : 'DigiTalent Platform'}</span>
             </div>
             <span className="pa-sidebar-footer-sub">
-              Chuẩn TT 02/2025/TT-BGDĐT
-              <br />
-              Catalog neo v1 · Ổn định
+              {mentor ? (
+                'Chấm bài test dùng thử và bài cuối khóa'
+              ) : (
+                <>
+                  Chuẩn TT 02/2025/TT-BGDĐT
+                  <br />
+                  Catalog neo v1 · Ổn định
+                </>
+              )}
             </span>
           </div>
         </aside>

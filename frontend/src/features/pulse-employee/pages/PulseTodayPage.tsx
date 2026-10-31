@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import {
   Award,
   Check,
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 import heroBgArt from '@/assets/pulse/enterprise-hero-bg.jpg';
 import { usePulseOverview } from '@/hooks/use-pulse';
+import { useIsEnterpriseTrial } from '@/hooks/use-trial-program';
 import type { PulseCourseSummary, PulseDomain, PulseOverview } from '@/services/pulse.service';
 import { Bar, Empty, LoadError, PageSkeleton, PuLink } from '../components/ui';
 import { levelName, pulseErrorMessage } from '../lib/labels';
@@ -34,14 +36,20 @@ import { QuickSyllabusDrawer } from '../components/QuickSyllabusDrawer';
  */
 export function PulseTodayPage() {
   const { data, isLoading, error, refetch } = usePulseOverview();
+  const trial = useIsEnterpriseTrial();
   const [selectedCourse, setSelectedCourse] = useState<PulseCourseSummary | null>(null);
 
   if (isLoading) return <PageSkeleton blocks={[200, 240, 500]} />;
   if (error || !data) return <LoadError message={pulseErrorMessage(error, 'Không tải được không gian học của bạn.')} onRetry={() => refetch()} />;
+  // Doanh nghiệp dùng thử chưa có khung năng lực: một trang Học thử duy nhất (Lộ trình).
+  if (trial && !data.hasTargets) return <Navigate to={PULSE_PATHS.path} replace />;
   if (!data.hasPosition || !data.hasTargets) return <NoPath overview={data} />;
 
   return (
     <div className="pu-home">
+      {/* Thông báo đánh giá phân loại năng lực đầu vào nếu có */}
+      <OnboardingBanner overview={data} />
+
       {/* 1. Hero Banner tối giản với ảnh nền trừu tượng cao cấp */}
       <EnterpriseHeroBanner overview={data} />
 
@@ -836,6 +844,114 @@ function CompetencyRadarSvg({
           );
         })}
       </svg>
+    </div>
+  );
+}
+
+/* ── Onboarding Placement Banner ────────────────────────────────────────── */
+function OnboardingBanner({ overview }: { overview: PulseOverview }) {
+  const placement = overview.placementTest;
+  if (!placement) return null;
+
+  if (!placement.hasTaken) {
+    return (
+      <div
+        className="pu-onboarding-banner"
+        style={{
+          background: 'linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)',
+          border: '1.5px solid #818cf8',
+          borderRadius: 12,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+          boxShadow: '0 4px 14px rgba(99, 102, 241, 0.08)',
+          marginBottom: 18,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 10,
+              background: '#4f46e5',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 22,
+              flexShrink: 0,
+            }}
+          >
+            🎯
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#4338ca', background: '#c7d2fe', padding: '2px 8px', borderRadius: 4 }}>
+                Dành cho thành viên mới
+              </span>
+              <span style={{ fontSize: 13, color: '#4b5563' }}>⏱️ ~15 phút</span>
+            </div>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#1e1b4b' }}>
+              Làm bài Đánh giá phân loại năng lực đầu vào
+            </h3>
+            <p style={{ margin: '3px 0 0', fontSize: 13, color: '#4338ca', lineHeight: 1.4 }}>
+              Hoàn thành bài trắc nghiệm 6 lĩnh vực số để được <strong>miễn học các khóa bạn đã nắm vững</strong> và tự động cá nhân hóa lộ trình của bạn.
+            </p>
+          </div>
+        </div>
+        <PuLink
+          to={PULSE_PATHS.trialTest}
+          kind="primary"
+          style={{
+            flexShrink: 0,
+            background: '#4f46e5',
+            color: '#fff',
+            fontWeight: 600,
+            padding: '10px 18px',
+            borderRadius: 8,
+            boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)',
+          }}
+        >
+          Làm bài test ngay →
+        </PuLink>
+      </div>
+    );
+  }
+
+  // Đã làm bài test
+  return (
+    <div
+      className="pu-onboarding-banner-done"
+      style={{
+        background: 'rgba(240, 253, 244, 0.9)',
+        border: '1px solid #86efac',
+        borderRadius: 12,
+        padding: '12px 18px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 16,
+        marginBottom: 18,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span style={{ fontSize: 20 }}>✅</span>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#166534' }}>
+            Đã hoàn thành Đánh giá phân loại đầu vào
+            {placement.choiceScore != null && ` · Đạt ${placement.choiceScore}/${placement.choiceTotal} câu`}
+          </div>
+          <div style={{ fontSize: 12, color: '#15803d', marginTop: 1 }}>
+            Hệ thống đã tự động công nhận & miễn các khóa cho {placement.passedDomains}/{placement.totalDomains} lĩnh vực. Lộ trình bên dưới đã được cập nhật!
+          </div>
+        </div>
+      </div>
+      <PuLink to={PULSE_PATHS.trialTest} kind="outline" small style={{ flexShrink: 0, color: '#166534', borderColor: '#86efac' }}>
+        Xem chi tiết
+      </PuLink>
     </div>
   );
 }

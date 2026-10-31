@@ -11,5 +11,8 @@ public interface IInvitationSender
     Task<string?> SendAsync(InvitationMessage message, CancellationToken cancellationToken = default);
 }
 
-/// <summary>What the invitee receives. <paramref name="Token"/> is the raw activation token (never stored).</summary>
-public sealed record InvitationMessage(string Email, string FullName, string OrganizationName, string Token);
+/// <summary>
+/// What the invitee receives. <paramref name="Token"/> is the raw activation token (never stored); <paramref name="Note"/>
+/// is an extra plain-text line (e.g. the trial assessment deadline).
+/// </summary>
+public sealed record InvitationMessage(string Email, string FullName, string OrganizationName, string Token, string? Note = null);

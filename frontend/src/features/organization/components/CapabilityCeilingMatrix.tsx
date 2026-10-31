@@ -331,7 +331,8 @@ export function CapabilityCeilingMatrix() {
             </div>
           </div>
 
-          <div className="cc-mx-container"><div className="cc-mx" role="group" aria-label="Ma trận năng lực nhân cấp độ">
+          {/* Ma trận màu xanh */}
+          <div className="cc-mx" role="group" aria-label="Ma trận năng lực nhân cấp độ">
             <div />
             {matrix.levels.map((level) => (
               <div key={level.level} className="hd">
@@ -355,7 +356,7 @@ export function CapabilityCeilingMatrix() {
                 />
               );
             })}
-          </div></div>
+          </div>
 
           {/* Chú giải ngắn gọn */}
           <div className="cc-legend">
@@ -446,9 +447,9 @@ export function CapabilityCeilingMatrix() {
                 </p>
               </div>
 
-              <div className="rounded-xl bg-blue-50/70 p-3 border border-blue-200/60">
-                <span className="font-bold text-blue-900 block mb-1">👆 Cách thao tác:</span>
-                <p className="text-blue-800">
+              <div className="rounded-xl bg-teal-50/70 p-3 border border-teal-200/60">
+                <span className="font-bold text-teal-900 block mb-1">👆 Cách thao tác:</span>
+                <p className="text-teal-800">
                   Bấm trực tiếp vào từng ô mã khóa học để đặt trần đến cấp đó (bấm lại ô đang chọn để hạ 1 cấp). Bấm <b>Lưu trần</b> để áp dụng.
                 </p>
               </div>

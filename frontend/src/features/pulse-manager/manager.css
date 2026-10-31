@@ -104,25 +104,15 @@
 .pm-hero img { width: 100%; height: 100%; min-height: 320px; object-fit: cover; object-position: 53% center; }
 
 /* ── KPI có viền màu ────────────────────────────────────────────────────── */
-.pm-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 15px 0 26px; }
-@media (max-width: 900px) {
-  .pm-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 480px) {
-  .pm-kpis { grid-template-columns: 1fr; }
-}
+.pm-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 15px 0 26px; }
 .pm-kpi { padding: 19px 20px; border: 1px solid #e0e7f4; border-top: 3px solid var(--pm-accent); border-radius: 18px; background: #fff; box-shadow: 0 11px 28px rgba(29, 48, 102, .04); }
 .pm-kpi:nth-child(2) { border-top-color: var(--pm-warm); }
-.pm-kpi:nth-child(3) { border-top-color: #10b981; }
-.pm-kpi:nth-child(4) { border-top-color: #6366f1; }
+.pm-kpi:nth-child(3) { border-top-color: #6db8ac; }
 .pm-kpi strong { display: block; color: var(--pm-strong); font-size: 34px; line-height: 1; letter-spacing: -.06em; }
 .pm-kpi:nth-child(2) strong { color: #c96f5a; }
-.pm-kpi:nth-child(3) strong { color: #059669; }
-.pm-kpi:nth-child(4) strong { color: #4f46e5; }
+.pm-kpi:nth-child(3) strong { color: #248c81; }
 .pm-kpi span { display: block; margin-top: 10px; color: #69758f; font-size: 11px; }
 .pm-kpi.muted strong { color: #9aa6b8; }
-.pm-kpi span.pm-kpi-label-row { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; color: #69758f; font-size: 11px; }
-.pm-kpi-info-icon { display: inline-grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: #e2e8f0; font-size: 9px; font-weight: 700; color: #64748b; line-height: 1; cursor: help; }
 
 /* ── Thẻ việc cụ thể ────────────────────────────────────────────────────── */
 .pm-section-title { margin: 6px 0 16px; font-size: clamp(25px, 3vw, 33px); line-height: 1.12; letter-spacing: -.055em; }
@@ -295,3 +285,80 @@ button.pm-activity-item:hover strong { color: var(--pm-strong); }
   .pm-hero img { height: 170px; }
   .pm-kpi strong { font-size: 30px; }
 }
+
+/* ── Giao diện tối ──────────────────────────────────────────────────────── */
+/*
+ * Cùng bảng màu tối với khung doanh nghiệp (enterprise-theme.css) và trang chủ doanh nghiệp (owner.css):
+ * mực xanh biển, bề mặt #142228, nhấn xanh ngọc. Hero / dải tối vốn đã tối nên giữ nguyên; chip trạng thái dùng nền trong.
+ */
+html[data-theme='dark'] .pu.pu-manager {
+  --pu-ink: #e6eff0;
+  --pu-ink-2: #c9d6d9;
+  --pu-muted: #9bb0b5;
+  --pu-faint: #7d9096;
+  --pu-blue: #5cc2b8;
+  --pu-violet: #2f9d94;
+  --pu-violet-2: #2f9d94;
+  --pu-line: rgba(184, 234, 220, .13);
+  --pu-line-2: rgba(184, 234, 220, .2);
+  --pu-soft: rgba(92, 194, 184, .12);
+  --pu-paper: #142228;
+  --pu-canvas: #0e171c;
+  --pm-accent: #2f9d94;
+  --pm-strong: #8fd8cf;
+  --pm-tint: rgba(92, 194, 184, .14);
+  color: var(--pu-ink);
+}
+html[data-theme='dark'] .pu-manager :is(
+  .pu-surface, .pm-panel, .pm-card, .pm-kpi, .pm-strip, .pm-summary > div, .pm-level-row, .pm-domain-card, .pm-course,
+  .pm-evidence, .pu-metrics > div, .pu-rplayer, .pu-attempt, .pu-rubric > div, .pu-review-choice-list li,
+  .pu-tabs button, .pu-btn-outline, .pu-btn-ghost, .pu-field textarea, .pu-field input, .pu-field select,
+  .pu-risk-gauge b, .pu-risk-factors li, .pu-rplayer-speed button[aria-pressed='true'], .pu-review-recording > summary
+) {
+  border-color: var(--pu-line);
+  background: #142228;
+  color: var(--pu-ink);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .22);
+}
+html[data-theme='dark'] .pu-manager :is(
+  .pu-empty, .pu-review-choice, .pu-review-evidence, .pu-risk, .pu-attempt blockquote, .pm-person, .pm-card:nth-child(2),
+  .pm-card:nth-child(3), .pu-rplayer-speed, .pm-submission, .pm-rubric-box, .pu-ai, .pu-ai-fraud, .pu-skeleton
+) {
+  border-color: var(--pu-line);
+  background: #1a2c33;
+  color: var(--pu-ink-2);
+}
+html[data-theme='dark'] .pu-manager :is(.pu-bar, .pu-lane, .pu-timeline-track, .pu-ai-bar) { background: #22363e; }
+html[data-theme='dark'] .pu-manager :is(.pm-row, .pm-learner, .pm-activity li, .pu-rplayer-events) { border-color: var(--pu-line); }
+html[data-theme='dark'] .pu-manager .pm-timeline li { border-left-color: #22363e; }
+html[data-theme='dark'] .pu-manager .pm-timeline li::before { border-color: #142228; }
+html[data-theme='dark'] .pu-manager .pu-tabs button[aria-pressed='true'] { border-color: var(--pm-accent); background: var(--pm-accent); color: #fff; }
+html[data-theme='dark'] .pu-manager :is(.pu-btn-outline, .pu-btn-ghost) { color: var(--pm-strong); }
+html[data-theme='dark'] .pu-manager :is(.pu-btn-outline, .pu-btn-ghost):hover { background: var(--pm-tint); }
+html[data-theme='dark'] .pu-manager :is(.pu-rplayer-events button:hover, .pu-rplayer-events button[aria-current='true'], .pu-risk-moments button:hover, .pu-risk-moments button[aria-current='true']) { background: var(--pm-tint); }
+
+/* Chữ viết cứng màu mực / xám trong manager.css và pulse.css */
+html[data-theme='dark'] .pu-manager :is(
+  .pu-page-head h1, .pm-row strong, .pm-strip p, .pm-summary strong, .pm-submission header strong, .pm-activity-item.unread strong,
+  .pm-person strong, .pm-level-row strong, .pm-learner strong, .pm-timeline strong, .pu-ai-label, .pu-ai-fraud-event
+) { color: var(--pu-ink); }
+html[data-theme='dark'] .pu-manager :is(
+  .pu-page-head p, .pm-row small, .pm-summary small, .pm-kpi span, .pm-card small, .pm-person small, .pm-domain-head small,
+  .pm-level-row small, .pm-levels, .pm-legend, .pm-learner small, .pm-learner-progress, .pm-timeline small, .pm-activity-item strong,
+  .pm-domain-card ul, .pm-submission p, .pm-rubric-box ul, .pu-ai-note, .pu-ai-fraud-note, .pu-ai-fraud-summary, .pu-footer-note
+) { color: var(--pu-muted); }
+html[data-theme='dark'] .pu-manager :is(.pm-levels b, .pm-level-chips span, .pm-rubric-box .pu-mini) { color: #8fd8cf; }
+html[data-theme='dark'] .pu-manager .pm-level-chips span { background: var(--pm-tint); }
+html[data-theme='dark'] .pu-manager .pm-kpi.muted strong { color: #6f8288; }
+
+/* Thông báo, chip, ô AI: nền trong suốt theo sắc độ */
+html[data-theme='dark'] .pu-manager .pu-notice { border-color: rgba(92, 194, 184, .25); background: rgba(92, 194, 184, .1); color: #b8e0dc; }
+html[data-theme='dark'] .pu-manager .pu-notice.warning { border-color: rgba(232, 161, 127, .3); background: rgba(232, 161, 127, .12); color: #f0c2a8; }
+html[data-theme='dark'] .pu-manager .pu-notice.success { border-color: rgba(127, 196, 140, .3); background: rgba(127, 196, 140, .12); color: #b5dcb9; }
+html[data-theme='dark'] .pu-manager .pu-pill { background: var(--pm-tint); color: #8fd8cf; }
+html[data-theme='dark'] .pu-manager .pu-pill.green { background: rgba(127, 196, 140, .15); color: #9fd8a8; }
+html[data-theme='dark'] .pu-manager .pu-pill.coral { background: rgba(232, 161, 127, .15); color: #f0b89c; }
+html[data-theme='dark'] .pu-manager .pu-pill.gray { background: rgba(255, 255, 255, .07); color: #b3c4c8; }
+html[data-theme='dark'] .pu-manager .pm-summary > div.warm { border-color: rgba(232, 161, 127, .3); background: rgba(232, 161, 127, .1); }
+html[data-theme='dark'] .pu-manager .pu-ai-verdict { background: var(--pm-tint); color: #b8e0dc; }
+html[data-theme='dark'] .pu-manager .pu-field :is(textarea, input, select):focus { outline-color: rgba(92, 194, 184, .35); }

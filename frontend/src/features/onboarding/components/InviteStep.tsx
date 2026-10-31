@@ -257,6 +257,7 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
                     {row.email} · {ROLE_LABELS[row.role as keyof typeof ROLE_LABELS] || row.role}
                     {row.positionName ? ` · ${row.positionName}` : ''}
                     {row.departmentName ? ` · ${row.departmentName}` : ''}
+                    {row.jobGrade ? ` · [${row.jobGrade}]` : ''}
                   </span>
                 </span>
                 <button

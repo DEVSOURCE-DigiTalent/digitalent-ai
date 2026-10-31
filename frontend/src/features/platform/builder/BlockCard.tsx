@@ -28,8 +28,9 @@ interface BlockCardProps {
 
 /** One content block of a module: a preview card, opened in place to edit it. */
 export function BlockCard({ block, count, linkedQuestions, editable, editing, onToggle, edit, courseCode, moduleIndex }: BlockCardProps) {
-  const type = BLOCK_TYPES[block.type];
-  const clickToEdit = editable && block.type === 'TEXT';
+  const normalizedType = ((block?.type || 'TEXT').toUpperCase() as keyof typeof BLOCK_TYPES);
+  const type = BLOCK_TYPES[normalizedType] ?? BLOCK_TYPES.TEXT;
+  const clickToEdit = editable && normalizedType === 'TEXT';
   const [confirmDelete, setConfirmDelete] = useState(false);
   const save = (body: BlockInput) => edit((v, c) => platformCatalogService.updateBlock(v, c, block.blockId, body));
   const move = (delta: number) =>
@@ -43,7 +44,7 @@ export function BlockCard({ block, count, linkedQuestions, editable, editing, on
     <article className={`pa-block${editing ? ' editing' : ''}`} aria-label={`Khối ${block.index + 1}: ${type.label}`}>
       <header className="pa-block-head">
         <div className="left">
-          <span className={`pa-type pa-type-${block.type.toLowerCase()}`} aria-hidden="true">{type.glyph}</span>
+          <span className={`pa-type pa-type-${(block?.type || 'text').toLowerCase()}`} aria-hidden="true">{type.glyph}</span>
           <strong>{type.label}</strong>
           <small>Khối {block.index + 1}</small>
           {linkedQuestions > 0 && <span className="pill">{linkedQuestions} câu hỏi gắn với khối này</span>}
@@ -68,10 +69,10 @@ export function BlockCard({ block, count, linkedQuestions, editable, editing, on
       </header>
       {editing && editable ? (
         <div className="pa-block-body">
-          {block.type === 'TEXT' && <TextEditor block={block} save={save} />}
-          {block.type === 'SLIDE' && <SlideEditor block={block} save={save} />}
-          {block.type === 'IMAGE' && <MediaEditor block={block} kind="IMAGE" save={save} />}
-          {block.type === 'VIDEO' && <MediaEditor block={block} kind="VIDEO" save={save} />}
+          {normalizedType === 'TEXT' && <TextEditor block={block} save={save} />}
+          {normalizedType === 'SLIDE' && <SlideEditor block={block} save={save} />}
+          {normalizedType === 'IMAGE' && <MediaEditor block={block} kind="IMAGE" save={save} />}
+          {normalizedType === 'VIDEO' && <MediaEditor block={block} kind="VIDEO" save={save} />}
         </div>
       ) : (
         <div
@@ -91,14 +92,15 @@ export function BlockCard({ block, count, linkedQuestions, editable, editing, on
 
 /** How a block looks (also used by the learner preview). HTML comes from the server, which sanitizes it on save. */
 export function BlockPreview({ block, learner = false, courseCode, moduleIndex = 0, count = 1 }: { block: CatalogBlock; learner?: boolean; courseCode?: string; moduleIndex?: number; count?: number }) {
-  if (block.type === 'TEXT') {
+  const type = ((block?.type || 'TEXT').toUpperCase());
+  if (type === 'TEXT') {
     if (learner && block.bodyHtml && courseCode) return <CatalogLessonContent block={block} courseCode={courseCode} moduleIndex={moduleIndex} count={count} />;
     return block.bodyHtml
       ? <div className="pa-rich" dangerouslySetInnerHTML={{ __html: block.bodyHtml }} />
       : <p className="pa-empty">Chưa có nội dung chữ.</p>;
   }
-  if (block.type === 'SLIDE') {
-    if (block.items.length === 0) return <p className="pa-empty">Chưa có ảnh hoặc video.</p>;
+  if (type === 'SLIDE') {
+    if (!block.items || block.items.length === 0) return <p className="pa-empty">Chưa có ảnh hoặc video.</p>;
     return learner ? <SlideCarousel block={block} /> : (
       <div className="pa-strip">
         {block.items.map((item) => (
@@ -110,10 +112,10 @@ export function BlockPreview({ block, learner = false, courseCode, moduleIndex =
       </div>
     );
   }
-  if (!block.asset) return <p className="pa-empty">{block.type === 'IMAGE' ? 'Chưa tải ảnh.' : 'Chưa tải video.'}</p>;
+  if (!block.asset) return <p className="pa-empty">{type === 'IMAGE' ? 'Chưa tải ảnh.' : 'Chưa tải video.'}</p>;
   return (
     <figure className="pa-media">
-      {block.type === 'IMAGE'
+      {type === 'IMAGE'
         ? <img src={assetUrl(block.asset)} alt={block.altText ?? ''} />
         : <video src={assetUrl(block.asset)} controls preload="metadata" />}
       {block.caption && <figcaption>{block.caption}</figcaption>}

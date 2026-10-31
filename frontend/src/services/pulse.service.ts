@@ -53,7 +53,7 @@ export type PulseFinalStatus =
   | 'FLAGGED';
 /** Bài đánh giá trước khi học của một khóa. */
 export type PulsePreStatus = 'REQUIRED' | 'LOCKED' | 'PENDING' | 'PASSED' | 'NOT_YET' | 'NOT_NEEDED';
-export type PulseApprovedVia = 'PRE_ASSESSMENT' | 'FINAL' | 'LEGACY';
+export type PulseApprovedVia = 'PLACEMENT_TEST' | 'PRE_ASSESSMENT' | 'FINAL' | 'LEGACY';
 export type PulseDecision = 'PASSED' | 'NOT_YET';
 export type PulseSupportAction = 'COACHING' | 'FRESH_CYCLE' | 'PAUSE';
 /** Loại bài làm có giám sát. */
@@ -170,9 +170,20 @@ export interface PulseLatestOutcome {
   reviewedAt: string;
 }
 
+export interface PulsePlacementTest {
+  hasTaken: boolean;
+  assessmentId?: string | null;
+  submittedAt?: string | null;
+  passedDomains: number;
+  totalDomains: number;
+  choiceScore?: number | null;
+  choiceTotal?: number | null;
+}
+
 export interface PulseOverview {
   person: PulsePerson;
   reviewer?: PulseReviewer | null;
+  placementTest?: PulsePlacementTest | null;
   hasPosition: boolean;
   hasTargets: boolean;
   domains: PulseDomain[];
@@ -652,6 +663,8 @@ export interface PulseFinalReviewItem {
   status: PulseReviewStatus;
   employeeId: string;
   employeeName: string;
+  /** Doanh nghiệp của người làm bài (hàng chờ của mentor gồm nhiều doanh nghiệp dùng thử). */
+  organizationName?: string | null;
   departmentName?: string | null;
   positionName?: string | null;
   courseId: string;

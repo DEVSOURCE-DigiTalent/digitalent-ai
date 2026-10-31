@@ -18,6 +18,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { usePulseOverview } from '@/hooks/use-pulse';
+import { useIsEnterpriseTrial } from '@/hooks/use-trial-program';
 import type { PulseCourseSummary, PulseOverview } from '@/services/pulse.service';
 import { RoadmapPlan, toSentenceCase } from '../components/roadmap';
 import { showsProgress } from '../lib/course-state';
@@ -25,6 +26,7 @@ import { Empty, LoadError, PageSkeleton } from '../components/ui';
 import { levelName, pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 import { QuickSyllabusDrawer } from '../components/QuickSyllabusDrawer';
+import { TrialLearning } from '../components/TrialLearning';
 
 /**
  * Lộ trình Năng lực Chuẩn hóa (EM-02)
@@ -38,12 +40,14 @@ import { QuickSyllabusDrawer } from '../components/QuickSyllabusDrawer';
  */
 export function PulsePathPage() {
   const { data, isLoading, error, refetch } = usePulseOverview();
+  const trial = useIsEnterpriseTrial();
   const [selectedCourse, setSelectedCourse] = useState<PulseCourseSummary | null>(null);
   const [viewMode, setViewMode] = useState<'mindmap' | 'matrix'>('mindmap');
   const [expandedCriteria, setExpandedCriteria] = useState<Set<string>>(new Set());
 
   if (isLoading) return <PageSkeleton blocks={[100, 240, 400]} />;
   if (error || !data) return <LoadError message={pulseErrorMessage(error, 'Không tải được lộ trình của bạn.')} onRetry={() => refetch()} />;
+  if (trial && !data.hasTargets) return <TrialLearning overview={data} />;
   if (!data.hasPosition || !data.hasTargets) return <NoPath overview={data} />;
 
   const toggleCriteria = (categoryId: string) => {

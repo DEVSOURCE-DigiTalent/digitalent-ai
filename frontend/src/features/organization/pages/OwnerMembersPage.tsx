@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { UserPlus, ChevronLeft, ChevronRight, Mail, Send } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { UserPlus, ChevronLeft, ChevronRight, Mail, Send, FlaskConical, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useDepartments } from '@/hooks/use-departments';
@@ -15,21 +15,7 @@ import { InviteMembersModal } from '@/features/members/components/InviteMembersM
 import { MEMBER_STATUS_LABELS } from '@/features/members/member-labels';
 import { MemberCard } from '../components/MemberCard';
 import { SendAnnouncementModal } from '../components/SendAnnouncementModal';
-
-const PULSE_TOKENS = {
-  '--po-canvas': '#f7f9fd',
-  '--po-surface': '#fff',
-  '--po-ink': '#172442',
-  '--po-muted': '#62718d',
-  '--po-accent': '#304bdf',
-  '--po-accent-strong': '#203bbf',
-  '--po-coral': '#ef735c',
-  '--po-lime': '#c6ec78',
-  '--po-line': '#dfe6f3',
-  '--po-soft': '#eef2ff',
-  '--po-tint': '#edf1ff',
-  '--po-warm': '#f1816b',
-} as React.CSSProperties;
+import { PULSE_TOKENS } from '../owner-theme';
 
 const PAGE_SIZE = 15;
 const ENTERPRISE_ROLES = [ROLES.OWNER, ROLES.MANAGER, ROLES.EMPLOYEE];
@@ -41,10 +27,10 @@ const ROLE_LABELS: Record<string, string> = {
 
 export function OwnerMembersPage() {
   const navigate = useNavigate();
-  const user = useCurrentUser((s) => s.user);
+  const user = useCurrentUser((s) => s.user)!;
   const canInvite =
     useCurrentUser((s) => s.hasPermission)(PERMISSIONS.USER_CREATE) &&
-    assignableRoles(user?.roles ?? []).length > 0;
+    assignableRoles(user.roles).length > 0;
 
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<MemberStatus | ''>('');
@@ -68,7 +54,6 @@ export function OwnerMembersPage() {
     role: role || undefined,
     departmentId: departmentId || undefined,
   });
-
 
   const resendInvitation = useResendInvitation();
   const [resendingId, setResendingId] = useState<string | null>(null);
@@ -118,9 +103,8 @@ export function OwnerMembersPage() {
     }
   };
 
-  const seats = user?.subscription?.seatLimit;
-  const seatsUsed = user?.subscription?.seatsUsed;
-
+  const seats = user.subscription?.seatLimit;
+  const seatsUsed = user.subscription?.seatsUsed;
   const published = orgData?.setupCompleted ?? false;
 
   const totalPages = data ? Math.ceil(data.totalItems / PAGE_SIZE) : 0;
@@ -132,12 +116,12 @@ export function OwnerMembersPage() {
 
   return (
     <div
-      className="-m-4 md:-m-6 min-h-screen"
+      className="po-owner -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
         backgroundImage:
-          'radial-gradient(ellipse 80% 55% at 50% 0%, #dce5ff 0%, transparent 65%)',
+          'radial-gradient(ellipse 80% 55% at 50% 0%, var(--po-glow) 0%, transparent 65%)',
       }}
     >
       {/* ── Page header ── */}
@@ -151,21 +135,28 @@ export function OwnerMembersPage() {
               className="text-[10px] font-black uppercase tracking-[0.14em]"
               style={{ color: 'var(--po-accent)' }}
             >
-              Nhân sự & Phân quyền
+              02 / Nhân sự và lộ trình
               <i
                 className="ml-[7px] inline-block size-1.5 rounded-full align-middle"
                 style={{ background: 'var(--po-coral)' }}
               />
             </span>
             <h1
-              className="mt-2 text-2xl md:text-3xl font-bold tracking-tight text-slate-900"
+              className="mt-3 font-bold leading-[1.05]"
+              style={{
+                fontSize: 'clamp(33px, 4vw, 55px)',
+                color: 'var(--po-ink)',
+                letterSpacing: '-0.06em',
+              }}
             >
-              Danh sách Thành viên
+              Đúng người, đúng vị trí, đúng mục tiêu.
             </h1>
             <p
-              className="mt-1 text-xs md:text-sm text-slate-600 max-w-xl leading-relaxed"
+              className="mt-2 text-[13px] leading-relaxed"
+              style={{ color: 'var(--po-muted)', maxWidth: 560 }}
             >
-              Quản lý danh sách nhân sự, phân quyền vai trò (Owner, Manager, Employee), gán phòng ban và vị trí công việc theo chuẩn năng lực số TT02.
+              Thiết lập Manager cho phòng ban, mời nhân viên theo vị trí.
+              Phòng ban xác định phạm vi; vị trí xác định mục tiêu học tập.
             </p>
           </div>
           {seats != null && seatsUsed != null && (
@@ -206,8 +197,32 @@ export function OwnerMembersPage() {
           }
         >
           {published
-            ? 'Khung năng lực số đã được kích hoạt. Hãy phân công đúng phòng ban và vị trí để hệ thống thiết lập lộ trình học tập tự động cho từng nhân viên.'
+            ? 'Kiến trúc năng lực đã công bố. Mời nhân viên vào đúng phòng ban và vị trí để hệ thống định tuyến lộ trình học tập.'
             : 'Công bố kiến trúc năng lực trước khi gửi lời mời nhân viên.'}
+        </div>
+
+        {/* Banner Hướng dẫn Đánh giá Năng lực Đội ngũ */}
+        <div className="rounded-[16px] border border-indigo-100 bg-gradient-to-r from-indigo-50/90 via-blue-50/50 to-white p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="size-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+              <FlaskConical className="size-4" />
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-[0.12em] text-indigo-600">
+                Bước 1 · Khởi động Đánh giá Năng lực Số
+              </span>
+              <p className="text-xs text-indigo-950 font-medium leading-relaxed mt-0.5">
+                Mời nhân viên vào đúng phòng ban và vị trí. Nhân viên sẽ tự động nhận đề test đánh giá năng lực ban đầu có giám sát, được <strong>Mentor DigiTalent</strong> trực tiếp thẩm định và chấm điểm.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/enterprise/trial"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-colors shrink-0 shadow-xs"
+          >
+            Đợt đánh giá & Lịch chấm
+            <ArrowRight className="size-3.5" />
+          </Link>
         </div>
 
         {/* Grid-2: Manager + Invite */}
@@ -259,7 +274,7 @@ export function OwnerMembersPage() {
                     <span
                       className="grid size-7 shrink-0 place-items-center rounded-lg text-[10px] font-bold"
                       style={{
-                        background: '#e9edff',
+                        background: 'var(--po-soft)',
                         color: 'var(--po-accent)',
                       }}
                     >
@@ -341,7 +356,7 @@ export function OwnerMembersPage() {
                 className="rounded-[13px] border p-4 text-center"
                 style={{
                   borderColor: 'var(--po-line)',
-                  background: 'rgba(238,242,255,.4)',
+                  background: 'var(--po-raised)',
                 }}
               >
                 <p
@@ -351,21 +366,30 @@ export function OwnerMembersPage() {
                   Mời từng người hoặc nhập danh sách CSV. Hệ thống kiểm tra
                   trước khi thêm.
                 </p>
-                {canInvite && (
-                  <button
-                    type="button"
-                    onClick={() => setInviting(true)}
-                    className="inline-flex items-center gap-2 rounded-[11px] px-4 py-3 text-[13px] font-bold transition-transform hover:-translate-y-0.5"
-                    style={{
-                      background: 'var(--po-accent)',
-                      color: '#fff',
-                      boxShadow: '0 9px 18px rgba(52,72,207,.17)',
-                    }}
+                <div className="flex items-center justify-center gap-2 flex-wrap">
+                  {canInvite && (
+                    <button
+                      type="button"
+                      onClick={() => setInviting(true)}
+                      className="inline-flex items-center gap-2 rounded-[11px] px-4 py-2.5 text-[13px] font-bold transition-transform hover:-translate-y-0.5"
+                      style={{
+                        background: 'var(--po-accent)',
+                        color: '#fff',
+                        boxShadow: '0 9px 18px rgba(19,123,132,.17)',
+                      }}
+                    >
+                      <UserPlus className="size-4" />
+                      Mời thành viên
+                    </button>
+                  )}
+                  <Link
+                    to="/enterprise/trial"
+                    className="inline-flex items-center gap-1.5 rounded-[11px] px-3.5 py-2.5 text-[13px] font-bold border border-teal-200 bg-white text-[var(--po-accent)] hover:bg-teal-50/70 transition-colors"
                   >
-                    <UserPlus className="size-4" />
-                    Mời thành viên
-                  </button>
-                )}
+                    <FlaskConical className="size-4" />
+                    Đợt test & Lịch chấm
+                  </Link>
+                </div>
               </div>
             </div>
 
@@ -423,7 +447,7 @@ export function OwnerMembersPage() {
                 className="mt-2 text-xl font-semibold"
                 style={{ color: 'var(--po-ink)', letterSpacing: '-0.045em' }}
               >
-                Tất cả nhân sự trong tổ chức
+                Nhân viên theo phòng ban và vị trí.
               </h2>
             </div>
             <div className="flex items-center gap-2.5 flex-wrap">
@@ -437,7 +461,7 @@ export function OwnerMembersPage() {
               <button
                 type="button"
                 onClick={() => setAnnouncing(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100/70 text-[#304bdf] text-xs font-bold transition-all shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-teal-200 bg-teal-50/70 hover:bg-teal-100/70 text-[var(--po-accent)] text-xs font-bold transition-all shadow-xs"
               >
                 <Send className="size-3.5" />
                 Gửi thông báo & Hạn chót
@@ -447,7 +471,7 @@ export function OwnerMembersPage() {
                 <button
                   type="button"
                   onClick={() => setInviting(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#304bdf] hover:bg-[#203bbf] text-white text-xs font-bold transition-all shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#137b84] hover:bg-[#0e5968] text-white text-xs font-bold transition-all shadow-xs"
                 >
                   <UserPlus className="size-3.5" />
                   Mời nhân sự
@@ -462,7 +486,7 @@ export function OwnerMembersPage() {
               type="text"
               value={search}
               onChange={(e) => resetPage(setSearch)(e.target.value)}
-              placeholder="Tìm theo tên, email hoặc mã nhân viên..."
+              placeholder="Tìm theo tên, email…"
               className="rounded-lg border px-3 py-2 text-xs outline-none focus:ring-1"
               style={{
                 borderColor: 'var(--po-line)',
@@ -532,9 +556,9 @@ export function OwnerMembersPage() {
 
           {/* Bulk department invite banner if pending members exist */}
           {pendingInDept.length > 0 && (
-            <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50/70 p-3.5 text-xs text-blue-900 shadow-xs">
+            <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-teal-200 bg-teal-50/70 p-3.5 text-xs text-teal-900 shadow-xs">
               <div className="flex items-center gap-2.5">
-                <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-blue-100 text-[#304bdf]">
+                <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-teal-100 text-[var(--po-accent)]">
                   <Mail className="size-4" />
                 </div>
                 <div>
@@ -551,7 +575,7 @@ export function OwnerMembersPage() {
                 type="button"
                 onClick={handleInviteAllPending}
                 disabled={isBulkInviting}
-                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#304bdf] hover:bg-[#203bbf] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:scale-102 active:scale-98 disabled:opacity-50"
+                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#137b84] hover:bg-[#0e5968] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:scale-102 active:scale-98 disabled:opacity-50"
               >
                 <Send className="size-3.5" />
                 <span>
@@ -579,7 +603,7 @@ export function OwnerMembersPage() {
                 <div
                   className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl text-2xl"
                   style={{
-                    background: '#e9edff',
+                    background: 'var(--po-soft)',
                     color: 'var(--po-accent)',
                   }}
                 >

@@ -1,12 +1,14 @@
 import type { PageRegistry } from '../build-routes';
+import { lazyPage } from '../lazy-page';
 
-import { OwnerTasksPage } from '../../../features/organization/pages/OwnerTasksPage';
-import { OwnerNewTaskPage } from '../../../features/organization/pages/OwnerNewTaskPage';
-import { OwnerTaskDetailPage } from '../../../features/organization/pages/OwnerTaskDetailPage';
-import { OwnerReviewDetailPage } from '../../../features/organization/pages/OwnerReviewDetailPage';
-import { AccountProfilePage } from '../../../features/account/pages/AccountProfilePage';
-import { SecuritySettingsPage } from '../../../features/account/pages/SecuritySettingsPage';
-import { RoleAwareEvidencePage, RoleAwareNotificationsPage } from '../../../features/pulse-manager/components/RoleAwarePages';
+const OwnerTasksPage = lazyPage(() => import('../../../features/organization/pages/OwnerTasksPage'), 'OwnerTasksPage');
+const OwnerNewTaskPage = lazyPage(() => import('../../../features/organization/pages/OwnerNewTaskPage'), 'OwnerNewTaskPage');
+const OwnerTaskDetailPage = lazyPage(() => import('../../../features/organization/pages/OwnerTaskDetailPage'), 'OwnerTaskDetailPage');
+const OwnerReviewDetailPage = lazyPage(() => import('../../../features/organization/pages/OwnerReviewDetailPage'), 'OwnerReviewDetailPage');
+const AccountProfilePage = lazyPage(() => import('../../../features/account/pages/AccountProfilePage'), 'AccountProfilePage');
+const SecuritySettingsPage = lazyPage(() => import('../../../features/account/pages/SecuritySettingsPage'), 'SecuritySettingsPage');
+const RoleAwareEvidencePage = lazyPage(() => import('../../../features/pulse-manager/components/RoleAwarePages'), 'RoleAwareEvidencePage');
+const RoleAwareNotificationsPage = lazyPage(() => import('../../../features/pulse-manager/components/RoleAwarePages'), 'RoleAwareNotificationsPage');
 
 /** Shared Work (Practical tasks, evidence review) and Shared Topbar/Account pages. */
 export const WORK_PAGES: PageRegistry = {

@@ -176,6 +176,8 @@ const OWNER = [
   P.AUDIT_LOG_READ_SYSTEM,
   P.AUDIT_LOG_READ_DEPARTMENT,
   P.BUSINESS_CONFIG_MANAGE,
+  // Dùng thử doanh nghiệp: mời nhân viên, gửi yêu cầu chấm (backend RolePermissions)
+  P.TRIAL_MANAGE,
 ];
 
 /** Personal workspace users: the employee capabilities, without any organization data. */
@@ -194,8 +196,11 @@ const MATRIX: Record<Role, string[]> = {
     'platform.catalog.read',
     'platform.catalog.manage',
     'platform.commerce.read',
+    'platform.trial.manage',
     'audit_log.read_system',
   ],
+  // Mentor chấm bài dùng thử doanh nghiệp (chưa có màn hình mock)
+  [ROLES.MENTOR]: ['trial.review'],
 };
 
 /** Permissions for a role set. */

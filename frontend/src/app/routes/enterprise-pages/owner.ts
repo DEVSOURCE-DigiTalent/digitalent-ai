@@ -1,52 +1,47 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
 import type { PageRegistry } from '../build-routes';
+import { lazyPage } from '../lazy-page';
 
-function RetiredJobGradeRedirect() {
-  return React.createElement(Navigate, { to: '/enterprise/positions', replace: true });
-}
-
-import { OwnerOverviewPage } from '../../../features/organization/pages/OwnerOverviewPage';
-import { OwnerMembersPage } from '../../../features/organization/pages/OwnerMembersPage';
-import { OwnerMemberDetailPage } from '../../../features/organization/pages/OwnerMemberDetailPage';
-import { DepartmentListPage } from '../../../features/organization/pages/DepartmentListPage';
-import { DepartmentDetailPage } from '../../../features/organization/pages/DepartmentDetailPage';
-import { PositionListPage } from '../../../features/organization/pages/PositionListPage';
-import { PositionDetailPage } from '../../../features/organization/pages/PositionDetailPage';
-
-import { RolesAccessPage } from '../../../features/members/pages/RolesAccessPage';
-
-
-import { OwnerFrameworkPage } from '../../../features/organization/pages/OwnerFrameworkPage';
-import { OwnerFrameworkDetailPage } from '../../../features/organization/pages/OwnerFrameworkDetailPage';
-import { RequirementSetListPage } from '../../../features/competency/pages/RequirementSetListPage';
-import { PositionRequirementsPage } from '../../../features/competency/pages/PositionRequirementsPage';
-import { RequirementHistoryPage } from '../../../features/competency/pages/RequirementHistoryPage';
-import { WorkforceCompetencyMatrixPage } from '../../../features/competency/pages/WorkforceCompetencyMatrixPage';
-import { EmployeeCompetencyProfilePage } from '../../../features/competency/pages/EmployeeCompetencyProfilePage';
-import { OwnerCapabilityGapPage } from '../../../features/organization/pages/OwnerCapabilityGapPage';
-import { SkillGapDetailPage } from '../../../features/intelligence/pages/SkillGapDetailPage';
-import { RecommendationReviewPage } from '../../../features/intelligence/pages/RecommendationReviewPage';
-import { CourseAssignmentPage } from '../../../features/assignments/pages/CourseAssignmentPage';
-import { TrainingMonitorPage } from '../../../features/assignments/pages/TrainingMonitorPage';
-import { AssessmentResultsOverviewPage } from '../../../features/assignments/pages/AssessmentResultsOverviewPage';
-import { InternalCourseListPage } from '../../../features/assignments/pages/InternalCourseListPage';
-import { InternalCourseEditorPage } from '../../../features/assignments/pages/InternalCourseEditorPage';
-import { SubscriptionOverviewPage } from '../../../features/billing/pages/SubscriptionOverviewPage';
-import { BillingInvoicesPage } from '../../../features/billing/pages/BillingInvoicesPage';
-import { UsagePage } from '../../../features/billing/pages/UsagePage';
-import { OrganizationSettingsPage } from '../../../features/organization/pages/OrganizationSettingsPage';
-import { AuditLogPage } from '../../../features/organization/pages/AuditLogPage';
-import { OwnerCourseCatalogPage } from '../../../features/organization/pages/OwnerCourseCatalogPage';
-import { OwnerCourseDetailPage } from '../../../features/organization/pages/OwnerCourseDetailPage';
-import { InternalCourseDetailPage } from '../../../features/courses/pages/InternalCourseDetailPage';
-import { OwnerTrainingBatchesPage } from '../../../features/organization/pages/OwnerTrainingBatchesPage';
-import { OwnerNewTrainingBatchPage } from '../../../features/organization/pages/OwnerNewTrainingBatchPage';
-import { OwnerTrainingBatchDetailPage } from '../../../features/organization/pages/OwnerTrainingBatchDetailPage';
-import { OwnerCycleReportPage } from '../../../features/organization/pages/OwnerCycleReportPage';
-import { OwnerSetupBlueprintPage } from '../../../features/organization/pages/OwnerSetupBlueprintPage';
-import { OwnerCertificatesPage } from '../../../features/organization/pages/OwnerCertificatesPage';
-import { OwnerCertificateDetailPage } from '../../../features/organization/pages/OwnerCertificateDetailPage';
+const OwnerOverviewPage = lazyPage(() => import('../../../features/organization/pages/OwnerOverviewPage'), 'OwnerOverviewPage');
+const OwnerMembersPage = lazyPage(() => import('../../../features/organization/pages/OwnerMembersPage'), 'OwnerMembersPage');
+const OwnerMemberDetailPage = lazyPage(() => import('../../../features/organization/pages/OwnerMemberDetailPage'), 'OwnerMemberDetailPage');
+const DepartmentListPage = lazyPage(() => import('../../../features/organization/pages/DepartmentListPage'), 'DepartmentListPage');
+const DepartmentDetailPage = lazyPage(() => import('../../../features/organization/pages/DepartmentDetailPage'), 'DepartmentDetailPage');
+const PositionListPage = lazyPage(() => import('../../../features/organization/pages/PositionListPage'), 'PositionListPage');
+const PositionDetailPage = lazyPage(() => import('../../../features/organization/pages/PositionDetailPage'), 'PositionDetailPage');
+const JobGradeConfigPage = lazyPage(() => import('../../../features/organization/pages/JobGradeConfigPage'), 'JobGradeConfigPage');
+const RolesAccessPage = lazyPage(() => import('../../../features/members/pages/RolesAccessPage'), 'RolesAccessPage');
+const OwnerFrameworkPage = lazyPage(() => import('../../../features/organization/pages/OwnerFrameworkPage'), 'OwnerFrameworkPage');
+const OwnerFrameworkDetailPage = lazyPage(() => import('../../../features/organization/pages/OwnerFrameworkDetailPage'), 'OwnerFrameworkDetailPage');
+const RequirementSetListPage = lazyPage(() => import('../../../features/competency/pages/RequirementSetListPage'), 'RequirementSetListPage');
+const PositionRequirementsPage = lazyPage(() => import('../../../features/competency/pages/PositionRequirementsPage'), 'PositionRequirementsPage');
+const RequirementHistoryPage = lazyPage(() => import('../../../features/competency/pages/RequirementHistoryPage'), 'RequirementHistoryPage');
+const WorkforceCompetencyMatrixPage = lazyPage(() => import('../../../features/competency/pages/WorkforceCompetencyMatrixPage'), 'WorkforceCompetencyMatrixPage');
+const EmployeeCompetencyProfilePage = lazyPage(() => import('../../../features/competency/pages/EmployeeCompetencyProfilePage'), 'EmployeeCompetencyProfilePage');
+const OwnerCapabilityGapPage = lazyPage(() => import('../../../features/organization/pages/OwnerCapabilityGapPage'), 'OwnerCapabilityGapPage');
+const SkillGapDetailPage = lazyPage(() => import('../../../features/intelligence/pages/SkillGapDetailPage'), 'SkillGapDetailPage');
+const RecommendationReviewPage = lazyPage(() => import('../../../features/intelligence/pages/RecommendationReviewPage'), 'RecommendationReviewPage');
+const CourseAssignmentPage = lazyPage(() => import('../../../features/assignments/pages/CourseAssignmentPage'), 'CourseAssignmentPage');
+const TrainingMonitorPage = lazyPage(() => import('../../../features/assignments/pages/TrainingMonitorPage'), 'TrainingMonitorPage');
+const AssessmentResultsOverviewPage = lazyPage(() => import('../../../features/assignments/pages/AssessmentResultsOverviewPage'), 'AssessmentResultsOverviewPage');
+const InternalCourseListPage = lazyPage(() => import('../../../features/assignments/pages/InternalCourseListPage'), 'InternalCourseListPage');
+const InternalCourseEditorPage = lazyPage(() => import('../../../features/assignments/pages/InternalCourseEditorPage'), 'InternalCourseEditorPage');
+const SubscriptionOverviewPage = lazyPage(() => import('../../../features/billing/pages/SubscriptionOverviewPage'), 'SubscriptionOverviewPage');
+const BillingInvoicesPage = lazyPage(() => import('../../../features/billing/pages/BillingInvoicesPage'), 'BillingInvoicesPage');
+const UsagePage = lazyPage(() => import('../../../features/billing/pages/UsagePage'), 'UsagePage');
+const OrganizationSettingsPage = lazyPage(() => import('../../../features/organization/pages/OrganizationSettingsPage'), 'OrganizationSettingsPage');
+const AuditLogPage = lazyPage(() => import('../../../features/organization/pages/AuditLogPage'), 'AuditLogPage');
+const OwnerCourseCatalogPage = lazyPage(() => import('../../../features/organization/pages/OwnerCourseCatalogPage'), 'OwnerCourseCatalogPage');
+const OwnerCourseDetailPage = lazyPage(() => import('../../../features/organization/pages/OwnerCourseDetailPage'), 'OwnerCourseDetailPage');
+const InternalCourseDetailPage = lazyPage(() => import('../../../features/courses/pages/InternalCourseDetailPage'), 'InternalCourseDetailPage');
+const OwnerTrainingBatchesPage = lazyPage(() => import('../../../features/organization/pages/OwnerTrainingBatchesPage'), 'OwnerTrainingBatchesPage');
+const OwnerNewTrainingBatchPage = lazyPage(() => import('../../../features/organization/pages/OwnerNewTrainingBatchPage'), 'OwnerNewTrainingBatchPage');
+const OwnerTrainingBatchDetailPage = lazyPage(() => import('../../../features/organization/pages/OwnerTrainingBatchDetailPage'), 'OwnerTrainingBatchDetailPage');
+const OwnerCycleReportPage = lazyPage(() => import('../../../features/organization/pages/OwnerCycleReportPage'), 'OwnerCycleReportPage');
+const OwnerSetupBlueprintPage = lazyPage(() => import('../../../features/organization/pages/OwnerSetupBlueprintPage'), 'OwnerSetupBlueprintPage');
+const TrialProgramPage = lazyPage(() => import('../../../features/trial-program/pages/TrialProgramPage'), 'TrialProgramPage');
+const OwnerTrialLearningPage = lazyPage(() => import('../../../features/trial-program/pages/OwnerTrialLearningPage'), 'OwnerTrialLearningPage');
+const OwnerCertificatesPage = lazyPage(() => import('../../../features/organization/pages/OwnerCertificatesPage'), 'OwnerCertificatesPage');
+const OwnerCertificateDetailPage = lazyPage(() => import('../../../features/organization/pages/OwnerCertificateDetailPage'), 'OwnerCertificateDetailPage');
 
 /** OWNER page registry mapping screen IDs (OW-*) to components. */
 export const OWNER_PAGES: PageRegistry = {
@@ -55,12 +50,14 @@ export const OWNER_PAGES: PageRegistry = {
   'OW-02': OwnerMembersPage,
   'OW-03': OwnerMemberDetailPage,
   'OW-05': OwnerSetupBlueprintPage,
+  'OW-T1': TrialProgramPage,
+  'OW-T2': OwnerTrialLearningPage,
   'OW-06': DepartmentListPage,
   'OW-07': DepartmentDetailPage,
   'OW-09': PositionListPage,
 
   'OW-10': PositionDetailPage,
-  'OW-12': RetiredJobGradeRedirect,
+  'OW-12': JobGradeConfigPage,
 
   'OW-13': RolesAccessPage,
   'OW-14': OwnerFrameworkPage,

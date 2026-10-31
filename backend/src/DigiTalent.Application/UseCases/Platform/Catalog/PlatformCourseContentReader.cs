@@ -86,7 +86,7 @@ public class PlatformCourseContentReader
                 {
                     BlockId = b.Id,
                     Index = i,
-                    Type = b.BlockType,
+                    Type = string.IsNullOrWhiteSpace(b.BlockType) ? PlatformCatalog.BlockType.Text : b.BlockType.Trim().ToUpperInvariant(),
                     BodyHtml = b.BodyHtml,
                     Asset = b.AssetId is { } assetId && assets.TryGetValue(assetId, out var asset) ? Asset(asset) : null,
                     Caption = b.Caption,

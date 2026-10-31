@@ -1,23 +1,30 @@
 import { Navigate, type RouteObject } from 'react-router-dom';
 import { PLATFORM_SCREENS } from '../../lib/screens/platform';
 import { buildRoutes, type PageRegistry } from './build-routes';
+import { useCurrentUser } from '../../hooks/use-current-user';
+import { getHomePath } from '../../lib/navigation';
+import { lazyPage } from './lazy-page';
 
-import { SecuritySettingsPage } from '../../features/account/pages/SecuritySettingsPage';
-import { NotificationsPage } from '../../features/notifications/pages/NotificationsPage';
+const PulseAdminLayout = lazyPage(() => import('../../features/platform/PulseAdminLayout'), 'PulseAdminLayout');
 
-import { PulseAdminLayout } from '../../features/platform/PulseAdminLayout';
-import { PlatformOverviewPage } from '../../features/platform/console/PlatformOverviewPage';
-import { PlatformFrameworkPage } from '../../features/platform/console/PlatformFrameworkPage';
-import { PlatformReferencePositionsPage } from '../../features/platform/console/PlatformReferencePositions';
-import { PlatformVersionsPage } from '../../features/platform/console/PlatformVersionsPage';
-import { PlatformCourseBuilderPage } from '../../features/platform/console/PlatformCourseBuilderPage';
-import { PlatformOrganizationsPage } from '../../features/platform/console/PlatformOrganizationsPage';
-import { PlatformOrganizationDetailPage } from '../../features/platform/console/PlatformOrganizationDetailPage';
-import { PlatformUsersPage } from '../../features/platform/console/PlatformUsersPage';
-import { PlatformUserDetailPage } from '../../features/platform/console/PlatformUserDetailPage';
-import { PlatformCommercePage } from '../../features/platform/console/PlatformCommercePage';
-import { PlatformAuditLogPage } from '../../features/platform/console/PlatformAuditLogPage';
-import { PlatformProfilePage } from '../../features/platform/console/PlatformProfilePage';
+const SecuritySettingsPage = lazyPage(() => import('../../features/account/pages/SecuritySettingsPage'), 'SecuritySettingsPage');
+const NotificationsPage = lazyPage(() => import('../../features/notifications/pages/NotificationsPage'), 'NotificationsPage');
+const PlatformOverviewPage = lazyPage(() => import('../../features/platform/console/PlatformOverviewPage'), 'PlatformOverviewPage');
+const PlatformFrameworkPage = lazyPage(() => import('../../features/platform/console/PlatformFrameworkPage'), 'PlatformFrameworkPage');
+const PlatformReferencePositionsPage = lazyPage(() => import('../../features/platform/console/PlatformReferencePositions'), 'PlatformReferencePositionsPage');
+const PlatformVersionsPage = lazyPage(() => import('../../features/platform/console/PlatformVersionsPage'), 'PlatformVersionsPage');
+const PlatformCourseBuilderPage = lazyPage(() => import('../../features/platform/console/PlatformCourseBuilderPage'), 'PlatformCourseBuilderPage');
+const PlatformOrganizationsPage = lazyPage(() => import('../../features/platform/console/PlatformOrganizationsPage'), 'PlatformOrganizationsPage');
+const PlatformOrganizationDetailPage = lazyPage(() => import('../../features/platform/console/PlatformOrganizationDetailPage'), 'PlatformOrganizationDetailPage');
+const PlatformUsersPage = lazyPage(() => import('../../features/platform/console/PlatformUsersPage'), 'PlatformUsersPage');
+const PlatformUserDetailPage = lazyPage(() => import('../../features/platform/console/PlatformUserDetailPage'), 'PlatformUserDetailPage');
+const PlatformCommercePage = lazyPage(() => import('../../features/platform/console/PlatformCommercePage'), 'PlatformCommercePage');
+const PlatformAuditLogPage = lazyPage(() => import('../../features/platform/console/PlatformAuditLogPage'), 'PlatformAuditLogPage');
+const PlatformProfilePage = lazyPage(() => import('../../features/platform/console/PlatformProfilePage'), 'PlatformProfilePage');
+const PlatformTrialsPage = lazyPage(() => import('../../features/trial-program/pages/PlatformTrialsPage'), 'PlatformTrialsPage');
+const MentorTrialsPage = lazyPage(() => import('../../features/trial-program/pages/MentorTrialsPage'), 'MentorTrialsPage');
+const MentorTrialPage = lazyPage(() => import('../../features/trial-program/pages/MentorTrialPage'), 'MentorTrialPage');
+const MentorCourseReviewsPage = lazyPage(() => import('../../features/trial-program/pages/MentorCourseReviewsPage'), 'MentorCourseReviewsPage');
 
 /**
  * Built pages by screen ID — Platform Admin console (Pulse redesign PA-01..10, Platform Admin v2 PA-12), its profile (SHR-01 = mock `#/profile`
@@ -40,7 +47,17 @@ const PLATFORM_PAGES: PageRegistry = {
   'PA-08': PlatformUserDetailPage,
   'PA-09': PlatformCommercePage,
   'PA-10': PlatformAuditLogPage,
+  'PA-14': PlatformTrialsPage,
+  'MT-01': MentorTrialsPage,
+  'MT-02': MentorTrialPage,
+  'MT-03': MentorCourseReviewsPage,
 };
+
+/** /platform → trang chính theo vai trò (quản trị: tổng quan; mentor: bài cần chấm). */
+function PlatformHome() {
+  const user = useCurrentUser((s) => s.user);
+  return <Navigate to={user ? getHomePath(user) : '/login'} replace />;
+}
 
 /** Paths of the previous platform portal, kept as redirects so old links still land somewhere useful. */
 const RETIRED_PATHS: [string, string][] = [
@@ -70,7 +87,7 @@ export const platformRoutes: RouteObject[] = [
     path: '/platform',
     element: <PulseAdminLayout />,
     children: [
-      { index: true, element: <Navigate to="/platform/dashboard" replace /> },
+      { index: true, element: <PlatformHome /> },
       ...buildRoutes(PLATFORM_SCREENS, PLATFORM_PAGES, '/platform'),
       ...RETIRED_PATHS.map(([path, to]) => ({ path, element: <Navigate to={to} replace /> })),
     ],

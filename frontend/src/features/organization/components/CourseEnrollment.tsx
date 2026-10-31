@@ -100,7 +100,7 @@ export function CourseEnrollment({
               style={{
                 background: 'var(--po-accent)',
                 color: '#fff',
-                boxShadow: '0 9px 18px rgba(52,72,207,.17)',
+                boxShadow: '0 9px 18px rgba(19,123,132,.17)',
               }}
             >
               <UserCheck className="size-3.5" />

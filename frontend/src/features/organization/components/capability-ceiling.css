@@ -9,8 +9,7 @@
   --cc-fg: #17201e;
   --cc-muted: #59665f;
   --cc-line: #d3dad7;
-  --cc-accent: #2563eb;
-  --cc-accent-strong: #1e40af;
+  --cc-accent: #0e6b5e;
   --cc-warn: #a86a0b;
   --cc-fail: #b33f29;
   --cc-tint: 13%;
@@ -46,8 +45,7 @@
 
 .cc-cell:focus-visible, .cc-btn:focus-visible { outline: 2px solid var(--cc-accent); outline-offset: 2px; }
 
-.cc-mx-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.cc-mx { min-width: 440px; display: grid; grid-template-columns: minmax(96px, 210px) repeat(3, minmax(0, 1fr)); gap: 6px; }
+.cc-mx { display: grid; grid-template-columns: minmax(96px, 210px) repeat(3, minmax(0, 1fr)); gap: 6px; }
 .cc-mx .hd { font-size: 12px; color: var(--cc-muted); font-weight: 600; text-align: center; line-height: 1.3; padding-bottom: 4px; }
 .cc-mx .hd span { font-weight: 500; }
 .cc-mx .rl { display: flex; flex-direction: column; justify-content: center; font-size: 13.5px; font-weight: 600; line-height: 1.3; }

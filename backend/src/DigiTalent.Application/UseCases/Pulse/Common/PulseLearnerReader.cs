@@ -80,6 +80,16 @@ public sealed class PulseCourseState
 /// <summary>Người đánh giá quá trình học của nhân viên: quản lý phòng ban, hoặc chủ doanh nghiệp khi nhân viên là quản lý.</summary>
 public sealed record PulseReviewerInfo(string Name, string Role);
 
+/// <summary>Trạng thái bài đánh giá phân loại năng lực đầu vào của nhân viên.</summary>
+public sealed record PulsePlacementTestInfo(
+    bool HasTaken,
+    Guid? AssessmentId,
+    DateTimeOffset? SubmittedAt,
+    int PassedDomains,
+    int TotalDomains,
+    int? ChoiceScore,
+    int? ChoiceTotal);
+
 /// <summary>Toàn bộ trạng thái học của một nhân viên — nguồn dữ liệu cho Hôm nay, Lộ trình, Thực hành và Hồ sơ.</summary>
 public sealed class PulseLearnerSnapshot
 {
@@ -89,6 +99,7 @@ public sealed class PulseLearnerSnapshot
     public string? OrganizationName { get; init; }
     public bool HasPosition { get; init; }
     public PulseReviewerInfo? Reviewer { get; init; }
+    public PulsePlacementTestInfo? PlacementTest { get; init; }
     public IReadOnlyList<PulseDomainState> Domains { get; init; } = Array.Empty<PulseDomainState>();
     public IReadOnlyList<PulseCourseState> Courses { get; init; } = Array.Empty<PulseCourseState>();
 
@@ -194,6 +205,20 @@ public class PulseLearnerReader
             .GroupBy(r => r.CategoryId)
             .ToDictionary(g => g.Key, g => Math.Clamp(g.Max(r => r.Requirement.RequiredLevel), 0, PulseRules.MaxLevel));
         var ceilings = await _ceilings.EffectiveForDepartmentAsync(organizationId, employee.DepartmentId, categoryIds);
+
+        // Khung năng lực & Lộ trình của nhân viên:
+        // 1. Nếu vị trí công việc đã có requirements cụ thể trong PositionRequirementSets ACTIVE thì lấy theo vị trí.
+        // 2. Với các lĩnh vực chưa có requirements riêng (hoặc nhân viên được thêm/seed bằng Excel vào phòng ban/vị trí),
+        //    mục tiêu tự động thừa hưởng theo đúng trần năng lực mà doanh nghiệp / phòng ban đã thiết lập (ceilings).
+        // 3. Đảm bảo nhân viên ở phòng ban và vị trí luôn có lộ trình học đúng với khung năng lực doanh nghiệp đã set.
+        foreach (var id in categoryIds)
+        {
+            if (!targets.TryGetValue(id, out var t) || t <= 0)
+            {
+                targets[id] = ceilings.TryGetValue(id, out var c) && c > 0 ? c : 1;
+            }
+        }
+        var isTrial = await _context.TrialWorkspaces.AsNoTracking().AnyAsync(t => t.OrganizationId == organizationId && t.ConvertedAt == null);
         var evidenceLevels = await LoadEvidenceLevelsAsync(employee.Id);
 
         // Lượt học của nhân viên theo mã khóa (mọi phiên bản), bỏ lượt đã hủy.
@@ -211,6 +236,44 @@ public class PulseLearnerReader
             .Where(r => r.Enrollment.Status == Statuses.Enrollment.Completed)
             .Select(r => r.Code)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // Bài đánh giá phân loại năng lực đầu vào (TrialAssessment) của nhân viên
+        var placementTest = await _context.TrialAssessments
+            .AsNoTracking()
+            .Where(a => a.EmployeeId == employee.Id)
+            .OrderByDescending(a => a.SubmittedAt)
+            .FirstOrDefaultAsync();
+
+        var placementDomains = placementTest != null
+            ? await _context.TrialAssessmentDomains
+                .AsNoTracking()
+                .Where(d => d.TrialAssessmentId == placementTest.Id)
+                .ToListAsync()
+            : new List<TrialAssessmentDomain>();
+
+        var placementLevels = placementDomains.ToDictionary(
+            d => d.CategoryId,
+            d => (int)(d.MentorLevel ?? (placementTest?.ReviewedAt != null ? d.SuggestedLevel : 0)));
+
+        var placementApprovedCodes = courses
+            .Where(c => placementLevels.TryGetValue(c.CategoryId, out var lvl) && lvl >= c.Tier)
+            .Select(c => c.Code)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var code in placementApprovedCodes)
+        {
+            approvedCodes.Add(code);
+        }
+
+        var placementInfo = new PulsePlacementTestInfo(
+            HasTaken: placementTest != null,
+            AssessmentId: placementTest?.Id,
+            SubmittedAt: placementTest?.SubmittedAt,
+            PassedDomains: placementDomains.Count(d => (d.MentorLevel ?? d.SuggestedLevel) > 0),
+            TotalDomains: placementDomains.Count > 0 ? placementDomains.Count : categoryIds.Count,
+            ChoiceScore: placementTest?.ChoiceScore,
+            ChoiceTotal: placementTest?.ChoiceTotal);
+
         var enrollmentByCode = enrollmentRows
             .GroupBy(r => r.Code, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
@@ -339,6 +402,7 @@ public class PulseLearnerReader
                 var allPassed = modules.Count > 0 && PulseModuleReader.CountPassed(modules, moduleProgress) == modules.Count;
                 var finalStatus = PulseRules.FinalStatusOf(enrollment, courseSubmissions, allPassed, now);
                 var approvedVia = !approved ? null
+                    : placementApprovedCodes.Contains(course.Code) ? PulseApprovedVia.PlacementTest
                     : pre?.Decision == Statuses.FinalSubmissionDecision.Passed ? PulseApprovedVia.PreAssessment
                     : courseSubmissions.Any(s => s.Decision == Statuses.FinalSubmissionDecision.Passed) ? PulseApprovedVia.Final
                     : PulseApprovedVia.Legacy;
@@ -387,6 +451,7 @@ public class PulseLearnerReader
             OrganizationName = names?.OrganizationName,
             HasPosition = hasPosition,
             Reviewer = await LoadReviewerAsync(employee, names?.ManagerEmployeeId),
+            PlacementTest = placementInfo,
             Domains = domains,
             Courses = states,
         };
@@ -456,6 +521,16 @@ public class PulseLearnerReader
     /// </summary>
     private async Task<PulseReviewerInfo?> LoadReviewerAsync(Employee employee, Guid? managerEmployeeId)
     {
+        // Doanh nghiệp dùng thử: mentor DigiTalent được phân công chấm mọi bài.
+        var trial = await _context.TrialWorkspaces.AsNoTracking()
+            .Where(t => t.OrganizationId == employee.OrganizationId && t.ConvertedAt == null)
+            .Select(t => new { t.MentorUserId, MentorName = _context.Users.Where(u => u.Id == t.MentorUserId).Select(u => u.DisplayName).FirstOrDefault() })
+            .FirstOrDefaultAsync();
+        if (trial != null)
+        {
+            return trial.MentorUserId == null ? null : new PulseReviewerInfo(trial.MentorName ?? "Mentor DigiTalent", "Mentor DigiTalent");
+        }
+
         if (managerEmployeeId is { } managerId && managerId != employee.Id)
         {
             var manager = await _context.Employees.AsNoTracking()

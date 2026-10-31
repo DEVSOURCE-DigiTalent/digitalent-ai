@@ -28,6 +28,7 @@ public class GetPulseOverviewUseCase : IUseCase<GetPulseOverviewUseCaseInput, Ge
             Reviewer = PulseMapping.Reviewer(snapshot),
             HasPosition = snapshot.HasPosition,
             HasTargets = snapshot.HasTargets,
+            PlacementTest = PulseMapping.PlacementTest(snapshot),
             Domains = snapshot.Domains.Select(PulseMapping.Domain).ToList(),
             Courses = snapshot.Courses.Select(PulseMapping.Course).ToList(),
             NextCourse = next.Count == 0 ? null : PulseMapping.Course(next[0]),

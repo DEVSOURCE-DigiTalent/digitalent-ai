@@ -146,7 +146,7 @@ public class PulseExamPaper
     }
 
     /// <summary>
-    /// Kết quả trắc nghiệm của các bài làm, theo id bài nộp (bài cuối khóa hoặc bài đánh giá trước khi học). Người chấm thấy
+    /// Kết quả trắc nghiệm của các bài làm, theo id bài nộp (bài cuối khóa, bài đánh giá trước khi học hoặc bài dùng thử). Người chấm thấy
     /// từng câu (câu hỏi, phương án đã chọn, đáp án đúng); nhân viên chỉ thấy số câu đúng.
     /// </summary>
     public async Task<Dictionary<Guid, List<PulseChoiceItemDto>>> LoadItemsAsync(IReadOnlyCollection<Guid> ownerIds)
@@ -162,9 +162,10 @@ public class PulseExamPaper
                 join selected in _context.QuestionOptions.AsNoTracking() on answer.SelectedOptionId equals selected.Id
                 where (answer.FinalSubmissionId != null && ownerIds.Contains(answer.FinalSubmissionId.Value))
                       || (answer.PreAssessmentId != null && ownerIds.Contains(answer.PreAssessmentId.Value))
+                      || (answer.TrialAssessmentId != null && ownerIds.Contains(answer.TrialAssessmentId.Value))
                 select new
                 {
-                    OwnerId = answer.FinalSubmissionId ?? answer.PreAssessmentId!.Value,
+                    OwnerId = answer.FinalSubmissionId ?? answer.PreAssessmentId ?? answer.TrialAssessmentId!.Value,
                     answer.SortOrder,
                     answer.IsCorrect,
                     answer.QuestionId,

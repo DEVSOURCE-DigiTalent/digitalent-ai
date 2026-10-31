@@ -371,7 +371,10 @@ public static class Statuses
     {
         public const string PreAssessment = "PRE_ASSESSMENT";
         public const string Final = "FINAL";
+        /// <summary>Bài đánh giá tổng hợp của doanh nghiệp dùng thử (v3.5): không thuộc khóa nào (course_id NULL).</summary>
+        public const string TrialAssessment = "TRIAL_ASSESSMENT";
 
+        /// <summary>Các loại bài gắn với một khóa (trang Pulse của nhân viên).</summary>
         public static readonly string[] All = { PreAssessment, Final };
     }
 

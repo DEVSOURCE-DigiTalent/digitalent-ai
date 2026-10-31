@@ -6,6 +6,10 @@ namespace DigiTalent.Application.UseCases.Organization.Members;
 public class InviteMembersUseCaseInput
 {
     public List<InviteMemberRow> Rows { get; set; } = new();
+
+    /// <summary>Extra line added to every invitation email (trial: the assessment deadline). Not exposed by the API.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? EmailNote { get; set; }
 }
 
 /// <summary>
@@ -20,4 +24,6 @@ public class InviteMemberRow
     public string? EmployeeCode { get; set; }
     public Guid? DepartmentId { get; set; }
     public Guid? JobPositionId { get; set; }
+    public string? DepartmentName { get; set; }
+    public string? JobPositionName { get; set; }
 }

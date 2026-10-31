@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
 interface DomainLevel {
@@ -17,16 +16,6 @@ const LEVEL_LABELS = ['—', 'Cơ bản', 'Trung cấp', 'Nâng cao'];
 const DIGITAL_AI_LEVEL = 3;
 
 export function PositionMapping({ domains, isLoading }: PositionMappingProps) {
-  const uniqueDomains = useMemo(() => {
-    const map = new Map<string, DomainLevel>();
-    for (const d of domains) {
-      const existing = map.get(d.name);
-      if (!existing || (d.averageRequired > 0 || d.averageCurrent > 0)) {
-        map.set(d.name, d);
-      }
-    }
-    return Array.from(map.values()).sort((a, b) => a.sortOrder - b.sortOrder);
-  }, [domains]);
   return (
     <section
       className="rounded-[22px] border p-6"
@@ -64,7 +53,7 @@ export function PositionMapping({ domains, isLoading }: PositionMappingProps) {
         >
           Đang tải…
         </p>
-      ) : uniqueDomains.length === 0 ? (
+      ) : domains.length === 0 ? (
         <p
           className="py-6 text-center text-sm"
           style={{ color: 'var(--po-muted)' }}
@@ -99,7 +88,7 @@ export function PositionMapping({ domains, isLoading }: PositionMappingProps) {
                   style={{
                     gridTemplateColumns: '1fr 90px 90px',
                     borderBottom:
-                      i < uniqueDomains.length - 1
+                      i < domains.length - 1
                         ? '1px solid var(--po-line)'
                         : 'none',
                   }}
@@ -148,7 +137,7 @@ export function PositionMapping({ domains, isLoading }: PositionMappingProps) {
           style={{
             background: 'var(--po-accent)',
             color: '#fff',
-            boxShadow: '0 9px 18px rgba(52,72,207,.17)',
+            boxShadow: '0 9px 18px rgba(19,123,132,.17)',
           }}
         >
           Yêu cầu riêng của doanh nghiệp →

@@ -196,4 +196,9 @@ export const PERMISSIONS = {
   PLATFORM_CATALOG_READ: 'platform.catalog.read',
   PLATFORM_CATALOG_MANAGE: 'platform.catalog.manage',
   PLATFORM_COMMERCE_READ: 'platform.commerce.read',
+  PLATFORM_TRIAL_MANAGE: 'platform.trial.manage',
+
+  // Dùng thử doanh nghiệp: chủ doanh nghiệp mời nhân viên và gửi yêu cầu chấm; mentor chấm bài
+  TRIAL_MANAGE: 'trial.manage',
+  TRIAL_REVIEW: 'trial.review',
 } as const;

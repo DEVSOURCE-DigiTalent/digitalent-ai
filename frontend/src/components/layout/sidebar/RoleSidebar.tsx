@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import pulseMark from '@/assets/pulse/pulse-mark.svg';
 import { cn } from '@/lib/utils';
 import type { PortalConfig } from '@/lib/portals';
 import type { SidebarConfig } from '@/lib/sidebars/types';
@@ -64,7 +65,8 @@ export function RoleSidebar({
       className={cn(
         'fixed inset-y-0 left-0 z-40 flex flex-col h-dvh',
         'transition-[width,transform] duration-200 ease-in-out',
-        isPulseOwner ? 'sidebar-pulse-owner' : isPulseManager ? 'sidebar-pulse-manager' : 'bg-[var(--ent-sidebar)]',
+        // Chủ doanh nghiệp và quản lý dùng chung menu bên mực xanh biển của Pulse.
+        isPulse ? 'sidebar-pulse-manager' : 'bg-[var(--ent-sidebar)]',
         isRail ? 'w-16' : isPulse ? 'w-[230px]' : 'w-[248px] sm:w-[248px]',
         'md:translate-x-0',
         isMobileOpen ? 'translate-x-0 w-[288px]' : '-translate-x-full md:translate-x-0',
@@ -73,17 +75,27 @@ export function RoleSidebar({
       aria-hidden={!isMobileOpen && isMobile ? true : undefined}
     >
       {!isPulse && <SidebarOrgBlock isRail={isRail && !isMobileOpen} />}
+      {isPulseOwner && (
+        <Link
+          to="/enterprise/dashboard"
+          className={cn('pm-side-brand', isRail && !isMobileOpen && 'rail')}
+          aria-label="DigiTalent Pulse — Tổng quan"
+        >
+          <img src={pulseMark} alt="" />
+          {!(isRail && !isMobileOpen) && <span>DigiTalent <em>Pulse</em></span>}
+        </Link>
+      )}
       <SidebarNav
         config={activeConfig}
         isRail={isRail && !isMobileOpen}
         onItemClick={onMobileClose}
         workspace={portal.workspace}
-        variant={isPulseManager ? 'pulse-manager' : 'default'}
+        variant={isPulse ? 'pulse-manager' : 'default'}
       />
       {isPulseManager ? (
         <SidebarManagerCard isRail={isRail && !isMobileOpen} onToggleCollapsed={isMobileOpen ? undefined : toggleCollapsed} />
       ) : isPulseOwner ? (
-        <SidebarPulseOrgCard isRail={isRail && !isMobileOpen} />
+        <SidebarPulseOrgCard isRail={isRail && !isMobileOpen} onToggleCollapsed={isMobileOpen ? undefined : toggleCollapsed} />
       ) : (
         <SidebarFooter
           isRail={isRail && !isMobileOpen}

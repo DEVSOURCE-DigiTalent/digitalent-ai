@@ -87,7 +87,16 @@ describe('role separation', () => {
   });
 
   it('keeps platform screens to platform staff', () => {
-    for (const screen of PLATFORM_SCREENS) expect(screen.roles).toEqual([ROLES.PLATFORM_ADMIN]);
+    const staff: string[] = [ROLES.PLATFORM_ADMIN, ROLES.MENTOR];
+    for (const screen of PLATFORM_SCREENS) {
+      expect(screen.roles.length).toBeGreaterThan(0);
+      for (const role of screen.roles) expect(staff).toContain(role);
+    }
+  });
+
+  it('keeps mentor screens to mentors and admin screens to the platform admin', () => {
+    expect(PLATFORM_SCREENS.filter((s) => s.roles.includes(ROLES.MENTOR) && !s.id.startsWith('SHR')).map((s) => s.id)).toEqual(['MT-01', 'MT-02', 'MT-03']);
+    expect(PLATFORM_SCREENS.find((s) => s.id === 'PA-14')?.roles).toEqual([ROLES.PLATFORM_ADMIN]);
   });
 
   it('does not let any enterprise screen admit the platform role', () => {

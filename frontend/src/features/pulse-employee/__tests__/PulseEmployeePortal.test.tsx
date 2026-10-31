@@ -8,6 +8,7 @@ import { ROLES } from '@/lib/roles';
 import { MANAGER_SIDEBAR, sidebarFor } from '@/lib/sidebars';
 import { EMPLOYEE_SCREENS } from '@/lib/screens/enterprise/employee';
 import { PulseTodayPage } from '../pages/PulseTodayPage';
+import { PulsePathPage } from '../pages/PulsePathPage';
 import {
   pulseService,
   type PulseCourseSummary,
@@ -19,6 +20,7 @@ import {
 import { PulseFinalPage } from '../pages/PulseFinalPage';
 import { PulsePreAssessmentPage } from '../pages/PulsePreAssessmentPage';
 import { PulseHeader } from '../components/PulseHeader';
+import { trialProgramService } from '@/services/trial-program.service';
 import { PULSE_PATHS } from '../lib/paths';
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -188,7 +190,7 @@ beforeEach(() => {
 
 describe('Pulse employee routes', () => {
   it('serves every employee screen under /enterprise/me for employees and managers, without the old baseline', () => {
-    expect(EMPLOYEE_SCREENS.map((s) => s.id)).toEqual(['EM-01', 'EM-02', 'EM-03', 'EM-05', 'EM-06', 'EM-07', 'EM-12', 'EM-08', 'EM-09', 'EM-10', 'EM-11']);
+    expect(EMPLOYEE_SCREENS.map((s) => s.id)).toEqual(['EM-01', 'EM-02', 'EM-03', 'EM-05', 'EM-06', 'EM-07', 'EM-12', 'EM-T1', 'EM-T2', 'EM-08', 'EM-09', 'EM-10', 'EM-11']);
     for (const screenDef of EMPLOYEE_SCREENS) {
       expect(screenDef.path.startsWith(PULSE_PATHS.today)).toBe(true);
       expect(screenDef.roles).toEqual(expect.arrayContaining([ROLES.EMPLOYEE, ROLES.MANAGER]));
@@ -218,6 +220,77 @@ describe('enterprise trial detection', () => {
 
     expect((await screen.findAllByRole('link', { name: 'Học tiếp' })).length).toBeGreaterThan(0);
     expect(sidebarFor({ id: 'm', email: 'm@x.test', fullName: 'M', roles: [ROLES.MANAGER], permissions: [], enterpriseTrialStatus: null })).toBe(MANAGER_SIDEBAR);
+  });
+});
+
+describe('enterprise trial learning', () => {
+  // Doanh nghiệp dùng thử: chỉ khóa Cơ bản mở, cao hơn vượt trần (= 1).
+  const trialOverview = () => overview({
+    hasTargets: false,
+    courses: [
+      course({ courseId: 'f1', code: 'M1-F', slotStatus: 'COMPLETED', finalStatus: 'APPROVED', approved: true, approvedVia: 'FINAL', progressPercent: 100 }),
+      course({ courseId: 'f2', code: 'M2-F', title: 'Giao tiếp số cơ bản nơi công sở', categoryId: 'cat-2', domainNumber: 2, slotStatus: 'TO_LEARN', progressPercent: 0 }),
+      course({ courseId: 'i1', code: 'M1-I', title: 'Chiến lược tìm kiếm', tier: 2, zone: 'ABOVE_CEILING', slotStatus: 'ABOVE_CEILING', canWork: false }),
+    ],
+  });
+  const routes = (
+    <>
+      <Route path={PULSE_PATHS.path} element={<PulsePathPage />} />
+    </>
+  );
+
+  it('shows the owner the Basic courses only, with the buy button', async () => {
+    signIn({ roles: [ROLES.OWNER, ROLES.EMPLOYEE], enterpriseTrialStatus: 'trial_active' });
+    vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(trialOverview()));
+
+    renderAt(PULSE_PATHS.path, null, routes);
+
+    expect(await screen.findByRole('heading', { name: '2 khóa Cơ bản để trải nghiệm.' })).toBeInTheDocument();
+    const list = screen.getByRole('list', { name: 'Khóa học thử' });
+    expect(within(list).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(list).queryByText('Chiến lược tìm kiếm')).not.toBeInTheDocument();
+    expect(within(list).getByRole('link', { name: /Bắt đầu học/ })).toHaveAttribute('href', PULSE_PATHS.course('f2'));
+    expect(screen.getByRole('link', { name: /Mua khóa học/ })).toHaveAttribute('href', '/enterprise/courses?level=2');
+  });
+
+  it('sends trial employees from Hôm nay to the one learning page, without the buy button', async () => {
+    signIn({ enterpriseTrialStatus: 'trial_active' });
+    vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(trialOverview()));
+
+    renderAt(PULSE_PATHS.today, <PulseTodayPage />, routes);
+
+    expect(await screen.findByRole('heading', { name: /khóa Cơ bản để trải nghiệm/ })).toBeInTheDocument();
+    expect(screen.getByText(/Trung cấp, Nâng cao mở khi doanh nghiệp mua khóa/)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Mua khóa học/ })).not.toBeInTheDocument();
+  });
+
+  it('gives trial employees the Học thử / Kết quả test / Thực hành header', () => {
+    signIn({ enterpriseTrialStatus: 'trial_active' });
+
+    renderAt(PULSE_PATHS.today, <PulseHeader />);
+
+    const nav = screen.getByRole('navigation', { name: 'Học tập của tôi' });
+    expect(within(nav).getAllByRole('link').map((l) => l.textContent)).toEqual(['Học thử', 'Bài test', 'Thực hành']);
+  });
+
+  it('locks the Basic courses with a warning until the mentor publishes the result', async () => {
+    signIn({ enterpriseTrialStatus: 'trial_active' });
+    vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(trialOverview()));
+    const mine = { organizationName: 'Demo', testDeadline: '2026-10-31T10:00:00Z', canStart: true, choiceCount: 18, domains: [], essays: [], reportPublished: false };
+    const getMine = vi.spyOn(trialProgramService, 'getMine').mockResolvedValue(ok({ ...mine, status: 'NOT_STARTED' }));
+
+    const view = renderAt(PULSE_PATHS.path, null, routes);
+
+    expect(await screen.findByRole('status', { name: 'Làm bài test trước khi học' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Làm bài test/ })).toHaveAttribute('href', PULSE_PATHS.trialTest);
+    const locked = screen.getByRole('list', { name: 'Khóa học thử (chưa mở)' });
+    expect(within(locked).getAllByText('Chưa mở')).toHaveLength(2);
+    expect(screen.queryByRole('link', { name: /Bắt đầu học/ })).not.toBeInTheDocument();
+    view.unmount();
+
+    getMine.mockResolvedValue(ok({ ...mine, status: 'SUBMITTED', submittedAt: '2026-10-29T03:00:00Z' }));
+    renderAt(PULSE_PATHS.path, null, routes);
+    expect(await screen.findByRole('status', { name: 'Đang chờ mentor chấm bài' })).toBeInTheDocument();
   });
 });
 

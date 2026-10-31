@@ -14,15 +14,13 @@ interface DemoAccounts {
 }
 
 const SEEDED_API_ACCOUNTS: SessionUser[] = [
-  { id: 'seed-owner', email: 'owner@digitalent.ai', fullName: 'Nguyễn Thế Hùng (CEO)', roles: ['OWNER'], permissions: [], workspace: 'enterprise' },
-  { id: 'seed-manager', email: 'manager@digitalent.ai', fullName: 'Lê Thị Thu Trang (Trưởng phòng KD)', roles: ['MANAGER'], permissions: [], workspace: 'enterprise' },
-  { id: 'seed-hr', email: 'hr@digitalent.ai', fullName: 'Phạm Quỳnh Nga (Trưởng phòng NS)', roles: ['OWNER'], permissions: [], workspace: 'enterprise' },
-  { id: 'seed-trainer', email: 'trainer@digitalent.ai', fullName: 'Vũ Đình Nam (Giảng viên nội bộ)', roles: ['EMPLOYEE'], permissions: [], workspace: 'enterprise' },
-  { id: 'seed-employee', email: 'employee@digitalent.ai', fullName: 'Hoàng Anh Thư (Chuyên viên)', roles: ['EMPLOYEE'], permissions: [], workspace: 'enterprise' },
-  { id: 'seed-personal', email: 'personal@digitalent.ai', fullName: 'Đỗ Minh Trí (Học viên Plus)', roles: ['LEARNER'], permissions: [], workspace: 'personal' },
-  { id: 'seed-trial', email: 'trial@digitalent.ai', fullName: 'Nguyễn Hải Đăng (Dùng thử)', roles: ['LEARNER'], permissions: [], workspace: 'personal' },
-  { id: 'seed-free', email: 'free@digitalent.ai', fullName: 'Võ Thanh Tùng (Gói Miễn phí)', roles: ['LEARNER'], permissions: [], workspace: 'personal' },
-  { id: 'seed-platform', email: 'platform@digitalent.ai', fullName: 'Trần Minh Hoàng (Admin)', roles: ['PLATFORM_ADMIN'], permissions: [], workspace: 'platform' },
+  { id: 'seed-platform', email: 'platform@digitalent.ai', fullName: 'Platform Administrator', roles: ['PLATFORM_ADMIN'], permissions: [], workspace: 'platform' },
+  { id: 'seed-owner', email: 'owner@digitalent.ai', fullName: 'Enterprise Owner', roles: ['OWNER'], permissions: [], workspace: 'enterprise' },
+  { id: 'seed-manager', email: 'manager@digitalent.ai', fullName: 'Department Manager', roles: ['MANAGER'], permissions: [], workspace: 'enterprise' },
+  { id: 'seed-employee', email: 'employee@digitalent.ai', fullName: 'Employee', roles: ['EMPLOYEE'], permissions: [], workspace: 'enterprise' },
+  { id: 'seed-personal', email: 'personal@digitalent.ai', fullName: 'Bùi Thị Cá Nhân', roles: ['LEARNER'], permissions: [], workspace: 'personal' },
+  { id: 'seed-trial', email: 'trial@digitalent.ai', fullName: 'Lý Văn Dùng Thử', roles: ['LEARNER'], permissions: [], workspace: 'personal' },
+  { id: 'seed-free', email: 'free@digitalent.ai', fullName: 'Mai Thị Miễn Phí', roles: ['LEARNER'], permissions: [], workspace: 'personal' },
 ];
 
 function describeAccount(account: SessionUser): string {
@@ -49,7 +47,7 @@ export function DemoAccountPicker({ onPick, enterpriseOnly = false }: DemoAccoun
       );
       return;
     }
-    if (import.meta.env.DEV || import.meta.env.VITE_SHOW_DEMO_ACCOUNTS === 'true') {
+    if (import.meta.env.DEV && import.meta.env.VITE_SHOW_DEMO_ACCOUNTS === 'true') {
       setDemo({ accounts: SEEDED_API_ACCOUNTS, password: 'Admin@1234' });
     }
   }, []);

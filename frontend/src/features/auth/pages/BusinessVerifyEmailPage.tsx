@@ -104,12 +104,37 @@ export function BusinessVerifyEmailPage() {
     setError('');
     setIsVerifying(true);
     try {
-      await authService.verifyBusinessEmail(email, otpValue);
+      const res = await authService.verifyBusinessEmail(email, otpValue);
       setSuccess(true);
+      const data = res.data?.data;
+      if (data?.accessToken) {
+        localStorage.setItem('accessToken', data.accessToken);
+        if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+        try {
+          const meRes = await authService.getMe();
+          if (meRes.data?.data) {
+            useCurrentUser.getState().setUser(meRes.data.data);
+            setTimeout(() => {
+              if (draftId) {
+                navigate(`/enterprise/contract?draft=${draftId}`, { replace: true });
+              } else {
+                navigate(resolveNextStep(meRes.data.data), { replace: true });
+              }
+            }, 1200);
+            return;
+          }
+        } catch {
+          // fallback to standard navigation
+        }
+      }
       if (currentUser) {
         useCurrentUser.getState().setUser({ ...currentUser, emailVerified: true });
         setTimeout(() => {
-          navigate(resolveNextStep({ ...currentUser, emailVerified: true }), { replace: true });
+          if (draftId) {
+            navigate(`/enterprise/contract?draft=${draftId}`, { replace: true });
+          } else {
+            navigate(resolveNextStep({ ...currentUser, emailVerified: true }), { replace: true });
+          }
         }, 1200);
         return;
       }

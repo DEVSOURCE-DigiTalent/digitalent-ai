@@ -202,6 +202,18 @@ public static class Permissions
         public const string CatalogRead = "platform.catalog.read";
         public const string CatalogManage = "platform.catalog.manage";
         public const string CommerceRead = "platform.commerce.read";
+        /// <summary>Yêu cầu chấm bài dùng thử của doanh nghiệp: xem, phân công mentor, quản lý tài khoản mentor.</summary>
+        public const string TrialManage = "platform.trial.manage";
+    }
+
+    /// <summary>
+    /// Dùng thử doanh nghiệp (docs/specs/2026-10-27-enterprise-trial-assessment.md): chủ doanh nghiệp mời nhân viên,
+    /// đặt hạn làm bài và gửi yêu cầu chấm; mentor chấm bài đánh giá tổng hợp được phân công.
+    /// </summary>
+    public static class Trial
+    {
+        public const string Manage = "trial.manage";
+        public const string Review = "trial.review";
     }
 
     public static class System

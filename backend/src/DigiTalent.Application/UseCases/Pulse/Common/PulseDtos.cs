@@ -209,6 +209,18 @@ public static class PulseMapping
     public static PulseReviewerDto? Reviewer(PulseLearnerSnapshot snapshot) =>
         snapshot.Reviewer == null ? null : new PulseReviewerDto { Name = snapshot.Reviewer.Name, Role = snapshot.Reviewer.Role };
 
+    public static PulsePlacementTestDto? PlacementTest(PulseLearnerSnapshot snapshot) =>
+        snapshot.PlacementTest == null ? null : new PulsePlacementTestDto
+        {
+            HasTaken = snapshot.PlacementTest.HasTaken,
+            AssessmentId = snapshot.PlacementTest.AssessmentId,
+            SubmittedAt = snapshot.PlacementTest.SubmittedAt,
+            PassedDomains = snapshot.PlacementTest.PassedDomains,
+            TotalDomains = snapshot.PlacementTest.TotalDomains,
+            ChoiceScore = snapshot.PlacementTest.ChoiceScore,
+            ChoiceTotal = snapshot.PlacementTest.ChoiceTotal,
+        };
+
     public static PulseDomainDto Domain(PulseDomainState d) => new()
     {
         CategoryId = d.CategoryId,
@@ -275,6 +287,7 @@ public static class PulseMapping
     /// <summary>Thời điểm khóa được công nhận: lúc chấm bài đạt, không có thì lúc lượt học hoàn thành.</summary>
     private static DateTimeOffset? ApprovedAt(PulseCourseState c) => c.ApprovedVia switch
     {
+        PulseApprovedVia.PlacementTest => c.Enrollment?.CompletedAt ?? c.Enrollment?.CreatedAt,
         PulseApprovedVia.PreAssessment => c.PreAssessment?.ReviewedAt,
         PulseApprovedVia.Final => c.Submissions.Where(s => s.Decision == Statuses.FinalSubmissionDecision.Passed).Max(s => s.ReviewedAt),
         _ => c.Enrollment?.CompletedAt,

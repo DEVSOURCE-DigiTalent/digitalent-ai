@@ -35,13 +35,18 @@ export function resolveNextStep(user: SessionUser | null | undefined): string {
   }
 
   if (resolved === WORKSPACES.PLATFORM || normalized.includes(ROLES.PLATFORM_ADMIN)) {
-    return '/platform/dashboard';
+    return normalized.includes(ROLES.MENTOR) && !normalized.includes(ROLES.PLATFORM_ADMIN) ? '/platform/reviews' : '/platform/dashboard';
   }
   if (resolved === WORKSPACES.PERSONAL) return '/personal/dashboard';
   if (normalized.includes(ROLES.OWNER)) return '/enterprise/dashboard';
   if (normalized.includes(ROLES.MANAGER)) return '/enterprise/team';
   if (normalized.includes(ROLES.EMPLOYEE)) return '/enterprise/me';
   return '/forbidden';
+}
+
+/** Doanh nghiệp đang dùng thử (chưa chuyển gói): chủ doanh nghiệp vào trang Dùng thử. */
+export function isEnterpriseTrial(user: Pick<SessionUser, 'enterpriseTrialStatus'>): boolean {
+  return user.enterpriseTrialStatus === 'trial_active' || user.enterpriseTrialStatus === 'trial_read_only';
 }
 
 /** The OTP page belongs to newly registered business owners. Legacy staff and platform accounts use their own workspaces. */
@@ -59,10 +64,10 @@ export function getDashboardPath(user: SessionUser | null | undefined): string {
   const resolved = user.workspace ?? inferWorkspace(normalized);
 
   if (resolved === WORKSPACES.PLATFORM || normalized.includes(ROLES.PLATFORM_ADMIN)) {
-    return '/platform/dashboard';
+    return normalized.includes(ROLES.MENTOR) && !normalized.includes(ROLES.PLATFORM_ADMIN) ? '/platform/reviews' : '/platform/dashboard';
   }
   if (resolved === WORKSPACES.PERSONAL) return '/personal/dashboard';
-  if (normalized.includes(ROLES.OWNER)) return '/enterprise/dashboard';
+  if (normalized.includes(ROLES.OWNER)) return isEnterpriseTrial(user) ? '/enterprise/trial' : '/enterprise/dashboard';
   if (normalized.includes(ROLES.MANAGER)) return '/enterprise/team';
   if (normalized.includes(ROLES.EMPLOYEE)) return '/enterprise/me';
   return '/forbidden';

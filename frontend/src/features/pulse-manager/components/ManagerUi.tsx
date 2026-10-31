@@ -1,4 +1,3 @@
-import { Tooltip } from '@/components/shared/Tooltip';
 import type { ReactNode } from 'react';
 import { Users } from 'lucide-react';
 import '@/features/pulse-employee/pulse.css';
@@ -18,7 +17,6 @@ export function ManagerPage({ children, testId }: { children: ReactNode; testId?
 export interface KpiItem {
   value: ReactNode;
   label: string;
-  tooltip?: string;
   /** Không có số liệu (chưa tải được / không có quyền): hiển thị mờ, không giả số 0. */
   muted?: boolean;
 }
@@ -26,24 +24,12 @@ export interface KpiItem {
 export function KpiRow({ items, label }: { items: KpiItem[]; label: string }) {
   return (
     <section className="pm-kpis" aria-label={label}>
-      {items.map((item) => {
-        const card = (
-          <div key={item.label} className={`pm-kpi${item.muted ? ' muted' : ''}`}>
-            <strong>{item.value}</strong>
-            <span className="pm-kpi-label-row">
-              {item.label}
-              {item.tooltip && <span className="pm-kpi-info-icon" title={item.tooltip}>ℹ</span>}
-            </span>
-          </div>
-        );
-        return item.tooltip ? (
-          <Tooltip key={item.label} content={item.tooltip} position="bottom">
-            {card}
-          </Tooltip>
-        ) : (
-          card
-        );
-      })}
+      {items.map((item) => (
+        <div key={item.label} className={`pm-kpi${item.muted ? ' muted' : ''}`}>
+          <strong>{item.value}</strong>
+          <span>{item.label}</span>
+        </div>
+      ))}
     </section>
   );
 }

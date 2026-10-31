@@ -8,6 +8,7 @@ vi.hoisted(() => {
 });
 
 import { routes } from '../../../app/router';
+import { preloadLazyPages } from '../../../app/routes/lazy-page';
 import { useCurrentUser } from '../../../hooks/use-current-user';
 import { mockCheckoutService } from '../../../services/mock/mock-checkout.service';
 import { mockOnboardingService } from '../../../services/mock/mock-onboarding.service';
@@ -18,7 +19,9 @@ import { getPlan, priceFor } from '../../../lib/plans';
 
 beforeAll(async () => {
   await import('../../../services/mock/server/mock-adapter');
-});
+  // Pages and layouts are lazy chunks; load them once so each test only waits for its own render.
+  await preloadLazyPages();
+}, 120_000);
 
 afterAll(() => {
   vi.unstubAllEnvs();
