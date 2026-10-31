@@ -1,7 +1,6 @@
 import { Check, Minus } from 'lucide-react';
 import { ENTITLEMENT_LABELS, ENTITLEMENTS, type Entitlement } from '@/lib/entitlements';
 import { plansFor, type PlanAudience } from '@/lib/plans';
-import { cn } from '@/lib/utils';
 
 /** Entitlements worth comparing for each audience, in the order a buyer cares about them. */
 const COMPARED: Record<PlanAudience, Entitlement[]> = {
@@ -14,60 +13,62 @@ const COMPARED: Record<PlanAudience, Entitlement[]> = {
   individual: [ENTITLEMENTS.PERSONAL_LEARNING_PATH, ENTITLEMENTS.ADVANCED_ANALYTICS],
 };
 
-/** Feature-by-plan table under the plan cards. */
+/**
+ * Bảng so sánh đối soát tính năng chuẩn B2B Enterprise theo phong cách Light Pearl.
+ */
 export function PlanComparison({ audience }: { audience: PlanAudience }) {
-  const isIndividual = audience === 'individual';
   const plans = plansFor(audience);
   const rows = COMPARED[audience];
 
   return (
-    <section aria-labelledby="plan-comparison-title" className="mx-auto mt-16 max-w-5xl">
-      <h2
-        id="plan-comparison-title"
-        className={cn('text-xl font-normal tracking-[-0.02em]', isIndividual ? 'text-pt-fg' : 'text-cream')}
-      >
-        So sánh tính năng
-      </h2>
-      <div
-        className={cn(
-          'mt-5 overflow-x-auto rounded-2xl',
-          isIndividual ? 'border border-pt-line bg-pt-panel' : 'ring-1 ring-amber-400/20 bg-landing-panel'
-        )}
-      >
-        <table className="w-full min-w-[480px] border-collapse text-left text-sm">
+    <section aria-labelledby="plan-comparison-title" className="mx-auto mt-20 max-w-5xl">
+      <div className="text-center max-w-2xl mx-auto mb-8">
+        <h2
+          id="plan-comparison-title"
+          className="text-2xl font-bold tracking-tight text-slate-900"
+        >
+          Đối sánh tính năng chi tiết
+        </h2>
+        <p className="mt-2 text-sm text-slate-600">
+          Minh bạch mọi quyền lợi và giới hạn để doanh nghiệp dễ dàng ra quyết định đầu tư.
+        </p>
+      </div>
+
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white/95 shadow-sm">
+        <table className="w-full min-w-[540px] border-collapse text-left text-sm">
           <caption className="sr-only">Tính năng có trong từng gói</caption>
           <thead>
-            <tr className={cn(isIndividual ? 'bg-pt-panel text-pt-fg' : 'bg-landing-panel text-cream')}>
-              <th scope="col" className={cn('px-5 py-4 font-normal', isIndividual ? 'text-pt-fg-3' : 'text-stone-400')}>
-                Tính năng
+            <tr className="bg-slate-50 border-b border-slate-200 text-slate-900">
+              <th scope="col" className="px-6 py-4 font-semibold text-slate-700">
+                Nhóm tính năng
               </th>
               {plans.map((plan) => (
-                <th key={plan.code} scope="col" className="px-5 py-4 text-center font-medium">
+                <th key={plan.code} scope="col" className="px-6 py-4 text-center font-bold text-slate-900">
                   {plan.name}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-slate-100">
             {rows.map((entitlement) => (
-              <tr key={entitlement} className={cn(isIndividual ? 'border-t border-pt-line' : 'border-t border-white/10')}>
-                <th scope="row" className={cn('px-5 py-3.5 font-normal', isIndividual ? 'text-pt-fg' : 'text-cream/85')}>
+              <tr key={entitlement} className="hover:bg-slate-50/60 transition-colors">
+                <th scope="row" className="px-6 py-4 font-medium text-slate-800">
                   {ENTITLEMENT_LABELS[entitlement]}
                 </th>
                 {plans.map((plan) => {
                   const included = plan.entitlements.includes(entitlement);
                   return (
-                    <td key={plan.code} className="px-5 py-3.5 text-center">
+                    <td key={plan.code} className="px-6 py-4 text-center">
                       {included ? (
-                        <Check
-                          className={cn('mx-auto size-4', isIndividual ? 'text-pt-accent' : 'text-[#F5CA65]')}
-                          aria-label="Có"
-                        />
+                        <span className="inline-flex items-center justify-center rounded-full bg-emerald-50 text-emerald-600 p-1 border border-emerald-200/60">
+                          <Check className="size-4 stroke-[2.5]" aria-hidden="true" />
+                          <span className="sr-only">Có</span>
+                        </span>
                       ) : (
-                        <Minus
-                          className={cn('mx-auto size-4', isIndividual ? 'text-pt-fg-3/50' : 'text-stone-500')}
-                          aria-label="Không"
-                        />
+                        <span className="inline-flex items-center justify-center text-slate-300">
+                          <Minus className="size-4 stroke-[2]" aria-hidden="true" />
+                          <span className="sr-only">Không</span>
+                        </span>
                       )}
                     </td>
                   );
