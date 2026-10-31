@@ -1,28 +1,23 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   BarChart3,
   Building2,
-  Calculator,
   CheckCircle2,
   ChevronRight,
-  Clock,
   Compass,
   FileCheck,
   GraduationCap,
   Layers,
-  ShieldCheck,
-  Sparkles,
-  TrendingUp,
+  Target,
   Users2,
   XCircle,
 } from 'lucide-react';
 import { PulsePublicShell } from './PulsePublicShell';
 import frameworkArt from '@/assets/pulse/competency-architecture.webp';
+import journeyArt from '@/assets/pulse/learning-journey-abstract.webp';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { getDashboardPath } from '@/lib/navigation';
-import { formatVnd } from '@/lib/plans';
 
 const painPoints = [
   {
@@ -100,24 +95,12 @@ const stats = [
 ];
 
 /**
- * Trang Giải pháp Nền tảng Doanh nghiệp (Enterprise Solutions Page) v3.0
- * Ngôn ngữ thiết kế: Light Pearl Glassmorphism, chuẩn Thông tư 02/2025/TT-BGDĐT.
+ * Trang Giải pháp Nền tảng Doanh nghiệp (Enterprise Solutions Page)
+ * Thay thế hoàn toàn trang giá cũ, mô tả chi tiết hướng giải quyết bài toán đào tạo thực chất của DigiTalent AI.
  */
 export function PulseBusinessSolutionPage() {
   const user = useCurrentUser((state) => state.user);
   const home = user ? getDashboardPath(user) : null;
-
-  // ROI Calculator States
-  const [roiHeadcount, setRoiHeadcount] = useState<number>(45);
-  const [roiSalary, setRoiSalary] = useState<number>(15000000); // 15 triệu VND/tháng
-
-  // Tính toán hiệu quả:
-  // - 1 nhân viên trung bình học 40h nếu học đại trà.
-  // - Với DigiTalent Pulse: Nhờ bài kiểm tra đầu vào miễn học phần đã biết, tiết kiệm trung bình 18 giờ/người.
-  // - Chi phí giờ làm việc: lương tháng / 160h.
-  const hourlyRate = roiSalary / 160;
-  const totalHoursSaved = roiHeadcount * 18;
-  const totalMoneySaved = Math.round(totalHoursSaved * hourlyRate);
 
   return (
     <PulsePublicShell>
@@ -125,12 +108,6 @@ export function PulseBusinessSolutionPage() {
         {/* ── Hero Section ── */}
         <section className="pulse-public-wrap pulse-solution-hero" aria-labelledby="solution-hero-title">
           <div className="pulse-solution-hero-content">
-            {/* Compliance Trust Pill */}
-            <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 border border-amber-200/80 px-3.5 py-1 text-xs font-semibold text-amber-800 mb-3">
-              <ShieldCheck className="size-3.5 text-amber-600" />
-              Khung năng lực số Thông tư 02/2025/TT-BGDĐT · 6 Lĩnh vực · 21 Năng lực
-            </div>
-
             <p className="pulse-public-eyebrow">
               <span className="pulse-public-eyebrow-dot" /> HƯỚNG GIẢI QUYẾT BÀI TOÁN DOANH NGHIỆP
             </p>
@@ -149,8 +126,24 @@ export function PulseBusinessSolutionPage() {
                 Xem 4 bài toán cốt lõi <ChevronRight size={18} aria-hidden="true" />
               </a>
               <Link className="pulse-public-text-link" to="/business/pricing">
-                Xem bảng giá B2B <ChevronRight size={18} aria-hidden="true" />
+                Xem gói và bảng giá <ChevronRight size={18} aria-hidden="true" />
               </Link>
+            </div>
+            <div className="pulse-solution-tags">
+              <span><CheckCircle2 size={15} /> Chuẩn hóa theo vị trí</span>
+              <span><CheckCircle2 size={15} /> Đo đúng Skill Gap</span>
+              <span><CheckCircle2 size={15} /> Minh chứng thực chiến</span>
+              <span><CheckCircle2 size={15} /> Báo cáo ROI minh bạch</span>
+            </div>
+          </div>
+          <div className="pulse-solution-hero-visual">
+            <img src={journeyArt} alt="Mô hình đào tạo năng lực số liên kết đa tầng" />
+            <div className="pulse-solution-floating-card">
+              <div className="pulse-solution-card-header">
+                <Target size={18} className="text-[#3251e8]" />
+                <strong>MỤC TIÊU CỐT LÕI</strong>
+              </div>
+              <p>Mỗi giờ nhân viên học tập là một bước tiến cụ thể hướng đến mục tiêu của tổ chức.</p>
             </div>
           </div>
         </section>
@@ -218,7 +211,7 @@ export function PulseBusinessSolutionPage() {
                   <span className="pulse-solution-tier-badge">CẤP 1</span>
                   <div>
                     <strong>Chuẩn Năng lực Quốc gia & DigiTalent</strong>
-                    <p>Khung tham chiếu chuẩn mực làm nền móng (TT 02/2025/TT-BGDĐT).</p>
+                    <p>Khung tham chiếu chuẩn mực làm nền móng.</p>
                   </div>
                 </div>
                 <div className="pulse-solution-hierarchy-item">
@@ -232,7 +225,7 @@ export function PulseBusinessSolutionPage() {
                   <span className="pulse-solution-tier-badge">CẤP 3</span>
                   <div>
                     <strong>Mục tiêu từng Phòng ban</strong>
-                    <p>Chuyên sâu theo bộ phận (Kế toán, Nhân sự, Kinh doanh, Marketing...).</p>
+                    <p>Chuyên sâu theo bộ phận (Kỹ thuật, Kinh doanh, Nhân sự...).</p>
                   </div>
                 </div>
                 <div className="pulse-solution-hierarchy-item">
@@ -286,117 +279,6 @@ export function PulseBusinessSolutionPage() {
                 <p>{s.desc}</p>
               </div>
             ))}
-          </div>
-        </section>
-
-        {/* ── Section: Interactive ROI Calculator ── */}
-        <section className="pulse-public-wrap py-12" aria-labelledby="roi-calculator-title">
-          <div className="rounded-3xl border border-slate-200/90 bg-white/95 p-6 sm:p-10 shadow-sm">
-            <div className="max-w-2xl mb-8">
-              <div className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500 text-white px-2.5 py-0.5 text-xs font-bold uppercase mb-2">
-                <Calculator className="size-3.5" /> Bảng tính hiệu quả đầu tư
-              </div>
-              <h2 id="roi-calculator-title" className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-                Ước tính giá trị kinh tế (ROI) cho tổ chức của bạn
-              </h2>
-              <p className="mt-2 text-sm text-slate-600">
-                Xem số giờ làm việc quý báu và ngân sách lãng phí được giải phóng nhờ cơ chế chẩn đoán miễn học phần đã biết.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              {/* Sliders Left */}
-              <div className="lg:col-span-5 space-y-6">
-                <div>
-                  <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    <span>Số lượng nhân sự đào tạo</span>
-                    <span className="text-emerald-700 font-extrabold font-mono text-base">{roiHeadcount} nhân sự</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={10}
-                    max={300}
-                    step={5}
-                    value={roiHeadcount}
-                    onChange={(e) => setRoiHeadcount(Number(e.target.value))}
-                    className="w-full accent-emerald-600 cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[11px] text-slate-400 font-mono mt-1">
-                    <span>10 người</span>
-                    <span>150 người</span>
-                    <span>300 người</span>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    <span>Mức lương trung bình tháng</span>
-                    <span className="text-emerald-700 font-extrabold font-mono text-base">{formatVnd(roiSalary)}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={8000000}
-                    max={40000000}
-                    step={1000000}
-                    value={roiSalary}
-                    onChange={(e) => setRoiSalary(Number(e.target.value))}
-                    className="w-full accent-emerald-600 cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[11px] text-slate-400 font-mono mt-1">
-                    <span>8 triệu</span>
-                    <span>20 triệu</span>
-                    <span>40 triệu</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Outputs Right */}
-              <div className="lg:col-span-7 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-300 p-6 sm:p-8 space-y-5">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                  <div className="bg-white rounded-xl p-4 border border-emerald-200/60 shadow-xs">
-                    <p className="text-xs font-bold text-slate-500 flex items-center justify-center gap-1">
-                      <Clock className="size-3.5 text-emerald-600" /> Giờ học tiết kiệm
-                    </p>
-                    <p className="mt-1 text-2xl font-extrabold text-slate-900 font-mono">
-                      {totalHoursSaved}h
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">thời gian làm việc thật</p>
-                  </div>
-
-                  <div className="bg-white rounded-xl p-4 border border-emerald-200/60 shadow-xs">
-                    <p className="text-xs font-bold text-slate-500 flex items-center justify-center gap-1">
-                      <TrendingUp className="size-3.5 text-emerald-600" /> Giá trị giải phóng
-                    </p>
-                    <p className="mt-1 text-2xl font-extrabold text-emerald-700 font-mono">
-                      ≈ {formatVnd(totalMoneySaved)}
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">chi phí vô hình/năm</p>
-                  </div>
-
-                  <div className="bg-white rounded-xl p-4 border border-emerald-200/60 shadow-xs">
-                    <p className="text-xs font-bold text-slate-500 flex items-center justify-center gap-1">
-                      <Sparkles className="size-3.5 text-amber-500" /> Tỷ lệ hiệu quả ROI
-                    </p>
-                    <p className="mt-1 text-2xl font-extrabold text-amber-600 font-mono">
-                      3.5x – 4.2x
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">so với chi phí bỏ ra</p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 border-t border-emerald-200/60">
-                  <p className="text-xs text-slate-600">
-                    Bắt đầu với 10 nhân sự hoàn toàn miễn phí trọn đời khóa Cơ bản.
-                  </p>
-                  <Link
-                    to="/business/try"
-                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-amber-700 whitespace-nowrap transition-all"
-                  >
-                    Kích hoạt thử nghiệm ngay <ArrowRight className="size-3.5" />
-                  </Link>
-                </div>
-              </div>
-            </div>
           </div>
         </section>
 

@@ -5,7 +5,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { Mail, CheckCircle2, ArrowRight, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
-import { PulseAuthLayout } from '@/features/public/pulse-landing/PulseAuthLayout';
+import { AuthShell } from '../components/AuthShell';
+import {
+  DARK_INPUT_CLASS,
+  DARK_PRIMARY_BUTTON,
+  DARK_SECONDARY_BUTTON,
+  Field,
+  FormError,
+  MockEmailNotice,
+} from '../../public/components/FormControls';
 import { passwordService } from '@/services/password.service';
 import { passwordSchema } from '../validation';
 import { USE_MOCK } from '@/services/mock/mock-config';
@@ -16,13 +24,10 @@ function errorMessage(error: unknown): string {
 }
 
 const forgotSchema = z.object({
-  email: z.string().trim().min(1, 'Vui lòng nhập email').pipe(z.email('Email không đúng định dạng')),
+  email: z.string().trim().min(1, 'Nhập email').pipe(z.email('Email không hợp lệ')),
 });
 
-/**
- * AUTH-06 (1/2): Trang Yêu Cầu Đặt Lại Mật Khẩu (Quên Mật Khẩu)
- * Thiết kế chuẩn PulseAuthLayout ánh ngọc trai v3.0.
- */
+/** AUTH-06 (1/2): asks for the email. The answer is the same whether or not an account exists. */
 export function ForgotPasswordPage() {
   const [submittedEmail, setSubmittedEmail] = useState('');
   const request = useMutation({
@@ -40,70 +45,56 @@ export function ForgotPasswordPage() {
   } = useForm<z.infer<typeof forgotSchema>>({ resolver: zodResolver(forgotSchema) });
 
   return (
-    <PulseAuthLayout
-      mode="login"
-      eyebrow="Bảo mật tài khoản doanh nghiệp"
-      title="Khôi phục mật khẩu"
-      subtitle="Nhập email tài khoản của bạn để nhận liên kết xác thực đặt lại mật khẩu an toàn mới."
-      asideTitle="Bảo vệ toàn vẹn tài khoản của bạn."
-      asideText="Mọi dữ liệu đánh giá năng lực, tiến độ học tập và minh chứng công việc của bạn luôn được mã hóa an toàn trên hệ sinh thái DigiTalent Pulse."
-      asidePoints={[
-        'Liên kết đặt lại mật khẩu có hiệu lực trong 30 phút',
-        'Mật khẩu mới yêu cầu tối thiểu 8 ký tự kèm chữ và số',
-      ]}
-      footer={
-        <p>
+    <AuthShell
+      portal="individual"
+      eyebrow="Bảo mật tài khoản"
+      title="Quên mật khẩu?"
+      subtitle="Nhập email tài khoản của bạn để nhận liên kết xác thực đặt lại mật khẩu mới."
+      footerLink={
+        <p className="text-xs text-stone-400">
           Đã nhớ mật khẩu?{' '}
-          <Link to="/login" className="font-bold text-amber-600 hover:text-amber-700 underline underline-offset-4">
+          <Link to="/login" className="text-cream underline underline-offset-4 font-medium hover:text-[#F5CA65] transition-colors">
             Đăng nhập ngay
           </Link>
         </p>
       }
     >
       {request.isSuccess ? (
-        <div className="space-y-6 text-center py-3" role="status">
-          <div className="size-16 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
-            <Mail className="size-8" />
+        <div className="space-y-6 text-center py-2" role="status">
+          <div className="grid size-14 place-items-center mx-auto rounded-full bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/30">
+            <Mail className="size-7" />
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-xl font-bold text-slate-900">Đã gửi email khôi phục!</h2>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-sm mx-auto">
-              Nếu email <strong className="font-mono text-slate-900 font-bold">{submittedEmail}</strong> tồn tại trong hệ thống, chúng tôi đã gửi liên kết đặt lại mật khẩu đến hộp thư của bạn.
+            <h2 className="text-lg font-semibold text-cream">Đã gửi email khôi phục!</h2>
+            <p className="text-xs text-stone-300 leading-relaxed max-w-sm mx-auto">
+              Nếu email <strong className="text-cream font-mono">{submittedEmail}</strong> có tài khoản trong hệ thống, chúng tôi đã gửi liên kết đặt lại mật khẩu đến hộp thư của bạn.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-left text-slate-700 space-y-2.5">
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-xs text-left text-stone-300 space-y-2.5">
             <div className="flex items-start gap-2">
-              <CheckCircle2 className="size-4 shrink-0 text-emerald-600 mt-0.5" />
-              <span>Liên kết bảo mật có thời hạn <strong>30 phút</strong> kể từ thời điểm gửi.</span>
+              <CheckCircle2 className="size-4 shrink-0 text-emerald-400 mt-0.5" />
+              <span>Liên kết có hiệu lực trong vòng <strong>30 phút</strong>.</span>
             </div>
             <div className="flex items-start gap-2">
-              <AlertCircle className="size-4 shrink-0 text-amber-600 mt-0.5" />
-              <span>Kiểm tra thêm thư mục <em>Thư rác (Spam / Junk)</em> nếu chưa thấy trong hộp thư chính.</span>
+              <AlertCircle className="size-4 shrink-0 text-[#F5CA65] mt-0.5" />
+              <span>Vui lòng kiểm tra cả thư mục <em>Thư rác (Spam / Junk)</em> nếu chưa thấy thư trong hộp thư chính.</span>
             </div>
           </div>
 
-          {USE_MOCK && request.data?.debugLink && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 text-left">
-              <strong>Môi trường thử nghiệm:</strong>{' '}
-              <a href={request.data.debugLink} className="underline font-mono">
-                Mở liên kết đặt lại mật khẩu mô phỏng
-              </a>
-            </div>
+          {USE_MOCK && (
+            <MockEmailNotice label="liên kết đặt lại mật khẩu." to={request.data?.debugLink} />
           )}
 
           <div className="grid gap-3 pt-2">
-            <Link
-              to="/login"
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-amber-700 transition"
-            >
-              Quay lại đăng nhập <ArrowRight className="size-4" />
+            <Link to="/login" className={`${DARK_PRIMARY_BUTTON} w-full text-center py-3`}>
+              Quay lại đăng nhập
             </Link>
             <button
               type="button"
               onClick={() => request.reset()}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+              className={`${DARK_SECONDARY_BUTTON} w-full text-center text-xs py-2.5`}
             >
               Gửi lại hoặc thử email khác
             </button>
@@ -111,34 +102,24 @@ export function ForgotPasswordPage() {
         </div>
       ) : (
         <form onSubmit={handleSubmit(({ email }) => request.mutate(email))} noValidate className="space-y-5">
-          {request.error && (
-            <div role="alert" className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
-              {errorMessage(request.error)}
-            </div>
-          )}
+          <FormError message={request.error ? errorMessage(request.error) : undefined} />
 
-          <div className="space-y-1.5 text-left">
-            <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-              Email tài khoản của bạn
-            </label>
+          <Field label="Địa chỉ email đăng ký" htmlFor="email" error={errors.email?.message}>
             <input
               id="email"
               type="email"
               autoComplete="email"
-              placeholder="ten@doanhnghiep.vn"
+              placeholder="example@gmail.com"
               aria-invalid={!!errors.email}
-              className="w-full h-11 rounded-xl bg-white border border-slate-300 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 shadow-sm transition"
+              className={DARK_INPUT_CLASS}
               {...register('email')}
             />
-            {errors.email?.message && (
-              <p className="text-xs text-rose-600 font-medium">{errors.email.message}</p>
-            )}
-          </div>
+          </Field>
 
           <button
             type="submit"
             disabled={request.isPending}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-3.5 text-sm font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-amber-700 disabled:opacity-50 transition cursor-pointer"
+            className={`${DARK_PRIMARY_BUTTON} w-full py-3.5`}
           >
             {request.isPending ? (
               <span className="flex items-center justify-center gap-2">
@@ -146,28 +127,23 @@ export function ForgotPasswordPage() {
                 Đang gửi liên kết…
               </span>
             ) : (
-              <>
-                Gửi liên kết đặt lại mật khẩu <ArrowRight className="size-4" />
-              </>
+              'Gửi liên kết đặt lại mật khẩu'
             )}
           </button>
         </form>
       )}
-    </PulseAuthLayout>
+    </AuthShell>
   );
 }
 
 const resetSchema = z
-  .object({ password: passwordSchema, confirmPassword: z.string().min(1, 'Vui lòng nhập lại mật khẩu') })
+  .object({ password: passwordSchema, confirmPassword: z.string().min(1, 'Nhập lại mật khẩu') })
   .refine((data) => data.password === data.confirmPassword, {
     path: ['confirmPassword'],
     message: 'Mật khẩu nhập lại không khớp',
   });
 
-/**
- * AUTH-06 (2/2): Trang Đặt Lại Mật Khẩu Mới (Reset Password)
- * Thiết kế chuẩn PulseAuthLayout ánh ngọc trai v3.0.
- */
+/** AUTH-06 (2/2): sets the new password from the emailed link. */
 export function ResetPasswordPage() {
   const { token = '' } = useParams();
   const navigate = useNavigate();
@@ -193,83 +169,71 @@ export function ResetPasswordPage() {
   } = useForm<z.infer<typeof resetSchema>>({ resolver: zodResolver(resetSchema) });
 
   return (
-    <PulseAuthLayout
-      mode="login"
-      eyebrow="Bảo mật tài khoản doanh nghiệp"
-      title="Thiết lập mật khẩu mới"
-      subtitle="Tạo mật khẩu an toàn mới để tiếp tục đăng nhập vào không gian làm việc của bạn."
-      asideTitle="An toàn và bảo mật theo chuẩn doanh nghiệp."
-      asideText="DigiTalent áp dụng chính sách mật khẩu mạnh và mã hóa bcrypt đa tầng để bảo vệ dữ liệu hồ sơ nhân sự của bạn."
-      asidePoints={[
-        'Mật khẩu tối thiểu 8 ký tự',
-        'Nên kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt',
-      ]}
-      footer={
-        <p>
-          <Link to="/login" className="font-bold text-amber-600 hover:text-amber-700 underline underline-offset-4">
+    <AuthShell
+      portal="individual"
+      eyebrow="Đặt lại mật khẩu"
+      title="Tạo mật khẩu mới"
+      subtitle="Thiết lập mật khẩu an toàn mới cho tài khoản của bạn."
+      footerLink={
+        <p className="text-xs text-stone-400">
+          <Link to="/login" className="text-cream underline underline-offset-4 hover:text-[#F5CA65] transition-colors">
             Quay lại trang đăng nhập
           </Link>
         </p>
       }
     >
       {validity.isLoading && (
-        <div className="flex flex-col items-center justify-center py-12 space-y-3 text-center">
-          <Loader2 className="size-8 animate-spin text-amber-500" />
-          <p className="text-xs text-slate-500">Đang kiểm tra tính hợp lệ của liên kết xác thực…</p>
+        <div className="flex flex-col items-center justify-center py-10 space-y-3 text-center">
+          <Loader2 className="size-8 animate-spin text-[#F5CA65]" />
+          <p className="text-xs text-stone-400">Đang kiểm tra liên kết đặt lại mật khẩu…</p>
         </div>
       )}
 
       {validity.isError && (
         <div className="space-y-6 text-center py-4">
-          <div className="size-16 rounded-full bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto shadow-sm">
-            <AlertCircle className="size-8" />
+          <div className="grid size-14 place-items-center mx-auto rounded-full bg-red-500/10 text-red-400 ring-1 ring-red-500/30">
+            <AlertCircle className="size-7" />
           </div>
           <div className="space-y-1">
-            <h2 className="text-lg font-bold text-slate-900">Liên kết không hợp lệ hoặc đã hết hạn</h2>
-            <p className="text-xs text-slate-600 max-w-sm mx-auto">
+            <h2 className="text-base font-medium text-cream">Liên kết không hợp lệ hoặc đã hết hạn</h2>
+            <p className="text-xs text-stone-400">
               {errorMessage(validity.error)}
             </p>
           </div>
-          <Link
-            to="/forgot-password"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-amber-700 transition"
-          >
-            Yêu cầu liên kết mới <ArrowRight className="size-4" />
+          <Link to="/forgot-password" className={`${DARK_PRIMARY_BUTTON} inline-flex items-center gap-2`}>
+            Yêu cầu liên kết mới
+            <ArrowRight className="size-4" />
           </Link>
         </div>
       )}
 
       {done && (
         <div className="space-y-6 text-center py-4" role="status">
-          <div className="size-16 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
-            <CheckCircle2 className="size-8" />
+          <div className="grid size-14 place-items-center mx-auto rounded-full bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/30">
+            <CheckCircle2 className="size-7" />
           </div>
           <div className="space-y-1">
-            <h2 className="text-xl font-bold text-slate-900">Đặt lại mật khẩu thành công!</h2>
-            <p className="text-xs sm:text-sm text-slate-600 max-w-sm mx-auto">
-              Mật khẩu mới đã được lưu an toàn. Bạn có thể đăng nhập ngay bằng mật khẩu vừa tạo.
+            <h2 className="text-base font-semibold text-cream">Đặt lại mật khẩu thành công!</h2>
+            <p className="text-xs text-stone-300">
+              Mật khẩu đã được cập nhật thành công. Bạn có thể đăng nhập ngay bằng mật khẩu mới.
             </p>
           </div>
           <button
             type="button"
-            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-3.5 text-sm font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-amber-700 transition cursor-pointer"
+            className={`${DARK_PRIMARY_BUTTON} w-full py-3.5`}
             onClick={() => navigate('/login', { replace: true })}
           >
-            Đến trang đăng nhập ngay <ArrowRight className="size-4" />
+            Đến trang đăng nhập
           </button>
         </div>
       )}
 
       {validity.isSuccess && !done && (
-        <form onSubmit={handleSubmit(({ password }) => reset.mutate(password))} noValidate className="space-y-5 text-left">
-          {reset.error && (
-            <div role="alert" className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
-              {errorMessage(reset.error)}
-            </div>
-          )}
+        <form onSubmit={handleSubmit(({ password }) => reset.mutate(password))} noValidate className="space-y-5">
+          <FormError message={reset.error ? errorMessage(reset.error) : undefined} />
 
-          <div className="space-y-1.5">
-            <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+          <div>
+            <label htmlFor="password" className="block text-xs font-medium text-stone-300 mb-1.5">
               Mật khẩu mới
             </label>
             <div className="relative">
@@ -277,27 +241,27 @@ export function ResetPasswordPage() {
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
-                placeholder="Tối thiểu 8 ký tự"
+                placeholder="Ít nhất 8 ký tự"
                 aria-invalid={!!errors.password}
-                className="w-full h-11 rounded-xl bg-white border border-slate-300 px-4 pr-11 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 shadow-sm transition"
+                className={`${DARK_INPUT_CLASS} pr-10`}
                 {...register('password')}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((p) => !p)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-cream transition-colors"
                 tabIndex={-1}
               >
                 {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>
             {errors.password?.message && (
-              <p className="text-xs text-rose-600 font-medium">{errors.password.message}</p>
+              <p className="mt-1 text-xs text-rose-400">{errors.password.message}</p>
             )}
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="confirmPassword" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+          <div>
+            <label htmlFor="confirmPassword" className="block text-xs font-medium text-stone-300 mb-1.5">
               Nhập lại mật khẩu mới
             </label>
             <div className="relative">
@@ -305,29 +269,29 @@ export function ResetPasswordPage() {
                 id="confirmPassword"
                 type={showConfirm ? 'text' : 'password'}
                 autoComplete="new-password"
-                placeholder="Xác nhận mật khẩu"
+                placeholder="Xác nhận mật khẩu mới"
                 aria-invalid={!!errors.confirmPassword}
-                className="w-full h-11 rounded-xl bg-white border border-slate-300 px-4 pr-11 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 shadow-sm transition"
+                className={`${DARK_INPUT_CLASS} pr-10`}
                 {...register('confirmPassword')}
               />
               <button
                 type="button"
                 onClick={() => setShowConfirm((p) => !p)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-cream transition-colors"
                 tabIndex={-1}
               >
                 {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>
             {errors.confirmPassword?.message && (
-              <p className="text-xs text-rose-600 font-medium">{errors.confirmPassword.message}</p>
+              <p className="mt-1 text-xs text-rose-400">{errors.confirmPassword.message}</p>
             )}
           </div>
 
           <button
             type="submit"
             disabled={reset.isPending}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-3.5 text-sm font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-amber-700 disabled:opacity-50 transition cursor-pointer"
+            className={`${DARK_PRIMARY_BUTTON} w-full py-3.5`}
           >
             {reset.isPending ? (
               <span className="flex items-center justify-center gap-2">
@@ -335,21 +299,16 @@ export function ResetPasswordPage() {
                 Đang lưu mật khẩu…
               </span>
             ) : (
-              <>
-                Lưu mật khẩu mới <ArrowRight className="size-4" />
-              </>
+              'Đặt mật khẩu mới'
             )}
           </button>
         </form>
       )}
-    </PulseAuthLayout>
+    </AuthShell>
   );
 }
 
-/**
- * AUTH-07: Trang Xác Minh Địa Chỉ Email
- * Thiết kế chuẩn PulseAuthLayout ánh ngọc trai v3.0.
- */
+/** AUTH-07: opened from the verification email; confirms the address. */
 export function VerifyEmailPage() {
   const { token = '' } = useParams();
   const verify = useMutation({ mutationFn: async () => passwordService.verifyEmail(token) });
@@ -360,66 +319,54 @@ export function VerifyEmailPage() {
   }, [mutate]);
 
   return (
-    <PulseAuthLayout
-      mode="login"
+    <AuthShell
+      portal="individual"
       eyebrow="Xác thực tài khoản"
       title="Xác minh địa chỉ email"
-      subtitle="Kích hoạt quyền truy cập đầy đủ vào nền tảng DigiTalent Pulse."
-      asideTitle="Một không gian phát triển năng lực số trọn vẹn."
-      asideText="Sau khi xác minh email thành công, bạn có thể đăng nhập để trải nghiệm bài đánh giá đầu vào và lộ trình đào tạo chuẩn TT 02/2025."
-      asidePoints={[
-        'Kích hoạt bảo mật 2 lớp cho tài khoản',
-        'Tự do tham gia các khóa học được phân bổ',
-      ]}
+      subtitle="Kích hoạt quyền truy cập đầy đủ vào nền tảng DigiTalent AI."
     >
-      <div className="space-y-6 text-center py-6" role="status">
+      <div className="space-y-6 text-center py-4" role="status">
         {(verify.isPending || verify.isIdle) && (
           <div className="flex flex-col items-center justify-center py-8 space-y-3">
-            <Loader2 className="size-8 animate-spin text-amber-500" />
-            <p className="text-xs text-slate-500">Đang đối soát mã xác thực email của bạn…</p>
+            <Loader2 className="size-8 animate-spin text-[#F5CA65]" />
+            <p className="text-xs text-stone-400">Đang xác thực liên kết email của bạn…</p>
           </div>
         )}
 
         {verify.isSuccess && (
           <>
-            <div className="size-16 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
-              <CheckCircle2 className="size-8" />
+            <div className="grid size-14 place-items-center mx-auto rounded-full bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/30">
+              <CheckCircle2 className="size-7" />
             </div>
             <div className="space-y-1">
-              <h2 className="text-xl font-bold text-slate-900">Email đã được xác minh thành công!</h2>
-              <p className="text-xs sm:text-sm text-slate-600 max-w-sm mx-auto">
-                Tài khoản của bạn đã sẵn sàng. Bạn có thể đăng nhập ngay để bắt đầu hành trình nâng cao năng lực số.
+              <h2 className="text-base font-semibold text-cream">Email của bạn đã được xác minh thành công!</h2>
+              <p className="text-xs text-stone-300">
+                Tài khoản đã sẵn sàng. Bạn có thể đăng nhập ngay để bắt đầu hành trình học tập.
               </p>
             </div>
-            <Link
-              to="/login"
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-3.5 text-sm font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-amber-700 transition"
-            >
-              Đến trang đăng nhập ngay <ArrowRight className="size-4" />
+            <Link to="/login" className={`${DARK_PRIMARY_BUTTON} w-full py-3`}>
+              Đến trang đăng nhập
             </Link>
           </>
         )}
 
         {verify.isError && (
           <>
-            <div className="size-16 rounded-full bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto shadow-sm">
-              <AlertCircle className="size-8" />
+            <div className="grid size-14 place-items-center mx-auto rounded-full bg-red-500/10 text-red-400 ring-1 ring-red-500/30">
+              <AlertCircle className="size-7" />
             </div>
             <div className="space-y-1">
-              <h2 className="text-lg font-bold text-slate-900">Xác thực không thành công</h2>
-              <p className="text-xs text-rose-700 max-w-sm mx-auto">
+              <h2 className="text-base font-medium text-cream">Xác thực không thành công</h2>
+              <p className="text-xs text-rose-400">
                 {errorMessage(verify.error)}
               </p>
             </div>
-            <Link
-              to="/login"
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-3.5 text-sm font-bold text-white hover:bg-slate-800 transition"
-            >
-              Quay lại trang đăng nhập <ArrowRight className="size-4" />
+            <Link to="/login" className={`${DARK_PRIMARY_BUTTON} w-full py-3`}>
+              Quay lại đăng nhập
             </Link>
           </>
         )}
       </div>
-    </PulseAuthLayout>
+    </AuthShell>
   );
 }

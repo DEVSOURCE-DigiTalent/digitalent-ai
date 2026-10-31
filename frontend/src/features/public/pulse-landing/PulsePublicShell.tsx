@@ -25,15 +25,12 @@ export function PulsePublicShell({ children, compact = false }: { children: Reac
       <header className="pulse-public-header">
         <div className={'pulse-public-wrap pulse-public-header-inner' + (compact ? ' pulse-public-header-inner-compact' : '')}>
           <PulseBrand />
-          {!compact && (
-            <nav className="pulse-public-nav" aria-label="Điều hướng chính">
+          {!compact && <nav className="pulse-public-nav" aria-label="Điều hướng chính">
               <Link to="/business/solution">Giải pháp</Link>
-              <Link to="/careers">Chức danh mẫu</Link>
-              <Link to="/business/pricing">Bảng giá</Link>
-              <Link to="/verify">Xác thực chứng chỉ</Link>
               <a href="/business#hanh-trinh">Cách hoạt động</a>
-            </nav>
-          )}
+              <a href="/business#khung-nang-luc">Khung năng lực</a>
+              <a href="/business#vai-tro">Vai trò</a>
+          </nav>}
           <div className="pulse-public-header-actions">
             <Link className="pulse-public-login" to="/login">Đăng nhập</Link>
             <Link className="pulse-public-button pulse-public-button-small" to="/business/try">
@@ -43,15 +40,12 @@ export function PulsePublicShell({ children, compact = false }: { children: Reac
           <details className="pulse-public-mobile-menu">
             <summary aria-label="Mở điều hướng"><Menu size={23} aria-hidden="true" /></summary>
             <nav aria-label="Điều hướng di động">
-              {!compact && (
-                <>
-                  <Link to="/business/solution">Giải pháp</Link>
-                  <Link to="/careers">Chức danh mẫu</Link>
-                  <Link to="/business/pricing">Bảng giá</Link>
-                  <Link to="/verify">Xác thực chứng chỉ</Link>
-                  <a href="/business#hanh-trinh">Cách hoạt động</a>
-                </>
-              )}
+              {!compact && <>
+                <Link to="/business/solution">Giải pháp</Link>
+                <a href="/business#hanh-trinh">Cách hoạt động</a>
+                <a href="/business#khung-nang-luc">Khung năng lực</a>
+                <a href="/business#vai-tro">Vai trò</a>
+              </>}
               <Link to="/login">Đăng nhập</Link>
               <Link to="/business/try">Dùng thử miễn phí</Link>
             </nav>
@@ -65,10 +59,7 @@ export function PulsePublicShell({ children, compact = false }: { children: Reac
           <p>Năng lực rõ ràng. Học tập có định hướng. Kết quả có minh chứng.</p>
           <nav aria-label="Liên kết cuối trang">
             <Link to="/business/solution">Giải pháp doanh nghiệp</Link>
-            <Link to="/careers">Chức danh mẫu</Link>
-            <Link to="/business/pricing">Bảng giá B2B</Link>
-            <Link to="/verify">Xác thực chứng chỉ số</Link>
-            <Link to="/business/try">Dùng thử miễn phí</Link>
+            <Link to="/business/try">Dùng thử</Link>
             <Link to="/login">Đăng nhập</Link>
           </nav>
         </div>
