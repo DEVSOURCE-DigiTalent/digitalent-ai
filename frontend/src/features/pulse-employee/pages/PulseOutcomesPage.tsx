@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import QRCode from 'qrcode';
 import {
@@ -7,14 +7,16 @@ import {
   ShieldCheck,
   CheckCircle2,
   Calendar,
-  Building2,
-  FileText,
   ArrowRight,
   ArrowLeft,
   BookOpen,
   GraduationCap,
   ExternalLink,
   Target,
+  Copy,
+  Check,
+  Search,
+  Zap,
 } from 'lucide-react';
 import { usePulseOutcome, usePulseOutcomes, usePulseOverview } from '@/hooks/use-pulse';
 import type { PulseOutcomeKind } from '@/services/pulse.service';
@@ -30,34 +32,75 @@ const KIND_LABELS: Record<PulseOutcomeKind, string> = {
   PRACTICAL_TASK: 'Minh chứng thực tế',
 };
 
+type OutcomeFilter = 'ALL' | 'COURSE' | 'PRE_ASSESSMENT' | 'PRACTICAL_TASK';
+
 /**
  * Hồ sơ Chứng nhận & Minh chứng Số:
- * - Khối 1: Chứng chỉ Chuẩn Năng lực Chức danh (cấp khi hoàn thành đủ 8/8 khóa học).
- * - Khối 2: Danh sách Huy hiệu & Chứng nhận từng môn học đã đạt chuẩn.
+ * - Khối 1: Header trang + 4 Thẻ KPI tóm tắt năng lực số.
+ * - Khối 2: Chứng chỉ Chuẩn Năng lực Chức danh (Grand Milestone) kèm Mini Domain Tracker 6 lĩnh vực.
+ * - Khối 3: Thanh công cụ Lọc phân loại & Tìm kiếm mã tra cứu.
+ * - Khối 4: Danh sách Huy hiệu & Chứng nhận từng môn học với thao tác 1-Click (Xem A4 & Copy link tra cứu).
  */
 export function PulseOutcomesPage() {
   const { data, isLoading, error, refetch } = usePulseOutcomes();
   const { data: overview } = usePulseOverview();
+
+  const [activeFilter, setActiveFilter] = useState<OutcomeFilter>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [copiedRef, setCopiedRef] = useState<string | null>(null);
 
   const position = overview?.person.positionName ?? 'Chuyên viên Kế toán tài chính';
   const totalCourses = overview?.stats.pathCourses ?? 8;
   const approvedCourses = overview?.stats.approvedPathCourses ?? 1;
   const isAllCompleted = totalCourses > 0 && approvedCourses >= totalCourses;
   const pct = totalCourses > 0 ? Math.round((approvedCourses / totalCourses) * 100) : 0;
+  const domains = overview?.domains ?? [];
+
+  const allOutcomes = data ?? [];
+  const courseCerts = useMemo(() => allOutcomes.filter((o) => o.kind === 'COURSE'), [allOutcomes]);
+  const preCerts = useMemo(() => allOutcomes.filter((o) => o.kind === 'PRE_ASSESSMENT'), [allOutcomes]);
+  const taskCerts = useMemo(() => allOutcomes.filter((o) => o.kind === 'PRACTICAL_TASK'), [allOutcomes]);
+
+  const handleCopyLink = (e: React.MouseEvent, refCode: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = typeof window !== 'undefined'
+      ? `${window.location.origin}/verify/${refCode}`
+      : `https://digitalent.vn/verify/${refCode}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedRef(refCode);
+      setTimeout(() => setCopiedRef(null), 2000);
+    });
+  };
+
+  const filteredOutcomes = useMemo(() => {
+    return allOutcomes.filter((item) => {
+      const matchKind = activeFilter === 'ALL' || item.kind === activeFilter;
+      const query = searchQuery.trim().toLowerCase();
+      const matchQuery =
+        !query ||
+        item.title.toLowerCase().includes(query) ||
+        (item.subtitle && item.subtitle.toLowerCase().includes(query)) ||
+        item.reference.toLowerCase().includes(query);
+      return matchKind && matchQuery;
+    });
+  }, [allOutcomes, activeFilter, searchQuery]);
 
   return (
     <div className="pu-outcomes-container">
-      {/* ── 1. Page Header ─────────────────────────────────────────────────── */}
-      <div className="pu-outcomes-header">
-        <div className="pu-outcomes-header-badge">
-          <ShieldCheck className="w-4 h-4 text-blue-700" />
-          <span>Hồ sơ chứng nhận & Minh chứng số</span>
+      {/* ── 1. Page Header Đồng Bộ Chuẩn Pulse (pu-workbench-header) ──────── */}
+      <header className="pu-workbench-header">
+        <div className="pu-path-title-block">
+          <div className="pu-path-badge-pill">
+            <ShieldCheck size={13} className="text-blue-800" />
+            <span>Hệ thống Chứng nhận & Minh chứng Số</span>
+          </div>
+          <h1 className="pu-path-main-title">Chứng chỉ & Kết quả Đào tạo</h1>
+          <p className="pu-path-sub-title">
+            Hồ sơ văn bằng chuẩn chức danh và chứng nhận hoàn thành năng lực số trên hệ thống DigiTalent AI.
+          </p>
         </div>
-        <h1 className="pu-outcomes-h1">Chứng chỉ & Kết quả đào tạo</h1>
-        <p className="pu-outcomes-desc">
-          Theo dõi chứng nhận hoàn thành đào tạo theo chức danh và hồ sơ minh chứng năng lực của bạn.
-        </p>
-      </div>
+      </header>
 
       {/* ── 2. Grand Job Role Certificate Milestone Card ───────────────────── */}
       <section className="pu-job-role-cert-card" aria-label="Chứng chỉ chuẩn chức danh">
@@ -73,12 +116,12 @@ export function PulseOutcomesPage() {
           </div>
 
           <h2 className="pu-job-cert-title">
-            Chuẩn Năng lực Vị trí: {position}
+            Chuẩn Năng lực Chức danh: {position}
           </h2>
 
           <p className="pu-job-cert-desc">
             {isAllCompleted
-              ? 'Bạn đã hoàn thành đủ 8/8 khóa học theo khung năng lực chức danh. Chứng chỉ chính thức đã được hội đồng thẩm định phê duyệt.'
+              ? 'Bạn đã hoàn thành đủ các khóa học theo khung năng lực chức danh. Chứng chỉ chính thức đã được hội đồng thẩm định phê duyệt.'
               : `Chứng chỉ Chuẩn Chức danh sẽ được cấp khi bạn hoàn thành toàn bộ ${totalCourses} khóa học trong lộ trình. Hiện bạn đã đạt ${approvedCourses} khóa.`}
           </p>
 
@@ -89,16 +132,38 @@ export function PulseOutcomesPage() {
             <span className="pu-job-cert-pct">{pct}%</span>
           </div>
 
+          {/* Mini Domain Tracker: Độ phủ qua 6 Lĩnh vực chuẩn hóa */}
+          {domains.length > 0 && (
+            <div className="pu-mini-domain-tracker">
+              <span className="pu-mini-domain-label">Độ phủ 6 Lĩnh vực:</span>
+              {domains.map((d) => {
+                const isMet = d.status === 'MET';
+                return (
+                  <span
+                    key={d.categoryId || d.number}
+                    className={`pu-domain-mini-pill${isMet ? ' met' : ''}`}
+                    title={`Lĩnh vực 0${d.number}: ${d.name} (${isMet ? 'Đã đạt chuẩn' : 'Chưa hoàn thành'})`}
+                  >
+                    {isMet ? <Check size={11} strokeWidth={3} /> : <span className="text-slate-400">·</span>}
+                    <span>LV 0{d.number}</span>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
           <div className="pu-job-cert-actions">
             {isAllCompleted ? (
               <Link to={PULSE_PATHS.outcome('job-role-cert')} className="pu-btn-view-cert">
                 <Award size={15} />
                 <span>Xem & in chứng chỉ A4</span>
+                <ArrowRight size={14} className="pu-btn-arrow" />
               </Link>
             ) : (
               <Link to={PULSE_PATHS.path} className="pu-btn-view-path">
                 <Target size={15} />
-                <span>Xem các khóa cần học tiếp trong lộ trình →</span>
+                <span>Xem các khóa cần học tiếp trong lộ trình</span>
+                <ArrowRight size={14} className="pu-btn-arrow" />
               </Link>
             )}
           </div>
@@ -113,15 +178,70 @@ export function PulseOutcomesPage() {
         </div>
       </section>
 
-      {/* ── 3. Danh sách Huy hiệu & Bản ghi kết quả từng môn học ────────────── */}
+      {/* ── 4. Thanh Công Cụ: Bộ Lọc Tab & Ô Tìm Kiếm Tra Cứu ─────────────── */}
+      <div className="pu-outcomes-toolbar">
+        <div className="pu-outcomes-tabs" role="tablist" aria-label="Bộ lọc loại chứng chỉ">
+          <button
+            type="button"
+            onClick={() => setActiveFilter('ALL')}
+            className={`pu-outcomes-tab-btn${activeFilter === 'ALL' ? ' active' : ''}`}
+          >
+            <span>Tất cả</span>
+            <span className="pu-outcomes-tab-badge">{allOutcomes.length}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveFilter('COURSE')}
+            className={`pu-outcomes-tab-btn${activeFilter === 'COURSE' ? ' active' : ''}`}
+          >
+            <Award size={13} />
+            <span>Huy hiệu môn học</span>
+            <span className="pu-outcomes-tab-badge">{courseCerts.length}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveFilter('PRE_ASSESSMENT')}
+            className={`pu-outcomes-tab-btn${activeFilter === 'PRE_ASSESSMENT' ? ' active' : ''}`}
+          >
+            <Zap size={13} />
+            <span>Đánh giá đầu vào</span>
+            <span className="pu-outcomes-tab-badge">{preCerts.length}</span>
+          </button>
+          {taskCerts.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setActiveFilter('PRACTICAL_TASK')}
+              className={`pu-outcomes-tab-btn${activeFilter === 'PRACTICAL_TASK' ? ' active' : ''}`}
+            >
+              <span>Minh chứng thực tế</span>
+              <span className="pu-outcomes-tab-badge">{taskCerts.length}</span>
+            </button>
+          )}
+        </div>
+
+        {/* Ô tìm kiếm nhanh */}
+        <div className="pu-outcomes-search-wrap">
+          <Search size={14} className="pu-outcomes-search-icon" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Tìm theo tên môn hoặc mã chứng chỉ..."
+            className="pu-outcomes-search-input"
+            aria-label="Tìm kiếm chứng chỉ"
+          />
+        </div>
+      </div>
+
+      {/* ── 4. Danh Sách Thẻ Chứng Nhận Môn Học & Thao Tác 1-Click ─────────── */}
       <section className="pu-course-badges-section" aria-labelledby="sec-badges-title">
         <div className="pu-badges-sec-head">
           <div>
             <h2 id="sec-badges-title" className="pu-badges-title">
-              Huy hiệu hoàn thành môn học & Minh chứng ({data?.length || 0})
+              Danh mục Huy hiệu Môn học & Minh chứng ({filteredOutcomes.length})
             </h2>
             <p className="pu-badges-sub">
-              Bản ghi công nhận cho từng khóa học đã vượt qua bài đánh giá đầu vào hoặc thi cuối khóa.
+              Bản ghi công nhận chính thức qua bài thi cuối khóa hoặc bài khảo sát miễn học theo 6 lĩnh vực.
             </p>
           </div>
         </div>
@@ -130,20 +250,45 @@ export function PulseOutcomesPage() {
           <PageSkeleton blocks={[180]} />
         ) : error || !data ? (
           <LoadError message={pulseErrorMessage(error, 'Không tải được kết quả đã xác nhận.')} onRetry={() => refetch()} />
-        ) : data.length === 0 ? (
-          <Empty icon={<Award size={24} />} title="Chưa có bản ghi môn học được xác nhận" action={<PuLink to={PULSE_PATHS.path}>Xem lộ trình của tôi →</PuLink>}>
-            Khi mentor duyệt bài cuối khóa hoặc bài đánh giá đầu vào, bản ghi chứng nhận sẽ xuất hiện ở đây.
+        ) : filteredOutcomes.length === 0 ? (
+          <Empty
+            icon={<Award size={24} />}
+            title={searchQuery ? 'Không tìm thấy chứng nhận phù hợp' : 'Chưa có bản ghi môn học được xác nhận'}
+            action={
+              searchQuery ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="pu-table-btn ghost-btn text-blue-700"
+                >
+                  Xóa bộ lọc tìm kiếm
+                </button>
+              ) : (
+                <PuLink to={PULSE_PATHS.path}>Xem lộ trình của tôi →</PuLink>
+              )
+            }
+          >
+            {searchQuery
+              ? `Không có kết quả nào khớp với từ khóa "${searchQuery}". Hãy thử tìm kiếm với từ khóa khác.`
+              : 'Khi mentor duyệt bài cuối khóa hoặc bài đánh giá đầu vào, bản ghi chứng nhận sẽ xuất hiện ở đây.'}
           </Empty>
         ) : (
           <div className="pu-cert-grid">
-            {data.map((outcome) => (
-              <Link key={outcome.id} to={PULSE_PATHS.outcome(outcome.id)} className="pu-cert-card group">
+            {filteredOutcomes.map((outcome) => (
+              <div
+                key={outcome.id}
+                className={`pu-cert-card group${outcome.kind === 'PRE_ASSESSMENT' ? ' pre-kind' : ''}`}
+              >
                 <div className="pu-cert-accent-bar" />
 
                 <div className="pu-cert-body">
                   <div className="pu-cert-top">
-                    <span className="pu-cert-badge">
-                      <Award className="w-3.5 h-3.5 text-blue-700" />
+                    <span className={`pu-cert-badge${outcome.kind === 'PRE_ASSESSMENT' ? ' pre' : ''}`}>
+                      {outcome.kind === 'PRE_ASSESSMENT' ? (
+                        <Zap size={13} />
+                      ) : (
+                        <Award size={13} />
+                      )}
                       {KIND_LABELS[outcome.kind]}
                     </span>
                     <span className="pu-cert-status">
@@ -159,12 +304,14 @@ export function PulseOutcomesPage() {
                   )}
 
                   <h3 className="pu-cert-title">
-                    {outcome.title}
+                    <Link to={PULSE_PATHS.outcome(outcome.id)} className="hover:underline text-inherit">
+                      {outcome.title}
+                    </Link>
                   </h3>
 
                   <div className="pu-cert-meta-row">
                     <span className="pu-cert-date">
-                      <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                      <Calendar size={13} className="text-slate-500" />
                       {formatDate(outcome.issuedAt)}
                     </span>
                     <span className="pu-cert-ref">
@@ -174,12 +321,35 @@ export function PulseOutcomesPage() {
                 </div>
 
                 <div className="pu-cert-footer">
-                  <span className="pu-cert-cta">
-                    Xem chứng nhận A4
-                    <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => handleCopyLink(e, outcome.reference)}
+                    className={`pu-cert-copy-btn${copiedRef === outcome.reference ? ' copied' : ''}`}
+                    title="Sao chép liên kết tra cứu chứng thực"
+                  >
+                    {copiedRef === outcome.reference ? (
+                      <>
+                        <Check size={12} strokeWidth={3} />
+                        <span>Đã chép link</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={12} />
+                        <span>Sao chép mã</span>
+                      </>
+                    )}
+                  </button>
+
+                  <Link
+                    to={PULSE_PATHS.outcome(outcome.id)}
+                    className="pu-cert-cta"
+                    title="Xem chi tiết và in bản chứng nhận A4"
+                  >
+                    <span>Xem chứng nhận A4</span>
+                    <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
+                  </Link>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}

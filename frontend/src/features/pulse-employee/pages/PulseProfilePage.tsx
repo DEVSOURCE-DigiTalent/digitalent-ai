@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ShieldCheck,
@@ -12,7 +12,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Settings,
-  UserCheck,
   Check,
   AlertTriangle,
   Laptop,
@@ -27,6 +26,9 @@ import {
   Users,
   PenTool,
   Lightbulb,
+  Eye,
+  EyeOff,
+  User,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePulseOverview, usePulseOutcomes } from '@/hooks/use-pulse';
@@ -39,6 +41,15 @@ import { PULSE_PATHS } from '../lib/paths';
 
 type ProfileTab = 'competency' | 'security' | 'preferences';
 
+const PREFS_STORAGE_KEY = 'digitalent_user_preferences';
+
+function formatDomainCode(domain: { number: number; code?: string | null }): string {
+  if (!domain.code || domain.code.toUpperCase().includes('TT02')) {
+    return `Lĩnh vực 0${domain.number}`;
+  }
+  return domain.code;
+}
+
 const DOMAIN_ICONS: Record<number, React.ReactNode> = {
   1: <Database className="w-4 h-4 text-indigo-600" />,
   2: <Users className="w-4 h-4 text-sky-600" />,
@@ -47,6 +58,26 @@ const DOMAIN_ICONS: Record<number, React.ReactNode> = {
   5: <Lightbulb className="w-4 h-4 text-amber-600" />,
   6: <Sparkles className="w-4 h-4 text-pink-600" />,
 };
+
+/**
+ * Đo độ mạnh mật khẩu doanh nghiệp:
+ * - Yếu (<8 ký tự hoặc quá đơn giản)
+ * - Trung bình (đủ độ dài, có chữ và số)
+ * - Mạnh (chữ hoa, chữ thường, số, ký tự đặc biệt)
+ */
+function getPasswordStrength(pass: string): { score: number; label: string; color: string } {
+  if (!pass) return { score: 0, label: '', color: '#e2e8f0' };
+  let score = 0;
+  if (pass.length >= 8) score += 1;
+  if (pass.length >= 12) score += 1;
+  if (/[A-Z]/.test(pass) && /[a-z]/.test(pass)) score += 1;
+  if (/[0-9]/.test(pass)) score += 1;
+  if (/[^A-Za-z0-9]/.test(pass)) score += 1;
+
+  if (score <= 2) return { score: 1, label: 'Yếu', color: '#ef4444' };
+  if (score <= 4) return { score: 2, label: 'Trung bình', color: '#f59e0b' };
+  return { score: 3, label: 'Mạnh (Tối ưu)', color: '#10b981' };
+}
 
 /**
  * Trực quan hóa 4 cấp độ năng lực L1 - L4 (Connected Segmented Track):
@@ -93,6 +124,9 @@ export function PulseProfilePage() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurPass, setShowCurPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [isChangingPass, setIsChangingPass] = useState(false);
 
   // Tab 3: Preferences States
@@ -102,12 +136,38 @@ export function PulseProfilePage() {
   const [prefLanguage, setPrefLanguage] = useState<'vi' | 'en'>('vi');
   const [prefFocusMode, setPrefFocusMode] = useState(true);
 
+  // Tải tùy chọn người dùng đã lưu từ LocalStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PREFS_STORAGE_KEY);
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (typeof p.reviews === 'boolean') setPrefEmailReviews(p.reviews);
+        if (typeof p.reminders === 'boolean') setPrefEmailReminders(p.reminders);
+        if (typeof p.newCourses === 'boolean') setPrefEmailNewCourses(p.newCourses);
+        if (p.language === 'vi' || p.language === 'en') setPrefLanguage(p.language);
+        if (typeof p.focusMode === 'boolean') setPrefFocusMode(p.focusMode);
+      }
+    } catch {
+      // Bỏ qua lỗi cú pháp JSON
+    }
+  }, []);
+
   if (isLoading) return <PageSkeleton blocks={[140, 90, 320]} />;
   if (error || !data) return <LoadError message={pulseErrorMessage(error, 'Không tải được hồ sơ.')} onRetry={() => refetch()} />;
 
-  const { person, reviewer, stats } = data;
-  const name = person.fullName || user?.fullName || 'Nhân viên';
-  const empCode = person.employeeId ? `EMP-${person.employeeId.slice(0, 8).toUpperCase()}` : 'EMP-C72D0EEE';
+  const { person, stats } = data;
+  const name = (person.fullName && person.fullName !== 'Employee')
+    ? person.fullName
+    : (user?.fullName && user.fullName !== 'Employee')
+      ? user.fullName
+      : 'Hoàng Anh Thư';
+
+  const empCode = person.employeeId ? `EMP-${person.employeeId.slice(0, 8).toUpperCase()}` : 'EMP-CBB187BB';
+  const reviewerName = data.reviewer?.name || 'Lê Thị Thu Trang';
+  const departmentName = person.departmentName || 'Phòng Tài chính - Kế toán';
+  const positionName = person.positionName || 'Chuyên viên Kế toán tài chính';
+  const organizationName = user?.organization?.name || person.organizationName || 'Công ty Cổ phần Công nghệ DigiTalent Việt Nam';
 
   // Đồng bộ số liệu giữa KPI và Ma trận:
   // Lĩnh vực đạt chuẩn vị trí: verified >= target và target > 0
@@ -151,15 +211,59 @@ export function PulseProfilePage() {
   };
 
   const handleSavePreferences = () => {
+    try {
+      localStorage.setItem(
+        PREFS_STORAGE_KEY,
+        JSON.stringify({
+          reviews: prefEmailReviews,
+          reminders: prefEmailReminders,
+          newCourses: prefEmailNewCourses,
+          language: prefLanguage,
+          focusMode: prefFocusMode,
+        })
+      );
+    } catch {
+      // LocalStorage đầy hoặc bị vô hiệu hóa
+    }
     toast.success('Đã lưu tùy chọn cá nhân thành công.');
   };
 
   return (
     <div className="pu-stack">
-      {/* ── Sub-tab Navigation Bar ───────────────────────────────────── */}
-      <nav className="pu-profile-tab-bar pu-no-print" aria-label="Phân mục hồ sơ">
+      {/* ── Khối Tiêu đề Chuẩn Đồng bộ Toàn Hệ thống ───────────────── */}
+      <header className="pu-workbench-header">
+        <div className="pu-path-title-block">
+          <div className="pu-path-badge-pill">
+            <User size={13} className="text-blue-800" />
+            <span>Hồ sơ Cá nhân & Năng lực</span>
+          </div>
+          <h1 className="pu-path-main-title">Hồ sơ cá nhân</h1>
+          <p className="pu-path-sub-title">
+            Quản trị thông tin cá nhân, hồ sơ năng lực số đã bảo chứng, thiết lập bảo mật và tùy chọn tài khoản.
+          </p>
+        </div>
+        <div className="pu-workbench-actions pu-no-print">
+          <button
+            type="button"
+            className="pu-hero-action-secondary"
+            onClick={() => window.print()}
+          >
+            <Printer className="w-4 h-4" />
+            <span>Xuất hồ sơ (PDF)</span>
+          </button>
+          <PuLink to={PULSE_PATHS.path} kind="primary" small>
+            <ArrowRight className="w-4 h-4" />
+            <span>Xem lộ trình bồi dưỡng</span>
+          </PuLink>
+        </div>
+      </header>
+
+      {/* ── Sub-tab Navigation Bar (Segmented Capsule) ────────────────── */}
+      <nav className="pu-profile-tab-bar pu-no-print" aria-label="Phân mục hồ sơ" role="tablist">
         <button
           type="button"
+          role="tab"
+          aria-selected={activeTab === 'competency'}
           className={`pu-profile-tab-btn${activeTab === 'competency' ? ' active' : ''}`}
           onClick={() => setActiveTab('competency')}
         >
@@ -169,6 +273,8 @@ export function PulseProfilePage() {
 
         <button
           type="button"
+          role="tab"
+          aria-selected={activeTab === 'security'}
           className={`pu-profile-tab-btn${activeTab === 'security' ? ' active' : ''}`}
           onClick={() => setActiveTab('security')}
         >
@@ -178,6 +284,8 @@ export function PulseProfilePage() {
 
         <button
           type="button"
+          role="tab"
+          aria-selected={activeTab === 'preferences'}
           className={`pu-profile-tab-btn${activeTab === 'preferences' ? ' active' : ''}`}
           onClick={() => setActiveTab('preferences')}
         >
@@ -190,9 +298,9 @@ export function PulseProfilePage() {
           TAB 1: HỒ SƠ NĂNG LỰC SỐ (COMPETENCY PASSPORT & MATRIX)
          ══════════════════════════════════════════════════════════════════════ */}
       {activeTab === 'competency' && (
-        <>
+        <div key="competency" className="pu-tab-pane pu-stack">
           {/* ── Tối giản Hero Card (Clean Executive Light) ────────────────── */}
-          <section className="pu-minimal-hero" aria-label="Thông tin nhân sự">
+          <section className="pu-minimal-hero" aria-label="Thông tin cá nhân">
             <div className="pu-minimal-hero-left">
               <div className="pu-minimal-avatar" aria-hidden="true">
                 {initials(name)}
@@ -200,7 +308,7 @@ export function PulseProfilePage() {
 
               <div className="pu-minimal-info">
                 <div className="pu-minimal-name-row">
-                  <h1 className="pu-minimal-name">{name}</h1>
+                  <h2 className="pu-minimal-name">{name}</h2>
                   <span className="pu-minimal-status-pill">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Nhân viên chính thức</span>
@@ -208,16 +316,15 @@ export function PulseProfilePage() {
                 </div>
 
                 <div className="pu-minimal-role">
-                  {person.positionName ?? 'Chuyên viên Kế toán tài chính'} · {person.departmentName ?? 'Phòng Tài chính - Kế toán'}
+                  {positionName} · {departmentName} · {organizationName}
                 </div>
 
                 <div className="pu-minimal-meta">
-                  <span>Mã nhân sự: <code>{empCode}</code></span>
+                  <span>Mã định danh: <code>{empCode}</code></span>
                   <span>·</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <Target className="w-3.5 h-3.5 text-blue-700" />
-                    Lộ trình: Chuẩn hóa 6 lĩnh vực năng lực
-                  </span>
+                  <span>Email: <code>{person.workEmail || user?.email || 'employee@digitalent.ai'}</code></span>
+                  <span>·</span>
+                  <span>Quản lý trực tiếp: <strong style={{ color: '#0f172a' }}>{reviewerName}</strong></span>
                 </div>
               </div>
             </div>
@@ -249,11 +356,14 @@ export function PulseProfilePage() {
             <div className="pu-tkpi-card">
               <div className="pu-tkpi-header">
                 <span className="pu-tkpi-title">Tiến độ lộ trình bắt buộc</span>
-                <Award className="w-4 h-4 text-indigo-600" />
+                <Award className="w-4 h-4 text-blue-700" />
               </div>
               <div className="pu-tkpi-value">{stats.approvedPathCourses}/{stats.pathCourses} chuyên đề</div>
+              <div className="pu-tkpi-progress">
+                <div className="pu-tkpi-progress-bar" style={{ width: `${readinessPercent}%` }} />
+              </div>
               <div className="pu-tkpi-footer">
-                <span style={{ color: '#4f46e5', fontWeight: 700 }}>{readinessPercent}%</span> hoàn thành chuẩn vị trí
+                <span style={{ color: '#1e40af', fontWeight: 700 }}>{readinessPercent}%</span> hoàn thành chuẩn vị trí
               </div>
             </div>
 
@@ -291,7 +401,7 @@ export function PulseProfilePage() {
             </div>
           </section>
 
-          {/* ── Bảng Ma trận Đối sánh Năng lực Số (Theo TT 02/2025/TT-BGDĐT) ── */}
+          {/* ── Bảng Ma trận Đối sánh Năng lực Số Doanh nghiệp ── */}
           <section className="pu-benchmark-card">
             <div className="pu-benchmark-header">
               <div>
@@ -299,10 +409,10 @@ export function PulseProfilePage() {
                   <div className="pu-benchmark-icon">
                     <Target className="w-4 h-4" />
                   </div>
-                  <h2 className="pu-benchmark-h2">Ma trận đối sánh năng lực số (Theo TT 02/2025/TT-BGDĐT)</h2>
+                  <h2 className="pu-benchmark-h2">Ma trận đối sánh năng lực số doanh nghiệp</h2>
                 </div>
                 <p className="pu-benchmark-desc">
-                  Khung 6 lĩnh vực năng lực số chuẩn quốc gia, đối sánh mức năng lực hiện tại với chuẩn vị trí chức danh và trần đào tạo phòng ban.
+                  Khung 6 lĩnh vực năng lực số trọng yếu của tổ chức, đối sánh mức năng lực hiện tại với chuẩn vị trí chức danh và trần đào tạo phòng ban.
                 </p>
               </div>
 
@@ -315,7 +425,7 @@ export function PulseProfilePage() {
               <table className="pu-benchmark-table">
                 <thead>
                   <tr>
-                    <th>Lĩnh vực (TT 02/2025)</th>
+                    <th>Lĩnh vực năng lực</th>
                     <th>Hiện tại</th>
                     <th>Chuẩn vị trí</th>
                     <th>Trần PB</th>
@@ -342,7 +452,7 @@ export function PulseProfilePage() {
                               <div className="pu-benchmark-domain-name">{domain.name}</div>
                               <div className="pu-benchmark-domain-meta">
                                 <span className="pu-benchmark-code-tag">
-                                  {domain.code || `Lĩnh vực 0${domain.number}`}
+                                  {formatDomainCode(domain)}
                                 </span>
                               </div>
                             </div>
@@ -417,6 +527,23 @@ export function PulseProfilePage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Thanh Chú giải Ký hiệu Cấp độ Trực quan */}
+            <div className="pu-benchmark-legend pu-no-print">
+              <span style={{ fontWeight: 700, color: '#0f172a' }}>Chú giải cấp độ:</span>
+              <div className="pu-legend-item">
+                <span className="pu-legend-dot" style={{ background: '#059669' }} />
+                <span>Đã đạt chuẩn (L1 - L4)</span>
+              </div>
+              <div className="pu-legend-item">
+                <span className="pu-legend-dot" style={{ background: '#fffbeb', border: '1.5px dashed #f59e0b' }} />
+                <span>Mục tiêu chuẩn chức danh</span>
+              </div>
+              <div className="pu-legend-item">
+                <span className="pu-legend-dot" style={{ background: '#e2e8f0' }} />
+                <span>Chưa hoàn thành</span>
+              </div>
+            </div>
           </section>
 
           {/* ── Bộ sưu tập Chứng chỉ Số Đã Xác thực (Verified Credentials Showcase) ── */}
@@ -483,14 +610,14 @@ export function PulseProfilePage() {
               </div>
             </section>
           )}
-        </>
+        </div>
       )}
 
       {/* ══════════════════════════════════════════════════════════════════════
           TAB 2: BẢO MẬT & ĐỔI MẬT KHẨU (SECURITY & CREDENTIALS)
          ══════════════════════════════════════════════════════════════════════ */}
       {activeTab === 'security' && (
-        <div className="pu-stack">
+        <div key="security" className="pu-tab-pane pu-stack">
           <div className="pu-security-grid">
           {/* Cột Trái: Form Đổi mật khẩu an toàn */}
           <div className="pu-sec-card">
@@ -509,45 +636,91 @@ export function PulseProfilePage() {
                 <label className="pu-input-label" htmlFor="cur-pass">
                   Mật khẩu hiện tại *
                 </label>
-                <input
-                  id="cur-pass"
-                  type="password"
-                  placeholder="Nhập mật khẩu hiện tại"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required
-                  className="pu-input-field"
-                />
+                <div className="pu-input-password-wrap">
+                  <input
+                    id="cur-pass"
+                    type={showCurPass ? 'text' : 'password'}
+                    placeholder="Nhập mật khẩu hiện tại"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    required
+                    className="pu-input-field"
+                  />
+                  <button
+                    type="button"
+                    className="pu-password-toggle-btn"
+                    onClick={() => setShowCurPass(!showCurPass)}
+                    title={showCurPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                    aria-label={showCurPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  >
+                    {showCurPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <div className="pu-input-group">
                 <label className="pu-input-label" htmlFor="new-pass">
                   Mật khẩu mới * (Tối thiểu 8 ký tự)
                 </label>
-                <input
-                  id="new-pass"
-                  type="password"
-                  placeholder="Nhập mật khẩu mới"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  className="pu-input-field"
-                />
+                <div className="pu-input-password-wrap">
+                  <input
+                    id="new-pass"
+                    type={showNewPass ? 'text' : 'password'}
+                    placeholder="Nhập mật khẩu mới"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    className="pu-input-field"
+                  />
+                  <button
+                    type="button"
+                    className="pu-password-toggle-btn"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    title={showNewPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                    aria-label={showNewPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  >
+                    {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                {newPassword && (
+                  <div className="pu-pass-strength-wrap">
+                    <div className="pu-pass-strength-bar">
+                      <div className={`pu-pass-strength-seg ${getPasswordStrength(newPassword).score >= 1 ? (getPasswordStrength(newPassword).score === 1 ? 'active-weak' : getPasswordStrength(newPassword).score === 2 ? 'active-med' : 'active-strong') : ''}`} />
+                      <div className={`pu-pass-strength-seg ${getPasswordStrength(newPassword).score >= 2 ? (getPasswordStrength(newPassword).score === 2 ? 'active-med' : 'active-strong') : ''}`} />
+                      <div className={`pu-pass-strength-seg ${getPasswordStrength(newPassword).score >= 3 ? 'active-strong' : ''}`} />
+                    </div>
+                    <span className="pu-pass-strength-label" style={{ color: getPasswordStrength(newPassword).color }}>
+                      Độ mạnh: {getPasswordStrength(newPassword).label}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="pu-input-group">
                 <label className="pu-input-label" htmlFor="confirm-pass">
                   Xác nhận mật khẩu mới *
                 </label>
-                <input
-                  id="confirm-pass"
-                  type="password"
-                  placeholder="Nhập lại mật khẩu mới"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="pu-input-field"
-                />
+                <div className="pu-input-password-wrap">
+                  <input
+                    id="confirm-pass"
+                    type={showConfirmPass ? 'text' : 'password'}
+                    placeholder="Nhập lại mật khẩu mới"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="pu-input-field"
+                  />
+                  <button
+                    type="button"
+                    className="pu-password-toggle-btn"
+                    onClick={() => setShowConfirmPass(!showConfirmPass)}
+                    title={showConfirmPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                    aria-label={showConfirmPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  >
+                    {showConfirmPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: 10, fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
@@ -565,7 +738,7 @@ export function PulseProfilePage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div className="pu-sec-card">
               <div className="pu-sec-header">
-                <div className="pu-sec-icon-wrap" style={{ background: '#ecfdf5', color: '#059669' }}>
+                <div className="pu-sec-icon-wrap" style={{ background: '#eff6ff', color: '#1e40af' }}>
                   <Laptop className="w-5 h-5" />
                 </div>
                 <div>
@@ -638,7 +811,7 @@ export function PulseProfilePage() {
           <div className="pu-compliance-accord-header">
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                <div className="pu-sec-icon-wrap" style={{ background: '#ecfdf5', color: '#059669' }}>
+                <div className="pu-sec-icon-wrap" style={{ background: '#eff6ff', color: '#1e40af' }}>
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
@@ -672,7 +845,7 @@ export function PulseProfilePage() {
           <div className="pu-compliance-policy-grid">
             <div className="pu-policy-item">
               <div className="pu-policy-item-head">
-                <div className="pu-policy-icon" style={{ color: '#4f46e5' }}>
+                <div className="pu-policy-icon" style={{ color: '#1e40af' }}>
                   <ShieldAlert className="w-4 h-4" />
                 </div>
                 <h3 className="pu-policy-title">Điều 1: Liêm chính Đánh giá & Giám sát Khách quan</h3>
@@ -726,11 +899,11 @@ export function PulseProfilePage() {
           TAB 3: TÙY CHỌN & THÔNG BÁO (PREFERENCES)
          ══════════════════════════════════════════════════════════════════════ */}
       {activeTab === 'preferences' && (
-        <div className="pu-pref-grid">
+        <div key="preferences" className="pu-tab-pane pu-pref-grid">
           {/* Cột Trái: Cài đặt Thông báo Email */}
           <div className="pu-sec-card">
             <div className="pu-sec-header">
-              <div className="pu-sec-icon-wrap">
+              <div className="pu-sec-icon-wrap" style={{ background: '#eff6ff', color: '#1e40af' }}>
                 <BellRing className="w-5 h-5" />
               </div>
               <div>
@@ -745,12 +918,16 @@ export function PulseProfilePage() {
                   <div className="pu-pref-item-title">Kết quả chấm điểm bài thi & bài tập</div>
                   <div className="pu-pref-item-desc">Nhận thông báo ngay khi người thẩm định hoàn tất nhận xét hoặc duyệt bài làm.</div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={prefEmailReviews}
-                  onChange={(e) => setPrefEmailReviews(e.target.checked)}
-                  style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#4f46e5' }}
-                />
+                <label className="pu-switch-control" htmlFor="pref-reviews" title="Bật/tắt thông báo kết quả chấm điểm">
+                  <input
+                    id="pref-reviews"
+                    type="checkbox"
+                    checked={prefEmailReviews}
+                    onChange={(e) => setPrefEmailReviews(e.target.checked)}
+                    className="pu-switch-checkbox"
+                  />
+                  <span className="pu-switch-track" />
+                </label>
               </div>
 
               <div className="pu-pref-item">
@@ -758,12 +935,16 @@ export function PulseProfilePage() {
                   <div className="pu-pref-item-title">Nhắc nhở tiến độ & Hạn chót</div>
                   <div className="pu-pref-item-desc">Nhắc nhở khi sắp đến thời hạn nộp bài thực hành hoặc kỳ đánh giá năng lực năm.</div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={prefEmailReminders}
-                  onChange={(e) => setPrefEmailReminders(e.target.checked)}
-                  style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#4f46e5' }}
-                />
+                <label className="pu-switch-control" htmlFor="pref-reminders" title="Bật/tắt nhắc nhở tiến độ">
+                  <input
+                    id="pref-reminders"
+                    type="checkbox"
+                    checked={prefEmailReminders}
+                    onChange={(e) => setPrefEmailReminders(e.target.checked)}
+                    className="pu-switch-checkbox"
+                  />
+                  <span className="pu-switch-track" />
+                </label>
               </div>
 
               <div className="pu-pref-item">
@@ -771,12 +952,16 @@ export function PulseProfilePage() {
                   <div className="pu-pref-item-title">Khóa học & Chuyên đề mới được gán</div>
                   <div className="pu-pref-item-desc">Thông báo khi doanh nghiệp phân bổ thêm khóa học mới vào lộ trình vị trí của bạn.</div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={prefEmailNewCourses}
-                  onChange={(e) => setPrefEmailNewCourses(e.target.checked)}
-                  style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#4f46e5' }}
-                />
+                <label className="pu-switch-control" htmlFor="pref-courses" title="Bật/tắt thông báo khóa học mới">
+                  <input
+                    id="pref-courses"
+                    type="checkbox"
+                    checked={prefEmailNewCourses}
+                    onChange={(e) => setPrefEmailNewCourses(e.target.checked)}
+                    className="pu-switch-checkbox"
+                  />
+                  <span className="pu-switch-track" />
+                </label>
               </div>
             </div>
 
@@ -822,12 +1007,16 @@ export function PulseProfilePage() {
                   <div className="pu-pref-item-title">Chế độ học tập tập trung (Focus Mode)</div>
                   <div className="pu-pref-item-desc">Tự động ẩn thanh bên khi đọc nội dung bài học để tối ưu không gian thị giác.</div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={prefFocusMode}
-                  onChange={(e) => setPrefFocusMode(e.target.checked)}
-                  style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#4f46e5' }}
-                />
+                <label className="pu-switch-control" htmlFor="pref-focus" title="Bật/tắt chế độ học tập tập trung">
+                  <input
+                    id="pref-focus"
+                    type="checkbox"
+                    checked={prefFocusMode}
+                    onChange={(e) => setPrefFocusMode(e.target.checked)}
+                    className="pu-switch-checkbox"
+                  />
+                  <span className="pu-switch-track" />
+                </label>
               </div>
 
               <div className="pu-pref-item">
