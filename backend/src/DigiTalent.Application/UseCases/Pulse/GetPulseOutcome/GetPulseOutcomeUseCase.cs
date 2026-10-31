@@ -22,7 +22,9 @@ public class GetPulseOutcomeUseCase : IUseCase<GetPulseOutcomeUseCaseInput, Puls
     {
         var snapshot = await _learner.LoadAsync();
         var all = await _outcomes.LoadAsync(snapshot);
-        return all.FirstOrDefault(o => string.Equals(o.Id, input.OutcomeId, StringComparison.OrdinalIgnoreCase))
+        return all.FirstOrDefault(o =>
+                   string.Equals(o.Id, input.OutcomeId, StringComparison.OrdinalIgnoreCase) ||
+                   (o.CourseId.HasValue && string.Equals(o.CourseId.Value.ToString(), input.OutcomeId, StringComparison.OrdinalIgnoreCase)))
                ?? throw new NotFoundException("Không tìm thấy kết quả đã xác nhận.");
     }
 }

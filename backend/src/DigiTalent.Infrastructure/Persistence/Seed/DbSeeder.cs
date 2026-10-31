@@ -183,6 +183,7 @@ public static class DbSeeder
                 users[email] = user;
             }
 
+            user.DisplayName = displayName;
             user.OrganizationId = organization;
             user.EmailVerifiedAt ??= now;
 

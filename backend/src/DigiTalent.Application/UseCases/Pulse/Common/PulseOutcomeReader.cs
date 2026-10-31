@@ -143,6 +143,10 @@ public class PulseOutcomeReader
             });
         }
 
+        var enrollmentCourseMap = await _context.Enrollments.AsNoTracking()
+            .Where(e => e.EmployeeId == employee.Id)
+            .ToDictionaryAsync(e => e.Id, e => e.CourseId);
+
         var pulseEnrollmentIds = finals.Select(f => f.EnrollmentId)
             .Concat(preAssessments.Where(p => p.EnrollmentId.HasValue).Select(p => p.EnrollmentId!.Value))
             .ToHashSet();
@@ -164,31 +168,33 @@ public class PulseOutcomeReader
                 Reference = c.CertificateCode,
                 HolderName = employee.FullName,
                 OrganizationName = snapshot.OrganizationName,
+                CourseId = enrollmentCourseMap.TryGetValue(c.EnrollmentId, out var cid) ? cid : null,
             }));
 
-        var handledEnrollmentIds = pulseEnrollmentIds
-            .Concat(certificates.Select(c => c.EnrollmentId))
-            .ToHashSet();
+        var handledCourseIds = outcomes.Where(o => o.CourseId.HasValue).Select(o => o.CourseId!.Value).ToHashSet();
 
-        foreach (var c in snapshot.Courses.Where(c => c.Approved && c.Enrollment != null && !handledEnrollmentIds.Contains(c.Enrollment.Id)))
+        foreach (var c in snapshot.Courses.Where(c => c.Approved && !handledCourseIds.Contains(c.Course.CourseId)))
         {
             var label = courseLabel.GetValueOrDefault(c.Course.Code);
             outcomes.Add(new PulseOutcomeDto
             {
-                Id = $"course-{c.Enrollment!.Id}",
-                Kind = PulseOutcomeKind.Course,
+                Id = c.Enrollment != null ? $"course-{c.Enrollment.Id}" : $"course-{c.Course.CourseId}",
+                Kind = c.ApprovedVia == PulseApprovedVia.PreAssessment ? PulseOutcomeKind.PreAssessment : PulseOutcomeKind.Course,
                 Title = c.Course.Title,
                 Subtitle = label.Name == null ? null : $"{label.Name} · {PulseRules.LevelName(label.Tier)}",
                 Level = label.Name == null ? null : label.Tier,
-                IssuedAt = c.Enrollment.CompletedAt ?? c.Enrollment.UpdatedAt,
-                Source = "Khóa học hoàn thành trong chương trình đào tạo doanh nghiệp",
-                Reference = $"{c.Course.Code}-{c.Enrollment.Id.ToString("N")[..8].ToUpperInvariant()}",
+                IssuedAt = c.Enrollment?.CompletedAt ?? c.Enrollment?.UpdatedAt ?? DateTimeOffset.UtcNow,
+                Source = c.ApprovedVia == PulseApprovedVia.PreAssessment
+                    ? "Bài đánh giá trước khi học được công nhận — miễn học lý thuyết"
+                    : "Khóa học hoàn thành trong chương trình đào tạo doanh nghiệp",
+                Reference = $"{c.Course.Code}-{c.Course.CourseId.ToString("N")[..8].ToUpperInvariant()}",
                 ReviewerName = snapshot.Reviewer?.Name,
                 ReviewNote = "Hoàn thành và công nhận năng lực theo lộ trình vị trí.",
                 HolderName = employee.FullName,
                 OrganizationName = snapshot.OrganizationName,
                 CourseId = c.Course.CourseId,
             });
+            handledCourseIds.Add(c.Course.CourseId);
         }
 
         var tasks = await (
