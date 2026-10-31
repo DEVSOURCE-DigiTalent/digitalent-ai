@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, MessageSquare, Send, Sparkles, X } from 'lucide-react';
+import { BookOpen, Clock, MessageSquare, Send, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 export interface AskReviewerModalProps {
@@ -124,7 +124,7 @@ export function AskReviewerModal({
             required
           />
           <div className="pu-ask-meta-row">
-            <small className="pu-ask-sla">⏱ Cam kết phản hồi trong 24h - 48h làm việc</small>
+            <small className="pu-ask-sla"><Clock size={11} className="inline mr-1" /> Cam kết phản hồi trong 24h - 48h làm việc</small>
             <small className="pu-ask-count">{question.length}/1000</small>
           </div>
 

@@ -30,7 +30,7 @@ export const EMPLOYEE_SCREENS: ScreenDef[] = [
   },
   {
     id: 'EM-03',
-    title: 'Thực hành',
+    title: 'Khảo thí & Đánh giá',
     path: '/enterprise/me/practice',
     roles: EMPLOYEE_ROLES,
     permission: P.LEARNING_PROGRESS_READ,
@@ -94,7 +94,7 @@ export const EMPLOYEE_SCREENS: ScreenDef[] = [
   },
   {
     id: 'EM-11',
-    title: 'Hồ sơ của tôi',
+    title: 'Hồ sơ cá nhân',
     path: '/enterprise/me/profile',
     roles: EMPLOYEE_ROLES,
     allowUnpaid: true,

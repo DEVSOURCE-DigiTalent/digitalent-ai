@@ -27,25 +27,25 @@ import { PULSE_PATHS, isExamPath } from '../lib/paths';
 const NAV = [
   { to: PULSE_PATHS.today, label: 'Tổng quan', end: true, match: [PULSE_PATHS.today], screenId: 'EM-01' },
   { to: PULSE_PATHS.path, label: 'Lộ trình', match: [PULSE_PATHS.path, '/enterprise/me/courses'], screenId: 'EM-02' },
-  { to: PULSE_PATHS.practice, label: 'Thực hành', match: [PULSE_PATHS.practice], screenId: 'EM-03' },
+  { to: PULSE_PATHS.practice, label: 'Khảo thí', match: [PULSE_PATHS.practice], screenId: 'EM-03' },
 ];
 
 function getPageTitle(pathname: string): string {
   if (pathname === PULSE_PATHS.today) return 'Tổng quan Bàn làm việc';
   if (pathname === PULSE_PATHS.path) return 'Lộ trình Năng lực chức danh';
   if (pathname.startsWith('/enterprise/me/courses')) return 'Chi tiết Khóa học & Đề cương';
-  if (pathname === PULSE_PATHS.practice) return 'Bàn Thực hành & Minh chứng';
+  if (pathname === PULSE_PATHS.practice) return 'Khảo thí & Đánh giá Năng lực';
   if (pathname === PULSE_PATHS.outcomes) return 'Bảng Chứng nhận số & Kết quả';
   if (pathname.startsWith('/enterprise/me/outcomes/')) return 'Chi tiết Chứng nhận năng lực';
   if (pathname === PULSE_PATHS.activity) return 'Nhật ký Hoạt động';
-  if (pathname === PULSE_PATHS.profile) return 'Hồ sơ Năng lực Nhân sự';
+  if (pathname === PULSE_PATHS.profile) return 'Hồ sơ cá nhân';
   return 'Cổng học tập DigiTalent AI';
 }
 
 const QUICK_SEARCH_ITEMS = [
   { title: 'Tổng quan Bàn làm việc', category: 'Điều hướng', path: PULSE_PATHS.today, icon: Compass },
   { title: 'Lộ trình Năng lực chức danh', category: 'Điều hướng', path: PULSE_PATHS.path, icon: BookOpen },
-  { title: 'Sổ kiểm tra & Bài tập thực hành', category: 'Điều hướng', path: PULSE_PATHS.practice, icon: FileCheck },
+  { title: 'Khảo thí & Đánh giá Năng lực', category: 'Điều hướng', path: PULSE_PATHS.practice, icon: FileCheck },
   { title: 'Chứng chỉ năng lực số', category: 'Hồ sơ', path: PULSE_PATHS.outcomes, icon: Award },
   { title: 'Hồ sơ năng lực cá nhân', category: 'Hồ sơ', path: PULSE_PATHS.profile, icon: UserRound },
   { title: 'M1-F Tìm kiếm và lưu trữ thông tin cơ bản', category: 'Khóa học', path: '/enterprise/me/courses/course-a1cd1c6e-1be2-4bf9-8f8b-eb1baacfa3f1', icon: BookOpen },

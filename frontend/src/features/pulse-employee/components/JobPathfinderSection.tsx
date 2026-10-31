@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { Check, Clock, Compass, FileText, Zap } from 'lucide-react';
+import { BookOpen, Check, Clock, FileText, ShieldCheck, Zap } from 'lucide-react';
 import type { PulseCourseSummary, PulseOverview } from '@/services/pulse.service';
 import { PULSE_PATHS } from '../lib/paths';
+import { levelName } from '../lib/labels';
 
 export interface JobPathfinderSectionProps {
   overview: PulseOverview;
@@ -17,6 +18,7 @@ export function JobPathfinderSection({
   const total = stats.pathCourses;
   const approved = stats.approvedPathCourses;
   const pct = total > 0 ? Math.round((approved / total) * 100) : 0;
+  const gaugeColor = pct >= 80 ? '#059669' : pct >= 50 ? '#2563eb' : '#d97706';
 
   // Arc length for r=76 is pi * 76 ≈ 238.76
   const arcLength = 238.76;
@@ -28,9 +30,9 @@ export function JobPathfinderSection({
     <section className="pu-pathfinder-card" aria-labelledby="pu-pathfinder-title">
       <header className="pu-pathfinder-header">
         <div>
-          <div className="pu-pathfinder-kicker">
-            <Compass size={14} className="text-blue-700" />
-            <span>MỨC ĐỘ ĐÁP ỨNG CHỨC DANH · JOB PATHFINDER</span>
+          <div className="pu-pathfinder-badge">
+            <ShieldCheck size={13} className="text-amber-600" />
+            <span>Khung đối chiếu chuẩn hóa chức danh doanh nghiệp</span>
           </div>
           <h2 id="pu-pathfinder-title" className="pu-pathfinder-title">
             Chỉ số sẵn sàng năng lực số: {position}
@@ -58,7 +60,7 @@ export function JobPathfinderSection({
               <path
                 d="M 24 105 A 76 76 0 0 1 176 105"
                 fill="none"
-                stroke="#e2e8f0"
+                stroke="#f1f5f9"
                 strokeWidth="16"
                 strokeLinecap="round"
               />
@@ -66,7 +68,7 @@ export function JobPathfinderSection({
               <path
                 d="M 24 105 A 76 76 0 0 1 176 105"
                 fill="none"
-                stroke={pct > 0 ? '#1e40af' : 'transparent'}
+                stroke={pct > 0 ? gaugeColor : 'transparent'}
                 strokeWidth="16"
                 strokeLinecap="round"
                 strokeDasharray={arcLength}
@@ -88,14 +90,14 @@ export function JobPathfinderSection({
                 textAnchor="middle"
                 className="pu-gauge-text-sub"
               >
-                MỨC ĐỘ SẴN SÀNG
+                SẴN SÀNG CHỨC DANH
               </text>
             </svg>
           </div>
 
           <div className="pu-gauge-meta">
             <div className="pu-gauge-status-row">
-              <span className={`pu-gauge-dot ${pct === 100 ? 'done' : pct > 0 ? 'learning' : 'pending'}`} />
+              <span className="pu-gauge-dot" style={{ backgroundColor: gaugeColor }} />
               <strong>{pct === 100 ? 'Đã đạt chuẩn chức danh' : pct > 0 ? 'Đang phát triển năng lực' : 'Chưa bắt đầu lộ trình'}</strong>
             </div>
             <p className="pu-gauge-note">
@@ -103,7 +105,12 @@ export function JobPathfinderSection({
                 ? 'Tất cả các khóa yêu cầu cho vị trí đã được duyệt chính thức.'
                 : `Còn thiếu ${total - approved} khóa học/bài thi để đạt 100% chuẩn chức danh.`}
             </p>
-            
+            {overview.reviewer && (
+              <div className="pu-gauge-reviewer">
+                <span>Thẩm định: </span>
+                <strong>{overview.reviewer.name}</strong>
+              </div>
+            )}
           </div>
         </aside>
 
@@ -149,7 +156,7 @@ export function JobPathfinderSection({
                       </span>
                     ) : isInProgress ? (
                       <span className="pu-pill learning">
-                        Đang học
+                        <BookOpen size={11} /> Đang học
                       </span>
                     ) : (
                       <span className="pu-pill standard">
@@ -161,12 +168,22 @@ export function JobPathfinderSection({
 
                 <h3 className="pu-domain-card-title">{domain.name}</h3>
 
+                {/* Level progression info */}
+                <div className="pu-domain-level-row">
+                  <span className="pu-domain-target-tag">
+                    Mục tiêu: <strong>{levelName(domain.target)}</strong>
+                  </span>
+                  <span className="pu-domain-current-tag">
+                    Đã đạt: <strong>{domain.verified > 0 ? levelName(domain.verified) : 'Chưa đạt'}</strong>
+                  </span>
+                </div>
+
                 {/* Progress bar */}
                 <div className="pu-domain-progress">
                   <div className="pu-domain-progress-track">
                     <div
                       className={`pu-domain-progress-fill ${isAllDone ? 'met' : ''}`}
-                      style={{ width: `${domainPct}%` }}
+                      style={{ width: `${domainPct}%`, backgroundColor: isAllDone ? '#059669' : isInProgress ? '#2563eb' : isPreTest || isWaiting ? '#d97706' : '#64748b' }}
                     />
                   </div>
                   <div className="pu-domain-progress-labels">
@@ -185,16 +202,20 @@ export function JobPathfinderSection({
                       title={`Xem nhanh đề cương ${activeCourse.code}: ${activeCourse.title}`}
                     >
                       <FileText size={13} />
-                      <span>{activeCourse.code} · Chi tiết</span>
+                      <span>{activeCourse.code} · Đề cương</span>
                     </button>
                   ) : null}
 
-                  {isPreTest && activeCourse ? (
+                  {isAllDone ? (
+                    <span className="pu-domain-done-label">
+                      <Check size={12} strokeWidth={3} /> Đã hoàn thành
+                    </span>
+                  ) : isPreTest && activeCourse ? (
                     <Link
                       to={PULSE_PATHS.preAssessment(activeCourse.courseId)}
                       className="pu-domain-action-link pretest"
                     >
-                      Làm test →
+                      <Zap size={12} /> Làm test vượt cấp →
                     </Link>
                   ) : isInProgress && activeCourse ? (
                     <Link
@@ -208,14 +229,14 @@ export function JobPathfinderSection({
                       to={PULSE_PATHS.preAssessment(activeCourse.courseId)}
                       className="pu-domain-action-link muted"
                     >
-                      Xem bài nộp
+                      <Clock size={12} /> Xem bài nộp
                     </Link>
                   ) : activeCourse ? (
                     <Link
                       to={PULSE_PATHS.course(activeCourse.courseId)}
                       className="pu-domain-action-link default"
                     >
-                      Bắt đầu →
+                      Bắt đầu học →
                     </Link>
                   ) : null}
                 </div>

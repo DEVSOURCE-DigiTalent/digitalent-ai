@@ -160,10 +160,10 @@ export function QuickSyllabusDrawer({
               </div>
               <div>
                 <strong className="pu-drawer-status-title waiting">
-                  Bài làm đang được Quản lý thẩm định
+                  Bài làm đang chờ Mentor chấm điểm
                 </strong>
                 <p className="pu-drawer-status-desc waiting">
-                  Quản lý {reviewerName} đang rà soát bài nộp cùng nhật ký giám sát AI. Cam kết SLA phản hồi trong vòng 48 giờ làm việc.
+                  Quản lý thẩm định {reviewerName} đang rà soát bài nộp và đánh giá tiêu chí. Kết quả sẽ được cập nhật trong vòng 48 giờ làm việc.
                 </p>
               </div>
             </div>
@@ -295,7 +295,7 @@ export function QuickSyllabusDrawer({
             <ul className="pu-drawer-rules-list">
               <li>Đọc đầy đủ bài giảng của từng mô đun và hoàn thành Flash Quiz ôn tập đạt 2/2 câu.</li>
               <li>Làm bài thi cuối khóa có AI giám sát (Webcam, Mic, Chia sẻ màn hình) chống gian lận.</li>
-              <li>Quản lý trực tiếp thẩm định bài làm và cấp Bằng chứng nhận số chính thức.</li>
+              <li>Mentor chấm điểm bài làm và công nhận đạt chuẩn kỹ năng số.</li>
             </ul>
           </section>
         </div>

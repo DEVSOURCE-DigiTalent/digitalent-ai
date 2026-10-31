@@ -47,7 +47,7 @@ const SIDEBAR_ITEMS: NavItem[] = [
   },
   {
     to: PULSE_PATHS.practice,
-    label: 'Bàn thực hành',
+    label: 'Khảo thí & Đánh giá',
     icon: ClipboardCheck,
     screenId: 'EM-03',
     match: [PULSE_PATHS.practice],
@@ -68,7 +68,7 @@ const SIDEBAR_ITEMS: NavItem[] = [
   },
   {
     to: PULSE_PATHS.profile,
-    label: 'Hồ sơ của tôi',
+    label: 'Hồ sơ cá nhân',
     icon: UserRound,
     screenId: 'EM-11',
     match: [PULSE_PATHS.profile],
