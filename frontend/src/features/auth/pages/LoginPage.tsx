@@ -25,7 +25,12 @@ function validate(email: string, password: string): FieldErrors {
 }
 
 function loginErrorMessage(error: unknown): string {
-  if (isAxiosError<{ message?: string }>(error)) return error.response?.data?.message || FALLBACK_ERROR;
+  if (isAxiosError<{ message?: string }>(error)) {
+    if (!error.response) {
+      return 'Không thể kết nối đến máy chủ backend (http://localhost:5000). Vui lòng kiểm tra backend hoặc bật VITE_USE_MOCK=true trong frontend/.env.';
+    }
+    return error.response?.data?.message || FALLBACK_ERROR;
+  }
   return FALLBACK_ERROR;
 }
 

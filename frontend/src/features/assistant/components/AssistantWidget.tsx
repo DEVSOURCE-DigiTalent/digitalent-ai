@@ -4,6 +4,7 @@ import {
   Award,
   BarChart3,
   BookOpen,
+  Bot,
   Check,
   ClipboardCheck,
   Copy,
@@ -128,7 +129,7 @@ export function AssistantWidget() {
         aria-label="Mở trợ lý hỗ trợ đào tạo"
         title="Trợ lý AI"
       >
-        <Sparkles size={22} aria-hidden="true" />
+        <Bot size={22} aria-hidden="true" />
       </button>
     );
   }
@@ -144,7 +145,7 @@ export function AssistantWidget() {
     >
       <header className="as-head">
         <span className="as-avatar as-avatar-lg" aria-hidden="true">
-          <Sparkles size={18} />
+          <Bot size={18} />
         </span>
         <div className="as-head-text">
           <strong>Trợ lý DigiTalent</strong>
@@ -174,7 +175,7 @@ export function AssistantWidget() {
         {entries.length === 0 && (
           <div className="as-empty">
             <span className="as-empty-mark" aria-hidden="true">
-              <Sparkles size={26} />
+              <Bot size={26} />
             </span>
             <h3>{name ? `Xin chào, ${name}!` : 'Xin chào!'}</h3>
             <p>
@@ -216,7 +217,7 @@ export function AssistantWidget() {
           return (
             <div key={entry.id} className="as-msg as-msg-bot">
               <span className="as-avatar" aria-hidden="true">
-                <Sparkles size={13} />
+                <Bot size={13} />
               </span>
               <div className="as-msg-body">
                 <div className="as-bubble">
