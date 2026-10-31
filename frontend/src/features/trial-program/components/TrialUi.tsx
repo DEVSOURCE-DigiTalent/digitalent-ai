@@ -203,15 +203,6 @@ function CapabilityRadarChart({ summary }: { summary: TrialReport['summary'] }) 
   );
 }
 
-const DOMAIN_ICONS = [
-  FileText,
-  BookOpen,
-  Award,
-  Check,
-  Award,
-  Award,
-];
-
 /** Bảng năng lực của doanh nghiệp: phân bố mức theo lĩnh vực và mức của từng nhân viên. */
 export function CompetencyReport({ report }: { report: TrialReport }) {
   const [selectedEmployee, setSelectedEmployee] = useState<TrialReportEmployee | null>(null);
@@ -538,48 +529,60 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
             </div>
           }
         >
-          <div className="space-y-5 py-1">
+          <div className="space-y-4 py-1">
             {/* Thẻ tóm tắt điểm số */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3.5 space-y-1">
-                <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wide">Điểm trắc nghiệm (6 lĩnh vực)</span>
-                <div className="text-xl font-bold text-blue-900">
-                  {selectedEmployee.choiceScore ?? 0} / {selectedEmployee.choiceTotal ?? 18} <span className="text-xs font-medium text-blue-700">câu đúng</span>
+              <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3.5 flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wide block">
+                    Trắc nghiệm 6 lĩnh vực
+                  </span>
+                  <div className="text-xl font-black text-blue-950 mt-0.5">
+                    {selectedEmployee.choiceScore ?? 0} / {selectedEmployee.choiceTotal ?? 18}{' '}
+                    <span className="text-xs font-semibold text-blue-700">câu đúng</span>
+                  </div>
                 </div>
-                <p className="text-[11px] text-blue-700">Đề chuẩn gồm 6 lĩnh vực × 3 cấp (Cơ bản, Trung cấp, Nâng cao).</p>
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
+                  {Math.round(((selectedEmployee.choiceScore ?? 0) / Math.max(1, selectedEmployee.choiceTotal ?? 18)) * 100)}%
+                </span>
               </div>
 
-              <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3.5 space-y-1">
-                <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wide">Điểm tự luận 3 cấp (Mentor chấm)</span>
-                <div className="flex items-center gap-3 mt-1 text-sm font-bold text-emerald-950">
-                  <span>Cơ bản: <strong className="text-emerald-700 font-extrabold">{selectedEmployee.essayBasicScore ?? '-'}</strong>/10</span>
-                  <span>·</span>
-                  <span>Trung cấp: <strong className="text-emerald-700 font-extrabold">{selectedEmployee.essayIntermediateScore ?? '-'}</strong>/10</span>
-                  <span>·</span>
-                  <span>Nâng cao: <strong className="text-emerald-700 font-extrabold">{selectedEmployee.essayAdvancedScore ?? '-'}</strong>/10</span>
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3.5 space-y-1.5">
+                <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wide block">
+                  Điểm tự luận (Mentor chấm)
+                </span>
+                <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-emerald-950">
+                  <span className="px-2 py-0.5 rounded-md bg-white border border-emerald-200">
+                    Cơ bản: <strong className="text-emerald-700">{selectedEmployee.essayBasicScore ?? '-'}</strong>/10
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-white border border-emerald-200">
+                    Trung cấp: <strong className="text-emerald-700">{selectedEmployee.essayIntermediateScore ?? '-'}</strong>/10
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-white border border-emerald-200">
+                    Nâng cao: <strong className="text-emerald-700">{selectedEmployee.essayAdvancedScore ?? '-'}</strong>/10
+                  </span>
                 </div>
-                <p className="text-[11px] text-emerald-700">Điểm đạt từ 5/10 cho từng cấp độ tình huống.</p>
               </div>
             </div>
 
             {/* Nhận xét từ Mentor */}
             {selectedEmployee.reviewNote && (
-              <div className="rounded-xl border border-purple-200 bg-purple-50/60 p-3.5 space-y-1">
+              <div className="rounded-xl border border-purple-200 bg-purple-50/60 p-3 space-y-1">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-purple-900">
                   <FileText className="size-3.5 text-purple-700" />
-                  Nhận xét chuyên môn từ Mentor:
+                  Nhận xét của Mentor:
                 </div>
-                <p className="text-xs text-purple-950 leading-relaxed italic">
+                <p className="text-xs text-purple-950 italic leading-relaxed">
                   "{selectedEmployee.reviewNote}"
                 </p>
               </div>
             )}
 
-            {/* Danh sách chi tiết 6 lĩnh vực */}
-            <div className="space-y-3">
+            {/* Danh sách 6 lĩnh vực */}
+            <div className="space-y-2.5">
               <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <Award className="size-4 text-blue-600" />
-                Đánh giá chi tiết &amp; Khoảng cách năng lực theo từng lĩnh vực
+                <Award className="size-4 text-[#137b84]" />
+                Kết quả 6 lĩnh vực năng lực số
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -604,36 +607,75 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                       recommendedCourse: `M${dom.number}-${selectedEmployee.levels[idx] >= 2 ? 'A' : selectedEmployee.levels[idx] >= 1 ? 'I' : 'F'}: Khóa học nâng cao năng lực`,
                     }))
                 ).map((detail) => (
-                  <div key={detail.categoryId} className="rounded-xl border border-slate-200 bg-white p-3.5 space-y-2 shadow-2xs">
+                  <div
+                    key={detail.categoryId}
+                    className="rounded-xl border border-slate-200 bg-white p-3.5 space-y-2.5 shadow-2xs hover:border-slate-300 transition-colors"
+                  >
+                    {/* Top: Lĩnh vực + LevelBadge */}
                     <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-0.5">
-                        <span className="text-[10px] font-bold text-slate-400">LĨNH VỰC {detail.number}</span>
-                        <h4 className="text-xs font-bold text-slate-900 leading-tight">{detail.name}</h4>
+                      <div className="min-w-0">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                          LĨNH VỰC {detail.number}
+                        </span>
+                        <h4 className="text-xs font-bold text-slate-900 leading-snug truncate" title={detail.name}>
+                          {detail.name}
+                        </h4>
                       </div>
-                      <LevelBadge level={detail.level} />
-                    </div>
-
-                    <div className="rounded-lg bg-slate-50 border border-slate-100 p-2 space-y-1">
-                      <div className="text-[11px] font-semibold text-slate-800">
-                        {detail.statusText}
-                      </div>
-                      <div className="text-[11px] text-slate-600 leading-relaxed">
-                        {detail.gapText}
+                      <div className="shrink-0">
+                        <LevelBadge level={detail.level} />
                       </div>
                     </div>
 
-                    {/* Kết quả trắc nghiệm 3 cấp */}
-                    <div className="flex items-center justify-between text-[11px] border-t border-slate-100 pt-2 text-slate-600">
-                      <span>Cơ bản: <strong>{detail.basicCorrect}/{detail.basicTotal}</strong> {detail.basicCorrect >= detail.basicTotal && detail.basicTotal > 0 ? '✓' : ''}</span>
-                      <span>Trung cấp: <strong>{detail.intermediateCorrect}/{detail.intermediateTotal}</strong> {detail.intermediateCorrect >= detail.intermediateTotal && detail.intermediateTotal > 0 ? '✓' : ''}</span>
-                      <span>Nâng cao: <strong>{detail.advancedCorrect}/{detail.advancedTotal}</strong> {detail.advancedCorrect >= detail.advancedTotal && detail.advancedTotal > 0 ? '✓' : ''}</span>
+                    {/* Middle: 3 Cấp độ trắc nghiệm */}
+                    <div className="grid grid-cols-3 gap-1.5 text-center">
+                      <div
+                        className={`rounded-lg py-1 px-1 text-[11px] font-medium border ${
+                          detail.basicCorrect >= detail.basicTotal && detail.basicTotal > 0
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-slate-50 text-slate-600 border-slate-100'
+                        }`}
+                      >
+                        <span className="block text-[9px] uppercase font-semibold text-slate-400">Cơ bản</span>
+                        <span className="font-bold">
+                          {detail.basicCorrect}/{detail.basicTotal}
+                          {detail.basicCorrect >= detail.basicTotal && detail.basicTotal > 0 ? ' ✓' : ''}
+                        </span>
+                      </div>
+
+                      <div
+                        className={`rounded-lg py-1 px-1 text-[11px] font-medium border ${
+                          detail.intermediateCorrect >= detail.intermediateTotal && detail.intermediateTotal > 0
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-slate-50 text-slate-600 border-slate-100'
+                        }`}
+                      >
+                        <span className="block text-[9px] uppercase font-semibold text-slate-400">Trung cấp</span>
+                        <span className="font-bold">
+                          {detail.intermediateCorrect}/{detail.intermediateTotal}
+                          {detail.intermediateCorrect >= detail.intermediateTotal && detail.intermediateTotal > 0 ? ' ✓' : ''}
+                        </span>
+                      </div>
+
+                      <div
+                        className={`rounded-lg py-1 px-1 text-[11px] font-medium border ${
+                          detail.advancedCorrect >= detail.advancedTotal && detail.advancedTotal > 0
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-slate-50 text-slate-600 border-slate-100'
+                        }`}
+                      >
+                        <span className="block text-[9px] uppercase font-semibold text-slate-400">Nâng cao</span>
+                        <span className="font-bold">
+                          {detail.advancedCorrect}/{detail.advancedTotal}
+                          {detail.advancedCorrect >= detail.advancedTotal && detail.advancedTotal > 0 ? ' ✓' : ''}
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Khóa học đề xuất */}
+                    {/* Bottom: Khóa học đề xuất */}
                     {detail.recommendedCourse && (
-                      <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-800 bg-emerald-50/80 border border-emerald-200/80 px-2.5 py-1 rounded-md">
-                        <BookOpen className="size-3 text-emerald-700 shrink-0" />
-                        <span className="truncate">{detail.recommendedCourse}</span>
+                      <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-800 bg-emerald-50/80 border border-emerald-200/80 px-2.5 py-1.5 rounded-lg">
+                        <BookOpen className="size-3.5 text-emerald-700 shrink-0" />
+                        <span className="truncate" title={detail.recommendedCourse}>{detail.recommendedCourse}</span>
                       </div>
                     )}
                   </div>
