@@ -6,10 +6,10 @@ interface BlueprintFlowProps {
 }
 
 const TIERS = [
-  { step: '01', label: 'Digital AI standard' },
-  { step: '02', label: 'Business ceiling' },
-  { step: '03', label: 'Department ceiling' },
-  { step: '04', label: 'Position target' },
+  { step: '01', label: 'Khung tham chiếu' },
+  { step: '02', label: 'Trần doanh nghiệp' },
+  { step: '03', label: 'Trần phòng ban' },
+  { step: '04', label: 'Chuẩn vị trí' },
 ];
 
 export function BlueprintFlow({ setup, setupCompleted }: BlueprintFlowProps) {

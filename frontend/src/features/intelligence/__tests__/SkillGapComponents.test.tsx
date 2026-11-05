@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { SeverityBadge } from '../components/SeverityBadge';
@@ -94,6 +95,7 @@ describe('SkillGapTable grouped by domain', () => {
     expect(screen.queryByText('4.2 Competency 4.2')).not.toBeInTheDocument();
     expect(screen.getByText('1.1 Competency 1.1')).toBeInTheDocument();
   });
+
 });
 
 describe('SkillGapDetailView', () => {

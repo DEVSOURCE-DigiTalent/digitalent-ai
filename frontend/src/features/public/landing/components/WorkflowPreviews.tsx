@@ -134,7 +134,7 @@ function AssignmentPreview() {
         </span>
         <span className="grid justify-items-end gap-1">
           <span className="text-[11px] text-stone-400 tabular-nums">5 nhân viên</span>
-          <Chip>Chờ Owner duyệt</Chip>
+          <Chip>Chờ phê duyệt</Chip>
         </span>
       </li>
       <li className={ROW}>
@@ -158,7 +158,7 @@ function TaskPreview() {
       <span>Lập quy trình xử lý dữ liệu khách hàng</span>
       <span className="flex flex-wrap gap-2">
         <Chip>Đã nộp 1 minh chứng</Chip>
-        <Chip>Chờ review</Chip>
+        <Chip>Chờ đánh giá</Chip>
       </span>
     </div>
   );

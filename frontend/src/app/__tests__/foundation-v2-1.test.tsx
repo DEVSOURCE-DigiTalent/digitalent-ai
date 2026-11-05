@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter, useRoutes } from 'react-router-dom';
@@ -38,12 +39,12 @@ describe('Foundation v2.1 Verification Suite (A1, A2, A3)', () => {
 
     const nav = await screen.findByRole('navigation', { name: 'Điều hướng chính' });
     expect(within(nav).getByText('Tổng quan')).toBeInTheDocument();
-    expect(within(nav).getByText('Khung năng lực')).toBeInTheDocument();
+    expect(within(nav).getByText('Khung năng lực số')).toBeInTheDocument();
     expect(within(nav).getByText('Nhân sự')).toBeInTheDocument();
-    expect(within(nav).getByText('Năng lực Khoảng cách')).toBeInTheDocument();
+    expect(within(nav).getByText('Khoảng trống năng lực')).toBeInTheDocument();
     expect(within(nav).getByText('Khóa học')).toBeInTheDocument();
     expect(within(nav).getByText('Báo cáo chu kỳ')).toBeInTheDocument();
-    expect(within(nav).getByText('Khung năng lực chung')).toBeInTheDocument();
+    expect(within(nav).getByText('Đợt đào tạo')).toBeInTheDocument();
     expect(within(nav).getByText('Chứng nhận')).toBeInTheDocument();
     expect(within(nav).getByText('Hoạt động')).toBeInTheDocument();
   });
@@ -79,9 +80,9 @@ describe('Foundation v2.1 Verification Suite (A1, A2, A3)', () => {
     );
 
     const nav = await screen.findByRole('navigation', { name: 'Học tập của tôi' });
-    expect(within(nav).getByRole('link', { name: 'Hôm nay' })).toHaveClass('active');
+    expect(within(nav).getByRole('link', { name: 'Tổng quan' })).toHaveClass('active');
     expect(within(nav).getByRole('link', { name: 'Lộ trình' })).toBeInTheDocument();
-    expect(within(nav).getByRole('link', { name: 'Thực hành' })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: 'Đánh giá' })).toBeInTheDocument();
   });
 
   // ── Last Owner Invariant Tests ──

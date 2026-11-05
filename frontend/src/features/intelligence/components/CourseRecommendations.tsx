@@ -1,4 +1,6 @@
-import { AlertTriangle, BookOpen, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AlertTriangle, ArrowRight, BookOpen, Clock } from 'lucide-react';
 import { EmptyState, StatusBadge } from '@/components/shared';
 import { useCourseRecommendations } from '@/hooks/use-recommendations';
 import { levelLabel } from '@/lib/competency-levels';
@@ -11,8 +13,8 @@ const EMPTY_STATES: Record<RecommendationEmptyReason, { title: string; descripti
     description: 'Đề xuất dựa trên chuẩn vị trí của nhân viên; tài khoản này chưa gắn với nhân viên nào.',
   },
   NO_SKILL_GAP_RUN: {
-    title: 'Chưa có phân tích skill gap',
-    description: 'Đề xuất xuất hiện sau khi chạy phân tích skill gap.',
+    title: 'Chưa có kết quả khoảng trống năng lực',
+    description: 'Cần phân tích năng lực trước khi đề xuất khóa học.',
   },
   NO_GAP: {
     title: 'Đã đạt mọi năng lực của vị trí',
@@ -33,7 +35,8 @@ const ENROLLMENT_LABELS: Record<string, string> = {
 /**
  * Explainable course recommendations for one employee (default: the signed-in employee) — spec §5.
  */
-export function CourseRecommendations({ employeeId }: { employeeId?: string }) {
+export function CourseRecommendations({ employeeId, compact = false }: { employeeId?: string; compact?: boolean }) {
+  const [showAll, setShowAll] = useState(false);
   const { data, isLoading, isError, refetch } = useCourseRecommendations(employeeId);
 
   if (isLoading) {
@@ -73,6 +76,19 @@ export function CourseRecommendations({ employeeId }: { employeeId?: string }) {
         description={empty.description}
       />
     );
+  }
+
+  if (compact) {
+    const visible = showAll ? data.items : data.items.slice(0, 3);
+    return <div className="personal-course-list">
+      {visible.map((item, index) => <article className="personal-course-card" key={item.courseId}>
+        <span className="personal-course-rank">{String(index + 1).padStart(2, '0')}</span>
+        <div><strong>{item.title}</strong><small>{item.courseCode}{item.estimatedDurationMinutes != null ? ` · ${Math.round(item.estimatedDurationMinutes / 60)} giờ` : ''} · {item.reasons.length} năng lực liên quan</small></div>
+        <span className="personal-course-score">{item.score.toFixed(0)} điểm</span>
+        <Link to={`/enterprise/courses?focus=${encodeURIComponent(item.courseCode)}`} aria-label={`Xem khóa học ${item.title}`}>Xem khóa học <ArrowRight size={15} /></Link>
+      </article>)}
+      {data.items.length > 3 && <button className="personal-course-more" type="button" onClick={() => setShowAll((value) => !value)}>{showAll ? 'Thu gọn' : `Xem thêm ${data.items.length - 3} khóa học`}</button>}
+    </div>;
   }
 
   return (

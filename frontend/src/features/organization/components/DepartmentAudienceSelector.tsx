@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useDepartments } from '@/hooks/use-departments';
 import { useAllEmployees } from '@/hooks/use-employees';
+import './owner-filter-controls.css';
 
 export type AudienceMode = 'all' | 'departments' | 'custom';
 
@@ -352,16 +353,17 @@ export function DepartmentAudienceSelector({
       {value.mode === 'custom' && (
         <div className="space-y-2">
           {/* Ô TÌM KIẾM */}
-          <div className="relative">
-            <Search className="size-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <label className="owner-filter-search">
+            <Search className="size-4" aria-hidden="true" />
             <input
               type="text"
+              aria-label="Tìm nhân viên theo tên, email hoặc mã"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo tên, email hoặc mã nhân viên..."
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--po-accent)]/30 focus:border-[var(--po-accent)]"
+              className="w-full text-sm"
             />
-          </div>
+          </label>
 
           <div className="max-h-60 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100 bg-white shadow-xs">
             {loadingEmployees && (

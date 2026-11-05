@@ -134,7 +134,7 @@ export function CreatePracticalTaskPage() {
 
       <PageHeader
         title="Giao bài tập thực hành & Dự án năng lực"
-        subtitle="Thiết lập nhiệm vụ thực tế gắn với Khung chuẩn năng lực số và tiêu chí chấm điểm minh chứng (Rubric)."
+        subtitle="Thiết lập nhiệm vụ và tiêu chí đánh giá minh chứng."
       />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -320,7 +320,7 @@ export function CreatePracticalTaskPage() {
         <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-bold text-slate-900">4. Bảng tiêu chí chấm điểm (Rubric)</h2>
+              <h2 className="text-base font-bold text-slate-900">4. Tiêu chí đánh giá</h2>
               <p className="text-xs text-slate-500 mt-0.5">
                 Thiết lập các tiêu chí để người duyệt đánh giá minh chứng của nhân viên.
               </p>

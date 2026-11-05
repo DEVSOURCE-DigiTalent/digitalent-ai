@@ -48,7 +48,7 @@ export function ApiCoursePathway({ course }: ApiCoursePathwayProps) {
   const presentedLesson = selectedEntry ? { ...selectedEntry.lesson, ...lessonContent } : undefined;
 
   if (lessonEntries.length === 0) {
-    return <div className="rounded-xl border border-slate-200 bg-white p-8 text-sm text-slate-600">Khóa học này chưa có bài học trong dữ liệu BE2.</div>;
+    return <div className="rounded-xl border border-slate-200 bg-white p-8 text-sm text-slate-600">Khóa học này chưa có bài học.</div>;
   }
 
   return (

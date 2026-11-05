@@ -3,26 +3,19 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   ArrowLeft,
-  ArrowRight,
-  Building,
   Building2,
   Check,
   CheckCircle2,
   Copy,
   CreditCard,
   Download,
-  ExternalLink,
   FileCheck,
   FileText,
-  Lock,
   Mail,
   PenTool,
   Phone,
-  QrCode,
-  RefreshCw,
   RotateCcw,
   ShieldCheck,
-  Sparkles,
   User,
   X,
 } from 'lucide-react';
@@ -130,7 +123,7 @@ export function CourseCheckoutPage() {
   useEffect(() => {
     setCustomerInfo((prev) => ({
       ...prev,
-      companyName: prev.companyName || orgData?.name || currentUser?.organizationName || 'Công ty TNHH Giải pháp Số',
+      companyName: prev.companyName || orgData?.name || currentUser?.organization?.name || 'Công ty TNHH Giải pháp Số',
       representativeName: prev.representativeName || currentUser?.fullName || 'Nguyễn Hoàng',
       email: prev.email || currentUser?.email || 'contact@digitalent.vn',
       phone: prev.phone || (currentUser as any)?.phoneNumber || '0988776655',
@@ -329,7 +322,7 @@ export function CourseCheckoutPage() {
         {/* ── Thanh điều hướng & Breadcrumb ── */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <Link
-            to="/enterprise/setup"
+            to="/enterprise/setup?tab=ceilings"
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition-colors"
           >
             <ArrowLeft className="size-3.5" />
@@ -377,16 +370,13 @@ export function CourseCheckoutPage() {
 
         {/* ── Tiêu đề chính ── */}
         <header className="mb-8">
-          <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--po-accent)' }}>
+          <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em] mb-1.5" style={{ color: 'var(--po-accent)' }}>
             <ShieldCheck className="size-4 text-emerald-600" />
             Hợp đồng đào tạo chuẩn hóa năng lực số · Nghị định 130/2018/NĐ-CP
           </div>
-          <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.03em] heading-gradient">
             Thanh toán & Ký kết Hợp đồng Cung cấp Suất học
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500 max-w-2xl">
-            Doanh nghiệp hoàn tất thông tin người đại diện, ký chữ ký điện tử trực tuyến và thanh toán qua cổng VietQR PayOS để tự động mở trần năng lực số toàn diện.
-          </p>
         </header>
 
         {coursesLoading ? (
@@ -429,13 +419,13 @@ export function CourseCheckoutPage() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2">
               <button
                 type="button"
                 onClick={() => {
                   toast.success('Đang tạo và tải hợp đồng đào tạo có chữ ký điện tử...');
                 }}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-xs"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-xs"
               >
                 <Download className="size-4" />
                 <span>Tải hợp đồng điện tử (PDF)</span>
@@ -443,11 +433,19 @@ export function CourseCheckoutPage() {
 
               <button
                 type="button"
-                onClick={() => navigate('/enterprise/setup')}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-xs font-bold text-white shadow-md hover:brightness-105"
+                onClick={() => navigate('/enterprise/training-batches')}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:brightness-105"
                 style={{ background: 'var(--po-accent)' }}
               >
-                <span>Xem Khung năng lực đã mở trần →</span>
+                <span>Tạo đợt đào tạo & Gán nhân sự →</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate('/enterprise/setup?tab=ceilings')}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-xs"
+              >
+                <span>Xem Trần năng lực đã mở</span>
               </button>
             </div>
           </div>

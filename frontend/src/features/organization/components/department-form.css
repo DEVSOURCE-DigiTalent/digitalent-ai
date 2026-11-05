@@ -1,0 +1,25 @@
+.department-dialog-backdrop {
+  background: rgba(12, 30, 42, .58);
+  backdrop-filter: blur(9px) saturate(.8);
+  animation: department-backdrop-in .24s ease-out both;
+}
+
+.department-dialog {
+  box-shadow: 0 28px 90px rgba(8, 29, 43, .3), 0 0 0 1px rgba(255, 255, 255, .55);
+  animation: department-dialog-in .3s cubic-bezier(.2, .7, .2, 1) both;
+}
+
+.department-dialog .position-form-head { flex: none; }
+.department-dialog-form { min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #b4d4d1 transparent; }
+.department-dialog .position-form-actions { position: sticky; bottom: 0; z-index: 1; }
+.department-dialog .position-form-save { transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; }
+.department-dialog .position-form-save:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 9px 20px rgba(19,123,132,.23); }
+
+@keyframes department-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes department-dialog-in { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .department-dialog-backdrop, .department-dialog { animation: none; }
+  .department-dialog .position-form-save { transition: none; }
+  .department-dialog .position-form-save:hover:not(:disabled) { transform: none; }
+}

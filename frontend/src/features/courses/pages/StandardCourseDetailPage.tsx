@@ -313,7 +313,7 @@ export function StandardCourseDetailPage() {
                   <ShieldCheck className="w-5 h-5 text-primary-600 shrink-0 mt-0.5" />
                   <div className="text-xs text-primary-900 space-y-1">
                     <span className="font-semibold block">Khóa học chuẩn hóa nền tảng</span>
-                    <span>Nội dung đã được chuẩn hóa bởi Hội đồng Chuyên gia số DigiTalent AI. Chủ doanh nghiệp (Owner) có thể duyệt, xem trước, phân công cho nhân sự hoặc đưa vào đợt đào tạo, nhưng không chỉnh sửa cấu trúc bài giảng chuẩn.</span>
+                    <span>Nội dung chuẩn đã được duyệt. Bạn có thể xem trước, giao cho nhân viên hoặc đưa vào đợt đào tạo.</span>
                   </div>
                 </div>
               </div>

@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useCompetency } from '@/hooks/use-competencies';
 import { CompetencyDetailPanel } from '../components/CompetencyDetailPanel';
 import { PULSE_TOKENS } from '../owner-theme';
+import { PageLoading } from '@/components/shared/LoadingState';
 
 const TYPE_LABELS: Record<string, string> = {
   CORE_DIGITAL: 'Năng lực số cốt lõi',
@@ -16,16 +17,7 @@ export function OwnerFrameworkDetailPage() {
   const { data: competency, isLoading, isError } = useCompetency(id);
 
   if (isLoading) {
-    return (
-      <div
-        className="po-owner -m-4 md:-m-6 min-h-screen flex items-center justify-center"
-        style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
-      >
-        <p className="text-sm" style={{ color: 'var(--po-muted)' }}>
-          Đang tải năng lực…
-        </p>
-      </div>
-    );
+    return <div className="po-owner -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label="Đang tải chi tiết năng lực" variant="detail" /></div>;
   }
 
   if (isError || !competency) {
@@ -52,7 +44,7 @@ export function OwnerFrameworkDetailPage() {
             className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold"
             style={{ color: 'var(--po-accent)' }}
           >
-            <ArrowLeft className="size-3.5" /> Quay lại khung năng lực
+            <ArrowLeft className="size-3.5" /> Quay lại Từ điển năng lực số
           </Link>
         </div>
       </div>
@@ -79,7 +71,7 @@ export function OwnerFrameworkDetailPage() {
           className="inline-flex items-center gap-1.5 text-[11px] font-bold mb-4 transition-opacity hover:opacity-70"
           style={{ color: 'var(--po-muted)' }}
         >
-          <ArrowLeft className="size-3" /> Khung năng lực
+          <ArrowLeft className="size-3" /> Quay lại Từ điển Chuẩn Năng lực Số
         </Link>
 
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">

@@ -29,8 +29,8 @@ interface PageHeaderProps {
  */
 export function PageHeader({
   title,
-  subtitle,
-  description,
+  subtitle: _subtitle,
+  description: _description,
   children,
   actions,
   tabs,
@@ -38,17 +38,13 @@ export function PageHeader({
   onTabChange,
   className,
 }: PageHeaderProps) {
-  const desc = description ?? subtitle;
   const rightSlot = actions ?? children;
 
   return (
     <div className={cn('mb-6', className)}>
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold text-ent-fg leading-tight">{title}</h1>
-          {desc && (
-            <p className="mt-1 text-sm text-ent-fg-2">{desc}</p>
-          )}
+          <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.03em] heading-gradient leading-tight">{title}</h1>
         </div>
         {rightSlot && (
           <div className="flex items-center gap-2 shrink-0">{rightSlot}</div>

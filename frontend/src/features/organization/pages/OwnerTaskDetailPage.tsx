@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Users } from 'lucide-react';
 import { usePracticalTask } from '@/hooks/use-tasks';
 import { useTaskCompetencies } from '@/hooks/use-competencies';
 import { formatDate } from '@/lib/utils';
 import type { RubricCriterion } from '@/services/task.service';
+import { RichText } from '@/features/pulse-employee/components/RichText';
 import { PULSE_TOKENS } from '../owner-theme';
+import { PageLoading } from '@/components/shared/LoadingState';
+import './owner-operations.css';
 
 const SUB_STATUS: Record<string, { label: string; bg: string; fg: string }> = {
   PENDING_REVIEW: { label: 'Chờ chấm', bg: 'var(--po-soft)', fg: 'var(--po-accent-strong)' },
@@ -14,19 +18,13 @@ const SUB_STATUS: Record<string, { label: string; bg: string; fg: string }> = {
 };
 
 export function OwnerTaskDetailPage() {
+  const [employeePage, setEmployeePage] = useState(1);
   const { id = '' } = useParams();
   const { data: task, isLoading, isError } = usePracticalTask(id);
   const { data: competencies = [] } = useTaskCompetencies(task?.competencyIds ?? []);
 
   if (isLoading) {
-    return (
-      <div
-        className="po-owner -m-4 md:-m-6 min-h-screen flex items-center justify-center"
-        style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
-      >
-        <p className="text-sm" style={{ color: 'var(--po-muted)' }}>Đang tải…</p>
-      </div>
-    );
+    return <div className="po-owner -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label="Đang tải chi tiết nhiệm vụ" variant="detail" /></div>;
   }
 
   if (isError || !task) {
@@ -59,10 +57,13 @@ export function OwnerTaskDetailPage() {
 
   const assignedEmployees = task.assignedEmployees ?? [];
   const submissions = task.submissions ?? [];
+  const rubricCriteria = Array.isArray(task.rubricCriteria) ? task.rubricCriteria : [];
+  const employeePages = Math.max(1, Math.ceil(assignedEmployees.length / 10));
+  const visibleEmployees = assignedEmployees.slice((employeePage - 1) * 10, employeePage * 10);
 
   return (
     <div
-      className="po-owner -m-4 md:-m-6 min-h-screen"
+      className="po-owner owner-operations owner-operations--detail -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
@@ -70,7 +71,7 @@ export function OwnerTaskDetailPage() {
       }}
     >
       {/* ── Hero ── */}
-      <section className="px-4 md:px-6 pt-6 pb-4 mx-auto" style={{ maxWidth: 1220 }}>
+      <section className="px-4 md:px-6 pt-6 pb-4 mx-auto" style={{ maxWidth: 1800 }}>
         <Link
           to="/enterprise/tasks"
           className="inline-flex items-center gap-1.5 text-[11px] font-bold mb-4 transition-opacity hover:opacity-70"
@@ -82,12 +83,12 @@ export function OwnerTaskDetailPage() {
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <span
+              {task.targetLevel > 0 && <span
                 className="text-[9px] font-black px-1.5 py-0.5 rounded"
                 style={{ background: 'var(--po-soft)', color: 'var(--po-accent-strong)' }}
               >
-                LV{task.targetLevel}
-              </span>
+                Cấp {task.targetLevel}
+              </span>}
               <span
                 className="rounded-full px-2 py-0.5 text-[10px] font-bold"
                 style={
@@ -100,13 +101,13 @@ export function OwnerTaskDetailPage() {
               </span>
             </div>
             <h1
-              className="text-2xl font-bold"
+              className="text-3xl sm:text-4xl font-bold"
               style={{ color: 'var(--po-ink)', letterSpacing: '-0.04em' }}
             >
               {task.title}
             </h1>
             <p className="mt-0.5 text-xs" style={{ color: 'var(--po-muted)' }}>
-              Giao bởi {task.assignedByName} · Hạn {formatDate(task.dueDate)}
+              Giao bởi {task.assignedByName}{task.dueDate ? ` · Hạn ${formatDate(task.dueDate)}` : ''}
               {task.departmentName && ` · ${task.departmentName}`}
             </p>
           </div>
@@ -117,7 +118,7 @@ export function OwnerTaskDetailPage() {
       </section>
 
       {/* ── Body ── */}
-      <div className="px-4 md:px-6 pb-8 mx-auto" style={{ maxWidth: 1220 }}>
+      <div className="px-4 md:px-6 pb-8 mx-auto" style={{ maxWidth: 1800 }}>
         <div className="grid lg:grid-cols-3 gap-4">
           {/* Left: description + rubric */}
           <div className="lg:col-span-2 space-y-4">
@@ -129,19 +130,16 @@ export function OwnerTaskDetailPage() {
               <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>
                 Yêu cầu & bối cảnh
               </p>
-              <p className="text-xs leading-relaxed whitespace-pre-line" style={{ color: 'var(--po-ink)' }}>
-                {task.description}
-              </p>
+              <div className="owner-operations__rich-text">
+                <RichText body={task.description} />
+              </div>
               <div className="pt-2" style={{ borderTop: '1px solid var(--po-line)' }}>
                 <span className="text-[10px] font-bold uppercase" style={{ color: 'var(--po-muted)' }}>
                   Sản phẩm đầu ra (minh chứng)
                 </span>
-                <p
-                  className="mt-1 text-xs font-medium rounded-lg p-3"
-                  style={{ background: 'var(--po-soft)', color: 'var(--po-accent)' }}
-                >
-                  {task.expectedOutput}
-                </p>
+                <div className="owner-operations__output owner-operations__rich-text mt-2">
+                  <RichText body={task.expectedOutput} />
+                </div>
               </div>
             </div>
 
@@ -152,13 +150,14 @@ export function OwnerTaskDetailPage() {
             >
               <div className="flex items-center justify-between">
                 <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>
-                  Tiêu chí chấm (Rubric)
+                  Tiêu chí đánh giá
                 </p>
-                <span className="text-[10px] font-bold" style={{ color: 'var(--po-muted)' }}>
-                  Tổng: {task.rubricCriteria.reduce((s: number, r: RubricCriterion) => s + r.maxPoints, 0)} đ
-                </span>
+                {rubricCriteria.length > 0 && <span className="text-[10px] font-bold" style={{ color: 'var(--po-muted)' }}>
+                  Tổng: {rubricCriteria.reduce((s: number, r: RubricCriterion) => s + Number(r.maxPoints || 0), 0)} điểm
+                </span>}
               </div>
-              {task.rubricCriteria.map((r: RubricCriterion, i: number) => (
+              {rubricCriteria.length === 0 && <p className="owner-operations__empty-inline">Nhiệm vụ này chưa có tiêu chí đánh giá.</p>}
+              {rubricCriteria.map((r: RubricCriterion, i: number) => (
                 <div
                   key={r.id || i}
                   className="rounded-[11px] border p-3 flex items-center justify-between gap-3"
@@ -193,6 +192,7 @@ export function OwnerTaskDetailPage() {
                 Năng lực liên kết
               </p>
               <div className="flex flex-wrap gap-2">
+                {task.competencyIds.length === 0 && <p className="owner-operations__empty-inline">Chưa liên kết năng lực.</p>}
                 {task.competencyIds.map((cid) => {
                   const c = competencies.find((x) => x.id === cid);
                   return (
@@ -224,7 +224,7 @@ export function OwnerTaskDetailPage() {
           </div>
 
           <div className="divide-y" style={{ borderColor: 'var(--po-line)' }}>
-            {assignedEmployees.map((emp: any) => {
+            {visibleEmployees.map((emp: any) => {
               const sub = submissions.find((s: any) => s.employeeId === emp.id);
               const st = sub ? (SUB_STATUS[sub.status] ?? SUB_STATUS.PENDING_REVIEW) : null;
 
@@ -282,6 +282,7 @@ export function OwnerTaskDetailPage() {
               );
             })}
           </div>
+          {employeePages > 1 && <div className="owner-operations__pagination px-4 pb-4"><span>Trang {employeePage} / {employeePages}</span><button type="button" disabled={employeePage <= 1} onClick={() => setEmployeePage((page) => page - 1)}>Trước</button><button type="button" disabled={employeePage >= employeePages} onClick={() => setEmployeePage((page) => page + 1)}>Sau</button></div>}
         </div>
       </div>
     </div>

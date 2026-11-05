@@ -1,205 +1,89 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, Search } from 'lucide-react';
 import type { CompetencyGapRow } from '@/services/analytics.service';
+import { OwnerFilterSelect } from './OwnerFilterSelect';
+import { SectionLoading } from '@/components/shared/LoadingState';
 
 interface CapabilityLearningPathProps {
   competencies: CompetencyGapRow[];
   isLoading: boolean;
 }
 
+type GapView = 'priority' | 'all' | 'met';
+const PAGE_SIZE = 6;
+
 export function CapabilityLearningPath({ competencies, isLoading }: CapabilityLearningPathProps) {
+  const [view, setView] = useState<GapView>('priority');
+  const [category, setCategory] = useState('');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+
+  const categories = useMemo(() => [...new Set(competencies.map((item) => item.categoryName).filter((name): name is string => Boolean(name)))], [competencies]);
+  const metCount = competencies.filter((item) => item.employeesWithGap === 0).length;
+
+  const filtered = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase('vi');
+    return competencies
+      .filter((item) => (view === 'priority' ? item.employeesWithGap > 0 : view === 'met' ? item.employeesWithGap === 0 : true))
+      .filter((item) => !category || item.categoryName === category)
+      .filter((item) => !query || `${item.frameworkCode} ${item.name} ${item.categoryName ?? ''}`.toLocaleLowerCase('vi').includes(query))
+      .sort((a, b) => view === 'priority'
+        ? b.highCount - a.highCount || b.employeesWithGap - a.employeesWithGap || (b.averageRequiredLevel - b.averageCurrentLevel) - (a.averageRequiredLevel - a.averageCurrentLevel)
+        : a.frameworkCode.localeCompare(b.frameworkCode, 'vi', { numeric: true }));
+  }, [competencies, view, category, search]);
+
+  useEffect(() => setPage(1), [view, category, search, competencies]);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
-    <section
-      className="rounded-[22px] border p-6"
-      style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)' }}
-    >
-      <div className="mb-4">
-        <span
-          className="text-[10px] font-black uppercase tracking-[0.1em]"
-          style={{ color: 'var(--po-accent)' }}
-        >
-          Theo năng lực TT02
-        </span>
-        <h2
-          className="mt-1 text-lg font-semibold"
-          style={{ color: 'var(--po-ink)', letterSpacing: '-0.02em' }}
-        >
-          Mức đáp ứng từng năng lực trên toàn tổ chức
-        </h2>
+    <section className="gap-panel" aria-labelledby="gap-competency-title">
+      <div className="gap-panel-heading">
+        <div>
+          <span className="gap-eyebrow">Theo năng lực TT02</span>
+          <h2 id="gap-competency-title">Mức đáp ứng từng năng lực trên toàn tổ chức</h2>
+        </div>
+        <span className="gap-panel-count">{competencies.length} năng lực</span>
       </div>
 
       {isLoading ? (
-        <p className="py-6 text-center text-sm" style={{ color: 'var(--po-muted)' }}>
-          Đang tải dữ liệu năng lực…
-        </p>
+        <SectionLoading label="Đang tải dữ liệu năng lực" />
       ) : competencies.length === 0 ? (
-        <div className="py-10 text-center">
-          <p className="text-sm font-medium" style={{ color: 'var(--po-ink)' }}>
-            Không có năng lực nào
-          </p>
-          <p className="mt-1 text-xs" style={{ color: 'var(--po-muted)' }}>
-            Không có số liệu năng lực theo bộ lọc hiện tại.
-          </p>
-        </div>
+        <div className="gap-empty"><strong>Chưa có dữ liệu năng lực</strong><span>Không có số liệu theo bộ lọc hiện tại.</span></div>
       ) : (
-        <div className="grid gap-[6px]">
-          {/* Legend */}
-          <div
-            className="mb-2 flex flex-wrap gap-4 text-[10px] font-bold"
-            style={{ color: '#66748c' }}
-          >
-            <span className="inline-flex items-center gap-1.5">
-              <i
-                className="inline-block size-[9px] rounded-full"
-                style={{ background: '#137b84' }}
-              />
-              Mức hiện tại TB
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <i
-                className="inline-block size-[9px] rounded-full"
-                style={{ background: '#eeb093' }}
-              />
-              Mức yêu cầu TB
-            </span>
+        <>
+          <div className="gap-toolbar">
+            <div className="gap-view-switch" role="group" aria-label="Hiển thị năng lực">
+              <button type="button" aria-pressed={view === 'priority'} onClick={() => setView('priority')}>Cần ưu tiên <b>{competencies.filter((item) => item.employeesWithGap > 0).length}</b></button>
+              <button type="button" aria-pressed={view === 'all'} onClick={() => setView('all')}>Tất cả <b>{competencies.length}</b></button>
+              <button type="button" aria-pressed={view === 'met'} onClick={() => setView('met')}>Đạt chuẩn <b>{metCount}</b></button>
+            </div>
+            <div className="gap-toolbar-fields">
+              <OwnerFilterSelect label="Lọc theo lĩnh vực năng lực" value={category} onChange={setCategory} options={[{ value: '', label: 'Mọi lĩnh vực' }, ...categories.map((name) => ({ value: name, label: name }))]} />
+              <label className="gap-search owner-filter-search"><Search size={17} aria-hidden="true" /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm mã hoặc tên năng lực" aria-label="Tìm năng lực" /></label>
+            </div>
           </div>
-
-          {competencies.map((comp) => {
-            const maxLevel = 3;
-            const currentPct = Math.min(100, (comp.averageCurrentLevel / maxLevel) * 100);
-            const requiredPct = Math.min(100, (comp.averageRequiredLevel / maxLevel) * 100);
-            const hasGap = comp.employeesWithGap > 0;
-
-            return (
-              <div
-                key={comp.competencyId}
-                className="grid items-center gap-x-3 gap-y-0.5 rounded-xl border px-4 py-3"
-                style={{
-                  gridTemplateColumns: 'minmax(130px, 1.6fr) minmax(65px, .55fr) 16px minmax(65px, .55fr) minmax(88px, .7fr)',
-                  borderColor: 'var(--po-line)',
-                  background: 'var(--po-surface)',
-                }}
-              >
-                {/* Domain name */}
-                <div>
-                  <span
-                    className="mr-2 inline-block rounded border px-1.5 py-0.5 font-mono text-[10px] font-bold"
-                    style={{ background: '#ecfdf5', color: '#15803d', borderColor: '#bbf7d0' }}
-                  >
-                    {comp.frameworkCode}
-                  </span>
-                  <strong className="text-[13px]" style={{ color: 'var(--po-ink)' }}>
-                    {comp.name}
-                  </strong>
-                  {comp.categoryName && (
-                    <small className="ml-1 text-[11px]" style={{ color: 'var(--po-muted)' }}>
-                      · {comp.categoryName}
-                    </small>
-                  )}
+          <div className="gap-list" aria-live="polite">
+            {visible.length === 0 ? <div className="gap-empty"><strong>Không tìm thấy năng lực</strong><span>Thử một lĩnh vực hoặc từ khóa khác.</span></div> : visible.map((comp) => {
+              const currentPct = Math.max(0, Math.min(100, comp.averageCurrentLevel / 3 * 100));
+              const requiredPct = Math.max(0, Math.min(100, comp.averageRequiredLevel / 3 * 100));
+              const hasGap = comp.employeesWithGap > 0;
+              return <article className="gap-competency" key={comp.competencyId}>
+                <div className="gap-competency-name"><span className="gap-code">{comp.frameworkCode}</span><div><strong>{comp.name}</strong><small>{comp.categoryName ?? 'Năng lực số'}</small></div></div>
+                <div className="gap-levels" aria-label={`Hiện tại ${comp.averageCurrentLevel.toFixed(1)}, yêu cầu ${comp.averageRequiredLevel.toFixed(1)}`}>
+                  <div className="gap-level-values"><span>Hiện tại <b>{comp.averageCurrentLevel.toFixed(1)}</b></span><ArrowRight size={15} aria-hidden="true" /><span>Yêu cầu <b>{comp.averageRequiredLevel.toFixed(1)}</b></span></div>
+                  <div className="gap-level-track" aria-hidden="true"><span style={{ width: `${requiredPct}%` }} /><i style={{ left: `${currentPct}%` }} /></div>
                 </div>
-
-                {/* Current level */}
-                <span className="text-center">
-                  <b className="text-[13px]" style={{ color: '#137b84' }}>
-                    L{comp.averageCurrentLevel.toFixed(1)}
-                  </b>
-                  <small
-                    className="block text-[10px]"
-                    style={{ color: 'var(--po-muted)' }}
-                  >
-                    hiện tại
-                  </small>
-                </span>
-
-                {/* Arrow */}
-                <span
-                  className="text-center text-sm"
-                  style={{ color: '#8998b7' }}
-                  aria-hidden="true"
-                >
-                  →
-                </span>
-
-                {/* Required level */}
-                <span className="text-center">
-                  <b className="text-[13px]" style={{ color: 'var(--po-accent)' }}>
-                    L{comp.averageRequiredLevel.toFixed(1)}
-                  </b>
-                  <small
-                    className="block text-[10px]"
-                    style={{ color: 'var(--po-muted)' }}
-                  >
-                    yêu cầu
-                  </small>
-                </span>
-
-                {/* Gap severity badges */}
-                <div className="flex items-center gap-1.5 text-[11px]">
-                  {comp.highCount > 0 && (
-                    <span
-                      className="rounded-md px-1.5 py-0.5 font-semibold"
-                      style={{ background: '#fff1f2', color: '#be123c', border: '1px solid #fecdd3' }}
-                    >
-                      {comp.highCount} Cao
-                    </span>
-                  )}
-                  {comp.mediumCount > 0 && (
-                    <span
-                      className="rounded-md px-1.5 py-0.5 font-semibold"
-                      style={{ background: '#fefce8', color: '#a16207', border: '1px solid #fde68a' }}
-                    >
-                      {comp.mediumCount} TB
-                    </span>
-                  )}
-                  {comp.lowCount > 0 && (
-                    <span
-                      className="rounded-md px-1.5 py-0.5"
-                      style={{ background: 'var(--po-canvas)', color: 'var(--po-muted)' }}
-                    >
-                      {comp.lowCount} Thấp
-                    </span>
-                  )}
-                  {!hasGap && (
-                    <span className="font-medium" style={{ color: '#16a34a' }}>
-                      Đạt chuẩn
-                    </span>
-                  )}
+                <div className="gap-competency-end">
+                  {hasGap ? <><span className="gap-severity">{comp.highCount > 0 ? `${comp.highCount} mức cao` : `${comp.employeesWithGap} khoảng trống`}</span><small>{comp.employeesWithGap}/{comp.employeesRequired} nhân sự</small></> : <span className="gap-met">Đạt chuẩn</span>}
+                  {hasGap && <Link to={`/enterprise/courses?gap=${encodeURIComponent(comp.frameworkCode)}&level=${Math.max(1, Math.min(3, Math.ceil(comp.averageRequiredLevel)))}`} aria-label={`Xem khóa học cho ${comp.name}`}>Khóa học <ArrowRight size={15} /></Link>}
                 </div>
-
-                {/* Level bars — full width */}
-                <div
-                  className="col-span-full mt-1 flex gap-1.5"
-                  style={{ gridColumn: '1 / -1' }}
-                >
-                  <div
-                    className="h-1.5 flex-1 rounded-full overflow-hidden"
-                    style={{ background: 'var(--po-raised)' }}
-                  >
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${currentPct}%`,
-                        background: '#137b84',
-                        transition: 'width .3s ease',
-                      }}
-                    />
-                  </div>
-                  <div
-                    className="h-1.5 flex-1 rounded-full overflow-hidden"
-                    style={{ background: 'var(--po-raised)' }}
-                  >
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${requiredPct}%`,
-                        background: '#eeb093',
-                        transition: 'width .3s ease',
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              </article>;
+            })}
+          </div>
+          <div className="gap-pagination"><span>Hiển thị {filtered.length ? (page - 1) * PAGE_SIZE + 1 : 0}–{Math.min(page * PAGE_SIZE, filtered.length)} / {filtered.length} năng lực</span><div><button type="button" disabled={page === 1} onClick={() => setPage((value) => value - 1)}>Trước</button><span>Trang {page}/{pageCount}</span><button type="button" disabled={page === pageCount} onClick={() => setPage((value) => value + 1)}>Sau</button></div></div>
+        </>
       )}
     </section>
   );

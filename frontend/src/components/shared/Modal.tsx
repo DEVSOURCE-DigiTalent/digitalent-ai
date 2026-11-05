@@ -22,10 +22,11 @@ interface ModalProps {
   /** Buttons row at the bottom. */
   footer?: ReactNode;
   size?: Size;
+  className?: string;
 }
 
 /** Centered dialog for short actions. Styled with Enterprise tokens. */
-export function Modal({ open, onClose, title, description, children, footer, size = 'md' }: ModalProps) {
+export function Modal({ open, onClose, title, description, children, footer, size = 'md', className }: ModalProps) {
   const titleId = useId();
   const descriptionId = useId();
   const ref = useRef<HTMLDivElement>(null);
@@ -43,7 +44,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
-        className={cn('relative flex max-h-[90vh] w-full flex-col rounded-2xl bg-white border border-slate-200 shadow-2xl outline-none text-slate-900', SIZES[size])}
+        className={cn('relative flex max-h-[90vh] w-full flex-col rounded-2xl bg-white border border-slate-200 shadow-2xl outline-none text-slate-900', SIZES[size], className)}
       >
         <header className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-4">
           <div>

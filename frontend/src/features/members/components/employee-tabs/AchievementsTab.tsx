@@ -1,52 +1,18 @@
-import React from 'react';
-import { Award } from 'lucide-react';
-import { EmptyState } from '@/components/shared';
+import { useState } from 'react';
+import { Award, CalendarDays } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import type { CertificateRecord } from '@/services/mock/server/types-work';
+import { MemberTabEmpty, MemberTabHeader, MemberTabPager } from './MemberTabUi';
 
-interface AchievementsTabProps {
-  certificates?: CertificateRecord[];
-  readOnly?: boolean;
+interface AchievementsTabProps { certificates?: CertificateRecord[]; readOnly?: boolean }
+const PAGE_SIZE = 6;
+export function AchievementsTab({ certificates = [] }: AchievementsTabProps) {
+  const [page, setPage] = useState(1);
+  const safePage = Math.min(page, Math.max(1, Math.ceil(certificates.length / PAGE_SIZE)));
+  return <div><MemberTabHeader title="Chứng nhận và thành tựu" count={certificates.length} icon={<Award size={21} />} />
+    {certificates.length === 0 ? <MemberTabEmpty title="Chưa có chứng nhận" description="Chứng nhận được cấp sau khi hoàn thành yêu cầu đào tạo hoặc đánh giá." icon={<Award size={27} />} /> : <>
+      <div className="member-tab-grid">{certificates.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE).map((cert) => <article key={cert.id} className="member-tab-card" style={{ background: 'linear-gradient(135deg,#fff,#f6fcfa)' }}><div className="member-tab-card-head"><div><span className="member-tab-code">{cert.certificateCode}</span><h3 style={{ marginTop: 9 }}>{cert.courseTitle}</h3></div><Award size={25} color="#119582" /></div><div className="member-tab-meta"><span><CalendarDays size={14} />Cấp {formatDate(cert.issueDate)}</span>{cert.expiryDate && <span>Hết hạn {formatDate(cert.expiryDate)}</span>}</div></article>)}</div>
+      <MemberTabPager page={safePage} total={certificates.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+    </>}
+  </div>;
 }
-
-export const AchievementsTab: React.FC<AchievementsTabProps> = ({ certificates = [] }) => {
-  if (certificates.length === 0) {
-    return (
-      <EmptyState
-        title="Chưa có chứng chỉ hay thành tựu nào"
-        description="Khi hoàn thành các khóa đào tạo hoặc đạt chuẩn năng lực, chứng chỉ số sẽ được cấp và lưu trữ tại đây."
-      />
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-900">
-          Chứng chỉ đã cấp ({certificates.length})
-        </h3>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        {certificates.map((cert) => (
-          <div
-            key={cert.id}
-            className="flex items-start gap-3.5 rounded-lg border border-slate-200 bg-linear-to-r from-white to-slate-50 p-4 shadow-2xs"
-          >
-            <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-teal-50 text-teal-600">
-              <Award className="size-6" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold text-slate-900">{cert.courseTitle}</p>
-              <p className="text-xs font-mono text-slate-500 mt-0.5">Số hiệu: {cert.certificateCode}</p>
-              <div className="mt-2 text-2xs text-slate-400">
-                <span>Cấp ngày: {formatDate(cert.issueDate)}</span>
-                {cert.expiryDate && <span> · Hạn: {formatDate(cert.expiryDate)}</span>}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};

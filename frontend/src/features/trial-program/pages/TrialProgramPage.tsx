@@ -1,68 +1,139 @@
 import { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Camera, Compass, Mic, Monitor, Send } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  Briefcase,
+  Camera,
+  CheckCircle2,
+  Clock,
+  FileCheck,
+  GraduationCap,
+  Mic,
+  Monitor,
+  Search,
+  Send,
+  TrendingUp,
+  UserCheck,
+  Users,
+  Zap,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { PageContainer } from '@/components/shared/PageContainer';
-import { useInviteTrialParticipants, useJoinTrialAsParticipant, useResendTrialInvitation, useSubmitTrialRequest, useTrialProgram } from '@/hooks/use-trial-program';
-import type { TrialInviteResult, TrialParticipant, TrialParticipantRow, TrialProgram, TrialReport } from '@/services/trial-program.service';
+import {
+  useInviteTrialParticipants,
+  useJoinTrialAsParticipant,
+  useResendTrialInvitation,
+  useSubmitTrialRequest,
+  useTrialProgram,
+} from '@/hooks/use-trial-program';
+import type {
+  TrialInviteResult,
+  TrialParticipant,
+  TrialParticipantRow,
+  TrialProgram,
+  TrialReport,
+} from '@/services/trial-program.service';
 import { apiErrorMessage } from '@/lib/utils';
+import { PULSE_TOKENS } from '@/features/organization/owner-theme';
 import { ParticipantsEditor } from '../components/ParticipantsEditor';
 import { CompetencyReport, ParticipantStatus, StageBadge, Steps } from '../components/TrialUi';
 import { emptyRows, isRowEmpty, rowError } from '../lib/participant-rows';
 import { formatWhen, toLocalInput } from '../lib/trial-format';
 import '../trial-program.css';
+import '@/features/organization/components/owner-filter-controls.css';
 
-const STEPS = ['Nhân viên', 'Hạn & lịch chấm', 'Làm bài & chấm', 'Kết quả'];
+const STEPS = ['Nhân sự tham gia', 'Thời gian & Lịch chấm', 'Làm bài & Chấm điểm', 'Báo cáo năng lực'];
 
-/** OW-T1 · Dùng thử: mời nhân viên, đặt hạn làm bài + giờ mong muốn chấm, theo dõi và xem bảng năng lực. */
+/** OW-T1 · Đánh giá đội ngũ: giao diện hiện đại, trải rộng toàn màn hình, ít chữ, không rườm rà */
 export function TrialProgramPage() {
   const { data, isLoading, error } = useTrialProgram();
 
   return (
-    <PageContainer>
-      <div className="tp tp-page">
-        {isLoading && <p className="tp-muted">Đang tải…</p>}
-        {error && <p className="tp-notice bad">{apiErrorMessage(error, 'Không tải được trang dùng thử.')}</p>}
+    <div
+      className="po-owner -m-4 md:-m-6 min-h-screen text-[#17243f] relative overflow-hidden"
+      style={{
+        ...PULSE_TOKENS,
+        background: `
+          radial-gradient(circle 800px at 90% 5%, rgba(19, 123, 132, 0.08), transparent 60%),
+          radial-gradient(circle 700px at 5% 35%, rgba(56, 189, 248, 0.07), transparent 60%),
+          radial-gradient(circle 900px at 50% 90%, rgba(99, 102, 241, 0.05), transparent 65%),
+          #f8fafc
+        `,
+        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      }}
+    >
+      {/* ── Tràn đều toàn màn hình, max 1920px ── */}
+      <div className="w-full px-5 sm:px-6 lg:px-8 xl:px-10 py-6 lg:py-8 relative z-10 max-w-[1920px] mx-auto space-y-6">
+        {isLoading && (
+          <div className="flex items-center justify-center min-h-[350px]">
+            <div className="size-8 rounded-full border-3 border-[#137b84] border-t-transparent animate-spin" />
+          </div>
+        )}
+        {error && (
+          <div className="rounded-2xl border border-red-200 bg-red-50/80 p-6 text-center max-w-md mx-auto shadow-xs">
+            <p className="text-xs font-bold text-red-700">
+              {apiErrorMessage(error, 'Không thể tải thông tin đợt đánh giá.')}
+            </p>
+          </div>
+        )}
         {data && <TrialProgramView program={data} />}
       </div>
-    </PageContainer>
+    </div>
   );
 }
 
 function TrialProgramView({ program }: { program: TrialProgram }) {
   const current = program.stage === 'SETUP' ? 0 : program.stage === 'REPORTED' ? 3 : 2;
-  // Kết quả lần mời đầu (lỗi từng dòng, link kích hoạt ở môi trường thử) vẫn hiện sau khi chuyển sang bước theo dõi.
   const [lastInvite, setLastInvite] = useState<TrialInviteResult | null>(null);
+
   return (
-    <>
-      <header className="tp-head">
+    <div className="space-y-6">
+      {/* ── Header: Đẳng cấp, Tinh tế, Ít chữ ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <span className="tp-eyebrow">Đánh giá đội ngũ · {program.organizationName}</span>
-          <h1>{program.stage === 'REPORTED' ? 'Bảng năng lực của doanh nghiệp' : 'Đánh giá năng lực đội ngũ'}</h1>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 border border-slate-200/80 shadow-2xs mb-2">
+            <span className="size-2 rounded-full bg-teal-500 animate-pulse" />
+            <span className="text-[11px] font-semibold text-slate-700">{program.organizationName}</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#17243f]">
+            {program.stage === 'REPORTED' ? 'Bảng Năng Lực Đội Ngũ' : 'Đánh Giá Năng Lực Đội Ngũ'}
+          </h1>
         </div>
-        <div className="tp-row" style={{ gap: 8, alignItems: 'center' }}>
-          <Link to="/enterprise/dashboard" className="tp-btn ghost small">
-            Về Tổng quan ➔
+
+        <div className="flex items-center gap-2.5">
+          <Link
+            to="/enterprise/dashboard"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white/90 hover:bg-white px-4 py-2.5 text-xs font-bold text-[#17243f] hover:text-[#137b84] transition-all shadow-2xs hover:shadow-xs hover:-translate-y-0.5"
+          >
+            Về Tổng quan
+            <ArrowRight className="size-3.5" />
           </Link>
           <StageBadge stage={program.stage} />
         </div>
-      </header>
+      </div>
+
+      {/* ── Stepper: Thanh tiến trình gọn gàng ── */}
       <Steps steps={STEPS} current={current} />
-      <OwnerParticipation program={program} />
+
       {program.stage === 'SETUP' ? (
-        <SetupView program={program} onInvited={setLastInvite} />
+        <div className="space-y-6">
+          <OwnerParticipation program={program} />
+          <SetupView program={program} onInvited={setLastInvite} />
+        </div>
       ) : (
-        <>
+        <div className="space-y-6">
           <InviteResult result={lastInvite} />
           <TrackView program={program} />
-        </>
+        </div>
       )}
-    </>
+    </div>
   );
 }
 
 /**
- * Chủ doanh nghiệp tùy chọn tự làm bài (mentor chấm như nhân viên) và học thử cùng nhân viên; không chấm bài của ai.
+ * Chủ doanh nghiệp tùy chọn tự làm bài (mentor chấm như nhân viên).
  */
 function OwnerParticipation({ program }: { program: TrialProgram }) {
   const me = program.participants.find((p) => p.isOwner);
@@ -74,59 +145,100 @@ function OwnerParticipation({ program }: { program: TrialProgram }) {
 
   if (me) {
     return (
-      <section className="tp-card tp-row" style={{ justifyContent: 'space-between' }}>
-        <span className="tp-row">
-          Bạn đang tham gia · <ParticipantStatus status={me.status} />
-        </span>
-        <Link to="/enterprise/me/trial-test" className="tp-btn small">
-          {reported ? 'Kết quả & học thử của tôi' : 'Bài test của tôi'} <ArrowRight size={14} aria-hidden />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl border border-teal-200/80 bg-gradient-to-r from-teal-50/70 via-emerald-50/40 to-white shadow-2xs">
+        <div className="flex items-center gap-2.5 text-xs">
+          <span className="size-2 rounded-full bg-teal-500 animate-pulse" />
+          <span className="font-semibold text-slate-800">
+            Bạn đang tham gia bài đánh giá cùng nhân viên:
+          </span>
+          <ParticipantStatus status={me.status} />
+        </div>
+        <Link
+          to="/enterprise/me/trial-test"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#137b84] hover:bg-[#0e5968] text-white text-xs font-bold transition-all shadow-2xs hover:shadow-xs"
+        >
+          {reported ? 'Kết quả & bài học của tôi' : 'Vào bài đánh giá của tôi'}
+          <ArrowRight size={13} />
         </Link>
-      </section>
+      </div>
     );
   }
 
   const ready = placement.department.trim() && placement.position.trim();
   return (
-    <section className="tp-card">
-      <div className="tp-card-head">
-        <span>{reported ? 'Bạn muốn học thử cùng nhân viên?' : 'Bạn cũng muốn làm bài test và học thử?'}</span>
-        {!open && <button type="button" className="tp-btn ghost small" onClick={() => setOpen(true)}>Tham gia</button>}
+    <div className="p-4 rounded-2xl border border-slate-200/80 bg-white/95 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 text-slate-700">
+          <GraduationCap className="size-4.5 text-[#137b84]" />
+          <span>{reported ? 'Bạn muốn học thử cùng nhân viên?' : 'Bạn muốn cùng tham gia làm bài đánh giá năng lực?'}</span>
+        </div>
+        {!open && (
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 text-[#0e5968] font-bold text-xs transition-colors cursor-pointer"
+            onClick={() => setOpen(true)}
+          >
+            + Tham gia cùng đội ngũ
+          </button>
+        )}
       </div>
       {open && (
-        <div className="tp-row" style={{ alignItems: 'flex-end' }}>
-          <label className="tp-field" style={{ flex: '1 1 180px' }}>
+        <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-end gap-2.5 text-xs">
+          <label className="flex-1 min-w-[180px] flex flex-col gap-1 text-slate-600 font-semibold">
             Phòng ban
-            <input list={`${listId}-d`} value={placement.department} maxLength={150} onChange={(e) => setPlacement({ ...placement, department: e.target.value })} />
+            <input
+              list={`${listId}-d`}
+              value={placement.department}
+              maxLength={150}
+              placeholder="VD: Ban Giám đốc"
+              className="h-8.5 px-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-xs focus:outline-[#137b84]"
+              onChange={(e) => setPlacement({ ...placement, department: e.target.value })}
+            />
           </label>
-          <label className="tp-field" style={{ flex: '1 1 180px' }}>
+          <label className="flex-1 min-w-[180px] flex flex-col gap-1 text-slate-600 font-semibold">
             Vị trí
-            <input list={`${listId}-p`} value={placement.position} maxLength={150} onChange={(e) => setPlacement({ ...placement, position: e.target.value })} />
+            <input
+              list={`${listId}-p`}
+              value={placement.position}
+              maxLength={150}
+              placeholder="VD: Tổng Giám đốc"
+              className="h-8.5 px-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-xs focus:outline-[#137b84]"
+              onChange={(e) => setPlacement({ ...placement, position: e.target.value })}
+            />
           </label>
           <datalist id={`${listId}-d`}>{program.departments.map((d) => <option key={d} value={d} />)}</datalist>
           <datalist id={`${listId}-p`}>{program.positions.map((p) => <option key={p} value={p} />)}</datalist>
-          <button
-            type="button"
-            className="tp-btn"
-            disabled={!ready || join.isPending}
-            onClick={() =>
-              join.mutate(
-                { department: placement.department.trim(), position: placement.position.trim() },
-                {
-                  onSuccess: ({ refreshed }) =>
-                    refreshed
-                      ? toast.success('Bạn đã tham gia. Mentor sẽ chấm bài của bạn như nhân viên.')
-                      : toast.warning('Bạn đã tham gia. Hãy đăng xuất rồi đăng nhập lại để vào bài test.'),
-                  onError: (err) => toast.error(apiErrorMessage(err, 'Chưa tham gia được.')),
-                },
-              )
-            }
-          >
-            {join.isPending ? 'Đang xử lý…' : 'Xác nhận'}
-          </button>
-          <button type="button" className="tp-btn ghost" onClick={() => setOpen(false)}>Hủy</button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="h-8.5 px-4 rounded-xl bg-[#137b84] hover:bg-[#0e5968] text-white font-bold text-xs transition-all shadow-2xs disabled:opacity-40 cursor-pointer"
+              disabled={!ready || join.isPending}
+              onClick={() =>
+                join.mutate(
+                  { department: placement.department.trim(), position: placement.position.trim() },
+                  {
+                    onSuccess: ({ refreshed }) =>
+                      refreshed
+                        ? toast.success('Bạn đã tham gia. Mentor sẽ chấm bài của bạn như nhân viên.')
+                        : toast.warning('Bạn đã tham gia. Hãy đăng xuất rồi đăng nhập lại để vào bài đánh giá.'),
+                    onError: (err) => toast.error(apiErrorMessage(err, 'Chưa tham gia được.')),
+                  },
+                )
+              }
+            >
+              {join.isPending ? 'Đang xử lý…' : 'Xác nhận'}
+            </button>
+            <button
+              type="button"
+              className="h-8.5 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-semibold cursor-pointer"
+              onClick={() => setOpen(false)}
+            >
+              Hủy
+            </button>
+          </div>
         </div>
       )}
-    </section>
+    </div>
   );
 }
 
@@ -163,75 +275,56 @@ function SetupView({ program, onInvited }: { program: TrialProgram; onInvited: (
   };
 
   return (
-    <>
-      <section
-        className="tp-card rounded-2xl border p-6 space-y-4 transition-all"
-        style={{
-          borderColor: 'var(--tp-line)',
-          background: 'var(--tp-card)',
-          boxShadow: '0 8px 30px rgba(29,48,102,.025)',
-        }}
-      >
+    <div className="space-y-6">
+      {/* ── Thẻ 1: Danh sách nhân sự ── */}
+      <section className="rounded-2xl border border-slate-200/90 bg-white/95 p-5 sm:p-6 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-slate-100">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span
-                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider"
-                style={{ background: '#e0f2f1', color: '#137b84' }}
-              >
-                Bước 1 / Khởi đầu
-              </span>
-              {existing > 0 && (
-                <span className="rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 text-[11px] font-bold">
-                  Đã mời {existing} nhân sự
-                </span>
-              )}
-            </div>
-            <h2 className="text-lg md:text-xl font-bold tracking-tight text-slate-900">
-              Danh sách nhân sự tham gia đánh giá năng lực số
+          <div className="flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">
+              Danh sách nhân sự tham gia
             </h2>
+            {existing > 0 && (
+              <span className="rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 text-[11px] font-bold">
+                Đã mời {existing} người
+              </span>
+            )}
           </div>
         </div>
-        <ParticipantsEditor rows={rows} onChange={setRows} departments={program.departments} positions={program.positions} limit={program.maxParticipants - existing} />
+        <ParticipantsEditor
+          rows={rows}
+          onChange={setRows}
+          departments={program.departments}
+          positions={program.positions}
+          limit={program.maxParticipants - existing}
+        />
         <InviteResult result={result} />
       </section>
 
-      <section
-        className="tp-card rounded-2xl border p-6 space-y-4 transition-all"
-        style={{
-          borderColor: 'var(--tp-line)',
-          background: 'var(--tp-card)',
-          boxShadow: '0 8px 30px rgba(29,48,102,.025)',
-        }}
-      >
+      {/* ── Thẻ 2: Thời gian & Lịch chấm ── */}
+      <section className="rounded-2xl border border-slate-200/90 bg-white/95 p-5 sm:p-6 shadow-xs space-y-4">
         <div className="pb-3 border-b border-slate-100">
-          <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider mb-1"
-            style={{ background: '#e0f2f1', color: '#137b84' }}
-          >
-            Bước 2 / Kế hoạch
-          </span>
-          <h2 className="text-lg md:text-xl font-bold tracking-tight text-slate-900">
-            Hạn làm bài & Lịch DigiTalent chấm bài
+          <h2 className="text-base sm:text-lg font-bold text-slate-900">
+            Thời gian làm bài & Lịch hẹn chấm
           </h2>
         </div>
         <ScheduleFields value={schedule} onChange={setSchedule} />
         <ExamSummary program={program} />
       </section>
 
+      {/* ── Nút kích hoạt ── */}
       <div className="flex items-center justify-end gap-3 pt-2">
         {scheduleError && <span className="text-xs font-semibold text-amber-600">{scheduleError}</span>}
         <button
           type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#137b84] hover:bg-[#0e5f66] px-6 py-3 text-sm font-bold text-white shadow-md shadow-[#137b84]/20 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#137b84] to-[#0d9488] hover:from-[#0e5968] hover:to-[#0f766e] px-6 py-3 text-sm font-bold text-white shadow-md shadow-[#137b84]/20 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           disabled={busy || invalid || !!scheduleError || existing + filled.length === 0}
           onClick={submit}
         >
           <Send className="size-4" />
-          {busy ? 'Đang gửi…' : 'Gửi lời mời & đăng ký chấm'}
+          {busy ? 'Đang xử lý…' : 'Gửi lời mời & đăng ký chấm'}
         </button>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -239,111 +332,487 @@ function SetupView({ program, onInvited }: { program: TrialProgram; onInvited: (
 function TrackView({ program }: { program: TrialProgram }) {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [ownerOpen, setOwnerOpen] = useState(false);
+  const [placement, setPlacement] = useState({ department: '', position: '' });
   const [resent, setResent] = useState<TrialInviteResult | null>(null);
+  const [search, setSearch] = useState('');
+  const join = useJoinTrialAsParticipant();
+  const listId = useId();
+
   const count = (statuses: string[]) => program.participants.filter((p) => statuses.includes(p.status)).length;
   const reported = program.stage === 'REPORTED';
+  const [showParticipants, setShowParticipants] = useState(!reported);
+  const me = program.participants.find((p) => p.isOwner);
+  const ready = placement.department.trim() && placement.position.trim();
+
+  const filteredParticipants = program.participants.filter((p) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      p.fullName.toLowerCase().includes(q) ||
+      p.email.toLowerCase().includes(q) ||
+      (p.departmentName && p.departmentName.toLowerCase().includes(q)) ||
+      (p.positionName && p.positionName.toLowerCase().includes(q))
+    );
+  });
 
   return (
-    <>
-      <div className="tp-stats">
-        <Stat label="Nhân viên" value={program.participants.length} />
-        <Stat label="Đã kích hoạt" value={count(['ACTIVE', 'SUBMITTED', 'REVIEWED'])} />
-        <Stat label="Đã nộp bài" value={count(['SUBMITTED', 'REVIEWED'])} />
-        <Stat label="Đã chấm" value={count(['REVIEWED'])} />
+    <div className="space-y-6">
+      {/* ── 4 THẺ CHỈ SỐ ĐIỀU HÀNH TIẾN ĐỘ ĐÁNH GIÁ (TRẢI RỘNG 4 CỘT) ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+        {/* 1. Tổng nhân sự */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white/95 p-4 sm:p-5 shadow-2xs hover:border-slate-300 transition-all relative overflow-hidden group">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+              Nhân sự tham gia
+            </span>
+            <div className="size-8 rounded-xl bg-teal-50 border border-teal-100/80 flex items-center justify-center text-[#137b84] shadow-2xs">
+              <Users size={16} />
+            </div>
+          </div>
+          <div className="mt-2.5 flex items-baseline gap-1.5">
+            <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight tabular-nums">
+              {program.participants.length}
+            </span>
+            <span className="text-sm text-slate-500 font-semibold">/ {program.maxParticipants}</span>
+          </div>
+          <div className="mt-2 text-xs sm:text-[13px] text-slate-600 font-medium">
+            Đã đăng ký danh sách
+          </div>
+        </div>
+
+        {/* 2. Đã kích hoạt */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white/95 p-4 sm:p-5 shadow-2xs hover:border-amber-300 transition-all relative overflow-hidden group">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+              Đã kích hoạt
+            </span>
+            <div className="size-8 rounded-xl bg-amber-50 border border-amber-100/80 flex items-center justify-center text-amber-700 shadow-2xs">
+              <Zap size={16} />
+            </div>
+          </div>
+          <div className="mt-2.5 flex items-baseline gap-1.5">
+            <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight tabular-nums">
+              {count(['ACTIVE', 'SUBMITTED', 'REVIEWED'])}
+            </span>
+            <span className="text-xs text-slate-500 font-semibold">
+              ({Math.round((count(['ACTIVE', 'SUBMITTED', 'REVIEWED']) / Math.max(1, program.participants.length)) * 100)}%)
+            </span>
+          </div>
+          <div className="mt-2 text-xs sm:text-[13px] text-slate-600 font-medium">
+            Đã sẵn sàng làm bài
+          </div>
+        </div>
+
+        {/* 3. Đã nộp bài */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white/95 p-4 sm:p-5 shadow-2xs hover:border-blue-300 transition-all relative overflow-hidden group">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+              Đã nộp bài
+            </span>
+            <div className="size-8 rounded-xl bg-blue-50 border border-blue-100/80 flex items-center justify-center text-blue-700 shadow-2xs">
+              <FileCheck size={16} />
+            </div>
+          </div>
+          <div className="mt-2.5 flex items-baseline gap-1.5">
+            <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight tabular-nums">
+              {count(['SUBMITTED', 'REVIEWED'])}
+            </span>
+            <span className="text-sm text-slate-500 font-semibold">/{program.participants.length}</span>
+          </div>
+          <div className="mt-2 text-xs sm:text-[13px] text-slate-600 font-medium">
+            Đã gửi bài kiểm tra
+          </div>
+        </div>
+
+        {/* 4. Đã chấm điểm */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white/95 p-4 sm:p-5 shadow-2xs hover:border-emerald-300 transition-all relative overflow-hidden group">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+              Đã chấm điểm
+            </span>
+            <div className="size-8 rounded-xl bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-emerald-700 shadow-2xs">
+              <CheckCircle2 size={16} />
+            </div>
+          </div>
+          <div className="mt-2.5 flex items-baseline gap-1.5">
+            <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight tabular-nums">
+              {count(['REVIEWED'])}
+            </span>
+            <span className="text-sm text-slate-500 font-semibold">/{program.participants.length}</span>
+          </div>
+          <div className="mt-2 text-xs sm:text-[13px] text-slate-600 font-medium">
+            Mentor hoàn tất đánh giá
+          </div>
+        </div>
       </div>
 
-      <section className="tp-card">
-        <div className="tp-card-head">
-          <h2>Lịch</h2>
-          {!reported && <button type="button" className="tp-btn ghost small" onClick={() => setEditing((v) => !v)}>{editing ? 'Đóng' : 'Đổi lịch'}</button>}
+      {/* ── THANH LỊCH TRÌNH & THAO TÁC CỦA CHỦ DOANH NGHIỆP ── */}
+      <section className="rounded-2xl border border-slate-200/90 bg-white/95 p-4 sm:p-4.5 shadow-2xs space-y-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs sm:text-sm">
+          {/* Cụm thông tin Lịch & Mentor */}
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-slate-600">
+            <span className="inline-flex items-center gap-2">
+              <Clock size={16} className="text-teal-600 shrink-0" />
+              <span className="text-slate-500 font-medium">Hạn làm bài:</span>
+              <strong className="text-slate-900 font-bold">{formatWhen(program.testDeadline)}</strong>
+            </span>
+            <span className="text-slate-300 hidden sm:inline">·</span>
+            <span className="inline-flex items-center gap-2">
+              <span className="text-slate-500 font-medium">Giờ chấm:</span>
+              <strong className="text-slate-900 font-bold">{formatWhen(program.preferredReviewAt)}</strong>
+            </span>
+            <span className="text-slate-300 hidden sm:inline">·</span>
+            <span className="inline-flex items-center gap-2">
+              <UserCheck size={16} className="text-teal-600 shrink-0" />
+              <span className="text-slate-500 font-medium">Mentor:</span>
+              <strong className="text-slate-900 font-bold">{program.mentorName ?? 'DigiTalent'}</strong>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            {!reported && (
+              <button
+                type="button"
+                className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm transition-colors cursor-pointer shadow-2xs"
+                onClick={() => setEditing((v) => !v)}
+              >
+                {editing ? 'Đóng' : 'Đổi lịch'}
+              </button>
+            )}
+
+            {me ? (
+              <Link
+                to="/enterprise/me/trial-test"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#137b84] hover:bg-[#0e5968] text-white font-bold text-xs sm:text-sm transition-all shadow-2xs hover:shadow-xs"
+              >
+                {reported ? 'Kết quả của tôi' : 'Bài đánh giá của tôi'}
+                <ArrowRight size={15} />
+              </Link>
+            ) : (
+              !ownerOpen && (
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 text-[#0e5968] font-bold text-xs sm:text-sm transition-all shadow-2xs hover:shadow-xs cursor-pointer"
+                  onClick={() => setOwnerOpen(true)}
+                >
+                  + Tự làm bài đánh giá
+                </button>
+              )
+            )}
+          </div>
         </div>
-        {editing ? (
-          <RescheduleForm program={program} onDone={() => setEditing(false)} />
-        ) : (
-          <div className="tp-grid-2">
-            <Info label="Hạn làm bài" value={formatWhen(program.testDeadline)} />
-            <Info label="Giờ mong muốn chấm" value={formatWhen(program.preferredReviewAt)} />
-            <Info label="Mentor" value={program.mentorName ?? 'Chờ DigiTalent phân công'} />
+
+        {/* Form đổi lịch nếu đang mở */}
+        {editing && (
+          <div className="pt-3 border-t border-slate-100">
+            <RescheduleForm program={program} onDone={() => setEditing(false)} />
+          </div>
+        )}
+
+        {/* Form chủ DN tham gia */}
+        {!me && ownerOpen && (
+          <div className="pt-3 border-t border-slate-100 flex flex-wrap items-end gap-2 text-xs">
+            <label className="flex-1 min-w-[160px] flex flex-col gap-1 text-slate-600 font-semibold">
+              Phòng ban
+              <input
+                list={`${listId}-d`}
+                value={placement.department}
+                maxLength={150}
+                placeholder="VD: Ban Giám đốc"
+                className="h-8.5 px-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-xs focus:outline-[#137b84]"
+                onChange={(e) => setPlacement({ ...placement, department: e.target.value })}
+              />
+            </label>
+            <label className="flex-1 min-w-[160px] flex flex-col gap-1 text-slate-600 font-semibold">
+              Vị trí
+              <input
+                list={`${listId}-p`}
+                value={placement.position}
+                maxLength={150}
+                placeholder="VD: Tổng Giám đốc"
+                className="h-8.5 px-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-xs focus:outline-[#137b84]"
+                onChange={(e) => setPlacement({ ...placement, position: e.target.value })}
+              />
+            </label>
+            <datalist id={`${listId}-d`}>{program.departments.map((d) => <option key={d} value={d} />)}</datalist>
+            <datalist id={`${listId}-p`}>{program.positions.map((p) => <option key={p} value={p} />)}</datalist>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                className="h-8.5 px-4 rounded-xl bg-[#137b84] hover:bg-[#0e5968] text-white font-bold text-xs transition-colors disabled:opacity-50 cursor-pointer"
+                disabled={!ready || join.isPending}
+                onClick={() =>
+                  join.mutate(
+                    { department: placement.department.trim(), position: placement.position.trim() },
+                    {
+                      onSuccess: ({ refreshed }) =>
+                        refreshed
+                          ? toast.success('Bạn đã tham gia. Mentor sẽ chấm bài của bạn như nhân viên.')
+                          : toast.warning('Bạn đã tham gia. Hãy đăng xuất rồi đăng nhập lại để vào bài đánh giá.'),
+                      onError: (err) => toast.error(apiErrorMessage(err, 'Chưa tham gia được.')),
+                    },
+                  )
+                }
+              >
+                {join.isPending ? 'Đang lưu…' : 'Xác nhận'}
+              </button>
+              <button
+                type="button"
+                className="h-8.5 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-medium text-xs transition-colors cursor-pointer"
+                onClick={() => setOwnerOpen(false)}
+              >
+                Hủy
+              </button>
+            </div>
           </div>
         )}
       </section>
 
+      {/* ── BÁO CÁO NĂNG LỰC KHI ĐÃ HOÀN TẤT CHẤM (REPORTED) ── */}
       {reported && program.report && (
-        <>
+        <div className="space-y-6">
           <SetupFramework report={program.report} />
           <CompetencyReport report={program.report} />
-        </>
+        </div>
       )}
 
-      <section className="tp-card">
-        <div className="tp-card-head">
-          <h2>Nhân viên</h2>
-          {!reported && program.participants.length < program.maxParticipants && (
-            <button type="button" className="tp-btn ghost small" onClick={() => setAdding((v) => !v)}>{adding ? 'Đóng' : '+ Mời thêm'}</button>
-          )}
-        </div>
-        {adding && <AddParticipants program={program} onDone={() => setAdding(false)} />}
-        <InviteResult result={resent} />
-        <div className="tp-table-wrap">
-          <table className="tp-table">
-            <thead>
-              <tr>
-                <th>Nhân viên</th>
-                <th>Phòng ban · Vị trí</th>
-                <th>Trạng thái</th>
-                <th>Nộp lúc</th>
-                {!reported && <th aria-label="Thao tác" />}
-              </tr>
-            </thead>
-            <tbody>
-              {program.participants.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.fullName}{p.isOwner ? ' (bạn)' : ''}<small>{p.email}</small></td>
-                  <td>{[p.departmentName, p.positionName].filter(Boolean).join(' · ') || '—'}</td>
-                  <td><ParticipantStatus status={p.status} /></td>
-                  <td>{formatWhen(p.submittedAt)}</td>
-                  {!reported && (
-                    <td>
-                      {p.invitationId && <ResendButton participant={p} onResent={setResent} />}
-                    </td>
+      {/* ── DANH SÁCH NHÂN VIÊN THAM GIA ĐÁNH GIÁ (COLLAPSIBLE / HIỂN THỊ PHỤ) ── */}
+      <section className="rounded-2xl border border-slate-200/90 bg-white/95 shadow-xs overflow-hidden transition-all">
+        <button
+          type="button"
+          onClick={() => setShowParticipants((v) => !v)}
+          className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 sm:p-6 text-left hover:bg-slate-50/70 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="size-11 rounded-xl bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-700 shadow-2xs shrink-0">
+              <Users size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                  Danh sách tài khoản & tiến độ tham gia ({program.participants.length})
+                </h3>
+                {reported && (
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shadow-2xs">
+                    Hiển thị phụ
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-slate-600 font-medium mt-1">
+                Tra cứu email, trạng thái kích hoạt và thời điểm gửi bài kiểm tra của từng nhân sự
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors">
+              {showParticipants ? (
+                <>
+                  <ChevronUp size={15} /> Thu gọn danh sách
+                </>
+              ) : (
+                <>
+                  <ChevronDown size={15} /> Mở rộng danh sách ({program.participants.length})
+                </>
+              )}
+            </span>
+          </div>
+        </button>
+
+        {showParticipants && (
+          <div className="p-5 sm:p-6 pt-0 border-t border-slate-100 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
+              <label className="owner-filter-search w-full sm:w-80">
+                <Search className="size-4" aria-hidden="true" />
+                <input
+                  type="text"
+                  aria-label="Tìm nhân viên hoặc phòng ban"
+                  placeholder="Tìm nhân viên, phòng ban..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full text-sm"
+                />
+              </label>
+              {!reported && program.participants.length < program.maxParticipants && (
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#137b84] hover:bg-[#0e5968] text-white font-bold text-xs transition-colors shadow-2xs cursor-pointer shrink-0"
+                  onClick={() => setAdding((v) => !v)}
+                >
+                  {adding ? 'Đóng' : '+ Mời thêm'}
+                </button>
+              )}
+            </div>
+
+            {adding && <AddParticipants program={program} onDone={() => setAdding(false)} />}
+            <InviteResult result={resent} />
+
+            <div className="overflow-x-auto rounded-xl border border-slate-200/80">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead className="bg-slate-50/80 text-slate-600 font-bold border-b border-slate-200/80">
+                  <tr>
+                    <th className="py-3 px-3.5">Nhân viên</th>
+                    <th className="py-3 px-3">Phòng ban · Vị trí</th>
+                    <th className="py-3 px-3 text-center">Trạng thái</th>
+                    <th className="py-3 px-3">Thời điểm nộp</th>
+                    {!reported && <th className="py-3 px-3.5 text-center w-28">Thao tác</th>}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {filteredParticipants.length === 0 ? (
+                    <tr>
+                      <td colSpan={reported ? 4 : 5} className="py-8 text-center text-slate-400">
+                        Không tìm thấy nhân viên nào phù hợp
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredParticipants.map((p) => {
+                      const initials = p.fullName
+                        .trim()
+                        .split(/\s+/)
+                        .slice(-2)
+                        .map((w) => w[0])
+                        .join('')
+                        .toUpperCase();
+
+                      return (
+                        <tr key={p.id} className="hover:bg-slate-50/70 transition-colors">
+                          <td className="py-3 px-3.5">
+                            <div className="flex items-center gap-2.5">
+                              <div className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-[#137b84] to-[#0e5968] text-white font-bold text-xs shadow-2xs shrink-0">
+                                {initials}
+                              </div>
+                              <div>
+                                <strong className="text-slate-900 block font-semibold text-xs sm:text-sm">
+                                  {p.fullName}{p.isOwner ? ' (bạn)' : ''}
+                                </strong>
+                                <span className="text-xs text-slate-500 block font-mono">{p.email}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className="text-slate-700 font-medium text-xs sm:text-sm">
+                              {[p.departmentName, p.positionName].filter(Boolean).join(' · ') || '—'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <ParticipantStatus status={p.status} />
+                          </td>
+                          <td className="py-3 px-3 text-slate-600 text-xs sm:text-sm">
+                            {p.submittedAt ? formatWhen(p.submittedAt) : '—'}
+                          </td>
+                          {!reported && (
+                            <td className="py-3 px-3.5 text-center">
+                              {p.invitationId && <ResendButton participant={p} onResent={setResent} />}
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })
                   )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </section>
-    </>
+    </div>
   );
 }
 
 /**
- * Sau khi có bảng năng lực: nhân viên đã hoàn thành đánh giá, doanh nghiệp thiết lập khung năng lực số để đối soát khoảng trống trước khi mua/gán khóa học.
+ * 3 bước chuẩn hóa năng lực sau đánh giá: thiết kế dạng dải ruy băng tinh tế.
  */
-function SetupFramework({ report }: { report: TrialReport }) {
-  const weakest = [...report.summary].filter((d) => d.level < 2).sort((a, b) => a.average - b.average).slice(0, 2);
+function SetupFramework(_props: { report: TrialReport }) {
   return (
-    <section className="tp-buy" aria-labelledby="tp-framework-title">
-      <span className="tp-buy-icon" aria-hidden><Compass size={18} /></span>
-      <div>
-        <strong id="tp-framework-title">Thiết lập Khung năng lực số</strong>
-        <span>
-          Dựa trên kết quả đánh giá, thiết lập mức năng lực chuẩn cho từng vị trí để xác định chính xác khoảng trống.
-          {weakest.length > 0 && ` Cần ưu tiên: ${weakest.map((d) => d.name).join(', ')}.`}
-        </span>
+    <section className="rounded-2xl border border-slate-200/90 bg-white/95 p-5 sm:p-6 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3.5 mb-4 border-b border-slate-100">
+        <div className="flex items-center gap-2.5">
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-2xs">
+            Lộ trình tiếp theo
+          </span>
+          <h3 className="text-base sm:text-lg font-bold text-slate-900">
+            Chuẩn hóa năng lực sau đánh giá
+          </h3>
+        </div>
       </div>
-      <Link to="/enterprise/setup" className="tp-btn light">Thiết lập khung năng lực <ArrowRight size={15} aria-hidden /></Link>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+        {/* Bước 1 */}
+        <Link
+          to="/enterprise/setup?tab=positions"
+          className="group flex items-center justify-between p-4 sm:p-4.5 rounded-2xl border border-emerald-200/90 bg-gradient-to-r from-emerald-50/60 to-white hover:border-emerald-500 hover:shadow-xs transition-all"
+        >
+          <div className="flex items-center gap-3.5 min-w-0">
+            <span className="size-10 rounded-xl bg-emerald-100/90 border border-emerald-200 text-emerald-800 grid place-items-center shrink-0 shadow-2xs">
+              <Briefcase className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <strong className="text-sm sm:text-[15px] font-bold text-slate-900 group-hover:text-emerald-700 transition-colors block truncate">
+                1. Cài đặt chuẩn vị trí
+              </strong>
+              <span className="text-xs sm:text-[13px] text-slate-600 font-medium block truncate mt-0.5">
+                Khung chuẩn kỳ vọng
+              </span>
+            </div>
+          </div>
+          <ArrowRight size={16} className="text-emerald-600 shrink-0 group-hover:translate-x-1 transition-transform" />
+        </Link>
+
+        {/* Bước 2 */}
+        <Link
+          to="/enterprise/skill-gap"
+          className="group flex items-center justify-between p-4 sm:p-4.5 rounded-2xl border border-blue-200/90 bg-gradient-to-r from-blue-50/60 to-white hover:border-blue-500 hover:shadow-xs transition-all"
+        >
+          <div className="flex items-center gap-3.5 min-w-0">
+            <span className="size-10 rounded-xl bg-blue-100/90 border border-blue-200 text-blue-800 grid place-items-center shrink-0 shadow-2xs">
+              <TrendingUp className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <strong className="text-sm sm:text-[15px] font-bold text-slate-900 group-hover:text-blue-700 transition-colors block truncate">
+                2. Báo cáo khoảng trống
+              </strong>
+              <span className="text-xs sm:text-[13px] text-slate-600 font-medium block truncate mt-0.5">
+                Phân tích chênh lệch
+              </span>
+            </div>
+          </div>
+          <ArrowRight size={16} className="text-blue-600 shrink-0 group-hover:translate-x-1 transition-transform" />
+        </Link>
+
+        {/* Bước 3 */}
+        <Link
+          to="/enterprise/courses"
+          className="group flex items-center justify-between p-4 sm:p-4.5 rounded-2xl border border-purple-200/90 bg-gradient-to-r from-purple-50/60 to-white hover:border-purple-500 hover:shadow-xs transition-all"
+        >
+          <div className="flex items-center gap-3.5 min-w-0">
+            <span className="size-10 rounded-xl bg-purple-100/90 border border-purple-200 text-purple-800 grid place-items-center shrink-0 shadow-2xs">
+              <BookOpen className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <strong className="text-sm sm:text-[15px] font-bold text-slate-900 group-hover:text-purple-700 transition-colors block truncate">
+                3. Trang bị khóa học
+              </strong>
+              <span className="text-xs sm:text-[13px] text-slate-600 font-medium block truncate mt-0.5">
+                Đào tạo đúng điểm nghẽn
+              </span>
+            </div>
+          </div>
+          <ArrowRight size={16} className="text-purple-600 shrink-0 group-hover:translate-x-1 transition-transform" />
+        </Link>
+      </div>
     </section>
   );
 }
 
-/** Gửi lại email mời (link mới, lời mời cũ hết hiệu lực) cho nhân viên chưa kích hoạt. */
+/** Gửi lại email mời cho nhân viên chưa kích hoạt. */
 function ResendButton({ participant, onResent }: { participant: TrialParticipant; onResent: (result: TrialInviteResult) => void }) {
   const resend = useResendTrialInvitation();
   return (
     <button
       type="button"
-      className="tp-btn ghost small"
+      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors disabled:opacity-40 cursor-pointer"
       disabled={resend.isPending}
       onClick={() =>
         resend.mutate(participant.invitationId!, {
@@ -377,17 +846,12 @@ function AddParticipants({ program, onDone }: { program: TrialProgram; onDone: (
       },
       onError: (err) => toast.error(apiErrorMessage(err, 'Chưa mời được.')),
     });
+
   return (
-    <div
-      className="rounded-2xl border p-5 space-y-4 mb-4 shadow-sm"
-      style={{
-        borderColor: 'var(--tp-line)',
-        background: 'var(--tp-card)',
-      }}
-    >
-      <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-        <h3 className="text-sm font-bold text-slate-900">
-          Mời thêm nhân viên tham gia đợt đánh giá
+    <div className="rounded-2xl border border-slate-200/90 bg-slate-50/70 p-4 sm:p-5 space-y-4 mb-4 shadow-2xs">
+      <div className="flex items-center justify-between pb-2 border-b border-slate-200/70">
+        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+          Mời thêm nhân viên tham gia
         </h3>
         <button
           type="button"
@@ -397,12 +861,18 @@ function AddParticipants({ program, onDone }: { program: TrialProgram; onDone: (
           Đóng
         </button>
       </div>
-      <ParticipantsEditor rows={rows} onChange={setRows} departments={program.departments} positions={program.positions} limit={program.maxParticipants - program.participants.length} />
+      <ParticipantsEditor
+        rows={rows}
+        onChange={setRows}
+        departments={program.departments}
+        positions={program.positions}
+        limit={program.maxParticipants - program.participants.length}
+      />
       <InviteResult result={result} />
       <div className="flex justify-end pt-2">
         <button
           type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#137b84] hover:bg-[#0e5f66] px-5 py-2.5 text-xs font-bold text-white shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#137b84] hover:bg-[#0e5f66] px-5 py-2 text-xs font-bold text-white shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           disabled={invite.isPending || filled.length === 0 || filled.some((r) => rowError(r) !== null)}
           onClick={send}
         >
@@ -421,26 +891,27 @@ function RescheduleForm({ program, onDone }: { program: TrialProgram; onDone: ()
   });
   const request = useSubmitTrialRequest();
   const error = validateSchedule(schedule);
+
   return (
-    <div className="tp" style={{ gap: 10 }}>
+    <div className="space-y-3">
       <ScheduleFields value={schedule} onChange={setSchedule} />
-      <div className="tp-row" style={{ justifyContent: 'flex-end' }}>
-        {error && <span className="tp-muted">{error}</span>}
+      <div className="flex items-center justify-end gap-3 pt-1">
+        {error && <span className="text-xs font-semibold text-amber-600">{error}</span>}
         <button
           type="button"
-          className="tp-btn"
+          className="px-4 py-2 rounded-xl bg-[#137b84] hover:bg-[#0e5968] text-white text-xs font-bold shadow-2xs disabled:opacity-40 cursor-pointer"
           disabled={!!error || request.isPending}
           onClick={() =>
             request.mutate(toRequest(schedule), {
               onSuccess: () => {
-                toast.success('Đã cập nhật lịch');
+                toast.success('Đã cập nhật lịch thành công');
                 onDone();
               },
               onError: (err) => toast.error(apiErrorMessage(err, 'Chưa cập nhật được.')),
             })
           }
         >
-          Lưu lịch
+          {request.isPending ? 'Đang lưu…' : 'Lưu thay đổi'}
         </button>
       </div>
     </div>
@@ -475,18 +946,34 @@ const toRequest = (s: Schedule) => ({
 
 function ScheduleFields({ value, onChange }: { value: Schedule; onChange: (v: Schedule) => void }) {
   return (
-    <div className="tp-grid-2">
-      <label className="tp-field">
-        Hạn hoàn thành bài test
-        <input type="datetime-local" value={value.deadline} onChange={(e) => onChange({ ...value, deadline: e.target.value })} />
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+      <label className="flex flex-col gap-1 text-slate-600 font-semibold">
+        Hạn hoàn thành bài đánh giá
+        <input
+          type="datetime-local"
+          value={value.deadline}
+          className="h-9 px-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-xs focus:outline-[#137b84]"
+          onChange={(e) => onChange({ ...value, deadline: e.target.value })}
+        />
       </label>
-      <label className="tp-field">
-        Giờ mong muốn mentor chấm
-        <input type="datetime-local" value={value.review} onChange={(e) => onChange({ ...value, review: e.target.value })} />
+      <label className="flex flex-col gap-1 text-slate-600 font-semibold">
+        Giờ mong muốn Mentor chấm
+        <input
+          type="datetime-local"
+          value={value.review}
+          className="h-9 px-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-xs focus:outline-[#137b84]"
+          onChange={(e) => onChange({ ...value, review: e.target.value })}
+        />
       </label>
-      <label className="tp-field" style={{ gridColumn: '1 / -1' }}>
+      <label className="sm:col-span-2 flex flex-col gap-1 text-slate-600 font-semibold">
         Ghi chú cho DigiTalent (không bắt buộc)
-        <input value={value.note} maxLength={500} placeholder="VD: ưu tiên chấm phòng Kế toán trước" onChange={(e) => onChange({ ...value, note: e.target.value })} />
+        <input
+          value={value.note}
+          maxLength={500}
+          placeholder="VD: Ưu tiên chấm cho khối Kinh doanh trước..."
+          className="h-9 px-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-xs focus:outline-[#137b84]"
+          onChange={(e) => onChange({ ...value, note: e.target.value })}
+        />
       </label>
     </div>
   );
@@ -494,10 +981,22 @@ function ScheduleFields({ value, onChange }: { value: Schedule; onChange: (v: Sc
 
 function ExamSummary({ program }: { program: TrialProgram }) {
   return (
-    <p className="tp-muted tp-row">
-      Bài test: {program.choiceCount} câu trắc nghiệm + {program.essayCount} tự luận (Cơ bản · Trung cấp · Nâng cao) ·
-      <Camera size={14} aria-hidden /> camera <Mic size={14} aria-hidden /> micro <Monitor size={14} aria-hidden /> chia sẻ màn hình
-    </p>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 pt-1">
+      <span className="font-semibold text-slate-700">
+        Quy cách kiểm tra:
+      </span>
+      <span>{program.choiceCount} câu trắc nghiệm + {program.essayCount} câu tự luận (3 cấp độ)</span>
+      <span className="text-slate-300">·</span>
+      <span className="inline-flex items-center gap-1 text-slate-600">
+        <Camera size={13} className="text-slate-400" /> Camera
+      </span>
+      <span className="inline-flex items-center gap-1 text-slate-600">
+        <Mic size={13} className="text-slate-400" /> Micro
+      </span>
+      <span className="inline-flex items-center gap-1 text-slate-600">
+        <Monitor size={13} className="text-slate-400" /> Chia sẻ màn hình
+      </span>
+    </div>
   );
 }
 
@@ -505,40 +1004,31 @@ function InviteResult({ result }: { result: TrialInviteResult | null }) {
   if (!result) return null;
   const links = result.invited.filter((i) => i.debugLink);
   return (
-    <>
+    <div className="space-y-2 text-xs">
       {result.rejected.length > 0 && (
-        <div className="tp-notice bad" role="alert">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-red-800 space-y-1" role="alert">
           {result.rejected.map((r) => (
-            <div key={r.email}>{r.email || '(trống)'}: {r.reason}</div>
+            <div key={r.email}>
+              <strong>{r.email || '(trống)'}:</strong> {r.reason}
+            </div>
           ))}
         </div>
       )}
       {links.length > 0 && (
-        <div className="tp-notice">
-          <strong>Link kích hoạt (môi trường thử):</strong>
+        <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-3 text-blue-900 space-y-1">
+          <strong className="block text-[11px] uppercase tracking-wider text-blue-800">
+            Link kích hoạt tài khoản thử nghiệm:
+          </strong>
           {links.map((i) => (
-            <div key={i.email}>{i.email}: <a href={i.debugLink!}>{i.debugLink}</a></div>
+            <div key={i.email} className="truncate">
+              <span className="font-semibold">{i.email}:</span>{' '}
+              <a href={i.debugLink!} className="text-blue-700 underline font-mono text-[11px]">
+                {i.debugLink}
+              </a>
+            </div>
           ))}
         </div>
       )}
-    </>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="tp-stat">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="tp-field">
-      {label}
-      <strong style={{ color: 'var(--tp-fg)', fontSize: 14 }}>{value}</strong>
     </div>
   );
 }

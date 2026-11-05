@@ -3,7 +3,8 @@ import { ArrowLeft } from 'lucide-react';
 import { EmptyState, LevelBadge, PageHeader, StatusBadge, getStatusVariant } from '@/components/shared';
 import { usePositionRequirements } from '@/hooks/use-competencies';
 import { useJobPositions } from '@/hooks/use-job-positions';
-import { INPUT_CLASS, PRIMARY_BUTTON } from '@/features/onboarding/components/styles';
+import { PRIMARY_BUTTON } from '@/features/onboarding/components/styles';
+import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import { formatDate } from '@/lib/utils';
 import { diffRequirements, type RequirementChange } from '../utils/requirement-diff';
 
@@ -66,11 +67,7 @@ export function RequirementHistoryPage() {
         Vị trí công việc
       </Link>
       <PageHeader title="Lịch sử phiên bản yêu cầu" subtitle="Theo dõi các lần thay đổi yêu cầu năng lực của một vị trí và so sánh hai phiên bản">
-        <label className="sr-only" htmlFor="history-position">Vị trí công việc</label>
-        <select id="history-position" value={positionId} onChange={(e) => update('positionId', e.target.value)} className={INPUT_CLASS}>
-          <option value="">Chọn vị trí…</option>
-          {positions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
+        <OwnerFilterSelect label="Vị trí công việc" value={positionId} onChange={(value) => update('positionId', value)} options={[{ value: '', label: 'Chọn vị trí…' }, ...positions.map((p) => ({ value: p.id, label: p.name }))]} />
       </PageHeader>
 
       {!positionId && <EmptyState title="Chọn một vị trí" description="Chọn vị trí để xem các phiên bản yêu cầu năng lực của vị trí đó." />}
@@ -119,16 +116,11 @@ export function RequirementHistoryPage() {
               <h2 id="diff-title" className="mr-auto text-sm font-semibold text-slate-900">So sánh phiên bản</h2>
               <label className="flex items-center gap-2 text-sm text-slate-600">
                 Cũ hơn
-                <select value={olderVersion ?? ''} onChange={(e) => update('compare', e.target.value)} className={INPUT_CLASS}>
-                  <option value="">Không có</option>
-                  {versions.map((v) => <option key={v.id} value={v.versionNo}>v{v.versionNo}</option>)}
-                </select>
+                <OwnerFilterSelect label="Phiên bản cũ hơn" value={String(olderVersion ?? '')} onChange={(value) => update('compare', value)} options={[{ value: '', label: 'Không có' }, ...versions.map((v) => ({ value: String(v.versionNo), label: `v${v.versionNo}` }))]} />
               </label>
               <label className="flex items-center gap-2 text-sm text-slate-600">
                 Mới hơn
-                <select value={newerVersion ?? ''} onChange={(e) => update('version', e.target.value)} className={INPUT_CLASS}>
-                  {versions.map((v) => <option key={v.id} value={v.versionNo}>v{v.versionNo}</option>)}
-                </select>
+                <OwnerFilterSelect label="Phiên bản mới hơn" value={String(newerVersion ?? '')} onChange={(value) => update('version', value)} options={versions.map((v) => ({ value: String(v.versionNo), label: `v${v.versionNo}` }))} />
               </label>
             </div>
 

@@ -13,6 +13,7 @@ import { PageHeader, StatusBadge, DataTable, ScoreCard } from '@/components/shar
 import { useAssessmentHistory } from '@/hooks/use-learning';
 import { formatDate } from '@/lib/utils';
 import type { AssessmentAttemptRowDto } from '@/services/learning.service';
+import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 
 interface QuestionReview {
   id: string;
@@ -359,7 +360,6 @@ export function AssessmentResultsOverviewPage() {
     <div className="space-y-6">
       <PageHeader
         title="Kết quả đánh giá năng lực"
-        subtitle="Theo dõi toàn bộ các đợt kiểm tra năng lực của nhân sự trong tổ chức theo Khung chuẩn năng lực số."
       />
 
       {/* KPI Cards */}
@@ -380,34 +380,32 @@ export function AssessmentResultsOverviewPage() {
         />
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200">
-        <div className="relative w-full sm:w-72">
-          <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      <div className="owner-filter-toolbar flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200">
+        <label className="owner-filter-search w-full sm:w-80">
+          <Search className="size-4" aria-hidden="true" />
           <input
             type="text"
+            aria-label="Tìm kết quả đánh giá"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPageIndex(1);
             }}
             placeholder="Tìm theo tên nhân sự, khóa học…"
-            className="w-full pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full text-sm"
           />
-        </div>
+        </label>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <select
+          <OwnerFilterSelect
+            label="Lọc theo kết quả"
             value={passed}
-            onChange={(e) => {
-              setPassed(e.target.value);
+            onChange={(value) => {
+              setPassed(value);
               setPageIndex(1);
             }}
-            className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-700"
-          >
-            <option value="">Tất cả kết quả</option>
-            <option value="true">Chỉ bài đạt (≥ 70%)</option>
-            <option value="false">Chỉ bài chưa đạt</option>
-          </select>
+            options={[{ value: '', label: 'Tất cả kết quả' }, { value: 'true', label: 'Chỉ bài đạt (≥ 70%)' }, { value: 'false', label: 'Chỉ bài chưa đạt' }]}
+          />
         </div>
       </div>
 

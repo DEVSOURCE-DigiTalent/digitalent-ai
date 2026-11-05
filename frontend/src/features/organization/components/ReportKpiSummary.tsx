@@ -18,7 +18,7 @@ export function ReportKpiSummary({
   underway,
 }: ReportKpiSummaryProps) {
   const items: KpiItem[] = [
-    { label: 'Khóa hoàn thành', value: approved, sub: 'Manager đã xác nhận' },
+    { label: 'Khóa hoàn thành', value: approved, sub: 'Đã được xác nhận' },
     { label: 'Học viên trong chu kỳ', value: learners, sub: 'Trong phạm vi hiển thị' },
     { label: 'Bài đánh giá đã chấm', value: submissions, sub: 'Bao gồm lần thi lại' },
     { label: 'Khóa đang triển khai', value: underway, sub: 'Có thể vào báo cáo sau' },

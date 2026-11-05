@@ -59,7 +59,7 @@ export function AssignManagerDepartmentsModal({ manager, open, onClose }: Assign
       onClose={onClose}
       size="md"
       title={`Phân công phòng ban quản lý: ${manager.fullName}`}
-      description="Quản lý (Manager) chỉ có quyền theo dõi nhân sự, giao nhiệm vụ và đánh giá minh chứng trong các phòng ban được phân công."
+      description="Quản lý có thể theo dõi nhân sự, giao nhiệm vụ và đánh giá minh chứng trong phòng ban được phân công."
       footer={
         <>
           <button type="button" onClick={onClose} className={SECONDARY_BUTTON} disabled={saving}>

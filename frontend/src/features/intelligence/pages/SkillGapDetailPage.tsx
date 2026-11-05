@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, BadgeCheck, RefreshCw, AlertCircle, BookOpen } from 'lucide-react';
-import { PageHeader } from '@/components/shared';
 import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
 import { useSkillGapRun, useSkillGapRuns, useCalculateSkillGap } from '@/hooks/use-skill-gaps';
 import { skillGapErrorMessage } from '@/lib/competency-levels';
 import { toast } from 'sonner';
 import { ConfirmLevelDialog } from '../components/ConfirmLevelDialog';
 import { CourseRecommendations } from '../components/CourseRecommendations';
-import { SkillGapDetailSkeleton, SkillGapDetailView } from '../components/SkillGapDetailView';
+import { SkillGapDetailSkeleton } from '../components/SkillGapDetailView';
+import { SkillGapDetailDashboard } from '../components/SkillGapDetailDashboard';
+import { formatDateTime } from '@/lib/utils';
+import './skill-gap-detail.css';
 
 /**
  * OW-22: Skill Gap Detail Page (/enterprise/skill-gap/:employeeId)
@@ -95,70 +97,31 @@ export function SkillGapDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link
-          to="/enterprise/skill-gap"
-          className="mb-3 inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900"
-        >
-          <ArrowLeft className="size-4" aria-hidden="true" />
-          Khoảng trống năng lực
-        </Link>
-        <PageHeader
-          title={run.employeeName}
-          subtitle={`${run.employeeCode} · ${run.jobPositionName} · ${run.departmentName} · Phiên bản yêu cầu v${run.requirementSetVersionNo}`}
-        >
-          <div className="flex items-center gap-2">
-            {canConfirmLevels && (
-              <button
-                type="button"
-                onClick={() => setIsConfirmOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3.5 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700"
-              >
-                <BadgeCheck className="size-4" />
-                Xác nhận mức năng lực
-              </button>
-            )}
-            {canCalculate && (
-              <button
-                type="button"
-                onClick={handleRecalculate}
-                disabled={calculateMutation.isPending}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-              >
-                <RefreshCw className={calculateMutation.isPending ? 'size-4 animate-spin' : 'size-4'} />
-                Tính lại khoảng trống
-              </button>
-            )}
-          </div>
-        </PageHeader>
-      </div>
+    <div className="personal-gap-page">
+      <div className="personal-gap-container">
+      <header className="personal-gap-header">
+        <div>
+          <Link to="/enterprise/skill-gap" className="personal-gap-back"><ArrowLeft size={16} /> Khoảng trống năng lực</Link>
+          <h1>{run.employeeName}</h1>
+          <div className="personal-gap-meta"><span>{run.employeeCode}</span>{run.jobPositionName && <span>{run.jobPositionName}</span>}{run.departmentName && <span>{run.departmentName}</span>}<span>Cập nhật {formatDateTime(run.generatedAt)}</span></div>
+        </div>
+        <div className="personal-gap-actions">
+          {canConfirmLevels && <button type="button" onClick={() => setIsConfirmOpen(true)}><BadgeCheck size={17} /> Xác nhận năng lực</button>}
+          {canCalculate && <button type="button" onClick={handleRecalculate} disabled={calculateMutation.isPending}><RefreshCw className={calculateMutation.isPending ? 'size-4 animate-spin' : 'size-4'} /> Tính lại</button>}
+        </div>
+      </header>
 
-      {/* Main Detail View */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <SkillGapDetailView run={run} />
-      </div>
+      <SkillGapDetailDashboard run={run} />
 
-      {/* Recommended Courses Section */}
-      {canReadRecommendations && (
-        <section aria-labelledby="course-rec-title" className="space-y-3">
-          <div className="flex items-center gap-2">
-            <BookOpen className="size-5 text-primary-600" />
-            <h2 id="course-rec-title" className="text-base font-semibold text-slate-900">
-              Khóa học đề xuất bù đắp khoảng trống
-            </h2>
-          </div>
-          <CourseRecommendations employeeId={run.employeeId} />
-        </section>
-      )}
+      {canReadRecommendations && <section aria-labelledby="course-rec-title" className="personal-gap-courses"><div className="personal-gap-section-heading"><h2 id="course-rec-title" className="flex items-center gap-2"><BookOpen size={19} /> Khóa học phù hợp</h2></div><CourseRecommendations employeeId={run.employeeId} compact /></section>}
 
-      {/* Confirm Level Dialog */}
       <ConfirmLevelDialog
         run={run}
         open={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         onConfirmed={handleLevelConfirmed}
       />
+      </div>
     </div>
   );
 }

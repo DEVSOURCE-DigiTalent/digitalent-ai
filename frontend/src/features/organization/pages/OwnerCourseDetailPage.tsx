@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, UserCheck, Layers, ShieldCheck, X } from 'lucide-react';
+import { ArrowLeft, UserCheck, Layers, ShieldCheck, X, BookOpen, Clock3 } from 'lucide-react';
 import { useCourse, useAssignments, usePurchaseCourseSeats } from '@/hooks/use-assignments';
 import { useCompetencyCategories } from '@/hooks/use-competencies';
 import {
@@ -10,8 +10,13 @@ import {
 } from '@/features/courses/course-catalog';
 import { CourseModules } from '../components/CourseModules';
 import { CourseEnrollment } from '../components/CourseEnrollment';
-import { CourseFinalBrief } from '@/components/shared/CourseFinalBrief';
+import { OwnerCourseFinalBrief } from '../components/OwnerCourseFinalBrief';
+import { CourseArtwork } from '../components/CourseArtwork';
+import { formatDuration } from '../components/course-tree';
 import { PULSE_TOKENS } from '../owner-theme';
+import { PageLoading } from '@/components/shared/LoadingState';
+import './owner-course-catalog.css';
+import './owner-course-detail.css';
 
 const TIER_LABELS = ['Cơ bản', 'Trung cấp', 'Nâng cao'];
 
@@ -38,16 +43,7 @@ export function OwnerCourseDetailPage() {
   );
 
   if (isLoading) {
-    return (
-      <div
-        className="po-owner -m-4 md:-m-6 min-h-screen flex items-center justify-center"
-        style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
-      >
-        <p className="text-sm" style={{ color: 'var(--po-muted)' }}>
-          Đang tải chi tiết khóa học…
-        </p>
-      </div>
-    );
+    return <div className="po-owner -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label="Đang tải chi tiết khóa học" variant="detail" /></div>;
   }
 
   if (!course) {
@@ -110,18 +106,19 @@ export function OwnerCourseDetailPage() {
     (a) => a.status === 'COMPLETED',
   ).length;
   const modules = course.modules ?? [];
+  const lessonCount = modules.reduce((sum, module) => sum + module.lessons.length, 0);
+  const duration = formatDuration(course.estimatedDurationMinutes);
 
   return (
     <div
-      className="po-owner -m-4 md:-m-6 min-h-screen"
+      className="po-owner course-detail-page -m-4 md:-m-6 min-h-screen"
       style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
     >
-      {/* ── Hero ── */}
+      <div className="course-detail-shell">
       <section
-        className="grid grid-cols-1 md:grid-cols-[1.05fr_.95fr] overflow-hidden"
-        style={{ background: '#172758', color: '#fff', minHeight: 330 }}
+        className="course-detail-hero"
       >
-        <div className="self-center px-6 md:px-10 py-10">
+        <div className="course-detail-hero-copy">
           <Link
             to="/enterprise/courses"
             className="inline-flex items-center gap-1.5 text-[11px] font-bold mb-4 opacity-70 hover:opacity-100 transition-opacity"
@@ -141,21 +138,13 @@ export function OwnerCourseDetailPage() {
             {isBasic ? 'Nền tảng cơ bản · Miễn phí' : hasLicense ? `${tierLabel} · Đã có ${totalSeats} suất` : `${tierLabel} · Cần mua suất học`}
           </span>
 
-          <h1
-            className="mt-3 text-[clamp(35px,4vw,55px)] font-bold leading-[1.05]"
-            style={{ letterSpacing: '-0.055em' }}
-          >
+          <h1>
             {course.title}
           </h1>
-
-          <p
-            className="mt-3 text-[13px] leading-relaxed"
-            style={{ color: '#dbe4ff', maxWidth: 520 }}
-          >
-            {course.purpose ||
-              course.description ||
-              `${modules.length} chương học, bài kiểm tra cuối khóa và bài tập thực hành được Manager đánh giá. ${isBasic ? 'Nội dung Cơ bản mở toàn bộ.' : 'Cần phân công trước khi nhân viên truy cập.'}`}
-          </p>
+          {(course.purpose || course.description) && <p className="course-detail-hero-description">{course.purpose || course.description}</p>}
+          <div className="course-detail-hero-meta">
+            <span>{course.code}</span><span><Layers size={15} /> {modules.length} chương</span><span><BookOpen size={15} /> {lessonCount} bài</span>{duration && <span><Clock3 size={15} /> {duration}</span>}
+          </div>
 
           <div className="flex flex-wrap items-center gap-2.5 mt-6">
             {hasLicense ? (
@@ -218,29 +207,10 @@ export function OwnerCourseDetailPage() {
           </div>
         </div>
 
-        {/* Art placeholder */}
-        <div
-          className="hidden md:block relative overflow-hidden"
-          style={{
-            background:
-              'linear-gradient(135deg, #2a3f80 0%, #3a5bbf 40%, #5a7ae0 100%)',
-          }}
-        >
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'radial-gradient(circle at 40% 60%, rgba(198,236,120,.15) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(233,106,83,.1) 0%, transparent 40%)',
-            }}
-          />
-        </div>
+        <div className="course-detail-hero-art"><CourseArtwork domain={domainIdx} level={level} /></div>
       </section>
 
-      {/* ── Content ── */}
-      <div
-        className="px-4 md:px-6 py-6 mx-auto"
-        style={{ maxWidth: 1220 }}
-      >
+      <div className="course-detail-content">
         {/* Access notice */}
         {isBasic ? (
           <div
@@ -251,7 +221,7 @@ export function OwnerCourseDetailPage() {
               color: '#487336',
             }}
           >
-            Tất cả bài giảng Cơ bản đều mở toàn bộ miễn phí. Nhân viên có thể bắt đầu ngay mà không cần phân công.
+            <b>Mở miễn phí.</b> Nhân viên có thể bắt đầu học ngay.
           </div>
         ) : hasLicense ? (
           <div
@@ -263,7 +233,7 @@ export function OwnerCourseDetailPage() {
             }}
           >
             <div>
-              <b>✓ Đã mở bản quyền cho tổ chức:</b> Sở hữu <b>{totalSeats} suất</b> (còn <b>{course.seatsAvailable ?? totalSeats}</b> suất khả dụng). Quản lý có thể đưa khóa học vào đợt đào tạo hoặc giao trực tiếp cho nhân viên.
+              <b>Đã có bản quyền.</b> {totalSeats} suất · Còn {course.seatsAvailable ?? totalSeats} suất để phân công.
             </div>
             <Link
               to={`/enterprise/courses/checkout?courses=${encodeURIComponent(course.code)}`}
@@ -282,7 +252,7 @@ export function OwnerCourseDetailPage() {
             }}
           >
             <div>
-              <b>🔒 Khóa học thương mại chuẩn TT02:</b> Tổ chức của bạn chưa sở hữu suất học cho khóa này. Doanh nghiệp cần trang bị suất học để giao cho nhân viên thực chiến và cấp chứng chỉ.
+              <b>Chưa có suất học.</b> Trang bị suất để giao khóa học cho nhân viên.
             </div>
             <Link
               to={`/enterprise/courses/checkout?courses=${encodeURIComponent(course.code)}`}
@@ -294,7 +264,7 @@ export function OwnerCourseDetailPage() {
         )}
 
         {/* Grid 2: Rubric + Enrollment */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        <div className="course-detail-overview grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           {/* Rubric panel */}
           <section
             className="rounded-[22px] border p-6"
@@ -317,15 +287,8 @@ export function OwnerCourseDetailPage() {
                 letterSpacing: '-0.045em',
               }}
             >
-              Chuẩn đầu ra thực tiễn.
+              Kết quả học tập
             </h2>
-            <p
-              className="mt-1 text-xs"
-              style={{ color: 'var(--po-muted)' }}
-            >
-              Giải thích ý tưởng, áp dụng vào vị trí công việc và tạo bằng
-              chứng để Manager kiểm tra.
-            </p>
             <div className="mt-4 grid gap-2.5">
               {(course.final?.criteria.length ? course.final.criteria : RUBRIC).map((text, i) => (
                 <div
@@ -384,58 +347,9 @@ export function OwnerCourseDetailPage() {
 
         {/* Course modules */}
         <CourseModules modules={modules} courseCode={course.code} />
-        {course.final && <div className="pu" style={{ minHeight: 0, background: 'transparent' }}><CourseFinalBrief content={course.final} /></div>}
+        {course.final && <OwnerCourseFinalBrief content={course.final} />}
 
-        {/* Before buying (paid courses) */}
-        {!isBasic && !hasLicense && (
-          <section
-            className="mt-4 rounded-[22px] border p-6"
-            style={{
-              borderColor: 'var(--po-line)',
-              background: 'var(--po-surface)',
-              boxShadow: '0 10px 35px rgba(29,48,102,.025)',
-            }}
-          >
-            <span
-              className="text-[10px] font-black uppercase tracking-[0.12em]"
-              style={{ color: 'var(--po-accent)' }}
-            >
-              Trước khi phân công
-            </span>
-            <h2
-              className="mt-2 text-xl font-semibold"
-              style={{
-                color: 'var(--po-ink)',
-                letterSpacing: '-0.045em',
-              }}
-            >
-              Chế độ xem trước dành cho Doanh nghiệp.
-            </h2>
-            <p
-              className="mt-1 text-xs"
-              style={{ color: 'var(--po-muted)' }}
-            >
-              Doanh nghiệp có thể xem đề cương chi tiết, các bài giảng mẫu và tiêu chuẩn đánh giá đầu ra trước khi ra quyết định đầu tư suất học.
-            </p>
-            <div
-              className="mt-4 rounded-[11px] border p-4 text-xs flex items-center justify-between"
-              style={{
-                borderColor: '#d9e5fb',
-                background: '#f0f4ff',
-                color: '#385084',
-              }}
-            >
-              <span>Để nhân viên bắt đầu học và nộp bài đánh giá, hãy mua suất học cho tổ chức.</span>
-              <button
-                type="button"
-                onClick={() => setPurchaseModalOpen(true)}
-                className="font-bold text-primary-700 hover:underline"
-              >
-                Trang bị suất →
-              </button>
-            </div>
-          </section>
-        )}
+      </div>
       </div>
 
       {purchaseModalOpen && (

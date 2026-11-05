@@ -17,6 +17,7 @@ import {
 } from './DepartmentAudienceSelector';
 import { notificationService } from '@/services/notification.service';
 import { apiErrorMessage } from '@/lib/utils';
+import './send-announcement.css';
 
 interface SendAnnouncementModalProps {
   open: boolean;
@@ -59,6 +60,9 @@ const TEMPLATES: TemplateOption[] = [
   },
 ];
 
+const localDateValue = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
 export function SendAnnouncementModal({
   open,
   onClose,
@@ -92,20 +96,20 @@ export function SendAnnouncementModal({
 
     const d = new Date();
     d.setDate(d.getDate() + t.days);
-    setDueDate(d.toISOString().slice(0, 10));
+    setDueDate(localDateValue(d));
   };
 
   // Quick deadline setter
   const setQuickDeadline = (days: number) => {
     const d = new Date();
     d.setDate(d.getDate() + days);
-    setDueDate(d.toISOString().slice(0, 10));
+    setDueDate(localDateValue(d));
   };
 
   const setEndOfMonth = () => {
     const d = new Date();
     const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-    setDueDate(lastDay.toISOString().slice(0, 10));
+    setDueDate(localDateValue(lastDay));
   };
 
   const handleSubmit = async () => {
@@ -150,8 +154,12 @@ export function SendAnnouncementModal({
 
   const handleReset = () => {
     setTitle('');
+    setType('ANNOUNCEMENT');
     setMessage('');
     setDueDate('');
+    setSendEmail(true);
+    setAutoRemind(true);
+    setAudience({ mode: 'all', departmentIds: [], employeeIds: [] });
     setResult(undefined);
     setSubmitError(undefined);
     onClose();
@@ -161,7 +169,8 @@ export function SendAnnouncementModal({
     <Modal
       open={open}
       onClose={handleReset}
-      size="lg"
+      size="xl"
+      className="announcement-modal"
       title="Gửi thông báo & Giao hạn hoàn thành"
       description="Gửi thông điệp, yêu cầu hoàn thành bài đánh giá/khóa học và đặt deadline đồng loạt cho nhân viên."
       footer={
@@ -169,7 +178,7 @@ export function SendAnnouncementModal({
           <button
             type="button"
             onClick={handleReset}
-            className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+            className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
           >
             {result ? 'Đóng' : 'Hủy bỏ'}
           </button>
@@ -179,7 +188,7 @@ export function SendAnnouncementModal({
               type="button"
               onClick={handleSubmit}
               disabled={submitting || !title.trim() || !message.trim()}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#137b84] hover:bg-[#0e5968] text-white text-xs font-bold transition-all disabled:opacity-50 disabled:pointer-events-none shadow-xs"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#137b84] hover:bg-[#0e5968] text-white text-sm font-bold transition-all disabled:opacity-50 disabled:pointer-events-none shadow-xs"
             >
               <Send className="size-3.5" />
               {submitting ? 'Đang gửi thông báo…' : 'Gửi thông báo ngay'}
@@ -215,10 +224,10 @@ export function SendAnnouncementModal({
           </div>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="announcement-content">
           {/* MẪU GỢI Ý NHANH (TEMPLATES) */}
-          <div className="space-y-1.5">
-            <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+          <div className="announcement-templates space-y-2">
+            <span className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
               <Sparkles className="size-3.5 text-amber-500" />
               Chọn nhanh mẫu nội dung:
             </span>
@@ -228,7 +237,7 @@ export function SendAnnouncementModal({
                   key={tpl.label}
                   type="button"
                   onClick={() => applyTemplate(tpl)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-teal-50/60 hover:border-teal-200 hover:text-[var(--po-accent)] text-xs font-medium text-slate-700 transition-all"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-teal-50/60 hover:border-teal-200 hover:text-[#137b84] text-sm font-medium text-slate-700 transition-all"
                 >
                   <FileText className="size-3 text-slate-400" />
                   {tpl.label}
@@ -238,26 +247,28 @@ export function SendAnnouncementModal({
           </div>
 
           {/* TIÊU ĐỀ & LOẠI THÔNG BÁO */}
-          <div className="grid gap-3 sm:grid-cols-4">
+          <div className="announcement-title grid gap-3 sm:grid-cols-4">
             <div className="sm:col-span-3 space-y-1">
-              <label className="text-xs font-bold text-slate-800 block">
+              <label htmlFor="announcement-title" className="text-sm font-bold text-slate-800 block">
                 Tiêu đề thông báo <span className="text-red-500">*</span>
               </label>
               <input
+                id="announcement-title"
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ví dụ: Thông báo hoàn thành đợt đánh giá năng lực Q4"
-                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--po-accent)]/30 focus:border-[var(--po-accent)]"
+                className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-800 block">Phân loại</label>
+              <label htmlFor="announcement-type" className="text-sm font-bold text-slate-800 block">Phân loại</label>
               <select
+                id="announcement-type"
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-[var(--po-accent)]/30 focus:border-[var(--po-accent)]"
+                className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600"
               >
                 <option value="ANNOUNCEMENT">Thông báo chung</option>
                 <option value="ASSESSMENT">Đánh giá / Test</option>
@@ -268,60 +279,62 @@ export function SendAnnouncementModal({
           </div>
 
           {/* NỘI DUNG THÔNG BÁO */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-800 block">
+          <div className="announcement-message space-y-1.5">
+            <label htmlFor="announcement-message" className="text-sm font-bold text-slate-800 block">
               Nội dung thông điệp <span className="text-red-500">*</span>
             </label>
             <textarea
-              rows={3}
+              id="announcement-message"
+              rows={5}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Nhập nội dung yêu cầu, mục đích và hướng dẫn nhân viên hoàn thành..."
-              className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--po-accent)]/30 focus:border-[var(--po-accent)] leading-relaxed"
+              className="w-full px-3.5 py-3 text-sm rounded-xl border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600 leading-relaxed"
             />
           </div>
 
           {/* HẠN HOÀN THÀNH (DEADLINE) */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2.5">
+          <div className="announcement-deadline rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+              <span className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                 <Calendar className="size-3.5 text-[var(--po-accent)]" />
                 Thời hạn hoàn thành (Deadline):
               </span>
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setQuickDeadline(3)}
-                  className="px-2 py-1 text-[11px] rounded-md bg-white border border-slate-200 text-slate-700 hover:text-[var(--po-accent)] hover:border-teal-200"
+                  className="px-2.5 py-1.5 text-xs rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-teal-700 hover:border-teal-200"
                 >
                   3 ngày
                 </button>
                 <button
                   type="button"
                   onClick={() => setQuickDeadline(7)}
-                  className="px-2 py-1 text-[11px] rounded-md bg-white border border-slate-200 text-slate-700 hover:text-[var(--po-accent)] hover:border-teal-200"
+                  className="px-2.5 py-1.5 text-xs rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-teal-700 hover:border-teal-200"
                 >
                   7 ngày
                 </button>
                 <button
                   type="button"
                   onClick={setEndOfMonth}
-                  className="px-2 py-1 text-[11px] rounded-md bg-white border border-slate-200 text-slate-700 hover:text-[var(--po-accent)] hover:border-teal-200"
+                  className="px-2.5 py-1.5 text-xs rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-teal-700 hover:border-teal-200"
                 >
                   Cuối tháng
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <input
                 type="date"
+                aria-label="Thời hạn hoàn thành"
                 value={dueDate}
-                min={new Date().toISOString().slice(0, 10)}
+                min={localDateValue(new Date())}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-[var(--po-accent)]/30"
+                className="px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-600/20"
               />
-              <span className="text-[11px] text-slate-500">
+              <span className="text-xs text-slate-500">
                 {dueDate
                   ? `Hạn nộp: ${dueDate.split('-').reverse().join('/')}`
                   : 'Không đặt hạn chót (thông báo thường)'}
@@ -330,8 +343,8 @@ export function SendAnnouncementModal({
           </div>
 
           {/* BỘ CHỌN ĐỐI TƯỢNG (AUDIENCE SELECTOR) */}
-          <div className="space-y-1.5">
-            <span className="text-xs font-bold text-slate-900 block">
+          <div className="announcement-audience space-y-2">
+            <span className="text-sm font-bold text-slate-900 block">
               Đối tượng nhận thông báo:
             </span>
             <DepartmentAudienceSelector
@@ -341,8 +354,8 @@ export function SendAnnouncementModal({
           </div>
 
           {/* CÁC TÙY CHỌN GỬI THÊM */}
-          <div className="grid gap-2 sm:grid-cols-2 text-xs pt-1">
-            <label className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-white cursor-pointer select-none">
+          <div className="announcement-options grid gap-3 sm:grid-cols-2 text-sm">
+            <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={sendEmail}
@@ -353,13 +366,13 @@ export function SendAnnouncementModal({
                 <span className="font-semibold text-slate-900 block flex items-center gap-1">
                   <Mail className="size-3.5 text-[var(--po-accent)]" /> Gửi email thông báo
                 </span>
-                <span className="text-[10px] text-slate-400 block mt-0.5">
+                <span className="text-xs text-slate-500 block mt-0.5">
                   Bắn email định dạng chuẩn vào hòm thư nhân viên
                 </span>
               </div>
             </label>
 
-            <label className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-white cursor-pointer select-none">
+            <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={autoRemind}
@@ -370,7 +383,7 @@ export function SendAnnouncementModal({
                 <span className="font-semibold text-slate-900 block flex items-center gap-1">
                   <Clock className="size-3.5 text-amber-500" /> Tự động nhắc nhở
                 </span>
-                <span className="text-[10px] text-slate-400 block mt-0.5">
+                <span className="text-xs text-slate-500 block mt-0.5">
                   Tự động gửi mail nhắc trước khi hết hạn 24 giờ
                 </span>
               </div>
@@ -378,7 +391,7 @@ export function SendAnnouncementModal({
           </div>
 
           {submitError && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 flex items-center gap-2">
+            <div className="announcement-error rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 flex items-center gap-2">
               <AlertCircle className="size-4 shrink-0" />
               <span>{submitError}</span>
             </div>

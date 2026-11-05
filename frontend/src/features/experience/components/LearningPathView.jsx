@@ -92,7 +92,7 @@ export default function LearningPathView({ onOpenCourse, personalizedRoadmap, di
                   style={{ fontSize: '11px', padding: '4px 10px', marginTop: '6px' }}
                   onClick={onStartDiagnostic}
                 >
-                  Làm bài test ngay
+                  Làm bài đánh giá ngay
                 </button>
               ) : (
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>

@@ -1,0 +1,20 @@
+.position-archive-backdrop { background: rgba(12,30,42,.58); backdrop-filter: blur(9px) saturate(.8); animation: position-archive-fade .24s ease-out both; }
+.position-archive-dialog { border: 1px solid rgba(255,255,255,.6); box-shadow: 0 28px 90px rgba(8,29,43,.3); animation: position-archive-in .3s cubic-bezier(.2,.7,.2,1) both; }
+.position-archive-content { position: relative; padding: 28px 30px 26px; background: radial-gradient(circle at 100% 0%,#fff1ed,transparent 53%),linear-gradient(140deg,#fff,#f8fbfc); }
+.position-archive-icon { display:grid; place-items:center; width:48px; height:48px; margin-bottom:18px; border:1px solid #fed7cc; border-radius:15px; background:#fff1ec; color:#b44b37; }
+.position-archive-eyebrow { color:#a64c39; font-size:11px; font-weight:800; letter-spacing:.13em; }
+.position-archive-content h2 { margin:5px 0 10px; color:#173248; font-size:22px; font-weight:800; letter-spacing:-.035em; }
+.position-archive-content p { margin:0; color:#5b7080; font-size:14px; line-height:1.65; }
+.position-archive-content strong { color:#173248; }
+.position-archive-close { position:absolute; top:22px; right:22px; display:grid; place-items:center; width:34px; height:34px; border:1px solid #dce6e9; border-radius:10px; background:#fff; color:#667c8b; }
+.position-archive-close:hover { background:#eff7f7; color:#175b61; }
+.position-archive-actions { display:flex; justify-content:flex-end; gap:10px; padding:18px 30px; border-top:1px solid #e4edf0; background:#fbfdfd; }
+.position-archive-actions button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:42px; padding:9px 17px; border-radius:11px; font-size:14px; font-weight:700; transition:transform .18s,box-shadow .18s,background .18s; }
+.position-archive-cancel { border:1px solid #dce6e9; background:#fff; color:#405669; }
+.position-archive-confirm { background:linear-gradient(110deg,#ac4937,#c26146); color:#fff; box-shadow:0 7px 17px rgba(171,72,53,.2); }
+.position-archive-confirm:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 11px 22px rgba(171,72,53,.28); }
+.position-archive-actions button:disabled { opacity:.6; cursor:wait; }
+.position-archive-layer button:focus-visible { outline:2px solid #a64c39; outline-offset:2px; }
+@keyframes position-archive-fade { from { opacity:0; } to { opacity:1; } }
+@keyframes position-archive-in { from { opacity:0; transform:translateY(14px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
+@media (prefers-reduced-motion:reduce) { .position-archive-backdrop,.position-archive-dialog { animation:none; } .position-archive-actions button { transition:none; } }

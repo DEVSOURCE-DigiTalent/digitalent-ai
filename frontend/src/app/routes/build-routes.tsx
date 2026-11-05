@@ -6,10 +6,11 @@ import { RequirePermission } from '../../components/guards/RequirePermission';
 import { RequireRole } from '../../components/guards/RequireRole';
 import { PlaceholderPage } from '../../features/system/pages/PlaceholderPage';
 import type { ScreenDef } from '../../lib/screens/types';
+import { PageLoading } from '../../components/shared/LoadingState';
 
 /** Shown while a page's code chunk loads (pages are lazy, see lazy-page.ts); the portal shell stays on screen. */
 export function RouteFallback() {
-  return <div aria-busy="true" aria-label="Đang tải trang" style={{ minHeight: '40vh' }} />;
+  return <PageLoading label="Đang tải trang" />;
 }
 
 /** Real pages by screen ID. Screens without an entry render a placeholder until they are built. */

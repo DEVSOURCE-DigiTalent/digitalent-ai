@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -61,7 +62,7 @@ describe('MainLayout navigation', () => {
     renderLayout();
     const nav = within(screen.getByRole('navigation', { name: /Điều hướng chính|Thanh điều hướng/i }));
 
-    expect(nav.getByText(/Năng lực Khoảng cách/i)).toBeInTheDocument();
+    expect(nav.getByText(/Khoảng trống năng lực/i)).toBeInTheDocument();
     expect(nav.queryByText('Nhật ký kiểm toán')).not.toBeInTheDocument();
   });
 
@@ -78,7 +79,7 @@ describe('MainLayout navigation', () => {
     renderLayout();
 
     const nav = screen.getByRole('navigation', { name: /Điều hướng chính|Thanh điều hướng/i });
-    expect(within(nav).getByRole('link', { name: /Năng lực Khoảng cách/i })).toHaveAttribute(
+    expect(within(nav).getByRole('link', { name: /Khoảng trống năng lực/i })).toHaveAttribute(
       'href',
       '/enterprise/skill-gap',
     );
@@ -88,7 +89,7 @@ describe('MainLayout navigation', () => {
     renderLayout('/enterprise/skill-gap');
 
     const nav = screen.getByRole('navigation', { name: /Điều hướng chính|Thanh điều hướng/i });
-    expect(within(nav).getByRole('link', { name: /Năng lực Khoảng cách/i })).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByRole('link', { name: /Khoảng trống năng lực/i })).toHaveAttribute('aria-current', 'page');
     expect(within(nav).getByRole('link', { name: /Tổng quan/i })).not.toHaveAttribute('aria-current');
   });
 
@@ -103,7 +104,7 @@ describe('MainLayout navigation', () => {
     expect(screen.queryByTestId('sidebar-backdrop')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Mở điều hướng' }));
-    fireEvent.click(screen.getByRole('link', { name: /Năng lực Khoảng cách/i }));
+    fireEvent.click(screen.getByRole('link', { name: /Khoảng trống năng lực/i }));
     expect(screen.queryByTestId('sidebar-backdrop')).not.toBeInTheDocument();
   });
 

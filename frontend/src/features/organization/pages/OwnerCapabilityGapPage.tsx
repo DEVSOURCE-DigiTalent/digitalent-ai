@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { RefreshCw, ArrowRight, Search } from 'lucide-react';
+import { RefreshCw, ArrowRight, Search, BookOpen } from 'lucide-react';
 import { useGapOverview, useCompetencyGaps } from '@/hooks/use-analytics';
 import { useSkillGapRuns, useCalculateSkillGapBatch } from '@/hooks/use-skill-gaps';
 import { useDepartments } from '@/hooks/use-departments';
@@ -13,8 +13,11 @@ import { BatchResultPanel } from '@/features/intelligence/components/BatchResult
 import { CapabilityGapSummary } from '../components/CapabilityGapSummary';
 import { CapabilityComparison } from '../components/CapabilityComparison';
 import { CapabilityLearningPath } from '../components/CapabilityLearningPath';
+import { OwnerFilterSelect } from '../components/OwnerFilterSelect';
 import type { CalculateSkillGapBatchResult, SkillGapRunListItem } from '@/services/intelligence.service';
 import { PULSE_TOKENS } from '../owner-theme';
+import { SectionLoading } from '@/components/shared/LoadingState';
+import './owner-capability-gap.css';
 
 type GroupBy = 'department' | 'position' | 'grade';
 
@@ -27,7 +30,7 @@ export function OwnerCapabilityGapPage() {
   const [jobGrade, setJobGrade] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 6;
   const [batchResult, setBatchResult] = useState<CalculateSkillGapBatchResult | null>(null);
 
   const departments = useDepartments({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
@@ -67,7 +70,7 @@ export function OwnerCapabilityGapPage() {
 
   return (
     <div
-      className="po-owner -m-4 md:-m-6 min-h-screen"
+      className="po-owner gap-page -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background:
@@ -75,35 +78,25 @@ export function OwnerCapabilityGapPage() {
         fontFamily: 'Inter, "Segoe UI", Arial, sans-serif',
       }}
     >
-      <div
-        className="mx-auto max-w-[1440px]"
-        style={{ padding: 'clamp(26px, 3.5vw, 50px) clamp(22px, 4vw, 62px) 90px' }}
-      >
+      <div className="gap-container">
         {/* ── Page Header ── */}
         <div className="mb-[27px] flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
           <div>
             <span
-              className="text-[11px] font-black uppercase tracking-[0.14em]"
+              className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.14em] mb-1.5"
               style={{ color: 'var(--po-muted)' }}
             >
               <span
-                className="mr-[7px] inline-block size-1.5 rounded-full align-middle"
+                className="inline-block size-1.5 rounded-full"
                 style={{ background: 'var(--po-coral)' }}
               />
               Năng lực
             </span>
-            <h1
-              className="mt-2 font-bold leading-[1.05]"
-              style={{
-                color: 'var(--po-ink)',
-                fontSize: 'clamp(28px, 3.5vw, 44px)',
-                letterSpacing: '-0.05em',
-              }}
-            >
-              Khoảng trống Năng lực Đội ngũ
+            <h1 className="gap-page-title font-bold tracking-[-0.03em] heading-gradient">
+              Khoảng trống năng lực đội ngũ
             </h1>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
             {overview.data && overview.data.totals.totalGaps > 0 && (
               <span
                 className="rounded-full px-3 py-1.5 text-[11px] font-bold"
@@ -112,6 +105,14 @@ export function OwnerCapabilityGapPage() {
                 {overview.data.totals.totalGaps} khoảng trống xác nhận
               </span>
             )}
+            <Link
+              to="/enterprise/courses"
+              className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all hover:scale-[1.01]"
+              style={{ background: 'var(--po-accent)' }}
+            >
+              <BookOpen className="size-3.5" />
+              <span>Trang bị khóa học bù đắp</span>
+            </Link>
             <button
               type="button"
               onClick={handleRecalculateAll}
@@ -136,51 +137,27 @@ export function OwnerCapabilityGapPage() {
           )}
 
           {/* Global filters */}
-          <div className="flex flex-wrap items-center gap-3">
-            <select
-              aria-label="Lọc theo phòng ban"
+          <div className="gap-global-filters">
+            <OwnerFilterSelect
+              label="Lọc theo phòng ban"
               value={departmentId}
-              onChange={(e) => setDepartmentId(e.target.value)}
-              className="rounded-xl border px-3 py-2 text-sm"
-              style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)', background: 'var(--po-surface)' }}
-            >
-              <option value="">Tất cả phòng ban</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
+              onChange={setDepartmentId}
+              options={[{ value: '', label: 'Tất cả phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]}
+            />
 
-            <select
-              aria-label="Lọc theo vị trí"
+            <OwnerFilterSelect
+              label="Lọc theo vị trí"
               value={jobPositionId}
-              onChange={(e) => setJobPositionId(e.target.value)}
-              className="rounded-xl border px-3 py-2 text-sm"
-              style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)', background: 'var(--po-surface)' }}
-            >
-              <option value="">Tất cả vị trí</option>
-              {positions.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+              onChange={setJobPositionId}
+              options={[{ value: '', label: 'Tất cả vị trí' }, ...positions.map((p) => ({ value: p.id, label: p.name }))]}
+            />
 
-            <select
-              aria-label="Lọc theo cấp bậc"
+            <OwnerFilterSelect
+              label="Lọc theo cấp bậc"
               value={jobGrade}
-              onChange={(e) => setJobGrade(e.target.value)}
-              className="rounded-xl border px-3 py-2 text-sm"
-              style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)', background: 'var(--po-surface)' }}
-            >
-              <option value="">Mọi cấp bậc</option>
-              {JOB_GRADES.map((g: string) => (
-                <option key={g} value={g}>
-                  Cấp bậc {g}
-                </option>
-              ))}
-            </select>
+              onChange={setJobGrade}
+              options={[{ value: '', label: 'Mọi cấp bậc' }, ...JOB_GRADES.map((g: string) => ({ value: g, label: `Cấp bậc ${g}` }))]}
+            />
           </div>
 
           {/* Overview by group */}
@@ -199,7 +176,7 @@ export function OwnerCapabilityGapPage() {
 
           {/* Employee list */}
           <section
-            className="rounded-[22px] border p-6"
+            className="gap-employee-panel rounded-[22px] border p-6"
             style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)' }}
           >
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -214,32 +191,30 @@ export function OwnerCapabilityGapPage() {
                   className="mt-1 text-lg font-semibold"
                   style={{ color: 'var(--po-ink)', letterSpacing: '-0.02em' }}
                 >
-                  Danh sách khoảng trống năng lực cá nhân
+                  Khoảng trống theo nhân viên
                 </h2>
               </div>
-              <div className="relative min-w-[200px]">
+              <label className="owner-filter-search min-w-[230px]">
                 <Search
-                  className="absolute left-3 top-1/2 size-4 -translate-y-1/2"
+                  className="size-4"
                   style={{ color: 'var(--po-muted)' }}
                 />
                 <input
                   type="search"
+                  aria-label="Tìm theo tên hoặc mã nhân viên"
                   value={search}
                   onChange={(e) => {
                     setSearch(e.target.value);
                     setPage(1);
                   }}
                   placeholder="Tìm theo tên hoặc mã nhân viên..."
-                  className="w-full rounded-xl border py-2 pl-9 pr-3 text-sm"
-                  style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)', background: 'var(--po-surface)' }}
+                  className="w-full text-sm"
                 />
-              </div>
+              </label>
             </div>
 
             {runsLoading ? (
-              <p className="py-6 text-center text-sm" style={{ color: 'var(--po-muted)' }}>
-                Đang tải danh sách nhân viên…
-              </p>
+              <SectionLoading label="Đang tải danh sách nhân viên" />
             ) : !runsData?.items?.length ? (
               <div className="py-10 text-center">
                 <p className="text-sm font-medium" style={{ color: 'var(--po-ink)' }}>
@@ -251,13 +226,13 @@ export function OwnerCapabilityGapPage() {
               </div>
             ) : (
               <>
-                <div className="grid gap-[6px]">
+                <div className="gap-employee-list grid gap-[6px]">
                   {runsData.items.map((run: SkillGapRunListItem) => (
                     <button
                       key={run.runId}
                       type="button"
                       onClick={() => navigate(`/enterprise/skill-gap/${run.employeeId}`)}
-                      className="flex items-center gap-4 rounded-xl border px-4 py-3 text-left transition-colors"
+                      className="gap-employee-row flex items-center gap-4 rounded-xl border px-4 py-3 text-left transition-colors"
                       style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)' }}
                       onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--po-canvas)')}
                       onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--po-surface)')}
@@ -384,25 +359,31 @@ export function OwnerCapabilityGapPage() {
               Lưu ý
             </span>
             <p className="mt-1 text-[13px]" style={{ color: 'var(--po-ink)' }}>
-              <strong>Pending không phải khoảng trống đã xác nhận.</strong>{' '}
-              Nhân viên chưa có kết quả đánh giá sẽ hiển thị ở trạng thái Pending — không tính là gap thực tế.
-              Cần hoàn thành đánh giá năng lực trước khi so sánh với mục tiêu vị trí.
+              <strong>Chưa đánh giá không được tính là khoảng trống.</strong>{' '}
+              Hoàn thành đánh giá năng lực để có kết quả so sánh với chuẩn vị trí.
             </p>
-            <div className="mt-3 flex gap-3">
+            <div className="mt-3 flex flex-wrap items-center gap-3">
               <Link
-                to="/enterprise/workforce"
+                to="/enterprise/setup?tab=positions"
                 className="inline-flex items-center gap-1.5 rounded-xl border px-[14px] py-[9px] text-[12px] font-bold transition-colors hover:opacity-80"
-                style={{ borderColor: 'var(--po-line)', color: 'var(--po-accent-strong)' }}
+                style={{ borderColor: 'var(--po-line)', color: 'var(--po-accent-strong)', background: 'var(--po-surface)' }}
               >
-                Xem lực lượng lao động
+                Điều chỉnh chuẩn vị trí
                 <ArrowRight className="size-3.5" />
+              </Link>
+              <Link
+                to="/enterprise/courses"
+                className="inline-flex items-center gap-1.5 rounded-xl px-[14px] py-[9px] text-[12px] font-bold text-white transition-opacity hover:opacity-90 shadow-2xs"
+                style={{ background: 'var(--po-accent)' }}
+              >
+                Trang bị khóa học bù đắp →
               </Link>
               <Link
                 to="/enterprise/competency-profiles"
                 className="inline-flex items-center gap-1.5 text-[12px] font-bold transition-colors hover:opacity-80"
                 style={{ color: 'var(--po-muted)' }}
               >
-                Hồ sơ năng lực →
+                Hồ sơ năng lực cá nhân →
               </Link>
             </div>
           </div>

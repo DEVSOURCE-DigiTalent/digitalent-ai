@@ -1,17 +1,19 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
-import { PageHeader, DataTable, StatusBadge, getStatusVariant, ConfirmActionDialog, type Column } from '@/components/shared';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, BriefcaseBusiness, CircleCheck, Plus, Edit2, Trash2, UsersRound } from 'lucide-react';
+import { DataTable, StatusBadge, getStatusVariant, type Column } from '@/components/shared';
 import { useJobPositions, useDeleteJobPosition } from '@/hooks/use-job-positions';
 import { useDepartments } from '@/hooks/use-departments';
 import { useJobGradeLabel } from '@/hooks/use-job-grades';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { JobPositionFormDialog } from '../components/JobPositionFormDialog';
+import { PositionArchiveDialog } from '../components/PositionArchiveDialog';
+import { OwnerFilterSelect } from '../components/OwnerFilterSelect';
 import { toast } from 'sonner';
 import { organizationErrorMessage } from '@/lib/organization-errors';
 import { JOB_GRADES } from '@/lib/terms';
-import { INPUT_CLASS, PRIMARY_BUTTON } from '@/features/onboarding/components/styles';
 import type { JobPositionListItem, JobPositionStatus } from '@/services/job-position.service';
+import './position-list.css';
 
 const STATUS_LABELS: Record<string, string> = { ACTIVE: 'Đang dùng', INACTIVE: 'Ngừng dùng', ARCHIVED: 'Đã lưu trữ' };
 
@@ -182,29 +184,41 @@ export function PositionListPage() {
     setPage(1);
   };
 
+  const pageItems = data?.items ?? [];
+  const pageHeadcount = pageItems.reduce((sum, position) => sum + (position.headcount ?? 0), 0);
+  const configuredOnPage = pageItems.filter((position) => position.hasRequirementSet).length;
+
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Vị trí công việc"
-        subtitle="Quản lý danh mục vị trí và bộ tiêu chuẩn năng lực yêu cầu"
-      >
-        <div className="flex items-center gap-2">
-          {canManagePositions && (
-            <button
-              onClick={() => {
-                setEditingPosition(null);
-                setIsPosFormOpen(true);
-              }}
-              className={PRIMARY_BUTTON}
-            >
-              <Plus className="size-4" />
-              Tạo vị trí
-            </button>
-          )}
+    <div className="positions-page -m-4 min-h-screen space-y-6 px-5 py-7 md:-m-6 md:px-7 xl:px-10">
+      <div className="positions-heading">
+        <div>
+          <Link to="/enterprise/setup?tab=positions" className="positions-back"><ArrowLeft className="size-4" /> Khung năng lực số</Link>
+          <div className="positions-eyebrow"><BriefcaseBusiness className="size-4" /> CẤU TRÚC TỔ CHỨC</div>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.04em] heading-gradient">Quản lý vị trí công việc</h1>
         </div>
-      </PageHeader>
+        {canManagePositions && (
+          <button
+            type="button"
+            onClick={() => {
+              setEditingPosition(null);
+              setIsPosFormOpen(true);
+            }}
+            className="positions-create"
+          >
+            <Plus className="size-4" /> Tạo vị trí mới
+          </button>
+        )}
+      </div>
+
+      <div className="positions-stats">
+        <div className="positions-stat positions-stat-sky"><BriefcaseBusiness className="size-5" /><span>Vị trí phù hợp</span><strong>{data?.totalItems ?? 0}</strong></div>
+        <div className="positions-stat positions-stat-teal"><UsersRound className="size-5" /><span>Nhân sự trên trang</span><strong>{pageHeadcount}</strong></div>
+        <div className="positions-stat positions-stat-violet"><CircleCheck className="size-5" /><span>Có chuẩn trên trang</span><strong>{configuredOnPage}<small> / {pageItems.length}</small></strong></div>
+      </div>
 
       <DataTable
+        className="positions-table"
+        forceScrollX
         columns={columns}
         data={data?.items || []}
         keyExtractor={(row) => row.id}
@@ -217,42 +231,27 @@ export function PositionListPage() {
         emptyDescription="Tạo vị trí công việc để thiết lập bộ yêu cầu năng lực cho tổ chức."
         filters={
           <>
-            <select
-              aria-label="Lọc theo phòng ban"
+            <OwnerFilterSelect
+              label="Lọc theo phòng ban"
               value={departmentId}
-              onChange={(e) => resetPage(setDepartmentId)(e.target.value)}
-              className={INPUT_CLASS}
-            >
-              <option value="">Mọi phòng ban</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label="Lọc theo Cấp bậc"
+              onChange={resetPage(setDepartmentId)}
+              options={[{ value: '', label: 'Mọi phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]}
+              className="positions-filter"
+            />
+            <OwnerFilterSelect
+              label="Lọc theo cấp bậc"
               value={jobGrade}
-              onChange={(e) => resetPage(setJobGrade)(e.target.value)}
-              className={INPUT_CLASS}
-            >
-              <option value="">Mọi Cấp bậc</option>
-              {JOB_GRADES.map((code) => (
-                <option key={code} value={code}>
-                  {gradeLabel(code)}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label="Lọc theo trạng thái"
+              onChange={resetPage(setJobGrade)}
+              options={[{ value: '', label: 'Mọi cấp bậc' }, ...JOB_GRADES.map((code) => ({ value: code, label: gradeLabel(code) }))]}
+              className="positions-filter"
+            />
+            <OwnerFilterSelect
+              label="Lọc theo trạng thái"
               value={status || ''}
-              onChange={(e) => resetPage(setStatus)(e.target.value ? (e.target.value as JobPositionStatus) : undefined)}
-              className={INPUT_CLASS}
-            >
-              <option value="">Mọi trạng thái</option>
-              <option value="ACTIVE">Đang dùng</option>
-              <option value="INACTIVE">Ngừng dùng</option>
-            </select>
+              onChange={(value) => resetPage(setStatus)(value ? value as JobPositionStatus : undefined)}
+              options={[{ value: '', label: 'Mọi trạng thái' }, { value: 'ACTIVE', label: 'Đang dùng' }, { value: 'INACTIVE', label: 'Ngừng dùng' }]}
+              className="positions-filter"
+            />
           </>
         }
         pageInfo={{
@@ -273,18 +272,11 @@ export function PositionListPage() {
       )}
 
       {isPosArchiveOpen && archivingPosition && (
-        <ConfirmActionDialog
-          open={isPosArchiveOpen}
+        <PositionArchiveDialog
+          name={archivingPosition.name}
+          busy={deletePosMutation.isPending}
           onClose={() => setIsPosArchiveOpen(false)}
           onConfirm={handleArchivePosConfirm}
-          title="Lưu trữ vị trí công việc"
-          description={
-            <span>
-              Lưu trữ vị trí <strong>{archivingPosition.name}</strong>? Vị trí sẽ ẩn khỏi danh sách đang dùng nhưng vẫn giữ dữ liệu lịch sử.
-            </span>
-          }
-          confirmLabel="Lưu trữ"
-          confirmVariant="danger"
         />
       )}
     </div>
