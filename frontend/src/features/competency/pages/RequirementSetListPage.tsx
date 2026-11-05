@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Sliders, History, PlusCircle, CheckCircle2, FileText, AlertCircle } from 'lucide-react';
+import { Sliders, History, PlusCircle, CheckCircle2, FileText, AlertCircle, Search } from 'lucide-react';
 import { PageHeader, StatusBadge, type Column, DataTable } from '@/components/shared';
 import { usePositionRequirementSummaries } from '@/hooks/use-competencies';
 import { useDepartments } from '@/hooks/use-departments';
-import { INPUT_CLASS } from '@/features/onboarding/components/styles';
+import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import { formatDate } from '@/lib/utils';
 import type { PositionRequirementSummary } from '@/services/competency.service';
 
@@ -209,52 +209,44 @@ export function RequirementSetListPage() {
       </div>
 
       {/* Filters Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-4">
-        <div className="flex-1 min-w-[220px]">
+      <div className="owner-filter-toolbar flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-4">
+        <label className="owner-filter-search flex-1 min-w-[220px]">
+          <Search size={17} aria-hidden="true" />
           <input
             type="search"
+            aria-label="Tìm bộ yêu cầu năng lực"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(1);
             }}
             placeholder="Tìm theo tên vị trí hoặc mã..."
-            className={INPUT_CLASS}
+            className="w-full text-sm"
+          />
+        </label>
+        <div className="w-56 max-w-full">
+          <OwnerFilterSelect
+            label="Lọc theo phòng ban"
+            value={selectedDept}
+            onChange={(value) => {
+              setSelectedDept(value);
+              setPage(1);
+            }}
+            options={[{ value: '', label: 'Tất cả phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]}
+            className="w-full"
           />
         </div>
-        <div className="w-56">
-          <select
-            aria-label="Lọc theo phòng ban"
-            value={selectedDept}
-            onChange={(e) => {
-              setSelectedDept(e.target.value);
-              setPage(1);
-            }}
-            className={INPUT_CLASS}
-          >
-            <option value="">Tất cả phòng ban</option>
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="w-48">
-          <select
-            aria-label="Lọc theo trạng thái"
+        <div className="w-48 max-w-full">
+          <OwnerFilterSelect
+            label="Lọc theo trạng thái"
             value={selectedStatus}
-            onChange={(e) => {
-              setSelectedStatus(e.target.value);
+            onChange={(value) => {
+              setSelectedStatus(value);
               setPage(1);
             }}
-            className={INPUT_CLASS}
-          >
-            <option value="">Mọi trạng thái</option>
-            <option value="ACTIVE">Đang áp dụng</option>
-            <option value="DRAFT">Có bản nháp</option>
-            <option value="NOT_CONFIGURED">Chưa thiết lập</option>
-          </select>
+            options={[{ value: '', label: 'Mọi trạng thái' }, { value: 'ACTIVE', label: 'Đang áp dụng' }, { value: 'DRAFT', label: 'Có bản nháp' }, { value: 'NOT_CONFIGURED', label: 'Chưa thiết lập' }]}
+            className="w-full"
+          />
         </div>
       </div>
 
