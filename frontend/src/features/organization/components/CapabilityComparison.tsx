@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { GapGroup } from '@/services/analytics.service';
+import { SectionLoading } from '@/components/shared/LoadingState';
 
 type GroupBy = 'department' | 'position' | 'grade';
 
@@ -30,7 +31,7 @@ export function CapabilityComparison({
 }: CapabilityComparisonProps) {
   return (
     <section
-      className="rounded-[22px] border p-6"
+      className="gap-comparison rounded-[22px] border p-6"
       style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)' }}
     >
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -75,9 +76,7 @@ export function CapabilityComparison({
       </div>
 
       {isLoading ? (
-        <p className="py-6 text-center text-sm" style={{ color: 'var(--po-muted)' }}>
-          Đang tải số liệu tổng quan…
-        </p>
+        <SectionLoading label="Đang tải số liệu tổng quan" />
       ) : groups.length === 0 ? (
         <div className="py-10 text-center">
           <p className="text-sm font-medium" style={{ color: 'var(--po-ink)' }}>
