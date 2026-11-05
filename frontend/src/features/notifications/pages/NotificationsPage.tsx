@@ -1,169 +1,33 @@
-import { Bell, CheckCheck } from 'lucide-react';
+import { useState } from 'react';
+import { Bell, CheckCheck, ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/hooks/use-platform';
 import { formatDateTime } from '@/lib/utils';
 import { PULSE_TOKENS } from '@/features/organization/owner-theme';
+import { SectionLoading } from '@/components/shared/LoadingState';
+import '@/features/organization/pages/owner-operations.css';
+
+const PAGE_SIZE = 8;
 
 export function NotificationsPage() {
   const { data: notifications = [], isLoading, isError, refetch } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
+  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [search, setSearch] = useState('');
+  const [pageIndex, setPageIndex] = useState(1);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const unreadCount = notifications.filter((item) => !item.isRead).length;
+  const visible = notifications.filter((item) => (filter === 'all' || !item.isRead) && `${item.title} ${item.message}`.toLocaleLowerCase('vi').includes(search.trim().toLocaleLowerCase('vi')));
+  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const page = Math.min(pageIndex, totalPages);
+  const currentItems = visible.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
-
-  const handleMarkItem = (id: string, isRead: boolean) => {
-    if (!isRead) markRead.mutate(id);
-  };
-
-  return (
-    <div
-      className="po-owner -m-4 md:-m-6 min-h-screen"
-      style={{
-        ...PULSE_TOKENS,
-        background: 'var(--po-canvas)',
-        backgroundImage:
-          'radial-gradient(ellipse 80% 55% at 50% 0%, var(--po-glow) 0%, transparent 65%)',
-      }}
-    >
-      {/* ── Page header ── */}
-      <section
-        className="px-4 md:px-6 pt-8 pb-2 mx-auto"
-        style={{ maxWidth: 1220 }}
-      >
-        <p
-          className="text-[10px] font-black uppercase tracking-[0.12em]"
-          style={{ color: 'var(--po-muted)' }}
-        >
-          Hoạt động
-          <span
-            className="ml-[7px] inline-block size-1.5 rounded-full align-middle"
-            style={{ background: 'var(--po-coral)' }}
-          />
-        </p>
-        <h1
-          className="mt-[11px] text-[clamp(26px,3.4vw,42px)] font-bold leading-[1.08]"
-          style={{ color: 'var(--po-ink)', letterSpacing: '-0.045em' }}
-        >
-          Trung tâm hoạt động.
-        </h1>
-        <p
-          className="mt-2 text-sm leading-relaxed max-w-[58ch]"
-          style={{ color: 'var(--po-muted)' }}
-        >
-          Bài được giao, đánh giá, phê duyệt và thay đổi tổ chức đều có thể theo
-          dõi tại đây.
-        </p>
-
-        {unreadCount > 0 && (
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={() => markAllRead.mutate()}
-              disabled={markAllRead.isPending}
-              className="inline-flex items-center gap-2 rounded-[11px] border px-4 py-2.5 text-xs font-extrabold transition-transform hover:-translate-y-0.5"
-              style={{
-                borderColor: 'var(--po-line)',
-                color: 'var(--po-ink)',
-                background: 'var(--po-surface)',
-              }}
-            >
-              <CheckCheck className="size-4" style={{ color: 'var(--po-accent)' }} />
-              Đánh dấu tất cả đã đọc
-            </button>
-          </div>
-        )}
-      </section>
-
-      {/* ── Activity list ── */}
-      <div className="px-4 md:px-6 py-5 mx-auto" style={{ maxWidth: 1220 }}>
-        <section
-          className="rounded-[22px] border p-6"
-          style={{
-            borderColor: 'var(--po-line)',
-            background: 'var(--po-surface)',
-            boxShadow: '0 10px 35px rgba(29,48,102,.025)',
-          }}
-        >
-          {isLoading ? (
-            <p className="text-xs py-8 text-center" style={{ color: 'var(--po-muted)' }}>
-              Đang tải hoạt động…
-            </p>
-          ) : isError ? (
-            <div className="py-8 text-center">
-              <p className="text-xs font-medium" style={{ color: 'var(--po-coral)' }}>
-                Không thể tải thông báo.
-              </p>
-              <button
-                type="button"
-                onClick={() => refetch()}
-                className="mt-2 text-xs underline font-semibold"
-                style={{ color: 'var(--po-accent)' }}
-              >
-                Thử lại
-              </button>
-            </div>
-          ) : notifications.length === 0 ? (
-            <div className="py-12 text-center">
-              <Bell
-                className="size-8 mx-auto mb-2"
-                style={{ color: 'var(--po-line)' }}
-              />
-              <p className="text-xs" style={{ color: 'var(--po-muted)' }}>
-                Hoạt động sẽ hiển thị khi tổ chức vận hành hệ thống.
-              </p>
-            </div>
-          ) : (
-            <div className="grid">
-              {notifications.map((item, idx) => (
-                <div
-                  key={item.id}
-                  onClick={() => handleMarkItem(item.id, item.isRead)}
-                  className="flex items-center gap-[15px] py-[15px] cursor-pointer"
-                  style={{
-                    borderBottom:
-                      idx < notifications.length - 1
-                        ? '1px solid var(--po-line)'
-                        : 'none',
-                  }}
-                >
-                  <span
-                    className="shrink-0 size-[9px] rounded-full"
-                    style={{
-                      background: item.isRead
-                        ? 'var(--po-line)'
-                        : 'var(--po-accent)',
-                    }}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <strong
-                      className="block text-xs"
-                      style={{
-                        color: 'var(--po-ink)',
-                        opacity: item.isRead ? 0.6 : 1,
-                      }}
-                    >
-                      {item.title}
-                    </strong>
-                    <small
-                      className="block mt-1 text-[10px] leading-[1.45]"
-                      style={{ color: 'var(--po-muted)' }}
-                    >
-                      {item.message} · {formatDateTime(item.createdAt)}
-                    </small>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {!isLoading && notifications.length > 0 && (
-            <p className="mt-4 text-[11px]" style={{ color: '#789' }}>
-              {unreadCount > 0
-                ? 'Có hoạt động mới chưa được đánh dấu đã đọc.'
-                : `Đã đọc đến ${formatDateTime(notifications[0]?.createdAt)}.`}
-            </p>
-          )}
-        </section>
-      </div>
-    </div>
-  );
+  return <div className="po-owner owner-operations -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><main className="owner-operations__shell">
+    <header className="owner-operations__header"><div><span className="owner-operations__eyebrow">THÔNG BÁO</span><h1>Hoạt động</h1><p>Cập nhật về học tập, đánh giá và thay đổi trong tổ chức.</p></div>{unreadCount > 0 && <button className="owner-operations__secondary" type="button" disabled={markAllRead.isPending} onClick={() => markAllRead.mutate()}><CheckCheck size={18} /> Đánh dấu tất cả đã đọc</button>}</header>
+    <section className="owner-operations__panel"><div className="owner-operations__section-head"><div><h2>Thông báo của bạn</h2><p>{unreadCount > 0 ? `${unreadCount} thông báo chưa đọc` : 'Bạn đã đọc tất cả thông báo'}</p></div></div>
+      <div className="owner-operations__activity-toolbar"><div className="owner-operations__tabs" role="group" aria-label="Lọc thông báo"><button type="button" className={filter === 'all' ? 'is-selected' : ''} onClick={() => { setFilter('all'); setPageIndex(1); }}>Tất cả <span>{notifications.length}</span></button><button type="button" className={filter === 'unread' ? 'is-selected' : ''} onClick={() => { setFilter('unread'); setPageIndex(1); }}>Chưa đọc <span>{unreadCount}</span></button></div><label className="owner-operations__search"><Search size={18} /><input type="search" aria-label="Tìm hoạt động" placeholder="Tìm thông báo" value={search} onChange={(event) => { setSearch(event.target.value); setPageIndex(1); }} /></label></div>
+      {isLoading ? <SectionLoading label="Đang tải hoạt động" /> : isError ? <div className="owner-operations__empty"><Bell size={32} /><h3>Không thể tải thông báo</h3><button type="button" onClick={() => refetch()}>Thử lại</button></div> : visible.length === 0 ? <div className="owner-operations__empty"><Bell size={36} /><h3>{notifications.length === 0 ? 'Chưa có hoạt động' : 'Không có thông báo phù hợp'}</h3><p>{notifications.length === 0 ? 'Các cập nhật mới sẽ xuất hiện tại đây.' : 'Thử đổi bộ lọc hoặc từ khóa tìm kiếm.'}</p></div> : <div className="owner-operations__activity-list">{currentItems.map((item) => { const expanded = expandedId === item.id; return <div className={`owner-operations__activity ${item.isRead ? '' : 'is-unread'}`} key={item.id}><button type="button" className="owner-operations__activity-main" aria-expanded={expanded} onClick={() => { setExpandedId(expanded ? null : item.id); if (!item.isRead) markRead.mutate(item.id); }}><span className="owner-operations__activity-icon"><Bell size={18} /></span><span className="owner-operations__activity-text"><strong>{item.title}</strong><small>{formatDateTime(item.createdAt)}</small></span>{!item.isRead && <span className="owner-operations__activity-new">Mới</span>}{expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}</button>{expanded && <div className="owner-operations__activity-detail">{item.message}</div>}</div>; })}</div>}
+      {totalPages > 1 && <div className="owner-operations__pagination"><span>Trang {page} / {totalPages}</span><button type="button" disabled={page <= 1} onClick={() => setPageIndex(page - 1)}>Trước</button><button type="button" disabled={page >= totalPages} onClick={() => setPageIndex(page + 1)}>Sau</button></div>}
+    </section>
+  </main></div>;
 }

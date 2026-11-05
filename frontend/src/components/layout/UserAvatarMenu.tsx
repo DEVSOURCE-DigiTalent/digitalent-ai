@@ -59,22 +59,25 @@ export function UserAvatarMenu({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-ent-raised transition-colors"
+        className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-xl hover:bg-slate-100/80 transition-all border border-transparent hover:border-slate-200/60"
         aria-label="Menu tài khoản"
         aria-expanded={isOpen}
       >
-        <div className="w-8 h-8 rounded-full bg-[var(--ent-accent-soft)] text-ent-accent flex items-center justify-center text-xs font-bold border border-ent-line">
-          {initial}
+        <div className="relative">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#137b84] via-[#0d9488] to-[#0284c7] text-white flex items-center justify-center text-xs font-black shadow-xs">
+            {initial}
+          </div>
+          <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-emerald-500 border-2 border-white" />
         </div>
         <div className="text-left hidden sm:block">
-          <p className="text-xs font-semibold text-ent-fg leading-none truncate max-w-[120px]">
+          <p className="text-xs font-bold text-[#17243f] leading-none truncate max-w-[120px]">
             {user.fullName}
           </p>
-          <p className="text-[10px] text-ent-fg-3 leading-none mt-1 truncate max-w-[120px]">
+          <p className="text-[10px] text-[#64748b] font-medium leading-none mt-1 truncate max-w-[120px]">
             {roleLabel}
           </p>
         </div>
-        <ChevronDown className="w-3.5 h-3.5 text-ent-fg-3 hidden sm:block" />
+        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 hidden sm:block transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (

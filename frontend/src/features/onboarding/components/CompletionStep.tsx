@@ -119,8 +119,7 @@ export function CompletionStep({ setup, onBack }: { setup: OrganizationSetup; on
       <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-4 text-xs leading-relaxed text-ent-fg ring-1 ring-amber-400/20">
         <p className="font-semibold text-[#F5CA65] text-sm">Việc tiếp theo sau khi khởi tạo</p>
         <p className="mt-1 text-ent-fg-2">
-          Thiết lập <strong>Bộ yêu cầu năng lực</strong> cho từng vị trí công việc theo Khung chuẩn năng lực số
-          để hệ thống tự động đo lường khoảng trống năng lực (Skill Gap) và gợi ý lộ trình đào tạo phù hợp cho nhân viên.
+          Thiết lập <strong>chuẩn năng lực theo vị trí</strong> để xác định khoảng trống năng lực và chọn khóa học phù hợp.
         </p>
       </div>
 

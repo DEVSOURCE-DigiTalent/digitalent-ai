@@ -34,7 +34,7 @@ const TITLES: Record<string, { title: string; description: string }> = {
   },
   departments: {
     title: 'Phòng ban và nhóm',
-    description: 'Dùng để xếp nhân viên và xem skill gap theo phòng ban. Bạn có thể bỏ qua và thêm sau.',
+    description: 'Dùng để phân công nhân sự và xem khoảng trống năng lực theo phòng ban.',
   },
   positions: {
     title: 'Vị trí công việc',
@@ -117,7 +117,7 @@ export function SetupWizardPage() {
       <main className="mx-auto max-w-5xl px-4 lg:px-8">
         <PurchaseStepper audience="enterprise" currentStep={5} className="mb-6" />
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <h1 className="text-2xl font-semibold text-ent-fg">Thiết lập tổ chức</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.03em] heading-gradient">Thiết lập tổ chức</h1>
           {isOrgSaved && (
             <button
               type="button"

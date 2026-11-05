@@ -1,0 +1,78 @@
+/* A quiet visual rhythm for every owner route, including screens outside .po-owner. */
+@keyframes owner-route-enter {
+  from { opacity: 0; transform: translate3d(0, 9px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+.owner-shell #main-content {
+  background:
+    radial-gradient(ellipse 760px 360px at 88% 0, rgba(19, 123, 132, .07), transparent 72%),
+    var(--ent-bg);
+}
+
+.owner-route-stage {
+  min-width: 0;
+  animation: owner-route-enter .34s cubic-bezier(.2, .7, .2, 1) both;
+}
+
+/* Let the shared route transition carry the page; keep each page's own stagger. */
+.owner-route-stage > .po-owner {
+  animation: none;
+}
+
+.owner-shell .sidebar-pulse-manager {
+  box-shadow: 12px 0 32px rgba(16, 43, 52, .07);
+}
+
+.owner-shell .pm-side-link {
+  position: relative;
+  transition: background-color .22s ease, color .22s ease, transform .22s ease, box-shadow .22s ease;
+}
+
+.owner-shell .pm-side-link:not(.active):hover {
+  background: rgba(197, 236, 228, .14);
+  box-shadow: inset 2px 0 rgba(184, 234, 220, .38);
+}
+
+.owner-shell .pm-side-link.active {
+  background: linear-gradient(105deg, #e7f7f2, #d9efea);
+  box-shadow: inset 3px 0 #e7a283, 0 8px 18px rgba(8, 30, 38, .15);
+}
+
+.owner-shell .pm-side-link svg {
+  transition: transform .22s ease, color .22s ease;
+}
+
+.owner-shell .pm-side-link:not(.active):hover svg {
+  transform: scale(1.09);
+  color: #d4f4e9;
+}
+
+.owner-shell .pm-side-brand img {
+  transition: transform .28s ease, filter .28s ease;
+}
+
+.owner-shell .pm-side-brand:hover img {
+  transform: rotate(-5deg) scale(1.06);
+  filter: drop-shadow(0 7px 12px rgba(92, 194, 184, .28));
+}
+
+.owner-shell #main-content :is(input, select, textarea):focus-visible {
+  outline-color: var(--ent-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .owner-route-stage { animation: none; }
+  .owner-shell .pm-side-link,
+  .owner-shell .pm-side-link svg,
+  .owner-shell .pm-side-brand img { transition: none; }
+  .owner-shell .pm-side-link:not(.active):hover,
+  .owner-shell .pm-side-link:not(.active):hover svg,
+  .owner-shell .pm-side-brand:hover img { transform: none; }
+}
+
+@media print {
+  .owner-route-stage { animation: none; }
+  .owner-shell #main-content { background: #fff; }
+}

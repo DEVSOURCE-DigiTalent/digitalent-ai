@@ -235,7 +235,7 @@ export function PlatformAuditLogPage() {
                             setSelectedLog(log);
                           }}
                           style={{ padding: '4px 8px', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                          title="Xem chi tiết snapshot dữ liệu"
+                          title="Xem chi tiết dữ liệu"
                         >
                           <FileJson size={13} />
                           Diff
