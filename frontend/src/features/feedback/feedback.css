@@ -1,0 +1,14 @@
+/* The employee portal does not set the enterprise theme on <html>, so the feedback screens bring the light values. */
+html:not(.ent-theme) .fb-scope {
+  --ent-bg: #f7f9fd;
+  --ent-card: #ffffff;
+  --ent-raised: #f8faff;
+  --ent-line: #dfe6f3;
+  --ent-fg: #172442;
+  --ent-fg-2: #4a5a7a;
+  --ent-fg-3: #62718d;
+  --ent-accent: #304bdf;
+  --ent-accent-soft: #eef2ff;
+  --ent-bad: #b13a2c;
+  --ent-bad-soft: #fbeae7;
+}

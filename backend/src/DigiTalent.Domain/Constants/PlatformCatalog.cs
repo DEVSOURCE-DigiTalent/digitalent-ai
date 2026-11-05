@@ -36,10 +36,11 @@ public static class PlatformCatalog
         public const string Slide = "SLIDE";
         public const string Image = "IMAGE";
         public const string Video = "VIDEO";
+        public const string Pdf = "PDF";
 
-        public static readonly string[] All = { Text, Slide, Image, Video };
+        public static readonly string[] All = { Text, Slide, Image, Video, Pdf };
 
-        public static bool IsValid(string? value) => value is Text or Slide or Image or Video;
+        public static bool IsValid(string? value) => value is Text or Slide or Image or Video or Pdf;
     }
 
     /// <summary>platform_assets.kind and its size limits (ck_platform_assets_size).</summary>
@@ -47,11 +48,18 @@ public static class PlatformCatalog
     {
         public const string Image = "IMAGE";
         public const string Video = "VIDEO";
+        public const string Pdf = "PDF";
 
         public const long MaxImageBytes = 10L * 1024 * 1024;
         public const long MaxVideoBytes = 500L * 1024 * 1024;
+        public const long MaxPdfBytes = 50L * 1024 * 1024;
 
-        public static long MaxBytes(string kind) => kind == Video ? MaxVideoBytes : MaxImageBytes;
+        public static long MaxBytes(string kind) => kind switch
+        {
+            Video => MaxVideoBytes,
+            Pdf => MaxPdfBytes,
+            _ => MaxImageBytes,
+        };
     }
 
     /// <summary>Review questions of a module: a learner draws 2 per attempt, so 6 gives three different attempts.</summary>

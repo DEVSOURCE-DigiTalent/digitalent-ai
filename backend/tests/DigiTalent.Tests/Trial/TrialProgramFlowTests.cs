@@ -357,7 +357,7 @@ public class TrialProgramFlowTests
         return new TrialUseCases(
             new GetTrialProgramUseCase(context, reader),
             new SubmitTrialRequestUseCase(context, reader),
-            new GetMyTrialAssessmentUseCase(context, me, reader),
+            new GetMyTrialAssessmentUseCase(context, me, reader, ai, Microsoft.Extensions.Logging.Abstractions.NullLogger<GetMyTrialAssessmentUseCase>.Instance),
             new StartMyTrialAssessmentUseCase(context, me, reader, paper, proctoring),
             new SubmitMyTrialAssessmentUseCase(context, me, reader, paper, proctoring),
             new GetPlatformTrialsUseCase(context),

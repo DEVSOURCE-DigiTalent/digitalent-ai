@@ -2,12 +2,14 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Anchor,
   BriefcaseBusiness,
+  Bug,
   Building2,
   CheckCircle2,
   ClipboardEdit,
   FlaskConical,
   Gem,
   LayoutDashboard,
+  MessageSquare,
   ReceiptText,
   ScrollText,
   Users,
@@ -32,6 +34,8 @@ export const PLATFORM_NAV: readonly PlatformNavItem[] = [
   { to: '/platform/users', label: 'Người dùng', glyph: '♙', icon: Users, description: 'Tài khoản & người dùng thử' },
   { to: '/platform/commerce', label: 'Đơn giá', glyph: '▥', icon: ReceiptText, description: 'Gói cước & thương mại B2B' },
   { to: '/platform/audit-log', label: 'Nhật ký kiểm tra', glyph: '◎', icon: ScrollText, description: 'Truy vết an ninh & kiểm toán' },
+  { to: '/platform/feedbacks', label: 'Góp ý', glyph: '✉', icon: MessageSquare, description: 'Ý kiến đóng góp từ người dùng' },
+  { to: '/platform/bug-reports', label: 'Báo lỗi', glyph: '⚠', icon: Bug, description: 'Lỗi người dùng báo cáo' },
 ] as const;
 
 /** Header links of the platform workspace. */

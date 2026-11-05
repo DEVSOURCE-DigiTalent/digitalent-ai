@@ -3,22 +3,28 @@ import { platformCatalogService, type PlatformAsset } from '@/services/platform-
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
+const PDF_TYPES = ['application/pdf'];
 const MAX_IMAGE = 10 * 1024 * 1024;
 const MAX_VIDEO = 500 * 1024 * 1024;
+const MAX_PDF = 50 * 1024 * 1024;
 
 export const IMAGE_ACCEPT = IMAGE_TYPES.join(',');
 export const VIDEO_ACCEPT = VIDEO_TYPES.join(',');
+export const PDF_ACCEPT = PDF_TYPES.join(',');
 export const MEDIA_ACCEPT = [...IMAGE_TYPES, ...VIDEO_TYPES].join(',');
 
 /** Why a file cannot be uploaded (same limits as the server), or null. */
-export function fileProblem(file: File, kind: 'IMAGE' | 'VIDEO' | 'ANY'): string | null {
+export function fileProblem(file: File, kind: 'IMAGE' | 'VIDEO' | 'PDF' | 'ANY'): string | null {
   const isImage = IMAGE_TYPES.includes(file.type);
   const isVideo = VIDEO_TYPES.includes(file.type);
+  const isPdf = PDF_TYPES.includes(file.type);
   if (kind === 'IMAGE' && !isImage) return 'Chọn ảnh JPG, PNG, WebP hoặc GIF.';
   if (kind === 'VIDEO' && !isVideo) return 'Chọn video MP4, WebM hoặc MOV.';
-  if (kind === 'ANY' && !isImage && !isVideo) return 'Chỉ nhận ảnh JPG, PNG, WebP, GIF hoặc video MP4, WebM, MOV.';
+  if (kind === 'PDF' && !isPdf) return 'Chọn tệp PDF.';
+  if (kind === 'ANY' && !isImage && !isVideo && !isPdf) return 'Chỉ nhận ảnh, video hoặc PDF.';
   if (isImage && file.size > MAX_IMAGE) return 'Ảnh tối đa 10 MB.';
   if (isVideo && file.size > MAX_VIDEO) return 'Video tối đa 500 MB.';
+  if (isPdf && file.size > MAX_PDF) return 'PDF tối đa 50 MB.';
   return null;
 }
 

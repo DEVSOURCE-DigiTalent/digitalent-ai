@@ -11,7 +11,7 @@ import {
 import { errorMessage } from '../components/pulse-format';
 import { RichTextEditor } from './RichTextEditor';
 import { BLOCK_TYPES, type CourseEdit } from './builder-types';
-import { IMAGE_ACCEPT, VIDEO_ACCEPT, fileProblem, formatSize, useAssetUpload } from './use-asset-upload';
+import { IMAGE_ACCEPT, PDF_ACCEPT, VIDEO_ACCEPT, fileProblem, formatSize, useAssetUpload } from './use-asset-upload';
 import { CatalogLessonContent } from './CatalogLessonContent';
 
 interface BlockCardProps {
@@ -73,6 +73,7 @@ export function BlockCard({ block, count, linkedQuestions, editable, editing, on
           {normalizedType === 'SLIDE' && <SlideEditor block={block} save={save} />}
           {normalizedType === 'IMAGE' && <MediaEditor block={block} kind="IMAGE" save={save} />}
           {normalizedType === 'VIDEO' && <MediaEditor block={block} kind="VIDEO" save={save} />}
+          {normalizedType === 'PDF' && <PdfUploadEditor block={block} save={save} />}
         </div>
       ) : (
         <div
@@ -109,6 +110,15 @@ export function BlockPreview({ block, learner = false, courseCode, moduleIndex =
             {item.caption && <figcaption>{item.caption}</figcaption>}
           </figure>
         ))}
+      </div>
+    );
+  }
+  if (type === 'PDF') {
+    if (!block.asset) return <p className="pa-empty">Chưa tải PDF.</p>;
+    return (
+      <div className="pa-media">
+        <iframe src={assetUrl(block.asset)} title={block.caption ?? 'PDF'} style={{ width: '100%', height: 500, border: 'none', borderRadius: 8 }} />
+        {block.caption && <p style={{ marginTop: 8, fontSize: 13, opacity: 0.7 }}>{block.caption}</p>}
       </div>
     );
   }
@@ -335,6 +345,57 @@ function MediaEditor({ block, kind, save }: { block: CatalogBlock; kind: 'IMAGE'
         )}
       </div>
       <input ref={input} type="file" accept={isImage ? IMAGE_ACCEPT : VIDEO_ACCEPT} hidden onChange={onFile} />
+    </div>
+  );
+}
+
+function PdfUploadEditor({ block, save }: { block: CatalogBlock; save: (body: BlockInput) => Promise<CatalogCourseDetail> }) {
+  const { upload, progress, fileName } = useAssetUpload();
+  const input = useRef<HTMLInputElement>(null);
+
+  const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const problem = fileProblem(file, 'PDF');
+    if (problem) { toast.error(problem); return; }
+    try {
+      const asset = await upload(file);
+      await save({ assetId: asset.assetId });
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
+  };
+
+  return (
+    <div className="stack">
+      {block.asset ? (
+        <div className="pa-media">
+          <iframe src={assetUrl(block.asset)} title={block.caption ?? 'PDF'} style={{ width: '100%', height: 500, border: 'none', borderRadius: 8 }} />
+          <p className="pa-hint">{block.asset.fileName} · {formatSize(block.asset.sizeBytes)}</p>
+        </div>
+      ) : (
+        <button type="button" className="pa-drop" onClick={() => input.current?.click()} disabled={progress !== null}>
+          <strong>Chọn tệp PDF từ máy</strong>
+          <span>PDF · tối đa 50 MB</span>
+        </button>
+      )}
+      {progress !== null && <UploadProgress name={fileName} value={progress} />}
+      {block.asset && (
+        <div>
+          <button type="button" className="btn btn-outline btn-small" onClick={() => input.current?.click()} disabled={progress !== null}>
+            Đổi PDF
+          </button>
+        </div>
+      )}
+      <label className="field">
+        Chú thích
+        <input defaultValue={block.caption ?? ''} maxLength={500} onBlur={(e) => {
+          if ((e.target.value || null) === block.caption) return;
+          save({ caption: e.target.value }).catch((err) => toast.error(errorMessage(err)));
+        }} />
+      </label>
+      <input ref={input} type="file" accept={PDF_ACCEPT} hidden onChange={onFile} />
     </div>
   );
 }

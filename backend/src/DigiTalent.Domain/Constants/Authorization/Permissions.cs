@@ -216,6 +216,14 @@ public static class Permissions
         public const string Review = "trial.review";
     }
 
+    public static class Feedback
+    {
+        public const string Create = "feedback.create";
+        public const string ReadOwn = "feedback.read_own";
+        public const string ReadAll = "feedback.read_all";
+        public const string Manage = "feedback.manage";
+    }
+
     public static class System
     {
         public const string FileUploadMaterial = "file.upload_material";

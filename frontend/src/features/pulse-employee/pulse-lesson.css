@@ -1248,3 +1248,39 @@
     justify-content: center;
   }
 }
+
+/* Uploaded PDF shown inside a lesson page */
+.pu-lesson-document {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid #e8ecf4;
+  border-radius: 17px;
+  background: #f7f9fc;
+}
+.pu-lesson-document iframe {
+  display: block;
+  width: 100%;
+  height: min(78vh, 760px);
+  border: 0;
+  background: #fff;
+}
+.pu-lesson-document figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 12px 17px;
+  color: #63738b;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.pu-lesson-document a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #3852c9;
+  font-weight: 700;
+  text-decoration: none;
+}

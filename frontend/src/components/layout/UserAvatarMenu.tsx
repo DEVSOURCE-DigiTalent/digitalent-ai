@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserCircle, Shield, Settings, LogOut, ChevronDown, Sun, Moon, GraduationCap } from 'lucide-react';
+import { UserCircle, Shield, Settings, LogOut, ChevronDown, Sun, Moon, GraduationCap, MessageSquare, Bug } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useLogout } from '@/hooks/use-auth';
 import { ROLE_LABELS, type Role } from '@/lib/roles';
@@ -127,6 +127,24 @@ export function UserAvatarMenu({
                 Cài đặt tổ chức
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={() => { navigate('/enterprise/feedbacks'); setIsOpen(false); }}
+              className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg transition-colors"
+            >
+              <MessageSquare className="w-4 h-4 text-ent-fg-3" />
+              Góp ý
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { navigate('/enterprise/bug-reports'); setIsOpen(false); }}
+              className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg transition-colors"
+            >
+              <Bug className="w-4 h-4 text-ent-fg-3" />
+              Báo lỗi
+            </button>
 
             {/* Khung chỉ có bản sáng (cổng nhân viên, platform) không hiện nút chuyển. */}
             {supportsDark && (

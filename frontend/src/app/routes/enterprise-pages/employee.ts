@@ -12,6 +12,8 @@ const PulseOutcomeDetailPage = lazyPage(() => import('../../../features/pulse-em
 const PulseOutcomesPage = lazyPage(() => import('../../../features/pulse-employee/pages/PulseOutcomesPage'), 'PulseOutcomesPage');
 const PulseActivityPage = lazyPage(() => import('../../../features/pulse-employee/pages/PulseActivityPage'), 'PulseActivityPage');
 const PulseProfilePage = lazyPage(() => import('../../../features/pulse-employee/pages/PulseProfilePage'), 'PulseProfilePage');
+const MyFeedbacksPage = lazyPage(() => import('../../../features/feedback/pages/MyFeedbacksPage'), 'MyFeedbacksPage');
+const MyBugReportsPage = lazyPage(() => import('../../../features/feedback/pages/MyBugReportsPage'), 'MyBugReportsPage');
 const TrialExamPage = lazyPage(() => import('../../../features/trial-program/pages/TrialTestPage'), 'TrialExamPage');
 const TrialTestPage = lazyPage(() => import('../../../features/trial-program/pages/TrialTestPage'), 'TrialTestPage');
 
@@ -27,6 +29,8 @@ export const EMPLOYEE_PAGES: PageRegistry = {
   'EM-09': PulseOutcomeDetailPage,
   'EM-10': PulseActivityPage,
   'EM-11': PulseProfilePage,
+  'EM-13': MyFeedbacksPage,
+  'EM-14': MyBugReportsPage,
   'EM-12': PulsePreAssessmentPage,
   'EM-T1': TrialTestPage,
   'EM-T2': TrialExamPage,
