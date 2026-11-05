@@ -1,4 +1,4 @@
-import { Award, Bell, ClipboardCheck, Compass, Route } from 'lucide-react';
+import { Award, Bell, Bug, ClipboardCheck, Compass, MessageSquare, Route } from 'lucide-react';
 import type { SidebarConfig } from './types';
 
 /**
@@ -11,4 +11,6 @@ export const EMPLOYEE_SIDEBAR: SidebarConfig = [
   { label: 'Thực hành', icon: ClipboardCheck, screenId: 'EM-03', activeFor: ['EM-07'] },
   { label: 'Kết quả đã xác nhận', icon: Award, screenId: 'EM-08', activeFor: ['EM-09'] },
   { label: 'Hoạt động', icon: Bell, screenId: 'EM-10' },
+  { label: 'Góp ý', icon: MessageSquare, screenId: 'EM-13' },
+  { label: 'Báo lỗi', icon: Bug, screenId: 'EM-14' },
 ];

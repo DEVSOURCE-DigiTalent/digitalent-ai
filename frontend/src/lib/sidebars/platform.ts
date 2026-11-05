@@ -1,4 +1,4 @@
-import { Anchor, BriefcaseBusiness, Building2, FlaskConical, Gem, LayoutDashboard, ReceiptText, ScrollText, Users } from 'lucide-react';
+import { Anchor, BriefcaseBusiness, Bug, Building2, FlaskConical, Gem, LayoutDashboard, MessageSquare, ReceiptText, ScrollText, Users } from 'lucide-react';
 import type { SidebarConfig } from './types';
 
 /**
@@ -15,4 +15,6 @@ export const PLATFORM_SIDEBAR: SidebarConfig = [
   { label: 'Người dùng', icon: Users, screenId: 'PA-07', activeFor: ['PA-08'] },
   { label: 'Đơn giá', icon: ReceiptText, screenId: 'PA-09', activeFor: ['PLT-10', 'PLT-11'] },
   { label: 'Nhật ký kiểm tra', icon: ScrollText, screenId: 'PA-10', activeFor: ['PLT-12'] },
+  { label: 'Góp ý', icon: MessageSquare, screenId: 'PA-15' },
+  { label: 'Báo lỗi', icon: Bug, screenId: 'PA-16' },
 ];

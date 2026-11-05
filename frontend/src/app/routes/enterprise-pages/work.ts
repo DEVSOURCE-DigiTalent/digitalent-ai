@@ -6,6 +6,8 @@ const OwnerNewTaskPage = lazyPage(() => import('../../../features/organization/p
 const OwnerTaskDetailPage = lazyPage(() => import('../../../features/organization/pages/OwnerTaskDetailPage'), 'OwnerTaskDetailPage');
 const OwnerReviewDetailPage = lazyPage(() => import('../../../features/organization/pages/OwnerReviewDetailPage'), 'OwnerReviewDetailPage');
 const AccountProfilePage = lazyPage(() => import('../../../features/account/pages/AccountProfilePage'), 'AccountProfilePage');
+const MyFeedbacksPage = lazyPage(() => import('../../../features/feedback/pages/MyFeedbacksPage'), 'MyFeedbacksPage');
+const MyBugReportsPage = lazyPage(() => import('../../../features/feedback/pages/MyBugReportsPage'), 'MyBugReportsPage');
 const SecuritySettingsPage = lazyPage(() => import('../../../features/account/pages/SecuritySettingsPage'), 'SecuritySettingsPage');
 const RoleAwareEvidencePage = lazyPage(() => import('../../../features/pulse-manager/components/RoleAwarePages'), 'RoleAwareEvidencePage');
 const RoleAwareNotificationsPage = lazyPage(() => import('../../../features/pulse-manager/components/RoleAwarePages'), 'RoleAwareNotificationsPage');
@@ -33,4 +35,6 @@ export const WORK_PAGES: PageRegistry = {
   'SHR-01': AccountProfilePage,
   'SHR-02': SecuritySettingsPage,
   'SHR-03': RoleAwareNotificationsPage,
+  'SHR-04': MyFeedbacksPage,
+  'SHR-05': MyBugReportsPage,
 };

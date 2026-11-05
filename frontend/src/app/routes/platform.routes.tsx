@@ -25,6 +25,8 @@ const PlatformTrialsPage = lazyPage(() => import('../../features/trial-program/p
 const MentorTrialsPage = lazyPage(() => import('../../features/trial-program/pages/MentorTrialsPage'), 'MentorTrialsPage');
 const MentorTrialPage = lazyPage(() => import('../../features/trial-program/pages/MentorTrialPage'), 'MentorTrialPage');
 const MentorCourseReviewsPage = lazyPage(() => import('../../features/trial-program/pages/MentorCourseReviewsPage'), 'MentorCourseReviewsPage');
+const PlatformFeedbacksPage = lazyPage(() => import('../../features/feedback/pages/PlatformFeedbacksPage'), 'PlatformFeedbacksPage');
+const PlatformBugReportsPage = lazyPage(() => import('../../features/feedback/pages/PlatformFeedbacksPage'), 'PlatformBugReportsPage');
 
 /**
  * Built pages by screen ID — Platform Admin console (Pulse redesign PA-01..10, Platform Admin v2 PA-12), its profile (SHR-01 = mock `#/profile`
@@ -51,6 +53,8 @@ const PLATFORM_PAGES: PageRegistry = {
   'MT-01': MentorTrialsPage,
   'MT-02': MentorTrialPage,
   'MT-03': MentorCourseReviewsPage,
+  'PA-15': PlatformFeedbacksPage,
+  'PA-16': PlatformBugReportsPage,
 };
 
 /** /platform → trang chính theo vai trò (quản trị: tổng quan; mentor: bài cần chấm). */

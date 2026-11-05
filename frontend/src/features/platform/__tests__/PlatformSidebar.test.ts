@@ -4,7 +4,7 @@ import { PLATFORM_SCREENS } from '@/lib/screens/platform';
 import { PLATFORM_NAV } from '../platform-nav';
 
 describe('Platform Admin navigation (Pulse)', () => {
-  it('lists the nine console areas in the Platform Admin v2 order', () => {
+  it('lists the console areas in the Platform Admin v2 order', () => {
     expect(PLATFORM_SIDEBAR.map((s) => s.label)).toEqual([
       'Tổng quan',
       'Khung chuẩn',
@@ -15,6 +15,8 @@ describe('Platform Admin navigation (Pulse)', () => {
       'Người dùng',
       'Đơn giá',
       'Nhật ký kiểm tra',
+      'Góp ý',
+      'Báo lỗi',
     ]);
     expect(PLATFORM_NAV.map((n) => n.label)).toEqual(PLATFORM_SIDEBAR.map((s) => s.label));
   });

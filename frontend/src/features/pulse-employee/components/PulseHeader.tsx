@@ -6,10 +6,12 @@ import {
   Bell,
   BookOpen,
   BriefcaseBusiness,
+  Bug,
   Compass,
   FileCheck,
   FileText,
   LogOut,
+  MessageSquare,
   Search,
   Sparkles,
   UserRound,
@@ -45,6 +47,8 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/enterprise/me/outcomes/')) return 'Chi tiết Chứng nhận năng lực';
   if (pathname === PULSE_PATHS.activity) return 'Nhật ký Hoạt động';
   if (pathname === PULSE_PATHS.profile) return 'Hồ sơ cá nhân';
+  if (pathname === PULSE_PATHS.feedbacks) return 'Góp ý của tôi';
+  if (pathname === PULSE_PATHS.bugReports) return 'Báo lỗi của tôi';
   return 'Cổng học tập DigiTalent AI';
 }
 
@@ -246,6 +250,8 @@ export function PulseHeader() {
                   <Link role="menuitem" to={PULSE_PATHS.trialTest}><FileText size={16} /> Kết quả đánh giá đầu vào</Link>
                 )}
                 <Link role="menuitem" to={PULSE_PATHS.activity}><Bell size={16} /> Nhật ký hoạt động</Link>
+                <Link role="menuitem" to={PULSE_PATHS.feedbacks}><MessageSquare size={16} /> Góp ý</Link>
+                <Link role="menuitem" to={PULSE_PATHS.bugReports}><Bug size={16} /> Báo lỗi</Link>
                 {workspaceHome && (
                   <Link role="menuitem" to={workspaceHome}><BriefcaseBusiness size={16} /> Về không gian quản lý</Link>
                 )}

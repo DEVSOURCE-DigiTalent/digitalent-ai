@@ -3,8 +3,10 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   Award,
   Bell,
+  Bug,
   ClipboardCheck,
   LayoutDashboard,
+  MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
   Route,
@@ -72,6 +74,20 @@ const SIDEBAR_ITEMS: NavItem[] = [
     icon: UserRound,
     screenId: 'EM-11',
     match: [PULSE_PATHS.profile],
+  },
+  {
+    to: PULSE_PATHS.feedbacks,
+    label: 'Góp ý',
+    icon: MessageSquare,
+    screenId: 'EM-13',
+    match: [PULSE_PATHS.feedbacks],
+  },
+  {
+    to: PULSE_PATHS.bugReports,
+    label: 'Báo lỗi',
+    icon: Bug,
+    screenId: 'EM-14',
+    match: [PULSE_PATHS.bugReports],
   },
 ];
 

@@ -1,3 +1,4 @@
+import { PERMISSIONS } from '../../../hooks/use-permission';
 import { ROLES } from '../../roles';
 import type { ScreenDef } from '../types';
 import { EMPLOYEE_SCREENS } from './employee';
@@ -36,6 +37,22 @@ export const ENTERPRISE_SHARED_SCREENS: ScreenDef[] = [
     path: '/enterprise/notifications',
     roles: SHARED_ROLES,
     allowUnpaid: true,
+    priority: 'P1',
+  },
+  {
+    id: 'SHR-04',
+    title: 'Góp ý của tôi',
+    path: '/enterprise/feedbacks',
+    roles: SHARED_ROLES,
+    permission: PERMISSIONS.FEEDBACK_READ_OWN,
+    priority: 'P1',
+  },
+  {
+    id: 'SHR-05',
+    title: 'Báo lỗi',
+    path: '/enterprise/bug-reports',
+    roles: SHARED_ROLES,
+    permission: PERMISSIONS.FEEDBACK_READ_OWN,
     priority: 'P1',
   },
 ];
