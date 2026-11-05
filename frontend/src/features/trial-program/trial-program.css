@@ -20,8 +20,22 @@
 /* Chừa chỗ cho nút trợ lý AI nổi ở góc dưới. */
 .tp-page { padding-bottom: 72px; }
 
-.tp h1 { margin: 0; font-size: 22px; line-height: 1.25; letter-spacing: -0.01em; }
-.tp h2 { margin: 0; font-size: 15px; font-weight: 650; }
+.tp h1 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+  font-weight: 750;
+  background: linear-gradient(135deg, #091e42 0%, #0e5968 52%, #137b84 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+}
+.tp h2 { margin: 0; font-size: 15px; font-weight: 650; color: #17243f; }
 .tp p { margin: 0; }
 .tp-muted { color: var(--tp-muted); font-size: 13px; }
 .tp-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }

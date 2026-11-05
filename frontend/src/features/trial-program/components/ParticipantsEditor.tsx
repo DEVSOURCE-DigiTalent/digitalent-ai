@@ -250,31 +250,40 @@ export function ParticipantsEditor({
   return (
     <div className="space-y-6">
       {/* ── Top Tabs & Capacity Pill ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200 pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-3">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setTab('excel')}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
               tab === 'excel'
-                ? 'bg-[#137b84] text-white shadow-sm shadow-[#137b84]/25'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
+                ? 'bg-[#137b84] text-white shadow-2xs'
+                : 'bg-slate-100/80 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
             }`}
           >
             <FileSpreadsheet className="size-4" />
-            Nhập hàng loạt từ Excel / CSV (Khuyên dùng)
+            Nhập file Excel / CSV
           </button>
           <button
             type="button"
             onClick={() => setTab('manual')}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
               tab === 'manual'
-                ? 'bg-[#137b84] text-white shadow-sm shadow-[#137b84]/25'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
+                ? 'bg-[#137b84] text-white shadow-2xs'
+                : 'bg-slate-100/80 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
             }`}
           >
             <UserPlus className="size-4" />
-            Thêm từng nhân viên
+            Thêm từng người
+          </button>
+          <button
+            type="button"
+            onClick={handleDownloadTemplate}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 transition-all cursor-pointer"
+            title="Tải về file CSV mẫu 4 cột: Họ tên, Email, Phòng ban, Vị trí"
+          >
+            <Download className="size-3.5 text-[#137b84]" />
+            Tải mẫu .csv
           </button>
         </div>
 
@@ -289,93 +298,14 @@ export function ParticipantsEditor({
             }}
           >
             <span className="size-2 rounded-full bg-current animate-pulse" />
-            Đã chọn {filledRows.length}/{limit} người
+            {filledRows.length}/{limit} người
           </span>
         </div>
       </div>
 
       {/* ── TAB 1: EXCEL / CSV IMPORT ── */}
       {tab === 'excel' && (
-        <div className="space-y-4">
-          {/* Template Card with Sample Preview & Department Suggestions */}
-          <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/90 via-teal-50/30 to-white p-4 space-y-3.5 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-emerald-950 font-bold text-sm">
-                  <FileSpreadsheet className="size-4.5 text-emerald-700" />
-                  Biểu mẫu Excel chuẩn hóa danh sách đánh giá đội ngũ
-                </div>
-                <p className="text-xs text-emerald-800 leading-relaxed max-w-xl">
-                  Tải về file mẫu hoặc xem cấu trúc 4 cột bên dưới: <strong>Họ tên, Email, Phòng ban, Vị trí</strong>. Hệ thống sẽ tự động ghép nhân viên vào phòng ban khi tải lên.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleDownloadTemplate}
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-emerald-700/20 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-              >
-                <Download className="size-4" />
-                Tải file mẫu Excel (.csv)
-              </button>
-            </div>
-
-            {/* Template Sample Table */}
-            <div className="rounded-xl border border-emerald-200/90 bg-white overflow-hidden text-xs shadow-2xs">
-              <div className="bg-emerald-100/70 px-3.5 py-1.5 font-bold text-emerald-950 flex items-center justify-between border-b border-emerald-200/60">
-                <span className="flex items-center gap-1.5">
-                  <FileText className="size-3.5 text-emerald-700" />
-                  Cấu trúc các cột mẫu trong file Excel
-                </span>
-                <span className="text-[11px] font-medium text-emerald-800">
-                  {allDepartments.length} phòng ban khả dụng
-                </span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-emerald-100 bg-emerald-50/60 text-[11px] font-bold text-slate-800">
-                      <th className="px-3.5 py-2 whitespace-nowrap">Họ và tên <span className="text-red-500 font-bold">*</span></th>
-                      <th className="px-3.5 py-2 whitespace-nowrap">Email <span className="text-red-500 font-bold">*</span></th>
-                      <th className="px-3.5 py-2 whitespace-nowrap">Phòng ban</th>
-                      <th className="px-3.5 py-2 whitespace-nowrap">Vị trí công việc</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-[11px] text-slate-700 divide-y divide-emerald-50">
-                    <tr className="bg-white">
-                      <td className="px-3.5 py-2 font-medium text-slate-900">Nguyễn Văn An</td>
-                      <td className="px-3.5 py-2 font-mono text-slate-600">an.nguyen@congty.vn</td>
-                      <td className="px-3.5 py-2 font-semibold text-[#137b84]">{allDepartments[0] || 'Kinh doanh'}</td>
-                      <td className="px-3.5 py-2 text-slate-600">{allPositions[0] || 'Chuyên viên kinh doanh'}</td>
-                    </tr>
-                    <tr className="bg-slate-50/40">
-                      <td className="px-3.5 py-2 font-medium text-slate-900">Trần Thị Bình</td>
-                      <td className="px-3.5 py-2 font-mono text-slate-600">binh.tran@congty.vn</td>
-                      <td className="px-3.5 py-2 font-semibold text-[#137b84]">{allDepartments[1] || allDepartments[0] || 'Kỹ thuật'}</td>
-                      <td className="px-3.5 py-2 text-slate-600">{allPositions[1] || allPositions[0] || 'Kỹ sư phần mềm'}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              {allDepartments.length > 0 && (
-                <div className="bg-emerald-50/40 border-t border-emerald-100 px-3.5 py-2 flex flex-wrap items-center gap-1.5 text-[11px] text-emerald-900">
-                  <span className="font-bold">Gợi ý tên phòng ban hiện có:</span>
-                  {allDepartments.slice(0, 6).map((dept) => (
-                    <button
-                      key={dept}
-                      type="button"
-                      onClick={() => setBatchDept(dept)}
-                      title={`Bấm để chọn "${dept}"`}
-                      className="rounded-md bg-white border border-emerald-200 text-emerald-900 hover:bg-emerald-100 px-2 py-0.5 font-medium shadow-2xs transition-colors cursor-pointer"
-                    >
-                      {dept}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+        <div className="space-y-3">
 
           {/* Upload Dropzone or Paste Mode */}
           <div className="space-y-3">

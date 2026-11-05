@@ -55,7 +55,7 @@ export function LiveInternalCourseEditorPage() {
   const existing = courseQuery.data;
   if (existing && (!existing.code.startsWith('INT-') || existing.status === 'ARCHIVED')) return (
     <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900">
-      {existing.status === 'ARCHIVED' ? 'Khóa đã lưu trữ.' : 'API này cũng trả về khóa chuẩn; chỉ khóa có mã INT- được chỉnh sửa tại đây.'}
+      {existing.status === 'ARCHIVED' ? 'Khóa học đã được lưu trữ.' : 'Khóa học chuẩn không thể chỉnh sửa tại đây.'}
       {' '}<Link to={`/enterprise/internal-courses/${existing.id}`} className="underline">Về chi tiết khóa học</Link>
     </div>
   );
@@ -67,10 +67,10 @@ export function LiveInternalCourseEditorPage() {
       <Link to="/enterprise/internal-courses" className="text-sm font-medium text-blue-700 hover:underline">← Quay lại danh sách khóa học</Link>
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">{isNew ? 'Tạo khóa học nội bộ' : 'Chỉnh sửa thông tin khóa học'}</h1>
-        <p className="mt-1 text-sm text-slate-600">Lưu tên, mô tả, chuyên mục và thời lượng bằng API BE2.</p>
+        <p className="mt-1 text-sm text-slate-600">Cập nhật thông tin cơ bản của khóa học.</p>
       </div>
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        BE2 chưa có API lưu nội dung từng học phần. Khóa mới được tạo ở trạng thái bản nháp với 0 học phần.
+        Nội dung học phần chưa thể chỉnh sửa tại đây. Khóa mới sẽ được lưu dưới dạng bản nháp.
       </div>
       <form onSubmit={save} className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         {existing && <div><span className="text-sm text-slate-500">Mã khóa: </span><strong className="font-mono text-slate-900">{existing.code}</strong></div>}

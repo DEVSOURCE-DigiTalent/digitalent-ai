@@ -174,7 +174,7 @@ function AssessmentReview({ trial, assessment, readOnly }: { trial: MentorTrial;
             </span>
           )}
         </div>
-        {!trial.aiAvailable && <p className="tp-muted" style={{ marginBottom: 8 }}>AI chưa được cấu hình (thiếu khóa Gemini) — mentor tự chấm.</p>}
+        {!trial.aiAvailable && <p className="tp-muted" style={{ marginBottom: 8 }}>Chấm bài thủ công.</p>}
         {ai.isError && !readOnly && <p className="tp-muted" style={{ marginBottom: 8 }}>{errorMessage(ai.error)} Bấm “AI gợi ý điểm” để thử lại.</p>}
         {assessment.aiReview?.summary && (
           <p className="tp-ai" style={{ marginBottom: 10 }}><Sparkles size={14} aria-hidden /> <span><b>AI:</b> {assessment.aiReview.summary}</span></p>

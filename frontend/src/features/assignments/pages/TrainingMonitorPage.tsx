@@ -5,7 +5,7 @@ import { useAssignmentSummary, useAssignments } from '@/hooks/use-assignments';
 import { useDepartments } from '@/hooks/use-departments';
 import { useJobPositions } from '@/hooks/use-job-positions';
 import type { AssignmentStatus } from '@/services/assignment.service';
-import { INPUT_CLASS } from '@/features/onboarding/components/styles';
+import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import { JOB_GRADES, JOB_GRADE_DEFAULT_NAMES, type JobGradeCode } from '@/lib/terms';
 import { ASSIGNMENT_STATUS_LABELS } from '../assignment-labels';
 import { AssignmentsTable } from '../components/AssignmentsTable';
@@ -72,11 +72,7 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
     <div className="space-y-6">
       <PageHeader
         title={isManager ? 'Tiến độ đào tạo nhóm' : 'Theo dõi đào tạo'}
-        subtitle={
-          isManager
-            ? 'Theo dõi tiến độ học tập, hạn hoàn thành và học viên cần đôn đốc trong nhóm phụ trách'
-            : 'Tiến độ, hạn hoàn thành và những người đang chậm trên toàn tổ chức'
-        }
+        subtitle={isManager ? 'Theo dõi tiến độ học tập, hạn hoàn thành và học viên cần đôn đốc trong nhóm phụ trách' : undefined}
       />
 
       {summary && (
@@ -141,91 +137,17 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
         }}
         filters={
           <>
-            <select
-              aria-label="Lọc theo trạng thái"
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value as AssignmentStatus | '');
-                setPage(1);
-              }}
-              className={INPUT_CLASS}
-            >
-              <option value="">Tất cả trạng thái</option>
-              {((import.meta.env.VITE_USE_MOCK === 'true'
-                ? ['NOT_STARTED', 'IN_PROGRESS', 'READY_FOR_ASSESSMENT', 'COMPLETED']
-                : ['ACTIVE', 'CANCELLED']) as AssignmentStatus[]).map((s) => (
-                <option key={s} value={s}>
-                  {ASSIGNMENT_STATUS_LABELS[s]}
-                </option>
-              ))}
-            </select>
+            <OwnerFilterSelect label="Lọc theo trạng thái" value={status} onChange={(value) => { setStatus(value as AssignmentStatus | ''); setPage(1); }} options={[{ value: '', label: 'Tất cả trạng thái' }, ...((import.meta.env.VITE_USE_MOCK === 'true' ? ['NOT_STARTED', 'IN_PROGRESS', 'READY_FOR_ASSESSMENT', 'COMPLETED'] : ['ACTIVE', 'CANCELLED']) as AssignmentStatus[]).map((s) => ({ value: s, label: ASSIGNMENT_STATUS_LABELS[s] }))]} />
 
             {!isManager && (
-              <select
-                aria-label="Lọc theo phòng ban"
-                value={departmentId}
-                onChange={(e) => {
-                  setDepartmentId(e.target.value);
-                  setPage(1);
-                }}
-                className={INPUT_CLASS}
-              >
-                <option value="">Mọi phòng ban</option>
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
+              <OwnerFilterSelect label="Lọc theo phòng ban" value={departmentId} onChange={(value) => { setDepartmentId(value); setPage(1); }} options={[{ value: '', label: 'Mọi phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
             )}
 
-            <select
-              aria-label="Lọc theo vị trí"
-              value={jobPositionId}
-              onChange={(e) => {
-                setJobPositionId(e.target.value);
-                setPage(1);
-              }}
-              className={INPUT_CLASS}
-            >
-              <option value="">Mọi vị trí</option>
-              {positions.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+            <OwnerFilterSelect label="Lọc theo vị trí" value={jobPositionId} onChange={(value) => { setJobPositionId(value); setPage(1); }} options={[{ value: '', label: 'Mọi vị trí' }, ...positions.map((p) => ({ value: p.id, label: p.name }))]} />
 
-            {import.meta.env.VITE_USE_MOCK === 'true' && <select
-              aria-label="Lọc theo cấp bậc"
-              value={jobGrade}
-              onChange={(e) => {
-                setJobGrade(e.target.value as JobGradeCode | '');
-                setPage(1);
-              }}
-              className={INPUT_CLASS}
-            >
-              <option value="">Mọi cấp bậc</option>
-              {JOB_GRADES.map((code) => (
-                <option key={code} value={code}>
-                  Cấp bậc {code} ({JOB_GRADE_DEFAULT_NAMES[code]})
-                </option>
-              ))}
-            </select>}
+            {import.meta.env.VITE_USE_MOCK === 'true' && <OwnerFilterSelect label="Lọc theo cấp bậc" value={jobGrade} onChange={(value) => { setJobGrade(value as JobGradeCode | ''); setPage(1); }} options={[{ value: '', label: 'Mọi cấp bậc' }, ...JOB_GRADES.map((code) => ({ value: code, label: `Cấp bậc ${code} (${JOB_GRADE_DEFAULT_NAMES[code]})` }))]} />}
 
-            <select
-              aria-label="Lọc theo hạn"
-              value={quick}
-              onChange={(e) => {
-                setQuick(e.target.value as Quick);
-                setPage(1);
-              }}
-              className={INPUT_CLASS}
-            >
-              <option value="">Mọi hạn</option>
-              <option value="overdue">Quá hạn</option>
-              <option value="dueSoon">Sắp đến hạn (7 ngày)</option>
-            </select>
+            <OwnerFilterSelect label="Lọc theo hạn" value={quick} onChange={(value) => { setQuick(value as Quick); setPage(1); }} options={[{ value: '', label: 'Mọi hạn' }, { value: 'overdue', label: 'Quá hạn' }, { value: 'dueSoon', label: 'Sắp đến hạn (7 ngày)' }]} />
           </>
         }
         pageInfo={{ page, pageSize: PAGE_SIZE, total: data?.totalItems ?? 0, onPageChange: setPage }}

@@ -1,25 +1,30 @@
 import { useState } from 'react';
-import { toast } from 'sonner';
-import { GraduationCap } from 'lucide-react';
-import { ConfirmActionDialog, PageHeader } from '@/components/shared';
-import { useAssignments, useCancelAssignment } from '@/hooks/use-assignments';
+import { Link, useSearchParams } from 'react-router-dom';
+import { BookOpen, CircleAlert, CircleCheck, GraduationCap, UsersRound } from 'lucide-react';
+import { useAssignments, useAssignmentSummary, useCourse } from '@/hooks/use-assignments';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useDepartments } from '@/hooks/use-departments';
 import { PERMISSIONS } from '@/hooks/use-permission';
-import { apiErrorMessage } from '@/lib/utils';
 import type { AssignmentRow, AssignmentStatus } from '@/services/assignment.service';
-import { INPUT_CLASS, PRIMARY_BUTTON } from '@/features/onboarding/components/styles';
+import { PRIMARY_BUTTON } from '@/features/onboarding/components/styles';
+import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import { ASSIGNMENT_STATUS_LABELS } from '../assignment-labels';
 import { AssignCourseModal } from '../components/AssignCourseModal';
+import { CancelAssignmentDialog } from '../components/CancelAssignmentDialog';
 import { AssignmentsTable } from '../components/AssignmentsTable';
 
-const PAGE_SIZE = 15;
+import './course-assignment.css';
+
+const PAGE_SIZE = 8;
 const STATUSES: AssignmentStatus[] = import.meta.env.VITE_USE_MOCK === 'true'
   ? ['NOT_STARTED', 'IN_PROGRESS', 'READY_FOR_ASSESSMENT', 'COMPLETED', 'CANCELLED']
   : ['ACTIVE', 'CANCELLED'];
 
 /** LCA-12: give standard courses to employees, teams or positions, and cancel an assignment. */
 export function CourseAssignmentPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const courseId = searchParams.get('courseId') || undefined;
+  const { data: selectedCourse } = useCourse(courseId);
   const can = useCurrentUser((s) => s.hasPermission);
   const canAssign = can(PERMISSIONS.COURSE_ASSIGNMENT_CREATE);
   const canCancel = can(PERMISSIONS.COURSE_ASSIGNMENT_CANCEL);
@@ -32,28 +37,51 @@ export function CourseAssignmentPage() {
   const [cancelling, setCancelling] = useState<AssignmentRow | null>(null);
 
   const departments = useDepartments({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
-  const cancel = useCancelAssignment();
+  const { data: summary } = useAssignmentSummary();
   const { data, isLoading, isError } = useAssignments({
     pageIndex: page,
     pageSize: PAGE_SIZE,
     search: search || undefined,
     status: status || undefined,
     departmentId: departmentId || undefined,
+    courseId,
   });
 
   return (
-    <div>
-      <PageHeader title="Giao khóa học" subtitle="Giao khóa học chuẩn theo nhân viên, phòng ban hoặc vị trí và theo dõi từng lượt giao">
+    <div className="assignment-page">
+      <header className="assignment-hero">
+        <div className="assignment-hero-copy">
+          <span className="assignment-hero-kicker"><BookOpen size={14} /> ĐÀO TẠO DOANH NGHIỆP</span>
+          <h1>Giao khóa học</h1>
+        </div>
         {canAssign && (
-          <button type="button" onClick={() => setAssigning(true)} className={PRIMARY_BUTTON}>
-            <GraduationCap className="size-4" aria-hidden="true" />
+          <button type="button" onClick={() => setAssigning(true)} className={`assignment-primary-action ${PRIMARY_BUTTON}`}>
+            <GraduationCap className="size-5" aria-hidden="true" />
             Giao khóa học
           </button>
         )}
-      </PageHeader>
+      </header>
+
+      <div className="assignment-stats" aria-label="Tổng quan phân công">
+        <div><span className="assignment-stat-icon is-teal"><UsersRound size={20} /></span><span>Lượt giao</span><strong>{summary?.total ?? data?.totalItems ?? 0}</strong></div>
+        <div><span className="assignment-stat-icon is-blue"><BookOpen size={20} /></span><span>Đang học</span><strong>{summary?.inProgress ?? 0}</strong></div>
+        <div><span className="assignment-stat-icon is-green"><CircleCheck size={20} /></span><span>Hoàn thành</span><strong>{summary?.completed ?? 0}</strong></div>
+        <div><span className="assignment-stat-icon is-coral"><CircleAlert size={20} /></span><span>Quá hạn</span><strong>{summary?.overdue ?? 0}</strong></div>
+      </div>
+
+      {courseId && <div className="assignment-course-context">
+        <div><span>Đang xem khóa học</span><strong>{selectedCourse?.title || 'Khóa học đã chọn'}</strong>{selectedCourse && <small>{selectedCourse.code}</small>}</div>
+        <div className="assignment-course-context-actions">
+          <Link to={`/enterprise/courses/${courseId}`}>Xem khóa học</Link>
+          <button type="button" onClick={() => { const next = new URLSearchParams(searchParams); next.delete('courseId'); setSearchParams(next); setPage(1); }}>Xem tất cả</button>
+        </div>
+      </div>}
+
+      <div className="assignment-list-heading"><div><strong>Danh sách phân công</strong><span>{data?.totalItems ?? 0} lượt giao{courseId ? ' trong khóa học này' : ''}</span></div></div>
 
       {isError && <p role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">Không tải được lượt giao khóa học. Vui lòng thử lại hoặc kiểm tra quyền truy cập.</p>}
       <AssignmentsTable
+        className="assignment-table"
         rows={data?.items ?? []}
         isLoading={isLoading}
         onCancel={canCancel ? setCancelling : undefined}
@@ -61,39 +89,16 @@ export function CourseAssignmentPage() {
         onSearchChange={(value) => { setSearch(value); setPage(1); }}
         filters={
           <>
-            <select aria-label="Lọc theo trạng thái" value={status} onChange={(e) => { setStatus(e.target.value as AssignmentStatus | ''); setPage(1); }} className={INPUT_CLASS}>
-              <option value="">Tất cả trạng thái</option>
-              {STATUSES.map((s) => <option key={s} value={s}>{ASSIGNMENT_STATUS_LABELS[s]}</option>)}
-            </select>
-            <select aria-label="Lọc theo phòng ban" value={departmentId} onChange={(e) => { setDepartmentId(e.target.value); setPage(1); }} className={INPUT_CLASS}>
-              <option value="">Mọi phòng ban</option>
-              {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-            </select>
+            <OwnerFilterSelect label="Lọc theo trạng thái" value={status} onChange={(value) => { setStatus(value as AssignmentStatus | ''); setPage(1); }} options={[{ value: '', label: 'Tất cả trạng thái' }, ...STATUSES.map((s) => ({ value: s, label: ASSIGNMENT_STATUS_LABELS[s] }))]} />
+            <OwnerFilterSelect label="Lọc theo phòng ban" value={departmentId} onChange={(value) => { setDepartmentId(value); setPage(1); }} options={[{ value: '', label: 'Mọi phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
           </>
         }
         pageInfo={{ page, pageSize: PAGE_SIZE, total: data?.totalItems ?? 0, onPageChange: setPage }}
       />
 
-      {assigning && <AssignCourseModal open onClose={() => setAssigning(false)} />}
+      {assigning && <AssignCourseModal open courseId={courseId} onClose={() => setAssigning(false)} />}
 
-      <ConfirmActionDialog
-        open={Boolean(cancelling)}
-        onClose={() => setCancelling(null)}
-        title="Hủy lượt giao khóa học?"
-        description={cancelling ? `${cancelling.courseCode} · ${cancelling.courseTitle} của ${cancelling.employeeName}. Tiến độ đã học được giữ lại nếu giao lại sau này.` : ''}
-        confirmLabel="Hủy giao"
-        requireReason
-        reasonPlaceholder="Ví dụ: không còn phù hợp với vị trí"
-        onConfirm={async (reason) => {
-          if (!cancelling) return;
-          try {
-            await cancel.mutateAsync({ id: cancelling.id, reason });
-            toast.success('Đã hủy lượt giao khóa học.');
-          } catch (error) {
-            toast.error(apiErrorMessage(error, 'Không hủy được.'));
-          }
-        }}
-      />
+      {cancelling && <CancelAssignmentDialog assignment={cancelling} onClose={() => setCancelling(null)} />}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -118,6 +119,7 @@ describe('TrainingMonitorPage & AssessmentResultsOverviewPage (Agent 1 - Phase H
       expect(screen.getByLabelText('Lọc theo phòng ban')).toBeInTheDocument();
       expect(screen.getByLabelText('Lọc theo vị trí')).toBeInTheDocument();
       expect(screen.queryByLabelText('Lọc theo cấp bậc')).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole('combobox', { name: 'Lọc theo trạng thái' }));
       expect(screen.getByRole('option', { name: 'Đang hiệu lực' })).toBeInTheDocument();
     });
 
@@ -194,7 +196,6 @@ describe('TrainingMonitorPage & AssessmentResultsOverviewPage (Agent 1 - Phase H
       // Modal appears
       expect(screen.getByText('Chi tiết kết quả làm bài')).toBeInTheDocument();
       expect(screen.getByText(/Chi tiết từng câu hỏi/i)).toBeInTheDocument();
-      expect(screen.getByText(/Theo chuẩn Khung năng lực số TT 02\/2025\/TT-BGDĐT/i)).toBeInTheDocument();
 
       // Close modal
       const closeButton = screen.getAllByRole('button', { name: 'Đóng' })[0];

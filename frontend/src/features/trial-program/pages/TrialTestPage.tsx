@@ -608,7 +608,7 @@ export function TrialTestPage() {
       {data.status === 'SUBMITTED' && (
         <section className="tp-card">
           <h2>Đã nộp lúc {formatWhen(data.submittedAt)}</h2>
-          <p className="tp-muted">{data.mentorName ? `${data.mentorName} đang chấm.` : 'Đang chờ DigiTalent phân công mentor chấm.'} Kết quả hiện tại đây.</p>
+          <p className="tp-muted">{data.mentorName ? `${data.mentorName} đang chấm bài.` : 'Đang chờ phân công người chấm.'} Kết quả sẽ hiển thị tại đây.</p>
         </section>
       )}
 

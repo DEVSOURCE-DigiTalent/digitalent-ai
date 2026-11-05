@@ -22,11 +22,12 @@ export function TrialRegisterPage() {
   const continuePath = safeDevelopmentPath(result?.developmentLink, 'verify');
   const requestError = readiness.error || register.error;
   return <PulseAuthLayout
+    mode="register"
     eyebrow="Dùng thử miễn phí"
     title={result ? 'Kiểm tra hộp thư.' : 'Thông tin doanh nghiệp'}
     subtitle={result ? `Mã 6 số đã gửi tới ${form.email}.` : 'Bước 1/4 · Sau đó mời nhân viên làm bài đánh giá năng lực.'}
     asideTitle="Biết đội ngũ đang ở mức nào."
-    asideText="Nhân viên làm một bài test ba cấp, mentor DigiTalent chấm, doanh nghiệp nhận bảng năng lực."
+    asideText="Nhân viên làm bài đánh giá theo ba cấp độ. Kết quả được xem xét trước khi công bố cho doanh nghiệp."
     asidePoints={['1 · Thông tin doanh nghiệp', '2 · Mời nhân viên, đặt hạn làm bài', '3 · Làm bài có giám sát, mentor chấm', '4 · Bảng năng lực + học thử mức Cơ bản']}
     footer={<p>Đã có tài khoản? <Link to="/login">Đăng nhập</Link></p>}
   >
