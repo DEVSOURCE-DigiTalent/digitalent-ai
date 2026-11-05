@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AxiosError, type AxiosResponse } from 'axios';
@@ -53,10 +54,18 @@ describe('DepartmentFormDialog', () => {
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Không tạo được phòng ban'));
   });
 
+  it('renders the backdrop at viewport level outside animated page content', () => {
+    vi.spyOn(deptHooks, 'useCreateDepartment').mockReturnValue({ mutateAsync: vi.fn() } as never);
+    renderWithClient(<div style={{ transform: 'translateY(0)' }}><DepartmentFormDialog open onClose={vi.fn()} /></div>);
+    const dialog = screen.getByRole('dialog', { name: 'Tạo phòng ban' });
+    expect(dialog.parentElement?.parentElement).toBe(document.body);
+    expect(dialog.parentElement).toHaveClass('fixed', 'inset-0');
+  });
+
   describe('editing', () => {
     const department = { id: 'dept-1', code: 'QA', name: 'Kiểm thử chất lượng', status: 'ACTIVE' as const, managerEmployeeId: 'emp-9' };
     const member = (employeeId: string, fullName: string) => ({ id: `user-${employeeId}`, kind: 'member', employeeId, fullName, email: `${employeeId}@digitalent.ai`, roles: [], status: 'ACTIVE' });
-    const managerSelect = () => screen.getByRole('option', { name: 'Chưa phân công Manager' }).closest('select')!;
+    const managerSelect = () => screen.getByRole('combobox', { name: 'Người quản lý' }) as HTMLSelectElement;
 
     beforeEach(() => {
       vi.spyOn(deptHooks, 'useDepartment').mockReturnValue({

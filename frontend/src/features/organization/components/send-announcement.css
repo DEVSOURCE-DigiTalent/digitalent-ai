@@ -1,0 +1,22 @@
+.announcement-modal { border-color: #d8e8e9; border-radius: 24px; }
+.announcement-modal > header { padding: 22px 28px; background: linear-gradient(110deg,#edf9f7,#f2f8ff 70%,#fff); }
+.announcement-modal > header h2 { color: #173341; font-size: 22px; font-weight: 800; letter-spacing: -.03em; }
+.announcement-modal > header div[id] { color: #536779; font-size: 13px; }
+.announcement-modal > div { padding: 24px 28px; }
+.announcement-modal > footer { padding: 17px 28px; }
+.announcement-content { display: grid; grid-template-columns: minmax(0,1.25fr) minmax(280px,.85fr); gap: 20px 24px; }
+.announcement-templates { grid-column: 1/-1; padding: 16px 18px; border: 1px solid #d7eee9; border-radius: 16px; background: linear-gradient(110deg,#f3fbf8,#f8fbff); }
+.announcement-title { grid-column: 1; grid-row: 2; align-self: start; }
+.announcement-message { grid-column: 1; grid-row: 3; }
+.announcement-deadline { grid-column: 2; grid-row: 2/4; align-self: stretch; background: #f7fafc; }
+.announcement-deadline > div:first-child { align-items: flex-start; flex-direction: column; gap: 12px; }
+.announcement-audience { grid-column: 1/-1; padding: 18px; border: 1px solid #dce7ed; border-radius: 16px; background: #fbfdfd; }
+.announcement-options { grid-column: 1/-1; }
+.announcement-options label:hover { border-color: #9bd8d0; background: #f6fcfa; }
+.announcement-error { grid-column: 1/-1; }
+.announcement-modal :is(input,textarea,select,button):focus-visible { outline: 2px solid #0f766e; outline-offset: 2px; }
+.announcement-modal .announcement-audience > div { font-size: 13px; }
+.announcement-modal .announcement-audience button { font-size: 13px; }
+.announcement-modal .announcement-audience p { font-size: 12px; }
+@media (max-width: 850px) { .announcement-content { grid-template-columns: 1fr; } .announcement-title,.announcement-message,.announcement-deadline,.announcement-audience,.announcement-options,.announcement-error { grid-column: 1; grid-row: auto; } .announcement-deadline > div:first-child { flex-direction: row; align-items: center; } }
+@media (max-width: 640px) { .announcement-modal > header,.announcement-modal > div,.announcement-modal > footer { padding-inline: 18px; } .announcement-modal > header h2 { font-size: 19px; } .announcement-deadline > div:first-child { flex-direction: column; align-items: flex-start; } .announcement-audience { padding: 12px; } }

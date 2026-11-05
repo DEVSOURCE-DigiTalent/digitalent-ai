@@ -39,31 +39,15 @@ export function PositionReferenceMatrix() {
   const [focused, setFocused] = useState<string | null>(null);
   const { data: reference, isLoading, isError } = useReferencePositionLevels();
 
+  if (isLoading) return <p className="py-3 text-sm text-slate-500">Đang tải mức tham chiếu…</p>;
+  if (isError || !reference) return <p className="py-3 text-sm text-red-500" role="alert">Chưa tải được mức tham chiếu. Vui lòng thử lại.</p>;
+
   return (
-    <section
-      aria-labelledby="position-reference-title"
-      className="rounded-[22px] border p-6"
-      style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)', boxShadow: '0 10px 35px rgba(29,48,102,.025)' }}
-    >
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div style={{ maxWidth: 680 }}>
-          <span className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-accent)' }}>
-            Tham khảo · DigiTalent AI đề xuất
-          </span>
-          <h2 id="position-reference-title" className="mt-1 text-lg font-bold" style={{ color: 'var(--po-ink)', letterSpacing: '-0.03em' }}>
-            Mức năng lực tham chiếu theo vị trí
-          </h2>
-        </div>
-      </div>
-
-      {isLoading && <p className="mt-4 text-sm">Đang tải mức tham chiếu…</p>}
-      {isError && <p className="mt-4 text-sm" role="alert">Chưa tải được mức tham chiếu. Vui lòng thử lại.</p>}
-
-      {reference && <div className="mt-5 overflow-x-auto">
+    <div className="overflow-x-auto">
         <table className="w-full min-w-[680px] border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
-              <th scope="col" className="border-b px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider" style={{ borderColor: 'var(--po-line)', color: 'var(--po-muted)' }}>
+              <th scope="col" className="border-b px-3 py-3 text-left text-xs font-bold uppercase tracking-wider" style={{ borderColor: 'var(--po-line)', color: 'var(--po-muted)' }}>
                 Miền năng lực
               </th>
               {COLUMNS.map((column) => {
@@ -80,7 +64,7 @@ export function PositionReferenceMatrix() {
                       title={column.name}
                       aria-pressed={active}
                       onClick={() => setFocused(active ? null : column.code)}
-                      className="rounded-md px-2 py-1 text-xs font-bold hover:bg-[var(--po-soft)]"
+                      className="rounded-md px-2 py-1 text-sm font-bold hover:bg-[var(--po-soft)]"
                       style={{ color: active ? 'var(--po-accent)' : 'var(--po-ink)' }}
                     >
                       {column.label}
@@ -125,7 +109,6 @@ export function PositionReferenceMatrix() {
             })}
           </tbody>
         </table>
-      </div>}
-    </section>
+      </div>
   );
 }
