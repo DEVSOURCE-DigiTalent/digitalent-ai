@@ -43,7 +43,7 @@ public class CapabilityCeilingTests : IDisposable
 
     public void Dispose() => _context.Dispose();
 
-    private UpdateOrganizationCeilingsUseCase OrganizationUseCase() => new(_context, _currentUser.Object, _audit.Object, _reader);
+    private UpdateOrganizationCeilingsUseCase OrganizationUseCase() => new(_context, _currentUser.Object, _audit.Object, _reader, new PulseCatalogReader(_context));
 
     private UpdateDepartmentCeilingsUseCase DepartmentUseCase() => new(_context, _currentUser.Object, _audit.Object, _reader);
 
