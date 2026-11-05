@@ -112,6 +112,21 @@ public class PurchaseCourseSeatsUseCase : IUseCase<PurchaseCourseSeatsInput, Pur
                 select comp.CategoryId
             ).FirstOrDefaultAsync();
 
+            if (categoryId == Guid.Empty)
+            {
+                // Fallback: tìm category theo domain number từ mã khóa học chuẩn (ví dụ M1-I / A1-I -> Miền 1)
+                var domainNum = normalizedCode.Length > 2 && char.IsDigit(normalizedCode[1])
+                    ? int.Parse(normalizedCode[1].ToString())
+                    : 0;
+                if (domainNum > 0)
+                {
+                    categoryId = await _context.CompetencyCategories.AsNoTracking()
+                        .Where(c => c.OrganizationId == organizationId && (c.SortOrder == domainNum || c.Code == $"TT02_D{domainNum}"))
+                        .Select(c => c.Id)
+                        .FirstOrDefaultAsync();
+                }
+            }
+
             if (categoryId != Guid.Empty)
             {
                 var existingCeiling = await _context.CapabilityCeilings

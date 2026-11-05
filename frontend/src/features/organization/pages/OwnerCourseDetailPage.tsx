@@ -265,13 +265,12 @@ export function OwnerCourseDetailPage() {
             <div>
               <b>✓ Đã mở bản quyền cho tổ chức:</b> Sở hữu <b>{totalSeats} suất</b> (còn <b>{course.seatsAvailable ?? totalSeats}</b> suất khả dụng). Quản lý có thể đưa khóa học vào đợt đào tạo hoặc giao trực tiếp cho nhân viên.
             </div>
-            <button
-              type="button"
-              onClick={() => setPurchaseModalOpen(true)}
+            <Link
+              to={`/enterprise/courses/checkout?courses=${encodeURIComponent(course.code)}`}
               className="text-xs font-bold text-emerald-800 underline hover:text-emerald-950"
             >
-              + Mua thêm suất
-            </button>
+              + Mua thêm suất & Ký online
+            </Link>
           </div>
         ) : (
           <div
@@ -285,13 +284,12 @@ export function OwnerCourseDetailPage() {
             <div>
               <b>🔒 Khóa học thương mại chuẩn TT02:</b> Tổ chức của bạn chưa sở hữu suất học cho khóa này. Doanh nghiệp cần trang bị suất học để giao cho nhân viên thực chiến và cấp chứng chỉ.
             </div>
-            <button
-              type="button"
-              onClick={() => setPurchaseModalOpen(true)}
-              className="rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-amber-700 transition-all"
+            <Link
+              to={`/enterprise/courses/checkout?courses=${encodeURIComponent(course.code)}`}
+              className="rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-amber-700 transition-all inline-flex items-center gap-1.5"
             >
-              Trang bị suất học ngay ({pricing.formatted}) →
-            </button>
+              <span>Trang bị suất học & Ký online ({pricing.formatted}) →</span>
+            </Link>
           </div>
         )}
 

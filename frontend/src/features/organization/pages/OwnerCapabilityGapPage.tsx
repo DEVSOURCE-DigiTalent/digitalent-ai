@@ -93,21 +93,15 @@ export function OwnerCapabilityGapPage() {
               Năng lực
             </span>
             <h1
-              className="mt-2 font-semibold leading-[1.05]"
+              className="mt-2 font-bold leading-[1.05]"
               style={{
                 color: 'var(--po-ink)',
                 fontSize: 'clamp(28px, 3.5vw, 44px)',
                 letterSpacing: '-0.05em',
               }}
             >
-              Xem tiến trình đáp ứng năng lực.
+              Khoảng trống Năng lực Đội ngũ
             </h1>
-            <p
-              className="mt-2 text-sm leading-relaxed max-w-xl"
-              style={{ color: 'var(--po-muted)' }}
-            >
-              Kết quả khởi điểm, năng lực xác nhận và mục tiêu vị trí luôn hiển thị cùng nhau.
-            </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
             {overview.data && overview.data.totals.totalGaps > 0 && (

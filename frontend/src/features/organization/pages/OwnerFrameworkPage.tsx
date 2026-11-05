@@ -47,16 +47,8 @@ export function OwnerFrameworkPage() {
           className="mt-[11px] text-[clamp(26px,3.4vw,42px)] font-bold leading-[1.08]"
           style={{ color: 'var(--po-ink)', letterSpacing: '-0.045em' }}
         >
-          Chuẩn Digital AI chung.
+          Khung Năng lực Số Chuẩn
         </h1>
-        <p
-          className="mt-2 text-sm leading-relaxed max-w-[58ch]"
-          style={{ color: 'var(--po-muted)' }}
-        >
-          Sáu miền năng lực. Ba mức rõ ràng. Chuẩn Thông tư 02/2025 là trần
-          cao nhất. Owner thiết lập trần doanh nghiệp, phòng ban và mục tiêu vị
-          trí bên trong khung này.
-        </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
             to="/enterprise/setup"

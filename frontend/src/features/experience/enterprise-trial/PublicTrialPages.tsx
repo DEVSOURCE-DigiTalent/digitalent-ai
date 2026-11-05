@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, useRef, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react';
@@ -9,6 +9,8 @@ import { getHomePath } from '@/lib/navigation';
 import { data, message, safeDevelopmentPath } from './trial-ui';
 
 const industries = ['Công nghệ thông tin', 'Tài chính – Ngân hàng', 'Sản xuất', 'Thương mại – Bán lẻ', 'Giáo dục', 'Y tế', 'Dịch vụ', 'Khác'];
+const OTP_LENGTH = 6;
+
 export function TrialRegisterPage() {
   const readiness = useQuery({ queryKey: ['enterprise-trial', 'readiness'], queryFn: () => data(service.readiness()), retry: false, refetchOnMount: 'always' });
   const [form, setForm] = useState<TrialRegistrationRequest>({ organizationName: '', ownerName: '', email: '', password: '', industry: '', size: '', goal: 'competency-assessment', acceptedTerms: false });
@@ -32,7 +34,21 @@ export function TrialRegisterPage() {
       {requestError && <p role="alert" className="pulse-auth-error">{message(requestError)}</p>}
       {register.error && form.email && <p className="pulse-auth-subtle">Đã đăng ký email này? <Link to={`/business/try/verify?email=${encodeURIComponent(form.email.trim())}`}>Nhập mã hoặc gửi lại</Link>.</p>}
       {readiness.data && !readiness.data.canRegister && <p role="alert" className="pulse-auth-error">Tạm chưa nhận đăng ký dùng thử.</p>}
-      {result ? <div className="pulse-auth-fields">{result.developmentCode && <p className="pulse-auth-info">Mã (môi trường thử): <strong>{result.developmentCode}</strong></p>}<Link className="pulse-auth-primary" to={`/business/try/verify?email=${encodeURIComponent(form.email)}`}>Nhập mã xác minh <ArrowRight size={17} aria-hidden="true" /></Link>{continuePath && <p className="pulse-auth-subtle"><Link to={continuePath}>Mở liên kết trong email (thử)</Link></p>}</div> :
+      {result ? (
+        <div className="pulse-auth-fields">
+          <p className="pulse-auth-info">
+            Hệ thống đã gửi mã xác minh 6 số đến <strong>{form.email}</strong>. Vui lòng kiểm tra hộp thư của bạn.
+          </p>
+          <Link className="pulse-auth-primary" to={`/business/try/verify?email=${encodeURIComponent(form.email)}`}>
+            Nhập mã xác minh <ArrowRight size={17} aria-hidden="true" />
+          </Link>
+          {continuePath && (
+            <p className="pulse-auth-subtle">
+              <Link to={continuePath}>Mở liên kết trong email (thử)</Link>
+            </p>
+          )}
+        </div>
+      ) : (
       <form className="pulse-auth-fields" onSubmit={(event: FormEvent) => { event.preventDefault(); if (canRegister && !register.isPending) register.mutate(); }}>
         <div className="pulse-auth-fields-two">
           <div className="pulse-auth-field"><label htmlFor="organizationName">Tên doanh nghiệp</label><input id="organizationName" required maxLength={200} autoComplete="organization" placeholder="Công ty Sao Bắc" value={form.organizationName} onChange={e => update('organizationName', e.target.value)} /></div>
@@ -48,18 +64,97 @@ export function TrialRegisterPage() {
         </div>
         <label className="pulse-auth-consent"><input type="checkbox" required checked={form.acceptedTerms} onChange={e => update('acceptedTerms', e.target.checked)} />Tôi đồng ý điều khoản dùng thử và xử lý dữ liệu đánh giá.</label>
         <button type="submit" className="pulse-auth-primary" disabled={!canRegister || register.isPending || !form.acceptedTerms}>{register.isPending ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <ArrowRight size={17} aria-hidden="true" />}{register.isPending ? 'Đang gửi…' : 'Tiếp tục'}</button>
-      </form>}
+      </form>
+    )}
     </div>
   </PulseAuthLayout>;
 }
 
 function TrialAccountPage({ kind }: { kind: 'verify' | 'accept' }) {
-  const [search] = useSearchParams(); const token = search.get('token') ?? ''; const email = search.get('email') ?? ''; const navigate = useNavigate(); const cache = useQueryClient();
-  const [code, setCode] = useState('');
+  const [search] = useSearchParams();
+  const token = search.get('token') ?? '';
+  const email = search.get('email') ?? '';
+  const navigate = useNavigate();
+  const cache = useQueryClient();
+  const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(''));
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [resendResult, setResendResult] = useState<TrialRegistrationDto | null>(null);
-  const [account, setAccount] = useState<TrialAccountDto | null>(null); const [password, setPassword] = useState('');
-  const resend = useMutation({ mutationFn: () => data(service.resendVerification(email)), onSuccess: value => { setCode(''); setResendResult(value); } });
-  
+  const [account, setAccount] = useState<TrialAccountDto | null>(null);
+  const [password, setPassword] = useState('');
+
+  const isVerify = kind === 'verify';
+  const code = digits.join('');
+
+  useEffect(() => {
+    if (isVerify && !token) {
+      inputRefs.current[0]?.focus();
+    }
+  }, [isVerify, token]);
+
+  const handleDigitChange = (index: number, val: string) => {
+    const raw = val.replace(/\D/g, '');
+    if (raw.length > 1) {
+      const nextDigits = Array(OTP_LENGTH).fill('');
+      for (let i = 0; i < Math.min(raw.length, OTP_LENGTH); i++) {
+        nextDigits[i] = raw[i];
+      }
+      setDigits(nextDigits);
+      const nextIdx = Math.min(raw.length, OTP_LENGTH - 1);
+      inputRefs.current[nextIdx]?.focus();
+      return;
+    }
+
+    const digit = raw.slice(-1);
+    const nextDigits = [...digits];
+    nextDigits[index] = digit;
+    setDigits(nextDigits);
+
+    if (digit && index < OTP_LENGTH - 1) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      if (!digits[index] && index > 0) {
+        inputRefs.current[index - 1]?.focus();
+        const nextDigits = [...digits];
+        nextDigits[index - 1] = '';
+        setDigits(nextDigits);
+      } else {
+        const nextDigits = [...digits];
+        nextDigits[index] = '';
+        setDigits(nextDigits);
+      }
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    } else if (e.key === 'ArrowRight' && index < OTP_LENGTH - 1) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH);
+    if (!pasted) return;
+    const nextDigits = Array(OTP_LENGTH).fill('');
+    for (let i = 0; i < pasted.length; i++) {
+      nextDigits[i] = pasted[i];
+    }
+    setDigits(nextDigits);
+    const nextIndex = Math.min(pasted.length, OTP_LENGTH - 1);
+    inputRefs.current[nextIndex]?.focus();
+  };
+
+  const resend = useMutation({
+    mutationFn: () => data(service.resendVerification(email)),
+    onSuccess: (value) => {
+      setDigits(Array(OTP_LENGTH).fill(''));
+      setResendResult(value);
+      inputRefs.current[0]?.focus();
+    },
+  });
+
   const finishSession = async (verifiedAccount: TrialAccountDto) => {
     if (verifiedAccount.accessToken) {
       localStorage.setItem('accessToken', verifiedAccount.accessToken);
@@ -76,85 +171,147 @@ function TrialAccountPage({ kind }: { kind: 'verify' | 'accept' }) {
   };
 
   const verify = useMutation({
-    mutationFn: (): Promise<TrialAccountDto> => data(token ? service.verify(token, password) : service.verifyCode(email, code, password)),
-    onSuccess: verifiedAccount => setAccount(verifiedAccount),
+    mutationFn: (): Promise<TrialAccountDto> =>
+      data(token ? service.verify(token, password) : service.verifyCode(email, code, password)),
+    onSuccess: (verifiedAccount) => setAccount(verifiedAccount),
   });
 
-  const login = useMutation({ mutationFn: async () => {
-    let verifiedAccount = account;
-    if (!verifiedAccount) {
-      verifiedAccount = kind === 'accept' ? await data(service.accept(token, password)) : await verify.mutateAsync();
-      setAccount(verifiedAccount);
-    }
-    await finishSession(verifiedAccount);
-  } });
+  const login = useMutation({
+    mutationFn: async () => {
+      let verifiedAccount = account;
+      if (!verifiedAccount) {
+        verifiedAccount = kind === 'accept' ? await data(service.accept(token, password)) : await verify.mutateAsync();
+        setAccount(verifiedAccount);
+      }
+      await finishSession(verifiedAccount);
+    },
+  });
 
-  const accountError = !token && (kind === 'accept' || !email) ? new Error('Thiếu thông tin xác minh. Hãy mở lại email hoặc đăng ký lại.') : verify.error || login.error;
-  const isVerify = kind === 'verify';
+  const accountError = !token && (kind === 'accept' || !email)
+    ? new Error('Thiếu thông tin xác minh. Hãy mở lại email hoặc đăng ký lại.')
+    : verify.error || login.error;
   const canSubmit = isVerify ? (token || code.length === 6) : (token && password.length >= 12);
 
-  return <PulseAuthLayout
-    eyebrow="Dùng thử miễn phí"
-    title={isVerify ? 'Xác minh email' : 'Tham gia dùng thử'}
-    subtitle={isVerify ? `Nhập mã xác thực 6 số gửi tới ${email || 'email của bạn'}.` : 'Thiết lập mật khẩu để hoàn tất tham gia.'}
-    asideTitle="Bước tiếp theo: mời nhân viên."
-    asideText="Thêm nhân viên tay hoặc bằng file Excel, đặt hạn làm bài và giờ mong muốn chấm."
-  >
-    <div className="pulse-auth-fields">
-      {accountError && <p role="alert" className="pulse-auth-error">{message(accountError)}</p>}
-      {verify.isPending && <p role="status" className="pulse-auth-info">Đang xác minh…</p>}
-      {isVerify && !token && email && !account && <div className="pulse-auth-fields">
-        {resend.error && <p role="alert" className="pulse-auth-error">{message(resend.error)}</p>}
-        {resendResult && <p role="status" className="pulse-auth-success">Nếu email đang chờ xác minh, mã mới đã được gửi. Kiểm tra cả thư rác.{resendResult.developmentCode && <> Mã thử: <strong>{resendResult.developmentCode}</strong></>}</p>}
-        <button type="button" className="pulse-auth-secondary" disabled={resend.isPending} onClick={() => resend.mutate()}>{resend.isPending ? 'Đang gửi lại…' : 'Gửi lại mã xác minh'}</button>
-      </div>}
-      {account && <p role="status" className="pulse-auth-success">Tài khoản đã xác minh: {account.email}. Đang chuyển vào hệ thống…</p>}
-      <form className="pulse-auth-fields" onSubmit={event => { event.preventDefault(); if (canSubmit && !login.isPending) login.mutate(); }}>
-        {isVerify && !token && (
-          <div className="pulse-auth-field">
-            <label htmlFor="trial-code">Mã xác minh email (OTP 6 số)</label>
-            <input
-              id="trial-code"
-              inputMode="numeric"
-              pattern="[0-9]{6}"
-              maxLength={6}
-              required
-              autoFocus
-              autoComplete="one-time-code"
-              value={code}
-              onChange={event => {
-                const next = event.target.value.replace(/\D/g, '');
-                setCode(next);
-              }}
-              placeholder="Nhập 6 chữ số"
-            />
-            <span className="pulse-auth-field-hint">Chỉ cần nhập mã 6 số từ email để vào thẳng hệ thống.</span>
+  return (
+    <PulseAuthLayout
+      eyebrow="Dùng thử miễn phí"
+      title={isVerify ? 'Xác minh email' : 'Tham gia dùng thử'}
+      subtitle={isVerify ? `Nhập mã xác thực 6 số gửi tới ${email || 'email của bạn'}.` : 'Thiết lập mật khẩu để hoàn tất tham gia.'}
+      asideTitle="Bước tiếp theo: mời nhân viên."
+      asideText="Thêm nhân viên tay hoặc bằng file Excel, đặt hạn làm bài và giờ mong muốn chấm."
+    >
+      <div className="pulse-auth-fields">
+        {accountError && <p role="alert" className="pulse-auth-error">{message(accountError)}</p>}
+        {verify.isPending && <p role="status" className="pulse-auth-info">Đang xác minh…</p>}
+        {isVerify && !token && email && !account && (
+          <div className="pulse-auth-fields">
+            {resend.error && <p role="alert" className="pulse-auth-error">{message(resend.error)}</p>}
+            {resendResult && (
+              <p role="status" className="pulse-auth-success">
+                Nếu email đang chờ xác minh, mã mới đã được gửi. Kiểm tra cả thư rác.
+              </p>
+            )}
+            <button
+              type="button"
+              className="pulse-auth-secondary"
+              disabled={resend.isPending}
+              onClick={() => resend.mutate()}
+            >
+              {resend.isPending ? 'Đang gửi lại…' : 'Gửi lại mã xác minh'}
+            </button>
           </div>
         )}
-        {!isVerify && (
-          <div className="pulse-auth-field">
-            <label htmlFor="trial-password">Mật khẩu</label>
-            <input
-              id="trial-password"
-              type="password"
-              required
-              minLength={12}
-              maxLength={72}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              autoComplete="new-password"
-              placeholder="Tối thiểu 12 ký tự"
-            />
-            <span className="pulse-auth-field-hint">12–72 ký tự.</span>
-          </div>
+        {account && (
+          <p role="status" className="pulse-auth-success">
+            Tài khoản đã xác minh: {account.email}. Đang chuyển vào hệ thống…
+          </p>
         )}
-        <button type="submit" className="pulse-auth-primary" disabled={!canSubmit || verify.isPending || login.isPending}>
-          {login.isPending || verify.isPending ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <ArrowRight size={17} aria-hidden="true" />}
-          {isVerify ? 'Xác minh và vào hệ thống' : 'Tham gia dùng thử'}
-        </button>
-      </form>
-    </div>
-  </PulseAuthLayout>;
+        <form
+          className="pulse-auth-fields"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (canSubmit && !login.isPending) login.mutate();
+          }}
+        >
+          {isVerify && !token && (
+            <div className="pulse-auth-field">
+              <label
+                htmlFor="trial-otp-0"
+                style={{
+                  display: 'block',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  color: 'var(--auth-ink-heading, #111827)',
+                  marginBottom: '8px',
+                }}
+              >
+                Mã xác minh email
+              </label>
+              <div
+                className="pulse-auth-otp-grid"
+                role="group"
+                aria-label="Mã OTP 6 số"
+                onPaste={handlePaste}
+              >
+                {digits.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => { inputRefs.current[index] = el; }}
+                    id={`trial-otp-${index}`}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                    maxLength={6}
+                    value={digit}
+                    onChange={(e) => handleDigitChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    aria-label={index === 0 ? 'Mã xác minh email' : `Chữ số thứ ${index + 1}`}
+                    className={`pulse-auth-otp-input${digit ? ' pulse-auth-otp-input--filled' : ''}${accountError ? ' pulse-auth-otp-input--error' : ''}`}
+                    disabled={verify.isPending || login.isPending}
+                  />
+                ))}
+              </div>
+              <span
+                className="pulse-auth-field-hint"
+                style={{ textAlign: 'center', display: 'block', marginTop: '10px' }}
+              >
+                Nhập mã 6 chữ số từ email để vào thẳng hệ thống.
+              </span>
+            </div>
+          )}
+          {!isVerify && (
+            <div className="pulse-auth-field">
+              <label htmlFor="trial-password">Mật khẩu</label>
+              <input
+                id="trial-password"
+                type="password"
+                required
+                minLength={12}
+                maxLength={72}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+                placeholder="Tối thiểu 12 ký tự"
+              />
+              <span className="pulse-auth-field-hint">12–72 ký tự.</span>
+            </div>
+          )}
+          <button
+            type="submit"
+            className="pulse-auth-primary"
+            disabled={!canSubmit || verify.isPending || login.isPending}
+          >
+            {login.isPending || verify.isPending ? (
+              <Loader2 size={17} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <ArrowRight size={17} aria-hidden="true" />
+            )}
+            {isVerify ? 'Xác minh và vào hệ thống' : 'Tham gia dùng thử'}
+          </button>
+        </form>
+      </div>
+    </PulseAuthLayout>
+  );
 }
 export function TrialVerifyPage() { return <TrialAccountPage kind="verify" />; }
 export function TrialAcceptPage() { return <TrialAccountPage kind="accept" />; }

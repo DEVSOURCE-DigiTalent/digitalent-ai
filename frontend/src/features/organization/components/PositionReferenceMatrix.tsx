@@ -50,13 +50,9 @@ export function PositionReferenceMatrix() {
           <span className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-accent)' }}>
             Tham khảo · DigiTalent AI đề xuất
           </span>
-          <h2 id="position-reference-title" className="mt-2 text-xl font-semibold" style={{ color: 'var(--po-ink)', letterSpacing: '-0.045em' }}>
-            Mức năng lực tham chiếu theo vị trí{reference ? ` · v${reference.version}` : ''}.
+          <h2 id="position-reference-title" className="mt-1 text-lg font-bold" style={{ color: 'var(--po-ink)', letterSpacing: '-0.03em' }}>
+            Mức năng lực tham chiếu theo vị trí
           </h2>
-          <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--po-muted)' }}>
-            Mức tham khảo cho 5 vị trí mẫu do quản trị DigiTalent công bố. Doanh nghiệp tự đặt yêu cầu cho vị trí của mình;
-            thay đổi ở đây không tự đổi mục tiêu đã áp dụng cho nhân viên.
-          </p>
         </div>
       </div>
 

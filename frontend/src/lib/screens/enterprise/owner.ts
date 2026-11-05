@@ -209,6 +209,14 @@ export const OWNER_SCREENS: ScreenDef[] = [
     priority: 'P0',
   },
   {
+    id: 'OW-CHECKOUT',
+    title: 'Thanh toán & Hợp đồng đào tạo',
+    path: '/enterprise/courses/checkout',
+    roles: OWNER_ROLES,
+    permission: P.COURSE_READ_CATALOG,
+    priority: 'P0',
+  },
+  {
     id: 'OW-25',
     title: 'Đợt đào tạo',
     path: '/enterprise/training-batches',

@@ -32,6 +32,7 @@ const OrganizationSettingsPage = lazyPage(() => import('../../../features/organi
 const AuditLogPage = lazyPage(() => import('../../../features/organization/pages/AuditLogPage'), 'AuditLogPage');
 const OwnerCourseCatalogPage = lazyPage(() => import('../../../features/organization/pages/OwnerCourseCatalogPage'), 'OwnerCourseCatalogPage');
 const OwnerCourseDetailPage = lazyPage(() => import('../../../features/organization/pages/OwnerCourseDetailPage'), 'OwnerCourseDetailPage');
+const CourseCheckoutPage = lazyPage(() => import('../../../features/organization/pages/CourseCheckoutPage'), 'CourseCheckoutPage');
 const InternalCourseDetailPage = lazyPage(() => import('../../../features/courses/pages/InternalCourseDetailPage'), 'InternalCourseDetailPage');
 const OwnerTrainingBatchesPage = lazyPage(() => import('../../../features/organization/pages/OwnerTrainingBatchesPage'), 'OwnerTrainingBatchesPage');
 const OwnerNewTrainingBatchPage = lazyPage(() => import('../../../features/organization/pages/OwnerNewTrainingBatchPage'), 'OwnerNewTrainingBatchPage');
@@ -71,6 +72,7 @@ export const OWNER_PAGES: PageRegistry = {
   'OW-22': SkillGapDetailPage,
   'OW-23': OwnerCourseCatalogPage,
   'OW-24': OwnerCourseDetailPage,
+  'OW-CHECKOUT': CourseCheckoutPage,
   'OW-25': OwnerTrainingBatchesPage,
   'OW-26': OwnerNewTrainingBatchPage,
   'OW-27': OwnerTrainingBatchDetailPage,

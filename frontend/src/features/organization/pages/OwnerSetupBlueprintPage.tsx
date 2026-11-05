@@ -5,14 +5,13 @@ import { useOrganizationOverview } from '@/hooks/use-organization';
 import { useCapabilityDashboard } from '@/hooks/use-analytics';
 import { BlueprintFlow } from '../components/BlueprintFlow';
 import { BlueprintTierCard } from '../components/BlueprintTierCard';
-import { PositionMapping } from '../components/PositionMapping';
 import { CapabilityCeilingMatrix } from '../components/CapabilityCeilingMatrix';
 import { PositionReferenceMatrix } from '../components/PositionReferenceMatrix';
 import { PULSE_TOKENS } from '../owner-theme';
 
 export function OwnerSetupBlueprintPage() {
   const { data: orgData, isLoading: orgLoading } = useOrganizationOverview();
-  const { data: capData, isLoading: capLoading } = useCapabilityDashboard();
+  const { isLoading: capLoading } = useCapabilityDashboard();
 
   const isLoading = orgLoading || capLoading;
 
@@ -37,14 +36,6 @@ export function OwnerSetupBlueprintPage() {
       },
     ],
     [orgData?.name, deptCount, posCount],
-  );
-
-  const domains = useMemo(
-    () =>
-      (capData?.domains ?? [])
-        .slice()
-        .sort((a, b) => a.sortOrder - b.sortOrder),
-    [capData],
   );
 
   if (isLoading) {
@@ -101,43 +92,11 @@ export function OwnerSetupBlueprintPage() {
               Chuẩn hóa khung năng lực và giới hạn khóa học theo vị trí & phòng ban.
             </p>
           </div>
-          <span
-            className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold"
-            style={
-              orgData?.setupCompleted
-                ? {
-                    borderColor: '#bbf7d0',
-                    background: '#ecfdf5',
-                    color: '#15803d',
-                  }
-                : {
-                    borderColor: '#fdddb6',
-                    background: '#fff7ed',
-                    color: '#c2410c',
-                  }
-            }
-          >
-            {orgData?.setupCompleted ? 'Đã công bố' : 'Bản nháp'}
-          </span>
         </div>
       </section>
 
       {/* ── Content ── */}
       <div className="px-4 md:px-6 py-4 mx-auto" style={{ maxWidth: 1220 }}>
-        {/* Ghi chú cơ chế - Dạng thu gọn / xổ ra theo yêu cầu */}
-        <details className="group mb-4 rounded-xl border border-teal-100 bg-teal-50/60 p-3.5 text-xs text-teal-900 transition-all [&_summary::-webkit-details-marker]:hidden">
-          <summary className="flex cursor-pointer items-center justify-between font-semibold select-none">
-            <span className="flex items-center gap-2">
-              <span className="grid size-5 place-items-center rounded-full bg-teal-100 text-teal-700 text-xs font-bold">ℹ️</span>
-              Ghi chú cơ chế: Phân cấp trần đào tạo & Chuẩn vị trí
-            </span>
-            <span className="text-xs text-teal-600 font-bold group-open:rotate-180 transition-transform">▼</span>
-          </summary>
-          <p className="mt-2.5 text-xs leading-relaxed text-teal-800 pl-7 border-t border-teal-100/70 pt-2">
-            Vị trí công việc xác định năng lực cần đạt của nhân viên. Doanh nghiệp và phòng ban thiết lập trần tối đa các khóa học được mở để kiểm soát nội dung và chi phí đào tạo.
-          </p>
-        </details>
-
         {/* Blueprint flow + checklist */}
         <BlueprintFlow
           setup={orgData?.setup ?? []}
@@ -169,16 +128,10 @@ export function OwnerSetupBlueprintPage() {
               className="mt-[11px] text-xl font-semibold tracking-[-0.045em]"
               style={{ color: 'var(--po-ink)' }}
             >
-              Từ khung nền tảng đến vị trí.
+              Kiến trúc phân cấp năng lực
             </h2>
-            <p
-              className="text-xs leading-relaxed mt-1"
-              style={{ color: 'var(--po-muted)' }}
-            >
-              Mục tiêu đã công bố xác định yêu cầu cho từng nhân viên.
-            </p>
 
-            <div className="mt-5">
+            <div className="mt-4">
               <BlueprintTierCard levels={tierLevels} />
             </div>
 
@@ -232,17 +185,11 @@ export function OwnerSetupBlueprintPage() {
               className="mt-[11px] text-xl font-semibold tracking-[-0.045em]"
               style={{ color: 'var(--po-ink)' }}
             >
-              Mục tiêu học theo vị trí công việc.
+              Mục tiêu học theo vị trí công việc
             </h2>
-            <p
-              className="text-xs leading-relaxed mt-1"
-              style={{ color: 'var(--po-muted)' }}
-            >
-              Manager chỉ duyệt bài tập cuối khóa trong phạm vi phòng ban.
-            </p>
 
             <div
-              className="mt-5 rounded-[13px] border p-[17px]"
+              className="mt-4 rounded-[13px] border p-[17px]"
               style={{
                 borderColor: 'var(--po-line)',
                 background: 'linear-gradient(145deg, var(--po-surface), var(--po-raised))',
@@ -251,13 +198,6 @@ export function OwnerSetupBlueprintPage() {
               <strong className="text-sm block" style={{ color: 'var(--po-ink)' }}>
                 Chuỗi mục tiêu đã công bố
               </strong>
-              <small
-                className="block mt-0.5 text-[11px]"
-                style={{ color: 'var(--po-muted)' }}
-              >
-                Mục tiêu vị trí quyết định đích học; phạm vi khóa mở do {orgData?.name || 'doanh nghiệp'}
-                {deptCount > 0 ? ' và phòng ban (nếu có giới hạn riêng)' : ''} quyết định.
-              </small>
               <div
                 className="mt-3 h-[5px] rounded-full overflow-hidden"
                 style={{ background: 'var(--po-line)' }}
@@ -349,15 +289,15 @@ export function OwnerSetupBlueprintPage() {
           <CapabilityCeilingMatrix />
         </div>
 
-        {/* Nguồn tham khảo mở rộng: Thu gọn mặc định để bảng màu xanh là trung tâm */}
-        <details className="group mt-6 rounded-[22px] border border-slate-200 bg-white p-6 shadow-sm transition-all [&_summary::-webkit-details-marker]:hidden">
+        {/* Nguồn tham khảo mở rộng: Mở mặc định theo yêu cầu */}
+        <details open className="group mt-6 rounded-[22px] border border-slate-200 bg-white p-6 shadow-sm transition-all [&_summary::-webkit-details-marker]:hidden">
           <summary className="flex cursor-pointer items-center justify-between select-none">
             <div>
               <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
                 Nguồn tham chiếu mở rộng
               </span>
               <h3 className="text-base font-bold text-slate-800">
-                Mức năng lực 5 vị trí mẫu & Ánh xạ chi tiết (DigiTalent AI)
+                Mức năng lực 5 vị trí mẫu tham chiếu
               </h3>
             </div>
             <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 group-open:bg-slate-100 transition-colors">
@@ -366,7 +306,6 @@ export function OwnerSetupBlueprintPage() {
           </summary>
           <div className="mt-6 space-y-6 pt-4 border-t border-slate-100">
             <PositionReferenceMatrix />
-            <PositionMapping domains={domains} isLoading={capLoading} />
           </div>
         </details>
       </div>

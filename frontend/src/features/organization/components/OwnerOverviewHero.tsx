@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import journeyArt from '@/assets/pulse/learning-journey-abstract.webp';
 import type { OrganizationOverview } from '@/services/organization.service';
 import type { DashboardDto } from '@/services/analytics.service';
+import { useTrialProgram } from '@/hooks/use-trial-program';
 
 interface OwnerOverviewHeroProps {
   org: OrganizationOverview;
@@ -14,33 +15,55 @@ interface HeroAction {
   variant: 'outline' | 'filled';
 }
 
-function resolveActions(org: OrganizationOverview, cap?: DashboardDto): HeroAction[] {
+function resolveActions(
+  org: OrganizationOverview,
+  cap?: DashboardDto,
+  hasTrialParticipants?: boolean
+): HeroAction[] {
+  const hasAssessmentStarted =
+    Boolean(hasTrialParticipants) ||
+    org.members.active + org.members.pending > 1 ||
+    (cap?.kpis.employees ?? 0) > 0;
+
+  // Bước 1: Khởi đầu từ trang Đánh giá đội ngũ để khảo sát năng lực số ban đầu
+  if (!hasAssessmentStarted) {
+    return [
+      { label: 'Bước 1: Đánh giá đội ngũ & Khảo sát năng lực', to: '/enterprise/trial', variant: 'filled' },
+      { label: 'Khám phá bài thi 6 lĩnh vực', to: '/enterprise/trial', variant: 'outline' },
+    ];
+  }
+
+  // Bước 2: Đã có nhân sự nhưng chưa có kết quả test / khoảng trống kỹ năng
+  const hasSkillGapData =
+    (cap?.kpis.employees ?? 0) > 0 &&
+    ((cap?.domains ?? []).some((d) => d.averageCurrent > 0) || (cap?.kpis.employeesWithHigh ?? 0) > 0);
+
+  if (!hasSkillGapData) {
+    return [
+      { label: 'Bước 2: Xem Khoảng trống Năng lực', to: '/enterprise/skill-gap', variant: 'filled' },
+      { label: 'Theo dõi tiến độ đánh giá', to: '/enterprise/trial', variant: 'outline' },
+    ];
+  }
+
+  // Bước 3: Đã thấy khoảng trống, tiếp theo là thiết lập khung trần năng lực mục tiêu
   if (!org.setupCompleted) {
     return [
-      { label: 'Hoàn thiện thiết lập', to: '/setup', variant: 'outline' },
-      { label: 'Khám phá khóa học', to: '/enterprise/courses', variant: 'filled' },
+      { label: 'Bước 3: Thiết lập Khung năng lực mục tiêu', to: '/enterprise/setup', variant: 'filled' },
+      { label: 'Xem ma trận năng lực', to: '/enterprise/skill-gap', variant: 'outline' },
     ];
   }
-  if (org.members.active + org.members.pending <= 1) {
-    return [
-      { label: 'Mời thành viên', to: '/enterprise/members', variant: 'outline' },
-      { label: 'Khám phá khóa học', to: '/enterprise/courses', variant: 'filled' },
-    ];
-  }
-  if (cap && cap.kpis.completionRate > 0) {
-    return [
-      { label: 'Mở báo cáo chu kỳ', to: '/enterprise/reports', variant: 'outline' },
-      { label: 'Khám phá khóa học', to: '/enterprise/courses', variant: 'filled' },
-    ];
-  }
+
+  // Bước 4 & 5: Mua khóa học & theo dõi báo cáo chu kỳ
   return [
-    { label: 'Xem khoảng cách năng lực', to: '/enterprise/skill-gap', variant: 'outline' },
-    { label: 'Khung năng lực', to: '/enterprise/framework', variant: 'filled' },
+    { label: 'Bước 4: Mua khóa học & Quản lý ghế', to: '/enterprise/courses', variant: 'filled' },
+    { label: 'Bước 5: Xem báo cáo chu kỳ', to: '/enterprise/reports', variant: 'outline' },
   ];
 }
 
 export function OwnerOverviewHero({ org, cap }: OwnerOverviewHeroProps) {
-  const actions = resolveActions(org, cap);
+  const { data: trialProgram } = useTrialProgram();
+  const hasTrialParticipants = (trialProgram?.participants?.length ?? 0) > 0;
+  const actions = resolveActions(org, cap, hasTrialParticipants);
 
   return (
     <section

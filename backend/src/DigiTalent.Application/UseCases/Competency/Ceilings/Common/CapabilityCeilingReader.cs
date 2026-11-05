@@ -136,17 +136,27 @@ public class CapabilityCeilingReader
             {
                 var course = catalog.FirstOrDefault(c => c.CategoryId == domain.Id && c.Tier == level);
                 var rawCode = course?.Code;
+                var domainNum = domainNumbers.TryGetValue(domain.Id, out var dn) ? dn : 0;
+                var levelSuffix = level switch { 1 => "F", 2 => "I", 3 => "A", _ => "" };
+                var fallbackCode = domainNum > 0 ? $"M{domainNum}-{levelSuffix}" : null;
+
                 // Chuẩn hóa hiển thị tiền tố M (M1-F, M1-I, M1-A...) theo yêu cầu doanh nghiệp
-                var displayCode = rawCode;
-                if (!string.IsNullOrEmpty(displayCode) && displayCode.StartsWith("A", StringComparison.OrdinalIgnoreCase) && displayCode.Length > 2 && char.IsDigit(displayCode[1]))
+                var displayCode = CanonicalCourseCode(rawCode ?? fallbackCode);
+                if (string.IsNullOrEmpty(displayCode))
                 {
-                    displayCode = "M" + displayCode[1..];
+                    displayCode = rawCode ?? fallbackCode;
                 }
+
+                var expectedCanonical = CanonicalCourseCode(displayCode);
 
                 // Cấp 1 (Cơ bản) luôn mở miễn phí 100%. Cấp 2 và Cấp 3 chỉ mở khi có suất học đã mua.
                 var seats = level == 1
                     ? 999
-                    : seatOrders.Where(so => so.Level == level && (rawCode == null || so.Code == rawCode || (displayCode != null && so.Code == displayCode))).Sum(so => so.Seats);
+                    : seatOrders.Where(so => so.Level == level && (
+                        (expectedCanonical.Length > 0 && CanonicalCourseCode(so.Code) == expectedCanonical) ||
+                        (rawCode != null && string.Equals(so.Code, rawCode, StringComparison.OrdinalIgnoreCase)) ||
+                        (displayCode != null && string.Equals(so.Code, displayCode, StringComparison.OrdinalIgnoreCase))
+                      )).Sum(so => so.Seats);
                 var isUnlocked = level == 1 || seats > 0;
                 var price = level == 3 ? 699000L : (level == 2 ? 399000L : 0L);
 
@@ -286,4 +296,15 @@ public class CapabilityCeilingReader
     }
 
     private static int Clamp(int level) => Math.Clamp(level, 0, CapabilityCeiling.MaxLevel);
+
+    private static string CanonicalCourseCode(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return string.Empty;
+        var trimmed = code.Trim().ToUpperInvariant();
+        if ((trimmed.StartsWith('A') || trimmed.StartsWith('M')) && trimmed.Length > 2 && char.IsDigit(trimmed[1]))
+        {
+            return "M" + trimmed[1..];
+        }
+        return trimmed;
+    }
 }
