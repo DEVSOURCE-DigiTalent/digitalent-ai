@@ -5,6 +5,9 @@ import { vi } from 'vitest';
 // Pages and the mock server load lazily; a full parallel run can take longer than the 1s default.
 configure({ asyncUtilTimeout: 10000 });
 
+// jsdom does not implement scrolling, which the onboarding spotlight uses on mount.
+Element.prototype.scrollIntoView = vi.fn();
+
 // MainLayout mở kết nối SignalR (useNotificationHub). Trong test không có server → dùng kết nối "câm"
 // để không gọi mạng / in lỗi negotiation. Test của hook tự ghi đè HubConnectionBuilder.
 vi.mock('@microsoft/signalr', () => {
@@ -36,6 +39,7 @@ if (typeof HTMLMediaElement !== 'undefined') {
 }
 
 if (typeof window !== 'undefined') {
+  window.scrollTo = vi.fn();
   // Fix Node.js 20+ undici and JSDOM AbortSignal / Request mismatch
   window.AbortController = globalThis.AbortController;
   window.AbortSignal = globalThis.AbortSignal;
