@@ -160,7 +160,7 @@ export function QuickSyllabusDrawer({
               </div>
               <div>
                 <strong className="pu-drawer-status-title waiting">
-                  Bài làm đang chờ Mentor chấm điểm
+                  Bài làm đang chờ Mentor đánh giá
                 </strong>
                 <p className="pu-drawer-status-desc waiting">
                   Quản lý thẩm định {reviewerName} đang rà soát bài nộp và đánh giá tiêu chí. Kết quả sẽ được cập nhật trong vòng 48 giờ làm việc.
@@ -176,17 +176,17 @@ export function QuickSyllabusDrawer({
               </div>
               <div>
                 <strong className="pu-drawer-status-title ready">
-                  Đủ điều kiện làm bài thi cuối khóa
+                  Đủ điều kiện làm bài đánh giá cuối khóa
                 </strong>
                 <p className="pu-drawer-status-desc ready">
-                  Bạn đã hoàn thành toàn bộ bài giảng và câu hỏi ôn tập. Hãy thực hiện bài thi giám sát để bảo chứng năng lực.
+                  Bạn đã hoàn thành toàn bộ nội dung đào tạo và câu hỏi kiểm tra. Hãy thực hiện bài đánh giá có giám sát để bảo chứng năng lực.
                 </p>
                 <Link
                   to={PULSE_PATHS.final(course.courseId)}
                   className="pu-drawer-ready-btn"
                   onClick={onClose}
                 >
-                  Vào phòng thi cuối khóa →
+                  Vào làm bài đánh giá cuối khóa →
                 </Link>
               </div>
             </div>
@@ -208,7 +208,7 @@ export function QuickSyllabusDrawer({
             </div>
             <div className="pu-drawer-fact-item">
               <span className="pu-drawer-fact-label">Hình thức đánh giá</span>
-              <strong className="pu-drawer-fact-value">Mentor chấm điểm</strong>
+              <strong className="pu-drawer-fact-value">Mentor đánh giá</strong>
             </div>
           </div>
 
@@ -293,9 +293,9 @@ export function QuickSyllabusDrawer({
               <ShieldCheck size={15} /> Tiêu chuẩn công nhận năng lực
             </h3>
             <ul className="pu-drawer-rules-list">
-              <li>Đọc đầy đủ bài giảng của từng mô đun và hoàn thành Flash Quiz ôn tập đạt 2/2 câu.</li>
-              <li>Làm bài thi cuối khóa có AI giám sát (Webcam, Mic, Chia sẻ màn hình) chống gian lận.</li>
-              <li>Mentor chấm điểm bài làm và công nhận đạt chuẩn kỹ năng số.</li>
+              <li>Đọc đầy đủ nội dung của từng mô đun và hoàn thành câu hỏi kiểm tra đạt 2/2 câu.</li>
+              <li>Làm bài đánh giá cuối khóa có AI giám sát (Webcam, Mic, Chia sẻ màn hình) bảo đảm tính minh bạch.</li>
+              <li>Mentor đánh giá bài làm và công nhận đạt chuẩn kỹ năng số.</li>
             </ul>
           </section>
         </div>
@@ -322,7 +322,7 @@ export function QuickSyllabusDrawer({
               onClick={onClose}
             >
               <Award size={15} />
-              Vào phòng thi cuối khóa →
+              Vào làm bài đánh giá cuối khóa →
             </Link>
           ) : isInProgress ? (
             <Link

@@ -316,7 +316,7 @@ export function PulsePracticePage() {
             <span>Hệ thống Đánh giá Chuẩn hóa</span>
           </div>
           <h1 className="pu-path-main-title">Khảo thí & Đánh giá Năng lực</h1>
-          <p className="pu-path-sub-title">Khảo sát năng lực đầu vào và thi đánh giá chuẩn hóa năng lực số theo chức danh.</p>
+          <p className="pu-path-sub-title">Khảo sát năng lực đầu vào và đánh giá chuẩn hóa năng lực số theo chức danh.</p>
         </div>
 
         {/* Nút xem nhanh Tiêu chuẩn đánh giá (Modal tra cứu khi cần) */}
@@ -340,7 +340,7 @@ export function PulsePracticePage() {
           </div>
           <h2 className="pu-campaign-h2">Đánh giá năng lực đầu vào</h2>
           <p className="pu-campaign-p">
-            Hoàn thành bài test để được miễn học toàn bộ lý thuyết các môn bạn đã thành thạo.
+            Hoàn thành bài đánh giá để được miễn học toàn bộ lý thuyết các khóa học bạn đã thành thạo.
           </p>
 
           {/* Thanh tiến độ hoàn thành đợt khảo sát */}
@@ -349,7 +349,7 @@ export function PulsePracticePage() {
               <span>
                 Tiến độ theo chức danh: <strong>{pathDoneCourses.length} / {pathEligibleCourses.length || 8}</strong> bài đã làm
                 <span style={{ fontWeight: 400, color: '#64748b', fontSize: '12px', marginLeft: '6px' }}>
-                  ({allDoneCourses.length}/{allEligibleCourses.length} môn toàn 6 lĩnh vực)
+                  ({allDoneCourses.length}/{allEligibleCourses.length} khóa toàn 6 lĩnh vực)
                 </span>
               </span>
               <strong>{pathCampaignProgress}%</strong>
@@ -390,7 +390,7 @@ export function PulsePracticePage() {
               <Trophy size={32} className="text-emerald-400" />
               <h4>Đã hoàn thành đợt khảo sát!</h4>
               <p>
-                Đã miễn học <strong>{exemptedCourses.length} môn</strong> và tiết kiệm <strong>~{savedHours} giờ</strong> học lý thuyết!
+                Đã miễn học <strong>{exemptedCourses.length} khóa</strong> và tiết kiệm <strong>~{savedHours} giờ</strong> học lý thuyết!
               </p>
             </div>
           )}
@@ -411,9 +411,9 @@ export function PulsePracticePage() {
             <div className="pu-kpi-num-row">
               <span className="pu-kpi-num">{urgentCount}</span>
             </div>
-            <div className="pu-kpi-label">Bài thi cần làm ngay</div>
+            <div className="pu-kpi-label">Bài đánh giá cần làm ngay</div>
             <small className="pu-kpi-desc">
-              Gồm bài test đầu vào & bài thi cuối khóa đang mở
+              Gồm bài đánh giá đầu vào & đánh giá cuối khóa đang mở
             </small>
           </div>
         </button>
@@ -430,7 +430,7 @@ export function PulsePracticePage() {
             <div className="pu-kpi-num-row">
               <span className="pu-kpi-num">{pendingCount}</span>
             </div>
-            <div className="pu-kpi-label">Đang chờ sếp duyệt</div>
+            <div className="pu-kpi-label">Đang chờ xét duyệt</div>
             <small className="pu-kpi-desc">
               SLA phản hồi dự kiến: ~24-48 giờ
             </small>
@@ -451,7 +451,7 @@ export function PulsePracticePage() {
             </div>
             <div className="pu-kpi-label">Năng lực đã công nhận</div>
             <small className="pu-kpi-desc">
-              Đã miễn học {exemptedCourses.length} môn · Tiết kiệm ~{savedHours}h học
+              Đã miễn học {exemptedCourses.length} khóa · Tiết kiệm ~{savedHours}h học
             </small>
           </div>
         </button>
@@ -483,7 +483,7 @@ export function PulsePracticePage() {
             className={`pu-f-chip${activeTab === 'final' ? ' active' : ''}`}
           >
             <GraduationCap size={13} />
-            <span>Thi cuối khóa (AI Proctored)</span>
+            <span>Đánh giá cuối khóa (AI Proctored)</span>
             <span className="pu-f-badge">{finals.length}</span>
           </button>
           <button
@@ -491,7 +491,7 @@ export function PulsePracticePage() {
             onClick={() => setActiveTab('pending')}
             className={`pu-f-chip${activeTab === 'pending' ? ' active' : ''}`}
           >
-            <span>Chờ sếp duyệt</span>
+            <span>Chờ xét duyệt</span>
             <span className="pu-f-badge">{pendingCount}</span>
           </button>
           <button
@@ -524,7 +524,7 @@ export function PulsePracticePage() {
                 <th className="pu-ledger-th">Khóa học & Lĩnh vực</th>
                 <th className="pu-ledger-th">Đánh giá Đầu vào (Vượt cấp)</th>
                 <th className="pu-ledger-th">Tiến độ Mô đun</th>
-                <th className="pu-ledger-th">Thi Cuối khóa (AI Proctored)</th>
+                <th className="pu-ledger-th">Đánh giá Cuối khóa (AI Proctored)</th>
                 <th className="pu-ledger-th">Thẩm định & Quyết định</th>
                 <th className="pu-ledger-th" style={{ textAlign: 'right' }}>Thao tác</th>
               </tr>
@@ -657,11 +657,11 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
           </Link>
         ) : isPrePending ? (
           <span className="pu-status-pill pending">
-            <Timer size={12} /> Đã nộp · Chờ sếp duyệt
+            <Timer size={12} /> Đã nộp · Chờ xét duyệt
           </span>
         ) : isPreOpen ? (
           <span className="pu-status-pill open-pre">
-            <Zap size={12} /> Mở làm bài test
+            <Zap size={12} /> Mở bài đánh giá
           </span>
         ) : isPreNotYet ? (
           <span className="pu-status-pill not-yet">
@@ -702,17 +702,17 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
           <Link
             to={targetOutcomePath}
             className="pu-status-pill passed hover:opacity-90 transition-opacity inline-flex items-center gap-1 cursor-pointer"
-            title="Nhấn để xem chứng chỉ môn học chi tiết"
+            title="Nhấn để xem chứng chỉ khóa học chi tiết"
           >
-            <CheckCircle2 size={12} /> Đã đỗ & Cấp chứng nhận
+            <CheckCircle2 size={12} /> Đã đạt & Cấp chứng nhận
           </Link>
         ) : isFinalPending ? (
           <span className="pu-status-pill pending">
-            <Timer size={12} /> Đã nộp · Chờ chấm
+            <Timer size={12} /> Đã nộp · Chờ đánh giá
           </span>
         ) : isFinalReady ? (
           <span className="pu-status-pill open-final">
-            <Zap size={12} /> Mở thi cuối khóa
+            <Zap size={12} /> Mở bài đánh giá cuối khóa
           </span>
         ) : isFinalLearning ? (
           <span className="pu-status-pill learning">
@@ -762,7 +762,7 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
               to={PULSE_PATHS.final(item.courseId)}
               className="pu-table-btn final-btn"
             >
-              <span>Vào thi ngay</span>
+              <span>Làm bài ngay</span>
               <ArrowRight size={13} />
             </Link>
           ) : isFinalLearning && item.progressPercent < 100 ? (
@@ -782,7 +782,7 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
               <ArrowRight size={13} />
             </Link>
           ) : (
-            <span style={{ fontSize: '12px', color: '#94a3b8' }}>Chưa mở thi</span>
+            <span style={{ fontSize: '12px', color: '#94a3b8' }}>Chưa mở đánh giá</span>
           )}
         </div>
       </td>

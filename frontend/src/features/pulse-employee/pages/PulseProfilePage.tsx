@@ -29,6 +29,7 @@ import {
   Eye,
   EyeOff,
   User,
+  Mail,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePulseOverview, usePulseOutcomes } from '@/hooks/use-pulse';
@@ -36,7 +37,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { useChangePassword, useLoginHistory } from '@/hooks/use-platform';
 import { formatDateTime, formatDate } from '@/lib/utils';
 import { LoadError, PageSkeleton, PuLink } from '../components/ui';
-import { initials, pulseErrorMessage } from '../lib/labels';
+import { initials, levelName, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 
 type ProfileTab = 'competency' | 'security' | 'preferences';
@@ -51,12 +52,12 @@ function formatDomainCode(domain: { number: number; code?: string | null }): str
 }
 
 const DOMAIN_ICONS: Record<number, React.ReactNode> = {
-  1: <Database className="w-4 h-4 text-indigo-600" />,
-  2: <Users className="w-4 h-4 text-sky-600" />,
-  3: <PenTool className="w-4 h-4 text-violet-600" />,
-  4: <ShieldCheck className="w-4 h-4 text-emerald-600" />,
-  5: <Lightbulb className="w-4 h-4 text-amber-600" />,
-  6: <Sparkles className="w-4 h-4 text-pink-600" />,
+  1: <Database className="w-4 h-4 text-blue-700" />,
+  2: <Users className="w-4 h-4 text-blue-700" />,
+  3: <PenTool className="w-4 h-4 text-blue-700" />,
+  4: <ShieldCheck className="w-4 h-4 text-blue-700" />,
+  5: <Lightbulb className="w-4 h-4 text-blue-700" />,
+  6: <Sparkles className="w-4 h-4 text-blue-700" />,
 };
 
 /**
@@ -80,20 +81,31 @@ function getPasswordStrength(pass: string): { score: number; label: string; colo
 }
 
 /**
- * Trực quan hóa 4 cấp độ năng lực L1 - L4 (Connected Segmented Track):
+ * Trực quan hóa 3 cấp độ năng lực L1 - L3 (Segmented Track):
+ * - L1: Cơ bản, L2: Trung cấp, L3: Nâng cao
  * - Đã đạt (done): Xanh ngọc lục bảo (emerald) kèm biểu tượng kiểm tra
- * - Mục tiêu vị trí (target): Viền nét đứt màu cam amber
+ * - Mục tiêu vị trí (target): Viền nét đứt màu xanh navy có chấm định vị
  * - Chưa đạt (empty): Màu xám nhạt trung tính
  */
-function LevelBar4({ verified, target }: { verified: number; target: number }) {
+function LevelBar3({ verified, target }: { verified: number; target: number }) {
+  const cappedVerified = Math.min(3, Math.max(0, verified));
+  const cappedTarget = Math.min(3, Math.max(0, target));
+
   return (
-    <div className="pu-benchmark-level-track" title={`Hiện tại: L${verified} / Chuẩn vị trí: L${target}`}>
-      {[1, 2, 3, 4].map((lvl) => {
-        const isDone = lvl <= verified;
-        const isTarget = lvl === target && verified < target;
+    <div
+      className="pu-benchmark-level-track"
+      title={`Hiện tại: ${verified > 0 ? `L${cappedVerified} (${levelName(cappedVerified)})` : 'Chưa đánh giá'} / Chuẩn vị trí: L${cappedTarget} (${levelName(cappedTarget)})`}
+    >
+      {[1, 2, 3].map((lvl) => {
+        const isDone = lvl <= cappedVerified;
+        const isTarget = lvl === cappedTarget && cappedVerified < cappedTarget;
         const cls = isDone ? 'done' : isTarget ? 'target' : 'empty';
         return (
-          <div key={lvl} className={`pu-benchmark-seg ${cls}`}>
+          <div
+            key={lvl}
+            className={`pu-benchmark-seg ${cls}`}
+            title={`Cấp ${lvl} - ${levelName(lvl)}${isDone ? ' (Đã đạt)' : isTarget ? ' (Mục tiêu chuẩn vị trí)' : ''}`}
+          >
             <span className="pu-seg-label">L{lvl}</span>
             {isDone && <Check className="w-2.5 h-2.5" style={{ marginLeft: 1 }} />}
             {isTarget && <span className="pu-target-dot" />}
@@ -164,7 +176,6 @@ export function PulseProfilePage() {
       : 'Hoàng Anh Thư';
 
   const empCode = person.employeeId ? `EMP-${person.employeeId.slice(0, 8).toUpperCase()}` : 'EMP-CBB187BB';
-  const reviewerName = data.reviewer?.name || 'Lê Thị Thu Trang';
   const departmentName = person.departmentName || 'Phòng Tài chính - Kế toán';
   const positionName = person.positionName || 'Chuyên viên Kế toán tài chính';
   const organizationName = user?.organization?.name || person.organizationName || 'Công ty Cổ phần Công nghệ DigiTalent Việt Nam';
@@ -251,10 +262,13 @@ export function PulseProfilePage() {
             <Printer className="w-4 h-4" />
             <span>Xuất hồ sơ (PDF)</span>
           </button>
-          <PuLink to={PULSE_PATHS.path} kind="primary" small>
-            <ArrowRight className="w-4 h-4" />
+          <Link
+            to={PULSE_PATHS.path}
+            className="pu-hero-action-primary"
+          >
             <span>Xem lộ trình bồi dưỡng</span>
-          </PuLink>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       </header>
 
@@ -268,7 +282,7 @@ export function PulseProfilePage() {
           onClick={() => setActiveTab('competency')}
         >
           <Award className="w-4 h-4" />
-          <span>Hồ sơ năng lực số (Passport)</span>
+          <span>Hồ sơ năng lực số</span>
         </button>
 
         <button
@@ -299,55 +313,63 @@ export function PulseProfilePage() {
          ══════════════════════════════════════════════════════════════════════ */}
       {activeTab === 'competency' && (
         <div key="competency" className="pu-tab-pane pu-stack">
-          {/* ── Tối giản Hero Card (Clean Executive Light) ────────────────── */}
-          <section className="pu-minimal-hero" aria-label="Thông tin cá nhân">
-            <div className="pu-minimal-hero-left">
-              <div className="pu-minimal-avatar" aria-hidden="true">
-                {initials(name)}
+          {/* ── Thẻ Thông tin Nhân sự Chuẩn Doanh nghiệp (Executive Competency Passport Card) ── */}
+          <section className="pu-executive-card" aria-label="Thông tin nhân sự & Hộ chiếu số">
+            <div className="pu-executive-accent-bar" />
+            
+            <div className="pu-executive-card-inner">
+              <div className="pu-executive-main">
+                <div className="pu-executive-avatar-wrap">
+                  <div className="pu-executive-avatar" aria-hidden="true">
+                    {initials(name)}
+                  </div>
+                  <div className="pu-executive-avatar-badge" title="Tài khoản đã xác thực">
+                    <ShieldCheck className="w-3.5 h-3.5 text-white" />
+                  </div>
+                </div>
+
+                <div className="pu-executive-content">
+                  <div className="pu-executive-header-row">
+                    <h2 className="pu-executive-name">{name}</h2>
+                    <span className="pu-executive-status-pill">
+                      <span className="pu-status-live-dot" />
+                      <span>Nhân viên chính thức</span>
+                    </span>
+                  </div>
+
+                  <div className="pu-executive-role-row">
+                    <span className="pu-role-position">{positionName}</span>
+                    <span className="pu-role-divider">•</span>
+                    <span className="pu-role-dept">{departmentName}</span>
+                    <span className="pu-role-divider">•</span>
+                    <span className="pu-role-org">{organizationName}</span>
+                  </div>
+
+                  <div className="pu-executive-chips">
+                    <div className="pu-chip-static">
+                      <span className="pu-chip-label">Mã định danh:</span>
+                      <code className="pu-chip-code">{empCode}</code>
+                    </div>
+
+                    <div className="pu-chip-static">
+                      <Mail className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{person.workEmail || user?.email || 'employee@digitalent.ai'}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="pu-minimal-info">
-                <div className="pu-minimal-name-row">
-                  <h2 className="pu-minimal-name">{name}</h2>
-                  <span className="pu-minimal-status-pill">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Nhân viên chính thức</span>
-                  </span>
-                </div>
-
-                <div className="pu-minimal-role">
-                  {positionName} · {departmentName} · {organizationName}
-                </div>
-
-                <div className="pu-minimal-meta">
-                  <span>Mã định danh: <code>{empCode}</code></span>
-                  <span>·</span>
-                  <span>Email: <code>{person.workEmail || user?.email || 'employee@digitalent.ai'}</code></span>
-                  <span>·</span>
-                  <span>Quản lý trực tiếp: <strong style={{ color: '#0f172a' }}>{reviewerName}</strong></span>
-                </div>
+              {/* Khối Thao tác nhanh Hồ sơ (Bên phải) */}
+              <div className="pu-executive-actions pu-no-print">
+                <button
+                  type="button"
+                  className="pu-hero-action-secondary"
+                  onClick={handleCopyCode}
+                >
+                  {copiedCode ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  <span>{copiedCode ? 'Đã sao chép mã' : 'Sao chép mã định danh'}</span>
+                </button>
               </div>
-            </div>
-
-            {/* Các tác vụ thực tế của Hồ sơ Năng lực (Không lặp lại Sidebar) */}
-            <div className="pu-minimal-hero-actions pu-no-print">
-              <button
-                type="button"
-                className="pu-hero-action-primary"
-                onClick={() => window.print()}
-              >
-                <Printer className="w-4 h-4" />
-                <span>Xuất hồ sơ năng lực (PDF)</span>
-              </button>
-
-              <button
-                type="button"
-                className="pu-hero-action-secondary"
-                onClick={handleCopyCode}
-              >
-                {copiedCode ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                <span>{copiedCode ? 'Đã sao chép mã' : 'Sao chép mã định danh'}</span>
-              </button>
             </div>
           </section>
 
@@ -429,15 +451,17 @@ export function PulseProfilePage() {
                     <th>Hiện tại</th>
                     <th>Chuẩn vị trí</th>
                     <th>Trần PB</th>
-                    <th>Tiến độ (L1 - L4)</th>
+                    <th>Tiến độ (L1 - L3)</th>
                     <th>Chênh lệch</th>
                     <th style={{ textAlign: 'right' }} className="pu-no-print">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.domains.map((domain) => {
-                    const isMet = domain.verified >= domain.target && domain.target > 0;
-                    const diff = domain.target - domain.verified;
+                    const cappedTarget = Math.min(3, Math.max(1, domain.target));
+                    const cappedVerified = Math.min(3, Math.max(0, domain.verified));
+                    const isMet = cappedVerified >= cappedTarget && cappedTarget > 0;
+                    const diff = cappedTarget - cappedVerified;
                     const domainOutcome = outcomes?.find((o) => o.subtitle?.includes(domain.name) || o.title.includes(domain.name));
                     const domainIcon = DOMAIN_ICONS[domain.number] || <Layers className="w-4 h-4 text-slate-600" />;
 
@@ -463,33 +487,33 @@ export function PulseProfilePage() {
                           {domain.verified > 0 ? (
                             <span className="pu-benchmark-pill-verified">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              L{domain.verified} · {domain.verified >= 2 ? 'Trung cấp' : 'Cơ bản'}
+                              L{cappedVerified} · {levelName(cappedVerified)}
                             </span>
                           ) : (
                             <span className="pu-benchmark-pill-unassessed">
-                              Chưa đánh giá (L0)
+                              Chưa đánh giá
                             </span>
                           )}
                         </td>
 
                         <td>
                           <span className="pu-benchmark-pill-target">
-                            L{domain.target} · {domain.target >= 2 ? 'Trung cấp' : 'Cơ bản'}
+                            L{cappedTarget} · {levelName(cappedTarget)}
                           </span>
                         </td>
 
                         <td>
                           <span className="pu-benchmark-ceiling-tag">
-                            Trần L{domain.ceiling}
+                            Trần L{Math.min(3, domain.ceiling)}
                           </span>
                         </td>
 
-                        {/* Thanh 4 Vạch Trực Quan (Level Bar L1 - L4) */}
+                        {/* Thanh 3 Vạch Trực Quan (Level Bar L1 - L3) */}
                         <td>
-                          <LevelBar4 verified={domain.verified} target={domain.target} />
+                          <LevelBar3 verified={domain.verified} target={domain.target} />
                         </td>
 
-                        {/* Cột Chênh lệch ngắn gọn, không lặp lại cụm dài gây chật bảng */}
+                        {/* Cột Chênh lệch ngắn gọn, trực quan */}
                         <td>
                           {isMet ? (
                             <span className="pu-benchmark-gap-met">
@@ -533,14 +557,14 @@ export function PulseProfilePage() {
               <span style={{ fontWeight: 700, color: '#0f172a' }}>Chú giải cấp độ:</span>
               <div className="pu-legend-item">
                 <span className="pu-legend-dot" style={{ background: '#059669' }} />
-                <span>Đã đạt chuẩn (L1 - L4)</span>
+                <span>Đã đạt chuẩn (L1 - L3)</span>
               </div>
               <div className="pu-legend-item">
-                <span className="pu-legend-dot" style={{ background: '#fffbeb', border: '1.5px dashed #f59e0b' }} />
+                <span className="pu-legend-dot" style={{ background: '#eff6ff', border: '1.5px dashed #2563eb' }} />
                 <span>Mục tiêu chuẩn chức danh</span>
               </div>
               <div className="pu-legend-item">
-                <span className="pu-legend-dot" style={{ background: '#e2e8f0' }} />
+                <span className="pu-legend-dot" style={{ background: '#f1f5f9' }} />
                 <span>Chưa hoàn thành</span>
               </div>
             </div>
@@ -915,10 +939,10 @@ export function PulseProfilePage() {
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div className="pu-pref-item">
                 <div>
-                  <div className="pu-pref-item-title">Kết quả chấm điểm bài thi & bài tập</div>
+                  <div className="pu-pref-item-title">Kết quả đánh giá bài kiểm tra & thực hành</div>
                   <div className="pu-pref-item-desc">Nhận thông báo ngay khi người thẩm định hoàn tất nhận xét hoặc duyệt bài làm.</div>
                 </div>
-                <label className="pu-switch-control" htmlFor="pref-reviews" title="Bật/tắt thông báo kết quả chấm điểm">
+                <label className="pu-switch-control" htmlFor="pref-reviews" title="Bật/tắt thông báo kết quả đánh giá">
                   <input
                     id="pref-reviews"
                     type="checkbox"
@@ -981,7 +1005,7 @@ export function PulseProfilePage() {
               </div>
               <div>
                 <h2 className="pu-sec-title">Ngôn ngữ & Trải nghiệm học</h2>
-                <p className="pu-sec-sub">Cấu hình ngôn ngữ hiển thị và chế độ tương tác bài giảng.</p>
+                <p className="pu-sec-sub">Cấu hình ngôn ngữ hiển thị và chế độ tương tác bài học.</p>
               </div>
             </div>
 
@@ -989,7 +1013,7 @@ export function PulseProfilePage() {
               <div className="pu-pref-item">
                 <div>
                   <div className="pu-pref-item-title">Ngôn ngữ hiển thị</div>
-                  <div className="pu-pref-item-desc">Ngôn ngữ mặc định cho giao diện và giáo trình bài giảng.</div>
+                  <div className="pu-pref-item-desc">Ngôn ngữ mặc định cho giao diện và tài liệu đào tạo.</div>
                 </div>
                 <select
                   value={prefLanguage}
@@ -1022,7 +1046,7 @@ export function PulseProfilePage() {
               <div className="pu-pref-item">
                 <div>
                   <div className="pu-pref-item-title">Tự động đồng bộ tiến độ học</div>
-                  <div className="pu-pref-item-desc">Lưu tiến độ đọc slide và bài tập trắc nghiệm theo thời gian thực về máy chủ.</div>
+                  <div className="pu-pref-item-desc">Lưu tiến độ đọc nội dung và câu hỏi kiểm tra theo thời gian thực về máy chủ.</div>
                 </div>
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#059669', background: '#ecfdf5', padding: '3px 8px', borderRadius: 6 }}>
                   Bật mặc định

@@ -11,7 +11,7 @@ import { ProctoredExam } from '../exam/ProctoredExam';
 import { PRE_LABELS, examStructure, levelName, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 
-const LABEL = 'Đánh giá trước khi học';
+const LABEL = 'Đánh giá năng lực đầu vào';
 
 /**
  * EM-12 · Bài đánh giá trước khi học của một khóa: đề như bài cuối khóa (trắc nghiệm + tự luận), một lần làm, có giám sát
@@ -119,11 +119,11 @@ function PreAssessmentStatus({ data }: { data: PulsePreAssessment }) {
       )}
 
       <section className="pu-surface pu-pad">
-        <Mini>Đề bài và tiêu chí chấm</Mini>
+        <Mini>Nội dung và tiêu chí đánh giá</Mini>
         <p className="pu-panel-desc">{examStructure(data.choiceCount, data.choicePassMark)}</p>
         <CriteriaRubric criteria={data.criteria} />
       </section>
-      {status === 'LOCKED' && <Notice>Mỗi khóa có một bài đánh giá trước khi học; bài mở khi khóa nằm trong lộ trình và khóa cấp trước đã đạt.</Notice>}
+      {status === 'LOCKED' && <Notice>Mỗi khóa có một bài đánh giá năng lực đầu vào; bài mở khi khóa nằm trong lộ trình và khóa cấp trước đã đạt.</Notice>}
     </div>
   );
 }

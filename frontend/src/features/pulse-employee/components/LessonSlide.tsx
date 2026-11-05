@@ -139,7 +139,7 @@ export function LessonSlide({
                   <details className="pu-voiceover-details">
                     <summary className="pu-voiceover-summary">
                       <Video size={13} />
-                      <span>Lời thuyết minh tóm tắt bài giảng</span>
+                      <span>Lời thuyết minh tóm tắt nội dung</span>
                     </summary>
                     <div className="pu-voiceover-content">
                       <p>{mediaSpec.videoScript}</p>
@@ -232,7 +232,7 @@ export function LessonSlide({
           <div>
             <h3>Dừng một chút, thử nghĩ xem</h3>
             <RichText body={section.body} />
-            <small>Tự suy nghĩ và liên hệ thực tế trước khi sang bài tiếp theo.</small>
+            <small>Tự suy nghĩ và liên hệ thực tế trước khi sang trang tiếp theo.</small>
           </div>
         </section>
       ))}

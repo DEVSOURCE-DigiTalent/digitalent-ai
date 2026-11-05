@@ -26,7 +26,7 @@ import { pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 
 const KIND_LABELS: Record<PulseOutcomeKind, string> = {
-  COURSE: 'Huy hiệu môn học',
+  COURSE: 'Huy hiệu khóa học',
   PRE_ASSESSMENT: 'Bài đánh giá đầu vào',
   CERTIFICATE: 'Chứng chỉ chuẩn chức danh',
   PRACTICAL_TASK: 'Minh chứng thực tế',
@@ -195,7 +195,7 @@ export function PulseOutcomesPage() {
             className={`pu-outcomes-tab-btn${activeFilter === 'COURSE' ? ' active' : ''}`}
           >
             <Award size={13} />
-            <span>Huy hiệu môn học</span>
+            <span>Huy hiệu khóa học</span>
             <span className="pu-outcomes-tab-badge">{courseCerts.length}</span>
           </button>
           <button
@@ -226,7 +226,7 @@ export function PulseOutcomesPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm theo tên môn hoặc mã chứng chỉ..."
+            placeholder="Tìm theo tên khóa học hoặc mã chứng chỉ..."
             className="pu-outcomes-search-input"
             aria-label="Tìm kiếm chứng chỉ"
           />
@@ -238,10 +238,10 @@ export function PulseOutcomesPage() {
         <div className="pu-badges-sec-head">
           <div>
             <h2 id="sec-badges-title" className="pu-badges-title">
-              Danh mục Huy hiệu Môn học & Minh chứng ({filteredOutcomes.length})
+              Danh mục Huy hiệu Khóa học & Minh chứng ({filteredOutcomes.length})
             </h2>
             <p className="pu-badges-sub">
-              Bản ghi công nhận chính thức qua bài thi cuối khóa hoặc bài khảo sát miễn học theo 6 lĩnh vực.
+              Bản ghi công nhận chính thức qua bài đánh giá cuối khóa hoặc bài đánh giá công nhận năng lực theo 6 lĩnh vực.
             </p>
           </div>
         </div>
@@ -253,7 +253,7 @@ export function PulseOutcomesPage() {
         ) : filteredOutcomes.length === 0 ? (
           <Empty
             icon={<Award size={24} />}
-            title={searchQuery ? 'Không tìm thấy chứng nhận phù hợp' : 'Chưa có bản ghi môn học được xác nhận'}
+            title={searchQuery ? 'Không tìm thấy chứng nhận phù hợp' : 'Chưa có bản ghi khóa học được xác nhận'}
             action={
               searchQuery ? (
                 <button
@@ -500,7 +500,7 @@ export function PulseOutcomeDetailPage() {
                 {data.holderName}
               </h2>
               <p className="text-xs sm:text-sm text-[#57534e] max-w-lg mx-auto">
-                Đã hoàn thành xuất sắc yêu cầu đào tạo và đáp ứng tiêu chuẩn năng lực môn học:
+                Đã hoàn thành xuất sắc yêu cầu đào tạo và đáp ứng tiêu chuẩn năng lực khóa học:
               </p>
               <div className="inline-block px-4 py-1.5 rounded bg-[#f5efe6] border border-[#b89758]/40">
                 <strong className="text-sm sm:text-base font-bold text-[#8c6d32]">

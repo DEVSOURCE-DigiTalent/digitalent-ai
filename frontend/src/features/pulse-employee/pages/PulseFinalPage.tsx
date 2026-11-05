@@ -60,7 +60,7 @@ export function PulseFinalPage() {
         outcomes={{
           pass: `Xác nhận đạt chuẩn ${code} (mức ${levelName(data.course.tier)}) và tự động mở khóa tiếp theo.`,
           fail: attemptNo < data.maxAttempts
-            ? 'Đọc nhận xét chi tiết từ hội đồng và hoàn thiện bài thi ở lần nộp tiếp theo.'
+            ? 'Đọc nhận xét chi tiết từ hội đồng và hoàn thiện bài làm ở lần nộp tiếp theo.'
             : 'Hội đồng khảo thí và quản lý phòng ban sẽ hỗ trợ định hướng trước khi tiếp tục lộ trình.',
         }}
         intro={last?.decisionReason ? (
@@ -106,11 +106,11 @@ function FinalView({ final }: { final: PulseFinal }) {
       <section className="pu-sequence" aria-label="Trình tự của khóa học">
         <div className={allPassed ? 'done' : 'current'}>
           <b>01</b>
-          <span>Hoàn thành các mô đun<small>Đạt {final.modulesPassed}/{final.moduleCount} bài ôn tập</small></span>
+          <span>Hoàn thành các mô đun<small>Đạt {final.modulesPassed}/{final.moduleCount} bài kiểm tra</small></span>
         </div>
         <div className={status === 'APPROVED' || status === 'PENDING' ? 'done' : allPassed ? 'current' : ''}>
           <b>02</b>
-          <span>Bài thi cuối khóa<small>{submitted}/{final.maxAttempts} lần nộp</small></span>
+          <span>Bài đánh giá cuối khóa<small>{submitted}/{final.maxAttempts} lần nộp</small></span>
         </div>
         <div className={status === 'APPROVED' ? 'done' : status === 'PENDING' ? 'current' : ''}>
           <b>03</b>
@@ -119,7 +119,7 @@ function FinalView({ final }: { final: PulseFinal }) {
       </section>
 
       <section className="pu-surface pu-pad">
-        <Mini>{course.domainName} · {levelName(course.tier)} · bài cuối khóa</Mini>
+        <Mini>{course.domainName} · {levelName(course.tier)} · đánh giá cuối khóa</Mini>
         {final.assignment && <CourseFinalBrief content={final.assignment} />}
         <h2 className="pu-panel-title">{final.choiceCount > 0 ? 'Trắc nghiệm & Tự luận thực hành có thể kiểm chứng' : 'Ghi chú công việc có thể kiểm tra'}</h2>
         <p className="pu-panel-desc">
@@ -135,7 +135,7 @@ function FinalView({ final }: { final: PulseFinal }) {
       {attempts.length > 0 && (
         <section className="pu-surface pu-pad" aria-labelledby="pu-attempts-title">
           <Mini>Lịch sử nộp bài</Mini>
-          <h2 className="pu-panel-title" id="pu-attempts-title">Bài đã nộp và phản hồi của người chấm.</h2>
+          <h2 className="pu-panel-title" id="pu-attempts-title">Bài đã nộp và phản hồi từ người đánh giá.</h2>
           <div className="pu-attempts">
             {[...attempts].reverse().map((attempt) => <AttemptCard key={attempt.submissionId} attempt={attempt} max={final.maxAttempts} />)}
           </div>
@@ -242,7 +242,7 @@ function AttemptCard({ attempt, max }: { attempt: PulseFinalAttempt; max: number
       <header>
         <span>Lần nộp {attempt.attemptNo}/{max} · {formatDateTime(attempt.submittedAt)}</span>
         <Pill tone={attempt.decision === 'PASSED' ? 'green' : attempt.decision === 'NOT_YET' ? 'coral' : 'gray'}>
-          {attempt.decision === 'PASSED' ? 'Đã duyệt' : attempt.decision === 'NOT_YET' ? 'Chưa đạt · cần sửa' : 'Chờ hội đồng chấm'}
+          {attempt.decision === 'PASSED' ? 'Đã duyệt' : attempt.decision === 'NOT_YET' ? 'Chưa đạt · cần sửa' : 'Chờ hội đồng đánh giá'}
         </Pill>
       </header>
       <ChoiceScore choice={attempt.choice} />

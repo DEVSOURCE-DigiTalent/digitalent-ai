@@ -53,7 +53,7 @@ export function TrialLearningHead({ total, done }: { total: number; done: number
       <div>
         <Eyebrow>Học thử</Eyebrow>
         <h1>{total} khóa Cơ bản để trải nghiệm.</h1>
-        <p>Mỗi lĩnh vực một khóa: học các mô-đun, nộp bài cuối khóa, mentor chấm.</p>
+        <p>Mỗi lĩnh vực một khóa: hoàn thành các mô-đun, nộp bài cuối khóa và được mentor đánh giá.</p>
       </div>
       {done != null && (
         <div className="pu-tl-score">
@@ -73,7 +73,7 @@ export function TrialNotice({ state, mine }: { state: TrialGateState; mine: MyTr
       <NoticeCard
         tone="waiting"
         icon={<Hourglass size={20} />}
-        title="Đang chờ mentor chấm bài"
+        title="Đang chờ mentor đánh giá bài làm"
         text="Học thử mở khi mentor công bố kết quả bài test."
         meta={mine.submittedAt ? `Đã nộp ${formatWhen(mine.submittedAt)}` : undefined}
         action={<PuLink to={PULSE_PATHS.trialTest} kind="outline" small>Xem bài test</PuLink>}
@@ -95,7 +95,7 @@ export function TrialNotice({ state, mine }: { state: TrialGateState; mine: MyTr
     <NoticeCard
       icon={<ClipboardList size={20} />}
       title="Làm bài test trước khi học"
-      text="Học thử mở sau khi mentor chấm bài test của bạn."
+      text="Chương trình đào tạo mở sau khi mentor đánh giá bài test của bạn."
       meta={mine.canStart && mine.testDeadline ? `Hạn nộp ${formatWhen(mine.testDeadline)}` : mine.closedMessage ?? undefined}
       action={<PuLink to={PULSE_PATHS.trialTest}>Làm bài test <ArrowRight size={15} aria-hidden /></PuLink>}
     />

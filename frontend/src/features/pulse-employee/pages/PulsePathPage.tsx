@@ -299,7 +299,7 @@ function PathHeaderSection({
                 className="pu-pmission-cta-btn primary pretest"
               >
                 <Zap size={14} />
-                <span>Làm test vượt cấp ngay</span>
+                <span>Đánh giá đầu vào ngay</span>
                 <ChevronRight size={14} className="pu-arrow-icon" />
               </Link>
             ) : isInProgress ? (
@@ -431,7 +431,7 @@ function MindmapJourney({
                     </span>
                   ) : hasWaiting ? (
                     <span className="pu-station-pill waiting">
-                      <Clock size={11} /> Chờ chấm bài
+                      <Clock size={11} /> Chờ đánh giá
                     </span>
                   ) : (
                     <span className="pu-station-pill upcoming">
@@ -487,12 +487,12 @@ function MindmapJourney({
                           )}
                           {isPreTest && !isDone && (
                             <span className="pu-scard-badge pretest">
-                              <Zap size={10} /> Test vượt cấp
+                              <Zap size={10} /> Đánh giá đầu vào
                             </span>
                           )}
                           {isWaiting && (
                             <span className="pu-scard-badge waiting">
-                              Chờ chấm
+                              Chờ duyệt
                             </span>
                           )}
                           {isLocked && (
@@ -536,7 +536,7 @@ function MindmapJourney({
                               to={PULSE_PATHS.preAssessment(course.courseId)}
                               className="pu-scard-cta pretest"
                             >
-                              <Zap size={12} /> Làm test vượt cấp →
+                              <Zap size={12} /> Làm bài đánh giá đầu vào →
                             </Link>
                           ) : isInProgress ? (
                             <Link

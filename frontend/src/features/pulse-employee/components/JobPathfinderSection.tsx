@@ -103,7 +103,7 @@ export function JobPathfinderSection({
             <p className="pu-gauge-note">
               {pct === 100
                 ? 'Tất cả các khóa yêu cầu cho vị trí đã được duyệt chính thức.'
-                : `Còn thiếu ${total - approved} khóa học/bài thi để đạt 100% chuẩn chức danh.`}
+                : `Còn thiếu ${total - approved} khóa học để đạt 100% chuẩn chức danh.`}
             </p>
             {overview.reviewer && (
               <div className="pu-gauge-reviewer">
@@ -148,7 +148,7 @@ export function JobPathfinderSection({
                       </span>
                     ) : isWaiting ? (
                       <span className="pu-pill waiting">
-                        <Clock size={11} /> Chờ chấm
+                        <Clock size={11} /> Chờ duyệt
                       </span>
                     ) : isPreTest ? (
                       <span className="pu-pill pretest">

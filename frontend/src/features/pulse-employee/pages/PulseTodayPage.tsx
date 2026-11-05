@@ -29,7 +29,7 @@ import { QuickSyllabusDrawer } from '../components/QuickSyllabusDrawer';
  * Hôm nay (EM-01) - Actionable Enterprise Dashboard
  * - Hero Banner: Ảnh nền trừu tượng công nghệ, thông điệp ngắn gọn, trực quan.
  * - 4 Quick Bento Stat Cards: Tiến độ 13%, Hàng đợi chờ chấm, Việc tiếp theo M5-F, Phủ 6 lĩnh vực.
- * - Review Queue Widget: Widget hàng đợi chấm điểm trang nhã với các chip môn học bấm được.
+ * - Review Queue Widget: Widget hàng đợi đánh giá trang nhã với các chip khóa học bấm được.
  * - Action Center (Việc nên làm tiếp): Tiêu điểm việc cần làm ngay.
  * - Competency Radar Chart + 6 Lĩnh vực: Biểu đồ Radar 6 góc đối chiếu trực quan năng lực vị trí.
  * - Quick Syllabus Slide-over Drawer: Xem nhanh đề cương khóa học.
@@ -69,7 +69,7 @@ export function PulseTodayPage() {
       <nav className="pu-more-links" aria-label="Truy cập nhanh">
         <span className="pu-more-links-title">Truy cập nhanh:</span>
         <PuLink to={PULSE_PATHS.path} kind="outline" small>Lộ trình đào tạo chi tiết →</PuLink>
-        <PuLink to={PULSE_PATHS.practice} kind="outline" small>Sổ kiểm tra & bài tập thực tế →</PuLink>
+        <PuLink to={PULSE_PATHS.practice} kind="outline" small>Sổ khảo thí & đánh giá năng lực →</PuLink>
         <PuLink to={PULSE_PATHS.outcomes} kind="outline" small>Chứng chỉ chức danh →</PuLink>
         <PuLink to={PULSE_PATHS.profile} kind="outline" small>Hồ sơ cá nhân →</PuLink>
       </nav>
@@ -191,7 +191,7 @@ function QuickStatCards({
             <Award size={14} />
           </div>
         </div>
-        <div className="pu-qstat-value">{approved} môn</div>
+        <div className="pu-qstat-value">{approved} khóa</div>
         <div className="pu-qstat-status-badge emerald">
           <span>{approved > 0 ? 'M1-I đạt chuẩn' : 'Chưa có'}</span>
         </div>
@@ -239,7 +239,7 @@ function QuickStatCards({
   );
 }
 
-/* ── 3. Review Queue Section (Phương án A: Hàng đợi chấm điểm) ─────────── */
+/* ── 3. Review Queue Section (Phương án A: Hàng đợi đánh giá) ─────────── */
 function ReviewQueueSection({
   overview,
   onSelectCourse,
@@ -252,17 +252,17 @@ function ReviewQueueSection({
   if (waiting.length === 0) return null;
 
   return (
-    <section className="pu-review-queue-widget" aria-label="Hàng đợi chờ mentor chấm điểm">
+    <section className="pu-review-queue-widget" aria-label="Hàng đợi chờ mentor đánh giá">
       <div className="pu-review-queue-info">
         <div className="pu-review-queue-icon-wrap" aria-hidden="true">
           <Clock size={18} />
         </div>
         <div className="pu-review-queue-text">
           <div className="pu-review-queue-head">
-            <strong>{waiting.length} bài kiểm tra đang chờ mentor chấm điểm</strong>
+            <strong>{waiting.length} bài kiểm tra đang chờ mentor đánh giá</strong>
           </div>
           <p className="pu-review-queue-desc">
-            Bấm vào từng môn bên dưới để xem bài đã nộp và tiêu chí đánh giá.
+            Bấm vào từng khóa học bên dưới để xem bài đã nộp và tiêu chí đánh giá.
           </p>
         </div>
       </div>
@@ -274,7 +274,7 @@ function ReviewQueueSection({
             type="button"
             className="pu-review-chip-btn"
             onClick={() => onSelectCourse(c)}
-            title={`Xem bài đã nộp của môn ${c.code} · ${c.title}`}
+            title={`Xem bài đã nộp của khóa ${c.code} · ${c.title}`}
           >
             <span className="pu-review-chip-code">{c.code}</span>
             <span className="pu-review-chip-title">{toSentenceCase(c.title)}</span>
@@ -327,7 +327,7 @@ function ActionCenter({
           </h2>
           <p className="pu-action-desc">
             {steps.length === 0
-              ? 'Tất cả các khóa hiện tại đã đạt hoặc đang chờ mentor chấm duyệt.'
+              ? 'Tất cả các khóa hiện tại đã đạt hoặc đang chờ mentor đánh giá.'
               : fresh
                 ? 'Thực hiện bài đánh giá trước khi học để được miễn học lý thuyết nếu đã đạt năng lực.'
                 : 'Các khóa học và bài kiểm tra ưu tiên theo tiến trình của bạn.'}
@@ -439,9 +439,9 @@ function ActionCenter({
               {currentCourse.slotStatus === 'PRE_ASSESSMENT'
                 ? 'Làm bài đánh giá đầu vào gồm 10 câu trắc nghiệm và 1 câu tự luận. Đạt từ 80% trở lên sẽ được công nhận hoàn thành mà không cần học lại lý thuyết.'
                 : currentCourse.slotStatus === 'FINAL_READY'
-                ? 'Bạn đã hoàn thành 100% bài giảng. Hãy làm bài thi cuối khóa để hoàn tất chứng nhận môn học.'
+                ? 'Bạn đã hoàn thành 100% nội dung đào tạo. Hãy làm bài đánh giá cuối khóa để hoàn tất chứng nhận khóa học.'
                 : currentCourse.slotStatus === 'IN_PROGRESS'
-                ? `Đã hoàn thành ${currentCourse.progressPercent}% bài học. Hãy tiếp tục học các mô đun tiếp theo để mở khóa bài thi cuối khóa.`
+                ? `Đã hoàn thành ${currentCourse.progressPercent}% nội dung. Hãy tiếp tục học các mô đun tiếp theo để mở khóa bài đánh giá cuối khóa.`
                 : 'Khóa học chuẩn hóa theo khung năng lực chức danh.'}
             </p>
 
@@ -532,13 +532,13 @@ function ActionCardCTA({ course }: { course: PulseCourseSummary }) {
     case 'FINAL_READY':
       return (
         <PuLink to={PULSE_PATHS.final(course.courseId)} kind="primary" small>
-          Làm bài thi cuối khóa →
+          Làm bài đánh giá cuối khóa →
         </PuLink>
       );
     case 'IN_PROGRESS':
       return (
         <PuLink to={PULSE_PATHS.course(course.courseId)} kind="primary" small>
-          Học tiếp bài giảng →
+          Học tiếp mô đun →
         </PuLink>
       );
     default:
@@ -622,7 +622,7 @@ function DomainRadarSection({
             const statusText = isFullyCompleted
               ? 'Đã đạt'
               : waitingCount > 0
-              ? 'Chờ chấm'
+              ? 'Chờ duyệt'
               : isLearning
               ? 'Đang học'
               : 'Chưa bắt đầu';
@@ -915,7 +915,7 @@ function OnboardingBanner({ overview }: { overview: PulseOverview }) {
             boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)',
           }}
         >
-          Làm bài test ngay →
+          Làm bài đánh giá ngay →
         </PuLink>
       </div>
     );

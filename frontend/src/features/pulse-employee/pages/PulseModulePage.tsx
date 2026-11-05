@@ -242,7 +242,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                 <GraduationCap size={16} />
               </div>
               <div className="pu-nav-final-info">
-                <strong>Kỳ thi cuối khóa</strong>
+                <strong>Đánh giá cuối khóa</strong>
                 <small>Giám sát trực tuyến · 3 tiêu chí</small>
               </div>
             </div>
@@ -368,7 +368,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                         document.getElementById('pu-module-quiz')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                       }}
                     >
-                      <span>Làm bài ôn tập ({detail.quiz?.questions.length ?? 2} câu)</span>
+                      <span>Làm câu hỏi kiểm tra ({detail.quiz?.questions.length ?? 2} câu)</span>
                       <ArrowDown size={14} />
                     </button>
                   ) : (
@@ -388,7 +388,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
           ) : (
             <div className="pu-quiz-locked-card">
               <AlertCircle size={20} className="text-amber-500" />
-              <p>Mô đun này hiện chưa có trang bài giảng.</p>
+              <p>Mô đun này hiện chưa có nội dung bài học.</p>
             </div>
           )}
 
@@ -404,7 +404,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
               </span>
             </div>
             <p>
-              Hãy liên hệ một nghiệp vụ thực tế trong công việc hàng ngày mà bạn có thể áp dụng ngay kiến thức của bài học này (chuẩn hóa định dạng, trích dẫn nguồn và kiểm chứng minh chứng). Đây sẽ là tư liệu hữu ích cho bài thi đánh giá cuối khóa.
+              Hãy liên hệ một nghiệp vụ thực tế trong công việc hàng ngày mà bạn có thể áp dụng ngay kiến thức của bài học này (chuẩn hóa định dạng, trích dẫn nguồn và kiểm chứng minh chứng). Đây sẽ là tư liệu hữu ích cho bài đánh giá năng lực cuối khóa.
             </p>
           </div>
 
@@ -417,9 +417,9 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                     <Lock size={18} />
                   </div>
                   <div>
-                    <h4>Câu hỏi ôn tập mô-đun {pad2(module.index + 1)} ({detail.quiz?.questions.length ?? 2} câu trắc nghiệm)</h4>
+                    <h4>Câu hỏi kiểm tra mô-đun {pad2(module.index + 1)} ({detail.quiz?.questions.length ?? 2} câu trắc nghiệm)</h4>
                     <p>
-                      Vui lòng đọc tuần tự các trang bài giảng (Đang ở trang {pad2(index + 1)} / {pad2(slides.length)}) để mở khóa bài kiểm tra kiến thức cuối mô-đun.
+                      Vui lòng đọc tuần tự các trang bài học (Đang ở trang {pad2(index + 1)} / {pad2(slides.length)}) để mở khóa bài kiểm tra kiến thức cuối mô-đun.
                     </p>
                   </div>
                 </div>
@@ -473,7 +473,7 @@ function QuizArea({ detail, viewed, reachedEnd, onOpenPage, opening }: QuizAreaP
   const nextPath = detail.nextModuleId
     ? PULSE_PATHS.module(course.courseId, detail.nextModuleId)
     : PULSE_PATHS.final(course.courseId);
-  const nextLabel = detail.nextModuleId ? 'Học mô-đun tiếp theo →' : 'Đến bài thi cuối khóa →';
+  const nextLabel = detail.nextModuleId ? 'Học mô-đun tiếp theo →' : 'Đến bài đánh giá cuối khóa →';
 
   if (detail.quizPassed || (!detail.quiz && !detail.quizBlockReason && viewed && !detail.sample && course.canWork)) {
     const score = detail.lastQuiz;
@@ -485,11 +485,11 @@ function QuizArea({ detail, viewed, reachedEnd, onOpenPage, opening }: QuizAreaP
         <div>
           <strong>
             {detail.quiz || score
-              ? `Đã đạt câu hỏi ôn tập${score ? ` (đúng ${score.score}/${score.total} câu)` : ''}`
+              ? `Đã đạt câu hỏi kiểm tra${score ? ` (đúng ${score.score}/${score.total} câu)` : ''}`
               : 'Đã hoàn thành nội dung bài học'}
           </strong>
           <p>
-            Tiến độ đã được lưu thành công. {detail.nextModuleId ? 'Mô đun tiếp theo đã sẵn sàng.' : 'Bạn đã sẵn sàng cho bài thi cuối khóa.'}
+            Tiến độ đã được lưu thành công. {detail.nextModuleId ? 'Mô đun tiếp theo đã sẵn sàng.' : 'Bạn đã sẵn sàng cho bài đánh giá cuối khóa.'}
           </p>
         </div>
         <PuLink to={nextPath} small>
@@ -625,8 +625,8 @@ function QuizForm({
           if (res.passed) {
             toast.success(
               res.allModulesPassed
-                ? 'Đã hoàn thành mọi mô đun! Bài thi cuối khóa đã sẵn sàng.'
-                : 'Đạt câu hỏi ôn tập! Mô đun tiếp theo đã mở.',
+                ? 'Đã hoàn thành mọi mô đun! Bài đánh giá cuối khóa đã sẵn sàng.'
+                : 'Đạt câu hỏi kiểm tra! Mô đun tiếp theo đã mở.',
             );
           }
         },
@@ -637,19 +637,19 @@ function QuizForm({
 
   return (
     <section className="pu-quiz" aria-labelledby="pu-quiz-title">
-      <h2 id="pu-quiz-title">Câu hỏi ôn tập mô-đun {pad2(module.index + 1)}</h2>
+      <h2 id="pu-quiz-title">Câu hỏi kiểm tra mô-đun {pad2(module.index + 1)}</h2>
       {module.quizBankQuestionCount != null && (
         <p>
-          Lượt thi này gồm {questions.length} câu được chọn ngẫu nhiên từ ngân hàng {module.quizBankQuestionCount} câu hỏi của mô-đun.
+          Lượt kiểm tra này gồm {questions.length} câu được chọn ngẫu nhiên từ ngân hàng {module.quizBankQuestionCount} câu hỏi của mô-đun.
         </p>
       )}
       <p>
-        Trả lời đúng tất cả {questions.length} câu để hoàn thành mô-đun. Nếu chưa đạt, bạn có thể xem lại trang bài giảng và làm lại với bộ câu hỏi mới.
+        Trả lời đúng tất cả {questions.length} câu để hoàn thành mô-đun. Nếu chưa đạt, bạn có thể xem lại trang bài học và làm lại với bộ câu hỏi mới.
       </p>
 
       {!viewed ? (
         <p style={{ color: '#64748b', fontSize: 13.5 }}>
-          {reachedEnd ? 'Đang lưu tiến độ đọc bài giảng…' : 'Vui lòng đọc hết các trang nội dung để mở câu hỏi ôn tập.'}
+          {reachedEnd ? 'Đang lưu tiến độ học tập…' : 'Vui lòng đọc hết các trang nội dung để mở câu hỏi kiểm tra.'}
         </p>
       ) : (
         <form onSubmit={onSubmit}>
@@ -679,7 +679,7 @@ function QuizForm({
 
           {result && !result.passed && (
             <div className="pu-quiz-feedback" role="alert">
-              Kết quả: Đúng {result.score}/{result.total} câu. Bạn cần đúng tất cả các câu để đạt. Hãy xem lại bài giảng và thử lại.
+              Kết quả: Đúng {result.score}/{result.total} câu. Bạn cần đúng tất cả các câu để đạt. Hãy xem lại nội dung và thử lại.
             </div>
           )}
 
@@ -689,7 +689,7 @@ function QuizForm({
             disabled={answered < questions.length || submit.isPending}
             style={{ marginTop: 8 }}
           >
-            {submit.isPending ? 'Đang chấm điểm…' : 'Nộp bài ôn tập →'}
+            {submit.isPending ? 'Đang kiểm tra kết quả…' : 'Nộp câu trả lời →'}
           </button>
         </form>
       )}

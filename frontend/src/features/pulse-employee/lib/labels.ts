@@ -40,11 +40,11 @@ export const ACCESS_LABELS: Record<PulseCourseAccess, string> = {
 export const SLOT_LABELS: Record<PulseSlotStatus, string> = {
   COMPLETED: 'Đã đạt',
   PRE_ASSESSMENT: 'Cần đánh giá',
-  PRE_REVIEW: 'Chờ mentor chấm',
+  PRE_REVIEW: 'Chờ đánh giá',
   TO_LEARN: 'Cần học',
   IN_PROGRESS: 'Đang học',
   FINAL_READY: 'Đã học xong',
-  IN_REVIEW: 'Chờ mentor chấm',
+  IN_REVIEW: 'Chờ đánh giá',
   RETRY_WAIT: 'Chờ mở lần nộp cuối',
   NEEDS_SUPPORT: 'Cần hỗ trợ',
   SEAT_NEEDED: 'Cần suất học',
@@ -68,7 +68,7 @@ export const slotTone = (status: PulseSlotStatus): 'passed' | 'ready' | 'review'
 export const PRE_LABELS: Record<PulsePreStatus, string> = {
   REQUIRED: 'Cần làm bài đánh giá',
   LOCKED: 'Chưa mở',
-  PENDING: 'Chờ mentor chấm',
+  PENDING: 'Chờ đánh giá',
   PASSED: 'Đạt · Khóa được công nhận',
   NOT_YET: 'Chưa đạt · Cần học khóa',
   NOT_NEEDED: 'Không cần',
@@ -78,7 +78,7 @@ export const FINAL_LABELS: Record<PulseFinalStatus, string> = {
   NOT_STARTED: 'Chưa bắt đầu',
   LEARNING: 'Đang học mô đun',
   READY: 'Sẵn sàng làm bài',
-  PENDING: 'Chờ mentor chấm',
+  PENDING: 'Chờ đánh giá',
   APPROVED: 'Đã duyệt',
   RETRY_WAIT: 'Chờ mở lần nộp cuối',
   RETRY_READY: 'Mở lần nộp cuối',
@@ -99,7 +99,7 @@ export const BLOCK_MESSAGES: Record<PulseBlockReason, string> = {
   ABOVE_CEILING: 'Doanh nghiệp chưa mở cấp độ này của lĩnh vực cho phòng ban của bạn.',
   PRIOR_LEVEL_REQUIRED: 'Khóa mở khi bạn đạt khóa ở cấp trước của cùng lĩnh vực.',
   PRE_ASSESSMENT_REQUIRED: 'Bạn cần làm bài đánh giá năng lực trước khi học khóa này. Đạt thì khóa được công nhận, chưa đạt thì bạn học khóa. Bạn vẫn đọc được nội dung, nhưng tiến độ chỉ được ghi sau bài đánh giá.',
-  PRE_ASSESSMENT_PENDING: 'Bài đánh giá đầu vào đang chờ mentor chấm điểm. Nếu chưa đạt, khóa sẽ mở để bạn tiếp tục học.',
+  PRE_ASSESSMENT_PENDING: 'Bài đánh giá đầu vào đang chờ chuyên gia đánh giá. Nếu chưa đạt, khóa sẽ mở để bạn tiếp tục đào tạo.',
   SEAT_REQUIRED: 'Cấp độ này cần suất học do chủ doanh nghiệp phân bổ. Bạn xem được đề cương và trang mẫu đầu tiên trước.',
   PREVIOUS_MODULE_REQUIRED: 'Hãy đạt câu hỏi ôn tập của mô đun trước để mở câu hỏi của mô đun này.',
   SLIDES_NOT_VIEWED: 'Đọc hết các trang nội dung để mở câu hỏi ôn tập.',
@@ -147,7 +147,7 @@ export const LESSON_TYPE_LABELS: Record<string, string> = {
   WORKPLACE_SCENARIO: 'Tình huống công việc',
   QUIZ: 'Câu hỏi',
   REFLECTION: 'Suy ngẫm',
-  ASSIGNMENT: 'Bài tập',
+  ASSIGNMENT: 'Bài thực hành',
 };
 
 /** Tóm tắt một lĩnh vực trên lộ trình: mục tiêu vị trí, phạm vi khóa được mở và số khóa đã đạt. */
@@ -171,8 +171,8 @@ export function capNote(domain: PulseDomain, positionName: string | null | undef
 /** "Đề gồm 10 câu trắc nghiệm (đúng từ 7 câu) và một bài tự luận…" — mô tả đề trên trang trạng thái. */
 export function examStructure(choiceCount: number, passMark: number): string {
   return choiceCount > 0
-    ? `Đề gồm ${choiceCount} câu trắc nghiệm (đúng từ ${passMark} câu) và một bài tự luận chấm theo ba tiêu chí dưới đây.`
-    : 'Đề gồm một bài tự luận chấm theo ba tiêu chí dưới đây.';
+    ? `Đề gồm ${choiceCount} câu trắc nghiệm (đúng từ ${passMark} câu) và một bài tự luận đánh giá theo ba tiêu chí dưới đây.`
+    : 'Đề gồm một bài tự luận đánh giá theo ba tiêu chí dưới đây.';
 }
 
 /** "41 phút 12 giây", "45 giây". */

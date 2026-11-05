@@ -45,7 +45,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/enterprise/me/outcomes/')) return 'Chi tiết Chứng nhận năng lực';
   if (pathname === PULSE_PATHS.activity) return 'Nhật ký Hoạt động';
   if (pathname === PULSE_PATHS.profile) return 'Hồ sơ cá nhân';
-  return 'Cổng học tập DigiTalent AI';
+  return 'Cổng đào tạo DigiTalent AI';
 }
 
 const QUICK_SEARCH_ITEMS = [
@@ -193,7 +193,7 @@ export function PulseHeader() {
             type="button"
             onClick={() => setSearchOpen(true)}
             className="pu-icon-btn pu-header-search-btn"
-            aria-label="Tìm kiếm nhanh khóa học và bài thi (Ctrl+K)"
+            aria-label="Tìm kiếm nhanh khóa học và bài đánh giá (Ctrl+K)"
             title="Tìm kiếm nhanh (Ctrl+K)"
           >
             <Search size={18} />
@@ -269,7 +269,7 @@ export function PulseHeader() {
                 ref={searchInputRef}
                 type="text"
                 className="pu-search-input"
-                placeholder="Tìm khóa học, bài thi, chức danh... (hoặc nhấn Esc để thoát)"
+                placeholder="Tìm khóa học, bài đánh giá, chức danh... (hoặc nhấn Esc để thoát)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />

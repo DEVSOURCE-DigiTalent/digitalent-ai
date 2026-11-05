@@ -228,9 +228,9 @@ export function ProctoredExam(props: ProctoredExamProps) {
               <AlertTriangle size={24} aria-hidden />
             </div>
             <div className="pu-modal-content">
-              <h3 id="pu-cancel-title" className="pu-modal-title">Xác nhận hủy bài làm thi?</h3>
+              <h3 id="pu-cancel-title" className="pu-modal-title">Xác nhận hủy bài đánh giá?</h3>
               <p className="pu-modal-desc">
-                Phiên làm bài và bản ghi giám sát sẽ dừng ngay lập tức. Dữ liệu chưa nộp sẽ không được lưu và bạn sẽ cần bắt đầu lại bài thi từ đầu trong lần nộp tiếp theo.
+                Phiên làm bài và bản ghi giám sát sẽ dừng ngay lập tức. Dữ liệu chưa nộp sẽ không được lưu và bạn sẽ cần bắt đầu lại bài đánh giá từ đầu trong lần nộp tiếp theo.
               </p>
             </div>
             <div className="pu-modal-actions">
@@ -270,7 +270,7 @@ export function ProctoredExam(props: ProctoredExamProps) {
           <div className="pu-work">
             {/* Stepper Bar (Phần 1 Trắc nghiệm / Phần 2 Tự luận) */}
             <div className="pu-exam-stepper-bar">
-              <div className="pu-stepper-tabs" role="tablist" aria-label="Các phần của bài thi">
+              <div className="pu-stepper-tabs" role="tablist" aria-label="Các phần của bài đánh giá">
                 {questions.length > 0 && (
                   <button
                     type="button"
@@ -308,7 +308,7 @@ export function ProctoredExam(props: ProctoredExamProps) {
                 </button>
               </div>
 
-              <div className="pu-stepper-criteria" aria-label="Điều kiện đạt bài thi">
+              <div className="pu-stepper-criteria" aria-label="Điều kiện đạt bài đánh giá">
                 <CheckCircle2 size={14} className="text-emerald-600 shrink-0" aria-hidden />
                 <span>Điều kiện đạt: ≥ {Math.min(props.choicePassMark, questions.length)}/{questions.length} trắc nghiệm & nộp bài tự luận</span>
               </div>
@@ -387,7 +387,7 @@ export function ProctoredExam(props: ProctoredExamProps) {
                   <span>
                     {submitError ?? (snapshot.pendingChunks
                       ? `Còn ${snapshot.pendingChunks} mẩu ghi hình đang tải lên. Giữ trang này mở.`
-                      : 'Đang gửi bài làm cho người chấm.')}
+                      : 'Đang gửi bài làm cho người đánh giá.')}
                   </span>
                   {submitError && (
                     <div className="pu-row">
@@ -492,7 +492,7 @@ function ExamBar({ kind, course, snapshot, elapsed, stage, onCancel }: {
         </div>
       </div>
       {recording && (
-        <div className="pu-exam-status" role="status" aria-label="Trạng thái bài thi">
+        <div className="pu-exam-status" role="status" aria-label="Trạng thái bài đánh giá">
           <span className="pu-rec"><i aria-hidden />Đang ghi hình · <time>{clock(elapsed)}</time></span>
           <span className={`pu-exam-leaves ${leaves > 0 ? 'has-leaves' : ''}`}>
             Rời bài làm: {leaves} lần
@@ -628,7 +628,7 @@ function DeviceCheck(props: ProctoredExamProps & {
             <span className="pu-device-icon" aria-hidden><Mic size={22} /></span>
             <div className="pu-device-text">
               <strong>Bật micro</strong>
-              <span>Thu âm thanh môi trường xung quanh phục vụ hậu kiểm liêm chính bài thi.</span>
+              <span>Thu âm thanh môi trường xung quanh phục vụ hậu kiểm liêm chính bài đánh giá.</span>
               {snapshot.mic === 'on' ? (
                 <span className="pu-device-badge ok"><Check size={13} aria-hidden /> Đang thu âm tốt</span>
               ) : snapshot.mic === 'requesting' ? (
@@ -653,12 +653,12 @@ function DeviceCheck(props: ProctoredExamProps & {
           {snapshot.deviceError && <div className="pu-notice warning" role="status">{snapshot.deviceError}</div>}
 
           {/* Khung Quy chế Giám sát & Cam kết Liêm chính Năng lực Số */}
-          <div className="pu-compliance-section" role="region" aria-label="Quy chế phòng thi có giám sát">
+          <div className="pu-compliance-section" role="region" aria-label="Quy chế đánh giá có giám sát">
             <div className="pu-compliance-header">
               <div className="pu-compliance-title-group">
                 <ShieldCheck size={20} className="text-blue-600" aria-hidden />
                 <div>
-                  <h3 className="pu-compliance-h3">Quy chế phòng thi có giám sát</h3>
+                  <h3 className="pu-compliance-h3">Quy chế đánh giá có giám sát</h3>
                   <p className="pu-compliance-sub">
                     Bảo đảm tính minh bạch, công bằng và giá trị chuẩn hóa chứng nhận số
                   </p>
@@ -707,7 +707,7 @@ function DeviceCheck(props: ProctoredExamProps & {
                 </div>
                 <div className="pu-rule-content">
                   <strong>Đánh giá & Phúc khảo</strong>
-                  <p>Hội đồng khảo thí chấm và phản hồi trong 48h. Thí sinh có quyền phúc khảo trong 05 ngày.</p>
+                  <p>Hội đồng khảo thí đánh giá và phản hồi trong 48h. Nhân viên có quyền phúc khảo trong 05 ngày.</p>
                 </div>
               </div>
             </div>
@@ -721,7 +721,7 @@ function DeviceCheck(props: ProctoredExamProps & {
                 checked={props.agree}
                 onChange={(event) => props.onAgree(event.target.checked)}
               />
-              <span>Tôi xác nhận đã hiểu rõ quy chế phòng thi và cam kết tự hoàn thành bài thi bằng năng lực thực tế.</span>
+              <span>Tôi xác nhận đã hiểu rõ quy chế đánh giá và cam kết tự hoàn thành bài làm bằng năng lực thực tế.</span>
             </label>
 
             <div className="pu-action-row">
@@ -763,12 +763,12 @@ function DeviceCheck(props: ProctoredExamProps & {
         </div>
 
         {/* Right Card: Exam Brief */}
-        <aside className="pu-exam-summary" aria-label="Thông tin bài thi">
-          <h2 className="pu-summary-title">Thông tin bài thi</h2>
+        <aside className="pu-exam-summary" aria-label="Thông tin bài đánh giá">
+          <h2 className="pu-summary-title">Thông tin bài đánh giá</h2>
           <strong>{course.code} · {toSentenceCase(course.title)}</strong>
           <span className="pu-summary-sub">{props.domainName} · Cấp độ {levelName(course.tier)}</span>
           <dl>
-            <div><dt>Loại bài thi</dt><dd>{KIND_LABEL[props.kind]}</dd></div>
+            <div><dt>Hình thức đánh giá</dt><dd>{KIND_LABEL[props.kind]}</dd></div>
             <div><dt>Cấu trúc đề</dt><dd>{props.choiceCount > 0 ? `${props.choiceCount} câu trắc nghiệm + tự luận` : 'Tự luận'}</dd></div>
             <div><dt>Lượt làm</dt><dd>{props.attemptLabel}</dd></div>
             <div><dt>Người đánh giá</dt><dd>{props.reviewer?.name ?? 'Chưa phân công'}</dd></div>
@@ -887,7 +887,7 @@ export function LockOverlay({ controller, snapshot, elapsed }: { controller: Pro
         <span className="pu-lock-icon" aria-hidden>{reason === 'SCREEN' ? <MonitorOff size={22} /> : <ShieldAlert size={22} />}</span>
         <strong>Bài làm đang tạm khóa</strong>
         <span>
-          {LOCK_TEXT[reason].title} lúc {clock(stoppedAt?.offsetMs ?? elapsed)}. Sự kiện đã được ghi vào nhật ký cho người chấm. Bật lại để làm
+          {LOCK_TEXT[reason].title} lúc {clock(stoppedAt?.offsetMs ?? elapsed)}. Sự kiện đã được ghi vào nhật ký cho người đánh giá. Bật lại để làm
           tiếp; đồng hồ vẫn chạy{reason === 'SCREEN' ? ', camera và micro vẫn ghi' : ''}.
         </span>
         {snapshot.deviceError && <span className="pu-lock-error">{snapshot.deviceError}</span>}
@@ -1021,7 +1021,7 @@ export function ProctorPanel({
           })}
         </ol>
       </div>
-      <small>Người chấm xem nhật ký này cùng bản ghi.</small>
+      <small>Người đánh giá xem nhật ký này cùng bản ghi.</small>
     </aside>
   );
 }

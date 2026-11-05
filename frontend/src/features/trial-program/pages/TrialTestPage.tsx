@@ -358,7 +358,7 @@ function EssayAccordionItem({
                 color: '#64748b',
               }}
             >
-              Đang chấm điểm
+              Đang đánh giá
             </span>
           )}
           <ChevronDown
@@ -588,16 +588,16 @@ export function TrialTestPage() {
               <div key={tier} className="tp-stat">
                 <span>Phần {tier}</span>
                 <strong style={{ fontSize: 16 }}>{TIER_LABELS[tier]}</strong>
-                <span>{data.choiceCount / 3} trắc nghiệm + 1 tự luận</span>
+                <span>{data.choiceCount / 3 || 6} câu trắc nghiệm</span>
               </div>
             ))}
           </div>
           <p className="tp-muted tp-row">
-            Cần: <Monitor size={14} aria-hidden /> chia sẻ màn hình · <Camera size={14} aria-hidden /> camera · <Mic size={14} aria-hidden /> micro · làm một lần.
+            Giám sát phiên làm bài: <Monitor size={14} aria-hidden /> chia sẻ toàn màn hình · <Camera size={14} aria-hidden /> camera · <Mic size={14} aria-hidden /> micro · Thực hiện 1 lần duy nhất.
           </p>
           {data.canStart ? (
             <div>
-              <Link to={PULSE_PATHS.trialExam} className={btn()}>Vào phòng thi <ArrowRight size={15} aria-hidden /></Link>
+              <Link to={PULSE_PATHS.trialExam} className={btn()}>Vào làm bài đánh giá <ArrowRight size={15} aria-hidden /></Link>
             </div>
           ) : (
             <p className="tp-notice">{data.closedMessage}</p>
@@ -607,8 +607,11 @@ export function TrialTestPage() {
 
       {data.status === 'SUBMITTED' && (
         <section className="tp-card">
-          <h2>Đã nộp lúc {formatWhen(data.submittedAt)}</h2>
-          <p className="tp-muted">{data.mentorName ? `${data.mentorName} đang chấm.` : 'Đang chờ DigiTalent phân công mentor chấm.'} Kết quả hiện tại đây.</p>
+          <h2>Đã hoàn thành và nộp bài lúc {formatWhen(data.submittedAt)}</h2>
+          <p className="tp-muted" style={{ marginTop: 6, lineHeight: 1.6 }}>
+            Hệ thống đã tự động ghi nhận và đánh giá 18 câu trắc nghiệm năng lực số của bạn.
+            Báo cáo phân tích khoảng cách năng lực (Skill Gap) và lộ trình học tập cá nhân hóa sẽ hiển thị tại đây ngay sau khi Doanh nghiệp phê duyệt và công bố.
+          </p>
         </section>
       )}
 
@@ -618,12 +621,12 @@ export function TrialTestPage() {
           <section className="tp-card">
             <div className="tp-card-head" style={{ marginBottom: 16 }}>
               <div>
-                <h2>1. Đánh giá 6 lĩnh vực năng lực (Trắc nghiệm 3 cấp)</h2>
+                <h2>Kết quả đánh giá 6 lĩnh vực năng lực số (Chuẩn Khung TT02)</h2>
                 <p className="tp-muted" style={{ margin: '4px 0 0', fontSize: 13 }}>
                   Khảo sát trắc nghiệm 3 cấp độ (Cơ bản, Trung cấp, Nâng cao) trên 6 lĩnh vực số TT02/2025. Bấm vào từng lĩnh vực để xem chi tiết.
                 </p>
               </div>
-              {data.mentorName && <span className="tp-muted">Chấm bởi {data.mentorName}</span>}
+
             </div>
 
             <div className="tp-accordion-list">
@@ -647,7 +650,7 @@ export function TrialTestPage() {
           </section>
 
           {/* Phần 2: 3 Bài tự luận & Đánh giá năng lực thực hành */}
-          {data.essayResults && data.essayResults.length > 0 && (
+          {data.essayResults && data.essayResults.some((e) => Boolean(e.answer && e.answer.trim().length > 0)) && (
             <section className="tp-card" style={{ marginTop: 20 }}>
               <div className="tp-card-head" style={{ marginBottom: 16 }}>
                 <div>
@@ -739,7 +742,7 @@ export function TrialTestPage() {
             <div>
               <div style={{ fontWeight: 600, color: '#1e293b' }}>Lộ trình học tập của bạn đã sẵn sàng</div>
               <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>
-                Các lĩnh vực chưa đạt đã được xếp khóa học tương ứng trên lộ trình của bạn.
+                Các khóa học cần thiết đã được mở sẵn trên lộ trình. Bạn có thể bắt đầu học ngay mà không cần làm lại bài kiểm tra trước khóa học.
               </div>
             </div>
             <Link to={PULSE_PATHS.path} className={btn()}>
@@ -752,7 +755,7 @@ export function TrialTestPage() {
   );
 }
 
-/** EM-T2 · Phòng thi có giám sát của bài đánh giá tổng hợp. */
+/** EM-T2 · Không gian đánh giá có giám sát của bài đánh giá tổng hợp. */
 export function TrialExamPage() {
   const { data, isLoading } = useMyTrialAssessment();
   // Chỉ xét lúc vào trang: sau khi nộp, dữ liệu làm mới (không còn làm được) nhưng vẫn ở lại màn "Đã nộp".

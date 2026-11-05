@@ -102,7 +102,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
         <div className="pu-c-meta-row">
           <span className="pu-c-meta-pill">
             <BookOpen size={13} className="text-blue-700" />
-            <span>{pad2(modules.length)} mô-đun bài giảng</span>
+            <span>{pad2(modules.length)} mô-đun bài học</span>
           </span>
           <span className="pu-c-meta-pill">
             <Clock size={13} className="text-blue-700" />
@@ -110,11 +110,11 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
           </span>
           <span className="pu-c-meta-pill">
             <HelpCircle size={13} className="text-blue-700" />
-            <span>{pad2(quizCount)} bài mini-quiz ôn tập</span>
+            <span>{pad2(quizCount)} bài kiểm tra củng cố</span>
           </span>
           <span className="pu-c-meta-pill">
             <GraduationCap size={13} className="text-blue-700" />
-            <span>01 kỳ thi proctored kết thúc môn</span>
+            <span>01 bài đánh giá proctored cuối khóa</span>
           </span>
           <span className={`pu-c-meta-pill ${approved ? 'approved' : 'access'}`}>
             <ShieldCheck size={13} className={approved ? 'text-emerald-700' : 'text-blue-700'} />
@@ -193,8 +193,8 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                 {approved
                   ? 'Đã hoàn tất toàn bộ khóa học'
                   : isFinalReady
-                  ? 'Đã sẵn sàng làm bài thi cuối khóa'
-                  : 'Đạt bài ôn tập từng mô-đun để mở khóa bài thi'}
+                  ? 'Đã sẵn sàng làm bài đánh giá cuối khóa'
+                  : 'Đạt bài kiểm tra từng mô-đun để mở khóa bài đánh giá'}
               </span>
             </div>
           </div>
@@ -219,14 +219,14 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                     to={viaPre ? preAssessmentPath : PULSE_PATHS.final(course.courseId)}
                     className="pu-c-btn-secondary"
                   >
-                    <span>Xem hồ sơ bài thi</span>
+                    <span>Xem kết quả đánh giá</span>
                   </Link>
                   {modules[0] && (
                     <Link
                       to={PULSE_PATHS.module(course.courseId, modules[0].moduleId)}
                       className="pu-c-btn-outline"
                     >
-                      <span>Xem lại bài giảng</span>
+                      <span>Xem lại nội dung học</span>
                     </Link>
                   )}
                 </div>
@@ -243,7 +243,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                 <div className="pu-c-action-btns">
                   <Link to={preAssessmentPath} className="pu-c-btn-primary">
                     <Zap size={14} />
-                    <span>Làm test vượt cấp ngay</span>
+                    <span>Đánh giá đầu vào ngay</span>
                     <ChevronRight size={14} />
                   </Link>
                   {detail.nextModuleId && (
@@ -259,11 +259,11 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
             ) : isPrePending ? (
               <div className="pu-c-action-waiting">
                 <div className="pu-c-act-head">
-                  <span className="pu-c-act-kicker">Trạng thái bài thi</span>
+                  <span className="pu-c-act-kicker">Trạng thái đánh giá</span>
                   <span className="pu-c-act-badge waiting">Chờ xác nhận</span>
                 </div>
                 <p className="pu-c-action-text">
-                  Bài kiểm tra đầu vào đã nộp thành công và đang chờ xác nhận kết quả chấm thi kèm bản ghi giám sát.
+                  Bài kiểm tra đầu vào đã nộp thành công và đang chờ xác nhận kết quả đánh giá kèm bản ghi giám sát.
                 </p>
                 <div className="pu-c-action-btns">
                   <Link to={preAssessmentPath} className="pu-c-btn-secondary">
@@ -278,12 +278,12 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                   <span className="pu-c-act-badge final">Sẵn sàng</span>
                 </div>
                 <p className="pu-c-action-text">
-                  Bạn đã hoàn thành toàn bộ bài ôn tập của các mô-đun. Hãy thực hiện kỳ thi cuối khóa có giám sát để hoàn tất khóa học.
+                  Bạn đã hoàn thành toàn bộ bài kiểm tra của các mô-đun. Hãy thực hiện bài đánh giá cuối khóa có giám sát để hoàn tất khóa học.
                 </p>
                 <div className="pu-c-action-btns">
                   <Link to={PULSE_PATHS.final(course.courseId)} className="pu-c-btn-primary final">
                     <GraduationCap size={15} />
-                    <span>Làm bài thi cuối khóa ngay</span>
+                    <span>Làm bài đánh giá cuối khóa ngay</span>
                     <ChevronRight size={14} />
                   </Link>
                 </div>
@@ -296,8 +296,8 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                 </div>
                 <p className="pu-c-action-text">
                   {passed > 0
-                    ? `Tiếp tục bài giảng Mô-đun ${pad2(firstOpen ? firstOpen.index + 1 : 1)} để hoàn thành mục tiêu ôn tập.`
-                    : 'Bắt đầu Mô-đun 01 để xây dựng nền tảng kiến thức bài học.'}
+                    ? `Tiếp tục bài học Mô-đun ${pad2(firstOpen ? firstOpen.index + 1 : 1)} để hoàn thành mục tiêu học tập.`
+                    : 'Bắt đầu Mô-đun 01 để xây dựng nền tảng kiến thức chuyên môn.'}
                 </p>
                 <div className="pu-c-action-btns">
                   <Link
@@ -320,10 +320,10 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
         <div className="pu-c-timeline-header">
           <div>
             <h2 id="pu-timeline-heading" className="pu-c-section-title">
-              Lộ trình học tập tuần tự ({modules.length} mô-đun bài giảng & 01 kỳ thi tốt nghiệp)
+              Lộ trình học tập tuần tự ({modules.length} mô-đun bài học & 01 bài đánh giá cuối khóa)
             </h2>
             <p className="pu-c-section-subtitle">
-              Hoàn thành bài giảng và câu hỏi ôn tập theo thứ tự từ trên xuống dưới để mở khóa kỳ thi đánh giá năng lực cuối khóa.
+              Hoàn thành bài học và câu hỏi kiểm tra theo thứ tự từ trên xuống dưới để mở khóa bài đánh giá năng lực cuối khóa.
             </p>
           </div>
           <div className="pu-c-timeline-badge">
@@ -450,7 +450,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                         ) : isPassed ? (
                           <>
                             <RotateCcw size={12} />
-                            <span>Ôn lại bài</span>
+                            <span>Xem lại bài học</span>
                           </>
                         ) : (
                           <>
@@ -486,7 +486,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
             <article className="pu-c-step-card milestone">
               <div className="pu-c-card-main-info">
                 <div className="pu-c-card-kicker-row">
-                  <span className="pu-c-card-kicker milestone">Chặng đích cuối môn</span>
+                  <span className="pu-c-card-kicker milestone">Chặng đích cuối khóa</span>
                   <span
                     className={`pu-c-step-status ${
                       approved ? 'passed' : isFinalReady ? 'current' : 'locked'
@@ -500,7 +500,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                     ) : isFinalReady ? (
                       <>
                         <Sparkles size={11} />
-                        <span>Sẵn sàng thi</span>
+                        <span>Sẵn sàng đánh giá</span>
                       </>
                     ) : (
                       <>
@@ -512,10 +512,10 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                 </div>
 
                 <h3 className="pu-c-step-title">
-                  Kỳ thi đánh giá năng lực cuối khóa (Proctored Final Exam)
+                  Đánh giá năng lực cuối khóa (Proctored Final Assessment)
                 </h3>
                 <p className="pu-c-step-desc">
-                  Bài thi thực hiện trực tuyến có giám sát camera, mic và chia sẻ màn hình. Đánh giá toàn diện dựa trên 3 tiêu chí cốt lõi:
+                  Bài đánh giá thực hiện trực tuyến có giám sát camera, mic và chia sẻ màn hình. Đánh giá toàn diện dựa trên 3 tiêu chí cốt lõi:
                 </p>
 
                 <div className="pu-c-rubric-chips">
@@ -533,20 +533,20 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                     to={viaPre ? preAssessmentPath : PULSE_PATHS.final(course.courseId)}
                     className="pu-c-step-btn outline"
                   >
-                    <span>Xem kết quả bài thi</span>
+                    <span>Xem kết quả đánh giá</span>
                   </Link>
                 ) : isFinalReady ? (
                   <Link
                     to={PULSE_PATHS.final(course.courseId)}
                     className="pu-c-step-btn primary pulse"
                   >
-                    <span>Làm bài thi cuối khóa</span>
+                    <span>Làm bài đánh giá cuối khóa</span>
                     <ChevronRight size={13} />
                   </Link>
                 ) : (
                   <div className="pu-c-step-locked-hint">
                     <Lock size={12} />
-                    <span>Chưa mở bài thi</span>
+                    <span>Chưa mở bài đánh giá</span>
                   </div>
                 )}
               </div>

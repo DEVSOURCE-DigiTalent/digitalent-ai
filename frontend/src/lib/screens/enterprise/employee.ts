@@ -46,7 +46,7 @@ export const EMPLOYEE_SCREENS: ScreenDef[] = [
   },
   {
     id: 'EM-06',
-    title: 'Học mô đun',
+    title: 'Nội dung đào tạo',
     path: '/enterprise/me/courses/:courseId/modules/:moduleId',
     roles: EMPLOYEE_ROLES,
     permission: P.COURSE_READ_CATALOG,
@@ -54,7 +54,7 @@ export const EMPLOYEE_SCREENS: ScreenDef[] = [
   },
   {
     id: 'EM-07',
-    title: 'Bài cuối khóa',
+    title: 'Đánh giá cuối khóa',
     path: '/enterprise/me/courses/:courseId/final',
     roles: EMPLOYEE_ROLES,
     permission: P.ASSESSMENT_READ,
@@ -62,7 +62,7 @@ export const EMPLOYEE_SCREENS: ScreenDef[] = [
   },
   {
     id: 'EM-12',
-    title: 'Đánh giá trước khi học',
+    title: 'Đánh giá năng lực đầu vào',
     path: '/enterprise/me/courses/:courseId/pre-assessment',
     roles: EMPLOYEE_ROLES,
     permission: P.ASSESSMENT_READ,
@@ -80,7 +80,7 @@ export const EMPLOYEE_SCREENS: ScreenDef[] = [
   },
   {
     id: 'EM-T2',
-    title: 'Phòng thi',
+    title: 'Phòng đánh giá năng lực',
     path: '/enterprise/me/trial-test/exam',
     roles: EMPLOYEE_ROLES,
     permission: P.ASSESSMENT_READ,

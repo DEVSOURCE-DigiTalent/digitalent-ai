@@ -247,7 +247,7 @@ function PlanCell({
             </span>
           )}
           {isWaiting && (
-            <span className="pu-mcard-badge waiting" title="Chờ chấm bài kiểm tra">
+            <span className="pu-mcard-badge waiting" title="Chờ đánh giá bài kiểm tra">
               <Clock size={10} /> Chờ
             </span>
           )}
