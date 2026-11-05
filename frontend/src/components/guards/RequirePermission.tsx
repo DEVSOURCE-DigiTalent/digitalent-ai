@@ -15,7 +15,11 @@ interface RequirePermissionProps {
  * Renders fallback (default: ForbiddenPage) when denied.
  */
 export function RequirePermission({ permission, children, fallback }: RequirePermissionProps) {
-  const { can } = usePermission();
+  const { can, user } = usePermission();
+
+  if (user?.roles.includes('PLATFORM_ADMIN')) {
+    return <>{children}</>;
+  }
 
   const allowed = Array.isArray(permission)
     ? permission.some((p) => can(p))

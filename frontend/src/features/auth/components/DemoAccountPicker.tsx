@@ -8,19 +8,23 @@ interface DemoAccountPickerProps {
   enterpriseOnly?: boolean;
 }
 
+interface DemoAccountItem extends SessionUser {
+  customPassword?: string;
+}
+
 interface DemoAccounts {
-  accounts: SessionUser[];
+  accounts: DemoAccountItem[];
   password: string;
 }
 
-const SEEDED_API_ACCOUNTS: SessionUser[] = [
-  { id: 'seed-platform', email: 'platform@digitalent.ai', fullName: 'Platform Administrator', roles: ['PLATFORM_ADMIN'], permissions: [], workspace: 'platform' },
-  { id: 'seed-owner', email: 'owner@digitalent.ai', fullName: 'Enterprise Owner', roles: ['OWNER'], permissions: [], workspace: 'enterprise' },
-  { id: 'seed-manager', email: 'manager@digitalent.ai', fullName: 'Department Manager', roles: ['MANAGER'], permissions: [], workspace: 'enterprise' },
-  { id: 'seed-employee', email: 'employee@digitalent.ai', fullName: 'Employee', roles: ['EMPLOYEE'], permissions: [], workspace: 'enterprise' },
-  { id: 'seed-personal', email: 'personal@digitalent.ai', fullName: 'Bùi Thị Cá Nhân', roles: ['LEARNER'], permissions: [], workspace: 'personal' },
-  { id: 'seed-trial', email: 'trial@digitalent.ai', fullName: 'Lý Văn Dùng Thử', roles: ['LEARNER'], permissions: [], workspace: 'personal' },
-  { id: 'seed-free', email: 'free@digitalent.ai', fullName: 'Mai Thị Miễn Phí', roles: ['LEARNER'], permissions: [], workspace: 'personal' },
+const SEEDED_API_ACCOUNTS: DemoAccountItem[] = [
+  { id: 'seed-mentor', email: 'mentor@digitalent.ai', fullName: 'Mentor Thẩm định (mentor)', roles: ['MENTOR'], permissions: [], workspace: 'platform', customPassword: 'Admin@1234' },
+  { id: 'seed-admin', email: 'admin@digitalent.ai', fullName: 'Quản trị viên Nền tảng (admin)', roles: ['PLATFORM_ADMIN'], permissions: [], workspace: 'platform', customPassword: 'Admin@1234' },
+  { id: 'seed-owner', email: 'owner@digitalent.ai', fullName: 'Chủ Doanh nghiệp (owner)', roles: ['OWNER'], permissions: [], workspace: 'enterprise', customPassword: 'Admin@1234' },
+  { id: 'seed-manager', email: 'manager@digitalent.ai', fullName: 'Trưởng bộ phận (manager)', roles: ['MANAGER'], permissions: [], workspace: 'enterprise', customPassword: 'Admin@1234' },
+  { id: 'seed-employee', email: 'employee@digitalent.ai', fullName: 'Nhân viên (employee)', roles: ['EMPLOYEE'], permissions: [], workspace: 'enterprise', customPassword: 'Admin@1234' },
+  { id: 'seed-personal', email: 'personal@digitalent.ai', fullName: 'Bùi Thị Cá Nhân', roles: ['LEARNER'], permissions: [], workspace: 'personal', customPassword: 'Admin@1234' },
+  { id: 'seed-trial', email: 'trial@digitalent.ai', fullName: 'Lý Văn Dùng Thử', roles: ['LEARNER'], permissions: [], workspace: 'personal', customPassword: 'Admin@1234' },
 ];
 
 function describeAccount(account: SessionUser): string {
@@ -65,21 +69,24 @@ export function DemoAccountPicker({ onPick, enterpriseOnly = false }: DemoAccoun
       </summary>
       <div className="border-t border-amber-400/15 p-3 pt-2">
         <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-cream/45">
-          Mật khẩu chung: <code className="text-cream/90 font-mono">{demo.password}</code>
+          Mật khẩu chung cho tất cả tài khoản: <code className="text-cream/90 font-mono">Admin@1234</code>
         </p>
         <ul className="grid gap-1 max-h-48 overflow-y-auto pr-1">
-          {demo.accounts.filter(account => !enterpriseOnly || account.workspace !== 'personal').map((account) => (
-            <li key={account.id}>
-              <button
-                type="button"
-                onClick={() => onPick(account.email, demo.password)}
-                className="flex w-full items-baseline justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs text-cream/80 hover:bg-cream/10 transition-colors cursor-pointer"
-              >
-                <span className="truncate">{account.email}</span>
-                <span className="shrink-0 text-[11px] text-cream/45">{describeAccount(account)}</span>
-              </button>
-            </li>
-          ))}
+          {demo.accounts.filter(account => !enterpriseOnly || account.workspace !== 'personal').map((account) => {
+            const pwd = account.customPassword || demo.password;
+            return (
+              <li key={account.id}>
+                <button
+                  type="button"
+                  onClick={() => onPick(account.email, pwd)}
+                  className="flex w-full items-baseline justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs text-cream/80 hover:bg-cream/10 transition-colors cursor-pointer"
+                >
+                  <span className="truncate font-mono">{account.email}</span>
+                  <span className="shrink-0 text-[11px] text-cream/45">{describeAccount(account)}</span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </details>

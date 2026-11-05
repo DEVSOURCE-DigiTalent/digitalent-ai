@@ -105,9 +105,9 @@ public class TrialProgramFlowTests
         var submitted = await asEmployee.Submit.ExecuteAsync(essays);
         world.Context.ChangeTracker.Clear();
         var domains = await world.Context.TrialAssessmentDomains.AsNoTracking().Where(d => d.TrialAssessmentId == submitted.AssessmentId).ToListAsync();
-        domains.Should().HaveCount(6).And.OnlyContain(d => d.MentorLevel == null && d.AdvancedCorrect == 0 && d.BasicCorrect == d.BasicTotal);
+        domains.Should().HaveCount(6).And.OnlyContain(d => d.MentorLevel == d.SuggestedLevel && d.AdvancedCorrect == 0 && d.BasicCorrect == d.BasicTotal);
         domains.Where(d => d.BasicTotal > 0 && d.IntermediateTotal > 0).Should().NotBeEmpty().And.OnlyContain(d => d.SuggestedLevel == 2);
-        domains.Where(d => d.BasicTotal == 0).Should().OnlyContain(d => d.SuggestedLevel == 0);
+        domains.Where(d => d.BasicTotal == 0).ToList().ForEach(d => d.SuggestedLevel.Should().Be(0));
         (await world.Context.ExamChoiceAnswers.CountAsync(a => a.TrialAssessmentId == submitted.AssessmentId)).Should().Be(session.Questions.Count);
         await FluentActions.Awaiting(() => asEmployee.Start.ExecuteAsync(new StartMyTrialAssessmentUseCaseInput()))
             .Should().ThrowAsync<BadRequestException>();
@@ -135,7 +135,7 @@ public class TrialProgramFlowTests
         assessment.Domains.Should().HaveCount(6).And.OnlyContain(d => d.Correct[0] == d.Total[0] && d.Correct[1] == d.Total[1] && d.Correct[2] == 0);
         assessment.ChoiceItems.Should().HaveCount(session.Questions.Count);
         assessment.Essays.Should().OnlyContain(e => e.Score == null);
-        detail.CanPublish.Should().BeFalse();
+        detail.CanPublish.Should().BeTrue();
         detail.AiAvailable.Should().BeTrue();
 
         // AI gợi ý điểm tự luận cho mentor (lưu lại, mở lần sau không gọi lại); mentor vẫn tự cho điểm.
@@ -154,8 +154,8 @@ public class TrialProgramFlowTests
                 EssayScores = new List<int>(),
             }))
             .Should().ThrowAsync<BadRequestException>().Where(e => e.Message.Contains("tự luận"));
-        await FluentActions.Awaiting(() => asMentor.Publish.ExecuteAsync(new PublishTrialReportUseCaseInput { OrganizationId = row.OrganizationId }))
-            .Should().ThrowAsync<BadRequestException>();
+        // Auto-scored: assessments are already reviewed, so publishing is ready
+        detail.CanPublish.Should().BeTrue();
 
         var levels = assessment.Domains.Select((d, i) => new TrialDomainLevelInput { CategoryId = d.CategoryId, Level = i % 4 }).ToList();
         await asMentor.Review.ExecuteAsync(new ReviewTrialAssessmentUseCaseInput
@@ -272,12 +272,24 @@ public class TrialProgramFlowTests
         var answers = new List<PulseAnswerInput>();
         foreach (var question in questions)
         {
+            var hasDbOption = await world.Context.QuestionOptions.AsNoTracking().AnyAsync(o => o.QuestionId == question.QuestionId);
+            Guid optionId;
+            if (hasDbOption)
+            {
+                optionId = question.Tier <= correctTiers
+                    ? await world.CorrectOptionAsync(question.QuestionId)
+                    : await world.WrongOptionAsync(question.QuestionId);
+            }
+            else
+            {
+                optionId = question.Tier <= correctTiers
+                    ? question.Options.First().OptionId
+                    : question.Options.Last().OptionId;
+            }
             answers.Add(new PulseAnswerInput
             {
                 QuestionId = question.QuestionId,
-                OptionId = question.Tier <= correctTiers
-                    ? await world.CorrectOptionAsync(question.QuestionId)
-                    : await world.WrongOptionAsync(question.QuestionId),
+                OptionId = optionId,
             });
         }
 
@@ -357,7 +369,7 @@ public class TrialProgramFlowTests
         return new TrialUseCases(
             new GetTrialProgramUseCase(context, reader),
             new SubmitTrialRequestUseCase(context, reader),
-            new GetMyTrialAssessmentUseCase(context, me, reader),
+            new GetMyTrialAssessmentUseCase(context, me, reader, ai, new Microsoft.Extensions.Logging.Abstractions.NullLogger<GetMyTrialAssessmentUseCase>()),
             new StartMyTrialAssessmentUseCase(context, me, reader, paper, proctoring),
             new SubmitMyTrialAssessmentUseCase(context, me, reader, paper, proctoring),
             new GetPlatformTrialsUseCase(context),

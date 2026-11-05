@@ -218,7 +218,16 @@ public class PulseLearnerReader
                 targets[id] = ceilings.TryGetValue(id, out var c) && c > 0 ? c : 1;
             }
         }
-        var isTrial = await _context.TrialWorkspaces.AsNoTracking().AnyAsync(t => t.OrganizationId == organizationId && t.ConvertedAt == null);
+        var trialPublished = await _context.TrialWorkspaces.AsNoTracking()
+            .Where(t => t.OrganizationId == organizationId && t.ConvertedAt == null)
+            .Select(t => (bool?)(t.ReportPublishedAt != null))
+            .FirstOrDefaultAsync();
+        var trialBasic = trialPublished == true;
+        if (trialPublished.HasValue)
+        {
+            targets = categoryIds.ToDictionary(id => id, _ => trialBasic ? 1 : 0);
+            ceilings = categoryIds.ToDictionary(id => id, _ => 1);
+        }
         var evidenceLevels = await LoadEvidenceLevelsAsync(employee.Id);
 
         // Lượt học của nhân viên theo mã khóa (mọi phiên bản), bỏ lượt đã hủy.
@@ -381,7 +390,7 @@ public class PulseLearnerReader
                     ? pre.Decision == null ? PulsePreStatus.Pending
                     : pre.Decision == Statuses.FinalSubmissionDecision.Passed ? PulsePreStatus.Passed
                     : PulsePreStatus.NotYet
-                    : approved || started ? PulsePreStatus.NotNeeded
+                    : approved || started || (trialBasic && course.Tier == 1) || (placementTest != null && trialBasic) ? PulsePreStatus.NotNeeded
                     : !hasPosition || zone is PulseCourseZone.OutsidePath or PulseCourseZone.AboveCeiling || !prereqApproved ? PulsePreStatus.Locked
                     : PulsePreStatus.Required;
                 var access = course.Tier == 1 ? PulseCourseAccess.FreeFull

@@ -58,9 +58,9 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
             OrganizationId = trial.OrganizationId,
             EmployeeId = employee.Id,
             ProctoringSessionId = session.Id,
-            EssayBasic = input.EssayBasic.Trim(),
-            EssayIntermediate = input.EssayIntermediate.Trim(),
-            EssayAdvanced = input.EssayAdvanced.Trim(),
+            EssayBasic = (input.EssayBasic ?? string.Empty).Trim(),
+            EssayIntermediate = (input.EssayIntermediate ?? string.Empty).Trim(),
+            EssayAdvanced = (input.EssayAdvanced ?? string.Empty).Trim(),
             ChoiceScore = grade.Score,
             ChoiceTotal = grade.Total,
             SubmittedAt = now,
@@ -72,10 +72,10 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
             _context.ExamChoiceAnswers.Add(answer);
         }
 
-        var isAutoReview = trial.ReportPublishedAt != null;
-        if (isAutoReview)
+        assessment.ReviewedAt = now;
+
         {
-            assessment.ReviewedAt = now;
+
         }
 
         var correct = grade.Answers.ToDictionary(a => a.QuestionId, a => a.IsCorrect);
@@ -100,11 +100,11 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
                 AdvancedCorrect = (short)cells[2].Correct,
                 AdvancedTotal = (short)cells[2].Total,
                 SuggestedLevel = suggested,
-                MentorLevel = isAutoReview ? suggested : null,
+                MentorLevel = suggested,
             });
         }
 
-        if (trial.MentorUserId is { } mentor)
+        if (false && trial.MentorUserId is { } mentor)
         {
             _reader.Notify(new[] { mentor }, TrialProgramRules.NotificationSubmitted, "Có bài dùng thử cần chấm",
                 $"{employee.FullName} ({await _reader.OrganizationNameAsync(trial.OrganizationId)}) đã nộp bài đánh giá tổng hợp.",

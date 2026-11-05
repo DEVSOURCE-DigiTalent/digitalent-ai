@@ -144,7 +144,10 @@ export function useReviewTrialAssessment(organizationId?: string) {
   return useMutation({
     mutationFn: ({ assessmentId, ...input }: TrialReviewInput & { assessmentId: string }) =>
       trialProgramService.review(organizationId!, assessmentId, input),
-    onSuccess: () => client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.mentorTrials }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.all });
+      void client.invalidateQueries({ queryKey: ['pulse'] });
+    },
   });
 }
 
@@ -160,7 +163,10 @@ export function useTrialEssayAiReview(organizationId?: string) {
 export function usePublishTrialReport(organizationId?: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: () => trialProgramService.publish(organizationId!),
-    onSuccess: () => client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.mentorTrials }),
+    mutationFn: () => trialProgramService.publish(organizationId),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.all });
+      void client.invalidateQueries({ queryKey: ['pulse'] });
+    },
   });
 }

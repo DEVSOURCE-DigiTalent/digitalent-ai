@@ -22,9 +22,10 @@ const PlatformCommercePage = lazyPage(() => import('../../features/platform/cons
 const PlatformAuditLogPage = lazyPage(() => import('../../features/platform/console/PlatformAuditLogPage'), 'PlatformAuditLogPage');
 const PlatformProfilePage = lazyPage(() => import('../../features/platform/console/PlatformProfilePage'), 'PlatformProfilePage');
 const PlatformTrialsPage = lazyPage(() => import('../../features/trial-program/pages/PlatformTrialsPage'), 'PlatformTrialsPage');
-const MentorTrialsPage = lazyPage(() => import('../../features/trial-program/pages/MentorTrialsPage'), 'MentorTrialsPage');
-const MentorTrialPage = lazyPage(() => import('../../features/trial-program/pages/MentorTrialPage'), 'MentorTrialPage');
+
+
 const MentorCourseReviewsPage = lazyPage(() => import('../../features/trial-program/pages/MentorCourseReviewsPage'), 'MentorCourseReviewsPage');
+const MentorCourseReviewWorkspacePage = lazyPage(() => import('../../features/trial-program/pages/MentorCourseReviewWorkspacePage'), 'MentorCourseReviewWorkspacePage');
 
 /**
  * Built pages by screen ID — Platform Admin console (Pulse redesign PA-01..10, Platform Admin v2 PA-12), its profile (SHR-01 = mock `#/profile`
@@ -48,8 +49,8 @@ const PLATFORM_PAGES: PageRegistry = {
   'PA-09': PlatformCommercePage,
   'PA-10': PlatformAuditLogPage,
   'PA-14': PlatformTrialsPage,
-  'MT-01': MentorTrialsPage,
-  'MT-02': MentorTrialPage,
+  'MT-01': MentorCourseReviewsPage,
+  'MT-02': MentorCourseReviewWorkspacePage,
   'MT-03': MentorCourseReviewsPage,
 };
 
@@ -80,6 +81,8 @@ const RETIRED_PATHS: [string, string][] = [
   ['subscriptions', '/platform/commerce'],
   ['subscriptions/:id', '/platform/commerce'],
   ['settings', '/platform/dashboard'],
+  ['reviews', '/platform/course-reviews'],
+  ['reviews/:organizationId', '/platform/course-reviews'],
 ];
 
 export const platformRoutes: RouteObject[] = [

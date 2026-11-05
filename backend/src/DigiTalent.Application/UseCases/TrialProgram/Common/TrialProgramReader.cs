@@ -131,10 +131,21 @@ public class TrialProgramReader
         var assessments = await _context.TrialAssessments.AsNoTracking()
             .Where(a => employeeIds.Contains(a.EmployeeId))
             .ToDictionaryAsync(a => a.EmployeeId);
+        var assessmentIds = assessments.Values.Select(a => a.Id).ToList();
+        var domainResults = await LoadDomainResultsAsync(assessmentIds);
 
         var rows = employees.Select(e =>
         {
             var assessment = assessments.GetValueOrDefault(e.Id);
+            int? choiceScore = assessment?.ChoiceScore;
+            int? choiceTotal = assessment?.ChoiceTotal;
+            List<short>? suggestedLevels = null;
+            if (assessment != null && domainResults.TryGetValue(assessment.Id, out var dList))
+            {
+                choiceScore ??= dList.Sum(d => d.BasicCorrect + d.IntermediateCorrect + d.AdvancedCorrect);
+                choiceTotal ??= dList.Sum(d => d.BasicTotal + d.IntermediateTotal + d.AdvancedTotal);
+                suggestedLevels = dList.Select(d => d.SuggestedLevel).ToList();
+            }
             return new TrialParticipantDto
             {
                 Id = e.Id,
@@ -151,6 +162,9 @@ public class TrialProgramReader
                 SubmittedAt = assessment?.SubmittedAt,
                 ReviewedAt = assessment?.ReviewedAt,
                 AddedAt = e.CreatedAt,
+                ChoiceScore = choiceScore,
+                ChoiceTotal = choiceTotal,
+                SuggestedLevels = suggestedLevels,
             };
         }).ToList();
 
@@ -407,6 +421,9 @@ public class TrialParticipantDto
     public DateTimeOffset? SubmittedAt { get; set; }
     public DateTimeOffset? ReviewedAt { get; set; }
     public DateTimeOffset AddedAt { get; set; }
+    public int? ChoiceScore { get; set; }
+    public int? ChoiceTotal { get; set; }
+    public List<short>? SuggestedLevels { get; set; }
 }
 
 public class TrialReportDto

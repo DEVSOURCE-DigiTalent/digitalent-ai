@@ -1,9 +1,9 @@
 import { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Camera, Lock, Mic, Monitor, Send } from 'lucide-react';
+import { ArrowRight, Camera, Lock, Mic, Monitor, Send, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageContainer } from '@/components/shared/PageContainer';
-import { useInviteTrialParticipants, useJoinTrialAsParticipant, useResendTrialInvitation, useSubmitTrialRequest, useTrialProgram } from '@/hooks/use-trial-program';
+import { useInviteTrialParticipants, useJoinTrialAsParticipant, usePublishTrialReport, useResendTrialInvitation, useSubmitTrialRequest, useTrialProgram } from '@/hooks/use-trial-program';
 import type { TrialInviteResult, TrialParticipant, TrialParticipantRow, TrialProgram, TrialReport } from '@/services/trial-program.service';
 import { apiErrorMessage } from '@/lib/utils';
 import { ParticipantsEditor } from '../components/ParticipantsEditor';
@@ -13,7 +13,7 @@ import { BUY_COURSES_PATH } from '../lib/buy-courses';
 import { formatWhen, toLocalInput } from '../lib/trial-format';
 import '../trial-program.css';
 
-const STEPS = ['Nhân viên', 'Hạn & lịch chấm', 'Làm bài & chấm', 'Kết quả'];
+const STEPS = ['Nhân viên', 'Hạn làm bài', 'Thực hiện đánh giá', 'Kết quả & Lộ trình'];
 
 /** OW-T1 · Dùng thử: mời nhân viên, đặt hạn làm bài + giờ mong muốn chấm, theo dõi và xem bảng năng lực. */
 export function TrialProgramPage() {
@@ -115,7 +115,7 @@ function OwnerParticipation({ program }: { program: TrialProgram }) {
                 {
                   onSuccess: ({ refreshed }) =>
                     refreshed
-                      ? toast.success('Bạn đã tham gia. Mentor sẽ chấm bài của bạn như nhân viên.')
+                      ? toast.success('Bạn đã tham gia. Bạn có thể vào thực hiện bài đánh giá đầu vào.')
                       : toast.warning('Bạn đã tham gia. Hãy đăng xuất rồi đăng nhập lại để vào bài test.'),
                   onError: (err) => toast.error(apiErrorMessage(err, 'Chưa tham gia được.')),
                 },
@@ -175,7 +175,7 @@ function SetupView({ program, onInvited }: { program: TrialProgram; onInvited: (
       </section>
 
       <section className="tp-card">
-        <h2>2. Hạn làm bài & lịch chấm</h2>
+        <h2>2. Thời hạn hoàn thành đánh giá</h2>
         <ScheduleFields value={schedule} onChange={setSchedule} />
         <ExamSummary program={program} />
       </section>
@@ -183,7 +183,7 @@ function SetupView({ program, onInvited }: { program: TrialProgram; onInvited: (
       <div className="tp-row" style={{ justifyContent: 'flex-end' }}>
         {scheduleError && <span className="tp-muted">{scheduleError}</span>}
         <button type="button" className="tp-btn" disabled={busy || invalid || !!scheduleError || existing + filled.length === 0} onClick={submit}>
-          <Send size={15} aria-hidden /> {busy ? 'Đang gửi…' : 'Gửi lời mời & đăng ký chấm'}
+          <Send size={15} aria-hidden /> {busy ? 'Đang gửi…' : 'Gửi lời mời & kích hoạt đánh giá'}
         </button>
       </div>
     </>
@@ -195,7 +195,9 @@ function TrackView({ program }: { program: TrialProgram }) {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(false);
   const [resent, setResent] = useState<TrialInviteResult | null>(null);
+  const publishMutation = usePublishTrialReport();
   const count = (statuses: string[]) => program.participants.filter((p) => statuses.includes(p.status)).length;
+  const submittedCount = count(['SUBMITTED', 'REVIEWED']);
   const reported = program.stage === 'REPORTED';
 
   return (
@@ -204,8 +206,45 @@ function TrackView({ program }: { program: TrialProgram }) {
         <Stat label="Nhân viên" value={program.participants.length} />
         <Stat label="Đã kích hoạt" value={count(['ACTIVE', 'SUBMITTED', 'REVIEWED'])} />
         <Stat label="Đã nộp bài" value={count(['SUBMITTED', 'REVIEWED'])} />
-        <Stat label="Đã chấm" value={count(['REVIEWED'])} />
+        <Stat label="Đã chấm điểm" value={count(['REVIEWED'])} />
       </div>
+
+      {!reported && submittedCount > 0 && (
+        <section className="tp-card" style={{ background: '#f8faff', border: '1.5px solid #c7d2fe' }}>
+          <div className="tp-card-head" style={{ alignItems: 'flex-start' }}>
+            <div style={{ display: 'grid', gap: 4 }}>
+              <h2 style={{ color: '#1e1b4b', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Sparkles size={18} style={{ color: '#4f46e5' }} />
+                Rà soát kết quả & Công bố lộ trình đào tạo
+              </h2>
+              <p className="tp-muted" style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>
+                Hệ thống đã tự động chấm bài làm trắc nghiệm ({submittedCount}/{program.participants.length} nhân viên đã nộp).
+                Bạn có thể xem điểm trắc nghiệm bên dưới, tùy chỉnh trần năng lực theo mục tiêu doanh nghiệp, sau đó công bố kết quả để nhân viên truy cập lộ trình học tập.
+              </p>
+            </div>
+            <div className="tp-row" style={{ gap: 8, marginTop: 4 }}>
+              <Link to="/enterprise/setup" className="tp-btn ghost small">
+                Cấu hình trần năng lực ➔
+              </Link>
+              <button
+                type="button"
+                className="tp-btn small"
+                disabled={publishMutation.isPending}
+                onClick={() => {
+                  if (window.confirm('Xác nhận công bố kết quả cho nhân viên? Sau khi công bố, nhân viên sẽ thấy báo cáo khoảng cách năng lực và lộ trình học tương ứng.')) {
+                    publishMutation.mutate(undefined, {
+                      onSuccess: () => toast.success('Đã công bố kết quả và mở lộ trình học tập cho nhân viên'),
+                      onError: (err) => toast.error(apiErrorMessage(err, 'Chưa công bố được kết quả.')),
+                    });
+                  }
+                }}
+              >
+                {publishMutation.isPending ? 'Đang công bố…' : 'Công bố kết quả cho nhân viên'}
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="tp-card">
         <div className="tp-card-head">
@@ -225,6 +264,14 @@ function TrackView({ program }: { program: TrialProgram }) {
 
       {reported && program.report && (
         <>
+          <div className="tp-row" style={{ justifyContent: 'space-between', alignItems: 'center', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '10px 14px' }}>
+            <span style={{ fontSize: 13, color: '#166534', fontWeight: 500 }}>
+              ✓ Đã công bố kết quả đào tạo cho nhân viên. Nhân viên có thể vào học các khóa tương ứng theo trần năng lực.
+            </span>
+            <Link to="/enterprise/setup" className="tp-btn ghost small" style={{ color: '#15803d', borderColor: '#86efac' }}>
+              Kiến trúc & Trần năng lực ➔
+            </Link>
+          </div>
           <BuyCourses report={program.report} />
           <CompetencyReport report={program.report} />
         </>
@@ -246,6 +293,7 @@ function TrackView({ program }: { program: TrialProgram }) {
                 <th>Nhân viên</th>
                 <th>Phòng ban · Vị trí</th>
                 <th>Trạng thái</th>
+                <th>Điểm trắc nghiệm</th>
                 <th>Nộp lúc</th>
                 {!reported && <th aria-label="Thao tác" />}
               </tr>
@@ -256,6 +304,15 @@ function TrackView({ program }: { program: TrialProgram }) {
                   <td>{p.fullName}{p.isOwner ? ' (bạn)' : ''}<small>{p.email}</small></td>
                   <td>{[p.departmentName, p.positionName].filter(Boolean).join(' · ') || '—'}</td>
                   <td><ParticipantStatus status={p.status} /></td>
+                  <td>
+                    {p.choiceScore != null ? (
+                      <span style={{ fontWeight: 600, color: '#047857' }}>
+                        {p.choiceScore}/{p.choiceTotal ?? 18} câu
+                      </span>
+                    ) : (
+                      <span style={{ color: '#94a3b8' }}>—</span>
+                    )}
+                  </td>
                   <td>{formatWhen(p.submittedAt)}</td>
                   {!reported && (
                     <td>
@@ -428,7 +485,7 @@ function ScheduleFields({ value, onChange }: { value: Schedule; onChange: (v: Sc
 function ExamSummary({ program }: { program: TrialProgram }) {
   return (
     <p className="tp-muted tp-row">
-      Bài test: {program.choiceCount} câu trắc nghiệm + {program.essayCount} tự luận (Cơ bản · Trung cấp · Nâng cao) ·
+      Bài test: {program.choiceCount || 18} câu trắc nghiệm (6 lĩnh vực × 3 cấp độ: Cơ bản · Trung cấp · Nâng cao) · Không có tự luận ·
       <Camera size={14} aria-hidden /> camera <Mic size={14} aria-hidden /> micro <Monitor size={14} aria-hidden /> chia sẻ màn hình
     </p>
   );

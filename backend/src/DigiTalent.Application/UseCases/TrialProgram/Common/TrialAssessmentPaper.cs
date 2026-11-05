@@ -133,7 +133,7 @@ public class TrialAssessmentPaper
 
     private static PulseQuizQuestion GetBenchmarkQuestion(TrialDomainInfo domain, int tier)
     {
-        var id = Guid.NewGuid();
+        var id = new Guid(0x11111111 + domain.Number, (short)tier, 0x4000, 0x80, 0, 0, 0, 0, 0, 0, 0);
         var (content, options) = (domain.Number, tier) switch
         {
             (1, 1) => ("Khi tìm kiếm tài liệu trên mạng, thao tác nào giúp lọc kết quả chính xác theo loại file PDF?",
@@ -179,8 +179,21 @@ public class TrialAssessmentPaper
                 new[] { ("Tích hợp mô hình ngôn ngữ lớn (RAG) với cơ sở tri thức nội bộ để tự động hóa hỗ trợ khách hàng và ra quyết định", true), ("Chỉ dùng AI để dịch một đoạn văn ngắn", false), ("Sao chép nguyên văn từ AI mà không kiểm chứng chuyên môn", false), ("Dùng AI tạo ảnh vui nhộn trong giờ làm việc", false) }),
         };
 
-        var optionDtos = options.Select(o => new PulseQuizOption(Guid.NewGuid(), o.Item1, o.Item2)).ToList();
+        var optionDtos = options.Select((o, idx) => new PulseQuizOption(new Guid(0x22222222 + domain.Number, (short)tier, (short)idx, 0x80, 0, 0, 0, 0, 0, 0, 0), o.Item1, o.Item2)).ToList();
         return new PulseQuizQuestion(id, content, null, 1, optionDtos);
+    }
+
+    public static PulseQuizQuestion? FindBenchmarkQuestion(Guid questionId)
+    {
+        for (var d = 1; d <= 6; d++)
+        {
+            for (var t = 1; t <= PulseRules.MaxLevel; t++)
+            {
+                var q = GetBenchmarkQuestion(new TrialDomainInfo(Guid.Empty, d, $"D{d}", $"Lĩnh vực {d}"), t);
+                if (q.QuestionId == questionId) return q;
+            }
+        }
+        return null;
     }
 
     /// <summary>Ngân hàng câu hỏi của nhiều bài ôn tập trong hai truy vấn.</summary>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Check, ClipboardCheck, X } from 'lucide-react';
+import { Check, ClipboardCheck, X, ArrowRight, GraduationCap, Building2, Clock, CheckCircle2, AlertCircle, FileCheck2, Sparkles } from 'lucide-react';
+import '@/features/trial-program/mentor-workspace.css';
 import { toast } from 'sonner';
 import { useDecidePulseFinal, useDecidePulsePreAssessment, usePulseFinalReviews, useRecordPulseSupport } from '@/hooks/use-pulse';
 import type {
@@ -109,36 +110,107 @@ export function PulseFinalReviewsPage({ audience = 'manager' }: { audience?: 'ma
 
   return (
     <ManagerPage testId="pulse-final-reviews">
-      <PageHead
-        eyebrow={mentor ? 'Mentor · Học thử' : `Quản lý đánh giá${department ? ` · ${department}` : ''}`}
-        title={mentor ? 'Bài cuối khóa cần chấm.' : 'Ra quyết định dựa trên minh chứng.'}
-        description={
-          mentor
-            ? 'Bài của nhân viên các doanh nghiệp dùng thử được giao cho bạn. Xem bản ghi, đọc bài, ghi đạt / chưa đạt kèm lý do.'
-            : 'Mỗi khóa có một bài đánh giá trước khi học và một bài cuối khóa, cả hai có bản ghi màn hình, camera và micro. Gợi ý AI chỉ để tham khảo — quản lý ghi quyết định cuối cùng và lý do.'
-        }
-        actions={<Pill>{data.pendingCount} bài chờ đánh giá</Pill>}
-      />
-
-      <section className="pm-banner" aria-label="Nguyên tắc chấm bài cuối khóa">
-        <div>
-          <span className="pu-mini">{department ? `${department} / ` : ''}Đánh giá khóa học</span>
-          <h2>Một người học. Một khóa. Một quyết định rõ ràng.</h2>
-          <p>Xem bản ghi và các lần rời tab hoặc dừng chia sẻ, đọc minh chứng rồi ghi đạt hoặc chưa đạt kèm lý do.</p>
+{mentor ? (
+        <div className="mw-header">
+          <div className="mw-breadcrumbs">
+            <span>Không gian làm việc</span>
+            <span>/</span>
+            <span className="current">Bài cuối khóa học thử</span>
+          </div>
+          <div className="mw-header-main">
+            <div className="mw-title-block">
+              <div className="mw-title-icon">
+                <GraduationCap className="size-6" aria-hidden="true" />
+              </div>
+              <div>
+                <h1>Chấm bài cuối khóa học thử</h1>
+                <p>
+                  Đánh giá bài nộp cuối khóa và bài tự đánh giá trước khi học của nhân sự các doanh nghiệp dùng thử được phân công.
+                </p>
+              </div>
+            </div>
+            <div className="mw-header-actions">
+              <span className="mw-chip amber" style={{ fontSize: 13, padding: '6px 12px' }}>
+                <Clock size={14} aria-hidden="true" />
+                {data.pendingCount} bài chờ quyết định
+              </span>
+            </div>
+          </div>
         </div>
-        <div className="pm-banner-count">
-          <strong>{data.pendingCount}</strong>
-          <span>chờ bạn quyết định</span>
-        </div>
-      </section>
+      ) : (
+        <>
+          <PageHead
+            eyebrow={`Quản lý đánh giá${department ? ` · ${department}` : ''}`}
+            title="Ra quyết định dựa trên minh chứng."
+            description="Mỗi khóa có một bài đánh giá trước khi học và một bài cuối khóa, cả hai có bản ghi màn hình, camera và micro. Gợi ý AI chỉ để tham khảo — quản lý ghi quyết định cuối cùng và lý do."
+            actions={<Pill>{data.pendingCount} bài chờ đánh giá</Pill>}
+          />
+          <section className="pm-banner" aria-label="Nguyên tắc chấm bài cuối khóa">
+            <div>
+              <span className="pu-mini">{department ? `${department} / ` : ''}Đánh giá khóa học</span>
+              <h2>Một người học. Một khóa. Một quyết định rõ ràng.</h2>
+              <p>Xem bản ghi và các lần rời tab hoặc dừng chia sẻ, đọc minh chứng rồi ghi đạt hoặc chưa đạt kèm lý do.</p>
+            </div>
+            <div className="pm-banner-count">
+              <strong>{data.pendingCount}</strong>
+              <span>chờ bạn quyết định</span>
+            </div>
+          </section>
+        </>
+      )}
 
-      <section className="pu-metrics pu-review-kpis" aria-label="Tình trạng hàng chờ" style={{ marginTop: 16 }}>
-        <div><strong>{data.pendingCount}</strong><span>Chờ quyết định</span></div>
-        <div><strong>{data.preAssessmentCount}</strong><span>Đánh giá trước khi học</span></div>
-        <div><strong>{data.retryCount}</strong><span>Chờ nộp lại</span></div>
-        <div className="warn"><strong>{data.deadlineMissedCount}</strong><span>Quá hạn nộp lại</span></div>
-        <div className="warn"><strong>{data.flaggedCount}</strong><span>Cần hỗ trợ</span></div>
-      </section>
+      {mentor ? (
+        <div className="mw-kpi-grid">
+          <div className="mw-kpi-card">
+            <div className="mw-kpi-icon amber">
+              <Clock className="size-5" aria-hidden="true" />
+            </div>
+            <div className="mw-kpi-info">
+              <span className="mw-kpi-label">Chờ quyết định</span>
+              <span className="mw-kpi-value">{data.pendingCount}</span>
+              <span className="mw-kpi-sub">Cần xem xét ngay</span>
+            </div>
+          </div>
+          <div className="mw-kpi-card">
+            <div className="mw-kpi-icon indigo">
+              <FileCheck2 className="size-5" aria-hidden="true" />
+            </div>
+            <div className="mw-kpi-info">
+              <span className="mw-kpi-label">Đánh giá trước học</span>
+              <span className="mw-kpi-value">{data.preAssessmentCount}</span>
+              <span className="mw-kpi-sub">Miễn học phần</span>
+            </div>
+          </div>
+          <div className="mw-kpi-card">
+            <div className="mw-kpi-icon emerald">
+              <CheckCircle2 className="size-5" aria-hidden="true" />
+            </div>
+            <div className="mw-kpi-info">
+              <span className="mw-kpi-label">Chờ nộp lại</span>
+              <span className="mw-kpi-value">{data.retryCount}</span>
+              <span className="mw-kpi-sub">Đang sửa bài</span>
+            </div>
+          </div>
+          <div className="mw-kpi-card">
+            <div className="mw-kpi-icon rose">
+              <AlertCircle className="size-5" aria-hidden="true" />
+            </div>
+            <div className="mw-kpi-info">
+              <span className="mw-kpi-label">Cần hỗ trợ</span>
+              <span className="mw-kpi-value">{data.flaggedCount + data.deadlineMissedCount}</span>
+              <span className="mw-kpi-sub">Quá hạn hoặc gắn cờ</span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <section className="pu-metrics pu-review-kpis" aria-label="Tình trạng hàng chờ" style={{ marginTop: 16 }}>
+          <div><strong>{data.pendingCount}</strong><span>Chờ quyết định</span></div>
+          <div><strong>{data.preAssessmentCount}</strong><span>Đánh giá trước khi học</span></div>
+          <div><strong>{data.retryCount}</strong><span>Chờ nộp lại</span></div>
+          <div className="warn"><strong>{data.deadlineMissedCount}</strong><span>Quá hạn nộp lại</span></div>
+          <div className="warn"><strong>{data.flaggedCount}</strong><span>Cần hỗ trợ</span></div>
+        </section>
+      )}
 
       {data.items.length === 0 ? (
         <div style={{ marginTop: 22 }}>
@@ -154,20 +226,58 @@ export function PulseFinalReviewsPage({ audience = 'manager' }: { audience?: 'ma
         </div>
       ) : (
         <>
-          <div className="pu-tabs" role="group" aria-label="Lọc theo loại bài">
-            {KIND_FILTERS.map((k) => (
-              <button key={k.key} type="button" aria-pressed={kind === k.key} onClick={() => setKind(k.key)}>
-                {k.label}<span>{data.items.filter((item) => k.key === 'ALL' || item.kind === k.key).length}</span>
-              </button>
-            ))}
-          </div>
-          <div className="pu-tabs" role="group" aria-label="Lọc theo trạng thái">
-            {FILTERS.map((f) => (
-              <button key={f.key} type="button" aria-pressed={filter === f.key} onClick={() => setFilter(f.key)}>
-                {f.label}<span>{ofKind.filter((item) => f.match(item.status)).length}</span>
-              </button>
-            ))}
-          </div>
+          {mentor ? (
+            <div className="mw-toolbar">
+              <div className="mw-filter-pills">
+                {FILTERS.map((f) => (
+                  <button
+                    key={f.key}
+                    type="button"
+                    className={`mw-filter-btn ${filter === f.key ? 'active' : ''}`}
+                    onClick={() => setFilter(f.key)}
+                  >
+                    <span>{f.label}</span>
+                    <span className="mw-filter-count">
+                      {ofKind.filter((item) => f.match(item.status)).length}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="mw-filter-pills">
+                {KIND_FILTERS.map((k) => (
+                  <button
+                    key={k.key}
+                    type="button"
+                    className={`mw-filter-btn ${kind === k.key ? 'active' : ''}`}
+                    onClick={() => setKind(k.key)}
+                  >
+                    <span>{k.label}</span>
+                    <span className="mw-filter-count">
+                      {data.items.filter((item) => k.key === 'ALL' || item.kind === k.key).length}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="pu-tabs" role="group" aria-label="Lọc theo loại bài">
+                {KIND_FILTERS.map((k) => (
+                  <button key={k.key} type="button" aria-pressed={kind === k.key} onClick={() => setKind(k.key)}>
+                    {k.label}<span>{data.items.filter((item) => k.key === 'ALL' || item.kind === k.key).length}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="pu-tabs" role="group" aria-label="Lọc theo trạng thái">
+                {FILTERS.map((f) => (
+                  <button key={f.key} type="button" aria-pressed={filter === f.key} onClick={() => setFilter(f.key)}>
+                    {f.label}<span>{ofKind.filter((item) => f.match(item.status)).length}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
           <div className="pu-stack">
             {visible.length === 0 && <Notice>Không có bài nào ở trạng thái này.</Notice>}
             {visible.map((item) => (
@@ -203,10 +313,21 @@ function ReviewCard({ item, criteria, showOrganization }: { item: PulseFinalRevi
     <article className="pu-surface pu-pad pu-review-card" aria-label={`${item.employeeName} · ${item.courseTitle}`}>
       <header>
         <div>
-          <Mini>
-            {showOrganization && item.organizationName ? `${item.organizationName} / ` : ''}
-            {item.employeeName} / {item.positionName ?? 'Chưa gán vị trí'} / {item.courseTitle}
-          </Mini>
+          {showOrganization && item.organizationName ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+              <span className="mw-chip indigo" style={{ fontSize: 11.5, padding: '2px 8px' }}>
+                <Building2 size={12} aria-hidden="true" />
+                {item.organizationName}
+              </span>
+              <span style={{ fontSize: 12.5, color: 'var(--mw-slate-500)', fontWeight: 500 }}>
+                {item.employeeName} · {item.positionName ?? 'Chưa gán vị trí'} · {item.courseTitle}
+              </span>
+            </div>
+          ) : (
+            <Mini>
+              {item.employeeName} / {item.positionName ?? 'Chưa gán vị trí'} / {item.courseTitle}
+            </Mini>
+          )}
           <h2>{isPre ? 'Đánh giá trước khi học' : `Bài cuối khóa · lần nộp ${item.attemptNo}/${item.maxAttempts}`}</h2>
           <p className="pu-review-meta">
             {[item.domainName, item.tier ? levelName(item.tier) : null, latest ? `nộp ${formatDateTime(latest.submittedAt)}` : null]
@@ -251,10 +372,10 @@ function ReviewCard({ item, criteria, showOrganization }: { item: PulseFinalRevi
             {criteria.map((criterion, index) => {
               const met = item.aiHint?.checks[index] ?? false;
               return (
-                <div key={criterion.number}>
+                <div key={criterion.number || index}>
                   <b>{criterion.number}</b>
                   <span>{criterion.title}<small>{criterion.description}</small></span>
-                  <span className={`pu-check${met ? ' on' : ''}`} aria-label={met ? 'Gợi ý: có' : 'Gợi ý: chưa thấy'}>{met ? '✓' : '·'}</span>
+                  <span className={`pu-check${met ? " on" : ""}`} aria-label={met ? "Gợi ý: có" : "Gợi ý: chưa thấy"}>{met ? <Check size={14} className="text-emerald-600" /> : <span style={{ color: "#94a3b8" }}>·</span>}</span>
                 </div>
               );
             })}
@@ -266,7 +387,7 @@ function ReviewCard({ item, criteria, showOrganization }: { item: PulseFinalRevi
       {earlier.length > 0 && (
         <div className="pu-review-history">
           <Mini>Lần nộp trước</Mini>
-          {earlier.map((attempt) => <AttemptHistory key={attempt.submissionId} attempt={attempt} max={item.maxAttempts} />)}
+          {earlier.map((attempt, idx) => <AttemptHistory key={attempt.submissionId || attempt.attemptNo || idx} attempt={attempt} max={item.maxAttempts} />)}
         </div>
       )}
 
@@ -325,7 +446,7 @@ function AiEvaluationPanel({ hint }: { hint?: PulseAiHint | null }) {
       {f && f.items.length > 0 && (
         <div className="pu-ai-fraud" style={{ borderColor: FraudLevelColor(f.level) }}>
           <h3 style={{ color: FraudLevelColor(f.level) }}>
-            ⚠ Phát hiện nghi ngờ gian lận · Mức: {FraudLevelLabel(f.level)}
+            Cảnh báo nghi ngờ gian lận · Mức: {FraudLevelLabel(f.level)}
           </h3>
           <p className="pu-ai-fraud-summary">{f.summary}</p>
           <div className="pu-ai-fraud-list">
@@ -341,12 +462,12 @@ function AiEvaluationPanel({ hint }: { hint?: PulseAiHint | null }) {
       )}
       {f && f.items.length === 0 && (
         <div className="pu-ai-fraud pu-ai-fraud--ok">
-          <p>✓ Không phát hiện hành vi bất thường trong quá trình làm bài.</p>
+          <p style={{ display: "flex", alignItems: "center", gap: 6 }}><Check size={14} className="text-emerald-600" aria-hidden="true" /> Không phát hiện hành vi bất thường trong quá trình làm bài.</p>
         </div>
       )}
 
       {/* Phần đánh giá bài viết */}
-      <h3>✦ Đánh giá của AI (Gemini)</h3>
+      <h3 style={{ display: "flex", alignItems: "center", gap: 6 }}><Sparkles size={15} style={{ color: "var(--mw-ai, #7c3aed)" }} aria-hidden="true" /> Đánh giá của AI (Gemini)</h3>
       {d ? (
         <>
           <div className="pu-ai-scores">
@@ -509,7 +630,10 @@ function DecisionForm({ item, mentor }: { item: PulseFinalReviewItem; mentor?: b
         </div>
       )}
       <button type="submit" className={btn()} disabled={!decision || length < MIN_REASON || decide.isPending}>
-        {decide.isPending ? 'Đang ghi…' : 'Ghi quyết định cuối cùng →'}
+        {decide.isPending ? 'Đang ghi…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span>Ghi quyết định cuối cùng</span>
+          <ArrowRight size={14} aria-hidden="true" />
+        </span>}
       </button>
     </form>
   );
@@ -577,7 +701,10 @@ function PreAssessmentDecisionForm({ item, mentor }: { item: PulseFinalReviewIte
         </div>
       )}
       <button type="submit" className={btn()} disabled={!decision || length < MIN_REASON || decide.isPending}>
-        {decide.isPending ? 'Đang ghi…' : 'Ghi quyết định cuối cùng →'}
+        {decide.isPending ? 'Đang ghi…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span>Ghi quyết định cuối cùng</span>
+          <ArrowRight size={14} aria-hidden="true" />
+        </span>}
       </button>
     </form>
   );
@@ -632,7 +759,7 @@ function SupportForm({ item }: { item: PulseFinalReviewItem }) {
         <textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} placeholder="Ví dụ: kèm cặp 2 buổi với trưởng nhóm." style={{ minHeight: 80 }} />
       </label>
       <button type="submit" className={btn()} disabled={!action || record.isPending}>
-        {record.isPending ? 'Đang ghi…' : latest?.supportAction ? 'Cập nhật hướng hỗ trợ →' : 'Ghi hướng hỗ trợ →'}
+        {record.isPending ? 'Đang ghi…' : latest?.supportAction ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span>Cập nhật hướng hỗ trợ</span><ArrowRight size={14} aria-hidden="true" /></span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span>Ghi hướng hỗ trợ</span><ArrowRight size={14} aria-hidden="true" /></span>}
       </button>
     </form>
   );

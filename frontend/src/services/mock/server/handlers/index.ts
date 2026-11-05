@@ -16,3 +16,4 @@ import './me';
 import './ceilings';
 import './reference-positions';
 import './assistant';
+import './mentor';

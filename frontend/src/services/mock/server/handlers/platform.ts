@@ -228,7 +228,76 @@ function getAllOrganizations(): PlatformOrganizationDto[] {
   return orgs;
 }
 
-// ── PLT-01: Dashboard ──
+// ── PLT-01: Dashboard & Overview ──
+route('GET', '/platform/overview', () => {
+  const orgs = getAllOrganizations();
+  const db = getDb();
+  const suspendedOrgs = orgs.filter((o) => o.status === 'SUSPENDED');
+  const trialOrgs = orgs.filter((o) => o.planCode === 'ENT_STARTER' || o.planCode === 'TRIAL');
+  const paidOrgs = orgs.filter((o) => o.status === 'ACTIVE' && o.planCode !== 'ENT_STARTER' && o.planCode !== 'TRIAL');
+  const totalUsers = 15 + db.users.length;
+  const totalLearners = 12 + db.users.filter((u) => u.roles.includes('EMPLOYEE')).length;
+
+  return {
+    organizationCount: orgs.length,
+    trialOrganizationCount: trialOrgs.length,
+    paidOrganizationCount: paidOrgs.length,
+    suspendedOrganizationCount: suspendedOrgs.length,
+    conversionRate: orgs.length ? Math.round((paidOrgs.length / orgs.length) * 100) : 0,
+    userCount: totalUsers,
+    employeeCount: totalLearners,
+    lockedUserCount: platformState.userLocks.size,
+    trialUserCount: 8,
+    trialEndingSoonCount: 2,
+    frameworkCount: 1,
+    draftFrameworkCount: 0,
+    frameworkHasDraft: false,
+    domainCount: 6,
+    currentVersionNo: 1,
+    currentVersionPublishedAt: '2026-10-01T00:00:00Z',
+    draftVersionNo: null,
+    draftNewCourseCount: 0,
+    draftEditedCourseCount: 0,
+    courseCount: 18,
+    pausedCourseCount: 0,
+    questionCount: 72,
+    seatsPurchased: 250,
+    seatsGranted: 50,
+    revenue: 125000000,
+    recentOrganizations: orgs.slice(0, 5).map((o) => ({
+      id: o.id,
+      code: o.id.slice(0, 8).toUpperCase(),
+      name: o.name,
+      status: o.status as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED',
+      stage: (o.planCode === 'ENT_STARTER' ? 'TRIAL' : 'PAID') as 'TRIAL' | 'PAID',
+      ownerName: o.ownerName,
+      ownerEmail: o.ownerEmail,
+      seatLimit: o.seatLimit || 20,
+      seatsPurchased: o.seatLimit || 20,
+      seatsGranted: 0,
+      seatsInUse: o.seatsUsed || 5,
+      activeLearners: o.membersCount || 5,
+      activeCourses: 6,
+      createdAt: o.createdAt,
+    })),
+    recentActivity: platformState.auditLogs.slice(0, 5).map((a) => ({
+      id: a.id,
+      action: a.action,
+      actionLabel: a.action,
+      scope: 'PLATFORM' as const,
+      entityType: a.targetType,
+      entityId: null,
+      entityLabel: a.targetName,
+      organizationId: null,
+      organizationName: null,
+      actorEmail: a.actorEmail,
+      oldValues: null,
+      newValues: a.details,
+      createdAt: a.timestamp,
+    })),
+  };
+});
+
 route('GET', '/platform/dashboard', () => {
   const orgs = getAllOrganizations();
   const db = getDb();
@@ -886,6 +955,69 @@ route('PUT', '/platform/subscriptions/:id/cancel', (context) => {
 }, { message: 'Đã cập nhật trạng thái hủy gói đăng ký thành công.' });
 
 // ── PLT-04: Framework Management ──
+route('GET', '/platform/frameworks', () => {
+  return {
+    items: [
+      {
+        id: 'fw-tt02',
+        code: 'TT02_2025',
+        name: 'Khung năng lực số quốc gia (Thông tư 02/2025/TT-BGDĐT)',
+        description: 'Bộ 24 năng lực số cốt lõi chuẩn hóa cho mọi cơ quan, tổ chức và doanh nghiệp.',
+        status: 'PUBLISHED' as const,
+        currentVersionNo: 1,
+        domainCount: 6,
+        courseCount: 18,
+        coursesByLevel: [6, 6, 6],
+        draftCourseCount: null,
+        hasDraft: false,
+      },
+    ],
+  };
+});
+
+route('GET', '/platform/frameworks/:id', () => {
+  return {
+    id: 'fw-tt02',
+    code: 'TT02_2025',
+    name: 'Khung năng lực số quốc gia (Thông tư 02/2025/TT-BGDĐT)',
+    description: 'Bộ 24 năng lực số cốt lõi chuẩn hóa cho mọi cơ quan, tổ chức và doanh nghiệp.',
+    status: 'PUBLISHED' as const,
+    currentVersionNo: 1,
+    domainCount: 6,
+    courseCount: 18,
+    coursesByLevel: [6, 6, 6],
+    draftCourseCount: null,
+    hasDraft: false,
+    currentCatalogVersionNo: 1,
+    draftCatalogVersionNo: null,
+    domains: CATEGORIES.map((cat, idx) => ({
+      id: cat.id,
+      code: cat.code,
+      name: cat.name,
+      sortOrder: cat.sortOrder,
+      publishedDescription: `Miền ${idx + 1}: ${cat.name} theo chuẩn Thông tư 02.`,
+      draftDescription: '',
+      hasDraft: false,
+      courses: COURSES.filter((c) => c.categoryId === cat.id && c.status === 'PUBLISHED').map((c) => ({
+        courseId: c.id,
+        code: c.code,
+        title: c.title,
+        level: c.level,
+        levelName: levelLabel(c.level),
+      })),
+      draftNewCourses: [],
+    })),
+    releases: [
+      {
+        versionNo: 1,
+        releaseNote: 'Công bố chuẩn Thông tư 02/2025/TT-BGDĐT phiên bản neo ban đầu.',
+        publishedByEmail: 'admin@digitalent.ai',
+        publishedAt: '2026-10-01T00:00:00Z',
+      },
+    ],
+  };
+});
+
 route('GET', '/platform/framework', () => {
   const competencies = COMPETENCIES.map((c) => {
     const customDesc = platformState.competencyDescriptions.get(c.id);
@@ -1044,7 +1176,146 @@ function enrichCourse(course: CatalogCourse): PlatformStandardCourseDto {
 }
 
 route('GET', '/platform/courses', () => {
-  return COURSES.map(enrichCourse);
+  const items = COURSES.map((c) => {
+    const d = parseInt(c.categoryId.replace('cat-', ''), 10) || 1;
+    return {
+      id: c.id,
+      code: c.code,
+      frameworkId: 'fw-tt02',
+      frameworkName: 'Khung năng lực số quốc gia (Thông tư 02/2025/TT-BGDĐT)',
+      domainCode: `D${d}`,
+      domainName: CATEGORIES.find((cat) => cat.id === c.categoryId)?.name ?? '',
+      level: c.level,
+      levelName: levelLabel(c.level),
+      versionNo: 1,
+      title: c.title,
+      outcome: `Đạt chuẩn năng lực số mức độ ${levelLabel(c.level)}`,
+      pricePerSeat: c.level === 1 ? 0 : 500000 * c.level,
+      salesStatus: 'OPEN' as const,
+      isFree: c.level === 1,
+      draftPricePerSeat: null,
+      draftSalesStatus: null,
+      publishedAt: '2026-10-01T00:00:00Z',
+      moduleCount: c.modules,
+      questionCount: 12,
+      seatsPurchased: 20,
+      seatsGranted: 5,
+      revenue: c.level === 1 ? 0 : 10000000,
+    };
+  });
+  return { items };
+});
+
+route('GET', '/platform/commerce', () => {
+  const published = COURSES.filter((c) => c.status === 'PUBLISHED');
+  const courses = published.map((c) => {
+    const d = parseInt(c.categoryId.replace('cat-', ''), 10) || 1;
+    return {
+      id: c.id,
+      code: c.code,
+      frameworkId: 'fw-tt02',
+      frameworkName: 'Khung năng lực số quốc gia (Thông tư 02/2025/TT-BGDĐT)',
+      domainCode: `D${d}`,
+      domainName: CATEGORIES.find((cat) => cat.id === c.categoryId)?.name ?? '',
+      level: c.level,
+      levelName: levelLabel(c.level),
+      versionNo: 1,
+      title: c.title,
+      outcome: `Đạt chuẩn năng lực số mức độ ${levelLabel(c.level)}`,
+      pricePerSeat: c.level === 1 ? 0 : 500000 * c.level,
+      salesStatus: 'OPEN' as const,
+      isFree: c.level === 1,
+      draftPricePerSeat: null,
+      draftSalesStatus: null,
+      publishedAt: '2026-10-01T00:00:00Z',
+      moduleCount: c.modules,
+      questionCount: 12,
+      seatsPurchased: 20,
+      seatsGranted: 5,
+      revenue: c.level === 1 ? 0 : 10000000,
+    };
+  });
+  return {
+    courses,
+    seatsPurchased: 250,
+    seatsGranted: 50,
+    revenue: 125000000,
+    orders: {
+      items: [],
+      totalCount: 0,
+      pageIndex: 1,
+      pageSize: 20,
+      totalPages: 0,
+    },
+  };
+});
+
+route('GET', '/platform/catalog/versions', () => {
+  return {
+    current: {
+      versionNo: 1,
+      status: 'CURRENT' as const,
+      publishedAt: '2026-10-01T00:00:00Z',
+      publishedByEmail: 'admin@digitalent.ai',
+      releaseNote: 'Phiên bản neo chính thức (Anchor v1).',
+      courseCount: 18,
+      courses: COURSES.filter((c) => c.status === 'PUBLISHED').map((c) => {
+        const d = parseInt(c.categoryId.replace('cat-', ''), 10) || 1;
+        return {
+          id: c.id,
+          code: c.code,
+          frameworkId: 'fw-tt02',
+          frameworkCode: 'TT02_2025',
+          domainCode: `D${d}`,
+          domainName: CATEGORIES.find((cat) => cat.id === c.categoryId)?.name ?? '',
+          level: c.level,
+          levelName: levelLabel(c.level),
+          title: c.title,
+          outcome: `Đạt chuẩn mức độ ${levelLabel(c.level)}`,
+          pricePerSeat: c.level === 1 ? 0 : 500000 * c.level,
+          salesStatus: 'OPEN' as const,
+          changeKind: 'UNCHANGED' as const,
+          moduleCount: c.modules,
+          questionCount: 12,
+          hasDraftPrice: false,
+        };
+      }),
+    },
+    draft: null,
+    retired: [],
+  };
+});
+
+route('GET', '/platform/catalog/versions/:versionNo', (context) => {
+  return {
+    versionNo: Number(context.params.versionNo) || 1,
+    status: 'CURRENT' as const,
+    publishedAt: '2026-10-01T00:00:00Z',
+    publishedByEmail: 'admin@digitalent.ai',
+    releaseNote: 'Phiên bản neo chính thức (Anchor v1).',
+    courseCount: 18,
+    courses: COURSES.filter((c) => c.status === 'PUBLISHED').map((c) => {
+      const d = parseInt(c.categoryId.replace('cat-', ''), 10) || 1;
+      return {
+        id: c.id,
+        code: c.code,
+        frameworkId: 'fw-tt02',
+        frameworkCode: 'TT02_2025',
+        domainCode: `D${d}`,
+        domainName: CATEGORIES.find((cat) => cat.id === c.categoryId)?.name ?? '',
+        level: c.level,
+        levelName: levelLabel(c.level),
+        title: c.title,
+        outcome: `Đạt chuẩn mức độ ${levelLabel(c.level)}`,
+        pricePerSeat: c.level === 1 ? 0 : 500000 * c.level,
+        salesStatus: 'OPEN' as const,
+        changeKind: 'UNCHANGED' as const,
+        moduleCount: c.modules,
+        questionCount: 12,
+        hasDraftPrice: false,
+      };
+    }),
+  };
 });
 
 route('GET', '/platform/courses/:id', (context) => {
@@ -1294,6 +1565,34 @@ route('GET', '/platform/audit-log', (context) => {
 
   if (query.search) {
     list = list.filter((a) => matchesSearch(a.details, query.search) || matchesSearch(a.targetName, query.search) || matchesSearch(a.actorEmail, query.search));
+  }
+  if (query.action) {
+    list = list.filter((a) => a.action === query.action);
+  }
+
+  return paginate(list, pageRequest(query));
+});
+
+route('GET', '/platform/audit-logs', (context) => {
+  const { query } = context;
+  let list = platformState.auditLogs.map((a) => ({
+    id: a.id,
+    action: a.action,
+    actionLabel: a.action,
+    scope: 'PLATFORM' as const,
+    entityType: a.targetType,
+    entityId: null,
+    entityLabel: a.targetName,
+    organizationId: null,
+    organizationName: null,
+    actorEmail: a.actorEmail,
+    oldValues: null,
+    newValues: a.details,
+    createdAt: a.timestamp,
+  }));
+
+  if (query.search) {
+    list = list.filter((a) => matchesSearch(a.newValues ?? '', query.search) || matchesSearch(a.entityLabel ?? '', query.search) || matchesSearch(a.actorEmail ?? '', query.search));
   }
   if (query.action) {
     list = list.filter((a) => a.action === query.action);

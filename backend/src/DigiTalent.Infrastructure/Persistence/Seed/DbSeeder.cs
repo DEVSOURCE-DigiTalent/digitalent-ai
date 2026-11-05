@@ -205,6 +205,7 @@ public static class DbSeeder
         }
 
         EnsureUser("platform@digitalent.ai", "Platform Administrator", null, Roles.PlatformAdmin);
+        EnsureUser("admin@digitalent.ai", "Quản trị viên Nền tảng", null, Roles.PlatformAdmin);
         EnsureUser("mentor@digitalent.ai", "Mentor DigiTalent", null, Roles.Mentor);
         var owner = EnsureUser("owner@digitalent.ai", "Enterprise Owner", organizationId, Roles.Owner);
         var manager = EnsureUser("manager@digitalent.ai", "Department Manager", organizationId, Roles.Manager);
