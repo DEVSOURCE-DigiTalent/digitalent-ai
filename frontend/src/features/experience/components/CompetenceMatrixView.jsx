@@ -57,7 +57,7 @@ export default function CompetenceMatrixView({
               Chuẩn Năng Lực Số Theo Vị Trí Việc Làm (Job Role Benchmark)
             </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-sm)', marginTop: '6px', maxWidth: '820px', lineHeight: 1.6 }}>
-              Trong doanh nghiệp, <strong>không cào bằng mọi nhân sự đều phải học Level 5-6</strong>. Mỗi vị trí việc làm có một Hồ sơ Chuẩn năng lực riêng. Vị trí <strong>{activeRoleObj.roleTitle}</strong> yêu cầu chuẩn hóa từng lĩnh vực phù hợp với nghiệp vụ thực tế. Lộ trình đào tạo chỉ kích hoạt khi có khoảng cách Gap so với chuẩn vị trí.
+              Trong doanh nghiệp, <strong>không cào bằng mọi nhân sự đều phải học Level 5-6</strong>. Mỗi vị trí việc làm có một Hồ sơ Chuẩn năng lực riêng. Vị trí <strong>{activeRoleObj.roleTitle}</strong> yêu cầu chuẩn hóa từng lĩnh vực phù hợp với nghiệp vụ thực tế. Lộ trình đào tạo chỉ kích hoạt khi có khoảng trống năng lực so với chuẩn vị trí.
             </p>
           </div>
           <div style={{ textAlign: 'right', minWidth: '160px' }}>
@@ -124,7 +124,7 @@ export default function CompetenceMatrixView({
 
                 {onStartDiagnostic && (
                   <button className="btn-cta" style={{ width: 'auto', padding: '8px 20px', fontSize: '13px' }} onClick={onStartDiagnostic}>
-                    <span>Làm bài test vị trí {activeRoleObj.roleCode}</span>
+                    <span>Làm bài đánh giá vị trí {activeRoleObj.roleCode}</span>
                   </button>
                 )}
               </div>
@@ -186,7 +186,7 @@ export default function CompetenceMatrixView({
                       <div style={{ textAlign: 'right' }}>
                         <span style={{ color: 'var(--text-muted)' }}>Năng lực hiện tại:</span>
                         <div style={{ fontWeight: 700, color: !diagnosticDone ? 'var(--text-muted)' : (isPassed ? 'var(--semantic-success)' : 'var(--brand-accent)'), marginTop: '2px' }}>
-                          {!diagnosticDone ? "Chưa làm bài test" : `${getLevelLabel(currentScore)} (${currentScore}%)`}
+                          {!diagnosticDone ? "Chưa làm bài đánh giá" : `${getLevelLabel(currentScore)} (${currentScore}%)`}
                         </div>
                       </div>
                     </div>
@@ -218,7 +218,7 @@ export default function CompetenceMatrixView({
                       }
                     }}
                   >
-                    <span>{!diagnosticDone ? "Bắt đầu bài test vị trí" : "Xem mô-đun đào tạo"}</span>
+                    <span>{!diagnosticDone ? "Bắt đầu bài đánh giá vị trí" : "Xem mô-đun đào tạo"}</span>
                     <ArrowUpRight size={16} />
                   </button>
                 </div>
