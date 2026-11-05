@@ -431,7 +431,7 @@ describe('Platform Admin console (v2)', () => {
     expect(await screen.findByRole('textbox', { name: 'Tên mô đun' })).toHaveValue('Viết câu lệnh');
     fireEvent.click(screen.getByRole('button', { name: 'Thêm nội dung đầu tiên' }));
     const menu = screen.getByRole('group', { name: 'Chọn loại khối' });
-    expect(within(menu).getAllByRole('button').map((b) => b.querySelector('strong')?.textContent)).toEqual(['Chữ', 'Slide', 'Ảnh', 'Video']);
+    expect(within(menu).getAllByRole('button').map((b) => b.querySelector('strong')?.textContent)).toEqual(['Chữ', 'Slide', 'Ảnh', 'Video', 'PDF']);
     fireEvent.click(within(menu).getByRole('button', { name: /Ảnh/ }));
 
     await waitFor(() => expect(catalog.addBlock).toHaveBeenCalledWith(4, 'c-AI1-F', 'm-1', 'IMAGE', 0));

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Platform.Catalog;
 
 /// <summary>
-/// Saves the content of a block in the draft. TEXT: sanitized HTML. IMAGE / VIDEO: an uploaded asset of the same
+/// Saves the content of a block in the draft. TEXT: sanitized HTML. IMAGE / VIDEO / PDF: an uploaded asset of the same
 /// kind, caption and alt text. SLIDE: the whole ordered list of images and videos with captions (replaces the old
 /// list). Fields left null are unchanged.
 /// </summary>
@@ -35,13 +35,19 @@ public class UpdatePlatformModuleBlockUseCase : IUseCase<UpdatePlatformModuleBlo
                 break;
             case PlatformCatalog.BlockType.Image:
             case PlatformCatalog.BlockType.Video:
+            case PlatformCatalog.BlockType.Pdf:
                 if (input.AssetId is { } assetId)
                 {
                     var asset = await _context.PlatformAssets.AsNoTracking().FirstOrDefaultAsync(a => a.Id == assetId)
                                 ?? throw new BadRequestException("Không tìm thấy tệp đã tải lên.", "assetId", "ASSET_NOT_FOUND");
                     if (asset.Kind != block.BlockType)
                         throw new BadRequestException(
-                            block.BlockType == PlatformCatalog.BlockType.Image ? "Khối ảnh cần một tệp ảnh." : "Khối video cần một tệp video.",
+                            block.BlockType switch
+                            {
+                                PlatformCatalog.BlockType.Image => "Khối ảnh cần một tệp ảnh.",
+                                PlatformCatalog.BlockType.Video => "Khối video cần một tệp video.",
+                                _ => "Khối PDF cần một tệp PDF.",
+                            },
                             "assetId", "ASSET_KIND_MISMATCH");
                     block.AssetId = asset.Id;
                 }
@@ -62,7 +68,7 @@ public class UpdatePlatformModuleBlockUseCase : IUseCase<UpdatePlatformModuleBlo
     private async Task ReplaceItemsAsync(PlatformModuleBlock block, List<PlatformSlideItemInput> items)
     {
         var assetIds = items.Select(i => i.AssetId).Distinct().ToList();
-        var known = await _context.PlatformAssets.AsNoTracking().Where(a => assetIds.Contains(a.Id)).Select(a => a.Id).ToListAsync();
+        var known = await _context.PlatformAssets.AsNoTracking().Where(a => assetIds.Contains(a.Id) && a.Kind != PlatformCatalog.AssetKind.Pdf).Select(a => a.Id).ToListAsync();
         if (known.Count != assetIds.Count)
             throw new BadRequestException("Có ảnh hoặc video trong slide chưa được tải lên.", "items", "ASSET_NOT_FOUND");
 

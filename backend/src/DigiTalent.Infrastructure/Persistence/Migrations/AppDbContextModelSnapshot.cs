@@ -4009,9 +4009,9 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
 
                     b.ToTable("platform_assets", null, t =>
                         {
-                            t.HasCheckConstraint("ck_platform_assets_kind", "kind IN ('IMAGE','VIDEO')");
+                            t.HasCheckConstraint("ck_platform_assets_kind", "kind IN ('IMAGE','VIDEO','PDF')");
 
-                            t.HasCheckConstraint("ck_platform_assets_size", "size_bytes > 0 AND (kind <> 'IMAGE' OR size_bytes <= 10485760) AND (kind <> 'VIDEO' OR size_bytes <= 524288000)");
+                            t.HasCheckConstraint("ck_platform_assets_size", "size_bytes > 0 AND (kind <> 'IMAGE' OR size_bytes <= 10485760) AND (kind <> 'VIDEO' OR size_bytes <= 524288000) AND (kind <> 'PDF' OR size_bytes <= 52428800)");
                         });
                 });
 
@@ -4576,11 +4576,11 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
 
                     b.ToTable("platform_module_blocks", null, t =>
                         {
-                            t.HasCheckConstraint("ck_platform_module_blocks_asset", "asset_id IS NULL OR block_type IN ('IMAGE','VIDEO')");
+                            t.HasCheckConstraint("ck_platform_module_blocks_asset", "asset_id IS NULL OR block_type IN ('IMAGE','VIDEO','PDF')");
 
                             t.HasCheckConstraint("ck_platform_module_blocks_text", "(block_type = 'TEXT') = (body_html IS NOT NULL)");
 
-                            t.HasCheckConstraint("ck_platform_module_blocks_type", "block_type IN ('TEXT','SLIDE','IMAGE','VIDEO')");
+                            t.HasCheckConstraint("ck_platform_module_blocks_type", "block_type IN ('TEXT','SLIDE','IMAGE','VIDEO','PDF')");
                         });
                 });
 

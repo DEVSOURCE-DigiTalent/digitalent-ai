@@ -49,6 +49,7 @@ export function LessonSlide({
     .filter((item) => item.kind === 'IMAGE')
     .map((item) => ({ src: lessonMediaUrl(item.url), alt: item.alt || slide.title }));
   const videos = uploaded.filter((item) => item.kind === 'VIDEO');
+  const documents = uploaded.filter((item) => item.kind === 'PDF');
   const [expanded, setExpanded] = useState<{ src: string; alt: string } | null>(null);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
@@ -62,8 +63,9 @@ export function LessonSlide({
   const normalizedCourseCode = (((slide as any).courseCode || courseCode || '') as string).toUpperCase();
   const courseSpecs = COURSE_MEDIA_SPECS[normalizedCourseCode] || COURSE_MEDIA_SPECS[normalizedCourseCode.replace(/^M/, 'A')];
   const specList = courseSpecs ? Object.values(courseSpecs)[moduleIndex - 1] || Object.values(courseSpecs)[0] : null;
-  const mediaSpec = specList ? specList[index] || specList[0] : null;
+  const mediaSpec = specList && documents.length === 0 ? specList[index] || specList[0] : null;
   const hasVisual = pictures.length > 0 || videos.length > 0 || Boolean(mediaSpec);
+  const documentOnly = documents.length > 0 && reading.length === 0;
 
   return (
     <article className={`pu-lesson-slide ${hasVisual ? 'has-art' : ''}`} aria-labelledby={headingId}>
@@ -86,7 +88,8 @@ export function LessonSlide({
       </header>
 
       {/* ── Lesson Content Grid ──────────────────────────────────────── */}
-      <div className="pu-lesson-grid">
+      {!documentOnly && <div className="pu-lesson-grid">
+
         <div className="pu-lesson-reading">
           {reading.length ? (
             reading.map((section, sectionIndex) => (
@@ -221,7 +224,25 @@ export function LessonSlide({
             ))}
           </div>
         )}
-      </div>
+      </div>}
+
+      {/* ── Uploaded PDF (slides exported from PowerPoint) ───────────── */}
+      {documents.map((file) => (
+        <figure className="pu-lesson-document" key={file.url}>
+          <iframe src={lessonMediaUrl(file.url)} title={file.alt || slide.title} />
+          <figcaption>
+            <span>{file.alt || slide.title}</span>
+            <a
+              href={lessonMediaUrl(file.url)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(event) => event.stopPropagation()}
+            >
+              Mở PDF trong tab mới <ArrowUpRight size={14} />
+            </a>
+          </figcaption>
+        </figure>
+      ))}
 
       {/* ── Self-check reflection ─────────────────────────────────────── */}
       {checks.map((section, sectionIndex) => (

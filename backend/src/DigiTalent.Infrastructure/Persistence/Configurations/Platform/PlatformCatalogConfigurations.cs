@@ -200,10 +200,10 @@ public class PlatformAssetConfiguration : IEntityTypeConfiguration<PlatformAsset
     {
         builder.ToTable("platform_assets", table =>
         {
-            table.HasCheckConstraint("ck_platform_assets_kind", "kind IN ('IMAGE','VIDEO')");
+            table.HasCheckConstraint("ck_platform_assets_kind", "kind IN ('IMAGE','VIDEO','PDF')");
             table.HasCheckConstraint(
                 "ck_platform_assets_size",
-                "size_bytes > 0 AND (kind <> 'IMAGE' OR size_bytes <= 10485760) AND (kind <> 'VIDEO' OR size_bytes <= 524288000)");
+                "size_bytes > 0 AND (kind <> 'IMAGE' OR size_bytes <= 10485760) AND (kind <> 'VIDEO' OR size_bytes <= 524288000) AND (kind <> 'PDF' OR size_bytes <= 52428800)");
         });
         builder.HasKey(a => a.Id);
         builder.Property(a => a.Kind).IsRequired().HasMaxLength(10);
@@ -224,9 +224,9 @@ public class PlatformModuleBlockConfiguration : IEntityTypeConfiguration<Platfor
     {
         builder.ToTable("platform_module_blocks", table =>
         {
-            table.HasCheckConstraint("ck_platform_module_blocks_type", "block_type IN ('TEXT','SLIDE','IMAGE','VIDEO')");
+            table.HasCheckConstraint("ck_platform_module_blocks_type", "block_type IN ('TEXT','SLIDE','IMAGE','VIDEO','PDF')");
             table.HasCheckConstraint("ck_platform_module_blocks_text", "(block_type = 'TEXT') = (body_html IS NOT NULL)");
-            table.HasCheckConstraint("ck_platform_module_blocks_asset", "asset_id IS NULL OR block_type IN ('IMAGE','VIDEO')");
+            table.HasCheckConstraint("ck_platform_module_blocks_asset", "asset_id IS NULL OR block_type IN ('IMAGE','VIDEO','PDF')");
         });
         builder.HasKey(b => b.Id);
         builder.Property(b => b.BlockType).IsRequired().HasMaxLength(10);
