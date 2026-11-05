@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import type { MemberHistoryEntry } from '@/services/member.service';
 import { formatDate } from '@/lib/utils';
 import { auditActionLabel } from '@/features/members/member-labels';
@@ -11,75 +12,52 @@ export function OwnerTrainingCycle({ events }: OwnerTrainingCycleProps) {
   const recent = events.slice(0, 3);
 
   return (
-    <section
-      className="rounded-[22px] border p-6"
-      style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)' }}
-    >
-      <p
-        className="text-[10px] font-black uppercase tracking-[0.12em]"
-        style={{ color: 'var(--po-muted)' }}
-      >
-        Chu kỳ đào tạo
-        <span
-          className="ml-[7px] inline-block size-1.5 rounded-full align-middle"
-          style={{ background: 'var(--po-coral)' }}
-        />
-      </p>
-      <h2
-        className="mt-[11px] text-xl font-semibold tracking-[-0.045em]"
-        style={{ color: 'var(--po-ink)' }}
-      >
-        Biết điều gì xảy ra sau học tập.
-      </h2>
-      <p className="text-xs leading-relaxed mt-1" style={{ color: 'var(--po-muted)' }}>
-        Báo cáo chu kỳ mở sau khi Quản lý duyệt đánh giá cuối khóa học.
-      </p>
+    <div className="rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-xs p-5 shadow-xs hover:shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-all flex flex-col justify-between">
+      <div>
+        <h3 className="text-sm font-bold text-[#17243f] pb-3 border-b border-slate-100">
+          Hoạt động Gần đây
+        </h3>
 
-      {recent.length > 0 ? (
-        <div className="mt-5">
-          {recent.map((event) => (
-            <div
-              key={event.id}
-              className="grid gap-x-[15px] py-4 border-b last:border-b-0"
-              style={{
-                gridTemplateColumns: '20px 90px 1fr',
-                borderColor: 'var(--po-line)',
-              }}
-            >
-              <span
-                className="mt-1.5 size-[10px] rounded-full shrink-0"
-                style={{ background: 'var(--po-accent)' }}
-                aria-hidden="true"
-              />
-              <time className="text-[10px] mt-0.5" style={{ color: '#8996ad' }}>
-                {formatDate(event.at)}
-              </time>
-              <span>
-                <strong className="text-sm block" style={{ color: 'var(--po-ink)' }}>
-                  {auditActionLabel(event.action)}
-                </strong>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--po-muted)' }}>
-                  {event.targetLabel}
-                </p>
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="mt-5 text-sm text-center py-4" style={{ color: 'var(--po-muted)' }}>
-          Chưa có hoạt động nào được ghi lại.
-        </p>
-      )}
+        {recent.length > 0 ? (
+          <div className="mt-3.5 space-y-2.5">
+            {recent.map((event) => (
+              <div
+                key={event.id}
+                className="flex items-center justify-between text-xs p-2 rounded-xl bg-slate-50/60 hover:bg-slate-50 border border-slate-100 transition-colors"
+              >
+                <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                  <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
+                  <div className="min-w-0">
+                    <span className="font-semibold text-[#17243f] block truncate">
+                      {auditActionLabel(event.action)}
+                    </span>
+                    <span className="text-[11px] text-[#64748b] block truncate">
+                      {event.targetLabel}
+                    </span>
+                  </div>
+                </div>
+                <time className="text-[11px] text-[#94a3b8] font-medium tabular-nums shrink-0">
+                  {formatDate(event.at)}
+                </time>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-6 text-center text-xs text-[#94a3b8]">
+            Chưa có hoạt động mới
+          </div>
+        )}
+      </div>
 
-      <div className="mt-5">
+      <div className="mt-5 pt-3 border-t border-slate-100">
         <Link
           to="/enterprise/reports"
-          className="rounded-xl border px-3 py-2 text-xs font-extrabold transition-colors hover:opacity-80"
-          style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)' }}
+          className="text-xs font-bold text-[#137b84] hover:text-[#0e5968] inline-flex items-center gap-1 transition-colors"
         >
-          Mở báo cáo chu kỳ
+          Xem tất cả
+          <ArrowRight className="size-3" />
         </Link>
       </div>
-    </section>
+    </div>
   );
 }
