@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { PageHeader } from '@/components/shared';
+import { PageLoading } from '@/components/shared/LoadingState';
 import { useOrganization, useUpdateOrganizationSettings } from '@/hooks/use-organization';
 import { ORGANIZATION_INDUSTRIES, ORGANIZATION_SIZES } from '@/lib/reference-positions';
 import { apiErrorMessage } from '@/lib/utils';
@@ -51,7 +52,7 @@ export function OrganizationSettingsPage() {
     }
   });
 
-  if (isLoading) return <p className="text-sm text-slate-500">Đang tải…</p>;
+  if (isLoading) return <PageLoading label="Đang tải cài đặt tổ chức" variant="detail" />;
   if (isError || !data) return <p role="alert" className="text-sm text-red-600">Không tải được cài đặt tổ chức.</p>;
 
   return (
@@ -62,7 +63,7 @@ export function OrganizationSettingsPage() {
         <div className="grid gap-1.5">
           <label htmlFor="org-name" className="text-sm font-medium text-slate-700">Tên tổ chức</label>
           <input id="org-name" readOnly aria-invalid={!!errors.name} aria-describedby={errors.name ? 'org-name-error' : undefined} className={INPUT_CLASS} {...register('name')} />
-          <p className="text-xs text-slate-500">Tên tổ chức hiện chỉ có thể xem; API cài đặt không hỗ trợ đổi tên.</p>
+          <p className="text-xs text-slate-500">Tên tổ chức không thể thay đổi tại đây.</p>
           {errors.name && <p id="org-name-error" role="alert" className="text-xs text-red-600">{errors.name.message}</p>}
         </div>
 

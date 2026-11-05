@@ -4,12 +4,18 @@ import { useCertificates } from '@/hooks/use-learning';
 import { useOrganizationOverview } from '@/hooks/use-organization';
 import { formatDate } from '@/lib/utils';
 import { PULSE_TOKENS } from '../owner-theme';
+import { PageLoading } from '@/components/shared/LoadingState';
+import './owner-operations.css';
 
 export function OwnerCertificateDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data } = useCertificates({ pageSize: 100 });
+  const { data, isLoading } = useCertificates({ pageSize: 100 });
   const { data: orgData } = useOrganizationOverview();
   const cert = (data?.items ?? []).find((c) => c.id === id);
+
+  if (isLoading) {
+    return <div className="po-owner owner-operations -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label="Đang tải chứng nhận" variant="detail" /></div>;
+  }
 
   if (!cert) {
     return (
@@ -51,7 +57,7 @@ export function OwnerCertificateDetailPage() {
 
   return (
     <div
-      className="po-owner -m-4 md:-m-6 min-h-screen"
+      className="po-owner owner-operations owner-operations--certificate -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
@@ -60,27 +66,20 @@ export function OwnerCertificateDetailPage() {
       }}
     >
       {/* ── Page header ── */}
-      <section className="px-4 md:px-6 pt-8 pb-2 mx-auto" style={{ maxWidth: 1220 }}>
+      <section className="px-4 md:px-6 pt-8 pb-2 mx-auto" style={{ maxWidth: 1600 }}>
         <p
-          className="text-[10px] font-black uppercase tracking-[0.12em]"
+          className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.12em] mb-1.5"
           style={{ color: 'var(--po-muted)' }}
         >
-          36 / Chứng nhận
+          CHỨNG NHẬN NĂNG LỰC
           <span
-            className="ml-[7px] inline-block size-1.5 rounded-full align-middle"
+            className="inline-block size-1.5 rounded-full"
             style={{ background: 'var(--po-coral)' }}
           />
         </p>
-        <h1
-          className="mt-[11px] text-[clamp(26px,3.4vw,42px)] font-bold leading-[1.08]"
-          style={{ color: 'var(--po-ink)', letterSpacing: '-0.045em' }}
-        >
-          Kết quả đã xác minh
+        <h1 className="text-[clamp(26px,3.4vw,42px)] font-bold leading-[1.08] heading-gradient tracking-[-0.03em]">
+          Chi tiết chứng nhận
         </h1>
-        <p className="mt-2 text-sm" style={{ color: 'var(--po-muted)' }}>
-          Chứng nhận với nguồn truy vết rõ ràng. Đây là bản xem trước nội bộ, không tạo
-          chứng nhận ký số công khai.
-        </p>
         <Link
           to="/enterprise/certificates"
           className="mt-4 inline-flex rounded-[11px] border px-4 py-2.5 text-xs font-extrabold transition-transform hover:-translate-y-0.5"
@@ -91,7 +90,7 @@ export function OwnerCertificateDetailPage() {
       </section>
 
       {/* ── Certificate document ── */}
-      <section className="px-4 md:px-6 py-6 mx-auto" style={{ maxWidth: 900 }}>
+      <section className="px-4 md:px-6 py-6 mx-auto" style={{ maxWidth: 1300 }}>
         <div
           className="relative isolate overflow-hidden rounded-[20px]"
           style={{

@@ -25,6 +25,15 @@ export interface DomainBranch {
   assignedCount: number;
 }
 
+/** TT02 courses cover a domain at one level; a competency links to that domain and its required level. */
+export function findGapCourse(branches: DomainBranch[], frameworkCode: string, level: number): CourseListItem | undefined {
+  const domain = Number(frameworkCode.split('.')[0]);
+  if (!/^\d+\.\d+$/.test(frameworkCode) || !Number.isInteger(level) || level < 1 || level > 3) return undefined;
+  return branches.find((branch) => branch.domain === domain)?.slots
+    .find((slot) => slot.level === level)?.courses
+    .find((course) => course.status === 'PUBLISHED');
+}
+
 export function buildCourseTree(
   categories: CompetencyCategory[],
   courses: CourseListItem[],
