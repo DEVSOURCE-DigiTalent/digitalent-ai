@@ -33,7 +33,7 @@ export function TeamCapabilityDashboardPage() {
   const overdueTraining = assignmentSummary?.overdue ?? 0;
 
   if (empError) {
-    return <div className="space-y-6 pb-12"><PageHeader title="Bảng năng lực của nhóm" subtitle="Theo dõi năng lực và đào tạo của nhân sự thuộc phạm vi quản lý." /><p role="alert" className="rounded-xl border border-red-200 p-4 text-red-700">Không tải được danh sách nhân sự từ BE2. Vui lòng thử lại sau.</p></div>;
+    return <div className="space-y-6 pb-12"><PageHeader title="Bảng năng lực của nhóm" subtitle="Theo dõi năng lực và đào tạo của nhân sự thuộc phạm vi quản lý." /><p role="alert" className="rounded-xl border border-red-200 p-4 text-red-700">Không tải được danh sách nhân sự. Vui lòng thử lại.</p></div>;
   }
 
   if (!empLoading && employees.length === 0) {
@@ -47,7 +47,7 @@ export function TeamCapabilityDashboardPage() {
           <EmptyState
             icon={<Users className="size-12 text-slate-400 mx-auto" />}
             title="Bạn chưa được phân công phụ trách phòng ban nào"
-            description="Tài khoản quản lý của bạn hiện chưa được gắn làm Quản lý cho phòng ban nào trong tổ chức. Vui lòng liên hệ Quản trị viên (Owner) để được phân công quản lý bộ phận và nhân sự."
+            description="Bạn chưa được phân công quản lý phòng ban. Hãy liên hệ chủ doanh nghiệp."
           />
         </div>
       </div>

@@ -1,3 +1,4 @@
+import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -197,17 +198,17 @@ describe('Pulse employee routes', () => {
     }
   });
 
-  it('marks Thực hành active on both exam pages and Lộ trình on the course itself', () => {
+  it('marks Đánh giá active on both exam pages and Lộ trình on the course itself', () => {
     for (const path of [PULSE_PATHS.final('course-1'), PULSE_PATHS.preAssessment('course-1')]) {
       const view = renderAt(path, <PulseHeader />);
-      expect(screen.getByRole('link', { name: 'Thực hành' }).className).toContain('active');
+      expect(screen.getByRole('link', { name: 'Đánh giá' }).className).toContain('active');
       expect(screen.getByRole('link', { name: 'Lộ trình' }).className).not.toContain('active');
       view.unmount();
     }
 
     renderAt(PULSE_PATHS.course('course-1'), <PulseHeader />);
     expect(screen.getByRole('link', { name: 'Lộ trình' }).className).toContain('active');
-    expect(screen.getByRole('link', { name: 'Thực hành' }).className).not.toContain('active');
+    expect(screen.getByRole('link', { name: 'Đánh giá' }).className).not.toContain('active');
   });
 });
 
@@ -270,7 +271,7 @@ describe('enterprise trial learning', () => {
     renderAt(PULSE_PATHS.today, <PulseHeader />);
 
     const nav = screen.getByRole('navigation', { name: 'Học tập của tôi' });
-    expect(within(nav).getAllByRole('link').map((l) => l.textContent)).toEqual(['Học thử', 'Bài test', 'Thực hành']);
+    expect(within(nav).getAllByRole('link').map((l) => l.textContent)).toEqual(['Học thử', 'Bài đánh giá', 'Thực hành']);
   });
 
   it('locks the Basic courses with a warning until the mentor publishes the result', async () => {
@@ -281,8 +282,8 @@ describe('enterprise trial learning', () => {
 
     const view = renderAt(PULSE_PATHS.path, null, routes);
 
-    expect(await screen.findByRole('status', { name: 'Làm bài test trước khi học' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Làm bài test/ })).toHaveAttribute('href', PULSE_PATHS.trialTest);
+    expect(await screen.findByRole('status', { name: 'Làm bài đánh giá trước khi học' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Làm bài đánh giá/ })).toHaveAttribute('href', PULSE_PATHS.trialTest);
     const locked = screen.getByRole('list', { name: 'Khóa học thử (chưa mở)' });
     expect(within(locked).getAllByText('Chưa mở')).toHaveLength(2);
     expect(screen.queryByRole('link', { name: /Bắt đầu học/ })).not.toBeInTheDocument();
@@ -349,9 +350,9 @@ describe('PulseTodayPage', () => {
 
     renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
-    expect(await screen.findByText('Bắt đầu bằng bài đánh giá')).toBeTruthy();
-    expect(screen.getByText('Bạn cần làm bài đánh giá năng lực trước khi học khóa này.')).toBeTruthy();
-    const links = screen.getAllByRole('link', { name: 'Đánh giá trước khi học' });
+    expect(await screen.findByText('Bắt đầu bằng bài đánh giá đầu vào')).toBeTruthy();
+    expect(screen.getByText('Thực hiện bài đánh giá trước khi học để được miễn học lý thuyết nếu đã đạt năng lực.')).toBeTruthy();
+    const links = screen.getAllByRole('link', { name: 'Làm bài đánh giá đầu vào →' });
     expect(links.length).toBeGreaterThan(0);
     links.forEach((link) => expect(link.getAttribute('href')).toBe(PULSE_PATHS.preAssessment('course-1')));
     expect(screen.queryByText(/% đã học/)).toBeNull();
@@ -403,7 +404,7 @@ describe('PulsePreAssessmentPage', () => {
 
     renderAt(PULSE_PATHS.preAssessment('course-1'), <PulsePreAssessmentPage />);
 
-    expect(await screen.findByText('Bài của bạn đang chờ Trần Quản Lý chấm.')).toBeTruthy();
+    expect(await screen.findByText('Bài của bạn đang chờ đánh giá.')).toBeTruthy();
     expect(screen.getByText('Đối chiếu 120 hóa đơn với sổ cái tháng 9.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Bắt đầu làm bài/ })).toBeNull();
     expect(screen.getByText(/Đề gồm 10 câu trắc nghiệm \(đúng từ 7 câu\) và một bài tự luận/)).toBeTruthy();
