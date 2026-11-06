@@ -11,8 +11,8 @@ namespace DigiTalent.Application.UseCases.TrialProgram;
 
 /// <summary>
 /// POST /me/trial-assessment — nộp bài đánh giá tổng hợp: đóng phiên giám sát (đã có bản ghi màn hình và camera), chấm
-/// trắc nghiệm, lưu số câu đúng theo lĩnh vực × cấp cùng mức gợi ý, ba bài tự luận; báo cho mentor nếu đã được phân công.
-/// Phiên mở trước hạn làm bài thì vẫn nộp được sau hạn.
+/// trắc nghiệm tự động theo 6 lĩnh vực × 3 cấp cùng mức đề xuất và mức chính thức.
+/// Doanh nghiệp nhận kết quả ngay để rà soát năng lực và công bố lộ trình đào tạo phù hợp.
 /// </summary>
 public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUseCaseInput, SubmitMyTrialAssessmentUseCaseOutput>
 {
@@ -64,18 +64,25 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
             ChoiceScore = grade.Score,
             ChoiceTotal = grade.Total,
             SubmittedAt = now,
+            ReviewedByUserId = trial.OwnerUserId,
+            ReviewedAt = now,
         };
         _context.TrialAssessments.Add(assessment);
+
+        var optionIds = grade.Answers.Select(a => a.SelectedOptionId).Distinct().ToList();
+        var validOptions = await _context.QuestionOptions.AsNoTracking()
+            .Where(o => optionIds.Contains(o.Id))
+            .Select(o => new { o.Id, o.QuestionId })
+            .ToListAsync();
+        var validOptionMap = validOptions.ToDictionary(o => o.Id, o => o.QuestionId);
+
         foreach (var answer in grade.Answers)
         {
-            answer.TrialAssessmentId = assessment.Id;
-            _context.ExamChoiceAnswers.Add(answer);
-        }
-
-        assessment.ReviewedAt = now;
-
-        {
-
+            if (validOptionMap.TryGetValue(answer.SelectedOptionId, out var qId) && qId == answer.QuestionId)
+            {
+                answer.TrialAssessmentId = assessment.Id;
+                _context.ExamChoiceAnswers.Add(answer);
+            }
         }
 
         var correct = grade.Answers.ToDictionary(a => a.QuestionId, a => a.IsCorrect);
@@ -104,12 +111,16 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
             });
         }
 
-        if (false && trial.MentorUserId is { } mentor)
+        if (trial.MentorUserId is { } mentor)
         {
-            _reader.Notify(new[] { mentor }, TrialProgramRules.NotificationSubmitted, "Có bài dùng thử cần chấm",
-                $"{employee.FullName} ({await _reader.OrganizationNameAsync(trial.OrganizationId)}) đã nộp bài đánh giá tổng hợp.",
+            _reader.Notify(new[] { mentor }, TrialProgramRules.NotificationSubmitted, "Có bài đánh giá doanh nghiệp mới",
+                $"{employee.FullName} ({await _reader.OrganizationNameAsync(trial.OrganizationId)}) đã hoàn thành bài đánh giá.",
                 trial.OrganizationId);
         }
+
+        _reader.Notify(new[] { trial.OwnerUserId }, TrialProgramRules.NotificationSubmitted, "Nhân viên đã hoàn thành đánh giá",
+            $"{employee.FullName} đã hoàn thành bài đánh giá năng lực.",
+            trial.OrganizationId);
 
         try
         {

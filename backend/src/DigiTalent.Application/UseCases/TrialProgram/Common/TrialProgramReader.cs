@@ -237,15 +237,33 @@ public class TrialProgramReader
         var departments = await _context.Departments.AsNoTracking().Where(d => departmentIds.Contains(d.Id)).ToDictionaryAsync(d => d.Id, d => d.Name);
         var positions = await _context.JobPositions.AsNoTracking().Where(p => positionIds.Contains(p.Id)).ToDictionaryAsync(p => p.Id, p => p.Name);
 
+        var categoryIds = domains.Select(d => d.CategoryId).ToList();
+        var ceilingRows = await _context.CapabilityCeilings.AsNoTracking()
+            .Where(c => c.OrganizationId == trial.OrganizationId && categoryIds.Contains(c.CompetencyCategoryId))
+            .ToListAsync();
+        var orgCeilings = ceilingRows.Where(c => c.DepartmentId == null)
+            .ToDictionary(c => c.CompetencyCategoryId, c => (int)c.CeilingLevel);
+        var deptCeilingsMap = ceilingRows.Where(c => c.DepartmentId != null)
+            .GroupBy(c => c.DepartmentId!.Value)
+            .ToDictionary(g => g.Key, g => g.ToDictionary(c => c.CompetencyCategoryId, c => (int)c.CeilingLevel));
+
         var employees = reviewed
             .Select(r =>
             {
                 var byCategory = (results.GetValueOrDefault(r.Id) ?? new List<TrialAssessmentDomain>()).ToDictionary(d => d.CategoryId);
+                Dictionary<Guid, int>? deptCeilings = null;
+                if (r.DepartmentId != Guid.Empty)
+                {
+                    deptCeilingsMap.TryGetValue(r.DepartmentId, out deptCeilings);
+                }
                 var domainDetails = domains.Select(domain =>
                 {
                     byCategory.TryGetValue(domain.CategoryId, out var dResult);
                     var lvl = (int)(dResult?.MentorLevel ?? dResult?.SuggestedLevel ?? 0);
-                    var (levelLabel, statusText, gapText, recCourse) = DescribeDomainResult(domain.Number, domain.Name, lvl, dResult);
+                    var targetLevel = deptCeilings != null && deptCeilings.TryGetValue(domain.CategoryId, out var dl) && dl > 0
+                        ? dl
+                        : orgCeilings.TryGetValue(domain.CategoryId, out var ol) && ol > 0 ? ol : 3;
+                    var (levelLabel, statusText, gapText, recCourse) = DescribeDomainResult(domain.Number, domain.Name, lvl, targetLevel, dResult);
 
                     return new TrialReportEmployeeDomainDetailDto
                     {
@@ -253,6 +271,8 @@ public class TrialProgramReader
                         Number = domain.Number,
                         Name = domain.Name,
                         Level = lvl,
+                        TargetLevel = targetLevel,
+                        SkillGap = Math.Max(0, targetLevel - lvl),
                         LevelLabel = levelLabel,
                         StatusText = statusText,
                         GapText = gapText,
@@ -294,9 +314,13 @@ public class TrialProgramReader
         var summary = domains.Select((domain, index) =>
         {
             var levels = employees.Select(e => e.Levels[index]).ToList();
+            var targetLevel = orgCeilings.TryGetValue(domain.CategoryId, out var ol) && ol > 0 ? ol : 3;
             var average = levels.Count == 0 ? 0m : Math.Round((decimal)levels.Average(), 1, MidpointRounding.AwayFromZero);
             var generalLevel = (int)Math.Round(average, MidpointRounding.AwayFromZero);
-            var (statusText, gapSummary) = DescribeEnterpriseDomainSummary(domain.Number, domain.Name, generalLevel);
+            var metCount = employees.Count(e => e.Levels[index] >= targetLevel);
+            var targetMetRate = employees.Count == 0 ? 0m : Math.Round((decimal)metCount / employees.Count * 100m, 1);
+            var avgGap = employees.Count == 0 ? 0m : Math.Round((decimal)employees.Select(e => Math.Max(0, targetLevel - e.Levels[index])).Average(), 1);
+            var (statusText, gapSummary) = DescribeEnterpriseDomainSummary(domain.Number, domain.Name, generalLevel, targetLevel, targetMetRate);
 
             return new TrialReportDomainDto
             {
@@ -306,6 +330,9 @@ public class TrialProgramReader
                 Counts = Enumerable.Range(0, 4).Select(level => levels.Count(l => l == level)).ToList(),
                 Average = average,
                 Level = generalLevel,
+                TargetLevel = targetLevel,
+                TargetMetRate = targetMetRate,
+                AverageGap = avgGap,
                 StatusText = statusText,
                 GapSummary = gapSummary,
             };
@@ -323,45 +350,83 @@ public class TrialProgramReader
 
     public static (string LevelLabel, string StatusText, string GapText, string RecommendedCourse) DescribeDomainResult(
         int domainNumber, string domainName, int level, TrialAssessmentDomain? dResult)
+        => DescribeDomainResult(domainNumber, domainName, level, 3, dResult);
+
+    public static (string LevelLabel, string StatusText, string GapText, string RecommendedCourse) DescribeDomainResult(
+        int domainNumber, string domainName, int level, int targetLevel, TrialAssessmentDomain? dResult)
     {
+        targetLevel = Math.Clamp(targetLevel, 1, 3);
+        var gap = Math.Max(0, targetLevel - level);
         var basicInfo = dResult != null ? $" (đúng {dResult.BasicCorrect}/{dResult.BasicTotal} câu)" : "";
         var interInfo = dResult != null ? $" (đúng {dResult.IntermediateCorrect}/{dResult.IntermediateTotal} câu)" : "";
         var advInfo = dResult != null ? $" (đúng {dResult.AdvancedCorrect}/{dResult.AdvancedTotal} câu)" : "";
 
-        return level switch
+        var levelLabel = level switch
         {
-            0 => ("Chưa đạt",
-                "Chưa đạt mức Cơ bản",
-                $"Chưa đạt trắc nghiệm cấp Cơ bản{basicInfo}. Cần đạt tối thiểu từ 2/3 câu đúng để công nhận đạt chuẩn Cơ bản. Hãy bổ sung kiến thức nhập môn và hoàn thành khóa Cơ bản.",
-                $"M{domainNumber}-F: Khóa Cơ bản về {domainName}"),
-            1 => ("Cơ bản",
-                "Đạt Cơ bản · Chưa đạt Trung cấp",
-                $"Đã nắm vững kỹ năng Cơ bản{basicInfo}, nhưng chưa đạt trắc nghiệm Trung cấp{interInfo} (yêu cầu từ 2/3 câu). Cần nâng cao kỹ năng xử lý độc lập và học khóa Trung cấp.",
-                $"M{domainNumber}-I: Khóa Trung cấp về {domainName}"),
-            2 => ("Trung cấp",
-                "Đạt Trung cấp · Chưa đạt Nâng cao",
-                $"Thành thạo ứng dụng ở mức Trung cấp{interInfo}, nhưng chưa đạt trắc nghiệm Nâng cao{advInfo} (yêu cầu từ 2/3 câu). Cần tối ưu quy trình và học khóa Nâng cao.",
-                $"M{domainNumber}-A: Khóa Nâng cao về {domainName}"),
-            _ => ("Nâng cao",
-                "Đạt mức Nâng cao",
-                $"Xuất sắc làm chủ toàn diện năng lực về {domainName}{advInfo}. Bạn đã được miễn học cả 3 cấp độ và đạt chuẩn tối đa của khung năng lực.",
-                "Đã đạt mức tối đa của chuẩn khung năng lực"),
+            0 => "Chưa đạt",
+            1 => "Cơ bản",
+            2 => "Trung cấp",
+            _ => "Nâng cao"
         };
+
+        var targetLabel = targetLevel switch
+        {
+            1 => "Cơ bản",
+            2 => "Trung cấp",
+            _ => "Nâng cao"
+        };
+
+        if (gap == 0)
+        {
+            var status = level > targetLevel ? "Vượt trần mục tiêu" : "Đạt trần mục tiêu";
+            return (levelLabel,
+                status,
+                $"Đã đạt năng lực theo trần doanh nghiệp (Mức {levelLabel} / Trần {targetLabel}). Không có khoảng cách năng lực (Skill Gap: 0). Toàn bộ nội dung tương ứng đã được công nhận.",
+                string.Empty);
+        }
+
+        var nextTier = level + 1;
+        var nextCourse = nextTier switch
+        {
+            1 => $"M{domainNumber}-F: Khóa Cơ bản về {domainName}",
+            2 => $"M{domainNumber}-I: Khóa Trung cấp về {domainName}",
+            _ => $"M{domainNumber}-A: Khóa Nâng cao về {domainName}"
+        };
+
+        var gapDesc = level == 0
+            ? $"Chưa đạt trắc nghiệm cấp Cơ bản{basicInfo}. Để đạt trần doanh nghiệp ({targetLabel}), bạn cần bắt đầu từ khóa Cơ bản."
+            : $"Đã đạt cấp {levelLabel}, nhưng chưa đạt trần doanh nghiệp ({targetLabel}). Khoảng cách năng lực: Thiếu {gap} cấp độ. Cần hoàn thành khóa {nextTier switch { 1 => "Cơ bản", 2 => "Trung cấp", _ => "Nâng cao" }} để nâng cao năng lực theo mục tiêu doanh nghiệp.";
+
+        return (levelLabel,
+            $"Thiếu hụt {gap} cấp độ (Hiện tại: {levelLabel} · Trần DN: {targetLabel})",
+            gapDesc,
+            nextCourse);
     }
 
-    private static (string StatusText, string GapSummary) DescribeEnterpriseDomainSummary(int domainNumber, string domainName, int generalLevel)
+    private static (string StatusText, string GapSummary) DescribeEnterpriseDomainSummary(
+        int domainNumber, string domainName, int generalLevel, int targetLevel, decimal targetMetRate)
     {
-        return generalLevel switch
+        targetLevel = Math.Clamp(targetLevel, 1, 3);
+        var targetLabel = targetLevel switch { 1 => "Cơ bản", 2 => "Trung cấp", _ => "Nâng cao" };
+        var generalLabel = generalLevel switch { 0 => "Chưa đạt Cơ bản", 1 => "Cơ bản", 2 => "Trung cấp", _ => "Nâng cao" };
+
+        if (generalLevel >= targetLevel)
         {
-            0 => ("Chưa đạt Cơ bản",
-                $"Đội ngũ chưa hoàn thiện kiến thức nền tảng về {domainName}. Cần ưu tiên học khóa Cơ bản (M{domainNumber}-F) để đồng bộ năng lực số ban đầu."),
-            1 => ("Đạt Cơ bản · Chưa đạt Trung cấp",
-                $"Đội ngũ đã nắm thao tác cơ bản nhưng đang thiếu hụt kỹ năng phân tích và phối hợp chuyên sâu ở mức Trung cấp (M{domainNumber}-I)."),
-            2 => ("Đạt Trung cấp · Chưa đạt Nâng cao",
-                $"Đội ngũ đáp ứng tốt công việc thường nhật, nhưng cần nâng cao năng lực tối ưu hóa, an toàn cấp cao và chiến lược ở mức Nâng cao (M{domainNumber}-A)."),
-            _ => ("Đạt chuẩn Nâng cao",
-                $"Đội ngũ đã xuất sắc làm chủ toàn diện các tiêu chuẩn và kỹ năng nâng cao trong lĩnh vực {domainName}."),
+            return ($"Đạt trần mục tiêu ({targetLabel})",
+                $"Đội ngũ đã đạt hoặc vượt trần năng lực của doanh nghiệp (Hiện tại: {generalLabel} / Trần: {targetLabel}). Tỷ lệ nhân sự đạt chuẩn mục tiêu: {targetMetRate}%. Không có khoảng cách năng lực diện rộng cần bù đắp.");
+        }
+
+        var gap = targetLevel - generalLevel;
+        var nextTier = generalLevel + 1;
+        var recCourse = nextTier switch
+        {
+            1 => $"M{domainNumber}-F (Cơ bản)",
+            2 => $"M{domainNumber}-I (Trung cấp)",
+            _ => $"M{domainNumber}-A (Nâng cao)"
         };
+
+        return ($"Thiếu {gap} cấp độ (Hiện tại: {generalLabel} · Trần: {targetLabel})",
+            $"Đội ngũ hiện đạt mức {generalLabel}, thiếu hụt {gap} cấp so với trần doanh nghiệp ({targetLabel}). Tỷ lệ nhân sự đạt trần: {targetMetRate}%. Doanh nghiệp nên ưu tiên tổ chức đào tạo khóa {recCourse} về {domainName} để thu hẹp khoảng cách năng lực.");
     }
 
     /// <summary>Người nhận thông báo của nền tảng (quản trị nền tảng đang hoạt động).</summary>
@@ -444,6 +509,9 @@ public class TrialReportDomainDto
     public List<int> Counts { get; set; } = new();
     public decimal Average { get; set; }
     public int Level { get; set; }
+    public int TargetLevel { get; set; } = 3;
+    public decimal TargetMetRate { get; set; }
+    public decimal AverageGap { get; set; }
     public string StatusText { get; set; } = string.Empty;
     public string GapSummary { get; set; } = string.Empty;
 }
@@ -475,6 +543,8 @@ public class TrialReportEmployeeDomainDetailDto
     public int Number { get; set; }
     public string Name { get; set; } = string.Empty;
     public int Level { get; set; }
+    public int TargetLevel { get; set; } = 3;
+    public int SkillGap { get; set; }
     public string LevelLabel { get; set; } = string.Empty;
     public string StatusText { get; set; } = string.Empty;
     public string GapText { get; set; } = string.Empty;

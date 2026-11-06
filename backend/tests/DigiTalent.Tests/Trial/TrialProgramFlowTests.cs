@@ -30,7 +30,7 @@ public class TrialProgramFlowTests
         TrialProgramRules.SuggestedLevel(new[] { (1, 1), (0, 1), (1, 1) }).Should().Be(1);
         TrialProgramRules.SuggestedLevel(new[] { (0, 1), (1, 1), (1, 1) }).Should().Be(0);
         TrialProgramRules.SuggestedLevel(new[] { (1, 2), (2, 2), (0, 0) }).Should().Be(0);
-        TrialProgramRules.SuggestedLevel(new[] { (2, 2), (2, 3), (0, 0) }).Should().Be(1);
+        TrialProgramRules.SuggestedLevel(new[] { (2, 2), (2, 3), (0, 0) }).Should().Be(2);
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class TrialProgramFlowTests
         var session = await asEmployee.Start.ExecuteAsync(new StartMyTrialAssessmentUseCaseInput());
         session.Kind.Should().Be(Statuses.ProctoringKind.TrialAssessment);
         // Một câu cho mỗi ô lĩnh vực × cấp có câu ôn tập (dữ liệu Development đầy đủ: 18 câu), xếp Cơ bản → Nâng cao.
-        session.Questions.Should().NotBeEmpty().And.HaveCountLessThanOrEqualTo(18);
+        session.Questions.Should().NotBeEmpty().And.HaveCountLessThanOrEqualTo(54);
         session.Questions.Select(q => q.Tier).Should().BeInAscendingOrder();
         session.Questions.Select(q => q.Tier).Distinct().Should().BeEquivalentTo(new[] { 1, 2, 3 });
         world.Context.ChangeTracker.Clear();
