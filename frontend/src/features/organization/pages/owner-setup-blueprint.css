@@ -1,0 +1,10 @@
+.blueprint-page { color: #17243f; }
+.blueprint-container { width: 100%; max-width: 1920px; margin-inline: auto; padding-inline: clamp(20px, 2.4vw, 48px); }
+.blueprint-eyebrow { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 7px; color: #0f766e; font-size: 11px; font-weight: 800; letter-spacing: .13em; }
+.blueprint-tabs { display: inline-flex; max-width: 100%; gap: 4px; padding: 5px; overflow-x: auto; border: 1px solid #dce8e9; border-radius: 16px; background: #eaf1f3; }
+.blueprint-panel { border: 1px solid #dce5ed; border-radius: 20px; background: rgba(255,255,255,.94); box-shadow: 0 8px 28px rgba(23,36,63,.045); }
+.blueprint-panel:hover { border-color: #cbdde0; }
+.blueprint-page input, .blueprint-page select { font-size: 14px; }
+.blueprint-page button, .blueprint-page a { transition-duration: .2s; }
+.blueprint-page button:focus-visible, .blueprint-page a:focus-visible { outline: 2px solid #0f766e; outline-offset: 3px; }
+@media (max-width: 640px) { .blueprint-container { padding-inline: 16px; } }

@@ -24,7 +24,7 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
         id: 'owner-step-2',
         title: 'Bước 2: Phân tích Khoảng trống Năng lực toàn thể Nhân viên',
         description:
-          'Sau khi nhân viên hoàn thành bài test, truy cập ma trận năng lực để thấy bức tranh toàn cảnh: Tỷ lệ Đạt/Chưa đạt ở từng lĩnh vực, cấp độ còn thiếu và các điểm yếu cần bổ trợ của từng phòng ban.',
+          'Sau khi nhân viên hoàn thành bài đánh giá, xem ma trận năng lực để biết mức đáp ứng và nội dung cần bổ sung theo phòng ban.',
         badge: '2. Khoảng trống kỹ năng',
         targetSelector: '[data-tour="OW-21"]',
         targetPosition: 'right',
@@ -72,7 +72,7 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
     checklist: [
       {
         id: 'task-owner-1',
-        title: '1. Đánh giá đội ngũ & Kích hoạt bài test khảo sát',
+        title: '1. Đánh giá đội ngũ',
         subtitle: 'Tạo đợt khảo sát năng lực số đầu vào cho nhân sự tại trang Đánh giá đội ngũ',
         route: '/enterprise/trial',
         targetSelector: '[data-tour="OW-T1"]',
@@ -215,7 +215,7 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
         id: 'emp-step-1',
         title: 'Bước 1: Làm bài Test Khảo sát Năng lực 6 Lĩnh vực số',
         description:
-          'Bắt đầu ngay bằng bài test khảo sát đầu vào chuẩn TT02/2025. Hoàn thành bài trắc nghiệm giúp hệ thống nhận diện điểm mạnh, phát hiện khoảng trống kỹ năng và tự động miễn học những nội dung bạn đã vững.',
+          'Hoàn thành bài đánh giá đầu vào theo TT02/2025 để xác định năng lực hiện tại và nội dung cần học.',
         badge: '1. Khảo sát đầu vào',
         targetSelector: '[data-tour="EM-01"]',
         targetPosition: 'bottom',

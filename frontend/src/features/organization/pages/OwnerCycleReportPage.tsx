@@ -1,396 +1,68 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, BarChart3, ArrowRight } from 'lucide-react';
-import {
-  useCapabilityDashboard,
-  useReportsOverview,
-} from '@/hooks/use-analytics';
-import { ReportKpiSummary } from '../components/ReportKpiSummary';
-import { ReportDomainBreakdown } from '../components/ReportDomainBreakdown';
-import { CycleTimeline } from '../components/CycleTimeline';
+import { ArrowRight, BookOpen, CheckCircle2, ClipboardCheck, GraduationCap, Search, TrendingUp, UsersRound } from 'lucide-react';
+import { useCapabilityDashboard, useReportsOverview } from '@/hooks/use-analytics';
 import { PULSE_TOKENS } from '../owner-theme';
+import { PageLoading } from '@/components/shared/LoadingState';
+import './owner-cycle-report.css';
+
+const PAGE_SIZE = 6;
+const percent = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 
 export function OwnerCycleReportPage() {
-  const { data: dashboard, isLoading: dashLoading } =
-    useCapabilityDashboard();
+  const { data: dashboard, isLoading: dashboardLoading } = useCapabilityDashboard();
   const { data: reports, isLoading: reportsLoading } = useReportsOverview();
+  const [courseView, setCourseView] = useState<'assigned' | 'all'>('assigned');
+  const [courseSearch, setCourseSearch] = useState('');
+  const [coursePage, setCoursePage] = useState(1);
 
-  const isLoading = dashLoading || reportsLoading;
-
-  const approved = reports?.training.completedAssignments ?? 0;
-  const learners = dashboard?.kpis.employees ?? 0;
-  const submissions = reports?.assessment.totalAttempts ?? 0;
+  const domains = useMemo(() => (dashboard?.domains ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder), [dashboard]);
+  const priorityDomain = useMemo(() => domains.filter((domain) => domain.averageRequired > 0).sort((a, b) => a.averageCurrent / a.averageRequired - b.averageCurrent / b.averageRequired)[0], [domains]);
+  const allCourses = reports?.training.courses ?? [];
+  const assignedCourseCount = allCourses.filter((course) => course.learnerCount > 0).length;
+  const filteredCourses = allCourses.filter((course) => {
+    if (courseView === 'assigned' && course.learnerCount === 0) return false;
+    const query = courseSearch.trim().toLocaleLowerCase('vi');
+    return !query || `${course.code} ${course.title} ${course.domainName}`.toLocaleLowerCase('vi').includes(query);
+  });
+  const pageCount = Math.max(1, Math.ceil(filteredCourses.length / PAGE_SIZE));
+  const visibleCourses = filteredCourses.slice((coursePage - 1) * PAGE_SIZE, coursePage * PAGE_SIZE);
+  const totalAssignments = reports?.training.totalAssignments ?? 0;
+  const completed = reports?.training.completedAssignments ?? 0;
   const underway = reports?.training.inProgressAssignments ?? 0;
+  const completionRate = percent(reports?.training.completionRate ?? 0);
+  const metricItems = [
+    { label: 'Lượt phân công', value: totalAssignments, icon: GraduationCap, tone: 'teal' },
+    { label: 'Đang học', value: underway, icon: BookOpen, tone: 'blue' },
+    { label: 'Lượt đánh giá', value: reports?.assessment.totalAttempts ?? 0, icon: ClipboardCheck, tone: 'coral' },
+    { label: 'Nhân sự hoạt động', value: reports?.workforce.activeEmployees ?? 0, icon: UsersRound, tone: 'green' },
+  ];
 
-  const hasCycles = approved > 0 || underway > 0;
+  if (dashboardLoading || reportsLoading) return <div className="po-owner cycle-report-page -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label="Đang tải báo cáo chu kỳ" /></div>;
 
-  const domains = useMemo(
-    () =>
-      (dashboard?.domains ?? [])
-        .slice()
-        .sort((a, b) => a.sortOrder - b.sortOrder),
-    [dashboard],
-  );
+  return <div className="po-owner cycle-report-page -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}>
+    <main className="cycle-report-shell">
+      <header className="cycle-report-hero">
+        <div className="cycle-report-hero-copy"><span className="cycle-report-kicker"><TrendingUp size={15} /> BÁO CÁO ĐÀO TẠO</span><h1>Báo cáo chu kỳ</h1><span className="cycle-report-hero-caption">{completed} / {totalAssignments} lượt giao đã hoàn thành</span></div>
+        <div className="cycle-report-completion" aria-label={`Tỷ lệ hoàn thành ${completionRate}%`}><div className="cycle-report-ring" style={{ background: `conic-gradient(#41ccb2 ${completionRate}%, rgba(255,255,255,.15) 0)` }}><div><strong>{completionRate}%</strong><span>hoàn thành</span></div></div></div>
+      </header>
 
-  const completionRate = reports?.training.completionRate ?? 0;
+      {totalAssignments === 0 ? <section className="cycle-report-empty"><span><GraduationCap size={30} /></span><h2>Chưa có lượt giao khóa học</h2><p>Giao khóa học cho nhân viên để bắt đầu theo dõi tiến độ và kết quả đào tạo.</p><Link to="/enterprise/assignments">Giao khóa học <ArrowRight size={16} /></Link></section> : <>
+        <div className="cycle-report-metrics" aria-label="Số liệu đào tạo">{metricItems.map((item) => <div key={item.label} className={`cycle-report-metric is-${item.tone}`}><span><item.icon size={21} /></span><div><small>{item.label}</small><strong>{item.value}</strong></div></div>)}</div>
 
-  const events = useMemo(() => {
-    if (!hasCycles) return [];
-    return [
-      {
-        step: '1',
-        title: 'Đánh giá năng lực cơ sở',
-        detail:
-          'Nhân viên được đánh giá theo khung TT02/2025 để xác định mức hiện tại.',
-      },
-      {
-        step: '2',
-        title: 'Xác định khoảng cách năng lực',
-        detail: `${dashboard?.kpis.employeesWithHigh ?? 0} nhân viên có mức thiếu hụt Cao cần ưu tiên.`,
-      },
-      {
-        step: '3',
-        title: 'Phân công khóa học',
-        detail: `${reports?.training.totalAssignments ?? 0} lượt phân công, ${underway} đang học, ${approved} hoàn thành.`,
-      },
-      {
-        step: '4',
-        title: 'Đánh giá kết thúc khóa',
-        detail: `${submissions} bài thi với tỷ lệ đạt ${reports?.assessment.passRate ?? 0}%.`,
-      },
-      {
-        step: '5',
-        title: 'Cập nhật năng lực',
-        detail:
-          'Điểm năng lực cá nhân được cập nhật sau khi Manager xác nhận kết quả.',
-      },
-      {
-        step: '6',
-        title: 'Chu kỳ tiếp theo',
-        detail:
-          'Khoảng cách mới được tính từ mục tiêu vị trí, gợi ý khóa tiếp theo.',
-      },
-    ];
-  }, [hasCycles, dashboard, reports, underway, approved, submissions]);
+        <section className="cycle-report-insight"><span className="cycle-report-insight-icon"><TrendingUp size={23} /></span><div><small>KẾT QUẢ CẦN CHÚ Ý</small><h2>{completed === 0 ? 'Chưa có lượt giao hoàn thành' : `${completed} lượt giao đã hoàn thành`}</h2><p>{underway > 0 ? `${underway} lượt đang học. Theo dõi tiến độ và hạn hoàn thành để kịp hỗ trợ nhân viên.` : 'Xem các lượt giao để kiểm tra tiến độ học tập.'}</p></div><Link to="/enterprise/assignments">Xem phân công <ArrowRight size={16} /></Link></section>
 
-  if (isLoading) {
-    return (
-      <div
-        className="po-owner -m-4 md:-m-6 min-h-screen flex items-center justify-center"
-        style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
-      >
-        <p className="text-sm" style={{ color: 'var(--po-muted)' }}>
-          Đang tải báo cáo chu kỳ…
-        </p>
-      </div>
-    );
-  }
+        {domains.length > 0 && <section className="cycle-report-section cycle-report-domains"><div className="cycle-report-section-head"><div><span>MỨC ĐÁP ỨNG NĂNG LỰC</span><h2>6 miền năng lực số</h2><p>So sánh mức hiện tại với yêu cầu của vị trí.</p></div>{priorityDomain && <div className="cycle-report-priority">Cần ưu tiên <strong>{priorityDomain.name}</strong></div>}</div><div className="cycle-report-domain-grid">{domains.map((domain, index) => {
+          const coverage = domain.averageRequired > 0 ? percent(domain.averageCurrent / domain.averageRequired * 100) : 100;
+          return <div key={domain.categoryId || domain.name} className={`cycle-report-domain ${coverage < 50 ? 'is-low' : coverage >= 100 ? 'is-met' : ''}`}><div className="cycle-report-domain-title"><span>{String(index + 1).padStart(2, '0')}</span><strong>{domain.name}</strong></div><div className="cycle-report-domain-values"><span>Hiện tại <b>{domain.averageCurrent.toFixed(1)}</b></span><span>Yêu cầu <b>{domain.averageRequired.toFixed(1)}</b></span></div><div className="cycle-report-domain-track" role="progressbar" aria-label={`Mức đáp ứng ${domain.name}`} aria-valuenow={coverage} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${coverage}%` }} /></div><div className="cycle-report-domain-foot"><span>{coverage >= 100 ? 'Đạt yêu cầu' : 'Mức đáp ứng'}</span><strong>{coverage}%</strong></div></div>;
+        })}</div><Link className="cycle-report-section-link" to="/enterprise/skill-gap">Xem khoảng trống năng lực <ArrowRight size={16} /></Link></section>}
 
-  return (
-    <div
-      className="po-owner -m-4 md:-m-6 min-h-screen"
-      style={{
-        ...PULSE_TOKENS,
-        background: 'var(--po-canvas)',
-        backgroundImage:
-          'radial-gradient(ellipse 80% 55% at 50% 0%, var(--po-glow) 0%, transparent 65%)',
-      }}
-    >
-      {/* ── Report cover (hero) ── */}
-      <section
-        className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-end gap-8"
-        style={{
-          padding: '36px',
-          background: 'linear-gradient(115deg, #173d49, #275967)',
-          color: '#fff',
-          boxShadow: '0 20px 42px rgba(29,48,102,.11)',
-        }}
-      >
-        <div>
-          <span
-            className="text-[10px] font-black uppercase tracking-[0.14em]"
-            style={{ color: '#ffc4a7' }}
-          >
-            Báo cáo chu kỳ học tập
-          </span>
-          <h1
-            className="mt-2 font-bold leading-[1.05]"
-            style={{
-              fontSize: 'clamp(28px, 3.8vw, 46px)',
-              letterSpacing: '-0.05em',
-            }}
-          >
-            Báo cáo Chu kỳ Đào tạo & Năng lực
-          </h1>
-          <p
-            className="mt-2 text-[13px] leading-relaxed"
-            style={{ color: '#dbe3ff', maxWidth: 520 }}
-          >
-            {hasCycles
-              ? `${learners} học viên · ${approved + underway} khóa trong phạm vi · Tỷ lệ hoàn thành ${completionRate}%.`
-              : 'Theo dõi tiến trình và tăng trưởng năng lực số theo từng chu kỳ đào tạo.'}
-          </p>
-        </div>
-
-        {hasCycles && (
-          <div
-            className="text-right"
-            style={{
-              fontSize: 60,
-              fontWeight: 900,
-              letterSpacing: '-0.08em',
-              color: '#ffc1a6',
-              lineHeight: 1,
-            }}
-          >
-            {completionRate}%
-          </div>
-        )}
-      </section>
-
-      {/* ── Content ── */}
-      <div className="px-4 md:px-6 py-6 mx-auto" style={{ maxWidth: 1220 }}>
-        {!hasCycles ? (
-          /* ── Empty state ── */
-          <div
-            className="mx-auto mt-8 text-center"
-            style={{ maxWidth: 480 }}
-          >
-            <div
-              className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl text-2xl"
-              style={{ background: 'var(--po-soft)', color: 'var(--po-accent)' }}
-            >
-              <BarChart3 className="size-7" />
-            </div>
-            <h2
-              className="text-xl font-semibold"
-              style={{ color: 'var(--po-ink)', letterSpacing: '-0.04em' }}
-            >
-              Báo cáo chu kỳ đầu tiên đang hình thành.
-            </h2>
-            <p
-              className="mt-2 text-xs leading-relaxed"
-              style={{ color: 'var(--po-muted)' }}
-            >
-              Hoàn thành quy trình đánh giá năng lực → phân công khóa học →
-              Manager xác nhận kết quả. Dữ liệu sẽ tự động hiển thị.
-            </p>
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <Link
-                to="/enterprise/skill-gap"
-                className="inline-flex items-center gap-2 rounded-[11px] px-4 py-3 text-[13px] font-bold transition-transform hover:-translate-y-0.5"
-                style={{
-                  background: 'var(--po-accent)',
-                  color: '#fff',
-                  boxShadow: '0 9px 18px rgba(19,123,132,.17)',
-                }}
-              >
-                <BarChart3 className="size-4" /> Xem khoảng cách
-              </Link>
-              <Link
-                to="/enterprise/courses"
-                className="inline-flex items-center gap-2 rounded-[11px] border px-4 py-3 text-[13px] font-bold transition-transform hover:-translate-y-0.5"
-                style={{
-                  borderColor: 'var(--po-line)',
-                  color: 'var(--po-ink)',
-                }}
-              >
-                <BookOpen className="size-4" /> Danh mục khóa học
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* ── KPI metrics ── */}
-            <ReportKpiSummary
-              approved={approved}
-              learners={learners}
-              submissions={submissions}
-              underway={underway}
-            />
-
-            {/* ── Domain breakdown ── */}
-            <div className="mt-4">
-              <ReportDomainBreakdown
-                domains={domains}
-                isLoading={dashLoading}
-              />
-            </div>
-
-            {/* ── Cohort table ── */}
-            {reports?.training.courses &&
-              reports.training.courses.length > 0 && (
-                <section
-                  className="mt-4 rounded-[22px] border p-6"
-                  style={{
-                    borderColor: 'var(--po-line)',
-                    background: 'var(--po-surface)',
-                    boxShadow: '0 10px 35px rgba(29,48,102,.025)',
-                  }}
-                >
-                  <span
-                    className="text-[10px] font-black uppercase tracking-[0.12em]"
-                    style={{ color: 'var(--po-accent)' }}
-                  >
-                    Tổng hợp khóa học
-                  </span>
-                  <h2
-                    className="mt-2 text-xl font-semibold"
-                    style={{
-                      color: 'var(--po-ink)',
-                      letterSpacing: '-0.045em',
-                    }}
-                  >
-                    Tất cả khóa trong chu kỳ hiện tại.
-                  </h2>
-
-                  <div className="mt-4 overflow-x-auto">
-                    <table
-                      className="w-full text-xs"
-                      style={{ borderCollapse: 'separate', borderSpacing: 0 }}
-                    >
-                      <thead>
-                        <tr
-                          className="text-left text-[10px] uppercase tracking-wider"
-                          style={{ color: 'var(--po-muted)' }}
-                        >
-                          <th className="pb-2 pr-4 font-bold">Mã</th>
-                          <th className="pb-2 pr-4 font-bold">Khóa học</th>
-                          <th className="pb-2 pr-4 font-bold">Miền</th>
-                          <th className="pb-2 pr-4 font-bold text-right">
-                            Học viên
-                          </th>
-                          <th className="pb-2 font-bold text-right">
-                            Tiến độ TB
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {reports.training.courses.map((c) => (
-                          <tr
-                            key={c.id}
-                            className="border-t"
-                            style={{ borderColor: 'var(--po-line)' }}
-                          >
-                            <td
-                              className="py-2.5 pr-4 font-mono font-bold"
-                              style={{ color: 'var(--po-accent)' }}
-                            >
-                              {c.code}
-                            </td>
-                            <td
-                              className="py-2.5 pr-4"
-                              style={{ color: 'var(--po-ink)' }}
-                            >
-                              {c.title}
-                            </td>
-                            <td
-                              className="py-2.5 pr-4"
-                              style={{ color: 'var(--po-muted)' }}
-                            >
-                              {c.domainName}
-                            </td>
-                            <td
-                              className="py-2.5 pr-4 text-right tabular-nums font-bold"
-                              style={{ color: 'var(--po-ink)' }}
-                            >
-                              {c.learnerCount}
-                            </td>
-                            <td
-                              className="py-2.5 text-right tabular-nums font-bold"
-                              style={{
-                                color:
-                                  c.averageProgress >= 80
-                                    ? '#16a34a'
-                                    : c.averageProgress >= 40
-                                      ? '#ca8a04'
-                                      : 'var(--po-coral)',
-                              }}
-                            >
-                              {c.averageProgress}%
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
-              )}
-
-            {/* ── Grid-2: Timeline + Growth narrative ── */}
-            <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <CycleTimeline events={events} />
-
-              {/* Growth narrative */}
-              <section
-                className="rounded-[22px] border p-6"
-                style={{
-                  borderColor: 'var(--po-line)',
-                  background: 'var(--po-surface)',
-                  boxShadow: '0 10px 35px rgba(29,48,102,.025)',
-                }}
-              >
-                <span
-                  className="text-[10px] font-black uppercase tracking-[0.12em]"
-                  style={{ color: 'var(--po-accent)' }}
-                >
-                  Bước tiếp theo
-                </span>
-                <h2
-                  className="mt-2 text-xl font-semibold"
-                  style={{
-                    color: 'var(--po-ink)',
-                    letterSpacing: '-0.045em',
-                  }}
-                >
-                  Khóa học tiếp theo sẽ nối tiếp câu chuyện này.
-                </h2>
-                <p
-                  className="mt-2 text-xs leading-relaxed"
-                  style={{ color: 'var(--po-muted)' }}
-                >
-                  Mỗi khoảng cách năng lực đã thu hẹp mở ra những yêu cầu
-                  tiếp theo. Hệ thống gợi ý dựa trên mức yêu cầu của vị
-                  trí, mức hiện tại và lịch sử hoàn thành.
-                </p>
-
-                <div className="mt-5 flex flex-wrap gap-2.5">
-                  <Link
-                    to="/enterprise/skill-gap"
-                    className="inline-flex items-center gap-2 rounded-[11px] px-4 py-3 text-[13px] font-bold transition-transform hover:-translate-y-0.5"
-                    style={{
-                      background: 'var(--po-accent)',
-                      color: '#fff',
-                      boxShadow: '0 9px 18px rgba(19,123,132,.17)',
-                    }}
-                  >
-                    Xem khoảng cách <ArrowRight className="size-4" />
-                  </Link>
-                  <Link
-                    to="/enterprise/courses"
-                    className="inline-flex items-center gap-2 rounded-[11px] border px-4 py-3 text-[13px] font-bold transition-transform hover:-translate-y-0.5"
-                    style={{
-                      borderColor: 'var(--po-line)',
-                      color: 'var(--po-ink)',
-                    }}
-                  >
-                    Danh mục khóa học <ArrowRight className="size-4" />
-                  </Link>
-                </div>
-
-                <p
-                  className="mt-5 text-[11px] leading-relaxed"
-                  style={{ color: '#789' }}
-                >
-                  Dữ liệu báo cáo phản ánh trạng thái tại thời điểm truy
-                  xuất. Hoàn thành khóa học không tự động thay đổi đánh giá
-                  năng lực cơ sở — Manager phải xác nhận kết quả.
-                </p>
-              </section>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
+        {allCourses.length > 0 && <section className="cycle-report-section cycle-report-courses"><div className="cycle-report-section-head"><div><span>TIẾN ĐỘ KHÓA HỌC</span><h2>Khóa học trong báo cáo</h2><p>{assignedCourseCount} khóa đã có học viên.</p></div><Link className="cycle-report-section-link" to="/enterprise/courses">Danh mục khóa học <ArrowRight size={16} /></Link></div><div className="cycle-report-course-toolbar"><div className="cycle-report-tabs" role="group" aria-label="Lọc khóa học"><button type="button" className={courseView === 'assigned' ? 'is-active' : ''} onClick={() => { setCourseView('assigned'); setCoursePage(1); }}>Đã phân công <span>{assignedCourseCount}</span></button><button type="button" className={courseView === 'all' ? 'is-active' : ''} onClick={() => { setCourseView('all'); setCoursePage(1); }}>Tất cả <span>{allCourses.length}</span></button></div><label className="cycle-report-search owner-filter-search"><Search size={17} /><input value={courseSearch} onChange={(event) => { setCourseSearch(event.target.value); setCoursePage(1); }} placeholder="Tìm khóa học" aria-label="Tìm khóa học" /></label></div>
+          {visibleCourses.length ? <div className="cycle-report-course-list">{visibleCourses.map((course) => <div key={course.id} className="cycle-report-course-row"><span className="cycle-report-course-code">{course.code}</span><div className="cycle-report-course-name"><strong>{course.title}</strong><small>{course.domainName}</small></div><span className="cycle-report-course-learners"><UsersRound size={15} /> {course.learnerCount} học viên</span><div className="cycle-report-course-progress"><strong>{percent(course.averageProgress)}%</strong><span><i style={{ width: `${percent(course.averageProgress)}%` }} /></span></div></div>)}</div> : <p className="cycle-report-no-courses">Không có khóa học phù hợp.</p>}
+          {filteredCourses.length > PAGE_SIZE && <div className="cycle-report-pagination"><span>{(coursePage - 1) * PAGE_SIZE + 1}–{Math.min(coursePage * PAGE_SIZE, filteredCourses.length)} / {filteredCourses.length} khóa</span><div><button type="button" disabled={coursePage === 1} onClick={() => setCoursePage((page) => page - 1)}>Trước</button><span>Trang {coursePage}/{pageCount}</span><button type="button" disabled={coursePage === pageCount} onClick={() => setCoursePage((page) => page + 1)}>Sau</button></div></div>}
+        </section>}
+        <p className="cycle-report-note"><CheckCircle2 size={15} /> Hoàn thành khóa học không tự cập nhật mức năng lực; kết quả cần được xác nhận qua đánh giá.</p>
+      </>}
+    </main>
+  </div>;
 }

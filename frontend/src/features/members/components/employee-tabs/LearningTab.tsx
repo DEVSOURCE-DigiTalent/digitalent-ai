@@ -1,52 +1,19 @@
-import React from 'react';
-import { EmptyState } from '@/components/shared';
+import { useState } from 'react';
+import { BookOpen, CalendarDays } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
-import { ASSIGNMENT_STATUS_LABELS, AssignmentStatusBadge } from '@/features/assignments/assignment-labels';
+import { AssignmentStatusBadge } from '@/features/assignments/assignment-labels';
 import type { AssignmentRow } from '@/services/assignment.service';
+import { MemberTabEmpty, MemberTabHeader, MemberTabPager } from './MemberTabUi';
 
-interface LearningTabProps {
-  assignments: AssignmentRow[];
-  readOnly?: boolean;
+interface LearningTabProps { assignments: AssignmentRow[]; readOnly?: boolean }
+const PAGE_SIZE = 6;
+export function LearningTab({ assignments }: LearningTabProps) {
+  const [page, setPage] = useState(1);
+  const safePage = Math.min(page, Math.max(1, Math.ceil(assignments.length / PAGE_SIZE)));
+  return <div><MemberTabHeader title="Khóa học được giao" count={assignments.length} icon={<BookOpen size={21} />} />
+    {assignments.length === 0 ? <MemberTabEmpty title="Chưa có khóa học" description="Các khóa học được giao sẽ hiển thị cùng tiến độ tại đây." icon={<BookOpen size={27} />} /> : <>
+      <div className="member-tab-grid">{assignments.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE).map((a) => <article key={a.id} className="member-tab-card"><div className="member-tab-card-head"><div><span className="member-tab-code">{a.courseCode}</span><h3 style={{ marginTop: 9 }}>{a.courseTitle}</h3></div><AssignmentStatusBadge assignment={a} /></div><div className="member-tab-meta"><span><CalendarDays size={14} />{a.dueDate ? `Hạn ${formatDate(a.dueDate)}` : 'Không giới hạn'}</span><strong>{a.progressPercent}% hoàn thành</strong></div><div className="member-tab-progress" aria-label={`Tiến độ ${a.progressPercent}%`}><span style={{ width: `${Math.max(0, Math.min(100, a.progressPercent))}%` }} /></div></article>)}</div>
+      <MemberTabPager page={safePage} total={assignments.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+    </>}
+  </div>;
 }
-
-export const LearningTab: React.FC<LearningTabProps> = ({ assignments }) => {
-  if (assignments.length === 0) {
-    return (
-      <EmptyState
-        title="Chưa được giao khóa học nào"
-        description="Nhân viên chưa tham gia khóa học nào trong các đợt đào tạo của tổ chức."
-      />
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-900">
-          Danh sách khóa học ({assignments.length})
-        </h3>
-      </div>
-
-      <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
-        {assignments.map((a) => (
-          <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm hover:bg-slate-50/50">
-            <div className="min-w-0 flex-1">
-              <p className="font-medium text-slate-900">
-                <span className="font-mono text-xs text-slate-500 mr-2">{a.courseCode}</span>
-                {a.courseTitle}
-              </p>
-              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                <span>{a.dueDate ? `Hạn hoàn thành: ${formatDate(a.dueDate)}` : 'Không giới hạn thời gian'}</span>
-                <span>·</span>
-                <span>{ASSIGNMENT_STATUS_LABELS[a.status]}</span>
-                <span>·</span>
-                <span className="font-semibold text-slate-700">Tiến độ: {a.progressPercent}%</span>
-              </div>
-            </div>
-            <AssignmentStatusBadge assignment={a} />
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-};

@@ -1,11 +1,13 @@
 import {
   Bell,
+  Bug,
   ClipboardCheck,
   FileBarChart,
   FileCheck2,
   GraduationCap,
   Layers,
   LayoutDashboard,
+  MessageSquare,
   TrendingUp,
 } from 'lucide-react';
 import type { SidebarConfig } from './types';
@@ -31,4 +33,6 @@ export const MANAGER_SIDEBAR: SidebarConfig = [
   { label: 'Đào tạo đội ngũ', icon: GraduationCap, screenId: 'MG-06', activeFor: ['MG-07'] },
   { label: 'Minh chứng thực tế', icon: ClipboardCheck, screenId: 'MG-11', activeFor: ['MG-12', 'MG-08', 'MG-09', 'MG-10'] },
   { label: 'Hoạt động', icon: Bell, screenId: 'SHR-03' },
+  { label: 'Góp ý', icon: MessageSquare, screenId: 'SHR-04' },
+  { label: 'Báo lỗi', icon: Bug, screenId: 'SHR-05' },
 ];

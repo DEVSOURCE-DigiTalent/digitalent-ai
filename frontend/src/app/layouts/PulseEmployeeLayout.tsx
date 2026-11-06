@@ -40,7 +40,7 @@ function TrialGate({ pathname, children }: { pathname: string; children: ReactNo
   const gate = trialGateOf(data);
   if (!gate || !data) return <>{children}</>;
   if (pathname === PULSE_PATHS.today) return <Navigate to={PULSE_PATHS.trialTest} replace />;
-  const open = [PULSE_PATHS.trialTest, PULSE_PATHS.path, PULSE_PATHS.profile, PULSE_PATHS.activity]
+  const open = [PULSE_PATHS.trialTest, PULSE_PATHS.path, PULSE_PATHS.profile, PULSE_PATHS.activity, PULSE_PATHS.feedbacks, PULSE_PATHS.bugReports]
     .some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
   if (open) return <>{children}</>;
   return (

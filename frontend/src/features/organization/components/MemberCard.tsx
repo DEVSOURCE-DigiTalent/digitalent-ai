@@ -25,30 +25,38 @@ export function MemberCard({ member, onClick, onResendInvite, isResending }: Mem
         : { bg: '#fee2e2', fg: '#dc2626' };
 
   return (
-    <button
-      type="button"
+    <div
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-[10px] border px-4 py-3 text-left transition-all hover:shadow-sm"
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onClick?.();
+        }
+      }}
+      className="member-card flex w-full items-center gap-4 rounded-xl border px-4 py-3.5 text-left transition-all hover:shadow-sm cursor-pointer"
       style={{
         borderColor: 'var(--po-line)',
         background: 'var(--po-surface)',
       }}
     >
       <span
-        className="grid size-9 shrink-0 place-items-center rounded-full text-xs font-bold"
+        className="grid size-11 shrink-0 place-items-center rounded-full text-sm font-bold"
         style={{ background: 'var(--po-soft)', color: 'var(--po-accent)' }}
       >
         {initials}
       </span>
       <div className="flex-1 min-w-0">
         <strong
-          className="block text-[13px] truncate"
+          className="block text-sm sm:text-base truncate"
           style={{ color: 'var(--po-ink)' }}
         >
           {member.fullName}
         </strong>
         <small
-          className="block text-[11px] truncate"
+          className="block text-xs sm:text-[13px] truncate"
           style={{ color: 'var(--po-muted)' }}
         >
           {[
@@ -74,13 +82,13 @@ export function MemberCard({ member, onClick, onResendInvite, isResending }: Mem
           </span>
         )}
         <span
-          className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+          className="rounded-full px-2.5 py-1 text-xs font-bold"
           style={{ background: statusColor.bg, color: statusColor.fg }}
         >
           {MEMBER_STATUS_LABELS[member.status]}
         </span>
         <span
-          className="hidden sm:inline-block rounded border px-1.5 py-0.5 text-[10px] font-bold"
+          className="hidden sm:inline-block rounded-lg border px-2.5 py-1 text-xs font-bold"
           style={{
             borderColor: 'var(--po-line)',
             color: 'var(--po-muted)',
@@ -107,6 +115,6 @@ export function MemberCard({ member, onClick, onResendInvite, isResending }: Mem
           </button>
         )}
       </div>
-    </button>
+    </div>
   );
 }

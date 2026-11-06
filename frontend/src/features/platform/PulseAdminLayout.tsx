@@ -127,7 +127,6 @@ function PulseAdminShell() {
               DigiTalent <em>AI</em>
             </span>
           </NavLink>
-
           {/* Top navigation for Mentor */}
           {mentor ? (
             <nav className="pa-mentor-top-nav" aria-label="Điều hướng chính">

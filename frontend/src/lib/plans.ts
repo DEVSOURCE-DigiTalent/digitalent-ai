@@ -104,7 +104,7 @@ export const PLANS: Plan[] = [
       'Bao gồm 20 người dùng (mở rộng tối đa 30)',
       'Khung chuẩn năng lực số đầy đủ 6 miền',
       'Yêu cầu năng lực theo vị trí',
-      'Phân tích skill gap và đề xuất học tập',
+      'Phân tích khoảng trống năng lực và đề xuất khóa học',
       'Nhiệm vụ thực hành và bằng chứng (evidence)',
     ],
   },

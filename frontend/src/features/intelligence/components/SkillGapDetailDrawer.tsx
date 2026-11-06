@@ -44,12 +44,12 @@ export function SkillGapDetailDrawer({ runId, onClose, canRecalculate, isRecalcu
       <aside
         role="dialog"
         aria-modal="true"
-        aria-label="Chi tiết skill gap"
+        aria-label="Chi tiết khoảng trống năng lực"
         className="relative w-full max-w-4xl h-full overflow-y-auto bg-slate-50 shadow-xl"
       >
         <header className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 bg-white border-b border-slate-200">
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold text-slate-900 truncate">{run?.employeeName ?? 'Skill gap'}</h2>
+            <h2 className="text-lg font-semibold text-slate-900 truncate">{run?.employeeName ?? 'Khoảng trống năng lực'}</h2>
             {run && (
               <p className="text-xs text-slate-500">
                 {run.employeeCode} · {run.departmentName}

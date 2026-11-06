@@ -1,21 +1,25 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Search, Sparkles, X } from 'lucide-react';
+import { BookOpen, Search, Sparkles, X } from 'lucide-react';
 import { useCourseCatalog, usePurchaseCourseSeats } from '@/hooks/use-assignments';
 import { useCompetencyCategories } from '@/hooks/use-competencies';
 import { courseCategories } from '@/features/courses/course-catalog';
 import type { CourseListItem } from '@/services/assignment.service';
+import { CourseArtwork, CourseDomainIcon } from '../components/CourseArtwork';
 import {
   LEVELS,
   buildCourseTree,
   courseLevel,
   formatDuration,
+  findGapCourse,
   levelName,
   levelPricing,
   matchesSearch,
   type DomainBranch,
 } from '../components/course-tree';
 import { PULSE_TOKENS } from '../owner-theme';
+import { SectionLoading } from '@/components/shared/LoadingState';
+import './owner-course-catalog.css';
 
 /** Chuẩn hóa mã khóa học chuẩn (A1..A6 <-> M1..M6) để đối chiếu chính xác. */
 function canonicalCode(code?: string): string {
@@ -34,19 +38,24 @@ const LEVEL_TONES: Record<number, { bg: string; fg: string; ring: string }> = {
   3: { bg: '#fdeee9', fg: '#c4553f', ring: '#f4b6a6' },
 };
 
-type Selection = { kind: 'course'; id: string } | { kind: 'domain'; domain: number } | null;
+type Selection = { kind: 'course'; id: string } | null;
 
 export function OwnerCourseCatalogPage() {
   const [search, setSearch] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
+  const gapCode = searchParams.get('gap') ?? '';
+  const gapDomain = Number(gapCode.split('.')[0]);
+  const gapTargetLevel = Number(searchParams.get('level'));
+  const focusCode = searchParams.get('focus') ?? '';
   // ?level=2 → mở sẵn bộ lọc bậc (nút "Mua khóa học" của doanh nghiệp dùng thử dẫn tới khóa Trung cấp).
   const [levelFilter, setLevelFilter] = useState(() => {
     const level = Number(searchParams.get('level'));
     return LEVELS.some((l) => l.level === level) ? level : 0;
   });
-  const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
+  const [activeDomain, setActiveDomain] = useState<number | null>(null);
   const [selection, setSelection] = useState<Selection>(null);
   const [purchaseModalCourse, setPurchaseModalCourse] = useState<CourseListItem | null>(null);
+  const appliedSelectedParam = useRef<string | null>(null);
 
   // Danh sách mã khóa học được chọn trước từ trang Thiết lập Khung năng lực (?selected=M1-I,M2-A...)
   const selectedParam = searchParams.get('selected');
@@ -74,93 +83,99 @@ export function OwnerCourseCatalogPage() {
     ? branches.filter((branch) => matchesSearch(branch.category.name, query)
       || branch.slots.some((slot) => slot.courses.some((course) => courseMatches(course, query))))
     : branches;
+  const activeBranch = visibleBranches.find((branch) => branch.domain === activeDomain) ?? visibleBranches[0];
 
   const allCourses = branches.flatMap((branch) => branch.slots.flatMap((slot) => slot.courses));
+  const gapCourse = findGapCourse(branches, gapCode, gapTargetLevel);
+  const focusCourse = focusCode ? allCourses.concat(others).find((course) => canonicalCode(course.code) === canonicalCode(focusCode)) : undefined;
+  const visibleOthers = query ? others.filter((course) => courseMatches(course, query)) : others;
   const totalAssigned = allCourses.reduce((sum, course) => sum + course.assignedCount, 0);
 
-  const selectedCourse = selection?.kind === 'course' ? allCourses.concat(others).find((c) => c.id === selection.id) : undefined;
-  const selectedBranch = selection?.kind === 'domain'
-    ? branches.find((b) => b.domain === selection.domain)
-    : selectedCourse ? branches.find((b) => b.slots.some((s) => s.courses.includes(selectedCourse))) : undefined;
-
-  const toggle = (domain: number) => setCollapsed((current) => {
-    const next = new Set(current);
-    if (next.has(domain)) next.delete(domain);
-    else next.add(domain);
-    return next;
-  });
-
-  // Tự động mở rộng các nhánh (miền) chứa khóa học được chọn trước từ Khung năng lực
-  useEffect(() => {
-    if (preselectedCodes.size > 0 && branches.length > 0) {
-      setCollapsed((current) => {
-        const next = new Set(current);
-        branches.forEach((b) => {
-          const hasPreselected = b.slots.some((s) =>
-            s.courses.some((c) => preselectedCodes.has(canonicalCode(c.code)))
-          );
-          if (hasPreselected) {
-            next.delete(b.domain);
-          }
-        });
-        return next;
-      });
-    }
-  }, [preselectedCodes, branches]);
+  const defaultCourse = (levelFilter ? activeBranch?.slots.find((slot) => slot.level === levelFilter)?.courses : activeBranch?.slots.flatMap((slot) => slot.courses))?.find((course) => course.status === 'PUBLISHED');
+  const selectedCourse = selection ? allCourses.concat(others).find((course) => course.id === selection.id) : defaultCourse;
+  const selectedBranch = selectedCourse ? branches.find((branch) => branch.slots.some((slot) => slot.courses.includes(selectedCourse))) : activeBranch;
+  const displaySelection = selectedCourse ? { kind: 'course' as const, id: selectedCourse.id } : null;
 
   // Tự động chọn khóa học đầu tiên trong danh sách chọn trước để hiện thông tin chi tiết ngay lập tức
   useEffect(() => {
-    if (preselectedCodes.size > 0 && !selection && allCourses.length > 0) {
+    if (!selectedParam) { appliedSelectedParam.current = null; return; }
+    if (selectedParam && appliedSelectedParam.current !== selectedParam && preselectedCodes.size > 0 && allCourses.length > 0) {
       const match = allCourses.find((c) => preselectedCodes.has(canonicalCode(c.code)));
       if (match) {
+        appliedSelectedParam.current = selectedParam;
         setSelection({ kind: 'course', id: match.id });
+        const branch = branches.find((item) => item.slots.some((slot) => slot.courses.includes(match)));
+        if (branch) setActiveDomain(branch.domain);
       }
     }
-  }, [preselectedCodes, selection, allCourses]);
+  }, [preselectedCodes, selectedParam, allCourses, branches]);
+
+  useEffect(() => {
+    if (!gapCode || !gapCourse) return;
+    setSelection({ kind: 'course', id: gapCourse.id });
+    setActiveDomain(gapDomain);
+    const timer = window.setTimeout(() => document.getElementById('gap-target-course')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+    return () => window.clearTimeout(timer);
+  }, [gapCode, gapCourse, gapDomain]);
+
+  useEffect(() => {
+    if (!focusCode || !focusCourse) return;
+    setSelection({ kind: 'course', id: focusCourse.id });
+    const branch = branches.find((item) => item.slots.some((slot) => slot.courses.some((course) => course.id === focusCourse.id)));
+    if (branch) setActiveDomain(branch.domain);
+    const timer = window.setTimeout(() => document.getElementById('gap-target-course')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+    return () => window.clearTimeout(timer);
+  }, [focusCode, focusCourse, branches]);
 
   return (
     <div
-      className="po-owner -m-4 md:-m-6 min-h-screen px-4 md:px-6 py-8"
-      style={{ ...PULSE_TOKENS, background: 'radial-gradient(ellipse at 50% 0%, var(--po-soft) 0%, var(--po-canvas) 60%)' }}
+      className="po-owner course-catalog-page -m-4 md:-m-6 min-h-screen"
+      style={{ ...PULSE_TOKENS }}
     >
-      <div className="mx-auto" style={{ maxWidth: 1220 }}>
+      <div className="course-catalog-container">
         {/* ── Header ── */}
-        <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <header className="course-catalog-header mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--po-accent)' }}>
+            <span className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em] mb-1.5" style={{ color: 'var(--po-accent)' }}>
               <i className="inline-block size-[6px] rounded-full" style={{ background: 'var(--po-coral)' }} />
               Chương trình chuẩn · Thông tư 02/2025
             </span>
-            <h1 className="mt-2 text-[clamp(28px,3.8vw,44px)] font-bold leading-[1.05]" style={{ color: 'var(--po-ink)', letterSpacing: '-0.05em' }}>
-              Kho Khóa học Chuẩn hóa Năng lực
+            <h1 className="font-bold tracking-[-0.03em] heading-gradient">
+              Khóa học năng lực số
             </h1>
           </div>
-          <dl className="grid grid-cols-3 gap-2 text-center">
+          <dl className="course-catalog-stats grid grid-cols-3 gap-2 text-center">
             <Stat label="Miền" value={branches.length} />
             <Stat label="Khóa học" value={allCourses.length} />
             <Stat label="Đang phân công" value={totalAssigned} />
           </dl>
         </header>
 
+        {gapCode && !isLoading && !isError && (
+          <div className="course-gap-context" role="status">
+            <span className="course-gap-context-icon"><Sparkles size={18} /></span>
+            <div><strong>{gapCourse ? `Khóa học bù đắp cho năng lực ${gapCode}` : `Chưa tìm thấy khóa học cho năng lực ${gapCode}`}</strong><span>{gapCourse ? `${gapCourse.code} · ${gapCourse.title} · ${levelName(gapTargetLevel)}` : 'Bạn có thể xem các cấp độ khác trong lĩnh vực này.'}</span></div>
+            <Link to="/enterprise/skill-gap">← Về khoảng trống năng lực</Link>
+          </div>
+        )}
+        {focusCode && !gapCode && !isLoading && !isError && <div className="course-gap-context" role="status"><span className="course-gap-context-icon"><BookOpen size={18} /></span><div><strong>{focusCourse ? 'Khóa học đề xuất cho nhân viên' : 'Chưa tìm thấy khóa học'}</strong><span>{focusCourse ? `${focusCourse.code} · ${focusCourse.title}` : `Mã khóa học ${focusCode}`}</span></div><Link to="/enterprise/skill-gap">← Về khoảng trống năng lực</Link></div>}
+
         {/* ── Banner làm nổi bật các khóa học đã chọn từ Khung năng lực ── */}
         {preselectedCodes.size > 0 && (
-          <div className="mb-6 rounded-2xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 via-white to-amber-50 p-4 sm:p-5 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 sm:p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="flex items-start sm:items-center gap-3.5 min-w-0">
-              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-sm">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-500 text-white shadow-xs">
                 <Sparkles className="size-5" />
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="text-sm font-semibold text-slate-800">
                     Khóa học đã chọn từ Thiết lập Khung năng lực ({preselectedCodes.size} khóa)
                   </h3>
                   <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10.5px] font-bold text-amber-800 border border-amber-300">
                     Đang làm nổi bật
                   </span>
                 </div>
-                <p className="mt-0.5 text-xs text-slate-600">
-                  Các khóa học bên dưới đã được phát sáng viền vàng và gắn nhãn <b className="text-amber-800 font-semibold">✨ Đã chọn</b>. Bấm vào từng khóa để mua suất học và mở trần cho doanh nghiệp.
-                </p>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   {Array.from(preselectedCodes).map((code) => (
                     <span
@@ -205,33 +220,28 @@ export function OwnerCourseCatalogPage() {
 
         {/* ── Toolbar ── */}
         <div
-          className="mb-4 grid gap-3 rounded-[16px] border px-4 py-3"
+          className="course-catalog-toolbar mb-4 grid gap-3 rounded-[16px] border px-4 py-3"
           style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)' }}
         >
           <div className="flex flex-wrap items-center gap-3">
-            <label className="relative flex min-w-[220px] flex-1 items-center">
-              <Search className="pointer-events-none absolute left-3 size-4" style={{ color: 'var(--po-muted)' }} />
+            <label className="owner-filter-search relative flex min-w-[220px] flex-1 items-center">
+              <Search className="pointer-events-none size-4" style={{ color: 'var(--po-muted)' }} />
               <input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setSelection(null); }}
                 placeholder="Tìm miền, tên hoặc mã khóa (VD: A4-I)…"
                 aria-label="Tìm khóa học"
-                className="w-full rounded-[10px] border py-2 pl-9 pr-8 text-sm outline-none focus:border-[var(--po-accent)]"
-                style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)' }}
+                className="w-full text-sm"
               />
               {search && (
-                <button type="button" aria-label="Xóa tìm kiếm" onClick={() => setSearch('')} className="absolute right-2.5" style={{ color: 'var(--po-muted)' }}>
+                <button type="button" aria-label="Xóa tìm kiếm" onClick={() => { setSearch(''); setSelection(null); }} className="owner-filter-search__clear" style={{ color: 'var(--po-muted)' }}>
                   <X className="size-4" />
                 </button>
               )}
             </label>
-            <div className="flex gap-1 text-xs font-bold" style={{ color: 'var(--po-accent)' }}>
-              <button type="button" className="rounded-md px-2 py-1 hover:bg-[var(--po-soft)]" onClick={() => setCollapsed(new Set())}>Mở tất cả</button>
-              <button type="button" className="rounded-md px-2 py-1 hover:bg-[var(--po-soft)]" onClick={() => setCollapsed(new Set(branches.map((b) => b.domain)))}>Thu gọn</button>
-            </div>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <ChipGroup label="Bậc">
+            <ChipGroup label="Cấp độ">
               {[{ level: 0, name: 'Tất cả' }, ...LEVELS].map(({ level, name }) => {
                 const active = levelFilter === level;
                 const tone = LEVEL_TONES[level];
@@ -240,7 +250,7 @@ export function OwnerCourseCatalogPage() {
                     key={level}
                     type="button"
                     aria-pressed={active}
-                    onClick={() => setLevelFilter(level)}
+                    onClick={() => { setLevelFilter(level); setSelection(null); }}
                     className="rounded-full border px-3 py-1.5 text-xs font-bold transition-colors"
                     style={active
                       ? { background: tone?.fg ?? 'var(--po-ink)', borderColor: tone?.fg ?? 'var(--po-ink)', color: '#fff' }
@@ -255,65 +265,47 @@ export function OwnerCourseCatalogPage() {
         </div>
 
         {isLoading ? (
-          <p className="py-20 text-center text-sm" style={{ color: 'var(--po-muted)' }}>Đang tải cây khóa học…</p>
+          <SectionLoading label="Đang tải khóa học" />
         ) : isError ? (
           <div className="rounded-[18px] border p-8 text-center text-sm" style={{ borderColor: '#fecdd3', background: '#fff1f2', color: '#be123c' }}>
             Không tải được danh mục.{' '}
             <button type="button" className="font-bold underline" onClick={() => refetch()}>Thử lại</button>
           </div>
         ) : (
-          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-            {/* ── Tree ── */}
-            <section
-              id="course-tree"
-              className="scroll-mt-[72px] rounded-[20px] border p-4 sm:p-6"
-              style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)', boxShadow: '0 10px 35px rgba(29,48,102,.03)' }}
-            >
-              <div className="flex items-center gap-3">
-                <span className="grid size-9 shrink-0 place-items-center rounded-xl text-sm font-black text-white" style={{ background: 'var(--po-ink)' }}>
-                  TT
-                </span>
-                <div className="min-w-0">
-                  <p className="text-[15px] font-bold" style={{ color: 'var(--po-ink)' }}>Khung năng lực số TT02/2025</p>
-                  <p className="text-xs" style={{ color: 'var(--po-muted)' }}>
-                    {branches.length} miền · {allCourses.length} khóa
-                  </p>
-                </div>
-              </div>
+          <>
+            <nav className="course-domain-nav" aria-label="Lĩnh vực năng lực">
+              {visibleBranches.map((branch) => (
+                <button key={branch.domain} type="button" aria-current={activeBranch?.domain === branch.domain ? 'true' : undefined} onClick={() => { setActiveDomain(branch.domain); setSelection(null); }}>
+                  <span className="course-domain-number"><CourseDomainIcon domain={branch.domain} size={19} /><small>{String(branch.domain).padStart(2, '0')}</small></span>
+                  <span className="course-domain-info"><strong>{branch.category.name}</strong><small>{branch.slots.reduce((sum, slot) => sum + slot.courses.length, 0)} khóa học{branch.assignedCount ? ` · ${branch.assignedCount} phân công` : ''}</small></span>
+                  {branch.slots.some((slot) => slot.courses.some((course) => preselectedCodes.has(canonicalCode(course.code)))) && <span className="course-domain-selected">Đã chọn</span>}
+                </button>
+              ))}
+              {visibleBranches.length === 0 && <p>{visibleOthers.length ? 'Khóa học phù hợp nằm ngoài khung TT02.' : `Không có lĩnh vực hoặc khóa học nào khớp “${query}”.`}</p>}
+            </nav>
+            <div className="course-catalog-main">
+            <section id="course-tree" className="course-domain-panel scroll-mt-[72px]">
+              {activeBranch && <BranchNode
+                branch={activeBranch}
+                query={matchesSearch(activeBranch.category.name, query) ? '' : query}
+                levelFilter={levelFilter}
+                selection={displaySelection}
+                onSelect={setSelection}
+                preselectedCodes={preselectedCodes}
+                gapCourseId={gapCourse?.id ?? focusCourse?.id}
+              />}
 
-              {visibleBranches.length === 0 ? (
-                <p className="mt-6 rounded-[14px] border border-dashed p-10 text-center text-sm" style={{ borderColor: '#cfd9ee', color: 'var(--po-muted)' }}>
-                  Không có miền hoặc khóa học nào khớp “{query}”.
-                </p>
-              ) : (
-                <ul role="tree" aria-label="Cây khóa học theo miền năng lực" className="mt-2">
-                  {visibleBranches.map((branch, index) => (
-                    <BranchNode
-                      key={branch.domain}
-                      branch={branch}
-                      last={index === visibleBranches.length - 1}
-                      open={!!query || !collapsed.has(branch.domain)}
-                      onToggle={() => toggle(branch.domain)}
-                      query={matchesSearch(branch.category.name, query) ? '' : query}
-                      levelFilter={levelFilter}
-                      selection={selection}
-                      onSelect={setSelection}
-                      preselectedCodes={preselectedCodes}
-                    />
-                  ))}
-                </ul>
-              )}
-
-              {others.length > 0 && !query && (
+              {visibleOthers.length > 0 && (
                 <div className="mt-6 border-t pt-4" style={{ borderColor: 'var(--po-line)' }}>
                   <p className="mb-2 text-xs font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>Ngoài khung TT02</p>
                   <div className="flex flex-wrap gap-2">
-                    {others.map((course) => (
+                    {visibleOthers.map((course) => (
                       <button
                         key={course.id}
+                        id={course.id === focusCourse?.id ? 'gap-target-course' : undefined}
                         type="button"
                         onClick={() => setSelection({ kind: 'course', id: course.id })}
-                        className="rounded-[10px] border px-3 py-2 text-left text-xs font-semibold"
+                        className={`rounded-[10px] border px-3 py-2 text-left text-xs font-semibold ${course.id === focusCourse?.id ? 'course-gap-target' : ''}`}
                         style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)' }}
                       >
                         {course.code} · {course.title}
@@ -325,21 +317,17 @@ export function OwnerCourseCatalogPage() {
             </section>
 
             {/* ── Detail ── */}
-            <aside className="lg:sticky lg:top-[72px]">
+            <aside className="course-catalog-detail lg:sticky lg:top-[84px]">
               {selectedCourse ? (
                 <CourseDetail
                   course={selectedCourse}
                   branch={selectedBranch}
-                  onClose={() => setSelection(null)}
                   onBuySeats={(c) => setPurchaseModalCourse(c)}
                 />
-              ) : selectedBranch ? (
-                <DomainDetail branch={selectedBranch} onSelect={setSelection} onClose={() => setSelection(null)} />
-              ) : (
-                <Legend />
-              )}
+              ) : <div className="course-detail-empty"><BookOpen size={26} /><strong>Chọn khóa học</strong><span>Chi tiết sẽ hiển thị tại đây.</span></div>}
             </aside>
-          </div>
+            </div>
+          </>
         )}
 
         {purchaseModalCourse && (
@@ -380,88 +368,55 @@ function ChipGroup({ label, children }: { label: string; children: React.ReactNo
 
 interface BranchNodeProps {
   branch: DomainBranch;
-  last: boolean;
-  open: boolean;
-  onToggle: () => void;
   query: string;
   levelFilter: number;
   selection: Selection;
   onSelect: (selection: Selection) => void;
   preselectedCodes: Set<string>;
+  gapCourseId?: string;
 }
 
-function BranchNode({ branch, last, open, onToggle, query, levelFilter, selection, onSelect, preselectedCodes }: BranchNodeProps) {
+function BranchNode({ branch, query, levelFilter, selection, onSelect, preselectedCodes, gapCourseId }: BranchNodeProps) {
   const courseCount = branch.slots.reduce((sum, slot) => sum + slot.courses.length, 0);
-  const domainSelected = selection?.kind === 'domain' && selection.domain === branch.domain;
-  const panelId = `course-branch-${branch.domain}`;
-
   return (
-    <li role="treeitem" aria-expanded={open} aria-selected={domainSelected} className="relative pl-7">
-      {/* Trunk and elbow of the tree */}
-      <span aria-hidden className="absolute left-[17px] top-0 w-px" style={{ height: last ? 30 : '100%', background: 'var(--po-line)' }} />
-      <span aria-hidden className="absolute left-[17px] top-[30px] h-px w-[11px]" style={{ background: 'var(--po-line)' }} />
-
-      <div
-        className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[14px] border px-3 py-2.5 transition-colors"
-        style={{
-          borderColor: domainSelected ? 'var(--po-accent)' : 'var(--po-line)',
-          background: domainSelected ? 'var(--po-soft)' : 'var(--po-raised)',
-        }}
-      >
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-controls={panelId}
-          aria-label={open ? `Thu gọn ${branch.category.name}` : `Mở ${branch.category.name}`}
-          className="grid size-6 place-items-center rounded-md hover:bg-white"
-          style={{ color: 'var(--po-muted)' }}
-        >
-          {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-        </button>
-        <button type="button" onClick={() => onSelect({ kind: 'domain', domain: branch.domain })} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-          <span className="grid size-8 shrink-0 place-items-center rounded-lg text-xs font-black" style={{ background: 'var(--po-soft)', color: 'var(--po-accent)' }}>
-            {String(branch.domain).padStart(2, '0')}
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate text-[14px] font-bold" style={{ color: 'var(--po-ink)' }}>{branch.category.name}</span>
-            <span className="block text-[11px]" style={{ color: 'var(--po-muted)' }}>
-              {courseCount} khóa{branch.assignedCount ? ` · ${branch.assignedCount} lượt phân công` : ''}
-            </span>
-          </span>
-        </button>
+    <div>
+      <div className="course-domain-panel-heading">
+        <span>{String(branch.domain).padStart(2, '0')}</span>
+        <div><h2>{branch.category.name}</h2><p>{courseCount} khóa học · 3 cấp độ</p></div>
       </div>
-
-      {open && (
-        <ol id={panelId} role="group" className="relative mt-2 grid gap-2 pb-1 pl-4 sm:grid-cols-[minmax(0,1fr)_16px_minmax(0,1fr)_16px_minmax(0,1fr)] sm:items-stretch sm:gap-1">
+        <ol role="group" aria-label={`Khóa học ${branch.category.name}`} className="course-level-grid">
           {branch.slots.map((slot, index) => (
             <LevelSlotNode
               key={slot.level}
               slot={slot}
+              domain={branch.domain}
               arrow={index > 0}
               query={query}
               levelFilter={levelFilter}
               selection={selection}
               onSelect={onSelect}
               preselectedCodes={preselectedCodes}
+              gapCourseId={gapCourseId}
             />
           ))}
         </ol>
-      )}
-    </li>
+    </div>
   );
 }
 
 interface LevelSlotNodeProps {
   slot: { level: number; courses: CourseListItem[] };
+  domain: number;
   arrow: boolean;
   query: string;
   levelFilter: number;
   selection: Selection;
   onSelect: (selection: Selection) => void;
   preselectedCodes: Set<string>;
+  gapCourseId?: string;
 }
 
-function LevelSlotNode({ slot, arrow, query, levelFilter, selection, onSelect, preselectedCodes }: LevelSlotNodeProps) {
+function LevelSlotNode({ slot, domain, arrow, query, levelFilter, selection, onSelect, preselectedCodes, gapCourseId }: LevelSlotNodeProps) {
   const tone = LEVEL_TONES[slot.level];
   const level = LEVELS.find((l) => l.level === slot.level)!;
   const pricing = levelPricing(slot.level);
@@ -479,6 +434,7 @@ function LevelSlotNode({ slot, arrow, query, levelFilter, selection, onSelect, p
         ) : slot.courses.map((course) => {
           const selected = selection?.kind === 'course' && selection.id === course.id;
           const isPreselected = preselectedCodes.has(canonicalCode(course.code));
+          const isGapTarget = course.id === gapCourseId;
           const dimmed = (levelFilter && levelFilter !== slot.level) || (query && !courseMatches(course, query));
           const duration = formatDuration(course.estimatedDurationMinutes);
           const totalSeats = (course.seatsPurchased ?? 0) + (course.seatsGranted ?? 0);
@@ -486,10 +442,11 @@ function LevelSlotNode({ slot, arrow, query, levelFilter, selection, onSelect, p
           return (
             <button
               key={course.id}
+              id={isGapTarget ? 'gap-target-course' : undefined}
               type="button"
               aria-pressed={selected}
               onClick={() => onSelect({ kind: 'course', id: course.id })}
-              className="flex h-full min-h-[96px] flex-col rounded-[14px] border px-3 py-2.5 text-left transition-all hover:-translate-y-px hover:shadow-md"
+              className={`flex h-full min-h-[96px] flex-col rounded-[14px] border px-3 py-2.5 text-left transition-all hover:-translate-y-px hover:shadow-md ${isGapTarget ? 'course-gap-target' : ''}`}
               style={{
                 borderColor: isPreselected ? '#f59e0b' : selected ? tone.fg : tone.ring,
                 background: isPreselected ? '#fffdf7' : selected ? tone.bg : 'var(--po-surface)',
@@ -501,6 +458,7 @@ function LevelSlotNode({ slot, arrow, query, levelFilter, selection, onSelect, p
                 opacity: dimmed ? 0.35 : 1,
               }}
             >
+              <CourseArtwork domain={domain} level={slot.level} compact />
               {isPreselected && (
                 <span className="mb-1.5 inline-flex w-fit items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-xs animate-pulse">
                   <Sparkles className="size-2.5" />
@@ -562,23 +520,21 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 function CourseDetail({
   course,
   branch,
-  onClose,
   onBuySeats: _onBuySeats,
 }: {
   course: CourseListItem;
   branch?: DomainBranch;
-  onClose: () => void;
-  onBuySeats: (course: CourseListItem) => void;
+  onBuySeats?: (course: CourseListItem) => void;
 }) {
   const level = courseLevel(course);
   const tone = LEVEL_TONES[level] ?? LEVEL_TONES[1];
   const pricing = levelPricing(level);
-  const next = branch?.slots.find((slot) => slot.level === level + 1)?.courses[0];
   const totalSeats = (course.seatsPurchased ?? 0) + (course.seatsGranted ?? 0);
   const isLicensed = level === 1 || course.hasLicense || totalSeats > 0;
 
   return (
-    <Panel onClose={onClose}>
+    <Panel>
+      <CourseArtwork domain={branch?.domain ?? 0} level={level} />
       <p className="pr-8 text-[11px] font-bold" style={{ color: 'var(--po-muted)' }}>
         {branch ? `Miền ${String(branch.domain).padStart(2, '0')} · ${branch.category.name}` : 'Ngoài khung TT02'}
       </p>
@@ -602,17 +558,9 @@ function CourseDetail({
         <Row label="Mã khóa">{course.code}</Row>
         <Row label="Học phần">{course.modules}</Row>
         {formatDuration(course.estimatedDurationMinutes) && <Row label="Thời lượng">{formatDuration(course.estimatedDurationMinutes)}</Row>}
-        <Row label="Học trước">{course.prerequisiteTitle ?? 'Không yêu cầu'}</Row>
-        <Row label="Học tiếp">{next?.title ?? (level >= 3 ? 'Bậc cao nhất' : '—')}</Row>
-        <Row label="Đơn giá">{pricing.formatted}</Row>
-        <Row label="Quyền truy cập">
-          {level === 1
-            ? 'Mở dùng thử miễn phí toàn bộ'
-            : isLicensed
-            ? `Đã sở hữu ${totalSeats} suất (${course.seatsAvailable ?? totalSeats} suất khả dụng)`
-            : 'Chưa mua suất (Chỉ xem mô tả & đề cương)'}
-        </Row>
-        <Row label="Đang phân công">{course.assignedCount} nhân viên</Row>
+        <Row label="Điều kiện">{course.prerequisiteTitle ?? 'Không yêu cầu'}</Row>
+        {level > 1 && isLicensed && <Row label="Suất khả dụng">{course.seatsAvailable ?? totalSeats}</Row>}
+        <Row label="Phân công">{course.assignedCount} nhân viên</Row>
       </dl>
 
       <div className="mt-4 grid gap-2">
@@ -652,60 +600,6 @@ function CourseDetail({
           </Link>
         )}
       </div>
-    </Panel>
-  );
-}
-
-function DomainDetail({ branch, onSelect, onClose }: { branch: DomainBranch; onSelect: (s: Selection) => void; onClose: () => void }) {
-  return (
-    <Panel onClose={onClose}>
-      <p className="text-[11px] font-bold" style={{ color: 'var(--po-muted)' }}>Miền {String(branch.domain).padStart(2, '0')}</p>
-      <h2 className="mt-1 pr-8 text-[20px] font-bold leading-tight" style={{ color: 'var(--po-ink)', letterSpacing: '-0.03em' }}>{branch.category.name}</h2>
-      <ol className="mt-4 grid gap-0">
-        {branch.slots.map((slot, index) => {
-          const tone = LEVEL_TONES[slot.level];
-          return (
-            <li key={slot.level} className="relative flex gap-3 pb-4 last:pb-0">
-              {index < branch.slots.length - 1 && <span aria-hidden className="absolute left-[11px] top-6 bottom-0 w-px" style={{ background: 'var(--po-line)' }} />}
-              <span className="grid size-6 shrink-0 place-items-center rounded-full text-[10px] font-black" style={{ background: tone.bg, color: tone.fg }}>{slot.level}</span>
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold" style={{ color: tone.fg }}>{levelName(slot.level)}</p>
-                {slot.courses.length ? slot.courses.map((course) => (
-                  <button key={course.id} type="button" onClick={() => onSelect({ kind: 'course', id: course.id })} className="block text-left text-[13px] font-semibold hover:underline" style={{ color: 'var(--po-ink)' }}>
-                    {course.title}
-                  </button>
-                )) : <p className="text-xs" style={{ color: 'var(--po-muted)' }}>Chưa có khóa học</p>}
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-    </Panel>
-  );
-}
-
-function Legend() {
-  return (
-    <Panel>
-      <h2 className="text-[15px] font-bold" style={{ color: 'var(--po-ink)' }}>Cách đọc cây</h2>
-      <ul className="mt-3 grid gap-2.5 text-xs leading-relaxed" style={{ color: 'var(--po-muted)' }}>
-        {LEVELS.map(({ level, code, name }) => (
-          <li key={level} className="flex items-start gap-2">
-            <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-black" style={{ background: LEVEL_TONES[level].bg, color: LEVEL_TONES[level].fg }}>{code}</span>
-            <span>
-              <b style={{ color: 'var(--po-ink)' }}>{name}</b> —{' '}
-              {level === 1 ? 'nền tảng, mở cho mọi nhân viên.' : level === 2 ? 'vận dụng trong công việc, cần hoàn thành bậc Cơ bản.' : 'làm chủ và hướng dẫn người khác, cần bậc Trung cấp.'}
-            </span>
-          </li>
-        ))}
-        <li className="flex items-start gap-2">
-          <span className="shrink-0 font-bold" style={{ color: '#a9b5cf' }}>→</span>
-          <span>Mũi tên là điều kiện tiên quyết: học xong khóa bên trái mới mở khóa bên phải.</span>
-        </li>
-      </ul>
-      <p className="mt-4 rounded-[10px] px-3 py-2 text-[11px]" style={{ background: 'var(--po-soft)', color: 'var(--po-accent)' }}>
-        Chọn một miền hoặc một khóa để xem lộ trình và phân công.
-      </p>
     </Panel>
   );
 }

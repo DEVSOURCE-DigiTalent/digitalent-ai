@@ -18,7 +18,7 @@ import '@/features/pulse-employee/pulse-roadmap.css';
 const BASIC_CODE = /^[A-Z]\d+-F$/;
 
 /**
- * OW-T2 · Học thử của chủ doanh nghiệp chưa tham gia: cảnh báo làm bài test trước khi học (tham gia như nhân viên với phòng
+ * OW-T2 · Học thử của chủ doanh nghiệp chưa tham gia: cảnh báo làm bài đánh giá trước khi học (tham gia như nhân viên với phòng
  * ban + vị trí), sáu khóa Cơ bản đang khóa và nút mua khóa. Đã tham gia → trang Học thử của cổng nhân viên (EM-02), nơi
  * cảnh báo tiếp tục tới khi mentor công bố kết quả.
  */
@@ -55,8 +55,8 @@ function JoinFirst() {
         // Token mới có role Nhân viên → trang tự chuyển sang Học thử của cổng nhân viên.
         onSuccess: ({ refreshed }) =>
           refreshed
-            ? toast.success(reported ? 'Bạn đã tham gia học thử.' : 'Bạn đã tham gia. Làm bài test để mở học thử.')
-            : toast.warning('Bạn đã tham gia. Hãy đăng xuất rồi đăng nhập lại để vào bài test.'),
+            ? toast.success(reported ? 'Bạn đã tham gia học thử.' : 'Bạn đã tham gia. Làm bài đánh giá để mở học thử.')
+            : toast.warning('Bạn đã tham gia. Hãy đăng xuất rồi đăng nhập lại để vào bài đánh giá.'),
         onError: (err) => toast.error(apiErrorMessage(err, 'Chưa tham gia được.')),
       },
     );
@@ -67,11 +67,11 @@ function JoinFirst() {
       <TrialLearningHead total={courses.length || 6} done={null} />
       <NoticeCard
         icon={<ClipboardList size={20} />}
-        title={reported ? 'Tham gia để học thử' : 'Làm bài test trước khi học'}
+        title={reported ? 'Tham gia để học thử' : 'Làm bài đánh giá trước khi học'}
         text={
           reported
             ? 'Kết quả đã công bố: tham gia là học được ngay.'
-            : 'Tham gia như nhân viên: làm bài test, mentor chấm, rồi học thử.'
+            : 'Làm bài đánh giá đầu vào và tham gia học thử.'
         }
         meta={program?.testDeadline && !reported ? `Hạn nộp ${formatWhen(program.testDeadline)}` : undefined}
       >
@@ -87,7 +87,7 @@ function JoinFirst() {
           <datalist id={`${listId}-d`}>{program?.departments.map((d) => <option key={d} value={d} />)}</datalist>
           <datalist id={`${listId}-p`}>{program?.positions.map((p) => <option key={p} value={p} />)}</datalist>
           <button type="submit" className="pu-btn pu-btn-primary" disabled={!ready || join.isPending}>
-            {join.isPending ? 'Đang xử lý…' : reported ? 'Tham gia học thử' : 'Tham gia làm bài test'} <ArrowRight size={15} aria-hidden />
+            {join.isPending ? 'Đang xử lý…' : reported ? 'Tham gia học thử' : 'Tham gia làm bài đánh giá'} <ArrowRight size={15} aria-hidden />
           </button>
         </form>
       </NoticeCard>

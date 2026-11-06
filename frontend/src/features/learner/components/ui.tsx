@@ -1,6 +1,7 @@
 import type { ElementType, ReactNode } from 'react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SectionLoading } from '@/components/shared/LoadingState';
 import { levelLabelVi } from '@/lib/competency-levels';
 import type { GapSeverity } from '@/services/personal-learning.service';
 
@@ -178,14 +179,7 @@ export function Stat({ label, value, hint, className }: { label: string; value: 
 }
 
 export function LoadingBlock({ label = 'Đang tải…', className }: { label?: string; className?: string }) {
-  return (
-    <div role="status" aria-live="polite" className={cn('grid gap-3', className)}>
-      <span className="sr-only">{label}</span>
-      {[0, 1, 2].map((row) => (
-        <div key={row} className="h-24 animate-pulse rounded-card bg-pt-card" style={{ animationDelay: `${row * 120}ms` }} />
-      ))}
-    </div>
-  );
+  return <div className={className}><SectionLoading label={label} /></div>;
 }
 
 export function ErrorBlock({ message, onRetry }: { message?: string; onRetry?: () => void }) {

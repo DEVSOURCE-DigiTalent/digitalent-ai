@@ -188,6 +188,38 @@ public class PlatformCatalogTests
     }
 
     [Fact]
+    public async Task PdfBlock_BlocksPublishUntilUploaded_AndAcceptsOnlyAPdfAsset()
+    {
+        await using var world = await CreateWorldAsync();
+        await world.CreateDraftAsync();
+        var courseId = await world.CourseIdAsync("M6-I");
+        var context = world.Context;
+
+        var withModule = await new AddPlatformCourseModuleUseCase(context, world.Editor, world.Reader)
+            .ExecuteAsync(new AddPlatformCourseModuleUseCaseInput { VersionNo = 2, CourseId = courseId, Title = "Slide bài giảng" });
+        var withBlock = await new AddPlatformModuleBlockUseCase(context, world.Editor, world.Reader)
+            .ExecuteAsync(new AddPlatformModuleBlockUseCaseInput { VersionNo = 2, CourseId = courseId, ModuleId = withModule.Modules.Last().ModuleId, Type = "PDF" });
+        var block = withBlock.Modules.Last().Blocks.Single();
+        block.Type.Should().Be(PlatformCatalog.BlockType.Pdf);
+
+        (await world.CheckAsync(2)).Items.Should().Contain(i => i.Level == PlatformPublishCheck.Block && i.Message.Contains("một khối PDF chưa tải tệp PDF"));
+
+        var image = new DigiTalent.Domain.Entities.PlatformAsset { Kind = PlatformCatalog.AssetKind.Image, FileName = "a.png", ContentType = "image/png", SizeBytes = 10, StorageKey = "a.png", UploadedByUserId = AdminId };
+        var pdf = new DigiTalent.Domain.Entities.PlatformAsset { Kind = PlatformCatalog.AssetKind.Pdf, FileName = "a.pdf", ContentType = "application/pdf", SizeBytes = 10, StorageKey = "a.pdf", UploadedByUserId = AdminId };
+        context.PlatformAssets.AddRange(image, pdf);
+        await context.SaveChangesAsync();
+
+        var update = new UpdatePlatformModuleBlockUseCase(context, world.Editor, world.Reader);
+        var wrongKind = () => update.ExecuteAsync(new UpdatePlatformModuleBlockUseCaseInput { VersionNo = 2, CourseId = courseId, BlockId = block.BlockId, AssetId = image.Id });
+        (await wrongKind.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("ASSET_KIND_MISMATCH");
+
+        var saved = await update.ExecuteAsync(new UpdatePlatformModuleBlockUseCaseInput { VersionNo = 2, CourseId = courseId, BlockId = block.BlockId, AssetId = pdf.Id });
+        var asset = saved.Modules.Last().Blocks.Single().Asset!;
+        asset.AssetId.Should().Be(pdf.Id);
+        asset.Kind.Should().Be(PlatformCatalog.AssetKind.Pdf);
+    }
+
+    [Fact]
     public async Task Publish_IsBlockedUntilTheChangedCoursesAreComplete_ThenMovesTheAnchor()
     {
         await using var world = await CreateWorldAsync();
@@ -430,8 +462,12 @@ public class PlatformCatalogTests
         asset.FileName.Should().Be("so-do.png");
         asset.Url.Should().StartWith($"platform/assets/{asset.AssetId}/content?exp=");
 
-        var pdf = () => upload.ExecuteAsync(new UploadPlatformAssetUseCaseInput { Content = Stream.Null, FileName = "a.pdf", ContentType = "application/pdf", Length = 10 });
-        (await pdf.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("UNSUPPORTED_FILE_TYPE");
+        var zip = () => upload.ExecuteAsync(new UploadPlatformAssetUseCaseInput { Content = Stream.Null, FileName = "a.zip", ContentType = "application/zip", Length = 10 });
+        (await zip.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("UNSUPPORTED_FILE_TYPE");
+        var bigPdf = () => upload.ExecuteAsync(new UploadPlatformAssetUseCaseInput { Content = Stream.Null, FileName = "a.pdf", ContentType = "application/pdf", Length = PlatformCatalog.AssetKind.MaxPdfBytes + 1 });
+        (await bigPdf.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("FILE_TOO_LARGE");
+        (await upload.ExecuteAsync(new UploadPlatformAssetUseCaseInput { Content = new MemoryStream(new byte[10]), FileName = "a.pdf", ContentType = "application/pdf", Length = 10 }))
+            .Kind.Should().Be(PlatformCatalog.AssetKind.Pdf);
         var big = () => upload.ExecuteAsync(new UploadPlatformAssetUseCaseInput { Content = Stream.Null, FileName = "a.jpg", ContentType = "image/jpeg", Length = PlatformCatalog.AssetKind.MaxImageBytes + 1 });
         (await big.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("FILE_TOO_LARGE");
 

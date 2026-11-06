@@ -13,6 +13,7 @@ import { SECONDARY_BUTTON } from '@/features/onboarding/components/styles';
 import { ChangeRoleModal } from '../components/MemberDialogs';
 import { AssignManagerDepartmentsModal } from '../components/AssignManagerDepartmentsModal';
 import { rolesLabel } from '../member-labels';
+import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 
 const PAGE_SIZE = 15;
 
@@ -137,7 +138,7 @@ export function RolesAccessPage() {
   const managerColumns: Column<MemberListItem>[] = [
     {
       key: 'name',
-      header: 'Quản lý (Manager)',
+      header: 'Quản lý',
       cell: (m) => (
         <div>
           <p className="font-medium text-slate-900">{m.fullName}</p>
@@ -193,7 +194,6 @@ export function RolesAccessPage() {
     <div className="space-y-6">
       <PageHeader
         title="Vai trò và phân quyền"
-        subtitle="Mô hình 3 vai trò chuẩn hóa của DigiTalent AI: Chủ doanh nghiệp, Quản lý và Nhân viên"
       />
 
       {/* Role Cards Summary */}
@@ -203,7 +203,6 @@ export function RolesAccessPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-base font-bold text-slate-900">{role.name}</h2>
-                <span className="text-xs font-mono text-slate-400">{role.role}</span>
               </div>
               <StatusBadge label={`${role.memberCount} người`} />
             </div>
@@ -226,28 +225,15 @@ export function RolesAccessPage() {
         value={activeTab}
         onChange={setActiveTab}
         tabs={[
-          { id: 'members', label: 'Thành viên & Vai trò' },
-          { id: 'managers', label: 'Phân công Quản lý phòng ban', badge: managers.length },
+          { id: 'members', label: 'Vai trò thành viên' },
+          { id: 'managers', label: 'Quản lý phòng ban', badge: managers.length },
         ]}
       >
         {activeTab === 'members' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-slate-900">Danh sách tài khoản & vai trò</h3>
-              <select
-                aria-label="Lọc vai trò"
-                value={roleFilter}
-                onChange={(e) => {
-                  setRoleFilter(e.target.value);
-                  setPage(1);
-                }}
-                className="px-3 py-1.5 border border-slate-300 rounded-md text-xs focus:ring-primary-500"
-              >
-                <option value="">Tất cả vai trò</option>
-                <option value={ROLES.OWNER}>Chủ doanh nghiệp</option>
-                <option value={ROLES.MANAGER}>Quản lý</option>
-                <option value={ROLES.EMPLOYEE}>Nhân viên</option>
-              </select>
+              <OwnerFilterSelect label="Lọc vai trò" value={roleFilter} onChange={(value) => { setRoleFilter(value); setPage(1); }} options={[{ value: '', label: 'Tất cả vai trò' }, { value: ROLES.OWNER, label: 'Chủ doanh nghiệp' }, { value: ROLES.MANAGER, label: 'Quản lý' }, { value: ROLES.EMPLOYEE, label: 'Nhân viên' }]} />
             </div>
 
             <DataTable
@@ -269,12 +255,8 @@ export function RolesAccessPage() {
         {activeTab === 'managers' && (
           <div className="space-y-4">
             <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-xs text-blue-900">
-              <p className="font-semibold text-blue-950 mb-1">Quy tắc phạm vi quản lý của Manager:</p>
-              <p>
-                Phạm vi nhóm của Manager được xác định duy nhất qua các phòng ban được phân công dưới đây.
-                Manager chỉ được theo dõi dữ liệu nhân sự, giao nhiệm vụ thực tế và chấm điểm minh chứng
-                cho nhân viên thuộc phòng ban mình phụ trách.
-              </p>
+              <p className="font-semibold text-blue-950 mb-1">Phạm vi quản lý</p>
+              <p>Quản lý chỉ có quyền theo dõi nhân sự, giao nhiệm vụ và đánh giá minh chứng trong phòng ban được phân công.</p>
             </div>
 
             <DataTable
@@ -282,8 +264,8 @@ export function RolesAccessPage() {
               data={managers}
               keyExtractor={(m) => m.id}
               isLoading={managersLoading}
-              emptyTitle="Chưa có Quản lý (Manager) nào"
-              emptyDescription="Hãy gán vai trò Quản lý cho thành viên ở tab 'Thành viên & Vai trò' trước."
+              emptyTitle="Chưa có quản lý nào"
+              emptyDescription="Phân công vai trò Quản lý trong mục Vai trò thành viên."
             />
           </div>
         )}

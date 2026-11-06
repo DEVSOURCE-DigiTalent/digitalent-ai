@@ -21,6 +21,7 @@ public class UploadPlatformAssetUseCase : IUseCase<UploadPlatformAssetUseCaseInp
         ["video/mp4"] = PlatformCatalog.AssetKind.Video,
         ["video/webm"] = PlatformCatalog.AssetKind.Video,
         ["video/quicktime"] = PlatformCatalog.AssetKind.Video,
+        ["application/pdf"] = PlatformCatalog.AssetKind.Pdf,
     };
 
     private readonly IApplicationDbContext _context;
@@ -40,13 +41,18 @@ public class UploadPlatformAssetUseCase : IUseCase<UploadPlatformAssetUseCaseInp
     {
         if (!Kinds.TryGetValue(input.ContentType, out var kind))
         {
-            throw new BadRequestException("Chỉ nhận ảnh JPG, PNG, WebP, GIF hoặc video MP4, WebM, MOV.", "file", "UNSUPPORTED_FILE_TYPE");
+            throw new BadRequestException("Chỉ nhận ảnh JPG, PNG, WebP, GIF, video MP4, WebM, MOV hoặc PDF.", "file", "UNSUPPORTED_FILE_TYPE");
         }
 
         if (input.Length <= 0 || input.Length > PlatformCatalog.AssetKind.MaxBytes(kind))
         {
-            throw new BadRequestException(
-                kind == PlatformCatalog.AssetKind.Video ? "Video tối đa 500 MB." : "Ảnh tối đa 10 MB.", "file", "FILE_TOO_LARGE");
+            var sizeMsg = kind switch
+            {
+                PlatformCatalog.AssetKind.Video => "Video tối đa 500 MB.",
+                PlatformCatalog.AssetKind.Pdf => "PDF tối đa 50 MB.",
+                _ => "Ảnh tối đa 10 MB.",
+            };
+            throw new BadRequestException(sizeMsg, "file", "FILE_TOO_LARGE");
         }
 
         var fileName = Path.GetFileName(input.FileName).Trim();

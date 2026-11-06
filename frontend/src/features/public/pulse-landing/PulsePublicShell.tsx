@@ -14,14 +14,14 @@ export function PulseBrand() {
 }
 
 export function PulsePublicShell({ children, compact = false }: { children: React.ReactNode; compact?: boolean }) {
-  usePageBackground('#f6f8fd');
+  usePageBackground('#070b16');
 
   return (
     <div className="pulse-public" lang="vi">
       <div className="pulse-public-ambient-glow pulse-public-ambient-1" aria-hidden="true" />
       <div className="pulse-public-ambient-glow pulse-public-ambient-2" aria-hidden="true" />
       <div className="pulse-public-ambient-glow pulse-public-ambient-3" aria-hidden="true" />
-      <a className="pulse-public-skip" href="#pulse-main">Bỏ qua điều hướng</a>
+      <a className="pulse-public-skip sr-only focus:not-sr-only" href="#pulse-main">Bỏ qua điều hướng</a>
       <header className="pulse-public-header">
         <div className={'pulse-public-wrap pulse-public-header-inner' + (compact ? ' pulse-public-header-inner-compact' : '')}>
           <PulseBrand />

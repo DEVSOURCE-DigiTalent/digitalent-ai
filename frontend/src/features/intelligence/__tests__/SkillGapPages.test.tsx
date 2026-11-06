@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -92,7 +93,7 @@ describe('SkillGapPage', () => {
 
     fireEvent.click(screen.getByText('EMP-0004'));
 
-    expect(screen.getByRole('dialog', { name: 'Chi tiết skill gap' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Chi tiết khoảng trống năng lực' })).toBeInTheDocument();
     expect(screen.getByText('Tính lại')).toBeInTheDocument();
   });
 });

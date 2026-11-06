@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import React, { StrictMode } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CourseModules } from './CourseModules';
@@ -35,5 +35,21 @@ describe('Owner xem bài trong React StrictMode', () => {
     await waitFor(() => expect(screen.getByRole('dialog')).toBeVisible());
     fireEvent(screen.getByRole('dialog'), new Event('cancel', { cancelable: true }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('chuyển bài trong hộp xem và cập nhật tiến độ', async () => {
+    render(<CourseModules courseCode="A1-F" modules={[{
+      id: 'module-1', title: 'Mô đun', sortOrder: 1,
+      lessons: [
+        { id: 'lesson-1', title: 'Bài đầu', lessonType: 'TEXT', sortOrder: 1 },
+        { id: 'lesson-2', title: 'Bài tiếp', lessonType: 'TEXT', sortOrder: 2 },
+      ],
+    }]} />);
+    fireEvent.click(screen.getAllByRole('button', { name: /Xem bài/ })[0]);
+    const progress = screen.getByRole('progressbar', { name: 'Tiến độ chương' });
+    expect(progress).toHaveAttribute('aria-valuenow', '1');
+    fireEvent.click(screen.getByRole('button', { name: 'Bài sau' }));
+    expect(progress).toHaveAttribute('aria-valuenow', '2');
+    expect(screen.getByText('Chương 1 · Bài 2 / 2')).toBeVisible();
   });
 });

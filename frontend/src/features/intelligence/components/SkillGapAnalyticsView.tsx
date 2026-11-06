@@ -35,7 +35,7 @@ export interface SkillGapAnalyticsViewProps {
 export function SkillGapAnalyticsView({
   departmentId: fixedDeptId,
   hideDepartmentFilter = false,
-  title = 'Phân tích khoảng trống năng lực (Skill Gap)',
+  title = 'Phân tích khoảng trống năng lực',
   subtitle = 'So sánh mức năng lực hiện tại với yêu cầu của vị trí, phân tích theo phòng ban, vị trí, cấp bậc và nhân sự',
   readOnly = false,
 }: SkillGapAnalyticsViewProps) {

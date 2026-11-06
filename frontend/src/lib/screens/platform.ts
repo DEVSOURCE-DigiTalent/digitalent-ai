@@ -25,11 +25,11 @@ export const PLATFORM_SCREENS: ScreenDef[] = [
   { id: 'PA-10', title: 'Nhật ký kiểm tra', path: '/platform/audit-log', roles: ADMIN, permission: 'audit_log.read_system', priority: 'P0', aliases: ['PLT-12'] },
   // Dùng thử doanh nghiệp (docs/specs/2026-10-27-enterprise-trial-assessment.md): yêu cầu chấm, phân công mentor; mentor chấm bài
   { id: 'PA-14', title: 'Dùng thử doanh nghiệp', path: '/platform/trials', roles: ADMIN, permission: 'platform.trial.manage', priority: 'P0' },
-
-
   { id: 'MT-01', title: 'Hàng chờ thẩm định', path: '/platform/course-reviews', roles: STAFF, permission: 'trial.review', priority: 'P0' },
   { id: 'MT-02', title: 'Thẩm định bài cuối khóa', path: '/platform/course-reviews/:submissionId', roles: STAFF, permission: 'trial.review', priority: 'P0' },
   { id: 'MT-03', title: 'Thẩm định năng lực đầu ra', path: '/platform/reviews', roles: STAFF, permission: 'trial.review', priority: 'P1' },
+  { id: 'PA-15', title: 'Góp ý người dùng', path: '/platform/feedbacks', roles: ADMIN, permission: 'feedback.read_all', priority: 'P0' },
+  { id: 'PA-16', title: 'Báo lỗi người dùng', path: '/platform/bug-reports', roles: ADMIN, permission: 'feedback.read_all', priority: 'P0' },
   { id: 'SHR-01', title: 'Hồ sơ của tôi', path: '/platform/account', roles: STAFF, priority: 'P1' },
   { id: 'SHR-02', title: 'Bảo mật', path: '/platform/account/security', roles: STAFF, priority: 'P1' },
   { id: 'SHR-03', title: 'Trung tâm thông báo', path: '/platform/notifications', roles: STAFF, priority: 'P1' },

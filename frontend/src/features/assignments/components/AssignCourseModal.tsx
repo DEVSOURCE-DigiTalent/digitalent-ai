@@ -1,4 +1,5 @@
-import { useId, useMemo, useState, useEffect } from 'react';
+import { useCallback, useId, useMemo, useState, useEffect } from 'react';
+import { BookOpen, BriefcaseBusiness, Building2, CalendarDays, CircleCheck, UsersRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Modal } from '@/components/shared';
 import { useCourseCatalog, useCreateAssignments } from '@/hooks/use-assignments';
@@ -12,6 +13,7 @@ import { JOB_GRADE_DEFAULT_NAMES } from '@/lib/terms';
 import type { CreateAssignmentResult } from '@/services/assignment.service';
 import { INPUT_CLASS, PRIMARY_BUTTON, SECONDARY_BUTTON } from '@/features/onboarding/components/styles';
 import { LEVEL_SUFFIX_LABELS, SKIP_REASON_LABELS } from '../assignment-labels';
+import './assign-course-modal.css';
 
 type TargetKind = 'employees' | 'department' | 'position' | 'grade' | 'gap';
 
@@ -21,13 +23,15 @@ const TARGET_CHOICES: ReadonlyArray<readonly [TargetKind, string]> = import.meta
       ['department', 'Cả phòng ban'],
       ['position', 'Mọi người ở một vị trí'],
       ['grade', 'Theo Cấp bậc (G1–G3)'],
-      ['gap', 'Từ khoảng trống năng lực (Skill Gap)'],
+      ['gap', 'Theo khoảng trống năng lực'],
     ]
   : [
       ['employees', 'Từng nhân viên'],
       ['department', 'Cả phòng ban'],
       ['position', 'Mọi người ở một vị trí'],
     ];
+
+const TARGET_ICONS = { employees: UsersRound, department: Building2, position: BriefcaseBusiness, grade: UsersRound, gap: CircleCheck };
 
 interface AssignCourseModalProps {
   open: boolean;
@@ -52,9 +56,10 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
   const create = useCreateAssignments();
   const courses = useCourseCatalog({ status: 'PUBLISHED' }, open).data?.items ?? [];
   const departments = useDepartments({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
-  const positions = useJobPositions({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
+  const positionsData = useJobPositions({ pageSize: 100, status: 'ACTIVE' }).data?.items;
+  const positions = useMemo(() => positionsData ?? [], [positionsData]);
   const { data: employeesData, isLoading: employeesLoading } = useAllEmployees({ status: 'ACTIVE' }, open);
-  const employees = employeesData ?? [];
+  const employees = useMemo(() => employeesData ?? [], [employeesData]);
   const { data: skillGapsData } = useSkillGapRuns({ pageSize: 100 }, open && import.meta.env.VITE_USE_MOCK === 'true');
 
   const [courseId, setCourseId] = useState(initialCourse ?? '');
@@ -101,10 +106,10 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
     return map;
   }, [positions]);
 
-  const getEmployeeGrade = (e: { jobPositionId?: string; positionId?: string }) => {
+  const getEmployeeGrade = useCallback((e: { jobPositionId?: string; positionId?: string }) => {
     const posId = e.jobPositionId || e.positionId;
     return posId ? posGradeMap.get(posId) : undefined;
-  };
+  }, [posGradeMap]);
 
   const visibleEmployees = useMemo(
     () => employees.filter((e) => !search || e.fullName.toLowerCase().includes(search.toLowerCase()) || e.employeeCode.toLowerCase().includes(search.toLowerCase())),
@@ -113,7 +118,7 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
 
   const gradeEmployees = useMemo(
     () => employees.filter((e) => getEmployeeGrade(e) === selectedGrade),
-    [employees, selectedGrade, posGradeMap]
+    [employees, selectedGrade, getEmployeeGrade]
   );
 
   const selectedDeptEmployees = useMemo(
@@ -141,6 +146,7 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
     if (kind === 'gap') return gapEmployees.length > 0;
     return false;
   }, [kind, employeeIds, selectedDepartmentIds, selectedDeptEmployees, jobPositionId, gradeEmployees, gapEmployees]);
+  const targetCount = kind === 'employees' ? employeeIds.length : kind === 'department' ? selectedDeptEmployees.length : kind === 'position' ? employees.filter((employee) => employee.jobPositionId === jobPositionId || employee.positionId === jobPositionId).length : kind === 'grade' ? gradeEmployees.length : gapEmployees.length;
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -162,11 +168,10 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
     <Modal
       open={open}
       onClose={onClose}
-      size="lg"
+      size="xl"
+      className="assign-course-dialog"
       title="Giao khóa học"
-      description={import.meta.env.VITE_USE_MOCK === 'true'
-        ? 'Giao khóa học chuẩn theo nhân viên, phòng ban, vị trí, cấp bậc hoặc khoảng trống năng lực.'
-        : 'Giao khóa học đã xuất bản cho nhân viên, phòng ban hoặc vị trí công việc.'}
+      description="Chọn khóa học, đối tượng nhận và hạn hoàn thành."
       footer={
         <>
           <button type="button" onClick={onClose} className={SECONDARY_BUTTON}>{result ? 'Đóng' : 'Hủy'}</button>
@@ -191,34 +196,40 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
           )}
         </div>
       ) : (
-        <div className="grid gap-5">
-          <div className="grid gap-1.5">
-            <label htmlFor={`${base}-course`} className="text-sm font-medium text-slate-700">Khóa học</label>
+        <div className="assign-course-form">
+          <section className="assign-course-step assign-course-step--course">
+            <div className="assign-course-step-heading"><span>01</span><div><h3>Chọn khóa học</h3><p>Khóa học đã xuất bản trong danh mục</p></div></div>
+            <label htmlFor={`${base}-course`} className="sr-only">Khóa học</label>
             <select id={`${base}-course`} value={courseId} onChange={(e) => setCourseId(e.target.value)} className={INPUT_CLASS}>
               <option value="">Chọn khóa học…</option>
               {courses.map((c) => (
                 <option key={c.id} value={c.id}>{c.code} · {c.title} ({LEVEL_SUFFIX_LABELS[c.level]})</option>
               ))}
             </select>
-          </div>
+            {selectedCourse && <div className="assign-course-selected"><BookOpen size={18} /><div><strong>{selectedCourse.title}</strong><span>{selectedCourse.code} · {LEVEL_SUFFIX_LABELS[selectedCourse.level]}</span></div><CircleCheck size={18} /></div>}
+          </section>
 
-          <fieldset>
-            <legend className="mb-2 text-sm font-medium text-slate-700">Giao cho</legend>
-            <div className="flex flex-wrap gap-4 text-sm">
-              {TARGET_CHOICES.map(([value, label]) => (
-                <label key={value} className="inline-flex items-center gap-2">
-                  <input type="radio" name={`${base}-kind`} checked={kind === value} onChange={() => setKind(value)} className="size-4 accent-primary-600" />
-                  {label}
-                </label>
-              ))}
+          <fieldset className="assign-course-step assign-course-step--audience">
+            <legend className="sr-only">Giao cho</legend>
+            <div className="assign-course-step-heading"><span>02</span><div><h3>Giao cho</h3><p>Chọn nhân viên, phòng ban hoặc vị trí</p></div></div>
+            <div className="assign-course-target-choices">
+              {TARGET_CHOICES.map(([value, label]) => {
+                const Icon = TARGET_ICONS[value];
+                return <label key={value} className="assign-course-target-choice">
+                  <input type="radio" name={`${base}-kind`} checked={kind === value} onChange={() => setKind(value)} />
+                  <Icon size={19} /><span>{label}</span>
+                </label>;
+              })}
             </div>
           </fieldset>
 
+          <div className="assign-course-target-panel">
           {kind === 'employees' && (
             <div className="grid gap-2">
+              <div className="assign-course-panel-heading"><strong>Nhân viên</strong><span>{employeeIds.length} đã chọn</span></div>
               <label htmlFor={`${base}-search`} className="sr-only">Tìm nhân viên</label>
               <input id={`${base}-search`} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm theo tên hoặc mã" className={INPUT_CLASS} />
-              <ul aria-label="Nhân viên" className="max-h-52 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200">
+              <ul aria-label="Nhân viên" className="assign-course-person-list divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200">
                 {visibleEmployees.map((e) => (
                   <li key={e.id}>
                     <label className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm hover:bg-slate-50">
@@ -231,12 +242,12 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
                 {visibleEmployees.length === 0 && <li className="px-3 py-4 text-sm text-slate-500">Không có nhân viên phù hợp.</li>}
               </ul>
               {employeesLoading && <p className="text-xs text-slate-500">Đang tải danh sách nhân viên…</p>}
-              <p className="text-xs text-slate-500">Đã chọn {employeeIds.length} người.</p>
             </div>
           )}
 
           {kind === 'department' && (
             <div className="grid gap-2">
+              <div className="assign-course-panel-heading"><strong>Phòng ban</strong><span>{selectedDepartmentIds.length} đã chọn</span></div>
               <div className="flex items-center justify-between text-xs text-slate-600">
                 <span className="font-medium text-slate-700">Chọn một hoặc nhiều phòng ban:</span>
                 <div className="flex items-center gap-2">
@@ -352,12 +363,15 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
               <p className="text-xs text-slate-500">Đã chọn {gapEmployees.length} người.</p>
             </div>
           )}
-
-          <div className="grid gap-1.5">
-            <label htmlFor={`${base}-due`} className="text-sm font-medium text-slate-700">Hạn hoàn thành</label>
-            <input id={`${base}-due`} type="date" min={today} value={dueDate} onChange={(e) => setDueDate(e.target.value)} aria-describedby={`${base}-due-hint`} className={INPUT_CLASS} />
-            <p id={`${base}-due-hint`} className="text-xs text-slate-500">Để trống để dùng thời hạn mặc định trong Cài đặt tổ chức.</p>
           </div>
+
+          <aside className="assign-course-side-panel">
+            <div className="assign-course-step-heading"><span>03</span><div><h3>Hạn hoàn thành</h3><p>Có thể để trống để dùng hạn mặc định</p></div></div>
+            <label htmlFor={`${base}-due`} className="sr-only">Hạn hoàn thành</label>
+            <input id={`${base}-due`} type="date" min={today} value={dueDate} onChange={(e) => setDueDate(e.target.value)} aria-describedby={`${base}-due-hint`} className={INPUT_CLASS} />
+            <p id={`${base}-due-hint`} className="text-xs text-slate-500">Hạn mặc định được thiết lập trong Cài đặt tổ chức.</p>
+            <div className="assign-course-review"><strong>Thông tin phân công</strong><span><BookOpen size={15} /> {selectedCourse?.title || 'Chưa chọn khóa học'}</span><span><UsersRound size={15} /> {hasTarget ? `${targetCount} nhân viên` : 'Chưa chọn người nhận'}</span><span><CalendarDays size={15} /> {dueDate ? new Date(`${dueDate}T00:00:00`).toLocaleDateString('vi-VN') : 'Hạn mặc định'}</span></div>
+          </aside>
 
           {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
         </div>

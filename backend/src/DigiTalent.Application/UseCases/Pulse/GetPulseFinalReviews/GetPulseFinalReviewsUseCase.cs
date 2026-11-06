@@ -208,8 +208,9 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
 
         // AI evaluation: gọi Gemini song song cho tất cả bài PENDING (đánh giá bài + phát hiện gian lận)
         var defaultCriteria = PulseRules.FinalCriteria.Select(c => c.Title).ToList();
-        var aiTasks = items
-            .Where(i => i.Status == PulseFinalStatus.Pending && i.Attempts.Count > 0)
+        var toEvaluate = items.Where(i => i.Status == PulseFinalStatus.Pending && i.Attempts.Count > 0).ToList();
+        var courseText = await PulseCourseText.LoadAsync(_context, toEvaluate.Select(i => i.CourseId).Distinct().ToList());
+        var aiTasks = toEvaluate
             .Select(async item =>
             {
                 var evidence = item.Attempts[^1].EvidenceText ?? "";
@@ -225,7 +226,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                     events = evts.Select(e => new ProctoringEventInfo(e.Kind, e.OffsetMs, e.DurationMs)).ToList();
                 }
 
-                item.AiHint = await _gemini.EvaluateEvidenceAsync(evidence, prompt, criteria, events);
+                item.AiHint = await _gemini.EvaluateEvidenceAsync(evidence, prompt, criteria, events, courseText.GetValueOrDefault(item.CourseId));
             })
             .ToList();
         await Task.WhenAll(aiTasks);

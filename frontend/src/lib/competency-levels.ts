@@ -52,7 +52,7 @@ export function levelLabelViFromDigComp(digCompLevel: number): string {
 const SKILL_GAP_REASON_MESSAGES: Record<string, string> = {
   NO_JOB_POSITION: 'Nhân viên chưa có vị trí công việc.',
   NO_ACTIVE_REQUIREMENT_SET: 'Vị trí của nhân viên chưa có bộ yêu cầu đang áp dụng.',
-  EMPLOYEE_NOT_ACTIVE: 'Chỉ tính được skill gap cho nhân viên đang hoạt động.',
+  EMPLOYEE_NOT_ACTIVE: 'Chỉ phân tích được khoảng trống năng lực của nhân viên đang hoạt động.',
   REQUIREMENT_SET_NOT_ACTIVE: 'Chỉ dùng được bộ yêu cầu đang áp dụng.',
   BATCH_TOO_LARGE: 'Quá nhiều nhân viên trong một lần tính: hãy lọc theo phòng ban hoặc vị trí.',
 };

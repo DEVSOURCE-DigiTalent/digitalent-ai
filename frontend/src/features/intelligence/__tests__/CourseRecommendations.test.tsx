@@ -1,5 +1,7 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import * as recommendationHooks from '@/hooks/use-recommendations';
 import type { CourseRecommendation, CourseRecommendationsResult } from '@/services/intelligence.service';
 import { CourseRecommendations } from '../components/CourseRecommendations';
@@ -50,7 +52,7 @@ describe('CourseRecommendations', () => {
   });
 
   it.each([
-    ['NO_SKILL_GAP_RUN', 'Chưa có phân tích skill gap'],
+    ['NO_SKILL_GAP_RUN', 'Chưa có kết quả khoảng trống năng lực'],
     ['NO_GAP', 'Đã đạt mọi năng lực của vị trí'],
     ['NO_MATCHING_COURSE', 'Chưa có khóa học phù hợp với khoảng trống hiện tại'],
     ['NO_EMPLOYEE_PROFILE', 'Chưa có hồ sơ nhân viên'],
@@ -86,5 +88,15 @@ describe('CourseRecommendations', () => {
 
     fireEvent.click(screen.getByText('Thử lại'));
     expect(refetch).toHaveBeenCalled();
+  });
+
+  it('shows three compact recommendations before expanding', () => {
+    const items = Array.from({ length: 5 }, (_, index) => recommendation({ courseId: `k${index}`, courseCode: `M${index}-F`, title: `Khóa ${index + 1}` }));
+    vi.spyOn(recommendationHooks, 'useCourseRecommendations').mockReturnValue(queryResult({ data: result({ items }) }));
+    render(<MemoryRouter><CourseRecommendations compact employeeId="emp-9" /></MemoryRouter>);
+    expect(screen.getAllByRole('article')).toHaveLength(3);
+    fireEvent.click(screen.getByRole('button', { name: 'Xem thêm 2 khóa học' }));
+    expect(screen.getAllByRole('article')).toHaveLength(5);
+    expect(screen.getByRole('link', { name: 'Xem khóa học Khóa 1' }).getAttribute('href')).toBe('/enterprise/courses?focus=M0-F');
   });
 });

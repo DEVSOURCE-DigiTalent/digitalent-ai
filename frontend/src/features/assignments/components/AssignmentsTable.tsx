@@ -6,6 +6,7 @@ import { SECONDARY_BUTTON } from '@/features/onboarding/components/styles';
 import { AssignmentStatusBadge } from '../assignment-labels';
 
 interface AssignmentsTableProps {
+  className?: string;
   rows: AssignmentRow[];
   isLoading: boolean;
   /** Shows a cancel button on open assignments. */
@@ -23,19 +24,22 @@ interface AssignmentsTableProps {
 }
 
 /** The list of course assignments shared by the assignment and the training monitor screens. */
-export function AssignmentsTable({ rows, isLoading, onCancel, search, onSearchChange, filters, toolbarActions, pageInfo, employeeLink = true, employeeLinkPrefix = '/enterprise/members', assignmentLinkPrefix }: AssignmentsTableProps) {
+export function AssignmentsTable({ rows, isLoading, onCancel, search, onSearchChange, filters, toolbarActions, pageInfo, className, employeeLink = true, employeeLinkPrefix = '/enterprise/members', assignmentLinkPrefix }: AssignmentsTableProps) {
   const columns: Column<AssignmentRow>[] = [
     {
       key: 'employee',
       header: 'Nhân viên',
       cell: (a) => (
-        <div>
+        <div className="assignment-employee">
+          <span className="assignment-avatar" aria-hidden="true">{a.employeeName.split(/\s+/).slice(-2).map((part) => part.charAt(0)).join('').toUpperCase()}</span>
+          <div>
           {employeeLink ? (
             <Link to={`${employeeLinkPrefix}/${a.employeeId}`} className="font-medium text-slate-900 hover:underline">{a.employeeName}</Link>
           ) : (
             <span className="font-medium text-slate-900">{a.employeeName}</span>
           )}
           <p className="text-xs text-slate-500">{a.departmentName}</p>
+          </div>
         </div>
       ),
     },
@@ -45,9 +49,9 @@ export function AssignmentsTable({ rows, isLoading, onCancel, search, onSearchCh
       cell: (a) => (
         <div>
           {assignmentLinkPrefix ? (
-            <Link to={`${assignmentLinkPrefix}/${a.id}`} className="text-slate-900 hover:underline">{a.courseTitle}</Link>
-          ) : <p className="text-slate-900">{a.courseTitle}</p>}
-          <p className="font-mono text-xs text-slate-500">{a.courseCode}{a.source === 'SKILL_GAP' || a.source === 'RECOMMENDATION' ? ' · từ đề xuất' : ''}</p>
+            <Link to={`${assignmentLinkPrefix}/${a.id}`} className="assignment-course-name hover:underline">{a.courseTitle}</Link>
+          ) : <p className="assignment-course-name">{a.courseTitle}</p>}
+          <p className="assignment-course-code font-mono">{a.courseCode}{a.source === 'SKILL_GAP' || a.source === 'RECOMMENDATION' ? ' · từ đề xuất' : ''}</p>
         </div>
       ),
     },
@@ -83,6 +87,7 @@ export function AssignmentsTable({ rows, isLoading, onCancel, search, onSearchCh
 
   return (
     <DataTable
+      className={`owner-filter-table ${className ?? ''}`}
       columns={columns}
       data={rows}
       keyExtractor={(a) => a.id}

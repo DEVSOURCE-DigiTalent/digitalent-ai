@@ -35,8 +35,8 @@ export function LiveInternalCourseDetailPage() {
       </div>
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
         {isInternalCode
-          ? 'BE2 hiện chỉ trả về số học phần, chưa trả danh sách nội dung từng học phần cho khóa nội bộ. Danh sách học viên riêng của khóa cũng chưa có API.'
-          : 'API khóa nội bộ hiện trả cả khóa chuẩn của tổ chức. Khóa này không có mã INT- nên chức năng chỉnh sửa nội bộ được ẩn để tránh thay đổi khóa chuẩn.'}
+          ? 'Hiện chưa thể xem nội dung học phần và danh sách học viên của khóa này.'
+          : 'Khóa học chuẩn được quản lý trong danh mục khóa học.'}
       </div>
     </div>
   );

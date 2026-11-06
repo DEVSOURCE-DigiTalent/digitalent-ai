@@ -1,4 +1,4 @@
-export interface LessonMedia { kind: 'IMAGE' | 'VIDEO'; url: string; alt: string }
+export interface LessonMedia { kind: 'IMAGE' | 'VIDEO' | 'PDF'; url: string; alt: string }
 export interface CourseFinalContent { title: string; promptHtml: string; criteria: string[] }
 
 export function lessonMediaUrl(url: string) {

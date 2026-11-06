@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { SectionLoading } from '@/components/shared/LoadingState';
 import { REASON_MIN, errorMessage } from './pulse-format';
 
 /**
@@ -58,12 +59,7 @@ export function Footer() {
 }
 
 export function Loading() {
-  return (
-    <div className="stack" aria-busy="true" aria-label="Đang tải">
-      <div className="pa-skeleton" />
-      <div className="pa-skeleton" />
-    </div>
-  );
+  return <SectionLoading label="Đang tải nội dung" count={2} />;
 }
 
 export function LoadError({ error }: { error: unknown }) {

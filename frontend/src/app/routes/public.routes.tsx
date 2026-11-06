@@ -4,6 +4,7 @@ import { PortalSelectorPage, RootRoute } from '../../features/portal/PortalSelec
 import { LoginPage } from '../../features/auth/pages/LoginPage';
 import { ForbiddenPage } from '../../features/auth/pages/ForbiddenPage';
 import { lazyPage } from './lazy-page';
+import { PageLoading } from '../../components/shared/LoadingState';
 
 const CareerCatalogPage = lazyPage(() => import('../../features/public/career-catalog/CareerCatalogPage'), 'CareerCatalogPage');
 const PricingPage = lazyPage(() => import('../../features/commerce/pages/PricingPage'), 'PricingPage');
@@ -22,7 +23,7 @@ const PublicVerifyPage = lazyPage(() => import('../../features/public/pages/Publ
 const EnterpriseLandingPage = lazy(() => import('../../features/public/pulse-landing/PulseBusinessLandingPage').then(module => ({ default: module.PulseBusinessLandingPage })));
 const EnterpriseSolutionPage = lazy(() => import('../../features/public/pulse-landing/PulseBusinessSolutionPage').then(module => ({ default: module.PulseBusinessSolutionPage })));
 
-const landingFallback = <div className="min-h-screen bg-[#f6f8fd]" />;
+const landingFallback = <PageLoading label="Đang tải trang" />;
 
 /** Old bookmarks and emails still point at /business/login and /individual/login; keep their returnTo. */
 function LegacyLoginRedirect() {

@@ -139,7 +139,7 @@ export function TrainingBatchDetailPage() {
               </span>
               <StatusBadge label={statusLabel(batch.status)} variant={statusVariant(batch.status)} />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">{batch.name}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.03em] heading-gradient">{batch.name}</h1>
             <p className="text-sm text-slate-500">
               Thời gian: <strong className="text-slate-700">{batch.startDate} → {batch.endDate}</strong>
               {batch.createdByName && ` · Tạo bởi ${batch.createdByName}`}

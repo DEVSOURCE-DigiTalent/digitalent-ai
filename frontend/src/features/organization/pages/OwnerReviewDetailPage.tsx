@@ -8,6 +8,8 @@ import { usePracticalTask, useSubmissionDetail, useEvaluateSubmission } from '@/
 import type { RubricCriterion } from '@/services/task.service';
 import { apiErrorMessage, formatDate } from '@/lib/utils';
 import { PULSE_TOKENS } from '../owner-theme';
+import { PageLoading } from '@/components/shared/LoadingState';
+import './owner-operations.css';
 
 const inputStyle: React.CSSProperties = {
   borderColor: 'var(--po-line)',
@@ -29,7 +31,7 @@ export function OwnerReviewDetailPage() {
   const [decision, setDecision] = useState<'APPROVED' | 'REVISION_REQUESTED' | 'REJECTED'>('APPROVED');
 
   useEffect(() => {
-    if (task?.rubricCriteria) {
+    if (Array.isArray(task?.rubricCriteria)) {
       const init: Record<string, number> = {};
       task.rubricCriteria.forEach((r: RubricCriterion) => { init[r.id] = 0; });
       setRubricScores(init);
@@ -42,6 +44,10 @@ export function OwnerReviewDetailPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!submissionId || alreadyEvaluated) return;
+    if (!Array.isArray(task?.rubricCriteria) || task.rubricCriteria.length === 0) {
+      toast.error('Nhiệm vụ chưa có tiêu chí chấm. Vui lòng bổ sung trước khi đánh giá.');
+      return;
+    }
     try {
       await evaluateMutation.mutateAsync({
         id: submissionId,
@@ -61,14 +67,7 @@ export function OwnerReviewDetailPage() {
   };
 
   if (subLoading || taskLoading) {
-    return (
-      <div
-        className="po-owner -m-4 md:-m-6 min-h-screen flex items-center justify-center"
-        style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
-      >
-        <p className="text-sm" style={{ color: 'var(--po-muted)' }}>Đang tải…</p>
-      </div>
-    );
+    return <div className="po-owner -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label="Đang tải bài đánh giá" variant="detail" /></div>;
   }
 
   if (!task || !submission) {
@@ -99,6 +98,7 @@ export function OwnerReviewDetailPage() {
     );
   }
 
+  const rubricCriteria = Array.isArray(task.rubricCriteria) ? task.rubricCriteria : [];
   const DECISIONS = [
     { key: 'APPROVED' as const, label: 'Đạt bài thực hành', desc: 'Ghi nhận kết quả', Icon: CheckCircle2, colors: { active: '#16a34a', bg: '#ecfdf5', border: '#bbf7d0' } },
     { key: 'REVISION_REQUESTED' as const, label: 'Yêu cầu sửa lại', desc: 'Cần bổ sung minh chứng', Icon: AlertTriangle, colors: { active: '#d97706', bg: '#fef3c7', border: '#fdddb6' } },
@@ -107,33 +107,33 @@ export function OwnerReviewDetailPage() {
 
   return (
     <div
-      className="po-owner -m-4 md:-m-6 min-h-screen"
+      className="po-owner owner-operations owner-operations--review-detail -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
         backgroundImage: 'radial-gradient(ellipse 80% 55% at 50% 0%, var(--po-glow) 0%, transparent 65%)',
       }}
     >
-      <div className="px-4 md:px-6 pt-6 pb-8 mx-auto" style={{ maxWidth: 900 }}>
+      <div className="owner-operations__shell">
         <Link
           to={`/enterprise/tasks/${taskId}`}
-          className="inline-flex items-center gap-1.5 text-[11px] font-bold mb-4 transition-opacity hover:opacity-70"
+          className="owner-operations__back"
           style={{ color: 'var(--po-muted)' }}
         >
-          <ArrowLeft className="size-3" /> Quay lại nhiệm vụ
+          <ArrowLeft className="size-4" /> Quay lại nhiệm vụ
         </Link>
 
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--po-ink)', letterSpacing: '-0.04em' }}>
-          Chấm điểm: {submission.employeeName}
+        <h1 className="owner-operations__review-title heading-gradient">
+          Đánh giá bài nộp
         </h1>
-        <p className="mt-0.5 text-xs" style={{ color: 'var(--po-muted)' }}>
-          {task.title} · Nộp ngày {formatDate(submission.submittedAt)}
+        <p className="owner-operations__review-subtitle" style={{ color: 'var(--po-muted)' }}>
+          {submission.employeeName} · {task.title} · Nộp {formatDate(submission.submittedAt)}
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <form onSubmit={handleSubmit} className="owner-operations__review-form">
           {/* Evidence */}
           <section
-            className="rounded-[22px] border p-6 space-y-4"
+            className="owner-operations__review-evidence rounded-[22px] border p-6 space-y-4"
             style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)', boxShadow: '0 10px 35px rgba(29,48,102,.025)' }}
           >
             <div className="flex items-center justify-between" style={{ borderBottom: '1px solid var(--po-line)', paddingBottom: 12 }}>
@@ -147,7 +147,7 @@ export function OwnerReviewDetailPage() {
                 className="text-[9px] font-black px-1.5 py-0.5 rounded"
                 style={{ background: 'var(--po-soft)', color: 'var(--po-accent-strong)' }}
               >
-                LV{task.targetLevel}
+                {task.targetLevel > 0 ? `Cấp ${task.targetLevel}` : 'Nhiệm vụ thực tế'}
               </span>
             </div>
 
@@ -217,7 +217,7 @@ export function OwnerReviewDetailPage() {
               >
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>
-                    Tiêu chí chấm (Rubric)
+                    Tiêu chí đánh giá
                   </p>
                   <div className="text-right">
                     <span className="text-xl font-black" style={{ color: 'var(--po-accent)' }}>{totalScore}</span>
@@ -225,7 +225,8 @@ export function OwnerReviewDetailPage() {
                   </div>
                 </div>
 
-                {task.rubricCriteria.map((r: RubricCriterion) => (
+                {rubricCriteria.length === 0 && <p className="owner-operations__empty-inline">Nhiệm vụ chưa có tiêu chí đánh giá. Hãy bổ sung trước khi chấm bài.</p>}
+                {rubricCriteria.map((r: RubricCriterion) => (
                   <div
                     key={r.id}
                     className="rounded-[11px] border p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
@@ -315,7 +316,7 @@ export function OwnerReviewDetailPage() {
             {!alreadyEvaluated && (
               <button
                 type="submit"
-                disabled={evaluateMutation.isPending}
+                disabled={evaluateMutation.isPending || rubricCriteria.length === 0}
                 className="inline-flex items-center gap-1.5 rounded-[11px] px-5 py-2.5 text-xs font-extrabold transition-transform hover:-translate-y-0.5 disabled:opacity-50"
                 style={{ background: 'var(--po-accent)', color: '#fff' }}
               >

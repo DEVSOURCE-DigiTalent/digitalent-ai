@@ -84,15 +84,15 @@ function PreAssessmentStatus({ data }: { data: PulsePreAssessment }) {
           <Pill tone={tone}>{PRE_LABELS[status]}</Pill>
         </div>
         <h1 className="pu-panel-title">
-          {status === 'PENDING' ? 'Bài của bạn đang chờ Hội đồng khảo thí thẩm định.'
+          {status === 'PENDING' ? 'Bài của bạn đang chờ đánh giá.'
             : status === 'PASSED' ? `Đạt — ${course.code} được công nhận.`
             : status === 'NOT_YET' ? 'Chưa đạt — hãy học khóa này.'
             : 'Bài đánh giá chưa mở.'}
         </h1>
         <p className="pu-panel-desc">
-          {status === 'PENDING' ? 'Hội đồng khảo thí trực tiếp thẩm định bài làm cùng bản ghi màn hình, camera và micro. Kết quả đánh giá và nhận xét chi tiết sẽ hiện ở đây khi hoàn tất.'
+          {status === 'PENDING' ? 'Kết quả và nhận xét sẽ hiển thị tại đây khi hoàn tất.'
             : status === 'PASSED' ? 'Bạn không cần học khóa này. Khóa tiếp theo của lĩnh vực đã mở trên lộ trình.'
-            : status === 'NOT_YET' ? 'Học các mô-đun của khóa, rồi làm bài cuối khóa (cũng có giám sát, tối đa 2 lần nộp).'
+            : status === 'NOT_YET' ? 'Hoàn thành bài học và bài cuối khóa. Bạn có tối đa 2 lần nộp.'
             : data.closedMessage}
         </p>
         <div className="pu-row">

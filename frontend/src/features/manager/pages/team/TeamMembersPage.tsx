@@ -45,7 +45,7 @@ export function TeamMembersPage() {
           <EmptyState
             icon={<Users className="size-12 text-slate-400 mx-auto" />}
             title="Bạn chưa được phân công phụ trách phòng ban nào"
-            description="Tài khoản quản lý của bạn hiện chưa được gắn với phòng ban nào trong tổ chức. Vui lòng liên hệ Quản trị viên (Owner) để được phân công quản lý bộ phận."
+            description="Bạn chưa được phân công quản lý phòng ban. Hãy liên hệ chủ doanh nghiệp."
           />
         </div>
       </div>
@@ -136,7 +136,7 @@ export function TeamMembersPage() {
           to="/enterprise/team/skill-gap"
           className="inline-flex items-center gap-2 px-3.5 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-sm rounded-xl transition shrink-0"
         >
-          <span>Xem khoảng trống năng lực (Skill Gap)</span>
+          <span>Xem khoảng trống năng lực</span>
         </Link>
       </div>
 

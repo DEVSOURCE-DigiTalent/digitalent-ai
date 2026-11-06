@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -206,7 +207,8 @@ describe('PositionListPage', () => {
 
     // According to spec v2.1 OW-09, Job Family tab is removed in favor of Grade & Department filters
     expect(screen.getByLabelText('Lọc theo phòng ban')).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Lọc theo Cấp bậc'), { target: { value: 'G2' } });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Lọc theo cấp bậc' }));
+    fireEvent.click(screen.getByRole('option', { name: /G2/ }));
 
     await waitFor(() => {
       expect(useJobPositions).toHaveBeenLastCalledWith(expect.objectContaining({ jobGrade: 'G2', pageIndex: 1 }));

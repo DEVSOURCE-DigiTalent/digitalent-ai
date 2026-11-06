@@ -9,4 +9,5 @@ export const BLOCK_TYPES = {
   SLIDE: { label: 'Slide', glyph: '⇆', hint: 'Dải ảnh cuộn ngang, chen được video' },
   IMAGE: { label: 'Ảnh', glyph: '▣', hint: 'Một ảnh kèm chú thích' },
   VIDEO: { label: 'Video', glyph: '▶', hint: 'Tải video lên từ máy' },
+  PDF: { label: 'PDF', glyph: '◰', hint: 'Tải tệp PDF, xem trực tiếp trên web' },
 } as const;

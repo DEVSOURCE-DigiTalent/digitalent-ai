@@ -71,6 +71,7 @@ export function BusinessRegisterPage() {
 
   return (
     <PulseAuthLayout
+      mode="register"
       eyebrow="Tài khoản doanh nghiệp · Gói đã chọn"
       title="Tạo tài khoản doanh nghiệp"
       subtitle="Hoàn tất tài khoản chủ sở hữu trước khi tiếp tục hợp đồng và thiết lập tổ chức."

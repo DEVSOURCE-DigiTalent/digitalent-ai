@@ -120,6 +120,9 @@ public static class RolePermissions
 
             Permissions.Assistant.Chat,
             Permissions.Trial.Manage,
+
+            Permissions.Feedback.Create,
+            Permissions.Feedback.ReadOwn,
         },
 
         [Roles.Manager] = new[]
@@ -189,6 +192,9 @@ public static class RolePermissions
             Permissions.System.AuditLogReadDepartment,
 
             Permissions.Assistant.Chat,
+
+            Permissions.Feedback.Create,
+            Permissions.Feedback.ReadOwn,
         },
 
         [Roles.PlatformAdmin] = new[]
@@ -209,6 +215,9 @@ public static class RolePermissions
             Permissions.Platform.CatalogManage,
             Permissions.Platform.CommerceRead,
             Permissions.Platform.TrialManage,
+
+            Permissions.Feedback.ReadAll,
+            Permissions.Feedback.Manage,
         },
 
         [Roles.Mentor] = new[]
@@ -274,6 +283,9 @@ public static class RolePermissions
             Permissions.System.FileDownloadAuthorized,
 
             Permissions.Assistant.Chat,
+
+            Permissions.Feedback.Create,
+            Permissions.Feedback.ReadOwn,
         },
     };
 }

@@ -262,6 +262,7 @@ export function LessonSlide({
     .filter((item) => item.kind === 'IMAGE')
     .map((item) => ({ src: lessonMediaUrl(item.url), alt: item.alt || slide.title }));
   const videos = uploaded.filter((item) => item.kind === 'VIDEO');
+  const documents = uploaded.filter((item) => item.kind === 'PDF');
   const [expanded, setExpanded] = useState<{ src: string; alt: string } | null>(null);
 
   // Phân tích các section từ Markdown/HTML
@@ -380,6 +381,24 @@ export function LessonSlide({
           }
         })}
       </div>
+
+      {/* ── Uploaded PDF (slides exported from PowerPoint) ───────────── */}
+      {documents.map((file) => (
+        <figure className="pu-lesson-document" key={file.url}>
+          <iframe src={lessonMediaUrl(file.url)} title={file.alt || slide.title} />
+          <figcaption>
+            <span>{file.alt || slide.title}</span>
+            <a
+              href={lessonMediaUrl(file.url)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(event) => event.stopPropagation()}
+            >
+              Mở PDF trong tab mới <ArrowUpRight size={14} />
+            </a>
+          </figcaption>
+        </figure>
+      ))}
 
       {/* ── 4. Tự kiểm tra (Self-check Reflection) ───────────────────── */}
       {checks.map((section, sectionIndex) => (

@@ -476,7 +476,7 @@ export function ReportsPage() {
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
             <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
               <AlertTriangle className="size-4 text-amber-600" />
-              <span>Các khoảng trống năng lực số cần ưu tiên đào tạo (Top Skill Gaps)</span>
+              <span>Khoảng trống năng lực cần ưu tiên</span>
             </h3>
 
             {topGaps.length === 0 ? (

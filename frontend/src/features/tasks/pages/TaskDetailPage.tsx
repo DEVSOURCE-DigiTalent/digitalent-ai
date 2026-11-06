@@ -86,7 +86,7 @@ export function TaskDetailPage() {
           {/* Rubrics */}
           <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-slate-900 text-base">Tiêu chí chấm điểm (Rubric)</h3>
+              <h3 className="font-bold text-slate-900 text-base">Tiêu chí đánh giá</h3>
               <span className="text-xs font-semibold text-slate-500">
                 Tổng điểm: {task.rubricCriteria.reduce((sum: number, r: any) => sum + r.maxPoints, 0)} điểm
               </span>

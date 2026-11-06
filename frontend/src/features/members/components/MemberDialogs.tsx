@@ -1,4 +1,5 @@
 import { useId, useState } from 'react';
+import { BriefcaseBusiness, Building2, Check, CircleAlert, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmActionDialog, Modal } from '@/components/shared';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -10,14 +11,22 @@ import {
 import { organizationErrorMessage } from '@/lib/organization-errors';
 import { assignableRoles, ROLE_DESCRIPTIONS } from '@/lib/role-policy';
 import type { MemberListItem } from '@/services/member.service';
-import { INPUT_CLASS, PRIMARY_BUTTON, SECONDARY_BUTTON } from '@/features/onboarding/components/styles';
+import { SECONDARY_BUTTON } from '@/features/onboarding/components/styles';
 import { roleLabel } from '../member-labels';
+import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
+import './member-dialogs.css';
 
 interface MemberDialogProps {
   member: MemberListItem;
   open: boolean;
   onClose: () => void;
 }
+
+const ROLE_SUMMARIES: Record<string, string> = {
+  OWNER: 'Toàn quyền quản trị và phân quyền.',
+  MANAGER: 'Theo dõi, phân công và đánh giá trong phòng ban.',
+  EMPLOYEE: 'Học tập, đánh giá và thực hiện nhiệm vụ.',
+};
 
 /** ADM-05: pick the new role of a member. Only roles the signed-in user may grant are offered. */
 export function ChangeRoleModal({ member, open, onClose }: MemberDialogProps) {
@@ -43,23 +52,24 @@ export function ChangeRoleModal({ member, open, onClose }: MemberDialogProps) {
       open={open}
       onClose={onClose}
       size="md"
+      className="member-detail-modal"
       title={`Đổi vai trò của ${member.fullName}`}
-      description="Vai trò quyết định người này thấy và làm được gì trong tổ chức."
+      description="Chọn quyền truy cập phù hợp trong tổ chức."
       footer={
         <>
-          <button type="button" onClick={onClose} className={SECONDARY_BUTTON}>Hủy</button>
-          <button type="button" onClick={save} disabled={selected === current || update.isPending} className={PRIMARY_BUTTON}>
-            {update.isPending ? 'Đang lưu…' : 'Lưu vai trò'}
+          <button type="button" onClick={onClose} className="member-modal-secondary">Hủy</button>
+          <button type="button" onClick={save} disabled={selected === current || update.isPending} className="member-modal-primary">
+            {update.isPending ? 'Đang lưu…' : 'Lưu thay đổi'}
           </button>
         </>
       }
     >
-      <fieldset>
+      <fieldset className="member-role-picker">
         <legend className="sr-only">Vai trò</legend>
         <ul className="grid gap-2">
           {options.map((option) => (
             <li key={option.role}>
-              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm has-[:checked]:border-primary-600 has-[:checked]:bg-primary-50 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60">
+              <label className="member-role-option">
                 <input
                   type="radio"
                   name={groupId}
@@ -67,12 +77,14 @@ export function ChangeRoleModal({ member, open, onClose }: MemberDialogProps) {
                   checked={selected === option.role}
                   disabled={option.role === current && !assignableRoles(user.roles).some((r) => r === current)}
                   onChange={() => setSelected(option.role)}
-                  className="mt-0.5 size-4 accent-primary-600"
+                  className="sr-only"
                 />
-                <span>
-                  <span className="block font-medium text-slate-900">{option.name}</span>
-                  <span className="block text-slate-500">{option.summary}</span>
+                <span className="member-role-option__icon"><ShieldCheck size={19} /></span>
+                <span className="member-role-option__copy">
+                  <span className="member-role-option__title">{option.name}{option.role === current && <small>Hiện tại</small>}</span>
+                  <span className="member-role-option__summary">{ROLE_SUMMARIES[option.role] ?? option.summary}</span>
                 </span>
+                <span className="member-role-option__check"><Check size={15} /></span>
               </label>
             </li>
           ))}
@@ -80,9 +92,8 @@ export function ChangeRoleModal({ member, open, onClose }: MemberDialogProps) {
       </fieldset>
 
       {selected === 'OWNER' && selected !== current && (
-        <div role="alert" className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
-          <p className="font-bold text-amber-800">Cảnh báo phân quyền:</p>
-          <p className="mt-0.5">Bạn đang cấp toàn quyền quản trị doanh nghiệp cho người này.</p>
+        <div role="alert" className="member-modal-alert mt-4">
+          <CircleAlert size={18} /><p>Bạn đang cấp toàn quyền quản trị doanh nghiệp cho thành viên này.</p>
         </div>
       )}
     </Modal>
@@ -95,13 +106,13 @@ export function ChangeRoleModal({ member, open, onClose }: MemberDialogProps) {
  */
 export function PlacementModal({ member, open, onClose }: MemberDialogProps) {
   const update = useUpdateMember();
-  const base = useId();
   const departments = useDepartments({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
   const positions = useJobPositions({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
   const [departmentId, setDepartmentId] = useState(member.departmentId ?? '');
   const [jobPositionId, setJobPositionId] = useState(member.jobPositionId ?? '');
   const hasProfile = Boolean(member.employeeId);
 
+  const changed = departmentId !== (member.departmentId ?? '') || jobPositionId !== (member.jobPositionId ?? '');
   const save = async () => {
     try {
       await update.mutateAsync({ id: member.id, data: { departmentId, jobPositionId } });
@@ -116,37 +127,32 @@ export function PlacementModal({ member, open, onClose }: MemberDialogProps) {
     <Modal
       open={open}
       onClose={onClose}
-      size="sm"
+      size="md"
+      className="member-detail-modal member-placement-modal"
       title={`Phòng ban và vị trí của ${member.fullName}`}
-      description="Vị trí quyết định Cấp bậc (G1–G3) và bộ yêu cầu năng lực chuẩn của nhân sự."
+      description="Cập nhật nơi làm việc và chuẩn năng lực theo vị trí."
       footer={
         <>
-          <button type="button" onClick={onClose} className={SECONDARY_BUTTON}>Hủy</button>
-          <button type="button" onClick={save} disabled={!departmentId || update.isPending} className={PRIMARY_BUTTON}>
-            {update.isPending ? 'Đang lưu…' : 'Lưu'}
+          <button type="button" onClick={onClose} className="member-modal-secondary">Hủy</button>
+          <button type="button" onClick={save} disabled={!departmentId || !changed || update.isPending} className="member-modal-primary">
+            {update.isPending ? 'Đang lưu…' : 'Lưu thay đổi'}
           </button>
         </>
       }
     >
-      <div className="grid gap-4">
+      <div className="member-placement-fields">
         {!hasProfile && (
-          <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-            Thành viên này chưa có hồ sơ nhân viên. Chọn phòng ban để tạo hồ sơ và bắt đầu theo dõi năng lực.
-          </p>
+          <div role="status" className="member-modal-alert"><CircleAlert size={18} /><p>Chọn phòng ban để tạo hồ sơ nhân viên và bắt đầu theo dõi năng lực.</p></div>
         )}
-        <div className="grid gap-1.5">
-          <label htmlFor={`${base}-department`} className="text-sm font-medium text-slate-700">Phòng ban *</label>
-          <select id={`${base}-department`} value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className={INPUT_CLASS}>
-            <option value="" disabled>Chọn phòng ban</option>
-            {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-          </select>
+        <div className="member-placement-field">
+          <span className="member-placement-field__icon"><Building2 size={19} /></span>
+          <div><p className="member-placement-field__label">Phòng ban <span>*</span></p><p className="member-placement-field__hint">Đơn vị quản lý trực tiếp</p></div>
+          <OwnerFilterSelect label="Phòng ban" value={departmentId} onChange={setDepartmentId} options={[{ value: '', label: 'Chọn phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
         </div>
-        <div className="grid gap-1.5">
-          <label htmlFor={`${base}-position`} className="text-sm font-medium text-slate-700">Vị trí công việc</label>
-          <select id={`${base}-position`} value={jobPositionId} onChange={(e) => setJobPositionId(e.target.value)} className={INPUT_CLASS}>
-            <option value="">Chưa xếp vị trí</option>
-            {positions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+        <div className="member-placement-field">
+          <span className="member-placement-field__icon member-placement-field__icon--sky"><BriefcaseBusiness size={19} /></span>
+          <div><p className="member-placement-field__label">Vị trí công việc</p><p className="member-placement-field__hint">Áp dụng chuẩn năng lực tương ứng</p></div>
+          <OwnerFilterSelect label="Vị trí công việc" value={jobPositionId} onChange={setJobPositionId} options={[{ value: '', label: 'Chưa xếp vị trí' }, ...positions.map((p) => ({ value: p.id, label: p.name }))]} />
         </div>
       </div>
     </Modal>

@@ -6,10 +6,12 @@ import {
   Bell,
   BookOpen,
   BriefcaseBusiness,
+  Bug,
   Compass,
   FileCheck,
   FileText,
   LogOut,
+  MessageSquare,
   Search,
   Sparkles,
   UserRound,
@@ -29,39 +31,41 @@ import { PULSE_PATHS, isExamPath } from '../lib/paths';
 
 type NavItem = { to: string; label: string; end?: boolean; match: string[]; screenId: string };
 
-/** Mục điều hướng chính của nhân viên chỉ có Hôm nay / Lộ trình / Khảo thí. */
+/** Mục điều hướng chính của nhân viên. */
 const NAV: NavItem[] = [
   { to: PULSE_PATHS.today, label: 'Tổng quan', end: true, match: [PULSE_PATHS.today], screenId: 'EM-01' },
   { to: PULSE_PATHS.path, label: 'Lộ trình', match: [PULSE_PATHS.path, '/enterprise/me/courses'], screenId: 'EM-02' },
-  { to: PULSE_PATHS.practice, label: 'Khảo thí', match: [PULSE_PATHS.practice], screenId: 'EM-03' },
+  { to: PULSE_PATHS.practice, label: 'Đánh giá', match: [PULSE_PATHS.practice], screenId: 'EM-03' },
 ];
 
 function getPageTitle(pathname: string): string {
-  if (pathname === PULSE_PATHS.today) return 'Tổng quan Bàn làm việc';
-  if (pathname === PULSE_PATHS.path) return 'Lộ trình Năng lực chức danh';
-  if (pathname.startsWith('/enterprise/me/courses')) return 'Chi tiết Khóa học & Đề cương';
-  if (pathname === PULSE_PATHS.practice) return 'Khảo thí & Đánh giá Năng lực';
-  if (pathname === PULSE_PATHS.outcomes) return 'Bảng Chứng nhận số & Kết quả';
-  if (pathname.startsWith('/enterprise/me/outcomes/')) return 'Chi tiết Chứng nhận năng lực';
-  if (pathname === PULSE_PATHS.activity) return 'Nhật ký Hoạt động';
+  if (pathname === PULSE_PATHS.today) return 'Tổng quan học tập';
+  if (pathname === PULSE_PATHS.path) return 'Lộ trình năng lực';
+  if (pathname.startsWith('/enterprise/me/courses')) return 'Chi tiết khóa học';
+  if (pathname === PULSE_PATHS.practice) return 'Đánh giá năng lực';
+  if (pathname === PULSE_PATHS.outcomes) return 'Chứng nhận và kết quả';
+  if (pathname.startsWith('/enterprise/me/outcomes/')) return 'Chi tiết chứng nhận';
+  if (pathname === PULSE_PATHS.activity) return 'Hoạt động';
   if (pathname === PULSE_PATHS.profile) return 'Hồ sơ cá nhân';
+  if (pathname === PULSE_PATHS.feedbacks) return 'Góp ý của tôi';
+  if (pathname === PULSE_PATHS.bugReports) return 'Báo lỗi của tôi';
   return 'Cổng đào tạo DigiTalent AI';
 }
 
 const QUICK_SEARCH_ITEMS = [
-  { title: 'Tổng quan Bàn làm việc', category: 'Điều hướng', path: PULSE_PATHS.today, icon: Compass },
-  { title: 'Lộ trình Năng lực chức danh', category: 'Điều hướng', path: PULSE_PATHS.path, icon: BookOpen },
-  { title: 'Khảo thí & Đánh giá Năng lực', category: 'Điều hướng', path: PULSE_PATHS.practice, icon: FileCheck },
-  { title: 'Chứng chỉ năng lực số', category: 'Hồ sơ', path: PULSE_PATHS.outcomes, icon: Award },
+  { title: 'Tổng quan học tập', category: 'Điều hướng', path: PULSE_PATHS.today, icon: Compass },
+  { title: 'Lộ trình năng lực', category: 'Điều hướng', path: PULSE_PATHS.path, icon: BookOpen },
+  { title: 'Đánh giá năng lực', category: 'Điều hướng', path: PULSE_PATHS.practice, icon: FileCheck },
+  { title: 'Chứng nhận và kết quả', category: 'Hồ sơ', path: PULSE_PATHS.outcomes, icon: Award },
   { title: 'Hồ sơ cá nhân', category: 'Hồ sơ', path: PULSE_PATHS.profile, icon: UserRound },
   { title: 'M1-F Tìm kiếm và lưu trữ thông tin cơ bản', category: 'Khóa học', path: '/enterprise/me/courses/course-a1cd1c6e-1be2-4bf9-8f8b-eb1baacfa3f1', icon: BookOpen },
   { title: 'M5-F Xử lý sự cố và tự học công nghệ', category: 'Khóa học', path: '/enterprise/me/courses/course-e5cd1c6e-5be2-4bf9-8f8b-eb1baacfa3f5', icon: BookOpen },
 ];
 
-/** Doanh nghiệp dùng thử: trang Học thử (sáu khóa Cơ bản), bài test tổng hợp ("Kết quả test" khi đã công bố) và bài đã nộp. */
+/** Doanh nghiệp dùng thử: trang Học thử (sáu khóa Cơ bản), bài đánh giá tổng hợp ("Kết quả test" khi đã công bố) và bài đã nộp. */
 const TRIAL_NAV: NavItem[] = [
   { to: PULSE_PATHS.path, label: 'Học thử', match: [PULSE_PATHS.path, '/enterprise/me/courses'], screenId: 'EM-02' },
-  { to: PULSE_PATHS.trialTest, label: 'Bài test', match: [PULSE_PATHS.trialTest], screenId: 'EM-T1' },
+  { to: PULSE_PATHS.trialTest, label: 'Bài đánh giá', match: [PULSE_PATHS.trialTest], screenId: 'EM-T1' },
   { to: PULSE_PATHS.practice, label: 'Thực hành', match: [PULSE_PATHS.practice], screenId: 'EM-03' },
 ];
 
@@ -82,8 +86,8 @@ export function PulseHeader() {
   const { data: overview } = usePulseOverview();
   const hasRoadmap = Boolean(overview?.hasTargets);
 
-  // Tài khoản mới vào làm bài test và chưa có công bố khung năng lực từ doanh nghiệp:
-  // Hiển thị thanh dùng thử (Học thử / Bài test / Thực hành).
+  // Tài khoản mới vào làm bài đánh giá và chưa có công bố khung năng lực từ doanh nghiệp:
+  // Hiển thị thanh dùng thử (Học thử / Bài đánh giá / Thực hành).
   // Khi đã có lộ trình từ doanh nghiệp (đã setup khung năng lực):
   // Hiển thị thanh điều hướng chính thức: Hôm nay / Lộ trình / Thực hành.
   const isPreRoadmapTrial = trial && !hasRoadmap;
@@ -246,6 +250,8 @@ export function PulseHeader() {
                   <Link role="menuitem" to={PULSE_PATHS.trialTest}><FileText size={16} /> Kết quả đánh giá đầu vào</Link>
                 )}
                 <Link role="menuitem" to={PULSE_PATHS.activity}><Bell size={16} /> Nhật ký hoạt động</Link>
+                <Link role="menuitem" to={PULSE_PATHS.feedbacks}><MessageSquare size={16} /> Góp ý</Link>
+                <Link role="menuitem" to={PULSE_PATHS.bugReports}><Bug size={16} /> Báo lỗi</Link>
                 {workspaceHome && (
                   <Link role="menuitem" to={workspaceHome}><BriefcaseBusiness size={16} /> Về không gian quản lý</Link>
                 )}

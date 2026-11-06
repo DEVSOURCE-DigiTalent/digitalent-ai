@@ -330,7 +330,7 @@ function ActionCenter({
               ? 'Tất cả các khóa hiện tại đã đạt hoặc đang chờ mentor đánh giá.'
               : fresh
                 ? 'Thực hiện bài đánh giá trước khi học để được miễn học lý thuyết nếu đã đạt năng lực.'
-                : 'Các khóa học và bài kiểm tra ưu tiên theo tiến trình của bạn.'}
+                : 'Khóa học và bài đánh giá cần hoàn thành tiếp theo.'}
           </p>
         </div>
 
@@ -921,7 +921,7 @@ function OnboardingBanner({ overview }: { overview: PulseOverview }) {
     );
   }
 
-  // Đã làm bài test
+  // Đã làm bài đánh giá
   return (
     <div
       className="pu-onboarding-banner-done"

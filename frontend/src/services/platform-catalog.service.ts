@@ -10,8 +10,8 @@ import type { ApiResponse } from '../types/api';
 export type FrameworkStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 export type CatalogVersionStatus = 'DRAFT' | 'CURRENT' | 'RETIRED';
 export type ChangeKind = 'NEW' | 'EDITED' | 'UNCHANGED';
-export type BlockType = 'TEXT' | 'SLIDE' | 'IMAGE' | 'VIDEO';
-export type AssetKind = 'IMAGE' | 'VIDEO';
+export type BlockType = 'TEXT' | 'SLIDE' | 'IMAGE' | 'VIDEO' | 'PDF';
+export type AssetKind = 'IMAGE' | 'VIDEO' | 'PDF';
 export type CatalogSalesStatus = 'OPEN' | 'PAUSED';
 
 export interface FrameworkSummary {

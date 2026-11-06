@@ -4,6 +4,7 @@ import { RouterProvider } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { shouldRetryQuery } from '@/lib/query-retry';
 import { router } from './router';
+import { AppLoadingScreen } from '@/components/shared/LoadingState';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,7 +39,7 @@ export function AppProviders() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Layouts and full-page screens are loaded on demand (app/routes/lazy-page.ts); portal pages have their own boundary. */}
-      <Suspense fallback={null}>
+      <Suspense fallback={<AppLoadingScreen />}>
         <RouterProvider router={router} />
       </Suspense>
       <ThemedToaster />

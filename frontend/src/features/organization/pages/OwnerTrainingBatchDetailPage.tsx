@@ -4,6 +4,7 @@ import {
   ArrowLeft, Play, CheckSquare, Ban, BookOpen, Users, ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Modal } from '@/components/shared/Modal';
 import {
   useTrainingBatch,
   useCompleteTrainingBatch,
@@ -11,6 +12,8 @@ import {
   useActivateTrainingBatch,
 } from '@/hooks/use-training-batches';
 import { PULSE_TOKENS } from '../owner-theme';
+import { PageLoading } from '@/components/shared/LoadingState';
+import './owner-operations.css';
 
 const STATUS_MAP: Record<string, { label: string; bg: string; fg: string }> = {
   RUNNING: { label: 'Đang diễn ra', bg: 'var(--po-soft)', fg: 'var(--po-accent-strong)' },
@@ -25,6 +28,9 @@ type Tab = 'courses' | 'participants' | 'analytics';
 export function OwnerTrainingBatchDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [tab, setTab] = useState<Tab>('courses');
+  const [participantPage, setParticipantPage] = useState(1);
+  const [dialogAction, setDialogAction] = useState<'activate' | 'complete' | 'cancel' | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
 
   const { data: batch, isLoading } = useTrainingBatch(id);
   const completeMutation = useCompleteTrainingBatch();
@@ -32,16 +38,7 @@ export function OwnerTrainingBatchDetailPage() {
   const activateMutation = useActivateTrainingBatch();
 
   if (isLoading) {
-    return (
-      <div
-        className="po-owner -m-4 md:-m-6 min-h-screen flex items-center justify-center"
-        style={{ ...PULSE_TOKENS, background: 'var(--po-canvas)' }}
-      >
-        <p className="text-sm" style={{ color: 'var(--po-muted)' }}>
-          Đang tải chi tiết đợt đào tạo…
-        </p>
-      </div>
-    );
+    return <div className="po-owner -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label="Đang tải chi tiết đợt đào tạo" variant="detail" /></div>;
   }
 
   if (!batch) {
@@ -77,37 +74,36 @@ export function OwnerTrainingBatchDetailPage() {
 
   const courses = batch.courses || [];
   const participants = batch.participants || [];
+  const participantPages = Math.max(1, Math.ceil(participants.length / 10));
+  const visibleParticipants = participants.slice((participantPage - 1) * 10, participantPage * 10);
   const completedParticipants = participants.filter((p) => p.isFullyCompleted);
   const status = STATUS_MAP[batch.status] ?? STATUS_MAP.DRAFT;
 
   const handleActivate = async () => {
-    if (!window.confirm(`Bắt đầu đợt đào tạo "${batch.name}"?`)) return;
     try {
       await activateMutation.mutateAsync(batch.id);
       toast.success('Đã bắt đầu đợt đào tạo.');
+      setDialogAction(null);
     } catch (err: any) {
       toast.error(err?.message || 'Không thể bắt đầu đợt đào tạo.');
     }
   };
 
   const handleComplete = async () => {
-    if (!window.confirm(`Kết thúc đợt đào tạo "${batch.name}"?`)) return;
     try {
       await completeMutation.mutateAsync(batch.id);
       toast.success('Đã hoàn thành đợt đào tạo.');
+      setDialogAction(null);
     } catch (err: any) {
       toast.error(err?.message || 'Không thể hoàn thành đợt.');
     }
   };
 
   const handleCancel = async () => {
-    const reason = import.meta.env.VITE_USE_MOCK === 'true'
-      ? window.prompt('Nhập lý do hủy đợt đào tạo này:')
-      : window.confirm(`Hủy đợt đào tạo "${batch.name}"?`) ? '' : null;
-    if (reason === null) return;
     try {
-      await cancelMutation.mutateAsync({ id: batch.id, reason: reason.trim() || undefined });
+      await cancelMutation.mutateAsync({ id: batch.id, reason: cancelReason.trim() || undefined });
       toast.success('Đã hủy đợt đào tạo.');
+      setDialogAction(null);
     } catch (err: any) {
       toast.error(err?.message || 'Không thể hủy đợt.');
     }
@@ -121,7 +117,7 @@ export function OwnerTrainingBatchDetailPage() {
 
   return (
     <div
-      className="po-owner -m-4 md:-m-6 min-h-screen"
+      className="po-owner owner-operations owner-operations--detail -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
@@ -132,7 +128,7 @@ export function OwnerTrainingBatchDetailPage() {
       {/* ── Hero ── */}
       <section
         className="px-4 md:px-6 pt-6 pb-4 mx-auto"
-        style={{ maxWidth: 1220 }}
+        style={{ maxWidth: 1800 }}
       >
         <Link
           to="/enterprise/training-batches"
@@ -161,10 +157,7 @@ export function OwnerTrainingBatchDetailPage() {
                 {status.label}
               </span>
             </div>
-            <h1
-              className="text-2xl font-bold"
-              style={{ color: 'var(--po-ink)', letterSpacing: '-0.04em' }}
-            >
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-[-0.04em] heading-gradient">
               {batch.name}
             </h1>
             <p className="mt-0.5 text-xs" style={{ color: 'var(--po-muted)' }}>
@@ -177,7 +170,7 @@ export function OwnerTrainingBatchDetailPage() {
             {batch.status === 'DRAFT' && (
               <button
                 type="button"
-                onClick={handleActivate}
+                onClick={() => setDialogAction('activate')}
                 disabled={activateMutation.isPending}
                 className="inline-flex items-center gap-1.5 rounded-[11px] px-4 py-2.5 text-xs font-extrabold transition-transform hover:-translate-y-0.5 disabled:opacity-50"
                 style={{ background: 'var(--po-accent)', color: '#fff' }}
@@ -188,7 +181,7 @@ export function OwnerTrainingBatchDetailPage() {
             {batch.status === 'RUNNING' && (
               <button
                 type="button"
-                onClick={handleComplete}
+                onClick={() => setDialogAction('complete')}
                 disabled={completeMutation.isPending}
                 className="inline-flex items-center gap-1.5 rounded-[11px] border px-4 py-2.5 text-xs font-bold transition-transform hover:-translate-y-0.5 disabled:opacity-50"
                 style={{ borderColor: '#bbf7d0', background: '#ecfdf5', color: '#16a34a' }}
@@ -199,7 +192,7 @@ export function OwnerTrainingBatchDetailPage() {
             {batch.status !== 'COMPLETED' && batch.status !== 'CANCELLED' && (
               <button
                 type="button"
-                onClick={handleCancel}
+                onClick={() => setDialogAction('cancel')}
                 disabled={cancelMutation.isPending}
                 className="inline-flex items-center gap-1.5 rounded-[11px] border px-4 py-2.5 text-xs font-bold transition-transform hover:-translate-y-0.5 disabled:opacity-50"
                 style={{ borderColor: '#fecaca', background: '#fee2e2', color: '#dc2626' }}
@@ -214,7 +207,7 @@ export function OwnerTrainingBatchDetailPage() {
       {/* ── KPI strip ── */}
       <div
         className="px-4 md:px-6 py-3 mx-auto"
-        style={{ maxWidth: 1220 }}
+        style={{ maxWidth: 1800 }}
       >
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
@@ -252,7 +245,7 @@ export function OwnerTrainingBatchDetailPage() {
 
       {/* ── Description ── */}
       {batch.description && (
-        <div className="px-4 md:px-6 mx-auto" style={{ maxWidth: 1220 }}>
+        <div className="px-4 md:px-6 mx-auto" style={{ maxWidth: 1800 }}>
           <div
             className="rounded-[13px] border p-4 text-xs leading-relaxed"
             style={{
@@ -269,22 +262,22 @@ export function OwnerTrainingBatchDetailPage() {
 
       {/* ── Info banner for mock ── */}
       {import.meta.env.VITE_USE_MOCK !== 'true' && batch.status !== 'CANCELLED' && (
-        <div className="px-4 md:px-6 mt-3 mx-auto" style={{ maxWidth: 1220 }}>
+        <div className="px-4 md:px-6 mt-3 mx-auto" style={{ maxWidth: 1800 }}>
           <div
             className="rounded-[11px] border p-4 text-xs"
             style={{ borderColor: '#fdddb6', background: '#fff7ed', color: '#c2410c' }}
           >
-            Học viên chưa được giao khóa học tự động. Dùng{' '}
+            Chưa có khóa học nào được giao cho học viên.{' '}
             <Link to="/enterprise/assignments" className="font-bold underline">
               Giao khóa học
             </Link>{' '}
-            để tạo phân công.
+            để phân công.
           </div>
         </div>
       )}
 
       {/* ── Tabs ── */}
-      <div className="px-4 md:px-6 mx-auto mt-4" style={{ maxWidth: 1220 }}>
+      <div className="px-4 md:px-6 mx-auto mt-4" style={{ maxWidth: 1800 }}>
         <div
           className="flex gap-1 rounded-[11px] border p-1"
           style={{
@@ -316,7 +309,7 @@ export function OwnerTrainingBatchDetailPage() {
       {/* ── Tab content ── */}
       <div
         className="px-4 md:px-6 pb-8 mt-4 mx-auto"
-        style={{ maxWidth: 1220 }}
+        style={{ maxWidth: 1800 }}
       >
         {/* COURSES */}
         {tab === 'courses' && (
@@ -430,7 +423,7 @@ export function OwnerTrainingBatchDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {participants.map((p) => (
+                  {visibleParticipants.map((p) => (
                     <tr
                       key={p.employeeId}
                       className="transition-colors"
@@ -518,6 +511,7 @@ export function OwnerTrainingBatchDetailPage() {
                 </tbody>
               </table>
             </div>
+            {participantPages > 1 && <div className="owner-operations__pagination px-4 pb-4"><span>Trang {participantPage} / {participantPages}</span><button type="button" disabled={participantPage <= 1} onClick={() => setParticipantPage((page) => page - 1)}>Trước</button><button type="button" disabled={participantPage >= participantPages} onClick={() => setParticipantPage((page) => page + 1)}>Sau</button></div>}
           </div>
         )}
 
@@ -625,6 +619,7 @@ export function OwnerTrainingBatchDetailPage() {
           </div>
         )}
       </div>
+      <Modal open={dialogAction !== null} onClose={() => setDialogAction(null)} title={dialogAction === 'activate' ? 'Bắt đầu đợt đào tạo' : dialogAction === 'complete' ? 'Kết thúc đợt đào tạo' : 'Hủy đợt đào tạo'} description={batch.name} footer={<><button type="button" className="owner-operations__secondary" onClick={() => setDialogAction(null)}>Quay lại</button><button type="button" className={dialogAction === 'cancel' ? 'owner-operations__danger' : 'owner-operations__primary'} disabled={activateMutation.isPending || completeMutation.isPending || cancelMutation.isPending || (dialogAction === 'cancel' && !cancelReason.trim())} onClick={() => { if (dialogAction === 'activate') void handleActivate(); if (dialogAction === 'complete') void handleComplete(); if (dialogAction === 'cancel') void handleCancel(); }}>{dialogAction === 'activate' ? 'Bắt đầu' : dialogAction === 'complete' ? 'Kết thúc đợt' : 'Xác nhận hủy'}</button></>}><p className="text-sm leading-relaxed">{dialogAction === 'activate' ? 'Đợt đào tạo sẽ chuyển sang trạng thái đang diễn ra.' : dialogAction === 'complete' ? 'Đợt đào tạo sẽ được đánh dấu hoàn thành.' : 'Đợt đào tạo sẽ ngừng hoạt động. Vui lòng ghi rõ lý do hủy.'}</p>{dialogAction === 'cancel' && <label className="mt-4 block text-sm font-semibold">Lý do hủy<textarea className="mt-2 w-full rounded-xl border border-slate-200 p-3 text-sm" rows={3} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Nhập lý do hủy đợt đào tạo" /></label>}</Modal>
     </div>
   );
 }

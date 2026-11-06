@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { ArrowLeft, Plus, Trash2, Check } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Check, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCreatePracticalTask } from '@/hooks/use-tasks';
 import { useAllEmployees } from '@/hooks/use-employees';
 import { useAllActiveCompetencies } from '@/hooks/use-competencies';
 import { apiErrorMessage } from '@/lib/utils';
 import { PULSE_TOKENS } from '../owner-theme';
+import { SectionLoading } from '@/components/shared/LoadingState';
+import { OwnerFilterSelect } from '../components/OwnerFilterSelect';
+import './owner-operations.css';
 
 const inputStyle: React.CSSProperties = {
   borderColor: 'var(--po-line)',
@@ -48,6 +51,7 @@ export function OwnerNewTaskPage() {
     control,
     handleSubmit,
     watch,
+    setValue,
     formState: { isSubmitting },
   } = useForm<FormValues>({
     defaultValues: {
@@ -133,14 +137,14 @@ export function OwnerNewTaskPage() {
 
   return (
     <div
-      className="po-owner -m-4 md:-m-6 min-h-screen"
+      className="po-owner owner-operations owner-operations--form -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
         backgroundImage: 'radial-gradient(ellipse 80% 55% at 50% 0%, var(--po-glow) 0%, transparent 65%)',
       }}
     >
-      <div className="px-4 md:px-6 pt-6 pb-8 mx-auto" style={{ maxWidth: 900 }}>
+      <div className="px-4 md:px-6 pt-6 pb-8 mx-auto" style={{ maxWidth: 1440 }}>
         <Link
           to="/enterprise/tasks"
           className="inline-flex items-center gap-1.5 text-[11px] font-bold mb-4 transition-opacity hover:opacity-70"
@@ -149,14 +153,11 @@ export function OwnerNewTaskPage() {
           <ArrowLeft className="size-3" /> Nhiệm vụ thực tế
         </Link>
 
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--po-ink)', letterSpacing: '-0.04em' }}>
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-[-0.04em] heading-gradient">
           Giao bài tập thực hành
         </h1>
-        <p className="mt-1 text-xs" style={{ color: 'var(--po-muted)' }}>
-          Thiết lập nhiệm vụ gắn năng lực, tiêu chí chấm và phân công nhân viên.
-        </p>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-5 space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="owner-operations__task-form mt-5 space-y-4">
           {/* Card 1: Info */}
           <section
             className="rounded-[22px] border p-6 space-y-4"
@@ -232,7 +233,7 @@ export function OwnerNewTaskPage() {
               </span>
             </div>
             {competenciesLoading ? (
-              <p className="text-xs" style={{ color: 'var(--po-muted)' }}>Đang tải năng lực…</p>
+              <SectionLoading label="Đang tải năng lực" count={2} />
             ) : (
               <div className="grid sm:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
                 {competencies.map((c) => {
@@ -290,28 +291,19 @@ export function OwnerNewTaskPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <select
-                {...register('departmentId')}
-                className="rounded-lg border px-3 py-2 text-xs outline-none sm:w-52"
-                style={inputStyle}
-              >
-                <option value="">Tất cả phòng ban</option>
-                {departments.map(([id, name]) => (
-                  <option key={id} value={id}>{name}</option>
-                ))}
-              </select>
-              <input
+              <OwnerFilterSelect label="Lọc nhân sự theo phòng ban" value={selectedDepartmentId} onChange={(value) => setValue('departmentId', value, { shouldDirty: true })} options={[{ value: '', label: 'Tất cả phòng ban' }, ...departments.map(([id, name]) => ({ value: id, label: name }))]} className="sm:w-56" />
+              <label className="owner-filter-search flex-1"><Search size={17} aria-hidden="true" /><input
                 type="search"
+                aria-label="Tìm nhân viên"
                 placeholder="Tìm nhân viên…"
                 value={employeeSearch}
                 onChange={(e) => setEmployeeSearch(e.target.value)}
-                className="flex-1 rounded-lg border px-3 py-2 text-xs outline-none"
-                style={inputStyle}
-              />
+                className="w-full text-sm"
+              /></label>
             </div>
 
             {employeesLoading ? (
-              <p className="text-xs" style={{ color: 'var(--po-muted)' }}>Đang tải…</p>
+              <SectionLoading label="Đang tải nhân viên" count={2} />
             ) : (
               <div
                 className="max-h-56 overflow-y-auto space-y-1 rounded-[11px] border p-2"
@@ -348,7 +340,7 @@ export function OwnerNewTaskPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>
-                  4 · Tiêu chí chấm điểm (Rubric)
+                  4 · Tiêu chí đánh giá
                 </p>
                 <p
                   className="text-[10px] mt-1"

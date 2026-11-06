@@ -6,7 +6,7 @@ interface CapabilityGapSummaryProps {
 
 export function CapabilityGapSummary({ totals }: CapabilityGapSummaryProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-[10px]">
+    <div className="gap-summary grid grid-cols-1 sm:grid-cols-3 gap-[10px]">
       <div
         className="grid gap-2 rounded-[17px] border p-5"
         style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)' }}

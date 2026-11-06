@@ -61,9 +61,9 @@ export function SkillGapPage({ embedded = false }: { embedded?: boolean }) {
     try {
       const run = await calculateMutation.mutateAsync({ employeeId });
       setSelectedRunId(run.runId);
-      toast.success(`Đã tính lại skill gap cho ${run.employeeName}`);
+      toast.success(`Đã cập nhật khoảng trống năng lực của ${run.employeeName}`);
     } catch (error) {
-      toast.error(skillGapErrorMessage(error, 'Không tính lại được skill gap'));
+      toast.error(skillGapErrorMessage(error, 'Không cập nhật được khoảng trống năng lực'));
     }
   };
 
@@ -74,9 +74,9 @@ export function SkillGapPage({ embedded = false }: { embedded?: boolean }) {
         jobPositionId: jobPositionId || undefined,
       });
       setBatchResult(result);
-      toast.success(`Đã tính skill gap cho ${result.calculatedCount} nhân viên`);
+      toast.success(`Đã cập nhật khoảng trống năng lực của ${result.calculatedCount} nhân viên`);
     } catch (error) {
-      toast.error(skillGapErrorMessage(error, 'Không tính lại được skill gap'));
+      toast.error(skillGapErrorMessage(error, 'Không cập nhật được khoảng trống năng lực'));
     }
   };
 
@@ -172,7 +172,7 @@ export function SkillGapPage({ embedded = false }: { embedded?: boolean }) {
       {embedded ? (
         <div className="flex justify-end">{recalculateAllButton}</div>
       ) : (
-        <PageHeader title="Skill gap theo nhân viên" subtitle="Khoảng trống năng lực mới nhất của từng nhân viên so với chuẩn vị trí">
+        <PageHeader title="Khoảng trống năng lực theo nhân viên" subtitle="Kết quả mới nhất so với chuẩn vị trí">
           {recalculateAllButton}
         </PageHeader>
       )}
@@ -181,7 +181,7 @@ export function SkillGapPage({ embedded = false }: { embedded?: boolean }) {
 
       {isError && (
         <p role="alert" className="text-sm text-danger-600">
-          Không tải được kết quả skill gap. Hãy tải lại trang.
+          Không tải được kết quả khoảng trống năng lực. Hãy tải lại trang.
         </p>
       )}
 
@@ -198,7 +198,7 @@ export function SkillGapPage({ embedded = false }: { embedded?: boolean }) {
         searchPlaceholder="Tìm theo tên hoặc mã nhân viên"
         filters={filters}
         onRowClick={(row) => setSelectedRunId(row.runId)}
-        emptyTitle="Chưa có kết quả skill gap"
+        emptyTitle="Chưa có kết quả khoảng trống năng lực"
         emptyDescription={
           canCalculate
             ? 'Hãy chạy phân tích để so sánh nhân viên với chuẩn vị trí.'

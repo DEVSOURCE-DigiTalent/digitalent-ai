@@ -65,7 +65,7 @@ export function ConfirmLevelDialog({ run, open, onClose, onConfirmed }: ConfirmL
   const onSubmit = async (values: FormOutput) => {
     try {
       await mutation.mutateAsync({ employeeId: run.employeeId, ...values });
-      toast.success(`Đã xác nhận mức ${levelLabel(values.confirmedLevel)} — skill gap đã được tính lại`);
+      toast.success(`Đã xác nhận mức ${levelLabel(values.confirmedLevel)} và cập nhật khoảng trống năng lực`);
       onConfirmed(run.employeeId);
       onClose();
     } catch (error) {
@@ -81,7 +81,7 @@ export function ConfirmLevelDialog({ run, open, onClose, onConfirmed }: ConfirmL
           Xác nhận mức năng lực
         </h2>
         <p className="mt-1 text-sm text-slate-500">
-          Cho {run.employeeName}. Mức này được ghi là bằng chứng do quản trị xác nhận và skill gap được tính lại ngay.
+          Xác nhận mức năng lực của {run.employeeName}. Kết quả khoảng trống năng lực sẽ được cập nhật.
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4" noValidate>

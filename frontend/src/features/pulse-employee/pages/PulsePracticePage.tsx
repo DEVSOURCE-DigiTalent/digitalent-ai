@@ -363,7 +363,7 @@ export function PulsePracticePage() {
           </div>
         </div>
 
-        {/* Khối hành động 1-Click: Bài test tiếp theo cần làm ngay */}
+        {/* Khối hành động 1-Click: Bài đánh giá tiếp theo cần làm ngay */}
         <div className="pu-campaign-right">
           {nextPreCourse ? (
             <>
@@ -747,7 +747,7 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
       {/* 6. Thao tác 1-Click */}
       <td className="pu-ledger-td" style={{ textAlign: 'right' }}>
         <div className="pu-action-cell">
-          {/* Nút ưu tiên 1: Làm bài test đầu vào (dành cho Onboarding nhân viên mới) */}
+          {/* Nút ưu tiên 1: Làm bài đánh giá đầu vào (dành cho Onboarding nhân viên mới) */}
           {isPreOpen ? (
             <Link
               to={PULSE_PATHS.preAssessment(item.courseId)}
