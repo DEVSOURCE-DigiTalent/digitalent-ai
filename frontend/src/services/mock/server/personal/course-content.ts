@@ -390,14 +390,15 @@ const TASKS: Record<number, Record<number, TaskTemplate>> = {
 
 export function taskTemplate(course: CatalogCourse): TaskTemplate {
   const curr = CURRICULUM_DATA[course.code];
-  if (curr?.finalTask && curr.finalTask.brief) {
-    const rawTitle = curr.finalTask.title.replace(/^ĐÁNH GIÁ CUỐI KHÓA\s*[MA]\d-[FIA]\s*[—–-]?\s*/i, '').trim();
+  const finalTask = curr?.finalTask || curr?.final_task;
+  if (finalTask) {
+    const rawTitle = finalTask.title.replace(/^ĐÁNH GIÁ CUỐI KHÓA\s*[MA]\d-[FIA]\s*[—–-]?\s*/i, '').trim();
     return {
-      title: rawTitle || curr.finalTask.title,
-      brief: curr.finalTask.brief,
-      deliverable: curr.finalTask.deliverable || 'Tài liệu tổng hợp kết quả thực hiện và bằng chứng minh chứng.',
-      rubric: curr.finalTask.rubric && curr.finalTask.rubric.length > 0
-        ? curr.finalTask.rubric
+      title: rawTitle || finalTask.title,
+      brief: finalTask.brief || finalTask.context || course.title,
+      deliverable: finalTask.deliverable || finalTask.deliverables || 'Tài liệu tổng hợp kết quả thực hiện và bằng chứng minh chứng.',
+      rubric: finalTask.rubric && finalTask.rubric.length > 0
+        ? finalTask.rubric
         : ['Nắm vững quy chuẩn và phương pháp thực hiện', 'Sản phẩm đầu ra đúng định dạng và đủ nội dung', 'Có đánh giá và kiểm chứng độc lập'],
     };
   }
