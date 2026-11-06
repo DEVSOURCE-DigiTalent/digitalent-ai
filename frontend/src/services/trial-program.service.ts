@@ -46,6 +46,9 @@ export interface TrialReportDomainSummary {
   counts: number[];
   average: number;
   level: number;
+  targetLevel?: number;
+  targetMetRate?: number;
+  averageGap?: number;
   statusText?: string;
   gapSummary?: string;
 }
@@ -55,6 +58,8 @@ export interface TrialEmployeeDomainDetail {
   number: number;
   name: string;
   level: number;
+  targetLevel?: number;
+  skillGap?: number;
   levelLabel: string;
   statusText: string;
   gapText: string;

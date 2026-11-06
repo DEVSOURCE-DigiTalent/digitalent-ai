@@ -85,7 +85,37 @@ function DomainAccordionItem({
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          {detail?.targetLevel != null && (
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                padding: '3px 8px',
+                borderRadius: 6,
+                background: '#f1f5f9',
+                color: '#475569',
+                border: '1px solid #e2e8f0',
+              }}
+            >
+              Trần DN: Cấp {detail.targetLevel}
+            </span>
+          )}
+          {detail?.skillGap != null && (
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                padding: '3px 8px',
+                borderRadius: 6,
+                background: detail.skillGap === 0 ? '#dcfce7' : '#fef3c7',
+                color: detail.skillGap === 0 ? '#166534' : '#92400e',
+                border: `1px solid ${detail.skillGap === 0 ? '#bbf7d0' : '#fde68a'}`,
+              }}
+            >
+              {detail.skillGap === 0 ? '✓ Đạt mục tiêu' : `Thiếu ${detail.skillGap} cấp`}
+            </span>
+          )}
           <LevelBadge level={level} />
           <ChevronDown
             size={18}
@@ -170,11 +200,11 @@ function DomainAccordionItem({
             </div>
           </div>
 
-          {/* Lý do chi tiết & Đánh giá */}
+          {/* Lý do chi tiết & Đánh giá theo Trần năng lực doanh nghiệp */}
           <div
             style={{
-              background: isPassed ? '#f0fdf4' : '#fffbeb',
-              border: `1px solid ${isPassed ? '#bbf7d0' : '#fef08a'}`,
+              background: (detail?.skillGap ?? 0) === 0 ? '#f0fdf4' : '#fffbeb',
+              border: `1px solid ${(detail?.skillGap ?? 0) === 0 ? '#bbf7d0' : '#fef08a'}`,
               borderRadius: 8,
               padding: '12px 14px',
               display: 'flex',
@@ -182,17 +212,17 @@ function DomainAccordionItem({
               alignItems: 'flex-start',
             }}
           >
-            {isPassed ? (
+            {(detail?.skillGap ?? 0) === 0 ? (
               <CheckCircle2 size={18} style={{ color: '#16a34a', flexShrink: 0, marginTop: 2 }} />
             ) : (
               <AlertCircle size={18} style={{ color: '#ca8a04', flexShrink: 0, marginTop: 2 }} />
             )}
-            <div style={{ fontSize: 13, color: isPassed ? '#166534' : '#854d0e', lineHeight: 1.5 }}>
-              <strong>{isPassed ? 'Đánh giá năng lực: ' : 'Lý do chưa đạt: '}</strong>
+            <div style={{ fontSize: 13, color: (detail?.skillGap ?? 0) === 0 ? '#166534' : '#854d0e', lineHeight: 1.5 }}>
+              <strong>{(detail?.skillGap ?? 0) === 0 ? 'Đánh giá năng lực: ' : 'Khoảng cách năng lực (Skill Gap): '}</strong>
               {detail?.gapText ||
-                (isPassed
-                  ? `Đã đạt mức ${detail?.levelLabel ?? 'Cơ bản'}. Các khóa học tương ứng đã được tự động công nhận.`
-                  : `Chưa đạt số câu đúng tối thiểu ở cấp Cơ bản. Bạn cần hoàn thành khóa học để củng cố nền tảng.`)}
+                ((detail?.skillGap ?? 0) === 0
+                  ? `Đã đạt trần năng lực của doanh nghiệp (Cấp ${detail?.levelLabel ?? 'Cơ bản'}). Các khóa học tương ứng đã được tự động công nhận.`
+                  : `Chưa đạt trần năng lực của doanh nghiệp. Bạn cần hoàn thành khóa học đề xuất để bù đắp khoảng cách.`)}
             </div>
           </div>
 
@@ -588,7 +618,7 @@ export function TrialTestPage() {
               <div key={tier} className="tp-stat">
                 <span>Phần {tier}</span>
                 <strong style={{ fontSize: 16 }}>{TIER_LABELS[tier]}</strong>
-                <span>{data.choiceCount / 3 || 6} câu trắc nghiệm</span>
+                <span>{data.choiceCount / 3 || 18} câu trắc nghiệm</span>
               </div>
             ))}
           </div>
@@ -609,7 +639,7 @@ export function TrialTestPage() {
         <section className="tp-card">
           <h2>Đã hoàn thành và nộp bài lúc {formatWhen(data.submittedAt)}</h2>
           <p className="tp-muted" style={{ marginTop: 6, lineHeight: 1.6 }}>
-            Hệ thống đã tự động ghi nhận và đánh giá 18 câu trắc nghiệm năng lực số của bạn.
+            Hệ thống đã tự động ghi nhận và đánh giá {data.choiceCount || 54} câu trắc nghiệm năng lực số của bạn.
             Báo cáo phân tích khoảng cách năng lực (Skill Gap) và lộ trình học tập cá nhân hóa sẽ hiển thị tại đây ngay sau khi Doanh nghiệp phê duyệt và công bố.
           </p>
         </section>

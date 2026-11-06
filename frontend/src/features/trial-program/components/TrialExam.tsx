@@ -35,7 +35,7 @@ function useTrialProctor() {
 
 /**
  * Phòng thi của bài đánh giá năng lực đầu vào dùng thử: chia sẻ toàn bộ màn hình + camera + micro.
- * Đề gồm 18 câu trắc nghiệm phủ 6 lĩnh vực khung TT02 (mỗi lĩnh vực 3 câu: Cơ bản, Trung cấp, Nâng cao).
+ * Đề gồm 54 câu trắc nghiệm phủ 6 lĩnh vực khung TT02 (mỗi lĩnh vực 9 câu: 3 câu Cơ bản, 3 câu Trung cấp, 3 câu Nâng cao).
  * Không có tự luận. Nộp bài xong hệ thống chấm tự động và ghi nhận kết quả.
  */
 export function TrialExam({ organizationName, deadline }: { organizationName: string; deadline?: string | null }) {
@@ -163,7 +163,7 @@ export function TrialExam({ organizationName, deadline }: { organizationName: st
                 <div className="space-y-1">
                   <h2>Lĩnh vực {domainNumber}: {currentDomainName}</h2>
                   <p className="text-xs text-slate-500">
-                    3 câu hỏi trắc nghiệm đánh giá theo 3 cấp độ (Cơ bản · Trung cấp · Nâng cao) chuẩn Khung TT02.
+                    {currentQuestions.length} câu hỏi trắc nghiệm đánh giá theo 3 cấp độ (Cơ bản · Trung cấp · Nâng cao) chuẩn Khung TT02.
                   </p>
                 </div>
                 <span className="tp-muted font-bold text-xs">
@@ -225,8 +225,8 @@ export function TrialExam({ organizationName, deadline }: { organizationName: st
             <section className="pu-surface pu-pad tp-row" style={{ justifyContent: 'space-between' }}>
               <span className="tp-muted font-medium">
                 {unanswered > 0
-                  ? `Còn ${unanswered}/18 câu trắc nghiệm chưa trả lời`
-                  : 'Đã hoàn thành đầy đủ 18/18 câu trắc nghiệm'}
+                  ? `Còn ${unanswered}/${questions.length} câu trắc nghiệm chưa trả lời`
+                  : `Đã hoàn thành đầy đủ ${questions.length}/${questions.length} câu trắc nghiệm`}
               </span>
               {stage === 'work' && (
                 <button

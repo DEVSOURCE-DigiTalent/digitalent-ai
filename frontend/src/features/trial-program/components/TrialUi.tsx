@@ -343,15 +343,14 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                 <th className="py-3 px-3.5">Lĩnh vực</th>
                 <th className="py-3 px-3 text-center">Điểm TB</th>
                 <th className="py-3 px-3 text-center">Đánh giá chung</th>
-                <th className="py-3 px-3 min-w-[200px]">Phân bổ nhân sự ({report.assessed} người)</th>
+                <th className="py-3 px-3 text-center">Trần mục tiêu</th>
+                <th className="py-3 px-3 text-center">Khoảng cách (Skill Gap)</th>
+                <th className="py-3 px-3 min-w-[180px]">Phân bổ nhân sự ({report.assessed} người)</th>
                 <th className="py-3 px-3.5">Khóa học đề xuất</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs">
               {report.summary.map((row) => {
-                const courseCode = `M${row.number}-${row.level >= 2 ? 'A' : row.level >= 1 ? 'I' : 'F'}`;
-                const tierName = row.level >= 2 ? 'Nâng cao' : row.level >= 1 ? 'Trung cấp' : 'Cơ bản';
-
                 return (
                   <tr key={row.categoryId} className="hover:bg-slate-50/60 transition-colors">
                     <td className="py-3.5 px-3.5">
@@ -372,6 +371,24 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
 
                     <td className="py-3.5 px-3 text-center">
                       <LevelBadge level={row.level} />
+                    </td>
+
+                    <td className="py-3.5 px-3 text-center">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                        Cấp {row.targetLevel ?? 3}
+                      </span>
+                    </td>
+
+                    <td className="py-3.5 px-3 text-center">
+                      {row.level >= (row.targetLevel ?? 3) ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          ✓ Đạt trần ({row.targetMetRate ?? 100}%)
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                          Thiếu {(row.targetLevel ?? 3) - row.level} cấp (Đạt: {row.targetMetRate ?? 0}%)
+                        </span>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-3">
@@ -410,12 +427,16 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                     </td>
 
                     <td className="py-3.5 px-3.5">
-                      <div className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 shadow-2xs">
-                        <span className="size-1.5 rounded-full bg-emerald-500" />
-                        <span className="font-bold text-slate-800 text-[11px]">{courseCode}</span>
-                        <span className="text-slate-400">·</span>
-                        <span className="text-slate-600 text-[11px]">{tierName}</span>
-                      </div>
+                      {row.level >= (row.targetLevel ?? 3) ? (
+                        <span className="text-slate-400 font-medium text-[11px]">Đã đạt chuẩn mục tiêu</span>
+                      ) : (
+                        <div className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 shadow-2xs">
+                          <span className="size-1.5 rounded-full bg-amber-500" />
+                          <span className="font-bold text-slate-800 text-[11px]">M${row.number}-${(row.level + 1) === 1 ? 'F' : (row.level + 1) === 2 ? 'I' : 'A'}</span>
+                          <span className="text-slate-400">·</span>
+                          <span className="text-slate-600 text-[11px]">{(row.level + 1) === 1 ? 'Cơ bản' : (row.level + 1) === 2 ? 'Trung cấp' : 'Nâng cao'}</span>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );
@@ -611,7 +632,7 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                     key={detail.categoryId}
                     className="rounded-xl border border-slate-200 bg-white p-3.5 space-y-2.5 shadow-2xs hover:border-slate-300 transition-colors"
                   >
-                    {/* Top: Lĩnh vực + LevelBadge */}
+                    {/* Top: Lĩnh vực + LevelBadge + Target Ceiling & Gap */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
@@ -621,7 +642,23 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                           {detail.name}
                         </h4>
                       </div>
-                      <div className="shrink-0">
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {(detail as any).targetLevel != null && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                            Trần: Cấp {(detail as any).targetLevel}
+                          </span>
+                        )}
+                        {(detail as any).skillGap != null && (
+                          <span
+                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                              (detail as any).skillGap === 0
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                : 'bg-amber-50 text-amber-800 border-amber-200'
+                            }`}
+                          >
+                            {(detail as any).skillGap === 0 ? '✓ Đạt' : `Thiếu ${(detail as any).skillGap} cấp`}
+                          </span>
+                        )}
                         <LevelBadge level={detail.level} />
                       </div>
                     </div>

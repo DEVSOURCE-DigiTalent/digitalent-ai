@@ -79,7 +79,7 @@ function OwnerParticipation({ program }: { program: TrialProgram }) {
           Bạn đang tham gia · <ParticipantStatus status={me.status} />
         </span>
         <Link to="/enterprise/me/trial-test" className="tp-btn small">
-          {reported ? 'Kết quả & học thử của tôi' : 'Bài test của tôi'} <ArrowRight size={14} aria-hidden />
+          {reported ? 'Kết quả & học thử của tôi' : 'Bài đánh giá của tôi'} <ArrowRight size={14} aria-hidden />
         </Link>
       </section>
     );
@@ -89,7 +89,7 @@ function OwnerParticipation({ program }: { program: TrialProgram }) {
   return (
     <section className="tp-card">
       <div className="tp-card-head">
-        <span>{reported ? 'Bạn muốn học thử cùng nhân viên?' : 'Bạn cũng muốn làm bài test và học thử?'}</span>
+        <span>{reported ? 'Bạn muốn học thử cùng nhân viên?' : 'Bạn cũng muốn tham gia đánh giá năng lực?'}</span>
         {!open && <button type="button" className="tp-btn ghost small" onClick={() => setOpen(true)}>Tham gia</button>}
       </div>
       {open && (
@@ -115,7 +115,7 @@ function OwnerParticipation({ program }: { program: TrialProgram }) {
                   onSuccess: ({ refreshed }) =>
                     refreshed
                       ? toast.success('Bạn đã tham gia. Bạn có thể vào thực hiện bài đánh giá đầu vào.')
-                      : toast.warning('Bạn đã tham gia. Hãy đăng xuất rồi đăng nhập lại để vào bài test.'),
+                      : toast.warning('Bạn đã tham gia. Hãy đăng xuất rồi đăng nhập lại để vào bài đánh giá.'),
                   onError: (err) => toast.error(apiErrorMessage(err, 'Chưa tham gia được.')),
                 },
               )
@@ -156,7 +156,7 @@ function SetupView({ program, onInvited }: { program: TrialProgram; onInvited: (
       }
       if (existing + invited === 0) return;
       await request.mutateAsync(toRequest(schedule));
-      toast.success('Đã gửi lời mời và đăng ký chấm');
+      toast.success('Đã gửi lời mời và kích hoạt đợt đánh giá');
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Chưa gửi được.'));
     }
@@ -251,7 +251,7 @@ function TrackView({ program }: { program: TrialProgram }) {
         <Stat label="Nhân viên" value={program.participants.length} />
         <Stat label="Đã kích hoạt" value={count(['ACTIVE', 'SUBMITTED', 'REVIEWED'])} />
         <Stat label="Đã nộp bài" value={count(['SUBMITTED', 'REVIEWED'])} />
-        <Stat label="Đã chấm điểm" value={count(['REVIEWED'])} />
+        <Stat label="Đã đánh giá" value={count(['REVIEWED'])} />
       </div>
 
       {!reported && submittedCount > 0 && (
@@ -263,8 +263,8 @@ function TrackView({ program }: { program: TrialProgram }) {
                 Rà soát kết quả & Công bố lộ trình đào tạo
               </h2>
               <p className="tp-muted" style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>
-                Hệ thống đã tự động chấm bài làm trắc nghiệm ({submittedCount}/{program.participants.length} nhân viên đã nộp).
-                Bạn có thể xem điểm trắc nghiệm bên dưới, tùy chỉnh trần năng lực theo mục tiêu doanh nghiệp, sau đó công bố kết quả để nhân viên truy cập lộ trình học tập.
+                Hệ thống đã tự động đánh giá năng lực trắc nghiệm ({submittedCount}/{program.participants.length} nhân sự đã nộp).
+                Bạn có thể xem kết quả đánh giá bên dưới, tùy chỉnh trần năng lực theo mục tiêu doanh nghiệp, sau đó công bố kết quả để nhân viên truy cập lộ trình đào tạo.
               </p>
             </div>
             <div className="tp-row" style={{ gap: 8, marginTop: 4 }}>
@@ -301,8 +301,8 @@ function TrackView({ program }: { program: TrialProgram }) {
         ) : (
           <div className="tp-grid-2">
             <Info label="Hạn làm bài" value={formatWhen(program.testDeadline)} />
-            <Info label="Giờ mong muốn chấm" value={formatWhen(program.preferredReviewAt)} />
-            <Info label="Mentor" value={program.mentorName ?? 'Chờ DigiTalent phân công'} />
+            <Info label="Thời gian mong muốn hoàn tất" value={formatWhen(program.preferredReviewAt)} />
+            <Info label="Mentor" value={program.mentorName ?? 'Tự động đánh giá hệ thống'} />
           </div>
         )}
       </section>
@@ -517,10 +517,10 @@ function defaultSchedule(): Schedule {
 }
 
 function validateSchedule(s: Schedule): string | null {
-  if (!s.deadline || !s.review) return 'Chọn hạn làm bài và giờ chấm.';
+  if (!s.deadline || !s.review) return 'Chọn hạn làm bài và thời gian mong muốn hoàn tất.';
   const deadline = new Date(s.deadline).getTime();
   if (deadline < Date.now() + 30 * 60_000) return 'Hạn làm bài cần sau ít nhất 30 phút.';
-  if (new Date(s.review).getTime() < deadline) return 'Giờ chấm phải sau hạn làm bài.';
+  if (new Date(s.review).getTime() < deadline) return 'Thời gian hoàn tất phải sau hạn làm bài.';
   return null;
 }
 
@@ -534,16 +534,16 @@ function ScheduleFields({ value, onChange }: { value: Schedule; onChange: (v: Sc
   return (
     <div className="tp-grid-2">
       <label className="tp-field">
-        Hạn hoàn thành bài test
+        Hạn hoàn thành bài đánh giá
         <input type="datetime-local" value={value.deadline} onChange={(e) => onChange({ ...value, deadline: e.target.value })} />
       </label>
       <label className="tp-field">
-        Giờ mong muốn mentor chấm
+        Thời gian mong muốn hoàn tất đánh giá
         <input type="datetime-local" value={value.review} onChange={(e) => onChange({ ...value, review: e.target.value })} />
       </label>
       <label className="tp-field" style={{ gridColumn: '1 / -1' }}>
         Ghi chú cho DigiTalent (không bắt buộc)
-        <input value={value.note} maxLength={500} placeholder="VD: ưu tiên chấm phòng Kế toán trước" onChange={(e) => onChange({ ...value, note: e.target.value })} />
+        <input value={value.note} maxLength={500} placeholder="VD: Ưu tiên đánh giá phòng Kế toán trước" onChange={(e) => onChange({ ...value, note: e.target.value })} />
       </label>
     </div>
   );
@@ -552,7 +552,7 @@ function ScheduleFields({ value, onChange }: { value: Schedule; onChange: (v: Sc
 function ExamSummary({ program }: { program: TrialProgram }) {
   return (
     <p className="tp-muted tp-row">
-      Bài test: {program.choiceCount || 18} câu trắc nghiệm (6 lĩnh vực × 3 cấp độ: Cơ bản · Trung cấp · Nâng cao) · Không có tự luận ·
+      Bài đánh giá: {program.choiceCount || 54} câu trắc nghiệm (6 lĩnh vực × 3 cấp độ: Cơ bản · Trung cấp · Nâng cao) · Không có tự luận ·
       <Camera size={14} aria-hidden /> camera <Mic size={14} aria-hidden /> micro <Monitor size={14} aria-hidden /> chia sẻ màn hình
     </p>
   );
