@@ -17,7 +17,7 @@ public static class PulseRules
     public const int MinDecisionReasonLength = 10;
 
     /// <summary>Số câu rút cho mỗi lần làm câu hỏi ôn tập mô đun; phải đúng tất cả (§9.2).</summary>
-    public const int ModuleQuizDrawSize = 2;
+    public const int ModuleQuizDrawSize = 3;
 
     /// <summary>
     /// Ngân hàng ôn tập của mô đun gắn câu hỏi với trang nội dung theo thứ tự: câu thứ 2k-1 và 2k (sort_order) ↔ trang k.

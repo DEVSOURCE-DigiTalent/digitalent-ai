@@ -225,8 +225,35 @@ public class PulseLearnerReader
         var trialBasic = trialPublished == true;
         if (trialPublished.HasValue)
         {
-            targets = categoryIds.ToDictionary(id => id, _ => trialBasic ? 1 : 0);
-            ceilings = categoryIds.ToDictionary(id => id, _ => 1);
+            if (!trialBasic)
+            {
+                targets = categoryIds.ToDictionary(id => id, _ => 0);
+                ceilings = categoryIds.ToDictionary(id => id, _ => 0);
+            }
+            else
+            {
+                var hasCustomCeilings = await _context.CapabilityCeilings.AsNoTracking()
+                    .AnyAsync(c => c.OrganizationId == organizationId);
+                var hasPurchasedSeats = await _context.CourseSeatOrders.AsNoTracking()
+                    .AnyAsync(o => o.OrganizationId == organizationId);
+
+                if (!hasCustomCeilings && !hasPurchasedSeats)
+                {
+                    targets = categoryIds.ToDictionary(id => id, _ => 1);
+                    ceilings = categoryIds.ToDictionary(id => id, _ => 1);
+        
+                }
+                else
+                {
+                    targets = categoryIds.ToDictionary(id => id, id =>
+                    {
+                        var ceilingVal = ceilings.TryGetValue(id, out var c) && c > 0 ? c : 1;
+                        var targetVal = targets.TryGetValue(id, out var t) && t > 0 ? t : ceilingVal;
+                        return Math.Max(targetVal, ceilingVal);
+                    });
+                }
+            }
+
         }
         var evidenceLevels = await LoadEvidenceLevelsAsync(employee.Id);
 
@@ -368,6 +395,26 @@ public class PulseLearnerReader
             };
         }).ToList();
 
+        var seatOrders = await (
+                from o in _context.CourseSeatOrders.AsNoTracking()
+                join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
+                where o.OrganizationId == organizationId
+                select new { pc.Code, o.Seats })
+            .ToListAsync();
+        var purchasedSeatsByCode = seatOrders
+            .GroupBy(s => s.Code, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Sum(s => s.Seats), StringComparer.OrdinalIgnoreCase);
+
+        var usedSeats = await _context.CourseAssignments.AsNoTracking()
+            .Where(ca => ca.Status == Statuses.CourseAssignment.Active)
+            .Join(_context.Courses.AsNoTracking().Where(c => c.OrganizationId == organizationId),
+                ca => ca.CourseId, c => c.Id, (ca, c) => new { ca.EmployeeId, c.Code })
+            .Distinct()
+            .ToListAsync();
+        var usedSeatsByCode = usedSeats
+            .GroupBy(s => s.Code, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
+
         var hasPosition = employee.JobPositionId.HasValue;
         var now = Now;
         var states = courses
@@ -393,8 +440,12 @@ public class PulseLearnerReader
                     : approved || started || (trialBasic && course.Tier == 1) || (placementTest != null && trialBasic) ? PulsePreStatus.NotNeeded
                     : !hasPosition || zone is PulseCourseZone.OutsidePath or PulseCourseZone.AboveCeiling || !prereqApproved ? PulsePreStatus.Locked
                     : PulsePreStatus.Required;
+                var hasPurchasedSeat = purchasedSeatsByCode.GetValueOrDefault(course.Code) > usedSeatsByCode.GetValueOrDefault(course.Code)
+                    || courses.Any(higher => higher.CategoryId == course.CategoryId
+                                             && higher.Tier > course.Tier
+                                             && purchasedSeatsByCode.GetValueOrDefault(higher.Code) > usedSeatsByCode.GetValueOrDefault(higher.Code));
                 var access = course.Tier == 1 ? PulseCourseAccess.FreeFull
-                    : enrollment != null ? PulseCourseAccess.SeatActive
+                    : (enrollment != null || hasPurchasedSeat) ? PulseCourseAccess.SeatActive
                     : PulseCourseAccess.Preview;
                 var block = !hasPosition ? PulseBlockReason.NoPosition
                     : zone == PulseCourseZone.OutsidePath ? PulseBlockReason.OutsidePath
@@ -402,7 +453,7 @@ public class PulseLearnerReader
                     : !prereqApproved ? PulseBlockReason.PriorLevelRequired
                     : preStatus == PulsePreStatus.Required ? PulseBlockReason.PreAssessmentRequired
                     : preStatus == PulsePreStatus.Pending ? PulseBlockReason.PreAssessmentPending
-                    : course.Tier > 1 && enrollment == null ? PulseBlockReason.SeatRequired
+                    : course.Tier > 1 && enrollment == null && !hasPurchasedSeat ? PulseBlockReason.SeatRequired
                     : null;
                 var modules = enrollment != null
                     ? modulesByCourse.GetValueOrDefault(enrollment.CourseId) ?? new List<PulseModuleInfo>()
@@ -426,7 +477,7 @@ public class PulseLearnerReader
                     : finalStatus is PulseFinalStatus.Flagged or PulseFinalStatus.DeadlineMissed ? PulseSlotStatus.NeedsSupport
                     : finalStatus == PulseFinalStatus.RetryWait ? PulseSlotStatus.RetryWait
                     : enrollment != null && PulseRules.CanSubmitFinal(finalStatus) ? PulseSlotStatus.FinalReady
-                    : course.Tier > 1 && enrollment == null ? PulseSlotStatus.SeatNeeded
+                    : course.Tier > 1 && enrollment == null && !hasPurchasedSeat ? PulseSlotStatus.SeatNeeded
                     : enrollment != null && enrollment.Status != Statuses.Enrollment.NotStarted ? PulseSlotStatus.InProgress
                     : PulseSlotStatus.ToLearn;
                 return new PulseCourseState
