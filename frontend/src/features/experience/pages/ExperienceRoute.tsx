@@ -17,11 +17,11 @@ export function ExperienceRoute() {
   return <div className="experience-app">
     <div className="experience-preview-bar">
       <strong>Giao diện mẫu</strong>
-      <span>Chọn không gian để xem, không cần tài khoản hay seed.</span>
+      <span>Chọn giao diện để xem trước.</span>
       <nav aria-label="Chọn giao diện mẫu">
         {views.map(view => <a key={view.role} href={`/experience?role=${view.role}`} aria-current={activeRole === view.role ? 'page' : undefined}>{view.label}</a>)}
       </nav>
-      <a className="experience-preview-exit" href="/login">Đăng nhập API thật</a>
+      <a className="experience-preview-exit" href="/login">Đăng nhập</a>
     </div>
     <DemoExperience />
   </div>;

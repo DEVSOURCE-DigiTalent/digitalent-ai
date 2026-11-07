@@ -153,6 +153,18 @@ function parseJson<T>(value: T | string | null | undefined, fallback: T): T {
   }
 }
 
+function parseRubricCriteria(value: unknown): RubricCriterion[] {
+  let parsed = value;
+  for (let attempt = 0; attempt < 2 && typeof parsed === 'string'; attempt += 1) {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      return [];
+    }
+  }
+  return Array.isArray(parsed) ? parsed.filter((item) => item && typeof item === 'object') as RubricCriterion[] : [];
+}
+
 function normalizeSubmission<T extends TaskSubmissionDto>(submission: T): T {
   return {
     ...submission,
@@ -166,7 +178,7 @@ function normalizeSubmission<T extends TaskSubmissionDto>(submission: T): T {
 function normalizeTask<T extends PracticalTaskDto>(task: T): T {
   return {
     ...task,
-    rubricCriteria: parseJson(task.rubricCriteria, []),
+    rubricCriteria: parseRubricCriteria(task.rubricCriteria),
     ...('submissions' in task ? {
       submissions: (task as unknown as PracticalTaskDetailDto).submissions.map(normalizeSubmission),
     } : {}),
@@ -206,7 +218,7 @@ export const taskService = {
     return apiClient.get<ApiResponse<SubmissionDetailDto>>(`/submissions/${id}`)
       .then((res) => mapData(res, (submission) => ({
         ...normalizeSubmission(submission),
-        rubricCriteria: parseJson(submission.rubricCriteria, []),
+        rubricCriteria: parseRubricCriteria(submission.rubricCriteria),
       })));
   },
 

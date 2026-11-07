@@ -1,70 +1,18 @@
-import React from 'react';
-import { EmptyState } from '@/components/shared';
+import { useState } from 'react';
+import { ClipboardCheck, CalendarDays } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import type { AssessmentAttemptRecord } from '@/services/mock/server/types-work';
+import { MemberTabEmpty, MemberTabHeader, MemberTabPager } from './MemberTabUi';
 
-interface AssessmentsTabProps {
-  attempts?: AssessmentAttemptRecord[];
-  readOnly?: boolean;
+interface AssessmentsTabProps { attempts?: AssessmentAttemptRecord[]; readOnly?: boolean }
+const PAGE_SIZE = 6;
+export function AssessmentsTab({ attempts = [] }: AssessmentsTabProps) {
+  const [page, setPage] = useState(1);
+  const safePage = Math.min(page, Math.max(1, Math.ceil(attempts.length / PAGE_SIZE)));
+  return <div><MemberTabHeader title="Kết quả đánh giá" count={attempts.length} icon={<ClipboardCheck size={21} />} />
+    {attempts.length === 0 ? <MemberTabEmpty title="Chưa có kết quả đánh giá" description="Kết quả các bài đánh giá sẽ được lưu tại đây." icon={<ClipboardCheck size={27} />} /> : <>
+      <div className="member-tab-grid">{attempts.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE).map((att) => <article key={att.id} className="member-tab-card"><div className="member-tab-card-head"><div><h3>{att.courseTitle}</h3><p style={{ margin: '3px 0 0' }}>{att.assessmentId}</p></div><span className={`member-tab-score${att.passed ? '' : ' is-low'}`}>{att.score}</span></div><div className="member-tab-meta"><strong style={{ color: att.passed ? '#087654' : '#bc5c3a' }}>{att.passed ? 'Đạt' : 'Chưa đạt'}</strong><span>{att.correctAnswers}/{att.totalQuestions} câu đúng</span><span><CalendarDays size={14} />{formatDate(att.submittedAt)}</span></div></article>)}</div>
+      <MemberTabPager page={safePage} total={attempts.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+    </>}
+  </div>;
 }
-
-export const AssessmentsTab: React.FC<AssessmentsTabProps> = ({ attempts = [] }) => {
-  if (attempts.length === 0) {
-    return (
-      <EmptyState
-        title="Chưa có kết quả đánh giá"
-        description="Nhân viên chưa thực hiện bài kiểm tra trắc nghiệm hay bài đánh giá năng lực nào."
-      />
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-900">
-          Lịch sử làm bài đánh giá ({attempts.length})
-        </h3>
-      </div>
-
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-100 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <th scope="col" className="px-4 py-2.5 font-medium">Khóa học / Bài đánh giá</th>
-              <th scope="col" className="px-4 py-2.5 font-medium">Điểm số</th>
-              <th scope="col" className="px-4 py-2.5 font-medium">Kết quả</th>
-              <th scope="col" className="px-4 py-2.5 font-medium">Số câu đúng</th>
-              <th scope="col" className="px-4 py-2.5 font-medium">Ngày nộp</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {attempts.map((att) => (
-              <tr key={att.id} className="hover:bg-slate-50/50">
-                <td className="px-4 py-3">
-                  <p className="font-medium text-slate-900">{att.courseTitle}</p>
-                  <p className="text-xs text-slate-500 font-mono">{att.assessmentId}</p>
-                </td>
-                <td className="px-4 py-3 font-semibold text-slate-900">{att.score} / 100</td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
-                      att.passed
-                        ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20'
-                        : 'bg-red-50 text-red-700 ring-red-600/20'
-                    }`}
-                  >
-                    {att.passed ? 'Đạt' : 'Chưa đạt'}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-slate-600">
-                  {att.correctAnswers} / {att.totalQuestions}
-                </td>
-                <td className="px-4 py-3 text-xs text-slate-500">{formatDate(att.submittedAt)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};

@@ -164,6 +164,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<CourseSeatOrder> CourseSeatOrders => Set<CourseSeatOrder>();
 
     // Shared
+    public DbSet<UserFeedback> UserFeedbacks => Set<UserFeedback>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<FileObject> FileObjects => Set<FileObject>();
     public DbSet<Notification> Notifications => Set<Notification>();

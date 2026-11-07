@@ -1,4 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { Building2, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,6 +9,10 @@ import { useMembers } from '@/hooks/use-members';
 import type { DepartmentDto } from '@/services/department.service';
 import { toast } from 'sonner';
 import { organizationErrorMessage } from '@/lib/organization-errors';
+import { INPUT_CLASS } from '@/features/onboarding/components/styles';
+import { useDialogFocus } from '@/hooks/use-dialog-focus';
+import './job-position-form.css';
+import './department-form.css';
 
 const formSchema = z.object({
   code: z.string().min(1, 'Vui lòng nhập mã'),
@@ -26,6 +32,8 @@ interface DepartmentFormDialogProps {
 }
 
 export function DepartmentFormDialog({ open, onClose, department }: DepartmentFormDialogProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(open, dialogRef, onClose);
   const isEditing = !!department;
   const createMutation = useCreateDepartment();
   const updateMutation = useUpdateDepartment();
@@ -129,20 +137,30 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" role="dialog">
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">
-          {isEditing ? 'Sửa phòng ban' : 'Tạo phòng ban'}
-        </h2>
+  return createPortal(
+    <div className="department-dialog-layer fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="department-dialog-backdrop absolute inset-0" aria-hidden="true" onClick={onClose} />
+      <div ref={dialogRef} tabIndex={-1} className="department-dialog position-form-dialog relative flex max-h-[min(90dvh,820px)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="department-dialog-title">
+        <div className="position-form-head">
+          <div className="position-form-icon"><Building2 className="size-5" /></div>
+          <div className="flex-1">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-teal-700">CẤU TRÚC TỔ CHỨC</p>
+            <h2 id="department-dialog-title" className="text-xl font-black tracking-tight text-slate-900">
+              {isEditing ? 'Sửa phòng ban' : 'Tạo phòng ban'}
+            </h2>
+            <p className="text-sm text-slate-500">Thiết lập thông tin và người phụ trách cho phòng ban.</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Đóng" className="position-form-close"><X className="size-5" /></button>
+        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="position-form-body department-dialog-form">
+          <div className="position-form-grid">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Mã phòng ban *</label>
+            <label htmlFor="department-code" className="block text-sm font-semibold text-slate-700 mb-1.5">Mã phòng ban <span className="text-rose-600">*</span></label>
             <input
+              id="department-code"
               {...register('code')}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className={INPUT_CLASS}
               placeholder="Ví dụ: ENG"
               disabled={isSubmitting}
             />
@@ -150,50 +168,54 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Tên phòng ban *</label>
+            <label htmlFor="department-name" className="block text-sm font-semibold text-slate-700 mb-1.5">Tên phòng ban <span className="text-rose-600">*</span></label>
             <input
+              id="department-name"
               {...register('name')}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className={INPUT_CLASS}
               placeholder="Ví dụ: Kỹ thuật"
               disabled={isSubmitting}
             />
             {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Mô tả</label>
+          <div className="position-form-full">
+            <label htmlFor="department-description" className="block text-sm font-semibold text-slate-700 mb-1.5">Mô tả</label>
             <textarea
+              id="department-description"
               {...register('description')}
               rows={2}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className={INPUT_CLASS}
               disabled={isSubmitting}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Người quản lý (Manager)</label>
+            <label htmlFor="department-manager" className="block text-sm font-semibold text-slate-700 mb-1.5">Người quản lý</label>
             <select
+              id="department-manager"
               {...register('managerEmployeeId')}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className={INPUT_CLASS}
               disabled={isSubmitting}
             >
-              <option value="">Chưa phân công Manager</option>
+              <option value="">Chưa phân công quản lý</option>
               {managerOptions.map((m) => (
                 <option key={m.employeeId} value={m.employeeId}>
                   {m.label}
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-2xs text-slate-500">
+            <p className="mt-1.5 text-xs text-slate-500">
               Người được chọn sẽ quản lý và theo dõi nhân sự thuộc phòng ban này.
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Phòng ban cấp trên</label>
+            <label htmlFor="department-parent" className="block text-sm font-semibold text-slate-700 mb-1.5">Phòng ban cấp trên</label>
             <select
+              id="department-parent"
               {...register('parentDepartmentId')}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className={INPUT_CLASS}
               disabled={isSubmitting}
             >
               <option value="">Không có (phòng ban gốc)</option>
@@ -207,10 +229,11 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
 
           {isEditing && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Trạng thái</label>
+              <label htmlFor="department-status" className="block text-sm font-semibold text-slate-700 mb-1.5">Trạng thái</label>
               <select
+                id="department-status"
                 {...register('status')}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className={INPUT_CLASS}
                 disabled={isSubmitting}
               >
                 <option value="ACTIVE">Đang dùng</option>
@@ -218,20 +241,19 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
               </select>
             </div>
           )}
-
-
-          <div className="flex justify-end gap-3 mt-6">
+          </div>
+          <div className="position-form-actions flex justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50"
+              className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               disabled={isSubmitting}
             >
               Hủy
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
+              className="position-form-save rounded-xl px-6 py-2.5 text-sm font-bold text-white disabled:opacity-50"
               disabled={isSubmitting || loadingCurrent || loadingOptions}
             >
               {isSubmitting ? 'Đang lưu…' : 'Lưu'}
@@ -239,6 +261,6 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
           </div>
         </form>
       </div>
-    </div>
+    </div>, document.body,
   );
 }

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Edit2, GraduationCap, Mail, Send, UserPlus } from 'lucide-react';
+import { ArrowLeft, Building2, Edit2, GraduationCap, Mail, Send, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
-import { PageHeader, StatusBadge, getStatusVariant, Tabs, DataTable, type Column } from '@/components/shared';
+import { StatusBadge, getStatusVariant, Tabs, DataTable, type Column } from '@/components/shared';
+import { PageLoading } from '@/components/shared/LoadingState';
 import { useDepartment } from '@/hooks/use-departments';
 import { useMembers, useResendInvitation } from '@/hooks/use-members';
 import { useJobGradeLabel } from '@/hooks/use-job-grades';
@@ -13,6 +14,7 @@ import { InviteMembersModal } from '@/features/members/components/InviteMembersM
 import type { MemberListItem } from '@/services/member.service';
 import type { JobPositionListItem } from '@/services/job-position.service';
 import { MEMBER_STATUS_LABELS, MEMBER_STATUS_VARIANTS, rolesLabel } from '@/features/members/member-labels';
+import './department-detail.css';
 
 export function DepartmentDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -73,7 +75,7 @@ export function DepartmentDetailPage() {
     }
   };
 
-  if (isLoading) return <p className="text-sm text-slate-500">Đang tải thông tin phòng ban…</p>;
+  if (isLoading) return <PageLoading label="Đang tải thông tin phòng ban" variant="detail" />;
   if (isError || !department) {
     return (
       <div role="alert" className="space-y-3">
@@ -171,7 +173,7 @@ export function DepartmentDetailPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="department-detail-page -m-4 min-h-screen space-y-6 px-5 py-7 md:-m-6 md:px-7 xl:px-10">
       <Link
         to="/enterprise/departments"
         className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900"
@@ -180,27 +182,20 @@ export function DepartmentDetailPage() {
         Danh sách phòng ban
       </Link>
 
-      <PageHeader
-        title={department.name}
-        subtitle={`Mã: ${department.code} · ${department.parentDepartmentName ? `Trực thuộc: ${department.parentDepartmentName}` : 'Phòng ban cấp cao nhất'}`}
-      >
-        <StatusBadge
-          label={department.status === 'ACTIVE' ? 'Đang dùng' : 'Ngừng dùng'}
-          variant={getStatusVariant(department.status)}
-        />
-        {canManage && (
-          <button
-            type="button"
-            onClick={() => setIsEditOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            <Edit2 className="size-4" />
-            Sửa phòng ban
-          </button>
-        )}
-      </PageHeader>
+      <header className="department-detail-heading">
+        <div>
+          <p className="department-detail-eyebrow"><Building2 size={16} aria-hidden="true" /> CẤU TRÚC TỔ CHỨC</p>
+          <h1>{department.name}</h1>
+          <p>Mã {department.code} · {department.parentDepartmentName ? `Trực thuộc ${department.parentDepartmentName}` : 'Phòng ban cấp cao nhất'}</p>
+        </div>
+        <div className="department-detail-actions">
+          <StatusBadge label={department.status === 'ACTIVE' ? 'Đang dùng' : 'Ngừng dùng'} variant={getStatusVariant(department.status)} />
+          {canManage && <button type="button" onClick={() => setIsEditOpen(true)} className="department-detail-edit"><Edit2 size={16} />Sửa phòng ban</button>}
+        </div>
+      </header>
 
       <Tabs
+        className="department-detail-tabs"
         label="Chi tiết phòng ban"
         value={tab}
         onChange={setTab}
@@ -213,7 +208,7 @@ export function DepartmentDetailPage() {
       >
         {tab === 'overview' && (
           <div className="space-y-6">
-            <dl className="grid gap-x-8 gap-y-4 rounded-lg border border-slate-200 bg-white p-6 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            <dl className="department-detail-card grid gap-x-8 gap-y-5 rounded-2xl border border-slate-200 bg-white p-6 text-sm sm:grid-cols-2 lg:grid-cols-3">
               <div>
                 <dt className="text-xs font-medium text-slate-500">Mã phòng ban</dt>
                 <dd className="mt-1 font-mono font-semibold text-slate-900">{department.code}</dd>
@@ -223,7 +218,7 @@ export function DepartmentDetailPage() {
                 <dd className="mt-1 font-medium text-slate-900">{department.name}</dd>
               </div>
               <div>
-                <dt className="text-xs font-medium text-slate-500">Quản lý (Manager)</dt>
+                <dt className="text-xs font-medium text-slate-500">Quản lý</dt>
                 <dd className="mt-1 font-semibold text-primary-700">
                   {department.managerName || 'Chưa phân công'}
                 </dd>
@@ -243,11 +238,11 @@ export function DepartmentDetailPage() {
             </dl>
 
             {/* Phân bố Cấp bậc trong phòng ban */}
-            <section className="rounded-lg border border-slate-200 bg-white p-5">
+            <section className="department-detail-card rounded-2xl border border-slate-200 bg-white p-6">
               <h3 className="text-sm font-semibold text-slate-900 mb-3">
                 Cơ cấu Cấp bậc (G1 – G3) trong phòng ban
               </h3>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="rounded-lg bg-teal-50 p-4 border border-teal-100">
                   <span className="text-xs font-medium text-teal-800">{gradeLabel('G1')}</span>
                   <p className="text-2xl font-bold text-teal-900 mt-1">{gd.G1 ?? 0}</p>
@@ -297,7 +292,7 @@ export function DepartmentDetailPage() {
                 <button
                   type="button"
                   onClick={() => setIsInviteOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#304bdf] hover:bg-[#203bbf] px-4 py-2 text-xs font-bold text-white shadow-sm shadow-[#304bdf]/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#137b84] hover:bg-[#0e5968] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <UserPlus className="size-3.5" />
                   <span>Mời nhân sự vào phòng này</span>

@@ -1,7 +1,7 @@
 # Dùng thử doanh nghiệp: báo cáo tự động từ trắc nghiệm + AI tóm tắt + đề xuất trần năng lực
 
 > **Trạng thái 2026-11-05: đã triển khai trên nhánh `feature/DT-trial-ai-report-roadmap`** (chưa commit). Khác với bản kế hoạch:
-> - Schema thật ở `docs/database/DigiTalent_AI_Canonical_v3_6.sql`: `trial_reports` chỉ giữ gợi ý (`insights` jsonb, `ai_status`
+> - Schema thật ở `docs/database/DigiTalent_AI_Canonical_v3_7.sql`: `trial_reports` chỉ giữ gợi ý (`insights` jsonb, `ai_status`
 >   PENDING/DONE/FALLBACK, `ai_model`, `ai_replaced`, `assessed_count`); số liệu và đề xuất phạm vi luôn tính lại. Bỏ
 >   `ck_trial_workspaces_report`. Chưa làm `ai_variant` / `trial_report_events` (checklist §5, §7 — Q9).
 > - AI chạy nền (hàng đợi trong tiến trình + quét lại), FE tự đọc lại khi PENDING. Chỉ A1 (ưu tiên) + A2 (lý do); A3–A6 chưa làm (Q10).
@@ -12,7 +12,7 @@
 Ngày: 2026-11-04 · Nhánh: `feature/DT-trial-ai-report-roadmap` (theo `develop` 264aadc1) · Trạng thái: **KẾ HOẠCH v5 — chờ review, chưa code**
 Workflow + mẫu UI: `docs/specs/mockups/2026-10-31-trial-ai-report-roadmap.html` (trang “Workflow” → bấm bước → “Mở mẫu”)
 Nguồn nghiệp vụ: `QuyTD13/Luồng vận hành Digital AI.html` (GĐ I, II, phần III “Lý thuyết trần nhà”)
-Nối tiếp: `docs/specs/2026-10-27-enterprise-trial-assessment.md` · Schema mới: `docs/database/DigiTalent_AI_Canonical_v3_6.sql`
+Nối tiếp: `docs/specs/2026-10-27-enterprise-trial-assessment.md` · Schema mới: `docs/database/DigiTalent_AI_Canonical_v3_7.sql`
 
 ---
 
@@ -132,7 +132,7 @@ bài trắc nghiệm” luôn hiện; (5) PA-14 “Tạo lại”.
 
 ---
 
-## 6. Dữ liệu — schema v3.6
+## 6. Dữ liệu — schema v3.7
 
 ```sql
 -- 23.1. Báo cáo dùng thử tự tạo khi đóng bài. Một dòng / DN.
@@ -193,7 +193,7 @@ Trần thật chỉ ở `capability_ceilings`. Entity `TrialReport`, `TrialRepor
 | # | Việc | Ước lượng |
 |---|---|---|
 | 0 | Gỡ tự luận + mentor khỏi luồng dùng thử (BE paper/submit/stage, FE EM-T1, PA-14, ẩn MT cho dùng thử); `ChoicePerCell` theo Q1; sửa test | 0,75 ngày |
-| 1 | SQL v3.6 + entity + migration `AddTrialReports` | 0,25 |
+| 1 | SQL v3.7 + entity + migration `AddTrialReports` | 0,25 |
 | 2 | Đóng bài (lazy + `POST /trial/close`) + `TrialCeilingPlanner` + đơn giá catalog (Q6) + unit test | 0,75 |
 | 3 | `TrialReportContextBuilder` + Gemini (tóm tắt, refresh) + rào chắn số liệu | 0,5 |
 | 4 | Use cases roadmap + regenerate + sửa `GET /trial` + test | 0,5 |

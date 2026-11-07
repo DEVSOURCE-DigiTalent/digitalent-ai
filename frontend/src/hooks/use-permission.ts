@@ -188,6 +188,12 @@ export const PERMISSIONS = {
   // AI assistant chatbot (read-only, scoped to the caller)
   ASSISTANT_CHAT: 'assistant.chat',
 
+  // Feedback
+  FEEDBACK_CREATE: 'feedback.create',
+  FEEDBACK_READ_OWN: 'feedback.read_own',
+  FEEDBACK_READ_ALL: 'feedback.read_all',
+  FEEDBACK_MANAGE: 'feedback.manage',
+
   // Platform Admin console (Pulse redesign)
   PLATFORM_ORGANIZATION_READ: 'platform.organization.read',
   PLATFORM_ORGANIZATION_MANAGE: 'platform.organization.manage',

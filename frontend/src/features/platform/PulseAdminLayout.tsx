@@ -79,7 +79,7 @@ function PulseAdminShell() {
               DigiTalent <em>Pulse</em>
             </span>
           </NavLink>
-          <span className="pa-brand-badge">{mentor ? 'Cổng Mentor' : 'Console Nền tảng'}</span>
+          <span className="pa-brand-badge">{mentor ? 'Cổng đánh giá' : 'Quản trị nền tảng'}</span>
         </div>
 
         {/* Quick Search trigger */}
@@ -151,7 +151,7 @@ function PulseAdminShell() {
                 >
                   <div className="pa-role-left">
                     <Building2 size={16} style={{ color: '#64748b' }} />
-                    <span>Chủ doanh nghiệp (Owner)</span>
+                    <span>Chủ doanh nghiệp</span>
                   </div>
                 </button>
 
@@ -165,7 +165,7 @@ function PulseAdminShell() {
                 >
                   <div className="pa-role-left">
                     <Users2 size={16} style={{ color: '#64748b' }} />
-                    <span>Quản lý phòng ban (Manager)</span>
+                    <span>Quản lý phòng ban</span>
                   </div>
                 </button>
 
@@ -242,11 +242,11 @@ function PulseAdminShell() {
           <div className="pa-sidebar-footer-card">
             <div className="pa-sidebar-footer-title">
               <span style={{ color: '#d97706', fontSize: 14 }}>{mentor ? '✎' : '⚓'}</span>
-              <span>{mentor ? 'Không gian Mentor' : 'DigiTalent Platform'}</span>
+              <span>{mentor ? 'Không gian đánh giá' : 'Quản trị DigiTalent'}</span>
             </div>
             <span className="pa-sidebar-footer-sub">
               {mentor ? (
-                'Chấm bài test dùng thử và bài cuối khóa'
+                'Chấm bài đánh giá dùng thử và bài cuối khóa'
               ) : (
                 <>
                   Chuẩn TT 02/2025/TT-BGDĐT

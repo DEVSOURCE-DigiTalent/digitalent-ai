@@ -195,7 +195,7 @@ export function EvaluateEvidencePage() {
         <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-5">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-base font-bold text-slate-900">Tiêu chí chấm điểm (Rubric)</h3>
+              <h3 className="text-base font-bold text-slate-900">Tiêu chí đánh giá</h3>
               <p className="text-xs text-slate-500 mt-0.5">Nhập điểm thành phần cho từng tiêu chí đánh giá.</p>
             </div>
             <div className="text-right">
@@ -238,7 +238,7 @@ export function EvaluateEvidencePage() {
 
           <div className="space-y-1.5">
             <label className="block text-sm font-semibold text-slate-800">
-              Nhận xét chi tiết của Manager dành cho nhân viên <span className="text-rose-500">*</span>
+              Nhận xét dành cho nhân viên <span className="text-rose-500">*</span>
             </label>
             <textarea
               rows={3}

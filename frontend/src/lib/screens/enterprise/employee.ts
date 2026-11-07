@@ -119,4 +119,22 @@ export const EMPLOYEE_SCREENS: ScreenDef[] = [
     allowUnpaid: true,
     priority: 'P1',
   },
+  {
+    id: 'EM-13',
+    title: 'Góp ý',
+    path: '/enterprise/me/feedbacks',
+    roles: EMPLOYEE_ROLES,
+    permission: P.FEEDBACK_READ_OWN,
+    allowUnpaid: true,
+    priority: 'P1',
+  },
+  {
+    id: 'EM-14',
+    title: 'Báo lỗi',
+    path: '/enterprise/me/bug-reports',
+    roles: EMPLOYEE_ROLES,
+    permission: P.FEEDBACK_READ_OWN,
+    allowUnpaid: true,
+    priority: 'P1',
+  },
 ];

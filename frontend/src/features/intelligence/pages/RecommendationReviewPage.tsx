@@ -8,6 +8,7 @@ import { PERMISSIONS } from '@/hooks/use-permission';
 import { apiErrorMessage, formatDate } from '@/lib/utils';
 import type { RecommendationReviewRow, ReviewStatus } from '@/services/analytics.service';
 import { INPUT_CLASS, PRIMARY_BUTTON, SECONDARY_BUTTON } from '@/features/onboarding/components/styles';
+import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 
 const PAGE_SIZE = 12;
 
@@ -131,17 +132,15 @@ export function RecommendationReviewPage() {
       </div>}
       {!isError && <>
       <DataTable
+        className="owner-filter-table"
         columns={columns}
         data={data?.items ?? []}
         keyExtractor={(r) => `${r.employeeId}:${r.courseId}`}
         isLoading={isLoading}
         emptyTitle={status === 'PENDING' ? 'Không còn đề xuất nào chờ duyệt' : 'Không có đề xuất nào'}
-        emptyDescription="Đề xuất mới xuất hiện khi skill gap thay đổi hoặc có nhân viên mới."
+        emptyDescription="Đề xuất sẽ xuất hiện khi có kết quả phân tích năng lực mới."
         filters={
-          <select aria-label="Lọc theo trạng thái" value={status} onChange={(e) => { setStatus(e.target.value as ReviewStatus | ''); setPage(1); }} className={INPUT_CLASS}>
-            <option value="">Tất cả</option>
-            {(Object.keys(STATUS_LABELS) as ReviewStatus[]).map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
-          </select>
+          <OwnerFilterSelect label="Lọc theo trạng thái" value={status} onChange={(value) => { setStatus(value as ReviewStatus | ''); setPage(1); }} options={[{ value: '', label: 'Tất cả' }, ...(Object.keys(STATUS_LABELS) as ReviewStatus[]).map((s) => ({ value: s, label: STATUS_LABELS[s] }))]} />
         }
         pageInfo={{ page, pageSize: PAGE_SIZE, total: data?.totalItems ?? 0, onPageChange: setPage }}
       />

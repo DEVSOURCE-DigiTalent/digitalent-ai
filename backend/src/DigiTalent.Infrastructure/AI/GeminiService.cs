@@ -55,6 +55,7 @@ public sealed class GeminiService : IGeminiService
         string finalPrompt,
         IReadOnlyList<string> criteria,
         IReadOnlyList<ProctoringEventInfo>? proctoringEvents = null,
+        string? courseContent = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(_apiKey))
@@ -63,7 +64,27 @@ public sealed class GeminiService : IGeminiService
             return PulseRules.AiHint(evidenceText);
         }
 
+        var prompt = EvidencePrompt(evidenceText, finalPrompt, criteria, proctoringEvents, courseContent);
+        return await SendEvidenceAsync(prompt, evidenceText, criteria.Count, cancellationToken);
+    }
+
+    /// <summary>Text sent to Gemini for one course-final or pre-assessment answer.</summary>
+    public static string EvidencePrompt(
+        string evidenceText,
+        string finalPrompt,
+        IReadOnlyList<string> criteria,
+        IReadOnlyList<ProctoringEventInfo>? proctoringEvents,
+        string? courseContent)
+    {
         var criteriaList = string.Join("\n", criteria.Select((c, i) => (i + 1) + ". " + c));
+
+        var courseText = string.IsNullOrWhiteSpace(courseContent)
+            ? ""
+            : "NỘI DUNG KHÓA HỌC (kiến thức nhân viên đã học trong khóa này):\n" + courseContent.Trim() + "\n\n";
+        var courseRule = courseText.Length == 0
+            ? ""
+            : "Đối chiếu bài nộp với NỘI DUNG KHÓA HỌC: bài áp dụng đúng kiến thức đã học thì ghi nhận; hiểu sai hoặc mâu thuẫn với nội dung khóa "
+              + "thì nêu rõ điểm sai trong summary và relevance_note. Không trừ điểm vì thiếu kiến thức nằm ngoài khóa và ngoài đề.\n";
 
         // Phần events giám sát (nếu có)
         var eventsText = "";
@@ -84,14 +105,16 @@ public sealed class GeminiService : IGeminiService
                 + "LOOKING_AWAY=nhìn ra ngoài màn hình lâu, FACE_CHECK_ON/OFF=nhận diện khuôn mặt trên trình duyệt chạy / không chạy được.";
         }
 
-        var prompt =
+        return
             "Bạn là hệ thống AI đánh giá bài cuối khóa năng lực số cho doanh nghiệp. "
             + "Phân tích bài nộp của nhân viên và trả lời JSON thuần (không markdown).\n\n"
             + "ĐỀ BÀI:\n" + StripHtml(finalPrompt) + "\n\n"
             + "TIÊU CHÍ CHẤM (" + criteria.Count + " tiêu chí):\n" + criteriaList + "\n\n"
+            + courseText
             + "BÀI NỘP CỦA NHÂN VIÊN:\n" + evidenceText
             + eventsText + "\n\n"
             + "YÊU CẦU ĐÁNH GIÁ:\n"
+            + courseRule
             + "1. checks: đánh giá từng tiêu chí (true/false)\n"
             + "2. summary: tóm tắt tổng quan 2-3 câu\n"
             + "3. detail: phân tích chi tiết gồm:\n"
@@ -121,7 +144,10 @@ public sealed class GeminiService : IGeminiService
             + "\"clarity_score\":0,\"clarity_note\":\"...\",\"verdict\":\"...\"},"
             + "\"fraud\":{\"level\":\"LOW\",\"summary\":\"...\",\"items\":[{\"time\":\"00:23\",\"event\":\"Rời tab\",\"note\":\"...\"}]}}\n"
             + "Trả lời bằng tiếng Việt.";
+    }
 
+    private async Task<PulseAiHintDto> SendEvidenceAsync(string prompt, string evidenceText, int criteriaCount, CancellationToken cancellationToken)
+    {
         try
         {
             var text = await GenerateJsonAsync(prompt, cancellationToken);
@@ -132,7 +158,7 @@ public sealed class GeminiService : IGeminiService
             }
 
             var parsed = JsonSerializer.Deserialize<AiHintResponse>(text);
-            if (parsed?.Checks == null || parsed.Checks.Count != criteria.Count)
+            if (parsed?.Checks == null || parsed.Checks.Count != criteriaCount)
             {
                 _logger.LogWarning("Gemini returned invalid checks count, falling back.");
                 return PulseRules.AiHint(evidenceText);

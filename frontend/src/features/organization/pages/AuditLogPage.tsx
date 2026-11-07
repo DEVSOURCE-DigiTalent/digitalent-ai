@@ -3,7 +3,7 @@ import { DataTable, PageHeader, type Column } from '@/components/shared';
 import { useAuditLog } from '@/hooks/use-organization';
 import { formatDateTime } from '@/lib/utils';
 import type { AuditEntry } from '@/services/organization.service';
-import { INPUT_CLASS } from '@/features/onboarding/components/styles';
+import { OwnerFilterSelect } from '../components/OwnerFilterSelect';
 import { AUDIT_ACTION_LABELS, auditActionLabel } from '@/features/members/member-labels';
 
 const PAGE_SIZE = 20;
@@ -27,6 +27,7 @@ export function AuditLogPage() {
     <div>
       <PageHeader title="Nhật ký tổ chức" subtitle="Các thay đổi nhạy cảm: vai trò, thành viên, gói dịch vụ, cấu hình" />
       <DataTable
+        className="owner-filter-table"
         columns={columns}
         data={data?.items ?? []}
         keyExtractor={(e) => e.id}
@@ -36,10 +37,7 @@ export function AuditLogPage() {
         searchPlaceholder="Tìm theo người, đối tượng hoặc chi tiết"
         emptyTitle="Chưa có mục nào trong nhật ký"
         filters={
-          <select aria-label="Lọc theo hành động" value={action} onChange={(e) => { setAction(e.target.value); setPage(1); }} className={INPUT_CLASS}>
-            <option value="">Mọi hành động</option>
-            {Object.entries(AUDIT_ACTION_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-          </select>
+          <OwnerFilterSelect label="Lọc theo hành động" value={action} onChange={(value) => { setAction(value); setPage(1); }} options={[{ value: '', label: 'Mọi hành động' }, ...Object.entries(AUDIT_ACTION_LABELS).map(([key, label]) => ({ value: key, label }))]} />
         }
         pageInfo={{ page, pageSize: PAGE_SIZE, total: data?.totalItems ?? 0, onPageChange: setPage }}
       />

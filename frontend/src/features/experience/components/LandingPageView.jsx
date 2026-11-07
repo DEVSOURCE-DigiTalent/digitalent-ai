@@ -51,7 +51,7 @@ export default function LandingPageView({ onSelectRoleAndStartTest, onNavigateTo
           </h1>
 
           <p style={{ fontSize: '16px', opacity: 0.9, lineHeight: 1.6, maxWidth: '780px', margin: '0 auto 32px' }}>
-            Hệ thống không đánh giá cảm tính. Năng lực số chỉ được tính khi người học <strong>chọn đúng vị trí công việc</strong>, tham gia <strong>bài test khảo sát ma trận đầu vào</strong> và hệ thống tự động phân tích <strong>khoảng cách Skill Gap</strong> để phân bổ lộ trình bù đắp chính xác nhất.
+            Hệ thống không đánh giá cảm tính. Năng lực số chỉ được tính khi người học <strong>chọn đúng vị trí công việc</strong>, tham gia <strong>bài đánh giá khảo sát ma trận đầu vào</strong> và hệ thống tự động phân tích <strong>khoảng trống năng lực</strong> để phân bổ lộ trình bù đắp chính xác nhất.
           </p>
 
           {/* Quick Interactive Role Selector Widget */}
@@ -217,7 +217,7 @@ export default function LandingPageView({ onSelectRoleAndStartTest, onNavigateTo
               Khảo Sát Khởi Điểm
             </h4>
             <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              Thực hiện bài test trắc nghiệm đối soát tình huống để hệ thống đo lường trình độ thực tế hiện tại.
+              Thực hiện bài đánh giá trắc nghiệm đối soát tình huống để hệ thống đo lường trình độ thực tế hiện tại.
             </p>
           </div>
 

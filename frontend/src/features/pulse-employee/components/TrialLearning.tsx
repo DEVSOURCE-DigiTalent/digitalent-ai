@@ -16,8 +16,8 @@ import { Bar, Eyebrow, PuLink } from './ui';
 import '../pulse-trial.css';
 
 /**
- * Học thử (doanh nghiệp dùng thử): sáu khóa Cơ bản, mỗi lĩnh vực một khóa, học tới bài cuối khóa. Trước khi bài test đóng
- * (hết hạn / đủ bài / chủ doanh nghiệp đóng sớm), các khóa hiện khóa kèm cảnh báo (làm bài test / chờ bài đóng). Trung cấp, Nâng cao mở khi doanh nghiệp mua
+ * Học thử (doanh nghiệp dùng thử): sáu khóa Cơ bản, mỗi lĩnh vực một khóa, học tới bài cuối khóa. Trước khi bài đánh giá đóng
+ * (hết hạn / đủ bài / chủ doanh nghiệp đóng sớm), các khóa hiện khóa kèm cảnh báo (làm bài đánh giá / chờ bài đóng). Trung cấp, Nâng cao mở khi doanh nghiệp mua
  * khóa — chủ doanh nghiệp có nút mua ngay dưới danh sách.
  */
 export function TrialLearning({ overview }: { overview: PulseOverview }) {
@@ -66,17 +66,17 @@ export function TrialLearningHead({ total, done }: { total: number; done: number
   );
 }
 
-/** Cảnh báo trước khi học thử: làm bài test trước / chờ bài test đóng / bài test đã đóng. */
+/** Cảnh báo trước khi học thử: làm bài đánh giá trước / chờ bài đánh giá đóng / bài đánh giá đã đóng. */
 export function TrialNotice({ state, mine }: { state: TrialGateState; mine: MyTrialAssessment }) {
   if (state === 'waiting') {
     return (
       <NoticeCard
         tone="waiting"
         icon={<Hourglass size={20} />}
-        title="Đã nộp, chờ bài test đóng"
-        text="Học thử mở khi bài test đóng: hết hạn hoặc mọi người đã nộp."
+        title="Đã nộp, chờ bài đánh giá đóng"
+        text="Học thử mở khi bài đánh giá đóng: hết hạn hoặc mọi người đã nộp."
         meta={mine.submittedAt ? `Đã nộp ${formatWhen(mine.submittedAt)}` : undefined}
-        action={<PuLink to={PULSE_PATHS.trialTest} kind="outline" small>Xem bài test</PuLink>}
+        action={<PuLink to={PULSE_PATHS.trialTest} kind="outline" small>Xem bài đánh giá</PuLink>}
       />
     );
   }
@@ -85,19 +85,19 @@ export function TrialNotice({ state, mine }: { state: TrialGateState; mine: MyTr
       <NoticeCard
         tone="closed"
         icon={<Lock size={20} />}
-        title="Bài test đã đóng"
+        title="Bài đánh giá đã đóng"
         text={mine.closedMessage ?? 'Hạn làm bài đã qua.'}
-        action={<PuLink to={PULSE_PATHS.trialTest} kind="outline" small>Xem bài test</PuLink>}
+        action={<PuLink to={PULSE_PATHS.trialTest} kind="outline" small>Xem bài đánh giá</PuLink>}
       />
     );
   }
   return (
     <NoticeCard
       icon={<ClipboardList size={20} />}
-      title="Làm bài test trước khi học"
-      text="Học thử mở sau khi bài test đóng."
+      title="Làm bài đánh giá trước khi học"
+      text="Học thử mở sau khi bài đánh giá đóng."
       meta={mine.canStart && mine.testDeadline ? `Hạn nộp ${formatWhen(mine.testDeadline)}` : mine.closedMessage ?? undefined}
-      action={<PuLink to={PULSE_PATHS.trialTest}>Làm bài test <ArrowRight size={15} aria-hidden /></PuLink>}
+      action={<PuLink to={PULSE_PATHS.trialTest}>Làm bài đánh giá <ArrowRight size={15} aria-hidden /></PuLink>}
     />
   );
 }
@@ -141,7 +141,7 @@ export interface LockedCourse {
   moduleCount?: number | null;
 }
 
-/** Sáu khóa Cơ bản hiện trước, khóa lại tới khi có kết quả bài test. */
+/** Sáu khóa Cơ bản hiện trước, khóa lại tới khi có kết quả bài đánh giá. */
 export function LockedCourses({ courses }: { courses: LockedCourse[] }) {
   return (
     <ul className="pu-tl-grid" aria-label="Khóa học thử (chưa mở)">

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { X, Info, Building2, Users, ChevronDown, Check, Search, ArrowRight } from 'lucide-react';
@@ -9,11 +10,13 @@ import {
 import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
 import { useTrialRoadmap } from '@/hooks/use-trial-program';
 import { organizationErrorMessage } from '@/lib/organization-errors';
+import { SectionLoading } from '@/components/shared/LoadingState';
 import type { CapabilityCeilings, CeilingCourse, CeilingDomain } from '@/services/capability-ceiling.service';
 import type { TrialPlanKind } from '@/services/trial-program.service';
 import { courseCode, trialScopeOf, type SeatHints } from '../lib/trial-scope';
 import { TrialScopePanel } from './TrialScopePanel';
 import './capability-ceiling.css';
+import './owner-filter-controls.css';
 
 type BuyItem = { code: string; title: string; level: number; domainName: string; price: number; seats?: number };
 const PLAN_KINDS_IN_URL: TrialPlanKind[] = ['SAVING', 'BALANCED', 'FULL'];
@@ -24,7 +27,8 @@ const ALL = 'all';
 type Levels = Record<string, number>;
 
 const sumLevels = (levels: Levels) => Object.values(levels).reduce((sum, level) => sum + level, 0);
-const sameLevels = (a: Levels, b: Levels) => Object.keys(a).every((key) => a[key] === b[key]);
+const sameLevels = (a: Levels, b: Levels) =>
+  Object.keys(a).length === Object.keys(b).length && Object.keys(a).every((key) => a[key] === b[key]);
 
 function organizationLevels(matrix: CapabilityCeilings): Levels {
   return Object.fromEntries(matrix.domains.map((d) => [d.categoryId, d.organizationCeiling]));
@@ -116,7 +120,7 @@ export function CapabilityCeilingMatrix() {
   if (isLoading) {
     return (
       <section className="cc-root">
-        <p className="cc-note">Đang tải phạm vi đào tạo…</p>
+        <SectionLoading label="Đang tải phạm vi đào tạo" />
       </section>
     );
   }
@@ -132,10 +136,16 @@ export function CapabilityCeilingMatrix() {
   const orgSaved = organizationLevels(matrix);
   const current = drafts[activeScope] ?? saved;
   const dirty = Boolean(drafts[activeScope]) && !sameLevels(current, saved);
+  const needsInitialSave = activeScope === ALL && !matrix.isConfigured;
   const saving = saveOrganization.isPending || saveDepartment.isPending;
   const orgCeiling = activeScope === ALL ? current : orgSaved;
   const routeCount = sumLevels(current);
   const orgCount = sumLevels(orgCeiling);
+  const suggestedLevels: Levels = Object.fromEntries(matrix.domains.map((domain) => [
+    domain.categoryId,
+    Math.min(domain.maxAllowedCeiling ?? 1, Math.max(1, domain.suggestedCeiling)),
+  ]));
+  const hasApplicableSuggestion = activeScope === ALL && !sameLevels(current, suggestedLevels);
 
   const setDraft = (levels: Levels | null) =>
     setDrafts((all) => {
@@ -172,11 +182,7 @@ export function CapabilityCeilingMatrix() {
   };
 
   const applySuggestion = () => {
-    const suggestion: Levels =
-      activeScope === ALL
-        ? Object.fromEntries(matrix.domains.map((d) => [d.categoryId, Math.max(1, d.suggestedCeiling)]))
-        : Object.fromEntries((department?.ceilings ?? []).map((c) => [c.categoryId, c.suggested]));
-    setDraft(suggestion);
+    setDraft(suggestedLevels);
   };
 
   const save = async () => {
@@ -217,9 +223,9 @@ export function CapabilityCeilingMatrix() {
   return (
     <section className="cc-root" aria-labelledby="cc-title">
       {/* ── Tiêu đề súc tích & Nút Hướng dẫn nổi ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-1">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-teal-100 bg-gradient-to-r from-teal-50 via-white to-sky-50 px-5 py-4">
         <div className="flex items-center gap-3">
-          <h2 id="cc-title" className="text-xl font-bold tracking-tight text-slate-900">
+          <h2 id="cc-title" className="text-xl sm:text-2xl font-black tracking-[-0.03em] section-gradient">
             Phạm vi đào tạo
           </h2>
           {matrix.isConfigured ? (
@@ -233,14 +239,23 @@ export function CapabilityCeilingMatrix() {
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowGuide(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 shadow-sm transition-all"
-        >
-          <Info className="size-3.5 text-slate-500" />
-          Quy tắc & Hướng dẫn
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate('/enterprise/courses')}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
+          >
+            <span>Danh mục khóa học →</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowGuide(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
+          >
+            <Info className="size-3.5 text-slate-500" />
+            <span>Quy tắc & Hướng dẫn</span>
+          </button>
+        </div>
       </div>
 
       {roadmap && (
@@ -313,17 +328,20 @@ export function CapabilityCeilingMatrix() {
                       </div>
 
                       {matrix.departments.length > 4 && (
-                        <div className="relative pt-2 pb-1">
-                          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                        <div className="pt-2 pb-1">
+                          <label className="owner-filter-search">
+                          <Search className="size-4" aria-hidden="true" />
                           <input
                             type="text"
+                            aria-label="Tìm phòng ban trong danh sách"
                             placeholder="Tìm kiếm phòng ban..."
                             value={deptSearch}
                             onChange={(e) => setDeptSearch(e.target.value)}
-                            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs text-slate-800 placeholder-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none"
+                            className="w-full text-sm"
                             onClick={(e) => e.stopPropagation()}
                             autoFocus
                           />
+                          </label>
                         </div>
                       )}
 
@@ -429,16 +447,16 @@ export function CapabilityCeilingMatrix() {
           </div>
 
           {/* Số liệu thống kê */}
-          <div className="cc-stats">
-            <div><b>{routeCount}</b><span>{routeLabel}</span></div>
-            <div><b>{orgCount}</b><span>Khóa trong phạm vi doanh nghiệp</span></div>
-            <div><b>{matrix.platformCourseCount}</b><span>Tổng danh mục chuẩn (18)</span></div>
+          <div className="cc-stats" aria-label="Tổng quan phạm vi đào tạo">
+            <div className="cc-stat cc-stat--active"><span className="cc-stat-label">Trong phạm vi</span><b>{routeCount}</b><span>{routeLabel}</span></div>
+            <div className="cc-stat cc-stat--organization"><span className="cc-stat-label">Cấp doanh nghiệp</span><b>{orgCount}</b><span>Khóa trong phạm vi doanh nghiệp</span></div>
+            <div className="cc-stat cc-stat--catalog"><span className="cc-stat-label">Danh mục</span><b>{matrix.platformCourseCount}</b><span>Tổng khóa học hiện có</span></div>
           </div>
 
           {/* Nút hành động */}
           {canEdit && (
             <div className="cc-actions">
-              <span className="hint">
+              <div className="hint"><Info size={17} aria-hidden="true" /><span>
                 {blockedDepartments
                   ? 'Cần lưu phạm vi doanh nghiệp trước.'
                   : activeScope === ALL
@@ -446,11 +464,11 @@ export function CapabilityCeilingMatrix() {
                     : department?.isCustomized
                       ? 'Đang dùng giới hạn riêng.'
                       : 'Đang theo phạm vi doanh nghiệp.'}
-              </span>
+              </span></div>
               <div className="btns">
-                {activeScope === ALL && (
+                {hasApplicableSuggestion && (
                   <button type="button" className="cc-btn" onClick={applySuggestion} disabled={saving}>
-                    Gợi ý theo vị trí
+                    Áp dụng mức đề xuất
                   </button>
                 )}
                 {activeScope !== ALL && department?.isCustomized && (
@@ -458,22 +476,30 @@ export function CapabilityCeilingMatrix() {
                     Theo doanh nghiệp
                   </button>
                 )}
-                <button type="button" className="cc-btn" onClick={() => setDraft(null)} disabled={!dirty || saving}>
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  className="cc-btn primary"
-                  onClick={save}
-                  disabled={saving || blockedDepartments || (!dirty && (activeScope !== ALL || matrix.isConfigured))}
-                >
-                  {saving ? 'Đang lưu…' : activeScope === ALL ? 'Lưu phạm vi doanh nghiệp' : 'Lưu phạm vi phòng ban'}
-                </button>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {canEdit && (dirty || needsInitialSave) && createPortal(
+        <div className="cc-root cc-save-portal">
+          <div className={`cc-save-bar${selectedToBuy.size > 0 ? ' cc-save-bar-with-cart' : ''}`} role="status" aria-live="polite">
+            <div className="cc-save-indicator" aria-hidden="true" />
+            <div className="cc-save-copy">
+              <strong>{dirty ? 'Thay đổi phạm vi đào tạo chưa được lưu' : 'Phạm vi đào tạo gợi ý chưa được lưu'}</strong>
+              <span>{activeScope === ALL ? 'Toàn doanh nghiệp' : department?.name ?? 'Phòng ban'} · Lưu để áp dụng mức tối đa đang hiển thị.</span>
+            </div>
+            <div className="cc-save-buttons">
+              {dirty && <button type="button" className="cc-btn" onClick={() => setDraft(null)} disabled={saving}>Hủy thay đổi</button>}
+              <button type="button" className="cc-btn primary" onClick={save} disabled={saving || blockedDepartments}>
+                {saving ? 'Đang lưu…' : 'Lưu thay đổi'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
 
       {/* ── Thanh thao tác mua nhiều khóa học đã chọn nổi bật (Floating Bar) ── */}
       {selectedToBuy.size > 0 && (

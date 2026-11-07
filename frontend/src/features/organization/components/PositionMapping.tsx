@@ -71,7 +71,7 @@ export function PositionMapping({ domains, isLoading }: PositionMappingProps) {
               borderBottom: '1px solid var(--po-line)',
             }}
           >
-            <span>Chuẩn Digital AI</span>
+            <span>Khung tham chiếu</span>
             <span className="text-center">Mục tiêu TB</span>
             <span className="text-center">Hiện tại TB</span>
           </div>
@@ -104,7 +104,7 @@ export function PositionMapping({ domains, isLoading }: PositionMappingProps) {
                       className="text-[11px]"
                       style={{ color: 'var(--po-muted)' }}
                     >
-                      Digital AI: {LEVEL_LABELS[DIGITAL_AI_LEVEL]}
+                      Mức tham chiếu: {LEVEL_LABELS[DIGITAL_AI_LEVEL]}
                     </small>
                   </div>
                   <span

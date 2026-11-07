@@ -81,6 +81,7 @@ public class PlatformPublishChecker
                             PlatformCatalog.BlockType.Text => "một khối chữ đang trống",
                             PlatformCatalog.BlockType.Slide => "một slide chưa có ảnh hoặc video",
                             PlatformCatalog.BlockType.Image => "một khối ảnh chưa tải ảnh",
+                            PlatformCatalog.BlockType.Pdf => "một khối PDF chưa tải tệp PDF",
                             _ => "một khối video chưa tải video",
                         };
                         Add(PlatformPublishCheck.Block, $"{label}: {what}.", module.Id);

@@ -27,6 +27,8 @@ export const PLATFORM_SCREENS: ScreenDef[] = [
   // Dùng thử doanh nghiệp (docs/specs/2026-10-27-enterprise-trial-assessment.md): yêu cầu chấm, phân công mentor; mentor chấm bài
   { id: 'PA-14', title: 'Dùng thử doanh nghiệp', path: '/platform/trials', roles: ADMIN, permission: 'platform.trial.manage', priority: 'P0' },
   { id: 'MT-03', title: 'Bài cuối khóa học thử', path: '/platform/course-reviews', roles: MENTOR, permission: 'trial.review', priority: 'P0' },
+  { id: 'PA-15', title: 'Góp ý người dùng', path: '/platform/feedbacks', roles: ADMIN, permission: 'feedback.read_all', priority: 'P0' },
+  { id: 'PA-16', title: 'Báo lỗi người dùng', path: '/platform/bug-reports', roles: ADMIN, permission: 'feedback.read_all', priority: 'P0' },
   { id: 'SHR-01', title: 'Hồ sơ của tôi', path: '/platform/account', roles: STAFF, priority: 'P1' },
   { id: 'SHR-02', title: 'Bảo mật', path: '/platform/account/security', roles: STAFF, priority: 'P1' },
   { id: 'SHR-03', title: 'Trung tâm thông báo', path: '/platform/notifications', roles: STAFF, priority: 'P1' },

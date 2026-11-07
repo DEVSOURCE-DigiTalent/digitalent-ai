@@ -366,7 +366,7 @@ public static class Statuses
         public const string Pause = "PAUSE";
     }
 
-    /// <summary>trial_reports.ai_status (v3.6) — gợi ý AI của báo cáo dùng thử.</summary>
+    /// <summary>trial_reports.ai_status (v3.7) — gợi ý AI của báo cáo dùng thử.</summary>
     public static class TrialReportAi
     {
         /// <summary>Đang chờ AI viết; báo cáo tạm hiện câu mẫu.</summary>

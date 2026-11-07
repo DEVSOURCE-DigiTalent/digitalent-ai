@@ -62,7 +62,6 @@ export function SubscriptionOverviewPage() {
     <div className="space-y-6 pb-12">
       <PageHeader
         title="Gói dịch vụ doanh nghiệp"
-        subtitle="Quản lý gói dịch vụ, tình trạng gia hạn và phân quyền tính năng của tổ chức"
       />
 
       {/* Main Plan Card */}

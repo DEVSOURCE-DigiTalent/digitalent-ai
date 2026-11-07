@@ -1,3 +1,5 @@
+@import './components/owner-filter-controls.css';
+
 /*
  * Trang chủ doanh nghiệp (lớp gốc .po-owner, bảng màu ở owner-theme.ts) — đồng bộ với trang quản lý (manager.css).
  * Chỉ thêm chuyển động: trang hiện dần, các khối xuất hiện lần lượt, thẻ/nút nhấc nhẹ khi rê chuột.

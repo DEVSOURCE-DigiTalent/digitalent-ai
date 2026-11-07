@@ -5,6 +5,7 @@ import { PageHeader, StatusBadge, DataTable, ScoreCard } from '@/components/shar
 import { useInternalCourses } from '@/hooks/use-learning';
 import { apiErrorMessage, formatDate } from '@/lib/utils';
 import type { InternalCourseDto } from '@/services/learning.service';
+import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 
 export function InternalCourseListPage() {
   const mock = import.meta.env.VITE_USE_MOCK === 'true';
@@ -127,7 +128,6 @@ export function InternalCourseListPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <PageHeader
           title={mock ? 'Khóa học nội bộ' : 'Khóa học trong tổ chức'}
-          subtitle={mock ? 'Soạn thảo và triển khai các chương trình đào tạo riêng của doanh nghiệp.' : 'Danh sách API hiện bao gồm cả khóa chuẩn và khóa có mã INT-.'}
         />
         <Link
           to="/enterprise/internal-courses/new"
@@ -139,15 +139,14 @@ export function InternalCourseListPage() {
       </div>
 
       {!mock && <div role="note" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        BE2 chưa có trường phân loại khóa chuẩn và khóa nội bộ. Chỉ khóa có mã INT- được chỉnh sửa tại đây; các khóa còn lại mở ở danh mục chuẩn.
+        Chỉ khóa học nội bộ có thể chỉnh sửa tại đây. Khóa học chuẩn được quản lý trong danh mục khóa học.
       </div>}
 
       {/* Thông báo nghiệp vụ Khung chuẩn năng lực số */}
       {mock && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
         <AlertCircle className="size-5 text-amber-600 shrink-0 mt-0.5" />
         <div className="text-sm text-amber-800">
-          <span className="font-semibold">Lưu ý nghiệp vụ:</span> Khóa học nội bộ dành riêng cho văn hóa, chính sách và quy trình nghiệp vụ nội bộ. Hoàn thành khóa học nội bộ{' '}
-          <strong className="underline">không tự động tăng bậc năng lực</strong> trong Khung chuẩn năng lực số.
+          Khóa học nội bộ dành cho văn hóa, chính sách và quy trình của tổ chức. Kết quả học tập không thay thế việc xác nhận năng lực.
         </div>
       </div>}
 
@@ -160,49 +159,42 @@ export function InternalCourseListPage() {
       </div>
 
       {/* Toolbar filters */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200">
-        <div className="relative w-full sm:w-72">
-          <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      <div className="owner-filter-toolbar flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200">
+        <label className="owner-filter-search w-full sm:w-80">
+          <Search className="size-4" aria-hidden="true" />
           <input
             type="text"
+            aria-label="Tìm khóa học nội bộ"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPageIndex(1);
             }}
             placeholder="Tìm theo tên hoặc mã khóa…"
-            className="w-full pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full text-sm"
           />
-        </div>
+        </label>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          {mock && <select
+          {mock && <OwnerFilterSelect
+            label="Lọc theo chuyên mục"
             value={category}
-            onChange={(e) => {
-              setCategory(e.target.value);
+            onChange={(value) => {
+              setCategory(value);
               setPageIndex(1);
             }}
-            className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-700"
-          >
-            <option value="">Tất cả chuyên mục</option>
-            <option value="Văn hóa & Hội nhập">Văn hóa & Hội nhập</option>
-            <option value="Chính sách & Tuân thủ">Chính sách & Tuân thủ</option>
-            <option value="Quy trình vận hành">Quy trình vận hành</option>
-            <option value="Kỹ năng chuyên môn">Kỹ năng chuyên môn</option>
-          </select>}
+            options={[{ value: '', label: 'Tất cả chuyên mục' }, { value: 'Văn hóa & Hội nhập', label: 'Văn hóa & Hội nhập' }, { value: 'Chính sách & Tuân thủ', label: 'Chính sách & Tuân thủ' }, { value: 'Quy trình vận hành', label: 'Quy trình vận hành' }, { value: 'Kỹ năng chuyên môn', label: 'Kỹ năng chuyên môn' }]}
+          />}
 
-          <select
+          <OwnerFilterSelect
+            label="Lọc theo trạng thái"
             value={status}
-            onChange={(e) => {
-              setStatus(e.target.value);
+            onChange={(value) => {
+              setStatus(value);
               setPageIndex(1);
             }}
-            className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-700"
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="PUBLISHED">Đã xuất bản</option>
-            <option value="DRAFT">Bản nháp</option>
-          </select>
+            options={[{ value: '', label: 'Tất cả trạng thái' }, { value: 'PUBLISHED', label: 'Đã xuất bản' }, { value: 'DRAFT', label: 'Bản nháp' }]}
+          />
         </div>
       </div>
 

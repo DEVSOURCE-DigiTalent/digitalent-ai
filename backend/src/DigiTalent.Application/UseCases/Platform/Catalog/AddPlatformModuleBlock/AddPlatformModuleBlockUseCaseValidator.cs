@@ -9,7 +9,7 @@ public class AddPlatformModuleBlockUseCaseValidator : AbstractValidator<AddPlatf
     {
         RuleFor(x => x.Type)
             .Must(t => PlatformCatalog.BlockType.IsValid(t?.Trim().ToUpperInvariant()))
-            .WithMessage("Loại khối phải là TEXT, SLIDE, IMAGE hoặc VIDEO.");
+            .WithMessage("Loại khối phải là TEXT, SLIDE, IMAGE, VIDEO hoặc PDF.");
         RuleFor(x => x.Position).GreaterThanOrEqualTo(0).When(x => x.Position.HasValue);
     }
 }

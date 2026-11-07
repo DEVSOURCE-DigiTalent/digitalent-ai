@@ -140,6 +140,7 @@ public interface IApplicationDbContext
     DbSet<CourseSeatOrder> CourseSeatOrders { get; }
 
     // Shared
+    DbSet<UserFeedback> UserFeedbacks { get; }
     DbSet<AuditLog> AuditLogs { get; }
     DbSet<FileObject> FileObjects { get; }
     DbSet<Notification> Notifications { get; }

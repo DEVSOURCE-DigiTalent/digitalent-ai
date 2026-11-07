@@ -9,9 +9,11 @@ import { RoleSidebar } from './sidebar';
 import { Topbar } from './Topbar';
 import { ManagerTopbar } from './ManagerTopbar';
 import { MANAGER_SIDEBAR } from '@/lib/sidebars/manager';
+import { OWNER_SIDEBAR } from '@/lib/sidebars/owner';
 import { useSidebarState } from '@/hooks/use-sidebar-state';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { ROLES } from '@/lib/roles';
+import './owner-shell.css';
 
 interface MainLayoutProps {
   portal: PortalConfig;
@@ -50,6 +52,7 @@ export function MainLayout({ portal, sidebarConfig, isUnpaid = false, children }
   const isOwner = Boolean(user?.roles?.includes(ROLES.OWNER));
   // Không gian Quản lý theo Pulse: thanh đầu trang toàn chiều ngang, menu bên nằm dưới nó, nền sáng.
   const isPulseManager = sidebarConfig === MANAGER_SIDEBAR;
+  const isPulseOwner = sidebarConfig === OWNER_SIDEBAR || (sidebarConfig == null && isOwner && portal.workspace === 'enterprise');
   const sidebarWidth = state === 'collapsed' ? '64px' : isOwner || isPulseManager ? '230px' : '248px';
 
   const unpaidBanner = isUnpaid && (
@@ -106,7 +109,7 @@ export function MainLayout({ portal, sidebarConfig, isUnpaid = false, children }
 
   return (
     <div
-      className="enterprise-shell"
+      className={`enterprise-shell${isPulseOwner ? ' owner-shell' : ''}`}
       style={{ 
         '--sidebar-w': sidebarWidth, 
         '--topbar-h': '56px',
@@ -138,7 +141,7 @@ export function MainLayout({ portal, sidebarConfig, isUnpaid = false, children }
         </div>
         <main id="main-content" className="flex-1 bg-ent-bg text-ent-fg">
           <div className="p-4 md:p-6">
-            {children ?? <Outlet />}
+            {isPulseOwner ? <div className="owner-route-stage" key={pathname}>{children ?? <Outlet />}</div> : children ?? <Outlet />}
           </div>
         </main>
       </div>

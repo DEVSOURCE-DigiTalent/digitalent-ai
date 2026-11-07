@@ -55,31 +55,37 @@ export function DemoAccountPicker({ onPick, enterpriseOnly = false }: DemoAccoun
   if (!demo) return null;
 
   return (
-    <details className="group mt-4 cramped:mt-3 rounded-xl border border-amber-400/20 bg-black/30 text-xs transition-colors">
-      <summary className="flex cursor-pointer items-center justify-between px-3.5 py-2.5 font-medium text-cream/70 hover:text-cream select-none outline-none focus-visible:ring-1 focus-visible:ring-cream/50 rounded-xl">
-        <span className="flex items-center gap-2">
-          <Sparkles className="size-3.5 text-cream-soft/80" />
-          <span>Tài khoản demo · bấm để điền nhanh</span>
+    <details className="pulse-auth-demo-picker">
+      <summary className="pulse-auth-demo-summary">
+        <span className="pulse-auth-demo-summary-label">
+          <Sparkles size={14} className="pulse-auth-demo-sparkle" aria-hidden="true" />
+          <span>Tài khoản demo thử nghiệm · Chọn để điền nhanh</span>
         </span>
-        <ChevronDown className="size-3.5 text-cream/40 transition-transform duration-200 group-open:rotate-180" />
+        <ChevronDown size={14} className="pulse-auth-demo-arrow" aria-hidden="true" />
       </summary>
-      <div className="border-t border-amber-400/15 p-3 pt-2">
-        <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-cream/45">
-          Mật khẩu chung: <code className="text-cream/90 font-mono">{demo.password}</code>
+      <div className="pulse-auth-demo-body">
+        <p className="pulse-auth-demo-hint">
+          Mật khẩu chung: <code>{demo.password}</code>
         </p>
-        <ul className="grid gap-1 max-h-48 overflow-y-auto pr-1">
-          {demo.accounts.filter(account => !enterpriseOnly || account.workspace !== 'personal').map((account) => (
-            <li key={account.id}>
-              <button
-                type="button"
-                onClick={() => onPick(account.email, demo.password)}
-                className="flex w-full items-baseline justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs text-cream/80 hover:bg-cream/10 transition-colors cursor-pointer"
-              >
-                <span className="truncate">{account.email}</span>
-                <span className="shrink-0 text-[11px] text-cream/45">{describeAccount(account)}</span>
-              </button>
-            </li>
-          ))}
+        <ul className="pulse-auth-demo-list">
+          {demo.accounts.filter(account => !enterpriseOnly || account.workspace !== 'personal').map((account) => {
+            const role = account.roles[0] as Role | undefined;
+            const roleClass = role === 'OWNER' ? 'owner' : role === 'MANAGER' ? 'manager' : 'employee';
+            return (
+              <li key={account.id}>
+                <button
+                  type="button"
+                  onClick={() => onPick(account.email, demo.password)}
+                  className="pulse-auth-demo-item"
+                >
+                  <span className="pulse-auth-demo-email">{account.email}</span>
+                  <span className={`pulse-auth-demo-badge pulse-auth-demo-badge--${roleClass}`}>
+                    {describeAccount(account)}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </details>

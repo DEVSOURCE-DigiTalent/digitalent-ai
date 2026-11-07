@@ -33,7 +33,7 @@ export const BUSINESS_HERO_FRAGMENTS: HeroFragments = {
   items: [
     { label: 'Yêu cầu vị trí', value: '12 năng lực' },
     { label: 'Khoảng trống', value: '4 ưu tiên' },
-    { label: 'Minh chứng', value: 'Chờ review' },
+    { label: 'Minh chứng', value: 'Chờ đánh giá' },
   ],
 };
 
@@ -89,7 +89,7 @@ const WORKFLOW: LandingSectionConfig = {
     {
       label: 'Vị trí',
       title: 'Xác định yêu cầu theo vị trí',
-      text: 'Owner chọn từ 9 đến 24 năng lực cho mỗi vị trí và đặt trình độ yêu cầu cho từng năng lực.',
+      text: 'Chủ doanh nghiệp chọn năng lực và mức yêu cầu cho từng vị trí.',
       preview: 'requirements',
     },
     {
@@ -100,14 +100,14 @@ const WORKFLOW: LandingSectionConfig = {
     },
     {
       label: 'Khoảng trống',
-      title: 'Phát hiện skill gap',
+      title: 'Nhận diện khoảng trống năng lực',
       text: 'So trình độ hiện tại với trình độ yêu cầu, theo từng năng lực, từng nhân viên và từng nhóm.',
       preview: 'gap',
     },
     {
       label: 'Học tập',
       title: 'Giao đúng khóa học',
-      text: 'Hệ thống đề xuất khóa theo thứ tự tiên quyết. Owner duyệt rồi giao cho đúng người.',
+      text: 'Khóa học được đề xuất theo năng lực cần cải thiện. Chủ doanh nghiệp duyệt và phân công.',
       preview: 'assignment',
     },
     {
@@ -119,7 +119,7 @@ const WORKFLOW: LandingSectionConfig = {
     {
       label: 'Xác nhận',
       title: 'Review minh chứng và xác nhận năng lực',
-      text: 'Owner hoặc Manager có thẩm quyền review theo tiêu chí. Đạt thì trình độ được xác nhận vào hồ sơ.',
+      text: 'Chủ doanh nghiệp hoặc quản lý đánh giá minh chứng theo tiêu chí trước khi xác nhận năng lực.',
       preview: 'profile',
     },
   ],
@@ -187,9 +187,9 @@ const EVIDENCE: LandingSectionConfig = {
   intro: {
     label: 'Minh chứng và xác nhận',
     title: [{ text: 'Từ nhiệm vụ thực tế đến' }, { text: 'năng lực được xác nhận.', className: SERIF_ITALIC }],
-    lead: 'Đậu bài kiểm tra chưa đủ. Năng lực chỉ được xác nhận khi nhân viên làm được việc thật và có người có thẩm quyền xem xét.',
+    lead: 'Năng lực được xác nhận qua bài thực hành và minh chứng công việc đã được đánh giá.',
   },
-  note: 'Owner hoặc Manager có thẩm quyền review. Doanh nghiệp nhỏ không có Manager thì Owner trực tiếp review.',
+  note: 'Chủ doanh nghiệp hoặc quản lý phụ trách đánh giá và xác nhận minh chứng.',
   sample: {
     competencyCode: '4.2',
     positionCode: 'MARKETING',
@@ -201,7 +201,7 @@ const EVIDENCE: LandingSectionConfig = {
       'Quy định ai được truy cập và trong bao lâu',
     ],
     feedback: 'Quy trình rõ ràng và áp dụng được ngay. Đạt cả ba tiêu chí.',
-    stages: ['Nhiệm vụ', 'Đã nộp', 'Đang review', 'Đạt tiêu chí', 'Năng lực được xác nhận'],
+    stages: ['Nhiệm vụ', 'Đã nộp', 'Đang đánh giá', 'Đạt tiêu chí', 'Đã xác nhận năng lực'],
   },
 };
 
@@ -214,7 +214,7 @@ const ROLES: LandingSectionConfig = {
   personas: [
     {
       role: 'Chủ doanh nghiệp',
-      badge: 'OWNER',
+      badge: 'CHỦ DOANH NGHIỆP',
       points: [
         'Nhìn toàn bộ năng lực của đội ngũ',
         'Thiết lập phòng ban, vị trí và yêu cầu năng lực',
@@ -223,13 +223,13 @@ const ROLES: LandingSectionConfig = {
     },
     {
       role: 'Quản lý',
-      badge: 'MANAGER · KHÔNG BẮT BUỘC',
-      points: ['Theo dõi nhóm của mình', 'Giao nhiệm vụ thực tế', 'Review minh chứng'],
-      note: 'Không bắt buộc. Với doanh nghiệp nhỏ, Owner có thể trực tiếp thực hiện các nghiệp vụ quản lý.',
+      badge: 'QUẢN LÝ · TÙY CHỌN',
+      points: ['Theo dõi đội ngũ', 'Giao nhiệm vụ thực tế', 'Đánh giá minh chứng'],
+      note: 'Doanh nghiệp nhỏ có thể để chủ doanh nghiệp trực tiếp phụ trách.',
     },
     {
       role: 'Nhân viên',
-      badge: 'EMPLOYEE',
+      badge: 'NHÂN VIÊN',
       points: ['Hiểu mình đang thiếu gì', 'Học đúng phần còn thiếu', 'Nộp minh chứng'],
     },
   ],
@@ -243,7 +243,7 @@ const DEPLOYMENT: LandingSectionConfig = {
   },
   steps: [
     { title: 'Chọn gói', note: 'Quyền sử dụng tính cả thành viên đang hoạt động và lời mời chưa kích hoạt.' },
-    { title: 'Tạo tổ chức', note: 'Tạo tài khoản Owner, thanh toán và khai báo thông tin doanh nghiệp.', chip: 'Tổ chức đã được tạo' },
+    { title: 'Tạo tổ chức', note: 'Đăng ký tài khoản chủ doanh nghiệp và khai báo thông tin tổ chức.', chip: 'Tổ chức đã được tạo' },
     { title: 'Thiết lập phòng ban và vị trí', note: 'Có thể bắt đầu từ các vị trí tham chiếu.', chip: '3 vị trí đã cấu hình' },
     { title: 'Đặt yêu cầu năng lực', note: 'Chọn 9–24 năng lực cho mỗi vị trí.' },
     { title: 'Mời nhân viên', note: 'Nhập hàng loạt từ tệp CSV có ở gói Pro.', chip: '12 nhân viên đã được mời' },
@@ -280,27 +280,27 @@ const FAQ: LandingSectionConfig = {
   items: [
     { question: 'Quyền sử dụng và số người dùng được tính như thế nào?', answer: userCapacityAnswer() },
     {
-      question: 'Manager có bắt buộc không?',
+      question: 'Có cần phân công quản lý không?',
       answer:
-        'Không. Manager là vai trò tùy chọn, phụ trách các phòng ban do Owner giao. Doanh nghiệp nhỏ có thể chỉ dùng Owner và nhân viên.',
+        'Không bắt buộc. Chủ doanh nghiệp có thể trực tiếp quản lý đội ngũ; khi cần, hãy phân công quản lý theo phòng ban.',
     },
     {
-      question: 'Công ty nhỏ không có Manager thì ai review minh chứng?',
-      answer: 'Owner. Owner có thể giao nhiệm vụ, review minh chứng và xác nhận năng lực cho toàn tổ chức khi chưa có Manager.',
+      question: 'Ai đánh giá minh chứng nếu chưa có quản lý?',
+      answer: 'Chủ doanh nghiệp có thể giao nhiệm vụ, đánh giá minh chứng và xác nhận năng lực cho toàn tổ chức.',
     },
     {
       question: 'Yêu cầu năng lực theo vị trí được thiết lập ra sao?',
       answer:
-        'Owner chọn từ 9 đến 24 trong 24 năng lực của Khung chuẩn cho mỗi vị trí và đặt trình độ yêu cầu cho từng năng lực. Hai năng lực an toàn 4.1 và 4.2 luôn có mặt. Mỗi lần thay đổi được lưu thành một phiên bản để xem lại.',
+        'Chủ doanh nghiệp chọn 9–24 năng lực và mức yêu cầu cho mỗi vị trí. Năng lực an toàn 4.1 và 4.2 luôn được giữ lại. Mỗi lần cập nhật tạo một phiên bản mới.',
     },
     {
       question: 'Hoàn thành khóa học có đồng nghĩa năng lực được xác nhận không?',
       answer:
-        'Không. Đậu bài đánh giá không tự động thành năng lực đã xác nhận. Năng lực chỉ được xác nhận sau khi Owner hoặc Manager review minh chứng từ nhiệm vụ thực tế.',
+        'Không. Kết quả học tập và năng lực được xác nhận là hai kết quả riêng. Chủ doanh nghiệp hoặc quản lý cần đánh giá minh chứng thực tế trước khi xác nhận năng lực.',
     },
     {
       question: 'Có thể đổi gói khi quy mô doanh nghiệp thay đổi không?',
-      answer: 'Có. Owner có thể nâng hoặc hạ gói trong phần Gói và thanh toán của tổ chức.',
+      answer: 'Có. Chủ doanh nghiệp có thể thay đổi gói trong mục Gói và thanh toán.',
     },
     {
       question: 'Khung chuẩn năng lực số được dùng trong DigiTalent AI như thế nào?',

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import { EmptyState, LevelBadge, PageHeader, ScoreCard, StatusBadge, Tabs, getStatusVariant } from '@/components/shared';
+import { ArrowLeft, BriefcaseBusiness, ClipboardList, UsersRound, CalendarDays, Layers3 } from 'lucide-react';
+import { EmptyState, LevelBadge, StatusBadge, Tabs, getStatusVariant } from '@/components/shared';
+import { PageLoading } from '@/components/shared/LoadingState';
 import { useAssignments, useCourses } from '@/hooks/use-assignments';
 import { usePositionRequirements } from '@/hooks/use-competencies';
 import { useJobPosition } from '@/hooks/use-job-positions';
@@ -11,6 +12,7 @@ import { groupByDomain, type DomainRow } from '@/features/competency/utils/requi
 import { LEVEL_SUFFIX_LABELS } from '@/features/assignments/assignment-labels';
 import { BLOCKER_LABELS } from '@/services/workforce.service';
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from '@/features/onboarding/components/styles';
+import './position-detail.css';
 
 const STATUS_LABELS: Record<string, string> = { ACTIVE: 'Đang áp dụng', DRAFT: 'Bản nháp', RETIRED: 'Đã thay thế', NONE: 'Chưa có' };
 
@@ -32,7 +34,7 @@ export function PositionDetailPage() {
   );
   const people = workforce.data?.items ?? [];
 
-  if (position.isLoading) return <p className="text-sm text-slate-500">Đang tải…</p>;
+  if (position.isLoading) return <PageLoading label="Đang tải thông tin vị trí" variant="detail" />;
   if (position.isError || !position.data) {
     return (
       <div role="alert" className="grid gap-3">
@@ -44,25 +46,26 @@ export function PositionDetailPage() {
   const p = position.data;
 
   return (
-    <div>
-      <Link to="/enterprise/positions" className="mb-3 inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900">
+    <div className="position-detail -m-4 min-h-screen px-5 py-7 md:-m-6 md:px-7 xl:px-10">
+      <Link to="/enterprise/positions" className="position-detail-back">
         <ArrowLeft className="size-4" aria-hidden="true" />
         Vị trí công việc
       </Link>
-      <PageHeader
-        title={p.name}
-        subtitle={[
-          `Mã: ${p.code}`,
-          p.departmentName ? `Phòng ban: ${p.departmentName}` : null,
-        ].filter(Boolean).join(' · ')}
-      >
-        <StatusBadge label={p.status === 'ACTIVE' ? 'Đang dùng' : 'Ngừng dùng'} variant={getStatusVariant(p.status)} />
-        <Link to={`/enterprise/requirements/builder?positionId=${id}`} className={PRIMARY_BUTTON}>Chỉnh yêu cầu năng lực</Link>
-        <Link to={`/enterprise/requirements/history?positionId=${id}`} className={SECONDARY_BUTTON}>Lịch sử phiên bản</Link>
-      </PageHeader>
-
+      <header className="position-detail-hero">
+        <div className="position-detail-hero__icon"><BriefcaseBusiness size={25} /></div>
+        <div className="position-detail-hero__main">
+          <span className="position-detail-kicker">HỒ SƠ VỊ TRÍ</span>
+          <h1>{p.name}</h1>
+          <div className="position-detail-meta"><span>Mã {p.code}</span>{p.departmentName && <span>{p.departmentName}</span>}<StatusBadge label={p.status === 'ACTIVE' ? 'Đang dùng' : 'Ngừng dùng'} variant={getStatusVariant(p.status)} /></div>
+        </div>
+        <div className="position-detail-actions">
+          <Link to={`/enterprise/requirements/builder?positionId=${id}`} className={PRIMARY_BUTTON}>Chỉnh yêu cầu năng lực</Link>
+          <Link to={`/enterprise/requirements/history?positionId=${id}`} className={SECONDARY_BUTTON}>Lịch sử phiên bản</Link>
+        </div>
+      </header>
 
       <Tabs
+        className="position-detail-tabs"
         label="Thông tin vị trí"
         value={tab}
         onChange={setTab}
@@ -74,17 +77,17 @@ export function PositionDetailPage() {
         ]}
       >
         {tab === 'overview' && (
-          <div className="grid gap-6">
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-              <ScoreCard label="Phiên bản đang áp dụng" value={hasSet && set?.status === 'ACTIVE' ? `v${set.versionNo}` : '—'} subtitle={set ? STATUS_LABELS[set.status] : undefined} />
-              <ScoreCard label="Năng lực yêu cầu" value={set?.items.length ?? 0} subtitle={`${set?.items.filter((i) => i.isMandatory).length ?? 0} bắt buộc`} />
-              <ScoreCard label="Nhân sự đang giữ vị trí" value={people.filter((x) => x.status === 'ACTIVE').length} />
-              <ScoreCard label="Hiệu lực từ" value={formatDate(set?.effectiveFrom)} subtitle={set?.reviewDate ? `Rà soát ${formatDate(set.reviewDate)}` : undefined} />
+          <div className="grid gap-5">
+            <div className="position-detail-stats">
+              <div className="position-detail-stat position-detail-stat--blue"><Layers3 size={21} /><span>Phiên bản đang áp dụng</span><strong>{hasSet && set?.status === 'ACTIVE' ? `v${set.versionNo}` : '—'}</strong><small>{set ? STATUS_LABELS[set.status] : 'Chưa thiết lập'}</small></div>
+              <div className="position-detail-stat position-detail-stat--teal"><ClipboardList size={21} /><span>Năng lực yêu cầu</span><strong>{set?.items.length ?? 0}</strong><small>{set?.items.filter((i) => i.isMandatory).length ?? 0} bắt buộc</small></div>
+              <div className="position-detail-stat position-detail-stat--violet"><UsersRound size={21} /><span>Nhân sự giữ vị trí</span><strong>{people.filter((x) => x.status === 'ACTIVE').length}</strong><small>Đang hoạt động</small></div>
+              <div className="position-detail-stat position-detail-stat--amber"><CalendarDays size={21} /><span>Hiệu lực từ</span><strong className="position-detail-stat__date">{formatDate(set?.effectiveFrom)}</strong><small>{set?.reviewDate ? `Rà soát ${formatDate(set.reviewDate)}` : 'Theo chuẩn hiện hành'}</small></div>
             </div>
-            <p className="max-w-[70ch] text-sm leading-relaxed text-slate-700">{p.description || 'Chưa có mô tả cho vị trí này.'}</p>
+            {p.description && <section className="position-detail-description"><h2>Mô tả vị trí</h2><p>{p.description}</p></section>}
             {!hasSet && (
               <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                Vị trí này chưa có yêu cầu năng lực, nên chưa tính được skill gap cho người giữ vị trí.{' '}
+                Chưa có chuẩn năng lực cho vị trí này. Thiết lập chuẩn để xem khoảng trống năng lực.{' '}
                 <Link to={`/enterprise/requirements/builder?positionId=${id}`} className="font-medium underline">Đặt yêu cầu năng lực</Link>
               </p>
             )}

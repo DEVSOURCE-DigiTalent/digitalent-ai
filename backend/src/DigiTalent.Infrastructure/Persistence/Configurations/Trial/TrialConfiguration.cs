@@ -114,7 +114,7 @@ public sealed class TrialAssessmentDomainConfiguration : IEntityTypeConfiguratio
     }
 }
 
-/// <summary>Map TrialReport với bảng "trial_reports" (canonical v3.6).</summary>
+/// <summary>Map TrialReport với bảng "trial_reports" (canonical v3.7).</summary>
 public sealed class TrialReportConfiguration : IEntityTypeConfiguration<TrialReport>
 {
     public void Configure(EntityTypeBuilder<TrialReport> b)

@@ -85,14 +85,13 @@ export function BillingInvoicesPage() {
 
       <PageHeader
         title="Lịch sử thanh toán & Hóa đơn"
-        subtitle="Xem tối đa 20 hóa đơn gần đây do API gói dịch vụ trả về"
       />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <ScoreCard label="Tổng giá trị hóa đơn đã thanh toán" value={formatVnd(totalPaid)} subtitle="Theo dữ liệu hóa đơn hiện có" />
-        <ScoreCard label="Tổng số hóa đơn" value={invoices.length} subtitle="Theo API gói dịch vụ" />
-        <ScoreCard label="Trạng thái tài khoản" value={subscription.status} variant="success" subtitle="Theo API gói dịch vụ" />
+        <ScoreCard label="Tổng số hóa đơn" value={invoices.length} />
+        <ScoreCard label="Trạng thái tài khoản" value={subscription.status} variant="success" />
         <ScoreCard label="Kỳ thanh toán tiếp theo" value={formatDate(subscription.renewsAt)} subtitle="Gia hạn tự động" />
       </div>
 

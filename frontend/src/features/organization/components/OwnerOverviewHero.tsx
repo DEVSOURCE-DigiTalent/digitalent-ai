@@ -28,8 +28,8 @@ function resolveActions(
   // Bước 1: Khởi đầu từ trang Đánh giá đội ngũ để khảo sát năng lực số ban đầu
   if (!hasAssessmentStarted) {
     return [
-      { label: 'Bước 1: Đánh giá đội ngũ & Khảo sát năng lực', to: '/enterprise/trial', variant: 'filled' },
-      { label: 'Khám phá bài thi 6 lĩnh vực', to: '/enterprise/trial', variant: 'outline' },
+      { label: 'Đánh giá đội ngũ', to: '/enterprise/trial', variant: 'filled' },
+      { label: 'Xem nội dung đánh giá', to: '/enterprise/trial', variant: 'outline' },
     ];
   }
 
@@ -40,7 +40,7 @@ function resolveActions(
 
   if (!hasSkillGapData) {
     return [
-      { label: 'Bước 2: Xem Khoảng trống Năng lực', to: '/enterprise/skill-gap', variant: 'filled' },
+      { label: 'Xem khoảng trống năng lực', to: '/enterprise/skill-gap', variant: 'filled' },
       { label: 'Theo dõi tiến độ đánh giá', to: '/enterprise/trial', variant: 'outline' },
     ];
   }
@@ -48,15 +48,15 @@ function resolveActions(
   // Bước 3: Đã thấy khoảng trống, tiếp theo là thiết lập khung trần năng lực mục tiêu
   if (!org.setupCompleted) {
     return [
-      { label: 'Bước 3: Thiết lập Khung năng lực mục tiêu', to: '/enterprise/setup', variant: 'filled' },
-      { label: 'Xem ma trận năng lực', to: '/enterprise/skill-gap', variant: 'outline' },
+      { label: 'Thiết lập khung năng lực', to: '/enterprise/setup', variant: 'filled' },
+      { label: 'Xem khoảng trống năng lực', to: '/enterprise/skill-gap', variant: 'outline' },
     ];
   }
 
   // Bước 4 & 5: Mua khóa học & theo dõi báo cáo chu kỳ
   return [
-    { label: 'Bước 4: Mua khóa học & Quản lý ghế', to: '/enterprise/courses', variant: 'filled' },
-    { label: 'Bước 5: Xem báo cáo chu kỳ', to: '/enterprise/reports', variant: 'outline' },
+    { label: 'Xem khóa học', to: '/enterprise/courses', variant: 'filled' },
+    { label: 'Xem báo cáo chu kỳ', to: '/enterprise/reports', variant: 'outline' },
   ];
 }
 
@@ -71,18 +71,18 @@ export function OwnerOverviewHero({ org, cap }: OwnerOverviewHeroProps) {
     >
       <div className="relative z-10 p-6 md:p-8 lg:p-10 flex flex-col justify-center">
         <p className="text-[11px] font-bold uppercase tracking-[0.1em] mb-5 " style={{ color: '#c1e8df' }}>
-          Chủ doanh nghiệp / <span className="tracking-[0.14em]">QUẢN LÝ LỘ TRÌNH</span>
+          NĂNG LỰC ĐỘI NGŨ
         </p>
         <h2
           className="font-semibold leading-[1.15] mb-4"
           style={{ fontSize: 'clamp(26px, 3.2vw, 42px)', letterSpacing: '-0.04em' }}
         >
-          <span className="text-white block">Thiết lập mục tiêu.</span>
-          <span className="text-white block">Xem khoảng cách năng lực.</span>
-          <span style={{ color: '#b8eadc' }} className="block">Chọn khóa học tiếp theo.</span>
+          <span className="text-white block">Hiểu năng lực hiện tại.</span>
+          <span className="text-white block">Xác định mục tiêu.</span>
+          <span style={{ color: '#b8eadc' }} className="block">Đào tạo đúng nhu cầu.</span>
         </h2>
         <p className="text-sm leading-relaxed max-w-lg mb-6" style={{ color: '#d4e8e9' }}>
-          Chuẩn Digital AI trở thành khung doanh nghiệp, rồi lộ trình phòng ban và vị trí cho từng nhân viên.
+          Theo dõi mức đáp ứng theo vị trí và chọn khóa học cho những năng lực cần cải thiện.
         </p>
         <div className="flex flex-wrap gap-3">
           {actions.map((action) => (

@@ -10,12 +10,11 @@ import {
   GraduationCap,
   Layers,
   Target,
+  TrendingUp,
   Users2,
   XCircle,
 } from 'lucide-react';
 import { PulsePublicShell } from './PulsePublicShell';
-import frameworkArt from '@/assets/pulse/competency-architecture.webp';
-import journeyArt from '@/assets/pulse/learning-journey-abstract.webp';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { getDashboardPath } from '@/lib/navigation';
 
@@ -131,19 +130,51 @@ export function PulseBusinessSolutionPage() {
             </div>
             <div className="pulse-solution-tags">
               <span><CheckCircle2 size={15} /> Chuẩn hóa theo vị trí</span>
-              <span><CheckCircle2 size={15} /> Đo đúng Skill Gap</span>
+              <span><CheckCircle2 size={15} /> Xác định khoảng trống năng lực</span>
               <span><CheckCircle2 size={15} /> Minh chứng thực chiến</span>
               <span><CheckCircle2 size={15} /> Báo cáo ROI minh bạch</span>
             </div>
           </div>
-          <div className="pulse-solution-hero-visual">
-            <img src={journeyArt} alt="Mô hình đào tạo năng lực số liên kết đa tầng" />
-            <div className="pulse-solution-floating-card">
-              <div className="pulse-solution-card-header">
-                <Target size={18} className="text-[#3251e8]" />
-                <strong>MỤC TIÊU CỐT LÕI</strong>
+          <div className="pulse-solution-hero-visual pulse-command-center">
+            <div className="pulse-command-aurora-1" aria-hidden="true" />
+            <div className="pulse-command-aurora-2" aria-hidden="true" />
+            <div className="pulse-command-header">
+              <span className="pulse-command-status-badge">
+                <span className="pulse-command-status-dot" />
+                MÔ HÌNH CHUYỂN HÓA ĐÀO TẠO 2026
+              </span>
+              <span className="pulse-command-tab--active" style={{ padding: '4px 10px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                <TrendingUp size={13} /> ROI 3.8x
+              </span>
+            </div>
+
+            <div className="pulse-command-stage">
+              <div className="pulse-solution-transformation-box">
+                <div className="pulse-command-metrics-row">
+                  <div className="pulse-command-metric-card">
+                    <span className="pulse-command-metric-val">-45%</span>
+                    <div className="pulse-command-metric-meta">
+                      <strong>Lãng phí thời gian</strong>
+                      <span>Chỉ học phần còn thiếu</span>
+                    </div>
+                  </div>
+                  <div className="pulse-command-metric-card">
+                    <span className="pulse-command-metric-val">3.2x</span>
+                    <div className="pulse-command-metric-meta">
+                      <strong>Ứng dụng thực tế</strong>
+                      <span>Duyệt qua sản phẩm thật</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pulse-solution-floating-card" style={{ position: 'relative', right: 'auto', bottom: 'auto', width: '100%', marginTop: '12px' }}>
+                  <div className="pulse-solution-card-header">
+                    <Target size={18} className="text-[#3251e8]" />
+                    <strong>MỤC TIÊU CỐT LÕI</strong>
+                  </div>
+                  <p>Mỗi giờ nhân viên học tập là một bước tiến cụ thể hướng đến mục tiêu của tổ chức.</p>
+                </div>
               </div>
-              <p>Mỗi giờ nhân viên học tập là một bước tiến cụ thể hướng đến mục tiêu của tổ chức.</p>
             </div>
           </div>
         </section>
@@ -198,9 +229,45 @@ export function PulseBusinessSolutionPage() {
         {/* ── Section: Kiến trúc Đa tầng ── */}
         <section className="pulse-public-framework pulse-solution-framework-section" id="kien-truc">
           <div className="pulse-public-wrap pulse-public-framework-inner">
-            <div className="pulse-public-framework-image">
-              <img src={frameworkArt} loading="lazy" alt="Kiến trúc khung năng lực đa tầng" />
-              <span className="pulse-public-image-caption">Kiến trúc liên thông 4 cấp độ</span>
+            <div className="pulse-tier-interactive-stage">
+              <div className="pulse-tier-card-stack">
+                <div className="pulse-tier-slab pulse-tier-slab--1 pulse-tier-slab--active">
+                  <div className="pulse-tier-slab-badge">CẤP 1</div>
+                  <div className="pulse-tier-slab-body">
+                    <strong>Khung Năng Lực Quốc Gia & DigiTalent</strong>
+                    <span>24 năng lực số chuẩn Thông tư 02/2022/TT-BTTTT</span>
+                  </div>
+                </div>
+                <div className="pulse-tier-slab pulse-tier-slab--2">
+                  <div className="pulse-tier-slab-badge">CẤP 2</div>
+                  <div className="pulse-tier-slab-body">
+                    <strong>Trần Năng Lực Doanh Nghiệp</strong>
+                    <span>Chiến lược chuyển đổi số riêng của tổ chức</span>
+                  </div>
+                </div>
+                <div className="pulse-tier-slab pulse-tier-slab--3">
+                  <div className="pulse-tier-slab-badge">CẤP 3</div>
+                  <div className="pulse-tier-slab-body">
+                    <strong>Mục Tiêu Theo Phòng Ban</strong>
+                    <span>Chuyên biệt cho Kỹ thuật, Kinh doanh, Vận hành</span>
+                  </div>
+                </div>
+                <div className="pulse-tier-slab pulse-tier-slab--4">
+                  <div className="pulse-tier-slab-badge">CẤP 4</div>
+                  <div className="pulse-tier-slab-body">
+                    <strong>Chuẩn Năng Lực Theo Vị Trí Công Việc</strong>
+                    <span>Căn cứ chẩn đoán đầu vào và thiết lập lộ trình</span>
+                  </div>
+                </div>
+              </div>
+              <div className="pulse-tier-sample-pills">
+                <span className="pulse-tier-sample-label">Kiến trúc liên thông 4 cấp độ:</span>
+                <div className="pulse-tier-pills-list">
+                  <span>Một chuẩn chung</span>
+                  <span>Đích đến riêng cho mỗi vị trí</span>
+                  <span>Đo lường thời gian thực</span>
+                </div>
+              </div>
             </div>
             <div className="pulse-public-framework-copy">
               <p className="pulse-public-kicker">CƠ CẤU TỔ CHỨC THỰC TẾ</p>
@@ -312,7 +379,7 @@ export function PulseBusinessSolutionPage() {
               <span className="pulse-solution-role-tag">QUẢN LÝ / MANAGER</span>
               <h3>Đồng hành & Thẩm định</h3>
               <ul>
-                <li>Nắm rõ khoảng cách kỹ năng (Skill Gap) của từng thành viên.</li>
+                <li>Nhận diện khoảng trống năng lực của từng thành viên.</li>
                 <li>Chấm bài cuối khóa qua minh chứng thực tế & phản hồi trực tiếp.</li>
               </ul>
             </article>

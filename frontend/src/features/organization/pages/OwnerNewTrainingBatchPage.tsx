@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Check, Plus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Plus, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCreateTrainingBatch } from '@/hooks/use-training-batches';
 import { useCourses } from '@/hooks/use-assignments';
@@ -10,6 +10,7 @@ import { useMembers } from '@/hooks/use-members';
 import { JOB_GRADES } from '@/lib/roles';
 import { JOB_GRADE_DEFAULT_NAMES } from '@/lib/terms';
 import { PULSE_TOKENS } from '../owner-theme';
+import './owner-operations.css';
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -67,10 +68,10 @@ export function OwnerNewTrainingBatchPage() {
     status: 'ACTIVE',
   });
 
-  const allCourses = coursesPaged?.items ?? [];
+  const allCourses = useMemo(() => coursesPaged?.items ?? [], [coursesPaged]);
   const departments = departmentsData?.items ?? [];
   const allPositions = positionsData?.items ?? [];
-  const allEmployees = membersData?.items ?? [];
+  const allEmployees = useMemo(() => membersData?.items ?? [], [membersData]);
 
   const filteredCourses = useMemo(
     () =>
@@ -157,7 +158,7 @@ export function OwnerNewTrainingBatchPage() {
 
   return (
     <div
-      className="po-owner -m-4 md:-m-6 min-h-screen"
+      className="po-owner owner-operations owner-operations--form -m-4 md:-m-6 min-h-screen"
       style={{
         ...PULSE_TOKENS,
         background: 'var(--po-canvas)',
@@ -167,7 +168,7 @@ export function OwnerNewTrainingBatchPage() {
     >
       <div
         className="px-4 md:px-6 pt-6 pb-8 mx-auto"
-        style={{ maxWidth: 900 }}
+        style={{ maxWidth: 1440 }}
       >
         <Link
           to="/enterprise/training-batches"
@@ -177,19 +178,9 @@ export function OwnerNewTrainingBatchPage() {
           <ArrowLeft className="size-3" /> Đợt đào tạo
         </Link>
 
-        <h1
-          className="text-2xl font-bold"
-          style={{ color: 'var(--po-ink)', letterSpacing: '-0.04em' }}
-        >
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-[-0.04em] heading-gradient">
           Tạo đợt đào tạo mới
         </h1>
-        <p
-          className="mt-1 text-xs"
-          style={{ color: 'var(--po-muted)' }}
-        >
-          Thiết lập chương trình bồi dưỡng năng lực: chọn khóa học, nhóm đối
-          tượng và lên lịch thực hiện.
-        </p>
 
         {/* ── Stepper ── */}
         <div
@@ -338,14 +329,14 @@ export function OwnerNewTrainingBatchPage() {
                   {selectedCourseIds.length} đã chọn
                 </span>
               </div>
-              <input
+              <label className="owner-filter-search"><Search size={17} aria-hidden="true" /><input
                 type="search"
+                aria-label="Tìm khóa học"
                 placeholder="Tìm khóa học…"
                 value={courseSearch}
                 onChange={(e) => setCourseSearch(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2 text-xs outline-none"
-                style={inputStyle}
-              />
+                className="w-full text-sm"
+              /></label>
               <div className="grid sm:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-1">
                 {filteredCourses.map((c) => {
                   const selected = selectedCourseIds.includes(c.id);
@@ -353,7 +344,7 @@ export function OwnerNewTrainingBatchPage() {
                     <button
                       key={c.id}
                       type="button"
-                      onClick={() => setSelectedCourseIds(selected ? [] : [c.id])}
+                      onClick={() => setSelectedCourseIds((current) => toggle(current, c.id))}
                       className="flex items-start gap-3 rounded-[11px] border p-3 text-left transition-all"
                       style={{
                         borderColor: selected

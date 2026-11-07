@@ -6,6 +6,8 @@ export const PULSE_PATHS = {
   outcomes: '/enterprise/me/outcomes',
   activity: '/enterprise/me/activity',
   profile: '/enterprise/me/profile',
+  feedbacks: '/enterprise/me/feedbacks',
+  bugReports: '/enterprise/me/bug-reports',
   course: (courseId: string) => `/enterprise/me/courses/${courseId}`,
   module: (courseId: string, moduleId: string) => `/enterprise/me/courses/${courseId}/modules/${moduleId}`,
   /** Bài đánh giá trước khi học (trang làm bài có giám sát). */

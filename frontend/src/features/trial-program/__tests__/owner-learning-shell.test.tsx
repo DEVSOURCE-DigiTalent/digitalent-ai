@@ -1,3 +1,4 @@
+import React from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter, useRoutes } from 'react-router-dom';
@@ -47,8 +48,8 @@ describe('owner taking the trial test / learning', () => {
     const nav = await screen.findByRole('navigation', { name: 'Điều hướng chính' });
     expect(within(nav).getByRole('link', { name: /Đánh giá đội ngũ/ })).toBeInTheDocument();
     expect(within(nav).getByRole('link', { name: /Tổng quan/ })).toBeInTheDocument();
-    expect(await screen.findByRole('status', { name: 'Làm bài test trước khi học' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Tham gia làm bài test/ })).toBeDisabled();
+    expect(await screen.findByRole('status', { name: 'Làm bài đánh giá trước khi học' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Tham gia làm bài đánh giá/ })).toBeDisabled();
     expect(screen.getByRole('link', { name: /Mua khóa học/ })).toHaveAttribute('href', '/enterprise/courses?level=2');
   });
 

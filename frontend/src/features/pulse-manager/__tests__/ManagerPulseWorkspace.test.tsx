@@ -80,10 +80,10 @@ beforeEach(() => {
 const labelsOf = (config: typeof MANAGER_SIDEBAR) => config.map((section) => section.label);
 
 describe('Manager sidebar (Pulse)', () => {
-  it('has the two prototype groups with the eight items in order', () => {
+  it('has the two prototype groups with their items in order', () => {
     expect(labelsOf(MANAGER_SIDEBAR)).toEqual([
       'Quản lý đội', 'Tổng quan', 'Năng lực đội ngũ', 'Chấm bài', 'Báo cáo chu kỳ',
-      'Các công cụ khác', 'Khung năng lực chung', 'Đào tạo đội ngũ', 'Minh chứng thực tế', 'Hoạt động',
+      'Các công cụ khác', 'Khung năng lực chung', 'Đào tạo đội ngũ', 'Minh chứng thực tế', 'Hoạt động', 'Góp ý', 'Báo lỗi',
     ]);
   });
 

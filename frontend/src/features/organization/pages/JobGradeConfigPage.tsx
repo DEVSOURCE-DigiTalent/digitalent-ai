@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Edit2, Users, Briefcase } from 'lucide-react';
 import { PageHeader, Modal } from '@/components/shared';
+import { PageLoading } from '@/components/shared/LoadingState';
 import { useJobGrades, useUpdateJobGrade } from '@/hooks/use-job-grades';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { toast } from 'sonner';
@@ -45,7 +46,7 @@ export function JobGradeConfigPage() {
     }
   };
 
-  if (isLoading) return <p className="text-sm text-slate-500">Đang tải cấu hình cấp bậc…</p>;
+  if (isLoading) return <PageLoading label="Đang tải cấu hình cấp bậc" variant="detail" />;
   if (isError || !grades) {
     return <p role="alert" className="text-sm text-red-600">Không tải được cấu hình cấp bậc.</p>;
   }
@@ -118,9 +119,8 @@ export function JobGradeConfigPage() {
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 space-y-1">
-        <p className="font-semibold text-slate-800">Quy tắc Cấp bậc theo chuẩn DigiTalent AI v2.1:</p>
-        <p>• Cấp bậc gắn liền với từng vị trí công việc cụ thể và tự động suy ra cho nhân sự giữ vị trí đó.</p>
-        <p>• Mã G1, G2, G3 được chuẩn hóa xuyên suốt hệ thống để phục vụ tính toán khoảng trống và giao đào tạo theo cấp bậc.</p>
+        <p className="font-semibold text-slate-800">Cấp bậc theo vị trí công việc</p>
+        <p>Nhân sự nhận cấp bậc G1–G3 theo vị trí được phân công. Cấp bậc được dùng khi xác định chuẩn năng lực và giao khóa học.</p>
       </div>
 
       {editingGrade && (

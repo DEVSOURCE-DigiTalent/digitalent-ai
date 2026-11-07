@@ -1,51 +1,63 @@
 -- ============================================================================
 -- DigiTalent AI — Canonical Database Schema v3.6
 -- Target: PostgreSQL 16+
--- Source: DigiTalent_AI_Canonical_v3_5.sql + Dùng thử doanh nghiệp: báo cáo tự động từ trắc nghiệm và gợi ý AI
+-- Source: DigiTalent_AI_Canonical_v3_5.sql + khối nội dung PDF + góp ý và báo lỗi của người dùng
 --
 -- This file is the SINGLE SOURCE OF TRUTH for the data model in v3.6.
--- EF Core entities, configurations and migrations are written to match it (migration AddTrialReports).
+-- EF Core configurations and migrations are written to match it (migrations AddUserFeedbacks,
+-- AddFeedbackScreenshots, AddFeedbackRating, AddPdfBlockAndAssetType).
 --
--- Changes v3.5 -> v3.6 (docs/specs/2026-10-31-trial-ai-report-roadmap.md):
---   * Bài đánh giá dùng thử chỉ còn trắc nghiệm, máy chấm khi nộp; không còn mentor chấm bài đánh giá. Bước = SETUP (chưa đặt
---     hạn) → OPEN (đã đặt hạn) → REPORTED (bài đã đóng), suy ra từ trial_workspaces. Bài đóng khi hết hạn, khi mọi người đã
---     nộp, hoặc khi chủ doanh nghiệp đóng sớm.
---   * trial_workspaces: bỏ ck_trial_workspaces_report (báo cáo không cần mentor). preferred_review_at, request_note không
---     còn ghi; mentor_user_id / mentor_assigned_at chỉ còn cho mentor chấm bài cuối khóa học thử.
---   * trial_assessments: các cột tự luận / điểm mentor / gợi ý AI chấm tự luận giữ dữ liệu cũ, bài mới không ghi
---     (essay_* = ''). trial_assessment_domains.mentor_level không còn ghi; mức = suggested_level.
---   * trial_reports: báo cáo của doanh nghiệp (một dòng). Số liệu luôn tính lại từ bài làm; bảng chỉ giữ gợi ý (3 ưu tiên +
---     lý do mức tối đa từng lĩnh vực) do AI viết rồi qua rào chắn, hoặc câu mẫu, và trạng thái AI.
+-- Changes v3.5 -> v3.6:
+--   * platform_assets nhận thêm kind PDF, tối đa 50 MB.
+--   * platform_module_blocks nhận thêm block_type PDF, gắn tệp qua asset_id như IMAGE / VIDEO.
+--   * Bảng mới user_feedbacks: góp ý và báo lỗi người dùng gửi, quản trị nền tảng phản hồi.
 -- ============================================================================
-
-\i DigiTalent_AI_Canonical_v3_5.sql
 
 BEGIN;
 
--- 23.1. Báo cáo không còn chờ mentor công bố.
-ALTER TABLE trial_workspaces DROP CONSTRAINT ck_trial_workspaces_report;
-
--- 23.2. Báo cáo dùng thử tự tạo khi bài đóng. ai_status: PENDING (AI đang viết, báo cáo tạm hiện câu mẫu) → DONE (đã có
---       câu AI; câu bị rào chắn loại vẫn là câu mẫu, đếm ở ai_replaced) | FALLBACK (không có khóa AI hoặc AI lỗi: câu mẫu).
---       assessed_count = số bài khi viết gợi ý; bài nộp muộn làm số này đổi → viết lại. Khóa lạc quan bằng cột hệ thống xmin.
-CREATE TABLE trial_reports (
-    id               uuid PRIMARY KEY,
-    organization_id  uuid NOT NULL REFERENCES organizations(id),
-    assessed_count   smallint NOT NULL,
-    insights         jsonb NOT NULL,              -- {priorities:[{domainNumber,text,source}], ceilingReasons:[...]}
-    ai_status        varchar(20) NOT NULL,
-    ai_model         varchar(100),
-    ai_replaced      smallint NOT NULL,
-    generated_at     timestamptz NOT NULL,        -- lúc bài đóng
-    ai_completed_at  timestamptz,
-    created_at       timestamptz NOT NULL DEFAULT now(),
-    updated_at       timestamptz NOT NULL DEFAULT now(),
-    CONSTRAINT ck_trial_reports_ai_status    CHECK (ai_status IN ('PENDING', 'DONE', 'FALLBACK')),
-    CONSTRAINT ck_trial_reports_ai_model     CHECK ((ai_status = 'DONE') = (ai_model IS NOT NULL)),
-    CONSTRAINT ck_trial_reports_ai_completed CHECK ((ai_status = 'PENDING') = (ai_completed_at IS NULL)),
-    CONSTRAINT ck_trial_reports_counts       CHECK (assessed_count >= 0 AND ai_replaced >= 0)
+CREATE TABLE user_feedbacks (
+    id                   uuid PRIMARY KEY,
+    user_id              uuid NOT NULL REFERENCES users(id),
+    organization_id      uuid REFERENCES organizations(id),
+    type                 varchar(20) NOT NULL,
+    title                varchar(200) NOT NULL,
+    description          varchar(5000) NOT NULL,
+    page_url             varchar(500),
+    status               varchar(20) NOT NULL,
+    rating               integer,                   -- 1..5, kiểm tra ở CreateFeedbackValidator
+    screenshots          jsonb,                     -- tối đa 3 ảnh data:image/*;base64, kiểm tra ở CreateFeedbackValidator
+    admin_note           varchar(2000),
+    resolved_by_user_id  uuid REFERENCES users(id),
+    resolved_at          timestamptz,
+    created_at           timestamptz NOT NULL,
+    updated_at           timestamptz NOT NULL,
+    CONSTRAINT ck_user_feedbacks_type CHECK (type IN ('BUG', 'FEEDBACK', 'SUGGESTION')),
+    CONSTRAINT ck_user_feedbacks_status CHECK (status IN ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED')),
+    CONSTRAINT ck_user_feedbacks_title_length CHECK (char_length(title) BETWEEN 5 AND 200),
+    CONSTRAINT ck_user_feedbacks_description_length CHECK (char_length(description) BETWEEN 10 AND 5000)
 );
-CREATE UNIQUE INDEX uq_trial_reports_organization ON trial_reports(organization_id);
-CREATE INDEX ix_trial_reports_ai_status ON trial_reports(ai_status);
+
+CREATE INDEX ix_user_feedbacks_user ON user_feedbacks (user_id);
+CREATE INDEX ix_user_feedbacks_status ON user_feedbacks (status);
+CREATE INDEX ix_user_feedbacks_org ON user_feedbacks (organization_id);
+
+ALTER TABLE platform_assets DROP CONSTRAINT ck_platform_assets_kind;
+ALTER TABLE platform_assets ADD CONSTRAINT ck_platform_assets_kind
+    CHECK (kind IN ('IMAGE','VIDEO','PDF'));
+
+ALTER TABLE platform_assets DROP CONSTRAINT ck_platform_assets_size;
+ALTER TABLE platform_assets ADD CONSTRAINT ck_platform_assets_size CHECK (
+    size_bytes > 0
+    AND (kind <> 'IMAGE' OR size_bytes <= 10485760)      -- 10 MB
+    AND (kind <> 'VIDEO' OR size_bytes <= 524288000)     -- 500 MB
+    AND (kind <> 'PDF' OR size_bytes <= 52428800));      -- 50 MB
+
+ALTER TABLE platform_module_blocks DROP CONSTRAINT ck_platform_module_blocks_type;
+ALTER TABLE platform_module_blocks ADD CONSTRAINT ck_platform_module_blocks_type
+    CHECK (block_type IN ('TEXT','SLIDE','IMAGE','VIDEO','PDF'));
+
+ALTER TABLE platform_module_blocks DROP CONSTRAINT ck_platform_module_blocks_asset;
+ALTER TABLE platform_module_blocks ADD CONSTRAINT ck_platform_module_blocks_asset
+    CHECK (asset_id IS NULL OR block_type IN ('IMAGE','VIDEO','PDF'));
 
 COMMIT;

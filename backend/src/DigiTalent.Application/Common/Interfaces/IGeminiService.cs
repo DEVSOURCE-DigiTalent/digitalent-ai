@@ -8,11 +8,13 @@ public interface IGeminiService
     /// <summary>Có khóa Gemini (Gemini:ApiKey, hoặc khóa trợ lý khi Assistant:Provider = Gemini, hoặc GEMINI_API_KEY).</summary>
     bool IsConfigured { get; }
 
+    /// <param name="courseContent">Plain text of the lessons of the course version, so the answer is checked against what was taught.</param>
     Task<PulseAiHintDto> EvaluateEvidenceAsync(
         string evidenceText,
         string finalPrompt,
         IReadOnlyList<string> criteria,
         IReadOnlyList<ProctoringEventInfo>? proctoringEvents = null,
+        string? courseContent = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

@@ -39,7 +39,7 @@ public sealed class TrialWorkspace : BaseEntity
     public string? ConversionReference { get; set; }
     public long Revision { get; set; }
 
-    // Bài đánh giá tổng hợp (v3.6, docs/specs/2026-10-31-trial-ai-report-roadmap.md): chủ doanh nghiệp đặt hạn làm bài;
+    // Bài đánh giá tổng hợp (v3.7, docs/specs/2026-10-31-trial-ai-report-roadmap.md): chủ doanh nghiệp đặt hạn làm bài;
     // bài đóng (ReportPublishedAt) khi hết hạn, khi mọi người đã nộp hoặc khi chủ doanh nghiệp đóng sớm.
     // PreferredReviewAt / RequestNote không còn ghi (luồng mentor chấm cũ). Mentor được phân công chỉ chấm bài cuối khóa học thử.
     public DateTimeOffset? TestDeadline { get; set; }
@@ -52,7 +52,7 @@ public sealed class TrialWorkspace : BaseEntity
 }
 
 /// <summary>
-/// Bảng trial_reports (v3.6): báo cáo tự tạo khi bài đánh giá dùng thử đóng, một dòng mỗi doanh nghiệp. Số liệu luôn tính lại
+/// Bảng trial_reports (v3.7): báo cáo tự tạo khi bài đánh giá dùng thử đóng, một dòng mỗi doanh nghiệp. Số liệu luôn tính lại
 /// từ bài làm; bảng chỉ giữ gợi ý (ưu tiên + lý do mức tối đa, jsonb) do AI viết hoặc câu mẫu, và trạng thái của AI.
 /// </summary>
 public sealed class TrialReport : BaseEntity
@@ -105,7 +105,7 @@ public sealed class PositionDiagnosticAttempt : BaseEntity
 }
 
 /// <summary>
-/// Bảng trial_assessments (v3.5, v3.6): bài đánh giá tổng hợp của một nhân viên doanh nghiệp dùng thử — trắc nghiệm của cả ba
+/// Bảng trial_assessments (v3.5, v3.7): bài đánh giá tổng hợp của một nhân viên doanh nghiệp dùng thử — trắc nghiệm của cả ba
 /// cấp (Cơ bản, Trung cấp, Nâng cao) cho mọi lĩnh vực, làm trong phòng thi có giám sát, máy chấm khi nộp. Một bài cho mỗi
 /// nhân viên. Các cột tự luận / chấm của mentor (luồng cũ) giữ dữ liệu cũ, bài mới không ghi.
 /// </summary>

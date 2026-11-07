@@ -70,7 +70,7 @@ export default function HeroOverviewCard({
               </div>
             </div>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-              Hệ thống không tự ý tính điểm mặc định. Để xác định chính xác trình độ và khoảng cách Gap cho vị trí <strong>{activeRoleObj.roleTitle}</strong>, bạn cần hoàn thành bài test khảo sát ma trận năng lực đầu vào.
+              Hệ thống không tự ý tính điểm mặc định. Để xác định chính xác trình độ và khoảng trống năng lực cho vị trí <strong>{activeRoleObj.roleTitle}</strong>, bạn cần hoàn thành bài đánh giá khảo sát ma trận năng lực đầu vào.
             </p>
             <button
               className="btn-cta"
@@ -134,7 +134,7 @@ export default function HeroOverviewCard({
                   ? (Object.keys(completedCourses).length > 0
                     ? `Đã hoàn thành ${Object.keys(completedCourses).length} khóa học bù đắp`
                     : "Lộ trình cá nhân hóa theo khoảng cách kỹ năng")
-                  : "Cần chọn vị trí & làm bài test"}
+                  : "Cần chọn vị trí & làm bài đánh giá"}
               </span>
             </div>
           </div>

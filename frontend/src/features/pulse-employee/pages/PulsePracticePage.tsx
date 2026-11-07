@@ -340,7 +340,7 @@ export function PulsePracticePage() {
           </div>
           <h2 className="pu-campaign-h2">Đánh giá năng lực đầu vào</h2>
           <p className="pu-campaign-p">
-            Hoàn thành bài test để được miễn học toàn bộ lý thuyết các môn bạn đã thành thạo.
+            Hoàn thành bài đánh giá để được miễn học toàn bộ lý thuyết các môn bạn đã thành thạo.
           </p>
 
           {/* Thanh tiến độ hoàn thành đợt khảo sát */}
@@ -363,7 +363,7 @@ export function PulsePracticePage() {
           </div>
         </div>
 
-        {/* Khối hành động 1-Click: Bài test tiếp theo cần làm ngay */}
+        {/* Khối hành động 1-Click: Bài đánh giá tiếp theo cần làm ngay */}
         <div className="pu-campaign-right">
           {nextPreCourse ? (
             <>
@@ -413,7 +413,7 @@ export function PulsePracticePage() {
             </div>
             <div className="pu-kpi-label">Bài thi cần làm ngay</div>
             <small className="pu-kpi-desc">
-              Gồm bài test đầu vào & bài thi cuối khóa đang mở
+              Gồm bài đánh giá đầu vào & bài thi cuối khóa đang mở
             </small>
           </div>
         </button>
@@ -661,7 +661,7 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
           </span>
         ) : isPreOpen ? (
           <span className="pu-status-pill open-pre">
-            <Zap size={12} /> Mở làm bài test
+            <Zap size={12} /> Mở làm bài đánh giá
           </span>
         ) : isPreNotYet ? (
           <span className="pu-status-pill not-yet">
@@ -747,7 +747,7 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
       {/* 6. Thao tác 1-Click */}
       <td className="pu-ledger-td" style={{ textAlign: 'right' }}>
         <div className="pu-action-cell">
-          {/* Nút ưu tiên 1: Làm bài test đầu vào (dành cho Onboarding nhân viên mới) */}
+          {/* Nút ưu tiên 1: Làm bài đánh giá đầu vào (dành cho Onboarding nhân viên mới) */}
           {isPreOpen ? (
             <Link
               to={PULSE_PATHS.preAssessment(item.courseId)}

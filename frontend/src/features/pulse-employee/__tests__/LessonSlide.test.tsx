@@ -31,6 +31,28 @@ describe('Học liệu theo từng slide', () => {
     expect(link.getAttribute('href')).toBe('https://support.google.com/websearch/answer/2466433');
   });
 
+  it('shows an uploaded PDF on a page without text, instead of the empty text notice and the video script panel', () => {
+    const { container } = render(<LessonSlide courseCode="M1-F" moduleIndex={1} index={0} count={12} slide={{
+      lessonId: 'pdf-page', title: 'Slide bài giảng', lessonType: 'TEXT', contentBody: null,
+      media: [{ kind: 'PDF', url: 'platform/assets/a1/content?exp=1&sig=s', alt: 'Slide bài giảng M1-F' }],
+    }} />);
+    const viewer = screen.getByTitle('Slide bài giảng M1-F');
+    expect(viewer.getAttribute('src')).toContain('platform/assets/a1/content?exp=1&sig=s');
+    expect(screen.getByRole('link', { name: /Mở PDF trong tab mới/ }).getAttribute('href')).toBe(viewer.getAttribute('src'));
+    expect(screen.queryByText('Trang này chưa có nội dung văn bản.')).toBeNull();
+    expect(screen.queryByText(/Kịch bản video/)).toBeNull();
+    expect(container.querySelector('.pu-lesson-grid')).toBeNull();
+  });
+
+  it('keeps the text of a page that also has a PDF', () => {
+    render(<LessonSlide index={0} count={1} slide={{
+      lessonId: 'pdf-text', title: 'Có chữ và PDF', lessonType: 'TEXT', contentBody: 'Đọc phần này trước.',
+      media: [{ kind: 'PDF', url: 'platform/assets/a2/content', alt: 'Tài liệu' }],
+    }} />);
+    expect(screen.getByText('Đọc phần này trước.')).toBeTruthy();
+    expect(screen.getByTitle('Tài liệu')).toBeTruthy();
+  });
+
   it('does not invent an illustration for custom content and sanitizes HTML in every section', () => {
     const { container } = render(<LessonSlide courseCode="A1-F" moduleIndex={0} index={0} count={1} slide={{
       lessonId: 'custom', title: 'Nội dung riêng', lessonType: 'TEXT',

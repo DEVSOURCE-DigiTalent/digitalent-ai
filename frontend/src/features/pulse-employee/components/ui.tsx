@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Link, type LinkProps } from 'react-router-dom';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 import { btn, type ButtonKind } from '../lib/button';
+import { SectionLoading } from '@/components/shared/LoadingState';
 
 /** Liên kết trông như nút (điều hướng trong ứng dụng). */
 export function PuLink({ kind = 'primary', small, className, ...props }: LinkProps & { kind?: ButtonKind; small?: boolean }) {
@@ -61,14 +62,10 @@ export function Empty({ icon, title, children, action }: { icon?: ReactNode; tit
   );
 }
 
-/** Khung chờ tải: vài khối nhấp nháy theo bố cục trang. */
+/** Khung chờ tải giữ bố cục trang khi dữ liệu đang được lấy. */
 export function PageSkeleton({ blocks = [320, 180, 260] }: { blocks?: number[] }) {
   return (
-    <div className="pu-stack" aria-busy="true" aria-label="Đang tải">
-      {blocks.map((height, index) => (
-        <div key={index} className="pu-skeleton" style={{ height }} />
-      ))}
-    </div>
+    <SectionLoading label="Đang tải nội dung" count={blocks.length} />
   );
 }
 
