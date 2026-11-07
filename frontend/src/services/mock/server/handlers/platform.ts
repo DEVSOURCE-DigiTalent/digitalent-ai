@@ -138,7 +138,7 @@ const platformState = {
     {
       id: 'notif-1',
       title: 'Kiến trúc năng lực đã công bố',
-      message: 'Trần doanh nghiệp, phòng ban và vị trí đã được xác nhận.',
+      message: 'Phạm vi đào tạo của doanh nghiệp, phòng ban và vị trí đã được xác nhận.',
       type: 'info',
       createdAt: new Date(Date.now() - 86400000 * 6).toISOString(),
       isRead: false,

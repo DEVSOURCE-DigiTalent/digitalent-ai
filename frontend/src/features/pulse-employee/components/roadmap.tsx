@@ -257,8 +257,8 @@ function PlanCell({
             </span>
           )}
           {isCapped && (
-            <span className="pu-mcard-badge capped" title="Giới hạn theo trần năng lực của phòng ban">
-              <Lock size={9} /> Trần
+            <span className="pu-mcard-badge capped" title="Ngoài phạm vi đào tạo của phòng ban">
+              <Lock size={9} /> Ngoài phạm vi
             </span>
           )}
         </div>
@@ -451,7 +451,7 @@ export function CapNote({ domain, overview }: { domain: PulseDomain; overview: P
         <AlertTriangle size={18} />
       </div>
       <div className="pu-cap-alert-content">
-        <strong className="pu-cap-alert-title">Giới hạn trần năng lực của phòng ban</strong>
+        <strong className="pu-cap-alert-title">Ngoài phạm vi đào tạo của phòng ban</strong>
         <p className="pu-cap-alert-desc">{note}</p>
       </div>
     </div>

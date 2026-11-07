@@ -1,16 +1,22 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { X, Info, Building2, Users, ChevronDown, Check, Search, ArrowRight, ShoppingCart } from 'lucide-react';
+import { X, Info, Building2, Users, ChevronDown, Check, Search, ArrowRight } from 'lucide-react';
 import {
   useCapabilityCeilings,
   useUpdateDepartmentCeilings,
-  useUpdateOrganizationCeilings,
-} from '@/hooks/use-capability-ceilings';
+  useUpdateOrganizationCeilings } from '@/hooks/use-capability-ceilings';
 import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
+import { useTrialRoadmap } from '@/hooks/use-trial-program';
 import { organizationErrorMessage } from '@/lib/organization-errors';
 import type { CapabilityCeilings, CeilingCourse, CeilingDomain } from '@/services/capability-ceiling.service';
+import type { TrialPlanKind } from '@/services/trial-program.service';
+import { courseCode, trialScopeOf, type SeatHints } from '../lib/trial-scope';
+import { TrialScopePanel } from './TrialScopePanel';
 import './capability-ceiling.css';
+
+type BuyItem = { code: string; title: string; level: number; domainName: string; price: number; seats?: number };
+const PLAN_KINDS_IN_URL: TrialPlanKind[] = ['SAVING', 'BALANCED', 'FULL'];
 
 /** Phạm vi đang xem: cả doanh nghiệp hoặc id của một phòng ban. */
 const ALL = 'all';
@@ -41,7 +47,14 @@ export function CapabilityCeilingMatrix() {
   const [showGuide, setShowGuide] = useState(false);
   const [isDeptMenuOpen, setIsDeptMenuOpen] = useState(false);
   const [deptSearch, setDeptSearch] = useState('');
-  const [selectedToBuy, setSelectedToBuy] = useState<Map<string, { code: string; title: string; level: number; domainName: string; price: number }>>(new Map());
+  const [selectedToBuy, setSelectedToBuy] = useState<Map<string, BuyItem>>(new Map());
+  // Phạm vi theo kết quả test dùng thử (?plan= từ báo cáo OW-T1).
+  const [searchParams] = useSearchParams();
+  const planParam = searchParams.get('plan') as TrialPlanKind | null;
+  const [trialKind, setTrialKind] = useState<TrialPlanKind>(planParam && PLAN_KINDS_IN_URL.includes(planParam) ? planParam : 'BALANCED');
+  const roadmapQuery = useTrialRoadmap(canEdit);
+  const roadmap = roadmapQuery.data?.available ? roadmapQuery.data : null;
+  const trialScope = useMemo(() => (roadmap && matrix ? trialScopeOf(roadmap, matrix, trialKind) : null), [roadmap, matrix, trialKind]);
 
   const department = matrix?.departments.find((d) => d.departmentId === scope);
   const activeScope = scope === ALL || department ? scope : ALL;
@@ -58,24 +71,43 @@ export function CapabilityCeilingMatrix() {
     return activeScope === ALL ? organizationLevels(matrix) : departmentLevels(matrix, activeScope);
   }, [matrix, activeScope]);
 
+  const buyItem = (course: CeilingCourse, domain: CeilingDomain): BuyItem => {
+    const code = courseCode(course.code, domain.sortOrder, course.level);
+    return {
+      code,
+      title: course.title || `Khóa học ${code}`,
+      level: course.level,
+      domainName: domain.name,
+      price: course.pricePerSeat || (course.level === 3 ? 699000 : 399000),
+      seats: trialScope?.seats.get(code),
+    };
+  };
+
+  /** Đánh dấu mua mọi khóa 🔒 mà phương án theo test cần (kèm số suất). */
+  const selectTrialPlan = () => {
+    if (!matrix || !trialScope) return;
+    const next = new Map<string, BuyItem>();
+    for (const domain of matrix.domains) {
+      for (const course of domain.courses) {
+        const item = buyItem(course, domain);
+        if (course.isUnlocked === false && item.seats) next.set(item.code, item);
+      }
+    }
+    setSelectedToBuy(next);
+    toast.success(`Đã chọn ${next.size} khóa theo kết quả test`);
+  };
+
   const toggleSelectToBuy = (course: CeilingCourse, domain: CeilingDomain) => {
-    const code = course.code || `M${domain.sortOrder}-${course.level === 2 ? 'I' : 'A'}`;
+    const code = courseCode(course.code, domain.sortOrder, course.level);
     setSelectedToBuy((prev) => {
       const next = new Map(prev);
       if (next.has(code)) {
         next.delete(code);
         toast.info(`Đã bỏ chọn khóa ${code}`);
       } else {
-        next.set(code, {
-          code,
-          title: course.title || `Khóa học ${code}`,
-          level: course.level,
-          domainName: domain.name,
-          price: course.pricePerSeat || (course.level === 3 ? 699000 : 399000),
-        });
+        next.set(code, buyItem(course, domain));
         toast.success(`Đã chọn khóa ${code} để mua bản quyền`, {
-          description: 'Bạn có thể chọn thêm nhiều khóa khác trước khi bấm Tiếp tục.',
-        });
+          description: 'Bạn có thể chọn thêm nhiều khóa khác trước khi bấm Tiếp tục.' });
       }
       return next;
     });
@@ -84,7 +116,7 @@ export function CapabilityCeilingMatrix() {
   if (isLoading) {
     return (
       <section className="cc-root">
-        <p className="cc-note">Đang tải ma trận trần nhà…</p>
+        <p className="cc-note">Đang tải phạm vi đào tạo…</p>
       </section>
     );
   }
@@ -92,7 +124,7 @@ export function CapabilityCeilingMatrix() {
   if (isError || !matrix) {
     return (
       <section className="cc-root">
-        <p className="cc-note">Chưa tải được ma trận trần nhà. Vui lòng thử lại sau.</p>
+        <p className="cc-note">Chưa tải được phạm vi đào tạo. Vui lòng thử lại sau.</p>
       </section>
     );
   }
@@ -125,7 +157,7 @@ export function CapabilityCeilingMatrix() {
     const now = current[domain.categoryId] ?? 0;
     const target = level === now ? level - 1 : level;
     if (activeScope !== ALL && target > (orgSaved[domain.categoryId] ?? 0)) {
-      toast.error('Trần phòng ban không được cao hơn trần doanh nghiệp ở bất kỳ năng lực nào.');
+      toast.error('Mức tối đa của phòng ban không được cao hơn của doanh nghiệp.');
       return;
     }
     const maxAllowed = domain.maxAllowedCeiling ?? 1;
@@ -154,17 +186,17 @@ export function CapabilityCeilingMatrix() {
         const result = await saveOrganization.mutateAsync(ceilings);
         const adjustedCount = (result as { adjustedDepartmentCount?: number } | null | undefined)?.adjustedDepartmentCount ?? 0;
         if (adjustedCount > 0) {
-          toast.info(`Đã lưu trần doanh nghiệp. Hạ trần của ${adjustedCount} phòng ban vượt trần mới.`);
+          toast.info(`Đã lưu phạm vi doanh nghiệp. Hạ mức tối đa của ${adjustedCount} phòng ban cho khớp.`);
         } else {
-          toast.success('Đã lưu trần năng lực của doanh nghiệp.');
+          toast.success('Đã lưu phạm vi đào tạo của doanh nghiệp.');
         }
       } else {
         await saveDepartment.mutateAsync({ departmentId: activeScope, data: { inherit: false, ceilings } });
-        toast.success(`Đã lưu trần năng lực cho ${department?.name ?? 'phòng ban'}.`);
+        toast.success(`Đã lưu phạm vi đào tạo cho ${department?.name ?? 'phòng ban'}.`);
       }
       setDraft(null);
     } catch (error) {
-      toast.error(organizationErrorMessage(error, 'Chưa lưu được trần năng lực.'));
+      toast.error(organizationErrorMessage(error, 'Chưa lưu được phạm vi đào tạo.'));
     }
   };
 
@@ -173,9 +205,9 @@ export function CapabilityCeilingMatrix() {
     try {
       await saveDepartment.mutateAsync({ departmentId: activeScope, data: { inherit: true, ceilings: [] } });
       setDraft(null);
-      toast.success(`${department?.name ?? 'Phòng ban'} dùng lại trần doanh nghiệp.`);
+      toast.success(`${department?.name ?? 'Phòng ban'} dùng lại phạm vi của doanh nghiệp.`);
     } catch (error) {
-      toast.error(organizationErrorMessage(error, 'Chưa lưu được trần năng lực.'));
+      toast.error(organizationErrorMessage(error, 'Chưa lưu được phạm vi đào tạo.'));
     }
   };
 
@@ -188,7 +220,7 @@ export function CapabilityCeilingMatrix() {
       <div className="flex flex-wrap items-center justify-between gap-3 pb-1">
         <div className="flex items-center gap-3">
           <h2 id="cc-title" className="text-xl font-bold tracking-tight text-slate-900">
-            Trần năng lực số
+            Phạm vi đào tạo
           </h2>
           {matrix.isConfigured ? (
             <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
@@ -210,6 +242,10 @@ export function CapabilityCeilingMatrix() {
           Quy tắc & Hướng dẫn
         </button>
       </div>
+
+      {roadmap && (
+        <TrialScopePanel roadmap={roadmap} matrix={matrix} kind={trialKind} onKind={setTrialKind} onSelect={selectTrialPlan} canEdit={canEdit} />
+      )}
 
       {/* ── Ma trận trung tâm (Clean & Rõ ràng) ── */}
       <div className="cc-grid">
@@ -257,7 +293,7 @@ export function CapabilityCeilingMatrix() {
                   </span>
                   {activeScope !== ALL && department?.isCustomized && (
                     <span className="rounded bg-emerald-100 px-1.5 py-0.2 text-[9.5px] font-bold text-emerald-800">
-                      Trần riêng
+                      Phạm vi riêng
                     </span>
                   )}
                   {activeScope !== ALL && drafts[activeScope] && (
@@ -273,7 +309,7 @@ export function CapabilityCeilingMatrix() {
                     <div className="absolute left-0 sm:left-auto sm:right-0 top-full z-30 mt-2 w-80 rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-xl">
                       <div className="flex items-center justify-between px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">
                         <span>Phòng ban ({matrix.departments.length})</span>
-                        <span>Trần áp dụng</span>
+                        <span>Mức tối đa</span>
                       </div>
 
                       {matrix.departments.length > 4 && (
@@ -325,7 +361,7 @@ export function CapabilityCeilingMatrix() {
                                   ? 'bg-emerald-100 text-emerald-800'
                                   : 'bg-slate-100 text-slate-500'
                               }`}>
-                                {d.isCustomized ? 'Trần riêng' : 'Kế thừa DN'}
+                                {d.isCustomized ? 'Phạm vi riêng' : 'Theo doanh nghiệp'}
                               </span>
                             </button>
                           );
@@ -345,10 +381,10 @@ export function CapabilityCeilingMatrix() {
               <span className={`size-2 rounded-full shrink-0 ${activeScope === ALL ? 'bg-emerald-500' : department?.isCustomized ? 'bg-emerald-500' : 'bg-slate-400'}`} />
               <span className="font-medium text-slate-600">
                 {activeScope === ALL
-                  ? 'Đang xem & thiết lập trần chung cho toàn doanh nghiệp'
+                  ? 'Đang xem phạm vi chung của doanh nghiệp'
                   : department?.isCustomized
-                    ? `${department.name} đang áp dụng trần năng lực riêng`
-                    : `${department?.name ?? 'Phòng ban'} đang kế thừa trần từ doanh nghiệp`}
+                    ? `${department.name} đang dùng phạm vi riêng`
+                    : `${department?.name ?? 'Phòng ban'} đang theo phạm vi doanh nghiệp`}
               </span>
             </div>
           </div>
@@ -375,6 +411,8 @@ export function CapabilityCeilingMatrix() {
                   isDepartment={activeScope !== ALL}
                   editable={canEdit && !blockedDepartments}
                   selectedToBuy={selectedToBuy}
+                  seats={trialScope?.seats}
+                  reason={trialScope?.reasons.get(domain.categoryId)}
                   onPick={pick}
                   onToggleBuy={toggleSelectToBuy}
                 />
@@ -385,15 +423,15 @@ export function CapabilityCeilingMatrix() {
           {/* Chú giải ngắn gọn */}
           <div className="cc-legend">
             <span><i className="route" />Được mở trong phạm vi</span>
-            <span><i className="dn" />Trong trần doanh nghiệp</span>
-            <span><i />Chỉ trong trần Digital AI</span>
+            <span><i className="dn" />Trong phạm vi doanh nghiệp</span>
+            <span><i />Chỉ có trong Digital AI</span>
             <span><i style={{ background: '#fffbeb', border: '1.5px solid #f59e0b' }} />Đang chọn mua</span>
           </div>
 
           {/* Số liệu thống kê */}
           <div className="cc-stats">
             <div><b>{routeCount}</b><span>{routeLabel}</span></div>
-            <div><b>{orgCount}</b><span>Khóa trần doanh nghiệp</span></div>
+            <div><b>{orgCount}</b><span>Khóa trong phạm vi doanh nghiệp</span></div>
             <div><b>{matrix.platformCourseCount}</b><span>Tổng danh mục chuẩn (18)</span></div>
           </div>
 
@@ -402,12 +440,12 @@ export function CapabilityCeilingMatrix() {
             <div className="cc-actions">
               <span className="hint">
                 {blockedDepartments
-                  ? 'Cần lưu trần doanh nghiệp trước.'
+                  ? 'Cần lưu phạm vi doanh nghiệp trước.'
                   : activeScope === ALL
-                    ? 'Bấm trực tiếp vào ô để điều chỉnh trần, hoặc bấm ô khóa (🔒) để chọn mua bản quyền.'
+                    ? 'Bấm ô để chỉnh mức tối đa; bấm ô 🔒 để chọn mua.'
                     : department?.isCustomized
                       ? 'Đang dùng giới hạn riêng.'
-                      : 'Đang kế thừa trần doanh nghiệp.'}
+                      : 'Đang theo phạm vi doanh nghiệp.'}
               </span>
               <div className="btns">
                 {activeScope === ALL && (
@@ -417,7 +455,7 @@ export function CapabilityCeilingMatrix() {
                 )}
                 {activeScope !== ALL && department?.isCustomized && (
                   <button type="button" className="cc-btn" onClick={inherit} disabled={saving}>
-                    Kế thừa trần doanh nghiệp
+                    Theo doanh nghiệp
                   </button>
                 )}
                 <button type="button" className="cc-btn" onClick={() => setDraft(null)} disabled={!dirty || saving}>
@@ -429,7 +467,7 @@ export function CapabilityCeilingMatrix() {
                   onClick={save}
                   disabled={saving || blockedDepartments || (!dirty && (activeScope !== ALL || matrix.isConfigured))}
                 >
-                  {saving ? 'Đang lưu…' : activeScope === ALL ? 'Lưu trần doanh nghiệp' : 'Lưu trần phòng ban'}
+                  {saving ? 'Đang lưu…' : activeScope === ALL ? 'Lưu phạm vi doanh nghiệp' : 'Lưu phạm vi phòng ban'}
                 </button>
               </div>
             </div>
@@ -450,7 +488,7 @@ export function CapabilityCeilingMatrix() {
                   Đã chọn {selectedToBuy.size} khóa học để mua bản quyền
                 </h4>
                 <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800 border border-amber-300">
-                  Mở trần năng lực
+                  Mở phạm vi đào tạo
                 </span>
               </div>
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -460,6 +498,7 @@ export function CapabilityCeilingMatrix() {
                     className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-2 py-0.5 text-xs font-semibold text-slate-800 border border-amber-200 shadow-xs"
                   >
                     <span className="font-bold text-amber-800">{item.code}</span>
+                    {item.seats ? <span className="text-slate-500">{item.seats} suất</span> : null}
                     <span className="text-slate-400">·</span>
                     <span className="text-slate-600 max-w-[140px] truncate">{item.domainName}</span>
                     <button
@@ -504,7 +543,7 @@ export function CapabilityCeilingMatrix() {
             <button
               type="button"
               onClick={() => {
-                const codes = Array.from(selectedToBuy.keys()).join(',');
+                const codes = Array.from(selectedToBuy.values()).map((item) => (item.seats ? `${item.code}:${item.seats}` : item.code)).join(',');
                 navigate(`/enterprise/courses/checkout?courses=${encodeURIComponent(codes)}`);
               }}
               className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:brightness-105 transition-all"
@@ -523,7 +562,7 @@ export function CapabilityCeilingMatrix() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <Info className="size-5 text-emerald-600" />
-                <h3 className="text-base font-bold text-slate-900">Quy tắc & Hướng dẫn trần năng lực</h3>
+                <h3 className="text-base font-bold text-slate-900">Quy tắc phạm vi đào tạo</h3>
               </div>
               <button
                 type="button"
@@ -537,9 +576,9 @@ export function CapabilityCeilingMatrix() {
             <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
               <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/70">
                 <span className="font-bold text-slate-800 block mb-1">📐 Nguyên tắc cấp bậc:</span>
-                <code>Trần phòng ban ≤ Trần doanh nghiệp ≤ Danh mục DigiTalent (3 cấp)</code>
+                <code>Phòng ban ≤ Doanh nghiệp ≤ Danh mục DigiTalent (3 cấp)</code>
                 <p className="mt-1 text-slate-500">
-                  Phòng ban chỉ được mở khóa tối đa bằng trần doanh nghiệp. Hạ trần doanh nghiệp sẽ tự động hạ trần các phòng ban liên quan.
+                  Mức tối đa của phòng ban không vượt doanh nghiệp. Hạ mức của doanh nghiệp thì phòng ban hạ theo.
                 </p>
               </div>
 
@@ -547,14 +586,14 @@ export function CapabilityCeilingMatrix() {
                 <span className="font-bold text-amber-900 block mb-1">🔒 Bản quyền khóa học thương mại:</span>
                 <p className="text-amber-800">
                   - <b>Cấp 1 (Cơ bản - F):</b> Mở miễn phí 100% trong gói dùng thử cho toàn bộ doanh nghiệp.<br />
-                  - <b>Cấp 2 (Trung cấp - I) & Cấp 3 (Nâng cao - A):</b> Hiển thị biểu tượng 🔒 nếu chưa mua suất học. Khi doanh nghiệp mua suất học, trần năng lực sẽ được tự động mở tương ứng.
+                  - <b>Cấp 2 (Trung cấp - I) & Cấp 3 (Nâng cao - A):</b> Hiển thị biểu tượng 🔒 nếu chưa mua suất học. Khi doanh nghiệp mua suất học, phạm vi đào tạo tự mở tương ứng.
                 </p>
               </div>
 
               <div className="rounded-xl bg-teal-50/70 p-3 border border-teal-200/60">
                 <span className="font-bold text-teal-900 block mb-1">👆 Cách thao tác:</span>
                 <p className="text-teal-800">
-                  Bấm trực tiếp vào từng ô mã khóa học để đặt trần đến cấp đó (bấm lại ô đang chọn để hạ 1 cấp). Bấm <b>Lưu trần</b> để áp dụng.
+                  Bấm ô khóa học để đặt mức tối đa tới cấp đó (bấm lại để hạ 1 cấp). Bấm <b>Lưu phạm vi</b> để áp dụng.
                 </p>
               </div>
             </div>
@@ -583,15 +622,20 @@ function DomainRow({
   isDepartment,
   editable,
   selectedToBuy,
+  seats,
+  reason,
   onPick,
-  onToggleBuy,
-}: {
+  onToggleBuy }: {
   domain: CeilingDomain;
   routeLevel: number;
   dnLevel: number;
   isDepartment: boolean;
   editable: boolean;
-  selectedToBuy?: Map<string, { code: string; title: string; level: number; domainName: string; price: number }>;
+  selectedToBuy?: Map<string, BuyItem>;
+  /** Số suất theo kết quả test (mã khóa → số người cần học). */
+  seats?: SeatHints;
+  /** ✦ Lý do mức tối đa đề xuất (kết quả test). */
+  reason?: string;
   onPick: (domain: CeilingDomain, level: number) => void;
   onToggleBuy?: (course: CeilingCourse, domain: CeilingDomain) => void;
 }) {
@@ -599,22 +643,25 @@ function DomainRow({
     <>
       <div className="rl">
         {domain.name}
-        <small>{isDepartment ? `PB ${routeLevel} · DN ${dnLevel}` : `trần DN ${dnLevel}`}</small>
+        <small>{isDepartment ? `PB ${routeLevel} · DN ${dnLevel}` : `tối đa DN ${dnLevel}`}</small>
+        {reason && <span className="cc-reason" title={`Theo kết quả test: ${reason}`}>✦ {reason}</span>}
       </div>
       {domain.courses.map((course) => {
         const inRoute = course.level <= routeLevel;
         const inOrg = course.level <= dnLevel;
         const isLocked = course.isUnlocked === false;
+        const code = courseCode(course.code, domain.sortOrder, course.level);
         const isSelectedToBuy = Boolean(course.code && selectedToBuy?.has(course.code));
+        const seatCount = course.level > 1 ? seats?.get(code) : undefined;
         const state = isSelectedToBuy
           ? 'đã chọn mua bản quyền (bấm để hủy chọn)'
           : inRoute
           ? 'trong lộ trình đang xem'
           : inOrg
-          ? 'trong trần doanh nghiệp'
+          ? 'trong phạm vi doanh nghiệp'
           : isLocked
           ? 'chưa mở bản quyền (bấm để chọn mua)'
-          : 'chỉ trong trần Digital AI';
+          : 'chỉ có trong Digital AI';
         const className = `cc-cell${isSelectedToBuy ? ' selected-to-buy' : inRoute ? ' route' : inOrg ? ' dn' : ''}${course.code ? '' : ' empty'}${isLocked && !isSelectedToBuy ? ' opacity-75' : ''}`;
         const label = course.code ? (
           isSelectedToBuy ? (
@@ -623,7 +670,10 @@ function DomainRow({
               <span>{course.code}</span>
             </span>
           ) : isLocked ? (
-            `🔒 ${course.code}`
+            <span className="flex flex-col items-center leading-tight">
+              <span>🔒 {course.code}</span>
+              {seatCount ? <small>{seatCount} suất</small> : null}
+            </span>
           ) : (
             course.code
           )

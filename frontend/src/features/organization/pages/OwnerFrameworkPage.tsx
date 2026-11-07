@@ -115,7 +115,7 @@ export function OwnerFrameworkPage() {
             className="mt-2 text-xs leading-relaxed max-w-[65ch]"
             style={{ color: 'var(--po-muted)' }}
           >
-            Chỉ Platform Admin công bố nội dung gốc. Doanh nghiệp thiết kế trần
+            Chỉ Platform Admin công bố nội dung gốc. Doanh nghiệp chọn phạm vi đào tạo
             và vị trí riêng; mức năng lực hiện tại đã xác nhận của nhân viên
             được so sánh với mục tiêu tại vị trí của họ.
           </p>

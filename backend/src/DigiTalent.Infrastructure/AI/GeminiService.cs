@@ -14,6 +14,7 @@ public sealed class GeminiService : IGeminiService
     private readonly HttpClient _http;
     private readonly string _apiKey;
     private readonly string _model;
+    private readonly string? _insightThinking;
     private readonly ILogger<GeminiService> _logger;
 
     public GeminiService(HttpClient http, IConfiguration config, ILogger<GeminiService> logger)
@@ -21,6 +22,10 @@ public sealed class GeminiService : IGeminiService
         _http = http;
         _apiKey = ResolveApiKey(config);
         _model = config["Gemini:Model"] ?? "gemini-3.8-flash";
+        // Nhãn ngắn viết từ số liệu có sẵn không cần suy luận dài: mức suy nghĩ thấp giữ độ trễ gợi ý báo cáo dùng thử trong
+        // ngưỡng (checklist §6 dòng 4.1). Đặt chuỗi rỗng để dùng mặc định của model.
+        var thinking = config["Gemini:TrialInsightsThinkingLevel"];
+        _insightThinking = thinking == null ? "low" : string.IsNullOrWhiteSpace(thinking) ? null : thinking.Trim();
         _logger = logger;
     }
 
@@ -181,71 +186,85 @@ public sealed class GeminiService : IGeminiService
         }
     }
 
-    public async Task<TrialEssayAiReviewDto?> EvaluateTrialEssaysAsync(
-        IReadOnlyList<TrialEssayAiInput> essays,
-        CancellationToken cancellationToken = default)
+    public async Task<TrialInsightDraft?> DraftTrialInsightsAsync(TrialInsightFacts facts, CancellationToken cancellationToken = default)
     {
-        if (!IsConfigured || essays.Count == 0) return null;
+        if (!IsConfigured || facts.Domains.Count == 0) return null;
 
-        var levels = new Dictionary<int, string> { [1] = "Cơ bản", [2] = "Trung cấp", [3] = "Nâng cao" };
-        var parts = essays.Select(e =>
-            "BÀI " + e.Tier + " — cấp " + levels.GetValueOrDefault(e.Tier, e.Tier.ToString()) + " · " + e.Title + "\n"
-            + "Đề: " + e.Prompt + "\n"
-            + "Bài làm:\n" + e.Answer.Trim());
+        string[] levels = { "chưa đạt", "Cơ bản", "Trung cấp", "Nâng cao" };
+        var eligible = TrialInsightTemplate.Eligible(facts).Select(d => d.Number).ToList();
+        var data = new
+        {
+            assessed = facts.Assessed,
+            highRiskSubmissions = facts.HighRisk,
+            domains = facts.Domains.Select(d => new
+            {
+                domain = d.Number,
+                name = d.Name,
+                people = d.People,
+                peopleByLevel = new { notBasic = d.Counts.ElementAtOrDefault(0), basic = d.Counts.ElementAtOrDefault(1), intermediate = d.Counts.ElementAtOrDefault(2), advanced = d.Counts.ElementAtOrDefault(3) },
+                average = d.Average,
+                correctPercentByTier = new { basic = d.CorrectRates.ElementAtOrDefault(0), intermediate = d.CorrectRates.ElementAtOrDefault(1), advanced = d.CorrectRates.ElementAtOrDefault(2) },
+                mostMissedQuestion = d.MissedQuestion == null ? null : new { question = d.MissedQuestion, tier = levels[d.MissedTier], wrong = d.MissedWrong, answered = d.MissedAnswered },
+                medianLevel = levels[d.Median],
+                suggestedMaxLevel = levels[d.SuggestedLevel],
+                rule = d.Reason,
+                peopleBelowSuggested = d.BelowSuggested,
+            }),
+            departments = facts.Departments.Select(d => new { name = d.Name, people = d.People, averageByDomain = d.Averages }),
+            priorityCandidates = eligible,
+        };
         var prompt =
-            "Bạn là mentor chấm bài đánh giá năng lực số (Khung năng lực số TT02/2025) của nhân viên doanh nghiệp. "
-            + "Chấm từng bài tự luận dưới đây theo thang 0–10 (đạt khi từ " + TrialProgramRules.EssayPassScore + " điểm), "
-            + "theo yêu cầu của đúng cấp bài đó: Cơ bản = làm được việc số hằng ngày; Trung cấp = tự giải quyết vấn đề của nhóm "
-            + "bằng công cụ số; Nâng cao = đề xuất cải tiến, quản trị rủi ro dữ liệu và đo hiệu quả.\n"
-            + "Tiêu chí: đúng trọng tâm đề; cụ thể (công cụ, các bước, dữ liệu); kiểm chứng được (cách kiểm tra hoặc đo kết quả); "
-            + "độ sâu phù hợp cấp. Bài sơ sài, chung chung, lạc đề hoặc chép lại đề thì dưới 5.\n\n"
-            + string.Join("\n\n", parts) + "\n\n"
-            + "Trả JSON thuần (không markdown): {\"essays\":[{\"tier\":1,\"score\":0,\"feedback\":\"...\"}],\"summary\":\"...\"}. "
-            + "feedback: 1–2 câu nêu điểm làm được và điều còn thiếu. summary: 1 câu nhận xét chung. Trả lời bằng tiếng Việt.";
+            "Bạn là chuyên gia đào tạo năng lực số (Khung năng lực số TT02/2025). Dữ liệu dưới đây là kết quả bài trắc nghiệm của một "
+            + "doanh nghiệp (ẩn danh). Mức đã do luật tính, bạn KHÔNG đổi con số nào; bạn chỉ viết nhãn ngắn hiện trên biểu đồ.\n"
+            + "1) priorities: chọn tối đa " + TrialInsightTemplate.MaxPriorities + " lĩnh vực trong priorityCandidates, theo thứ tự nên học trước; "
+            + "\"why\" nêu lý do cụ thể nhất (câu sai nhiều nhất, % đúng, số người chưa đạt).\n"
+            + "2) ceilingReasons: mỗi lĩnh vực một câu nêu SỐ LIỆU dẫn tới suggestedMaxLevel theo rule (không đề xuất mức khác): "
+            + TrialCeilingPlanner.ReasonBelowBasic + " = quá nửa chưa đạt Cơ bản, ghi x/N → giữ Cơ bản; "
+            + TrialCeilingPlanner.ReasonMedianZero + " = trung vị chưa đạt → giữ Cơ bản; "
+            + TrialCeilingPlanner.ReasonRaise + " = trung vị + 1 cấp; "
+            + TrialCeilingPlanner.ReasonAtMax + " = trung vị đã Nâng cao. Có thể thêm % đúng của cấp liên quan. "
+            + "Không viết lợi ích chung chung (sai: \"Nâng cao giúp cộng tác bền vững\"; đúng: \"Trung vị Cơ bản, x% đúng Trung cấp\").\n"
+            + "Quy tắc mỗi câu: tối đa " + TrialInsightGuard.PromptWords + " từ tiếng Việt; chỉ dùng con số có trong dữ liệu; số người ghi dạng x/N và nói rõ mức "
+            + "(vd. \"4/9 chưa đạt Cơ bản\"); không nêu tên người; "
+            + "không dùng các từ \"trần\", \"mục tiêu\", \"mentor\"; gọi cấp là Cơ bản / Trung cấp / Nâng cao; không markdown, không dấu chấm cuối.\n"
+            + "Dữ liệu: " + JsonSerializer.Serialize(data) + "\n"
+            + "Trả JSON thuần: {\"priorities\":[{\"domain\":4,\"why\":\"...\"}],\"ceilingReasons\":[{\"domain\":1,\"text\":\"...\"}]}";
 
         try
         {
-            var text = await GenerateJsonAsync(prompt, cancellationToken);
+            var text = await GenerateJsonAsync(prompt, cancellationToken, temperature: 0.2, thinkingLevel: _insightThinking);
             if (string.IsNullOrWhiteSpace(text)) return null;
 
-            var parsed = JsonSerializer.Deserialize<EssayReviewResponse>(text);
-            var byTier = (parsed?.Essays ?? new List<EssayScoreResponse>())
-                .GroupBy(e => e.Tier)
-                .ToDictionary(g => g.Key, g => g.First());
-            if (essays.Any(e => !byTier.ContainsKey(e.Tier)))
+            var parsed = JsonSerializer.Deserialize<InsightResponse>(text);
+            if (parsed == null) return null;
+            return new TrialInsightDraft
             {
-                _logger.LogWarning("Gemini essay review is missing tiers, ignoring it.");
-                return null;
-            }
-
-            return new TrialEssayAiReviewDto
-            {
-                Essays = essays.Select(e =>
-                {
-                    var score = Math.Clamp(byTier[e.Tier].Score, 0, TrialProgramRules.EssayMaxScore);
-                    return new TrialEssayAiScoreDto
-                    {
-                        Tier = e.Tier,
-                        Score = score,
-                        Passed = score >= TrialProgramRules.EssayPassScore,
-                        Feedback = byTier[e.Tier].Feedback?.Trim() ?? "",
-                    };
-                }).ToList(),
-                Summary = parsed?.Summary?.Trim() ?? "",
+                Priorities = (parsed.Priorities ?? new()).Select(p => new TrialInsightDraftItem(p.Domain, p.Why ?? string.Empty)).ToList(),
+                CeilingReasons = (parsed.CeilingReasons ?? new()).Select(r => new TrialInsightDraftItem(r.Domain, r.Text ?? string.Empty)).ToList(),
                 Model = _model,
             };
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _logger.LogWarning(ex, "Gemini essay review failed.");
+            _logger.LogWarning(ex, "Gemini trial insights failed.");
             return null;
         }
     }
 
-    /// <summary>Gọi generateContent (trả JSON), thử lại khi 429/503. Khóa gửi qua header, không nằm trong URL / log.</summary>
-    private async Task<string?> GenerateJsonAsync(string prompt, CancellationToken cancellationToken)
+    /// <summary>
+    /// Gọi generateContent (trả JSON), thử lại khi 429/503; model không nhận mức suy nghĩ (400) thì gọi lại không kèm. Khóa gửi
+    /// qua header, không nằm trong URL / log.
+    /// </summary>
+    private async Task<string?> GenerateJsonAsync(
+        string prompt, CancellationToken cancellationToken, double? temperature = null, string? thinkingLevel = null)
     {
         var url = "https://generativelanguage.googleapis.com/v1beta/models/" + _model + ":generateContent";
+        var generation = new GeminiGenerationConfig
+        {
+            ResponseMimeType = "application/json",
+            Temperature = temperature,
+            ThinkingConfig = thinkingLevel == null ? null : new GeminiThinkingConfig { ThinkingLevel = thinkingLevel },
+        };
         var request = new GeminiRequest
         {
             Contents = new[]
@@ -255,10 +274,7 @@ public sealed class GeminiService : IGeminiService
                     Parts = new[] { new GeminiPart { Text = prompt } }
                 }
             },
-            GenerationConfig = new GeminiGenerationConfig
-            {
-                ResponseMimeType = "application/json"
-            }
+            GenerationConfig = generation,
         };
 
         HttpResponseMessage? response = null;
@@ -270,6 +286,12 @@ public sealed class GeminiService : IGeminiService
             if (response.IsSuccessStatusCode) break;
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogWarning("Gemini API attempt {Attempt} returned {Status}: {Body}", attempt + 1, (int)response.StatusCode, body);
+            if ((int)response.StatusCode == 400 && generation.ThinkingConfig != null)
+            {
+                generation.ThinkingConfig = null;
+                continue;
+            }
+
             if ((int)response.StatusCode != 503 && (int)response.StatusCode != 429) break;
             await Task.Delay(2000 * (attempt + 1), cancellationToken);
         }
@@ -309,17 +331,22 @@ public sealed class GeminiService : IGeminiService
         public AiFraudResponse? Fraud { get; set; }
     }
 
-    private sealed class EssayReviewResponse
+    private sealed class InsightResponse
     {
-        [JsonPropertyName("essays")] public List<EssayScoreResponse>? Essays { get; set; }
-        [JsonPropertyName("summary")] public string? Summary { get; set; }
+        [JsonPropertyName("priorities")] public List<InsightPriorityResponse>? Priorities { get; set; }
+        [JsonPropertyName("ceilingReasons")] public List<InsightReasonResponse>? CeilingReasons { get; set; }
     }
 
-    private sealed class EssayScoreResponse
+    private sealed class InsightPriorityResponse
     {
-        [JsonPropertyName("tier")] public int Tier { get; set; }
-        [JsonPropertyName("score")] public int Score { get; set; }
-        [JsonPropertyName("feedback")] public string? Feedback { get; set; }
+        [JsonPropertyName("domain")] public int Domain { get; set; }
+        [JsonPropertyName("why")] public string? Why { get; set; }
+    }
+
+    private sealed class InsightReasonResponse
+    {
+        [JsonPropertyName("domain")] public int Domain { get; set; }
+        [JsonPropertyName("text")] public string? Text { get; set; }
     }
 
     private sealed class AiDetailResponse
@@ -376,6 +403,18 @@ file sealed class GeminiGenerationConfig
 {
     [JsonPropertyName("responseMimeType")]
     public string? ResponseMimeType { get; set; }
+    [JsonPropertyName("temperature")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? Temperature { get; set; }
+    [JsonPropertyName("thinkingConfig")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public GeminiThinkingConfig? ThinkingConfig { get; set; }
+}
+
+file sealed class GeminiThinkingConfig
+{
+    [JsonPropertyName("thinkingLevel")]
+    public string? ThinkingLevel { get; set; }
 }
 
 file sealed class GeminiResponse

@@ -4,45 +4,33 @@ import {
   ArrowRight,
   Award,
   BookOpen,
-  Calendar,
   Check,
   Clock,
   ExternalLink,
   FlaskConical,
   Sparkles,
-  UserCheck,
-  Users,
-} from 'lucide-react';
+  Users } from 'lucide-react';
 import { useTrialProgram } from '@/hooks/use-trial-program';
 import { formatWhen } from '@/features/trial-program/lib/trial-format';
 import { LevelBadge, LevelLegend } from '@/features/trial-program/components/TrialUi';
 import type { TrialParticipantStatus, TrialStage } from '@/services/trial-program.service';
 import '@/features/trial-program/trial-program.css';
 
-const STEPS = ['Nhân viên', 'Hạn & lịch chấm', 'Làm bài & chấm', 'Kết quả'];
+const STEPS = ['Nhân viên', 'Hạn làm bài', 'Làm bài', 'Kết quả'];
 
 const STAGE_CONFIG: Record<TrialStage, { label: string; tone: string; desc: string }> = {
   SETUP: {
-    label: 'Chưa gửi yêu cầu',
+    label: 'Chưa đặt hạn',
     tone: 'bg-amber-50 text-amber-700 border-amber-200',
-    desc: 'Cần mời nhân viên và thiết lập hạn làm bài để gửi yêu cầu cho DigiTalent.',
-  },
-  REQUESTED: {
-    label: 'Chờ DigiTalent phân công Mentor',
+    desc: 'Mời nhân viên và đặt hạn làm bài để mở bài test.' },
+  OPEN: {
+    label: 'Đang làm bài',
     tone: 'bg-blue-50 text-blue-700 border-blue-200',
-    desc: 'Yêu cầu đánh giá đã được gửi. Quản trị viên DigiTalent đang phân công Mentor phụ trách.',
-  },
-  ASSIGNED: {
-    label: 'Mentor đang chấm bài',
-    tone: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-    desc: 'Nhân viên đang làm bài hoặc Mentor DigiTalent đang chấm điểm các bài tự luận.',
-  },
+    desc: 'Bài chấm tự động khi nộp. Báo cáo tự tạo khi hết hạn hoặc đủ bài.' },
   REPORTED: {
-    label: 'Đã có kết quả chính thức',
+    label: 'Đã có kết quả',
     tone: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    desc: 'Mentor đã hoàn tất chấm điểm và công bố toàn cảnh năng lực đội ngũ.',
-  },
-};
+    desc: 'Báo cáo năng lực và đề xuất phạm vi đào tạo đã sẵn sàng.' } };
 
 export function OwnerTrialAssessmentWidget() {
   const { data: program, isLoading, isError } = useTrialProgram();
@@ -66,7 +54,7 @@ export function OwnerTrialAssessmentWidget() {
   if (program.stage === 'REPORTED' && program.report) {
     const report = program.report;
     const weakest = [...report.summary]
-      .filter((d) => d.level < 2)
+      .filter((d) => Math.round(d.average) < 2)
       .sort((a, b) => a.average - b.average)
       .slice(0, 2);
 
@@ -76,8 +64,7 @@ export function OwnerTrialAssessmentWidget() {
         style={{
           borderColor: 'var(--po-line)',
           background: 'var(--po-surface)',
-          boxShadow: '0 10px 35px rgba(29,48,102,.025)',
-        }}
+          boxShadow: '0 10px 35px rgba(29,48,102,.025)' }}
       >
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-5 border-b border-slate-100">
@@ -197,7 +184,7 @@ export function OwnerTrialAssessmentWidget() {
                       {row.average.toFixed(1)}
                     </td>
                     <td className="num py-2.5 px-3">
-                      <LevelBadge level={row.level} />
+                      <LevelBadge level={Math.round(row.average)} />
                     </td>
                   </tr>
                 ))}
@@ -218,7 +205,7 @@ export function OwnerTrialAssessmentWidget() {
           </button>
 
           <span className="text-[11px] text-slate-400">
-            Mentor: {program.mentorName ?? 'Mentor DigiTalent'} · Công bố: {formatWhen(report.publishedAt)}
+            Đóng bài: {formatWhen(report.publishedAt)}
           </span>
         </div>
 
@@ -260,7 +247,7 @@ export function OwnerTrialAssessmentWidget() {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // GIAI ĐOẠN ĐANG TIẾN HÀNH (SETUP / REQUESTED / ASSIGNED)
+  // GIAI ĐOẠN ĐANG TIẾN HÀNH (SETUP / OPEN)
   // ─────────────────────────────────────────────────────────────
   return (
     <section
@@ -268,8 +255,7 @@ export function OwnerTrialAssessmentWidget() {
       style={{
         borderColor: 'var(--po-line)',
         background: 'var(--po-surface)',
-        boxShadow: '0 10px 35px rgba(29,48,102,.025)',
-      }}
+        boxShadow: '0 10px 35px rgba(29,48,102,.025)' }}
     >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-100">
@@ -338,7 +324,7 @@ export function OwnerTrialAssessmentWidget() {
         <div className="rounded-xl bg-slate-50/80 p-3.5 border border-slate-100">
           <span className="text-[11px] font-medium text-slate-500 block">Đã kích hoạt</span>
           <strong className="text-2xl font-bold text-blue-600 block mt-0.5">
-            {count(['ACTIVE', 'SUBMITTED', 'REVIEWED'])}
+            {count(['ACTIVE', 'SUBMITTED'])}
           </strong>
           <small className="text-[10px] text-slate-400">Đã mở tài khoản</small>
         </div>
@@ -346,17 +332,17 @@ export function OwnerTrialAssessmentWidget() {
         <div className="rounded-xl bg-slate-50/80 p-3.5 border border-slate-100">
           <span className="text-[11px] font-medium text-slate-500 block">Đã nộp bài</span>
           <strong className="text-2xl font-bold text-amber-600 block mt-0.5">
-            {count(['SUBMITTED', 'REVIEWED'])}
+            {count(['SUBMITTED'])}
           </strong>
-          <small className="text-[10px] text-slate-400">Đã thi trắc nghiệm & tự luận</small>
+          <small className="text-[10px] text-slate-400">Đã chấm tự động</small>
         </div>
 
         <div className="rounded-xl bg-slate-50/80 p-3.5 border border-slate-100">
-          <span className="text-[11px] font-medium text-slate-500 block">Mentor đã chấm</span>
+          <span className="text-[11px] font-medium text-slate-500 block">Chưa nộp</span>
           <strong className="text-2xl font-bold text-emerald-600 block mt-0.5">
-            {count(['REVIEWED'])}
+            {count(['ACTIVE'])}
           </strong>
-          <small className="text-[10px] text-slate-400">Đã cho điểm tự luận</small>
+          <small className="text-[10px] text-slate-400">Đã kích hoạt, chưa nộp</small>
         </div>
       </div>
 
@@ -366,17 +352,6 @@ export function OwnerTrialAssessmentWidget() {
           <span className="inline-flex items-center gap-1.5">
             <Clock className="size-3.5 text-slate-400" />
             Hạn làm bài: <strong className="text-slate-800">{formatWhen(program.testDeadline)}</strong>
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Calendar className="size-3.5 text-slate-400" />
-            Giờ mong muốn chấm: <strong className="text-slate-800">{formatWhen(program.preferredReviewAt)}</strong>
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <UserCheck className="size-3.5 text-slate-400" />
-            Mentor:{' '}
-            <strong className="text-indigo-600 font-semibold">
-              {program.mentorName ?? 'Chờ DigiTalent phân công'}
-            </strong>
           </span>
         </div>
 

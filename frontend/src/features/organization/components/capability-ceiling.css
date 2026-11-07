@@ -50,6 +50,8 @@
 .cc-mx .hd span { font-weight: 500; }
 .cc-mx .rl { display: flex; flex-direction: column; justify-content: center; font-size: 13.5px; font-weight: 600; line-height: 1.3; }
 .cc-mx .rl small { font-weight: 500; color: var(--cc-muted); font-size: 11.5px; font-family: var(--cc-mono); }
+/* ✦ Lý do mức tối đa theo kết quả test dùng thử: một dòng, đủ câu ở tooltip. */
+.cc-mx .rl .cc-reason { margin-top: 2px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; font-weight: 600; color: #c2531f; }
 
 .cc-cell {
   height: 52px; width: 100%; border-radius: 8px; display: grid; place-items: center;

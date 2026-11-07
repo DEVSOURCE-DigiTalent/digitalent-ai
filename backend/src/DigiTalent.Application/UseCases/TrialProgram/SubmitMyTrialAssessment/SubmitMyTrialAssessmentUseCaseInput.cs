@@ -9,8 +9,4 @@ public class SubmitMyTrialAssessmentUseCaseInput
 
     /// <summary>Một phương án cho mỗi câu trắc nghiệm của đề.</summary>
     public List<PulseAnswerInput> Answers { get; set; } = new();
-
-    public string EssayBasic { get; set; } = string.Empty;
-    public string EssayIntermediate { get; set; } = string.Empty;
-    public string EssayAdvanced { get; set; } = string.Empty;
 }

@@ -150,7 +150,7 @@ function readCeilings(body: Record<string, unknown>): CeilingInput[] {
     if (!Number.isInteger(level) || level < 0 || level > MAX_LEVEL) throw badRequest('Dữ liệu chưa hợp lệ. Vui lòng kiểm tra lại.');
     if (ids.has(categoryId)) throw badRequest('Dữ liệu chưa hợp lệ. Vui lòng kiểm tra lại.');
     if (!CATEGORIES.some((c) => c.id === categoryId)) {
-      throw badRequest('Năng lực không thuộc ma trận trần nhà.', 'CATEGORY_NOT_IN_MATRIX', 'ceilings');
+      throw badRequest('Lĩnh vực không thuộc phạm vi đào tạo.', 'CATEGORY_NOT_IN_MATRIX', 'ceilings');
     }
     ids.add(categoryId);
     return { categoryId, level };
@@ -167,7 +167,7 @@ route('GET', '/capability-ceilings', ({ org }) => ceilingMatrixDto(org()), { per
 route('PUT', '/capability-ceilings/organization', ({ body, session, update }) => update((data) => {
   const ceilings = readCeilings(body);
   if (CATEGORIES.some((c) => !ceilings.some((i) => i.categoryId === c.id))) {
-    throw badRequest('Cần đặt trần cho đủ mọi năng lực của ma trận.', 'CEILINGS_INCOMPLETE', 'ceilings');
+    throw badRequest('Chọn mức tối đa cho cả 6 lĩnh vực.', 'CEILINGS_INCOMPLETE', 'ceilings');
   }
 
   const record: CapabilityCeilingRecord = ceilingsOf(data) ?? { organization: {}, departments: {}, updatedAt: '', updatedByName: '' };
@@ -188,10 +188,10 @@ route('PUT', '/capability-ceilings/organization', ({ body, session, update }) =>
 
   stamp(record, session.fullName);
   data.capabilityCeilings = record;
-  recordAudit(data, session, 'CAPABILITY_CEILING_UPDATED', 'Trần năng lực', 'Trần doanh nghiệp',
-    adjusted > 0 ? `Hạ trần của ${adjusted} phòng ban theo trần mới` : undefined);
+  recordAudit(data, session, 'CAPABILITY_CEILING_UPDATED', 'Phạm vi đào tạo', 'Phạm vi doanh nghiệp',
+    adjusted > 0 ? `Hạ mức tối đa của ${adjusted} phòng ban cho khớp` : undefined);
   return { ...ceilingMatrixDto(data), adjustedDepartmentCount: adjusted };
-}), { permission: P.POSITION_REQUIREMENT_MANAGE, message: 'Đã lưu trần doanh nghiệp.' });
+}), { permission: P.POSITION_REQUIREMENT_MANAGE, message: 'Đã lưu phạm vi doanh nghiệp.' });
 
 route('PUT', '/capability-ceilings/departments/:id', ({ body, params, session, update }) => update((data) => {
   const department = data.departments.find((d) => d.id === params.id && d.status === 'ACTIVE');
@@ -199,7 +199,7 @@ route('PUT', '/capability-ceilings/departments/:id', ({ body, params, session, u
 
   const record = ceilingsOf(data);
   if (!record) {
-    throw badRequest('Hãy lưu trần doanh nghiệp trước khi đặt trần cho phòng ban.', 'ORGANIZATION_CEILING_REQUIRED', 'ceilings');
+    throw badRequest('Lưu phạm vi đào tạo của doanh nghiệp trước, rồi mới chỉnh phòng ban.', 'ORGANIZATION_CEILING_REQUIRED', 'ceilings');
   }
 
   if (body.inherit === true) {
@@ -209,7 +209,7 @@ route('PUT', '/capability-ceilings/departments/:id', ({ body, params, session, u
     if (ceilings.length === 0) throw badRequest('Dữ liệu chưa hợp lệ. Vui lòng kiểm tra lại.');
     if (ceilings.some((item) => item.level > (record.organization[item.categoryId] ?? 0))) {
       throw badRequest(
-        'Trần phòng ban không được cao hơn trần doanh nghiệp ở bất kỳ năng lực nào.',
+        'Mức tối đa của phòng ban không được cao hơn của doanh nghiệp.',
         'CEILING_ABOVE_ORGANIZATION',
         'ceilings',
       );
@@ -220,7 +220,7 @@ route('PUT', '/capability-ceilings/departments/:id', ({ body, params, session, u
 
   stamp(record, session.fullName);
   data.capabilityCeilings = record;
-  recordAudit(data, session, 'CAPABILITY_CEILING_UPDATED', 'Trần năng lực', `Trần phòng ban ${department.name}`,
-    body.inherit === true ? 'Kế thừa trần doanh nghiệp' : undefined);
+  recordAudit(data, session, 'CAPABILITY_CEILING_UPDATED', 'Phạm vi đào tạo', `Phạm vi phòng ban ${department.name}`,
+    body.inherit === true ? 'Theo doanh nghiệp' : undefined);
   return ceilingMatrixDto(data);
-}), { permission: P.POSITION_REQUIREMENT_MANAGE, message: 'Đã lưu trần phòng ban.' });
+}), { permission: P.POSITION_REQUIREMENT_MANAGE, message: 'Đã lưu phạm vi phòng ban.' });

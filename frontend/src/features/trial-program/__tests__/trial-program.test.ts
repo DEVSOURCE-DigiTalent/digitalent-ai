@@ -5,7 +5,8 @@ import { getHomePath } from '@/lib/navigation';
 import { inferWorkspace } from '@/lib/roles';
 import { trialGateOf } from '@/features/pulse-employee/lib/trial-gate';
 import type { MyTrialAssessment } from '@/services/trial-program.service';
-import { suggestLevel } from '../lib/trial-format';
+import { formatMoneyShort } from '../lib/trial-format';
+import { learners, planTotals, type PlanLevels } from '../lib/trial-plan';
 
 describe('trial participant file', () => {
   it('maps Vietnamese headers in any order and skips blank rows', () => {
@@ -45,7 +46,7 @@ describe('trial participant file', () => {
 describe('trial navigation', () => {
   it('sends mentors to their review queue in the platform workspace', () => {
     expect(inferWorkspace(['MENTOR'])).toBe('platform');
-    expect(getHomePath({ roles: ['MENTOR'], workspace: 'platform' })).toBe('/platform/reviews');
+    expect(getHomePath({ roles: ['MENTOR'], workspace: 'platform' })).toBe('/platform/course-reviews');
     expect(getHomePath({ roles: ['PLATFORM_ADMIN'], workspace: 'platform' })).toBe('/platform/dashboard');
   });
 
@@ -60,27 +61,49 @@ describe('trial navigation', () => {
 describe('trial learning gate', () => {
   const now = Date.parse('2026-10-28T10:00:00Z');
   const mine = (overrides: Partial<MyTrialAssessment>): MyTrialAssessment => ({
-    organizationName: 'Demo', status: 'NOT_STARTED', canStart: true, choiceCount: 18, domains: [], essays: [],
+    organizationName: 'Demo', status: 'NOT_STARTED', canStart: true, choiceCount: 18, domains: [],
     reportPublished: false, testDeadline: '2026-10-31T10:00:00Z', ...overrides,
   });
 
-  it('asks for the test first, waits for the mentor after submitting, opens once the report is published', () => {
+  it('asks for the test first, waits for the test to close after submitting, opens once it is closed', () => {
     expect(trialGateOf(mine({}), now)).toBe('todo');
     // Doanh nghiệp chưa đặt hạn: chưa làm được nhưng không phải "đã đóng".
     expect(trialGateOf(mine({ canStart: false, testDeadline: null, closedMessage: 'Doanh nghiệp chưa đặt hạn làm bài.' }), now)).toBe('todo');
     expect(trialGateOf(mine({ canStart: false, testDeadline: '2026-10-27T10:00:00Z', closedMessage: 'Đã hết hạn.' }), now)).toBe('closed');
     expect(trialGateOf(mine({ status: 'SUBMITTED' }), now)).toBe('waiting');
-    expect(trialGateOf(mine({ status: 'REVIEWED', reportPublished: true }), now)).toBeNull();
+    expect(trialGateOf(mine({ status: 'REPORTED', reportPublished: true }), now)).toBeNull();
     expect(trialGateOf(undefined, now)).toBeNull();
   });
 });
 
-describe('mentor suggested level', () => {
-  it('caps the multiple-choice level by the essays passed in a row once all three are scored', () => {
-    expect(suggestLevel(3, [7, 6, 4], 5)).toBe(2);
-    expect(suggestLevel(1, [9, 9, 9], 5)).toBe(1);
-    expect(suggestLevel(3, [4, 9, 9], 5)).toBe(0);
-    // Chưa chấm đủ tự luận: chỉ theo trắc nghiệm.
-    expect(suggestLevel(2, [7, null, null], 5)).toBe(2);
+describe('training scope totals', () => {
+  // 2 lĩnh vực; giá theo cấp: Cơ bản miễn phí, Trung cấp 399k, Nâng cao 699k.
+  const prices = [0, 0, 399_000, 699_000];
+  const people = [
+    { departmentId: 'kt', levels: [0, 2] },
+    { departmentId: 'kt', levels: [1, 3] },
+    { departmentId: 'mk', levels: [1, 1] },
+  ];
+  const plan: PlanLevels = { organization: [3, 2], departments: { kt: [1, null] } };
+
+  it('counts a seat when the level is below the course tier and the tier is within the effective maximum', () => {
+    // Lĩnh vực 1: Kế toán dừng ở Cơ bản (mức riêng), Marketing tới Nâng cao.
+    expect(learners(people, plan, 0, 1).length).toBe(1);
+    expect(learners(people, plan, 0, 2).map((p) => p.departmentId)).toEqual(['mk']);
+    expect(learners(people, plan, 0, 3).map((p) => p.departmentId)).toEqual(['mk']);
+    // Lĩnh vực 2: tối đa Trung cấp theo doanh nghiệp; ai đã đạt không cần suất.
+    expect(learners(people, plan, 1, 2).map((p) => p.departmentId)).toEqual(['mk']);
+    expect(learners(people, plan, 1, 3)).toEqual([]);
+  });
+
+  it('adds up paid courses, seats and cost; Basic is free', () => {
+    const totals = planTotals(people, plan, prices);
+    expect(totals.byTier[1]).toEqual({ courses: 1, seats: 1, cost: 0 });
+    expect(totals.courses).toBe(3);
+    expect(totals.seats).toBe(3);
+    expect(totals.cost).toBe(399_000 * 2 + 699_000);
+    expect(totals.costByDomain).toEqual([[399_000, 699_000], [399_000, 0]]);
+    expect(formatMoneyShort(totals.cost)).toBe('1,5tr');
+    expect(formatMoneyShort(399_000)).toBe('399k');
   });
 });

@@ -1,20 +1,30 @@
 import { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Camera, Compass, Mic, Monitor, Send } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Camera, Clock, Mic, Monitor, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageContainer } from '@/components/shared/PageContainer';
-import { useInviteTrialParticipants, useJoinTrialAsParticipant, useResendTrialInvitation, useSubmitTrialRequest, useTrialProgram } from '@/hooks/use-trial-program';
-import type { TrialInviteResult, TrialParticipant, TrialParticipantRow, TrialProgram, TrialReport } from '@/services/trial-program.service';
+import {
+  useCloseTrial,
+  useInviteTrialParticipants,
+  useJoinTrialAsParticipant,
+  useResendTrialInvitation,
+  useSetTrialDeadline,
+  useTrialProgram,
+} from '@/hooks/use-trial-program';
+import type { TrialInviteResult, TrialParticipant, TrialParticipantRow, TrialProgram, TrialReportEmployee } from '@/services/trial-program.service';
 import { apiErrorMessage } from '@/lib/utils';
 import { ParticipantsEditor } from '../components/ParticipantsEditor';
-import { CompetencyReport, ParticipantStatus, StageBadge, Steps } from '../components/TrialUi';
+import { ParticipantStatus, StageBadge, Steps } from '../components/TrialUi';
+import { TrialReportView } from '../components/report/TrialReportView';
 import { emptyRows, isRowEmpty, rowError } from '../lib/participant-rows';
-import { formatWhen, toLocalInput } from '../lib/trial-format';
+import { formatWhen, LEVEL_LABELS, percentOf, toLocalInput } from '../lib/trial-format';
 import '../trial-program.css';
+import '../components/report/trial-report.css';
 
-const STEPS = ['Nhân viên', 'Hạn & lịch chấm', 'Làm bài & chấm', 'Kết quả'];
+const STEPS = ['Nhân viên', 'Hạn làm bài', 'Làm bài', 'Kết quả'];
+const MIN_DEADLINE_MINUTES = 30;
 
-/** OW-T1 · Dùng thử: mời nhân viên, đặt hạn làm bài + giờ mong muốn chấm, theo dõi và xem bảng năng lực. */
+/** OW-T1 · Đánh giá đội ngũ: mời nhân viên, đặt hạn, theo dõi bài làm, đóng bài và xem báo cáo năng lực. */
 export function TrialProgramPage() {
   const { data, isLoading, error } = useTrialProgram();
 
@@ -22,7 +32,7 @@ export function TrialProgramPage() {
     <PageContainer>
       <div className="tp tp-page">
         {isLoading && <p className="tp-muted">Đang tải…</p>}
-        {error && <p className="tp-notice bad">{apiErrorMessage(error, 'Không tải được trang dùng thử.')}</p>}
+        {error && <p className="tp-notice bad">{apiErrorMessage(error, 'Không tải được trang đánh giá.')}</p>}
         {data && <TrialProgramView program={data} />}
       </div>
     </PageContainer>
@@ -30,7 +40,7 @@ export function TrialProgramPage() {
 }
 
 function TrialProgramView({ program }: { program: TrialProgram }) {
-  const current = program.stage === 'SETUP' ? 0 : program.stage === 'REPORTED' ? 3 : 2;
+  const current = program.stage === 'SETUP' ? 0 : program.stage === 'OPEN' ? 2 : 3;
   // Kết quả lần mời đầu (lỗi từng dòng, link kích hoạt ở môi trường thử) vẫn hiện sau khi chuyển sang bước theo dõi.
   const [lastInvite, setLastInvite] = useState<TrialInviteResult | null>(null);
   return (
@@ -38,14 +48,9 @@ function TrialProgramView({ program }: { program: TrialProgram }) {
       <header className="tp-head">
         <div>
           <span className="tp-eyebrow">Đánh giá đội ngũ · {program.organizationName}</span>
-          <h1>{program.stage === 'REPORTED' ? 'Bảng năng lực của doanh nghiệp' : 'Đánh giá năng lực đội ngũ'}</h1>
+          <h1>{program.stage === 'REPORTED' ? 'Bảng năng lực' : 'Đánh giá năng lực đội ngũ'}</h1>
         </div>
-        <div className="tp-row" style={{ gap: 8, alignItems: 'center' }}>
-          <Link to="/enterprise/dashboard" className="tp-btn ghost small">
-            Về Tổng quan ➔
-          </Link>
-          <StageBadge stage={program.stage} />
-        </div>
+        <StageBadge stage={program.stage} />
       </header>
       <Steps steps={STEPS} current={current} />
       <OwnerParticipation program={program} />
@@ -54,16 +59,21 @@ function TrialProgramView({ program }: { program: TrialProgram }) {
       ) : (
         <>
           <InviteResult result={lastInvite} />
-          <TrackView program={program} />
+          {program.stage === 'OPEN' && <OpenTest program={program} />}
+          {program.stage === 'REPORTED' && program.report && (
+            <TrialReportView report={program.report} choicePerCell={choicePerCellOf(program)} />
+          )}
+          <Participants program={program} />
         </>
       )}
     </>
   );
 }
 
-/**
- * Chủ doanh nghiệp tùy chọn tự làm bài (mentor chấm như nhân viên) và học thử cùng nhân viên; không chấm bài của ai.
- */
+const choicePerCellOf = (program: TrialProgram) =>
+  Math.max(1, Math.round(program.choiceCount / Math.max(1, (program.report?.domains.length ?? 6) * 3)));
+
+/** Chủ doanh nghiệp tùy chọn tự làm bài (máy chấm như nhân viên) và học thử cùng nhân viên. */
 function OwnerParticipation({ program }: { program: TrialProgram }) {
   const me = program.participants.find((p) => p.isOwner);
   const [open, setOpen] = useState(false);
@@ -75,9 +85,7 @@ function OwnerParticipation({ program }: { program: TrialProgram }) {
   if (me) {
     return (
       <section className="tp-card tp-row" style={{ justifyContent: 'space-between' }}>
-        <span className="tp-row">
-          Bạn đang tham gia · <ParticipantStatus status={me.status} />
-        </span>
+        <span className="tp-row">Bạn đang tham gia · <ParticipantStatus status={me.status} /></span>
         <Link to="/enterprise/me/trial-test" className="tp-btn small">
           {reported ? 'Kết quả & học thử của tôi' : 'Bài test của tôi'} <ArrowRight size={14} aria-hidden />
         </Link>
@@ -114,7 +122,7 @@ function OwnerParticipation({ program }: { program: TrialProgram }) {
                 {
                   onSuccess: ({ refreshed }) =>
                     refreshed
-                      ? toast.success('Bạn đã tham gia. Mentor sẽ chấm bài của bạn như nhân viên.')
+                      ? toast.success('Bạn đã tham gia. Bài của bạn được chấm tự động như nhân viên.')
                       : toast.warning('Bạn đã tham gia. Hãy đăng xuất rồi đăng nhập lại để vào bài test.'),
                   onError: (err) => toast.error(apiErrorMessage(err, 'Chưa tham gia được.')),
                 },
@@ -133,15 +141,15 @@ function OwnerParticipation({ program }: { program: TrialProgram }) {
 /** Bước 1–2: danh sách nhân viên + hạn làm bài, gửi một lần. */
 function SetupView({ program, onInvited }: { program: TrialProgram; onInvited: (result: TrialInviteResult) => void }) {
   const [rows, setRows] = useState<TrialParticipantRow[]>(emptyRows());
-  const [schedule, setSchedule] = useState(defaultSchedule());
+  const [deadline, setDeadline] = useState(defaultDeadline());
   const [result, setResult] = useState<TrialInviteResult | null>(null);
   const invite = useInviteTrialParticipants();
-  const request = useSubmitTrialRequest();
+  const setTrialDeadline = useSetTrialDeadline();
   const filled = rows.filter((r) => !isRowEmpty(r));
   const invalid = filled.some((r) => rowError(r) !== null);
   const existing = program.participants.length;
-  const scheduleError = validateSchedule(schedule);
-  const busy = invite.isPending || request.isPending;
+  const deadlineError = validateDeadline(deadline);
+  const busy = invite.isPending || setTrialDeadline.isPending;
 
   const submit = async () => {
     try {
@@ -155,8 +163,8 @@ function SetupView({ program, onInvited }: { program: TrialProgram; onInvited: (
         setRows(filled.filter((r) => rejected.has(r.email.trim().toLowerCase())));
       }
       if (existing + invited === 0) return;
-      await request.mutateAsync(toRequest(schedule));
-      toast.success('Đã gửi lời mời và đăng ký chấm');
+      await setTrialDeadline.mutateAsync(new Date(deadline).toISOString());
+      toast.success('Đã gửi lời mời và mở bài test');
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Chưa gửi được.'));
     }
@@ -164,176 +172,201 @@ function SetupView({ program, onInvited }: { program: TrialProgram; onInvited: (
 
   return (
     <>
-      <section
-        className="tp-card rounded-2xl border p-6 space-y-4 transition-all"
-        style={{
-          borderColor: 'var(--tp-line)',
-          background: 'var(--tp-card)',
-          boxShadow: '0 8px 30px rgba(29,48,102,.025)',
-        }}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-slate-100">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span
-                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider"
-                style={{ background: '#e0f2f1', color: '#137b84' }}
-              >
-                Bước 1 / Khởi đầu
-              </span>
-              {existing > 0 && (
-                <span className="rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 text-[11px] font-bold">
-                  Đã mời {existing} nhân sự
-                </span>
-              )}
-            </div>
-            <h2 className="text-lg md:text-xl font-bold tracking-tight text-slate-900">
-              Danh sách nhân sự tham gia đánh giá năng lực số
-            </h2>
-          </div>
+      <section className="tp-card">
+        <div className="tp-card-head">
+          <h2>1 · Nhân viên tham gia</h2>
+          {existing > 0 && <span className="tp-badge info">Đã mời {existing}</span>}
         </div>
         <ParticipantsEditor rows={rows} onChange={setRows} departments={program.departments} positions={program.positions} limit={program.maxParticipants - existing} />
         <InviteResult result={result} />
       </section>
 
-      <section
-        className="tp-card rounded-2xl border p-6 space-y-4 transition-all"
-        style={{
-          borderColor: 'var(--tp-line)',
-          background: 'var(--tp-card)',
-          boxShadow: '0 8px 30px rgba(29,48,102,.025)',
-        }}
-      >
-        <div className="pb-3 border-b border-slate-100">
-          <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider mb-1"
-            style={{ background: '#e0f2f1', color: '#137b84' }}
-          >
-            Bước 2 / Kế hoạch
-          </span>
-          <h2 className="text-lg md:text-xl font-bold tracking-tight text-slate-900">
-            Hạn làm bài & Lịch DigiTalent chấm bài
-          </h2>
+      <section className="tp-card">
+        <div className="tp-card-head"><h2>2 · Hạn làm bài</h2></div>
+        <div className="tp-row" style={{ alignItems: 'flex-end' }}>
+          <label className="tp-field" style={{ flex: '0 1 320px' }}>
+            Hạn hoàn thành bài test
+            <input type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+          </label>
+          <button type="button" className="tp-btn" disabled={busy || invalid || !!deadlineError || existing + filled.length === 0} onClick={submit}>
+            <Send size={15} aria-hidden /> {busy ? 'Đang gửi…' : 'Gửi lời mời & mở bài test'}
+          </button>
+          {deadlineError && <span className="tp-muted">{deadlineError}</span>}
         </div>
-        <ScheduleFields value={schedule} onChange={setSchedule} />
         <ExamSummary program={program} />
       </section>
-
-      <div className="flex items-center justify-end gap-3 pt-2">
-        {scheduleError && <span className="text-xs font-semibold text-amber-600">{scheduleError}</span>}
-        <button
-          type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#137b84] hover:bg-[#0e5f66] px-6 py-3 text-sm font-bold text-white shadow-md shadow-[#137b84]/20 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-          disabled={busy || invalid || !!scheduleError || existing + filled.length === 0}
-          onClick={submit}
-        >
-          <Send className="size-4" />
-          {busy ? 'Đang gửi…' : 'Gửi lời mời & đăng ký chấm'}
-        </button>
-      </div>
     </>
   );
 }
 
-/** Bước 3–4: theo dõi bài làm, mời thêm, đổi lịch; bảng năng lực khi có kết quả. */
-function TrackView({ program }: { program: TrialProgram }) {
-  const [adding, setAdding] = useState(false);
+/** Bước 3: bài đang mở — tiến độ nộp theo phòng ban, đổi hạn, đóng sớm. */
+function OpenTest({ program }: { program: TrialProgram }) {
   const [editing, setEditing] = useState(false);
-  const [resent, setResent] = useState<TrialInviteResult | null>(null);
-  const count = (statuses: string[]) => program.participants.filter((p) => statuses.includes(p.status)).length;
-  const reported = program.stage === 'REPORTED';
+  const people = program.participants;
+  const submitted = people.filter((p) => p.status === 'SUBMITTED').length;
+  const notActivated = people.filter((p) => p.status === 'INVITED' || p.status === 'INVITE_EXPIRED').length;
 
   return (
-    <>
+    <section className="tp-card">
+      <div className="tp-card-head">
+        <h2>Bài test đang mở</h2>
+        <div className="tp-row">
+          <span className="tp-badge info"><Clock size={12} aria-hidden /> Đóng {formatWhen(program.testDeadline)}</span>
+          <button type="button" className="tp-btn ghost small" onClick={() => setEditing((v) => !v)}>{editing ? 'Đóng' : 'Đổi hạn'}</button>
+        </div>
+      </div>
+      {editing && <DeadlineForm program={program} onDone={() => setEditing(false)} />}
+
       <div className="tp-stats">
-        <Stat label="Nhân viên" value={program.participants.length} />
-        <Stat label="Đã kích hoạt" value={count(['ACTIVE', 'SUBMITTED', 'REVIEWED'])} />
-        <Stat label="Đã nộp bài" value={count(['SUBMITTED', 'REVIEWED'])} />
-        <Stat label="Đã chấm" value={count(['REVIEWED'])} />
+        <div className="tp-stat"><span>Đã nộp</span><strong>{submitted}<small className="tp-muted"> / {people.length}</small></strong></div>
+        <div className="tp-stat"><span>Chưa nộp</span><strong>{people.length - submitted - notActivated}</strong></div>
+        <div className="tp-stat"><span>Chưa kích hoạt</span><strong>{notActivated}</strong></div>
+        <div className="tp-stat"><span>Đề</span><strong>{program.choiceCount}<small className="tp-muted"> câu</small></strong></div>
       </div>
 
-      <section className="tp-card">
-        <div className="tp-card-head">
-          <h2>Lịch</h2>
-          {!reported && <button type="button" className="tp-btn ghost small" onClick={() => setEditing((v) => !v)}>{editing ? 'Đóng' : 'Đổi lịch'}</button>}
-        </div>
-        {editing ? (
-          <RescheduleForm program={program} onDone={() => setEditing(false)} />
-        ) : (
-          <div className="tp-grid-2">
-            <Info label="Hạn làm bài" value={formatWhen(program.testDeadline)} />
-            <Info label="Giờ mong muốn chấm" value={formatWhen(program.preferredReviewAt)} />
-            <Info label="Mentor" value={program.mentorName ?? 'Chờ DigiTalent phân công'} />
-          </div>
-        )}
-      </section>
+      <SubmitProgress participants={people} />
+      <CloseTest program={program} submitted={submitted} />
+    </section>
+  );
+}
 
-      {reported && program.report && (
+const PROGRESS = [
+  { key: 'done', label: 'Đã nộp', match: (p: TrialParticipant) => p.status === 'SUBMITTED' },
+  { key: 'doing', label: 'Chưa nộp', match: (p: TrialParticipant) => p.status === 'ACTIVE' },
+  { key: 'todo', label: 'Chưa kích hoạt', match: (p: TrialParticipant) => p.status === 'INVITED' || p.status === 'INVITE_EXPIRED' },
+] as const;
+
+/** Tiến độ nộp bài theo phòng ban (thanh xếp chồng). */
+function SubmitProgress({ participants }: { participants: TrialParticipant[] }) {
+  const departments = [...new Set(participants.map((p) => p.departmentName ?? 'Chưa có phòng ban'))].sort();
+  return (
+    <div className="rp" style={{ gap: 8 }}>
+      <div className="tp-card-head">
+        <span className="tp-muted">Theo phòng ban</span>
+        <span className="rp-key">
+          {PROGRESS.map((s) => <span key={s.key}><i style={{ background: s.key === 'done' ? 'var(--tp-l3)' : s.key === 'doing' ? 'var(--tp-l1)' : 'var(--tp-l0)' }} />{s.label}</span>)}
+        </span>
+      </div>
+      <div className="rp-stack">
+        {departments.map((name) => {
+          const group = participants.filter((p) => (p.departmentName ?? 'Chưa có phòng ban') === name);
+          const done = group.filter(PROGRESS[0].match).length;
+          return (
+            <div key={name} className="rp-srow" style={{ gridTemplateColumns: '150px 1fr 48px' }}>
+              <span className="lab"><span>{name}</span></span>
+              <span className="rp-bar" role="img" aria-label={`${name}: ${done}/${group.length} đã nộp`}>
+                {PROGRESS.map((s) => {
+                  const n = group.filter(s.match).length;
+                  return n > 0 ? <i key={s.key} data-state={s.key} style={{ flex: n }} title={`${s.label}: ${n}`} /> : null;
+                })}
+              </span>
+              <b>{done}/{group.length}</b>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** "Xem kết quả ngay": đóng bài trước hạn — hỏi lại vì người chưa nộp sẽ không làm được nữa. */
+function CloseTest({ program, submitted }: { program: TrialProgram; submitted: number }) {
+  const [confirming, setConfirming] = useState(false);
+  const close = useCloseTrial();
+  const remaining = program.participants.length - submitted;
+
+  return (
+    <div className="tp-notice tp-row" style={{ justifyContent: 'space-between' }}>
+      {confirming ? (
         <>
-          <SetupFramework report={program.report} />
-          <CompetencyReport report={program.report} />
+          <span className="tp-row"><AlertTriangle size={15} aria-hidden /> Đóng bài? {remaining} người chưa nộp sẽ không làm được nữa.</span>
+          <span className="tp-row">
+            <button type="button" className="tp-btn ghost small" onClick={() => setConfirming(false)}>Hủy</button>
+            <button
+              type="button"
+              className="tp-btn small"
+              disabled={close.isPending}
+              onClick={() =>
+                close.mutate(undefined, {
+                  onSuccess: (r) => toast.success(`Đã tạo báo cáo từ ${r.assessed} bài`),
+                  onError: (err) => toast.error(apiErrorMessage(err, 'Chưa đóng được bài.')),
+                })
+              }
+            >
+              {close.isPending ? 'Đang tạo báo cáo…' : 'Đóng bài'}
+            </button>
+          </span>
+        </>
+      ) : (
+        <>
+          <span>Kết quả tự tạo khi <b>hết hạn</b> hoặc <b>đủ {program.participants.length} bài</b>.</span>
+          <button type="button" className="tp-btn small" disabled={submitted === 0} onClick={() => setConfirming(true)}>
+            Xem kết quả ngay ({submitted} bài)
+          </button>
         </>
       )}
+    </div>
+  );
+}
 
-      <section className="tp-card">
-        <div className="tp-card-head">
-          <h2>Nhân viên</h2>
-          {!reported && program.participants.length < program.maxParticipants && (
-            <button type="button" className="tp-btn ghost small" onClick={() => setAdding((v) => !v)}>{adding ? 'Đóng' : '+ Mời thêm'}</button>
-          )}
-        </div>
-        {adding && <AddParticipants program={program} onDone={() => setAdding(false)} />}
-        <InviteResult result={resent} />
-        <div className="tp-table-wrap">
-          <table className="tp-table">
-            <thead>
-              <tr>
-                <th>Nhân viên</th>
-                <th>Phòng ban · Vị trí</th>
-                <th>Trạng thái</th>
-                <th>Nộp lúc</th>
-                {!reported && <th aria-label="Thao tác" />}
-              </tr>
-            </thead>
-            <tbody>
-              {program.participants.map((p) => (
+/** Danh sách nhân viên; sau khi có kết quả kèm mức 6 lĩnh vực và dấu rủi ro giám sát. */
+function Participants({ program }: { program: TrialProgram }) {
+  const [adding, setAdding] = useState(false);
+  const [resent, setResent] = useState<TrialInviteResult | null>(null);
+  const reported = program.stage === 'REPORTED';
+  const results = new Map((program.report?.employees ?? []).map((e) => [e.employeeId, e]));
+
+  return (
+    <section className="tp-card">
+      <div className="tp-card-head">
+        <h2>Nhân viên</h2>
+        {!reported && program.participants.length < program.maxParticipants && (
+          <button type="button" className="tp-btn ghost small" onClick={() => setAdding((v) => !v)}>{adding ? 'Đóng' : '+ Mời thêm'}</button>
+        )}
+      </div>
+      {adding && <AddParticipants program={program} onDone={() => setAdding(false)} />}
+      <InviteResult result={resent} />
+      <div className="tp-table-wrap">
+        <table className="tp-table">
+          <thead>
+            <tr>
+              <th>Nhân viên</th>
+              <th>Phòng ban · Vị trí</th>
+              <th>Trạng thái</th>
+              {reported ? <th>Mức {program.report?.domains.map((d) => `M${d.number}`).join(' · ')}</th> : <th>Nộp lúc</th>}
+              {!reported && <th aria-label="Thao tác" />}
+            </tr>
+          </thead>
+          <tbody>
+            {program.participants.map((p) => {
+              const result = p.employeeId ? results.get(p.employeeId) : undefined;
+              return (
                 <tr key={p.id}>
                   <td>{p.fullName}{p.isOwner ? ' (bạn)' : ''}<small>{p.email}</small></td>
                   <td>{[p.departmentName, p.positionName].filter(Boolean).join(' · ') || '—'}</td>
                   <td><ParticipantStatus status={p.status} /></td>
-                  <td>{formatWhen(p.submittedAt)}</td>
-                  {!reported && (
-                    <td>
-                      {p.invitationId && <ResendButton participant={p} onResent={setResent} />}
-                    </td>
-                  )}
+                  {reported ? <td><EmployeeLevels result={result} /></td> : <td>{formatWhen(p.submittedAt)}</td>}
+                  {!reported && <td>{p.invitationId && <ResendButton participant={p} onResent={setResent} />}</td>}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
-/**
- * Sau khi có bảng năng lực: nhân viên đã hoàn thành đánh giá, doanh nghiệp thiết lập khung năng lực số để đối soát khoảng trống trước khi mua/gán khóa học.
- */
-function SetupFramework({ report }: { report: TrialReport }) {
-  const weakest = [...report.summary].filter((d) => d.level < 2).sort((a, b) => a.average - b.average).slice(0, 2);
+function EmployeeLevels({ result }: { result?: TrialReportEmployee }) {
+  if (!result) return <span className="tp-muted">—</span>;
   return (
-    <section className="tp-buy" aria-labelledby="tp-framework-title">
-      <span className="tp-buy-icon" aria-hidden><Compass size={18} /></span>
-      <div>
-        <strong id="tp-framework-title">Thiết lập Khung năng lực số</strong>
-        <span>
-          Dựa trên kết quả đánh giá, thiết lập mức năng lực chuẩn cho từng vị trí để xác định chính xác khoảng trống.
-          {weakest.length > 0 && ` Cần ưu tiên: ${weakest.map((d) => d.name).join(', ')}.`}
-        </span>
-      </div>
-      <Link to="/enterprise/setup" className="tp-btn light">Thiết lập khung năng lực <ArrowRight size={15} aria-hidden /></Link>
-    </section>
+    <span className="tp-row" style={{ gap: 6, flexWrap: 'nowrap' }}>
+      <span className="rp-levels" role="img" aria-label={result.levels.map((l, i) => `M${i + 1} ${LEVEL_LABELS[l]}`).join(', ')}>
+        {result.levels.map((level, i) => <i key={i} data-level={level} title={`M${i + 1}: ${LEVEL_LABELS[level]}`} />)}
+      </span>
+      <small className="tp-muted" style={{ display: 'inline' }}>{result.choiceScore}/{result.choiceTotal} · {percentOf(result.choiceScore, result.choiceTotal)}%</small>
+      {result.riskLevel === 'HIGH' && <span className="tp-badge bad" title="Rủi ro giám sát cao — vẫn tính vào kết quả"><AlertTriangle size={11} aria-hidden /> rủi ro</span>}
+    </span>
   );
 }
 
@@ -378,34 +411,11 @@ function AddParticipants({ program, onDone }: { program: TrialProgram; onDone: (
       onError: (err) => toast.error(apiErrorMessage(err, 'Chưa mời được.')),
     });
   return (
-    <div
-      className="rounded-2xl border p-5 space-y-4 mb-4 shadow-sm"
-      style={{
-        borderColor: 'var(--tp-line)',
-        background: 'var(--tp-card)',
-      }}
-    >
-      <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-        <h3 className="text-sm font-bold text-slate-900">
-          Mời thêm nhân viên tham gia đợt đánh giá
-        </h3>
-        <button
-          type="button"
-          onClick={onDone}
-          className="text-slate-400 hover:text-slate-600 text-xs font-semibold cursor-pointer"
-        >
-          Đóng
-        </button>
-      </div>
+    <div className="tp-card" style={{ background: 'var(--tp-raised)' }}>
       <ParticipantsEditor rows={rows} onChange={setRows} departments={program.departments} positions={program.positions} limit={program.maxParticipants - program.participants.length} />
       <InviteResult result={result} />
-      <div className="flex justify-end pt-2">
-        <button
-          type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#137b84] hover:bg-[#0e5f66] px-5 py-2.5 text-xs font-bold text-white shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-          disabled={invite.isPending || filled.length === 0 || filled.some((r) => rowError(r) !== null)}
-          onClick={send}
-        >
+      <div className="tp-row" style={{ justifyContent: 'flex-end' }}>
+        <button type="button" className="tp-btn" disabled={invite.isPending || filled.length === 0 || filled.some((r) => rowError(r) !== null)} onClick={send}>
           {invite.isPending ? 'Đang gửi…' : `Gửi lời mời (${filled.length} người)`}
         </button>
       </div>
@@ -413,89 +423,54 @@ function AddParticipants({ program, onDone }: { program: TrialProgram; onDone: (
   );
 }
 
-function RescheduleForm({ program, onDone }: { program: TrialProgram; onDone: () => void }) {
-  const [schedule, setSchedule] = useState({
-    deadline: toLocalInput(program.testDeadline),
-    review: toLocalInput(program.preferredReviewAt),
-    note: program.requestNote ?? '',
-  });
-  const request = useSubmitTrialRequest();
-  const error = validateSchedule(schedule);
+function DeadlineForm({ program, onDone }: { program: TrialProgram; onDone: () => void }) {
+  const [deadline, setDeadline] = useState(toLocalInput(program.testDeadline));
+  const setTrialDeadline = useSetTrialDeadline();
+  const error = validateDeadline(deadline);
   return (
-    <div className="tp" style={{ gap: 10 }}>
-      <ScheduleFields value={schedule} onChange={setSchedule} />
-      <div className="tp-row" style={{ justifyContent: 'flex-end' }}>
-        {error && <span className="tp-muted">{error}</span>}
-        <button
-          type="button"
-          className="tp-btn"
-          disabled={!!error || request.isPending}
-          onClick={() =>
-            request.mutate(toRequest(schedule), {
-              onSuccess: () => {
-                toast.success('Đã cập nhật lịch');
-                onDone();
-              },
-              onError: (err) => toast.error(apiErrorMessage(err, 'Chưa cập nhật được.')),
-            })
-          }
-        >
-          Lưu lịch
-        </button>
-      </div>
+    <div className="tp-row" style={{ alignItems: 'flex-end' }}>
+      <label className="tp-field" style={{ flex: '0 1 320px' }}>
+        Hạn hoàn thành bài test
+        <input type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+      </label>
+      {error && <span className="tp-muted">{error}</span>}
+      <button
+        type="button"
+        className="tp-btn"
+        disabled={!!error || setTrialDeadline.isPending}
+        onClick={() =>
+          setTrialDeadline.mutate(new Date(deadline).toISOString(), {
+            onSuccess: () => {
+              toast.success('Đã đổi hạn');
+              onDone();
+            },
+            onError: (err) => toast.error(apiErrorMessage(err, 'Chưa đổi được hạn.')),
+          })
+        }
+      >
+        Lưu hạn
+      </button>
     </div>
   );
 }
 
-type Schedule = { deadline: string; review: string; note: string };
-
-function defaultSchedule(): Schedule {
+function defaultDeadline() {
   const deadline = new Date();
   deadline.setDate(deadline.getDate() + 3);
   deadline.setHours(17, 0, 0, 0);
-  const review = new Date(deadline);
-  review.setDate(review.getDate() + 1);
-  review.setHours(9, 0, 0, 0);
-  return { deadline: toLocalInput(deadline), review: toLocalInput(review), note: '' };
+  return toLocalInput(deadline);
 }
 
-function validateSchedule(s: Schedule): string | null {
-  if (!s.deadline || !s.review) return 'Chọn hạn làm bài và giờ chấm.';
-  const deadline = new Date(s.deadline).getTime();
-  if (deadline < Date.now() + 30 * 60_000) return 'Hạn làm bài cần sau ít nhất 30 phút.';
-  if (new Date(s.review).getTime() < deadline) return 'Giờ chấm phải sau hạn làm bài.';
+function validateDeadline(value: string): string | null {
+  if (!value) return 'Chọn hạn làm bài.';
+  if (new Date(value).getTime() < Date.now() + MIN_DEADLINE_MINUTES * 60_000) return `Hạn làm bài cần sau ít nhất ${MIN_DEADLINE_MINUTES} phút.`;
   return null;
-}
-
-const toRequest = (s: Schedule) => ({
-  testDeadline: new Date(s.deadline).toISOString(),
-  preferredReviewAt: new Date(s.review).toISOString(),
-  note: s.note.trim() || null,
-});
-
-function ScheduleFields({ value, onChange }: { value: Schedule; onChange: (v: Schedule) => void }) {
-  return (
-    <div className="tp-grid-2">
-      <label className="tp-field">
-        Hạn hoàn thành bài test
-        <input type="datetime-local" value={value.deadline} onChange={(e) => onChange({ ...value, deadline: e.target.value })} />
-      </label>
-      <label className="tp-field">
-        Giờ mong muốn mentor chấm
-        <input type="datetime-local" value={value.review} onChange={(e) => onChange({ ...value, review: e.target.value })} />
-      </label>
-      <label className="tp-field" style={{ gridColumn: '1 / -1' }}>
-        Ghi chú cho DigiTalent (không bắt buộc)
-        <input value={value.note} maxLength={500} placeholder="VD: ưu tiên chấm phòng Kế toán trước" onChange={(e) => onChange({ ...value, note: e.target.value })} />
-      </label>
-    </div>
-  );
 }
 
 function ExamSummary({ program }: { program: TrialProgram }) {
   return (
     <p className="tp-muted tp-row">
-      Bài test: {program.choiceCount} câu trắc nghiệm + {program.essayCount} tự luận (Cơ bản · Trung cấp · Nâng cao) ·
+      Bài test: {program.choiceCount} câu trắc nghiệm (Cơ bản · Trung cấp · Nâng cao), chấm tự động ·
       <Camera size={14} aria-hidden /> camera <Mic size={14} aria-hidden /> micro <Monitor size={14} aria-hidden /> chia sẻ màn hình
     </p>
   );
@@ -508,37 +483,15 @@ function InviteResult({ result }: { result: TrialInviteResult | null }) {
     <>
       {result.rejected.length > 0 && (
         <div className="tp-notice bad" role="alert">
-          {result.rejected.map((r) => (
-            <div key={r.email}>{r.email || '(trống)'}: {r.reason}</div>
-          ))}
+          {result.rejected.map((r) => <div key={r.email}>{r.email || '(trống)'}: {r.reason}</div>)}
         </div>
       )}
       {links.length > 0 && (
         <div className="tp-notice">
           <strong>Link kích hoạt (môi trường thử):</strong>
-          {links.map((i) => (
-            <div key={i.email}>{i.email}: <a href={i.debugLink!}>{i.debugLink}</a></div>
-          ))}
+          {links.map((i) => <div key={i.email}>{i.email}: <a href={i.debugLink!}>{i.debugLink}</a></div>)}
         </div>
       )}
     </>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="tp-stat">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="tp-field">
-      {label}
-      <strong style={{ color: 'var(--tp-fg)', fontSize: 14 }}>{value}</strong>
-    </div>
   );
 }

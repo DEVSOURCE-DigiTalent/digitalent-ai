@@ -15,6 +15,9 @@ public class CapabilityCeilingReader
 {
     public static readonly string[] LevelNames = { "Cơ bản", "Trung cấp", "Nâng cao" };
 
+    /// <summary>Đơn giá một suất học theo cấp (Cơ bản miễn phí) — nguồn duy nhất cho OW-05, lộ trình dùng thử và thanh toán.</summary>
+    public static long PricePerSeat(int level) => level switch { 3 => 699_000L, 2 => 399_000L, _ => 0L };
+
     private readonly IApplicationDbContext _context;
     private readonly PulseCatalogReader _catalog;
     private readonly ReferencePositionMatrixService? _references;
@@ -158,7 +161,7 @@ public class CapabilityCeilingReader
                         (displayCode != null && string.Equals(so.Code, displayCode, StringComparison.OrdinalIgnoreCase))
                       )).Sum(so => so.Seats);
                 var isUnlocked = level == 1 || seats > 0;
-                var price = level == 3 ? 699000L : (level == 2 ? 399000L : 0L);
+                var price = PricePerSeat(level);
 
                 return new CeilingCourseDto
                 {

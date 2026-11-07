@@ -7194,6 +7194,85 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                     b.ToTable("trial_registrations", (string)null);
                 });
 
+            modelBuilder.Entity("DigiTalent.Domain.Entities.TrialReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("AiCompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ai_completed_at");
+
+                    b.Property<string>("AiModel")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("ai_model");
+
+                    b.Property<short>("AiReplaced")
+                        .HasColumnType("smallint")
+                        .HasColumnName("ai_replaced");
+
+                    b.Property<string>("AiStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("ai_status");
+
+                    b.Property<short>("AssessedCount")
+                        .HasColumnType("smallint")
+                        .HasColumnName("assessed_count");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("GeneratedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("generated_at");
+
+                    b.Property<string>("Insights")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("insights");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_trial_reports");
+
+                    b.HasIndex("AiStatus")
+                        .HasDatabaseName("ix_trial_reports_ai_status");
+
+                    b.HasIndex("OrganizationId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_trial_reports_organization");
+
+                    b.ToTable("trial_reports", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_trial_reports_ai_completed", "(ai_status = 'PENDING') = (ai_completed_at IS NULL)");
+
+                            t.HasCheckConstraint("ck_trial_reports_ai_model", "(ai_status = 'DONE') = (ai_model IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_trial_reports_ai_status", "ai_status IN ('PENDING', 'DONE', 'FALLBACK')");
+
+                            t.HasCheckConstraint("ck_trial_reports_counts", "assessed_count >= 0 AND ai_replaced >= 0");
+                        });
+                });
+
             modelBuilder.Entity("DigiTalent.Domain.Entities.TrialWorkspace", b =>
                 {
                     b.Property<Guid>("Id")
@@ -7330,8 +7409,6 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                     b.ToTable("trial_workspaces", null, t =>
                         {
                             t.HasCheckConstraint("ck_trial_workspaces_mentor", "(mentor_user_id IS NULL) = (mentor_assigned_at IS NULL)");
-
-                            t.HasCheckConstraint("ck_trial_workspaces_report", "report_published_at IS NULL OR mentor_user_id IS NOT NULL");
 
                             t.HasCheckConstraint("ck_trial_workspaces_request", "requested_at IS NULL OR test_deadline IS NOT NULL");
                         });
@@ -9285,6 +9362,16 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_trial_registrations_organizations_organization_id");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.TrialReport", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_trial_reports_organizations_organization_id");
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.TrialWorkspace", b =>

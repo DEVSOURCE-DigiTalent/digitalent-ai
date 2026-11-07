@@ -366,6 +366,19 @@ public static class Statuses
         public const string Pause = "PAUSE";
     }
 
+    /// <summary>trial_reports.ai_status (v3.6) — gợi ý AI của báo cáo dùng thử.</summary>
+    public static class TrialReportAi
+    {
+        /// <summary>Đang chờ AI viết; báo cáo tạm hiện câu mẫu.</summary>
+        public const string Pending = "PENDING";
+        /// <summary>AI đã viết (từng câu vẫn có thể là câu mẫu khi bị rào chắn loại).</summary>
+        public const string Done = "DONE";
+        /// <summary>Không có khóa AI hoặc AI lỗi: toàn bộ câu mẫu.</summary>
+        public const string Fallback = "FALLBACK";
+
+        public static readonly string[] All = { Pending, Done, Fallback };
+    }
+
     /// <summary>proctoring_sessions.kind — loại bài làm có giám sát.</summary>
     public static class ProctoringKind
     {

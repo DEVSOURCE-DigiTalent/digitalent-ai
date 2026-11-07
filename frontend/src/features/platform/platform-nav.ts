@@ -4,7 +4,6 @@ import {
   BriefcaseBusiness,
   Building2,
   CheckCircle2,
-  ClipboardEdit,
   FlaskConical,
   Gem,
   LayoutDashboard,
@@ -42,8 +41,7 @@ export const PLATFORM_TOP_LINKS = [
   { to: '/platform/audit-log', label: 'Nhật ký' },
 ] as const;
 
-/** Sidebar của mentor (nhân sự nền tảng chấm bài dùng thử). */
+/** Sidebar của mentor (nhân sự nền tảng chấm bài cuối khóa học thử). */
 export const MENTOR_NAV: readonly PlatformNavItem[] = [
-  { to: '/platform/reviews', label: 'Bài test dùng thử', glyph: '✎', icon: ClipboardEdit, description: 'Chấm bài test dùng thử' },
   { to: '/platform/course-reviews', label: 'Bài cuối khóa', glyph: '✓', icon: CheckCircle2, description: 'Chấm bài cuối khóa' },
 ] as const;

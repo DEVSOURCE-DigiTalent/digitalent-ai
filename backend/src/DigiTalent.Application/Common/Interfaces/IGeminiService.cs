@@ -16,12 +16,10 @@ public interface IGeminiService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gợi ý điểm (0–10) và nhận xét cho các bài tự luận của bài đánh giá dùng thử. Null khi chưa cấu hình khóa hoặc AI
-    /// không trả lời được — không có điểm giả thay thế.
+    /// Bản nháp gợi ý cho báo cáo dùng thử từ số liệu ẩn danh: 3 lĩnh vực ưu tiên và lý do mức tối đa từng lĩnh vực, mỗi câu
+    /// ngắn. Null khi chưa cấu hình khóa hoặc AI không trả lời được. Kết quả phải qua <see cref="TrialInsightGuard"/> trước khi hiện.
     /// </summary>
-    Task<TrialEssayAiReviewDto?> EvaluateTrialEssaysAsync(
-        IReadOnlyList<TrialEssayAiInput> essays,
-        CancellationToken cancellationToken = default);
+    Task<TrialInsightDraft?> DraftTrialInsightsAsync(TrialInsightFacts facts, CancellationToken cancellationToken = default);
 }
 
 public sealed record ProctoringEventInfo(string Kind, long OffsetMs, long? DurationMs);

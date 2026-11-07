@@ -103,9 +103,12 @@ public static class DependencyInjection
         services.AddScoped<DigiTalent.Application.UseCases.Assistant.AssistantDataReader>();
         services.AddScoped<DigiTalent.Application.UseCases.Assistant.AssistantToolbox>();
 
-        // 11. Dùng thử doanh nghiệp: đề đánh giá tổng hợp ba cấp, nhân viên tham gia và bảng năng lực (/trial, /mentor/trials)
+        // 11. Dùng thử doanh nghiệp: đề đánh giá tổng hợp ba cấp, nhân viên tham gia, đóng bài, báo cáo năng lực và gợi ý AI (/trial)
         services.AddScoped<DigiTalent.Application.UseCases.TrialProgram.TrialAssessmentPaper>();
         services.AddScoped<DigiTalent.Application.UseCases.TrialProgram.TrialProgramReader>();
+        services.AddScoped<DigiTalent.Application.UseCases.TrialProgram.TrialReportBuilder>();
+        services.AddScoped<DigiTalent.Application.UseCases.TrialProgram.TrialCloser>();
+        services.AddScoped<DigiTalent.Application.UseCases.TrialProgram.TrialInsightWriter>();
 
         return services;
     }

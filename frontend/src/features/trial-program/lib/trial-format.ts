@@ -1,26 +1,12 @@
 import type { TrialStage } from '@/services/trial-program.service';
 
 export const LEVEL_LABELS = ['Chưa đạt', 'Cơ bản', 'Trung cấp', 'Nâng cao'] as const;
+export const LEVEL_SHORT = ['0', 'CB', 'TC', 'NC'] as const;
 export const TIER_LABELS = ['', 'Cơ bản', 'Trung cấp', 'Nâng cao'] as const;
 
-/**
- * Mức gợi ý của một lĩnh vực: số cấp đạt liên tiếp từ Cơ bản ở trắc nghiệm (máy chấm), giới hạn bởi số cấp tự luận đạt
- * liên tiếp (điểm mentor ≥ điểm đạt). Chưa chấm đủ tự luận thì chỉ theo trắc nghiệm.
- */
-export function suggestLevel(choiceLevel: number, essayScores: (number | null | undefined)[], passScore: number): number {
-  if (essayScores.some((s) => s == null)) return choiceLevel;
-  let essayLevel = 0;
-  for (const score of essayScores) {
-    if ((score ?? 0) < passScore) break;
-    essayLevel++;
-  }
-  return Math.min(choiceLevel, essayLevel);
-}
-
 export const STAGE: Record<TrialStage, { label: string; tone: string }> = {
-  SETUP: { label: 'Chưa gửi', tone: '' },
-  REQUESTED: { label: 'Chờ phân công', tone: 'warn' },
-  ASSIGNED: { label: 'Đang chấm', tone: 'info' },
+  SETUP: { label: 'Chưa đặt hạn', tone: '' },
+  OPEN: { label: 'Đang làm bài', tone: 'info' },
   REPORTED: { label: 'Đã có kết quả', tone: 'ok' },
 };
 
@@ -39,4 +25,20 @@ export function toLocalInput(value?: string | Date | null) {
   if (Number.isNaN(date.getTime())) return '';
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+/** Mức trung bình một chữ số thập phân, dấu phẩy: 1,2. */
+export function formatAverage(value: number) {
+  return value.toFixed(1).replace('.', ',');
+}
+
+/** Tiền gọn cho biểu đồ: 0đ · 399k · 17,7tr. */
+export function formatMoneyShort(value: number) {
+  if (value === 0) return '0đ';
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1).replace('.', ',')}tr`;
+  return `${Math.round(value / 1000)}k`;
+}
+
+export function percentOf(part: number, total: number) {
+  return total ? Math.round((part / total) * 100) : 0;
 }

@@ -6,7 +6,7 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
     roleName: 'Chủ doanh nghiệp',
     welcomeTitle: 'Lộ trình 5 bước Chuẩn hóa Năng lực Số',
     welcomeDescription:
-      'Hành trình triển khai: Bắt đầu từ trang Đánh giá đội ngũ để khảo sát 6 lĩnh vực số cho nhân sự, nhận diện khoảng trống năng lực thực tế của toàn đội ngũ, thiết lập khung trần mục tiêu, trang bị khóa học và theo dõi báo cáo chu kỳ.',
+      'Hành trình triển khai: Bắt đầu từ trang Đánh giá đội ngũ để khảo sát 6 lĩnh vực số cho nhân sự, nhận diện khoảng trống năng lực thực tế của toàn đội ngũ, chọn phạm vi đào tạo, trang bị khóa học và theo dõi báo cáo chu kỳ.',
     steps: [
       {
         id: 'owner-step-1',
@@ -36,12 +36,12 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
         id: 'owner-step-3',
         title: 'Bước 3: Thiết lập Khung năng lực mục tiêu',
         description:
-          'Dựa trên khoảng trống kỹ năng vừa nhận diện, bạn tiến hành thiết lập trần năng lực kỳ vọng cho từng vị trí công việc và phòng ban.',
+          'Dựa trên khoảng trống kỹ năng vừa nhận diện, bạn tiến hành chọn phạm vi đào tạo cho từng vị trí công việc và phòng ban.',
         badge: '3. Khung năng lực',
         targetSelector: '[data-tour="OW-05"]',
         targetPosition: 'right',
         actionRoute: '/enterprise/setup',
-        actionText: 'Cấu hình khung trần',
+        actionText: 'Chọn phạm vi đào tạo',
         tips: 'Khung chuẩn TT02/2025 với 6 lĩnh vực và 3 cấp độ giúp chuẩn hóa chức danh toàn diện.',
       },
       {
@@ -89,7 +89,7 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
       {
         id: 'task-owner-3',
         title: '3. Thiết lập Khung năng lực mục tiêu cho Vị trí',
-        subtitle: 'Cấu hình trần năng lực kỳ vọng cho các phòng ban',
+        subtitle: 'Chọn phạm vi đào tạo cho các phòng ban',
         route: '/enterprise/setup',
         targetSelector: '[data-tour="OW-05"]',
         badge: 'Khung chuẩn',
@@ -227,7 +227,7 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
         id: 'emp-step-2',
         title: 'Bước 2: Xem Bản đồ Lộ trình & Khoảng trống Kỹ năng',
         description:
-          'Khám phá bản đồ năng lực cá nhân: Xem khoảng cách giữa năng lực hiện tại của bạn và chuẩn trần yêu cầu của doanh nghiệp cho vị trí công tác.',
+          'Khám phá bản đồ năng lực cá nhân: Xem khoảng cách giữa năng lực hiện tại của bạn và mức yêu cầu của doanh nghiệp cho vị trí công tác.',
         badge: '2. Bản đồ năng lực',
         targetSelector: '[data-tour="EM-02"]',
         targetPosition: 'bottom',
@@ -272,7 +272,7 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
       {
         id: 'task-emp-2',
         title: '2. Xem Bản đồ Lộ trình & Khoảng trống Kỹ năng',
-        subtitle: 'Đối chiếu năng lực thực tế với chuẩn trần của vị trí công việc',
+        subtitle: 'Đối chiếu năng lực thực tế với mức yêu cầu của vị trí công việc',
         route: '/enterprise/me/path',
         targetSelector: '[data-tour="EM-02"]',
         badge: 'Lộ trình',

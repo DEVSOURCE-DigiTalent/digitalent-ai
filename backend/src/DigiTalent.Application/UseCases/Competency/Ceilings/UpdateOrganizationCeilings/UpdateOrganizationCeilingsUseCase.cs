@@ -112,7 +112,7 @@ public class UpdateOrganizationCeilingsUseCase : IUseCase<UpdateOrganizationCeil
                 ceilings = requested.ToDictionary(r => r.Key.ToString(), r => r.Value),
                 adjustedDepartments = adjusted.Select(r => r.DepartmentId).Distinct().Count(),
             },
-            "Trần doanh nghiệp");
+            "Phạm vi đào tạo doanh nghiệp");
 
         var output = await _reader.ReadAsync<UpdateOrganizationCeilingsUseCaseOutput>(organizationId);
         output.AdjustedDepartmentCount = adjusted.Select(r => r.DepartmentId).Distinct().Count();

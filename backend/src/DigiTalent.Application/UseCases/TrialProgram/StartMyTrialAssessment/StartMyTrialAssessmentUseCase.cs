@@ -52,6 +52,7 @@ public class StartMyTrialAssessmentUseCase : IUseCase<StartMyTrialAssessmentUseC
             throw new BadRequestException("Đề đánh giá chưa sẵn sàng. Hãy báo cho chủ doanh nghiệp.", "session", PaperEmpty);
         }
 
+        await _paper.StoreBenchmarksAsync(paper, trial.OrganizationId, _reader.UserId);
         await _proctoring.AbandonOpenAsync(employee.Id, null, Statuses.ProctoringKind.TrialAssessment, now);
         var session = new ProctoringSession
         {
@@ -78,7 +79,6 @@ public class StartMyTrialAssessmentUseCase : IUseCase<StartMyTrialAssessmentUseC
             StartedAt = now,
             MaxChunkBytes = PulseRules.MaxRecordingChunkBytes,
             Questions = TrialAssessmentPaper.ToDto(paper),
-            Essays = TrialProgramRules.Essays.ToList(),
         };
     }
 }

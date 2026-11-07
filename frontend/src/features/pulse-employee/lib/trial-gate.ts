@@ -1,6 +1,6 @@
 import type { MyTrialAssessment } from '@/services/trial-program.service';
 
-/** Doanh nghiệp dùng thử chưa có kết quả bài test: chưa nộp (làm bài / bài đã đóng) hoặc đã nộp, chờ mentor chấm. */
+/** Doanh nghiệp dùng thử chưa có kết quả bài test: chưa nộp (làm bài / bài đã đóng) hoặc đã nộp, chờ bài test đóng. */
 export type TrialGateState = 'todo' | 'waiting' | 'closed';
 
 /**

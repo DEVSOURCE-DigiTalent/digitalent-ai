@@ -110,6 +110,11 @@ public static class DependencyInjection
         // Background Service: Auto-remind approaching deadlines
         services.AddHostedService<DigiTalent.Infrastructure.BackgroundServices.DeadlineReminderBackgroundService>();
 
+        // Báo cáo dùng thử: gợi ý AI viết nền (hàng đợi trong tiến trình + quét lại báo cáo còn chờ)
+        services.AddSingleton<DigiTalent.Infrastructure.BackgroundServices.TrialInsightQueue>();
+        services.AddSingleton<ITrialInsightQueue>(sp => sp.GetRequiredService<DigiTalent.Infrastructure.BackgroundServices.TrialInsightQueue>());
+        services.AddHostedService<DigiTalent.Infrastructure.BackgroundServices.TrialInsightBackgroundService>();
+
         return services;
     }
 }

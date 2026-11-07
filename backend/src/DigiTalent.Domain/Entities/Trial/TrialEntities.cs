@@ -39,8 +39,9 @@ public sealed class TrialWorkspace : BaseEntity
     public string? ConversionReference { get; set; }
     public long Revision { get; set; }
 
-    // Bài đánh giá tổng hợp (v3.5, docs/specs/2026-10-27-enterprise-trial-assessment.md): chủ doanh nghiệp đặt hạn làm bài
-    // và giờ mong muốn chấm rồi gửi yêu cầu; quản trị nền tảng phân công mentor; mentor chấm xong thì công bố kết quả.
+    // Bài đánh giá tổng hợp (v3.6, docs/specs/2026-10-31-trial-ai-report-roadmap.md): chủ doanh nghiệp đặt hạn làm bài;
+    // bài đóng (ReportPublishedAt) khi hết hạn, khi mọi người đã nộp hoặc khi chủ doanh nghiệp đóng sớm.
+    // PreferredReviewAt / RequestNote không còn ghi (luồng mentor chấm cũ). Mentor được phân công chỉ chấm bài cuối khóa học thử.
     public DateTimeOffset? TestDeadline { get; set; }
     public DateTimeOffset? PreferredReviewAt { get; set; }
     public string? RequestNote { get; set; }
@@ -48,6 +49,27 @@ public sealed class TrialWorkspace : BaseEntity
     public Guid? MentorUserId { get; set; }
     public DateTimeOffset? MentorAssignedAt { get; set; }
     public DateTimeOffset? ReportPublishedAt { get; set; }
+}
+
+/// <summary>
+/// Bảng trial_reports (v3.6): báo cáo tự tạo khi bài đánh giá dùng thử đóng, một dòng mỗi doanh nghiệp. Số liệu luôn tính lại
+/// từ bài làm; bảng chỉ giữ gợi ý (ưu tiên + lý do mức tối đa, jsonb) do AI viết hoặc câu mẫu, và trạng thái của AI.
+/// </summary>
+public sealed class TrialReport : BaseEntity
+{
+    public Guid OrganizationId { get; set; }
+    /// <summary>Số bài đã dùng để viết gợi ý — bài nộp muộn làm đổi số này thì gợi ý được viết lại.</summary>
+    public short AssessedCount { get; set; }
+    public string Insights { get; set; } = "{}";
+    /// <summary>PENDING | DONE | FALLBACK (Statuses.TrialReportAi).</summary>
+    public string AiStatus { get; set; } = "PENDING";
+    public string? AiModel { get; set; }
+    /// <summary>Số câu AI bị rào chắn thay bằng câu mẫu ở lần viết gần nhất.</summary>
+    public short AiReplaced { get; set; }
+    public DateTimeOffset GeneratedAt { get; set; }
+    public DateTimeOffset? AiCompletedAt { get; set; }
+    /// <summary>xmin của PostgreSQL: lần viết AI bị bỏ khi báo cáo vừa được đặt lại.</summary>
+    public uint Version { get; set; }
 }
 
 public sealed class TrialInvitation : BaseEntity
@@ -83,9 +105,9 @@ public sealed class PositionDiagnosticAttempt : BaseEntity
 }
 
 /// <summary>
-/// Bảng trial_assessments (v3.5): bài đánh giá tổng hợp của một nhân viên doanh nghiệp dùng thử — trắc nghiệm của cả ba
-/// cấp (Cơ bản, Trung cấp, Nâng cao) cho mọi lĩnh vực, ba bài tự luận (một bài mỗi cấp), làm trong phòng thi có giám sát.
-/// Một bài cho mỗi nhân viên. Mentor được phân công chấm: mức của từng lĩnh vực (<see cref="TrialAssessmentDomain"/>).
+/// Bảng trial_assessments (v3.5, v3.6): bài đánh giá tổng hợp của một nhân viên doanh nghiệp dùng thử — trắc nghiệm của cả ba
+/// cấp (Cơ bản, Trung cấp, Nâng cao) cho mọi lĩnh vực, làm trong phòng thi có giám sát, máy chấm khi nộp. Một bài cho mỗi
+/// nhân viên. Các cột tự luận / chấm của mentor (luồng cũ) giữ dữ liệu cũ, bài mới không ghi.
 /// </summary>
 public sealed class TrialAssessment : BaseEntity
 {
@@ -107,7 +129,7 @@ public sealed class TrialAssessment : BaseEntity
     public short? EssayIntermediateScore { get; set; }
     public short? EssayAdvancedScore { get; set; }
 
-    /// <summary>Gợi ý chấm tự luận của AI (jsonb, TrialEssayAiReviewDto) và thời điểm tạo — chỉ để mentor tham khảo.</summary>
+    /// <summary>Gợi ý chấm tự luận của AI ở luồng mentor cũ (jsonb) — không còn ghi.</summary>
     public string? AiEssayReview { get; set; }
     public DateTimeOffset? AiEssayReviewedAt { get; set; }
 }

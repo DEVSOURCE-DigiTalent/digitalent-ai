@@ -6,7 +6,6 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { useDepartments } from '@/hooks/use-departments';
 import { useJobPositions } from '@/hooks/use-job-positions';
 import { useMembers, useResendInvitation } from '@/hooks/use-members';
-import { useOrganizationOverview } from '@/hooks/use-organization';
 import { PERMISSIONS } from '@/hooks/use-permission';
 import { ROLES } from '@/lib/roles';
 import { assignableRoles } from '@/lib/role-policy';
@@ -40,7 +39,6 @@ export function OwnerMembersPage() {
   const [inviting, setInviting] = useState(false);
   const [announcing, setAnnouncing] = useState(false);
 
-  const { data: orgData } = useOrganizationOverview();
   const departments =
     useDepartments({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
   const positions =

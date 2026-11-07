@@ -28,9 +28,9 @@ import '../../features/pulse-employee/pulse-exam.css';
  * - Tự động ẩn hoàn toàn (Zero Distraction Focus Mode) khi làm bài thi Proctored (Pre-assessment & Final).
  */
 /**
- * Doanh nghiệp dùng thử: trước khi mentor công bố kết quả, trang học (khóa học, thực hành, kết quả) hiện cảnh báo "làm bài
- * test trước" / "đang chờ mentor chấm" thay cho nội dung; trang Học thử tự hiện cảnh báo trên các khóa đang khóa. Vào cổng
- * (/enterprise/me) thì tới thẳng bài test. Hồ sơ, hoạt động vẫn mở. Sau công bố: học thử các khóa Cơ bản như bình thường.
+ * Doanh nghiệp dùng thử: trước khi bài test đóng, trang học (khóa học, thực hành, kết quả) hiện cảnh báo "làm bài
+ * test trước" / "chờ bài test đóng" thay cho nội dung; trang Học thử tự hiện cảnh báo trên các khóa đang khóa. Vào cổng
+ * (/enterprise/me) thì tới thẳng bài test. Hồ sơ, hoạt động vẫn mở. Sau khi đóng: học thử các khóa Cơ bản như bình thường.
  */
 function TrialGate({ pathname, children }: { pathname: string; children: ReactNode }) {
   const trial = useIsEnterpriseTrial();

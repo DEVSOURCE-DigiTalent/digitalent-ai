@@ -30,7 +30,7 @@ describe('Pulse enterprise landing page', () => {
   it('shows the competency ceiling order and distinct responsibilities for each role', () => {
     renderBusiness();
 
-    expect(screen.getByLabelText('Trật tự các mức trần năng lực')).toHaveTextContent('Vị trí≤Phòng ban≤Doanh nghiệp≤Digital AI');
+    expect(screen.getByLabelText('Thứ tự mức tối đa')).toHaveTextContent('Vị trí≤Phòng ban≤Doanh nghiệp≤Digital AI');
     const roles = screen.getByRole('region', { name: /Cùng một mục tiêu/ });
     for (const name of ['Doanh nghiệp', 'Quản lý', 'Nhân viên']) {
       expect(within(roles).getByRole('heading', { name })).toBeInTheDocument();

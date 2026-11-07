@@ -10,9 +10,9 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.TrialProgram;
 
 /// <summary>
-/// POST /me/trial-assessment — nộp bài đánh giá tổng hợp: đóng phiên giám sát (đã có bản ghi màn hình và camera), chấm
-/// trắc nghiệm, lưu số câu đúng theo lĩnh vực × cấp cùng mức gợi ý, ba bài tự luận; báo cho mentor nếu đã được phân công.
-/// Phiên mở trước hạn làm bài thì vẫn nộp được sau hạn.
+/// POST /me/trial-assessment — nộp bài đánh giá tổng hợp: đóng phiên giám sát, chấm trắc nghiệm và lưu số câu đúng theo
+/// lĩnh vực × cấp cùng mức (máy chấm, không chờ ai duyệt). Người cuối cùng nộp thì bài đóng và báo cáo được tạo; bài nộp muộn
+/// (phiên mở trước khi đóng) làm báo cáo viết lại gợi ý.
 /// </summary>
 public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUseCaseInput, SubmitMyTrialAssessmentUseCaseOutput>
 {
@@ -21,15 +21,22 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
     private readonly TrialProgramReader _reader;
     private readonly TrialAssessmentPaper _paper;
     private readonly PulseProctoring _proctoring;
+    private readonly TrialCloser _closer;
 
     public SubmitMyTrialAssessmentUseCase(
-        IApplicationDbContext context, MyEmployeeContext me, TrialProgramReader reader, TrialAssessmentPaper paper, PulseProctoring proctoring)
+        IApplicationDbContext context,
+        MyEmployeeContext me,
+        TrialProgramReader reader,
+        TrialAssessmentPaper paper,
+        PulseProctoring proctoring,
+        TrialCloser closer)
     {
         _context = context;
         _me = me;
         _reader = reader;
         _paper = paper;
         _proctoring = proctoring;
+        _closer = closer;
     }
 
     public async Task<SubmitMyTrialAssessmentUseCaseOutput> ExecuteAsync(SubmitMyTrialAssessmentUseCaseInput input)
@@ -58,9 +65,6 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
             OrganizationId = trial.OrganizationId,
             EmployeeId = employee.Id,
             ProctoringSessionId = session.Id,
-            EssayBasic = input.EssayBasic.Trim(),
-            EssayIntermediate = input.EssayIntermediate.Trim(),
-            EssayAdvanced = input.EssayAdvanced.Trim(),
             ChoiceScore = grade.Score,
             ChoiceTotal = grade.Total,
             SubmittedAt = now,
@@ -70,12 +74,6 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
         {
             answer.TrialAssessmentId = assessment.Id;
             _context.ExamChoiceAnswers.Add(answer);
-        }
-
-        var isAutoReview = trial.ReportPublishedAt != null;
-        if (isAutoReview)
-        {
-            assessment.ReviewedAt = now;
         }
 
         var correct = grade.Answers.ToDictionary(a => a.QuestionId, a => a.IsCorrect);
@@ -88,7 +86,6 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
                     return (Correct: items.Count(i => correct.GetValueOrDefault(i.Question.QuestionId)), Total: items.Count);
                 })
                 .ToList();
-            var suggested = TrialProgramRules.SuggestedLevel(cells);
             _context.TrialAssessmentDomains.Add(new TrialAssessmentDomain
             {
                 TrialAssessmentId = assessment.Id,
@@ -99,16 +96,8 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
                 IntermediateTotal = (short)cells[1].Total,
                 AdvancedCorrect = (short)cells[2].Correct,
                 AdvancedTotal = (short)cells[2].Total,
-                SuggestedLevel = suggested,
-                MentorLevel = isAutoReview ? suggested : null,
+                SuggestedLevel = TrialProgramRules.SuggestedLevel(cells),
             });
-        }
-
-        if (trial.MentorUserId is { } mentor)
-        {
-            _reader.Notify(new[] { mentor }, TrialProgramRules.NotificationSubmitted, "Có bài dùng thử cần chấm",
-                $"{employee.FullName} ({await _reader.OrganizationNameAsync(trial.OrganizationId)}) đã nộp bài đánh giá tổng hợp.",
-                trial.OrganizationId);
         }
 
         try
@@ -119,6 +108,15 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
         {
             // uq_trial_assessments_employee: bấm "Nộp" hai lần cùng lúc
             throw new ConflictException("Bài đánh giá đang được gửi, vui lòng tải lại trang.");
+        }
+
+        if (trial.ReportPublishedAt != null)
+        {
+            await _closer.RefreshInsightsAsync(trial.OrganizationId);
+        }
+        else
+        {
+            await _closer.CloseIfDueAsync(trial);
         }
 
         return new SubmitMyTrialAssessmentUseCaseOutput

@@ -40,7 +40,7 @@ export function PositionMapping({ domains, isLoading }: PositionMappingProps) {
             Thiết lập mức theo miền năng lực.
           </h2>
           <p className="mt-1 text-xs" style={{ color: 'var(--po-muted)' }}>
-            Trần con không được vượt trần cha. Công bố trước khi mời nhân
+            Mức tối đa cấp dưới không vượt cấp trên. Công bố trước khi mời nhân
             viên.
           </p>
         </div>
@@ -71,7 +71,7 @@ export function PositionMapping({ domains, isLoading }: PositionMappingProps) {
               borderBottom: '1px solid var(--po-line)',
             }}
           >
-            <span>Digital AI standard</span>
+            <span>Chuẩn Digital AI</span>
             <span className="text-center">Mục tiêu TB</span>
             <span className="text-center">Hiện tại TB</span>
           </div>
@@ -156,7 +156,7 @@ export function PositionMapping({ domains, isLoading }: PositionMappingProps) {
         style={{ color: '#789' }}
       >
         Khung năng lực số 6 miền do Platform Admin công bố. Tổ chức chỉ chỉnh
-        sửa trần và mục tiêu bên dưới khung nền tảng.
+        sửa phạm vi và mục tiêu bên dưới khung nền tảng.
       </p>
     </section>
   );

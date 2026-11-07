@@ -28,7 +28,12 @@ export function OnboardingChecklistWidget() {
     startTour,
   } = useOnboardingStore();
 
-  const [isOpen, setIsOpen] = useState(true);
+  // Nhớ trạng thái thu gọn qua các trang (mặc định mở lần đầu): widget mở rộng che phần bên phải của nội dung.
+  const [isOpen, setIsOpenState] = useState(readOpen);
+  const setIsOpen = (open: boolean) => {
+    setIsOpenState(open);
+    writeOpen(open);
+  };
 
   if (isTourActive || isDismissed || !currentRole) return null;
 
@@ -179,4 +184,22 @@ export function OnboardingChecklistWidget() {
       </div>
     </div>
   );
+}
+
+const OPEN_KEY = 'dt-onboarding-widget-open';
+
+function readOpen() {
+  try {
+    return window.localStorage.getItem(OPEN_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+}
+
+function writeOpen(open: boolean) {
+  try {
+    window.localStorage.setItem(OPEN_KEY, String(open));
+  } catch {
+    /* trình duyệt chặn lưu trữ: chỉ nhớ trong trang */
+  }
 }

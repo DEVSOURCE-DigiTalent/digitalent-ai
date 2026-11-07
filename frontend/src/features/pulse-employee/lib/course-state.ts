@@ -26,7 +26,7 @@ export const withinCeiling = (courses: PulseCourseSummary[]) => courses.filter((
 export function courseStatusText(course: PulseCourseSummary, courses: PulseCourseSummary[], _reviewerName?: string | null, departmentName?: string | null): string {
     const modules = course.moduleCount;
   const prior = courses.find((c) => c.categoryId === course.categoryId && c.tier === course.tier - 1);
-  const optional = course.zone === 'OPTIONAL' ? 'Tùy chọn: cao hơn mức vị trí yêu cầu nhưng nằm trong trần của phòng ban. ' : '';
+  const optional = course.zone === 'OPTIONAL' ? 'Tùy chọn: cao hơn mức vị trí yêu cầu nhưng nằm trong phạm vi đào tạo của phòng ban. ' : '';
   switch (course.slotStatus) {
     case 'COMPLETED':
       return course.approvedVia === 'PRE_ASSESSMENT'

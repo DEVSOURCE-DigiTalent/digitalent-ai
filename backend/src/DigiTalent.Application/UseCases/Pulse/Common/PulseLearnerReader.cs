@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Competency.Ceilings;
 using DigiTalent.Application.UseCases.Me;
+using DigiTalent.Application.UseCases.TrialProgram;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Constants.Authorization;
 using DigiTalent.Domain.Entities;
@@ -251,9 +252,12 @@ public class PulseLearnerReader
                 .ToListAsync()
             : new List<TrialAssessmentDomain>();
 
+        // Mức của bài đánh giá chỉ có hiệu lực khi bài dùng thử đã đóng (máy chấm, không chờ duyệt).
+        var placementCounts = placementTest != null && await _context.TrialWorkspaces.AsNoTracking()
+            .AnyAsync(t => t.OrganizationId == organizationId && t.ReportPublishedAt != null);
         var placementLevels = placementDomains.ToDictionary(
             d => d.CategoryId,
-            d => (int)(d.MentorLevel ?? (placementTest?.ReviewedAt != null ? d.SuggestedLevel : 0)));
+            d => placementCounts ? TrialProgramRules.LevelOf(d) : 0);
 
         var placementApprovedCodes = courses
             .Where(c => placementLevels.TryGetValue(c.CategoryId, out var lvl) && lvl >= c.Tier)
@@ -269,7 +273,7 @@ public class PulseLearnerReader
             HasTaken: placementTest != null,
             AssessmentId: placementTest?.Id,
             SubmittedAt: placementTest?.SubmittedAt,
-            PassedDomains: placementDomains.Count(d => (d.MentorLevel ?? d.SuggestedLevel) > 0),
+            PassedDomains: placementDomains.Count(d => TrialProgramRules.LevelOf(d) > 0),
             TotalDomains: placementDomains.Count > 0 ? placementDomains.Count : categoryIds.Count,
             ChoiceScore: placementTest?.ChoiceScore,
             ChoiceTotal: placementTest?.ChoiceTotal);

@@ -9,7 +9,7 @@ import frameworkArt from '@/assets/pulse/competency-architecture.webp';
 import { PulsePublicShell } from './PulsePublicShell';
 
 const journey = [
-  { number: '01', title: 'Định nghĩa đích đến', text: 'Doanh nghiệp điều chỉnh trần năng lực theo phòng ban và mục tiêu của từng vị trí.', icon: Layers3 },
+  { number: '01', title: 'Định nghĩa đích đến', text: 'Doanh nghiệp chọn phạm vi đào tạo theo phòng ban và mục tiêu của từng vị trí.', icon: Layers3 },
   { number: '02', title: 'Đo điểm xuất phát', text: 'Nhân viên làm bài đầu vào để thấy mức hiện tại so với yêu cầu công việc.', icon: Compass },
   { number: '03', title: 'Học đúng lộ trình', text: 'Khóa học được xếp theo khoảng cách năng lực và thứ tự tiên quyết.', icon: Route },
   { number: '04', title: 'Làm bài cuối khóa', text: 'Nhân viên đưa ra minh chứng thực tế. Quản lý chấm và phản hồi theo tiêu chí.', icon: ClipboardCheck },
@@ -82,7 +82,7 @@ export function PulseBusinessLandingPage() {
               <p className="pulse-public-kicker">THIẾT KẾ TỪ KHUNG NĂNG LỰC</p>
               <h2 id="pulse-framework-title">Một chuẩn chung.<br /><em>Đích đến riêng cho mỗi vị trí.</em></h2>
               <p>Doanh nghiệp bắt đầu từ khung năng lực số của hệ thống, rồi đặt mục tiêu phù hợp với tổ chức, phòng ban và vị trí. Bài đầu vào cho thấy mức hiện tại so với đích đến trước khi gợi ý khóa học.</p>
-              <div className="pulse-public-level-chain" aria-label="Trật tự các mức trần năng lực"><span>Vị trí</span><b>≤</b><span>Phòng ban</span><b>≤</b><span>Doanh nghiệp</span><b>≤</b><span>Digital AI</span></div>
+              <div className="pulse-public-level-chain" aria-label="Thứ tự mức tối đa"><span>Vị trí</span><b>≤</b><span>Phòng ban</span><b>≤</b><span>Doanh nghiệp</span><b>≤</b><span>Digital AI</span></div>
               <Link className="pulse-public-text-link" to="/business/solution">Khám phá giải pháp doanh nghiệp <ArrowRight size={18} aria-hidden="true" /></Link>
             </div>
           </div>

@@ -334,7 +334,7 @@ describe('PulseTodayPage', () => {
     expect(screen.getAllByText('Đang học').length).toBeGreaterThan(0);
     expect(screen.getByText('40% đã học')).toBeTruthy();
     expect(screen.queryByText('A1-A')).toBeNull();
-    expect(screen.queryByText('Ngoài trần')).toBeNull();
+    expect(screen.queryByText('Ngoài phạm vi')).toBeNull();
     expect(screen.getByText(/Được công nhận qua bài đánh giá trước khi học/)).toBeTruthy();
   });
 

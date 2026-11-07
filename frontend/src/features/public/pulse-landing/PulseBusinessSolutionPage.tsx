@@ -82,7 +82,7 @@ const pillars = [
   {
     step: '05',
     title: 'Ghi nhận',
-    desc: 'Cập nhật trần năng lực & cấp chứng nhận',
+    desc: 'Cập nhật phạm vi đào tạo & cấp chứng nhận',
     badge: 'CÔNG NHẬN',
   },
 ];
@@ -217,7 +217,7 @@ export function PulseBusinessSolutionPage() {
                 <div className="pulse-solution-hierarchy-item">
                   <span className="pulse-solution-tier-badge">CẤP 2</span>
                   <div>
-                    <strong>Trần Năng lực Doanh nghiệp</strong>
+                    <strong>Phạm vi đào tạo doanh nghiệp</strong>
                     <p>Mục tiêu chuyển đổi số theo chiến lược công ty.</p>
                   </div>
                 </div>

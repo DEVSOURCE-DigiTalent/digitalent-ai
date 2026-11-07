@@ -106,6 +106,7 @@ public interface IApplicationDbContext
     DbSet<TrialInvitation> TrialInvitations { get; }
     DbSet<TrialAssessment> TrialAssessments { get; }
     DbSet<TrialAssessmentDomain> TrialAssessmentDomains { get; }
+    DbSet<TrialReport> TrialReports { get; }
     DbSet<PositionDiagnosticAttempt> PositionDiagnosticAttempts { get; }
 
     // Individual Commerce & Registration (v3.0)

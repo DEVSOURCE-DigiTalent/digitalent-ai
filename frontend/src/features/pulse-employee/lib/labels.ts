@@ -49,7 +49,7 @@ export const SLOT_LABELS: Record<PulseSlotStatus, string> = {
   NEEDS_SUPPORT: 'Cần hỗ trợ',
   SEAT_NEEDED: 'Cần suất học',
   AFTER_PRIOR_LEVEL: 'Chưa mở',
-  ABOVE_CEILING: 'Ngoài trần',
+  ABOVE_CEILING: 'Ngoài phạm vi',
   OUTSIDE_PATH: 'Ngoài lộ trình',
   NO_POSITION: 'Chưa có vị trí',
 };

@@ -3,29 +3,21 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   ArrowLeft,
-  ArrowRight,
-  Building,
   Building2,
   Check,
   CheckCircle2,
   Copy,
   CreditCard,
   Download,
-  ExternalLink,
   FileCheck,
   FileText,
-  Lock,
   Mail,
   PenTool,
   Phone,
-  QrCode,
-  RefreshCw,
   RotateCcw,
   ShieldCheck,
-  Sparkles,
   User,
-  X,
-} from 'lucide-react';
+  X } from 'lucide-react';
 import { useCourseCatalog, usePurchaseCourseSeats } from '@/hooks/use-assignments';
 import { useOrganization } from '@/hooks/use-organization';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -59,16 +51,21 @@ export function CourseCheckoutPage() {
 
   const { data: coursesData, isLoading: coursesLoading } = useCourseCatalog({});
 
-  // 1. Phân tích danh sách mã khóa học từ URL (?courses=M1-I,M2-A&seats=10)
+  // 1. Mã khóa học từ URL: ?courses=M1-I:8,M2-A:11 (số suất riêng từng khóa, từ phạm vi đào tạo) hoặc ?courses=M1-I,M2-A&seats=10.
   const coursesParam = searchParams.get('courses') || searchParams.get('selected') || searchParams.get('code') || '';
   const defaultSeats = Math.max(1, Number(searchParams.get('seats')) || 10);
 
-  const requestedCodes = useMemo(() => {
-    return coursesParam
-      .split(',')
-      .map((c) => canonicalCode(c))
-      .filter(Boolean);
-  }, [coursesParam]);
+  const requested = useMemo(
+    () =>
+      coursesParam
+        .split(',')
+        .map((entry) => {
+          const [code, seats] = entry.split(':');
+          return { code: canonicalCode(code), seats: Math.max(1, Math.floor(Number(seats)) || defaultSeats) };
+        })
+        .filter((r) => r.code),
+    [coursesParam, defaultSeats],
+  );
 
   // Giỏ hàng lưu trữ các khóa học được chọn thanh toán
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -80,7 +77,7 @@ export function CourseCheckoutPage() {
     const items: CartItem[] = [];
     const allCourses = coursesData.items;
 
-    requestedCodes.forEach((reqCode) => {
+    requested.forEach(({ code: reqCode, seats }) => {
       const match = allCourses.find((c) => canonicalCode(c.code) === reqCode || c.code.toUpperCase() === reqCode);
       if (match) {
         const level = match.code.endsWith('-A') ? 3 : match.code.endsWith('-I') ? 2 : 1;
@@ -90,8 +87,7 @@ export function CourseCheckoutPage() {
           canonicalCode: reqCode,
           level,
           unitPrice,
-          seats: defaultSeats,
-        });
+          seats });
       }
     });
 
@@ -105,14 +101,13 @@ export function CourseCheckoutPage() {
           canonicalCode: canonicalCode(defaultCourse.code),
           level,
           unitPrice: level === 3 ? 699000 : 399000,
-          seats: defaultSeats,
-        });
+          seats: defaultSeats });
       }
     }
 
     setCartItems(items);
     setCartInitialized(true);
-  }, [coursesData?.items, requestedCodes, defaultSeats, cartInitialized]);
+  }, [coursesData?.items, requested, defaultSeats, cartInitialized]);
 
   // 2. Thông tin pháp lý & đại diện doanh nghiệp
   const [customerInfo, setCustomerInfo] = useState({
@@ -123,18 +118,16 @@ export function CourseCheckoutPage() {
     phone: '',
     email: '',
     address: 'Hà Nội, Việt Nam',
-    needInvoice: true,
-  });
+    needInvoice: true });
 
   // Tự động điền từ thông tin tài khoản hiện tại
   useEffect(() => {
     setCustomerInfo((prev) => ({
       ...prev,
-      companyName: prev.companyName || orgData?.name || currentUser?.organizationName || 'Công ty TNHH Giải pháp Số',
+      companyName: prev.companyName || orgData?.name || currentUser?.organization?.name || 'Công ty TNHH Giải pháp Số',
       representativeName: prev.representativeName || currentUser?.fullName || 'Nguyễn Hoàng',
       email: prev.email || currentUser?.email || 'contact@digitalent.vn',
-      phone: prev.phone || (currentUser as any)?.phoneNumber || '0988776655',
-    }));
+      phone: prev.phone || (currentUser as any)?.phoneNumber || '0988776655' }));
   }, [orgData, currentUser]);
 
   // 3. Chữ ký số online (E-Signature)
@@ -294,8 +287,7 @@ export function CourseCheckoutPage() {
         const res = await purchaseMutation.mutateAsync({
           courseId: item.course.id,
           seats: item.seats,
-          note: signerNote,
-        });
+          note: signerNote });
         lastOrderId = res.orderId;
       }
 
@@ -303,8 +295,7 @@ export function CourseCheckoutPage() {
       setPaymentResult({
         orderId: lastOrderId,
         orderCode: generatedCode,
-        totalAmount,
-      });
+        totalAmount });
 
       setStep('payment');
       toast.success('Hợp đồng đã ký thành công! Vui lòng quét mã VietQR để thanh toán.');
@@ -370,7 +361,7 @@ export function CourseCheckoutPage() {
               }`}
             >
               <span>3</span>
-              <span>Kích hoạt trần</span>
+              <span>Mở khóa học</span>
             </span>
           </div>
         </div>
@@ -385,7 +376,7 @@ export function CourseCheckoutPage() {
             Thanh toán & Ký kết Hợp đồng Cung cấp Suất học
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-slate-500 max-w-2xl">
-            Doanh nghiệp hoàn tất thông tin người đại diện, ký chữ ký điện tử trực tuyến và thanh toán qua cổng VietQR PayOS để tự động mở trần năng lực số toàn diện.
+            Doanh nghiệp hoàn tất thông tin người đại diện, ký chữ ký điện tử trực tuyến và thanh toán qua cổng VietQR PayOS để tự động mở các khóa trong phạm vi đào tạo.
           </p>
         </header>
 
@@ -403,7 +394,7 @@ export function CourseCheckoutPage() {
                 Giao dịch thành công · Bản quyền đã kích hoạt
               </span>
               <h2 className="text-2xl font-black text-slate-900">
-                Ký hợp đồng & Nâng trần năng lực thành công!
+                Đã ký hợp đồng và mở khóa học!
               </h2>
               <p className="text-sm text-slate-600">
                 Đơn hàng và chữ ký điện tử số hiệu <b>{paymentResult?.orderCode || docHash}</b> của <b>{customerInfo.companyName}</b> đã được lưu trữ hợp lệ trên hệ thống DigiTalent AI.
@@ -447,7 +438,7 @@ export function CourseCheckoutPage() {
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-xs font-bold text-white shadow-md hover:brightness-105"
                 style={{ background: 'var(--po-accent)' }}
               >
-                <span>Xem Khung năng lực đã mở trần →</span>
+                <span>Xem phạm vi đào tạo →</span>
               </button>
             </div>
           </div>
@@ -952,7 +943,7 @@ export function CourseCheckoutPage() {
                   </div>
                   <div className="flex justify-between text-slate-600">
                     <span>Ưu đãi dùng thử doanh nghiệp:</span>
-                    <span className="font-semibold text-emerald-600">Miễn phí mở trần Cấp 1</span>
+                    <span className="font-semibold text-emerald-600">Cấp 1 miễn phí</span>
                   </div>
                   <div className="flex justify-between text-slate-600">
                     <span>Thuế GTGT (VAT):</span>
@@ -1024,9 +1015,9 @@ export function CourseCheckoutPage() {
               </div>
 
               <div>
-                <h4 className="font-bold text-slate-800">Điều 2: Mở trần năng lực & Suất học</h4>
+                <h4 className="font-bold text-slate-800">Điều 2: Mở phạm vi đào tạo & Suất học</h4>
                 <p>
-                  Khi Bên B hoàn tất nghĩa vụ thanh toán, hệ thống sẽ tự động nâng Trần năng lực của Bên B tương ứng với các khóa học đã đăng ký. Bên B có toàn quyền phân công nhân viên vào các đợt đào tạo và theo dõi tiến độ thời gian thực.
+                  Khi Bên B hoàn tất nghĩa vụ thanh toán, hệ thống tự động mở rộng phạm vi đào tạo của Bên B tương ứng với các khóa học đã đăng ký. Bên B có toàn quyền phân công nhân viên vào các đợt đào tạo và theo dõi tiến độ thời gian thực.
                 </p>
               </div>
 

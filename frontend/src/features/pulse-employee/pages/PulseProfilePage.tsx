@@ -412,7 +412,7 @@ export function PulseProfilePage() {
                   <h2 className="pu-benchmark-h2">Ma trận đối sánh năng lực số doanh nghiệp</h2>
                 </div>
                 <p className="pu-benchmark-desc">
-                  Khung 6 lĩnh vực năng lực số trọng yếu của tổ chức, đối sánh mức năng lực hiện tại với chuẩn vị trí chức danh và trần đào tạo phòng ban.
+                  Khung 6 lĩnh vực năng lực số trọng yếu của tổ chức, đối sánh mức năng lực hiện tại với chuẩn vị trí chức danh và phạm vi đào tạo của phòng ban.
                 </p>
               </div>
 
@@ -428,7 +428,7 @@ export function PulseProfilePage() {
                     <th>Lĩnh vực năng lực</th>
                     <th>Hiện tại</th>
                     <th>Chuẩn vị trí</th>
-                    <th>Trần PB</th>
+                    <th>Tối đa PB</th>
                     <th>Tiến độ (L1 - L4)</th>
                     <th>Chênh lệch</th>
                     <th style={{ textAlign: 'right' }} className="pu-no-print">Thao tác</th>
@@ -480,7 +480,7 @@ export function PulseProfilePage() {
 
                         <td>
                           <span className="pu-benchmark-ceiling-tag">
-                            Trần L{domain.ceiling}
+                            Tối đa L{domain.ceiling}
                           </span>
                         </td>
 

@@ -22,8 +22,6 @@ const PlatformCommercePage = lazyPage(() => import('../../features/platform/cons
 const PlatformAuditLogPage = lazyPage(() => import('../../features/platform/console/PlatformAuditLogPage'), 'PlatformAuditLogPage');
 const PlatformProfilePage = lazyPage(() => import('../../features/platform/console/PlatformProfilePage'), 'PlatformProfilePage');
 const PlatformTrialsPage = lazyPage(() => import('../../features/trial-program/pages/PlatformTrialsPage'), 'PlatformTrialsPage');
-const MentorTrialsPage = lazyPage(() => import('../../features/trial-program/pages/MentorTrialsPage'), 'MentorTrialsPage');
-const MentorTrialPage = lazyPage(() => import('../../features/trial-program/pages/MentorTrialPage'), 'MentorTrialPage');
 const MentorCourseReviewsPage = lazyPage(() => import('../../features/trial-program/pages/MentorCourseReviewsPage'), 'MentorCourseReviewsPage');
 
 /**
@@ -48,8 +46,6 @@ const PLATFORM_PAGES: PageRegistry = {
   'PA-09': PlatformCommercePage,
   'PA-10': PlatformAuditLogPage,
   'PA-14': PlatformTrialsPage,
-  'MT-01': MentorTrialsPage,
-  'MT-02': MentorTrialPage,
   'MT-03': MentorCourseReviewsPage,
 };
 

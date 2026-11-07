@@ -1,16 +1,20 @@
 import apiClient from './api-client';
 import type { ApiResponse } from '../types/api';
-import type { PulseAnswer, PulseChoiceItem, PulseOption, PulseProctoringSession, PulseRecording } from './pulse.service';
+import type { PulseAnswer, PulseOption, PulseProctoringSession } from './pulse.service';
 
 /**
- * Dùng thử doanh nghiệp (docs/specs/2026-10-27-enterprise-trial-assessment.md) — khớp
- * DigiTalent.Application/UseCases/TrialProgram: chủ doanh nghiệp (/trial), nhân viên (/me/trial-assessment),
- * quản trị nền tảng (/platform/trials, /platform/mentors) và mentor (/mentor/trials).
- * Mức: 0 = chưa đạt Cơ bản, 1 Cơ bản, 2 Trung cấp, 3 Nâng cao.
+ * Dùng thử doanh nghiệp (docs/specs/2026-10-31-trial-ai-report-roadmap.md) — khớp
+ * DigiTalent.Application/UseCases/TrialProgram: chủ doanh nghiệp (/trial), nhân viên (/me/trial-assessment) và quản trị nền
+ * tảng (/platform/trials, /platform/mentors). Bài test chỉ có trắc nghiệm, máy chấm khi nộp; bài đóng khi hết hạn, khi mọi
+ * người đã nộp hoặc khi chủ doanh nghiệp đóng sớm. Mức: 0 = chưa đạt Cơ bản, 1 Cơ bản, 2 Trung cấp, 3 Nâng cao.
  */
 
-export type TrialStage = 'SETUP' | 'REQUESTED' | 'ASSIGNED' | 'REPORTED';
-export type TrialParticipantStatus = 'INVITED' | 'INVITE_EXPIRED' | 'ACTIVE' | 'SUBMITTED' | 'REVIEWED';
+export type TrialStage = 'SETUP' | 'OPEN' | 'REPORTED';
+export type TrialParticipantStatus = 'INVITED' | 'INVITE_EXPIRED' | 'ACTIVE' | 'SUBMITTED';
+/** PENDING: AI đang viết (tạm hiện câu mẫu) · DONE · FALLBACK: câu mẫu. */
+export type TrialInsightStatus = 'PENDING' | 'DONE' | 'FALLBACK';
+export type TrialPlanKind = 'SAVING' | 'BALANCED' | 'FULL';
+export type TrialRiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
 
 export interface TrialDomain {
   categoryId: string;
@@ -32,19 +36,121 @@ export interface TrialParticipant {
   status: TrialParticipantStatus;
   assessmentId?: string | null;
   submittedAt?: string | null;
-  reviewedAt?: string | null;
   addedAt: string;
+}
+
+export interface TrialMissedQuestion {
+  content: string;
+  /** Cấp của câu: 1 Cơ bản, 2 Trung cấp, 3 Nâng cao (trong mức tối đa đề xuất). */
+  tier: number;
+  wrong: number;
+  answered: number;
 }
 
 export interface TrialReportDomainSummary {
   categoryId: string;
   number: number;
   name: string;
+  /** Số người ở mức 0, 1, 2, 3. */
   counts: number[];
   average: number;
-  level: number;
-  statusText?: string;
-  gapSummary?: string;
+  /** % câu đúng của cả đội ở Cơ bản, Trung cấp, Nâng cao (null khi cấp đó không có câu). */
+  correctRates: (number | null)[];
+  mostMissed?: TrialMissedQuestion | null;
+}
+
+export interface TrialReportDepartment {
+  departmentId: string;
+  name: string;
+  people: number;
+  averages: number[];
+}
+
+export interface TrialReportEmployee {
+  employeeId: string;
+  assessmentId: string;
+  fullName: string;
+  email?: string | null;
+  departmentId: string;
+  departmentName?: string | null;
+  positionName?: string | null;
+  levels: number[];
+  choiceScore: number;
+  choiceTotal: number;
+  submittedAt: string;
+  riskLevel?: TrialRiskLevel | null;
+}
+
+/** Một câu gợi ý ✦ (≤ 8 từ): của AI hoặc câu mẫu. */
+export interface TrialInsightItem {
+  domainNumber: number;
+  text: string;
+  source: 'AI' | 'TEMPLATE';
+}
+
+export interface TrialReportInsights {
+  status: TrialInsightStatus;
+  priorities: TrialInsightItem[];
+  ceilingReasons: TrialInsightItem[];
+  completedAt?: string | null;
+}
+
+export interface TrialReport {
+  publishedAt?: string | null;
+  assessed: number;
+  highRisk: number;
+  domains: TrialDomain[];
+  summary: TrialReportDomainSummary[];
+  departments: TrialReportDepartment[];
+  employees: TrialReportEmployee[];
+  insights: TrialReportInsights;
+}
+
+export interface TrialProgram {
+  organizationId: string;
+  organizationName: string;
+  stage: TrialStage;
+  testDeadline?: string | null;
+  reportPublishedAt?: string | null;
+  maxParticipants: number;
+  choiceCount: number;
+  participants: TrialParticipant[];
+  departments: string[];
+  positions: string[];
+  report?: TrialReport | null;
+}
+
+/** Một phương án phạm vi đào tạo: mức tối đa mỗi lĩnh vực của doanh nghiệp và mức riêng (thấp hơn) của phòng ban. */
+export interface TrialPlanOption {
+  kind: TrialPlanKind;
+  organization: number[];
+  departments: { departmentId: string; levels: (number | null)[] }[];
+}
+
+export interface TrialRoadmap {
+  available: boolean;
+  domains: TrialDomain[];
+  departments: { id: string; name: string; people: number }[];
+  /** Mức của từng người đã làm bài (ẩn danh), thứ tự lĩnh vực như domains. */
+  people: { departmentId: string; levels: number[] }[];
+  options: TrialPlanOption[];
+  suggested: TrialPlanKind;
+  reasons: TrialInsightItem[];
+  insightStatus: TrialInsightStatus | '';
+  /** Đơn giá một suất theo cấp: [0] = 0, [1] Cơ bản = 0, [2] Trung cấp, [3] Nâng cao. */
+  prices: number[];
+}
+
+export interface TrialParticipantRow {
+  fullName: string;
+  email: string;
+  department: string;
+  position: string;
+}
+
+export interface TrialInviteResult {
+  invited: { email: string; fullName: string; debugLink?: string | null }[];
+  rejected: { email: string; reason: string }[];
 }
 
 export interface TrialEmployeeDomainDetail {
@@ -66,104 +172,19 @@ export interface TrialEmployeeDomainDetail {
   recommendedCourse: string;
 }
 
-export interface TrialReportEmployee {
-  employeeId: string;
-  assessmentId?: string | null;
-  fullName: string;
-  email?: string | null;
-  departmentName?: string | null;
-  positionName?: string | null;
-  levels: number[];
-  choiceScore?: number;
-  choiceTotal?: number;
-  essayBasicScore?: number | null;
-  essayIntermediateScore?: number | null;
-  essayAdvancedScore?: number | null;
-  reviewNote?: string | null;
-  submittedAt?: string | null;
-  reviewedAt?: string | null;
-  domainDetails?: TrialEmployeeDomainDetail[];
-}
-
-export interface TrialReport {
-  publishedAt?: string | null;
-  assessed: number;
-  domains: TrialDomain[];
-  summary: TrialReportDomainSummary[];
-  employees: TrialReportEmployee[];
-}
-
-export interface TrialProgram {
-  organizationId: string;
-  organizationName: string;
-  stage: TrialStage;
-  testDeadline?: string | null;
-  preferredReviewAt?: string | null;
-  requestNote?: string | null;
-  requestedAt?: string | null;
-  mentorName?: string | null;
-  mentorAssignedAt?: string | null;
-  reportPublishedAt?: string | null;
-  maxParticipants: number;
-  choiceCount: number;
-  essayCount: number;
-  participants: TrialParticipant[];
-  departments: string[];
-  positions: string[];
-  report?: TrialReport | null;
-}
-
-export interface TrialParticipantRow {
-  fullName: string;
-  email: string;
-  department: string;
-  position: string;
-}
-
-export interface TrialInviteResult {
-  invited: { email: string; fullName: string; debugLink?: string | null }[];
-  rejected: { email: string; reason: string }[];
-}
-
-export interface TrialRequestInput {
-  testDeadline: string;
-  preferredReviewAt: string;
-  note?: string | null;
-}
-
-export interface TrialEssayPrompt {
-  tier: number;
-  title: string;
-  prompt: string;
-}
-
 export interface MyTrialAssessment {
   organizationName: string;
   testDeadline?: string | null;
-  status: 'NOT_STARTED' | 'SUBMITTED' | 'REVIEWED';
+  /** REPORTED: bài đã đóng, có kết quả. */
+  status: 'NOT_STARTED' | 'SUBMITTED' | 'REPORTED';
   canStart: boolean;
   closedMessage?: string | null;
   choiceCount: number;
   domains: TrialDomain[];
-  essays: TrialEssayPrompt[];
   submittedAt?: string | null;
   reportPublished: boolean;
   levels?: number[] | null;
   domainDetails?: TrialEmployeeDomainDetail[] | null;
-  essayResults?: MyTrialEssayResult[] | null;
-  essaySummary?: string | null;
-  reviewNote?: string | null;
-  mentorName?: string | null;
-}
-
-export interface MyTrialEssayResult {
-  tier: number;
-  title: string;
-  prompt: string;
-  answer: string;
-  score?: number | null;
-  passed?: boolean | null;
-  feedback?: string | null;
 }
 
 export interface TrialExamQuestion {
@@ -179,15 +200,11 @@ export interface TrialExamQuestion {
 export interface TrialExamSession extends Omit<PulseProctoringSession, 'kind' | 'questions'> {
   kind: 'TRIAL_ASSESSMENT';
   questions: TrialExamQuestion[];
-  essays: TrialEssayPrompt[];
 }
 
 export interface TrialExamSubmission {
   proctoringSessionId: string;
   answers: PulseAnswer[];
-  essayBasic: string;
-  essayIntermediate: string;
-  essayAdvanced: string;
 }
 
 export interface PlatformTrialItem {
@@ -198,15 +215,13 @@ export interface PlatformTrialItem {
   stage: TrialStage;
   startedAt: string;
   testDeadline?: string | null;
-  preferredReviewAt?: string | null;
-  requestNote?: string | null;
-  requestedAt?: string | null;
+  /** Mentor chấm bài cuối khóa học thử. */
   mentorUserId?: string | null;
   mentorName?: string | null;
   reportPublishedAt?: string | null;
   participants: number;
   submitted: number;
-  reviewed: number;
+  insightStatus?: TrialInsightStatus | null;
 }
 
 export interface MentorItem {
@@ -218,72 +233,14 @@ export interface MentorItem {
   createdAt: string;
 }
 
-/** Gợi ý chấm tự luận của AI (Gemini) — mentor tham khảo, vẫn tự cho điểm. */
-export interface TrialEssayAiReview {
-  essays: { tier: number; score: number; passed: boolean; feedback: string }[];
-  summary: string;
-  model: string;
-  reviewedAt: string;
-}
-
-export interface MentorAssessment {
-  assessmentId: string;
-  employeeId: string;
-  fullName: string;
-  departmentName?: string | null;
-  positionName?: string | null;
-  submittedAt: string;
-  reviewedAt?: string | null;
-  reviewNote?: string | null;
-  choiceScore: number;
-  choiceTotal: number;
-  domains: {
-    categoryId: string;
-    number: number;
-    name: string;
-    /** [Cơ bản, Trung cấp, Nâng cao]. */
-    correct: number[];
-    total: number[];
-    suggestedLevel: number;
-    mentorLevel?: number | null;
-  }[];
-  /** score = điểm mentor đã cho (0–10), null khi chưa chấm. */
-  essays: (TrialEssayPrompt & { text: string; score?: number | null })[];
-  choiceItems: PulseChoiceItem[];
-  recording?: PulseRecording | null;
-  aiReview?: TrialEssayAiReview | null;
-}
-
-export interface TrialReviewInput {
-  levels: { categoryId: string; level: number }[];
-  /** [Cơ bản, Trung cấp, Nâng cao], 0–10. */
-  essayScores: number[];
-  note?: string | null;
-}
-
-export interface MentorTrial {
-  organizationId: string;
-  organizationName: string;
-  stage: TrialStage;
-  testDeadline?: string | null;
-  preferredReviewAt?: string | null;
-  requestNote?: string | null;
-  reportPublishedAt?: string | null;
-  domains: TrialDomain[];
-  participants: TrialParticipant[];
-  assessments: MentorAssessment[];
-  canPublish: boolean;
-  /** Có khóa AI để gợi ý chấm tự luận. */
-  aiAvailable: boolean;
-  essayMaxScore: number;
-  essayPassScore: number;
-}
-
 export const trialProgramService = {
   // Chủ doanh nghiệp
   get: () => apiClient.get<ApiResponse<TrialProgram>>('/trial'),
   invite: (rows: TrialParticipantRow[]) => apiClient.post<ApiResponse<TrialInviteResult>>('/trial/participants', { rows }),
-  submitRequest: (input: TrialRequestInput) => apiClient.put<ApiResponse<unknown>>('/trial/request', input),
+  setDeadline: (testDeadline: string) => apiClient.put<ApiResponse<{ stage: TrialStage; testDeadline: string }>>('/trial/request', { testDeadline }),
+  /** "Xem kết quả ngay": đóng bài trước hạn (cần ít nhất một bài đã nộp). */
+  close: () => apiClient.post<ApiResponse<{ closedAt: string; assessed: number }>>('/trial/close'),
+  roadmap: () => apiClient.get<ApiResponse<TrialRoadmap>>('/trial/roadmap'),
   /** Chủ doanh nghiệp tự tham gia làm bài và học thử (thêm hồ sơ nhân viên + role Nhân viên). */
   joinAsParticipant: (input: { department: string; position: string }) =>
     apiClient.post<ApiResponse<{ employeeId: string }>>('/trial/me/join', input),
@@ -296,19 +253,11 @@ export const trialProgramService = {
 
   // Quản trị nền tảng
   platformTrials: () => apiClient.get<ApiResponse<{ items: PlatformTrialItem[] }>>('/platform/trials'),
+  regenerateInsights: (organizationId: string) =>
+    apiClient.post<ApiResponse<{ status: TrialInsightStatus }>>(`/platform/trials/${organizationId}/report/insights`),
   assignMentor: (organizationId: string, mentorUserId: string) =>
     apiClient.put<ApiResponse<unknown>>(`/platform/trials/${organizationId}/mentor`, { mentorUserId }),
   mentors: () => apiClient.get<ApiResponse<{ items: MentorItem[] }>>('/platform/mentors'),
   createMentor: (input: { fullName: string; email: string; password: string }) =>
     apiClient.post<ApiResponse<{ mentor: MentorItem }>>('/platform/mentors', input),
-
-  // Mentor
-  mentorTrials: () => apiClient.get<ApiResponse<{ items: PlatformTrialItem[] }>>('/mentor/trials'),
-  mentorTrial: (organizationId: string) => apiClient.get<ApiResponse<MentorTrial>>(`/mentor/trials/${organizationId}`),
-  review: (organizationId: string, assessmentId: string, input: TrialReviewInput) =>
-    apiClient.put<ApiResponse<unknown>>(`/mentor/trials/${organizationId}/assessments/${assessmentId}`, input),
-  /** AI gợi ý điểm tự luận (lưu lại cho lần mở sau). */
-  aiReview: (organizationId: string, assessmentId: string) =>
-    apiClient.post<ApiResponse<TrialEssayAiReview>>(`/mentor/trials/${organizationId}/assessments/${assessmentId}/ai-review`),
-  publish: (organizationId: string) => apiClient.post<ApiResponse<unknown>>(`/mentor/trials/${organizationId}/publish`),
 };

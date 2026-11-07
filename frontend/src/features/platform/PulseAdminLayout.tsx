@@ -37,7 +37,7 @@ function PulseAdminShell() {
   // Mentor (nhân sự chấm bài dùng thử) dùng cùng khung, chỉ thấy trang chấm bài.
   const mentor = Boolean(user?.roles.includes(ROLES.MENTOR) && !user.roles.includes(ROLES.PLATFORM_ADMIN));
   const roleLabel = mentor ? 'Mentor' : 'Quản trị nền tảng';
-  const home = mentor ? '/platform/reviews' : '/platform/dashboard';
+  const home = mentor ? '/platform/course-reviews' : '/platform/dashboard';
   const nav = mentor ? MENTOR_NAV : PLATFORM_NAV;
   const name = user?.fullName || user?.email || roleLabel;
 
@@ -228,7 +228,7 @@ function PulseAdminShell() {
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  end={item.to === '/platform/dashboard' || item.to === '/platform/reviews'}
+                  end={item.to === '/platform/dashboard' || item.to === '/platform/course-reviews'}
                   className={({ isActive }) => `pa-side-nav-link${isActive ? ' active' : ''}`}
                   title={item.description}
                 >

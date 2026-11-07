@@ -23,7 +23,6 @@ public sealed class TrialWorkspaceConfiguration : IEntityTypeConfiguration<Trial
         {
             t.HasCheckConstraint("ck_trial_workspaces_request", "requested_at IS NULL OR test_deadline IS NOT NULL");
             t.HasCheckConstraint("ck_trial_workspaces_mentor", "(mentor_user_id IS NULL) = (mentor_assigned_at IS NULL)");
-            t.HasCheckConstraint("ck_trial_workspaces_report", "report_published_at IS NULL OR mentor_user_id IS NOT NULL");
         });
         b.HasKey(x => x.Id);
         b.HasIndex(x => x.OrganizationId).IsUnique(); b.HasIndex(x => x.OwnerUserId).IsUnique();
@@ -112,5 +111,28 @@ public sealed class TrialAssessmentDomainConfiguration : IEntityTypeConfiguratio
         b.HasOne<CompetencyCategory>().WithMany().HasForeignKey(x => x.CategoryId);
         b.HasIndex(x => new { x.TrialAssessmentId, x.CategoryId }).IsUnique().HasDatabaseName("uq_trial_assessment_domains_category");
         b.HasIndex(x => x.CategoryId).HasDatabaseName("ix_trial_assessment_domains_category_id");
+    }
+}
+
+/// <summary>Map TrialReport với bảng "trial_reports" (canonical v3.6).</summary>
+public sealed class TrialReportConfiguration : IEntityTypeConfiguration<TrialReport>
+{
+    public void Configure(EntityTypeBuilder<TrialReport> b)
+    {
+        b.ToTable("trial_reports", t =>
+        {
+            t.HasCheckConstraint("ck_trial_reports_ai_status", "ai_status IN ('PENDING', 'DONE', 'FALLBACK')");
+            t.HasCheckConstraint("ck_trial_reports_ai_model", "(ai_status = 'DONE') = (ai_model IS NOT NULL)");
+            t.HasCheckConstraint("ck_trial_reports_ai_completed", "(ai_status = 'PENDING') = (ai_completed_at IS NULL)");
+            t.HasCheckConstraint("ck_trial_reports_counts", "assessed_count >= 0 AND ai_replaced >= 0");
+        });
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Insights).HasColumnType("jsonb").IsRequired();
+        b.Property(x => x.AiStatus).HasMaxLength(20).IsRequired();
+        b.Property(x => x.AiModel).HasMaxLength(100);
+        b.Property(x => x.Version).IsRowVersion();
+        b.HasOne<Organization>().WithMany().HasForeignKey(x => x.OrganizationId);
+        b.HasIndex(x => x.OrganizationId).IsUnique().HasDatabaseName("uq_trial_reports_organization");
+        b.HasIndex(x => x.AiStatus).HasDatabaseName("ix_trial_reports_ai_status");
     }
 }

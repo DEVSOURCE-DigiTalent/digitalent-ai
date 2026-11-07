@@ -4,12 +4,22 @@ using DigiTalent.Application.UseCases.TrialProgram;
 
 namespace DigiTalent.Tests.Pulse;
 
-/// <summary>AI giả cho test: bài cuối khóa chấm bằng từ khóa; tự luận dùng thử cho mọi bài <see cref="EssayScore"/> điểm.</summary>
+/// <summary>
+/// AI giả cho test: bài cuối khóa chấm bằng từ khóa; gợi ý báo cáo dùng thử theo <see cref="TrialDraft"/> (mặc định: câu hợp lệ
+/// cho mọi lĩnh vực ưu tiên và mọi lĩnh vực).
+/// </summary>
 internal sealed class StubGeminiService : IGeminiService
 {
+    public const string Model = "stub";
+
     public bool IsConfigured { get; init; } = true;
 
-    public int EssayScore { get; init; } = 7;
+    public Func<TrialInsightFacts, TrialInsightDraft?> TrialDraft { get; init; } = facts => new TrialInsightDraft
+    {
+        Priorities = TrialInsightTemplate.Eligible(facts).Select(d => new TrialInsightDraftItem(d.Number, "Học lại phần nền")).ToList(),
+        CeilingReasons = facts.Domains.Select(d => new TrialInsightDraftItem(d.Number, "Trung vị theo kết quả trắc nghiệm")).ToList(),
+        Model = Model,
+    };
 
     public Task<PulseAiHintDto> EvaluateEvidenceAsync(
         string evidenceText,
@@ -21,22 +31,6 @@ internal sealed class StubGeminiService : IGeminiService
         return Task.FromResult(PulseRules.AiHint(evidenceText));
     }
 
-    public Task<TrialEssayAiReviewDto?> EvaluateTrialEssaysAsync(
-        IReadOnlyList<TrialEssayAiInput> essays,
-        CancellationToken cancellationToken = default)
-    {
-        TrialEssayAiReviewDto? review = !IsConfigured ? null : new TrialEssayAiReviewDto
-        {
-            Essays = essays.Select(e => new TrialEssayAiScoreDto
-            {
-                Tier = e.Tier,
-                Score = EssayScore,
-                Passed = EssayScore >= TrialProgramRules.EssayPassScore,
-                Feedback = "Bài có công cụ và các bước cụ thể.",
-            }).ToList(),
-            Summary = "Bài làm rõ ràng.",
-            Model = "stub",
-        };
-        return Task.FromResult(review);
-    }
+    public Task<TrialInsightDraft?> DraftTrialInsightsAsync(TrialInsightFacts facts, CancellationToken cancellationToken = default) =>
+        Task.FromResult(IsConfigured ? TrialDraft(facts) : null);
 }

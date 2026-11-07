@@ -8,5 +8,4 @@ public class StartMyTrialAssessmentUseCaseOutput
     public DateTimeOffset StartedAt { get; set; }
     public int MaxChunkBytes { get; set; }
     public List<TrialExamQuestionDto> Questions { get; set; } = new();
-    public List<TrialEssayPromptDto> Essays { get; set; } = new();
 }

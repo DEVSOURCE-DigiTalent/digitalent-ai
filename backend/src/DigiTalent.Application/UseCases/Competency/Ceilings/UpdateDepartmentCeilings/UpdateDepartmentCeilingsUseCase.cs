@@ -105,7 +105,7 @@ public class UpdateDepartmentCeilingsUseCase : IUseCase<UpdateDepartmentCeilings
             input.Inherit
                 ? new { inherit = true }
                 : new { ceilings = input.Ceilings.ToDictionary(c => c.CategoryId.ToString(), c => c.Level) },
-            $"Trần phòng ban {department.Code} - {department.Name}");
+            $"Phạm vi đào tạo phòng ban {department.Code} - {department.Name}");
 
         return await _reader.ReadAsync<UpdateDepartmentCeilingsUseCaseOutput>(organizationId);
     }

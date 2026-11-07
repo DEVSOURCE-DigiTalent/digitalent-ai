@@ -1,5 +1,9 @@
+using System.Security.Cryptography;
+using System.Text;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Pulse;
+using DigiTalent.Domain.Constants;
+using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.TrialProgram;
@@ -7,18 +11,24 @@ namespace DigiTalent.Application.UseCases.TrialProgram;
 /// <summary>Một lĩnh vực của Khung TT02 trong doanh nghiệp (thứ tự hiển thị 1..6).</summary>
 public sealed record TrialDomainInfo(Guid CategoryId, int Number, string Code, string Name);
 
-/// <summary>Một câu của đề tổng hợp, kèm lĩnh vực và cấp của khóa đã cho câu hỏi.</summary>
-public sealed record TrialPaperItem(Guid CategoryId, int Tier, PulseQuizQuestion Question);
+/// <summary>
+/// Một câu của đề tổng hợp, kèm lĩnh vực và cấp của khóa đã cho câu hỏi. <paramref name="IsBenchmark"/>: câu chuẩn thay cho ô
+/// chưa có câu ôn tập (lưu vào ngân hàng câu chuẩn của doanh nghiệp lúc mở phiên, xem <see cref="TrialAssessmentPaper.StoreBenchmarksAsync"/>).
+/// </summary>
+public sealed record TrialPaperItem(Guid CategoryId, int Tier, PulseQuizQuestion Question, bool IsBenchmark = false);
 
 public sealed record TrialPaper(IReadOnlyList<TrialDomainInfo> Domains, IReadOnlyList<TrialPaperItem> Items);
 
 /// <summary>
 /// Đề đánh giá tổng hợp dùng thử: với mỗi cấp (Cơ bản → Trung cấp → Nâng cao) và mỗi lĩnh vực, rút
 /// <see cref="TrialProgramRules.ChoicePerCell"/> câu từ ngân hàng ôn tập của khóa chuẩn ở ô đó (<see cref="PulseCatalogReader"/>).
-/// Thứ tự câu và phương án cố định cho mỗi nhân viên, nên lúc bắt đầu phiên và lúc nộp thấy đúng một đề.
+/// Thứ tự câu và phương án cố định cho mỗi nhân viên, nên lúc bắt đầu phiên và lúc nộp thấy đúng một đề. Ô chưa có câu ôn tập
+/// dùng câu chuẩn có id cố định theo (doanh nghiệp, lĩnh vực, cấp) — chấm được và giữ đúng khóa ngoại của câu trả lời.
 /// </summary>
 public class TrialAssessmentPaper
 {
+    public const string BenchmarkBankTitle = "Câu chuẩn bài đánh giá dùng thử";
+    private const string BenchmarkDifficulty = "TRIAL_BENCHMARK";
     private const int SeedSalt = 104729;
 
     private readonly IApplicationDbContext _context;
@@ -72,21 +82,60 @@ public class TrialAssessmentPaper
                         .ToList();
                 }
 
-                // Nếu khóa học chưa có câu hỏi hoặc chưa tạo, tự động bổ sung câu hỏi chuẩn theo lĩnh vực và cấp
-                if (picked.Count == 0)
+                if (picked.Count > 0)
                 {
-                    var benchmark = GetBenchmarkQuestion(domain, tier);
-                    if (seen.Add(benchmark.Content.Trim()))
-                    {
-                        picked.Add(benchmark);
-                    }
+                    items.AddRange(picked.Select(q => new TrialPaperItem(domain.CategoryId, tier, q)));
+                    continue;
                 }
 
-                items.AddRange(picked.Select(q => new TrialPaperItem(domain.CategoryId, tier, q)));
+                // Khóa chưa có câu ôn tập: câu chuẩn của ô, phương án trộn theo nhân viên như câu ôn tập.
+                var benchmark = BenchmarkQuestion(organizationId, domain, tier);
+                if (seen.Add(benchmark.Content.Trim()))
+                {
+                    var optionRandom = new Random(PulseQuizReader.Seed(employeeId, benchmark.QuestionId, SeedSalt));
+                    items.Add(new TrialPaperItem(domain.CategoryId, tier,
+                        benchmark with { Options = PulseQuizReader.Shuffle(benchmark.Options.ToList(), optionRandom) }, IsBenchmark: true));
+                }
             }
         }
 
         return new TrialPaper(domains, items);
+    }
+
+    /// <summary>
+    /// Ô (lĩnh vực, cấp) của mọi câu trong ngân hàng ôn tập các khóa chuẩn của doanh nghiệp — để gom câu trả lời của bài đánh giá
+    /// theo lĩnh vực (câu sai nhiều nhất). Câu thuộc nhiều khóa lấy khóa đầu tiên.
+    /// </summary>
+    public async Task<Dictionary<Guid, (Guid CategoryId, int Tier)>> LoadQuestionCellsAsync(Guid organizationId)
+    {
+        var courses = await _catalog.LoadAsync(organizationId);
+        var cellOfCourse = courses.GroupBy(c => c.CourseId).ToDictionary(g => g.Key, g => (g.First().CategoryId, g.First().Tier));
+        var modules = await _modules.LoadModulesAsync(cellOfCourse.Keys.ToList(), includeContent: false);
+        var courseOfQuiz = modules.Values.SelectMany(m => m)
+            .Where(m => m.QuizAssessmentId.HasValue)
+            .GroupBy(m => m.QuizAssessmentId!.Value)
+            .ToDictionary(g => g.Key, g => g.First().CourseId);
+        var quizIds = courseOfQuiz.Keys.ToList();
+        var links = await _context.AssessmentQuestions.AsNoTracking()
+            .Where(l => quizIds.Contains(l.AssessmentId))
+            .Select(l => new { l.AssessmentId, l.QuestionId })
+            .ToListAsync();
+
+        var cells = new Dictionary<Guid, (Guid CategoryId, int Tier)>();
+        foreach (var link in links)
+        {
+            cells.TryAdd(link.QuestionId, cellOfCourse[courseOfQuiz[link.AssessmentId]]);
+        }
+
+        foreach (var domain in await DomainsOfAsync(courses, organizationId))
+        {
+            for (var tier = 1; tier <= PulseRules.MaxLevel; tier++)
+            {
+                cells.TryAdd(BenchmarkId(organizationId, domain.Number, tier), (domain.CategoryId, tier));
+            }
+        }
+
+        return cells;
     }
 
     private async Task<List<TrialDomainInfo>> DomainsOfAsync(IReadOnlyCollection<PulseCourseRef> courses, Guid organizationId)
@@ -131,9 +180,79 @@ public class TrialAssessmentPaper
             .ToList();
     }
 
-    private static PulseQuizQuestion GetBenchmarkQuestion(TrialDomainInfo domain, int tier)
+    /// <summary>
+    /// Lưu các câu chuẩn của đề chưa có vào ngân hàng câu chuẩn của doanh nghiệp (gọi lúc mở phiên, trước SaveChanges của người
+    /// gọi), để câu trả lời tham chiếu được câu hỏi và báo cáo đọc được nội dung câu.
+    /// </summary>
+    public async Task StoreBenchmarksAsync(TrialPaper paper, Guid organizationId, Guid authorUserId)
     {
-        var id = Guid.NewGuid();
+        var benchmarks = paper.Items
+            .Where(i => i.IsBenchmark)
+            .Select(i => BenchmarkQuestion(organizationId, paper.Domains.First(d => d.CategoryId == i.CategoryId), i.Tier))
+            .ToList();
+        var ids = benchmarks.Select(q => q.QuestionId).ToList();
+        if (ids.Count == 0)
+        {
+            return;
+        }
+
+        var stored = await _context.Questions.AsNoTracking().Where(q => ids.Contains(q.Id)).Select(q => q.Id).ToListAsync();
+        var missing = benchmarks.Where(q => !stored.Contains(q.QuestionId)).ToList();
+        if (missing.Count == 0)
+        {
+            return;
+        }
+
+        var bank = await _context.QuestionBanks.FirstOrDefaultAsync(b => b.OrganizationId == organizationId && b.Title == BenchmarkBankTitle);
+        if (bank == null)
+        {
+            bank = new QuestionBank
+            {
+                OrganizationId = organizationId,
+                Title = BenchmarkBankTitle,
+                Description = "Câu thay cho ô lĩnh vực × cấp chưa có câu ôn tập.",
+                Status = Statuses.QuestionBank.Active,
+            };
+            _context.QuestionBanks.Add(bank);
+        }
+
+        foreach (var question in missing)
+        {
+            _context.Questions.Add(new Question
+            {
+                Id = question.QuestionId,
+                BankId = bank.Id,
+                QuestionType = Statuses.QuestionType.MultipleChoice,
+                Difficulty = BenchmarkDifficulty,
+                Content = question.Content,
+                Status = Statuses.Question.Approved,
+                CreatedByUserId = authorUserId,
+            });
+            foreach (var (option, index) in question.Options.Select((o, i) => (o, i)))
+            {
+                _context.QuestionOptions.Add(new QuestionOption
+                {
+                    Id = option.OptionId,
+                    QuestionId = question.QuestionId,
+                    Content = option.Content,
+                    IsCorrect = option.IsCorrect,
+                    SortOrder = index + 1,
+                });
+            }
+        }
+    }
+
+    /// <summary>Id cố định của câu chuẩn (doanh nghiệp, lĩnh vực, cấp).</summary>
+    public static Guid BenchmarkId(Guid organizationId, int domainNumber, int tier) =>
+        StableId(organizationId, $"trial-benchmark:{domainNumber}:{tier}");
+
+    private static Guid StableId(Guid scope, string name) =>
+        new(SHA256.HashData(Encoding.UTF8.GetBytes(scope.ToString("N") + "/" + name)).AsSpan(0, 16));
+
+    /// <summary>Câu chuẩn của ô (phương án theo thứ tự lưu, đáp án đúng đầu tiên; đề phát cho nhân viên đã trộn).</summary>
+    private static PulseQuizQuestion BenchmarkQuestion(Guid organizationId, TrialDomainInfo domain, int tier)
+    {
+        var id = BenchmarkId(organizationId, domain.Number, tier);
         var (content, options) = (domain.Number, tier) switch
         {
             (1, 1) => ("Khi tìm kiếm tài liệu trên mạng, thao tác nào giúp lọc kết quả chính xác theo loại file PDF?",
@@ -179,7 +298,7 @@ public class TrialAssessmentPaper
                 new[] { ("Tích hợp mô hình ngôn ngữ lớn (RAG) với cơ sở tri thức nội bộ để tự động hóa hỗ trợ khách hàng và ra quyết định", true), ("Chỉ dùng AI để dịch một đoạn văn ngắn", false), ("Sao chép nguyên văn từ AI mà không kiểm chứng chuyên môn", false), ("Dùng AI tạo ảnh vui nhộn trong giờ làm việc", false) }),
         };
 
-        var optionDtos = options.Select(o => new PulseQuizOption(Guid.NewGuid(), o.Item1, o.Item2)).ToList();
+        var optionDtos = options.Select((o, i) => new PulseQuizOption(StableId(id, $"option:{i}"), o.Item1, o.Item2)).ToList();
         return new PulseQuizQuestion(id, content, null, 1, optionDtos);
     }
 

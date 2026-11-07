@@ -159,7 +159,7 @@ export function OwnerCourseCatalogPage() {
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-slate-600">
-                  Các khóa học bên dưới đã được phát sáng viền vàng và gắn nhãn <b className="text-amber-800 font-semibold">✨ Đã chọn</b>. Bấm vào từng khóa để mua suất học và mở trần cho doanh nghiệp.
+                  Các khóa học bên dưới đã được phát sáng viền vàng và gắn nhãn <b className="text-amber-800 font-semibold">✨ Đã chọn</b>. Bấm vào từng khóa để mua suất học và mở khóa cho doanh nghiệp.
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   {Array.from(preselectedCodes).map((code) => (
@@ -331,7 +331,6 @@ export function OwnerCourseCatalogPage() {
                   course={selectedCourse}
                   branch={selectedBranch}
                   onClose={() => setSelection(null)}
-                  onBuySeats={(c) => setPurchaseModalCourse(c)}
                 />
               ) : selectedBranch ? (
                 <DomainDetail branch={selectedBranch} onSelect={setSelection} onClose={() => setSelection(null)} />
@@ -563,12 +562,10 @@ function CourseDetail({
   course,
   branch,
   onClose,
-  onBuySeats,
 }: {
   course: CourseListItem;
   branch?: DomainBranch;
   onClose: () => void;
-  onBuySeats: (course: CourseListItem) => void;
 }) {
   const level = courseLevel(course);
   const tone = LEVEL_TONES[level] ?? LEVEL_TONES[1];
@@ -778,10 +775,10 @@ function CourseSeatPurchaseModal({
             <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 font-bold text-xl">
               ✓
             </div>
-            <h3 className="text-base font-bold text-slate-900">Kích hoạt suất học & Mở trần thành công!</h3>
+            <h3 className="text-base font-bold text-slate-900">Đã kích hoạt suất học!</h3>
             <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
               Bạn đã trang bị thành công <b>{result.seats} suất</b> cho khóa học <b>{course.code}</b>.
-              Khóa học đã được mở bản quyền và trần năng lực của doanh nghiệp đã được nâng lên <b>Bậc {level} ({levelName(level)})</b>.
+              Khóa học đã mở; phạm vi đào tạo của doanh nghiệp đã nâng lên <b>Bậc {level} ({levelName(level)})</b>.
             </p>
             <div className="mx-auto max-w-sm rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-left text-xs space-y-1">
               <div className="flex justify-between text-slate-600">

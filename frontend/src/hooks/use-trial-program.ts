@@ -3,24 +3,20 @@ import { useCurrentUser } from './use-current-user';
 import { memberService } from '../services/member.service';
 import { refreshSessionTokens } from '../services/api-client';
 import { authService } from '../services/auth.service';
-import {
-  trialProgramService,
-  type TrialExamSubmission,
-  type TrialParticipantRow,
-  type TrialRequestInput,
-  type TrialReviewInput,
-} from '../services/trial-program.service';
+import { trialProgramService, type TrialExamSubmission, type TrialParticipantRow } from '../services/trial-program.service';
 
 /** Query keys của luồng dùng thử doanh nghiệp — mọi dữ liệu dưới ['trial-program']. */
 export const TRIAL_PROGRAM_KEYS = {
   all: ['trial-program'] as const,
   owner: ['trial-program', 'owner'] as const,
+  roadmap: ['trial-program', 'roadmap'] as const,
   mine: ['trial-program', 'mine'] as const,
   platform: ['trial-program', 'platform'] as const,
   mentors: ['trial-program', 'mentors'] as const,
-  mentorTrials: ['trial-program', 'mentor'] as const,
-  mentorTrial: (organizationId?: string) => ['trial-program', 'mentor', organizationId] as const,
 };
+
+/** Đọc lại trong lúc AI viết gợi ý (báo cáo tạm hiện câu mẫu). */
+const INSIGHT_POLL_MS = 5_000;
 
 /** Tài khoản thuộc doanh nghiệp đang dùng thử (chưa chuyển gói). */
 export function useIsEnterpriseTrial() {
@@ -29,7 +25,21 @@ export function useIsEnterpriseTrial() {
 }
 
 export function useTrialProgram() {
-  return useQuery({ queryKey: TRIAL_PROGRAM_KEYS.owner, queryFn: () => trialProgramService.get().then((r) => r.data.data!) });
+  return useQuery({
+    queryKey: TRIAL_PROGRAM_KEYS.owner,
+    queryFn: () => trialProgramService.get().then((r) => r.data.data!),
+    refetchInterval: (query) => (query.state.data?.report?.insights.status === 'PENDING' ? INSIGHT_POLL_MS : false),
+  });
+}
+
+/** Đề xuất phạm vi đào tạo từ kết quả test (available = false khi chưa có báo cáo / không dùng thử). */
+export function useTrialRoadmap(enabled = true) {
+  return useQuery({
+    queryKey: TRIAL_PROGRAM_KEYS.roadmap,
+    queryFn: () => trialProgramService.roadmap().then((r) => r.data.data!),
+    enabled,
+    refetchInterval: (query) => (query.state.data?.insightStatus === 'PENDING' ? INSIGHT_POLL_MS : false),
+  });
 }
 
 export function useInviteTrialParticipants() {
@@ -68,11 +78,20 @@ export function useJoinTrialAsParticipant() {
   });
 }
 
-export function useSubmitTrialRequest() {
+export function useSetTrialDeadline() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: TrialRequestInput) => trialProgramService.submitRequest(input),
+    mutationFn: (testDeadline: string) => trialProgramService.setDeadline(testDeadline),
     // Hạn làm bài mới cũng mở bài test của chủ doanh nghiệp nếu đã tham gia.
+    onSuccess: () => client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.all }),
+  });
+}
+
+/** "Xem kết quả ngay": đóng bài, tạo báo cáo; nhân viên chưa nộp không vào bài được nữa. */
+export function useCloseTrial() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => trialProgramService.close().then((r) => r.data.data!),
     onSuccess: () => client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.all }),
   });
 }
@@ -83,7 +102,7 @@ export function useMyTrialAssessment(enabled = true) {
     queryFn: () => trialProgramService.getMine().then((r) => r.data.data!),
     enabled,
     retry: false,
-    // Trạng thái chặn học thử (chờ chấm → đã công bố) đổi từ phía mentor: không giữ cache 5 phút như mặc định.
+    // Bài đóng khi hết hạn / chủ doanh nghiệp đóng sớm: không giữ cache 5 phút như mặc định.
     staleTime: 15_000,
   });
 }
@@ -100,7 +119,20 @@ export function useSubmitTrialExam() {
 }
 
 export function usePlatformTrials() {
-  return useQuery({ queryKey: TRIAL_PROGRAM_KEYS.platform, queryFn: () => trialProgramService.platformTrials().then((r) => r.data.data!.items) });
+  return useQuery({
+    queryKey: TRIAL_PROGRAM_KEYS.platform,
+    queryFn: () => trialProgramService.platformTrials().then((r) => r.data.data!.items),
+    refetchInterval: (query) => (query.state.data?.some((t) => t.insightStatus === 'PENDING') ? INSIGHT_POLL_MS : false),
+  });
+}
+
+/** Quản trị nền tảng cho AI viết lại gợi ý của một báo cáo. */
+export function useRegenerateTrialInsights() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (organizationId: string) => trialProgramService.regenerateInsights(organizationId).then((r) => r.data.data!),
+    onSuccess: () => client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.platform }),
+  });
 }
 
 export function useMentors() {
@@ -124,43 +156,5 @@ export function useCreateMentor() {
   return useMutation({
     mutationFn: (input: { fullName: string; email: string; password: string }) => trialProgramService.createMentor(input).then((r) => r.data.data!.mentor),
     onSuccess: () => client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.mentors }),
-  });
-}
-
-export function useMentorTrials() {
-  return useQuery({ queryKey: TRIAL_PROGRAM_KEYS.mentorTrials, queryFn: () => trialProgramService.mentorTrials().then((r) => r.data.data!.items) });
-}
-
-export function useMentorTrial(organizationId?: string) {
-  return useQuery({
-    queryKey: TRIAL_PROGRAM_KEYS.mentorTrial(organizationId),
-    queryFn: () => trialProgramService.mentorTrial(organizationId!).then((r) => r.data.data!),
-    enabled: Boolean(organizationId),
-  });
-}
-
-export function useReviewTrialAssessment(organizationId?: string) {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: ({ assessmentId, ...input }: TrialReviewInput & { assessmentId: string }) =>
-      trialProgramService.review(organizationId!, assessmentId, input),
-    onSuccess: () => client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.mentorTrials }),
-  });
-}
-
-/** AI gợi ý điểm ba bài tự luận của một bài làm; kết quả được lưu nên tải lại trang mentor. */
-export function useTrialEssayAiReview(organizationId?: string) {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (assessmentId: string) => trialProgramService.aiReview(organizationId!, assessmentId).then((r) => r.data.data!),
-    onSuccess: () => client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.mentorTrial(organizationId) }),
-  });
-}
-
-export function usePublishTrialReport(organizationId?: string) {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: () => trialProgramService.publish(organizationId!),
-    onSuccess: () => client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.mentorTrials }),
   });
 }

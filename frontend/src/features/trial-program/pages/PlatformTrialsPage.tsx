@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useAssignMentor, useCreateMentor, useMentors, usePlatformTrials } from '@/hooks/use-trial-program';
-import type { MentorItem, PlatformTrialItem, TrialStage } from '@/services/trial-program.service';
+import { useAssignMentor, useCreateMentor, useMentors, usePlatformTrials, useRegenerateTrialInsights } from '@/hooks/use-trial-program';
+import type { MentorItem, PlatformTrialItem, TrialInsightStatus, TrialStage } from '@/services/trial-program.service';
 import { Box, LoadError, Loading, PageHead } from '@/features/platform/components/pulse-ui';
 import { errorMessage } from '@/features/platform/components/pulse-format';
 import { StageBadge } from '../components/TrialUi';
@@ -9,26 +9,35 @@ import { formatWhen } from '../lib/trial-format';
 import '../trial-program.css';
 
 const TABS: { key: TrialStage | 'ALL'; label: string }[] = [
-  { key: 'REQUESTED', label: 'Chờ phân công' },
-  { key: 'ASSIGNED', label: 'Đang chấm' },
+  { key: 'OPEN', label: 'Đang làm bài' },
   { key: 'REPORTED', label: 'Đã có kết quả' },
+  { key: 'SETUP', label: 'Chưa đặt hạn' },
   { key: 'ALL', label: 'Tất cả' },
 ];
 
-/** PA-14 · Dùng thử doanh nghiệp: yêu cầu chấm bài (hạn làm bài, giờ mong muốn chấm), phân công mentor, tài khoản mentor. */
+const INSIGHT: Record<TrialInsightStatus, string> = {
+  PENDING: 'AI đang viết…',
+  DONE: '✦ AI',
+  FALLBACK: 'Câu mẫu',
+};
+
+/**
+ * PA-14 · Dùng thử doanh nghiệp: theo dõi bài làm (hạn, số bài đã nộp), gợi ý AI của báo cáo (xem trạng thái, cho viết lại)
+ * và mentor chấm bài cuối khóa học thử.
+ */
 export function PlatformTrialsPage() {
   const trials = usePlatformTrials();
   const mentors = useMentors();
-  const [tab, setTab] = useState<TrialStage | 'ALL'>('REQUESTED');
+  const [tab, setTab] = useState<TrialStage | 'ALL'>('OPEN');
   const items = (trials.data ?? []).filter((t) => tab === 'ALL' || t.stage === tab);
   const count = (stage: TrialStage) => (trials.data ?? []).filter((t) => t.stage === stage).length;
 
   return (
     <>
-      <PageHead eyebrow="Nền tảng / Dùng thử" title="Yêu cầu chấm bài dùng thử." />
+      <PageHead eyebrow="Nền tảng / Dùng thử" title="Doanh nghiệp dùng thử." />
       <Box>
         <div className="pa-filters pa-row-between">
-          <div className="pa-tabs" role="group" aria-label="Lọc yêu cầu">
+          <div className="pa-tabs" role="group" aria-label="Lọc doanh nghiệp">
             {TABS.map((t) => (
               <button key={t.key} type="button" aria-pressed={tab === t.key} onClick={() => setTab(t.key)}>
                 {t.label}
@@ -48,8 +57,8 @@ export function PlatformTrialsPage() {
                   <th>Doanh nghiệp</th>
                   <th className="num">Đã nộp</th>
                   <th>Hạn làm bài</th>
-                  <th>Muốn chấm lúc</th>
-                  <th>Mentor</th>
+                  <th>Gợi ý báo cáo</th>
+                  <th>Mentor học thử</th>
                   <th>Trạng thái</th>
                 </tr>
               </thead>
@@ -59,14 +68,10 @@ export function PlatformTrialsPage() {
                     <td>
                       <strong className="pa-cell-title">{t.organizationName}</strong>
                       <small className="pa-cell-sub">{t.ownerName} · {t.ownerEmail}</small>
-                      {t.requestNote && <small className="pa-cell-sub">“{t.requestNote}”</small>}
                     </td>
-                    <td className="num">
-                      <strong>{t.submitted}</strong> / {t.participants}
-                      {t.reviewed > 0 && <small className="pa-cell-sub">đã chấm {t.reviewed}</small>}
-                    </td>
+                    <td className="num"><strong>{t.submitted}</strong> / {t.participants}</td>
                     <td>{formatWhen(t.testDeadline)}</td>
-                    <td>{formatWhen(t.preferredReviewAt)}</td>
+                    <td><InsightCell trial={t} /></td>
                     <td><MentorCell trial={t} mentors={mentors.data ?? []} /></td>
                     <td><span className="tp-vars"><StageBadge stage={t.stage} /></span></td>
                   </tr>
@@ -81,15 +86,37 @@ export function PlatformTrialsPage() {
   );
 }
 
+/** Trạng thái gợi ý AI của báo cáo và nút cho AI viết lại. */
+function InsightCell({ trial }: { trial: PlatformTrialItem }) {
+  const regenerate = useRegenerateTrialInsights();
+  if (!trial.insightStatus) return <span className="pa-cell-sub">—</span>;
+  return (
+    <div className="pa-chips" style={{ flexWrap: 'nowrap' }}>
+      <span>{INSIGHT[trial.insightStatus]}</span>
+      <button
+        type="button"
+        className="btn btn-outline btn-small"
+        disabled={trial.insightStatus === 'PENDING' || regenerate.isPending}
+        onClick={() =>
+          regenerate.mutate(trial.organizationId, {
+            onSuccess: () => toast.success('Đã yêu cầu viết lại gợi ý'),
+            onError: (err) => toast.error(errorMessage(err)),
+          })
+        }
+      >
+        Tạo lại
+      </button>
+    </div>
+  );
+}
+
 function MentorCell({ trial, mentors }: { trial: PlatformTrialItem; mentors: MentorItem[] }) {
   const [choice, setChoice] = useState(trial.mentorUserId ?? '');
   const assign = useAssignMentor();
-  if (trial.stage === 'SETUP') return <span className="pa-cell-sub">Chưa gửi yêu cầu</span>;
-  if (trial.stage === 'REPORTED') return <span>{trial.mentorName}</span>;
   const active = mentors.filter((m) => m.status === 'ACTIVE');
   return (
     <div className="pa-chips" style={{ flexWrap: 'nowrap' }}>
-      <select aria-label={`Mentor cho ${trial.organizationName}`} value={choice} onChange={(e) => setChoice(e.target.value)}>
+      <select aria-label={`Mentor chấm bài học thử của ${trial.organizationName}`} value={choice} onChange={(e) => setChoice(e.target.value)}>
         <option value="">Chọn mentor</option>
         {active.map((m) => (
           <option key={m.userId} value={m.userId}>{m.fullName} ({m.activeTrials})</option>
@@ -157,7 +184,7 @@ function MentorsBox({ mentors, loading }: { mentors?: MentorItem[]; loading: boo
             <thead>
               <tr>
                 <th>Mentor</th>
-                <th className="num">Đang chấm</th>
+                <th className="num">Doanh nghiệp</th>
                 <th>Trạng thái</th>
               </tr>
             </thead>

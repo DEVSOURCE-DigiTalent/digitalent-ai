@@ -95,7 +95,7 @@ describe('role separation', () => {
   });
 
   it('keeps mentor screens to mentors and admin screens to the platform admin', () => {
-    expect(PLATFORM_SCREENS.filter((s) => s.roles.includes(ROLES.MENTOR) && !s.id.startsWith('SHR')).map((s) => s.id)).toEqual(['MT-01', 'MT-02', 'MT-03']);
+    expect(PLATFORM_SCREENS.filter((s) => s.roles.includes(ROLES.MENTOR) && !s.id.startsWith('SHR')).map((s) => s.id)).toEqual(['MT-03']);
     expect(PLATFORM_SCREENS.find((s) => s.id === 'PA-14')?.roles).toEqual([ROLES.PLATFORM_ADMIN]);
   });
 

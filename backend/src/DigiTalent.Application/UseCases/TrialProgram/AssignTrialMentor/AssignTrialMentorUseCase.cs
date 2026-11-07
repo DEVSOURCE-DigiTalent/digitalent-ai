@@ -8,8 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.TrialProgram;
 
 /// <summary>
-/// PUT /platform/trials/{organizationId}/mentor — quản trị nền tảng phân công (hoặc đổi) mentor chấm bài cho một doanh nghiệp
-/// đã gửi yêu cầu. Mentor và chủ doanh nghiệp nhận thông báo; mentor nhận thêm thông báo cho mỗi bài nộp sau đó.
+/// PUT /platform/trials/{organizationId}/mentor — quản trị nền tảng phân công (hoặc đổi) mentor chấm bài cuối khóa học thử
+/// Cơ bản của một doanh nghiệp dùng thử (bài đánh giá năng lực do máy chấm). Mentor và chủ doanh nghiệp nhận thông báo.
 /// </summary>
 public class AssignTrialMentorUseCase : IUseCase<AssignTrialMentorUseCaseInput, AssignTrialMentorUseCaseOutput>
 {
@@ -28,16 +28,6 @@ public class AssignTrialMentorUseCase : IUseCase<AssignTrialMentorUseCaseInput, 
     {
         var trial = await _context.TrialWorkspaces.FirstOrDefaultAsync(t => t.OrganizationId == input.OrganizationId)
                     ?? throw new NotFoundException(TrialProgramReader.NotTrialMessage);
-        if (trial.RequestedAt == null)
-        {
-            throw new BadRequestException("Doanh nghiệp chưa gửi yêu cầu chấm.", "mentorUserId", "TRIAL_NOT_REQUESTED");
-        }
-
-        if (trial.ReportPublishedAt != null)
-        {
-            throw new BadRequestException("Kết quả đã được công bố, không đổi mentor.", "mentorUserId", "TRIAL_REPORTED");
-        }
-
         var mentor = await (
                 from user in _context.Users
                 join userRole in _context.UserRoles on user.Id equals userRole.UserId
@@ -54,11 +44,10 @@ public class AssignTrialMentorUseCase : IUseCase<AssignTrialMentorUseCaseInput, 
         trial.Revision++;
 
         var organizationName = await _reader.OrganizationNameAsync(trial.OrganizationId);
-        var schedule = trial.PreferredReviewAt is { } at ? $" Giờ mong muốn chấm: {TrialProgramRules.FormatVietnamTime(at)}." : string.Empty;
-        _reader.Notify(new[] { mentor.Id }, TrialProgramRules.NotificationMentorAssigned, "Bạn được phân công chấm bài dùng thử",
-            $"{organizationName}.{schedule}", trial.OrganizationId);
-        _reader.Notify(new[] { trial.OwnerUserId }, TrialProgramRules.NotificationMentorAssigned, "Đã có mentor chấm bài",
-            $"{mentor.DisplayName} sẽ chấm bài đánh giá của nhân viên.", trial.OrganizationId);
+        _reader.Notify(new[] { mentor.Id }, TrialProgramRules.NotificationMentorAssigned, "Bạn được phân công chấm bài học thử",
+            $"{organizationName}: bài cuối khóa Cơ bản của nhân viên.", trial.OrganizationId);
+        _reader.Notify(new[] { trial.OwnerUserId }, TrialProgramRules.NotificationMentorAssigned, "Đã có mentor chấm bài học thử",
+            $"{mentor.DisplayName} chấm bài cuối khóa Cơ bản của nhân viên.", trial.OrganizationId);
         await _context.SaveChangesAsync();
 
         await _audit.LogAsync("TRIAL_MENTOR_ASSIGNED", "trial_workspaces", trial.Id,

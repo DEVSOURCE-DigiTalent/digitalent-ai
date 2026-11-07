@@ -20,7 +20,7 @@ export function ManagerFrameworkPage() {
     <PageHead
       eyebrow="Chung chuẩn Digital AI"
       title="Sáu lĩnh vực. Ba mức rõ ràng."
-      description="Đây là trần chung. Chủ doanh nghiệp đặt mục tiêu các cấp trong giới hạn đó; quản lý dùng mục tiêu ấy khi đánh giá nhân sự."
+      description="Đây là phạm vi chung. Chủ doanh nghiệp đặt mục tiêu các cấp trong giới hạn đó; quản lý dùng mục tiêu ấy khi đánh giá nhân sự."
       actions={
         <>
           <Pill>Chỉ đọc</Pill>
@@ -90,7 +90,7 @@ export function ManagerFrameworkPage() {
         <Mini>Chuẩn chung trở thành mục tiêu cá nhân như thế nào</Mini>
         <h2 id="pm-hierarchy-title">Digital AI ≥ doanh nghiệp ≥ phòng ban ≥ vị trí</h2>
         <p className="pu-panel-desc">
-          Chỉ quản trị nền tảng công bố nội dung chuẩn. Doanh nghiệp tự thiết kế mức trần và vị trí; mức đã xác nhận của nhân viên
+          Chỉ quản trị nền tảng công bố nội dung chuẩn. Doanh nghiệp tự chọn phạm vi đào tạo và vị trí; mức đã xác nhận của nhân viên
           được so với mục tiêu vị trí.
         </p>
         <ol aria-label="Thứ bậc mục tiêu">
