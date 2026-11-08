@@ -98,7 +98,7 @@ describe('commerce edge cases (T5, T6, T7, T14, T15, T17, T18)', () => {
     renderApp('/login');
     type(/Email/, 'active@acme.vn');
     type('Mật khẩu', VALID_PASSWORD);
-    click('Đăng nhập');
+    click('Đăng nhập vào hệ thống');
 
     expect(await screen.findByTestId('enterprise-layout', {}, { timeout: 10000 })).toBeInTheDocument();
   });
@@ -154,7 +154,7 @@ describe('commerce edge cases (T5, T6, T7, T14, T15, T17, T18)', () => {
     renderApp('/login');
     type(/Email/, 'reload@acme.vn');
     type('Mật khẩu', VALID_PASSWORD);
-    click('Đăng nhập');
+    click('Đăng nhập vào hệ thống');
 
     await heading('Quét mã để thanh toán');
 
@@ -214,18 +214,17 @@ describe('commerce edge cases (T5, T6, T7, T14, T15, T17, T18)', () => {
     expect(await heading('Phòng ban và nhóm')).toBeInTheDocument();
   });
 
-  it('T15: header "Bắt đầu" and login links point to pricing pages', async () => {
+  it('T15: the enterprise header and the login page lead new visitors to the free trial', async () => {
+    // Pricing is no longer a public entry: every sign-up call to action opens the enterprise trial (/business/try).
     renderApp('/business');
-    const pricingLinks = await screen.findAllByRole('link', { name: 'Bảng giá' });
-    expect(pricingLinks.length).toBeGreaterThan(0);
-    expect(pricingLinks[0]).toHaveAttribute('href', '/business/pricing');
+    const trialLinks = await screen.findAllByRole('link', { name: /^Dùng thử/ });
+    expect(trialLinks.length).toBeGreaterThan(0);
+    trialLinks.forEach((link) => expect(link).toHaveAttribute('href', '/business/try'));
+    expect(screen.getAllByRole('link', { name: 'Đăng nhập' })[0]).toHaveAttribute('href', '/login');
 
     renderApp('/login');
-    const registerCta = screen.getByRole('link', { name: 'Đăng ký' });
-    expect(registerCta).toHaveAttribute('href', '/portal?intent=register');
-
-    const registerPromptLink = screen.getByRole('link', { name: 'Đăng ký ngay' });
-    expect(registerPromptLink).toHaveAttribute('href', '/portal?intent=register');
+    expect(await screen.findByRole('link', { name: /Dùng thử miễn phí/ })).toHaveAttribute('href', '/business/try');
+    expect(screen.getByRole('link', { name: 'Bắt đầu dùng thử miễn phí 14 ngày' })).toHaveAttribute('href', '/business/try');
   });
 
   it('T18: contact plan (ENT_CUSTOM) triggers mailto link, not register', async () => {
