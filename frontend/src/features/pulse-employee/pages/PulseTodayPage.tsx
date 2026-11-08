@@ -105,7 +105,7 @@ function cleanDomainCode(code: string): string {
 /* ── 1. Enterprise Hero Banner (Ảnh nền + Text tối giản) ───────────────── */
 function EnterpriseHeroBanner({ overview }: { overview: PulseOverview }) {
   const { person } = overview;
-  const position = person.positionName ?? 'Chuyên viên Kế toán tài chính';
+  const position = person.positionName ?? 'Chưa được gán vị trí';
   const deptRaw = person.departmentName?.trim();
   const dept = deptRaw
     ? deptRaw.toLowerCase().startsWith('phòng')
@@ -158,6 +158,10 @@ function QuickStatCards({
   const total = stats.pathCourses;
   const approved = stats.approvedPathCourses;
   const pct = total > 0 ? Math.round((approved / total) * 100) : 0;
+  // Most recently recognised course on the path (approvedAt is ISO, so it sorts as text).
+  const latestApproved = courses
+    .filter((c) => c.approved && c.zone === 'PATH')
+    .sort((a, b) => (b.approvedAt ?? '').localeCompare(a.approvedAt ?? ''))[0];
 
   const completedDomains = domains.filter((d) => {
     const domainCourses = courses.filter((c) => c.categoryId === d.categoryId && c.zone === 'PATH');
@@ -193,7 +197,7 @@ function QuickStatCards({
         </div>
         <div className="pu-qstat-value">{approved} môn</div>
         <div className="pu-qstat-status-badge emerald">
-          <span>{approved > 0 ? 'M1-I đạt chuẩn' : 'Chưa có'}</span>
+          <span>{latestApproved ? `${latestApproved.code} đạt chuẩn` : 'Chưa có'}</span>
         </div>
         <span className="pu-qstat-sub">Chứng nhận kỹ năng số</span>
       </article>
