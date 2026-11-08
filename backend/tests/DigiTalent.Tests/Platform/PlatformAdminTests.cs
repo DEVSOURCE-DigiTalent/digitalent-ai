@@ -88,7 +88,7 @@ public class PlatformAdminTests
 
         var codes = await context.PlatformCourses.Select(c => c.Code).ToListAsync();
         codes.Should().BeEquivalentTo(Tt02Catalog.Domains.SelectMany(d => new[] { 1, 2, 3 }.Select(d.CourseCode)));
-        var intermediate = await context.PlatformCourses.SingleAsync(c => c.Code == "A1-I");
+        var intermediate = await context.PlatformCourses.SingleAsync(c => c.Code == "M1-I");
         intermediate.Title.Should().Be(Tt02Catalog.Domains[0].CourseTitles[1]);
         intermediate.Level.Should().Be(2);
     }
@@ -129,16 +129,16 @@ public class PlatformAdminTests
 
         var basic = () => grant.ExecuteAsync(new GrantPlatformCourseSeatsUseCaseInput
         {
-            OrganizationId = organization.Id, CourseCode = "A1-F", Seats = 1, Reason = "Hỗ trợ dùng thử mở rộng",
+            OrganizationId = organization.Id, CourseCode = "M1-F", Seats = 1, Reason = "Hỗ trợ dùng thử mở rộng",
         });
         await basic.Should().ThrowAsync<BadRequestException>();
 
         var detail = await grant.ExecuteAsync(new GrantPlatformCourseSeatsUseCaseInput
         {
-            OrganizationId = organization.Id, CourseCode = "A3-I", Seats = 2, Reason = "Bù suất do lỗi thanh toán",
+            OrganizationId = organization.Id, CourseCode = "M3-I", Seats = 2, Reason = "Bù suất do lỗi thanh toán",
         });
 
-        detail.Seats.Should().ContainSingle(s => s.CourseCode == "A3-I" && s.SeatsGranted == 2 && s.SeatsPurchased == 0);
+        detail.Seats.Should().ContainSingle(s => s.CourseCode == "M3-I" && s.SeatsGranted == 2 && s.SeatsPurchased == 0);
         detail.Orders.Should().ContainSingle(o => o.Kind == PlatformCatalog.SeatOrderKind.AdminGrant && o.TotalAmount == 0);
         detail.Organization.Stage.Should().Be(PlatformOrganizationStages.Trial);
     }
@@ -203,7 +203,7 @@ public class PlatformAdminTests
         await using var context = await CreateSeededContextAsync();
         var trial = await AddOrganizationAsync(context, "Northstar Studio");
         var paid = await AddOrganizationAsync(context, "Northstar Growth");
-        var course = await context.PlatformCourses.SingleAsync(c => c.Code == "A1-I");
+        var course = await context.PlatformCourses.SingleAsync(c => c.Code == "M1-I");
         context.CourseSeatOrders.Add(new CourseSeatOrder
         {
             OrganizationId = paid.Id,
@@ -275,16 +275,16 @@ public class PlatformAdminTests
             .Select(i => new Employee { OrganizationId = organization.Id, DepartmentId = department.Id, EmployeeCode = $"E{i}", FullName = $"Nhân viên {i}" })
             .ToList();
         context.Employees.AddRange(employees);
-        var courses = new[] { "A1-F", "A2-F", "A1-I", "AI-OFFICE" }
+        var courses = new[] { "M1-F", "M2-F", "M1-I", "AI-OFFICE" }
             .ToDictionary(code => code, code => new Course { OrganizationId = organization.Id, Code = code, Title = code, Status = "PUBLISHED" });
         context.Courses.AddRange(courses.Values);
         void Enroll(Employee employee, string code, string status) =>
             context.Enrollments.Add(new Enrollment { EmployeeId = employee.Id, CourseId = courses[code].Id, Status = status });
-        Enroll(employees[0], "A1-F", Statuses.Enrollment.Completed);
-        Enroll(employees[1], "A1-F", Statuses.Enrollment.InProgress);
-        Enroll(employees[1], "A2-F", Statuses.Enrollment.InProgress);
-        Enroll(employees[0], "A1-I", Statuses.Enrollment.NotStarted);
-        Enroll(employees[2], "A1-I", Statuses.Enrollment.Cancelled); // cancelled: not taking part
+        Enroll(employees[0], "M1-F", Statuses.Enrollment.Completed);
+        Enroll(employees[1], "M1-F", Statuses.Enrollment.InProgress);
+        Enroll(employees[1], "M2-F", Statuses.Enrollment.InProgress);
+        Enroll(employees[0], "M1-I", Statuses.Enrollment.NotStarted);
+        Enroll(employees[2], "M1-I", Statuses.Enrollment.Cancelled); // cancelled: not taking part
         Enroll(employees[2], "AI-OFFICE", Statuses.Enrollment.InProgress); // not a platform course
         await context.SaveChangesAsync();
 
@@ -297,7 +297,7 @@ public class PlatformAdminTests
         item.ParticipantCount.Should().Be(2);
 
         var detail = await new GetPlatformOrganizationDetailUseCase(context).ExecuteAsync(new GetPlatformOrganizationDetailUseCaseInput { Id = organization.Id });
-        detail.CoursesInUse.Select(c => (c.CourseCode, c.Participants, c.Completed)).Should().Equal(("A1-F", 2, 1), ("A2-F", 1, 0), ("A1-I", 1, 0));
+        detail.CoursesInUse.Select(c => (c.CourseCode, c.Participants, c.Completed)).Should().Equal(("M1-F", 2, 1), ("M2-F", 1, 0), ("M1-I", 1, 0));
         detail.CoursesInUse[0].LevelName.Should().Be("Cơ bản");
     }
 
