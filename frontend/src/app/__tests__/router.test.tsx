@@ -37,11 +37,10 @@ describe('Router Configuration & Surface Separation', () => {
   });
 
   describe('Public Flow (Anonymous Access)', () => {
-    it('Anonymous can access the Individual guided trial without entering the paid workspace', async () => {
+    it('Anonymous visitors of the retired individual trial land on the enterprise trial, outside any workspace', async () => {
       renderWithRouter('/individual/try', queryClient);
 
-      expect(await screen.findByTestId('individual-trial-page', {}, { timeout: 10_000 })).toBeInTheDocument();
-      expect(await screen.findByRole('heading', { level: 1, name: /Xem lộ trình cá nhân/ })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: 'Thông tin doanh nghiệp' }, { timeout: 10_000 })).toBeInTheDocument();
       expect(screen.queryByTestId('personal-layout')).not.toBeInTheDocument();
     });
 
@@ -51,7 +50,7 @@ describe('Router Configuration & Surface Separation', () => {
       // The landing page is lazy-loaded (first import is slow when the whole suite runs in parallel)
       // and brings its own navigation and footer.
       expect(await screen.findByTestId('landing-page', {}, { timeout: 10_000 })).toBeInTheDocument();
-      expect(await screen.findByRole('heading', { level: 1, name: 'DigiTalent AI' })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: /Định vị năng lực số/ })).toBeInTheDocument();
       expect(screen.queryByTestId('public-layout')).not.toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
