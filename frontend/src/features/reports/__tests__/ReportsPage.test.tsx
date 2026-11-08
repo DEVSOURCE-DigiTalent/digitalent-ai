@@ -147,7 +147,7 @@ describe('ReportsPage (Agent 1 - Phase H: OW-40)', () => {
 
     // 5 tabs present
     expect(screen.getByRole('button', { name: 'Nhân sự' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Năng lực TT02' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Năng lực chuẩn' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Đào tạo' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Đánh giá' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Minh chứng & Nhiệm vụ' })).toBeInTheDocument();
@@ -157,10 +157,10 @@ describe('ReportsPage (Agent 1 - Phase H: OW-40)', () => {
     expect(screen.getByText('Quy mô nhân sự theo phòng ban')).toBeInTheDocument();
 
     // Switch to Tab 2: Competency TT02
-    fireEvent.click(screen.getByRole('button', { name: 'Năng lực TT02' }));
-    expect(screen.getByText(/Tiến độ đạt chuẩn theo 6 Miền năng lực/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Năng lực chuẩn' }));
+    expect(screen.getByText(/Tiến độ đạt chuẩn theo 6 Miền của Khung chuẩn năng lực số/)).toBeInTheDocument();
     expect(screen.getByText(/Miền 1: Dữ liệu và thông tin/i)).toBeInTheDocument();
-    expect(screen.getByText(/Top Skill Gaps/i)).toBeInTheDocument();
+    expect(screen.getByText("Khoảng trống năng lực cần ưu tiên")).toBeInTheDocument();
 
     // Switch to Tab 3: Training
     fireEvent.click(screen.getByRole('button', { name: 'Đào tạo' }));
@@ -192,7 +192,7 @@ describe('ReportsPage (Agent 1 - Phase H: OW-40)', () => {
     renderWithClient(<ReportsPage />);
 
     // Switch to Tab 2: Competency TT02
-    fireEvent.click(screen.getByRole('button', { name: 'Năng lực TT02' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Năng lực chuẩn' }));
     expect(screen.getByText('Chưa có dữ liệu miền năng lực')).toBeInTheDocument();
     expect(screen.getByText('Không có khoảng trống năng lực')).toBeInTheDocument();
   });
