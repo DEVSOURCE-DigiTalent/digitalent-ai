@@ -36,6 +36,7 @@ public class CapabilityCeilingTests : IDisposable
             new CompetencyCategory { Id = _dataId, OrganizationId = _orgId, Code = "TT02_D1", Name = "Khai thác dữ liệu", SortOrder = 1 },
             new CompetencyCategory { Id = _aiId, OrganizationId = _orgId, Code = "TT02_D6", Name = "Ứng dụng AI", SortOrder = 6 });
         _context.Departments.Add(new Department { Id = _deptId, OrganizationId = _orgId, Code = "KT", Name = "Kế toán" });
+        SeedCatalogAndLicenses();
         _context.SaveChanges();
 
         _reader = new CapabilityCeilingReader(_context, new PulseCatalogReader(_context));
@@ -59,6 +60,65 @@ public class CapabilityCeilingTests : IDisposable
             DepartmentId = _deptId,
             Ceilings = { new CeilingInputItem { CategoryId = _dataId, Level = data } },
         });
+
+    private void SeedCatalogAndLicenses()
+    {
+        foreach (var (categoryId, prefix) in new[] { (_dataId, "DATA"), (_aiId, "AI") })
+        {
+            var competency = new DigiTalent.Domain.Entities.Competency
+            {
+                Id = Guid.NewGuid(),
+                CategoryId = categoryId,
+                Code = $"CMP-{prefix}",
+                Name = prefix,
+            };
+            _context.Competencies.Add(competency);
+
+            for (short level = 1; level <= 3; level++)
+            {
+                var code = $"{prefix}-{level}";
+                var course = new Course
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizationId = _orgId,
+                    Code = code,
+                    VersionNo = 1,
+                    Title = code,
+                    Status = Statuses.Course.Published,
+                };
+                var platformCourse = new PlatformCourse
+                {
+                    Id = Guid.NewGuid(),
+                    Code = code,
+                    DomainId = categoryId,
+                    Level = level,
+                    Title = code,
+                    SalesStatus = Statuses.PlatformCourseSales.Open,
+                };
+                _context.Courses.Add(course);
+                _context.PlatformCourses.Add(platformCourse);
+                _context.CourseCompetencies.Add(new CourseCompetency
+                {
+                    CourseId = course.Id,
+                    CompetencyId = competency.Id,
+                    TargetLevel = level,
+                    CoverageType = Statuses.CourseCoverageType.Primary,
+                });
+
+                // Level 2 and 3 are paid. The foundation remains free by rule.
+                if (level > 1)
+                {
+                    _context.CourseSeatOrders.Add(new CourseSeatOrder
+                    {
+                        OrganizationId = _orgId,
+                        CourseId = platformCourse.Id,
+                        Seats = 1,
+                        Kind = "PURCHASE",
+                    });
+                }
+            }
+        }
+    }
 
     [Fact]
     public async Task Get_BeforeSaving_ShowsSuggestionAndDigitalAiCeiling()
@@ -114,6 +174,17 @@ public class CapabilityCeilingTests : IDisposable
         });
 
         (await action.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("CEILINGS_INCOMPLETE");
+    }
+
+    [Fact]
+    public async Task UpdateOrganization_WithoutPurchasedCourse_IsRejected()
+    {
+        _context.CourseSeatOrders.RemoveRange(_context.CourseSeatOrders);
+        await _context.SaveChangesAsync();
+
+        var action = () => SaveOrganization(data: 2, ai: 1);
+
+        (await action.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("COURSE_LICENSE_REQUIRED");
     }
 
     [Fact]

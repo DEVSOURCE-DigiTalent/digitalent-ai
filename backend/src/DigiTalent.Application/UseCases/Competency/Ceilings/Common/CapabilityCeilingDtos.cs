@@ -1,15 +1,15 @@
 namespace DigiTalent.Application.UseCases.Competency.Ceilings;
 
 /// <summary>
-/// Ma trận trần nhà của tổ chức (OW-05 "Lý thuyết trần nhà"): 6 lĩnh vực × 3 cấp = 18 khóa là trần Digital AI,
-/// trần doanh nghiệp và trần riêng từng phòng ban nằm lồng bên trong.
+/// Ma trận phạm vi năng lực của tổ chức (OW-05 "Phạm vi năng lực"): 6 lĩnh vực × 3 cấp = 18 khóa là phạm vi Digital AI,
+/// phạm vi doanh nghiệp và thiết lập riêng từng phòng ban nằm lồng bên trong.
 /// </summary>
 public class CapabilityCeilingsDto
 {
-    /// <summary>Trần Digital AI (số cấp của mỗi lĩnh vực).</summary>
+    /// <summary>Danh mục Digital AI (số cấp của mỗi lĩnh vực).</summary>
     public int PlatformMaxLevel { get; set; }
 
-    /// <summary>false = doanh nghiệp chưa lưu trần; trần doanh nghiệp đang hiển thị là gợi ý từ yêu cầu vị trí.</summary>
+    /// <summary>false = doanh nghiệp chưa lưu phạm vi; phạm vi doanh nghiệp đang hiển thị là gợi ý từ yêu cầu vị trí.</summary>
     public bool IsConfigured { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }
     public string? UpdatedByName { get; set; }
@@ -18,10 +18,10 @@ public class CapabilityCeilingsDto
     public List<CeilingDomainDto> Domains { get; set; } = new();
     public List<CeilingDepartmentDto> Departments { get; set; } = new();
 
-    /// <summary>Số khóa nằm dưới trần doanh nghiệp.</summary>
+    /// <summary>Số khóa nằm dưới phạm vi doanh nghiệp.</summary>
     public int OrganizationCourseCount { get; set; }
 
-    /// <summary>Số ô của trần Digital AI (lĩnh vực × cấp).</summary>
+    /// <summary>Số ô của phạm vi Digital AI (lĩnh vực × cấp).</summary>
     public int PlatformCourseCount { get; set; }
 }
 
@@ -38,10 +38,10 @@ public class CeilingDomainDto
     public string Name { get; set; } = string.Empty;
     public int SortOrder { get; set; }
 
-    /// <summary>Trần doanh nghiệp ở lĩnh vực này (0–3).</summary>
+    /// <summary>Phạm vi doanh nghiệp ở lĩnh vực này (0–3).</summary>
     public int OrganizationCeiling { get; set; }
 
-    /// <summary>Trần tối đa doanh nghiệp được phép thiết lập dựa trên bản quyền đã mua (mặc định 1 - Cơ bản trong gói dùng thử).</summary>
+    /// <summary>Cấp độ tối đa doanh nghiệp được phép thiết lập dựa trên bản quyền đã mua (mặc định 1 - Cơ bản trong gói dùng thử).</summary>
     public int MaxAllowedCeiling { get; set; } = 1;
 
     /// <summary>Mức yêu cầu cao nhất của các vị trí đang có bộ yêu cầu ACTIVE.</summary>
@@ -57,11 +57,19 @@ public class CeilingCourseDto
     public Guid? CourseId { get; set; }
     public string? Code { get; set; }
     public string? Title { get; set; }
+    /// <summary>Năng lực và cấp đích thực tế của khóa đã xuất bản, từ course_competencies.</summary>
+    public List<CeilingCourseCompetencyDto> Competencies { get; set; } = new();
 
     /// <summary>Khóa học đã mở bản quyền cho doanh nghiệp (Cấp 1 luôn mở, Cấp 2/3 khi đã mua suất).</summary>
     public bool IsUnlocked { get; set; } = true;
     public int SeatsPurchased { get; set; }
     public long PricePerSeat { get; set; }
+}
+
+public class CeilingCourseCompetencyDto
+{
+    public Guid CompetencyId { get; set; }
+    public int TargetLevel { get; set; }
 }
 
 public class CeilingDepartmentDto
@@ -73,10 +81,10 @@ public class CeilingDepartmentDto
     /// <summary>False when no position in the department has active requirements or a supported reference mapping.</summary>
     public bool HasSuggestion { get; set; }
 
-    /// <summary>true khi phòng ban có ít nhất một trần riêng; false = kế thừa trần doanh nghiệp.</summary>
+    /// <summary>true khi phòng ban có ít nhất một thiết lập riêng; false = kế thừa phạm vi doanh nghiệp.</summary>
     public bool IsCustomized { get; set; }
 
-    /// <summary>Số khóa nằm dưới trần phòng ban (lộ trình của phòng ban).</summary>
+    /// <summary>Số khóa nằm dưới phạm vi phòng ban (lộ trình của phòng ban).</summary>
     public int CourseCount { get; set; }
     public List<CeilingValueDto> Ceilings { get; set; } = new();
 }
@@ -85,15 +93,15 @@ public class CeilingValueDto
 {
     public Guid CategoryId { get; set; }
 
-    /// <summary>Trần hiệu lực: trần riêng nếu có, không thì trần doanh nghiệp.</summary>
+    /// <summary>Phạm vi hiệu lực: thiết lập riêng nếu có, không thì phạm vi doanh nghiệp.</summary>
     public int Level { get; set; }
 
-    /// <summary>Mức yêu cầu cao nhất của các vị trí trong phòng ban, không vượt trần doanh nghiệp.</summary>
+    /// <summary>Mức yêu cầu cao nhất của các vị trí trong phòng ban, không vượt phạm vi doanh nghiệp.</summary>
     public int Suggested { get; set; }
     public bool IsCustomized { get; set; }
 }
 
-/// <summary>Một ô nhập liệu khi lưu trần: lĩnh vực và cấp.</summary>
+/// <summary>Một ô nhập liệu khi lưu phạm vi: lĩnh vực và cấp.</summary>
 public class CeilingInputItem
 {
     public Guid CategoryId { get; set; }
