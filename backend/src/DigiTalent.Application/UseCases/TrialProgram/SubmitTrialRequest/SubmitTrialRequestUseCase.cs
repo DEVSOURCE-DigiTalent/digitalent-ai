@@ -41,21 +41,17 @@ public class SubmitTrialRequestUseCase : IUseCase<SubmitTrialRequestUseCaseInput
 
         var first = trial.RequestedAt == null;
         trial.TestDeadline = input.TestDeadline;
-        trial.PreferredReviewAt = input.PreferredReviewAt;
-        trial.RequestNote = string.IsNullOrWhiteSpace(input.Note) ? null : input.Note.Trim();
+        // Survey grading is automatic; legacy mentor scheduling fields are no longer used.
+        trial.PreferredReviewAt = null;
+        trial.RequestNote = null;
         trial.RequestedAt ??= now;
 
         var organizationName = await _reader.OrganizationNameAsync(trial.OrganizationId);
-        var when = $"hạn làm bài {TrialProgramRules.FormatVietnamTime(input.TestDeadline)}, mong muốn chấm {TrialProgramRules.FormatVietnamTime(input.PreferredReviewAt)}";
+        var when = $"hạn làm bài {TrialProgramRules.FormatVietnamTime(input.TestDeadline)}";
         if (first)
         {
             _reader.Notify(await _reader.PlatformAdminUserIdsAsync(), TrialProgramRules.NotificationRequested,
-                "Yêu cầu chấm bài dùng thử mới", $"{organizationName}: {when}. Hãy phân công mentor.", trial.OrganizationId);
-        }
-        else if (trial.MentorUserId is { } mentor)
-        {
-            _reader.Notify(new[] { mentor }, TrialProgramRules.NotificationRequested,
-                "Doanh nghiệp đổi lịch dùng thử", $"{organizationName}: {when}.", trial.OrganizationId);
+                "Đợt khảo sát đã bắt đầu", $"{organizationName}: {when}. Bài trắc nghiệm được chấm tự động.", trial.OrganizationId);
         }
 
         trial.Revision++;

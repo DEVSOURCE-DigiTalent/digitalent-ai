@@ -11,8 +11,8 @@ namespace DigiTalent.Application.UseCases.TrialProgram;
 
 /// <summary>
 /// POST /me/trial-assessment — nộp bài đánh giá tổng hợp: đóng phiên giám sát (đã có bản ghi màn hình và camera), chấm
-/// trắc nghiệm, lưu số câu đúng theo lĩnh vực × cấp cùng mức gợi ý, ba bài tự luận; báo cho mentor nếu đã được phân công.
-/// Phiên mở trước hạn làm bài thì vẫn nộp được sau hạn.
+/// trắc nghiệm, lưu số câu đúng theo lĩnh vực × cấp và cập nhật kết quả tự động.
+/// Hạn nộp áp dụng cả các phiên đã bắt đầu để kết quả chốt không tiếp tục thay đổi.
 /// </summary>
 public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUseCaseInput, SubmitMyTrialAssessmentUseCaseOutput>
 {
@@ -37,30 +37,28 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
         var employee = await _me.GetAsync();
         var trial = await _reader.ForEmployeeAsync(employee);
         var now = _reader.Now;
-        var startedAt = await _context.ProctoringSessions.AsNoTracking()
-            .Where(s => s.Id == input.ProctoringSessionId && s.EmployeeId == employee.Id)
-            .Select(s => (DateTimeOffset?)s.StartedAt)
-            .FirstOrDefaultAsync();
         var existing = await _context.TrialAssessments.AsNoTracking().FirstOrDefaultAsync(a => a.EmployeeId == employee.Id);
-        if (TrialProgramReader.ClosedReason(trial, existing, startedAt ?? now) is { } reason)
+        if (TrialProgramReader.ClosedReason(trial, existing, now) is { } reason)
         {
             throw new BadRequestException(reason, "proctoringSessionId", StartMyTrialAssessmentUseCase.NotOpen);
         }
 
-        var session = await _proctoring.CloseForSubmitAsync(
-            input.ProctoringSessionId, employee.Id, Statuses.ProctoringKind.TrialAssessment, null, now);
+
         var paper = await _paper.BuildAsync(trial.OrganizationId, employee.Id);
         var grade = PulseExamPaper.Grade(paper.Items.Select(i => i.Question).ToList(), input.Answers)
                     ?? throw new BadRequestException("Đề đánh giá chưa sẵn sàng.", "answers", StartMyTrialAssessmentUseCase.PaperEmpty);
+
+        var session = await _proctoring.CloseForSubmitAsync(
+            input.ProctoringSessionId, employee.Id, Statuses.ProctoringKind.TrialAssessment, null, now);
 
         var assessment = new TrialAssessment
         {
             OrganizationId = trial.OrganizationId,
             EmployeeId = employee.Id,
             ProctoringSessionId = session.Id,
-            EssayBasic = input.EssayBasic.Trim(),
-            EssayIntermediate = input.EssayIntermediate.Trim(),
-            EssayAdvanced = input.EssayAdvanced.Trim(),
+            EssayBasic = string.Empty,
+            EssayIntermediate = string.Empty,
+            EssayAdvanced = string.Empty,
             ChoiceScore = grade.Score,
             ChoiceTotal = grade.Total,
             SubmittedAt = now,
@@ -72,11 +70,7 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
             _context.ExamChoiceAnswers.Add(answer);
         }
 
-        var isAutoReview = trial.ReportPublishedAt != null;
-        if (isAutoReview)
-        {
-            assessment.ReviewedAt = now;
-        }
+        assessment.ReviewedAt = now;
 
         var correct = grade.Answers.ToDictionary(a => a.QuestionId, a => a.IsCorrect);
         foreach (var domain in paper.Domains)
@@ -100,16 +94,10 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
                 AdvancedCorrect = (short)cells[2].Correct,
                 AdvancedTotal = (short)cells[2].Total,
                 SuggestedLevel = suggested,
-                MentorLevel = isAutoReview ? suggested : null,
+                MentorLevel = null,
             });
         }
 
-        if (trial.MentorUserId is { } mentor)
-        {
-            _reader.Notify(new[] { mentor }, TrialProgramRules.NotificationSubmitted, "Có bài dùng thử cần chấm",
-                $"{employee.FullName} ({await _reader.OrganizationNameAsync(trial.OrganizationId)}) đã nộp bài đánh giá tổng hợp.",
-                trial.OrganizationId);
-        }
 
         try
         {
@@ -121,6 +109,7 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
             throw new ConflictException("Bài đánh giá đang được gửi, vui lòng tải lại trang.");
         }
 
+        await _reader.FinalizeSurveyAsync(trial);
         return new SubmitMyTrialAssessmentUseCaseOutput
         {
             AssessmentId = assessment.Id,

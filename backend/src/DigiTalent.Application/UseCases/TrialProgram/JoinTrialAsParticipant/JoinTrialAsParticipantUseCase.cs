@@ -28,10 +28,18 @@ public class JoinTrialAsParticipantUseCase : IUseCase<JoinTrialAsParticipantUseC
     {
         var trial = await _reader.ForOwnerAsync();
         var owner = await _context.Users.Include(u => u.UserRoles).FirstAsync(u => u.Id == trial.OwnerUserId);
-        if (await _context.Employees.AnyAsync(e => e.UserId == owner.Id))
+        var existing = await _context.Employees.FirstOrDefaultAsync(e => e.UserId == owner.Id && e.OrganizationId == trial.OrganizationId);
+        if (existing != null)
         {
-            throw new ConflictException("Bạn đã tham gia làm bài.");
+            var roleId = await _context.Roles.Where(r => r.Code == Roles.Employee).Select(r => r.Id).FirstAsync();
+            if (owner.UserRoles.All(r => r.RoleId != roleId))
+                owner.UserRoles.Add(new UserRole { RoleId = roleId, AssignedAt = _reader.Now, AssignedByUserId = owner.Id });
+            await _context.SaveChangesAsync();
+            return new JoinTrialAsParticipantUseCaseOutput { EmployeeId = existing.Id };
         }
+
+        if (trial.ReportPublishedAt != null || trial.TestDeadline <= _reader.Now)
+            throw new BadRequestException("Đợt khảo sát đã kết thúc, không thể đăng ký thêm người làm bài.", "department", "TRIAL_CLOSED");
 
         if ((await _reader.LoadParticipantsAsync(trial)).Count >= TrialProgramRules.MaxParticipants)
         {

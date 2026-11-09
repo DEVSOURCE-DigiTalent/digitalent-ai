@@ -34,167 +34,60 @@ public class TrialProgramFlowTests
     }
 
     [Fact]
-    public async Task Owner_request_employee_exam_mentor_review_and_report_unlock_basic_learning()
+    public async Task Multiple_choice_submission_is_graded_and_published_without_a_mentor()
     {
         using var world = await PulseTestWorld.CreateAsync();
         var owner = await world.UserAsync(PulseTestWorld.OwnerEmail);
-        world.Context.TrialWorkspaces.Add(new TrialWorkspace
-        {
-            OrganizationId = owner.OrganizationId!.Value,
-            OwnerUserId = owner.Id,
-            StartedAt = world.Clock.Now,
-            EndsAt = world.Clock.Now.AddDays(14),
-            PolicyJson = "{}",
-        });
+        var employeeUser = await world.UserAsync(PulseTestWorld.EmployeeEmail);
+        foreach (var employee in await world.Context.Employees.Where(e => e.UserId != employeeUser.Id).ToListAsync()) employee.Status = Statuses.Employee.Archived;
         await world.Context.SaveChangesAsync();
-        world.Context.ChangeTracker.Clear();
-
-        // 1. Chủ doanh nghiệp gửi yêu cầu chấm: hạn làm bài + giờ mong muốn chấm.
         var asOwner = await TrialAsAsync(world, PulseTestWorld.OwnerEmail, Roles.Owner);
-        await FluentActions.Awaiting(() => asOwner.Request.ExecuteAsync(new SubmitTrialRequestUseCaseInput
-        {
-            TestDeadline = world.Clock.Now.AddMinutes(10),
-            PreferredReviewAt = world.Clock.Now.AddDays(1),
-        })).Should().ThrowAsync<BadRequestException>();
-        var preferredReviewAt = world.Clock.Now.AddDays(3);
-        var request = await asOwner.Request.ExecuteAsync(new SubmitTrialRequestUseCaseInput
-        {
-            TestDeadline = world.Clock.Now.AddDays(2),
-            PreferredReviewAt = preferredReviewAt,
-            Note = "Chấm buổi sáng",
-        });
-        request.Stage.Should().Be(TrialProgramRules.StageRequested);
-        var platform = await world.UserAsync("platform@digitalent.ai");
-        (await world.Context.Notifications.CountAsync(n => n.RecipientUserId == platform.Id && n.Type == TrialProgramRules.NotificationRequested))
-            .Should().Be(1);
-        world.Context.ChangeTracker.Clear();
-
-        // 2. Trước khi công bố, nhân viên chưa có lộ trình học.
-        var employeeUc = await world.AsAsync(PulseTestWorld.EmployeeEmail);
-        (await employeeUc.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput())).Courses.Should().OnlyContain(c => !c.CanWork);
-
-        // 3. Nhân viên làm bài tổng hợp ba cấp trong phòng thi có giám sát.
+        var before = await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput());
         var asEmployee = await TrialAsAsync(world, PulseTestWorld.EmployeeEmail, Roles.Employee);
-        var mine = await asEmployee.Mine.ExecuteAsync(new GetMyTrialAssessmentUseCaseInput());
-        mine.CanStart.Should().BeTrue();
-        mine.Domains.Should().HaveCount(6);
+        (await asEmployee.Mine.ExecuteAsync(new GetMyTrialAssessmentUseCaseInput())).CanStart.Should().BeFalse();
+        await asOwner.Request.ExecuteAsync(new SubmitTrialRequestUseCaseInput { TestDeadline = world.Clock.Now.AddDays(2) });
         var session = await asEmployee.Start.ExecuteAsync(new StartMyTrialAssessmentUseCaseInput());
-        session.Kind.Should().Be(Statuses.ProctoringKind.TrialAssessment);
-        // Một câu cho mỗi ô lĩnh vực × cấp có câu ôn tập (dữ liệu Development đầy đủ: 18 câu), xếp Cơ bản → Nâng cao.
-        session.Questions.Should().NotBeEmpty().And.HaveCountLessThanOrEqualTo(18);
-        session.Questions.Select(q => q.Tier).Should().BeInAscendingOrder();
-        session.Questions.Select(q => q.Tier).Distinct().Should().BeEquivalentTo(new[] { 1, 2, 3 });
-        world.Context.ChangeTracker.Clear();
-        (await world.Context.ProctoringSessions.AsNoTracking().SingleAsync(s => s.Id == session.SessionId)).CourseId.Should().BeNull();
-
-        var essays = new SubmitMyTrialAssessmentUseCaseInput
-        {
-            ProctoringSessionId = session.SessionId,
-            EssayBasic = PulseTestWorld.Evidence,
-            EssayIntermediate = PulseTestWorld.Evidence,
-            EssayAdvanced = PulseTestWorld.Evidence,
-        };
-        // Chưa có bản ghi màn hình và camera → không nộp được.
-        essays.Answers = await AnswersAsync(world, session.Questions, correctTiers: 3);
-        await FluentActions.Awaiting(() => asEmployee.Submit.ExecuteAsync(essays)).Should().ThrowAsync<BadRequestException>();
-        world.Context.ChangeTracker.Clear();
+        session.Essays.Should().BeEmpty();
+        var employeeUc = await world.AsAsync(PulseTestWorld.EmployeeEmail);
         await RecordAsync(world, employeeUc, session.SessionId);
-
-        // Đúng hết Cơ bản và Trung cấp, sai hết Nâng cao → mức gợi ý 2 ở mọi lĩnh vực.
-        essays.Answers = await AnswersAsync(world, session.Questions, correctTiers: 2);
-        var submitted = await asEmployee.Submit.ExecuteAsync(essays);
-        world.Context.ChangeTracker.Clear();
-        var domains = await world.Context.TrialAssessmentDomains.AsNoTracking().Where(d => d.TrialAssessmentId == submitted.AssessmentId).ToListAsync();
-        domains.Should().HaveCount(6).And.OnlyContain(d => d.MentorLevel == null && d.AdvancedCorrect == 0 && d.BasicCorrect == d.BasicTotal);
-        domains.Where(d => d.BasicTotal > 0 && d.IntermediateTotal > 0).Should().NotBeEmpty().And.OnlyContain(d => d.SuggestedLevel == 2);
-        domains.Where(d => d.BasicTotal == 0).Should().OnlyContain(d => d.SuggestedLevel == 0);
-        (await world.Context.ExamChoiceAnswers.CountAsync(a => a.TrialAssessmentId == submitted.AssessmentId)).Should().Be(session.Questions.Count);
-        await FluentActions.Awaiting(() => asEmployee.Start.ExecuteAsync(new StartMyTrialAssessmentUseCaseInput()))
-            .Should().ThrowAsync<BadRequestException>();
-
-        // 4. Quản trị nền tảng thấy yêu cầu và phân công mentor.
-        var asAdmin = await TrialAsAsync(world, "platform@digitalent.ai", Roles.PlatformAdmin);
-        var queue = await asAdmin.PlatformTrials.ExecuteAsync(new GetPlatformTrialsUseCaseInput());
-        var row = queue.Items.Single();
-        row.Stage.Should().Be(TrialProgramRules.StageRequested);
-        row.Submitted.Should().Be(1);
-        row.PreferredReviewAt.Should().Be(preferredReviewAt);
-        var mentor = await world.UserAsync("mentor@digitalent.ai");
-        await FluentActions.Awaiting(() => asAdmin.Assign.ExecuteAsync(new AssignTrialMentorUseCaseInput { OrganizationId = row.OrganizationId, MentorUserId = owner.Id }))
-            .Should().ThrowAsync<BadRequestException>();
-        await asAdmin.Assign.ExecuteAsync(new AssignTrialMentorUseCaseInput { OrganizationId = row.OrganizationId, MentorUserId = mentor.Id });
-        world.Context.ChangeTracker.Clear();
-
-        // 5. Mentor chấm: thấy bản ghi, số câu đúng theo cấp, ba bài tự luận; quyết định mức từng lĩnh vực rồi công bố.
-        var asMentor = await TrialAsAsync(world, "mentor@digitalent.ai", Roles.Mentor);
-        var detail = await asMentor.MentorTrial.ExecuteAsync(new GetMentorTrialUseCaseInput { OrganizationId = row.OrganizationId });
-        var assessment = detail.Assessments.Single();
-        assessment.Recording.Should().NotBeNull();
-        assessment.Recording!.Segments.Should().HaveCount(2);
-        assessment.Essays.Should().HaveCount(3);
-        assessment.Domains.Should().HaveCount(6).And.OnlyContain(d => d.Correct[0] == d.Total[0] && d.Correct[1] == d.Total[1] && d.Correct[2] == 0);
-        assessment.ChoiceItems.Should().HaveCount(session.Questions.Count);
-        assessment.Essays.Should().OnlyContain(e => e.Score == null);
-        detail.CanPublish.Should().BeFalse();
-        detail.AiAvailable.Should().BeTrue();
-
-        // AI gợi ý điểm tự luận cho mentor (lưu lại, mở lần sau không gọi lại); mentor vẫn tự cho điểm.
-        var ai = await asMentor.AiReview.ExecuteAsync(new ReviewTrialEssaysWithAiUseCaseInput { OrganizationId = row.OrganizationId, AssessmentId = assessment.AssessmentId });
-        ai.Essays.Select(e => e.Tier).Should().Equal(1, 2, 3);
-        ai.Essays.Should().OnlyContain(e => e.Score == 7 && e.Passed);
-        world.Context.ChangeTracker.Clear();
-        (await asMentor.MentorTrial.ExecuteAsync(new GetMentorTrialUseCaseInput { OrganizationId = row.OrganizationId }))
-            .Assessments.Single().AiReview!.Essays.Should().HaveCount(3);
-
-        await FluentActions.Awaiting(() => asMentor.Review.ExecuteAsync(new ReviewTrialAssessmentUseCaseInput
-            {
-                OrganizationId = row.OrganizationId,
-                AssessmentId = assessment.AssessmentId,
-                Levels = assessment.Domains.Select(d => new TrialDomainLevelInput { CategoryId = d.CategoryId, Level = 1 }).ToList(),
-                EssayScores = new List<int>(),
-            }))
-            .Should().ThrowAsync<BadRequestException>().Where(e => e.Message.Contains("tự luận"));
-        await FluentActions.Awaiting(() => asMentor.Publish.ExecuteAsync(new PublishTrialReportUseCaseInput { OrganizationId = row.OrganizationId }))
-            .Should().ThrowAsync<BadRequestException>();
-
-        var levels = assessment.Domains.Select((d, i) => new TrialDomainLevelInput { CategoryId = d.CategoryId, Level = i % 4 }).ToList();
-        await asMentor.Review.ExecuteAsync(new ReviewTrialAssessmentUseCaseInput
-        {
-            OrganizationId = row.OrganizationId,
-            AssessmentId = assessment.AssessmentId,
-            Levels = levels,
-            EssayScores = new List<int> { 6, 5, 3 },
-            Note = "Nền tảng tốt.",
+        var submitted = await asEmployee.Submit.ExecuteAsync(new SubmitMyTrialAssessmentUseCaseInput {
+            ProctoringSessionId = session.SessionId, Answers = await AnswersAsync(world, session.Questions, 2)
         });
         world.Context.ChangeTracker.Clear();
-        var scored = (await asMentor.MentorTrial.ExecuteAsync(new GetMentorTrialUseCaseInput { OrganizationId = row.OrganizationId })).Assessments.Single();
-        scored.Essays.Select(e => e.Score).Should().Equal(6, 5, 3);
-        TrialProgramRules.EssayLevel(scored.Essays.Select(e => e.Score).ToList()).Should().Be(2);
-        world.Context.ChangeTracker.Clear();
-        await asMentor.Publish.ExecuteAsync(new PublishTrialReportUseCaseInput { OrganizationId = row.OrganizationId });
-        world.Context.ChangeTracker.Clear();
-
-        // Mentor khác không thấy doanh nghiệp này.
-        var other = await TrialAsAsync(world, "platform@digitalent.ai", Roles.Mentor);
-        await FluentActions.Awaiting(() => other.MentorTrial.ExecuteAsync(new GetMentorTrialUseCaseInput { OrganizationId = row.OrganizationId }))
-            .Should().ThrowAsync<NotFoundException>();
-
-        // 6. Chủ doanh nghiệp nhận bảng năng lực; nhân viên thấy mức của mình và học thử khóa Cơ bản.
-        var program = await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput());
-        program.Stage.Should().Be(TrialProgramRules.StageReported);
-        program.Report.Should().NotBeNull();
-        program.Report!.Assessed.Should().Be(1);
-        program.Report.Employees.Single().Levels.Should().Equal(levels.Select(l => l.Level));
-        program.Report.Summary.Select(s => s.Counts.Sum()).Should().OnlyContain(n => n == 1);
-
         var result = await asEmployee.Mine.ExecuteAsync(new GetMyTrialAssessmentUseCaseInput());
         result.Status.Should().Be(TrialProgramRules.ParticipantReviewed);
-        result.Levels.Should().Equal(levels.Select(l => l.Level));
-        result.ReviewNote.Should().Be("Nền tảng tốt.");
+        result.Essays.Should().BeEmpty();
+        result.MentorName.Should().BeNull();
+        result.EssayResults.Should().BeNull();
+        var program = await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput());
+        program.Stage.Should().Be(TrialProgramRules.StageReported);
+        program.Report!.Assessed.Should().Be(1);
+        program.Report.Employees.Single().EmployeeId.ToString().Should().Be(before.Participants.Single().EmployeeId!.Value.ToString());
+        await FluentActions.Awaiting(() => asEmployee.Submit.ExecuteAsync(new SubmitMyTrialAssessmentUseCaseInput { ProctoringSessionId = session.SessionId }))
+            .Should().ThrowAsync<BadRequestException>();
+    }
 
-        var overview = await (await world.AsAsync(PulseTestWorld.EmployeeEmail)).Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
-        overview.Courses.Where(c => c.Tier == 1).Should().NotBeEmpty().And.OnlyContain(c => c.Zone == PulseCourseZone.Path);
-        overview.Courses.Where(c => c.Tier > 1).Should().OnlyContain(c => c.Zone == PulseCourseZone.AboveCeiling && !c.CanWork);
+    [Fact]
+    public async Task Deadline_publishes_only_submitted_results_and_never_invents_zero_results_for_absentees()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var asOwner = await TrialAsAsync(world, PulseTestWorld.OwnerEmail, Roles.Owner);
+        var initial = await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput());
+        initial.Participants.Count.Should().BeGreaterThan(1);
+        await asOwner.Request.ExecuteAsync(new SubmitTrialRequestUseCaseInput { TestDeadline = world.Clock.Now.AddHours(1) });
+        var assessment = new TrialAssessment { OrganizationId = initial.OrganizationId, EmployeeId = initial.Participants.First(p => p.EmployeeId.HasValue).EmployeeId!.Value, SubmittedAt = world.Clock.Now, ReviewedAt = world.Clock.Now, ChoiceScore = 10, ChoiceTotal = 18 };
+        world.Context.TrialAssessments.Add(assessment);
+        await world.Context.SaveChangesAsync();
+        var live = await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput());
+        live.Stage.Should().Be(TrialProgramRules.StageRequested);
+        live.Report!.Assessed.Should().Be(1);
+        live.Report.PublishedAt.Should().BeNull();
+        live.ReportPublishedAt.Should().BeNull();
+        world.Clock.Advance(TimeSpan.FromHours(2));
+        var finished = await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput());
+        finished.Stage.Should().Be(TrialProgramRules.StageReported);
+        finished.Report!.Assessed.Should().Be(1);
+        finished.Report.Employees.Should().ContainSingle();
     }
 
     [Fact]
@@ -227,8 +120,8 @@ public class TrialProgramFlowTests
         me.IsOwner.Should().BeTrue();
         me.DepartmentName.Should().Be("Ban giám đốc");
         me.Status.Should().Be(TrialProgramRules.ParticipantActive);
-        await FluentActions.Awaiting(() => asOwner.Join.ExecuteAsync(new JoinTrialAsParticipantUseCaseInput { Department = "Ban giám đốc", Position = "Giám đốc" }))
-            .Should().ThrowAsync<ConflictException>();
+        var joinedAgain = await asOwner.Join.ExecuteAsync(new JoinTrialAsParticipantUseCaseInput { Department = "Ban giám đốc", Position = "Giám đốc" });
+        joinedAgain.EmployeeId.Should().Be(me.EmployeeId!.Value);
     }
 
     [Fact]
@@ -272,10 +165,11 @@ public class TrialProgramFlowTests
         var answers = new List<PulseAnswerInput>();
         foreach (var question in questions)
         {
+            var persisted = await world.Context.Questions.AnyAsync(q => q.Id == question.QuestionId);
             answers.Add(new PulseAnswerInput
             {
                 QuestionId = question.QuestionId,
-                OptionId = question.Tier <= correctTiers
+                OptionId = !persisted ? question.Options[question.Tier <= correctTiers ? 0 : 1].OptionId : question.Tier <= correctTiers
                     ? await world.CorrectOptionAsync(question.QuestionId)
                     : await world.WrongOptionAsync(question.QuestionId),
             });

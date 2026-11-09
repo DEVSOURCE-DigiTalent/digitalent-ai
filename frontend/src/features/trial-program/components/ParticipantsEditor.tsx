@@ -1,4 +1,5 @@
-import { useId, useRef, useState, type DragEvent } from 'react';
+import { translateUi, useUiLanguage } from '@/lib/i18n';
+import { useEffect, useId, useRef, useState, type DragEvent } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
@@ -41,7 +42,11 @@ export function ParticipantsEditor({
   positions,
   limit,
 }: ParticipantsEditorProps) {
+  useUiLanguage();
   const fileRef = useRef<HTMLInputElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const pendingNewRow = useRef(false);
+  const batchMenuRef = useRef<HTMLDivElement>(null);
   const listId = useId();
 
   // Fetch real org departments and job positions for rich autocomplete
@@ -72,7 +77,7 @@ export function ParticipantsEditor({
   const [isPasting, setIsPasting] = useState(false);
   const [pastedText, setPastedText] = useState('');
   const [fileError, setFileError] = useState<string | null>(null);
-  const [batchDept, setBatchDept] = useState('');
+  const [batchMenuOpen, setBatchMenuOpen] = useState(false);
 
   // Manual Draft State
   const [manualDraft, setManualDraft] = useState<TrialParticipantRow>({
@@ -86,6 +91,31 @@ export function ParticipantsEditor({
   const filledRows = rows.filter((r) => !isRowEmpty(r));
   const validCount = filledRows.filter((r) => rowError(r) === null).length;
   const invalidCount = filledRows.length - validCount;
+  const missingDepartmentCount = filledRows.filter((row) => !row.department.trim()).length;
+
+  useEffect(() => {
+    if (!pendingNewRow.current) return;
+    pendingNewRow.current = false;
+    const timer = window.setTimeout(() => {
+      const container = tableScrollRef.current;
+      if (!container) return;
+      if (typeof container.scrollTo === 'function') container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+      else container.scrollTop = container.scrollHeight;
+      container.querySelector<HTMLInputElement>('tbody tr:last-child input')?.focus({ preventScroll: true });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [rows.length]);
+
+  useEffect(() => {
+    if (!batchMenuOpen) return;
+    const closeOnOutside = (event: PointerEvent) => {
+      if (!batchMenuRef.current?.contains(event.target as Node)) setBatchMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setBatchMenuOpen(false); };
+    document.addEventListener('pointerdown', closeOnOutside);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => { document.removeEventListener('pointerdown', closeOnOutside); document.removeEventListener('keydown', closeOnEscape); };
+  }, [batchMenuOpen]);
 
   // Update specific row
   const updateRow = (index: number, patch: Partial<TrialParticipantRow>) => {
@@ -105,17 +135,17 @@ export function ParticipantsEditor({
   };
 
   // Batch assign department for rows that are missing department
-  const handleBatchAssignDept = () => {
-    if (!batchDept) return;
+  const handleBatchAssignDept = (department: string) => {
     const updated = rows.map((r) => {
       if (isRowEmpty(r)) return r;
       if (!r.department.trim()) {
-        return { ...r, department: batchDept };
+        return { ...r, department };
       }
       return r;
     });
     onChange(updated);
-    toast.success(`Đã áp dụng phòng ban "${batchDept}" cho các dòng còn trống`);
+    setBatchMenuOpen(false);
+    toast.success(`Đã gán ${department} cho ${missingDepartmentCount} nhân viên chưa có phòng ban`);
   };
 
   // Download template with current enterprise departments
@@ -248,43 +278,39 @@ export function ParticipantsEditor({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="trial-participants-editor space-y-6">
       {/* ── Top Tabs & Capacity Pill ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-3">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setTab('excel')}
+            aria-pressed={tab === 'excel'}
             className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
               tab === 'excel'
                 ? 'bg-[#137b84] text-white shadow-2xs'
                 : 'bg-slate-100/80 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
             }`}
           >
-            <FileSpreadsheet className="size-4" />
-            Nhập file Excel / CSV
-          </button>
+            <FileSpreadsheet className="size-4" />{translateUi("Nhập file Excel / CSV")}</button>
           <button
             type="button"
             onClick={() => setTab('manual')}
+            aria-pressed={tab === 'manual'}
             className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
               tab === 'manual'
                 ? 'bg-[#137b84] text-white shadow-2xs'
                 : 'bg-slate-100/80 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
             }`}
           >
-            <UserPlus className="size-4" />
-            Thêm từng người
-          </button>
+            <UserPlus className="size-4" />{translateUi("Thêm từng người")}</button>
           <button
             type="button"
             onClick={handleDownloadTemplate}
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 transition-all cursor-pointer"
-            title="Tải về file CSV mẫu 4 cột: Họ tên, Email, Phòng ban, Vị trí"
+            title={translateUi("Tải về file CSV mẫu 4 cột: Họ tên, Email, Phòng ban, Vị trí")}
           >
-            <Download className="size-3.5 text-[#137b84]" />
-            Tải mẫu .csv
-          </button>
+            <Download className="size-3.5 text-[#137b84]" />{translateUi("Tải mẫu .csv")}</button>
         </div>
 
         {/* Capacity Indicator Pill */}
@@ -298,8 +324,7 @@ export function ParticipantsEditor({
             }}
           >
             <span className="size-2 rounded-full bg-current animate-pulse" />
-            {filledRows.length}/{limit} người
-          </span>
+            {filledRows.length}/{limit}{translateUi(" người")}</span>
         </div>
       </div>
 
@@ -310,14 +335,14 @@ export function ParticipantsEditor({
           {/* Upload Dropzone or Paste Mode */}
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-              <span>Chọn tải file lên hoặc dán trực tiếp:</span>
+              <span>{translateUi("Chọn tải file lên hoặc dán trực tiếp:")}</span>
               <button
                 type="button"
                 onClick={() => setIsPasting(!isPasting)}
                 className="text-[#137b84] hover:underline flex items-center gap-1 cursor-pointer font-bold"
               >
                 <FileText className="size-3.5" />
-                {isPasting ? 'Chuyển sang chọn file' : 'Dán dữ liệu trực tiếp từ Excel'}
+                {isPasting ? 'Chuyển sang chọn file' : translateUi('Dán dữ liệu trực tiếp từ Excel')}
               </button>
             </div>
 
@@ -329,7 +354,7 @@ export function ParticipantsEditor({
                 }}
                 onDragLeave={() => setOver(false)}
                 onDrop={onDrop}
-                className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-7 text-center cursor-pointer transition-all ${
+                className={`trial-import-dropzone flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-7 text-center cursor-pointer transition-all ${
                   over
                     ? 'border-[#137b84] bg-[#137b84]/5'
                     : 'border-slate-300 bg-slate-50/70 hover:bg-[#137b84]/5 hover:border-[#137b84]'
@@ -338,12 +363,8 @@ export function ParticipantsEditor({
                 <div className="grid size-12 place-items-center rounded-full bg-[#137b84]/10 text-[#137b84] mb-3">
                   <Upload className="size-6" />
                 </div>
-                <span className="text-sm font-bold text-slate-800">
-                  Bấm để chọn file Excel (.xlsx, .csv) hoặc kéo thả vào đây
-                </span>
-                <span className="mt-1 text-xs text-slate-500">
-                  Hỗ trợ file .xlsx, .csv chuẩn UTF-8 xuất từ Microsoft Excel hoặc Google Sheets
-                </span>
+                <span className="text-sm font-bold text-slate-800">{translateUi("Kéo thả danh sách hoặc chọn file")}</span>
+                <span className="mt-1 text-xs text-slate-500">{translateUi("Excel (.xlsx) hoặc CSV · tối đa ")}{limit}{translateUi(" người")}</span>
                 <input
                   ref={fileRef}
                   type="file"
@@ -372,9 +393,7 @@ export function ParticipantsEditor({
                       setIsPasting(false);
                     }}
                     className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 cursor-pointer"
-                  >
-                    Hủy
-                  </button>
+                  >{translateUi("Hủy")}</button>
                   <button
                     type="button"
                     onClick={handleParsePastedText}
@@ -405,8 +424,7 @@ export function ParticipantsEditor({
         >
           <div className="grid gap-3.5 sm:grid-cols-2">
             <div className="space-y-1">
-              <label htmlFor={`${listId}-name`} className="text-xs font-semibold text-slate-700">
-                Họ và tên <span className="text-red-500">*</span>
+              <label htmlFor={`${listId}-name`} className="text-xs font-semibold text-slate-700">{translateUi("Họ và tên ")}<span className="text-red-500">*</span>
               </label>
               <input
                 id={`${listId}-name`}
@@ -418,8 +436,7 @@ export function ParticipantsEditor({
             </div>
 
             <div className="space-y-1">
-              <label htmlFor={`${listId}-email`} className="text-xs font-semibold text-slate-700">
-                Email nhân viên <span className="text-red-500">*</span>
+              <label htmlFor={`${listId}-email`} className="text-xs font-semibold text-slate-700">{translateUi("Email nhân viên ")}<span className="text-red-500">*</span>
               </label>
               <input
                 id={`${listId}-email`}
@@ -432,9 +449,7 @@ export function ParticipantsEditor({
             </div>
 
             <div className="space-y-1">
-              <label htmlFor={`${listId}-dept`} className="text-xs font-semibold text-slate-700">
-                Phòng ban
-              </label>
+              <label htmlFor={`${listId}-dept`} className="text-xs font-semibold text-slate-700">{translateUi("Phòng ban")}</label>
               <input
                 id={`${listId}-dept`}
                 list={`${listId}-d`}
@@ -446,13 +461,11 @@ export function ParticipantsEditor({
             </div>
 
             <div className="space-y-1">
-              <label htmlFor={`${listId}-pos`} className="text-xs font-semibold text-slate-700">
-                Vị trí công việc
-              </label>
+              <label htmlFor={`${listId}-pos`} className="text-xs font-semibold text-slate-700">{translateUi("Vị trí công việc")}</label>
               <input
                 id={`${listId}-pos`}
                 list={`${listId}-p`}
-                placeholder="VD: Chuyên viên kinh doanh, Trưởng nhóm..."
+                placeholder={translateUi("VD: Chuyên viên kinh doanh, Trưởng nhóm...")}
                 value={manualDraft.position}
                 onChange={(e) => setManualDraft((c) => ({ ...c, position: e.target.value }))}
                 className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-[#137b84] focus:ring-2 focus:ring-[#137b84]/20"
@@ -472,9 +485,7 @@ export function ParticipantsEditor({
               type="submit"
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#137b84] hover:bg-[#0e5f66] px-4 py-2 text-xs font-bold text-white shadow-xs cursor-pointer"
             >
-              <Plus className="size-4" />
-              Thêm vào danh sách đánh giá
-            </button>
+              <Plus className="size-4" />{translateUi("Thêm vào danh sách đánh giá")}</button>
           </div>
         </form>
       )}
@@ -484,68 +495,50 @@ export function ParticipantsEditor({
         {/* Table Header with Stats and Batch Tools */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl bg-slate-50 border border-slate-200 p-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-900">
-              Danh sách ({filledRows.length} người)
+            <span className="text-xs font-bold text-slate-900">{translateUi("Danh sách (")}{filledRows.length} người)
             </span>
             <span className="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-[11px] font-bold">
-              {validCount} hợp lệ
-            </span>
+              {validCount}{translateUi(" hợp lệ")}</span>
             {invalidCount > 0 && (
               <span className="rounded-full bg-amber-100 text-amber-800 px-2.5 py-0.5 text-[11px] font-bold">
-                {invalidCount} cần bổ sung
-              </span>
+                {invalidCount}{translateUi(" cần bổ sung")}</span>
             )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* Batch assign department */}
-            <div className="flex items-center gap-1.5">
-              <select
-                value={batchDept}
-                onChange={(e) => setBatchDept(e.target.value)}
-                className="tp-participant-select outline-none cursor-pointer"
-              >
-                <option value="">Gán PB cho dòng trống...</option>
-                {allDepartments.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={handleBatchAssignDept}
-                disabled={!batchDept}
-                className="rounded-lg bg-slate-200 hover:bg-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-700 disabled:opacity-40 cursor-pointer h-[30px]"
-              >
-                Áp dụng
-              </button>
-            </div>
+            {missingDepartmentCount > 0 && allDepartments.length > 0 && (
+              <div className="tp-batch-dept" ref={batchMenuRef}>
+                <button type="button" className="tp-batch-dept__trigger" aria-expanded={batchMenuOpen} onClick={() => setBatchMenuOpen((open) => !open)}>{translateUi("Gán phòng ban cho ")}{missingDepartmentCount}{translateUi(" người ")}<span aria-hidden="true">⌄</span>
+                </button>
+                {batchMenuOpen && <div className="tp-batch-dept__menu">
+                  <span>{translateUi("Chọn phòng ban để gán")}</span>
+                  {allDepartments.map((department) => <button key={department} type="button" onClick={() => handleBatchAssignDept(department)}>{department}</button>)}
+                </div>}
+              </div>
+            )}
 
             {filledRows.length > 0 && (
               <button
                 type="button"
                 onClick={clearAll}
                 className="rounded-lg border border-slate-200 bg-white hover:bg-red-50 hover:text-red-600 px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors cursor-pointer h-[30px]"
-              >
-                Xóa tất cả
-              </button>
+              >{translateUi("Xóa tất cả")}</button>
             )}
           </div>
         </div>
 
         {/* Table of Rows */}
-        <div className="max-h-80 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
+        <div ref={tableScrollRef} className="max-h-80 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
           <table className="w-full text-left border-collapse text-xs">
             <thead className="bg-slate-50 sticky top-0 z-10 text-slate-700 font-bold border-b border-slate-200">
               <tr>
                 <th className="py-2.5 px-3 w-8">#</th>
-                <th className="py-2.5 px-3">Họ và tên <span className="text-red-500">*</span></th>
-                <th className="py-2.5 px-3">Email <span className="text-red-500">*</span></th>
-                <th className="py-2.5 px-3">Phòng ban</th>
-                <th className="py-2.5 px-3">Vị trí công việc</th>
-                <th className="py-2.5 px-3 text-center w-24">Trạng thái</th>
-                <th className="py-2.5 px-3 text-center w-10">Xóa</th>
+                <th className="py-2.5 px-3">{translateUi("Họ và tên ")}<span className="text-red-500">*</span></th>
+                <th className="py-2.5 px-3">{translateUi("Email ")}<span className="text-red-500">*</span></th>
+                <th className="py-2.5 px-3">{translateUi("Phòng ban")}</th>
+                <th className="py-2.5 px-3">{translateUi("Vị trí công việc")}</th>
+                <th className="py-2.5 px-3 text-center w-24">{translateUi("Trạng thái")}</th>
+                <th className="py-2.5 px-3 text-center w-10">{translateUi("Xóa")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -567,7 +560,8 @@ export function ParticipantsEditor({
                     <td className="py-2 px-3 text-slate-400 font-mono text-[11px]">{idx + 1}</td>
                     <td className="py-1.5 px-2.5">
                       <input
-                        placeholder="Họ và tên..."
+                        aria-label={translateUi(`Họ và tên dòng ${idx + 1}`)}
+                        placeholder={translateUi("Họ và tên...")}
                         value={row.fullName}
                         onChange={(e) => updateRow(idx, { fullName: e.target.value })}
                         className="tp-participant-input font-medium"
@@ -585,7 +579,7 @@ export function ParticipantsEditor({
                     <td className="py-1.5 px-2.5">
                       <input
                         list={`${listId}-d`}
-                        placeholder="Phòng ban..."
+                        placeholder={translateUi("Phòng ban...")}
                         value={row.department}
                         onChange={(e) => updateRow(idx, { department: e.target.value })}
                         className="tp-participant-input"
@@ -602,22 +596,21 @@ export function ParticipantsEditor({
                     </td>
                     <td className="py-2 px-3 text-center">
                       {empty ? (
-                        <span className="text-[10px] text-slate-400">Dòng trống</span>
+                        <span className="text-[10px] text-slate-400">{translateUi("Dòng trống")}</span>
                       ) : err ? (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full whitespace-nowrap">
                           {err}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full whitespace-nowrap">
-                          <CheckCircle2 className="size-3" /> Hợp lệ
-                        </span>
+                          <CheckCircle2 className="size-3" />{translateUi(" Hợp lệ")}</span>
                       )}
                     </td>
                     <td className="py-2 px-3 text-center">
                       <button
                         type="button"
                         onClick={() => removeRow(idx)}
-                        aria-label={`Xóa dòng ${idx + 1}`}
+                        aria-label={translateUi(`Xóa dòng ${idx + 1}`)}
                         className="rounded p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                       >
                         <Trash2 className="size-3.5" />
@@ -635,15 +628,12 @@ export function ParticipantsEditor({
           <button
             type="button"
             disabled={rows.length >= limit}
-            onClick={() => onChange([...rows, { ...EMPTY }])}
+            onClick={() => { pendingNewRow.current = true; onChange([...rows, { ...EMPTY }]); }}
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition-all cursor-pointer"
           >
-            <Plus className="size-3.5" /> Thêm dòng mới
-          </button>
+            <Plus className="size-3.5" />{translateUi(" Thêm dòng mới")}</button>
 
-          <span className="text-xs text-slate-500">
-            Tổng cộng: <strong>{filledRows.length}</strong> / tối đa {limit} người
-          </span>
+          <span className="text-xs text-slate-500">{translateUi("Tổng cộng: ")}<strong>{filledRows.length}</strong>{translateUi(" / tối đa ")}{limit}{translateUi(" người")}</span>
         </div>
       </div>
 

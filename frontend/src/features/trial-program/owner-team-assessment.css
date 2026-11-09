@@ -1,0 +1,114 @@
+/* Owner assessment workspace. Shared employee/mentor screens keep their own styling. */
+.owner-team-assessment { --trial-ink: #193d50; --trial-accent: #138e8a; }
+.owner-team-assessment .trial-page-heading { padding: 8px 0 6px; }
+.owner-team-assessment .trial-owner-action { padding: 20px 24px; background: radial-gradient(ellipse at 100% 0,#d7efeb80,transparent 65%),linear-gradient(110deg,#f4fbfa,#fff); }
+.trial-owner-action__bar { display:flex; align-items:center; gap:16px; }
+.trial-owner-action__icon { display:grid; place-items:center; flex-shrink:0; width:46px; height:46px; border-radius:14px; color:#148b87; background:linear-gradient(135deg,#fff,#dbf0ec); box-shadow:inset 0 0 0 1px #baded8,0 6px 14px -10px #147e7e80; }
+.owner-team-assessment .trial-owner-action h2 { margin:0; font-size:17px; }
+.trial-owner-action p { margin:5px 0 0; font-size:12px; color:#668490; }
+.trial-owner-action button:not([role=combobox]) { display:inline-flex; align-items:center; justify-content:center; gap:10px; min-height:42px; padding:10px 16px; border-radius:12px; color:#fff; background:linear-gradient(120deg,#20546a,#138f87); box-shadow:0 6px 16px -10px #147e7e99; font-size:12px; font-weight:700; }
+.trial-owner-action__bar > button { margin-left:auto; flex-shrink:0; }
+.trial-owner-action__placement { display:flex; gap:12px; flex-wrap:wrap; padding-top:20px; }
+@media(max-width:640px) { .trial-owner-action__bar { flex-wrap:wrap; gap:12px; } .trial-owner-action__bar > div { flex:1; } .trial-owner-action__bar > button { width:100%; } .trial-owner-action__placement > * { flex:1 1 100%; } }
+.owner-team-assessment .trial-page-heading h1 { color: var(--trial-ink); font-size: clamp(26px, 2.5vw, 36px); font-weight: 750; line-height: 1.2; letter-spacing: -.035em; }
+.owner-team-assessment section { border-color: #d5e6eb; border-radius: 24px; background: linear-gradient(130deg, #ffffffed, #f9fcfdeb); box-shadow: inset 0 1px 0 #fff, 0 12px 36px -24px #224c6850; }
+.owner-team-assessment h2, .owner-team-assessment h3 { color: var(--trial-ink); letter-spacing: -.025em; }
+.owner-team-assessment h2 { font-size: clamp(18px, 1.5vw, 23px); }
+.owner-team-assessment button, .owner-team-assessment a { -webkit-tap-highlight-color: transparent; transition: color .2s, background .2s, border-color .2s, box-shadow .25s, transform .25s; }
+.owner-team-assessment button:not(:disabled):active { transform: translateY(1px); }
+.owner-team-assessment :is(button,a,input,textarea):focus-visible { outline: 2px solid #159c96; outline-offset: 3px; }
+.owner-team-assessment button:disabled { cursor: not-allowed; }
+.owner-team-assessment .animate-pulse { animation: none; }
+.owner-team-assessment .trial-journey ol { padding: 8px; border-color: #d4e6eb; background: linear-gradient(115deg,#fff, #f2f8fa); box-shadow: inset 0 1px 0 #fff, 0 8px 20px -16px #224c6850; }
+.owner-team-assessment .trial-journey li { min-height: 54px; border-radius: 14px; padding: 10px 16px; font-size: 13px; }
+.owner-team-assessment .trial-journey li[data-state=current] { color: #fff; border-color: #167f86; background: linear-gradient(120deg,#214c63,#158e89); box-shadow: 0 5px 14px -5px #137b8455, inset 0 1px 0 #ffffff45; }
+.owner-team-assessment .trial-journey li[data-state=current] > span:first-child { color: #fff; background: #ffffff26; box-shadow: inset 0 0 0 1px #ffffff50; }
+.owner-team-assessment .trial-journey li[data-state=done] { border-color: transparent; background: #eaf6f2; color: #387e73; }
+.owner-team-assessment .trial-journey li > span:first-child { width: 26px; height: 26px; font-size: 11px; }
+.owner-team-assessment .trial-participation-stats > div { border-radius: 21px; padding: 22px; background: radial-gradient(ellipse at 100% 0,#d6efec 0,transparent 65%),#fff; border-color: #bfdfd9; box-shadow: inset 0 1px 0 #fff,0 10px 24px -20px #23546565; }
+.owner-team-assessment .trial-participation-stats > div:nth-child(2) { background: radial-gradient(ellipse at 100% 0,#fff0d9,transparent 65%),#fff; border-color: #ecdbbf; }
+.owner-team-assessment .trial-participation-stats > div:nth-child(3) { background: radial-gradient(ellipse at 100% 0,#e3e9ff,transparent 65%),#fff; border-color: #d4daf1; }
+.owner-team-assessment .trial-participation-stats > div:hover { transform: translateY(-2px); box-shadow: 0 12px 25px -18px #23546570; }
+.owner-team-assessment .trial-participation-stats > div > div:last-child { color: #607e8c; }
+.trial-disclosure { display: grid; grid-template-rows: 0fr; opacity: 0; visibility: hidden; transition: grid-template-rows .42s cubic-bezier(.22,1,.36,1),opacity .24s,visibility .42s; }
+.trial-disclosure[data-open=true] { grid-template-rows: 1fr; opacity: 1; visibility: visible; }
+.trial-disclosure__clip { min-height: 0; overflow: hidden; }
+.owner-team-assessment .trial-participants-editor > div:first-child { align-items: center; }
+.owner-team-assessment .trial-participants-editor > div:first-child > div:first-child { flex-wrap: wrap; gap: 8px; }
+.owner-team-assessment .trial-participants-editor button[aria-pressed] { min-height: 42px; border: 1px solid #dce9ed; background: #f5f8fa; color: #557082; }
+.owner-team-assessment .trial-participants-editor button[aria-pressed=true] { color: #fff; border-color: #157f83; background: linear-gradient(120deg,#21546b,#15978e); box-shadow: 0 5px 12px -6px #148a8880,inset 0 1px 0 #ffffff40; }
+.owner-team-assessment .trial-import-dropzone { position: relative; min-height: 190px; border: 1px dashed #a4cdce; background: radial-gradient(ellipse at 50% 120%,#d4eeed90,transparent 65%),linear-gradient(120deg,#f7fcfc,#f5f8fd); box-shadow: inset 0 1px 0 white; }
+.owner-team-assessment .trial-import-dropzone:hover, .owner-team-assessment .trial-import-dropzone:focus-within { border-color: #239d99; background-color: #eef9f8; box-shadow: 0 8px 25px -20px #148a88,inset 0 0 0 3px #148a8809; }
+.owner-team-assessment .trial-import-dropzone > div { border-radius: 17px; background: linear-gradient(145deg,#fff,#d5f0eb); box-shadow: 0 6px 14px -7px #1c7c7c50, inset 0 0 0 1px #b7ded8; transition: transform .3s; }
+.owner-team-assessment .trial-import-dropzone:hover > div { transform: translateY(-3px) rotate(-4deg); }
+.owner-team-assessment .trial-import-dropzone > span:first-of-type { font-size: 16px; color: #215367; }
+.owner-team-assessment input:not([type=file]), .owner-team-assessment textarea { color: #24485e; border: 1px solid #d3e3eb; border-radius: 11px; min-height: 40px; background-color: #fbfdfe; transition: border-color .2s,box-shadow .2s,background .2s; }
+.owner-team-assessment input:not([type=file]):focus, .owner-team-assessment textarea:focus { background: #fff; border-color: #4ea7a4; box-shadow: 0 0 0 3px #159c9610; }
+.owner-team-assessment .tp-participant-input { width: 100%; min-width: 135px; padding: 8px 10px; font-size: 13px; }
+.owner-team-assessment table { font-size: 13px; }
+.owner-team-assessment thead { position: static; background: #eff5f8; color: #5a788b; }
+.owner-team-assessment thead th { padding-top: 14px; padding-bottom: 14px; font-size: 11px; font-weight: 700; letter-spacing: .035em; white-space: nowrap; }
+.owner-team-assessment tbody tr { transition: background .2s; }
+.owner-team-assessment tbody tr:hover { background: #f1f8f9; }
+.owner-team-assessment table td { vertical-align: middle; }
+.owner-team-assessment table .font-mono { font-family: inherit; }
+.owner-team-assessment .tp-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 9px; font-size: 11px; font-weight: 650; white-space: nowrap; background: #eef3f7; color: #627b8a; }
+.owner-team-assessment .tp-badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.owner-team-assessment .tp-badge.ok { color: #168875; background: #e6f6ef; }
+.owner-team-assessment .tp-badge.info { color: #377ea9; background: #eaf4fc; }
+.owner-team-assessment .tp-badge.warn { color: #a3752d; background: #fff4df; }
+.owner-team-assessment .tp-badge.bad { color: #b55a50; background: #fff0ed; }
+.owner-team-assessment .trial-competency-report > section:first-child { padding: clamp(20px,2vw,30px); background: radial-gradient(ellipse at 85% 0,#e1efed80,transparent 50%),#fff; }
+.owner-team-assessment .trial-competency-report > section:first-child > .grid > div:first-child > div { box-shadow: none; border-radius: 17px; background: #ffffffa8; }
+.owner-team-assessment .trial-competency-report > section:first-child > .grid > div:first-child > div:nth-child(3) { background: linear-gradient(120deg,#fffaf2,#fff); }
+.owner-team-assessment .trial-competency-report > section:first-child > .grid > div:first-child > div:nth-child(4) { background: linear-gradient(120deg,#f8f4fc,#fff); }
+.owner-team-assessment .trial-competency-report svg { max-width: 100%; }
+.owner-team-assessment .tp-participant-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; color: #638092; font-size: 12px; }
+.owner-team-assessment .tp-participant-pagination > div { display:flex; align-items:center; gap:12px; }
+.owner-team-assessment .tp-participant-pagination button { min-height: 36px; padding: 6px 13px; border-radius: 11px; background: #fff; border: 1px solid #d7e7ed; color: #237c82; }
+.owner-team-assessment .tp-participant-pagination button:hover:not(:disabled) { background: #ebf7f5; border-color: #87c5bf; }
+.owner-team-assessment .tp-participant-pagination button:disabled { opacity: .4; }
+.fixed:has(> .trial-result-dialog) { z-index: 160; padding: 24px; }
+.fixed:has(> .trial-result-dialog) > [aria-hidden=true] { background: radial-gradient(ellipse at 30% 15%,#2e88863b,transparent 60%),#142c4690; backdrop-filter: blur(12px) saturate(.85); animation: trial-backdrop-in .25s both; }
+.trial-result-dialog { border: 1px solid #ffffffbc; border-radius: 27px; background: linear-gradient(140deg,#fff,#f9fcfd); box-shadow: 0 30px 100px #102e4b4d,inset 0 1px 0 #fff; animation: trial-dialog-in .35s cubic-bezier(.22,1,.36,1) both; }
+.trial-result-dialog > header { padding: 23px 26px; background: radial-gradient(ellipse at 0 0,#d5f1eb,transparent 75%),#f7fbfd; border-bottom-color: #dcebee; border-radius: 27px 27px 0 0; }
+.trial-result-dialog > header h2 { color: #1c4356; font-size: 20px; letter-spacing: -.025em; }
+.trial-result-dialog > header button { border: 1px solid #d8e7ed; background: #ffffffb0; color: #628293; border-radius: 11px; }
+.trial-result-dialog > header button:hover { color: #148c86; background: #e8f6f2; }
+.trial-result-dialog > footer { background: #f5fafb; }
+.trial-result-dialog.is-closing { animation: trial-dialog-out .22s ease both; }
+.fixed:has(> .trial-result-dialog.is-closing) > [aria-hidden=true] { animation: trial-backdrop-out .22s ease both; }
+@keyframes trial-dialog-in { from { opacity:0; transform:translateY(18px) scale(.975); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes trial-dialog-out { to { opacity:0; transform:translateY(10px) scale(.985); } }
+@keyframes trial-backdrop-in { from { opacity:0; } to { opacity:1; } }
+@keyframes trial-backdrop-out { to { opacity:0; } }
+@media (max-width: 640px) {
+  .fixed:has(> .trial-result-dialog) { padding: 12px; }
+  .trial-result-dialog > header { padding: 18px; }
+  .trial-result-dialog > header h2 { font-size: 17px; }
+  .trial-result-dialog > .overflow-y-auto { padding: 18px; }
+  .owner-team-assessment .trial-journey ol { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .owner-team-assessment .trial-journey li { padding: 10px; justify-content: start; font-size: 11px; }
+  .owner-team-assessment .trial-journey li > span:last-child { display: inline; white-space: normal; }
+  .owner-team-assessment .trial-participation-stats { grid-template-columns: 1fr; gap: 10px; }
+  .owner-team-assessment .trial-participation-stats > div { padding: 16px 18px; }
+  .owner-team-assessment .trial-participation-stats > div > div:last-child { display: none; }
+  .owner-team-assessment section { border-radius: 19px; }
+  .owner-team-assessment .trial-participants-editor > div:first-child { align-items: stretch; }
+  .owner-team-assessment .trial-import-dropzone { padding: 22px 14px; }
+  .owner-team-assessment .trial-participants-editor .max-h-80 { overflow-x: auto; }
+  .owner-team-assessment .trial-participants-editor table { min-width: 820px; }
+  .owner-team-assessment .tp-participant-pagination { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .owner-team-assessment *, .trial-disclosure, .trial-result-dialog, .fixed:has(> .trial-result-dialog) > [aria-hidden=true] { animation: none !important; transition-duration: .01ms !important; }
+}
+.trial-live-report { display:flex; align-items:center; gap:13px; padding:18px 22px; border:1px solid #bfdfd9; border-radius:18px; background:linear-gradient(115deg,#eaf9f4,#f7fbff); color:#245969; }
+.trial-live-report p { margin:4px 0 0; font-size:13px; color:#60838c; }
+.trial-live-report__dot { width:9px; height:9px; background:#19a78c; border-radius:50%; box-shadow:0 0 0 5px #19a78c12; }
+.owner-team-assessment .trial-owner-action { padding:15px 20px; border:1px solid #d7e7e9; box-shadow:none; }
+.owner-team-assessment .trial-owner-action h2 { font-size:14px; }
+.owner-team-assessment .trial-owner-action__bar > button { background:#ffffffb3; color:#267b80; box-shadow:inset 0 0 0 1px #c8e0df; min-height:38px; }
+.owner-team-assessment .trial-owner-action__bar > button:hover { background:#e6f6f2; }
+.owner-team-assessment .trial-radar-panel__heading > span:first-child { font-size:14px; color:#244b5c; }
+.owner-team-assessment .trial-radar-panel__heading > span:last-child { font-size:11px; color:#6e899a; }
