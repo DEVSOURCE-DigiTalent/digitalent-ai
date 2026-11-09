@@ -376,6 +376,7 @@ export function PositionRequirementsPage() {
                 <span className="text-xs text-slate-400">Phiên bản:</span>
                 <select
                   value={reqData?.versionNo}
+                  aria-label="Phiên bản"
                   onChange={(e) => setSelectedVersionNo(Number(e.target.value))}
                   disabled={isSaving}
                   className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs focus:outline-hidden"
@@ -611,17 +612,17 @@ export function PositionRequirementsPage() {
 
       {/* ── MODAL XÁC NHẬN KÍCH HOẠT PHIÊN BẢN ── */}
       {confirmOpen && (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+        <div role="dialog" aria-modal="true" aria-labelledby="activate-title" aria-describedby="activate-subtitle" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 shrink-0">
                 <CheckCircle2 className="size-5" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-slate-800">
+                <h3 id="activate-title" className="text-base font-semibold text-slate-800">
                   Kích hoạt chuẩn năng lực
                 </h3>
-                <span className="text-xs text-slate-500">
+                <span id="activate-subtitle" className="text-xs text-slate-500">
                   {selectedPosition?.name} · Phiên bản v{reqData?.versionNo ?? 1}
                 </span>
               </div>

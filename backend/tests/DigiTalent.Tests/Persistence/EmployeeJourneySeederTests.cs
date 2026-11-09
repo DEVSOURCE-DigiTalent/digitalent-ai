@@ -36,9 +36,9 @@ public class EmployeeJourneySeederTests
             .ToListAsync();
         enrollments.Should().BeEquivalentTo(new[]
         {
-            new { Code = "A2-F", Status = Statuses.Enrollment.Completed },
-            new { Code = "A4-I", Status = Statuses.Enrollment.InProgress },
-            new { Code = "A1-I", Status = Statuses.Enrollment.NotStarted },
+            new { Code = "M2-F", Status = Statuses.Enrollment.Completed },
+            new { Code = "M4-I", Status = Statuses.Enrollment.InProgress },
+            new { Code = "M1-I", Status = Statuses.Enrollment.NotStarted },
         });
 
         (await context.Certificates.CountAsync(c => c.EmployeeId == employee.Id)).Should().Be(1);

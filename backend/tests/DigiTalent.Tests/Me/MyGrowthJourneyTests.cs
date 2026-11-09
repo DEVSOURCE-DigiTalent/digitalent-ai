@@ -50,7 +50,7 @@ public class MyGrowthJourneyTests
 
         path.Steps.Select(s => s.Order).Should().Equal(Enumerable.Range(1, path.Steps.Count));
         path.Steps.Where(s => s.Source != "RECOMMENDED").Select(s => s.CourseCode)
-            .Should().BeEquivalentTo(new[] { "A2-F", "A4-I", "A1-I" });
+            .Should().BeEquivalentTo(new[] { "M2-F", "M4-I", "M1-I" });
         path.Steps.Where(s => s.Source == "RECOMMENDED").Should().NotBeEmpty()
             .And.OnlyContain(s => s.Status == "RECOMMENDED" && s.ProgressPercent == 0 && s.Rationale.Length > 0);
         var orderByCode = path.Steps.ToDictionary(s => s.CourseCode, s => s.Order);

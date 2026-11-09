@@ -65,9 +65,9 @@ describe('Authentication', () => {
       </QueryClientProvider>
     );
 
-    const emailInput = screen.getByLabelText('Email');
+    const emailInput = screen.getByLabelText('Email công việc');
     const passwordInput = screen.getByLabelText('Mật khẩu');
-    const submitBtn = screen.getByRole('button', { name: 'Đăng nhập' });
+    const submitBtn = screen.getByRole('button', { name: 'Đăng nhập vào hệ thống' });
 
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
@@ -119,9 +119,9 @@ describe('Authentication', () => {
       </QueryClientProvider>
     );
 
-    const emailInput = screen.getByLabelText('Email');
+    const emailInput = screen.getByLabelText('Email công việc');
     const passwordInput = screen.getByLabelText('Mật khẩu');
-    const submitBtn = screen.getByRole('button', { name: 'Đăng nhập' });
+    const submitBtn = screen.getByRole('button', { name: 'Đăng nhập vào hệ thống' });
 
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
@@ -155,9 +155,9 @@ describe('Authentication', () => {
       </QueryClientProvider>
     );
 
-    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'employee@digitalent.ai' } });
+    fireEvent.change(screen.getByLabelText('Email công việc'), { target: { value: 'employee@digitalent.ai' } });
     fireEvent.change(screen.getByLabelText('Mật khẩu'), { target: { value: 'Admin@1234' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập vào hệ thống' }));
 
     expect(await screen.findByText('Employee Pulse')).toBeInTheDocument();
     expect(screen.queryByText('Manager workspace')).not.toBeInTheDocument();
@@ -183,9 +183,9 @@ describe('Authentication', () => {
       </QueryClientProvider>
     );
 
-    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'manager@company.test' } });
+    fireEvent.change(screen.getByLabelText('Email công việc'), { target: { value: 'manager@company.test' } });
     fireEvent.change(screen.getByLabelText('Mật khẩu'), { target: { value: 'valid-password' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập vào hệ thống' }));
 
     expect(await screen.findByText('Manager team workspace')).toBeInTheDocument();
     expect(screen.queryByText('Employee learning space')).not.toBeInTheDocument();
@@ -210,9 +210,9 @@ describe('Authentication', () => {
       </QueryClientProvider>
     );
 
-    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'manager@company.test' } });
+    fireEvent.change(screen.getByLabelText('Email công việc'), { target: { value: 'manager@company.test' } });
     fireEvent.change(screen.getByLabelText('Mật khẩu'), { target: { value: 'valid-password' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập vào hệ thống' }));
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
     expect(useCurrentUser.getState().user).toBeNull();

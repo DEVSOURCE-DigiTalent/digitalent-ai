@@ -1,0 +1,321 @@
+{
+  "meta": {
+    "branch": "feature/DT-role-based-tests",
+    "commit": "c51a6d6",
+    "api": "http://localhost:5000",
+    "fe": "http://localhost:5173",
+    "db": "PostgreSQL 16 (DB mới: migration + seed Development)",
+    "date": "09/11/2026"
+  },
+  "role": {
+    "label": "MENTOR",
+    "email": "mentor@digitalent.ai",
+    "title": "MENTOR CHẤM BÀI DÙNG THỬ (MENTOR)"
+  },
+  "cases": [
+    {
+      "id": "TC01",
+      "feature": "Xác thực",
+      "title": "Đăng nhập tài khoản demo mentor@digitalent.ai để lấy access token",
+      "role": "Ẩn danh",
+      "endpoint": "POST /api/v1/auth/login",
+      "precondition": "Tài khoản demo mentor@digitalent.ai (seed Development), mật khẩu Admin@1234",
+      "expected": "200, success = true, trả về accessToken và refreshToken",
+      "status": "PASS",
+      "http": 200,
+      "ms": 333,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "success = true",
+          "ok": true
+        },
+        {
+          "label": "Có accessToken và refreshToken",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; success = true: đạt; Có accessToken và refreshToken: đạt",
+      "at": "09/11/2026 07:42:58"
+    },
+    {
+      "id": "TC02",
+      "feature": "Phiên đăng nhập",
+      "title": "MENTOR đọc thông tin phiên: vai trò, workspace và tổ chức",
+      "role": "MENTOR",
+      "endpoint": "GET /api/v1/auth/me",
+      "precondition": "Đã đăng nhập (ca trước)",
+      "expected": "200; roles = [MENTOR]; workspace = platform; organizationId = null (không thuộc tổ chức)",
+      "status": "PASS",
+      "http": 200,
+      "ms": 13,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "roles = [MENTOR]",
+          "ok": true
+        },
+        {
+          "label": "workspace = platform",
+          "ok": true
+        },
+        {
+          "label": "organizationId = null (không thuộc tổ chức)",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; roles = [MENTOR]: đạt; workspace = platform: đạt; organizationId = null (không thuộc tổ chức): đạt",
+      "at": "09/11/2026 07:42:58"
+    },
+    {
+      "id": "TC03",
+      "feature": "MT-01 Bài dùng thử",
+      "title": "Xem các doanh nghiệp dùng thử được phân công chấm",
+      "role": "MENTOR",
+      "endpoint": "GET /api/v1/mentor/trials",
+      "precondition": "DB mới: chưa có doanh nghiệp nào phân công cho mentor@",
+      "expected": "200; danh sách items (rỗng khi chưa được phân công)",
+      "status": "PASS",
+      "http": 200,
+      "ms": 32,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "Có trường items",
+          "ok": true
+        },
+        {
+          "label": "Không thấy doanh nghiệp chưa phân công",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; Có trường items: đạt; Không thấy doanh nghiệp chưa phân công: đạt",
+      "at": "09/11/2026 07:42:58"
+    },
+    {
+      "id": "TC04",
+      "feature": "MT-03 Chấm bài cuối khóa",
+      "title": "Xem bài cuối khóa cần chấm của doanh nghiệp dùng thử",
+      "role": "MENTOR",
+      "endpoint": "GET /api/v1/pulse/final-reviews",
+      "precondition": "Mentor chỉ thấy doanh nghiệp dùng thử được phân công (PulseReviewScope)",
+      "expected": "200; có 3 tiêu chí chấm; không có bài của tổ chức khác",
+      "status": "PASS",
+      "http": 200,
+      "ms": 49,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "3 tiêu chí chấm",
+          "ok": true
+        },
+        {
+          "label": "Không có bài ngoài phạm vi",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; 3 tiêu chí chấm: đạt; Không có bài ngoài phạm vi: đạt",
+      "at": "09/11/2026 07:42:58"
+    },
+    {
+      "id": "TC05",
+      "feature": "SHR Hồ sơ",
+      "title": "Mentor xem hồ sơ tài khoản của mình",
+      "role": "MENTOR",
+      "endpoint": "GET /api/v1/account/profile",
+      "precondition": "Đã đăng nhập",
+      "expected": "200; email = mentor@digitalent.ai",
+      "status": "PASS",
+      "http": 200,
+      "ms": 66,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "email = mentor@digitalent.ai",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; email = mentor@digitalent.ai: đạt",
+      "at": "09/11/2026 07:42:59"
+    },
+    {
+      "id": "TC06",
+      "feature": "Thông báo",
+      "title": "Mentor đọc thông báo của mình",
+      "role": "MENTOR",
+      "endpoint": "GET /api/v1/notifications",
+      "precondition": "Đã đăng nhập",
+      "expected": "200; success = true",
+      "status": "PASS",
+      "http": 200,
+      "ms": 22,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "success = true",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; success = true: đạt",
+      "at": "09/11/2026 07:42:59"
+    },
+    {
+      "id": "TC07",
+      "feature": "Phân quyền",
+      "title": "MENTOR không được mở console quản trị nền tảng",
+      "role": "MENTOR",
+      "endpoint": "GET /api/v1/platform/overview",
+      "precondition": "Vai trò không có quyền platform.organization.read",
+      "expected": "403 Forbidden, success = false",
+      "status": "PASS",
+      "http": 403,
+      "ms": 34,
+      "checks": [
+        {
+          "label": "HTTP status = 403",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 403; success = false: đạt",
+      "at": "09/11/2026 07:42:59"
+    },
+    {
+      "id": "TC08",
+      "feature": "Phân quyền",
+      "title": "MENTOR không được tự phân công mentor cho doanh nghiệp",
+      "role": "MENTOR",
+      "endpoint": "PUT /api/v1/platform/trials/00000000-0000-0000-0000-000000000001/mentor",
+      "precondition": "Vai trò không có quyền platform.trial.manage",
+      "expected": "403 Forbidden, success = false",
+      "status": "PASS",
+      "http": 403,
+      "ms": 19,
+      "checks": [
+        {
+          "label": "HTTP status = 403",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 403; success = false: đạt",
+      "at": "09/11/2026 07:42:59"
+    },
+    {
+      "id": "TC09",
+      "feature": "Phân quyền",
+      "title": "MENTOR không được xem thành viên doanh nghiệp",
+      "role": "MENTOR",
+      "endpoint": "GET /api/v1/members",
+      "precondition": "Vai trò không có quyền user.read",
+      "expected": "403 Forbidden, success = false",
+      "status": "PASS",
+      "http": 403,
+      "ms": 29,
+      "checks": [
+        {
+          "label": "HTTP status = 403",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 403; success = false: đạt",
+      "at": "09/11/2026 07:42:59"
+    },
+    {
+      "id": "TC10",
+      "feature": "Phân quyền",
+      "title": "MENTOR không được nộp bài đánh giá thay nhân viên",
+      "role": "MENTOR",
+      "endpoint": "POST /api/v1/me/trial-assessment",
+      "precondition": "Vai trò không có quyền attempt.submit",
+      "expected": "403 Forbidden, success = false",
+      "status": "PASS",
+      "http": 403,
+      "ms": 34,
+      "checks": [
+        {
+          "label": "HTTP status = 403",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 403; success = false: đạt",
+      "at": "09/11/2026 07:43:00"
+    },
+    {
+      "id": "TC11",
+      "feature": "Phân quyền",
+      "title": "Gọi danh sách bài dùng thử của mentor không kèm token",
+      "role": "Ẩn danh",
+      "endpoint": "GET /api/v1/mentor/trials",
+      "precondition": "Không gửi header Authorization",
+      "expected": "401 Unauthorized",
+      "status": "PASS",
+      "http": 401,
+      "ms": 2,
+      "checks": [
+        {
+          "label": "HTTP status = 401",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 401; success = false: đạt",
+      "at": "09/11/2026 07:43:00"
+    }
+  ],
+  "auto": [
+    {
+      "id": "AUTO01",
+      "filter": "MentorAccessTests",
+      "description": "Ma trận quyền API của MENTOR",
+      "total": 22,
+      "passed": 22,
+      "failed": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "AUTO02",
+      "filter": "TrialProgramFlowTests",
+      "description": "Luồng dùng thử: mời → làm bài có giám sát → mentor chấm → báo cáo",
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "status": "PASS"
+    }
+  ]
+}

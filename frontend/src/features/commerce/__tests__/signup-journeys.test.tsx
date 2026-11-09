@@ -55,6 +55,7 @@ function fillOwnerForm(email: string, password = VALID_PASSWORD) {
   type('Họ và tên', 'Nguyễn Văn Chủ');
   type(/Email/, email);
   type('Mật khẩu', password);
+  type('Xác nhận mật khẩu', password);
   fireEvent.click(screen.getByRole('checkbox'));
 }
 
@@ -80,6 +81,16 @@ describe('enterprise purchase, contract signing and organization setup (FLOW-01 
 
     fillOwnerForm('chu@acme.vn');
     click('Tạo tài khoản và thanh toán');
+
+    // 2b. Email OTP (BusinessVerifyEmailPage); the mock auth adapter accepts 123456.
+    await heading('Nhập mã xác minh');
+    expect(screen.getByText(/chu@acme\.vn/)).toBeInTheDocument();
+    '123456'.split('').forEach((digit, index) => type(`Chữ số thứ ${index + 1}`, digit));
+    // A verified owner signs in, then resolveNextStep resumes the purchase at the contract.
+    expect(await screen.findByText(/Email đã xác minh thành công/, {}, { timeout: 10000 })).toBeInTheDocument();
+    type('Email công việc', 'chu@acme.vn');
+    type('Mật khẩu', VALID_PASSWORD);
+    click('Đăng nhập vào hệ thống');
 
     // 3. B2B E-Contract Signing step (Step 3, before checkout)
     await heading('Hợp đồng dịch vụ điện tử B2B');
@@ -143,7 +154,7 @@ describe('enterprise purchase, contract signing and organization setup (FLOW-01 
     fireEvent.click(enterButton);
 
     expect(await screen.findByTestId('enterprise-layout', {}, { timeout: 10000 })).toBeInTheDocument();
-    expect(await heading('Tổng quan tổ chức')).toBeInTheDocument();
+    expect(await heading('Tổng quan doanh nghiệp')).toBeInTheDocument();
     await waitFor(() => {
       expect(useCurrentUser.getState().user?.onboardingStatus).toBeUndefined();
     });
@@ -170,7 +181,8 @@ describe('enterprise purchase, contract signing and organization setup (FLOW-01 
     click('Tạo tài khoản và thanh toán');
 
     expect(await screen.findByText('Email không hợp lệ')).toBeInTheDocument();
-    expect(screen.getByText('Mật khẩu cần ít nhất 12 ký tự')).toBeInTheDocument();
+    // passwordSchema (features/auth/validation.ts) asks for 8–128 characters since 56349cf.
+    expect(screen.getByText('Mật khẩu cần ít nhất 8 ký tự')).toBeInTheDocument();
     expect(screen.getByText('Bạn cần đồng ý với điều khoản để tiếp tục')).toBeInTheDocument();
     expect(useCurrentUser.getState().user).toBeNull();
   });
@@ -214,7 +226,7 @@ describe('payment outcomes & states (ENT-ONB-03, T9, T10, T11)', () => {
     renderApp('/login');
     type(/Email/, 'chu@acme.vn');
     type('Mật khẩu', VALID_PASSWORD);
-    click('Đăng nhập');
+    click('Đăng nhập vào hệ thống');
     await heading('Quét mã để thanh toán');
   }
 
@@ -265,52 +277,22 @@ describe('payment outcomes & states (ENT-ONB-03, T9, T10, T11)', () => {
     renderApp('/login');
     type(/Email/, 'chu2@acme.vn');
     type('Mật khẩu', VALID_PASSWORD);
-    click('Đăng nhập');
+    click('Đăng nhập vào hệ thống');
 
     await heading('Hợp đồng dịch vụ điện tử B2B');
   });
 });
 
-describe('individual sign-up and onboarding (FLOW-05, T19)', () => {
-  it('T1: sends a visitor without a plan to the pricing page first', async () => {
-    renderApp('/individual/register');
-    await heading('Chọn gói phù hợp với mục tiêu của bạn.');
-  });
-
-  it('T19: sends a paid individual plan through checkout, then to personal onboarding and dashboard', async () => {
-    renderApp('/individual/register?plan=IND_PLUS&seats=1&cycle=month');
-    await heading('Tạo tài khoản cá nhân');
-
-    type('Họ và tên', 'Bùi Cá Nhân');
-    type(/Email/, 'ca@nhan.vn');
-    type('Mật khẩu', VALID_PASSWORD);
-    fireEvent.click(screen.getByRole('checkbox'));
-    click('Tạo tài khoản và thanh toán');
-
-    await heading('Quét mã để thanh toán');
-    click('Tôi đã quét mã và thanh toán');
-    await heading('Thanh toán thành công');
-    click('Bắt đầu thiết lập lộ trình');
-
-    // Personal Onboarding step
-    await heading('Chọn vị trí mục tiêu nghề nghiệp');
-    click('Xác nhận và tiếp tục');
-
-    await heading('Sẵn sàng bắt đầu lộ trình học');
-
-    // Email verified unlocks workspace entry
-    updateDb((db) => {
-      const u = db.users.find((x) => x.email === 'ca@nhan.vn');
-      if (u) u.emailVerified = true;
-    });
-    const cur = useCurrentUser.getState().user;
-    if (cur) useCurrentUser.getState().setUser({ ...cur, emailVerified: true });
-
-    click('Vào khu cá nhân');
-
-    expect(await screen.findByTestId('personal-layout', {}, { timeout: 10000 })).toBeInTheDocument();
-    expect(useCurrentUser.getState().user?.subscription?.planCode).toBe('IND_PLUS');
-  });
+// Public sign-up is enterprise only (public.routes.tsx): individual registration links open the enterprise trial.
+describe('retired individual sign-up (FLOW-05)', () => {
+  it.each(['/individual/register', '/individual/register?plan=IND_PLUS&seats=1&cycle=month'])(
+    'T1/T19: %s opens the enterprise trial registration',
+    async (path) => {
+      renderApp(path);
+      await heading('Thông tin doanh nghiệp');
+      expect(screen.getByLabelText('Tên doanh nghiệp')).toBeInTheDocument();
+    },
+  );
 });
 
 describe('employee activation (FLOW-02)', () => {
@@ -344,18 +326,17 @@ describe('employee activation (FLOW-02)', () => {
     const token = await inviteEmployee();
     renderApp(`/activate/${token}`);
 
-    await heading('Kích hoạt tài khoản');
+    await heading('Tham gia không gian làm việc.');
     expect(await screen.findByText(/Công ty Acme/)).toBeInTheDocument();
     expect(screen.getByDisplayValue('an@acme.vn')).toHaveAttribute('readonly');
-    type('Mật khẩu', 'MatKhauMoi6789');
+    type('Mật khẩu mới', 'MatKhauMoi6789');
     type('Nhập lại mật khẩu', 'MatKhauMoi6789');
     click('Kích hoạt và vào hệ thống');
 
-    expect(await heading('Bài test đánh giá năng lực hiện tại')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('link', { name: 'Vào trang cá nhân' }));
-
-    expect(await screen.findByTestId('enterprise-layout', {}, { timeout: 10000 })).toBeInTheDocument();
-    expect(await heading('Bảng phát triển của tôi')).toBeInTheDocument();
+    // The new employee lands in the Pulse employee portal (EM-01), signed in under the invited name.
+    expect(await screen.findByText('Tổng quan học tập', {}, { timeout: 10000 })).toBeInTheDocument();
+    expect(screen.getByText('Lê An')).toBeInTheDocument();
+    expect(useCurrentUser.getState().user?.email).toBe('an@acme.vn');
   });
 
   it('refuses a link that was already used or never existed', async () => {
@@ -380,24 +361,24 @@ describe('forgotten password (AUTH-06)', () => {
     });
     renderApp('/forgot-password');
 
-    await heading('Quên mật khẩu');
-    type(/Email/, 'ca@nhan.vn');
-    click('Gửi liên kết');
+    await heading('Quên mật khẩu?');
+    type('Địa chỉ email đăng ký', 'ca@nhan.vn');
+    click('Gửi liên kết đặt lại mật khẩu');
     const link = await screen.findByRole('link', { name: 'mở liên kết' });
     const resetPath = link.getAttribute('href')!;
 
     renderApp(resetPath);
-    await heading('Đặt lại mật khẩu');
+    await heading('Tạo mật khẩu mới');
     await screen.findByLabelText('Mật khẩu mới');
     type('Mật khẩu mới', 'MatKhauMoi6789');
-    type('Nhập lại mật khẩu', 'MatKhauMoi6789');
+    type('Nhập lại mật khẩu mới', 'MatKhauMoi6789');
     click('Đặt mật khẩu mới');
-    expect(await screen.findByText(/Mật khẩu đã được đặt lại/)).toBeInTheDocument();
+    expect(await screen.findByText('Đặt lại mật khẩu thành công!')).toBeInTheDocument();
     click('Đến trang đăng nhập');
 
     type(/Email/, 'ca@nhan.vn');
     type('Mật khẩu', 'MatKhauMoi6789');
-    click('Đăng nhập');
+    click('Đăng nhập vào hệ thống');
     // A new individual has not paid yet, so signing in leads to checkout rather than the workspace.
     await heading('Quét mã để thanh toán');
   });
@@ -405,11 +386,11 @@ describe('forgotten password (AUTH-06)', () => {
   it('gives no hint whether an email has an account', async () => {
     renderApp('/forgot-password');
 
-    await heading('Quên mật khẩu');
-    type(/Email/, 'ghost@x.vn');
-    click('Gửi liên kết');
+    await heading('Quên mật khẩu?');
+    type('Địa chỉ email đăng ký', 'ghost@x.vn');
+    click('Gửi liên kết đặt lại mật khẩu');
 
-    expect(await screen.findByText(/Nếu email này có tài khoản/)).toBeInTheDocument();
+    expect(await screen.findByText('Đã gửi email khôi phục!')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'mở liên kết' })).not.toBeInTheDocument();
   });
 
@@ -433,21 +414,23 @@ describe('email verification & routes (AUTH-07, T20, T22)', () => {
     ).data.data!;
     renderApp(debugVerifyLink!);
 
-    expect(await screen.findByText('Email của bạn đã được xác minh.')).toBeInTheDocument();
+    expect(await screen.findByText('Email của bạn đã được xác minh thành công!')).toBeInTheDocument();
   });
 
   it('says so when the link is wrong', async () => {
     renderApp('/verify-email/sai');
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Liên kết xác minh không hợp lệ.');
+    // The result area is a polite live region (role=status) that also carries the error.
+    expect(await screen.findByText('Liên kết xác minh không hợp lệ.')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Liên kết xác minh không hợp lệ.');
   });
 
-  it('T22: redirects /register to /portal', async () => {
+  it('T22: redirects /register to the enterprise trial registration', async () => {
     renderApp('/register');
-    await heading('Bạn dùng DigiTalent AI cho ai?');
+    await heading('Thông tin doanh nghiệp');
   });
 
-  it('T20: directs unverified user to /verify-email-required when blocked', async () => {
+  it('T20: sends an unverified enterprise owner to the email OTP step when signing in', async () => {
     await mockRegistrationService.registerEnterprise({
       fullName: 'Chưa xác thực',
       email: 'unverified@acme.vn',
@@ -467,9 +450,9 @@ describe('email verification & routes (AUTH-07, T20, T22)', () => {
     renderApp('/login');
     type(/Email/, 'unverified@acme.vn');
     type('Mật khẩu', VALID_PASSWORD);
-    click('Đăng nhập');
+    click('Đăng nhập vào hệ thống');
 
-    await heading('Xác minh email của bạn');
+    await heading('Nhập mã xác minh');
     expect(screen.getAllByText(/unverified@acme.vn/).length).toBeGreaterThanOrEqual(1);
   });
 });

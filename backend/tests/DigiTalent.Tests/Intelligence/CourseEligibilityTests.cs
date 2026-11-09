@@ -21,7 +21,7 @@ public class CourseEligibilityTests
     };
 
     private static CandidateCourse AdvancedCourse(CourseEligibility eligibility) =>
-        new(Guid.NewGuid(), "A1-A", "Advanced", 2, 540, null, false,
+        new(Guid.NewGuid(), "M1-A", "Advanced", 2, 540, null, false,
             new[] { new CourseTeaching(DataLiteracy, 3, Statuses.CourseCoverageType.Primary, null) }, eligibility);
 
     [Fact]
@@ -79,8 +79,8 @@ public class CourseEligibilityTests
         var ranked = CourseRecommender.Rank(gaps, courses, RecommendationWeights.Default, limit: 10);
 
         // Số tính tay: spec Sprint 3 §5.3.1 (ma trận theo từng năng lực). Khóa -A chỉ mở sau khi xong khóa -I tương ứng.
-        // A5-I và A3-I hòa điểm và thời lượng → xếp theo tên khóa.
-        ranked.Select(r => r.Course.Code).Should().Equal("A1-I", "A4-I", "A2-I", "M6-I", "A5-I", "A3-I");
+        // M5-I và M3-I hòa điểm và thời lượng → xếp theo tên khóa.
+        ranked.Select(r => r.Course.Code).Should().Equal("M1-I", "M4-I", "M2-I", "M6-I", "M5-I", "M3-I");
         ranked.Select(r => r.Score).Should().Equal(32.00m, 28.51m, 23.62m, 16.99m, 15.25m, 15.25m);
         ranked[0].Breakdown.Should().Be(new RecommendationBreakdown(GapPriorityCoverage: 14.00m, MandatoryCoverage: 8m, EntryLevelFit: 10m));
     }

@@ -56,8 +56,8 @@ describe('Learning assessments and certificates data scoping', () => {
     // Should see attempts of dep-kd employees (emp-02, emp-06, emp-07...)
     expect(attempts.some((a) => a.employeeId === 'emp-02')).toBe(true);
     expect(attempts.some((a) => a.employeeId === 'emp-07')).toBe(true);
-    // Must NOT see attempts of emp-01 (dep-kt) or emp-05 (dep-ns)
-    expect(attempts.some((a) => a.employeeId === 'emp-01')).toBe(false);
+    // employee@ (emp-01) is in the manager's department since ece40cb; emp-05 (dep-ns) is not.
+    expect(attempts.every((a) => ['emp-01', 'emp-02', 'emp-06', 'emp-07', 'emp-12'].includes(a.employeeId))).toBe(true);
     expect(attempts.some((a) => a.employeeId === 'emp-05')).toBe(false);
 
     const certsRes = await learningService.getCertificates();
@@ -67,8 +67,8 @@ describe('Learning assessments and certificates data scoping', () => {
     // Should see cert-001 (emp-07) and cert-002 (emp-02) from dep-kd
     expect(certs.some((c) => c.employeeId === 'emp-02')).toBe(true);
     expect(certs.some((c) => c.employeeId === 'emp-07')).toBe(true);
-    // Must NOT see cert-003 of emp-01 (dep-kt)
-    expect(certs.some((c) => c.employeeId === 'emp-01')).toBe(false);
+    // cert-003 of emp-01 is in scope now; nothing from another department.
+    expect(certs.every((c) => ['emp-01', 'emp-02', 'emp-06', 'emp-07', 'emp-12'].includes(c.employeeId))).toBe(true);
   });
 
   it('allows OWNER to see assessment attempts and certificates of the entire organization', async () => {

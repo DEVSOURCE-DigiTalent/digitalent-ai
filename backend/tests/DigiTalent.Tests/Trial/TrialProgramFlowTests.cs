@@ -18,8 +18,7 @@ namespace DigiTalent.Tests.Trial;
 
 /// <summary>
 /// Luồng dùng thử mới (docs/specs/2026-10-27-enterprise-trial-assessment.md) trên dữ liệu Development (InMemory): tổ chức demo
-/// được đánh dấu dùng thử; owner@ gửi yêu cầu, employee@ làm bài tổng hợp có giám sát, platform@ phân công mentor@, mentor
-/// chấm và công bố; owner thấy bảng năng lực, nhân viên học thử khóa Cơ bản.
+/// owner gửi khảo sát, nhân viên làm trắc nghiệm có giám sát; hệ thống tự chấm và cập nhật báo cáo.
 /// </summary>
 public class TrialProgramFlowTests
 {
@@ -48,6 +47,10 @@ public class TrialProgramFlowTests
         await asOwner.Request.ExecuteAsync(new SubmitTrialRequestUseCaseInput { TestDeadline = world.Clock.Now.AddDays(2) });
         var session = await asEmployee.Start.ExecuteAsync(new StartMyTrialAssessmentUseCaseInput());
         session.Essays.Should().BeEmpty();
+        session.Kind.Should().Be(Statuses.ProctoringKind.TrialAssessment);
+        session.Questions.Should().HaveCount(18);
+        session.Questions.Select(q => q.Tier).Should().BeInAscendingOrder();
+        session.Questions.Select(q => q.Tier).Distinct().Should().BeEquivalentTo(new[] { 1, 2, 3 });
         var employeeUc = await world.AsAsync(PulseTestWorld.EmployeeEmail);
         await RecordAsync(world, employeeUc, session.SessionId);
         var submitted = await asEmployee.Submit.ExecuteAsync(new SubmitMyTrialAssessmentUseCaseInput {
@@ -59,6 +62,9 @@ public class TrialProgramFlowTests
         result.Essays.Should().BeEmpty();
         result.MentorName.Should().BeNull();
         result.EssayResults.Should().BeNull();
+        result.Levels.Should().OnlyContain(level => level == 2);
+        (await world.Context.ExamChoiceAnswers.CountAsync(a => a.TrialAssessmentId == submitted.AssessmentId))
+            .Should().Be(session.Questions.Count);
         var program = await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput());
         program.Stage.Should().Be(TrialProgramRules.StageReported);
         program.Report!.Assessed.Should().Be(1);

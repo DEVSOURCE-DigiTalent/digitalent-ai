@@ -59,14 +59,17 @@ describe('guided enterprise trial', () => {
     expect(await screen.findByRole('link', { name: 'Nhập mã xác minh' })).toHaveAttribute('href', '/business/try/verify?email=owner%40acme.test');
     expect(screen.getByRole('link', { name: 'Mở liên kết trong email (thử)' })).toHaveAttribute('href', '/business/try/verify?token=abc');
   });
-  it('verifies only once and logs in before opening workspace', async () => {
-    api.verify.mockResolvedValue(ok({ email: 'owner@acme.test', role: 'Owner' })); api.login.mockResolvedValue(ok({ accessToken: 'token' })); api.currentUser.mockResolvedValue(ok({ id: 'owner', email: 'owner@acme.test', fullName: 'Owner', roles: ['OWNER'], permissions: [] }));
+  it('verifies a link token once and signs in with the session it returns', async () => {
+    // The password is chosen at registration now; verifying the link returns the session directly.
+    api.verify.mockResolvedValue(ok({ email: 'owner@acme.test', role: 'Owner', accessToken: 'token' })); api.currentUser.mockResolvedValue(ok({ id: 'owner', email: 'owner@acme.test', fullName: 'Owner', roles: ['OWNER'], permissions: [] }));
     mount(<TrialVerifyPage />, '/business/try/verify?token=abc');
-    fireEvent.change(screen.getByLabelText('Mật khẩu'), { target: { value: 'long-password-123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Xác minh và đăng nhập' }));
-    await waitFor(() => expect(api.login).toHaveBeenCalledWith('owner@acme.test', 'long-password-123'));
-    expect(api.verify).toHaveBeenCalledWith('abc', 'long-password-123');
+    expect(screen.queryByLabelText('Mật khẩu')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Xác minh và vào hệ thống' }));
+    await waitFor(() => expect(api.currentUser).toHaveBeenCalled());
+    expect(api.verify).toHaveBeenCalledWith('abc', '');
     expect(api.verify).toHaveBeenCalledTimes(1);
+    expect(api.login).not.toHaveBeenCalled();
+    expect(localStorage.getItem('accessToken')).toBe('token');
   });
   it('verifies owner email with a one-time code before login', async () => {
     api.verifyCode.mockResolvedValue(ok({ email: 'owner@acme.test', role: 'Owner', accessToken: 'token' })); api.currentUser.mockResolvedValue(ok({ id: 'owner', email: 'owner@acme.test', fullName: 'Owner', roles: ['OWNER'], permissions: [] }));
@@ -139,6 +142,6 @@ describe('guided enterprise trial', () => {
     expect(await screen.findByText(/Chỉ đọc/)).toBeInTheDocument(); expect(await screen.findByText('Pending person')).toBeInTheDocument(); expect(screen.getByRole('button', { name: 'Gửi lời mời' })).toBeDisabled(); expect(screen.getByRole('link', { name: 'Xem gói phù hợp' })).toHaveAttribute('href', '/business/pricing');
   });
   it('refetches context on remount instead of using client business truth', async () => {
-    const first = mount(<TrialWorkspacePage />); await screen.findByText(/requirements-v1/); first.unmount(); mount(<TrialWorkspacePage />); await screen.findByText(/requirements-v1/); expect(api.context).toHaveBeenCalledTimes(2);
+    const first = mount(<TrialWorkspacePage />); await screen.findByText(/Chính sách: v1/); first.unmount(); mount(<TrialWorkspacePage />); await screen.findByText(/Chính sách: v1/); expect(api.context).toHaveBeenCalledTimes(2);
   });
 });
