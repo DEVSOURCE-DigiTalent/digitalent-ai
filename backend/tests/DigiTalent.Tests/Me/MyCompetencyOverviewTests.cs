@@ -20,7 +20,7 @@ public class MyCompetencyOverviewTests
         dashboard.Employee.JobPositionName.Should().NotBeNullOrEmpty();
         dashboard.Courses.Should().BeEquivalentTo(new { Total = 3, Completed = 1, InProgress = 1, NotStarted = 1 },
             options => options.ExcludingMissingMembers());
-        dashboard.ContinueLearning!.CourseCode.Should().Be("A4-I");
+        dashboard.ContinueLearning!.CourseCode.Should().Be("M4-I");
         dashboard.ContinueLearning.CompletedLessons.Should().BeLessThan(dashboard.ContinueLearning.TotalLessons);
         dashboard.ContinueLearning.NextLessonId.Should().NotBeNull();
         dashboard.Tasks.Should().BeEquivalentTo(new { Total = 3, ToDo = 2, NeedsRevision = 1, Passed = 1 },
@@ -76,7 +76,7 @@ public class MyCompetencyOverviewTests
         gaps.Should().OnlyContain(i => i.SuggestedCourses.All(c => c.TargetLevel > (i.CurrentLevel ?? 0)));
         gaps.Where(i => i.SuggestedCourses.Count > 0)
             .Should().OnlyContain(i => i.SuggestedCourses[0].TargetLevel == (i.CurrentLevel ?? 0) + 1, "the course to the next level comes first");
-        gaps.SelectMany(i => i.SuggestedCourses).Should().Contain(c => c.Code == "A4-I" && c.EnrollmentStatus == Statuses.Enrollment.InProgress);
+        gaps.SelectMany(i => i.SuggestedCourses).Should().Contain(c => c.Code == "M4-I" && c.EnrollmentStatus == Statuses.Enrollment.InProgress);
     }
 
     [Fact]

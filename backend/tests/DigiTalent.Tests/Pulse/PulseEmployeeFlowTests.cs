@@ -13,7 +13,7 @@ namespace DigiTalent.Tests.Pulse;
 /// <summary>
 /// Luồng nhân viên Pulse trên dữ liệu Development thật (docs/ui-redesign/16-pulse-product-flow-detailed.md,
 /// docs/specs/2026-10-16-pulse-employee-roadmap-proctoring.md). employee@ = Kế toán, mục tiêu theo lĩnh vực 3/3/2/3/2/2;
-/// A2-F đã hoàn thành (luồng cũ), A4-I đang học (luồng cũ), A1-I được giao chưa bắt đầu.
+/// M2-F đã hoàn thành (luồng cũ), M4-I đang học (luồng cũ), M1-I được giao chưa bắt đầu.
 /// </summary>
 public class PulseEmployeeFlowTests
 {
@@ -31,23 +31,23 @@ public class PulseEmployeeFlowTests
         overview.Reviewer.Role.Should().Be("Quản lý phòng ban");
         overview.Domains.Select(d => d.Target).Should().Equal(3, 3, 2, 3, 2, 2);
         overview.Domains.Select(d => d.PathTop).Should().Equal(new[] { 3, 3, 2, 3, 2, 2 }, "chưa lưu trần: trần = gợi ý từ yêu cầu vị trí, không thấp hơn mục tiêu");
-        overview.Domains.Should().OnlyContain(d => d.Status == PulseDomainStatus.Pending || d.Number == 2, "chưa có bài nào được chấm; A2-F đã xong ở luồng cũ");
+        overview.Domains.Should().OnlyContain(d => d.Status == PulseDomainStatus.Pending || d.Number == 2, "chưa có bài nào được chấm; M2-F đã xong ở luồng cũ");
         overview.Domains.Sum(d => d.Competencies.Count).Should().Be(21);
         overview.Stats.RequiredCompetencies.Should().Be(21);
         overview.Domains[3].Competencies.Where(c => c.Core).Select(c => c.Code).Should().Equal("4.1", "4.2");
         overview.Stats.PathCourses.Should().Be(15);
-        overview.Courses.Where(c => c.Zone == PulseCourseZone.Optional).Select(c => c.Code).Should().BeEquivalentTo("A3-A", "A5-A", "M6-A");
+        overview.Courses.Where(c => c.Zone == PulseCourseZone.Optional).Select(c => c.Code).Should().BeEquivalentTo("M3-A", "M5-A", "M6-A");
 
-        var basic = overview.Courses.Single(c => c.Code == "A1-F");
+        var basic = overview.Courses.Single(c => c.Code == "M1-F");
         basic.SlotStatus.Should().Be(PulseSlotStatus.PreAssessment);
         basic.PreStatus.Should().Be(PulsePreStatus.Required);
         basic.CanStartPreAssessment.Should().BeTrue();
         basic.BlockReason.Should().Be(PulseBlockReason.PreAssessmentRequired, "phải làm bài đánh giá trước khi học");
-        overview.Courses.Single(c => c.Code == "A2-F").ApprovedVia.Should().Be(PulseApprovedVia.Legacy);
-        overview.Courses.Single(c => c.Code == "A2-I").SlotStatus.Should().Be(PulseSlotStatus.PreAssessment, "cấp Cơ bản đã xong ở luồng cũ");
-        overview.Courses.Single(c => c.Code == "A1-I").SlotStatus.Should().Be(PulseSlotStatus.AfterPriorLevel, "có suất nhưng chưa đạt A1-F");
-        overview.Courses.Single(c => c.Code == "A4-I").PreStatus.Should().Be(PulsePreStatus.NotNeeded, "đã bắt đầu học trước khi có bài đánh giá");
-        overview.NextSteps.Select(c => c.Code).Should().Equal("A1-F", "A2-I", "A3-F");
+        overview.Courses.Single(c => c.Code == "M2-F").ApprovedVia.Should().Be(PulseApprovedVia.Legacy);
+        overview.Courses.Single(c => c.Code == "M2-I").SlotStatus.Should().Be(PulseSlotStatus.PreAssessment, "cấp Cơ bản đã xong ở luồng cũ");
+        overview.Courses.Single(c => c.Code == "M1-I").SlotStatus.Should().Be(PulseSlotStatus.AfterPriorLevel, "có suất nhưng chưa đạt M1-F");
+        overview.Courses.Single(c => c.Code == "M4-I").PreStatus.Should().Be(PulsePreStatus.NotNeeded, "đã bắt đầu học trước khi có bài đánh giá");
+        overview.NextSteps.Select(c => c.Code).Should().Equal("M1-F", "M2-I", "M3-F");
 
         // Doanh nghiệp mở Giao tiếp và Giải quyết vấn đề tới Trung cấp; phòng OPS chỉ mở AI ở Cơ bản.
         var employee = await world.EmployeeAsync(PulseTestWorld.EmployeeEmail);
@@ -72,9 +72,9 @@ public class PulseEmployeeFlowTests
         var capped = await uc.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
         capped.Domains.Select(d => d.Ceiling).Should().Equal(3, 2, 3, 3, 2, 1);
         capped.Domains.Select(d => d.PathTop).Should().Equal(3, 2, 2, 3, 2, 1);
-        capped.Courses.Where(c => c.Zone == PulseCourseZone.AboveCeiling).Select(c => c.Code).Should().BeEquivalentTo("A2-A", "A5-A", "M6-I", "M6-A");
-        capped.Courses.Single(c => c.Code == "A2-A").SlotStatus.Should().Be(PulseSlotStatus.AboveCeiling);
-        capped.Courses.Where(c => c.Zone == PulseCourseZone.Optional).Select(c => c.Code).Should().Equal("A3-A");
+        capped.Courses.Where(c => c.Zone == PulseCourseZone.AboveCeiling).Select(c => c.Code).Should().BeEquivalentTo("M2-A", "M5-A", "M6-I", "M6-A");
+        capped.Courses.Single(c => c.Code == "M2-A").SlotStatus.Should().Be(PulseSlotStatus.AboveCeiling);
+        capped.Courses.Where(c => c.Zone == PulseCourseZone.Optional).Select(c => c.Code).Should().Equal("M3-A");
         capped.Stats.PathCourses.Should().Be(13);
         capped.Stats.AboveCeilingCourses.Should().Be(4);
     }
@@ -95,7 +95,7 @@ public class PulseEmployeeFlowTests
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
         var manager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
-        var course = await world.CourseAsync(employee, "A1-F");
+        var course = await world.CourseAsync(employee, "M1-F");
 
         var info = await employee.GetPreAssessment.ExecuteAsync(new GetPulsePreAssessmentUseCaseInput { CourseId = course.CourseId });
         info.Status.Should().Be(PulsePreStatus.Required);
@@ -103,13 +103,13 @@ public class PulseEmployeeFlowTests
         info.Criteria.Should().HaveCount(3);
         info.Submission.Should().BeNull();
 
-        var submitted = await world.SubmitPreAssessmentAsync(employee, "A1-F");
+        var submitted = await world.SubmitPreAssessmentAsync(employee, "M1-F");
         submitted.DurationMs.Should().Be((long)TimeSpan.FromMinutes(20).TotalMilliseconds);
         var managerUser = await world.UserAsync(PulseTestWorld.ManagerEmail);
         (await world.Context.Notifications.AnyAsync(n => n.RecipientUserId == managerUser.Id && n.Type == SubmitPulsePreAssessmentUseCase.NotificationType))
             .Should().BeTrue("quản lý phòng ban nhận thông báo bài cần chấm");
 
-        var pending = await world.CourseAsync(employee, "A1-F");
+        var pending = await world.CourseAsync(employee, "M1-F");
         pending.SlotStatus.Should().Be(PulseSlotStatus.PreReview);
         pending.BlockReason.Should().Be(PulseBlockReason.PreAssessmentPending);
         var again = () => employee.StartProctoring.ExecuteAsync(new StartPulseProctoringUseCaseInput { CourseId = course.CourseId, Kind = Statuses.ProctoringKind.PreAssessment });
@@ -173,7 +173,7 @@ public class PulseEmployeeFlowTests
         world.Context.ChangeTracker.Clear();
 
         var after = await employee.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
-        var recognised = after.Courses.Single(c => c.Code == "A1-F");
+        var recognised = after.Courses.Single(c => c.Code == "M1-F");
         recognised.SlotStatus.Should().Be(PulseSlotStatus.Completed);
         recognised.ApprovedVia.Should().Be(PulseApprovedVia.PreAssessment);
         recognised.PreStatus.Should().Be(PulsePreStatus.Passed);
@@ -181,7 +181,7 @@ public class PulseEmployeeFlowTests
         after.Domains[0].Verified.Should().Be(1);
         after.Domains[0].Source.Should().Be(PulseLevelSource.Course);
         after.Domains[0].Status.Should().Be(PulseDomainStatus.Gap);
-        after.Courses.Single(c => c.Code == "A1-I").SlotStatus.Should().Be(PulseSlotStatus.PreAssessment, "cấp kế tiếp mở, cũng bắt đầu bằng bài đánh giá");
+        after.Courses.Single(c => c.Code == "M1-I").SlotStatus.Should().Be(PulseSlotStatus.PreAssessment, "cấp kế tiếp mở, cũng bắt đầu bằng bài đánh giá");
         after.LatestOutcome!.Via.Should().Be(PulseApprovedVia.PreAssessment);
 
         var outcomes = await employee.Outcomes.ExecuteAsync(new GetPulseOutcomesUseCaseInput());
@@ -201,7 +201,7 @@ public class PulseEmployeeFlowTests
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
         var manager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
 
-        var course = await world.OpenForLearningAsync(employee, "A4-F");
+        var course = await world.OpenForLearningAsync(employee, "M4-F");
         course.PreStatus.Should().Be(PulsePreStatus.NotYet);
         course.SlotStatus.Should().Be(PulseSlotStatus.ToLearn);
         course.CanWork.Should().BeTrue();
@@ -209,7 +209,7 @@ public class PulseEmployeeFlowTests
             .Submission!.DecisionReason.Should().NotBeNullOrEmpty();
 
         await world.PassAllModulesAsync(employee, course.CourseId);
-        var ready = await world.CourseAsync(employee, "A4-F");
+        var ready = await world.CourseAsync(employee, "M4-F");
         ready.SlotStatus.Should().Be(PulseSlotStatus.FinalReady);
         ready.CanStartFinal.Should().BeTrue();
         ready.ProgressPercent.Should().Be(100);
@@ -230,13 +230,13 @@ public class PulseEmployeeFlowTests
         world.Context.ChangeTracker.Clear();
 
         var after = await employee.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
-        var passed = after.Courses.Single(c => c.Code == "A4-F");
+        var passed = after.Courses.Single(c => c.Code == "M4-F");
         passed.SlotStatus.Should().Be(PulseSlotStatus.Completed);
         passed.ApprovedVia.Should().Be(PulseApprovedVia.Final);
         after.Domains[3].Verified.Should().Be(1);
         after.LatestOutcome!.Via.Should().Be(PulseApprovedVia.Final);
-        var next = after.Courses.Single(c => c.Code == "A4-I");
-        next.SlotStatus.Should().Be(PulseSlotStatus.InProgress, "A4-I đã học dở từ luồng cũ, không cần bài đánh giá");
+        var next = after.Courses.Single(c => c.Code == "M4-I");
+        next.SlotStatus.Should().Be(PulseSlotStatus.InProgress, "M4-I đã học dở từ luồng cũ, không cần bài đánh giá");
         next.CanWork.Should().BeTrue();
         (await employee.Outcomes.ExecuteAsync(new GetPulseOutcomesUseCaseInput())).Items.Should().Contain(o => o.Kind == PulseOutcomeKind.Course);
     }
@@ -247,7 +247,7 @@ public class PulseEmployeeFlowTests
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
         var manager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
-        var course = await world.CourseAsync(employee, "A3-F");
+        var course = await world.CourseAsync(employee, "M3-F");
 
         var abandoned = await employee.StartProctoring.ExecuteAsync(new StartPulseProctoringUseCaseInput { CourseId = course.CourseId, Kind = Statuses.ProctoringKind.PreAssessment });
         world.Context.ChangeTracker.Clear();
@@ -356,7 +356,7 @@ public class PulseEmployeeFlowTests
     {
         using var world = await PulseTestWorld.CreateAsync();
         var uc = await world.AsAsync(PulseTestWorld.EmployeeEmail);
-        var course = await world.OpenForLearningAsync(uc, "A1-F");
+        var course = await world.OpenForLearningAsync(uc, "M1-F");
 
         var detail = await uc.GetCourse.ExecuteAsync(new GetPulseCourseUseCaseInput { CourseId = course.CourseId });
         detail.NextAction.Should().Be("MODULE");
@@ -406,7 +406,7 @@ public class PulseEmployeeFlowTests
         enrollment.Status.Should().Be(Statuses.Enrollment.InProgress, "khóa Cơ bản tự mở lượt học khi bắt đầu");
         enrollment.ProgressPercent.Should().BeGreaterThan(0);
         (await world.Context.AssessmentAttempts.CountAsync(a => a.EnrollmentId == enrollment.Id)).Should().Be(2, "mỗi lần làm đều được lưu");
-        (await world.CourseAsync(uc, "A1-F")).ProgressPercent.Should().BeGreaterThan(0).And.BeLessThan(100);
+        (await world.CourseAsync(uc, "M1-F")).ProgressPercent.Should().BeGreaterThan(0).And.BeLessThan(100);
     }
 
     [Fact]
@@ -414,7 +414,7 @@ public class PulseEmployeeFlowTests
     {
         using var world = await PulseTestWorld.CreateAsync();
         var uc = await world.AsAsync(PulseTestWorld.EmployeeEmail);
-        var course = await world.OpenForLearningAsync(uc, "A1-F");
+        var course = await world.OpenForLearningAsync(uc, "M1-F");
         var moduleId = (await uc.GetCourse.ExecuteAsync(new GetPulseCourseUseCaseInput { CourseId = course.CourseId })).Modules[0].ModuleId;
         Task<GetPulseModuleUseCaseOutput> Module() => uc.GetModule.ExecuteAsync(new GetPulseModuleUseCaseInput { CourseId = course.CourseId, ModuleId = moduleId });
         Task<SubmitPulseModuleQuizUseCaseOutput> Submit(List<PulseAnswerInput> answers, int? attemptNo) =>
@@ -501,7 +501,7 @@ public class PulseEmployeeFlowTests
         sortOrdersByQuiz.Should().HaveCount(quizIds.Count).And.OnlyContain(orders => orders.SequenceEqual(new[] { 1, 2, 3, 4, 5, 6 }));
 
         // Bản cũ: mô đun thứ 2 của khóa chỉ có cặp câu tình huống (nay là câu 3–4), xếp ở vị trí 1–2.
-        var course = await db.Courses.AsNoTracking().SingleAsync(c => c.Code == "A1-F");
+        var course = await db.Courses.AsNoTracking().SingleAsync(c => c.Code == "M1-F");
         var module = await db.CourseModules.AsNoTracking()
             .Where(m => m.CourseId == course.Id && m.Status == Statuses.CourseContent.Active)
             .OrderBy(m => m.SortOrder).Skip(1).FirstAsync();
@@ -531,7 +531,7 @@ public class PulseEmployeeFlowTests
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
         var manager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
-        var course = await world.CourseAsync(employee, "A1-F");
+        var course = await world.CourseAsync(employee, "M1-F");
 
         var info = await employee.GetPreAssessment.ExecuteAsync(new GetPulsePreAssessmentUseCaseInput { CourseId = course.CourseId });
         info.ChoiceCount.Should().Be(10);
@@ -619,7 +619,7 @@ public class PulseEmployeeFlowTests
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
         var manager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
-        var course = await world.OpenForLearningAsync(employee, "A1-F");
+        var course = await world.OpenForLearningAsync(employee, "M1-F");
 
         var early = () => employee.SubmitFinal.ExecuteAsync(new SubmitPulseFinalUseCaseInput { CourseId = course.CourseId, EvidenceText = Evidence, ProctoringSessionId = Guid.NewGuid() });
         (await early.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("MODULES_INCOMPLETE");
@@ -680,7 +680,7 @@ public class PulseEmployeeFlowTests
         world.Context.ChangeTracker.Clear();
 
         var overview = await employee.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
-        overview.Courses.Single(c => c.Code == "A1-F").SlotStatus.Should().Be(PulseSlotStatus.NeedsSupport);
+        overview.Courses.Single(c => c.Code == "M1-F").SlotStatus.Should().Be(PulseSlotStatus.NeedsSupport);
         overview.Domains[0].Verified.Should().Be(0, "hai lần chưa đạt không nâng mức năng lực");
     }
 
@@ -690,7 +690,7 @@ public class PulseEmployeeFlowTests
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
         var manager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
-        var course = await world.OpenForLearningAsync(employee, "A1-F");
+        var course = await world.OpenForLearningAsync(employee, "M1-F");
         await world.PassAllModulesAsync(employee, course.CourseId);
         var first = await world.SubmitFinalAsync(employee, course.CourseId);
         await manager.Decide.ExecuteAsync(new DecidePulseFinalUseCaseInput { SubmissionId = first.SubmissionId, Decision = Statuses.FinalSubmissionDecision.NotYet, Reason = CommentReason });
@@ -712,7 +712,7 @@ public class PulseEmployeeFlowTests
     {
         using var world = await PulseTestWorld.CreateAsync();
         var uc = await world.AsAsync(PulseTestWorld.EmployeeEmail);
-        var course = await world.CourseAsync(uc, "A3-I");
+        var course = await world.CourseAsync(uc, "M3-I");
         course.Access.Should().Be(PulseCourseAccess.Preview);
         course.SlotStatus.Should().Be(PulseSlotStatus.AfterPriorLevel);
 
@@ -736,7 +736,7 @@ public class PulseEmployeeFlowTests
     {
         using var world = await PulseTestWorld.CreateAsync();
         var uc = await world.AsAsync(PulseTestWorld.EmployeeEmail);
-        var course = await world.CourseAsync(uc, "A1-F");
+        var course = await world.CourseAsync(uc, "M1-F");
         var detail = await uc.GetCourse.ExecuteAsync(new GetPulseCourseUseCaseInput { CourseId = course.CourseId });
         detail.NextAction.Should().Be("PRE_ASSESSMENT");
 
@@ -759,10 +759,10 @@ public class PulseEmployeeFlowTests
     {
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
-        var course = await world.OpenForLearningAsync(employee, "A1-F");
+        var course = await world.OpenForLearningAsync(employee, "M1-F");
         await world.PassAllModulesAsync(employee, course.CourseId);
         var submitted = await world.SubmitFinalAsync(employee, course.CourseId);
-        var pre = await world.SubmitPreAssessmentAsync(employee, "A3-F");
+        var pre = await world.SubmitPreAssessmentAsync(employee, "M3-F");
 
         var organizationId = (await world.EmployeeAsync(PulseTestWorld.EmployeeEmail)).OrganizationId;
         var otherDepartment = new Department { OrganizationId = organizationId, Code = "SALES-X", Name = "Kinh doanh" };
@@ -791,15 +791,15 @@ public class PulseEmployeeFlowTests
     {
         using var world = await PulseTestWorld.CreateAsync();
         var uc = await world.AsAsync(PulseTestWorld.EmployeeEmail);
-        var course = await world.OpenForLearningAsync(uc, "A1-F");
+        var course = await world.OpenForLearningAsync(uc, "M1-F");
         await world.PassAllModulesAsync(uc, course.CourseId);
-        await world.SubmitPreAssessmentAsync(uc, "A3-F");
+        await world.SubmitPreAssessmentAsync(uc, "M3-F");
 
         var practice = await uc.Practice.ExecuteAsync(new GetPulsePracticeUseCaseInput());
-        practice.Finals.Select(f => f.Course.Code).Should().Contain("A1-F").And.Contain("A2-F")
-            .And.NotContain("A1-I", "suất đang giữ nằm ở lộ trình, chưa phải việc cần làm");
+        practice.Finals.Select(f => f.Course.Code).Should().Contain("M1-F").And.Contain("M2-F")
+            .And.NotContain("M1-I", "suất đang giữ nằm ở lộ trình, chưa phải việc cần làm");
         practice.Finals.First().Course.FinalStatus.Should().Be(PulseFinalStatus.Ready, "việc nộp được xếp lên đầu");
-        practice.PreAssessments.Select(p => p.Course.Code).Should().Equal("A3-F", "A1-F");
+        practice.PreAssessments.Select(p => p.Course.Code).Should().Equal("M3-F", "M1-F");
         practice.PreAssessments.First().LastDecision.Should().BeNull("bài chờ chấm xếp trước");
         practice.Criteria.Should().HaveCount(3);
     }

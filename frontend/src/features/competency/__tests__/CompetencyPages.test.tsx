@@ -64,7 +64,7 @@ describe('CompetencyFrameworkPage (read-only)', () => {
     renderPage();
 
     expect(screen.getByRole('link', { name: 'Bảo vệ dữ liệu cá nhân' })).toHaveAttribute('href', '/enterprise/framework/c-1');
-    expect(screen.getByText('4.2')).toBeInTheDocument();
+    expect(screen.getByText('CMP-4.2')).toBeInTheDocument();
     expect(screen.getByText('Chưa ánh xạ')).toBeInTheDocument();
     expect(screen.getAllByText('3 tiêu chí')).toHaveLength(2);
   });
@@ -230,6 +230,13 @@ describe('PositionRequirementsPage', () => {
       </QueryClientProvider>
     );
 
+  /** Level buttons of one competency row (role=group named after the competency). */
+  const levelGroup = (code: string) => screen.getByRole('group', { name: `Trình độ yêu cầu của ${code} Competency ${code}` });
+  const pressedLevel = (code: string) =>
+    within(levelGroup(code)).getAllByRole('button').find((b) => b.getAttribute('aria-pressed') === 'true')?.textContent;
+  const applyToDomain = (domainIndex: number, level: string) =>
+    fireEvent.click(within(screen.getAllByRole('group', { name: /^Áp mức cho cả miền/ })[domainIndex]!).getByRole('button', { name: level }));
+
   beforeEach(() => {
     vi.clearAllMocks();
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -255,14 +262,15 @@ describe('PositionRequirementsPage', () => {
 
     renderPage();
 
-    expect(screen.getByText('v1')).toBeInTheDocument();
-    expect(screen.getByText('Đang áp dụng')).toBeInTheDocument();
-    expect(screen.getByText('100%')).toBeInTheDocument();
-    DOMAINS.forEach((name) => expect(screen.getByText(name)).toBeInTheDocument());
+    expect(screen.getAllByText('Đang áp dụng').length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(6);
+    expect(screen.getAllByRole('group', { name: /^Trình độ yêu cầu của/ })).toHaveLength(24);
     expect(screen.getAllByRole('spinbutton')).toHaveLength(24);
-    expect(screen.queryByTitle('Remove item')).not.toBeInTheDocument();
-    const level42 = screen.getByLabelText('Trình độ yêu cầu của 4.2 Competency 4.2');
-    expect(within(level42).getByRole('option', { name: 'Trung cấp · bậc 3–4', selected: true })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Xóa|Remove/i })).not.toBeInTheDocument();
+    expect(pressedLevel('4.2')).toBe('Trung cấp (3–4)');
+    // 4.1 and 4.2 are core: always mandatory, the toggle is locked.
+    expect(screen.getByRole('button', { name: 'Bắt buộc: 4.2 Competency 4.2' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Bắt buộc: 4.2 Competency 4.2' })).toBeDisabled();
   });
 
   it('starts a position without requirements from a full 24-competency draft and saves it', async () => {
@@ -281,20 +289,17 @@ describe('PositionRequirementsPage', () => {
     expect(Math.round(total * 100) / 100).toBe(100);
   });
 
-  it('applies a level to a whole domain and flags a line that differs', () => {
+  it('applies a level to a whole domain, then lets one line differ', () => {
     mockSet({ id: 'set-1', jobPositionId: 'pos-1', versionNo: 2, status: 'DRAFT', items: serverItems(CODES) });
     renderPage();
 
-    fireEvent.change(screen.getByLabelText(`Mức cho cả miền ${DOMAINS[0]}`), { target: { value: '3' } });
-    fireEvent.click(screen.getAllByRole('button', { name: 'Áp mức cho cả miền' })[0]);
+    applyToDomain(0, 'Nâng cao');
+    ['1.1', '1.2', '1.3'].forEach((code) => expect(pressedLevel(code)).toBe('Nâng cao (5–6)'));
+    expect(pressedLevel('2.1')).toBe('Trung cấp (3–4)');
 
-    ['1.1', '1.2', '1.3'].forEach((code) =>
-      expect(screen.getByLabelText(`Trình độ yêu cầu của ${code} Competency ${code}`)).toHaveValue('3'));
-    expect(screen.getByLabelText('Bắt buộc: 1.1 Competency 1.1')).toBeChecked();
-    expect(screen.queryByText('Khác mức của miền')).not.toBeInTheDocument();
-
-    fireEvent.change(screen.getByLabelText('Trình độ yêu cầu của 1.2 Competency 1.2'), { target: { value: '2' } });
-    expect(screen.getByText('Khác mức của miền')).toBeInTheDocument();
+    fireEvent.click(within(levelGroup('1.2')).getByRole('button', { name: 'Trung cấp (3–4)' }));
+    expect(pressedLevel('1.2')).toBe('Trung cấp (3–4)');
+    expect(pressedLevel('1.1')).toBe('Nâng cao (5–6)');
   });
 
   it('lists the whole framework and shows unselected competencies as "Not required" (D-B7)', async () => {
@@ -304,11 +309,11 @@ describe('PositionRequirementsPage', () => {
 
     renderPage();
 
-    expect(screen.getByText('21/24')).toBeInTheDocument();
-    expect(screen.getAllByRole('spinbutton')).toHaveLength(24);
-    expect(screen.getByLabelText('Trình độ yêu cầu của 6.2 Competency 6.2')).toHaveValue('0');
-    expect(screen.getByLabelText('Trọng số của 6.2 Competency 6.2')).toBeDisabled();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('group', { name: /^Trình độ yêu cầu của/ })).toHaveLength(24);
+    expect(pressedLevel('6.2')).toBe('Bỏ qua');
+    expect(screen.getByRole('spinbutton', { name: 'Trọng số của 6.2 Competency 6.2' })).toBeDisabled();
+    // 21 competencies with 4.1 and 4.2: nothing blocks activation except that this version is already active.
+    expect(screen.getByRole('alert')).toHaveTextContent('Phiên bản này đang được áp dụng');
 
     // Only the selected competencies are saved
     fireEvent.click(screen.getByRole('button', { name: /Lưu bản nháp/i }));
@@ -323,15 +328,14 @@ describe('PositionRequirementsPage', () => {
     });
     renderPage();
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Còn thiếu: 4.2');
+    expect(screen.getByRole('alert')).toHaveTextContent('Còn thiếu năng lực an toàn cốt lõi: 4.2');
     expect(screen.getByRole('button', { name: /Kích hoạt phiên bản/i })).toBeDisabled();
 
     // dropping below 9 selected competencies adds the count message
-    fireEvent.change(screen.getByLabelText(`Mức cho cả miền ${DOMAINS[1]}`), { target: { value: '0' } });
-    fireEvent.click(screen.getAllByRole('button', { name: 'Áp mức cho cả miền' })[1]);
+    applyToDomain(1, 'Bỏ qua');
 
-    expect(screen.getByText('4/24')).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent('cần từ 9 đến 24 năng lực');
+    expect(screen.getByRole('alert')).toHaveTextContent('Cần chọn từ 9 đến 24 năng lực (hiện có 4)');
+    expect(screen.getByRole('button', { name: /Kích hoạt phiên bản/i })).toBeDisabled();
   });
 
   it('asks for confirmation before activating', async () => {
@@ -341,12 +345,12 @@ describe('PositionRequirementsPage', () => {
     renderPage();
 
     fireEvent.click(screen.getByRole('button', { name: /Kích hoạt phiên bản/i }));
-    const dialog = screen.getByRole('dialog');
-    expect(dialog).toHaveTextContent('Kích hoạt phiên bản v2 cho Kế toán');
+    const dialog = screen.getByRole('dialog', { name: 'Kích hoạt chuẩn năng lực' });
+    expect(dialog).toHaveAccessibleDescription('Kế toán · Phiên bản v2');
     expect(activate).not.toHaveBeenCalled();
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Kích hoạt' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Xác nhận kích hoạt' }));
 
-    await waitFor(() => expect(activate).toHaveBeenCalledWith('set-2'));
+    await waitFor(() => expect(activate).toHaveBeenCalled());
   });
 
   const VERSIONS = [

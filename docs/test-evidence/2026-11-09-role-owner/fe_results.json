@@ -1,0 +1,179 @@
+{
+  "meta": {
+    "branch": "feature/DT-role-based-tests",
+    "commit": "c51a6d6",
+    "api": "http://localhost:5000",
+    "fe": "http://localhost:5173",
+    "db": "PostgreSQL 16 (DB mới: migration + seed Development)",
+    "date": "09/11/2026"
+  },
+  "role": {
+    "label": "OWNER",
+    "email": "owner@digitalent.ai",
+    "title": "CHỦ DOANH NGHIỆP (OWNER)"
+  },
+  "cases": [
+    {
+      "id": "FE01",
+      "screen": "OW-01 Tổng quan",
+      "title": "Đăng nhập owner@digitalent.ai và vào đúng không gian làm việc",
+      "url": "/login",
+      "role": "OWNER (owner@digitalent.ai)",
+      "precondition": "DB mới, seed Development",
+      "steps": [
+        "1. Mở /login",
+        "2. Nhập owner@digitalent.ai / Admin@1234, bấm \"Đăng nhập vào hệ thống\""
+      ],
+      "expected": "Chuyển tới /enterprise/dashboard; tiêu đề \"Tổng quan doanh nghiệp\"; menu của vai trò (12+ mục).",
+      "actual": "Đăng nhập thành công, vào /enterprise/dashboard; tiêu đề \"Tổng quan doanh nghiệp\"; menu 14 mục: DigiTalent Pulse, Tổng quan, Đánh giá đội ngũ, Khung năng lực số, Nhân sự, Khoảng trống năng lực, Khóa học, Báo cáo chu kỳ, Đợt đào tạo, Nhiệm vụ thực tế, Chứng nhận, Hoạt động.",
+      "status": "PASS",
+      "api": [
+        "POST /api/v1/auth/login → 200",
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/notifications → 200",
+        "GET /api/v1/intelligence/dashboard → 200",
+        "GET /api/v1/organization/overview → 200",
+        "GET /api/v1/trial → 200"
+      ],
+      "marks": [
+        "1. Menu chủ doanh nghiệp",
+        "2. Màn hình đầu tiên của vai trò"
+      ],
+      "at": "09/11/2026 07:53:48"
+    },
+    {
+      "id": "FE02",
+      "screen": "OW-02 Nhân sự",
+      "title": "Danh sách nhân sự của tổ chức",
+      "url": "/enterprise/members",
+      "role": "OWNER (owner@digitalent.ai)",
+      "precondition": "Seed: owner@, manager@, employee@",
+      "steps": [
+        "1. Bấm menu \"Nhân sự\""
+      ],
+      "expected": "Trang \"Nhân sự\" liệt kê nhân viên theo phòng ban và vị trí, có nút thêm nhân sự.",
+      "actual": "Hiện Department Manager và Employee trong danh sách. (URL: /enterprise/members)",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/notifications → 200",
+        "GET /api/v1/job-positions?pageSize=100&status=ACTIVE → 200",
+        "GET /api/v1/departments?pageSize=100&status=ACTIVE → 200",
+        "GET /api/v1/departments?pageSize=1 → 200",
+        "GET /api/v1/job-positions?pageSize=1 → 200",
+        "GET /api/v1/members?pageIndex=1&pageSize=6 → 200",
+        "GET /api/v1/members?pageIndex=1&pageSize=1 → 200"
+      ],
+      "marks": [
+        "1. Nhân sự",
+        "2. Thêm / mời nhân sự",
+        "3. Quản lý phòng OPS"
+      ],
+      "at": "09/11/2026 07:53:53"
+    },
+    {
+      "id": "FE03",
+      "screen": "OW-05 Khung năng lực số",
+      "title": "Khung năng lực số và chuẩn theo vị trí",
+      "url": "/enterprise/setup",
+      "role": "OWNER (owner@digitalent.ai)",
+      "precondition": "Seed: 5 vị trí có chuẩn ACTIVE",
+      "steps": [
+        "1. Bấm menu \"Khung năng lực số\""
+      ],
+      "expected": "Trang \"Khung năng lực số\" có phần \"Chuẩn năng lực theo vị trí công việc\".",
+      "actual": "Tiêu đề \"Khung năng lực số\". (URL: /enterprise/setup)",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/notifications → 200",
+        "GET /api/v1/position-requirements/summaries → 200",
+        "GET /api/v1/departments?pageSize=100&status=ACTIVE → 200",
+        "GET /api/v1/intelligence/dashboard → 200",
+        "GET /api/v1/organization/overview → 200"
+      ],
+      "marks": [
+        "1. Khung năng lực số",
+        "2. Chuẩn theo vị trí"
+      ],
+      "at": "09/11/2026 07:53:58"
+    },
+    {
+      "id": "FE04",
+      "screen": "OW-T1 Đánh giá đội ngũ",
+      "title": "Chương trình đánh giá đội ngũ (dùng thử)",
+      "url": "/enterprise/trial",
+      "role": "OWNER (owner@digitalent.ai)",
+      "precondition": "Tổ chức demo ở giai đoạn SETUP",
+      "steps": [
+        "1. Bấm menu \"Đánh giá đội ngũ\""
+      ],
+      "expected": "Danh sách nhân sự tham gia và phần đặt hạn làm bài / lịch hẹn chấm.",
+      "actual": "Tiêu đề \"Đánh Giá Năng Lực Đội Ngũ\". (URL: /enterprise/trial)",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/notifications → 200",
+        "GET /api/v1/trial → 200",
+        "GET /api/v1/job-positions?pageSize=100&status=ACTIVE → 200",
+        "GET /api/v1/departments?pageSize=100&status=ACTIVE → 200"
+      ],
+      "marks": [
+        "1. Đánh giá năng lực đội ngũ",
+        "2. Nhân sự tham gia",
+        "3. Hạn làm bài và lịch chấm"
+      ],
+      "at": "09/11/2026 07:54:11"
+    },
+    {
+      "id": "FE05",
+      "screen": "OW-23 Khóa học",
+      "title": "Danh mục khóa học năng lực số để mua suất",
+      "url": "/enterprise/courses",
+      "role": "OWNER (owner@digitalent.ai)",
+      "precondition": "Catalog 18 khóa TT02",
+      "steps": [
+        "1. Bấm menu \"Khóa học\""
+      ],
+      "expected": "Khóa học theo lĩnh vực, lĩnh vực đầu \"Khai thác dữ liệu và thông tin\".",
+      "actual": "Tiêu đề \"Khóa học năng lực số\". (URL: /enterprise/courses)",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/notifications → 200",
+        "GET /api/v1/competency-categories → 200",
+        "GET /api/v1/courses?pageIndex=1&pageSize=100 → 200"
+      ],
+      "marks": [
+        "1. Khóa học năng lực số",
+        "2. Lĩnh vực 1 và các khóa"
+      ],
+      "at": "09/11/2026 07:54:15"
+    },
+    {
+      "id": "FE06",
+      "screen": "Phân quyền",
+      "title": "Chủ doanh nghiệp không vào được console nền tảng",
+      "url": "/platform/dashboard",
+      "role": "OWNER (owner@digitalent.ai)",
+      "precondition": "OWNER thuộc workspace enterprise",
+      "steps": [
+        "1. Mở trực tiếp /platform/dashboard"
+      ],
+      "expected": "RequireWorkspace giữ vai trò trong cổng của mình: chuyển về /enterprise/dashboard.",
+      "actual": "Bị đưa về /enterprise/dashboard (\"Tổng quan doanh nghiệp\"); không vào được /platform/dashboard.",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/notifications → 200",
+        "GET /api/v1/intelligence/dashboard → 200",
+        "GET /api/v1/organization/overview → 200",
+        "GET /api/v1/trial → 200"
+      ],
+      "marks": [
+        "1. Đưa về không gian của vai trò (/enterprise/dashboard)"
+      ],
+      "at": "09/11/2026 07:54:28"
+    }
+  ]
+}

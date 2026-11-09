@@ -1,0 +1,369 @@
+{
+  "meta": {
+    "branch": "feature/DT-role-based-tests",
+    "commit": "9f7e695",
+    "api": "http://localhost:5000",
+    "fe": "http://localhost:5173",
+    "db": "PostgreSQL 16 (DB mới: migration + seed Development)",
+    "date": "09/11/2026"
+  },
+  "role": {
+    "label": "PLATFORM_ADMIN",
+    "email": "platform@digitalent.ai",
+    "title": "QUẢN TRỊ NỀN TẢNG (PLATFORM_ADMIN)"
+  },
+  "cases": [
+    {
+      "id": "TC01",
+      "feature": "Xác thực",
+      "title": "Đăng nhập tài khoản demo platform@digitalent.ai để lấy access token",
+      "role": "Ẩn danh",
+      "endpoint": "POST /api/v1/auth/login",
+      "precondition": "Tài khoản demo platform@digitalent.ai (seed Development), mật khẩu Admin@1234",
+      "expected": "200, success = true, trả về accessToken và refreshToken",
+      "status": "PASS",
+      "http": 200,
+      "ms": 278,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "success = true",
+          "ok": true
+        },
+        {
+          "label": "Có accessToken và refreshToken",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; success = true: đạt; Có accessToken và refreshToken: đạt",
+      "at": "09/11/2026 07:55:51"
+    },
+    {
+      "id": "TC02",
+      "feature": "Phiên đăng nhập",
+      "title": "PLATFORM_ADMIN đọc thông tin phiên: vai trò, workspace và tổ chức",
+      "role": "PLATFORM_ADMIN",
+      "endpoint": "GET /api/v1/auth/me",
+      "precondition": "Đã đăng nhập (ca trước)",
+      "expected": "200; roles = [PLATFORM_ADMIN]; workspace = platform; organizationId = null (không thuộc tổ chức)",
+      "status": "PASS",
+      "http": 200,
+      "ms": 12,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "roles = [PLATFORM_ADMIN]",
+          "ok": true
+        },
+        {
+          "label": "workspace = platform",
+          "ok": true
+        },
+        {
+          "label": "organizationId = null (không thuộc tổ chức)",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; roles = [PLATFORM_ADMIN]: đạt; workspace = platform: đạt; organizationId = null (không thuộc tổ chức): đạt",
+      "at": "09/11/2026 07:55:52"
+    },
+    {
+      "id": "TC03",
+      "feature": "PA-01 Tổng quan",
+      "title": "Xem toàn cảnh nền tảng: tổ chức, người dùng, khung chuẩn",
+      "role": "PLATFORM_ADMIN",
+      "endpoint": "GET /api/v1/platform/overview",
+      "precondition": "Seed Development: 1 tổ chức DIGITALENT, khung TT02_2025 có 6 lĩnh vực",
+      "expected": "200; organizationCount ≥ 1; frameworkCount = 1; domainCount = 6",
+      "status": "PASS",
+      "http": 200,
+      "ms": 81,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "organizationCount ≥ 1",
+          "ok": true
+        },
+        {
+          "label": "frameworkCount = 1",
+          "ok": true
+        },
+        {
+          "label": "domainCount = 6",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; organizationCount ≥ 1: đạt; frameworkCount = 1: đạt; domainCount = 6: đạt",
+      "at": "09/11/2026 07:55:52"
+    },
+    {
+      "id": "TC04",
+      "feature": "PA-02 Khung chuẩn",
+      "title": "Xem khung năng lực số TT02 và số khóa học của khung",
+      "role": "PLATFORM_ADMIN",
+      "endpoint": "GET /api/v1/platform/frameworks",
+      "precondition": "Khung TT02_2025 được seed ở mọi môi trường",
+      "expected": "200; đúng 1 khung, 6 lĩnh vực, 18 khóa; có phiên bản catalog đang dùng",
+      "status": "PASS",
+      "http": 200,
+      "ms": 32,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "Đúng 1 khung",
+          "ok": true
+        },
+        {
+          "label": "6 lĩnh vực, 18 khóa học",
+          "ok": true
+        },
+        {
+          "label": "currentCatalogVersionNo có giá trị",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; Đúng 1 khung: đạt; 6 lĩnh vực, 18 khóa học: đạt; currentCatalogVersionNo có giá trị: đạt",
+      "at": "09/11/2026 07:55:52"
+    },
+    {
+      "id": "TC05",
+      "feature": "PA-03 Phiên bản khóa học",
+      "title": "Xem các phiên bản catalog và phiên bản neo ⚓ đang dùng",
+      "role": "PLATFORM_ADMIN",
+      "endpoint": "GET /api/v1/platform/catalog/versions",
+      "precondition": "Seed: phiên bản v1 = 18 khóa TT02",
+      "expected": "200; có phiên bản CURRENT; currentVersionNo = v1",
+      "status": "PASS",
+      "http": 200,
+      "ms": 30,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "Có 1 phiên bản CURRENT",
+          "ok": true
+        },
+        {
+          "label": "Phiên bản đang dùng có 18 khóa",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; Có 1 phiên bản CURRENT: đạt; Phiên bản đang dùng có 18 khóa: đạt",
+      "at": "09/11/2026 07:55:52"
+    },
+    {
+      "id": "TC06",
+      "feature": "PA-05 Tổ chức",
+      "title": "Xem danh sách tổ chức khách hàng kèm gói và chủ sở hữu",
+      "role": "PLATFORM_ADMIN",
+      "endpoint": "GET /api/v1/platform/organizations",
+      "precondition": "Tổ chức demo DIGITALENT",
+      "expected": "200; có tổ chức DIGITALENT với chủ owner@digitalent.ai",
+      "status": "PASS",
+      "http": 200,
+      "ms": 29,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "Có tổ chức DIGITALENT",
+          "ok": true
+        },
+        {
+          "label": "Chủ sở hữu = owner@digitalent.ai",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; Có tổ chức DIGITALENT: đạt; Chủ sở hữu = owner@digitalent.ai: đạt",
+      "at": "09/11/2026 07:55:52"
+    },
+    {
+      "id": "TC07",
+      "feature": "PA-07 Người dùng",
+      "title": "Theo dõi người dùng cá nhân đang dùng thử 7 ngày",
+      "role": "PLATFORM_ADMIN",
+      "endpoint": "GET /api/v1/platform/users?trial=ANY",
+      "precondition": "Seed: trial@ đang dùng thử, free@ đã hết hạn",
+      "expected": "200; trials.active ≥ 1; trials.ended ≥ 1",
+      "status": "PASS",
+      "http": 200,
+      "ms": 25,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "trials.active ≥ 1",
+          "ok": true
+        },
+        {
+          "label": "trials.ended ≥ 1",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; trials.active ≥ 1: đạt; trials.ended ≥ 1: đạt",
+      "at": "09/11/2026 07:55:53"
+    },
+    {
+      "id": "TC08",
+      "feature": "PA-08 Khóa tài khoản",
+      "title": "Khóa tài khoản phải kèm lý do ≥ 10 ký tự",
+      "role": "PLATFORM_ADMIN",
+      "endpoint": "POST /api/v1/platform/users/{employee@}/lock",
+      "precondition": "Tài khoản employee@ (id bad64ce5…); lý do quá ngắn",
+      "expected": "400 Bad Request; tài khoản không bị khóa",
+      "status": "PASS",
+      "http": 400,
+      "ms": 13,
+      "checks": [
+        {
+          "label": "HTTP status = 400",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        },
+        {
+          "label": "employee@ vẫn chưa bị khóa",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 400; success = false: đạt; employee@ vẫn chưa bị khóa: đạt",
+      "at": "09/11/2026 07:55:53"
+    },
+    {
+      "id": "TC09",
+      "feature": "PA-10 Nhật ký kiểm tra",
+      "title": "Đọc nhật ký kiểm tra của nền tảng",
+      "role": "PLATFORM_ADMIN",
+      "endpoint": "GET /api/v1/platform/audit-logs?pageSize=5",
+      "precondition": "DB mới",
+      "expected": "200; trả về danh sách có phân trang (pageIndex, totalItems)",
+      "status": "PASS",
+      "http": 200,
+      "ms": 54,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "Có pageIndex và totalItems",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; Có pageIndex và totalItems: đạt",
+      "at": "09/11/2026 07:55:53"
+    },
+    {
+      "id": "TC10",
+      "feature": "Phân quyền",
+      "title": "PLATFORM_ADMIN không được xem thành viên của một doanh nghiệp",
+      "role": "PLATFORM_ADMIN",
+      "endpoint": "GET /api/v1/members",
+      "precondition": "Vai trò không có quyền user.read",
+      "expected": "403 Forbidden, success = false",
+      "status": "PASS",
+      "http": 403,
+      "ms": 14,
+      "checks": [
+        {
+          "label": "HTTP status = 403",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 403; success = false: đạt",
+      "at": "09/11/2026 07:55:53"
+    },
+    {
+      "id": "TC11",
+      "feature": "Phân quyền",
+      "title": "PLATFORM_ADMIN không được mở cổng học của nhân viên",
+      "role": "PLATFORM_ADMIN",
+      "endpoint": "GET /api/v1/me/pulse/overview",
+      "precondition": "Vai trò không có quyền employee_competency_profile.read",
+      "expected": "403 Forbidden, success = false",
+      "status": "PASS",
+      "http": 403,
+      "ms": 14,
+      "checks": [
+        {
+          "label": "HTTP status = 403",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 403; success = false: đạt",
+      "at": "09/11/2026 07:55:53"
+    },
+    {
+      "id": "TC12",
+      "feature": "Phân quyền",
+      "title": "Gọi tổng quan nền tảng không kèm token",
+      "role": "Ẩn danh",
+      "endpoint": "GET /api/v1/platform/overview",
+      "precondition": "Không gửi header Authorization",
+      "expected": "401 Unauthorized",
+      "status": "PASS",
+      "http": 401,
+      "ms": 24,
+      "checks": [
+        {
+          "label": "HTTP status = 401",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 401; success = false: đạt",
+      "at": "09/11/2026 07:55:54"
+    }
+  ],
+  "auto": [
+    {
+      "id": "AUTO01",
+      "filter": "PlatformAdminAccessTests",
+      "description": "Ma trận quyền API của PLATFORM_ADMIN",
+      "total": 31,
+      "passed": 31,
+      "failed": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "AUTO02",
+      "filter": "DigiTalent.Tests.Platform",
+      "description": "Test use case Platform Admin (khung chuẩn, catalog, tổ chức, người dùng)",
+      "total": 23,
+      "passed": 23,
+      "failed": 0,
+      "status": "PASS"
+    }
+  ]
+}

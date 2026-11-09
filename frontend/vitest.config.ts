@@ -4,6 +4,10 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  // Vitest 1.x runs on its own Vite 5, where @vitejs/plugin-react 6 no longer configures the JSX
+  // transform (it targets Vite 8's oxc). Without this, test files compile JSX to React.createElement
+  // and fail with "React is not defined".
+  esbuild: { jsx: 'automatic' },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

@@ -135,13 +135,13 @@ describe('Câu hỏi ôn tập mô đun (§9.2)', () => {
     const firstSource = image.getAttribute('src');
     expect(firstSource).toContain('m1-i-m01.png');
     expect(pulseService.markModuleViewed).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Tập trung' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tập trung đọc' }));
     expect(screen.getByRole('button', { name: 'Hiện mục lục' }).getAttribute('aria-pressed')).toBe('true');
-    fireEvent.click(screen.getByRole('button', { name: 'Trang tiếp theo →' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Trang tiếp theo' }));
     expect(screen.getByRole('img').getAttribute('src')).toContain('m1-f-m01-s02.png');
     expect(screen.getByRole('button', { name: /Trang 02:/ }).getAttribute('aria-current')).toBe('step');
     await waitFor(() => expect(pulseService.markModuleViewed).toHaveBeenCalledWith('course-1', 'mod-1'));
-    expect(screen.getByRole('button', { name: 'Đến phần ôn tập' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 2, name: 'Câu hỏi ôn tập mô-đun 01' })).toBeTruthy();
   });
 
   it('sends the attempt number and, after a wrong attempt, points to the page to reopen instead of the answer', async () => {
@@ -159,15 +159,17 @@ describe('Câu hỏi ôn tập mô đun (§9.2)', () => {
     const submit = vi.spyOn(pulseService, 'submitModuleQuiz').mockResolvedValue(ok(result));
 
     renderModule();
-    expect(await screen.findByText(/Chưa đạt thì mở lại trang liên quan rồi làm lại với câu hỏi khác/)).toBeTruthy();
+    // The review questions open once the learner reaches the last page of the module.
+    fireEvent.click(await screen.findByRole('button', { name: /Đến trang \d+ để mở khóa/ }));
+    expect(await screen.findByText(/Nếu chưa đạt, bạn có thể xem lại trang bài giảng và làm lại với bộ câu hỏi mới/)).toBeTruthy();
     answerAll(['q1', 'q2']);
-    fireEvent.click(screen.getByRole('button', { name: 'Kiểm tra câu trả lời →' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Nộp bài ôn tập →' }));
 
     await waitFor(() =>
       expect(submit).toHaveBeenCalledWith('course-1', 'mod-1', [{ questionId: 'q1', optionId: 'q1-a' }, { questionId: 'q2', optionId: 'q2-a' }], 1),
     );
-    expect(await screen.findByRole('heading', { name: 'Xem lại trước lần làm thứ 2' })).toBeTruthy();
-    expect(screen.getByText(/Lần 1 chưa đạt \(đúng 1\/2\)/)).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Xem lại nội dung trước lần làm thứ 2' })).toBeTruthy();
+    expect(screen.getByText(/Lần làm thứ 1 chưa đạt \(đúng 1\/2 câu\)/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Mở lại trang 02 →' })).toBeTruthy();
     expect(screen.queryAllByRole('radio')).toHaveLength(0);
     expect(screen.queryByText(/Đã đạt câu hỏi ôn tập/)).toBeNull();
@@ -188,9 +190,8 @@ describe('Câu hỏi ôn tập mô đun (§9.2)', () => {
 
     expect(await screen.findByText('Câu hỏi q3')).toBeTruthy();
     expect(screen.queryByText('Câu hỏi q1')).toBeNull();
-    expect(screen.getByText(/lần làm thứ 2/)).toBeTruthy();
     answerAll(['q3', 'q4']);
-    fireEvent.click(screen.getByRole('button', { name: 'Kiểm tra câu trả lời →' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Nộp bài ôn tập →' }));
     await waitFor(() => expect(submit).toHaveBeenCalledWith('course-1', 'mod-1', expect.any(Array), 2));
   });
 
@@ -200,10 +201,10 @@ describe('Câu hỏi ôn tập mô đun (§9.2)', () => {
 
     renderModule();
     expect(await screen.findByText('Nội dung trang một')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Trang tiếp theo →' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Trang tiếp theo' }));
     expect(markPage).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: '← Trước đó' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Trang trước' }));
     await waitFor(() => expect(markPage).toHaveBeenCalledWith('course-1', 'mod-1', 'l-1'));
     expect(markPage).toHaveBeenCalledTimes(1);
   });

@@ -136,7 +136,7 @@ describe('PositionListPage', () => {
 
     expect(screen.getByText(/ẩn khỏi danh sách đang dùng/i)).toBeInTheDocument();
     const dialog = screen.getByRole('dialog');
-    const confirmBtn = within(dialog).getByRole('button', { name: 'Lưu trữ' });
+    const confirmBtn = within(dialog).getByRole('button', { name: 'Lưu trữ vị trí' });
     expect(confirmBtn).toBeInTheDocument();
 
     fireEvent.click(confirmBtn);

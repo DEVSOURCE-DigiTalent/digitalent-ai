@@ -1,0 +1,410 @@
+{
+  "meta": {
+    "branch": "feature/DT-role-based-tests",
+    "commit": "c51a6d6",
+    "api": "http://localhost:5000",
+    "fe": "http://localhost:5173",
+    "db": "PostgreSQL 16 (DB mới: migration + seed Development)",
+    "date": "09/11/2026"
+  },
+  "role": {
+    "label": "OWNER",
+    "email": "owner@digitalent.ai",
+    "title": "CHỦ DOANH NGHIỆP (OWNER)"
+  },
+  "cases": [
+    {
+      "id": "TC01",
+      "feature": "Xác thực",
+      "title": "Đăng nhập tài khoản demo owner@digitalent.ai để lấy access token",
+      "role": "Ẩn danh",
+      "endpoint": "POST /api/v1/auth/login",
+      "precondition": "Tài khoản demo owner@digitalent.ai (seed Development), mật khẩu Admin@1234",
+      "expected": "200, success = true, trả về accessToken và refreshToken",
+      "status": "PASS",
+      "http": 200,
+      "ms": 388,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "success = true",
+          "ok": true
+        },
+        {
+          "label": "Có accessToken và refreshToken",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; success = true: đạt; Có accessToken và refreshToken: đạt",
+      "at": "09/11/2026 07:47:33"
+    },
+    {
+      "id": "TC02",
+      "feature": "Phiên đăng nhập",
+      "title": "OWNER đọc thông tin phiên: vai trò, workspace và tổ chức",
+      "role": "OWNER",
+      "endpoint": "GET /api/v1/auth/me",
+      "precondition": "Đã đăng nhập (ca trước)",
+      "expected": "200; roles = [OWNER]; workspace = enterprise; organizationId có giá trị",
+      "status": "PASS",
+      "http": 200,
+      "ms": 43,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "roles = [OWNER]",
+          "ok": true
+        },
+        {
+          "label": "workspace = enterprise",
+          "ok": true
+        },
+        {
+          "label": "organizationId có giá trị",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; roles = [OWNER]: đạt; workspace = enterprise: đạt; organizationId có giá trị: đạt",
+      "at": "09/11/2026 07:47:33"
+    },
+    {
+      "id": "TC03",
+      "feature": "OW-01 Tổng quan",
+      "title": "Xem tổng quan doanh nghiệp: thành viên, quyền sử dụng, gói, thiết lập",
+      "role": "OWNER",
+      "endpoint": "GET /api/v1/organization/overview",
+      "precondition": "Seed Development: gói BUSINESS 50 người dùng",
+      "expected": "200; seats.limit = 50; plan.code = BUSINESS; có 4 bước thiết lập",
+      "status": "PASS",
+      "http": 200,
+      "ms": 48,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "seats.limit = 50",
+          "ok": true
+        },
+        {
+          "label": "plan.code = BUSINESS",
+          "ok": true
+        },
+        {
+          "label": "setup có 4 bước",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; seats.limit = 50: đạt; plan.code = BUSINESS: đạt; setup có 4 bước: đạt",
+      "at": "09/11/2026 07:47:34"
+    },
+    {
+      "id": "TC04",
+      "feature": "OW-02 Thành viên",
+      "title": "Xem danh sách thành viên với vai trò và phòng ban",
+      "role": "OWNER",
+      "endpoint": "GET /api/v1/members?pageSize=50",
+      "precondition": "Seed: owner@, manager@, employee@ có hồ sơ nhân viên",
+      "expected": "200; có manager@ vai trò MANAGER và employee@ vai trò EMPLOYEE",
+      "status": "PASS",
+      "http": 200,
+      "ms": 61,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "manager@ có vai trò MANAGER",
+          "ok": true
+        },
+        {
+          "label": "employee@ có vai trò EMPLOYEE",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; manager@ có vai trò MANAGER: đạt; employee@ có vai trò EMPLOYEE: đạt",
+      "at": "09/11/2026 07:47:34"
+    },
+    {
+      "id": "TC05",
+      "feature": "OW-05 Trần năng lực",
+      "title": "Xem ma trận trần năng lực 6 lĩnh vực của doanh nghiệp",
+      "role": "OWNER",
+      "endpoint": "GET /api/v1/capability-ceilings",
+      "precondition": "Chưa lưu trần: hiển thị gợi ý, mặc định Cơ bản",
+      "expected": "200; 6 lĩnh vực; trần Digital AI = 3; 18 khóa nền tảng",
+      "status": "PASS",
+      "http": 200,
+      "ms": 78,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "6 lĩnh vực",
+          "ok": true
+        },
+        {
+          "label": "platformMaxLevel = 3",
+          "ok": true
+        },
+        {
+          "label": "platformCourseCount = 18",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; 6 lĩnh vực: đạt; platformMaxLevel = 3: đạt; platformCourseCount = 18: đạt",
+      "at": "09/11/2026 07:47:34"
+    },
+    {
+      "id": "TC06",
+      "feature": "OW-16 Chuẩn năng lực",
+      "title": "Xem tóm tắt chuẩn năng lực theo vị trí",
+      "role": "OWNER",
+      "endpoint": "GET /api/v1/position-requirements/summaries",
+      "precondition": "Seed: 5 vị trí, mỗi vị trí có bộ yêu cầu ACTIVE",
+      "expected": "200; 5 vị trí; vị trí Kế toán có phiên bản ACTIVE",
+      "status": "PASS",
+      "http": 200,
+      "ms": 50,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "5 vị trí",
+          "ok": true
+        },
+        {
+          "label": "Kế toán có bộ ACTIVE",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; 5 vị trí: đạt; Kế toán có bộ ACTIVE: đạt",
+      "at": "09/11/2026 07:47:34"
+    },
+    {
+      "id": "TC07",
+      "feature": "OW-06 Phòng ban",
+      "title": "Tạo phòng ban mới, rồi đọc lại phòng ban vừa tạo",
+      "role": "OWNER",
+      "endpoint": "POST /api/v1/departments",
+      "precondition": "Mã EVD074732 chưa tồn tại",
+      "expected": "200; trả về id phòng ban; GET /departments/{id} có mã EVD074732, trạng thái ACTIVE",
+      "status": "PASS",
+      "http": 200,
+      "ms": 38,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "success = true, có id",
+          "ok": true
+        },
+        {
+          "label": "GET /departments/{id}: code = EVD074732, status = ACTIVE",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; success = true, có id: đạt; GET /departments/{id}: code = EVD074732, status = ACTIVE: đạt",
+      "at": "09/11/2026 07:47:35"
+    },
+    {
+      "id": "TC08",
+      "feature": "OW-T1 Dùng thử",
+      "title": "Xem chương trình đánh giá đội ngũ (dùng thử)",
+      "role": "OWNER",
+      "endpoint": "GET /api/v1/trial",
+      "precondition": "Tổ chức demo đang ở giai đoạn SETUP",
+      "expected": "200; stage = SETUP; tối đa 30 người; bài test 18 câu + 3 tự luận",
+      "status": "PASS",
+      "http": 200,
+      "ms": 55,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "stage = SETUP",
+          "ok": true
+        },
+        {
+          "label": "maxParticipants = 30",
+          "ok": true
+        },
+        {
+          "label": "18 câu trắc nghiệm, 3 tự luận",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; stage = SETUP: đạt; maxParticipants = 30: đạt; 18 câu trắc nghiệm, 3 tự luận: đạt",
+      "at": "09/11/2026 07:47:35"
+    },
+    {
+      "id": "TC09",
+      "feature": "Gói dịch vụ",
+      "title": "Xem gói dịch vụ và hạn mức người dùng",
+      "role": "OWNER",
+      "endpoint": "GET /api/v1/subscription",
+      "precondition": "Gói BUSINESS",
+      "expected": "200; planCode = BUSINESS; seatLimit = 50",
+      "status": "PASS",
+      "http": 200,
+      "ms": 26,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "planCode = BUSINESS",
+          "ok": true
+        },
+        {
+          "label": "seatLimit = 50",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; planCode = BUSINESS: đạt; seatLimit = 50: đạt",
+      "at": "09/11/2026 07:47:35"
+    },
+    {
+      "id": "TC10",
+      "feature": "Phân quyền",
+      "title": "OWNER không được mở console quản trị nền tảng",
+      "role": "OWNER",
+      "endpoint": "GET /api/v1/platform/overview",
+      "precondition": "Vai trò không có quyền platform.organization.read",
+      "expected": "403 Forbidden, success = false",
+      "status": "PASS",
+      "http": 403,
+      "ms": 11,
+      "checks": [
+        {
+          "label": "HTTP status = 403",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 403; success = false: đạt",
+      "at": "09/11/2026 07:47:35"
+    },
+    {
+      "id": "TC11",
+      "feature": "Phân quyền",
+      "title": "OWNER không được xem việc chấm bài của mentor",
+      "role": "OWNER",
+      "endpoint": "GET /api/v1/mentor/trials",
+      "precondition": "Vai trò không có quyền trial.review",
+      "expected": "403 Forbidden, success = false",
+      "status": "PASS",
+      "http": 403,
+      "ms": 33,
+      "checks": [
+        {
+          "label": "HTTP status = 403",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 403; success = false: đạt",
+      "at": "09/11/2026 07:47:36"
+    },
+    {
+      "id": "TC12",
+      "feature": "Phân quyền",
+      "title": "OWNER không được nộp bài cuối khóa (chỉ người học)",
+      "role": "OWNER",
+      "endpoint": "POST /api/v1/me/pulse/courses/00000000-0000-0000-0000-000000000001/final",
+      "precondition": "Vai trò không có quyền attempt.submit",
+      "expected": "403 Forbidden, success = false",
+      "status": "PASS",
+      "http": 403,
+      "ms": 37,
+      "checks": [
+        {
+          "label": "HTTP status = 403",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 403; success = false: đạt",
+      "at": "09/11/2026 07:47:36"
+    },
+    {
+      "id": "TC13",
+      "feature": "Phân quyền",
+      "title": "Gọi tổng quan doanh nghiệp không kèm token",
+      "role": "Ẩn danh",
+      "endpoint": "GET /api/v1/organization/overview",
+      "precondition": "Không gửi header Authorization",
+      "expected": "401 Unauthorized",
+      "status": "PASS",
+      "http": 401,
+      "ms": 1,
+      "checks": [
+        {
+          "label": "HTTP status = 401",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 401; success = false: đạt",
+      "at": "09/11/2026 07:47:36"
+    }
+  ],
+  "auto": [
+    {
+      "id": "AUTO01",
+      "filter": "OwnerAccessTests",
+      "description": "Ma trận quyền API của OWNER",
+      "total": 27,
+      "passed": 27,
+      "failed": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "AUTO02",
+      "filter": "DigiTalent.Tests.Organization",
+      "description": "Test use case tổ chức (thành viên, lời mời, phòng ban, vị trí)",
+      "total": 67,
+      "passed": 67,
+      "failed": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "AUTO03",
+      "filter": "CapabilityCeilingTests",
+      "description": "Trần năng lực doanh nghiệp / phòng ban theo suất đã mua",
+      "total": 7,
+      "passed": 7,
+      "failed": 0,
+      "status": "PASS"
+    }
+  ]
+}

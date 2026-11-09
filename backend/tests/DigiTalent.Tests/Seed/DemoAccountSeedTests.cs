@@ -39,7 +39,8 @@ public class DemoAccountSeedTests
             "employee@digitalent.ai", "personal@digitalent.ai", "trial@digitalent.ai", "free@digitalent.ai",
         });
         users["manager@digitalent.ai"].PasswordHash.Should().Be("existing-hash");
-        users["manager@digitalent.ai"].DisplayName.Should().Be("Existing Manager");
+        // The seed keeps the password of an existing demo account but restores its standard display name (1d61355).
+        users["manager@digitalent.ai"].DisplayName.Should().Be("Department Manager");
         users["platform@digitalent.ai"].OrganizationId.Should().BeNull();
         users["platform@digitalent.ai"].EmailVerifiedAt.Should().NotBeNull();
         users["mentor@digitalent.ai"].OrganizationId.Should().BeNull();

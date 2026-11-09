@@ -302,10 +302,10 @@ describe('Platform Admin console (v2)', () => {
     renderAt('/platform/dashboard');
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Toàn cảnh nền tảng hôm nay.' })).toBeInTheDocument();
-    expect((await screen.findByText('⚓ Phiên bản đang dùng')).nextElementSibling).toHaveTextContent('v3');
-    expect(screen.getByText('1 khóa mới · 2 đã sửa')).toBeInTheDocument();
+    expect((await screen.findByText('Phiên bản đang dùng')).nextElementSibling).toHaveTextContent('v3');
+    expect(screen.getByText('+1 khóa mới · 2 đã sửa')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Mở bản nháp' })).toHaveAttribute('href', '/platform/versions/4');
-    expect(screen.getByText('1 người dùng thử hết hạn trong 2 ngày.')).toBeInTheDocument();
+    expect(screen.getByText('1 người dùng thử nghiệm sẽ hết hạn trong vòng 48 giờ tới.')).toBeInTheDocument();
     const sidebar = screen.getByRole('complementary', { name: 'Điều hướng quản trị nền tảng' });
     expect(within(sidebar).getByRole('link', { name: /Phiên bản khóa học/ })).toHaveAttribute('href', '/platform/versions');
     expect(within(sidebar).getByRole('link', { name: /Đơn giá/ })).toHaveAttribute('href', '/platform/commerce');
@@ -315,10 +315,10 @@ describe('Platform Admin console (v2)', () => {
     renderAt('/platform/frameworks');
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Chuẩn năng lực số TT02' })).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { level: 4, name: 'Khai thác dữ liệu và thông tin' })).toBeInTheDocument();
-    expect(screen.getByText('1 khóa trong v3 · +1 trong bản nháp v4')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 3, name: 'Khai thác dữ liệu và thông tin' })).toBeInTheDocument();
+    expect(screen.getByText('1 Khóa trong v3 · +1 khóa mới (nháp)')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /AI1-F/ })).toHaveAttribute('href', '/platform/versions/4/courses/c-AI1-F');
-    expect(screen.getByRole('button', { name: '+ Thêm lĩnh vực' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Thêm lĩnh vực' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Thêm khung/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Sửa khung|Xóa khung/ })).not.toBeInTheDocument();
   });
@@ -328,7 +328,7 @@ describe('Platform Admin console (v2)', () => {
     catalog.updateDomain.mockResolvedValue(frameworkDetail);
     renderAt('/platform/frameworks');
 
-    fireEvent.click(await screen.findByRole('button', { name: '+ Thêm lĩnh vực' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Thêm lĩnh vực' }));
     const addForm = screen.getByRole('form', { name: 'Thêm lĩnh vực' });
     fireEvent.change(within(addForm).getByLabelText('Tên lĩnh vực mới'), { target: { value: 'Dữ liệu khách hàng' } });
     fireEvent.click(within(addForm).getByRole('button', { name: 'Thêm lĩnh vực' }));
@@ -385,7 +385,7 @@ describe('Platform Admin console (v2)', () => {
     renderAt('/platform/versions');
 
     expect(await screen.findByText('Phiên bản v3')).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { level: 2, name: 'Khóa học của v4' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Danh mục khóa học thuộc v4' })).toBeInTheDocument();
     expect(screen.getByText('Bản nháp chép từ v3: 1 khóa mới, 0 khóa đã sửa.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Công bố v4' })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Sửa' })).toHaveLength(3);
@@ -400,13 +400,13 @@ describe('Platform Admin console (v2)', () => {
     });
     renderAt('/platform/versions/4');
 
-    expect(await screen.findByRole('heading', { level: 2, name: 'Khóa học của v4' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Danh mục khóa học thuộc v4' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Bỏ AI1-F khỏi bản nháp' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Công bố v4' }));
 
     const dialog = await screen.findByRole('dialog', { name: 'Công bố phiên bản v4' });
     expect(await within(dialog).findByText(/Mô đun 1: chưa có nội dung./)).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'Công bố v4 →' })).toBeDisabled();
+    expect(within(dialog).getByRole('button', { name: 'Xác nhận công bố v4' })).toBeDisabled();
     expect(catalog.publishVersion).not.toHaveBeenCalled();
   });
 
@@ -447,7 +447,7 @@ describe('Platform Admin console (v2)', () => {
     expect(screen.queryByRole('button', { name: '+ Thêm mô đun' })).not.toBeInTheDocument();
     fireEvent.click(await screen.findByRole('button', { name: 'Sửa trong v4' }));
 
-    expect(await screen.findByText('Mọi thay đổi được lưu ngay vào bản nháp v4.')).toBeInTheDocument();
+    expect(await screen.findByText('Mọi thay đổi được tự động lưu ngay vào bản nháp v4.')).toBeInTheDocument();
     expect(catalog.getCourse).toHaveBeenLastCalledWith(4, 'c-AI1-F');
     expect(screen.getByRole('button', { name: '+ Thêm mô đun' })).toBeInTheDocument();
   });
@@ -470,7 +470,7 @@ describe('Platform Admin console (v2)', () => {
     expect(screen.getByText('Gói Doanh nghiệp')).toBeInTheDocument();
     expect(screen.getByText('4 / 6')).toBeInTheDocument();
     expect(screen.getByText('Dữ liệu · Cơ bản')).toBeInTheDocument();
-    const submit = screen.getByRole('button', { name: 'Ghi nhận thao tác hỗ trợ →' });
+    const submit = screen.getByRole('button', { name: 'Xác nhận thao tác hỗ trợ →' });
     await waitFor(() => expect(screen.getByRole('combobox', { name: 'Khóa có phí để cấp suất' })).toHaveValue('A1-I'));
     expect(submit).toBeDisabled();
 
@@ -514,7 +514,7 @@ describe('Platform Admin console (v2)', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Mia Trần' })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Lý do ghi nhật ký'), { target: { value: 'Tài khoản bị chia sẻ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Khóa tài khoản →' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Khóa tài khoản này →' }));
 
     await waitFor(() => expect(service.lockUser).toHaveBeenCalledWith('u-1', 'Tài khoản bị chia sẻ'));
   });
@@ -550,8 +550,8 @@ describe('Platform Admin console (v2)', () => {
     renderAt('/platform/users?trial=ENDING_SOON');
 
     expect(await screen.findByText('Dùng thử · còn 2 ngày')).toBeInTheDocument();
-    expect(screen.getByText('Hết hạn trong 2 ngày').nextElementSibling).toHaveTextContent('1');
-    expect(screen.getByRole('button', { name: 'Sắp hết hạn' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('Hết hạn trong 48h').parentElement!.nextElementSibling).toHaveTextContent('1');
+    expect(screen.getByRole('button', { name: 'Sắp hết hạn (≤ 48h)' })).toHaveAttribute('aria-pressed', 'true');
     expect(service.getUsers).toHaveBeenCalledWith(expect.objectContaining({ trial: 'ENDING_SOON' }));
   });
 
@@ -580,13 +580,16 @@ describe('Platform Admin console (v2)', () => {
     renderAt('/platform/account');
     const name = useCurrentUser.getState().user!.fullName;
 
-    expect(await screen.findByRole('heading', { level: 1, name })).toBeInTheDocument();
-    expect(await screen.findByText('⚓ v3')).toBeInTheDocument();
-    expect(screen.getByText('Khóa học chuẩn').previousElementSibling).toHaveTextContent('18');
-    await waitFor(() => expect(screen.getByText('Mục nhật ký').previousElementSibling).toHaveTextContent('9'));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Hồ sơ cá nhân & Thiết lập hệ thống.' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument();
+    expect((await screen.findByText('Khóa học chuẩn hóa')).previousElementSibling).toHaveTextContent('18');
+    await waitFor(() => expect(screen.getByText('Nhật ký kiểm toán').previousElementSibling).toHaveTextContent('9'));
     expect(service.getAuditLogs).toHaveBeenCalledWith(expect.objectContaining({ pageSize: 1, scope: 'platform' }));
-    expect(screen.getByRole('link', { name: `Hồ sơ của tôi: ${name}` })).toHaveAttribute('href', '/platform/account');
-    expect(screen.getByRole('button', { name: 'Đăng xuất' })).toBeInTheDocument();
+
+    // The header menu leads back to this page and signs out.
+    fireEvent.click(screen.getByRole('button', { name: `Menu người dùng: ${name}` }));
+    expect(screen.getByRole('link', { name: 'Hồ sơ quản trị viên' })).toHaveAttribute('href', '/platform/account');
+    expect(screen.getByRole('button', { name: 'Đăng xuất hệ thống' })).toBeInTheDocument();
   });
 
   it('redirects the retired curriculum editor to the catalog versions', async () => {
