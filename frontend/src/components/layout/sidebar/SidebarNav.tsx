@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useMemo, useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
@@ -19,6 +20,7 @@ interface SidebarNavProps {
 }
 
 export function SidebarNav({ config, isRail, onItemClick, workspace, variant = 'default' }: SidebarNavProps) {
+  useUiLanguage();
   const pulseManager = variant === 'pulse-manager';
   const { pathname } = useLocation();
   const hasEntitlement = useCurrentUser((s) => s.hasEntitlement);
@@ -82,18 +84,18 @@ export function SidebarNav({ config, isRail, onItemClick, workspace, variant = '
   }, [activeGroupLabel]);
 
   return (
-    <nav aria-label="Điều hướng chính" className={cn('flex-1 overflow-y-auto', !pulseManager && 'py-2 px-2 space-y-0.5')}>
+    <nav aria-label={translateUi("Điều hướng chính")} className={cn('flex-1 overflow-y-auto', !pulseManager && 'py-2 px-2 space-y-0.5')}>
       {config.map((section) => {
         // Label-only group header (Pulse flat sidebar)
         if (!section.screenId && (!section.items || section.items.length === 0)) {
           if (isRail) return null;
           if (pulseManager) {
-            return <span key={`label-${section.label}`} className="pm-side-label">{section.label}</span>;
+            return <span key={`label-${section.label}`} className="pm-side-label">{translateUi(section.label)}</span>;
           }
           return (
             <div key={`label-${section.label}`} className="mt-5 first:mt-0 px-3 pb-1.5">
               <span className="text-[10px] font-black tracking-[0.14em] uppercase text-ent-sidebar-muted">
-                {section.label}
+                {translateUi(section.label)}
               </span>
             </div>
           );
@@ -111,7 +113,7 @@ export function SidebarNav({ config, isRail, onItemClick, workspace, variant = '
             <div key={section.label} className={pulseManager ? undefined : 'py-0.5'}>
               <SidebarItem
                 href={path}
-                label={section.label}
+                label={translateUi(section.label)}
                 icon={Icon ? <Icon className={pulseManager ? undefined : 'w-4 h-4 shrink-0'} strokeWidth={pulseManager ? 1.8 : 1.5} /> : undefined}
                 isActive={isActive}
                 isLocked={locked}
@@ -140,7 +142,7 @@ export function SidebarNav({ config, isRail, onItemClick, workspace, variant = '
                   onClick={() => setExpanded((p) => ({ ...p, [section.label]: !p[section.label] }))}
                   className="flex items-center justify-between w-full px-2 py-1.5 text-xs text-ent-sidebar-muted hover:text-ent-sidebar-fg transition-colors"
                 >
-                  <span>{section.label}</span>
+                  <span>{translateUi(section.label)}</span>
                   <ChevronDown
                     className={cn('w-3 h-3 transition-transform duration-150', !isExpanded && '-rotate-90')}
                   />
@@ -157,7 +159,7 @@ export function SidebarNav({ config, isRail, onItemClick, workspace, variant = '
                     <SidebarItem
                       key={item.screenId}
                       href={path}
-                      label={item.label}
+                      label={translateUi(item.label)}
                       icon={Icon ? <Icon className="w-4 h-4 shrink-0" strokeWidth={1.5} /> : undefined}
                       isActive={isActive}
                       isLocked={locked}

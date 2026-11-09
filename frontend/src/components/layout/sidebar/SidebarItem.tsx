@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { ReactNode } from 'react';
 import { Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -18,6 +19,7 @@ interface SidebarItemProps {
 }
 
 export function SidebarItem({ icon, label, isActive, isLocked, isRail, href, onClick, variant = 'default', dataTour }: SidebarItemProps) {
+  useUiLanguage();
   const lockTooltip = isLocked ? `${label} (Cần nâng cấp gói để mở)` : undefined;
 
   const innerContent = (
@@ -35,9 +37,9 @@ export function SidebarItem({ icon, label, isActive, isLocked, isRail, href, onC
       }
     >
       {icon && <span className="shrink-0">{icon}</span>}
-      {!isRail && <span className={cn('flex-1 truncate', variant === 'default' && 'text-sm')}>{label}</span>}
+      {!isRail && <span className={cn('flex-1 min-w-0 whitespace-normal leading-snug', variant === 'default' && 'text-sm')}>{translateUi(label)}</span>}
       {!isRail && isLocked && (
-        <Lock aria-label="Chưa có trong gói" className="w-3.5 h-3.5 ml-auto shrink-0 text-ent-sidebar-muted" />
+        <Lock aria-label={translateUi("Chưa có trong gói")} className="w-3.5 h-3.5 ml-auto shrink-0 text-ent-sidebar-muted" />
       )}
     </div>
   );

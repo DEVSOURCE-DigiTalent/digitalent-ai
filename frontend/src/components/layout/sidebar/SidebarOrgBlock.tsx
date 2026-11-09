@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { ROLES, WORKSPACES } from '@/lib/roles';
 
@@ -6,6 +7,7 @@ interface SidebarOrgBlockProps {
 }
 
 export function SidebarOrgBlock({ isRail = false }: SidebarOrgBlockProps) {
+  useUiLanguage();
   const user = useCurrentUser((s) => s.user);
 
   const isPlatform = user?.workspace === WORKSPACES.PLATFORM || Boolean(user?.roles?.includes(ROLES.PLATFORM_ADMIN));
@@ -34,7 +36,7 @@ export function SidebarOrgBlock({ isRail = false }: SidebarOrgBlockProps) {
         </div>
         {!isRail && (
           <div className="flex-1 min-w-0">
-            <div className="text-ent-sidebar-fg font-semibold leading-tight text-sm truncate" title={orgName}>
+            <div className="text-ent-sidebar-fg font-semibold leading-tight text-sm truncate" title={translateUi(orgName)}>
               {orgName}
             </div>
             <div className="text-[10px] text-ent-sidebar-muted uppercase tracking-wider mt-0.5 truncate">

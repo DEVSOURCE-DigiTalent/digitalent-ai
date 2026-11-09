@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { EmptyState } from './EmptyState';
@@ -66,6 +67,7 @@ export function DataTable<T extends Record<string, any>>({
   className,
   forceScrollX = false,
 }: DataTableProps<T>) {
+  useUiLanguage();
   const visibleColumns = columns;
   const mobileClass = (col: Column<T>) => {
     if (col.className?.includes('hidden')) return '';
@@ -91,10 +93,10 @@ export function DataTable<T extends Record<string, any>>({
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ent-fg-3" />
               <input
                 type="text"
-                aria-label={searchPlaceholder}
+                aria-label={translateUi(searchPlaceholder)}
                 value={searchValue ?? ''}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder={searchPlaceholder}
+                placeholder={translateUi(searchPlaceholder)}
                 className="w-full pl-9 pr-3 py-2 text-sm bg-ent-raised border border-ent-line rounded-md text-ent-fg placeholder:text-ent-fg-3 focus:outline-none focus:ring-2 focus:ring-ent-accent focus:border-ent-accent"
               />
             </div>
@@ -119,7 +121,7 @@ export function DataTable<T extends Record<string, any>>({
 
       {/* Empty state */}
       {!isLoading && data.length === 0 && (
-        <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />
+        <EmptyState title={translateUi(emptyTitle)} description={translateUi(emptyDescription)} action={emptyAction} />
       )}
 
       {/* Table with sticky headers */}
@@ -142,7 +144,7 @@ export function DataTable<T extends Record<string, any>>({
                     onClick={() => col.sortable && onSort?.(col.key)}
                   >
                     <span className="inline-flex items-center gap-1">
-                      {col.header}
+                      {translateUi(col.header)}
                       {col.sortable && renderSortIcon(col.key)}
                     </span>
                   </th>
@@ -184,24 +186,20 @@ export function DataTable<T extends Record<string, any>>({
         <div className="flex items-center justify-between px-4 py-3 border-t border-ent-line">
           <span className="text-xs text-ent-fg-3 tabular-nums">
             {pageInfo.pageSize * (pageInfo.page - 1) + 1}–
-            {Math.min(pageInfo.pageSize * pageInfo.page, pageInfo.total)} trên {pageInfo.total}
+            {Math.min(pageInfo.pageSize * pageInfo.page, pageInfo.total)}{translateUi(" trên ")}{pageInfo.total}
           </span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => pageInfo.onPageChange(pageInfo.page - 1)}
               disabled={pageInfo.page <= 1}
               className="px-3 py-1 text-xs font-medium text-ent-fg-2 border border-ent-line rounded-md hover:bg-ent-raised disabled:opacity-40 transition-colors"
-            >
-              Trước
-            </button>
-            <span className="text-xs text-ent-fg-3">Trang {pageInfo.page}</span>
+            >{translateUi("Trước")}</button>
+            <span className="text-xs text-ent-fg-3">{translateUi("Trang ")}{pageInfo.page}</span>
             <button
               onClick={() => pageInfo.onPageChange(pageInfo.page + 1)}
               disabled={pageInfo.page >= Math.ceil(pageInfo.total / pageInfo.pageSize)}
               className="px-3 py-1 text-xs font-medium text-ent-fg-2 border border-ent-line rounded-md hover:bg-ent-raised disabled:opacity-40 transition-colors"
-            >
-              Sau
-            </button>
+            >{translateUi("Sau")}</button>
           </div>
         </div>
       )}

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Suspense, type ComponentType, type ReactNode } from 'react';
 import type { RouteObject } from 'react-router-dom';
 import { RequireActiveSubscription } from '../../components/guards/RequireActiveSubscription';
@@ -10,7 +11,8 @@ import { PageLoading } from '../../components/shared/LoadingState';
 
 /** Shown while a page's code chunk loads (pages are lazy, see lazy-page.ts); the portal shell stays on screen. */
 export function RouteFallback() {
-  return <PageLoading label="Đang tải trang" />;
+  useUiLanguage();
+  return <PageLoading label={translateUi("Đang tải trang")} />;
 }
 
 /** Real pages by screen ID. Screens without an entry render a placeholder until they are built. */
@@ -34,7 +36,7 @@ export function buildRoutes(screens: ScreenDef[], pages: PageRegistry, base: str
         <Page />
       </Suspense>
     ) : (
-      <PlaceholderPage screenId={screen.id} title={screen.title} priority={screen.priority} />
+      <PlaceholderPage screenId={screen.id} title={translateUi(screen.title)} priority={screen.priority} />
     );
     return { path: screen.path.slice(base.length + 1), element: guard(screen, page) };
   });

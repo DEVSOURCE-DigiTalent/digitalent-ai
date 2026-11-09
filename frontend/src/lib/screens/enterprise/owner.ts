@@ -22,7 +22,7 @@ export const OWNER_SCREENS: ScreenDef[] = [
   // ── Dùng thử (docs/specs/2026-10-27-enterprise-trial-assessment.md) ──
   {
     id: 'OW-T1',
-    title: 'Dùng thử',
+    title: 'Đánh giá đội ngũ',
     path: '/enterprise/trial',
     roles: OWNER_ROLES,
     permission: P.TRIAL_MANAGE,
@@ -194,7 +194,7 @@ export const OWNER_SCREENS: ScreenDef[] = [
   // ── Đào tạo ──
   {
     id: 'OW-23',
-    title: 'Chương trình chuẩn',
+    title: 'Khóa học',
     path: '/enterprise/courses',
     roles: OWNER_ROLES,
     permission: P.COURSE_READ_CATALOG,
@@ -202,7 +202,7 @@ export const OWNER_SCREENS: ScreenDef[] = [
   },
   {
     id: 'OW-24',
-    title: 'Chi tiết khóa học chuẩn',
+    title: 'Chi tiết khóa học',
     path: '/enterprise/courses/:id',
     roles: OWNER_ROLES,
     permission: P.COURSE_READ_CATALOG,
@@ -320,7 +320,7 @@ export const OWNER_SCREENS: ScreenDef[] = [
   // ── Báo cáo ──
   {
     id: 'OW-40',
-    title: 'Báo cáo & Phân tích',
+    title: 'Báo cáo chu kỳ',
     path: '/enterprise/reports',
     roles: OWNER_ROLES,
     permission: P.DASHBOARD_HR_COMPANY_READ,
