@@ -37,6 +37,12 @@ public static class EndpointCatalog
         };
     }
 
+    /// <summary>A personal account: no persisted role, shown as LEARNER by /auth/me.</summary>
+    public const string PersonalLearner = "LEARNER";
+
+    /// <summary>What PermissionService grants an account without role (or LEARNER) on top of role_permissions.</summary>
+    private static readonly string[] PersonalLearnerGrants = { Permissions.Account.ViewOwn, "learner.access" };
+
     /// <summary>Whether a signed-in account holding only <paramref name="role"/> passes the permission filter.</summary>
     public static bool RoleCanCall(string role, ApiEndpoint endpoint)
     {
@@ -45,7 +51,10 @@ public static class EndpointCatalog
             return true;
         }
 
-        return RolePermissions.Defaults.TryGetValue(role, out var granted) && endpoint.Permissions.Any(granted.Contains);
+        var granted = role == PersonalLearner
+            ? PersonalLearnerGrants
+            : RolePermissions.Defaults.TryGetValue(role, out var defaults) ? defaults : Array.Empty<string>();
+        return endpoint.Permissions.Any(granted.Contains);
     }
 
     public static bool RoleCanCall(string role, string verb, string route) => RoleCanCall(role, Find(verb, route));
