@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -25,6 +26,7 @@ const two = (n: number) => String(n).padStart(2, '0');
  * it changes (outline: course info → modules → course-final); published versions are read-only.
  */
 export function PlatformCourseBuilderPage() {
+  useUiLanguage();
   const params = useParams<{ versionNo: string; courseId: string }>();
   const versionNo = Number(params.versionNo);
   const courseId = params.courseId!;
@@ -41,6 +43,7 @@ export function PlatformCourseBuilderPage() {
 }
 
 function Builder({ course }: { course: CatalogCourseDetail }) {
+  useUiLanguage();
   const [params, setParams] = useSearchParams();
   const { can } = usePermission();
   const editable = course.editable && can(PERMISSIONS.PLATFORM_CATALOG_MANAGE);
@@ -70,9 +73,9 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
               <span className="pa-eyebrow-dot" />
               QUẢN TRỊ NỀN TẢNG / STUDIO BIÊN SOẠN KHÓA HỌC · {status}
             </div>
-            <h1 className="pa-header-title">{course.title || 'Khóa học mới'}</h1>
+            <h1 className="pa-header-title">{translateUi(course.title) || 'Khóa học mới'}</h1>
             <p className="pa-header-subtitle">
-              {course.frameworkName} · {course.domainName} · {course.levelName} · Mã học phần <strong>{course.code}</strong>
+              {course.frameworkName} · {translateUi(course.domainName)} · {course.levelName} · Mã học phần <strong>{course.code}</strong>
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -115,18 +118,18 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
           }}
           aria-live="polite"
         >
-          {kind && <Pill tone={kind.tone}>{kind.label}</Pill>}
-          <span>{courseEdit.isPending ? 'Đang tự động lưu…' : `Mọi thay đổi được tự động lưu ngay vào bản nháp v${course.versionNo}.`}</span>
+          {kind && <Pill tone={kind.tone}>{translateUi(kind.label)}</Pill>}
+          <span>{courseEdit.isPending ? 'Đang tự động lưu…' : translateUi(`Mọi thay đổi được tự động lưu ngay vào bản nháp v${course.versionNo}.`)}</span>
         </div>
       )}
       <div className="pa-builder">
-        <nav className="pa-outline" aria-label="Cấu trúc khóa học">
+        <nav className="pa-outline" aria-label={translateUi("Cấu trúc khóa học")}>
           <button type="button" className="pa-ol-item" aria-current={section === 'info' ? 'step' : undefined} onClick={() => go('info')}>
             <b>i</b>
             <span>
-              <strong>Thông tin khóa học</strong>
+              <strong>{translateUi("Thông tin khóa học")}</strong>
               <small>
-                {LEVEL_NAMES[course.level]} · {course.pricePerSeat ? formatMoney(course.pricePerSeat) : 'Miễn phí'}
+                {translateUi(LEVEL_NAMES[course.level])} · {course.pricePerSeat ? formatMoney(course.pricePerSeat) : translateUi('Miễn phí')}
               </small>
             </span>
           </button>
@@ -141,7 +144,7 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
             >
               <b>{two(m.index + 1)}</b>
               <span>
-                <strong>{m.title || 'Mô đun chưa đặt tên'}</strong>
+                <strong>{translateUi(m.title) || 'Mô đun chưa đặt tên'}</strong>
                 <small>
                   {m.blocks.length} khối · {m.questions.length} câu hỏi
                 </small>
@@ -164,7 +167,7 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
           <button type="button" className="pa-ol-item" aria-current={section === 'final' ? 'step' : undefined} onClick={() => go('final')}>
             <b>✓</b>
             <span>
-              <strong>{course.final.title}</strong>
+              <strong>{translateUi(course.final.title)}</strong>
               <small>Quản lý phòng ban chấm</small>
             </span>
           </button>
@@ -199,6 +202,7 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
 }
 
 function NewModuleForm({ edit, onDone }: { edit: CourseEdit; onDone: (index: number | null) => void }) {
+  useUiLanguage();
   const [title, setTitle] = useState('');
   const [saving, setSaving] = useState(false);
   const valid = title.trim().length >= 2;
@@ -226,11 +230,9 @@ function NewModuleForm({ edit, onDone }: { edit: CourseEdit; onDone: (index: num
       </label>
       <div className="button-row">
         <button type="submit" className="btn btn-primary btn-small" disabled={!valid || saving}>
-          {saving ? 'Đang thêm…' : 'Thêm'}
+          {saving ? 'Đang thêm…' : translateUi('Thêm')}
         </button>
-        <button type="button" className="btn btn-ghost btn-small" onClick={() => onDone(null)}>
-          Hủy
-        </button>
+        <button type="button" className="btn btn-ghost btn-small" onClick={() => onDone(null)}>{translateUi("Hủy")}</button>
       </div>
     </form>
   );
@@ -238,6 +240,7 @@ function NewModuleForm({ edit, onDone }: { edit: CourseEdit; onDone: (index: num
 
 /** A published version cannot change: point to the draft (or create it) to edit the same course there. */
 function ReadOnlyBar({ course }: { course: CatalogCourseDetail }) {
+  useUiLanguage();
   const navigate = useNavigate();
   const versions = useCatalogVersions();
   const createDraft = useCreateDraft();
@@ -266,7 +269,7 @@ function ReadOnlyBar({ course }: { course: CatalogCourseDetail }) {
       </span>
       {can(PERMISSIONS.PLATFORM_CATALOG_MANAGE) && (
         <button type="button" className="btn btn-primary btn-small" onClick={openDraft} disabled={createDraft.isPending || versions.isLoading}>
-          {draftNo !== null ? `Sửa trong v${draftNo}` : 'Tạo bản nháp để sửa'}
+          {draftNo !== null ? translateUi(`Sửa trong v${draftNo}`) : 'Tạo bản nháp để sửa'}
         </button>
       )}
     </div>

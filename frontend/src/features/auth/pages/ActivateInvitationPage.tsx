@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -29,6 +30,7 @@ const errorMessage = (error: unknown) => organizationErrorMessage(error, 'Không
 
 /** AUTH-05: an invited employee confirms the invitation, sets a password and enters the organization. */
 export function ActivateInvitationPage() {
+  useUiLanguage();
   const { token = '' } = useParams();
   const invitation = useQuery({
     queryKey: ['invitation', token],
@@ -51,7 +53,7 @@ export function ActivateInvitationPage() {
       {invitation.isError && (
         <div className="pulse-auth-fields">
           <p role="alert" className="pulse-auth-error">{errorMessage(invitation.error)}</p>
-          <p>Hãy nhờ doanh nghiệp gửi lại lời mời, hoặc đăng nhập nếu bạn đã kích hoạt.</p>
+          <p>{translateUi("Hãy nhờ doanh nghiệp gửi lại lời mời, hoặc đăng nhập nếu bạn đã kích hoạt.")}</p>
           <Link to="/login" className="pulse-auth-link">
             Đến trang đăng nhập
           </Link>
@@ -61,9 +63,7 @@ export function ActivateInvitationPage() {
       {invitation.data?.status === 'accepted' && (
         <div className="pulse-auth-fields">
           <p className="pulse-auth-info">Lời mời này đã được kích hoạt.</p>
-          <Link to="/login" className="pulse-auth-link">
-            Đăng nhập
-          </Link>
+          <Link to="/login" className="pulse-auth-link">{translateUi("Đăng nhập")}</Link>
         </div>
       )}
 
@@ -93,6 +93,7 @@ interface ActivationFormProps {
 }
 
 function ActivationForm({ token, email, fullName, organizationName, roleLabel, departmentName, positionName }: ActivationFormProps) {
+  useUiLanguage();
   const navigate = useNavigate();
   const login = useLogin();
   const [submitError, setSubmitError] = useState<string>();
@@ -124,7 +125,7 @@ function ActivationForm({ token, email, fullName, organizationName, roleLabel, d
   return (
     <>
       <p className="pulse-auth-info">
-        <strong>{organizationName}</strong> mời bạn với vai trò <strong>{roleLabel}</strong>
+        <strong>{organizationName}</strong> mời bạn với vai trò <strong>{translateUi(roleLabel)}</strong>
         {departmentName ? <> · Phòng ban <strong>{departmentName}</strong></> : null}
         {positionName ? <> · Vị trí <strong>{positionName}</strong></> : null}.
       </p>
@@ -132,17 +133,17 @@ function ActivationForm({ token, email, fullName, organizationName, roleLabel, d
       <form onSubmit={onSubmit} noValidate className="pulse-auth-fields">
         {submitError && <p role="alert" className="pulse-auth-error">{submitError}</p>}
         <div className="pulse-auth-field">
-          <label htmlFor="email">Email nhận lời mời</label>
+          <label htmlFor="email">{translateUi("Email nhận lời mời")}</label>
           <input id="email" type="email" value={email} readOnly />
           <span className="pulse-auth-field-hint">Địa chỉ này sẽ dùng để đăng nhập.</span>
         </div>
         <div className="pulse-auth-field">
-          <label htmlFor="fullName">Họ và tên</label>
+          <label htmlFor="fullName">{translateUi("Họ và tên")}</label>
           <input id="fullName" autoComplete="name" aria-invalid={!!errors.fullName} {...register('fullName')} />
-          {errors.fullName && <p role="alert" className="pulse-auth-inline-error">{errors.fullName.message}</p>}
+          {errors.fullName && <p role="alert" className="pulse-auth-inline-error">{translateUi(errors.fullName.message)}</p>}
         </div>
         <div className="pulse-auth-field">
-          <label htmlFor="password">Mật khẩu mới</label>
+          <label htmlFor="password">{translateUi("Mật khẩu mới")}</label>
           <div className="pulse-auth-input-wrap">
             <input
               id="password"
@@ -155,7 +156,7 @@ function ActivationForm({ token, email, fullName, organizationName, roleLabel, d
             <button
               type="button"
               className="pulse-auth-icon-button"
-              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              aria-label={translateUi(showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu')}
               onClick={() => setShowPassword((v) => !v)}
               tabIndex={-1}
             >
@@ -163,10 +164,10 @@ function ActivationForm({ token, email, fullName, organizationName, roleLabel, d
             </button>
           </div>
           <span className="pulse-auth-field-hint">Từ 12 đến 128 ký tự.</span>
-          {errors.password && <p role="alert" className="pulse-auth-inline-error">{errors.password.message}</p>}
+          {errors.password && <p role="alert" className="pulse-auth-inline-error">{translateUi(errors.password.message)}</p>}
         </div>
         <div className="pulse-auth-field">
-          <label htmlFor="confirmPassword">Nhập lại mật khẩu</label>
+          <label htmlFor="confirmPassword">{translateUi("Nhập lại mật khẩu")}</label>
           <div className="pulse-auth-input-wrap">
             <input
               id="confirmPassword"
@@ -179,14 +180,14 @@ function ActivationForm({ token, email, fullName, organizationName, roleLabel, d
             <button
               type="button"
               className="pulse-auth-icon-button"
-              aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              aria-label={translateUi(showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu')}
               onClick={() => setShowConfirmPassword((v) => !v)}
               tabIndex={-1}
             >
               {showConfirmPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
             </button>
           </div>
-          {errors.confirmPassword && <p role="alert" className="pulse-auth-inline-error">{errors.confirmPassword.message}</p>}
+          {errors.confirmPassword && <p role="alert" className="pulse-auth-inline-error">{translateUi(errors.confirmPassword.message)}</p>}
         </div>
         <button type="submit" disabled={isSubmitting} className="pulse-auth-primary">
           {isSubmitting ? 'Đang kích hoạt…' : 'Kích hoạt và vào hệ thống'}

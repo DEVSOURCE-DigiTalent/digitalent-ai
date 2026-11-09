@@ -1,6 +1,8 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Award, CheckCircle2, QrCode, Share2, ShieldCheck, Lock } from 'lucide-react';
 
 export function TrialCertificateSection() {
+  useUiLanguage();
   return (
     <section id="certificate" className="relative py-20 border-t border-cream/10 bg-[#06141a]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -94,7 +96,7 @@ export function TrialCertificateSection() {
                 {/* Score & Validation Strip */}
                 <div className="w-full rounded-2xl bg-white/[0.03] p-3.5 border border-white/5 flex items-center justify-between text-xs">
                   <div className="text-left space-y-0.5">
-                    <span className="text-[10px] text-stone-400 uppercase font-semibold block">Mã xác thực</span>
+                    <span className="text-[10px] text-stone-400 uppercase font-semibold block">{translateUi("Mã xác thực")}</span>
                     <span className="font-mono text-xs text-amber-300 font-medium">DT-CERT-2026-8892</span>
                   </div>
 

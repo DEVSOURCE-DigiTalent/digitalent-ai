@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -24,6 +25,7 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
  * Draft / Scheduled / Running / Completed / Cancelled.
  */
 export function TrainingBatchListPage() {
+  useUiLanguage();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [pageIndex, setPageIndex] = useState(1);
@@ -79,9 +81,7 @@ export function TrainingBatchListPage() {
           to="/enterprise/training-batches/new"
           className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 shadow-sm transition-colors"
         >
-          <Plus className="size-4" />
-          Tạo đợt đào tạo mới
-        </Link>
+          <Plus className="size-4" />{translateUi("Tạo đợt đào tạo mới")}</Link>
       </div>
 
       {/* KPI Cards */}
@@ -91,15 +91,15 @@ export function TrainingBatchListPage() {
           <div className="text-xl font-bold text-slate-900 mt-1">{summary?.total ?? 0}</div>
         </div>
         <div className="bg-white rounded-xl border border-sky-100 bg-sky-50/20 p-3.5 shadow-sm">
-          <div className="text-xs text-sky-700 font-medium">Đang diễn ra</div>
+          <div className="text-xs text-sky-700 font-medium">{translateUi("Đang diễn ra")}</div>
           <div className="text-xl font-bold text-sky-800 mt-1">{summary?.running ?? 0}</div>
         </div>
         <div className="bg-white rounded-xl border border-amber-100 bg-amber-50/20 p-3.5 shadow-sm">
-          <div className="text-xs text-amber-700 font-medium">{import.meta.env.VITE_USE_MOCK === 'true' ? 'Đã lên lịch' : 'Bản nháp'}</div>
+          <div className="text-xs text-amber-700 font-medium">{import.meta.env.VITE_USE_MOCK === 'true' ? translateUi('Đã lên lịch') : translateUi('Bản nháp')}</div>
           <div className="text-xl font-bold text-amber-800 mt-1">{summary?.scheduled ?? 0}</div>
         </div>
         <div className="bg-white rounded-xl border border-emerald-100 bg-emerald-50/20 p-3.5 shadow-sm">
-          <div className="text-xs text-emerald-700 font-medium">Đã hoàn thành</div>
+          <div className="text-xs text-emerald-700 font-medium">{translateUi("Đã hoàn thành")}</div>
           <div className="text-xl font-bold text-emerald-800 mt-1">{summary?.completed ?? 0}</div>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm">
@@ -129,7 +129,7 @@ export function TrainingBatchListPage() {
           >
             {STATUS_OPTIONS.filter((opt) => import.meta.env.VITE_USE_MOCK === 'true' || opt.value !== 'SCHEDULED').map((opt) => (
               <option key={opt.value} value={opt.value}>
-                {opt.label}
+                {translateUi(opt.label)}
               </option>
             ))}
           </select>
@@ -141,7 +141,7 @@ export function TrainingBatchListPage() {
         {isError ? (
           <div role="alert" className="py-12 text-center text-sm text-rose-700">
             Không tải được đợt đào tạo: {apiErrorMessage(error, 'Vui lòng thử lại.')}
-            <button type="button" onClick={() => void refetch()} className="ml-3 font-semibold underline">Thử lại</button>
+            <button type="button" onClick={() => void refetch()} className="ml-3 font-semibold underline">{translateUi("Thử lại")}</button>
           </div>
         ) : isLoading ? (
           <div className="py-20 text-center text-sm text-slate-500">Đang tải danh sách đợt đào tạo…</div>
@@ -165,11 +165,11 @@ export function TrainingBatchListPage() {
               <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600">
                 <tr>
                   <th className="px-4 py-3">Mã / Tên đợt đào tạo</th>
-                  <th className="px-4 py-3">Thời gian</th>
-                  <th className="px-4 py-3">Quy mô</th>
-                  <th className="px-4 py-3">{import.meta.env.VITE_USE_MOCK === 'true' ? 'Tiến độ đợt' : 'Tỷ lệ hoàn thành'}</th>
-                  <th className="px-4 py-3">Trạng thái</th>
-                  <th className="px-4 py-3 text-right">Thao tác</th>
+                  <th className="px-4 py-3">{translateUi("Thời gian")}</th>
+                  <th className="px-4 py-3">{translateUi("Quy mô")}</th>
+                  <th className="px-4 py-3">{import.meta.env.VITE_USE_MOCK === 'true' ? translateUi('Tiến độ đợt') : translateUi('Tỷ lệ hoàn thành')}</th>
+                  <th className="px-4 py-3">{translateUi("Trạng thái")}</th>
+                  <th className="px-4 py-3 text-right">{translateUi("Thao tác")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -195,10 +195,9 @@ export function TrainingBatchListPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3.5 text-xs text-slate-600">
-                      <div><strong className="text-slate-800">{batch.coursesCount}</strong> khóa học</div>
+                      <div><strong className="text-slate-800">{batch.coursesCount}</strong>{translateUi(" khóa học")}</div>
                       <div className="text-slate-400 mt-0.5">
-                        <strong className="text-slate-700">{batch.participantsCount}</strong> học viên
-                        {batch.completedParticipantsCount > 0 && ` (${batch.completedParticipantsCount} xong)`}
+                        <strong className="text-slate-700">{batch.participantsCount}</strong>{translateUi(" học viên")}{batch.completedParticipantsCount > 0 && ` (${batch.completedParticipantsCount} xong)`}
                       </div>
                     </td>
                     <td className="px-4 py-3.5">
@@ -217,15 +216,14 @@ export function TrainingBatchListPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3.5">
-                      <StatusBadge label={statusLabel(batch.status)} variant={statusVariant(batch.status)} />
+                      <StatusBadge label={translateUi(statusLabel(batch.status))} variant={statusVariant(batch.status)} />
                     </td>
                     <td className="px-4 py-3.5 text-right">
                       <Link
                         to={`/enterprise/training-batches/${batch.id}`}
                         className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:text-primary-800 px-2.5 py-1 rounded bg-primary-50 hover:bg-primary-100 transition-colors"
                       >
-                        <Eye className="w-3.5 h-3.5" /> Chi tiết
-                      </Link>
+                        <Eye className="w-3.5 h-3.5" />{translateUi(" Chi tiết")}</Link>
                     </td>
                   </tr>
                 ))}
@@ -237,10 +235,10 @@ export function TrainingBatchListPage() {
       {(batchesData?.totalPages ?? 0) > 1 && (
         <div className="flex items-center justify-end gap-3 text-sm">
           <button type="button" disabled={pageIndex <= 1} onClick={() => setPageIndex((page) => page - 1)}
-            className="rounded border border-slate-300 px-3 py-1.5 disabled:opacity-40">Trang trước</button>
-          <span>Trang {pageIndex} / {batchesData?.totalPages}</span>
+            className="rounded border border-slate-300 px-3 py-1.5 disabled:opacity-40">{translateUi("Trang trước")}</button>
+          <span>{translateUi("Trang ")}{pageIndex} / {batchesData?.totalPages}</span>
           <button type="button" disabled={pageIndex >= (batchesData?.totalPages ?? 1)} onClick={() => setPageIndex((page) => page + 1)}
-            className="rounded border border-slate-300 px-3 py-1.5 disabled:opacity-40">Trang sau</button>
+            className="rounded border border-slate-300 px-3 py-1.5 disabled:opacity-40">{translateUi("Trang sau")}</button>
         </div>
       )}
     </div>

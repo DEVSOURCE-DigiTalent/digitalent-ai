@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import {
   BookOpen,
@@ -7,6 +8,7 @@ import {
 } from 'lucide-react';
 
 export function OwnerQuickOperations() {
+  useUiLanguage();
   const operations = [
     {
       title: 'Đánh giá đội ngũ',
@@ -41,9 +43,7 @@ export function OwnerQuickOperations() {
   return (
     <div className="rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-xs p-5 shadow-xs hover:shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-all flex flex-col justify-between">
       <div>
-        <h3 className="text-sm font-bold text-[#17243f] pb-3 border-b border-slate-100">
-          Thao tác Nhanh
-        </h3>
+        <h3 className="text-sm font-bold text-[#17243f] pb-3 border-b border-slate-100">{translateUi("Thao tác Nhanh")}</h3>
 
         <div className="mt-4 grid grid-cols-2 gap-2.5">
           {operations.map((op) => {
@@ -58,7 +58,7 @@ export function OwnerQuickOperations() {
                   <Icon className="size-4" />
                 </div>
                 <span className="text-xs font-semibold text-[#17243f] group-hover:text-[#137b84] transition-colors">
-                  {op.title}
+                  {translateUi(op.title)}
                 </span>
               </Link>
             );

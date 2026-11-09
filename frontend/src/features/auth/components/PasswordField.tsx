@@ -1,3 +1,4 @@
+import { translateUi } from '@/lib/i18n';
 import { forwardRef, useState, type InputHTMLAttributes } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -53,7 +54,7 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
             tabIndex={-1}
             onClick={() => setShow((prev) => !prev)}
             className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-cream transition-colors cursor-pointer"
-            aria-label={show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+            aria-label={translateUi(show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu')}
           >
             {show ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
           </button>
@@ -73,8 +74,8 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
               ))}
             </div>
             <div className="flex justify-between items-center text-[10px] text-stone-400">
-              <span>Độ bảo mật: <strong className="text-cream">{strength.label}</strong></span>
-              {length < 8 && <span>{length}/8 ký tự tối thiểu</span>}
+              <span>Độ bảo mật: <strong className="text-cream">{translateUi(strength.label)}</strong></span>
+              {length < 8 && <span>{length}{translateUi("/8 ký tự tối thiểu")}</span>}
             </div>
           </div>
         )}

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useId, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { Modal } from './Modal';
@@ -32,6 +33,7 @@ export function ConfirmActionDialog({
   reasonPlaceholder = 'Nêu lý do cần thực hiện thao tác này…',
   children,
 }: ConfirmActionDialogProps) {
+  useUiLanguage();
   const reasonId = useId();
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,8 +61,8 @@ export function ConfirmActionDialog({
       open={open}
       onClose={close}
       size="sm"
-      title={title}
-      description={typeof description === 'string' ? <p>{description}</p> : description}
+      title={translateUi(title)}
+      description={translateUi(typeof description === 'string' ? <p>{description}</p> : translateUi(description))}
       footer={
         <>
           <button
@@ -68,9 +70,7 @@ export function ConfirmActionDialog({
             onClick={close}
             disabled={isSubmitting}
             className="px-4 py-2 text-sm font-medium text-ent-fg-2 bg-ent-raised border border-ent-line rounded-lg hover:bg-ent-card hover:text-ent-fg transition-colors disabled:opacity-50"
-          >
-            Hủy
-          </button>
+          >{translateUi("Hủy")}</button>
           <button
             type="button"
             onClick={handleConfirm}
@@ -82,7 +82,7 @@ export function ConfirmActionDialog({
                 : 'bg-ent-primary text-ent-on-primary hover:opacity-90',
             )}
           >
-            {isSubmitting ? 'Đang xử lý…' : confirmLabel}
+            {isSubmitting ? translateUi('Đang xử lý…') : confirmLabel}
           </button>
         </>
       }
@@ -97,7 +97,7 @@ export function ConfirmActionDialog({
             id={reasonId}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder={reasonPlaceholder}
+            placeholder={translateUi(reasonPlaceholder)}
             rows={3}
             required
             className="w-full px-3 py-2 bg-ent-raised border border-ent-line rounded-lg text-sm text-ent-fg placeholder:text-ent-fg-3 focus:outline-none focus:ring-2 focus:ring-ent-accent focus:border-ent-accent"

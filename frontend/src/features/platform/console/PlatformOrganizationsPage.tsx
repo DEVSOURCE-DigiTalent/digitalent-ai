@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { usePlatformOrganizations } from '@/hooks/use-platform-admin';
@@ -31,6 +32,7 @@ type TabKey = (typeof TABS)[number]['key'];
 
 /** PA-05 · Quản trị Tổ chức: list of customer tenants with In-Context Slide-in Drawer (PA-06). */
 export function PlatformOrganizationsPage() {
+  useUiLanguage();
   const [params, setParams] = useSearchParams();
   const initialTab = (TABS.find((t) => t.key === params.get('status') || t.key === params.get('stage'))?.key ?? 'ALL') as TabKey;
   const [tab, setTab] = useState<TabKey>(initialTab);
@@ -97,7 +99,7 @@ export function PlatformOrganizationsPage() {
           <div className="pa-tabs" role="group" aria-label="Lọc tổ chức">
             {TABS.map((t) => (
               <button key={t.key} type="button" aria-pressed={tab === t.key} onClick={() => chooseTab(t.key)}>
-                {t.label}
+                {translateUi(t.label)}
               </button>
             ))}
           </div>
@@ -138,9 +140,9 @@ export function PlatformOrganizationsPage() {
                     <th>Tổ chức & Chủ sở hữu</th>
                     <th>Gói thuê bao & hạn dùng</th>
                     <th>Khóa học theo cấp</th>
-                    <th className="num">Nhân sự tham gia</th>
-                    <th>Ngày tạo</th>
-                    <th style={{ width: 100 }}>Thao tác</th>
+                    <th className="num">{translateUi("Nhân sự tham gia")}</th>
+                    <th>{translateUi("Ngày tạo")}</th>
+                    <th style={{ width: 100 }}>{translateUi("Thao tác")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -195,7 +197,7 @@ export function PlatformOrganizationsPage() {
                           <div>
                             <strong style={{ color: '#0f172a' }}>{o.participantCount}</strong> / {o.employeeCount}
                           </div>
-                          <small className="pa-cell-sub">nhân viên</small>
+                          <small className="pa-cell-sub">{translateUi("nhân viên")}</small>
                         </div>
                       </td>
                       <td>{formatDate(o.createdAt)}</td>
@@ -226,15 +228,15 @@ export function PlatformOrganizationsPage() {
       <PlatformDrawer
         isOpen={Boolean(drawerOrgId)}
         onClose={() => setDrawerOrgId(null)}
-        title={selectedOrg?.name ?? 'Chi tiết tổ chức'}
-        subtitle={selectedOrg?.ownerEmail ? `Chủ sở hữu: ${selectedOrg.ownerEmail}` : 'Hồ sơ 360 doanh nghiệp'}
+        title={translateUi(selectedOrg?.name ?? 'Chi tiết tổ chức')}
+        subtitle={translateUi(selectedOrg?.ownerEmail ? translateUi(`Chủ sở hữu: ${selectedOrg.ownerEmail}`) : 'Hồ sơ 360 doanh nghiệp')}
         icon={Building2}
         badge={
           selectedOrg && (
             selectedOrg.status === 'SUSPENDED' ? (
-              <Pill tone={ORG_STATUS.SUSPENDED.tone}>{ORG_STATUS.SUSPENDED.label}</Pill>
+              <Pill tone={ORG_STATUS.SUSPENDED.tone}>{translateUi(ORG_STATUS.SUSPENDED.label)}</Pill>
             ) : (
-              <Pill tone={STAGE_LABELS[selectedOrg.stage]?.tone}>{STAGE_LABELS[selectedOrg.stage]?.label ?? 'Đang hoạt động'}</Pill>
+              <Pill tone={STAGE_LABELS[selectedOrg.stage]?.tone}>{translateUi(STAGE_LABELS[selectedOrg.stage]?.label) ?? translateUi('Đang hoạt động')}</Pill>
             )
           )
         }
@@ -249,9 +251,7 @@ export function PlatformOrganizationsPage() {
               >
                 Mở toàn màn hình <ExternalLink size={13} style={{ marginLeft: 4 }} />
               </Link>
-              <button type="button" className="btn btn-outline btn-small" onClick={() => setDrawerOrgId(null)}>
-                Đóng
-              </button>
+              <button type="button" className="btn btn-outline btn-small" onClick={() => setDrawerOrgId(null)}>{translateUi("Đóng")}</button>
             </div>
           ) : undefined
         }
@@ -265,11 +265,12 @@ export function PlatformOrganizationsPage() {
 }
 
 function PlanCell({ organization: o }: { organization: PlatformOrganization }) {
+  useUiLanguage();
   const stage =
     o.status === 'SUSPENDED' ? (
-      <Pill tone={ORG_STATUS.SUSPENDED.tone}>{ORG_STATUS.SUSPENDED.label}</Pill>
+      <Pill tone={ORG_STATUS.SUSPENDED.tone}>{translateUi(ORG_STATUS.SUSPENDED.label)}</Pill>
     ) : (
-      <Pill tone={STAGE_LABELS[o.stage]?.tone}>{STAGE_LABELS[o.stage]?.label ?? o.stage}</Pill>
+      <Pill tone={STAGE_LABELS[o.stage]?.tone}>{translateUi(STAGE_LABELS[o.stage]?.label) ?? o.stage}</Pill>
     );
 
   return (

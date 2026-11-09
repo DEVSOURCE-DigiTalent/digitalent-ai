@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { ScanFace } from 'lucide-react';
 import type { PulseFaceCheck, PulseProctoringRisk, PulseRiskMoment } from '@/services/pulse.service';
 import { PROCTORING_EVENT_LABELS, RISK_LEVEL_LABELS, clock, formatDuration } from '@/features/pulse-employee/lib/labels';
@@ -11,9 +12,10 @@ const FACE_CHECK_TEXT: Record<PulseFaceCheck, string | null> = {
 
 /** Nhãn ngắn mức rủi ro (thẻ bài trong hàng chờ, đầu trình phát). */
 export function RiskTag({ risk }: { risk: PulseProctoringRisk }) {
+  useUiLanguage();
   return (
-    <span className={`pu-risk-tag ${risk.level.toLowerCase()}`} title={`Điểm rủi ro gian lận ${risk.score}/100`}>
-      {RISK_LEVEL_LABELS[risk.level]} · {risk.score}
+    <span className={`pu-risk-tag ${risk.level.toLowerCase()}`} title={translateUi(`Điểm rủi ro gian lận ${risk.score}/100`)}>
+      {translateUi(RISK_LEVEL_LABELS[risk.level])} · {risk.score}
     </span>
   );
 }
@@ -28,6 +30,7 @@ function momentLabel(moment: PulseRiskMoment) {
  * là của người chấm.
  */
 export function ProctoringRiskPanel({ risk, t, onSeek }: { risk: PulseProctoringRisk; t: number; onSeek: (ms: number) => void }) {
+  useUiLanguage();
   const faceText = FACE_CHECK_TEXT[risk.faceCheck];
   return (
     <section className={`pu-risk ${risk.level.toLowerCase()}`} aria-label="Phân tích rủi ro gian lận">
@@ -36,10 +39,10 @@ export function ProctoringRiskPanel({ risk, t, onSeek }: { risk: PulseProctoring
           <b>{risk.score}</b>
         </div>
         <div>
-          <strong>{RISK_LEVEL_LABELS[risk.level]}</strong>
+          <strong>{translateUi(RISK_LEVEL_LABELS[risk.level])}</strong>
           <p>
             {risk.moments.length
-              ? `${risk.moments.length} điểm đáng ngờ — bấm để tua bản ghi tới đúng đoạn.`
+              ? translateUi(`${risk.moments.length} điểm đáng ngờ — bấm để tua bản ghi tới đúng đoạn.`)
               : 'Không có điểm đáng ngờ trong nhật ký giám sát.'}
           </p>
         </div>
@@ -49,7 +52,7 @@ export function ProctoringRiskPanel({ risk, t, onSeek }: { risk: PulseProctoring
         <ul className="pu-risk-factors" aria-label="Yếu tố đóng góp">
           {risk.factors.map((factor) => (
             <li key={factor.kind}>
-              <span>{PROCTORING_EVENT_LABELS[factor.kind]}</span>
+              <span>{translateUi(PROCTORING_EVENT_LABELS[factor.kind])}</span>
               <small>
                 {factor.count} lần{factor.totalMs >= 1000 ? ` · ${formatDuration(factor.totalMs)}` : ''}
               </small>
@@ -76,7 +79,7 @@ export function ProctoringRiskPanel({ risk, t, onSeek }: { risk: PulseProctoring
                     {momentLabel(moment)}
                     <small>
                       {formatDuration(Math.max(1000, moment.endMs - moment.startMs))}
-                      {moment.eventCount > 1 ? ` · ${moment.eventCount} sự kiện` : ''}
+                      {moment.eventCount > 1 ? translateUi(` · ${moment.eventCount} sự kiện`) : ''}
                     </small>
                   </span>
                   <b>+{moment.points}</b>

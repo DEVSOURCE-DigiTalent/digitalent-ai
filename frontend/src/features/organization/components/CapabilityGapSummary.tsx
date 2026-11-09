@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { GapStats } from '@/services/analytics.service';
 
 interface CapabilityGapSummaryProps {
@@ -5,6 +6,7 @@ interface CapabilityGapSummaryProps {
 }
 
 export function CapabilityGapSummary({ totals }: CapabilityGapSummaryProps) {
+  useUiLanguage();
   return (
     <div className="gap-summary grid grid-cols-1 sm:grid-cols-3 gap-[10px]">
       <div
@@ -14,9 +16,7 @@ export function CapabilityGapSummary({ totals }: CapabilityGapSummaryProps) {
         <span
           className="text-[10px] font-black tracking-[0.1em]"
           style={{ color: 'var(--po-accent)' }}
-        >
-          NHÂN SỰ PHÂN TÍCH
-        </span>
+        >{translateUi("NHÂN SỰ PHÂN TÍCH")}</span>
         <strong
           className="text-[31px] font-light leading-none tracking-[-0.05em]"
           style={{ color: 'var(--po-ink)' }}
@@ -25,9 +25,7 @@ export function CapabilityGapSummary({ totals }: CapabilityGapSummaryProps) {
           <small
             className="ml-[5px] text-[11px] font-medium tracking-normal"
             style={{ color: 'var(--po-muted)' }}
-          >
-            nhân viên có snapshot
-          </small>
+          >{translateUi("nhân viên có phân tích")}</small>
         </strong>
       </div>
 
@@ -38,9 +36,7 @@ export function CapabilityGapSummary({ totals }: CapabilityGapSummaryProps) {
         <span
           className="text-[10px] font-black tracking-[0.1em]"
           style={{ color: 'var(--po-accent)' }}
-        >
-          KHOẢNG TRỐNG XÁC NHẬN
-        </span>
+        >{translateUi("KHOẢNG TRỐNG XÁC NHẬN")}</span>
         <strong
           className="text-[31px] font-light leading-none tracking-[-0.05em]"
           style={{ color: 'var(--po-ink)' }}
@@ -51,8 +47,7 @@ export function CapabilityGapSummary({ totals }: CapabilityGapSummaryProps) {
               className="ml-[5px] text-[11px] font-medium tracking-normal"
               style={{ color: 'var(--po-muted)' }}
             >
-              {totals.highCount} mức cao
-            </small>
+              {totals.highCount}{translateUi(" mức cao")}</small>
           )}
         </strong>
       </div>
@@ -64,9 +59,7 @@ export function CapabilityGapSummary({ totals }: CapabilityGapSummaryProps) {
         <span
           className="text-[10px] font-black tracking-[0.1em]"
           style={{ color: 'var(--po-accent)' }}
-        >
-          TỶ LỆ ĐÁP ỨNG
-        </span>
+        >{translateUi("TỶ LỆ ĐÁP ỨNG")}</span>
         <strong
           className="text-[31px] font-light leading-none tracking-[-0.05em]"
           style={{ color: 'var(--po-ink)' }}
@@ -75,9 +68,7 @@ export function CapabilityGapSummary({ totals }: CapabilityGapSummaryProps) {
           <small
             className="ml-[5px] text-[11px] font-medium tracking-normal"
             style={{ color: 'var(--po-muted)' }}
-          >
-            % trung bình toàn tổ chức
-          </small>
+          >{translateUi("% trung bình toàn tổ chức")}</small>
         </strong>
       </div>
     </div>

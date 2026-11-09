@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Plus, X, Layers } from 'lucide-react';
 import { REFERENCE_POSITIONS } from '@/lib/reference-positions';
@@ -18,6 +19,7 @@ interface PositionsStepProps {
  * và gắn Phòng ban tương ứng.
  */
 export function PositionsStep({ setup, onBack, onDone, onSkip }: PositionsStepProps) {
+  useUiLanguage();
   const save = useSavePositions();
   const [codes, setCodes] = useState<string[]>(() =>
     setup.positions.filter((p) => !p.isCustom).map((p) => p.code),
@@ -117,7 +119,7 @@ export function PositionsStep({ setup, onBack, onDone, onSkip }: PositionsStepPr
                   />
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium text-ent-fg">{position.name}</span>
-                    <span className="block text-xs text-ent-fg-3 line-clamp-2">{position.description}</span>
+                    <span className="block text-xs text-ent-fg-3 line-clamp-2">{translateUi(position.description)}</span>
                   </span>
                 </label>
 
@@ -159,9 +161,7 @@ export function PositionsStep({ setup, onBack, onDone, onSkip }: PositionsStepPr
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label htmlFor="custom-position" className="text-xs text-ent-fg-2 block mb-1">
-              Tên vị trí
-            </label>
+            <label htmlFor="custom-position" className="text-xs text-ent-fg-2 block mb-1">{translateUi("Tên vị trí")}</label>
             <input
               id="custom-position"
               value={draft}
@@ -172,9 +172,7 @@ export function PositionsStep({ setup, onBack, onDone, onSkip }: PositionsStepPr
           </div>
 
           <div>
-            <label htmlFor="custom-dept" className="text-xs text-ent-fg-2 block mb-1">
-              Phòng ban
-            </label>
+            <label htmlFor="custom-dept" className="text-xs text-ent-fg-2 block mb-1">{translateUi("Phòng ban")}</label>
             <select
               id="custom-dept"
               value={draftDept}
@@ -215,7 +213,7 @@ export function PositionsStep({ setup, onBack, onDone, onSkip }: PositionsStepPr
                 <button
                   type="button"
                   onClick={() => setCustom(custom.filter((n) => n !== name))}
-                  aria-label={`Xóa ${name}`}
+                  aria-label={translateUi(`Xóa ${name}`)}
                   className="grid size-5 place-items-center rounded-full hover:bg-amber-400/20 text-ent-fg-3 hover:text-ent-fg"
                 >
                   <X className="size-3" aria-hidden="true" />
@@ -226,12 +224,12 @@ export function PositionsStep({ setup, onBack, onDone, onSkip }: PositionsStepPr
         </ul>
       )}
 
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-600">{translateUi(error)}</p>}
 
       <div className="flex flex-wrap items-center gap-3 pt-2">
-        <button type="button" onClick={onBack} className={SECONDARY_BUTTON}>Quay lại</button>
+        <button type="button" onClick={onBack} className={SECONDARY_BUTTON}>{translateUi("Quay lại")}</button>
         <button type="button" onClick={submit} disabled={save.isPending || total === 0} className={PRIMARY_BUTTON}>
-          {save.isPending ? 'Đang lưu…' : `Lưu ${total} vị trí và tiếp tục`}
+          {save.isPending ? translateUi('Đang lưu…') : translateUi(`Lưu ${total} vị trí và tiếp tục`)}
         </button>
         <button type="button" onClick={onSkip} className={LINK_BUTTON}>Bỏ qua bước này</button>
       </div>

@@ -9,6 +9,7 @@ public class GetSkillGapRunsUseCaseInput : PaginationRequest
     public Guid? DepartmentId { get; set; }
     /// <summary>Vị trí HIỆN TẠI của nhân viên.</summary>
     public Guid? JobPositionId { get; set; }
+    public string? JobGrade { get; set; }
     /// <summary>true (mặc định): chỉ snapshot mới nhất của mỗi nhân viên; false: toàn bộ lịch sử.</summary>
     public bool LatestOnly { get; set; } = true;
 }

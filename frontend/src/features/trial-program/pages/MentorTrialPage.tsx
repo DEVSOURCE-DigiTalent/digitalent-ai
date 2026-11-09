@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
@@ -17,6 +18,7 @@ import '../trial-program.css';
  * công bố bảng năng lực.
  */
 export function MentorTrialPage() {
+  useUiLanguage();
   const { organizationId } = useParams();
   const { data, isLoading, error } = useMentorTrial(organizationId);
 
@@ -30,6 +32,7 @@ export function MentorTrialPage() {
 }
 
 function MentorTrialView({ trial }: { trial: MentorTrial }) {
+  useUiLanguage();
   const [selected, setSelected] = useState<string | null>(trial.assessments.find((a) => !a.reviewedAt)?.assessmentId ?? trial.assessments[0]?.assessmentId ?? null);
   const publish = usePublishTrialReport(trial.organizationId);
   const assessment = trial.assessments.find((a) => a.assessmentId === selected);
@@ -48,15 +51,13 @@ function MentorTrialView({ trial }: { trial: MentorTrial }) {
     <>
       <PageHead
         eyebrow="Mentor / Chấm bài"
-        title={trial.organizationName}
-        description={`Hạn làm bài ${formatWhen(trial.testDeadline)} · muốn chấm lúc ${formatWhen(trial.preferredReviewAt)}${trial.requestNote ? ` · “${trial.requestNote}”` : ''}`}
+        title={translateUi(trial.organizationName)}
+        description={translateUi(`Hạn làm bài ${formatWhen(trial.testDeadline)} · muốn chấm lúc ${formatWhen(trial.preferredReviewAt)}${trial.requestNote ? ` · “${trial.requestNote}”` : ''}`)}
         actions={
           <>
-            <Link className="btn btn-outline btn-small" to="/platform/reviews">Danh sách</Link>
+            <Link className="btn btn-outline btn-small" to="/platform/reviews">{translateUi("Danh sách")}</Link>
             {!reported && (
-              <button type="button" className="btn btn-primary" disabled={!trial.canPublish || publish.isPending} onClick={onPublish}>
-                Công bố kết quả
-              </button>
+              <button type="button" className="btn btn-primary" disabled={!trial.canPublish || publish.isPending} onClick={onPublish}>{translateUi("Công bố kết quả")}</button>
             )}
           </>
         }
@@ -64,7 +65,7 @@ function MentorTrialView({ trial }: { trial: MentorTrial }) {
       <div className="tp tp-pu tp-review">
         <Box>
           <div className="tp-card-head" style={{ marginBottom: 8 }}>
-            <strong>Nhân viên</strong>
+            <strong>{translateUi("Nhân viên")}</strong>
             <StageBadge stage={trial.stage} />
           </div>
           <div className="tp-people">
@@ -84,7 +85,7 @@ function MentorTrialView({ trial }: { trial: MentorTrial }) {
           {assessment ? (
             <AssessmentReview key={assessment.assessmentId} trial={trial} assessment={assessment} readOnly={reported} />
           ) : (
-            <Box><p className="pa-empty">Chưa có bài nộp.</p></Box>
+            <Box><p className="pa-empty">{translateUi("Chưa có bài nộp.")}</p></Box>
           )}
         </div>
       </div>
@@ -93,6 +94,7 @@ function MentorTrialView({ trial }: { trial: MentorTrial }) {
 }
 
 function AssessmentReview({ trial, assessment, readOnly }: { trial: MentorTrial; assessment: MentorAssessment; readOnly: boolean }) {
+  useUiLanguage();
   const review = useReviewTrialAssessment(trial.organizationId);
   const ai = useTrialEssayAiReview(trial.organizationId);
   const pass = trial.essayPassScore;
@@ -141,30 +143,29 @@ function AssessmentReview({ trial, assessment, readOnly }: { trial: MentorTrial;
           <div>
             <h2 style={{ margin: 0, fontSize: 17 }}>{assessment.fullName}</h2>
             <span className="tp-muted">
-              {[assessment.departmentName, assessment.positionName].filter(Boolean).join(' · ')} · nộp {formatWhen(assessment.submittedAt)}
+              {[assessment.departmentName, assessment.positionName].filter(Boolean).join(' · ')}{translateUi(" · nộp ")}{formatWhen(assessment.submittedAt)}
             </span>
           </div>
           <span className="tp-row">
-            <span className="tp-badge info">Trắc nghiệm {assessment.choiceScore}/{assessment.choiceTotal}</span>
-            <span className={`tp-badge${scored ? ' info' : ''}`}>
-              Tự luận {scored ? `${essayTotal}/${assessment.essays.length * trial.essayMaxScore}` : 'chưa chấm'}
+            <span className="tp-badge info">{translateUi("Trắc nghiệm ")}{assessment.choiceScore}/{assessment.choiceTotal}</span>
+            <span className={`tp-badge${scored ? ' info' : ''}`}>{translateUi("Tự luận ")}{scored ? `${essayTotal}/${assessment.essays.length * trial.essayMaxScore}` : 'chưa chấm'}
             </span>
           </span>
         </div>
       </Box>
 
-      {assessment.recording ? <RecordingPlayer recording={assessment.recording} /> : <Box><p className="pa-empty">Không có bản ghi.</p></Box>}
+      {assessment.recording ? <RecordingPlayer recording={assessment.recording} /> : <Box><p className="pa-empty">{translateUi("Không có bản ghi.")}</p></Box>}
 
       <Box>
         <div className="tp-card-head" style={{ marginBottom: 8 }}>
           <div>
-            <strong>Tự luận</strong>
-            <span className="tp-muted"> · chấm 0–{trial.essayMaxScore}, đạt từ {pass}</span>
+            <strong>{translateUi("Tự luận")}</strong>
+            <span className="tp-muted"> · chấm 0–{trial.essayMaxScore}{translateUi(", đạt từ ")}{pass}</span>
           </div>
           {!readOnly && (
             <span className="tp-row">
               {assessment.aiReview && (
-                <button type="button" className="btn btn-outline btn-small" onClick={useAiScores}>Dùng điểm AI</button>
+                <button type="button" className="btn btn-outline btn-small" onClick={useAiScores}>{translateUi("Dùng điểm AI")}</button>
               )}
               {trial.aiAvailable && (
                 <button type="button" className="btn btn-outline btn-small" disabled={ai.isPending} onClick={runAi}>
@@ -174,8 +175,8 @@ function AssessmentReview({ trial, assessment, readOnly }: { trial: MentorTrial;
             </span>
           )}
         </div>
-        {!trial.aiAvailable && <p className="tp-muted" style={{ marginBottom: 8 }}>Chấm bài thủ công.</p>}
-        {ai.isError && !readOnly && <p className="tp-muted" style={{ marginBottom: 8 }}>{errorMessage(ai.error)} Bấm “AI gợi ý điểm” để thử lại.</p>}
+        {!trial.aiAvailable && <p className="tp-muted" style={{ marginBottom: 8 }}>{translateUi("Chấm bài thủ công.")}</p>}
+        {ai.isError && !readOnly && <p className="tp-muted" style={{ marginBottom: 8 }}>{errorMessage(ai.error)}{translateUi(" Bấm “AI gợi ý điểm” để thử lại.")}</p>}
         {assessment.aiReview?.summary && (
           <p className="tp-ai" style={{ marginBottom: 10 }}><Sparkles size={14} aria-hidden /> <span><b>AI:</b> {assessment.aiReview.summary}</span></p>
         )}
@@ -184,11 +185,11 @@ function AssessmentReview({ trial, assessment, readOnly }: { trial: MentorTrial;
             const suggestion = aiScore(e.tier);
             const score = scores[i];
             return (
-              <section key={e.tier} className="tp-essay" aria-label={`Tự luận ${TIER_LABELS[e.tier]}`}>
+              <section key={e.tier} className="tp-essay" aria-label={translateUi(`Tự luận ${TIER_LABELS[e.tier]}`)}>
                 <div className="tp-essay-head">
-                  <strong>{TIER_LABELS[e.tier]} · {e.title}</strong>
+                  <strong>{translateUi(TIER_LABELS[e.tier])} · {translateUi(e.title)}</strong>
                   {score != null && (
-                    <span className={`tp-badge ${score >= pass ? 'ok' : 'bad'}`}>{score}/{trial.essayMaxScore} · {score >= pass ? 'Đạt' : 'Chưa đạt'}</span>
+                    <span className={`tp-badge ${score >= pass ? 'ok' : 'bad'}`}>{score}/{trial.essayMaxScore} · {score >= pass ? 'Đạt' : translateUi('Chưa đạt')}</span>
                   )}
                 </div>
                 <span className="tp-muted">{e.prompt}</span>
@@ -197,11 +198,11 @@ function AssessmentReview({ trial, assessment, readOnly }: { trial: MentorTrial;
                   <div className="tp-ai">
                     <Sparkles size={14} aria-hidden />
                     <span>
-                      <b>AI gợi ý {suggestion.score}/{trial.essayMaxScore} · {suggestion.passed ? 'Đạt' : 'Chưa đạt'}.</b> {suggestion.feedback}
+                      <b>{translateUi("AI gợi ý ")}{suggestion.score}/{trial.essayMaxScore} · {suggestion.passed ? 'Đạt' : translateUi('Chưa đạt')}.</b> {suggestion.feedback}
                     </span>
                   </div>
                 )}
-                <div className="tp-score" role="radiogroup" aria-label={`Điểm tự luận ${TIER_LABELS[e.tier]}`}>
+                <div className="tp-score" role="radiogroup" aria-label={translateUi(`Điểm tự luận ${TIER_LABELS[e.tier]}`)}>
                   {Array.from({ length: trial.essayMaxScore + 1 }, (_, value) => (
                     <button
                       key={value}
@@ -224,17 +225,17 @@ function AssessmentReview({ trial, assessment, readOnly }: { trial: MentorTrial;
 
       <Box>
         <div className="tp-card-head" style={{ marginBottom: 8 }}>
-          <strong>Mức theo lĩnh vực</strong>
-          <span className="tp-muted">Gợi ý = cấp đạt liên tiếp ở cả trắc nghiệm và tự luận</span>
+          <strong>{translateUi("Mức theo lĩnh vực")}</strong>
+          <span className="tp-muted">{translateUi("Gợi ý = cấp đạt liên tiếp ở cả trắc nghiệm và tự luận")}</span>
         </div>
         <div className="tp-table-wrap">
           <table className="tp-table">
             <thead>
               <tr>
-                <th>Lĩnh vực</th>
-                {[1, 2, 3].map((t) => <th key={t} className="num">{TIER_LABELS[t]}</th>)}
-                <th className="num">Gợi ý</th>
-                <th>Mức chấm</th>
+                <th>{translateUi("Lĩnh vực")}</th>
+                {[1, 2, 3].map((t) => <th key={t} className="num">{translateUi(TIER_LABELS[t])}</th>)}
+                <th className="num">{translateUi("Gợi ý")}</th>
+                <th>{translateUi("Mức chấm")}</th>
               </tr>
             </thead>
             <tbody>
@@ -243,7 +244,7 @@ function AssessmentReview({ trial, assessment, readOnly }: { trial: MentorTrial;
                   <td>{d.number}. {d.name}</td>
                   {[0, 1, 2].map((i) => (
                     <td key={i} className="num">
-                      <span className="tp-dots" title={`${d.correct[i]}/${d.total[i]}`}>
+                      <span className="tp-dots" title={translateUi(`${d.correct[i]}/${d.total[i]}`)}>
                         {Array.from({ length: d.total[i] ?? 0 }, (_, k) => <i key={k} data-ok={k < (d.correct[i] ?? 0)} />)}
                       </span>
                     </td>
@@ -251,12 +252,12 @@ function AssessmentReview({ trial, assessment, readOnly }: { trial: MentorTrial;
                   <td className="num"><LevelBadge level={suggestLevel(d.suggestedLevel, scores, pass)} /></td>
                   <td>
                     <select
-                      aria-label={`Mức ${d.name}`}
+                      aria-label={translateUi(`Mức ${d.name}`)}
                       value={levelOf(d)}
                       disabled={readOnly}
                       onChange={(e) => setOverrides((prev) => ({ ...prev, [d.categoryId]: Number(e.target.value) }))}
                     >
-                      {LEVEL_LABELS.map((label, level) => <option key={label} value={level}>{label}</option>)}
+                      {LEVEL_LABELS.map((label, level) => <option key={label} value={level}>{translateUi(label)}</option>)}
                     </select>
                   </td>
                 </tr>
@@ -265,7 +266,7 @@ function AssessmentReview({ trial, assessment, readOnly }: { trial: MentorTrial;
           </table>
         </div>
         <button type="button" className="btn btn-outline btn-small" style={{ marginTop: 10 }} onClick={() => setShowItems((v) => !v)}>
-          {showItems ? 'Ẩn' : 'Xem'} từng câu trắc nghiệm
+          {showItems ? translateUi('Ẩn') : translateUi('Xem')} từng câu trắc nghiệm
         </button>
         {showItems && (
           <div className="tp-table-wrap" style={{ marginTop: 8 }}>
@@ -276,7 +277,7 @@ function AssessmentReview({ trial, assessment, readOnly }: { trial: MentorTrial;
                     <td className="tp-muted">{item.number}</td>
                     <td>
                       {item.question}
-                      <small>Chọn: {item.selected}{item.isCorrect ? '' : ` · Đúng: ${item.correct}`}</small>
+                      <small>{translateUi("Chọn: ")}{item.selected}{item.isCorrect ? '' : translateUi(` · Đúng: ${item.correct}`)}</small>
                     </td>
                     <td className="num"><span className={`tp-badge ${item.isCorrect ? 'ok' : 'bad'}`}>{item.isCorrect ? 'Đúng' : 'Sai'}</span></td>
                   </tr>
@@ -288,16 +289,14 @@ function AssessmentReview({ trial, assessment, readOnly }: { trial: MentorTrial;
       </Box>
 
       <Box>
-        <label className="tp-field">
-          Nhận xét cho nhân viên (không bắt buộc)
-          <textarea value={note} maxLength={2000} disabled={readOnly} onChange={(e) => setNote(e.target.value)} style={{ minHeight: 80 }} />
+        <label className="tp-field">{translateUi("Nhận xét cho nhân viên (không bắt buộc)")}<textarea value={note} maxLength={2000} disabled={readOnly} onChange={(e) => setNote(e.target.value)} style={{ minHeight: 80 }} />
         </label>
         {!readOnly && (
           <div className="pa-row-between" style={{ marginTop: 10 }}>
             <span className="tp-muted">
-              {!scored ? 'Cho điểm cả ba bài tự luận để lưu.' : assessment.reviewedAt ? `Đã chấm ${formatWhen(assessment.reviewedAt)}` : 'Chưa chấm'}
+              {!scored ? 'Cho điểm cả ba bài tự luận để lưu.' : assessment.reviewedAt ? translateUi(`Đã chấm ${formatWhen(assessment.reviewedAt)}`) : 'Chưa chấm'}
             </span>
-            <button type="button" className="btn btn-primary" disabled={!scored || review.isPending} onClick={save}>Lưu chấm</button>
+            <button type="button" className="btn btn-primary" disabled={!scored || review.isPending} onClick={save}>{translateUi("Lưu chấm")}</button>
           </div>
         )}
       </Box>

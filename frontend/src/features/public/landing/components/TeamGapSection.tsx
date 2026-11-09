@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useId, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { TT02_COMPETENCY_NAMES, getReferencePosition, summarizeRequirements } from '@/lib/reference-positions';
@@ -36,6 +37,7 @@ function buildRows(sample: TeamGapSample): GapRow[] {
  * finished. Switching department swaps the data and keeps the finished state.
  */
 export function TeamGapSection({ section }: { section: TeamGapSection }) {
+  useUiLanguage();
   const tabsId = useId();
   const { reduced } = useLandingMotion();
   const [stageRef, inView] = useInView<HTMLDivElement>({ rootMargin: '0px 0px -120px 0px' });
@@ -53,7 +55,7 @@ export function TeamGapSection({ section }: { section: TeamGapSection }) {
       <SectionHeader id="lp-team-gap-title" intro={section.intro} />
 
       <div ref={stageRef} className="mx-auto mt-12 w-full max-w-[100rem]">
-        <div role="tablist" aria-label={section.tabsLabel} className="mb-3 flex flex-wrap gap-2">
+        <div role="tablist" aria-label={translateUi(section.tabsLabel)} className="mb-3 flex flex-wrap gap-2">
           {section.samples.map((item, index) => (
             <button
               key={item.label}
@@ -67,7 +69,7 @@ export function TeamGapSection({ section }: { section: TeamGapSection }) {
                 index === selected ? 'border-cream bg-cream-soft font-medium text-black' : 'border-cream/25 text-cream/80 hover:border-cream/60 hover:text-cream',
               )}
             >
-              {item.label}
+              {translateUi(item.label)}
             </button>
           ))}
         </div>
@@ -89,13 +91,13 @@ export function TeamGapSection({ section }: { section: TeamGapSection }) {
 
             <div className="relative mt-6">
               <div className="overflow-x-auto pb-1 scrollbar-thin">
-                <table aria-label={`Khoảng trống năng lực của nhóm ${sample.department}`} className="w-full min-w-[520px] border-collapse text-left text-base">
+                <table aria-label={translateUi(`Khoảng trống năng lực của nhóm ${sample.department}`)} className="w-full min-w-[520px] border-collapse text-left text-base">
                   <thead>
                     <tr className="text-xs uppercase tracking-[0.1em] text-stone-500">
-                      <th scope="col" className="py-2 pr-4 font-normal">Năng lực</th>
+                      <th scope="col" className="py-2 pr-4 font-normal">{translateUi("Năng lực")}</th>
                       <th scope="col" className="px-4 py-2 font-normal">Trình độ hiện tại</th>
                       <th scope="col" className="px-4 py-2 font-normal">Trình độ yêu cầu</th>
-                      <th scope="col" className="py-2 pl-4 text-right font-normal">Khoảng trống</th>
+                      <th scope="col" className="py-2 pl-4 text-right font-normal">{translateUi("Khoảng trống")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -107,13 +109,13 @@ export function TeamGapSection({ section }: { section: TeamGapSection }) {
                       >
                         <td className="py-4 pr-4 text-cream/90">
                           <span className="mr-2 text-stone-500 tabular-nums">{row.code}</span>
-                          {TT02_COMPETENCY_NAMES[row.code]}
+                          {translateUi(TT02_COMPETENCY_NAMES[row.code])}
                         </td>
-                        <td className="px-4 py-4 text-stone-400">{TIER_LABELS[row.current]}</td>
-                        <td className="px-4 py-4 text-stone-400">{TIER_LABELS[row.required]}</td>
+                        <td className="px-4 py-4 text-stone-400">{translateUi(TIER_LABELS[row.current])}</td>
+                        <td className="px-4 py-4 text-stone-400">{translateUi(TIER_LABELS[row.required])}</td>
                         <td className="py-4 pl-4 text-right">
                           <span className={cn('block whitespace-nowrap text-sm tabular-nums', row.gap > 0 ? 'text-[#F5CA65] font-medium' : 'text-[#79E0C2] font-medium')}>
-                            {row.gap > 0 ? `Còn thiếu ${row.gap} tầng` : 'Đã đạt'}
+                            {row.gap > 0 ? translateUi(`Còn thiếu ${row.gap} tầng`) : translateUi('Đã đạt')}
                           </span>
                           <GapBar current={row.current} required={row.required} shown={shown} />
                         </td>
@@ -147,9 +149,9 @@ export function TeamGapSection({ section }: { section: TeamGapSection }) {
                   <li key={row.code} className="flex items-baseline justify-between gap-4 text-base leading-[1.35]">
                     <span className="text-cream/90">
                       <span className="mr-2 text-stone-500 tabular-nums">{row.code}</span>
-                      {TT02_COMPETENCY_NAMES[row.code]}
+                      {translateUi(TT02_COMPETENCY_NAMES[row.code])}
                     </span>
-                    <span className="shrink-0 text-sm text-stone-400 tabular-nums">{row.behind} nhân viên</span>
+                    <span className="shrink-0 text-sm text-stone-400 tabular-nums">{row.behind}{translateUi(" nhân viên")}</span>
                   </li>
                 ))}
               </ul>
@@ -168,11 +170,13 @@ export function TeamGapSection({ section }: { section: TeamGapSection }) {
 }
 
 function Chip({ children }: { children: React.ReactNode }) {
+  useUiLanguage();
   return <span className="inline-flex w-max items-center whitespace-nowrap rounded-full border border-cream/12 px-3 py-1 text-xs text-cream/80">{children}</span>;
 }
 
 /** Three segments: reached, still missing to meet the requirement, beyond it. Grows from the left once shown. */
 function GapBar({ current, required, shown }: { current: number; required: number; shown: boolean }) {
+  useUiLanguage();
   return (
     <span
       aria-hidden="true"

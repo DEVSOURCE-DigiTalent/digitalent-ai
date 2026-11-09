@@ -4,4 +4,5 @@ public class CalculateSkillGapBatchUseCaseInput
 {
     public Guid? DepartmentId { get; set; }
     public Guid? JobPositionId { get; set; }
+    public string? JobGrade { get; set; }
 }

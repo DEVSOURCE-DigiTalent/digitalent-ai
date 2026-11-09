@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useId, type KeyboardEvent, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +21,7 @@ interface TabsProps {
 
 /** Tabs of one entity workspace. Styled with Enterprise tokens. */
 export function Tabs({ tabs, value, onChange, label, children, className }: TabsProps) {
+  useUiLanguage();
   const base = useId();
   const idOf = (id: string) => `${base}-${id}`;
 
@@ -34,7 +36,7 @@ export function Tabs({ tabs, value, onChange, label, children, className }: Tabs
 
   return (
     <div className={className}>
-      <div role="tablist" aria-label={label} className="flex gap-1 overflow-x-auto border-b border-ent-line">
+      <div role="tablist" aria-label={translateUi(label)} className="flex gap-1 overflow-x-auto border-b border-ent-line">
         {tabs.map((tab, index) => {
           const selected = tab.id === value;
           return (
@@ -55,7 +57,7 @@ export function Tabs({ tabs, value, onChange, label, children, className }: Tabs
                   : 'border-transparent text-ent-fg-2 hover:text-ent-fg hover:border-ent-line',
               )}
             >
-              {tab.label}
+              {translateUi(tab.label)}
               {tab.badge !== undefined && (
                 <span className="rounded-full bg-ent-raised px-2 py-0.5 text-xs text-ent-fg-2">{tab.badge}</span>
               )}

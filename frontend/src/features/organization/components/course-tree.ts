@@ -1,6 +1,7 @@
 import type { CourseListItem } from '@/services/assignment.service';
 import type { CompetencyCategory } from '@/services/competency.service';
 import { categoryDomain, courseCodeMetadata } from '@/features/courses/course-catalog';
+import { translateUi } from '@/lib/i18n';
 
 /**
  * Course tree of the owner catalog (OW-23): TT02 framework → 6 domains → 3 levels (Cơ bản → Trung cấp → Nâng cao).
@@ -87,7 +88,7 @@ export function levelPricing(level: number) {
 }
 
 export function levelName(level: number): string {
-  return LEVELS.find((l) => l.level === level)?.name ?? `Bậc ${level}`;
+  return translateUi(LEVELS.find((l) => l.level === level)?.name ?? `Bậc ${level}`);
 }
 
 export function matchesSearch(text: string, search: string): boolean {
@@ -99,6 +100,6 @@ export function formatDuration(minutes?: number | null): string | null {
   if (!minutes) return null;
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
-  if (!hours) return `${rest} phút`;
-  return rest ? `${hours} giờ ${rest} phút` : `${hours} giờ`;
+  if (!hours) return translateUi(`${rest} phút`);
+  return translateUi(rest ? `${hours} giờ ${rest} phút` : `${hours} giờ`);
 }

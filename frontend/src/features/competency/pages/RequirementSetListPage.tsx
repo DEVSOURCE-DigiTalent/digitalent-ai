@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Sliders, History, PlusCircle, CheckCircle2, FileText, AlertCircle, Search } from 'lucide-react';
@@ -20,6 +21,7 @@ const STATUS_MAP: Record<PositionRequirementSummary['status'], { label: string; 
  * Cấp bậc G1–G3, phòng ban, phiên bản, ngày hiệu lực và số lượng năng lực yêu cầu.
  */
 export function RequirementSetListPage() {
+  useUiLanguage();
   const [search, setSearch] = useState('');
   const [selectedDept, setSelectedDept] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
@@ -88,8 +90,7 @@ export function RequirementSetListPage() {
       header: 'Nhân sự',
       cell: (row) => (
         <span className="text-xs font-medium text-slate-600">
-          {row.employeeCount} nhân viên
-        </span>
+          {row.employeeCount}{translateUi(" nhân viên")}</span>
       ),
     },
     {
@@ -100,18 +101,16 @@ export function RequirementSetListPage() {
           <div>
             <span className="font-semibold text-slate-800">Phiên bản {row.activeSet.versionNo}</span>
             <div className="text-[11px] text-slate-500">
-              {row.activeSet.competencyCount} năng lực yêu cầu
-            </div>
+              {row.activeSet.competencyCount}{translateUi(" năng lực yêu cầu")}</div>
           </div>
         ) : row.draftSet ? (
           <div>
             <span className="font-medium text-amber-700">Bản nháp v{row.draftSet.versionNo}</span>
             <div className="text-[11px] text-slate-500">
-              {row.draftSet.competencyCount} năng lực
-            </div>
+              {row.draftSet.competencyCount}{translateUi(" năng lực")}</div>
           </div>
         ) : (
-          <span className="text-xs text-slate-400">Chưa thiết lập</span>
+          <span className="text-xs text-slate-400">{translateUi("Chưa thiết lập")}</span>
         ),
     },
     {
@@ -129,7 +128,7 @@ export function RequirementSetListPage() {
       header: 'Trạng thái',
       cell: (row) => {
         const conf = STATUS_MAP[row.status];
-        return <StatusBadge label={conf.label} variant={conf.variant} />;
+        return <StatusBadge label={translateUi(conf.label)} variant={conf.variant} />;
       },
     },
     {
@@ -143,13 +142,13 @@ export function RequirementSetListPage() {
             title="Thiết lập bộ yêu cầu năng lực"
           >
             <Sliders className="size-3.5" />
-            <span>{row.status === 'NOT_CONFIGURED' ? 'Thiết lập' : 'Chỉnh sửa'}</span>
+            <span>{row.status === 'NOT_CONFIGURED' ? 'Thiết lập' : translateUi('Chỉnh sửa')}</span>
           </Link>
           {row.totalVersions > 0 && (
             <Link
               to={`/enterprise/requirements/history?positionId=${row.jobPositionId}`}
               className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-              title="Lịch sử phiên bản"
+              title={translateUi("Lịch sử phiên bản")}
             >
               <History className="size-3.5" />
             </Link>
@@ -226,7 +225,7 @@ export function RequirementSetListPage() {
         </label>
         <div className="w-56 max-w-full">
           <OwnerFilterSelect
-            label="Lọc theo phòng ban"
+            label={translateUi("Lọc theo phòng ban")}
             value={selectedDept}
             onChange={(value) => {
               setSelectedDept(value);
@@ -238,7 +237,7 @@ export function RequirementSetListPage() {
         </div>
         <div className="w-48 max-w-full">
           <OwnerFilterSelect
-            label="Lọc theo trạng thái"
+            label={translateUi("Lọc theo trạng thái")}
             value={selectedStatus}
             onChange={(value) => {
               setSelectedStatus(value);

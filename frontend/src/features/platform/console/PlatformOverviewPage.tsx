@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { usePlatformOverview } from '@/hooks/use-platform-admin';
@@ -32,6 +33,7 @@ import {
 
 /** PA-01 · Bento Executive Dashboard: the catalog anchor, draft, customers, trials, action center & quick actions. */
 export function PlatformOverviewPage() {
+  useUiLanguage();
   const { data, isLoading, error, refetch } = usePlatformOverview();
 
   return (
@@ -56,9 +58,7 @@ export function PlatformOverviewPage() {
             className="btn btn-outline btn-small"
             onClick={() => refetch()}
             title="Làm mới dữ liệu từ máy chủ"
-          >
-            Làm mới
-          </button>
+          >{translateUi("Làm mới")}</button>
           <Link to="/platform/organizations" className="btn btn-primary btn-small">
             <Plus size={14} style={{ marginRight: 4 }} />
             Thêm tổ chức mới
@@ -110,7 +110,7 @@ export function PlatformOverviewPage() {
               </div>
               <div className="pa-bento-kpi-sub">
                 {data.draftVersionNo
-                  ? `+${data.draftNewCourseCount} khóa mới · ${data.draftEditedCourseCount} đã sửa`
+                  ? translateUi(`+${data.draftNewCourseCount} khóa mới · ${data.draftEditedCourseCount} đã sửa`)
                   : 'Chưa có bản nháp mới'}
               </div>
             </div>
@@ -154,7 +154,7 @@ export function PlatformOverviewPage() {
               </div>
               <div className="pa-bento-kpi-sub">
                 {data.trialEndingSoonCount > 0
-                  ? `${data.trialEndingSoonCount} người hết hạn trong 48 giờ`
+                  ? translateUi(`${data.trialEndingSoonCount} người hết hạn trong 48 giờ`)
                   : 'Không có người dùng sắp hết hạn'}
               </div>
             </div>
@@ -196,7 +196,7 @@ export function PlatformOverviewPage() {
               <div className="pa-box-header">
                 <div className="pa-box-title-group">
                   <Sparkles size={17} style={{ color: '#d97706' }} />
-                  <h2 className="pa-box-title">Thao tác nhanh</h2>
+                  <h2 className="pa-box-title">{translateUi("Thao tác nhanh")}</h2>
                 </div>
                 <span style={{ fontSize: 12, color: '#64748b' }}>Phím tắt vận hành</span>
               </div>
@@ -250,21 +250,21 @@ export function PlatformOverviewPage() {
                     style={{
                       width: `${data.organizationCount > 0 ? (data.paidOrganizationCount / data.organizationCount) * 100 : 50}%`,
                     }}
-                    title={`Trả phí: ${data.paidOrganizationCount}`}
+                    title={translateUi(`Trả phí: ${data.paidOrganizationCount}`)}
                   />
                   <div
                     className="pa-progress-seg-trial"
                     style={{
                       width: `${data.organizationCount > 0 ? (data.trialOrganizationCount / data.organizationCount) * 100 : 50}%`,
                     }}
-                    title={`Dùng thử: ${data.trialOrganizationCount}`}
+                    title={translateUi(`Dùng thử: ${data.trialOrganizationCount}`)}
                   />
                   <div
                     className="pa-progress-seg-suspended"
                     style={{
                       width: `${data.organizationCount > 0 ? (data.suspendedOrganizationCount / data.organizationCount) * 100 : 0}%`,
                     }}
-                    title={`Tạm ngưng: ${data.suspendedOrganizationCount}`}
+                    title={translateUi(`Tạm ngưng: ${data.suspendedOrganizationCount}`)}
                   />
                 </div>
 
@@ -284,7 +284,7 @@ export function PlatformOverviewPage() {
                 </div>
 
                 <div style={{ marginTop: 12, fontSize: 12, color: '#64748b' }}>
-                  Quy mô nhân sự toàn nền tảng: <strong style={{ color: '#0f172a' }}>{formatNumber(data.employeeCount)} nhân viên</strong>
+                  Quy mô nhân sự toàn nền tảng: <strong style={{ color: '#0f172a' }}>{formatNumber(data.employeeCount)}{translateUi(" nhân viên")}</strong>
                 </div>
               </div>
             </div>
@@ -365,9 +365,9 @@ export function PlatformOverviewPage() {
 
                       <div>
                         {o.status === 'SUSPENDED' ? (
-                          <Pill tone={ORG_STATUS.SUSPENDED.tone}>{ORG_STATUS.SUSPENDED.label}</Pill>
+                          <Pill tone={ORG_STATUS.SUSPENDED.tone}>{translateUi(ORG_STATUS.SUSPENDED.label)}</Pill>
                         ) : (
-                          <Pill tone={STAGE_LABELS[o.stage]?.tone}>{STAGE_LABELS[o.stage]?.label ?? 'Đang hoạt động'}</Pill>
+                          <Pill tone={STAGE_LABELS[o.stage]?.tone}>{translateUi(STAGE_LABELS[o.stage]?.label) ?? translateUi('Đang hoạt động')}</Pill>
                         )}
                       </div>
                     </div>
@@ -408,8 +408,7 @@ export function PlatformOverviewPage() {
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700 }}>Khung chuẩn TT 02/2025</div>
                 <div style={{ fontSize: 12, color: '#64748b' }}>
-                  {data.frameworkCount} khung · {data.domainCount} lĩnh vực
-                  {data.draftFrameworkCount ? ` · ${data.draftFrameworkCount} bản nháp` : ''}
+                  {data.frameworkCount} khung · {data.domainCount}{translateUi(" lĩnh vực")}{data.draftFrameworkCount ? translateUi(` · ${data.draftFrameworkCount} bản nháp`) : ''}
                 </div>
               </div>
             </Link>
@@ -436,7 +435,7 @@ export function PlatformOverviewPage() {
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700 }}>Catalog khóa học chuẩn</div>
                 <div style={{ fontSize: 12, color: '#64748b' }}>
-                  {data.courseCount} khóa · {formatNumber(data.questionCount)} câu hỏi ôn tập
+                  {data.courseCount}{translateUi(" khóa · ")}{formatNumber(data.questionCount)} câu hỏi ôn tập
                 </div>
               </div>
             </Link>
@@ -463,8 +462,7 @@ export function PlatformOverviewPage() {
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700 }}>Tài khoản toàn hệ thống</div>
                 <div style={{ fontSize: 12, color: '#64748b' }}>
-                  {formatNumber(data.userCount)} tài khoản · {formatNumber(data.employeeCount)} nhân sự
-                </div>
+                  {formatNumber(data.userCount)} tài khoản · {formatNumber(data.employeeCount)}{translateUi(" nhân sự")}</div>
               </div>
             </Link>
           </div>
@@ -478,6 +476,7 @@ export function PlatformOverviewPage() {
 }
 
 function ActionCenterBadge({ data }: { data: PlatformOverview }) {
+  useUiLanguage();
   let count = 0;
   if (data.draftVersionNo && (data.draftNewCourseCount + data.draftEditedCourseCount > 0)) count++;
   if (data.trialEndingSoonCount > 0) count++;
@@ -493,6 +492,7 @@ function ActionCenterBadge({ data }: { data: PlatformOverview }) {
 }
 
 function ActionCenterItems({ data }: { data: PlatformOverview }) {
+  useUiLanguage();
   const items: { key: string; tone: string; text: string; to: string; action: string; icon: ReactNode }[] = [];
 
   if (data.draftVersionNo) {

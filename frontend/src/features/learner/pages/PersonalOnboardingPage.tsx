@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, Compass, Sparkles } from 'lucide-react';
@@ -16,6 +17,7 @@ import { INDIVIDUAL_TRIAL } from '@/lib/plans';
 import { LoadingBlock, PT_BUTTON, PT_BUTTON_GOLD, PT_BUTTON_SECONDARY } from '../components/ui';
 
 export function PersonalOnboardingPage() {
+  useUiLanguage();
   const user = useCurrentUser((s) => s.user);
   const navigate = useNavigate();
   const refreshSession = useRefreshSession();
@@ -85,7 +87,7 @@ export function PersonalOnboardingPage() {
         {isTrial && (
           <TrialTermsCard
             variant="themed"
-            heading={`Kỳ dùng thử của bạn: đến ${trialEndsAt ? formatDmy(trialEndsAt) : ''} (${INDIVIDUAL_TRIAL.days} ngày)`}
+            heading={translateUi(`Kỳ dùng thử của bạn: đến ${trialEndsAt ? formatDmy(trialEndsAt) : ''} (${INDIVIDUAL_TRIAL.days} ngày)`)}
           />
         )}
         <div>
@@ -95,7 +97,7 @@ export function PersonalOnboardingPage() {
           <p className="mt-2 text-sm text-pt-fg-2">
             {step === 'choose-target'
               ? isTrial
-                ? `Lộ trình và các bài đánh giá của bạn sẽ được thiết kế riêng theo vị trí đã chọn. Trong kỳ dùng thử, bạn đổi được vị trí thêm ${INDIVIDUAL_TRIAL.targetChanges} lần.`
+                ? translateUi(`Lộ trình và các bài đánh giá của bạn sẽ được thiết kế riêng theo vị trí đã chọn. Trong kỳ dùng thử, bạn đổi được vị trí thêm ${INDIVIDUAL_TRIAL.targetChanges} lần.`)
                 : 'Lộ trình và các bài đánh giá của bạn sẽ được thiết kế riêng theo vị trí đã chọn. Bạn có thể đổi vị trí bất kỳ lúc nào.'
               : 'Bạn đã chọn vị trí mục tiêu thành công. Hãy chọn bước tiếp theo.'}
           </p>
@@ -147,12 +149,12 @@ export function PersonalOnboardingPage() {
                       )}
                     </div>
                     <h2 className="text-lg font-medium text-pt-fg">{pos.name}</h2>
-                    <p className="text-xs leading-relaxed text-pt-fg-2">{pos.description}</p>
+                    <p className="text-xs leading-relaxed text-pt-fg-2">{translateUi(pos.description)}</p>
                   </div>
 
                   <div className="mt-5 border-t border-pt-line pt-3 text-xs text-pt-fg-3 flex items-center justify-between">
                     <span>{pos.levels.filter((l) => l > 0).length} năng lực TT02</span>
-                    <span className="text-[#F5CA65] font-medium underline">Chọn vị trí</span>
+                    <span className="text-[#F5CA65] font-medium underline">{translateUi("Chọn vị trí")}</span>
                   </div>
                 </article>
               );
@@ -175,7 +177,7 @@ export function PersonalOnboardingPage() {
               disabled={setTarget.isPending}
               className={PT_BUTTON}
             >
-              {setTarget.isPending ? 'Đang lưu…' : 'Xác nhận và tiếp tục'}
+              {setTarget.isPending ? translateUi('Đang lưu…') : 'Xác nhận và tiếp tục'}
               <ArrowRight className="size-4" />
             </button>
           </div>
@@ -243,6 +245,7 @@ export function PersonalOnboardingPage() {
 
 /** Second onboarding step of a trial account: take the entry assessment now or look around first (spec §8.4). */
 function TrialStartActions({ errorMsg, busy, onFinish }: { errorMsg?: string; busy: boolean; onFinish: (to: string) => void }) {
+  useUiLanguage();
   return (
     <div className="mx-auto grid max-w-2xl gap-6 rounded-3xl border border-pt-line bg-pt-panel p-8 text-center">
       <div className="space-y-2">

@@ -2,7 +2,7 @@ import apiClient from './api-client';
 import type { ApiResponse } from '../types/api';
 
 /**
- * Ceiling matrix of the organization (OW-05 "Lý thuyết trần nhà"): the Digital AI ceiling (6 domains × 3 levels = 18
+ * Ceiling matrix of the organization (OW-05 "Phạm vi năng lực"): the Digital AI ceiling (6 domains × 3 levels = 18
  * courses), the organization ceiling and optional department ceilings, department ≤ organization ≤ Digital AI per domain.
  * Backend: CapabilityCeilingsController (`/capability-ceilings`).
  */
@@ -17,6 +17,7 @@ export interface CeilingCourse {
   courseId: string | null;
   code: string | null;
   title: string | null;
+  competencies?: { competencyId: string; targetLevel: number }[];
   isUnlocked?: boolean;
   seatsPurchased?: number;
   pricePerSeat?: number;

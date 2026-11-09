@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="..\..\src\DigiTalent.Domain\DigiTalent.Domain.csproj" />
     <ProjectReference Include="..\..\src\DigiTalent.Application\DigiTalent.Application.csproj" />
     <ProjectReference Include="..\..\src\DigiTalent.Infrastructure\DigiTalent.Infrastructure.csproj" />

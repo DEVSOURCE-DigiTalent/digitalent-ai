@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { platformCatalogService, type CatalogModule, type CatalogQuestion } from '@/services/platform-catalog.service';
@@ -13,6 +14,7 @@ const MIN_OPTIONS = 2;
  * the block the question is linked to). One question is open for editing at a time and saved with "Lưu câu hỏi".
  */
 export function QuizEditor({ module, editable, edit }: { module: CatalogModule; editable: boolean; edit: CourseEdit }) {
+  useUiLanguage();
   const [openId, setOpenId] = useState<string | null>(null);
   const [quizTitle, setQuizTitle] = useState(module.quizTitle);
   const count = module.questions.length;
@@ -102,6 +104,7 @@ function QuestionRow({
   onClose: () => void;
   edit: CourseEdit;
 }) {
+  useUiLanguage();
   const correct = question.options.findIndex((o) => o.isCorrect);
   const block = module.blocks.find((b) => b.blockId === question.blockId);
   const incomplete = !question.text.trim() || question.options.some((o) => !o.text.trim()) || correct < 0;
@@ -113,7 +116,7 @@ function QuestionRow({
         <span className="qt">{question.text.trim() || 'Câu hỏi mới — chưa có nội dung'}</span>
         <small>
           {incomplete && <span className="pa-error">Chưa đủ · </span>}
-          Đúng: {correct >= 0 ? letter(correct) : '—'} · {block ? `khối ${block.index + 1}` : 'chưa gắn khối'}
+          Đúng: {correct >= 0 ? letter(correct) : '—'} · {block ? translateUi(`khối ${block.index + 1}`) : 'chưa gắn khối'}
         </small>
       </button>
       {open && <QuestionForm question={question} module={module} onClose={onClose} edit={edit} />}
@@ -122,6 +125,7 @@ function QuestionRow({
 }
 
 function QuestionForm({ question, module, onClose, edit }: { question: CatalogQuestion; module: CatalogModule; onClose: () => void; edit: CourseEdit }) {
+  useUiLanguage();
   const [text, setText] = useState(question.text);
   const [explanation, setExplanation] = useState(question.explanation ?? '');
   const [blockId, setBlockId] = useState(question.blockId ?? '');
@@ -180,14 +184,14 @@ function QuestionForm({ question, module, onClose, edit }: { question: CatalogQu
               name={`correct-${question.questionId}`}
               checked={option.isCorrect}
               onChange={() => setOption(index, { isCorrect: true })}
-              aria-label={`Phương án ${letter(index)} là đáp án đúng`}
+              aria-label={translateUi(`Phương án ${letter(index)} là đáp án đúng`)}
             />
             <input
               className="pa-input"
               value={option.text}
               onChange={(e) => setOption(index, { text: e.target.value })}
-              placeholder={`Phương án ${letter(index)}`}
-              aria-label={`Phương án ${letter(index)}`}
+              placeholder={translateUi(`Phương án ${letter(index)}`)}
+              aria-label={translateUi(`Phương án ${letter(index)}`)}
               maxLength={500}
             />
             <button
@@ -195,7 +199,7 @@ function QuestionForm({ question, module, onClose, edit }: { question: CatalogQu
               className="btn btn-ghost btn-small pa-danger-text"
               onClick={() => removeOption(index)}
               disabled={options.length <= MIN_OPTIONS}
-              aria-label={`Xóa phương án ${letter(index)}`}
+              aria-label={translateUi(`Xóa phương án ${letter(index)}`)}
             >
               ✕
             </button>
@@ -222,7 +226,7 @@ function QuestionForm({ question, module, onClose, edit }: { question: CatalogQu
               const label = BLOCK_TYPES[bType]?.label ?? 'Chữ';
               return (
                 <option key={b.blockId} value={b.blockId}>
-                  Khối {b.index + 1} · {label}
+                  Khối {b.index + 1} · {translateUi(label)}
                 </option>
               );
             })}
@@ -241,9 +245,7 @@ function QuestionForm({ question, module, onClose, edit }: { question: CatalogQu
             <button type="button" className="btn btn-small pa-danger" onClick={remove}>
               Xóa câu hỏi này
             </button>
-            <button type="button" className="btn btn-ghost btn-small" onClick={() => setConfirmDelete(false)}>
-              Giữ lại
-            </button>
+            <button type="button" className="btn btn-ghost btn-small" onClick={() => setConfirmDelete(false)}>{translateUi("Giữ lại")}</button>
           </div>
         ) : (
           <button type="button" className="btn btn-ghost btn-small pa-danger-text" onClick={() => setConfirmDelete(true)}>
@@ -251,11 +253,9 @@ function QuestionForm({ question, module, onClose, edit }: { question: CatalogQu
           </button>
         )}
         <div className="button-row">
-          <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>
-            Hủy
-          </button>
+          <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>{translateUi("Hủy")}</button>
           <button type="button" className="btn btn-primary btn-small" onClick={save} disabled={!valid || saving}>
-            {saving ? 'Đang lưu…' : 'Lưu câu hỏi'}
+            {saving ? translateUi('Đang lưu…') : 'Lưu câu hỏi'}
           </button>
         </div>
       </div>

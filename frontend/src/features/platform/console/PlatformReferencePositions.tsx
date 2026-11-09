@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { useReferencePositionLevels, useUpdateReferencePositionLevels } from '@/hooks/use-reference-position-levels';
@@ -37,6 +38,7 @@ const POSITION_ICONS: Record<string, { icon: typeof Briefcase; color: string; bg
 };
 
 export function PlatformReferencePositions() {
+  useUiLanguage();
   const { data, isLoading, isError } = useReferencePositionLevels();
   return (
     <section className="surface pad" style={{ borderRadius: 16, border: '1px solid #e2e8f0', background: '#fff' }} aria-labelledby="reference-positions-title">
@@ -50,7 +52,7 @@ export function PlatformReferencePositions() {
           </p>
         </div>
       </div>
-      {isLoading && <p style={{ fontSize: 13, color: '#64748b' }}>Đang tải mức tham chiếu…</p>}
+      {isLoading && <p style={{ fontSize: 13, color: '#64748b' }}>{translateUi("Đang tải mức tham chiếu…")}</p>}
       {isError && <p role="alert" style={{ fontSize: 13, color: '#e11d48' }}>Chưa tải được mức tham chiếu.</p>}
       {data && <ReferenceEditor key={data.version} version={data.version} initial={data.levels} />}
     </section>
@@ -58,6 +60,7 @@ export function PlatformReferencePositions() {
 }
 
 export function PlatformReferencePositionsPage() {
+  useUiLanguage();
   return (
     <>
       <div className="pa-page-header">
@@ -110,6 +113,7 @@ export function PlatformReferencePositionsPage() {
 }
 
 function ReferenceEditor({ version, initial }: { version: number; initial: Record<string, number[]> }) {
+  useUiLanguage();
   const { can } = usePermission();
   const canEdit = can(PERMISSIONS.PLATFORM_CATALOG_MANAGE);
   const save = useUpdateReferencePositionLevels();
@@ -202,7 +206,7 @@ function ReferenceEditor({ version, initial }: { version: number; initial: Recor
                     >
                       {String(domain.number).padStart(2, '0')}
                     </span>
-                    <strong style={{ fontSize: 13, color: '#0f172a' }}>{domain.name}</strong>
+                    <strong style={{ fontSize: 13, color: '#0f172a' }}>{translateUi(domain.name)}</strong>
                   </div>
                 </td>
                 {REFERENCE_POSITIONS.map((position) => {
@@ -285,7 +289,7 @@ function ReferenceEditor({ version, initial }: { version: number; initial: Recor
                                   >
                                     <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                       <span style={{ width: 8, height: 8, borderRadius: '50%', background: opt.dot }} />
-                                      <span>Mức {lvl}: {LEVELS[lvl]}</span>
+                                      <span>{translateUi("Mức ")}{lvl}: {LEVELS[lvl]}</span>
                                     </span>
                                     {isSelected && <Check size={14} style={{ color: opt.color }} />}
                                   </button>
@@ -324,8 +328,7 @@ function ReferenceEditor({ version, initial }: { version: number; initial: Recor
             <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0' }}>
               <td style={{ padding: '12px 18px', fontSize: 12, fontWeight: 700, color: '#475569' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <Layers size={14} style={{ color: '#0284c7' }} /> MỨC NĂNG LỰC TRUNG BÌNH
-                </span>
+                  <Layers size={14} style={{ color: '#0284c7' }} />{translateUi(" MỨC NĂNG LỰC TRUNG BÌNH")}</span>
               </td>
               {REFERENCE_POSITIONS.map((pos) => {
                 const posLevels = levels[pos.code] || [];
@@ -386,7 +389,7 @@ function ReferenceEditor({ version, initial }: { version: number; initial: Recor
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
               <Save size={15} />
-              {save.isPending ? 'Đang lưu…' : 'Lưu bảng tham chiếu'}
+              {save.isPending ? translateUi('Đang lưu…') : 'Lưu bảng tham chiếu'}
             </button>
           </div>
         )}

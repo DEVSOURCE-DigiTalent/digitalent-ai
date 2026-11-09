@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -9,6 +10,7 @@ import { formatDate } from '@/lib/utils';
 import { ASSIGNMENT_STATUS_LABELS } from '@/features/assignments/assignment-labels';
 
 export function TrainingAssignmentDetailPage() {
+  useUiLanguage();
   const { assignmentId } = useParams<{ assignmentId: string }>();
 
   const { data: assignment, isLoading, isError } = useQuery({
@@ -68,15 +70,14 @@ export function TrainingAssignmentDetailPage() {
               </span>
               {isCompleted ? (
                 <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                  <CheckCircle2 className="size-3.5" /> Đã hoàn thành
-                </span>
+                  <CheckCircle2 className="size-3.5" />{translateUi(" Đã hoàn thành")}</span>
               ) : isOverdue ? (
                 <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200">
                   <AlertTriangle className="size-3.5" /> Quá hạn
                 </span>
               ) : (
                 <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
-                  {ASSIGNMENT_STATUS_LABELS[assignment.status] ?? assignment.status}
+                  {translateUi(ASSIGNMENT_STATUS_LABELS[assignment.status]) ?? assignment.status}
                 </span>
               )}
             </div>
@@ -94,11 +95,11 @@ export function TrainingAssignmentDetailPage() {
           </div>
           <div>
             <span className="text-slate-400 block mb-0.5">Phòng ban:</span>
-            <p className="font-semibold text-slate-800">{assignment.departmentName || 'Chưa gán'}</p>
+            <p className="font-semibold text-slate-800">{assignment.departmentName || translateUi('Chưa gán')}</p>
           </div>
           <div>
             <span className="text-slate-400 block mb-0.5">Vị trí:</span>
-            <p className="font-semibold text-slate-800">{assignment.positionName || 'Chưa gán'}</p>
+            <p className="font-semibold text-slate-800">{assignment.positionName || translateUi('Chưa gán')}</p>
           </div>
           <div>
             <span className="text-slate-400 block mb-0.5">Người giao:</span>
@@ -130,7 +131,7 @@ export function TrainingAssignmentDetailPage() {
           </div>
           <div className="flex items-center gap-2">
             <Clock className="size-4 text-slate-400" />
-            <span>Hạn nộp: <strong>{assignment.dueDate ? formatDate(assignment.dueDate) : 'Không có'}</strong></span>
+            <span>Hạn nộp: <strong>{assignment.dueDate ? formatDate(assignment.dueDate) : translateUi('Không có')}</strong></span>
           </div>
           {assignment.completedAt && (
             <div className="flex items-center gap-2 text-emerald-700">

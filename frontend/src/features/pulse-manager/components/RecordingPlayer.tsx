@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pause, Play } from 'lucide-react';
 import { recordingUrl, type PulseRecording, type PulseRecordingSegment } from '@/services/pulse.service';
@@ -78,6 +79,7 @@ function sync(video: HTMLVideoElement | null, span: Span | null, t: number, play
  * dòng thời gian và danh sách bấm để tua.
  */
 export function RecordingPlayer({ recording }: { recording: PulseRecording }) {
+  useUiLanguage();
   const total = useMemo(() => Math.max(
     1000,
     recording.durationMs ?? 0,
@@ -162,7 +164,7 @@ export function RecordingPlayer({ recording }: { recording: PulseRecording }) {
       <div className="pu-rplayer-head">
         <h3>Bản ghi màn hình, camera và micro</h3>
         <span>
-          {formatDuration(recording.durationMs ?? total)} · {flagged ? `${flagged} sự kiện cần xem` : 'không có sự kiện cần xem'}
+          {formatDuration(recording.durationMs ?? total)} · {flagged ? translateUi(`${flagged} sự kiện cần xem`) : 'không có sự kiện cần xem'}
           {risk && <> · <RiskTag risk={risk} /></>}
         </span>
       </div>
@@ -206,7 +208,7 @@ export function RecordingPlayer({ recording }: { recording: PulseRecording }) {
       </div>
 
       <div className="pu-rplayer-controls">
-        <button type="button" className="pu-rplayer-play" onClick={togglePlay} aria-label={playing ? 'Tạm dừng' : 'Phát'}>
+        <button type="button" className="pu-rplayer-play" onClick={togglePlay} aria-label={translateUi(playing ? 'Tạm dừng' : 'Phát')}>
           {playing ? <Pause size={18} /> : <Play size={18} />}
         </button>
         <span>{clock(t)} / {clock(total)}</span>
@@ -230,8 +232,8 @@ export function RecordingPlayer({ recording }: { recording: PulseRecording }) {
             className={`pu-timeline-risk ${m.severity.toLowerCase()}`}
             style={{ left: percent(m.startMs), width: percent(Math.max(m.endMs - m.startMs, total / 200)) }}
             onClick={() => seek(m.startMs - 2000)}
-            aria-label={`Điểm đáng ngờ lúc ${clock(m.startMs)} · ${RISK_LEVEL_LABELS[m.severity]}`}
-            title={`${clock(m.startMs)} · ${m.kinds.map((k) => PROCTORING_EVENT_LABELS[k]).join(' · ')}`}
+            aria-label={translateUi(`Điểm đáng ngờ lúc ${clock(m.startMs)} · ${RISK_LEVEL_LABELS[m.severity]}`)}
+            title={translateUi(`${clock(m.startMs)} · ${m.kinds.map((k) => PROCTORING_EVENT_LABELS[k]).join(' · ')}`)}
           />
         ))}
         <input
@@ -251,8 +253,8 @@ export function RecordingPlayer({ recording }: { recording: PulseRecording }) {
             className={`pu-timeline-mark${e.flagged ? ' flagged' : ''}`}
             style={{ left: percent(e.offsetMs) }}
             onClick={() => seek(e.offsetMs - 2000)}
-            aria-label={`${PROCTORING_EVENT_LABELS[e.kind]} lúc ${clock(e.offsetMs)}`}
-            title={`${clock(e.offsetMs)} · ${PROCTORING_EVENT_LABELS[e.kind]}`}
+            aria-label={translateUi(`${PROCTORING_EVENT_LABELS[e.kind]} lúc ${clock(e.offsetMs)}`)}
+            title={translateUi(`${clock(e.offsetMs)} · ${PROCTORING_EVENT_LABELS[e.kind]}`)}
           />
         ))}
         <div className="pu-timeline-head" style={{ left: percent(t) }} />
@@ -279,7 +281,7 @@ export function RecordingPlayer({ recording }: { recording: PulseRecording }) {
                 <time>{clock(e.offsetMs)}</time>
                 <span className="dot" aria-hidden />
                 <span className="text">
-                  {PROCTORING_EVENT_LABELS[e.kind]}
+                  {translateUi(PROCTORING_EVENT_LABELS[e.kind])}
                   {e.durationMs ? ` · ${formatDuration(e.durationMs)}` : ''}
                   {e.detail && e.kind !== 'FACE_CHECK_OFF' ? ` · ${e.detail}` : ''}
                 </span>

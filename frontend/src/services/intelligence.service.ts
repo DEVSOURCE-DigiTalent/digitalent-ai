@@ -60,6 +60,7 @@ export interface SkillGapRunDetail extends SkillGapRunListItem {
 }
 
 export interface SkillGapRunListParams extends PaginationRequest {
+  jobGrade?: string;
   employeeId?: string;
   departmentId?: string;
   jobPositionId?: string;
@@ -72,6 +73,7 @@ export interface CalculateSkillGapRequest {
 }
 
 export interface CalculateSkillGapBatchRequest {
+  jobGrade?: string;
   departmentId?: string;
   jobPositionId?: string;
 }
@@ -135,6 +137,8 @@ export const recommendationService = {
  * Skill Gap Engine API (spec §4.7) — api/v1/intelligence/skill-gaps.
  */
 export const skillGapService = {
+  getLearningNeeds: (params?: SkillGapRunListParams) =>
+    apiClient.get<ApiResponse<PagedList<EmployeeLearningNeeds> & { overview: LearningNeedsOverview }>>('/intelligence/skill-gaps/learning-needs', { params }),
   getList: (params?: SkillGapRunListParams) =>
     apiClient.get<ApiResponse<PagedList<SkillGapRunListItem>>>('/intelligence/skill-gaps', { params }),
 
@@ -150,3 +154,54 @@ export const skillGapService = {
   calculateBatch: (data: CalculateSkillGapBatchRequest) =>
     apiClient.post<ApiResponse<CalculateSkillGapBatchResult>>('/intelligence/skill-gaps/calculate-batch', data),
 };
+
+export interface LearningNeedDomain {
+  assessmentLevel?: number | null;
+  assessmentReviewedAt?: string | null;
+  competencies?: { competencyId: string; name: string; requiredLevel: number; currentLevel: number | null; confirmedAt?: string | null; source?: 'ASSESSMENT' | 'EVIDENCE' | null }[];
+  categoryId: string;
+  name: string;
+  number: number;
+  requiredLevel: number;
+  currentLevel: number | null;
+  state: 'WAITING_ASSESSMENT' | 'MET' | 'NEEDS_LEARNING';
+  courseId?: string | null;
+  courseCode?: string | null;
+  courseTitle?: string | null;
+  missingCompetencies: string[];
+}
+export interface EmployeeLearningNeeds {
+  employeeId: string;
+  employeeName: string;
+  positionId?: string | null;
+  positionName?: string | null;
+  departmentName?: string | null;
+  state: 'WAITING_ASSESSMENT' | 'MET' | 'NEEDS_LEARNING' | 'NO_STANDARD';
+  domains: LearningNeedDomain[];
+}
+
+export interface LearningNeedsCourseGroup {
+  requiredLevel: number;
+  courseId?: string | null;
+  courseCode?: string | null;
+  courseTitle?: string | null;
+  employees: number;
+  missingCompetencies: string[];
+}
+export interface LearningNeedsDomainOverview {
+  categoryId: string;
+  name: string;
+  number: number;
+  assessed: number;
+  met: number;
+  waiting: number;
+  needsLearning: number;
+  courses: LearningNeedsCourseGroup[];
+}
+export interface LearningNeedsOverview {
+  employees: number;
+  assessedEmployees: number;
+  waitingEmployees: number;
+  noStandardEmployees: number;
+  domains: LearningNeedsDomainOverview[];
+}

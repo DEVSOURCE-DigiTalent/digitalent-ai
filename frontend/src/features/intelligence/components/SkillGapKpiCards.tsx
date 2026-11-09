@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { ScoreCard } from '@/components/shared';
 import type { SkillGapSummary } from '@/services/intelligence.service';
 
@@ -12,14 +13,15 @@ function coverageVariant(coverage: number): 'success' | 'warning' | 'danger' {
 
 /** KPI row: required / met / gaps / coverage of the position standard. */
 export function SkillGapKpiCards({ summary }: { summary: SkillGapSummary }) {
+  useUiLanguage();
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <ScoreCard label="Năng lực yêu cầu" value={summary.totalRequired} />
-      <ScoreCard label="Đã đạt" value={summary.totalMet} variant="success" />
+      <ScoreCard label={translateUi("Năng lực yêu cầu")} value={summary.totalRequired} />
+      <ScoreCard label={translateUi("Đã đạt")} value={summary.totalMet} variant="success" />
       <ScoreCard
-        label="Khoảng trống"
+        label={translateUi("Khoảng trống")}
         value={summary.totalGap}
-        subtitle={`${summary.highCount} mức cao · ${summary.mediumCount} trung bình · ${summary.lowCount} thấp`}
+        subtitle={translateUi(`${summary.highCount} mức cao · ${summary.mediumCount} trung bình · ${summary.lowCount} thấp`)}
         variant={summary.highCount > 0 ? 'danger' : summary.totalGap > 0 ? 'warning' : 'success'}
       />
       <ScoreCard

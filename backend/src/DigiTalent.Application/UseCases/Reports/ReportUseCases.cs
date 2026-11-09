@@ -211,10 +211,7 @@ public class GetReportsOverviewUseCase : IUseCase<GetReportsOverviewInput, Repor
 
         // ── Training ──
         var caQuery = _context.CourseAssignments.AsNoTracking()
-            .Where(ca => _context.Courses.AsNoTracking().Any(c => c.Id == ca.CourseId && c.OrganizationId == orgId));
-
-        if (input.DepartmentId.HasValue)
-            caQuery = caQuery.Where(ca => _context.Employees.Any(e => e.Id == ca.EmployeeId && e.DepartmentId == input.DepartmentId.Value));
+            .Where(ca => empQuery.Any(e => e.Id == ca.EmployeeId));
 
         var activeCaQuery = caQuery.Where(ca => ca.Status == "ACTIVE");
         var totalAssignments = await activeCaQuery.CountAsync();
@@ -228,16 +225,16 @@ public class GetReportsOverviewUseCase : IUseCase<GetReportsOverviewInput, Repor
             : 0;
 
         var courses = await _context.Courses.AsNoTracking()
-            .Where(c => c.OrganizationId == orgId && c.Status == "PUBLISHED")
+            .Where(c => c.Status == "PUBLISHED" && (c.OrganizationId == orgId || activeCaQuery.Any(ca => ca.CourseId == c.Id)))
             .Select(c => new CourseTrainingSummary
             {
                 Id = c.Id.ToString(),
                 Code = c.Code,
                 Title = c.Title,
                 DomainName = null,
-                LearnerCount = _context.Enrollments.AsNoTracking().Count(e => e.CourseId == c.Id),
-                AverageProgress = _context.Enrollments.AsNoTracking().Any(e => e.CourseId == c.Id)
-                    ? _context.Enrollments.AsNoTracking().Where(e => e.CourseId == c.Id).Average(e => e.ProgressPercent)
+                LearnerCount = caEnrollments.Count(e => e.CourseId == c.Id),
+                AverageProgress = caEnrollments.Any(e => e.CourseId == c.Id)
+                    ? caEnrollments.Where(e => e.CourseId == c.Id).Average(e => e.ProgressPercent)
                     : 0,
             })
             .ToListAsync();

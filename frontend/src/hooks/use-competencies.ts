@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { invalidateSkillGapViews } from './use-skill-gaps';
 import {
   competencyService,
   type CompetencyListParams,
@@ -137,6 +138,10 @@ export function useActivatePositionRequirements() {
       const changeReason = typeof param === 'string' ? undefined : param.changeReason;
       return competencyService.activate(id, changeReason ? { changeReason } : undefined);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: POSITION_REQUIREMENTS_KEY }),
+    onSuccess: () => Promise.all([
+      qc.invalidateQueries({ queryKey: POSITION_REQUIREMENTS_KEY }),
+      qc.invalidateQueries({ queryKey: ['capability-ceilings'] }),
+      invalidateSkillGapViews(qc),
+    ]),
   });
 }

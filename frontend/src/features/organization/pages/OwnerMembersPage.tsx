@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserPlus, ChevronLeft, ChevronRight, Mail, Send, FlaskConical, ArrowRight, Search, X, Building2, UsersRound, BriefcaseBusiness, Sparkles } from 'lucide-react';
@@ -19,7 +20,6 @@ import { PULSE_TOKENS } from '../owner-theme';
 import { SectionLoading } from '@/components/shared/LoadingState';
 import './owner-members.css';
 
-const PAGE_SIZE = 6;
 const DEPARTMENT_PREVIEW_SIZE = 3;
 const ENTERPRISE_ROLES = [ROLES.OWNER, ROLES.MANAGER, ROLES.EMPLOYEE];
 const ROLE_LABELS: Record<string, string> = {
@@ -29,6 +29,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export function OwnerMembersPage() {
+  useUiLanguage();
   const navigate = useNavigate();
   const user = useCurrentUser((s) => s.user)!;
   const canInvite =
@@ -43,6 +44,7 @@ export function OwnerMembersPage() {
   const [debouncedDepartmentSearch, setDebouncedDepartmentSearch] = useState('');
   const [selectedDepartmentName, setSelectedDepartmentName] = useState('');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
   const [inviting, setInviting] = useState(false);
   const [announcing, setAnnouncing] = useState(false);
 
@@ -66,7 +68,7 @@ export function OwnerMembersPage() {
 
   const { data, isFetching } = useMembers({
     pageIndex: page,
-    pageSize: PAGE_SIZE,
+    pageSize,
     search: search || undefined,
     status: status || undefined,
     role: role || undefined,
@@ -124,7 +126,8 @@ export function OwnerMembersPage() {
   const seats = user.subscription?.seatLimit;
   const seatsUsed = user.subscription?.seatsUsed;
 
-  const totalPages = !isFetching && data ? Math.ceil(data.totalItems / PAGE_SIZE) : 0;
+  const totalPages = data ? Math.ceil(data.totalItems / pageSize) : 0;
+  useEffect(() => { if (!isFetching && data && page > Math.max(1, totalPages)) setPage(Math.max(1, totalPages)); }, [data, isFetching, page, totalPages]);
 
   const resetPage = <T,>(setter: (v: T) => void) => (v: T) => {
     setter(v);
@@ -150,9 +153,7 @@ export function OwnerMembersPage() {
       <section className="members-container pt-7 pb-2">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.04em] heading-gradient">
-              Nhân sự
-            </h1>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.04em] heading-gradient">{translateUi("Nhân sự")}</h1>
           </div>
           {seats != null && seatsUsed != null && (
             <span
@@ -163,31 +164,30 @@ export function OwnerMembersPage() {
                 color: 'var(--po-ink)',
               }}
             >
-              {seatsUsed}/{seats} quyền sử dụng
-            </span>
+              {seatsUsed}/{seats}{translateUi(" quyền sử dụng")}</span>
           )}
         </div>
       </section>
 
       {/* ── Content ── */}
-      <div className="members-container py-5 pb-16">
-        <section className="members-invite" aria-label="Mời thành viên nhanh">
+      <div className="members-container members-workspace py-5 pb-16">
+        <section className="members-invite" aria-label={translateUi("Mời thành viên nhanh")}>
           <div className="members-invite__icon"><Sparkles size={22} /></div>
-          <div className="members-invite__copy"><span>THAO TÁC NHANH</span><h2>Thêm nhân sự vào tổ chức</h2></div>
+          <div className="members-invite__copy"><span>{translateUi("THAO TÁC NHANH")}</span><h2>{translateUi("Thêm nhân sự vào tổ chức")}</h2></div>
           <div className="members-invite__actions">
-            {canInvite && <button type="button" className="members-invite__primary" onClick={() => setInviting(true)}><UserPlus size={18} /> Mời thành viên <ArrowRight size={16} /></button>}
-            <Link to="/enterprise/trial" className="members-invite__secondary"><FlaskConical size={17} /> Đợt đánh giá</Link>
+            {canInvite && <button type="button" className="members-invite__primary" onClick={() => setInviting(true)}><UserPlus size={18} />{translateUi(" Mời thành viên ")}<ArrowRight size={16} /></button>}
+            <Link to="/enterprise/trial" className="members-invite__secondary"><FlaskConical size={17} />{translateUi(" Đợt đánh giá")}</Link>
           </div>
         </section>
 
-        <div className="members-stats" aria-label="Thông tin nhanh về nhân sự">
-          <Link className="members-stat members-stat--blue" to="/enterprise/departments"><span className="members-stat__icon"><Building2 size={22} /></span><span className="members-stat__label">Phòng ban</span><strong>{departmentTotal ?? '—'}</strong><span className="members-stat__foot">Xem phòng ban <ArrowRight size={16} /></span></Link>
-          <button type="button" className="members-stat members-stat--teal" onClick={scrollToMembers}><span className="members-stat__icon"><UsersRound size={22} /></span><span className="members-stat__label">Thành viên</span><strong>{memberTotal ?? '—'}</strong><span className="members-stat__foot">Xem danh sách <ArrowRight size={16} /></span></button>
-          <Link className="members-stat members-stat--violet" to="/enterprise/positions"><span className="members-stat__icon"><BriefcaseBusiness size={22} /></span><span className="members-stat__label">Vị trí công việc</span><strong>{positionTotal ?? '—'}</strong><span className="members-stat__foot">Xem vị trí <ArrowRight size={16} /></span></Link>
+        <div className="members-stats" aria-label={translateUi("Thông tin nhanh về nhân sự")}>
+          <Link className="members-stat members-stat--blue" to="/enterprise/departments"><span className="members-stat__icon"><Building2 size={22} /></span><span className="members-stat__label">{translateUi("Phòng ban")}</span><strong>{departmentTotal ?? '—'}</strong><span className="members-stat__foot">{translateUi("Xem phòng ban ")}<ArrowRight size={16} /></span></Link>
+          <button type="button" className="members-stat members-stat--teal" onClick={scrollToMembers}><span className="members-stat__icon"><UsersRound size={22} /></span><span className="members-stat__label">{translateUi("Thành viên")}</span><strong>{memberTotal ?? '—'}</strong><span className="members-stat__foot">{translateUi("Xem danh sách ")}<ArrowRight size={16} /></span></button>
+          <Link className="members-stat members-stat--violet" to="/enterprise/positions"><span className="members-stat__icon"><BriefcaseBusiness size={22} /></span><span className="members-stat__label">{translateUi("Vị trí công việc")}</span><strong>{positionTotal ?? '—'}</strong><span className="members-stat__foot">{translateUi("Xem vị trí ")}<ArrowRight size={16} /></span></Link>
         </div>
 
         {/* Department management */}
-        <div className="mb-5">
+        <div className="members-workspace__organization mb-5">
           <section
             className="members-panel members-departments-panel rounded-[22px] border p-6"
             style={{
@@ -199,21 +199,15 @@ export function OwnerMembersPage() {
             <div className="members-departments-panel__heading"><div><span
               className="text-[10px] font-black uppercase tracking-[0.12em]"
               style={{ color: 'var(--po-accent)' }}
-            >
-              QUẢN LÝ PHÒNG BAN
-            </span>
-            <h2 className="mt-1 text-lg sm:text-xl font-bold tracking-[-0.02em] text-slate-800">
-              Phân công quản lý
-            </h2></div><Link to="/enterprise/departments" className="members-departments-panel__link">Quản lý phòng ban <ArrowRight size={16} /></Link></div>
+            >{translateUi("QUẢN LÝ PHÒNG BAN")}</span>
+            <h2 className="mt-1 text-lg sm:text-xl font-bold tracking-[-0.02em] text-slate-800">{translateUi("Phân công quản lý")}</h2></div><Link to="/enterprise/departments" className="members-departments-panel__link">{translateUi("Quản lý phòng ban ")}<ArrowRight size={16} /></Link></div>
 
             <div className="members-department-grid mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {departments.length === 0 ? (
                 <p
                   className="py-3 text-sm"
                   style={{ color: 'var(--po-muted)' }}
-                >
-                  Chưa có phòng ban. Tạo phòng ban trước.
-                </p>
+                >{translateUi("Chưa có phòng ban. Tạo phòng ban trước.")}</p>
               ) : (
                 departments.slice(0, DEPARTMENT_PREVIEW_SIZE).map((dept) => (
                   <Link
@@ -242,7 +236,7 @@ export function OwnerMembersPage() {
                         className="text-xs"
                         style={{ color: 'var(--po-muted)' }}
                       >
-                        {dept.managerName ?? 'Chưa phân công'}
+                        {dept.managerName ?? translateUi('Chưa phân công')}
                       </small>
                     </div>
                     <span
@@ -253,7 +247,7 @@ export function OwnerMembersPage() {
                           : { background: '#fef3c7', color: '#d97706' }
                       }
                     >
-                      {dept.managerName ? 'Đã phân công' : 'Chưa phân công'}
+                      {dept.managerName ? translateUi('Đã phân công') : translateUi('Chưa phân công')}
                     </span>
                   </Link>
                 ))
@@ -261,9 +255,7 @@ export function OwnerMembersPage() {
             </div>
 
             {(departmentData?.totalItems ?? 0) > DEPARTMENT_PREVIEW_SIZE && (
-              <p className="members-department-summary">
-                Đang xem {DEPARTMENT_PREVIEW_SIZE} trong {departmentData?.totalItems} phòng ban
-              </p>
+              <p className="members-department-summary">{translateUi("Đang xem ")}{DEPARTMENT_PREVIEW_SIZE} trong {departmentData?.totalItems}{translateUi(" phòng ban")}</p>
             )}
 
           </section>
@@ -285,32 +277,19 @@ export function OwnerMembersPage() {
               <span
                 className="text-[10px] font-black uppercase tracking-[0.12em]"
                 style={{ color: 'var(--po-accent)' }}
-              >
-                Danh sách thành viên
-              </span>
+              >{translateUi("Danh sách thành viên")}</span>
               <h2
                 className="mt-2 text-xl sm:text-2xl font-bold"
                 style={{ color: 'var(--po-ink)', letterSpacing: '-0.045em' }}
-              >
-                Nhân viên theo phòng ban và vị trí.
-              </h2>
+              >{translateUi("Nhân viên theo phòng ban và vị trí.")}</h2>
             </div>
             <div className="flex items-center gap-2.5 flex-wrap">
-              <span
-                className="text-xs tabular-nums mr-1"
-                style={{ color: 'var(--po-muted)' }}
-              >
-                {isFetching ? 'Đang cập nhật…' : `${data?.totalItems ?? 0} thành viên`}
-              </span>
-
               <button
                 type="button"
                 onClick={() => setAnnouncing(true)}
                 className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-teal-200 bg-teal-50/70 hover:bg-teal-100/70 text-[var(--po-accent)] text-sm font-bold transition-all shadow-xs"
               >
-                <Send className="size-3.5" />
-                Gửi thông báo & Hạn chót
-              </button>
+                <Send className="size-3.5" />{translateUi("Gửi thông báo & Hạn chót")}</button>
 
             </div>
           </div>
@@ -319,13 +298,13 @@ export function OwnerMembersPage() {
           <div className="members-filters mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
             <label className="owner-filter-search"><Search size={18} aria-hidden="true" /><input
               type="text"
-              aria-label="Tìm nhân sự"
+              aria-label={translateUi("Tìm nhân sự")}
               value={search}
               onChange={(e) => resetPage(setSearch)(e.target.value)}
-              placeholder="Tìm tên hoặc email"
-            />{search && <button type="button" className="owner-filter-search__clear" aria-label="Xóa tìm kiếm" onClick={() => resetPage(setSearch)('')}><X size={15} /></button>}</label>
+              placeholder={translateUi("Tìm tên hoặc email")}
+            />{search && <button type="button" className="owner-filter-search__clear" aria-label={translateUi("Xóa tìm kiếm")} onClick={() => resetPage(setSearch)('')}><X size={15} /></button>}</label>
             <OwnerFilterSelect
-              label="Phòng ban"
+              label={translateUi("Phòng ban")}
               value={departmentId}
               onChange={(value) => {
                 setSelectedDepartmentName(departmentOptions.find((option) => option.value === value)?.label ?? '');
@@ -336,13 +315,13 @@ export function OwnerMembersPage() {
               options={departmentOptions}
             />
             <OwnerFilterSelect
-              label="Vai trò"
+              label={translateUi("Vai trò")}
               value={role}
               onChange={resetPage(setRole)}
               options={[{ value: '', label: 'Mọi vai trò' }, ...ENTERPRISE_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] ?? r }))]}
             />
             <OwnerFilterSelect
-              label="Trạng thái"
+              label={translateUi("Trạng thái")}
               value={status}
               onChange={(value) => resetPage(setStatus)(value as MemberStatus | '')}
               options={[{ value: '', label: 'Mọi trạng thái' }, ...(Object.keys(MEMBER_STATUS_LABELS) as MemberStatus[]).map((s) => ({ value: s, label: MEMBER_STATUS_LABELS[s] }))]}
@@ -350,6 +329,7 @@ export function OwnerMembersPage() {
           </div>
 
           {/* Bulk department invite banner if pending members exist */}
+          <div className="members-page-size"><span>{data?.totalItems ?? 0}{translateUi(" thành viên")}</span><div><span>{translateUi("Hiển thị")}</span><OwnerFilterSelect label={translateUi("Số nhân viên mỗi trang")} value={String(pageSize)} onChange={(value) => { setPageSize(Number(value)); setPage(1); }} options={[5, 10, 15, 20, 50].map((size) => ({ value: String(size), label: `${size} / trang` }))} /></div></div>
           {!isFetching && pendingInDept.length > 0 && (
             <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-teal-200 bg-teal-50/70 p-3.5 text-xs text-teal-900 shadow-xs">
               <div className="flex items-center gap-2.5">
@@ -357,12 +337,8 @@ export function OwnerMembersPage() {
                   <Mail className="size-4" />
                 </div>
                 <div>
-                  <p className="font-bold text-slate-900">
-                    Có {pendingInDept.length} nhân sự {selectedDept ? `phòng ${selectedDept.name}` : ''} đang ở trạng thái Chờ kích hoạt
-                  </p>
-                  <p className="text-[11px] text-slate-500">
-                    Gửi email mời tham gia và thiết lập mật khẩu một lần cho toàn bộ nhân sự này.
-                  </p>
+                  <p className="font-bold text-slate-900">{translateUi("Có ")}{pendingInDept.length}{translateUi(" nhân sự ")}{selectedDept ? translateUi(`phòng ${selectedDept.name}`) : ''}{translateUi(" đang ở trạng thái Chờ kích hoạt")}</p>
+                  <p className="text-[11px] text-slate-500">{translateUi("Gửi email mời tham gia và thiết lập mật khẩu một lần cho toàn bộ nhân sự này.")}</p>
                 </div>
               </div>
 
@@ -377,8 +353,8 @@ export function OwnerMembersPage() {
                   {isBulkInviting
                     ? 'Đang gửi lời mời...'
                     : selectedDept
-                      ? `Mời tất cả phòng ${selectedDept.name}`
-                      : `Gửi lời mời cho tất cả (${pendingInDept.length})`}
+                      ? translateUi(`Mời tất cả phòng ${selectedDept.name}`)
+                      : translateUi(`Gửi lời mời cho tất cả (${pendingInDept.length})`)}
                 </span>
               </button>
             </div>
@@ -387,7 +363,7 @@ export function OwnerMembersPage() {
           {/* List */}
           <div className="members-list mt-4 grid gap-2" aria-live="polite">
             {isFetching ? (
-              <SectionLoading label="Đang tải danh sách thành viên" />
+              <SectionLoading label={translateUi("Đang tải danh sách thành viên")} />
             ) : !data?.items.length ? (
               <div className="py-10 text-center">
                 <div
@@ -402,16 +378,11 @@ export function OwnerMembersPage() {
                 <h3
                   className="text-base font-semibold"
                   style={{ color: 'var(--po-ink)' }}
-                >
-                  Chưa có thành viên
-                </h3>
+                >{translateUi("Chưa có thành viên")}</h3>
                 <p
                   className="mt-1 text-xs"
                   style={{ color: 'var(--po-muted)' }}
-                >
-                  Mời nhân viên sau khi công bố kiến trúc. Phòng ban và vị
-                  trí xác định mục tiêu họ thấy.
-                </p>
+                >{translateUi("Mời nhân viên sau khi công bố kiến trúc. Phòng ban và vị trí xác định mục tiêu họ thấy.")}</p>
               </div>
             ) : (
               data.items.map((m) => (
@@ -428,27 +399,26 @@ export function OwnerMembersPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <nav className="members-pagination" aria-label="Phân trang nhân sự">
+            <nav className="members-pagination" aria-label={translateUi("Phân trang nhân sự")}>
               <span
                 className="members-pagination__summary tabular-nums"
                 style={{ color: 'var(--po-muted)' }}
               >
-                {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, data?.totalItems ?? 0)} trong {data?.totalItems ?? 0} thành viên
-              </span>
+                {((page - 1) * pageSize) + 1}–{Math.min(page * pageSize, data?.totalItems ?? 0)} trong {data?.totalItems ?? 0}{translateUi(" thành viên")}</span>
               <div className="members-pagination__controls">
                 <button
                   type="button"
-                  aria-label="Trang trước"
+                  aria-label={translateUi("Trang trước")}
                   disabled={page <= 1}
                   onClick={() => setPage((p) => p - 1)}
                   className="members-pagination__button"
                 >
                   <ChevronLeft className="size-4" />
                 </button>
-                <span className="members-pagination__current" aria-current="page">Trang {page} / {totalPages}</span>
+                <span className="members-pagination__current" aria-current="page">{translateUi("Trang ")}{page} / {totalPages}</span>
                 <button
                   type="button"
-                  aria-label="Trang sau"
+                  aria-label={translateUi("Trang sau")}
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => p + 1)}
                   className="members-pagination__button"

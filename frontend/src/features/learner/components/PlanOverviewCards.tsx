@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import { Check, Lock } from 'lucide-react';
 import { formatDmy } from '@/lib/personal-access';
@@ -8,6 +9,7 @@ import { UpgradeLink } from './UpgradeLink';
 
 /** "Gói của tôi" while the 7-day trial runs (spec §8.12). */
 export function TrialPlanCard({ access }: { access: PersonalAccess }) {
+  useUiLanguage();
   const used = access.trialCourseIds.length;
 
   return (
@@ -15,12 +17,10 @@ export function TrialPlanCard({ access }: { access: PersonalAccess }) {
       <div>
         <div className="flex flex-wrap items-center gap-2">
           <p className={PT_EYEBROW}>Gói hiện tại</p>
-          <Tag tone="info">Dùng thử</Tag>
+          <Tag tone="info">{translateUi("Dùng thử")}</Tag>
         </div>
         <p className="mt-4 text-[28px] font-semibold leading-tight tracking-tight">Gói Plus (dùng thử)</p>
-        <p className="mt-3 text-[15px] text-pt-fg-2">
-          Hết hạn {access.trialEndsAt ? formatDmy(access.trialEndsAt) : ''} · còn {access.daysLeft ?? 0} ngày
-        </p>
+        <p className="mt-3 text-[15px] text-pt-fg-2">{translateUi("Hết hạn ")}{access.trialEndsAt ? formatDmy(access.trialEndsAt) : ''} · còn {access.daysLeft ?? 0}{translateUi(" ngày")}</p>
         <p className="mt-1 text-[15px] text-pt-fg-2">
           Lượt học thử {used}/{access.courseLimit ?? used}
         </p>
@@ -38,12 +38,13 @@ export function TrialPlanCard({ access }: { access: PersonalAccess }) {
 
 /** "Gói của tôi" on the Free plan: what stays, what an upgrade opens (spec §8.12 and §9). */
 export function FreePlanCard() {
+  useUiLanguage();
   return (
     <Card className="grid gap-8 p-7 md:p-9">
       <div>
         <div className="flex flex-wrap items-center gap-2">
           <p className={PT_EYEBROW}>Gói hiện tại</p>
-          <Tag tone="ok">Đang hoạt động</Tag>
+          <Tag tone="ok">{translateUi("Đang hoạt động")}</Tag>
         </div>
         <p className="mt-4 text-[28px] font-semibold leading-tight tracking-tight">Gói Miễn phí</p>
       </div>

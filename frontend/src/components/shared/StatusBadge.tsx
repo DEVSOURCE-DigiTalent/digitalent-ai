@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { BadgeVariant } from './status-variant';
 
@@ -30,6 +31,7 @@ const dotStyles: Record<BadgeVariant, string> = {
  * Styled with Enterprise tokens and whitespace-nowrap.
  */
 export function StatusBadge({ label, variant = 'default', className }: StatusBadgeProps) {
+  useUiLanguage();
   return (
     <span
       className={cn(
@@ -39,7 +41,7 @@ export function StatusBadge({ label, variant = 'default', className }: StatusBad
       )}
     >
       <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', dotStyles[variant])} aria-hidden="true" />
-      {label}
+      {translateUi(label)}
     </span>
   );
 }

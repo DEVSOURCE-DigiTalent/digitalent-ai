@@ -102,7 +102,7 @@ public class PurchaseCourseSeatsUseCase : IUseCase<PurchaseCourseSeatsInput, Pur
         _context.CourseSeatOrders.Add(order);
         await _context.SaveChangesAsync();
 
-        // 1. Tự động nâng trần năng lực của doanh nghiệp ứng với khóa học vừa mua (nếu cấp độ cao hơn)
+        // 1. Tự động nâng phạm vi năng lực của doanh nghiệp ứng với khóa học vừa mua (nếu cấp độ cao hơn)
         try
         {
             var categoryId = await (

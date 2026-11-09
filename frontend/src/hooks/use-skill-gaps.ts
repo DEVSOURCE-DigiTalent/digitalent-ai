@@ -12,6 +12,14 @@ import { WORKFORCE_KEY } from './use-workforce';
 
 export const SKILL_GAPS_KEY = ['skill-gaps'];
 
+export function useLearningNeeds(params?: SkillGapRunListParams, enabled = true) {
+  return useQuery({
+    queryKey: [...SKILL_GAPS_KEY, 'learning-needs', params],
+    queryFn: () => skillGapService.getLearningNeeds(params).then((r) => r.data.data!),
+    enabled,
+  });
+}
+
 /**
  * Views computed from skill gap snapshots: runs, recommendations, gap analytics, workforce rows and matrix, member
  * coverage and the organization overview. Refreshed whenever a snapshot is recalculated.

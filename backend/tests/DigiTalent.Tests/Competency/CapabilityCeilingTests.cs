@@ -137,6 +137,17 @@ public class CapabilityCeilingTests : IDisposable
     }
 
     [Fact]
+    public async Task UpdateOrganization_WithoutPurchasedCourse_IsRejected()
+    {
+        _context.CourseSeatOrders.RemoveRange(_context.CourseSeatOrders);
+        await _context.SaveChangesAsync();
+
+        var action = () => SaveOrganization(data: 2, ai: 1);
+
+        (await action.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("COURSE_LICENSE_REQUIRED");
+    }
+
+    [Fact]
     public async Task UpdateDepartment_Inherit_DropsOwnCeilings()
     {
         await SaveOrganization(data: 2, ai: 2);
@@ -150,7 +161,7 @@ public class CapabilityCeilingTests : IDisposable
     }
 
     [Fact]
-    public async Task UpdateOrganization_AboveThePurchasedLevel_IsCappedToTheSeatsBought()
+    public async Task UpdateOrganization_AboveThePurchasedLevel_IsRejected()
     {
         // Lĩnh vực dữ liệu chỉ mua suất Cấp 2; lĩnh vực AI chưa mua suất nào.
         var notBought = await _context.CourseSeatOrders
@@ -159,12 +170,7 @@ public class CapabilityCeilingTests : IDisposable
         _context.CourseSeatOrders.RemoveRange(notBought);
         await _context.SaveChangesAsync();
 
-        var output = await SaveOrganization(data: 3, ai: 3);
-
-        output.Domains.Single(d => d.CategoryId == _dataId).OrganizationCeiling.Should().Be(2);
-        output.Domains.Single(d => d.CategoryId == _aiId).OrganizationCeiling.Should().Be(1, "Basic courses are free");
-        output.OrganizationCourseCount.Should().Be(3);
-        (await _context.CapabilityCeilings.Where(c => c.DepartmentId == null).Select(c => (int)c.CeilingLevel).ToListAsync())
-            .Should().BeEquivalentTo(new[] { 2, 1 });
+        var action = () => SaveOrganization(data: 3, ai: 3);
+        (await action.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("COURSE_LICENSE_REQUIRED");
     }
 }

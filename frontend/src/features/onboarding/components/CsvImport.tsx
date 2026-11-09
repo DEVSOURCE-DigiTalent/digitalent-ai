@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Lock, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -16,6 +17,7 @@ const TEMPLATE = 'email,họ tên,phòng ban,vị trí,vai trò\nan.nguyen@congt
 
 /** ENT-ONB-08, import path: paste or upload a CSV and add its rows to the list of invitations. */
 export function CsvImport({ enabled, known, onRows }: CsvImportProps) {
+  useUiLanguage();
   const [text, setText] = useState('');
   const [issues, setIssues] = useState<CsvIssue[]>([]);
   const [added, setAdded] = useState<number>();
@@ -26,9 +28,7 @@ export function CsvImport({ enabled, known, onRows }: CsvImportProps) {
         <Lock className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
         <p>
           Nhập hàng loạt từ file có trong gói Pro. Bạn vẫn có thể thêm từng người ở trên, hoặc{' '}
-          <Link to="/enterprise/billing" className="font-medium text-primary-700 underline underline-offset-4">
-            nâng cấp gói
-          </Link>{' '}
+          <Link to="/enterprise/billing" className="font-medium text-primary-700 underline underline-offset-4">{translateUi("nâng cấp gói")}</Link>{' '}
           sau khi thiết lập xong.
         </p>
       </div>
@@ -60,7 +60,7 @@ export function CsvImport({ enabled, known, onRows }: CsvImportProps) {
           rows={5}
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder={TEMPLATE}
+          placeholder={translateUi(TEMPLATE)}
           className={`${INPUT_CLASS} font-mono text-xs`}
         />
         <p className="text-xs text-slate-500">
@@ -88,7 +88,7 @@ export function CsvImport({ enabled, known, onRows }: CsvImportProps) {
         <ul role="alert" className="grid gap-1 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
           {issues.map((issue) => (
             <li key={`${issue.line}-${issue.message}`}>
-              Dòng {issue.line}: {issue.message}
+              Dòng {issue.line}: {translateUi(issue.message)}
             </li>
           ))}
         </ul>

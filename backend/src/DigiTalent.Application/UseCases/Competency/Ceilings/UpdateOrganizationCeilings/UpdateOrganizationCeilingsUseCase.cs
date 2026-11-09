@@ -8,8 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Competency.Ceilings;
 
 /// <summary>
-/// Lưu trần doanh nghiệp cho từng lĩnh vực (≤ trần Digital AI). Trần riêng của phòng ban cao hơn trần mới
-/// được hạ xuống cho đúng quy tắc trần phòng ban ≤ trần doanh nghiệp.
+/// Lưu phạm vi doanh nghiệp cho từng lĩnh vực. Cấp 2–3 chỉ được lưu khi tổ chức đã có suất học
+/// tương ứng; thiết lập riêng của phòng ban cao hơn phạm vi mới được hạ xuống theo cùng quy tắc.
 /// </summary>
 public class UpdateOrganizationCeilingsUseCase : IUseCase<UpdateOrganizationCeilingsUseCaseInput, UpdateOrganizationCeilingsUseCaseOutput>
 {
@@ -50,7 +50,8 @@ public class UpdateOrganizationCeilingsUseCase : IUseCase<UpdateOrganizationCeil
             throw new BadRequestException("Every competency domain needs a ceiling.", "ceilings", "CEILINGS_INCOMPLETE");
         }
 
-        // 2. Ghi trần doanh nghiệp (không vượt quá bản quyền khóa học đã mở, tối thiểu Cấp 1)
+        // 2. Xác nhận quyền học trước khi thay đổi phạm vi. Không được âm thầm hạ cấp: UI cần
+        // nhận lỗi rõ ràng để hướng người dùng mua đúng khóa học đang chọn.
         var catalog = await _catalog.LoadAsync(organizationId);
         var seatOrders = await (
             from o in _context.CourseSeatOrders.AsNoTracking()
@@ -70,6 +71,14 @@ public class UpdateOrganizationCeilingsUseCase : IUseCase<UpdateOrganizationCeil
             }
         }
 
+        if (requested.Any(item => item.Value > Math.Max(1, maxAllowedByDomain.GetValueOrDefault(item.Key, 1))))
+        {
+            throw new BadRequestException(
+                "Purchase a seat for this course level before raising the organization ceiling.",
+                "ceilings",
+                "COURSE_LICENSE_REQUIRED");
+        }
+
         var rows = await _context.CapabilityCeilings
             .Where(c => c.OrganizationId == organizationId && domainIds.Contains(c.CompetencyCategoryId))
             .ToListAsync();
@@ -77,20 +86,17 @@ public class UpdateOrganizationCeilingsUseCase : IUseCase<UpdateOrganizationCeil
         var oldValues = orgRows.ToDictionary(r => r.Key.ToString(), r => r.Value.CeilingLevel);
         foreach (var (categoryId, level) in requested)
         {
-            var maxAllowed = Math.Max(1, maxAllowedByDomain.GetValueOrDefault(categoryId, 1));
-            var effectiveLevel = (short)Math.Min((int)level, maxAllowed);
-
             if (!orgRows.TryGetValue(categoryId, out var row))
             {
                 row = new CapabilityCeiling { OrganizationId = organizationId, CompetencyCategoryId = categoryId };
                 _context.CapabilityCeilings.Add(row);
             }
 
-            row.CeilingLevel = effectiveLevel;
+            row.CeilingLevel = level;
             row.UpdatedByUserId = _currentUser.UserId;
         }
 
-        // 3. Hạ trần phòng ban vượt trần mới
+        // 3. Thu hẹp phạm vi phòng ban vượt phạm vi mới
         var adjusted = rows
             .Where(r => r.DepartmentId != null && r.CeilingLevel > requested[r.CompetencyCategoryId])
             .ToList();
@@ -112,7 +118,7 @@ public class UpdateOrganizationCeilingsUseCase : IUseCase<UpdateOrganizationCeil
                 ceilings = requested.ToDictionary(r => r.Key.ToString(), r => r.Value),
                 adjustedDepartments = adjusted.Select(r => r.DepartmentId).Distinct().Count(),
             },
-            "Trần doanh nghiệp");
+            "Phạm vi doanh nghiệp");
 
         var output = await _reader.ReadAsync<UpdateOrganizationCeilingsUseCaseOutput>(organizationId);
         output.AdjustedDepartmentCount = adjusted.Select(r => r.DepartmentId).Distinct().Count();

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { translateUi, useUiLanguage } from '@/lib/i18n';
+import { useState, useEffect, useRef } from 'react';
 import { Search, Menu, Plus, HelpCircle } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -13,11 +14,15 @@ import { cn } from '@/lib/utils';
 import { WORKSPACES } from '@/lib/roles';
 import { PLATFORM_SCREENS } from '@/lib/screens/platform';
 import { PLATFORM_SIDEBAR } from '@/lib/sidebars/platform';
+import { useDirectionalHeader } from './use-directional-header';
+import './owner-header.css';
+import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 
 interface TopbarProps {
   portal: PortalConfig;
   onOpenMobileNav?: () => void;
   isMobileNavOpen?: boolean;
+  autoHide?: boolean;
 }
 
 function useScrollState() {
@@ -41,6 +46,7 @@ function useScrollState() {
 }
 
 function QuickCreateMenu() {
+  useUiLanguage();
   const hasPermission = useCurrentUser((s) => s.hasPermission);
   const [open, setOpen] = useState(false);
 
@@ -57,9 +63,9 @@ function QuickCreateMenu() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label="Tạo nhanh"
+        aria-label={translateUi("Tạo nhanh")}
         className="flex items-center justify-center size-8 rounded-xl bg-white/80 hover:bg-teal-50 text-slate-600 hover:text-[#137b84] border border-slate-200/80 hover:border-teal-200 transition-all hover:scale-105 active:scale-95 shadow-2xs"
-        title="Tạo nhanh"
+        title={translateUi("Tạo nhanh")}
       >
         <Plus className="w-4 h-4" />
       </button>
@@ -75,7 +81,7 @@ function QuickCreateMenu() {
               className="block px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-teal-50 hover:text-[#137b84] transition-colors"
               onClick={() => setOpen(false)}
             >
-              {action.label}
+              {translateUi(action.label)}
             </Link>
           ))}
         </div>
@@ -84,12 +90,15 @@ function QuickCreateMenu() {
   );
 }
 
-export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false }: TopbarProps) {
+export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false, autoHide = false }: TopbarProps) {
+  useUiLanguage();
   const { pathname } = useLocation();
   const hasPermission = useCurrentUser((s) => s.hasPermission);
   const canManageSettings = !portal.settingsPermission || hasPermission(portal.settingsPermission);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const { scrolled, scrollProgress } = useScrollState();
+  const headerRef = useRef<HTMLDivElement>(null);
+  const { hidden, reveal } = useDirectionalHeader(headerRef, autoHide, pathname, paletteOpen || isMobileNavOpen);
 
   const isPlatform = portal.workspace === WORKSPACES.PLATFORM;
   const screens = isPlatform ? PLATFORM_SCREENS : undefined;
@@ -109,14 +118,18 @@ export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false }: Top
     <>
       {/* Outer Wrapper: Tự động co giãn mượt mà khi cuộn trang */}
       <div
+        ref={headerRef}
+        data-hidden={hidden}
+        onFocusCapture={reveal}
         className={cn(
-          'w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] relative z-30',
+          'owner-adaptive-header w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] relative z-30',
           scrolled ? 'px-3 sm:px-4 lg:px-6 pt-2 pb-1' : 'px-0 pt-0 pb-0',
         )}
       >
         <header
           className={cn(
-            'flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] relative overflow-hidden',
+            // Dropdowns must extend beyond the header; only the progress track clips its contents.
+            'flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] relative overflow-visible',
             scrolled
               ? 'h-12 px-4 lg:px-6 rounded-2xl border border-white/90 shadow-[0_12px_36px_rgba(15,23,42,0.08),_0_2px_8px_rgba(19,123,132,0.06)] backdrop-blur-xl'
               : 'h-14 px-4 lg:px-8 border-b border-slate-200/70 backdrop-blur-md shadow-[0_1px_6px_rgba(15,23,42,0.02)]',
@@ -143,7 +156,7 @@ export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false }: Top
               type="button"
               onClick={onOpenMobileNav}
               className="md:hidden p-1.5 -ml-1 rounded-xl text-slate-600 hover:bg-white/80 hover:text-slate-900 transition-colors"
-              aria-label="Mở điều hướng"
+              aria-label={translateUi("Mở điều hướng")}
               aria-expanded={isMobileNavOpen}
             >
               <Menu className="w-5 h-5" />
@@ -151,7 +164,7 @@ export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false }: Top
 
             {/* Breadcrumb: Tinh tế, font đậm sắc nét */}
             {breadcrumbs.length > 0 && (
-              <nav aria-label="Đường dẫn" className="flex items-center gap-2 text-sm">
+              <nav aria-label={translateUi("Đường dẫn")} className="flex items-center gap-2 text-sm">
                 {breadcrumbs.map((crumb, i) => (
                   <span key={i} className="flex items-center gap-2">
                     {i > 0 && <span className="text-slate-300 font-light">/</span>}
@@ -160,12 +173,12 @@ export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false }: Top
                         to={crumb.href}
                         className="text-slate-500 hover:text-[#137b84] font-medium transition-colors truncate max-w-[180px]"
                       >
-                        {crumb.label}
+                        {translateUi(crumb.label)}
                       </Link>
                     ) : (
                       <span className="text-[#17243f] font-bold tracking-tight truncate max-w-[220px] flex items-center gap-2">
                         <span className="size-2 rounded-full bg-[#137b84] inline-block shadow-2xs" />
-                        {crumb.label}
+                        {translateUi(crumb.label)}
                       </span>
                     )}
                   </span>
@@ -176,16 +189,17 @@ export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false }: Top
 
           {/* Right actions: Hiệu ứng tươi sáng, linh động */}
           <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="hidden sm:flex"><LanguageSwitcher /></div>
             {/* Quick Search Pill (Ctrl+K) */}
             <button
               type="button"
               onClick={() => setPaletteOpen(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/80 hover:bg-white border border-slate-200/80 hover:border-slate-300 text-slate-500 hover:text-[#17243f] transition-all shadow-2xs hover:shadow-xs group cursor-pointer"
-              aria-label="Tìm kiếm"
-              title="Tìm kiếm (Ctrl+K)"
+              aria-label={translateUi("Tìm kiếm")}
+              title={translateUi("Tìm kiếm (Ctrl+K)")}
             >
               <Search className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#137b84] transition-colors" />
-              <span className="hidden md:inline text-xs font-medium text-slate-500 group-hover:text-slate-700">Tìm nhanh</span>
+              <span className="hidden md:inline text-xs font-medium text-slate-500 group-hover:text-slate-700">{translateUi("Tìm nhanh")}</span>
               <kbd className="hidden lg:inline text-[10px] font-bold bg-slate-100/80 px-1.5 py-0.5 rounded border border-slate-200/80 text-slate-400 group-hover:text-slate-600 shadow-2xs">Ctrl K</kbd>
             </button>
 
@@ -197,10 +211,10 @@ export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false }: Top
                 store.startTour(store.currentRole || 'OWNER');
               }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-50/90 to-purple-50/90 hover:from-indigo-100 hover:to-purple-100 border border-indigo-200/70 hover:border-indigo-300 text-indigo-700 hover:text-indigo-800 text-xs font-bold transition-all shadow-2xs hover:shadow-xs hover:-translate-y-0.2 cursor-pointer"
-              title="Xem lại hướng dẫn sử dụng"
+              title={translateUi("Xem lại hướng dẫn sử dụng")}
             >
               <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
-              <span className="hidden sm:inline">Hướng dẫn</span>
+              <span className="hidden sm:inline">{translateUi("Hướng dẫn")}</span>
             </button>
 
             {/* Quick create menu (+) */}

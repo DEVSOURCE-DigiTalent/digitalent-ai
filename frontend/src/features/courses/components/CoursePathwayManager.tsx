@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useEffect } from 'react';
 import {
   Lock, CheckCircle2, Play, Eye, Settings2, RotateCcw,
@@ -24,6 +25,7 @@ interface CoursePathwayManagerProps {
 }
 
 export function CoursePathwayManager({ course, batchId, batchName }: CoursePathwayManagerProps) {
+  useUiLanguage();
   // Determine domain number from code, e.g. "A1-F" -> 1
   const domainNumberMatch = course.code.match(/A(\d+)/i);
   const domainNumber = domainNumberMatch ? parseInt(domainNumberMatch[1], 10) : 1;
@@ -232,7 +234,7 @@ export function CoursePathwayManager({ course, batchId, batchName }: CoursePathw
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  {label}
+                  {translateUi(label)}
                   <span className="ml-1 opacity-70 font-mono text-[10px]">({code})</span>
                 </button>
               ))}
@@ -249,9 +251,7 @@ export function CoursePathwayManager({ course, batchId, batchName }: CoursePathw
               Đã tùy biến:{' '}
               <strong className={customLessonsCount > 0 ? 'text-primary-700 font-bold' : 'text-slate-800'}>
                 {customLessonsCount}
-              </strong>{' '}
-              bài
-            </span>
+              </strong>{' '}{translateUi("bài")}</span>
           </div>
         </div>
       </div>
@@ -265,16 +265,15 @@ export function CoursePathwayManager({ course, batchId, batchName }: CoursePathw
               <span>Lộ trình bài học của nhân viên</span>
             </span>
             <span className="text-[11px] font-mono font-medium text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
-              {allLessons.length} bài
-            </span>
+              {allLessons.length}{translateUi(" bài")}</span>
           </div>
 
           <div className="divide-y divide-slate-100 max-h-[700px] overflow-y-auto">
             {modules.map((m, mIdx) => (
               <div key={m.id || mIdx} className="p-2 space-y-1">
                 <div className="px-2 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100/70 rounded flex items-center justify-between">
-                  <span className="line-clamp-1">{m.title}</span>
-                  <span className="text-[10px] text-slate-500 shrink-0 ml-1">{m.lessons.length} bài</span>
+                  <span className="line-clamp-1">{translateUi(m.title)}</span>
+                  <span className="text-[10px] text-slate-500 shrink-0 ml-1">{m.lessons.length}{translateUi(" bài")}</span>
                 </div>
 
                 <div className="space-y-1 pl-1 pt-0.5">
@@ -304,10 +303,10 @@ export function CoursePathwayManager({ course, batchId, batchName }: CoursePathw
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className={`line-clamp-1 ${isSelected ? 'font-semibold text-primary-900' : 'text-slate-800'}`}>
-                            {lesson.title}
+                            {translateUi(lesson.title)}
                           </p>
                           <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-500">
-                            <span>{lesson.durationMinutes} phút</span>
+                            <span>{lesson.durationMinutes}{translateUi(" phút")}</span>
                             {hasCustomVideo && (
                               <span className="text-indigo-600 font-medium bg-indigo-50 px-1 rounded">
                                 Video DN
@@ -336,7 +335,7 @@ export function CoursePathwayManager({ course, batchId, batchName }: CoursePathw
                   <span>Nhiệm vụ thực hành tổng kết (Capstone)</span>
                 </div>
                 <p className="text-slate-600 line-clamp-2 text-[11px]">
-                  {rawCurriculum.finalTask.title}: {rawCurriculum.finalTask.brief}
+                  {translateUi(rawCurriculum.finalTask.title)}: {rawCurriculum.finalTask.brief}
                 </p>
               </div>
             )}
@@ -375,7 +374,7 @@ export function CoursePathwayManager({ course, batchId, batchName }: CoursePathw
             </div>
 
             <div className="text-xs text-slate-500 pr-2">
-              Đang xem: <strong className="text-slate-800">{currentLesson?.title}</strong>
+              Đang xem: <strong className="text-slate-800">{translateUi(currentLesson?.title)}</strong>
             </div>
           </div>
 
@@ -389,8 +388,7 @@ export function CoursePathwayManager({ course, batchId, batchName }: CoursePathw
                   <span>Giao diện mô phỏng chính xác nội dung nhân viên nhìn thấy khi vào học.</span>
                 </span>
                 <span className="text-[11px] font-mono text-slate-500">
-                  Thời lượng: {currentLesson.durationMinutes} phút
-                </span>
+                  Thời lượng: {currentLesson.durationMinutes}{translateUi(" phút")}</span>
               </div>
 
               {/* Lesson Title */}
@@ -399,7 +397,7 @@ export function CoursePathwayManager({ course, batchId, batchName }: CoursePathw
                   {currentLesson.moduleTitle}
                 </span>
                 <h3 className="text-xl font-bold text-slate-900 mt-1">
-                  {currentLesson.title}
+                  {translateUi(currentLesson.title)}
                 </h3>
               </div>
 
@@ -438,7 +436,7 @@ export function CoursePathwayManager({ course, batchId, batchName }: CoursePathw
                         <Play className="size-6 fill-white ml-0.5" />
                       </div>
                       <p className="text-white font-medium text-sm">
-                        {currentCustomization.customVideoTitle || `Video bài giảng: ${currentLesson.title}`}
+                        {currentCustomization.customVideoTitle || translateUi(`Video bài giảng: ${currentLesson.title}`)}
                       </p>
                       <p className="text-xs text-slate-400">
                         {isCustomVideo ? 'Nguồn video nội bộ doanh nghiệp' : 'Học liệu số chuẩn hóa TT02 · Thời lượng 15-20 phút'}
@@ -553,7 +551,7 @@ export function CoursePathwayManager({ course, batchId, batchName }: CoursePathw
                       >
                         <span className="flex items-center gap-2 truncate">
                           <FileText className="size-4 text-primary-600 shrink-0" />
-                          <span className="truncate font-medium">{doc.title}</span>
+                          <span className="truncate font-medium">{translateUi(doc.title)}</span>
                         </span>
                         <ExternalLink className="size-3 text-slate-400 shrink-0 ml-1" />
                       </a>
@@ -572,7 +570,7 @@ export function CoursePathwayManager({ course, batchId, batchName }: CoursePathw
                   Cấu hình triển khai bài học
                 </span>
                 <h3 className="text-base font-bold text-slate-900">
-                  {currentLesson.title}
+                  {translateUi(currentLesson.title)}
                 </h3>
               </div>
 
@@ -751,7 +749,7 @@ export function CoursePathwayManager({ course, batchId, batchName }: CoursePathw
                       >
                         <span className="flex items-center gap-2">
                           <FileText className="size-4 text-primary-600" />
-                          <span className="font-medium text-slate-800">{doc.title}</span>
+                          <span className="font-medium text-slate-800">{translateUi(doc.title)}</span>
                           <span className="text-slate-400 font-mono text-[10px]">({doc.url})</span>
                         </span>
                         <button

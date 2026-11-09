@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { ElementType, ReactNode } from 'react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -31,12 +32,13 @@ interface PageIntroProps {
 }
 
 export function PageIntro({ label, title, accent, lead, actions, className }: PageIntroProps) {
+  useUiLanguage();
   return (
     <header className={cn('flex flex-col gap-6 md:flex-row md:items-end md:justify-between', className)}>
       <div className="max-w-3xl">
-        <p className={PT_EYEBROW}>{label}</p>
+        <p className={PT_EYEBROW}>{translateUi(label)}</p>
         <h1 className="mt-4 text-balance text-[clamp(30px,4.6vw,52px)] font-normal leading-[1.04] tracking-[-0.03em] text-pt-fg">
-          {title}
+          {translateUi(title)}
           {accent && (
             <>
               {' '}
@@ -52,11 +54,12 @@ export function PageIntro({ label, title, accent, lead, actions, className }: Pa
 }
 
 export function PersonalPageHeader({ label, title, accent, lead, actions, className }: PageIntroProps) {
+  useUiLanguage();
   return (
     <header className={cn('flex min-w-0 flex-col gap-4 md:flex-row md:items-start md:justify-between', className)}>
       <div className="min-w-0 max-w-3xl">
-        <p className="mb-2 text-xs font-medium uppercase tracking-[0.12em] text-pt-accent">{label}</p>
-        <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-pt-fg md:text-[30px]">{title}{accent && <> <span>{accent}</span></>}</h1>
+        <p className="mb-2 text-xs font-medium uppercase tracking-[0.12em] text-pt-accent">{translateUi(label)}</p>
+        <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-pt-fg md:text-[30px]">{translateUi(title)}{accent && <> <span>{accent}</span></>}</h1>
         {lead && <p className="mt-2 max-w-[72ch] text-sm leading-relaxed text-pt-fg-2">{lead}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2 md:max-w-[45%]">{actions}</div>}
@@ -72,6 +75,7 @@ interface CardProps {
 }
 
 export function Card({ as: Component = 'section', className, children, ...rest }: CardProps) {
+  useUiLanguage();
   return (
     <Component className={cn('rounded-2xl border border-pt-line/80 bg-pt-card', className)} {...rest}>
       {children}
@@ -80,9 +84,10 @@ export function Card({ as: Component = 'section', className, children, ...rest }
 }
 
 export function SectionTitle({ title, aside, id, className }: { title: ReactNode; aside?: ReactNode; id?: string; className?: string }) {
+  useUiLanguage();
   return (
     <div className={cn('flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1', className)}>
-      <h2 id={id} className="text-[19px] font-normal tracking-[-0.015em] text-pt-fg">{title}</h2>
+      <h2 id={id} className="text-[19px] font-normal tracking-[-0.015em] text-pt-fg">{translateUi(title)}</h2>
       {aside && <div className="text-xs text-pt-fg-3">{aside}</div>}
     </div>
   );
@@ -100,6 +105,7 @@ const TONES: Record<Tone, string> = {
 };
 
 export function Tag({ tone = 'neutral', children, className }: { tone?: Tone; children: ReactNode; className?: string }) {
+  useUiLanguage();
   return (
     <span className={cn('inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] font-medium', TONES[tone], className)}>
       {children}
@@ -114,8 +120,9 @@ const SEVERITY: Record<GapSeverity, { tone: Tone; label: string }> = {
 };
 
 export function SeverityTag({ severity }: { severity: GapSeverity | null }) {
+  useUiLanguage();
   if (!severity) return <Tag tone="ok">Đạt</Tag>;
-  return <Tag tone={SEVERITY[severity].tone}>{SEVERITY[severity].label}</Tag>;
+  return <Tag tone={SEVERITY[severity].tone}>{translateUi(SEVERITY[severity].label)}</Tag>;
 }
 
 interface LevelPipsProps {
@@ -128,12 +135,13 @@ interface LevelPipsProps {
 
 /** Three steps (Cơ bản · Trung cấp · Nâng cao): filled = reached, outlined = still required. */
 export function LevelPips({ level, required = 0, className, showLabel = false }: LevelPipsProps) {
+  useUiLanguage();
   const label = required > 0
     ? `Hiện tại ${levelLabelVi(level)}, yêu cầu ${levelLabelVi(required)}`
     : `Mức ${levelLabelVi(level)}`;
   return (
     <span className={cn('inline-flex items-center gap-2', className)}>
-      <span className="inline-flex gap-1" role="img" aria-label={label}>
+      <span className="inline-flex gap-1" role="img" aria-label={translateUi(label)}>
         {[1, 2, 3].map((step) => (
           <i
             key={step}
@@ -150,11 +158,12 @@ export function LevelPips({ level, required = 0, className, showLabel = false }:
 }
 
 export function ProgressBar({ value, label, className, tone = 'fg' }: { value: number; label: string; className?: string; tone?: 'fg' | 'ok' }) {
+  useUiLanguage();
   const clamped = Math.max(0, Math.min(100, Math.round(value)));
   return (
     <div
       role="progressbar"
-      aria-label={label}
+      aria-label={translateUi(label)}
       aria-valuenow={clamped}
       aria-valuemin={0}
       aria-valuemax={100}
@@ -169,9 +178,10 @@ export function ProgressBar({ value, label, className, tone = 'fg' }: { value: n
 }
 
 export function Stat({ label, value, hint, className }: { label: string; value: ReactNode; hint?: ReactNode; className?: string }) {
+  useUiLanguage();
   return (
     <div className={cn('flex flex-col gap-1', className)}>
-      <span className="text-xs text-pt-fg-3">{label}</span>
+      <span className="text-xs text-pt-fg-3">{translateUi(label)}</span>
       <span className="text-[28px] font-light leading-none tracking-[-0.03em] text-pt-fg tabular-nums">{value}</span>
       {hint && <span className="text-xs text-pt-fg-3">{hint}</span>}
     </div>
@@ -179,31 +189,32 @@ export function Stat({ label, value, hint, className }: { label: string; value: 
 }
 
 export function LoadingBlock({ label = 'Đang tải…', className }: { label?: string; className?: string }) {
-  return <div className={className}><SectionLoading label={label} /></div>;
+  useUiLanguage();
+  return <div className={className}><SectionLoading label={translateUi(label)} /></div>;
 }
 
 export function ErrorBlock({ message, onRetry }: { message?: string; onRetry?: () => void }) {
+  useUiLanguage();
   return (
     <Card className="flex flex-col items-start gap-4 p-6" role="alert">
       <div className="flex items-center gap-2 text-pt-bad">
         <AlertTriangle className="size-4" aria-hidden="true" />
         <span className="text-sm font-medium">Không tải được dữ liệu</span>
       </div>
-      <p className="text-sm text-pt-fg-2">{message ?? 'Kiểm tra kết nối rồi thử lại.'}</p>
+      <p className="text-sm text-pt-fg-2">{translateUi(message) ?? 'Kiểm tra kết nối rồi thử lại.'}</p>
       {onRetry && (
         <button type="button" onClick={onRetry} className={PT_BUTTON_SECONDARY}>
-          <RotateCcw className="size-4" aria-hidden="true" />
-          Thử lại
-        </button>
+          <RotateCcw className="size-4" aria-hidden="true" />{translateUi("Thử lại")}</button>
       )}
     </Card>
   );
 }
 
 export function EmptyState({ title, body, action, className }: { title: string; body?: ReactNode; action?: ReactNode; className?: string }) {
+  useUiLanguage();
   return (
     <Card className={cn('flex flex-col items-start gap-3 p-8', className)}>
-      <p className="text-xl font-normal tracking-[-0.015em] text-pt-fg">{title}</p>
+      <p className="text-xl font-normal tracking-[-0.015em] text-pt-fg">{translateUi(title)}</p>
       {body && <p className="max-w-[56ch] text-sm leading-relaxed text-pt-fg-2">{body}</p>}
       {action && <div className="mt-2">{action}</div>}
     </Card>

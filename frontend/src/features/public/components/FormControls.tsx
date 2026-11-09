@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -24,6 +25,7 @@ interface FieldProps {
 
 /** Label, control and message, wired for screen readers (the control sets aria-describedby itself). */
 export function Field({ label, htmlFor, error, hint, children, className }: FieldProps) {
+  useUiLanguage();
   const describedBy = error ? `${htmlFor}-error` : hint ? `${htmlFor}-hint` : undefined;
   const control = isValidElement(children)
     ? cloneElement(children as ReactElement<{ 'aria-describedby'?: string; 'aria-invalid'?: boolean }>, {
@@ -35,12 +37,12 @@ export function Field({ label, htmlFor, error, hint, children, className }: Fiel
   return (
     <div className={cn('grid gap-1.5', className)}>
       <label htmlFor={htmlFor} className="text-sm text-cream/90 [data-individual-theme_&]:text-pt-fg">
-        {label}
+        {translateUi(label)}
       </label>
       {control}
       {error ? (
         <p id={`${htmlFor}-error`} role="alert" className="text-xs text-red-300 [data-individual-theme_&]:text-pt-bad">
-          {error}
+          {translateUi(error)}
         </p>
       ) : (
         hint && (
@@ -55,24 +57,26 @@ export function Field({ label, htmlFor, error, hint, children, className }: Fiel
 
 /** Banner for a failed submit (wrong password, email taken...). */
 export function FormError({ message }: { message?: string }) {
+  useUiLanguage();
   if (!message) return null;
   return (
     <div
       role="alert"
       className="rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-200 [data-individual-theme_&]:border-pt-bad/30 [data-individual-theme_&]:bg-pt-bad/10 [data-individual-theme_&]:text-pt-bad"
     >
-      {message}
+      {translateUi(message)}
     </div>
   );
 }
 
 /** Shows what a real email would carry. Mock mode only: the real backend never returns these links. */
 export function MockEmailNotice({ label, to }: { label: string; to?: string }) {
+  useUiLanguage();
   // Never trust a link that arrives in a response: only the mock layer produces them, and only app-relative.
   if (!USE_MOCK || !to || !to.startsWith('/') || to.startsWith('//')) return null;
   return (
     <p className="rounded-xl border border-dashed border-cream/25 px-4 py-3 text-xs text-stone-400 [data-individual-theme_&]:border-pt-line [data-individual-theme_&]:text-pt-fg-3">
-      Giả lập email: {label}{' '}
+      Giả lập email: {translateUi(label)}{' '}
       <Link to={to} className="text-cream underline underline-offset-4 [data-individual-theme_&]:text-pt-fg">
         mở liên kết
       </Link>

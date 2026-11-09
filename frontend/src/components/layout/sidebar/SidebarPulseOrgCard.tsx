@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { PanelLeftClose } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/use-current-user';
 
@@ -8,6 +9,7 @@ interface SidebarPulseOrgCardProps {
 
 /** Khối cuối menu bên của chủ doanh nghiệp: cùng kiểu với khối của quản lý (SidebarManagerCard, `.pm-side-foot`). */
 export function SidebarPulseOrgCard({ isRail = false, onToggleCollapsed }: SidebarPulseOrgCardProps) {
+  useUiLanguage();
   const user = useCurrentUser((s) => s.user);
 
   const orgName = user?.organization?.name || 'Tổ chức';
@@ -30,18 +32,18 @@ export function SidebarPulseOrgCard({ isRail = false, onToggleCollapsed }: Sideb
       type="button"
       className="pm-side-toggle"
       onClick={onToggleCollapsed}
-      title={isRail ? 'Mở rộng thanh bên (Ctrl+B)' : 'Thu gọn thanh bên (Ctrl+B)'}
-      aria-label={isRail ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
+      title={translateUi(isRail ? translateUi('Mở rộng thanh bên (Ctrl+B)') : translateUi('Thu gọn thanh bên (Ctrl+B)'))}
+      aria-label={translateUi(isRail ? translateUi('Mở rộng thanh bên') : translateUi('Thu gọn thanh bên'))}
     >
       <PanelLeftClose className={`size-4 transition-transform duration-200 ${isRail ? 'rotate-180' : ''}`} />
-      {!isRail && <span>Thu gọn</span>}
+      {!isRail && <span>{translateUi("Thu gọn")}</span>}
     </button>
   );
 
   if (isRail) {
     return (
       <div className="shrink-0 pt-2">
-        <div className="pm-side-avatar" title={`${user?.fullName ?? ''} · ${orgName}`}>
+        <div className="pm-side-avatar" title={translateUi(`${user?.fullName ?? ''} · ${orgName}`)}>
           {orgName.trim().charAt(0).toUpperCase() || 'D'}
         </div>
         {toggle}
@@ -51,17 +53,17 @@ export function SidebarPulseOrgCard({ isRail = false, onToggleCollapsed }: Sideb
 
   return (
     <div className="shrink-0 pt-2">
-      <dl className="pm-side-foot" aria-label="Tổ chức">
-        <dt>Chủ doanh nghiệp</dt>
-        <dd>{user?.fullName ?? 'Chủ doanh nghiệp'}</dd>
-        <dt>Tổ chức</dt>
+      <dl className="pm-side-foot" aria-label={translateUi("Tổ chức")}>
+        <dt>{translateUi("Chủ doanh nghiệp")}</dt>
+        <dd>{user?.fullName ?? translateUi('Chủ doanh nghiệp')}</dd>
+        <dt>{translateUi("Tổ chức")}</dt>
         <dd>
           {orgName}
-          <small>{statusLabel}</small>
+          <small>{translateUi(statusLabel)}</small>
         </dd>
         {totalSeats != null && totalSeats > 0 && (
           <>
-            <dt>Suất nhân viên</dt>
+            <dt>{translateUi("Suất nhân viên")}</dt>
             <dd>{usedSeats ?? 0}/{totalSeats}</dd>
           </>
         )}

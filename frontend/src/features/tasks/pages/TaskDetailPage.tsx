@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, AlertCircle,
@@ -9,6 +10,7 @@ import { useTaskCompetencies } from '@/hooks/use-competencies';
 import { formatDate } from '@/lib/utils';
 
 export function TaskDetailPage() {
+  useUiLanguage();
   const { id } = useParams<{ id: string }>();
   const { data: task, isLoading, isError } = usePracticalTask(id);
   const { data: competencies = [] } = useTaskCompetencies(task?.competencyIds ?? []);
@@ -27,14 +29,12 @@ export function TaskDetailPage() {
     return (
       <div className="max-w-md mx-auto py-16 text-center space-y-4">
         <AlertCircle className="size-12 text-rose-500 mx-auto" />
-        <h2 className="text-lg font-bold text-slate-900">Không tìm thấy bài thực hành</h2>
+        <h2 className="text-lg font-bold text-slate-900">{translateUi("Không tìm thấy bài thực hành")}</h2>
         <p className="text-sm text-slate-500">Bài tập có thể đã bị xóa hoặc không thuộc quyền quản lý của bạn.</p>
         <Link
           to="/enterprise/tasks"
           className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium"
-        >
-          Quay lại danh sách
-        </Link>
+        >{translateUi("Quay lại danh sách")}</Link>
       </div>
     );
   }
@@ -51,14 +51,14 @@ export function TaskDetailPage() {
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <PageHeader
-          title={task.title}
-          subtitle={`Giao bởi: ${task.assignedByName} • Hạn hoàn thành: ${formatDate(task.dueDate)}`}
+          title={translateUi(task.title)}
+          subtitle={translateUi(`Giao bởi: ${task.assignedByName} • Hạn hoàn thành: ${formatDate(task.dueDate)}`)}
         />
         <div className="flex items-center gap-2">
           <LevelBadge level={task.targetLevel} />
           <StatusBadge
             variant={task.status === 'ACTIVE' ? 'success' : 'default'}
-            label={task.status === 'ACTIVE' ? 'Đang mở' : 'Đã đóng'}
+            label={translateUi(task.status === 'ACTIVE' ? translateUi('Đang mở') : translateUi('Đã đóng'))}
           />
         </div>
       </div>
@@ -70,7 +70,7 @@ export function TaskDetailPage() {
           <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
             <h3 className="font-bold text-slate-900 text-base">Yêu cầu nhiệm vụ & Bối cảnh</h3>
             <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
-              {task.description}
+              {translateUi(task.description)}
             </p>
 
             <div className="pt-2 border-t border-slate-100 space-y-1.5">
@@ -86,22 +86,21 @@ export function TaskDetailPage() {
           {/* Rubrics */}
           <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-slate-900 text-base">Tiêu chí đánh giá</h3>
+              <h3 className="font-bold text-slate-900 text-base">{translateUi("Tiêu chí đánh giá")}</h3>
               <span className="text-xs font-semibold text-slate-500">
-                Tổng điểm: {task.rubricCriteria.reduce((sum: number, r: any) => sum + r.maxPoints, 0)} điểm
-              </span>
+                Tổng điểm: {task.rubricCriteria.reduce((sum: number, r: any) => sum + r.maxPoints, 0)}{translateUi(" điểm")}</span>
             </div>
 
             <div className="space-y-3">
               {task.rubricCriteria.map((r: any, idx: number) => (
                 <div key={r.id || idx} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-slate-900">{r.label}</span>
+                    <span className="text-sm font-bold text-slate-900">{translateUi(r.label)}</span>
                     <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                       Tối đa {r.maxPoints}đ
                     </span>
                   </div>
-                  {r.description && <p className="text-xs text-slate-600">{r.description}</p>}
+                  {r.description && <p className="text-xs text-slate-600">{translateUi(r.description)}</p>}
                 </div>
               ))}
             </div>
@@ -111,7 +110,7 @@ export function TaskDetailPage() {
         {/* Right column: Competencies & Info */}
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
-            <h3 className="font-bold text-slate-900 text-base">Năng lực liên kết</h3>
+            <h3 className="font-bold text-slate-900 text-base">{translateUi("Năng lực liên kết")}</h3>
             <div className="flex flex-wrap gap-2">
               {task.competencyIds.map((competencyId) => {
                 const competency = competencies.find((item) => item.id === competencyId);
@@ -120,7 +119,7 @@ export function TaskDetailPage() {
                     key={competencyId}
                     className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-mono font-bold"
                   >
-                    {competency ? `${competency.code} · ${competency.name}` : `Năng lực ${competencyId.slice(0, 8)}…`}
+                    {competency ? `${competency.code} · ${competency.name}` : translateUi(`Năng lực ${competencyId.slice(0, 8)}…`)}
                   </span>
                 );
               })}
@@ -144,8 +143,7 @@ export function TaskDetailPage() {
             </p>
           </div>
           <span className="text-xs font-semibold text-slate-600">
-            {(task.assignedEmployees ?? []).length} nhân sự
-          </span>
+            {(task.assignedEmployees ?? []).length}{translateUi(" nhân sự")}</span>
         </div>
 
         <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
@@ -180,33 +178,29 @@ export function TaskDetailPage() {
                             : 'info'
                         }
                         label={
-                          sub.status === 'APPROVED'
-                            ? `Đã duyệt (${sub.evaluation?.score ?? 0}đ)`
+                          translateUi(sub.status === 'APPROVED'
+                            ? translateUi(`Đã duyệt (${sub.evaluation?.score ?? 0}đ)`)
                             : sub.status === 'REVISION_REQUESTED'
-                            ? 'Yêu cầu sửa lại'
+                            ? translateUi('Yêu cầu sửa lại')
                             : sub.status === 'REJECTED'
-                            ? 'Không đạt'
-                            : 'Đang chờ chấm'
+                            ? translateUi('Không đạt')
+                            : 'Đang chờ chấm')
                         }
                       />
                       {sub.status === 'PENDING_REVIEW' ? (
                         <Link
                           to={`/enterprise/reviews/${sub.id}`}
                           className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition"
-                        >
-                          Chấm điểm
-                        </Link>
+                        >{translateUi("Chấm điểm")}</Link>
                       ) : (
                         <Link
                           to={`/enterprise/reviews/${sub.id}`}
                           className="px-3 py-1.5 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-medium transition"
-                        >
-                          Xem minh chứng
-                        </Link>
+                        >{translateUi("Xem minh chứng")}</Link>
                       )}
                     </>
                   ) : (
-                    <span className="text-xs text-slate-400 italic">Chưa nộp bài</span>
+                    <span className="text-xs text-slate-400 italic">{translateUi("Chưa nộp bài")}</span>
                   )}
                 </div>
               </div>

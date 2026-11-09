@@ -1,7 +1,9 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useLandingContent } from '../landing-content-context';
 import { LandingNavLink } from './LandingLinks';
 
 export function LandingFooter() {
+  useUiLanguage();
   const { footerGroups, footerText } = useLandingContent();
 
   return (
@@ -14,8 +16,8 @@ export function LandingFooter() {
       </div>
 
       {footerGroups.map((group) => (
-        <nav key={group.title} aria-label={group.title}>
-          <p className="mb-3 text-[11px] uppercase tracking-[0.14em] text-stone-500">{group.title}</p>
+        <nav key={group.title} aria-label={translateUi(group.title)}>
+          <p className="mb-3 text-[11px] uppercase tracking-[0.14em] text-stone-500">{translateUi(group.title)}</p>
           <ul className="grid gap-2">
             {group.links.map((item) => (
               <li key={item.label}>

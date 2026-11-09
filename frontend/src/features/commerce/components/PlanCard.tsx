@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useId, useState } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -25,6 +26,7 @@ interface PlanCardProps {
  * Uses bundle capacity architecture: includes baseline quota with smooth add-on capacity.
  */
 export function PlanCard({ plan, cycle, onChoose, salesEmail, isSuggested }: PlanCardProps) {
+  useUiLanguage();
   const seatsId = useId();
   const defaultUsers = plan.users?.included ?? 1;
   const [seats, setSeats] = useState(defaultUsers);
@@ -39,7 +41,7 @@ export function PlanCard({ plan, cycle, onChoose, salesEmail, isSuggested }: Pla
 
   return (
     <article
-      aria-label={`Gói ${plan.name}`}
+      aria-label={translateUi(`Gói ${plan.name}`)}
       className={cn(
         'flex h-full flex-col rounded-3xl p-7 transition-all',
         isIndividual
@@ -83,7 +85,7 @@ export function PlanCard({ plan, cycle, onChoose, salesEmail, isSuggested }: Pla
       <div className="mt-6">
         {!isOnline ? (
           <div>
-            <p className="text-3xl font-light tracking-[-0.03em]">Liên hệ</p>
+            <p className="text-3xl font-light tracking-[-0.03em]">{translateUi("Liên hệ")}</p>
             <p className="mt-1 text-xs text-stone-400">
               Quy mô lớn &amp; tích hợp hệ thống theo yêu cầu
             </p>
@@ -114,8 +116,8 @@ export function PlanCard({ plan, cycle, onChoose, salesEmail, isSuggested }: Pla
             {total !== null && (
               <p className="mt-2 text-xs font-medium text-stone-300 tabular-nums">
                 {effectiveSeats > defaultUsers
-                  ? `Tổng ${formatVnd(total)} / ${BILLING_CYCLE_LABELS[cycle]} cho ${effectiveSeats} người dùng`
-                  : `Trọn gói ${formatVnd(total)} / ${BILLING_CYCLE_LABELS[cycle]} cho tối đa ${defaultUsers} người dùng`}
+                  ? translateUi(`Tổng ${formatVnd(total)} / ${BILLING_CYCLE_LABELS[cycle]} cho ${effectiveSeats} người dùng`)
+                  : translateUi(`Trọn gói ${formatVnd(total)} / ${BILLING_CYCLE_LABELS[cycle]} cho tối đa ${defaultUsers} người dùng`)}
               </p>
             )}
           </div>
@@ -151,7 +153,7 @@ export function PlanCard({ plan, cycle, onChoose, salesEmail, isSuggested }: Pla
                 ? (plan.users.annualAddonPrice ?? 0)
                 : (plan.users.monthlyAddonPrice ?? 0),
             )}{' '}
-            / người / {BILLING_CYCLE_LABELS[cycle]}
+            / người / {translateUi(BILLING_CYCLE_LABELS[cycle])}
           </p>
         </div>
       )}

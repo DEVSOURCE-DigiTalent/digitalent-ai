@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Bell, CheckCheck } from 'lucide-react';
 import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from '@/hooks/use-platform';
 import { formatDateTime } from '@/lib/utils';
@@ -10,6 +11,7 @@ import { ManagerPage } from '../components/ManagerUi';
  * (bấm một mục chưa đọc để đánh dấu đã đọc, đánh dấu tất cả), trình bày theo Pulse.
  */
 export function ManagerActivityPage() {
+  useUiLanguage();
   const { data: notifications = [], isLoading, isError, refetch } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
@@ -24,8 +26,7 @@ export function ManagerActivityPage() {
         actions={
           unreadCount > 0 ? (
             <button type="button" className={btn('outline')} onClick={() => markAllRead.mutate()} disabled={markAllRead.isPending}>
-              <CheckCheck size={16} /> Đánh dấu tất cả đã đọc
-            </button>
+              <CheckCheck size={16} />{translateUi(" Đánh dấu tất cả đã đọc")}</button>
           ) : undefined
         }
       />
@@ -39,15 +40,15 @@ export function ManagerActivityPage() {
           Hoạt động sẽ hiển thị khi phòng ban của bạn bắt đầu học, nộp bài và nhận quyết định.
         </Empty>
       ) : (
-        <section className="pm-panel" aria-label={`Hoạt động, ${unreadCount} chưa đọc`}>
+        <section className="pm-panel" aria-label={translateUi(`Hoạt động, ${unreadCount} chưa đọc`)}>
           <ul className="pm-activity">
             {notifications.map((item) => {
               const body = (
                 <>
                   <span className="pm-activity-dot" aria-hidden />
                   <div>
-                    <strong>{item.title}</strong>
-                    <p>{item.message}</p>
+                    <strong>{translateUi(item.title)}</strong>
+                    <p>{translateUi(item.message)}</p>
                   </div>
                   <time dateTime={item.createdAt}>{formatDateTime(item.createdAt)}</time>
                 </>
@@ -61,7 +62,7 @@ export function ManagerActivityPage() {
                       type="button"
                       className="pm-activity-item unread"
                       onClick={() => markRead.mutate(item.id)}
-                      aria-label={`${item.title} — chưa đọc, bấm để đánh dấu đã đọc`}
+                      aria-label={translateUi(`${item.title} — chưa đọc, bấm để đánh dấu đã đọc`)}
                     >
                       {body}
                     </button>
@@ -72,8 +73,8 @@ export function ManagerActivityPage() {
           </ul>
           <p className="pu-footer-note" style={{ marginTop: 14 }}>
             {unreadCount > 0
-              ? `${unreadCount} hoạt động mới chưa được đánh dấu đã đọc.`
-              : `Đã đọc đến ${formatDateTime(notifications[0]?.createdAt)}.`}
+              ? translateUi(`${unreadCount} hoạt động mới chưa được đánh dấu đã đọc.`)
+              : translateUi(`Đã đọc đến ${formatDateTime(notifications[0]?.createdAt)}.`)}
           </p>
         </section>
       )}

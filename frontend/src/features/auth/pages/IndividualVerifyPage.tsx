@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Mail, CheckCircle2, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
@@ -7,6 +8,7 @@ import { registrationService } from '@/services/registration.service';
 import { useCurrentUser } from '@/hooks/use-current-user';
 
 export function IndividualVerifyPage() {
+  useUiLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -198,7 +200,7 @@ export function IndividualVerifyPage() {
       <AuthShell
         portal="individual"
         eyebrow="Xác thực tài khoản"
-        title="Không tìm thấy phiên đăng ký"
+        title={translateUi("Không tìm thấy phiên đăng ký")}
         subtitle="Phiên đăng ký có thể đã hết hạn hoặc chưa được tạo."
       >
         <div className="space-y-6 text-center py-4">
@@ -223,9 +225,9 @@ export function IndividualVerifyPage() {
       eyebrow={intent === 'TRIAL' ? 'Dùng thử 7 ngày' : 'Gói Cá nhân Plus'}
       title="Xác thực địa chỉ email"
       subtitle={
-        email
-          ? `Mã OTP 6 chữ số đã được gửi đến ${email}`
-          : 'Nhập mã OTP 6 chữ số để kích hoạt tài khoản của bạn.'
+        translateUi(email
+          ? translateUi(`Mã OTP 6 chữ số đã được gửi đến ${email}`)
+          : 'Nhập mã OTP 6 chữ số để kích hoạt tài khoản của bạn.')
       }
     >
       <div className="space-y-6">
@@ -265,14 +267,14 @@ export function IndividualVerifyPage() {
             <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-xs text-stone-300 flex items-start gap-3">
               <Mail className="size-5 shrink-0 text-[#F5CA65] mt-0.5" />
               <div>
-                <p className="font-medium text-cream">Kiểm tra hộp thư đến</p>
+                <p className="font-medium text-cream">{translateUi("Kiểm tra hộp thư đến")}</p>
                 <p className="mt-0.5 text-stone-400">
                   Mã OTP có hiệu lực trong 15 phút. Hãy kiểm tra cả thư mục <em>Spam / Quảng cáo</em> nếu chưa thấy thư.
                 </p>
               </div>
             </div>
 
-            {error && <FormError message={error} />}
+            {error && <FormError message={translateUi(error)} />}
 
             {resendSuccess && (
               <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 p-3 ring-1 ring-emerald-500/20 text-xs text-emerald-400">
@@ -313,9 +315,7 @@ export function IndividualVerifyPage() {
             >
               {loading ? (
                 <>
-                  <Loader2 className="size-4 animate-spin" />
-                  Đang xác thực…
-                </>
+                  <Loader2 className="size-4 animate-spin" />{translateUi("Đang xác thực…")}</>
               ) : (
                 'Xác thực & Bắt đầu'
               )}
@@ -323,12 +323,9 @@ export function IndividualVerifyPage() {
 
             {/* Resend OTP Section */}
             <div className="text-center space-y-2 pt-2">
-              <p className="text-xs text-stone-400">
-                Chưa nhận được mã xác thực?
-              </p>
+              <p className="text-xs text-stone-400">{translateUi("Chưa nhận được mã xác thực?")}</p>
               {resendCooldown > 0 ? (
-                <p className="text-xs text-stone-500 font-mono">
-                  Gửi lại sau <span className="text-[#F5CA65]">{resendCooldown}s</span>
+                <p className="text-xs text-stone-500 font-mono">{translateUi("Gửi lại sau ")}<span className="text-[#F5CA65]">{resendCooldown}s</span>
                 </p>
               ) : (
                 <button
@@ -337,7 +334,7 @@ export function IndividualVerifyPage() {
                   disabled={resending}
                   className="text-xs font-semibold text-[#F5CA65] hover:underline transition-colors disabled:opacity-50"
                 >
-                  {resending ? 'Đang gửi lại mã…' : 'Gửi lại mã OTP'}
+                  {resending ? 'Đang gửi lại mã…' : translateUi('Gửi lại mã OTP')}
                 </button>
               )}
             </div>

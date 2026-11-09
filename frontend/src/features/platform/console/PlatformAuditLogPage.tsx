@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { usePlatformAuditLogs } from '@/hooks/use-platform-admin';
 import type { PlatformAuditLog } from '@/services/platform-admin.service';
@@ -54,6 +55,7 @@ function formatJsonPayload(raw: string | null) {
  * kiểm tra chi tiết JSON Payload Diff qua Slide-in Drawer không phá vỡ layout.
  */
 export function PlatformAuditLogPage() {
+  useUiLanguage();
   const [scope, setScope] = useState<'platform' | 'all'>('platform');
   const [action, setAction] = useState('');
   const [search, setSearch] = useState('');
@@ -111,7 +113,7 @@ export function PlatformAuditLogPage() {
               <option value="">Tất cả loại thao tác</option>
               {Object.entries(AUDIT_ACTIONS).map(([code, label]) => (
                 <option key={code} value={code}>
-                  {label}
+                  {translateUi(label)}
                 </option>
               ))}
             </select>
@@ -145,12 +147,12 @@ export function PlatformAuditLogPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th style={{ width: 170 }}>Thời gian</th>
+                  <th style={{ width: 170 }}>{translateUi("Thời gian")}</th>
                   <th style={{ width: 230 }}>Hành động an ninh</th>
                   <th>Đối tượng & Tổ chức</th>
                   <th>Lý do thao tác</th>
-                  <th style={{ width: 190 }}>Người thực hiện</th>
-                  <th style={{ width: 90, textAlign: 'right' }}>Chi tiết</th>
+                  <th style={{ width: 190 }}>{translateUi("Người thực hiện")}</th>
+                  <th style={{ width: 90, textAlign: 'right' }}>{translateUi("Chi tiết")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -260,14 +262,14 @@ export function PlatformAuditLogPage() {
       <PlatformDrawer
         isOpen={selectedLog !== null}
         onClose={() => setSelectedLog(null)}
-        title={selectedLog ? auditActionLabel(selectedLog.action) : ''}
+        title={translateUi(selectedLog ? auditActionLabel(selectedLog.action) : '')}
         subtitle={
-          selectedLog ? (
+          translateUi(selectedLog ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#64748b' }}>
               <Clock size={12} />
               {formatDateTime(selectedLog.createdAt)} · Thực hiện bởi {selectedLog.actorEmail ?? 'Hệ thống'}
             </div>
-          ) : undefined
+          ) : undefined)
         }
         icon={ActionIcon}
         badge={

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { EmptyState, LevelBadge, PageHeader, StatusBadge, getStatusVariant } from '@/components/shared';
@@ -27,11 +28,13 @@ const CHANGE_TONE: Record<RequirementChange['kind'], string> = {
 };
 
 function LevelCell({ level }: { level: number }) {
+  useUiLanguage();
   return level === 0 ? <span className="text-slate-400">—</span> : <LevelBadge level={level} />;
 }
 
 /** LCA-05: every version of a position's requirements, and what changed between two of them. */
 export function RequirementHistoryPage() {
+  useUiLanguage();
   const [params, setParams] = useSearchParams();
   const positionId = params.get('positionId') ?? '';
   const newerNo = Number(params.get('version')) || undefined;
@@ -63,21 +66,19 @@ export function RequirementHistoryPage() {
   return (
     <div>
       <Link to={positionId ? `/enterprise/positions/${positionId}` : '/enterprise/positions'} className="mb-3 inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900">
-        <ArrowLeft className="size-4" aria-hidden="true" />
-        Vị trí công việc
-      </Link>
+        <ArrowLeft className="size-4" aria-hidden="true" />{translateUi("Vị trí công việc")}</Link>
       <PageHeader title="Lịch sử phiên bản yêu cầu" subtitle="Theo dõi các lần thay đổi yêu cầu năng lực của một vị trí và so sánh hai phiên bản">
-        <OwnerFilterSelect label="Vị trí công việc" value={positionId} onChange={(value) => update('positionId', value)} options={[{ value: '', label: 'Chọn vị trí…' }, ...positions.map((p) => ({ value: p.id, label: p.name }))]} />
+        <OwnerFilterSelect label={translateUi("Vị trí công việc")} value={positionId} onChange={(value) => update('positionId', value)} options={[{ value: '', label: 'Chọn vị trí…' }, ...positions.map((p) => ({ value: p.id, label: p.name }))]} />
       </PageHeader>
 
       {!positionId && <EmptyState title="Chọn một vị trí" description="Chọn vị trí để xem các phiên bản yêu cầu năng lực của vị trí đó." />}
-      {positionId && overview.isLoading && <p className="text-sm text-slate-500">Đang tải…</p>}
+      {positionId && overview.isLoading && <p className="text-sm text-slate-500">{translateUi("Đang tải…")}</p>}
       {positionId && overview.isError && <p role="alert" className="text-sm text-red-600">Không tải được lịch sử phiên bản.</p>}
       {positionId && overview.data && versions.length === 0 && (
         <EmptyState
           title="Vị trí này chưa có phiên bản nào"
           description="Đặt yêu cầu năng lực để tạo phiên bản đầu tiên."
-          action={<Link to={`/enterprise/requirements/builder?positionId=${positionId}`} className={PRIMARY_BUTTON}>Đặt yêu cầu năng lực</Link>}
+          action={<Link to={`/enterprise/setup?tab=ceilings&positionId=${positionId}`} className={PRIMARY_BUTTON}>{translateUi("Thiết lập chuẩn theo khóa học")}</Link>}
         />
       )}
 
@@ -91,9 +92,9 @@ export function RequirementHistoryPage() {
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-semibold text-slate-900">Phiên bản {version.versionNo}</span>
                     <span className="flex items-center gap-2">
-                      <StatusBadge label={STATUS_LABELS[version.status] ?? version.status} variant={getStatusVariant(version.status)} />
+                      <StatusBadge label={translateUi(translateUi(STATUS_LABELS[version.status]) ?? version.status)} variant={getStatusVariant(version.status)} />
                       {version.status === 'DRAFT' && (
-                        <Link to={`/enterprise/requirements/builder?positionId=${positionId}&version=${version.versionNo}`} className="text-xs font-medium text-primary-700 hover:underline">Sửa</Link>
+                        <Link to={`/enterprise/setup?tab=ceilings&positionId=${positionId}`} className="text-xs font-medium text-primary-700 hover:underline">Chỉnh chuẩn</Link>
                       )}
                     </span>
                   </div>
@@ -103,7 +104,7 @@ export function RequirementHistoryPage() {
                     </p>
                   )}
                   <div className="flex items-center justify-between text-[11px] text-slate-400">
-                    <span>Người đổi: <strong className="text-slate-600">{version.changeUserFullName || 'Quản trị viên'}</strong></span>
+                    <span>Người đổi: <strong className="text-slate-600">{version.changeUserFullName || translateUi('Quản trị viên')}</strong></span>
                     {version.activatedAt && <span>{formatDate(version.activatedAt)}</span>}
                   </div>
                 </li>
@@ -127,9 +128,9 @@ export function RequirementHistoryPage() {
             {newer.data && (
               <div className="border-b border-slate-100 bg-slate-50/50 p-4 space-y-1">
                 <p className="text-xs text-slate-600">
-                  <span className="font-semibold text-slate-800">Phiên bản {newer.data.versionNo}:</span> hiệu lực từ {formatDate(newer.data.effectiveFrom)}
-                  {newer.data.activatedAt ? ` · kích hoạt ${formatDate(newer.data.activatedAt)}` : ''}
-                  {newer.data.changeUserFullName ? ` bởi ${newer.data.changeUserFullName}` : ''}
+                  <span className="font-semibold text-slate-800">Phiên bản {newer.data.versionNo}:</span>{translateUi(" hiệu lực từ ")}{formatDate(newer.data.effectiveFrom)}
+                  {newer.data.activatedAt ? translateUi(` · kích hoạt ${formatDate(newer.data.activatedAt)}`) : ''}
+                  {newer.data.changeUserFullName ? translateUi(` bởi ${newer.data.changeUserFullName}`) : ''}
                 </p>
                 {newer.data.changeReason && (
                   <p className="text-xs text-slate-500 italic">
@@ -140,7 +141,7 @@ export function RequirementHistoryPage() {
             )}
 
             {newer.isLoading ? (
-              <p className="p-4 text-sm text-slate-500">Đang tải…</p>
+              <p className="p-4 text-sm text-slate-500">{translateUi("Đang tải…")}</p>
             ) : changes.length === 0 ? (
               <p className="p-4 text-sm text-slate-600">
                 {olderVersion ? 'Hai phiên bản này giống nhau về năng lực, mức yêu cầu và tính bắt buộc.' : 'Đây là phiên bản đầu tiên, chưa có phiên bản cũ hơn để so sánh.'}
@@ -151,10 +152,10 @@ export function RequirementHistoryPage() {
                   <caption className="sr-only">Thay đổi giữa hai phiên bản</caption>
                   <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-600">
                     <tr>
-                      <th scope="col" className="px-4 py-3 font-semibold">Năng lực</th>
+                      <th scope="col" className="px-4 py-3 font-semibold">{translateUi("Năng lực")}</th>
                       <th scope="col" className="px-4 py-3 font-semibold">Thay đổi</th>
-                      <th scope="col" className="px-4 py-3 font-semibold">Trước</th>
-                      <th scope="col" className="px-4 py-3 font-semibold">Sau</th>
+                      <th scope="col" className="px-4 py-3 font-semibold">{translateUi("Trước")}</th>
+                      <th scope="col" className="px-4 py-3 font-semibold">{translateUi("Sau")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -166,7 +167,7 @@ export function RequirementHistoryPage() {
                           </Link>
                         </th>
                         <td className={`px-4 py-3 font-medium ${CHANGE_TONE[change.kind]}`}>
-                          {CHANGE_LABELS[change.kind]}
+                          {translateUi(CHANGE_LABELS[change.kind])}
                           {change.kind === 'MANDATORY_CHANGED' && (change.mandatoryTo ? ' (thành bắt buộc)' : ' (thành tùy chọn)')}
                         </td>
                         <td className="px-4 py-3"><LevelCell level={change.from} /></td>

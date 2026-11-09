@@ -9,7 +9,7 @@ namespace DigiTalent.Api.Controllers;
 
 /// <summary>
 /// Trang nhân viên Pulse (docs/ui-redesign/16-pulse-product-flow-detailed.md, docs/specs/2026-10-16-pulse-employee-roadmap-proctoring.md):
-/// Hôm nay / Lộ trình / Thực hành, lộ trình doanh nghiệp đặt (mục tiêu vị trí giới hạn bởi trần phòng ban), bài đánh giá
+/// Hôm nay / Lộ trình / Thực hành, lộ trình doanh nghiệp đặt (mục tiêu vị trí giới hạn bởi phạm vi phòng ban), bài đánh giá
 /// trước khi học, khóa học theo mô đun, bài cuối khóa, bài làm có giám sát (toàn bộ màn hình + camera + micro) và kết quả
 /// đã xác nhận. Chỉ dữ liệu của chính người gọi.
 /// </summary>

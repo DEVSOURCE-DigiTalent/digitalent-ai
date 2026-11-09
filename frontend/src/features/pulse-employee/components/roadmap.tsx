@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, ArrowRight, Check, Clock, FileText, Lock, ShieldCheck, Target, Zap } from 'lucide-react';
 import type { PulseCourseSummary, PulseDomain, PulseOverview } from '@/services/pulse.service';
@@ -17,6 +18,7 @@ export function toSentenceCase(str: string): string {
 
 /** Ba chấm cấp độ: ●○○ Cơ bản, ●●○ Trung cấp, ●●● Nâng cao. */
 export function LevelDots({ level }: { level: number }) {
+  useUiLanguage();
   return (
     <span className="pu-level-dots" aria-hidden>
       {[1, 2, 3].map((n) => <i key={n} className={n <= level ? 'on' : undefined} />)}
@@ -29,8 +31,8 @@ const shortCode = (domain: PulseDomain, courses: PulseCourseSummary[]) =>
 
 /**
  * Lộ trình doanh nghiệp đặt cho vị trí: mỗi lĩnh vực một hàng, mỗi cấp độ một cột, mỗi ô là tên khóa trong lộ trình
- * (Cơ bản → min(mục tiêu vị trí, trần phòng ban)). Chỉ khóa bắt buộc: khóa tùy chọn nằm ở danh sách khóa bên dưới, khóa vượt
- * trần không hiện. Chỉ là kế hoạch — không có tiến độ hay đạt / chưa đạt.
+ * (Cơ bản → min(mục tiêu vị trí, phạm vi phòng ban)). Chỉ khóa bắt buộc: khóa tùy chọn nằm ở danh sách khóa bên dưới, khóa vượt
+ * phạm vi không hiện. Chỉ là kế hoạch — không có tiến độ hay đạt / chưa đạt.
  */
 export function RoadmapPlan({
   overview,
@@ -43,6 +45,7 @@ export function RoadmapPlan({
   caption: string;
   onSelectCourse?: (course: PulseCourseSummary) => void;
 }) {
+  useUiLanguage();
   const domains = overview.domains.filter((d) => d.pathTop > 0);
 
   return (
@@ -54,7 +57,7 @@ export function RoadmapPlan({
             <tr>
               <th scope="col" className="pu-matrix-col-domain">
                 <div className="pu-matrix-th-content">
-                  <span className="pu-matrix-th-title">Lĩnh vực Năng lực</span>
+                  <span className="pu-matrix-th-title">{translateUi("Lĩnh vực Năng lực")}</span>
                   <span className="pu-matrix-th-sub">Khung 6 lĩnh vực chuẩn hóa</span>
                 </div>
               </th>
@@ -103,12 +106,9 @@ export function RoadmapPlan({
                         <span className="pu-matrix-domain-tag">{code}</span>
                         {isDomainMet ? (
                           <span className="pu-matrix-domain-status met">
-                            <Check size={11} strokeWidth={3} /> Đạt chuẩn
-                          </span>
+                            <Check size={11} strokeWidth={3} />{translateUi(" Đạt chuẩn")}</span>
                         ) : (
-                          <span className="pu-matrix-domain-status gap">
-                            Còn {remainingCourses} khóa
-                          </span>
+                          <span className="pu-matrix-domain-status gap">{translateUi("Còn ")}{remainingCourses}{translateUi(" khóa")}</span>
                         )}
                       </div>
 
@@ -123,8 +123,7 @@ export function RoadmapPlan({
                             <Target size={11} className="pu-meta-icon text-amber-600" />
                             <span>Mục tiêu vị trí:</span>
                           </span>
-                          <strong className="pu-matrix-meta-val target">
-                            Cấp {domain.target} · {levelName(domain.target)}
+                          <strong className="pu-matrix-meta-val target">{translateUi("Cấp ")}{domain.target} · {levelName(domain.target)}
                           </strong>
                         </div>
 
@@ -147,10 +146,10 @@ export function RoadmapPlan({
                             }`}
                           >
                             {isDomainMet
-                              ? `Đạt chuẩn (${levelName(domain.verified)})`
+                              ? translateUi(`Đạt chuẩn (${levelName(domain.verified)})`)
                               : domain.verified > 0
-                                ? `Cấp ${domain.verified} · ${levelName(domain.verified)}`
-                                : 'Chưa đạt'}
+                                ? translateUi(`Cấp ${domain.verified} · ${levelName(domain.verified)}`)
+                                : translateUi('Chưa đạt')}
                           </strong>
                         </div>
                       </div>
@@ -203,6 +202,7 @@ function PlanCell({
   joined: boolean;
   onSelectCourse?: (course: PulseCourseSummary) => void;
 }) {
+  useUiLanguage();
   const isCapped = domain.pathTop < domain.target && course.tier === domain.pathTop;
   const isTarget = course.tier === domain.pathTop && !isCapped;
   const isDone = course.approved || course.slotStatus === 'COMPLETED';
@@ -237,7 +237,7 @@ function PlanCell({
             </span>
           )}
           {isInProgress && (
-            <span className="pu-mcard-badge learning" title={`Đã học ${course.progressPercent}%`}>
+            <span className="pu-mcard-badge learning" title={translateUi(`Đã học ${course.progressPercent}%`)}>
               {course.progressPercent}%
             </span>
           )}
@@ -253,12 +253,11 @@ function PlanCell({
           )}
           {isTarget && (
             <span className="pu-mcard-badge target" title="Mục tiêu năng lực của chức danh">
-              <Target size={10} /> Mục tiêu
-            </span>
+              <Target size={10} />{translateUi(" Mục tiêu")}</span>
           )}
           {isCapped && (
-            <span className="pu-mcard-badge capped" title="Giới hạn theo trần năng lực của phòng ban">
-              <Lock size={9} /> Trần
+            <span className="pu-mcard-badge capped" title="Giới hạn theo phạm vi năng lực của phòng ban">
+              <Lock size={9} /> Giới hạn áp dụng
             </span>
           )}
         </div>
@@ -295,8 +294,7 @@ function PlanCell({
       <div className="pu-mcard-actions">
         {isDone ? (
           <span className="pu-mcard-done-label">
-            <Check size={11} strokeWidth={3} /> Đã đạt
-          </span>
+            <Check size={11} strokeWidth={3} />{translateUi(" Đã đạt")}</span>
         ) : isPreTest ? (
           <Link
             to={PULSE_PATHS.preAssessment(course.courseId)}
@@ -321,8 +319,7 @@ function PlanCell({
           </Link>
         ) : isLocked ? (
           <span className="pu-mcard-locked-label">
-            <Lock size={10} /> Cấp {course.tier - 1} trước
-          </span>
+            <Lock size={10} />{translateUi(" Cấp ")}{course.tier - 1}{translateUi(" trước")}</span>
         ) : (
           <Link
             to={PULSE_PATHS.course(course.courseId)}
@@ -349,11 +346,13 @@ function PlanCell({
 }
 
 export function StatePill({ course }: { course: PulseCourseSummary }) {
+  useUiLanguage();
   return <span className={`pu-state ${courseTone(course)}`}>{courseLabel(course)}</span>;
 }
 
 /** Nút hành động chính của một khóa, theo trạng thái. */
 export function CourseAction({ course, tone = 'page' }: { course: PulseCourseSummary; tone?: 'page' | 'dark' }) {
+  useUiLanguage();
   const primary = tone === 'dark' ? 'lime' : 'primary';
   const secondary = tone === 'dark' ? 'on-dark' : 'outline';
   const arrow = <ArrowRight size={15} aria-hidden />;
@@ -363,7 +362,7 @@ export function CourseAction({ course, tone = 'page' }: { course: PulseCourseSum
     case 'PRE_REVIEW':
       return <PuLink to={PULSE_PATHS.preAssessment(course.courseId)} kind={secondary} small>Xem bài đã nộp</PuLink>;
     case 'TO_LEARN':
-      return <PuLink to={PULSE_PATHS.course(course.courseId)} kind={tone === 'dark' ? 'on-dark' : 'primary'} small={tone === 'dark'}>Bắt đầu học {arrow}</PuLink>;
+      return <PuLink to={PULSE_PATHS.course(course.courseId)} kind={tone === 'dark' ? 'on-dark' : 'primary'} small={tone === 'dark'}>{translateUi("Bắt đầu học ")}{arrow}</PuLink>;
     case 'IN_PROGRESS':
       return <PuLink to={PULSE_PATHS.course(course.courseId)} kind={tone === 'dark' ? 'on-dark' : 'primary'} small={tone === 'dark'}>Học tiếp {arrow}</PuLink>;
     case 'FINAL_READY':
@@ -377,7 +376,7 @@ export function CourseAction({ course, tone = 'page' }: { course: PulseCourseSum
     case 'SEAT_NEEDED':
       return <PuLink to={PULSE_PATHS.course(course.courseId)} kind={secondary} small>Xem đề cương</PuLink>;
     case 'COMPLETED':
-      return <PuLink to={PULSE_PATHS.course(course.courseId)} kind="ghost" small>Xem khóa học</PuLink>;
+      return <PuLink to={PULSE_PATHS.course(course.courseId)} kind="ghost" small>{translateUi("Xem khóa học")}</PuLink>;
     default:
       return null;
   }
@@ -385,6 +384,7 @@ export function CourseAction({ course, tone = 'page' }: { course: PulseCourseSum
 
 /** Nhắc nhân viên mới: khóa cần bài đánh giá năng lực trước khi học. */
 export function AssessFirstNote() {
+  useUiLanguage();
   return (
     <span className="pu-assess-note">
       <ShieldCheck size={15} aria-hidden />
@@ -403,6 +403,7 @@ export function CourseRow({
   overview: PulseOverview;
   onSelectCourse?: (course: PulseCourseSummary) => void;
 }) {
+  useUiLanguage();
   return (
     <div className={`pu-course-row${course.zone === 'OPTIONAL' ? ' optional' : ''}`}>
       <span className="pu-course-level">
@@ -432,7 +433,7 @@ export function CourseRow({
         </span>
         {showsProgress(course) && (
           <span className="pu-course-progress">
-            <Bar value={course.progressPercent} label={`Tiến độ học ${course.code}`} />
+            <Bar value={course.progressPercent} label={translateUi(`Tiến độ học ${course.code}`)} />
             <span>{course.progressPercent}% đã học</span>
           </span>
         )}
@@ -443,6 +444,7 @@ export function CourseRow({
 }
 
 export function CapNote({ domain, overview }: { domain: PulseDomain; overview: PulseOverview }) {
+  useUiLanguage();
   const note = capNote(domain, overview.person.positionName, overview.person.departmentName);
   if (!note) return null;
   return (
@@ -451,7 +453,7 @@ export function CapNote({ domain, overview }: { domain: PulseDomain; overview: P
         <AlertTriangle size={18} />
       </div>
       <div className="pu-cap-alert-content">
-        <strong className="pu-cap-alert-title">Giới hạn trần năng lực của phòng ban</strong>
+        <strong className="pu-cap-alert-title">Giới hạn phạm vi năng lực của phòng ban</strong>
         <p className="pu-cap-alert-desc">{note}</p>
       </div>
     </div>
@@ -460,6 +462,7 @@ export function CapNote({ domain, overview }: { domain: PulseDomain; overview: P
 
 /** Ba ô trạng thái nhỏ (Cơ bản / Trung cấp / Nâng cao) của một lĩnh vực. */
 export function DomainTrack({ courses, vertical }: { courses: PulseCourseSummary[]; vertical?: boolean }) {
+  useUiLanguage();
   const ordered = [...courses].sort((a, b) => (vertical ? b.tier - a.tier : a.tier - b.tier));
   return (
     <span className={vertical ? 'pu-comp-tower' : 'pu-domain-track'} aria-hidden>

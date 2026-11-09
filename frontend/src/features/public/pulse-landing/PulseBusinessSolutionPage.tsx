@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -81,7 +82,7 @@ const pillars = [
   {
     step: '05',
     title: 'Ghi nhận',
-    desc: 'Cập nhật trần năng lực & cấp chứng nhận',
+    desc: 'Cập nhật phạm vi năng lực & cấp chứng nhận',
     badge: 'CÔNG NHẬN',
   },
 ];
@@ -98,6 +99,7 @@ const stats = [
  * Thay thế hoàn toàn trang giá cũ, mô tả chi tiết hướng giải quyết bài toán đào tạo thực chất của DigiTalent AI.
  */
 export function PulseBusinessSolutionPage() {
+  useUiLanguage();
   const user = useCurrentUser((state) => state.user);
   const home = user ? getDashboardPath(user) : null;
 
@@ -232,21 +234,21 @@ export function PulseBusinessSolutionPage() {
             <div className="pulse-tier-interactive-stage">
               <div className="pulse-tier-card-stack">
                 <div className="pulse-tier-slab pulse-tier-slab--1 pulse-tier-slab--active">
-                  <div className="pulse-tier-slab-badge">CẤP 1</div>
+                  <div className="pulse-tier-slab-badge">{translateUi("CẤP 1")}</div>
                   <div className="pulse-tier-slab-body">
                     <strong>Khung Năng Lực Quốc Gia & DigiTalent</strong>
                     <span>24 năng lực số chuẩn Thông tư 02/2022/TT-BTTTT</span>
                   </div>
                 </div>
                 <div className="pulse-tier-slab pulse-tier-slab--2">
-                  <div className="pulse-tier-slab-badge">CẤP 2</div>
+                  <div className="pulse-tier-slab-badge">{translateUi("CẤP 2")}</div>
                   <div className="pulse-tier-slab-body">
                     <strong>Trần Năng Lực Doanh Nghiệp</strong>
                     <span>Chiến lược chuyển đổi số riêng của tổ chức</span>
                   </div>
                 </div>
                 <div className="pulse-tier-slab pulse-tier-slab--3">
-                  <div className="pulse-tier-slab-badge">CẤP 3</div>
+                  <div className="pulse-tier-slab-badge">{translateUi("CẤP 3")}</div>
                   <div className="pulse-tier-slab-body">
                     <strong>Mục Tiêu Theo Phòng Ban</strong>
                     <span>Chuyên biệt cho Kỹ thuật, Kinh doanh, Vận hành</span>
@@ -275,21 +277,21 @@ export function PulseBusinessSolutionPage() {
               <p>Mỗi vị trí có một bộ tiêu chuẩn riêng biệt, không học dàn trải hay chồng chéo.</p>
               <div className="pulse-solution-hierarchy-list">
                 <div className="pulse-solution-hierarchy-item">
-                  <span className="pulse-solution-tier-badge">CẤP 1</span>
+                  <span className="pulse-solution-tier-badge">{translateUi("CẤP 1")}</span>
                   <div>
                     <strong>Chuẩn Năng lực Quốc gia & DigiTalent</strong>
                     <p>Khung tham chiếu chuẩn mực làm nền móng.</p>
                   </div>
                 </div>
                 <div className="pulse-solution-hierarchy-item">
-                  <span className="pulse-solution-tier-badge">CẤP 2</span>
+                  <span className="pulse-solution-tier-badge">{translateUi("CẤP 2")}</span>
                   <div>
                     <strong>Trần Năng lực Doanh nghiệp</strong>
                     <p>Mục tiêu chuyển đổi số theo chiến lược công ty.</p>
                   </div>
                 </div>
                 <div className="pulse-solution-hierarchy-item">
-                  <span className="pulse-solution-tier-badge">CẤP 3</span>
+                  <span className="pulse-solution-tier-badge">{translateUi("CẤP 3")}</span>
                   <div>
                     <strong>Mục tiêu từng Phòng ban</strong>
                     <p>Chuyên sâu theo bộ phận (Kỹ thuật, Kinh doanh, Nhân sự...).</p>
@@ -324,7 +326,7 @@ export function PulseBusinessSolutionPage() {
                   <span className="pulse-solution-pillar-step">{pillar.step}</span>
                   <span className="pulse-solution-pillar-badge">{pillar.badge}</span>
                 </div>
-                <h3>{pillar.title}</h3>
+                <h3>{translateUi(pillar.title)}</h3>
                 <p>{pillar.desc}</p>
               </div>
             ))}
@@ -342,7 +344,7 @@ export function PulseBusinessSolutionPage() {
             {stats.map((s, idx) => (
               <div key={idx} className="pulse-solution-stat-card">
                 <span className="pulse-solution-stat-value">{s.value}</span>
-                <h4>{s.label}</h4>
+                <h4>{translateUi(s.label)}</h4>
                 <p>{s.desc}</p>
               </div>
             ))}

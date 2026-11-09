@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { ShieldCheck, Info } from 'lucide-react';
 import { useSaveGrades } from '@/hooks/use-onboarding';
@@ -35,6 +36,7 @@ const DEFAULT_GRADES: SetupGrade[] = [
  * quyền hạn duyệt minh chứng và ma trận yêu cầu năng lực.
  */
 export function GradesStep({ setup, onBack, onDone, onSkip }: GradesStepProps) {
+  useUiLanguage();
   const save = useSaveGrades();
   const [error, setError] = useState<string>();
   const [grades, setGrades] = useState<SetupGrade[]>(() => {
@@ -67,9 +69,8 @@ export function GradesStep({ setup, onBack, onDone, onSkip }: GradesStepProps) {
           <Info className="mt-0.5 size-5 shrink-0 text-[#F5CA65]" aria-hidden="true" />
           <div className="space-y-1">
             <p className="font-semibold text-[#F5CA65]">Quy chuẩn Cấp bậc G1–G3</p>
-            <p className="text-xs text-ent-fg-2 leading-relaxed">
-              Mã cấp bậc <strong>G1, G2, G3</strong> là bất biến trong hệ thống nhằm liên kết tự động với Khung chuẩn năng lực số.
-              Bạn có thể điều chỉnh <strong>Tên hiển thị</strong> và <strong>Mô tả</strong> phù hợp với cơ cấu chức danh tại tổ chức của bạn.
+            <p className="text-xs text-ent-fg-2 leading-relaxed">{translateUi("Mã cấp bậc ")}<strong>G1, G2, G3</strong> là bất biến trong hệ thống nhằm liên kết tự động với Khung chuẩn năng lực số.
+              Bạn có thể điều chỉnh <strong>Tên hiển thị</strong> và <strong>{translateUi("Mô tả")}</strong> phù hợp với cơ cấu chức danh tại tổ chức của bạn.
             </p>
           </div>
         </div>
@@ -84,8 +85,7 @@ export function GradesStep({ setup, onBack, onDone, onSkip }: GradesStepProps) {
             <div className="mb-3 flex items-center justify-between border-b border-ent-line pb-2">
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1 rounded-md bg-amber-400/20 border border-amber-400/30 px-2.5 py-1 text-xs font-bold text-[#F5CA65]">
-                  <ShieldCheck className="size-3.5" />
-                  Mã: {grade.code}
+                  <ShieldCheck className="size-3.5" />{translateUi("Mã: ")}{grade.code}
                 </span>
                 <span className="text-xs text-ent-fg-3">
                   {grade.code === 'G1'
@@ -129,19 +129,17 @@ export function GradesStep({ setup, onBack, onDone, onSkip }: GradesStepProps) {
         ))}
       </div>
 
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-600">{translateUi(error)}</p>}
 
       <div className="flex flex-wrap items-center gap-3 pt-2">
-        <button type="button" onClick={onBack} className={SECONDARY_BUTTON}>
-          Quay lại
-        </button>
+        <button type="button" onClick={onBack} className={SECONDARY_BUTTON}>{translateUi("Quay lại")}</button>
         <button
           type="button"
           onClick={submit}
           disabled={save.isPending || grades.some((g) => !g.name.trim())}
           className={PRIMARY_BUTTON}
         >
-          {save.isPending ? 'Đang lưu…' : 'Lưu và tiếp tục'}
+          {save.isPending ? translateUi('Đang lưu…') : translateUi('Lưu và tiếp tục')}
         </button>
         <button type="button" onClick={onSkip} className={LINK_BUTTON}>
           Bỏ qua (dùng mặc định)

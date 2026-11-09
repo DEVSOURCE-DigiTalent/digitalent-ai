@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { type ReactNode } from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { X } from 'lucide-react';
@@ -31,6 +32,7 @@ export function FocusLayout({
   title,
   children,
 }: FocusLayoutProps) {
+  useUiLanguage();
   useEnterpriseTheme({ lightOnly: true });
 
   return (
@@ -44,7 +46,7 @@ export function FocusLayout({
           {title && (
             <>
               <span className="text-ent-line">/</span>
-              <span className="text-sm font-medium text-ent-fg">{title}</span>
+              <span className="text-sm font-medium text-ent-fg">{translateUi(title)}</span>
             </>
           )}
         </div>

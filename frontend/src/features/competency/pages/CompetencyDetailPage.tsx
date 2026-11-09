@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { EmptyState, LevelBadge, PageHeader, ScoreCard, StatusBadge, getStatusVariant } from '@/components/shared';
@@ -19,18 +20,17 @@ const TYPE_LABELS: Record<string, string> = {
  * và danh sách nhân viên đang có khoảng trống thiếu hụt năng lực này.
  */
 export function CompetencyDetailPage() {
+  useUiLanguage();
   const { id = '' } = useParams();
   const competency = useCompetency(id);
   const usage = useCompetencyUsage(id);
 
-  if (competency.isLoading) return <p className="text-sm text-slate-500">Đang tải…</p>;
+  if (competency.isLoading) return <p className="text-sm text-slate-500">{translateUi("Đang tải…")}</p>;
   if (competency.isError || !competency.data) {
     return (
       <div role="alert" className="grid gap-3">
         <p className="text-sm text-red-600">Không tìm thấy năng lực này.</p>
-        <Link to="/enterprise/framework" className="text-sm font-medium text-primary-700 underline">
-          Quay lại khung năng lực
-        </Link>
+        <Link to="/enterprise/framework" className="text-sm font-medium text-primary-700 underline">{translateUi("Quay lại khung năng lực")}</Link>
       </div>
     );
   }
@@ -51,11 +51,11 @@ export function CompetencyDetailPage() {
           Khung chuẩn năng lực số
         </Link>
         <PageHeader
-          title={c.name}
-          subtitle={`${c.code} · ${c.categoryName} · ${TYPE_LABELS[c.competencyType] ?? c.competencyType}`}
+          title={translateUi(c.name)}
+          subtitle={translateUi(`${c.code} · ${c.categoryName} · ${TYPE_LABELS[c.competencyType] ?? c.competencyType}`)}
         >
           <StatusBadge
-            label={c.status === 'ACTIVE' ? 'Đang dùng' : c.status === 'DRAFT' ? 'Bản nháp' : 'Đã lưu trữ'}
+            label={translateUi(c.status === 'ACTIVE' ? translateUi('Đang dùng') : c.status === 'DRAFT' ? translateUi('Bản nháp') : 'Đã lưu trữ')}
             variant={getStatusVariant(c.status)}
           />
         </PageHeader>
@@ -63,7 +63,7 @@ export function CompetencyDetailPage() {
 
       {c.description && (
         <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <p className="max-w-[80ch] text-sm leading-relaxed text-slate-700">{c.description}</p>
+          <p className="max-w-[80ch] text-sm leading-relaxed text-slate-700">{translateUi(c.description)}</p>
         </div>
       )}
 
@@ -73,11 +73,9 @@ export function CompetencyDetailPage() {
           aria-labelledby="criteria-title"
           className="rounded-lg border border-slate-200 bg-white p-5 lg:col-span-2"
         >
-          <h2 id="criteria-title" className="mb-3 text-base font-semibold text-slate-900">
-            Tiêu chí hành vi theo mức
-          </h2>
+          <h2 id="criteria-title" className="mb-3 text-base font-semibold text-slate-900">{translateUi("Tiêu chí hành vi theo mức")}</h2>
           {c.criteria.length === 0 ? (
-            <p className="text-sm text-slate-500">Năng lực này chưa có tiêu chí hành vi.</p>
+            <p className="text-sm text-slate-500">{translateUi("Năng lực này chưa có tiêu chí hành vi.")}</p>
           ) : (
             <div className="grid gap-4 md:grid-cols-3">
               {LEVELS.map((level) => {
@@ -85,12 +83,11 @@ export function CompetencyDetailPage() {
                 return (
                   <div key={level} className="rounded-lg border border-slate-100 bg-slate-50/50 p-4">
                     <h3 className="mb-2 flex items-center justify-between text-sm font-semibold text-slate-800">
-                      <span>Mức {level}</span>
+                      <span>{translateUi("Mức ")}{level}</span>
                       <LevelBadge level={level} />
                     </h3>
                     {items.length === 0 ? (
-                      <p className="text-xs text-slate-500">
-                        Chưa có tiêu chí cho mức {levelLabel(level).toLowerCase()}.
+                      <p className="text-xs text-slate-500">{translateUi("Chưa có tiêu chí cho mức ")}{levelLabel(level).toLowerCase()}.
                       </p>
                     ) : (
                       <ul className="grid gap-2">
@@ -120,7 +117,7 @@ export function CompetencyDetailPage() {
             Nhân viên theo mức đã xác nhận
           </h2>
           {usage.isLoading ? (
-            <p className="text-sm text-slate-500">Đang tải…</p>
+            <p className="text-sm text-slate-500">{translateUi("Đang tải…")}</p>
           ) : usage.isError || !usage.data ? (
             <p role="alert" className="text-sm text-red-600">
               Không tải được số liệu sử dụng.
@@ -130,12 +127,12 @@ export function CompetencyDetailPage() {
               {[0, 1, 2, 3].map((level) => (
                 <ScoreCard
                   key={level}
-                  label={level === 0 ? 'Chưa xác nhận' : levelLabel(level)}
+                  label={translateUi(level === 0 ? translateUi('Chưa xác nhận') : levelLabel(level))}
                   value={distribution[String(level)] ?? 0}
                   subtitle={
-                    people
-                      ? `${Math.round(((distribution[String(level)] ?? 0) / people) * 100)}% tổng số`
-                      : undefined
+                    translateUi(people
+                      ? translateUi(`${Math.round(((distribution[String(level)] ?? 0) / people) * 100)}% tổng số`)
+                      : undefined)
                   }
                 />
               ))}
@@ -167,8 +164,8 @@ export function CompetencyDetailPage() {
                     {position.positionName}
                   </Link>
                   <span className="flex items-center gap-2 text-xs text-slate-600">
-                    <span className="font-medium">{position.employees} nhân viên</span>
-                    {position.isMandatory && <StatusBadge label="Bắt buộc" variant="warning" />}
+                    <span className="font-medium">{position.employees}{translateUi(" nhân viên")}</span>
+                    {position.isMandatory && <StatusBadge label={translateUi("Bắt buộc")} variant="warning" />}
                     <LevelBadge level={position.requiredLevel} />
                   </span>
                 </li>
@@ -179,9 +176,7 @@ export function CompetencyDetailPage() {
 
         {/* Phân bố trình độ nhân sự */}
         <section aria-labelledby="distribution-title" className="rounded-lg border border-slate-200 bg-white p-5">
-          <h2 id="distribution-title" className="mb-3 text-base font-semibold text-slate-900">
-            Phân bố trình độ nhân sự
-          </h2>
+          <h2 id="distribution-title" className="mb-3 text-base font-semibold text-slate-900">{translateUi("Phân bố trình độ nhân sự")}</h2>
           {(() => {
             const dist = usage.data?.levelDistribution ?? {};
             const total = Object.values(dist).reduce((s, v) => s + (Number(v) || 0), 0);
@@ -199,7 +194,7 @@ export function CompetencyDetailPage() {
                   return (
                     <div key={level} className="space-y-1">
                       <div className="flex items-center justify-between text-xs font-medium">
-                        <span className="text-slate-700">{label}</span>
+                        <span className="text-slate-700">{translateUi(label)}</span>
                         <span className="text-slate-500">
                           {count} nhân sự (<span>{pct}%</span>)
                         </span>
@@ -227,9 +222,7 @@ export function CompetencyDetailPage() {
         >
           <div className="mb-3 flex items-center justify-between">
             <div>
-              <h2 id="gaps-title" className="text-base font-semibold text-slate-900">
-                Nhân viên đang thiếu năng lực này
-              </h2>
+              <h2 id="gaps-title" className="text-base font-semibold text-slate-900">{translateUi("Nhân viên đang thiếu năng lực này")}</h2>
               <p className="text-xs text-slate-500">
                 Những nhân viên ở vị trí có yêu cầu nhưng trình độ năng lực hiện tại chưa đáp ứng
               </p>
@@ -256,12 +249,12 @@ export function CompetencyDetailPage() {
               <table className="min-w-full divide-y divide-slate-200 text-left text-xs">
                 <thead className="bg-slate-50 text-slate-600">
                   <tr>
-                    <th className="px-4 py-2.5 font-semibold">Nhân viên</th>
-                    <th className="px-4 py-2.5 font-semibold">Phòng ban</th>
+                    <th className="px-4 py-2.5 font-semibold">{translateUi("Nhân viên")}</th>
+                    <th className="px-4 py-2.5 font-semibold">{translateUi("Phòng ban")}</th>
                     <th className="px-4 py-2.5 font-semibold">Vị trí & Cấp bậc</th>
-                    <th className="px-4 py-2.5 font-semibold">Hiện tại</th>
-                    <th className="px-4 py-2.5 font-semibold">Yêu cầu</th>
-                    <th className="px-4 py-2.5 font-semibold text-right">Khoảng trống</th>
+                    <th className="px-4 py-2.5 font-semibold">{translateUi("Hiện tại")}</th>
+                    <th className="px-4 py-2.5 font-semibold">{translateUi("Yêu cầu")}</th>
+                    <th className="px-4 py-2.5 font-semibold text-right">{translateUi("Khoảng trống")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
@@ -292,9 +285,7 @@ export function CompetencyDetailPage() {
                         <LevelBadge level={emp.requiredLevel} />
                       </td>
                       <td className="px-4 py-2.5 text-right">
-                        <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700 border border-rose-200">
-                          Thiếu {emp.gap} mức
-                        </span>
+                        <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700 border border-rose-200">{translateUi("Thiếu ")}{emp.gap}{translateUi(" mức")}</span>
                       </td>
                     </tr>
                   ))}
@@ -325,9 +316,9 @@ export function CompetencyDetailPage() {
                     <span className="font-mono text-xs font-bold text-primary-700 bg-primary-50 px-2 py-0.5 rounded border border-primary-100">
                       {course.code}
                     </span>
-                    <span className="font-medium text-slate-800">{course.title}</span>
+                    <span className="font-medium text-slate-800">{translateUi(course.title)}</span>
                   </span>
-                  <span className="text-xs text-slate-600 font-medium">{course.assigned} lượt giao</span>
+                  <span className="text-xs text-slate-600 font-medium">{course.assigned}{translateUi(" lượt giao")}</span>
                 </li>
               ))}
             </ul>

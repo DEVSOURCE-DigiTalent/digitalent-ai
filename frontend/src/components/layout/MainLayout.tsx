@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
@@ -24,11 +25,13 @@ interface MainLayoutProps {
 }
 
 function RealtimeNotifications() {
+  useUiLanguage();
   useNotificationHub();
   return null;
 }
 
 export function MainLayout({ portal, sidebarConfig, isUnpaid = false, children }: MainLayoutProps) {
+  useUiLanguage();
   const { isMobileOpen, setMobileOpen, toggleCollapsed, state } = useSidebarState();
   const { pathname } = useLocation();
 
@@ -66,9 +69,7 @@ export function MainLayout({ portal, sidebarConfig, isUnpaid = false, children }
         <Link
           to="/enterprise/billing"
           className="ml-2 px-2.5 py-0.5 rounded bg-ent-warn text-ent-on-primary text-xs font-semibold hover:opacity-90 transition-opacity"
-        >
-          Thanh toán ngay
-        </Link>
+        >{translateUi("Thanh toán ngay")}</Link>
       )}
     </div>
   );
@@ -76,9 +77,7 @@ export function MainLayout({ portal, sidebarConfig, isUnpaid = false, children }
   if (isPulseManager) {
     return (
       <div className="enterprise-shell pm-shell" style={{ '--sidebar-w': sidebarWidth, '--pm-banner-h': isUnpaid ? '36px' : '0px' } as React.CSSProperties}>
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:p-2 focus:bg-white focus:text-[#17243f] focus:border focus:rounded-md">
-          Bỏ qua đến nội dung
-        </a>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:p-2 focus:bg-white focus:text-[#17243f] focus:border focus:rounded-md">{translateUi("Bỏ qua đến nội dung")}</a>
 
         {!USE_MOCK && <RealtimeNotifications />}
 
@@ -117,9 +116,7 @@ export function MainLayout({ portal, sidebarConfig, isUnpaid = false, children }
         '--shell-top': 'calc(var(--topbar-h) + var(--banner-h))'
       } as React.CSSProperties}
     >
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:p-2 focus:bg-ent-card focus:text-ent-fg focus:border focus:border-ent-line focus:rounded-md">
-        Bỏ qua đến nội dung
-      </a>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:p-2 focus:bg-ent-card focus:text-ent-fg focus:border focus:border-ent-line focus:rounded-md">{translateUi("Bỏ qua đến nội dung")}</a>
       
       {!USE_MOCK && <RealtimeNotifications />}
       
@@ -136,7 +133,7 @@ export function MainLayout({ portal, sidebarConfig, isUnpaid = false, children }
       
       <div className="flex flex-col min-w-0 min-h-screen md:pl-[var(--sidebar-w)]">
         <div className="sticky top-0 z-30">
-          <Topbar portal={portal} isMobileNavOpen={isMobileOpen} onOpenMobileNav={() => setMobileOpen(true)} />
+          <Topbar portal={portal} autoHide={isPulseOwner} isMobileNavOpen={isMobileOpen} onOpenMobileNav={() => setMobileOpen(true)} />
           {unpaidBanner}
         </div>
         <main id="main-content" className="flex-1 bg-ent-bg text-ent-fg">

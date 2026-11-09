@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import { useCompetencyUsage } from '@/hooks/use-competencies';
 import { levelLabel } from '@/lib/competency-levels';
@@ -12,6 +13,7 @@ const LEVELS = [1, 2, 3] as const;
 export function CompetencyDetailPanel({
   competency: c,
 }: CompetencyDetailPanelProps) {
+  useUiLanguage();
   const usage = useCompetencyUsage(c.id);
   const dist = usage.data?.levelDistribution ?? {};
   const total = Object.values(dist).reduce(
@@ -35,7 +37,7 @@ export function CompetencyDetailPanel({
             className="text-[13px] leading-relaxed"
             style={{ color: 'var(--po-ink)', maxWidth: '75ch' }}
           >
-            {c.description}
+            {translateUi(c.description)}
           </p>
         </div>
       )}
@@ -51,9 +53,7 @@ export function CompetencyDetailPanel({
         <p
           className="text-[10px] font-black uppercase tracking-[0.12em]"
           style={{ color: 'var(--po-muted)' }}
-        >
-          Tiêu chí hành vi theo mức
-          <span
+        >{translateUi("Tiêu chí hành vi theo mức")}<span
             className="ml-[7px] inline-block size-1.5 rounded-full align-middle"
             style={{ background: 'var(--po-coral)' }}
           />
@@ -62,9 +62,7 @@ export function CompetencyDetailPanel({
           <p
             className="mt-3 text-xs"
             style={{ color: 'var(--po-muted)' }}
-          >
-            Năng lực này chưa có tiêu chí hành vi.
-          </p>
+          >{translateUi("Năng lực này chưa có tiêu chí hành vi.")}</p>
         ) : (
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             {LEVELS.map((level) => {
@@ -83,8 +81,7 @@ export function CompetencyDetailPanel({
                     <strong
                       className="text-sm"
                       style={{ color: 'var(--po-ink)' }}
-                    >
-                      Mức {level}
+                    >{translateUi("Mức ")}{level}
                     </strong>
                     <span
                       className="rounded-lg px-2 py-1 text-[9px] font-extrabold"
@@ -100,8 +97,7 @@ export function CompetencyDetailPanel({
                     <p
                       className="text-[11px]"
                       style={{ color: 'var(--po-muted)' }}
-                    >
-                      Chưa có tiêu chí cho mức{' '}
+                    >{translateUi("Chưa có tiêu chí cho mức")}{' '}
                       {levelLabel(level).toLowerCase()}.
                     </p>
                   ) : (
@@ -147,9 +143,7 @@ export function CompetencyDetailPanel({
           <p
             className="text-[10px] font-black uppercase tracking-[0.12em] mb-4"
             style={{ color: 'var(--po-muted)' }}
-          >
-            Phân bố trình độ nhân sự
-          </p>
+          >{translateUi("Phân bố trình độ nhân sự")}</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[0, 1, 2, 3].map((level) => {
               const count = dist[String(level)] ?? 0;
@@ -175,7 +169,7 @@ export function CompetencyDetailPanel({
                     className="block text-[10px] font-bold mt-1"
                     style={{ color: 'var(--po-muted)' }}
                   >
-                    {level === 0 ? 'Chưa xác nhận' : levelLabel(level)}
+                    {level === 0 ? translateUi('Chưa xác nhận') : levelLabel(level)}
                   </span>
                   <span
                     className="block text-[9px] mt-0.5"
@@ -200,23 +194,17 @@ export function CompetencyDetailPanel({
           <p
             className="text-[10px] font-black uppercase tracking-[0.12em] mb-4"
             style={{ color: 'var(--po-muted)' }}
-          >
-            Vị trí đang yêu cầu
-          </p>
+          >{translateUi("Vị trí đang yêu cầu")}</p>
           {usage.isLoading ? (
             <p
               className="text-xs"
               style={{ color: 'var(--po-muted)' }}
-            >
-              Đang tải…
-            </p>
+            >{translateUi("Đang tải…")}</p>
           ) : usage.data?.positions.length === 0 ? (
             <p
               className="text-xs"
               style={{ color: 'var(--po-muted)' }}
-            >
-              Chưa vị trí nào yêu cầu năng lực này.
-            </p>
+            >{translateUi("Chưa vị trí nào yêu cầu năng lực này.")}</p>
           ) : (
             <div className="space-y-2">
               {usage.data?.positions.map((pos) => (
@@ -234,16 +222,14 @@ export function CompetencyDetailPanel({
                   </span>
                   <span className="flex items-center gap-2">
                     <span style={{ color: 'var(--po-muted)' }}>
-                      {pos.employees} nhân viên
-                    </span>
+                      {pos.employees}{translateUi(" nhân viên")}</span>
                     <span
                       className="rounded-lg px-2 py-0.5 text-[9px] font-extrabold"
                       style={{
                         background: 'var(--po-soft)',
                         color: 'var(--po-accent)',
                       }}
-                    >
-                      Mức {pos.requiredLevel}
+                    >{translateUi("Mức ")}{pos.requiredLevel}
                     </span>
                     {pos.isMandatory && (
                       <span
@@ -252,9 +238,7 @@ export function CompetencyDetailPanel({
                           background: '#fef3c7',
                           color: '#d97706',
                         }}
-                      >
-                        Bắt buộc
-                      </span>
+                      >{translateUi("Bắt buộc")}</span>
                     )}
                   </span>
                 </Link>
@@ -277,15 +261,11 @@ export function CompetencyDetailPanel({
             <p
               className="text-[10px] font-black uppercase tracking-[0.12em]"
               style={{ color: 'var(--po-muted)' }}
-            >
-              Nhân viên đang thiếu năng lực này
-            </p>
+            >{translateUi("Nhân viên đang thiếu năng lực này")}</p>
             <p
               className="text-[11px] mt-1"
               style={{ color: 'var(--po-muted)' }}
-            >
-              Trình độ hiện tại chưa đáp ứng yêu cầu vị trí
-            </p>
+            >{translateUi("Trình độ hiện tại chưa đáp ứng yêu cầu vị trí")}</p>
           </div>
           <span
             className="rounded-full px-2.5 py-1 text-[11px] font-bold"
@@ -295,8 +275,7 @@ export function CompetencyDetailPanel({
                 : { background: '#ecfdf5', color: '#16a34a' }
             }
           >
-            {employeesWithGap.length} cần bổ sung
-          </span>
+            {employeesWithGap.length}{translateUi(" cần bổ sung")}</span>
         </div>
         {employeesWithGap.length === 0 ? (
           <div
@@ -308,9 +287,7 @@ export function CompetencyDetailPanel({
             }}
           >
             <span className="text-lg">✓</span>
-            <span className="text-xs font-semibold">
-              Toàn bộ nhân viên đều đáp ứng hoặc vượt mức yêu cầu.
-            </span>
+            <span className="text-xs font-semibold">{translateUi("Toàn bộ nhân viên đều đáp ứng hoặc vượt mức yêu cầu.")}</span>
           </div>
         ) : (
           <div className="space-y-1.5">
@@ -333,15 +310,13 @@ export function CompetencyDetailPanel({
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span style={{ color: 'var(--po-muted)' }}>
-                    Hiện mức {emp.currentLevel} → Yêu cầu mức{' '}
+                  <span style={{ color: 'var(--po-muted)' }}>{translateUi("Hiện mức ")}{emp.currentLevel}{translateUi(" → Yêu cầu mức")}{' '}
                     {emp.requiredLevel}
                   </span>
                   <span
                     className="rounded-full px-2 py-0.5 text-[10px] font-bold"
                     style={{ background: '#fee2e2', color: '#dc2626' }}
-                  >
-                    Thiếu {emp.gap}
+                  >{translateUi("Thiếu ")}{emp.gap}
                   </span>
                 </div>
               </Link>
@@ -361,23 +336,17 @@ export function CompetencyDetailPanel({
         <p
           className="text-[10px] font-black uppercase tracking-[0.12em] mb-4"
           style={{ color: 'var(--po-muted)' }}
-        >
-          Khóa học bồi dưỡng
-        </p>
+        >{translateUi("Khóa học bồi dưỡng")}</p>
         {usage.isLoading ? (
           <p
             className="text-xs"
             style={{ color: 'var(--po-muted)' }}
-          >
-            Đang tải…
-          </p>
+          >{translateUi("Đang tải…")}</p>
         ) : usage.data?.courses.length === 0 ? (
           <p
             className="text-xs"
             style={{ color: 'var(--po-muted)' }}
-          >
-            Chưa có khóa học đã xuất bản cho năng lực này.
-          </p>
+          >{translateUi("Chưa có khóa học đã xuất bản cho năng lực này.")}</p>
         ) : (
           <div className="space-y-1.5">
             {usage.data?.courses.map((course) => (
@@ -400,12 +369,11 @@ export function CompetencyDetailPanel({
                     className="font-medium"
                     style={{ color: 'var(--po-ink)' }}
                   >
-                    {course.title}
+                    {translateUi(course.title)}
                   </span>
                 </span>
                 <span style={{ color: 'var(--po-muted)' }}>
-                  {course.assigned} lượt giao
-                </span>
+                  {course.assigned}{translateUi(" lượt giao")}</span>
               </div>
             ))}
           </div>

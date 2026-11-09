@@ -1,9 +1,11 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Moon, Sun } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePersonalTheme } from '../theme/use-personal-theme';
 
 /** Switches the personal workspace between the dark (default) and the light theme. */
 export function ThemeToggle({ className }: { className?: string }) {
+  useUiLanguage();
   const theme = usePersonalTheme((state) => state.theme);
   const toggle = usePersonalTheme((state) => state.toggle);
   const isDark = theme === 'dark';
@@ -13,8 +15,8 @@ export function ThemeToggle({ className }: { className?: string }) {
       type="button"
       onClick={toggle}
       aria-pressed={!isDark}
-      aria-label={isDark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
-      title={isDark ? 'Giao diện sáng' : 'Giao diện tối'}
+      aria-label={translateUi(isDark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối')}
+      title={translateUi(isDark ? 'Giao diện sáng' : 'Giao diện tối')}
       className={cn(
         'relative inline-flex h-9 w-[68px] shrink-0 items-center rounded-full border border-pt-line bg-pt-raised/60 p-1 transition-colors hover:border-pt-fg/40',
         className,

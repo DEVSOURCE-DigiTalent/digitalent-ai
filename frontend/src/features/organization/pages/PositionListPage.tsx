@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, BriefcaseBusiness, CircleCheck, Plus, Edit2, Trash2, UsersRound } from 'lucide-react';
@@ -25,6 +26,7 @@ const STATUS_LABELS: Record<string, string> = { ACTIVE: 'Đang dùng', INACTIVE:
  * - Actions: Add Position (OW-11), Edit, Archive.
  */
 export function PositionListPage() {
+  useUiLanguage();
   const navigate = useNavigate();
   const { can } = usePermission();
   const canManagePositions = can(PERMISSIONS.JOB_POSITION_CREATE_UPDATE);
@@ -90,14 +92,14 @@ export function PositionListPage() {
       cell: (row) => (
         <div>
           <span className="font-semibold text-slate-900 hover:text-primary-700">{row.name}</span>
-          {row.description && <p className="text-xs text-slate-500 line-clamp-1">{row.description}</p>}
+          {row.description && <p className="text-xs text-slate-500 line-clamp-1">{translateUi(row.description)}</p>}
         </div>
       ),
     },
     {
       key: 'department',
       header: 'Phòng ban',
-      cell: (row) => row.departmentName || (row as any).jobFamilyName || <span className="text-slate-400">Chưa gắn</span>,
+      cell: (row) => row.departmentName || (row as any).jobFamilyName || <span className="text-slate-400">{translateUi("Chưa gắn")}</span>,
     },
     {
       key: 'jobGrade',
@@ -108,7 +110,7 @@ export function PositionListPage() {
             {row.jobGradeName ?? row.jobGrade} <span className="font-mono text-xs text-slate-400">{row.jobGrade}</span>
           </span>
         ) : (
-          <span className="text-slate-400">Chưa xếp</span>
+          <span className="text-slate-400">{translateUi("Chưa xếp")}</span>
         ),
       hideOnMobile: true,
     },
@@ -117,8 +119,7 @@ export function PositionListPage() {
       header: 'Nhân sự',
       cell: (row) => (
         <span className="font-medium tabular-nums text-slate-900">
-          {row.headcount ?? 0} người
-        </span>
+          {row.headcount ?? 0}{translateUi(" người")}</span>
       ),
     },
     {
@@ -126,13 +127,9 @@ export function PositionListPage() {
       header: 'Yêu cầu năng lực',
       cell: (row) =>
         row.hasRequirementSet ? (
-          <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-600/20 ring-inset">
-            Đã có yêu cầu
-          </span>
+          <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-600/20 ring-inset">{translateUi("Đã có yêu cầu")}</span>
         ) : (
-          <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-amber-600/20 ring-inset">
-            Chưa thiết lập
-          </span>
+          <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-amber-600/20 ring-inset">{translateUi("Chưa thiết lập")}</span>
         ),
       hideOnMobile: true,
     },
@@ -141,7 +138,7 @@ export function PositionListPage() {
       header: 'Trạng thái',
       cell: (row) => (
         <StatusBadge
-          label={STATUS_LABELS[row.status] ?? row.status}
+          label={translateUi(translateUi(STATUS_LABELS[row.status]) ?? row.status)}
           variant={getStatusVariant(row.status)}
         />
       ),
@@ -160,7 +157,7 @@ export function PositionListPage() {
               handleEditPos(row);
             }}
             className="p-1 text-slate-400 hover:text-primary-600 transition-colors"
-            title="Sửa"
+            title={translateUi("Sửa")}
           >
             <Edit2 className="w-4 h-4" />
           </button>
@@ -170,7 +167,7 @@ export function PositionListPage() {
               handleArchivePosClick(row);
             }}
             className="p-1 text-slate-400 hover:text-danger-600 transition-colors"
-            title="Lưu trữ"
+            title={translateUi("Lưu trữ")}
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -192,9 +189,9 @@ export function PositionListPage() {
     <div className="positions-page -m-4 min-h-screen space-y-6 px-5 py-7 md:-m-6 md:px-7 xl:px-10">
       <div className="positions-heading">
         <div>
-          <Link to="/enterprise/setup?tab=positions" className="positions-back"><ArrowLeft className="size-4" /> Khung năng lực số</Link>
-          <div className="positions-eyebrow"><BriefcaseBusiness className="size-4" /> CẤU TRÚC TỔ CHỨC</div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.04em] heading-gradient">Quản lý vị trí công việc</h1>
+          <Link to="/enterprise/setup?tab=positions" className="positions-back"><ArrowLeft className="size-4" />{translateUi(" Khung năng lực số")}</Link>
+          <div className="positions-eyebrow"><BriefcaseBusiness className="size-4" />{translateUi(" CẤU TRÚC TỔ CHỨC")}</div>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.04em] heading-gradient">{translateUi("Quản lý vị trí công việc")}</h1>
         </div>
         {canManagePositions && (
           <button
@@ -205,15 +202,14 @@ export function PositionListPage() {
             }}
             className="positions-create"
           >
-            <Plus className="size-4" /> Tạo vị trí mới
-          </button>
+            <Plus className="size-4" />{translateUi(" Tạo vị trí mới")}</button>
         )}
       </div>
 
       <div className="positions-stats">
-        <div className="positions-stat positions-stat-sky"><BriefcaseBusiness className="size-5" /><span>Vị trí phù hợp</span><strong>{data?.totalItems ?? 0}</strong></div>
-        <div className="positions-stat positions-stat-teal"><UsersRound className="size-5" /><span>Nhân sự trên trang</span><strong>{pageHeadcount}</strong></div>
-        <div className="positions-stat positions-stat-violet"><CircleCheck className="size-5" /><span>Có chuẩn trên trang</span><strong>{configuredOnPage}<small> / {pageItems.length}</small></strong></div>
+        <div className="positions-stat positions-stat-sky"><BriefcaseBusiness className="size-5" /><span>{translateUi("Vị trí phù hợp")}</span><strong>{data?.totalItems ?? 0}</strong></div>
+        <div className="positions-stat positions-stat-teal"><UsersRound className="size-5" /><span>{translateUi("Nhân sự trên trang")}</span><strong>{pageHeadcount}</strong></div>
+        <div className="positions-stat positions-stat-violet"><CircleCheck className="size-5" /><span>{translateUi("Có chuẩn trên trang")}</span><strong>{configuredOnPage}<small> / {pageItems.length}</small></strong></div>
       </div>
 
       <DataTable
@@ -225,28 +221,28 @@ export function PositionListPage() {
         isLoading={isLoading}
         searchValue={search}
         onSearchChange={resetPage(setSearch)}
-        searchPlaceholder="Tìm theo tên hoặc mã vị trí"
+        searchPlaceholder={translateUi("Tìm theo tên hoặc mã vị trí")}
         onRowClick={(row) => navigate(`/enterprise/positions/${row.id}`)}
         emptyTitle="Chưa có vị trí công việc"
         emptyDescription="Tạo vị trí công việc để thiết lập bộ yêu cầu năng lực cho tổ chức."
         filters={
           <>
             <OwnerFilterSelect
-              label="Lọc theo phòng ban"
+              label={translateUi("Lọc theo phòng ban")}
               value={departmentId}
               onChange={resetPage(setDepartmentId)}
               options={[{ value: '', label: 'Mọi phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]}
               className="positions-filter"
             />
             <OwnerFilterSelect
-              label="Lọc theo cấp bậc"
+              label={translateUi("Lọc theo cấp bậc")}
               value={jobGrade}
               onChange={resetPage(setJobGrade)}
               options={[{ value: '', label: 'Mọi cấp bậc' }, ...JOB_GRADES.map((code) => ({ value: code, label: gradeLabel(code) }))]}
               className="positions-filter"
             />
             <OwnerFilterSelect
-              label="Lọc theo trạng thái"
+              label={translateUi("Lọc theo trạng thái")}
               value={status || ''}
               onChange={(value) => resetPage(setStatus)(value ? value as JobPositionStatus : undefined)}
               options={[{ value: '', label: 'Mọi trạng thái' }, { value: 'ACTIVE', label: 'Đang dùng' }, { value: 'INACTIVE', label: 'Ngừng dùng' }]}

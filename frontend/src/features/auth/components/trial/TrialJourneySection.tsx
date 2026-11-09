@@ -1,6 +1,8 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Compass, BookOpen, Cpu, Award } from 'lucide-react';
 
 export function TrialJourneySection() {
+  useUiLanguage();
   const steps = [
     {
       day: 'Ngày 1',
@@ -67,8 +69,7 @@ export function TrialJourneySection() {
                     <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
                       {step.day}
                     </span>
-                    <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-medium text-stone-300 ring-1 ring-white/10">
-                      Bước {idx + 1}
+                    <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-medium text-stone-300 ring-1 ring-white/10">{translateUi("Bước ")}{idx + 1}
                     </span>
                   </div>
 
@@ -77,7 +78,7 @@ export function TrialJourneySection() {
                   </div>
 
                   <h3 className="text-base font-semibold text-cream leading-snug group-hover:text-amber-200 transition-colors">
-                    {step.title}
+                    {translateUi(step.title)}
                   </h3>
 
                   <p className="text-xs leading-relaxed text-stone-300">

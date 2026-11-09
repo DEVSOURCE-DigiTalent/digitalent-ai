@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import journeyArt from '@/assets/pulse/learning-journey-abstract.webp';
 import type { OrganizationOverview } from '@/services/organization.service';
@@ -45,7 +46,7 @@ function resolveActions(
     ];
   }
 
-  // Bước 3: Đã thấy khoảng trống, tiếp theo là thiết lập khung trần năng lực mục tiêu
+  // Bước 3: Đã thấy khoảng trống, tiếp theo là thiết lập phạm vi năng lực năng lực mục tiêu
   if (!org.setupCompleted) {
     return [
       { label: 'Thiết lập khung năng lực', to: '/enterprise/setup', variant: 'filled' },
@@ -61,6 +62,7 @@ function resolveActions(
 }
 
 export function OwnerOverviewHero({ org, cap }: OwnerOverviewHeroProps) {
+  useUiLanguage();
   const { data: trialProgram } = useTrialProgram();
   const hasTrialParticipants = (trialProgram?.participants?.length ?? 0) > 0;
   const actions = resolveActions(org, cap, hasTrialParticipants);
@@ -70,20 +72,16 @@ export function OwnerOverviewHero({ org, cap }: OwnerOverviewHeroProps) {
       className="po-owner-hero relative overflow-hidden rounded-[25px] grid grid-cols-1 lg:grid-cols-[1.2fr_.75fr] lg:min-h-[320px]"
     >
       <div className="relative z-10 p-6 md:p-8 lg:p-10 flex flex-col justify-center">
-        <p className="text-[11px] font-bold uppercase tracking-[0.1em] mb-5 " style={{ color: '#c1e8df' }}>
-          NĂNG LỰC ĐỘI NGŨ
-        </p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.1em] mb-5 " style={{ color: '#c1e8df' }}>{translateUi("NĂNG LỰC ĐỘI NGŨ")}</p>
         <h2
           className="font-semibold leading-[1.15] mb-4"
           style={{ fontSize: 'clamp(26px, 3.2vw, 42px)', letterSpacing: '-0.04em' }}
         >
-          <span className="text-white block">Hiểu năng lực hiện tại.</span>
-          <span className="text-white block">Xác định mục tiêu.</span>
-          <span style={{ color: '#b8eadc' }} className="block">Đào tạo đúng nhu cầu.</span>
+          <span className="text-white block">{translateUi("Hiểu năng lực hiện tại.")}</span>
+          <span className="text-white block">{translateUi("Xác định mục tiêu.")}</span>
+          <span style={{ color: '#b8eadc' }} className="block">{translateUi("Đào tạo đúng nhu cầu.")}</span>
         </h2>
-        <p className="text-sm leading-relaxed max-w-lg mb-6" style={{ color: '#d4e8e9' }}>
-          Theo dõi mức đáp ứng theo vị trí và chọn khóa học cho những năng lực cần cải thiện.
-        </p>
+        <p className="text-sm leading-relaxed max-w-lg mb-6" style={{ color: '#d4e8e9' }}>{translateUi("Theo dõi mức đáp ứng theo vị trí và chọn khóa học cho những năng lực cần cải thiện.")}</p>
         <div className="flex flex-wrap gap-3">
           {actions.map((action) => (
             <Link
@@ -95,7 +93,7 @@ export function OwnerOverviewHero({ org, cap }: OwnerOverviewHeroProps) {
                   : 'inline-flex items-center rounded-xl bg-[#fff] px-5 py-2.5 text-[13px] font-extrabold text-[#0e5968] shadow-[0_12px_24px_rgba(0,0,0,.12)] transition-transform hover:-translate-y-0.5'
               }
             >
-              {action.label}
+              {translateUi(action.label)}
             </Link>
           ))}
         </div>

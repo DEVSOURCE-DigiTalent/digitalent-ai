@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { ReactNode } from 'react';
 import { BadgeCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -7,6 +8,7 @@ import { LP_KICKER } from '../landing-type';
 
 /** Illustrations built from the product's own data shapes. Decorative: hidden from screen readers. */
 export function FeatureVisual({ kind }: { kind: FeatureVisualKind }) {
+  useUiLanguage();
   return (
     <div className="flex flex-wrap items-center gap-4 text-cream" aria-hidden="true">
       {kind === 'matrix' && <MatrixVisual />}
@@ -18,6 +20,7 @@ export function FeatureVisual({ kind }: { kind: FeatureVisualKind }) {
 }
 
 function Chip({ tone = 'neutral', children }: { tone?: 'neutral' | 'ok' | 'gold' | 'teal' | 'warn'; children: ReactNode }) {
+  useUiLanguage();
   return (
     <span
       className={cn(
@@ -52,6 +55,7 @@ const LEGEND = [
 ];
 
 export function MatrixVisual() {
+  useUiLanguage();
   const levels = MATRIX_SAMPLE.flat();
   const selected = levels.filter((level) => level > 0).length;
 
@@ -74,7 +78,7 @@ export function MatrixVisual() {
           {LEGEND.map((item) => (
             <span key={item.label} className="inline-flex items-center gap-1.5">
               <i className={cn('inline-block rounded-full', item.className)} />
-              <span className="text-stone-300">{item.label}</span>
+              <span className="text-stone-300">{translateUi(item.label)}</span>
             </span>
           ))}
         </span>
@@ -84,6 +88,7 @@ export function MatrixVisual() {
 }
 
 export function RadarVisual() {
+  useUiLanguage();
   return (
     <>
       <RadarChart required={RADAR_SAMPLE.required} current={RADAR_SAMPLE.current} />
@@ -103,6 +108,7 @@ export function RadarVisual() {
 }
 
 function CertificateVisual() {
+  useUiLanguage();
   return (
     <>
       <div className="flex w-full items-center gap-3.5 rounded-[14px] border border-amber-400/25 bg-black/25 p-3.5 shadow-[0_0_15px_rgba(245,202,101,0.06)]">
@@ -121,13 +127,14 @@ function CertificateVisual() {
 
 /** Personal competency profile: the level each domain was assessed at, three steps per bar. */
 export function ProgressProfile() {
+  useUiLanguage();
   const improved = 2;
   const courses = 3;
 
   return (
     <div className="grid w-full gap-3">
       <div className="flex items-baseline justify-between gap-3">
-        <p className={cn(LP_KICKER, 'text-teal-400')}>Hồ sơ năng lực</p>
+        <p className={cn(LP_KICKER, 'text-teal-400')}>{translateUi("Hồ sơ năng lực")}</p>
         <p className="text-[11px] text-stone-400">Mức được đánh giá</p>
       </div>
       <ul className="grid gap-2">
@@ -155,7 +162,7 @@ export function ProgressProfile() {
                 })}
               </span>
               <span className={cn('w-[4.5rem] text-right text-[11px]', row.level === 3 ? 'text-amber-300 font-medium' : 'text-stone-400')}>
-                {TIER_LABELS[row.level]}
+                {translateUi(TIER_LABELS[row.level])}
               </span>
             </span>
           </li>

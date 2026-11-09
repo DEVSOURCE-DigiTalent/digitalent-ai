@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import {
   ArrowUp,
@@ -57,6 +58,7 @@ function givenName(fullName: string | undefined): string {
 }
 
 function CopyButton({ text }: { text: string }) {
+  useUiLanguage();
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -68,7 +70,7 @@ function CopyButton({ text }: { text: string }) {
     }
   };
   return (
-    <button type="button" className="as-meta-btn" onClick={copy} aria-label={copied ? 'Đã sao chép' : 'Sao chép câu trả lời'} title="Sao chép">
+    <button type="button" className="as-meta-btn" onClick={copy} aria-label={translateUi(copied ? translateUi('Đã sao chép') : 'Sao chép câu trả lời')} title={translateUi("Sao chép")}>
       {copied ? <Check size={13} aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />}
     </button>
   );
@@ -79,6 +81,7 @@ function CopyButton({ text }: { text: string }) {
  * Mounted by the enterprise layouts for users holding assistant.chat; hidden during proctored exams.
  */
 export function AssistantWidget() {
+  useUiLanguage();
   const { can, is } = usePermission();
   const fullName = useCurrentUser((s) => s.user?.fullName);
   const chat = useAssistantChat();
@@ -126,8 +129,8 @@ export function AssistantWidget() {
         type="button"
         className="as-fab as-fab-compact"
         onClick={() => setOpen(true)}
-        aria-label="Mở trợ lý hỗ trợ đào tạo"
-        title="Trợ lý AI"
+        aria-label={translateUi("Mở trợ lý hỗ trợ đào tạo")}
+        title={translateUi("Trợ lý AI")}
       >
         <Bot size={22} aria-hidden="true" />
       </button>
@@ -177,7 +180,7 @@ export function AssistantWidget() {
             <span className="as-empty-mark" aria-hidden="true">
               <Bot size={26} />
             </span>
-            <h3>{name ? `Xin chào, ${name}!` : 'Xin chào!'}</h3>
+            <h3>{name ? translateUi(`Xin chào, ${name}!`) : 'Xin chào!'}</h3>
             <p>
               Tôi hỗ trợ giải đáp nhanh về khóa học, tiến độ học tập và bài thi của bạn.
             </p>
@@ -228,7 +231,7 @@ export function AssistantWidget() {
                       <span className="as-sources-label">Dựa trên</span>
                       {labels.map((label) => (
                         <span key={label} className="as-source">
-                          {label}
+                          {translateUi(label)}
                         </span>
                       ))}
                     </div>
@@ -261,7 +264,7 @@ export function AssistantWidget() {
 
         {chat.error && !pending && (
           <p className="as-error" role="alert">
-            {chat.error}
+            {translateUi(chat.error)}
           </p>
         )}
       </div>
@@ -278,7 +281,7 @@ export function AssistantWidget() {
             maxLength={ASSISTANT_MAX_LENGTH}
             aria-label="Câu hỏi cho trợ lý AI"
           />
-          <button type="submit" className="as-send" disabled={pending || !draft.trim()} aria-label="Gửi">
+          <button type="submit" className="as-send" disabled={pending || !draft.trim()} aria-label={translateUi("Gửi")}>
             <ArrowUp size={17} strokeWidth={2.4} />
           </button>
         </div>

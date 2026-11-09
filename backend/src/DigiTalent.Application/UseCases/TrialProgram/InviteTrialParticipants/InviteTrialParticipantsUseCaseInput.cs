@@ -4,6 +4,7 @@ namespace DigiTalent.Application.UseCases.TrialProgram;
 public class InviteTrialParticipantsUseCaseInput
 {
     public List<TrialParticipantRow> Rows { get; set; } = new();
+    public DateTimeOffset? TestDeadline { get; set; }
 }
 
 public class TrialParticipantRow

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -30,6 +31,7 @@ interface OrganizationDetailContentProps {
 }
 
 export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetailContentProps) {
+  useUiLanguage();
   const { data, isLoading, error } = usePlatformOrganization(orgId);
   const courses = usePlatformCourses();
   const action = useOrganizationAction(orgId);
@@ -84,19 +86,18 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
         </div>
 
         <div className="pa-bento-card" style={{ padding: 14, minHeight: 'auto' }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Quy mô nhân sự</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>{translateUi("Quy mô nhân sự")}</span>
           <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '4px 0' }}>
             {o.participantCount} / {o.employeeCount} <span style={{ fontSize: 12, fontWeight: 400, color: '#64748b' }}>tham gia</span>
           </div>
           <small style={{ fontSize: 11, color: '#64748b' }}>
-            {o.departmentCount} phòng ban · {o.managerCount} quản lý
-          </small>
+            {o.departmentCount} phòng ban · {o.managerCount}{translateUi(" quản lý")}</small>
         </div>
 
         <div className="pa-bento-card" style={{ padding: 14, minHeight: 'auto' }}>
           <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Suất khóa có phí</span>
           <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '4px 0' }}>
-            {o.seatsPurchased + o.seatsGranted} <span style={{ fontSize: 12, fontWeight: 400, color: '#64748b' }}>suất</span>
+            {o.seatsPurchased + o.seatsGranted} <span style={{ fontSize: 12, fontWeight: 400, color: '#64748b' }}>{translateUi("suất")}</span>
           </div>
           <small style={{ fontSize: 11, color: '#64748b' }}>
             {o.seatsPurchased} đã mua · {o.seatsGranted} cấp quyền
@@ -104,12 +105,12 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
         </div>
 
         <div className="pa-bento-card" style={{ padding: 14, minHeight: 'auto' }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Trạng thái</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>{translateUi("Trạng thái")}</span>
           <div style={{ margin: '4px 0' }}>
             {suspended ? (
-              <Pill tone={ORG_STATUS.SUSPENDED.tone}>{ORG_STATUS.SUSPENDED.label}</Pill>
+              <Pill tone={ORG_STATUS.SUSPENDED.tone}>{translateUi(ORG_STATUS.SUSPENDED.label)}</Pill>
             ) : (
-              <Pill tone={STAGE_LABELS[o.stage]?.tone}>{STAGE_LABELS[o.stage]?.label ?? 'Đang hoạt động'}</Pill>
+              <Pill tone={STAGE_LABELS[o.stage]?.tone}>{translateUi(STAGE_LABELS[o.stage]?.label) ?? translateUi('Đang hoạt động')}</Pill>
             )}
           </div>
           <small style={{ fontSize: 11, color: '#64748b' }}>
@@ -125,7 +126,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
           <div className="pa-chips">
             {o.coursesInUseByLevel.map((n, i) => (
               <span key={i} className={`pa-level pa-level-${i + 1}`}>
-                {LEVEL_NAMES[i + 1]} · {n}
+                {translateUi(LEVEL_NAMES[i + 1])} · {n}
               </span>
             ))}
           </div>
@@ -138,10 +139,10 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
           <table className="data-table">
             <thead>
               <tr>
-                <th>Khóa học</th>
-                <th>Cấp</th>
+                <th>{translateUi("Khóa học")}</th>
+                <th>{translateUi("Cấp")}</th>
                 <th className="num">Tham gia</th>
-                <th className="num">Hoàn thành</th>
+                <th className="num">{translateUi("Hoàn thành")}</th>
               </tr>
             </thead>
             <tbody>
@@ -174,9 +175,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
 
           <form onSubmit={onSubmit}>
             <div className="inline-fields" style={{ marginBottom: 12 }}>
-              <label className="field">
-                Thao tác
-                <select value={kind} onChange={(e) => setKind(e.target.value as SupportAction)}>
+              <label className="field">{translateUi("Thao tác")}<select value={kind} onChange={(e) => setKind(e.target.value as SupportAction)}>
                   <option value="grant">Cấp 1 suất khóa nâng cao</option>
                   <option value="suspend">Tạm ngưng tổ chức</option>
                   <option value="restore">Khôi phục tổ chức</option>
@@ -189,7 +188,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                   <select value={selectedCourse} onChange={(e) => setCourseCode(e.target.value)}>
                     {paidCourses.map((c) => (
                       <option key={c.code} value={c.code}>
-                        {c.domainName} · {c.levelName}
+                        {translateUi(c.domainName)} · {c.levelName}
                       </option>
                     ))}
                   </select>
@@ -235,15 +234,15 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
             {data.people.map((p, i) => (
               <ListItem
                 key={p.userId ?? `${p.fullName}-${i}`}
-                title={p.userId ? <Link to={`/platform/users/${p.userId}`}>{p.fullName}</Link> : p.fullName}
+                title={translateUi(p.userId ? <Link to={`/platform/users/${p.userId}`}>{p.fullName}</Link> : p.fullName)}
                 detail={[p.email ?? 'Chưa có email', [p.departmentName, p.positionName].filter(Boolean).join(' / ') || ROLE_LABELS[p.role]]
                   .filter(Boolean)
                   .join(' · ')}
                 aside={
                   p.status === 'ACTIVE' ? (
-                    <Pill tone="gray">{ROLE_LABELS[p.role] ?? p.role}</Pill>
+                    <Pill tone="gray">{translateUi(ROLE_LABELS[p.role]) ?? p.role}</Pill>
                   ) : (
-                    <Pill tone={USER_STATUS[p.status]?.tone}>{USER_STATUS[p.status]?.label ?? p.status}</Pill>
+                    <Pill tone={USER_STATUS[p.status]?.tone}>{translateUi(USER_STATUS[p.status]?.label) ?? p.status}</Pill>
                   )
                 }
               />
@@ -262,9 +261,9 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
             data.seats.map((s) => (
               <ListItem
                 key={s.courseCode}
-                title={s.courseTitle}
+                title={translateUi(s.courseTitle)}
                 detail={`${s.seatsPurchased} đã mua · ${s.seatsGranted} quản trị cấp`}
-                aside={<Pill>{s.seatsPurchased + s.seatsGranted} suất</Pill>}
+                aside={<Pill>{s.seatsPurchased + s.seatsGranted}{translateUi(" suất")}</Pill>}
               />
             ))
           )}
@@ -278,11 +277,11 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
             data.orders.map((order) => (
               <ListItem
                 key={order.id}
-                title={order.courseTitle}
+                title={translateUi(order.courseTitle)}
                 detail={[ORDER_KIND[order.kind]?.label, formatDateTime(order.createdAt), order.reason, order.totalAmount > 0 ? formatMoney(order.totalAmount) : null]
                   .filter(Boolean)
                   .join(' · ')}
-                aside={<Pill tone={ORDER_KIND[order.kind]?.tone}>{order.seats} suất</Pill>}
+                aside={<Pill tone={ORDER_KIND[order.kind]?.tone}>{order.seats}{translateUi(" suất")}</Pill>}
               />
             ))
           )}

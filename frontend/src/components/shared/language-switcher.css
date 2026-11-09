@@ -1,0 +1,11 @@
+.language-switcher{display:inline-flex;align-items:center;gap:2px;padding:3px;border:1px solid var(--ent-line,#dce7eb);border-radius:12px;background:var(--ent-card,rgba(255,255,255,.75));box-shadow:inset 0 1px 0 #ffffff80;flex-shrink:0}
+.language-switcher>svg{margin:0 5px;color:var(--ent-fg-3,#64748b)}
+.language-switcher button{border:0;border-radius:8px;background:transparent;color:var(--ent-fg-3,#64748b);padding:5px 7px;font-size:10px;font-weight:750;line-height:16px;cursor:pointer;transition:background .18s,color .18s,box-shadow .18s}
+.language-switcher button[aria-pressed=true]{background:var(--ent-accent,#137b84);color:#fff;box-shadow:0 2px 6px #137b8425}
+.language-switcher button:hover:not([aria-pressed=true]){background:var(--ent-raised,#eef8f7);color:var(--ent-fg,#173b49)}
+.language-switcher button:focus-visible{outline:2px solid #14b8a6;outline-offset:2px}
+.owner-shell .account-menu__panel .language-switcher button{padding:4px 7px;font-size:10px;line-height:16px;transform:none}
+.owner-shell .account-menu__panel .language-switcher button[aria-pressed=true]{color:#fff;background:var(--ent-accent,#137b84)}
+.owner-shell .account-menu__panel .language-switcher button:hover{transform:none}
+@media(max-width:640px){.language-switcher>svg{display:none}.language-switcher{border-radius:10px;gap:0}.language-switcher button{padding:4px 5px}}
+@media(prefers-reduced-motion:reduce){.language-switcher button{transition:none}}

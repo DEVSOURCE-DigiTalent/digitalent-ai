@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Check } from 'lucide-react';
 import { TIER_LABELS } from '../landing-content';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,7 @@ type EvidenceSection = Extract<LandingSectionConfig, { kind: 'evidence' }>;
  * The review walks from assigned task to confirmed competency as the section comes into view.
  */
 export function EvidenceSection({ section }: { section: EvidenceSection }) {
+  useUiLanguage();
   const { sample } = section;
   const { media } = useLandingContent();
   const { reduced } = useLandingMotion();
@@ -51,13 +53,13 @@ export function EvidenceSection({ section }: { section: EvidenceSection }) {
                 confirmed ? 'border-[#79E0C2]/50 bg-[#79E0C2]/10 text-[#79E0C2]' : 'border-amber-400/30 bg-amber-400/5 text-[#F5CA65]',
               )}
             >
-              {confirmed ? 'ĐÃ XÁC NHẬN' : 'ĐANG XỬ LÝ'}
+              {confirmed ? translateUi('ĐÃ XÁC NHẬN') : 'ĐANG XỬ LÝ'}
             </span>
           </div>
 
           <p className="mt-6 text-sm text-stone-500">
             <span className="mr-2 tabular-nums">{sample.competencyCode}</span>
-            {TT02_COMPETENCY_NAMES[sample.competencyCode]}
+            {translateUi(TT02_COMPETENCY_NAMES[sample.competencyCode])}
           </p>
           <p className="mt-2 text-2xl leading-[1.25] tracking-[-0.02em] text-cream">{sample.task}</p>
 
@@ -75,7 +77,7 @@ export function EvidenceSection({ section }: { section: EvidenceSection }) {
                   )}
                 />
                 <span className={cn('block text-sm leading-[1.4] transition-colors duration-500 sm:pr-2', index <= stage ? 'text-cream' : 'text-stone-500')}>
-                  {label}
+                  {translateUi(label)}
                 </span>
               </li>
             ))}
@@ -101,10 +103,9 @@ export function EvidenceSection({ section }: { section: EvidenceSection }) {
               <p className="mt-2 text-sm leading-[1.55] text-stone-400">{sample.feedback}</p>
               <div className={cn('mt-5 grid gap-2 rounded-xl border border-amber-400/30 bg-amber-400/5 p-4 transition-opacity duration-700', confirmed ? 'opacity-100' : 'opacity-0')}>
                 <p className="text-base text-cream">
-                  Trình độ đã xác nhận: <span className="font-semibold text-[#F5CA65]">{TIER_LABELS[from]} → {TIER_LABELS[to]}</span>
+                  Trình độ đã xác nhận: <span className="font-semibold text-[#F5CA65]">{translateUi(TIER_LABELS[from])} → {translateUi(TIER_LABELS[to])}</span>
                 </p>
-                <p className="text-sm text-stone-400">
-                  Khoảng trống {sample.competencyCode}: {gapBefore > 0 ? `còn thiếu ${gapBefore} tầng` : 'đã đạt'} → {gapAfter > 0 ? `còn thiếu ${gapAfter} tầng` : <span className="font-medium text-[#79E0C2]">đã đạt</span>}
+                <p className="text-sm text-stone-400">{translateUi("Khoảng trống ")}{sample.competencyCode}: {gapBefore > 0 ? translateUi(`còn thiếu ${gapBefore} tầng`) : translateUi('đã đạt')} → {gapAfter > 0 ? translateUi(`còn thiếu ${gapAfter} tầng`) : <span className="font-medium text-[#79E0C2]">{translateUi("đã đạt")}</span>}
                 </p>
               </div>
             </div>

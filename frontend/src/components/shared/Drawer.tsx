@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useId, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
@@ -14,6 +15,7 @@ interface DrawerProps {
 
 /** Panel that slides in from the right. Styled with Enterprise tokens. */
 export function Drawer({ open, onClose, title, description, children, footer }: DrawerProps) {
+  useUiLanguage();
   const titleId = useId();
   const ref = useRef<HTMLDivElement>(null);
   useDialogFocus(open, ref, onClose);
@@ -34,14 +36,14 @@ export function Drawer({ open, onClose, title, description, children, footer }: 
         <header className="flex items-start justify-between gap-4 border-b border-ent-line px-6 py-4">
           <div>
             <h2 id={titleId} className="text-lg font-semibold text-ent-fg">
-              {title}
+              {translateUi(title)}
             </h2>
-            {description && <div className="mt-1 text-sm text-ent-fg-2">{description}</div>}
+            {description && <div className="mt-1 text-sm text-ent-fg-2">{translateUi(description)}</div>}
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Đóng"
+            aria-label={translateUi("Đóng")}
             className="-mr-2 rounded-md p-2 text-ent-fg-3 hover:bg-ent-raised hover:text-ent-fg transition-colors"
           >
             <X className="size-4" aria-hidden="true" />

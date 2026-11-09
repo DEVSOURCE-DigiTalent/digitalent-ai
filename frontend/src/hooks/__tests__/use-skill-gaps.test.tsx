@@ -1,4 +1,6 @@
-import type { ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
+import { useActivatePositionRequirements } from '../use-competencies';
+import { competencyService } from '../../services/competency.service';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -9,6 +11,17 @@ type CalculateBatch = Awaited<ReturnType<typeof skillGapService.calculateBatch>>
 
 describe('useCalculateSkillGapBatch', () => {
   afterEach(() => { vi.restoreAllMocks(); });
+
+  it('refreshes gap snapshots, recommendations and analytics after activating a position standard', async () => {
+    vi.spyOn(competencyService, 'activate').mockResolvedValue({ data: {} } as never);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const keys = [['position-requirements'], ['capability-ceilings'], ['skill-gaps', 'list'], ['recommendations'], ['analytics']];
+    keys.forEach((key) => client.setQueryData(key, {}));
+    const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    const { result } = renderHook(() => useActivatePositionRequirements(), { wrapper });
+    await result.current.mutateAsync('standard-new');
+    keys.forEach((key) => expect(client.getQueryState(key)?.isInvalidated, key.join('/')).toBe(true));
+  });
 
   it('refreshes every view computed from skill gap snapshots, and only those', async () => {
     vi.spyOn(skillGapService, 'calculateBatch').mockResolvedValue({

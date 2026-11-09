@@ -1,3 +1,5 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
+import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 import { useState, useRef, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthGuard } from '@/components/guards/AuthGuard';
@@ -27,6 +29,7 @@ import './pulse-catalog.css';
 
 /** Header + navy sidebar of the Pulse mock's Platform Admin workspace (`app-shell role-admin`). */
 function PulseAdminShell() {
+  useUiLanguage();
   const user = useCurrentUser((s) => s.user);
   const logout = useLogout();
   const navigate = useNavigate();
@@ -79,7 +82,7 @@ function PulseAdminShell() {
               DigiTalent <em>Pulse</em>
             </span>
           </NavLink>
-          <span className="pa-brand-badge">{mentor ? 'Cổng đánh giá' : 'Quản trị nền tảng'}</span>
+          <span className="pa-brand-badge">{mentor ? 'Cổng đánh giá' : translateUi('Quản trị nền tảng')}</span>
         </div>
 
         {/* Quick Search trigger */}
@@ -96,6 +99,7 @@ function PulseAdminShell() {
 
         {/* Right header actions: Status + Role Switcher & Profile */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <LanguageSwitcher />
           <div className="pa-system-status" title="Catalog phiên bản neo đang phục vụ">
             <span className="pa-status-dot" aria-hidden="true" />
             <span>Catalog ⚓ v1 · Ổn định</span>
@@ -108,12 +112,12 @@ function PulseAdminShell() {
               onClick={() => setProfileOpen((prev) => !prev)}
               aria-expanded={profileOpen}
               aria-haspopup="true"
-              aria-label={`Menu người dùng: ${name}`}
+              aria-label={translateUi(`Menu người dùng: ${name}`)}
             >
               <div className="pa-avatar-circle">{initials(name)}</div>
               <div className="pa-profile-info">
                 <span className="pa-profile-name">{name}</span>
-                <span className="pa-profile-role">Quản trị nền tảng</span>
+                <span className="pa-profile-role">{translateUi("Quản trị nền tảng")}</span>
               </div>
               <ChevronDown size={15} style={{ color: '#64748b', marginLeft: 2 }} />
             </button>
@@ -151,7 +155,7 @@ function PulseAdminShell() {
                 >
                   <div className="pa-role-left">
                     <Building2 size={16} style={{ color: '#64748b' }} />
-                    <span>Chủ doanh nghiệp</span>
+                    <span>{translateUi("Chủ doanh nghiệp")}</span>
                   </div>
                 </button>
 
@@ -165,7 +169,7 @@ function PulseAdminShell() {
                 >
                   <div className="pa-role-left">
                     <Users2 size={16} style={{ color: '#64748b' }} />
-                    <span>Quản lý phòng ban</span>
+                    <span>{translateUi("Quản lý phòng ban")}</span>
                   </div>
                 </button>
 
@@ -185,7 +189,7 @@ function PulseAdminShell() {
 
                 <div className="pa-dropdown-divider" />
 
-                <div className="pa-dropdown-heading">Cài đặt tài khoản</div>
+                <div className="pa-dropdown-heading">{translateUi("Cài đặt tài khoản")}</div>
                 <NavLink to="/platform/account" className="pa-dropdown-menu-item" onClick={() => setProfileOpen(false)}>
                   <Settings size={15} style={{ color: '#64748b' }} />
                   <span>Hồ sơ quản trị viên</span>
@@ -221,7 +225,7 @@ function PulseAdminShell() {
       <div className="app-shell role-admin">
         <aside className="sidebar" aria-label="Điều hướng quản trị nền tảng">
           <div className="pa-side-nav-group">
-            <span className="pa-side-nav-title">{roleLabel}</span>
+            <span className="pa-side-nav-title">{translateUi(roleLabel)}</span>
             {nav.map((item) => {
               const Icon = item.icon;
               return (
@@ -230,10 +234,10 @@ function PulseAdminShell() {
                   to={item.to}
                   end={item.to === '/platform/dashboard' || item.to === '/platform/reviews'}
                   className={({ isActive }) => `pa-side-nav-link${isActive ? ' active' : ''}`}
-                  title={item.description}
+                  title={translateUi(item.description)}
                 >
                   <Icon size={18} aria-hidden="true" />
-                  <span>{item.label}</span>
+                  <span>{translateUi(item.label)}</span>
                 </NavLink>
               );
             })}
@@ -267,6 +271,7 @@ function PulseAdminShell() {
 }
 
 export function PulseAdminLayout() {
+  useUiLanguage();
   return (
     <AuthGuard>
       <RequireWorkspace workspace={WORKSPACES.PLATFORM}>

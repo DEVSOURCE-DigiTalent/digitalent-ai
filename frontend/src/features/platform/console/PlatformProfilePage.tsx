@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { usePlatformAuditLogs, usePlatformOverview } from '@/hooks/use-platform-admin';
@@ -21,6 +22,7 @@ import {
  * Thiết kế chuẩn Enterprise Linear/Stripe, loại bỏ hoàn toàn banner marketing cam lòe loẹt.
  */
 export function PlatformProfilePage() {
+  useUiLanguage();
   const user = useCurrentUser((s) => s.user);
   const overview = usePlatformOverview();
   const audit = usePlatformAuditLogs({ pageIndex: 1, pageSize: 1, scope: 'platform' });
@@ -93,8 +95,7 @@ export function PlatformProfilePage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
                 <span style={{ color: '#64748b' }}>Trạng thái tài khoản:</span>
                 <span style={{ fontWeight: 600, color: '#059669', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <ShieldCheck size={14} /> Đang hoạt động
-                </span>
+                  <ShieldCheck size={14} />{translateUi(" Đang hoạt động")}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
                 <span style={{ color: '#64748b' }}>Không gian làm việc:</span>

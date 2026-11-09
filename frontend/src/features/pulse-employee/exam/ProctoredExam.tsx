@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Link, UNSAFE_DataRouterContext, useBlocker, useNavigate } from 'react-router-dom';
 import { AlertTriangle, ArrowRight, Check, CheckCircle2, Lock, LogOut, Mic, Monitor, MonitorOff, ScanFace, ShieldAlert, ShieldCheck, Upload, Video, Award } from 'lucide-react';
@@ -57,6 +58,7 @@ function useProctor(courseId: string, kind: PulseExamKind) {
  * nộp bài kèm câu trả lời và phiên ghi hình. Kết quả chỉ hiện khi người chấm chấm xong.
  */
 export function ProctoredExam(props: ProctoredExamProps) {
+  useUiLanguage();
   const { kind, course } = props;
   const { controller, snapshot } = useProctor(course.courseId, kind);
   const navigate = useNavigate();
@@ -285,7 +287,7 @@ export function ProctoredExam(props: ProctoredExamProps) {
                     <span className="pu-tab-badge">01</span>
                     <span className="pu-tab-info">
                       <strong>Phần 1: Trắc nghiệm</strong>
-                      <small>{questions.length - unanswered}/{questions.length} đã chọn</small>
+                      <small>{questions.length - unanswered}/{questions.length}{translateUi(" đã chọn")}</small>
                     </span>
                   </button>
                 )}
@@ -303,7 +305,7 @@ export function ProctoredExam(props: ProctoredExamProps) {
                   <span className="pu-tab-badge">02</span>
                   <span className="pu-tab-info">
                     <strong>Phần 2: Tự luận</strong>
-                    <small>{essayShort ? 'Chưa đủ điều kiện' : `${length}/${MAX_EVIDENCE} ký tự`}</small>
+                    <small>{essayShort ? 'Chưa đủ điều kiện' : translateUi(`${length}/${MAX_EVIDENCE} ký tự`)}</small>
                   </span>
                 </button>
               </div>
@@ -331,7 +333,7 @@ export function ProctoredExam(props: ProctoredExamProps) {
             <section id="pu-essay-section" className="pu-surface pu-pad pu-answer" aria-labelledby="pu-essay-title">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-blue-700">
-                  {questions.length > 0 ? 'Phần 2 · Tự luận' : 'Tự luận'}
+                  {questions.length > 0 ? 'Phần 2 · Tự luận' : translateUi('Tự luận')}
                 </span>
                 <h2 id="pu-essay-title" className="pu-panel-title mt-1.5">Tạo ghi chú công việc có thể kiểm tra.</h2>
                 <p className="pu-panel-desc max-w-2xl">
@@ -354,8 +356,8 @@ export function ProctoredExam(props: ProctoredExamProps) {
               <div className="pu-answer-foot">
                 <small id="pu-evidence-hint" className={length > 0 && essayShort ? 'error' : undefined}>
                   {length > 0 && essayShort
-                    ? `Cần ít nhất ${MIN_EVIDENCE} ký tự (hiện có ${length}).`
-                    : `Ít nhất ${MIN_EVIDENCE} ký tự · ${length}/${MAX_EVIDENCE} · ${props.attemptLabel}`}
+                    ? translateUi(`Cần ít nhất ${MIN_EVIDENCE} ký tự (hiện có ${length}).`)
+                    : translateUi(`Ít nhất ${MIN_EVIDENCE} ký tự · ${length}/${MAX_EVIDENCE} · ${props.attemptLabel}`)}
                   {unanswered > 0 && <span className="pu-answer-missing"> · Còn {unanswered} câu trắc nghiệm chưa chọn</span>}
                 </small>
                 {stage === 'work' && (
@@ -364,9 +366,7 @@ export function ProctoredExam(props: ProctoredExamProps) {
                     className={btn()}
                     disabled={essayShort || unanswered > 0 || snapshot.phase === 'locked'}
                     onClick={() => setConfirmSubmit(true)}
-                  >
-                    Nộp bài
-                  </button>
+                  >{translateUi("Nộp bài")}</button>
                 )}
               </div>
               {confirmSubmit && stage === 'work' && (
@@ -376,8 +376,8 @@ export function ProctoredExam(props: ProctoredExamProps) {
                     Bài làm cùng bản ghi giám sát ({clock(elapsed)}) sẽ được chuyển đến Hội đồng khảo thí. Sau khi nộp, bạn không thể chỉnh sửa bài làm.
                   </span>
                   <div className="pu-row">
-                    <button type="button" className={btn('primary', true)} onClick={submit}>Nộp bài</button>
-                    <button type="button" className={btn('outline', true)} onClick={() => setConfirmSubmit(false)}>Làm tiếp</button>
+                    <button type="button" className={btn('primary', true)} onClick={submit}>{translateUi("Nộp bài")}</button>
+                    <button type="button" className={btn('outline', true)} onClick={() => setConfirmSubmit(false)}>{translateUi("Làm tiếp")}</button>
                   </div>
                 </div>
               )}
@@ -386,12 +386,12 @@ export function ProctoredExam(props: ProctoredExamProps) {
                   <strong>{submitError ? 'Chưa nộp được bài' : 'Đang tải bản ghi và nộp bài…'}</strong>
                   <span>
                     {submitError ?? (snapshot.pendingChunks
-                      ? `Còn ${snapshot.pendingChunks} mẩu ghi hình đang tải lên. Giữ trang này mở.`
+                      ? translateUi(`Còn ${snapshot.pendingChunks} mẩu ghi hình đang tải lên. Giữ trang này mở.`)
                       : 'Đang gửi bài làm cho người chấm.')}
                   </span>
                   {submitError && (
                     <div className="pu-row">
-                      <button type="button" className={btn('primary', true)} onClick={submit}>Nộp lại</button>
+                      <button type="button" className={btn('primary', true)} onClick={submit}>{translateUi("Nộp lại")}</button>
                     </div>
                   )}
                 </div>
@@ -426,7 +426,7 @@ export function ProctoredExam(props: ProctoredExamProps) {
           <section className="pu-exam-done" aria-labelledby="pu-done-title">
             <span className="pu-exam-done-icon" aria-hidden><Check size={26} strokeWidth={2.6} /></span>
             <h1 id="pu-done-title">
-              {kind === 'PRE_ASSESSMENT' ? `Đã nộp bài đánh giá ${course.code}.` : `Đã nộp bài cuối khóa ${course.code}.`}
+              {kind === 'PRE_ASSESSMENT' ? translateUi(`Đã nộp bài đánh giá ${course.code}.`) : translateUi(`Đã nộp bài cuối khóa ${course.code}.`)}
             </h1>
             <p>
               Bài làm và bản ghi giám sát ({formatDuration(doneDuration)}) đã được gửi đến Hội đồng khảo thí. Kết quả đánh giá
@@ -445,7 +445,7 @@ export function ProctoredExam(props: ProctoredExamProps) {
             </div>
             <div className="pu-row">
               <Link to={PULSE_PATHS.today} className={btn('primary', true)}>Về trang Tổng quan</Link>
-              <Link to={PULSE_PATHS.path} className={btn('outline', true)}>Xem lộ trình</Link>
+              <Link to={PULSE_PATHS.path} className={btn('outline', true)}>{translateUi("Xem lộ trình")}</Link>
             </div>
           </section>
         </main>
@@ -456,6 +456,7 @@ export function ProctoredExam(props: ProctoredExamProps) {
 
 /** Hỏi lại trước khi rời trang trong lúc đang ghi hình (chỉ có trong data router). */
 export function LeaveGuard({ active }: { active: boolean }) {
+  useUiLanguage();
   const blocker = useBlocker(active);
   useEffect(() => {
     if (blocker.state !== 'blocked') return;
@@ -473,6 +474,7 @@ function ExamBar({ kind, course, snapshot, elapsed, stage, onCancel }: {
   stage: string;
   onCancel: () => void;
 }) {
+  useUiLanguage();
   const recording = snapshot.phase === 'recording' || snapshot.phase === 'locked' || stage === 'work';
   const leaves = snapshot.events.filter((e) => e.kind === 'TAB_HIDDEN' || e.kind === 'FOCUS_LOST').length;
 
@@ -485,8 +487,8 @@ function ExamBar({ kind, course, snapshot, elapsed, stage, onCancel }: {
         </div>
         <span className="pu-exam-bar-divider" aria-hidden="true" />
         <div className="pu-exam-bar-info">
-          <span className="pu-exam-type-pill">{KIND_LABEL[kind]}</span>
-          <span className="pu-exam-course-title" title={`${course.code} · ${toSentenceCase(course.title)}`}>
+          <span className="pu-exam-type-pill">{translateUi(KIND_LABEL[kind])}</span>
+          <span className="pu-exam-course-title" title={translateUi(`${course.code} · ${toSentenceCase(course.title)}`)}>
             {course.code} · {toSentenceCase(course.title)}
           </span>
         </div>
@@ -509,7 +511,7 @@ function ExamBar({ kind, course, snapshot, elapsed, stage, onCancel }: {
         {(stage === 'check' || stage === 'done') && (
           <Link to={PULSE_PATHS.course(course.courseId)} className="pu-exam-leave-btn">
             <LogOut size={15} aria-hidden />
-            <span>Thoát</span>
+            <span>{translateUi("Thoát")}</span>
           </Link>
         )}
       </div>
@@ -525,6 +527,7 @@ function DeviceCheck(props: ProctoredExamProps & {
   onStart: () => void;
   startError: string | null;
 }) {
+  useUiLanguage();
   const { controller, snapshot, course } = props;
   const supported = proctoringSupported();
 
@@ -564,7 +567,7 @@ function DeviceCheck(props: ProctoredExamProps & {
           <div className={`pu-device ${snapshot.screen === 'on' ? 'on' : snapshot.screen === 'idle' ? '' : 'error'}`}>
             <span className="pu-device-icon" aria-hidden><Monitor size={22} /></span>
             <div className="pu-device-text">
-              <strong>Chia sẻ toàn bộ màn hình</strong>
+              <strong>{translateUi("Chia sẻ toàn bộ màn hình")}</strong>
               <span>Chọn tùy chọn "Toàn bộ màn hình" (Entire Screen) khi trình duyệt yêu cầu để bắt đầu ghi hình.</span>
               {snapshot.screen === 'on' ? (
                 <span className="pu-device-badge ok"><Check size={13} aria-hidden /> Đã chọn toàn bộ màn hình</span>
@@ -587,7 +590,7 @@ function DeviceCheck(props: ProctoredExamProps & {
               disabled={!supported || snapshot.screen === 'requesting'}
               onClick={() => void controller.requestScreen()}
             >
-              {snapshot.screen === 'on' ? 'Đổi màn hình' : 'Chọn màn hình'}
+              {snapshot.screen === 'on' ? 'Đổi màn hình' : translateUi('Chọn màn hình')}
             </button>
           </div>
 
@@ -595,7 +598,7 @@ function DeviceCheck(props: ProctoredExamProps & {
           <div className={`pu-device ${snapshot.camera === 'on' ? 'on' : snapshot.camera === 'idle' ? '' : 'error'}`}>
             <span className="pu-device-icon" aria-hidden><Video size={22} /></span>
             <div className="pu-device-text">
-              <strong>Bật camera</strong>
+              <strong>{translateUi("Bật camera")}</strong>
               <span>Đảm bảo khuôn mặt luôn nằm rõ trong khung hình suốt thời gian làm bài.</span>
               {snapshot.camera === 'on' ? (
                 <span className="pu-device-badge ok">
@@ -619,7 +622,7 @@ function DeviceCheck(props: ProctoredExamProps & {
               disabled={!supported || snapshot.camera === 'requesting'}
               onClick={() => void controller.requestCamera()}
             >
-              {snapshot.camera === 'on' ? 'Đổi camera' : 'Bật camera'}
+              {snapshot.camera === 'on' ? 'Đổi camera' : translateUi('Bật camera')}
             </button>
           </div>
 
@@ -627,7 +630,7 @@ function DeviceCheck(props: ProctoredExamProps & {
           <div className={`pu-device ${snapshot.mic === 'on' ? 'on' : snapshot.mic === 'idle' ? '' : 'error'}`}>
             <span className="pu-device-icon" aria-hidden><Mic size={22} /></span>
             <div className="pu-device-text">
-              <strong>Bật micro</strong>
+              <strong>{translateUi("Bật micro")}</strong>
               <span>Thu âm thanh môi trường xung quanh phục vụ hậu kiểm liêm chính bài thi.</span>
               {snapshot.mic === 'on' ? (
                 <span className="pu-device-badge ok"><Check size={13} aria-hidden /> Đang thu âm tốt</span>
@@ -646,7 +649,7 @@ function DeviceCheck(props: ProctoredExamProps & {
               disabled={!supported || snapshot.mic === 'requesting'}
               onClick={() => void controller.requestMic()}
             >
-              {snapshot.mic === 'on' ? 'Kiểm tra lại' : 'Bật micro'}
+              {snapshot.mic === 'on' ? 'Kiểm tra lại' : translateUi('Bật micro')}
             </button>
           </div>
 
@@ -732,7 +735,7 @@ function DeviceCheck(props: ProctoredExamProps & {
                     className={`pu-checklist-chip ${item.ready ? 'is-ready' : ''}`}
                   >
                     <span className="pu-chip-dot" />
-                    {item.label}
+                    {translateUi(item.label)}
                   </span>
                 ))}
               </div>
@@ -746,7 +749,7 @@ function DeviceCheck(props: ProctoredExamProps & {
                 {snapshot.phase === 'starting' ? (
                   'Đang bắt đầu…'
                 ) : !allDevicesReady ? (
-                  `Bắt đầu làm bài (Đã bật ${readyCount}/3 thiết bị)`
+                  translateUi(`Bắt đầu làm bài (Đã bật ${readyCount}/3 thiết bị)`)
                 ) : !props.agree ? (
                   'Bắt đầu làm bài (Cần tích cam kết)'
                 ) : (
@@ -766,13 +769,13 @@ function DeviceCheck(props: ProctoredExamProps & {
         <aside className="pu-exam-summary" aria-label="Thông tin bài thi">
           <h2 className="pu-summary-title">Thông tin bài thi</h2>
           <strong>{course.code} · {toSentenceCase(course.title)}</strong>
-          <span className="pu-summary-sub">{props.domainName} · Cấp độ {levelName(course.tier)}</span>
+          <span className="pu-summary-sub">{translateUi(props.domainName)} · Cấp độ {levelName(course.tier)}</span>
           <dl>
-            <div><dt>Loại bài thi</dt><dd>{KIND_LABEL[props.kind]}</dd></div>
-            <div><dt>Cấu trúc đề</dt><dd>{props.choiceCount > 0 ? `${props.choiceCount} câu trắc nghiệm + tự luận` : 'Tự luận'}</dd></div>
+            <div><dt>Loại bài thi</dt><dd>{translateUi(KIND_LABEL[props.kind])}</dd></div>
+            <div><dt>Cấu trúc đề</dt><dd>{props.choiceCount > 0 ? translateUi(`${props.choiceCount} câu trắc nghiệm + tự luận`) : translateUi('Tự luận')}</dd></div>
             <div><dt>Lượt làm</dt><dd>{props.attemptLabel}</dd></div>
-            <div><dt>Người đánh giá</dt><dd>{props.reviewer?.name ?? 'Chưa phân công'}</dd></div>
-            <div><dt>Giám sát</dt><dd>Màn hình, camera, micro</dd></div>
+            <div><dt>Người đánh giá</dt><dd>{props.reviewer?.name ?? translateUi('Chưa phân công')}</dd></div>
+            <div><dt>Giám sát</dt><dd>{translateUi("Màn hình, camera, micro")}</dd></div>
           </dl>
           <div className="pu-summary-outcomes">
             <div className="pu-outcome-item ok">
@@ -780,7 +783,7 @@ function DeviceCheck(props: ProctoredExamProps & {
               <p>Mở khóa cấp độ tiếp theo và công nhận chuẩn năng lực số.</p>
             </div>
             <div className="pu-outcome-item no">
-              <span className="pu-outcome-pill no">Chưa đạt</span>
+              <span className="pu-outcome-pill no">{translateUi("Chưa đạt")}</span>
               <p>Xem nhận xét từ hội đồng và được làm lại bài 01 lần.</p>
             </div>
           </div>
@@ -798,6 +801,7 @@ function ChoicePart({ questions, answers, passMark, disabled, onChoose }: {
   disabled: boolean;
   onChoose: (questionId: string, optionId: string) => void;
 }) {
+  useUiLanguage();
   const answered = questions.filter((q) => answers[q.questionId]).length;
   return (
     <section className="pu-quiz pu-exam-choice" aria-labelledby="pu-choice-title">
@@ -807,7 +811,7 @@ function ChoicePart({ questions, answers, passMark, disabled, onChoose }: {
           <h2 id="pu-choice-title" className="mt-1">Chọn một đáp án cho mỗi câu.</h2>
           <p>{questions.length} câu, đúng từ {Math.min(passMark, questions.length)} câu thì phần này đạt.</p>
         </div>
-        <span className="pu-exam-choice-count" aria-live="polite">{answered}/{questions.length} đã chọn</span>
+        <span className="pu-exam-choice-count" aria-live="polite">{answered}/{questions.length}{translateUi(" đã chọn")}</span>
       </div>
       {questions.map((question) => (
         <fieldset id={`q-${question.questionId}`} key={question.questionId} disabled={disabled} tabIndex={-1}>
@@ -831,6 +835,7 @@ function ChoicePart({ questions, answers, passMark, disabled, onChoose }: {
 }
 
 export function StreamPreview({ stream, version, label, mirrored }: { stream: MediaStream | null; version: number; label: string; mirrored?: boolean }) {
+  useUiLanguage();
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     const video = ref.current;
@@ -838,10 +843,11 @@ export function StreamPreview({ stream, version, label, mirrored }: { stream: Me
     video.srcObject = stream;
     if (stream) void video.play().catch(() => undefined);
   }, [stream, version]);
-  return <video ref={ref} className={`pu-preview${mirrored ? ' mirrored' : ''}`} muted playsInline autoPlay aria-label={label} />;
+  return <video ref={ref} className={`pu-preview${mirrored ? ' mirrored' : ''}`} muted playsInline autoPlay aria-label={translateUi(label)} />;
 }
 
 export function MicMeter({ level }: { level: number }) {
+  useUiLanguage();
   const bars = [0.35, 0.6, 0.85, 0.55, 1, 0.7, 0.45, 0.8, 0.5];
   return (
     <span className="pu-meter" role="meter" aria-label="Mức âm thanh của micro" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(level * 100)}>
@@ -869,6 +875,7 @@ const LOCK_TEXT: Record<LockReason, { title: string; action: string }> = {
 };
 
 export function LockOverlay({ controller, snapshot, elapsed }: { controller: ProctorController; snapshot: ProctorSnapshot; elapsed: number }) {
+  useUiLanguage();
   const [busy, setBusy] = useState(false);
   const reason = snapshot.lockReasons[0];
   if (!reason) return null;
@@ -887,7 +894,7 @@ export function LockOverlay({ controller, snapshot, elapsed }: { controller: Pro
         <span className="pu-lock-icon" aria-hidden>{reason === 'SCREEN' ? <MonitorOff size={22} /> : <ShieldAlert size={22} />}</span>
         <strong>Bài làm đang tạm khóa</strong>
         <span>
-          {LOCK_TEXT[reason].title} lúc {clock(stoppedAt?.offsetMs ?? elapsed)}. Sự kiện đã được ghi vào nhật ký cho người chấm. Bật lại để làm
+          {translateUi(LOCK_TEXT[reason].title)} lúc {clock(stoppedAt?.offsetMs ?? elapsed)}. Sự kiện đã được ghi vào nhật ký cho người chấm. Bật lại để làm
           tiếp; đồng hồ vẫn chạy{reason === 'SCREEN' ? ', camera và micro vẫn ghi' : ''}.
         </span>
         {snapshot.deviceError && <span className="pu-lock-error">{snapshot.deviceError}</span>}
@@ -905,6 +912,7 @@ const FACE_ALERT_TEXT: Record<FaceSignalKind, string> = {
 
 /** Trạng thái nhận diện khuôn mặt trên máy, kèm lời nhắc khi đang có bất thường. */
 function FaceRow({ snapshot }: { snapshot: ProctorSnapshot }) {
+  useUiLanguage();
   if (snapshot.faceCheck === 'idle') return null;
   const alert = snapshot.faceAlert;
   const text = snapshot.faceCheck === 'loading' ? 'Đang tải…' : snapshot.faceCheck === 'off' ? 'Không chạy được' : alert ? 'Cần chú ý' : 'Bình thường';
@@ -940,6 +948,7 @@ export function ProctorPanel({
   onJumpQuestion?: (qId: string) => void;
   onJumpEssay?: () => void;
 }) {
+  useUiLanguage();
   const screenOff = snapshot.lockReasons.includes('SCREEN');
   const answeredCount = questions.filter((q) => answers[q.questionId]).length;
 
@@ -981,7 +990,7 @@ export function ProctorPanel({
                   type="button"
                   onClick={() => onJumpQuestion?.(q.questionId)}
                   className={`pu-q-btn ${isDone ? 'is-done' : ''}`}
-                  title={`Câu ${num}: ${isDone ? 'Đã trả lời' : 'Chưa trả lời'}`}
+                  title={translateUi(`Câu ${num}: ${isDone ? 'Đã trả lời' : 'Chưa trả lời'}`)}
                 >
                   {num}
                 </button>
@@ -991,7 +1000,7 @@ export function ProctorPanel({
               type="button"
               onClick={() => onJumpEssay?.()}
               className={`pu-q-btn pu-q-essay ${essayDone ? 'is-done' : ''}`}
-              title={`Tự luận: ${essayDone ? 'Đã viết' : 'Chưa đủ điều kiện'}`}
+              title={translateUi(`Tự luận: ${essayDone ? 'Đã viết' : 'Chưa đủ điều kiện'}`)}
             >
               TL
             </button>
@@ -1013,7 +1022,7 @@ export function ProctorPanel({
                 <span className={`pu-log-dot ${tone}`} aria-hidden />
                 <time>{clock(event.offsetMs)}</time>
                 <span className="pu-log-text">
-                  {PROCTORING_EVENT_LABELS[event.kind]}
+                  {translateUi(PROCTORING_EVENT_LABELS[event.kind])}
                   {event.durationMs ? ` (${formatDuration(event.durationMs)})` : ''}
                 </span>
               </li>

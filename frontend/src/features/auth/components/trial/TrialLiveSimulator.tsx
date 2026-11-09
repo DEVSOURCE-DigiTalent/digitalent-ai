@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Sparkles, Compass, BookOpen, Award, CheckCircle2, ShieldCheck, Zap, CreditCard, ChevronRight, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -8,6 +9,7 @@ interface TrialLiveSimulatorProps {
 }
 
 export function TrialLiveSimulator({ positionName, fromTry = false }: TrialLiveSimulatorProps) {
+  useUiLanguage();
   const displayPosition = positionName || 'Kỹ sư Trí tuệ nhân tạo (AI Engineer)';
   const [selectedCourseIdx, setSelectedCourseIdx] = useState(0);
 
@@ -164,7 +166,7 @@ export function TrialLiveSimulator({ positionName, fromTry = false }: TrialLiveS
                     <span className="rounded-full bg-white/10 px-1.5 py-0.2 text-[9px] text-stone-300">{c.duration}</span>
                   </div>
                   <p className="text-xs sm:text-sm font-medium text-cream truncate">
-                    {c.title}
+                    {translateUi(c.title)}
                   </p>
                 </div>
               </div>

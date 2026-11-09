@@ -51,6 +51,11 @@ public class TrialProgramReader
             _context.TrialWorkspaces.Add(trial);
             await _context.SaveChangesAsync();
         }
+        else if (trial.OwnerUserId == Guid.Empty)
+        {
+            trial.OwnerUserId = UserId;
+            await _context.SaveChangesAsync();
+        }
         return trial;
     }
 
@@ -89,13 +94,32 @@ public class TrialProgramReader
             return "Bạn đã nộp bài đánh giá.";
         }
 
+        if (trial.RequestedAt == null)
+        {
+            return "Doanh nghiệp chưa bắt đầu đợt khảo sát.";
+        }
+
         // Đợt khảo sát ban đầu nếu chưa công bố và có đặt hạn chót
-        if (trial.ReportPublishedAt == null && trial.TestDeadline.HasValue && now >= trial.TestDeadline.Value)
+        if (trial.TestDeadline.HasValue && now >= trial.TestDeadline.Value)
         {
             return "Đã quá hạn làm bài của đợt khảo sát.";
         }
 
         return null;
+    }
+
+    /// <summary>Publish automatically when the entire roster submits, or summarize submitted work after the deadline.</summary>
+    public async Task FinalizeSurveyAsync(TrialWorkspace trial)
+    {
+        if (trial.RequestedAt == null || trial.ReportPublishedAt != null) return;
+        var participants = await LoadParticipantsAsync(trial);
+        var completed = participants.Count(p => p.Status == TrialProgramRules.ParticipantReviewed);
+        if (completed == 0 || (completed != participants.Count && !(trial.TestDeadline <= Now))) return;
+        trial.ReportPublishedAt = Now;
+        trial.Revision++;
+        Notify(new[] { trial.OwnerUserId }, TrialProgramRules.NotificationReported, "Đã có kết quả khảo sát",
+            $"{completed}/{participants.Count} người đã hoàn thành. Xem tổng quan năng lực đội ngũ.", trial.OrganizationId);
+        await _context.SaveChangesAsync();
     }
 
     public Task<List<TrialDomainInfo>> LoadDomainsAsync(Guid organizationId) => _paper.LoadDomainsAsync(organizationId);
@@ -318,15 +342,15 @@ public class TrialProgramReader
         {
             0 => ("Chưa đạt",
                 "Chưa đạt mức Cơ bản",
-                $"Chưa đạt trắc nghiệm cấp Cơ bản{basicInfo}. Cần đạt tối thiểu từ 2/3 câu đúng để công nhận đạt chuẩn Cơ bản. Hãy bổ sung kiến thức nhập môn và hoàn thành khóa Cơ bản.",
+                $"Chưa đạt trắc nghiệm cấp Cơ bản{basicInfo}. Cần đạt tối thiểu 70% câu đúng của cấp để công nhận đạt chuẩn Cơ bản. Hãy bổ sung kiến thức nhập môn và hoàn thành khóa Cơ bản.",
                 $"M{domainNumber}-F: Khóa Cơ bản về {domainName}"),
             1 => ("Cơ bản",
                 "Đạt Cơ bản · Chưa đạt Trung cấp",
-                $"Đã nắm vững kỹ năng Cơ bản{basicInfo}, nhưng chưa đạt trắc nghiệm Trung cấp{interInfo} (yêu cầu từ 2/3 câu). Cần nâng cao kỹ năng xử lý độc lập và học khóa Trung cấp.",
+                $"Đã nắm vững kỹ năng Cơ bản{basicInfo}, nhưng chưa đạt trắc nghiệm Trung cấp{interInfo} (yêu cầu tối thiểu 70% câu đúng). Cần nâng cao kỹ năng xử lý độc lập và học khóa Trung cấp.",
                 $"M{domainNumber}-I: Khóa Trung cấp về {domainName}"),
             2 => ("Trung cấp",
                 "Đạt Trung cấp · Chưa đạt Nâng cao",
-                $"Thành thạo ứng dụng ở mức Trung cấp{interInfo}, nhưng chưa đạt trắc nghiệm Nâng cao{advInfo} (yêu cầu từ 2/3 câu). Cần tối ưu quy trình và học khóa Nâng cao.",
+                $"Thành thạo ứng dụng ở mức Trung cấp{interInfo}, nhưng chưa đạt trắc nghiệm Nâng cao{advInfo} (yêu cầu tối thiểu 70% câu đúng). Cần tối ưu quy trình và học khóa Nâng cao.",
                 $"M{domainNumber}-A: Khóa Nâng cao về {domainName}"),
             _ => ("Nâng cao",
                 "Đạt mức Nâng cao",

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
@@ -30,6 +31,7 @@ const localPath = (href: string) => {
 };
 
 export function EnterpriseTrialRegisterPage() {
+  useUiLanguage();
   const [form, setForm] = useState({
     organizationName: '',
     ownerName: '',
@@ -68,17 +70,17 @@ export function EnterpriseTrialRegisterPage() {
         </div>
       ) : (
         <form onSubmit={submit} className="grid gap-4">
-          <FormError message={register.error ? err(register.error, 'Không thể tạo trial.') : undefined} />
-          <Field label="Tên tổ chức" htmlFor="organizationName">
+          <FormError message={translateUi(register.error ? err(register.error, 'Không thể tạo trial.') : undefined)} />
+          <Field label={translateUi("Tên tổ chức")} htmlFor="organizationName">
             <input id="organizationName" className={DARK_INPUT_CLASS} value={form.organizationName} onChange={(e) => setForm({ ...form, organizationName: e.target.value })} required />
           </Field>
-          <Field label="Chủ sở hữu" htmlFor="ownerName">
+          <Field label={translateUi("Chủ sở hữu")} htmlFor="ownerName">
             <input id="ownerName" className={DARK_INPUT_CLASS} value={form.ownerName} onChange={(e) => setForm({ ...form, ownerName: e.target.value })} required />
           </Field>
-          <Field label="Email" htmlFor="email">
+          <Field label={translateUi("Email")} htmlFor="email">
             <input id="email" type="email" className={DARK_INPUT_CLASS} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
           </Field>
-          <Field label="Mật khẩu" htmlFor="password" hint="Tối thiểu 12 ký tự.">
+          <Field label={translateUi("Mật khẩu")} htmlFor="password" hint="Tối thiểu 12 ký tự.">
             <PasswordField id="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
           </Field>
           <label className="flex items-start gap-3 text-xs text-stone-300">
@@ -96,6 +98,7 @@ export function EnterpriseTrialRegisterPage() {
 }
 
 export function EnterpriseTrialVerifyPage() {
+  useUiLanguage();
   const [search] = useSearchParams();
   const token = search.get('token') ?? '';
   const verify = useMutation({ mutationFn: () => enterpriseTrialService.verify(token) });
@@ -109,9 +112,9 @@ export function EnterpriseTrialVerifyPage() {
 
   return (
     <AuthShell portal="enterprise" eyebrow="Xác minh trial" title="Xác minh chủ sở hữu" subtitle="Sau khi xác minh, đăng nhập bằng email và mật khẩu đã đăng ký.">
-      {!token && <FormError message="Link xác minh thiếu token." />}
-      {verify.isPending && <p className="text-sm text-stone-300">Đang xác minh…</p>}
-      {verify.isError && <FormError message={err(verify.error, 'Không thể xác minh link.')} />}
+      {!token && <FormError message={translateUi("Link xác minh thiếu token.")} />}
+      {verify.isPending && <p className="text-sm text-stone-300">{translateUi("Đang xác minh…")}</p>}
+      {verify.isError && <FormError message={translateUi(err(verify.error, 'Không thể xác minh link.'))} />}
       {verify.isSuccess && (
         <div className="grid gap-4 text-sm text-stone-300">
           <p className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 p-4 text-emerald-100">
@@ -125,6 +128,7 @@ export function EnterpriseTrialVerifyPage() {
 }
 
 export function EnterpriseTrialAcceptPage() {
+  useUiLanguage();
   const [search] = useSearchParams();
   const token = search.get('token') ?? '';
   const [password, setPassword] = useState('');
@@ -142,25 +146,24 @@ export function EnterpriseTrialAcceptPage() {
   };
 
   return (
-    <AuthShell portal="enterprise" eyebrow="Lời mời trial" title="Kích hoạt tài khoản" subtitle="Đặt mật khẩu để vào tenant trial của tổ chức.">
+    <AuthShell portal="enterprise" eyebrow="Lời mời trial" title={translateUi("Kích hoạt tài khoản")} subtitle="Đặt mật khẩu để vào tenant trial của tổ chức.">
       <form onSubmit={submit} className="grid gap-4">
-        <FormError message={!token ? 'Link lời mời thiếu token.' : accept.error ? err(accept.error, 'Không thể kích hoạt lời mời.') : password && confirm && password !== confirm ? 'Mật khẩu nhập lại không khớp.' : undefined} />
-        <Field label="Mật khẩu" htmlFor="password">
+        <FormError message={translateUi(!token ? 'Link lời mời thiếu token.' : accept.error ? err(accept.error, 'Không thể kích hoạt lời mời.') : password && confirm && password !== confirm ? 'Mật khẩu nhập lại không khớp.' : undefined)} />
+        <Field label={translateUi("Mật khẩu")} htmlFor="password">
           <PasswordField id="password" value={password} onChange={(e) => setPassword(e.target.value)} />
         </Field>
-        <Field label="Nhập lại mật khẩu" htmlFor="confirm">
+        <Field label={translateUi("Nhập lại mật khẩu")} htmlFor="confirm">
           <PasswordField id="confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
         </Field>
         <button type="submit" disabled={!token || accept.isPending || password !== confirm} className={DARK_PRIMARY_BUTTON}>
-          {accept.isPending && <Loader2 className="size-4 animate-spin" />}
-          Kích hoạt tài khoản
-        </button>
+          {accept.isPending && <Loader2 className="size-4 animate-spin" />}{translateUi("Kích hoạt tài khoản")}</button>
       </form>
     </AuthShell>
   );
 }
 
 export function EnterpriseTrialSetupPage() {
+  useUiLanguage();
   const catalog = useTrialCatalog();
   const context = useTrialContext();
   const invitations = useTrialInvitations();
@@ -180,7 +183,7 @@ export function EnterpriseTrialSetupPage() {
         <section className="rounded-2xl border border-slate-200 bg-white p-6">
           <h2 className="font-semibold text-slate-900">Vị trí trial</h2>
           <p className="mt-2 text-sm text-slate-600">
-            {context.data?.selectedPosition ? `Đã chọn: ${context.data.selectedPosition.name}` : eligible ? `${eligible.name} · ${eligible.requirementVersion}` : 'Chưa có bundle đủ điều kiện.'}
+            {context.data?.selectedPosition ? translateUi(`Đã chọn: ${context.data.selectedPosition.name}`) : eligible ? `${eligible.name} · ${eligible.requirementVersion}` : 'Chưa có bundle đủ điều kiện.'}
           </p>
           {!context.data?.selectedPosition && eligible && (
             <div className="mt-4 grid gap-3">
@@ -192,18 +195,16 @@ export function EnterpriseTrialSetupPage() {
           )}
         </section>
         <section className="rounded-2xl border border-slate-200 bg-white p-6">
-          <h2 className="font-semibold text-slate-900">Mời thành viên</h2>
+          <h2 className="font-semibold text-slate-900">{translateUi("Mời thành viên")}</h2>
           <form className="mt-4 grid gap-3" onSubmit={(event) => { event.preventDefault(); invite.mutate(inviteForm); }}>
-            <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Họ tên" value={inviteForm.name} onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })} />
+            <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder={translateUi("Họ tên")} value={inviteForm.name} onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })} />
             <input className="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="email@company.com" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} />
             <select className="rounded-xl border border-slate-300 px-3 py-2 text-sm" value={inviteForm.role} onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value as 'Employee' | 'Manager' })}>
-              <option value="Employee">Nhân viên</option>
-              <option value="Manager">Quản lý</option>
+              <option value="Employee">{translateUi("Nhân viên")}</option>
+              <option value="Manager">{translateUi("Quản lý")}</option>
             </select>
             <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">
-              <UserPlus className="size-4" />
-              Gửi lời mời
-            </button>
+              <UserPlus className="size-4" />{translateUi("Gửi lời mời")}</button>
           </form>
         </section>
       </div>
@@ -228,6 +229,7 @@ export function EnterpriseTrialSetupPage() {
 }
 
 export function EnterpriseTrialResultsPage() {
+  useUiLanguage();
   const results = useTrialResults();
   const context = useTrialContext();
   const requestConversion = useMutation({ mutationFn: () => enterpriseTrialService.requestConversion() });
@@ -254,7 +256,7 @@ export function EnterpriseTrialResultsPage() {
               {(row.result?.items ?? []).map((item) => (
                 <div key={item.competencyId} className="rounded-xl border border-slate-200 p-3 text-sm">
                   <div className="font-medium text-slate-900">{item.name}</div>
-                  <div className="mt-1 text-slate-500">{item.classification === 'insufficient_data' ? 'Chưa đủ dữ liệu' : `Hiện tại ${item.currentLevel}/${item.requiredLevel}`}</div>
+                  <div className="mt-1 text-slate-500">{item.classification === 'insufficient_data' ? 'Chưa đủ dữ liệu' : translateUi(`Hiện tại ${item.currentLevel}/${item.requiredLevel}`)}</div>
                 </div>
               ))}
             </div>

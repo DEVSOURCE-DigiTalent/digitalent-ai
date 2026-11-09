@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Modal } from '@/components/shared';
 import { useDepartments, useSetDepartmentManager } from '@/hooks/use-departments';
@@ -13,6 +14,7 @@ interface AssignManagerDepartmentsModalProps {
 }
 
 export function AssignManagerDepartmentsModal({ manager, open, onClose }: AssignManagerDepartmentsModalProps) {
+  useUiLanguage();
   const { data: deptData, isLoading } = useDepartments({ pageSize: 100, status: 'ACTIVE' });
   const allDepartments = deptData?.items || [];
   const setDepartmentManager = useSetDepartmentManager();
@@ -58,15 +60,13 @@ export function AssignManagerDepartmentsModal({ manager, open, onClose }: Assign
       open={open}
       onClose={onClose}
       size="md"
-      title={`Phân công phòng ban quản lý: ${manager.fullName}`}
+      title={translateUi(`Phân công phòng ban quản lý: ${manager.fullName}`)}
       description="Quản lý có thể theo dõi nhân sự, giao nhiệm vụ và đánh giá minh chứng trong phòng ban được phân công."
       footer={
         <>
-          <button type="button" onClick={onClose} className={SECONDARY_BUTTON} disabled={saving}>
-            Hủy
-          </button>
+          <button type="button" onClick={onClose} className={SECONDARY_BUTTON} disabled={saving}>{translateUi("Hủy")}</button>
           <button type="button" onClick={handleSave} className={PRIMARY_BUTTON} disabled={saving || !managerEmpId}>
-            {saving ? 'Đang lưu…' : 'Lưu phân công'}
+            {saving ? translateUi('Đang lưu…') : 'Lưu phân công'}
           </button>
         </>
       }

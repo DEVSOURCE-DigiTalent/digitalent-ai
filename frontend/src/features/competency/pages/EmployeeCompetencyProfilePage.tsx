@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, BadgeCheck } from 'lucide-react';
@@ -49,6 +50,7 @@ function toRun(capability: EmployeeCapability): SkillGapRunDetail | null {
  * dòng thời gian minh chứng (EvidencesTab), tiến độ học tập và nhiệm vụ thực tế.
  */
 export function EmployeeCompetencyProfilePage() {
+  useUiLanguage();
   const { employeeId } = useParams<{ employeeId: string }>();
   const { data, isLoading, isError, refetch } = useEmployeeCapability(employeeId);
   const canConfirm = useCurrentUser((s) => s.hasPermission)(PERMISSIONS.EVIDENCE_CREATE_MANUAL);
@@ -84,18 +86,18 @@ export function EmployeeCompetencyProfilePage() {
       </Link>
 
       <PageHeader
-        title={employee.fullName}
-        subtitle={[
+        title={translateUi(employee.fullName)}
+        subtitle={translateUi([
           employee.employeeCode,
           employee.positionName,
           (employee as any).jobGrade ? `Cấp bậc ${(employee as any).jobGrade}` : null,
           employee.departmentName,
         ]
           .filter(Boolean)
-          .join(' · ')}
+          .join(' · '))}
       >
         <StatusBadge
-          label={employee.status === 'ACTIVE' ? 'Đang làm việc' : 'Đã nghỉ'}
+          label={translateUi(employee.status === 'ACTIVE' ? 'Đang làm việc' : 'Đã nghỉ')}
           variant={employee.status === 'ACTIVE' ? 'success' : 'default'}
         />
         {run && canConfirm && (
@@ -119,19 +121,19 @@ export function EmployeeCompetencyProfilePage() {
               ? 'warning'
               : 'danger'
           }
-          subtitle={summary.blocker ? BLOCKER_LABELS[summary.blocker] : undefined}
+          subtitle={translateUi(summary.blocker ? translateUi(BLOCKER_LABELS[summary.blocker]) : undefined)}
         />
         <ScoreCard
-          label="Khoảng trống năng lực"
+          label={translateUi("Khoảng trống năng lực")}
           value={summary.gapCount ?? '—'}
           variant={summary.highCount ? 'danger' : 'default'}
-          subtitle={summary.highCount ? `${summary.highCount} khoảng trống mức cao` : undefined}
+          subtitle={translateUi(summary.highCount ? translateUi(`${summary.highCount} khoảng trống mức cao`) : undefined)}
         />
         <ScoreCard
           label="Khóa đang học"
           value={summary.activeCourses}
           variant={summary.overdueCourses ? 'warning' : 'default'}
-          subtitle={summary.overdueCourses ? `${summary.overdueCourses} quá hạn` : undefined}
+          subtitle={translateUi(summary.overdueCourses ? translateUi(`${summary.overdueCourses} quá hạn`) : undefined)}
         />
         <ScoreCard
           label="Khóa đã hoàn thành"

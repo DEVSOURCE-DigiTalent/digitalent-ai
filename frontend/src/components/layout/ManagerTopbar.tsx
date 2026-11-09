@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, Search, Sparkles } from 'lucide-react';
@@ -10,6 +11,7 @@ import { findScreen } from '@/lib/screens';
 import { USE_MOCK } from '@/services/mock/mock-config';
 import { NotificationPopover } from './NotificationPopover';
 import { UserAvatarMenu } from './UserAvatarMenu';
+import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 import { CommandPalette } from './CommandPalette';
 
 /** Điều hướng trung tâm của bản Pulse (Tổng quan / Năng lực / Khóa học / Báo cáo), trỏ vào màn hình trong sitemap. */
@@ -31,6 +33,7 @@ interface ManagerTopbarProps {
  * tìm kiếm (Ctrl+K) và menu tài khoản bên phải. Nhãn "Bản xem trước tương tác" chỉ hiện khi chạy dữ liệu mẫu.
  */
 export function ManagerTopbar({ portal, onOpenMobileNav, isMobileNavOpen = false }: ManagerTopbarProps) {
+  useUiLanguage();
   const { pathname } = useLocation();
   const user = useCurrentUser((s) => s.user);
   const hasPermission = useCurrentUser((s) => s.hasPermission);
@@ -73,12 +76,12 @@ export function ManagerTopbar({ portal, onOpenMobileNav, isMobileNavOpen = false
             type="button"
             onClick={onOpenMobileNav}
             className="pm-icon-btn pm-menu-btn -ml-2"
-            aria-label="Mở điều hướng"
+            aria-label={translateUi("Mở điều hướng")}
             aria-expanded={isMobileNavOpen}
           >
             <Menu className="size-5" />
           </button>
-          <Link to={items[0]?.path ?? '/enterprise'} className="pm-brand" aria-label="DigiTalent Pulse — Tổng quan">
+          <Link to={items[0]?.path ?? '/enterprise'} className="pm-brand" aria-label={translateUi("DigiTalent Pulse — Tổng quan")}>
             <img src={pulseMark} alt="" />
             <span>DigiTalent <em>Pulse</em></span>
           </Link>
@@ -87,7 +90,7 @@ export function ManagerTopbar({ portal, onOpenMobileNav, isMobileNavOpen = false
         <nav className="pm-topnav" aria-label="Không gian quản lý">
           {items.map((item) => (
             <Link key={item.screenId} to={item.path} aria-current={activeId === item.screenId ? 'page' : undefined}>
-              {item.label}
+              {translateUi(item.label)}
             </Link>
           ))}
         </nav>
@@ -101,19 +104,20 @@ export function ManagerTopbar({ portal, onOpenMobileNav, isMobileNavOpen = false
             title="Xem lại hướng dẫn quản lý"
           >
             <Sparkles className="size-3.5 text-indigo-600" />
-            <span className="hidden sm:inline">Hướng dẫn</span>
+            <span className="hidden sm:inline">{translateUi("Hướng dẫn")}</span>
           </button>
           <button
             type="button"
             onClick={() => setPaletteOpen(true)}
             className="pm-icon-btn"
-            aria-label="Tìm kiếm"
-            title="Tìm kiếm (Ctrl+K)"
+            aria-label={translateUi("Tìm kiếm")}
+            title={translateUi("Tìm kiếm (Ctrl+K)")}
           >
             <Search className="size-4" />
           </button>
           <NotificationPopover notificationsPath={portal.notificationsPath} />
           {/* Quản lý vẫn tự học trên lộ trình của mình (cổng nhân viên Pulse, EM-01). */}
+          <LanguageSwitcher />
           <UserAvatarMenu accountPath={portal.accountPath} learningPath={findScreen('EM-01')?.path} />
         </div>
       </header>

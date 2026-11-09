@@ -8,9 +8,9 @@ public class UpdateDepartmentCeilingsUseCaseInput
     [JsonIgnore]
     public Guid DepartmentId { get; set; }
 
-    /// <summary>true = bỏ mọi trần riêng, phòng ban kế thừa trần doanh nghiệp (Ceilings bị bỏ qua).</summary>
+    /// <summary>true = bỏ mọi thiết lập riêng, phòng ban kế thừa phạm vi doanh nghiệp (Ceilings bị bỏ qua).</summary>
     public bool Inherit { get; set; }
 
-    /// <summary>Trần riêng theo lĩnh vực; lĩnh vực không có trong danh sách giữ nguyên.</summary>
+    /// <summary>Thiết lập riêng theo lĩnh vực; lĩnh vực không có trong danh sách giữ nguyên.</summary>
     public List<CeilingInputItem> Ceilings { get; set; } = new();
 }

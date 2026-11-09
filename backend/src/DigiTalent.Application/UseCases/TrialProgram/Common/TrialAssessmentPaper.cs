@@ -133,7 +133,7 @@ public class TrialAssessmentPaper
 
     private static PulseQuizQuestion GetBenchmarkQuestion(TrialDomainInfo domain, int tier)
     {
-        var id = Guid.NewGuid();
+        var id = StableBenchmarkId($"survey:{domain.CategoryId}:{tier}");
         var (content, options) = (domain.Number, tier) switch
         {
             (1, 1) => ("Khi tìm kiếm tài liệu trên mạng, thao tác nào giúp lọc kết quả chính xác theo loại file PDF?",
@@ -179,9 +179,12 @@ public class TrialAssessmentPaper
                 new[] { ("Tích hợp mô hình ngôn ngữ lớn (RAG) với cơ sở tri thức nội bộ để tự động hóa hỗ trợ khách hàng và ra quyết định", true), ("Chỉ dùng AI để dịch một đoạn văn ngắn", false), ("Sao chép nguyên văn từ AI mà không kiểm chứng chuyên môn", false), ("Dùng AI tạo ảnh vui nhộn trong giờ làm việc", false) }),
         };
 
-        var optionDtos = options.Select(o => new PulseQuizOption(Guid.NewGuid(), o.Item1, o.Item2)).ToList();
+        var optionDtos = options.Select((o, index) => new PulseQuizOption(StableBenchmarkId($"{id}:option:{index}"), o.Item1, o.Item2)).ToList();
         return new PulseQuizQuestion(id, content, null, 1, optionDtos);
     }
+
+    private static Guid StableBenchmarkId(string key) => new(System.Security.Cryptography.SHA256.HashData(
+        System.Text.Encoding.UTF8.GetBytes(key)).AsSpan(0, 16));
 
     /// <summary>Ngân hàng câu hỏi của nhiều bài ôn tập trong hai truy vấn.</summary>
     private async Task<Dictionary<Guid, List<PulseQuizQuestion>>> LoadPoolsAsync(IReadOnlyCollection<Guid> quizIds)

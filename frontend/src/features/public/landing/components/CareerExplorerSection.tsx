@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
@@ -15,6 +16,7 @@ const stagger = (index: number) => ({ '--i': index }) as CSSProperties;
 
 /** Preview of the reference positions a learner can aim for (individual page, so mint accents); the full list lives at /careers. */
 export function CareerExplorerSection({ section }: { section: CareersSection }) {
+  useUiLanguage();
   const [gridRef, gridInView] = useInView<HTMLDivElement>({ rootMargin: '0px 0px -100px 0px' });
 
   return (
@@ -53,6 +55,7 @@ export function CareerExplorerSection({ section }: { section: CareersSection }) 
 }
 
 function PositionCard({ position, index, linkLabel }: { position: ReferencePosition; index: number; linkLabel: string }) {
+  useUiLanguage();
   const { selected, domains } = summarizeRequirements(position);
 
   return (
@@ -69,7 +72,7 @@ function PositionCard({ position, index, linkLabel }: { position: ReferencePosit
         <h3 className="text-[22px] font-normal leading-[1.22] tracking-[-0.015em] text-cream">
           {position.name}
         </h3>
-        <p className="mt-2 text-sm leading-[1.5] text-stone-400">{position.description}</p>
+        <p className="mt-2 text-sm leading-[1.5] text-stone-400">{translateUi(position.description)}</p>
         <p className="mt-4 text-xs text-stone-400 tabular-nums">
           <span className="font-medium text-[#F5CA65]">{selected}</span>/24 năng lực được chọn
         </p>

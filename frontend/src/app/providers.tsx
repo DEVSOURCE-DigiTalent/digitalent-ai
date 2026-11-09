@@ -5,6 +5,7 @@ import { Toaster } from 'sonner';
 import { shouldRetryQuery } from '@/lib/query-retry';
 import { router } from './router';
 import { AppLoadingScreen } from '@/components/shared/LoadingState';
+import { LanguageEffects } from '@/lib/i18n';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +39,7 @@ function ThemedToaster() {
 export function AppProviders() {
   return (
     <QueryClientProvider client={queryClient}>
+      <LanguageEffects />
       {/* Layouts and full-page screens are loaded on demand (app/routes/lazy-page.ts); portal pages have their own boundary. */}
       <Suspense fallback={<AppLoadingScreen />}>
         <RouterProvider router={router} />

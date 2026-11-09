@@ -27,6 +27,7 @@ export interface CourseListItem {
 }
 
 export interface CourseDetailDto {
+  seatsUsed?: number;
   final?: CourseFinalContent | null;
   id: string;
   code: string;

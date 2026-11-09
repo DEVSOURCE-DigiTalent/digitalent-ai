@@ -29,6 +29,12 @@ public class InviteTrialParticipantsUseCase : IUseCase<InviteTrialParticipantsUs
     public async Task<InviteTrialParticipantsUseCaseOutput> ExecuteAsync(InviteTrialParticipantsUseCaseInput input)
     {
         var trial = await _reader.ForOwnerAsync();
+        if (input.TestDeadline is { } chosenDeadline)
+        {
+            if (chosenDeadline <= _reader.Now.AddMinutes(30) || chosenDeadline > _reader.Now.AddDays(TrialProgramRules.MaxDeadlineDays))
+                throw new BadRequestException("Hạn làm bài cần sau ít nhất 30 phút và trong vòng 60 ngày.", "testDeadline", "TRIAL_DEADLINE_INVALID");
+            trial.TestDeadline = chosenDeadline;
+        }
         if (trial.ReportPublishedAt != null)
         {
             throw new BadRequestException("Kết quả dùng thử đã được công bố, không mời thêm nhân viên.", "rows", "TRIAL_REPORTED");

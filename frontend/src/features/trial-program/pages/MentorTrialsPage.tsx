@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMentorTrials } from '@/hooks/use-trial-program';
 import { Box, LoadError, Loading, PageHead } from '@/features/platform/components/pulse-ui';
@@ -7,27 +8,28 @@ import '../trial-program.css';
 
 /** MT-01 · Bài cần chấm: các doanh nghiệp dùng thử được phân công cho mentor. */
 export function MentorTrialsPage() {
+  useUiLanguage();
   const navigate = useNavigate();
   const { data, isLoading, error } = useMentorTrials();
 
   return (
     <>
-      <PageHead eyebrow="Mentor" title="Doanh nghiệp cần chấm." />
+      <PageHead eyebrow="Mentor" title={translateUi("Doanh nghiệp cần chấm.")} />
       <Box>
         {isLoading && <Loading />}
         {error && <LoadError error={error} />}
-        {data && data.length === 0 && <p className="pa-empty">Chưa được phân công doanh nghiệp nào.</p>}
+        {data && data.length === 0 && <p className="pa-empty">{translateUi("Chưa được phân công doanh nghiệp nào.")}</p>}
         {data && data.length > 0 && (
           <div className="table-scroll">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Doanh nghiệp</th>
-                  <th className="num">Đã nộp</th>
-                  <th className="num">Đã chấm</th>
-                  <th>Hạn làm bài</th>
-                  <th>Muốn chấm lúc</th>
-                  <th>Trạng thái</th>
+                  <th>{translateUi("Doanh nghiệp")}</th>
+                  <th className="num">{translateUi("Đã nộp")}</th>
+                  <th className="num">{translateUi("Đã chấm")}</th>
+                  <th>{translateUi("Hạn làm bài")}</th>
+                  <th>{translateUi("Muốn chấm lúc")}</th>
+                  <th>{translateUi("Trạng thái")}</th>
                 </tr>
               </thead>
               <tbody>

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import DemoExperience from './ExperiencePage';
 import '../experience.css';
 
@@ -12,6 +13,7 @@ const views = [
 ];
 
 export function ExperienceRoute() {
+  useUiLanguage();
   const activeRole = new URLSearchParams(window.location.search).get('role') ?? 'landing';
 
   return <div className="experience-app">
@@ -19,9 +21,9 @@ export function ExperienceRoute() {
       <strong>Giao diện mẫu</strong>
       <span>Chọn giao diện để xem trước.</span>
       <nav aria-label="Chọn giao diện mẫu">
-        {views.map(view => <a key={view.role} href={`/experience?role=${view.role}`} aria-current={activeRole === view.role ? 'page' : undefined}>{view.label}</a>)}
+        {views.map(view => <a key={view.role} href={`/experience?role=${view.role}`} aria-current={activeRole === view.role ? 'page' : undefined}>{translateUi(view.label)}</a>)}
       </nav>
-      <a className="experience-preview-exit" href="/login">Đăng nhập</a>
+      <a className="experience-preview-exit" href="/login">{translateUi("Đăng nhập")}</a>
     </div>
     <DemoExperience />
   </div>;

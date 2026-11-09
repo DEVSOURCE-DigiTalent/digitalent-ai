@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
@@ -69,6 +70,7 @@ function stateOf(items: TrialChecklistItem[], item: TrialChecklistItem, nextKey:
  * Not a tour: nothing is laid over the page.
  */
 export function TrialChecklist() {
+  useUiLanguage();
   const { data: access } = usePersonalAccess();
   const { data: overview } = usePersonalOverview();
   const markSeen = useMarkSeen();
@@ -119,8 +121,7 @@ export function TrialChecklist() {
           }}
           aria-expanded
           className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-pt-fg-2 transition-colors hover:text-pt-fg"
-        >
-          Thu gọn <ChevronUp className="size-4" aria-hidden="true" />
+        >{translateUi("Thu gọn ")}<ChevronUp className="size-4" aria-hidden="true" />
         </button>
       </div>
       <ol className="mt-4 grid gap-2.5">
@@ -148,6 +149,7 @@ interface StepRowProps {
 }
 
 function StepRow({ number, item, state, neededNumber, to }: StepRowProps) {
+  useUiLanguage();
   const copy = STEPS[item.key];
   const locked = state === 'locked';
 
@@ -170,15 +172,14 @@ function StepRow({ number, item, state, neededNumber, to }: StepRowProps) {
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-[15px] font-medium text-pt-fg">
-          {copy.title}
+          {translateUi(copy.title)}
           {state === 'done' && <span className="ml-2 text-xs font-normal text-pt-ok">Đã xong</span>}
         </p>
-        <p className="mt-0.5 text-sm text-pt-fg-2">{copy.description}</p>
+        <p className="mt-0.5 text-sm text-pt-fg-2">{translateUi(copy.description)}</p>
       </div>
       {state === 'done' ? null : locked ? (
         <button type="button" disabled className={cn(PT_BUTTON_SECONDARY, 'sm:w-auto')}>
-          Làm việc {neededNumber} trước
-        </button>
+          Làm việc {neededNumber}{translateUi(" trước")}</button>
       ) : (
         <Link to={to} className={state === 'next' ? PT_BUTTON_GOLD : PT_BUTTON_SECONDARY}>
           {copy.action}
@@ -190,6 +191,7 @@ function StepRow({ number, item, state, neededNumber, to }: StepRowProps) {
 
 /** All four steps done: what is left in the path and the way to open it. */
 function FinishedCard() {
+  useUiLanguage();
   const { data: path } = usePersonalPath();
   const remaining = path ? path.stages.flatMap((stage) => stage.courses).filter((course) => !course.trialSlot).length : null;
 
@@ -200,7 +202,7 @@ function FinishedCard() {
         <p className="mt-1 max-w-[60ch] text-sm text-pt-fg-2">
           {remaining === null
             ? 'Nâng cấp để học tiếp các khóa còn lại trong lộ trình.'
-            : `Nâng cấp để học tiếp ${remaining} khóa còn lại trong lộ trình.`}
+            : translateUi(`Nâng cấp để học tiếp ${remaining} khóa còn lại trong lộ trình.`)}
         </p>
       </div>
       <UpgradeLink placement="checklist">Nâng cấp Plus</UpgradeLink>

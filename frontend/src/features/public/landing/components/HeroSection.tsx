@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { CSSProperties, Ref } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
@@ -19,6 +20,7 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ metaRef }: HeroSectionProps) {
+  useUiLanguage();
   const cta = useLandingCta();
   const content = useLandingContent();
 
@@ -44,7 +46,7 @@ export function HeroSection({ metaRef }: HeroSectionProps) {
               {content.heroEyebrow?.title && (
                 <div className="lp-fade-rise flex items-center gap-2.5" style={delay(0.15)}>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cream/70 sm:text-xs">
-                    {content.heroEyebrow.title}
+                    {translateUi(content.heroEyebrow.title)}
                   </p>
                   {content.heroEyebrow.basis && (
                     <span className="hidden text-xs text-cream/50 sm:inline">· {content.heroEyebrow.basis}</span>
@@ -112,6 +114,7 @@ export function HeroSection({ metaRef }: HeroSectionProps) {
 
 /** The quieter second action: an in-page anchor, or a route when it is not a section id. */
 function SecondaryLink({ to, children }: { to: string; children: string }) {
+  useUiLanguage();
   const className = 'text-base text-cream/85 underline underline-offset-4 transition-colors hover:text-cream';
   if (to.startsWith('/')) {
     return (
@@ -129,17 +132,18 @@ function SecondaryLink({ to, children }: { to: string; children: string }) {
 
 /** A few labelled figures over the footage. Sample data: the caption says so. */
 function HeroFragments({ fragments }: { fragments: HeroFragmentsData }) {
+  useUiLanguage();
   return (
     <div
       role="group"
-      aria-label={fragments.caption}
+      aria-label={translateUi(fragments.caption)}
       className="lp-fade-rise absolute right-4 top-24 z-10 hidden overflow-hidden rounded-2xl border border-cream/15 bg-black/30 backdrop-blur-md md:[@media(min-height:720px)]:block lg:right-8 lg:top-28"
       style={delay(1)}
     >
       <div className="flex divide-x divide-cream/10">
         {fragments.items.map((item) => (
           <div key={item.label} className="grid gap-0.5 px-4 py-2.5">
-            <span className="text-[10px] uppercase tracking-[0.14em] text-cream/60">{item.label}</span>
+            <span className="text-[10px] uppercase tracking-[0.14em] text-cream/60">{translateUi(item.label)}</span>
             <span className="text-base tracking-[-0.02em] text-cream tabular-nums">{item.value}</span>
           </div>
         ))}

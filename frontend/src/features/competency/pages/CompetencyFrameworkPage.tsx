@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Layers, Table, ChevronRight } from 'lucide-react';
@@ -21,6 +22,7 @@ const STATUS_LABELS: Record<string, string> = { ACTIVE: 'Đang dùng', DRAFT: 'B
  * Chế độ xem: Nhóm theo 6 miền năng lực hoặc bảng danh sách chi tiết.
  */
 export function CompetencyFrameworkPage() {
+  useUiLanguage();
   const [viewMode, setViewMode] = useState<'domains' | 'table'>('table');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -60,7 +62,7 @@ export function CompetencyFrameworkPage() {
           <Link to={`/enterprise/framework/${row.id}`} className="font-medium text-slate-900 hover:underline">
             {row.name}
           </Link>
-          {row.description && <div className="line-clamp-1 text-xs text-slate-500">{row.description}</div>}
+          {row.description && <div className="line-clamp-1 text-xs text-slate-500">{translateUi(row.description)}</div>}
         </div>
       ),
     },
@@ -73,18 +75,18 @@ export function CompetencyFrameworkPage() {
       key: 'competencyType',
       header: 'Loại',
       hideOnMobile: true,
-      cell: (row) => <span className="text-xs text-slate-600">{TYPE_LABELS[row.competencyType] ?? row.competencyType}</span>,
+      cell: (row) => <span className="text-xs text-slate-600">{translateUi(TYPE_LABELS[row.competencyType]) ?? row.competencyType}</span>,
     },
     {
       key: 'criteriaCount',
       header: 'Tiêu chí theo mức',
       hideOnMobile: true,
-      cell: (row) => <span className="text-xs font-medium text-slate-600">{row.criteriaCount ?? 0} tiêu chí</span>,
+      cell: (row) => <span className="text-xs font-medium text-slate-600">{row.criteriaCount ?? 0}{translateUi(" tiêu chí")}</span>,
     },
     {
       key: 'status',
       header: 'Trạng thái',
-      cell: (row) => <StatusBadge label={STATUS_LABELS[row.status] ?? row.status} variant={getStatusVariant(row.status)} />,
+      cell: (row) => <StatusBadge label={translateUi(translateUi(STATUS_LABELS[row.status]) ?? row.status)} variant={getStatusVariant(row.status)} />,
     },
   ];
 
@@ -179,7 +181,7 @@ export function CompetencyFrameworkPage() {
             <option value="">Mọi loại năng lực</option>
             {Object.entries(TYPE_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
-                {label}
+                {translateUi(label)}
               </option>
             ))}
           </select>
@@ -208,14 +210,13 @@ export function CompetencyFrameworkPage() {
                     </span>
                     <div>
                       <h2 className="text-sm font-semibold text-slate-900">
-                        {group.category.name}
+                        {translateUi(group.category.name)}
                       </h2>
                       <span className="text-xs font-mono text-slate-500">{group.category.code}</span>
                     </div>
                   </div>
                   <span className="rounded-full bg-slate-200/70 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-                    {group.competencies.length} năng lực
-                  </span>
+                    {group.competencies.length}{translateUi(" năng lực")}</span>
                 </div>
 
                 <div className="grid divide-y divide-slate-100 sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-4">
@@ -238,7 +239,7 @@ export function CompetencyFrameworkPage() {
                           {comp.name}
                         </h3>
                         {comp.description && (
-                          <p className="mt-1 line-clamp-2 text-xs text-slate-500">{comp.description}</p>
+                          <p className="mt-1 line-clamp-2 text-xs text-slate-500">{translateUi(comp.description)}</p>
                         )}
                       </div>
                       <div className="mt-4 flex items-center justify-between text-xs font-medium text-primary-700">

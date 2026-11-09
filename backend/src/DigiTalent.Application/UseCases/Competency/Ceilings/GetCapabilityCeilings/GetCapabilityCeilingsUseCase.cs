@@ -4,7 +4,7 @@ using DigiTalent.Application.Common.UseCases;
 namespace DigiTalent.Application.UseCases.Competency.Ceilings;
 
 /// <summary>
-/// Ma trận trần nhà của tổ chức người gọi (OW-05): trần Digital AI, trần doanh nghiệp, trần từng phòng ban.
+/// Ma trận phạm vi năng lực của tổ chức người gọi (OW-05): phạm vi Digital AI, phạm vi doanh nghiệp, phạm vi từng phòng ban.
 /// </summary>
 public class GetCapabilityCeilingsUseCase : IUseCase<GetCapabilityCeilingsUseCaseInput, GetCapabilityCeilingsUseCaseOutput>
 {

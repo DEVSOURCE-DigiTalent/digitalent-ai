@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -45,18 +46,20 @@ function toSentenceCase(str: string): string {
  * 5. Chuẩn Brand Blue (#1e40af), Zero emoji, icon SVG vector chuyên nghiệp
  */
 export function PulseCoursePage() {
+  useUiLanguage();
   const { courseId } = useParams<{ courseId: string }>();
   const { data, isLoading, error, refetch } = usePulseCourse(courseId);
 
   if (isLoading) return <PageSkeleton blocks={[120, 240, 420]} />;
   if (error || !data) {
-    return <LoadError message={pulseErrorMessage(error, 'Không tải được khóa học.')} onRetry={() => refetch()} />;
+    return <LoadError message={translateUi(pulseErrorMessage(error, 'Không tải được khóa học.'))} onRetry={() => refetch()} />;
   }
 
   return <CourseView detail={data} />;
 }
 
 function CourseView({ detail }: { detail: PulseCourseDetail }) {
+  useUiLanguage();
   const { course, modules } = detail;
   const passed = modules.filter((m) => m.passed).length;
   const quizCount = modules.filter((m) => m.hasQuiz).length;
@@ -83,10 +86,10 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
         <nav className="pu-c-breadcrumb" aria-label="Điều hướng lộ trình">
           <Link to={PULSE_PATHS.path} className="pu-c-back-link">
             <ArrowLeft size={14} />
-            <span>Lộ trình năng lực</span>
+            <span>{translateUi("Lộ trình năng lực")}</span>
           </Link>
           <ChevronRight size={13} className="pu-c-bc-separator" aria-hidden />
-          <span className="pu-c-bc-domain">{detail.domain.name}</span>
+          <span className="pu-c-bc-domain">{translateUi(detail.domain.name)}</span>
           <ChevronRight size={13} className="pu-c-bc-separator" aria-hidden />
           <span className="pu-c-bc-tag">{course.code} · Cấp {course.tier} ({tier})</span>
         </nav>
@@ -95,7 +98,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
 
         <p className="pu-c-main-desc">
           {detail.description?.trim() ||
-            `Khóa học chuẩn hóa thuộc lĩnh vực ${detail.domain.name}, cấp độ ${tier}. Cung cấp các kiến thức và kỹ năng thực tế với hệ thống bài giảng tương tác, câu hỏi ôn tập và đánh giá có giám sát.`}
+            translateUi(`Khóa học chuẩn hóa thuộc lĩnh vực ${detail.domain.name}, cấp độ ${tier}. Cung cấp các kiến thức và kỹ năng thực tế với hệ thống bài giảng tương tác, câu hỏi ôn tập và đánh giá có giám sát.`)}
         </p>
 
         {/* Dải thông số tóm tắt nhanh */}
@@ -118,7 +121,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
           </span>
           <span className={`pu-c-meta-pill ${approved ? 'approved' : 'access'}`}>
             <ShieldCheck size={13} className={approved ? 'text-emerald-700' : 'text-blue-700'} />
-            <span>{approved ? 'Đã công nhận năng lực' : ACCESS_LABELS[course.access] || 'Suất học đã kích hoạt'}</span>
+            <span>{approved ? 'Đã công nhận năng lực' : translateUi(ACCESS_LABELS[course.access]) || 'Suất học đã kích hoạt'}</span>
           </span>
         </div>
       </header>
@@ -135,7 +138,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
           </div>
           <p className="pu-c-card-subheading">
             {detail.purpose?.trim() ||
-              `Áp dụng kiến thức ${detail.domain.name.toLowerCase()} ở cấp độ ${tier.toLowerCase()} với các kết quả công việc đo lường được trong nghiệp vụ thực tế:`}
+              translateUi(`Áp dụng kiến thức ${detail.domain.name.toLowerCase()} ở cấp độ ${tier.toLowerCase()} với các kết quả công việc đo lường được trong nghiệp vụ thực tế:`)}
           </p>
 
           <div className="pu-c-outcome-list">
@@ -204,10 +207,9 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
             {approved ? (
               <div className="pu-c-action-done">
                 <div className="pu-c-act-head">
-                  <span className="pu-c-act-kicker">Trạng thái</span>
+                  <span className="pu-c-act-kicker">{translateUi("Trạng thái")}</span>
                   <span className="pu-c-act-badge done">
-                    <Check size={11} strokeWidth={3} /> Đã hoàn thành
-                  </span>
+                    <Check size={11} strokeWidth={3} />{translateUi(" Đã hoàn thành")}</span>
                 </div>
                 <p className="pu-c-action-text">
                   {viaPre
@@ -296,7 +298,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                 </div>
                 <p className="pu-c-action-text">
                   {passed > 0
-                    ? `Tiếp tục bài giảng Mô-đun ${pad2(firstOpen ? firstOpen.index + 1 : 1)} để hoàn thành mục tiêu ôn tập.`
+                    ? translateUi(`Tiếp tục bài giảng Mô-đun ${pad2(firstOpen ? firstOpen.index + 1 : 1)} để hoàn thành mục tiêu ôn tập.`)
                     : 'Bắt đầu Mô-đun 01 để xây dựng nền tảng kiến thức bài học.'}
                 </p>
                 <div className="pu-c-action-btns">
@@ -380,12 +382,12 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                         {isPassed ? (
                           <>
                             <Check size={11} strokeWidth={3} />
-                            <span>Đã đạt</span>
+                            <span>{translateUi("Đã đạt")}</span>
                           </>
                         ) : isNext ? (
                           <>
                             <PlayCircle size={11} />
-                            <span>Đang học</span>
+                            <span>{translateUi("Đang học")}</span>
                           </>
                         ) : isLocked ? (
                           <>
@@ -401,7 +403,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                     <h3 className="pu-c-step-title">{toSentenceCase(module.title)}</h3>
 
                     {module.description && (
-                      <p className="pu-c-step-desc">{module.description}</p>
+                      <p className="pu-c-step-desc">{translateUi(module.description)}</p>
                     )}
 
                     {/* Thông số bài giảng */}
@@ -415,7 +417,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                           <span className="pu-c-meta-dot" />
                           <span className="pu-c-step-meta-item">
                             <Clock size={13} className="text-slate-500" />
-                            <span>~{module.estimatedMinutes} phút</span>
+                            <span>~{module.estimatedMinutes}{translateUi(" phút")}</span>
                           </span>
                         </>
                       )}
@@ -426,7 +428,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                             <HelpCircle size={13} className="text-slate-500" />
                             <span>
                               {module.quizBankQuestionCount != null
-                                ? `Ngân hàng ${module.quizBankQuestionCount} câu · `
+                                ? translateUi(`Ngân hàng ${module.quizBankQuestionCount} câu · `)
                                 : ''}
                               Làm {module.quizQuestionCount} câu ôn tập
                             </span>
@@ -462,7 +464,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                     ) : (
                       <div className="pu-c-step-locked-hint">
                         <Lock size={12} />
-                        <span>Khóa · Học Mô-đun {pad2(module.index)} trước</span>
+                        <span>Khóa · Học Mô-đun {pad2(module.index)}{translateUi(" trước")}</span>
                       </div>
                     )}
                   </div>
@@ -521,7 +523,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                 <div className="pu-c-rubric-chips">
                   {detail.finalCriteria.map((c) => (
                     <span key={c.number} className="pu-c-rubric-pill">
-                      <strong>{c.number}.</strong> {c.title}
+                      <strong>{c.number}.</strong> {translateUi(c.title)}
                     </span>
                   ))}
                 </div>
@@ -561,8 +563,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
           <ArrowLeft size={15} />
           <span>Quay lại Bản đồ Lộ trình Năng lực</span>
         </Link>
-        <span className="pu-c-footer-meta">
-          Khóa {course.code} · Phiên bản v{detail.versionNo} · Lĩnh vực {detail.domain.name} / Cấp độ {tier}
+        <span className="pu-c-footer-meta">{translateUi("Khóa ")}{course.code} · Phiên bản v{detail.versionNo} · Lĩnh vực {translateUi(detail.domain.name)} / Cấp độ {tier}
         </span>
       </footer>
     </div>

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { SECTION_IDS, type LandingSectionConfig } from '../landing-content';
 import { ProgressProfile } from './FeatureVisuals';
 import { SectionHeader } from './SectionHeader';
@@ -7,6 +8,7 @@ type ProgressSection = Extract<LandingSectionConfig, { kind: 'progress' }>;
 
 /** What a learner sees after studying: the assessed profile and the history behind it. */
 export function ProgressSection({ section }: { section: ProgressSection }) {
+  useUiLanguage();
   return (
     <section id={SECTION_IDS.progress} tabIndex={-1} aria-labelledby="lp-progress-title" className="scroll-mt-24 py-14 outline-none md:py-20">
       <SectionHeader id="lp-progress-title" intro={section.intro} />
@@ -28,7 +30,7 @@ export function ProgressSection({ section }: { section: ProgressSection }) {
                   {index < section.timeline.length - 1 && <i className="absolute bottom-[-1.5rem] top-4 w-px bg-amber-400/20" />}
                 </span>
                 <div>
-                  <p className="text-sm leading-[1.4] text-cream group-hover:text-white transition-colors">{event.title}</p>
+                  <p className="text-sm leading-[1.4] text-cream group-hover:text-white transition-colors">{translateUi(event.title)}</p>
                   {event.detail && <p className="mt-1 text-sm leading-[1.5] text-stone-400 group-hover:text-stone-300 transition-colors">{event.detail}</p>}
                 </div>
               </li>

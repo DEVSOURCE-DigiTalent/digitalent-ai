@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { BookOpenText, CheckCircle2, ClipboardList, Play, Video } from 'lucide-react';
 import type { CourseLessonDto } from '@/services/assignment.service';
 import { resolveCourseMedia } from '@/features/courses/components/course-media';
@@ -70,6 +71,7 @@ export function parseLessonContent(content: string, lessonType?: string): Conten
 }
 
 export function LessonMedia({ lesson }: { lesson: LessonContent }) {
+  useUiLanguage();
   const source = lesson.videoUrl ?? (lesson.lessonType === 'VIDEO' ? lesson.contentBody : null);
   const media = resolveCourseMedia(source);
 
@@ -78,7 +80,7 @@ export function LessonMedia({ lesson }: { lesson: LessonContent }) {
       <h3 className="flex items-center gap-2 font-semibold text-slate-900"><Video className="size-4 text-blue-600" />Video bài giảng</h3>
       <span className="text-xs text-slate-500">{media ? 'Video bài học' : 'Khung video mô phỏng'}</span>
     </div>
-    {media?.kind === 'embed' ? <div className="aspect-video overflow-hidden rounded-2xl bg-slate-950 shadow-sm"><iframe title={`Video bài học: ${lesson.title}`} src={media.url} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="h-full w-full border-0" /></div>
+    {media?.kind === 'embed' ? <div className="aspect-video overflow-hidden rounded-2xl bg-slate-950 shadow-sm"><iframe title={translateUi(`Video bài học: ${lesson.title}`)} src={media.url} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="h-full w-full border-0" /></div>
       : media?.kind === 'file' ? <video key={media.url} src={media.url} controls preload="metadata" className="aspect-video w-full rounded-2xl bg-slate-950 shadow-sm">Trình duyệt không hỗ trợ phát video này.</video>
         : <div className="relative flex aspect-video min-h-56 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#1d2939] via-[#465569] to-[#121d2b] p-6 text-center text-white shadow-sm">
           <div className="pointer-events-none absolute -left-16 -top-20 size-64 rounded-full bg-blue-300/10 blur-2xl" />
@@ -88,18 +90,19 @@ export function LessonMedia({ lesson }: { lesson: LessonContent }) {
             <p className="mt-4 text-lg font-semibold">Video bài học đang được cập nhật</p>
             <p className="mt-2 text-sm leading-6 text-slate-200">Bạn có thể học nội dung bên dưới ngay bây giờ. Khi bài học có liên kết video, trình phát sẽ xuất hiện tại đây.</p>
           </div>
-          {lesson.estimatedMinutes != null && <span className="absolute bottom-4 right-4 rounded-md bg-black/30 px-2 py-1 text-xs">{lesson.estimatedMinutes} phút</span>}
+          {lesson.estimatedMinutes != null && <span className="absolute bottom-4 right-4 rounded-md bg-black/30 px-2 py-1 text-xs">{lesson.estimatedMinutes}{translateUi(" phút")}</span>}
         </div>}
   </section>;
 }
 
 export function LessonText({ lesson }: { lesson: LessonContent }) {
+  useUiLanguage();
   const source = lesson.videoUrl ?? (lesson.lessonType === 'VIDEO' ? lesson.contentBody : null);
   const isVideoOnly = lesson.lessonType === 'VIDEO' && Boolean(resolveCourseMedia(source)) && source === lesson.contentBody;
   const blocks = isVideoOnly ? [] : parseLessonContent(lesson.contentBody ?? '', lesson.lessonType);
 
-  return <section aria-label="Nội dung bài học" className="space-y-5 border-t border-slate-200 pt-6">
-    <div className="flex items-center gap-2"><BookOpenText className="size-5 text-blue-600" /><h3 className="text-base font-bold text-slate-900">Nội dung bài học</h3></div>
+  return <section aria-label={translateUi("Nội dung bài học")} className="space-y-5 border-t border-slate-200 pt-6">
+    <div className="flex items-center gap-2"><BookOpenText className="size-5 text-blue-600" /><h3 className="text-base font-bold text-slate-900">{translateUi("Nội dung bài học")}</h3></div>
     {blocks.length === 0 ? <p className="rounded-xl bg-slate-50 p-5 text-sm text-slate-500">Bài học này chưa có nội dung văn bản.</p>
       : <div className="space-y-5 text-[15px] leading-7 text-slate-700">
         {blocks.map((block, index) => {
@@ -108,7 +111,7 @@ export function LessonText({ lesson }: { lesson: LessonContent }) {
           if (block.kind === 'deliverable') return <div key={index} className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950"><ClipboardList className="mt-1 size-5 shrink-0 text-amber-600" /><p>{block.text}</p></div>;
           if (block.kind === 'bullets') return <ul key={index} className="grid gap-2">{block.items.map((item, itemIndex) => <li key={itemIndex} className="flex gap-3 rounded-lg bg-slate-50 px-4 py-3"><CheckCircle2 className="mt-1 size-4 shrink-0 text-blue-600" /><span>{item}</span></li>)}</ul>;
           return <article key={index} className="rounded-xl border border-slate-200 p-4 sm:p-5">
-            <p className="font-semibold text-slate-900">Câu {block.number}. {block.question}</p>
+            <p className="font-semibold text-slate-900">{translateUi("Câu ")}{block.number}. {block.question}</p>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2">{block.options.map((option) => <li key={option.letter} className="rounded-lg bg-slate-50 px-3 py-2 text-sm"><span className="mr-2 font-bold text-blue-700">{option.letter}.</span>{option.text}</li>)}</ul>
             <details className="mt-4 border-t border-slate-100 pt-3 text-sm"><summary className="cursor-pointer font-semibold text-blue-700">Xem đáp án và giải thích</summary><p className="mt-2 text-slate-700">{block.answer}</p></details>
           </article>;

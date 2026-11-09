@@ -78,7 +78,7 @@ public class StartMyTrialAssessmentUseCase : IUseCase<StartMyTrialAssessmentUseC
             StartedAt = now,
             MaxChunkBytes = PulseRules.MaxRecordingChunkBytes,
             Questions = TrialAssessmentPaper.ToDto(paper),
-            Essays = TrialProgramRules.Essays.ToList(),
+            Essays = new(),
         };
     }
 }

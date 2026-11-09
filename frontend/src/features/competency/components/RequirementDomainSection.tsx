@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { FileText, ShieldCheck } from 'lucide-react';
 import { levelWithTier } from '@/lib/competency-levels';
@@ -35,6 +36,7 @@ export function RequirementDomainSection({
   onRowLevelChange,
   onApplyDomainLevel,
 }: RequirementDomainSectionProps) {
+  useUiLanguage();
   const [openNotes, setOpenNotes] = useState<Record<string, boolean>>({});
 
   const toggleNote = (id: string) => {
@@ -74,7 +76,7 @@ export function RequirementDomainSection({
               </h3>
               {currentDomainLevel > 0 && (
                 <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200">
-                  Trần: {levelOptionLabel(currentDomainLevel)}
+                  Giới hạn áp dụng: {levelOptionLabel(currentDomainLevel)}
                 </span>
               )}
             </div>
@@ -105,23 +107,17 @@ export function RequirementDomainSection({
               type="button"
               onClick={() => onApplyDomainLevel(group.domain.categoryId, 1)}
               className="px-2.5 py-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors border border-emerald-200 cursor-pointer"
-            >
-              Cơ bản
-            </button>
+            >{translateUi("Cơ bản")}</button>
             <button
               type="button"
               onClick={() => onApplyDomainLevel(group.domain.categoryId, 2)}
               className="px-2.5 py-1 text-[11px] font-semibold text-teal-800 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors border border-teal-200 cursor-pointer"
-            >
-              Trung cấp
-            </button>
+            >{translateUi("Trung cấp")}</button>
             <button
               type="button"
               onClick={() => onApplyDomainLevel(group.domain.categoryId, 3)}
               className="px-2.5 py-1 text-[11px] font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors border border-amber-200 cursor-pointer"
-            >
-              Nâng cao
-            </button>
+            >{translateUi("Nâng cao")}</button>
           </div>
         )}
       </div>
@@ -201,7 +197,7 @@ export function RequirementDomainSection({
                             : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/60'
                         }`}
                       >
-                        {opt.label}
+                        {translateUi(opt.label)}
                       </button>
                     );
                   })}
@@ -242,9 +238,9 @@ export function RequirementDomainSection({
                         ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold'
                         : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
                     }`}
-                    title={isCore ? 'Năng lực cốt lõi luôn bắt buộc' : 'Bấm để chuyển đổi bắt buộc / tùy chọn'}
+                    title={translateUi(isCore ? 'Năng lực cốt lõi luôn bắt buộc' : 'Bấm để chuyển đổi bắt buộc / tùy chọn')}
                   >
-                    {row.isMandatory ? '✓ Bắt buộc' : 'Tùy chọn'}
+                    {row.isMandatory ? '✓ Bắt buộc' : translateUi('Tùy chọn')}
                   </button>
 
                   {/* Toggle Cần minh chứng thực tế */}

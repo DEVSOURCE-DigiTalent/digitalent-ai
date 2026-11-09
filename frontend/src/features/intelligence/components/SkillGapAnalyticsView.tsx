@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { RefreshCw, Search, ArrowRight } from 'lucide-react';
@@ -39,6 +40,7 @@ export function SkillGapAnalyticsView({
   subtitle = 'So sánh mức năng lực hiện tại với yêu cầu của vị trí, phân tích theo phòng ban, vị trí, cấp bậc và nhân sự',
   readOnly = false,
 }: SkillGapAnalyticsViewProps) {
+  useUiLanguage();
   const navigate = useNavigate();
   const [tab, setTab] = useState('overview');
   const [groupBy, setGroupBy] = useState<GroupBy>('department');
@@ -116,8 +118,7 @@ export function SkillGapAnalyticsView({
           <span className="font-bold text-slate-800">{row.gapCount}</span>
           {row.highCount > 0 && (
             <span className="ml-2 rounded bg-rose-50 px-1.5 py-0.5 text-xs font-semibold text-rose-700 border border-rose-200">
-              {row.highCount} mức cao
-            </span>
+              {row.highCount}{translateUi(" mức cao")}</span>
           )}
         </span>
       ),
@@ -152,9 +153,7 @@ export function SkillGapAnalyticsView({
         <Link
           to={`/enterprise/skill-gap/${row.employeeId}`}
           className="inline-flex items-center gap-1 text-xs font-medium text-primary-700 hover:text-primary-800 hover:underline"
-        >
-          Chi tiết
-          <ArrowRight className="size-3.5" />
+        >{translateUi("Chi tiết")}<ArrowRight className="size-3.5" />
         </Link>
       ),
     },
@@ -163,7 +162,7 @@ export function SkillGapAnalyticsView({
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <PageHeader title={title} subtitle={subtitle} />
+        <PageHeader title={translateUi(title)} subtitle={translateUi(subtitle)} />
         {!readOnly && (
           <button
             type="button"
@@ -171,9 +170,7 @@ export function SkillGapAnalyticsView({
             disabled={batchMutation.isPending}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 disabled:opacity-50"
           >
-            <RefreshCw className={batchMutation.isPending ? 'size-4 animate-spin' : 'size-4'} />
-            Tính lại toàn bộ
-          </button>
+            <RefreshCw className={batchMutation.isPending ? 'size-4 animate-spin' : 'size-4'} />{translateUi("Tính lại toàn bộ")}</button>
         )}
       </div>
 
@@ -192,7 +189,7 @@ export function SkillGapAnalyticsView({
         {/* Global Toolbar Filters */}
         <div className="mb-4 flex flex-wrap items-center gap-3">
           {tab === 'overview' && (
-            <div role="group" aria-label="Nhóm theo" className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1 text-xs">
+            <div role="group" aria-label={translateUi("Nhóm theo")} className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1 text-xs">
               <button
                 type="button"
                 aria-pressed={groupBy === 'department'}
@@ -200,9 +197,7 @@ export function SkillGapAnalyticsView({
                 className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
                   groupBy === 'department' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
-              >
-                Theo phòng ban
-              </button>
+              >{translateUi("Theo phòng ban")}</button>
               <button
                 type="button"
                 aria-pressed={groupBy === 'position'}
@@ -210,9 +205,7 @@ export function SkillGapAnalyticsView({
                 className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
                   groupBy === 'position' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
-              >
-                Theo vị trí
-              </button>
+              >{translateUi("Theo vị trí")}</button>
               <button
                 type="button"
                 aria-pressed={groupBy === 'grade'}
@@ -230,12 +223,12 @@ export function SkillGapAnalyticsView({
             <>
               {!hideDepartmentFilter && !fixedDeptId && (
                 <select
-                  aria-label="Lọc theo phòng ban"
+                  aria-label={translateUi("Lọc theo phòng ban")}
                   value={departmentId}
                   onChange={(e) => setDepartmentId(e.target.value)}
                   className={INPUT_CLASS}
                 >
-                  <option value="">Tất cả phòng ban</option>
+                  <option value="">{translateUi("Tất cả phòng ban")}</option>
                   {departments.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.name}
@@ -250,7 +243,7 @@ export function SkillGapAnalyticsView({
                 onChange={(e) => setJobPositionId(e.target.value)}
                 className={INPUT_CLASS}
               >
-                <option value="">Tất cả vị trí</option>
+                <option value="">{translateUi("Tất cả vị trí")}</option>
                 {positions.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
@@ -259,15 +252,14 @@ export function SkillGapAnalyticsView({
               </select>
 
               <select
-                aria-label="Lọc theo Cấp bậc"
+                aria-label={translateUi("Lọc theo Cấp bậc")}
                 value={jobGrade}
                 onChange={(e) => setJobGrade(e.target.value)}
                 className={INPUT_CLASS}
               >
-                <option value="">Mọi cấp bậc</option>
+                <option value="">{translateUi("Mọi cấp bậc")}</option>
                 {JOB_GRADES.map((g: string) => (
-                  <option key={g} value={g}>
-                    Cấp bậc {g}
+                  <option key={g} value={g}>{translateUi("Cấp bậc ")}{g}
                   </option>
                 ))}
               </select>
@@ -288,13 +280,13 @@ export function SkillGapAnalyticsView({
                 <ScoreCard
                   label="Tổng khoảng trống"
                   value={overview.data.totals.totalGaps}
-                  subtitle={`${overview.data.totals.mediumCount} mức TB · ${overview.data.totals.lowCount} mức thấp`}
+                  subtitle={translateUi(`${overview.data.totals.mediumCount} mức TB · ${overview.data.totals.lowCount} mức thấp`)}
                 />
                 <ScoreCard
                   label="Khoảng trống mức cao"
                   value={overview.data.totals.highCount}
                   variant={overview.data.totals.highCount > 0 ? 'danger' : 'success'}
-                  subtitle={`${overview.data.totals.employeesWithHigh} nhân sự bị thiếu`}
+                  subtitle={translateUi(`${overview.data.totals.employeesWithHigh} nhân sự bị thiếu`)}
                 />
               </div>
             )}
@@ -303,8 +295,8 @@ export function SkillGapAnalyticsView({
               <p className="text-sm text-slate-500">Đang tải số liệu tổng quan…</p>
             ) : overview.data && overview.data.groups.length === 0 ? (
               <EmptyState
-                title="Chưa có dữ liệu khoảng trống"
-                description="Cần có nhân viên đã gán vị trí và vị trí đã có bộ yêu cầu năng lực đang áp dụng."
+                title={translateUi("Chưa có dữ liệu khoảng trống")}
+                description={translateUi("Cần có nhân viên đã gán vị trí và vị trí đã có bộ yêu cầu năng lực đang áp dụng.")}
               />
             ) : (
               overview.data && (
@@ -314,14 +306,14 @@ export function SkillGapAnalyticsView({
                       <tr>
                         <th className="px-4 py-3">
                           {groupBy === 'department'
-                            ? 'Phòng ban'
+                            ? translateUi('Phòng ban')
                             : groupBy === 'grade'
                               ? 'Cấp bậc (Job Grade)'
-                              : 'Vị trí công việc'}
+                              : translateUi('Vị trí công việc')}
                         </th>
-                        <th className="px-4 py-3 text-center">Nhân sự</th>
-                        <th className="px-4 py-3 text-center">Tỷ lệ đáp ứng TB</th>
-                        <th className="px-4 py-3">Khoảng trống tổng</th>
+                        <th className="px-4 py-3 text-center">{translateUi("Nhân sự")}</th>
+                        <th className="px-4 py-3 text-center">{translateUi("Tỷ lệ đáp ứng TB")}</th>
+                        <th className="px-4 py-3">{translateUi("Khoảng trống tổng")}</th>
                         <th className="px-4 py-3">Mức cao (Cần ưu tiên)</th>
                       </tr>
                     </thead>
@@ -351,10 +343,9 @@ export function SkillGapAnalyticsView({
                           <td className="px-4 py-3">
                             {group.highCount > 0 ? (
                               <span className="rounded bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700 border border-rose-200">
-                                {group.highCount} khoảng trống cao
-                              </span>
+                                {group.highCount}{translateUi(" khoảng trống cao")}</span>
                             ) : (
-                              <span className="text-xs text-emerald-600 font-medium">Không có</span>
+                              <span className="text-xs text-emerald-600 font-medium">{translateUi("Không có")}</span>
                             )}
                           </td>
                         </tr>
@@ -401,7 +392,7 @@ export function SkillGapAnalyticsView({
                             {comp.name}
                           </Link>
                           {comp.categoryName && (
-                            <div className="text-[11px] text-slate-500">{comp.categoryName}</div>
+                            <div className="text-[11px] text-slate-500">{translateUi(comp.categoryName)}</div>
                           )}
                         </td>
                         <td className="px-4 py-3 text-center font-medium">{comp.employeesRequired}</td>
@@ -424,8 +415,7 @@ export function SkillGapAnalyticsView({
                           <div className="flex items-center gap-2 text-xs">
                             {comp.highCount > 0 && (
                               <span className="rounded bg-rose-50 px-1.5 py-0.5 text-rose-700 font-semibold border border-rose-200">
-                                {comp.highCount} Cao
-                              </span>
+                                {comp.highCount}{translateUi(" Cao")}</span>
                             )}
                             {comp.mediumCount > 0 && (
                               <span className="rounded bg-amber-50 px-1.5 py-0.5 text-amber-700 font-semibold border border-amber-200">
@@ -434,8 +424,7 @@ export function SkillGapAnalyticsView({
                             )}
                             {comp.lowCount > 0 && (
                               <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600">
-                                {comp.lowCount} Thấp
-                              </span>
+                                {comp.lowCount}{translateUi(" Thấp")}</span>
                             )}
                             {comp.highCount === 0 && comp.mediumCount === 0 && comp.lowCount === 0 && (
                               <span className="text-emerald-600 font-medium">Đạt chuẩn 100%</span>

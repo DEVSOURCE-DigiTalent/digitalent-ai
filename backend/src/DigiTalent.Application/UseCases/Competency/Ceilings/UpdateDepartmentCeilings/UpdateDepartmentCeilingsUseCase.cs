@@ -8,8 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Competency.Ceilings;
 
 /// <summary>
-/// Đặt trần riêng cho một phòng ban (doanh nghiệp lớn). Chặn khi trần phòng ban cao hơn trần doanh nghiệp
-/// ở bất kỳ lĩnh vực nào; Inherit = true đưa phòng ban về kế thừa trần doanh nghiệp.
+/// Đặt thiết lập riêng cho một phòng ban (doanh nghiệp lớn). Chặn khi phạm vi phòng ban cao hơn phạm vi doanh nghiệp
+/// ở bất kỳ lĩnh vực nào; Inherit = true đưa phòng ban về kế thừa phạm vi doanh nghiệp.
 /// </summary>
 public class UpdateDepartmentCeilingsUseCase : IUseCase<UpdateDepartmentCeilingsUseCaseInput, UpdateDepartmentCeilingsUseCaseOutput>
 {
@@ -41,7 +41,7 @@ public class UpdateDepartmentCeilingsUseCase : IUseCase<UpdateDepartmentCeilings
                                       && d.Status == Statuses.MasterData.Active)
             ?? throw new NotFoundException("Department not found.");
 
-        // 2. Trần doanh nghiệp phải được lưu trước
+        // 2. Phạm vi doanh nghiệp phải được lưu trước
         var rows = await _context.CapabilityCeilings
             .Where(c => c.OrganizationId == organizationId && (c.DepartmentId == null || c.DepartmentId == department.Id))
             .ToListAsync();
@@ -56,12 +56,12 @@ public class UpdateDepartmentCeilingsUseCase : IUseCase<UpdateDepartmentCeilings
 
         if (input.Inherit)
         {
-            // Trần riêng chỉ là phần ghi đè: bỏ đi thì phòng ban dùng lại trần doanh nghiệp.
+            // Thiết lập riêng chỉ là phần ghi đè: bỏ đi thì phòng ban dùng lại phạm vi doanh nghiệp.
             _context.CapabilityCeilings.RemoveRange(deptRows);
         }
         else
         {
-            // 3. Quy tắc: trần phòng ban ≤ trần doanh nghiệp, xét riêng từng lĩnh vực
+            // 3. Quy tắc: phạm vi phòng ban ≤ phạm vi doanh nghiệp, xét riêng từng lĩnh vực
             foreach (var item in input.Ceilings)
             {
                 if (!orgCeilings.TryGetValue(item.CategoryId, out var orgLevel))
@@ -105,7 +105,7 @@ public class UpdateDepartmentCeilingsUseCase : IUseCase<UpdateDepartmentCeilings
             input.Inherit
                 ? new { inherit = true }
                 : new { ceilings = input.Ceilings.ToDictionary(c => c.CategoryId.ToString(), c => c.Level) },
-            $"Trần phòng ban {department.Code} - {department.Name}");
+            $"Phạm vi phòng ban {department.Code} - {department.Name}");
 
         return await _reader.ReadAsync<UpdateDepartmentCeilingsUseCaseOutput>(organizationId);
     }

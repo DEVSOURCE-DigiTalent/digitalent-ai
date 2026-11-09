@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { TT02_COMPETENCY_NAMES, getReferencePosition } from '@/lib/reference-positions';
 import { SECTION_IDS, TIER_LABELS, type LandingSectionConfig, type SkillPathSample } from '../landing-content';
@@ -18,6 +19,7 @@ function requiredLevel(sample: SkillPathSample, code: string): number {
  * courses that close it in prerequisite order, each with the reason it was recommended.
  */
 export function SkillPathSection({ section }: { section: SkillPathSection }) {
+  useUiLanguage();
   const { sample } = section;
   const position = getReferencePosition(sample.positionCode);
 
@@ -51,7 +53,7 @@ export function SkillPathSection({ section }: { section: SkillPathSection }) {
         </div>
 
         <div className="rounded-[20px] bg-landing-card p-6 md:p-8">
-          <p className={LP_KICKER}>Lộ trình đề xuất</p>
+          <p className={LP_KICKER}>{translateUi("Lộ trình đề xuất")}</p>
           <ol aria-label="Lộ trình học đề xuất" className="mt-6 grid gap-6">
             {sample.roadmap.map((step, index) => (
               <RoadmapStep key={step.courseCode} index={index} sample={sample} step={step} />
@@ -64,10 +66,12 @@ export function SkillPathSection({ section }: { section: SkillPathSection }) {
 }
 
 function Chip({ children }: { children: React.ReactNode }) {
+  useUiLanguage();
   return <span className="inline-flex w-max items-center whitespace-nowrap rounded-full border border-cream/12 px-2.5 py-1 text-[11px] text-cream/80">{children}</span>;
 }
 
 function GapRow({ code, current, required }: { code: string; current: number; required: number }) {
+  useUiLanguage();
   const gap = Math.max(0, required - current);
 
   return (
@@ -75,10 +79,10 @@ function GapRow({ code, current, required }: { code: string; current: number; re
       <div className="flex items-baseline justify-between gap-4">
         <p className="min-w-0 text-sm leading-[1.35] text-cream/90 group-hover:text-white transition-colors">
           <span className="mr-2 text-stone-500 tabular-nums">{code}</span>
-          {TT02_COMPETENCY_NAMES[code]}
+          {translateUi(TT02_COMPETENCY_NAMES[code])}
         </p>
         <span className={cn('shrink-0 text-xs tabular-nums font-medium', gap > 0 ? 'text-amber-300' : 'text-[#79E0C2]')}>
-          {gap > 0 ? `Còn thiếu ${gap} tầng` : 'Đã đạt'}
+          {gap > 0 ? translateUi(`Còn thiếu ${gap} tầng`) : translateUi('Đã đạt')}
         </span>
       </div>
       <div className="flex gap-1" aria-hidden="true">
@@ -93,13 +97,14 @@ function GapRow({ code, current, required }: { code: string; current: number; re
         ))}
       </div>
       <p className="text-[11px] text-stone-500">
-        {TIER_LABELS[current]} → {TIER_LABELS[required]}
+        {translateUi(TIER_LABELS[current])} → {translateUi(TIER_LABELS[required])}
       </p>
     </li>
   );
 }
 
 function RoadmapStep({ index, sample, step }: { index: number; sample: SkillPathSample; step: SkillPathSample['roadmap'][number] }) {
+  useUiLanguage();
   const required = requiredLevel(sample, step.competencyCode);
   const current = sample.rows.find((row) => row.code === step.competencyCode)?.current ?? 0;
 
@@ -110,10 +115,10 @@ function RoadmapStep({ index, sample, step }: { index: number; sample: SkillPath
       </span>
       <div>
         <p className="font-mono text-[11px] tracking-[0.04em] text-amber-400/70">{step.courseCode}</p>
-        <p className="mt-1 text-base leading-[1.3] text-cream group-hover:text-white transition-colors">{step.title}</p>
+        <p className="mt-1 text-base leading-[1.3] text-cream group-hover:text-white transition-colors">{translateUi(step.title)}</p>
         <p className="mt-2 text-sm leading-[1.5] text-stone-400 group-hover:text-stone-300 transition-colors">
-          Vị trí yêu cầu {TIER_LABELS[required]} ở năng lực {step.competencyCode}, kết quả hiện tại là {TIER_LABELS[current]}.
-          {step.after ? ` Cần hoàn thành ${step.after} trước.` : ''}
+          Vị trí yêu cầu {translateUi(TIER_LABELS[required])} ở năng lực {step.competencyCode}, kết quả hiện tại là {translateUi(TIER_LABELS[current])}.
+          {step.after ? translateUi(` Cần hoàn thành ${step.after} trước.`) : ''}
         </p>
       </div>
     </li>

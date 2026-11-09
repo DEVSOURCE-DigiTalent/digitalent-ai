@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
@@ -34,6 +35,7 @@ function loginErrorMessage(error: unknown): string {
 }
 
 export function LoginPage() {
+  useUiLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isVerified = searchParams.get('verified') === '1';
@@ -64,11 +66,10 @@ export function LoginPage() {
     <PulseAuthLayout
       mode="login"
       eyebrow="CỔNG TRUY CẬP DOANH NGHIỆP"
-      title="Đăng nhập"
+      title={translateUi("Đăng nhập")}
       subtitle="Đăng nhập để điều hành khung năng lực số và quản trị nhân sự."
       footer={
-        <p>
-          Chưa có tài khoản doanh nghiệp? <Link to="/business/try">Bắt đầu dùng thử miễn phí 14 ngày</Link>
+        <p>{translateUi("Chưa có tài khoản doanh nghiệp? ")}<Link to="/business/try">Bắt đầu dùng thử miễn phí 14 ngày</Link>
         </p>
       }
     >
@@ -78,22 +79,20 @@ export function LoginPage() {
           {isVerified && (
             <div role="status" className="pulse-auth-banner pulse-auth-banner--success">
               <CheckCircle2 size={16} aria-hidden="true" />
-              <span>Email đã xác minh thành công! Bạn có thể đăng nhập ngay bây giờ.</span>
+              <span>{translateUi("Email đã xác minh thành công! Bạn có thể đăng nhập ngay bây giờ.")}</span>
             </div>
           )}
 
           {error && (
             <div role="alert" className="pulse-auth-banner pulse-auth-banner--error">
               <ShieldAlert size={16} aria-hidden="true" />
-              <span>{error}</span>
+              <span>{translateUi(error)}</span>
             </div>
           )}
 
           {/* Email Field */}
           <div className="pulse-auth-input-group">
-            <label htmlFor="email" className="pulse-auth-label">
-              Email công việc
-            </label>
+            <label htmlFor="email" className="pulse-auth-label">{translateUi("Email công việc")}</label>
             <div className="pulse-auth-field-control">
               <Mail size={17} className="pulse-auth-lead-icon" aria-hidden="true" />
               <input
@@ -119,12 +118,8 @@ export function LoginPage() {
           {/* Password Field */}
           <div className="pulse-auth-input-group">
             <div className="pulse-auth-label-row">
-              <label htmlFor="password" className="pulse-auth-label">
-                Mật khẩu
-              </label>
-              <Link to="/forgot-password" className="pulse-auth-forgot-link">
-                Quên mật khẩu?
-              </Link>
+              <label htmlFor="password" className="pulse-auth-label">{translateUi("Mật khẩu")}</label>
+              <Link to="/forgot-password" className="pulse-auth-forgot-link">{translateUi("Quên mật khẩu?")}</Link>
             </div>
             <div className="pulse-auth-field-control">
               <Lock size={17} className="pulse-auth-lead-icon" aria-hidden="true" />
@@ -142,7 +137,7 @@ export function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                aria-label={translateUi(showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu')}
                 aria-pressed={showPassword}
                 className="pulse-auth-trailing-button"
               >
@@ -164,7 +159,7 @@ export function LoginPage() {
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
               />
-              <span>Ghi nhớ phiên làm việc trên thiết bị này</span>
+              <span>{translateUi("Ghi nhớ phiên làm việc trên thiết bị này")}</span>
             </label>
           </div>
 

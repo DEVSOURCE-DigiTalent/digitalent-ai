@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Users } from 'lucide-react';
@@ -18,13 +19,14 @@ const SUB_STATUS: Record<string, { label: string; bg: string; fg: string }> = {
 };
 
 export function OwnerTaskDetailPage() {
+  useUiLanguage();
   const [employeePage, setEmployeePage] = useState(1);
   const { id = '' } = useParams();
   const { data: task, isLoading, isError } = usePracticalTask(id);
   const { data: competencies = [] } = useTaskCompetencies(task?.competencyIds ?? []);
 
   if (isLoading) {
-    return <div className="po-owner -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label="Đang tải chi tiết nhiệm vụ" variant="detail" /></div>;
+    return <div className="po-owner -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label={translateUi("Đang tải chi tiết nhiệm vụ")} variant="detail" /></div>;
   }
 
   if (isError || !task) {
@@ -40,16 +42,13 @@ export function OwnerTaskDetailPage() {
           >
             ✕
           </div>
-          <h2 className="text-xl font-semibold" style={{ color: 'var(--po-ink)' }}>
-            Không tìm thấy bài thực hành
-          </h2>
+          <h2 className="text-xl font-semibold" style={{ color: 'var(--po-ink)' }}>{translateUi("Không tìm thấy bài thực hành")}</h2>
           <Link
             to="/enterprise/tasks"
             className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold"
             style={{ color: 'var(--po-accent)' }}
           >
-            <ArrowLeft className="size-3.5" /> Quay lại danh sách
-          </Link>
+            <ArrowLeft className="size-3.5" />{translateUi(" Quay lại danh sách")}</Link>
         </div>
       </div>
     );
@@ -77,8 +76,7 @@ export function OwnerTaskDetailPage() {
           className="inline-flex items-center gap-1.5 text-[11px] font-bold mb-4 transition-opacity hover:opacity-70"
           style={{ color: 'var(--po-muted)' }}
         >
-          <ArrowLeft className="size-3" /> Nhiệm vụ thực tế
-        </Link>
+          <ArrowLeft className="size-3" />{translateUi(" Nhiệm vụ thực tế")}</Link>
 
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           <div className="flex-1 min-w-0">
@@ -86,8 +84,7 @@ export function OwnerTaskDetailPage() {
               {task.targetLevel > 0 && <span
                 className="text-[9px] font-black px-1.5 py-0.5 rounded"
                 style={{ background: 'var(--po-soft)', color: 'var(--po-accent-strong)' }}
-              >
-                Cấp {task.targetLevel}
+              >{translateUi("Cấp ")}{task.targetLevel}
               </span>}
               <span
                 className="rounded-full px-2 py-0.5 text-[10px] font-bold"
@@ -97,23 +94,21 @@ export function OwnerTaskDetailPage() {
                     : { background: 'var(--po-raised)', color: 'var(--po-muted)' }
                 }
               >
-                {task.status === 'ACTIVE' ? 'Đang mở' : 'Đã đóng'}
+                {task.status === 'ACTIVE' ? translateUi('Đang mở') : translateUi('Đã đóng')}
               </span>
             </div>
             <h1
               className="text-3xl sm:text-4xl font-bold"
               style={{ color: 'var(--po-ink)', letterSpacing: '-0.04em' }}
             >
-              {task.title}
+              {translateUi(task.title)}
             </h1>
-            <p className="mt-0.5 text-xs" style={{ color: 'var(--po-muted)' }}>
-              Giao bởi {task.assignedByName}{task.dueDate ? ` · Hạn ${formatDate(task.dueDate)}` : ''}
+            <p className="mt-0.5 text-xs" style={{ color: 'var(--po-muted)' }}>{translateUi("Giao bởi ")}{task.assignedByName}{task.dueDate ? translateUi(` · Hạn ${formatDate(task.dueDate)}`) : ''}
               {task.departmentName && ` · ${task.departmentName}`}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0 text-[11px] font-bold" style={{ color: 'var(--po-accent)' }}>
-            <Users className="size-3.5" /> {assignedEmployees.length} nhân sự
-          </div>
+            <Users className="size-3.5" /> {assignedEmployees.length}{translateUi(" nhân sự")}</div>
         </div>
       </section>
 
@@ -127,16 +122,12 @@ export function OwnerTaskDetailPage() {
               className="rounded-[13px] border p-5 space-y-3"
               style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)' }}
             >
-              <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>
-                Yêu cầu & bối cảnh
-              </p>
+              <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>{translateUi("Yêu cầu & bối cảnh")}</p>
               <div className="owner-operations__rich-text">
                 <RichText body={task.description} />
               </div>
               <div className="pt-2" style={{ borderTop: '1px solid var(--po-line)' }}>
-                <span className="text-[10px] font-bold uppercase" style={{ color: 'var(--po-muted)' }}>
-                  Sản phẩm đầu ra (minh chứng)
-                </span>
+                <span className="text-[10px] font-bold uppercase" style={{ color: 'var(--po-muted)' }}>{translateUi("Sản phẩm đầu ra (minh chứng)")}</span>
                 <div className="owner-operations__output owner-operations__rich-text mt-2">
                   <RichText body={task.expectedOutput} />
                 </div>
@@ -149,14 +140,10 @@ export function OwnerTaskDetailPage() {
               style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)' }}
             >
               <div className="flex items-center justify-between">
-                <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>
-                  Tiêu chí đánh giá
-                </p>
-                {rubricCriteria.length > 0 && <span className="text-[10px] font-bold" style={{ color: 'var(--po-muted)' }}>
-                  Tổng: {rubricCriteria.reduce((s: number, r: RubricCriterion) => s + Number(r.maxPoints || 0), 0)} điểm
-                </span>}
+                <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>{translateUi("Tiêu chí đánh giá")}</p>
+                {rubricCriteria.length > 0 && <span className="text-[10px] font-bold" style={{ color: 'var(--po-muted)' }}>{translateUi("Tổng: ")}{rubricCriteria.reduce((s: number, r: RubricCriterion) => s + Number(r.maxPoints || 0), 0)}{translateUi(" điểm")}</span>}
               </div>
-              {rubricCriteria.length === 0 && <p className="owner-operations__empty-inline">Nhiệm vụ này chưa có tiêu chí đánh giá.</p>}
+              {rubricCriteria.length === 0 && <p className="owner-operations__empty-inline">{translateUi("Nhiệm vụ này chưa có tiêu chí đánh giá.")}</p>}
               {rubricCriteria.map((r: RubricCriterion, i: number) => (
                 <div
                   key={r.id || i}
@@ -164,10 +151,10 @@ export function OwnerTaskDetailPage() {
                   style={{ borderColor: 'var(--po-line)', background: 'var(--po-canvas)' }}
                 >
                   <div>
-                    <strong className="text-xs" style={{ color: 'var(--po-ink)' }}>{r.label}</strong>
+                    <strong className="text-xs" style={{ color: 'var(--po-ink)' }}>{translateUi(r.label)}</strong>
                     {r.description && (
                       <p className="text-[10px] mt-0.5" style={{ color: 'var(--po-muted)' }}>
-                        {r.description}
+                        {translateUi(r.description)}
                       </p>
                     )}
                   </div>
@@ -188,11 +175,9 @@ export function OwnerTaskDetailPage() {
               className="rounded-[13px] border p-5 space-y-3"
               style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)' }}
             >
-              <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>
-                Năng lực liên kết
-              </p>
+              <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>{translateUi("Năng lực liên kết")}</p>
               <div className="flex flex-wrap gap-2">
-                {task.competencyIds.length === 0 && <p className="owner-operations__empty-inline">Chưa liên kết năng lực.</p>}
+                {task.competencyIds.length === 0 && <p className="owner-operations__empty-inline">{translateUi("Chưa liên kết năng lực.")}</p>}
                 {task.competencyIds.map((cid) => {
                   const c = competencies.find((x) => x.id === cid);
                   return (
@@ -219,8 +204,8 @@ export function OwnerTaskDetailPage() {
             className="px-4 py-3 flex items-center justify-between text-[11px] font-bold"
             style={{ borderBottom: '1px solid var(--po-line)', color: 'var(--po-muted)' }}
           >
-            <span>Nhân sự & tiến độ nộp bài</span>
-            <span>{assignedEmployees.length} nhân sự</span>
+            <span>{translateUi("Nhân sự & tiến độ nộp bài")}</span>
+            <span>{assignedEmployees.length}{translateUi(" nhân sự")}</span>
           </div>
 
           <div className="divide-y" style={{ borderColor: 'var(--po-line)' }}>
@@ -257,7 +242,7 @@ export function OwnerTaskDetailPage() {
                           className="rounded-full px-2 py-0.5 text-[10px] font-bold"
                           style={{ background: st!.bg, color: st!.fg }}
                         >
-                          {st!.label}
+                          {translateUi(st!.label)}
                           {sub.evaluation?.score != null && ` · ${sub.evaluation.score}đ`}
                         </span>
                         <Link
@@ -269,20 +254,18 @@ export function OwnerTaskDetailPage() {
                               : { border: '1px solid var(--po-line)', color: 'var(--po-ink)' }
                           }
                         >
-                          {sub.status === 'PENDING_REVIEW' ? 'Chấm điểm' : 'Xem minh chứng'}
+                          {sub.status === 'PENDING_REVIEW' ? translateUi('Chấm điểm') : translateUi('Xem minh chứng')}
                         </Link>
                       </>
                     ) : (
-                      <span className="text-[10px] italic" style={{ color: 'var(--po-muted)' }}>
-                        Chưa nộp bài
-                      </span>
+                      <span className="text-[10px] italic" style={{ color: 'var(--po-muted)' }}>{translateUi("Chưa nộp bài")}</span>
                     )}
                   </div>
                 </div>
               );
             })}
           </div>
-          {employeePages > 1 && <div className="owner-operations__pagination px-4 pb-4"><span>Trang {employeePage} / {employeePages}</span><button type="button" disabled={employeePage <= 1} onClick={() => setEmployeePage((page) => page - 1)}>Trước</button><button type="button" disabled={employeePage >= employeePages} onClick={() => setEmployeePage((page) => page + 1)}>Sau</button></div>}
+          {employeePages > 1 && <div className="owner-operations__pagination px-4 pb-4"><span>{translateUi("Trang ")}{employeePage} / {employeePages}</span><button type="button" disabled={employeePage <= 1} onClick={() => setEmployeePage((page) => page - 1)}>{translateUi("Trước")}</button><button type="button" disabled={employeePage >= employeePages} onClick={() => setEmployeePage((page) => page + 1)}>{translateUi("Sau")}</button></div>}
         </div>
       </div>
     </div>

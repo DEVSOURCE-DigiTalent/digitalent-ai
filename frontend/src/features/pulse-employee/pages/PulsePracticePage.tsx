@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useMemo, Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -70,6 +71,7 @@ function formatTitle(title: string): string {
 }
 
 export function PulsePracticePage() {
+  useUiLanguage();
   const practice = usePulsePractice();
   const overview = usePulseOverview();
   const outcomesQuery = usePulseOutcomes();
@@ -297,7 +299,7 @@ export function PulsePracticePage() {
   if ((practice.error && !practice.data) || (overview.error && !overview.data)) {
     return (
       <LoadError
-        message={pulseErrorMessage(practice.error || overview.error, 'Không tải được dữ liệu khảo thí.')}
+        message={translateUi(pulseErrorMessage(practice.error || overview.error, 'Không tải được dữ liệu khảo thí.'))}
         onRetry={() => {
           practice.refetch();
           overview.refetch();
@@ -373,9 +375,9 @@ export function PulsePracticePage() {
               <div className="pu-campaign-next-course">
                 <div className="pu-campaign-next-code-row">
                   <span className="pu-campaign-next-code">{nextPreCourse.code}</span>
-                  <span className="pu-campaign-next-domain">{nextPreCourse.domainName}</span>
+                  <span className="pu-campaign-next-domain">{translateUi(nextPreCourse.domainName)}</span>
                 </div>
-                <h3 className="pu-campaign-next-title">{nextPreCourse.title}</h3>
+                <h3 className="pu-campaign-next-title">{translateUi(nextPreCourse.title)}</h3>
               </div>
               <Link
                 to={PULSE_PATHS.preAssessment(nextPreCourse.courseId)}
@@ -390,7 +392,7 @@ export function PulsePracticePage() {
               <Trophy size={32} className="text-emerald-400" />
               <h4>Đã hoàn thành đợt khảo sát!</h4>
               <p>
-                Đã miễn học <strong>{exemptedCourses.length} môn</strong> và tiết kiệm <strong>~{savedHours} giờ</strong> học lý thuyết!
+                Đã miễn học <strong>{exemptedCourses.length} môn</strong> và tiết kiệm <strong>~{savedHours}{translateUi(" giờ")}</strong> học lý thuyết!
               </p>
             </div>
           )}
@@ -499,7 +501,7 @@ export function PulsePracticePage() {
             onClick={() => setActiveTab('completed')}
             className={`pu-f-chip${activeTab === 'completed' ? ' active' : ''}`}
           >
-            <span>Đã hoàn thành</span>
+            <span>{translateUi("Đã hoàn thành")}</span>
             <span className="pu-f-badge">{completedCount}</span>
           </button>
         </div>
@@ -510,7 +512,7 @@ export function PulsePracticePage() {
         <PageSkeleton blocks={[140, 360]} />
       ) : practice.error ? (
         <LoadError
-          message={pulseErrorMessage(practice.error, 'Không tải được dữ liệu khảo thí.')}
+          message={translateUi(pulseErrorMessage(practice.error, 'Không tải được dữ liệu khảo thí.'))}
           onRetry={() => {
             practice.refetch();
             overview.refetch();
@@ -526,7 +528,7 @@ export function PulsePracticePage() {
                 <th className="pu-ledger-th">Tiến độ Mô đun</th>
                 <th className="pu-ledger-th">Thi Cuối khóa (AI Proctored)</th>
                 <th className="pu-ledger-th">Thẩm định & Quyết định</th>
-                <th className="pu-ledger-th" style={{ textAlign: 'right' }}>Thao tác</th>
+                <th className="pu-ledger-th" style={{ textAlign: 'right' }}>{translateUi("Thao tác")}</th>
               </tr>
             </thead>
             <tbody>
@@ -545,11 +547,10 @@ export function PulsePracticePage() {
                         <tr className="pu-domain-divider-row">
                           <td colSpan={6} className="pu-domain-divider-td">
                             <div className="pu-domain-divider-wrap">
-                              <span className="pu-domain-divider-pill">
-                                Lĩnh vực 0{item.domainNumber}
+                              <span className="pu-domain-divider-pill">{translateUi("Lĩnh vực 0")}{item.domainNumber}
                               </span>
                               <span className="pu-domain-divider-name">
-                                {item.domainName}
+                                {translateUi(item.domainName)}
                               </span>
                               <span className="pu-domain-divider-line" />
                             </div>
@@ -601,8 +602,8 @@ export function PulsePracticePage() {
                 <div key={c.number} className="pu-crit-card">
                   <span className="pu-crit-badge">Tiêu chí 0{c.number}</span>
                   <div className="pu-crit-body">
-                    <strong>{c.title}</strong>
-                    <p>{c.description}</p>
+                    <strong>{translateUi(c.title)}</strong>
+                    <p>{translateUi(c.description)}</p>
                   </div>
                 </div>
               ))}
@@ -618,6 +619,7 @@ export function PulsePracticePage() {
    COMPONENT: Dòng bảng Sổ Khảo Thí (Assessment Table Row)
 ───────────────────────────────────────────────────────────────────────────── */
 function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outcomeId?: string }) {
+  useUiLanguage();
   const isPreOpen = item.canStartPreAssessment || item.preStatus === 'REQUIRED';
   const isPrePassed = item.preStatus === 'PASSED' || item.approvedVia === 'PRE_ASSESSMENT';
   const isPrePending = item.preStatus === 'PENDING';
@@ -637,9 +639,9 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
         <div className="pu-course-identity">
           <span className="pu-ledger-code">{item.code}</span>
           <div className="pu-ledger-title-group">
-            <span className="pu-ledger-title">{item.title}</span>
+            <span className="pu-ledger-title">{translateUi(item.title)}</span>
             <span className="pu-ledger-domain">
-              {item.domainName} · {levelName(item.tier)}
+              {translateUi(item.domainName)} · {levelName(item.tier)}
             </span>
           </div>
         </div>
@@ -668,7 +670,7 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
             <AlertCircle size={12} /> Chưa đạt điểm miễn
           </span>
         ) : (
-          <span className="pu-status-pill locked">Không áp dụng</span>
+          <span className="pu-status-pill locked">{translateUi("Không áp dụng")}</span>
         )}
       </td>
 
@@ -778,7 +780,7 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
               className="pu-table-btn ghost-btn text-emerald-700 hover:text-emerald-800"
               title="Xem chứng chỉ chi tiết của khóa học này"
             >
-              <span>Xem kết quả</span>
+              <span>{translateUi("Xem kết quả")}</span>
               <ArrowRight size={13} />
             </Link>
           ) : (

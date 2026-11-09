@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import {
   Users, Brain, ClipboardList, ArrowRight,
@@ -16,6 +17,7 @@ import { useAssignmentSummary } from '@/hooks/use-assignments';
  * Hiển thị empty state hướng dẫn liên hệ Owner nếu Manager chưa phụ trách phòng ban nào.
  */
 export function TeamCapabilityDashboardPage() {
+  useUiLanguage();
   const { data: empData, isLoading: empLoading, isError: empError } = useEmployees();
   const { data: taskData } = usePracticalTasks();
   const { data: reviewData } = useReviewQueue();
@@ -137,11 +139,11 @@ export function TeamCapabilityDashboardPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
-              <span className="text-xs font-semibold text-slate-500 block">Đang hoạt động</span>
+              <span className="text-xs font-semibold text-slate-500 block">{translateUi("Đang hoạt động")}</span>
               <span className="text-xl font-bold text-slate-900">{activeEmployees}</span>
             </div>
             <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
-              <span className="text-xs font-semibold text-slate-500 block">Khác</span>
+              <span className="text-xs font-semibold text-slate-500 block">{translateUi("Khác")}</span>
               <span className="text-xl font-bold text-slate-900">{employees.length - activeEmployees}</span>
             </div>
           </div>
@@ -158,7 +160,7 @@ export function TeamCapabilityDashboardPage() {
             to="/enterprise/team/training"
             className="text-xs text-indigo-600 font-medium hover:underline inline-flex items-center gap-1"
           >
-            <span>Theo dõi tiến độ</span>
+            <span>{translateUi("Theo dõi tiến độ")}</span>
             <ArrowRight className="size-3" />
           </Link>
         </div>
@@ -190,7 +192,7 @@ export function TeamCapabilityDashboardPage() {
                 to="/enterprise/team/members"
                 className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
               >
-                <span>Xem tất cả</span>
+                <span>{translateUi("Xem tất cả")}</span>
                 <ArrowRight className="size-3.5" />
               </Link>
             </div>
@@ -203,9 +205,9 @@ export function TeamCapabilityDashboardPage() {
                       {emp.fullName ? emp.fullName.charAt(0) : 'N'}
                     </div>
                     <div>
-                      <p className="font-semibold text-sm text-slate-900">{emp.fullName || 'Nhân sự'}</p>
+                      <p className="font-semibold text-sm text-slate-900">{emp.fullName || translateUi('Nhân sự')}</p>
                       <p className="text-xs text-slate-500 font-mono">
-                        {emp.employeeCode || ''} {emp.jobGrade ? `· Cấp bậc ${emp.jobGrade}` : ''}
+                        {emp.employeeCode || ''} {emp.jobGrade ? translateUi(`· Cấp bậc ${emp.jobGrade}`) : ''}
                       </p>
                     </div>
                   </div>
@@ -213,9 +215,7 @@ export function TeamCapabilityDashboardPage() {
                   <Link
                     to={`/enterprise/team/members/${emp.id}`}
                     className="text-xs font-medium text-slate-600 hover:text-blue-600 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition"
-                  >
-                    Xem chi tiết
-                  </Link>
+                  >{translateUi("Xem chi tiết")}</Link>
                 </div>
               ))}
             </div>
@@ -245,7 +245,7 @@ export function TeamCapabilityDashboardPage() {
                       to={`/enterprise/tasks/${task.id}`}
                       className="font-semibold text-sm text-slate-900 hover:text-blue-600 transition"
                     >
-                      {task.title}
+                      {translateUi(task.title)}
                     </Link>
                     <p className="text-xs text-slate-500">
                       {task.assignedEmployeesCount} nhân sự • {task.pendingReviewCount ?? 0} chờ duyệt
@@ -254,9 +254,7 @@ export function TeamCapabilityDashboardPage() {
                   <Link
                     to={`/enterprise/tasks/${task.id}`}
                     className="text-xs font-semibold text-blue-600 hover:text-blue-800 shrink-0"
-                  >
-                    Chi tiết
-                  </Link>
+                  >{translateUi("Chi tiết")}</Link>
                 </div>
               ))}
             </div>
@@ -276,9 +274,7 @@ export function TeamCapabilityDashboardPage() {
             <Link
               to="/enterprise/team/skill-gap"
               className="inline-block mt-2 px-3.5 py-1.5 bg-white text-blue-700 font-bold text-xs rounded-lg hover:bg-blue-50 transition shadow-sm"
-            >
-              Xem khoảng trống năng lực
-            </Link>
+            >{translateUi("Xem khoảng trống năng lực")}</Link>
           </div>}
 
           <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-3 shadow-sm">

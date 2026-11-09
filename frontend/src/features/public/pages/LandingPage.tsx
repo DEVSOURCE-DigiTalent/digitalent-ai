@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect } from 'react';
 import '../landing/landing.css';
 import { SECTION_IDS, type LandingContent } from '../landing/landing-content';
@@ -27,6 +28,7 @@ interface LandingPageProps {
  * remembers the choice, so the portal selector at "/" is asked only once.
  */
 export function LandingPage({ content = ENTERPRISE_CONTENT }: LandingPageProps) {
+  useUiLanguage();
   const isIndividual = content.variant === 'individual';
   usePageBackground(isIndividual ? '#07151b' : '#0C0E12');
 
@@ -45,10 +47,12 @@ export function LandingPage({ content = ENTERPRISE_CONTENT }: LandingPageProps) 
 
 /** PUB-03, "/individual". */
 export function IndividualLandingPage() {
+  useUiLanguage();
   return <LandingPage content={INDIVIDUAL_CONTENT} />;
 }
 
 function LandingShell() {
+  useUiLanguage();
   const { reduced } = useLandingMotion();
   const content = useLandingContent();
   const [heroMetaRef, scrolledPastHero] = useScrolledPast<HTMLDivElement>();
@@ -72,9 +76,7 @@ function LandingShell() {
           'fixed -top-16 left-4 z-[100] rounded-full px-4 py-2.5 text-sm transition-[top] focus:top-3',
           'bg-gradient-to-r from-[#F5CA65] to-[#D4982F] text-[#0C0E12] font-semibold shadow-md shadow-amber-500/20'
         )}
-      >
-        Bỏ qua đến nội dung
-      </SectionLink>
+      >{translateUi("Bỏ qua đến nội dung")}</SectionLink>
       <StickyDock visible={scrolledPastHero} />
       <LandingAudioControl />
 
