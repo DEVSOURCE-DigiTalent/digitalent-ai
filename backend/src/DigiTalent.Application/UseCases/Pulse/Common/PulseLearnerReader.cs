@@ -20,9 +20,9 @@ public sealed class PulseDomainState
     public string Name { get; init; } = string.Empty;
     /// <summary>Mục tiêu vị trí (0 = vị trí không yêu cầu lĩnh vực).</summary>
     public int Target { get; init; }
-    /// <summary>Trần năng lực doanh nghiệp đặt cho phòng ban của nhân viên (0..3).</summary>
+    /// <summary>Phạm vi năng lực doanh nghiệp đặt cho phòng ban của nhân viên (0..3).</summary>
     public int Ceiling { get; init; } = PulseRules.MaxLevel;
-    /// <summary>Đỉnh lộ trình = min(mục tiêu, trần); 0 = lĩnh vực ngoài lộ trình.</summary>
+    /// <summary>Đỉnh lộ trình = min(mục tiêu, phạm vi); 0 = lĩnh vực ngoài lộ trình.</summary>
     public int PathTop => Target == 0 ? 0 : Math.Min(Target, Ceiling);
     /// <summary>Mức đã xác nhận = max(cấp khóa được công nhận, minh chứng thực tế được duyệt).</summary>
     public int Verified { get; init; }
@@ -133,8 +133,8 @@ public sealed class PulseLearnerSnapshot
 /// <summary>
 /// Dựng <see cref="PulseLearnerSnapshot"/> cho nhân viên đang đăng nhập:
 ///   - Lĩnh vực = competency_categories của tổ chức có khóa PUBLISHED; mỗi (lĩnh vực, cấp) một khóa (PulseCatalogReader).
-///   - Mục tiêu vị trí = mức yêu cầu lớn nhất trong lĩnh vực của bộ yêu cầu ACTIVE; trần = trần hiệu lực của phòng ban
-///     (CapabilityCeilingReader); lộ trình = Cơ bản → min(mục tiêu, trần).
+///   - Mục tiêu vị trí = mức yêu cầu lớn nhất trong lĩnh vực của bộ yêu cầu ACTIVE; phạm vi = phạm vi hiệu lực của phòng ban
+///     (CapabilityCeilingReader); lộ trình = Cơ bản → min(mục tiêu, phạm vi).
 ///   - Khóa được công nhận = lượt học COMPLETED của bất kỳ phiên bản nào của mã khóa (bài cuối khóa được duyệt, bài đánh
 ///     giá trước khi học đạt, hoặc luồng học trước).
 ///   - Bài đánh giá trước khi học bắt buộc trước khi học một khóa chưa bắt đầu (một bài cho mỗi mã khóa).
@@ -209,7 +209,7 @@ public class PulseLearnerReader
         // Khung năng lực & Lộ trình của nhân viên:
         // 1. Nếu vị trí công việc đã có requirements cụ thể trong PositionRequirementSets ACTIVE thì lấy theo vị trí.
         // 2. Với các lĩnh vực chưa có requirements riêng (hoặc nhân viên được thêm/seed bằng Excel vào phòng ban/vị trí),
-        //    mục tiêu tự động thừa hưởng theo đúng trần năng lực mà doanh nghiệp / phòng ban đã thiết lập (ceilings).
+        //    mục tiêu tự động thừa hưởng theo đúng phạm vi năng lực mà doanh nghiệp / phòng ban đã thiết lập (ceilings).
         // 3. Đảm bảo nhân viên ở phòng ban và vị trí luôn có lộ trình học đúng với khung năng lực doanh nghiệp đã set.
         foreach (var id in categoryIds)
         {

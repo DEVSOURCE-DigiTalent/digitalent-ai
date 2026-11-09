@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, ArrowRight, BookOpen, Clock } from 'lucide-react';
@@ -36,6 +37,7 @@ const ENROLLMENT_LABELS: Record<string, string> = {
  * Explainable course recommendations for one employee (default: the signed-in employee) — spec §5.
  */
 export function CourseRecommendations({ employeeId, compact = false }: { employeeId?: string; compact?: boolean }) {
+  useUiLanguage();
   const [showAll, setShowAll] = useState(false);
   const { data, isLoading, isError, refetch } = useCourseRecommendations(employeeId);
 
@@ -59,9 +61,7 @@ export function CourseRecommendations({ employeeId, compact = false }: { employe
             type="button"
             onClick={() => refetch()}
             className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700"
-          >
-            Thử lại
-          </button>
+          >{translateUi("Thử lại")}</button>
         }
       />
     );
@@ -72,8 +72,8 @@ export function CourseRecommendations({ employeeId, compact = false }: { employe
     return (
       <EmptyState
         icon={<BookOpen className="w-16 h-16 mx-auto" strokeWidth={1} />}
-        title={empty.title}
-        description={empty.description}
+        title={translateUi(empty.title)}
+        description={translateUi(empty.description)}
       />
     );
   }
@@ -83,11 +83,11 @@ export function CourseRecommendations({ employeeId, compact = false }: { employe
     return <div className="personal-course-list">
       {visible.map((item, index) => <article className="personal-course-card" key={item.courseId}>
         <span className="personal-course-rank">{String(index + 1).padStart(2, '0')}</span>
-        <div><strong>{item.title}</strong><small>{item.courseCode}{item.estimatedDurationMinutes != null ? ` · ${Math.round(item.estimatedDurationMinutes / 60)} giờ` : ''} · {item.reasons.length} năng lực liên quan</small></div>
-        <span className="personal-course-score">{item.score.toFixed(0)} điểm</span>
-        <Link to={`/enterprise/courses?focus=${encodeURIComponent(item.courseCode)}`} aria-label={`Xem khóa học ${item.title}`}>Xem khóa học <ArrowRight size={15} /></Link>
+        <div><strong>{translateUi(item.title)}</strong><small>{item.courseCode}{item.estimatedDurationMinutes != null ? translateUi(` · ${(item.estimatedDurationMinutes / 60).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} giờ`) : ''} · {item.reasons.length} năng lực liên quan</small></div>
+        <span className="personal-course-score">{translateUi("Ưu tiên ")}{index + 1}</span>
+        <Link to={`/enterprise/courses?focus=${encodeURIComponent(item.courseCode)}`} aria-label={translateUi(`Xem khóa học ${item.title}`)}>{translateUi("Xem khóa học ")}<ArrowRight size={15} /></Link>
       </article>)}
-      {data.items.length > 3 && <button className="personal-course-more" type="button" onClick={() => setShowAll((value) => !value)}>{showAll ? 'Thu gọn' : `Xem thêm ${data.items.length - 3} khóa học`}</button>}
+      {data.items.length > 3 && <button className="personal-course-more" type="button" onClick={() => setShowAll((value) => !value)}>{showAll ? translateUi('Thu gọn') : translateUi(`Xem thêm ${data.items.length - 3} khóa học`)}</button>}
     </div>;
   }
 
@@ -103,6 +103,7 @@ export function CourseRecommendations({ employeeId, compact = false }: { employe
 }
 
 function RecommendationCard({ item, rank }: { item: CourseRecommendation; rank: number }) {
+  useUiLanguage();
   const { breakdown } = item;
   const enrollmentLabel = item.enrollmentStatus ? ENROLLMENT_LABELS[item.enrollmentStatus] ?? item.enrollmentStatus : null;
 
@@ -116,17 +117,16 @@ function RecommendationCard({ item, rank }: { item: CourseRecommendation; rank: 
 
       <div className="flex-1 min-w-0 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="font-semibold text-slate-900">{item.title}</h3>
+          <h3 className="font-semibold text-slate-900">{translateUi(item.title)}</h3>
           <span className="text-xs text-slate-400">{item.courseCode}</span>
-          {enrollmentLabel && <StatusBadge label={enrollmentLabel} variant="info" />}
+          {enrollmentLabel && <StatusBadge label={translateUi(enrollmentLabel)} variant="info" />}
         </div>
 
         <p className="text-xs text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-1">
           {item.estimatedDurationMinutes != null && (
             <span className="inline-flex items-center gap-1">
               <Clock className="w-3.5 h-3.5" />
-              {Math.round(item.estimatedDurationMinutes / 60)} giờ
-            </span>
+              {Math.round(item.estimatedDurationMinutes / 60)}{translateUi(" giờ")}</span>
           )}
           <span>
             Đóng khoảng trống {breakdown.gapPriorityCoverage.toFixed(1)} · Bắt buộc {breakdown.mandatoryCoverage.toFixed(1)} · Phù hợp
@@ -142,7 +142,7 @@ function RecommendationCard({ item, rank }: { item: CourseRecommendation; rank: 
                 {reason.competencyName}: {levelLabel(reason.currentLevel)} → {levelLabel(reason.courseTargetLevel)}
                 <span className="text-slate-400"> (yêu cầu {levelLabel(reason.requiredLevel)})</span>
               </span>
-              {reason.mandatory && <span className="text-[10px] font-semibold uppercase text-danger-600">Bắt buộc</span>}
+              {reason.mandatory && <span className="text-[10px] font-semibold uppercase text-danger-600">{translateUi("Bắt buộc")}</span>}
             </li>
           ))}
         </ul>

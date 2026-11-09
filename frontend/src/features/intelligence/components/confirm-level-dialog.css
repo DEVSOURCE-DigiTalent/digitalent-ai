@@ -1,0 +1,47 @@
+.confirm-evidence { position: fixed; inset: 0; z-index: 12000; display: grid; place-items: center; padding: 20px; isolation: isolate; opacity: 0; transition: opacity .22s ease; }
+.confirm-evidence.is-visible { opacity: 1; }
+.confirm-evidence-backdrop { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 35%,#1b58613b,#112a3b80); backdrop-filter: blur(8px) saturate(.8); -webkit-backdrop-filter: blur(8px) saturate(.8); }
+.confirm-evidence-dialog { position: relative; width: min(100%,600px); max-height: calc(100dvh - 40px); display: flex; flex-direction: column; overflow: hidden; color: #254856; background: #fff; border: 1px solid #ffffffc2; border-radius: 25px; box-shadow: 0 35px 100px #092b4140,0 4px 20px #15383e15,inset 0 1px 0 white; outline: none; opacity: 0; transform: translateY(16px) scale(.97); transition: transform .28s cubic-bezier(.2,.8,.2,1),opacity .22s; }
+.confirm-evidence.is-visible .confirm-evidence-dialog { opacity: 1; transform: translateY(0) scale(1); }
+.confirm-evidence-header { position: relative; display: flex; align-items: center; gap: 14px; padding: 25px 27px; border-bottom: 1px solid #e1efee; background: radial-gradient(ellipse at 100% 0,#ccf1e980,transparent 70%),linear-gradient(115deg,#f2fbf8,#fff); }
+.confirm-evidence-icon { display: grid; place-items: center; flex-shrink: 0; width: 49px; height: 49px; border-radius: 16px; color: #168c7f; border: 1px solid #c0e8df; background: linear-gradient(135deg,#fff,#e8f9f1); box-shadow: 0 4px 10px #2d8b7a0d,inset 0 1px white; }
+.confirm-evidence-header h2 { font-size: 21px; font-weight: 740; letter-spacing: -.035em; margin: 0; }
+.confirm-evidence-header p { margin: 5px 0 0; color: #7c969f; font-size: 12px; }
+.confirm-evidence-close { margin-left: auto; display: grid; place-items: center; flex-shrink: 0; width: 33px; height: 33px; border: 1px solid #dcebe9; border-radius: 10px; color: #819c9f; background: #ffffffc9; cursor: pointer; transition: color .2s,background .2s; }
+.confirm-evidence-close:hover { color: #198b7e; background: #e7f7f1; }
+.confirm-evidence-dialog form { display: flex; flex-direction: column; min-height: 0; }
+.confirm-evidence-body { padding: 21px 27px 24px; overflow-y: auto; overscroll-behavior: contain; }
+.confirm-evidence-purpose { display: flex; align-items: start; gap: 8px; color: #7d949d; font-size: 11px; line-height: 1.65; margin-bottom: 22px; }
+.confirm-evidence-purpose svg { flex-shrink: 0; margin-top: 1px; color: #48a395; }
+.confirm-evidence-purpose p { margin: 0; }
+.confirm-evidence fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.confirm-evidence-field > label,.confirm-evidence-levels > legend { display: block; padding: 0; margin-bottom: 9px; font-size: 12px; font-weight: 700; color: #4f707d; }
+.confirm-evidence-field > label > span { color: #c57c6c; }
+.confirm-evidence-field select,.confirm-evidence-field textarea { width: 100%; border: 1px solid #d8e8eb; border-radius: 12px; padding: 12px 13px; background: linear-gradient(120deg,#fbfdfd,#fff); color: #365967; font-size: 13px; line-height: 1.7; outline: none; transition: border-color .2s,box-shadow .2s; }
+.confirm-evidence-field select:focus-visible,.confirm-evidence-field textarea:focus-visible { border-color: #52b6a6; box-shadow: 0 0 0 3px #169a8512; }
+.confirm-evidence-field textarea { resize: vertical; min-height: 91px; max-height: 200px; }
+.confirm-evidence-field textarea::placeholder { color: #a1b2bb; }
+.confirm-evidence-target { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 10px; color: #8ba0a8; }
+.confirm-evidence-target strong { color: #518f85; font-size: 10px; font-weight: 650; padding: 2px 6px; background: #eff8f4; border-radius: 5px; }
+.confirm-evidence fieldset.confirm-evidence-levels { margin: 22px 0; }
+.confirm-evidence-levels > div { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px; }
+.confirm-evidence-levels label { position: relative; display: flex; align-items: center; justify-content: center; gap: 9px; border: 1px solid #dce8ec; padding: 14px 8px; border-radius: 12px; cursor: pointer; color: #81949f; background: #fbfdfd; transition: border-color .2s,background .2s,box-shadow .2s; }
+.confirm-evidence-levels label:hover { border-color: #95cdc2; }
+.confirm-evidence-levels label.is-selected { background: linear-gradient(125deg,#eaf8f1,#f9fffc); border-color: #4bae9e; color: #167f72; box-shadow: 0 4px 11px #188b7b0b,inset 0 1px white; }
+.confirm-evidence-levels input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; margin: 0; }
+.confirm-evidence-levels label:has(input:focus-visible) { outline: 2px solid #45a995; outline-offset: 3px; }
+.confirm-evidence-levels strong { font-size: 12px; font-weight: 700; }
+.confirm-evidence-level-mark { display: grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; border: 1px solid #d2e3e3; background: white; color: white; }
+.confirm-evidence-levels .is-selected .confirm-evidence-level-mark { background: #249786; border-color: #249786; }
+.confirm-evidence-note-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #9aacb4; font-size: 10px; margin-top: 7px; }
+.confirm-evidence-note-meta > span:first-child { display: flex; align-items: center; gap: 5px; }
+.confirm-evidence-error { font-size: 11px; color: #bc6556; margin: 7px 0 0; }
+.confirm-evidence [aria-invalid=true] { border-color: #d89b8e; }
+.confirm-evidence-footer { display: flex; justify-content: end; align-items: center; gap: 10px; border-top: 1px solid #e5eef0; background: linear-gradient(110deg,#fafdfc,#f5faf9); padding: 17px 27px; }
+.confirm-evidence-footer button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; border: 1px solid #d8e7e9; padding: 9px 17px; background: #fff; border-radius: 11px; color: #6d8793; font-size: 12px; font-weight: 650; cursor: pointer; transition: box-shadow .2s,background .2s,transform .2s; }
+.confirm-evidence-footer button.confirm-evidence-submit { background: linear-gradient(120deg,#167e7c,#15998b); color: white; border-color: #249589; box-shadow: 0 4px 12px #168c7c1a,inset 0 1px #ffffff25; }
+.confirm-evidence-footer button:hover { transform: translateY(-1px); box-shadow: 0 5px 14px #168b7b1b; }
+.confirm-evidence button:disabled,.confirm-evidence fieldset:disabled { opacity: .55; cursor: default; }
+.confirm-evidence button:focus-visible { outline: 2px solid #4aae9d; outline-offset: 3px; }
+@media(max-width:600px) { .confirm-evidence { padding: 12px; }.confirm-evidence-dialog { max-height: calc(100dvh - 24px); border-radius: 20px; }.confirm-evidence-header { padding: 20px; }.confirm-evidence-body { padding: 19px 20px; }.confirm-evidence-footer { padding: 15px 20px; }.confirm-evidence-header h2 { font-size: 19px; }.confirm-evidence-levels label { gap: 5px; padding: 13px 4px; }.confirm-evidence-levels strong { font-size: 11px; } }
+@media(prefers-reduced-motion:reduce) { .confirm-evidence,.confirm-evidence * { transition: none !important; animation: none !important; } }

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { BadgeCheck, RefreshCw, X } from 'lucide-react';
 import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
@@ -18,6 +19,7 @@ interface SkillGapDetailDrawerProps {
 
 /** Right-side panel with one employee's snapshot; Esc or backdrop click closes it. */
 export function SkillGapDetailDrawer({ runId, onClose, canRecalculate, isRecalculating, onRecalculate, onLevelConfirmed }: SkillGapDetailDrawerProps) {
+  useUiLanguage();
   const { data: run, isLoading, isError } = useSkillGapRun(runId);
   const { can } = usePermission();
   const canReadRecommendations = can(PERMISSIONS.LEARNING_RECOMMENDATION_READ);
@@ -44,12 +46,12 @@ export function SkillGapDetailDrawer({ runId, onClose, canRecalculate, isRecalcu
       <aside
         role="dialog"
         aria-modal="true"
-        aria-label="Chi tiết khoảng trống năng lực"
+        aria-label={translateUi("Chi tiết khoảng trống năng lực")}
         className="relative w-full max-w-4xl h-full overflow-y-auto bg-slate-50 shadow-xl"
       >
         <header className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 bg-white border-b border-slate-200">
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold text-slate-900 truncate">{run?.employeeName ?? 'Khoảng trống năng lực'}</h2>
+            <h2 className="text-lg font-semibold text-slate-900 truncate">{run?.employeeName ?? translateUi('Khoảng trống năng lực')}</h2>
             {run && (
               <p className="text-xs text-slate-500">
                 {run.employeeCode} · {run.departmentName}
@@ -63,9 +65,7 @@ export function SkillGapDetailDrawer({ runId, onClose, canRecalculate, isRecalcu
                 onClick={() => setIsConfirmOpen(true)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
               >
-                <BadgeCheck className="w-4 h-4" />
-                Xác nhận mức
-              </button>
+                <BadgeCheck className="w-4 h-4" />{translateUi("Xác nhận mức")}</button>
             )}
             {canRecalculate && run && (
               <button
@@ -74,15 +74,13 @@ export function SkillGapDetailDrawer({ runId, onClose, canRecalculate, isRecalcu
                 disabled={isRecalculating}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary-700 border border-primary-200 rounded-md hover:bg-primary-50 disabled:opacity-50"
               >
-                <RefreshCw className={isRecalculating ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} />
-                Tính lại
-              </button>
+                <RefreshCw className={isRecalculating ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} />{translateUi("Tính lại")}</button>
             )}
             <button
               type="button"
               onClick={onClose}
               className="p-1.5 text-slate-400 hover:text-slate-700 rounded-md"
-              aria-label="Đóng"
+              aria-label={translateUi("Đóng")}
             >
               <X className="w-5 h-5" />
             </button>

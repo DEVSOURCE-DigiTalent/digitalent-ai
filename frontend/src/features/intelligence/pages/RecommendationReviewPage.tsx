@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -22,6 +23,7 @@ const STATUS_VARIANTS = { PENDING: 'warning', ASSIGNED: 'info', ACCEPTED: 'succe
 
 /** LCA-11: review the rule-based course suggestions: give the course, or set it aside with a reason. */
 export function RecommendationReviewPage() {
+  useUiLanguage();
   const hasPermission = useCurrentUser((s) => s.hasPermission);
   const canAssign = hasPermission(PERMISSIONS.COURSE_ASSIGNMENT_CREATE);
   const canReview = hasPermission(PERMISSIONS.LEARNING_RECOMMENDATION_READ);
@@ -64,7 +66,7 @@ export function RecommendationReviewPage() {
       header: 'Khóa được đề xuất',
       cell: (r) => (
         <div>
-          <p className="text-slate-900">{r.title}</p>
+          <p className="text-slate-900">{translateUi(r.title)}</p>
           <p className="font-mono text-xs text-slate-500">{r.courseCode}</p>
         </div>
       ),
@@ -74,8 +76,7 @@ export function RecommendationReviewPage() {
       header: 'Vì sao',
       cell: (r) => (
         <details>
-          <summary className="cursor-pointer text-sm text-slate-700">
-            Đóng {r.gapsClosed} khoảng trống{r.mandatoryClosed ? `, ${r.mandatoryClosed} bắt buộc` : ''}{r.highClosed ? `, ${r.highClosed} mức cao` : ''}
+          <summary className="cursor-pointer text-sm text-slate-700">{translateUi("Đóng ")}{r.gapsClosed}{translateUi(" khoảng trống")}{r.mandatoryClosed ? translateUi(`, ${r.mandatoryClosed} bắt buộc`) : ''}{r.highClosed ? translateUi(`, ${r.highClosed} mức cao`) : ''}
           </summary>
           <p className="mt-2 text-xs text-slate-600">{r.explanation}</p>
           <ul className="mt-1 list-disc pl-4 text-xs text-slate-600">{r.reasons.map((reason) => <li key={reason}>{reason}</li>)}</ul>
@@ -88,7 +89,7 @@ export function RecommendationReviewPage() {
       header: 'Trạng thái',
       cell: (r) => (
         <div>
-          <StatusBadge label={STATUS_LABELS[r.status]} variant={STATUS_VARIANTS[r.status]} />
+          <StatusBadge label={translateUi(STATUS_LABELS[r.status])} variant={STATUS_VARIANTS[r.status]} />
           {r.status === 'DISMISSED' && <p className="mt-1 max-w-48 text-xs text-slate-500">{r.decisionReason} · {r.decidedByName}, {formatDate(r.decidedAt)}</p>}
         </div>
       ),
@@ -101,8 +102,8 @@ export function RecommendationReviewPage() {
         if (r.status === 'PENDING') {
           return (
             <div className="flex justify-end gap-2">
-              {canAssign && <button type="button" onClick={() => setAccepting(r)} className={PRIMARY_BUTTON} aria-label={`Giao ${r.courseCode} cho ${r.employeeName}`}>Giao khóa</button>}
-              {canReview && <button type="button" onClick={() => setDismissing(r)} className={SECONDARY_BUTTON} aria-label={`Bỏ qua ${r.courseCode} của ${r.employeeName}`}>Bỏ qua</button>}
+              {canAssign && <button type="button" onClick={() => setAccepting(r)} className={PRIMARY_BUTTON} aria-label={translateUi(`Giao ${r.courseCode} cho ${r.employeeName}`)}>Giao khóa</button>}
+              {canReview && <button type="button" onClick={() => setDismissing(r)} className={SECONDARY_BUTTON} aria-label={translateUi(`Bỏ qua ${r.courseCode} của ${r.employeeName}`)}>Bỏ qua</button>}
             </div>
           );
         }
@@ -112,7 +113,7 @@ export function RecommendationReviewPage() {
               type="button"
               className={SECONDARY_BUTTON}
               onClick={() => reopen.mutate({ employeeId: r.employeeId, courseId: r.courseId }, { onSuccess: () => toast.success('Đã mở lại đề xuất.') })}
-              aria-label={`Mở lại đề xuất ${r.courseCode} của ${r.employeeName}`}
+              aria-label={translateUi(`Mở lại đề xuất ${r.courseCode} của ${r.employeeName}`)}
             >
               Mở lại
             </button>
@@ -128,7 +129,7 @@ export function RecommendationReviewPage() {
       <PageHeader title="Duyệt đề xuất học tập" subtitle="Hệ thống đề xuất khóa học theo khoảng trống kỹ năng. Quản trị học tập quyết định giao hay bỏ qua." />
       {isError && <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
         Không tải được đề xuất: {apiErrorMessage(error, 'Vui lòng thử lại.')}
-        <button type="button" onClick={() => void refetch()} className="ml-3 font-semibold underline">Thử lại</button>
+        <button type="button" onClick={() => void refetch()} className="ml-3 font-semibold underline">{translateUi("Thử lại")}</button>
       </div>}
       {!isError && <>
       <DataTable
@@ -140,7 +141,7 @@ export function RecommendationReviewPage() {
         emptyTitle={status === 'PENDING' ? 'Không còn đề xuất nào chờ duyệt' : 'Không có đề xuất nào'}
         emptyDescription="Đề xuất sẽ xuất hiện khi có kết quả phân tích năng lực mới."
         filters={
-          <OwnerFilterSelect label="Lọc theo trạng thái" value={status} onChange={(value) => { setStatus(value as ReviewStatus | ''); setPage(1); }} options={[{ value: '', label: 'Tất cả' }, ...(Object.keys(STATUS_LABELS) as ReviewStatus[]).map((s) => ({ value: s, label: STATUS_LABELS[s] }))]} />
+          <OwnerFilterSelect label={translateUi("Lọc theo trạng thái")} value={status} onChange={(value) => { setStatus(value as ReviewStatus | ''); setPage(1); }} options={[{ value: '', label: 'Tất cả' }, ...(Object.keys(STATUS_LABELS) as ReviewStatus[]).map((s) => ({ value: s, label: STATUS_LABELS[s] }))]} />
         }
         pageInfo={{ page, pageSize: PAGE_SIZE, total: data?.totalItems ?? 0, onPageChange: setPage }}
       />
@@ -151,16 +152,16 @@ export function RecommendationReviewPage() {
         onClose={() => setAccepting(null)}
         size="sm"
         title="Giao khóa học theo đề xuất"
-        description={accepting ? `${accepting.courseCode} · ${accepting.title} cho ${accepting.employeeName}` : undefined}
+        description={translateUi(accepting ? `${accepting.courseCode} · ${accepting.title} cho ${accepting.employeeName}` : undefined)}
         footer={
           <>
-            <button type="button" onClick={() => setAccepting(null)} className={SECONDARY_BUTTON}>Hủy</button>
-            <button type="button" onClick={doAccept} disabled={accept.isPending} className={PRIMARY_BUTTON}>{accept.isPending ? 'Đang giao…' : 'Giao khóa học'}</button>
+            <button type="button" onClick={() => setAccepting(null)} className={SECONDARY_BUTTON}>{translateUi("Hủy")}</button>
+            <button type="button" onClick={doAccept} disabled={accept.isPending} className={PRIMARY_BUTTON}>{accept.isPending ? 'Đang giao…' : translateUi('Giao khóa học')}</button>
           </>
         }
       >
         <div className="grid gap-1.5">
-          <label htmlFor="review-due" className="text-sm font-medium text-slate-700">Hạn hoàn thành</label>
+          <label htmlFor="review-due" className="text-sm font-medium text-slate-700">{translateUi("Hạn hoàn thành")}</label>
           <input id="review-due" type="date" min={new Date().toISOString().slice(0, 10)} value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={INPUT_CLASS} />
           <p className="text-xs text-slate-500">Để trống để dùng thời hạn mặc định của tổ chức.</p>
         </div>
@@ -170,7 +171,7 @@ export function RecommendationReviewPage() {
         open={Boolean(dismissing)}
         onClose={() => setDismissing(null)}
         title="Bỏ qua đề xuất này?"
-        description={dismissing ? `${dismissing.courseCode} cho ${dismissing.employeeName}. Đề xuất được giữ lại ở mục "Đã bỏ qua" và có thể mở lại.` : ''}
+        description={translateUi(dismissing ? translateUi(`${dismissing.courseCode} cho ${dismissing.employeeName}. Đề xuất được giữ lại ở mục "Đã bỏ qua" và có thể mở lại.`) : '')}
         confirmLabel="Bỏ qua đề xuất"
         requireReason
         reasonPlaceholder="Ví dụ: đã học khóa tương đương bên ngoài"
