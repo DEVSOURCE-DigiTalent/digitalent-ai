@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 interface TierLevel {
   label: string;
   sublabel: string;
@@ -8,6 +9,7 @@ interface BlueprintTierCardProps {
 }
 
 export function BlueprintTierCard({ levels }: BlueprintTierCardProps) {
+  useUiLanguage();
   return (
     <div className="grid grid-cols-2 gap-3">
       {levels.map((level) => (
@@ -23,7 +25,7 @@ export function BlueprintTierCard({ levels }: BlueprintTierCardProps) {
             className="block text-sm"
             style={{ color: 'var(--po-ink)' }}
           >
-            {level.label}
+            {translateUi(level.label)}
           </strong>
           <small
             className="block mt-0.5 text-[11px]"

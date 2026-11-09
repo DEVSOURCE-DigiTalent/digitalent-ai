@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
@@ -23,12 +24,14 @@ import { LiveInternalCourseDetailPage } from './LiveInternalCourseDetailPage';
 type DetailTab = 'curriculum' | 'learners' | 'settings';
 
 export function InternalCourseDetailPage() {
+  useUiLanguage();
   return import.meta.env.VITE_USE_MOCK === 'true'
     ? <MockInternalCourseDetailPage />
     : <LiveInternalCourseDetailPage />;
 }
 
 function MockInternalCourseDetailPage() {
+  useUiLanguage();
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<DetailTab>('curriculum');
   const [assignModalOpen, setAssignModalOpen] = useState(false);
@@ -79,7 +82,7 @@ function MockInternalCourseDetailPage() {
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
         >
           <ArrowLeft className="size-4" />
-          <span>Quay lại danh sách</span>
+          <span>{translateUi("Quay lại danh sách")}</span>
         </Link>
       </div>
     );
@@ -103,7 +106,7 @@ function MockInternalCourseDetailPage() {
       header: 'Tiến độ',
       cell: (row: AssignmentRow) => (
         <div className="flex items-center gap-2">
-          <div role="progressbar" aria-label={`Tiến độ của ${row.employeeName}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={row.progressPercent} className="h-2 w-24 overflow-hidden rounded-full bg-slate-100">
+          <div role="progressbar" aria-label={translateUi(`Tiến độ của ${row.employeeName}`)} aria-valuemin={0} aria-valuemax={100} aria-valuenow={row.progressPercent} className="h-2 w-24 overflow-hidden rounded-full bg-slate-100">
             <div className="h-full rounded-full bg-blue-600" style={{ width: `${row.progressPercent}%` }} />
           </div>
           <span className="text-xs tabular-nums text-slate-600 font-medium">{row.progressPercent}%</span>
@@ -168,21 +171,21 @@ function MockInternalCourseDetailPage() {
           </span>
           <StatusBadge
             variant={course.status === 'PUBLISHED' ? 'success' : 'default'}
-            label={course.status === 'PUBLISHED' ? 'Đã xuất bản' : 'Bản nháp'}
+            label={translateUi(course.status === 'PUBLISHED' ? 'Đã xuất bản' : translateUi('Bản nháp'))}
           />
         </div>
 
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">{course.title}</h1>
+          <h1 className="text-2xl font-bold text-slate-900">{translateUi(course.title)}</h1>
           <p className="text-sm text-slate-600 mt-2 max-w-3xl leading-relaxed">
-            {course.description || 'Chương trình đào tạo nội bộ do doanh nghiệp tự xây dựng.'}
+            {translateUi(course.description) || 'Chương trình đào tạo nội bộ do doanh nghiệp tự xây dựng.'}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-slate-100 text-sm text-slate-600">
           <div className="flex items-center gap-1.5">
             <BookOpen className="size-4 text-slate-400" />
-            <span>{course.modulesCount} học phần</span>
+            <span>{course.modulesCount}{translateUi(" học phần")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Clock className="size-4 text-slate-400" />
@@ -206,11 +209,11 @@ function MockInternalCourseDetailPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <ScoreCard label="Tổng học viên đã giao" value={learners.length} subtitle="Nhân sự tham gia" />
-        <ScoreCard label="Đã hoàn thành" value={completedLearners} variant="success" subtitle="Hoàn thành tốt" />
-        <ScoreCard label="Đang học" value={inProgressLearners} variant="default" subtitle="Đang tiến hành" />
+        <ScoreCard label="Tổng học viên đã giao" value={learners.length} subtitle={translateUi("Nhân sự tham gia")} />
+        <ScoreCard label={translateUi("Đã hoàn thành")} value={completedLearners} variant="success" subtitle="Hoàn thành tốt" />
+        <ScoreCard label={translateUi("Đang học")} value={inProgressLearners} variant="default" subtitle="Đang tiến hành" />
         <ScoreCard
-          label="Tỷ lệ hoàn thành"
+          label={translateUi("Tỷ lệ hoàn thành")}
           value={`${completionRate}%`}
           variant={completionRate >= 70 ? 'success' : 'default'}
           subtitle="Tiến độ học tập chung"
@@ -284,13 +287,13 @@ function MockInternalCourseDetailPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-semibold text-slate-900 text-sm">{m.title}</h3>
+                    <h3 className="font-semibold text-slate-900 text-sm">{translateUi(m.title)}</h3>
                     <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded font-medium">
                       {m.type === 'QUIZ' ? 'Trắc nghiệm kiểm tra' : m.type === 'VIDEO' ? 'Video hướng dẫn' : m.type === 'DOCUMENT' ? 'Tài liệu SOP' : 'Bài đọc văn bản'}
                     </span>
-                    <span className="text-xs text-slate-400">· {m.durationMinutes} phút</span>
+                    <span className="text-xs text-slate-400">· {m.durationMinutes}{translateUi(" phút")}</span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">{m.description}</p>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">{translateUi(m.description)}</p>
                 </div>
               </div>
             ))}
@@ -341,7 +344,7 @@ function MockInternalCourseDetailPage() {
               <dd className="mt-1">
                 <StatusBadge
                   variant={course.status === 'PUBLISHED' ? 'success' : 'default'}
-                  label={course.status === 'PUBLISHED' ? 'Đã xuất bản (học viên có thể học)' : 'Bản nháp (ẩn khỏi học viên)'}
+                  label={translateUi(course.status === 'PUBLISHED' ? 'Đã xuất bản (học viên có thể học)' : 'Bản nháp (ẩn khỏi học viên)')}
                 />
               </dd>
             </div>
@@ -354,7 +357,7 @@ function MockInternalCourseDetailPage() {
               <dd className="mt-1 text-slate-900 font-medium">{course.durationMinutes} phút ({course.modulesCount} học phần)</dd>
             </div>
             <div>
-              <dt className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Ngày tạo</dt>
+              <dt className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{translateUi("Ngày tạo")}</dt>
               <dd className="mt-1 text-slate-900">{formatDate(course.createdAt)}</dd>
             </div>
             <div>

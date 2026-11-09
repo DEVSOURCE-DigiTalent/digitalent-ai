@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -27,6 +28,7 @@ interface FormValues {
 }
 
 export function CreatePracticalTaskPage() {
+  useUiLanguage();
   const navigate = useNavigate();
   const createMutation = useCreatePracticalTask();
 
@@ -196,8 +198,7 @@ export function CreatePracticalTaskPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="task-due-date" className="block text-sm font-semibold text-slate-800">
-                Hạn hoàn thành <span className="text-rose-500">*</span>
+              <label htmlFor="task-due-date" className="block text-sm font-semibold text-slate-800">{translateUi("Hạn hoàn thành ")}<span className="text-rose-500">*</span>
               </label>
               <input
                 id="task-due-date"
@@ -262,15 +263,13 @@ export function CreatePracticalTaskPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="task-department" className="block text-sm font-semibold text-slate-800">
-              Lọc theo phòng ban
-            </label>
+            <label htmlFor="task-department" className="block text-sm font-semibold text-slate-800">{translateUi("Lọc theo phòng ban")}</label>
             <select
               id="task-department"
               {...register('departmentId')}
               className="w-full sm:w-72 px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
             >
-              <option value="">Tất cả phòng ban</option>
+              <option value="">{translateUi("Tất cả phòng ban")}</option>
               {departments.map(([departmentId, departmentName]) => (
                 <option key={departmentId} value={departmentId}>
                   {departmentName}
@@ -312,7 +311,7 @@ export function CreatePracticalTaskPage() {
             </div>
             {employeesLoading && <p className="text-sm text-slate-500">Đang tải nhân viên…</p>}
             {employeesError && <p role="alert" className="text-sm text-rose-600">Không tải được danh sách nhân viên. Vui lòng thử lại sau.</p>}
-            {!employeesLoading && !employeesError && filteredEmployees.length === 0 && <p className="text-sm text-slate-500">Không có nhân viên phù hợp.</p>}
+            {!employeesLoading && !employeesError && filteredEmployees.length === 0 && <p className="text-sm text-slate-500">{translateUi("Không có nhân viên phù hợp.")}</p>}
           </div>
         </div>
 
@@ -355,7 +354,7 @@ export function CreatePracticalTaskPage() {
                   <div className="flex-1">
                     <input
                       {...register(`rubricCriteria.${index}.label` as const, { required: true })}
-                      placeholder={`Tiêu chí ${index + 1}: VD. Tính ứng dụng thực tế`}
+                      placeholder={translateUi(`Tiêu chí ${index + 1}: VD. Tính ứng dụng thực tế`)}
                       className="w-full px-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white font-medium"
                     />
                   </div>
@@ -397,9 +396,7 @@ export function CreatePracticalTaskPage() {
           <Link
             to="/enterprise/tasks"
             className="px-5 py-2.5 border border-slate-200 text-slate-700 font-medium text-sm rounded-xl hover:bg-slate-50 transition"
-          >
-            Hủy
-          </Link>
+          >{translateUi("Hủy")}</Link>
           <button
             type="submit"
             disabled={isSubmitting || createMutation.isPending || competenciesLoading || employeesLoading || competenciesError || employeesError}

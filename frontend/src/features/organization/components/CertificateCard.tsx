@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { formatDate } from '@/lib/utils';
 
 interface CertificateCardProps {
@@ -7,6 +8,7 @@ interface CertificateCardProps {
 }
 
 export function CertificateCard({ title, employeeName, issueDate }: CertificateCardProps) {
+  useUiLanguage();
   return (
     <div
       className="grid gap-[10px] rounded-2xl p-[23px] transition-all hover:-translate-y-0.5"
@@ -27,7 +29,7 @@ export function CertificateCard({ title, employeeName, issueDate }: CertificateC
         className="leading-[1.15]"
         style={{ fontSize: 23, letterSpacing: '-0.04em' }}
       >
-        {title}
+        {translateUi(title)}
       </strong>
       <small className="text-[11px]" style={{ color: '#64738e' }}>
         {employeeName} · {formatDate(issueDate)}
@@ -35,9 +37,7 @@ export function CertificateCard({ title, employeeName, issueDate }: CertificateC
       <em
         className="self-end text-[11px] font-[850] not-italic"
         style={{ color: '#137b84' }}
-      >
-        Xem chứng nhận ↗
-      </em>
+      >{translateUi("Xem chứng nhận ↗")}</em>
     </div>
   );
 }

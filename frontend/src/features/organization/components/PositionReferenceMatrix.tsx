@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { useReferencePositionLevels } from '@/hooks/use-reference-position-levels';
 import {
@@ -22,11 +23,12 @@ const POSITION_SHORT: Record<string, string> = {
 const COLUMNS = REFERENCE_POSITIONS.map((position) => ({ code: position.code, name: position.name, label: POSITION_SHORT[position.code] ?? position.name }));
 
 function LevelChip({ level }: { level: number }) {
+  useUiLanguage();
   const tone = LEVEL_TONES[level];
   if (!tone) return <span style={{ color: 'var(--po-muted)' }}>—</span>;
   return (
     <span className="inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: tone.bg, color: tone.fg }}>
-      {tone.name}
+      {translateUi(tone.name)}
     </span>
   );
 }
@@ -36,20 +38,19 @@ function LevelChip({ level }: { level: number }) {
  * owner set the organization levels above; each organization adjusts the requirements of its own positions.
  */
 export function PositionReferenceMatrix() {
+  useUiLanguage();
   const [focused, setFocused] = useState<string | null>(null);
   const { data: reference, isLoading, isError } = useReferencePositionLevels();
 
-  if (isLoading) return <p className="py-3 text-sm text-slate-500">Đang tải mức tham chiếu…</p>;
-  if (isError || !reference) return <p className="py-3 text-sm text-red-500" role="alert">Chưa tải được mức tham chiếu. Vui lòng thử lại.</p>;
+  if (isLoading) return <p className="py-3 text-sm text-slate-500">{translateUi("Đang tải mức tham chiếu…")}</p>;
+  if (isError || !reference) return <p className="py-3 text-sm text-red-500" role="alert">{translateUi("Chưa tải được mức tham chiếu. Vui lòng thử lại.")}</p>;
 
   return (
     <div className="overflow-x-auto">
         <table className="w-full min-w-[680px] border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
-              <th scope="col" className="border-b px-3 py-3 text-left text-xs font-bold uppercase tracking-wider" style={{ borderColor: 'var(--po-line)', color: 'var(--po-muted)' }}>
-                Miền năng lực
-              </th>
+              <th scope="col" className="border-b px-3 py-3 text-left text-xs font-bold uppercase tracking-wider" style={{ borderColor: 'var(--po-line)', color: 'var(--po-muted)' }}>{translateUi("Miền năng lực")}</th>
               {COLUMNS.map((column) => {
                 const active = focused === column.code;
                 return (
@@ -61,13 +62,13 @@ export function PositionReferenceMatrix() {
                   >
                     <button
                       type="button"
-                      title={column.name}
+                      title={translateUi(column.name)}
                       aria-pressed={active}
                       onClick={() => setFocused(active ? null : column.code)}
                       className="rounded-md px-2 py-1 text-sm font-bold hover:bg-[var(--po-soft)]"
                       style={{ color: active ? 'var(--po-accent)' : 'var(--po-ink)' }}
                     >
-                      {column.label}
+                      {translateUi(column.label)}
                     </button>
                   </th>
                 );
@@ -87,9 +88,9 @@ export function PositionReferenceMatrix() {
                     <span className="mr-2 inline-grid size-6 place-items-center rounded-md text-[10px] font-black" style={{ background: 'var(--po-soft)', color: 'var(--po-accent)' }}>
                       {String(domain.number).padStart(2, '0')}
                     </span>
-                    {domain.name}
+                    {translateUi(domain.name)}
                     {domain.number === 6 && (
-                      <span className="ml-1.5 text-[11px] font-normal italic" style={{ color: 'var(--po-muted)' }}>(mới, chưa khảo sát)</span>
+                      <span className="ml-1.5 text-[11px] font-normal italic" style={{ color: 'var(--po-muted)' }}>{translateUi("(mới, chưa khảo sát)")}</span>
                     )}
                   </th>
                   {COLUMNS.map((column) => (

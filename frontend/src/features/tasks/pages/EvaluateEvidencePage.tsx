@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import {
@@ -11,6 +12,7 @@ import type { RubricCriterion } from '@/services/task.service';
 import { apiErrorMessage, formatDate } from '@/lib/utils';
 
 export function EvaluateEvidencePage() {
+  useUiLanguage();
   const { id: taskIdFromParam, submissionId } = useParams<{ id?: string; submissionId?: string }>();
   const [searchParams] = useSearchParams();
   const subIdFromQuery = searchParams.get('subId');
@@ -94,14 +96,12 @@ export function EvaluateEvidencePage() {
     return (
       <div className="max-w-md mx-auto py-16 text-center space-y-4">
         <AlertTriangle className="size-12 text-amber-500 mx-auto" />
-        <h2 className="text-lg font-bold text-slate-900">Không tìm thấy bài nộp</h2>
+        <h2 className="text-lg font-bold text-slate-900">{translateUi("Không tìm thấy bài nộp")}</h2>
         <p className="text-sm text-slate-500">Chưa có bài nộp nào cho nhiệm vụ này hoặc bài nộp không hợp lệ.</p>
         <Link
           to={`/enterprise/tasks/${taskId}`}
           className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium"
-        >
-          Quay lại nhiệm vụ
-        </Link>
+        >{translateUi("Quay lại nhiệm vụ")}</Link>
       </div>
     );
   }
@@ -117,8 +117,8 @@ export function EvaluateEvidencePage() {
       </Link>
 
       <PageHeader
-        title={`Chấm điểm minh chứng: ${submission.employeeName}`}
-        subtitle={`Bài thực hành: ${task.title} • Nộp ngày: ${formatDate(submission.submittedAt)}`}
+        title={translateUi(`Chấm điểm minh chứng: ${submission.employeeName}`)}
+        subtitle={translateUi(`Bài thực hành: ${task.title} • Nộp ngày: ${formatDate(submission.submittedAt)}`)}
       />
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -160,7 +160,7 @@ export function EvaluateEvidencePage() {
                     <ExternalLink className="size-3.5 shrink-0" />
                     <span className="truncate">{url}</span>
                   </a>
-                ) : <p key={i} className="text-xs text-slate-500">Đường dẫn {i + 1} không hợp lệ.</p>
+                ) : <p key={i} className="text-xs text-slate-500">{translateUi("Đường dẫn ")}{i + 1} không hợp lệ.</p>
                 )}
               </div>
             </div>
@@ -183,8 +183,8 @@ export function EvaluateEvidencePage() {
 
         {alreadyEvaluated && (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-2" role="status">
-            <p className="font-semibold text-slate-900">Bài nộp đã được đánh giá</p>
-            <p className="text-sm text-slate-700">Điểm: {submission.evaluation?.score ?? '—'} · Kết quả: {{ APPROVED: 'Đạt bài thực hành', REVISION_REQUESTED: 'Cần chỉnh sửa', REJECTED: 'Không đạt', PENDING_REVIEW: 'Chờ chấm' }[submission.status]}</p>
+            <p className="font-semibold text-slate-900">{translateUi("Bài nộp đã được đánh giá")}</p>
+            <p className="text-sm text-slate-700">{translateUi("Điểm: ")}{submission.evaluation?.score ?? '—'} · Kết quả: {{ APPROVED: 'Đạt bài thực hành', REVISION_REQUESTED: 'Cần chỉnh sửa', REJECTED: 'Không đạt', PENDING_REVIEW: 'Chờ chấm' }[submission.status]}</p>
             {submission.evaluation?.feedback && <p className="text-sm text-slate-700 whitespace-pre-line">{submission.evaluation.feedback}</p>}
             <p className="text-xs text-slate-500">Kết quả này không tự xác nhận cấp năng lực.</p>
           </div>
@@ -195,7 +195,7 @@ export function EvaluateEvidencePage() {
         <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-5">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-base font-bold text-slate-900">Tiêu chí đánh giá</h3>
+              <h3 className="text-base font-bold text-slate-900">{translateUi("Tiêu chí đánh giá")}</h3>
               <p className="text-xs text-slate-500 mt-0.5">Nhập điểm thành phần cho từng tiêu chí đánh giá.</p>
             </div>
             <div className="text-right">
@@ -211,8 +211,8 @@ export function EvaluateEvidencePage() {
                 className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div className="space-y-1 flex-1">
-                  <span className="text-sm font-bold text-slate-900">{r.label}</span>
-                  {r.description && <p className="text-xs text-slate-500">{r.description}</p>}
+                  <span className="text-sm font-bold text-slate-900">{translateUi(r.label)}</span>
+                  {r.description && <p className="text-xs text-slate-500">{translateUi(r.description)}</p>}
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
@@ -264,7 +264,7 @@ export function EvaluateEvidencePage() {
               >
                 <CheckCircle2 className={`size-5 ${decision === 'APPROVED' ? 'text-emerald-600' : 'text-slate-400'}`} />
                 <div>
-                  <p className="font-bold text-xs">Đạt bài thực hành</p>
+                  <p className="font-bold text-xs">{translateUi("Đạt bài thực hành")}</p>
                   <p className="text-[11px] text-slate-500">Ghi nhận kết quả chấm bài</p>
                 </div>
               </button>
@@ -280,7 +280,7 @@ export function EvaluateEvidencePage() {
               >
                 <AlertTriangle className={`size-5 ${decision === 'REVISION_REQUESTED' ? 'text-amber-600' : 'text-slate-400'}`} />
                 <div>
-                  <p className="font-bold text-xs">Yêu cầu sửa lại</p>
+                  <p className="font-bold text-xs">{translateUi("Yêu cầu sửa lại")}</p>
                   <p className="text-[11px] text-slate-500">Cần bổ sung minh chứng</p>
                 </div>
               </button>
@@ -310,9 +310,7 @@ export function EvaluateEvidencePage() {
           <Link
             to={`/enterprise/tasks/${taskId}`}
             className="px-5 py-2.5 border border-slate-200 text-slate-700 font-medium text-sm rounded-xl hover:bg-slate-50 transition"
-          >
-            Hủy
-          </Link>
+          >{translateUi("Hủy")}</Link>
           {!alreadyEvaluated && <button
             type="submit"
             disabled={evaluateMutation.isPending}

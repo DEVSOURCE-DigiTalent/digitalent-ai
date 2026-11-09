@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 interface KpiItem {
   label: string;
   value: number | string;
@@ -17,6 +18,7 @@ export function ReportKpiSummary({
   submissions,
   underway,
 }: ReportKpiSummaryProps) {
+  useUiLanguage();
   const items: KpiItem[] = [
     { label: 'Khóa hoàn thành', value: approved, sub: 'Đã được xác nhận' },
     { label: 'Học viên trong chu kỳ', value: learners, sub: 'Trong phạm vi hiển thị' },
@@ -49,7 +51,7 @@ export function ReportKpiSummary({
           }}
         >
           <span className="text-[10px]" style={{ color: 'var(--po-muted)' }}>
-            {item.label}
+            {translateUi(item.label)}
           </span>
           <strong
             className="block text-[28px] tabular-nums"

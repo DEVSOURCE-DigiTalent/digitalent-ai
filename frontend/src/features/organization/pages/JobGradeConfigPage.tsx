@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Edit2, Users, Briefcase } from 'lucide-react';
@@ -11,6 +12,7 @@ import { INPUT_CLASS, PRIMARY_BUTTON, SECONDARY_BUTTON } from '@/features/onboar
 import type { JobGradeItem } from '@/services/job-grade.service';
 
 export function JobGradeConfigPage() {
+  useUiLanguage();
   const { can } = usePermission();
   const canManage = can(PERMISSIONS.JOB_GRADE_MANAGE);
 
@@ -46,9 +48,9 @@ export function JobGradeConfigPage() {
     }
   };
 
-  if (isLoading) return <PageLoading label="Đang tải cấu hình cấp bậc" variant="detail" />;
+  if (isLoading) return <PageLoading label={translateUi("Đang tải cấu hình cấp bậc")} variant="detail" />;
   if (isError || !grades) {
-    return <p role="alert" className="text-sm text-red-600">Không tải được cấu hình cấp bậc.</p>;
+    return <p role="alert" className="text-sm text-red-600">{translateUi("Không tải được cấu hình cấp bậc.")}</p>;
   }
 
   return (
@@ -57,13 +59,11 @@ export function JobGradeConfigPage() {
         to="/enterprise/positions"
         className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" />
-        Vị trí công việc
-      </Link>
+        <ArrowLeft className="size-4" aria-hidden="true" />{translateUi("Vị trí công việc")}</Link>
 
       <PageHeader
-        title="Cấu hình Cấp bậc (G1 – G3)"
-        subtitle="Quản lý tên hiển thị và định nghĩa trách nhiệm cho 3 cấp bậc chuẩn trong tổ chức. Mã cấp bậc G1, G2, G3 là cố định."
+        title={translateUi("Cấu hình Cấp bậc (G1 – G3)")}
+        subtitle={translateUi("Quản lý tên hiển thị và định nghĩa trách nhiệm cho 3 cấp bậc chuẩn trong tổ chức. Mã cấp bậc G1, G2, G3 là cố định.")}
       />
 
       <div className="grid gap-6 md:grid-cols-3">
@@ -90,7 +90,7 @@ export function JobGradeConfigPage() {
                       type="button"
                       onClick={() => handleEdit(g)}
                       className="p-1.5 text-slate-400 hover:text-primary-600 rounded-md hover:bg-slate-50 transition-colors"
-                      title="Chỉnh sửa tên và mô tả"
+                      title={translateUi("Chỉnh sửa tên và mô tả")}
                     >
                       <Edit2 className="size-4" />
                     </button>
@@ -99,18 +99,18 @@ export function JobGradeConfigPage() {
 
                 <h3 className="text-lg font-bold text-slate-900">{g.name}</h3>
                 <p className="mt-2 text-sm text-slate-600 leading-relaxed min-h-16">
-                  {g.description || 'Chưa có mô tả chi tiết cho cấp bậc này.'}
+                  {translateUi(g.description) || 'Chưa có mô tả chi tiết cho cấp bậc này.'}
                 </p>
               </div>
 
               <div className="mt-6 border-t border-slate-100 pt-4 grid grid-cols-2 gap-2 text-xs">
                 <div className="flex items-center gap-1.5 text-slate-600">
                   <Briefcase className="size-4 text-slate-400" />
-                  <span>{g.positionCount} vị trí áp dụng</span>
+                  <span>{g.positionCount}{translateUi(" vị trí áp dụng")}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-slate-600">
                   <Users className="size-4 text-slate-400" />
-                  <span>{g.employeeCount} nhân sự</span>
+                  <span>{g.employeeCount}{translateUi(" nhân sự")}</span>
                 </div>
               </div>
             </div>
@@ -119,8 +119,8 @@ export function JobGradeConfigPage() {
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 space-y-1">
-        <p className="font-semibold text-slate-800">Cấp bậc theo vị trí công việc</p>
-        <p>Nhân sự nhận cấp bậc G1–G3 theo vị trí được phân công. Cấp bậc được dùng khi xác định chuẩn năng lực và giao khóa học.</p>
+        <p className="font-semibold text-slate-800">{translateUi("Cấp bậc theo vị trí công việc")}</p>
+        <p>{translateUi("Nhân sự nhận cấp bậc G1–G3 theo vị trí được phân công. Cấp bậc được dùng khi xác định chuẩn năng lực và giao khóa học.")}</p>
       </div>
 
       {editingGrade && (
@@ -128,8 +128,8 @@ export function JobGradeConfigPage() {
           open={Boolean(editingGrade)}
           onClose={() => setEditingGrade(null)}
           size="sm"
-          title={`Chỉnh sửa Cấp bậc ${editingGrade.code}`}
-          description="Cập nhật tên hiển thị phù hợp với văn hóa và cơ cấu chức danh doanh nghiệp của bạn."
+          title={translateUi(`Chỉnh sửa Cấp bậc ${editingGrade.code}`)}
+          description={translateUi("Cập nhật tên hiển thị phù hợp với văn hóa và cơ cấu chức danh doanh nghiệp của bạn.")}
           footer={
             <>
               <button
@@ -137,23 +137,21 @@ export function JobGradeConfigPage() {
                 onClick={() => setEditingGrade(null)}
                 className={SECONDARY_BUTTON}
                 disabled={updateMutation.isPending}
-              >
-                Hủy
-              </button>
+              >{translateUi("Hủy")}</button>
               <button
                 type="button"
                 onClick={handleSave}
                 className={PRIMARY_BUTTON}
                 disabled={updateMutation.isPending}
               >
-                {updateMutation.isPending ? 'Đang lưu…' : 'Lưu thay đổi'}
+                {updateMutation.isPending ? translateUi('Đang lưu…') : translateUi('Lưu thay đổi')}
               </button>
             </>
           }
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Mã cấp bậc</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{translateUi("Mã cấp bậc")}</label>
               <input
                 disabled
                 value={editingGrade.code}
@@ -161,22 +159,22 @@ export function JobGradeConfigPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Tên hiển thị *</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{translateUi("Tên hiển thị *")}</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ví dụ: Chuyên viên, Trưởng nhóm, Trưởng phòng..."
+                placeholder={translateUi("Ví dụ: Chuyên viên, Trưởng nhóm, Trưởng phòng...")}
                 className={INPUT_CLASS}
                 autoFocus
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Mô tả định nghĩa</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{translateUi("Mô tả định nghĩa")}</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                placeholder="Mô tả phạm vi trách nhiệm hoặc mức độ chuyên môn của cấp bậc..."
+                placeholder={translateUi("Mô tả phạm vi trách nhiệm hoặc mức độ chuyên môn của cấp bậc...")}
                 className={INPUT_CLASS}
               />
             </div>

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Mail } from 'lucide-react';
 import type { MemberListItem } from '@/services/member.service';
 import { rolesLabel, MEMBER_STATUS_LABELS } from '@/features/members/member-labels';
@@ -10,6 +11,7 @@ interface MemberCardProps {
 }
 
 export function MemberCard({ member, onClick, onResendInvite, isResending }: MemberCardProps) {
+  useUiLanguage();
   const initials = member.fullName
     .split(' ')
     .map((w) => w[0])
@@ -62,30 +64,18 @@ export function MemberCard({ member, onClick, onResendInvite, isResending }: Mem
           {[
             member.departmentName,
             member.positionName,
-            member.kind === 'invitation'
-              ? 'Chờ kích hoạt'
-              : member.coveragePercent != null
-                ? `${member.coveragePercent.toFixed(0)}% năng lực`
-                : 'Chưa đánh giá',
+            member.kind === 'invitation' ? 'Chờ kích hoạt' : null,
           ]
-            .filter(Boolean)
+            .filter((value, index, all) => value && all.indexOf(value) === index)
             .join(' · ')}
         </small>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        {member.highGapCount != null && member.highGapCount > 0 && (
-          <span
-            className="rounded px-1.5 py-0.5 text-[10px] font-bold"
-            style={{ background: '#fee2e2', color: '#dc2626' }}
-          >
-            {member.highGapCount} cao
-          </span>
-        )}
         <span
           className="rounded-full px-2.5 py-1 text-xs font-bold"
           style={{ background: statusColor.bg, color: statusColor.fg }}
         >
-          {MEMBER_STATUS_LABELS[member.status]}
+          {translateUi(MEMBER_STATUS_LABELS[member.status])}
         </span>
         <span
           className="hidden sm:inline-block rounded-lg border px-2.5 py-1 text-xs font-bold"
@@ -108,10 +98,10 @@ export function MemberCard({ member, onClick, onResendInvite, isResending }: Mem
             }}
             disabled={isResending}
             className="inline-flex items-center gap-1.5 rounded-lg border border-teal-200 bg-teal-50/80 hover:bg-teal-100 hover:border-teal-300 px-2.5 py-1 text-[11px] font-bold text-teal-700 transition-all hover:scale-102 active:scale-98 disabled:opacity-50"
-            title="Gửi email mời kích hoạt tài khoản cho nhân viên này"
+            title={translateUi("Gửi email mời kích hoạt tài khoản cho nhân viên này")}
           >
             <Mail className="size-3.5 text-teal-600" />
-            <span>{isResending ? 'Đang gửi...' : 'Gửi lời mời'}</span>
+            <span>{isResending ? translateUi('Đang gửi...') : translateUi('Gửi lời mời')}</span>
           </button>
         )}
       </div>

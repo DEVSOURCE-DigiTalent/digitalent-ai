@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useCallback, useId, useMemo, useState, useEffect } from 'react';
 import { BookOpen, BriefcaseBusiness, Building2, CalendarDays, CircleCheck, UsersRound } from 'lucide-react';
 import { toast } from 'sonner';
@@ -52,6 +53,7 @@ interface AssignCourseModalProps {
  * - Tự động từ Khoảng trống năng lực (Skill Gap)
  */
 export function AssignCourseModal({ open, onClose, courseId: initialCourse, employeeIds: initialEmployees }: AssignCourseModalProps) {
+  useUiLanguage();
   const base = useId();
   const create = useCreateAssignments();
   const courses = useCourseCatalog({ status: 'PUBLISHED' }, open).data?.items ?? [];
@@ -170,14 +172,14 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
       onClose={onClose}
       size="xl"
       className="assign-course-dialog"
-      title="Giao khóa học"
+      title={translateUi("Giao khóa học")}
       description="Chọn khóa học, đối tượng nhận và hạn hoàn thành."
       footer={
         <>
-          <button type="button" onClick={onClose} className={SECONDARY_BUTTON}>{result ? 'Đóng' : 'Hủy'}</button>
+          <button type="button" onClick={onClose} className={SECONDARY_BUTTON}>{result ? translateUi('Đóng') : translateUi('Hủy')}</button>
           {!result && (
             <button type="button" onClick={submit} disabled={!courseId || !hasTarget || create.isPending} className={PRIMARY_BUTTON}>
-              {create.isPending ? 'Đang giao…' : 'Giao khóa học'}
+              {create.isPending ? 'Đang giao…' : translateUi('Giao khóa học')}
             </button>
           )}
         </>
@@ -190,7 +192,7 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
               <p className="font-medium">{result.skipped.length} người chưa được giao:</p>
               <ul className="mt-2 grid gap-1">
-                {result.skipped.map((s) => <li key={s.employeeId}>{s.employeeName}: {SKIP_REASON_LABELS[s.reason]}</li>)}
+                {result.skipped.map((s) => <li key={s.employeeId}>{s.employeeName}: {translateUi(SKIP_REASON_LABELS[s.reason])}</li>)}
               </ul>
             </div>
           )}
@@ -198,15 +200,15 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
       ) : (
         <div className="assign-course-form">
           <section className="assign-course-step assign-course-step--course">
-            <div className="assign-course-step-heading"><span>01</span><div><h3>Chọn khóa học</h3><p>Khóa học đã xuất bản trong danh mục</p></div></div>
-            <label htmlFor={`${base}-course`} className="sr-only">Khóa học</label>
+            <div className="assign-course-step-heading"><span>01</span><div><h3>{translateUi("Chọn khóa học")}</h3><p>Khóa học đã xuất bản trong danh mục</p></div></div>
+            <label htmlFor={`${base}-course`} className="sr-only">{translateUi("Khóa học")}</label>
             <select id={`${base}-course`} value={courseId} onChange={(e) => setCourseId(e.target.value)} className={INPUT_CLASS}>
               <option value="">Chọn khóa học…</option>
               {courses.map((c) => (
-                <option key={c.id} value={c.id}>{c.code} · {c.title} ({LEVEL_SUFFIX_LABELS[c.level]})</option>
+                <option key={c.id} value={c.id}>{c.code} · {translateUi(c.title)} ({translateUi(LEVEL_SUFFIX_LABELS[c.level])})</option>
               ))}
             </select>
-            {selectedCourse && <div className="assign-course-selected"><BookOpen size={18} /><div><strong>{selectedCourse.title}</strong><span>{selectedCourse.code} · {LEVEL_SUFFIX_LABELS[selectedCourse.level]}</span></div><CircleCheck size={18} /></div>}
+            {selectedCourse && <div className="assign-course-selected"><BookOpen size={18} /><div><strong>{translateUi(selectedCourse.title)}</strong><span>{selectedCourse.code} · {translateUi(LEVEL_SUFFIX_LABELS[selectedCourse.level])}</span></div><CircleCheck size={18} /></div>}
           </section>
 
           <fieldset className="assign-course-step assign-course-step--audience">
@@ -217,7 +219,7 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
                 const Icon = TARGET_ICONS[value];
                 return <label key={value} className="assign-course-target-choice">
                   <input type="radio" name={`${base}-kind`} checked={kind === value} onChange={() => setKind(value)} />
-                  <Icon size={19} /><span>{label}</span>
+                  <Icon size={19} /><span>{translateUi(label)}</span>
                 </label>;
               })}
             </div>
@@ -226,20 +228,20 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
           <div className="assign-course-target-panel">
           {kind === 'employees' && (
             <div className="grid gap-2">
-              <div className="assign-course-panel-heading"><strong>Nhân viên</strong><span>{employeeIds.length} đã chọn</span></div>
-              <label htmlFor={`${base}-search`} className="sr-only">Tìm nhân viên</label>
+              <div className="assign-course-panel-heading"><strong>{translateUi("Nhân viên")}</strong><span>{employeeIds.length}{translateUi(" đã chọn")}</span></div>
+              <label htmlFor={`${base}-search`} className="sr-only">{translateUi("Tìm nhân viên")}</label>
               <input id={`${base}-search`} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm theo tên hoặc mã" className={INPUT_CLASS} />
-              <ul aria-label="Nhân viên" className="assign-course-person-list divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200">
+              <ul aria-label={translateUi("Nhân viên")} className="assign-course-person-list divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200">
                 {visibleEmployees.map((e) => (
                   <li key={e.id}>
                     <label className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm hover:bg-slate-50">
                       <input type="checkbox" checked={employeeIds.includes(e.id)} onChange={() => toggle(e.id)} className="size-4 accent-primary-600" />
                       <span className="font-medium text-slate-900">{e.fullName}</span>
-                      <span className="text-xs text-slate-500">{e.employeeCode} · {e.positionName ?? 'Chưa có vị trí'} {getEmployeeGrade(e) && `(${getEmployeeGrade(e)})`}</span>
+                      <span className="text-xs text-slate-500">{e.employeeCode} · {e.positionName ?? translateUi('Chưa có vị trí')} {getEmployeeGrade(e) && `(${getEmployeeGrade(e)})`}</span>
                     </label>
                   </li>
                 ))}
-                {visibleEmployees.length === 0 && <li className="px-3 py-4 text-sm text-slate-500">Không có nhân viên phù hợp.</li>}
+                {visibleEmployees.length === 0 && <li className="px-3 py-4 text-sm text-slate-500">{translateUi("Không có nhân viên phù hợp.")}</li>}
               </ul>
               {employeesLoading && <p className="text-xs text-slate-500">Đang tải danh sách nhân viên…</p>}
             </div>
@@ -247,7 +249,7 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
 
           {kind === 'department' && (
             <div className="grid gap-2">
-              <div className="assign-course-panel-heading"><strong>Phòng ban</strong><span>{selectedDepartmentIds.length} đã chọn</span></div>
+              <div className="assign-course-panel-heading"><strong>{translateUi("Phòng ban")}</strong><span>{selectedDepartmentIds.length}{translateUi(" đã chọn")}</span></div>
               <div className="flex items-center justify-between text-xs text-slate-600">
                 <span className="font-medium text-slate-700">Chọn một hoặc nhiều phòng ban:</span>
                 <div className="flex items-center gap-2">
@@ -255,9 +257,7 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
                     type="button"
                     onClick={() => setSelectedDepartmentIds(departments.map((d) => d.id))}
                     className="text-primary-600 hover:underline font-medium"
-                  >
-                    Chọn tất cả
-                  </button>
+                  >{translateUi("Chọn tất cả")}</button>
                   <span>•</span>
                   <button
                     type="button"
@@ -288,20 +288,19 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
                         />
                         <span className="font-medium text-slate-900">{d.name}</span>
                       </div>
-                      <span className="text-xs text-slate-500">{empCount} nhân sự</span>
+                      <span className="text-xs text-slate-500">{empCount}{translateUi(" nhân sự")}</span>
                     </label>
                   );
                 })}
               </div>
-              <p className="text-xs text-slate-500">
-                Đã chọn <strong className="text-slate-800">{selectedDepartmentIds.length}</strong> phòng ban ({selectedDeptEmployees.length} nhân sự sẽ được giao).
+              <p className="text-xs text-slate-500">{translateUi("Đã chọn ")}<strong className="text-slate-800">{selectedDepartmentIds.length}</strong>{translateUi(" phòng ban (")}{selectedDeptEmployees.length} nhân sự sẽ được giao).
               </p>
             </div>
           )}
 
           {kind === 'position' && (
             <div className="grid gap-1.5">
-              <label htmlFor={`${base}-position`} className="text-sm font-medium text-slate-700">Vị trí công việc</label>
+              <label htmlFor={`${base}-position`} className="text-sm font-medium text-slate-700">{translateUi("Vị trí công việc")}</label>
               <select id={`${base}-position`} value={jobPositionId} onChange={(e) => setJobPositionId(e.target.value)} className={INPUT_CLASS}>
                 <option value="">Chọn vị trí…</option>
                 {positions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -332,8 +331,7 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
                   );
                 })}
               </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Có <strong className="text-slate-800">{gradeEmployees.length}</strong> nhân sự thuộc cấp bậc {selectedGrade}.
+              <p className="text-xs text-slate-500 mt-1">{translateUi("Có ")}<strong className="text-slate-800">{gradeEmployees.length}</strong> nhân sự thuộc cấp bậc {selectedGrade}.
               </p>
             </div>
           )}
@@ -360,20 +358,20 @@ export function AssignCourseModal({ open, onClose, courseId: initialCourse, empl
               ) : (
                 <p className="text-xs text-slate-500 py-2">Hiện không có nhân viên nào có khoảng trống ở năng lực này.</p>
               )}
-              <p className="text-xs text-slate-500">Đã chọn {gapEmployees.length} người.</p>
+              <p className="text-xs text-slate-500">{translateUi("Đã chọn ")}{gapEmployees.length} người.</p>
             </div>
           )}
           </div>
 
           <aside className="assign-course-side-panel">
-            <div className="assign-course-step-heading"><span>03</span><div><h3>Hạn hoàn thành</h3><p>Có thể để trống để dùng hạn mặc định</p></div></div>
-            <label htmlFor={`${base}-due`} className="sr-only">Hạn hoàn thành</label>
+            <div className="assign-course-step-heading"><span>03</span><div><h3>{translateUi("Hạn hoàn thành")}</h3><p>Có thể để trống để dùng hạn mặc định</p></div></div>
+            <label htmlFor={`${base}-due`} className="sr-only">{translateUi("Hạn hoàn thành")}</label>
             <input id={`${base}-due`} type="date" min={today} value={dueDate} onChange={(e) => setDueDate(e.target.value)} aria-describedby={`${base}-due-hint`} className={INPUT_CLASS} />
             <p id={`${base}-due-hint`} className="text-xs text-slate-500">Hạn mặc định được thiết lập trong Cài đặt tổ chức.</p>
-            <div className="assign-course-review"><strong>Thông tin phân công</strong><span><BookOpen size={15} /> {selectedCourse?.title || 'Chưa chọn khóa học'}</span><span><UsersRound size={15} /> {hasTarget ? `${targetCount} nhân viên` : 'Chưa chọn người nhận'}</span><span><CalendarDays size={15} /> {dueDate ? new Date(`${dueDate}T00:00:00`).toLocaleDateString('vi-VN') : 'Hạn mặc định'}</span></div>
+            <div className="assign-course-review"><strong>Thông tin phân công</strong><span><BookOpen size={15} /> {translateUi(selectedCourse?.title) || 'Chưa chọn khóa học'}</span><span><UsersRound size={15} /> {hasTarget ? translateUi(`${targetCount} nhân viên`) : 'Chưa chọn người nhận'}</span><span><CalendarDays size={15} /> {dueDate ? new Date(`${dueDate}T00:00:00`).toLocaleDateString('vi-VN') : 'Hạn mặc định'}</span></div>
           </aside>
 
-          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+          {error && <p role="alert" className="text-sm text-red-600">{translateUi(error)}</p>}
         </div>
       )}
     </Modal>

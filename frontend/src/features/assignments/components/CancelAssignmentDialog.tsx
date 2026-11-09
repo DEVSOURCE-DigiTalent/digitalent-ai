@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { BookOpen, CalendarDays, CircleAlert, UserRound, X } from 'lucide-react';
@@ -8,6 +9,7 @@ import type { AssignmentRow } from '@/services/assignment.service';
 import './cancel-assignment-dialog.css';
 
 export function CancelAssignmentDialog({ assignment, onClose }: { assignment: AssignmentRow; onClose: () => void }) {
+  useUiLanguage();
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const cancel = useCancelAssignment();
@@ -33,16 +35,16 @@ export function CancelAssignmentDialog({ assignment, onClose }: { assignment: As
         <div><small>KHÓA HỌC ĐANG GIAO</small><strong>{assignment.courseTitle}</strong><span>{assignment.courseCode}</span></div>
       </div>
       <div className="cancel-assignment-info">
-        <div><UserRound size={17} /><span>Nhân viên</span><strong>{assignment.employeeName}</strong></div>
-        <div><CalendarDays size={17} /><span>Hạn hoàn thành</span><strong>{assignment.dueDate ? formatDate(assignment.dueDate) : 'Theo thiết lập'}</strong></div>
+        <div><UserRound size={17} /><span>{translateUi("Nhân viên")}</span><strong>{assignment.employeeName}</strong></div>
+        <div><CalendarDays size={17} /><span>{translateUi("Hạn hoàn thành")}</span><strong>{assignment.dueDate ? formatDate(assignment.dueDate) : 'Theo thiết lập'}</strong></div>
       </div>
       <div className="cancel-assignment-note"><CircleAlert size={18} /><span>Lượt giao sẽ được hủy. Tiến độ đã học vẫn được giữ lại nếu giao lại sau này.</span></div>
       <div className="cancel-assignment-reason">
-        <label htmlFor="cancel-assignment-reason">Lý do hủy <span>*</span></label>
+        <label htmlFor="cancel-assignment-reason">{translateUi("Lý do hủy ")}<span>*</span></label>
         <textarea id="cancel-assignment-reason" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Nhập lý do hủy lượt giao…" rows={3} disabled={pending} maxLength={500} />
         <small>{reason.length}/500 ký tự</small>
       </div>
-      {error && <p role="alert" className="cancel-assignment-error">{error}</p>}
+      {error && <p role="alert" className="cancel-assignment-error">{translateUi(error)}</p>}
       <div className="cancel-assignment-actions">
         <button type="button" onClick={close} disabled={pending}>Giữ lượt giao</button>
         <button type="button" onClick={submit} disabled={!reason.trim() || pending}><X size={16} />{pending ? 'Đang hủy…' : 'Xác nhận hủy'}</button>

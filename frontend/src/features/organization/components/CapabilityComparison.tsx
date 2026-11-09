@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import type { GapGroup } from '@/services/analytics.service';
 import { SectionLoading } from '@/components/shared/LoadingState';
@@ -29,6 +30,7 @@ export function CapabilityComparison({
   onGroupByChange,
   isLoading,
 }: CapabilityComparisonProps) {
+  useUiLanguage();
   return (
     <section
       className="gap-comparison rounded-[22px] border p-6"
@@ -39,22 +41,18 @@ export function CapabilityComparison({
           <span
             className="text-[10px] font-black uppercase tracking-[0.1em]"
             style={{ color: 'var(--po-accent)' }}
-          >
-            Tổng quan so sánh
-          </span>
+          >{translateUi("Tổng quan so sánh")}</span>
           <h2
             className="mt-1 text-lg font-semibold"
             style={{ color: 'var(--po-ink)', letterSpacing: '-0.02em' }}
-          >
-            Mức đáp ứng năng lực theo nhóm
-          </h2>
+          >{translateUi("Mức đáp ứng năng lực theo nhóm")}</h2>
         </div>
 
         <div
           className="inline-flex rounded-xl border p-1 text-xs"
           style={{ borderColor: 'var(--po-line)', background: 'var(--po-canvas)' }}
           role="group"
-          aria-label="Nhóm theo"
+          aria-label={translateUi("Nhóm theo")}
         >
           {TOGGLE_OPTIONS.map((opt) => (
             <button
@@ -69,30 +67,24 @@ export function CapabilityComparison({
                   : { color: 'var(--po-muted)' }
               }
             >
-              {opt.label}
+              {translateUi(opt.label)}
             </button>
           ))}
         </div>
       </div>
 
       {isLoading ? (
-        <SectionLoading label="Đang tải số liệu tổng quan" />
+        <SectionLoading label={translateUi("Đang tải số liệu tổng quan")} />
       ) : groups.length === 0 ? (
         <div className="py-10 text-center">
-          <p className="text-sm font-medium" style={{ color: 'var(--po-ink)' }}>
-            Chưa có dữ liệu khoảng trống
-          </p>
-          <p className="mt-1 text-xs" style={{ color: 'var(--po-muted)' }}>
-            Cần có nhân viên đã gán vị trí và vị trí đã có bộ yêu cầu năng lực đang áp dụng.
-          </p>
+          <p className="text-sm font-medium" style={{ color: 'var(--po-ink)' }}>{translateUi("Chưa có dữ liệu khoảng trống")}</p>
+          <p className="mt-1 text-xs" style={{ color: 'var(--po-muted)' }}>{translateUi("Cần có nhân viên đã gán vị trí và vị trí đã có bộ yêu cầu năng lực đang áp dụng.")}</p>
           <div className="mt-4 flex items-center justify-center">
             <Link
               to="/enterprise/positions"
               className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:opacity-95"
               style={{ background: 'var(--po-primary, #0c4a60)' }}
-            >
-              Thiết lập & kích hoạt yêu cầu vị trí →
-            </Link>
+            >{translateUi("Thiết lập & kích hoạt yêu cầu vị trí →")}</Link>
           </div>
         </div>
       ) : (
@@ -104,32 +96,24 @@ export function CapabilityComparison({
                   className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider"
                   style={{ color: 'var(--po-muted)', borderBottom: `1px solid var(--po-line)` }}
                 >
-                  {GROUP_LABELS[groupBy]}
+                  {translateUi(GROUP_LABELS[groupBy])}
                 </th>
                 <th
                   className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider"
                   style={{ color: 'var(--po-muted)', borderBottom: `1px solid var(--po-line)` }}
-                >
-                  Nhân sự
-                </th>
+                >{translateUi("Nhân sự")}</th>
                 <th
                   className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider"
                   style={{ color: 'var(--po-muted)', borderBottom: `1px solid var(--po-line)` }}
-                >
-                  Tỷ lệ đáp ứng TB
-                </th>
+                >{translateUi("Tỷ lệ đáp ứng TB")}</th>
                 <th
                   className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider"
                   style={{ color: 'var(--po-muted)', borderBottom: `1px solid var(--po-line)` }}
-                >
-                  Khoảng trống tổng
-                </th>
+                >{translateUi("Khoảng trống tổng")}</th>
                 <th
                   className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider"
                   style={{ color: 'var(--po-muted)', borderBottom: `1px solid var(--po-line)` }}
-                >
-                  Mức cao
-                </th>
+                >{translateUi("Mức cao")}</th>
               </tr>
             </thead>
             <tbody>
@@ -184,12 +168,9 @@ export function CapabilityComparison({
                           border: '1px solid #fecdd3',
                         }}
                       >
-                        {group.highCount} khoảng trống cao
-                      </span>
+                        {group.highCount}{translateUi(" khoảng trống cao")}</span>
                     ) : (
-                      <span className="text-[11px] font-medium" style={{ color: '#16a34a' }}>
-                        Không có
-                      </span>
+                      <span className="text-[11px] font-medium" style={{ color: '#16a34a' }}>{translateUi("Không có")}</span>
                     )}
                   </td>
                 </tr>

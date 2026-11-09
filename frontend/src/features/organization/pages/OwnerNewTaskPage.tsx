@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -35,6 +36,7 @@ interface FormValues {
 }
 
 export function OwnerNewTaskPage() {
+  useUiLanguage();
   const navigate = useNavigate();
   const createMutation = useCreatePracticalTask();
 
@@ -150,12 +152,9 @@ export function OwnerNewTaskPage() {
           className="inline-flex items-center gap-1.5 text-[11px] font-bold mb-4 transition-opacity hover:opacity-70"
           style={{ color: 'var(--po-muted)' }}
         >
-          <ArrowLeft className="size-3" /> Nhiệm vụ thực tế
-        </Link>
+          <ArrowLeft className="size-3" />{translateUi(" Nhiệm vụ thực tế")}</Link>
 
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-[-0.04em] heading-gradient">
-          Giao bài tập thực hành
-        </h1>
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-[-0.04em] heading-gradient">{translateUi("Giao bài tập thực hành")}</h1>
 
         <form onSubmit={handleSubmit(onSubmit)} className="owner-operations__task-form mt-5 space-y-4">
           {/* Card 1: Info */}
@@ -163,52 +162,50 @@ export function OwnerNewTaskPage() {
             className="rounded-[22px] border p-6 space-y-4"
             style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)', boxShadow: '0 10px 35px rgba(29,48,102,.025)' }}
           >
-            <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>
-              1 · Thông tin nhiệm vụ
-            </p>
+            <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>{translateUi("1 · Thông tin nhiệm vụ")}</p>
             <label className="block space-y-1">
-              <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>Tiêu đề *</span>
+              <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>{translateUi("Tiêu đề *")}</span>
               <input
                 {...register('title', { required: true })}
-                placeholder="VD: Xây dựng quy trình bảo vệ dữ liệu CRM"
+                placeholder={translateUi("VD: Xây dựng quy trình bảo vệ dữ liệu CRM")}
                 className="w-full rounded-lg border px-3 py-2 text-xs outline-none"
                 style={inputStyle}
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>Bối cảnh & yêu cầu *</span>
+              <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>{translateUi("Bối cảnh & yêu cầu *")}</span>
               <textarea
                 rows={3}
                 {...register('description', { required: true })}
-                placeholder="Mô tả tình huống, vấn đề cần giải quyết…"
+                placeholder={translateUi("Mô tả tình huống, vấn đề cần giải quyết…")}
                 className="w-full rounded-lg border px-3 py-2 text-xs outline-none resize-none"
                 style={inputStyle}
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>Sản phẩm đầu ra (minh chứng) *</span>
+              <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>{translateUi("Sản phẩm đầu ra (minh chứng) *")}</span>
               <input
                 {...register('expectedOutput', { required: true })}
-                placeholder="VD: Tài liệu SOP + ảnh chụp màn hình + link repo"
+                placeholder={translateUi("VD: Tài liệu SOP + ảnh chụp màn hình + link repo")}
                 className="w-full rounded-lg border px-3 py-2 text-xs outline-none"
                 style={inputStyle}
               />
             </label>
             <div className="grid sm:grid-cols-2 gap-3">
               <label className="block space-y-1">
-                <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>Cấp độ</span>
+                <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>{translateUi("Cấp độ")}</span>
                 <select
                   {...register('targetLevel', { valueAsNumber: true })}
                   className="w-full rounded-lg border px-3 py-2 text-xs outline-none"
                   style={inputStyle}
                 >
-                  <option value={1}>01 Cơ bản</option>
-                  <option value={2}>02 Trung cấp</option>
-                  <option value={3}>03 Nâng cao</option>
+                  <option value={1}>{translateUi("01 Cơ bản")}</option>
+                  <option value={2}>{translateUi("02 Trung cấp")}</option>
+                  <option value={3}>{translateUi("03 Nâng cao")}</option>
                 </select>
               </label>
               <label className="block space-y-1">
-                <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>Hạn hoàn thành *</span>
+                <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>{translateUi("Hạn hoàn thành *")}</span>
                 <input
                   type="date"
                   {...register('dueDate', { required: true })}
@@ -225,15 +222,12 @@ export function OwnerNewTaskPage() {
             style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)', boxShadow: '0 10px 35px rgba(29,48,102,.025)' }}
           >
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>
-                2 · Năng lực liên kết
-              </p>
+              <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>{translateUi("2 · Năng lực liên kết")}</p>
               <span className="text-[11px] font-bold" style={{ color: 'var(--po-accent)' }}>
-                {selectedCompetencies.length} đã chọn
-              </span>
+                {selectedCompetencies.length}{translateUi(" đã chọn")}</span>
             </div>
             {competenciesLoading ? (
-              <SectionLoading label="Đang tải năng lực" count={2} />
+              <SectionLoading label={translateUi("Đang tải năng lực")} count={2} />
             ) : (
               <div className="grid sm:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
                 {competencies.map((c) => {
@@ -282,20 +276,17 @@ export function OwnerNewTaskPage() {
             style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)', boxShadow: '0 10px 35px rgba(29,48,102,.025)' }}
           >
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>
-                3 · Phân công người thực hiện
-              </p>
+              <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>{translateUi("3 · Phân công người thực hiện")}</p>
               <span className="text-[11px] font-bold" style={{ color: 'var(--po-accent)' }}>
-                {selectedEmployeeIds.length} đã chọn
-              </span>
+                {selectedEmployeeIds.length}{translateUi(" đã chọn")}</span>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <OwnerFilterSelect label="Lọc nhân sự theo phòng ban" value={selectedDepartmentId} onChange={(value) => setValue('departmentId', value, { shouldDirty: true })} options={[{ value: '', label: 'Tất cả phòng ban' }, ...departments.map(([id, name]) => ({ value: id, label: name }))]} className="sm:w-56" />
+              <OwnerFilterSelect label={translateUi("Lọc nhân sự theo phòng ban")} value={selectedDepartmentId} onChange={(value) => setValue('departmentId', value, { shouldDirty: true })} options={[{ value: '', label: 'Tất cả phòng ban' }, ...departments.map(([id, name]) => ({ value: id, label: name }))]} className="sm:w-56" />
               <label className="owner-filter-search flex-1"><Search size={17} aria-hidden="true" /><input
                 type="search"
-                aria-label="Tìm nhân viên"
-                placeholder="Tìm nhân viên…"
+                aria-label={translateUi("Tìm nhân viên")}
+                placeholder={translateUi("Tìm nhân viên…")}
                 value={employeeSearch}
                 onChange={(e) => setEmployeeSearch(e.target.value)}
                 className="w-full text-sm"
@@ -303,7 +294,7 @@ export function OwnerNewTaskPage() {
             </div>
 
             {employeesLoading ? (
-              <SectionLoading label="Đang tải nhân viên" count={2} />
+              <SectionLoading label={translateUi("Đang tải nhân viên")} count={2} />
             ) : (
               <div
                 className="max-h-56 overflow-y-auto space-y-1 rounded-[11px] border p-2"
@@ -339,14 +330,11 @@ export function OwnerNewTaskPage() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>
-                  4 · Tiêu chí đánh giá
-                </p>
+                <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>{translateUi("4 · Tiêu chí đánh giá")}</p>
                 <p
                   className="text-[10px] mt-1"
                   style={{ color: rubricMaxPoints === 100 ? '#16a34a' : '#d97706' }}
-                >
-                  Tổng: {rubricMaxPoints}/100
+                >{translateUi("Tổng: ")}{rubricMaxPoints}/100
                 </p>
               </div>
               <button
@@ -355,8 +343,7 @@ export function OwnerNewTaskPage() {
                 className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[10px] font-bold"
                 style={{ background: 'var(--po-soft)', color: 'var(--po-accent)' }}
               >
-                <Plus className="size-3" /> Thêm
-              </button>
+                <Plus className="size-3" />{translateUi(" Thêm")}</button>
             </div>
 
             <div className="space-y-3">
@@ -369,7 +356,7 @@ export function OwnerNewTaskPage() {
                   <div className="flex items-center gap-3">
                     <input
                       {...register(`rubricCriteria.${idx}.label`, { required: true })}
-                      placeholder={`Tiêu chí ${idx + 1}`}
+                      placeholder={translateUi(`Tiêu chí ${idx + 1}`)}
                       className="flex-1 rounded-lg border px-3 py-1.5 text-xs outline-none"
                       style={inputStyle}
                     />
@@ -395,7 +382,7 @@ export function OwnerNewTaskPage() {
                   </div>
                   <input
                     {...register(`rubricCriteria.${idx}.description`)}
-                    placeholder="Hướng dẫn cho người duyệt…"
+                    placeholder={translateUi("Hướng dẫn cho người duyệt…")}
                     className="w-full rounded-lg border px-3 py-1.5 text-[10px] outline-none"
                     style={inputStyle}
                   />
@@ -410,9 +397,7 @@ export function OwnerNewTaskPage() {
               to="/enterprise/tasks"
               className="rounded-[11px] border px-4 py-2.5 text-xs font-bold transition-transform hover:-translate-y-0.5"
               style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)' }}
-            >
-              Hủy
-            </Link>
+            >{translateUi("Hủy")}</Link>
             <button
               type="submit"
               disabled={isSubmitting || createMutation.isPending}

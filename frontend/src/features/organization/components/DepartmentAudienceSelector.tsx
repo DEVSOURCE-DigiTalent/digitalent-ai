@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useMemo, useState } from 'react';
 import {
   Building2,
@@ -33,6 +34,7 @@ export function DepartmentAudienceSelector({
   value,
   onChange,
 }: DepartmentAudienceSelectorProps) {
+  useUiLanguage();
   const { data: departmentsPaged } = useDepartments({ pageSize: 100, status: 'ACTIVE' });
   const { data: employeesData, isLoading: loadingEmployees } = useAllEmployees({ status: 'ACTIVE' }, true);
 
@@ -185,7 +187,7 @@ export function DepartmentAudienceSelector({
           }`}
         >
           <Globe className="size-3.5" />
-          <span>Toàn công ty</span>
+          <span>{translateUi("Toàn công ty")}</span>
         </button>
 
         <button
@@ -198,7 +200,7 @@ export function DepartmentAudienceSelector({
           }`}
         >
           <Building2 className="size-3.5" />
-          <span>Theo phòng ban</span>
+          <span>{translateUi("Theo phòng ban")}</span>
         </button>
 
         <button
@@ -211,7 +213,7 @@ export function DepartmentAudienceSelector({
           }`}
         >
           <Users className="size-3.5" />
-          <span>Chọn từng người</span>
+          <span>{translateUi("Chọn từng người")}</span>
         </button>
       </div>
 
@@ -220,12 +222,8 @@ export function DepartmentAudienceSelector({
         <div className="rounded-xl border border-teal-200 bg-teal-50/60 p-4 text-xs text-teal-950 flex items-start gap-3">
           <Globe className="size-5 text-[var(--po-accent)] shrink-0 mt-0.5" />
           <div className="space-y-1">
-            <strong className="block text-slate-900 font-bold">
-              Gửi tới toàn bộ nhân sự trong doanh nghiệp
-            </strong>
-            <p className="text-slate-600 leading-relaxed text-[11px]">
-              Tất cả <strong>{employees.length}</strong> nhân sự đang hoạt động sẽ nhận được thông báo này và hiển thị hạn chót trên trang cá nhân của họ.
-            </p>
+            <strong className="block text-slate-900 font-bold">{translateUi("Gửi tới toàn bộ nhân sự trong doanh nghiệp")}</strong>
+            <p className="text-slate-600 leading-relaxed text-[11px]">{translateUi("Tất cả ")}<strong>{employees.length}</strong>{translateUi(" nhân sự đang hoạt động sẽ nhận được thông báo này và hiển thị hạn chót trên trang cá nhân của họ.")}</p>
           </div>
         </div>
       )}
@@ -234,31 +232,25 @@ export function DepartmentAudienceSelector({
         <div className="space-y-2">
           {/* Action bar: Chọn tất cả / Bỏ chọn */}
           <div className="flex items-center justify-between text-xs text-slate-500 px-1">
-            <span>Tick chọn một hoặc nhiều phòng ban (mở rộng để lọc chi tiết):</span>
+            <span>{translateUi("Tick chọn một hoặc nhiều phòng ban (mở rộng để lọc chi tiết):")}</span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={selectAllDepartments}
                 className="text-[var(--po-accent)] hover:underline font-medium"
-              >
-                Chọn tất cả
-              </button>
+              >{translateUi("Chọn tất cả")}</button>
               <span>•</span>
               <button
                 type="button"
                 onClick={clearAll}
                 className="text-slate-500 hover:underline"
-              >
-                Bỏ chọn hết
-              </button>
+              >{translateUi("Bỏ chọn hết")}</button>
             </div>
           </div>
 
           <div className="max-h-60 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100 bg-white shadow-xs">
             {departments.length === 0 && (
-              <div className="p-4 text-center text-xs text-slate-500">
-                Chưa có phòng ban nào được thiết lập.
-              </div>
+              <div className="p-4 text-center text-xs text-slate-500">{translateUi("Chưa có phòng ban nào được thiết lập.")}</div>
             )}
 
             {departments.map((dept) => {
@@ -304,7 +296,7 @@ export function DepartmentAudienceSelector({
                         type="button"
                         onClick={() => toggleExpand(dept.id)}
                         className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors"
-                        title={isExpanded ? 'Thu gọn' : 'Xem nhân sự trong phòng'}
+                        title={translateUi(isExpanded ? translateUi('Thu gọn') : 'Xem nhân sự trong phòng')}
                       >
                         {isExpanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
                       </button>
@@ -357,25 +349,21 @@ export function DepartmentAudienceSelector({
             <Search className="size-4" aria-hidden="true" />
             <input
               type="text"
-              aria-label="Tìm nhân viên theo tên, email hoặc mã"
+              aria-label={translateUi("Tìm nhân viên theo tên, email hoặc mã")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm theo tên, email hoặc mã nhân viên..."
+              placeholder={translateUi("Tìm theo tên, email hoặc mã nhân viên...")}
               className="w-full text-sm"
             />
           </label>
 
           <div className="max-h-60 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100 bg-white shadow-xs">
             {loadingEmployees && (
-              <div className="p-4 text-center text-xs text-slate-400">
-                Đang tải danh sách nhân viên...
-              </div>
+              <div className="p-4 text-center text-xs text-slate-400">{translateUi("Đang tải danh sách nhân viên...")}</div>
             )}
 
             {!loadingEmployees && filteredEmployees.length === 0 && (
-              <div className="p-4 text-center text-xs text-slate-500">
-                Không tìm thấy nhân viên nào phù hợp.
-              </div>
+              <div className="p-4 text-center text-xs text-slate-500">{translateUi("Không tìm thấy nhân viên nào phù hợp.")}</div>
             )}
 
             {filteredEmployees.map((emp) => {
@@ -403,8 +391,7 @@ export function DepartmentAudienceSelector({
 
                   {isChecked && (
                     <span className="shrink-0 text-[var(--po-accent)] font-semibold text-[11px] flex items-center gap-1">
-                      <Check className="size-3.5" /> Đã chọn
-                    </span>
+                      <Check className="size-3.5" />{translateUi(" Đã chọn")}</span>
                   )}
                 </label>
               );
@@ -416,10 +403,8 @@ export function DepartmentAudienceSelector({
       {/* LIVE COUNTER BAR: HIỂN THỊ SỐ LƯỢNG NGƯỜI ĐÃ CHỌN */}
       <div className="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs">
         <span className="text-slate-600 flex items-center gap-1.5">
-          <User className="size-3.5 text-[var(--po-accent)]" />
-          Đã chọn: <strong className="text-slate-900 font-bold">{totalSelectedCount}</strong> nhân sự
-          {value.mode === 'departments' && value.departmentIds.length > 0 && (
-            <span>(từ {value.departmentIds.length} phòng ban)</span>
+          <User className="size-3.5 text-[var(--po-accent)]" />{translateUi("Đã chọn: ")}<strong className="text-slate-900 font-bold">{totalSelectedCount}</strong>{translateUi(" nhân sự")}{value.mode === 'departments' && value.departmentIds.length > 0 && (
+            <span>{translateUi("(từ ")}{value.departmentIds.length}{translateUi(" phòng ban)")}</span>
           )}
         </span>
 
@@ -428,9 +413,7 @@ export function DepartmentAudienceSelector({
             type="button"
             onClick={clearAll}
             className="text-[11px] text-red-600 hover:underline font-medium"
-          >
-            Xóa lựa chọn
-          </button>
+          >{translateUi("Xóa lựa chọn")}</button>
         )}
       </div>
     </div>

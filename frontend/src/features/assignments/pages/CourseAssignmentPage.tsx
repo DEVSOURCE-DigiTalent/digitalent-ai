@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, CircleAlert, CircleCheck, GraduationCap, UsersRound } from 'lucide-react';
@@ -22,6 +23,7 @@ const STATUSES: AssignmentStatus[] = import.meta.env.VITE_USE_MOCK === 'true'
 
 /** LCA-12: give standard courses to employees, teams or positions, and cancel an assignment. */
 export function CourseAssignmentPage() {
+  useUiLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const courseId = searchParams.get('courseId') || undefined;
   const { data: selectedCourse } = useCourse(courseId);
@@ -51,33 +53,31 @@ export function CourseAssignmentPage() {
     <div className="assignment-page">
       <header className="assignment-hero">
         <div className="assignment-hero-copy">
-          <span className="assignment-hero-kicker"><BookOpen size={14} /> ĐÀO TẠO DOANH NGHIỆP</span>
-          <h1>Giao khóa học</h1>
+          <span className="assignment-hero-kicker"><BookOpen size={14} />{translateUi(" ĐÀO TẠO DOANH NGHIỆP")}</span>
+          <h1>{translateUi("Giao khóa học")}</h1>
         </div>
         {canAssign && (
           <button type="button" onClick={() => setAssigning(true)} className={`assignment-primary-action ${PRIMARY_BUTTON}`}>
-            <GraduationCap className="size-5" aria-hidden="true" />
-            Giao khóa học
-          </button>
+            <GraduationCap className="size-5" aria-hidden="true" />{translateUi("Giao khóa học")}</button>
         )}
       </header>
 
       <div className="assignment-stats" aria-label="Tổng quan phân công">
-        <div><span className="assignment-stat-icon is-teal"><UsersRound size={20} /></span><span>Lượt giao</span><strong>{summary?.total ?? data?.totalItems ?? 0}</strong></div>
-        <div><span className="assignment-stat-icon is-blue"><BookOpen size={20} /></span><span>Đang học</span><strong>{summary?.inProgress ?? 0}</strong></div>
-        <div><span className="assignment-stat-icon is-green"><CircleCheck size={20} /></span><span>Hoàn thành</span><strong>{summary?.completed ?? 0}</strong></div>
+        <div><span className="assignment-stat-icon is-teal"><UsersRound size={20} /></span><span>{translateUi("Lượt giao")}</span><strong>{summary?.total ?? data?.totalItems ?? 0}</strong></div>
+        <div><span className="assignment-stat-icon is-blue"><BookOpen size={20} /></span><span>{translateUi("Đang học")}</span><strong>{summary?.inProgress ?? 0}</strong></div>
+        <div><span className="assignment-stat-icon is-green"><CircleCheck size={20} /></span><span>{translateUi("Hoàn thành")}</span><strong>{summary?.completed ?? 0}</strong></div>
         <div><span className="assignment-stat-icon is-coral"><CircleAlert size={20} /></span><span>Quá hạn</span><strong>{summary?.overdue ?? 0}</strong></div>
       </div>
 
       {courseId && <div className="assignment-course-context">
-        <div><span>Đang xem khóa học</span><strong>{selectedCourse?.title || 'Khóa học đã chọn'}</strong>{selectedCourse && <small>{selectedCourse.code}</small>}</div>
+        <div><span>Đang xem khóa học</span><strong>{translateUi(selectedCourse?.title) || translateUi('Khóa học đã chọn')}</strong>{selectedCourse && <small>{selectedCourse.code}</small>}</div>
         <div className="assignment-course-context-actions">
-          <Link to={`/enterprise/courses/${courseId}`}>Xem khóa học</Link>
-          <button type="button" onClick={() => { const next = new URLSearchParams(searchParams); next.delete('courseId'); setSearchParams(next); setPage(1); }}>Xem tất cả</button>
+          <Link to={`/enterprise/courses/${courseId}`}>{translateUi("Xem khóa học")}</Link>
+          <button type="button" onClick={() => { const next = new URLSearchParams(searchParams); next.delete('courseId'); setSearchParams(next); setPage(1); }}>{translateUi("Xem tất cả")}</button>
         </div>
       </div>}
 
-      <div className="assignment-list-heading"><div><strong>Danh sách phân công</strong><span>{data?.totalItems ?? 0} lượt giao{courseId ? ' trong khóa học này' : ''}</span></div></div>
+      <div className="assignment-list-heading"><div><strong>Danh sách phân công</strong><span>{data?.totalItems ?? 0}{translateUi(" lượt giao")}{courseId ? ' trong khóa học này' : ''}</span></div></div>
 
       {isError && <p role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">Không tải được lượt giao khóa học. Vui lòng thử lại hoặc kiểm tra quyền truy cập.</p>}
       <AssignmentsTable
@@ -89,8 +89,8 @@ export function CourseAssignmentPage() {
         onSearchChange={(value) => { setSearch(value); setPage(1); }}
         filters={
           <>
-            <OwnerFilterSelect label="Lọc theo trạng thái" value={status} onChange={(value) => { setStatus(value as AssignmentStatus | ''); setPage(1); }} options={[{ value: '', label: 'Tất cả trạng thái' }, ...STATUSES.map((s) => ({ value: s, label: ASSIGNMENT_STATUS_LABELS[s] }))]} />
-            <OwnerFilterSelect label="Lọc theo phòng ban" value={departmentId} onChange={(value) => { setDepartmentId(value); setPage(1); }} options={[{ value: '', label: 'Mọi phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
+            <OwnerFilterSelect label={translateUi("Lọc theo trạng thái")} value={status} onChange={(value) => { setStatus(value as AssignmentStatus | ''); setPage(1); }} options={[{ value: '', label: 'Tất cả trạng thái' }, ...STATUSES.map((s) => ({ value: s, label: ASSIGNMENT_STATUS_LABELS[s] }))]} />
+            <OwnerFilterSelect label={translateUi("Lọc theo phòng ban")} value={departmentId} onChange={(value) => { setDepartmentId(value); setPage(1); }} options={[{ value: '', label: 'Mọi phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
           </>
         }
         pageInfo={{ page, pageSize: PAGE_SIZE, total: data?.totalItems ?? 0, onPageChange: setPage }}

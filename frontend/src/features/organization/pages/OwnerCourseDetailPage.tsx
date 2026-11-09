@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, UserCheck, Layers, ShieldCheck, X, BookOpen, Clock3 } from 'lucide-react';
@@ -27,6 +28,7 @@ const RUBRIC = [
 ];
 
 export function OwnerCourseDetailPage() {
+  useUiLanguage();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
@@ -43,7 +45,7 @@ export function OwnerCourseDetailPage() {
   );
 
   if (isLoading) {
-    return <div className="po-owner -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label="Đang tải chi tiết khóa học" variant="detail" /></div>;
+    return <div className="po-owner -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label={translateUi("Đang tải chi tiết khóa học")} variant="detail" /></div>;
   }
 
   if (!course) {
@@ -62,22 +64,17 @@ export function OwnerCourseDetailPage() {
           <h2
             className="text-xl font-semibold"
             style={{ color: 'var(--po-ink)' }}
-          >
-            Không tìm thấy khóa học
-          </h2>
+          >{translateUi("Không tìm thấy khóa học")}</h2>
           <p
             className="mt-2 text-xs"
             style={{ color: 'var(--po-muted)' }}
-          >
-            Khóa học không tồn tại hoặc đã bị thu hồi.
-          </p>
+          >{translateUi("Khóa học không tồn tại hoặc đã bị thu hồi.")}</p>
           <Link
             to="/enterprise/courses"
             className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold"
             style={{ color: 'var(--po-accent)' }}
           >
-            <ArrowLeft className="size-3.5" /> Quay lại danh mục
-          </Link>
+            <ArrowLeft className="size-3.5" />{translateUi(" Quay lại danh mục")}</Link>
         </div>
       </div>
     );
@@ -124,8 +121,7 @@ export function OwnerCourseDetailPage() {
             className="inline-flex items-center gap-1.5 text-[11px] font-bold mb-4 opacity-70 hover:opacity-100 transition-opacity"
             style={{ color: '#dbe4ff' }}
           >
-            <ArrowLeft className="size-3" /> Danh mục khóa học
-          </Link>
+            <ArrowLeft className="size-3" />{translateUi(" Danh mục khóa học")}</Link>
 
           <span
             className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em]"
@@ -135,15 +131,15 @@ export function OwnerCourseDetailPage() {
               className="inline-block size-[6px] rounded-full"
               style={{ background: 'var(--po-coral)' }}
             />
-            {isBasic ? 'Nền tảng cơ bản · Miễn phí' : hasLicense ? `${tierLabel} · Đã có ${totalSeats} suất` : `${tierLabel} · Cần mua suất học`}
+            {isBasic ? 'Nền tảng cơ bản · Miễn phí' : hasLicense ? translateUi(`${tierLabel} · Đã có ${totalSeats} suất`) : translateUi(`${tierLabel} · Cần mua suất học`)}
           </span>
 
           <h1>
-            {course.title}
+            {translateUi(course.title)}
           </h1>
-          {(course.purpose || course.description) && <p className="course-detail-hero-description">{course.purpose || course.description}</p>}
+          {(course.purpose || course.description) && <p className="course-detail-hero-description">{course.purpose || translateUi(course.description)}</p>}
           <div className="course-detail-hero-meta">
-            <span>{course.code}</span><span><Layers size={15} /> {modules.length} chương</span><span><BookOpen size={15} /> {lessonCount} bài</span>{duration && <span><Clock3 size={15} /> {duration}</span>}
+            <span>{course.code}</span><span><Layers size={15} /> {modules.length}{translateUi(" chương")}</span><span><BookOpen size={15} /> {lessonCount}{translateUi(" bài")}</span>{duration && <span><Clock3 size={15} /> {duration}</span>}
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 mt-6">
@@ -161,9 +157,7 @@ export function OwnerCourseDetailPage() {
                     boxShadow: '0 9px 18px rgba(19,123,132,.17)',
                   }}
                 >
-                  <UserCheck className="size-4" />
-                  Giao khóa học
-                </button>
+                  <UserCheck className="size-4" />{translateUi("Giao khóa học")}</button>
                 <button
                   type="button"
                   onClick={() =>
@@ -178,17 +172,13 @@ export function OwnerCourseDetailPage() {
                     borderColor: 'rgba(255,255,255,.25)',
                   }}
                 >
-                  <Layers className="size-4" />
-                  Đợt đào tạo
-                </button>
+                  <Layers className="size-4" />{translateUi("Đợt đào tạo")}</button>
                 {!isBasic && (
                   <button
                     type="button"
                     onClick={() => setPurchaseModalOpen(true)}
                     className="inline-flex items-center gap-1.5 rounded-[11px] px-3.5 py-3 text-[13px] font-semibold text-amber-200 hover:text-white transition-colors"
-                  >
-                    + Mua thêm suất
-                  </button>
+                  >{translateUi("+ Mua thêm suất")}</button>
                 )}
               </>
             ) : (
@@ -221,8 +211,7 @@ export function OwnerCourseDetailPage() {
               color: '#487336',
             }}
           >
-            <b>Mở miễn phí.</b> Nhân viên có thể bắt đầu học ngay.
-          </div>
+            <b>{translateUi("Mở miễn phí.")}</b>{translateUi(" Nhân viên có thể bắt đầu học ngay.")}</div>
         ) : hasLicense ? (
           <div
             className="rounded-[11px] border p-4 text-xs mb-4 flex flex-wrap items-center justify-between gap-3"
@@ -233,14 +222,11 @@ export function OwnerCourseDetailPage() {
             }}
           >
             <div>
-              <b>Đã có bản quyền.</b> {totalSeats} suất · Còn {course.seatsAvailable ?? totalSeats} suất để phân công.
-            </div>
+              <b>{translateUi("Đã có bản quyền.")}</b> {totalSeats}{translateUi(" suất · Còn ")}{course.seatsAvailable ?? totalSeats}{translateUi(" suất để phân công.")}</div>
             <Link
               to={`/enterprise/courses/checkout?courses=${encodeURIComponent(course.code)}`}
               className="text-xs font-bold text-emerald-800 underline hover:text-emerald-950"
-            >
-              + Mua thêm suất & Ký online
-            </Link>
+            >{translateUi("+ Mua thêm suất & Ký online")}</Link>
           </div>
         ) : (
           <div
@@ -252,8 +238,7 @@ export function OwnerCourseDetailPage() {
             }}
           >
             <div>
-              <b>Chưa có suất học.</b> Trang bị suất để giao khóa học cho nhân viên.
-            </div>
+              <b>{translateUi("Chưa có suất học.")}</b>{translateUi(" Trang bị suất để giao khóa học cho nhân viên.")}</div>
             <Link
               to={`/enterprise/courses/checkout?courses=${encodeURIComponent(course.code)}`}
               className="rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-amber-700 transition-all inline-flex items-center gap-1.5"
@@ -277,18 +262,14 @@ export function OwnerCourseDetailPage() {
             <span
               className="text-[10px] font-black uppercase tracking-[0.12em]"
               style={{ color: 'var(--po-accent)' }}
-            >
-              Kết quả đầu ra
-            </span>
+            >{translateUi("Kết quả đầu ra")}</span>
             <h2
               className="mt-2 text-xl font-semibold"
               style={{
                 color: 'var(--po-ink)',
                 letterSpacing: '-0.045em',
               }}
-            >
-              Kết quả học tập
-            </h2>
+            >{translateUi("Kết quả học tập")}</h2>
             <div className="mt-4 grid gap-2.5">
               {(course.final?.criteria.length ? course.final.criteria : RUBRIC).map((text, i) => (
                 <div
@@ -322,11 +303,9 @@ export function OwnerCourseDetailPage() {
                 className="text-[11px] space-y-1"
                 style={{ color: '#385084' }}
               >
-                <span className="font-bold block">
-                  Miền: {displayCategory}
+                <span className="font-bold block">{translateUi("Miền: ")}{displayCategory}
                 </span>
-                <span>
-                  Trình độ đầu ra: {tierLabel} · Mã: {course.code}
+                <span>{translateUi("Trình độ đầu ra: ")}{tierLabel}{translateUi(" · Mã: ")}{course.code}
                 </span>
               </div>
             </div>
@@ -383,6 +362,7 @@ function CourseDetailPurchaseModal({
   onClose: () => void;
   onSuccess?: () => void;
 }) {
+  useUiLanguage();
   const [seats, setSeats] = useState(10);
   const [result, setResult] = useState<{
     orderId: string;
@@ -419,8 +399,8 @@ function CourseDetailPurchaseModal({
             <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
               🔒 Bản quyền khóa học thương mại
             </span>
-            <h2 className="mt-2 text-lg font-bold text-slate-900">{course.title}</h2>
-            <p className="text-xs text-slate-500 font-mono mt-0.5">{course.code} · Bậc {level} ({tierLabel})</p>
+            <h2 className="mt-2 text-lg font-bold text-slate-900">{translateUi(course.title)}</h2>
+            <p className="text-xs text-slate-500 font-mono mt-0.5">{course.code}{translateUi(" · Bậc ")}{level} ({tierLabel})</p>
           </div>
           <button
             type="button"
@@ -436,9 +416,8 @@ function CourseDetailPurchaseModal({
             <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 font-bold text-xl">
               ✓
             </div>
-            <h3 className="text-base font-bold text-slate-900">Kích hoạt suất học thành công!</h3>
-            <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
-              Bạn đã trang bị thành công <b>{result.seats} suất</b> cho khóa học <b>{course.code}</b>.
+            <h3 className="text-base font-bold text-slate-900">{translateUi("Kích hoạt suất học thành công!")}</h3>
+            <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">{translateUi("Bạn đã trang bị thành công ")}<b>{result.seats}{translateUi(" suất")}</b>{translateUi(" cho khóa học ")}<b>{course.code}</b>.
               Khóa học đã được mở bản quyền ngay lập tức và đồng bộ vào hệ thống quản lý Platform Admin.
             </p>
             <div className="mx-auto max-w-sm rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-left text-xs space-y-1">
@@ -447,11 +426,11 @@ function CourseDetailPurchaseModal({
                 <span className="font-mono font-semibold text-slate-800">{result.orderId.substring(0, 8)}...</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Tổng chi phí:</span>
+                <span>{translateUi("Tổng chi phí:")}</span>
                 <span className="font-bold text-emerald-800">{result.totalAmount.toLocaleString('vi-VN')} ₫</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Thời gian:</span>
+                <span>{translateUi("Thời gian:")}</span>
                 <span className="text-slate-700">{result.createdAt ? new Date(result.createdAt).toLocaleString('vi-VN') : new Date().toLocaleString('vi-VN')}</span>
               </div>
             </div>
@@ -461,22 +440,18 @@ function CourseDetailPurchaseModal({
                 onClick={onClose}
                 className="rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-sm"
                 style={{ background: 'var(--po-accent)' }}
-              >
-                Hoàn tất & Bắt đầu đào tạo
-              </button>
+              >{translateUi("Hoàn tất & Bắt đầu đào tạo")}</button>
             </div>
           </div>
         ) : (
           <div className="space-y-4 py-4">
             <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 text-xs text-slate-700 leading-relaxed">
-              💡 Doanh nghiệp của bạn đang dùng thử và được <b>miễn phí 100% toàn bộ khóa Cơ bản</b>.
+              💡 Doanh nghiệp của bạn đang dùng thử và được <b>{translateUi("miễn phí 100% toàn bộ khóa Cơ bản")}</b>.
               Khóa Trung cấp & Nâng cao cung cấp kỹ năng thực chiến và cấp chứng chỉ chuẩn TT02 theo từng đầu người (1 suất = 1 nhân viên).
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Số lượng suất cần trang bị cho nhân sự:
-              </label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">{translateUi("Số lượng suất cần trang bị cho nhân sự:")}</label>
               <div className="flex items-center gap-2 mb-2">
                 {[5, 10, 20, 50].map((count) => (
                   <button
@@ -489,8 +464,7 @@ function CourseDetailPurchaseModal({
                         : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                     }`}
                   >
-                    {count} suất
-                  </button>
+                    {count}{translateUi(" suất")}</button>
                 ))}
               </div>
               <input
@@ -509,19 +483,19 @@ function CourseDetailPurchaseModal({
                 <span className="font-semibold text-slate-900">{pricing.formatted}</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Số lượng nhân viên đào tạo:</span>
-                <span className="font-semibold text-slate-900">{seats} nhân viên</span>
+                <span>{translateUi("Số lượng nhân viên đào tạo:")}</span>
+                <span className="font-semibold text-slate-900">{seats}{translateUi(" nhân viên")}</span>
               </div>
               <div className="flex justify-between border-t border-amber-200/60 pt-2 text-sm font-bold text-slate-900">
-                <span>Tổng chi phí đầu tư:</span>
+                <span>{translateUi("Tổng chi phí đầu tư:")}</span>
                 <span className="text-primary-700 font-extrabold">{totalAmount.toLocaleString('vi-VN')} ₫</span>
               </div>
             </div>
 
             {purchaseMutation.isError && (
               <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
-                {(purchaseMutation.error as any)?.response?.data?.message ||
-                  (purchaseMutation.error as any)?.message ||
+                {translateUi((purchaseMutation.error as any)?.response?.data?.message) ||
+                  translateUi((purchaseMutation.error as any)?.message) ||
                   'Có lỗi xảy ra khi thực hiện mua suất học.'}
               </div>
             )}
@@ -532,9 +506,7 @@ function CourseDetailPurchaseModal({
                 onClick={onClose}
                 disabled={purchaseMutation.isPending}
                 className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-              >
-                Để sau
-              </button>
+              >{translateUi("Để sau")}</button>
               <button
                 type="button"
                 onClick={handlePurchase}
@@ -543,7 +515,7 @@ function CourseDetailPurchaseModal({
                 style={{ background: 'var(--po-accent)' }}
               >
                 {purchaseMutation.isPending && <span className="animate-spin inline-block size-3.5 border-2 border-white border-t-transparent rounded-full" />}
-                <span>{purchaseMutation.isPending ? 'Đang xử lý...' : `Xác nhận mua suất học (${totalAmount.toLocaleString('vi-VN')} ₫)`}</span>
+                <span>{purchaseMutation.isPending ? translateUi('Đang xử lý...') : translateUi(`Xác nhận mua suất học (${totalAmount.toLocaleString('vi-VN')} ₫)`)}</span>
               </button>
             </div>
           </div>

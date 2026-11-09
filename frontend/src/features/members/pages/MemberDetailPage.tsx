@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, BadgeCheck } from 'lucide-react';
@@ -63,6 +64,7 @@ function toRun(capability: EmployeeCapability): SkillGapRunDetail | null {
  * - Owner actions: Change role, placement, manual competency confirmation, deactivation/reactivation.
  */
 export function MemberDetailPage() {
+  useUiLanguage();
   const { id } = useParams();
   const user = useCurrentUser((s) => s.user)!;
   const can = useCurrentUser((s) => s.hasPermission);
@@ -84,9 +86,7 @@ export function MemberDetailPage() {
     return (
       <div role="alert" className="grid gap-3">
         <p className="text-sm text-red-600">Không tìm thấy thành viên này.</p>
-        <Link to="/enterprise/members" className="text-sm font-medium text-primary-700 underline">
-          Quay lại danh sách
-        </Link>
+        <Link to="/enterprise/members" className="text-sm font-medium text-primary-700 underline">{translateUi("Quay lại danh sách")}</Link>
       </div>
     );
   }
@@ -115,45 +115,33 @@ export function MemberDetailPage() {
         to="/enterprise/members"
         className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" />
-        Thành viên
-      </Link>
+        <ArrowLeft className="size-4" aria-hidden="true" />{translateUi("Thành viên")}</Link>
 
       <PageHeader
-        title={member.fullName}
-        subtitle={[member.employeeCode, member.positionName, member.departmentName, member.email]
+        title={translateUi(member.fullName)}
+        subtitle={translateUi([member.employeeCode, member.positionName, member.departmentName, member.email]
           .filter(Boolean)
-          .join(' · ')}
+          .join(' · '))}
       >
         <StatusBadge
-          label={MEMBER_STATUS_LABELS[member.status]}
+          label={translateUi(MEMBER_STATUS_LABELS[member.status])}
           variant={MEMBER_STATUS_VARIANTS[member.status]}
         />
         {run && canConfirm && (
           <button type="button" onClick={() => setConfirming(true)} className={SECONDARY_BUTTON}>
-            <BadgeCheck className="size-4 text-teal-600" aria-hidden="true" />
-            Xác nhận mức năng lực
-          </button>
+            <BadgeCheck className="size-4 text-teal-600" aria-hidden="true" />{translateUi("Xác nhận mức năng lực")}</button>
         )}
         {canChangeRole && (
-          <button type="button" onClick={() => setDialog('role')} className={SECONDARY_BUTTON}>
-            Đổi vai trò
-          </button>
+          <button type="button" onClick={() => setDialog('role')} className={SECONDARY_BUTTON}>{translateUi("Đổi vai trò")}</button>
         )}
         {canEdit && (
-          <button type="button" onClick={() => setDialog('placement')} className={SECONDARY_BUTTON}>
-            Phòng ban & vị trí
-          </button>
+          <button type="button" onClick={() => setDialog('placement')} className={SECONDARY_BUTTON}>{translateUi("Phòng ban & vị trí")}</button>
         )}
         {canToggle && member.status === 'ACTIVE' && (
-          <button type="button" onClick={() => setDialog('deactivate')} className={SECONDARY_BUTTON}>
-            Vô hiệu hóa
-          </button>
+          <button type="button" onClick={() => setDialog('deactivate')} className={SECONDARY_BUTTON}>{translateUi("Vô hiệu hóa")}</button>
         )}
         {canToggle && member.status === 'INACTIVE' && (
-          <button type="button" onClick={() => setDialog('reactivate')} className={SECONDARY_BUTTON}>
-            Kích hoạt lại
-          </button>
+          <button type="button" onClick={() => setDialog('reactivate')} className={SECONDARY_BUTTON}>{translateUi("Kích hoạt lại")}</button>
         )}
         {member.kind === 'invitation' && can(PERMISSIONS.USER_CREATE) && (
           <InvitationActions member={member} />
