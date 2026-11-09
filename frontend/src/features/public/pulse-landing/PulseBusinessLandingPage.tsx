@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -156,6 +157,7 @@ const AGENTS_DATA: Record<
 };
 
 export function PulseBusinessLandingPage() {
+  useUiLanguage();
   const user = useCurrentUser((state) => state.user);
   const home = user ? getDashboardPath(user) : null;
   const [activeTab, setActiveTab] = useState<DeckTab>('matrix');
@@ -355,7 +357,7 @@ export function PulseBusinessLandingPage() {
                     onClick={() => setActiveTab('gap')}
                   >
                     <BarChart3 size={14} />
-                    <span>Khoảng trống năng lực</span>
+                    <span>{translateUi("Khoảng trống năng lực")}</span>
                   </button>
                   <button
                     type="button"
@@ -411,7 +413,7 @@ export function PulseBusinessLandingPage() {
                         onClick={() => setActiveDept('all')}
                       >
                         <Building2 size={13} />
-                        <span>Toàn doanh nghiệp</span>
+                        <span>{translateUi("Toàn doanh nghiệp")}</span>
                       </button>
                       <button
                         type="button"
@@ -511,7 +513,7 @@ export function PulseBusinessLandingPage() {
                       <div className="pulse-gap-row">
                         <div className="pulse-gap-meta">
                           <strong>M4. An toàn thông tin & Bảo mật số</strong>
-                          <span>Khoảng cách: 0% · Đã đạt trần chuẩn</span>
+                          <span>Khoảng cách: 0% · Đã đạt phạm vi chuẩn</span>
                         </div>
                         <div className="pulse-gap-progress-track">
                           <div className="pulse-gap-bar pulse-gap-bar--done" style={{ width: '85%' }}>85%</div>
@@ -705,9 +707,9 @@ export function PulseBusinessLandingPage() {
               <p>Đối chiếu năng lực hiện tại với yêu cầu của từng vị trí.</p>
               <div className="pulse-bento-mini-visual">
                 <div className="pulse-mini-bar-compare">
-                  <div><span>Hiện tại</span><strong className="text-amber-500">62%</strong></div>
+                  <div><span>{translateUi("Hiện tại")}</span><strong className="text-amber-500">62%</strong></div>
                   <ArrowRight size={14} className="text-slate-400" />
-                  <div><span>Chuẩn vị trí</span><strong className="text-emerald-500">85%</strong></div>
+                  <div><span>{translateUi("Chuẩn vị trí")}</span><strong className="text-emerald-500">85%</strong></div>
                   <span className="pulse-mini-gap-pill">Chênh lệch: 23%</span>
                 </div>
               </div>
@@ -772,7 +774,7 @@ export function PulseBusinessLandingPage() {
                   className={`pulse-roi-slider-btn ${roiIndex === idx ? 'pulse-roi-slider-btn--active' : ''}`}
                   onClick={() => setRoiIndex(idx)}
                 >
-                  <strong>{t.label}</strong>
+                  <strong>{translateUi(t.label)}</strong>
                 </button>
               ))}
             </div>
@@ -799,7 +801,7 @@ export function PulseBusinessLandingPage() {
             </div>
 
             <div className="pulse-roi-bottom-action">
-              <span>Sẵn sàng chuẩn hóa cho quy mô {currentRoi.label}?</span>
+              <span>Sẵn sàng chuẩn hóa cho quy mô {translateUi(currentRoi.label)}?</span>
               <Link to="/business/try" className="pulse-btn-primary pulse-btn-primary--compact">
                 Kích hoạt dùng thử ngay <ArrowRight size={16} />
               </Link>
@@ -814,7 +816,7 @@ export function PulseBusinessLandingPage() {
           <div className="pulse-section-heading-center">
             <span className="pulse-kicker">KIẾN TRÚC ĐA TẦNG</span>
             <h2>Một chuẩn chung. <em>Đích đến riêng cho mỗi vị trí.</em></h2>
-            <p>Doanh nghiệp cấu hình mức trần năng lực theo mục tiêu tổ chức, phòng ban và vị trí công việc.</p>
+            <p>Doanh nghiệp cấu hình mức phạm vi năng lực theo mục tiêu tổ chức, phòng ban và vị trí công việc.</p>
           </div>
 
           <div className="pulse-cascade-flow">
@@ -822,7 +824,7 @@ export function PulseBusinessLandingPage() {
               className={`pulse-cascade-card ${activeTier === 1 ? 'pulse-cascade-card--active' : ''}`}
               onClick={() => setActiveTier(1)}
             >
-              <span className="pulse-cascade-tier">CẤP 1</span>
+              <span className="pulse-cascade-tier">{translateUi("CẤP 1")}</span>
               <h4>Chuẩn Quốc Gia TT02</h4>
               <p>24 năng lực số của Bộ TTTT</p>
             </div>
@@ -832,7 +834,7 @@ export function PulseBusinessLandingPage() {
               className={`pulse-cascade-card ${activeTier === 2 ? 'pulse-cascade-card--active' : ''}`}
               onClick={() => setActiveTier(2)}
             >
-              <span className="pulse-cascade-tier">CẤP 2</span>
+              <span className="pulse-cascade-tier">{translateUi("CẤP 2")}</span>
               <h4>Trần Doanh Nghiệp</h4>
               <p>Chiến lược chuyển đổi số của công ty</p>
             </div>
@@ -842,7 +844,7 @@ export function PulseBusinessLandingPage() {
               className={`pulse-cascade-card ${activeTier === 3 ? 'pulse-cascade-card--active' : ''}`}
               onClick={() => setActiveTier(3)}
             >
-              <span className="pulse-cascade-tier">CẤP 3</span>
+              <span className="pulse-cascade-tier">{translateUi("CẤP 3")}</span>
               <h4>Mục Tiêu Phòng Ban</h4>
               <p>Kỹ thuật, Kinh doanh, Vận hành</p>
             </div>

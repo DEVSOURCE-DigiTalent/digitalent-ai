@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { toast } from 'sonner';
 import {
@@ -28,6 +29,7 @@ interface BlockCardProps {
 
 /** One content block of a module: a preview card, opened in place to edit it. */
 export function BlockCard({ block, count, linkedQuestions, editable, editing, onToggle, edit, courseCode, moduleIndex }: BlockCardProps) {
+  useUiLanguage();
   const normalizedType = ((block?.type || 'TEXT').toUpperCase() as keyof typeof BLOCK_TYPES);
   const type = BLOCK_TYPES[normalizedType] ?? BLOCK_TYPES.TEXT;
   const clickToEdit = editable && normalizedType === 'TEXT';
@@ -41,25 +43,25 @@ export function BlockCard({ block, count, linkedQuestions, editable, editing, on
       .catch((err) => toast.error(errorMessage(err)));
 
   return (
-    <article className={`pa-block${editing ? ' editing' : ''}`} aria-label={`Khối ${block.index + 1}: ${type.label}`}>
+    <article className={`pa-block${editing ? ' editing' : ''}`} aria-label={translateUi(`Khối ${block.index + 1}: ${type.label}`)}>
       <header className="pa-block-head">
         <div className="left">
           <span className={`pa-type pa-type-${(block?.type || 'text').toLowerCase()}`} aria-hidden="true">{type.glyph}</span>
-          <strong>{type.label}</strong>
+          <strong>{translateUi(type.label)}</strong>
           <small>Khối {block.index + 1}</small>
           {linkedQuestions > 0 && <span className="pill">{linkedQuestions} câu hỏi gắn với khối này</span>}
         </div>
         {editable && (
           <div className="button-row">
             <button type="button" className={`btn btn-small ${editing ? 'btn-primary' : 'btn-outline'}`} onClick={onToggle}>
-              {editing ? 'Xong' : 'Sửa'}
+              {editing ? 'Xong' : translateUi('Sửa')}
             </button>
             <button type="button" className="btn btn-ghost btn-small" aria-label="Đưa khối lên" disabled={block.index === 0} onClick={() => move(-1)}>↑</button>
             <button type="button" className="btn btn-ghost btn-small" aria-label="Đưa khối xuống" disabled={block.index === count - 1} onClick={() => move(1)}>↓</button>
             {confirmDelete ? (
               <>
                 <button type="button" className="btn btn-small pa-danger" onClick={remove}>Xóa khối</button>
-                <button type="button" className="btn btn-ghost btn-small" onClick={() => setConfirmDelete(false)}>Giữ lại</button>
+                <button type="button" className="btn btn-ghost btn-small" onClick={() => setConfirmDelete(false)}>{translateUi("Giữ lại")}</button>
               </>
             ) : (
               <button type="button" className="btn btn-ghost btn-small pa-danger-text" aria-label="Xóa khối" onClick={() => setConfirmDelete(true)}>✕</button>
@@ -82,7 +84,7 @@ export function BlockCard({ block, count, linkedQuestions, editable, editing, on
           onKeyDown={clickToEdit ? (e) => e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onToggle()) : undefined}
           role={clickToEdit ? 'button' : undefined}
           tabIndex={clickToEdit ? 0 : undefined}
-          aria-label={clickToEdit ? `Sửa khối ${block.index + 1}` : undefined}
+          aria-label={translateUi(clickToEdit ? translateUi(`Sửa khối ${block.index + 1}`) : undefined)}
         >
           <BlockPreview block={block} courseCode={courseCode} moduleIndex={moduleIndex} count={count} />
         </div>
@@ -93,6 +95,7 @@ export function BlockCard({ block, count, linkedQuestions, editable, editing, on
 
 /** How a block looks (also used by the learner preview). HTML comes from the server, which sanitizes it on save. */
 export function BlockPreview({ block, learner = false, courseCode, moduleIndex = 0, count = 1 }: { block: CatalogBlock; learner?: boolean; courseCode?: string; moduleIndex?: number; count?: number }) {
+  useUiLanguage();
   const type = ((block?.type || 'TEXT').toUpperCase());
   if (type === 'TEXT') {
     if (learner && block.bodyHtml && courseCode) return <CatalogLessonContent block={block} courseCode={courseCode} moduleIndex={moduleIndex} count={count} />;
@@ -117,7 +120,7 @@ export function BlockPreview({ block, learner = false, courseCode, moduleIndex =
     if (!block.asset) return <p className="pa-empty">Chưa tải PDF.</p>;
     return (
       <div className="pa-media">
-        <iframe src={assetUrl(block.asset)} title={block.caption ?? 'PDF'} style={{ width: '100%', height: 500, border: 'none', borderRadius: 8 }} />
+        <iframe src={assetUrl(block.asset)} title={translateUi(block.caption ?? 'PDF')} style={{ width: '100%', height: 500, border: 'none', borderRadius: 8 }} />
         {block.caption && <p style={{ marginTop: 8, fontSize: 13, opacity: 0.7 }}>{block.caption}</p>}
       </div>
     );
@@ -126,7 +129,7 @@ export function BlockPreview({ block, learner = false, courseCode, moduleIndex =
   return (
     <figure className="pa-media">
       {type === 'IMAGE'
-        ? <img src={assetUrl(block.asset)} alt={block.altText ?? ''} />
+        ? <img src={assetUrl(block.asset)} alt={translateUi(block.altText ?? '')} />
         : <video src={assetUrl(block.asset)} controls preload="metadata" />}
       {block.caption && <figcaption>{block.caption}</figcaption>}
     </figure>
@@ -134,6 +137,7 @@ export function BlockPreview({ block, learner = false, courseCode, moduleIndex =
 }
 
 function Thumb({ asset }: { asset: PlatformAsset }) {
+  useUiLanguage();
   return (
     <div className="pa-thumb">
       {asset.kind === 'IMAGE' ? <img src={assetUrl(asset)} alt="" /> : <video src={assetUrl(asset)} muted preload="metadata" />}
@@ -144,6 +148,7 @@ function Thumb({ asset }: { asset: PlatformAsset }) {
 }
 
 function SlideCarousel({ block }: { block: CatalogBlock }) {
+  useUiLanguage();
   const track = useRef<HTMLDivElement>(null);
   const scroll = (dir: number) => track.current?.scrollBy?.({ left: dir * track.current.clientWidth, behavior: 'smooth' });
   return (
@@ -151,15 +156,15 @@ function SlideCarousel({ block }: { block: CatalogBlock }) {
       <div className="track" ref={track}>
         {block.items.map((item) => (
           <figure key={item.itemId} className="slide">
-            {item.asset.kind === 'IMAGE' ? <img src={assetUrl(item.asset)} alt={item.caption ?? ''} /> : <video src={assetUrl(item.asset)} controls preload="metadata" />}
+            {item.asset.kind === 'IMAGE' ? <img src={assetUrl(item.asset)} alt={translateUi(item.caption ?? '')} /> : <video src={assetUrl(item.asset)} controls preload="metadata" />}
             {item.caption && <figcaption>{item.caption}</figcaption>}
           </figure>
         ))}
       </div>
       {block.items.length > 1 && (
         <div className="arrows">
-          <button type="button" aria-label="Trước" onClick={() => scroll(-1)}>‹</button>
-          <button type="button" aria-label="Sau" onClick={() => scroll(1)}>›</button>
+          <button type="button" aria-label={translateUi("Trước")} onClick={() => scroll(-1)}>‹</button>
+          <button type="button" aria-label={translateUi("Sau")} onClick={() => scroll(1)}>›</button>
         </div>
       )}
     </div>
@@ -168,6 +173,7 @@ function SlideCarousel({ block }: { block: CatalogBlock }) {
 
 /** Rich text, saved by itself one second after typing stops (and when leaving the editor). */
 function TextEditor({ block, save }: { block: CatalogBlock; save: (body: BlockInput) => Promise<CatalogCourseDetail> }) {
+  useUiLanguage();
   const [html, setHtml] = useState(block.bodyHtml ?? '');
   const [state, setState] = useState<'saved' | 'dirty' | 'saving'>('saved');
   const latest = useRef(html);
@@ -195,7 +201,7 @@ function TextEditor({ block, save }: { block: CatalogBlock; save: (body: BlockIn
   return (
     <div className="stack">
       <RichTextEditor
-        label={`Nội dung khối ${block.index + 1}`}
+        label={translateUi(`Nội dung khối ${block.index + 1}`)}
         value={html}
         autoFocus={!block.bodyHtml}
         onChange={(value) => {
@@ -208,13 +214,14 @@ function TextEditor({ block, save }: { block: CatalogBlock; save: (body: BlockIn
         onBlur={flush}
       />
       <small className="pa-save-state" aria-live="polite">
-        {state === 'saving' ? 'Đang lưu…' : state === 'dirty' ? 'Chưa lưu — tự lưu sau khi dừng gõ' : 'Đã lưu'}
+        {state === 'saving' ? translateUi('Đang lưu…') : state === 'dirty' ? 'Chưa lưu — tự lưu sau khi dừng gõ' : translateUi('Đã lưu')}
       </small>
     </div>
   );
 }
 
 function SlideEditor({ block, save }: { block: CatalogBlock; save: (body: BlockInput) => Promise<CatalogCourseDetail> }) {
+  useUiLanguage();
   const { upload, progress, fileName } = useAssetUpload();
   const imageInput = useRef<HTMLInputElement>(null);
   const videoInput = useRef<HTMLInputElement>(null);
@@ -257,7 +264,7 @@ function SlideEditor({ block, save }: { block: CatalogBlock; save: (body: BlockI
           <figure key={item.itemId} className="pa-tile">
             <Thumb asset={item.asset} />
             <input
-              aria-label={`Chú thích mục ${index + 1}`}
+              aria-label={translateUi(`Chú thích mục ${index + 1}`)}
               defaultValue={item.caption ?? ''}
               placeholder="Chú thích"
               maxLength={500}
@@ -269,7 +276,7 @@ function SlideEditor({ block, save }: { block: CatalogBlock; save: (body: BlockI
             />
             <div className="tools">
               <button type="button" className="btn btn-ghost btn-small" aria-label="Đưa sang trái" disabled={index === 0} onClick={() => shift(index, -1)}>←</button>
-              <button type="button" className="btn btn-ghost btn-small pa-danger-text" onClick={() => persist(items.filter((_, i) => i !== index))}>Xóa</button>
+              <button type="button" className="btn btn-ghost btn-small pa-danger-text" onClick={() => persist(items.filter((_, i) => i !== index))}>{translateUi("Xóa")}</button>
               <button type="button" className="btn btn-ghost btn-small" aria-label="Đưa sang phải" disabled={index === block.items.length - 1} onClick={() => shift(index, 1)}>→</button>
             </div>
           </figure>
@@ -285,6 +292,7 @@ function SlideEditor({ block, save }: { block: CatalogBlock; save: (body: BlockI
 }
 
 function MediaEditor({ block, kind, save }: { block: CatalogBlock; kind: 'IMAGE' | 'VIDEO'; save: (body: BlockInput) => Promise<CatalogCourseDetail> }) {
+  useUiLanguage();
   const { upload, progress, fileName } = useAssetUpload();
   const input = useRef<HTMLInputElement>(null);
   const isImage = kind === 'IMAGE';
@@ -315,7 +323,7 @@ function MediaEditor({ block, kind, save }: { block: CatalogBlock; kind: 'IMAGE'
     <div className="stack">
       {block.asset ? (
         <figure className="pa-media">
-          {isImage ? <img src={assetUrl(block.asset)} alt={block.altText ?? ''} /> : <video src={assetUrl(block.asset)} controls preload="metadata" />}
+          {isImage ? <img src={assetUrl(block.asset)} alt={translateUi(block.altText ?? '')} /> : <video src={assetUrl(block.asset)} controls preload="metadata" />}
           <figcaption className="pa-hint">{block.asset.fileName} · {formatSize(block.asset.sizeBytes)}</figcaption>
         </figure>
       ) : (
@@ -350,6 +358,7 @@ function MediaEditor({ block, kind, save }: { block: CatalogBlock; kind: 'IMAGE'
 }
 
 function PdfUploadEditor({ block, save }: { block: CatalogBlock; save: (body: BlockInput) => Promise<CatalogCourseDetail> }) {
+  useUiLanguage();
   const { upload, progress, fileName } = useAssetUpload();
   const input = useRef<HTMLInputElement>(null);
 
@@ -371,7 +380,7 @@ function PdfUploadEditor({ block, save }: { block: CatalogBlock; save: (body: Bl
     <div className="stack">
       {block.asset ? (
         <div className="pa-media">
-          <iframe src={assetUrl(block.asset)} title={block.caption ?? 'PDF'} style={{ width: '100%', height: 500, border: 'none', borderRadius: 8 }} />
+          <iframe src={assetUrl(block.asset)} title={translateUi(block.caption ?? 'PDF')} style={{ width: '100%', height: 500, border: 'none', borderRadius: 8 }} />
           <p className="pa-hint">{block.asset.fileName} · {formatSize(block.asset.sizeBytes)}</p>
         </div>
       ) : (
@@ -401,6 +410,7 @@ function PdfUploadEditor({ block, save }: { block: CatalogBlock; save: (body: Bl
 }
 
 function UploadProgress({ name, value }: { name: string | null; value: number }) {
+  useUiLanguage();
   return (
     <div className="pa-upload" role="status" aria-live="polite">
       <span>Đang tải {name ?? 'tệp'} · {value}%</span>

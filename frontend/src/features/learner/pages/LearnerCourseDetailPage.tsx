@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Lock } from 'lucide-react';
 import { usePersonalAccess, usePersonalCourse } from '@/hooks/use-personal-learning';
@@ -16,16 +17,16 @@ import { LESSON_KIND } from '../utils/lesson-kind';
 
 /** IND-09 "/personal/courses/:id": what a course teaches, what it raises, and where the learner is in it. */
 export function LearnerCourseDetailPage() {
+  useUiLanguage();
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, isError, error, refetch } = usePersonalCourse(id);
 
   return (
     <div data-testid="learner-course-detail" className="grid gap-8">
       <Link to="/personal/path" className="inline-flex w-fit items-center gap-1.5 text-sm text-pt-fg-2 transition-colors hover:text-pt-fg">
-        <ArrowLeft className="size-4" aria-hidden="true" /> Lộ trình
-      </Link>
+        <ArrowLeft className="size-4" aria-hidden="true" />{translateUi(" Lộ trình")}</Link>
       {isLoading && <LoadingBlock />}
-      {isError && <ErrorBlock message={errorMessage(error)} onRetry={() => refetch()} />}
+      {isError && <ErrorBlock message={translateUi(errorMessage(error))} onRetry={() => refetch()} />}
       {data && <CourseBody course={data} />}
     </div>
   );
@@ -43,6 +44,7 @@ function primaryAction(course: PersonalCourseDetail, access: PersonalAccess | un
 
 /** One sentence about what this course costs or gives under the learner's plan; nothing for a paying plan. */
 function PlanNote({ course, access }: { course: PersonalCourseDetail; access: PersonalAccess | undefined }) {
+  useUiLanguage();
   if (!access) return null;
   const box = 'rounded-xl border border-pt-line border-l-2 border-l-pt-accent bg-pt-raised/60 px-4 py-3 text-sm text-pt-fg-2';
 
@@ -67,6 +69,7 @@ function PlanNote({ course, access }: { course: PersonalCourseDetail; access: Pe
 }
 
 function CourseBody({ course }: { course: PersonalCourseDetail }) {
+  useUiLanguage();
   const { data: access } = usePersonalAccess();
   const action = primaryAction(course, access);
   const planMode = usePlanMode();
@@ -77,24 +80,24 @@ function CourseBody({ course }: { course: PersonalCourseDetail }) {
       <header className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
         <div className="max-w-3xl">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={PT_EYEBROW}>Mã: {course.code}</span>
+            <span className={PT_EYEBROW}>{translateUi("Mã: ")}{course.code}</span>
             <Tag>{levelLabelVi(course.level)}</Tag>
-            <Tag>Miền {course.domainNumber} · {course.domainName}</Tag>
+            <Tag>{translateUi("Miền ")}{course.domainNumber} · {translateUi(course.domainName)}</Tag>
             {course.inPath && <Tag tone="info">Trong lộ trình</Tag>}
             {course.exempt && <Tag tone="ok">Được miễn</Tag>}
             {course.trialSlot && <Tag tone="ok">Đang học thử</Tag>}
-            {course.status === 'COMPLETED' && <Tag tone="ok"><Check className="size-3" aria-hidden="true" />Đã hoàn thành</Tag>}
+            {course.status === 'COMPLETED' && <Tag tone="ok"><Check className="size-3" aria-hidden="true" />{translateUi("Đã hoàn thành")}</Tag>}
           </div>
-          <h1 className="mt-5 text-balance text-[clamp(26px,3vw,32px)] font-semibold leading-tight tracking-[-0.03em]">{course.title}</h1>
-          <p className="mt-3 max-w-[62ch] text-[15px] leading-[1.7] text-pt-fg-2">{course.description}</p>
-          <p className="mt-3 text-sm text-pt-fg-3">{formatMinutes(course.durationMinutes)} · {course.lessonCount} bài · {course.status === 'IN_PROGRESS' ? 'Đang học' : course.status === 'COMPLETED' ? 'Đã hoàn thành' : course.status === 'LOCKED' ? 'Chờ điều kiện tiên quyết' : 'Có thể bắt đầu'}</p>
+          <h1 className="mt-5 text-balance text-[clamp(26px,3vw,32px)] font-semibold leading-tight tracking-[-0.03em]">{translateUi(course.title)}</h1>
+          <p className="mt-3 max-w-[62ch] text-[15px] leading-[1.7] text-pt-fg-2">{translateUi(course.description)}</p>
+          <p className="mt-3 text-sm text-pt-fg-3">{formatMinutes(course.durationMinutes)} · {course.lessonCount} bài · {course.status === 'IN_PROGRESS' ? translateUi('Đang học') : course.status === 'COMPLETED' ? translateUi('Đã hoàn thành') : course.status === 'LOCKED' ? 'Chờ điều kiện tiên quyết' : 'Có thể bắt đầu'}</p>
         </div>
         <div className="flex flex-col gap-3 lg:items-end">
           {lockedMode ? (
             <PlanLockBlock mode={lockedMode} courseLimit={access?.courseLimit ?? null} placement="course" className="w-full max-w-sm" />
           ) : action ? (
             <Link to={action.to} className={PT_BUTTON}>
-              {action.label} <ArrowRight className="size-4" aria-hidden="true" />
+              {translateUi(action.label)} <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
           ) : (
             <span className="inline-flex items-center gap-2 rounded-full border border-pt-line px-4 py-2.5 text-sm text-pt-fg-2">
@@ -103,7 +106,7 @@ function CourseBody({ course }: { course: PersonalCourseDetail }) {
           )}
           {course.status !== 'AVAILABLE' && course.status !== 'LOCKED' && (
             <div className="flex w-56 items-center gap-3">
-              <ProgressBar value={course.progressPercent} label={`Tiến độ ${course.title}`} />
+              <ProgressBar value={course.progressPercent} label={translateUi(`Tiến độ ${course.title}`)} />
               <span className="text-xs tabular-nums text-pt-fg-3">{course.progressPercent}%</span>
             </div>
           )}
@@ -115,7 +118,7 @@ function CourseBody({ course }: { course: PersonalCourseDetail }) {
       {course.status === 'LOCKED' && course.prerequisite && (
         <Card className="flex flex-col gap-3 border-pt-warn/40 p-5 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-pt-fg-2">
-            Khóa này cần mức {levelLabelVi(course.entryLevel)} của miền. Hoàn thành <span className="text-pt-fg">{course.prerequisite.title}</span> trước.
+            Khóa này cần mức {levelLabelVi(course.entryLevel)} của miền. Hoàn thành <span className="text-pt-fg">{translateUi(course.prerequisite.title)}</span> trước.
           </p>
           <Link to={`/personal/courses/${course.prerequisite.id}`} className={PT_BUTTON_SECONDARY}>Mở khóa tiên quyết</Link>
         </Card>
@@ -145,7 +148,7 @@ function CourseBody({ course }: { course: PersonalCourseDetail }) {
                     <details className="group rounded-2xl border border-pt-line" open={index === 0}>
                       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-4 [&::-webkit-details-marker]:hidden">
                         <span className="min-w-0">
-                          <span className="block text-[15px] text-pt-fg">{module.title}</span>
+                          <span className="block text-[15px] text-pt-fg">{translateUi(module.title)}</span>
                           <span className="text-xs text-pt-fg-3">{done}/{module.lessons.length} bài đã học</span>
                         </span>
                         <span className="text-xs text-pt-fg-3 transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
@@ -160,8 +163,8 @@ function CourseBody({ course }: { course: PersonalCourseDetail }) {
                                 : access?.mode === 'free'
                                   ? <Lock className="size-4 shrink-0 text-pt-fg-3" aria-label="Mở khi nâng cấp" />
                                   : <kind.icon className="size-4 shrink-0 text-pt-fg-3" aria-hidden="true" />}
-                              <span className={cn('flex-1', lesson.completed ? 'text-pt-fg-2' : 'text-pt-fg')}>{lesson.title}</span>
-                              <span className="text-xs text-pt-fg-3">{kind.label} · {lesson.durationMinutes} phút</span>
+                              <span className={cn('flex-1', lesson.completed ? 'text-pt-fg-2' : 'text-pt-fg')}>{translateUi(lesson.title)}</span>
+                              <span className="text-xs text-pt-fg-3">{translateUi(kind.label)} · {lesson.durationMinutes}{translateUi(" phút")}</span>
                             </li>
                           );
                         })}
@@ -177,9 +180,9 @@ function CourseBody({ course }: { course: PersonalCourseDetail }) {
         <aside className="grid content-start gap-3">
           <Card className="p-6">
             <dl className="grid grid-cols-2 gap-5">
-              <div><dt className="text-xs text-pt-fg-3">Thời lượng</dt><dd className="mt-1 text-sm">{formatMinutes(course.durationMinutes)}</dd></div>
-              <div><dt className="text-xs text-pt-fg-3">Số bài</dt><dd className="mt-1 text-sm">{course.lessonCount} bài</dd></div>
-              <div><dt className="text-xs text-pt-fg-3">Mức đầu vào</dt><dd className="mt-1 text-sm">{course.entryLevel === 0 ? 'Không yêu cầu' : levelLabelVi(course.entryLevel)}</dd></div>
+              <div><dt className="text-xs text-pt-fg-3">{translateUi("Thời lượng")}</dt><dd className="mt-1 text-sm">{formatMinutes(course.durationMinutes)}</dd></div>
+              <div><dt className="text-xs text-pt-fg-3">Số bài</dt><dd className="mt-1 text-sm">{course.lessonCount}{translateUi(" bài")}</dd></div>
+              <div><dt className="text-xs text-pt-fg-3">Mức đầu vào</dt><dd className="mt-1 text-sm">{course.entryLevel === 0 ? translateUi('Không yêu cầu') : levelLabelVi(course.entryLevel)}</dd></div>
               <div>
                 <dt className="text-xs text-pt-fg-3">Bài đánh giá</dt>
                 <dd className="mt-1 text-sm">{course.assessment.questionCount} câu · đạt {course.assessment.passPercent}%</dd>
@@ -200,7 +203,7 @@ function CourseBody({ course }: { course: PersonalCourseDetail }) {
                   <span className="text-sm leading-snug text-pt-fg"><span className="mr-2 text-xs text-pt-fg-3">{competency.code}</span>{competency.name}</span>
                   <span className="flex items-center gap-3 text-xs text-pt-fg-3">
                     <span>Hiện tại: {levelLabelVi(competency.currentLevel)}</span>
-                    {competency.requiredLevel > 0 ? `Vị trí cần ${levelLabelVi(competency.requiredLevel)}` : 'Vị trí không yêu cầu'}
+                    {competency.requiredLevel > 0 ? translateUi(`Vị trí cần ${levelLabelVi(competency.requiredLevel)}`) : 'Vị trí không yêu cầu'}
                   </span>
                 </li>
               ))}
@@ -210,7 +213,7 @@ function CourseBody({ course }: { course: PersonalCourseDetail }) {
           {course.task && (
             <Card className="p-6">
               <p className={PT_EYEBROW}>Bài thực hành</p>
-              <p className="mt-3 text-[15px] leading-snug text-pt-fg">{course.task.title}</p>
+              <p className="mt-3 text-[15px] leading-snug text-pt-fg">{translateUi(course.task.title)}</p>
               <p className="mt-2 text-xs leading-relaxed text-pt-fg-3">{course.task.brief}</p>
               <Link to="/personal/tasks" className="mt-4 inline-flex text-sm text-pt-fg underline decoration-pt-fg/30 underline-offset-4 hover:decoration-pt-fg">
                 Mở bài thực hành

@@ -1,3 +1,5 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
+import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -70,6 +72,7 @@ const TRIAL_NAV: NavItem[] = [
 ];
 
 export function PulseHeader() {
+  useUiLanguage();
   const user = useCurrentUser((s) => s.user);
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -177,7 +180,7 @@ export function PulseHeader() {
         </div>
 
         {/* Navigation cho tablet/mobile */}
-        <nav className="pu-nav" aria-label="Học tập của tôi">
+        <nav className="pu-nav" aria-label={translateUi("Học tập của tôi")}>
           {nav.map((item) => (
             <NavLink
               key={item.to}
@@ -186,12 +189,13 @@ export function PulseHeader() {
               data-tour={item.screenId}
               className={isActive(item.match, item.end) ? 'active' : ''}
             >
-              {item.label}
+              {translateUi(item.label)}
             </NavLink>
           ))}
         </nav>
 
         <div className="pu-header-actions">
+          <LanguageSwitcher />
           {/* Nút tìm kiếm nhanh */}
           <button
             type="button"
@@ -220,8 +224,8 @@ export function PulseHeader() {
           <Link
             to={PULSE_PATHS.activity}
             className="pu-icon-btn pu-header-bell-btn"
-            aria-label={unread?.length ? `Hoạt động, ${unread.length} chưa đọc` : 'Hoạt động'}
-            title="Nhật ký hoạt động"
+            aria-label={translateUi(unread?.length ? translateUi(`Hoạt động, ${unread.length} chưa đọc`) : translateUi('Hoạt động'))}
+            title={translateUi("Nhật ký hoạt động")}
           >
             <Bell size={18} />
             {Boolean(unread?.length) && <span className="pu-dot" />}
@@ -238,27 +242,26 @@ export function PulseHeader() {
             >
               <span className="pu-avatar" aria-hidden>{initials(user?.fullName)}</span>
               <div>
-                <b>{user?.fullName ?? 'Nhân viên'}</b>
-                <small>{roleLabel}</small>
+                <b>{user?.fullName ?? translateUi('Nhân viên')}</b>
+                <small>{translateUi(roleLabel)}</small>
               </div>
             </button>
             {open && (
               <div className="pu-menu-panel" role="menu">
-                <Link role="menuitem" to={PULSE_PATHS.profile}><UserRound size={16} /> Hồ sơ cá nhân</Link>
+                <Link role="menuitem" to={PULSE_PATHS.profile}><UserRound size={16} />{translateUi(" Hồ sơ cá nhân")}</Link>
                 <Link role="menuitem" to={PULSE_PATHS.outcomes}><Award size={16} /> Chứng chỉ năng lực</Link>
                 {(myTrial?.status !== 'NOT_STARTED' || overview?.placementTest?.hasTaken) && (
                   <Link role="menuitem" to={PULSE_PATHS.trialTest}><FileText size={16} /> Kết quả đánh giá đầu vào</Link>
                 )}
-                <Link role="menuitem" to={PULSE_PATHS.activity}><Bell size={16} /> Nhật ký hoạt động</Link>
-                <Link role="menuitem" to={PULSE_PATHS.feedbacks}><MessageSquare size={16} /> Góp ý</Link>
-                <Link role="menuitem" to={PULSE_PATHS.bugReports}><Bug size={16} /> Báo lỗi</Link>
+                <Link role="menuitem" to={PULSE_PATHS.activity}><Bell size={16} />{translateUi(" Nhật ký hoạt động")}</Link>
+                <Link role="menuitem" to={PULSE_PATHS.feedbacks}><MessageSquare size={16} />{translateUi(" Góp ý")}</Link>
+                <Link role="menuitem" to={PULSE_PATHS.bugReports}><Bug size={16} />{translateUi(" Báo lỗi")}</Link>
                 {workspaceHome && (
                   <Link role="menuitem" to={workspaceHome}><BriefcaseBusiness size={16} /> Về không gian quản lý</Link>
                 )}
                 <hr />
                 <button role="menuitem" type="button" onClick={signOut} disabled={logout.isPending}>
-                  <LogOut size={16} /> Đăng xuất
-                </button>
+                  <LogOut size={16} />{translateUi(" Đăng xuất")}</button>
               </div>
             )}
           </div>
@@ -268,7 +271,7 @@ export function PulseHeader() {
       {/* Hộp thoại tra cứu nhanh (Quick Search Modal) */}
       {searchOpen && (
         <div className="pu-search-modal-backdrop" onClick={() => setSearchOpen(false)}>
-          <div className="pu-search-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Tìm kiếm nhanh">
+          <div className="pu-search-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={translateUi("Tìm kiếm nhanh")}>
             <div className="pu-search-input-wrap">
               <Search size={18} className="pu-search-icon" />
               <input
@@ -309,7 +312,7 @@ export function PulseHeader() {
                         <Icon size={16} />
                       </span>
                       <div className="pu-search-item-info">
-                        <strong>{item.title}</strong>
+                        <strong>{translateUi(item.title)}</strong>
                         <small>{item.category}</small>
                       </div>
                       <span className="pu-search-item-arrow">

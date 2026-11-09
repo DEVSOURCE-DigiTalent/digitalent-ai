@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-react';
@@ -30,6 +31,7 @@ export function PulseAuthLayout({
   footer,
   mode = 'login',
 }: PulseAuthLayoutProps) {
+  useUiLanguage();
   usePageBackground('#070b16');
 
   return (
@@ -51,10 +53,9 @@ export function PulseAuthLayout({
         </Link>
         <div className="pulse-auth-topbar-actions">
           <Link to="/business" className="pulse-auth-home-link">
-            <ArrowLeft size={15} aria-hidden="true" /> Trang chủ
-          </Link>
+            <ArrowLeft size={15} aria-hidden="true" />{translateUi(" Trang chủ")}</Link>
           <Link to={mode === 'login' ? '/business/try' : '/login'} className="pulse-auth-switch-btn">
-            {mode === 'login' ? 'Dùng thử miễn phí' : 'Đăng nhập'} <ArrowRight size={15} aria-hidden="true" />
+            {mode === 'login' ? 'Dùng thử miễn phí' : translateUi('Đăng nhập')} <ArrowRight size={15} aria-hidden="true" />
           </Link>
         </div>
       </header>
@@ -70,8 +71,8 @@ export function PulseAuthLayout({
               <span className="pulse-auth-pill-dot" />
               {eyebrow}
             </span>
-            <h1 className="pulse-auth-title">{title}</h1>
-            <p className="pulse-auth-subtitle">{subtitle}</p>
+            <h1 className="pulse-auth-title">{translateUi(title)}</h1>
+            <p className="pulse-auth-subtitle">{translateUi(subtitle)}</p>
           </div>
 
           {/* Form Content */}

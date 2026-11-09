@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -29,6 +30,7 @@ const forgotSchema = z.object({
 
 /** AUTH-06 (1/2): asks for the email. The answer is the same whether or not an account exists. */
 export function ForgotPasswordPage() {
+  useUiLanguage();
   const [submittedEmail, setSubmittedEmail] = useState('');
   const request = useMutation({
     mutationFn: async (email: string) => {
@@ -48,14 +50,12 @@ export function ForgotPasswordPage() {
     <AuthShell
       portal="individual"
       eyebrow="Bảo mật tài khoản"
-      title="Quên mật khẩu?"
+      title={translateUi("Quên mật khẩu?")}
       subtitle="Nhập email tài khoản của bạn để nhận liên kết xác thực đặt lại mật khẩu mới."
       footerLink={
         <p className="text-xs text-stone-400">
           Đã nhớ mật khẩu?{' '}
-          <Link to="/login" className="text-cream underline underline-offset-4 font-medium hover:text-[#F5CA65] transition-colors">
-            Đăng nhập ngay
-          </Link>
+          <Link to="/login" className="text-cream underline underline-offset-4 font-medium hover:text-[#F5CA65] transition-colors">{translateUi("Đăng nhập ngay")}</Link>
         </p>
       }
     >
@@ -75,7 +75,7 @@ export function ForgotPasswordPage() {
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-xs text-left text-stone-300 space-y-2.5">
             <div className="flex items-start gap-2">
               <CheckCircle2 className="size-4 shrink-0 text-emerald-400 mt-0.5" />
-              <span>Liên kết có hiệu lực trong vòng <strong>30 phút</strong>.</span>
+              <span>{translateUi("Liên kết có hiệu lực trong vòng ")}<strong>30 phút</strong>.</span>
             </div>
             <div className="flex items-start gap-2">
               <AlertCircle className="size-4 shrink-0 text-[#F5CA65] mt-0.5" />
@@ -88,21 +88,17 @@ export function ForgotPasswordPage() {
           )}
 
           <div className="grid gap-3 pt-2">
-            <Link to="/login" className={`${DARK_PRIMARY_BUTTON} w-full text-center py-3`}>
-              Quay lại đăng nhập
-            </Link>
+            <Link to="/login" className={`${DARK_PRIMARY_BUTTON} w-full text-center py-3`}>{translateUi("Quay lại đăng nhập")}</Link>
             <button
               type="button"
               onClick={() => request.reset()}
               className={`${DARK_SECONDARY_BUTTON} w-full text-center text-xs py-2.5`}
-            >
-              Gửi lại hoặc thử email khác
-            </button>
+            >{translateUi("Gửi lại hoặc thử email khác")}</button>
           </div>
         </div>
       ) : (
         <form onSubmit={handleSubmit(({ email }) => request.mutate(email))} noValidate className="space-y-5">
-          <FormError message={request.error ? errorMessage(request.error) : undefined} />
+          <FormError message={translateUi(request.error ? errorMessage(request.error) : undefined)} />
 
           <Field label="Địa chỉ email đăng ký" htmlFor="email" error={errors.email?.message}>
             <input
@@ -145,6 +141,7 @@ const resetSchema = z
 
 /** AUTH-06 (2/2): sets the new password from the emailed link. */
 export function ResetPasswordPage() {
+  useUiLanguage();
   const { token = '' } = useParams();
   const navigate = useNavigate();
   const [done, setDone] = useState(false);
@@ -230,18 +227,16 @@ export function ResetPasswordPage() {
 
       {validity.isSuccess && !done && (
         <form onSubmit={handleSubmit(({ password }) => reset.mutate(password))} noValidate className="space-y-5">
-          <FormError message={reset.error ? errorMessage(reset.error) : undefined} />
+          <FormError message={translateUi(reset.error ? errorMessage(reset.error) : undefined)} />
 
           <div>
-            <label htmlFor="password" className="block text-xs font-medium text-stone-300 mb-1.5">
-              Mật khẩu mới
-            </label>
+            <label htmlFor="password" className="block text-xs font-medium text-stone-300 mb-1.5">{translateUi("Mật khẩu mới")}</label>
             <div className="relative">
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
-                placeholder="Ít nhất 8 ký tự"
+                placeholder={translateUi("Ít nhất 8 ký tự")}
                 aria-invalid={!!errors.password}
                 className={`${DARK_INPUT_CLASS} pr-10`}
                 {...register('password')}
@@ -256,7 +251,7 @@ export function ResetPasswordPage() {
               </button>
             </div>
             {errors.password?.message && (
-              <p className="mt-1 text-xs text-rose-400">{errors.password.message}</p>
+              <p className="mt-1 text-xs text-rose-400">{translateUi(errors.password.message)}</p>
             )}
           </div>
 
@@ -269,7 +264,7 @@ export function ResetPasswordPage() {
                 id="confirmPassword"
                 type={showConfirm ? 'text' : 'password'}
                 autoComplete="new-password"
-                placeholder="Xác nhận mật khẩu mới"
+                placeholder={translateUi("Xác nhận mật khẩu mới")}
                 aria-invalid={!!errors.confirmPassword}
                 className={`${DARK_INPUT_CLASS} pr-10`}
                 {...register('confirmPassword')}
@@ -284,7 +279,7 @@ export function ResetPasswordPage() {
               </button>
             </div>
             {errors.confirmPassword?.message && (
-              <p className="mt-1 text-xs text-rose-400">{errors.confirmPassword.message}</p>
+              <p className="mt-1 text-xs text-rose-400">{translateUi(errors.confirmPassword.message)}</p>
             )}
           </div>
 
@@ -310,6 +305,7 @@ export function ResetPasswordPage() {
 
 /** AUTH-07: opened from the verification email; confirms the address. */
 export function VerifyEmailPage() {
+  useUiLanguage();
   const { token = '' } = useParams();
   const verify = useMutation({ mutationFn: async () => passwordService.verifyEmail(token) });
   const { mutate } = verify;
@@ -339,7 +335,7 @@ export function VerifyEmailPage() {
               <CheckCircle2 className="size-7" />
             </div>
             <div className="space-y-1">
-              <h2 className="text-base font-semibold text-cream">Email của bạn đã được xác minh thành công!</h2>
+              <h2 className="text-base font-semibold text-cream">{translateUi("Email của bạn đã được xác minh thành công!")}</h2>
               <p className="text-xs text-stone-300">
                 Tài khoản đã sẵn sàng. Bạn có thể đăng nhập ngay để bắt đầu hành trình học tập.
               </p>
@@ -361,9 +357,7 @@ export function VerifyEmailPage() {
                 {errorMessage(verify.error)}
               </p>
             </div>
-            <Link to="/login" className={`${DARK_PRIMARY_BUTTON} w-full py-3`}>
-              Quay lại đăng nhập
-            </Link>
+            <Link to="/login" className={`${DARK_PRIMARY_BUTTON} w-full py-3`}>{translateUi("Quay lại đăng nhập")}</Link>
           </>
         )}
       </div>

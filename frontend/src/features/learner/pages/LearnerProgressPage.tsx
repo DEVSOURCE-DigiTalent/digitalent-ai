@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Check } from 'lucide-react';
@@ -15,19 +16,20 @@ import { formatDate, formatHours } from '../utils/format';
 
 /** IND-11 "/personal/progress": the learner's competency profile, where each level came from, and milestones. */
 export function LearnerProgressPage() {
+  useUiLanguage();
   const { data, isLoading, isError, error, refetch } = usePersonalProgress();
   const diagnostic = usePersonalDiagnostic();
 
   return (
     <div data-testid="learner-progress-page" className="grid gap-10">
       <PersonalPageHeader
-        label="Hồ sơ năng lực"
-        title="Hồ sơ năng lực"
+        label={translateUi("Hồ sơ năng lực")}
+        title={translateUi("Hồ sơ năng lực")}
         lead="Mức hiện tại, yêu cầu của vị trí và căn cứ đánh giá cho từng năng lực."
         actions={<Link to="/personal/certificates" className={PT_BUTTON_SECONDARY}>Xem chứng nhận</Link>}
       />
       {isLoading && <LoadingBlock />}
-      {isError && <ErrorBlock message={errorMessage(error)} onRetry={() => refetch()} />}
+      {isError && <ErrorBlock message={translateUi(errorMessage(error))} onRetry={() => refetch()} />}
       {data && <ProgressBody data={data} diagnostic={diagnostic.data?.result ?? null} />}
     </div>
   );
@@ -43,6 +45,7 @@ function lastRaise(profile: PersonalProgress['profile']): { domain: string; cour
 }
 
 function ProgressBody({ data, diagnostic }: { data: PersonalProgress; diagnostic: { completedAt: string; domains: { number: number; level: number }[] } | null }) {
+  useUiLanguage();
   const { data: access } = usePersonalAccess();
   const { mutate: markSeen } = useMarkSeen();
   const raise = lastRaise(data.profile);
@@ -75,11 +78,11 @@ function ProgressBody({ data, diagnostic }: { data: PersonalProgress; diagnostic
         <div className="grid gap-4">
           {data.profile.map((domain) => (
             <details key={domain.number} open className="group overflow-hidden rounded-2xl border border-pt-line bg-pt-card">
-              <summary className="cursor-pointer px-5 py-4 text-base font-semibold text-pt-fg">{domain.number}. {domain.name}</summary>
-              <div className="overflow-x-auto border-t border-pt-line" role="region" aria-label={`Bảng ${domain.name}`} tabIndex={0}>
-                <table aria-label={domain.name} className="w-full min-w-[760px] text-left text-sm">
+              <summary className="cursor-pointer px-5 py-4 text-base font-semibold text-pt-fg">{domain.number}. {translateUi(domain.name)}</summary>
+              <div className="overflow-x-auto border-t border-pt-line" role="region" aria-label={translateUi(`Bảng ${domain.name}`)} tabIndex={0}>
+                <table aria-label={translateUi(domain.name)} className="w-full min-w-[760px] text-left text-sm">
                   <thead className="bg-pt-raised/60 text-xs text-pt-fg-3"><tr>
-                    <th className="px-5 py-3 font-medium">Năng lực</th><th className="px-4 py-3 font-medium">Mức hiện tại</th><th className="px-4 py-3 font-medium">Mức mục tiêu</th><th className="px-4 py-3 font-medium">Căn cứ</th><th className="px-5 py-3 font-medium">Ngày đánh giá</th>
+                    <th className="px-5 py-3 font-medium">{translateUi("Năng lực")}</th><th className="px-4 py-3 font-medium">Mức hiện tại</th><th className="px-4 py-3 font-medium">Mức mục tiêu</th><th className="px-4 py-3 font-medium">Căn cứ</th><th className="px-5 py-3 font-medium">Ngày đánh giá</th>
                   </tr></thead>
                   <tbody>{domain.items.map((item) => {
                     const domainResult = diagnostic?.domains.find((result) => result.number === domain.number);
@@ -89,8 +92,8 @@ function ProgressBody({ data, diagnostic }: { data: PersonalProgress; diagnostic
                     return <tr key={item.code} className="border-t border-pt-line">
                       <th scope="row" className="px-5 py-3 font-medium text-pt-fg"><span className="mr-2 text-xs font-normal text-pt-fg-3">{item.code}</span>{item.name}</th>
                       <td className="px-4 py-3 text-pt-fg-2">{current}</td>
-                      <td className="px-4 py-3 text-pt-fg-2">{item.requiredLevel > 0 ? levelLabelVi(item.requiredLevel) : 'Không yêu cầu'}</td>
-                      <td className="px-4 py-3 text-pt-fg-2">{item.source || (hasDiagnosticEvidence ? 'Đánh giá đầu vào' : 'Chưa có')}</td>
+                      <td className="px-4 py-3 text-pt-fg-2">{item.requiredLevel > 0 ? levelLabelVi(item.requiredLevel) : translateUi('Không yêu cầu')}</td>
+                      <td className="px-4 py-3 text-pt-fg-2">{item.source || (hasDiagnosticEvidence ? translateUi('Đánh giá đầu vào') : 'Chưa có')}</td>
                       <td className="px-5 py-3 text-pt-fg-2">{item.at ? formatDate(item.at) : hasDiagnosticEvidence ? formatDate(diagnostic!.completedAt) : '—'}</td>
                     </tr>;
                   })}</tbody>
@@ -118,6 +121,7 @@ function ProgressBody({ data, diagnostic }: { data: PersonalProgress; diagnostic
 }
 
 function Milestone({ milestone }: { milestone: PersonalMilestone }) {
+  useUiLanguage();
   const achieved = Boolean(milestone.achievedAt);
   return (
     <li className={cn('flex gap-4 rounded-2xl border p-4', achieved ? 'border-pt-fg/30 bg-pt-raised/60' : 'border-dashed border-pt-line')}>
@@ -125,12 +129,12 @@ function Milestone({ milestone }: { milestone: PersonalMilestone }) {
         {achieved ? <Check className="size-4" aria-hidden="true" /> : <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />}
       </span>
       <div>
-        <p className={cn('text-sm', achieved ? 'text-pt-fg' : 'text-pt-fg-2')}>{milestone.title}</p>
+        <p className={cn('text-sm', achieved ? 'text-pt-fg' : 'text-pt-fg-2')}>{translateUi(milestone.title)}</p>
         <p className="mt-0.5 text-xs leading-snug text-pt-fg-3">
-          {milestone.description}
+          {translateUi(milestone.description)}
           {milestone.achievedAt && <> · {formatDate(milestone.achievedAt)}</>}
         </p>
-        <span className="sr-only">{achieved ? 'Đã đạt' : 'Chưa đạt'}</span>
+        <span className="sr-only">{achieved ? translateUi('Đã đạt') : translateUi('Chưa đạt')}</span>
       </div>
     </li>
   );

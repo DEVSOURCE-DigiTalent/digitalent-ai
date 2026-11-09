@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, Loader2, Mail, RefreshCw, ShieldCheck } from 'lucide-react';
@@ -16,6 +17,7 @@ function errorMessage(error: unknown): string {
 
 /** AUTH-OTP: Business Owner nhập OTP 6 số để kích hoạt tài khoản sau khi đăng ký. */
 export function BusinessVerifyEmailPage() {
+  useUiLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const currentUser = useCurrentUser((s) => s.user);
@@ -186,7 +188,7 @@ export function BusinessVerifyEmailPage() {
     return (
       <PulseAuthLayout
         eyebrow="Xác minh email"
-        title="Email đã xác minh!"
+        title={translateUi("Email đã xác minh!")}
         subtitle="Tài khoản doanh nghiệp của bạn đã được kích hoạt thành công."
         asideTitle="Bắt đầu xây dựng đội ngũ."
         asideText="Thiết lập phòng ban, vị trí và mời nhân viên để bắt đầu hành trình phát triển năng lực."
@@ -216,9 +218,9 @@ export function BusinessVerifyEmailPage() {
     <PulseAuthLayout
       eyebrow="Xác minh email"
       title="Nhập mã xác minh"
-      subtitle={deliveryPending
-        ? `Tài khoản đã được tạo nhưng chưa gửi được mã đến ${email}. Vui lòng thử gửi lại.`
-        : `Chúng tôi đã gửi mã OTP 6 số đến ${email}. Mã có hiệu lực trong 10 phút.`}
+      subtitle={translateUi(deliveryPending
+        ? translateUi(`Tài khoản đã được tạo nhưng chưa gửi được mã đến ${email}. Vui lòng thử gửi lại.`)
+        : translateUi(`Chúng tôi đã gửi mã OTP 6 số đến ${email}. Mã có hiệu lực trong 10 phút.`))}
       asideTitle="Một bước nữa để sẵn sàng."
       asideText="Xác minh email giúp bảo vệ tài khoản doanh nghiệp và đảm bảo chỉ bạn mới quản lý được tổ chức."
       asidePoints={['Mã OTP chỉ gửi đến email của bạn', 'Hiệu lực 10 phút, có thể gửi lại', 'Bảo mật 2 lớp cho tài khoản chủ sở hữu']}
@@ -239,13 +241,11 @@ export function BusinessVerifyEmailPage() {
 
         {/* Thông báo lỗi */}
         {deliveryPending && !error && (
-          <div role="status" className="pulse-auth-error">
-            Chưa gửi được mã xác minh. Chọn “Gửi lại mã OTP” bên dưới.
-          </div>
+          <div role="status" className="pulse-auth-error">{translateUi("Chưa gửi được mã xác minh. Chọn “Gửi lại mã OTP” bên dưới.")}</div>
         )}
         {error && (
           <div role="alert" className="pulse-auth-error">
-            {error}
+            {translateUi(error)}
           </div>
         )}
 
@@ -268,7 +268,7 @@ export function BusinessVerifyEmailPage() {
               value={digit}
               onChange={(e) => handleOtpChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
-              aria-label={`Chữ số thứ ${index + 1}`}
+              aria-label={translateUi(`Chữ số thứ ${index + 1}`)}
               className={`pulse-auth-otp-input${digit ? ' pulse-auth-otp-input--filled' : ''}${error ? ' pulse-auth-otp-input--error' : ''}`}
               disabled={isVerifying}
             />
@@ -287,14 +287,13 @@ export function BusinessVerifyEmailPage() {
           ) : (
             <ShieldCheck size={17} aria-hidden="true" />
           )}
-          {isVerifying ? 'Đang xác minh…' : 'Xác minh tài khoản'}
+          {isVerifying ? translateUi('Đang xác minh…') : translateUi('Xác minh tài khoản')}
         </button>
 
         {/* Gửi lại OTP */}
         <div className="pulse-auth-otp-resend">
           {resendCountdown > 0 ? (
-            <p className="pulse-auth-field-hint">
-              Gửi lại mã sau <strong>{resendCountdown}s</strong>
+            <p className="pulse-auth-field-hint">{translateUi("Gửi lại mã sau ")}<strong>{resendCountdown}s</strong>
             </p>
           ) : (
             <button
@@ -306,7 +305,7 @@ export function BusinessVerifyEmailPage() {
               {isResending ? (
                 <><Loader2 size={14} className="animate-spin" /> Đang gửi lại…</>
               ) : (
-                <><RefreshCw size={14} /> Gửi lại mã OTP</>
+                <><RefreshCw size={14} />{translateUi(" Gửi lại mã OTP")}</>
               )}
             </button>
           )}
@@ -314,9 +313,7 @@ export function BusinessVerifyEmailPage() {
 
         {/* Hướng dẫn */}
         <p className="pulse-auth-field-hint" style={{ textAlign: 'center' }}>
-          <Mail size={13} style={{ display: 'inline', verticalAlign: 'middle' }} />{' '}
-          Kiểm tra cả thư mục Spam nếu chưa thấy email.
-        </p>
+          <Mail size={13} style={{ display: 'inline', verticalAlign: 'middle' }} />{' '}{translateUi("Kiểm tra cả thư mục Spam nếu chưa thấy email.")}</p>
       </div>
     </PulseAuthLayout>
   );

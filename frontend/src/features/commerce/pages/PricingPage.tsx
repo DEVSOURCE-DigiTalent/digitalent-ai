@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -46,6 +47,7 @@ interface PricingPageProps {
 
 /** PUB-04 (enterprise) and PUB-05 (individual): compare plans, pick one, carry the choice into sign-up. */
 export function PricingPage({ audience }: PricingPageProps) {
+  useUiLanguage();
   const copy = COPY[audience];
   const plans = plansFor(audience);
   const navigate = useNavigate();
@@ -126,7 +128,7 @@ export function PricingPage({ audience }: PricingPageProps) {
     <PublicShell portal={copy.portal} width="wide">
       {fromTrial && (
         <div role="status" className="mx-auto mb-8 max-w-2xl rounded-2xl bg-emerald-500/10 px-5 py-3.5 text-center text-sm text-emerald-100 ring-1 ring-emerald-400/30">
-          Bạn đã hoàn thành phần trải nghiệm{trialPosition ? ` cho vị trí ${trialPosition.name}` : ''}. Chọn gói để mở lộ trình đầy đủ; tiến độ thử không được dùng làm chứng nhận.
+          Bạn đã hoàn thành phần trải nghiệm{trialPosition ? translateUi(` cho vị trí ${trialPosition.name}`) : ''}. Chọn gói để mở lộ trình đầy đủ; tiến độ thử không được dùng làm chứng nhận.
         </div>
       )}
       {reason === 'choose-plan' && (
@@ -140,8 +142,8 @@ export function PricingPage({ audience }: PricingPageProps) {
         </div>
       )}
       <div className="mx-auto max-w-3xl text-center">
-        <p className="text-[11px] uppercase tracking-[0.16em] text-cream-soft sm:text-xs">Bảng giá</p>
-        <h1 className="mt-4 text-balance text-[clamp(28px,3.6vw,46px)] font-normal leading-[1.08] tracking-[-0.03em]">{copy.title}</h1>
+        <p className="text-[11px] uppercase tracking-[0.16em] text-cream-soft sm:text-xs">{translateUi("Bảng giá")}</p>
+        <h1 className="mt-4 text-balance text-[clamp(28px,3.6vw,46px)] font-normal leading-[1.08] tracking-[-0.03em]">{translateUi(copy.title)}</h1>
         <p className="mx-auto mt-4 max-w-[52ch] text-pretty text-sm leading-[1.7] text-stone-400 sm:text-base">{copy.lead}</p>
 
         {/* Billing cycle tabs (Annual first) */}

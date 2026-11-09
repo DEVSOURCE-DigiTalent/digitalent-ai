@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Clock, Layers } from 'lucide-react';
@@ -56,6 +57,7 @@ function readSavedTry(): SavedTry {
 }
 
 export function IndividualTrialPage() {
+  useUiLanguage();
   const theme = usePersonalTheme((state) => state.theme);
   usePageBackground(PERSONAL_PUBLIC_BACKGROUND[theme]);
 
@@ -101,9 +103,7 @@ export function IndividualTrialPage() {
       lang="vi"
       className="personal-theme pt-soft min-h-screen bg-pt-bg font-landing text-pt-fg transition-colors duration-300"
     >
-      <a href="#trial-main" className="fixed -top-16 left-4 z-[100] rounded-full bg-pt-accent px-4 py-2.5 text-sm text-pt-on-accent focus:top-3">
-        Bỏ qua đến nội dung
-      </a>
+      <a href="#trial-main" className="fixed -top-16 left-4 z-[100] rounded-full bg-pt-accent px-4 py-2.5 text-sm text-pt-on-accent focus:top-3">{translateUi("Bỏ qua đến nội dung")}</a>
       <header className="border-b border-pt-line bg-pt-panel">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5 md:px-8">
           <Link to="/individual" aria-label="DigiTalent AI, về trang cá nhân">
@@ -112,8 +112,8 @@ export function IndividualTrialPage() {
           </Link>
           <div className="flex items-center gap-2.5">
             <ThemeToggle />
-            <Link to="/login" className="inline-flex items-center whitespace-nowrap rounded-full border border-pt-accent/50 px-3.5 py-1.5 text-sm font-medium text-pt-accent transition-colors hover:border-pt-accent hover:bg-pt-accent/10">Đăng nhập</Link>
-            <Link to="/individual/pricing" className="hidden text-sm text-pt-fg-2 hover:text-pt-fg sm:inline">Xem gói</Link>
+            <Link to="/login" className="inline-flex items-center whitespace-nowrap rounded-full border border-pt-accent/50 px-3.5 py-1.5 text-sm font-medium text-pt-accent transition-colors hover:border-pt-accent hover:bg-pt-accent/10">{translateUi("Đăng nhập")}</Link>
+            <Link to="/individual/pricing" className="hidden text-sm text-pt-fg-2 hover:text-pt-fg sm:inline">{translateUi("Xem gói")}</Link>
           </div>
         </div>
       </header>
@@ -133,6 +133,7 @@ export function IndividualTrialPage() {
 }
 
 function TrialStepper({ current }: { current: TrialStep }) {
+  useUiLanguage();
   const activeIndex = STEPS.findIndex((step) => step.key === current);
   return (
     <nav aria-label="Tiến trình xem lộ trình" className="mb-8 sm:mb-10">
@@ -149,7 +150,7 @@ function TrialStepper({ current }: { current: TrialStep }) {
             >
               {index < activeIndex ? <Check className="size-3.5" aria-hidden="true" /> : index + 1}
             </span>
-            <span className={cn('text-xs', index === activeIndex ? 'font-medium text-pt-fg' : 'text-pt-fg-3')}>{item.label}</span>
+            <span className={cn('text-xs', index === activeIndex ? 'font-medium text-pt-fg' : 'text-pt-fg-3')}>{translateUi(item.label)}</span>
             {index < STEPS.length - 1 && <span aria-hidden="true" className="mx-1 h-px w-8 bg-pt-line" />}
           </li>
         ))}
@@ -159,10 +160,11 @@ function TrialStepper({ current }: { current: TrialStep }) {
 }
 
 function StepHeader({ eyebrow, title, lead }: { eyebrow: string; title: string; lead: string }) {
+  useUiLanguage();
   return (
     <header className="mb-6 max-w-3xl sm:mb-8">
       <p className={GOLD_KICKER}>{eyebrow}</p>
-      <h2 className="mt-3 text-balance text-[clamp(26px,3.6vw,42px)] font-normal leading-[1.1] tracking-[-0.03em]">{title}</h2>
+      <h2 className="mt-3 text-balance text-[clamp(26px,3.6vw,42px)] font-normal leading-[1.1] tracking-[-0.03em]">{translateUi(title)}</h2>
       <p className="mt-3 max-w-[64ch] text-sm leading-relaxed text-pt-fg-2 sm:text-[15px]">{lead}</p>
     </header>
   );
@@ -173,6 +175,7 @@ function TargetStep({ selected, onSelect, onContinue }: {
   onSelect: (code: string) => void;
   onContinue: () => void;
 }) {
+  useUiLanguage();
   const selectedPosition = TRIAL_POSITIONS.find((position) => position.code === selected);
   return (
     <section>
@@ -199,12 +202,12 @@ function TargetStep({ selected, onSelect, onContinue }: {
                 value={position.code}
                 checked={checked}
                 onChange={() => onSelect(position.code)}
-                aria-label={`${position.name}: ${position.description}`}
+                aria-label={translateUi(`${position.name}: ${position.description}`)}
                 className="sr-only"
               />
               <DomainPips domains={domains} tone="theme" />
               <span className="mt-4 block text-[19px] font-medium leading-tight">{position.name}</span>
-              <span className="mt-2 block text-xs leading-relaxed text-pt-fg-2">{position.description}</span>
+              <span className="mt-2 block text-xs leading-relaxed text-pt-fg-2">{translateUi(position.description)}</span>
               <span className="mt-auto pt-4 text-[11px] text-pt-fg-3 tabular-nums">{competencyCount}/24 năng lực</span>
               <span
                 aria-hidden="true"
@@ -222,7 +225,7 @@ function TargetStep({ selected, onSelect, onContinue }: {
       {/* On phones the action sticks to the bottom of the screen, so the choice and the next step stay together. */}
       <div className="sticky bottom-0 z-10 -mx-5 mt-6 flex justify-end border-t border-pt-line bg-pt-bg/90 px-5 py-3 backdrop-blur-md sm:static sm:mx-0 sm:mt-8 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
         <button type="button" disabled={!selectedPosition} onClick={onContinue} className={cn(GOLD_BUTTON, 'max-sm:flex-1')}>
-          {selectedPosition ? <>Xem lộ trình<span className="max-sm:sr-only"> cho {selectedPosition.name}</span></> : 'Chọn một vị trí'}
+          {selectedPosition ? <>{translateUi("Xem lộ trình")}<span className="max-sm:sr-only"> cho {selectedPosition.name}</span></> : 'Chọn một vị trí'}
           <ArrowRight className="size-4" aria-hidden="true" />
         </button>
       </div>
@@ -231,6 +234,7 @@ function TargetStep({ selected, onSelect, onContinue }: {
 }
 
 function SamplePathStep({ positionCode, onBack }: { positionCode: string; onBack: () => void }) {
+  useUiLanguage();
   const position = TRIAL_POSITIONS.find((item) => item.code === positionCode)!;
   const path = samplePathFor(position);
   const registerPath = `/individual/register?trial=1&position=${positionCode}&source=try`;
@@ -239,7 +243,7 @@ function SamplePathStep({ positionCode, onBack }: { positionCode: string; onBack
     <section>
       <StepHeader
         eyebrow={`Lộ trình mẫu · ${position.name}`}
-        title={`Lộ trình năng lực số cho ${position.name}`}
+        title={translateUi(`Lộ trình năng lực số cho ${position.name}`)}
         lead="Đây là lộ trình đầy đủ khi bắt đầu từ con số 0. Sau khi tạo tài khoản, bài đánh giá đầu vào sẽ bỏ qua những khóa bạn đã nắm, nên lộ trình thật thường ngắn hơn."
       />
 
@@ -250,8 +254,8 @@ function SamplePathStep({ positionCode, onBack }: { positionCode: string; onBack
               <Card className="p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs text-pt-fg-3">Miền {domain.number} · {domain.selected}/{domain.total} năng lực</p>
-                    <h3 className="mt-1 text-[17px] font-medium leading-snug">{domain.name}</h3>
+                    <p className="text-xs text-pt-fg-3">{translateUi("Miền ")}{domain.number} · {domain.selected}/{domain.total}{translateUi(" năng lực")}</p>
+                    <h3 className="mt-1 text-[17px] font-medium leading-snug">{translateUi(domain.name)}</h3>
                   </div>
                   <span className="inline-flex items-center gap-2 text-xs text-pt-fg-2">
                     Cần đạt <span className="font-medium text-pt-fg">{levelLabelVi(domain.requiredLevel)}</span>
@@ -262,7 +266,7 @@ function SamplePathStep({ positionCode, onBack }: { positionCode: string; onBack
                   {domain.courses.map((course) => (
                     <li key={course.code} className="flex items-baseline gap-3 text-sm">
                       <span className="w-12 shrink-0 text-xs tabular-nums text-pt-fg-3">{course.code}</span>
-                      <span className="min-w-0 flex-1 text-pt-fg-2">{course.title}</span>
+                      <span className="min-w-0 flex-1 text-pt-fg-2">{translateUi(course.title)}</span>
                       <span className="shrink-0 text-xs tabular-nums text-pt-fg-3">{formatHours(course.minutes)}</span>
                     </li>
                   ))}
@@ -300,8 +304,7 @@ function SamplePathStep({ positionCode, onBack }: { positionCode: string; onBack
                 trackTrialEvent('trial_completed', { positionCode });
               }}
               className={cn(GOLD_BUTTON, 'mt-6 w-full')}
-            >
-              Bắt đầu {INDIVIDUAL_TRIAL.days} ngày miễn phí <ArrowRight className="size-4" aria-hidden="true" />
+            >{translateUi("Bắt đầu ")}{INDIVIDUAL_TRIAL.days} ngày miễn phí <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
             <p className="mt-3 text-center text-xs text-pt-fg-3">Không cần thẻ · Không tự gia hạn</p>
           </Card>

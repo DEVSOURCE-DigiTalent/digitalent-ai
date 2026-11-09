@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GraduationCap } from 'lucide-react';
@@ -24,6 +25,7 @@ const FILTERS: { key: TrainingFilter; label: string }[] = [
  * của từng người và trạng thái học / chờ chấm / đã hoàn thành / cần hỗ trợ. Chủ doanh nghiệp tạo nhóm; quản lý theo dõi.
  */
 export function ManagerTeamTrainingPage() {
+  useUiLanguage();
   const { can } = usePermission();
   const canReview = can(PERMISSIONS.TASK_EVALUATE);
   const canReadAssignments = can(PERMISSIONS.COURSE_ASSIGNMENT_READ);
@@ -78,9 +80,9 @@ export function ManagerTeamTrainingPage() {
       ) : (
         <>
           <section className="pu-metrics pu-review-kpis" aria-label="Tình trạng đào tạo">
-            <div><strong>{count('LEARNING')}</strong><span>Đang học</span></div>
+            <div><strong>{count('LEARNING')}</strong><span>{translateUi("Đang học")}</span></div>
             <div><strong>{count('REVIEW')}</strong><span>Chờ chấm / nộp lại</span></div>
-            <div><strong>{count('APPROVED')}</strong><span>Đã hoàn thành</span></div>
+            <div><strong>{count('APPROVED')}</strong><span>{translateUi("Đã hoàn thành")}</span></div>
             <div className="warn"><strong>{count('SUPPORT')}</strong><span>Cần hỗ trợ</span></div>
           </section>
           {canReview && reviews.isError && (
@@ -92,17 +94,17 @@ export function ManagerTeamTrainingPage() {
           <div className="pu-tabs" role="group" aria-label="Lọc theo trạng thái học">
             {FILTERS.map((f) => (
               <button key={f.key} type="button" aria-pressed={filter === f.key} onClick={() => setFilter(f.key)}>
-                {f.label}<span>{count(f.key)}</span>
+                {translateUi(f.label)}<span>{count(f.key)}</span>
               </button>
             ))}
           </div>
 
           {visible.length === 0 && <Notice>Không có học viên nào ở trạng thái này.</Notice>}
           {visible.map((cohort) => (
-            <section key={cohort.courseId} className="pm-course" aria-label={cohort.courseTitle}>
+            <section key={cohort.courseId} className="pm-course" aria-label={translateUi(cohort.courseTitle)}>
               <div className="pm-panel-head" style={{ marginBottom: 6 }}>
                 <div>
-                  <Mini>{cohort.courseCode} · {cohort.learners.length} học viên</Mini>
+                  <Mini>{cohort.courseCode} · {cohort.learners.length}{translateUi(" học viên")}</Mini>
                   <h2>{cohort.courseTitle}</h2>
                 </div>
               </div>
@@ -114,14 +116,14 @@ export function ManagerTeamTrainingPage() {
                       <Link to={MANAGER_PATHS.trainingDetail(learner.id)}><strong>{learner.employeeName}</strong></Link>
                       <small>
                         {learner.positionName ?? 'Chưa gán vị trí'}
-                        {learner.dueDate ? ` · hạn ${formatDate(learner.dueDate)}` : ''}
+                        {learner.dueDate ? translateUi(` · hạn ${formatDate(learner.dueDate)}`) : ''}
                       </small>
                     </div>
                     <div className="pm-learner-progress">
-                      <Bar value={learner.progressPercent} label={`Tiến độ bài học ${Math.round(learner.progressPercent)}%`} />
+                      <Bar value={learner.progressPercent} label={translateUi(`Tiến độ bài học ${Math.round(learner.progressPercent)}%`)} />
                       <span>Tiến độ bài học {Math.round(learner.progressPercent)}%</span>
                     </div>
-                    <Pill tone={state.tone}>{state.label}</Pill>
+                    <Pill tone={state.tone}>{translateUi(state.label)}</Pill>
                   </div>
                 );
               })}

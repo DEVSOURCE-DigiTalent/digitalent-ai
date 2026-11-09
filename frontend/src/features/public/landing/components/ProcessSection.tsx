@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { SECTION_IDS, type LandingSectionConfig } from '../landing-content';
 import { SectionHeader } from './SectionHeader';
 
@@ -8,6 +9,7 @@ type ProcessSection = Extract<LandingSectionConfig, { kind: 'process' }>;
  * number and a short accent bar on each step); hovering only deepens it, the bar running across the step.
  */
 export function ProcessSection({ section }: { section: ProcessSection }) {
+  useUiLanguage();
   return (
     <section id={SECTION_IDS.process} tabIndex={-1} aria-labelledby="lp-process-title" className="scroll-mt-24 py-14 outline-none md:py-20">
       <SectionHeader id="lp-process-title" intro={section.intro} />
@@ -25,7 +27,7 @@ export function ProcessSection({ section }: { section: ProcessSection }) {
             >
               {String(index + 1).padStart(2, '0')}
             </span>
-            <h3 className="mt-4 text-xl font-normal leading-[1.25] tracking-[-0.015em] text-cream transition-colors group-hover:text-white">{step.title}</h3>
+            <h3 className="mt-4 text-xl font-normal leading-[1.25] tracking-[-0.015em] text-cream transition-colors group-hover:text-white">{translateUi(step.title)}</h3>
             <p className="mt-2 max-w-[34ch] text-sm leading-[1.6] text-stone-400 transition-colors group-hover:text-stone-300">{step.text}</p>
           </li>
         ))}

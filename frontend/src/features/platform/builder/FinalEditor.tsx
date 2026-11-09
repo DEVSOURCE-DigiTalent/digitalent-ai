@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { platformCatalogService, type CatalogCourseDetail } from '@/services/platform-catalog.service';
@@ -9,6 +10,7 @@ const MAX_CRITERIA = 10;
 
 /** The course-final assignment: title, brief (rich text) and the criteria the department manager grades. */
 export function FinalEditor({ course, editable, edit }: { course: CatalogCourseDetail; editable: boolean; edit: CourseEdit }) {
+  useUiLanguage();
   const initial = { title: course.final.title, promptHtml: course.final.promptHtml, criteria: course.final.criteria };
   const [form, setForm] = useState(initial);
   const [saving, setSaving] = useState(false);
@@ -65,13 +67,13 @@ export function FinalEditor({ course, editable, edit }: { course: CatalogCourseD
               readOnly={!editable}
               maxLength={250}
               onChange={(e) => setCriterion(index, e.target.value)}
-              aria-label={`Tiêu chí ${index + 1}`}
+              aria-label={translateUi(`Tiêu chí ${index + 1}`)}
             />
             {editable && (
               <button
                 type="button"
                 className="btn btn-ghost btn-small pa-danger-text"
-                aria-label={`Xóa tiêu chí ${index + 1}`}
+                aria-label={translateUi(`Xóa tiêu chí ${index + 1}`)}
                 disabled={form.criteria.length <= 1}
                 onClick={() => setForm((f) => ({ ...f, criteria: f.criteria.filter((_, i) => i !== index) }))}
               >
@@ -99,7 +101,7 @@ export function FinalEditor({ course, editable, edit }: { course: CatalogCourseD
       {editable && (
         <div className="button-row pa-gap-top">
           <button type="button" className="btn btn-primary" onClick={save} disabled={!dirty || !valid || saving}>
-            {saving ? 'Đang lưu…' : 'Lưu bài cuối khóa'}
+            {saving ? translateUi('Đang lưu…') : 'Lưu bài cuối khóa'}
           </button>
           {dirty && <small className="pa-hint">Có thay đổi chưa lưu.</small>}
         </div>

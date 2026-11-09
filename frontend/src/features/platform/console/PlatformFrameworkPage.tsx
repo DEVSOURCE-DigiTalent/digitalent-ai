@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -45,6 +46,7 @@ const DOMAIN_THEMES = [
  * PA-02 · Khung chuẩn: the platform's one competency framework (Thông tư 02/2025).
  */
 export function PlatformFrameworkPage() {
+  useUiLanguage();
   const list = useFrameworks();
   const frameworkId = list.data?.items[0]?.id;
   const framework = useFramework(frameworkId);
@@ -62,6 +64,7 @@ export function PlatformFrameworkPage() {
 }
 
 function FrameworkView({ framework: f }: { framework: FrameworkDetail }) {
+  useUiLanguage();
   const { can } = usePermission();
   const canManage = can(PERMISSIONS.PLATFORM_CATALOG_MANAGE);
   const publish = usePublishFramework(f.id);
@@ -94,7 +97,7 @@ function FrameworkView({ framework: f }: { framework: FrameworkDetail }) {
             </div>
             <h1 className="pa-header-title">{f.name}</h1>
             <p className="pa-header-subtitle">
-              {f.description || 'Khung năng lực số tham chiếu theo Thông tư 02/2025/TT-BGDĐT: 6 lĩnh vực trụ cột, 18 khóa học chuẩn quốc gia.'}
+              {translateUi(f.description) || 'Khung năng lực số tham chiếu theo Thông tư 02/2025/TT-BGDĐT: 6 lĩnh vực trụ cột, 18 khóa học chuẩn quốc gia.'}
             </p>
           </div>
           {canManage && !addingDomain && (
@@ -115,7 +118,7 @@ function FrameworkView({ framework: f }: { framework: FrameworkDetail }) {
       <div className="pa-bento-kpi-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 24 }}>
         <div className="pa-bento-card">
           <div className="pa-bento-top">
-            <span className="pa-bento-label">LĨNH VỰC NĂNG LỰC</span>
+            <span className="pa-bento-label">{translateUi("LĨNH VỰC NĂNG LỰC")}</span>
             <Layers size={16} style={{ color: '#0284c7' }} />
           </div>
           <div className="pa-bento-value">{f.domainCount}</div>
@@ -129,7 +132,7 @@ function FrameworkView({ framework: f }: { framework: FrameworkDetail }) {
           </div>
           <div className="pa-bento-value">{f.courseCount}</div>
           <div className="pa-bento-sub">
-            {LEVEL_NAMES[1]} {byLevel1 ?? 0} · {LEVEL_NAMES[2]} {byLevel2 ?? 0} · {LEVEL_NAMES[3]} {byLevel3 ?? 0}
+            {translateUi(LEVEL_NAMES[1])} {byLevel1 ?? 0} · {translateUi(LEVEL_NAMES[2])} {byLevel2 ?? 0} · {translateUi(LEVEL_NAMES[3])} {byLevel3 ?? 0}
           </div>
         </div>
 
@@ -224,9 +227,9 @@ function FrameworkView({ framework: f }: { framework: FrameworkDetail }) {
                   <strong style={{ fontSize: 14, color: '#0f172a' }}>Công bố cập nhật khung năng lực</strong>
                   <div style={{ fontSize: 12, color: '#64748b' }}>
                     {tooShort.length > 0
-                      ? `Cần mô tả ít nhất ${DESCRIPTION_MIN} ký tự trước khi công bố (chưa đủ: ${tooShort.map((d) => d.name).join(', ')}).`
+                      ? translateUi(`Cần mô tả ít nhất ${DESCRIPTION_MIN} ký tự trước khi công bố (chưa đủ: ${tooShort.map((d) => d.name).join(', ')}).`)
                       : unpublished
-                        ? `${drafted.length} lĩnh vực có mô tả mới trong bản nháp sẵn sàng công bố.`
+                        ? translateUi(`${drafted.length} lĩnh vực có mô tả mới trong bản nháp sẵn sàng công bố.`)
                         : 'Toàn bộ mô tả lĩnh vực hiện đang đồng bộ với phiên bản công bố.'}
                   </div>
                 </div>
@@ -239,7 +242,7 @@ function FrameworkView({ framework: f }: { framework: FrameworkDetail }) {
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
               >
                 <Send size={15} />
-                {publish.isPending ? 'Đang công bố…' : `Công bố khung v${f.currentVersionNo + 1}`}
+                {publish.isPending ? 'Đang công bố…' : translateUi(`Công bố khung v${f.currentVersionNo + 1}`)}
               </button>
             </div>
 
@@ -307,7 +310,7 @@ function FrameworkView({ framework: f }: { framework: FrameworkDetail }) {
                     <strong style={{ fontSize: 13, color: '#0f172a' }}>{r.releaseNote || 'Công bố định kỳ tiêu chuẩn'}</strong>
                   </div>
                   <small style={{ fontSize: 12, color: '#64748b', marginTop: 4, display: 'block' }}>
-                    Người thực hiện: {r.publishedByEmail ?? 'Hệ thống'} · {formatDateTime(r.publishedAt)}
+                    Người thực hiện: {r.publishedByEmail ?? translateUi('Hệ thống')} · {formatDateTime(r.publishedAt)}
                   </small>
                 </div>
               </div>
@@ -336,6 +339,7 @@ function DomainRow({
   currentNo: number | null;
   draftNo: number | null;
 }) {
+  useUiLanguage();
   const [mode, setMode] = useState<'view' | 'edit' | 'delete'>('view');
   const archive = useArchiveDomain(frameworkId);
   const draftDiffers = d.draftDescription !== d.publishedDescription;
@@ -398,7 +402,7 @@ function DomainRow({
                   color: theme.color,
                 }}
               >
-                {label}
+                {translateUi(label)}
               </span>
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{d.name}</h3>
             </div>
@@ -410,17 +414,15 @@ function DomainRow({
                 type="button"
                 className="btn btn-light btn-small"
                 onClick={() => setMode('edit')}
-                aria-label={`Sửa ${d.name}`}
+                aria-label={translateUi(`Sửa ${d.name}`)}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 32, padding: '0 10px' }}
               >
-                <Edit2 size={13} />
-                Sửa
-              </button>
+                <Edit2 size={13} />{translateUi("Sửa")}</button>
               <button
                 type="button"
                 className="btn btn-ghost btn-small"
                 onClick={() => setMode('delete')}
-                aria-label={`Xóa ${d.name}`}
+                aria-label={translateUi(`Xóa ${d.name}`)}
                 style={{ color: '#ef4444', height: 32, padding: '0 8px' }}
               >
                 <Trash2 size={14} />
@@ -430,7 +432,7 @@ function DomainRow({
         </div>
 
         {mode === 'edit' ? (
-          <DomainEditForm frameworkId={frameworkId} domain={d} label={label} onClose={() => setMode('view')} />
+          <DomainEditForm frameworkId={frameworkId} domain={d} label={translateUi(label)} onClose={() => setMode('view')} />
         ) : (
           <>
             <p style={{ margin: 0, fontSize: 13, lineHeight: '1.5', color: '#475569' }}>
@@ -448,7 +450,7 @@ function DomainRow({
                   lineHeight: '1.4',
                 }}
               >
-                <strong>Bản nháp chưa công bố:</strong> “{d.draftDescription || 'trống'}”
+                <strong>Bản nháp chưa công bố:</strong> “{d.draftDescription || translateUi('trống')}”
               </div>
             )}
           </>
@@ -458,9 +460,7 @@ function DomainRow({
           (blockedReason ? (
             <div className="notice warning pa-row-between" role="alert" style={{ marginTop: 8 }}>
               <span style={{ fontSize: 12 }}>{blockedReason}</span>
-              <button type="button" className="btn btn-ghost btn-small" onClick={() => setMode('view')}>
-                Đóng
-              </button>
+              <button type="button" className="btn btn-ghost btn-small" onClick={() => setMode('view')}>{translateUi("Đóng")}</button>
             </div>
           ) : (
             <div className="notice pa-row-between" role="alert" style={{ marginTop: 8 }}>
@@ -469,9 +469,7 @@ function DomainRow({
                 <button type="button" className="btn btn-small pa-danger" onClick={onDelete} disabled={archive.isPending}>
                   {archive.isPending ? 'Đang xóa…' : 'Xóa lĩnh vực'}
                 </button>
-                <button type="button" className="btn btn-ghost btn-small" onClick={() => setMode('view')}>
-                  Giữ lại
-                </button>
+                <button type="button" className="btn btn-ghost btn-small" onClick={() => setMode('view')}>{translateUi("Giữ lại")}</button>
               </div>
             </div>
           ))}
@@ -482,7 +480,7 @@ function DomainRow({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
           <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' }}>
             {d.courses.length} Khóa trong v{currentNo ?? '—'}
-            {d.draftNewCourses.length ? ` · +${d.draftNewCourses.length} khóa mới (nháp)` : ''}
+            {d.draftNewCourses.length ? translateUi(` · +${d.draftNewCourses.length} khóa mới (nháp)`) : ''}
           </span>
           <span style={{ fontSize: 11, color: '#94a3b8' }}>Bấm để mở Studio</span>
         </div>
@@ -519,7 +517,7 @@ function DomainRow({
                     {c.code}
                   </code>
                   <span style={{ fontSize: 13, fontWeight: 500, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.title}
+                    {translateUi(c.title)}
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -559,6 +557,7 @@ function DomainRow({
 
 /** Sửa lĩnh vực: the name changes at once, the description goes to the draft. */
 function DomainEditForm({ frameworkId, domain: d, label, onClose }: { frameworkId: string; domain: FrameworkDomain; label: string; onClose: () => void }) {
+  useUiLanguage();
   const update = useUpdateDomain(frameworkId);
   const [name, setName] = useState(d.name);
   const [description, setDescription] = useState(d.draftDescription);
@@ -582,10 +581,8 @@ function DomainEditForm({ frameworkId, domain: d, label, onClose }: { frameworkI
   };
 
   return (
-    <form className="pa-domain-edit" onSubmit={submit} aria-label={`Sửa ${label}`}>
-      <label className="field">
-        Tên lĩnh vực
-        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={150} autoFocus required />
+    <form className="pa-domain-edit" onSubmit={submit} aria-label={translateUi(`Sửa ${label}`)}>
+      <label className="field">{translateUi("Tên lĩnh vực")}<input value={name} onChange={(e) => setName(e.target.value)} maxLength={150} autoFocus required />
       </label>
       <label className="field">
         Mô tả (bản nháp)
@@ -596,17 +593,16 @@ function DomainEditForm({ frameworkId, domain: d, label, onClose }: { frameworkI
       </label>
       <div className="button-row">
         <button type="submit" className="btn btn-primary btn-small" disabled={!dirty || !valid || update.isPending}>
-          {update.isPending ? 'Đang lưu…' : 'Lưu'}
+          {update.isPending ? translateUi('Đang lưu…') : translateUi('Lưu')}
         </button>
-        <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>
-          Hủy
-        </button>
+        <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>{translateUi("Hủy")}</button>
       </div>
     </form>
   );
 }
 
 function AddDomainForm({ frameworkId, onClose }: { frameworkId: string; onClose: () => void }) {
+  useUiLanguage();
   const add = useAddFrameworkDomain(frameworkId);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -632,18 +628,14 @@ function AddDomainForm({ frameworkId, onClose }: { frameworkId: string; onClose:
           Tên lĩnh vực mới
           <input value={name} onChange={(e) => setName(e.target.value)} maxLength={150} autoFocus required />
         </label>
-        <label className="field">
-          Mô tả
-          <input value={description} onChange={(e) => setDescription(e.target.value)} maxLength={4000} placeholder="Năng lực này giúp người học làm được gì" />
+        <label className="field">{translateUi("Mô tả")}<input value={description} onChange={(e) => setDescription(e.target.value)} maxLength={4000} placeholder="Năng lực này giúp người học làm được gì" />
         </label>
       </div>
       <div className="button-row">
         <button type="submit" className="btn btn-primary btn-small" disabled={name.trim().length < 2 || add.isPending}>
           {add.isPending ? 'Đang thêm…' : 'Thêm lĩnh vực'}
         </button>
-        <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>
-          Hủy
-        </button>
+        <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>{translateUi("Hủy")}</button>
       </div>
     </form>
   );

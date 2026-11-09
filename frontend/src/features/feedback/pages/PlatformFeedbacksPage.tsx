@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
@@ -38,6 +39,7 @@ const MODAL_STYLE = {
 } as CSSProperties;
 
 function Stars({ count }: { count: number }) {
+  useUiLanguage();
   return (
     <span className="inline-flex gap-px">
       {[1, 2, 3, 4, 5].map((s) => (
@@ -48,6 +50,7 @@ function Stars({ count }: { count: number }) {
 }
 
 function DetailModal({ item, onClose }: { item: FeedbackItem; onClose: () => void }) {
+  useUiLanguage();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState(item.status);
   const [note, setNote] = useState(item.adminNote ?? '');
@@ -75,8 +78,8 @@ function DetailModal({ item, onClose }: { item: FeedbackItem; onClose: () => voi
               {isBug ? <Bug size={16} /> : <MessageSquare size={16} />}
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-ent-fg truncate">{item.title}</p>
-              <p className="text-[11px] text-ent-fg-2 mt-0.5">{isBug ? 'Báo lỗi' : 'Góp ý'} · {formatDateTime(item.createdAt)}</p>
+              <p className="text-sm font-semibold text-ent-fg truncate">{translateUi(item.title)}</p>
+              <p className="text-[11px] text-ent-fg-2 mt-0.5">{isBug ? translateUi('Báo lỗi') : translateUi('Góp ý')} · {formatDateTime(item.createdAt)}</p>
             </div>
           </div>
           <button onClick={onClose} className="rounded-lg p-1.5 text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg shrink-0">
@@ -98,7 +101,7 @@ function DetailModal({ item, onClose }: { item: FeedbackItem; onClose: () => voi
               st?.tone === 'green' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
               st?.tone === 'gray' ? 'bg-gray-50 text-gray-500 border-gray-200' :
               'bg-blue-50 text-blue-700 border-blue-200'
-            }`}>{st?.label ?? item.status}</span>
+            }`}>{translateUi(st?.label) ?? item.status}</span>
           </div>
 
           {item.rating != null && item.rating > 0 && (
@@ -109,7 +112,7 @@ function DetailModal({ item, onClose }: { item: FeedbackItem; onClose: () => voi
           )}
 
           <div className="rounded-xl bg-ent-raised/50 border border-ent-line px-4 py-3">
-            <p className="text-sm text-ent-fg leading-relaxed whitespace-pre-wrap">{item.description}</p>
+            <p className="text-sm text-ent-fg leading-relaxed whitespace-pre-wrap">{translateUi(item.description)}</p>
           </div>
 
           {item.pageUrl && (
@@ -121,7 +124,7 @@ function DetailModal({ item, onClose }: { item: FeedbackItem; onClose: () => voi
               <p className="text-xs font-medium text-ent-fg">Ảnh đính kèm</p>
               <div className="flex gap-2 flex-wrap">
                 {item.screenshots.map((src, i) => (
-                  <img key={i} src={src} alt={`Ảnh ${i + 1}`} className="h-20 w-28 rounded-lg object-cover border border-ent-line cursor-pointer hover:opacity-80" onClick={() => openScreenshot(src)} />
+                  <img key={i} src={src} alt={translateUi(`Ảnh ${i + 1}`)} className="h-20 w-28 rounded-lg object-cover border border-ent-line cursor-pointer hover:opacity-80" onClick={() => openScreenshot(src)} />
                 ))}
               </div>
             </div>
@@ -137,7 +140,7 @@ function DetailModal({ item, onClose }: { item: FeedbackItem; onClose: () => voi
               className="w-full rounded-xl border border-ent-line bg-ent-bg px-4 py-2.5 text-sm text-ent-fg focus:border-ent-accent focus:outline-none"
             >
               {STATUS_OPTIONS.filter((o) => o.value).map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
+                <option key={o.value} value={o.value}>{translateUi(o.label)}</option>
               ))}
             </select>
           </div>
@@ -156,14 +159,14 @@ function DetailModal({ item, onClose }: { item: FeedbackItem; onClose: () => voi
         </div>
 
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-ent-line shrink-0">
-          <button type="button" onClick={onClose} className="rounded-xl border border-ent-line px-5 py-2.5 text-sm font-medium text-ent-fg-2 hover:bg-ent-raised">Hủy</button>
+          <button type="button" onClick={onClose} className="rounded-xl border border-ent-line px-5 py-2.5 text-sm font-medium text-ent-fg-2 hover:bg-ent-raised">{translateUi("Hủy")}</button>
           <button
             type="button"
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending}
             className="rounded-xl bg-ent-accent px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40"
           >
-            {mutation.isPending ? 'Đang lưu...' : 'Lưu thay đổi'}
+            {mutation.isPending ? translateUi('Đang lưu...') : translateUi('Lưu thay đổi')}
           </button>
         </div>
       </div>
@@ -173,6 +176,7 @@ function DetailModal({ item, onClose }: { item: FeedbackItem; onClose: () => voi
 }
 
 function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
+  useUiLanguage();
   const isBug = type === 'BUG';
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -199,10 +203,10 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
     <>
       <PageHead
         eyebrow={`Nền tảng / ${isBug ? 'Báo lỗi' : 'Góp ý'}`}
-        title={isBug ? 'Báo lỗi từ người dùng.' : 'Góp ý từ người dùng.'}
-        description={isBug
+        title={translateUi(isBug ? 'Báo lỗi từ người dùng.' : 'Góp ý từ người dùng.')}
+        description={translateUi(isBug
           ? 'Xem và xử lý các lỗi được người dùng báo cáo. Phản hồi sẽ hiển thị cho người gửi.'
-          : 'Xem và phản hồi ý kiến đóng góp từ người dùng. Phản hồi sẽ hiển thị cho người gửi.'}
+          : 'Xem và phản hồi ý kiến đóng góp từ người dùng. Phản hồi sẽ hiển thị cho người gửi.')}
       />
       <Box>
         <div className="pa-filters">
@@ -211,22 +215,22 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
             placeholder="Tìm theo tiêu đề, email hoặc tổ chức"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPageIndex(1); }}
-            aria-label="Tìm kiếm"
+            aria-label={translateUi("Tìm kiếm")}
           />
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPageIndex(1); }}
-            aria-label="Trạng thái"
+            aria-label={translateUi("Trạng thái")}
           >
             {STATUS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+              <option key={o.value} value={o.value}>{translateUi(o.label)}</option>
             ))}
           </select>
         </div>
         {isLoading && <Loading />}
         {error && <LoadError error={error} />}
         {!isLoading && !error && items.length === 0 && (
-          <p className="pa-empty">Không có {isBug ? 'báo lỗi' : 'góp ý'} nào khớp bộ lọc.</p>
+          <p className="pa-empty">{translateUi("Không có ")}{isBug ? translateUi('báo lỗi') : translateUi('góp ý')} nào khớp bộ lọc.</p>
         )}
         {items.length > 0 && (
           <>
@@ -236,10 +240,10 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                   <tr>
                     <th>Người gửi</th>
                     <th>Tiêu đề</th>
-                    <th>Tổ chức</th>
-                    {!isBug && <th>Đánh giá</th>}
+                    <th>{translateUi("Tổ chức")}</th>
+                    {!isBug && <th>{translateUi("Đánh giá")}</th>}
                     <th>Ngày gửi</th>
-                    <th>Trạng thái</th>
+                    <th>{translateUi("Trạng thái")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -251,7 +255,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                           <strong className="pa-cell-title">{item.userName}</strong>
                           <small className="pa-cell-sub">{item.userEmail}</small>
                         </td>
-                        <td>{item.title}</td>
+                        <td>{translateUi(item.title)}</td>
                         <td>{item.organizationName ?? '—'}</td>
                         {!isBug && (
                           <td>
@@ -259,7 +263,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                           </td>
                         )}
                         <td>{formatDate(item.createdAt)}</td>
-                        <td><Pill tone={st?.tone}>{st?.label ?? item.status}</Pill></td>
+                        <td><Pill tone={st?.tone}>{translateUi(st?.label) ?? item.status}</Pill></td>
                       </tr>
                     );
                   })}
@@ -277,9 +281,11 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
 }
 
 export function PlatformFeedbacksPage() {
+  useUiLanguage();
   return <FeedbacksTable type="FEEDBACK" />;
 }
 
 export function PlatformBugReportsPage() {
+  useUiLanguage();
   return <FeedbacksTable type="BUG" />;
 }

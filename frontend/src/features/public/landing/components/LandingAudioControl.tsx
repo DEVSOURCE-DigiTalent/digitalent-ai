@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LoaderCircle, Volume2, VolumeX } from 'lucide-react';
 import { LANDING_AUDIO } from '../landing-audio';
@@ -9,6 +10,7 @@ const LOAD_ERROR_MESSAGE = 'Không tải được nhạc nền. Trang vẫn ho�
 
 /** Opt-in soundtrack control. Audible media never starts before a deliberate visitor action. */
 export function LandingAudioControl() {
+  useUiLanguage();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playback, setPlayback] = useState<PlaybackState>('stopped');
   const [message, setMessage] = useState<string | null>(null);
@@ -80,7 +82,7 @@ export function LandingAudioControl() {
         aria-label="Nhạc nền"
         aria-pressed={isPlaying}
         aria-busy={playback === 'starting'}
-        title={`${label} · ${LANDING_AUDIO.title} — ${LANDING_AUDIO.artist}`}
+        title={translateUi(`${label} · ${LANDING_AUDIO.title} — ${LANDING_AUDIO.artist}`)}
         className="lp-glass fixed bottom-[calc(env(safe-area-inset-bottom,0px)+1rem)] right-4 z-50 flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 rounded-full px-3.5 text-xs font-medium text-cream transition-colors hover:text-cream-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream md:right-6 [[data-theme=light]_&]:text-pt-fg [[data-theme=light]_&]:hover:text-pt-accent"
       >
         <Icon
@@ -91,7 +93,7 @@ export function LandingAudioControl() {
       </button>
       {message && (
         <p role="status" className="sr-only">
-          {message}
+          {translateUi(message)}
         </p>
       )}
     </>

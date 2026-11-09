@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -27,6 +28,7 @@ function errorMessage(error: unknown): string {
  * URL is never the source of price.
  */
 export function CheckoutPage() {
+  useUiLanguage();
   const user = useCurrentUser((s) => s.user);
   const [searchParams] = useSearchParams();
   const draftIdParam = searchParams.get('draft');
@@ -91,7 +93,7 @@ export function CheckoutPage() {
     <PublicShell portal={audience}>
       <div className="mb-6 space-y-6">
         <PurchaseStepper audience={audience} currentStep={currentStep} changePlanPath={pricingPath} />
-        <h1 className="text-[clamp(28px,4vw,40px)] font-normal leading-[1.1] tracking-[-0.03em]">Thanh toán</h1>
+        <h1 className="text-[clamp(28px,4vw,40px)] font-normal leading-[1.1] tracking-[-0.03em]">{translateUi("Thanh toán")}</h1>
       </div>
 
       {selection ? (
@@ -116,6 +118,7 @@ interface CheckoutBodyProps {
 }
 
 function CheckoutBody({ selection, pricingPath, draft, audience }: CheckoutBodyProps) {
+  useUiLanguage();
   const user = useCurrentUser((s) => s.user)!;
   const refreshSession = useRefreshSession();
   const navigate = useNavigate();
@@ -260,22 +263,20 @@ function CheckoutBody({ selection, pricingPath, draft, audience }: CheckoutBodyP
               type="button"
               onClick={() => setShowEmailDialog(false)}
               className={DARK_SECONDARY_BUTTON}
-            >
-              Hủy
-            </button>
+            >{translateUi("Hủy")}</button>
             <button
               type="button"
               onClick={() => updateEmailMutation.mutate(newEmail)}
               disabled={updateEmailMutation.isPending || !newEmail.trim()}
               className={DARK_PRIMARY_BUTTON}
             >
-              {updateEmailMutation.isPending ? 'Đang lưu…' : 'Cập nhật email'}
+              {updateEmailMutation.isPending ? translateUi('Đang lưu…') : 'Cập nhật email'}
             </button>
           </div>
         </div>
       )}
 
-      <FormError message={error ? errorMessage(error) : undefined} />
+      <FormError message={translateUi(error ? errorMessage(error) : undefined)} />
 
       {order ? (
         <QrPaymentPanel

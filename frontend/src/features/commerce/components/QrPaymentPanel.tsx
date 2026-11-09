@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { formatVnd } from '@/lib/plans';
 import { USE_MOCK } from '@/services/mock/mock-config';
@@ -38,6 +39,7 @@ function formatClock(totalSeconds: number): string {
 
 /** ENT-ONB-02: shows the QR code, the amount and the transfer reference, and waits for the payment. */
 export function QrPaymentPanel({ order, busy, regenerating, onSimulate, onRegenerate }: QrPaymentPanelProps) {
+  useUiLanguage();
   const secondsLeft = useSecondsLeft(order.createdAt);
   const isOrderExpired = order.status === 'expired' || secondsLeft === 0;
 
@@ -93,7 +95,7 @@ export function QrPaymentPanel({ order, busy, regenerating, onSimulate, onRegene
         ) : USE_MOCK ? (
           <>
             <button type="button" onClick={() => onSimulate('paid')} disabled={busy} className={DARK_PRIMARY_BUTTON}>
-              {busy ? 'Đang xác nhận…' : 'Tôi đã quét mã và thanh toán'}
+              {busy ? translateUi('Đang xác nhận…') : 'Tôi đã quét mã và thanh toán'}
             </button>
             <p className="text-center text-xs text-stone-400">
               Đây là bản giả lập: nút trên thay cho thông báo thanh toán từ ngân hàng.

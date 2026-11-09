@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ExternalLink, Lock, X } from 'lucide-react';
@@ -37,6 +38,7 @@ const EXPLANATION_TARGET = 150;
 
 /** IND-12 "/personal/tasks": one practical task per course, turned into evidence of the competency. */
 export function LearnerTasksPage() {
+  useUiLanguage();
   const { data, isLoading, isError, error, refetch } = usePersonalTasks();
   const [filter, setFilter] = useState<Filter>('todo');
   const [active, setActive] = useState<PersonalTask | null>(null);
@@ -54,7 +56,7 @@ export function LearnerTasksPage() {
 
       {notice && <p role="status" className="rounded-2xl border border-pt-ok/40 bg-pt-ok/10 px-5 py-3 text-sm text-pt-ok">{notice}</p>}
       {isLoading && <LoadingBlock />}
-      {isError && <ErrorBlock message={errorMessage(error)} onRetry={() => refetch()} />}
+      {isError && <ErrorBlock message={translateUi(errorMessage(error))} onRetry={() => refetch()} />}
 
       {data && (
         <>
@@ -71,7 +73,7 @@ export function LearnerTasksPage() {
                   filter === item.key ? 'border-pt-fg bg-pt-fg text-pt-bg' : 'border-pt-line text-pt-fg-2 hover:border-pt-fg/40 hover:text-pt-fg',
                 )}
               >
-                {item.label}
+                {translateUi(item.label)}
                 <span className={cn('tabular-nums text-xs', filter === item.key ? 'opacity-70' : 'text-pt-fg-3')}>{counts[item.key]}</span>
               </button>
             ))}
@@ -79,7 +81,7 @@ export function LearnerTasksPage() {
 
           {visible.length === 0 ? (
             <EmptyState
-              title={filter === 'todo' ? 'Không có bài nào đang chờ bạn' : 'Chưa có bài nào ở đây'}
+              title={translateUi(filter === 'todo' ? 'Không có bài nào đang chờ bạn' : 'Chưa có bài nào ở đây')}
               body={filter === 'todo' ? 'Bắt đầu một khóa trong lộ trình để mở bài thực hành của khóa đó.' : undefined}
               action={filter === 'todo' && <Link to="/personal/path" className={PT_BUTTON_SECONDARY}>Mở lộ trình</Link>}
             />
@@ -108,6 +110,7 @@ export function LearnerTasksPage() {
 }
 
 function TaskCard({ task, onSubmit }: { task: PersonalTask; onSubmit: () => void }) {
+  useUiLanguage();
   const status = STATUS[task.status];
   const locked = task.status === 'LOCKED';
   const freePlan = usePersonalAccess().data?.mode === 'free';
@@ -119,12 +122,12 @@ function TaskCard({ task, onSubmit }: { task: PersonalTask; onSubmit: () => void
         <div className="flex gap-1.5">
           {task.required && task.status !== 'APPROVED' && <Tag tone="warn">Bắt buộc để hoàn thành khóa</Tag>}
           <Tag>{levelLabelVi(task.level)}</Tag>
-          <Tag tone={status.tone}>{status.label}</Tag>
+          <Tag tone={status.tone}>{translateUi(status.label)}</Tag>
         </div>
       </div>
 
       <div>
-        <h2 className={cn('text-[19px] font-normal leading-snug tracking-[-0.015em]', locked ? 'text-pt-fg-2' : 'text-pt-fg')}>{task.title}</h2>
+        <h2 className={cn('text-[19px] font-normal leading-snug tracking-[-0.015em]', locked ? 'text-pt-fg-2' : 'text-pt-fg')}>{translateUi(task.title)}</h2>
         <p className="mt-2 text-sm leading-relaxed text-pt-fg-2">{task.brief}</p>
       </div>
 
@@ -164,8 +167,8 @@ function TaskCard({ task, onSubmit }: { task: PersonalTask; onSubmit: () => void
                     <li key={criterion.label} className="flex gap-2">
                       {criterion.met
                         ? <Check className="mt-0.5 size-4 shrink-0 text-pt-ok" aria-label="Đạt" />
-                        : <X className="mt-0.5 size-4 shrink-0 text-pt-bad" aria-label="Chưa đạt" />}
-                      <span className="text-pt-fg-2">{criterion.label}</span>
+                        : <X className="mt-0.5 size-4 shrink-0 text-pt-bad" aria-label={translateUi("Chưa đạt")} />}
+                      <span className="text-pt-fg-2">{translateUi(criterion.label)}</span>
                     </li>
                   ))}
                 </ul>
@@ -179,9 +182,9 @@ function TaskCard({ task, onSubmit }: { task: PersonalTask; onSubmit: () => void
       )}
 
       <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-pt-line pt-4">
-        <span className="text-xs text-pt-fg-3">Năng lực {task.competencyCodes.join(', ')}</span>
+        <span className="text-xs text-pt-fg-3">{translateUi("Năng lực ")}{task.competencyCodes.join(', ')}</span>
         {locked ? (
-          <span className="inline-flex items-center gap-1.5 text-xs text-pt-fg-3"><Lock className="size-3.5" aria-hidden="true" />Cần bắt đầu khóa {task.courseCode} trước</span>
+          <span className="inline-flex items-center gap-1.5 text-xs text-pt-fg-3"><Lock className="size-3.5" aria-hidden="true" />Cần bắt đầu khóa {task.courseCode}{translateUi(" trước")}</span>
         ) : (task.status === 'OPEN' || task.status === 'REVISION_REQUESTED') && (
           freePlan ? (
             <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-pt-fg-3">
@@ -192,7 +195,7 @@ function TaskCard({ task, onSubmit }: { task: PersonalTask; onSubmit: () => void
             <span className="text-xs text-pt-fg-3">Đã nộp 3 lần trong 24 giờ · nộp lại sau</span>
           ) : (
             <button type="button" onClick={onSubmit} className={PT_BUTTON}>
-              {task.status === 'REVISION_REQUESTED' ? `Nộp lại (còn ${task.attemptsLeft} lần hôm nay)` : 'Nộp bài làm'}
+              {task.status === 'REVISION_REQUESTED' ? translateUi(`Nộp lại (còn ${task.attemptsLeft} lần hôm nay)`) : 'Nộp bài làm'}
             </button>
           )
         )}
@@ -204,6 +207,7 @@ function TaskCard({ task, onSubmit }: { task: PersonalTask; onSubmit: () => void
 function SubmitDialog({ task, onClose, onSubmitted }: {
   task: PersonalTask | null; onClose: () => void; onSubmitted: (task: PersonalTask) => void;
 }) {
+  useUiLanguage();
   const submit = useSubmitPersonalTask();
   const handlePlanError = usePlanErrorHandler();
   const [linkUrl, setLinkUrl] = useState('');
@@ -255,7 +259,7 @@ function SubmitDialog({ task, onClose, onSubmitted }: {
       open={Boolean(task)}
       onClose={close}
       title="Nộp minh chứng công việc thực tế"
-      description={task ? `${task.title} · ${task.courseCode}` : undefined}
+      description={translateUi(task ? `${task.title} · ${task.courseCode}` : undefined)}
     >
       {task && (
         <form onSubmit={handleSubmit} noValidate className="grid gap-5">
@@ -295,9 +299,9 @@ function SubmitDialog({ task, onClose, onSubmitted }: {
               {content.trim().length}/{EXPLANATION_TARGET} ký tự nên có · Không dán mật khẩu hay dữ liệu cá nhân của khách hàng.
             </p>
           </div>
-          {(error || (submit.isError && !planErrorOf(submit.error))) && <p role="alert" className="text-sm text-pt-bad">{error || errorMessage(submit.error)}</p>}
+          {(error || (submit.isError && !planErrorOf(submit.error))) && <p role="alert" className="text-sm text-pt-bad">{translateUi(error) || errorMessage(submit.error)}</p>}
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={close} className={PT_BUTTON_SECONDARY}>Hủy</button>
+            <button type="button" onClick={close} className={PT_BUTTON_SECONDARY}>{translateUi("Hủy")}</button>
             <button type="submit" disabled={submit.isPending} className={PT_BUTTON}>
               {submit.isPending ? 'Đang chấm…' : 'Nộp và chấm bài'}
             </button>

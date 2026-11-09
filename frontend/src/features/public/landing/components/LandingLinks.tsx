@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { MouseEvent, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { LandingLink } from '../landing-content';
@@ -12,6 +13,7 @@ interface SectionLinkProps {
 
 /** In-page link: scrolls to the section (smoothly unless motion is reduced) and moves focus to it. */
 export function SectionLink({ sectionId, className, ariaLabel, children }: SectionLinkProps) {
+  useUiLanguage();
   const { reduced } = useLandingMotion();
 
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -23,7 +25,7 @@ export function SectionLink({ sectionId, className, ariaLabel, children }: Secti
   };
 
   return (
-    <a href={`#${sectionId}`} onClick={handleClick} className={className} aria-label={ariaLabel}>
+    <a href={`#${sectionId}`} onClick={handleClick} className={className} aria-label={translateUi(ariaLabel)}>
       {children}
     </a>
   );
@@ -35,9 +37,10 @@ interface LandingNavLinkProps {
 }
 
 export function LandingNavLink({ item, className }: LandingNavLinkProps) {
+  useUiLanguage();
   const label = item.shortLabel ? (
     <>
-      <span className="hidden sm:inline">{item.label}</span>
+      <span className="hidden sm:inline">{translateUi(item.label)}</span>
       <span className="sm:hidden">{item.shortLabel}</span>
     </>
   ) : (
@@ -47,13 +50,13 @@ export function LandingNavLink({ item, className }: LandingNavLinkProps) {
   if (item.kind === 'section') {
     return (
       <SectionLink sectionId={item.to} className={className} ariaLabel={item.shortLabel ? item.label : undefined}>
-        {label}
+        {translateUi(label)}
       </SectionLink>
     );
   }
   return (
-    <Link to={item.to} className={className} aria-label={item.shortLabel ? item.label : undefined}>
-      {label}
+    <Link to={item.to} className={className} aria-label={translateUi(item.shortLabel ? translateUi(item.label) : undefined)}>
+      {translateUi(label)}
     </Link>
   );
 }

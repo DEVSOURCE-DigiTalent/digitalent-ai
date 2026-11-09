@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import QRCode from 'qrcode';
@@ -42,6 +43,7 @@ type OutcomeFilter = 'ALL' | 'COURSE' | 'PRE_ASSESSMENT' | 'PRACTICAL_TASK';
  * - Khối 4: Danh sách Huy hiệu & Chứng nhận từng môn học với thao tác 1-Click (Xem A4 & Copy link tra cứu).
  */
 export function PulseOutcomesPage() {
+  useUiLanguage();
   const { data, isLoading, error, refetch } = usePulseOutcomes();
   const { data: overview } = usePulseOverview();
 
@@ -111,7 +113,7 @@ export function PulseOutcomesPage() {
               CHỨNG NHẬN CHUẨN NĂNG LỰC CHỨC DANH
             </span>
             <span className={`pu-job-cert-status-pill ${isAllCompleted ? 'issued' : 'in-progress'}`}>
-              {isAllCompleted ? 'Đã cấp chính thức' : `Đang hoàn thiện: ${approvedCourses}/${totalCourses} khóa (${pct}%)`}
+              {isAllCompleted ? 'Đã cấp chính thức' : translateUi(`Đang hoàn thiện: ${approvedCourses}/${totalCourses} khóa (${pct}%)`)}
             </span>
           </div>
 
@@ -122,7 +124,7 @@ export function PulseOutcomesPage() {
           <p className="pu-job-cert-desc">
             {isAllCompleted
               ? 'Bạn đã hoàn thành đủ các khóa học theo khung năng lực chức danh. Chứng chỉ chính thức đã được hội đồng thẩm định phê duyệt.'
-              : `Chứng chỉ Chuẩn Chức danh sẽ được cấp khi bạn hoàn thành toàn bộ ${totalCourses} khóa học trong lộ trình. Hiện bạn đã đạt ${approvedCourses} khóa.`}
+              : translateUi(`Chứng chỉ Chuẩn Chức danh sẽ được cấp khi bạn hoàn thành toàn bộ ${totalCourses} khóa học trong lộ trình. Hiện bạn đã đạt ${approvedCourses} khóa.`)}
           </p>
 
           <div className="pu-job-cert-progress-row">
@@ -142,7 +144,7 @@ export function PulseOutcomesPage() {
                   <span
                     key={d.categoryId || d.number}
                     className={`pu-domain-mini-pill${isMet ? ' met' : ''}`}
-                    title={`Lĩnh vực 0${d.number}: ${d.name} (${isMet ? 'Đã đạt chuẩn' : 'Chưa hoàn thành'})`}
+                    title={translateUi(`Lĩnh vực 0${d.number}: ${d.name} (${isMet ? 'Đã đạt chuẩn' : 'Chưa hoàn thành'})`)}
                   >
                     {isMet ? <Check size={11} strokeWidth={3} /> : <span className="text-slate-400">·</span>}
                     <span>LV 0{d.number}</span>
@@ -186,7 +188,7 @@ export function PulseOutcomesPage() {
             onClick={() => setActiveFilter('ALL')}
             className={`pu-outcomes-tab-btn${activeFilter === 'ALL' ? ' active' : ''}`}
           >
-            <span>Tất cả</span>
+            <span>{translateUi("Tất cả")}</span>
             <span className="pu-outcomes-tab-badge">{allOutcomes.length}</span>
           </button>
           <button
@@ -204,7 +206,7 @@ export function PulseOutcomesPage() {
             className={`pu-outcomes-tab-btn${activeFilter === 'PRE_ASSESSMENT' ? ' active' : ''}`}
           >
             <Zap size={13} />
-            <span>Đánh giá đầu vào</span>
+            <span>{translateUi("Đánh giá đầu vào")}</span>
             <span className="pu-outcomes-tab-badge">{preCerts.length}</span>
           </button>
           {taskCerts.length > 0 && (
@@ -249,11 +251,11 @@ export function PulseOutcomesPage() {
         {isLoading ? (
           <PageSkeleton blocks={[180]} />
         ) : error || !data ? (
-          <LoadError message={pulseErrorMessage(error, 'Không tải được kết quả đã xác nhận.')} onRetry={() => refetch()} />
+          <LoadError message={translateUi(pulseErrorMessage(error, 'Không tải được kết quả đã xác nhận.'))} onRetry={() => refetch()} />
         ) : filteredOutcomes.length === 0 ? (
           <Empty
             icon={<Award size={24} />}
-            title={searchQuery ? 'Không tìm thấy chứng nhận phù hợp' : 'Chưa có bản ghi môn học được xác nhận'}
+            title={translateUi(searchQuery ? 'Không tìm thấy chứng nhận phù hợp' : 'Chưa có bản ghi môn học được xác nhận')}
             action={
               searchQuery ? (
                 <button
@@ -269,7 +271,7 @@ export function PulseOutcomesPage() {
             }
           >
             {searchQuery
-              ? `Không có kết quả nào khớp với từ khóa "${searchQuery}". Hãy thử tìm kiếm với từ khóa khác.`
+              ? translateUi(`Không có kết quả nào khớp với từ khóa "${searchQuery}". Hãy thử tìm kiếm với từ khóa khác.`)
               : 'Khi mentor duyệt bài cuối khóa hoặc bài đánh giá đầu vào, bản ghi chứng nhận sẽ xuất hiện ở đây.'}
           </Empty>
         ) : (
@@ -289,23 +291,21 @@ export function PulseOutcomesPage() {
                       ) : (
                         <Award size={13} />
                       )}
-                      {KIND_LABELS[outcome.kind]}
+                      {translateUi(KIND_LABELS[outcome.kind])}
                     </span>
                     <span className="pu-cert-status">
-                      <span className="pu-status-dot" />
-                      Đã đạt
-                    </span>
+                      <span className="pu-status-dot" />{translateUi("Đã đạt")}</span>
                   </div>
 
                   {outcome.subtitle && (
                     <div className="pu-cert-domain">
-                      {outcome.subtitle}
+                      {translateUi(outcome.subtitle)}
                     </div>
                   )}
 
                   <h3 className="pu-cert-title">
                     <Link to={PULSE_PATHS.outcome(outcome.id)} className="hover:underline text-inherit">
-                      {outcome.title}
+                      {translateUi(outcome.title)}
                     </Link>
                   </h3>
 
@@ -314,8 +314,7 @@ export function PulseOutcomesPage() {
                       <Calendar size={13} className="text-slate-500" />
                       {formatDate(outcome.issuedAt)}
                     </span>
-                    <span className="pu-cert-ref">
-                      Mã: <code>{outcome.reference}</code>
+                    <span className="pu-cert-ref">{translateUi("Mã: ")}<code>{outcome.reference}</code>
                     </span>
                   </div>
                 </div>
@@ -364,6 +363,7 @@ export function PulseOutcomesPage() {
  * Khung viền Guilloche, QR code xác thực trực tuyến, Con dấu số vàng kim, chữ ký giám đốc học thuật.
  */
 export function PulseOutcomeDetailPage() {
+  useUiLanguage();
   const { outcomeId } = useParams<{ outcomeId: string }>();
   const { data, isLoading, error } = usePulseOutcome(outcomeId);
   const [qrSvg, setQrSvg] = useState<string>('');
@@ -419,7 +419,7 @@ export function PulseOutcomeDetailPage() {
           {data.courseId && (
             <Link to={PULSE_PATHS.course(data.courseId)} className="pu-btn-course">
               <BookOpen className="w-4 h-4" />
-              <span>Xem khóa học</span>
+              <span>{translateUi("Xem khóa học")}</span>
             </Link>
           )}
         </div>
@@ -504,11 +504,11 @@ export function PulseOutcomeDetailPage() {
               </p>
               <div className="inline-block px-4 py-1.5 rounded bg-[#f5efe6] border border-[#b89758]/40">
                 <strong className="text-sm sm:text-base font-bold text-[#8c6d32]">
-                  {data.title}
+                  {translateUi(data.title)}
                 </strong>
                 {data.subtitle && (
                   <span className="block text-[11px] sm:text-xs text-[#57534e] mt-0.5">
-                    {data.subtitle}
+                    {translateUi(data.subtitle)}
                   </span>
                 )}
               </div>
@@ -598,6 +598,7 @@ export function PulseOutcomeDetailPage() {
 }
 
 function CornerOrnament({ className = '' }: { className?: string }) {
+  useUiLanguage();
   return (
     <svg
       viewBox="0 0 40 40"

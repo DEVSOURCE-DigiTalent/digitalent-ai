@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { ClipboardCheck } from 'lucide-react';
 import { useManagedDepartment } from '@/hooks/use-managed-department';
@@ -30,6 +31,7 @@ type View = 'PENDING' | 'ALL';
  * bài nộp, hạn và quyết định. Tách khỏi bài cuối khóa; duyệt / yêu cầu sửa / từ chối ở trang đánh giá (MG-12).
  */
 export function ManagerEvidencePage() {
+  useUiLanguage();
   const { can } = usePermission();
   const canEvaluate = can(PERMISSIONS.TASK_EVALUATE);
   const canCreate = can(PERMISSIONS.TASK_CREATE);
@@ -94,8 +96,8 @@ export function ManagerEvidencePage() {
         description="Bài đánh giá trước khi học và bài cuối khóa có hàng chờ riêng. Tại đây, hãy duyệt, yêu cầu sửa hoặc từ chối nhiệm vụ thực tế theo tiêu chí của chủ doanh nghiệp."
         actions={
           <>
-            <PuLink to={MANAGER_PATHS.finalReviews} kind="outline">Chấm bài</PuLink>
-            {canCreate && <PuLink to={MANAGER_PATHS.newTask}>Giao nhiệm vụ</PuLink>}
+            <PuLink to={MANAGER_PATHS.finalReviews} kind="outline">{translateUi("Chấm bài")}</PuLink>
+            {canCreate && <PuLink to={MANAGER_PATHS.newTask}>{translateUi("Giao nhiệm vụ")}</PuLink>}
           </>
         }
       />
@@ -122,8 +124,7 @@ export function ManagerEvidencePage() {
       ) : (
         <>
           <div className="pu-tabs" role="group" aria-label="Lọc nhiệm vụ" style={{ marginTop: 0 }}>
-            <button type="button" aria-pressed={view === 'PENDING'} onClick={() => setView('PENDING')}>
-              Chờ đánh giá<span>{pending.length}</span>
+            <button type="button" aria-pressed={view === 'PENDING'} onClick={() => setView('PENDING')}>{translateUi("Chờ đánh giá")}<span>{pending.length}</span>
             </button>
             <button type="button" aria-pressed={view === 'ALL'} onClick={() => setView('ALL')}>
               Tất cả nhiệm vụ<span>{all.length}</span>
@@ -131,21 +132,21 @@ export function ManagerEvidencePage() {
           </div>
           {visible.length === 0 && <Notice>Không có minh chứng nào đang chờ đánh giá trong phòng ban.</Notice>}
           {visible.map((card) => (
-            <article key={card.taskId} className="pm-evidence" aria-label={card.title}>
+            <article key={card.taskId} className="pm-evidence" aria-label={translateUi(card.title)}>
               <header>
                 <div>
                   <Mini>
                     {department.name}
-                    {card.targetLevel ? ` · mức mục tiêu ${levelName(card.targetLevel)}` : ''}
+                    {card.targetLevel ? translateUi(` · mức mục tiêu ${levelName(card.targetLevel)}`) : ''}
                   </Mini>
-                  <h2>{card.title}</h2>
+                  <h2>{translateUi(card.title)}</h2>
                   <p className="pm-evidence-meta">
-                    {card.dueDate ? `Hạn ${formatDate(card.dueDate)}` : 'Không đặt hạn'}
+                    {card.dueDate ? translateUi(`Hạn ${formatDate(card.dueDate)}`) : 'Không đặt hạn'}
                     {card.description ? ` · ${card.description}` : ''}
                   </p>
                 </div>
                 <Pill tone={card.pending.length > 0 ? 'coral' : card.approvedCount ? 'green' : 'gray'}>
-                  {card.pending.length > 0 ? `${card.pending.length} chờ đánh giá` : card.approvedCount ? `${card.approvedCount} đã duyệt` : 'Mở'}
+                  {card.pending.length > 0 ? translateUi(`${card.pending.length} chờ đánh giá`) : card.approvedCount ? translateUi(`${card.approvedCount} đã duyệt`) : 'Mở'}
                 </Pill>
               </header>
 
@@ -154,7 +155,7 @@ export function ManagerEvidencePage() {
                   <Mini>Tiêu chí của chủ doanh nghiệp</Mini>
                   <ul>
                     {card.rubric.map((criterion) => (
-                      <li key={criterion.id}><b>{criterion.label}</b>{criterion.description} · tối đa {criterion.maxPoints} điểm</li>
+                      <li key={criterion.id}><b>{translateUi(criterion.label)}</b>{translateUi(criterion.description)} · tối đa {criterion.maxPoints}{translateUi(" điểm")}</li>
                     ))}
                   </ul>
                 </div>
@@ -164,7 +165,7 @@ export function ManagerEvidencePage() {
                 card.pending.map((item) => (
                   <div key={item.id} className="pm-submission">
                     <header>
-                      <strong>{item.employeeName} · nộp {formatDateTime(item.submittedAt)}</strong>
+                      <strong>{item.employeeName}{translateUi(" · nộp ")}{formatDateTime(item.submittedAt)}</strong>
                       <PuLink to={MANAGER_PATHS.evidenceDetail(item.id)} small>Đánh giá minh chứng →</PuLink>
                     </header>
                     <p>{item.content.length > 280 ? `${item.content.slice(0, 280)}…` : item.content}</p>
@@ -173,7 +174,7 @@ export function ManagerEvidencePage() {
               ) : (
                 <div className="pm-submission">
                   {card.submissionsCount
-                    ? `${card.submissionsCount} bài đã nộp · ${card.approvedCount ?? 0} đã duyệt. Không có bài nào đang chờ quyết định.`
+                    ? translateUi(`${card.submissionsCount} bài đã nộp · ${card.approvedCount ?? 0} đã duyệt. Không có bài nào đang chờ quyết định.`)
                     : 'Nhân viên chưa nộp minh chứng.'}
                 </div>
               )}

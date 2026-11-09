@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -14,6 +15,7 @@ import { useCurrentUser } from '../../../hooks/use-current-user';
 import { getHomePath } from '../../../lib/navigation';
 
 export function NotFoundPage() {
+  useUiLanguage();
   const user = useCurrentUser((state) => state.user);
   const navigate = useNavigate();
   const homePath = user ? getHomePath(user) : '/';
@@ -105,9 +107,9 @@ export function NotFoundPage() {
                 setWallpaperMode((m) => (m === 'ai' ? 'reference' : 'ai'))
               }
               title={
-                wallpaperMode === 'ai'
+                translateUi(wallpaperMode === 'ai'
                   ? 'Chuyển sang ảnh mẫu gốc'
-                  : 'Chuyển sang ảnh AI mới tạo'
+                  : 'Chuyển sang ảnh AI mới tạo')
               }
               className="px-2 py-0.5 rounded-full hover:text-white hover:bg-white/15 transition-colors flex items-center gap-1 font-mono text-[11px]"
             >
@@ -130,9 +132,9 @@ export function NotFoundPage() {
             <button
               type="button"
               onClick={() => setIsFullscreen((f) => !f)}
-              title={isFullscreen ? 'Thu nhỏ khung card' : 'Toàn màn hình'}
+              title={translateUi(isFullscreen ? 'Thu nhỏ khung card' : 'Toàn màn hình')}
               className="p-1 rounded-full hover:text-white hover:bg-white/15 transition-colors"
-              aria-label={isFullscreen ? 'Thu nhỏ' : 'Toàn màn hình'}
+              aria-label={translateUi(isFullscreen ? 'Thu nhỏ' : 'Toàn màn hình')}
             >
               {isFullscreen ? (
                 <Minimize2 className="w-3.5 h-3.5" />
@@ -224,7 +226,7 @@ export function NotFoundPage() {
                 type="button"
                 onClick={() => setShowTerminal(false)}
                 className="absolute top-4 right-4 text-cyan-400/70 hover:text-cyan-100 transition-colors"
-                aria-label="Đóng"
+                aria-label={translateUi("Đóng")}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -321,12 +323,12 @@ export function NotFoundPage() {
               <div className="inline-flex items-center gap-1.5 ml-2 font-sans">
                 <Link
                   to={homePath}
-                  aria-label="Về trang chủ"
+                  aria-label={translateUi("Về trang chủ")}
                   className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-[#EDEAE2] text-[11px] border border-white/15 transition-all"
-                  title="Về trang chủ"
+                  title={translateUi("Về trang chủ")}
                 >
                   <Home className="w-3 h-3" />
-                  <span>Về trang chủ</span>
+                  <span>{translateUi("Về trang chủ")}</span>
                 </Link>
                 <button
                   type="button"
@@ -335,7 +337,7 @@ export function NotFoundPage() {
                   title="Quay lại trang trước"
                 >
                   <ArrowLeft className="w-3 h-3" />
-                  <span>Quay lại</span>
+                  <span>{translateUi("Quay lại")}</span>
                 </button>
               </div>
             </div>
@@ -361,7 +363,7 @@ export function NotFoundPage() {
               <Link
                 to="/business"
                 className="hover:text-[#EDEAE2] transition-colors"
-                title="Giải pháp Doanh nghiệp"
+                title={translateUi("Giải pháp Doanh nghiệp")}
               >
                 brand
               </Link>

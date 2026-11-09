@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, Compass } from 'lucide-react';
@@ -22,6 +23,7 @@ export function TrialHeroSection({
   formNode,
   formRef,
 }: TrialHeroSectionProps) {
+  useUiLanguage();
   return (
     <section className="relative overflow-hidden pt-8 pb-16 sm:pt-12 sm:pb-20 lg:pt-16 lg:pb-24">
       {/* Dynamic ambient background glow effects */}
@@ -38,7 +40,7 @@ export function TrialHeroSection({
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3.5 py-1 text-xs font-semibold text-[#F5CA65] shadow-xs">
                 <Sparkles className="size-3.5" />
-                <span>Dùng thử {INDIVIDUAL_TRIAL.days} ngày</span>
+                <span>{translateUi("Dùng thử ")}{INDIVIDUAL_TRIAL.days}{translateUi(" ngày")}</span>
                 <span className="size-1 rounded-full bg-amber-400" />
                 <span className="text-cream-soft font-normal">Không cần thẻ tín dụng</span>
               </div>

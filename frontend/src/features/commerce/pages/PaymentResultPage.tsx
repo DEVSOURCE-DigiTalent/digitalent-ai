@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -19,6 +20,7 @@ import { checkoutService } from '@/services/checkout.service';
 
 /** ENT-ONB-03: what happened to the payment, and where to go next. Read-only status display. */
 export function PaymentResultPage() {
+  useUiLanguage();
   const user = useCurrentUser((s) => s.user)!;
   const navigate = useNavigate();
   const refreshSessionOnly = useRefreshSession();
@@ -95,7 +97,7 @@ export function PaymentResultPage() {
       ) : order.status === 'paid' ? (
         <ResultCard
           icon={<CheckCircle2 className="size-8 text-emerald-300" aria-hidden="true" />}
-          title="Thanh toán thành công"
+          title={translateUi("Thanh toán thành công")}
           body={`Gói ${plan?.name ?? ''} đã được kích hoạt (${formatVnd(order.amount)}). ${nextStep}`}
         >
           <button
@@ -179,12 +181,13 @@ interface ResultCardProps {
 }
 
 function ResultCard({ icon, title, body, children }: ResultCardProps) {
+  useUiLanguage();
   return (
     <section className="relative overflow-hidden mt-6 rounded-3xl bg-landing-panel p-8 text-center ring-1 ring-amber-400/20 shadow-2xl shadow-black/40" aria-live="polite">
       {/* Ambient amber glow */}
       <div className="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 size-48 rounded-full bg-amber-500/10 blur-3xl" />
       <div className="relative mx-auto grid size-16 place-items-center rounded-2xl bg-landing-card ring-1 ring-amber-400/25 shadow-lg shadow-black/30">{icon}</div>
-      <h1 className="mt-5 text-2xl font-normal tracking-[-0.02em] text-cream">{title}</h1>
+      <h1 className="mt-5 text-2xl font-normal tracking-[-0.02em] text-cream">{translateUi(title)}</h1>
       <p className="mx-auto mt-3 max-w-[40ch] text-sm leading-[1.65] text-stone-300">{body}</p>
       <div className="mt-7 grid gap-3">{children}</div>
     </section>

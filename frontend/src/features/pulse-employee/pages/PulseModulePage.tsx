@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -52,18 +53,20 @@ function toSentenceCase(str: string): string {
  * 5. Khối ôn tập Mini-quiz tuần tự mở khóa sau khi đọc xong
  */
 export function PulseModulePage() {
+  useUiLanguage();
   const { courseId, moduleId } = useParams<{ courseId: string; moduleId: string }>();
   const { data, isLoading, error, refetch } = usePulseModule(courseId, moduleId);
 
   if (isLoading) return <PageSkeleton blocks={[60, 520, 240]} />;
   if (error || !data) {
-    return <LoadError message={pulseErrorMessage(error, 'Không mở được mô đun này.')} onRetry={() => refetch()} />;
+    return <LoadError message={translateUi(pulseErrorMessage(error, 'Không mở được mô đun này.'))} onRetry={() => refetch()} />;
   }
 
   return <ModuleView key={data.module.moduleId} detail={data} />;
 }
 
 function ModuleView({ detail }: { detail: PulseModuleDetail }) {
+  useUiLanguage();
   const { course, module, slides } = detail;
   const courseId = course.courseId;
   const [index, setIndex] = useState(0);
@@ -140,17 +143,17 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
       {/* ── 1. Header Canvas & Thanh tiến độ mini ───────────────────────── */}
       <header className="pu-m-header-block">
         <div className="pu-m-header-top">
-          <nav className="pu-m-breadcrumb" aria-label="Điều hướng">
+          <nav className="pu-m-breadcrumb" aria-label={translateUi("Điều hướng")}>
             <Link to={PULSE_PATHS.path} className="pu-m-back-link">
               <ArrowLeft size={14} />
-              <span>Lộ trình năng lực</span>
+              <span>{translateUi("Lộ trình năng lực")}</span>
             </Link>
             <ChevronRight size={13} className="pu-m-bc-separator" aria-hidden />
             <Link to={PULSE_PATHS.course(courseId)} className="pu-m-bc-course">
               {toSentenceCase(course.title)}
             </Link>
             <ChevronRight size={13} className="pu-m-bc-separator" aria-hidden />
-            <span className="pu-m-bc-tag">{course.domainName} · Cấp {course.tier}</span>
+            <span className="pu-m-bc-tag">{translateUi(course.domainName)} · Cấp {course.tier}</span>
           </nav>
         </div>
 
@@ -182,7 +185,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
         <nav className="pu-module-nav" aria-label="Đề cương các mô-đun trong khóa học">
           <div className="pu-nav-head">
             <span>Đề cương khóa học</span>
-            <span className="pu-nav-count">{passedCount}/{total} đã đạt</span>
+            <span className="pu-nav-count">{passedCount}/{total}{translateUi(" đã đạt")}</span>
           </div>
 
           <div className="pu-nav-list">
@@ -257,14 +260,14 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
           {/* Tiêu đề Mô-đun Canvas */}
           <div className="pu-module-title-strip">
             <div className="pu-eyebrow-row">
-              <span className="pu-eyebrow-pill">{course.domainName}</span>
+              <span className="pu-eyebrow-pill">{translateUi(course.domainName)}</span>
               <span className="pu-eyebrow-dot">·</span>
-              <span className="pu-eyebrow-tier">Cấp độ {levelName(course.tier)}</span>
+              <span className="pu-eyebrow-tier">{translateUi("Cấp độ ")}{levelName(course.tier)}</span>
               {detail.sample && <span className="pu-eyebrow-sample">Trang mẫu</span>}
             </div>
 
             <h1 className="pu-module-heading">{formattedModuleTitle}</h1>
-            {module.description && <p className="pu-module-desc">{module.description}</p>}
+            {module.description && <p className="pu-module-desc">{translateUi(module.description)}</p>}
           </div>
 
           {slide ? (
@@ -304,7 +307,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                     className="pu-focus-btn"
                     onClick={() => setFocused(!focused)}
                     aria-pressed={focused}
-                    title={focused ? 'Mở lại mục lục khóa học' : 'Ẩn mục lục để tập trung đọc'}
+                    title={translateUi(focused ? 'Mở lại mục lục khóa học' : 'Ẩn mục lục để tập trung đọc')}
                   >
                     {focused ? <List size={13} /> : <Maximize2 size={13} />}
                     <span>{focused ? 'Hiện mục lục' : 'Tập trung đọc'}</span>
@@ -330,16 +333,15 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                     className="pu-nav-action-btn prev"
                     onClick={() => openPage(index - 1)}
                     disabled={index === 0}
-                    aria-label="Trang trước"
+                    aria-label={translateUi("Trang trước")}
                   >
                     <ArrowLeft size={14} />
-                    <span>Trang trước</span>
+                    <span>{translateUi("Trang trước")}</span>
                   </button>
                 </div>
 
                 <div className="pu-nav-center-group">
-                  <span className="pu-nav-page-indicator">
-                    Trang {pad2(index + 1)} / {pad2(slides.length)}
+                  <span className="pu-nav-page-indicator">{translateUi("Trang ")}{pad2(index + 1)} / {pad2(slides.length)}
                   </span>
 
                   <nav className="pu-nav-pills" aria-label="Chọn nhanh trang bài học">
@@ -350,8 +352,8 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                         onClick={() => openPage(pageIndex)}
                         className={`pu-nav-pill-btn ${pageIndex === index ? 'active' : ''}`}
                         aria-current={pageIndex === index ? 'step' : undefined}
-                        aria-label={`Trang ${pad2(pageIndex + 1)}: ${page.title}`}
-                        title={page.title}
+                        aria-label={translateUi(`Trang ${pad2(pageIndex + 1)}: ${page.title}`)}
+                        title={translateUi(page.title)}
                       >
                         {pad2(pageIndex + 1)}
                       </button>
@@ -469,6 +471,7 @@ interface QuizAreaProps {
 }
 
 function QuizArea({ detail, viewed, reachedEnd, onOpenPage, opening }: QuizAreaProps) {
+  useUiLanguage();
   const { course } = detail;
   const nextPath = detail.nextModuleId
     ? PULSE_PATHS.module(course.courseId, detail.nextModuleId)
@@ -485,7 +488,7 @@ function QuizArea({ detail, viewed, reachedEnd, onOpenPage, opening }: QuizAreaP
         <div>
           <strong>
             {detail.quiz || score
-              ? `Đã đạt câu hỏi ôn tập${score ? ` (đúng ${score.score}/${score.total} câu)` : ''}`
+              ? translateUi(`Đã đạt câu hỏi ôn tập${score ? ` (đúng ${score.score}/${score.total} câu)` : ''}`)
               : 'Đã hoàn thành nội dung bài học'}
           </strong>
           <p>
@@ -544,13 +547,14 @@ function ReviewPanel({
   onOpenPage: (index: number) => void;
   opening: boolean;
 }) {
+  useUiLanguage();
   const review = detail.review!;
   const last = detail.lastQuiz;
   return (
     <section className="pu-quiz" aria-labelledby="pu-quiz-title">
       <h2 id="pu-quiz-title">Xem lại nội dung trước lần làm thứ {review.attemptNo + 1}</h2>
       <div className="pu-quiz-feedback" role="status">
-        Lần làm thứ {review.attemptNo} chưa đạt{last ? ` (đúng ${last.score}/${last.total} câu)` : ''}. Vui lòng mở lại các trang nội dung chưa đúng bên dưới để củng cố kiến thức. Lần làm tiếp theo sẽ là một bộ câu hỏi khác.
+        Lần làm thứ {review.attemptNo}{translateUi(" chưa đạt")}{last ? translateUi(` (đúng ${last.score}/${last.total} câu)`) : ''}. Vui lòng mở lại các trang nội dung chưa đúng bên dưới để củng cố kiến thức. Lần làm tiếp theo sẽ là một bộ câu hỏi khác.
       </div>
       <ul className="pu-review-pages" aria-label="Trang cần xem lại" style={{ listStyle: 'none', padding: 0 }}>
         {review.pages.map((page) => (
@@ -568,8 +572,8 @@ function ReviewPanel({
             }}
           >
             <span>
-              <b style={{ marginRight: 8 }}>Trang {pad2(page.index + 1)}:</b>
-              {page.title}
+              <b style={{ marginRight: 8 }}>{translateUi("Trang ")}{pad2(page.index + 1)}:</b>
+              {translateUi(page.title)}
             </span>
             {page.done ? (
               <small style={{ color: '#166534', fontWeight: 600 }}>
@@ -603,6 +607,7 @@ function QuizForm({
   viewed: boolean;
   reachedEnd: boolean;
 }) {
+  useUiLanguage();
   const { course, module } = detail;
   const submit = useSubmitPulseModuleQuiz();
   const [answers, setAnswers] = useState<Record<string, string>>({});

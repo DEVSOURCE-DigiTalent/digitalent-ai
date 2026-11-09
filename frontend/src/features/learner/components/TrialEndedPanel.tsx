@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Lock } from 'lucide-react';
@@ -36,6 +37,7 @@ function summaryOf(access: PersonalAccess, progress: PersonalProgress | undefine
  * Closed with "Tiếp tục với gói Miễn phí"; the server remembers it, so it appears once (spec §8.13).
  */
 export function TrialEndedPanel() {
+  useUiLanguage();
   const { data: access } = usePersonalAccess();
   if (access?.mode !== 'free' || access.seen['trial-ended']) return null;
   return <EndedBody access={access} />;
@@ -43,6 +45,7 @@ export function TrialEndedPanel() {
 
 /** Split from the gate so a paying learner never loads the progress this summary needs. */
 function EndedBody({ access }: { access: PersonalAccess }) {
+  useUiLanguage();
   const { data: progress, isLoading } = usePersonalProgress();
   const markSeen = useMarkSeen();
   const tracked = useRef(false);
@@ -76,7 +79,7 @@ function EndedBody({ access }: { access: PersonalAccess }) {
             <p className="max-w-[60ch] text-sm text-pt-fg-2">
               Bạn chưa làm bài đánh giá. Gói Miễn phí vẫn cho bạn làm bài này để biết mức của mình.
             </p>
-            <Link to="/personal/diagnostic" className={PT_BUTTON_SECONDARY}>Làm bài đánh giá</Link>
+            <Link to="/personal/diagnostic" className={PT_BUTTON_SECONDARY}>{translateUi("Làm bài đánh giá")}</Link>
           </div>
         )}
       </div>

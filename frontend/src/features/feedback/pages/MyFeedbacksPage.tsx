@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { MessageSquare, Plus, Star } from 'lucide-react';
@@ -15,6 +16,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 function Stars({ count }: { count: number }) {
+  useUiLanguage();
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map((s) => (
@@ -25,6 +27,7 @@ function Stars({ count }: { count: number }) {
 }
 
 function FeedbackCard({ item }: { item: FeedbackItem }) {
+  useUiLanguage();
   const status = STATUS_LABELS[item.status];
   return (
     <div className="rounded-xl border border-ent-line bg-ent-card p-5 hover:shadow-sm transition-shadow">
@@ -34,14 +37,14 @@ function FeedbackCard({ item }: { item: FeedbackItem }) {
             <div className="rounded-lg p-1.5 bg-blue-50 text-blue-500">
               <MessageSquare className="h-3.5 w-3.5" />
             </div>
-            <h3 className="font-medium text-ent-fg text-sm">{item.title}</h3>
+            <h3 className="font-medium text-ent-fg text-sm">{translateUi(item.title)}</h3>
           </div>
           {item.rating != null && item.rating > 0 && <div className="mb-2"><Stars count={item.rating} /></div>}
-          <p className="text-sm text-ent-fg-2 leading-relaxed line-clamp-2">{item.description}</p>
+          <p className="text-sm text-ent-fg-2 leading-relaxed line-clamp-2">{translateUi(item.description)}</p>
           {item.screenshots && item.screenshots.length > 0 && (
             <div className="flex gap-2 mt-3 flex-wrap">
               {item.screenshots.map((src, i) => (
-                <img key={i} src={src} alt={`Ảnh ${i + 1}`} className="h-14 w-20 rounded-lg object-cover border border-ent-line cursor-pointer hover:opacity-80" onClick={() => openScreenshot(src)} />
+                <img key={i} src={src} alt={translateUi(`Ảnh ${i + 1}`)} className="h-14 w-20 rounded-lg object-cover border border-ent-line cursor-pointer hover:opacity-80" onClick={() => openScreenshot(src)} />
               ))}
             </div>
           )}
@@ -54,7 +57,7 @@ function FeedbackCard({ item }: { item: FeedbackItem }) {
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">
           <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${status?.color ?? ''}`}>
-            {status?.label ?? item.status}
+            {translateUi(status?.label) ?? item.status}
           </span>
           <span className="text-[11px] text-ent-fg-2">{new Date(item.createdAt).toLocaleDateString('vi-VN')}</span>
         </div>
@@ -64,6 +67,7 @@ function FeedbackCard({ item }: { item: FeedbackItem }) {
 }
 
 export function MyFeedbacksPage() {
+  useUiLanguage();
   const [showDialog, setShowDialog] = useState(false);
 
   const { data, isLoading } = useQuery({
@@ -76,7 +80,7 @@ export function MyFeedbacksPage() {
   return (
     <div className="fb-scope space-y-6">
       <div className="flex items-center justify-between">
-        <PageHeader title="Góp ý" description="Chia sẻ ý kiến để chúng tôi cải thiện sản phẩm" />
+        <PageHeader title={translateUi("Góp ý")} description="Chia sẻ ý kiến để chúng tôi cải thiện sản phẩm" />
         <button onClick={() => setShowDialog(true)} className="flex items-center gap-2 rounded-xl bg-ent-accent px-4 py-2.5 text-sm font-medium text-white hover:opacity-90">
           <Plus className="h-4 w-4" />
           Gửi góp ý
@@ -84,7 +88,7 @@ export function MyFeedbacksPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12 text-ent-fg-2">Đang tải...</div>
+        <div className="text-center py-12 text-ent-fg-2">{translateUi("Đang tải...")}</div>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16">
           <div className="rounded-2xl bg-ent-raised p-4 mb-4"><MessageSquare className="h-8 w-8 text-ent-fg-2" /></div>

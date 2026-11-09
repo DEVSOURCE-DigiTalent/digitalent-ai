@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Award, Check, RotateCcw, X } from 'lucide-react';
@@ -13,6 +14,7 @@ import { errorMessage, planErrorOf } from '../utils/error-message';
 
 /** End-of-course assessment: 4 questions of the course's domain; passing raises the levels and issues a certificate. */
 export function CourseAssessment({ course }: { course: PersonalCourseDetail }) {
+  useUiLanguage();
   const [started, setStarted] = useState(false);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [outcome, setOutcome] = useState<AssessmentOutcome | null>(null);
@@ -43,12 +45,12 @@ export function CourseAssessment({ course }: { course: PersonalCourseDetail }) {
           <p className={PT_EYEBROW}>Bài đánh giá cuối khóa</p>
           <p className="mt-3 text-[19px] leading-snug tracking-[-0.015em]">
             {course.assessment.passed
-              ? `Bạn đã đạt bài đánh giá (cao nhất ${course.assessment.bestScore}%).`
-              : `${course.assessment.questionCount} câu tình huống · cần đúng từ ${course.assessment.passPercent}%`}
+              ? translateUi(`Bạn đã đạt bài đánh giá (cao nhất ${course.assessment.bestScore}%).`)
+              : translateUi(`${course.assessment.questionCount} câu tình huống · cần đúng từ ${course.assessment.passPercent}%`)}
           </p>
           <p className="mt-2 text-sm text-pt-fg-2">
             {!ready
-              ? `Học hết ${course.lessonCount - course.completedLessons} bài còn lại để mở bài đánh giá.`
+              ? translateUi(`Học hết ${course.lessonCount - course.completedLessons} bài còn lại để mở bài đánh giá.`)
               : course.awaitingTask
                 ? 'Bạn đã đạt bài đánh giá. Khóa hoàn thành khi bài thực hành được duyệt.'
                 : course.taskRequired
@@ -57,9 +59,9 @@ export function CourseAssessment({ course }: { course: PersonalCourseDetail }) {
           </p>
         </div>
         {started && assessment.isLoading && <LoadingBlock className="w-40" />}
-        {assessment.isError && <ErrorBlock message={errorMessage(assessment.error)} onRetry={() => assessment.refetch()} />}
+        {assessment.isError && <ErrorBlock message={translateUi(errorMessage(assessment.error))} onRetry={() => assessment.refetch()} />}
         <button type="button" disabled={!ready} onClick={restart} className={course.assessment.passed ? PT_BUTTON_SECONDARY : PT_BUTTON}>
-          {course.assessment.passed ? 'Làm lại để luyện tập' : 'Làm bài đánh giá'}
+          {course.assessment.passed ? 'Làm lại để luyện tập' : translateUi('Làm bài đánh giá')}
         </button>
       </Card>
     );
@@ -83,7 +85,7 @@ export function CourseAssessment({ course }: { course: PersonalCourseDetail }) {
         >
           <div>
             <p className={cn('text-[22px] font-light tracking-[-0.02em]', outcome.passed ? 'text-pt-ok' : 'text-pt-bad')}>
-              {outcome.passed ? 'Đạt' : 'Chưa đạt'} · {outcome.scorePercent}%
+              {outcome.passed ? 'Đạt' : translateUi('Chưa đạt')} · {outcome.scorePercent}%
             </p>
             <p className="mt-1 text-sm text-pt-fg-2">
               {outcome.correct}/{outcome.total} câu đúng.{' '}
@@ -105,7 +107,7 @@ export function CourseAssessment({ course }: { course: PersonalCourseDetail }) {
               <Link to="/personal/certificates" className={PT_BUTTON}><Award className="size-4" aria-hidden="true" /> Xem chứng nhận</Link>
             )
           ) : (
-            <button type="button" onClick={restart} className={PT_BUTTON_SECONDARY}><RotateCcw className="size-4" aria-hidden="true" /> Làm lại</button>
+            <button type="button" onClick={restart} className={PT_BUTTON_SECONDARY}><RotateCcw className="size-4" aria-hidden="true" />{translateUi(" Làm lại")}</button>
           )}
         </div>
       )}

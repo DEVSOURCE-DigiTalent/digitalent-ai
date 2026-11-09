@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { levelWithTier } from '@/lib/competency-levels';
@@ -18,6 +19,7 @@ const ORIGIN_NOTE =
 
 /** PUB-06 "/careers" and "/careers/:slug": the reference positions and what each asks of a learner. */
 export function CareerCatalogPage() {
+  useUiLanguage();
   const { slug } = useParams<{ slug: string }>();
   const position = slug ? getReferencePosition(slug.toUpperCase()) : undefined;
 
@@ -31,6 +33,7 @@ export function CareerCatalogPage() {
 }
 
 function PositionList() {
+  useUiLanguage();
   return (
     <>
       <div className="mx-auto max-w-3xl text-center">
@@ -51,6 +54,7 @@ function PositionList() {
 }
 
 function PositionCard({ position }: { position: ReferencePosition }) {
+  useUiLanguage();
   const { selected, domains } = summarizeRequirements(position);
 
   return (
@@ -62,7 +66,7 @@ function PositionCard({ position }: { position: ReferencePosition }) {
             {position.name}
           </Link>
         </h2>
-        <p className="mt-2 text-sm leading-[1.5] text-pt-fg-2">{position.description}</p>
+        <p className="mt-2 text-sm leading-[1.5] text-pt-fg-2">{translateUi(position.description)}</p>
         <p className="mt-4 text-xs text-pt-fg-3 tabular-nums">{selected}/24 năng lực được chọn</p>
       </div>
     </li>
@@ -70,20 +74,19 @@ function PositionCard({ position }: { position: ReferencePosition }) {
 }
 
 function PositionDetail({ position }: { position: ReferencePosition }) {
+  useUiLanguage();
   const { selected, domains } = summarizeRequirements(position);
   const groups = requirementsByDomain(position);
 
   return (
     <article>
       <Link to="/careers" className="inline-flex items-center gap-1.5 text-sm text-pt-fg-2 transition-colors hover:text-[#F5CA65]">
-        <ArrowLeft className="size-4" aria-hidden="true" />
-        Tất cả vị trí
-      </Link>
+        <ArrowLeft className="size-4" aria-hidden="true" />{translateUi("Tất cả vị trí")}</Link>
 
       <header className="mt-8 grid gap-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
         <div>
           <h1 className="text-balance text-[clamp(32px,5vw,56px)] font-normal leading-[1.05] tracking-[-0.03em] text-pt-fg">{position.name}</h1>
-          <p className="mt-4 max-w-[52ch] text-pretty text-sm leading-[1.7] text-pt-fg-2 sm:text-base">{position.description}</p>
+          <p className="mt-4 max-w-[52ch] text-pretty text-sm leading-[1.7] text-pt-fg-2 sm:text-base">{translateUi(position.description)}</p>
           <p className="mt-4 text-sm text-pt-fg-2 tabular-nums">{selected}/24 năng lực được chọn cho vị trí này</p>
         </div>
         <DomainPips domains={domains} />
@@ -135,9 +138,10 @@ function PositionDetail({ position }: { position: ReferencePosition }) {
 }
 
 function PositionNotFound() {
+  useUiLanguage();
   return (
     <div className="mx-auto max-w-xl py-16 text-center">
-      <h1 className="text-[clamp(28px,4vw,44px)] font-normal leading-[1.1] tracking-[-0.03em]">Không tìm thấy vị trí này.</h1>
+      <h1 className="text-[clamp(28px,4vw,44px)] font-normal leading-[1.1] tracking-[-0.03em]">{translateUi("Không tìm thấy vị trí này.")}</h1>
       <p className="mt-4 text-sm leading-[1.7] text-stone-400">Vị trí bạn mở không nằm trong danh sách vị trí tham chiếu hiện có.</p>
       <Link to="/careers" className="mt-8 inline-block rounded-full border border-cream/30 px-6 py-3 text-sm text-cream transition-colors hover:border-cream/70">
         Xem tất cả vị trí

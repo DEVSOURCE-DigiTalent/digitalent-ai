@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Copy, Printer } from 'lucide-react';
@@ -22,6 +23,7 @@ const isIssued = (certificate: PersonalCertificate): certificate is IssuedCertif
 
 /** IND-13 "/personal/certificates": one certificate per course passed, naming the competencies it confirms. */
 export function LearnerCertificatesPage() {
+  useUiLanguage();
   const { data, isLoading, isError, error, refetch } = usePersonalCertificates();
   const [selected, setSelected] = useState<IssuedCertificate | null>(null);
   const pending = data?.filter((certificate) => !isIssued(certificate)).length ?? 0;
@@ -29,12 +31,12 @@ export function LearnerCertificatesPage() {
   return (
     <div data-testid="learner-certificates-page" className="grid gap-10">
       <PersonalPageHeader
-        label="Chứng nhận"
+        label={translateUi("Chứng nhận")}
         title="Chứng nhận hoàn thành khóa học"
         lead="Tài liệu ghi nhận khóa học đã hoàn thành và kết quả đánh giá liên quan."
       />
       {isLoading && <LoadingBlock />}
-      {isError && <ErrorBlock message={errorMessage(error)} onRetry={() => refetch()} />}
+      {isError && <ErrorBlock message={translateUi(errorMessage(error))} onRetry={() => refetch()} />}
       {data && data.length === 0 && (
         <EmptyState
           title="Chưa có chứng nhận nào"
@@ -57,11 +59,10 @@ export function LearnerCertificatesPage() {
               <div className="relative">
                 <div className="flex flex-wrap gap-1.5">
                   <Tag>{levelLabelVi(certificate.level)}</Tag>
-                  <Tag>{certificate.domainName}</Tag>
+                  <Tag>{translateUi(certificate.domainName)}</Tag>
                 </div>
                 <h2 className="mt-5 text-[24px] font-normal leading-tight tracking-[-0.02em]">{certificate.courseTitle}</h2>
-                <p className="mt-2 text-sm text-pt-fg-2">
-                  Năng lực {certificate.competencies.map((competency) => competency.code).join(', ')} · đạt {certificate.scorePercent}%
+                <p className="mt-2 text-sm text-pt-fg-2">{translateUi("Năng lực ")}{certificate.competencies.map((competency) => competency.code).join(', ')} · đạt {certificate.scorePercent}%
                 </p>
               </div>
               <div className="relative flex flex-wrap items-end justify-between gap-4 border-t border-pt-line pt-5">
@@ -69,7 +70,7 @@ export function LearnerCertificatesPage() {
                   <>
                     <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
                       <dt className="text-pt-fg-3">Mã chứng nhận</dt>
-                      <dt className="text-pt-fg-3">Ngày cấp</dt>
+                      <dt className="text-pt-fg-3">{translateUi("Ngày cấp")}</dt>
                       <dd className="font-mono text-pt-fg">{certificate.code}</dd>
                       <dd className="text-pt-fg">{formatDate(certificate.issuedAt)}</dd>
                     </dl>
@@ -95,6 +96,7 @@ export function LearnerCertificatesPage() {
 }
 
 function CertificateModalContent({ certificate }: { certificate: IssuedCertificate }) {
+  useUiLanguage();
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {

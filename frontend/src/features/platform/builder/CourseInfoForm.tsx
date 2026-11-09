@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { useFramework, useFrameworks } from '@/hooks/use-platform-catalog';
@@ -21,6 +22,7 @@ export function CourseInfoForm({
   onNext: () => void;
   onAddModule: () => void;
 }) {
+  useUiLanguage();
   const initial = {
     code: course.code,
     frameworkId: course.frameworkId,
@@ -66,10 +68,8 @@ export function CourseInfoForm({
   return (
     <form className="surface pad" onSubmit={onSubmit} aria-labelledby="course-info-title">
       <div className="pa-card-head">
-        <h2 id="course-info-title" className="panel-title">
-          Thông tin khóa học
-        </h2>
-        {!course.codeEditable && <small className="pa-hint">Mã {course.code} giữ nguyên giữa các phiên bản</small>}
+        <h2 id="course-info-title" className="panel-title">{translateUi("Thông tin khóa học")}</h2>
+        {!course.codeEditable && <small className="pa-hint">{translateUi("Mã ")}{course.code} giữ nguyên giữa các phiên bản</small>}
       </div>
       <fieldset disabled={!editable} className="pa-fieldset">
         <div className="pa-fields-3">
@@ -86,11 +86,9 @@ export function CourseInfoForm({
               ))}
             </select>
           </label>
-          <label className="field">
-            Lĩnh vực
-            <select value={form.domainId} onChange={(e) => set('domainId', e.target.value)} required>
+          <label className="field">{translateUi("Lĩnh vực")}<select value={form.domainId} onChange={(e) => set('domainId', e.target.value)} required>
               <option value="" disabled>
-                {framework.isLoading ? 'Đang tải…' : 'Chọn lĩnh vực'}
+                {framework.isLoading ? translateUi('Đang tải…') : 'Chọn lĩnh vực'}
               </option>
               {domains.map((d) => (
                 <option key={d.id} value={d.id}>
@@ -99,12 +97,10 @@ export function CourseInfoForm({
               ))}
             </select>
           </label>
-          <label className="field">
-            Cấp độ
-            <select value={form.level} onChange={(e) => set('level', Number(e.target.value))}>
+          <label className="field">{translateUi("Cấp độ")}<select value={form.level} onChange={(e) => set('level', Number(e.target.value))}>
               {[1, 2, 3].map((l) => (
                 <option key={l} value={l}>
-                  {LEVEL_NAMES[l]}
+                  {translateUi(LEVEL_NAMES[l])}
                 </option>
               ))}
             </select>
@@ -119,9 +115,7 @@ export function CourseInfoForm({
             </small>
           </label>
         )}
-        <label className="field">
-          Tên khóa học
-          <input value={form.title} onChange={(e) => set('title', e.target.value)} maxLength={250} required minLength={3} />
+        <label className="field">{translateUi("Tên khóa học")}<input value={form.title} onChange={(e) => set('title', e.target.value)} maxLength={250} required minLength={3} />
         </label>
         <label className="field">
           Kết quả học
@@ -153,7 +147,7 @@ export function CourseInfoForm({
       {editable && (
         <div className="pa-row-between">
           <button type="submit" className="btn btn-primary" disabled={!dirty || !valid || saving}>
-            {saving ? 'Đang lưu…' : 'Lưu thông tin'}
+            {saving ? translateUi('Đang lưu…') : translateUi('Lưu thông tin')}
           </button>
           {course.modules.length > 0 ? (
             <button type="button" className="btn btn-light" onClick={onNext} disabled={dirty}>

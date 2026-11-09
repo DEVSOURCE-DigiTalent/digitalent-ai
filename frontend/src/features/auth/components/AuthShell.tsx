@@ -1,3 +1,5 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
+import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Wordmark } from '@/components/brand/Wordmark';
@@ -138,6 +140,7 @@ function loginPricingPath(): string {
  * The individual sign-up and the login page follow the light/dark choice (shared with the personal workspace).
  */
 export function AuthShell({ portal = 'default', title, subtitle, eyebrow, footerLink, headerSlot, rightSlot, showLogo = true, children }: AuthShellProps) {
+  useUiLanguage();
   const isIndividual = portal === 'individual';
   const isLogin = portal === 'default';
   const theme = usePersonalTheme((s) => s.theme);
@@ -150,7 +153,6 @@ export function AuthShell({ portal = 'default', title, subtitle, eyebrow, footer
 
   return (
     <div
-      lang="vi"
       data-portal={portal}
       data-theme={isIndividual || isLogin ? theme : undefined}
       data-individual-theme={isIndividual ? theme : undefined}
@@ -164,16 +166,15 @@ export function AuthShell({ portal = 'default', title, subtitle, eyebrow, footer
       {/* The band spans the screen; its content stays inside the same 6xl column as the card. */}
       <header className={cn('w-full transition-colors duration-300', look.headerBar)}>
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5 md:px-8 cramped:py-2.5 tiny:py-1.5">
-          <Link to={copy.homePath} aria-label="DigiTalent AI, về trang chủ" className="text-lg">
+          <Link to={copy.homePath} aria-label={translateUi("DigiTalent AI, về trang chủ")} className="text-lg">
             {/* Phones under 360px keep only the emblem so the theme switch and the call to action fit on one line. */}
             <Wordmark markOnly className={cn('min-[360px]:hidden', look.wordmark)} />
             <Wordmark className={cn('hidden min-[360px]:inline-flex', look.wordmark)} />
           </Link>
-          <nav aria-label="Điều hướng chính" className="flex items-center gap-3 sm:gap-5">
+          <nav aria-label={translateUi("Điều hướng chính")} className="flex items-center gap-3 sm:gap-5">
+            <LanguageSwitcher />
             {pricingPath && (
-              <Link to={pricingPath} className={cn('hidden text-sm transition-colors sm:inline', look.navLink)}>
-                Bảng giá
-              </Link>
+              <Link to={pricingPath} className={cn('hidden text-sm transition-colors sm:inline', look.navLink)}>{translateUi("Bảng giá")}</Link>
             )}
             {(isIndividual || isLogin) && <ThemeToggle />}
             <Link
@@ -184,7 +185,7 @@ export function AuthShell({ portal = 'default', title, subtitle, eyebrow, footer
                 onRegister ? cn('border', look.outlineCta) : cn('hover:opacity-90', look.cta)
               )}
             >
-              {onRegister ? 'Đăng nhập' : 'Đăng ký'}
+              {onRegister ? translateUi('Đăng nhập') : translateUi('Đăng ký')}
             </Link>
           </nav>
         </div>
@@ -274,8 +275,8 @@ export function AuthShell({ portal = 'default', title, subtitle, eyebrow, footer
                 </div>
               )}
               {eyebrow && <p className={cn('text-[11px] uppercase tracking-[0.16em]', look.eyebrow)}>{eyebrow}</p>}
-              <h1 className={cn('mt-2.5 text-[28px] font-normal sm:text-[34px] cramped:mt-1 cramped:text-[26px] leading-tight tracking-[-0.03em]', look.title)}>{title}</h1>
-              {subtitle && <p className={cn('mt-2 text-sm leading-relaxed tiny:hidden', look.subtitle)}>{subtitle}</p>}
+              <h1 className={cn('mt-2.5 text-[28px] font-normal sm:text-[34px] cramped:mt-1 cramped:text-[26px] leading-tight tracking-[-0.03em]', look.title)}>{translateUi(title)}</h1>
+              {subtitle && <p className={cn('mt-2 text-sm leading-relaxed tiny:hidden', look.subtitle)}>{translateUi(subtitle)}</p>}
               {headerSlot && <div className="mt-6 short:mt-4">{headerSlot}</div>}
               <div className="mt-7 short:mt-5 cramped:mt-4">{children}</div>
               {footerLink && (
@@ -301,6 +302,7 @@ export function AuthShell({ portal = 'default', title, subtitle, eyebrow, footer
  * product's line, so small screens keep the brand mood without pushing the form far down.
  */
 function AuthBanner({ portal, fade }: { portal: LoginPortal; fade: string }) {
+  useUiLanguage();
   const copy = LOGIN_COPY[portal];
   // Height follows the screen (17% of it, 72–224px); short screens keep a thin strip without the line, very short ones drop it.
   return (
@@ -321,6 +323,7 @@ function AuthBanner({ portal, fade }: { portal: LoginPortal; fade: string }) {
 
 /** Decorative picture with the product's line; desktop only. */
 function AuthPicture({ portal }: { portal: LoginPortal }) {
+  useUiLanguage();
   const copy = LOGIN_COPY[portal];
   return (
     <div aria-hidden="true" className="relative hidden lg:flex flex-col justify-end p-10 z-10">

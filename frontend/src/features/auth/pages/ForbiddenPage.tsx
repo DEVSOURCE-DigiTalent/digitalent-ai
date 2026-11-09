@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useNavigate } from 'react-router-dom';
 import { ShieldX } from 'lucide-react';
 import { useCurrentUser } from '../../../hooks/use-current-user';
@@ -8,6 +9,7 @@ import { getHomePath } from '../../../lib/navigation';
  * Includes a link back to their role-appropriate dashboard.
  */
 export function ForbiddenPage() {
+  useUiLanguage();
   const navigate = useNavigate();
   const user = useCurrentUser((s) => s.user);
   const homePath = user ? getHomePath(user) : '/login';
@@ -19,10 +21,7 @@ export function ForbiddenPage() {
           <ShieldX className="w-8 h-8" />
         </div>
         <h1 className="text-2xl font-bold text-slate-900 mb-2">Truy cập bị từ chối</h1>
-        <p className="text-slate-600 mb-6">
-          Bạn không có quyền truy cập vào trang này. Nếu bạn cho rằng đây là một sự nhầm lẫn,
-          vui lòng liên hệ quản trị viên tổ chức của bạn.
-        </p>
+        <p className="text-slate-600 mb-6">{translateUi("Bạn không có quyền truy cập vào trang này. Nếu bạn cho rằng đây là một sự nhầm lẫn, vui lòng liên hệ quản trị viên tổ chức của bạn.")}</p>
         <button
           onClick={() => navigate(homePath)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"

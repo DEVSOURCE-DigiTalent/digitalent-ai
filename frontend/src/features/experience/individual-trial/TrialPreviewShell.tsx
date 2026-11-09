@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { RotateCcw } from 'lucide-react';
@@ -32,6 +33,7 @@ export function TrialPreviewShell({
   onReset,
   children,
 }: TrialPreviewShellProps) {
+  useUiLanguage();
   const theme = usePersonalTheme((state) => state.theme);
 
   return (
@@ -47,9 +49,7 @@ export function TrialPreviewShell({
       <a
         href="#trial-preview-main"
         className="fixed -top-16 left-4 z-[100] rounded-full bg-pt-accent px-4 py-2.5 text-sm text-pt-on-accent transition-[top] focus:top-3"
-      >
-        Bỏ qua đến nội dung
-      </a>
+      >{translateUi("Bỏ qua đến nội dung")}</a>
 
       {/* Header band like the other public pages; the active tab is gold, like the main actions of the flow. */}
       <header className="sticky top-0 z-40 border-b border-pt-line bg-pt-panel/90 backdrop-blur-xl">
@@ -84,7 +84,7 @@ export function TrialPreviewShell({
                           : 'text-pt-fg-2 hover:bg-pt-fg/8 hover:text-pt-fg',
                       )}
                     >
-                      {tab.label}
+                      {translateUi(tab.label)}
                     </button>
                   </li>
                 );
@@ -97,15 +97,11 @@ export function TrialPreviewShell({
             <Link
               to="/login"
               className="hidden items-center whitespace-nowrap rounded-full border border-pt-accent/50 px-3.5 py-1.5 text-xs font-medium text-pt-accent transition-colors hover:border-pt-accent hover:bg-pt-accent/10 sm:inline-flex"
-            >
-              Đăng nhập
-            </Link>
+            >{translateUi("Đăng nhập")}</Link>
             <Link
               to={`/individual/pricing?source=trial&position=${positionCode}`}
               className="text-xs text-pt-fg-2 transition-colors hover:text-pt-fg hidden lg:inline"
-            >
-              Xem gói
-            </Link>
+            >{translateUi("Xem gói")}</Link>
             <button
               type="button"
               onClick={onReset}
@@ -134,7 +130,7 @@ export function TrialPreviewShell({
                       active ? 'bg-gradient-to-r from-[#F5CA65] to-[#D4982F] text-[#0C0E12]' : 'border border-pt-line bg-pt-card text-pt-fg-2',
                     )}
                   >
-                    {tab.label}
+                    {translateUi(tab.label)}
                   </button>
                 </li>
               );

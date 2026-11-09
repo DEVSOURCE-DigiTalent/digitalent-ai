@@ -225,7 +225,7 @@ describe('enterprise trial detection', () => {
 });
 
 describe('enterprise trial learning', () => {
-  // Doanh nghiệp dùng thử: chỉ khóa Cơ bản mở, cao hơn vượt trần (= 1).
+  // Doanh nghiệp dùng thử: chỉ khóa Cơ bản mở, cao hơn vượt phạm vi (= 1).
   const trialOverview = () => overview({
     hasTargets: false,
     courses: [
@@ -320,7 +320,7 @@ describe('PulseTodayPage', () => {
     expect(within(roleCard).getByText('Kế toán')).toBeTruthy();
     expect(within(roleCard).getByText('Trần Quản Lý')).toBeTruthy();
 
-    // Bảng lộ trình: tên khóa + cấp độ; đỉnh lộ trình bị trần phòng ban giới hạn, khóa vượt trần không hiện.
+    // Bảng lộ trình: tên khóa + cấp độ; đỉnh lộ trình bị phạm vi phòng ban giới hạn, khóa vượt phạm vi không hiện.
     const plan = screen.getByRole('table');
     expect(within(plan).getByText('A1-F')).toBeTruthy();
     expect(within(plan).getByText('A1-I')).toBeTruthy();
@@ -335,7 +335,7 @@ describe('PulseTodayPage', () => {
     expect(screen.getAllByText('Đang học').length).toBeGreaterThan(0);
     expect(screen.getByText('40% đã học')).toBeTruthy();
     expect(screen.queryByText('A1-A')).toBeNull();
-    expect(screen.queryByText('Ngoài trần')).toBeNull();
+    expect(screen.queryByText('Ngoài phạm vi')).toBeNull();
     expect(screen.getByText(/Được công nhận qua bài đánh giá trước khi học/)).toBeTruthy();
   });
 

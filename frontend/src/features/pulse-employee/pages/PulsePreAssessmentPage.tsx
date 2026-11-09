@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -19,6 +20,7 @@ const LABEL = 'Đánh giá trước khi học';
  * cần học. Chưa đạt: học khóa rồi làm bài cuối khóa.
  */
 export function PulsePreAssessmentPage() {
+  useUiLanguage();
   const { courseId } = useParams<{ courseId: string }>();
   const { data, isLoading, error, refetch } = usePulsePreAssessment(courseId);
   const qc = useQueryClient();
@@ -30,12 +32,12 @@ export function PulsePreAssessmentPage() {
 
   const backTo = courseId ? PULSE_PATHS.course(courseId) : PULSE_PATHS.today;
   if (isLoading) {
-    return <ExamShell label={LABEL} backTo={backTo}><PageSkeleton blocks={[160, 320]} /></ExamShell>;
+    return <ExamShell label={translateUi(LABEL)} backTo={backTo}><PageSkeleton blocks={[160, 320]} /></ExamShell>;
   }
   if (error || !data) {
     return (
-      <ExamShell label={LABEL} backTo={backTo}>
-        <LoadError message={pulseErrorMessage(error, 'Không tải được bài đánh giá.')} onRetry={() => refetch()} />
+      <ExamShell label={translateUi(LABEL)} backTo={backTo}>
+        <LoadError message={translateUi(pulseErrorMessage(error, 'Không tải được bài đánh giá.'))} onRetry={() => refetch()} />
       </ExamShell>
     );
   }
@@ -67,25 +69,26 @@ export function PulsePreAssessmentPage() {
   }
 
   return (
-    <ExamShell label={LABEL} title={`${data.course.code} · ${data.course.title}`} backTo={backTo}>
+    <ExamShell label={translateUi(LABEL)} title={translateUi(`${data.course.code} · ${data.course.title}`)} backTo={backTo}>
       <PreAssessmentStatus data={data} />
     </ExamShell>
   );
 }
 
 function PreAssessmentStatus({ data }: { data: PulsePreAssessment }) {
+  useUiLanguage();
   const { course, submission, status } = data;
   const tone = status === 'PASSED' ? 'green' : status === 'NOT_YET' ? 'coral' : status === 'PENDING' ? '' : 'gray';
   return (
     <div className="pu-stack">
       <section className="pu-surface pu-pad">
         <div className="pu-row" style={{ justifyContent: 'space-between' }}>
-          <Mini>{LABEL} · {data.domain.name} · {levelName(course.tier)}</Mini>
-          <Pill tone={tone}>{PRE_LABELS[status]}</Pill>
+          <Mini>{LABEL} · {translateUi(data.domain.name)} · {levelName(course.tier)}</Mini>
+          <Pill tone={tone}>{translateUi(PRE_LABELS[status])}</Pill>
         </div>
         <h1 className="pu-panel-title">
           {status === 'PENDING' ? 'Bài của bạn đang chờ đánh giá.'
-            : status === 'PASSED' ? `Đạt — ${course.code} được công nhận.`
+            : status === 'PASSED' ? translateUi(`Đạt — ${course.code} được công nhận.`)
             : status === 'NOT_YET' ? 'Chưa đạt — hãy học khóa này.'
             : 'Bài đánh giá chưa mở.'}
         </h1>
@@ -98,7 +101,7 @@ function PreAssessmentStatus({ data }: { data: PulsePreAssessment }) {
         <div className="pu-row">
           {status === 'NOT_YET' && <PuLink to={PULSE_PATHS.course(course.courseId)}>Bắt đầu học →</PuLink>}
           <PuLink to={PULSE_PATHS.today} kind={status === 'NOT_YET' ? 'outline' : 'primary'}>Về trang Tổng quan</PuLink>
-          <PuLink to={PULSE_PATHS.path} kind="outline">Xem lộ trình</PuLink>
+          <PuLink to={PULSE_PATHS.path} kind="outline">{translateUi("Xem lộ trình")}</PuLink>
         </div>
       </section>
 

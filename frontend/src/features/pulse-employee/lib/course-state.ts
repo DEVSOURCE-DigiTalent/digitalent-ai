@@ -2,7 +2,7 @@ import type { PulseCourseSummary } from '@/services/pulse.service';
 import { formatDate } from '@/lib/utils';
 import { SLOT_LABELS, levelName, slotTone } from './labels';
 
-/** Màu của ô / nút trạng thái khóa: khóa tùy chọn chưa mở và khóa ngoài trần có kiểu riêng. */
+/** Màu của ô / nút trạng thái khóa: khóa tùy chọn chưa mở và khóa ngoài phạm vi có kiểu riêng. */
 export function courseTone(course: PulseCourseSummary): string {
   if (course.zone === 'ABOVE_CEILING' || course.zone === 'OUTSIDE_PATH') return 'beyond';
   if (course.zone === 'OPTIONAL' && course.slotStatus === 'AFTER_PRIOR_LEVEL') return 'optional';
@@ -20,13 +20,13 @@ export const showsProgress = (course: PulseCourseSummary) =>
   || (course.slotStatus === 'COMPLETED' && course.approvedVia === 'FINAL');
 
 /** Một câu mô tả trạng thái của khóa cho nhân viên. */
-/** Khóa vượt trần doanh nghiệp đặt cho phòng ban không hiện trong danh sách khóa của nhân viên. */
+/** Khóa vượt phạm vi doanh nghiệp đặt cho phòng ban không hiện trong danh sách khóa của nhân viên. */
 export const withinCeiling = (courses: PulseCourseSummary[]) => courses.filter((c) => c.zone !== 'ABOVE_CEILING');
 
 export function courseStatusText(course: PulseCourseSummary, courses: PulseCourseSummary[], _reviewerName?: string | null, departmentName?: string | null): string {
     const modules = course.moduleCount;
   const prior = courses.find((c) => c.categoryId === course.categoryId && c.tier === course.tier - 1);
-  const optional = course.zone === 'OPTIONAL' ? 'Tùy chọn: cao hơn mức vị trí yêu cầu nhưng nằm trong trần của phòng ban. ' : '';
+  const optional = course.zone === 'OPTIONAL' ? 'Tùy chọn: cao hơn mức vị trí yêu cầu nhưng nằm trong phạm vi của phòng ban. ' : '';
   switch (course.slotStatus) {
     case 'COMPLETED':
       return course.approvedVia === 'PRE_ASSESSMENT'

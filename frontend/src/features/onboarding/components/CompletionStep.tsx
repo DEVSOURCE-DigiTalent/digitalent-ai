@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, Circle, Building2 } from 'lucide-react';
@@ -54,6 +55,7 @@ function checklistFor(setup: OrganizationSetup): ChecklistItem[] {
 
 /** AUTH-05 / ENT-ONB-09: readiness checklist. Skipped steps stay on it as things to do later. */
 export function CompletionStep({ setup, onBack }: { setup: OrganizationSetup; onBack: () => void }) {
+  useUiLanguage();
   const navigate = useNavigate();
   const complete = useCompleteSetup();
   const refreshSession = useRefreshSession();
@@ -109,7 +111,7 @@ export function CompletionStep({ setup, onBack }: { setup: OrganizationSetup; on
               <Circle className="mt-0.5 size-5 shrink-0 text-ent-fg-3/40" aria-label="Chưa làm" />
             )}
             <div>
-              <p className="text-sm font-medium text-ent-fg">{item.label}</p>
+              <p className="text-sm font-medium text-ent-fg">{translateUi(item.label)}</p>
               <p className="text-xs text-ent-fg-3">{item.detail}</p>
             </div>
           </li>
@@ -123,10 +125,10 @@ export function CompletionStep({ setup, onBack }: { setup: OrganizationSetup; on
         </p>
       </div>
 
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-600">{translateUi(error)}</p>}
 
       <div className="flex flex-wrap items-center gap-3 pt-2">
-        <button type="button" onClick={onBack} className={SECONDARY_BUTTON}>Quay lại</button>
+        <button type="button" onClick={onBack} className={SECONDARY_BUTTON}>{translateUi("Quay lại")}</button>
         <button
           type="button"
           onClick={finish}

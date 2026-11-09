@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
@@ -19,6 +20,7 @@ import { formatDate } from '@/features/learner/utils/format';
 import { levelWithTier } from '@/lib/competency-levels';
 
 export function PublicVerifyPage() {
+  useUiLanguage();
   const { code: urlCode } = useParams<{ code?: string }>();
   const navigate = useNavigate();
 
@@ -177,7 +179,7 @@ export function PublicVerifyPage() {
             <AlertCircle className="size-5 text-red-400 shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-red-300">Không thể xác thực</p>
-              <p className="text-xs text-red-300/80 mt-1">{error}</p>
+              <p className="text-xs text-red-300/80 mt-1">{translateUi(error)}</p>
             </div>
           </div>
         )}
@@ -225,15 +227,15 @@ export function PublicVerifyPage() {
                 <p className="font-bold text-white mt-1 text-sm">{certificate.recipientName}</p>
               </div>
               <div className="bg-white/5 border border-white/10 rounded-xl p-3.5">
-                <p className="text-slate-400 flex items-center gap-1.5"><BookOpen className="size-3.5 text-amber-400" /> Khóa học</p>
-                <p className="font-bold text-white mt-1 text-sm truncate" title={certificate.courseTitle}>{certificate.courseTitle}</p>
+                <p className="text-slate-400 flex items-center gap-1.5"><BookOpen className="size-3.5 text-amber-400" />{translateUi(" Khóa học")}</p>
+                <p className="font-bold text-white mt-1 text-sm truncate" title={translateUi(certificate.courseTitle)}>{certificate.courseTitle}</p>
               </div>
               <div className="bg-white/5 border border-white/10 rounded-xl p-3.5">
                 <p className="text-slate-400 flex items-center gap-1.5"><Award className="size-3.5 text-amber-400" /> Trình độ đạt</p>
                 <p className="font-bold text-white mt-1 text-sm">{levelWithTier(certificate.level, 'vi')} · {certificate.scorePercent}%</p>
               </div>
               <div className="bg-white/5 border border-white/10 rounded-xl p-3.5">
-                <p className="text-slate-400 flex items-center gap-1.5"><Calendar className="size-3.5 text-amber-400" /> Ngày cấp</p>
+                <p className="text-slate-400 flex items-center gap-1.5"><Calendar className="size-3.5 text-amber-400" />{translateUi(" Ngày cấp")}</p>
                 <p className="font-bold text-white mt-1 text-sm">{formatDate(certificate.issuedAt)}</p>
               </div>
             </div>
