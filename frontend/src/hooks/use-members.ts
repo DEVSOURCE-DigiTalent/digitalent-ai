@@ -31,7 +31,7 @@ export function useRoles() {
  * Data a member change shows up in: member lists and details, roles, the overview, seats, workforce, and the
  * headcounts of departments, positions and grades (placement and deactivation move people between them).
  */
-const MEMBER_DEPENDENT_KEYS = [MEMBERS_KEY, ['organization'], ['subscription'], ['workforce'], ['departments'], ['job-positions'], ['job-grades']];
+const MEMBER_DEPENDENT_KEYS = [MEMBERS_KEY, ['organization'], ['subscription'], ['workforce'], ['skill-gaps'], ['departments'], ['job-positions'], ['job-grades']];
 
 /** Wraps a member call so everything that shows members refreshes afterwards. */
 function useMemberMutation<TInput, TResult>(call: (input: TInput) => Promise<{ data: { data: TResult | null } }>) {

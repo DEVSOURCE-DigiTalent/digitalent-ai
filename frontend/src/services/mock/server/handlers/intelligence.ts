@@ -6,12 +6,27 @@ import { recommendCourses } from '../engine';
 import { route, type RequestContext } from '../router';
 import type { EmployeeRecord, OrgData, SkillGapRunRecord } from '../types';
 import { employeesInScope } from './structure';
+import { employeeLearningNeeds, learningNeedsOverview } from '../learning-needs';
 
 /** Skill gap snapshots and course recommendations (spec Sprint 3, section 4). */
 
 const P = PERMISSIONS;
 const CALCULATION_VERSION = 'mock-1';
 const MAX_BATCH = 200;
+
+route('GET', '/intelligence/skill-gaps/learning-needs', (context) => {
+  const data = context.org();
+  const { query } = context;
+  const rows = employeesInScope(context)
+    .filter((e) => e.status === 'ACTIVE' && (!query.employeeId || e.id === query.employeeId)
+      && (!query.departmentId || e.departmentId === query.departmentId)
+      && (!query.jobPositionId || e.jobPositionId === query.jobPositionId))
+    .filter((e) => !query.jobGrade || data.positions.find((p) => p.id === e.jobPositionId)?.jobGrade === query.jobGrade)
+    .filter((e) => !query.search || `${e.fullName} ${e.employeeCode}`.toLocaleLowerCase('vi').includes(query.search.toLocaleLowerCase('vi')))
+    .sort((a, b) => a.fullName.localeCompare(b.fullName, 'vi'));
+  const needs = rows.map((employee) => employeeLearningNeeds(data, employee));
+  return { ...paginate(needs, pageRequest(query)), overview: learningNeedsOverview(needs) };
+}, { permission: P.SKILL_GAP_READ });
 
 const BLOCKER_MESSAGES: Record<SkillGapBlocker, string> = {
   NO_JOB_POSITION: 'Nhân viên chưa có vị trí công việc.',
@@ -45,6 +60,7 @@ route('GET', '/intelligence/skill-gaps', (context) => context.update((data) => {
   const { query } = context;
   const rows = employeesInScope({ org: () => data, session: context.session })
     .filter((e) => (!query.departmentId || e.departmentId === query.departmentId) && (!query.jobPositionId || e.jobPositionId === query.jobPositionId))
+    .filter((e) => !query.jobGrade || data.positions.find((p) => p.id === e.jobPositionId)?.jobGrade === query.jobGrade)
     .flatMap((employee) => {
       if (query.latestOnly === 'false') {
         return data.skillGapRuns.filter((r) => r.employeeId === employee.id).map((run) => ({ employee, run }));
@@ -101,7 +117,7 @@ route('POST', '/intelligence/skill-gaps/calculate-batch', (context) => context.u
   const { body } = context;
   const targets = employeesInScope({ org: () => data, session: context.session }).filter(
     (e) => e.status === 'ACTIVE' && (!body.departmentId || e.departmentId === body.departmentId) && (!body.jobPositionId || e.jobPositionId === body.jobPositionId),
-  );
+  ).filter((e) => !body.jobGrade || data.positions.find((p) => p.id === e.jobPositionId)?.jobGrade === body.jobGrade);
   if (targets.length > MAX_BATCH) throw badRequest('Quá nhiều nhân viên trong một lần tính.', 'BATCH_TOO_LARGE');
 
   const runs: { employeeId: string; runId: string; gapCount: number }[] = [];

@@ -1,3 +1,4 @@
+import { useCurrentUser } from './use-current-user';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { platformService, type UserProfileDto } from '../services/platform.service';
 
@@ -23,8 +24,10 @@ export function useUpdateUserProfile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<UserProfileDto>) => (await platformService.updateProfile(data)).data.data!,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: PLATFORM_KEYS.profile });
+    onSuccess: (profile) => {
+      queryClient.setQueryData(PLATFORM_KEYS.profile, profile);
+      const current = useCurrentUser.getState().user;
+      if (current && current.id === profile.id) useCurrentUser.getState().setUser({ ...current, fullName: profile.fullName });
     },
   });
 }

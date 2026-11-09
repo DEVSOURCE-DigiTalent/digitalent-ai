@@ -127,7 +127,7 @@ export interface TrialInviteResult {
 
 export interface TrialRequestInput {
   testDeadline: string;
-  preferredReviewAt: string;
+  preferredReviewAt?: string;
   note?: string | null;
 }
 
@@ -185,9 +185,9 @@ export interface TrialExamSession extends Omit<PulseProctoringSession, 'kind' | 
 export interface TrialExamSubmission {
   proctoringSessionId: string;
   answers: PulseAnswer[];
-  essayBasic: string;
-  essayIntermediate: string;
-  essayAdvanced: string;
+  essayBasic?: string;
+  essayIntermediate?: string;
+  essayAdvanced?: string;
 }
 
 export interface PlatformTrialItem {
@@ -282,7 +282,7 @@ export interface MentorTrial {
 export const trialProgramService = {
   // Chủ doanh nghiệp
   get: () => apiClient.get<ApiResponse<TrialProgram>>('/trial'),
-  invite: (rows: TrialParticipantRow[]) => apiClient.post<ApiResponse<TrialInviteResult>>('/trial/participants', { rows }),
+  invite: (rows: TrialParticipantRow[], testDeadline?: string) => apiClient.post<ApiResponse<TrialInviteResult>>('/trial/participants', { rows, testDeadline }),
   submitRequest: (input: TrialRequestInput) => apiClient.put<ApiResponse<unknown>>('/trial/request', input),
   /** Chủ doanh nghiệp tự tham gia làm bài và học thử (thêm hồ sơ nhân viên + role Nhân viên). */
   joinAsParticipant: (input: { department: string; position: string }) =>
