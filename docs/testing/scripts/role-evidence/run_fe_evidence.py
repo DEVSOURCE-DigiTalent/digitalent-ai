@@ -13,10 +13,17 @@ from PIL import Image
 from playwright.sync_api import sync_playwright
 
 import fe_cases
-from evidence_lib import annotate, clear_annotations, launch, now_text, out_dir, run_meta
+from evidence_lib import annotate, call, clear_annotations, data_of, launch, login, now_text, out_dir, run_meta
 
 sys.stdout.reconfigure(encoding='utf-8')
 MAX_HEIGHT = 1800
+TOUR_SEEN_SCRIPT = """
+for (const id of __IDS__) {
+  for (const role of ['OWNER', 'MANAGER', 'EMPLOYEE']) {
+    localStorage.setItem(`dt_onboarding_v1_${id}_${role}`, JSON.stringify({ completedTaskIds: [], hasSeenTour: true, isDismissed: true }));
+  }
+}
+"""
 
 
 def main() -> None:
@@ -37,6 +44,10 @@ def main() -> None:
     with sync_playwright() as pw:
         browser = launch(pw)
         context = browser.new_context(viewport={'width': 1440, 'height': 900}, locale='vi-VN')
+        # The guided tour (features/onboarding-tutorial) opens over the first screens of a new account and would hide
+        # what each case checks: mark it as seen for this account (key dt_onboarding_v1_<userId>_<role>).
+        user_id = data_of(call('GET', '/auth/me', login(role['email'])))['id']
+        context.add_init_script(TOUR_SEEN_SCRIPT.replace('__IDS__', json.dumps([user_id, role['email']])))
         page = context.new_page()
         page.on('response', on_response)
         for case in fe_cases.CASES[slug]():

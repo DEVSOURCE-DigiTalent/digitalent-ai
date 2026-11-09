@@ -278,7 +278,8 @@ ANNOTATE_JS = """
       height: (h + 6) + 'px', border: '3px solid #e11d1d', borderRadius: '6px', zIndex: 2147483646, pointerEvents: 'none' });
     const tag = document.createElement('div');
     tag.textContent = label;
-    Object.assign(tag.style, { position: 'absolute', left: '-3px', top: '-22px', background: '#e11d1d', color: '#fff',
+    // No room above a box that starts at the top of the page: put the label inside it.
+    Object.assign(tag.style, { position: 'absolute', left: y < 26 ? '4px' : '-3px', top: y < 26 ? '4px' : '-22px', background: '#e11d1d', color: '#fff',
       font: '700 12px Arial, sans-serif', padding: '2px 6px', borderRadius: '4px', whiteSpace: 'nowrap' });
     box.appendChild(tag);
     document.body.appendChild(box);

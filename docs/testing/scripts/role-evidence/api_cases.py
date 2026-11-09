@@ -1,6 +1,8 @@
 """API test cases per role, run against the real API on a fresh Development database (demo accounts, Admin@1234)."""
 from __future__ import annotations
 
+from datetime import datetime
+
 from evidence_lib import ApiCase, Check, call, data_of, login
 
 ZERO_ID = '00000000-0000-0000-0000-000000000001'
@@ -161,6 +163,7 @@ def mentor() -> list[ApiCase]:
 def owner() -> list[ApiCase]:
     role, email = 'OWNER', ROLES['owner']['email']
     t = login(email)
+    department_code = 'EVD' + datetime.now().strftime('%H%M%S')  # a new code each run: department codes are unique
     return [
         login_case('TC01', role, email),
         me_case('TC02', role, t, 'enterprise', True),
@@ -190,11 +193,15 @@ def owner() -> list[ApiCase]:
                 checks=[Check('5 vị trí', lambda r: len(data_of(r)) == 5),
                         Check('Kế toán có bộ ACTIVE', lambda r: next(p for p in data_of(r) if p['jobPositionCode'] == 'ACCOUNTANT')['status'] == 'ACTIVE')],
                 highlight=['data[0].jobPositionCode', 'data[0].activeSet', 'data[0].status']),
-        ApiCase('TC07', 'OW-06 Phòng ban', 'Tạo phòng ban mới', role, 'Mã EVD01 chưa tồn tại',
-                '201/200; phòng ban mới có mã EVD01, trạng thái ACTIVE', 'POST', '/departments', 200, t,
-                body={'code': 'EVD01', 'name': 'Phòng Kiểm thử Evidence', 'description': 'Tạo bởi kịch bản kiểm thử theo vai trò'},
-                checks=[Check('code = EVD01', lambda r: data_of(r)['code'] == 'EVD01')],
-                highlight=['data.code', 'data.name', 'data.status']),
+        ApiCase('TC07', 'OW-06 Phòng ban', 'Tạo phòng ban mới, rồi đọc lại phòng ban vừa tạo', role, f'Mã {department_code} chưa tồn tại',
+                f'200; trả về id phòng ban; GET /departments/{{id}} có mã {department_code}, trạng thái ACTIVE',
+                'POST', '/departments', 200, t,
+                body={'code': department_code, 'name': 'Phòng Kiểm thử Evidence', 'description': 'Tạo bởi kịch bản kiểm thử theo vai trò'},
+                checks=[Check('success = true, có id', lambda r: r.body['success'] is True and bool(data_of(r)['id'])),
+                        Check(f'GET /departments/{{id}}: code = {department_code}, status = ACTIVE',
+                              lambda r: (lambda d: d['code'] == department_code and d['status'] == 'ACTIVE')(
+                                  data_of(call('GET', f'/departments/{data_of(r)["id"]}', t))))],
+                highlight=['success', 'data.id']),
         ApiCase('TC08', 'OW-T1 Dùng thử', 'Xem chương trình đánh giá đội ngũ (dùng thử)', role,
                 'Tổ chức demo đang ở giai đoạn SETUP', '200; stage = SETUP; tối đa 30 người; bài test 18 câu + 3 tự luận',
                 'GET', '/trial', 200, t,

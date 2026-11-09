@@ -47,4 +47,4 @@ Kết quả nằm ở `docs/test-evidence/2026-11-09-role-<vai-trò>/`.
 
    Vai trò: `platform-admin`, `mentor`, `owner`, `manager`, `employee`.
 
-Ca TC07 của OWNER tạo phòng ban `EVD01`, nên chạy lại cần DB mới (hoặc xóa phòng ban đó).
+Ca TC07 của OWNER tạo một phòng ban `EVDhhmmss` (mã theo giờ chạy); các ca khác chỉ đọc hoặc bị từ chối, nên chạy lại trên cùng DB vẫn được.
