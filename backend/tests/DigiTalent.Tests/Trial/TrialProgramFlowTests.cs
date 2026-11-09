@@ -69,9 +69,10 @@ public class TrialProgramFlowTests
             .Should().Be(1);
         world.Context.ChangeTracker.Clear();
 
-        // 2. Trước khi công bố, nhân viên chưa có lộ trình học.
+        // 2. Trước khi công bố, nhân viên chưa có lộ trình học (khóa M2-F đã hoàn thành từ seed demo vẫn xem lại được).
         var employeeUc = await world.AsAsync(PulseTestWorld.EmployeeEmail);
-        (await employeeUc.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput())).Courses.Should().OnlyContain(c => !c.CanWork);
+        (await employeeUc.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput())).Courses
+            .Should().OnlyContain(c => !c.CanWork || c.SlotStatus == PulseSlotStatus.Completed);
 
         // 3. Nhân viên làm bài tổng hợp ba cấp trong phòng thi có giám sát.
         var asEmployee = await TrialAsAsync(world, PulseTestWorld.EmployeeEmail, Roles.Employee);
@@ -81,7 +82,7 @@ public class TrialProgramFlowTests
         var session = await asEmployee.Start.ExecuteAsync(new StartMyTrialAssessmentUseCaseInput());
         session.Kind.Should().Be(Statuses.ProctoringKind.TrialAssessment);
         // Một câu cho mỗi ô lĩnh vực × cấp có câu ôn tập (dữ liệu Development đầy đủ: 18 câu), xếp Cơ bản → Nâng cao.
-        session.Questions.Should().NotBeEmpty().And.HaveCountLessThanOrEqualTo(18);
+        session.Questions.Should().HaveCount(18);
         session.Questions.Select(q => q.Tier).Should().BeInAscendingOrder();
         session.Questions.Select(q => q.Tier).Distinct().Should().BeEquivalentTo(new[] { 1, 2, 3 });
         world.Context.ChangeTracker.Clear();
@@ -106,8 +107,7 @@ public class TrialProgramFlowTests
         world.Context.ChangeTracker.Clear();
         var domains = await world.Context.TrialAssessmentDomains.AsNoTracking().Where(d => d.TrialAssessmentId == submitted.AssessmentId).ToListAsync();
         domains.Should().HaveCount(6).And.OnlyContain(d => d.MentorLevel == null && d.AdvancedCorrect == 0 && d.BasicCorrect == d.BasicTotal);
-        domains.Where(d => d.BasicTotal > 0 && d.IntermediateTotal > 0).Should().NotBeEmpty().And.OnlyContain(d => d.SuggestedLevel == 2);
-        domains.Where(d => d.BasicTotal == 0).Should().OnlyContain(d => d.SuggestedLevel == 0);
+        domains.Should().OnlyContain(d => d.BasicTotal > 0 && d.IntermediateTotal > 0 && d.SuggestedLevel == 2);
         (await world.Context.ExamChoiceAnswers.CountAsync(a => a.TrialAssessmentId == submitted.AssessmentId)).Should().Be(session.Questions.Count);
         await FluentActions.Awaiting(() => asEmployee.Start.ExecuteAsync(new StartMyTrialAssessmentUseCaseInput()))
             .Should().ThrowAsync<BadRequestException>();
@@ -192,9 +192,16 @@ public class TrialProgramFlowTests
         result.Levels.Should().Equal(levels.Select(l => l.Level));
         result.ReviewNote.Should().Be("Nền tảng tốt.");
 
+        // Since bb63ee0 a trial employee follows the position roadmap like any employee once the report is out: the
+        // mentor's level of each domain recognises the courses up to that level (placement test) instead of capping
+        // learning at Basic.
         var overview = await (await world.AsAsync(PulseTestWorld.EmployeeEmail)).Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
+        var mentorLevel = levels.ToDictionary(l => l.CategoryId, l => l.Level);
         overview.Courses.Where(c => c.Tier == 1).Should().NotBeEmpty().And.OnlyContain(c => c.Zone == PulseCourseZone.Path);
-        overview.Courses.Where(c => c.Tier > 1).Should().OnlyContain(c => c.Zone == PulseCourseZone.AboveCeiling && !c.CanWork);
+        overview.Courses.Where(c => c.Tier <= mentorLevel.GetValueOrDefault(c.CategoryId)).Should().NotBeEmpty()
+            .And.OnlyContain(c => c.Approved && c.ApprovedVia == PulseApprovedVia.PlacementTest);
+        overview.Courses.Where(c => c.Tier == 1 && mentorLevel.GetValueOrDefault(c.CategoryId) == 0).Should().NotBeEmpty()
+            .And.OnlyContain(c => !c.Approved);
     }
 
     [Fact]
