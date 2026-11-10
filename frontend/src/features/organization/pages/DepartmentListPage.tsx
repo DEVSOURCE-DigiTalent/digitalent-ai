@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DataTable, StatusBadge, getStatusVariant, Modal, type Column } from '@/components/shared';
@@ -15,6 +16,7 @@ import './department-archive.css';
 const STATUS_LABELS: Record<string, string> = { ACTIVE: 'Đang dùng', INACTIVE: 'Ngừng dùng', ARCHIVED: 'Đã lưu trữ' };
 
 export function DepartmentListPage() {
+  useUiLanguage();
   const navigate = useNavigate();
   const { can } = usePermission();
   const canManage = can(PERMISSIONS.DEPARTMENT_CREATE_UPDATE);
@@ -91,7 +93,7 @@ export function DepartmentListPage() {
         row.managerName ? (
           <span className="font-medium text-slate-800">{row.managerName}</span>
         ) : (
-          <span className="text-xs text-slate-400">Chưa phân công</span>
+          <span className="text-xs text-slate-400">{translateUi("Chưa phân công")}</span>
         ),
     },
     {
@@ -99,8 +101,7 @@ export function DepartmentListPage() {
       header: 'Nhân sự',
       cell: (row) => (
         <span className="font-medium tabular-nums text-slate-900">
-          {row.headcount ?? 0} người
-        </span>
+          {row.headcount ?? 0}{translateUi(" người")}</span>
       ),
     },
     {
@@ -127,7 +128,7 @@ export function DepartmentListPage() {
     {
       key: 'status',
       header: 'Trạng thái',
-      cell: (row) => <StatusBadge label={STATUS_LABELS[row.status] ?? row.status} variant={getStatusVariant(row.status)} />,
+      cell: (row) => <StatusBadge label={translateUi(translateUi(STATUS_LABELS[row.status]) ?? row.status)} variant={getStatusVariant(row.status)} />,
     },
   ];
 
@@ -144,8 +145,8 @@ export function DepartmentListPage() {
               handleEdit(row);
             }}
             className="departments-row-action departments-row-action--edit"
-            title="Sửa"
-            aria-label={`Sửa ${row.name}`}
+            title={translateUi("Sửa")}
+            aria-label={translateUi(`Sửa ${row.name}`)}
           >
             <Edit2 className="w-4 h-4" />
           </button>
@@ -155,8 +156,8 @@ export function DepartmentListPage() {
               handleArchiveClick(row);
             }}
             className="departments-row-action departments-row-action--archive"
-            title="Lưu trữ"
-            aria-label={`Lưu trữ ${row.name}`}
+            title={translateUi("Lưu trữ")}
+            aria-label={translateUi(`Lưu trữ ${row.name}`)}
           >
             <Archive className="w-4 h-4" />
           </button>
@@ -174,7 +175,7 @@ export function DepartmentListPage() {
     <OwnerFilterSelect
       value={status || ''}
       onChange={(value) => { setStatus(value ? value as DepartmentStatus : undefined); setPage(1); }}
-      label="Lọc theo trạng thái"
+      label={translateUi("Lọc theo trạng thái")}
       className="positions-filter"
       options={[{ value: '', label: 'Mọi trạng thái' }, { value: 'ACTIVE', label: 'Đang dùng' }, { value: 'INACTIVE', label: 'Ngừng dùng' }]}
     />
@@ -188,8 +189,8 @@ export function DepartmentListPage() {
     <div className="positions-page departments-page -m-4 min-h-screen space-y-6 px-5 py-7 md:-m-6 md:px-7 xl:px-10">
       <div className="positions-heading">
         <div>
-          <div className="positions-eyebrow"><Building2 className="size-4" /> CẤU TRÚC TỔ CHỨC</div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.04em] heading-gradient">Quản lý phòng ban</h1>
+          <div className="positions-eyebrow"><Building2 className="size-4" />{translateUi(" CẤU TRÚC TỔ CHỨC")}</div>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.04em] heading-gradient">{translateUi("Quản lý phòng ban")}</h1>
         </div>
         {canManage && (
           <button
@@ -197,15 +198,14 @@ export function DepartmentListPage() {
             onClick={handleCreateNew}
             className="positions-create"
           >
-            <Plus className="size-4" /> Tạo phòng ban
-          </button>
+            <Plus className="size-4" />{translateUi(" Tạo phòng ban")}</button>
         )}
       </div>
 
       <div className="positions-stats">
-        <div className="positions-stat positions-stat-sky"><Building2 className="size-5" /><span>Phòng ban phù hợp</span><strong>{data?.totalItems ?? 0}</strong></div>
-        <div className="positions-stat positions-stat-teal"><UsersRound className="size-5" /><span>Nhân sự trên trang</span><strong>{pageHeadcount}</strong></div>
-        <div className="positions-stat positions-stat-violet"><CircleCheck className="size-5" /><span>Có quản lý trên trang</span><strong>{managedOnPage}<small> / {pageItems.length}</small></strong></div>
+        <div className="positions-stat positions-stat-sky"><Building2 className="size-5" /><span>{translateUi("Phòng ban phù hợp")}</span><strong>{data?.totalItems ?? 0}</strong></div>
+        <div className="positions-stat positions-stat-teal"><UsersRound className="size-5" /><span>{translateUi("Nhân sự trên trang")}</span><strong>{pageHeadcount}</strong></div>
+        <div className="positions-stat positions-stat-violet"><CircleCheck className="size-5" /><span>{translateUi("Có quản lý trên trang")}</span><strong>{managedOnPage}<small> / {pageItems.length}</small></strong></div>
       </div>
 
       <DataTable
@@ -217,7 +217,7 @@ export function DepartmentListPage() {
         isLoading={isLoading}
         searchValue={search}
         onSearchChange={(value) => { setSearch(value); setPage(1); }}
-        searchPlaceholder="Tìm theo tên hoặc mã phòng ban"
+        searchPlaceholder={translateUi("Tìm theo tên hoặc mã phòng ban")}
         onRowClick={(row) => navigate(`/enterprise/departments/${row.id}`)}
         filters={statusFilter}
         emptyTitle="Chưa có phòng ban nào"
@@ -244,24 +244,24 @@ export function DepartmentListPage() {
         <Modal
           open={isArchiveOpen}
           onClose={() => { if (!isArchiving) setIsArchiveOpen(false); }}
-          title="Lưu trữ phòng ban"
-          description="Kiểm tra phòng ban trước khi xác nhận."
+          title={translateUi("Lưu trữ phòng ban")}
+          description={translateUi("Kiểm tra phòng ban trước khi xác nhận.")}
           size="md"
           className="department-archive-dialog"
           footer={
             <>
-              <button type="button" className="department-archive-cancel" onClick={() => setIsArchiveOpen(false)} disabled={isArchiving}>Giữ lại</button>
+              <button type="button" className="department-archive-cancel" onClick={() => setIsArchiveOpen(false)} disabled={isArchiving}>{translateUi("Giữ lại")}</button>
               <button type="button" className="department-archive-confirm" onClick={handleArchiveConfirm} disabled={isArchiving}>
-                <Archive size={16} aria-hidden="true" />{isArchiving ? 'Đang lưu trữ…' : 'Lưu trữ'}
+                <Archive size={16} aria-hidden="true" />{isArchiving ? 'Đang lưu trữ…' : translateUi('Lưu trữ')}
               </button>
             </>
           }
         >
           <div className="department-archive-target">
             <span className="department-archive-icon"><Building2 size={22} aria-hidden="true" /></span>
-            <div><strong>{archivingDept.name}</strong><small>Mã phòng ban: {archivingDept.code}</small></div>
+            <div><strong>{archivingDept.name}</strong><small>{translateUi("Mã phòng ban: ")}{archivingDept.code}</small></div>
           </div>
-          <p className="department-archive-explanation">Phòng ban sẽ ẩn khỏi danh sách đang dùng nhưng vẫn giữ dữ liệu lịch sử. Bạn có thể kiểm tra nhân sự và vị trí liên quan trước khi tiếp tục.</p>
+          <p className="department-archive-explanation">{translateUi("Phòng ban sẽ ẩn khỏi danh sách đang dùng nhưng vẫn giữ dữ liệu lịch sử. Bạn có thể kiểm tra nhân sự và vị trí liên quan trước khi tiếp tục.")}</p>
         </Modal>
       )}
     </div>

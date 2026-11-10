@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -43,6 +44,7 @@ interface CartItem {
 }
 
 export function CourseCheckoutPage() {
+  useUiLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { data: orgData } = useOrganization();
@@ -324,7 +326,7 @@ export function CourseCheckoutPage() {
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition-colors"
           >
             <ArrowLeft className="size-3.5" />
-            <span>Quay lại Khung năng lực</span>
+            <span>{translateUi("Quay lại Khung năng lực")}</span>
           </Link>
 
           {/* Stepper chỉ báo tiến trình chuyên nghiệp */}
@@ -361,7 +363,7 @@ export function CourseCheckoutPage() {
               }`}
             >
               <span>3</span>
-              <span>Mở khóa học</span>
+              <span>{translateUi("Mở khóa học")}</span>
             </span>
           </div>
         </div>
@@ -387,14 +389,12 @@ export function CourseCheckoutPage() {
             </div>
 
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-0.5 text-xs font-bold text-emerald-800">
-                Giao dịch thành công · Bản quyền đã kích hoạt
-              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-0.5 text-xs font-bold text-emerald-800">{translateUi("Giao dịch thành công · Bản quyền đã kích hoạt")}</span>
               <h2 className="text-2xl font-black text-slate-900">
                 Đã ký hợp đồng và mở khóa học!
               </h2>
               <p className="text-sm text-slate-600">
-                Đơn hàng và chữ ký điện tử số hiệu <b>{paymentResult?.orderCode || docHash}</b> của <b>{customerInfo.companyName}</b> đã được lưu trữ hợp lệ trên hệ thống DigiTalent AI.
+                Đơn hàng và chữ ký điện tử số hiệu <b>{paymentResult?.orderCode || docHash}</b>{translateUi(" của ")}<b>{customerInfo.companyName}</b> đã được lưu trữ hợp lệ trên hệ thống DigiTalent AI.
               </p>
             </div>
 
@@ -404,11 +404,11 @@ export function CourseCheckoutPage() {
                 <span className="font-bold text-slate-900">{customerInfo.representativeName} ({customerInfo.phone})</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Số lượng khóa mở bản quyền:</span>
-                <span className="font-bold text-slate-900">{cartItems.length} khóa ({cartItems.reduce((s, c) => s + c.seats, 0)} suất học)</span>
+                <span className="text-slate-500">{translateUi("Số lượng khóa mở bản quyền:")}</span>
+                <span className="font-bold text-slate-900">{cartItems.length}{translateUi(" khóa (")}{cartItems.reduce((s, c) => s + c.seats, 0)}{translateUi(" suất học)")}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Tổng thanh toán:</span>
+                <span className="text-slate-500">{translateUi("Tổng thanh toán:")}</span>
                 <span className="font-bold text-emerald-700">{totalAmount.toLocaleString('vi-VN')} ₫</span>
               </div>
               <div className="flex justify-between border-t border-slate-200 pt-2">
@@ -435,7 +435,7 @@ export function CourseCheckoutPage() {
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:brightness-105"
                 style={{ background: 'var(--po-accent)' }}
               >
-                <span>Tạo đợt đào tạo & Gán nhân sự →</span>
+                <span>{translateUi("Tạo đợt đào tạo & Gán nhân sự →")}</span>
               </button>
 
               <button
@@ -458,9 +458,7 @@ export function CourseCheckoutPage() {
                   <p className="text-xs text-slate-500">Hỗ trợ tất cả ứng dụng Ngân hàng (Vietcombank, MB, Techcombank...) và ví điện tử</p>
                 </div>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
-                  <span className="size-2 rounded-full bg-emerald-500 animate-ping" />
-                  Chờ thanh toán
-                </span>
+                  <span className="size-2 rounded-full bg-emerald-500 animate-ping" />{translateUi("Chờ thanh toán")}</span>
               </div>
 
               {/* Khung mã QR nổi bật */}
@@ -484,7 +482,7 @@ export function CourseCheckoutPage() {
                   <span className="font-bold text-slate-900">MB Bank (Ngân hàng TMCP Quân Đội)</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Chủ tài khoản:</span>
+                  <span className="text-slate-500">{translateUi("Chủ tài khoản:")}</span>
                   <span className="font-bold text-slate-900 uppercase">CONG TY CP CONG NGHE DIGITALENT AI</span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -561,7 +559,7 @@ export function CourseCheckoutPage() {
 
               <div className="space-y-2 text-xs text-slate-600">
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Doanh nghiệp:</span>
+                  <span className="text-slate-400">{translateUi("Doanh nghiệp:")}</span>
                   <span className="font-semibold text-slate-800">{customerInfo.companyName}</span>
                 </div>
                 <div className="flex justify-between">
@@ -574,14 +572,14 @@ export function CourseCheckoutPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Thời gian ký:</span>
-                  <span className="font-semibold text-slate-800">{signatureDate || 'Hôm nay'}</span>
+                  <span className="font-semibold text-slate-800">{signatureDate || translateUi('Hôm nay')}</span>
                 </div>
               </div>
 
               <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 text-xs text-emerald-900 space-y-1">
                 <div className="font-bold flex items-center gap-1.5">
                   <ShieldCheck className="size-4 text-emerald-700" />
-                  <span>Chứng thực số hợp lệ</span>
+                  <span>{translateUi("Chứng thực số hợp lệ")}</span>
                 </div>
                 <p className="text-[11px] text-emerald-800 leading-relaxed">
                   Chữ ký điện tử của doanh nghiệp đã được đóng dấu thời gian (Timestamp) theo quy định Luật Giao dịch điện tử.
@@ -606,14 +604,12 @@ export function CourseCheckoutPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1 sm:col-span-2">
                     <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
-                      <Building2 className="size-3.5 text-slate-400" />
-                      Tên đầy đủ của Doanh nghiệp / Tổ chức *
-                    </label>
+                      <Building2 className="size-3.5 text-slate-400" />{translateUi("Tên đầy đủ của Doanh nghiệp / Tổ chức *")}</label>
                     <input
                       type="text"
                       value={customerInfo.companyName}
                       onChange={(e) => setCustomerInfo({ ...customerInfo, companyName: e.target.value })}
-                      placeholder="VD: Công ty Cổ phần Công nghệ ABC"
+                      placeholder={translateUi("VD: Công ty Cổ phần Công nghệ ABC")}
                       className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                     />
                   </div>
@@ -627,7 +623,7 @@ export function CourseCheckoutPage() {
                       type="text"
                       value={customerInfo.representativeName}
                       onChange={(e) => setCustomerInfo({ ...customerInfo, representativeName: e.target.value })}
-                      placeholder="VD: Nguyễn Hoàng"
+                      placeholder={translateUi("VD: Nguyễn Hoàng")}
                       className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                     />
                   </div>
@@ -799,7 +795,7 @@ export function CourseCheckoutPage() {
                         type="text"
                         value={typedSignature}
                         onChange={(e) => setTypedSignature(e.target.value)}
-                        placeholder="Họ và tên..."
+                        placeholder={translateUi("Họ và tên...")}
                         className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold outline-none focus:border-emerald-600"
                       />
                     </div>
@@ -869,14 +865,12 @@ export function CourseCheckoutPage() {
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                    <span>Khóa học đã chọn</span>
+                    <span>{translateUi("Khóa học đã chọn")}</span>
                     <span className="rounded-full bg-slate-100 px-2 py-0.2 text-xs font-semibold text-slate-600">
                       {cartItems.length}
                     </span>
                   </h3>
-                  <Link to="/enterprise/courses" className="text-xs font-semibold text-emerald-700 hover:underline">
-                    + Thêm khóa
-                  </Link>
+                  <Link to="/enterprise/courses" className="text-xs font-semibold text-emerald-700 hover:underline">{translateUi("+ Thêm khóa")}</Link>
                 </div>
 
                 {/* Danh sách khóa học trong đơn */}
@@ -889,12 +883,11 @@ export function CourseCheckoutPage() {
                             <span className="font-mono text-xs font-black text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
                               {item.canonicalCode}
                             </span>
-                            <span className="text-[10px] font-bold text-slate-500">
-                              Bậc {item.level} ({item.level === 3 ? 'Nâng cao' : 'Trung cấp'})
+                            <span className="text-[10px] font-bold text-slate-500">{translateUi("Bậc ")}{item.level} ({item.level === 3 ? translateUi('Nâng cao') : translateUi('Trung cấp')})
                             </span>
                           </div>
                           <h4 className="mt-1 text-xs font-bold text-slate-900 line-clamp-1">
-                            {item.course.title}
+                            {translateUi(item.course.title)}
                           </h4>
                         </div>
                         {cartItems.length > 1 && (
@@ -902,7 +895,7 @@ export function CourseCheckoutPage() {
                             type="button"
                             onClick={() => removeCartItem(item.canonicalCode)}
                             className="text-slate-400 hover:text-rose-500 p-0.5"
-                            title="Xóa khóa này"
+                            title={translateUi("Xóa khóa này")}
                           >
                             <X className="size-3.5" />
                           </button>
@@ -912,7 +905,7 @@ export function CourseCheckoutPage() {
                       {/* Bộ chỉnh số lượng suất */}
                       <div className="flex items-center justify-between text-xs pt-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-slate-500">Số suất học:</span>
+                          <span className="text-slate-500">{translateUi("Số suất học:")}</span>
                           <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50">
                             <button
                               type="button"
@@ -943,19 +936,19 @@ export function CourseCheckoutPage() {
                 {/* Tóm lược chi phí */}
                 <div className="rounded-2xl bg-slate-50 p-4 space-y-2 text-xs border border-slate-200/70">
                   <div className="flex justify-between text-slate-600">
-                    <span>Tạm tính ({cartItems.reduce((s, c) => s + c.seats, 0)} suất):</span>
+                    <span>{translateUi("Tạm tính (")}{cartItems.reduce((s, c) => s + c.seats, 0)}{translateUi(" suất):")}</span>
                     <span className="font-semibold text-slate-900">{totalAmount.toLocaleString('vi-VN')} ₫</span>
                   </div>
                   <div className="flex justify-between text-slate-600">
-                    <span>Ưu đãi dùng thử doanh nghiệp:</span>
-                    <span className="font-semibold text-emerald-600">Cấp 1 miễn phí</span>
+                    <span>{translateUi("Ưu đãi dùng thử doanh nghiệp:")}</span>
+                    <span className="font-semibold text-emerald-600">{translateUi("Cấp 1 miễn phí")}</span>
                   </div>
                   <div className="flex justify-between text-slate-600">
                     <span>Thuế GTGT (VAT):</span>
                     <span className="font-semibold text-slate-900">0% (Đào tạo chuẩn)</span>
                   </div>
                   <div className="border-t border-slate-200 pt-2 flex justify-between text-sm font-bold text-slate-900">
-                    <span>Tổng đầu tư đào tạo:</span>
+                    <span>{translateUi("Tổng đầu tư đào tạo:")}</span>
                     <span className="text-emerald-700 text-base font-extrabold">{totalAmount.toLocaleString('vi-VN')} ₫</span>
                   </div>
                 </div>
@@ -1040,9 +1033,7 @@ export function CourseCheckoutPage() {
                 onClick={() => setShowAgreementModal(false)}
                 className="rounded-xl px-5 py-2 text-xs font-bold text-white shadow-sm"
                 style={{ background: 'var(--po-accent)' }}
-              >
-                Đã hiểu & Đóng
-              </button>
+              >{translateUi("Đã hiểu & Đóng")}</button>
             </div>
           </div>
         </div>

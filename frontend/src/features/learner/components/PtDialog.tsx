@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useId, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -14,6 +15,7 @@ interface PtDialogProps {
 
 /** Modal of the personal workspace. Rendered in place, so it inherits the current theme. */
 export function PtDialog({ open, onClose, title, description, children, className }: PtDialogProps) {
+  useUiLanguage();
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const descriptionId = useId();
@@ -38,13 +40,13 @@ export function PtDialog({ open, onClose, title, description, children, classNam
       >
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <h2 id={titleId} className="text-[22px] font-normal leading-tight tracking-[-0.02em]">{title}</h2>
-            {description && <p id={descriptionId} className="mt-2 text-sm leading-relaxed text-pt-fg-2">{description}</p>}
+            <h2 id={titleId} className="text-[22px] font-normal leading-tight tracking-[-0.02em]">{translateUi(title)}</h2>
+            {description && <p id={descriptionId} className="mt-2 text-sm leading-relaxed text-pt-fg-2">{translateUi(description)}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Đóng"
+            aria-label={translateUi("Đóng")}
             className="grid size-9 shrink-0 place-items-center rounded-full border border-pt-line text-pt-fg-2 transition-colors hover:border-pt-fg/40 hover:text-pt-fg"
           >
             <X className="size-4" aria-hidden="true" />

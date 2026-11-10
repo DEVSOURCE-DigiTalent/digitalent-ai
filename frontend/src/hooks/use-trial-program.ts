@@ -28,7 +28,9 @@ export function useTrialProgram() {
   return useQuery({
     queryKey: TRIAL_PROGRAM_KEYS.owner,
     queryFn: () => trialProgramService.get().then((r) => r.data.data!),
-    refetchInterval: (query) => (query.state.data?.report?.insights.status === 'PENDING' ? INSIGHT_POLL_MS : false),
+    // Nhanh khi AI đang viết gợi ý; còn lại 15 s để chủ doanh nghiệp thấy bài nộp mới.
+    refetchInterval: (query) => (query.state.data?.report?.insights.status === 'PENDING' ? INSIGHT_POLL_MS : 15_000),
+    refetchIntervalInBackground: false,
   });
 }
 
@@ -45,7 +47,7 @@ export function useTrialRoadmap(enabled = true) {
 export function useInviteTrialParticipants() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (rows: TrialParticipantRow[]) => trialProgramService.invite(rows).then((r) => r.data.data!),
+    mutationFn: (input: TrialParticipantRow[] | { rows: TrialParticipantRow[]; testDeadline: string }) => trialProgramService.invite(Array.isArray(input) ? input : input.rows, Array.isArray(input) ? undefined : input.testDeadline).then((r) => r.data.data!),
     onSettled: () => client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.owner }),
   });
 }
@@ -72,7 +74,8 @@ export function useJoinTrialAsParticipant() {
       const refreshed = await refreshSessionTokens().then(() => true, () => false);
       const user = (await authService.getMe()).data.data;
       if (user) setUser(user);
-      return { refreshed };
+      // The local mock authorizes against its live session store, without issuing a new JWT.
+      return { refreshed: refreshed || import.meta.env.VITE_USE_MOCK === 'true' };
     },
     onSettled: () => client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.all }),
   });
@@ -113,6 +116,8 @@ export function useSubmitTrialExam() {
     mutationFn: (input: TrialExamSubmission) => trialProgramService.submitExam(input).then((r) => r.data.data!),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.mine });
+      void client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.owner });
+      void client.invalidateQueries({ queryKey: ['learning-needs'] });
       void client.invalidateQueries({ queryKey: ['pulse'] });
     },
   });

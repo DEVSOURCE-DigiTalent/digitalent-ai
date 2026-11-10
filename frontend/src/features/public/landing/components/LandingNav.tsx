@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -27,6 +28,7 @@ const LOGIN_LINK_CLASS =
 
 /** Black pill hanging from the top edge of the hero frame. */
 export function HangingNav() {
+  useUiLanguage();
   const { mainNav } = useLandingContent();
   const cta = useLandingCta();
 
@@ -34,7 +36,7 @@ export function HangingNav() {
   const loginItem = mainNav.find((item) => item.to.endsWith('/login'));
 
   return (
-    <nav aria-label="Điều hướng chính" className="lp-pill absolute left-1/2 top-0 z-30 -translate-x-1/2 px-[18px] pb-1.5 pt-1 md:px-8 md:pb-2 md:pt-1.5">
+    <nav aria-label={translateUi("Điều hướng chính")} className="lp-pill absolute left-1/2 top-0 z-30 -translate-x-1/2 px-[18px] pb-1.5 pt-1 md:px-8 md:pb-2 md:pt-1.5">
       <ul className="flex items-center gap-4 sm:gap-6 md:gap-8 lg:gap-12 xl:gap-14">
         {navLinks.map((item) => (
           <li key={item.label} className={item.wideOnly ? 'hidden sm:block' : undefined}>
@@ -60,6 +62,7 @@ interface StickyDockProps {
 
 /** Glass bar that takes over once the hero has scrolled away, so login and the main action stay at hand. */
 export function StickyDock({ visible }: StickyDockProps) {
+  useUiLanguage();
   const cta = useLandingCta();
   const { dockNav, cta: ctaCopy } = useLandingContent();
 
@@ -107,6 +110,7 @@ export function StickyDock({ visible }: StickyDockProps) {
 
 /** Ghost pill for the login link: visually sits between plain nav text and the solid CTA button. */
 function LoginPill({ item, sizeClass, iconClass }: { item: LandingLink; sizeClass?: string; iconClass?: string }) {
+  useUiLanguage();
   return (
     <Link
       to={item.to}
@@ -116,7 +120,7 @@ function LoginPill({ item, sizeClass, iconClass }: { item: LandingLink; sizeClas
         className={cn('size-3.5 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5', iconClass)}
         aria-hidden="true"
       />
-      <span className="font-medium">{item.label}</span>
+      <span className="font-medium">{translateUi(item.label)}</span>
     </Link>
   );
 }

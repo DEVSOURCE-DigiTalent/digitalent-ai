@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Navigate, useSearchParams, useNavigate } from 'react-router-dom';
 import { PulseAuthLayout } from '@/features/public/pulse-landing/PulseAuthLayout';
@@ -19,6 +20,7 @@ function getErrorMessage(error: unknown): { message: string; isTaken: boolean } 
 }
 
 export function BusinessRegisterPage() {
+  useUiLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -74,7 +76,7 @@ export function BusinessRegisterPage() {
       mode="register"
       eyebrow="Tài khoản doanh nghiệp · Gói đã chọn"
       title="Tạo tài khoản doanh nghiệp"
-      subtitle="Hoàn tất tài khoản chủ sở hữu trước khi tiếp tục hợp đồng và thiết lập tổ chức."
+      subtitle={translateUi("Hoàn tất tài khoản chủ sở hữu trước khi tiếp tục hợp đồng và thiết lập tổ chức.")}
       asideTitle="Bắt đầu bằng một mục tiêu chung."
       asideText="Sau khi tạo tài khoản, doanh nghiệp sẽ hoàn tất gói đã chọn rồi thiết kế khung năng lực phù hợp với đội ngũ."
       asidePoints={['Thiết lập theo tổ chức, phòng ban và vị trí', 'Giao khóa học và theo dõi tiến độ', 'Đánh giá kết quả bằng minh chứng cuối khóa']}

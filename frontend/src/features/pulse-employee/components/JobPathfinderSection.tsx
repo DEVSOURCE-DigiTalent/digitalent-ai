@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import { BookOpen, Check, Clock, FileText, ShieldCheck, Zap } from 'lucide-react';
 import type { PulseCourseSummary, PulseOverview } from '@/services/pulse.service';
@@ -13,6 +14,7 @@ export function JobPathfinderSection({
   overview,
   onSelectCourse,
 }: JobPathfinderSectionProps) {
+  useUiLanguage();
   const { stats, person } = overview;
   const position = person.positionName ?? 'của bạn';
   const total = stats.pathCourses;
@@ -54,7 +56,7 @@ export function JobPathfinderSection({
               className="pu-gauge-svg"
               viewBox="0 0 200 120"
               role="img"
-              aria-label={`Tiến độ chức danh: ${pct}%`}
+              aria-label={translateUi(`Tiến độ chức danh: ${pct}%`)}
             >
               {/* Background Arc */}
               <path
@@ -103,7 +105,7 @@ export function JobPathfinderSection({
             <p className="pu-gauge-note">
               {pct === 100
                 ? 'Tất cả các khóa yêu cầu cho vị trí đã được duyệt chính thức.'
-                : `Còn thiếu ${total - approved} khóa học/bài thi để đạt 100% chuẩn chức danh.`}
+                : translateUi(`Còn thiếu ${total - approved} khóa học/bài thi để đạt 100% chuẩn chức danh.`)}
             </p>
             {overview.reviewer && (
               <div className="pu-gauge-reviewer">
@@ -144,37 +146,30 @@ export function JobPathfinderSection({
                   <div className="pu-domain-status-pill">
                     {isAllDone ? (
                       <span className="pu-pill met">
-                        <Check size={11} strokeWidth={3} /> Đạt chuẩn
-                      </span>
+                        <Check size={11} strokeWidth={3} />{translateUi(" Đạt chuẩn")}</span>
                     ) : isWaiting ? (
                       <span className="pu-pill waiting">
-                        <Clock size={11} /> Chờ chấm
-                      </span>
+                        <Clock size={11} />{translateUi(" Chờ chấm")}</span>
                     ) : isPreTest ? (
                       <span className="pu-pill pretest">
-                        <Zap size={11} /> Đánh giá
-                      </span>
+                        <Zap size={11} />{translateUi(" Đánh giá")}</span>
                     ) : isInProgress ? (
                       <span className="pu-pill learning">
-                        <BookOpen size={11} /> Đang học
-                      </span>
+                        <BookOpen size={11} />{translateUi(" Đang học")}</span>
                     ) : (
-                      <span className="pu-pill standard">
-                        Cần bồi dưỡng
-                      </span>
+                      <span className="pu-pill standard">{translateUi("Cần bồi dưỡng")}</span>
                     )}
                   </div>
                 </div>
 
-                <h3 className="pu-domain-card-title">{domain.name}</h3>
+                <h3 className="pu-domain-card-title">{translateUi(domain.name)}</h3>
 
                 {/* Level progression info */}
                 <div className="pu-domain-level-row">
-                  <span className="pu-domain-target-tag">
-                    Mục tiêu: <strong>{levelName(domain.target)}</strong>
+                  <span className="pu-domain-target-tag">{translateUi("Mục tiêu: ")}<strong>{levelName(domain.target)}</strong>
                   </span>
                   <span className="pu-domain-current-tag">
-                    Đã đạt: <strong>{domain.verified > 0 ? levelName(domain.verified) : 'Chưa đạt'}</strong>
+                    Đã đạt: <strong>{domain.verified > 0 ? levelName(domain.verified) : translateUi('Chưa đạt')}</strong>
                   </span>
                 </div>
 
@@ -199,7 +194,7 @@ export function JobPathfinderSection({
                       type="button"
                       className="pu-domain-detail-btn"
                       onClick={() => onSelectCourse?.(activeCourse)}
-                      title={`Xem nhanh đề cương ${activeCourse.code}: ${activeCourse.title}`}
+                      title={translateUi(`Xem nhanh đề cương ${activeCourse.code}: ${activeCourse.title}`)}
                     >
                       <FileText size={13} />
                       <span>{activeCourse.code} · Đề cương</span>
@@ -208,8 +203,7 @@ export function JobPathfinderSection({
 
                   {isAllDone ? (
                     <span className="pu-domain-done-label">
-                      <Check size={12} strokeWidth={3} /> Đã hoàn thành
-                    </span>
+                      <Check size={12} strokeWidth={3} />{translateUi(" Đã hoàn thành")}</span>
                   ) : isPreTest && activeCourse ? (
                     <Link
                       to={PULSE_PATHS.preAssessment(activeCourse.courseId)}

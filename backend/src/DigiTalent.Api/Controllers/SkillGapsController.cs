@@ -15,6 +15,15 @@ namespace DigiTalent.Api.Controllers;
 [Route("api/v1/intelligence/skill-gaps")]
 public class SkillGapsController : ControllerBase
 {
+    [HttpGet("learning-needs")]
+    [HasPermission(Permissions.Intelligence.SkillGapRead)]
+    public async Task<ActionResult<ApiResponse<GetLearningNeedsOutput>>> GetLearningNeeds(
+        [FromQuery] GetSkillGapRunsUseCaseInput input,
+        [FromServices] IUseCase<GetSkillGapRunsUseCaseInput, GetLearningNeedsOutput> useCase)
+    {
+        return Ok(ApiResponse<GetLearningNeedsOutput>.Ok(await useCase.ExecuteAsync(input)));
+    }
+
     // POST api/v1/intelligence/skill-gaps/calculate
     [HttpPost("calculate")]
     [HasPermission(Permissions.Intelligence.SkillGapCalculate)]

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,6 +35,7 @@ interface OrganizationStepProps {
 
 /** AUTH-04 / ENT-ONB-04: name, industry, size, logo, timezone of the organization. */
 export function OrganizationStep({ setup, onDone }: OrganizationStepProps) {
+  useUiLanguage();
   const save = useSaveOrganization();
   const [submitError, setSubmitError] = useState<string>();
   const {
@@ -103,9 +105,7 @@ export function OrganizationStep({ setup, onDone }: OrganizationStepProps) {
       </div>
 
       <div className="grid gap-1.5">
-        <label htmlFor="org-name" className="text-sm font-medium text-ent-fg">
-          Tên tổ chức
-        </label>
+        <label htmlFor="org-name" className="text-sm font-medium text-ent-fg">{translateUi("Tên tổ chức")}</label>
         <input
           id="org-name"
           placeholder="Ví dụ: Công ty Cổ phần DigiTalent Việt Nam"
@@ -113,34 +113,30 @@ export function OrganizationStep({ setup, onDone }: OrganizationStepProps) {
           className={INPUT_CLASS}
           {...register('name')}
         />
-        {errors.name && <p role="alert" className="text-xs text-red-400">{errors.name.message}</p>}
+        {errors.name && <p role="alert" className="text-xs text-red-400">{translateUi(errors.name.message)}</p>}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-1.5">
-          <label htmlFor="org-industry" className="text-sm font-medium text-ent-fg">
-            Ngành hoạt động
-          </label>
+          <label htmlFor="org-industry" className="text-sm font-medium text-ent-fg">{translateUi("Ngành hoạt động")}</label>
           <select id="org-industry" aria-invalid={!!errors.industry} className={INPUT_CLASS} {...register('industry')}>
             <option value="" className="bg-[#11151E] text-cream">Chọn ngành…</option>
             {ORGANIZATION_INDUSTRIES.map((industry) => (
               <option key={industry} value={industry} className="bg-[#11151E] text-cream">{industry}</option>
             ))}
           </select>
-          {errors.industry && <p role="alert" className="text-xs text-red-400">{errors.industry.message}</p>}
+          {errors.industry && <p role="alert" className="text-xs text-red-400">{translateUi(errors.industry.message)}</p>}
         </div>
 
         <div className="grid gap-1.5">
-          <label htmlFor="org-size" className="text-sm font-medium text-ent-fg">
-            Quy mô
-          </label>
+          <label htmlFor="org-size" className="text-sm font-medium text-ent-fg">{translateUi("Quy mô")}</label>
           <select id="org-size" aria-invalid={!!errors.size} className={INPUT_CLASS} {...register('size')}>
             <option value="" className="bg-[#11151E] text-cream">Chọn quy mô…</option>
             {ORGANIZATION_SIZES.map((size) => (
-              <option key={size.value} value={size.value} className="bg-[#11151E] text-cream">{size.label}</option>
+              <option key={size.value} value={size.value} className="bg-[#11151E] text-cream">{translateUi(size.label)}</option>
             ))}
           </select>
-          {errors.size && <p role="alert" className="text-xs text-red-400">{errors.size.message}</p>}
+          {errors.size && <p role="alert" className="text-xs text-red-400">{translateUi(errors.size.message)}</p>}
         </div>
       </div>
 
@@ -156,7 +152,7 @@ export function OrganizationStep({ setup, onDone }: OrganizationStepProps) {
           className={INPUT_CLASS}
           {...register('logoUrl')}
         />
-        {errors.logoUrl && <p role="alert" className="text-xs text-red-400">{errors.logoUrl.message}</p>}
+        {errors.logoUrl && <p role="alert" className="text-xs text-red-400">{translateUi(errors.logoUrl.message)}</p>}
         <p className="text-xs text-ent-fg-3">
           Nhập liên kết ảnh PNG/SVG logo tổ chức. Bạn có thể cập nhật lại trong Cài đặt tổ chức.
         </p>
@@ -169,10 +165,10 @@ export function OrganizationStep({ setup, onDone }: OrganizationStepProps) {
         </label>
         <select id="org-timezone" aria-invalid={!!errors.timezone} className={INPUT_CLASS} {...register('timezone')}>
           {TIMEZONES.map((tz) => (
-            <option key={tz.value} value={tz.value} className="bg-[#11151E] text-cream">{tz.label}</option>
+            <option key={tz.value} value={tz.value} className="bg-[#11151E] text-cream">{translateUi(tz.label)}</option>
           ))}
         </select>
-        {errors.timezone && <p role="alert" className="text-xs text-red-400">{errors.timezone.message}</p>}
+        {errors.timezone && <p role="alert" className="text-xs text-red-400">{translateUi(errors.timezone.message)}</p>}
         <p className="text-xs text-ent-fg-3">
           Dùng để tính thời hạn nhiệm vụ, lịch thi đánh giá năng lực và các báo cáo đào tạo.
         </p>
@@ -180,7 +176,7 @@ export function OrganizationStep({ setup, onDone }: OrganizationStepProps) {
 
       <div className="pt-2">
         <button type="submit" disabled={save.isPending} className={PRIMARY_BUTTON}>
-          {save.isPending ? 'Đang lưu…' : 'Lưu và tiếp tục'}
+          {save.isPending ? translateUi('Đang lưu…') : translateUi('Lưu và tiếp tục')}
         </button>
       </div>
     </form>

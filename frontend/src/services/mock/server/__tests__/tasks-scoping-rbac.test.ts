@@ -66,35 +66,39 @@ describe('Practical Tasks RBAC & Scoping Matrix', () => {
       expect(await failure(call('post', '/submissions/sub-001/evaluate', { score: 90, decision: 'APPROVED' }))).toMatchObject({ status: 403 });
     });
 
+    // Demo data (seed-work.ts): tsk-001 (dep-kd) is assigned to emp-01, emp-06, emp-07; tsk-002 (dep-kt) to emp-11.
     it('returns 404 when employee views a task not assigned to them, but 200 when assigned', async () => {
-      asUser('employee'); // emp-01 (Hoàng Văn Nhân Viên, dep-kt)
-      // tsk-001 được giao cho emp-06, emp-07 -> employee không được giao -> 404
-      expect(await failure(call('get', '/tasks/tsk-001'))).toMatchObject({ status: 404 });
+      asUser('employee'); // emp-01 (Hoàng Văn Nhân Viên, dep-kd)
+      // tsk-002 is assigned to emp-11 only -> 404
+      expect(await failure(call('get', '/tasks/tsk-002'))).toMatchObject({ status: 404 });
 
-      // tsk-002 được giao cho emp-01 -> 200 OK
-      const task = await call<PracticalTaskRecord>('get', '/tasks/tsk-002');
-      expect(task).toBeDefined();
-      expect(task.id).toBe('tsk-002');
+      // tsk-001 is assigned to emp-01 -> 200 OK
+      const task = await call<PracticalTaskRecord>('get', '/tasks/tsk-001');
+      expect(task.id).toBe('tsk-001');
     });
 
     it('returns 404 when employee views submission of another employee, but 200 for own submission', async () => {
       asUser('employee'); // emp-01
-      // sub-001 thuộc emp-06 -> 404
+      // sub-001 belongs to emp-06, sub-002 to emp-11 -> 404
       expect(await failure(call('get', '/submissions/sub-001'))).toMatchObject({ status: 404 });
+      expect(await failure(call('get', '/submissions/sub-002'))).toMatchObject({ status: 404 });
 
-      // sub-002 thuộc emp-01 -> 200 OK
-      const sub = await call<TaskSubmissionRecord>('get', '/submissions/sub-002');
-      expect(sub).toBeDefined();
-      expect(sub.id).toBe('sub-002');
+      // Own submission, made through /me/tasks -> 200 OK
+      const { submissionId } = await call<{ submissionId: string }>('post', '/me/tasks/tsk-001/submissions', {
+        content: 'Bản nộp minh chứng cho tsk-001 của nhân viên',
+        linkUrls: [],
+        attachmentIds: [],
+      });
+      const sub = await call<TaskSubmissionRecord>('get', `/submissions/${submissionId}`);
       expect(sub.employeeId).toBe('emp-01');
     });
 
     it('returns 403 when employee attempts to submit for an unassigned task', async () => {
       asUser('employee'); // emp-01
-      // tsk-001 giao cho emp-06, emp-07
+      // tsk-002 is assigned to emp-11 only
       expect(
         await failure(
-          call('post', '/tasks/tsk-001/submit', {
+          call('post', '/tasks/tsk-002/submit', {
             content: 'Nội dung nộp không hợp lệ',
           })
         )
@@ -156,7 +160,7 @@ describe('Practical Tasks RBAC & Scoping Matrix', () => {
             title: 'Nhiệm vụ ngoài phạm vi',
             expectedOutput: 'Báo cáo',
             dueDate: '2026-11-30',
-            assignedEmployeeIds: ['emp-01'], // emp-01 thuộc dep-kt
+            assignedEmployeeIds: ['emp-11'], // emp-11 thuộc dep-kt
           })
         )
       ).toMatchObject({ status: 403 });

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, BriefcaseBusiness, ClipboardList, UsersRound, CalendarDays, Layers3 } from 'lucide-react';
@@ -18,6 +19,7 @@ const STATUS_LABELS: Record<string, string> = { ACTIVE: 'Đang áp dụng', DRAF
 
 /** LCA-03: one position in a workspace of tabs: overview, requirements, people and learning coverage. */
 export function PositionDetailPage() {
+  useUiLanguage();
   const { id = '' } = useParams();
   const position = useJobPosition(id);
   const requirements = usePositionRequirements(id);
@@ -34,12 +36,12 @@ export function PositionDetailPage() {
   );
   const people = workforce.data?.items ?? [];
 
-  if (position.isLoading) return <PageLoading label="Đang tải thông tin vị trí" variant="detail" />;
+  if (position.isLoading) return <PageLoading label={translateUi("Đang tải thông tin vị trí")} variant="detail" />;
   if (position.isError || !position.data) {
     return (
       <div role="alert" className="grid gap-3">
-        <p className="text-sm text-red-600">Không tìm thấy vị trí này.</p>
-        <Link to="/enterprise/positions" className="text-sm font-medium text-primary-700 underline">Quay lại danh sách</Link>
+        <p className="text-sm text-red-600">{translateUi("Không tìm thấy vị trí này.")}</p>
+        <Link to="/enterprise/positions" className="text-sm font-medium text-primary-700 underline">{translateUi("Quay lại danh sách")}</Link>
       </div>
     );
   }
@@ -48,25 +50,23 @@ export function PositionDetailPage() {
   return (
     <div className="position-detail -m-4 min-h-screen px-5 py-7 md:-m-6 md:px-7 xl:px-10">
       <Link to="/enterprise/positions" className="position-detail-back">
-        <ArrowLeft className="size-4" aria-hidden="true" />
-        Vị trí công việc
-      </Link>
+        <ArrowLeft className="size-4" aria-hidden="true" />{translateUi("Vị trí công việc")}</Link>
       <header className="position-detail-hero">
         <div className="position-detail-hero__icon"><BriefcaseBusiness size={25} /></div>
         <div className="position-detail-hero__main">
-          <span className="position-detail-kicker">HỒ SƠ VỊ TRÍ</span>
+          <span className="position-detail-kicker">{translateUi("HỒ SƠ VỊ TRÍ")}</span>
           <h1>{p.name}</h1>
-          <div className="position-detail-meta"><span>Mã {p.code}</span>{p.departmentName && <span>{p.departmentName}</span>}<StatusBadge label={p.status === 'ACTIVE' ? 'Đang dùng' : 'Ngừng dùng'} variant={getStatusVariant(p.status)} /></div>
+          <div className="position-detail-meta"><span>{translateUi("Mã ")}{p.code}</span>{p.departmentName && <span>{p.departmentName}</span>}<StatusBadge label={translateUi(p.status === 'ACTIVE' ? translateUi('Đang dùng') : translateUi('Ngừng dùng'))} variant={getStatusVariant(p.status)} /></div>
         </div>
         <div className="position-detail-actions">
-          <Link to={`/enterprise/requirements/builder?positionId=${id}`} className={PRIMARY_BUTTON}>Chỉnh yêu cầu năng lực</Link>
-          <Link to={`/enterprise/requirements/history?positionId=${id}`} className={SECONDARY_BUTTON}>Lịch sử phiên bản</Link>
+          <Link to={`/enterprise/setup?tab=ceilings&positionId=${id}`} className={PRIMARY_BUTTON}>{translateUi("Thiết lập chuẩn theo khóa học")}</Link>
+          <Link to={`/enterprise/requirements/history?positionId=${id}`} className={SECONDARY_BUTTON}>{translateUi("Lịch sử phiên bản")}</Link>
         </div>
       </header>
 
       <Tabs
         className="position-detail-tabs"
-        label="Thông tin vị trí"
+        label={translateUi("Thông tin vị trí")}
         value={tab}
         onChange={setTab}
         tabs={[
@@ -79,16 +79,15 @@ export function PositionDetailPage() {
         {tab === 'overview' && (
           <div className="grid gap-5">
             <div className="position-detail-stats">
-              <div className="position-detail-stat position-detail-stat--blue"><Layers3 size={21} /><span>Phiên bản đang áp dụng</span><strong>{hasSet && set?.status === 'ACTIVE' ? `v${set.versionNo}` : '—'}</strong><small>{set ? STATUS_LABELS[set.status] : 'Chưa thiết lập'}</small></div>
-              <div className="position-detail-stat position-detail-stat--teal"><ClipboardList size={21} /><span>Năng lực yêu cầu</span><strong>{set?.items.length ?? 0}</strong><small>{set?.items.filter((i) => i.isMandatory).length ?? 0} bắt buộc</small></div>
-              <div className="position-detail-stat position-detail-stat--violet"><UsersRound size={21} /><span>Nhân sự giữ vị trí</span><strong>{people.filter((x) => x.status === 'ACTIVE').length}</strong><small>Đang hoạt động</small></div>
-              <div className="position-detail-stat position-detail-stat--amber"><CalendarDays size={21} /><span>Hiệu lực từ</span><strong className="position-detail-stat__date">{formatDate(set?.effectiveFrom)}</strong><small>{set?.reviewDate ? `Rà soát ${formatDate(set.reviewDate)}` : 'Theo chuẩn hiện hành'}</small></div>
+              <div className="position-detail-stat position-detail-stat--blue"><Layers3 size={21} /><span>{translateUi("Phiên bản đang áp dụng")}</span><strong>{hasSet && set?.status === 'ACTIVE' ? `v${set.versionNo}` : '—'}</strong><small>{set ? translateUi(STATUS_LABELS[set.status]) : translateUi('Chưa thiết lập')}</small></div>
+              <div className="position-detail-stat position-detail-stat--teal"><ClipboardList size={21} /><span>{translateUi("Năng lực yêu cầu")}</span><strong>{set?.items.length ?? 0}</strong><small>{set?.items.filter((i) => i.isMandatory).length ?? 0}{translateUi(" bắt buộc")}</small></div>
+              <div className="position-detail-stat position-detail-stat--violet"><UsersRound size={21} /><span>{translateUi("Nhân sự giữ vị trí")}</span><strong>{people.filter((x) => x.status === 'ACTIVE').length}</strong><small>{translateUi("Đang hoạt động")}</small></div>
+              <div className="position-detail-stat position-detail-stat--amber"><CalendarDays size={21} /><span>{translateUi("Hiệu lực từ")}</span><strong className="position-detail-stat__date">{formatDate(set?.effectiveFrom)}</strong><small>{set?.reviewDate ? translateUi(`Rà soát ${formatDate(set.reviewDate)}`) : 'Theo chuẩn hiện hành'}</small></div>
             </div>
-            {p.description && <section className="position-detail-description"><h2>Mô tả vị trí</h2><p>{p.description}</p></section>}
+            {p.description && <section className="position-detail-description"><h2>{translateUi("Mô tả vị trí")}</h2><p>{translateUi(p.description)}</p></section>}
             {!hasSet && (
-              <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                Chưa có chuẩn năng lực cho vị trí này. Thiết lập chuẩn để xem khoảng trống năng lực.{' '}
-                <Link to={`/enterprise/requirements/builder?positionId=${id}`} className="font-medium underline">Đặt yêu cầu năng lực</Link>
+              <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{translateUi("Chưa có chuẩn năng lực cho vị trí này. Thiết lập chuẩn để xem khoảng trống năng lực.")}{' '}
+                <Link to={`/enterprise/setup?tab=ceilings&positionId=${id}`} className="font-medium underline">{translateUi("Đặt chuẩn theo khóa học")}</Link>
               </p>
             )}
           </div>
@@ -96,12 +95,12 @@ export function PositionDetailPage() {
 
         {tab === 'requirements' &&
           (!hasSet ? (
-            <EmptyState title="Chưa có yêu cầu năng lực" description="Chọn từ 9 đến 24 năng lực của Thông tư 02/2025 và đặt trình độ yêu cầu cho từng năng lực." action={<Link to={`/enterprise/requirements/builder?positionId=${id}`} className={PRIMARY_BUTTON}>Đặt yêu cầu năng lực</Link>} />
+            <EmptyState title={translateUi("Chưa có chuẩn theo khóa học")} description={translateUi("Chọn cấp khóa học cho từng lĩnh vực trong khung năng lực số.")} action={<Link to={`/enterprise/setup?tab=ceilings&positionId=${id}`} className={PRIMARY_BUTTON}>{translateUi("Thiết lập chuẩn theo khóa học")}</Link>} />
           ) : (
             <div className="grid gap-5">
               {domains.map((group) => (
-                <section key={group.domain.categoryId} aria-label={group.domain.name} className="rounded-lg border border-slate-200 bg-white">
-                  <h3 className="border-b border-slate-100 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-800">{group.domain.name}</h3>
+                <section key={group.domain.categoryId} aria-label={translateUi(group.domain.name)} className="rounded-lg border border-slate-200 bg-white">
+                  <h3 className="border-b border-slate-100 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-800">{translateUi(group.domain.name)}</h3>
                   <ul className="divide-y divide-slate-100">
                     {group.rows.map((row) => (
                       <li key={row.competencyId} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
@@ -109,7 +108,7 @@ export function PositionDetailPage() {
                           <span className="mr-2 font-mono text-xs text-slate-500">{row.frameworkCode}</span>{row.competencyName}
                         </Link>
                         <span className="flex items-center gap-2">
-                          {row.isMandatory && <StatusBadge label="Bắt buộc" variant="warning" />}
+                          {row.isMandatory && <StatusBadge label={translateUi("Bắt buộc")} variant="warning" />}
                           <LevelBadge level={row.requiredLevel} />
                         </span>
                       </li>
@@ -122,7 +121,7 @@ export function PositionDetailPage() {
 
         {tab === 'people' &&
           (people.length === 0 ? (
-            <EmptyState title="Chưa có ai giữ vị trí này" description="Xếp vị trí cho nhân viên trong mục Thành viên." />
+            <EmptyState title={translateUi("Chưa có ai giữ vị trí này")} description={translateUi("Xếp vị trí cho nhân viên trong mục Thành viên.")} />
           ) : (
             <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
               {people.map((person) => (
@@ -132,8 +131,8 @@ export function PositionDetailPage() {
                     <p className="text-xs text-slate-500">{person.employeeCode} · {person.departmentName}</p>
                   </div>
                   <p className="text-right text-xs text-slate-600">
-                    {person.coveragePercent === null ? BLOCKER_LABELS[person.blocker ?? ''] ?? '—' : `Đáp ứng ${person.coveragePercent.toFixed(1)}%`}
-                    {person.highCount ? <span className="ml-2 font-medium text-red-600">{person.highCount} mức cao</span> : null}
+                    {person.coveragePercent === null ? translateUi(BLOCKER_LABELS[person.blocker ?? '']) ?? '—' : translateUi(`Đáp ứng ${person.coveragePercent.toFixed(1)}%`)}
+                    {person.highCount ? <span className="ml-2 font-medium text-red-600">{person.highCount}{translateUi(" mức cao")}</span> : null}
                   </p>
                 </li>
               ))}
@@ -155,18 +154,19 @@ interface CoverageProps {
 
 /** For each domain the position needs: the standard courses up to the highest required level, and who has them. */
 function LearningCoverage({ domains, assignments, courses, peopleCount }: CoverageProps) {
-  if (domains.length === 0) return <EmptyState title="Chưa có yêu cầu năng lực" description="Phủ khóa học được tính từ trình độ yêu cầu cao nhất của từng miền." />;
+  useUiLanguage();
+  if (domains.length === 0) return <EmptyState title={translateUi("Chưa có yêu cầu năng lực")} description={translateUi("Phủ khóa học được tính từ trình độ yêu cầu cao nhất của từng miền.")} />;
 
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
       <table className="w-full text-sm">
-        <caption className="sr-only">Khóa học chuẩn cần cho từng miền của vị trí</caption>
+        <caption className="sr-only">{translateUi("Khóa học chuẩn cần cho từng miền của vị trí")}</caption>
         <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-600">
           <tr>
-            <th scope="col" className="px-4 py-3 font-semibold">Miền</th>
-            <th scope="col" className="px-4 py-3 font-semibold">Mức cao nhất yêu cầu</th>
-            <th scope="col" className="px-4 py-3 font-semibold">Khóa chuẩn cần học</th>
-            <th scope="col" className="px-4 py-3 font-semibold">Đã giao / Hoàn thành</th>
+            <th scope="col" className="px-4 py-3 font-semibold">{translateUi("Miền")}</th>
+            <th scope="col" className="px-4 py-3 font-semibold">{translateUi("Mức cao nhất yêu cầu")}</th>
+            <th scope="col" className="px-4 py-3 font-semibold">{translateUi("Khóa chuẩn cần học")}</th>
+            <th scope="col" className="px-4 py-3 font-semibold">{translateUi("Đã giao / Hoàn thành")}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -177,12 +177,12 @@ function LearningCoverage({ domains, assignments, courses, peopleCount }: Covera
             const done = assigned.filter((a) => a.status === 'COMPLETED').length;
             return (
               <tr key={group.domain.categoryId}>
-                <th scope="row" className="px-4 py-3 text-left font-medium text-slate-900">{group.domain.name}</th>
+                <th scope="row" className="px-4 py-3 text-left font-medium text-slate-900">{translateUi(group.domain.name)}</th>
                 <td className="px-4 py-3"><LevelBadge level={maxLevel} /></td>
                 <td className="px-4 py-3 text-slate-700">
-                  {needed.map((c) => <span key={c.id} className="mr-2 inline-block" title={c.title}><span className="font-mono text-xs">{c.code}</span> <span className="text-xs text-slate-500">({LEVEL_SUFFIX_LABELS[c.level]})</span></span>)}
+                  {needed.map((c) => <span key={c.id} className="mr-2 inline-block" title={translateUi(c.title)}><span className="font-mono text-xs">{c.code}</span> <span className="text-xs text-slate-500">({translateUi(LEVEL_SUFFIX_LABELS[c.level])})</span></span>)}
                 </td>
-                <td className="px-4 py-3 tabular-nums">{assigned.length} lượt giao · {done} hoàn thành{peopleCount > 0 ? ` · ${peopleCount} người` : ''}</td>
+                <td className="px-4 py-3 tabular-nums">{assigned.length}{translateUi(" lượt giao · ")}{done}{translateUi(" hoàn thành")}{peopleCount > 0 ? translateUi(` · ${peopleCount} người`) : ''}</td>
               </tr>
             );
           })}

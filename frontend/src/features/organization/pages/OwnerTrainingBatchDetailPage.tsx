@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
@@ -26,6 +27,7 @@ const STATUS_MAP: Record<string, { label: string; bg: string; fg: string }> = {
 type Tab = 'courses' | 'participants' | 'analytics';
 
 export function OwnerTrainingBatchDetailPage() {
+  useUiLanguage();
   const { id } = useParams<{ id: string }>();
   const [tab, setTab] = useState<Tab>('courses');
   const [participantPage, setParticipantPage] = useState(1);
@@ -38,7 +40,7 @@ export function OwnerTrainingBatchDetailPage() {
   const activateMutation = useActivateTrainingBatch();
 
   if (isLoading) {
-    return <div className="po-owner -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label="Đang tải chi tiết đợt đào tạo" variant="detail" /></div>;
+    return <div className="po-owner -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label={translateUi("Đang tải chi tiết đợt đào tạo")} variant="detail" /></div>;
   }
 
   if (!batch) {
@@ -57,16 +59,13 @@ export function OwnerTrainingBatchDetailPage() {
           <h2
             className="text-xl font-semibold"
             style={{ color: 'var(--po-ink)' }}
-          >
-            Không tìm thấy đợt đào tạo
-          </h2>
+          >{translateUi("Không tìm thấy đợt đào tạo")}</h2>
           <Link
             to="/enterprise/training-batches"
             className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold"
             style={{ color: 'var(--po-accent)' }}
           >
-            <ArrowLeft className="size-3.5" /> Quay lại danh sách
-          </Link>
+            <ArrowLeft className="size-3.5" />{translateUi(" Quay lại danh sách")}</Link>
         </div>
       </div>
     );
@@ -135,8 +134,7 @@ export function OwnerTrainingBatchDetailPage() {
           className="inline-flex items-center gap-1.5 text-[11px] font-bold mb-4 transition-opacity hover:opacity-70"
           style={{ color: 'var(--po-muted)' }}
         >
-          <ArrowLeft className="size-3" /> Đợt đào tạo
-        </Link>
+          <ArrowLeft className="size-3" />{translateUi(" Đợt đào tạo")}</Link>
 
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           <div className="flex-1 min-w-0">
@@ -154,7 +152,7 @@ export function OwnerTrainingBatchDetailPage() {
                 className="rounded-full px-2 py-0.5 text-[10px] font-bold"
                 style={{ background: status.bg, color: status.fg }}
               >
-                {status.label}
+                {translateUi(status.label)}
               </span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold tracking-[-0.04em] heading-gradient">
@@ -175,8 +173,7 @@ export function OwnerTrainingBatchDetailPage() {
                 className="inline-flex items-center gap-1.5 rounded-[11px] px-4 py-2.5 text-xs font-extrabold transition-transform hover:-translate-y-0.5 disabled:opacity-50"
                 style={{ background: 'var(--po-accent)', color: '#fff' }}
               >
-                <Play className="size-3.5" /> Bắt đầu
-              </button>
+                <Play className="size-3.5" />{translateUi(" Bắt đầu")}</button>
             )}
             {batch.status === 'RUNNING' && (
               <button
@@ -186,8 +183,7 @@ export function OwnerTrainingBatchDetailPage() {
                 className="inline-flex items-center gap-1.5 rounded-[11px] border px-4 py-2.5 text-xs font-bold transition-transform hover:-translate-y-0.5 disabled:opacity-50"
                 style={{ borderColor: '#bbf7d0', background: '#ecfdf5', color: '#16a34a' }}
               >
-                <CheckSquare className="size-3.5" /> Kết thúc
-              </button>
+                <CheckSquare className="size-3.5" />{translateUi(" Kết thúc")}</button>
             )}
             {batch.status !== 'COMPLETED' && batch.status !== 'CANCELLED' && (
               <button
@@ -197,8 +193,7 @@ export function OwnerTrainingBatchDetailPage() {
                 className="inline-flex items-center gap-1.5 rounded-[11px] border px-4 py-2.5 text-xs font-bold transition-transform hover:-translate-y-0.5 disabled:opacity-50"
                 style={{ borderColor: '#fecaca', background: '#fee2e2', color: '#dc2626' }}
               >
-                <Ban className="size-3.5" /> Hủy
-              </button>
+                <Ban className="size-3.5" />{translateUi(" Hủy")}</button>
             )}
           </div>
         </div>
@@ -228,7 +223,7 @@ export function OwnerTrainingBatchDetailPage() {
                 className="text-[10px] font-bold block"
                 style={{ color: 'var(--po-muted)' }}
               >
-                {kpi.label}
+                {translateUi(kpi.label)}
               </span>
               <strong
                 className="text-lg block mt-1"
@@ -254,8 +249,8 @@ export function OwnerTrainingBatchDetailPage() {
               color: 'var(--po-muted)',
             }}
           >
-            <strong style={{ color: 'var(--po-ink)' }}>Mục tiêu:</strong>{' '}
-            {batch.description}
+            <strong style={{ color: 'var(--po-ink)' }}>{translateUi("Mục tiêu:")}</strong>{' '}
+            {translateUi(batch.description)}
           </div>
         </div>
       )}
@@ -266,13 +261,8 @@ export function OwnerTrainingBatchDetailPage() {
           <div
             className="rounded-[11px] border p-4 text-xs"
             style={{ borderColor: '#fdddb6', background: '#fff7ed', color: '#c2410c' }}
-          >
-            Chưa có khóa học nào được giao cho học viên.{' '}
-            <Link to="/enterprise/assignments" className="font-bold underline">
-              Giao khóa học
-            </Link>{' '}
-            để phân công.
-          </div>
+          >{translateUi("Chưa có khóa học nào được giao cho học viên.")}{' '}
+            <Link to="/enterprise/assignments" className="font-bold underline">{translateUi("Giao khóa học")}</Link>{' '}{translateUi("để phân công.")}</div>
         </div>
       )}
 
@@ -297,7 +287,7 @@ export function OwnerTrainingBatchDetailPage() {
                   : { color: 'var(--po-muted)' }
               }
             >
-              {t.label}
+              {translateUi(t.label)}
               {t.count != null && (
                 <span className="ml-1 opacity-60">({t.count})</span>
               )}
@@ -347,36 +337,31 @@ export function OwnerTrainingBatchDetailPage() {
                     className="block text-xs line-clamp-2"
                     style={{ color: 'var(--po-ink)' }}
                   >
-                    {crs.title}
+                    {translateUi(crs.title)}
                   </strong>
                   {crs.durationMinutes > 0 && (
                     <small className="text-[10px]" style={{ color: 'var(--po-muted)' }}>
-                      {crs.durationMinutes} phút
-                    </small>
+                      {crs.durationMinutes}{translateUi(" phút")}</small>
                   )}
                 </div>
                 <div
                   className="mt-3 pt-3 flex items-center justify-between"
                   style={{ borderTop: '1px solid var(--po-line)' }}
                 >
-                  <span className="text-[10px] font-bold" style={{ color: 'var(--po-muted)' }}>
-                    Tỷ lệ đạt:{' '}
+                  <span className="text-[10px] font-bold" style={{ color: 'var(--po-muted)' }}>{translateUi("Tỷ lệ đạt:")}{' '}
                     <strong style={{ color: '#16a34a' }}>{crs.completionRate}%</strong>
                   </span>
                   <Link
                     to={`/enterprise/courses/${crs.id}?tab=pathway&batchId=${batch.id}&batchName=${encodeURIComponent(batch.name)}`}
                     className="text-[10px] font-bold inline-flex items-center gap-1 transition-opacity hover:opacity-70"
                     style={{ color: 'var(--po-accent)' }}
-                  >
-                    Chi tiết <ExternalLink className="size-2.5" />
+                  >{translateUi("Chi tiết ")}<ExternalLink className="size-2.5" />
                   </Link>
                 </div>
               </div>
             ))}
             {courses.length === 0 && (
-              <p className="text-xs col-span-full py-8 text-center" style={{ color: 'var(--po-muted)' }}>
-                Đợt đào tạo chưa có khóa học nào.
-              </p>
+              <p className="text-xs col-span-full py-8 text-center" style={{ color: 'var(--po-muted)' }}>{translateUi("Đợt đào tạo chưa có khóa học nào.")}</p>
             )}
           </div>
         )}
@@ -397,9 +382,8 @@ export function OwnerTrainingBatchDetailPage() {
                 color: 'var(--po-muted)',
               }}
             >
-              <span>{participants.length} học viên tham gia</span>
-              <span>
-                Đạt toàn bộ:{' '}
+              <span>{participants.length}{translateUi(" học viên tham gia")}</span>
+              <span>{translateUi("Đạt toàn bộ:")}{' '}
                 <strong style={{ color: '#16a34a' }}>
                   {completedParticipants.length}
                 </strong>
@@ -500,10 +484,10 @@ export function OwnerTrainingBatchDetailPage() {
                           }
                         >
                           {p.isFullyCompleted
-                            ? 'Hoàn thành'
+                            ? translateUi('Hoàn thành')
                             : p.progressPercent > 0
-                              ? 'Đang học'
-                              : 'Chưa bắt đầu'}
+                              ? translateUi('Đang học')
+                              : translateUi('Chưa bắt đầu')}
                         </span>
                       </td>
                     </tr>
@@ -511,7 +495,7 @@ export function OwnerTrainingBatchDetailPage() {
                 </tbody>
               </table>
             </div>
-            {participantPages > 1 && <div className="owner-operations__pagination px-4 pb-4"><span>Trang {participantPage} / {participantPages}</span><button type="button" disabled={participantPage <= 1} onClick={() => setParticipantPage((page) => page - 1)}>Trước</button><button type="button" disabled={participantPage >= participantPages} onClick={() => setParticipantPage((page) => page + 1)}>Sau</button></div>}
+            {participantPages > 1 && <div className="owner-operations__pagination px-4 pb-4"><span>{translateUi("Trang ")}{participantPage} / {participantPages}</span><button type="button" disabled={participantPage <= 1} onClick={() => setParticipantPage((page) => page - 1)}>{translateUi("Trước")}</button><button type="button" disabled={participantPage >= participantPages} onClick={() => setParticipantPage((page) => page + 1)}>{translateUi("Sau")}</button></div>}
           </div>
         )}
 
@@ -529,9 +513,7 @@ export function OwnerTrainingBatchDetailPage() {
               <p
                 className="text-[10px] font-black uppercase tracking-[0.12em]"
                 style={{ color: 'var(--po-muted)' }}
-              >
-                Phân bố tiến độ
-              </p>
+              >{translateUi("Phân bố tiến độ")}</p>
               {[
                 {
                   label: 'Hoàn thành 100%',
@@ -561,7 +543,7 @@ export function OwnerTrainingBatchDetailPage() {
                   <div key={item.label} className="space-y-1.5">
                     <div className="flex justify-between text-[11px]">
                       <span className="font-bold" style={{ color: 'var(--po-ink)' }}>
-                        {item.label}
+                        {translateUi(item.label)}
                       </span>
                       <span style={{ color: 'var(--po-muted)' }}>
                         {item.count} ({pct}%)
@@ -592,9 +574,7 @@ export function OwnerTrainingBatchDetailPage() {
               <p
                 className="text-[10px] font-black uppercase tracking-[0.12em]"
                 style={{ color: 'var(--po-muted)' }}
-              >
-                Cấu hình đợt
-              </p>
+              >{translateUi("Cấu hình đợt")}</p>
               {[
                 { k: 'Mã đợt', v: batch.code, mono: true },
                 { k: 'Ngày bắt đầu', v: batch.startDate },
@@ -619,7 +599,7 @@ export function OwnerTrainingBatchDetailPage() {
           </div>
         )}
       </div>
-      <Modal open={dialogAction !== null} onClose={() => setDialogAction(null)} title={dialogAction === 'activate' ? 'Bắt đầu đợt đào tạo' : dialogAction === 'complete' ? 'Kết thúc đợt đào tạo' : 'Hủy đợt đào tạo'} description={batch.name} footer={<><button type="button" className="owner-operations__secondary" onClick={() => setDialogAction(null)}>Quay lại</button><button type="button" className={dialogAction === 'cancel' ? 'owner-operations__danger' : 'owner-operations__primary'} disabled={activateMutation.isPending || completeMutation.isPending || cancelMutation.isPending || (dialogAction === 'cancel' && !cancelReason.trim())} onClick={() => { if (dialogAction === 'activate') void handleActivate(); if (dialogAction === 'complete') void handleComplete(); if (dialogAction === 'cancel') void handleCancel(); }}>{dialogAction === 'activate' ? 'Bắt đầu' : dialogAction === 'complete' ? 'Kết thúc đợt' : 'Xác nhận hủy'}</button></>}><p className="text-sm leading-relaxed">{dialogAction === 'activate' ? 'Đợt đào tạo sẽ chuyển sang trạng thái đang diễn ra.' : dialogAction === 'complete' ? 'Đợt đào tạo sẽ được đánh dấu hoàn thành.' : 'Đợt đào tạo sẽ ngừng hoạt động. Vui lòng ghi rõ lý do hủy.'}</p>{dialogAction === 'cancel' && <label className="mt-4 block text-sm font-semibold">Lý do hủy<textarea className="mt-2 w-full rounded-xl border border-slate-200 p-3 text-sm" rows={3} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Nhập lý do hủy đợt đào tạo" /></label>}</Modal>
+      <Modal open={dialogAction !== null} onClose={() => setDialogAction(null)} title={translateUi(dialogAction === 'activate' ? 'Bắt đầu đợt đào tạo' : dialogAction === 'complete' ? 'Kết thúc đợt đào tạo' : 'Hủy đợt đào tạo')} description={translateUi(batch.name)} footer={<><button type="button" className="owner-operations__secondary" onClick={() => setDialogAction(null)}>{translateUi("Quay lại")}</button><button type="button" className={dialogAction === 'cancel' ? 'owner-operations__danger' : 'owner-operations__primary'} disabled={activateMutation.isPending || completeMutation.isPending || cancelMutation.isPending || (dialogAction === 'cancel' && !cancelReason.trim())} onClick={() => { if (dialogAction === 'activate') void handleActivate(); if (dialogAction === 'complete') void handleComplete(); if (dialogAction === 'cancel') void handleCancel(); }}>{dialogAction === 'activate' ? translateUi('Bắt đầu') : dialogAction === 'complete' ? 'Kết thúc đợt' : 'Xác nhận hủy'}</button></>}><p className="text-sm leading-relaxed">{dialogAction === 'activate' ? 'Đợt đào tạo sẽ chuyển sang trạng thái đang diễn ra.' : dialogAction === 'complete' ? 'Đợt đào tạo sẽ được đánh dấu hoàn thành.' : 'Đợt đào tạo sẽ ngừng hoạt động. Vui lòng ghi rõ lý do hủy.'}</p>{dialogAction === 'cancel' && <label className="mt-4 block text-sm font-semibold">{translateUi("Lý do hủy")}<textarea className="mt-2 w-full rounded-xl border border-slate-200 p-3 text-sm" rows={3} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder={translateUi("Nhập lý do hủy đợt đào tạo")} /></label>}</Modal>
     </div>
   );
 }

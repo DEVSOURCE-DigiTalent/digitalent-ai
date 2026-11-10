@@ -1,3 +1,4 @@
+import type { TrialReportEmployee } from '../../trial-program.service';
 import type { SkillGapItem, SkillGapSummary } from '../../intelligence.service';
 import type { ReferencePositionCode } from './catalog';
 import type { EnrollmentStatus } from './engine';
@@ -233,7 +234,7 @@ export interface InternalCourseRecord {
   updatedAt: string;
 }
 
-/** Ceiling matrix (OW-05 "Lý thuyết trần nhà"): levels 0–3 per competency category id. */
+/** Ceiling matrix (OW-05 "Phạm vi năng lực"): levels 0–3 per competency category id. */
 export interface CapabilityCeilingRecord {
   organization: Record<string, number>;
   /** A department's own ceilings; a category missing here inherits the organization ceiling. */
@@ -242,7 +243,21 @@ export interface CapabilityCeilingRecord {
   updatedByName: string;
 }
 
+/** Bài dùng thử đã nộp trên mock: dòng báo cáo + số câu đúng theo lĩnh vực × cấp + từng câu (để tìm câu sai nhiều nhất). */
+export interface MockTrialResult extends TrialReportEmployee {
+  /** [lĩnh vực][cấp − 1] = [đúng, tổng]. */
+  cells: [number, number][][];
+  questions: { domainNumber: number; tier: number; content: string; correct: boolean }[];
+}
+
 export interface OrgData {
+  trialSurvey?: {
+    program: import('../../trial-program.service').TrialProgram;
+    results: Record<string, MockTrialResult>;
+    sessions: Record<string, { employeeId: string; startedAt: string; submitted: boolean; questions: (import('../../trial-program.service').TrialExamQuestion & { correctOptionId: string })[]; recordings: Record<string, { track: string; chunks: number; ended: boolean }> }>;
+  };
+  /** Published overall assessment fixtures; never inferred from enrollment or purchases. */
+  overallAssessments?: { employeeId: string; reviewedAt: string; publishedAt: string; domains: Record<string, number> }[];
   organizationId: string;
   settings: OrgSettingsRecord;
   jobGrades?: JobGradeRecord[];
@@ -269,6 +284,8 @@ export interface OrgData {
   internalCourses?: InternalCourseRecord[];
   /** Absent = not saved yet (the organization ceiling shown is the suggestion). */
   capabilityCeilings?: CapabilityCeilingRecord;
+  /** Paid course seats are independent of configured organization ceilings. */
+  courseSeatOrders?: Record<string, number>;
   /** Plan changes made after sign-up (seeded organizations have their plan in code). */
   subscriptionOverride?: {
     planCode: string;

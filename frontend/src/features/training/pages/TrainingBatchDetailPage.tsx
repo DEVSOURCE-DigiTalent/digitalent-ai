@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
@@ -23,6 +24,7 @@ type BatchTab = 'courses' | 'participants' | 'analytics';
  * Overview / Participants / Courses / Progress / Results.
  */
 export function TrainingBatchDetailPage() {
+  useUiLanguage();
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<BatchTab>('courses');
 
@@ -39,7 +41,7 @@ export function TrainingBatchDetailPage() {
     return (
       <div className="rounded-xl border border-slate-200 bg-white p-12 text-center shadow-sm">
         <AlertCircle className="w-12 h-12 text-rose-400 mx-auto mb-3" />
-        <h3 className="text-base font-semibold text-slate-900">Không tìm thấy đợt đào tạo</h3>
+        <h3 className="text-base font-semibold text-slate-900">{translateUi("Không tìm thấy đợt đào tạo")}</h3>
         <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
           Đợt đào tạo không tồn tại hoặc đã bị gỡ bỏ khỏi hệ thống.
         </p>
@@ -137,11 +139,10 @@ export function TrainingBatchDetailPage() {
               <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                 {batch.code}
               </span>
-              <StatusBadge label={statusLabel(batch.status)} variant={statusVariant(batch.status)} />
+              <StatusBadge label={translateUi(statusLabel(batch.status))} variant={statusVariant(batch.status)} />
             </div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.03em] heading-gradient">{batch.name}</h1>
-            <p className="text-sm text-slate-500">
-              Thời gian: <strong className="text-slate-700">{batch.startDate} → {batch.endDate}</strong>
+            <p className="text-sm text-slate-500">{translateUi("Thời gian: ")}<strong className="text-slate-700">{batch.startDate} → {batch.endDate}</strong>
               {batch.createdByName && ` · Tạo bởi ${batch.createdByName}`}
             </p>
           </div>
@@ -185,7 +186,7 @@ export function TrainingBatchDetailPage() {
 
       {import.meta.env.VITE_USE_MOCK !== 'true' && batch.status !== 'CANCELLED' && (
         <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          Học viên trong đợt chưa được giao khóa học tự động. Dùng <Link to="/enterprise/assignments" className="font-semibold underline">Giao khóa học</Link> để tạo phân công.
+          Học viên trong đợt chưa được giao khóa học tự động. Dùng <Link to="/enterprise/assignments" className="font-semibold underline">{translateUi("Giao khóa học")}</Link> để tạo phân công.
         </p>
       )}
 
@@ -197,7 +198,7 @@ export function TrainingBatchDetailPage() {
           </div>
           <div>
             <div className="text-xs text-slate-500">Khóa học trong đợt</div>
-            <div className="text-base font-bold text-slate-900">{courses.length} khóa</div>
+            <div className="text-base font-bold text-slate-900">{courses.length}{translateUi(" khóa")}</div>
           </div>
         </div>
 
@@ -206,8 +207,8 @@ export function TrainingBatchDetailPage() {
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs text-slate-500">Học viên tham gia</div>
-            <div className="text-base font-bold text-slate-900">{participants.length} nhân sự</div>
+            <div className="text-xs text-slate-500">{translateUi("Học viên tham gia")}</div>
+            <div className="text-base font-bold text-slate-900">{participants.length}{translateUi(" nhân sự")}</div>
           </div>
         </div>
 
@@ -228,7 +229,7 @@ export function TrainingBatchDetailPage() {
             <BarChart3 className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs text-slate-500">Tiến độ đợt</div>
+            <div className="text-xs text-slate-500">{translateUi("Tiến độ đợt")}</div>
             <div className="text-base font-bold text-sky-700">{batch.overallProgressPercent}%</div>
           </div>
         </div>
@@ -238,7 +239,7 @@ export function TrainingBatchDetailPage() {
       {batch.description && (
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm text-sm text-slate-600">
           <span className="font-semibold text-slate-900 block mb-0.5">Mục tiêu đợt đào tạo:</span>
-          {batch.description}
+          {translateUi(batch.description)}
         </div>
       )}
 
@@ -296,9 +297,9 @@ export function TrainingBatchDetailPage() {
                   </span>
                   {crs.level > 0 && <LevelBadge level={crs.level} />}
                 </div>
-                <h4 className="font-semibold text-sm text-slate-900 line-clamp-2">{crs.title}</h4>
+                <h4 className="font-semibold text-sm text-slate-900 line-clamp-2">{translateUi(crs.title)}</h4>
                 <div className="flex items-center gap-3 text-xs text-slate-500 mt-2">
-                  {crs.durationMinutes > 0 && <span>{crs.durationMinutes} phút</span>}
+                  {crs.durationMinutes > 0 && <span>{crs.durationMinutes}{translateUi(" phút")}</span>}
                 </div>
               </div>
 
@@ -325,21 +326,19 @@ export function TrainingBatchDetailPage() {
             <h3 className="text-base font-semibold text-slate-900">
               Học viên tham gia ({participants.length} nhân sự)
             </h3>
-            <span className="text-xs text-slate-500">
-              Đạt toàn bộ: <strong className="text-emerald-700">{completedParticipants.length}</strong> học viên
-            </span>
+            <span className="text-xs text-slate-500">{translateUi("Đạt toàn bộ: ")}<strong className="text-emerald-700">{completedParticipants.length}</strong>{translateUi(" học viên")}</span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600">
                 <tr>
-                  <th className="px-4 py-3">Học viên</th>
-                  <th className="px-4 py-3">Phòng ban</th>
+                  <th className="px-4 py-3">{translateUi("Học viên")}</th>
+                  <th className="px-4 py-3">{translateUi("Phòng ban")}</th>
                   <th className="px-4 py-3">Vị trí / Cấp bậc</th>
-                  <th className="px-4 py-3">Khóa hoàn thành</th>
+                  <th className="px-4 py-3">{translateUi("Khóa hoàn thành")}</th>
                   <th className="px-4 py-3">Tiến độ chung</th>
-                  <th className="px-4 py-3">Trạng thái</th>
+                  <th className="px-4 py-3">{translateUi("Trạng thái")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -382,7 +381,7 @@ export function TrainingBatchDetailPage() {
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge
-                        label={p.isFullyCompleted ? 'Hoàn thành' : p.progressPercent > 0 ? 'Đang học' : 'Chưa bắt đầu'}
+                        label={translateUi(p.isFullyCompleted ? translateUi('Hoàn thành') : p.progressPercent > 0 ? translateUi('Đang học') : translateUi('Chưa bắt đầu'))}
                         variant={p.isFullyCompleted ? 'success' : p.progressPercent > 0 ? 'info' : 'default'}
                       />
                     </td>
@@ -417,7 +416,7 @@ export function TrainingBatchDetailPage() {
                 return (
                   <div key={item.label} className="space-y-1 text-xs">
                     <div className="flex justify-between font-medium">
-                      <span className="text-slate-700">{item.label}</span>
+                      <span className="text-slate-700">{translateUi(item.label)}</span>
                       <span className="text-slate-500">{item.count} học viên ({pct}%)</span>
                     </div>
                     <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -446,7 +445,7 @@ export function TrainingBatchDetailPage() {
               </div>
               <div className="flex justify-between py-2">
                 <span className="text-slate-500">Trạng thái:</span>
-                <StatusBadge label={statusLabel(batch.status)} variant={statusVariant(batch.status)} />
+                <StatusBadge label={translateUi(statusLabel(batch.status))} variant={statusVariant(batch.status)} />
               </div>
             </div>
           </div>

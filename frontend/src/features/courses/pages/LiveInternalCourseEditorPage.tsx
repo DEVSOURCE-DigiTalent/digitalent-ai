@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -6,6 +7,7 @@ import { apiErrorMessage } from '@/lib/utils';
 
 /** BE2 stores course metadata here; it has no endpoint to persist an internal curriculum. */
 export function LiveInternalCourseEditorPage() {
+  useUiLanguage();
   const { id } = useParams<{ id: string }>();
   const isNew = !id || id === 'new';
   const navigate = useNavigate();
@@ -45,7 +47,7 @@ export function LiveInternalCourseEditorPage() {
     }
   };
 
-  if (!isNew && courseQuery.isLoading) return <p className="p-6 text-sm text-slate-500">Đang tải khóa học…</p>;
+  if (!isNew && courseQuery.isLoading) return <p className="p-6 text-sm text-slate-500">{translateUi("Đang tải khóa học…")}</p>;
   if (!isNew && (courseQuery.isError || !courseQuery.data)) return (
     <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-rose-800">
       Không tải được khóa học. <Link to="/enterprise/internal-courses" className="underline">Về danh sách</Link>
@@ -74,11 +76,9 @@ export function LiveInternalCourseEditorPage() {
       </div>
       <form onSubmit={save} className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         {existing && <div><span className="text-sm text-slate-500">Mã khóa: </span><strong className="font-mono text-slate-900">{existing.code}</strong></div>}
-        <label className="block text-sm font-medium text-slate-800">Tên khóa học
-          <input required maxLength={200} value={title} onChange={(event) => setTitle(event.target.value)} className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2" />
+        <label className="block text-sm font-medium text-slate-800">{translateUi("Tên khóa học")}<input required maxLength={200} value={title} onChange={(event) => setTitle(event.target.value)} className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2" />
         </label>
-        <label className="block text-sm font-medium text-slate-800">Mô tả
-          <textarea rows={4} value={description} onChange={(event) => setDescription(event.target.value)} className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2" />
+        <label className="block text-sm font-medium text-slate-800">{translateUi("Mô tả")}<textarea rows={4} value={description} onChange={(event) => setDescription(event.target.value)} className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2" />
         </label>
         <label className="block text-sm font-medium text-slate-800">Chuyên mục
           <input value={category} onChange={(event) => setCategory(event.target.value)} className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2" />
@@ -86,15 +86,14 @@ export function LiveInternalCourseEditorPage() {
         <label className="block text-sm font-medium text-slate-800">Thời lượng dự kiến (phút)
           <input type="number" min="0" step="1" value={durationMinutes} onChange={(event) => setDurationMinutes(Number(event.target.value))} className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2" />
         </label>
-        {canPublish && <label className="block text-sm font-medium text-slate-800">Trạng thái
-          <select value={status} onChange={(event) => setStatus(event.target.value as 'DRAFT' | 'PUBLISHED')} className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2">
-            <option value="DRAFT">Bản nháp</option>
+        {canPublish && <label className="block text-sm font-medium text-slate-800">{translateUi("Trạng thái")}<select value={status} onChange={(event) => setStatus(event.target.value as 'DRAFT' | 'PUBLISHED')} className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2">
+            <option value="DRAFT">{translateUi("Bản nháp")}</option>
             <option value="PUBLISHED">Đã xuất bản</option>
           </select>
         </label>}
         <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
-          <Link to={isNew ? '/enterprise/internal-courses' : `/enterprise/internal-courses/${id}`} className="rounded-lg border border-slate-300 px-4 py-2 text-sm">Hủy</Link>
-          <button type="submit" disabled={pending} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{pending ? 'Đang lưu…' : isNew ? 'Tạo bản nháp' : 'Lưu thay đổi'}</button>
+          <Link to={isNew ? '/enterprise/internal-courses' : `/enterprise/internal-courses/${id}`} className="rounded-lg border border-slate-300 px-4 py-2 text-sm">{translateUi("Hủy")}</Link>
+          <button type="submit" disabled={pending} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{pending ? translateUi('Đang lưu…') : isNew ? 'Tạo bản nháp' : translateUi('Lưu thay đổi')}</button>
         </div>
       </form>
     </div>

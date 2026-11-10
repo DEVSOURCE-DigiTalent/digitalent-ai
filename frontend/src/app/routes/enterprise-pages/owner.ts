@@ -12,8 +12,7 @@ const JobGradeConfigPage = lazyPage(() => import('../../../features/organization
 const RolesAccessPage = lazyPage(() => import('../../../features/members/pages/RolesAccessPage'), 'RolesAccessPage');
 const OwnerFrameworkPage = lazyPage(() => import('../../../features/organization/pages/OwnerFrameworkPage'), 'OwnerFrameworkPage');
 const OwnerFrameworkDetailPage = lazyPage(() => import('../../../features/organization/pages/OwnerFrameworkDetailPage'), 'OwnerFrameworkDetailPage');
-const RequirementSetListPage = lazyPage(() => import('../../../features/competency/pages/RequirementSetListPage'), 'RequirementSetListPage');
-const PositionRequirementsPage = lazyPage(() => import('../../../features/competency/pages/PositionRequirementsPage'), 'PositionRequirementsPage');
+const PositionStandardsRedirectPage = lazyPage(() => import('../../../features/organization/pages/PositionStandardsRedirectPage'), 'PositionStandardsRedirectPage');
 const RequirementHistoryPage = lazyPage(() => import('../../../features/competency/pages/RequirementHistoryPage'), 'RequirementHistoryPage');
 const WorkforceCompetencyMatrixPage = lazyPage(() => import('../../../features/competency/pages/WorkforceCompetencyMatrixPage'), 'WorkforceCompetencyMatrixPage');
 const EmployeeCompetencyProfilePage = lazyPage(() => import('../../../features/competency/pages/EmployeeCompetencyProfilePage'), 'EmployeeCompetencyProfilePage');
@@ -63,8 +62,8 @@ export const OWNER_PAGES: PageRegistry = {
   'OW-13': RolesAccessPage,
   'OW-14': OwnerFrameworkPage,
   'OW-15': OwnerFrameworkDetailPage,
-  'OW-16': RequirementSetListPage,
-  'OW-17': PositionRequirementsPage,
+  'OW-16': PositionStandardsRedirectPage,
+  'OW-17': PositionStandardsRedirectPage,
   'OW-18': RequirementHistoryPage,
   'OW-19': WorkforceCompetencyMatrixPage,
   'OW-20': EmployeeCompetencyProfilePage,

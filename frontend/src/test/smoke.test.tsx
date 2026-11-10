@@ -34,8 +34,8 @@ describe('End-to-End Foundation Smoke Tests (SEP-06)', () => {
     );
 
     // The landing page is lazy-loaded; its first import is slow when the whole suite runs in parallel.
-    expect(await screen.findByRole('heading', { level: 1, name: 'DigiTalent AI' }, { timeout: 10_000 })).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: /^Xem bảng giá$/ })[0]).toHaveAttribute('href', '/business/pricing');
+    expect(await screen.findByRole('heading', { level: 1, name: /Định vị năng lực số/ }, { timeout: 10_000 })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /^Dùng thử/ })[0]).toHaveAttribute('href', '/business/try');
   });
 
   it('OwnerCanAccessEnterpriseDepartments', async () => {
@@ -49,7 +49,7 @@ describe('End-to-End Foundation Smoke Tests (SEP-06)', () => {
       </QueryClientProvider>
     );
 
-    expect(await screen.findByRole('heading', { name: /Phòng ban/ })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Quản lý phòng ban' })).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: 'Tạo phòng ban' })).toBeInTheDocument();
   });
 
@@ -64,7 +64,7 @@ describe('End-to-End Foundation Smoke Tests (SEP-06)', () => {
       </QueryClientProvider>
     );
 
-    expect(await screen.findByRole('heading', { name: /Phòng ban/ })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Quản lý phòng ban' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Tạo phòng ban' })).not.toBeInTheDocument();
   });
 

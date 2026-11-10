@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Search, Clock, Users, ArrowRight, CheckCircle2 } from 'lucide-react';
@@ -11,6 +12,7 @@ import { formatDate } from '@/lib/utils';
 import type { PracticalTaskDto } from '@/services/task.service';
 
 export function PracticalTaskListPage() {
+  useUiLanguage();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string>('');
   const [pageIndex, setPageIndex] = useState(1);
@@ -34,7 +36,7 @@ export function PracticalTaskListPage() {
             to={`/enterprise/tasks/${row.id}`}
             className="font-semibold text-sm text-slate-900 hover:text-blue-600 transition inline-block"
           >
-            {row.title}
+            {translateUi(row.title)}
           </Link>
           <div className="flex items-center gap-2">
             <LevelBadge level={row.targetLevel} />
@@ -59,7 +61,7 @@ export function PracticalTaskListPage() {
                 key={id}
                 className="text-[10px] font-mono px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-medium"
               >
-                {competency?.frameworkCode ? `TT02-${competency.frameworkCode}` : competency?.code ?? `Năng lực ${id.slice(0, 8)}…`}
+                {competency?.frameworkCode ? `TT02-${competency.frameworkCode}` : competency?.code ?? translateUi(`Năng lực ${id.slice(0, 8)}…`)}
               </span>
             );
           })}
@@ -72,7 +74,7 @@ export function PracticalTaskListPage() {
       cell: (row: PracticalTaskDto) => (
         <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
           <Users className="size-3.5 text-slate-400" />
-          <span>{row.assignedEmployeesCount} nhân sự</span>
+          <span>{row.assignedEmployeesCount}{translateUi(" nhân sự")}</span>
         </div>
       ),
     },
@@ -92,13 +94,11 @@ export function PracticalTaskListPage() {
             <div className="flex items-center gap-1.5">
               {pending > 0 && (
                 <span className="text-[10px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded">
-                  {pending} chờ chấm
-                </span>
+                  {pending}{translateUi(" chờ chấm")}</span>
               )}
               {approved > 0 && (
                 <span className="text-[10px] font-bold px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded">
-                  {approved} đã duyệt
-                </span>
+                  {approved}{translateUi(" đã duyệt")}</span>
               )}
             </div>
           </div>
@@ -123,7 +123,7 @@ export function PracticalTaskListPage() {
           to={`/enterprise/tasks/${row.id}`}
           className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
         >
-          <span>Chi tiết</span>
+          <span>{translateUi("Chi tiết")}</span>
           <ArrowRight className="size-3.5" />
         </Link>
       ),
@@ -143,7 +143,7 @@ export function PracticalTaskListPage() {
             className="inline-flex items-center gap-2 px-3.5 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-sm rounded-xl transition"
           >
             <CheckCircle2 className="size-4 text-emerald-600" />
-            <span>Hàng chờ chấm điểm</span>
+            <span>{translateUi("Hàng chờ chấm điểm")}</span>
           </Link>
           {canCreate && <Link
             to="/enterprise/tasks/new"
@@ -178,10 +178,10 @@ export function PracticalTaskListPage() {
               setStatus(e.target.value);
               setPageIndex(1);
             }}
-            aria-label="Lọc theo trạng thái"
+            aria-label={translateUi("Lọc theo trạng thái")}
             className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
           >
-            <option value="">Tất cả trạng thái</option>
+            <option value="">{translateUi("Tất cả trạng thái")}</option>
             <option value="ACTIVE">Đang kích hoạt</option>
             <option value="ARCHIVED">Đã lưu trữ</option>
           </select>

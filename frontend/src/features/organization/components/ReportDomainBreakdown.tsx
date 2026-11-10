@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 interface DomainRow {
   name: string;
   averageCurrent: number;
@@ -13,6 +14,7 @@ export function ReportDomainBreakdown({
   domains,
   isLoading,
 }: ReportDomainBreakdownProps) {
+  useUiLanguage();
   const maxLevel = 3;
 
   return (
@@ -35,29 +37,21 @@ export function ReportDomainBreakdown({
           <h2
             className="mt-2 text-xl font-semibold"
             style={{ color: 'var(--po-ink)', letterSpacing: '-0.045em' }}
-          >
-            Mức hiện tại bên cạnh mục tiêu yêu cầu.
-          </h2>
+          >{translateUi("Mức hiện tại bên cạnh mục tiêu yêu cầu.")}</h2>
         </div>
-        <p className="text-xs" style={{ color: 'var(--po-muted)' }}>
-          Hoàn thành khóa học không ghi đè kết quả đánh giá năng lực cơ sở.
-        </p>
+        <p className="text-xs" style={{ color: 'var(--po-muted)' }}>{translateUi("Hoàn thành khóa học không ghi đè kết quả đánh giá năng lực cơ sở.")}</p>
       </div>
 
       {isLoading ? (
         <p
           className="py-6 text-center text-sm"
           style={{ color: 'var(--po-muted)' }}
-        >
-          Đang tải…
-        </p>
+        >{translateUi("Đang tải…")}</p>
       ) : domains.length === 0 ? (
         <p
           className="py-6 text-center text-sm"
           style={{ color: 'var(--po-muted)' }}
-        >
-          Chưa có dữ liệu miền năng lực.
-        </p>
+        >{translateUi("Chưa có dữ liệu miền năng lực.")}</p>
       ) : (
         <>
           <div
@@ -68,16 +62,12 @@ export function ReportDomainBreakdown({
               <i
                 className="inline-block size-[9px] rounded-full"
                 style={{ background: '#137b84' }}
-              />
-              Mức hiện tại TB
-            </span>
+              />{translateUi("Mức hiện tại TB")}</span>
             <span className="inline-flex items-center gap-1.5">
               <i
                 className="inline-block size-[9px] rounded-full"
                 style={{ background: '#eeb093' }}
-              />
-              Mức yêu cầu TB
-            </span>
+              />{translateUi("Mức yêu cầu TB")}</span>
           </div>
 
           <div className="grid gap-2">
@@ -147,9 +137,7 @@ export function ReportDomainBreakdown({
                     >
                       <b style={{ color: '#137b84' }}>
                         L{d.averageCurrent.toFixed(1)}
-                      </b>{' '}
-                      hiện
-                    </div>
+                      </b>{' '}{translateUi("hiện")}</div>
                     <div
                       className="flex-1 h-1.5 rounded-full overflow-hidden"
                       style={{ background: 'var(--po-raised)' }}
@@ -171,9 +159,7 @@ export function ReportDomainBreakdown({
                     >
                       <b style={{ color: '#eeb093' }}>
                         L{d.averageRequired.toFixed(1)}
-                      </b>{' '}
-                      cần
-                    </div>
+                      </b>{' '}{translateUi("cần")}</div>
                     <div
                       className="flex-1 h-1.5 rounded-full overflow-hidden"
                       style={{ background: 'var(--po-raised)' }}

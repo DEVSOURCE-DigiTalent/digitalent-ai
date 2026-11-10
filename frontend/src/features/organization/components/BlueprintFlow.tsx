@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { SetupItem } from '@/services/organization.service';
 
 interface BlueprintFlowProps {
@@ -13,13 +14,14 @@ const TIERS = [
 ];
 
 export function BlueprintFlow({ setup, setupCompleted }: BlueprintFlowProps) {
+  useUiLanguage();
   return (
     <div>
       {/* Pulse-sequence lane */}
       <div
         className="flex items-center gap-2 overflow-x-auto whitespace-nowrap"
         style={{ margin: '-5px 0 18px', padding: '3px 2px 9px' }}
-        aria-label="Phân cấp năng lực"
+        aria-label={translateUi("Phân cấp năng lực")}
       >
         {TIERS.map((tier, i) => (
           <div key={tier.step} className="contents">
@@ -45,7 +47,7 @@ export function BlueprintFlow({ setup, setupCompleted }: BlueprintFlowProps) {
               >
                 {tier.step}
               </b>
-              {tier.label}
+              {translateUi(tier.label)}
             </span>
           </div>
         ))}
@@ -63,9 +65,7 @@ export function BlueprintFlow({ setup, setupCompleted }: BlueprintFlowProps) {
         <span
           className="text-[10px] font-black uppercase tracking-[0.12em]"
           style={{ color: 'var(--po-accent)' }}
-        >
-          Tiến độ thiết lập
-        </span>
+        >{translateUi("Tiến độ thiết lập")}</span>
         <h2
           className="mt-2 text-xl font-semibold"
           style={{ color: 'var(--po-ink)', letterSpacing: '-0.045em' }}
@@ -97,7 +97,7 @@ export function BlueprintFlow({ setup, setupCompleted }: BlueprintFlowProps) {
                   className="block text-[13px]"
                   style={{ color: 'var(--po-ink)' }}
                 >
-                  {item.label}
+                  {translateUi(item.label)}
                 </strong>
                 {item.detail && (
                   <small

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useEffect } from 'react';
 import { CheckCircle2, RefreshCw, KeyRound, ArrowLeft } from 'lucide-react';
 import { DARK_INPUT_CLASS, DARK_PRIMARY_BUTTON, FormError } from '../../public/components/FormControls';
@@ -22,6 +23,7 @@ export function OtpVerificationCard({
   onSuccess,
   onCancel,
 }: OtpVerificationCardProps) {
+  useUiLanguage();
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -86,7 +88,7 @@ export function OtpVerificationCard({
           type="button"
           onClick={onCancel}
           className="grid size-9 place-items-center rounded-xl bg-white/5 text-stone-400 hover:text-cream hover:bg-white/10 transition-colors"
-          title="Quay lại"
+          title={translateUi("Quay lại")}
         >
           <ArrowLeft className="size-4" />
         </button>
@@ -129,7 +131,7 @@ export function OtpVerificationCard({
         </div>
       )}
 
-      {error && <FormError message={error} />}
+      {error && <FormError message={translateUi(error)} />}
 
       <form onSubmit={handleVerify} className="space-y-4">
         <div>
@@ -158,7 +160,7 @@ export function OtpVerificationCard({
           disabled={loading || otp.length < 6}
           className={`${DARK_PRIMARY_BUTTON} w-full`}
         >
-          {loading ? 'Đang xác thực…' : 'Xác thực & Bắt đầu'}
+          {loading ? translateUi('Đang xác thực…') : 'Xác thực & Bắt đầu'}
         </button>
 
         <div className="flex items-center justify-between pt-2 text-xs">
@@ -169,7 +171,7 @@ export function OtpVerificationCard({
             className="text-stone-400 hover:text-cream disabled:opacity-40 transition-colors flex items-center gap-1"
           >
             <RefreshCw className={`size-3.5 ${resending ? 'animate-spin' : ''}`} />
-            {resendCooldown > 0 ? `Gửi lại sau (${resendCooldown}s)` : 'Gửi lại mã'}
+            {resendCooldown > 0 ? translateUi(`Gửi lại sau (${resendCooldown}s)`) : 'Gửi lại mã'}
           </button>
 
           <button

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
@@ -31,6 +32,7 @@ const HEADER_LINKS: Record<PortalChoice, { home: string; pricing: string; login:
  * Đã được đồng bộ 100% sang chuẩn nhận diện ánh sáng ngọc trai và kính mờ hiện đại của DigiTalent Pulse.
  */
 export function PublicShell({ portal, children, width = 'narrow', className }: PublicShellProps) {
+  useUiLanguage();
   const isIndividual = portal === 'individual';
   const isNeutral = !portal;
   const theme = usePersonalTheme((s) => s.theme);
@@ -60,11 +62,11 @@ export function PublicShell({ portal, children, width = 'narrow', className }: P
         )}
       >
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5 md:px-8">
-          <Link to={links?.home ?? '/business'} aria-label="DigiTalent AI, về trang chủ" className="text-lg">
+          <Link to={links?.home ?? '/business'} aria-label={translateUi("DigiTalent AI, về trang chủ")} className="text-lg">
             <Wordmark markOnly className={cn('min-[420px]:hidden', isIndividual ? '[--wordmark-on:var(--pt-bg)]' : isNeutral ? neutral.wordmark : undefined)} />
             <Wordmark className={cn('hidden min-[420px]:inline-flex', isIndividual ? '[--wordmark-on:var(--pt-bg)]' : isNeutral ? neutral.wordmark : undefined)} />
           </Link>
-          <nav aria-label="Điều hướng chính" className="flex items-center gap-3 text-sm sm:gap-5">
+          <nav aria-label={translateUi("Điều hướng chính")} className="flex items-center gap-3 text-sm sm:gap-5">
             {links && (
               <Link
                 to={links.pricing}
@@ -72,9 +74,7 @@ export function PublicShell({ portal, children, width = 'narrow', className }: P
                   'hidden font-medium transition-colors sm:inline',
                   isIndividual ? 'text-pt-fg-2 hover:text-pt-fg' : 'text-slate-600 hover:text-blue-600'
                 )}
-              >
-                Giải pháp
-              </Link>
+              >{translateUi("Giải pháp")}</Link>
             )}
             {(isIndividual || isNeutral) && <ThemeToggle />}
             {user ? (
@@ -84,9 +84,7 @@ export function PublicShell({ portal, children, width = 'narrow', className }: P
                   type="button"
                   onClick={() => logout.mutate()}
                   className={cn('text-xs font-medium transition-colors', isIndividual ? 'text-pt-fg-2 hover:text-pt-fg' : 'text-slate-600 hover:text-rose-600')}
-                >
-                  Đăng xuất
-                </button>
+                >{translateUi("Đăng xuất")}</button>
               </div>
             ) : (
               <>
@@ -101,16 +99,12 @@ export function PublicShell({ portal, children, width = 'narrow', className }: P
                         : 'border-slate-300 text-slate-700 hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50/50'
                   )}
                 >
-                  <LogIn className="hidden size-4 sm:block" aria-hidden="true" />
-                  Đăng nhập
-                </Link>
+                  <LogIn className="hidden size-4 sm:block" aria-hidden="true" />{translateUi("Đăng nhập")}</Link>
                 {links && !isPricingPage && (
                   <Link
                     to={links.pricing}
                     className="whitespace-nowrap rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-3.5 py-1.5 font-semibold text-white shadow-md shadow-blue-500/20 transition-all hover:brightness-110 sm:px-4 sm:py-2"
-                  >
-                    Khám phá
-                  </Link>
+                  >{translateUi("Khám phá")}</Link>
                 )}
               </>
             )}

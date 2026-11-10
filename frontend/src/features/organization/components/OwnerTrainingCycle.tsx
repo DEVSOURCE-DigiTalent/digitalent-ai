@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import type { MemberHistoryEntry } from '@/services/member.service';
@@ -9,14 +10,13 @@ interface OwnerTrainingCycleProps {
 }
 
 export function OwnerTrainingCycle({ events }: OwnerTrainingCycleProps) {
+  useUiLanguage();
   const recent = events.slice(0, 3);
 
   return (
     <div className="rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-xs p-5 shadow-xs hover:shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-all flex flex-col justify-between">
       <div>
-        <h3 className="text-sm font-bold text-[#17243f] pb-3 border-b border-slate-100">
-          Hoạt động Gần đây
-        </h3>
+        <h3 className="text-sm font-bold text-[#17243f] pb-3 border-b border-slate-100">{translateUi("Hoạt động Gần đây")}</h3>
 
         {recent.length > 0 ? (
           <div className="mt-3.5 space-y-2.5">
@@ -43,9 +43,7 @@ export function OwnerTrainingCycle({ events }: OwnerTrainingCycleProps) {
             ))}
           </div>
         ) : (
-          <div className="py-6 text-center text-xs text-[#94a3b8]">
-            Chưa có hoạt động mới
-          </div>
+          <div className="py-6 text-center text-xs text-[#94a3b8]">{translateUi("Chưa có hoạt động mới")}</div>
         )}
       </div>
 
@@ -53,9 +51,7 @@ export function OwnerTrainingCycle({ events }: OwnerTrainingCycleProps) {
         <Link
           to="/enterprise/reports"
           className="text-xs font-bold text-[#137b84] hover:text-[#0e5968] inline-flex items-center gap-1 transition-colors"
-        >
-          Xem tất cả
-          <ArrowRight className="size-3" />
+        >{translateUi("Xem tất cả")}<ArrowRight className="size-3" />
         </Link>
       </div>
     </div>

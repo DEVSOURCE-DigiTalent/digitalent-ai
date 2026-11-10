@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Layers } from 'lucide-react';
 import { useCompetencies, useCompetencyCategories } from '@/hooks/use-competencies';
 import { Empty, LoadError, Mini, PageHead, PageSkeleton, Pill, PuLink } from '@/features/pulse-employee/components/ui';
@@ -10,9 +11,10 @@ const HIERARCHY = ['Digital AI', 'Doanh nghiệp', 'Phòng ban', 'Vị trí'];
 
 /**
  * MG-15 · Khung năng lực chung (mock `#/framework`), chỉ đọc cho quản lý: sáu lĩnh vực của chuẩn Digital AI, ba mức,
- * và cách chuẩn chung trở thành mục tiêu vị trí. Chủ doanh nghiệp sửa trần và mục tiêu ở màn của họ (OW-14).
+ * và cách chuẩn chung trở thành mục tiêu vị trí. Chủ doanh nghiệp sửa phạm vi và mục tiêu ở màn của họ (OW-14).
  */
 export function ManagerFrameworkPage() {
+  useUiLanguage();
   const categories = useCompetencyCategories();
   const competencies = useCompetencies({ pageIndex: 1, pageSize: 100, status: 'ACTIVE' });
 
@@ -31,12 +33,12 @@ export function ManagerFrameworkPage() {
   );
 
   if (categories.isLoading || competencies.isLoading) {
-    return <ManagerPage>{header}<PageSkeleton blocks={[180, 180, 120]} /></ManagerPage>;
+    return <ManagerPage>{translateUi(header)}<PageSkeleton blocks={[180, 180, 120]} /></ManagerPage>;
   }
   if (categories.isError || competencies.isError) {
     return (
       <ManagerPage>
-        {header}
+        {translateUi(header)}
         <LoadError
           message="Không tải được khung năng lực."
           onRetry={() => { categories.refetch(); competencies.refetch(); }}
@@ -57,7 +59,7 @@ export function ManagerFrameworkPage() {
 
   return (
     <ManagerPage testId="manager-framework">
-      {header}
+      {translateUi(header)}
 
       {domains.length === 0 ? (
         <Empty icon={<Layers size={24} />} title="Khung năng lực chưa được công bố.">
@@ -66,20 +68,20 @@ export function ManagerFrameworkPage() {
       ) : (
         <div className="pm-domain-grid">
           {domains.map((domain, index) => (
-            <article key={domain.id} className="pm-domain-card" aria-label={domain.name}>
-              <Mini>Lĩnh vực {pad2(index + 1)}</Mini>
-              <h3>{domain.name}</h3>
+            <article key={domain.id} className="pm-domain-card" aria-label={translateUi(domain.name)}>
+              <Mini>{translateUi("Lĩnh vực ")}{pad2(index + 1)}</Mini>
+              <h3>{translateUi(domain.name)}</h3>
               <p>{domain.competencies.length} năng lực · hành vi số thực tế ở ba mức.</p>
               {domain.competencies.length > 0 && (
                 <ul>
                   {domain.competencies.slice(0, 4).map((item) => (
-                    <li key={item.id} title={item.name}><b>{item.frameworkCode ?? item.code}</b>{item.name}</li>
+                    <li key={item.id} title={translateUi(item.name)}><b>{item.frameworkCode ?? item.code}</b>{item.name}</li>
                   ))}
                   {domain.competencies.length > 4 && <li>+ {domain.competencies.length - 4} năng lực khác</li>}
                 </ul>
               )}
               <div className="pm-level-chips" aria-label="Ba mức">
-                {LEVELS.map((level) => <span key={level}>{pad2(level)} {LEVEL_NAMES[level]}</span>)}
+                {LEVELS.map((level) => <span key={level}>{pad2(level)} {translateUi(LEVEL_NAMES[level])}</span>)}
               </div>
             </article>
           ))}

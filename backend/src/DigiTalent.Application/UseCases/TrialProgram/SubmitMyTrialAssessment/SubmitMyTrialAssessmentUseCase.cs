@@ -54,11 +54,12 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
             throw new BadRequestException(reason, "proctoringSessionId", StartMyTrialAssessmentUseCase.NotOpen);
         }
 
-        var session = await _proctoring.CloseForSubmitAsync(
-            input.ProctoringSessionId, employee.Id, Statuses.ProctoringKind.TrialAssessment, null, now);
         var paper = await _paper.BuildAsync(trial.OrganizationId, employee.Id);
         var grade = PulseExamPaper.Grade(paper.Items.Select(i => i.Question).ToList(), input.Answers)
                     ?? throw new BadRequestException("Đề đánh giá chưa sẵn sàng.", "answers", StartMyTrialAssessmentUseCase.PaperEmpty);
+
+        var session = await _proctoring.CloseForSubmitAsync(
+            input.ProctoringSessionId, employee.Id, Statuses.ProctoringKind.TrialAssessment, null, now);
 
         var assessment = new TrialAssessment
         {

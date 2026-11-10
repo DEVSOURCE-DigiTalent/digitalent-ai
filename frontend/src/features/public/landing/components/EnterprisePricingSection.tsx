@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Check, Minus, Plus } from 'lucide-react';
@@ -28,6 +29,7 @@ const toSeats = (value: string): number => {
  * so they cannot drift from the pricing page. A plan that cannot hold that many seats says so instead of pricing it.
  */
 export function EnterprisePricingSection({ section }: { section: PricingSection }) {
+  useUiLanguage();
   const seatsId = useId();
   const [value, setValue] = useState(String(DEFAULT_SEATS));
   const seats = toSeats(value);
@@ -81,10 +83,11 @@ export function EnterprisePricingSection({ section }: { section: PricingSection 
 }
 
 function StepButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+  useUiLanguage();
   return (
     <button
       type="button"
-      aria-label={label}
+      aria-label={translateUi(label)}
       onClick={onClick}
       className="grid size-11 place-items-center rounded-full border border-cream/25 text-cream transition-colors hover:border-cream/60"
     >
@@ -94,6 +97,7 @@ function StepButton({ label, onClick, children }: { label: string; onClick: () =
 }
 
 function PlanPanel({ plan, seats }: { plan: Plan; seats: number }) {
+  useUiLanguage();
   const { reduced } = useLandingMotion();
   const range = plan.seatRange;
   const contactOnly = plan.monthlyPrice === null;
@@ -105,7 +109,7 @@ function PlanPanel({ plan, seats }: { plan: Plan; seats: number }) {
 
   return (
     <article
-      aria-label={`Gói ${plan.name}`}
+      aria-label={translateUi(`Gói ${plan.name}`)}
       data-featured={plan.recommended || undefined}
       className={cn(
         'flex flex-col rounded-[20px] p-7 ring-1 transition-all duration-300',
@@ -121,7 +125,7 @@ function PlanPanel({ plan, seats }: { plan: Plan; seats: number }) {
       <p className="mt-2 min-h-[2.8em] text-base leading-[1.5] text-stone-400">{plan.tagline}</p>
 
       <div className="mt-6 min-h-[5.5rem]">
-        {contactOnly && <p className="text-3xl font-light tracking-[-0.03em]">Liên hệ</p>}
+        {contactOnly && <p className="text-3xl font-light tracking-[-0.03em]">{translateUi("Liên hệ")}</p>}
         {!contactOnly && overLimit && range && (
           <p className="text-sm leading-[1.6] text-stone-400">
             {plan.name} hỗ trợ tối đa {range.max} người dùng. Với {seats} nhân viên, hãy chọn gói khác.
@@ -134,8 +138,7 @@ function PlanPanel({ plan, seats }: { plan: Plan; seats: number }) {
               <span className="ml-1 text-sm text-stone-400">/ tháng</span>
             </p>
             <p className="mt-1 text-xs text-stone-500 tabular-nums">
-              {formatVnd(plan.monthlyPrice ?? 0)} × {billedSeats} người dùng
-              {range && seats < range.min ? ` · tối thiểu ${range.min} người dùng` : ''}
+              {formatVnd(plan.monthlyPrice ?? 0)} × {billedSeats}{translateUi(" người dùng")}{range && seats < range.min ? translateUi(` · tối thiểu ${range.min} người dùng`) : ''}
             </p>
           </>
         )}

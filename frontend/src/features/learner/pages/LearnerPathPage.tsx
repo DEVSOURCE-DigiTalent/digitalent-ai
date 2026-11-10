@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Check, Lock, Play } from 'lucide-react';
@@ -23,19 +24,20 @@ const STATUS_LABEL: Record<PathCourseStatus, string> = {
 
 /** IND-08 "/personal/path": the courses between the learner and the target, in prerequisite order. */
 export function LearnerPathPage() {
+  useUiLanguage();
   const { data, isLoading, isError, error, refetch } = usePersonalPath();
 
   return (
     <div data-testid="learner-path-page" className="grid gap-6">
       <PersonalPageHeader
-        label="Lộ trình học tập"
+        label={translateUi("Lộ trình học tập")}
         title="Lộ trình học"
         lead={data?.target ? `Mục tiêu: ${data.target.name}. Các khóa học được sắp theo điều kiện tiên quyết.` : 'Chọn mục tiêu nghề nghiệp để xây dựng lộ trình học.'}
         actions={data?.target && <Link to="/personal/target" className={PT_BUTTON_SECONDARY}>Đổi mục tiêu</Link>}
       />
 
       {isLoading && <LoadingBlock />}
-      {isError && <ErrorBlock message={errorMessage(error)} onRetry={() => refetch()} />}
+      {isError && <ErrorBlock message={translateUi(errorMessage(error))} onRetry={() => refetch()} />}
       {data && !data.target && (
         <EmptyState
           title="Chưa có vị trí mục tiêu"
@@ -49,6 +51,7 @@ export function LearnerPathPage() {
 }
 
 function PathBody({ path }: { path: PersonalPath }) {
+  useUiLanguage();
   const { data: access } = usePersonalAccess();
   const { mutate: markSeen } = useMarkSeen();
   const seenPath = access?.seen.path;
@@ -82,8 +85,8 @@ function PathBody({ path }: { path: PersonalPath }) {
           </p>
           <ProgressBar value={path.progressPercent} label="Tiến độ lộ trình" />
         </div>
-        <Stat label="Khóa học" value={`${path.completedCourses}/${path.totalCourses}`} hint="đã hoàn thành" />
-        <Stat label="Còn lại" value={formatHours(path.minutesLeft)} hint="thời lượng ước tính" />
+        <Stat label={translateUi("Khóa học")} value={`${path.completedCourses}/${path.totalCourses}`} hint="đã hoàn thành" />
+        <Stat label={translateUi("Còn lại")} value={formatHours(path.minutesLeft)} hint="thời lượng ước tính" />
         <Stat label="Được miễn" value={path.exempt.length} hint="khóa nhờ đánh giá đầu vào" />
       </Card>
 
@@ -111,9 +114,7 @@ function PathBody({ path }: { path: PersonalPath }) {
             <li key={stage.level} className="grid gap-3">
               <div className="border-b border-pt-line pb-3">
                 <h2 className="mt-3 text-[20px] font-normal tracking-[-0.015em]">{stage.title.replace(/^Chặng \d+ · /, '')}</h2>
-                <p className="mt-1 text-xs text-pt-fg-3">
-                  Mức {levelLabelVi(stage.level)} · {stage.courses.filter((c) => c.status === 'COMPLETED').length}/{stage.courses.length} khóa
-                </p>
+                <p className="mt-1 text-xs text-pt-fg-3">{translateUi("Mức ")}{levelLabelVi(stage.level)} · {stage.courses.filter((c) => c.status === 'COMPLETED').length}/{stage.courses.length}{translateUi(" khóa")}</p>
               </div>
               <ul className="grid gap-3">
                 {stage.courses.map((course) => (
@@ -142,7 +143,7 @@ function PathBody({ path }: { path: PersonalPath }) {
                   className="inline-flex items-center gap-2 rounded-full border border-pt-line px-3.5 py-1.5 text-xs text-pt-fg-2 transition-colors hover:border-pt-fg/40 hover:text-pt-fg"
                 >
                   <span className="tabular-nums text-pt-fg-3">{course.code}</span>
-                  {course.title}
+                  {translateUi(course.title)}
                 </Link>
               </li>
             ))}
@@ -155,6 +156,7 @@ function PathBody({ path }: { path: PersonalPath }) {
 
 /** Trial: the three course slots as dots. Free: what the plan opens. Nothing for a paying plan. */
 function PlanStrip({ access }: { access: PersonalAccess }) {
+  useUiLanguage();
   if (access.mode === 'trial' && access.courseLimit !== null) {
     const used = access.trialCourseIds.length;
     return (
@@ -175,7 +177,7 @@ function PlanStrip({ access }: { access: PersonalAccess }) {
     return (
       <Card className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
         <p className="text-sm text-pt-fg-2">Gói Miễn phí: xem lộ trình và hồ sơ. Nâng cấp để học các khóa còn lại.</p>
-        <UpgradeLink placement="path" variant="text">Nâng cấp</UpgradeLink>
+        <UpgradeLink placement="path" variant="text">{translateUi("Nâng cấp")}</UpgradeLink>
       </Card>
     );
   }
@@ -183,6 +185,7 @@ function PlanStrip({ access }: { access: PersonalAccess }) {
 }
 
 function StatusMark({ status }: { status: PathCourseStatus }) {
+  useUiLanguage();
   const base = 'grid size-10 shrink-0 place-items-center rounded-full border';
   if (status === 'COMPLETED') return <span className={cn(base, 'border-pt-ok/40 bg-pt-ok/15 text-pt-ok')}><Check className="size-4" aria-hidden="true" /></span>;
   if (status === 'LOCKED') return <span className={cn(base, 'border-pt-line text-pt-fg-3')}><Lock className="size-4" aria-hidden="true" /></span>;
@@ -191,6 +194,7 @@ function StatusMark({ status }: { status: PathCourseStatus }) {
 }
 
 function CourseRow({ course, isNext }: { course: PathCourse; isNext: boolean }) {
+  useUiLanguage();
   const locked = course.status === 'LOCKED';
   return (
     <Card
@@ -205,34 +209,34 @@ function CourseRow({ course, isNext }: { course: PathCourse; isNext: boolean }) 
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs tabular-nums text-pt-fg-3">{course.code}</span>
-          {(course.status === 'COMPLETED' || course.status === 'LOCKED') && <Tag tone={course.status === 'COMPLETED' ? 'ok' : 'neutral'}>{STATUS_LABEL[course.status]}</Tag>}
-          {isNext && course.status !== 'IN_PROGRESS' && <Tag tone="solid">Tiếp theo</Tag>}
+          {(course.status === 'COMPLETED' || course.status === 'LOCKED') && <Tag tone={course.status === 'COMPLETED' ? 'ok' : 'neutral'}>{translateUi(STATUS_LABEL[course.status])}</Tag>}
+          {isNext && course.status !== 'IN_PROGRESS' && <Tag tone="solid">{translateUi("Tiếp theo")}</Tag>}
           {course.awaitingTask && <Tag tone="warn">Chờ bài thực hành</Tag>}
           {course.trialSlot && <Tag tone="ok">Đang học thử</Tag>}
           {course.planLocked && <Tag><Lock className="size-3" aria-hidden="true" />Mở khi nâng cấp</Tag>}
         </div>
         <Link to={`/personal/courses/${course.id}`} className={cn('mt-1.5 block text-[17px] leading-snug tracking-[-0.01em] hover:underline hover:underline-offset-4', locked ? 'text-pt-fg-2' : 'text-pt-fg')}>
-          {course.title}
+          {translateUi(course.title)}
         </Link>
         <p className="mt-1 text-xs text-pt-fg-3">
-          {course.domainName} · {formatMinutes(course.durationMinutes)}
+          {translateUi(course.domainName)} · {formatMinutes(course.durationMinutes)}
           {course.closes.length > 0 && <> · nâng {course.closes.join(', ')}</>}
         </p>
-        {locked && course.prerequisiteTitle && <p className="mt-1 text-xs text-pt-fg-3">Cần hoàn thành khóa {course.prerequisiteTitle} trước</p>}
+        {locked && course.prerequisiteTitle && <p className="mt-1 text-xs text-pt-fg-3">Cần hoàn thành khóa {course.prerequisiteTitle}{translateUi(" trước")}</p>}
         {course.status === 'IN_PROGRESS' && (
           <div className="mt-3 flex items-center gap-3">
-            <ProgressBar value={course.progressPercent} label={`Tiến độ ${course.title}`} className="max-w-[240px]" />
-            <span className="text-xs tabular-nums text-pt-fg-3">{course.completedLessons}/{course.lessonCount} bài</span>
+            <ProgressBar value={course.progressPercent} label={translateUi(`Tiến độ ${course.title}`)} className="max-w-[240px]" />
+            <span className="text-xs tabular-nums text-pt-fg-3">{course.completedLessons}/{course.lessonCount}{translateUi(" bài")}</span>
           </div>
         )}
       </div>
       <div className="flex gap-2 sm:justify-end">
-        {course.planLocked && course.status !== 'COMPLETED' && <Link to={`/personal/courses/${course.id}`} className={PT_BUTTON_SECONDARY}>Xem</Link>}
+        {course.planLocked && course.status !== 'COMPLETED' && <Link to={`/personal/courses/${course.id}`} className={PT_BUTTON_SECONDARY}>{translateUi("Xem")}</Link>}
         {!course.planLocked && course.awaitingTask && <Link to="/personal/tasks" className={PT_BUTTON}>Nộp bài thực hành</Link>}
         {!course.planLocked && course.status === 'IN_PROGRESS' && !course.awaitingTask && <Link to={`/personal/classroom/${course.id}`} className={PT_BUTTON}>Học tiếp</Link>}
-        {!course.planLocked && course.status === 'AVAILABLE' && <Link to={`/personal/classroom/${course.id}`} className={isNext ? PT_BUTTON : PT_BUTTON_SECONDARY}>Bắt đầu</Link>}
+        {!course.planLocked && course.status === 'AVAILABLE' && <Link to={`/personal/classroom/${course.id}`} className={isNext ? PT_BUTTON : PT_BUTTON_SECONDARY}>{translateUi("Bắt đầu")}</Link>}
         {course.status === 'COMPLETED' && <Link to={`/personal/courses/${course.id}`} className={PT_BUTTON_SECONDARY}>Ôn lại</Link>}
-        {locked && !course.planLocked && <Link to={`/personal/courses/${course.id}`} className={PT_BUTTON_SECONDARY}>Xem</Link>}
+        {locked && !course.planLocked && <Link to={`/personal/courses/${course.id}`} className={PT_BUTTON_SECONDARY}>{translateUi("Xem")}</Link>}
       </div>
     </Card>
   );

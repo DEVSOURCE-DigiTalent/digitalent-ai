@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Lightbulb, Lock } from 'lucide-react';
@@ -21,6 +22,7 @@ const STUDY_CLIP = '/videos/individual-study.mp4';
 
 /** IND-10 "/personal/classroom/:id": one lesson at a time, notes, and the end-of-course assessment. */
 export function LearnerClassroomPage() {
+  useUiLanguage();
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, isError, error, refetch } = usePersonalCourse(id);
   const { data: access } = usePersonalAccess();
@@ -31,17 +33,16 @@ export function LearnerClassroomPage() {
     <div data-testid="learner-classroom-page" className="grid gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link to={id ? `/personal/courses/${id}` : '/personal/path'} className="inline-flex items-center gap-1.5 text-sm text-pt-fg-2 transition-colors hover:text-pt-fg">
-          <ArrowLeft className="size-4" aria-hidden="true" /> Thông tin khóa học
-        </Link>
+          <ArrowLeft className="size-4" aria-hidden="true" />{translateUi(" Thông tin khóa học")}</Link>
         <p className={PT_EYEBROW}>Lớp học số: {data?.code ?? id}</p>
       </div>
       {isLoading && <LoadingBlock />}
-      {isError && <ErrorBlock message={errorMessage(error)} onRetry={() => refetch()} />}
+      {isError && <ErrorBlock message={translateUi(errorMessage(error))} onRetry={() => refetch()} />}
       {data && data.status === 'LOCKED' && (
         <EmptyState
           title="Khóa học chưa mở"
           body={`Khóa này cần mức ${levelLabelVi(data.entryLevel)} của miền ${data.domainName}. Hoàn thành khóa tiên quyết trước.`}
-          action={data.prerequisite && <Link to={`/personal/classroom/${data.prerequisite.id}`} className={PT_BUTTON}>Học {data.prerequisite.title}</Link>}
+          action={data.prerequisite && <Link to={`/personal/classroom/${data.prerequisite.id}`} className={PT_BUTTON}>Học {translateUi(data.prerequisite.title)}</Link>}
         />
       )}
       {data && lockedMode && data.status !== 'LOCKED' && (
@@ -53,6 +54,7 @@ export function LearnerClassroomPage() {
 }
 
 function Classroom({ course }: { course: PersonalCourseDetail }) {
+  useUiLanguage();
   const [params, setParams] = useSearchParams();
   const lessons = useMemo(() => course.modules.flatMap((module) => module.lessons), [course.modules]);
   const firstOpen = lessons.find((lesson) => !lesson.completed) ?? lessons[0];
@@ -125,7 +127,7 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
     <div className="grid gap-5 xl:grid-cols-[270px_minmax(0,1fr)]">
       <button ref={outlineTrigger} type="button" aria-label="Mở mục lục khóa học" aria-expanded={outlineOpen} onClick={() => setOutlineOpen(true)} className={cn(PT_BUTTON_SECONDARY, 'w-fit xl:hidden')}>Mục lục khóa học</button>
       {outlineOpen && <div className="fixed inset-0 z-50 bg-black/50" onClick={closeOutline} aria-hidden="true" />}
-      <aside ref={outlinePanel} role={outlineOpen ? 'dialog' : undefined} aria-modal={outlineOpen ? true : undefined} aria-label={outlineOpen ? 'Mục lục khóa học' : 'Danh sách bài học'}
+      <aside ref={outlinePanel} role={outlineOpen ? 'dialog' : undefined} aria-modal={outlineOpen ? true : undefined} aria-label={translateUi(outlineOpen ? 'Mục lục khóa học' : 'Danh sách bài học')}
         onKeyDown={(event) => {
           if (!outlineOpen) return;
           if (event.key === 'Escape') { event.preventDefault(); closeOutline(); }
@@ -140,7 +142,7 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
         className={outlineOpen ? 'fixed inset-y-0 left-0 z-50 w-[min(340px,90vw)] overflow-y-auto bg-pt-bg p-3' : 'hidden xl:block xl:sticky xl:top-20 xl:self-start'}>
         {outlineOpen && <button type="button" onClick={closeOutline} className={cn(PT_BUTTON_SECONDARY, 'mb-3')}>Đóng mục lục</button>}
         <Card className="p-5">
-          <p className="text-[15px] leading-snug text-pt-fg">{course.title}</p>
+          <p className="text-[15px] leading-snug text-pt-fg">{translateUi(course.title)}</p>
           <div className="mt-3 flex items-center gap-3">
             <ProgressBar value={course.progressPercent} label="Tiến độ khóa học" />
             <span className="text-xs tabular-nums text-pt-fg-3">{course.completedLessons}/{course.lessonCount}</span>
@@ -150,7 +152,7 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
           <ol className="mt-3 grid gap-4">
             {course.modules.map((item) => (
               <li key={item.id}>
-                <p className="mb-1.5 px-2.5 text-[11px] font-medium uppercase tracking-[0.1em] text-pt-fg-3">{item.title}</p>
+                <p className="mb-1.5 px-2.5 text-[11px] font-medium uppercase tracking-[0.1em] text-pt-fg-3">{translateUi(item.title)}</p>
                 <ul className="grid gap-0.5">
                   {item.lessons.map((entry) => (
                     <li key={entry.id}>
@@ -166,7 +168,7 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
                         <span className={cn('grid size-5 shrink-0 place-items-center rounded-full border', entry.completed ? 'border-pt-ok/50 bg-pt-ok/15 text-pt-ok' : 'border-pt-line')}>
                           {entry.completed && <Check className="size-3" aria-label="Đã học" />}
                         </span>
-                        <span className="flex-1 leading-snug">{entry.title}</span>
+                        <span className="flex-1 leading-snug">{translateUi(entry.title)}</span>
                       </button>
                     </li>
                   ))}
@@ -184,7 +186,7 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
             <span className={cn('text-xs', course.awaitingTask ? 'text-pt-warn' : course.assessment.passed ? 'text-pt-ok' : assessmentReady ? 'text-pt-accent' : 'text-pt-fg-3')}>
               {course.awaitingTask
                 ? 'Chờ bài thực hành'
-                : course.assessment.passed ? 'Đã đạt' : assessmentReady ? 'Sẵn sàng' : `còn ${course.lessonCount - course.completedLessons} bài`}
+                : course.assessment.passed ? translateUi('Đã đạt') : assessmentReady ? 'Sẵn sàng' : translateUi(`còn ${course.lessonCount - course.completedLessons} bài`)}
             </span>
           </button>
         </Card>
@@ -203,7 +205,7 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
                 onClick={() => setTab(key)}
                 className={cn('relative px-3 py-3.5 text-sm transition-colors', tab === key ? 'text-pt-fg' : 'text-pt-fg-3 hover:text-pt-fg')}
               >
-                {key === 'content' ? 'Nội dung bài học' : 'Ghi chú của tôi'}
+                {key === 'content' ? translateUi('Nội dung bài học') : 'Ghi chú của tôi'}
                 {tab === key && <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-pt-accent" aria-hidden="true" />}
               </button>
             ))}
@@ -215,8 +217,7 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-pt-line px-6 py-5 md:px-8">
             <button type="button" onClick={() => open(lessons[index - 1])} disabled={index === 0} className={PT_BUTTON_SECONDARY}>
-              <ArrowLeft className="size-4" aria-hidden="true" /> Bài trước
-            </button>
+              <ArrowLeft className="size-4" aria-hidden="true" />{translateUi(" Bài trước")}</button>
             <div className="flex flex-wrap gap-2">
               {access?.mode === 'free' ? (
                 // The Free plan keeps finished lessons as they are: a finished one cannot be taken back, a new one is closed.
@@ -230,8 +231,7 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
                 </button>
               )}
               {index < lessons.length - 1 && (
-                <button type="button" onClick={() => open(lessons[index + 1])} className={PT_BUTTON_SECONDARY}>
-                  Bài sau <ArrowRight className="size-4" aria-hidden="true" />
+                <button type="button" onClick={() => open(lessons[index + 1])} className={PT_BUTTON_SECONDARY}>{translateUi("Bài sau ")}<ArrowRight className="size-4" aria-hidden="true" />
                 </button>
               )}
             </div>
@@ -242,7 +242,7 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
         </Card>
 
         <p className="flex items-center gap-2 px-1 text-xs text-pt-fg-3">
-          <Kind.icon className="size-3.5" aria-hidden="true" /> {Kind.label} · {lesson.durationMinutes} phút · bài {index + 1}/{lessons.length}
+          <Kind.icon className="size-3.5" aria-hidden="true" /> {translateUi(Kind.label)} · {lesson.durationMinutes} phút · bài {index + 1}/{lessons.length}
         </p>
 
         {(isLastLesson || assessmentReady) && <div id="course-assessment" className="scroll-mt-24"><CourseAssessment course={course} /></div>}
@@ -254,6 +254,7 @@ function Classroom({ course }: { course: PersonalCourseDetail }) {
 function LessonMedia({ lesson, moduleTitle, closed, onEnded }: {
   lesson: PersonalLesson; moduleTitle: string; closed: boolean; onEnded: () => void;
 }) {
+  useUiLanguage();
   if (lesson.kind === 'VIDEO' && !closed) {
     let videoSrc = STUDY_CLIP;
     if (lesson.id.includes('A1-A') || lesson.id.includes('a1-a')) {
@@ -270,7 +271,7 @@ function LessonMedia({ lesson, moduleTitle, closed, onEnded }: {
 
     return (
       <figure className="relative bg-black">
-        <video key={lesson.id} src={videoSrc} controls preload="metadata" playsInline onEnded={onEnded} className="aspect-video w-full object-contain" aria-label={`Video bài học: ${lesson.title}`} />
+        <video key={lesson.id} src={videoSrc} controls preload="metadata" playsInline onEnded={onEnded} className="aspect-video w-full object-contain" aria-label={translateUi(`Video bài học: ${lesson.title}`)} />
         <figcaption className="pointer-events-none absolute left-5 top-4 text-xs uppercase tracking-[0.14em] text-white/70">{moduleTitle}</figcaption>
         {/* Lessons without their own recording reuse one study clip; say so instead of passing it off as the lesson. */}
         {videoSrc === STUDY_CLIP && (
@@ -282,17 +283,18 @@ function LessonMedia({ lesson, moduleTitle, closed, onEnded }: {
   return (
     <div className="relative overflow-hidden border-b border-pt-line bg-pt-raised px-6 py-10 md:px-8 md:py-14">
       <p className={PT_EYEBROW}>{moduleTitle}</p>
-      <h1 className="relative mt-4 max-w-[30ch] text-balance text-[clamp(24px,3vw,34px)] font-normal leading-[1.12] tracking-[-0.025em]">{lesson.title}</h1>
+      <h1 className="relative mt-4 max-w-[30ch] text-balance text-[clamp(24px,3vw,34px)] font-normal leading-[1.12] tracking-[-0.025em]">{translateUi(lesson.title)}</h1>
     </div>
   );
 }
 
 /** A lesson the Free plan does not open: the title stays, the content waits for an upgrade (BR-06). */
 function ClosedLesson({ lesson }: { lesson: PersonalLesson }) {
+  useUiLanguage();
   return (
     <div className="mx-auto grid max-w-[60ch] gap-4 py-6 text-center">
       <Lock className="mx-auto size-6 text-pt-fg-3" aria-hidden="true" />
-      <p className="text-base text-pt-fg">{lesson.title}</p>
+      <p className="text-base text-pt-fg">{translateUi(lesson.title)}</p>
       <p className="text-sm text-pt-fg-2">Gói Miễn phí không mở bài học mới. Các bài bạn đã học vẫn xem lại được.</p>
       <div><UpgradeLink placement="classroom">Nâng cấp Plus</UpgradeLink></div>
     </div>
@@ -301,15 +303,17 @@ function ClosedLesson({ lesson }: { lesson: PersonalLesson }) {
 
 /** A short "Term: definition" line gets the term set apart, so a list of terms scans instead of reading as one block. */
 function BodyParagraph({ text }: { text: string }) {
+  useUiLanguage();
   const split = text.indexOf(': ');
   if (split <= 0 || split > 48) return <p>{text}</p>;
   return <p><strong className="font-medium text-pt-fg">{text.slice(0, split)}:</strong> {text.slice(split + 2)}</p>;
 }
 
 function LessonContent({ lesson }: { lesson: PersonalLesson }) {
+  useUiLanguage();
   return (
     <article className="mx-auto grid max-w-[68ch] gap-7">
-      {lesson.kind === 'VIDEO' && <h1 className="text-[clamp(22px,2.6vw,30px)] font-normal leading-tight tracking-[-0.02em]">{lesson.title}</h1>}
+      {lesson.kind === 'VIDEO' && <h1 className="text-[clamp(22px,2.6vw,30px)] font-normal leading-tight tracking-[-0.02em]">{translateUi(lesson.title)}</h1>}
       <p className="border-l-2 border-pt-accent/70 pl-4 text-[17px] font-medium leading-relaxed text-pt-fg">{lesson.summary}</p>
       <div className="grid gap-3.5 text-[15px] leading-[1.75] text-pt-fg-2">
         {lesson.body.map((paragraph) => <BodyParagraph key={paragraph} text={paragraph} />)}
@@ -333,6 +337,7 @@ function LessonContent({ lesson }: { lesson: PersonalLesson }) {
 }
 
 function Notes({ course }: { course: PersonalCourseDetail }) {
+  useUiLanguage();
   const [notes, setNotes] = useState(course.notes);
   const save = useSaveCourseNotes();
   useEffect(() => setNotes(course.notes), [course.notes]);
@@ -351,10 +356,10 @@ function Notes({ course }: { course: PersonalCourseDetail }) {
       />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-xs text-pt-fg-3" role="status">
-          {save.isSuccess ? 'Đã lưu ghi chú.' : save.isError ? errorMessage(save.error) : `${notes.length}/2000 ký tự · ghi chú dùng chung cho cả khóa`}
+          {save.isSuccess ? 'Đã lưu ghi chú.' : save.isError ? errorMessage(save.error) : translateUi(`${notes.length}/2000 ký tự · ghi chú dùng chung cho cả khóa`)}
         </span>
         <button type="button" onClick={() => save.mutate({ courseId: course.id, notes })} disabled={save.isPending} className={PT_BUTTON}>
-          {save.isPending ? 'Đang lưu…' : 'Lưu ghi chú'}
+          {save.isPending ? translateUi('Đang lưu…') : 'Lưu ghi chú'}
         </button>
       </div>
     </div>

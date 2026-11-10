@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -13,6 +14,7 @@ import type { Invoice } from '@/services/subscription.service';
 
 /** OW-43: The 20 most recent invoices returned by GET /subscription. Owner only. */
 export function BillingInvoicesPage() {
+  useUiLanguage();
   const { data: subscription, isLoading, isError } = useSubscription();
   const { data: org } = useOrganization();
 
@@ -48,7 +50,7 @@ export function BillingInvoicesPage() {
       header: 'Nội dung dịch vụ',
       cell: (i) => (
         <div>
-          <p className="text-sm font-semibold text-slate-900">{i.description}</p>
+          <p className="text-sm font-semibold text-slate-900">{translateUi(i.description)}</p>
           <p className="text-xs text-slate-500">Gói {subscription.planName} · Chu kỳ {subscription.cycle}</p>
         </div>
       ),
@@ -66,7 +68,7 @@ export function BillingInvoicesPage() {
     {
       key: 'status',
       header: 'Trạng thái',
-      cell: (i) => <StatusBadge label={i.status} variant={i.status === 'PAID' ? 'success' : 'warning'} />,
+      cell: (i) => <StatusBadge label={translateUi(i.status)} variant={i.status === 'PAID' ? 'success' : 'warning'} />,
     },
   ];
 

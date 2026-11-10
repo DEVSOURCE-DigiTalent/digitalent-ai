@@ -158,6 +158,7 @@ export interface StoredResetToken {
 }
 
 export interface MockDb {
+  accountProfiles?: Record<string, { fullName: string; phone?: string; jobTitle?: string }>;
   users: StoredUser[];
   organizations: StoredOrganization[];
   orders: StoredOrder[];

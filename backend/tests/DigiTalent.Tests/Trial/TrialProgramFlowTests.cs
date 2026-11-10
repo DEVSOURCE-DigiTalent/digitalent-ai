@@ -51,9 +51,10 @@ public class TrialProgramFlowTests
             .Should().ThrowAsync<BadRequestException>().Where(e => e.Message.Contains("Chưa có bài"));
         world.Context.ChangeTracker.Clear();
 
-        // 2. Trước khi bài đóng, nhân viên chưa có lộ trình học.
+        // 2. Trước khi bài đóng, nhân viên chưa mở thêm khóa nào (khóa demo đã ghi danh sẵn của employee@ không tính).
         var employeeUc = await world.AsAsync(PulseTestWorld.EmployeeEmail);
-        (await employeeUc.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput())).Courses.Should().OnlyContain(c => !c.CanWork);
+        (await employeeUc.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput())).Courses
+            .Where(c => c.EnrollmentStatus == null).Should().NotBeEmpty().And.OnlyContain(c => !c.CanWork);
 
         // 3. Nhân viên làm bài trắc nghiệm ba cấp trong phòng thi có giám sát; máy chấm ngay khi nộp.
         var asEmployee = await TrialAsAsync(world, PulseTestWorld.EmployeeEmail, Roles.Employee);
@@ -139,7 +140,7 @@ public class TrialProgramFlowTests
         var overview = await (await world.AsAsync(PulseTestWorld.EmployeeEmail)).Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
         overview.Courses.Where(c => c.Tier == 1).Should().NotBeEmpty().And.OnlyContain(c => c.Zone == PulseCourseZone.Path);
         overview.Courses.Where(c => c.Tier == 1).Should().OnlyContain(c => c.CanWork);
-        overview.Courses.Where(c => c.Tier > 1).Should().OnlyContain(c => !c.CanWork);
+        overview.Courses.Where(c => c.Tier > 1 && c.EnrollmentStatus == null).Should().NotBeEmpty().And.OnlyContain(c => !c.CanWork);
 
         // 7. Quản trị nền tảng thấy báo cáo và cho AI viết lại.
         var asAdmin = await TrialAsAsync(world, "platform@digitalent.ai", Roles.PlatformAdmin);
@@ -233,8 +234,8 @@ public class TrialProgramFlowTests
         me.IsOwner.Should().BeTrue();
         me.DepartmentName.Should().Be("Ban giám đốc");
         me.Status.Should().Be(TrialProgramRules.ParticipantActive);
-        await FluentActions.Awaiting(() => asOwner.Join.ExecuteAsync(new JoinTrialAsParticipantUseCaseInput { Department = "Ban giám đốc", Position = "Giám đốc" }))
-            .Should().ThrowAsync<ConflictException>();
+        var joinedAgain = await asOwner.Join.ExecuteAsync(new JoinTrialAsParticipantUseCaseInput { Department = "Ban giám đốc", Position = "Giám đốc" });
+        joinedAgain.EmployeeId.Should().Be(me.EmployeeId!.Value);
     }
 
     [Fact]

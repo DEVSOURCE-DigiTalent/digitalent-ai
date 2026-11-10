@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useId, useState } from 'react';
 import { ArrowUpRight, BookOpen, Clock3, Layers, Lightbulb, Maximize2, Presentation, Video, X } from 'lucide-react';
 import { COURSE_MEDIA_SPECS } from '@/features/learning/data/course-media-specs';
@@ -8,6 +9,7 @@ import { RichText } from './RichText';
 import { lessonMediaUrl } from '@/types/learning-content';
 
 function Sources({ body }: { body: string }) {
+  useUiLanguage();
   if (/<[a-z][^>]*>/i.test(body)) return <RichText body={body} />;
   return (
     <div className="pu-lesson-sources">
@@ -43,6 +45,7 @@ export function LessonSlide({
   index: number;
   count: number;
 }) {
+  useUiLanguage();
   const headingId = useId();
   const uploaded = slide.media ?? [];
   const pictures = uploaded
@@ -74,9 +77,9 @@ export function LessonSlide({
         <div className="pu-lesson-meta">
           <span className="pu-lesson-type-pill">
             <BookOpen size={13} className="text-blue-700" />
-            <span>{LESSON_TYPE_LABELS[slide.lessonType] ?? 'Nội dung bài học'}</span>
+            <span>{translateUi(LESSON_TYPE_LABELS[slide.lessonType]) ?? translateUi('Nội dung bài học')}</span>
           </span>
-          <span className="pu-lesson-page-pill">Bài {pad2(index + 1)} / {pad2(count)}</span>
+          <span className="pu-lesson-page-pill">{translateUi("Bài ")}{pad2(index + 1)} / {pad2(count)}</span>
           {slide.estimatedMinutes ? (
             <span className="pu-lesson-time-pill">
               <Clock3 size={13} className="text-slate-500" />
@@ -84,7 +87,7 @@ export function LessonSlide({
             </span>
           ) : null}
         </div>
-        <h2 id={headingId}>{slide.title}</h2>
+        <h2 id={headingId}>{translateUi(slide.title)}</h2>
       </header>
 
       {/* ── Lesson Content Grid ──────────────────────────────────────── */}
@@ -97,7 +100,7 @@ export function LessonSlide({
                 key={sectionIndex}
                 className={sectionIndex === 0 && !section.title ? 'pu-lesson-lead' : 'pu-lesson-section'}
               >
-                {section.title && <h3>{section.title}</h3>}
+                {section.title && <h3>{translateUi(section.title)}</h3>}
                 {section.body.trim() && <RichText body={section.body} />}
               </section>
             ))
@@ -127,7 +130,7 @@ export function LessonSlide({
               </div>
 
               <div className="pu-takeaways-body">
-                <h4 className="pu-takeaways-title">{mediaSpec.title}</h4>
+                <h4 className="pu-takeaways-title">{translateUi(mediaSpec.title)}</h4>
 
                 <div className="pu-takeaways-points">
                   {mediaSpec.keyPoints.map((pt, pti) => (
@@ -170,7 +173,7 @@ export function LessonSlide({
                       <span className="pu-takeaways-layout">Khái niệm cốt lõi</span>
                     </div>
                     <div className="pu-takeaways-body">
-                      <h4 className="pu-takeaways-title">{slide.title}</h4>
+                      <h4 className="pu-takeaways-title">{translateUi(slide.title)}</h4>
                       <p className="pu-fallback-desc">{artwork.alt}</p>
                       {mediaSpec && mediaSpec.keyPoints.length > 0 && (
                         <div className="pu-takeaways-points">
@@ -200,7 +203,7 @@ export function LessonSlide({
                   >
                     <img
                       src={artwork.src}
-                      alt={artwork.alt}
+                      alt={translateUi(artwork.alt)}
                       decoding="async"
                       loading="lazy"
                       onError={() => setFailedImages((prev) => ({ ...prev, [artwork.src]: true }))}
@@ -229,9 +232,9 @@ export function LessonSlide({
       {/* ── Uploaded PDF (slides exported from PowerPoint) ───────────── */}
       {documents.map((file) => (
         <figure className="pu-lesson-document" key={file.url}>
-          <iframe src={lessonMediaUrl(file.url)} title={file.alt || slide.title} />
+          <iframe src={lessonMediaUrl(file.url)} title={translateUi(file.alt || translateUi(slide.title))} />
           <figcaption>
-            <span>{file.alt || slide.title}</span>
+            <span>{file.alt || translateUi(slide.title)}</span>
             <a
               href={lessonMediaUrl(file.url)}
               target="_blank"
@@ -277,7 +280,7 @@ export function LessonSlide({
           tabIndex={-1}
         >
           <div className="pu-lightbox-inner" onClick={(e) => e.stopPropagation()}>
-            <img src={expanded.src} alt={expanded.alt} />
+            <img src={expanded.src} alt={translateUi(expanded.alt)} />
             <div className="pu-lightbox-caption">
               <p>{expanded.alt}</p>
               <button

@@ -15,4 +15,5 @@ import './personal';
 import './me';
 import './ceilings';
 import './reference-positions';
+import './trial-overview';
 import './assistant';

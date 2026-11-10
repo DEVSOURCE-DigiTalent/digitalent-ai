@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -92,6 +93,7 @@ const SIDEBAR_ITEMS: NavItem[] = [
 ];
 
 export function PulseSidebar() {
+  useUiLanguage();
   const { pathname } = useLocation();
   const { data: unread } = useNotifications({ unreadOnly: true });
   const hasUnread = Boolean(unread && unread.length > 0);
@@ -133,13 +135,13 @@ export function PulseSidebar() {
     >
       {/* ── Top Micro-bar: Nút Thu / Phóng tinh giản không chiếm diện tích ── */}
       <div className="pu-side-card-topbar">
-        {!collapsed && <span className="pu-side-card-brand">Nhân viên</span>}
+        {!collapsed && <span className="pu-side-card-brand">{translateUi("Nhân viên")}</span>}
         <button
           type="button"
           onClick={toggleCollapse}
           className="pu-side-card-toggle"
-          aria-label={collapsed ? 'Mở rộng thanh menu' : 'Thu gọn thanh menu'}
-          title={collapsed ? 'Mở rộng thanh menu' : 'Thu gọn thanh menu'}
+          aria-label={translateUi(collapsed ? 'Mở rộng thanh menu' : 'Thu gọn thanh menu')}
+          title={translateUi(collapsed ? 'Mở rộng thanh menu' : 'Thu gọn thanh menu')}
         >
           {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
         </button>
@@ -157,19 +159,19 @@ export function PulseSidebar() {
                   to={item.to}
                   end={item.end}
                   data-tour={`side-${item.screenId}`}
-                  aria-label={item.label}
+                  aria-label={translateUi(item.label)}
                   aria-current={active ? 'page' : undefined}
                   className={`pu-side-card-item${active ? ' active' : ''}`}
                 >
                   <Icon size={18} className="pu-side-card-icon" strokeWidth={active ? 2.2 : 1.8} aria-hidden />
-                  {!collapsed && <span className="pu-side-card-label truncate">{item.label}</span>}
+                  {!collapsed && <span className="pu-side-card-label truncate">{translateUi(item.label)}</span>}
                   {!collapsed && item.to === PULSE_PATHS.activity && hasUnread && (
                     <span className="pu-side-card-pill">{unread?.length}</span>
                   )}
                   {collapsed && item.to === PULSE_PATHS.activity && hasUnread && (
                     <span className="pu-side-card-dot" />
                   )}
-                  {collapsed && <span className="pu-side-tooltip">{item.label}</span>}
+                  {collapsed && <span className="pu-side-tooltip">{translateUi(item.label)}</span>}
                 </NavLink>
               </li>
             );

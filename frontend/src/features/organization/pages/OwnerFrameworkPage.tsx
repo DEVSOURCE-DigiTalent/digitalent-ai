@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -20,6 +21,7 @@ import './owner-framework-polish.css';
 import { SectionLoading } from '@/components/shared/LoadingState';
 
 export function OwnerFrameworkPage() {
+  useUiLanguage();
   const [search, setSearch] = useState('');
   const [selectedDomain, setSelectedDomain] = useState<string>('all');
 
@@ -61,7 +63,7 @@ export function OwnerFrameworkPage() {
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors mb-2 block w-fit"
         >
           <ArrowLeft className="size-3.5" />
-          <span>Quay lại Khung năng lực số của doanh nghiệp</span>
+          <span>{translateUi("Quay lại Khung năng lực số của doanh nghiệp")}</span>
         </Link>
 
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -70,9 +72,7 @@ export function OwnerFrameworkPage() {
               <Compass className="size-3.5 inline text-teal-600" />
               Thông tư 02/2025/TT-BTTTT · Bộ Thông tin & Truyền thông
             </span>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.03em] heading-gradient">
-              Từ điển Chuẩn Năng lực Số Quốc gia
-            </h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.03em] heading-gradient">{translateUi("Từ điển Chuẩn Năng lực Số Quốc gia")}</h1>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
@@ -82,7 +82,7 @@ export function OwnerFrameworkPage() {
               style={{ background: 'var(--po-accent)' }}
             >
               <Sliders className="size-3.5" />
-              <span>Cài đặt cho chức danh công ty</span>
+              <span>{translateUi("Cài đặt cho chức danh công ty")}</span>
               <ArrowRight className="size-3.5" />
             </Link>
           </div>
@@ -91,19 +91,19 @@ export function OwnerFrameworkPage() {
         {/* ── Overview Pills Strip ── */}
         <div className="framework-catalog-stats mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           <div className="rounded-xl border border-slate-200 bg-white p-3 text-center shadow-2xs">
-            <span className="text-[10px] font-bold uppercase text-slate-400">Lĩnh vực chuẩn</span>
-            <div className="text-lg font-extrabold text-slate-800 mt-0.5">6 Lĩnh vực</div>
+            <span className="text-[10px] font-bold uppercase text-slate-400">{translateUi("Lĩnh vực chuẩn")}</span>
+            <div className="text-lg font-extrabold text-slate-800 mt-0.5">{translateUi("6 Lĩnh vực")}</div>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-3 text-center shadow-2xs">
-            <span className="text-[10px] font-bold uppercase text-slate-400">Tổng năng lực</span>
-            <div className="text-lg font-extrabold text-emerald-700 mt-0.5">24 Năng lực số</div>
+            <span className="text-[10px] font-bold uppercase text-slate-400">{translateUi("Tổng năng lực")}</span>
+            <div className="text-lg font-extrabold text-emerald-700 mt-0.5">{translateUi("24 Năng lực số")}</div>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-3 text-center shadow-2xs">
-            <span className="text-[10px] font-bold uppercase text-slate-400">Khung thang đo</span>
-            <div className="text-lg font-extrabold text-slate-800 mt-0.5">3 Cấp độ (1 - 3)</div>
+            <span className="text-[10px] font-bold uppercase text-slate-400">{translateUi("Khung thang đo")}</span>
+            <div className="text-lg font-extrabold text-slate-800 mt-0.5">{translateUi("3 Cấp độ (1 - 3)")}</div>
           </div>
           <div className="rounded-xl border border-teal-200 bg-teal-50/50 p-3 text-center shadow-2xs">
-            <span className="text-[10px] font-bold uppercase text-teal-800">Quy chuẩn áp dụng</span>
+            <span className="text-[10px] font-bold uppercase text-teal-800">{translateUi("Quy chuẩn áp dụng")}</span>
             <div className="text-lg font-extrabold text-teal-800 mt-0.5 flex items-center justify-center gap-1">
               <Sparkles className="size-4 text-teal-600" />
               <span>Toàn quốc 2025</span>
@@ -117,10 +117,10 @@ export function OwnerFrameworkPage() {
             <Search className="size-4" aria-hidden="true" />
             <input
               type="search"
-              aria-label="Tìm năng lực"
+              aria-label={translateUi("Tìm năng lực")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm theo tên hoặc mã (ví dụ: 1.1, dữ liệu, an toàn)..."
+              placeholder={translateUi("Tìm theo tên hoặc mã (ví dụ: 1.1, dữ liệu, an toàn)...")}
               className="w-full text-sm"
             />
           </label>
@@ -134,9 +134,7 @@ export function OwnerFrameworkPage() {
                   ? 'bg-slate-900 text-white font-bold'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
-            >
-              Tất cả (24)
-            </button>
+            >{translateUi("Tất cả (24)")}</button>
             {sortedCategories.map((cat) => (
               <button
                 key={cat.id}
@@ -158,10 +156,10 @@ export function OwnerFrameworkPage() {
       {/* ── Competencies Grid ── */}
       <div className="px-4 md:px-6 py-4 mx-auto pb-16" style={{ maxWidth: 1240 }}>
         {catLoading || compLoading ? (
-          <SectionLoading label="Đang tải danh mục năng lực" />
+          <SectionLoading label={translateUi("Đang tải danh mục năng lực")} />
         ) : filteredCompetencies.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white py-12 text-center shadow-2xs">
-            <p className="text-xs font-semibold text-slate-700">Không tìm thấy năng lực nào khớp với từ khóa</p>
+            <p className="text-xs font-semibold text-slate-700">{translateUi("Không tìm thấy năng lực nào khớp với từ khóa")}</p>
           </div>
         ) : (
           <div className="framework-catalog-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -179,12 +177,10 @@ export function OwnerFrameworkPage() {
                     <div>
                       {/* Domain Header */}
                       <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                          Lĩnh vực 0{cat.sortOrder}
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{translateUi("Lĩnh vực 0")}{cat.sortOrder}
                         </span>
                         <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
-                          {catComps.length} năng lực
-                        </span>
+                          {catComps.length}{translateUi(" năng lực")}</span>
                       </div>
 
                       <h2 className="mt-2 text-sm font-bold tracking-[-0.015em] text-slate-800 leading-snug">
@@ -220,9 +216,7 @@ export function OwnerFrameworkPage() {
                                     className="rounded bg-amber-50 px-1 py-0.5 text-[9px] font-semibold text-amber-700 border border-amber-200"
                                     title="Bắt buộc theo chuẩn Thông tư 02"
                                   >
-                                    <ShieldCheck className="size-2.5 inline mr-0.5" />
-                                    Bắt buộc
-                                  </span>
+                                    <ShieldCheck className="size-2.5 inline mr-0.5" />{translateUi("Bắt buộc")}</span>
                                 )}
                                 <ExternalLink className="size-3 text-slate-300 group-hover:text-emerald-600" />
                               </div>
@@ -235,14 +229,11 @@ export function OwnerFrameworkPage() {
                     {/* Footer action */}
                     <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                       <span className="text-[11px] text-slate-400">
-                        {catComps.length} chuẩn cấp 1-3
-                      </span>
+                        {catComps.length}{translateUi(" chuẩn cấp 1-3")}</span>
                       <Link
                         to="/enterprise/setup?tab=positions"
                         className="text-[11px] font-bold text-emerald-700 hover:underline inline-flex items-center gap-1"
-                      >
-                        Gán vào chuẩn vị trí
-                        <ArrowRight className="size-3" />
+                      >{translateUi("Gán vào chuẩn vị trí")}<ArrowRight className="size-3" />
                       </Link>
                     </div>
                   </div>

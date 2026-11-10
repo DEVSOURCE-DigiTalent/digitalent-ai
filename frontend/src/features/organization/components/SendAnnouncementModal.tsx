@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -68,6 +69,7 @@ export function SendAnnouncementModal({
   onClose,
   onSuccess,
 }: SendAnnouncementModalProps) {
+  useUiLanguage();
   const [title, setTitle] = useState('');
   const [type, setType] = useState('ANNOUNCEMENT');
   const [message, setMessage] = useState('');
@@ -171,8 +173,8 @@ export function SendAnnouncementModal({
       onClose={handleReset}
       size="xl"
       className="announcement-modal"
-      title="Gửi thông báo & Giao hạn hoàn thành"
-      description="Gửi thông điệp, yêu cầu hoàn thành bài đánh giá/khóa học và đặt deadline đồng loạt cho nhân viên."
+      title={translateUi("Gửi thông báo & Giao hạn hoàn thành")}
+      description={translateUi("Gửi thông điệp, yêu cầu hoàn thành bài đánh giá/khóa học và đặt deadline đồng loạt cho nhân viên.")}
       footer={
         <>
           <button
@@ -180,7 +182,7 @@ export function SendAnnouncementModal({
             onClick={handleReset}
             className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
           >
-            {result ? 'Đóng' : 'Hủy bỏ'}
+            {result ? translateUi('Đóng') : translateUi('Hủy bỏ')}
           </button>
 
           {!result && (
@@ -191,7 +193,7 @@ export function SendAnnouncementModal({
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#137b84] hover:bg-[#0e5968] text-white text-sm font-bold transition-all disabled:opacity-50 disabled:pointer-events-none shadow-xs"
             >
               <Send className="size-3.5" />
-              {submitting ? 'Đang gửi thông báo…' : 'Gửi thông báo ngay'}
+              {submitting ? 'Đang gửi thông báo…' : translateUi('Gửi thông báo ngay')}
             </button>
           )}
         </>
@@ -201,25 +203,21 @@ export function SendAnnouncementModal({
         <div className="space-y-4 py-2">
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-5 text-emerald-950 space-y-2">
             <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
-              <CheckCircle2 className="size-5 text-emerald-600" />
-              Đã gửi thông báo thành công tới {result.totalRecipients} nhân sự!
-            </div>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Thông báo đã được ghi nhận trên hệ thống và hiển thị tức thì trên chuông thông báo cá nhân của nhân viên.
-              {sendEmail && (
-                <span> Đã phát lệnh gửi email thông báo chi tiết đến hòm thư của nhân sự.</span>
+              <CheckCircle2 className="size-5 text-emerald-600" />{translateUi("Đã gửi thông báo thành công tới ")}{result.totalRecipients}{translateUi(" nhân sự!")}</div>
+            <p className="text-xs text-slate-600 leading-relaxed">{translateUi("Thông báo đã được ghi nhận trên hệ thống và hiển thị tức thì trên chuông thông báo cá nhân của nhân viên.")}{sendEmail && (
+                <span>{translateUi(" Đã phát lệnh gửi email thông báo chi tiết đến hòm thư của nhân sự.")}</span>
               )}
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3">
-              <span className="text-slate-500 block">Thông báo in-app (chuông)</span>
-              <strong className="text-slate-900 text-sm mt-0.5 block">{result.inAppNotificationCount} đã tạo</strong>
+              <span className="text-slate-500 block">{translateUi("Thông báo in-app (chuông)")}</span>
+              <strong className="text-slate-900 text-sm mt-0.5 block">{result.inAppNotificationCount}{translateUi(" đã tạo")}</strong>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3">
-              <span className="text-slate-500 block">Email hộp thư thật</span>
-              <strong className="text-slate-900 text-sm mt-0.5 block">{result.emailsSentCount} đã gửi</strong>
+              <span className="text-slate-500 block">{translateUi("Email hộp thư thật")}</span>
+              <strong className="text-slate-900 text-sm mt-0.5 block">{result.emailsSentCount}{translateUi(" đã gửi")}</strong>
             </div>
           </div>
         </div>
@@ -228,9 +226,7 @@ export function SendAnnouncementModal({
           {/* MẪU GỢI Ý NHANH (TEMPLATES) */}
           <div className="announcement-templates space-y-2">
             <span className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-              <Sparkles className="size-3.5 text-amber-500" />
-              Chọn nhanh mẫu nội dung:
-            </span>
+              <Sparkles className="size-3.5 text-amber-500" />{translateUi("Chọn nhanh mẫu nội dung:")}</span>
             <div className="flex flex-wrap gap-2">
               {TEMPLATES.map((tpl) => (
                 <button
@@ -240,7 +236,7 @@ export function SendAnnouncementModal({
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-teal-50/60 hover:border-teal-200 hover:text-[#137b84] text-sm font-medium text-slate-700 transition-all"
                 >
                   <FileText className="size-3 text-slate-400" />
-                  {tpl.label}
+                  {translateUi(tpl.label)}
                 </button>
               ))}
             </div>
@@ -249,46 +245,44 @@ export function SendAnnouncementModal({
           {/* TIÊU ĐỀ & LOẠI THÔNG BÁO */}
           <div className="announcement-title grid gap-3 sm:grid-cols-4">
             <div className="sm:col-span-3 space-y-1">
-              <label htmlFor="announcement-title" className="text-sm font-bold text-slate-800 block">
-                Tiêu đề thông báo <span className="text-red-500">*</span>
+              <label htmlFor="announcement-title" className="text-sm font-bold text-slate-800 block">{translateUi("Tiêu đề thông báo ")}<span className="text-red-500">*</span>
               </label>
               <input
                 id="announcement-title"
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ví dụ: Thông báo hoàn thành đợt đánh giá năng lực Q4"
+                placeholder={translateUi("Ví dụ: Thông báo hoàn thành đợt đánh giá năng lực Q4")}
                 className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600"
               />
             </div>
 
             <div className="space-y-1">
-              <label htmlFor="announcement-type" className="text-sm font-bold text-slate-800 block">Phân loại</label>
+              <label htmlFor="announcement-type" className="text-sm font-bold text-slate-800 block">{translateUi("Phân loại")}</label>
               <select
                 id="announcement-type"
                 value={type}
                 onChange={(e) => setType(e.target.value)}
                 className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600"
               >
-                <option value="ANNOUNCEMENT">Thông báo chung</option>
-                <option value="ASSESSMENT">Đánh giá / Test</option>
-                <option value="COURSE">Khóa học</option>
-                <option value="TASK">Nhiệm vụ</option>
+                <option value="ANNOUNCEMENT">{translateUi("Thông báo chung")}</option>
+                <option value="ASSESSMENT">{translateUi("Đánh giá / Test")}</option>
+                <option value="COURSE">{translateUi("Khóa học")}</option>
+                <option value="TASK">{translateUi("Nhiệm vụ")}</option>
               </select>
             </div>
           </div>
 
           {/* NỘI DUNG THÔNG BÁO */}
           <div className="announcement-message space-y-1.5">
-            <label htmlFor="announcement-message" className="text-sm font-bold text-slate-800 block">
-              Nội dung thông điệp <span className="text-red-500">*</span>
+            <label htmlFor="announcement-message" className="text-sm font-bold text-slate-800 block">{translateUi("Nội dung thông điệp ")}<span className="text-red-500">*</span>
             </label>
             <textarea
               id="announcement-message"
               rows={5}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Nhập nội dung yêu cầu, mục đích và hướng dẫn nhân viên hoàn thành..."
+              placeholder={translateUi("Nhập nội dung yêu cầu, mục đích và hướng dẫn nhân viên hoàn thành...")}
               className="w-full px-3.5 py-3 text-sm rounded-xl border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600 leading-relaxed"
             />
           </div>
@@ -297,38 +291,30 @@ export function SendAnnouncementModal({
           <div className="announcement-deadline rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                <Calendar className="size-3.5 text-[var(--po-accent)]" />
-                Thời hạn hoàn thành (Deadline):
-              </span>
+                <Calendar className="size-3.5 text-[var(--po-accent)]" />{translateUi("Thời hạn hoàn thành (Deadline):")}</span>
               <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setQuickDeadline(3)}
                   className="px-2.5 py-1.5 text-xs rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-teal-700 hover:border-teal-200"
-                >
-                  3 ngày
-                </button>
+                >{translateUi("3 ngày")}</button>
                 <button
                   type="button"
                   onClick={() => setQuickDeadline(7)}
                   className="px-2.5 py-1.5 text-xs rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-teal-700 hover:border-teal-200"
-                >
-                  7 ngày
-                </button>
+                >{translateUi("7 ngày")}</button>
                 <button
                   type="button"
                   onClick={setEndOfMonth}
                   className="px-2.5 py-1.5 text-xs rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-teal-700 hover:border-teal-200"
-                >
-                  Cuối tháng
-                </button>
+                >{translateUi("Cuối tháng")}</button>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
               <input
                 type="date"
-                aria-label="Thời hạn hoàn thành"
+                aria-label={translateUi("Thời hạn hoàn thành")}
                 value={dueDate}
                 min={localDateValue(new Date())}
                 onChange={(e) => setDueDate(e.target.value)}
@@ -336,17 +322,15 @@ export function SendAnnouncementModal({
               />
               <span className="text-xs text-slate-500">
                 {dueDate
-                  ? `Hạn nộp: ${dueDate.split('-').reverse().join('/')}`
-                  : 'Không đặt hạn chót (thông báo thường)'}
+                  ? translateUi(`Hạn nộp: ${dueDate.split('-').reverse().join('/')}`)
+                  : translateUi('Không đặt hạn chót (thông báo thường)')}
               </span>
             </div>
           </div>
 
           {/* BỘ CHỌN ĐỐI TƯỢNG (AUDIENCE SELECTOR) */}
           <div className="announcement-audience space-y-2">
-            <span className="text-sm font-bold text-slate-900 block">
-              Đối tượng nhận thông báo:
-            </span>
+            <span className="text-sm font-bold text-slate-900 block">{translateUi("Đối tượng nhận thông báo:")}</span>
             <DepartmentAudienceSelector
               value={audience}
               onChange={setAudience}
@@ -364,8 +348,7 @@ export function SendAnnouncementModal({
               />
               <div>
                 <span className="font-semibold text-slate-900 block flex items-center gap-1">
-                  <Mail className="size-3.5 text-[var(--po-accent)]" /> Gửi email thông báo
-                </span>
+                  <Mail className="size-3.5 text-[var(--po-accent)]" />{translateUi(" Gửi email thông báo")}</span>
                 <span className="text-xs text-slate-500 block mt-0.5">
                   Bắn email định dạng chuẩn vào hòm thư nhân viên
                 </span>
@@ -381,11 +364,8 @@ export function SendAnnouncementModal({
               />
               <div>
                 <span className="font-semibold text-slate-900 block flex items-center gap-1">
-                  <Clock className="size-3.5 text-amber-500" /> Tự động nhắc nhở
-                </span>
-                <span className="text-xs text-slate-500 block mt-0.5">
-                  Tự động gửi mail nhắc trước khi hết hạn 24 giờ
-                </span>
+                  <Clock className="size-3.5 text-amber-500" />{translateUi(" Tự động nhắc nhở")}</span>
+                <span className="text-xs text-slate-500 block mt-0.5">{translateUi("Tự động gửi mail nhắc trước khi hết hạn 24 giờ")}</span>
               </div>
             </label>
           </div>

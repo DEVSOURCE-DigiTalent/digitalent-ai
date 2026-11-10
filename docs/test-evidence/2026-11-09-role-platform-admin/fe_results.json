@@ -1,0 +1,205 @@
+{
+  "meta": {
+    "branch": "feature/DT-role-based-tests",
+    "commit": "c51a6d6",
+    "api": "http://localhost:5000",
+    "fe": "http://localhost:5173",
+    "db": "PostgreSQL 16 (DB mới: migration + seed Development)",
+    "date": "09/11/2026"
+  },
+  "role": {
+    "label": "PLATFORM_ADMIN",
+    "email": "platform@digitalent.ai",
+    "title": "QUẢN TRỊ NỀN TẢNG (PLATFORM_ADMIN)"
+  },
+  "cases": [
+    {
+      "id": "FE01",
+      "screen": "PA-01 Tổng quan",
+      "title": "Đăng nhập platform@digitalent.ai và vào đúng không gian làm việc",
+      "url": "/login",
+      "role": "PLATFORM_ADMIN (platform@digitalent.ai)",
+      "precondition": "DB mới, seed Development",
+      "steps": [
+        "1. Mở /login",
+        "2. Nhập platform@digitalent.ai / Admin@1234, bấm \"Đăng nhập vào hệ thống\""
+      ],
+      "expected": "Chuyển tới /platform/dashboard; tiêu đề \"Toàn cảnh nền tảng hôm nay.\"; menu của vai trò (11+ mục).",
+      "actual": "Đăng nhập thành công, vào /platform/dashboard; tiêu đề \"Toàn cảnh nền tảng hôm nay.\"; menu 11 mục: Tổng quan, Khung chuẩn, Mẫu vị trí, Phiên bản khóa học, Tổ chức, Dùng thử, Người dùng, Đơn giá, Nhật ký kiểm tra, Góp ý, Báo lỗi.",
+      "status": "PASS",
+      "api": [
+        "POST /api/v1/auth/login → 200",
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/platform/overview → 200"
+      ],
+      "marks": [
+        "1. Menu quản trị nền tảng",
+        "2. Màn hình đầu tiên của vai trò"
+      ],
+      "at": "09/11/2026 07:52:41"
+    },
+    {
+      "id": "FE02",
+      "screen": "PA-01 Tổng quan",
+      "title": "Thẻ chỉ số: phiên bản catalog đang dùng và bản nháp",
+      "url": "/platform/dashboard",
+      "role": "PLATFORM_ADMIN (platform@digitalent.ai)",
+      "precondition": "Đã đăng nhập (FE01)",
+      "steps": [
+        "1. Xem các thẻ \"Phiên bản đang dùng\" và \"Bản nháp đang soạn\""
+      ],
+      "expected": "Thẻ \"Phiên bản đang dùng\" = v1 (catalog seed); chưa có bản nháp.",
+      "actual": "Thẻ \"Phiên bản đang dùng\" hiện v1; thẻ bản nháp hiện \"Chưa có bản nháp mới\". (URL: /platform/dashboard)",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/platform/overview → 200"
+      ],
+      "marks": [
+        "1. Phiên bản catalog đang dùng: v1",
+        "2. Bản nháp đang soạn"
+      ],
+      "at": "09/11/2026 07:52:45"
+    },
+    {
+      "id": "FE03",
+      "screen": "PA-02 Khung chuẩn",
+      "title": "Khung TT02 với 6 lĩnh vực và khóa học của từng lĩnh vực",
+      "url": "/platform/frameworks",
+      "role": "PLATFORM_ADMIN (platform@digitalent.ai)",
+      "precondition": "Khung TT02_2025 (seed)",
+      "steps": [
+        "1. Bấm menu \"Khung chuẩn\""
+      ],
+      "expected": "6 lĩnh vực năng lực số, mỗi lĩnh vực có các khóa Cơ bản / Trung cấp / Nâng cao.",
+      "actual": "6 thẻ lĩnh vực; lĩnh vực đầu \"Khai thác dữ liệu và thông tin\". (URL: /platform/frameworks)",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/platform/frameworks → 200",
+        "GET /api/v1/platform/frameworks/d1d6e26b-fe3f-4d20-9721-9e6e465f6a4b → 200"
+      ],
+      "marks": [
+        "1. Khung chuẩn Thông tư 02/2025",
+        "2. Lĩnh vực 01 và các khóa thuộc lĩnh vực"
+      ],
+      "at": "09/11/2026 07:52:50"
+    },
+    {
+      "id": "FE04",
+      "screen": "PA-03 Phiên bản khóa học",
+      "title": "Phiên bản neo ⚓ v1 với danh mục 18 khóa",
+      "url": "/platform/versions",
+      "role": "PLATFORM_ADMIN (platform@digitalent.ai)",
+      "precondition": "Catalog v1 (seed)",
+      "steps": [
+        "1. Bấm menu \"Phiên bản khóa học\""
+      ],
+      "expected": "Phiên bản đang áp dụng v1; bảng \"Danh mục khóa học thuộc v1\" có 18 khóa.",
+      "actual": "Bảng có 18 khóa học của v1 (M1-F … M6-A). (URL: /platform/versions)",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/platform/catalog/versions → 200",
+        "GET /api/v1/platform/catalog/versions/1 → 200"
+      ],
+      "marks": [
+        "1. Danh mục khóa học của phiên bản v1",
+        "2. 18 khóa học chuẩn"
+      ],
+      "at": "09/11/2026 07:52:54"
+    },
+    {
+      "id": "FE05",
+      "screen": "PA-05 Tổ chức",
+      "title": "Danh sách doanh nghiệp khách hàng",
+      "url": "/platform/organizations",
+      "role": "PLATFORM_ADMIN (platform@digitalent.ai)",
+      "precondition": "Tổ chức demo DigiTalent Demo Company",
+      "steps": [
+        "1. Bấm menu \"Tổ chức\""
+      ],
+      "expected": "Có doanh nghiệp \"DigiTalent Demo Company\" với chủ sở hữu owner@digitalent.ai.",
+      "actual": "Hiện DigiTalent Demo Company trong danh sách. (URL: /platform/organizations)",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/platform/organizations?pageIndex=1&pageSize=20 → 200"
+      ],
+      "marks": [
+        "1. Doanh nghiệp đang dùng nền tảng",
+        "2. Tổ chức demo"
+      ],
+      "at": "09/11/2026 07:52:58"
+    },
+    {
+      "id": "FE06",
+      "screen": "PA-07 Người dùng",
+      "title": "Theo dõi tài khoản và học viên dùng thử",
+      "url": "/platform/users",
+      "role": "PLATFORM_ADMIN (platform@digitalent.ai)",
+      "precondition": "Seed: trial@ đang dùng thử, free@ đã hết hạn",
+      "steps": [
+        "1. Bấm menu \"Người dùng\""
+      ],
+      "expected": "Các thẻ dùng thử (đang dùng thử / hết hạn trong 48h) và bảng người dùng.",
+      "actual": "Hiện các thẻ theo dõi dùng thử và bảng tài khoản. (URL: /platform/users)",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/platform/users?pageIndex=1&pageSize=20 → 200"
+      ],
+      "marks": [
+        "1. Theo dõi tài khoản & học viên dùng thử",
+        "2. Học viên sắp hết hạn dùng thử"
+      ],
+      "at": "09/11/2026 07:53:03"
+    },
+    {
+      "id": "FE07",
+      "screen": "PA-14 Dùng thử",
+      "title": "Yêu cầu chấm bài dùng thử và phân công mentor",
+      "url": "/platform/trials",
+      "role": "PLATFORM_ADMIN (platform@digitalent.ai)",
+      "precondition": "DB mới: chưa có yêu cầu chấm",
+      "steps": [
+        "1. Bấm menu \"Dùng thử\""
+      ],
+      "expected": "Trang \"Yêu cầu chấm bài dùng thử.\" có khu vực Mentor để tạo/phân công mentor.",
+      "actual": "Tiêu đề \"Yêu cầu chấm bài dùng thử.\"; có khu vực Mentor. (URL: /platform/trials)",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/platform/mentors → 200",
+        "GET /api/v1/platform/trials → 200"
+      ],
+      "marks": [
+        "1. Yêu cầu chấm bài dùng thử",
+        "2. Quản lý mentor"
+      ],
+      "at": "09/11/2026 07:53:07"
+    },
+    {
+      "id": "FE08",
+      "screen": "Phân quyền",
+      "title": "Quản trị nền tảng không vào được cổng doanh nghiệp",
+      "url": "/enterprise/dashboard",
+      "role": "PLATFORM_ADMIN (platform@digitalent.ai)",
+      "precondition": "PLATFORM_ADMIN thuộc workspace platform",
+      "steps": [
+        "1. Mở trực tiếp /enterprise/dashboard"
+      ],
+      "expected": "RequireWorkspace giữ vai trò trong cổng của mình: chuyển về /platform/dashboard.",
+      "actual": "Bị đưa về /platform/dashboard (\"Toàn cảnh nền tảng hôm nay.\"); không vào được /enterprise/dashboard.",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/platform/overview → 200"
+      ],
+      "marks": [
+        "1. Đưa về không gian của vai trò (/platform/dashboard)"
+      ],
+      "at": "09/11/2026 07:53:11"
+    }
+  ]
+}

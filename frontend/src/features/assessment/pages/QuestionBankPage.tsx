@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, CheckCircle2 } from 'lucide-react';
@@ -15,6 +16,7 @@ import type { QuestionDto } from '@/services/question-bank.service';
 import { QuestionEditorModal } from '../components/QuestionEditorModal';
 
 export function QuestionBankPage() {
+  useUiLanguage();
   const { can } = usePermission();
   const canManage = can(PERMISSIONS.QUESTION_CREATE_UPDATE);
   const canApprove = can(PERMISSIONS.QUESTION_APPROVE_PUBLISH);
@@ -110,7 +112,7 @@ export function QuestionBankPage() {
           <div className="flex flex-wrap gap-1">
             {q.tags.length === 0 && <span className="text-xs text-slate-400">—</span>}
             {q.tags.map((t) => (
-              <StatusBadge key={t.id} label={t.name} variant="default" />
+              <StatusBadge key={t.id} label={translateUi(t.name)} variant="default" />
             ))}
           </div>
         ),
@@ -118,7 +120,7 @@ export function QuestionBankPage() {
       {
         key: 'status',
         header: 'Status',
-        cell: (q) => <StatusBadge label={q.status} variant={getStatusVariant(q.status)} />,
+        cell: (q) => <StatusBadge label={translateUi(q.status)} variant={getStatusVariant(q.status)} />,
       },
       {
         key: 'actions',
@@ -215,7 +217,7 @@ export function QuestionBankPage() {
               >
                 {banks?.items.map((b) => (
                   <option key={b.id} value={b.id}>
-                    {b.title} ({b.questionCount})
+                    {translateUi(b.title)} ({b.questionCount})
                   </option>
                 ))}
               </select>

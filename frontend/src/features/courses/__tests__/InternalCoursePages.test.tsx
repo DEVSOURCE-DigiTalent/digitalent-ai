@@ -61,7 +61,7 @@ describe('InternalCoursePages (Agent 1 - Phase H: OW-31..33)', () => {
       renderWithClient(<InternalCourseListPage />);
 
       expect(screen.getByText('Khóa học trong tổ chức')).toBeInTheDocument();
-      expect(screen.getByText(/chưa có trường phân loại khóa chuẩn và khóa nội bộ/i)).toBeInTheDocument();
+      expect(screen.getByText(/Chỉ khóa học nội bộ có thể chỉnh sửa tại đây\. Khóa học chuẩn được quản lý trong danh mục khóa học\./)).toBeInTheDocument();
       expect(screen.getByText('Văn hóa doanh nghiệp & Quy tắc ứng xử số')).toBeInTheDocument();
       expect(screen.getByText('INT-001')).toBeInTheDocument();
       expect(screen.getByText('Tổng khóa tổ chức')).toBeInTheDocument();
@@ -93,7 +93,7 @@ describe('InternalCoursePages (Agent 1 - Phase H: OW-31..33)', () => {
       );
 
       expect(screen.getByText('Tạo khóa học nội bộ')).toBeInTheDocument();
-      expect(screen.getByText(/chưa có API lưu nội dung từng học phần/i)).toBeInTheDocument();
+      expect(screen.getByText(/Nội dung học phần chưa thể chỉnh sửa tại đây\. Khóa mới sẽ được lưu dưới dạng bản nháp\./)).toBeInTheDocument();
 
       // Fill title
       const titleInput = screen.getByLabelText(/Tên khóa học/i);
@@ -168,7 +168,7 @@ describe('InternalCoursePages (Agent 1 - Phase H: OW-31..33)', () => {
 
       expect(screen.getByText('Văn hóa làm việc số tại DigiTalent')).toBeInTheDocument();
       expect(screen.getByText('INT-001')).toBeInTheDocument();
-      expect(screen.getByText(/chưa trả danh sách nội dung từng học phần/i)).toBeInTheDocument();
+      expect(screen.getByText(/Hiện chưa thể xem nội dung học phần và danh sách học viên của khóa này\./)).toBeInTheDocument();
       expect(screen.getByText('Chỉnh sửa thông tin')).toBeInTheDocument();
       expect(screen.queryByText('Lê Hoàng Nam')).not.toBeInTheDocument();
     });

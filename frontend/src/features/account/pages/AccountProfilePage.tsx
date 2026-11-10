@@ -1,178 +1,43 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useEffect } from 'react';
-import { User, Mail, Phone, Briefcase, Save, CheckCircle2 } from 'lucide-react';
-import { PageHeader } from '@/components/shared';
+import { UserRound, Mail, Phone, Briefcase, Save, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useUserProfile, useUpdateUserProfile } from '@/hooks/use-platform';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { ROLE_LABELS, type Role } from '@/lib/roles';
+import { apiErrorMessage } from '@/lib/utils';
+import { AccountWorkspace } from '../components/AccountWorkspace';
 
 export function AccountProfilePage() {
-  const { data: profile, isLoading, isError, refetch } = useUserProfile();
-  const updateProfile = useUpdateUserProfile();
-  const sessionUser = useCurrentUser((s) => s.user);
-
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [jobTitle, setJobTitle] = useState('');
-  const [savedSuccess, setSavedSuccess] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string>();
-
-  useEffect(() => {
-    if (profile) {
-      setFullName(profile.fullName || '');
-      setPhone(profile.phone || '');
-      setJobTitle(profile.jobTitle || '');
-    } else if (sessionUser) {
-      setFullName(sessionUser.fullName || '');
-    }
-  }, [profile, sessionUser]);
-
-  if (isLoading) {
-    return <div className="p-8 text-center text-slate-500">Đang tải thông tin tài khoản…</div>;
-  }
-
-  if (isError) {
-    return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center text-red-700">
-        <p className="font-medium">Không thể tải thông tin hồ sơ cá nhân.</p>
-        <button type="button" onClick={() => refetch()} className="mt-2 text-sm underline font-semibold">
-          Thử lại
-        </button>
-      </div>
-    );
-  }
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage(undefined);
-    setSavedSuccess(false);
-
-    try {
-      await updateProfile.mutateAsync({
-        fullName: fullName.trim(),
-        phone: phone.trim(),
-        jobTitle: jobTitle.trim(),
-      });
-      setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 3000);
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Không thể cập nhật thông tin cá nhân.');
-    }
+  useUiLanguage();
+  const {data:profile,isLoading,isError,refetch}=useUserProfile();
+  const update=useUpdateUserProfile();
+  const user=useCurrentUser(s=>s.user);
+  const [fullName,setFullName]=useState('');
+  const [phone,setPhone]=useState('');
+  const [jobTitle,setJobTitle]=useState('');
+  const [saved,setSaved]=useState(false);
+  const [error,setError]=useState('');
+  useEffect(()=>{if(profile){setFullName(profile.fullName??'');setPhone(profile.phone??'');setJobTitle(profile.jobTitle??'');}},[profile]);
+  const dirty=Boolean(profile && (fullName.trim()!==profile.fullName || phone.trim()!==(profile.phone??'') || jobTitle.trim()!==(profile.jobTitle??'')));
+  const save=async(e:React.FormEvent)=>{
+    e.preventDefault();setError('');setSaved(false);
+    if(!fullName.trim()){setError('Vui lòng nhập họ và tên.');return;}
+    try{await update.mutateAsync({fullName:fullName.trim(),phone:phone.trim(),jobTitle:jobTitle.trim()});setSaved(true);}catch(err){setError(apiErrorMessage(err,'Không thể lưu thông tin cá nhân.'));}
   };
-
-  return (
-    <div className="space-y-6 max-w-3xl">
-      <PageHeader
-        title="Thông tin tài khoản"
-        subtitle="Quản lý thông tin định danh cá nhân và chức vụ của bạn trên hệ thống DigiTalent AI"
-      />
-
-      {savedSuccess && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-800 flex items-center gap-2">
-          <CheckCircle2 className="size-5 text-emerald-600" />
-          Đã lưu cập nhật thông tin tài khoản thành công!
+  return <AccountWorkspace title={translateUi("Hồ sơ của tôi")} section="profile">
+    {isLoading?<div className="aw-card aw-state" role="status">{translateUi("Đang tải hồ sơ…")}</div>:isError?<div className="aw-alert aw-alert--error" role="alert">{translateUi("Không tải được hồ sơ. ")}<button onClick={()=>void refetch()}>{translateUi("Thử lại")}</button></div>:<div className="aw-profile-grid">
+      <aside className="aw-identity"><span className="aw-avatar">{(profile?.fullName||user?.fullName||'U').charAt(0).toUpperCase()}</span><h2>{profile?.fullName||user?.fullName}</h2><span className="aw-identity__email">{profile?.email||user?.email}</span><div className="aw-roles">{user?.roles.map(role=><span key={role}><ShieldCheck size={12}/>{translateUi(ROLE_LABELS[role as Role])??role}</span>)}</div><dl><div><dt>{translateUi("Chức danh")}</dt><dd>{profile?.jobTitle||translateUi('Chưa cập nhật')}</dd></div><div><dt>{translateUi("Số điện thoại")}</dt><dd>{profile?.phone||translateUi('Chưa cập nhật')}</dd></div></dl></aside>
+      <form className="aw-card aw-profile-form" onSubmit={save}>
+        <div className="aw-section-title"><span className="aw-icon"><UserRound size={20}/></span><div><h2>{translateUi("Thông tin cá nhân")}</h2><p>{translateUi("Cập nhật thông tin liên hệ của bạn.")}</p></div></div>
+        {saved&&<p className="aw-alert aw-alert--success" role="status"><CheckCircle2 size={17}/>{translateUi("Đã lưu thông tin cá nhân.")}</p>}{error&&<p className="aw-alert aw-alert--error" role="alert">{translateUi(error)}</p>}
+        <div className="aw-fields">
+          <label className="aw-field" htmlFor="user-fullname">{translateUi("Họ và tên")}<span className="aw-input-icon"><UserRound size={16}/><input id="user-fullname" autoComplete="name" required maxLength={200} value={fullName} onChange={e=>{setFullName(e.target.value);setSaved(false);}}/></span></label>
+          <label className="aw-field" htmlFor="user-email">{translateUi("Email đăng nhập")}<span className="aw-input-icon"><Mail size={16}/><input id="user-email" type="email" readOnly value={profile?.email||user?.email||''}/></span><small>{translateUi("Email được dùng để đăng nhập và nhận thông báo.")}</small></label>
+          <label className="aw-field" htmlFor="user-phone">{translateUi("Số điện thoại")}<span className="aw-input-icon"><Phone size={16}/><input id="user-phone" type="tel" autoComplete="tel" value={phone} onChange={e=>{setPhone(e.target.value);setSaved(false);}} placeholder={translateUi("Chưa cập nhật")}/></span></label>
+          <label className="aw-field" htmlFor="user-jobtitle">{translateUi("Chức danh")}<span className="aw-input-icon"><Briefcase size={16}/><input id="user-jobtitle" autoComplete="organization-title" value={jobTitle} onChange={e=>{setJobTitle(e.target.value);setSaved(false);}} placeholder={translateUi("Chưa cập nhật")}/></span></label>
         </div>
-      )}
-
-      {errorMessage && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800">
-          {errorMessage}
-        </div>
-      )}
-
-      <form onSubmit={handleSave} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
-        <div className="flex items-center gap-4 border-b border-slate-100 pb-5">
-          <div className="size-16 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-xl">
-            {fullName.slice(0, 1) || 'U'}
-          </div>
-          <div>
-            <h2 className="text-base font-bold text-slate-900">{fullName || 'Người dùng'}</h2>
-            <p className="text-xs text-slate-500 font-mono">{profile?.email || sessionUser?.email}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="user-fullname" className="block text-sm font-medium text-slate-700 mb-1">
-              Họ và tên
-            </label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
-              <input
-                id="user-fullname"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:border-primary-500 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="user-email" className="block text-sm font-medium text-slate-700 mb-1">
-              Email đăng nhập (cố định)
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
-              <input
-                id="user-email"
-                type="email"
-                disabled
-                value={profile?.email || sessionUser?.email || ''}
-                className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-500 cursor-not-allowed"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="user-phone" className="block text-sm font-medium text-slate-700 mb-1">
-              Số điện thoại
-            </label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
-              <input
-                id="user-phone"
-                type="text"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="0912 345 678"
-                className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:border-primary-500 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="user-jobtitle" className="block text-sm font-medium text-slate-700 mb-1">
-              Chức danh công việc
-            </label>
-            <div className="relative">
-              <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
-              <input
-                id="user-jobtitle"
-                type="text"
-                value={jobTitle}
-                onChange={(e) => setJobTitle(e.target.value)}
-                placeholder="Quản trị viên / Chuyên viên"
-                className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:border-primary-500 focus:outline-none"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t border-slate-100 pt-4 flex justify-between items-center">
-          <span className="text-xs text-slate-400">
-            Vai trò hiện tại: <strong>{sessionUser?.roles?.join(', ') || 'PLATFORM_ADMIN'}</strong>
-          </span>
-
-          <button
-            type="submit"
-            disabled={updateProfile.isPending}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-5 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
-          >
-            <Save className="size-4" />
-            {updateProfile.isPending ? 'Đang lưu…' : 'Lưu thông tin'}
-          </button>
-        </div>
+        <footer className="aw-actions"><span>{dirty?translateUi('Có thay đổi chưa được lưu'):translateUi('Thông tin đã được đồng bộ')}</span><button className="aw-primary" type="submit" disabled={!dirty||update.isPending}><Save size={16}/>{update.isPending?translateUi('Đang lưu…'):translateUi('Lưu thông tin')}</button></footer>
       </form>
-    </div>
-  );
+    </div>}
+  </AccountWorkspace>;
 }

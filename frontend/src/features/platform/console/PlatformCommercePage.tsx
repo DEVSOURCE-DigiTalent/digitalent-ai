@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -24,6 +25,7 @@ type Edit = { price: number; sales: SalesStatus };
  * PA-09 · Đơn giá: per-seat price of every published course.
  */
 export function PlatformCommercePage() {
+  useUiLanguage();
   const [kind, setKind] = useState('');
   const [pageIndex, setPageIndex] = useState(1);
   const { data, isLoading, error } = usePlatformCommerce({ kind, pageIndex, pageSize: 20 });
@@ -123,11 +125,11 @@ export function PlatformCommercePage() {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th style={{ width: 160 }}>Thời gian</th>
+                      <th style={{ width: 160 }}>{translateUi("Thời gian")}</th>
                       <th>Khóa học & Doanh nghiệp</th>
                       <th style={{ width: 160 }}>Loại đơn</th>
-                      <th className="num" style={{ width: 100, textAlign: 'right' }}>Số suất</th>
-                      <th className="num" style={{ width: 140, textAlign: 'right' }}>Tổng tiền</th>
+                      <th className="num" style={{ width: 100, textAlign: 'right' }}>{translateUi("Số suất")}</th>
+                      <th className="num" style={{ width: 140, textAlign: 'right' }}>{translateUi("Tổng tiền")}</th>
                       <th>Người thực hiện / Lý do</th>
                     </tr>
                   </thead>
@@ -169,11 +171,11 @@ export function PlatformCommercePage() {
                           </td>
                           <td className="num" style={{ textAlign: 'right' }}>
                             <span style={{ fontWeight: 700, fontSize: 13, color: '#0f172a' }}>{o.seats}</span>
-                            <span style={{ fontSize: 11, color: '#64748b', marginLeft: 3 }}>suất</span>
+                            <span style={{ fontSize: 11, color: '#64748b', marginLeft: 3 }}>{translateUi("suất")}</span>
                           </td>
                           <td className="num" style={{ textAlign: 'right' }}>
                             <strong style={{ fontSize: 13, color: isPurchase ? '#059669' : '#64748b' }}>
-                              {o.totalAmount > 0 ? formatMoney(o.totalAmount) : 'Miễn phí'}
+                              {o.totalAmount > 0 ? formatMoney(o.totalAmount) : translateUi('Miễn phí')}
                             </strong>
                           </td>
                           <td>
@@ -201,6 +203,7 @@ export function PlatformCommercePage() {
 }
 
 function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]; currentNo: number | null; draftNo: number | null }) {
+  useUiLanguage();
   const { can } = usePermission();
   const canManage = can(PERMISSIONS.PLATFORM_CATALOG_MANAGE);
   const editable = canManage && draftNo !== null;
@@ -256,8 +259,8 @@ function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]
           </h2>
           <p className="panel-desc" style={{ fontSize: 13, color: '#64748b' }}>
             {draftNo !== null
-              ? `Giá đang áp dụng thuộc phiên bản neo ⚓ v${currentNo}. Mọi thay đổi giá trong bản nháp v${draftNo} sẽ có hiệu lực ngay khi công bố.`
-              : `Giá đang dùng thuộc ⚓ v${currentNo ?? '—'}. Tạo bản nháp mới để điều chỉnh đơn giá.`}
+              ? translateUi(`Giá đang áp dụng thuộc phiên bản neo ⚓ v${currentNo}. Mọi thay đổi giá trong bản nháp v${draftNo} sẽ có hiệu lực ngay khi công bố.`)
+              : translateUi(`Giá đang dùng thuộc ⚓ v${currentNo ?? '—'}. Tạo bản nháp mới để điều chỉnh đơn giá.`)}
           </p>
         </div>
         {canManage && draftNo === null && (
@@ -279,7 +282,7 @@ function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]
           <thead>
             <tr style={{ background: '#f8fafc' }}>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569' }}>KHÓA HỌC & LĨNH VỰC</th>
-              <th style={{ padding: '12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>CẤP ĐỘ</th>
+              <th style={{ padding: '12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>{translateUi("CẤP ĐỘ")}</th>
               <th className="num" style={{ padding: '12px 16px', textAlign: 'right', fontSize: 12, fontWeight: 700, color: '#475569' }}>
                 GIÁ ĐANG DÙNG (v{currentNo ?? '—'})
               </th>
@@ -314,8 +317,8 @@ function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]
                             {c.code}
                           </code>
                           <div>
-                            <strong style={{ fontSize: 13, color: '#0f172a', display: 'block' }}>{c.title}</strong>
-                            <small style={{ fontSize: 12, color: '#64748b' }}>{c.domainName}</small>
+                            <strong style={{ fontSize: 13, color: '#0f172a', display: 'block' }}>{translateUi(c.title)}</strong>
+                            <small style={{ fontSize: 12, color: '#64748b' }}>{translateUi(c.domainName)}</small>
                           </div>
                         </div>
                       </td>
@@ -332,11 +335,11 @@ function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]
                             border: `1px solid ${levelStyle.border}`,
                           }}
                         >
-                          {LEVEL_NAMES[c.level] ?? c.levelName}
+                          {translateUi(LEVEL_NAMES[c.level]) ?? c.levelName}
                         </span>
                       </td>
                       <td className="num" style={{ padding: '12px 16px', textAlign: 'right', fontSize: 13, fontWeight: 600 }}>
-                        {c.isFree ? <span style={{ color: '#16a34a' }}>Miễn phí</span> : formatMoney(c.pricePerSeat)}
+                        {c.isFree ? <span style={{ color: '#16a34a' }}>{translateUi("Miễn phí")}</span> : formatMoney(c.pricePerSeat)}
                       </td>
                       {draftNo !== null && (
                         <td style={{ padding: '10px 16px' }}>
@@ -350,7 +353,7 @@ function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]
                                 step={1000}
                                 value={Number.isFinite(edit.price) ? edit.price : ''}
                                 onChange={(e) => set(c.id, { price: e.target.value === '' ? Number.NaN : Number(e.target.value) })}
-                                aria-label={`Giá bản nháp của ${c.code}`}
+                                aria-label={translateUi(`Giá bản nháp của ${c.code}`)}
                                 style={{ width: 120, height: 32, padding: '0 8px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600 }}
                               />
                               <span style={{ fontSize: 13, color: '#64748b' }}>₫</span>
@@ -366,18 +369,18 @@ function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]
                           <select
                             value={edit.sales}
                             onChange={(e) => set(c.id, { sales: e.target.value as SalesStatus })}
-                            aria-label={`Trạng thái bán của ${c.code}`}
+                            aria-label={translateUi(`Trạng thái bán của ${c.code}`)}
                             style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 12, fontWeight: 600 }}
                           >
                             <option value="OPEN">Đang mở bán</option>
                             <option value="PAUSED">Tạm ngưng bán</option>
                           </select>
                         ) : (
-                          <Pill tone={SALES_STATUS[c.salesStatus]?.tone}>{SALES_STATUS[c.salesStatus]?.label}</Pill>
+                          <Pill tone={SALES_STATUS[c.salesStatus]?.tone}>{translateUi(SALES_STATUS[c.salesStatus]?.label)}</Pill>
                         )}
                       </td>
                       <td className="num" style={{ padding: '12px 16px', textAlign: 'right', fontSize: 12, color: '#64748b' }}>
-                        {c.isFree ? '—' : `${c.seatsPurchased} mua · ${c.seatsGranted} cấp`}
+                        {c.isFree ? '—' : translateUi(`${c.seatsPurchased} mua · ${c.seatsGranted} cấp`)}
                       </td>
                     </tr>
                   );
@@ -417,9 +420,7 @@ function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]
               disabled={!changed.length || save.isPending}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
-              <RotateCcw size={14} />
-              Hủy thay đổi
-            </button>
+              <RotateCcw size={14} />{translateUi("Hủy thay đổi")}</button>
             <button
               type="button"
               className="btn btn-primary"
@@ -428,7 +429,7 @@ function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
               <Save size={15} />
-              {save.isPending ? 'Đang lưu…' : `Lưu giá vào bản nháp v${draftNo}`}
+              {save.isPending ? translateUi('Đang lưu…') : translateUi(`Lưu giá vào bản nháp v${draftNo}`)}
             </button>
           </div>
         </div>
@@ -439,6 +440,7 @@ function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]
 }
 
 function PriceGroup({ name, colSpan, count, children }: { name: string; colSpan: number; count: number; children: ReactNode }) {
+  useUiLanguage();
   return (
     <>
       <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
@@ -449,8 +451,7 @@ function PriceGroup({ name, colSpan, count, children }: { name: string; colSpan:
               <strong style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{name}</strong>
             </div>
             <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: '#e2e8f0', color: '#475569', fontWeight: 600 }}>
-              {count} khóa học
-            </span>
+              {count}{translateUi(" khóa học")}</span>
           </div>
         </td>
       </tr>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { ReactNode } from 'react';
@@ -191,7 +191,7 @@ beforeEach(() => {
 
 describe('Pulse employee routes', () => {
   it('serves every employee screen under /enterprise/me for employees and managers, without the old baseline', () => {
-    expect(EMPLOYEE_SCREENS.map((s) => s.id)).toEqual(['EM-01', 'EM-02', 'EM-03', 'EM-05', 'EM-06', 'EM-07', 'EM-12', 'EM-T1', 'EM-T2', 'EM-08', 'EM-09', 'EM-10', 'EM-11']);
+    expect(EMPLOYEE_SCREENS.map((s) => s.id)).toEqual(['EM-01', 'EM-02', 'EM-03', 'EM-05', 'EM-06', 'EM-07', 'EM-12', 'EM-T1', 'EM-T2', 'EM-08', 'EM-09', 'EM-10', 'EM-11', 'EM-13', 'EM-14']);
     for (const screenDef of EMPLOYEE_SCREENS) {
       expect(screenDef.path.startsWith(PULSE_PATHS.today)).toBe(true);
       expect(screenDef.roles).toEqual(expect.arrayContaining([ROLES.EMPLOYEE, ROLES.MANAGER]));
@@ -219,7 +219,7 @@ describe('enterprise trial detection', () => {
 
     renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
-    expect((await screen.findAllByRole('link', { name: 'Học tiếp' })).length).toBeGreaterThan(0);
+    expect((await screen.findAllByRole('link', { name: 'Học tiếp bài giảng →' })).length).toBeGreaterThan(0);
     expect(sidebarFor({ id: 'm', email: 'm@x.test', fullName: 'M', roles: [ROLES.MANAGER], permissions: [], enterpriseTrialStatus: null })).toBe(MANAGER_SIDEBAR);
   });
 });
@@ -305,7 +305,7 @@ describe('PulseTodayPage', () => {
     course({ courseId: 'c-a', code: 'A1-A', title: 'Quản trị dữ liệu nâng cao', tier: 3, zone: 'ABOVE_CEILING', slotStatus: 'ABOVE_CEILING', finalStatus: 'NOT_STARTED', preStatus: 'LOCKED', enrollmentId: null, progressPercent: 0 }),
   ];
 
-  it('shows the role, the reviewer and the roadmap as course names and levels only', async () => {
+  it('shows the position, the latest recognised course and the path courses of each domain', async () => {
     const courses = ladder();
     vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(overview({
       domains: [domain({ ceiling: 2, pathTop: 2, verified: 1 })],
@@ -316,27 +316,18 @@ describe('PulseTodayPage', () => {
 
     renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
-    const roleCard = await screen.findByRole('complementary', { name: 'Vị trí và người đánh giá' });
-    expect(within(roleCard).getByText('Kế toán')).toBeTruthy();
-    expect(within(roleCard).getByText('Trần Quản Lý')).toBeTruthy();
+    expect(await screen.findByText(/Lộ trình phát triển năng lực chức danh/)).toHaveTextContent('Lộ trình phát triển năng lực chức danh Kế toán');
+    expect(screen.getByText('1/2 khóa hoàn thành')).toBeTruthy();
+    // The badge names the course actually recognised, not a fixed sample.
+    expect(screen.getByText('A1-F đạt chuẩn')).toBeTruthy();
 
-    // Bảng lộ trình: tên khóa + cấp độ; đỉnh lộ trình bị trần phòng ban giới hạn, khóa vượt trần không hiện.
-    const plan = screen.getByRole('table');
-    expect(within(plan).getByText('A1-F')).toBeTruthy();
-    expect(within(plan).getByText('A1-I')).toBeTruthy();
-    expect(within(plan).getByText('Giới hạn khóa')).toBeTruthy();
-    expect(within(plan).getByText('Không có khóa trong lộ trình')).toBeTruthy();
-    expect(within(plan).queryByText('Đã đạt')).toBeNull();
-    expect(within(plan).queryByText('Đang học')).toBeNull();
-    expect(within(plan).queryByText(/%/)).toBeNull();
-
-    // Trạng thái, % đã học và đạt / chưa đạt nằm ở danh sách khóa của lĩnh vực.
-    expect(screen.getByText('Đã đạt')).toBeTruthy();
-    expect(screen.getAllByText('Đang học').length).toBeGreaterThan(0);
-    expect(screen.getByText('40% đã học')).toBeTruthy();
-    expect(screen.queryByText('A1-A')).toBeNull();
-    expect(screen.queryByText('Ngoài phạm vi')).toBeNull();
-    expect(screen.getByText(/Được công nhận qua bài đánh giá trước khi học/)).toBeTruthy();
+    // Domain card: path courses only (Cơ bản → department ceiling); the Advanced course above the ceiling is not listed.
+    const card = screen.getByRole('heading', { level: 3, name: 'Khai thác dữ liệu và thông tin' }).closest('article')!;
+    expect(within(card).getByText('1/2 khóa đạt')).toBeTruthy();
+    expect(within(card).getByText('Đang học')).toBeTruthy();
+    expect(within(card).getByRole('button', { name: 'A1-F' })).toBeTruthy();
+    expect(within(card).getByRole('button', { name: 'A1-I' })).toBeTruthy();
+    expect(within(card).queryByRole('button', { name: 'A1-A' })).toBeNull();
   });
 
   it('asks a new employee to take the pre-assessment of each course first', async () => {
@@ -358,18 +349,16 @@ describe('PulseTodayPage', () => {
     expect(screen.queryByText(/% đã học/)).toBeNull();
   });
 
-  it('expands and collapses a domain to show its courses', async () => {
+  it('opens the quick syllabus of a course from its domain card', async () => {
     vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(overview()));
 
     renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
-    const toggle = await screen.findByRole('button', { name: /A1 · Khai thác dữ liệu và thông tin/ });
-    expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByText('40% đã học')).toBeTruthy();
-
-    fireEvent.click(toggle);
-    expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(screen.queryByText('40% đã học')).toBeNull();
+    const card = (await screen.findByRole('heading', { level: 3, name: 'Khai thác dữ liệu và thông tin' })).closest('article')!;
+    fireEvent.click(within(card).getAllByRole('button')[0]!);
+    const drawer = await screen.findByRole('dialog');
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Đóng ngăn kéo' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 
   it('explains a missing position instead of an empty path', async () => {
@@ -378,6 +367,16 @@ describe('PulseTodayPage', () => {
     renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
     expect(await screen.findByText('Bạn chưa được gán vị trí công việc')).toBeTruthy();
+  });
+
+  it('never shows a sample job title in the header of an employee without a position', async () => {
+    const base = overview();
+    vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(overview({ person: { ...base.person, positionName: null } })));
+
+    renderAt(PULSE_PATHS.today, <PulseTodayPage />);
+
+    expect(await screen.findByText(/Lộ trình phát triển năng lực chức danh/)).toHaveTextContent('Chưa được gán vị trí');
+    expect(screen.queryByText(/Chuyên viên Kế toán tài chính/)).toBeNull();
   });
 });
 

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { FileBarChart } from 'lucide-react';
 import { useAssignments } from '@/hooks/use-assignments';
 import { useManagedDepartment } from '@/hooks/use-managed-department';
@@ -22,6 +23,7 @@ interface TimelineEvent {
  * dòng thời gian quyết định và bước tiếp theo. Hoàn thành khóa học không tự đổi mức đầu vào của nhân viên.
  */
 export function ManagerCycleReportPage() {
+  useUiLanguage();
   const { can } = usePermission();
   const canReview = can(PERMISSIONS.TASK_EVALUATE);
   const canReadTasks = can(PERMISSIONS.TASK_READ);
@@ -97,7 +99,7 @@ export function ManagerCycleReportPage() {
       ) : (
         <>
           <section className="pu-metrics pu-review-kpis" aria-label="Chu kỳ của phòng ban">
-            <div><strong>{people}</strong><span>Học viên trong chu kỳ</span></div>
+            <div><strong>{people}</strong><span>{translateUi("Học viên trong chu kỳ")}</span></div>
             <div><strong>{reviews.isSuccess ? submissions : '—'}</strong><span>Lượt nộp đang theo dõi</span></div>
             <div><strong>{completed.length}</strong><span>Khóa đã duyệt hoàn thành</span></div>
             <div><strong>{avgProgress != null ? `${avgProgress}%` : '—'}</strong><span>Tiến độ học trung bình</span></div>
@@ -121,7 +123,7 @@ export function ManagerCycleReportPage() {
                       <strong>{cohort.courseTitle}</strong>
                       <small>
                         {cohort.learners.length} học viên · {done} đã hoàn thành · {review} chờ chấm/nộp lại
-                        {support > 0 ? ` · ${support} cần hỗ trợ` : ''}
+                        {support > 0 ? translateUi(` · ${support} cần hỗ trợ`) : ''}
                       </small>
                     </div>
                   </div>
@@ -142,7 +144,7 @@ export function ManagerCycleReportPage() {
             <ol className="pm-timeline">
               {events.map((event, index) => (
                 <li key={`${event.at}-${index}`} className={event.warm ? 'warm' : undefined}>
-                  <strong>{event.title}</strong>
+                  <strong>{translateUi(event.title)}</strong>
                   <small>{event.detail} · {formatDate(event.at)}</small>
                 </li>
               ))}
@@ -169,12 +171,12 @@ export function ManagerCycleReportPage() {
         <h2 id="pm-evidence-title" className="pu-panel-title">Minh chứng thực tế luôn có thể truy vết.</h2>
         <p className="pu-panel-desc">
           {canReadTasks && tasks.isSuccess
-            ? `${approvedEvidence} minh chứng thực tế đã được duyệt trong phòng ban. `
+            ? translateUi(`${approvedEvidence} minh chứng thực tế đã được duyệt trong phòng ban. `)
             : ''}
           Mỗi minh chứng có thể xác nhận mức áp dụng và nguồn riêng với bài cuối khóa.
-          {rows.length > 0 && rows[0].assignedAt ? ` Dữ liệu tính từ ${formatDate(rows.map((r) => r.assignedAt).sort()[0])}.` : ''}
+          {rows.length > 0 && rows[0].assignedAt ? translateUi(` Dữ liệu tính từ ${formatDate(rows.map((r) => r.assignedAt).sort()[0])}.`) : ''}
         </p>
-        <PuLink to={MANAGER_PATHS.evidence} kind="outline" small>Xem minh chứng</PuLink>
+        <PuLink to={MANAGER_PATHS.evidence} kind="outline" small>{translateUi("Xem minh chứng")}</PuLink>
       </section>
     </ManagerPage>
   );

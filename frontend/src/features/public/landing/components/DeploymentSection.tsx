@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -13,6 +14,7 @@ type DeploymentSection = Extract<LandingSectionConfig, { kind: 'deployment' }>;
  * one by one and show what the product would display once the step is done. No duration is promised.
  */
 export function DeploymentSection({ section }: { section: DeploymentSection }) {
+  useUiLanguage();
   const { reduced } = useLandingMotion();
   const railRef = useRef<HTMLOListElement>(null);
   const [lit, setLit] = useState(0);
@@ -73,7 +75,7 @@ export function DeploymentSection({ section }: { section: DeploymentSection }) {
                 </span>
                 <div className={cn('transition-opacity duration-500', done ? 'opacity-100' : 'opacity-50')}>
                   <p className="text-xs tracking-[0.14em] text-[#E8C67C]/80 tabular-nums">{String(index + 1).padStart(2, '0')}</p>
-                  <h3 className="mt-1 text-[clamp(22px,2.4vw,30px)] font-normal leading-[1.2] tracking-[-0.02em] text-cream">{step.title}</h3>
+                  <h3 className="mt-1 text-[clamp(22px,2.4vw,30px)] font-normal leading-[1.2] tracking-[-0.02em] text-cream">{translateUi(step.title)}</h3>
                   {step.note && <p className="mt-2 max-w-[52ch] text-base leading-[1.55] text-stone-400">{step.note}</p>}
                   {step.chip && (
                     <span

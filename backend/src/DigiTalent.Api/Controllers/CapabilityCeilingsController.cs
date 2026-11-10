@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DigiTalent.Api.Controllers;
 
 /// <summary>
-/// Ceiling matrix of the organization (OW-05 "Lý thuyết trần nhà"): Digital AI ceiling (6 domains × 3 levels),
+/// Ceiling matrix of the organization (OW-05 "Phạm vi năng lực"): Digital AI ceiling (6 domains × 3 levels),
 /// organization ceiling and optional department ceilings, with department ≤ organization ≤ Digital AI per domain.
 /// </summary>
 [ApiController]

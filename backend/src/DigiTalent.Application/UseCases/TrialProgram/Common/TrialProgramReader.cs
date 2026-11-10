@@ -51,6 +51,11 @@ public class TrialProgramReader
             _context.TrialWorkspaces.Add(trial);
             await _context.SaveChangesAsync();
         }
+        else if (trial.OwnerUserId == Guid.Empty)
+        {
+            trial.OwnerUserId = UserId;
+            await _context.SaveChangesAsync();
+        }
         return trial;
     }
 
@@ -82,6 +87,11 @@ public class TrialProgramReader
         if (assessment != null)
         {
             return "Bạn đã nộp bài đánh giá.";
+        }
+
+        if (trial.RequestedAt == null)
+        {
+            return "Doanh nghiệp chưa bắt đầu đợt khảo sát.";
         }
 
         if (trial.ReportPublishedAt is { } closedAt && at >= closedAt)

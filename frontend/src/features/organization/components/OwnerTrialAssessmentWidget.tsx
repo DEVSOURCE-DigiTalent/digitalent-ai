@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronDown } from 'lucide-react';
@@ -13,6 +14,7 @@ const LEVEL_COLORS = [
 ];
 
 export function OwnerTrialAssessmentWidget() {
+  useUiLanguage();
   const { data: program, isLoading, isError } = useTrialProgram();
   const [showEmployees, setShowEmployees] = useState(false);
   const [chartMode, setChartMode] = useState<'distribution' | 'score'>('distribution');
@@ -74,9 +76,7 @@ export function OwnerTrialAssessmentWidget() {
         <div className="pb-4 mb-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <span className="size-2.5 rounded-full bg-[#137b84]" />
-            <h2 className="text-base sm:text-lg font-black tracking-tight text-[#17243f]">
-              Phân bố Năng lực 6 Lĩnh vực
-            </h2>
+            <h2 className="text-base sm:text-lg font-black tracking-tight text-[#17243f]">{translateUi("Phân bố Năng lực 6 Lĩnh vực")}</h2>
           </div>
 
           <div className="flex items-center gap-2.5">
@@ -90,9 +90,7 @@ export function OwnerTrialAssessmentWidget() {
                     ? 'bg-white text-[#17243f] shadow-2xs font-bold'
                     : 'text-[#64748b] hover:text-[#17243f]'
                 }`}
-              >
-                Phân bố cấp độ (%)
-              </button>
+              >{translateUi("Phân bố cấp độ (%)")}</button>
               <button
                 type="button"
                 onClick={() => setChartMode('score')}
@@ -101,17 +99,13 @@ export function OwnerTrialAssessmentWidget() {
                     ? 'bg-white text-[#17243f] shadow-2xs font-bold'
                     : 'text-[#64748b] hover:text-[#17243f]'
                 }`}
-              >
-                Điểm TB (0 - 3.0)
-              </button>
+              >{translateUi("Điểm TB (0 - 3.0)")}</button>
             </div>
 
             <Link
               to="/enterprise/skill-gap"
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-[#17243f] transition-all shadow-2xs hover:shadow-xs"
-            >
-              Ma trận khoảng cách
-              <ArrowRight className="size-3 text-[#137b84]" />
+            >{translateUi("Ma trận khoảng cách")}<ArrowRight className="size-3 text-[#137b84]" />
             </Link>
           </div>
         </div>
@@ -125,7 +119,7 @@ export function OwnerTrialAssessmentWidget() {
               {LEVEL_COLORS.map((lvl) => (
                 <span key={lvl.level} className="inline-flex items-center gap-1.5 text-[#64748b]">
                   <span className="size-2 rounded-full" style={{ backgroundColor: lvl.hex }} />
-                  <span className="font-semibold text-[11px] text-[#17243f]">{lvl.label}</span>
+                  <span className="font-semibold text-[11px] text-[#17243f]">{translateUi(lvl.label)}</span>
                 </span>
               ))}
             </div>
@@ -147,7 +141,7 @@ export function OwnerTrialAssessmentWidget() {
                           {domain.number}
                         </span>
                         <span className="font-semibold text-[#17243f]">
-                          {domain.name}
+                          {translateUi(domain.name)}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -172,7 +166,7 @@ export function OwnerTrialAssessmentWidget() {
                                 backgroundColor: LEVEL_COLORS[lvl].hex,
                               }}
                               className="h-full first:rounded-l-full last:rounded-r-full transition-all duration-300"
-                              title={`${LEVEL_COLORS[lvl].label}: ${cnt} người (${Math.round(pct)}%)`}
+                              title={translateUi(`${LEVEL_COLORS[lvl].label}: ${cnt} người (${Math.round(pct)}%)`)}
                             />
                           );
                         })}
@@ -205,7 +199,7 @@ export function OwnerTrialAssessmentWidget() {
                 onClick={() => setShowEmployees((v) => !v)}
                 className="text-xs font-bold text-[#137b84] hover:text-[#0e5968] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <span>{showEmployees ? 'Thu gọn' : `Xem chi tiết ${report.employees.length} nhân sự`}</span>
+                <span>{showEmployees ? translateUi('Thu gọn') : translateUi(`Xem chi tiết ${report.employees.length} nhân sự`)}</span>
                 <ChevronDown className={`size-3.5 transition-transform duration-200 ${showEmployees ? 'rotate-180' : ''}`} />
               </button>
             </div>
@@ -213,9 +207,7 @@ export function OwnerTrialAssessmentWidget() {
 
           {/* Right Column (30%): Donut Breakdown & Link nhanh */}
           <div className="lg:col-span-4 flex flex-col items-center justify-between border-t lg:border-t-0 lg:border-l border-slate-100 lg:pl-6 pt-5 lg:pt-0">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#64748b] block mb-2 self-start">
-              Tỷ lệ Cấp độ
-            </span>
+            <span className="text-xs font-bold uppercase tracking-wider text-[#64748b] block mb-2 self-start">{translateUi("Tỷ lệ Cấp độ")}</span>
 
             {/* Donut Chart: Gọn, Hiện đại */}
             <div className="flex items-center justify-center my-2 relative">
@@ -251,9 +243,7 @@ export function OwnerTrialAssessmentWidget() {
                 <span className="text-3xl font-black text-[#17243f] tabular-nums">
                   {companyAvgScore.toFixed(1)}
                 </span>
-                <span className="text-[10px] uppercase font-bold text-[#94a3b8]">
-                  Điểm TB
-                </span>
+                <span className="text-[10px] uppercase font-bold text-[#94a3b8]">{translateUi("Điểm TB")}</span>
               </div>
             </div>
 
@@ -266,7 +256,7 @@ export function OwnerTrialAssessmentWidget() {
                 >
                   <div className="flex items-center gap-1.5">
                     <span className="size-2 rounded-full" style={{ backgroundColor: slice.color }} />
-                    <span className="font-semibold text-[11px]">{slice.label}</span>
+                    <span className="font-semibold text-[11px]">{translateUi(slice.label)}</span>
                   </div>
                   <span className="font-black tabular-nums">
                     {slice.percent}%
@@ -280,9 +270,7 @@ export function OwnerTrialAssessmentWidget() {
               <Link
                 to="/enterprise/courses"
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#137b84] to-[#0d9488] hover:from-[#0e5968] hover:to-[#0f766e] text-white text-xs font-bold transition-all shadow-[0_4px_12px_rgba(19,123,132,0.2)] hover:shadow-[0_6px_18px_rgba(19,123,132,0.3)] hover:-translate-y-0.5"
-              >
-                Xem Khóa học Đào tạo
-                <ArrowRight className="size-3.5" />
+              >{translateUi("Xem Khóa học Đào tạo")}<ArrowRight className="size-3.5" />
               </Link>
             </div>
           </div>
@@ -295,8 +283,8 @@ export function OwnerTrialAssessmentWidget() {
               <table className="tp-table w-full text-xs">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
-                    <th className="text-left py-2.5 px-3 font-semibold text-[#17243f]">Nhân sự</th>
-                    <th className="text-left py-2.5 px-3 font-semibold text-[#17243f]">Phòng ban · Vị trí</th>
+                    <th className="text-left py-2.5 px-3 font-semibold text-[#17243f]">{translateUi("Nhân sự")}</th>
+                    <th className="text-left py-2.5 px-3 font-semibold text-[#17243f]">{translateUi("Phòng ban · Vị trí")}</th>
                     {report.domains.map((d) => (
                       <th key={d.categoryId} className="num py-2.5 px-2 font-semibold text-[#17243f]">
                         {d.number}
@@ -331,39 +319,35 @@ export function OwnerTrialAssessmentWidget() {
   return (
     <section className="rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-xs p-6 shadow-xs">
       <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-        <h2 className="text-base sm:text-lg font-black text-[#17243f]">
-          Khảo sát Năng lực Đội ngũ
-        </h2>
+        <h2 className="text-base sm:text-lg font-black text-[#17243f]">{translateUi("Khảo sát Năng lực Đội ngũ")}</h2>
         <Link
           to="/enterprise/trial"
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#137b84] to-[#0d9488] text-white text-xs font-bold hover:shadow-xs transition-all"
-        >
-          Quản lý đợt thi
-          <ArrowRight className="size-3.5" />
+        >{translateUi("Quản lý đợt thi")}<ArrowRight className="size-3.5" />
         </Link>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 mt-4">
         <div className="rounded-xl bg-slate-50/80 p-3.5 border border-slate-200/70">
-          <span className="text-[11px] font-bold text-[#64748b] block">Nhân sự</span>
+          <span className="text-[11px] font-bold text-[#64748b] block">{translateUi("Nhân sự")}</span>
           <strong className="text-2xl font-black text-[#17243f] block mt-0.5 tabular-nums">
             {program.participants.length}
           </strong>
         </div>
         <div className="rounded-xl bg-sky-50/60 p-3.5 border border-sky-200/70">
-          <span className="text-[11px] font-bold text-sky-700 block">Đã kích hoạt</span>
+          <span className="text-[11px] font-bold text-sky-700 block">{translateUi("Đã kích hoạt")}</span>
           <strong className="text-2xl font-black text-sky-800 block mt-0.5 tabular-nums">
             {program.participants.filter((p) => ['ACTIVE', 'SUBMITTED'].includes(p.status)).length}
           </strong>
         </div>
         <div className="rounded-xl bg-amber-50/60 p-3.5 border border-amber-200/70">
-          <span className="text-[11px] font-bold text-amber-700 block">Đã nộp bài</span>
+          <span className="text-[11px] font-bold text-amber-700 block">{translateUi("Đã nộp bài")}</span>
           <strong className="text-2xl font-black text-amber-800 block mt-0.5 tabular-nums">
             {program.participants.filter((p) => p.status === 'SUBMITTED').length}
           </strong>
         </div>
         <div className="rounded-xl bg-emerald-50/60 p-3.5 border border-emerald-200/70">
-          <span className="text-[11px] font-bold text-emerald-700 block">Chưa nộp</span>
+          <span className="text-[11px] font-bold text-emerald-700 block">{translateUi("Chưa nộp")}</span>
           <strong className="text-2xl font-black text-emerald-800 block mt-0.5 tabular-nums">
             {program.participants.filter((p) => p.status === 'ACTIVE').length}
           </strong>

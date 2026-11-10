@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ClipboardList, Hourglass, Lock } from 'lucide-react';
@@ -21,6 +22,7 @@ import '../pulse-trial.css';
  * khóa — chủ doanh nghiệp có nút mua ngay dưới danh sách.
  */
 export function TrialLearning({ overview }: { overview: PulseOverview }) {
+  useUiLanguage();
   const owner = useIsOwner();
   const { data: mine } = useMyTrialAssessment();
   const gate = trialGateOf(mine);
@@ -48,6 +50,7 @@ function useIsOwner() {
 }
 
 export function TrialLearningHead({ total, done }: { total: number; done: number | null }) {
+  useUiLanguage();
   return (
     <header className="pu-tl-head">
       <div>
@@ -58,7 +61,7 @@ export function TrialLearningHead({ total, done }: { total: number; done: number
       {done != null && (
         <div className="pu-tl-score">
           <strong>{done}<small>/{total}</small></strong>
-          <span>khóa hoàn thành</span>
+          <span>{translateUi("khóa hoàn thành")}</span>
           <Bar value={total ? (done / total) * 100 : 0} label="Khóa học thử đã hoàn thành" />
         </div>
       )}
@@ -68,6 +71,7 @@ export function TrialLearningHead({ total, done }: { total: number; done: number
 
 /** Cảnh báo trước khi học thử: làm bài đánh giá trước / chờ bài đánh giá đóng / bài đánh giá đã đóng. */
 export function TrialNotice({ state, mine }: { state: TrialGateState; mine: MyTrialAssessment }) {
+  useUiLanguage();
   if (state === 'waiting') {
     return (
       <NoticeCard
@@ -97,7 +101,7 @@ export function TrialNotice({ state, mine }: { state: TrialGateState; mine: MyTr
       title="Làm bài đánh giá trước khi học"
       text="Học thử mở sau khi bài đánh giá đóng."
       meta={mine.canStart && mine.testDeadline ? `Hạn nộp ${formatWhen(mine.testDeadline)}` : mine.closedMessage ?? undefined}
-      action={<PuLink to={PULSE_PATHS.trialTest}>Làm bài đánh giá <ArrowRight size={15} aria-hidden /></PuLink>}
+      action={<PuLink to={PULSE_PATHS.trialTest}>{translateUi("Làm bài đánh giá ")}<ArrowRight size={15} aria-hidden /></PuLink>}
     />
   );
 }
@@ -119,11 +123,12 @@ export function NoticeCard({
   action?: ReactNode;
   children?: ReactNode;
 }) {
+  useUiLanguage();
   return (
-    <section className={`pu-tl-notice ${tone}`} role="status" aria-label={title}>
+    <section className={`pu-tl-notice ${tone}`} role="status" aria-label={translateUi(title)}>
       <span className="pu-tl-notice-icon" aria-hidden>{icon}</span>
       <div>
-        <strong>{title}</strong>
+        <strong>{translateUi(title)}</strong>
         <span>{text}</span>
         {meta && <small>{meta}</small>}
       </div>
@@ -143,6 +148,7 @@ export interface LockedCourse {
 
 /** Sáu khóa Cơ bản hiện trước, khóa lại tới khi có kết quả bài đánh giá. */
 export function LockedCourses({ courses }: { courses: LockedCourse[] }) {
+  useUiLanguage();
   return (
     <ul className="pu-tl-grid" aria-label="Khóa học thử (chưa mở)">
       {courses.map((course) => (
@@ -151,8 +157,8 @@ export function LockedCourses({ courses }: { courses: LockedCourse[] }) {
             <span className="pu-tl-code">{course.code.split('-')[0]}</span>
             <span className="pu-state locked"><Lock size={11} aria-hidden /> Chưa mở</span>
           </div>
-          {course.domainName && <small className="pu-tl-domain">{course.domainName}</small>}
-          <h3>{course.title}</h3>
+          {course.domainName && <small className="pu-tl-domain">{translateUi(course.domainName)}</small>}
+          <h3>{translateUi(course.title)}</h3>
           {course.moduleCount != null && <div className="pu-tl-meta"><span>{course.moduleCount} mô-đun</span></div>}
         </li>
       ))}
@@ -161,6 +167,7 @@ export function LockedCourses({ courses }: { courses: LockedCourse[] }) {
 }
 
 function TrialCourse({ course }: { course: PulseCourseSummary }) {
+  useUiLanguage();
   // Chưa bắt đầu (0%) thì chỉ ghi số mô-đun.
   const learning = showsProgress(course) && !course.approved && course.slotStatus !== 'TO_LEARN';
   return (
@@ -169,12 +176,12 @@ function TrialCourse({ course }: { course: PulseCourseSummary }) {
         <span className="pu-tl-code">{course.code.split('-')[0]}</span>
         <StatePill course={course} />
       </div>
-      <small className="pu-tl-domain">{course.domainName}</small>
-      <h3><Link to={PULSE_PATHS.course(course.courseId)}>{course.title}</Link></h3>
+      <small className="pu-tl-domain">{translateUi(course.domainName)}</small>
+      <h3><Link to={PULSE_PATHS.course(course.courseId)}>{translateUi(course.title)}</Link></h3>
       <div className="pu-tl-meta">
         {learning ? (
           <>
-            <Bar value={course.progressPercent} label={`Tiến độ học ${course.code}`} />
+            <Bar value={course.progressPercent} label={translateUi(`Tiến độ học ${course.code}`)} />
             <span>{course.progressPercent}%</span>
           </>
         ) : (
@@ -188,6 +195,7 @@ function TrialCourse({ course }: { course: PulseCourseSummary }) {
 
 /** Nhân viên chỉ thấy Trung cấp, Nâng cao đang khóa; chủ doanh nghiệp thấy nút mua khóa. */
 export function Upgrade({ owner, finished }: { owner: boolean; finished: boolean }) {
+  useUiLanguage();
   if (!owner) {
     return (
       <p className="pu-tl-locked">

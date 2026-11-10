@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useAssignMentor, useCreateMentor, useMentors, usePlatformTrials, useRegenerateTrialInsights } from '@/hooks/use-trial-program';
@@ -26,6 +27,7 @@ const INSIGHT: Record<TrialInsightStatus, string> = {
  * và mentor chấm bài cuối khóa học thử.
  */
 export function PlatformTrialsPage() {
+  useUiLanguage();
   const trials = usePlatformTrials();
   const mentors = useMentors();
   const [tab, setTab] = useState<TrialStage | 'ALL'>('OPEN');
@@ -37,10 +39,10 @@ export function PlatformTrialsPage() {
       <PageHead eyebrow="Nền tảng / Dùng thử" title="Doanh nghiệp dùng thử." />
       <Box>
         <div className="pa-filters pa-row-between">
-          <div className="pa-tabs" role="group" aria-label="Lọc doanh nghiệp">
+          <div className="pa-tabs" role="group" aria-label={translateUi("Lọc doanh nghiệp")}>
             {TABS.map((t) => (
               <button key={t.key} type="button" aria-pressed={tab === t.key} onClick={() => setTab(t.key)}>
-                {t.label}
+                {translateUi(t.label)}
                 {t.key !== 'ALL' && count(t.key) > 0 ? ` (${count(t.key)})` : ''}
               </button>
             ))}
@@ -48,7 +50,7 @@ export function PlatformTrialsPage() {
         </div>
         {trials.isLoading && <Loading />}
         {trials.error && <LoadError error={trials.error} />}
-        {trials.data && items.length === 0 && <p className="pa-empty">Không có doanh nghiệp nào.</p>}
+        {trials.data && items.length === 0 && <p className="pa-empty">{translateUi("Không có doanh nghiệp nào.")}</p>}
         {items.length > 0 && (
           <div className="table-scroll">
             <table className="data-table">
@@ -111,6 +113,7 @@ function InsightCell({ trial }: { trial: PlatformTrialItem }) {
 }
 
 function MentorCell({ trial, mentors }: { trial: PlatformTrialItem; mentors: MentorItem[] }) {
+  useUiLanguage();
   const [choice, setChoice] = useState(trial.mentorUserId ?? '');
   const assign = useAssignMentor();
   const active = mentors.filter((m) => m.status === 'ACTIVE');
@@ -140,6 +143,7 @@ function MentorCell({ trial, mentors }: { trial: PlatformTrialItem; mentors: Men
 }
 
 function MentorsBox({ mentors, loading }: { mentors?: MentorItem[]; loading: boolean }) {
+  useUiLanguage();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ fullName: '', email: '', password: '' });
   const create = useCreateMentor();
@@ -148,7 +152,7 @@ function MentorsBox({ mentors, loading }: { mentors?: MentorItem[]; loading: boo
     <Box>
       <div className="pa-row-between">
         <h2 style={{ margin: 0, fontSize: 17 }}>Mentor</h2>
-        <button type="button" className="btn btn-outline btn-small" onClick={() => setOpen((v) => !v)}>{open ? 'Đóng' : '+ Thêm mentor'}</button>
+        <button type="button" className="btn btn-outline btn-small" onClick={() => setOpen((v) => !v)}>{open ? translateUi('Đóng') : '+ Thêm mentor'}</button>
       </div>
       {open && (
         <form
@@ -170,14 +174,14 @@ function MentorsBox({ mentors, loading }: { mentors?: MentorItem[]; loading: boo
             );
           }}
         >
-          <input aria-label="Họ tên mentor" placeholder="Họ tên" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
-          <input aria-label="Email mentor" type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <input aria-label="Mật khẩu ban đầu" type="password" placeholder="Mật khẩu (≥ 12 ký tự)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-          <button type="submit" className="btn btn-primary btn-small" disabled={!valid || create.isPending}>Tạo</button>
+          <input aria-label={translateUi("Họ tên mentor")} placeholder={translateUi("Họ tên")} value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
+          <input aria-label="Email mentor" type="email" placeholder={translateUi("Email")} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          <input aria-label={translateUi("Mật khẩu ban đầu")} type="password" placeholder={translateUi("Mật khẩu (≥ 12 ký tự)")} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+          <button type="submit" className="btn btn-primary btn-small" disabled={!valid || create.isPending}>{translateUi("Tạo")}</button>
         </form>
       )}
       {loading && <Loading />}
-      {mentors && mentors.length === 0 && <p className="pa-empty">Chưa có mentor.</p>}
+      {mentors && mentors.length === 0 && <p className="pa-empty">{translateUi("Chưa có mentor.")}</p>}
       {mentors && mentors.length > 0 && (
         <div className="table-scroll">
           <table className="data-table">
@@ -196,7 +200,7 @@ function MentorsBox({ mentors, loading }: { mentors?: MentorItem[]; loading: boo
                     <small className="pa-cell-sub">{m.email}</small>
                   </td>
                   <td className="num">{m.activeTrials}</td>
-                  <td>{m.status === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa'}</td>
+                  <td>{m.status === 'ACTIVE' ? translateUi('Hoạt động') : 'Đã khóa'}</td>
                 </tr>
               ))}
             </tbody>

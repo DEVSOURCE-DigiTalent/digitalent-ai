@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useContext, useEffect, useState } from 'react';
 import { Link, UNSAFE_DataRouterContext, useBlocker } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, RotateCcw, X } from 'lucide-react';
@@ -26,6 +27,7 @@ type Mode = 'intro' | 'quiz' | 'result';
  * when both are right, and the first level missed ends the domain (up to 36 questions, usually fewer).
  */
 export function LearnerDiagnosticPage() {
+  useUiLanguage();
   const { data, isLoading, isError, error, refetch } = usePersonalDiagnostic();
   const [mode, setMode] = useState<Mode | null>(null);
   const current: Mode = mode ?? (data?.result ? 'result' : 'intro');
@@ -35,13 +37,13 @@ export function LearnerDiagnosticPage() {
   return (
     <div data-testid="learner-diagnostic-page" className="grid gap-6">
       {current !== 'quiz' && <PersonalPageHeader
-        label="Đánh giá đầu vào"
-        title="Đánh giá năng lực"
+        label={translateUi("Đánh giá đầu vào")}
+        title={translateUi("Đánh giá năng lực")}
         lead="Mỗi miền bắt đầu từ mức Cơ bản. Mỗi mức có hai câu tình huống: đúng cả hai thì sang mức tiếp theo, sai một câu thì dừng ở miền đó. Đây là bài xếp lớp sơ bộ; năng lực được xác nhận qua khóa học và bài thực hành."
       />}
 
       {isLoading && <LoadingBlock />}
-      {isError && <ErrorBlock message={errorMessage(error)} onRetry={() => refetch()} />}
+      {isError && <ErrorBlock message={translateUi(errorMessage(error))} onRetry={() => refetch()} />}
       {data && current === 'intro' && <Intro data={data} onStart={() => setMode('quiz')} />}
       {data && current === 'quiz' && (
         <Quiz
@@ -58,6 +60,7 @@ export function LearnerDiagnosticPage() {
 }
 
 function Intro({ data, onStart }: { data: PersonalDiagnostic; onStart: () => void }) {
+  useUiLanguage();
   const facts = [
     { value: `≤${data.questions.length}`, label: 'câu tình huống, hỏi theo mức của bạn' },
     { value: '6', label: 'miền của Khung năng lực số' },
@@ -67,7 +70,7 @@ function Intro({ data, onStart }: { data: PersonalDiagnostic; onStart: () => voi
     <Card className="grid gap-10 p-7 md:grid-cols-[1.2fr_1fr] md:p-10">
       <div className="flex flex-col justify-between gap-8">
         <div>
-          <p className={PT_EYEBROW}>{data.target ? `Mục tiêu: ${data.target.name}` : 'Chưa chọn mục tiêu'}</p>
+          <p className={PT_EYEBROW}>{data.target ? translateUi(`Mục tiêu: ${data.target.name}`) : 'Chưa chọn mục tiêu'}</p>
           <p className="mt-4 max-w-[48ch] text-[17px] leading-relaxed text-pt-fg-2">
             Kết quả cho biết mức hiện tại của bạn ở từng miền, thay vì mặc định bằng không. Lộ trình sẽ miễn các khóa
             bạn đã đạt và chỉ giữ phần còn thiếu so với vị trí mục tiêu.
@@ -87,7 +90,7 @@ function Intro({ data, onStart }: { data: PersonalDiagnostic; onStart: () => voi
         {facts.map((fact) => (
           <div key={fact.label} className="flex items-baseline gap-4 border-b border-pt-line pb-5 last:border-0">
             <dt className="w-16 shrink-0 text-2xl font-semibold leading-none tracking-[-0.04em] tabular-nums">{fact.value}</dt>
-            <dd className="text-sm text-pt-fg-2">{fact.label}</dd>
+            <dd className="text-sm text-pt-fg-2">{translateUi(fact.label)}</dd>
           </div>
         ))}
       </dl>
@@ -105,6 +108,7 @@ interface QuizProps {
 }
 
 function Quiz({ questions: bank, access, previousCompletedAt, onCancel, onDone }: QuizProps) {
+  useUiLanguage();
   const submit = useSubmitDiagnostic();
   const handlePlanError = usePlanErrorHandler();
   const [index, setIndex] = useState(0);
@@ -159,7 +163,7 @@ function Quiz({ questions: bank, access, previousCompletedAt, onCancel, onDone }
               <button
                 type="button"
                 onClick={() => setIndex(position)}
-                aria-label={`Câu ${position + 1}${answers[item.id] !== undefined ? ', đã trả lời' : ''}`}
+                aria-label={translateUi(`Câu ${position + 1}${answers[item.id] !== undefined ? ', đã trả lời' : ''}`)}
                 aria-current={position === index ? 'step' : undefined}
                 className={cn(
                   'grid h-9 w-full place-items-center rounded-lg border text-xs tabular-nums transition-colors',
@@ -179,8 +183,8 @@ function Quiz({ questions: bank, access, previousCompletedAt, onCancel, onDone }
 
       <Card className="order-1 p-6 md:p-9 lg:order-2">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className={PT_EYEBROW}>Câu {index + 1} · Miền {question.domainNumber}/6 · Mức {levelLabelVi(question.level)}</p>
-          <Tag>{question.domainName}</Tag>
+          <p className={PT_EYEBROW}>{translateUi("Câu ")}{index + 1} · Miền {question.domainNumber}/6 · Mức {levelLabelVi(question.level)}</p>
+          <Tag>{translateUi(question.domainName)}</Tag>
         </div>
         <ProgressBar className="mt-4" value={(domainsDone / 6) * 100} label="Tiến độ làm bài theo miền" />
 
@@ -219,9 +223,8 @@ function Quiz({ questions: bank, access, previousCompletedAt, onCancel, onDone }
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-pt-line pt-6">
           <div className="flex gap-2">
             <button type="button" onClick={() => setIndex(index - 1)} disabled={index === 0} className={PT_BUTTON_SECONDARY}>
-              <ArrowLeft className="size-4" aria-hidden="true" /> Câu trước
-            </button>
-            <button type="button" onClick={cancel} className="px-3 text-sm text-pt-fg-3 hover:text-pt-fg">Thoát</button>
+              <ArrowLeft className="size-4" aria-hidden="true" />{translateUi(" Câu trước")}</button>
+            <button type="button" onClick={cancel} className="px-3 text-sm text-pt-fg-3 hover:text-pt-fg">{translateUi("Thoát")}</button>
           </div>
           {isLast && (done || answers[question.id] === undefined || plan.isFetching) ? (
             <button
@@ -230,7 +233,7 @@ function Quiz({ questions: bank, access, previousCompletedAt, onCancel, onDone }
               disabled={!allAnswered || submit.isPending}
               className={PT_BUTTON}
             >
-              {submit.isPending ? 'Đang chấm…' : allAnswered ? 'Nộp bài' : plan.isFetching ? 'Đang tải câu tiếp…' : 'Chọn một đáp án'}
+              {submit.isPending ? 'Đang chấm…' : allAnswered ? translateUi('Nộp bài') : plan.isFetching ? 'Đang tải câu tiếp…' : 'Chọn một đáp án'}
             </button>
           ) : (
             <button type="button" onClick={() => setIndex(index + 1)} className={PT_BUTTON}>
@@ -244,6 +247,7 @@ function Quiz({ questions: bank, access, previousCompletedAt, onCancel, onDone }
 }
 
 function QuizNavigationGuard({ dirty }: { dirty: boolean }) {
+  useUiLanguage();
   const blocker = useBlocker(dirty);
   useEffect(() => {
     if (blocker.state !== 'blocked') return;
@@ -255,6 +259,7 @@ function QuizNavigationGuard({ dirty }: { dirty: boolean }) {
 
 /** Retaking the entry assessment depends on the plan: once in a trial, every 30 days on the Free plan (BR-09). */
 function RetakeControl({ access, onRetake }: { access: PersonalAccess | undefined; onRetake: () => void }) {
+  useUiLanguage();
   if (access?.mode === 'trial' && !access.diagnosticAvailable) {
     return <p className="max-w-[40ch] text-sm text-pt-fg-3">Trong kỳ dùng thử, bài đánh giá làm được một lần.</p>;
   }
@@ -269,12 +274,12 @@ function RetakeControl({ access, onRetake }: { access: PersonalAccess | undefine
   }
   return (
     <button type="button" onClick={onRetake} className={PT_BUTTON_SECONDARY}>
-      <RotateCcw className="size-4" aria-hidden="true" /> Làm lại
-    </button>
+      <RotateCcw className="size-4" aria-hidden="true" />{translateUi(" Làm lại")}</button>
   );
 }
 
 function Result({ data, result, access, onRetake }: { data: PersonalDiagnostic; result: DiagnosticResult; access: PersonalAccess | undefined; onRetake: () => void }) {
+  useUiLanguage();
   const required = data.target?.domains.map((domain) => domain.highestLevel) ?? [0, 0, 0, 0, 0, 0];
   const current = result.domains.map((domain) => domain.level);
   const questions = new Map(data.questions.map((question) => [question.id, question]));
@@ -292,7 +297,7 @@ function Result({ data, result, access, onRetake }: { data: PersonalDiagnostic; 
           </p>
           <p className="mt-3 max-w-[44ch] text-[15px] leading-relaxed text-pt-fg-2">
             câu trả lời đúng. {data.target
-              ? `Đường nét đứt là yêu cầu của vị trí ${data.target.name}; phần tô là mức của bạn.`
+              ? translateUi(`Đường nét đứt là yêu cầu của vị trí ${data.target.name}; phần tô là mức của bạn.`)
               : 'Chọn một vị trí mục tiêu để so mức của bạn với yêu cầu.'}
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
@@ -315,9 +320,9 @@ function Result({ data, result, access, onRetake }: { data: PersonalDiagnostic; 
           {result.domains.map((domain) => (
             <li key={domain.number} className="flex items-center justify-between gap-4 border-b border-pt-line py-4">
               <div className="min-w-0">
-                <p className="text-sm text-pt-fg"><span className="mr-2 text-pt-fg-3">{domain.number}</span>{domain.name}</p>
+                <p className="text-sm text-pt-fg"><span className="mr-2 text-pt-fg-3">{domain.number}</span>{translateUi(domain.name)}</p>
                 <p className="mt-0.5 text-xs text-pt-fg-3">
-                  {domain.correct}/{domain.total} câu đúng · {domain.level === 0 ? 'Chưa đạt mức Cơ bản' : `Đạt ${levelLabelVi(domain.level)}`}
+                  {domain.correct}/{domain.total} câu đúng · {domain.level === 0 ? 'Chưa đạt mức Cơ bản' : translateUi(`Đạt ${levelLabelVi(domain.level)}`)}
                   {required[domain.number - 1] > 0 && ` · Chuẩn: ${levelLabelVi(required[domain.number - 1])}`}
                 </p>
               </div>
@@ -331,7 +336,7 @@ function Result({ data, result, access, onRetake }: { data: PersonalDiagnostic; 
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[19px] tracking-[-0.015em] [&::-webkit-details-marker]:hidden">
           Xem lại đáp án
           <span className="text-xs text-pt-fg-3 group-open:hidden">Mở</span>
-          <span className="hidden text-xs text-pt-fg-3 group-open:inline">Thu gọn</span>
+          <span className="hidden text-xs text-pt-fg-3 group-open:inline">{translateUi("Thu gọn")}</span>
         </summary>
         <ol className="mt-6 grid gap-5">
           {result.review.map((item, position) => {
@@ -344,7 +349,7 @@ function Result({ data, result, access, onRetake }: { data: PersonalDiagnostic; 
                   <span className={cn('mt-0.5 grid size-5 shrink-0 place-items-center rounded-full', right ? 'bg-pt-ok/20 text-pt-ok' : 'bg-pt-bad/20 text-pt-bad')}>
                     {right ? <Check className="size-3" aria-label="Đúng" /> : <X className="size-3" aria-label="Sai" />}
                   </span>
-                  <span>Câu {position + 1} ({levelLabelVi(question.level)}). {question.text}</span>
+                  <span>{translateUi("Câu ")}{position + 1} ({levelLabelVi(question.level)}). {question.text}</span>
                 </p>
                 <p className="pl-8 text-xs text-pt-fg-2">Đáp án: {question.options[item.correctIndex]}</p>
                 <p className="pl-8 text-xs leading-relaxed text-pt-fg-3">{item.explanation}</p>

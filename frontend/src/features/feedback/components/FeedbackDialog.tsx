@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useCallback, useRef, useState } from 'react';
 import { Bug, ImagePlus, MessageSquare, Star, X } from 'lucide-react';
 import '../feedback.css';
@@ -12,6 +13,7 @@ const MIN_TITLE = 5;
 const MIN_DESCRIPTION = 10;
 
 function TooShort({ value, min, what }: { value: string; min: number; what: string }) {
+  useUiLanguage();
   const length = value.trim().length;
   if (length === 0 || length >= min) return null;
   return <p className="mt-1.5 text-xs text-ent-bad">{what} cần ít nhất {min} ký tự (còn thiếu {min - length}).</p>;
@@ -72,6 +74,7 @@ function compressImage(file: File): Promise<string> {
 }
 
 function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  useUiLanguage();
   const [hover, setHover] = useState(0);
   const labels = ['', 'Rất tệ', 'Tệ', 'Bình thường', 'Tốt', 'Rất tốt'];
   return (
@@ -104,6 +107,7 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
 }
 
 export function FeedbackDialog({ type, onClose }: Props) {
+  useUiLanguage();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const copy = COPY[type];
@@ -185,11 +189,11 @@ export function FeedbackDialog({ type, onClose }: Props) {
               <HeadingIcon className="h-4 w-4" />
             </span>
             <div>
-              <h2 className="text-base font-semibold text-ent-fg">{copy.heading}</h2>
+              <h2 className="text-base font-semibold text-ent-fg">{translateUi(copy.heading)}</h2>
               <p className="mt-0.5 text-xs text-ent-fg-2">{copy.intro}</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Đóng" className="rounded-lg p-1 text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg transition-colors">
+          <button type="button" onClick={onClose} aria-label={translateUi("Đóng")} className="rounded-lg p-1 text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -198,7 +202,7 @@ export function FeedbackDialog({ type, onClose }: Props) {
           {/* Rating (only for FEEDBACK) */}
           {type === 'FEEDBACK' && (
             <div>
-              <label className="block text-sm font-medium text-ent-fg mb-1.5">Đánh giá chung</label>
+              <label className="block text-sm font-medium text-ent-fg mb-1.5">{translateUi("Đánh giá chung")}</label>
               <StarRating value={rating} onChange={setRating} />
             </div>
           )}
@@ -210,7 +214,7 @@ export function FeedbackDialog({ type, onClose }: Props) {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={copy.titlePlaceholder}
+              placeholder={translateUi(copy.titlePlaceholder)}
               maxLength={200}
               className="w-full rounded-xl border border-ent-line bg-ent-bg px-4 py-2.5 text-sm text-ent-fg placeholder:text-ent-fg-2/40 focus:border-ent-accent focus:ring-1 focus:ring-ent-accent/30 focus:outline-none transition-colors"
             />
@@ -223,7 +227,7 @@ export function FeedbackDialog({ type, onClose }: Props) {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder={copy.descriptionPlaceholder}
+              placeholder={translateUi(copy.descriptionPlaceholder)}
               maxLength={5000}
               rows={4}
               className="w-full rounded-xl border border-ent-line bg-ent-bg px-4 py-2.5 text-sm text-ent-fg placeholder:text-ent-fg-2/40 focus:border-ent-accent focus:ring-1 focus:ring-ent-accent/30 focus:outline-none resize-none transition-colors"
@@ -257,7 +261,7 @@ export function FeedbackDialog({ type, onClose }: Props) {
               <div className="flex gap-2 mb-2 flex-wrap">
                 {screenshots.map((src, i) => (
                   <div key={i} className="relative group">
-                    <img src={src} alt={`Ảnh ${i + 1}`} className="h-20 w-28 rounded-lg object-cover border border-ent-line" />
+                    <img src={src} alt={translateUi(`Ảnh ${i + 1}`)} className="h-20 w-28 rounded-lg object-cover border border-ent-line" />
                     <button
                       type="button"
                       onClick={() => removeScreenshot(i)}
@@ -291,13 +295,13 @@ export function FeedbackDialog({ type, onClose }: Props) {
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-1">
-            <button type="button" onClick={onClose} className="rounded-xl border border-ent-line px-5 py-2.5 text-sm font-medium text-ent-fg-2 hover:bg-ent-raised transition-colors">Hủy</button>
+            <button type="button" onClick={onClose} className="rounded-xl border border-ent-line px-5 py-2.5 text-sm font-medium text-ent-fg-2 hover:bg-ent-raised transition-colors">{translateUi("Hủy")}</button>
             <button
               type="submit"
               disabled={!isValid || mutation.isPending || uploading}
               className="rounded-xl bg-ent-accent px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40 transition-opacity"
             >
-              {mutation.isPending ? 'Đang gửi...' : 'Gửi'}
+              {mutation.isPending ? translateUi('Đang gửi...') : translateUi('Gửi')}
             </button>
           </div>
         </form>

@@ -1,12 +1,14 @@
-import { useMemo, useState } from 'react';
+import { translateUi, useUiLanguage } from '@/lib/i18n';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { X, Info, Building2, Users, ChevronDown, Check, Search, ArrowRight } from 'lucide-react';
+import { X, Info, Building2, Users, ChevronDown, Check, Search, ArrowRight, Layers3, Database, MessagesSquare, PenTool, ShieldCheck, Lightbulb, BrainCircuit } from 'lucide-react';
 import {
   useCapabilityCeilings,
   useUpdateDepartmentCeilings,
-  useUpdateOrganizationCeilings } from '@/hooks/use-capability-ceilings';
+  useUpdateOrganizationCeilings,
+} from '@/hooks/use-capability-ceilings';
 import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
 import { useTrialRoadmap } from '@/hooks/use-trial-program';
 import { organizationErrorMessage } from '@/lib/organization-errors';
@@ -15,6 +17,9 @@ import type { CapabilityCeilings, CeilingCourse, CeilingDomain } from '@/service
 import type { TrialPlanKind } from '@/services/trial-program.service';
 import { courseCode, trialScopeOf, type SeatHints } from '../lib/trial-scope';
 import { TrialScopePanel } from './TrialScopePanel';
+import { CoursePositionStandardPanel } from './CoursePositionStandardPanel';
+import { DomainPositionStandardPanel } from './DomainPositionStandardPanel';
+import { CapabilityCeilingGuide } from './CapabilityCeilingGuide';
 import './capability-ceiling.css';
 import './owner-filter-controls.css';
 
@@ -23,10 +28,11 @@ const PLAN_KINDS_IN_URL: TrialPlanKind[] = ['SAVING', 'BALANCED', 'FULL'];
 
 /** Phạm vi đang xem: cả doanh nghiệp hoặc id của một phòng ban. */
 const ALL = 'all';
+const DOMAIN_ICONS = [Database, MessagesSquare, PenTool, ShieldCheck, Lightbulb, BrainCircuit];
 
 type Levels = Record<string, number>;
+type MatrixSelection = { kind: 'domain'; categoryId: string } | { kind: 'course'; categoryId: string; level: number };
 
-const sumLevels = (levels: Levels) => Object.values(levels).reduce((sum, level) => sum + level, 0);
 const sameLevels = (a: Levels, b: Levels) =>
   Object.keys(a).length === Object.keys(b).length && Object.keys(a).every((key) => a[key] === b[key]);
 
@@ -40,7 +46,10 @@ function departmentLevels(matrix: CapabilityCeilings, departmentId: string): Lev
 }
 
 export function CapabilityCeilingMatrix() {
+  useUiLanguage();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialPositionId = searchParams.get('positionId');
   const { data: matrix, isLoading, isError } = useCapabilityCeilings();
   const { can } = usePermission();
   const canEdit = can(PERMISSIONS.POSITION_REQUIREMENT_MANAGE);
@@ -53,12 +62,22 @@ export function CapabilityCeilingMatrix() {
   const [deptSearch, setDeptSearch] = useState('');
   const [selectedToBuy, setSelectedToBuy] = useState<Map<string, BuyItem>>(new Map());
   // Phạm vi theo kết quả test dùng thử (?plan= từ báo cáo OW-T1).
-  const [searchParams] = useSearchParams();
   const planParam = searchParams.get('plan') as TrialPlanKind | null;
   const [trialKind, setTrialKind] = useState<TrialPlanKind>(planParam && PLAN_KINDS_IN_URL.includes(planParam) ? planParam : 'BALANCED');
   const roadmapQuery = useTrialRoadmap(canEdit);
   const roadmap = roadmapQuery.data?.available ? roadmapQuery.data : null;
   const trialScope = useMemo(() => (roadmap && matrix ? trialScopeOf(roadmap, matrix, trialKind) : null), [roadmap, matrix, trialKind]);
+  const [selection, setSelection] = useState<MatrixSelection | null>(null);
+  const [closingSelection, setClosingSelection] = useState<MatrixSelection | null>(null);
+  const [closedInitialPanel, setClosedInitialPanel] = useState(false);
+  const [panelVisible, setPanelVisible] = useState(Boolean(initialPositionId));
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openFrame = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    if (openFrame.current) cancelAnimationFrame(openFrame.current);
+  }, []);
 
   const department = matrix?.departments.find((d) => d.departmentId === scope);
   const activeScope = scope === ALL || department ? scope : ALL;
@@ -94,7 +113,7 @@ export function CapabilityCeilingMatrix() {
     for (const domain of matrix.domains) {
       for (const course of domain.courses) {
         const item = buyItem(course, domain);
-        if (course.isUnlocked === false && item.seats) next.set(item.code, item);
+        if (course.courseId && course.isUnlocked !== true && course.level > 1 && item.seats) next.set(item.code, item);
       }
     }
     setSelectedToBuy(next);
@@ -102,6 +121,10 @@ export function CapabilityCeilingMatrix() {
   };
 
   const toggleSelectToBuy = (course: CeilingCourse, domain: CeilingDomain) => {
+    if (!course.courseId) {
+      toast.error('Khóa học này chưa có trong danh mục để mua.');
+      return;
+    }
     const code = courseCode(course.code, domain.sortOrder, course.level);
     setSelectedToBuy((prev) => {
       const next = new Map(prev);
@@ -111,7 +134,8 @@ export function CapabilityCeilingMatrix() {
       } else {
         next.set(code, buyItem(course, domain));
         toast.success(`Đã chọn khóa ${code} để mua bản quyền`, {
-          description: 'Bạn có thể chọn thêm nhiều khóa khác trước khi bấm Tiếp tục.' });
+          description: 'Bạn có thể chọn thêm nhiều khóa khác trước khi bấm Tiếp tục.',
+        });
       }
       return next;
     });
@@ -120,7 +144,7 @@ export function CapabilityCeilingMatrix() {
   if (isLoading) {
     return (
       <section className="cc-root">
-        <SectionLoading label="Đang tải phạm vi đào tạo" />
+        <SectionLoading label={translateUi("Đang tải ma trận năng lực")} />
       </section>
     );
   }
@@ -128,7 +152,7 @@ export function CapabilityCeilingMatrix() {
   if (isError || !matrix) {
     return (
       <section className="cc-root">
-        <p className="cc-note">Chưa tải được phạm vi đào tạo. Vui lòng thử lại sau.</p>
+        <p className="cc-note">{translateUi("Chưa tải được ma trận phạm vi đào tạo. Vui lòng thử lại sau.")}</p>
       </section>
     );
   }
@@ -139,8 +163,10 @@ export function CapabilityCeilingMatrix() {
   const needsInitialSave = activeScope === ALL && !matrix.isConfigured;
   const saving = saveOrganization.isPending || saveDepartment.isPending;
   const orgCeiling = activeScope === ALL ? current : orgSaved;
-  const routeCount = sumLevels(current);
-  const orgCount = sumLevels(orgCeiling);
+  const activeSelection = selection ?? (!closedInitialPanel && initialPositionId && matrix.domains[0] ? { kind: 'domain' as const, categoryId: matrix.domains[0].categoryId } : null);
+  const renderedSelection = activeSelection ?? closingSelection;
+  const activeDomain = matrix.domains.find((item) => item.categoryId === renderedSelection?.categoryId);
+  const activeCourse = renderedSelection?.kind === 'course' ? activeDomain?.courses.find((item) => item.level === renderedSelection.level) : undefined;
   const suggestedLevels: Levels = Object.fromEntries(matrix.domains.map((domain) => [
     domain.categoryId,
     Math.min(domain.maxAllowedCeiling ?? 1, Math.max(1, domain.suggestedCeiling)),
@@ -156,28 +182,20 @@ export function CapabilityCeilingMatrix() {
     });
 
   const pick = (domain: CeilingDomain, level: number) => {
-    if (!canEdit || saving) return;
+    if (!canEdit || saving || (activeScope !== ALL && !matrix.isConfigured)) return;
     const courseAtLevel = domain.courses.find((c) => c.level === level);
-    // Nếu ô này là khóa học chưa mở bản quyền -> Chọn/hủy chọn vào danh sách mua
-    if (courseAtLevel?.isUnlocked === false) {
+    if (level > 1 && (courseAtLevel?.isUnlocked !== true || level > (domain.maxAllowedCeiling ?? 1))) {
+      if (!courseAtLevel) return;
       toggleSelectToBuy(courseAtLevel, domain);
       return;
     }
 
-    const now = current[domain.categoryId] ?? 0;
-    const target = level === now ? level - 1 : level;
+    const target = level;
     if (activeScope !== ALL && target > (orgSaved[domain.categoryId] ?? 0)) {
-      toast.error('Mức tối đa của phòng ban không được cao hơn của doanh nghiệp.');
+      toast.error('Cấp độ áp dụng của phòng ban không được vượt mức doanh nghiệp đã thiết lập.');
       return;
     }
-    const maxAllowed = domain.maxAllowedCeiling ?? 1;
-    if (activeScope === ALL && target > maxAllowed) {
-      const lockedCourse = domain.courses.find((c) => c.level === target && c.isUnlocked === false);
-      if (lockedCourse) {
-        toggleSelectToBuy(lockedCourse, domain);
-        return;
-      }
-    }
+    if (activeScope === ALL && target > (domain.maxAllowedCeiling ?? 1)) return;
     setDraft({ ...current, [domain.categoryId]: target });
   };
 
@@ -187,12 +205,16 @@ export function CapabilityCeilingMatrix() {
 
   const save = async () => {
     const ceilings = Object.entries(current).map(([categoryId, level]) => ({ categoryId, level }));
+    if (activeScope === ALL && ceilings.some(({ categoryId, level }) => level > (matrix.domains.find((item) => item.categoryId === categoryId)?.maxAllowedCeiling ?? 1))) {
+      toast.error('Có cấp chưa mua suất học. Chọn khóa để mua trước khi mở rộng phạm vi.');
+      return;
+    }
     try {
       if (activeScope === ALL) {
         const result = await saveOrganization.mutateAsync(ceilings);
         const adjustedCount = (result as { adjustedDepartmentCount?: number } | null | undefined)?.adjustedDepartmentCount ?? 0;
         if (adjustedCount > 0) {
-          toast.info(`Đã lưu phạm vi doanh nghiệp. Hạ mức tối đa của ${adjustedCount} phòng ban cho khớp.`);
+          toast.info(`Đã lưu phạm vi doanh nghiệp. Đã điều chỉnh ${adjustedCount} phòng ban theo phạm vi mới.`);
         } else {
           toast.success('Đã lưu phạm vi đào tạo của doanh nghiệp.');
         }
@@ -211,31 +233,56 @@ export function CapabilityCeilingMatrix() {
     try {
       await saveDepartment.mutateAsync({ departmentId: activeScope, data: { inherit: true, ceilings: [] } });
       setDraft(null);
-      toast.success(`${department?.name ?? 'Phòng ban'} dùng lại phạm vi của doanh nghiệp.`);
+      toast.success(`${department?.name ?? 'Phòng ban'} dùng lại phạm vi doanh nghiệp.`);
     } catch (error) {
       toast.error(organizationErrorMessage(error, 'Chưa lưu được phạm vi đào tạo.'));
     }
   };
 
-  const routeLabel = activeScope === ALL ? 'Khóa mở (Doanh nghiệp)' : `Khóa mở (${department?.name})`;
   const blockedDepartments = activeScope !== ALL && !matrix.isConfigured;
+  const panelDuration = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 380;
+  const openSelection = (next: MatrixSelection) => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    if (openFrame.current) cancelAnimationFrame(openFrame.current);
+    setClosedInitialPanel(true);
+    // Update the requested content immediately; animation must never queue a click.
+    const sameRow = renderedSelection?.categoryId === next.categoryId;
+    setClosingSelection(null);
+    setSelection(next);
+    setPanelVisible(Boolean(sameRow));
+    if (!sameRow) openFrame.current = requestAnimationFrame(() => {
+      openFrame.current = requestAnimationFrame(() => setPanelVisible(true));
+    });
+  };
+  const closeSelection = () => {
+    if (!activeSelection) return;
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    if (openFrame.current) cancelAnimationFrame(openFrame.current);
+    setClosingSelection(activeSelection);
+    setPanelVisible(false);
+    setSelection(null);
+    setClosedInitialPanel(true);
+    closeTimer.current = setTimeout(() => setClosingSelection(null), panelDuration());
+  };
+  const inspect = (domain: CeilingDomain, level: number) => {
+    if (panelVisible && activeSelection?.kind === 'course' && activeSelection.categoryId === domain.categoryId && activeSelection.level === level) closeSelection();
+    else openSelection({ kind: 'course', categoryId: domain.categoryId, level });
+  };
+  const inspectDomain = (domain: CeilingDomain) => {
+    if (panelVisible && activeSelection?.kind === 'domain' && activeSelection.categoryId === domain.categoryId) closeSelection();
+    else openSelection({ kind: 'domain', categoryId: domain.categoryId });
+  };
 
   return (
     <section className="cc-root" aria-labelledby="cc-title">
       {/* ── Tiêu đề súc tích & Nút Hướng dẫn nổi ── */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-teal-100 bg-gradient-to-r from-teal-50 via-white to-sky-50 px-5 py-4">
         <div className="flex items-center gap-3">
-          <h2 id="cc-title" className="text-xl sm:text-2xl font-black tracking-[-0.03em] section-gradient">
-            Phạm vi đào tạo
-          </h2>
+          <h2 id="cc-title" className="text-xl sm:text-2xl font-black tracking-[-0.03em] section-gradient">{translateUi("Phạm vi đào tạo")}</h2>
           {matrix.isConfigured ? (
-            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
-              Đã lưu
-            </span>
+            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">{translateUi("Đã lưu")}</span>
           ) : (
-            <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 border border-amber-200">
-              Gợi ý · Chưa lưu
-            </span>
+            <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 border border-amber-200">{translateUi("Gợi ý · Chưa lưu")}</span>
           )}
         </div>
 
@@ -245,15 +292,16 @@ export function CapabilityCeilingMatrix() {
             onClick={() => navigate('/enterprise/courses')}
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
           >
-            <span>Danh mục khóa học →</span>
+            <span>{translateUi("Danh mục khóa học →")}</span>
           </button>
           <button
             type="button"
             onClick={() => setShowGuide(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
+            className="cc-guide-trigger"
+            aria-haspopup="dialog"
           >
             <Info className="size-3.5 text-slate-500" />
-            <span>Quy tắc & Hướng dẫn</span>
+            <span>{translateUi("Quy tắc & Hướng dẫn")}</span>
           </button>
         </div>
       </div>
@@ -264,10 +312,12 @@ export function CapabilityCeilingMatrix() {
 
       {/* ── Ma trận trung tâm (Clean & Rõ ràng) ── */}
       <div className="cc-grid">
-        <div className="cc-card shadow-sm border border-slate-200">
+        <div className="cc-card cc-card--studio">
           {/* ── Bộ chọn phạm vi tối giản, hiện đại (Segmented Scope Control) ── */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100">
-            <div className="relative inline-flex items-center rounded-xl bg-slate-100/90 p-1 border border-slate-200/60 shadow-inner">
+          <div className="cc-scope-toolbar">
+            <div className="cc-scope-controls">
+            <span className="cc-scope-label"><Layers3 size={15} aria-hidden="true" />{translateUi("Phạm vi áp dụng")}</span>
+            <div className="cc-scope-switch">
               {/* Nút 1: Toàn doanh nghiệp */}
               <button
                 type="button"
@@ -275,15 +325,12 @@ export function CapabilityCeilingMatrix() {
                   setScope(ALL);
                   setIsDeptMenuOpen(false);
                 }}
-                className={`relative flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 select-none ${
-                  activeScope === ALL
-                    ? 'bg-white text-emerald-800 shadow-sm border border-slate-200/50 font-bold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/40'
-                }`}
+                className={`cc-scope-option${activeScope === ALL ? ' is-active' : ''}`}
+                aria-pressed={activeScope === ALL}
               >
                 <Building2 className="size-3.5 text-emerald-700" />
-                <span>Toàn doanh nghiệp</span>
-                {drafts[ALL] && <span className="size-1.5 rounded-full bg-amber-500" title="Chưa lưu" />}
+                <span>{translateUi("Toàn doanh nghiệp")}</span>
+                {drafts[ALL] && <span className="size-1.5 rounded-full bg-amber-500" title={translateUi("Chưa lưu")} />}
               </button>
 
               {/* Nút 2: Theo phòng ban (có Popover chọn) */}
@@ -296,23 +343,18 @@ export function CapabilityCeilingMatrix() {
                     }
                     setIsDeptMenuOpen(!isDeptMenuOpen);
                   }}
-                  className={`relative flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 select-none ${
-                    activeScope !== ALL
-                      ? 'bg-white text-emerald-800 shadow-sm border border-slate-200/50 font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/40'
-                  }`}
+                  className={`cc-scope-option${activeScope !== ALL ? ' is-active' : ''}`}
+                  aria-expanded={isDeptMenuOpen}
                 >
                   <Users className="size-3.5 text-emerald-700" />
                   <span className="max-w-[170px] sm:max-w-[210px] truncate">
-                    {activeScope !== ALL && department ? department.name : 'Chọn phòng ban'}
+                    {activeScope !== ALL && department ? department.name : translateUi('Chọn phòng ban')}
                   </span>
                   {activeScope !== ALL && department?.isCustomized && (
-                    <span className="rounded bg-emerald-100 px-1.5 py-0.2 text-[9.5px] font-bold text-emerald-800">
-                      Phạm vi riêng
-                    </span>
+                    <span className="rounded bg-emerald-100 px-1.5 py-0.2 text-[9.5px] font-bold text-emerald-800">{translateUi("Thiết lập riêng")}</span>
                   )}
                   {activeScope !== ALL && drafts[activeScope] && (
-                    <span className="size-1.5 rounded-full bg-amber-500" title="Chưa lưu" />
+                    <span className="size-1.5 rounded-full bg-amber-500" title={translateUi("Chưa lưu")} />
                   )}
                   <ChevronDown className={`size-3 text-slate-400 transition-transform duration-200 ${isDeptMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -323,8 +365,8 @@ export function CapabilityCeilingMatrix() {
                     <div className="fixed inset-0 z-20" onClick={() => setIsDeptMenuOpen(false)} />
                     <div className="absolute left-0 sm:left-auto sm:right-0 top-full z-30 mt-2 w-80 rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-xl">
                       <div className="flex items-center justify-between px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">
-                        <span>Phòng ban ({matrix.departments.length})</span>
-                        <span>Mức tối đa</span>
+                        <span>{translateUi("Phòng ban (")}{matrix.departments.length})</span>
+                        <span>{translateUi("Mức áp dụng")}</span>
                       </div>
 
                       {matrix.departments.length > 4 && (
@@ -333,8 +375,8 @@ export function CapabilityCeilingMatrix() {
                           <Search className="size-4" aria-hidden="true" />
                           <input
                             type="text"
-                            aria-label="Tìm phòng ban trong danh sách"
-                            placeholder="Tìm kiếm phòng ban..."
+                            aria-label={translateUi("Tìm phòng ban trong danh sách")}
+                            placeholder={translateUi("Tìm kiếm phòng ban...")}
                             value={deptSearch}
                             onChange={(e) => setDeptSearch(e.target.value)}
                             className="w-full text-sm"
@@ -371,7 +413,7 @@ export function CapabilityCeilingMatrix() {
                                   <span className="size-1.5 rounded-full bg-slate-300 shrink-0 ml-1 mr-1" />
                                 )}
                                 <span className="truncate">{d.name}</span>
-                                {hasDraft && <span className="size-1.5 rounded-full bg-amber-500 shrink-0" title="Chưa lưu" />}
+                                {hasDraft && <span className="size-1.5 rounded-full bg-amber-500 shrink-0" title={translateUi("Chưa lưu")} />}
                               </div>
 
                               <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
@@ -379,13 +421,13 @@ export function CapabilityCeilingMatrix() {
                                   ? 'bg-emerald-100 text-emerald-800'
                                   : 'bg-slate-100 text-slate-500'
                               }`}>
-                                {d.isCustomized ? 'Phạm vi riêng' : 'Theo doanh nghiệp'}
+                                {d.isCustomized ? translateUi('Thiết lập riêng') : 'Kế thừa DN'}
                               </span>
                             </button>
                           );
                         })}
                         {filteredDepartments.length === 0 && (
-                          <p className="py-4 text-center text-xs text-slate-400">Không tìm thấy phòng ban</p>
+                          <p className="py-4 text-center text-xs text-slate-400">{translateUi("Không tìm thấy phòng ban")}</p>
                         )}
                       </div>
                     </div>
@@ -393,87 +435,120 @@ export function CapabilityCeilingMatrix() {
                 )}
               </div>
             </div>
+            </div>
 
             {/* Dòng trạng thái ngữ cảnh tinh tế */}
-            <div className="text-xs text-slate-500 flex items-center gap-2">
+            <div className="cc-scope-status">
               <span className={`size-2 rounded-full shrink-0 ${activeScope === ALL ? 'bg-emerald-500' : department?.isCustomized ? 'bg-emerald-500' : 'bg-slate-400'}`} />
               <span className="font-medium text-slate-600">
                 {activeScope === ALL
-                  ? 'Đang xem phạm vi chung của doanh nghiệp'
+                  ? translateUi('Phạm vi chung toàn doanh nghiệp')
                   : department?.isCustomized
-                    ? `${department.name} đang dùng phạm vi riêng`
-                    : `${department?.name ?? 'Phòng ban'} đang theo phạm vi doanh nghiệp`}
+                    ? translateUi(`${department.name} · Thiết lập riêng`)
+                    : translateUi(`${department?.name ?? 'Phòng ban'} · Kế thừa doanh nghiệp`)}
               </span>
             </div>
           </div>
 
           {/* Ma trận màu xanh */}
-          <div className="cc-mx" role="group" aria-label="Ma trận năng lực nhân cấp độ">
-            <div />
+          <div className="cc-mx" role="group" aria-label={translateUi("Ma trận năng lực nhân cấp độ")}>
+            <div className="cc-mx-domain-heading"><Layers3 size={16} aria-hidden="true" /><span>{translateUi("Lĩnh vực năng lực")}<small>{translateUi("Chọn để cài đặt vị trí")}</small></span></div>
             {matrix.levels.map((level) => (
               <div key={level.level} className="hd">
-                Cấp {level.level}
-                <br />
-                <span>{level.name}</span>
+                <span className="cc-level-marker" aria-hidden="true">{String(level.level).padStart(2, '0')}</span>
+                <span className="cc-level-copy"><small>{translateUi("Cấp ")}{level.level}</small><strong>{translateUi(level.name)}</strong></span>
               </div>
             ))}
             {matrix.domains.map((domain) => {
               const routeLevel = current[domain.categoryId] ?? 0;
               const dnLevel = orgCeiling[domain.categoryId] ?? 0;
+              const isSelected = activeSelection?.categoryId === domain.categoryId && panelVisible;
+              const isRendered = renderedSelection?.categoryId === domain.categoryId;
+              const DomainIcon = DOMAIN_ICONS[domain.sortOrder - 1] ?? Layers3;
               return (
+                <Fragment key={domain.categoryId}>
                 <DomainRow
-                  key={domain.categoryId}
                   domain={domain}
                   routeLevel={routeLevel}
                   dnLevel={dnLevel}
                   isDepartment={activeScope !== ALL}
-                  editable={canEdit && !blockedDepartments}
+                  selectedDomain={isSelected && activeSelection?.kind === 'domain'}
+                  editable={canEdit}
                   selectedToBuy={selectedToBuy}
                   seats={trialScope?.seats}
                   reason={trialScope?.reasons.get(domain.categoryId)}
                   onPick={pick}
+                  onInspect={inspect}
+                  onDomainClick={inspectDomain}
                   onToggleBuy={toggleSelectToBuy}
                 />
+                {isRendered && activeDomain && (
+                  <div
+                    id={`course-position-standard-${domain.categoryId}`}
+                    className={`cc-inline-panel${isSelected ? ' is-open' : ''}`}
+                    inert={!isSelected}
+                  >
+                    <div className="cc-inline-panel__inner">
+                      <div className="cc-inline-panel__surface">
+                        <div className="cc-domain-panel" data-domain={domain.sortOrder}>
+                        <button type="button" className="cc-domain-panel__header" onClick={closeSelection} aria-label={translateUi(`Thu gọn ${domain.name}`)} aria-expanded={isSelected} aria-controls={`domain-panel-content-${domain.categoryId}`}>
+                          <span className="cc-domain-icon" aria-hidden="true"><DomainIcon size={18} /></span>
+                          <span className="cc-domain-panel__heading"><small>{activeCourse ? translateUi('KHÓA HỌC & SUẤT HỌC') : 'CHUẨN VỊ TRÍ THEO LĨNH VỰC'}</small><strong>{translateUi(domain.name)}</strong></span>
+                          <span className="cc-domain-panel__collapse">{translateUi("Thu gọn ")}<ChevronDown size={16} aria-hidden="true" /></span>
+                        </button>
+                        <div id={`domain-panel-content-${domain.categoryId}`}>
+                        {activeCourse ? <CoursePositionStandardPanel
+                          domain={activeDomain}
+                          course={activeCourse}
+                          isSelectedToBuy={Boolean(activeCourse.code && selectedToBuy.has(activeCourse.code))}
+                          scopeLabel={activeScope === ALL ? 'doanh nghiệp' : 'phòng ban'}
+                          onSelectToBuy={() => toggleSelectToBuy(activeCourse, activeDomain)}
+                        /> : <DomainPositionStandardPanel
+                          key={activeDomain.categoryId}
+                          domain={activeDomain}
+                          domains={matrix.domains}
+                          departmentId={activeScope === ALL ? null : activeScope}
+                          initialPositionId={initialPositionId}
+                          canEdit={canEdit}
+                        />}
+                        </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                </Fragment>
               );
             })}
           </div>
 
           {/* Chú giải ngắn gọn */}
-          <div className="cc-legend">
-            <span><i className="route" />Được mở trong phạm vi</span>
-            <span><i className="dn" />Trong phạm vi doanh nghiệp</span>
-            <span><i />Chỉ có trong Digital AI</span>
-            <span><i style={{ background: '#fffbeb', border: '1.5px solid #f59e0b' }} />Đang chọn mua</span>
-          </div>
-
-          {/* Số liệu thống kê */}
-          <div className="cc-stats" aria-label="Tổng quan phạm vi đào tạo">
-            <div className="cc-stat cc-stat--active"><span className="cc-stat-label">Trong phạm vi</span><b>{routeCount}</b><span>{routeLabel}</span></div>
-            <div className="cc-stat cc-stat--organization"><span className="cc-stat-label">Cấp doanh nghiệp</span><b>{orgCount}</b><span>Khóa trong phạm vi doanh nghiệp</span></div>
-            <div className="cc-stat cc-stat--catalog"><span className="cc-stat-label">Danh mục</span><b>{matrix.platformCourseCount}</b><span>Tổng khóa học hiện có</span></div>
+          <div className="cc-legend" aria-label={translateUi("Chú giải trạng thái khóa học")}>
+            <span className="cc-legend__title">{translateUi("Trạng thái")}</span>
+            <span className="cc-legend__chip"><i className="route" />{translateUi("Trong phạm vi áp dụng")}</span>
+            {activeScope !== ALL && <span className="cc-legend__chip"><i className="dn" />{translateUi("Trong phạm vi doanh nghiệp")}</span>}
+            <span className="cc-legend__chip"><i className="licensed" />{translateUi("Đã mở · ngoài phạm vi")}</span>
+            <span className="cc-legend__chip"><i className="locked" />{translateUi("Chưa mua")}</span>
+            <span className="cc-legend__chip cc-legend__chip--cart"><i className="cart" />{translateUi("Đã chọn vào giỏ")}</span>
           </div>
 
           {/* Nút hành động */}
           {canEdit && (
             <div className="cc-actions">
-              <div className="hint"><Info size={17} aria-hidden="true" /><span>
-                {blockedDepartments
-                  ? 'Cần lưu phạm vi doanh nghiệp trước.'
-                  : activeScope === ALL
-                    ? 'Bấm ô để chỉnh mức tối đa; bấm ô 🔒 để chọn mua.'
-                    : department?.isCustomized
-                      ? 'Đang dùng giới hạn riêng.'
-                      : 'Đang theo phạm vi doanh nghiệp.'}
-              </span></div>
+              <div className="cc-interaction-guide" aria-label={translateUi("Cách thao tác")}>
+                {blockedDepartments ? <span className="cc-interaction-guide__notice"><Info size={15} />{translateUi("Lưu phạm vi doanh nghiệp trước khi thiết lập phạm vi phòng ban.")}</span> : <span><Check size={14} /><strong>{translateUi("Chọn ô")}</strong><ArrowRight size={12} />{translateUi("Chọn cấp & lưu")}</span>}
+                <span><Info size={14} /><strong>ⓘ</strong>{translateUi("Khóa học & suất học")}</span>
+                <span><ChevronDown size={14} /><strong>{translateUi("Tên lĩnh vực")}</strong>{translateUi("Cài đặt vị trí")}</span>
+              </div>
               <div className="btns">
                 {hasApplicableSuggestion && (
-                  <button type="button" className="cc-btn" onClick={applySuggestion} disabled={saving}>
-                    Áp dụng mức đề xuất
-                  </button>
+                  <button type="button" className="cc-btn" onClick={applySuggestion} disabled={saving}>{translateUi("Áp dụng mức đề xuất")}</button>
                 )}
                 {activeScope !== ALL && department?.isCustomized && (
-                  <button type="button" className="cc-btn" onClick={inherit} disabled={saving}>
-                    Theo doanh nghiệp
+                  <button type="button" className="cc-btn cc-btn--inherit" onClick={inherit} disabled={saving} aria-busy={saving} title={translateUi("Đưa phòng ban về dùng phạm vi chung của doanh nghiệp")}>
+                    <span className="cc-inherit-icon" aria-hidden="true"><Building2 size={15} /></span>
+                    <span>{saving ? 'Đang áp dụng…' : translateUi('Kế thừa phạm vi doanh nghiệp')}</span>
+                    <ArrowRight size={14} className="cc-inherit-arrow" aria-hidden="true" />
                   </button>
                 )}
               </div>
@@ -488,12 +563,12 @@ export function CapabilityCeilingMatrix() {
             <div className="cc-save-indicator" aria-hidden="true" />
             <div className="cc-save-copy">
               <strong>{dirty ? 'Thay đổi phạm vi đào tạo chưa được lưu' : 'Phạm vi đào tạo gợi ý chưa được lưu'}</strong>
-              <span>{activeScope === ALL ? 'Toàn doanh nghiệp' : department?.name ?? 'Phòng ban'} · Lưu để áp dụng mức tối đa đang hiển thị.</span>
+              <span>{activeScope === ALL ? translateUi('Toàn doanh nghiệp') : department?.name ?? translateUi('Phòng ban')}{translateUi(" · Lưu để áp dụng cấp độ đang hiển thị.")}</span>
             </div>
             <div className="cc-save-buttons">
-              {dirty && <button type="button" className="cc-btn" onClick={() => setDraft(null)} disabled={saving}>Hủy thay đổi</button>}
+              {dirty && <button type="button" className="cc-btn" onClick={() => setDraft(null)} disabled={saving}>{translateUi("Hủy thay đổi")}</button>}
               <button type="button" className="cc-btn primary" onClick={save} disabled={saving || blockedDepartments}>
-                {saving ? 'Đang lưu…' : 'Lưu thay đổi'}
+                {saving ? translateUi('Đang lưu…') : translateUi('Lưu thay đổi')}
               </button>
             </div>
           </div>
@@ -502,20 +577,16 @@ export function CapabilityCeilingMatrix() {
       )}
 
       {/* ── Thanh thao tác mua nhiều khóa học đã chọn nổi bật (Floating Bar) ── */}
-      {selectedToBuy.size > 0 && (
-        <div className="sticky bottom-4 z-40 mt-4 rounded-2xl border-2 border-amber-400 bg-white/95 p-4 shadow-xl backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
+      {selectedToBuy.size > 0 && createPortal(
+        <div className="cc-cart-bar rounded-2xl border-2 border-amber-400 bg-white/95 p-4 shadow-xl backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
           <div className="flex items-center gap-3 min-w-0">
             <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-white font-bold text-base shadow-sm">
               {selectedToBuy.size}
             </span>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h4 className="font-bold text-slate-900 text-sm">
-                  Đã chọn {selectedToBuy.size} khóa học để mua bản quyền
-                </h4>
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800 border border-amber-300">
-                  Mở phạm vi đào tạo
-                </span>
+                <h4 className="font-bold text-slate-900 text-sm">{translateUi("Giỏ suất học · ")}{selectedToBuy.size}{translateUi(" khóa")}</h4>
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800 border border-amber-300">{translateUi("Mua suất học")}</span>
               </div>
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                 {Array.from(selectedToBuy.values()).map((item) => (
@@ -526,7 +597,7 @@ export function CapabilityCeilingMatrix() {
                     <span className="font-bold text-amber-800">{item.code}</span>
                     {item.seats ? <span className="text-slate-500">{item.seats} suất</span> : null}
                     <span className="text-slate-400">·</span>
-                    <span className="text-slate-600 max-w-[140px] truncate">{item.domainName}</span>
+                    <span className="text-slate-600 max-w-[140px] truncate">{translateUi(item.domainName)}</span>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -538,7 +609,7 @@ export function CapabilityCeilingMatrix() {
                         });
                       }}
                       className="ml-0.5 grid size-3.5 place-items-center rounded-full text-slate-400 hover:bg-amber-200 hover:text-slate-800"
-                      title="Bỏ chọn khóa này"
+                      title={translateUi("Bỏ chọn khóa này")}
                     >
                       <X className="size-3" />
                     </button>
@@ -553,9 +624,7 @@ export function CapabilityCeilingMatrix() {
               type="button"
               onClick={() => setSelectedToBuy(new Map())}
               className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-            >
-              Hủy chọn tất cả
-            </button>
+            >{translateUi("Hủy chọn tất cả")}</button>
             <button
               type="button"
               onClick={() => {
@@ -563,9 +632,7 @@ export function CapabilityCeilingMatrix() {
                 navigate(`/enterprise/courses?selected=${encodeURIComponent(codes)}`);
               }}
               className="rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800 hover:bg-amber-100 transition-colors"
-            >
-              Xem trên danh mục
-            </button>
+            >{translateUi("Xem trên danh mục")}</button>
             <button
               type="button"
               onClick={() => {
@@ -578,65 +645,12 @@ export function CapabilityCeilingMatrix() {
               <ArrowRight className="size-4" />
             </button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* ── Modal Popup nổi: Quy tắc & Hướng dẫn ── */}
-      {showGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Info className="size-5 text-emerald-600" />
-                <h3 className="text-base font-bold text-slate-900">Quy tắc phạm vi đào tạo</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowGuide(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
-              <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/70">
-                <span className="font-bold text-slate-800 block mb-1">📐 Nguyên tắc cấp bậc:</span>
-                <code>Phòng ban ≤ Doanh nghiệp ≤ Danh mục DigiTalent (3 cấp)</code>
-                <p className="mt-1 text-slate-500">
-                  Mức tối đa của phòng ban không vượt doanh nghiệp. Hạ mức của doanh nghiệp thì phòng ban hạ theo.
-                </p>
-              </div>
-
-              <div className="rounded-xl bg-amber-50/70 p-3 border border-amber-200/60">
-                <span className="font-bold text-amber-900 block mb-1">🔒 Bản quyền khóa học thương mại:</span>
-                <p className="text-amber-800">
-                  - <b>Cấp 1 (Cơ bản - F):</b> Mở miễn phí 100% trong gói dùng thử cho toàn bộ doanh nghiệp.<br />
-                  - <b>Cấp 2 (Trung cấp - I) & Cấp 3 (Nâng cao - A):</b> Hiển thị biểu tượng 🔒 nếu chưa mua suất học. Khi doanh nghiệp mua suất học, phạm vi đào tạo tự mở tương ứng.
-                </p>
-              </div>
-
-              <div className="rounded-xl bg-teal-50/70 p-3 border border-teal-200/60">
-                <span className="font-bold text-teal-900 block mb-1">👆 Cách thao tác:</span>
-                <p className="text-teal-800">
-                  Bấm ô khóa học để đặt mức tối đa tới cấp đó (bấm lại để hạ 1 cấp). Bấm <b>Lưu phạm vi</b> để áp dụng.
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-2 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowGuide(false)}
-                className="rounded-xl px-4 py-2 text-xs font-bold text-white shadow-sm"
-                style={{ background: 'var(--po-accent)' }}
-              >
-                Đã hiểu
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CapabilityCeilingGuide open={showGuide} onClose={() => setShowGuide(false)} />
     </section>
   );
 }
@@ -646,16 +660,21 @@ function DomainRow({
   routeLevel,
   dnLevel,
   isDepartment,
+  selectedDomain,
   editable,
   selectedToBuy,
   seats,
   reason,
   onPick,
-  onToggleBuy }: {
+  onInspect,
+  onDomainClick,
+  onToggleBuy,
+}: {
   domain: CeilingDomain;
   routeLevel: number;
   dnLevel: number;
   isDepartment: boolean;
+  selectedDomain: boolean;
   editable: boolean;
   selectedToBuy?: Map<string, BuyItem>;
   /** Số suất theo kết quả test (mã khóa → số người cần học). */
@@ -663,72 +682,89 @@ function DomainRow({
   /** ✦ Lý do mức tối đa đề xuất (kết quả test). */
   reason?: string;
   onPick: (domain: CeilingDomain, level: number) => void;
+  onInspect: (domain: CeilingDomain, level: number) => void;
+  onDomainClick: (domain: CeilingDomain) => void;
   onToggleBuy?: (course: CeilingCourse, domain: CeilingDomain) => void;
 }) {
+  useUiLanguage();
+  const DomainIcon = DOMAIN_ICONS[domain.sortOrder - 1] ?? Layers3;
   return (
     <>
-      <div className="rl">
-        {domain.name}
-        <small>{isDepartment ? `PB ${routeLevel} · DN ${dnLevel}` : `tối đa DN ${dnLevel}`}</small>
-        {reason && <span className="cc-reason" title={`Theo kết quả test: ${reason}`}>✦ {reason}</span>}
-      </div>
+      <button type="button" data-domain={domain.sortOrder} className={`rl${selectedDomain ? ' is-selected' : ''}`} aria-expanded={selectedDomain} aria-controls={`course-position-standard-${domain.categoryId}`} aria-label={translateUi(`${selectedDomain ? 'Đóng' : 'Mở'} cài đặt vị trí cho lĩnh vực ${domain.name}`)} onClick={() => onDomainClick(domain)}>
+        <span className="cc-domain-icon" aria-hidden="true"><DomainIcon size={18} /></span>
+        <span className="cc-domain-copy"><span className="cc-domain-title">{translateUi(domain.name)}</span>
+        <small><span className="cc-domain-level">{isDepartment ? `PB ${routeLevel} · DN ${dnLevel}` : translateUi(`DN · Cấp ${dnLevel}`)}</span><span className="cc-domain-hint">{selectedDomain ? 'Đóng cài đặt' : translateUi('Cài đặt vị trí')}</span></small>
+        {reason && <span className="cc-reason" title={`Theo kết quả test: ${reason}`}>✦ {reason}</span>}</span>
+        <ChevronDown className={`cc-domain-chevron${selectedDomain ? ' is-open' : ''}`} size={15} aria-hidden="true" />
+      </button>
       {domain.courses.map((course) => {
-        const inRoute = course.level <= routeLevel;
-        const inOrg = course.level <= dnLevel;
-        const isLocked = course.isUnlocked === false;
-        const code = courseCode(course.code, domain.sortOrder, course.level);
+        const isLocked = course.level > 1 && course.isUnlocked !== true;
+        const inRoute = !isLocked && course.level <= routeLevel;
+        const inOrg = !isLocked && course.level <= dnLevel;
         const isSelectedToBuy = Boolean(course.code && selectedToBuy?.has(course.code));
-        const seatCount = course.level > 1 ? seats?.get(code) : undefined;
+        const seatCount = course.level > 1 ? seats?.get(courseCode(course.code, domain.sortOrder, course.level)) : undefined;
         const state = isSelectedToBuy
-          ? 'đã chọn mua bản quyền (bấm để hủy chọn)'
+          ? 'đã chọn mua, bấm để bỏ chọn'
           : inRoute
           ? 'trong lộ trình đang xem'
           : inOrg
           ? 'trong phạm vi doanh nghiệp'
           : isLocked
-          ? 'chưa mở bản quyền (bấm để chọn mua)'
-          : 'chỉ có trong Digital AI';
-        const className = `cc-cell${isSelectedToBuy ? ' selected-to-buy' : inRoute ? ' route' : inOrg ? ' dn' : ''}${course.code ? '' : ' empty'}${isLocked && !isSelectedToBuy ? ' opacity-75' : ''}`;
-        const label = course.code ? (
+          ? 'chưa mua suất, bấm để chọn mua cùng khóa khác'
+          : 'bấm để chọn cấp độ năng lực';
+        const className = `cc-cell${isSelectedToBuy ? ' selected-to-buy' : isLocked ? ' is-locked' : inRoute ? ' route' : inOrg ? ' dn' : ' licensed'}${course.courseId ? '' : ' empty'}`;
+        const label = course.courseId && course.code ? (
           isSelectedToBuy ? (
             <span className="flex items-center justify-center gap-1 font-bold">
               <Check className="size-3.5 text-amber-700 stroke-[3]" />
               <span>{course.code}</span>
             </span>
           ) : isLocked ? (
-            <span className="flex flex-col items-center leading-tight">
-              <span>🔒 {course.code}</span>
-              {seatCount ? <small>{seatCount} suất</small> : null}
-            </span>
+            `🔒 ${course.code}`
           ) : (
             course.code
           )
         ) : (
           'Chưa có khóa'
         );
-        const title = `${course.code ? `${course.code} · ${course.title}` : 'Chưa có khóa'}: ${state}`;
-        const handleClick = () => {
-          if (isLocked && onToggleBuy) {
-            onToggleBuy(course, domain);
-          } else {
-            onPick(domain, course.level);
-          }
-        };
+        const title = `${course.courseId && course.code ? `${course.code} · ${course.title}` : 'Chưa có khóa học'}: ${state}`;
+        const handleClick = () => onPick(domain, course.level);
+
+        if (editable && isLocked && onToggleBuy) return (
+          <div key={course.level} className="cc-purchase-cell">
+            <button
+              type="button"
+              className={className}
+              title={translateUi(title)}
+              aria-pressed={isSelectedToBuy}
+              aria-label={translateUi(`${domain.name}, cấp ${course.level}: ${state}.`)}
+              onClick={() => onToggleBuy(course, domain)}
+            >
+              {translateUi(label)}<small>{isSelectedToBuy ? 'Đã chọn mua' : seatCount ? `${seatCount} suất · chọn mua` : translateUi('Chọn mua +')}</small>
+            </button>
+            <button type="button" className="cc-purchase-cell__detail" aria-label={translateUi(`Xem khóa ${course.code ?? `cấp ${course.level}`}`)} title={translateUi("Khóa học & suất học")} onClick={() => onInspect(domain, course.level)}><Info size={13} /></button>
+          </div>
+        );
 
         return editable ? (
+          <div key={course.level} className="cc-purchase-cell cc-course-cell">
           <button
-            key={course.level}
             type="button"
             className={className}
-            title={title}
-            aria-label={`${domain.name}, cấp ${course.level}: ${state}.`}
+            title={translateUi(title)}
+            aria-label={translateUi(`Thiết lập phạm vi ${domain.name}: cấp ${course.level}`)}
+            aria-pressed={!isLocked && course.level === routeLevel}
+            disabled={!course.courseId}
             onClick={handleClick}
           >
-            {label}
+            {translateUi(label)}
+            {!isLocked && course.level === routeLevel && <small className="cc-current-ceiling"><Check size={11} />{translateUi(" Mức đang chọn")}</small>}
           </button>
+          <button type="button" className="cc-purchase-cell__detail" disabled={!course.courseId} aria-label={translateUi(`Xem khóa ${course.code ?? `cấp ${course.level}`}`)} title={translateUi("Khóa học & suất học")} onClick={() => onInspect(domain, course.level)}><Info size={13} /></button>
+          </div>
         ) : (
-          <div key={course.level} className={className} title={title}>
-            {label}
+          <div key={course.level} className={className} title={translateUi(title)}>
+            {translateUi(label)}
           </div>
         );
       })}

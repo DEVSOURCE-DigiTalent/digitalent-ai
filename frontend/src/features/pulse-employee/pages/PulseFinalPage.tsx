@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -20,6 +21,7 @@ const LABEL = 'Bài cuối khóa';
  * lần 2 chưa đạt → cờ hỗ trợ. Khi chưa / không làm được bài, trang cho thấy trạng thái và các lần nộp.
  */
 export function PulseFinalPage() {
+  useUiLanguage();
   const { courseId } = useParams<{ courseId: string }>();
   const { data, isLoading, error, refetch } = usePulseFinal(courseId);
   const qc = useQueryClient();
@@ -31,12 +33,12 @@ export function PulseFinalPage() {
 
   const backTo = courseId ? PULSE_PATHS.course(courseId) : PULSE_PATHS.today;
   if (isLoading) {
-    return <ExamShell label={LABEL} backTo={backTo}><PageSkeleton blocks={[140, 80, 280]} /></ExamShell>;
+    return <ExamShell label={translateUi(LABEL)} backTo={backTo}><PageSkeleton blocks={[140, 80, 280]} /></ExamShell>;
   }
   if (error || !data) {
     return (
-      <ExamShell label={LABEL} backTo={backTo}>
-        <LoadError message={pulseErrorMessage(error, 'Không tải được bài cuối khóa.')} onRetry={() => refetch()} />
+      <ExamShell label={translateUi(LABEL)} backTo={backTo}>
+        <LoadError message={translateUi(pulseErrorMessage(error, 'Không tải được bài cuối khóa.'))} onRetry={() => refetch()} />
       </ExamShell>
     );
   }
@@ -78,13 +80,14 @@ export function PulseFinalPage() {
   }
 
   return (
-    <ExamShell label={LABEL} title={`${data.course.code} · ${data.course.title}`} backTo={backTo}>
+    <ExamShell label={translateUi(LABEL)} title={translateUi(`${data.course.code} · ${data.course.title}`)} backTo={backTo}>
       <FinalView final={data} />
     </ExamShell>
   );
 }
 
 function FinalView({ final }: { final: PulseFinal }) {
+  useUiLanguage();
   const { course, status, attempts } = final;
   const submitted = attempts.length;
   const allPassed = final.moduleCount > 0 && final.modulesPassed === final.moduleCount;
@@ -119,7 +122,7 @@ function FinalView({ final }: { final: PulseFinal }) {
       </section>
 
       <section className="pu-surface pu-pad">
-        <Mini>{course.domainName} · {levelName(course.tier)} · bài cuối khóa</Mini>
+        <Mini>{translateUi(course.domainName)} · {levelName(course.tier)} · bài cuối khóa</Mini>
         {final.assignment && <CourseFinalBrief content={final.assignment} />}
         <h2 className="pu-panel-title">{final.choiceCount > 0 ? 'Trắc nghiệm & Tự luận thực hành có thể kiểm chứng' : 'Ghi chú công việc có thể kiểm tra'}</h2>
         <p className="pu-panel-desc">
@@ -151,6 +154,7 @@ function FinalView({ final }: { final: PulseFinal }) {
 }
 
 function FinalState({ final }: { final: PulseFinal }) {
+  useUiLanguage();
   const { course, status, attempts } = final;
   const first = attempts.find((a) => a.attemptNo === 1);
   const last = attempts[attempts.length - 1];
@@ -206,7 +210,7 @@ function FinalState({ final }: { final: PulseFinal }) {
           <Notice tone="warning">
             <strong>Đã quá hạn nộp lần cuối</strong> ({formatDateTime(first?.retryDueAt)}). Quản lý phòng ban sẽ sắp xếp hỗ trợ trước khi lộ trình tiếp tục.
           </Notice>
-          {last?.supportAction && <Notice>{SUPPORT_LABELS[last.supportAction]}{last.supportNote ? `: ${last.supportNote}` : '.'}</Notice>}
+          {last?.supportAction && <Notice>{translateUi(SUPPORT_LABELS[last.supportAction])}{last.supportNote ? `: ${last.supportNote}` : '.'}</Notice>}
         </div>
       );
     case 'FLAGGED':
@@ -216,7 +220,7 @@ function FinalState({ final }: { final: PulseFinal }) {
             <strong>Hai lần nộp chưa đạt tiêu chí.</strong> Quản lý thấy cờ cần hỗ trợ và sẽ chọn kèm cặp, chu kỳ học mới hoặc tạm dừng lộ trình.
             Cấp tiếp theo chưa mở và mức năng lực không thay đổi.
           </Notice>
-          {last?.supportAction && <Notice>{SUPPORT_LABELS[last.supportAction]}{last.supportNote ? `: ${last.supportNote}` : '.'}</Notice>}
+          {last?.supportAction && <Notice>{translateUi(SUPPORT_LABELS[last.supportAction])}{last.supportNote ? `: ${last.supportNote}` : '.'}</Notice>}
         </div>
       );
     case 'APPROVED':
@@ -237,12 +241,13 @@ function FinalState({ final }: { final: PulseFinal }) {
 }
 
 function AttemptCard({ attempt, max }: { attempt: PulseFinalAttempt; max: number }) {
+  useUiLanguage();
   return (
     <article className="pu-attempt">
       <header>
         <span>Lần nộp {attempt.attemptNo}/{max} · {formatDateTime(attempt.submittedAt)}</span>
         <Pill tone={attempt.decision === 'PASSED' ? 'green' : attempt.decision === 'NOT_YET' ? 'coral' : 'gray'}>
-          {attempt.decision === 'PASSED' ? 'Đã duyệt' : attempt.decision === 'NOT_YET' ? 'Chưa đạt · cần sửa' : 'Chờ hội đồng chấm'}
+          {attempt.decision === 'PASSED' ? translateUi('Đã duyệt') : attempt.decision === 'NOT_YET' ? 'Chưa đạt · cần sửa' : 'Chờ hội đồng chấm'}
         </Pill>
       </header>
       <ChoiceScore choice={attempt.choice} />

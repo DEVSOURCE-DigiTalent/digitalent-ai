@@ -36,9 +36,29 @@ public class CapabilityCeilingTests : IDisposable
             new CompetencyCategory { Id = _dataId, OrganizationId = _orgId, Code = "TT02_D1", Name = "Khai thác dữ liệu", SortOrder = 1 },
             new CompetencyCategory { Id = _aiId, OrganizationId = _orgId, Code = "TT02_D6", Name = "Ứng dụng AI", SortOrder = 6 });
         _context.Departments.Add(new Department { Id = _deptId, OrganizationId = _orgId, Code = "KT", Name = "Kế toán" });
+        // Cấp 2–3 chỉ mở khi doanh nghiệp đã mua suất học: mặc định đã mua đủ cho cả hai lĩnh vực.
+        AddLicensedCourses(_dataId, domainNumber: 1);
+        AddLicensedCourses(_aiId, domainNumber: 6);
         _context.SaveChanges();
 
         _reader = new CapabilityCeilingReader(_context, new PulseCatalogReader(_context));
+    }
+
+    /// <summary>Khóa Cấp 2 và Cấp 3 của lĩnh vực trong danh mục doanh nghiệp, mỗi khóa có đơn mua suất học.</summary>
+    private void AddLicensedCourses(Guid categoryId, int domainNumber)
+    {
+        var competency = new Domain.Entities.Competency { Id = Guid.NewGuid(), CategoryId = categoryId, Code = $"TT02-{domainNumber}.1", Name = $"Năng lực {domainNumber}.1" };
+        _context.Competencies.Add(competency);
+        foreach (var (level, suffix) in new[] { (2, "I"), (3, "A") })
+        {
+            var code = $"M{domainNumber}-{suffix}";
+            var course = new Course { OrganizationId = _orgId, Code = code, VersionNo = 1, Title = code, Status = Statuses.Course.Published, CreatedByUserId = Guid.NewGuid() };
+            _context.Courses.Add(course);
+            _context.CourseCompetencies.Add(new CourseCompetency { CourseId = course.Id, CompetencyId = competency.Id, TargetLevel = (short)level, CoverageType = "PRIMARY" });
+            var platformCourse = new PlatformCourse { Code = code, Level = (short)level, Title = code, SalesStatus = Statuses.PlatformCourseSales.Open };
+            _context.PlatformCourses.Add(platformCourse);
+            _context.CourseSeatOrders.Add(new CourseSeatOrder { OrganizationId = _orgId, CourseId = platformCourse.Id, Seats = 5, Kind = PlatformCatalog.SeatOrderKind.Purchase });
+        }
     }
 
     public void Dispose() => _context.Dispose();
@@ -117,6 +137,17 @@ public class CapabilityCeilingTests : IDisposable
     }
 
     [Fact]
+    public async Task UpdateOrganization_WithoutPurchasedCourse_IsRejected()
+    {
+        _context.CourseSeatOrders.RemoveRange(_context.CourseSeatOrders);
+        await _context.SaveChangesAsync();
+
+        var action = () => SaveOrganization(data: 2, ai: 1);
+
+        (await action.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("COURSE_LICENSE_REQUIRED");
+    }
+
+    [Fact]
     public async Task UpdateDepartment_Inherit_DropsOwnCeilings()
     {
         await SaveOrganization(data: 2, ai: 2);
@@ -127,5 +158,19 @@ public class CapabilityCeilingTests : IDisposable
         output.Departments.Single().IsCustomized.Should().BeFalse();
         output.Departments.Single().CourseCount.Should().Be(4);
         (await _context.CapabilityCeilings.CountAsync(c => c.DepartmentId == _deptId)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UpdateOrganization_AboveThePurchasedLevel_IsRejected()
+    {
+        // Lĩnh vực dữ liệu chỉ mua suất Cấp 2; lĩnh vực AI chưa mua suất nào.
+        var notBought = await _context.CourseSeatOrders
+            .Where(o => _context.PlatformCourses.Any(p => p.Id == o.CourseId && (p.Code == "M1-A" || p.Code.StartsWith("M6-"))))
+            .ToListAsync();
+        _context.CourseSeatOrders.RemoveRange(notBought);
+        await _context.SaveChangesAsync();
+
+        var action = () => SaveOrganization(data: 3, ai: 3);
+        (await action.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("COURSE_LICENSE_REQUIRED");
     }
 }

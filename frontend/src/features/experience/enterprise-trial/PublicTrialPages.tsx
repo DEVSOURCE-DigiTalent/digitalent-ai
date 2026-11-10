@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useEffect, useRef, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -12,6 +13,7 @@ const industries = ['Công nghệ thông tin', 'Tài chính – Ngân hàng', 'S
 const OTP_LENGTH = 6;
 
 export function TrialRegisterPage() {
+  useUiLanguage();
   const readiness = useQuery({ queryKey: ['enterprise-trial', 'readiness'], queryFn: () => data(service.readiness()), retry: false, refetchOnMount: 'always' });
   const [form, setForm] = useState<TrialRegistrationRequest>({ organizationName: '', ownerName: '', email: '', password: '', industry: '', size: '', goal: 'competency-assessment', acceptedTerms: false });
   const [showPassword, setShowPassword] = useState(false);
@@ -24,12 +26,12 @@ export function TrialRegisterPage() {
   return <PulseAuthLayout
     mode="register"
     eyebrow="Dùng thử miễn phí"
-    title={result ? 'Kiểm tra hộp thư.' : 'Thông tin doanh nghiệp'}
-    subtitle={result ? `Mã 6 số đã gửi tới ${form.email}.` : 'Bước 1/4 · Sau đó mời nhân viên làm bài đánh giá năng lực.'}
+    title={translateUi(result ? 'Kiểm tra hộp thư.' : translateUi('Thông tin doanh nghiệp'))}
+    subtitle={translateUi(result ? translateUi(`Mã 6 số đã gửi tới ${form.email}.`) : 'Bước 1/4 · Sau đó mời nhân viên làm bài đánh giá năng lực.')}
     asideTitle="Biết đội ngũ đang ở mức nào."
     asideText="Nhân viên làm bài đánh giá theo ba cấp độ. Kết quả được xem xét trước khi công bố cho doanh nghiệp."
     asidePoints={['1 · Thông tin doanh nghiệp', '2 · Mời nhân viên, đặt hạn làm bài', '3 · Làm bài có giám sát, mentor chấm', '4 · Bảng năng lực + học thử mức Cơ bản']}
-    footer={<p>Đã có tài khoản? <Link to="/login">Đăng nhập</Link></p>}
+    footer={<p>{translateUi("Đã có tài khoản? ")}<Link to="/login">{translateUi("Đăng nhập")}</Link></p>}
   >
     <div className="pulse-auth-fields">
       {requestError && <p role="alert" className="pulse-auth-error">{message(requestError)}</p>}
@@ -52,19 +54,19 @@ export function TrialRegisterPage() {
       ) : (
       <form className="pulse-auth-fields" onSubmit={(event: FormEvent) => { event.preventDefault(); if (canRegister && !register.isPending) register.mutate(); }}>
         <div className="pulse-auth-fields-two">
-          <div className="pulse-auth-field"><label htmlFor="organizationName">Tên doanh nghiệp</label><input id="organizationName" required maxLength={200} autoComplete="organization" placeholder="Công ty Sao Bắc" value={form.organizationName} onChange={e => update('organizationName', e.target.value)} /></div>
-          <div className="pulse-auth-field"><label htmlFor="ownerName">Người liên hệ</label><input id="ownerName" required maxLength={200} autoComplete="name" placeholder="Họ và tên" value={form.ownerName} onChange={e => update('ownerName', e.target.value)} /></div>
+          <div className="pulse-auth-field"><label htmlFor="organizationName">{translateUi("Tên doanh nghiệp")}</label><input id="organizationName" required maxLength={200} autoComplete="organization" placeholder="Công ty Sao Bắc" value={form.organizationName} onChange={e => update('organizationName', e.target.value)} /></div>
+          <div className="pulse-auth-field"><label htmlFor="ownerName">Người liên hệ</label><input id="ownerName" required maxLength={200} autoComplete="name" placeholder={translateUi("Họ và tên")} value={form.ownerName} onChange={e => update('ownerName', e.target.value)} /></div>
         </div>
         <div className="pulse-auth-fields-two">
-          <div className="pulse-auth-field"><label htmlFor="email">Email công việc</label><input id="email" type="email" required maxLength={200} autoComplete="email" placeholder="ten@doanhnghiep.vn" value={form.email} onChange={e => update('email', e.target.value)} /></div>
-          <div className="pulse-auth-field"><label htmlFor="password">Mật khẩu</label><div className="pulse-auth-input-wrap"><input id="password" type={showPassword ? 'text' : 'password'} required minLength={12} maxLength={72} autoComplete="new-password" placeholder="12–72 ký tự" value={form.password} onChange={e => update('password', e.target.value)} /><button type="button" className="pulse-auth-icon-button" aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowPassword(value => !value)}>{showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}</button></div></div>
+          <div className="pulse-auth-field"><label htmlFor="email">{translateUi("Email công việc")}</label><input id="email" type="email" required maxLength={200} autoComplete="email" placeholder="ten@doanhnghiep.vn" value={form.email} onChange={e => update('email', e.target.value)} /></div>
+          <div className="pulse-auth-field"><label htmlFor="password">{translateUi("Mật khẩu")}</label><div className="pulse-auth-input-wrap"><input id="password" type={showPassword ? 'text' : 'password'} required minLength={12} maxLength={72} autoComplete="new-password" placeholder="12–72 ký tự" value={form.password} onChange={e => update('password', e.target.value)} /><button type="button" className="pulse-auth-icon-button" aria-label={translateUi(showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu')} onClick={() => setShowPassword(value => !value)}>{showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}</button></div></div>
         </div>
         <div className="pulse-auth-fields-two">
           <div className="pulse-auth-field"><label htmlFor="industry">Ngành</label><select id="industry" required value={form.industry} onChange={e => update('industry', e.target.value)}><option value="" disabled>Chọn ngành</option>{industries.map(industry => <option key={industry}>{industry}</option>)}</select></div>
-          <div className="pulse-auth-field"><label htmlFor="size">Quy mô</label><select id="size" required value={form.size} onChange={e => update('size', e.target.value)}><option value="" disabled>Chọn quy mô</option>{['1-20', '21-100', '101-500', '500+'].map(size => <option key={size} value={size}>{size} nhân sự</option>)}</select></div>
+          <div className="pulse-auth-field"><label htmlFor="size">{translateUi("Quy mô")}</label><select id="size" required value={form.size} onChange={e => update('size', e.target.value)}><option value="" disabled>Chọn quy mô</option>{['1-20', '21-100', '101-500', '500+'].map(size => <option key={size} value={size}>{size}{translateUi(" nhân sự")}</option>)}</select></div>
         </div>
         <label className="pulse-auth-consent"><input type="checkbox" required checked={form.acceptedTerms} onChange={e => update('acceptedTerms', e.target.checked)} />Tôi đồng ý điều khoản dùng thử và xử lý dữ liệu đánh giá.</label>
-        <button type="submit" className="pulse-auth-primary" disabled={!canRegister || register.isPending || !form.acceptedTerms}>{register.isPending ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <ArrowRight size={17} aria-hidden="true" />}{register.isPending ? 'Đang gửi…' : 'Tiếp tục'}</button>
+        <button type="submit" className="pulse-auth-primary" disabled={!canRegister || register.isPending || !form.acceptedTerms}>{register.isPending ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <ArrowRight size={17} aria-hidden="true" />}{register.isPending ? translateUi('Đang gửi…') : translateUi('Tiếp tục')}</button>
       </form>
     )}
     </div>
@@ -72,6 +74,7 @@ export function TrialRegisterPage() {
 }
 
 function TrialAccountPage({ kind }: { kind: 'verify' | 'accept' }) {
+  useUiLanguage();
   const [search] = useSearchParams();
   const token = search.get('token') ?? '';
   const email = search.get('email') ?? '';
@@ -196,14 +199,14 @@ function TrialAccountPage({ kind }: { kind: 'verify' | 'accept' }) {
   return (
     <PulseAuthLayout
       eyebrow="Dùng thử miễn phí"
-      title={isVerify ? 'Xác minh email' : 'Tham gia dùng thử'}
-      subtitle={isVerify ? `Nhập mã xác thực 6 số gửi tới ${email || 'email của bạn'}.` : 'Thiết lập mật khẩu để hoàn tất tham gia.'}
+      title={translateUi(isVerify ? translateUi('Xác minh email') : 'Tham gia dùng thử')}
+      subtitle={translateUi(isVerify ? translateUi(`Nhập mã xác thực 6 số gửi tới ${email || 'email của bạn'}.`) : 'Thiết lập mật khẩu để hoàn tất tham gia.')}
       asideTitle="Bước tiếp theo: mời nhân viên."
       asideText="Thêm nhân viên tay hoặc bằng file Excel, đặt hạn làm bài và giờ mong muốn chấm."
     >
       <div className="pulse-auth-fields">
         {accountError && <p role="alert" className="pulse-auth-error">{message(accountError)}</p>}
-        {verify.isPending && <p role="status" className="pulse-auth-info">Đang xác minh…</p>}
+        {verify.isPending && <p role="status" className="pulse-auth-info">{translateUi("Đang xác minh…")}</p>}
         {isVerify && !token && email && !account && (
           <div className="pulse-auth-fields">
             {resend.error && <p role="alert" className="pulse-auth-error">{message(resend.error)}</p>}
@@ -266,7 +269,7 @@ function TrialAccountPage({ kind }: { kind: 'verify' | 'accept' }) {
                     value={digit}
                     onChange={(e) => handleDigitChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
-                    aria-label={index === 0 ? 'Mã xác minh email' : `Chữ số thứ ${index + 1}`}
+                    aria-label={translateUi(index === 0 ? 'Mã xác minh email' : translateUi(`Chữ số thứ ${index + 1}`))}
                     className={`pulse-auth-otp-input${digit ? ' pulse-auth-otp-input--filled' : ''}${accountError ? ' pulse-auth-otp-input--error' : ''}`}
                     disabled={verify.isPending || login.isPending}
                   />
@@ -282,7 +285,7 @@ function TrialAccountPage({ kind }: { kind: 'verify' | 'accept' }) {
           )}
           {!isVerify && (
             <div className="pulse-auth-field">
-              <label htmlFor="trial-password">Mật khẩu</label>
+              <label htmlFor="trial-password">{translateUi("Mật khẩu")}</label>
               <input
                 id="trial-password"
                 type="password"
@@ -314,5 +317,7 @@ function TrialAccountPage({ kind }: { kind: 'verify' | 'accept' }) {
     </PulseAuthLayout>
   );
 }
-export function TrialVerifyPage() { return <TrialAccountPage kind="verify" />; }
-export function TrialAcceptPage() { return <TrialAccountPage kind="accept" />; }
+export function TrialVerifyPage() {
+  useUiLanguage(); return <TrialAccountPage kind="verify" />; }
+export function TrialAcceptPage() {
+  useUiLanguage(); return <TrialAccountPage kind="accept" />; }

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useId, useState } from 'react';
 import { BriefcaseBusiness, Building2, Check, CircleAlert, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
@@ -30,6 +31,7 @@ const ROLE_SUMMARIES: Record<string, string> = {
 
 /** ADM-05: pick the new role of a member. Only roles the signed-in user may grant are offered. */
 export function ChangeRoleModal({ member, open, onClose }: MemberDialogProps) {
+  useUiLanguage();
   const user = useCurrentUser((s) => s.user)!;
   const update = useUpdateMember();
   const groupId = useId();
@@ -53,19 +55,19 @@ export function ChangeRoleModal({ member, open, onClose }: MemberDialogProps) {
       onClose={onClose}
       size="md"
       className="member-detail-modal"
-      title={`Đổi vai trò của ${member.fullName}`}
+      title={translateUi(`Đổi vai trò của ${member.fullName}`)}
       description="Chọn quyền truy cập phù hợp trong tổ chức."
       footer={
         <>
-          <button type="button" onClick={onClose} className="member-modal-secondary">Hủy</button>
+          <button type="button" onClick={onClose} className="member-modal-secondary">{translateUi("Hủy")}</button>
           <button type="button" onClick={save} disabled={selected === current || update.isPending} className="member-modal-primary">
-            {update.isPending ? 'Đang lưu…' : 'Lưu thay đổi'}
+            {update.isPending ? translateUi('Đang lưu…') : translateUi('Lưu thay đổi')}
           </button>
         </>
       }
     >
       <fieldset className="member-role-picker">
-        <legend className="sr-only">Vai trò</legend>
+        <legend className="sr-only">{translateUi("Vai trò")}</legend>
         <ul className="grid gap-2">
           {options.map((option) => (
             <li key={option.role}>
@@ -81,7 +83,7 @@ export function ChangeRoleModal({ member, open, onClose }: MemberDialogProps) {
                 />
                 <span className="member-role-option__icon"><ShieldCheck size={19} /></span>
                 <span className="member-role-option__copy">
-                  <span className="member-role-option__title">{option.name}{option.role === current && <small>Hiện tại</small>}</span>
+                  <span className="member-role-option__title">{option.name}{option.role === current && <small>{translateUi("Hiện tại")}</small>}</span>
                   <span className="member-role-option__summary">{ROLE_SUMMARIES[option.role] ?? option.summary}</span>
                 </span>
                 <span className="member-role-option__check"><Check size={15} /></span>
@@ -105,6 +107,7 @@ export function ChangeRoleModal({ member, open, onClose }: MemberDialogProps) {
  * is required; for an account without a profile yet, saving creates the profile in that department.
  */
 export function PlacementModal({ member, open, onClose }: MemberDialogProps) {
+  useUiLanguage();
   const update = useUpdateMember();
   const departments = useDepartments({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
   const positions = useJobPositions({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
@@ -129,13 +132,13 @@ export function PlacementModal({ member, open, onClose }: MemberDialogProps) {
       onClose={onClose}
       size="md"
       className="member-detail-modal member-placement-modal"
-      title={`Phòng ban và vị trí của ${member.fullName}`}
+      title={translateUi(`Phòng ban và vị trí của ${member.fullName}`)}
       description="Cập nhật nơi làm việc và chuẩn năng lực theo vị trí."
       footer={
         <>
-          <button type="button" onClick={onClose} className="member-modal-secondary">Hủy</button>
+          <button type="button" onClick={onClose} className="member-modal-secondary">{translateUi("Hủy")}</button>
           <button type="button" onClick={save} disabled={!departmentId || !changed || update.isPending} className="member-modal-primary">
-            {update.isPending ? 'Đang lưu…' : 'Lưu thay đổi'}
+            {update.isPending ? translateUi('Đang lưu…') : translateUi('Lưu thay đổi')}
           </button>
         </>
       }
@@ -146,13 +149,13 @@ export function PlacementModal({ member, open, onClose }: MemberDialogProps) {
         )}
         <div className="member-placement-field">
           <span className="member-placement-field__icon"><Building2 size={19} /></span>
-          <div><p className="member-placement-field__label">Phòng ban <span>*</span></p><p className="member-placement-field__hint">Đơn vị quản lý trực tiếp</p></div>
-          <OwnerFilterSelect label="Phòng ban" value={departmentId} onChange={setDepartmentId} options={[{ value: '', label: 'Chọn phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
+          <div><p className="member-placement-field__label">{translateUi("Phòng ban ")}<span>*</span></p><p className="member-placement-field__hint">Đơn vị quản lý trực tiếp</p></div>
+          <OwnerFilterSelect label={translateUi("Phòng ban")} value={departmentId} onChange={setDepartmentId} options={[{ value: '', label: 'Chọn phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
         </div>
         <div className="member-placement-field">
           <span className="member-placement-field__icon member-placement-field__icon--sky"><BriefcaseBusiness size={19} /></span>
-          <div><p className="member-placement-field__label">Vị trí công việc</p><p className="member-placement-field__hint">Áp dụng chuẩn năng lực tương ứng</p></div>
-          <OwnerFilterSelect label="Vị trí công việc" value={jobPositionId} onChange={setJobPositionId} options={[{ value: '', label: 'Chưa xếp vị trí' }, ...positions.map((p) => ({ value: p.id, label: p.name }))]} />
+          <div><p className="member-placement-field__label">{translateUi("Vị trí công việc")}</p><p className="member-placement-field__hint">Áp dụng chuẩn năng lực tương ứng</p></div>
+          <OwnerFilterSelect label={translateUi("Vị trí công việc")} value={jobPositionId} onChange={setJobPositionId} options={[{ value: '', label: 'Chưa xếp vị trí' }, ...positions.map((p) => ({ value: p.id, label: p.name }))]} />
         </div>
       </div>
     </Modal>
@@ -162,14 +165,15 @@ export function PlacementModal({ member, open, onClose }: MemberDialogProps) {
 
 /** Offboarding (FLOW-08): needs a reason; history is kept. */
 export function DeactivateMemberDialog({ member, open, onClose }: MemberDialogProps) {
+  useUiLanguage();
   const deactivate = useDeactivateMember();
   return (
     <ConfirmActionDialog
       open={open}
       onClose={onClose}
-      title={`Vô hiệu hóa ${member.fullName}?`}
+      title={translateUi(`Vô hiệu hóa ${member.fullName}?`)}
       description="Người này sẽ không đăng nhập được nữa và quyền sử dụng được giải phóng lại cho gói. Hồ sơ năng lực, lịch sử học tập và bằng chứng vẫn được giữ nguyên, có thể kích hoạt lại sau."
-      confirmLabel="Vô hiệu hóa"
+      confirmLabel={translateUi("Vô hiệu hóa")}
       requireReason
       reasonPlaceholder="Ví dụ: nghỉ việc, chuyển công ty…"
       onConfirm={async (reason) => {
@@ -185,14 +189,15 @@ export function DeactivateMemberDialog({ member, open, onClose }: MemberDialogPr
 }
 
 export function ReactivateMemberDialog({ member, open, onClose }: MemberDialogProps) {
+  useUiLanguage();
   const reactivate = useReactivateMember();
   return (
     <ConfirmActionDialog
       open={open}
       onClose={onClose}
-      title={`Kích hoạt lại ${member.fullName}?`}
+      title={translateUi(`Kích hoạt lại ${member.fullName}?`)}
       description="Người này đăng nhập lại được và sử dụng một quyền sử dụng của gói."
-      confirmLabel="Kích hoạt lại"
+      confirmLabel={translateUi("Kích hoạt lại")}
       confirmVariant="primary"
       onConfirm={async () => {
         try {
@@ -207,6 +212,7 @@ export function ReactivateMemberDialog({ member, open, onClose }: MemberDialogPr
 }
 
 export function InvitationActions({ member }: { member: MemberListItem }) {
+  useUiLanguage();
   const resend = useResendInvitation();
   const revoke = useRevokeInvitation();
   const [confirmRevoke, setConfirmRevoke] = useState(false);
@@ -227,7 +233,7 @@ export function InvitationActions({ member }: { member: MemberListItem }) {
       <ConfirmActionDialog
         open={confirmRevoke}
         onClose={() => setConfirmRevoke(false)}
-        title={`Thu hồi lời mời của ${member.fullName}?`}
+        title={translateUi(`Thu hồi lời mời của ${member.fullName}?`)}
         description="Liên kết kích hoạt sẽ không dùng được nữa và quyền sử dụng được giải phóng lại cho gói."
         confirmLabel="Thu hồi"
         onConfirm={async () => {

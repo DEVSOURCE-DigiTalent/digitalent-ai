@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -18,6 +19,7 @@ const STATUS_LABEL: Record<string, { label: string; tone: 'ok' | 'warn' | 'bad' 
 
 /** IND-17 "/personal/subscription": the learner's plan and the other individual plans. */
 export function LearnerSubscriptionPage() {
+  useUiLanguage();
   const subscription = useCurrentUser((state) => state.user?.subscription);
   const { data: access } = usePersonalAccess();
   const planMode = usePlanMode();
@@ -47,15 +49,15 @@ export function LearnerSubscriptionPage() {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <p className={PT_EYEBROW}>Gói hiện tại</p>
-                <Tag tone={status.tone}>{status.label}</Tag>
+                <Tag tone={status.tone}>{translateUi(status.label)}</Tag>
               </div>
               <p className="mt-4 text-[28px] font-semibold leading-tight tracking-tight">{plan.name}</p>
               <p className="mt-3 text-[15px] text-pt-fg-2">{plan.tagline}</p>
             </div>
             <dl className="grid grid-cols-2 gap-5 border-t border-pt-line pt-6 text-sm">
               <div>
-                <dt className="text-xs text-pt-fg-3">Giá</dt>
-                <dd className="mt-1">{plan.monthlyPrice ? `${formatVnd(plan.monthlyPrice)}/tháng` : 'Liên hệ'}</dd>
+                <dt className="text-xs text-pt-fg-3">{translateUi("Giá")}</dt>
+                <dd className="mt-1">{plan.monthlyPrice ? translateUi(`${formatVnd(plan.monthlyPrice)}/tháng`) : translateUi('Liên hệ')}</dd>
               </div>
               {subscription.renewsAt && (
                 <div>
@@ -80,8 +82,8 @@ export function LearnerSubscriptionPage() {
             <div className="mt-8 grid gap-2 border-t border-pt-line pt-6">
               {plansFor('individual').map((other) => (
                 <div key={other.code} className={cn('flex items-center justify-between rounded-xl px-3 py-2 text-sm', other.code === plan.code ? 'bg-pt-fg/8 text-pt-fg' : 'text-pt-fg-2')}>
-                  <span>{other.name}{other.code === plan.code && <span className="ml-2 text-xs text-pt-fg-3">đang dùng</span>}</span>
-                  <span className="tabular-nums">{other.monthlyPrice ? `${formatVnd(other.monthlyPrice)}/tháng` : 'Liên hệ'}</span>
+                  <span>{other.name}{other.code === plan.code && <span className="ml-2 text-xs text-pt-fg-3">{translateUi("đang dùng")}</span>}</span>
+                  <span className="tabular-nums">{other.monthlyPrice ? translateUi(`${formatVnd(other.monthlyPrice)}/tháng`) : translateUi('Liên hệ')}</span>
                 </div>
               ))}
             </div>

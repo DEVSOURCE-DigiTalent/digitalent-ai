@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { levelLabelVi } from '@/lib/competency-levels';
 import { DOMAIN_SHORT_NAMES } from '../utils/format';
@@ -27,6 +28,7 @@ interface DomainRadarProps {
 
 /** Six domains of Circular 02/2025: outline = what the target asks, filled shape = where the learner is. */
 export function DomainRadar({ required, current, className, compact = false }: DomainRadarProps) {
+  useUiLanguage();
   const axes = Array.from({ length: AXES }, (_, axis) => axis);
   const summary = axes
     .map((axis) => `${DOMAIN_SHORT_NAMES[axis + 1]}: ${levelLabelVi(current[axis])} / yêu cầu ${levelLabelVi(required[axis])}`)
@@ -37,7 +39,7 @@ export function DomainRadar({ required, current, className, compact = false }: D
       viewBox={compact ? '40 40 220 220' : '-30 0 360 300'}
       className={cn('h-auto w-full text-pt-fg', className)}
       role="img"
-      aria-label={`Radar năng lực theo 6 miền. ${summary}`}
+      aria-label={translateUi(`Radar năng lực theo 6 miền. ${summary}`)}
     >
       <g fill="none" stroke="currentColor" strokeOpacity={0.14}>
         {[1, 2, 3].map((ring) => (
@@ -76,7 +78,7 @@ export function DomainRadar({ required, current, className, compact = false }: D
               fillOpacity={0.62}
               className="text-[11px]"
             >
-              <tspan fontWeight={500} fillOpacity={1}>{axis + 1}</tspan> {DOMAIN_SHORT_NAMES[axis + 1]}
+              <tspan fontWeight={500} fillOpacity={1}>{axis + 1}</tspan> {translateUi(DOMAIN_SHORT_NAMES[axis + 1])}
             </text>
           );
         })}
@@ -85,6 +87,7 @@ export function DomainRadar({ required, current, className, compact = false }: D
 }
 
 export function RadarLegend({ className }: { className?: string }) {
+  useUiLanguage();
   return (
     <div className={cn('flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-pt-fg-3', className)}>
       <span className="inline-flex items-center gap-2">

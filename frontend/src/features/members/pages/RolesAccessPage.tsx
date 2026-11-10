@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Building2 } from 'lucide-react';
@@ -25,6 +26,7 @@ const PAGE_SIZE = 15;
  * - Protect last owner invariant: prevents downgrading/locking the only owner.
  */
 export function RolesAccessPage() {
+  useUiLanguage();
   const user = useCurrentUser((s) => s.user)!;
   const can = useCurrentUser((s) => s.hasPermission);
   const canAssign = can(PERMISSIONS.ROLE_ASSIGN_BUSINESS) && assignableRoles(user.roles).length > 0;
@@ -122,10 +124,8 @@ export function RolesAccessPage() {
             type="button"
             onClick={() => setEditingRoleMember(m)}
             className={SECONDARY_BUTTON}
-            aria-label={`Đổi vai trò của ${m.fullName}`}
-          >
-            Đổi vai trò
-          </button>
+            aria-label={translateUi(`Đổi vai trò của ${m.fullName}`)}
+          >{translateUi("Đổi vai trò")}</button>
         ) : (
           <span className="text-xs text-slate-400">Không có quyền đổi</span>
         );
@@ -204,7 +204,7 @@ export function RolesAccessPage() {
               <div>
                 <h2 className="text-base font-bold text-slate-900">{role.name}</h2>
               </div>
-              <StatusBadge label={`${role.memberCount} người`} />
+              <StatusBadge label={translateUi(`${role.memberCount} người`)} />
             </div>
             <p className="mt-2 text-xs text-slate-600 leading-relaxed">{role.summary}</p>
             <ul className="mt-3 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-700">

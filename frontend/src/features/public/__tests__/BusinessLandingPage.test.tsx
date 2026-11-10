@@ -2,57 +2,61 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { MOCK_EMAILS, signInAsMock } from '@/test/session';
 import { PulseBusinessLandingPage } from '../pulse-landing/PulseBusinessLandingPage';
 
 function renderBusiness() {
   return render(<MemoryRouter><PulseBusinessLandingPage /></MemoryRouter>);
 }
 
-describe('Pulse enterprise landing page', () => {
+/** Section of the landing page that holds a level-2 heading matching `name`. */
+function sectionOf(name: RegExp) {
+  return screen.getByRole('heading', { level: 2, name }).closest('section') as HTMLElement;
+}
+
+describe('Pulse enterprise landing page (2026 redesign)', () => {
   beforeEach(() => {
     localStorage.clear();
     useCurrentUser.getState().clearUser();
   });
 
-  it('presents the new visual identity and the enterprise learning journey', () => {
+  it('opens with the competency positioning and the two entry actions', () => {
     renderBusiness();
 
-    expect(screen.getByRole('heading', { level: 1, name: /Đào tạo có đích đến.*Tiến bộ nhìn thấy được/ })).toBeInTheDocument();
-    expect(screen.getByText('Nền tảng phát triển năng lực số cho doanh nghiệp')).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: /Các tầng học tập bằng kính/ })).toBeInTheDocument();
-
-    const journey = screen.getByRole('region', { name: /Từ mục tiêu của doanh nghiệp/ });
-    expect(within(journey).getAllByRole('article')).toHaveLength(5);
-    expect(within(journey).getByRole('heading', { name: 'Đo điểm xuất phát' })).toBeInTheDocument();
-    expect(within(journey).getByRole('heading', { name: 'Làm bài cuối khóa' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /Định vị năng lực số\.\s*Bứt phá từ kết quả thật\./ })).toBeInTheDocument();
+    expect(screen.getByText(/Đánh giá năng lực theo vị trí, xác định nội dung cần bồi dưỡng/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Trải nghiệm miễn phí 14 ngày/ })).toHaveAttribute('href', '/business/try');
+    expect(screen.getByRole('link', { name: /Khám phá giải pháp/ })).toHaveAttribute('href', '/business/solution');
   });
 
-  it('shows the competency ceiling order and distinct responsibilities for each role', () => {
+  it('walks through the closed learning loop and the shared competency framework', () => {
     renderBusiness();
 
-    expect(screen.getByLabelText('Thứ tự mức tối đa')).toHaveTextContent('Vị trí≤Phòng ban≤Doanh nghiệp≤Digital AI');
-    const roles = screen.getByRole('region', { name: /Cùng một mục tiêu/ });
-    for (const name of ['Doanh nghiệp', 'Quản lý', 'Nhân viên']) {
-      expect(within(roles).getByRole('heading', { name })).toBeInTheDocument();
+    const journey = sectionOf(/Chuyển hóa đào tạo thành/);
+    expect(journey).toHaveAttribute('id', 'hanh-trinh');
+    for (const step of ['Đo chuẩn đầu vào thích ứng', 'Học đúng chỗ còn thiếu', 'Minh chứng công việc thật', 'Báo cáo ROI & Sức khỏe kỹ năng']) {
+      expect(within(journey).getByRole('heading', { level: 3, name: step })).toBeInTheDocument();
     }
+    expect(sectionOf(/Một chuẩn chung/)).toHaveAttribute('id', 'khung-nang-luc');
+    expect(sectionOf(/4 AI Agent Chuyên Trách/)).toHaveAttribute('id', 'ai-agents');
   });
 
-  it('explains free Basic content and paid higher level seats accurately', () => {
+  it('sends every sign-up call to action to the enterprise trial and offers no individual entry', () => {
     renderBusiness();
 
-    expect(screen.getByText(/Dùng thử miễn phí · học trọn khóa Cơ bản/)).toBeInTheDocument();
-    expect(screen.getByText(/Học liệu Cơ bản luôn mở đầy đủ/)).toBeInTheDocument();
-    expect(screen.getByText(/doanh nghiệp có thể xem đề cương và nội dung mẫu trước khi mua/)).toBeInTheDocument();
-    expect(screen.getByText(/Doanh nghiệp mua theo khóa và phân bổ suất/)).toBeInTheDocument();
-  });
-
-  it('keeps the enterprise entry routes for trial, solution and login', () => {
-    renderBusiness();
-
-    expect(screen.getByRole('link', { name: /Bắt đầu dùng thử/ })).toHaveAttribute('href', '/business/try');
-    expect(screen.getByRole('link', { name: /Xem cách hoạt động/ })).toHaveAttribute('href', '#hanh-trinh');
-    expect(screen.getAllByRole('link', { name: 'Giải pháp' })[0]).toHaveAttribute('href', '/business/solution');
-    expect(screen.getAllByRole('link', { name: 'Đăng nhập' })[0]).toHaveAttribute('href', '/login');
+    const finalCta = sectionOf(/Sẵn sàng xây dựng đội ngũ/);
+    expect(within(finalCta).getByRole('link')).toHaveAttribute('href', '/business/try');
+    expect(within(sectionOf(/Tính toán hiệu quả cho/)).getByRole('link')).toHaveAttribute('href', '/business/try');
     expect(screen.queryByRole('link', { name: /Cá nhân/ })).not.toBeInTheDocument();
+  });
+
+  it('takes a signed-in owner back to the workspace instead of the trial', () => {
+    signInAsMock(MOCK_EMAILS.owner);
+    renderBusiness();
+
+    const toWorkspace = screen.getAllByRole('link', { name: /Vào không gian làm việc/ });
+    expect(toWorkspace.length).toBeGreaterThan(0);
+    toWorkspace.forEach((link) => expect(link).toHaveAttribute('href', '/enterprise/dashboard'));
+    expect(screen.queryByRole('link', { name: /Trải nghiệm miễn phí 14 ngày/ })).not.toBeInTheDocument();
   });
 });

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Search, BookOpen, AlertCircle, Eye, Edit3 } from 'lucide-react';
@@ -8,6 +9,7 @@ import type { InternalCourseDto } from '@/services/learning.service';
 import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 
 export function InternalCourseListPage() {
+  useUiLanguage();
   const mock = import.meta.env.VITE_USE_MOCK === 'true';
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string>('');
@@ -54,9 +56,9 @@ export function InternalCourseListPage() {
             to={mock || row.code.startsWith('INT-') ? `/enterprise/internal-courses/${row.id}` : `/enterprise/courses/${row.id}`}
             className="font-semibold text-sm text-slate-900 hover:text-blue-600 transition"
           >
-            {row.title}
+            {translateUi(row.title)}
           </Link>
-          <p className="text-xs text-slate-500 line-clamp-1">{row.description}</p>
+          <p className="text-xs text-slate-500 line-clamp-1">{translateUi(row.description)}</p>
         </div>
       ),
     },
@@ -75,8 +77,7 @@ export function InternalCourseListPage() {
       cell: (row: InternalCourseDto) => (
         <span className="text-xs text-slate-600 flex items-center gap-1">
           <BookOpen className="size-3.5 text-slate-400" />
-          {row.modulesCount} học phần · {row.durationMinutes} phút
-        </span>
+          {row.modulesCount} học phần · {row.durationMinutes}{translateUi(" phút")}</span>
       ),
     },
     {
@@ -94,7 +95,7 @@ export function InternalCourseListPage() {
       cell: (row: InternalCourseDto) => (
         <StatusBadge
           variant={row.status === 'PUBLISHED' ? 'success' : 'default'}
-          label={row.status === 'PUBLISHED' ? 'Đã xuất bản' : row.status === 'ARCHIVED' ? 'Đã lưu trữ' : 'Bản nháp'}
+          label={translateUi(row.status === 'PUBLISHED' ? 'Đã xuất bản' : row.status === 'ARCHIVED' ? 'Đã lưu trữ' : translateUi('Bản nháp'))}
         />
       ),
     },
@@ -107,14 +108,14 @@ export function InternalCourseListPage() {
           <Link
             to={mock || row.code.startsWith('INT-') ? `/enterprise/internal-courses/${row.id}` : `/enterprise/courses/${row.id}`}
             className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition"
-            title="Xem chi tiết"
+            title={translateUi("Xem chi tiết")}
           >
             <Eye className="size-4" />
           </Link>
           {(mock || row.code.startsWith('INT-')) && <Link
             to={`/enterprise/internal-courses/${row.id}/edit`}
             className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition"
-            title="Chỉnh sửa thông tin"
+            title={translateUi("Chỉnh sửa thông tin")}
           >
             <Edit3 className="size-4" />
           </Link>}
@@ -127,7 +128,7 @@ export function InternalCourseListPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <PageHeader
-          title={mock ? 'Khóa học nội bộ' : 'Khóa học trong tổ chức'}
+          title={translateUi(mock ? 'Khóa học nội bộ' : 'Khóa học trong tổ chức')}
         />
         <Link
           to="/enterprise/internal-courses/new"
@@ -152,10 +153,10 @@ export function InternalCourseListPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <ScoreCard label={mock ? 'Tổng khóa nội bộ' : 'Tổng khóa tổ chức'} value={totalCourses} subtitle="Chương trình đào tạo" />
-        <ScoreCard label="Đã xuất bản" value={publishedCount} variant="success" subtitle={mock ? 'Sẵn sàng đào tạo' : 'Trên trang này'} />
-        <ScoreCard label="Bản nháp" value={draftCount} variant="default" subtitle={mock ? 'Đang biên soạn' : 'Trên trang này'} />
-        <ScoreCard label="Tổng thời lượng" value={`${totalDuration}p`} subtitle={mock ? 'Học liệu tích lũy' : 'Trên trang này'} />
+        <ScoreCard label={translateUi(mock ? 'Tổng khóa nội bộ' : 'Tổng khóa tổ chức')} value={totalCourses} subtitle="Chương trình đào tạo" />
+        <ScoreCard label="Đã xuất bản" value={publishedCount} variant="success" subtitle={translateUi(mock ? 'Sẵn sàng đào tạo' : 'Trên trang này')} />
+        <ScoreCard label={translateUi("Bản nháp")} value={draftCount} variant="default" subtitle={translateUi(mock ? 'Đang biên soạn' : 'Trên trang này')} />
+        <ScoreCard label="Tổng thời lượng" value={`${totalDuration}p`} subtitle={translateUi(mock ? 'Học liệu tích lũy' : 'Trên trang này')} />
       </div>
 
       {/* Toolbar filters */}
@@ -187,7 +188,7 @@ export function InternalCourseListPage() {
           />}
 
           <OwnerFilterSelect
-            label="Lọc theo trạng thái"
+            label={translateUi("Lọc theo trạng thái")}
             value={status}
             onChange={(value) => {
               setStatus(value);
@@ -201,7 +202,7 @@ export function InternalCourseListPage() {
       {isError ? (
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-800">
           Không tải được khóa học: {apiErrorMessage(error, 'Vui lòng thử lại.')}
-          <button type="button" onClick={() => void refetch()} className="ml-3 font-semibold underline">Thử lại</button>
+          <button type="button" onClick={() => void refetch()} className="ml-3 font-semibold underline">{translateUi("Thử lại")}</button>
         </div>
       ) : isLoading ? (
         <div className="h-64 bg-slate-100 animate-pulse rounded-xl" />

@@ -123,10 +123,10 @@ public class SkillGapSeederTests
         courses.Count(c => c.Status == Statuses.Course.Published).Should().Be(18);
         courses.Should().ContainSingle(c => c.Status == Statuses.Course.Draft);
 
-        var a4i = courses.Single(c => c.Code == "A4-I");
+        var a4i = courses.Single(c => c.Code == "M4-I");
         a4i.EntryLevel.Should().Be((short)1);
         a4i.EstimatedDurationMinutes.Should().Be(600);
-        courses.Single(c => c.Code == "A2-A").EstimatedDurationMinutes.Should().Be(1080);
+        courses.Single(c => c.Code == "M2-A").EstimatedDurationMinutes.Should().Be(1080);
         courses.Single(c => c.Code == "M6-A").EntryLevel.Should().Be((short)2);
 
         var teaches = await context.CourseCompetencies.Where(cc => cc.CourseId == a4i.Id).ToListAsync();
@@ -137,7 +137,7 @@ public class SkillGapSeederTests
         prerequisites.Should().HaveCount(12);
         var byId = courses.ToDictionary(c => c.Id, c => c.Code);
         prerequisites.Select(p => $"{byId[p.PrerequisiteCourseId]}->{byId[p.CourseId]}")
-            .Should().Contain(new[] { "A1-F->A1-I", "A1-I->A1-A", "M6-F->M6-I", "M6-I->M6-A" });
+            .Should().Contain(new[] { "M1-F->M1-I", "M1-I->M1-A", "M6-F->M6-I", "M6-I->M6-A" });
     }
 
     [Fact]

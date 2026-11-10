@@ -3,7 +3,7 @@ using FluentValidation;
 
 namespace DigiTalent.Application.UseCases.Competency.Ceilings;
 
-/// <summary>Mỗi lĩnh vực một dòng, cấp trong 0..3; trần doanh nghiệp được kiểm tra trong use case.</summary>
+/// <summary>Mỗi lĩnh vực một dòng, cấp trong 0..3; phạm vi doanh nghiệp được kiểm tra trong use case.</summary>
 public class UpdateDepartmentCeilingsUseCaseValidator : AbstractValidator<UpdateDepartmentCeilingsUseCaseInput>
 {
     public UpdateDepartmentCeilingsUseCaseValidator()

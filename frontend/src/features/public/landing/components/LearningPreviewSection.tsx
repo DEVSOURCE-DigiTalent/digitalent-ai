@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { SECTION_IDS, type LandingSectionConfig } from '../landing-content';
@@ -61,6 +62,7 @@ const MODULE_LESSONS: Record<number, {
 
 /** A mock lesson viewer: the course on the left, one module on the right. Content is illustrative. */
 export function LearningPreviewSection({ section }: { section: LearningPreviewSection }) {
+  useUiLanguage();
   const { sample } = section;
   const [activeModule, setActiveModule] = useState(sample.currentModule);
   const { media } = useLandingContent();
@@ -97,7 +99,7 @@ export function LearningPreviewSection({ section }: { section: LearningPreviewSe
                     )}
                   >
                     <span className={cn('tabular-nums', index === activeModule ? 'text-[#F5CA65] font-semibold' : 'text-cream/50')}>{index + 1}</span>
-                    <span>{title}</span>
+                    <span>{translateUi(title)}</span>
                   </button>
                 </li>
               ))}
@@ -128,7 +130,7 @@ export function LearningPreviewSection({ section }: { section: LearningPreviewSe
           </div>
 
           <div className="border-t border-cream/12 pt-5">
-            <Block title="Tiến độ">{currentLesson.progress}</Block>
+            <Block title={translateUi("Tiến độ")}>{currentLesson.progress}</Block>
             <div className="mt-4 flex gap-1" aria-hidden="true">
               {sample.modules.map((title, index) => (
                 <i key={title} className={cn('block h-1.5 flex-1 rounded-full transition-all duration-300', index <= activeModule ? 'bg-gradient-to-r from-[#79E0C2] to-[#F5CA65]' : 'bg-cream/12')} />
@@ -142,9 +144,10 @@ export function LearningPreviewSection({ section }: { section: LearningPreviewSe
 }
 
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
+  useUiLanguage();
   return (
     <div>
-      <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-[#79E0C2]/90">{title}</h3>
+      <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-[#79E0C2]/90">{translateUi(title)}</h3>
       <div className="mt-2 text-sm leading-[1.6] text-stone-400">{children}</div>
     </div>
   );

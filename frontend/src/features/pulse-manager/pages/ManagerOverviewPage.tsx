@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import journeyArt from '@/assets/pulse/learning-journey-abstract.webp';
 import { useManagedDepartment } from '@/hooks/use-managed-department';
@@ -41,6 +42,7 @@ function measureState(row: WorkforceRow): { label: string; tone: 'green' | 'gray
  * ba việc cụ thể, đội ngũ và hàng chờ bài cuối khóa — chỉ trong phòng ban quản lý phụ trách.
  */
 export function ManagerOverviewPage() {
+  useUiLanguage();
   const { can } = usePermission();
   const canReview = can(PERMISSIONS.TASK_EVALUATE);
   const { department, isLoading: deptLoading, isError: deptError, refetch: refetchDept } = useManagedDepartment();
@@ -111,7 +113,7 @@ export function ManagerOverviewPage() {
             {!reviewsReady
               ? 'Hàng chờ chưa tải được; mở trang chấm bài để xem.'
               : pending > 0
-                ? `${pending} bài đang chờ bạn quyết định.`
+                ? translateUi(`${pending} bài đang chờ bạn quyết định.`)
                 : 'Hiện chưa có việc chờ xử lý.'}
           </small>
           <em>Mở tiêu chí ↗</em>
@@ -156,10 +158,10 @@ export function ManagerOverviewPage() {
                       <strong>{row.fullName}{row.jobPositionName ? ` · ${row.jobPositionName}` : ''}</strong>
                       <small>
                         {state.detail}
-                        {row.activeCourses > 0 ? ` · ${row.activeCourses} khóa đang học` : ''}
+                        {row.activeCourses > 0 ? translateUi(` · ${row.activeCourses} khóa đang học`) : ''}
                       </small>
                     </div>
-                    <Pill tone={state.tone}>{state.label}</Pill>
+                    <Pill tone={state.tone}>{translateUi(state.label)}</Pill>
                   </Link>
                 );
               })}
@@ -195,7 +197,7 @@ export function ManagerOverviewPage() {
                     <strong>{item.employeeName}</strong>
                     <small>{item.courseTitle} · lần nộp {item.attemptNo}/{item.maxAttempts}</small>
                   </div>
-                  <Pill tone={QUEUE_PILL[item.status].tone}>{QUEUE_PILL[item.status].label}</Pill>
+                  <Pill tone={QUEUE_PILL[item.status].tone}>{translateUi(QUEUE_PILL[item.status].label)}</Pill>
                 </Link>
               ))}
             </div>

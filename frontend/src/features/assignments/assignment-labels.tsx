@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { StatusBadge } from '@/components/shared';
 import type { AssignmentRow, AssignmentStatus } from '@/services/assignment.service';
 
@@ -21,10 +22,11 @@ const VARIANTS = {
 
 /** Status of an assignment; "Quá hạn" and "Sắp đến hạn" take over while the work is open. */
 export function AssignmentStatusBadge({ assignment }: { assignment: Pick<AssignmentRow, 'status' | 'overdue' | 'dueSoon'> & Partial<Pick<AssignmentRow, 'completedAt'>> }) {
-  if (assignment.status === 'COMPLETED' || assignment.completedAt) return <StatusBadge label="Đã hoàn thành" variant="success" />;
+  useUiLanguage();
+  if (assignment.status === 'COMPLETED' || assignment.completedAt) return <StatusBadge label={translateUi("Đã hoàn thành")} variant="success" />;
   if (assignment.overdue) return <StatusBadge label="Quá hạn" variant="danger" />;
   if (assignment.dueSoon) return <StatusBadge label="Sắp đến hạn" variant="warning" />;
-  return <StatusBadge label={ASSIGNMENT_STATUS_LABELS[assignment.status]} variant={VARIANTS[assignment.status]} />;
+  return <StatusBadge label={translateUi(ASSIGNMENT_STATUS_LABELS[assignment.status])} variant={VARIANTS[assignment.status]} />;
 }
 
 export const SKIP_REASON_LABELS = {

@@ -1,8 +1,12 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
+import { CalendarDays, ChevronRight } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 import type { TrainingBatchListItemDto } from '@/services/mock/server/handlers/training-batches';
 
 interface TrainingBatchCardProps {
   batch: TrainingBatchListItemDto;
+  variant?: 'card' | 'schedule';
 }
 
 const STATUS_MAP: Record<string, { label: string; bg: string; fg: string }> = {
@@ -13,9 +17,17 @@ const STATUS_MAP: Record<string, { label: string; bg: string; fg: string }> = {
   DRAFT: { label: 'Bản nháp', bg: 'var(--po-raised)', fg: 'var(--po-muted)' },
 };
 
-export function TrainingBatchCard({ batch }: TrainingBatchCardProps) {
+export function TrainingBatchCard({ batch, variant = 'card' }: TrainingBatchCardProps) {
+  useUiLanguage();
   const status = STATUS_MAP[batch.status] ?? STATUS_MAP.DRAFT;
   const pct = batch.averageProgressPercent;
+
+  if (variant === 'schedule') return <Link to={`/enterprise/training-batches/${batch.id}`} className="training-schedule-entry">
+    <span className="training-schedule-entry__date"><CalendarDays size={18} /><strong>{formatDate(batch.startDate)}</strong><small>{translateUi("đến ")}{formatDate(batch.endDate)}</small></span>
+    <span className="training-schedule-entry__name"><small>{batch.code}</small><strong>{batch.name}</strong><span>{batch.coursesCount}{translateUi(" khóa · ")}{batch.participantsCount}{translateUi(" học viên")}</span></span>
+    <span className="training-schedule-entry__status" style={{ color: status.fg, background: status.bg }}>{translateUi(status.label)}</span>
+    <span className="training-schedule-entry__progress"><strong>{pct}%</strong><span role="progressbar" aria-label={translateUi(`Tiến độ ${batch.name}`)} aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} /></span><small>{batch.completedParticipantsCount}/{batch.participantsCount}{translateUi(" hoàn thành")}</small></span><ChevronRight size={17} />
+  </Link>;
 
   return (
     <Link
@@ -38,15 +50,13 @@ export function TrainingBatchCard({ batch }: TrainingBatchCardProps) {
             className="block text-[11px] mt-0.5 truncate"
             style={{ color: 'var(--po-muted)' }}
           >
-            {batch.code} · {batch.coursesCount} khóa · {batch.participantsCount}{' '}
-            học viên
-          </small>
+            {batch.code} · {batch.coursesCount}{translateUi(" khóa · ")}{batch.participantsCount}{' '}{translateUi("học viên")}</small>
         </div>
         <span
           className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
           style={{ background: status.bg, color: status.fg }}
         >
-          {status.label}
+          {translateUi(status.label)}
         </span>
       </div>
 
@@ -76,11 +86,9 @@ export function TrainingBatchCard({ batch }: TrainingBatchCardProps) {
 
       <div className="flex items-center justify-between mt-2">
         <span className="text-[10px] font-bold" style={{ color: 'var(--po-muted)' }}>
-          {pct}% tiến độ
-        </span>
+          {pct}{translateUi("% tiến độ")}</span>
         <span className="text-[10px] font-bold" style={{ color: 'var(--po-accent)' }}>
-          {batch.completedParticipantsCount}/{batch.participantsCount} hoàn thành
-        </span>
+          {batch.completedParticipantsCount}/{batch.participantsCount}{translateUi(" hoàn thành")}</span>
       </div>
     </Link>
   );

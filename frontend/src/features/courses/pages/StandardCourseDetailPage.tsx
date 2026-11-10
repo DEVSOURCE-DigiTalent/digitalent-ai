@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -23,6 +24,7 @@ type DetailTab = 'overview' | 'pathway' | 'assessment' | 'learners';
  * Owner xem nội dung nhưng không sửa lesson chuẩn.
  */
 export function StandardCourseDetailPage() {
+  useUiLanguage();
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -62,7 +64,7 @@ export function StandardCourseDetailPage() {
     return (
       <div className="rounded-xl border border-slate-200 bg-white p-12 text-center shadow-sm">
         <AlertCircle className="w-12 h-12 text-rose-400 mx-auto mb-3" />
-        <h3 className="text-base font-semibold text-slate-900">Không tìm thấy khóa học</h3>
+        <h3 className="text-base font-semibold text-slate-900">{translateUi("Không tìm thấy khóa học")}</h3>
         <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
           Khóa học chuẩn không tồn tại hoặc đã bị thu hồi khỏi hệ thống.
         </p>
@@ -107,11 +109,11 @@ export function StandardCourseDetailPage() {
                 {levelPricing(displayLevel).badge}
               </span>
               <StatusBadge
-                label={course.status === 'PUBLISHED' ? 'Chuẩn hóa TT02' : course.status === 'ARCHIVED' ? 'Đã lưu trữ' : 'Bản nháp'}
+                label={translateUi(course.status === 'PUBLISHED' ? 'Chuẩn hóa TT02' : course.status === 'ARCHIVED' ? 'Đã lưu trữ' : translateUi('Bản nháp'))}
                 variant={course.status === 'PUBLISHED' ? 'success' : 'default'}
               />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">{course.title}</h1>
+            <h1 className="text-2xl font-bold text-slate-900">{translateUi(course.title)}</h1>
             <p className="text-sm text-slate-500">
               Thuộc miền năng lực: <strong className="text-slate-700">{displayCategory}</strong>
             </p>
@@ -167,9 +169,7 @@ export function StandardCourseDetailPage() {
                   onClick={() => navigate(`/enterprise/training-batches/new?courseId=${course.id}`)}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 shadow-sm"
                 >
-                  <Layers className="size-4 text-primary-600" />
-                  Thêm vào đợt đào tạo
-                </button>
+                  <Layers className="size-4 text-primary-600" />{translateUi("Thêm vào đợt đào tạo")}</button>
                 <button
                   type="button"
                   onClick={() => navigate(`/enterprise/assignments?courseId=${course.id}`)}
@@ -215,8 +215,8 @@ export function StandardCourseDetailPage() {
             <Clock className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs text-slate-500">Thời lượng</div>
-            <div className="text-base font-bold text-slate-900">{course.estimatedDurationMinutes == null ? 'Chưa cập nhật' : `${course.estimatedDurationMinutes} phút`}</div>
+            <div className="text-xs text-slate-500">{translateUi("Thời lượng")}</div>
+            <div className="text-base font-bold text-slate-900">{course.estimatedDurationMinutes == null ? translateUi('Chưa cập nhật') : translateUi(`${course.estimatedDurationMinutes} phút`)}</div>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -234,7 +234,7 @@ export function StandardCourseDetailPage() {
           </div>
           <div>
             <div className="text-xs text-slate-500">Đã giao</div>
-            <div className="text-base font-bold text-slate-900">{assignmentsData?.totalItems ?? 0} nhân viên</div>
+            <div className="text-base font-bold text-slate-900">{assignmentsData?.totalItems ?? 0}{translateUi(" nhân viên")}</div>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -243,7 +243,7 @@ export function StandardCourseDetailPage() {
           </div>
           <div>
             <div className="text-xs text-slate-500">Đã hoàn thành trên trang</div>
-            <div className="text-base font-bold text-emerald-700">{completedEmployees.length} nhân viên</div>
+            <div className="text-base font-bold text-emerald-700">{completedEmployees.length}{translateUi(" nhân viên")}</div>
           </div>
         </div>
       </div>
@@ -305,7 +305,7 @@ export function StandardCourseDetailPage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
               <h2 className="text-base font-semibold text-slate-900">Mục tiêu và chuẩn đầu ra</h2>
               <p className="text-sm text-slate-600 leading-relaxed">
-                {course.purpose || course.description || 'Khóa học được thiết kế bám sát Khung chuẩn năng lực số và trang bị kỹ năng số thực tiễn.'}
+                {course.purpose || translateUi(course.description) || 'Khóa học được thiết kế bám sát Khung chuẩn năng lực số và trang bị kỹ năng số thực tiễn.'}
               </p>
               
               <div className="rounded-lg bg-primary-50/60 border border-primary-100 p-4">
@@ -323,7 +323,7 @@ export function StandardCourseDetailPage() {
               <h2 className="text-base font-semibold text-slate-900">Năng lực TT02 được phát triển</h2>
               <div className="rounded-lg border border-slate-200 p-4 flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Miền năng lực</div>
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{translateUi("Miền năng lực")}</div>
                   <div className="text-sm font-bold text-slate-900 mt-0.5">{displayCategory}</div>
                 </div>
                 <div className="text-right">
@@ -347,18 +347,18 @@ export function StandardCourseDetailPage() {
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
                   <span className="text-slate-500">Trình độ đầu vào yêu cầu:</span>
                   <span className="font-medium text-slate-800">
-                    {course.entryLevel == null || course.entryLevel === 0 ? 'Không yêu cầu (Nhập môn)' : `Mức ${course.entryLevel}`}
+                    {course.entryLevel == null || course.entryLevel === 0 ? 'Không yêu cầu (Nhập môn)' : translateUi(`Mức ${course.entryLevel}`)}
                   </span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
                   <span className="text-slate-500">Khóa tiên quyết:</span>
                   <span className="font-medium text-slate-800">
-                    {course.prerequisiteTitle || 'Không có'}
+                    {course.prerequisiteTitle || translateUi('Không có')}
                   </span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
                   <span className="text-slate-500">Trạng thái phát hành:</span>
-                  <StatusBadge label={course.status === 'PUBLISHED' ? 'Đã xuất bản' : course.status === 'ARCHIVED' ? 'Đã lưu trữ' : 'Bản nháp'} variant={course.status === 'PUBLISHED' ? 'success' : 'default'} />
+                  <StatusBadge label={translateUi(course.status === 'PUBLISHED' ? 'Đã xuất bản' : course.status === 'ARCHIVED' ? 'Đã lưu trữ' : translateUi('Bản nháp'))} variant={course.status === 'PUBLISHED' ? 'success' : 'default'} />
                 </div>
               </div>
             </div>
@@ -425,11 +425,11 @@ export function StandardCourseDetailPage() {
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 text-xs font-semibold text-slate-600 border-b border-slate-200">
                   <tr>
-                    <th className="px-4 py-3">Nhân viên</th>
+                    <th className="px-4 py-3">{translateUi("Nhân viên")}</th>
                     <th className="px-4 py-3">Phòng ban / Vị trí</th>
-                    <th className="px-4 py-3">Tiến độ</th>
-                    <th className="px-4 py-3">Trạng thái</th>
-                    <th className="px-4 py-3">Hạn hoàn thành</th>
+                    <th className="px-4 py-3">{translateUi("Tiến độ")}</th>
+                    <th className="px-4 py-3">{translateUi("Trạng thái")}</th>
+                    <th className="px-4 py-3">{translateUi("Hạn hoàn thành")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -454,9 +454,9 @@ export function StandardCourseDetailPage() {
                       <td className="px-4 py-3">
                         <StatusBadge
                           label={
-                            asg.status === 'COMPLETED' ? 'Đã xong' :
-                            asg.status === 'IN_PROGRESS' || (asg.status === 'ACTIVE' && asg.progressPercent > 0) ? 'Đang học' :
-                            asg.status === 'READY_FOR_ASSESSMENT' ? 'Chờ thi' : 'Chưa bắt đầu'
+                            translateUi(asg.status === 'COMPLETED' ? 'Đã xong' :
+                            asg.status === 'IN_PROGRESS' || (asg.status === 'ACTIVE' && asg.progressPercent > 0) ? translateUi('Đang học') :
+                            asg.status === 'READY_FOR_ASSESSMENT' ? 'Chờ thi' : translateUi('Chưa bắt đầu'))
                           }
                           variant={asg.status === 'COMPLETED' ? 'success' : asg.status === 'IN_PROGRESS' || (asg.status === 'ACTIVE' && asg.progressPercent > 0) ? 'info' : 'default'}
                         />
@@ -477,10 +477,10 @@ export function StandardCourseDetailPage() {
           {(assignmentsData?.totalPages ?? 0) > 1 && (
             <div className="flex items-center justify-end gap-3 border-t border-slate-100 p-4 text-sm">
               <button type="button" disabled={learnerPage <= 1} onClick={() => setLearnerPage((page) => page - 1)}
-                className="rounded border border-slate-300 px-3 py-1.5 disabled:opacity-40">Trang trước</button>
-              <span>Trang {learnerPage} / {assignmentsData?.totalPages}</span>
+                className="rounded border border-slate-300 px-3 py-1.5 disabled:opacity-40">{translateUi("Trang trước")}</button>
+              <span>{translateUi("Trang ")}{learnerPage} / {assignmentsData?.totalPages}</span>
               <button type="button" disabled={learnerPage >= (assignmentsData?.totalPages ?? 1)} onClick={() => setLearnerPage((page) => page + 1)}
-                className="rounded border border-slate-300 px-3 py-1.5 disabled:opacity-40">Trang sau</button>
+                className="rounded border border-slate-300 px-3 py-1.5 disabled:opacity-40">{translateUi("Trang sau")}</button>
             </div>
           )}
         </div>
@@ -506,6 +506,7 @@ function CourseDetailPurchaseModal({
   course: { code: string; title: string; level: number };
   onClose: () => void;
 }) {
+  useUiLanguage();
   const pricing = levelPricing(course.level);
   const [seats, setSeats] = useState(10);
   const [requested, setRequested] = useState(false);
@@ -519,8 +520,8 @@ function CourseDetailPurchaseModal({
             <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
               🔒 Bản quyền khóa học thương mại
             </span>
-            <h2 className="mt-2 text-lg font-bold text-slate-900">{course.title}</h2>
-            <p className="text-xs text-slate-500 font-mono mt-0.5">{course.code} · Bậc {course.level}</p>
+            <h2 className="mt-2 text-lg font-bold text-slate-900">{translateUi(course.title)}</h2>
+            <p className="text-xs text-slate-500 font-mono mt-0.5">{course.code}{translateUi(" · Bậc ")}{course.level}</p>
           </div>
           <button
             type="button"
@@ -538,16 +539,14 @@ function CourseDetailPurchaseModal({
             </div>
             <h3 className="text-base font-bold text-slate-900">Đã ghi nhận yêu cầu trang bị suất học</h3>
             <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
-              Yêu cầu mua <b>{seats} suất</b> cho khóa học <b>{course.code}</b> (Dự toán: {totalAmount.toLocaleString('vi-VN')} ₫) đã được gửi đến ban quản trị nền tảng DigiTalent. Đội ngũ chuyên gia sẽ liên hệ và cấp suất đào tạo cho doanh nghiệp.
+              Yêu cầu mua <b>{seats}{translateUi(" suất")}</b>{translateUi(" cho khóa học ")}<b>{course.code}</b> (Dự toán: {totalAmount.toLocaleString('vi-VN')} ₫) đã được gửi đến ban quản trị nền tảng DigiTalent. Đội ngũ chuyên gia sẽ liên hệ và cấp suất đào tạo cho doanh nghiệp.
             </p>
             <div className="pt-3">
               <button
                 type="button"
                 onClick={onClose}
                 className="rounded-xl px-5 py-2.5 text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 shadow-sm"
-              >
-                Đã hiểu
-              </button>
+              >{translateUi("Đã hiểu")}</button>
             </div>
           </div>
         ) : (
@@ -558,9 +557,7 @@ function CourseDetailPurchaseModal({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Số lượng suất cần trang bị cho nhân sự:
-              </label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">{translateUi("Số lượng suất cần trang bị cho nhân sự:")}</label>
               <div className="flex items-center gap-2 mb-2">
                 {[5, 10, 20, 50].map((count) => (
                   <button
@@ -573,8 +570,7 @@ function CourseDetailPurchaseModal({
                         : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                     }`}
                   >
-                    {count} suất
-                  </button>
+                    {count}{translateUi(" suất")}</button>
                 ))}
               </div>
               <input
@@ -593,11 +589,11 @@ function CourseDetailPurchaseModal({
                 <span className="font-semibold text-slate-900">{pricing.formatted}</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Số lượng nhân viên đào tạo:</span>
-                <span className="font-semibold text-slate-900">{seats} nhân viên</span>
+                <span>{translateUi("Số lượng nhân viên đào tạo:")}</span>
+                <span className="font-semibold text-slate-900">{seats}{translateUi(" nhân viên")}</span>
               </div>
               <div className="flex justify-between border-t border-amber-200/60 pt-2 text-sm font-bold text-slate-900">
-                <span>Tổng chi phí đầu tư:</span>
+                <span>{translateUi("Tổng chi phí đầu tư:")}</span>
                 <span className="text-primary-700 font-extrabold">{totalAmount.toLocaleString('vi-VN')} ₫</span>
               </div>
             </div>
@@ -607,9 +603,7 @@ function CourseDetailPurchaseModal({
                 type="button"
                 onClick={onClose}
                 className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Để sau
-              </button>
+              >{translateUi("Để sau")}</button>
               <button
                 type="button"
                 onClick={() => setRequested(true)}

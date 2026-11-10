@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -26,6 +27,7 @@ interface WizardShellProps {
  * Styled with Enterprise tokens.
  */
 export function WizardShell({ steps, current, completed, onStepSelect, title, description, children }: WizardShellProps) {
+  useUiLanguage();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const firstRender = useRef(true);
 
@@ -74,7 +76,7 @@ export function WizardShell({ steps, current, completed, onStepSelect, title, de
                     {isDone ? <Check className="size-3.5" strokeWidth={3} /> : index + 1}
                   </span>
                   <span className="min-w-0">
-                    <span className="block truncate">{step.label}</span>
+                    <span className="block truncate">{translateUi(step.label)}</span>
                     {step.optional && <span className="block text-xs font-normal text-ent-fg-3">Có thể bỏ qua</span>}
                   </span>
                   {isDone && <span className="sr-only">(đã xong)</span>}
@@ -90,9 +92,9 @@ export function WizardShell({ steps, current, completed, onStepSelect, title, de
         <div className="pointer-events-none absolute -right-24 -top-24 size-64 rounded-full bg-amber-500/10 blur-3xl" />
 
         <h2 id="wizard-step-title" ref={titleRef} tabIndex={-1} className="relative text-xl font-semibold text-ent-fg outline-none">
-          {title}
+          {translateUi(title)}
         </h2>
-        {description && <p className="relative mt-1.5 max-w-[60ch] text-sm leading-relaxed text-ent-fg-2">{description}</p>}
+        {description && <p className="relative mt-1.5 max-w-[60ch] text-sm leading-relaxed text-ent-fg-2">{translateUi(description)}</p>}
         <div className="relative mt-6 text-ent-fg">{children}</div>
       </section>
     </div>

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Clock, ArrowRight } from 'lucide-react';
@@ -8,6 +9,7 @@ import { formatDate } from '@/lib/utils';
 import type { ReviewQueueItemDto } from '@/services/task.service';
 
 export function ReviewQueuePage() {
+  useUiLanguage();
   const [search, setSearch] = useState('');
   const [pageIndex, setPageIndex] = useState(1);
 
@@ -70,7 +72,7 @@ export function ReviewQueuePage() {
           to={`/enterprise/reviews/${row.id}`}
           className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition"
         >
-          <span>Chấm điểm</span>
+          <span>{translateUi("Chấm điểm")}</span>
           <ArrowRight className="size-3.5" />
         </Link>
       ),

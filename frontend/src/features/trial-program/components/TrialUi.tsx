@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Check, Cpu, Database, MessageSquare, Palette, Shield, Sparkles } from 'lucide-react';
 import type { TrialParticipantStatus, TrialStage } from '@/services/trial-program.service';
 import { LEVEL_LABELS, STAGE } from '../lib/trial-format';
@@ -84,6 +85,7 @@ export const DOMAIN_THEMES = [
 ];
 
 export function LevelBadge({ level, size = 'default' }: { level: number; size?: 'default' | 'sm' }) {
+  useUiLanguage();
   const value = Math.max(0, Math.min(3, Math.round(level)));
   const styles = [
     'bg-slate-100/90 text-slate-600 border-slate-200/90 font-medium', // 0: Chưa đạt
@@ -97,7 +99,7 @@ export function LevelBadge({ level, size = 'default' }: { level: number; size?: 
     <span
       className={`inline-flex items-center justify-center rounded-xl border shadow-2xs transition-all ${sizeClasses} ${styles[value]}`}
     >
-      {LEVEL_LABELS[value]}
+      {translateUi(LEVEL_LABELS[value])}
     </span>
   );
 }
@@ -110,18 +112,21 @@ const PARTICIPANT: Record<TrialParticipantStatus, { label: string; tone: string 
 };
 
 export function ParticipantStatus({ status }: { status: TrialParticipantStatus }) {
+  useUiLanguage();
   const s = PARTICIPANT[status];
-  return <span className={`tp-badge ${s.tone}`}>{s.label}</span>;
+  return <span className={`tp-badge ${s.tone}`}>{translateUi(s.label)}</span>;
 }
 
 export function StageBadge({ stage }: { stage: TrialStage }) {
-  return <span className={`tp-badge ${STAGE[stage].tone}`}>{STAGE[stage].label}</span>;
+  useUiLanguage();
+  return <span className={`tp-badge ${STAGE[stage].tone}`}>{translateUi(STAGE[stage].label)}</span>;
 }
 
 /** Thanh bước: index = bước hiện tại (0-based); các bước trước đã xong. */
-export function Steps({ steps, current }: { steps: string[]; current: number }) {
+export function Steps({ steps, current, label = 'Các bước dùng thử' }: { steps: string[]; current: number; label?: string }) {
+  useUiLanguage();
   return (
-    <nav aria-label="Các bước dùng thử" className="w-full">
+    <nav aria-label={translateUi(label)} className="w-full">
       <ol className="flex items-center gap-1.5 sm:gap-2.5 p-1.5 sm:p-2 rounded-2xl bg-white/90 border border-slate-200/80 shadow-2xs">
         {steps.map((step, index) => {
           const isDone = index < current;
@@ -129,6 +134,8 @@ export function Steps({ steps, current }: { steps: string[]; current: number }) 
           return (
             <li
               key={step}
+              aria-current={isCurrent ? 'step' : undefined}
+              data-state={isCurrent ? 'current' : isDone ? 'done' : 'upcoming'}
               className={`flex-1 flex items-center justify-center sm:justify-start gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs transition-all ${
                 isDone
                   ? 'bg-emerald-50/80 text-emerald-800 font-semibold border border-emerald-200/60'
@@ -158,6 +165,7 @@ export function Steps({ steps, current }: { steps: string[]; current: number }) 
 }
 
 export function LevelLegend() {
+  useUiLanguage();
   const dots = [
     { bg: 'bg-slate-300' },
     { bg: 'bg-sky-400' },
@@ -169,11 +177,11 @@ export function LevelLegend() {
       className="inline-flex flex-wrap items-center gap-3 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 shadow-2xs"
       aria-hidden
     >
-      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-0.5">Cấp độ:</span>
+      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-0.5">{translateUi("Cấp độ:")}</span>
       {LEVEL_LABELS.map((label, level) => (
         <span key={label} className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700">
           <span className={`size-2 rounded-full ${dots[level]?.bg ?? 'bg-slate-300'} ring-2 ring-white shadow-2xs`} />
-          <span className="text-[11px]">{label}</span>
+          <span className="text-[11px]">{translateUi(label)}</span>
         </span>
       ))}
     </div>

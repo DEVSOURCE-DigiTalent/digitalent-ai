@@ -175,12 +175,12 @@ describe('resolveNextStep (P11, §4.7, T12, T14, T19, T20)', () => {
     expect(resolveNextStep(user)).toBe('/personal/onboarding');
   });
 
-  it('T20: directs accounts with unverified email to /verify-email-required before entering portal', () => {
+  it('T20: directs an owner with an unverified email to the business OTP step before entering the portal', () => {
     const user: SessionUser = {
       id: 'u5', email: 'a@b.c', fullName: 'A', roles: ['OWNER'], permissions: [],
       workspace: 'enterprise', emailVerified: false,
     };
-    expect(resolveNextStep(user)).toBe('/verify-email-required');
+    expect(resolveNextStep(user)).toBe('/business/verify-email?email=a%40b.c');
   });
 
   it('directs fully onboarded owner to enterprise dashboard', () => {

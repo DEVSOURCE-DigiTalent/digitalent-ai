@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import { DataTable, type Column } from '@/components/shared';
 import { formatDate } from '@/lib/utils';
@@ -25,6 +26,7 @@ interface AssignmentsTableProps {
 
 /** The list of course assignments shared by the assignment and the training monitor screens. */
 export function AssignmentsTable({ rows, isLoading, onCancel, search, onSearchChange, filters, toolbarActions, pageInfo, className, employeeLink = true, employeeLinkPrefix = '/enterprise/members', assignmentLinkPrefix }: AssignmentsTableProps) {
+  useUiLanguage();
   const columns: Column<AssignmentRow>[] = [
     {
       key: 'employee',
@@ -60,7 +62,7 @@ export function AssignmentsTable({ rows, isLoading, onCancel, search, onSearchCh
       header: 'Tiến độ',
       cell: (a) => (
         <div className="flex items-center gap-2">
-          <div role="progressbar" aria-label={`Tiến độ của ${a.employeeName}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={a.progressPercent} className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100">
+          <div role="progressbar" aria-label={translateUi(`Tiến độ của ${a.employeeName}`)} aria-valuemin={0} aria-valuemax={100} aria-valuenow={a.progressPercent} className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100">
             <div className="h-full rounded-full bg-primary-600" style={{ width: `${a.progressPercent}%` }} />
           </div>
           <span className="text-xs tabular-nums text-slate-600">{a.progressPercent}%</span>
@@ -78,7 +80,7 @@ export function AssignmentsTable({ rows, isLoading, onCancel, search, onSearchCh
       className: 'text-right',
       cell: (a) =>
         a.status === 'COMPLETED' || a.status === 'CANCELLED' || a.completedAt ? null : (
-          <button type="button" onClick={() => onCancel(a)} className={SECONDARY_BUTTON} aria-label={`Hủy khóa ${a.courseCode} của ${a.employeeName}`}>
+          <button type="button" onClick={() => onCancel(a)} className={SECONDARY_BUTTON} aria-label={translateUi(`Hủy khóa ${a.courseCode} của ${a.employeeName}`)}>
             Hủy giao
           </button>
         ),

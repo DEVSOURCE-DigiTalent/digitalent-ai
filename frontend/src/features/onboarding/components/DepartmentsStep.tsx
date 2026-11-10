@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { useSaveDepartments } from '@/hooks/use-onboarding';
@@ -15,6 +16,7 @@ interface DepartmentsStepProps {
 
 /** ENT-ONB-06: the departments or teams employees belong to. Optional: they can be added later. */
 export function DepartmentsStep({ setup, onBack, onDone, onSkip }: DepartmentsStepProps) {
+  useUiLanguage();
   const save = useSaveDepartments();
   const [names, setNames] = useState<string[]>(() => setup.departments.map((d) => d.name));
   const [draft, setDraft] = useState('');
@@ -90,13 +92,11 @@ export function DepartmentsStep({ setup, onBack, onDone, onSkip }: DepartmentsSt
             placeholder="Ví dụ: Chăm sóc khách hàng"
           />
           <button type="submit" className={SECONDARY_BUTTON}>
-            <Plus className="size-4" aria-hidden="true" />
-            Thêm
-          </button>
+            <Plus className="size-4" aria-hidden="true" />{translateUi("Thêm")}</button>
         </div>
       </form>
 
-      {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-400">{translateUi(error)}</p>}
 
       <div>
         <p className="mb-2 text-sm font-medium text-ent-fg">Đã chọn ({names.length})</p>
@@ -110,7 +110,7 @@ export function DepartmentsStep({ setup, onBack, onDone, onSkip }: DepartmentsSt
                 <button
                   type="button"
                   onClick={() => setNames(names.filter((n) => n !== name))}
-                  aria-label={`Xóa ${name}`}
+                  aria-label={translateUi(`Xóa ${name}`)}
                   className="grid size-5 place-items-center rounded-full hover:bg-amber-400/20 text-ent-fg-3 hover:text-ent-fg"
                 >
                   <X className="size-3.5" aria-hidden="true" />
@@ -122,9 +122,9 @@ export function DepartmentsStep({ setup, onBack, onDone, onSkip }: DepartmentsSt
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <button type="button" onClick={onBack} className={SECONDARY_BUTTON}>Quay lại</button>
+        <button type="button" onClick={onBack} className={SECONDARY_BUTTON}>{translateUi("Quay lại")}</button>
         <button type="button" onClick={submit} disabled={save.isPending || names.length === 0} className={PRIMARY_BUTTON}>
-          {save.isPending ? 'Đang lưu…' : 'Lưu và tiếp tục'}
+          {save.isPending ? translateUi('Đang lưu…') : translateUi('Lưu và tiếp tục')}
         </button>
         <button type="button" onClick={onSkip} className={LINK_BUTTON}>Bỏ qua bước này</button>
       </div>

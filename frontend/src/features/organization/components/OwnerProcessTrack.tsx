@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -22,6 +23,7 @@ const MILESTONES = [
 ];
 
 export function OwnerProcessTrack({ org, cap }: OwnerProcessTrackProps) {
+  useUiLanguage();
   const { data: trialProgram } = useTrialProgram();
   const hasTrialParticipants = (trialProgram?.participants?.length ?? 0) > 0;
 
@@ -57,15 +59,12 @@ export function OwnerProcessTrack({ org, cap }: OwnerProcessTrackProps) {
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#5f6e88]">
-              Lộ trình Chuẩn hóa Số
-            </span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#5f6e88]">{translateUi("Lộ trình Chuẩn hóa Số")}</span>
             <span className="text-[11px] font-bold text-[#137b84] bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200/70">
-              {progressPercent}% hoàn thành ({completedCount}/5 bước)
+              {progressPercent}{translateUi("% hoàn thành (")}{completedCount}/5 bước)
             </span>
           </div>
-          <p className="text-xs font-semibold text-[#17243f] mt-0.5">
-            Bước {activeStep}: {nextMilestone.title}
+          <p className="text-xs font-semibold text-[#17243f] mt-0.5">{translateUi("Bước ")}{activeStep}: {translateUi(nextMilestone.title)}
           </p>
         </div>
       </div>
@@ -92,7 +91,7 @@ export function OwnerProcessTrack({ org, cap }: OwnerProcessTrackProps) {
               }`}>
                 {isDone ? <Check size={10} strokeWidth={3} /> : m.step}
               </span>
-              <span>{m.title}</span>
+              <span>{translateUi(m.title)}</span>
             </Link>
           );
         })}
@@ -104,7 +103,7 @@ export function OwnerProcessTrack({ org, cap }: OwnerProcessTrackProps) {
           to={nextMilestone.path}
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#137b84] hover:bg-[#0e5968] text-white text-xs font-bold transition-all shadow-xs"
         >
-          <span>Tiếp tục: {nextMilestone.title}</span>
+          <span>{translateUi("Tiếp tục: ")}{translateUi(nextMilestone.title)}</span>
           <ArrowRight className="size-3.5" />
         </Link>
       </div>

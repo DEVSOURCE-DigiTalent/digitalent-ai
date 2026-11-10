@@ -1,4 +1,5 @@
 import type { TrialStage } from '@/services/trial-program.service';
+import { uiLocale } from '@/lib/i18n';
 
 export const LEVEL_LABELS = ['Chưa đạt', 'Cơ bản', 'Trung cấp', 'Nâng cao'] as const;
 export const LEVEL_SHORT = ['0', 'CB', 'TC', 'NC'] as const;
@@ -15,7 +16,7 @@ export function formatWhen(value?: string | null) {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? '—'
-    : new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+    : new Intl.DateTimeFormat(uiLocale(), { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
 }
 
 /** Giá trị cho <input type="datetime-local"> theo giờ máy. */

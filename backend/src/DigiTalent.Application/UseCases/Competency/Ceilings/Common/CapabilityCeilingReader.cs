@@ -8,8 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Competency.Ceilings;
 
 /// <summary>
-/// Đọc ma trận trần nhà của một tổ chức: lĩnh vực có khóa chuẩn, trần doanh nghiệp (đã lưu hoặc gợi ý),
-/// trần hiệu lực của từng phòng ban và gợi ý từ yêu cầu vị trí.
+/// Đọc ma trận phạm vi năng lực của một tổ chức: lĩnh vực có khóa chuẩn, phạm vi doanh nghiệp (đã lưu hoặc gợi ý),
+/// phạm vi hiệu lực của từng phòng ban và gợi ý từ yêu cầu vị trí.
 /// </summary>
 public class CapabilityCeilingReader
 {
@@ -50,6 +50,18 @@ public class CapabilityCeilingReader
         where T : CapabilityCeilingsDto, new()
     {
         var catalog = await _catalog.LoadAsync(organizationId);
+        var catalogCourseIds = catalog.Select(c => c.CourseId).ToList();
+        var courseCompetencies = await _context.CourseCompetencies.AsNoTracking()
+            .Where(item => catalogCourseIds.Contains(item.CourseId))
+            .Select(item => new { item.CourseId, item.CompetencyId, item.TargetLevel })
+            .ToListAsync();
+        var competenciesByCourse = courseCompetencies
+            .GroupBy(item => item.CourseId)
+            .ToDictionary(group => group.Key, group => group.Select(item => new CeilingCourseCompetencyDto
+            {
+                CompetencyId = item.CompetencyId,
+                TargetLevel = item.TargetLevel,
+            }).ToList());
         var domains = await LoadDomainsAsync(organizationId, catalog.Select(c => c.CategoryId).ToHashSet());
         var domainIds = domains.Select(d => d.Id).ToList();
 
@@ -169,6 +181,8 @@ public class CapabilityCeilingReader
                     CourseId = course?.CourseId,
                     Code = displayCode,
                     Title = course?.Title,
+                    Competencies = course != null && competenciesByCourse.TryGetValue(course.CourseId, out var taught)
+                        ? taught : new List<CeilingCourseCompetencyDto>(),
                     IsUnlocked = isUnlocked,
                     SeatsPurchased = seats == 999 ? 0 : seats,
                     PricePerSeat = price
@@ -176,8 +190,8 @@ public class CapabilityCeilingReader
             }).ToList();
 
             var maxAllowed = domainCourses.Where(c => c.IsUnlocked).Select(c => c.Level).DefaultIfEmpty(1).Max();
-            // Chưa lưu trần: mặc định ở mức Cơ bản (1 - khóa học miễn phí).
-            // Đã lưu trần: không được vượt quá số cấp đã mở bản quyền (maxAllowed).
+            // Chưa lưu phạm vi: mặc định ở mức Cơ bản (1 - khóa học miễn phí).
+            // Đã lưu phạm vi: không được vượt quá số cấp đã mở bản quyền (maxAllowed).
             var ceiling = orgRows.TryGetValue(domain.Id, out var row)
                 ? Math.Min((int)row.CeilingLevel, maxAllowed)
                 : 1;
@@ -246,9 +260,9 @@ public class CapabilityCeilingReader
     }
 
     /// <summary>
-    /// Trần hiệu lực của một phòng ban theo lĩnh vực, cùng quy tắc với ma trận OW-05: trần riêng của phòng ban (không
-    /// vượt trần doanh nghiệp) → trần doanh nghiệp đã lưu → chưa lưu thì gợi ý từ yêu cầu vị trí của tổ chức (ít nhất
-    /// Cơ bản). Không có phòng ban thì là trần doanh nghiệp. Dùng cho lộ trình của nhân viên (Pulse).
+    /// Phạm vi hiệu lực của một phòng ban theo lĩnh vực, cùng quy tắc với ma trận OW-05: thiết lập riêng của phòng ban (không
+    /// vượt phạm vi doanh nghiệp) → phạm vi doanh nghiệp đã lưu → chưa lưu thì gợi ý từ yêu cầu vị trí của tổ chức (ít nhất
+    /// Cơ bản). Không có phòng ban thì là phạm vi doanh nghiệp. Dùng cho lộ trình của nhân viên (Pulse).
     /// </summary>
     public async Task<Dictionary<Guid, int>> EffectiveForDepartmentAsync(Guid organizationId, Guid? departmentId, IReadOnlyCollection<Guid> categoryIds)
     {

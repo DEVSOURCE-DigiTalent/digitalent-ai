@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { TIER_LABELS, type WorkflowPreview } from '../landing-content';
 import { TT02_DOMAINS, getReferencePosition, summarizeRequirements } from '@/lib/reference-positions';
@@ -6,6 +7,7 @@ import { LP_KICKER } from '../landing-type';
 
 /** Small product mock-ups that go with each step of the competency loop. Sample data, decorative. */
 export function WorkflowPreviewView({ kind }: { kind: WorkflowPreview }) {
+  useUiLanguage();
   return (
     <div aria-hidden="true" className="grid gap-4 text-cream">
       {kind === 'requirements' && <RequirementsPreview />}
@@ -21,6 +23,7 @@ export function WorkflowPreviewView({ kind }: { kind: WorkflowPreview }) {
 const ROW = 'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-cream/12 bg-black/25 px-5 py-4 text-base leading-[1.35]';
 
 function Chip({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: 'neutral' | 'ok' }) {
+  useUiLanguage();
   return (
     <span
       className={cn(
@@ -34,6 +37,7 @@ function Chip({ children, tone = 'neutral' }: { children: React.ReactNode; tone?
 }
 
 function Pips({ level }: { level: number }) {
+  useUiLanguage();
   return (
     <span className="flex gap-0.5">
       {[1, 2, 3].map((step) => (
@@ -48,6 +52,7 @@ const LEVEL_DOT = ['border border-cream/25', 'bg-cream/40', 'bg-cream/75', 'bg-c
 
 /** The requirement matrix of one reference position: a row per domain, a dot per competency, brighter = higher level. */
 function RequirementsPreview() {
+  useUiLanguage();
   const position = getReferencePosition(REQUIREMENT_POSITION);
   if (!position) return null;
   const { selected } = summarizeRequirements(position);
@@ -67,7 +72,7 @@ function RequirementsPreview() {
             <li key={domain.number} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 text-base">
               <span className="truncate text-cream/90">
                 <span className="mr-2 text-stone-500 tabular-nums">{domain.number}</span>
-                {domain.name}
+                {translateUi(domain.name)}
               </span>
               <span className="flex gap-1.5">
                 {levels.map((level, index) => (
@@ -87,6 +92,7 @@ const GAP_REQUIRED = [3, 3, 3, 2, 3, 3];
 const GAP_CURRENT = [2, 3, 2, 1, 2, 1];
 
 function GapPreview() {
+  useUiLanguage();
   return (
     <div className="flex flex-wrap items-center gap-8 text-cream">
       <RadarChart required={GAP_REQUIRED} current={GAP_CURRENT} size={240} />
@@ -106,6 +112,7 @@ const ASSESSMENT_ROWS = [
 ];
 
 function AssessmentPreview() {
+  useUiLanguage();
   return (
     <ul className="grid gap-2">
       {ASSESSMENT_ROWS.map((row) => (
@@ -116,7 +123,7 @@ function AssessmentPreview() {
           </span>
           <span className="flex items-center gap-2">
             <Pips level={row.level} />
-            <span className="w-16 text-right text-[11px] text-stone-400">{TIER_LABELS[row.level]}</span>
+            <span className="w-16 text-right text-[11px] text-stone-400">{translateUi(TIER_LABELS[row.level])}</span>
           </span>
         </li>
       ))}
@@ -125,6 +132,7 @@ function AssessmentPreview() {
 }
 
 function AssignmentPreview() {
+  useUiLanguage();
   return (
     <ul className="grid gap-2">
       <li className={ROW}>
@@ -152,19 +160,21 @@ function AssignmentPreview() {
 }
 
 function TaskPreview() {
+  useUiLanguage();
   return (
     <div className={cn(ROW, 'grid-cols-1 gap-2')}>
       <span className={LP_KICKER}>Nhiệm vụ · năng lực 4.2</span>
       <span>Lập quy trình xử lý dữ liệu khách hàng</span>
       <span className="flex flex-wrap gap-2">
         <Chip>Đã nộp 1 minh chứng</Chip>
-        <Chip>Chờ đánh giá</Chip>
+        <Chip>{translateUi("Chờ đánh giá")}</Chip>
       </span>
     </div>
   );
 }
 
 function ConfirmedPreview() {
+  useUiLanguage();
   return (
     <ul className="grid gap-2">
       {[
@@ -176,7 +186,7 @@ function ConfirmedPreview() {
             <span className="mr-2 text-stone-500 tabular-nums">{row.code}</span>
             {row.name}
           </span>
-          <Chip tone="ok">Đã xác nhận · {TIER_LABELS[row.level]}</Chip>
+          <Chip tone="ok">Đã xác nhận · {translateUi(TIER_LABELS[row.level])}</Chip>
         </li>
       ))}
     </ul>

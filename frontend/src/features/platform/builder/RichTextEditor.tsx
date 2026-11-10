@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect } from 'react';
 import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -25,6 +26,7 @@ export function RichTextEditor({
   readOnly?: boolean;
   autoFocus?: boolean;
 }) {
+  useUiLanguage();
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3, 4] }, code: false, codeBlock: false, horizontalRule: false }),
@@ -60,11 +62,12 @@ export function RichTextEditor({
 }
 
 function Toolbar({ editor }: { editor: Editor }) {
+  useUiLanguage();
   const button = (label: string, text: string, active: boolean, run: () => void, disabled = false) => (
     <button
       type="button"
-      title={label}
-      aria-label={label}
+      title={translateUi(label)}
+      aria-label={translateUi(label)}
       aria-pressed={active}
       disabled={disabled}
       onMouseDown={(e) => e.preventDefault()}

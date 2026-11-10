@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import pulseMark from '@/assets/pulse/pulse-mark.svg';
@@ -31,6 +32,7 @@ export function RoleSidebar({
   isMobileOpen = false,
   onMobileClose,
 }: RoleSidebarProps) {
+  useUiLanguage();
   const user = useCurrentUser((s) => s.user);
   const { state, toggleCollapsed } = useSidebarState();
   const isRail = state === 'collapsed';
@@ -71,7 +73,7 @@ export function RoleSidebar({
         'md:translate-x-0',
         isMobileOpen ? 'translate-x-0 w-[288px]' : '-translate-x-full md:translate-x-0',
       )}
-      aria-label="Thanh điều hướng"
+      aria-label={translateUi("Thanh điều hướng")}
       aria-hidden={!isMobileOpen && isMobile ? true : undefined}
     >
       {!isPulse && <SidebarOrgBlock isRail={isRail && !isMobileOpen} />}
@@ -79,7 +81,7 @@ export function RoleSidebar({
         <Link
           to="/enterprise/dashboard"
           className={cn('pm-side-brand', isRail && !isMobileOpen && 'rail')}
-          aria-label="DigiTalent Pulse — Tổng quan"
+          aria-label={translateUi("DigiTalent Pulse — Tổng quan")}
         >
           <img src={pulseMark} alt="" />
           {!(isRail && !isMobileOpen) && <span>DigiTalent <em>Pulse</em></span>}

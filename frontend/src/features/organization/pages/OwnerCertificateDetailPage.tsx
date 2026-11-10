@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useParams, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useCertificates } from '@/hooks/use-learning';
@@ -8,13 +9,14 @@ import { PageLoading } from '@/components/shared/LoadingState';
 import './owner-operations.css';
 
 export function OwnerCertificateDetailPage() {
+  useUiLanguage();
   const { id } = useParams<{ id: string }>();
   const { data, isLoading } = useCertificates({ pageSize: 100 });
   const { data: orgData } = useOrganizationOverview();
   const cert = (data?.items ?? []).find((c) => c.id === id);
 
   if (isLoading) {
-    return <div className="po-owner owner-operations -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label="Đang tải chứng nhận" variant="detail" /></div>;
+    return <div className="po-owner owner-operations -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label={translateUi("Đang tải chứng nhận")} variant="detail" /></div>;
   }
 
   if (!cert) {
@@ -37,19 +39,13 @@ export function OwnerCertificateDetailPage() {
           <h1
             className="mt-[11px] text-[clamp(26px,3.4vw,42px)] font-bold leading-[1.08]"
             style={{ color: 'var(--po-ink)', letterSpacing: '-0.045em' }}
-          >
-            Chứng nhận không khả dụng
-          </h1>
-          <p className="mt-2 text-sm" style={{ color: 'var(--po-muted)' }}>
-            Bản ghi này nằm ngoài phạm vi xem của bạn.
-          </p>
+          >{translateUi("Chứng nhận không khả dụng")}</h1>
+          <p className="mt-2 text-sm" style={{ color: 'var(--po-muted)' }}>{translateUi("Bản ghi này nằm ngoài phạm vi xem của bạn.")}</p>
           <Link
             to="/enterprise/certificates"
             className="mt-4 inline-flex rounded-[11px] border px-4 py-2.5 text-xs font-extrabold transition-transform hover:-translate-y-0.5"
             style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)' }}
-          >
-            Quay lại danh sách chứng nhận
-          </Link>
+          >{translateUi("Quay lại danh sách chứng nhận")}</Link>
         </section>
       </div>
     );
@@ -70,23 +66,17 @@ export function OwnerCertificateDetailPage() {
         <p
           className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.12em] mb-1.5"
           style={{ color: 'var(--po-muted)' }}
-        >
-          CHỨNG NHẬN NĂNG LỰC
-          <span
+        >{translateUi("CHỨNG NHẬN NĂNG LỰC")}<span
             className="inline-block size-1.5 rounded-full"
             style={{ background: 'var(--po-coral)' }}
           />
         </p>
-        <h1 className="text-[clamp(26px,3.4vw,42px)] font-bold leading-[1.08] heading-gradient tracking-[-0.03em]">
-          Chi tiết chứng nhận
-        </h1>
+        <h1 className="text-[clamp(26px,3.4vw,42px)] font-bold leading-[1.08] heading-gradient tracking-[-0.03em]">{translateUi("Chi tiết chứng nhận")}</h1>
         <Link
           to="/enterprise/certificates"
           className="mt-4 inline-flex rounded-[11px] border px-4 py-2.5 text-xs font-extrabold transition-transform hover:-translate-y-0.5"
           style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)' }}
-        >
-          Tất cả chứng nhận
-        </Link>
+        >{translateUi("Tất cả chứng nhận")}</Link>
       </section>
 
       {/* ── Certificate document ── */}
@@ -115,13 +105,9 @@ export function OwnerCertificateDetailPage() {
               margin: '22px 0',
               color: 'var(--po-ink)',
             }}
-          >
-            Chứng nhận năng lực đã xác minh
-          </h2>
+          >{translateUi("Chứng nhận năng lực đã xác minh")}</h2>
 
-          <p className="text-xs" style={{ color: 'var(--po-ink)' }}>
-            Cấp cho
-          </p>
+          <p className="text-xs" style={{ color: 'var(--po-ink)' }}>{translateUi("Cấp cho")}</p>
 
           <strong
             className="block"
@@ -148,21 +134,15 @@ export function OwnerCertificateDetailPage() {
             className="flex flex-wrap gap-[30px] pt-5 mt-8"
             style={{ borderTop: '1px solid #dce4f3' }}
           >
-            <span className="min-w-[120px] text-[10px]" style={{ color: 'var(--po-muted)' }}>
-              Tổ chức
-              <b className="mt-[5px] block text-xs" style={{ color: 'var(--po-ink)' }}>
+            <span className="min-w-[120px] text-[10px]" style={{ color: 'var(--po-muted)' }}>{translateUi("Tổ chức")}<b className="mt-[5px] block text-xs" style={{ color: 'var(--po-ink)' }}>
                 {orgData?.name ?? 'DigiTalent AI'}
               </b>
             </span>
-            <span className="min-w-[120px] text-[10px]" style={{ color: 'var(--po-muted)' }}>
-              Ngày cấp
-              <b className="mt-[5px] block text-xs" style={{ color: 'var(--po-ink)' }}>
+            <span className="min-w-[120px] text-[10px]" style={{ color: 'var(--po-muted)' }}>{translateUi("Ngày cấp")}<b className="mt-[5px] block text-xs" style={{ color: 'var(--po-ink)' }}>
                 {formatDate(cert.issueDate)}
               </b>
             </span>
-            <span className="min-w-[120px] text-[10px]" style={{ color: 'var(--po-muted)' }}>
-              Mã tham chiếu
-              <b className="mt-[5px] block text-xs" style={{ color: 'var(--po-ink)' }}>
+            <span className="min-w-[120px] text-[10px]" style={{ color: 'var(--po-muted)' }}>{translateUi("Mã tham chiếu")}<b className="mt-[5px] block text-xs" style={{ color: 'var(--po-ink)' }}>
                 {cert.certificateCode}
               </b>
             </span>
@@ -191,9 +171,7 @@ export function OwnerCertificateDetailPage() {
             }}
             className="rounded-[11px] border px-4 py-2.5 text-xs font-extrabold transition-transform hover:-translate-y-0.5"
             style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)' }}
-          >
-            In bản ghi này ↗
-          </button>
+          >{translateUi("In bản ghi này ↗")}</button>
         </div>
       </section>
     </div>

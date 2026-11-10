@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { platformCatalogService, type BlockType, type CatalogCourseDetail, type CatalogModule } from '@/services/platform-catalog.service';
@@ -26,6 +27,7 @@ export function ModuleEditor({
   /** 'info', 'final' or a module index. */
   onNavigate: (target: 'info' | 'final' | number) => void;
 }) {
+  useUiLanguage();
   const [title, setTitle] = useState(module.title);
   const [addAt, setAddAt] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -74,7 +76,7 @@ export function ModuleEditor({
     if (addAt === position) return <TypeMenu onPick={(type) => insert(type, position)} onClose={() => setAddAt(null)} />;
     return (
       <div className="pa-add-bar">
-        <button type="button" onClick={() => setAddAt(position)} aria-label={`Thêm khối ở vị trí ${position + 1}`}>
+        <button type="button" onClick={() => setAddAt(position)} aria-label={translateUi(`Thêm khối ở vị trí ${position + 1}`)}>
           +
         </button>
       </div>
@@ -111,9 +113,7 @@ export function ModuleEditor({
                 <button type="button" className="btn btn-small pa-danger" onClick={remove}>
                   Xóa mô đun và {module.blocks.length} khối, {module.questions.length} câu hỏi
                 </button>
-                <button type="button" className="btn btn-ghost btn-small" onClick={() => setConfirmDelete(false)}>
-                  Giữ lại
-                </button>
+                <button type="button" className="btn btn-ghost btn-small" onClick={() => setConfirmDelete(false)}>{translateUi("Giữ lại")}</button>
               </>
             ) : (
               <button type="button" className="btn btn-ghost btn-small pa-danger-text" onClick={() => setConfirmDelete(true)}>
@@ -125,7 +125,7 @@ export function ModuleEditor({
       </div>
 
       <div className="pa-section-title">
-        <h3>Nội dung</h3>
+        <h3>{translateUi("Nội dung")}</h3>
         <small>Nhân viên xem lần lượt từ trên xuống.{editable ? ' Bấm vào một khối để sửa.' : ''}</small>
       </div>
 
@@ -173,7 +173,7 @@ export function ModuleEditor({
 
       <div className="pa-row-between">
         <button type="button" className="btn btn-outline" onClick={() => onNavigate(module.index === 0 ? 'info' : module.index - 1)}>
-          ← {module.index === 0 ? 'Thông tin khóa học' : 'Mô đun trước'}
+          ← {module.index === 0 ? translateUi('Thông tin khóa học') : 'Mô đun trước'}
         </button>
         <button type="button" className="btn btn-light" onClick={() => onNavigate(last ? 'final' : module.index + 1)}>
           {last ? 'Tới bài cuối khóa →' : 'Mô đun tiếp theo →'}
@@ -184,6 +184,7 @@ export function ModuleEditor({
 }
 
 function TypeMenu({ onPick, onClose }: { onPick: (type: BlockType) => void; onClose: () => void }) {
+  useUiLanguage();
   return (
     <div className="pa-type-menu-wrap">
       <div className="pa-type-menu" role="group" aria-label="Chọn loại khối">
@@ -192,15 +193,13 @@ function TypeMenu({ onPick, onClose }: { onPick: (type: BlockType) => void; onCl
             <span className={`pa-type pa-type-${type.toLowerCase()}`} aria-hidden="true">
               {BLOCK_TYPES[type].glyph}
             </span>
-            <strong>{BLOCK_TYPES[type].label}</strong>
+            <strong>{translateUi(BLOCK_TYPES[type].label)}</strong>
             <small>{BLOCK_TYPES[type].hint}</small>
           </button>
         ))}
       </div>
       <div className="pa-center">
-        <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>
-          Đóng
-        </button>
+        <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>{translateUi("Đóng")}</button>
       </div>
     </div>
   );

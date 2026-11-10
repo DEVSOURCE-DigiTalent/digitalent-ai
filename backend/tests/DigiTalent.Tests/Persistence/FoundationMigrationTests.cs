@@ -274,14 +274,6 @@ public class FoundationMigrationTests
         using var context = PostgresTestDatabase.CreateContext();
         await PostgresTestDatabase.MigrateAsync(context);
 
-        var platformRole = await context.Roles.FirstOrDefaultAsync(r => r.Code == "PLATFORM_ADMIN");
-        platformRole.Should().NotBeNull();
-
-        var permissionCodes = await context.RolePermissions
-            .Where(rp => rp.RoleId == platformRole!.Id)
-            .Join(context.Permissions, rp => rp.PermissionId, p => p.Id, (rp, p) => p.Code)
-            .ToListAsync();
-
         var expectedAllowlist = new[]
         {
             "account.view_own",
@@ -291,7 +283,64 @@ public class FoundationMigrationTests
             "system_config.manage"
         };
 
+        // Migrations create no roles (DbSeeder does), and other integration tests may already have seeded this
+        // shared database. Arrange a platform role holding enterprise permissions, run the migration SQL, then roll back.
+        await using var transaction = await context.Database.BeginTransactionAsync();
+        var permissions = new Dictionary<string, Domain.Entities.Permission>();
+        foreach (var code in expectedAllowlist.Append("employee.read").Append("course.create"))
+        {
+            var permission = await context.Permissions.FirstOrDefaultAsync(p => p.Code == code);
+            if (permission is null)
+            {
+                permission = new Domain.Entities.Permission { Code = code, Module = code.Split('.')[0], Action = code.Split('.')[1] };
+                context.Permissions.Add(permission);
+            }
+            permissions[code] = permission;
+        }
+
+        var platformRole = await context.Roles.FirstOrDefaultAsync(r => r.Code == "PLATFORM_ADMIN");
+        if (platformRole is null)
+        {
+            // The legacy code that the migration renames to PLATFORM_ADMIN.
+            platformRole = new Domain.Entities.Role { Code = "SYSTEM_ADMIN", Name = "System Admin", ScopeType = "GLOBAL" };
+            context.Roles.Add(platformRole);
+        }
+        await context.SaveChangesAsync();
+
+        foreach (var code in new[] { "employee.read", "course.create", "account.view_own" })
+        {
+            var permissionId = permissions[code].Id;
+            if (!await context.RolePermissions.AnyAsync(rp => rp.RoleId == platformRole.Id && rp.PermissionId == permissionId))
+            {
+                context.RolePermissions.Add(new Domain.Entities.RolePermission { RoleId = platformRole.Id, PermissionId = permissionId });
+            }
+        }
+        await context.SaveChangesAsync();
+
+        foreach (var operation in MigrationSql())
+        {
+            await context.Database.ExecuteSqlRawAsync(operation);
+        }
+        context.ChangeTracker.Clear();
+
+        var role = await context.Roles.SingleAsync(r => r.Code == "PLATFORM_ADMIN");
+        role.Id.Should().Be(platformRole.Id);
+        var permissionCodes = await context.RolePermissions
+            .Where(rp => rp.RoleId == role.Id)
+            .Join(context.Permissions, rp => rp.PermissionId, p => p.Id, (rp, p) => p.Code)
+            .ToListAsync();
+
         permissionCodes.Should().BeEquivalentTo(expectedAllowlist);
+    }
+
+    private static IEnumerable<string> MigrationSql()
+    {
+        var migration = new DigiTalent.Infrastructure.Persistence.Migrations.NormalizeAuthorizationRoles();
+        var builder = new Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder("Npgsql");
+        typeof(DigiTalent.Infrastructure.Persistence.Migrations.NormalizeAuthorizationRoles)
+            .GetMethod("Up", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .Invoke(migration, new object[] { builder });
+        return builder.Operations.OfType<Microsoft.EntityFrameworkCore.Migrations.Operations.SqlOperation>().Select(o => o.Sql);
     }
 
     private static Task<bool> ExistsAsync(AppDbContext context, string sql, params object[] parameters) =>

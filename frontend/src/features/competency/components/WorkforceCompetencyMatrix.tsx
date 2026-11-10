@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ChevronRight } from 'lucide-react';
@@ -29,6 +30,7 @@ export function WorkforceCompetencyMatrix({
   subtitle = 'So sánh trực quan trình độ hiện tại, yêu cầu vị trí và khoảng trống năng lực theo Khung chuẩn năng lực số',
   readOnly: _readOnly = false,
 }: WorkforceCompetencyMatrixProps) {
+  useUiLanguage();
   const [search, setSearch] = useState('');
   const [selectedDept, setSelectedDept] = useState(fixedDeptId || '');
   const [selectedPos, setSelectedPos] = useState('');
@@ -62,7 +64,7 @@ export function WorkforceCompetencyMatrix({
 
   return (
     <div className="space-y-6">
-      <PageHeader title={title} subtitle={subtitle} />
+      <PageHeader title={translateUi(title)} subtitle={translateUi(subtitle)} />
 
       {/* Filter toolbar */}
       <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -82,12 +84,12 @@ export function WorkforceCompetencyMatrix({
         {!hideDepartmentFilter && !fixedDeptId && (
           <div className="w-48">
             <select
-              aria-label="Lọc theo phòng ban"
+              aria-label={translateUi("Lọc theo phòng ban")}
               value={selectedDept}
               onChange={(e) => setSelectedDept(e.target.value)}
               className={INPUT_CLASS}
             >
-              <option value="">Tất cả phòng ban</option>
+              <option value="">{translateUi("Tất cả phòng ban")}</option>
               {departments.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
@@ -104,7 +106,7 @@ export function WorkforceCompetencyMatrix({
             onChange={(e) => setSelectedPos(e.target.value)}
             className={INPUT_CLASS}
           >
-            <option value="">Tất cả vị trí</option>
+            <option value="">{translateUi("Tất cả vị trí")}</option>
             {positions.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -120,10 +122,9 @@ export function WorkforceCompetencyMatrix({
             onChange={(e) => setSelectedGrade(e.target.value)}
             className={INPUT_CLASS}
           >
-            <option value="">Mọi cấp bậc</option>
+            <option value="">{translateUi("Mọi cấp bậc")}</option>
             {JOB_GRADES.map((g: string) => (
-              <option key={g} value={g}>
-                Cấp bậc {g}
+              <option key={g} value={g}>{translateUi("Cấp bậc ")}{g}
               </option>
             ))}
           </select>
@@ -169,7 +170,7 @@ export function WorkforceCompetencyMatrix({
                     <th
                       key={comp.id}
                       className="px-2.5 py-3 min-w-[100px] text-center font-semibold border-r border-slate-200"
-                      title={`${comp.frameworkCode}: ${comp.name}`}
+                      title={translateUi(`${comp.frameworkCode}: ${comp.name}`)}
                     >
                       <div className="font-mono text-[11px] font-bold text-primary-700">
                         {comp.frameworkCode || comp.code}
@@ -257,9 +258,9 @@ export function WorkforceCompetencyMatrix({
                                 ? 'bg-rose-50/40'
                                 : 'bg-emerald-50/30'
                           }`}
-                          title={`Hiện tại: Mức ${cell.currentLevel} | Yêu cầu: Mức ${cell.requiredLevel}${
+                          title={translateUi(`Hiện tại: Mức ${cell.currentLevel} | Yêu cầu: Mức ${cell.requiredLevel}${
                             hasGap ? ` (Thiếu ${cell.gap} mức)` : ''
-                          }${cell.evidenceStatus === 'CONFIRMED' ? ' · Đã có minh chứng xác nhận' : ''}`}
+                          }${cell.evidenceStatus === 'CONFIRMED' ? ' · Đã có minh chứng xác nhận' : ''}`)}
                         >
                           {isNotReq ? (
                             <span className="text-slate-300 font-mono">—</span>

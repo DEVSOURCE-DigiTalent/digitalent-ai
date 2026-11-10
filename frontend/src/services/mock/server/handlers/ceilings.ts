@@ -1,14 +1,14 @@
 import { PERMISSIONS } from '../../../../hooks/use-permission';
 import { badRequest, notFound } from '../http';
 import { route } from '../router';
-import { CATEGORIES, COMPETENCY_BY_ID, courseFor } from '../catalog';
+import { CATEGORIES, COMPETENCIES, COMPETENCY_BY_ID, courseFor } from '../catalog';
 import { ACME_ORGANIZATION_ID } from '../seed-acme';
 import type { CapabilityCeilingRecord, OrgData } from '../types';
 import { recordAudit } from './audit';
 import { readReferencePositionLevels } from './reference-positions';
 
 /**
- * Ceiling matrix of the organization (OW-05 "Lý thuyết trần nhà"), mirror of CapabilityCeilingsController:
+ * Ceiling matrix of the organization (OW-05 "Phạm vi năng lực"), mirror of CapabilityCeilingsController:
  * Digital AI ceiling = 6 domains × 3 levels (18 courses) ⊇ organization ceiling ⊇ department ceilings, per domain.
  */
 
@@ -34,6 +34,12 @@ function demoCeilings(): CapabilityCeilingRecord {
 
 const ceilingsOf = (data: OrgData): CapabilityCeilingRecord | undefined =>
   data.capabilityCeilings ?? (data.organizationId === ACME_ORGANIZATION_ID ? demoCeilings() : undefined);
+
+const paidSeats = (data: OrgData, courseId: string | undefined): number =>
+  courseId ? Math.max(0, data.courseSeatOrders?.[courseId] ?? 0) : 0;
+
+const maxLicensedLevel = (data: OrgData, categoryId: string): number =>
+  [3, 2].find((level) => paidSeats(data, courseFor(categoryId, level)?.id) > 0) ?? 1;
 
 /** Highest required level per category id for each position with an active requirement set. */
 function requirementLevels(data: OrgData): Map<string, Map<string, number>> {
@@ -75,7 +81,7 @@ export function ceilingMatrixDto(data: OrgData) {
 
   const domains = CATEGORIES.slice().sort((a, b) => a.sortOrder - b.sortOrder);
   const organizationCeiling = new Map(
-    domains.map((d) => [d.id, saved?.organization[d.id] ?? Math.max(1, suggest(data.positions.map((position) => position.id), d.id))]),
+    domains.map((d) => [d.id, Math.min(maxLicensedLevel(data, d.id), saved?.organization[d.id] ?? Math.max(1, suggest(data.positions.map((position) => position.id), d.id)))]),
   );
 
   const activeEmployees = data.employees.filter((e) => e.status === 'ACTIVE');
@@ -123,10 +129,18 @@ export function ceilingMatrixDto(data: OrgData) {
       name: d.name,
       sortOrder: d.sortOrder,
       organizationCeiling: organizationCeiling.get(d.id)!,
+      maxAllowedCeiling: maxLicensedLevel(data, d.id),
       suggestedCeiling: suggest(requirements.keys(), d.id),
       courses: [1, 2, 3].map((level) => {
         const course = courseFor(d.id, level);
-        return { level, courseId: course?.id ?? null, code: course?.code ?? null, title: course?.title ?? null };
+        const seatsPurchased = level === 1 ? 0 : paidSeats(data, course?.id);
+        const isUnlocked = level === 1 || seatsPurchased > 0;
+        return {
+          level, courseId: course?.id ?? null, code: course?.code ?? null, title: course?.title ?? null,
+          isUnlocked, seatsPurchased,
+          pricePerSeat: level === 2 ? 399000 : level === 3 ? 699000 : 0,
+          competencies: course ? COMPETENCIES.filter((item) => item.categoryId === d.id).map((item) => ({ competencyId: item.id, targetLevel: level })) : [],
+        };
       }),
     })),
     departments,
@@ -168,6 +182,9 @@ route('PUT', '/capability-ceilings/organization', ({ body, session, update }) =>
   const ceilings = readCeilings(body);
   if (CATEGORIES.some((c) => !ceilings.some((i) => i.categoryId === c.id))) {
     throw badRequest('Chọn mức tối đa cho cả 6 lĩnh vực.', 'CEILINGS_INCOMPLETE', 'ceilings');
+  }
+  if (ceilings.some((item) => item.level > maxLicensedLevel(data, item.categoryId))) {
+    throw badRequest('Cần mua suất học của cấp này trước khi nâng mức tối đa của doanh nghiệp.', 'COURSE_LICENSE_REQUIRED', 'ceilings');
   }
 
   const record: CapabilityCeilingRecord = ceilingsOf(data) ?? { organization: {}, departments: {}, updatedAt: '', updatedByName: '' };
@@ -213,6 +230,9 @@ route('PUT', '/capability-ceilings/departments/:id', ({ body, params, session, u
         'CEILING_ABOVE_ORGANIZATION',
         'ceilings',
       );
+    }
+    if (ceilings.some((item) => item.level > maxLicensedLevel(data, item.categoryId))) {
+      throw badRequest('Cần mua suất học của cấp này trước khi mở rộng phạm vi phòng ban.', 'COURSE_LICENSE_REQUIRED', 'ceilings');
     }
     const own = (record.departments[department.id] ??= {});
     for (const item of ceilings) own[item.categoryId] = item.level;

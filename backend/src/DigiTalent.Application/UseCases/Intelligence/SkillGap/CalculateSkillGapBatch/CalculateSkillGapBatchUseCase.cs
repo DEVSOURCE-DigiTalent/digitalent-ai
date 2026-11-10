@@ -48,6 +48,11 @@ public class CalculateSkillGapBatchUseCase : IUseCase<CalculateSkillGapBatchUseC
             query = query.Where(e => e.JobPositionId == input.JobPositionId.Value);
         }
 
+        if (!string.IsNullOrWhiteSpace(input.JobGrade))
+        {
+            query = query.Where(e => _context.JobPositions.Any(p => p.Id == e.JobPositionId && p.JobGrade == input.JobGrade));
+        }
+
         if (await query.CountAsync() > MaxEmployeesPerBatch)
         {
             throw new BadRequestException(

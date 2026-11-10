@@ -148,7 +148,6 @@ export function TrialRegisterPage() {
 
   return (
     <div
-      lang="vi"
       data-portal="individual"
       data-theme={theme}
       data-individual-theme={theme}

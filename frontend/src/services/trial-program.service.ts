@@ -236,7 +236,7 @@ export interface MentorItem {
 export const trialProgramService = {
   // Chủ doanh nghiệp
   get: () => apiClient.get<ApiResponse<TrialProgram>>('/trial'),
-  invite: (rows: TrialParticipantRow[]) => apiClient.post<ApiResponse<TrialInviteResult>>('/trial/participants', { rows }),
+  invite: (rows: TrialParticipantRow[], testDeadline?: string) => apiClient.post<ApiResponse<TrialInviteResult>>('/trial/participants', { rows, testDeadline }),
   setDeadline: (testDeadline: string) => apiClient.put<ApiResponse<{ stage: TrialStage; testDeadline: string }>>('/trial/request', { testDeadline }),
   /** "Xem kết quả ngay": đóng bài trước hạn (cần ít nhất một bài đã nộp). */
   close: () => apiClient.post<ApiResponse<{ closedAt: string; assessed: number }>>('/trial/close'),

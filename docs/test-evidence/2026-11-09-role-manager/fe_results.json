@@ -1,0 +1,141 @@
+{
+  "meta": {
+    "branch": "feature/DT-role-based-tests",
+    "commit": "c51a6d6",
+    "api": "http://localhost:5000",
+    "fe": "http://localhost:5173",
+    "db": "PostgreSQL 16 (DB mới: migration + seed Development)",
+    "date": "09/11/2026"
+  },
+  "role": {
+    "label": "MANAGER",
+    "email": "manager@digitalent.ai",
+    "title": "QUẢN LÝ PHÒNG BAN (MANAGER)"
+  },
+  "cases": [
+    {
+      "id": "FE01",
+      "screen": "MG-01 Tổng quan nhóm",
+      "title": "Đăng nhập manager@digitalent.ai và vào đúng không gian làm việc",
+      "url": "/login",
+      "role": "MANAGER (manager@digitalent.ai)",
+      "precondition": "DB mới, seed Development",
+      "steps": [
+        "1. Mở /login",
+        "2. Nhập manager@digitalent.ai / Admin@1234, bấm \"Đăng nhập vào hệ thống\""
+      ],
+      "expected": "Chuyển tới /enterprise/team; tiêu đề \"Quyết định việc cần ưu tiên.\"; menu của vai trò (8+ mục).",
+      "actual": "Đăng nhập thành công, vào /enterprise/team; tiêu đề \"Quyết định việc cần ưu tiên.\"; menu 10 mục: Tổng quan, Năng lực đội ngũ, Chấm bài, Báo cáo chu kỳ, Khung năng lực chung, Đào tạo đội ngũ, Minh chứng thực tế, Hoạt động, Góp ý, Báo lỗi.",
+      "status": "PASS",
+      "api": [
+        "POST /api/v1/auth/login → 200",
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/notifications → 200",
+        "GET /api/v1/departments?pageIndex=1&pageSize=100 → 200",
+        "GET /api/v1/workforce?departmentId=9a2ee8ee-5c4c-4911-9ed2-bd309bdd9068&pageIndex=1&pageSize=100 → 200",
+        "GET /api/v1/pulse/final-reviews → 200"
+      ],
+      "marks": [
+        "1. Menu quản lý phòng ban",
+        "2. Màn hình đầu tiên của vai trò"
+      ],
+      "at": "09/11/2026 07:54:38"
+    },
+    {
+      "id": "FE02",
+      "screen": "MG-13 Chấm bài",
+      "title": "Hàng đợi chấm bài cuối khóa của nhóm",
+      "url": "/enterprise/team/final-reviews",
+      "role": "MANAGER (manager@digitalent.ai)",
+      "precondition": "Chưa có bài nộp trong phòng OPS",
+      "steps": [
+        "1. Bấm menu \"Chấm bài\""
+      ],
+      "expected": "Trang \"Ra quyết định dựa trên minh chứng.\" với trạng thái trống khi chưa có bài.",
+      "actual": "Tiêu đề \"Ra quyết định dựa trên minh chứng.\"; chưa có bài cần quyết định. (URL: /enterprise/team/final-reviews)",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/notifications → 200",
+        "GET /api/v1/departments?pageIndex=1&pageSize=100 → 200",
+        "GET /api/v1/pulse/final-reviews → 200"
+      ],
+      "marks": [
+        "1. Chấm bài cuối khóa",
+        "2. Chưa có bài trong phạm vi"
+      ],
+      "at": "09/11/2026 07:54:42"
+    },
+    {
+      "id": "FE03",
+      "screen": "EM-T1 Học như nhân viên",
+      "title": "Quản lý vào cổng học: tổ chức dùng thử yêu cầu làm bài đánh giá trước",
+      "url": "/enterprise/me",
+      "role": "MANAGER (manager@digitalent.ai)",
+      "precondition": "Tổ chức demo đang dùng thử, manager@ chưa làm bài",
+      "steps": [
+        "1. Mở /enterprise/me (cổng học của quản lý)"
+      ],
+      "expected": "Được đưa tới \"Bài đánh giá năng lực\" (EM-T1) trước khi học.",
+      "actual": "Đưa tới \"Bài đánh giá năng lực\". (URL: /enterprise/me/trial-test)",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/notifications?unreadOnly=true → 200",
+        "GET /api/v1/me/trial-assessment → 200",
+        "GET /api/v1/me/pulse/overview → 200"
+      ],
+      "marks": [
+        "1. Bài đánh giá năng lực (dùng thử)",
+        "2. Menu cổng học"
+      ],
+      "at": "09/11/2026 07:54:46"
+    },
+    {
+      "id": "FE04",
+      "screen": "Phân quyền",
+      "title": "Quản lý không mở được quản trị nhân sự của doanh nghiệp",
+      "url": "/enterprise/members",
+      "role": "MANAGER (manager@digitalent.ai)",
+      "precondition": "MANAGER không có quyền user.read",
+      "steps": [
+        "1. Mở trực tiếp /enterprise/members"
+      ],
+      "expected": "Giao diện chặn bằng trang \"Truy cập bị từ chối\", không hiện dữ liệu của màn hình.",
+      "actual": "Hiện \"Truy cập bị từ chối\" tại /enterprise/members; không hiện nội dung của màn hình.",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/notifications → 200",
+        "GET /api/v1/departments?pageIndex=1&pageSize=100 → 200"
+      ],
+      "marks": [
+        "1. Bị chặn: không đủ quyền"
+      ],
+      "at": "09/11/2026 07:54:50"
+    },
+    {
+      "id": "FE05",
+      "screen": "Phân quyền",
+      "title": "Quản lý không mở được khung năng lực / trần năng lực",
+      "url": "/enterprise/setup",
+      "role": "MANAGER (manager@digitalent.ai)",
+      "precondition": "MANAGER không có quyền quản trị khung",
+      "steps": [
+        "1. Mở trực tiếp /enterprise/setup"
+      ],
+      "expected": "Giao diện chặn bằng trang \"Truy cập bị từ chối\", không hiện dữ liệu của màn hình.",
+      "actual": "Hiện \"Truy cập bị từ chối\" tại /enterprise/setup; không hiện nội dung của màn hình.",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/notifications → 200",
+        "GET /api/v1/departments?pageIndex=1&pageSize=100 → 200"
+      ],
+      "marks": [
+        "1. Bị chặn: không đủ quyền"
+      ],
+      "at": "09/11/2026 07:54:54"
+    }
+  ]
+}

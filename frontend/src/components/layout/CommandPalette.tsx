@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X } from 'lucide-react';
@@ -24,11 +25,12 @@ function useFilteredScreens(query: string): ScreenDef[] {
     if (screen.permission && !hasPermission(screen.permission)) return false;
     if (!screen.roles.includes('*') && !screen.roles.some((r) => user?.roles.includes(r))) return false;
     if (!query) return true;
-    return screen.title.toLowerCase().includes(query.toLowerCase());
+    return `${screen.title} ${translateUi(screen.title)}`.toLowerCase().includes(query.toLowerCase());
   }).slice(0, 8);
 }
 
 export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
+  useUiLanguage();
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const navigate = useNavigate();
@@ -65,7 +67,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       onClick={onClose}
       aria-modal="true"
       role="dialog"
-      aria-label="Tìm kiếm"
+      aria-label={translateUi("Tìm kiếm")}
     >
       <div
         className="bg-ent-card border border-ent-line rounded-xl shadow-2xl w-full max-w-lg mx-4"
@@ -83,7 +85,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             className="flex-1 bg-transparent text-ent-fg placeholder:text-ent-fg-3 text-sm outline-none"
             aria-autocomplete="list"
           />
-          <button onClick={onClose} aria-label="Đóng" className="text-ent-fg-3 hover:text-ent-fg">
+          <button onClick={onClose} aria-label={translateUi("Đóng")} className="text-ent-fg-3 hover:text-ent-fg">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -105,16 +107,16 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
               onClick={() => handleSelect(screen)}
               onMouseEnter={() => setActiveIndex(i)}
             >
-              <span className="flex-1">{screen.title}</span>
+              <span className="flex-1">{translateUi(screen.title)}</span>
               <span className="text-[10px] text-ent-fg-3 font-mono">{screen.id}</span>
             </li>
           ))}
         </ul>
 
         <div className="px-4 py-2 border-t border-ent-line flex gap-3 text-[10px] text-ent-fg-3">
-          <span><kbd className="font-mono">↑↓</kbd> điều hướng</span>
-          <span><kbd className="font-mono">↵</kbd> chọn</span>
-          <span><kbd className="font-mono">Esc</kbd> đóng</span>
+          <span><kbd className="font-mono">↑↓</kbd>{translateUi(" điều hướng")}</span>
+          <span><kbd className="font-mono">↵</kbd>{translateUi(" chọn")}</span>
+          <span><kbd className="font-mono">Esc</kbd>{translateUi(" đóng")}</span>
         </div>
       </div>
     </div>

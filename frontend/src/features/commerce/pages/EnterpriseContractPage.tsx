@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -18,6 +19,7 @@ import { purchaseService } from '@/services/purchase.service';
 import { USE_MOCK } from '@/services/mock/mock-config';
 
 export function EnterpriseContractPage() {
+  useUiLanguage();
   const user = useCurrentUser((s) => s.user);
   const navigate = useNavigate();
   const refreshSession = useRefreshSession();
@@ -174,7 +176,7 @@ export function EnterpriseContractPage() {
                   <span className="font-mono">{formatVnd(totalAmount)}</span>
                 </div>
                 <div className="flex justify-between text-[11px] text-stone-300">
-                  <span>Quy mô: {seats} người dùng</span>
+                  <span>Quy mô: {seats}{translateUi(" người dùng")}</span>
                   <span>Chu kỳ: {cycle === 'year' ? '12 tháng (Tiết kiệm 20%)' : 'Hàng tháng'}</span>
                 </div>
               </div>
@@ -229,7 +231,7 @@ export function EnterpriseContractPage() {
                     type="text"
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
-                    placeholder="VD: Công ty Cổ phần Công nghệ ABC"
+                    placeholder={translateUi("VD: Công ty Cổ phần Công nghệ ABC")}
                     className={DARK_INPUT_CLASS}
                   />
                 </div>
@@ -309,7 +311,7 @@ export function EnterpriseContractPage() {
                         disabled={sendOtpMutation.isPending}
                         className="text-xs text-[#F5CA65] underline hover:text-amber-300 font-medium"
                       >
-                        {sendOtpMutation.isPending ? 'Đang gửi…' : 'Gửi mã OTP'}
+                        {sendOtpMutation.isPending ? translateUi('Đang gửi…') : 'Gửi mã OTP'}
                       </button>
                     ) : (
                       <button
@@ -342,7 +344,7 @@ export function EnterpriseContractPage() {
                   )}
                 </div>
 
-                {errorMsg && <FormError message={errorMsg} />}
+                {errorMsg && <FormError message={translateUi(errorMsg)} />}
 
                 <button
                   type="button"

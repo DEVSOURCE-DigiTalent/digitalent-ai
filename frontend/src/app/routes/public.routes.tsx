@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { lazy, Suspense } from 'react';
 import { Navigate, useLocation, type RouteObject } from 'react-router-dom';
 import { PortalSelectorPage, RootRoute } from '../../features/portal/PortalSelectorPage';
@@ -23,10 +24,11 @@ const PublicVerifyPage = lazyPage(() => import('../../features/public/pages/Publ
 const EnterpriseLandingPage = lazy(() => import('../../features/public/pulse-landing/PulseBusinessLandingPage').then(module => ({ default: module.PulseBusinessLandingPage })));
 const EnterpriseSolutionPage = lazy(() => import('../../features/public/pulse-landing/PulseBusinessSolutionPage').then(module => ({ default: module.PulseBusinessSolutionPage })));
 
-const landingFallback = <PageLoading label="Đang tải trang" />;
+const landingFallback = <PageLoading label={translateUi("Đang tải trang")} />;
 
 /** Old bookmarks and emails still point at /business/login and /individual/login; keep their returnTo. */
 function LegacyLoginRedirect() {
+  useUiLanguage();
   const { search } = useLocation();
   return <Navigate to={{ pathname: '/login', search }} replace />;
 }

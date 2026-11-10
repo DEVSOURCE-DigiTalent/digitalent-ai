@@ -250,7 +250,13 @@ route('GET', '/intelligence/dashboard', (context) => context.update((data) => {
 route('GET', '/intelligence/reports/overview', (context) => context.update((data) => {
   const { query } = context;
   const rows = snapshots(data, context, query);
-  const scopedEmpIds = new Set(rows.map((r) => r.employee.id));
+  // Learning activity exists before a competency snapshot or position standard does.
+  const scopedEmpIds = new Set(employeesInScope({ org: () => data, session: context.session }).filter((employee) =>
+    employee.status === 'ACTIVE'
+    && (!query.departmentId || employee.departmentId === query.departmentId)
+    && (!query.jobPositionId || employee.jobPositionId === query.jobPositionId)
+    && (!query.jobGrade || data.positions.find((position) => position.id === employee.jobPositionId)?.jobGrade === query.jobGrade)
+  ).map((employee) => employee.id));
 
   // 1. Workforce stats
   const totalEmployees = rows.length;

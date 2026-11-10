@@ -11,6 +11,7 @@ const ERROR_CODE_MESSAGES = new Map<string, string>([
   ['CEILING_ABOVE_ORGANIZATION', 'Mức tối đa của phòng ban không được cao hơn của doanh nghiệp.'],
   ['ORGANIZATION_CEILING_REQUIRED', 'Lưu phạm vi đào tạo của doanh nghiệp trước, rồi mới chỉnh phòng ban.'],
   ['CEILINGS_INCOMPLETE', 'Chọn mức tối đa cho cả 6 lĩnh vực.'],
+  ['COURSE_LICENSE_REQUIRED', 'Cần mua suất học của cấp này trước khi nâng mức tối đa.'],
   ['CATEGORY_NOT_IN_MATRIX', 'Lĩnh vực không thuộc phạm vi đào tạo.'],
 ]);
 

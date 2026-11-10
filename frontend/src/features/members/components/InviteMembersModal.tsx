@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useId, useState } from 'react';
 import {
   FileSpreadsheet,
@@ -64,6 +65,7 @@ interface InviteMembersModalProps {
 }
 
 export function InviteMembersModal({ open, onClose, defaultDepartmentId }: InviteMembersModalProps) {
+  useUiLanguage();
   const user = useCurrentUser((s) => s.user)!;
   const invite = useInviteMembers();
   const roles = assignableRoles(user.roles) as MemberRole[];
@@ -296,9 +298,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
               type="button"
               onClick={handleClose}
               className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-            >
-              Đóng
-            </button>
+            >{translateUi("Đóng")}</button>
             <button
               type="button"
               onClick={handleSend}
@@ -307,12 +307,12 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
             >
               <Send className="size-3.5" />
               {invite.isPending
-                ? 'Đang xử lý...'
+                ? translateUi('Đang xử lý...')
                 : queue.length > 0
                   ? sendInviteNow
-                    ? `Gửi ${queue.length} lời mời ngay`
-                    : `Lưu ${queue.length} nhân sự vào phòng ban`
-                  : 'Xác nhận'}
+                    ? translateUi(`Gửi ${queue.length} lời mời ngay`)
+                    : translateUi(`Lưu ${queue.length} nhân sự vào phòng ban`)
+                  : translateUi('Xác nhận')}
             </button>
           </div>
         </div>
@@ -327,8 +327,8 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
             }`}
           >
             {seatsLeft < 0
-              ? `Danh sách vượt quá ${-seatsLeft} quyền sử dụng gói dịch vụ hiện tại.`
-              : `Gói ${user.subscription?.planName || 'Doanh nghiệp'} còn ${seatsLeft} quyền sử dụng thành viên khả dụng.`}
+              ? translateUi(`Danh sách vượt quá ${-seatsLeft} quyền sử dụng gói dịch vụ hiện tại.`)
+              : translateUi(`Gói ${user.subscription?.planName || 'Doanh nghiệp'} còn ${seatsLeft} quyền sử dụng thành viên khả dụng.`)}
           </div>
         )}
 
@@ -400,12 +400,12 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-emerald-100 bg-emerald-50/50 text-[11px] font-bold text-slate-800">
-                        <th className="px-3.5 py-2 whitespace-nowrap">Họ và tên <span className="text-red-500 font-bold">*</span></th>
-                        <th className="px-3.5 py-2 whitespace-nowrap">Email <span className="text-red-500 font-bold">*</span></th>
-                        <th className="px-3.5 py-2 whitespace-nowrap">Mã nhân viên</th>
-                        <th className="px-3.5 py-2 whitespace-nowrap">Phòng ban <span className="text-red-500 font-bold">*</span></th>
-                        <th className="px-3.5 py-2 whitespace-nowrap">Vị trí công việc</th>
-                        <th className="px-3.5 py-2 whitespace-nowrap">Vai trò</th>
+                        <th className="px-3.5 py-2 whitespace-nowrap">{translateUi("Họ và tên ")}<span className="text-red-500 font-bold">*</span></th>
+                        <th className="px-3.5 py-2 whitespace-nowrap">{translateUi("Email ")}<span className="text-red-500 font-bold">*</span></th>
+                        <th className="px-3.5 py-2 whitespace-nowrap">{translateUi("Mã nhân viên")}</th>
+                        <th className="px-3.5 py-2 whitespace-nowrap">{translateUi("Phòng ban ")}<span className="text-red-500 font-bold">*</span></th>
+                        <th className="px-3.5 py-2 whitespace-nowrap">{translateUi("Vị trí công việc")}</th>
+                        <th className="px-3.5 py-2 whitespace-nowrap">{translateUi("Vai trò")}</th>
                       </tr>
                     </thead>
                     <tbody className="text-[11px] text-slate-700 divide-y divide-emerald-50">
@@ -420,9 +420,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                           {positions[0]?.name || 'Chuyên viên kinh doanh'}
                         </td>
                         <td className="px-3.5 py-2">
-                          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700">
-                            Nhân viên
-                          </span>
+                          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700">{translateUi("Nhân viên")}</span>
                         </td>
                       </tr>
                       <tr className="bg-slate-50/30">
@@ -433,12 +431,10 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                           {departments[1]?.name || departments[0]?.name || 'Kỹ thuật'}
                         </td>
                         <td className="px-3.5 py-2 text-slate-600">
-                          {positions[1]?.name || positions[0]?.name || 'Trưởng nhóm'}
+                          {positions[1]?.name || positions[0]?.name || translateUi('Trưởng nhóm')}
                         </td>
                         <td className="px-3.5 py-2">
-                          <span className="rounded-md bg-blue-100 text-blue-800 px-2 py-0.5 text-[10px] font-bold">
-                            Quản lý
-                          </span>
+                          <span className="rounded-md bg-blue-100 text-blue-800 px-2 py-0.5 text-[10px] font-bold">{translateUi("Quản lý")}</span>
                         </td>
                       </tr>
                     </tbody>
@@ -462,14 +458,14 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
             {previewRows.length === 0 ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                  <span>Chọn tải file lên hoặc dán trực tiếp:</span>
+                  <span>{translateUi("Chọn tải file lên hoặc dán trực tiếp:")}</span>
                   <button
                     type="button"
                     onClick={() => setIsPasting(!isPasting)}
                     className="text-[#304bdf] hover:underline flex items-center gap-1"
                   >
                     <FileText className="size-3.5" />
-                    {isPasting ? 'Chuyển sang chọn file' : 'Dán dữ liệu trực tiếp từ Excel'}
+                    {isPasting ? 'Chuyển sang chọn file' : translateUi('Dán dữ liệu trực tiếp từ Excel')}
                   </button>
                 </div>
 
@@ -518,12 +514,9 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
               <div className="space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl bg-slate-50 border border-slate-200 p-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-800">
-                      Đã đọc {previewRows.length} nhân sự
-                    </span>
+                    <span className="text-xs font-bold text-slate-800">{translateUi("Đã đọc ")}{previewRows.length}{translateUi(" nhân sự")}</span>
                     <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800">
-                      {validPreviewCount} hợp lệ
-                    </span>
+                      {validPreviewCount}{translateUi(" hợp lệ")}</span>
                     {previewRows.length - validPreviewCount > 0 && (
                       <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-800">
                         {previewRows.length - validPreviewCount} cần kiểm tra
@@ -551,9 +544,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                         onClick={handleBatchAssignDept}
                         disabled={!batchDeptId}
                         className="rounded-lg bg-slate-200 hover:bg-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 disabled:opacity-40"
-                      >
-                        Áp dụng
-                      </button>
+                      >{translateUi("Áp dụng")}</button>
                     </div>
 
                     <button
@@ -572,13 +563,13 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                     <thead className="bg-slate-100/80 sticky top-0 z-10 text-slate-600 font-bold border-b border-slate-200">
                       <tr>
                         <th className="py-2.5 px-3 w-8">#</th>
-                        <th className="py-2.5 px-3">Họ và tên</th>
-                        <th className="py-2.5 px-3">Email</th>
+                        <th className="py-2.5 px-3">{translateUi("Họ và tên")}</th>
+                        <th className="py-2.5 px-3">{translateUi("Email")}</th>
                         <th className="py-2.5 px-3">Mã NV</th>
                         <th className="py-2.5 px-3">Phòng ban *</th>
-                        <th className="py-2.5 px-3">Vị trí</th>
-                        <th className="py-2.5 px-3">Vai trò</th>
-                        <th className="py-2.5 px-3 text-center w-10">Xóa</th>
+                        <th className="py-2.5 px-3">{translateUi("Vị trí")}</th>
+                        <th className="py-2.5 px-3">{translateUi("Vai trò")}</th>
+                        <th className="py-2.5 px-3 text-center w-10">{translateUi("Xóa")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
@@ -657,9 +648,9 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                                 onChange={(e) => updatePreviewRow(row.id, { role: e.target.value as MemberRole })}
                                 className="rounded-lg border border-slate-200 bg-white px-1.5 py-1 text-xs text-slate-800 outline-none"
                               >
-                                <option value="EMPLOYEE">Nhân viên</option>
-                                <option value="MANAGER">Quản lý</option>
-                                <option value="OWNER">Chủ sở hữu</option>
+                                <option value="EMPLOYEE">{translateUi("Nhân viên")}</option>
+                                <option value="MANAGER">{translateUi("Quản lý")}</option>
+                                <option value="OWNER">{translateUi("Chủ sở hữu")}</option>
                               </select>
                             </td>
                             <td className="py-2 px-3 text-center">
@@ -685,8 +676,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                     disabled={validPreviewCount === 0}
                     className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 px-4 py-2 text-xs font-bold text-white shadow-sm disabled:opacity-40"
                   >
-                    <Plus className="size-4" />
-                    Thêm {validPreviewCount} nhân sự hợp lệ vào danh sách chờ gửi
+                    <Plus className="size-4" />{translateUi("Thêm ")}{validPreviewCount} nhân sự hợp lệ vào danh sách chờ gửi
                   </button>
                 </div>
               </div>
@@ -744,9 +734,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
               </div>
 
               <div className="space-y-1">
-                <label htmlFor={`${base}-code`} className="text-xs font-semibold text-slate-700">
-                  Mã nhân viên
-                </label>
+                <label htmlFor={`${base}-code`} className="text-xs font-semibold text-slate-700">{translateUi("Mã nhân viên")}</label>
                 <input
                   id={`${base}-code`}
                   placeholder="VD: NV012"
@@ -775,8 +763,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
               </div>
 
               <div className="space-y-1">
-                <label htmlFor={`${base}-department`} className="text-xs font-semibold text-slate-700">
-                  Phòng ban {draft.role !== 'OWNER' ? '*' : ''}
+                <label htmlFor={`${base}-department`} className="text-xs font-semibold text-slate-700">{translateUi("Phòng ban ")}{draft.role !== 'OWNER' ? '*' : ''}
                 </label>
                 <select
                   id={`${base}-department`}
@@ -800,8 +787,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
               </div>
 
               <div className="space-y-1">
-                <label htmlFor={`${base}-position`} className="text-xs font-semibold text-slate-700">
-                  Vị trí công việc {draft.role === 'EMPLOYEE' ? '*' : ''}
+                <label htmlFor={`${base}-position`} className="text-xs font-semibold text-slate-700">{translateUi("Vị trí công việc ")}{draft.role === 'EMPLOYEE' ? '*' : ''}
                 </label>
                 <select
                   id={`${base}-position`}
@@ -854,9 +840,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                 type="button"
                 onClick={() => setQueue([])}
                 className="text-slate-400 hover:text-red-600 text-[11px]"
-              >
-                Xóa tất cả
-              </button>
+              >{translateUi("Xóa tất cả")}</button>
             </div>
 
             <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">

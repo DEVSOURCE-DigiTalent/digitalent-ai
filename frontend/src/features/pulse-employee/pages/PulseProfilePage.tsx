@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -86,8 +87,9 @@ function getPasswordStrength(pass: string): { score: number; label: string; colo
  * - Chưa đạt (empty): Màu xám nhạt trung tính
  */
 function LevelBar4({ verified, target }: { verified: number; target: number }) {
+  useUiLanguage();
   return (
-    <div className="pu-benchmark-level-track" title={`Hiện tại: L${verified} / Chuẩn vị trí: L${target}`}>
+    <div className="pu-benchmark-level-track" title={translateUi(`Hiện tại: L${verified} / Chuẩn vị trí: L${target}`)}>
       {[1, 2, 3, 4].map((lvl) => {
         const isDone = lvl <= verified;
         const isTarget = lvl === target && verified < target;
@@ -111,6 +113,7 @@ function LevelBar4({ verified, target }: { verified: number; target: number }) {
  * - Tab 3: Tùy chọn Cá nhân & Thông báo (Preferences)
  */
 export function PulseProfilePage() {
+  useUiLanguage();
   const [activeTab, setActiveTab] = useState<ProfileTab>('competency');
   const [copiedCode, setCopiedCode] = useState(false);
 
@@ -154,7 +157,7 @@ export function PulseProfilePage() {
   }, []);
 
   if (isLoading) return <PageSkeleton blocks={[140, 90, 320]} />;
-  if (error || !data) return <LoadError message={pulseErrorMessage(error, 'Không tải được hồ sơ.')} onRetry={() => refetch()} />;
+  if (error || !data) return <LoadError message={translateUi(pulseErrorMessage(error, 'Không tải được hồ sơ.'))} onRetry={() => refetch()} />;
 
   const { person, stats } = data;
   const name = (person.fullName && person.fullName !== 'Employee')
@@ -237,7 +240,7 @@ export function PulseProfilePage() {
             <User size={13} className="text-blue-800" />
             <span>Hồ sơ Cá nhân & Năng lực</span>
           </div>
-          <h1 className="pu-path-main-title">Hồ sơ cá nhân</h1>
+          <h1 className="pu-path-main-title">{translateUi("Hồ sơ cá nhân")}</h1>
           <p className="pu-path-sub-title">
             Quản trị thông tin cá nhân, hồ sơ năng lực số đã bảo chứng, thiết lập bảo mật và tùy chọn tài khoản.
           </p>
@@ -300,7 +303,7 @@ export function PulseProfilePage() {
       {activeTab === 'competency' && (
         <div key="competency" className="pu-tab-pane pu-stack">
           {/* ── Tối giản Hero Card (Clean Executive Light) ────────────────── */}
-          <section className="pu-minimal-hero" aria-label="Thông tin cá nhân">
+          <section className="pu-minimal-hero" aria-label={translateUi("Thông tin cá nhân")}>
             <div className="pu-minimal-hero-left">
               <div className="pu-minimal-avatar" aria-hidden="true">
                 {initials(name)}
@@ -372,7 +375,7 @@ export function PulseProfilePage() {
                 <span className="pu-tkpi-title">Khoảng cách kỹ năng</span>
                 <AlertTriangle className="w-4 h-4 text-amber-500" />
               </div>
-              <div className="pu-tkpi-value" style={{ color: '#b45309' }}>{gapDomainCount} lĩnh vực</div>
+              <div className="pu-tkpi-value" style={{ color: '#b45309' }}>{gapDomainCount}{translateUi(" lĩnh vực")}</div>
               <div className="pu-tkpi-footer">
                 <span style={{ color: '#b45309' }}>Cần bồi dưỡng theo vị trí</span>
               </div>
@@ -383,7 +386,7 @@ export function PulseProfilePage() {
                 <span className="pu-tkpi-title">Năng lực đã bảo chứng</span>
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               </div>
-              <div className="pu-tkpi-value" style={{ color: '#047857' }}>{metDomainCount} lĩnh vực</div>
+              <div className="pu-tkpi-value" style={{ color: '#047857' }}>{metDomainCount}{translateUi(" lĩnh vực")}</div>
               <div className="pu-tkpi-footer">
                 <span style={{ color: '#047857' }}>Đã đạt chuẩn vị trí</span>
               </div>
@@ -425,13 +428,13 @@ export function PulseProfilePage() {
               <table className="pu-benchmark-table">
                 <thead>
                   <tr>
-                    <th>Lĩnh vực năng lực</th>
-                    <th>Hiện tại</th>
-                    <th>Chuẩn vị trí</th>
-                    <th>Tối đa PB</th>
+                    <th>{translateUi("Lĩnh vực năng lực")}</th>
+                    <th>{translateUi("Hiện tại")}</th>
+                    <th>{translateUi("Chuẩn vị trí")}</th>
+                    <th>{translateUi("Tối đa PB")}</th>
                     <th>Tiến độ (L1 - L4)</th>
                     <th>Chênh lệch</th>
-                    <th style={{ textAlign: 'right' }} className="pu-no-print">Thao tác</th>
+                    <th style={{ textAlign: 'right' }} className="pu-no-print">{translateUi("Thao tác")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -449,7 +452,7 @@ export function PulseProfilePage() {
                               {domainIcon}
                             </div>
                             <div>
-                              <div className="pu-benchmark-domain-name">{domain.name}</div>
+                              <div className="pu-benchmark-domain-name">{translateUi(domain.name)}</div>
                               <div className="pu-benchmark-domain-meta">
                                 <span className="pu-benchmark-code-tag">
                                   {formatDomainCode(domain)}
@@ -463,7 +466,7 @@ export function PulseProfilePage() {
                           {domain.verified > 0 ? (
                             <span className="pu-benchmark-pill-verified">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              L{domain.verified} · {domain.verified >= 2 ? 'Trung cấp' : 'Cơ bản'}
+                              L{domain.verified} · {domain.verified >= 2 ? translateUi('Trung cấp') : translateUi('Cơ bản')}
                             </span>
                           ) : (
                             <span className="pu-benchmark-pill-unassessed">
@@ -474,7 +477,7 @@ export function PulseProfilePage() {
 
                         <td>
                           <span className="pu-benchmark-pill-target">
-                            L{domain.target} · {domain.target >= 2 ? 'Trung cấp' : 'Cơ bản'}
+                            L{domain.target} · {domain.target >= 2 ? translateUi('Trung cấp') : translateUi('Cơ bản')}
                           </span>
                         </td>
 
@@ -493,14 +496,10 @@ export function PulseProfilePage() {
                         <td>
                           {isMet ? (
                             <span className="pu-benchmark-gap-met">
-                              <Check className="w-3.5 h-3.5" />
-                              Đạt chuẩn
-                            </span>
+                              <Check className="w-3.5 h-3.5" />{translateUi("Đạt chuẩn")}</span>
                           ) : diff > 0 ? (
                             <span className={diff > 1 ? 'pu-benchmark-gap-danger' : 'pu-benchmark-gap-warning'}>
-                              {diff > 1 ? <AlertCircle className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
-                              Thiếu {diff} cấp
-                            </span>
+                              {diff > 1 ? <AlertCircle className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}{translateUi("Thiếu ")}{diff}{translateUi(" cấp")}</span>
                           ) : (
                             <span className="pu-benchmark-gap-met">
                               Ngoài lộ trình
@@ -541,7 +540,7 @@ export function PulseProfilePage() {
               </div>
               <div className="pu-legend-item">
                 <span className="pu-legend-dot" style={{ background: '#e2e8f0' }} />
-                <span>Chưa hoàn thành</span>
+                <span>{translateUi("Chưa hoàn thành")}</span>
               </div>
             </div>
           </section>
@@ -578,23 +577,20 @@ export function PulseProfilePage() {
                           Chứng chỉ năng lực số
                         </span>
                         <span className="pu-cert-status">
-                          <span className="pu-status-dot" />
-                          Đã duyệt
-                        </span>
+                          <span className="pu-status-dot" />{translateUi("Đã duyệt")}</span>
                       </div>
 
                       {outcome.subtitle && (
-                        <div className="pu-cert-domain">{outcome.subtitle}</div>
+                        <div className="pu-cert-domain">{translateUi(outcome.subtitle)}</div>
                       )}
 
-                      <h3 className="pu-cert-title">{outcome.title}</h3>
+                      <h3 className="pu-cert-title">{translateUi(outcome.title)}</h3>
 
                       <div className="pu-cert-meta-row">
                         <span className="pu-cert-date">
                           Cấp ngày: {formatDate(outcome.issuedAt)}
                         </span>
-                        <span className="pu-cert-ref">
-                          Mã: <code>{outcome.reference}</code>
+                        <span className="pu-cert-ref">{translateUi("Mã: ")}<code>{outcome.reference}</code>
                         </span>
                       </div>
                     </div>
@@ -650,8 +646,8 @@ export function PulseProfilePage() {
                     type="button"
                     className="pu-password-toggle-btn"
                     onClick={() => setShowCurPass(!showCurPass)}
-                    title={showCurPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                    aria-label={showCurPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                    title={translateUi(showCurPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu')}
+                    aria-label={translateUi(showCurPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu')}
                   >
                     {showCurPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -676,8 +672,8 @@ export function PulseProfilePage() {
                     type="button"
                     className="pu-password-toggle-btn"
                     onClick={() => setShowNewPass(!showNewPass)}
-                    title={showNewPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                    aria-label={showNewPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                    title={translateUi(showNewPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu')}
+                    aria-label={translateUi(showNewPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu')}
                   >
                     {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -691,7 +687,7 @@ export function PulseProfilePage() {
                       <div className={`pu-pass-strength-seg ${getPasswordStrength(newPassword).score >= 3 ? 'active-strong' : ''}`} />
                     </div>
                     <span className="pu-pass-strength-label" style={{ color: getPasswordStrength(newPassword).color }}>
-                      Độ mạnh: {getPasswordStrength(newPassword).label}
+                      Độ mạnh: {translateUi(getPasswordStrength(newPassword).label)}
                     </span>
                   </div>
                 )}
@@ -715,8 +711,8 @@ export function PulseProfilePage() {
                     type="button"
                     className="pu-password-toggle-btn"
                     onClick={() => setShowConfirmPass(!showConfirmPass)}
-                    title={showConfirmPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                    aria-label={showConfirmPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                    title={translateUi(showConfirmPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu')}
+                    aria-label={translateUi(showConfirmPass ? 'Ẩn mật khẩu' : 'Hiện mật khẩu')}
                   >
                     {showConfirmPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -751,10 +747,10 @@ export function PulseProfilePage() {
                 <table className="pu-login-table">
                   <thead>
                     <tr>
-                      <th>Thời gian</th>
+                      <th>{translateUi("Thời gian")}</th>
                       <th>IP</th>
                       <th>Trình duyệt & OS</th>
-                      <th>Trạng thái</th>
+                      <th>{translateUi("Trạng thái")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -772,7 +768,7 @@ export function PulseProfilePage() {
                           </td>
                           <td>
                             <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: item.status === 'SUCCESS' ? '#ecfdf5' : '#fef2f2', color: item.status === 'SUCCESS' ? '#065f46' : '#991b1b' }}>
-                              {item.status === 'SUCCESS' ? 'Thành công' : 'Thất bại'}
+                              {item.status === 'SUCCESS' ? translateUi('Thành công') : translateUi('Thất bại')}
                             </span>
                           </td>
                         </tr>
@@ -997,7 +993,7 @@ export function PulseProfilePage() {
                   className="pu-input-field"
                   style={{ width: 'auto', minWidth: 140 }}
                 >
-                  <option value="vi">Tiếng Việt</option>
+                  <option value="vi">{translateUi("Tiếng Việt")}</option>
                   <option value="en">English</option>
                 </select>
               </div>

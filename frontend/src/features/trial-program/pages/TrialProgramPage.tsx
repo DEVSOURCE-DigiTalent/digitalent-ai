@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, ArrowRight, Camera, Clock, Mic, Monitor, Send } from 'lucide-react';
@@ -26,6 +27,7 @@ const MIN_DEADLINE_MINUTES = 30;
 
 /** OW-T1 · Đánh giá đội ngũ: mời nhân viên, đặt hạn, theo dõi bài làm, đóng bài và xem báo cáo năng lực. */
 export function TrialProgramPage() {
+  useUiLanguage();
   const { data, isLoading, error } = useTrialProgram();
 
   return (
@@ -140,6 +142,7 @@ function OwnerParticipation({ program }: { program: TrialProgram }) {
 
 /** Bước 1–2: danh sách nhân viên + hạn làm bài, gửi một lần. */
 function SetupView({ program, onInvited }: { program: TrialProgram; onInvited: (result: TrialInviteResult) => void }) {
+  useUiLanguage();
   const [rows, setRows] = useState<TrialParticipantRow[]>(emptyRows());
   const [deadline, setDeadline] = useState(defaultDeadline());
   const [result, setResult] = useState<TrialInviteResult | null>(null);
@@ -372,6 +375,7 @@ function EmployeeLevels({ result }: { result?: TrialReportEmployee }) {
 
 /** Gửi lại email mời (link mới, lời mời cũ hết hiệu lực) cho nhân viên chưa kích hoạt. */
 function ResendButton({ participant, onResent }: { participant: TrialParticipant; onResent: (result: TrialInviteResult) => void }) {
+  useUiLanguage();
   const resend = useResendTrialInvitation();
   return (
     <button
@@ -388,12 +392,13 @@ function ResendButton({ participant, onResent }: { participant: TrialParticipant
         })
       }
     >
-      {resend.isPending ? 'Đang gửi…' : 'Gửi lại'}
+      {resend.isPending ? translateUi('Đang gửi…') : translateUi('Gửi lại')}
     </button>
   );
 }
 
 function AddParticipants({ program, onDone }: { program: TrialProgram; onDone: () => void }) {
+  useUiLanguage();
   const [rows, setRows] = useState<TrialParticipantRow[]>(emptyRows(1));
   const [result, setResult] = useState<TrialInviteResult | null>(null);
   const invite = useInviteTrialParticipants();
@@ -477,6 +482,7 @@ function ExamSummary({ program }: { program: TrialProgram }) {
 }
 
 function InviteResult({ result }: { result: TrialInviteResult | null }) {
+  useUiLanguage();
   if (!result) return null;
   const links = result.invited.filter((i) => i.debugLink);
   return (

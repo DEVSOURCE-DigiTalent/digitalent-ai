@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Award, BookOpen, ClipboardCheck, FileCheck2, Flag, GraduationCap } from 'lucide-react';
 import type { ActivityKind, PersonalActivity } from '@/services/personal-learning.service';
 import { formatDateTime, formatRelativeDay } from '../utils/format';
@@ -13,6 +14,7 @@ const ICONS: Record<ActivityKind, typeof Flag> = {
 
 /** Recent learning events, newest first, on a thin timeline. */
 export function ActivityList({ items }: { items: PersonalActivity[] }) {
+  useUiLanguage();
   if (items.length === 0) {
     return <p className="text-sm text-pt-fg-3">Chưa có hoạt động nào. Mọi bước học sẽ hiện ở đây.</p>;
   }
@@ -26,9 +28,9 @@ export function ActivityList({ items }: { items: PersonalActivity[] }) {
               <Icon className="size-3.5" aria-hidden="true" />
             </span>
             <div className="min-w-0 pt-1">
-              <p className="text-sm leading-snug text-pt-fg">{item.title}</p>
+              <p className="text-sm leading-snug text-pt-fg">{translateUi(item.title)}</p>
               <p className="mt-0.5 truncate text-xs text-pt-fg-3">
-                <time dateTime={item.at} title={formatDateTime(item.at)}>{formatRelativeDay(item.at)}</time>
+                <time dateTime={item.at} title={translateUi(formatDateTime(item.at))}>{formatRelativeDay(item.at)}</time>
                 {item.detail && <> · {item.detail}</>}
               </p>
             </div>

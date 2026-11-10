@@ -1,8 +1,11 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import React from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { Wordmark } from '@/components/brand/Wordmark';
+import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 
 export const PublicLayout: React.FC = () => {
+  useUiLanguage();
   return (
     <div data-testid="public-layout" className="public-layout min-h-screen flex flex-col font-sans">
       <header className="flex items-center justify-between p-4 bg-white border-b">
@@ -11,11 +14,12 @@ export const PublicLayout: React.FC = () => {
             <Wordmark className="text-base text-blue-700" />
           </Link>
           <nav className="hidden md:flex gap-4">
-            <Link to="/" className="text-gray-600 hover:text-gray-900">Trang chủ</Link>
+            <Link to="/" className="text-gray-600 hover:text-gray-900">{translateUi("Trang chủ")}</Link>
             <Link to="/careers" className="text-gray-600 hover:text-gray-900">Vị trí nghề nghiệp</Link>
           </nav>
         </div>
         <div className="flex items-center gap-4">
+          <LanguageSwitcher />
           <Link to="/experience?role=personal" className="text-sm font-medium text-blue-700 hover:underline">
             Xem mẫu cá nhân
           </Link>
