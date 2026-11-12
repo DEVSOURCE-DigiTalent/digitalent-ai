@@ -2,7 +2,6 @@ import { ROLES } from '../roles';
 import type { ScreenDef } from './types';
 
 const ADMIN = [ROLES.PLATFORM_ADMIN];
-const STAFF = [ROLES.PLATFORM_ADMIN, ROLES.MENTOR];
 
 /**
  * Platform Admin sitemap — Pulse redesign (docs/ui-redesign/16-pulse-product-flow-detailed.md §12.4, §12.6 and §14),
@@ -23,16 +22,13 @@ export const PLATFORM_SCREENS: ScreenDef[] = [
   { id: 'PA-08', title: 'Chi tiết người dùng', path: '/platform/users/:id', roles: ADMIN, permission: 'platform.user.read', priority: 'P0', aliases: ['PLT-05-USER-DETAIL'] },
   { id: 'PA-09', title: 'Đơn giá', path: '/platform/commerce', roles: ADMIN, permission: 'platform.commerce.read', priority: 'P0', aliases: ['PLT-10', 'PLT-11'] },
   { id: 'PA-10', title: 'Nhật ký kiểm tra', path: '/platform/audit-log', roles: ADMIN, permission: 'audit_log.read_system', priority: 'P0', aliases: ['PLT-12'] },
-  // Dùng thử doanh nghiệp (docs/specs/2026-10-27-enterprise-trial-assessment.md): yêu cầu chấm, phân công mentor; mentor chấm bài
+  // Dùng thử doanh nghiệp (docs/specs/2026-10-27-enterprise-trial-assessment.md): yêu cầu chấm, phân công mentor
   { id: 'PA-14', title: 'Dùng thử doanh nghiệp', path: '/platform/trials', roles: ADMIN, permission: 'platform.trial.manage', priority: 'P0' },
-  { id: 'MT-01', title: 'Hàng chờ thẩm định', path: '/platform/course-reviews', roles: STAFF, permission: 'trial.review', priority: 'P0' },
-  { id: 'MT-02', title: 'Thẩm định bài cuối khóa', path: '/platform/course-reviews/:submissionId', roles: STAFF, permission: 'trial.review', priority: 'P0' },
-  { id: 'MT-03', title: 'Thẩm định năng lực đầu ra', path: '/platform/reviews', roles: STAFF, permission: 'trial.review', priority: 'P1' },
   { id: 'PA-15', title: 'Góp ý người dùng', path: '/platform/feedbacks', roles: ADMIN, permission: 'feedback.read_all', priority: 'P0' },
   { id: 'PA-16', title: 'Báo lỗi người dùng', path: '/platform/bug-reports', roles: ADMIN, permission: 'feedback.read_all', priority: 'P0' },
-  { id: 'SHR-01', title: 'Hồ sơ của tôi', path: '/platform/account', roles: STAFF, priority: 'P1' },
-  { id: 'SHR-02', title: 'Bảo mật', path: '/platform/account/security', roles: STAFF, priority: 'P1' },
-  { id: 'SHR-03', title: 'Trung tâm thông báo', path: '/platform/notifications', roles: STAFF, priority: 'P1' },
+  { id: 'SHR-01', title: 'Hồ sơ của tôi', path: '/platform/account', roles: ADMIN, priority: 'P1' },
+  { id: 'SHR-02', title: 'Bảo mật', path: '/platform/account/security', roles: ADMIN, priority: 'P1' },
+  { id: 'SHR-03', title: 'Trung tâm thông báo', path: '/platform/notifications', roles: ADMIN, priority: 'P1' },
 ];
 
 export function findPlatformScreen(id: string): ScreenDef | undefined {

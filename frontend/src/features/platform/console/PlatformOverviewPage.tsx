@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { usePlatformOverview } from '@/hooks/use-platform-admin';
+import { usePlatformTrials } from '@/hooks/use-trial-program';
 import type { PlatformOverview } from '@/services/platform-admin.service';
 import { Footer, LoadError, Loading, Pill } from '../components/pulse-ui';
 import {
@@ -28,40 +29,48 @@ import {
   Clock,
   Sparkles,
   Gem,
+  RefreshCw,
+  FlaskConical,
 } from 'lucide-react';
 
 /** PA-01 · Bento Executive Dashboard: the catalog anchor, draft, customers, trials, action center & quick actions. */
 export function PlatformOverviewPage() {
-  const { data, isLoading, error, refetch } = usePlatformOverview();
+  const { data, isLoading, error, refetch, isFetching } = usePlatformOverview();
+  const trials = usePlatformTrials();
+  const pendingTrialsCount = (trials.data ?? []).filter((t) => t.stage === 'REQUESTED').length;
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+      <div className="flex items-start justify-between flex-wrap gap-4 pb-2 border-b border-slate-200/80 mb-6">
         <div>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#d97706' }} />
+          <span className="text-xs font-bold text-amber-700 tracking-wider uppercase flex items-center gap-1.5 mb-1">
+            <span className="w-2 h-2 rounded-full bg-amber-600 inline-block" />
             Quản trị nền tảng / Tổng quan
           </span>
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', margin: '6px 0 4px' }}>
-            Toàn cảnh nền tảng hôm nay.
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight m-0" aria-label="Toàn cảnh nền tảng hôm nay.">
+            Bảng điều khiển vận hành nền tảng
           </h1>
-          <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>
-            Phiên bản khóa học đang dùng, khách hàng B2B, người dùng thử và các tác vụ khẩn cấp.
+          <p className="text-sm text-slate-500 mt-1 mb-0">
+            Giám sát phiên bản chuẩn, khách hàng doanh nghiệp B2B, đánh giá dùng thử và hàng chờ tác vụ khẩn cấp.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="flex items-center gap-2.5">
           <button
             type="button"
-            className="btn btn-outline btn-small"
-            onClick={() => refetch()}
+            className="btn btn-outline btn-small inline-flex items-center gap-1.5"
+            onClick={() => {
+              void refetch();
+              void trials.refetch();
+            }}
             title="Làm mới dữ liệu từ máy chủ"
           >
-            Làm mới
+            <RefreshCw size={14} className={isFetching ? 'animate-spin' : ''} />
+            <span>Làm mới</span>
           </button>
-          <Link to="/platform/organizations" className="btn btn-primary btn-small">
-            <Plus size={14} style={{ marginRight: 4 }} />
-            Thêm tổ chức mới
+          <Link to="/platform/organizations" className="btn btn-primary btn-small inline-flex items-center gap-1.5">
+            <Plus size={14} />
+            <span>Thêm tổ chức</span>
           </Link>
         </div>
       </div>
@@ -186,9 +195,9 @@ export function PlatformOverviewPage() {
                   <AlertTriangle size={17} style={{ color: '#d97706' }} />
                   <h2 className="pa-box-title">Việc cần xử lý khẩn cấp</h2>
                 </div>
-                <ActionCenterBadge data={data} />
+                <ActionCenterBadge data={data} pendingTrialsCount={pendingTrialsCount} />
               </div>
-              <ActionCenterItems data={data} />
+              <ActionCenterItems data={data} pendingTrialsCount={pendingTrialsCount} />
             </div>
 
             {/* Quick Actions Card & Conversion Health */}
@@ -210,12 +219,12 @@ export function PlatformOverviewPage() {
                   <span className="pa-quick-action-desc">Kích hoạt doanh nghiệp B2B mới</span>
                 </Link>
 
-                <Link to="/platform/reference-positions" className="pa-quick-action-btn">
+                <Link to="/platform/trials" className="pa-quick-action-btn">
                   <div className="pa-quick-action-top">
-                    <Briefcase size={16} style={{ color: '#0284c7' }} />
-                    <span className="pa-quick-action-title">Mẫu vị trí</span>
+                    <FlaskConical size={16} style={{ color: '#d97706' }} />
+                    <span className="pa-quick-action-title">Đánh giá dùng thử</span>
                   </div>
-                  <span className="pa-quick-action-desc">Thư viện chức danh chuẩn TT02</span>
+                  <span className="pa-quick-action-desc">Phân công mentor & thẩm định</span>
                 </Link>
 
                 <Link to="/platform/versions" className="pa-quick-action-btn">
@@ -377,7 +386,7 @@ export function PlatformOverviewPage() {
             </div>
           </div>
 
-          {/* Ecosystem Standard Content Strip */}
+          {/* Standard Content Strip */}
           <div
             style={{
               display: 'grid',
@@ -477,7 +486,7 @@ export function PlatformOverviewPage() {
   );
 }
 
-function ActionCenterBadge({ data }: { data: PlatformOverview }) {
+function ActionCenterBadge({ data, pendingTrialsCount = 0 }: { data: PlatformOverview; pendingTrialsCount?: number }) {
   let count = 0;
   if (data.draftVersionNo && (data.draftNewCourseCount + data.draftEditedCourseCount > 0)) count++;
   if (data.trialEndingSoonCount > 0) count++;
@@ -485,6 +494,7 @@ function ActionCenterBadge({ data }: { data: PlatformOverview }) {
   if (data.lockedUserCount > 0) count++;
   if (data.draftFrameworkCount > 0) count++;
   if (data.pausedCourseCount > 0) count++;
+  if (pendingTrialsCount > 0) count++;
 
   if (count === 0) {
     return <span className="pa-count-badge neutral">0 việc</span>;
@@ -492,9 +502,22 @@ function ActionCenterBadge({ data }: { data: PlatformOverview }) {
   return <span className="pa-count-badge">{count} việc cần xử lý</span>;
 }
 
-function ActionCenterItems({ data }: { data: PlatformOverview }) {
+function ActionCenterItems({ data, pendingTrialsCount = 0 }: { data: PlatformOverview; pendingTrialsCount?: number }) {
   const items: { key: string; tone: string; text: string; to: string; action: string; icon: ReactNode }[] = [];
 
+  // 1. Pending Trial Assessments Queue
+  if (pendingTrialsCount > 0) {
+    items.push({
+      key: 'trials_pending',
+      tone: 'amber',
+      text: `${pendingTrialsCount} yêu cầu chấm bài dùng thử của doanh nghiệp đang chờ phân công Mentor thẩm định.`,
+      to: '/platform/trials',
+      action: 'Phân công ngay',
+      icon: <FlaskConical size={16} style={{ color: '#d97706' }} />,
+    });
+  }
+
+  // 2. Draft Catalog changes
   if (data.draftVersionNo) {
     const changed = data.draftNewCourseCount + data.draftEditedCourseCount;
     if (changed > 0) {
@@ -509,6 +532,7 @@ function ActionCenterItems({ data }: { data: PlatformOverview }) {
     }
   }
 
+  // 3. Personal trials ending soon
   if (data.trialEndingSoonCount > 0) {
     items.push({
       key: 'trial',
@@ -520,6 +544,7 @@ function ActionCenterItems({ data }: { data: PlatformOverview }) {
     });
   }
 
+  // 4. Suspended organizations
   if (data.suspendedOrganizationCount > 0) {
     items.push({
       key: 'suspended',
@@ -531,6 +556,7 @@ function ActionCenterItems({ data }: { data: PlatformOverview }) {
     });
   }
 
+  // 5. Locked users
   if (data.lockedUserCount > 0) {
     items.push({
       key: 'locked',
@@ -542,6 +568,7 @@ function ActionCenterItems({ data }: { data: PlatformOverview }) {
     });
   }
 
+  // 6. Draft frameworks
   if (data.draftFrameworkCount > 0) {
     items.push({
       key: 'framework',
@@ -553,6 +580,7 @@ function ActionCenterItems({ data }: { data: PlatformOverview }) {
     });
   }
 
+  // 7. Paused courses
   if (data.pausedCourseCount > 0) {
     items.push({
       key: 'paused',
@@ -568,7 +596,7 @@ function ActionCenterItems({ data }: { data: PlatformOverview }) {
     return (
       <div style={{ textAlign: 'center', padding: '32px 16px', background: '#f8fafc', borderRadius: 10, border: '1px dashed #e2e8f0' }}>
         <CheckCircle2 size={32} style={{ color: '#10b981', margin: '0 auto 8px' }} />
-        <div style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>Hệ sinh thái đang vận hành ổn định</div>
+        <div style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>Hệ thống đang vận hành ổn định</div>
         <p style={{ fontSize: 12, color: '#64748b', margin: '4px 0 0' }}>
           Không có cảnh báo khẩn cấp hoặc việc tồn đọng cần xử lý.
         </p>

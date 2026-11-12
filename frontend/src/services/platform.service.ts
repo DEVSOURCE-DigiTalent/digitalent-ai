@@ -145,7 +145,7 @@ export interface PlatformUserDto {
   phone?: string;
   jobTitle?: string;
   roles: string[];
-  workspace: 'enterprise' | 'personal' | 'platform';
+  workspace: 'enterprise' | 'personal' | 'platform' | 'mentor';
   organizationId?: string;
   organizationName?: string;
   status: 'ACTIVE' | 'LOCKED';
@@ -275,7 +275,9 @@ export interface NotificationDto {
   id: string;
   title: string;
   message: string;
-  type: 'info' | 'warning' | 'success' | 'alert';
+  type: 'info' | 'warning' | 'success' | 'alert' | string;
+  relatedEntityType?: string | null;
+  relatedEntityId?: string | null;
   createdAt: string;
   isRead: boolean;
   link?: string;

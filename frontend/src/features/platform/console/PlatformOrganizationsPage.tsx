@@ -18,6 +18,10 @@ import {
   Plus,
   FileSpreadsheet,
   ExternalLink,
+  ChevronRight,
+  Sparkles,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 
 const TABS = [
@@ -51,37 +55,35 @@ export function PlatformOrganizationsPage() {
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+      <div className="flex items-start justify-between flex-wrap gap-4 pb-2 border-b border-slate-200/80 mb-6">
         <div>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#d97706' }} />
+          <span className="text-xs font-bold text-amber-700 tracking-wider uppercase flex items-center gap-1.5 mb-1">
+            <span className="w-2 h-2 rounded-full bg-amber-600 inline-block" />
             Quản trị nền tảng / Khách hàng doanh nghiệp
           </span>
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', margin: '6px 0 4px' }}>
-            Doanh nghiệp đang dùng nền tảng.
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight m-0" aria-label="Doanh nghiệp đang dùng nền tảng.">
+            Quản trị tổ chức khách hàng doanh nghiệp
           </h1>
-          <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>
-            Quản trị gói thuê bao, số lượng nhân sự tham gia, phân bổ khóa học theo cấp và cấp suất nâng cao.
+          <p className="text-sm text-slate-500 mt-1 mb-0">
+            Quản lý gói dịch vụ, hạn sử dụng, phân bổ suất học và giám sát tình trạng hoạt động của các doanh nghiệp.
           </p>
         </div>
 
         {/* Split Button Action */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ display: 'inline-flex', borderRadius: 8, boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-xl shadow-2xs overflow-hidden">
             <Link
               to="/business/try"
               target="_blank"
               rel="noreferrer"
-              className="btn btn-primary btn-small"
-              style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
+              className="btn btn-primary btn-small rounded-r-none"
             >
               <Plus size={14} style={{ marginRight: 4 }} />
               Thêm tổ chức
             </Link>
             <button
               type="button"
-              className="btn btn-primary btn-small"
-              style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0, borderLeft: '1px solid rgba(255, 255, 255, 0.25)', padding: '0 8px' }}
+              className="btn btn-primary btn-small rounded-l-none border-l border-white/25 px-2"
               title="Nhập danh sách doanh nghiệp từ tệp Excel/CSV"
               onClick={() => alert('Chức năng nhập tệp hàng loạt (Excel/CSV) dành cho dự án đào tạo đối tác lớn.')}
             >
@@ -90,6 +92,71 @@ export function PlatformOrganizationsPage() {
           </div>
         </div>
       </div>
+
+      {/* Bento Metric Cards */}
+      {data && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 14, marginBottom: 20 }}>
+          <div className="pa-bento-card" style={{ padding: 14, minHeight: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Tổng doanh nghiệp
+              </span>
+              <div className="pa-kpi-icon-wrap emerald" style={{ width: 28, height: 28 }}>
+                <Building2 size={15} />
+              </div>
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', margin: '4px 0 2px' }}>
+              {data.totalItems}
+            </div>
+            <small style={{ fontSize: 12, color: '#64748b' }}>Đang quản lý trên toàn hệ thống</small>
+          </div>
+
+          <div className="pa-bento-card" style={{ padding: 14, minHeight: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Đang dùng thử
+              </span>
+              <div className="pa-kpi-icon-wrap amber" style={{ width: 28, height: 28 }}>
+                <Sparkles size={15} />
+              </div>
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#d97706', margin: '4px 0 2px' }}>
+              {data.items.filter((o) => o.stage === 'TRIAL').length}
+            </div>
+            <small style={{ fontSize: 12, color: '#64748b' }}>Đang trong giai đoạn đánh giá thử nghiệm</small>
+          </div>
+
+          <div className="pa-bento-card" style={{ padding: 14, minHeight: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Đã mua khóa
+              </span>
+              <div className="pa-kpi-icon-wrap sky" style={{ width: 28, height: 28 }}>
+                <CheckCircle2 size={15} />
+              </div>
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#0284c7', margin: '4px 0 2px' }}>
+              {data.items.filter((o) => o.stage === 'PAID').length}
+            </div>
+            <small style={{ fontSize: 12, color: '#64748b' }}>Khách hàng trả phí chính thức</small>
+          </div>
+
+          <div className="pa-bento-card" style={{ padding: 14, minHeight: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Tạm ngưng
+              </span>
+              <div className="pa-kpi-icon-wrap slate" style={{ width: 28, height: 28 }}>
+                <AlertCircle size={15} />
+              </div>
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#64748b', margin: '4px 0 2px' }}>
+              {data.items.filter((o) => o.status === 'SUSPENDED').length}
+            </div>
+            <small style={{ fontSize: 12, color: '#64748b' }}>Tổ chức đang tạm ngưng truy cập</small>
+          </div>
+        </div>
+      )}
 
       <Box>
         <div className="pa-filters pa-row-between" style={{ alignItems: 'center', marginBottom: 18 }}>
@@ -191,12 +258,39 @@ export function PlatformOrganizationsPage() {
                         </div>
                       </td>
                       <td className="num">
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                          <div>
-                            <strong style={{ color: '#0f172a' }}>{o.participantCount}</strong> / {o.employeeCount}
-                          </div>
-                          <small className="pa-cell-sub">nhân viên</small>
-                        </div>
+                        {(() => {
+                          const pct = Math.min(100, Math.round((o.participantCount / Math.max(o.employeeCount, 1)) * 100));
+                          return (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+                              <div>
+                                <strong style={{ color: '#0f172a', fontSize: 13 }}>{o.participantCount}</strong>
+                                <span style={{ color: '#64748b', fontSize: 12 }}> / {o.employeeCount}</span>
+                              </div>
+                              <div
+                                style={{
+                                  width: 72,
+                                  height: 4,
+                                  borderRadius: 9999,
+                                  background: '#e2e8f0',
+                                  overflow: 'hidden',
+                                }}
+                                title={`Tỷ lệ kích hoạt: ${pct}%`}
+                              >
+                                <div
+                                  style={{
+                                    width: `${pct}%`,
+                                    height: '100%',
+                                    borderRadius: 9999,
+                                    background: pct > 80 ? '#10b981' : pct > 30 ? '#0284c7' : '#94a3b8',
+                                  }}
+                                />
+                              </div>
+                              <small className="pa-cell-sub" style={{ fontSize: 10 }}>
+                                {pct}% nhân sự
+                              </small>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td>{formatDate(o.createdAt)}</td>
                       <td>
@@ -207,9 +301,10 @@ export function PlatformOrganizationsPage() {
                             e.stopPropagation();
                             setDrawerOrgId(o.id);
                           }}
-                          style={{ padding: '4px 8px', fontSize: 11 }}
+                          style={{ padding: '4px 8px', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 3 }}
                         >
-                          Chi tiết →
+                          Chi tiết
+                          <ChevronRight size={12} />
                         </button>
                       </td>
                     </tr>
@@ -287,7 +382,7 @@ function PlanCell({ organization: o }: { organization: PlatformOrganization }) {
           o.seatsPurchased + o.seatsGranted > 0 ? `${o.seatsPurchased + o.seatsGranted} suất có phí` : null,
         ]
           .filter(Boolean)
-          .join(' · ') || '—'}
+          .join(' · ') || 'Chưa cấu hình gói'}
       </small>
     </div>
   );

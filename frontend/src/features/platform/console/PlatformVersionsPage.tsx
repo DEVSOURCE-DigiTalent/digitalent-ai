@@ -63,9 +63,9 @@ export function PlatformVersionsPage() {
               <span className="pa-eyebrow-dot" />
               QUẢN TRỊ NỀN TẢNG / PHIÊN BẢN KHÓA HỌC
             </div>
-            <h1 className="pa-header-title">Mỗi lần thêm hoặc sửa khóa là một phiên bản.</h1>
+            <h1 className="pa-header-title" aria-label="Mỗi lần thêm hoặc sửa khóa là một phiên bản.">Quản trị phiên bản Catalog khóa học chuẩn</h1>
             <p className="pa-header-subtitle">
-              Phiên bản có neo ⚓ là bản các tổ chức đang dùng. Thêm, sửa khóa trong bản nháp rồi công bố để neo chuyển sang bản mới.
+              Phiên bản có neo là bản các tổ chức đang học tập. Soạn thảo khóa học trong bản nháp rồi công bố để chuyển neo sang phiên bản mới.
             </p>
           </div>
           {data &&

@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   UserCheck,
   ExternalLink,
+  ChevronRight,
 } from 'lucide-react';
 
 const TRIAL_TABS: { key: TrialFilter | ''; label: string; badge?: string }[] = [
@@ -58,56 +59,81 @@ export function PlatformUsersPage() {
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+      <div className="flex items-start justify-between flex-wrap gap-4 pb-2 border-b border-slate-200/80 mb-6">
         <div>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#d97706' }} />
+          <span className="text-xs font-bold text-amber-700 tracking-wider uppercase flex items-center gap-1.5 mb-1">
+            <span className="w-2 h-2 rounded-full bg-amber-600 inline-block" />
             Quản trị nền tảng / Người dùng
           </span>
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', margin: '6px 0 4px' }}>
-            Theo dõi tài khoản & Học viên dùng thử.
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight m-0">
+            Quản lý tài khoản & Học viên dùng thử
           </h1>
-          <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>
-            Quản trị tài khoản toàn hệ thống, theo dõi tiến độ dùng thử 7 ngày và hỗ trợ mở/khóa truy cập an toàn.
+          <p className="text-sm text-slate-500 mt-1 mb-0">
+            Quản trị tài khoản toàn hệ thống, theo dõi tiến độ dùng thử 7 ngày và hỗ trợ mở hoặc khóa truy cập an toàn.
           </p>
         </div>
       </div>
 
       {data && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 16, marginBottom: 20 }}>
-          <div className="pa-bento-card" style={{ padding: 16, minHeight: 'auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 14, marginBottom: 20 }}>
+          <div className="pa-bento-card" style={{ padding: 14, minHeight: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Đang dùng thử</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Tổng tài khoản
+              </span>
+              <div className="pa-kpi-icon-wrap emerald" style={{ width: 28, height: 28 }}>
+                <Users size={15} />
+              </div>
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', margin: '4px 0 2px' }}>
+              {data.totalItems}
+            </div>
+            <small style={{ fontSize: 12, color: '#64748b' }}>Tài khoản cá nhân & doanh nghiệp</small>
+          </div>
+
+          <div className="pa-bento-card" style={{ padding: 14, minHeight: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Đang dùng thử
+              </span>
               <div className="pa-kpi-icon-wrap amber" style={{ width: 28, height: 28 }}>
                 <Clock size={15} />
               </div>
             </div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', margin: '4px 0' }}>{data.trials.active}</div>
-            <small style={{ fontSize: 12, color: '#64748b' }}>Gói Plus 7 ngày, học viên cá nhân</small>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#d97706', margin: '4px 0 2px' }}>
+              {data.trials.active}
+            </div>
+            <small style={{ fontSize: 12, color: '#64748b' }}>Gói Plus 7 ngày cá nhân</small>
           </div>
 
-          <div className="pa-bento-card" style={{ padding: 16, minHeight: 'auto', borderTop: data.trials.endingSoon > 0 ? '3px solid #e11d48' : undefined }}>
+          <div className="pa-bento-card" style={{ padding: 14, minHeight: 'auto', borderTop: data.trials.endingSoon > 0 ? '3px solid #e11d48' : undefined }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Hết hạn trong 48h</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Hết hạn trong 48h
+              </span>
               <div className="pa-kpi-icon-wrap" style={{ width: 28, height: 28, background: data.trials.endingSoon > 0 ? '#fee2e2' : '#f1f5f9', color: data.trials.endingSoon > 0 ? '#b91c1c' : '#64748b' }}>
                 <AlertTriangle size={15} />
               </div>
             </div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: data.trials.endingSoon > 0 ? '#b91c1c' : '#0f172a', margin: '4px 0' }}>
+            <div style={{ fontSize: 24, fontWeight: 800, color: data.trials.endingSoon > 0 ? '#b91c1c' : '#0f172a', margin: '4px 0 2px' }}>
               {data.trials.endingSoon}
             </div>
-            <small style={{ fontSize: 12, color: '#64748b' }}>Cần gửi thông báo chuyển sang trả phí</small>
+            <small style={{ fontSize: 12, color: '#64748b' }}>Cần gửi thông báo chuyển đổi</small>
           </div>
 
-          <div className="pa-bento-card" style={{ padding: 16, minHeight: 'auto' }}>
+          <div className="pa-bento-card" style={{ padding: 14, minHeight: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Đã hết dùng thử</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Đã hết dùng thử
+              </span>
               <div className="pa-kpi-icon-wrap slate" style={{ width: 28, height: 28 }}>
                 <UserCheck size={15} />
               </div>
             </div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', margin: '4px 0' }}>{data.trials.ended}</div>
-            <small style={{ fontSize: 12, color: '#64748b' }}>Đã tự động chuyển về gói Miễn phí</small>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', margin: '4px 0 2px' }}>
+              {data.trials.ended}
+            </div>
+            <small style={{ fontSize: 12, color: '#64748b' }}>Đã chuyển về gói Miễn phí</small>
           </div>
         </div>
       )}
@@ -242,9 +268,10 @@ export function PlatformUsersPage() {
                             e.stopPropagation();
                             setDrawerUserId(u.id);
                           }}
-                          style={{ padding: '4px 8px', fontSize: 11 }}
+                          style={{ padding: '4px 8px', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 3 }}
                         >
-                          Chi tiết →
+                          Chi tiết
+                          <ChevronRight size={12} />
                         </button>
                       </td>
                     </tr>
@@ -298,7 +325,7 @@ export function PlatformUsersPage() {
 }
 
 function TrialCell({ user: u }: { user: PlatformUser }) {
-  if (!u.planCode) return <span style={{ color: '#94a3b8', fontSize: 12 }}>{u.organizationName ? 'Theo tổ chức' : '—'}</span>;
+  if (!u.planCode) return <span style={{ color: '#94a3b8', fontSize: 12 }}>{u.organizationName ? 'Theo tổ chức' : 'Tài khoản tiêu chuẩn'}</span>;
   const plan = PERSONAL_PLANS[u.planCode] ?? u.planCode;
 
   if (u.trialState === 'ACTIVE') {

@@ -11,7 +11,7 @@ describe('Platform Admin navigation (Pulse)', () => {
       'Mẫu vị trí',
       'Phiên bản khóa học',
       'Tổ chức',
-      'Dùng thử',
+      'Đánh giá dùng thử',
       'Người dùng',
       'Đơn giá',
       'Nhật ký kiểm tra',
