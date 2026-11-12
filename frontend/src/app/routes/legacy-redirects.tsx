@@ -88,5 +88,11 @@ export const legacyRedirectRoutes: RouteObject[] = [
   // ── Platform legacy paths ──
   { path: '/platform/courses', element: <RedirectWithQuery to="/platform/versions" /> },
   { path: '/platform/assessment-bank', element: <RedirectWithQuery to="/platform/versions" /> },
+
+  // ── Mentor legacy paths (moved from /platform to /mentor) ──
+  { path: '/platform/course-reviews', element: <RedirectWithQuery to="/mentor/course-reviews" /> },
+  { path: '/platform/course-reviews/:id', element: <LegacyParamRedirect toPrefix="/mentor/course-reviews" /> },
+  { path: '/platform/reviews', element: <RedirectWithQuery to="/mentor/enterprises" /> },
+  { path: '/platform/reviews/:id', element: <RedirectWithQuery to="/mentor/enterprises" /> },
 ];
 

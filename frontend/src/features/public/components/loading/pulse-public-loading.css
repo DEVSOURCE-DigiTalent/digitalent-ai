@@ -1,0 +1,161 @@
+/* ══════════════════════════════════════════════════════════════════
+   DIGITALENT PULSE · MINIMAL PUBLIC LOADING
+   Tối giản: Sử dụng đúng Logo hệ thống, Tên thương hiệu và 1 hiệu ứng loading
+   ══════════════════════════════════════════════════════════════════ */
+
+@keyframes pu-public-halo {
+  0% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.12);
+    opacity: 0.85;
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+    opacity: 0.55;
+  }
+}
+
+@keyframes pu-public-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+@keyframes pu-public-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+@keyframes pu-public-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Màn hình loading công khai tối giản */
+.pu-public-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-family: 'Plus Jakarta Sans', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+  animation: pu-public-fade-in 0.3s ease-out;
+}
+
+/* Vầng sáng nền tinh tế */
+.pu-public-splash__ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 25% 30%, rgba(37, 99, 235, 0.05) 0%, transparent 45%),
+    radial-gradient(circle at 75% 70%, rgba(16, 185, 129, 0.04) 0%, transparent 45%);
+}
+
+/* Khối nội dung trung tâm - không có viền khung rườm rà */
+.pu-public-splash__content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Logo hệ thống với vầng sáng xoay mềm mại */
+.pu-public-splash__mark-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  margin-bottom: 16px;
+}
+
+.pu-public-splash__halo {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #2563eb, #10b981, #f59e0b, #2563eb);
+  filter: blur(14px);
+  opacity: 0.6;
+  animation: pu-public-halo 5s linear infinite;
+}
+
+.pu-public-splash__logo {
+  position: relative;
+  z-index: 1;
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 22px rgba(37, 99, 235, 0.28));
+  animation: pu-public-pulse 3s ease-in-out infinite;
+}
+
+/* Tên thương hiệu */
+.pu-public-splash__brand {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.pu-public-splash__brand strong {
+  font-weight: 800;
+  background: linear-gradient(135deg, #2563eb 0%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Hiệu ứng loading dạng thanh xung nhịp tối giản */
+.pu-public-splash__indicator {
+  width: 110px;
+  height: 3.5px;
+  margin-top: 18px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(226, 232, 240, 0.85);
+  position: relative;
+}
+
+.pu-public-splash__indicator-bar {
+  display: block;
+  width: 50px;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2563eb 0%, #10b981 100%);
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.4);
+  animation: pu-public-indeterminate 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pu-public-splash__halo,
+  .pu-public-splash__logo,
+  .pu-public-splash__indicator-bar {
+    animation: none;
+  }
+}

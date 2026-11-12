@@ -63,14 +63,9 @@ export function LoginPage() {
   return (
     <PulseAuthLayout
       mode="login"
-      eyebrow="CỔNG TRUY CẬP DOANH NGHIỆP"
-      title="Đăng nhập"
-      subtitle="Đăng nhập để điều hành khung năng lực số và quản trị nhân sự."
-      footer={
-        <p>
-          Chưa có tài khoản doanh nghiệp? <Link to="/business/try">Bắt đầu dùng thử miễn phí 14 ngày</Link>
-        </p>
-      }
+      title="Đăng nhập hệ thống"
+      subtitle="Nhập email công việc và mật khẩu để tiếp tục."
+      complianceText="DigiTalent AI · Đào tạo năng lực số theo vị trí công việc"
     >
       <div className="pulse-auth-form-wrapper">
         {/* Credentials Form */}
@@ -177,6 +172,13 @@ export function LoginPage() {
             )}
             <span>{login.isPending ? 'Đang xác thực bảo mật…' : 'Đăng nhập vào hệ thống'}</span>
           </button>
+
+          <p className="pulse-auth-switch-prompt">
+            Chưa có tài khoản?{' '}
+            <Link to="/business/try" className="pulse-auth-switch-link">
+              Đăng ký dùng thử
+            </Link>
+          </p>
         </form>
       </div>
     </PulseAuthLayout>

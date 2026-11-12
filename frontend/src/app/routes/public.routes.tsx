@@ -1,10 +1,10 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { Navigate, useLocation, type RouteObject } from 'react-router-dom';
 import { PortalSelectorPage, RootRoute } from '../../features/portal/PortalSelectorPage';
 import { LoginPage } from '../../features/auth/pages/LoginPage';
 import { ForbiddenPage } from '../../features/auth/pages/ForbiddenPage';
 import { lazyPage } from './lazy-page';
-import { PageLoading } from '../../components/shared/LoadingState';
+import { PulsePublicLoadingScreen } from '../../features/public/components/loading/PulsePublicLoadingScreen';
 
 const CareerCatalogPage = lazyPage(() => import('../../features/public/career-catalog/CareerCatalogPage'), 'CareerCatalogPage');
 const PricingPage = lazyPage(() => import('../../features/commerce/pages/PricingPage'), 'PricingPage');
@@ -23,7 +23,8 @@ const PublicVerifyPage = lazyPage(() => import('../../features/public/pages/Publ
 const EnterpriseLandingPage = lazy(() => import('../../features/public/pulse-landing/PulseBusinessLandingPage').then(module => ({ default: module.PulseBusinessLandingPage })));
 const EnterpriseSolutionPage = lazy(() => import('../../features/public/pulse-landing/PulseBusinessSolutionPage').then(module => ({ default: module.PulseBusinessSolutionPage })));
 
-const landingFallback = <PageLoading label="Đang tải trang" />;
+const publicLandingFallback = <PulsePublicLoadingScreen />;
+const withPublicFallback = (element: ReactNode) => <Suspense fallback={publicLandingFallback}>{element}</Suspense>;
 
 /** Old bookmarks and emails still point at /business/login and /individual/login; keep their returnTo. */
 function LegacyLoginRedirect() {
@@ -39,10 +40,10 @@ export const publicRoutes: RouteObject[] = [
   { path: '/portal', element: <PortalSelectorPage /> },
 
   // The enterprise landing has its own navigation and footer.
-  { path: '/business', element: <Suspense fallback={landingFallback}><EnterpriseLandingPage /></Suspense> },
-  { path: '/business/try', element: <EnterpriseTrialRegisterPage /> },
-  { path: '/business/try/verify', element: <EnterpriseTrialVerifyPage /> },
-  { path: '/business/try/accept', element: <EnterpriseTrialAcceptPage /> },
+  { path: '/business', element: withPublicFallback(<EnterpriseLandingPage />) },
+  { path: '/business/try', element: withPublicFallback(<EnterpriseTrialRegisterPage />) },
+  { path: '/business/try/verify', element: withPublicFallback(<EnterpriseTrialVerifyPage />) },
+  { path: '/business/try/accept', element: withPublicFallback(<EnterpriseTrialAcceptPage />) },
   { path: '/individual', element: <Navigate to="/business" replace /> },
   { path: '/individual/try', element: <Navigate to="/business/try" replace /> },
 
@@ -51,8 +52,8 @@ export const publicRoutes: RouteObject[] = [
   { path: '/v2/landing', element: <Navigate to="/business" replace /> },
   { path: '/v2/individual', element: <Navigate to="/business" replace /> },
 
-  { path: '/business/solution', element: <Suspense fallback={landingFallback}><EnterpriseSolutionPage /></Suspense> },
-  { path: '/business/pricing', element: <PricingPage audience="enterprise" /> },
+  { path: '/business/solution', element: withPublicFallback(<EnterpriseSolutionPage />) },
+  { path: '/business/pricing', element: withPublicFallback(<PricingPage audience="enterprise" />) },
   { path: '/individual/pricing', element: <Navigate to="/business/solution" replace /> },
 
   // Existing accounts share one login. New public registration is enterprise only.
@@ -61,21 +62,21 @@ export const publicRoutes: RouteObject[] = [
   { path: '/business/login', element: <LegacyLoginRedirect /> },
   { path: '/individual/login', element: <LegacyLoginRedirect /> },
   { path: '/register', element: <Navigate to="/business/try" replace /> },
-  { path: '/business/register', element: <BusinessRegisterPage /> },
-  { path: '/business/verify-email', element: <BusinessVerifyEmailPage /> },
+  { path: '/business/register', element: withPublicFallback(<BusinessRegisterPage />) },
+  { path: '/business/verify-email', element: withPublicFallback(<BusinessVerifyEmailPage />) },
   { path: '/individual/register', element: <Navigate to="/business/try" replace /> },
-  { path: '/individual/register/verify', element: <IndividualVerifyPage /> },
-  { path: '/individual/verify', element: <IndividualVerifyPage /> },
-  { path: '/activate/:token', element: <ActivateInvitationPage /> },
-  { path: '/forgot-password', element: <ForgotPasswordPage /> },
-  { path: '/reset-password/:token', element: <ResetPasswordPage /> },
-  { path: '/verify-email/:token', element: <VerifyEmailPage /> },
+  { path: '/individual/register/verify', element: withPublicFallback(<IndividualVerifyPage />) },
+  { path: '/individual/verify', element: withPublicFallback(<IndividualVerifyPage />) },
+  { path: '/activate/:token', element: withPublicFallback(<ActivateInvitationPage />) },
+  { path: '/forgot-password', element: withPublicFallback(<ForgotPasswordPage />) },
+  { path: '/reset-password/:token', element: withPublicFallback(<ResetPasswordPage />) },
+  { path: '/verify-email/:token', element: withPublicFallback(<VerifyEmailPage />) },
 
   // Reference positions: public, in the same dark frame as pricing and sign-up.
-  { path: '/careers', element: <CareerCatalogPage /> },
-  { path: '/careers/:slug', element: <CareerCatalogPage /> },
+  { path: '/careers', element: withPublicFallback(<CareerCatalogPage />) },
+  { path: '/careers/:slug', element: withPublicFallback(<CareerCatalogPage />) },
 
   // Public certificate verification: tra cứu và xác thực chứng chỉ số công khai
-  { path: '/verify', element: <PublicVerifyPage /> },
-  { path: '/verify/:code', element: <PublicVerifyPage /> },
+  { path: '/verify', element: withPublicFallback(<PublicVerifyPage />) },
+  { path: '/verify/:code', element: withPublicFallback(<PublicVerifyPage />) },
 ];

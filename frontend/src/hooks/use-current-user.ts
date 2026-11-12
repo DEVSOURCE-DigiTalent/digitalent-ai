@@ -31,9 +31,12 @@ export const useCurrentUser = create<AuthState>((set, get) => ({
 
   setUser: (incoming) => {
     const roles = normalizeRoles(incoming.roles);
-    // A user with backend roles is never "personal", even if none maps to the new model; and a platform
-    // workspace is only honoured for platform staff.
-    const claimed = incoming.workspace === 'platform' && !roles.includes(ROLES.PLATFORM_ADMIN) ? undefined : incoming.workspace;
+    // A user with backend roles is never "personal", even if none maps to the new model; a platform
+    // workspace is only honoured for platform admins, and a mentor workspace only for mentors.
+    const isInvalidPlatform = incoming.workspace === 'platform' && !roles.includes(ROLES.PLATFORM_ADMIN);
+    const isInvalidMentor =
+      incoming.workspace === 'mentor' && (!roles.includes(ROLES.MENTOR) || roles.includes(ROLES.PLATFORM_ADMIN));
+    const claimed = isInvalidPlatform || isInvalidMentor ? undefined : incoming.workspace;
     const workspace = claimed ?? (incoming.roles.length > 0 && roles.length === 0 ? WORKSPACES.ENTERPRISE : inferWorkspace(roles));
     set({ user: { ...incoming, roles, workspace }, isAuthenticated: true });
   },
@@ -56,13 +59,16 @@ export const useCurrentUser = create<AuthState>((set, get) => ({
   hasEntitlement: (entitlement: string) => {
     const { user } = get();
     if (!user) return false;
-    if (resolveWorkspace(user) === WORKSPACES.PLATFORM || !user.subscription) return true;
+    const workspace = resolveWorkspace(user);
+    if (workspace === WORKSPACES.PLATFORM || workspace === WORKSPACES.MENTOR || !user.subscription) return true;
     return user.subscription.entitlements.includes(entitlement);
   },
 
   getSubscriptionStatus: () => {
     const { user } = get();
-    if (!user || resolveWorkspace(user) === WORKSPACES.PLATFORM || !user.subscription) return null;
+    if (!user) return null;
+    const workspace = resolveWorkspace(user);
+    if (workspace === WORKSPACES.PLATFORM || workspace === WORKSPACES.MENTOR || !user.subscription) return null;
     return user.subscription.status;
   },
 }));

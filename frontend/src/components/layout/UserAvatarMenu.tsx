@@ -59,7 +59,7 @@ export function UserAvatarMenu({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-xl hover:bg-slate-100/80 transition-all border border-transparent hover:border-slate-200/60"
+        className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-xl hover:bg-slate-100/80 transition-all border border-transparent hover:border-slate-200/60 cursor-pointer"
         aria-label="Menu tài khoản"
         aria-expanded={isOpen}
       >
@@ -81,7 +81,7 @@ export function UserAvatarMenu({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-60 bg-ent-card rounded-xl shadow-xl border border-ent-line z-50 py-1.5 overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-60 bg-ent-card rounded-xl shadow-xl border border-ent-line z-50 py-1.5 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150">
           <div className="px-4 py-2.5 border-b border-ent-line">
             <p className="text-sm font-semibold text-ent-fg truncate">{user.fullName}</p>
             <p className="text-xs text-ent-fg-3 truncate mt-0.5">{user.email}</p>

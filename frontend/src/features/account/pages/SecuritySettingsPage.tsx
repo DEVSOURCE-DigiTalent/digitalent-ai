@@ -13,6 +13,8 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { useChangePassword, useLoginHistory } from '@/hooks/use-platform';
+import { useCurrentUser } from '@/hooks/use-current-user';
+import { WORKSPACES } from '@/lib/roles';
 import { formatDateTime } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -22,6 +24,8 @@ import { toast } from 'sonner';
  * khắc phục hoàn toàn lỗi autofill nền đen, bảng lịch sử phiên đăng nhập chuyên nghiệp.
  */
 export function SecuritySettingsPage() {
+  const workspace = useCurrentUser((s) => s.user?.workspace);
+  const isMentor = workspace === WORKSPACES.MENTOR;
   const changePassword = useChangePassword();
   const { data: history, isLoading: historyLoading } = useLoginHistory();
 
@@ -72,7 +76,7 @@ export function SecuritySettingsPage() {
     try {
       await changePassword.mutateAsync({ currentPassword, newPassword });
       setSuccessMsg('Đã đổi mật khẩu thành công! Hãy ghi nhớ mật khẩu mới.');
-      toast.success('Mật khẩu quản trị đã được cập nhật.');
+      toast.success('Mật khẩu tài khoản đã được cập nhật.');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -95,11 +99,13 @@ export function SecuritySettingsPage() {
           <div>
             <div className="pa-header-eyebrow">
               <span className="pa-eyebrow-dot" />
-              QUẢN TRỊ NỀN TẢNG / AN NINH & BẢO MẬT TÀI KHOẢN
+              {isMentor ? 'KHÔNG GIAN MENTOR / AN NINH & BẢO MẬT TÀI KHOẢN' : 'QUẢN TRỊ NỀN TẢNG / AN NINH & BẢO MẬT TÀI KHOẢN'}
             </div>
-            <h1 className="pa-header-title">Bảo mật tài khoản & Phiên đăng nhập.</h1>
+            <h1 className="pa-header-title">Bảo mật tài khoản & Phiên đăng nhập</h1>
             <p className="pa-header-subtitle">
-              Quản lý mật khẩu truy cập tài khoản quản trị tối cao, giám sát các phiên hoạt động và áp dụng các tiêu chuẩn an toàn thông tin.
+              {isMentor
+                ? 'Quản lý mật khẩu truy cập cổng Mentor, giám sát các phiên hoạt động và thiết lập an toàn tài khoản.'
+                : 'Quản lý mật khẩu truy cập tài khoản quản trị nền tảng, giám sát các phiên hoạt động và áp dụng các tiêu chuẩn an toàn thông tin.'}
             </p>
           </div>
         </div>
@@ -129,7 +135,7 @@ export function SecuritySettingsPage() {
             </div>
             <div>
               <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>Đổi mật khẩu tài khoản</h2>
-              <span style={{ fontSize: 12, color: '#64748b' }}>Yêu cầu mật khẩu mạnh để bảo vệ quyền quản trị nền tảng</span>
+              <span style={{ fontSize: 12, color: '#64748b' }}>{isMentor ? 'Đặt mật khẩu mạnh để bảo vệ tài khoản chấm bài' : 'Yêu cầu mật khẩu mạnh để bảo vệ quyền quản trị nền tảng'}</span>
             </div>
           </div>
 
@@ -333,7 +339,9 @@ export function SecuritySettingsPage() {
               <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: 0 }}>Xác thực hai yếu tố (2FA)</h3>
             </div>
             <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-              Tài khoản quản trị viên được khuyến nghị bật xác thực qua ứng dụng Authenticator để bảo vệ trước các mối đe dọa truy cập trái phép.
+              {isMentor
+                ? 'Tài khoản Mentor nên bật xác thực qua ứng dụng Authenticator để bảo vệ dữ liệu bài làm và kết quả chấm.'
+                : 'Tài khoản quản trị viên được khuyến nghị bật xác thực qua ứng dụng Authenticator để bảo vệ trước các mối đe dọa truy cập trái phép.'}
             </p>
           </div>
         </div>
@@ -385,7 +393,7 @@ export function SecuritySettingsPage() {
                     </td>
                     <td>
                       <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#64748b', background: '#f1f5f9', padding: '2px 8px', borderRadius: 4 }}>
-                        {item.ip && item.ip !== '—' ? item.ip : '127.0.0.1'}
+                        {item.ip && item.ip !== '\u2014' && item.ip !== '-' ? item.ip : '127.0.0.1'}
                       </span>
                     </td>
                     <td>

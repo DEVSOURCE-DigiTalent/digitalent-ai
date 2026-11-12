@@ -79,10 +79,10 @@ export function RoleSidebar({
         <Link
           to="/enterprise/dashboard"
           className={cn('pm-side-brand', isRail && !isMobileOpen && 'rail')}
-          aria-label="DigiTalent Pulse — Tổng quan"
+          aria-label="DigiTalent AI: Tổng quan"
         >
           <img src={pulseMark} alt="" />
-          {!(isRail && !isMobileOpen) && <span>DigiTalent <em>Pulse</em></span>}
+          {!(isRail && !isMobileOpen) && <span>DigiTalent <em>AI</em></span>}
         </Link>
       )}
       <SidebarNav

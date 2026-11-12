@@ -93,12 +93,11 @@ function DetailModal({ item, onClose }: { item: FeedbackItem; onClose: () => voi
               <p className="text-sm font-medium text-ent-fg">{item.userName}</p>
               <p className="text-[11px] text-ent-fg-2">{item.userEmail}{item.organizationName ? ` · ${item.organizationName}` : ''}</p>
             </div>
-            <span className={`ml-auto inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${
-              st?.tone === 'coral' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-              st?.tone === 'green' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-              st?.tone === 'gray' ? 'bg-gray-50 text-gray-500 border-gray-200' :
-              'bg-blue-50 text-blue-700 border-blue-200'
-            }`}>{st?.label ?? item.status}</span>
+            <span className={`ml-auto inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${st?.tone === 'coral' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                st?.tone === 'green' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                  st?.tone === 'gray' ? 'bg-gray-50 text-gray-500 border-gray-200' :
+                    'bg-blue-50 text-blue-700 border-blue-200'
+              }`}>{st?.label ?? item.status}</span>
           </div>
 
           {item.rating != null && item.rating > 0 && (
@@ -198,11 +197,11 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
   return (
     <>
       <PageHead
-        eyebrow={`Nền tảng / ${isBug ? 'Báo lỗi' : 'Góp ý'}`}
-        title={isBug ? 'Báo lỗi từ người dùng.' : 'Góp ý từ người dùng.'}
+        eyebrow={`Quản trị nền tảng / ${isBug ? 'Báo lỗi kỹ thuật' : 'Ý kiến phản hồi'}`}
+        title={isBug ? 'Quản lý sự cố kỹ thuật từ người dùng' : 'Ý kiến phản hồi & Đóng góp từ người dùng'}
         description={isBug
-          ? 'Xem và xử lý các lỗi được người dùng báo cáo. Phản hồi sẽ hiển thị cho người gửi.'
-          : 'Xem và phản hồi ý kiến đóng góp từ người dùng. Phản hồi sẽ hiển thị cho người gửi.'}
+          ? 'Xem và xử lý các lỗi kỹ thuật được người dùng báo cáo. Phản hồi sẽ hiển thị trực tiếp cho người gửi.'
+          : 'Xem và phản hồi ý kiến đóng góp từ người dùng. Phản hồi sẽ hiển thị trực tiếp cho người gửi.'}
       />
       <Box>
         <div className="pa-filters">

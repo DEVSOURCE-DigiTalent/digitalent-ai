@@ -9,18 +9,21 @@ describe('mock accounts', () => {
     expect(new Set(MOCK_ACCOUNTS.map((a) => a.email)).size).toBe(MOCK_ACCOUNTS.length);
   });
 
-  it('cover every role, the personal workspace, and the plan-gating cases', () => {
+  it('cover every role, the personal and mentor workspaces, and the plan-gating cases', () => {
     const roles = new Set(MOCK_ACCOUNTS.flatMap((a) => a.roles));
     for (const role of Object.values(ROLES)) expect(roles).toContain(role);
 
     expect(MOCK_ACCOUNTS.some((a) => a.workspace === 'personal')).toBe(true);
+    expect(MOCK_ACCOUNTS.some((a) => a.workspace === 'mentor')).toBe(true);
     expect(MOCK_ACCOUNTS.some((a) => a.subscription?.status === 'payment_required')).toBe(true);
     expect(MOCK_ACCOUNTS.some((a) => a.subscription && !a.subscription.entitlements.includes('internal_learning'))).toBe(true);
   });
 
-  it('give platform staff no organization and personal users no roles', () => {
+  it('give platform staff and mentors no organization and personal users no roles', () => {
     for (const account of MOCK_ACCOUNTS) {
-      if (account.workspace === 'platform') expect(account.organization).toBeUndefined();
+      if (account.workspace === 'platform' || account.workspace === 'mentor') {
+        expect(account.organization).toBeUndefined();
+      }
       if (account.workspace === 'personal') expect(account.roles).toEqual([]);
       if (account.workspace === 'enterprise') expect(account.organization).toBeDefined();
     }

@@ -18,7 +18,7 @@ interface DemoAccounts {
 }
 
 const SEEDED_API_ACCOUNTS: DemoAccountItem[] = [
-  { id: 'seed-mentor', email: 'mentor@digitalent.ai', fullName: 'Mentor Thẩm định (mentor)', roles: ['MENTOR'], permissions: [], workspace: 'platform', customPassword: 'Admin@1234' },
+  { id: 'seed-mentor', email: 'mentor@digitalent.ai', fullName: 'Mentor Thẩm định (mentor)', roles: ['MENTOR'], permissions: [], workspace: 'mentor', customPassword: 'Admin@1234' },
   { id: 'seed-admin', email: 'admin@digitalent.ai', fullName: 'Quản trị viên Nền tảng (admin)', roles: ['PLATFORM_ADMIN'], permissions: [], workspace: 'platform', customPassword: 'Admin@1234' },
   { id: 'seed-owner', email: 'owner@digitalent.ai', fullName: 'Chủ Doanh nghiệp (owner)', roles: ['OWNER'], permissions: [], workspace: 'enterprise', customPassword: 'Admin@1234' },
   { id: 'seed-manager', email: 'manager@digitalent.ai', fullName: 'Trưởng bộ phận (manager)', roles: ['MANAGER'], permissions: [], workspace: 'enterprise', customPassword: 'Admin@1234' },

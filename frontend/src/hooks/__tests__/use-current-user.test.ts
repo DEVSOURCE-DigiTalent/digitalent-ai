@@ -57,6 +57,21 @@ describe('useCurrentUser', () => {
     expect(store().user?.workspace).toBe('platform');
   });
 
+  it('derives the mentor workspace from MENTOR and ignores cross-workspace claims', () => {
+    store().setUser({ id: 'm1', email: 'm@b.c', fullName: 'M', roles: ['MENTOR'], permissions: ['trial.review'] });
+    expect(store().user?.roles).toContain('MENTOR');
+    expect(store().user?.workspace).toBe('mentor');
+
+    store().setUser({ ...baseUser, roles: ['MENTOR'], permissions: ['trial.review'], workspace: 'platform' });
+    expect(store().user?.workspace).toBe('mentor');
+
+    store().setUser({ ...baseUser, roles: ['PLATFORM_ADMIN'], workspace: 'mentor' });
+    expect(store().user?.workspace).toBe('platform');
+
+    store().setUser({ ...baseUser, roles: ['OWNER'], workspace: 'mentor' });
+    expect(store().user?.workspace).toBe('enterprise');
+  });
+
   it('requires explicit permissions for platform admins and every other role', () => {
     store().setUser({ ...baseUser, roles: ['PLATFORM_ADMIN'], permissions: [], workspace: 'platform' });
     expect(store().hasPermission('anything.at_all')).toBe(false);
@@ -84,6 +99,13 @@ describe('useCurrentUser', () => {
 
     it('is not enforced for platform staff', () => {
       store().setUser({ ...baseUser, roles: ['PLATFORM_ADMIN'], workspace: 'platform', subscription: undefined });
+
+      expect(store().hasEntitlement('advanced_analytics')).toBe(true);
+      expect(store().getSubscriptionStatus()).toBeNull();
+    });
+
+    it('is not enforced for mentors', () => {
+      store().setUser({ ...baseUser, roles: ['MENTOR'], permissions: ['trial.review'], workspace: 'mentor', subscription: undefined });
 
       expect(store().hasEntitlement('advanced_analytics')).toBe(true);
       expect(store().getSubscriptionStatus()).toBeNull();

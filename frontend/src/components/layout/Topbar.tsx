@@ -116,7 +116,7 @@ export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false }: Top
       >
         <header
           className={cn(
-            'flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] relative overflow-hidden',
+            'flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] relative',
             scrolled
               ? 'h-12 px-4 lg:px-6 rounded-2xl border border-white/90 shadow-[0_12px_36px_rgba(15,23,42,0.08),_0_2px_8px_rgba(19,123,132,0.06)] backdrop-blur-xl'
               : 'h-14 px-4 lg:px-8 border-b border-slate-200/70 backdrop-blur-md shadow-[0_1px_6px_rgba(15,23,42,0.02)]',

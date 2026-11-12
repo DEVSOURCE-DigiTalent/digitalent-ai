@@ -206,8 +206,8 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
 
   EMPLOYEE: {
     role: 'EMPLOYEE',
-    roleName: 'Nhân viên (Cổng Pulse)',
-    welcomeTitle: 'Chào mừng bạn đến với Lộ trình Học tập Pulse',
+    roleName: 'Nhân viên (Cổng DigiTalent AI)',
+    welcomeTitle: 'Chào mừng bạn đến với Lộ trình Học tập DigiTalent AI',
     welcomeDescription:
       'Tại đây, bạn được trang bị lộ trình phát triển năng lực số rõ ràng theo đúng chức danh công việc, với cơ chế đánh giá năng lực đầu vào giúp miễn học phần đã vững.',
     steps: [

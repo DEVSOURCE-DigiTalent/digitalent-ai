@@ -25,7 +25,7 @@ export function SidebarNav({ config, isRail, onItemClick, workspace, variant = '
   const hasPermission = useCurrentUser((s) => s.hasPermission);
   const user = useCurrentUser((s) => s.user);
 
-  const currentWorkspace = workspace ?? (pathname.startsWith('/platform') ? WORKSPACES.PLATFORM : WORKSPACES.ENTERPRISE);
+  const currentWorkspace = workspace ?? (pathname.startsWith('/platform') ? WORKSPACES.PLATFORM : pathname.startsWith('/mentor') ? WORKSPACES.MENTOR : WORKSPACES.ENTERPRISE);
 
   const isVisible = (screenId?: string) => {
     if (!screenId) return true;

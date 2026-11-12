@@ -20,11 +20,16 @@ describe('normalizeRoles', () => {
 });
 
 describe('workspace', () => {
-  it('is platform for platform staff, enterprise for any other role, personal without roles', () => {
+  it('is platform for platform admin, mentor for mentors, enterprise for org roles, personal without roles', () => {
     expect(inferWorkspace(['PLATFORM_ADMIN'])).toBe('platform');
+    expect(inferWorkspace(['MENTOR'])).toBe('mentor');
     expect(inferWorkspace(['LEARNER'])).toBe('personal');
     expect(inferWorkspace(['EMPLOYEE'])).toBe('enterprise');
     expect(inferWorkspace([])).toBe('personal');
+  });
+
+  it('derives the mentor workspace cleanly when backend omits it', () => {
+    expect(resolveWorkspace({ roles: ['MENTOR'] })).toBe('mentor');
   });
 
   it('prefers the workspace the backend sent', () => {
@@ -36,6 +41,7 @@ describe('workspace', () => {
 describe('getHomePath', () => {
   it.each([
     [['PLATFORM_ADMIN'], '/platform/dashboard'],
+    [['MENTOR'], '/mentor/enterprises'],
     [[], '/personal/dashboard'],
     [['OWNER'], '/enterprise/dashboard'],
     [['MANAGER'], '/enterprise/team'],
@@ -57,6 +63,7 @@ describe('getHomePath', () => {
     ['trainer@digitalent.ai', 'EMPLOYEE', 'enterprise', false, '/enterprise/me'],
     ['employee@digitalent.ai', 'EMPLOYEE', 'enterprise', true, '/enterprise/me'],
     ['admin@digitalent.ai', 'PLATFORM_ADMIN', 'platform', false, '/platform/dashboard'],
+    ['mentor@digitalent.ai', 'MENTOR', 'mentor', true, '/mentor/enterprises'],
     ['owner@digitalent.ai', 'OWNER', 'enterprise', true, '/enterprise/dashboard'],
     ['hr@digitalent.ai', 'OWNER', 'enterprise', true, '/enterprise/dashboard'],
   ] as const)('opens the correct workspace for %s', (email, role, workspace, emailVerified, path) => {
@@ -78,5 +85,34 @@ describe('getHomePath', () => {
 
     expect(getHomePath(manager)).toBe('/enterprise/team');
     expect(getPostLoginPath('/enterprise/me/path', manager)).toBe('/enterprise/team');
+  });
+
+  it('preserves mentor deep links and blocks cross-workspace redirects', () => {
+    const mentor: SessionUser = {
+      id: 'mentor-1',
+      email: 'mentor@digitalent.ai',
+      fullName: 'Mentor',
+      roles: ['MENTOR'],
+      permissions: ['trial.review'],
+      workspace: 'mentor',
+      emailVerified: true,
+    };
+    const admin: SessionUser = {
+      id: 'admin-1',
+      email: 'admin@digitalent.ai',
+      fullName: 'Admin',
+      roles: ['PLATFORM_ADMIN'],
+      permissions: [],
+      workspace: 'platform',
+      emailVerified: true,
+    };
+
+    expect(getPostLoginPath('/mentor/enterprises/org-1', mentor)).toBe('/mentor/enterprises/org-1');
+    expect(getPostLoginPath('/mentor/enterprises/org-1/submissions/sub-1', mentor)).toBe('/mentor/enterprises/org-1/submissions/sub-1');
+    expect(getPostLoginPath('/mentor/course-reviews/sub-1', mentor)).toBe('/mentor/course-reviews/sub-1');
+    expect(getPostLoginPath('/mentor/reviews', mentor)).toBe('/mentor/enterprises');
+    expect(getPostLoginPath('/mentor/reviews/org-1', mentor)).toBe('/mentor/enterprises');
+    expect(getPostLoginPath('/platform/course-reviews', mentor)).toBe('/mentor/enterprises');
+    expect(getPostLoginPath('/mentor/course-reviews', admin)).toBe('/platform/dashboard');
   });
 });

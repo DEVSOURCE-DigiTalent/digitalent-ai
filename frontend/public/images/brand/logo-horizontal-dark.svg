@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="48" viewBox="0 0 240 48" role="img" aria-labelledby="digitalent-dark-title">
+  <title id="digitalent-dark-title">DigiTalent AI Logo (Dark Theme)</title>
+  <defs>
+    <!-- Mark Gradient -->
+    <linearGradient id="hzd-surface" x1="2" y1="4" x2="38" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="50%" stop-color="#4F46E5"/>
+      <stop offset="100%" stop-color="#1E1B4B"/>
+    </linearGradient>
+    <linearGradient id="hzd-letter" x1="12" y1="12" x2="30" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E0E7FF"/>
+    </linearGradient>
+    <linearGradient id="hzd-pulse" x1="14" y1="24" x2="30" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#818CF8"/>
+    </linearGradient>
+    <!-- AI Badge Gradient -->
+    <linearGradient id="hzd-ai-badge-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0284C7"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+    <radialGradient id="hzd-spark" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FB923C"/>
+      <stop offset="80%" stop-color="#EA580C"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Left Icon Mark -->
+  <g transform="translate(4, 5)">
+    <rect width="38" height="38" rx="11" fill="url(#hzd-surface)"/>
+    <rect x="0.8" y="0.8" width="36.4" height="36.4" rx="10.2" fill="none" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="0.8"/>
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M11 10H19C25.5 10 30 14 30 20C30 26 25.5 30 19 30H11V10ZM16.5 15.5V24.5H19C22.2 24.5 24.5 22.8 24.5 20C24.5 17.2 22.2 15.5 19 15.5H16.5Z" fill="url(#hzd-letter)"/>
+    <!-- Pulse Line -->
+    <path d="M12 20H15L17 16L19 24L21 18L22.5 20H28" fill="none" stroke="url(#hzd-pulse)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Spark Dot -->
+    <circle cx="31" cy="9" r="2.8" fill="url(#hzd-spark)"/>
+    <circle cx="31" cy="9" r="1" fill="#FFFFFF" opacity="0.95"/>
+  </g>
+
+  <!-- Typographic Wordmark "DigiTalent" (White text for dark backgrounds) -->
+  <text x="52" y="32" font-family="system-ui, -apple-system, 'Plus Jakarta Sans', 'Inter', sans-serif" font-size="22" font-weight="700" letter-spacing="-0.03em" fill="#FFFFFF">
+    Digi<tspan fill="#818CF8">Talent</tspan>
+  </text>
+
+  <!-- "AI" Badge Pill -->
+  <g transform="translate(182, 13)">
+    <rect width="38" height="22" rx="6" fill="url(#hzd-ai-badge-bg)"/>
+    <rect x="0.5" y="0.5" width="37" height="21" rx="5.5" fill="none" stroke="#38BDF8" stroke-opacity="0.6" stroke-width="1"/>
+    <text x="19" y="15.5" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="800" letter-spacing="0.05em" fill="#FFFFFF" text-anchor="middle">
+      AI
+    </text>
+  </g>
+</svg>

@@ -1,6 +1,6 @@
 /**
  * Role & workspace model (UI/UX spec v2.1, §1, §2).
- * Roles: PLATFORM_ADMIN and MENTOR (platform staff — a mentor grades enterprise trial assessments), OWNER, MANAGER, EMPLOYEE.
+ * Roles: PLATFORM_ADMIN, MENTOR (grades employee course assignments and enterprise trial assessments), OWNER, MANAGER, EMPLOYEE.
  * LEARNER is retained only for Personal Workspace accounts.
  */
 export const ROLES = {
@@ -17,6 +17,7 @@ export const WORKSPACES = {
   ENTERPRISE: 'enterprise',
   PERSONAL: 'personal',
   PLATFORM: 'platform',
+  MENTOR: 'mentor',
 } as const;
 
 export type Workspace = (typeof WORKSPACES)[keyof typeof WORKSPACES];
@@ -39,7 +40,7 @@ export const ROLE_HIERARCHY: readonly Role[] = [
 ];
 
 /**
- * Chuẩn hóa một mã vai trò về một trong 4 roles chuẩn: PLATFORM_ADMIN, OWNER, MANAGER, EMPLOYEE.
+ * Chuẩn hóa một mã vai trò về các role chuẩn: PLATFORM_ADMIN, MENTOR, OWNER, MANAGER, EMPLOYEE.
  * Chấp nhận cả chữ thường/hoa và các mã định danh lịch sử (DEPARTMENT_MANAGER, HR_MANAGER, SYSTEM_ADMIN, TRAINER).
  */
 export function normalizeRoleCode(role: string): string {
@@ -50,6 +51,8 @@ export function normalizeRoleCode(role: string): string {
     case 'SYSTEM_ADMIN':
     case 'ADMIN':
       return ROLES.PLATFORM_ADMIN;
+    case 'MENTOR':
+      return ROLES.MENTOR;
     case 'OWNER':
     case 'HR_MANAGER':
     case 'BUSINESS_OWNER':
@@ -88,7 +91,8 @@ export function primaryRole(user?: { roles: readonly string[] } | null): Role | 
  * Workspace implied by a role list when the backend does not send one.
  */
 export function inferWorkspace(roles: readonly string[]): Workspace {
-  if (roles.includes(ROLES.PLATFORM_ADMIN) || roles.includes(ROLES.MENTOR)) return WORKSPACES.PLATFORM;
+  if (roles.includes(ROLES.PLATFORM_ADMIN)) return WORKSPACES.PLATFORM;
+  if (roles.includes(ROLES.MENTOR)) return WORKSPACES.MENTOR;
   if (roles.some((role) => role === ROLES.OWNER || role === ROLES.MANAGER || role === ROLES.EMPLOYEE)) {
     return WORKSPACES.ENTERPRISE;
   }

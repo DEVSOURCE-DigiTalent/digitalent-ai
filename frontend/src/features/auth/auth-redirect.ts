@@ -2,6 +2,7 @@ import { matchPath } from 'react-router-dom';
 import { getHomePath, requiresOwnerEmailVerification } from '../../lib/navigation';
 import { ROLES, WORKSPACES, normalizeRoleCode, normalizeRoles, primaryRole, resolveWorkspace } from '../../lib/roles';
 import { ENTERPRISE_SCREENS } from '../../lib/screens/enterprise';
+import { MENTOR_SCREENS } from '../../lib/screens/mentor';
 import { PLATFORM_SCREENS } from '../../lib/screens/platform';
 import type { ScreenDef } from '../../lib/screens/types';
 import type { SessionUser } from '../../types/session';
@@ -24,7 +25,7 @@ export function getPostLoginPath(returnTo: string | null, user: SessionUser): st
   const workspace = resolveWorkspace(user);
 
   // If returnTo is a generic dashboard or portal root, always direct to the user's canonical home path
-  // so Manager lands on /enterprise/team, Owner on /enterprise/dashboard, Employee on /enterprise/me, Admin on /platform/dashboard
+  // so Manager lands on /enterprise/team, Owner on /enterprise/dashboard, Employee on /enterprise/me, Admin on /platform/dashboard, Mentor on /mentor/enterprises
   const genericDashboardPaths = new Set([
     '/',
     '/enterprise',
@@ -35,6 +36,8 @@ export function getPostLoginPath(returnTo: string | null, user: SessionUser): st
     '/platform',
     '/platform/',
     '/platform/dashboard',
+    '/mentor',
+    '/mentor/',
     '/personal',
     '/personal/',
     '/personal/dashboard',
@@ -68,6 +71,9 @@ export function getPostLoginPath(returnTo: string | null, user: SessionUser): st
   }
   if (pathname.startsWith('/platform/')) {
     return workspace === WORKSPACES.PLATFORM && canOpenScreen(PLATFORM_SCREENS) ? returnTo : home;
+  }
+  if (pathname.startsWith('/mentor/')) {
+    return workspace === WORKSPACES.MENTOR && canOpenScreen(MENTOR_SCREENS) ? returnTo : home;
   }
   if (pathname.startsWith('/personal/')) {
     return workspace === WORKSPACES.PERSONAL ? returnTo : home;

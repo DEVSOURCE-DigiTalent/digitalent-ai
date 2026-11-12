@@ -113,7 +113,7 @@ const SEEDS: MockAccountSeed[] = [
   },
   {
     id: 'mock-mentor', email: 'mentor@digitalent.ai', fullName: 'Mentor DigiTalent',
-    roles: [ROLES.MENTOR], workspace: WORKSPACES.PLATFORM,
+    roles: [ROLES.MENTOR], workspace: WORKSPACES.MENTOR,
   },
 ];
 

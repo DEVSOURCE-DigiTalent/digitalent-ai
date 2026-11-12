@@ -7,9 +7,18 @@ import { RequireRole } from '../../components/guards/RequireRole';
 import { PlaceholderPage } from '../../features/system/pages/PlaceholderPage';
 import type { ScreenDef } from '../../lib/screens/types';
 import { PageLoading } from '../../components/shared/LoadingState';
+import { PageSkeleton } from '../../features/pulse-employee/components/ui';
 
-/** Shown while a page's code chunk loads (pages are lazy, see lazy-page.ts); the portal shell stays on screen. */
+/**
+ * Shown while a page's code chunk loads (pages are lazy, see lazy-page.ts);
+ * the portal shell stays on screen.
+ * Tự động chuyển sang Pulse Skeleton chuyên biệt khi người dùng ở phân hệ Employee (/enterprise/me).
+ */
 export function RouteFallback() {
+  const path = typeof window !== 'undefined' ? window.location.pathname : '';
+  if (path.startsWith('/enterprise/me')) {
+    return <PageSkeleton />;
+  }
   return <PageLoading label="Đang tải trang" />;
 }
 
