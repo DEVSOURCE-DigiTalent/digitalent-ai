@@ -458,12 +458,14 @@ select:-webkit-autofill {
   flex-direction: column;
   gap: 16px;
   width: 100%;
+  min-width: 0;
 }
 
 .pulse-auth-fields-two {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
+  min-width: 0;
 }
 
 .pulse-auth-field,
@@ -473,6 +475,7 @@ select:-webkit-autofill {
   gap: 6px;
   text-align: left;
   width: 100%;
+  min-width: 0;
 }
 
 .pulse-auth-field label,
@@ -536,7 +539,7 @@ select:-webkit-autofill {
 .pulse-auth-field-control input:not([type='checkbox']):not([type='radio']) {
   width: 100% !important;
   min-height: 48px !important;
-  padding: 12px 16px !important;
+  padding: 12px 16px;
   border-radius: 12px !important;
   border: 1.5px solid rgba(255, 255, 255, 0.14) !important;
   background: rgba(255, 255, 255, 0.04) !important;
@@ -566,9 +569,10 @@ select:-webkit-autofill {
   color: #ffffff;
 }
 
-.pulse-auth-native-input {
-  padding-left: 44px !important;
-  padding-right: 44px !important;
+.pulse-auth-native-input,
+.pulse-auth-field-control input.pulse-auth-native-input {
+  padding-left: 46px !important;
+  padding-right: 46px !important;
 }
 
 .pulse-auth-field input::placeholder,
@@ -910,5 +914,2252 @@ select:-webkit-autofill {
   }
   .pulse-auth-topbar-actions .pulse-auth-home-link {
     display: none;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   UNIFIED MASTER FRAME · ENTERPRISE AUTHENTICATION (SPLIT VIEW)
+   Left: Isometric digital competency artwork · Right: Brand & Form
+   ═══════════════════════════════════════════════════════════════════ */
+
+.pulse-auth-container--unified {
+  justify-content: center;
+  align-items: center;
+  padding: 28px 20px;
+}
+
+.pulse-auth-master-stage {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+}
+
+.pulse-auth-master-frame {
+  width: min(100%, 1100px);
+  min-height: 622px;
+  display: grid;
+  grid-template-columns: 1.07fr 1fr;
+  border-radius: 26px;
+  background: rgba(11, 17, 33, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 35px 90px -20px rgba(0, 0, 0, 0.85),
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 0 60px -15px rgba(56, 189, 248, 0.16);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Left Column: Visual Image Artwork ── */
+.pulse-auth-visual-col {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+  background: #060a15;
+}
+
+.pulse-auth-visual-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 48%;
+  display: block;
+}
+
+.pulse-auth-visual-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(6, 9, 19, 0.15) 0%, rgba(6, 9, 19, 0.35) 60%, rgba(6, 9, 19, 0.75) 100%),
+    radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.12), transparent 50%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── Right Column: Form, Logo & Meta ── */
+.pulse-auth-form-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 32px clamp(28px, 3.6vw, 44px) 22px;
+  position: relative;
+  background: rgba(13, 20, 38, 0.65);
+  min-width: 0;
+}
+
+.pulse-auth-col-topbar {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 5;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.pulse-auth-back-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pulse-auth-col-topbar .pulse-auth-back-btn {
+  position: static;
+}
+
+.pulse-auth-back-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(56, 189, 248, 0.35);
+  transform: translateX(-2px);
+}
+
+.pulse-auth-home-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.pulse-auth-home-chip:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
+  border-color: rgba(56, 189, 248, 0.3);
+  transform: translateX(-1px);
+}
+
+.pulse-auth-form-inner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  margin: auto 0;
+}
+
+/* Brand Lockup inside Right Column */
+.pulse-auth-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.pulse-auth-brand-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  filter: drop-shadow(0 4px 12px rgba(56, 189, 248, 0.35));
+}
+
+.pulse-auth-brand-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pulse-auth-brand-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+}
+
+.pulse-auth-brand-title strong {
+  color: #38bdf8;
+  font-weight: 850;
+}
+
+.pulse-auth-enterprise-tag {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  padding: 2.5px 7px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+/* Heading Area */
+.pulse-auth-heading-area {
+  margin-bottom: 22px;
+}
+
+.pulse-auth-main-title {
+  font-size: clamp(23px, 2.2vw, 27px);
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 6px;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+}
+
+.pulse-auth-lead-subtitle {
+  font-size: 13.5px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.pulse-auth-form-slot {
+  width: 100%;
+  min-width: 0;
+}
+
+.pulse-auth-form-slot .pulse-auth-fields-stack {
+  margin: 0;
+  gap: 16px;
+}
+
+/* Compliance Bottom Footer */
+.pulse-auth-compliance-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: #64748b;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.pulse-auth-compliance-icon {
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+/* ── Responsive Behavior (Unified) ── */
+@media (max-width: 860px) {
+  .pulse-auth-container--unified {
+    padding: 20px 16px;
+  }
+
+  .pulse-auth-master-frame {
+    grid-template-columns: 1fr;
+    width: min(100%, 480px);
+    min-height: auto;
+  }
+
+  .pulse-auth-visual-col {
+    height: 248px;
+    min-height: 248px;
+  }
+
+  .pulse-auth-visual-image {
+    object-position: center 40%;
+  }
+
+  .pulse-auth-visual-overlay {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .pulse-auth-form-col {
+    padding: 26px 24px 20px;
+  }
+
+  .pulse-auth-back-btn {
+    top: 16px;
+    right: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pulse-auth-visual-col {
+    display: none;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   LIGHT ENTERPRISE THEME
+   Crisp White Surface, Sky-to-Royal Blue Illustration & Clean Hierarchy
+   ═══════════════════════════════════════════════════════════════════ */
+
+.pulse-auth-container--light {
+  --auth-ink: #0f172a;
+  --auth-ink-heading: #0f172a;
+  --auth-muted: #64748b;
+  --auth-border: #e2e8f0;
+  background: #f4f6f9 !important;
+  color: #0f172a !important;
+}
+
+.pulse-auth-container--light .pulse-auth-mesh {
+  background-image: radial-gradient(rgba(15, 23, 42, 0.055) 1.15px, transparent 1.15px) !important;
+  opacity: 0.78;
+}
+
+.pulse-auth-container--light .pulse-auth-glow-1 {
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.12) 0%, rgba(56, 189, 248, 0.06) 52%, transparent 72%) !important;
+}
+
+.pulse-auth-container--light .pulse-auth-glow-2 {
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.08) 0%, transparent 68%) !important;
+}
+
+/* Master Frame in Light Theme */
+.pulse-auth-container--light .pulse-auth-master-frame {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow:
+    0 24px 64px -16px rgba(15, 23, 42, 0.10),
+    0 8px 28px -8px rgba(37, 99, 235, 0.08),
+    0 0 0 1px rgba(15, 23, 42, 0.03) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Left Visual Column */
+.pulse-auth-container--light .pulse-auth-visual-col {
+  background: linear-gradient(155deg, #62c7ff 0%, #2d7ff4 52%, #1d57d8 100%) !important;
+}
+
+.pulse-auth-container--light .pulse-auth-visual-overlay {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 90%, rgba(255, 255, 255, 0.16) 100%) !important;
+  border-right: 1px solid rgba(37, 99, 235, 0.12) !important;
+}
+
+/* Right Form Column */
+.pulse-auth-container--light .pulse-auth-form-col {
+  background: #ffffff !important;
+  padding: 28px clamp(30px, 3.8vw, 50px) 24px !important;
+}
+
+/* Back Link Chip */
+.pulse-auth-container--light .pulse-auth-home-chip {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+.pulse-auth-container--light .pulse-auth-home-chip:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Floating Back Button in Light Mode */
+.pulse-auth-container--light .pulse-auth-back-btn {
+  top: 22px !important;
+  right: 22px !important;
+  width: 38px;
+  height: 38px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.pulse-auth-container--light .pulse-auth-back-btn:hover {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+  transform: translateX(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+}
+
+.pulse-auth-container--light .pulse-auth-back-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Brand Lockup */
+.pulse-auth-container--light .pulse-auth-brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  text-decoration: none;
+  cursor: pointer;
+  width: fit-content;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.pulse-auth-container--light .pulse-auth-brand-lockup--centered {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  gap: 3px !important;
+  margin: 0 auto 14px auto !important;
+  width: fit-content !important;
+  padding: 2px 10px;
+  border-radius: 14px;
+}
+
+.pulse-auth-container--light .pulse-auth-brand-lockup:hover {
+  transform: translateY(-1px);
+}
+
+.pulse-auth-container--light .pulse-auth-brand-lockup--centered:hover {
+  transform: translateY(-2px);
+}
+
+.pulse-auth-container--light .pulse-auth-brand-lockup:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+/* Radial Blue Wash Halo around Logo (No White Card Frame) */
+.pulse-auth-container--light .pulse-auth-brand-mark-wrap {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(37, 99, 235, 0.18) 0%, rgba(56, 189, 248, 0.09) 46%, rgba(255, 255, 255, 0) 74%) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none !important;
+  border: none !important;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s ease, filter 0.25s ease;
+  filter: drop-shadow(0 0 12px rgba(37, 99, 235, 0.16));
+}
+
+.pulse-auth-container--light .pulse-auth-brand-lockup:hover .pulse-auth-brand-mark-wrap {
+  transform: scale(1.07);
+  background: radial-gradient(circle at center, rgba(37, 99, 235, 0.28) 0%, rgba(56, 189, 248, 0.16) 52%, rgba(255, 255, 255, 0) 76%) !important;
+  filter: drop-shadow(0 0 16px rgba(37, 99, 235, 0.26));
+  box-shadow: none !important;
+}
+
+.pulse-auth-container--light .pulse-auth-brand-mark {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 0 !important;
+  filter: drop-shadow(0 3px 8px rgba(37, 99, 235, 0.18)) !important;
+}
+
+.pulse-auth-container--light .pulse-auth-brand-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin-top: -1px !important;
+}
+
+.pulse-auth-container--light .pulse-auth-brand-title {
+  font-size: 21px !important;
+  font-weight: 850 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.04em !important;
+  line-height: 1.2 !important;
+  transition: color 0.2s ease;
+}
+
+.pulse-auth-container--light .pulse-auth-brand-lockup:hover .pulse-auth-brand-title {
+  color: #1e293b !important;
+}
+
+.pulse-auth-container--light .pulse-auth-brand-accent {
+  color: #2563eb !important;
+  font-weight: 850 !important;
+  transition: color 0.2s ease;
+}
+
+.pulse-auth-container--light .pulse-auth-brand-lockup:hover .pulse-auth-brand-accent {
+  color: #1d4ed8 !important;
+}
+
+/* Heading & Subtitle */
+.pulse-auth-container--light .pulse-auth-heading-area--centered {
+  text-align: center !important;
+  margin-bottom: 24px !important;
+}
+
+.pulse-auth-container--light .pulse-auth-main-title {
+  color: #0f172a !important;
+  font-size: 27px !important;
+  font-weight: 850 !important;
+  letter-spacing: -0.035em !important;
+  margin-bottom: 6px !important;
+}
+
+.pulse-auth-container--light .pulse-auth-lead-subtitle {
+  color: #64748b !important;
+  font-size: 14px !important;
+  margin: 0 auto !important;
+  max-width: 380px !important;
+}
+
+/* Labels */
+.pulse-auth-container--light .pulse-auth-label {
+  color: #334155 !important;
+  font-size: 13.5px !important;
+  font-weight: 650 !important;
+}
+
+/* Forgot Link */
+.pulse-auth-container--light .pulse-auth-forgot-link {
+  color: #2563eb !important;
+  font-size: 13px !important;
+}
+
+.pulse-auth-container--light .pulse-auth-forgot-link:hover {
+  color: #1d4ed8 !important;
+}
+
+/* Inputs in Light Theme (Clean Border & Crisp Light Shadow) */
+.pulse-auth-container--light .pulse-auth-card input:not([type='checkbox']):not([type='radio']),
+.pulse-auth-container--light .pulse-auth-card select,
+.pulse-auth-container--light .pulse-auth-field input:not([type='checkbox']):not([type='radio']),
+.pulse-auth-container--light .pulse-auth-field select,
+.pulse-auth-container--light .pulse-auth-native-input,
+.pulse-auth-container--light .pulse-auth-fields input:not([type='checkbox']):not([type='radio']),
+.pulse-auth-container--light .pulse-auth-fields select,
+.pulse-auth-container--light .pulse-auth-input-group input:not([type='checkbox']):not([type='radio']),
+.pulse-auth-container--light .pulse-auth-field-control input:not([type='checkbox']):not([type='radio']) {
+  background: #f8fafc !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  font-size: 14.5px !important;
+  font-weight: 500 !important;
+  min-height: 48px !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.pulse-auth-container--light .pulse-auth-native-input:hover:not(:focus),
+.pulse-auth-container--light .pulse-auth-field-control input:hover:not(:focus) {
+  background: #ffffff !important;
+  border-color: #94a3b8 !important;
+}
+
+.pulse-auth-container--light .pulse-auth-native-input:focus,
+.pulse-auth-container--light .pulse-auth-field-control input:focus {
+  background: #ffffff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.14) !important;
+}
+
+/* Chrome / WebKit Autofill in Light Mode */
+.pulse-auth-container--light input:-webkit-autofill,
+.pulse-auth-container--light input:-webkit-autofill:hover,
+.pulse-auth-container--light input:-webkit-autofill:focus,
+.pulse-auth-container--light input:-webkit-autofill:active {
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a !important;
+  -webkit-box-shadow: 0 0 0 1000px #eff6ff inset, 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  box-shadow: 0 0 0 1000px #eff6ff inset, 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  border: 1.5px solid #93c5fd !important;
+  border-radius: 12px !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+  font-size: 14px !important;
+  font-weight: 550 !important;
+  color: #0f172a !important;
+}
+
+.pulse-auth-container--light input:-webkit-autofill:hover {
+  border-color: #60a5fa !important;
+}
+
+.pulse-auth-container--light input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset, 0 0 0 3.5px rgba(37, 99, 235, 0.16) !important;
+  box-shadow: 0 0 0 1000px #ffffff inset, 0 0 0 3.5px rgba(37, 99, 235, 0.16) !important;
+  border-color: #2563eb !important;
+}
+
+.pulse-auth-container--light .pulse-auth-field input::placeholder,
+.pulse-auth-container--light .pulse-auth-native-input::placeholder {
+  color: #94a3b8 !important;
+}
+
+.pulse-auth-container--light .pulse-auth-lead-icon {
+  color: #64748b !important;
+  z-index: 2 !important;
+  pointer-events: none !important;
+}
+
+.pulse-auth-container--light .pulse-auth-field-control:focus-within .pulse-auth-lead-icon {
+  color: #2563eb !important;
+}
+
+.pulse-auth-container--light .pulse-auth-trailing-button {
+  color: #64748b !important;
+  z-index: 2 !important;
+}
+
+.pulse-auth-container--light .pulse-auth-trailing-button:hover {
+  color: #0f172a !important;
+  background: rgba(15, 23, 42, 0.05) !important;
+}
+
+/* Error / Alert Banners in Light Theme */
+.pulse-auth-container--light .pulse-auth-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.pulse-auth-container--light .pulse-auth-banner--error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.pulse-auth-container--light .pulse-auth-banner--success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+
+.pulse-auth-container--light .pulse-auth-error-text {
+  color: #dc2626 !important;
+}
+
+/* Checkbox & Remember Row */
+.pulse-auth-container--light .pulse-auth-checkbox-label {
+  color: #475569 !important;
+  font-size: 13.5px !important;
+}
+
+.pulse-auth-container--light .pulse-auth-checkbox-label input[type='checkbox'] {
+  accent-color: #2563eb !important;
+}
+
+/* Submit Button */
+.pulse-auth-container--light .pulse-auth-submit-btn {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border: none !important;
+  min-height: 48px !important;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.28) !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.pulse-auth-container--light .pulse-auth-submit-btn:hover:not(:disabled) {
+  background: #1d4ed8 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.38) !important;
+}
+
+/* Trial Sign-Up Switch Prompt */
+.pulse-auth-container--light .pulse-auth-switch-prompt {
+  margin: 2px 0 0;
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.pulse-auth-container--light .pulse-auth-switch-link {
+  color: #2563eb;
+  font-weight: 650;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.pulse-auth-container--light .pulse-auth-switch-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Footer Descriptor */
+.pulse-auth-container--light .pulse-auth-compliance-footer {
+  border-top: 1px solid #f1f5f9 !important;
+  color: #64748b !important;
+  font-size: 12px !important;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.45;
+  margin-top: 18px !important;
+  padding-top: 15px !important;
+}
+
+.pulse-auth-container--light .pulse-auth-compliance-icon {
+  color: #2563eb !important;
+}
+
+/* ── Light Theme Responsive Overrides ── */
+@media (max-width: 860px) {
+  .pulse-auth-container--light .pulse-auth-visual-overlay {
+    border-right: none !important;
+    border-bottom: 1px solid rgba(37, 99, 235, 0.12) !important;
+  }
+
+  .pulse-auth-container--light .pulse-auth-form-col {
+    padding: 24px 24px 20px !important;
+  }
+
+  .pulse-auth-container--light .pulse-auth-back-btn {
+    top: 16px !important;
+    right: 16px !important;
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pulse-auth-container--light .pulse-auth-form-col {
+    padding: 22px 18px 18px !important;
+  }
+
+  .pulse-auth-container--light .pulse-auth-main-title {
+    font-size: 24px !important;
+  }
+
+  .pulse-auth-container--light .pulse-auth-compliance-footer {
+    font-size: 11px !important;
+    gap: 6px !important;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   LIGHT ONBOARDING / TRIAL / REGISTER SPLIT FRAME
+   Left: Enterprise Blue Roadmap Aside · Right: Crisp White Form
+   ═══════════════════════════════════════════════════════════════════ */
+
+.pulse-auth-master-frame--register {
+  width: min(100%, 1120px) !important;
+  min-height: 622px;
+  grid-template-columns: minmax(340px, 0.78fr) 1.22fr !important;
+}
+
+/* ── Left Aside Panel (Enterprise Blue Canvas) ── */
+.pulse-auth-aside-col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 38px 34px 28px;
+  background: linear-gradient(155deg, #3b82f6 0%, #2563eb 50%, #1e40af 100%);
+  color: #ffffff;
+  border-right: 1px solid rgba(37, 99, 235, 0.14);
+  overflow: hidden;
+}
+
+.pulse-auth-aside-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.065) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.065) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(ellipse 88% 76% at 24% 22%, #000 32%, transparent 90%);
+  -webkit-mask-image: radial-gradient(ellipse 88% 76% at 24% 22%, #000 32%, transparent 90%);
+}
+
+.pulse-auth-aside-glow {
+  position: absolute;
+  top: -110px;
+  right: -90px;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(125, 211, 252, 0.34) 0%, rgba(56, 189, 248, 0.10) 48%, transparent 72%);
+}
+
+.pulse-auth-aside-content {
+  position: relative;
+  z-index: 1;
+}
+
+.pulse-auth-aside-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+
+.pulse-auth-aside-pill-dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #7dd3fc;
+  box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.28);
+}
+
+.pulse-auth-aside-title {
+  margin: 0 0 12px;
+  font-size: clamp(23px, 2.25vw, 28px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.24;
+  text-wrap: balance;
+  color: #ffffff;
+}
+
+.pulse-auth-aside-text {
+  margin: 0 0 26px;
+  font-size: 14px;
+  line-height: 1.62;
+  color: rgba(239, 246, 255, 0.92);
+  max-width: 34ch;
+}
+
+/* Numbered 4-Step Vertical Roadmap */
+.pulse-auth-roadmap {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pulse-auth-roadmap-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 13px;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(241, 245, 249, 0.88);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.pulse-auth-roadmap-item--active {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.38);
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+
+.pulse-auth-roadmap-marker {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12.5px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+}
+
+.pulse-auth-roadmap-item--active .pulse-auth-roadmap-marker {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #1d4ed8;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.16);
+}
+
+.pulse-auth-roadmap-label {
+  font-size: 13.5px;
+  font-weight: 550;
+  line-height: 1.4;
+}
+
+.pulse-auth-roadmap-item--active .pulse-auth-roadmap-label {
+  font-weight: 700;
+}
+
+/* Unnumbered Check Highlights (Paid Registration / Activation Flows) */
+.pulse-auth-aside-highlights {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pulse-auth-aside-highlight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  font-size: 13.5px;
+  font-weight: 550;
+  line-height: 1.5;
+  color: rgba(248, 250, 252, 0.94);
+}
+
+.pulse-auth-aside-check {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  color: #ffffff;
+}
+
+/* Bottom Trust Fact Bar inside Blue Aside Column */
+.pulse-auth-aside-trust {
+  position: relative;
+  z-index: 1;
+  margin-top: 26px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+
+.pulse-auth-aside-trust-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 550;
+  color: rgba(239, 246, 255, 0.90);
+}
+
+/* ── Right White Form Column for Onboarding Flows ── */
+.pulse-auth-container--light .pulse-auth-form-col--register {
+  padding: 26px clamp(28px, 3.6vw, 44px) 22px !important;
+}
+
+.pulse-auth-form-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.pulse-auth-brand-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #0f172a;
+  border-radius: 10px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.pulse-auth-brand-inline:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.pulse-auth-brand-inline:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 4px;
+}
+
+.pulse-auth-brand-inline-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  filter: drop-shadow(0 2px 6px rgba(37, 99, 235, 0.16));
+}
+
+.pulse-auth-brand-inline-title {
+  font-size: 18px;
+  font-weight: 850;
+  letter-spacing: -0.04em;
+  color: #0f172a;
+}
+
+.pulse-auth-back-btn--static {
+  position: static !important;
+  flex-shrink: 0;
+}
+
+.pulse-auth-form-inner--register {
+  margin: auto 0;
+}
+
+.pulse-auth-heading-area--register {
+  text-align: left !important;
+  margin-bottom: 18px !important;
+}
+
+.pulse-auth-container--light .pulse-auth-heading-area--register .pulse-auth-main-title {
+  font-size: clamp(23px, 2.2vw, 26px) !important;
+  margin-bottom: 5px !important;
+}
+
+.pulse-auth-container--light .pulse-auth-heading-area--register .pulse-auth-lead-subtitle {
+  margin: 0 !important;
+  max-width: none !important;
+  font-size: 13.5px !important;
+  color: #64748b !important;
+}
+
+/* ── Shared Field, Select, Button & Alert Overrides inside Light Container ── */
+.pulse-auth-container--light .pulse-auth-fields {
+  gap: 14px;
+}
+
+.pulse-auth-container--light .pulse-auth-fields-two {
+  gap: 14px;
+}
+
+.pulse-auth-container--light .pulse-auth-field label {
+  color: #334155 !important;
+  font-size: 13px !important;
+  font-weight: 650 !important;
+}
+
+.pulse-auth-container--light .pulse-auth-field input:not([type='checkbox']):not([type='radio']),
+.pulse-auth-container--light .pulse-auth-field select,
+.pulse-auth-container--light .pulse-auth-fields input:not([type='checkbox']):not([type='radio']),
+.pulse-auth-container--light .pulse-auth-fields select {
+  min-height: 46px !important;
+  padding: 10px 14px;
+  font-size: 14px !important;
+  background-color: #f8fafc !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.pulse-auth-container--light .pulse-auth-field input:not([type='checkbox']):not([type='radio']):hover:not(:focus),
+.pulse-auth-container--light .pulse-auth-field select:hover:not(:focus),
+.pulse-auth-container--light .pulse-auth-fields input:not([type='checkbox']):not([type='radio']):hover:not(:focus),
+.pulse-auth-container--light .pulse-auth-fields select:hover:not(:focus) {
+  background-color: #ffffff !important;
+  border-color: #94a3b8 !important;
+}
+
+.pulse-auth-container--light .pulse-auth-field input:not([type='checkbox']):not([type='radio']):focus,
+.pulse-auth-container--light .pulse-auth-field select:focus,
+.pulse-auth-container--light .pulse-auth-fields input:not([type='checkbox']):not([type='radio']):focus,
+.pulse-auth-container--light .pulse-auth-fields select:focus {
+  background-color: #ffffff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.14) !important;
+}
+
+.pulse-auth-container--light .pulse-auth-field select,
+.pulse-auth-container--light .pulse-auth-fields select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 38px !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 13px center !important;
+  background-size: 16px 16px !important;
+}
+
+.pulse-auth-container--light .pulse-auth-field select:required:invalid,
+.pulse-auth-container--light .pulse-auth-fields select:required:invalid {
+  color: #94a3b8 !important;
+}
+
+.pulse-auth-container--light .pulse-auth-field select option,
+.pulse-auth-container--light .pulse-auth-fields select option {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.pulse-auth-container--light .pulse-auth-icon-button {
+  color: #64748b;
+}
+
+.pulse-auth-container--light .pulse-auth-icon-button:hover {
+  background: rgba(15, 23, 42, 0.05);
+  color: #0f172a;
+}
+
+.pulse-auth-container--light .pulse-auth-consent {
+  align-items: flex-start;
+  color: #475569 !important;
+  font-size: 13px !important;
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+.pulse-auth-container--light .pulse-auth-consent input[type='checkbox'] {
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: #2563eb !important;
+}
+
+.pulse-auth-container--light .pulse-auth-primary {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border: none !important;
+  min-height: 48px !important;
+  margin-top: 4px;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.28) !important;
+}
+
+.pulse-auth-container--light .pulse-auth-primary::before {
+  display: none;
+}
+
+.pulse-auth-container--light .pulse-auth-primary:hover:not(:disabled) {
+  background: #1d4ed8 !important;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.38) !important;
+  transform: translateY(-1px);
+}
+
+.pulse-auth-container--light .pulse-auth-primary:disabled {
+  background: #e2e8f0 !important;
+  color: #475569 !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+.pulse-auth-container--light .pulse-auth-card-footer--inline {
+  margin-top: 14px;
+  padding-top: 0;
+  border-top: none;
+}
+
+.pulse-auth-container--light .pulse-auth-card-footer p {
+  color: #64748b;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.pulse-auth-container--light .pulse-auth-card-footer a {
+  color: #2563eb;
+  font-weight: 650;
+}
+
+.pulse-auth-container--light .pulse-auth-card-footer a:hover {
+  color: #1d4ed8;
+}
+
+/* Light-Mode Alerts, Hints, Links, Secondary & OTP Widgets */
+.pulse-auth-container--light .pulse-auth-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.pulse-auth-container--light .pulse-auth-success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+
+.pulse-auth-container--light .pulse-auth-info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+.pulse-auth-container--light .pulse-auth-subtle,
+.pulse-auth-container--light .pulse-auth-field-hint {
+  color: #64748b;
+}
+
+.pulse-auth-container--light .pulse-auth-subtle a,
+.pulse-auth-container--light .pulse-auth-link {
+  color: #2563eb;
+  font-weight: 650;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pulse-auth-container--light .pulse-auth-subtle a:hover,
+.pulse-auth-container--light .pulse-auth-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.pulse-auth-container--light .pulse-auth-inline-error {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.pulse-auth-container--light .pulse-auth-secondary {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.pulse-auth-container--light .pulse-auth-secondary:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.pulse-auth-container--light .pulse-auth-otp-input {
+  background: #f8fafc !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.pulse-auth-container--light .pulse-auth-otp-input:focus {
+  background: #ffffff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.16) !important;
+}
+
+.pulse-auth-container--light .pulse-auth-otp-input--filled {
+  background: #eff6ff !important;
+  border-color: #2563eb !important;
+}
+
+.pulse-auth-container--light .pulse-auth-otp-input--error {
+  border-color: #dc2626 !important;
+}
+
+.pulse-auth-container--light .pulse-auth-otp-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 4px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #2563eb;
+}
+
+.pulse-auth-container--light .pulse-auth-success-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 4px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #059669;
+}
+
+.pulse-auth-container--light .pulse-auth-otp-resend {
+  display: flex;
+  justify-content: center;
+}
+
+/* Light-Theme Compatibility for Paid Business Register Flow (.pulse-auth-paid-plan & .pulse-auth-paid-form) */
+.pulse-auth-container--light .pulse-auth-paid-plan {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-plan .bg-landing-panel {
+  background: #f8fafc !important;
+  box-shadow: none !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-plan .bg-landing-card {
+  background: #eff6ff !important;
+  color: #475569 !important;
+  border-color: #bfdbfe !important;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-plan .text-cream {
+  color: #0f172a !important;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-plan .text-\[\#F5CA65\] {
+  color: #2563eb !important;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-plan .text-amber-200\/90,
+.pulse-auth-container--light .pulse-auth-paid-plan .text-stone-300,
+.pulse-auth-container--light .pulse-auth-paid-plan .text-stone-400 {
+  color: #475569 !important;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-plan .bg-gradient-to-r {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28) !important;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-plan .bg-amber-400\/20 {
+  background: #dbeafe !important;
+  border-color: #93c5fd !important;
+  color: #1d4ed8 !important;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-plan .bg-white\/10 {
+  background: #e2e8f0 !important;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-form label.text-cream\/90 {
+  color: #334155 !important;
+  font-weight: 650;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-form input:not([type='checkbox']) {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #f8fafc !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  font-size: 14px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.pulse-auth-container--light .pulse-auth-paid-form input:not([type='checkbox']):focus {
+  background: #ffffff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.14) !important;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-form input::placeholder {
+  color: #94a3b8 !important;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-form input[type='checkbox'] {
+  accent-color: #2563eb !important;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-form .text-stone-400 {
+  color: #475569 !important;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-form .text-cream {
+  color: #2563eb !important;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-form .text-red-300,
+.pulse-auth-container--light .pulse-auth-paid-form .text-red-200 {
+  color: #dc2626 !important;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-form [role='alert'].bg-red-500\/10 {
+  background: #fef2f2 !important;
+  border-color: #fecaca !important;
+  color: #b91c1c !important;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-form button[type='submit'] {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-radius: 12px !important;
+  min-height: 48px !important;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.28) !important;
+}
+
+.pulse-auth-container--light .pulse-auth-paid-form button[type='submit']:hover:not(:disabled) {
+  background: #1d4ed8 !important;
+}
+
+/* ── Light Visual Image Aside Variant (Phương án 1 · Clean Backdrop + Minimal Copy) ── */
+.pulse-auth-aside-col--visual {
+  justify-content: flex-start;
+  background: #f1f6fc;
+  color: #0f172a;
+  border-right: 1px solid #e2e8f0;
+  padding: 34px 32px;
+}
+
+.pulse-auth-aside-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 58%;
+  pointer-events: none;
+  user-select: none;
+}
+
+.pulse-auth-aside-bg-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(248, 250, 252, 0.78) 0%,
+    rgba(248, 250, 252, 0.24) 40%,
+    rgba(239, 246, 255, 0.08) 100%
+  );
+}
+
+.pulse-auth-aside-content--visual {
+  position: relative;
+  z-index: 1;
+}
+
+.pulse-auth-aside-pill--light {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  margin-bottom: 14px;
+}
+
+.pulse-auth-aside-pill--light .pulse-auth-aside-pill-dot {
+  background: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+
+.pulse-auth-aside-title--light {
+  margin: 0 0 8px;
+  font-size: clamp(21px, 2.05vw, 25px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.24;
+  color: #0f172a;
+}
+
+.pulse-auth-aside-text--light {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #475569;
+  max-width: 30ch;
+}
+
+/* ── 3-Step Registration Stepper & Multi-Step Controls ── */
+.pulse-auth-stepper {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 0;
+}
+
+.pulse-auth-stepper-item {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.pulse-auth-stepper-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+button.pulse-auth-stepper-cell {
+  cursor: pointer;
+  border-radius: 9px;
+}
+
+button.pulse-auth-stepper-cell:hover {
+  background: rgba(37, 99, 235, 0.06);
+}
+
+button.pulse-auth-stepper-cell:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+.pulse-auth-stepper-num {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11.5px;
+  font-weight: 800;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.pulse-auth-stepper-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pulse-auth-stepper-item--active {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #0f172a;
+}
+
+.pulse-auth-stepper-item--active .pulse-auth-stepper-num {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.pulse-auth-stepper-item--active .pulse-auth-stepper-label {
+  font-weight: 700;
+}
+
+.pulse-auth-stepper-item--done {
+  background: #f8fafc;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+.pulse-auth-stepper-item--done .pulse-auth-stepper-num {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.pulse-auth-step-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #334155;
+}
+
+.pulse-auth-step-summary-meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pulse-auth-step-summary-meta strong {
+  color: #0f172a;
+  font-weight: 650;
+}
+
+.pulse-auth-text-btn {
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.pulse-auth-text-btn:hover:not(:disabled) {
+  color: #1d4ed8;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.pulse-auth-text-btn:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.pulse-auth-password-status {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.pulse-auth-password-status--ok {
+  color: #047857;
+  font-weight: 600;
+}
+
+/* Real-time Password Strength Meter */
+.pulse-auth-pwd-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 6px;
+}
+
+.pulse-auth-pwd-bars {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.pulse-auth-pwd-bar {
+  height: 4px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  transition: background-color 0.2s ease;
+}
+
+.pulse-auth-pwd-bar--weak {
+  background: #ef4444;
+}
+
+.pulse-auth-pwd-bar--fair {
+  background: #f59e0b;
+}
+
+.pulse-auth-pwd-bar--good {
+  background: #0284c7;
+}
+
+.pulse-auth-pwd-bar--strong {
+  background: #059669;
+}
+
+.pulse-auth-pwd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.pulse-auth-pwd-label {
+  color: #475569;
+  font-weight: 500;
+}
+
+.pulse-auth-pwd-badge {
+  font-weight: 700;
+}
+
+.pulse-auth-pwd-badge--idle {
+  color: #64748b;
+}
+
+.pulse-auth-pwd-badge--weak {
+  color: #dc2626;
+}
+
+.pulse-auth-pwd-badge--fair {
+  color: #d97706;
+}
+
+.pulse-auth-pwd-badge--good {
+  color: #0369a1;
+}
+
+.pulse-auth-pwd-badge--strong {
+  color: #047857;
+}
+
+.pulse-auth-pwd-hint {
+  color: #64748b;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.pulse-auth-pwd-hint--warn {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.pulse-auth-pwd-rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 6px;
+}
+
+.pulse-auth-pwd-rule {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 550;
+  line-height: 1.3;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.pulse-auth-pwd-rule-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.pulse-auth-pwd-rule--met {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+  font-weight: 650;
+}
+
+/* Elevated Email Verification Notice Card */
+.pulse-auth-otp-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 14px 15px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f8fbff 0%, #eff6ff 100%);
+  border: 1px solid #bfdbfe;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.06);
+}
+
+.pulse-auth-otp-notice--resent {
+  background: linear-gradient(135deg, #f7fefb 0%, #ecfdf5 100%);
+  border-color: #a7f3d0;
+  box-shadow: 0 2px 10px rgba(5, 150, 105, 0.07);
+}
+
+.pulse-auth-otp-notice-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  border: 1px solid #bfdbfe;
+  color: #2563eb;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.08);
+}
+
+.pulse-auth-otp-notice--resent .pulse-auth-otp-notice-icon {
+  border-color: #a7f3d0;
+  color: #059669;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.08);
+}
+
+.pulse-auth-otp-notice-body {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pulse-auth-otp-notice-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pulse-auth-otp-notice-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
+.pulse-auth-otp-notice-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.pulse-auth-otp-notice--resent .pulse-auth-otp-notice-badge {
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+.pulse-auth-otp-notice-recipient {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 1px;
+}
+
+.pulse-auth-otp-notice-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+.pulse-auth-otp-notice-email {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 2px 9px;
+  border-radius: 7px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  word-break: break-all;
+}
+
+.pulse-auth-step-actions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: stretch;
+  margin-top: 2px;
+}
+
+.pulse-auth-step-actions .pulse-auth-secondary {
+  min-height: 48px;
+  min-width: 104px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pulse-auth-step-actions .pulse-auth-primary {
+  margin-top: 0;
+}
+
+.pulse-auth-otp-footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
+.pulse-auth-otp-footer-actions .pulse-auth-secondary {
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: 10px;
+}
+
+.pulse-auth-otp-footer-actions .pulse-auth-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Register / Onboarding Flow Responsive Breakpoints ── */
+@media (max-width: 960px) {
+  .pulse-auth-master-frame--register {
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: min(100%, 580px) !important;
+    min-height: auto !important;
+  }
+
+  .pulse-auth-aside-col {
+    padding: 24px 24px 20px;
+    border-right: none;
+    border-bottom: 1px solid rgba(37, 99, 235, 0.14);
+  }
+
+  .pulse-auth-aside-col--visual {
+    padding: 22px 24px;
+    min-height: 156px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .pulse-auth-aside-bg-scrim {
+    background: linear-gradient(
+      90deg,
+      rgba(248, 250, 252, 0.92) 0%,
+      rgba(248, 250, 252, 0.72) 55%,
+      rgba(239, 246, 255, 0.25) 100%
+    );
+  }
+
+  .pulse-auth-aside-pill {
+    margin-bottom: 12px;
+  }
+
+  .pulse-auth-aside-title {
+    margin-bottom: 8px;
+  }
+
+  .pulse-auth-aside-text {
+    margin-bottom: 18px;
+    max-width: none;
+  }
+
+  .pulse-auth-aside-text--light {
+    margin-bottom: 0;
+  }
+
+  .pulse-auth-aside-trust {
+    margin-top: 18px;
+    padding-top: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .pulse-auth-container--aside-flow {
+    padding: 16px 14px;
+  }
+
+  .pulse-auth-aside-col {
+    padding: 18px 18px;
+  }
+
+  .pulse-auth-aside-col--visual {
+    min-height: 118px;
+    padding: 16px 18px;
+  }
+
+  .pulse-auth-aside-title,
+  .pulse-auth-aside-title--light {
+    font-size: 19px;
+    margin-bottom: 6px;
+  }
+
+  .pulse-auth-aside-text {
+    display: none;
+  }
+
+  .pulse-auth-aside-text--light {
+    display: block;
+    font-size: 13px;
+  }
+
+  .pulse-auth-roadmap {
+    gap: 7px;
+  }
+
+  .pulse-auth-roadmap-item {
+    padding: 7px 10px;
+    gap: 10px;
+    border-radius: 10px;
+  }
+
+  .pulse-auth-roadmap-marker {
+    width: 24px;
+    height: 24px;
+    font-size: 11.5px;
+  }
+
+  .pulse-auth-roadmap-label {
+    font-size: 12.5px;
+  }
+
+  .pulse-auth-aside-trust {
+    display: none;
+  }
+
+  .pulse-auth-container--light .pulse-auth-form-col--register {
+    padding: 20px 18px 18px !important;
+  }
+
+  .pulse-auth-step-summary-meta {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .pulse-auth-form-topbar {
+    margin-bottom: 14px;
+  }
+
+  .pulse-auth-stepper {
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .pulse-auth-stepper-cell {
+    padding: 7px 8px;
+    gap: 6px;
+  }
+
+  .pulse-auth-stepper-label {
+    font-size: 11.5px;
+  }
+
+  .pulse-auth-step-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .pulse-auth-step-actions .pulse-auth-secondary {
+    order: 2;
+  }
+
+  .pulse-trial-loading-card {
+    padding: 28px 20px 24px;
+    border-radius: 20px;
+  }
+}
+
+/* ── Fullscreen Workspace Handoff Loading Screen ── */
+@keyframes pulse-trial-loading-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pulse-trial-halo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pulse-auth-loading-stage {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: #f4f7fc;
+  color: #0f172a;
+  overflow: hidden;
+  font-family: var(--font-sans, 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif);
+}
+
+.pulse-trial-loading-card {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 440px);
+  padding: 36px 32px 28px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid #dbeafe;
+  box-shadow:
+    0 24px 64px rgba(15, 23, 42, 0.08),
+    0 4px 18px rgba(37, 99, 235, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: pulse-trial-loading-enter 0.28s ease-out;
+}
+
+.pulse-trial-loading-mark-wrap {
+  position: relative;
+  width: 82px;
+  height: 82px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 18px;
+}
+
+.pulse-trial-loading-halo {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #2563eb, #38bdf8, #10b981, #2563eb);
+  opacity: 0.34;
+  filter: blur(12px);
+  animation: pulse-trial-halo-spin 4s linear infinite;
+}
+
+.pulse-trial-loading-mark-inner {
+  position: relative;
+  z-index: 1;
+  width: 68px;
+  height: 68px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.14);
+}
+
+.pulse-trial-loading-logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.pulse-trial-loading-email {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 650;
+  margin-bottom: 12px;
+  word-break: break-all;
+}
+
+.pulse-trial-loading-title {
+  margin: 0 0 6px;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.pulse-trial-loading-status {
+  margin: 0;
+  min-height: 20px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.pulse-trial-loading-track {
+  width: 100%;
+  height: 6px;
+  margin-top: 20px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.pulse-trial-loading-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2563eb 0%, #0ea5e9 55%, #10b981 100%);
+  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.28);
+}
+
+.pulse-trial-loading-steps {
+  list-style: none;
+  width: 100%;
+  margin: 20px 0 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.pulse-trial-loading-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.pulse-trial-loading-step--active {
+  color: #0f172a;
+  font-weight: 650;
+}
+
+.pulse-trial-loading-step--done {
+  color: #047857;
+  font-weight: 600;
+}
+
+.pulse-trial-loading-step-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.pulse-trial-loading-step--active .pulse-trial-loading-step-icon {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.pulse-trial-loading-step--done .pulse-trial-loading-step-icon {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.pulse-trial-loading-step-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+
+.pulse-trial-loading-footer {
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+  width: 100%;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-trial-loading-card,
+  .pulse-trial-loading-halo {
+    animation: none;
+  }
+
+  .pulse-trial-loading-fill {
+    transition: none;
   }
 }
