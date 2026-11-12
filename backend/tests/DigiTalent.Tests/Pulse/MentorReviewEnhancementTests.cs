@@ -192,15 +192,15 @@ public class MentorReviewEnhancementTests
         await world.PassAllModulesAsync(employee, course.CourseId);
         var submitted = await world.SubmitFinalAsync(employee, course.CourseId);
 
-        var managerUser = await world.UserAsync(PulseTestWorld.ManagerEmail);
-        var managerEmp = await world.EmployeeAsync(PulseTestWorld.ManagerEmail);
+        var managerUser = await world.UserAsync(PulseTestWorld.OwnerEmail);
+        var managerEmp = await world.EmployeeAsync(PulseTestWorld.OwnerEmail);
         var current = new Mock<ICurrentUser>();
         current.Setup(c => c.UserId).Returns(managerUser.Id);
         current.Setup(c => c.OrganizationId).Returns(managerUser.OrganizationId);
         current.Setup(c => c.GetRequiredOrganizationId()).Returns(managerUser.OrganizationId!.Value);
         current.Setup(c => c.DepartmentId).Returns(managerEmp.DepartmentId);
-        current.Setup(c => c.Roles).Returns(new List<string> { Roles.Manager });
-        current.Setup(c => c.IsDepartmentManager).Returns(true);
+        current.Setup(c => c.Roles).Returns(new List<string> { Roles.Owner });
+        current.Setup(c => c.IsAdmin).Returns(true);
         current.Setup(c => c.IsAuthenticated).Returns(true);
 
         var scope = new PulseReviewScope(world.Context, new EmployeeScope(world.Context, current.Object), current.Object);
@@ -278,15 +278,15 @@ public class MentorReviewEnhancementTests
         await world.PassAllModulesAsync(employee, course.CourseId);
         var submitted = await world.SubmitFinalAsync(employee, course.CourseId);
 
-        var managerUser = await world.UserAsync(PulseTestWorld.ManagerEmail);
-        var managerEmp = await world.EmployeeAsync(PulseTestWorld.ManagerEmail);
+        var managerUser = await world.UserAsync(PulseTestWorld.OwnerEmail);
+        var managerEmp = await world.EmployeeAsync(PulseTestWorld.OwnerEmail);
         var current = new Mock<ICurrentUser>();
         current.Setup(c => c.UserId).Returns(managerUser.Id);
         current.Setup(c => c.OrganizationId).Returns(managerUser.OrganizationId);
         current.Setup(c => c.GetRequiredOrganizationId()).Returns(managerUser.OrganizationId!.Value);
         current.Setup(c => c.DepartmentId).Returns(managerEmp.DepartmentId);
-        current.Setup(c => c.Roles).Returns(new List<string> { Roles.Manager });
-        current.Setup(c => c.IsDepartmentManager).Returns(true);
+        current.Setup(c => c.Roles).Returns(new List<string> { Roles.Owner });
+        current.Setup(c => c.IsAdmin).Returns(true);
         current.Setup(c => c.IsAuthenticated).Returns(true);
 
         var audit = new Mock<IAuditService>();
@@ -398,7 +398,7 @@ public class MentorReviewEnhancementTests
         world.Context.ChangeTracker.Clear();
 
         var submitted = await world.SubmitFinalAsync(employee, course.CourseId);
-        var manager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
+        var manager = await world.AsAsync(PulseTestWorld.OwnerEmail, Roles.Owner);
         var gateFailPass = () => manager.Decide.ExecuteAsync(new DecidePulseFinalUseCaseInput
         {
             SubmissionId = submitted.SubmissionId,

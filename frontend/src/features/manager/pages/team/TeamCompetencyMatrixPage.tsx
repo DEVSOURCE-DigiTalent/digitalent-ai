@@ -2,12 +2,14 @@ import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '@/components/shared';
+import { useManagedDepartment } from '@/hooks/use-managed-department';
 import { useManagerSkillGapMatrix } from '../../hooks/use-manager-skill-gaps';
 
 export function TeamCompetencyMatrixPage() {
   useUiLanguage();
   const [page, setPage] = useState(1);
-  const query = useManagerSkillGapMatrix(page);
+  const { department } = useManagedDepartment();
+  const query = useManagerSkillGapMatrix(page, 10, department?.id);
   const rows = query.data?.details ?? [];
   const competencies = Array.from(new Map(rows.flatMap((run) => run.items).map((item) => [item.competencyId, item])).values());
 

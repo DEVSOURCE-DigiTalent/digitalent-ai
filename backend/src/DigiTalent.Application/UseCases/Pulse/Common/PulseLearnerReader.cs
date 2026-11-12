@@ -185,7 +185,6 @@ public class PulseLearnerReader
                 select new
                 {
                     DepartmentName = d.Name,
-                    d.ManagerEmployeeId,
                     OrganizationName = o.Name,
                     PositionName = _context.JobPositions.Where(p => p.Id == e.JobPositionId).Select(p => p.Name).FirstOrDefault(),
                 })
@@ -510,7 +509,7 @@ public class PulseLearnerReader
             PositionName = names?.PositionName,
             OrganizationName = names?.OrganizationName,
             HasPosition = hasPosition,
-            Reviewer = await LoadReviewerAsync(employee, names?.ManagerEmployeeId),
+            Reviewer = await LoadReviewerAsync(employee),
             PlacementTest = placementInfo,
             Domains = domains,
             Courses = states,
@@ -575,11 +574,7 @@ public class PulseLearnerReader
             .ToList();
     }
 
-    /// <summary>
-    /// Quản lý phòng ban của nhân viên chấm bài; nhân viên là quản lý phòng ban (hoặc phòng chưa có quản lý) thì chủ
-    /// doanh nghiệp chấm (PulseReviewScope: không ai tự chấm bài của mình).
-    /// </summary>
-    private async Task<PulseReviewerInfo?> LoadReviewerAsync(Employee employee, Guid? managerEmployeeId)
+    private async Task<PulseReviewerInfo?> LoadReviewerAsync(Employee employee)
     {
         // Doanh nghiệp dùng thử: mentor DigiTalent được phân công chấm mọi bài.
         var trial = await _context.TrialWorkspaces.AsNoTracking()
@@ -591,16 +586,17 @@ public class PulseLearnerReader
             return trial.MentorUserId == null ? null : new PulseReviewerInfo(trial.MentorName ?? "Mentor DigiTalent", "Mentor DigiTalent");
         }
 
-        if (managerEmployeeId is { } managerId && managerId != employee.Id)
+        var hasMentor = await (
+                from userRole in _context.UserRoles.AsNoTracking()
+                join role in _context.Roles.AsNoTracking() on userRole.RoleId equals role.Id
+                join user in _context.Users.AsNoTracking() on userRole.UserId equals user.Id
+                where role.Code == Roles.Mentor && role.Status == Statuses.Simple.Active
+                      && user.Status == Statuses.User.Active && user.Id != employee.UserId
+                select user.Id)
+            .AnyAsync();
+        if (hasMentor)
         {
-            var manager = await _context.Employees.AsNoTracking()
-                .Where(e => e.Id == managerId)
-                .Select(e => new { e.FullName, e.UserId })
-                .FirstOrDefaultAsync();
-            if (manager != null && (manager.UserId == null || manager.UserId != employee.UserId))
-            {
-                return new PulseReviewerInfo(manager.FullName, "Quản lý phòng ban");
-            }
+            return new PulseReviewerInfo("Mentor DigiTalent", "Mentor DigiTalent");
         }
 
         var owner = await (

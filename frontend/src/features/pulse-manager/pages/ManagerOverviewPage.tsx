@@ -46,10 +46,10 @@ function measureState(row: WorkforceRow): { label: string; tone: 'green' | 'gray
 export function ManagerOverviewPage() {
   useUiLanguage();
   const { can } = usePermission();
-  const canReview = can(PERMISSIONS.TASK_EVALUATE);
+  const canReview = can(PERMISSIONS.DASHBOARD_DEPARTMENT_READ);
   const { department, isLoading: deptLoading, isError: deptError, refetch: refetchDept } = useManagedDepartment();
   const team = useWorkforce({ departmentId: department?.id, pageIndex: 1, pageSize: 100 }, Boolean(department));
-  const reviews = usePulseFinalReviews(canReview && Boolean(department));
+  const reviews = usePulseFinalReviews({ enabled: canReview && Boolean(department), departmentId: department?.id });
 
   if (deptLoading) {
     return <ManagerPage><PageSkeleton blocks={[110, 320, 110, 260]} /></ManagerPage>;
@@ -66,8 +66,7 @@ export function ManagerOverviewPage() {
     );
   }
 
-  // Lọc theo phòng ban ở cả phía giao diện: hàng chờ chỉ hiển thị bài của phòng ban này.
-  const queue = (reviews.data?.items ?? []).filter((item) => !item.departmentName || item.departmentName === department.name);
+  const queue = reviews.data?.items ?? [];
   const people = (team.data?.items ?? []).filter((row) => !row.departmentId || row.departmentId === department.id);
   const reviewsReady = canReview && reviews.isSuccess;
   const pending = queue.filter((item) => item.status === 'PENDING').length;
@@ -86,10 +85,10 @@ export function ManagerOverviewPage() {
       <section className="pm-hero" aria-label="Việc của quản lý hôm nay">
         <div>
           <span className="pm-hero-eyebrow">Quản lý / {department.name}</span>
-          <h2>Đọc minh chứng. <em>Ghi quyết định rõ ràng.</em></h2>
-          <p>Chấm bài cuối mỗi khóa, theo dõi lượt nộp thứ hai có giới hạn thời gian và so với mục tiêu vị trí.</p>
+          <h2>Theo dõi đội ngũ. <em>Xem kết quả học tập.</em></h2>
+          <p>Xem tiến độ học, kết quả mentor đã chấm và các trường hợp cần hỗ trợ.</p>
           <div className="pu-row">
-            {canReview && <Link to={MANAGER_PATHS.finalReviews} className={btn('light')}>Mở hàng chờ bài cuối khóa</Link>}
+            {canReview && <Link to={MANAGER_PATHS.finalReviews} className={btn('light')}>Xem kết quả bài làm</Link>}
             <Link to={MANAGER_PATHS.capability} className={btn('on-dark')}>Xem năng lực đội ngũ</Link>
           </div>
         </div>
@@ -99,7 +98,7 @@ export function ManagerOverviewPage() {
       <KpiRow
         label="Tình hình phòng ban"
         items={[
-          { value: reviewsReady ? pending : '—', label: 'Bài chờ quyết định', muted: !reviewsReady },
+          { value: reviewsReady ? pending : '—', label: 'Bài chờ mentor chấm', muted: !reviewsReady },
           { value: reviewsReady ? flagged : '—', label: 'Cờ hỗ trợ sau hai lần chưa đạt', muted: !reviewsReady },
           { value: headcount ?? '—', label: `Nhân viên đang làm việc · ${department.name}`, muted: headcount == null },
         ]}
@@ -109,13 +108,13 @@ export function ManagerOverviewPage() {
       <h2 className="pm-section-title">Việc cụ thể, bước tiếp theo cụ thể.</h2>
       <div className="pm-cards">
         <Link className="pm-card" to={canReview ? MANAGER_PATHS.finalReviews : MANAGER_PATHS.training}>
-          <b>01 / Chấm bài</b>
+          <b>Kết quả bài làm</b>
           <h3>Xem bài nộp của khóa tiếp theo</h3>
           <small>
             {!reviewsReady
-              ? 'Hàng chờ chưa tải được; mở trang chấm bài để xem.'
+              ? 'Chưa tải được trạng thái bài nộp.'
               : pending > 0
-                ? translateUi(`${pending} bài đang chờ bạn quyết định.`)
+                ? translateUi(`${pending} bài đang chờ mentor chấm.`)
                 : 'Hiện chưa có việc chờ xử lý.'}
           </small>
           <em>Mở tiêu chí ↗</em>
@@ -177,13 +176,13 @@ export function ManagerOverviewPage() {
         <section className="pm-panel" aria-labelledby="pm-queue-title">
           <div className="pm-panel-head">
             <div>
-              <Mini>Hàng chờ chấm bài</Mini>
-              <h2 id="pm-queue-title">Bài nộp cần bạn đọc.</h2>
+              <Mini>Bài đã nộp</Mini>
+              <h2 id="pm-queue-title">Theo dõi bài nộp của phòng ban</h2>
               <p>Bài đánh giá trước khi học và bài cuối khóa tách riêng khỏi minh chứng thực tế trong lúc học.</p>
             </div>
           </div>
           {!canReview ? (
-            <p className="pu-panel-desc">Tài khoản của bạn chưa có quyền chấm bài.</p>
+            <p className="pu-panel-desc">Tài khoản của bạn chưa có quyền xem kết quả.</p>
           ) : reviews.isLoading ? (
             <PageSkeleton blocks={[56, 56]} />
           ) : reviews.isError ? (

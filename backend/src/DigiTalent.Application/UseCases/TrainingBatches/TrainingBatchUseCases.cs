@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
@@ -5,6 +6,29 @@ using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.TrainingBatches;
+
+internal static class TrainingBatchReadScope
+{
+    public static IQueryable<TrainingBatchEmployee> Participants(IApplicationDbContext context, ICurrentUser user)
+    {
+        var participants = context.TrainingBatchEmployees.AsNoTracking();
+        if (user.IsDepartmentManager && !user.IsAdmin)
+        {
+            var employees = new EmployeeScope(context, user).VisibleEmployees();
+            participants = participants.Where(p => employees.Any(e => e.Id == p.EmployeeId));
+        }
+        return participants;
+    }
+
+    public static IQueryable<TrainingBatch> Batches(IApplicationDbContext context, ICurrentUser user,
+        Guid organizationId, IQueryable<TrainingBatchEmployee> participants)
+    {
+        var batches = context.TrainingBatches.AsNoTracking().Where(b => b.OrganizationId == organizationId);
+        return user.IsDepartmentManager && !user.IsAdmin
+            ? batches.Where(b => participants.Any(p => p.TrainingBatchId == b.Id))
+            : batches;
+    }
+}
 
 // ── GET summary ──
 public class GetTrainingBatchSummaryUseCase : IUseCase<GetTrainingBatchSummaryInput, TrainingBatchSummaryDto>
@@ -22,8 +46,8 @@ public class GetTrainingBatchSummaryUseCase : IUseCase<GetTrainingBatchSummaryIn
     {
         var orgId = _currentUser.GetRequiredOrganizationId();
 
-        var batches = _context.TrainingBatches.AsNoTracking()
-            .Where(b => b.OrganizationId == orgId);
+        var participants = TrainingBatchReadScope.Participants(_context, _currentUser);
+        var batches = TrainingBatchReadScope.Batches(_context, _currentUser, orgId, participants);
 
         var total = await batches.CountAsync();
         var running = await batches.CountAsync(b => b.Status == "ACTIVE");
@@ -32,8 +56,7 @@ public class GetTrainingBatchSummaryUseCase : IUseCase<GetTrainingBatchSummaryIn
         var cancelled = await batches.CountAsync(b => b.Status == "CANCELLED");
 
         var batchIds = batches.Select(b => b.Id);
-        var totalParticipants = await _context.TrainingBatchEmployees.AsNoTracking()
-            .CountAsync(be => batchIds.Contains(be.TrainingBatchId));
+        var totalParticipants = await participants.CountAsync(be => batchIds.Contains(be.TrainingBatchId));
 
         return new TrainingBatchSummaryDto
         {
@@ -63,8 +86,8 @@ public class GetTrainingBatchesUseCase : IUseCase<GetTrainingBatchesInput, GetTr
     {
         var orgId = _currentUser.GetRequiredOrganizationId();
 
-        var query = _context.TrainingBatches.AsNoTracking()
-            .Where(b => b.OrganizationId == orgId);
+        var batchEmployees = TrainingBatchReadScope.Participants(_context, _currentUser);
+        var query = TrainingBatchReadScope.Batches(_context, _currentUser, orgId, batchEmployees);
 
         if (!string.IsNullOrWhiteSpace(input.Status))
             query = query.Where(b => b.Status == input.Status.Trim().ToUpper());
@@ -87,7 +110,6 @@ public class GetTrainingBatchesUseCase : IUseCase<GetTrainingBatchesInput, GetTr
         var pageIndex = Math.Max(1, input.PageIndex);
         var pageSize = Math.Clamp(input.PageSize, 1, 100);
 
-        var batchEmployees = _context.TrainingBatchEmployees.AsNoTracking();
         var courses = _context.Courses.AsNoTracking();
         var departments = _context.Departments.AsNoTracking();
 
@@ -140,8 +162,9 @@ public class GetTrainingBatchByIdUseCase : IUseCase<GetTrainingBatchByIdInput, T
     {
         var orgId = _currentUser.GetRequiredOrganizationId();
 
-        var batch = await _context.TrainingBatches.AsNoTracking()
-            .FirstOrDefaultAsync(b => b.Id == input.Id && b.OrganizationId == orgId)
+        var participants = TrainingBatchReadScope.Participants(_context, _currentUser);
+        var batch = await TrainingBatchReadScope.Batches(_context, _currentUser, orgId, participants)
+            .FirstOrDefaultAsync(b => b.Id == input.Id)
             ?? throw new NotFoundException("Training batch not found.");
 
         var course = await _context.Courses.AsNoTracking()
@@ -169,7 +192,7 @@ public class GetTrainingBatchByIdUseCase : IUseCase<GetTrainingBatchByIdInput, T
             .FirstOrDefaultAsync();
 
         var employees = await (
-            from be in _context.TrainingBatchEmployees.AsNoTracking()
+            from be in participants
             join emp in _context.Employees.AsNoTracking() on be.EmployeeId equals emp.Id
             join dept in _context.Departments.AsNoTracking() on emp.DepartmentId equals dept.Id into deptJoin
             from dept in deptJoin.DefaultIfEmpty()

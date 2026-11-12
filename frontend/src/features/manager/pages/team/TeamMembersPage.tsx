@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ArrowRight, ShieldCheck, Mail, Users } from 'lucide-react';
 import { PageHeader, DataTable, EmptyState } from '@/components/shared';
+import { useManagedDepartment } from '@/hooks/use-managed-department';
 import { useEmployees } from '@/hooks/use-employees';
 import { useJobPositions } from '@/hooks/use-job-positions';
 import { INPUT_CLASS } from '@/features/onboarding/components/styles';
@@ -21,22 +22,21 @@ export function TeamMembersPage() {
   const [status, setStatus] = useState<'ACTIVE' | 'INACTIVE' | ''>('');
   const [pageIndex, setPageIndex] = useState(1);
 
+  const { department, isLoading: departmentLoading } = useManagedDepartment();
   const { data: empData, isLoading } = useEmployees({
+    departmentId: department?.id,
     search: search || undefined,
     positionId: positionId || undefined,
     status: status || undefined,
     pageIndex,
     pageSize: 50,
-  });
+  }, Boolean(department));
 
   const { data: positions } = useJobPositions();
 
   const filteredItems = empData?.items ?? [];
-  const rawItems = filteredItems;
 
-  const hasActiveFilters = Boolean(search || positionId || status);
-
-  if (!isLoading && rawItems.length === 0 && !hasActiveFilters) {
+  if (!departmentLoading && !department) {
     return (
       <div className="space-y-6">
         <PageHeader

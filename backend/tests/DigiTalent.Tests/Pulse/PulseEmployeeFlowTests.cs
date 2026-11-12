@@ -1,5 +1,6 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.UseCases.Pulse;
+using DigiTalent.Application.UseCases.Learning.CourseAssignments;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Constants.Authorization;
 using DigiTalent.Domain.Entities;
@@ -7,6 +8,8 @@ using DigiTalent.Infrastructure.Persistence.Seed;
 using FluentAssertions;
 using Xunit;
 using Microsoft.EntityFrameworkCore;
+using DigiTalent.Application.Common.Interfaces;
+using Moq;
 
 namespace DigiTalent.Tests.Pulse;
 
@@ -80,13 +83,12 @@ public class PulseEmployeeFlowTests
     }
 
     [Fact]
-    public async Task ManagerAsLearner_IsReviewedByTheOwner()
+    public async Task ManagerAsLearner_IsReviewedByMentor()
     {
         using var world = await PulseTestWorld.CreateAsync();
         var manager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
         var overview = await manager.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
-        overview.Reviewer!.Name.Should().Be("Enterprise Owner");
-        overview.Reviewer.Role.Should().Be("Chủ doanh nghiệp");
+        overview.Reviewer!.Role.Should().Be("Mentor DigiTalent");
     }
 
     [Fact]
@@ -94,7 +96,7 @@ public class PulseEmployeeFlowTests
     {
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
-        var manager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
+        var manager = await world.AsAsync(PulseTestWorld.OwnerEmail, Roles.Owner);
         var course = await world.CourseAsync(employee, "M1-F");
 
         var info = await employee.GetPreAssessment.ExecuteAsync(new GetPulsePreAssessmentUseCaseInput { CourseId = course.CourseId });
@@ -199,7 +201,7 @@ public class PulseEmployeeFlowTests
     {
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
-        var manager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
+        var manager = await world.AsAsync(PulseTestWorld.OwnerEmail, Roles.Owner);
 
         var course = await world.OpenForLearningAsync(employee, "M4-F");
         course.PreStatus.Should().Be(PulsePreStatus.NotYet);
@@ -246,7 +248,7 @@ public class PulseEmployeeFlowTests
     {
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
-        var manager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
+        var manager = await world.AsAsync(PulseTestWorld.OwnerEmail, Roles.Owner);
         var course = await world.CourseAsync(employee, "M3-F");
 
         var abandoned = await employee.StartProctoring.ExecuteAsync(new StartPulseProctoringUseCaseInput { CourseId = course.CourseId, Kind = Statuses.ProctoringKind.PreAssessment });
@@ -530,7 +532,7 @@ public class PulseEmployeeFlowTests
     {
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
-        var manager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
+        var manager = await world.AsAsync(PulseTestWorld.OwnerEmail, Roles.Owner);
         var course = await world.CourseAsync(employee, "M1-F");
 
         var info = await employee.GetPreAssessment.ExecuteAsync(new GetPulsePreAssessmentUseCaseInput { CourseId = course.CourseId });
@@ -618,7 +620,7 @@ public class PulseEmployeeFlowTests
     {
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
-        var manager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
+        var manager = await world.AsAsync(PulseTestWorld.OwnerEmail, Roles.Owner);
         var course = await world.OpenForLearningAsync(employee, "M1-F");
 
         var early = () => employee.SubmitFinal.ExecuteAsync(new SubmitPulseFinalUseCaseInput { CourseId = course.CourseId, EvidenceText = Evidence, ProctoringSessionId = Guid.NewGuid() });
@@ -692,7 +694,7 @@ public class PulseEmployeeFlowTests
     {
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
-        var manager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
+        var manager = await world.AsAsync(PulseTestWorld.OwnerEmail, Roles.Owner);
         var course = await world.OpenForLearningAsync(employee, "M1-F");
         await world.PassAllModulesAsync(employee, course.CourseId);
         var first = await world.SubmitFinalAsync(employee, course.CourseId);
@@ -758,7 +760,7 @@ public class PulseEmployeeFlowTests
     }
 
     [Fact]
-    public async Task ManagerOfAnotherDepartment_CannotSeeOrDecide()
+    public async Task ManagerCanReadAssignedDepartmentResultsButCannotDecide()
     {
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
@@ -774,11 +776,33 @@ public class PulseEmployeeFlowTests
         world.Context.ChangeTracker.Clear();
 
         var outsider = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager, otherDepartment.Id);
-        (await outsider.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).Items.Should().BeEmpty();
+        (await outsider.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput { DepartmentId = otherDepartment.Id })).Items.Should().BeEmpty();
+        (await outsider.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).PendingCount.Should().Be(2);
+
+        var managerProfile = await world.EmployeeAsync(PulseTestWorld.ManagerEmail);
+        var managerUser = new Mock<ICurrentUser>();
+        managerUser.SetupGet(u => u.IsDepartmentManager).Returns(true);
+        managerUser.SetupGet(u => u.EmployeeId).Returns(managerProfile.Id);
+        managerUser.Setup(u => u.GetRequiredOrganizationId()).Returns(organizationId);
+        var assignments = new GetCourseAssignmentsUseCase(world.Context, managerUser.Object);
+        var ownProgress = await assignments.ExecuteAsync(new GetCourseAssignmentsInput
+        {
+            CourseId = course.CourseId, IncludeIndependentLearning = true,
+        });
+        ownProgress.Items.Should().ContainSingle(row => row.Source == "SELF_ENROLLED" && row.ProgressPercent == 100);
+        var otherProgress = await assignments.ExecuteAsync(new GetCourseAssignmentsInput
+        {
+            DepartmentId = otherDepartment.Id, IncludeIndependentLearning = true,
+        });
+        otherProgress.Items.Should().BeEmpty();
+
+        var mentor = await world.AsAsync("mentor@digitalent.ai", Roles.Mentor);
+        (await mentor.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).Items
+            .Should().Contain(item => item.SubmissionId == pre.PreAssessmentId);
         var decide = () => outsider.Decide.ExecuteAsync(new DecidePulseFinalUseCaseInput { SubmissionId = submitted.SubmissionId, Decision = Statuses.FinalSubmissionDecision.Passed, Reason = "Không thuộc phòng ban." });
-        await decide.Should().ThrowAsync<NotFoundException>();
+        await decide.Should().ThrowAsync<ForbiddenException>();
         var decidePre = () => outsider.DecidePreAssessment.ExecuteAsync(new DecidePulsePreAssessmentUseCaseInput { PreAssessmentId = pre.PreAssessmentId, Decision = Statuses.FinalSubmissionDecision.Passed, Reason = "Không thuộc phòng ban." });
-        await decidePre.Should().ThrowAsync<NotFoundException>();
+        await decidePre.Should().ThrowAsync<ForbiddenException>();
 
         var owner = await world.AsAsync(PulseTestWorld.OwnerEmail, Roles.Owner);
         (await owner.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).PendingCount.Should().Be(2, "chủ doanh nghiệp thấy toàn tổ chức");

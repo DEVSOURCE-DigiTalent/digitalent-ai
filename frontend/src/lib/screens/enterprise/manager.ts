@@ -69,13 +69,13 @@ export const MANAGER_SCREENS: ScreenDef[] = [
     permission: P.LEARNING_PROGRESS_READ,
     priority: 'P1',
   },
-  // ── Chấm bài (Pulse, mock #/review): hàng chờ đánh giá trước khi học + bài cuối khóa của phòng ban ──
+  // ── Kết quả đánh giá trước khi học và bài cuối khóa của phòng ban ──
   {
     id: 'MG-13',
-    title: 'Chấm bài',
+    title: 'Kết quả bài làm',
     path: '/enterprise/team/final-reviews',
     roles: MANAGER_ROLES,
-    permission: P.TASK_EVALUATE,
+    permission: P.DASHBOARD_DEPARTMENT_READ,
     priority: 'P0',
   },
   // ── Pulse mock #/report: báo cáo chu kỳ khóa học của phòng ban (OW-40 là báo cáo toàn doanh nghiệp) ──

@@ -27,11 +27,11 @@ const FILTERS: { key: TrainingFilter; label: string }[] = [
 export function ManagerTeamTrainingPage() {
   useUiLanguage();
   const { can } = usePermission();
-  const canReview = can(PERMISSIONS.TASK_EVALUATE);
+  const canReview = can(PERMISSIONS.DASHBOARD_DEPARTMENT_READ);
   const canReadAssignments = can(PERMISSIONS.COURSE_ASSIGNMENT_READ);
   const { department, isLoading: deptLoading, isError: deptError, refetch: refetchDept } = useManagedDepartment();
-  const assignments = useAssignments({ departmentId: department?.id, pageIndex: 1, pageSize: 100 }, canReadAssignments && Boolean(department));
-  const reviews = usePulseFinalReviews(canReview && Boolean(department));
+  const assignments = useAssignments({ departmentId: department?.id, includeIndependentLearning: true, pageIndex: 1, pageSize: 100 }, canReadAssignments && Boolean(department));
+  const reviews = usePulseFinalReviews({ enabled: canReview && Boolean(department), departmentId: department?.id });
   const [filter, setFilter] = useState<TrainingFilter>('ALL');
 
   if (deptLoading || (department && canReadAssignments && assignments.isLoading)) {
@@ -56,7 +56,7 @@ export function ManagerTeamTrainingPage() {
     );
   }
 
-  const rows = (assignments.data?.items ?? []).filter((row) => !row.departmentName || row.departmentName === department.name);
+  const rows = assignments.data?.items ?? [];
   const cohorts = groupByCourse(rows, reviews.data?.items ?? []);
   const learners = cohorts.flatMap((cohort) => cohort.learners);
   const count = (key: TrainingFilter) => (key === 'ALL' ? learners.length : learners.filter((l) => LEARNER_STATE[l.state].filter === key).length);
@@ -69,7 +69,7 @@ export function ManagerTeamTrainingPage() {
       <PageHead
         eyebrow={`Quản lý / ${department.name}`}
         title="Xem ai cần hỗ trợ trước hạn."
-        description="Chủ doanh nghiệp tạo nhóm đào tạo. Quản lý theo dõi tiến độ trong phòng ban và chấm bài cuối khóa."
+        description="Theo dõi tiến độ các khóa được giao, khóa tự học và kết quả bài làm trong phòng ban."
         actions={canReview ? <PuLink to={MANAGER_PATHS.finalReviews} kind="outline">Mở bài cuối khóa</PuLink> : undefined}
       />
 
@@ -113,7 +113,7 @@ export function ManagerTeamTrainingPage() {
                 return (
                   <div key={learner.id} className="pm-learner">
                     <div>
-                      <Link to={MANAGER_PATHS.trainingDetail(learner.id)}><strong>{learner.employeeName}</strong></Link>
+                      <Link to={learner.source === 'SELF_ENROLLED' ? MANAGER_PATHS.member(learner.employeeId) : MANAGER_PATHS.trainingDetail(learner.id)}><strong>{learner.employeeName}</strong></Link>
                       <small>
                         {learner.positionName ?? 'Chưa gán vị trí'}
                         {learner.dueDate ? translateUi(` · hạn ${formatDate(learner.dueDate)}`) : ''}

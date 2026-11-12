@@ -43,7 +43,7 @@ export const WORK_SCREENS: ScreenDef[] = [
     title: 'Hàng đợi đánh giá',
     path: '/enterprise/reviews',
     roles: WORK_ROLES,
-    permission: P.TASK_EVALUATE,
+    permission: P.TASK_READ,
     priority: 'P0',
   },
   {
@@ -52,7 +52,7 @@ export const WORK_SCREENS: ScreenDef[] = [
     title: 'Đánh giá minh chứng',
     path: '/enterprise/reviews/:submissionId',
     roles: WORK_ROLES,
-    permission: P.TASK_EVALUATE,
+    permission: P.TASK_READ,
     priority: 'P0',
   },
 ];

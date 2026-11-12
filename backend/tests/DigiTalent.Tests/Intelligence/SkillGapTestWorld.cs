@@ -112,6 +112,9 @@ internal sealed class SkillGapTestWorld
         }
 
         await context.SaveChangesAsync();
+        departmentA.ManagerEmployeeId = analyst.Id;
+        departmentB.ManagerEmployeeId = analystB.Id;
+        await context.SaveChangesAsync();
 
         return new SkillGapTestWorld
         {
@@ -133,7 +136,8 @@ internal sealed class SkillGapTestWorld
 
     public ICurrentUser HrManager() => CurrentUser(isAdmin: true);
 
-    public ICurrentUser ManagerOf(Department department) => CurrentUser(isDepartmentManager: true, departmentId: department.Id);
+    public ICurrentUser ManagerOf(Department department) =>
+        CurrentUser(isDepartmentManager: true, departmentId: department.Id, employeeId: department.ManagerEmployeeId);
 
     public ICurrentUser EmployeeSelf(Employee employee) => CurrentUser(employeeId: employee.Id, departmentId: employee.DepartmentId);
 

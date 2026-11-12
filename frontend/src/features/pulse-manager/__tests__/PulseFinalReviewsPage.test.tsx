@@ -10,6 +10,10 @@ import { SidebarNav } from '@/components/layout/sidebar/SidebarNav';
 import { pulseReviewService, type PulseFinalReviewItem, type PulseFinalReviewQueue, type PulseRecording } from '@/services/pulse.service';
 import { PulseFinalReviewsPage } from '../pages/PulseFinalReviewsPage';
 
+vi.mock('@/hooks/use-managed-department', () => ({
+  useManagedDepartment: () => ({ department: { id: 'dep-1', name: 'Kế toán' }, isLoading: false, isError: false }),
+}));
+
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 const ok = <T,>(data: T) => ({ data: { success: true, message: 'Success', data } }) as never;
@@ -101,13 +105,13 @@ const pre = item({
   recording,
 });
 
-function renderPage() {
+function renderPage(audience: 'manager' | 'mentor' = 'manager') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={['/enterprise/team/final-reviews']}>
         <Routes>
-          <Route path="/enterprise/team/final-reviews" element={<PulseFinalReviewsPage />} />
+          <Route path="/enterprise/team/final-reviews" element={<PulseFinalReviewsPage audience={audience} />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -117,13 +121,13 @@ function renderPage() {
 beforeEach(() => {
   vi.restoreAllMocks();
   useCurrentUser.setState({
-    user: { id: 'u-1', email: 'manager@digitalent.ai', fullName: 'Trưởng phòng', roles: [ROLES.MANAGER], permissions: ['task.evaluate', 'learning_progress.read', 'competency.read', 'dashboard.department.read'], workspace: 'enterprise' },
+    user: { id: 'u-1', email: 'manager@digitalent.ai', fullName: 'Trưởng phòng', roles: [ROLES.MANAGER], permissions: ['learning_progress.read', 'competency.read', 'dashboard.department.read'], workspace: 'enterprise' },
     isAuthenticated: true,
   });
 });
 
 describe('PulseFinalReviewsPage (MG-13, mock #/review)', () => {
-  it('shows the queue counts, the evidence, the three criteria with the AI hint and every status', async () => {
+  it('shows results without grading controls', async () => {
     vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok(queue([
       item(),
       flagged,
@@ -132,20 +136,20 @@ describe('PulseFinalReviewsPage (MG-13, mock #/review)', () => {
 
     renderPage();
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Ra quyết định dựa trên minh chứng.' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Kết quả bài làm' })).toBeTruthy();
     const kpis = screen.getByRole('region', { name: 'Tình trạng hàng chờ' });
-    expect(within(kpis).getByText('Chờ quyết định').previousElementSibling).toHaveTextContent('1');
+    expect(within(kpis).getByText('Chờ mentor chấm').previousElementSibling).toHaveTextContent('1');
     expect(within(kpis).getByText('Cần hỗ trợ').previousElementSibling).toHaveTextContent('1');
 
     const pending = screen.getByRole('article', { name: 'Nguyễn An · Tìm kiếm và lưu trữ thông tin cơ bản' });
     expect(within(pending).getByText('Nguồn: sổ cái tháng 9; đối chiếu 120 hóa đơn.')).toBeTruthy();
-    expect(within(pending).getAllByLabelText('Gợi ý: có')).toHaveLength(2);
-    expect(within(pending).getByLabelText('Gợi ý: chưa thấy')).toBeTruthy();
-    expect(within(pending).getByText('Có nguồn và hành động kiểm tra được; chưa thấy bước tiếp theo.')).toBeTruthy();
+    expect(screen.queryByRole('combobox', { name: /Quyết định/ })).toBeNull();
+    expect(pulseReviewService.getQueue).toHaveBeenCalledWith(true, undefined, false, undefined, 'dep-1');
 
     const support = screen.getByRole('article', { name: 'Trần Bình · An toàn số cơ bản' });
     expect(within(support).getByText('Lần nộp trước')).toBeTruthy();
-    expect(within(support).getByRole('button', { name: 'Sắp xếp kèm cặp' })).toBeTruthy();
+    expect(within(support).getByText(/Vẫn thiếu kết luận/)).toBeTruthy();
+    expect(within(support).queryByRole('button', { name: 'Sắp xếp kèm cặp' })).toBeNull();
     expect(screen.getByText(/Lần nộp cuối mở/)).toBeTruthy();
   });
 
@@ -153,11 +157,11 @@ describe('PulseFinalReviewsPage (MG-13, mock #/review)', () => {
     vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok(queue([item()])));
     const decide = vi.spyOn(pulseReviewService, 'decide').mockResolvedValue(ok({ submissionId: 'sub-1', decision: 'PASSED', status: 'APPROVED', enrollmentStatus: 'COMPLETED' }));
 
-    renderPage();
+    renderPage('mentor');
 
-    const submit = await screen.findByRole('button', { name: 'Ghi quyết định cuối cùng →' });
+    const submit = await screen.findByRole('button', { name: 'Ghi quyết định cuối cùng' });
     expect((submit as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.change(screen.getByRole('combobox', { name: 'Quyết định của quản lý' }), { target: { value: 'PASSED' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Quyết định của mentor' }), { target: { value: 'PASSED' } });
     fireEvent.change(screen.getByLabelText(/Lý do gửi nhân viên/), { target: { value: 'Ngắn' } });
     expect((submit as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText('Cần ít nhất 10 ký tự (hiện có 4).')).toBeTruthy();
@@ -172,9 +176,9 @@ describe('PulseFinalReviewsPage (MG-13, mock #/review)', () => {
   it('warns that a second NOT_YET raises the support flag', async () => {
     vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok(queue([item({ attemptNo: 2 })])));
 
-    renderPage();
+    renderPage('mentor');
 
-    fireEvent.change(await screen.findByRole('combobox', { name: 'Quyết định của quản lý' }), { target: { value: 'NOT_YET' } });
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Quyết định của mentor' }), { target: { value: 'NOT_YET' } });
     expect(screen.getByText(/Đây là lần nộp cuối: chưa đạt sẽ bật cờ hỗ trợ/)).toBeTruthy();
   });
 
@@ -182,9 +186,9 @@ describe('PulseFinalReviewsPage (MG-13, mock #/review)', () => {
     vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok(queue([flagged])));
     const record = vi.spyOn(pulseReviewService, 'recordSupport').mockResolvedValue(ok({ submissionId: 'sub-3', action: 'COACHING', recordedAt: '2026-10-15T08:00:00Z' }));
 
-    renderPage();
+    renderPage('mentor');
 
-    const submit = await screen.findByRole('button', { name: 'Ghi hướng hỗ trợ →' });
+    const submit = await screen.findByRole('button', { name: 'Ghi hướng hỗ trợ' });
     expect((submit as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Sắp xếp kèm cặp' }));
     fireEvent.change(screen.getByLabelText(/Ghi chú cho nhân viên/), { target: { value: 'Kèm cặp 2 buổi' } });
@@ -204,7 +208,7 @@ describe('PulseFinalReviewsPage (MG-13, mock #/review)', () => {
 
     vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok(queue([])));
     renderPage();
-    expect(await screen.findByText('Chưa có bài nào cần quyết định.')).toBeTruthy();
+    expect(await screen.findByText('Phòng ban chưa có bài nộp.')).toBeTruthy();
   });
 });
 
@@ -284,13 +288,13 @@ describe('PulseFinalReviewsPage · pre-assessments and recordings', () => {
     const decideFinal = vi.spyOn(pulseReviewService, 'decide');
     const decidePre = vi.spyOn(pulseReviewService, 'decidePreAssessment').mockResolvedValue(ok({ preAssessmentId: 'pa-1', decision: 'PASSED', status: 'PASSED', enrollmentId: 'enr-9' }));
 
-    renderPage();
+    renderPage('mentor');
 
-    const select = await screen.findByRole('combobox', { name: 'Quyết định của quản lý' });
+    const select = await screen.findByRole('combobox', { name: 'Quyết định của mentor' });
     expect(within(select).getByRole('option', { name: 'Đạt · công nhận khóa, không cần học' })).toBeTruthy();
     fireEvent.change(select, { target: { value: 'PASSED' } });
     fireEvent.change(screen.getByLabelText(/Lý do gửi nhân viên/), { target: { value: 'Bài đạt cả ba tiêu chí, có nguồn.' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ghi quyết định cuối cùng →' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ghi quyết định cuối cùng' }));
 
     await waitFor(() => expect(decidePre).toHaveBeenCalledWith('pa-1', 'PASSED', 'Bài đạt cả ba tiêu chí, có nguồn.'));
     expect(decideFinal).not.toHaveBeenCalled();
@@ -311,7 +315,7 @@ describe('PulseFinalReviewsPage · pre-assessments and recordings', () => {
     });
     vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok(queue([below])));
 
-    renderPage();
+    renderPage('mentor');
 
     const choice = await screen.findByRole('region', { name: 'Phần trắc nghiệm' });
     expect(within(choice).getByText('Đúng 6/10 câu')).toBeTruthy();
@@ -321,7 +325,7 @@ describe('PulseFinalReviewsPage · pre-assessments and recordings', () => {
     expect(within(choice).queryByText('Đáp án đúng: Sổ cái tháng 9')).toBeNull();
     expect(screen.getByText('Phần tự luận · minh chứng đã nộp')).toBeTruthy();
 
-    const pass = within(screen.getByRole('combobox', { name: 'Quyết định của quản lý' })).getByRole('option', { name: /Duyệt khóa học/ }) as HTMLOptionElement;
+    const pass = within(screen.getByRole('combobox', { name: 'Quyết định của mentor' })).getByRole('option', { name: /Duyệt khóa học/ }) as HTMLOptionElement;
     expect(pass.disabled).toBe(true);
     expect(screen.getByText(/Phần trắc nghiệm đúng 6\/10 câu, chưa đủ 7 câu: bài chỉ có thể chưa đạt\./)).toBeTruthy();
   });
@@ -349,9 +353,9 @@ describe('manager sidebar', () => {
       </MemoryRouter>,
     );
 
-  it('highlights only the most specific item: Chấm bài, not the team overview', () => {
+  it('highlights only the most specific item: Kết quả bài làm, not the team overview', () => {
     renderNav('/enterprise/team/final-reviews');
-    expect(screen.getByRole('link', { name: /Chấm bài/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: /Kết quả bài làm/ })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: /^Tổng quan$/ })).not.toHaveAttribute('aria-current');
   });
 

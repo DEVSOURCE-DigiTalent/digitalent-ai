@@ -26,7 +26,7 @@ public class GetMyLatestSkillGapUseCase : IUseCase<GetMyLatestSkillGapUseCaseInp
     {
         var employeeId = _currentUser.EmployeeId;
         return employeeId.HasValue
-            ? await _runReader.FindLatestDetailAsync(_employeeScope.VisibleEmployees(), employeeId.Value)
+            ? await _runReader.FindLatestDetailAsync(_employeeScope.VisibleEmployees(includeSelf: true), employeeId.Value)
             : null;
     }
 }

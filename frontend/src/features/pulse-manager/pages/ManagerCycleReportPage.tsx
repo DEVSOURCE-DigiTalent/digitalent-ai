@@ -25,13 +25,13 @@ interface TimelineEvent {
 export function ManagerCycleReportPage() {
   useUiLanguage();
   const { can } = usePermission();
-  const canReview = can(PERMISSIONS.TASK_EVALUATE);
+  const canReview = can(PERMISSIONS.DASHBOARD_DEPARTMENT_READ);
   const canReadTasks = can(PERMISSIONS.TASK_READ);
   const canReadAssignments = can(PERMISSIONS.COURSE_ASSIGNMENT_READ);
   const { department, isLoading: deptLoading, isError: deptError, refetch: refetchDept } = useManagedDepartment();
   const ready = Boolean(department);
-  const assignments = useAssignments({ departmentId: department?.id, pageIndex: 1, pageSize: 100 }, canReadAssignments && ready);
-  const reviews = usePulseFinalReviews(canReview && ready);
+  const assignments = useAssignments({ departmentId: department?.id, includeIndependentLearning: true, pageIndex: 1, pageSize: 100 }, canReadAssignments && ready);
+  const reviews = usePulseFinalReviews({ enabled: canReview && ready, departmentId: department?.id, includeReviewed: true });
   const tasks = usePracticalTasks({ departmentId: department?.id, pageIndex: 1, pageSize: 100 }, canReadTasks && ready);
 
   if (deptLoading || (department && canReadAssignments && assignments.isLoading)) {
@@ -48,8 +48,8 @@ export function ManagerCycleReportPage() {
     return <ManagerPage><PageHead eyebrow="Phân tích chu kỳ khóa học" title="Xem toàn bộ hành trình, không chỉ một điểm số." /><NoDepartment /></ManagerPage>;
   }
 
-  const rows = (assignments.data?.items ?? []).filter((row) => !row.departmentName || row.departmentName === department.name);
-  const queue = (reviews.data?.items ?? []).filter((item) => !item.departmentName || item.departmentName === department.name);
+  const rows = assignments.data?.items ?? [];
+  const queue = reviews.data?.items ?? [];
   const cohorts = groupByCourse(rows, queue);
   const learners = cohorts.flatMap((c) => c.learners);
   const completed = learners.filter((l) => l.state === 'APPROVED');
@@ -82,7 +82,7 @@ export function ManagerCycleReportPage() {
       <PageHead
         eyebrow={`Phân tích chu kỳ khóa học · ${department.name}`}
         title="Xem toàn bộ hành trình, không chỉ một điểm số."
-        description="Khi quản lý duyệt bài cuối, báo cáo nối mục tiêu doanh nghiệp, bài đầu vào, hoạt động học, đánh giá và bước tiếp theo."
+        description="Theo dõi bài đầu vào, tiến độ học và kết quả mentor đã chấm trong phòng ban."
       />
 
       {learners.length === 0 ? (

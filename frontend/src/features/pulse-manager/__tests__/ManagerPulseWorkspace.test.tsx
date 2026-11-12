@@ -8,6 +8,7 @@ import { ROLES } from '@/lib/roles';
 import { MANAGER_SIDEBAR, OWNER_SIDEBAR, EMPLOYEE_SIDEBAR } from '@/lib/sidebars';
 import { findEnterpriseScreen } from '@/lib/screens/enterprise';
 import { SidebarNav } from '@/components/layout/sidebar/SidebarNav';
+import { SidebarManagerCard } from '@/components/layout/sidebar/SidebarManagerCard';
 import { ManagerTopbar } from '@/components/layout/ManagerTopbar';
 import { ENTERPRISE_PORTAL } from '@/lib/portals';
 import { departmentService } from '@/services/department.service';
@@ -27,7 +28,7 @@ const page = <T,>(items: T[]) => ok({ items, pageIndex: 1, pageSize: 100, totalI
 
 const MANAGER_PERMISSIONS = [
   'dashboard.department.read', 'employee.read', 'competency.read', 'competency.profile.read', 'employee_competency_profile.read',
-  'skill_gap.read', 'learning_progress.read', 'task.read', 'task.create', 'task.evaluate', 'department.read', 'notification.read_own',
+  'skill_gap.read', 'learning_progress.read', 'task.read', 'task.create', 'department.read', 'notification.read_own',
 ];
 
 function signInManager(permissions = MANAGER_PERMISSIONS) {
@@ -80,9 +81,25 @@ beforeEach(() => {
 const labelsOf = (config: typeof MANAGER_SIDEBAR) => config.map((section) => section.label);
 
 describe('Manager sidebar (Pulse)', () => {
+  it('switches between assigned departments and refreshes the displayed scope', async () => {
+    vi.mocked(departmentService.getList).mockResolvedValue(page([
+      ...DEPARTMENTS,
+      { id: 'dep-support', code: 'SUP', name: 'Hỗ trợ', managerEmployeeId: 'emp-mgr', headcount: 8, status: 'ACTIVE' },
+    ]));
+    const getTasks = vi.spyOn(taskService, 'getTasks').mockResolvedValue(page([]));
+    renderAt('/enterprise/reviews', <><SidebarManagerCard /><ManagerEvidencePage /></>);
+
+    const select = await screen.findByRole('combobox', { name: 'Phòng ban đang quản lý' });
+    expect(within(select).queryByRole('option', { name: 'Tài chính' })).toBeNull();
+    fireEvent.change(select, { target: { value: 'dep-support' } });
+    await waitFor(() => expect(getTasks).toHaveBeenLastCalledWith(expect.objectContaining({ departmentId: 'dep-support' })));
+    expect(screen.getByText('8 nhân viên trong phòng ban')).toBeInTheDocument();
+    fireEvent.change(select, { target: { value: 'dep-ops' } });
+  });
+
   it('has the two prototype groups with their items in order', () => {
     expect(labelsOf(MANAGER_SIDEBAR)).toEqual([
-      'Quản lý đội', 'Tổng quan', 'Năng lực đội ngũ', 'Chấm bài', 'Báo cáo chu kỳ',
+      'Quản lý đội', 'Tổng quan', 'Nhân viên', 'Năng lực đội ngũ', 'Kết quả bài làm', 'Báo cáo chu kỳ',
       'Các công cụ khác', 'Khung năng lực chung', 'Đào tạo đội ngũ', 'Minh chứng thực tế', 'Hoạt động', 'Góp ý', 'Báo lỗi',
     ]);
   });
@@ -105,9 +122,9 @@ describe('Manager sidebar (Pulse)', () => {
   it.each([
     ['/enterprise/team', 'Tổng quan'],
     ['/enterprise/team/skill-gap', 'Năng lực đội ngũ'],
-    ['/enterprise/team/members/emp-1', 'Năng lực đội ngũ'],
+    ['/enterprise/team/members/emp-1', 'Nhân viên'],
     ['/enterprise/team/competency', 'Năng lực đội ngũ'],
-    ['/enterprise/team/final-reviews', 'Chấm bài'],
+    ['/enterprise/team/final-reviews', 'Kết quả bài làm'],
     ['/enterprise/team/reports', 'Báo cáo chu kỳ'],
     ['/enterprise/team/framework', 'Khung năng lực chung'],
     ['/enterprise/team/training', 'Đào tạo đội ngũ'],
@@ -127,15 +144,14 @@ describe('Manager sidebar (Pulse)', () => {
     expect(current[0].firstElementChild).toHaveClass('pm-side-link', 'active');
   });
 
-  it('hides an item the manager lacks the permission for', () => {
-    signInManager(MANAGER_PERMISSIONS.filter((p) => p !== 'task.evaluate'));
+  it('shows results and evidence without the grading permission', () => {
     render(
       <MemoryRouter initialEntries={['/enterprise/team']}>
         <SidebarNav config={MANAGER_SIDEBAR} isRail={false} variant="pulse-manager" />
       </MemoryRouter>,
     );
-    expect(screen.queryByRole('link', { name: 'Chấm bài' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Minh chứng thực tế' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Kết quả bài làm' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Minh chứng thực tế' })).toBeInTheDocument();
   });
 });
 
@@ -159,16 +175,16 @@ describe('Manager route access', () => {
 });
 
 describe('Evidence and final assignment are separate flows', () => {
-  it('routes "Minh chứng thực tế" and "Chấm bài" to different screens', () => {
+  it('routes "Minh chứng thực tế" and "Kết quả bài làm" to different screens', () => {
     const evidence = MANAGER_SIDEBAR.find((s) => s.label === 'Minh chứng thực tế')!;
-    const finals = MANAGER_SIDEBAR.find((s) => s.label === 'Chấm bài')!;
+    const finals = MANAGER_SIDEBAR.find((s) => s.label === 'Kết quả bài làm')!;
     expect(findEnterpriseScreen(evidence.screenId!)!.path).toBe('/enterprise/reviews');
     expect(findEnterpriseScreen(finals.screenId!)!.path).toBe('/enterprise/team/final-reviews');
     expect(evidence.activeFor).not.toContain(finals.screenId);
   });
 
-  it('lists only this department’s practical evidence and sends the decision to the evaluation screen', async () => {
-    vi.spyOn(taskService, 'getTasks').mockResolvedValue(page([
+  it('lists only this department’s practical evidence and opens task submissions', async () => {
+    const getTasks = vi.spyOn(taskService, 'getTasks').mockResolvedValue(page([
       { id: 'tsk-1', title: 'Báo cáo tài chính truy vết được', description: 'Dùng báo cáo nguồn.', expectedOutput: '', competencyIds: [], targetLevel: 2,
         departmentId: 'dep-ops', assignedEmployeesCount: 2, assignedByEmployeeId: 'emp-mgr', assignedByName: 'Lê Quản Lý', assignedAt: '2026-10-01',
         dueDate: '2026-10-21', status: 'ACTIVE', submissionsCount: 1, approvedCount: 0,
@@ -185,11 +201,12 @@ describe('Evidence and final assignment are separate flows', () => {
 
     const card = await screen.findByRole('article', { name: 'Báo cáo tài chính truy vết được' });
     expect(within(card).getByText('Nguồn được nêu rõ · tối đa 5 điểm', { exact: false })).toBeInTheDocument();
-    expect(within(card).getByRole('link', { name: 'Đánh giá minh chứng →' })).toHaveAttribute('href', '/enterprise/reviews/sub-ops');
+    expect(within(card).getByRole('link', { name: 'Xem nhiệm vụ và bài nộp' })).toHaveAttribute('href', '/enterprise/tasks/tsk-1');
     expect(screen.queryByText('Phòng Khác', { exact: false })).toBeNull();
     expect(screen.queryByRole('article', { name: 'Việc của phòng khác' })).toBeNull();
-    expect(screen.getByRole('link', { name: 'Chấm bài' })).toHaveAttribute('href', '/enterprise/team/final-reviews');
-    expect(getQueue).toHaveBeenCalled();
+    expect(screen.getByRole('link', { name: 'Kết quả bài làm' })).toHaveAttribute('href', '/enterprise/team/final-reviews');
+    expect(getTasks).toHaveBeenCalledWith(expect.objectContaining({ departmentId: 'dep-ops' }));
+    expect(getQueue).not.toHaveBeenCalled();
   });
 });
 

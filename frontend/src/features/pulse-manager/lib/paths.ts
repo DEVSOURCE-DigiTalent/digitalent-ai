@@ -16,6 +16,7 @@ export const MANAGER_PATHS = {
   training: path('MG-06'),
   trainingDetail: (assignmentId: string) => path('MG-07').replace(':assignmentId', encodeURIComponent(assignmentId)),
   tasks: path('MG-08'),
+  task: (taskId: string) => path('MG-10').replace(':id', encodeURIComponent(taskId)),
   newTask: path('MG-09'),
   evidence: path('MG-11'),
   evidenceDetail: (submissionId: string) => path('MG-12').replace(':submissionId', encodeURIComponent(submissionId)),

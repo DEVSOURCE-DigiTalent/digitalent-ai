@@ -2,6 +2,8 @@ import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Users } from 'lucide-react';
+import { useIsPulseManager } from '@/features/pulse-manager/lib/use-is-pulse-manager';
+import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { usePracticalTask } from '@/hooks/use-tasks';
 import { useTaskCompetencies } from '@/hooks/use-competencies';
 import { formatDate } from '@/lib/utils';
@@ -20,6 +22,8 @@ const SUB_STATUS: Record<string, { label: string; bg: string; fg: string }> = {
 
 export function OwnerTaskDetailPage() {
   useUiLanguage();
+  const isManager = useIsPulseManager();
+  const canEvaluate = usePermission().can(PERMISSIONS.TASK_EVALUATE) && !isManager;
   const [employeePage, setEmployeePage] = useState(1);
   const { id = '' } = useParams();
   const { data: task, isLoading, isError } = usePracticalTask(id);
@@ -254,7 +258,7 @@ export function OwnerTaskDetailPage() {
                               : { border: '1px solid var(--po-line)', color: 'var(--po-ink)' }
                           }
                         >
-                          {sub.status === 'PENDING_REVIEW' ? translateUi('Chấm điểm') : translateUi('Xem minh chứng')}
+                          {canEvaluate && sub.status === 'PENDING_REVIEW' ? translateUi('Chấm điểm') : translateUi('Xem minh chứng')}
                         </Link>
                       </>
                     ) : (

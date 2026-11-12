@@ -47,6 +47,7 @@ import type {
 import { getAvatarColor, initials } from '@/features/platform/components/pulse-format';
 import { clock, formatDuration, levelName, SUPPORT_LABELS } from '@/features/pulse-employee/lib/labels';
 import { RichText } from '@/features/pulse-employee/components/RichText';
+import { ReviewCard } from '@/features/pulse-manager/pages/PulseFinalReviewsPage';
 import { RecordingPlayer } from '@/features/pulse-manager/components/RecordingPlayer';
 import { RiskTag } from '@/features/pulse-manager/components/ProctoringRiskPanel';
 import { PaginationBar } from '@/features/trial-program/components/PaginationBar';
@@ -275,7 +276,7 @@ export function MentorReviewWorkbench({
   }, [showCriteriaModal]);
 
   const allItems = useMemo(
-    () => (data?.items ?? []).filter((item) => item.kind === 'FINAL'),
+    () => data?.items ?? [],
     [data],
   );
   const criteriaList = useMemo(() => data?.criteria ?? [], [data]);
@@ -1163,6 +1164,8 @@ export function MentorReviewWorkbench({
                   </button>
                 </div>
               </div>
+            ) : activeItem.kind === 'PRE_ASSESSMENT' ? (
+              <ReviewCard key={activeItem.submissionId} item={activeItem} criteria={criteriaList} showOrganization />
             ) : (
               <MentorReviewDetailPane
                 key={`${activeItem.kind}-${activeItem.submissionId}`}

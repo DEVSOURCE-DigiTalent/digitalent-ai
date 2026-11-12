@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
@@ -22,11 +23,9 @@ public class GetDepartmentByIdUseCase : IUseCase<GetDepartmentByIdUseCaseInput, 
 
     public async Task<GetDepartmentByIdUseCaseOutput> ExecuteAsync(GetDepartmentByIdUseCaseInput input)
     {
-        var organizationId = _currentUser.GetRequiredOrganizationId();
-
         // Select thẳng sang Output → chỉ lấy đúng các cột cần, không load cả entity
-        var department = await _context.Departments
-            .Where(d => d.Id == input.Id && d.OrganizationId == organizationId)
+        var department = await new EmployeeScope(_context, _currentUser).VisibleDepartments()
+            .Where(d => d.Id == input.Id)
             .Select(d => new GetDepartmentByIdUseCaseOutput
             {
                 Id = d.Id,

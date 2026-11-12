@@ -9,11 +9,11 @@ export function useManagerSkillGapPage(pageIndex: number, pageSize = 20, search?
   });
 }
 
-export function useManagerSkillGapMatrix(pageIndex: number, pageSize = 10) {
+export function useManagerSkillGapMatrix(pageIndex: number, pageSize = 10, departmentId?: string) {
   return useQuery({
-    queryKey: ['manager', 'skill-gap-matrix', pageIndex, pageSize],
+    queryKey: ['manager', 'skill-gap-matrix', pageIndex, pageSize, departmentId],
     queryFn: async () => {
-      const page = (await skillGapService.getList({ pageIndex, pageSize, latestOnly: true })).data.data!;
+      const page = (await skillGapService.getList({ pageIndex, pageSize, departmentId, latestOnly: true })).data.data!;
       const details = await Promise.all(page.items.map(async (item) => (await skillGapService.getById(item.runId)).data.data!));
       return { ...page, details };
     },

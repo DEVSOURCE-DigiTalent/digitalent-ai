@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useManagedDepartment } from '@/hooks/use-managed-department';
 import { Check, ClipboardCheck, X, ArrowRight, GraduationCap, Building2, Clock, CheckCircle2, AlertCircle, FileCheck2, Sparkles } from 'lucide-react';
 import '@/features/trial-program/mentor-workspace.css';
 import { toast } from 'sonner';
@@ -20,14 +21,14 @@ import { ChoiceScore } from '@/features/pulse-employee/components/blocks';
 import { Empty, LoadError, Mini, Notice, PageHead, PageSkeleton, Pill, PuLink } from '@/features/pulse-employee/components/ui';
 import { btn } from '@/features/pulse-employee/lib/button';
 import { SUPPORT_LABELS, levelName, pulseErrorMessage, timeLeft } from '@/features/pulse-employee/lib/labels';
-import { ManagerPage } from '../components/ManagerUi';
+import { ManagerPage, NoDepartment } from '../components/ManagerUi';
 import { RecordingPlayer } from '../components/RecordingPlayer';
 import { RiskTag } from '../components/ProctoringRiskPanel';
 import { MANAGER_PATHS } from '../lib/paths';
 
 const MIN_REASON = 10;
 
-type Filter = 'ALL' | 'PENDING' | 'RETRY' | 'DEADLINE_MISSED' | 'FLAGGED';
+type Filter = 'ALL' | 'REVIEWED' | 'PENDING' | 'RETRY' | 'DEADLINE_MISSED' | 'FLAGGED';
 type KindFilter = 'ALL' | PulseExamKind;
 
 const KIND_FILTERS: { key: KindFilter; label: string }[] = [
@@ -47,6 +48,7 @@ const FILTERS: { key: Filter; label: string; match: (status: PulseReviewStatus) 
   { key: 'RETRY', label: 'Chờ nộp lại', match: (s) => s === 'RETRY_WAIT' || s === 'RETRY_READY' },
   { key: 'DEADLINE_MISSED', label: 'Quá hạn nộp lại', match: (s) => s === 'DEADLINE_MISSED' },
   { key: 'FLAGGED', label: 'Cần hỗ trợ', match: (s) => s === 'FLAGGED' },
+  { key: 'REVIEWED', label: 'Đã có kết quả', match: (s) => s === 'APPROVED' || s === 'NOT_YET' },
 ];
 
 const STATUS_PILL: Record<PulseReviewStatus, { label: string; tone: 'gray' | 'coral' | 'green' }> = {
@@ -63,8 +65,8 @@ const STATUS_HINT: Record<PulseReviewStatus, string> = {
   PENDING: 'Xem kết quả trắc nghiệm, đọc phần tự luận theo ba tiêu chí, rồi ghi quyết định kèm lý do. Đạt cần cả hai phần đạt.',
   RETRY_WAIT: 'Nhân viên đang đọc nhận xét; lần nộp cuối chưa mở.',
   RETRY_READY: 'Lần nộp cuối đang mở, nhân viên cần nộp trước hạn.',
-  DEADLINE_MISSED: 'Đã quá hạn nộp lần cuối. Chọn cách hỗ trợ trước khi lộ trình tiếp tục.',
-  FLAGGED: 'Hai lần nộp chưa đạt. Chọn kèm cặp, một chu kỳ học mới hoặc tạm dừng lộ trình.',
+  DEADLINE_MISSED: 'Đã quá hạn nộp lần cuối.',
+  FLAGGED: 'Hai lần nộp chưa đạt và cần hỗ trợ.',
   APPROVED: 'Bài đã được duyệt đạt chuẩn và công nhận hoàn thành cấp độ khóa học.',
   NOT_YET: 'Bài đánh giá trước khi học chưa đạt. Nhân viên tiếp tục học khóa và nộp bài cuối cấp.',
 };
@@ -77,27 +79,30 @@ const SUPPORT_OPTIONS: { action: PulseSupportAction; label: string }[] = [
   { action: 'PAUSE', label: 'Tạm dừng lộ trình' },
 ];
 
-/**
- * MG-13 · Chấm bài (mock `#/review`, docs/ui-redesign/16 §10): hàng chờ của phòng ban quản lý gồm bài đánh giá trước khi học
- * và bài cuối khóa, cả hai kèm bản ghi màn hình + camera + micro. Gợi ý AI chỉ để tham khảo; quản lý ghi quyết định cuối
- * cùng kèm lý do. Bài cuối: lần 1 chưa đạt mở cửa sổ nộp lại, lần 2 chưa đạt bật cờ hỗ trợ.
- */
-/**
- * `audience="mentor"`: mentor DigiTalent chấm bài của các doanh nghiệp dùng thử được phân công (backend chỉ trả các bài đó);
- * mỗi thẻ ghi tên doanh nghiệp, không có phần nhiệm vụ thực tế của quản lý.
- */
+/** MG-13 hiển thị kết quả bài làm của phòng ban. Chế độ mentor hiển thị thao tác chấm bài. */
 export function PulseFinalReviewsPage({ audience = 'manager' }: { audience?: 'manager' | 'mentor' } = {}) {
   const mentor = audience === 'mentor';
-  const { data, isLoading, error, refetch } = usePulseFinalReviews();
+  const { department, isLoading: departmentLoading, isError: departmentError, refetch: refetchDepartment } = useManagedDepartment();
+  const { data, isLoading, error, refetch } = usePulseFinalReviews({
+    enabled: mentor || Boolean(department),
+    includeReviewed: !mentor,
+    departmentId: mentor ? undefined : department?.id,
+  });
   const [filter, setFilter] = useState<Filter>('ALL');
   const [kind, setKind] = useState<KindFilter>('ALL');
 
-  if (isLoading) {
+  if (isLoading || (!mentor && departmentLoading)) {
     return (
       <ManagerPage>
         <PageSkeleton blocks={[140, 110, 420]} />
       </ManagerPage>
     );
+  }
+  if (!mentor && departmentError) {
+    return <ManagerPage><LoadError message="Không tải được phòng ban bạn phụ trách." onRetry={() => refetchDepartment()} /></ManagerPage>;
+  }
+  if (!mentor && !department) {
+    return <ManagerPage><PageHead eyebrow="Quản lý đội" title="Kết quả bài làm" /><NoDepartment /></ManagerPage>;
   }
   if (error || !data) {
     return (
@@ -107,7 +112,6 @@ export function PulseFinalReviewsPage({ audience = 'manager' }: { audience?: 'ma
     );
   }
 
-  const department = data.items.find((item) => item.departmentName)?.departmentName;
   const active = FILTERS.find((f) => f.key === filter)!;
   const ofKind = data.items.filter((item) => kind === 'ALL' || item.kind === kind);
   const visible = ofKind.filter((item) => active.match(item.status));
@@ -142,25 +146,11 @@ export function PulseFinalReviewsPage({ audience = 'manager' }: { audience?: 'ma
           </div>
         </div>
       ) : (
-        <>
-          <PageHead
-            eyebrow={`Quản lý đánh giá${department ? ` · ${department}` : ''}`}
-            title="Ra quyết định dựa trên minh chứng."
-            description="Mỗi khóa có một bài đánh giá trước khi học và một bài cuối khóa, cả hai có bản ghi màn hình, camera và micro. Gợi ý AI chỉ để tham khảo. Quản lý ghi quyết định cuối cùng và lý do."
-            actions={<Pill>{data.pendingCount} bài chờ đánh giá</Pill>}
-          />
-          <section className="pm-banner" aria-label="Nguyên tắc chấm bài cuối khóa">
-            <div>
-              <span className="pu-mini">{department ? `${department} / ` : ''}Đánh giá khóa học</span>
-              <h2>Một người học. Một khóa. Một quyết định rõ ràng.</h2>
-              <p>Xem bản ghi và các lần rời tab hoặc dừng chia sẻ, đọc minh chứng rồi ghi đạt hoặc chưa đạt kèm lý do.</p>
-            </div>
-            <div className="pm-banner-count">
-              <strong>{data.pendingCount}</strong>
-              <span>chờ bạn quyết định</span>
-            </div>
-          </section>
-        </>
+        <PageHead
+          eyebrow={department?.name ?? 'Quản lý đội'}
+          title="Kết quả bài làm"
+          description="Xem bài nộp, kết quả và nhận xét của mentor cho bài đánh giá trước khi học và bài cuối khóa."
+        />
       )}
 
       {mentor ? (
@@ -208,7 +198,7 @@ export function PulseFinalReviewsPage({ audience = 'manager' }: { audience?: 'ma
         </div>
       ) : (
         <section className="pu-metrics pu-review-kpis" aria-label="Tình trạng hàng chờ" style={{ marginTop: 16 }}>
-          <div><strong>{data.pendingCount}</strong><span>Chờ quyết định</span></div>
+          <div><strong>{data.pendingCount}</strong><span>Chờ mentor chấm</span></div>
           <div><strong>{data.preAssessmentCount}</strong><span>Đánh giá trước khi học</span></div>
           <div><strong>{data.retryCount}</strong><span>Chờ nộp lại</span></div>
           <div className="warn"><strong>{data.deadlineMissedCount}</strong><span>Quá hạn nộp lại</span></div>
@@ -220,12 +210,12 @@ export function PulseFinalReviewsPage({ audience = 'manager' }: { audience?: 'ma
         <div style={{ marginTop: 22 }}>
           <Empty
             icon={<ClipboardCheck size={24} />}
-            title="Chưa có bài nào cần quyết định."
+            title={mentor ? 'Chưa có bài nào cần quyết định.' : 'Phòng ban chưa có bài nộp.'}
             action={mentor ? undefined : <PuLink to={MANAGER_PATHS.overview} kind="outline">Quay lại đội ngũ</PuLink>}
           >
             {mentor
               ? 'Khi nhân viên doanh nghiệp dùng thử nộp bài cuối khóa Cơ bản, bài sẽ xuất hiện ở đây.'
-              : 'Khi nhân viên trong phòng ban nộp bài đánh giá trước khi học hoặc bài cuối khóa, bài sẽ xuất hiện ở đây để bạn chấm.'}
+              : 'Khi nhân viên trong phòng ban nộp bài đánh giá trước khi học hoặc bài cuối khóa, bạn có thể theo dõi trạng thái và kết quả tại đây.'}
           </Empty>
         </div>
       ) : (
@@ -276,7 +266,7 @@ export function PulseFinalReviewsPage({ audience = 'manager' }: { audience?: 'ma
               <div className="pu-tabs" role="group" aria-label="Lọc theo trạng thái">
                 {FILTERS.map((f) => (
                   <button key={f.key} type="button" aria-pressed={filter === f.key} onClick={() => setFilter(f.key)}>
-                    {f.label}<span>{ofKind.filter((item) => f.match(item.status)).length}</span>
+                    {f.key === 'PENDING' ? 'Chờ mentor chấm' : f.label}<span>{ofKind.filter((item) => f.match(item.status)).length}</span>
                   </button>
                 ))}
               </div>
@@ -306,7 +296,7 @@ export function PulseFinalReviewsPage({ audience = 'manager' }: { audience?: 'ma
   );
 }
 
-function ReviewCard({ item, criteria, showOrganization }: { item: PulseFinalReviewItem; criteria: PulseCriterion[]; showOrganization?: boolean }) {
+export function ReviewCard({ item, criteria, showOrganization }: { item: PulseFinalReviewItem; criteria: PulseCriterion[]; showOrganization?: boolean }) {
   const latest = item.attempts[item.attempts.length - 1];
   const earlier = item.attempts.slice(0, -1);
   const pill = STATUS_PILL[item.status];
@@ -342,10 +332,10 @@ function ReviewCard({ item, criteria, showOrganization }: { item: PulseFinalRevi
         <div className="pu-row">
           <span className={`pu-kind-tag ${isPre ? 'pre' : 'final'}`}>{KIND_LABELS[item.kind]}</span>
           {item.recording?.risk && <RiskTag risk={item.recording.risk} />}
-          <Pill tone={pill.tone}>{pill.label}</Pill>
+          <Pill tone={pill.tone}>{!showOrganization && item.status === 'PENDING' ? 'Chờ mentor chấm' : pill.label}</Pill>
         </div>
       </header>
-      <p className="pu-panel-desc" style={{ marginTop: 10 }}>{isPre ? PRE_HINT : STATUS_HINT[item.status]}</p>
+      <p className="pu-panel-desc" style={{ marginTop: 10 }}>{isPre ? PRE_HINT : !showOrganization && item.status === 'PENDING' ? 'Bài đã nộp và đang chờ mentor chấm.' : STATUS_HINT[item.status]}</p>
 
       {item.recording ? (
         item.status === 'PENDING' ? (
@@ -370,7 +360,7 @@ function ReviewCard({ item, criteria, showOrganization }: { item: PulseFinalRevi
         </div>
       )}
 
-      {item.status === 'PENDING' && (
+      {showOrganization && item.status === 'PENDING' && (
         <div className="pu-review-grid">
           <div className="pu-rubric" aria-label="Ba tiêu chí của phần tự luận">
             {criteria.map((criterion, index) => {
@@ -395,7 +385,10 @@ function ReviewCard({ item, criteria, showOrganization }: { item: PulseFinalRevi
         </div>
       )}
 
-      {item.status === 'PENDING' && (isPre ? <PreAssessmentDecisionForm item={item} mentor={showOrganization} /> : <DecisionForm item={item} mentor={showOrganization} />)}
+      {latest?.decisionReason && item.status !== 'RETRY_WAIT' && item.status !== 'RETRY_READY' && (
+        <Notice>Nhận xét của {latest.reviewerName ?? 'người chấm'} · {latest.decisionReason}</Notice>
+      )}
+      {showOrganization && item.status === 'PENDING' && (isPre ? <PreAssessmentDecisionForm item={item} /> : <DecisionForm item={item} />)}
       {(item.status === 'RETRY_WAIT' || item.status === 'RETRY_READY') && (
         <div style={{ marginTop: 16 }}>
           {latest?.decisionReason && (
@@ -409,7 +402,7 @@ function ReviewCard({ item, criteria, showOrganization }: { item: PulseFinalRevi
           </div>
         </div>
       )}
-      {(item.status === 'FLAGGED' || item.status === 'DEADLINE_MISSED') && <SupportForm item={item} />}
+      {showOrganization && (item.status === 'FLAGGED' || item.status === 'DEADLINE_MISSED') && <SupportForm item={item} />}
     </article>
   );
 }
@@ -557,14 +550,14 @@ function AttemptHistory({ attempt, max }: { attempt: PulseFinalAttempt; max: num
       <blockquote>{attempt.evidenceText}</blockquote>
       {attempt.decisionReason && (
         <div className="pu-feedback">
-          <strong>Nhận xét của {attempt.reviewerName ?? 'quản lý'}</strong>: {attempt.decisionReason}
+          <strong>Nhận xét của {attempt.reviewerName ?? 'người chấm'}</strong>: {attempt.decisionReason}
         </div>
       )}
     </div>
   );
 }
 
-function DecisionForm({ item, mentor }: { item: PulseFinalReviewItem; mentor?: boolean }) {
+function DecisionForm({ item }: { item: PulseFinalReviewItem }) {
   const decide = useDecidePulseFinal();
   const [decision, setDecision] = useState<PulseDecision | ''>('');
   const [reason, setReason] = useState('');
@@ -598,7 +591,7 @@ function DecisionForm({ item, mentor }: { item: PulseFinalReviewItem; mentor?: b
     <form onSubmit={onSubmit} style={{ marginTop: 16 }}>
       <div className="pu-decision">
         <label className="pu-field">
-          {mentor ? 'Quyết định của mentor' : 'Quyết định của quản lý'}
+          Quyết định của mentor
           <select value={decision} onChange={(e) => setDecision(e.target.value as PulseDecision | '')} required>
             <option value="">Chọn quyết định</option>
             <option value="PASSED" disabled={choiceFails}>Duyệt khóa học{choiceFails ? ' · trắc nghiệm chưa đạt' : ''}</option>
@@ -643,7 +636,7 @@ function DecisionForm({ item, mentor }: { item: PulseFinalReviewItem; mentor?: b
   );
 }
 
-function PreAssessmentDecisionForm({ item, mentor }: { item: PulseFinalReviewItem; mentor?: boolean }) {
+function PreAssessmentDecisionForm({ item }: { item: PulseFinalReviewItem }) {
   const decide = useDecidePulsePreAssessment();
   const [decision, setDecision] = useState<PulseDecision | ''>('');
   const [reason, setReason] = useState('');
@@ -674,7 +667,7 @@ function PreAssessmentDecisionForm({ item, mentor }: { item: PulseFinalReviewIte
     <form onSubmit={onSubmit} style={{ marginTop: 16 }}>
       <div className="pu-decision">
         <label className="pu-field">
-          {mentor ? 'Quyết định của mentor' : 'Quyết định của quản lý'}
+          Quyết định của mentor
           <select value={decision} onChange={(e) => setDecision(e.target.value as PulseDecision | '')} required>
             <option value="">Chọn quyết định</option>
             <option value="PASSED" disabled={choiceFails}>Đạt · công nhận khóa, không cần học{choiceFails ? ' · trắc nghiệm chưa đạt' : ''}</option>

@@ -12,7 +12,7 @@ interface SidebarManagerCardProps {
 export function SidebarManagerCard({ isRail = false, onToggleCollapsed }: SidebarManagerCardProps) {
   useUiLanguage();
   const user = useCurrentUser((s) => s.user);
-  const { department, isLoading } = useManagedDepartment();
+  const { department, departments, selectDepartment, isLoading } = useManagedDepartment();
 
   const orgName = user?.organization?.name ?? 'Tổ chức';
   const departmentName = department?.name ?? (isLoading ? 'Đang tải…' : 'Chưa được gán phòng ban');
@@ -48,7 +48,16 @@ export function SidebarManagerCard({ isRail = false, onToggleCollapsed }: Sideba
         <dd>{user?.fullName ?? translateUi('Quản lý')}</dd>
         <dt>Phòng ban đang quản lý</dt>
         <dd>
-          {departmentName}
+          {departments.length > 1 ? (
+            <select
+              aria-label={translateUi('Phòng ban đang quản lý')}
+              className="w-full rounded bg-transparent text-inherit"
+              value={department?.id ?? ''}
+              onChange={(event) => selectDepartment(event.target.value)}
+            >
+              {departments.map((item) => <option className="text-slate-900" key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          ) : departmentName}
           {department?.headcount != null && <small>{department.headcount} nhân viên trong phòng ban</small>}
         </dd>
         <dt>{translateUi("Tổ chức")}</dt>
