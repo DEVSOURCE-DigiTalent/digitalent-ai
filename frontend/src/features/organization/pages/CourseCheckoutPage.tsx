@@ -1017,7 +1017,7 @@ export function CourseCheckoutPage() {
               <div>
                 <h4 className="font-bold text-slate-800">Điều 1: Phạm vi và Mục tiêu đào tạo</h4>
                 <p>
-                  Bên A cấp quyền truy cập nền tảng đào tạo trực tuyến DigiTalent Pulse, các học phần bài giảng số hóa và hệ thống đánh giá theo Khung năng lực số quốc gia (Thông tư 02/2025/TT-BTTTT).
+                  Bên A cấp quyền truy cập nền tảng đào tạo trực tuyến DigiTalent AI, các học phần bài giảng số hóa và hệ thống đánh giá theo Khung năng lực số quốc gia (Thông tư 02/2025/TT-BTTTT).
                 </p>
               </div>
 

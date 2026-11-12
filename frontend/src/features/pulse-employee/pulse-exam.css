@@ -192,9 +192,18 @@
   transition: all 0.15s ease;
 }
 .pu-exam-leave-btn:hover {
-  background: #f8fafc;
-  border-color: #94a3b8;
-  color: #0f172a;
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.12);
+}
+.pu-exam-leave-btn svg {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.pu-exam-leave-btn:hover svg {
+  transform: translateX(-2px);
+  color: #dc2626;
 }
 .pu-exam-leave-btn.danger {
   border-color: #fecdd3;
@@ -421,6 +430,14 @@
   outline: none;
   box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.12);
 }
+.pu-answer textarea.is-error {
+  border-color: #e11d48;
+  background: #fffafa;
+}
+.pu-answer textarea.is-error:focus {
+  border-color: #e11d48;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.14);
+}
 .pu-answer textarea:disabled { background: #f6f6fb; }
 .pu-answer-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .pu-answer-foot small { color: #66708a; font-size: 12px; font-variant-numeric: tabular-nums; }
@@ -632,6 +649,10 @@
 .pu-rplayer-head h3 { margin: 0; font-size: 16px; letter-spacing: -.03em; }
 .pu-rplayer-head span { color: var(--pu-muted); font-size: 12px; }
 .pu-rplayer-stage { position: relative; overflow: hidden; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; background: #0f1430; }
+.pu-rplayer-stage.is-clickable { cursor: pointer; }
+.pu-rplayer-stage-play { position: absolute; top: 50%; left: 50%; z-index: 3; display: grid; place-items: center; width: 64px; height: 64px; padding-left: 3px; border: 2px solid rgba(255, 255, 255, .9); border-radius: 50%; background: rgba(79, 70, 229, .92); color: #fff; transform: translate(-50%, -50%); box-shadow: 0 10px 28px rgba(15, 23, 42, .45); transition: transform .18s ease, background-color .18s ease; pointer-events: none; }
+.pu-rplayer-stage.is-clickable:hover .pu-rplayer-stage-play { transform: translate(-50%, -50%) scale(1.07); background: #4338ca; }
+.pu-rplayer-hint { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 0; padding: 8px 12px; border: 1px solid #fde68a; border-radius: 10px; background: #fffbeb; color: #92400e; font-size: 12px; font-weight: 600; }
 .pu-rplayer-stage video.screen { width: 100%; height: 100%; object-fit: contain; background: #0f1430; }
 .pu-rplayer-camera { position: absolute; top: 4%; right: 3%; overflow: hidden; width: 24%; aspect-ratio: 4 / 3; border: 2px solid rgba(255, 255, 255, .85); border-radius: 12px; background: radial-gradient(circle at 50% 38%, #46518a, #1f2750); }
 .pu-rplayer-camera video { width: 100%; height: 100%; object-fit: cover; }
@@ -640,7 +661,11 @@
 .pu-rplayer-camera .pu-rplayer-gap { font-size: 11px; }
 .pu-rplayer-time { position: absolute; bottom: 4%; left: 3%; padding: 4px 9px; border-radius: 8px; background: rgba(0, 0, 0, .5); color: #fff; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .pu-rplayer-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
-.pu-rplayer-play { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--pu-violet); color: #fff; cursor: pointer; }
+.pu-rplayer-play { display: grid; flex: none; place-items: center; width: 42px; height: 42px; border: 0; border-radius: 50%; background: var(--pu-violet, #4f46e5); color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(79, 70, 229, .24); transition: transform .15s ease, background-color .15s ease, box-shadow .15s ease; }
+.pu-rplayer-play:hover { background: var(--pu-violet-2, #4338ca); transform: scale(1.05); }
+.pu-rplayer-mute { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 11px; border: 1px solid var(--pu-line, #e2e8f0); border-radius: 10px; background: #fff; color: var(--pu-ink-2, #334155); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; transition: background-color .15s ease, border-color .15s ease; }
+.pu-rplayer-mute:hover { background: #f8fafc; border-color: #cbd5e1; }
+.pu-rplayer-mute[aria-pressed='true'] { background: #f1f5f9; color: #475569; }
 .pu-rplayer-controls > span { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .pu-rplayer-speed { display: inline-flex; margin-left: auto; padding: 3px; border-radius: 10px; background: #f0eff8; }
 .pu-rplayer-speed button { min-width: 44px; min-height: 32px; border: 0; border-radius: 8px; background: transparent; color: var(--pu-muted); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
@@ -648,7 +673,7 @@
 .pu-timeline { position: relative; height: 22px; }
 .pu-timeline input[type='range'] { position: absolute; inset: 0; width: 100%; height: 22px; margin: 0; opacity: 0; cursor: pointer; }
 .pu-timeline-track { position: absolute; top: 50%; right: 0; left: 0; height: 6px; margin-top: -3px; border-radius: 99px; background: #e7e6f2; pointer-events: none; }
-.pu-timeline-fill { position: absolute; top: 50%; left: 0; height: 6px; margin-top: -3px; border-radius: 99px; background: var(--pu-violet); pointer-events: none; }
+.pu-timeline-fill { position: absolute; top: 50%; left: 0; height: 6px; margin-top: -3px; border-radius: 99px; background: var(--pu-violet, #4f46e5); pointer-events: none; }
 .pu-timeline-gap { position: absolute; top: 50%; height: 12px; margin-top: -6px; border-radius: 3px; background: #ff8f7a; pointer-events: none; }
 .pu-timeline-mark { position: absolute; top: 50%; width: 10px; height: 10px; padding: 0; transform: translate(-50%, -50%); border: 0; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px #8f86e0; cursor: pointer; }
 .pu-timeline-mark.flagged { width: 14px; height: 14px; background: #ff8f7a; box-shadow: 0 0 0 3px #fff; }
@@ -762,7 +787,7 @@
 .pu-risk-moments .text small { color: var(--pu-muted); font-size: 11.5px; }
 .pu-risk-moments b { flex: none; color: var(--pu-coral-ink); font-size: 12px; }
 .pu-risk-note { display: flex; gap: 8px; margin: 0; color: var(--pu-muted); font-size: 12px; line-height: 1.5; }
-.pu-risk-note svg { flex: none; margin-top: 1px; color: var(--pu-violet); }
+.pu-risk-note svg { flex: none; margin-top: 1px; color: var(--pu-violet, #4f46e5); }
 
 /* ── Stepper Bar (Phần 1 Trắc nghiệm / Phần 2 Tự luận) ──────────────── */
 .pu-exam-stepper-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 18px; padding: 12px 18px; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 2px 10px rgba(15, 23, 42, .03); }

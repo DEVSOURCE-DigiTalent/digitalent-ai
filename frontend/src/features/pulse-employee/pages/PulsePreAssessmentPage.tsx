@@ -120,7 +120,7 @@ function PreAssessmentStatus({ data }: { data: PulsePreAssessment }) {
 
       <section className="pu-surface pu-pad">
         <Mini>Nội dung và tiêu chí đánh giá</Mini>
-        <p className="pu-panel-desc">{examStructure(data.choiceCount, data.choicePassMark)}</p>
+        <p className="pu-panel-desc">{examStructure(data.choiceCount, data.choicePassMark, data.criteria.length)}</p>
         <CriteriaRubric criteria={data.criteria} />
       </section>
       {status === 'LOCKED' && <Notice>Mỗi khóa có một bài đánh giá năng lực đầu vào; bài mở khi khóa nằm trong lộ trình và khóa cấp trước đã đạt.</Notice>}

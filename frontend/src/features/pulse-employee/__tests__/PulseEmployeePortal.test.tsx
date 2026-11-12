@@ -1,5 +1,5 @@
 import React from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -187,6 +187,10 @@ function signIn(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
   vi.restoreAllMocks();
   signIn();
+});
+
+afterEach(() => {
+  window.history.replaceState(null, '', '/');
 });
 
 describe('Pulse employee routes', () => {
@@ -491,5 +495,60 @@ describe('PulseFinalPage', () => {
 
     expect(await screen.findByText('Hai lần nộp chưa đạt tiêu chí.')).toBeTruthy();
     expect(screen.getByText('Quản lý sắp xếp kèm cặp: Kèm cặp 2 buổi')).toBeTruthy();
+  });
+
+  it('displays weighted criteria and Gate badge on final view and blocks copied prompt during exam input', async () => {
+    const weightedCriteria = [
+      { number: '01', title: 'Nguồn & bối cảnh', description: 'Nêu nguồn thực tế.', weightPercent: 20, isRequired: false },
+      { number: '02', title: 'Quy trình kiểm chứng', description: 'Kiểm tra lại được.', weightPercent: 20, isRequired: false },
+      { number: '03', title: 'Kết luận & bàn giao', description: 'Nêu bước tiếp theo.', weightPercent: 20, isRequired: false },
+      { number: '04', title: 'Truy xuất nguồn chéo', description: 'Đối chiếu ít nhất 2 nguồn.', weightPercent: 40, isRequired: true },
+    ];
+    vi.spyOn(pulseService, 'getFinal').mockResolvedValue(ok(final({
+      status: 'PENDING',
+      canSubmit: false,
+      criteria: weightedCriteria,
+    })));
+
+    const view = renderAt(PULSE_PATHS.final('course-1'), <PulseFinalPage />);
+    expect(await screen.findByText(/theo 4 tiêu chí dưới đây/)).toBeTruthy();
+    expect(screen.getByText('40%')).toBeTruthy();
+    expect(screen.getByText('Bắt buộc')).toBeTruthy();
+    view.unmount();
+
+    window.history.replaceState(null, '', '/enterprise/me/courses/course-1/final?stage=work');
+    vi.spyOn(pulseService, 'getFinal').mockResolvedValue(ok(final({
+      canSubmit: true,
+      choiceCount: 0,
+      criteria: weightedCriteria,
+      assignment: {
+        title: 'Phân tích dữ liệu',
+        promptHtml: '<p>Mô tả một nhiệm vụ thực tế của vị trí Sales / CRM thuộc lĩnh vực khai thác dữ liệu.</p>',
+        criteria: weightedCriteria.map((c) => c.title),
+      },
+    })));
+
+    renderAt('/enterprise/me/courses/course-1/final?stage=work', <PulseFinalPage />);
+
+    const textarea = await screen.findByLabelText('Ghi chú minh chứng');
+    const submitBtn = screen.getByRole('button', { name: 'Nộp bài' }) as HTMLButtonElement;
+    expect(submitBtn.disabled).toBe(true);
+
+    fireEvent.change(textarea, {
+      target: {
+        value: 'Mô tả một nhiệm vụ thực tế của vị trí Sales / CRM thuộc lĩnh vực khai thác dữ liệu và thông tin: nêu nguồn, hành động hoặc phép tính người khác kiểm tra lại được, kết luận và bước tiếp theo.',
+      },
+    });
+    expect(
+      screen.getByText('Nội dung đang lặp lại câu chữ đề bài. Hãy mô tả tình huống công việc thực tế và kết quả kiểm chứng.'),
+    ).toBeInTheDocument();
+    expect(submitBtn.disabled).toBe(true);
+
+    fireEvent.change(textarea, {
+      target: {
+        value: 'Từ báo cáo doanh thu Q3 xuất trên HubSpot CRM và đối chiếu bảng công nợ ERP MISA, tôi dùng Pivot Table lọc ra 14 mã đơn trùng và gửi danh sách đã làm sạch cho kế toán đối soát chiều thứ Sáu.',
+      },
+    });
+    expect(submitBtn.disabled).toBe(false);
   });
 });

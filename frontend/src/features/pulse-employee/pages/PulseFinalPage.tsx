@@ -56,6 +56,7 @@ export function PulseFinalPage() {
         choiceCount={data.choiceCount}
         choicePassMark={data.choicePassMark}
         assignmentContent={data.assignment ? <CourseFinalBrief content={data.assignment} /> : undefined}
+        assignmentPrompt={data.assignment?.promptHtml}
         attemptLabel={`Lần nộp ${attemptNo}/${data.maxAttempts}`}
         outcomes={{
           pass: `Xác nhận đạt chuẩn ${code} (mức ${levelName(data.course.tier)}) và tự động mở khóa tiếp theo.`,
@@ -123,7 +124,7 @@ function FinalView({ final }: { final: PulseFinal }) {
         {final.assignment && <CourseFinalBrief content={final.assignment} />}
         <h2 className="pu-panel-title">{final.choiceCount > 0 ? 'Trắc nghiệm & Tự luận thực hành có thể kiểm chứng' : 'Ghi chú công việc có thể kiểm tra'}</h2>
         <p className="pu-panel-desc">
-          {examStructure(final.choiceCount, final.choicePassMark)} Phần tự luận yêu cầu giải quyết tình huống công việc thực tế của vị trí {position}, nêu rõ nguồn dữ liệu, quy trình xử lý và kết luận dựa trên minh chứng.
+          {examStructure(final.choiceCount, final.choicePassMark, final.criteria.length)} Phần tự luận yêu cầu giải quyết tình huống công việc thực tế của vị trí {position}, nêu rõ nguồn dữ liệu, quy trình xử lý và kết luận dựa trên minh chứng.
         </p>
         <CriteriaRubric criteria={final.criteria} />
       </section>

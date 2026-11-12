@@ -17,6 +17,8 @@ const QUEUE_PILL: Record<PulseReviewStatus, { label: string; tone: 'gray' | 'cor
   RETRY_READY: { label: 'Đang mở lần cuối', tone: 'green' },
   DEADLINE_MISSED: { label: 'Quá hạn nộp lại', tone: 'coral' },
   FLAGGED: { label: 'Cần hỗ trợ', tone: 'coral' },
+  APPROVED: { label: 'Đã duyệt', tone: 'green' },
+  NOT_YET: { label: 'Chưa đạt', tone: 'coral' },
 };
 
 /** Trạng thái đo của một người: chỉ "Đã đo" khi có bản phân tích năng lực, không suy ra khoảng trống khi chưa đo. */

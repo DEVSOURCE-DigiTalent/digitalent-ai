@@ -3,6 +3,7 @@ import { Link, UNSAFE_DataRouterContext, useBlocker, useNavigate } from 'react-r
 import { AlertTriangle, ArrowRight, Check, CheckCircle2, Lock, LogOut, Mic, Monitor, MonitorOff, ScanFace, ShieldAlert, ShieldCheck, Upload, Video, Award } from 'lucide-react';
 import pulseMark from '@/assets/pulse/pulse-mark.svg';
 import type { PulseAnswer, PulseCourseSummary, PulseCriterion, PulseExamKind, PulseExamQuestion, PulseReviewer } from '@/services/pulse.service';
+import { detectPromptCopy } from '@/lib/pulse-prompt-guard';
 import { btn } from '../lib/button';
 import { PROCTORING_EVENT_LABELS, clock, formatDuration, levelName, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
@@ -30,6 +31,7 @@ export interface ProctoredExamProps {
   /** Nội dung hiện trước khi bắt đầu (trạng thái, bài đã nộp…) — chỉ ở bước chuẩn bị. */
   intro?: ReactNode;
   assignmentContent?: ReactNode;
+  assignmentPrompt?: string | null;
 }
 
 function toSentenceCase(str: string): string {
@@ -200,6 +202,7 @@ export function ProctoredExam(props: ProctoredExamProps) {
   const length = text.trim().length;
   const unanswered = questions.filter((q) => !answers[q.questionId]).length;
   const essayShort = length < MIN_EVIDENCE;
+  const essayCopiesPrompt = !essayShort && detectPromptCopy(text, props.assignmentPrompt);
 
   return (
     <div className="pu-exam" data-testid="pulse-exam">
@@ -303,7 +306,13 @@ export function ProctoredExam(props: ProctoredExamProps) {
                   <span className="pu-tab-badge">02</span>
                   <span className="pu-tab-info">
                     <strong>Phần 2: Tự luận</strong>
-                    <small>{essayShort ? 'Chưa đủ điều kiện' : `${length}/${MAX_EVIDENCE} ký tự`}</small>
+                    <small>
+                      {essayCopiesPrompt
+                        ? 'Đang lặp lại đề bài'
+                        : essayShort
+                          ? 'Chưa đủ điều kiện'
+                          : `${length}/${MAX_EVIDENCE} ký tự`}
+                    </small>
                   </span>
                 </button>
               </div>
@@ -344,25 +353,29 @@ export function ProctoredExam(props: ProctoredExamProps) {
               <label id="pu-answer-label" htmlFor="pu-evidence" className="pu-answer-label">Ghi chú minh chứng</label>
               <textarea
                 id="pu-evidence"
+                className={essayCopiesPrompt ? 'is-error' : undefined}
                 value={text}
                 onChange={(event) => setText(event.target.value)}
                 maxLength={MAX_EVIDENCE}
                 disabled={snapshot.phase === 'locked'}
                 placeholder="Nêu nguồn, trình bày hành động hoặc phép tính của bạn, rồi giải thích kết luận và bước tiếp theo."
+                aria-invalid={essayCopiesPrompt || (length > 0 && essayShort) ? true : undefined}
                 aria-describedby="pu-evidence-hint"
               />
               <div className="pu-answer-foot">
-                <small id="pu-evidence-hint" className={length > 0 && essayShort ? 'error' : undefined}>
-                  {length > 0 && essayShort
-                    ? `Cần ít nhất ${MIN_EVIDENCE} ký tự (hiện có ${length}).`
-                    : `Ít nhất ${MIN_EVIDENCE} ký tự · ${length}/${MAX_EVIDENCE} · ${props.attemptLabel}`}
+                <small id="pu-evidence-hint" className={essayCopiesPrompt || (length > 0 && essayShort) ? 'error' : undefined}>
+                  {essayCopiesPrompt
+                    ? 'Nội dung đang lặp lại câu chữ đề bài. Hãy mô tả tình huống công việc thực tế và kết quả kiểm chứng.'
+                    : length > 0 && essayShort
+                      ? `Cần ít nhất ${MIN_EVIDENCE} ký tự (hiện có ${length}).`
+                      : `Ít nhất ${MIN_EVIDENCE} ký tự · ${length}/${MAX_EVIDENCE} · ${props.attemptLabel}`}
                   {unanswered > 0 && <span className="pu-answer-missing"> · Còn {unanswered} câu trắc nghiệm chưa chọn</span>}
                 </small>
                 {stage === 'work' && (
                   <button
                     type="button"
                     className={btn()}
-                    disabled={essayShort || unanswered > 0 || snapshot.phase === 'locked'}
+                    disabled={essayShort || essayCopiesPrompt || unanswered > 0 || snapshot.phase === 'locked'}
                     onClick={() => setConfirmSubmit(true)}
                   >
                     Nộp bài

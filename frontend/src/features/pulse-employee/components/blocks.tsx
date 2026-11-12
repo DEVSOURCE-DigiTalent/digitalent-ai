@@ -6,9 +6,24 @@ export function CriteriaRubric({ criteria }: { criteria: PulseCriterion[] }) {
   return (
     <div className="pu-rubric">
       {criteria.map((criterion) => (
-        <div key={criterion.number}>
+        <div key={criterion.number} className={criterion.isRequired ? 'is-required-gate' : undefined}>
           <b>{criterion.number}</b>
-          <span>{criterion.title}<small>{criterion.description}</small></span>
+          <div className="pu-rubric-content">
+            <div className="pu-rubric-title-row">
+              <strong>{criterion.title}</strong>
+              {(criterion.weightPercent != null || criterion.isRequired) && (
+                <div className="pu-rubric-badges">
+                  {criterion.weightPercent != null && (
+                    <em className="pu-rubric-weight">{criterion.weightPercent}%</em>
+                  )}
+                  {criterion.isRequired && (
+                    <em className="pu-rubric-gate">Bắt buộc</em>
+                  )}
+                </div>
+              )}
+            </div>
+            <small>{criterion.description}</small>
+          </div>
         </div>
       ))}
     </div>

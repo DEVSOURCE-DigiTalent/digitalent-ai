@@ -2,7 +2,17 @@ import type { ReactNode } from 'react';
 import { Link, type LinkProps } from 'react-router-dom';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 import { btn, type ButtonKind } from '../lib/button';
-import { SectionLoading } from '@/components/shared/LoadingState';
+import {
+  PulseTodaySkeleton,
+  PulsePathSkeleton,
+  PulseCourseDetailSkeleton,
+  PulseModulePlayerSkeleton,
+  PulsePracticeSkeleton,
+  PulseOutcomesSkeleton,
+  PulseExamReadySkeleton,
+} from './loading/PulseEmployeeSkeletons';
+
+export * from './loading';
 
 /** Liên kết trông như nút (điều hướng trong ứng dụng). */
 export function PuLink({ kind = 'primary', small, className, ...props }: LinkProps & { kind?: ButtonKind; small?: boolean }) {
@@ -62,11 +72,26 @@ export function Empty({ icon, title, children, action }: { icon?: ReactNode; tit
   );
 }
 
-/** Khung chờ tải giữ bố cục trang khi dữ liệu đang được lấy. */
-export function PageSkeleton({ blocks = [320, 180, 260] }: { blocks?: number[] }) {
-  return (
-    <SectionLoading label="Đang tải nội dung" count={blocks.length} />
-  );
+/**
+ * Khung chờ tải giữ bố cục trang khi dữ liệu đang được lấy.
+ * Tự động nhận diện ngữ cảnh route trong /enterprise/me để render Skeleton chuẩn hóa 1:1.
+ */
+export function PageSkeleton({ blocks: _blocks }: { blocks?: number[] } = {}) {
+  const path = typeof window !== 'undefined' ? window.location.pathname : '';
+  if (path.includes('/modules/')) return <PulseModulePlayerSkeleton />;
+  if (path.includes('/courses/')) return <PulseCourseDetailSkeleton />;
+  if (path.includes('/path')) return <PulsePathSkeleton />;
+  if (path.includes('/practice') || path.includes('/tasks')) return <PulsePracticeSkeleton />;
+  if (path.includes('/outcomes') || path.includes('/achievements')) return <PulseOutcomesSkeleton />;
+  if (
+    path.includes('/exam') ||
+    path.includes('/trial-test') ||
+    path.includes('/final') ||
+    path.includes('/pre-assessment')
+  ) {
+    return <PulseExamReadySkeleton />;
+  }
+  return <PulseTodaySkeleton />;
 }
 
 export function LoadError({ message, onRetry }: { message: string; onRetry?: () => void }) {

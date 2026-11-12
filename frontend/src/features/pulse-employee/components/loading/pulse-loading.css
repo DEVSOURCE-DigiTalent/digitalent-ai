@@ -1,0 +1,477 @@
+/*
+ * DigiTalent Pulse — Loading & Skeleton System for Employee Portal
+ * Brand tokens:
+ *   --pu-canvas: #f7f7fd (Lavender paper canvas)
+ *   --pu-blue: #3448cf (Deep cobalt)
+ *   --pu-violet: #5544b8 (Signature purple)
+ *   --pu-coral: #e9826d (Warm coral progress)
+ *   --pu-lime: #d7f8a8 (Accent lime)
+ *   --pu-teal: #147b84 (Competency teal)
+ */
+
+/* ── SHIMMER ANIMATION ── */
+@keyframes pu-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes pu-pulse-halo {
+  0% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.12);
+    opacity: 0.95;
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+    opacity: 0.6;
+  }
+}
+
+@keyframes pu-float-gentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes pu-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Bone element with organic shimmer */
+.pu-bone {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    rgba(226, 232, 240, 0.65) 0%,
+    rgba(241, 245, 249, 0.95) 45%,
+    rgba(226, 232, 240, 0.65) 100%
+  );
+  background-size: 250% 100%;
+  animation: pu-shimmer 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  border-radius: 8px;
+}
+
+/* Skeleton Card Container */
+.pu-skel-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 20px;
+  box-shadow: 0 10px 28px rgba(30, 41, 59, 0.035);
+  padding: 24px;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   1. FULL-PAGE SPLASH SCREEN FOR EMPLOYEE (PulseEmployeeLoadingScreen)
+   ══════════════════════════════════════════════════════════════════ */
+.pu-splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 35%, #ffffff 0%, #f4f6fc 60%, #eef2fb 100%);
+  color: #17243f;
+  font-family: 'Plus Jakarta Sans', Inter, -apple-system, sans-serif;
+  overflow: hidden;
+  animation: pu-fade-in 0.4s ease-out;
+}
+
+/* Vầng hào quang sinh học nền */
+.pu-splash-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 25% 25%, rgba(52, 72, 207, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 75% 70%, rgba(233, 130, 109, 0.09) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(20, 123, 132, 0.05) 0%, transparent 55%);
+}
+
+.pu-splash-card {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: min(440px, calc(100% - 36px));
+  padding: clamp(32px, 5vw, 44px) 28px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 28px;
+  box-shadow:
+    0 24px 60px rgba(30, 41, 59, 0.08),
+    0 4px 16px rgba(52, 72, 207, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* Brand mark container with breathing halo */
+.pu-splash-brand-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 90px;
+  height: 90px;
+  margin-bottom: 22px;
+}
+
+.pu-splash-halo {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #3448cf, #147b84, #e9826d, #5544b8, #3448cf);
+  filter: blur(14px);
+  opacity: 0.55;
+  animation: pu-pulse-halo 7s linear infinite;
+}
+
+.pu-splash-logo-img {
+  position: relative;
+  z-index: 1;
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 24px rgba(52, 72, 207, 0.28));
+  animation: pu-float-gentle 4s ease-in-out infinite;
+}
+
+.pu-splash-logo span {
+  font-size: 42px;
+  font-weight: 850;
+  letter-spacing: -0.06em;
+  transform: translateX(-1px);
+}
+
+.pu-splash-dot {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ffc392;
+  box-shadow: 0 0 12px #ffc392;
+}
+
+.pu-splash-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: #0f172a;
+}
+
+.pu-splash-title span {
+  color: #3448cf;
+  font-style: italic;
+  font-weight: 850;
+}
+
+.pu-splash-subtitle {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.pu-splash-greeting {
+  margin: 16px 0 0;
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.pu-splash-greeting strong {
+  color: #3448cf;
+  font-weight: 700;
+}
+
+/* Progress bar */
+.pu-splash-progress-track {
+  position: relative;
+  width: 220px;
+  height: 6px;
+  margin-top: 24px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.pu-splash-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #3448cf 0%, #147b84 50%, #e9826d 100%);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 12px rgba(52, 72, 207, 0.4);
+}
+
+.pu-splash-stage-text {
+  margin: 12px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  min-height: 20px;
+}
+
+/* Motivational Learning Tip Box */
+.pu-splash-tip-box {
+  margin-top: 24px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  text-align: center;
+  max-width: 380px;
+}
+
+.pu-splash-tip-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #147b84;
+  margin-bottom: 4px;
+}
+
+.pu-splash-tip-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #475569;
+  font-style: italic;
+}
+
+.pu-splash-footer {
+  margin-top: 24px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.01em;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   2. TODAY DASHBOARD SKELETON (PulseTodaySkeleton)
+   ══════════════════════════════════════════════════════════════════ */
+.pu-skel-today {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: clamp(16px, 2.5vw, 32px) 16px;
+}
+
+/* Hero card */
+.pu-skel-hero {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 28px;
+  align-items: center;
+  padding: 32px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #ffffff 0%, #f7f9fe 100%);
+  border: 1px solid #e2e8f0;
+}
+
+.pu-skel-hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pu-skel-hero-ring {
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  border: 8px solid #e2e8f0;
+  display: grid;
+  place-items: center;
+}
+
+/* Quick stat 4 cards */
+.pu-skel-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.pu-skel-stat-card {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Action Center & Competency Split */
+.pu-skel-split-2 {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 24px;
+}
+
+/* Checklist rows */
+.pu-skel-row-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #edf2f7;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   3. ROADMAP / PATH SKELETON (PulsePathSkeleton)
+   ══════════════════════════════════════════════════════════════════ */
+.pu-skel-path {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.pu-skel-tabs {
+  display: flex;
+  gap: 10px;
+}
+
+.pu-skel-path-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding-left: 48px;
+}
+
+.pu-skel-path-timeline::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  bottom: 24px;
+  left: 17px;
+  width: 3px;
+  background: #e2e8f0;
+  border-radius: 2px;
+}
+
+.pu-skel-milestone {
+  position: relative;
+}
+
+.pu-skel-node {
+  position: absolute;
+  left: -48px;
+  top: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   4. COURSE DETAIL & LESSON PLAYER SKELETONS
+   ══════════════════════════════════════════════════════════════════ */
+.pu-skel-course {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.pu-skel-course-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+}
+
+.pu-skel-player-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+
+.pu-skel-media-frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 20px;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   5. PRACTICE & EXAM PROCTORING SKELETONS
+   ══════════════════════════════════════════════════════════════════ */
+.pu-skel-tasks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.pu-skel-hardware-checks {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin: 32px 0;
+}
+
+.pu-skel-hardware-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  padding: 28px 20px;
+  border-radius: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .pu-skel-hero {
+    grid-template-columns: 1fr;
+  }
+  .pu-skel-hero-ring {
+    display: none;
+  }
+  .pu-skel-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .pu-skel-split-2,
+  .pu-skel-course-layout,
+  .pu-skel-player-layout {
+    grid-template-columns: 1fr;
+  }
+  .pu-skel-hardware-checks {
+    grid-template-columns: 1fr;
+  }
+}

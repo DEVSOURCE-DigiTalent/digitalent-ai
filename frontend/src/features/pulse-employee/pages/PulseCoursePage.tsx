@@ -515,13 +515,23 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                   Đánh giá năng lực cuối khóa (Proctored Final Assessment)
                 </h3>
                 <p className="pu-c-step-desc">
-                  Bài đánh giá thực hiện trực tuyến có giám sát camera, mic và chia sẻ màn hình. Đánh giá toàn diện dựa trên 3 tiêu chí cốt lõi:
+                  Bài đánh giá thực hiện trực tuyến có giám sát camera, mic và chia sẻ màn hình, chấm theo {detail.finalCriteria.length} tiêu chí thực hành:
                 </p>
 
                 <div className="pu-c-rubric-chips">
                   {detail.finalCriteria.map((c) => (
-                    <span key={c.number} className="pu-c-rubric-pill">
-                      <strong>{c.number}.</strong> {c.title}
+                    <span
+                      key={c.number}
+                      className={`pu-c-rubric-pill${c.isRequired ? ' is-required' : ''}`}
+                    >
+                      <strong>{c.number}.</strong>
+                      <span>{c.title}</span>
+                      {c.weightPercent != null && (
+                        <em className="pu-c-rubric-weight">{c.weightPercent}%</em>
+                      )}
+                      {c.isRequired && (
+                        <em className="pu-c-rubric-gate">Bắt buộc</em>
+                      )}
                     </span>
                   ))}
                 </div>

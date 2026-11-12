@@ -108,8 +108,9 @@
 .pu-profile-chip b { display: block; overflow: hidden; color: #1d2445; font-size: 12px; white-space: nowrap; text-overflow: ellipsis; }
 .pu-profile-chip small { display: block; color: #7b84a0; font-size: 10px; }
 .pu-menu { position: relative; }
-.pu-menu-panel { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; min-width: 220px; padding: 7px; border: 1px solid var(--pu-line); border-radius: 14px; background: #fff; box-shadow: 0 20px 45px rgba(29, 36, 80, .14); }
-.pu-menu-panel a, .pu-menu-panel button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 10px 11px; border: 0; border-radius: 10px; background: none; color: #2d3658; font-size: 13px; font-weight: 700; text-align: left; cursor: pointer; }
+.pu-menu-panel { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; min-width: 250px; width: max-content; max-width: 320px; padding: 7px; border: 1px solid var(--pu-line); border-radius: 14px; background: #fff; box-shadow: 0 20px 45px rgba(29, 36, 80, .14); }
+.pu-menu-panel a, .pu-menu-panel button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: 0; border-radius: 10px; background: none; color: #2d3658; font-size: 13px; font-weight: 700; text-align: left; white-space: nowrap; cursor: pointer; }
+.pu-menu-panel a svg, .pu-menu-panel button svg { flex-shrink: 0; }
 .pu-menu-panel a:hover, .pu-menu-panel button:hover { background: var(--pu-soft); color: var(--pu-violet); }
 .pu-menu-panel hr { margin: 6px 4px; border: 0; border-top: 1px solid var(--pu-line); }
 .pu-main { max-width: 1190px; margin: 0 auto; padding: 44px 24px 90px; }
@@ -180,8 +181,15 @@
 @keyframes pu-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 .pu-rubric { display: grid; gap: 10px; margin-top: 10px; }
 .pu-rubric > div { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 14px; background: #ffffff; color: #1e293b; font-size: 13px; line-height: 1.5; transition: border-color 0.15s ease; }
+.pu-rubric > div.is-required-gate { border-color: #fed7aa; background: #fffcf8; }
 .pu-rubric b { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 8px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; font-size: 12px; font-weight: 800; }
 .pu-rubric span { display: grid; gap: 3px; min-width: 0; font-size: 13.5px; font-weight: 700; color: #0f172a; }
+.pu-rubric-content { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.pu-rubric-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.pu-rubric-title-row strong { font-size: 13.5px; font-weight: 700; color: #0f172a; }
+.pu-rubric-badges { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.pu-rubric-weight { font-style: normal; font-size: 11px; font-weight: 750; padding: 1px 7px; border-radius: 999px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; font-variant-numeric: tabular-nums; }
+.pu-rubric-gate { font-style: normal; font-size: 11px; font-weight: 750; padding: 1px 7px; border-radius: 999px; background: #ffedd5; border: 1px solid #fdba74; color: #9a3412; }
 .pu-rubric small { display: block; color: #64748b; font-size: 12.5px; font-weight: 400; line-height: 1.45; }
 .pu-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
@@ -4967,13 +4975,36 @@
 .pu-c-rubric-pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   padding: 4px 10px;
   border-radius: 6px;
   background: #ffffff;
   border: 1px solid #cbd5e1;
   font-size: 12px;
   color: #334155;
+}
+
+.pu-c-rubric-pill.is-required {
+  border-color: #fdba74;
+  background: #fffcf8;
+}
+
+.pu-c-rubric-weight {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  font-variant-numeric: tabular-nums;
+}
+
+.pu-c-rubric-gate {
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 750;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #ffedd5;
+  color: #9a3412;
 }
 
 .pu-c-card-action-side {

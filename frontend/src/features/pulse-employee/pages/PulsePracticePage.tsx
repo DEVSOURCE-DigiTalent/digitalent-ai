@@ -211,29 +211,52 @@ export function PulsePracticePage() {
   // ── Tính toán số liệu Chiến dịch Khảo sát Đầu vào (Onboarding Baseline Campaign) ──
   // 1. Tiến độ theo Lộ trình Chức danh (các khóa bắt buộc trong vị trí việc làm)
   const pathEligibleCourses = useMemo(
-    () => assessmentItems.filter((i) => i.inPath && i.preStatus !== 'NOT_NEEDED'),
+    () => assessmentItems.filter((i) => i.inPath),
     [assessmentItems]
   );
   const pathDoneCourses = useMemo(
-    () => pathEligibleCourses.filter((i) => i.preStatus === 'PASSED' || (i.preStatus === 'NOT_YET' && i.preSubmittedAt)),
+    () =>
+      pathEligibleCourses.filter(
+        (i) =>
+          i.preStatus === 'PASSED' ||
+          i.approvedVia === 'PRE_ASSESSMENT' ||
+          i.approvedVia === 'PLACEMENT_TEST' ||
+          i.approved ||
+          (i.preStatus === 'NOT_YET' && i.preSubmittedAt)
+      ),
     [pathEligibleCourses]
   );
-  const pathCampaignProgress = pathEligibleCourses.length > 0
-    ? Math.round((pathDoneCourses.length / pathEligibleCourses.length) * 100)
-    : 100;
+  const pathCampaignProgress =
+    pathEligibleCourses.length > 0
+      ? Math.round((pathDoneCourses.length / pathEligibleCourses.length) * 100)
+      : 100;
 
-  // 2. Tiến độ toàn diện (toàn bộ 16 khóa trong hệ sinh thái 6 lĩnh vực)
+  // 2. Tiến độ toàn diện (toàn bộ các khóa trong hệ sinh thái 6 lĩnh vực)
   const allEligibleCourses = useMemo(
-    () => assessmentItems.filter((i) => i.preStatus !== 'NOT_NEEDED'),
+    () => assessmentItems,
     [assessmentItems]
   );
   const allDoneCourses = useMemo(
-    () => allEligibleCourses.filter((i) => i.preStatus === 'PASSED' || (i.preStatus === 'NOT_YET' && i.preSubmittedAt)),
+    () =>
+      allEligibleCourses.filter(
+        (i) =>
+          i.preStatus === 'PASSED' ||
+          i.approvedVia === 'PRE_ASSESSMENT' ||
+          i.approvedVia === 'PLACEMENT_TEST' ||
+          i.approved ||
+          (i.preStatus === 'NOT_YET' && i.preSubmittedAt)
+      ),
     [allEligibleCourses]
   );
 
   const exemptedCourses = useMemo(
-    () => assessmentItems.filter((i) => i.preStatus === 'PASSED' || i.approvedVia === 'PRE_ASSESSMENT'),
+    () =>
+      assessmentItems.filter(
+        (i) =>
+          i.preStatus === 'PASSED' ||
+          i.approvedVia === 'PRE_ASSESSMENT' ||
+          i.approvedVia === 'PLACEMENT_TEST'
+      ),
     [assessmentItems]
   );
 
@@ -244,13 +267,17 @@ export function PulsePracticePage() {
         (i) =>
           (i.canStartPreAssessment || i.preStatus === 'REQUIRED' || i.preStatus === 'NOT_YET') &&
           i.preStatus !== 'PASSED' &&
-          i.preStatus !== 'PENDING'
+          i.preStatus !== 'PENDING' &&
+          i.approvedVia !== 'PLACEMENT_TEST' &&
+          !i.approved
       ) ||
       allEligibleCourses.find(
         (i) =>
           (i.canStartPreAssessment || i.preStatus === 'REQUIRED' || i.preStatus === 'NOT_YET') &&
           i.preStatus !== 'PASSED' &&
-          i.preStatus !== 'PENDING'
+          i.preStatus !== 'PENDING' &&
+          i.approvedVia !== 'PLACEMENT_TEST' &&
+          !i.approved
       ),
     [pathEligibleCourses, allEligibleCourses]
   );
@@ -261,13 +288,53 @@ export function PulsePracticePage() {
   const completedCount = assessmentItems.filter((c) => c.isCompleted).length;
   const savedHours = exemptedCourses.length * 4; // Trung bình mỗi môn được miễn học tiết kiệm 4 giờ lý thuyết
 
+  // Số lượng phân loại bài khảo thí
+  const preCount = useMemo(
+    () =>
+      assessmentItems.filter(
+        (c) =>
+          c.approvedVia === 'PLACEMENT_TEST' ||
+          c.approvedVia === 'PRE_ASSESSMENT' ||
+          c.preStatus === 'PASSED' ||
+          c.preStatus === 'PENDING' ||
+          c.preStatus === 'REQUIRED' ||
+          c.canStartPreAssessment ||
+          c.preStatus === 'NOT_YET'
+      ).length,
+    [assessmentItems]
+  );
+  const finalCount = useMemo(
+    () =>
+      assessmentItems.filter(
+        (c) =>
+          (c.finalStatus !== 'NOT_READY' && c.finalStatus !== 'NOT_STARTED') ||
+          c.progressPercent > 0 ||
+          c.finalAttempts > 0
+      ).length,
+    [assessmentItems]
+  );
+
   // ── Lọc danh sách theo Tab ──
   const filteredItems = useMemo(() => {
     switch (activeTab) {
       case 'pre':
-        return assessmentItems.filter((c) => c.preStatus !== 'NOT_NEEDED');
+        return assessmentItems.filter(
+          (c) =>
+            c.approvedVia === 'PLACEMENT_TEST' ||
+            c.approvedVia === 'PRE_ASSESSMENT' ||
+            c.preStatus === 'PASSED' ||
+            c.preStatus === 'PENDING' ||
+            c.preStatus === 'REQUIRED' ||
+            c.canStartPreAssessment ||
+            c.preStatus === 'NOT_YET'
+        );
       case 'final':
-        return assessmentItems.filter((c) => c.finalStatus !== 'NOT_READY' || c.progressPercent > 0);
+        return assessmentItems.filter(
+          (c) =>
+            (c.finalStatus !== 'NOT_READY' && c.finalStatus !== 'NOT_STARTED') ||
+            c.progressPercent > 0 ||
+            c.finalAttempts > 0
+        );
       case 'pending':
         return assessmentItems.filter((c) => c.isPending);
       case 'completed':
@@ -392,6 +459,14 @@ export function PulsePracticePage() {
               <p>
                 Đã miễn học <strong>{exemptedCourses.length} khóa</strong> và tiết kiệm <strong>~{savedHours} giờ</strong> học lý thuyết!
               </p>
+              <Link
+                to={PULSE_PATHS.trialTest}
+                className="pu-campaign-cta-btn"
+                style={{ marginTop: 10, background: '#059669', borderColor: '#059669', textDecoration: 'none' }}
+              >
+                <span>Xem báo cáo đầu vào</span>
+                <ArrowRight size={14} />
+              </Link>
             </div>
           )}
         </div>
@@ -475,7 +550,7 @@ export function PulsePracticePage() {
           >
             <Zap size={13} />
             <span>Đánh giá đầu vào (Vượt cấp)</span>
-            <span className="pu-f-badge">{allEligibleCourses.length}</span>
+            <span className="pu-f-badge">{preCount}</span>
           </button>
           <button
             type="button"
@@ -484,7 +559,7 @@ export function PulsePracticePage() {
           >
             <GraduationCap size={13} />
             <span>Đánh giá cuối khóa (AI Proctored)</span>
-            <span className="pu-f-badge">{finals.length}</span>
+            <span className="pu-f-badge">{finalCount}</span>
           </button>
           <button
             type="button"
@@ -619,11 +694,15 @@ export function PulsePracticePage() {
 ───────────────────────────────────────────────────────────────────────────── */
 function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outcomeId?: string }) {
   const isPreOpen = item.canStartPreAssessment || item.preStatus === 'REQUIRED';
-  const isPrePassed = item.preStatus === 'PASSED' || item.approvedVia === 'PRE_ASSESSMENT';
+  const isPlacementApproved = item.approvedVia === 'PLACEMENT_TEST';
+  const isPrePassed =
+    item.preStatus === 'PASSED' ||
+    item.approvedVia === 'PRE_ASSESSMENT' ||
+    isPlacementApproved;
   const isPrePending = item.preStatus === 'PENDING';
   const isPreNotYet = item.preStatus === 'NOT_YET';
 
-  const isFinalApproved = item.finalStatus === 'APPROVED' || item.approved;
+  const isFinalApproved = item.finalStatus === 'APPROVED' || (item.approved && !isPlacementApproved);
   const isFinalPending = item.finalStatus === 'PENDING';
   const isFinalReady = item.finalStatus === 'READY' || item.finalStatus === 'RETRY_READY';
   const isFinalLearning = item.finalStatus === 'LEARNING';
@@ -653,7 +732,7 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
             className="pu-status-pill passed hover:opacity-90 transition-opacity inline-flex items-center gap-1 cursor-pointer"
             title="Nhấn để xem chứng nhận miễn học chi tiết"
           >
-            <Check size={12} strokeWidth={3} /> Đạt · Miễn học 100%
+            <Check size={12} strokeWidth={3} /> {isPlacementApproved ? 'Đạt khảo sát · Miễn học' : 'Đạt · Miễn học 100%'}
           </Link>
         ) : isPrePending ? (
           <span className="pu-status-pill pending">
@@ -698,7 +777,14 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
 
       {/* 4. Thi Cuối khóa (AI Proctored) */}
       <td className="pu-ledger-td">
-        {isFinalApproved ? (
+        {isPlacementApproved ? (
+          <span
+            className="pu-status-pill passed inline-flex items-center gap-1"
+            title="Được miễn thi cuối khóa do đã đạt chuẩn khảo sát đầu vào"
+          >
+            <Check size={12} strokeWidth={2.5} /> Miễn thi cuối khóa
+          </span>
+        ) : isFinalApproved ? (
           <Link
             to={targetOutcomePath}
             className="pu-status-pill passed hover:opacity-90 transition-opacity inline-flex items-center gap-1 cursor-pointer"
@@ -731,6 +817,10 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
           <span className="text-slate-700 italic">
             "{item.finalDecisionReason || item.preDecisionReason}"
           </span>
+        ) : isPlacementApproved ? (
+          <span className="text-emerald-700 font-medium">Miễn học qua Khảo sát đầu vào</span>
+        ) : item.approvedVia === 'PRE_ASSESSMENT' ? (
+          <span className="text-emerald-700 font-medium">Miễn học qua Đánh giá đầu vào</span>
         ) : isPrePassed ? (
           <span className="text-emerald-700 font-semibold">Được công nhận năng lực</span>
         ) : item.retryDueAt ? (
@@ -740,7 +830,7 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
         ) : isFinalPending || isPrePending ? (
           <span className="text-amber-700">Đang thẩm định...</span>
         ) : (
-          <span className="text-slate-400">—</span>
+          <span className="text-slate-400">Không có yêu cầu</span>
         )}
       </td>
 

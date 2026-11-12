@@ -60,7 +60,7 @@ function TargetCard({ section }: { section: LessonSection }) {
           <Target size={15} className="text-blue-700" />
           <span>Mục tiêu năng lực cốt lõi</span>
         </div>
-        <span className="pu-sc-tag">Chuẩn Thông tư 02</span>
+        <span className="pu-sc-tag">Khung năng lực số</span>
       </div>
       {items.length > 0 ? (
         <div className="pu-target-grid">

@@ -169,10 +169,11 @@ export function capNote(domain: PulseDomain, positionName: string | null | undef
 }
 
 /** "Đề gồm 10 câu trắc nghiệm (đúng từ 7 câu) và một bài tự luận…" — mô tả đề trên trang trạng thái. */
-export function examStructure(choiceCount: number, passMark: number): string {
+export function examStructure(choiceCount: number, passMark: number, criteriaCount = 3): string {
+  const countLabel = criteriaCount === 3 ? 'ba' : String(criteriaCount);
   return choiceCount > 0
-    ? `Đề gồm ${choiceCount} câu trắc nghiệm (đúng từ ${passMark} câu) và một bài tự luận đánh giá theo ba tiêu chí dưới đây.`
-    : 'Đề gồm một bài tự luận đánh giá theo ba tiêu chí dưới đây.';
+    ? `Đề gồm ${choiceCount} câu trắc nghiệm (đúng từ ${passMark} câu) và một bài tự luận đánh giá theo ${countLabel} tiêu chí dưới đây.`
+    : `Đề gồm một bài tự luận đánh giá theo ${countLabel} tiêu chí dưới đây.`;
 }
 
 /** "41 phút 12 giây", "45 giây". */

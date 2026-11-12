@@ -55,6 +55,8 @@ const STATUS_PILL: Record<PulseReviewStatus, { label: string; tone: 'gray' | 'co
   RETRY_READY: { label: 'Đang mở lần nộp cuối', tone: 'green' },
   DEADLINE_MISSED: { label: 'Quá hạn nộp lại', tone: 'coral' },
   FLAGGED: { label: 'Cờ hỗ trợ', tone: 'coral' },
+  APPROVED: { label: 'Đã duyệt', tone: 'green' },
+  NOT_YET: { label: 'Chưa đạt', tone: 'coral' },
 };
 
 const STATUS_HINT: Record<PulseReviewStatus, string> = {
@@ -63,6 +65,8 @@ const STATUS_HINT: Record<PulseReviewStatus, string> = {
   RETRY_READY: 'Lần nộp cuối đang mở, nhân viên cần nộp trước hạn.',
   DEADLINE_MISSED: 'Đã quá hạn nộp lần cuối. Chọn cách hỗ trợ trước khi lộ trình tiếp tục.',
   FLAGGED: 'Hai lần nộp chưa đạt. Chọn kèm cặp, một chu kỳ học mới hoặc tạm dừng lộ trình.',
+  APPROVED: 'Bài đã được duyệt đạt chuẩn và công nhận hoàn thành cấp độ khóa học.',
+  NOT_YET: 'Bài đánh giá trước khi học chưa đạt. Nhân viên tiếp tục học khóa và nộp bài cuối cấp.',
 };
 
 const PRE_HINT = 'Bài làm trước khi học, theo đề cuối khóa (trắc nghiệm và tự luận). Đạt: khóa được công nhận, nhân viên không cần học. Chưa đạt: nhân viên học khóa rồi làm bài cuối khóa.';
@@ -142,7 +146,7 @@ export function PulseFinalReviewsPage({ audience = 'manager' }: { audience?: 'ma
           <PageHead
             eyebrow={`Quản lý đánh giá${department ? ` · ${department}` : ''}`}
             title="Ra quyết định dựa trên minh chứng."
-            description="Mỗi khóa có một bài đánh giá trước khi học và một bài cuối khóa, cả hai có bản ghi màn hình, camera và micro. Gợi ý AI chỉ để tham khảo — quản lý ghi quyết định cuối cùng và lý do."
+            description="Mỗi khóa có một bài đánh giá trước khi học và một bài cuối khóa, cả hai có bản ghi màn hình, camera và micro. Gợi ý AI chỉ để tham khảo. Quản lý ghi quyết định cuối cùng và lý do."
             actions={<Pill>{data.pendingCount} bài chờ đánh giá</Pill>}
           />
           <section className="pm-banner" aria-label="Nguyên tắc chấm bài cuối khóa">
@@ -581,7 +585,7 @@ function DecisionForm({ item, mentor }: { item: PulseFinalReviewItem; mentor?: b
             result.status === 'APPROVED'
               ? `Đã duyệt khóa học cho ${item.employeeName}.`
               : result.status === 'FLAGGED'
-                ? 'Lần nộp cuối chưa đạt — đã bật cờ hỗ trợ.'
+                ? 'Lần nộp cuối chưa đạt. Đã bật cờ hỗ trợ.'
                 : 'Đã ghi nhận xét. Lần nộp cuối mở sau thời gian chờ.',
           );
         },
