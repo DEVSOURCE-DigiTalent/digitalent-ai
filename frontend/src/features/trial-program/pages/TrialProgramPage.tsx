@@ -552,7 +552,7 @@ function ScheduleFields({ value, onChange }: { value: Schedule; onChange: (v: Sc
 function ExamSummary({ program }: { program: TrialProgram }) {
   return (
     <p className="tp-muted tp-row">
-      Bài đánh giá: {program.choiceCount || 54} câu trắc nghiệm (6 lĩnh vực × 3 cấp độ: Cơ bản · Trung cấp · Nâng cao) · Không có tự luận ·
+      Bài đánh giá: {program.choiceCount || 54} câu trắc nghiệm (6 lĩnh vực × 3 cấp độ: Cơ bản · Trung cấp · Nâng cao){program.essayCount > 0 ? ` · ${program.essayCount} bài tự luận (Mentor & AI chấm điểm)` : ' · Không có tự luận'} ·
       <Camera size={14} aria-hidden /> camera <Mic size={14} aria-hidden /> micro <Monitor size={14} aria-hidden /> chia sẻ màn hình
     </p>
   );

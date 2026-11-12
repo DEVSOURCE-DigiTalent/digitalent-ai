@@ -315,13 +315,13 @@ export function MentorTrialsPage() {
                       return (
                         <tr
                           key={t.organizationId}
-                          onClick={() => navigate(`/platform/reviews/${t.organizationId}`)}
+                          onClick={() => navigate(`/mentor/reviews/${t.organizationId}`)}
                           tabIndex={0}
                           role="button"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
-                              navigate(`/platform/reviews/${t.organizationId}`);
+                              navigate(`/mentor/reviews/${t.organizationId}`);
                             }
                           }}
                         >
@@ -397,7 +397,7 @@ export function MentorTrialsPage() {
                               className={`mw-action-btn ${isComplete ? 'view' : 'grade'}`}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/platform/reviews/${t.organizationId}`);
+                                navigate(`/mentor/reviews/${t.organizationId}`);
                               }}
                             >
                               <span>{isComplete ? 'Xem lại' : 'Chấm bài'}</span>

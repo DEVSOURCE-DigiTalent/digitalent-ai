@@ -90,7 +90,7 @@ function MentorTrialView({ trial }: { trial: MentorTrial }) {
       {/* Page Header */}
       <div className="mw-header">
         <div className="mw-breadcrumbs">
-          <Link to="/platform/reviews">
+          <Link to="/mentor/reviews">
             <ArrowLeft size={14} aria-hidden="true" />
             <span>Đánh giá doanh nghiệp</span>
           </Link>
@@ -127,7 +127,7 @@ function MentorTrialView({ trial }: { trial: MentorTrial }) {
             <button
               type="button"
               className="mw-btn mw-btn-outline mw-btn-small"
-              onClick={() => navigate('/platform/reviews')}
+              onClick={() => navigate('/mentor/reviews')}
             >
               <ArrowLeft size={14} aria-hidden="true" />
               <span>Quay lại</span>
@@ -301,13 +301,13 @@ function AssessmentReview({
   const runAi = () =>
     ai.mutate(assessment.assessmentId, { onError: (err) => toast.error(errorMessage(err)) });
 
-  const useAiScores = () => {
+  const applyAiScores = () => {
     if (!assessment.aiReview) return;
     setScores(assessment.essays.map((e, i) => aiScore(e.tier)?.score ?? scores[i]));
     toast.success('Đã áp dụng toàn bộ điểm AI gợi ý vào các câu tự luận.');
   };
 
-  const useSingleAiScore = (tier: number, index: number) => {
+  const applySingleAiScore = (tier: number, index: number) => {
     const s = aiScore(tier);
     if (!s) return;
     setScores((prev) => prev.map((item, i) => (i === index ? s.score : item)));
@@ -405,7 +405,7 @@ function AssessmentReview({
               <span>Chấm điểm bài tự luận</span>
             </span>
             <span style={{ fontSize: 12.5, color: 'var(--mw-slate-500)' }}>
-              Thang điểm 0–{trial.essayMaxScore} mỗi bài · Đạt từ {pass} điểm trở lên
+              Thang điểm từ 0 đến {trial.essayMaxScore} mỗi bài · Đạt từ {pass} điểm trở lên
             </span>
           </div>
 
@@ -415,7 +415,7 @@ function AssessmentReview({
                 <button
                   type="button"
                   className="mw-btn mw-btn-outline mw-btn-small"
-                  onClick={useAiScores}
+                  onClick={applyAiScores}
                 >
                   <Sparkles size={13} style={{ color: 'var(--mw-ai)' }} aria-hidden="true" />
                   <span>Áp dụng tất cả điểm AI</span>
@@ -488,7 +488,7 @@ function AssessmentReview({
                           type="button"
                           className="mw-btn mw-btn-outline mw-btn-small"
                           style={{ height: 26, fontSize: 11.5, padding: '0 8px', marginLeft: 12, flexShrink: 0 }}
-                          onClick={() => useSingleAiScore(e.tier, i)}
+                          onClick={() => applySingleAiScore(e.tier, i)}
                         >
                           Chọn {suggestion.score}đ
                         </button>

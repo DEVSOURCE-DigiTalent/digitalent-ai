@@ -81,6 +81,29 @@ export function useMyTrialAssessment(enabled = true) {
   return useQuery({
     queryKey: TRIAL_PROGRAM_KEYS.mine,
     queryFn: () => trialProgramService.getMine().then((r) => r.data.data!),
+    select: (data) => {
+      if (typeof window !== 'undefined') {
+        const search = window.location.search;
+        if (search.includes('gate=todo')) {
+          return {
+            ...data,
+            status: 'NOT_STARTED' as const,
+            canStart: true,
+            reportPublished: false,
+          };
+        }
+        if (search.includes('gate=waiting')) {
+          return {
+            ...data,
+            status: 'SUBMITTED' as const,
+            canStart: false,
+            reportPublished: false,
+            submittedAt: data?.submittedAt || new Date().toISOString(),
+          };
+        }
+      }
+      return data;
+    },
     enabled,
     retry: false,
     // Trạng thái chặn học thử (chờ chấm → đã công bố) đổi từ phía mentor: không giữ cache 5 phút như mặc định.

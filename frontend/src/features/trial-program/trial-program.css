@@ -167,7 +167,8 @@
 /* Biến của cổng Pulse cho trình phát bản ghi (pulse-exam.css) khi nằm ngoài khung .pu (console nền tảng). */
 .tp-pu {
   --pu-ink: #1b2448; --pu-ink-2: #3c4a66; --pu-muted: #62718d; --pu-faint: #8b97ad; --pu-blue: #3448cf;
-  --pu-coral: #e9826d; --pu-coral-ink: #a4513b; --pu-ok: #2d7653; --pu-line: #e4e3f1; --pu-paper: #fff; --pu-soft: #f3f1ff;
+  --pu-coral: #e9826d; --pu-coral-ink: #a4513b; --pu-ok: #2d7653; --pu-line: #e4e3f1; --pu-line-2: #c7d2fe; --pu-paper: #ffffff; --pu-soft: #eef2ff; --pu-canvas: #f7f7fd;
+  --pu-violet: #4f46e5; --pu-violet-2: #6366f1;
 }
 .tp-pu .pu-rplayer { margin-top: 0; }
 
