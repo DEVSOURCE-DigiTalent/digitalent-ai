@@ -1,4 +1,3 @@
-import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -40,7 +39,6 @@ import { TrialLearning } from '../components/TrialLearning';
  * 6. Quick Syllabus Drawer: Xem đề cương & điều kiện miễn học 1-click
  */
 export function PulsePathPage() {
-  useUiLanguage();
   const { data, isLoading, error, refetch } = usePulseOverview();
   const trial = useIsEnterpriseTrial();
   const [selectedCourse, setSelectedCourse] = useState<PulseCourseSummary | null>(null);
@@ -48,7 +46,7 @@ export function PulsePathPage() {
   const [expandedCriteria, setExpandedCriteria] = useState<Set<string>>(new Set());
 
   if (isLoading) return <PageSkeleton blocks={[100, 240, 400]} />;
-  if (error || !data) return <LoadError message={translateUi(pulseErrorMessage(error, 'Không tải được lộ trình của bạn.'))} onRetry={() => refetch()} />;
+  if (error || !data) return <LoadError message={pulseErrorMessage(error, 'Không tải được lộ trình của bạn.')} onRetry={() => refetch()} />;
   if (trial && !data.hasTargets) return <TrialLearning overview={data} />;
   if (!data.hasPosition || !data.hasTargets) return <NoPath overview={data} />;
 
@@ -94,7 +92,7 @@ export function PulsePathPage() {
         <div className="pu-view-legend" aria-hidden="true">
           <span><i className="pu-legend-dot done" />Đã đạt chuẩn</span>
           <span><i className="pu-legend-dot current" />Trạm ưu tiên</span>
-          <span><i className="pu-legend-dot learning" />{translateUi("Đang học")}</span>
+          <span><i className="pu-legend-dot learning" />Đang học</span>
           <span><i className="pu-legend-dot pending" />Chưa học</span>
         </div>
       </div>
@@ -112,7 +110,7 @@ export function PulsePathPage() {
           <header className="pu-matrix-head">
             <div>
               <h2 id="pu-matrix-heading" className="pu-matrix-title">
-                Bảng ma trận lộ trình năng lực số · {data.person.positionName ?? translateUi('Vị trí')}
+                Bảng ma trận lộ trình năng lực số · {data.person.positionName ?? 'Vị trí'}
               </h2>
               <p className="pu-matrix-sub">
                 Đối chiếu 6 lĩnh vực năng lực theo 3 cấp độ chuẩn hóa chức danh chuyên môn.
@@ -147,7 +145,6 @@ function PathHeaderSection({
   overview: PulseOverview;
   onSelectCourse: (course: PulseCourseSummary) => void;
 }) {
-  useUiLanguage();
   const { person, stats, nextSteps } = overview;
   const position = person.positionName ?? 'Vị trí công việc';
   const total = stats.pathCourses;
@@ -206,7 +203,7 @@ function PathHeaderSection({
           <div className="pu-stat-card-body">
             <div className="pu-stat-number-row">
               <span className="pu-stat-big-number">{approved}</span>
-              <span className="pu-stat-total">/ {total}{translateUi(" khóa học")}</span>
+              <span className="pu-stat-total">/ {total} khóa học</span>
             </div>
             <div className="pu-stat-prog-track">
               <div
@@ -231,12 +228,12 @@ function PathHeaderSection({
           <div className="pu-stat-card-body">
             <div className="pu-stat-number-row">
               <span className="pu-stat-big-number">{metDomainCount}</span>
-              <span className="pu-stat-total">/ {domains.length}{translateUi(" lĩnh vực")}</span>
+              <span className="pu-stat-total">/ {domains.length} lĩnh vực</span>
             </div>
             <p className="pu-stat-desc-note">
               {metDomainCount === domains.length
                 ? 'Đã đạt toàn bộ lĩnh vực chuẩn hóa'
-                : translateUi(`Còn ${domains.length - metDomainCount} lĩnh vực cần hoàn thiện`)}
+                : `Còn ${domains.length - metDomainCount} lĩnh vực cần hoàn thiện`}
             </p>
           </div>
         </div>
@@ -245,7 +242,7 @@ function PathHeaderSection({
         <div className="pu-path-stat-card">
           <div className="pu-stat-card-header">
             <span className="pu-stat-card-title">Tiêu chuẩn năng lực</span>
-            <span className="pu-stat-badge neutral">{translateUi("Yêu cầu")}</span>
+            <span className="pu-stat-badge neutral">Yêu cầu</span>
           </div>
           <div className="pu-stat-card-body">
             <div className="pu-stat-number-row">
@@ -271,7 +268,7 @@ function PathHeaderSection({
               <span className="pu-pmission-kicker">Nhiệm vụ ưu tiên tiếp theo</span>
               {stationLabel && nextDomain && (
                 <span className="pu-pmission-station-chip">
-                  {stationLabel}: {translateUi(nextDomain.name)} · {levelName(nextCourse.tier)}
+                  {stationLabel}: {nextDomain.name} · {levelName(nextCourse.tier)}
                 </span>
               )}
             </div>
@@ -288,7 +285,7 @@ function PathHeaderSection({
               {isPreTest
                 ? 'Làm bài kiểm tra đánh giá năng lực đầu vào (~20 phút). Đạt kết quả sẽ được xét miễn học ngay toàn bộ khóa học này.'
                 : isInProgress
-                  ? translateUi(`Khóa học đang học dở dang (đã hoàn thành ${nextCourse.progressPercent}%). Hãy tiếp tục bài học tiếp theo để hoàn thành trạm.`)
+                  ? `Khóa học đang học dở dang (đã hoàn thành ${nextCourse.progressPercent}%). Hãy tiếp tục bài học tiếp theo để hoàn thành trạm.`
                   : isWaitingReview
                     ? 'Bài kiểm tra của bạn đã nộp thành công và đang chờ xác nhận kết quả.'
                     : 'Khóa học nền tảng bắt buộc tiếp theo. Bắt đầu ngay để xây dựng năng lực chuẩn.'}
@@ -302,7 +299,7 @@ function PathHeaderSection({
                 className="pu-pmission-cta-btn primary pretest"
               >
                 <Zap size={14} />
-                <span>Làm test vượt cấp ngay</span>
+                <span>Đánh giá đầu vào ngay</span>
                 <ChevronRight size={14} className="pu-arrow-icon" />
               </Link>
             ) : isInProgress ? (
@@ -352,7 +349,6 @@ function MindmapJourney({
   onToggleCriteria: (categoryId: string) => void;
   onSelectCourse: (course: PulseCourseSummary) => void;
 }) {
-  useUiLanguage();
   const domains = overview.domains.filter((d) => d.target > 0);
 
   return (
@@ -389,7 +385,7 @@ function MindmapJourney({
           <article
             key={domain.categoryId}
             className="pu-mindmap-station"
-            aria-label={translateUi(`Trạm ${stationNumber}: ${domain.name}`)}
+            aria-label={`Trạm ${stationNumber}: ${domain.name}`}
           >
             {/* Cột mốc Timeline (Mindmap Node Marker) */}
             <div className={`pu-station-indicator ${stationStatusClass}`}>
@@ -413,12 +409,13 @@ function MindmapJourney({
                 <div className="pu-station-title-group">
                   <span className="pu-station-tag">{code}</span>
                   <h2 className="pu-station-name">
-                    Trạm {stationNumber}: {translateUi(domain.name)}
+                    Trạm {stationNumber}: {domain.name}
                   </h2>
                 </div>
 
                 <div className="pu-station-status-side">
-                  <span className="pu-station-meta">{translateUi("Mục tiêu: ")}<strong>{levelName(domain.target)}</strong> · Hiện tại: <strong>{domain.verified > 0 ? levelName(domain.verified) : translateUi('Chưa đạt')}</strong>
+                  <span className="pu-station-meta">
+                    Mục tiêu: <strong>{levelName(domain.target)}</strong> · Hiện tại: <strong>{domain.verified > 0 ? levelName(domain.verified) : 'Chưa đạt'}</strong>
                   </span>
                   {isStationDone ? (
                     <span className="pu-station-pill done">
@@ -434,11 +431,12 @@ function MindmapJourney({
                     </span>
                   ) : hasWaiting ? (
                     <span className="pu-station-pill waiting">
-                      <Clock size={11} /> Chờ chấm bài
+                      <Clock size={11} /> Chờ đánh giá
                     </span>
                   ) : (
                     <span className="pu-station-pill upcoming">
-                      Chưa học ({domainCourses.length}{translateUi(" khóa)")}</span>
+                      Chưa học ({domainCourses.length} khóa)
+                    </span>
                   )}
                 </div>
               </div>
@@ -479,7 +477,8 @@ function MindmapJourney({
                           <span className="pu-scard-tier">{levelName(course.tier)}</span>
                           {isDone && (
                             <span className="pu-scard-badge done">
-                              <Check size={10} strokeWidth={3} />{translateUi(" Đã đạt")}</span>
+                              <Check size={10} strokeWidth={3} /> Đã đạt
+                            </span>
                           )}
                           {isInProgress && (
                             <span className="pu-scard-badge learning">
@@ -488,11 +487,13 @@ function MindmapJourney({
                           )}
                           {isPreTest && !isDone && (
                             <span className="pu-scard-badge pretest">
-                              <Zap size={10} /> Test vượt cấp
+                              <Zap size={10} /> Đánh giá đầu vào
                             </span>
                           )}
                           {isWaiting && (
-                            <span className="pu-scard-badge waiting">{translateUi("Chờ chấm")}</span>
+                            <span className="pu-scard-badge waiting">
+                              Chờ duyệt
+                            </span>
                           )}
                           {isLocked && (
                             <span className="pu-scard-badge locked">
@@ -528,13 +529,14 @@ function MindmapJourney({
                         <div className="pu-scard-actions">
                           {isDone ? (
                             <span className="pu-scard-done-tag">
-                              <Check size={11} strokeWidth={3} />{translateUi(" Đã hoàn thành")}</span>
+                              <Check size={11} strokeWidth={3} /> Đã hoàn thành
+                            </span>
                           ) : isPreTest ? (
                             <Link
                               to={PULSE_PATHS.preAssessment(course.courseId)}
                               className="pu-scard-cta pretest"
                             >
-                              <Zap size={12} /> Làm test vượt cấp →
+                              <Zap size={12} /> Làm bài đánh giá đầu vào →
                             </Link>
                           ) : isInProgress ? (
                             <Link
@@ -608,7 +610,7 @@ function MindmapJourney({
                           <div
                             key={comp.code}
                             className={`pu-crit-pill ${isMet ? 'met' : 'gap'}`}
-                            title={translateUi(`${comp.name} · Mức yêu cầu: ${levelName(comp.requiredLevel)}`)}
+                            title={`${comp.name} · Mức yêu cầu: ${levelName(comp.requiredLevel)}`}
                           >
                             <span className="pu-crit-code">{comp.code}</span>
                             <span className="pu-crit-name">{comp.name}</span>
@@ -642,14 +644,13 @@ function MindmapJourney({
 
 /* ── 3. Empty State ────────────────────────────────────────────────────── */
 function NoPath({ overview }: { overview: PulseOverview }) {
-  useUiLanguage();
   return (
     <Empty
       icon={overview.hasPosition ? <Compass size={24} /> : <UserX size={24} />}
-      title={translateUi(overview.hasPosition ? 'Vị trí của bạn chưa có lộ trình' : 'Bạn chưa được gán vị trí công việc')}
+      title={overview.hasPosition ? 'Vị trí của bạn chưa có lộ trình' : 'Bạn chưa được gán vị trí công việc'}
     >
       {overview.hasPosition
-        ? translateUi(`Chủ doanh nghiệp chưa công bố yêu cầu năng lực cho vị trí ${overview.person.positionName ?? ''}, hoặc chưa mở lĩnh vực nào cho phòng ban của bạn. Lộ trình sẽ hiện khi được thiết lập.`)
+        ? `Chủ doanh nghiệp chưa công bố yêu cầu năng lực cho vị trí ${overview.person.positionName ?? ''}, hoặc chưa mở lĩnh vực nào cho phòng ban của bạn. Lộ trình sẽ hiện khi được thiết lập.`
         : 'Lộ trình học đi theo phòng ban và vị trí của bạn. Hãy liên hệ ban quản trị để được xếp vào đúng vị trí.'}
     </Empty>
   );

@@ -62,7 +62,7 @@ export function ListItem({ title, detail, aside }: { title: ReactNode; detail?: 
 
 export function Footer() {
   useUiLanguage();
-  return <div className="utility-footer">DigiTalent Pulse · Quản trị nền tảng</div>;
+  return <div className="utility-footer">DigiTalent AI · {translateUi("Quản trị nền tảng")}</div>;
 }
 
 export function Loading() {

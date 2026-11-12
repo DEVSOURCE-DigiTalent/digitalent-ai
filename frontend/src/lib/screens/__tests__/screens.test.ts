@@ -3,6 +3,8 @@ import { isValidElement, type ReactElement } from 'react';
 import { matchRoutes } from 'react-router-dom';
 import { enterpriseRoutes } from '@/app/routes/enterprise.routes';
 import { platformRoutes } from '@/app/routes/platform.routes';
+import { mentorRoutes } from '@/app/routes/mentor.routes';
+import { legacyRedirectRoutes } from '@/app/routes/legacy-redirects';
 import { RequireRole } from '@/components/guards/RequireRole';
 import { RequirePermission } from '@/components/guards/RequirePermission';
 import { RequireEntitlement } from '@/components/guards/RequireEntitlement';
@@ -12,11 +14,13 @@ import { ENTITLEMENTS } from '../../entitlements';
 
 import { ENTERPRISE_SCREENS } from '../enterprise';
 import { PLATFORM_SCREENS } from '../platform';
+import { MENTOR_SCREENS } from '../mentor';
 import type { ScreenDef } from '../types';
 
 const PORTALS = [
   { name: 'enterprise', screens: ENTERPRISE_SCREENS, routes: enterpriseRoutes, base: '/enterprise' },
   { name: 'platform', screens: PLATFORM_SCREENS, routes: platformRoutes, base: '/platform' },
+  { name: 'mentor', screens: MENTOR_SCREENS, routes: mentorRoutes, base: '/mentor' },
 ] as const;
 
 /** Guard components wrapped around a route element, outermost first. */
@@ -86,20 +90,34 @@ describe('role separation', () => {
     expect(billing?.roles).toEqual([ROLES.OWNER]);
   });
 
-  it('keeps platform screens to platform staff', () => {
-    const staff: string[] = [ROLES.PLATFORM_ADMIN, ROLES.MENTOR];
+  it('keeps platform screens strictly to the platform admin', () => {
     for (const screen of PLATFORM_SCREENS) {
-      expect(screen.roles.length).toBeGreaterThan(0);
-      for (const role of screen.roles) expect(staff).toContain(role);
+      expect(screen.roles).toEqual([ROLES.PLATFORM_ADMIN]);
     }
   });
 
-  it('keeps mentor screens to mentors and admin screens to the platform admin', () => {
-    expect(PLATFORM_SCREENS.filter((s) => s.roles.includes(ROLES.MENTOR) && !s.id.startsWith('SHR')).map((s) => s.id)).toEqual(['MT-01', 'MT-02', 'MT-03']);
+  it('keeps mentor screens in the dedicated /mentor portal separate from platform', () => {
+    expect(PLATFORM_SCREENS.filter((s) => s.roles.includes(ROLES.MENTOR))).toEqual([]);
+    expect(MENTOR_SCREENS.filter((s) => !s.id.startsWith('SHR')).map((s) => s.id)).toEqual(['MT-01', 'MT-02', 'MT-03', 'MT-04', 'MT-05', 'MT-06', 'MT-07']);
+    for (const screen of MENTOR_SCREENS) {
+      expect(screen.roles).toEqual([ROLES.MENTOR]);
+    }
     expect(PLATFORM_SCREENS.find((s) => s.id === 'PA-14')?.roles).toEqual([ROLES.PLATFORM_ADMIN]);
   });
 
-  it('does not let any enterprise screen admit the platform role', () => {
-    for (const screen of ENTERPRISE_SCREENS) expect(screen.roles).not.toContain(ROLES.PLATFORM_ADMIN);
+  it('does not let any enterprise screen admit the platform or mentor role', () => {
+    for (const screen of ENTERPRISE_SCREENS) {
+      expect(screen.roles).not.toContain(ROLES.PLATFORM_ADMIN);
+      expect(screen.roles).not.toContain(ROLES.MENTOR);
+    }
+  });
+
+  it('redirects legacy /platform mentor URLs to /mentor without colliding with platformRoutes', () => {
+    const combined = [...platformRoutes, ...mentorRoutes, ...legacyRedirectRoutes];
+    for (const legacyPath of ['/platform/course-reviews', '/platform/course-reviews/x1', '/platform/reviews', '/platform/reviews/x1']) {
+      const matched = matchRoutes(combined, legacyPath);
+      expect(matched, legacyPath).toBeTruthy();
+      expect(legacyRedirectRoutes).toContain(matched?.at(-1)?.route);
+    }
   });
 });

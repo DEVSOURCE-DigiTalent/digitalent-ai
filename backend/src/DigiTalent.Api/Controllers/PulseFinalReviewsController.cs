@@ -16,13 +16,23 @@ namespace DigiTalent.Api.Controllers;
 [Route("api/v1/pulse/final-reviews")]
 public class PulseFinalReviewsController : ControllerBase
 {
-    // GET api/v1/pulse/final-reviews — bài đánh giá trước khi học và bài cuối khóa chờ chấm, cửa sổ nộp lại, quá hạn, cờ hỗ trợ
+    // GET api/v1/pulse/final-reviews?includeReviewed=true&organizationId=... — bài đánh giá và bài cuối cấp chờ chấm, cửa sổ nộp lại, quá hạn, cờ hỗ trợ (và bài đã chấm khi includeReviewed=true)
     [HttpGet]
     [HasPermission(Permissions.Task.Evaluate, Permissions.Trial.Review)]
     public async Task<ActionResult<ApiResponse<GetPulseFinalReviewsUseCaseOutput>>> GetQueue(
-        [FromServices] IUseCase<GetPulseFinalReviewsUseCaseInput, GetPulseFinalReviewsUseCaseOutput> useCase)
+        [FromServices] IUseCase<GetPulseFinalReviewsUseCaseInput, GetPulseFinalReviewsUseCaseOutput> useCase,
+        [FromQuery] bool includeReviewed = false,
+        [FromQuery] Guid? organizationId = null,
+        [FromQuery] bool refreshAi = false,
+        [FromQuery] Guid? refreshSubmissionId = null)
     {
-        var result = await useCase.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput());
+        var result = await useCase.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput
+        {
+            IncludeReviewed = includeReviewed,
+            OrganizationId = organizationId,
+            RefreshAi = refreshAi,
+            RefreshSubmissionId = refreshSubmissionId,
+        });
         return Ok(ApiResponse<GetPulseFinalReviewsUseCaseOutput>.Ok(result));
     }
 

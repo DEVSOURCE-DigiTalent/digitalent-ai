@@ -23,7 +23,7 @@ public sealed class TrialWorkspaceConfiguration : IEntityTypeConfiguration<Trial
         {
             t.HasCheckConstraint("ck_trial_workspaces_request", "requested_at IS NULL OR test_deadline IS NOT NULL");
             t.HasCheckConstraint("ck_trial_workspaces_mentor", "(mentor_user_id IS NULL) = (mentor_assigned_at IS NULL)");
-            t.HasCheckConstraint("ck_trial_workspaces_report", "report_published_at IS NULL OR mentor_user_id IS NOT NULL");
+            t.HasCheckConstraint("ck_trial_workspaces_report", "report_published_at IS NULL OR mentor_user_id IS NOT NULL OR owner_user_id IS NOT NULL");
         });
         b.HasKey(x => x.Id);
         b.HasIndex(x => x.OrganizationId).IsUnique(); b.HasIndex(x => x.OwnerUserId).IsUnique();

@@ -5,11 +5,12 @@ import { publicRoutes } from './routes/public.routes';
 import { personalRoutes } from './routes/personal.routes';
 import { enterpriseRoutes } from './routes/enterprise.routes';
 import { platformRoutes } from './routes/platform.routes';
+import { mentorRoutes } from './routes/mentor.routes';
 import { onboardingRoutes } from './routes/onboarding.routes';
 import { legacyRedirectRoutes } from './routes/legacy-redirects';
 
 /**
- * Application router. Three portals (UI/UX spec section 2): Enterprise, Personal, Platform.
+ * Application router. Four portals: Enterprise, Personal, Platform, Mentor.
  */
 export const routes = [
   // ── Public Routes (Landing, Careers) ──
@@ -22,6 +23,7 @@ export const routes = [
   ...personalRoutes,
   ...enterpriseRoutes,
   ...platformRoutes,
+  ...mentorRoutes,
 
   // ── Legacy Redirects (pre-restructure paths) ──
   ...legacyRedirectRoutes,

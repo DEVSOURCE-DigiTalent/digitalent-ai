@@ -81,9 +81,9 @@ export function ManagerTopbar({ portal, onOpenMobileNav, isMobileNavOpen = false
           >
             <Menu className="size-5" />
           </button>
-          <Link to={items[0]?.path ?? '/enterprise'} className="pm-brand" aria-label={translateUi("DigiTalent Pulse — Tổng quan")}>
+          <Link to={items[0]?.path ?? '/enterprise'} className="pm-brand" aria-label={translateUi("DigiTalent AI: Tổng quan")}>
             <img src={pulseMark} alt="" />
-            <span>DigiTalent <em>Pulse</em></span>
+            <span>DigiTalent <em>AI</em></span>
           </Link>
         </div>
 

@@ -27,7 +27,7 @@ export function Wordmark({ className, withMark = true, markOnly = false, useBran
             <img
               src="/logo.png"
               alt=""
-              className="relative h-full w-auto object-contain drop-shadow-[0_2px_8px_rgba(245,180,80,0.22)]"
+              className="relative h-full w-auto object-contain drop-shadow-[0_2px_8px_rgba(52,70,200,0.25)]"
             />
           </span>
         ) : (
@@ -36,7 +36,7 @@ export function Wordmark({ className, withMark = true, markOnly = false, useBran
             className="relative grid size-[1.45em] shrink-0 place-items-center rounded-[0.4em] bg-current"
           >
             <span className="text-[0.8em] font-semibold tracking-[-0.04em] text-[var(--wordmark-on,#111110)]">D</span>
-            <span className="absolute right-[0.2em] top-[0.2em] size-[0.24em] rounded-full bg-[#7C9BE6]" />
+            <span className="absolute right-[0.2em] top-[0.2em] size-[0.24em] rounded-full bg-[#3446C8]" />
           </span>
         )
       )}

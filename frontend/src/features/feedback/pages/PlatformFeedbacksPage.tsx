@@ -202,11 +202,11 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
   return (
     <>
       <PageHead
-        eyebrow={`Nền tảng / ${isBug ? 'Báo lỗi' : 'Góp ý'}`}
-        title={translateUi(isBug ? 'Báo lỗi từ người dùng.' : 'Góp ý từ người dùng.')}
+        eyebrow={`Quản trị nền tảng / ${isBug ? translateUi('Báo lỗi kỹ thuật') : translateUi('Ý kiến phản hồi')}`}
+        title={translateUi(isBug ? 'Quản lý sự cố kỹ thuật từ người dùng' : 'Ý kiến phản hồi & Đóng góp từ người dùng')}
         description={translateUi(isBug
-          ? 'Xem và xử lý các lỗi được người dùng báo cáo. Phản hồi sẽ hiển thị cho người gửi.'
-          : 'Xem và phản hồi ý kiến đóng góp từ người dùng. Phản hồi sẽ hiển thị cho người gửi.')}
+          ? 'Xem và xử lý các lỗi kỹ thuật được người dùng báo cáo. Phản hồi sẽ hiển thị trực tiếp cho người gửi.'
+          : 'Xem và phản hồi ý kiến đóng góp từ người dùng. Phản hồi sẽ hiển thị trực tiếp cho người gửi.')}
       />
       <Box>
         <div className="pa-filters">

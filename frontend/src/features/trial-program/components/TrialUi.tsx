@@ -1,5 +1,4 @@
-import { translateUi, useUiLanguage } from '@/lib/i18n';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
   Check,
   Eye,
@@ -27,8 +26,6 @@ import {
   Users,
 } from 'lucide-react';
 import { Modal } from '@/components/shared';
-import { TrialDisclosure } from './TrialDisclosure';
-import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import type { TrialParticipantStatus, TrialReport, TrialReportEmployee, TrialStage } from '@/services/trial-program.service';
 import { LEVEL_LABELS, STAGE } from '../lib/trial-format';
 
@@ -114,7 +111,6 @@ export const DOMAIN_THEMES = [
 ];
 
 export function LevelBadge({ level, size = 'default' }: { level: number; size?: 'default' | 'sm' }) {
-  useUiLanguage();
   const value = Math.max(0, Math.min(3, Math.round(level)));
   const styles = [
     'bg-slate-100/90 text-slate-600 border-slate-200/90 font-medium', // 0: Chưa đạt
@@ -128,7 +124,7 @@ export function LevelBadge({ level, size = 'default' }: { level: number; size?: 
     <span
       className={`inline-flex items-center justify-center rounded-xl border shadow-2xs transition-all ${sizeClasses} ${styles[value]}`}
     >
-      {translateUi(LEVEL_LABELS[value])}
+      {LEVEL_LABELS[value]}
     </span>
   );
 }
@@ -142,21 +138,18 @@ const PARTICIPANT: Record<TrialParticipantStatus, { label: string; tone: string 
 };
 
 export function ParticipantStatus({ status }: { status: TrialParticipantStatus }) {
-  useUiLanguage();
   const s = PARTICIPANT[status];
-  return <span className={`tp-badge ${s.tone}`}>{translateUi(s.label)}</span>;
+  return <span className={`tp-badge ${s.tone}`}>{s.label}</span>;
 }
 
 export function StageBadge({ stage }: { stage: TrialStage }) {
-  useUiLanguage();
-  return <span className={`tp-badge ${STAGE[stage].tone}`}>{translateUi(STAGE[stage].label)}</span>;
+  return <span className={`tp-badge ${STAGE[stage].tone}`}>{STAGE[stage].label}</span>;
 }
 
 /** Thanh bước: index = bước hiện tại (0-based); các bước trước đã xong. */
-export function Steps({ steps, current, label = 'Các bước dùng thử' }: { steps: string[]; current: number; label?: string }) {
-  useUiLanguage();
+export function Steps({ steps, current }: { steps: string[]; current: number }) {
   return (
-    <nav aria-label={translateUi(label)} className="w-full">
+    <nav aria-label="Các bước dùng thử" className="w-full">
       <ol className="flex items-center gap-1.5 sm:gap-2.5 p-1.5 sm:p-2 rounded-2xl bg-white/90 border border-slate-200/80 shadow-2xs">
         {steps.map((step, index) => {
           const isDone = index < current;
@@ -164,8 +157,6 @@ export function Steps({ steps, current, label = 'Các bước dùng thử' }: { 
           return (
             <li
               key={step}
-              aria-current={isCurrent ? 'step' : undefined}
-              data-state={isCurrent ? 'current' : isDone ? 'done' : 'upcoming'}
               className={`flex-1 flex items-center justify-center sm:justify-start gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs transition-all ${
                 isDone
                   ? 'bg-emerald-50/80 text-emerald-800 font-semibold border border-emerald-200/60'
@@ -195,7 +186,6 @@ export function Steps({ steps, current, label = 'Các bước dùng thử' }: { 
 }
 
 export function LevelLegend() {
-  useUiLanguage();
   const dots = [
     { bg: 'bg-slate-300' },
     { bg: 'bg-sky-400' },
@@ -207,11 +197,11 @@ export function LevelLegend() {
       className="inline-flex flex-wrap items-center gap-3 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 shadow-2xs"
       aria-hidden
     >
-      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-0.5">{translateUi("Cấp độ:")}</span>
+      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-0.5">Cấp độ:</span>
       {LEVEL_LABELS.map((label, level) => (
         <span key={label} className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700">
           <span className={`size-2 rounded-full ${dots[level]?.bg ?? 'bg-slate-300'} ring-2 ring-white shadow-2xs`} />
-          <span className="text-[11px]">{translateUi(label)}</span>
+          <span className="text-[11px]">{label}</span>
         </span>
       ))}
     </div>
@@ -219,7 +209,6 @@ export function LevelLegend() {
 }
 
 function CapabilityRadarChart({ summary }: { summary: TrialReport['summary'] }) {
-  useUiLanguage();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const size = 320;
@@ -286,19 +275,20 @@ function CapabilityRadarChart({ summary }: { summary: TrialReport['summary'] }) 
           <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-slate-900/95 backdrop-blur-md text-white shadow-xl border border-slate-700 text-xs animate-in fade-in zoom-in-95 duration-150">
             <span className="flex items-center gap-1.5 font-bold" style={{ color: activeTheme.color }}>
               <activeTheme.icon size={13} />
-              {translateUi(activeTheme.shortName)}
+              {activeTheme.shortName}
             </span>
             <span className="text-slate-600">·</span>
             <span className="font-mono font-bold text-emerald-400">
-              {activeDomain.average.toFixed(1)}{translateUi(" / 3 cấp")}</span>
+              {activeDomain.average.toFixed(1)} / 3.0
+            </span>
             <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-white/20 text-white">
-              {translateUi(LEVEL_LABELS[activeDomain.level ?? 0])}
+              {LEVEL_LABELS[activeDomain.level ?? 0]}
             </span>
           </div>
         ) : (
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100/90 text-slate-500 text-[11px] font-medium border border-slate-200/60">
             <Compass size={12} className="text-teal-600" />
-            Xem chi tiết năng lực theo lĩnh vực
+            Rê chuột vào các miền hoặc trục để tương tác
           </div>
         )}
       </div>
@@ -368,9 +358,15 @@ function CapabilityRadarChart({ summary }: { summary: TrialReport['summary'] }) 
           />
 
           {/* Level labels on vertical axis */}
-          <text x={center + 5} y={center - (1 / 3) * radius + 11} className="text-[9px] font-bold fill-teal-600 select-none">{translateUi("L1 (Cơ bản)")}</text>
-          <text x={center + 5} y={center - (2 / 3) * radius + 11} className="text-[9px] font-bold fill-sky-600 select-none">{translateUi("L2 (Trung cấp)")}</text>
-          <text x={center + 5} y={center - radius + 11} className="text-[9px] font-bold fill-indigo-600 select-none">{translateUi("L3 (Nâng cao)")}</text>
+          <text x={center + 5} y={center - (1 / 3) * radius + 11} className="text-[9px] font-bold fill-teal-600 select-none">
+            L1 (Cơ bản)
+          </text>
+          <text x={center + 5} y={center - (2 / 3) * radius + 11} className="text-[9px] font-bold fill-sky-600 select-none">
+            L2 (Trung cấp)
+          </text>
+          <text x={center + 5} y={center - radius + 11} className="text-[9px] font-bold fill-indigo-600 select-none">
+            L3 (Nâng cao)
+          </text>
 
           {/* Axis spokes */}
           {Array.from({ length: totalAxes }).map((_, i) => {
@@ -473,7 +469,7 @@ function CapabilityRadarChart({ summary }: { summary: TrialReport['summary'] }) 
                       : 'font-bold fill-slate-700 hover:fill-slate-900'
                   }`}
                 >
-                  {translateUi(theme.shortName)}
+                  {theme.shortName}
                 </text>
               </g>
             );
@@ -526,21 +522,9 @@ function CapabilityRadarChart({ summary }: { summary: TrialReport['summary'] }) 
 
 /** Bảng năng lực của doanh nghiệp: phân bố mức theo lĩnh vực và mức của từng nhân viên. */
 export function CompetencyReport({ report }: { report: TrialReport }) {
-  useUiLanguage();
   const [selectedEmployee, setSelectedEmployee] = useState<TrialReportEmployee | null>(null);
-  const [closingEmployee, setClosingEmployee] = useState(false);
-  const closeEmployeeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  useEffect(() => () => { if (closeEmployeeTimer.current) clearTimeout(closeEmployeeTimer.current); }, []);
-  const closeEmployee = () => {
-    if (closingEmployee) return;
-    setClosingEmployee(true);
-    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    closeEmployeeTimer.current = setTimeout(() => { setSelectedEmployee(null); setClosingEmployee(false); }, reduced ? 0 : 220);
-  };
   const [employeeFilter, setEmployeeFilter] = useState('');
   const [isEmployeeTableOpen, setIsEmployeeTableOpen] = useState(false);
-  const [employeePage, setEmployeePage] = useState(1);
-  const [employeePageSize, setEmployeePageSize] = useState(5);
 
   // Tính các chỉ số KPI điều hành
   const totalAssessed = Math.max(1, report.assessed);
@@ -564,17 +548,16 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
       (e.departmentName && e.departmentName.toLowerCase().includes(employeeFilter.toLowerCase())) ||
       (e.positionName && e.positionName.toLowerCase().includes(employeeFilter.toLowerCase())),
   );
-  const employeePageCount = Math.max(1, Math.ceil(filteredEmployees.length / employeePageSize));
-  const activeEmployeePage = Math.min(employeePage, employeePageCount);
-  const visibleEmployees = filteredEmployees.slice((activeEmployeePage - 1) * employeePageSize, activeEmployeePage * employeePageSize);
 
   return (
-    <div className="trial-competency-report space-y-6">
+    <div className="space-y-6">
       {/* ── BỨC TRANH TOÀN CẢNH: EXECUTIVE METRICS + RADAR CHART ── */}
       <section className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-4 mb-5">
           <div>
-            <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">{translateUi("Bức tranh năng lực")}</h2>
+            <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+              Báo cáo Năng lực Đội ngũ
+            </h2>
             <p className="text-sm sm:text-[14.5px] text-slate-600 font-medium mt-1">
               Đánh giá chuẩn hóa 6 lĩnh vực từ <strong className="text-slate-900 font-bold tabular-nums">{report.assessed}</strong> nhân sự hoàn thành.
             </p>
@@ -587,7 +570,7 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
           {/* Cột trái: 4 chỉ số KPI quan trọng */}
           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {/* 1. Mức năng lực trung bình đội ngũ */}
+            {/* 1. Điểm trung bình đội ngũ */}
             <div className="rounded-2xl border border-slate-200/90 bg-white p-4.5 sm:p-5 shadow-2xs hover:border-teal-300 transition-all duration-200 flex flex-col justify-between relative overflow-hidden group">
               <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-teal-500 via-teal-600 to-emerald-500" />
               <div>
@@ -596,21 +579,25 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                     <div className="size-8.5 rounded-xl bg-teal-50 border border-teal-100/80 flex items-center justify-center text-teal-700 shadow-2xs">
                       <Award size={17} />
                     </div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{translateUi("Mức năng lực trung bình")}</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Điểm trung bình
+                    </span>
                   </div>
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 shadow-2xs">{translateUi("3 cấp độ")}</span>
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 shadow-2xs">
+                    Thang 3.0
+                  </span>
                 </div>
 
                 <div className="mt-3 flex items-baseline gap-1.5">
                   <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight tabular-nums">
                     {avgOverallScore}
                   </span>
-                  <span className="text-sm font-bold text-slate-500">{translateUi("/ 3 cấp")}</span>
+                  <span className="text-sm font-bold text-slate-500">/ 3.0</span>
                 </div>
 
                 <div
                   className="w-full bg-slate-100 rounded-full h-2 overflow-hidden mt-3"
-                  title={translateUi("Trung bình các mức: 0 Chưa đạt · 1 Cơ bản · 2 Trung cấp · 3 Nâng cao")}
+                  title={`Tiến độ: ${Math.round((parseFloat(avgOverallScore) / 3) * 100)}%`}
                 >
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-500"
@@ -624,14 +611,16 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
               <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                 {parseFloat(avgOverallScore) >= 2 ? (
                   <span className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200/60">
-                    <TrendingUp size={14} className="text-emerald-600" />{translateUi(" Mức Trung cấp")}</span>
+                    <TrendingUp size={14} className="text-emerald-600" /> Mức Trung cấp
+                  </span>
                 ) : parseFloat(avgOverallScore) >= 1 ? (
                   <span className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-xl border border-blue-200/60">
                     <CheckCircle2 size={14} className="text-blue-600" /> Đạt chuẩn Cơ bản
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200/60">
-                    <AlertTriangle size={14} className="text-amber-600" />{translateUi(" Cần bồi dưỡng")}</span>
+                    <AlertTriangle size={14} className="text-amber-600" /> Cần bồi dưỡng
+                  </span>
                 )}
               </div>
             </div>
@@ -649,7 +638,9 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                       Đạt chuẩn cơ bản
                     </span>
                   </div>
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-2xs">{translateUi("Cấp 1+")}</span>
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-2xs">
+                    Cấp 1+
+                  </span>
                 </div>
 
                 <div className="mt-3 flex items-baseline gap-2">
@@ -663,7 +654,7 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
 
                 <div
                   className="w-full bg-slate-100 rounded-full h-2 overflow-hidden mt-3"
-                  title={translateUi(`Tỷ lệ: ${basicPassPercent}%`)}
+                  title={`Tỷ lệ: ${basicPassPercent}%`}
                 >
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500"
@@ -691,7 +682,9 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                     <div className="size-8.5 rounded-xl bg-amber-50 border border-amber-100/80 flex items-center justify-center text-amber-700 shadow-2xs">
                       <AlertTriangle size={17} />
                     </div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{translateUi("Cần ưu tiên")}</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Cần ưu tiên
+                    </span>
                   </div>
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/80 shadow-2xs">
                     Điểm nghẽn
@@ -705,14 +698,15 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                   <div className="flex-1 min-w-0">
                     <h4
                       className="text-sm sm:text-base font-bold text-slate-900 leading-snug line-clamp-1"
-                      title={translateUi(topFocusDomain?.name)}
+                      title={topFocusDomain?.name}
                     >
-                      {translateUi(topFocusDomain?.name) ?? '—'}
+                      {topFocusDomain?.name ?? '—'}
                     </h4>
                     <div className="mt-1 flex items-center gap-2 text-xs sm:text-[13px] font-semibold text-slate-600">
-                      <span>{translateUi("Mức TB:")}</span>
+                      <span>Điểm TB:</span>
                       <strong className="text-amber-800 font-black tabular-nums text-sm">
-                        {topFocusDomain?.average.toFixed(1) ?? '0.0'}{translateUi(" / 3 cấp")}</strong>
+                        {topFocusDomain?.average.toFixed(1) ?? '0.0'} / 3.0
+                      </strong>
                     </div>
                   </div>
                 </div>
@@ -720,7 +714,8 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
 
               <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 border border-amber-200/70 text-amber-900 text-xs sm:text-[13px] font-bold">
-                  <BookOpen size={13} className="text-amber-700" />{translateUi("Khóa học: M")}{topFocusDomain?.number}-F
+                  <BookOpen size={13} className="text-amber-700" />
+                  Khóa học: M{topFocusDomain?.number}-F
                 </span>
               </div>
             </div>
@@ -734,9 +729,13 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                     <div className="size-8.5 rounded-xl bg-purple-50 border border-purple-100/80 flex items-center justify-center text-purple-700 shadow-2xs">
                       <Award size={17} />
                     </div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{translateUi("Nổi trội nhất")}</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Nổi trội nhất
+                    </span>
                   </div>
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200/80 shadow-2xs">{translateUi("Dẫn đầu")}</span>
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200/80 shadow-2xs">
+                    Dẫn đầu
+                  </span>
                 </div>
 
                 <div className="mt-2.5 flex items-start gap-2.5">
@@ -746,14 +745,15 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                   <div className="flex-1 min-w-0">
                     <h4
                       className="text-sm sm:text-base font-bold text-slate-900 leading-snug line-clamp-1"
-                      title={translateUi(topStrengthDomain?.name)}
+                      title={topStrengthDomain?.name}
                     >
-                      {translateUi(topStrengthDomain?.name) ?? '—'}
+                      {topStrengthDomain?.name ?? '—'}
                     </h4>
                     <div className="mt-1 flex items-center gap-2 text-xs sm:text-[13px] font-semibold text-slate-600">
-                      <span>{translateUi("Mức TB:")}</span>
+                      <span>Điểm TB:</span>
                       <strong className="text-purple-800 font-black tabular-nums text-sm">
-                        {topStrengthDomain?.average.toFixed(1) ?? '0.0'}{translateUi(" / 3 cấp")}</strong>
+                        {topStrengthDomain?.average.toFixed(1) ?? '0.0'} / 3.0
+                      </strong>
                     </div>
                   </div>
                 </div>
@@ -761,17 +761,21 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
 
               <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-50 border border-purple-200/70 text-purple-900 text-xs sm:text-[13px] font-bold">
-                  <TrendingUp size={13} className="text-purple-700" />{translateUi("Mức cao nhất")}</span>
+                  <TrendingUp size={13} className="text-purple-700" />
+                  Điểm cao nhất
+                </span>
               </div>
             </div>
           </div>
 
           {/* Cột phải: Bản đồ mạng nhện Radar trực quan */}
-          <div className="trial-radar-panel lg:col-span-5 self-start min-w-0 flex flex-col items-center justify-start rounded-2xl bg-gradient-to-b from-slate-50/80 to-slate-100/40 border border-slate-200/80 p-5 shadow-2xs">
-            <div className="trial-radar-panel__heading w-full flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/70 pb-3 mb-2 px-1">
+          <div className="lg:col-span-5 flex flex-col items-center justify-center rounded-2xl bg-gradient-to-b from-slate-50/80 to-slate-100/40 border border-slate-200/80 p-5 shadow-2xs">
+            <div className="w-full flex items-center justify-between border-b border-slate-200/70 pb-2.5 mb-2 px-1">
               <span className="text-xs font-bold text-slate-800 tracking-tight flex items-center gap-1.5">
-                <Compass size={14} className="text-teal-600" />{translateUi("Năng lực theo lĩnh vực")}</span>
-              <span className="text-[11px] font-medium text-slate-400">{translateUi("So sánh mức TB")}</span>
+                <Compass size={14} className="text-teal-600" />
+                Bản đồ Radar 6 Miền
+              </span>
+              <span className="text-[11px] font-medium text-slate-400">So sánh mức TB</span>
             </div>
             <CapabilityRadarChart summary={report.summary} />
           </div>
@@ -783,19 +787,26 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3.5 mb-4">
           <div className="flex items-center gap-2">
             <span className="size-2 rounded-full bg-teal-500 animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-700">{translateUi("Chi tiết đánh giá theo 6 lĩnh vực")}</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Chi tiết đánh giá theo 6 lĩnh vực
+            </span>
           </div>
-          <span className="text-xs font-semibold text-slate-500">{translateUi("Tổng nhân sự: ")}<strong className="text-slate-900 font-bold tabular-nums">{report.assessed}</strong>{translateUi(" người")}</span>
+          <span className="text-xs font-semibold text-slate-500">
+            Tổng nhân sự: <strong className="text-slate-900 font-bold tabular-nums">{report.assessed}</strong> người
+          </span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                <th className="py-3 px-4">{translateUi("Lĩnh vực")}</th>
-                <th className="py-3 px-3 text-center">{translateUi("Mức tham khảo")}</th>
-                <th className="py-3 px-4 min-w-[220px]">{translateUi("Phân bổ (")}{report.assessed} người)</th>
-                <th className="py-3 px-4 min-w-[180px]">{translateUi("Khóa học đề xuất")}</th>
+                <th className="py-3 px-4">Lĩnh vực</th>
+                <th className="py-3 px-3 text-center">Điểm TB</th>
+                <th className="py-3 px-3 text-center">Đánh giá chung</th>
+                <th className="py-3 px-3 text-center">Trần mục tiêu</th>
+                <th className="py-3 px-3 text-center">Khoảng cách (Skill Gap)</th>
+                <th className="py-3 px-4 min-w-[200px]">Phân bổ ({report.assessed} người)</th>
+                <th className="py-3 px-4 min-w-[180px]">Khóa học đề xuất</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs">
@@ -804,7 +815,6 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                 const Icon = theme.icon;
                 const courseCode = `M${row.number}-${row.level >= 2 ? 'A' : row.level >= 1 ? 'I' : 'F'}`;
                 const tierName = row.level >= 2 ? 'Nâng cao' : row.level >= 1 ? 'Trung cấp' : 'Cơ bản';
-
                 return (
                   <tr key={row.categoryId} className="hover:bg-slate-50/70 transition-colors group">
                     <td className="py-3.5 px-4">
@@ -815,7 +825,8 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                           <Icon size={16} />
                         </div>
                         <div>
-                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">{translateUi("Miền 0")}{row.number}
+                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                            Miền 0{row.number}
                           </span>
                           <strong className="text-slate-900 font-bold text-xs sm:text-sm block leading-snug">
                             {row.name}
@@ -824,16 +835,42 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                       </div>
                     </td>
 
+                    <td className="py-3.5 px-3 text-center">
+                      <div className="inline-flex items-baseline gap-1 px-2.5 py-1 rounded-xl bg-slate-100/90 border border-slate-200/80 shadow-2xs">
+                        <span className="font-mono font-black text-slate-900 text-sm tabular-nums">
+                          {row.average.toFixed(1)}
+                        </span>
+                        <span className="text-xs font-bold text-slate-500">/ 3.0</span>
+                      </div>
+                    </td>
 
                     <td className="py-3.5 px-3 text-center">
                       <LevelBadge level={row.level} />
+                    </td>
+
+                    <td className="py-3.5 px-3 text-center">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                        Cấp {row.targetLevel ?? 3}
+                      </span>
+                    </td>
+
+                    <td className="py-3.5 px-3 text-center">
+                      {row.level >= (row.targetLevel ?? 3) ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          ✓ Đạt trần ({row.targetMetRate ?? 100}%)
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                          Thiếu {(row.targetLevel ?? 3) - row.level} cấp (Đạt: {row.targetMetRate ?? 0}%)
+                        </span>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4">
                       <div className="space-y-1.5">
                         <div
                           className="h-2 w-full rounded-full overflow-hidden bg-slate-100 flex border border-slate-200/60 shadow-inner"
-                          title={translateUi(row.counts.map((n, i) => `${LEVEL_LABELS[i]}: ${n}`).join(' · '))}
+                          title={row.counts.map((n, i) => `${LEVEL_LABELS[i]}: ${n}`).join(' · ')}
                         >
                           {row.counts.map((count, levelIdx) =>
                             count > 0 ? (
@@ -881,7 +918,7 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                                       : 'bg-emerald-500'
                                   }`}
                                 />
-                                {translateUi(LEVEL_LABELS[levelIdx])}: <strong>{count}</strong>
+                                {LEVEL_LABELS[levelIdx]}: <strong>{count}</strong>
                               </span>
                             ) : null,
                           )}
@@ -890,12 +927,16 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                     </td>
 
                     <td className="py-3.5 px-4">
-                      <div className="inline-flex items-center gap-2 rounded-xl border border-teal-200/90 bg-teal-50/60 hover:bg-teal-100/80 px-2.5 py-1.5 text-xs text-teal-950 shadow-2xs transition-all group-hover:border-teal-300">
-                        <BookOpen size={13} className="text-teal-700 shrink-0" />
-                        <span className="font-bold text-teal-900">{courseCode}</span>
-                        <span className="text-teal-400">·</span>
-                        <span className="text-teal-700 font-medium text-[11px]">{tierName}</span>
-                      </div>
+                      {row.level >= (row.targetLevel ?? 3) ? (
+                        <span className="text-slate-400 font-medium text-[11px]">Đã đạt chuẩn mục tiêu</span>
+                      ) : (
+                        <div className="inline-flex items-center gap-2 rounded-xl border border-teal-200/90 bg-teal-50/60 hover:bg-teal-100/80 px-2.5 py-1.5 text-xs text-teal-950 shadow-2xs transition-all group-hover:border-teal-300">
+                          <BookOpen size={13} className="text-teal-700 shrink-0" />
+                          <span className="font-bold text-teal-900">{courseCode}</span>
+                          <span className="text-teal-400">·</span>
+                          <span className="text-teal-700 font-medium text-[11px]">{tierName}</span>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );
@@ -910,8 +951,6 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
         <button
           type="button"
           onClick={() => setIsEmployeeTableOpen((v) => !v)}
-          aria-expanded={isEmployeeTableOpen}
-          aria-controls="trial-employee-results"
           className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 sm:p-6 text-left hover:bg-slate-50/70 transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-3.5">
@@ -920,8 +959,12 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-base sm:text-lg font-bold text-slate-900">{translateUi("Chi tiết từng nhân viên")}</h3>
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200/80 shadow-2xs">{translateUi("6 Lĩnh vực")}</span>
+                <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                  Chi tiết từng nhân viên ({filteredEmployees.length})
+                </h3>
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200/80 shadow-2xs">
+                  6 Lĩnh vực
+                </span>
               </div>
               <p className="text-sm text-slate-600 font-medium mt-1">
                 Đánh giá chuẩn hóa 6 lĩnh vực năng lực số của từng nhân sự
@@ -933,26 +976,30 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
             <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors">
               {isEmployeeTableOpen ? (
                 <>
-                  <ChevronUp size={15} />{translateUi(" Thu gọn")}</>
+                  <ChevronUp size={15} /> Thu gọn
+                </>
               ) : (
                 <>
-                  <ChevronDown size={15} />{translateUi(" Xem chi tiết")}</>
+                  <ChevronDown size={15} /> Xem chi tiết ({filteredEmployees.length} nhân sự)
+                </>
               )}
             </span>
           </div>
         </button>
 
-        <TrialDisclosure open={isEmployeeTableOpen} id="trial-employee-results">
+        {isEmployeeTableOpen && (
           <div className="p-5 sm:p-6 pt-0 border-t border-slate-100 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
-              <OwnerFilterSelect label={translateUi("Số kết quả mỗi trang")} value={String(employeePageSize)} onChange={(value) => { setEmployeePageSize(Number(value)); setEmployeePage(1); }} options={[5, 10, 15, 25].map((size) => ({ value: String(size), label: `${size} / trang` }))} />
+              <span className="text-sm font-semibold text-slate-600">
+                Tìm kiếm và xem chi tiết phiếu đánh giá năng lực của nhân sự:
+              </span>
               <div className="relative w-full sm:w-72">
                 <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
-                  placeholder={translateUi("Tìm theo tên, phòng ban...")}
+                  placeholder="Tìm theo tên, phòng ban..."
                   value={employeeFilter}
-                  onChange={(e) => { setEmployeeFilter(e.target.value); setEmployeePage(1); }}
+                  onChange={(e) => setEmployeeFilter(e.target.value)}
                   className="w-full h-9 pl-8 pr-3 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-teal-600 transition-colors"
                 />
               </div>
@@ -962,22 +1009,24 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50/80 text-xs font-bold uppercase tracking-wider text-slate-600">
-                    <th className="py-3 px-4 min-w-[200px]">{translateUi("Nhân viên")}</th>
+                    <th className="py-3 px-4 min-w-[200px]">Nhân viên</th>
                     {DOMAIN_THEMES.map((theme) => (
-                      <th key={theme.number} className="py-3 px-2 text-center min-w-[95px]" title={translateUi(theme.name)}>
-                        {translateUi(theme.tableHeader)}
+                      <th key={theme.number} className="py-3 px-2 text-center min-w-[95px]" title={theme.name}>
+                        {theme.tableHeader}
                       </th>
                     ))}
-                    <th className="py-3 px-4 text-center min-w-[110px]">{translateUi("Thao tác")}</th>
+                    <th className="py-3 px-4 text-center min-w-[110px]">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
                   {filteredEmployees.length === 0 ? (
                     <tr>
-                      <td colSpan={DOMAIN_THEMES.length + 2} className="py-8 text-center text-slate-400">{translateUi("Không tìm thấy nhân viên nào phù hợp")}</td>
+                      <td colSpan={DOMAIN_THEMES.length + 2} className="py-8 text-center text-slate-400">
+                        Không tìm thấy nhân viên nào phù hợp
+                      </td>
                     </tr>
                   ) : (
-                    visibleEmployees.map((e) => {
+                    filteredEmployees.map((e) => {
                       const initials = e.fullName
                         .trim()
                         .split(/\s+/)
@@ -996,7 +1045,7 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                               <div>
                                 <strong className="text-slate-900 block text-xs sm:text-sm font-bold">{e.fullName}</strong>
                                 <span className="text-xs text-slate-600 block mt-0.5 font-medium">
-                                  {[e.departmentName, e.positionName].filter(Boolean).join(' · ') || translateUi('Nhân viên')}
+                                  {[e.departmentName, e.positionName].filter(Boolean).join(' · ') || 'Nhân viên'}
                                 </span>
                               </div>
                             </div>
@@ -1011,10 +1060,12 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                           <td className="py-3.5 px-4 text-center">
                             <button
                               type="button"
-                              onClick={() => { setClosingEmployee(false); setSelectedEmployee(e); }}
+                              onClick={() => setSelectedEmployee(e)}
                               className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 text-xs font-bold text-teal-800 transition-all shadow-2xs hover:shadow-xs cursor-pointer"
                             >
-                              <Eye size={13} className="text-teal-700" />{translateUi("Xem chi tiết")}</button>
+                              <Eye size={13} className="text-teal-700" />
+                              Xem chi tiết
+                            </button>
                           </td>
                         </tr>
                       );
@@ -1023,34 +1074,31 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                 </tbody>
               </table>
             </div>
-            <div className="tp-participant-pagination" aria-label={translateUi("Phân trang kết quả đánh giá")}>
-              <span>{filteredEmployees.length ? translateUi(`${(activeEmployeePage - 1) * employeePageSize + 1}–${Math.min(activeEmployeePage * employeePageSize, filteredEmployees.length)} / ${filteredEmployees.length} người`) : '0 người'}</span>
-              {employeePageCount > 1 && <div><button type="button" disabled={activeEmployeePage === 1} onClick={() => setEmployeePage(activeEmployeePage - 1)}>{translateUi("Trước")}</button><strong>{translateUi("Trang ")}{activeEmployeePage}/{employeePageCount}</strong><button type="button" disabled={activeEmployeePage === employeePageCount} onClick={() => setEmployeePage(activeEmployeePage + 1)}>{translateUi("Sau")}</button></div>}
-            </div>
           </div>
-        </TrialDisclosure>
+        )}
       </section>
 
       {/* Modal xem chi tiết bài đánh giá của từng nhân viên */}
       {selectedEmployee && (
         <Modal
           open={Boolean(selectedEmployee)}
-          onClose={closeEmployee}
-          className={`trial-result-dialog${closingEmployee ? ' is-closing' : ''}`}
+          onClose={() => setSelectedEmployee(null)}
           size="xl"
-          title={translateUi(`Chi tiết đánh giá năng lực: ${selectedEmployee.fullName}`)}
+          title={`Chi tiết đánh giá năng lực: ${selectedEmployee.fullName}`}
           footer={
             <div className="flex w-full items-center justify-between">
               <span className="text-xs text-slate-500">
                 {selectedEmployee.submittedAt
-                  ? translateUi(`Nộp bài lúc ${new Date(selectedEmployee.submittedAt).toLocaleString('vi-VN')}`)
+                  ? `Nộp bài lúc ${new Date(selectedEmployee.submittedAt).toLocaleString('vi-VN')}`
                   : ''}
               </span>
               <button
                 type="button"
-                onClick={closeEmployee}
+                onClick={() => setSelectedEmployee(null)}
                 className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
-              >{translateUi("Đóng")}</button>
+              >
+                Đóng
+              </button>
             </div>
           }
         >
@@ -1096,7 +1144,7 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
 
               {selectedEmployee.submittedAt && (
                 <div className="sm:text-right shrink-0">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">{translateUi("Thời gian nộp")}</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">Thời gian nộp</span>
                   <span className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-semibold text-slate-800 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs mt-0.5">
                     <Calendar size={13} className="text-teal-600" />
                     {new Date(selectedEmployee.submittedAt).toLocaleString('vi-VN')}
@@ -1110,25 +1158,60 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
               <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 flex flex-col justify-between shadow-2xs">
                 <div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-blue-900 uppercase tracking-wider block">{translateUi("Trắc nghiệm 6 lĩnh vực")}</span>
+                    <span className="text-xs font-bold text-blue-900 uppercase tracking-wider block">
+                      Trắc nghiệm 6 lĩnh vực
+                    </span>
                     <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                      {Math.round(((selectedEmployee.choiceScore ?? 0) / Math.max(1, selectedEmployee.choiceTotal ?? 18)) * 100)}{translateUi("% chính xác")}</span>
+                      {Math.round(((selectedEmployee.choiceScore ?? 0) / Math.max(1, selectedEmployee.choiceTotal ?? 18)) * 100)}% chính xác
+                    </span>
                   </div>
                   <div className="text-2xl font-black text-blue-950 mt-2 tabular-nums">
                     {selectedEmployee.choiceScore ?? 0} / {selectedEmployee.choiceTotal ?? 18}{' '}
                     <span className="text-xs font-semibold text-blue-700 font-sans">câu đúng</span>
                   </div>
                 </div>
-                <div className="mt-3 pt-2 border-t border-blue-150 text-[11px] text-blue-800/80 font-medium">{translateUi("Hoàn thành trắc nghiệm lý thuyết chuẩn khung năng lực.")}</div>
+                <div className="mt-3 pt-2 border-t border-blue-150 text-[11px] text-blue-800/80 font-medium">
+                  Hoàn thành trắc nghiệm lý thuyết chuẩn khung năng lực.
+                </div>
               </div>
 
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 flex flex-col justify-between shadow-2xs">
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider block">
+                      Điểm tự luận (Mentor chấm)
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                      Thang 10 điểm
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 mt-2 text-xs font-bold text-emerald-950">
+                    <span className="px-2.5 py-1 rounded-xl bg-white border border-emerald-200 shadow-2xs">
+                      Cơ bản: <strong className="text-emerald-700 font-mono">{selectedEmployee.essayBasicScore ?? 0}</strong>/10
+                    </span>
+                    <span className="px-2.5 py-1 rounded-xl bg-white border border-emerald-200 shadow-2xs">
+                      Trung cấp: <strong className="text-emerald-700 font-mono">{selectedEmployee.essayIntermediateScore ?? 0}</strong>/10
+                    </span>
+                    <span className="px-2.5 py-1 rounded-xl bg-white border border-emerald-200 shadow-2xs">
+                      Nâng cao: <strong className="text-emerald-700 font-mono">{selectedEmployee.essayAdvancedScore ?? 0}</strong>/10
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-3 pt-2 border-t border-emerald-150 text-[11px] text-emerald-800/80 font-medium">
+                  {selectedEmployee.essayBasicScore === 0 && selectedEmployee.essayIntermediateScore === 0 && selectedEmployee.essayAdvancedScore === 0
+                    ? 'Chưa có điểm tự luận thực hành từ Mentor (yếu tố quyết định cấp chứng chỉ).'
+                    : 'Đã hoàn thành đánh giá thực hành tự luận từ Mentor.'}
+                </div>
+              </div>
             </div>
 
             {/* Nhận xét từ Mentor nếu có */}
             {selectedEmployee.reviewNote && (
               <div className="rounded-2xl border border-purple-200/90 bg-purple-50/60 p-3.5 space-y-1 shadow-2xs">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-purple-900">
-                  <FileText className="size-3.5 text-purple-700" />{translateUi("Ghi chú đánh giá:")}</div>
+                  <FileText className="size-3.5 text-purple-700" />
+                  Nhận xét của Mentor:
+                </div>
                 <p className="text-xs text-purple-950 italic leading-relaxed">
                   "{selectedEmployee.reviewNote}"
                 </p>
@@ -1139,8 +1222,12 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
             <div className="space-y-3 pt-1">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h4 className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Award size={15} className="text-teal-600" />{translateUi("Kết quả chi tiết 6 lĩnh vực năng lực số")}</h4>
-                <span className="text-xs text-slate-500 font-medium">{translateUi("Mức khảo sát")}</span>
+                  <Award size={15} className="text-teal-600" />
+                  Kết quả chi tiết 6 lĩnh vực năng lực số
+                </h4>
+                <span className="text-xs text-slate-500 font-medium">
+                  Mức chứng chỉ cuối cùng
+                </span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -1158,7 +1245,7 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                           : `Đạt ${LEVEL_LABELS[selectedEmployee.levels[idx]]}`,
                       gapText:
                         selectedEmployee.levels[idx] === 0
-                          ? 'Cần bổ sung kiến thức ở cấp Cơ bản.'
+                          ? 'Cần bổ sung kiến thức thực hành và hoàn thành tự luận.'
                           : `Đã đạt chuẩn mức ${LEVEL_LABELS[selectedEmployee.levels[idx]]}.`,
                       basicCorrect: selectedEmployee.levels[idx] >= 1 ? 1 : 0,
                       basicTotal: 1,
@@ -1179,7 +1266,7 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                       key={detail.categoryId}
                       className="rounded-2xl border border-slate-200/90 bg-white p-4 space-y-3 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between"
                     >
-                      {/* Top: Icon + Tên lĩnh vực + LevelBadge */}
+                      {/* Top: Icon + Tên lĩnh vực + LevelBadge + Target Ceiling & Gap */}
                       <div className="flex items-start justify-between gap-2.5">
                         <div className="flex items-center gap-2.5 min-w-0">
                           <div
@@ -1188,14 +1275,31 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                             <Icon size={16} />
                           </div>
                           <div className="min-w-0">
-                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">{translateUi("Miền 0")}{detail.number}
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                              Miền 0{detail.number}
                             </span>
-                            <h5 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug truncate" title={translateUi(detail.name)}>
+                            <h5 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug truncate" title={detail.name}>
                               {detail.name}
                             </h5>
                           </div>
                         </div>
-                        <div className="shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {(detail as any).targetLevel != null && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                              Trần: Cấp {(detail as any).targetLevel}
+                            </span>
+                          )}
+                          {(detail as any).skillGap != null && (
+                            <span
+                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                                (detail as any).skillGap === 0
+                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                  : 'bg-amber-50 text-amber-800 border-amber-200'
+                              }`}
+                            >
+                              {(detail as any).skillGap === 0 ? '✓ Đạt' : `Thiếu ${(detail as any).skillGap} cấp`}
+                            </span>
+                          )}
                           <LevelBadge level={detail.level} />
                         </div>
                       </div>
@@ -1203,7 +1307,7 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                       {/* Middle: Thông tin Trắc nghiệm lý thuyết */}
                       <div className="rounded-xl bg-slate-50 border border-slate-100 p-2.5 space-y-1.5">
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-semibold text-slate-600">{translateUi("Trắc nghiệm lý thuyết:")}</span>
+                          <span className="font-semibold text-slate-600">Trắc nghiệm lý thuyết:</span>
                           <span className="font-bold text-slate-800">
                             {(detail.basicCorrect ?? 0) + (detail.intermediateCorrect ?? 0) + (detail.advancedCorrect ?? 0)}/
                             {(detail.basicTotal ?? 1) + (detail.intermediateTotal ?? 1) + (detail.advancedTotal ?? 1)} câu đúng
@@ -1216,7 +1320,8 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                                 ? 'bg-sky-50 text-sky-800 border-sky-200/80'
                                 : 'bg-slate-100 text-slate-500 border-slate-200'
                             }`}
-                          >{translateUi("Cơ bản: ")}{detail.basicCorrect}/{detail.basicTotal}
+                          >
+                            Cơ bản: {detail.basicCorrect}/{detail.basicTotal}
                           </span>
                           <span
                             className={`px-1.5 py-0.5 rounded-lg text-[10px] font-bold border ${
@@ -1224,7 +1329,8 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                                 ? 'bg-indigo-50 text-indigo-800 border-indigo-200/80'
                                 : 'bg-slate-100 text-slate-500 border-slate-200'
                             }`}
-                          >{translateUi("Trung cấp: ")}{detail.intermediateCorrect}/{detail.intermediateTotal}
+                          >
+                            Trung cấp: {detail.intermediateCorrect}/{detail.intermediateTotal}
                           </span>
                           <span
                             className={`px-1.5 py-0.5 rounded-lg text-[10px] font-bold border ${
@@ -1232,7 +1338,8 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                                 ? 'bg-emerald-50 text-emerald-800 border-emerald-200/80'
                                 : 'bg-slate-100 text-slate-500 border-slate-200'
                             }`}
-                          >{translateUi("Nâng cao: ")}{detail.advancedCorrect}/{detail.advancedTotal}
+                          >
+                            Nâng cao: {detail.advancedCorrect}/{detail.advancedTotal}
                           </span>
                         </div>
                       </div>
@@ -1241,7 +1348,7 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
                       {detail.recommendedCourse && (
                         <div className="flex items-center gap-2 text-xs font-semibold text-teal-900 bg-teal-50/70 border border-teal-200/80 px-3 py-2 rounded-xl">
                           <BookOpen size={14} className="text-teal-700 shrink-0" />
-                          <span className="truncate" title={translateUi(detail.recommendedCourse)}>
+                          <span className="truncate" title={detail.recommendedCourse}>
                             {detail.recommendedCourse}
                           </span>
                         </div>

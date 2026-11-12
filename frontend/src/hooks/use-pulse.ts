@@ -1,6 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { learningContentQueryOptions } from '@/lib/learning-content-query';
-import { pulseReviewService, pulseService, type PulseAnswer, type PulseDecision, type PulseSupportAction } from '../services/pulse.service';
+import {
+  mentorEnterpriseService,
+  pulseReviewService,
+  pulseService,
+  type PulseAnswer,
+  type PulseCriterionEvaluationInput,
+  type PulseDecision,
+  type PulseSupportAction,
+} from '../services/pulse.service';
 
 /** Query keys của trang nhân viên Pulse — mọi dữ liệu dưới ['pulse'] để làm mới cùng lúc sau mỗi thao tác. */
 export const PULSE_KEYS = {
@@ -13,7 +21,9 @@ export const PULSE_KEYS = {
   practice: ['pulse', 'practice'] as const,
   outcomes: ['pulse', 'outcomes'] as const,
   outcome: (outcomeId?: string) => ['pulse', 'outcomes', outcomeId] as const,
-  finalReviews: ['pulse', 'final-reviews'] as const,
+  finalReviews: (includeReviewed = false, organizationId?: string) =>
+    ['pulse', 'final-reviews', { includeReviewed, organizationId: organizationId ?? null }] as const,
+  mentorEnterprises: ['pulse', 'mentor-enterprises'] as const,
 };
 
 export function usePulseOverview() {
@@ -103,16 +113,74 @@ export function usePulseOutcome(outcomeId?: string) {
   });
 }
 
-/** Hàng chờ chấm bài của phòng ban (quản lý): bài đánh giá trước khi học và bài cuối khóa. */
-export function usePulseFinalReviews(enabled = true) {
-  return useQuery({ ...learningContentQueryOptions, queryKey: PULSE_KEYS.finalReviews, queryFn: () => pulseReviewService.getQueue().then((r) => r.data.data!), enabled });
+/** Danh sách doanh nghiệp được giao cho Mentor (dùng thử được phân công + doanh nghiệp chính thức). */
+export function useMentorEnterprises(enabled = true) {
+  return useQuery({
+    ...learningContentQueryOptions,
+    queryKey: PULSE_KEYS.mentorEnterprises,
+    queryFn: () => mentorEnterpriseService.list().then((r) => r.data.data!),
+    enabled,
+  });
+}
+
+/** Hàng chờ chấm bài cuối cấp (hoặc bài đánh giá đầu vào với quản lý). */
+export interface UsePulseFinalReviewsOptions {
+  enabled?: boolean;
+  includeReviewed?: boolean;
+  organizationId?: string;
+}
+
+export function usePulseFinalReviews(enabledOrOptions: boolean | UsePulseFinalReviewsOptions = true) {
+  const enabled = typeof enabledOrOptions === 'boolean' ? enabledOrOptions : (enabledOrOptions.enabled ?? true);
+  const includeReviewed = typeof enabledOrOptions === 'boolean' ? false : (enabledOrOptions.includeReviewed ?? false);
+  const organizationId = typeof enabledOrOptions === 'boolean' ? undefined : enabledOrOptions.organizationId;
+  return useQuery({
+    ...learningContentQueryOptions,
+    queryKey: PULSE_KEYS.finalReviews(includeReviewed, organizationId),
+    queryFn: () => pulseReviewService.getQueue(includeReviewed, organizationId).then((r) => r.data.data!),
+    enabled,
+  });
+}
+
+export function useRefreshPulseFinalAi() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      includeReviewed = true,
+      organizationId,
+      submissionId,
+    }: {
+      includeReviewed?: boolean;
+      organizationId?: string;
+      submissionId?: string;
+    }) =>
+      pulseReviewService
+        .getQueue(includeReviewed, organizationId, true, submissionId)
+        .then((r) => r.data.data!),
+    onSuccess: (freshQueue, { includeReviewed = true, organizationId }) => {
+      qc.setQueryData(PULSE_KEYS.finalReviews(includeReviewed, organizationId), freshQueue);
+    },
+  });
 }
 
 export function useDecidePulseFinal() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ submissionId, decision, reason }: { submissionId: string; decision: PulseDecision; reason: string }) =>
-      pulseReviewService.decide(submissionId, decision, reason).then((r) => r.data.data!),
+    mutationFn: ({
+      submissionId,
+      decision,
+      reason,
+      criterionEvaluations,
+    }: {
+      submissionId: string;
+      decision: PulseDecision;
+      reason: string;
+      criterionEvaluations?: PulseCriterionEvaluationInput[];
+    }) =>
+      (criterionEvaluations && criterionEvaluations.length > 0
+        ? pulseReviewService.decide(submissionId, decision, reason, criterionEvaluations)
+        : pulseReviewService.decide(submissionId, decision, reason)
+      ).then((r) => r.data.data!),
     onSuccess: () => qc.invalidateQueries({ queryKey: PULSE_KEYS.all }),
   });
 }
@@ -120,8 +188,21 @@ export function useDecidePulseFinal() {
 export function useDecidePulsePreAssessment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ preAssessmentId, decision, reason }: { preAssessmentId: string; decision: PulseDecision; reason: string }) =>
-      pulseReviewService.decidePreAssessment(preAssessmentId, decision, reason).then((r) => r.data.data!),
+    mutationFn: ({
+      preAssessmentId,
+      decision,
+      reason,
+      criterionEvaluations,
+    }: {
+      preAssessmentId: string;
+      decision: PulseDecision;
+      reason: string;
+      criterionEvaluations?: PulseCriterionEvaluationInput[];
+    }) =>
+      (criterionEvaluations && criterionEvaluations.length > 0
+        ? pulseReviewService.decidePreAssessment(preAssessmentId, decision, reason, criterionEvaluations)
+        : pulseReviewService.decidePreAssessment(preAssessmentId, decision, reason)
+      ).then((r) => r.data.data!),
     onSuccess: () => qc.invalidateQueries({ queryKey: PULSE_KEYS.all }),
   });
 }

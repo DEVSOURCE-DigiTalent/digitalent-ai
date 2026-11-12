@@ -57,4 +57,14 @@ public class TrialProgramController : ControllerBase
         var result = await useCase.ExecuteAsync(input);
         return Ok(ApiResponse<SubmitTrialRequestUseCaseOutput>.Ok(result));
     }
+
+    // POST api/v1/trial/publish — công bố bảng kết quả đánh giá cho nhân viên
+    [HttpPost("publish")]
+    [HasPermission(Permissions.Trial.Manage)]
+    public async Task<ActionResult<ApiResponse<PublishTrialReportUseCaseOutput>>> Publish(
+        [FromServices] IUseCase<PublishTrialReportUseCaseInput, PublishTrialReportUseCaseOutput> useCase)
+    {
+        var result = await useCase.ExecuteAsync(new PublishTrialReportUseCaseInput());
+        return Ok(ApiResponse<PublishTrialReportUseCaseOutput>.Ok(result, "Đã công bố kết quả cho nhân viên."));
+    }
 }

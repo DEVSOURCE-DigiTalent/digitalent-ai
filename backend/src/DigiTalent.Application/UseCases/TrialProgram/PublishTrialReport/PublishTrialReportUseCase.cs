@@ -22,7 +22,9 @@ public class PublishTrialReportUseCase : IUseCase<PublishTrialReportUseCaseInput
 
     public async Task<PublishTrialReportUseCaseOutput> ExecuteAsync(PublishTrialReportUseCaseInput input)
     {
-        var trial = await _reader.ForMentorAsync(input.OrganizationId);
+        var trial = input.OrganizationId == Guid.Empty
+            ? await _reader.ForOwnerAsync()
+            : await _reader.ForMentorAsync(input.OrganizationId);
         if (trial.ReportPublishedAt != null)
         {
             throw new ConflictException("Kết quả đã được công bố.");

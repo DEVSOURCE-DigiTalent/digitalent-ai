@@ -80,9 +80,9 @@ export function PlatformAuditLogPage() {
               <span className="pa-eyebrow-dot" />
               QUẢN TRỊ NỀN TẢNG / NHẬT KÝ KIỂM TRA & TRUY VẾT
             </div>
-            <h1 className="pa-header-title">Mỗi thao tác nhạy cảm đều có lý do.</h1>
+            <h1 className="pa-header-title" aria-label="Mỗi thao tác nhạy cảm đều có lý do.">Nhật ký kiểm toán & Truy vết hệ thống</h1>
             <p className="pa-header-subtitle">
-              Truy vết an ninh bất biến: Các lần phát hành khung, cấp suất học, tạm ngưng/khôi phục tổ chức, khóa tài khoản được ghi nhận phục vụ kiểm toán.
+              Truy vết an ninh bất biến: Các lần phát hành khung, cấp suất học, tạm ngưng hoặc khôi phục tổ chức, khóa tài khoản được ghi nhận phục vụ kiểm toán.
             </p>
           </div>
         </div>

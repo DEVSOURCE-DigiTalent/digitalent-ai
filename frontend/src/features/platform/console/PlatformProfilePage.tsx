@@ -42,7 +42,7 @@ export function PlatformProfilePage() {
             </div>
             <h1 className="pa-header-title">Hồ sơ cá nhân & Thiết lập hệ thống.</h1>
             <p className="pa-header-subtitle">
-              Quản lý định danh tài khoản quản trị tối cao, phạm vi phân quyền vận hành DigiTalent Pulse và các tùy chọn cá nhân.
+              Quản lý định danh tài khoản quản trị tối cao, phạm vi phân quyền vận hành DigiTalent AI và các tùy chọn cá nhân.
             </p>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>

@@ -643,7 +643,10 @@ public class PulseEmployeeFlowTests
         var queue = await manager.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput());
         var item = queue.Items.Single(i => i.Status == PulseFinalStatus.Pending);
         item.Kind.Should().Be(Statuses.ProctoringKind.Final);
-        item.AiHint!.Checks.Should().Equal(true, true, true);
+        item.Rubric.Should().HaveCount(4);
+        item.Rubric.Sum(r => r.WeightPercent).Should().Be(100);
+        item.Rubric.Count(r => r.IsRequired).Should().Be(1);
+        item.AiHint!.Checks.Should().Equal(true, true, true, true);
         item.DomainName.Should().Be(course.DomainName, "the queue names a domain like the employee pages, without the \"1. \" of the category");
         await manager.Decide.ExecuteAsync(new DecidePulseFinalUseCaseInput { SubmissionId = item.SubmissionId, Decision = Statuses.FinalSubmissionDecision.NotYet, Reason = CommentReason });
         world.Context.ChangeTracker.Clear();

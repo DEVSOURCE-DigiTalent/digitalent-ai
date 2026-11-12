@@ -68,9 +68,9 @@ export function PlatformReferencePositionsPage() {
           <span className="pa-eyebrow-dot" />
           QUẢN TRỊ NỀN TẢNG / MẪU VỊ TRÍ THAM CHIẾU
         </div>
-        <h1 className="pa-header-title">Mức năng lực tham chiếu theo vị trí.</h1>
+        <h1 className="pa-header-title">Mẫu vị trí chuẩn tham chiếu theo Thông tư 02</h1>
         <p className="pa-header-subtitle">
-          Quản lý 5 mẫu vị trí chuẩn hóa của DigiTalent: Giám đốc, Nhân sự, Marketing, Kinh doanh và Kế toán theo chuẩn 6 miền năng lực số.
+          Quản lý 5 mẫu vị trí chuẩn hóa: Giám đốc, Nhân sự, Marketing, Kinh doanh và Kế toán theo chuẩn 6 miền năng lực số.
         </p>
       </div>
 

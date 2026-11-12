@@ -38,6 +38,19 @@ export function AuthGuard({ children }: AuthGuardProps) {
       .finally(() => setIsLoading(false));
   }, [hasSession, user, setUser, clearUser]);
 
+  // Hỗ trợ chế độ xem trước (preview) các biến thể loading màn hình qua query param
+  const previewLoading = location.search.includes('loading=general')
+    ? ('default' as const)
+    : location.search.includes('loading=employee')
+    ? ('employee' as const)
+    : location.search.includes('loading=public')
+    ? ('public' as const)
+    : null;
+
+  if (previewLoading) {
+    return <AppLoadingScreen forceVariant={previewLoading} />;
+  }
+
   if (!hasSession) {
     return <Navigate to={getLoginPath(location.pathname, location.search)} replace />;
   }

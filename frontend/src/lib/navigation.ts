@@ -35,7 +35,10 @@ export function resolveNextStep(user: SessionUser | null | undefined): string {
   }
 
   if (resolved === WORKSPACES.PLATFORM || normalized.includes(ROLES.PLATFORM_ADMIN)) {
-    return normalized.includes(ROLES.MENTOR) && !normalized.includes(ROLES.PLATFORM_ADMIN) ? '/platform/reviews' : '/platform/dashboard';
+    return '/platform/dashboard';
+  }
+  if (resolved === WORKSPACES.MENTOR || normalized.includes(ROLES.MENTOR)) {
+    return '/mentor/enterprises';
   }
   if (resolved === WORKSPACES.PERSONAL) return '/personal/dashboard';
   if (normalized.includes(ROLES.OWNER)) return '/enterprise/dashboard';
@@ -64,7 +67,10 @@ export function getDashboardPath(user: SessionUser | null | undefined): string {
   const resolved = user.workspace ?? inferWorkspace(normalized);
 
   if (resolved === WORKSPACES.PLATFORM || normalized.includes(ROLES.PLATFORM_ADMIN)) {
-    return normalized.includes(ROLES.MENTOR) && !normalized.includes(ROLES.PLATFORM_ADMIN) ? '/platform/reviews' : '/platform/dashboard';
+    return '/platform/dashboard';
+  }
+  if (resolved === WORKSPACES.MENTOR || normalized.includes(ROLES.MENTOR)) {
+    return '/mentor/enterprises';
   }
   if (resolved === WORKSPACES.PERSONAL) return '/personal/dashboard';
   if (normalized.includes(ROLES.OWNER)) return isEnterpriseTrial(user) ? '/enterprise/trial' : '/enterprise/dashboard';

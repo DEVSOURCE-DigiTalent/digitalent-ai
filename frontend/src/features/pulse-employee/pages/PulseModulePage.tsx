@@ -1,14 +1,14 @@
-import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   AlertCircle,
-  ArrowDown,
   ArrowLeft,
   ArrowRight,
+  BookOpen,
   Check,
   CheckCircle2,
   ChevronRight,
+  Clock3,
   GraduationCap,
   Lightbulb,
   List,
@@ -16,6 +16,8 @@ import {
   Maximize2,
   MessageSquare,
   PlayCircle,
+  Sparkles,
+  Target,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -29,7 +31,6 @@ import type { PulseModuleDetail, PulseModuleQuiz, PulseQuizResult } from '@/serv
 import { LessonSlide } from '../components/LessonSlide';
 import { AskReviewerModal } from '../components/AskReviewerModal';
 import { LoadError, PageSkeleton, PuLink } from '../components/ui';
-import { btn } from '../lib/button';
 import { BLOCK_MESSAGES, levelName, pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 import '../pulse-lesson.css';
@@ -53,25 +54,24 @@ function toSentenceCase(str: string): string {
  * 5. Khối ôn tập Mini-quiz tuần tự mở khóa sau khi đọc xong
  */
 export function PulseModulePage() {
-  useUiLanguage();
   const { courseId, moduleId } = useParams<{ courseId: string; moduleId: string }>();
   const { data, isLoading, error, refetch } = usePulseModule(courseId, moduleId);
 
   if (isLoading) return <PageSkeleton blocks={[60, 520, 240]} />;
   if (error || !data) {
-    return <LoadError message={translateUi(pulseErrorMessage(error, 'Không mở được mô đun này.'))} onRetry={() => refetch()} />;
+    return <LoadError message={pulseErrorMessage(error, 'Không mở được mô đun này.')} onRetry={() => refetch()} />;
   }
 
   return <ModuleView key={data.module.moduleId} detail={data} />;
 }
 
 function ModuleView({ detail }: { detail: PulseModuleDetail }) {
-  useUiLanguage();
   const { course, module, slides } = detail;
   const courseId = course.courseId;
-  const [index, setIndex] = useState(0);
   const [focused, setFocused] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'reading' | 'quiz'>('reading');
+  const [forceRetake, setForceRetake] = useState(false);
   const markViewed = useMarkPulseModuleViewed();
   const markPage = useMarkPulsePageViewed();
   const marked = useRef(detail.viewed);
@@ -80,8 +80,6 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
   const reviewerName = overview?.reviewer?.name ?? 'Người hướng dẫn chuyên môn';
   const reviewerRole = overview?.reviewer?.role ?? 'Người đánh giá học tập';
   const canRecord = !detail.sample && course.canWork;
-  const slide = slides[index];
-  const isLast = index === slides.length - 1;
   const total = detail.modules.length;
   const passedCount = detail.modules.filter((m) => m.passed).length;
   const review = detail.review && !detail.review.done ? detail.review : null;
@@ -93,48 +91,50 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
     : detail.quizBlockReason === 'PREVIOUS_MODULE_REQUIRED'
     ? 'Cần đạt mô đun trước'
     : review
-    ? 'Xem lại trang trước khi làm lại'
+    ? 'Xem lại bài trước khi làm lại'
     : detail.viewed
-    ? 'Sẵn sàng làm câu hỏi ôn tập'
-    : 'Đang đọc nội dung bài giảng';
+    ? 'Sẵn sàng làm bài kiểm tra'
+    : 'Đang đọc nội dung bài học';
 
   const progressPct = Math.round(
     ((module.index + (detail.quizPassed ? 1 : 0)) / Math.max(1, total)) * 100
   );
 
-  // Chuyển tới một trang bài đọc
-  const goTo = (target: number) => {
-    if (target < 0 || target >= slides.length) return;
-    setIndex(target);
-    const page = slides[target];
-    if (!page || !canRecord || !review?.pages.some((p) => p.lessonId === page.lessonId && !p.done) || markPage.isPending) {
-      return;
-    }
-    markPage.mutate(
-      { courseId, moduleId: module.moduleId, lessonId: page.lessonId },
-      { onError: (err) => toast.error(pulseErrorMessage(err, 'Chưa ghi nhận được trang đã xem lại.')) },
-    );
-  };
-
-  const openPage = (target: number) => {
-    goTo(target);
-    playerRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
-  };
-
-  // Đọc tới trang cuối → ghi nhận đã xem (mở câu hỏi ôn tập)
+  // Tự động ghi nhận đã xem bài học của chương khi người học mở vào
   useEffect(() => {
-    if (!isLast || !canRecord || marked.current) return;
+    if (!canRecord || marked.current) return;
     marked.current = true;
     markViewed.mutate(
       { courseId, moduleId: module.moduleId },
       {
-        onError: (err) => {
+        onError: () => {
           marked.current = false;
-          toast.error(pulseErrorMessage(err, 'Chưa lưu được tiến độ đọc.'));
         },
       },
     );
-  }, [isLast, canRecord, courseId, module.moduleId, markViewed]);
+  }, [canRecord, courseId, module.moduleId, markViewed]);
+
+  const scrollToPart = (partNum: number) => {
+    const el = document.getElementById(`chapter-part-${partNum}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleReviewOpenPart = (partIndex: number) => {
+    setViewMode('reading');
+    setForceRetake(false);
+    setTimeout(() => {
+      scrollToPart(partIndex + 1);
+    }, 100);
+    const page = slides[partIndex];
+    if (page && canRecord && review?.pages.some((p) => p.lessonId === page.lessonId && !p.done) && !markPage.isPending) {
+      markPage.mutate(
+        { courseId, moduleId: module.moduleId, lessonId: page.lessonId },
+        { onError: (err) => toast.error(pulseErrorMessage(err, 'Chưa ghi nhận được phần đã xem lại.')) },
+      );
+    }
+  };
 
   const formattedModuleTitle = toSentenceCase(module.title);
 
@@ -143,17 +143,17 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
       {/* ── 1. Header Canvas & Thanh tiến độ mini ───────────────────────── */}
       <header className="pu-m-header-block">
         <div className="pu-m-header-top">
-          <nav className="pu-m-breadcrumb" aria-label={translateUi("Điều hướng")}>
+          <nav className="pu-m-breadcrumb" aria-label="Điều hướng">
             <Link to={PULSE_PATHS.path} className="pu-m-back-link">
               <ArrowLeft size={14} />
-              <span>{translateUi("Lộ trình năng lực")}</span>
+              <span>Lộ trình năng lực</span>
             </Link>
             <ChevronRight size={13} className="pu-m-bc-separator" aria-hidden />
             <Link to={PULSE_PATHS.course(courseId)} className="pu-m-bc-course">
               {toSentenceCase(course.title)}
             </Link>
             <ChevronRight size={13} className="pu-m-bc-separator" aria-hidden />
-            <span className="pu-m-bc-tag">{translateUi(course.domainName)} · Cấp {course.tier}</span>
+            <span className="pu-m-bc-tag">{course.domainName} · Cấp {course.tier}</span>
           </nav>
         </div>
 
@@ -185,7 +185,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
         <nav className="pu-module-nav" aria-label="Đề cương các mô-đun trong khóa học">
           <div className="pu-nav-head">
             <span>Đề cương khóa học</span>
-            <span className="pu-nav-count">{passedCount}/{total}{translateUi(" đã đạt")}</span>
+            <span className="pu-nav-count">{passedCount}/{total} đã đạt</span>
           </div>
 
           <div className="pu-nav-list">
@@ -245,7 +245,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                 <GraduationCap size={16} />
               </div>
               <div className="pu-nav-final-info">
-                <strong>Kỳ thi cuối khóa</strong>
+                <strong>Đánh giá cuối khóa</strong>
                 <small>Giám sát trực tuyến · 3 tiêu chí</small>
               </div>
             </div>
@@ -255,194 +255,271 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
           </div>
         </nav>
 
-        {/* Khu vực Trình đọc Bài giảng Chính */}
+        {/* Khu vực Trình đọc Bài giảng & Làm bài kiểm tra */}
         <main className="pu-module-main">
-          {/* Tiêu đề Mô-đun Canvas */}
-          <div className="pu-module-title-strip">
-            <div className="pu-eyebrow-row">
-              <span className="pu-eyebrow-pill">{translateUi(course.domainName)}</span>
-              <span className="pu-eyebrow-dot">·</span>
-              <span className="pu-eyebrow-tier">{translateUi("Cấp độ ")}{levelName(course.tier)}</span>
-              {detail.sample && <span className="pu-eyebrow-sample">Trang mẫu</span>}
-            </div>
-
-            <h1 className="pu-module-heading">{formattedModuleTitle}</h1>
-            {module.description && <p className="pu-module-desc">{translateUi(module.description)}</p>}
-          </div>
-
-          {slide ? (
-            <div
-              className="pu-lesson-player"
-              aria-label="Trang nội dung của mô đun"
-              ref={playerRef}
-              tabIndex={0}
-              onKeyDown={(event) => {
-                if (event.target !== event.currentTarget || event.altKey || event.ctrlKey || event.metaKey) return;
-                if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-                  event.preventDefault();
-                  goTo(index + (event.key === 'ArrowRight' ? 1 : -1));
-                }
-              }}
-            >
-              {/* Thanh công cụ đầu bài đọc */}
-              <div className="pu-lesson-toolbar">
-                <div className="pu-toolbar-left">
-                  <span className="pu-lesson-live-dot" />
-                  <span>Bài học trực tuyến</span>
-                </div>
-
-                <div className="pu-lesson-toolbar-actions">
-                  <button
-                    type="button"
-                    className="pu-ask-reviewer-btn"
-                    onClick={() => setAskOpen(true)}
-                    title="Gửi câu hỏi nghiệp vụ tới người hướng dẫn"
-                  >
-                    <MessageSquare size={13} />
-                    <span>Hỏi người hướng dẫn</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="pu-focus-btn"
-                    onClick={() => setFocused(!focused)}
-                    aria-pressed={focused}
-                    title={translateUi(focused ? 'Mở lại mục lục khóa học' : 'Ẩn mục lục để tập trung đọc')}
-                  >
-                    {focused ? <List size={13} /> : <Maximize2 size={13} />}
-                    <span>{focused ? 'Hiện mục lục' : 'Tập trung đọc'}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Nội dung Slide bài giảng */}
-              <LessonSlide
-                key={slide.lessonId}
-                slide={slide}
-                courseCode={course.code}
-                moduleIndex={module.index}
-                index={index}
-                count={slides.length}
-              />
-
-              {/* Thanh điều hướng phân trang cố định dưới chân bài */}
-              <div className="pu-lesson-nav-bar">
-                <div className="pu-nav-bar-left">
-                  <button
-                    type="button"
-                    className="pu-nav-action-btn prev"
-                    onClick={() => openPage(index - 1)}
-                    disabled={index === 0}
-                    aria-label={translateUi("Trang trước")}
-                  >
-                    <ArrowLeft size={14} />
-                    <span>{translateUi("Trang trước")}</span>
-                  </button>
-                </div>
-
-                <div className="pu-nav-center-group">
-                  <span className="pu-nav-page-indicator">{translateUi("Trang ")}{pad2(index + 1)} / {pad2(slides.length)}
-                  </span>
-
-                  <nav className="pu-nav-pills" aria-label="Chọn nhanh trang bài học">
-                    {slides.map((page, pageIndex) => (
-                      <button
-                        key={page.lessonId}
-                        type="button"
-                        onClick={() => openPage(pageIndex)}
-                        className={`pu-nav-pill-btn ${pageIndex === index ? 'active' : ''}`}
-                        aria-current={pageIndex === index ? 'step' : undefined}
-                        aria-label={translateUi(`Trang ${pad2(pageIndex + 1)}: ${page.title}`)}
-                        title={translateUi(page.title)}
-                      >
-                        {pad2(pageIndex + 1)}
-                      </button>
-                    ))}
-                  </nav>
-                </div>
-
-                <div className="pu-nav-bar-right">
-                  {isLast ? (
-                    <button
-                      type="button"
-                      className="pu-nav-action-btn next quiz-cta"
-                      onClick={() => {
-                        document.getElementById('pu-module-quiz')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }}
-                    >
-                      <span>Làm bài ôn tập ({detail.quiz?.questions.length ?? 2} câu)</span>
-                      <ArrowDown size={14} />
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="pu-nav-action-btn next"
-                      onClick={() => openPage(index + 1)}
-                      aria-label="Trang tiếp theo"
-                    >
-                      <span>Trang tiếp theo</span>
-                      <ArrowRight size={14} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="pu-quiz-locked-card">
-              <AlertCircle size={20} className="text-amber-500" />
-              <p>Mô đun này hiện chưa có trang bài giảng.</p>
-            </div>
-          )}
-
-          {/* Gợi ý áp dụng cho vị trí nhân sự */}
-          <div className="pu-reflection-box">
-            <div className="pu-reflection-head">
-              <span className="pu-reflection-badge">
-                <Lightbulb size={13} className="inline mr-1 text-amber-600" />
-                Gợi ý áp dụng thực tế
-              </span>
-              <span className="pu-reflection-target">
-                Vị trí: {overview?.person.positionName ?? 'Chuyên viên Kế toán tài chính'}
-              </span>
-            </div>
-            <p>
-              Hãy liên hệ một nghiệp vụ thực tế trong công việc hàng ngày mà bạn có thể áp dụng ngay kiến thức của bài học này (chuẩn hóa định dạng, trích dẫn nguồn và kiểm chứng minh chứng). Đây sẽ là tư liệu hữu ích cho bài thi đánh giá cuối khóa.
-            </p>
-          </div>
-
-          {/* Khu vực Ôn tập Mini-quiz */}
-          <div id="pu-module-quiz" className="pu-lesson-quiz-anchor">
-            {!isLast && !detail.quizPassed && !detail.review ? (
-              <div className="pu-quiz-locked-card">
-                <div className="pu-quiz-locked-left">
-                  <div className="pu-quiz-lock-icon">
-                    <Lock size={18} />
-                  </div>
-                  <div>
-                    <h4>Câu hỏi ôn tập mô-đun {pad2(module.index + 1)} ({detail.quiz?.questions.length ?? 2} câu trắc nghiệm)</h4>
-                    <p>
-                      Vui lòng đọc tuần tự các trang bài giảng (Đang ở trang {pad2(index + 1)} / {pad2(slides.length)}) để mở khóa bài kiểm tra kiến thức cuối mô-đun.
-                    </p>
-                  </div>
-                </div>
+          {viewMode === 'quiz' ? (
+            <div className="pu-dedicated-quiz-page">
+              <div className="pu-quiz-screen-header">
                 <button
                   type="button"
-                  className="pu-quiz-unlock-step-btn"
-                  onClick={() => openPage(slides.length - 1)}
+                  className="pu-quiz-back-btn"
+                  onClick={() => {
+                    setViewMode('reading');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                 >
-                  Đến trang {pad2(slides.length)} để mở khóa →
+                  <ArrowLeft size={14} />
+                  <span>← Quay lại bài đọc của chương</span>
                 </button>
+                <span className="pu-quiz-screen-module-title">
+                  Mô-đun {pad2(module.index + 1)}: {formattedModuleTitle}
+                </span>
               </div>
-            ) : (
+
               <QuizArea
                 detail={detail}
-                viewed={detail.viewed || (markViewed.isSuccess && canRecord)}
-                reachedEnd={isLast}
-                onOpenPage={openPage}
+                viewed={true}
+                forceRetake={forceRetake}
+                onRetake={() => setForceRetake(true)}
+                onOpenPart={handleReviewOpenPart}
                 opening={markPage.isPending}
+                onBackToLesson={() => {
+                  setViewMode('reading');
+                  setForceRetake(false);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
               />
-            )}
-          </div>
+            </div>
+          ) : (
+            <>
+              {/* Tiêu đề Mô-đun Canvas */}
+              <div className="pu-module-title-strip">
+                <div className="pu-eyebrow-row">
+                  <span className="pu-eyebrow-pill">{course.domainName}</span>
+                  <span className="pu-eyebrow-dot">·</span>
+                  <span className="pu-eyebrow-tier">Cấp độ {levelName(course.tier)}</span>
+                  {detail.sample && <span className="pu-eyebrow-sample">Trang mẫu</span>}
+                </div>
+
+                <h1 className="pu-module-heading">{formattedModuleTitle}</h1>
+                {module.description && <p className="pu-module-desc">{module.description}</p>}
+              </div>
+
+              {slides.length > 0 ? (
+                <div
+                  className="pu-lesson-player"
+                  aria-label="Toàn bộ giáo trình mô đun"
+                  ref={playerRef}
+                >
+                  {/* Thanh công cụ đầu bài đọc */}
+                  <div className="pu-lesson-toolbar">
+                    <div className="pu-toolbar-left">
+                      <span className="pu-lesson-live-dot" />
+                      <span>Bài học trực tuyến</span>
+                      <span className="pu-tb-dot" style={{ margin: '0 6px', color: '#cbd5e1' }}>·</span>
+                      <span className="pu-tb-sub" style={{ color: '#64748b', fontWeight: 500 }}>
+                        Giáo trình chuẩn hóa {slides.length} phần liên tục
+                      </span>
+                    </div>
+
+                    <div className="pu-lesson-toolbar-actions">
+                      <button
+                        type="button"
+                        className="pu-ask-reviewer-btn"
+                        onClick={() => setAskOpen(true)}
+                        title="Gửi câu hỏi nghiệp vụ tới người hướng dẫn"
+                      >
+                        <MessageSquare size={13} />
+                        <span>Hỏi người hướng dẫn</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="pu-focus-btn"
+                        onClick={() => setFocused(!focused)}
+                        aria-pressed={focused}
+                        title={focused ? 'Mở lại mục lục khóa học' : 'Ẩn mục lục để tập trung đọc'}
+                      >
+                        {focused ? <List size={13} /> : <Maximize2 size={13} />}
+                        <span>{focused ? 'Hiện mục lục' : 'Tập trung đọc'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Thanh mục lục nhảy nhanh các phần của chương */}
+                  <nav className="pu-chapter-anchors-bar" aria-label="Mục lục các phần trong chương">
+                    <div className="pu-cab-left">
+                      <BookOpen size={14} className="text-blue-700" />
+                      <span className="pu-cab-label">Nội dung chương:</span>
+                    </div>
+
+                    <div className="pu-cab-links">
+                      {slides.map((s, sIdx) => {
+                        const titleShort =
+                          sIdx === 0
+                            ? '01. Lý thuyết & Quy chuẩn'
+                            : sIdx === 1
+                            ? '02. Tình huống thực tế'
+                            : '03. Cẩm nang tác nghiệp';
+                        return (
+                          <button
+                            key={s.lessonId}
+                            type="button"
+                            className="pu-cab-anchor-btn"
+                            onClick={() => scrollToPart(sIdx + 1)}
+                            title={s.title}
+                          >
+                            <span className="pu-cab-pill-num">{pad2(sIdx + 1)}</span>
+                            <span>{titleShort}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="pu-cab-quiz-jump-btn"
+                      onClick={() => {
+                        setViewMode('quiz');
+                        setForceRetake(true);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      <Target size={13} />
+                      <span>Bài kiểm tra ({detail.quiz?.questions.length ?? 3} câu) →</span>
+                    </button>
+                  </nav>
+
+                  {/* Luồng đọc liên tục toàn bộ các phần của chương (Không phân trang) */}
+                  <div className="pu-chapter-reading-flow">
+                    {slides.map((s, sIdx) => (
+                      <div
+                        key={s.lessonId}
+                        id={`chapter-part-${sIdx + 1}`}
+                        className="pu-chapter-part-block"
+                      >
+                        {sIdx > 0 && (
+                          <div className="pu-part-divider-strip" aria-hidden="true">
+                            <span className="pu-pds-line" />
+                            <span className="pu-pds-badge">
+                              {sIdx === 1
+                                ? 'Phần 02 · Nghiên cứu tình huống thực tế (Case study)'
+                                : 'Phần 03 · Cẩm nang tác nghiệp & Tiêu chuẩn bàn giao (Job Aid)'}
+                            </span>
+                            <span className="pu-pds-line" />
+                          </div>
+                        )}
+                        <LessonSlide
+                          slide={s}
+                          courseCode={course.code}
+                          moduleIndex={module.index}
+                          index={sIdx}
+                          count={slides.length}
+                          hideMedia={sIdx > 0}
+                          partNumber={sIdx + 1}
+                          partTitle={
+                            sIdx === 0
+                              ? 'Phần 01 · Lý thuyết nền tảng & Quy chuẩn số'
+                              : sIdx === 1
+                              ? 'Phần 02 · Nghiên cứu tình huống thực tế (Case study)'
+                              : 'Phần 03 · Cẩm nang tác nghiệp & Tiêu chuẩn bàn giao'
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Banner hoàn thành hoặc nút chuyển tiếp sang làm bài trắc nghiệm cuối chương */}
+                  {detail.quizPassed ? (
+                    <div className="pu-module-completion-card">
+                      <div className="pu-mcc-left">
+                        <CheckCircle2 size={24} className="text-emerald-600 flex-shrink-0" />
+                        <div>
+                          <h4>Mô-đun {pad2(module.index + 1)} đã hoàn thành!</h4>
+                          <p>Bạn đã hoàn thành nội dung giáo trình và đạt bài kiểm tra củng cố năng lực.</p>
+                        </div>
+                      </div>
+                      <div className="pu-mcc-actions">
+                        <button
+                          type="button"
+                          className="pu-btn-outline small"
+                          onClick={() => {
+                            setViewMode('quiz');
+                            setForceRetake(true);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                        >
+                          Làm lại bài kiểm tra
+                        </button>
+                        {detail.nextModuleId ? (
+                          <Link
+                            to={PULSE_PATHS.module(courseId, detail.nextModuleId)}
+                            className="pu-btn-primary small"
+                          >
+                            Học mô-đun tiếp theo →
+                          </Link>
+                        ) : (
+                          <Link
+                            to={PULSE_PATHS.final(courseId)}
+                            className="pu-btn-primary small"
+                          >
+                            Đến bài đánh giá cuối khóa →
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="pu-module-ready-quiz-banner">
+                      <div className="pu-mrqb-left">
+                        <div className="pu-mrqb-icon-wrap">
+                          <Target size={22} className="text-blue-700" />
+                        </div>
+                        <div>
+                          <h4>Hoàn thành nội dung giáo trình chương {pad2(module.index + 1)}</h4>
+                          <p>
+                            Bạn đã nghiên cứu toàn bộ lý thuyết, tình huống thực tế và cẩm nang tác nghiệp. Hãy làm bài kiểm tra gồm {detail.quiz?.questions.length ?? 3} câu trắc nghiệm để hoàn tất mô-đun và mở khóa bài tiếp theo.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="pu-mrqb-btn"
+                        onClick={() => {
+                          setViewMode('quiz');
+                          setForceRetake(true);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                      >
+                        <span>Bắt đầu bài kiểm tra ({detail.quiz?.questions.length ?? 3} câu trắc nghiệm)</span>
+                        <ArrowRight size={15} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="pu-quiz-locked-card">
+                  <AlertCircle size={20} className="text-amber-500" />
+                  <p>Mô đun này hiện chưa có nội dung bài học.</p>
+                </div>
+              )}
+
+              {/* Gợi ý áp dụng cho vị trí nhân sự */}
+              <div className="pu-reflection-box">
+                <div className="pu-reflection-head">
+                  <span className="pu-reflection-badge">
+                    <Lightbulb size={13} className="inline mr-1 text-amber-600" />
+                    Gợi ý áp dụng thực tế
+                  </span>
+                  <span className="pu-reflection-target">
+                    Vị trí: {overview?.person.positionName ?? 'Chuyên viên Kế toán tài chính'}
+                  </span>
+                </div>
+                <p>
+                  Hãy liên hệ một nghiệp vụ thực tế trong công việc hàng ngày mà bạn có thể áp dụng ngay kiến thức của bài học này (chuẩn hóa định dạng, trích dẫn nguồn và kiểm chứng minh chứng). Đây sẽ là tư liệu hữu ích cho bài đánh giá năng lực cuối khóa.
+                </p>
+              </div>
+            </>
+          )}
         </main>
       </div>
 
@@ -455,8 +532,8 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
         courseCode={course.code}
         courseTitle={course.title}
         moduleTitle={module.title}
-        slideIndex={index}
-        slideTitle={slide?.title}
+        slideIndex={0}
+        slideTitle={slides[0]?.title}
       />
     </div>
   );
@@ -465,45 +542,69 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
 interface QuizAreaProps {
   detail: PulseModuleDetail;
   viewed: boolean;
-  reachedEnd: boolean;
-  onOpenPage: (index: number) => void;
+  reachedEnd?: boolean;
+  onOpenPart?: (partIndex: number) => void;
   opening: boolean;
+  onBackToLesson?: () => void;
+  forceRetake?: boolean;
+  onRetake?: () => void;
 }
 
-function QuizArea({ detail, viewed, reachedEnd, onOpenPage, opening }: QuizAreaProps) {
-  useUiLanguage();
+function QuizArea({ detail, viewed, reachedEnd, onOpenPart, opening, onBackToLesson, forceRetake, onRetake }: QuizAreaProps) {
   const { course } = detail;
   const nextPath = detail.nextModuleId
     ? PULSE_PATHS.module(course.courseId, detail.nextModuleId)
     : PULSE_PATHS.final(course.courseId);
-  const nextLabel = detail.nextModuleId ? 'Học mô-đun tiếp theo →' : 'Đến bài thi cuối khóa →';
+  const nextLabel = detail.nextModuleId ? 'Học mô-đun tiếp theo →' : 'Đến bài đánh giá cuối khóa →';
 
-  if (detail.quizPassed || (!detail.quiz && !detail.quizBlockReason && viewed && !detail.sample && course.canWork)) {
+  if (!forceRetake && (detail.quizPassed || (!detail.quiz && !detail.quizBlockReason && viewed && !detail.sample && course.canWork))) {
     const score = detail.lastQuiz;
     return (
-      <div className="pu-passed">
-        <span aria-hidden>
-          <CheckCircle2 size={24} className="text-emerald-700" />
-        </span>
-        <div>
-          <strong>
+      <section className="pu-quiz-passed-view" aria-labelledby="pu-quiz-passed-title">
+        <div className="pu-qpv-card">
+          <div className="pu-qpv-badge">
+            <CheckCircle2 size={15} className="text-emerald-700" />
+            <span>Mô-đun {pad2(detail.module.index + 1)} · Đạt chuẩn năng lực</span>
+          </div>
+          <h2 id="pu-quiz-passed-title" className="pu-qpv-title">
+            Hoàn thành xuất sắc bài kiểm tra!
+          </h2>
+          <p className="pu-qpv-desc">
             {detail.quiz || score
-              ? translateUi(`Đã đạt câu hỏi ôn tập${score ? ` (đúng ${score.score}/${score.total} câu)` : ''}`)
-              : 'Đã hoàn thành nội dung bài học'}
-          </strong>
-          <p>
-            Tiến độ đã được lưu thành công. {detail.nextModuleId ? 'Mô đun tiếp theo đã sẵn sàng.' : 'Bạn đã sẵn sàng cho bài thi cuối khóa.'}
+              ? `Bạn đã đạt bài kiểm tra củng cố${score ? ` (đúng ${score.score}/${score.total} câu)` : ''}. Tiến độ học tập đã được lưu thành công.`
+              : 'Bạn đã hoàn thành nội dung bài học này. Tiến độ đã được lưu thành công.'}
           </p>
+
+          <div className="pu-qpv-actions">
+            {onBackToLesson && (
+              <button
+                type="button"
+                className="pu-btn-outline"
+                onClick={onBackToLesson}
+              >
+                ← Xem lại bài học
+              </button>
+            )}
+            {detail.quiz && onRetake && (
+              <button
+                type="button"
+                className="pu-btn-outline"
+                onClick={onRetake}
+              >
+                Luyện tập lại đề trắc nghiệm
+              </button>
+            )}
+            <Link to={nextPath} className="pu-btn-primary">
+              {nextLabel}
+            </Link>
+          </div>
         </div>
-        <PuLink to={nextPath} small>
-          {nextLabel}
-        </PuLink>
-      </div>
+      </section>
     );
   }
 
   if (detail.review && !detail.review.done) {
-    return <ReviewPanel detail={detail} onOpenPage={onOpenPage} opening={opening} />;
+    return <ReviewPanel detail={detail} onOpenPart={onOpenPart} opening={opening} onBackToLesson={onBackToLesson} />;
   }
 
   if (detail.sample || detail.quizBlockReason || !detail.quiz) {
@@ -533,65 +634,89 @@ function QuizArea({ detail, viewed, reachedEnd, onOpenPage, opening }: QuizAreaP
       detail={detail}
       quiz={detail.quiz}
       viewed={viewed}
-      reachedEnd={reachedEnd}
+      reachedEnd={reachedEnd ?? true}
+      onBackToLesson={onBackToLesson}
     />
   );
 }
 
 function ReviewPanel({
   detail,
-  onOpenPage,
+  onOpenPart,
   opening,
+  onBackToLesson,
 }: {
   detail: PulseModuleDetail;
-  onOpenPage: (index: number) => void;
+  onOpenPart?: (partIndex: number) => void;
   opening: boolean;
+  onBackToLesson?: () => void;
 }) {
-  useUiLanguage();
   const review = detail.review!;
   const last = detail.lastQuiz;
   return (
-    <section className="pu-quiz" aria-labelledby="pu-quiz-title">
-      <h2 id="pu-quiz-title">Xem lại nội dung trước lần làm thứ {review.attemptNo + 1}</h2>
-      <div className="pu-quiz-feedback" role="status">
-        Lần làm thứ {review.attemptNo}{translateUi(" chưa đạt")}{last ? translateUi(` (đúng ${last.score}/${last.total} câu)`) : ''}. Vui lòng mở lại các trang nội dung chưa đúng bên dưới để củng cố kiến thức. Lần làm tiếp theo sẽ là một bộ câu hỏi khác.
+    <section className="pu-quiz-card" aria-labelledby="pu-quiz-title">
+      <div className="pu-quiz-card-header">
+        <div className="pu-quiz-header-badge" style={{ background: '#fef3c7', borderColor: '#fde68a', color: '#b45309' }}>
+          <AlertCircle size={13} className="text-amber-700" />
+          <span>Cần ôn tập trước lần làm thứ {review.attemptNo + 1}</span>
+        </div>
+        <h2 id="pu-quiz-title" className="pu-quiz-main-title">
+          Xem lại nội dung cần củng cố
+        </h2>
+        <div className="pu-quiz-feedback-box failed" role="status">
+          <AlertCircle size={18} className="text-rose-600 flex-shrink-0" />
+          <div>
+            <strong>Lần làm thứ {review.attemptNo} chưa đạt{last ? ` (đúng ${last.score}/${last.total} câu)` : ''}</strong>
+            <p>
+              Vui lòng xem lại các phần nội dung dưới đây để nắm chắc kiến thức trước khi làm lại với bộ câu hỏi mới.
+            </p>
+          </div>
+        </div>
       </div>
-      <ul className="pu-review-pages" aria-label="Trang cần xem lại" style={{ listStyle: 'none', padding: 0 }}>
+
+      <div className="pu-review-pages-list" style={{ display: 'flex', flexDirection: 'column', gap: 10, margin: '20px 0' }}>
         {review.pages.map((page) => (
-          <li
+          <div
             key={page.lessonId}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '10px 14px',
-              borderRadius: 8,
+              padding: '12px 16px',
+              background: '#f8fafc',
               border: '1px solid #e2e8f0',
-              marginBottom: 8,
-              background: page.done ? '#f0fdf4' : '#ffffff',
+              borderRadius: 10,
             }}
           >
-            <span>
-              <b style={{ marginRight: 8 }}>{translateUi("Trang ")}{pad2(page.index + 1)}:</b>
-              {translateUi(page.title)}
-            </span>
+            <div>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#1e40af', display: 'block' }}>
+                Phần {pad2(page.index + 1)}
+              </span>
+              <strong style={{ fontSize: 14, color: '#0f172a' }}>{page.title}</strong>
+            </div>
             {page.done ? (
-              <small style={{ color: '#166534', fontWeight: 600 }}>
-                <Check size={14} style={{ display: 'inline', marginRight: 4 }} /> Đã xem lại
-              </small>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#16a34a', fontSize: 13, fontWeight: 600 }}>
+                <CheckCircle2 size={16} /> Đã xem lại
+              </span>
             ) : (
               <button
                 type="button"
-                className={btn('outline', true)}
-                onClick={() => onOpenPage(page.index)}
+                className="pu-btn-outline small"
+                onClick={() => onOpenPart?.(page.index)}
                 disabled={opening}
               >
-                Mở lại trang {pad2(page.index + 1)} →
+                Xem lại phần này →
               </button>
             )}
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
+
+      {onBackToLesson && (
+        <button type="button" className="pu-btn-outline" onClick={onBackToLesson}>
+          ← Quay lại bài học
+        </button>
+      )}
     </section>
   );
 }
@@ -601,13 +726,14 @@ function QuizForm({
   quiz,
   viewed,
   reachedEnd,
+  onBackToLesson,
 }: {
   detail: PulseModuleDetail;
   quiz: PulseModuleQuiz;
   viewed: boolean;
   reachedEnd: boolean;
+  onBackToLesson?: () => void;
 }) {
-  useUiLanguage();
   const { course, module } = detail;
   const submit = useSubmitPulseModuleQuiz();
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -630,8 +756,8 @@ function QuizForm({
           if (res.passed) {
             toast.success(
               res.allModulesPassed
-                ? 'Đã hoàn thành mọi mô đun! Bài thi cuối khóa đã sẵn sàng.'
-                : 'Đạt câu hỏi ôn tập! Mô đun tiếp theo đã mở.',
+                ? 'Đã hoàn thành mọi mô đun! Bài đánh giá cuối khóa đã sẵn sàng.'
+                : 'Đạt câu hỏi kiểm tra! Mô đun tiếp theo đã mở.',
             );
           }
         },
@@ -640,62 +766,185 @@ function QuizForm({
     );
   };
 
+  const nextPath = detail.nextModuleId
+    ? PULSE_PATHS.module(course.courseId, detail.nextModuleId)
+    : PULSE_PATHS.final(course.courseId);
+  const nextLabel = detail.nextModuleId ? 'Học mô-đun tiếp theo →' : 'Đến bài đánh giá cuối khóa →';
+
+  // Khi đã submit và đạt
+  if (result?.passed) {
+    return (
+      <section className="pu-quiz-passed-view" aria-labelledby="pu-quiz-passed-title">
+        <div className="pu-qpv-card">
+          <div className="pu-qpv-badge">
+            <CheckCircle2 size={15} className="text-emerald-700" />
+            <span>Mô-đun {pad2(module.index + 1)} · Đạt chuẩn năng lực</span>
+          </div>
+          <h2 id="pu-quiz-passed-title" className="pu-qpv-title">
+            Hoàn thành xuất sắc bài kiểm tra!
+          </h2>
+          <p className="pu-qpv-desc">
+            Bạn đã trả lời đúng {result.score}/{result.total} câu hỏi. Kết quả đã được ghi nhận tự động vào lộ trình học tập của bạn.
+          </p>
+
+          <div className="pu-qpv-actions">
+            {onBackToLesson && (
+              <button
+                type="button"
+                className="pu-btn-outline"
+                onClick={onBackToLesson}
+              >
+                ← Xem lại bài học
+              </button>
+            )}
+            <Link to={nextPath} className="pu-btn-primary">
+              {nextLabel}
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
+
   return (
-    <section className="pu-quiz" aria-labelledby="pu-quiz-title">
-      <h2 id="pu-quiz-title">Câu hỏi ôn tập mô-đun {pad2(module.index + 1)}</h2>
-      {module.quizBankQuestionCount != null && (
-        <p>
-          Lượt thi này gồm {questions.length} câu được chọn ngẫu nhiên từ ngân hàng {module.quizBankQuestionCount} câu hỏi của mô-đun.
+    <section className="pu-quiz-card" aria-labelledby="pu-quiz-title">
+      <div className="pu-quiz-card-header">
+        <div className="pu-quiz-header-badge">
+          <Sparkles size={13} className="text-blue-700" />
+          <span>Câu hỏi kiểm tra mô-đun {pad2(module.index + 1)}</span>
+        </div>
+        <h2 id="pu-quiz-title" className="pu-quiz-main-title">
+          Kiểm tra củng cố: {toSentenceCase(module.title)}
+        </h2>
+
+        <div className="pu-quiz-meta-chips">
+          <span className="pu-quiz-chip">
+            <BookOpen size={13} className="text-blue-700" />
+            {questions.length} câu trắc nghiệm ngẫu nhiên
+          </span>
+          <span className="pu-quiz-chip highlight">
+            <Target size={13} className="text-emerald-700" />
+            Yêu cầu: Đúng {questions.length}/{questions.length} câu
+          </span>
+          <span className="pu-quiz-chip">
+            <Clock3 size={13} className="text-slate-500" />
+            Không giới hạn lượt làm
+          </span>
+        </div>
+
+        <p className="pu-quiz-lead-text">
+          Lượt kiểm tra này gồm {questions.length} câu được chọn ngẫu nhiên từ ngân hàng câu hỏi của mô-đun.
+          Trả lời đúng tất cả {questions.length} câu để hoàn thành mô-đun. Nếu chưa đạt, bạn có thể xem lại bài học và làm lại với bộ câu hỏi mới.
         </p>
-      )}
-      <p>
-        Trả lời đúng tất cả {questions.length} câu để hoàn thành mô-đun. Nếu chưa đạt, bạn có thể xem lại trang bài giảng và làm lại với bộ câu hỏi mới.
-      </p>
+      </div>
 
       {!viewed ? (
-        <p style={{ color: '#64748b', fontSize: 13.5 }}>
-          {reachedEnd ? 'Đang lưu tiến độ đọc bài giảng…' : 'Vui lòng đọc hết các trang nội dung để mở câu hỏi ôn tập.'}
-        </p>
+        <div className="pu-quiz-waiting-view" style={{ padding: '20px 0', textAlign: 'center' }}>
+          <p style={{ color: '#64748b', fontSize: 14 }}>
+            {reachedEnd ? 'Đang lưu tiến độ học tập…' : 'Vui lòng đọc hết các trang nội dung để mở câu hỏi kiểm tra.'}
+          </p>
+          {onBackToLesson && (
+            <button type="button" className="pu-btn-outline" onClick={onBackToLesson} style={{ marginTop: 12 }}>
+              ← Quay lại đọc nội dung bài học
+            </button>
+          )}
+        </div>
       ) : (
         <form onSubmit={onSubmit}>
-          {questions.map((question, qIndex) => (
-            <fieldset key={question.questionId}>
-              <legend>
-                <span>{pad2(qIndex + 1)}</span>
-                {question.content}
-              </legend>
-              {question.options.map((option) => (
-                <label key={option.optionId}>
-                  <input
-                    type="radio"
-                    name={question.questionId}
-                    value={option.optionId}
-                    checked={answers[question.questionId] === option.optionId}
-                    onChange={() => {
-                      setAnswers((prev) => ({ ...prev, [question.questionId]: option.optionId }));
-                      setResult(null);
-                    }}
-                  />
-                  <span>{option.content}</span>
-                </label>
-              ))}
-            </fieldset>
-          ))}
+          <div className="pu-quiz-questions-list">
+            {questions.map((question, qIndex) => (
+              <fieldset key={question.questionId} className="pu-quiz-question-card">
+                <legend className="pu-quiz-question-legend">
+                  <span className="pu-q-num-pill">{pad2(qIndex + 1)}</span>
+                  <span className="pu-q-text">{question.content}</span>
+                </legend>
+                <div className="pu-quiz-options-group">
+                  {question.options.map((option, optIdx) => {
+                    const isSelected = answers[question.questionId] === option.optionId;
+                    return (
+                      <label
+                        key={option.optionId}
+                        className={`pu-quiz-option-item ${isSelected ? 'is-selected' : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name={question.questionId}
+                          value={option.optionId}
+                          checked={isSelected}
+                          onChange={() => {
+                            setAnswers((prev) => ({ ...prev, [question.questionId]: option.optionId }));
+                            setResult(null);
+                          }}
+                        />
+                        <span className="pu-opt-letter-circle">{optionLetters[optIdx] ?? (optIdx + 1)}</span>
+                        <span className="pu-opt-text">{option.content}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            ))}
+          </div>
 
           {result && !result.passed && (
-            <div className="pu-quiz-feedback" role="alert">
-              Kết quả: Đúng {result.score}/{result.total} câu. Bạn cần đúng tất cả các câu để đạt. Hãy xem lại bài giảng và thử lại.
+            <div className="pu-quiz-feedback-box failed" role="alert">
+              <AlertCircle size={20} className="text-rose-600 flex-shrink-0" />
+              <div>
+                <strong>Chưa đạt yêu cầu: Đúng {result.score}/{result.total} câu</strong>
+                <p>
+                  Bạn cần trả lời đúng tất cả các câu để hoàn thành mô-đun. Hãy xem lại bài học hoặc thử lại với bộ câu hỏi mới.
+                </p>
+                <div className="pu-feedback-actions" style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+                  {onBackToLesson && (
+                    <button
+                      type="button"
+                      className="pu-btn-outline small"
+                      onClick={onBackToLesson}
+                    >
+                      ← Xem lại bài học
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="pu-btn-outline small"
+                    onClick={() => {
+                      setAnswers({});
+                      setResult(null);
+                    }}
+                  >
+                    Làm lại bài kiểm tra
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
-          <button
-            type="submit"
-            className={btn()}
-            disabled={answered < questions.length || submit.isPending}
-            style={{ marginTop: 8 }}
-          >
-            {submit.isPending ? 'Đang chấm điểm…' : 'Nộp bài ôn tập →'}
-          </button>
+          <div className="pu-quiz-submit-row">
+            <button
+              type="submit"
+              className="pu-quiz-submit-btn"
+              disabled={answered < questions.length || submit.isPending}
+            >
+              {submit.isPending ? (
+                'Đang kiểm tra kết quả…'
+              ) : answered < questions.length ? (
+                `Vui lòng chọn đủ câu trả lời (${answered}/${questions.length})`
+              ) : (
+                `Nộp bài kiểm tra (${answered}/${questions.length} câu) →`
+              )}
+            </button>
+            {onBackToLesson && (
+              <button
+                type="button"
+                className="pu-quiz-cancel-btn"
+                onClick={onBackToLesson}
+              >
+                Xem lại bài học
+              </button>
+            )}
+          </div>
         </form>
       )}
     </section>

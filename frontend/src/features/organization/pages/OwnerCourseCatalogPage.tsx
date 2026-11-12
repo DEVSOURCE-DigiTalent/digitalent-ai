@@ -531,6 +531,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 function CourseDetail({
   course,
   branch,
+  onBuySeats: _onBuySeats,
 }: {
   course: CourseListItem;
   branch?: DomainBranch;

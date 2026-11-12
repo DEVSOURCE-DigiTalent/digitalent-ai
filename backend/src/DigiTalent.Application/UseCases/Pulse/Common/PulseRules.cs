@@ -17,7 +17,7 @@ public static class PulseRules
     public const int MinDecisionReasonLength = 10;
 
     /// <summary>Số câu rút cho mỗi lần làm câu hỏi ôn tập mô đun; phải đúng tất cả (§9.2).</summary>
-    public const int ModuleQuizDrawSize = 2;
+    public const int ModuleQuizDrawSize = 3;
 
     /// <summary>
     /// Ngân hàng ôn tập của mô đun gắn câu hỏi với trang nội dung theo thứ tự: câu thứ 2k-1 và 2k (sort_order) ↔ trang k.
@@ -142,20 +142,74 @@ public static class PulseRules
 
     /// <summary>
     /// Gợi ý AI minh họa cho quản lý (§10.1): chỉ dò từ khóa trong ghi chú, không đọc tệp, không ra quyết định.
+    /// Chặn cảnh báo ngay nếu nhân viên lặp lại nguyên văn đề bài hoặc chỉ dùng câu chữ chung chung.
     /// </summary>
-    public static PulseAiHintDto AiHint(string evidence)
+    public static PulseAiHintDto AiHint(string evidence) =>
+        AiHint(evidence, null, null, null, null);
+
+    public static PulseAiHintDto AiHint(
+        string evidence,
+        string? promptHtml,
+        IReadOnlyList<PulseCriterionDto>? rubric = null,
+        int? domainNumber = null,
+        int? tier = null)
     {
-        var text = evidence.ToLowerInvariant();
-        var checks = new[]
+        var criteriaCount = rubric is { Count: > 0 } ? rubric.Count : FinalCriteria.Count;
+        var copyCheck = PulseEssayRubric.AnalyzePromptCopy(evidence, promptHtml);
+        if (copyCheck.IsPromptCopy)
         {
-            ContainsAny(text, "nguồn", "dữ liệu", "báo cáo", "sổ", "hồ sơ", "chứng từ", "source", "data", "record", "report"),
-            ContainsAny(text, "kiểm tra", "đối chiếu", "so sánh", "tính", "công thức", "xác minh", "check", "calculate", "compare", "verify"),
-            ContainsAny(text, "kết luận", "tiếp theo", "đề xuất", "hành động", "bước", "conclusion", "next", "recommend"),
-        };
+            var warningSummary =
+                "Cảnh báo: Bài nộp đang lặp lại câu chữ của đề bài hoặc nói chung chung, chưa nêu tình huống công việc thực tế và dẫn chứng kiểm chứng. Cần yêu cầu bổ sung trước khi công nhận.";
+            var copyNotes = Enumerable.Range(0, criteriaCount)
+                .Select(_ => "Nội dung trùng với câu hỏi đề bài, chưa có tình huống thực tế hoặc số liệu kiểm chứng.")
+                .ToList();
+            return new PulseAiHintDto(Enumerable.Repeat(false, criteriaCount).ToList(), warningSummary)
+            {
+                CriterionNotes = copyNotes,
+                Source = "KEYWORD_FALLBACK",
+            };
+        }
+
+        var folded = PulseEssayRubric.NormalizeFold(evidence);
+        var lower = evidence.ToLowerInvariant();
+        var checkSource = ContainsAny(lower, "nguồn", "dữ liệu", "báo cáo", "sổ", "hồ sơ", "chứng từ", "source", "data", "record", "report")
+            || ContainsAny(folded, "crm", "erp", "excel", "he thong", "tep", "khach hang", "hoa don");
+        var checkAction = ContainsAny(lower, "kiểm tra", "đối chiếu", "so sánh", "tính", "công thức", "xác minh", "check", "calculate", "compare", "verify")
+            || ContainsAny(folded, "loc trung", "pivot", "thao tac", "kiem chung", "xu ly", "ra soat");
+        var checkConclusion = ContainsAny(lower, "kết luận", "tiếp theo", "đề xuất", "hành động", "bước", "conclusion", "next", "recommend")
+            || ContainsAny(folded, "ban giao", "phong ngua", "cai thien", "gui lai", "cap nhat", "ket qua", "de tranh", "chuan hoa");
+
+        var resolvedDomain = domainNumber.HasValue ? Math.Clamp(domainNumber.Value, 1, 6) : 1;
+        var gateKeywords = PulseEssayRubric.GateKeywordsForDomain(resolvedDomain);
+        var checkGate = ContainsAny(folded, gateKeywords) || ContainsAny(lower, "đối chiếu", "bảo mật", "bản quyền", "xác thực", "kiểm chứng", "báo cáo gốc");
+
+        var checks = new List<bool>(criteriaCount);
+        var notes = new List<string>(criteriaCount);
+        for (var i = 0; i < criteriaCount; i++)
+        {
+            var criterionTitle = rubric != null && i < rubric.Count ? rubric[i].Title : FinalCriteria[Math.Min(i, FinalCriteria.Count - 1)].Title;
+            var met = i switch
+            {
+                0 => checkSource,
+                1 => checkAction,
+                2 => checkConclusion,
+                3 => checkGate,
+                _ => checkSource && checkAction,
+            };
+            checks.Add(met);
+            notes.Add(met
+                ? $"Có từ khóa liên quan tới \"{criterionTitle}\"."
+                : $"Chưa thấy dẫn chứng rõ cho \"{criterionTitle}\".");
+        }
+
         var summary = checks.All(c => c)
-            ? "Ghi chú có vẻ đã nêu nguồn, hành động kiểm tra được và bước tiếp theo. Hãy đọc bài làm thực tế trước khi quyết định."
+            ? "Ghi chú có vẻ đã nêu đủ các tiêu chí thực hành. Hãy đọc bài làm thực tế trước khi quyết định."
             : "Ghi chú có thể cần làm rõ nguồn, hành động kiểm tra được hoặc bước tiếp theo. Hãy đọc bài làm thực tế trước khi quyết định.";
-        return new PulseAiHintDto(checks, summary);
+        return new PulseAiHintDto(checks, summary)
+        {
+            CriterionNotes = notes,
+            Source = "KEYWORD_FALLBACK",
+        };
     }
 
     private static bool ContainsAny(string text, params string[] words) => words.Any(text.Contains);
@@ -292,10 +346,17 @@ public static class PulseSlotStatus
     public const string NoPosition = "NO_POSITION";
 }
 
-public sealed record PulseCriterionDto(string Number, string Title, string Description);
+public sealed record PulseCriterionDto(string Number, string Title, string Description)
+{
+    public int WeightPercent { get; init; }
+    public bool IsRequired { get; init; }
+}
 
 public sealed record PulseAiHintDto(IReadOnlyList<bool> Checks, string Summary)
 {
+    public IReadOnlyList<string>? CriterionNotes { get; init; }
+    public string Source { get; init; } = "KEYWORD_FALLBACK";
+    public string? Model { get; init; }
     public PulseAiDetailDto? Detail { get; init; }
     public PulseAiFraudDto? Fraud { get; init; }
 }

@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter, useRoutes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { routes } from '@/app/router';
+import { preloadLazyPages } from '@/app/routes/lazy-page';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { MOCK_EMAILS, signInAsMock } from '@/test/session';
 
@@ -26,13 +27,17 @@ const emptyPage = { items: [], pageIndex: 1, pageSize: 20, totalItems: 0, totalP
 describe('Platform Admin sidebar navigation (Pulse)', () => {
   let queryClient: QueryClient;
 
+  beforeAll(async () => {
+    await preloadLazyPages();
+  }, 60000);
+
   beforeEach(() => {
     localStorage.clear();
     useCurrentUser.getState().clearUser();
     signInAsMock(MOCK_EMAILS.platform);
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } } });
     vi.clearAllMocks();
-    service.getOverview.mockReturnValue(new Promise(() => {})); // stays loading: only the shell matters here
+    service.getOverview.mockReturnValue(new Promise(() => { })); // stays loading: only the shell matters here
     service.getOrganizations.mockResolvedValue(emptyPage);
     service.getAuditLogs.mockResolvedValue(emptyPage);
     catalog.getFrameworks.mockResolvedValue({ items: [], currentCatalogVersionNo: 1, draftCatalogVersionNo: null });
@@ -64,7 +69,7 @@ describe('Platform Admin sidebar navigation (Pulse)', () => {
     fireEvent.click(within(sidebar()).getByRole('link', { name: /Tổ chức/ }));
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Doanh nghiệp đang dùng nền tảng.' })).toBeInTheDocument();
-    expect(await screen.findByText('Không có tổ chức nào khớp bộ lọc')).toBeInTheDocument();
+    expect(await screen.findByText(/Không có tổ chức nào khớp bộ lọc/)).toBeInTheDocument();
   });
 
   it('opens Khung chuẩn and Nhật ký kiểm tra from the sidebar', async () => {

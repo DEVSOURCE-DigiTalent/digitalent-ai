@@ -1,4 +1,3 @@
-import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import {
@@ -30,28 +29,24 @@ import { QuickSyllabusDrawer } from '../components/QuickSyllabusDrawer';
  * Hôm nay (EM-01) - Actionable Enterprise Dashboard
  * - Hero Banner: Ảnh nền trừu tượng công nghệ, thông điệp ngắn gọn, trực quan.
  * - 4 Quick Bento Stat Cards: Tiến độ 13%, Hàng đợi chờ chấm, Việc tiếp theo M5-F, Phủ 6 lĩnh vực.
- * - Review Queue Widget: Widget hàng đợi chấm điểm trang nhã với các chip môn học bấm được.
+ * - Review Queue Widget: Widget hàng đợi đánh giá trang nhã với các chip khóa học bấm được.
  * - Action Center (Việc nên làm tiếp): Tiêu điểm việc cần làm ngay.
  * - Competency Radar Chart + 6 Lĩnh vực: Biểu đồ Radar 6 góc đối chiếu trực quan năng lực vị trí.
  * - Quick Syllabus Slide-over Drawer: Xem nhanh đề cương khóa học.
  */
 export function PulseTodayPage() {
-  useUiLanguage();
   const { data, isLoading, error, refetch } = usePulseOverview();
   const trial = useIsEnterpriseTrial();
   const [selectedCourse, setSelectedCourse] = useState<PulseCourseSummary | null>(null);
 
   if (isLoading) return <PageSkeleton blocks={[200, 240, 500]} />;
-  if (error || !data) return <LoadError message={translateUi(pulseErrorMessage(error, 'Không tải được không gian học của bạn.'))} onRetry={() => refetch()} />;
+  if (error || !data) return <LoadError message={pulseErrorMessage(error, 'Không tải được không gian học của bạn.')} onRetry={() => refetch()} />;
   // Doanh nghiệp dùng thử chưa có khung năng lực: một trang Học thử duy nhất (Lộ trình).
   if (trial && !data.hasTargets) return <Navigate to={PULSE_PATHS.path} replace />;
   if (!data.hasPosition || !data.hasTargets) return <NoPath overview={data} />;
 
   return (
     <div className="pu-home">
-      {/* Thông báo đánh giá phân loại năng lực đầu vào nếu có */}
-      <OnboardingBanner overview={data} />
-
       {/* 1. Hero Banner tối giản với ảnh nền trừu tượng cao cấp */}
       <EnterpriseHeroBanner overview={data} />
 
@@ -71,7 +66,7 @@ export function PulseTodayPage() {
       <nav className="pu-more-links" aria-label="Truy cập nhanh">
         <span className="pu-more-links-title">Truy cập nhanh:</span>
         <PuLink to={PULSE_PATHS.path} kind="outline" small>Lộ trình đào tạo chi tiết →</PuLink>
-        <PuLink to={PULSE_PATHS.practice} kind="outline" small>Sổ kiểm tra & bài tập thực tế →</PuLink>
+        <PuLink to={PULSE_PATHS.practice} kind="outline" small>Sổ khảo thí & đánh giá năng lực →</PuLink>
         <PuLink to={PULSE_PATHS.outcomes} kind="outline" small>Chứng chỉ chức danh →</PuLink>
         <PuLink to={PULSE_PATHS.profile} kind="outline" small>Hồ sơ cá nhân →</PuLink>
       </nav>
@@ -106,9 +101,8 @@ function cleanDomainCode(code: string): string {
 
 /* ── 1. Enterprise Hero Banner (Ảnh nền + Text tối giản) ───────────────── */
 function EnterpriseHeroBanner({ overview }: { overview: PulseOverview }) {
-  useUiLanguage();
   const { person } = overview;
-  const position = person.positionName ?? 'Chưa được gán vị trí';
+  const position = person.positionName ?? 'Chuyên viên Kế toán tài chính';
   const deptRaw = person.departmentName?.trim();
   const dept = deptRaw
     ? deptRaw.toLowerCase().startsWith('phòng')
@@ -157,15 +151,10 @@ function QuickStatCards({
   overview: PulseOverview;
   onSelectCourse: (course: PulseCourseSummary) => void;
 }) {
-  useUiLanguage();
   const { stats, courses, domains, nextSteps } = overview;
   const total = stats.pathCourses;
   const approved = stats.approvedPathCourses;
   const pct = total > 0 ? Math.round((approved / total) * 100) : 0;
-  // Most recently recognised course on the path (approvedAt is ISO, so it sorts as text).
-  const latestApproved = courses
-    .filter((c) => c.approved && c.zone === 'PATH')
-    .sort((a, b) => (b.approvedAt ?? '').localeCompare(a.approvedAt ?? ''))[0];
 
   const completedDomains = domains.filter((d) => {
     const domainCourses = courses.filter((c) => c.categoryId === d.categoryId && c.zone === 'PATH');
@@ -188,7 +177,7 @@ function QuickStatCards({
         <div className="pu-qstat-progress-bar">
           <div className="pu-qstat-bar-fill" style={{ width: `${pct}%` }} />
         </div>
-        <span className="pu-qstat-sub">{approved}/{total}{translateUi(" khóa hoàn thành")}</span>
+        <span className="pu-qstat-sub">{approved}/{total} khóa hoàn thành</span>
       </article>
 
       {/* Card 2: Huy hiệu đã đạt (Thay thế để không trùng lặp với hàng đợi chờ chấm bên dưới) */}
@@ -199,9 +188,9 @@ function QuickStatCards({
             <Award size={14} />
           </div>
         </div>
-        <div className="pu-qstat-value">{approved} môn</div>
+        <div className="pu-qstat-value">{approved} khóa</div>
         <div className="pu-qstat-status-badge emerald">
-          <span>{latestApproved ? `${latestApproved.code} đạt chuẩn` : 'Chưa có'}</span>
+          <span>{approved > 0 ? 'M1-I đạt chuẩn' : 'Chưa có'}</span>
         </div>
         <span className="pu-qstat-sub">Chứng nhận kỹ năng số</span>
       </article>
@@ -247,7 +236,7 @@ function QuickStatCards({
   );
 }
 
-/* ── 3. Review Queue Section (Phương án A: Hàng đợi chấm điểm) ─────────── */
+/* ── 3. Review Queue Section (Phương án A: Hàng đợi đánh giá) ─────────── */
 function ReviewQueueSection({
   overview,
   onSelectCourse,
@@ -255,23 +244,22 @@ function ReviewQueueSection({
   overview: PulseOverview;
   onSelectCourse: (course: PulseCourseSummary) => void;
 }) {
-  useUiLanguage();
   const waiting = overview.courses.filter((c) => c.slotStatus === 'PRE_REVIEW' || c.slotStatus === 'IN_REVIEW');
 
   if (waiting.length === 0) return null;
 
   return (
-    <section className="pu-review-queue-widget" aria-label="Hàng đợi chờ mentor chấm điểm">
+    <section className="pu-review-queue-widget" aria-label="Hàng đợi chờ mentor đánh giá">
       <div className="pu-review-queue-info">
         <div className="pu-review-queue-icon-wrap" aria-hidden="true">
           <Clock size={18} />
         </div>
         <div className="pu-review-queue-text">
           <div className="pu-review-queue-head">
-            <strong>{waiting.length} bài kiểm tra đang chờ mentor chấm điểm</strong>
+            <strong>{waiting.length} bài kiểm tra đang chờ mentor đánh giá</strong>
           </div>
           <p className="pu-review-queue-desc">
-            Bấm vào từng môn bên dưới để xem bài đã nộp và tiêu chí đánh giá.
+            Bấm vào từng khóa học bên dưới để xem bài đã nộp và tiêu chí đánh giá.
           </p>
         </div>
       </div>
@@ -283,7 +271,7 @@ function ReviewQueueSection({
             type="button"
             className="pu-review-chip-btn"
             onClick={() => onSelectCourse(c)}
-            title={translateUi(`Xem bài đã nộp của môn ${c.code} · ${c.title}`)}
+            title={`Xem bài đã nộp của khóa ${c.code} · ${c.title}`}
           >
             <span className="pu-review-chip-code">{c.code}</span>
             <span className="pu-review-chip-title">{toSentenceCase(c.title)}</span>
@@ -315,7 +303,6 @@ function ActionCenter({
   overview: PulseOverview;
   onSelectCourse: (course: PulseCourseSummary) => void;
 }) {
-  useUiLanguage();
   const steps = overview.nextSteps;
   const fresh = steps.length > 0 && overview.stats.approvedPathCourses === 0 && steps.every((s) => s.slotStatus === 'PRE_ASSESSMENT');
 
@@ -337,7 +324,7 @@ function ActionCenter({
           </h2>
           <p className="pu-action-desc">
             {steps.length === 0
-              ? 'Các khóa hiện tại đã hoàn thành hoặc đang chờ đánh giá.'
+              ? 'Tất cả các khóa hiện tại đã đạt hoặc đang chờ mentor đánh giá.'
               : fresh
                 ? 'Thực hiện bài đánh giá trước khi học để được miễn học lý thuyết nếu đã đạt năng lực.'
                 : 'Khóa học và bài đánh giá cần hoàn thành tiếp theo.'}
@@ -426,7 +413,7 @@ function ActionCenter({
                     className={`pu-carousel-dot ${idx === activeSlide ? 'active' : ''}`}
                     onClick={() => setActiveSlide(idx)}
                     aria-selected={idx === activeSlide}
-                    aria-label={translateUi(`Chuyển tới việc ${idx + 1}: ${s.code}`)}
+                    aria-label={`Chuyển tới việc ${idx + 1}: ${s.code}`}
                   />
                 ))}
               </div>
@@ -449,15 +436,15 @@ function ActionCenter({
               {currentCourse.slotStatus === 'PRE_ASSESSMENT'
                 ? 'Làm bài đánh giá đầu vào gồm 10 câu trắc nghiệm và 1 câu tự luận. Đạt từ 80% trở lên sẽ được công nhận hoàn thành mà không cần học lại lý thuyết.'
                 : currentCourse.slotStatus === 'FINAL_READY'
-                ? 'Bạn đã hoàn thành 100% bài giảng. Hãy làm bài thi cuối khóa để hoàn tất chứng nhận môn học.'
+                ? 'Bạn đã hoàn thành 100% nội dung đào tạo. Hãy làm bài đánh giá cuối khóa để hoàn tất chứng nhận khóa học.'
                 : currentCourse.slotStatus === 'IN_PROGRESS'
-                ? translateUi(`Đã hoàn thành ${currentCourse.progressPercent}% bài học. Hãy tiếp tục học các mô đun tiếp theo để mở khóa bài thi cuối khóa.`)
+                ? `Đã hoàn thành ${currentCourse.progressPercent}% nội dung. Hãy tiếp tục học các mô đun tiếp theo để mở khóa bài đánh giá cuối khóa.`
                 : 'Khóa học chuẩn hóa theo khung năng lực chức danh.'}
             </p>
 
             {currentCourse.slotStatus === 'IN_PROGRESS' && (
               <div className="pu-action-progress" style={{ maxWidth: 400 }}>
-                <Bar value={currentCourse.progressPercent} label={translateUi(`Tiến độ ${currentCourse.code}`)} />
+                <Bar value={currentCourse.progressPercent} label={`Tiến độ ${currentCourse.code}`} />
               </div>
             )}
           </div>
@@ -477,7 +464,7 @@ function ActionCenter({
 
             {steps.length > 1 && (
               <div className="pu-featured-queue-hint">
-                <span>{translateUi("Còn ")}{steps.length - 1} việc khác trong hàng đợi</span>
+                <span>Còn {steps.length - 1} việc khác trong hàng đợi</span>
               </div>
             )}
           </div>
@@ -516,7 +503,7 @@ function ActionCenter({
 
               {course.slotStatus === 'IN_PROGRESS' && (
                 <div className="pu-action-progress">
-                  <Bar value={course.progressPercent} label={translateUi(`Tiến độ ${course.code}`)} />
+                  <Bar value={course.progressPercent} label={`Tiến độ ${course.code}`} />
                 </div>
               )}
 
@@ -532,7 +519,6 @@ function ActionCenter({
 }
 
 function ActionCardCTA({ course }: { course: PulseCourseSummary }) {
-  useUiLanguage();
   switch (course.slotStatus) {
     case 'PRE_ASSESSMENT':
       return (
@@ -543,13 +529,13 @@ function ActionCardCTA({ course }: { course: PulseCourseSummary }) {
     case 'FINAL_READY':
       return (
         <PuLink to={PULSE_PATHS.final(course.courseId)} kind="primary" small>
-          Làm bài thi cuối khóa →
+          Làm bài đánh giá cuối khóa →
         </PuLink>
       );
     case 'IN_PROGRESS':
       return (
         <PuLink to={PULSE_PATHS.course(course.courseId)} kind="primary" small>
-          Học tiếp bài giảng →
+          Học tiếp mô đun →
         </PuLink>
       );
     default:
@@ -569,7 +555,6 @@ function DomainRadarSection({
   overview: PulseOverview;
   onSelectCourse: (course: PulseCourseSummary) => void;
 }) {
-  useUiLanguage();
   const domains = overview.domains.filter((d) => d.pathTop > 0);
 
   return (
@@ -594,7 +579,7 @@ function DomainRadarSection({
           <div className="pu-radar-card">
             <div className="pu-radar-head">
               <span className="pu-radar-badge">Biểu đồ Radar Năng lực Số</span>
-              <span className="pu-radar-sub-note">{translateUi("6 Lĩnh vực")}</span>
+              <span className="pu-radar-sub-note">6 Lĩnh vực</span>
             </div>
             <CompetencyRadarSvg domains={domains} courses={overview.courses} />
             <div className="pu-radar-legend">
@@ -634,7 +619,7 @@ function DomainRadarSection({
             const statusText = isFullyCompleted
               ? 'Đã đạt'
               : waitingCount > 0
-              ? 'Chờ chấm'
+              ? 'Chờ duyệt'
               : isLearning
               ? 'Đang học'
               : 'Chưa bắt đầu';
@@ -644,7 +629,7 @@ function DomainRadarSection({
                 <div className="pu-domain-compact-head">
                   <div className="pu-domain-compact-info">
                     <span className="pu-domain-compact-code">{cleanDomainCode(domain.code)}</span>
-                    <h3 className="pu-domain-compact-title">{translateUi(domain.name)}</h3>
+                    <h3 className="pu-domain-compact-title">{domain.name}</h3>
                   </div>
                   <span className={`pu-domain-status-badge ${statusClass}`}>{statusText}</span>
                 </div>
@@ -671,7 +656,7 @@ function DomainRadarSection({
                         type="button"
                         className={`pu-domain-course-chip ${chipClass}`}
                         onClick={() => onSelectCourse(c)}
-                        title={translateUi(`${c.code} · ${c.title} (${levelName(c.tier)})`)}
+                        title={`${c.code} · ${c.title} (${levelName(c.tier)})`}
                       >
                         {isDone && <Check size={11} />}
                         {isWait && <Clock size={11} />}
@@ -706,7 +691,6 @@ function CompetencyRadarSvg({
   domains: PulseDomain[];
   courses: PulseCourseSummary[];
 }) {
-  useUiLanguage();
   const cx = 150;
   const cy = 135;
   const maxR = 85;
@@ -852,7 +836,7 @@ function CompetencyRadarSvg({
               textAnchor={textAnchor}
               className="pu-radar-axis-label"
             >
-              {translateUi(d.label)}
+              {d.label}
             </text>
           );
         })}
@@ -861,123 +845,15 @@ function CompetencyRadarSvg({
   );
 }
 
-/* ── Onboarding Placement Banner ────────────────────────────────────────── */
-function OnboardingBanner({ overview }: { overview: PulseOverview }) {
-  useUiLanguage();
-  const placement = overview.placementTest;
-  if (!placement) return null;
-
-  if (!placement.hasTaken) {
-    return (
-      <div
-        className="pu-onboarding-banner"
-        style={{
-          background: 'linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)',
-          border: '1.5px solid #818cf8',
-          borderRadius: 12,
-          padding: '16px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 16,
-          boxShadow: '0 4px 14px rgba(99, 102, 241, 0.08)',
-          marginBottom: 18,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 10,
-              background: '#4f46e5',
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 22,
-              flexShrink: 0,
-            }}
-          >
-            🎯
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#4338ca', background: '#c7d2fe', padding: '2px 8px', borderRadius: 4 }}>
-                Dành cho thành viên mới
-              </span>
-              <span style={{ fontSize: 13, color: '#4b5563' }}>⏱️ ~15 phút</span>
-            </div>
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#1e1b4b' }}>
-              Làm bài Đánh giá phân loại năng lực đầu vào
-            </h3>
-            <p style={{ margin: '3px 0 0', fontSize: 13, color: '#4338ca', lineHeight: 1.4 }}>
-              Hoàn thành bài trắc nghiệm 6 lĩnh vực số để được <strong>miễn học các khóa bạn đã nắm vững</strong> và tự động cá nhân hóa lộ trình của bạn.
-            </p>
-          </div>
-        </div>
-        <PuLink
-          to={PULSE_PATHS.trialTest}
-          kind="primary"
-          style={{
-            flexShrink: 0,
-            background: '#4f46e5',
-            color: '#fff',
-            fontWeight: 600,
-            padding: '10px 18px',
-            borderRadius: 8,
-            boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)',
-          }}
-        >
-          Làm bài đánh giá ngay →
-        </PuLink>
-      </div>
-    );
-  }
-
-  // Đã làm bài đánh giá
-  return (
-    <div
-      className="pu-onboarding-banner-done"
-      style={{
-        background: 'rgba(240, 253, 244, 0.9)',
-        border: '1px solid #86efac',
-        borderRadius: 12,
-        padding: '12px 18px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 16,
-        marginBottom: 18,
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span style={{ fontSize: 20 }}>✅</span>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#166534' }}>
-            Đã hoàn thành Đánh giá phân loại đầu vào
-            {placement.choiceScore != null && ` · Đạt ${placement.choiceScore}/${placement.choiceTotal} câu`}
-          </div>
-          <div style={{ fontSize: 12, color: '#15803d', marginTop: 1 }}>
-            Hệ thống đã tự động công nhận & miễn các khóa cho {placement.passedDomains}/{placement.totalDomains} lĩnh vực. Lộ trình bên dưới đã được cập nhật!
-          </div>
-        </div>
-      </div>
-      <PuLink to={PULSE_PATHS.trialTest} kind="outline" small style={{ flexShrink: 0, color: '#166534', borderColor: '#86efac' }}>{translateUi("Xem chi tiết")}</PuLink>
-    </div>
-  );
-}
-
 /* ── Empty State ──────────────────────────────────────────────────────── */
 function NoPath({ overview }: { overview: PulseOverview }) {
-  useUiLanguage();
   return (
     <Empty
       icon={overview.hasPosition ? <Compass size={24} /> : <UserX size={24} />}
-      title={translateUi(overview.hasPosition ? 'Vị trí của bạn chưa có lộ trình' : 'Bạn chưa được gán vị trí công việc')}
+      title={overview.hasPosition ? 'Vị trí của bạn chưa có lộ trình' : 'Bạn chưa được gán vị trí công việc'}
     >
       {overview.hasPosition
-        ? translateUi(`Chủ doanh nghiệp chưa công bố yêu cầu năng lực cho vị trí ${overview.person.positionName ?? ''}, hoặc chưa mở lĩnh vực nào cho phòng ban của bạn. Lộ trình sẽ hiện khi được thiết lập.`)
+        ? `Chủ doanh nghiệp chưa công bố yêu cầu năng lực cho vị trí ${overview.person.positionName ?? ''}, hoặc chưa mở lĩnh vực nào cho phòng ban của bạn. Lộ trình sẽ hiện khi được thiết lập.`
         : 'Lộ trình học đi theo phòng ban và vị trí của bạn. Hãy liên hệ ban quản trị để được xếp vào đúng vị trí.'}
     </Empty>
   );

@@ -187,16 +187,16 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
       },
       {
         id: 'task-mgr-3',
-        title: 'Khám phá giao diện Chấm bài thi có AI Proctoring',
+        title: 'Khám phá giao diện Thẩm định bài đánh giá có AI Proctoring',
         subtitle: 'Trải nghiệm xem video giám sát và đưa ra quyết định',
         route: '/enterprise/team/final-reviews',
         targetSelector: '[data-tour="MG-13"]',
-        badge: 'Chấm bài',
+        badge: 'Đánh giá',
       },
       {
         id: 'task-mgr-4',
         title: 'Theo dõi tiến trình đào tạo của phòng ban',
-        subtitle: 'Kiểm tra mức độ hoàn thành các môn học',
+        subtitle: 'Kiểm tra mức độ hoàn thành các khóa học',
         route: '/enterprise/team/training',
         targetSelector: '[data-tour="MG-06"]',
         badge: 'Tiến độ',
@@ -206,10 +206,10 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
 
   EMPLOYEE: {
     role: 'EMPLOYEE',
-    roleName: 'Nhân viên (Cổng Pulse)',
-    welcomeTitle: 'Chào mừng bạn đến với Lộ trình Học tập Pulse',
+    roleName: 'Nhân viên (Cổng DigiTalent AI)',
+    welcomeTitle: 'Chào mừng bạn đến với Lộ trình Học tập DigiTalent AI',
     welcomeDescription:
-      'Tại đây, bạn được trang bị lộ trình phát triển năng lực số rõ ràng theo đúng chức danh công việc, với cơ chế đánh giá trước giúp miễn học phần đã vững.',
+      'Tại đây, bạn được trang bị lộ trình phát triển năng lực số rõ ràng theo đúng chức danh công việc, với cơ chế đánh giá năng lực đầu vào giúp miễn học phần đã vững.',
     steps: [
       {
         id: 'emp-step-1',
@@ -220,7 +220,7 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
         targetSelector: '[data-tour="EM-01"]',
         targetPosition: 'bottom',
         actionRoute: '/enterprise/me/trial-test',
-        actionText: 'Làm bài đánh giá đầu vào',
+        actionText: 'Làm bài khảo sát đầu vào',
         tips: 'Mẹo: Đạt điểm chuẩn ở lĩnh vực nào, bạn sẽ được tự động miễn học khóa tương ứng!',
       },
       {
@@ -237,21 +237,21 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
       },
       {
         id: 'emp-step-3',
-        title: 'Bước 3: Tham gia Khóa học & Bài Đánh giá trước',
+        title: 'Bước 3: Tham gia Khóa học & Bài Đánh giá đầu vào',
         description:
-          'Học trực tuyến với giáo trình, slide, video và làm bài trắc nghiệm mô-đun. Trước mỗi môn học, bạn có thể làm bài Pre-assessment để vượt cấp nhanh.',
-        badge: '3. Học tập & Thi thử',
+          'Học trực tuyến với tài liệu đào tạo, slide, bài học số và làm câu hỏi kiểm tra mô-đun. Trước mỗi khóa học, bạn có thể làm bài đánh giá đầu vào để được công nhận năng lực nhanh.',
+        badge: '3. Đào tạo & Đánh giá',
         targetSelector: '[data-tour="EM-03"]',
         targetPosition: 'bottom',
         actionRoute: '/enterprise/me/practice',
-        actionText: 'Khám phá bài học & bài thi',
-        tips: 'Làm bài trắc nghiệm nhanh 10 câu đạt ≥ 70% để vượt qua môn học mà không mất nhiều thời gian.',
+        actionText: 'Khám phá bài học & bài đánh giá',
+        tips: 'Làm câu hỏi kiểm tra đạt chuẩn để hoàn thành khóa học mà không mất nhiều thời gian.',
       },
       {
         id: 'emp-step-4',
         title: 'Bước 4: Nộp Minh chứng Thực hành & Nhận Chứng nhận',
         description:
-          'Nộp sản phẩm thực tế, bài tập cuối khóa để Mentor và AI DigiTalent thẩm định, sau đó nhận chứng nhận số hoàn thành chuẩn năng lực.',
+          'Nộp sản phẩm thực tế, bài thực hành cuối khóa để Mentor và AI DigiTalent thẩm định, sau đó nhận chứng nhận số hoàn thành chuẩn năng lực.',
         badge: '4. Minh chứng & Chứng nhận',
         targetSelector: '[data-tour="EM-01"]',
         targetPosition: 'bottom',
@@ -263,8 +263,8 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
     checklist: [
       {
         id: 'task-emp-1',
-        title: '1. Làm bài Test Khảo sát Năng lực 6 Lĩnh vực',
-        subtitle: 'Hoàn thành bài đánh giá đầu vào để xác định lộ trình phù hợp',
+        title: '1. Làm bài Khảo sát Năng lực 6 Lĩnh vực',
+        subtitle: 'Hoàn thành bài khảo sát phân loại đầu vào để được miễn học khóa đã vững',
         route: '/enterprise/me/trial-test',
         targetSelector: '[data-tour="EM-01"]',
         badge: 'Ưu tiên 1',
@@ -279,11 +279,11 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
       },
       {
         id: 'task-emp-3',
-        title: '3. Bắt đầu Khóa học & Bài Đánh giá trước',
-        subtitle: 'Học trực tuyến và tận dụng bài thi vượt cấp thông minh',
+        title: '3. Bắt đầu Khóa học & Bài Đánh giá đầu vào',
+        subtitle: 'Học trực tuyến và tận dụng bài đánh giá công nhận năng lực thông minh',
         route: '/enterprise/me/practice',
         targetSelector: '[data-tour="EM-03"]',
-        badge: 'Học tập',
+        badge: 'Đào tạo',
       },
       {
         id: 'task-emp-4',

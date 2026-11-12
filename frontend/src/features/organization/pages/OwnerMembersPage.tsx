@@ -47,7 +47,6 @@ export function OwnerMembersPage() {
   const [pageSize, setPageSize] = useState(5);
   const [inviting, setInviting] = useState(false);
   const [announcing, setAnnouncing] = useState(false);
-
   const departmentData = useDepartments({ pageSize: 100, status: 'ACTIVE' }).data;
   const departmentTotal = useDepartments({ pageSize: 1 }).data?.totalItems;
   const departments = departmentData?.items ?? [];

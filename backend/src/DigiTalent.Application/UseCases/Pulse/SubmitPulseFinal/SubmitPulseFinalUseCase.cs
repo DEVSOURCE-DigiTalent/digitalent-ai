@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.Learning.Content;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -43,6 +44,16 @@ public class SubmitPulseFinalUseCase : IUseCase<SubmitPulseFinalUseCaseInput, Su
         if (!PulseRules.CanSubmitFinal(state.FinalStatus))
         {
             throw new ConflictException(PulseCourseWorkspace.FinalClosedMessage(state));
+        }
+
+        var assignment = (await new LearningContentReader(_context).FinalsAsync(new[] { state.Enrollment.CourseId }))
+            .GetValueOrDefault(state.Enrollment.CourseId);
+        if (PulseEssayRubric.AnalyzePromptCopy(input.EvidenceText, assignment?.PromptHtml).IsPromptCopy)
+        {
+            throw new BadRequestException(
+                "Nội dung tự luận đang lặp lại câu hỏi đề bài. Hãy mô tả tình huống công việc thực tế, nguồn dữ liệu và kết quả bạn đã kiểm chứng.",
+                "EvidenceText",
+                "EVIDENCE_COPIES_PROMPT");
         }
 
         var now = _workspace.Now;

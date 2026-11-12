@@ -48,14 +48,16 @@ export function getCourseModules(courseId: string, courseCode: string, courseTit
   const curr = CURRICULUM_DATA[courseCode];
   if (curr && curr.modules.length > 0) {
     return curr.modules.map((m) => {
-      const moduleId = `mod-${courseId}-${m.moduleIndex}`;
-      const moduleTitle = `Học phần ${m.moduleIndex}: ${m.title} (TT02-${m.competencyCode})`;
-      const spec1 = getLessonMediaSpec(courseCode, m.competencyCode, 0);
-      const spec2 = getLessonMediaSpec(courseCode, m.competencyCode, 1);
+      const modNo = m.moduleIndex ?? m.module_number ?? 1;
+      const compCode = m.competencyCode || '1.1';
+      const moduleId = `mod-${courseId}-${modNo}`;
+      const moduleTitle = `Học phần ${modNo}: ${m.title} (TT02-${compCode})`;
+      const spec1 = getLessonMediaSpec(courseCode, compCode, 0);
+      const spec2 = getLessonMediaSpec(courseCode, compCode, 1);
       const lessons: LessonItem[] = [
         {
           mediaSpec: spec1,
-          id: `les-${courseId}-${m.moduleIndex}-1`,
+          id: `les-${courseId}-${modNo}-1`,
           moduleId,
           moduleTitle,
           lessonNo: 1,
@@ -73,13 +75,13 @@ export function getCourseModules(courseId: string, courseCode: string, courseTit
         },
         {
           mediaSpec: spec2,
-          id: `les-${courseId}-${m.moduleIndex}-2`,
+          id: `les-${courseId}-${modNo}-2`,
           moduleId,
           moduleTitle,
           lessonNo: 2,
-          title: `Bài 2: Tác nghiệp thực tế & Hoàn thiện sản phẩm (${m.competencyCode})`,
+          title: `Bài 2: Tác nghiệp thực tế & Hoàn thiện sản phẩm (${compCode})`,
           durationMinutes: 25,
-          objective: `Ứng dụng năng lực ${m.competencyCode} giải quyết tình huống thực tế và bàn giao sản phẩm đạt chuẩn.`,
+          objective: `Ứng dụng năng lực ${compCode} giải quyết tình huống thực tế và bàn giao sản phẩm đạt chuẩn.`,
           summary: `Phân tích tình huống công sở, các lỗi thường gặp và bài tập thực hành.`,
           content: [
             ...(m.examples.length > 0 ? m.examples : [`Tình huống thực tế ứng dụng trong môi trường doanh nghiệp:`]),
@@ -88,7 +90,7 @@ export function getCourseModules(courseId: string, courseCode: string, courseTit
             'Lưu ý: Luôn tuân thủ quy định bảo vệ an toàn dữ liệu và đạo đức số.',
           ],
           keyTakeaways: [
-            `Giải quyết trọn vẹn tình huống nghiệp vụ cho năng lực ${m.competencyCode}.`,
+            `Giải quyết trọn vẹn tình huống nghiệp vụ cho năng lực ${compCode}.`,
             'Bàn giao sản phẩm công việc đúng hạn và đúng quy chuẩn.',
           ],
           practiceTask: `${m.practice} (Sản phẩm nộp: ${m.deliverable || 'Báo cáo/kết quả thực hiện'}).`,
@@ -97,9 +99,9 @@ export function getCourseModules(courseId: string, courseCode: string, courseTit
 
       return {
         id: moduleId,
-        moduleNo: m.moduleIndex,
+        moduleNo: modNo,
         title: moduleTitle,
-        description: `Cung cấp kiến thức và kỹ năng thực hành cho năng lực ${m.competencyCode} (${m.title}).`,
+        description: `Cung cấp kiến thức và kỹ năng thực hành cho năng lực ${compCode} (${m.title}).`,
         lessons,
       };
     });
@@ -180,11 +182,11 @@ export function getCourseAssessment(courseId: string, courseCode: string, course
         passPercentage: 70,
         questions: selected.map((q, idx) => ({
           id: `q-${idx + 1}`,
-          questionText: q.questionText,
-          options: q.options,
-          correctOptionIndex: q.correctIndex,
-          explanation: q.explanation,
-          competencyCode: q.competencyCode,
+          questionText: q?.questionText || q?.question || '',
+          options: q?.options || ['', '', '', ''],
+          correctOptionIndex: q?.correctIndex ?? q?.correct_index ?? 0,
+          explanation: q?.explanation || '',
+          competencyCode: q?.competencyCode || '1.1',
         })),
       };
     }

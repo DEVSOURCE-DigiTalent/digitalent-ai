@@ -224,6 +224,8 @@ export interface PulseCriterion {
   number: string;
   title: string;
   description: string;
+  weightPercent?: number;
+  isRequired?: boolean;
 }
 
 export interface PulseCourseModule {
@@ -551,14 +553,28 @@ export const pulseService = {
 // ── Hàng chờ chấm bài của quản lý (api/v1/pulse/final-reviews, quyền task.evaluate) ──
 
 /** Trạng thái một bài trong hàng chờ: chờ chấm, chờ nộp lại, quá hạn nộp lại, cần hỗ trợ. */
-export type PulseReviewStatus = 'PENDING' | 'RETRY_WAIT' | 'RETRY_READY' | 'DEADLINE_MISSED' | 'FLAGGED';
+export type PulseReviewStatus = 'PENDING' | 'RETRY_WAIT' | 'RETRY_READY' | 'DEADLINE_MISSED' | 'FLAGGED' | 'APPROVED' | 'NOT_YET';
 
 /** Gợi ý AI dựa trên Gemini cho lần nộp đang chờ. */
 export interface PulseAiHint {
   checks: boolean[];
+  criterionNotes?: string[] | null;
+  source?: 'GEMINI' | 'KEYWORD_FALLBACK';
+  model?: string | null;
   summary: string;
   detail?: PulseAiDetail | null;
   fraud?: PulseAiFraud | null;
+}
+
+export type PulseCriterionEvaluationStatus = 'PASS' | 'PARTIAL' | 'FAIL';
+
+export interface PulseCriterionEvaluationInput {
+  number: string;
+  title: string;
+  status: PulseCriterionEvaluationStatus;
+  note?: string | null;
+  weightPercent?: number;
+  isRequired?: boolean;
 }
 
 export interface PulseAiFraud {
@@ -663,7 +679,8 @@ export interface PulseFinalReviewItem {
   status: PulseReviewStatus;
   employeeId: string;
   employeeName: string;
-  /** Doanh nghiệp của người làm bài (hàng chờ của mentor gồm nhiều doanh nghiệp dùng thử). */
+  organizationId?: string;
+  /** Doanh nghiệp của người làm bài (hàng chờ của mentor gồm nhiều doanh nghiệp). */
   organizationName?: string | null;
   departmentName?: string | null;
   positionName?: string | null;
@@ -672,6 +689,7 @@ export interface PulseFinalReviewItem {
   courseTitle: string;
   domainName?: string | null;
   tier?: number | null;
+  rubric?: PulseCriterion[] | null;
   attemptNo: number;
   maxAttempts: number;
   attempts: PulseFinalAttempt[];
@@ -686,6 +704,7 @@ export interface PulseFinalReviewQueue {
   retryCount: number;
   deadlineMissedCount: number;
   flaggedCount: number;
+  reviewedCount?: number;
   criteria: PulseCriterion[];
   items: PulseFinalReviewItem[];
 }
@@ -712,12 +731,87 @@ const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/$/,
 /** Đường dẫn đầy đủ tới tệp ghi hình (link đã ký — thẻ <video> không gửi token). */
 export const recordingUrl = (segment: PulseRecordingSegment) => (segment.contentPath ? `${API_BASE}/${segment.contentPath}` : null);
 
+export interface MentorEnterpriseItem {
+  organizationId: string;
+  organizationCode: string;
+  organizationName: string;
+  stage: 'TRIAL' | 'OFFICIAL';
+  ownerName?: string | null;
+  ownerEmail?: string | null;
+  departmentCount: number;
+  employeeCount: number;
+  pendingCount: number;
+  retryCount: number;
+  flaggedCount: number;
+  reviewedCount: number;
+  totalSubmissions: number;
+  latestSubmittedAt?: string | null;
+  assignedAt?: string | null;
+}
+
+export interface MentorEnterprisesResponse {
+  totalEnterprises: number;
+  pendingCount: number;
+  attentionCount: number;
+  reviewedCount: number;
+  items: MentorEnterpriseItem[];
+}
+
+export const mentorEnterpriseService = {
+  list: () => apiClient.get<ApiResponse<MentorEnterprisesResponse>>('/mentor/enterprises'),
+};
+
 export const pulseReviewService = {
-  getQueue: () => apiClient.get<ApiResponse<PulseFinalReviewQueue>>('/pulse/final-reviews'),
-  decide: (submissionId: string, decision: PulseDecision, reason: string) =>
-    apiClient.post<ApiResponse<PulseDecisionResult>>(`/pulse/final-reviews/${submissionId}/decision`, { decision, reason }),
-  decidePreAssessment: (preAssessmentId: string, decision: PulseDecision, reason: string) =>
-    apiClient.post<ApiResponse<PulsePreAssessmentDecisionResult>>(`/pulse/final-reviews/pre-assessments/${preAssessmentId}/decision`, { decision, reason }),
+  getQueue: (
+    includeReviewed = false,
+    organizationId?: string,
+    refreshAi = false,
+    refreshSubmissionId?: string,
+  ) => {
+    const params: Record<string, string | boolean> = {};
+    if (includeReviewed) params.includeReviewed = true;
+    if (organizationId) params.organizationId = organizationId;
+    if (refreshAi) params.refreshAi = true;
+    if (refreshSubmissionId) params.refreshSubmissionId = refreshSubmissionId;
+    return apiClient.get<ApiResponse<PulseFinalReviewQueue>>('/pulse/final-reviews', {
+      params: Object.keys(params).length > 0 ? params : undefined,
+    });
+  },
+  decide: (
+    submissionId: string,
+    decision: PulseDecision,
+    reason: string,
+    criterionEvaluations?: PulseCriterionEvaluationInput[],
+  ) => {
+    const payload: {
+      decision: PulseDecision;
+      reason: string;
+      criterionEvaluations?: PulseCriterionEvaluationInput[];
+    } = { decision, reason };
+    if (criterionEvaluations && criterionEvaluations.length > 0) {
+      payload.criterionEvaluations = criterionEvaluations;
+    }
+    return apiClient.post<ApiResponse<PulseDecisionResult>>(`/pulse/final-reviews/${submissionId}/decision`, payload);
+  },
+  decidePreAssessment: (
+    preAssessmentId: string,
+    decision: PulseDecision,
+    reason: string,
+    criterionEvaluations?: PulseCriterionEvaluationInput[],
+  ) => {
+    const payload: {
+      decision: PulseDecision;
+      reason: string;
+      criterionEvaluations?: PulseCriterionEvaluationInput[];
+    } = { decision, reason };
+    if (criterionEvaluations && criterionEvaluations.length > 0) {
+      payload.criterionEvaluations = criterionEvaluations;
+    }
+    return apiClient.post<ApiResponse<PulsePreAssessmentDecisionResult>>(
+      `/pulse/final-reviews/pre-assessments/${preAssessmentId}/decision`,
+      payload,
+    );
+  },
   recordSupport: (submissionId: string, action: PulseSupportAction, note?: string) =>
     apiClient.post<ApiResponse<{ submissionId: string; action: PulseSupportAction; recordedAt: string }>>(
       `/pulse/final-reviews/${submissionId}/support`,

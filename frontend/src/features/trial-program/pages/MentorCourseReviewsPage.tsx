@@ -1,9 +1,7 @@
-import { PulseFinalReviewsPage } from '@/features/pulse-manager/pages/PulseFinalReviewsPage';
+import { useParams } from 'react-router-dom';
+import { MentorReviewWorkbench } from '@/features/trial-program/components/MentorReviewWorkbench';
 
-/**
- * MT-03 · Bài cuối khóa học thử: nhân viên doanh nghiệp dùng thử học khóa Cơ bản xong thì nộp bài cuối khóa; chỉ mentor được
- * phân công chấm (chủ doanh nghiệp và quản lý không chấm trong doanh nghiệp dùng thử).
- */
 export function MentorCourseReviewsPage() {
-  return <PulseFinalReviewsPage audience="mentor" />;
+  const { organizationId } = useParams<{ organizationId?: string }>();
+  return <MentorReviewWorkbench key={organizationId ?? 'global'} organizationId={organizationId} />;
 }

@@ -56,7 +56,7 @@ export function TrialLearningHead({ total, done }: { total: number; done: number
       <div>
         <Eyebrow>Học thử</Eyebrow>
         <h1>{total} khóa Cơ bản để trải nghiệm.</h1>
-        <p>Mỗi lĩnh vực một khóa: học các mô-đun, nộp bài cuối khóa, mentor chấm.</p>
+        <p>Mỗi lĩnh vực một khóa: hoàn thành các mô-đun, nộp bài cuối khóa và được mentor đánh giá.</p>
       </div>
       {done != null && (
         <div className="pu-tl-score">
@@ -74,14 +74,29 @@ export function TrialNotice({ state, mine }: { state: TrialGateState; mine: MyTr
   useUiLanguage();
   if (state === 'waiting') {
     return (
-      <NoticeCard
-        tone="waiting"
-        icon={<Hourglass size={20} />}
-        title="Đang chờ mentor chấm bài"
-        text="Học thử mở khi mentor công bố kết quả bài đánh giá."
-        meta={mine.submittedAt ? `Đã nộp ${formatWhen(mine.submittedAt)}` : undefined}
-        action={<PuLink to={PULSE_PATHS.trialTest} kind="outline" small>Xem bài đánh giá</PuLink>}
-      />
+      <div className="pu-gate-waiting-wrap">
+        <NoticeCard
+          tone="waiting"
+          icon={<Hourglass size={20} />}
+          title="Đang chờ mentor thẩm định & công bố kết quả bài làm"
+          text="Chương trình đào tạo và các khóa học sẽ tự động mở khóa ngay sau khi mentor công bố kết quả bài đánh giá."
+          meta={mine.submittedAt ? `Đã nộp bài lúc ${formatWhen(mine.submittedAt)} · 54 câu trắc nghiệm & 3 bài tự luận` : undefined}
+          action={
+            <PuLink to={PULSE_PATHS.trialTest} kind="primary" small>
+              Vào xem bài làm <ArrowRight size={14} aria-hidden />
+            </PuLink>
+          }
+        />
+        <div className="pu-gate-steps-card">
+          <div className="pu-gate-steps-title">Tiến độ quy trình thẩm định bài đánh giá của bạn:</div>
+          <div className="pu-gate-steps-row">
+            <span className="pu-gate-step done">✓ Đã nộp bài thi</span>
+            <span className="pu-gate-step done">⚡ AI phân tích sơ bộ</span>
+            <span className="pu-gate-step active">🔄 Mentor đang chấm điểm</span>
+            <span className="pu-gate-step">⏳ Công bố & mở lộ trình</span>
+          </div>
+        </div>
+      </div>
     );
   }
   if (state === 'closed') {
@@ -98,8 +113,8 @@ export function TrialNotice({ state, mine }: { state: TrialGateState; mine: MyTr
   return (
     <NoticeCard
       icon={<ClipboardList size={20} />}
-      title="Làm bài đánh giá trước khi học"
-      text="Học thử mở sau khi mentor chấm bài đánh giá của bạn."
+      title="Làm bài test trước khi học"
+      text="Chương trình đào tạo mở sau khi mentor đánh giá bài test của bạn."
       meta={mine.canStart && mine.testDeadline ? `Hạn nộp ${formatWhen(mine.testDeadline)}` : mine.closedMessage ?? undefined}
       action={<PuLink to={PULSE_PATHS.trialTest}>{translateUi("Làm bài đánh giá ")}<ArrowRight size={15} aria-hidden /></PuLink>}
     />

@@ -17,3 +17,4 @@ import './ceilings';
 import './reference-positions';
 import './trial-overview';
 import './assistant';
+import './mentor';

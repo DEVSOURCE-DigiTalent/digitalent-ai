@@ -37,7 +37,7 @@ export function courseStatusText(course: PulseCourseSummary, courses: PulseCours
     case 'PRE_ASSESSMENT':
       return `${optional}Đạt: khóa được công nhận và bạn lên khóa tiếp theo. Chưa đạt: học khóa này rồi làm bài cuối khóa.`;
     case 'PRE_REVIEW':
-      return `Đã nộp bài đánh giá trước khi học ngày ${formatDate(course.preAssessment?.submittedAt)}. Đang chờ Mentor chấm điểm.`;
+      return `Đã nộp bài đánh giá trước khi học ngày ${formatDate(course.preAssessment?.submittedAt)}. Đang chờ Mentor đánh giá.`;
     case 'TO_LEARN':
       return course.preStatus === 'NOT_YET'
         ? `Bài đánh giá trước khi học ngày ${formatDate(course.preAssessment?.submittedAt)} chưa đạt. Học ${modules} mô-đun rồi làm bài cuối khóa.`
@@ -45,9 +45,9 @@ export function courseStatusText(course: PulseCourseSummary, courses: PulseCours
     case 'IN_PROGRESS':
       return `${optional}Đã qua ${course.modulesPassed}/${modules} mô-đun.`;
     case 'FINAL_READY':
-      return `Đã học hết ${modules} mô-đun. Bài cuối khóa được ghi hình màn hình, camera và micro để Mentor chấm điểm.`;
+      return `Đã học hết ${modules} mô-đun. Bài cuối khóa được ghi hình màn hình, camera và micro để Mentor đánh giá.`;
     case 'IN_REVIEW':
-      return `Bài cuối khóa đang chờ Mentor chấm điểm.`;
+      return `Bài cuối khóa đang chờ Mentor đánh giá.`;
     case 'RETRY_WAIT':
       return 'Lần nộp đầu chưa đạt. Xem nhận xét và chờ mở lần nộp cuối.';
     case 'NEEDS_SUPPORT':

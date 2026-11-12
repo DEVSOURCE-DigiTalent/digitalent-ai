@@ -17,7 +17,7 @@ export interface AskReviewerModalProps {
 
 const QUICK_SUGGESTIONS = [
   'Quy định này áp dụng thực tế tại phòng ban mình thế nào?',
-  'Minh chứng nào là hợp lệ cho bài thi cuối khóa?',
+  'Minh chứng nào là hợp lệ cho bài đánh giá cuối khóa?',
   'Tôi chưa rõ tình huống xử lý ở slide này.',
 ];
 

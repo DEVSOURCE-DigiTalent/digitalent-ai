@@ -42,7 +42,7 @@ export function PlatformCommercePage() {
               <span className="pa-eyebrow-dot" />
               QUẢN TRỊ NỀN TẢNG / ĐƠN GIÁ & DOANH THU B2B
             </div>
-            <h1 className="pa-header-title">Giá mỗi suất theo khóa học.</h1>
+            <h1 className="pa-header-title">Biểu giá mỗi suất theo khóa học</h1>
             <p className="pa-header-subtitle">
               Khóa Cơ bản luôn miễn phí theo Thông tư 02. Đổi giá trong bản nháp phiên bản; giá mới áp dụng khi bản nháp được công bố.
             </p>

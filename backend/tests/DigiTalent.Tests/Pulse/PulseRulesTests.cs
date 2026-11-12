@@ -56,9 +56,9 @@ public class PulseRulesTests
         var draws = Enumerable.Range(1, 4).Select(attempt => PulseQuizReader.Draw(pool, employee, assessment, attempt)).ToList();
 
         draws.Should().OnlyContain(d => d.Count == PulseRules.ModuleQuizDrawSize);
-        draws.Take(3).SelectMany(d => d.Select(q => q.QuestionId)).Should().OnlyHaveUniqueItems()
-            .And.BeEquivalentTo(pool.Select(q => q.QuestionId), "ba lần đầu đi hết ngân hàng 6 câu, không lặp câu nào");
-        draws[3].Select(q => q.QuestionId).Should().Equal(draws[0].Select(q => q.QuestionId), "hết ngân hàng thì quay lại từ đầu");
+        draws.Take(2).SelectMany(d => d.Select(q => q.QuestionId)).Should().OnlyHaveUniqueItems()
+            .And.BeEquivalentTo(pool.Select(q => q.QuestionId), "hai lần đầu đi hết ngân hàng 6 câu, không lặp câu nào");
+        draws[2].Select(q => q.QuestionId).Should().Equal(draws[0].Select(q => q.QuestionId), "hết ngân hàng thì quay lại từ đầu");
 
         var again = PulseQuizReader.Draw(pool, employee, assessment, 2);
         again.Select(q => q.QuestionId).Should().Equal(draws[1].Select(q => q.QuestionId), "trang học và lúc chấm thấy cùng một bộ câu");

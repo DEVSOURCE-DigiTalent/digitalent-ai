@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AuthGuard } from '../../components/guards/AuthGuard';
 import { RequireOnboarded } from '../../components/guards/RequireOnboarded';
@@ -12,7 +12,7 @@ import { useEnterpriseTheme } from '../../hooks/use-enterprise-theme';
 import { PulseHeader } from '../../features/pulse-employee/components/PulseHeader';
 import { PulseSidebar } from '../../features/pulse-employee/components/PulseSidebar';
 import { PULSE_PATHS, isExamPath } from '../../features/pulse-employee/lib/paths';
-import { TrialNotice } from '../../features/pulse-employee/components/TrialLearning';
+import { PageSkeleton } from '../../features/pulse-employee/components/ui';
 import { trialGateOf } from '../../features/pulse-employee/lib/trial-gate';
 import '../../features/pulse-employee/pulse-trial.css';
 import { useIsEnterpriseTrial, useMyTrialAssessment } from '../../hooks/use-trial-program';
@@ -28,42 +28,17 @@ import '../../features/pulse-employee/pulse-exam.css';
  * - Tự động ẩn hoàn toàn (Zero Distraction Focus Mode) khi làm bài thi Proctored (Pre-assessment & Final).
  */
 /**
- * Doanh nghiệp dùng thử: trước khi mentor công bố kết quả, trang học (khóa học, thực hành, kết quả) hiện cảnh báo "làm bài
- * test trước" / "đang chờ mentor chấm" thay cho nội dung; trang Học thử tự hiện cảnh báo trên các khóa đang khóa. Vào cổng
- * (/enterprise/me) thì tới thẳng bài test. Hồ sơ, hoạt động vẫn mở. Sau công bố: học thử các khóa Cơ bản như bình thường.
- */
-function TrialGate({ pathname, children }: { pathname: string; children: ReactNode }) {
-  const trial = useIsEnterpriseTrial();
-  const { data, isLoading } = useMyTrialAssessment(trial);
-  if (!trial) return <>{children}</>;
-  if (isLoading) return null;
-  const gate = trialGateOf(data);
-  if (!gate || !data) return <>{children}</>;
-  if (pathname === PULSE_PATHS.today) return <Navigate to={PULSE_PATHS.trialTest} replace />;
-  const open = [PULSE_PATHS.trialTest, PULSE_PATHS.path, PULSE_PATHS.profile, PULSE_PATHS.activity, PULSE_PATHS.feedbacks, PULSE_PATHS.bugReports]
-    .some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-  if (open) return <>{children}</>;
-  return (
-    <div className="pu-gate">
-      <TrialNotice state={gate} mine={data} />
-    </div>
-  );
-}
-
-/**
  * Chủ doanh nghiệp tự làm bài / học thử (doanh nghiệp dùng thử): trang Pulse nằm trong khung quản trị — menu bên, thanh trên —
  * để không mất các thao tác quản lý khi chuyển sang bài test và khóa học.
  */
-function OwnerLearningShell({ pathname }: { pathname: string }) {
+function OwnerLearningShell({ pathname: _pathname }: { pathname: string }) {
   useEnterpriseTheme({ lightOnly: true });
   const user = useCurrentUser((s) => s.user);
   return (
     <>
       <MainLayout portal={ENTERPRISE_PORTAL} sidebarConfig={sidebarFor(user)}>
         <div className="pu pu-in-shell" data-testid="pulse-employee-layout">
-          <TrialGate pathname={pathname}>
-            <Outlet />
-          </TrialGate>
+          <Outlet />
         </div>
       </MainLayout>
       <AssistantWidget />
@@ -76,34 +51,77 @@ export function PulseEmployeeLayout() {
   const exam = isExamPath(pathname);
   const trial = useIsEnterpriseTrial();
   const owner = useCurrentUser((s) => Boolean(s.user?.roles.includes(ROLES.OWNER)));
+  const { data: myTrial, isLoading: isTrialLoading } = useMyTrialAssessment(trial);
+  const gate = trialGateOf(myTrial);
+  const isWaiting = myTrial?.status === 'SUBMITTED' || gate === 'waiting';
+  const isGateActive = Boolean(gate && myTrial);
+  const shouldFocus = Boolean(exam || isGateActive || (pathname === PULSE_PATHS.trialTest && isWaiting));
+
   useEffect(() => {
     window.scrollTo({ top: 0 });
   }, [pathname]);
+
+  // Khi đang bị Gate (chưa làm bài hoặc đã nộp đang chờ doanh nghiệp xác nhận kết quả):
+  // Nhân viên BẮT BUỘC ở trang trial-test (hoặc phòng thi trial-test/exam).
+  // Chặn toàn bộ truy cập vào các trang khác trong /enterprise/me.
+  if (isGateActive && !isTrialLoading) {
+    const isAllowedGatedPath =
+      pathname === PULSE_PATHS.trialTest ||
+      pathname === PULSE_PATHS.trialExam ||
+      pathname.startsWith(`${PULSE_PATHS.trialExam}/`);
+
+    if (!isAllowedGatedPath) {
+      const search = typeof window !== 'undefined' ? window.location.search : '';
+      return <Navigate to={`${PULSE_PATHS.trialTest}${search}`} replace />;
+    }
+  }
 
   return (
     <AuthGuard>
       <RequireWorkspace workspace={WORKSPACES.ENTERPRISE}>
         <RequireOnboarded>
-          {owner && !exam ? (
+          {owner && !exam && !shouldFocus ? (
             <OwnerLearningShell pathname={pathname} />
           ) : (
-            <div className={exam ? 'pu pu-exam-mode' : 'pu pu-workspace'} data-testid="pulse-employee-layout">
-              {/* 1. Header trên cùng toàn màn hình */}
-              {!exam && <PulseHeader />}
+            <div
+              className={exam ? 'pu pu-exam-mode' : shouldFocus ? 'pu pu-gate-mode' : 'pu pu-workspace'}
+              data-testid="pulse-employee-layout"
+            >
+              {/* 1. Header trên cùng toàn màn hình - truyền gate để Header tự tối giản */}
+              {!exam && <PulseHeader gate={gate} isGateActive={shouldFocus} />}
 
-              {/* 2. Vùng làm việc: Khung Sidebar dạng thẻ nhỏ gọn + Main content */}
-              <div className={exam ? 'pu-exam-container' : 'pu-workspace-content'}>
-                {!exam && <PulseSidebar />}
-                <main className={exam ? 'pu-exam-main' : 'pu-main-content'} id="main">
-                  <TrialGate pathname={pathname}>
+              {/* 2. Vùng làm việc: Ẩn hoàn toàn sidebar khi đang ở Gate Mode hoặc Exam Mode */}
+              <div
+                className={
+                  exam
+                    ? 'pu-exam-container'
+                    : shouldFocus
+                    ? 'pu-gate-focused-container'
+                    : 'pu-workspace-content'
+                }
+              >
+                {!exam && !shouldFocus && <PulseSidebar />}
+                <main
+                  className={
+                    exam
+                      ? 'pu-exam-main'
+                      : shouldFocus
+                      ? 'pu-gate-focused-main'
+                      : 'pu-main-content'
+                  }
+                  id="main"
+                >
+                  {isTrialLoading ? (
+                    <PageSkeleton />
+                  ) : (
                     <Outlet />
-                  </TrialGate>
+                  )}
                 </main>
               </div>
 
-              {/* Không có trợ lý trong bài làm có giám sát */}
-              {!exam && <AssistantWidget />}
-              {!exam && !trial && <RoleTutorialContainer forcedRole="EMPLOYEE" />}
+              {/* Trợ lý & Hướng dẫn: ẩn khi thi hoặc khi đang ở Gate Mode */}
+              {!exam && !shouldFocus && <AssistantWidget />}
+              {!exam && !trial && !shouldFocus && <RoleTutorialContainer forcedRole="EMPLOYEE" />}
             </div>
           )}
         </RequireOnboarded>

@@ -76,7 +76,7 @@ export function UserAvatarMenu({
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
-        className="account-menu__trigger flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-xl hover:bg-slate-100/80 transition-all border border-transparent hover:border-slate-200/60"
+        className="account-menu__trigger flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-xl hover:bg-slate-100/80 transition-all border border-transparent hover:border-slate-200/60 cursor-pointer"
         aria-label={translateUi("Menu tài khoản")}
         aria-expanded={isOpen}
       >

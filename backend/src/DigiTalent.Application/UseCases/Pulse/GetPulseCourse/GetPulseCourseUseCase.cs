@@ -1,5 +1,6 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.Learning.Content;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Pulse;
@@ -63,6 +64,10 @@ public class GetPulseCourseUseCase : IUseCase<GetPulseCourseUseCaseInput, GetPul
             : state.AllModulesPassed ? "FINAL"
             : "MODULE";
 
+        var assignment = (await new LearningContentReader(_context).FinalsAsync(new[] { state.Course.CourseId }))
+            .GetValueOrDefault(state.Course.CourseId);
+        var finalRubric = PulseEssayRubric.Build(state.Domain.Number, state.Domain.Name, state.Course.Tier, assignment?.Criteria, state.Course.Code);
+
         return new GetPulseCourseUseCaseOutput
         {
             Course = PulseMapping.Course(state),
@@ -74,7 +79,7 @@ public class GetPulseCourseUseCase : IUseCase<GetPulseCourseUseCaseInput, GetPul
             Reviewer = PulseMapping.Reviewer(snapshot),
             LearningOutcomes = outcomes,
             Modules = modules,
-            FinalCriteria = PulseRules.FinalCriteria.ToList(),
+            FinalCriteria = finalRubric,
             NextAction = nextAction,
             NextModuleId = nextAction == "PREVIEW" ? modules.FirstOrDefault()?.ModuleId
                 : nextAction == "MODULE" ? (firstOpen ?? modules.FirstOrDefault())?.ModuleId

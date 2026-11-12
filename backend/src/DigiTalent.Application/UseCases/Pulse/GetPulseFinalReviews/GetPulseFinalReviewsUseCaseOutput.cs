@@ -2,13 +2,15 @@ namespace DigiTalent.Application.UseCases.Pulse;
 
 public class GetPulseFinalReviewsUseCaseOutput
 {
-    /// <summary>Bài chờ quyết định (bài đánh giá trước khi học + bài cuối khóa).</summary>
+    /// <summary>Bài chờ quyết định.</summary>
     public int PendingCount { get; set; }
-    /// <summary>Bài đánh giá trước khi học chờ quyết định.</summary>
+    /// <summary>Bài đánh giá trước khi học chờ quyết định (dành cho quản lý/chủ doanh nghiệp).</summary>
     public int PreAssessmentCount { get; set; }
     public int RetryCount { get; set; }
     public int DeadlineMissedCount { get; set; }
     public int FlaggedCount { get; set; }
+    /// <summary>Bài đã hoàn tất thẩm định (APPROVED / NOT_YET) khi tải với includeReviewed = true.</summary>
+    public int ReviewedCount { get; set; }
     public List<PulseCriterionDto> Criteria { get; set; } = new();
     public List<PulseFinalReviewItemDto> Items { get; set; } = new();
 }
@@ -23,11 +25,12 @@ public class PulseFinalReviewItemDto
     /// PRE_ASSESSMENT: id bài đánh giá — dùng cho POST pre-assessments/{id}/decision.
     /// </summary>
     public Guid SubmissionId { get; set; }
-    /// <summary>PENDING | RETRY_WAIT | RETRY_READY | DEADLINE_MISSED | FLAGGED (bài đánh giá trước khi học luôn PENDING).</summary>
+    /// <summary>PENDING | RETRY_WAIT | RETRY_READY | DEADLINE_MISSED | FLAGGED | APPROVED | NOT_YET.</summary>
     public string Status { get; set; } = string.Empty;
     public Guid EmployeeId { get; set; }
     public string EmployeeName { get; set; } = string.Empty;
-    /// <summary>Doanh nghiệp của người làm bài (mentor chấm cho nhiều doanh nghiệp dùng thử).</summary>
+    public Guid OrganizationId { get; set; }
+    /// <summary>Doanh nghiệp của người làm bài.</summary>
     public string? OrganizationName { get; set; }
     public string? DepartmentName { get; set; }
     public string? PositionName { get; set; }
@@ -36,6 +39,8 @@ public class PulseFinalReviewItemDto
     public string CourseTitle { get; set; } = string.Empty;
     public string? DomainName { get; set; }
     public int? Tier { get; set; }
+    /// <summary>Bộ tiêu chí chấm tự luận có trọng số (theo lĩnh vực × cấp độ hoặc tiêu chí riêng của khóa).</summary>
+    public List<PulseCriterionDto> Rubric { get; set; } = new();
     public int AttemptNo { get; set; }
     public int MaxAttempts { get; set; }
     public List<PulseFinalAttemptDto> Attempts { get; set; } = new();

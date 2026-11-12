@@ -112,8 +112,8 @@ public class PulseProctoring
 }
 
 /// <summary>
-/// Người nhận thông báo khi nhân viên nộp bài: quản lý phòng ban, hoặc chủ doanh nghiệp khi nhân viên là quản lý; doanh
-/// nghiệp dùng thử → mentor được phân công (chưa phân công → không ai).
+/// Người nhận thông báo khi nhân viên nộp bài: quản lý phòng ban (hoặc chủ doanh nghiệp khi nhân viên là quản lý)
+/// cùng các mentor đang hoạt động; doanh nghiệp dùng thử → mentor được phân công (chưa phân công → không ai).
 /// </summary>
 public static class PulseReviewers
 {
@@ -128,6 +128,7 @@ public static class PulseReviewers
             return trial.MentorUserId is { } mentor ? new List<Guid> { mentor } : new List<Guid>();
         }
 
+        var recipientIds = new List<Guid>();
         var manager = await (
                 from department in context.Departments.AsNoTracking()
                 join head in context.Employees.AsNoTracking() on department.ManagerEmployeeId equals head.Id
@@ -136,17 +137,35 @@ public static class PulseReviewers
             .FirstOrDefaultAsync();
         if (manager is { } managerUserId && managerUserId != employee.UserId)
         {
-            return new List<Guid> { managerUserId };
+            recipientIds.Add(managerUserId);
+        }
+        else
+        {
+            var ownerIds = await (
+                    from userRole in context.UserRoles.AsNoTracking()
+                    join role in context.Roles.AsNoTracking() on userRole.RoleId equals role.Id
+                    join user in context.Users.AsNoTracking() on userRole.UserId equals user.Id
+                    where role.Code == Roles.Owner && user.OrganizationId == employee.OrganizationId && user.Id != employee.UserId
+                    select user.Id)
+                .Distinct()
+                .ToListAsync();
+            recipientIds.AddRange(ownerIds);
         }
 
-        return await (
+        var mentorIds = await (
                 from userRole in context.UserRoles.AsNoTracking()
                 join role in context.Roles.AsNoTracking() on userRole.RoleId equals role.Id
                 join user in context.Users.AsNoTracking() on userRole.UserId equals user.Id
-                where role.Code == Roles.Owner && user.OrganizationId == employee.OrganizationId && user.Id != employee.UserId
+                where role.Code == Roles.Mentor
+                      && role.Status == Statuses.Simple.Active
+                      && user.Status == Statuses.User.Active
+                      && user.Id != employee.UserId
                 select user.Id)
             .Distinct()
             .ToListAsync();
+        recipientIds.AddRange(mentorIds);
+
+        return recipientIds.Distinct().ToList();
     }
 }
 

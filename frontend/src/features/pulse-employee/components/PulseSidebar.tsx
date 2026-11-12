@@ -148,7 +148,7 @@ export function PulseSidebar() {
       </div>
 
       {/* ── Navigation: Danh sách chức năng chuẩn form Personal ────────── */}
-      <nav className="pu-side-card-nav" aria-label="Khu học tập nhân viên">
+      <nav className="pu-side-card-nav" aria-label="Cổng đào tạo nhân viên">
         <ul className="pu-side-card-list">
           {SIDEBAR_ITEMS.map((item) => {
             const Icon = item.icon;

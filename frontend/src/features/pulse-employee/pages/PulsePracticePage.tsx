@@ -1,4 +1,3 @@
-import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useMemo, Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -71,7 +70,6 @@ function formatTitle(title: string): string {
 }
 
 export function PulsePracticePage() {
-  useUiLanguage();
   const practice = usePulsePractice();
   const overview = usePulseOverview();
   const outcomesQuery = usePulseOutcomes();
@@ -213,29 +211,52 @@ export function PulsePracticePage() {
   // ── Tính toán số liệu Chiến dịch Khảo sát Đầu vào (Onboarding Baseline Campaign) ──
   // 1. Tiến độ theo Lộ trình Chức danh (các khóa bắt buộc trong vị trí việc làm)
   const pathEligibleCourses = useMemo(
-    () => assessmentItems.filter((i) => i.inPath && i.preStatus !== 'NOT_NEEDED'),
+    () => assessmentItems.filter((i) => i.inPath),
     [assessmentItems]
   );
   const pathDoneCourses = useMemo(
-    () => pathEligibleCourses.filter((i) => i.preStatus === 'PASSED' || (i.preStatus === 'NOT_YET' && i.preSubmittedAt)),
+    () =>
+      pathEligibleCourses.filter(
+        (i) =>
+          i.preStatus === 'PASSED' ||
+          i.approvedVia === 'PRE_ASSESSMENT' ||
+          i.approvedVia === 'PLACEMENT_TEST' ||
+          i.approved ||
+          (i.preStatus === 'NOT_YET' && i.preSubmittedAt)
+      ),
     [pathEligibleCourses]
   );
-  const pathCampaignProgress = pathEligibleCourses.length > 0
-    ? Math.round((pathDoneCourses.length / pathEligibleCourses.length) * 100)
-    : 100;
+  const pathCampaignProgress =
+    pathEligibleCourses.length > 0
+      ? Math.round((pathDoneCourses.length / pathEligibleCourses.length) * 100)
+      : 100;
 
-  // 2. Tiến độ toàn diện (toàn bộ 16 khóa trong hệ sinh thái 6 lĩnh vực)
+  // 2. Tiến độ toàn diện (toàn bộ các khóa trong hệ sinh thái 6 lĩnh vực)
   const allEligibleCourses = useMemo(
-    () => assessmentItems.filter((i) => i.preStatus !== 'NOT_NEEDED'),
+    () => assessmentItems,
     [assessmentItems]
   );
   const allDoneCourses = useMemo(
-    () => allEligibleCourses.filter((i) => i.preStatus === 'PASSED' || (i.preStatus === 'NOT_YET' && i.preSubmittedAt)),
+    () =>
+      allEligibleCourses.filter(
+        (i) =>
+          i.preStatus === 'PASSED' ||
+          i.approvedVia === 'PRE_ASSESSMENT' ||
+          i.approvedVia === 'PLACEMENT_TEST' ||
+          i.approved ||
+          (i.preStatus === 'NOT_YET' && i.preSubmittedAt)
+      ),
     [allEligibleCourses]
   );
 
   const exemptedCourses = useMemo(
-    () => assessmentItems.filter((i) => i.preStatus === 'PASSED' || i.approvedVia === 'PRE_ASSESSMENT'),
+    () =>
+      assessmentItems.filter(
+        (i) =>
+          i.preStatus === 'PASSED' ||
+          i.approvedVia === 'PRE_ASSESSMENT' ||
+          i.approvedVia === 'PLACEMENT_TEST'
+      ),
     [assessmentItems]
   );
 
@@ -246,13 +267,17 @@ export function PulsePracticePage() {
         (i) =>
           (i.canStartPreAssessment || i.preStatus === 'REQUIRED' || i.preStatus === 'NOT_YET') &&
           i.preStatus !== 'PASSED' &&
-          i.preStatus !== 'PENDING'
+          i.preStatus !== 'PENDING' &&
+          i.approvedVia !== 'PLACEMENT_TEST' &&
+          !i.approved
       ) ||
       allEligibleCourses.find(
         (i) =>
           (i.canStartPreAssessment || i.preStatus === 'REQUIRED' || i.preStatus === 'NOT_YET') &&
           i.preStatus !== 'PASSED' &&
-          i.preStatus !== 'PENDING'
+          i.preStatus !== 'PENDING' &&
+          i.approvedVia !== 'PLACEMENT_TEST' &&
+          !i.approved
       ),
     [pathEligibleCourses, allEligibleCourses]
   );
@@ -263,13 +288,53 @@ export function PulsePracticePage() {
   const completedCount = assessmentItems.filter((c) => c.isCompleted).length;
   const savedHours = exemptedCourses.length * 4; // Trung bình mỗi môn được miễn học tiết kiệm 4 giờ lý thuyết
 
+  // Số lượng phân loại bài khảo thí
+  const preCount = useMemo(
+    () =>
+      assessmentItems.filter(
+        (c) =>
+          c.approvedVia === 'PLACEMENT_TEST' ||
+          c.approvedVia === 'PRE_ASSESSMENT' ||
+          c.preStatus === 'PASSED' ||
+          c.preStatus === 'PENDING' ||
+          c.preStatus === 'REQUIRED' ||
+          c.canStartPreAssessment ||
+          c.preStatus === 'NOT_YET'
+      ).length,
+    [assessmentItems]
+  );
+  const finalCount = useMemo(
+    () =>
+      assessmentItems.filter(
+        (c) =>
+          (c.finalStatus !== 'NOT_READY' && c.finalStatus !== 'NOT_STARTED') ||
+          c.progressPercent > 0 ||
+          c.finalAttempts > 0
+      ).length,
+    [assessmentItems]
+  );
+
   // ── Lọc danh sách theo Tab ──
   const filteredItems = useMemo(() => {
     switch (activeTab) {
       case 'pre':
-        return assessmentItems.filter((c) => c.preStatus !== 'NOT_NEEDED');
+        return assessmentItems.filter(
+          (c) =>
+            c.approvedVia === 'PLACEMENT_TEST' ||
+            c.approvedVia === 'PRE_ASSESSMENT' ||
+            c.preStatus === 'PASSED' ||
+            c.preStatus === 'PENDING' ||
+            c.preStatus === 'REQUIRED' ||
+            c.canStartPreAssessment ||
+            c.preStatus === 'NOT_YET'
+        );
       case 'final':
-        return assessmentItems.filter((c) => c.finalStatus !== 'NOT_READY' || c.progressPercent > 0);
+        return assessmentItems.filter(
+          (c) =>
+            (c.finalStatus !== 'NOT_READY' && c.finalStatus !== 'NOT_STARTED') ||
+            c.progressPercent > 0 ||
+            c.finalAttempts > 0
+        );
       case 'pending':
         return assessmentItems.filter((c) => c.isPending);
       case 'completed':
@@ -299,7 +364,7 @@ export function PulsePracticePage() {
   if ((practice.error && !practice.data) || (overview.error && !overview.data)) {
     return (
       <LoadError
-        message={translateUi(pulseErrorMessage(practice.error || overview.error, 'Không tải được dữ liệu khảo thí.'))}
+        message={pulseErrorMessage(practice.error || overview.error, 'Không tải được dữ liệu khảo thí.')}
         onRetry={() => {
           practice.refetch();
           overview.refetch();
@@ -318,7 +383,7 @@ export function PulsePracticePage() {
             <span>Hệ thống Đánh giá Chuẩn hóa</span>
           </div>
           <h1 className="pu-path-main-title">Khảo thí & Đánh giá Năng lực</h1>
-          <p className="pu-path-sub-title">Khảo sát năng lực đầu vào và thi đánh giá chuẩn hóa năng lực số theo chức danh.</p>
+          <p className="pu-path-sub-title">Khảo sát năng lực đầu vào và đánh giá chuẩn hóa năng lực số theo chức danh.</p>
         </div>
 
         {/* Nút xem nhanh Tiêu chuẩn đánh giá (Modal tra cứu khi cần) */}
@@ -342,7 +407,7 @@ export function PulsePracticePage() {
           </div>
           <h2 className="pu-campaign-h2">Đánh giá năng lực đầu vào</h2>
           <p className="pu-campaign-p">
-            Hoàn thành bài đánh giá để được miễn học toàn bộ lý thuyết các môn bạn đã thành thạo.
+            Hoàn thành bài đánh giá để được miễn học toàn bộ lý thuyết các khóa học bạn đã thành thạo.
           </p>
 
           {/* Thanh tiến độ hoàn thành đợt khảo sát */}
@@ -351,7 +416,7 @@ export function PulsePracticePage() {
               <span>
                 Tiến độ theo chức danh: <strong>{pathDoneCourses.length} / {pathEligibleCourses.length || 8}</strong> bài đã làm
                 <span style={{ fontWeight: 400, color: '#64748b', fontSize: '12px', marginLeft: '6px' }}>
-                  ({allDoneCourses.length}/{allEligibleCourses.length} môn toàn 6 lĩnh vực)
+                  ({allDoneCourses.length}/{allEligibleCourses.length} khóa toàn 6 lĩnh vực)
                 </span>
               </span>
               <strong>{pathCampaignProgress}%</strong>
@@ -375,9 +440,9 @@ export function PulsePracticePage() {
               <div className="pu-campaign-next-course">
                 <div className="pu-campaign-next-code-row">
                   <span className="pu-campaign-next-code">{nextPreCourse.code}</span>
-                  <span className="pu-campaign-next-domain">{translateUi(nextPreCourse.domainName)}</span>
+                  <span className="pu-campaign-next-domain">{nextPreCourse.domainName}</span>
                 </div>
-                <h3 className="pu-campaign-next-title">{translateUi(nextPreCourse.title)}</h3>
+                <h3 className="pu-campaign-next-title">{nextPreCourse.title}</h3>
               </div>
               <Link
                 to={PULSE_PATHS.preAssessment(nextPreCourse.courseId)}
@@ -392,8 +457,16 @@ export function PulsePracticePage() {
               <Trophy size={32} className="text-emerald-400" />
               <h4>Đã hoàn thành đợt khảo sát!</h4>
               <p>
-                Đã miễn học <strong>{exemptedCourses.length} môn</strong> và tiết kiệm <strong>~{savedHours}{translateUi(" giờ")}</strong> học lý thuyết!
+                Đã miễn học <strong>{exemptedCourses.length} khóa</strong> và tiết kiệm <strong>~{savedHours} giờ</strong> học lý thuyết!
               </p>
+              <Link
+                to={PULSE_PATHS.trialTest}
+                className="pu-campaign-cta-btn"
+                style={{ marginTop: 10, background: '#059669', borderColor: '#059669', textDecoration: 'none' }}
+              >
+                <span>Xem báo cáo đầu vào</span>
+                <ArrowRight size={14} />
+              </Link>
             </div>
           )}
         </div>
@@ -413,9 +486,9 @@ export function PulsePracticePage() {
             <div className="pu-kpi-num-row">
               <span className="pu-kpi-num">{urgentCount}</span>
             </div>
-            <div className="pu-kpi-label">Bài thi cần làm ngay</div>
+            <div className="pu-kpi-label">Bài đánh giá cần làm ngay</div>
             <small className="pu-kpi-desc">
-              Gồm bài đánh giá đầu vào & bài thi cuối khóa đang mở
+              Gồm bài đánh giá đầu vào & đánh giá cuối khóa đang mở
             </small>
           </div>
         </button>
@@ -432,7 +505,7 @@ export function PulsePracticePage() {
             <div className="pu-kpi-num-row">
               <span className="pu-kpi-num">{pendingCount}</span>
             </div>
-            <div className="pu-kpi-label">Đang chờ sếp duyệt</div>
+            <div className="pu-kpi-label">Đang chờ xét duyệt</div>
             <small className="pu-kpi-desc">
               SLA phản hồi dự kiến: ~24-48 giờ
             </small>
@@ -453,7 +526,7 @@ export function PulsePracticePage() {
             </div>
             <div className="pu-kpi-label">Năng lực đã công nhận</div>
             <small className="pu-kpi-desc">
-              Đã miễn học {exemptedCourses.length} môn · Tiết kiệm ~{savedHours}h học
+              Đã miễn học {exemptedCourses.length} khóa · Tiết kiệm ~{savedHours}h học
             </small>
           </div>
         </button>
@@ -477,7 +550,7 @@ export function PulsePracticePage() {
           >
             <Zap size={13} />
             <span>Đánh giá đầu vào (Vượt cấp)</span>
-            <span className="pu-f-badge">{allEligibleCourses.length}</span>
+            <span className="pu-f-badge">{preCount}</span>
           </button>
           <button
             type="button"
@@ -485,15 +558,15 @@ export function PulsePracticePage() {
             className={`pu-f-chip${activeTab === 'final' ? ' active' : ''}`}
           >
             <GraduationCap size={13} />
-            <span>Thi cuối khóa (AI Proctored)</span>
-            <span className="pu-f-badge">{finals.length}</span>
+            <span>Đánh giá cuối khóa (AI Proctored)</span>
+            <span className="pu-f-badge">{finalCount}</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('pending')}
             className={`pu-f-chip${activeTab === 'pending' ? ' active' : ''}`}
           >
-            <span>Chờ sếp duyệt</span>
+            <span>Chờ xét duyệt</span>
             <span className="pu-f-badge">{pendingCount}</span>
           </button>
           <button
@@ -501,7 +574,7 @@ export function PulsePracticePage() {
             onClick={() => setActiveTab('completed')}
             className={`pu-f-chip${activeTab === 'completed' ? ' active' : ''}`}
           >
-            <span>{translateUi("Đã hoàn thành")}</span>
+            <span>Đã hoàn thành</span>
             <span className="pu-f-badge">{completedCount}</span>
           </button>
         </div>
@@ -512,7 +585,7 @@ export function PulsePracticePage() {
         <PageSkeleton blocks={[140, 360]} />
       ) : practice.error ? (
         <LoadError
-          message={translateUi(pulseErrorMessage(practice.error, 'Không tải được dữ liệu khảo thí.'))}
+          message={pulseErrorMessage(practice.error, 'Không tải được dữ liệu khảo thí.')}
           onRetry={() => {
             practice.refetch();
             overview.refetch();
@@ -526,9 +599,9 @@ export function PulsePracticePage() {
                 <th className="pu-ledger-th">Khóa học & Lĩnh vực</th>
                 <th className="pu-ledger-th">Đánh giá Đầu vào (Vượt cấp)</th>
                 <th className="pu-ledger-th">Tiến độ Mô đun</th>
-                <th className="pu-ledger-th">Thi Cuối khóa (AI Proctored)</th>
+                <th className="pu-ledger-th">Đánh giá Cuối khóa (AI Proctored)</th>
                 <th className="pu-ledger-th">Thẩm định & Quyết định</th>
-                <th className="pu-ledger-th" style={{ textAlign: 'right' }}>{translateUi("Thao tác")}</th>
+                <th className="pu-ledger-th" style={{ textAlign: 'right' }}>Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -547,10 +620,11 @@ export function PulsePracticePage() {
                         <tr className="pu-domain-divider-row">
                           <td colSpan={6} className="pu-domain-divider-td">
                             <div className="pu-domain-divider-wrap">
-                              <span className="pu-domain-divider-pill">{translateUi("Lĩnh vực 0")}{item.domainNumber}
+                              <span className="pu-domain-divider-pill">
+                                Lĩnh vực 0{item.domainNumber}
                               </span>
                               <span className="pu-domain-divider-name">
-                                {translateUi(item.domainName)}
+                                {item.domainName}
                               </span>
                               <span className="pu-domain-divider-line" />
                             </div>
@@ -602,8 +676,8 @@ export function PulsePracticePage() {
                 <div key={c.number} className="pu-crit-card">
                   <span className="pu-crit-badge">Tiêu chí 0{c.number}</span>
                   <div className="pu-crit-body">
-                    <strong>{translateUi(c.title)}</strong>
-                    <p>{translateUi(c.description)}</p>
+                    <strong>{c.title}</strong>
+                    <p>{c.description}</p>
                   </div>
                 </div>
               ))}
@@ -619,13 +693,16 @@ export function PulsePracticePage() {
    COMPONENT: Dòng bảng Sổ Khảo Thí (Assessment Table Row)
 ───────────────────────────────────────────────────────────────────────────── */
 function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outcomeId?: string }) {
-  useUiLanguage();
   const isPreOpen = item.canStartPreAssessment || item.preStatus === 'REQUIRED';
-  const isPrePassed = item.preStatus === 'PASSED' || item.approvedVia === 'PRE_ASSESSMENT';
+  const isPlacementApproved = item.approvedVia === 'PLACEMENT_TEST';
+  const isPrePassed =
+    item.preStatus === 'PASSED' ||
+    item.approvedVia === 'PRE_ASSESSMENT' ||
+    isPlacementApproved;
   const isPrePending = item.preStatus === 'PENDING';
   const isPreNotYet = item.preStatus === 'NOT_YET';
 
-  const isFinalApproved = item.finalStatus === 'APPROVED' || item.approved;
+  const isFinalApproved = item.finalStatus === 'APPROVED' || (item.approved && !isPlacementApproved);
   const isFinalPending = item.finalStatus === 'PENDING';
   const isFinalReady = item.finalStatus === 'READY' || item.finalStatus === 'RETRY_READY';
   const isFinalLearning = item.finalStatus === 'LEARNING';
@@ -639,9 +716,9 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
         <div className="pu-course-identity">
           <span className="pu-ledger-code">{item.code}</span>
           <div className="pu-ledger-title-group">
-            <span className="pu-ledger-title">{translateUi(item.title)}</span>
+            <span className="pu-ledger-title">{item.title}</span>
             <span className="pu-ledger-domain">
-              {translateUi(item.domainName)} · {levelName(item.tier)}
+              {item.domainName} · {levelName(item.tier)}
             </span>
           </div>
         </div>
@@ -655,22 +732,22 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
             className="pu-status-pill passed hover:opacity-90 transition-opacity inline-flex items-center gap-1 cursor-pointer"
             title="Nhấn để xem chứng nhận miễn học chi tiết"
           >
-            <Check size={12} strokeWidth={3} /> Đạt · Miễn học 100%
+            <Check size={12} strokeWidth={3} /> {isPlacementApproved ? 'Đạt khảo sát · Miễn học' : 'Đạt · Miễn học 100%'}
           </Link>
         ) : isPrePending ? (
           <span className="pu-status-pill pending">
-            <Timer size={12} /> Đã nộp · Chờ sếp duyệt
+            <Timer size={12} /> Đã nộp · Chờ xét duyệt
           </span>
         ) : isPreOpen ? (
           <span className="pu-status-pill open-pre">
-            <Zap size={12} /> Mở làm bài đánh giá
+            <Zap size={12} /> Mở bài đánh giá
           </span>
         ) : isPreNotYet ? (
           <span className="pu-status-pill not-yet">
             <AlertCircle size={12} /> Chưa đạt điểm miễn
           </span>
         ) : (
-          <span className="pu-status-pill locked">{translateUi("Không áp dụng")}</span>
+          <span className="pu-status-pill locked">Không áp dụng</span>
         )}
       </td>
 
@@ -700,21 +777,28 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
 
       {/* 4. Thi Cuối khóa (AI Proctored) */}
       <td className="pu-ledger-td">
-        {isFinalApproved ? (
+        {isPlacementApproved ? (
+          <span
+            className="pu-status-pill passed inline-flex items-center gap-1"
+            title="Được miễn thi cuối khóa do đã đạt chuẩn khảo sát đầu vào"
+          >
+            <Check size={12} strokeWidth={2.5} /> Miễn thi cuối khóa
+          </span>
+        ) : isFinalApproved ? (
           <Link
             to={targetOutcomePath}
             className="pu-status-pill passed hover:opacity-90 transition-opacity inline-flex items-center gap-1 cursor-pointer"
-            title="Nhấn để xem chứng chỉ môn học chi tiết"
+            title="Nhấn để xem chứng chỉ khóa học chi tiết"
           >
-            <CheckCircle2 size={12} /> Đã đỗ & Cấp chứng nhận
+            <CheckCircle2 size={12} /> Đã đạt & Cấp chứng nhận
           </Link>
         ) : isFinalPending ? (
           <span className="pu-status-pill pending">
-            <Timer size={12} /> Đã nộp · Chờ chấm
+            <Timer size={12} /> Đã nộp · Chờ đánh giá
           </span>
         ) : isFinalReady ? (
           <span className="pu-status-pill open-final">
-            <Zap size={12} /> Mở thi cuối khóa
+            <Zap size={12} /> Mở bài đánh giá cuối khóa
           </span>
         ) : isFinalLearning ? (
           <span className="pu-status-pill learning">
@@ -733,6 +817,10 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
           <span className="text-slate-700 italic">
             "{item.finalDecisionReason || item.preDecisionReason}"
           </span>
+        ) : isPlacementApproved ? (
+          <span className="text-emerald-700 font-medium">Miễn học qua Khảo sát đầu vào</span>
+        ) : item.approvedVia === 'PRE_ASSESSMENT' ? (
+          <span className="text-emerald-700 font-medium">Miễn học qua Đánh giá đầu vào</span>
         ) : isPrePassed ? (
           <span className="text-emerald-700 font-semibold">Được công nhận năng lực</span>
         ) : item.retryDueAt ? (
@@ -742,7 +830,7 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
         ) : isFinalPending || isPrePending ? (
           <span className="text-amber-700">Đang thẩm định...</span>
         ) : (
-          <span className="text-slate-400">—</span>
+          <span className="text-slate-400">Không có yêu cầu</span>
         )}
       </td>
 
@@ -764,7 +852,7 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
               to={PULSE_PATHS.final(item.courseId)}
               className="pu-table-btn final-btn"
             >
-              <span>Vào thi ngay</span>
+              <span>Làm bài ngay</span>
               <ArrowRight size={13} />
             </Link>
           ) : isFinalLearning && item.progressPercent < 100 ? (
@@ -780,11 +868,11 @@ function AssessmentTableRow({ item, outcomeId }: { item: AssessmentRowItem; outc
               className="pu-table-btn ghost-btn text-emerald-700 hover:text-emerald-800"
               title="Xem chứng chỉ chi tiết của khóa học này"
             >
-              <span>{translateUi("Xem kết quả")}</span>
+              <span>Xem kết quả</span>
               <ArrowRight size={13} />
             </Link>
           ) : (
-            <span style={{ fontSize: '12px', color: '#94a3b8' }}>Chưa mở thi</span>
+            <span style={{ fontSize: '12px', color: '#94a3b8' }}>Chưa mở đánh giá</span>
           )}
         </div>
       </td>

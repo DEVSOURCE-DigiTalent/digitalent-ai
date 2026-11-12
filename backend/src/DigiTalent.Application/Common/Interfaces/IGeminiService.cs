@@ -15,6 +15,9 @@ public interface IGeminiService
         IReadOnlyList<string> criteria,
         IReadOnlyList<ProctoringEventInfo>? proctoringEvents = null,
         string? courseContent = null,
+        string? domainName = null,
+        int? tier = null,
+        IReadOnlyList<PulseCriterionDto>? rubric = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

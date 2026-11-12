@@ -47,17 +47,34 @@ public class GetMyTrialAssessmentUseCase : IUseCase<GetMyTrialAssessmentUseCaseI
         {
             var results = (await _reader.LoadDomainResultsAsync(new[] { assessment.Id })).GetValueOrDefault(assessment.Id) ?? new();
             var byCategory = results.ToDictionary(r => r.CategoryId);
+
+            var categoryIds = domains.Select(d => d.CategoryId).ToList();
+            var ceilingRows = await _context.CapabilityCeilings.AsNoTracking()
+                .Where(c => c.OrganizationId == trial.OrganizationId && categoryIds.Contains(c.CompetencyCategoryId))
+                .ToListAsync();
+            var orgCeilings = ceilingRows.Where(c => c.DepartmentId == null)
+                .ToDictionary(c => c.CompetencyCategoryId, c => (int)c.CeilingLevel);
+            var deptCeilings = employee.DepartmentId != Guid.Empty
+                ? ceilingRows.Where(c => c.DepartmentId == employee.DepartmentId)
+                    .ToDictionary(c => c.CompetencyCategoryId, c => (int)c.CeilingLevel)
+                : new Dictionary<Guid, int>();
+
             domainDetails = domains.Select(d =>
             {
                 byCategory.TryGetValue(d.CategoryId, out var dResult);
                 var lvl = (int)(dResult?.MentorLevel ?? dResult?.SuggestedLevel ?? 0);
-                var (levelLabel, statusText, gapText, recCourse) = TrialProgramReader.DescribeDomainResult(d.Number, d.Name, lvl, dResult);
+                var targetLevel = deptCeilings.TryGetValue(d.CategoryId, out var dl) && dl > 0
+                    ? dl
+                    : orgCeilings.TryGetValue(d.CategoryId, out var ol) && ol > 0 ? ol : 3;
+                var (levelLabel, statusText, gapText, recCourse) = TrialProgramReader.DescribeDomainResult(d.Number, d.Name, lvl, targetLevel, dResult);
                 return new TrialReportEmployeeDomainDetailDto
                 {
                     CategoryId = d.CategoryId,
                     Number = d.Number,
                     Name = d.Name,
                     Level = lvl,
+                    TargetLevel = targetLevel,
+                    SkillGap = Math.Max(0, targetLevel - lvl),
                     LevelLabel = levelLabel,
                     StatusText = statusText,
                     GapText = gapText,
@@ -89,7 +106,7 @@ public class GetMyTrialAssessmentUseCase : IUseCase<GetMyTrialAssessmentUseCaseI
             Domains = domains.Select(TrialDomainDto.From).ToList(),
             Essays = new(),
             SubmittedAt = assessment?.SubmittedAt,
-            ReportPublished = published,
+            ReportPublished = published && levels != null,
             Levels = levels,
             DomainDetails = domainDetails,
             EssayResults = essayResults,

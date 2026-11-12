@@ -108,8 +108,9 @@
 .pu-profile-chip b { display: block; overflow: hidden; color: #1d2445; font-size: 12px; white-space: nowrap; text-overflow: ellipsis; }
 .pu-profile-chip small { display: block; color: #7b84a0; font-size: 10px; }
 .pu-menu { position: relative; }
-.pu-menu-panel { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; min-width: 220px; padding: 7px; border: 1px solid var(--pu-line); border-radius: 14px; background: #fff; box-shadow: 0 20px 45px rgba(29, 36, 80, .14); }
-.pu-menu-panel a, .pu-menu-panel button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 10px 11px; border: 0; border-radius: 10px; background: none; color: #2d3658; font-size: 13px; font-weight: 700; text-align: left; cursor: pointer; }
+.pu-menu-panel { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; min-width: 250px; width: max-content; max-width: 320px; padding: 7px; border: 1px solid var(--pu-line); border-radius: 14px; background: #fff; box-shadow: 0 20px 45px rgba(29, 36, 80, .14); }
+.pu-menu-panel a, .pu-menu-panel button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: 0; border-radius: 10px; background: none; color: #2d3658; font-size: 13px; font-weight: 700; text-align: left; white-space: nowrap; cursor: pointer; }
+.pu-menu-panel a svg, .pu-menu-panel button svg { flex-shrink: 0; }
 .pu-menu-panel a:hover, .pu-menu-panel button:hover { background: var(--pu-soft); color: var(--pu-violet); }
 .pu-menu-panel hr { margin: 6px 4px; border: 0; border-top: 1px solid var(--pu-line); }
 .pu-main { max-width: 1190px; margin: 0 auto; padding: 44px 24px 90px; }
@@ -180,8 +181,15 @@
 @keyframes pu-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 .pu-rubric { display: grid; gap: 10px; margin-top: 10px; }
 .pu-rubric > div { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 14px; background: #ffffff; color: #1e293b; font-size: 13px; line-height: 1.5; transition: border-color 0.15s ease; }
+.pu-rubric > div.is-required-gate { border-color: #fed7aa; background: #fffcf8; }
 .pu-rubric b { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 8px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; font-size: 12px; font-weight: 800; }
 .pu-rubric span { display: grid; gap: 3px; min-width: 0; font-size: 13.5px; font-weight: 700; color: #0f172a; }
+.pu-rubric-content { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.pu-rubric-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.pu-rubric-title-row strong { font-size: 13.5px; font-weight: 700; color: #0f172a; }
+.pu-rubric-badges { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.pu-rubric-weight { font-style: normal; font-size: 11px; font-weight: 750; padding: 1px 7px; border-radius: 999px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; font-variant-numeric: tabular-nums; }
+.pu-rubric-gate { font-style: normal; font-size: 11px; font-weight: 750; padding: 1px 7px; border-radius: 999px; background: #ffedd5; border: 1px solid #fdba74; color: #9a3412; }
 .pu-rubric small { display: block; color: #64748b; font-size: 12.5px; font-weight: 400; line-height: 1.45; }
 .pu-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
@@ -3464,6 +3472,12 @@
   flex-wrap: wrap;
 }
 
+.pu-workbench-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .pu-criteria-trigger-btn {
   display: inline-flex;
   align-items: center;
@@ -4961,13 +4975,36 @@
 .pu-c-rubric-pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   padding: 4px 10px;
   border-radius: 6px;
   background: #ffffff;
   border: 1px solid #cbd5e1;
   font-size: 12px;
   color: #334155;
+}
+
+.pu-c-rubric-pill.is-required {
+  border-color: #fdba74;
+  background: #fffcf8;
+}
+
+.pu-c-rubric-weight {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  font-variant-numeric: tabular-nums;
+}
+
+.pu-c-rubric-gate {
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 750;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #ffedd5;
+  color: #9a3412;
 }
 
 .pu-c-card-action-side {
@@ -5918,7 +5955,225 @@
   box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.25);
 }
 
-/* ── Minimalist Executive Hero (EM-10 Redesign) ─────────────────────── */
+/* ── Executive Competency Passport Card ────────────────────────────── */
+.pu-executive-card {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.pu-executive-accent-bar {
+  height: 4px;
+  width: 100%;
+  background: linear-gradient(90deg, #1e40af 0%, #3b82f6 50%, #0ea5e9 100%);
+}
+
+.pu-executive-card-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: clamp(20px, 2.5vw, 28px);
+}
+
+@media (max-width: 960px) {
+  .pu-executive-card-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.pu-executive-main {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+  flex: 1;
+}
+
+.pu-executive-avatar-wrap {
+  position: relative;
+  flex: none;
+}
+
+.pu-executive-avatar {
+  width: 70px;
+  height: 70px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+  color: #ffffff;
+  font-size: 26px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 8px 18px -4px rgba(37, 99, 235, 0.35);
+}
+
+.pu-executive-avatar-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #059669;
+  border: 2px solid #ffffff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pu-executive-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.pu-executive-header-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pu-executive-name {
+  margin: 0;
+  font-size: clamp(22px, 2.4vw, 26px);
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+.pu-executive-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3.5px 10px;
+  border-radius: 9999px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pu-status-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.18);
+}
+
+.pu-executive-passport-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.pu-executive-role-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13.5px;
+  color: #475569;
+}
+
+.pu-role-position {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.pu-role-divider {
+  color: #cbd5e1;
+  font-size: 11px;
+}
+
+.pu-role-dept {
+  color: #475569;
+  font-weight: 500;
+}
+
+.pu-role-org {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.pu-executive-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.pu-chip-interactive {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pu-chip-interactive:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.pu-chip-label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.pu-chip-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.pu-chip-static {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.pu-executive-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+/* ── Minimalist Executive Hero (EM-10 Redesign Legacy Fallback) ────── */
 .pu-minimal-hero {
   display: flex;
   align-items: center;
@@ -6084,12 +6339,12 @@
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
-/* 4-Segment Level Bar (L1 - L4) */
+/* 3-Segment Level Bar (L1 - L3) */
 .pu-level-bar-4,
 .pu-benchmark-level-track {
   display: inline-flex;
   align-items: center;
-  background: #f1f5f9;
+  background: #f8fafc;
   padding: 3px;
   border-radius: 8px;
   gap: 3px;
@@ -6098,14 +6353,14 @@
 
 .pu-lvl-segment,
 .pu-benchmark-seg {
-  width: 28px;
-  height: 22px;
-  border-radius: 5px;
+  width: 32px;
+  height: 23px;
+  border-radius: 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   box-sizing: border-box;
@@ -6121,9 +6376,9 @@
 
 .pu-lvl-segment.target,
 .pu-benchmark-seg.target {
-  background: #fffbeb;
-  border: 1.5px dashed #f59e0b;
-  color: #b45309;
+  background: #eff6ff;
+  border: 1.5px dashed #2563eb;
+  color: #1d4ed8;
 }
 
 .pu-lvl-segment.target .pu-target-dot,
@@ -6131,7 +6386,7 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #f59e0b;
+  background: #2563eb;
 }
 
 .pu-lvl-segment.empty,
@@ -6287,11 +6542,12 @@
   width: 34px;
   height: 34px;
   border-radius: 9px;
-  background: #f1f5f9;
+  background: #eff6ff;
+  color: #1d4ed8;
   display: grid;
   place-items: center;
   flex: none;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #dbeafe;
 }
 
 .pu-benchmark-domain-name {
@@ -6323,7 +6579,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 8px;
+  padding: 3.5px 8px;
   border-radius: 6px;
   background: #ecfdf5;
   border: 1px solid #a7f3d0;
@@ -6337,11 +6593,11 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 8px;
+  padding: 3.5px 8px;
   border-radius: 6px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  color: #64748b;
+  color: #94a3b8;
   font-size: 11.5px;
   font-weight: 500;
   white-space: nowrap;
@@ -6351,11 +6607,11 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 8px;
+  padding: 3.5px 8px;
   border-radius: 6px;
-  background: #eef2ff;
-  border: 1px solid #c7d2fe;
-  color: #3730a3;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
@@ -6366,9 +6622,9 @@
   align-items: center;
   padding: 3px 7px;
   border-radius: 5px;
-  background: #f8fafc;
+  background: transparent;
   border: 1px solid #e2e8f0;
-  color: #475569;
+  color: #64748b;
   font-size: 11.5px;
   font-weight: 600;
   white-space: nowrap;
@@ -6379,7 +6635,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 8px;
+  padding: 3.5px 8px;
   border-radius: 6px;
   background: #ecfdf5;
   border: 1px solid #a7f3d0;
@@ -6393,11 +6649,11 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 8px;
+  padding: 3.5px 8px;
   border-radius: 6px;
   background: #fffbeb;
   border: 1px solid #fde68a;
-  color: #b45309;
+  color: #92400e;
   font-size: 11.5px;
   font-weight: 700;
   white-space: nowrap;
@@ -6407,11 +6663,11 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 8px;
+  padding: 3.5px 8px;
   border-radius: 6px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #9f1239;
   font-size: 11.5px;
   font-weight: 700;
   white-space: nowrap;

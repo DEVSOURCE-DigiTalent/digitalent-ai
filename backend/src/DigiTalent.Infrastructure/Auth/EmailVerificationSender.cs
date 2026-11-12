@@ -53,7 +53,7 @@ public sealed class EmailVerificationSender : IEmailVerificationSender
         using var email = new MailMessage
         {
             From = new MailAddress(smtp.FromEmail, smtp.FromName ?? "DigiTalent"),
-            Subject = "Mã xác minh tài khoản DigiTalent Pulse",
+            Subject = "Mã xác minh tài khoản DigiTalent AI",
             IsBodyHtml = true,
             Body = $"""
                     <p>Xin chào <strong>{safeName}</strong>,</p>
@@ -62,7 +62,7 @@ public sealed class EmailVerificationSender : IEmailVerificationSender
                     <p>Mã có hiệu lực trong <strong>10 phút</strong>. Không chia sẻ mã này với bất kỳ ai.</p>
                     <p>Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email.</p>
                     <hr/>
-                    <p style="font-size:12px;color:#666">DigiTalent Pulse &mdash; Nền tảng phát triển năng lực đội ngũ</p>
+                    <p style="font-size:12px;color:#666">DigiTalent AI: Nền tảng phát triển năng lực đội ngũ</p>
                     """
         };
         email.To.Add(toEmail);

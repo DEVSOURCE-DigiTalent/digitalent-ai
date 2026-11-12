@@ -34,6 +34,9 @@ export interface TrialParticipant {
   submittedAt?: string | null;
   reviewedAt?: string | null;
   addedAt: string;
+  choiceScore?: number;
+  choiceTotal?: number;
+  suggestedLevels?: number[];
 }
 
 export interface TrialReportDomainSummary {
@@ -43,6 +46,9 @@ export interface TrialReportDomainSummary {
   counts: number[];
   average: number;
   level: number;
+  targetLevel?: number;
+  targetMetRate?: number;
+  averageGap?: number;
   statusText?: string;
   gapSummary?: string;
 }
@@ -52,6 +58,8 @@ export interface TrialEmployeeDomainDetail {
   number: number;
   name: string;
   level: number;
+  targetLevel?: number;
+  skillGap?: number;
   levelLabel: string;
   statusText: string;
   gapText: string;
@@ -287,6 +295,10 @@ export const trialProgramService = {
   /** Chủ doanh nghiệp tự tham gia làm bài và học thử (thêm hồ sơ nhân viên + role Nhân viên). */
   joinAsParticipant: (input: { department: string; position: string }) =>
     apiClient.post<ApiResponse<{ employeeId: string }>>('/trial/me/join', input),
+  publish: (organizationId?: string) =>
+    organizationId
+      ? apiClient.post<ApiResponse<unknown>>(`/mentor/trials/${organizationId}/publish`)
+      : apiClient.post<ApiResponse<{ publishedAt: string; assessed: number }>>('/trial/publish'),
 
   // Nhân viên
   getMine: () => apiClient.get<ApiResponse<MyTrialAssessment>>('/me/trial-assessment'),
@@ -310,5 +322,4 @@ export const trialProgramService = {
   /** AI gợi ý điểm tự luận (lưu lại cho lần mở sau). */
   aiReview: (organizationId: string, assessmentId: string) =>
     apiClient.post<ApiResponse<TrialEssayAiReview>>(`/mentor/trials/${organizationId}/assessments/${assessmentId}/ai-review`),
-  publish: (organizationId: string) => apiClient.post<ApiResponse<unknown>>(`/mentor/trials/${organizationId}/publish`),
 };

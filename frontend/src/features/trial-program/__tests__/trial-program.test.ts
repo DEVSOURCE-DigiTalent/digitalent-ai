@@ -43,9 +43,10 @@ describe('trial participant file', () => {
 });
 
 describe('trial navigation', () => {
-  it('sends mentors to their review queue in the platform workspace', () => {
-    expect(inferWorkspace(['MENTOR'])).toBe('platform');
-    expect(getHomePath({ roles: ['MENTOR'], workspace: 'platform' })).toBe('/platform/reviews');
+  it('sends mentors to their review queue in the dedicated /mentor workspace', () => {
+    expect(inferWorkspace(['MENTOR'])).toBe('mentor');
+    expect(getHomePath({ roles: ['MENTOR'], workspace: 'mentor' })).toBe('/mentor/enterprises');
+    expect(getHomePath({ roles: ['MENTOR'] })).toBe('/mentor/enterprises');
     expect(getHomePath({ roles: ['PLATFORM_ADMIN'], workspace: 'platform' })).toBe('/platform/dashboard');
   });
 

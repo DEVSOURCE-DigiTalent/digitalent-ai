@@ -33,7 +33,7 @@ public class AssignTrialMentorUseCase : IUseCase<AssignTrialMentorUseCaseInput, 
             throw new BadRequestException("Doanh nghiệp chưa gửi yêu cầu chấm.", "mentorUserId", "TRIAL_NOT_REQUESTED");
         }
 
-        if (trial.ReportPublishedAt != null)
+        if (trial.ReportPublishedAt != null && trial.MentorUserId != null)
         {
             throw new BadRequestException("Kết quả đã được công bố, không đổi mentor.", "mentorUserId", "TRIAL_REPORTED");
         }

@@ -13,6 +13,7 @@ import {
   Search,
   Clock,
   MessageSquare,
+  Target,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from '@/hooks/use-platform';
@@ -71,59 +72,16 @@ function parseNotificationItem(notification: {
     }
   }
 
-  const isPreNotYet =
-    rawText.includes('trước khi học chưa đạt') ||
-    (rawText.includes('đánh giá') && rawText.includes('chưa đạt'));
-  const isPrePassed =
-    rawText.includes('trước khi học đạt') ||
-    (rawText.includes('đánh giá') && rawText.includes('đạt') && !rawText.includes('chưa đạt'));
-  const isFinalRetry = rawText.includes('cần chỉnh sửa') || rawText.includes('cần sửa');
-  const isFinalSupport = rawText.includes('hỗ trợ thêm');
-  const isFinalApproved = rawText.includes('đã được duyệt') || rawText.includes('được duyệt');
-
-  // 1. Khảo sát đầu vào chưa đạt -> Cần học khóa
-  if (isPreNotYet) {
-    return {
-      id,
-      category: 'study',
-      categoryLabel: 'Lộ trình học tập',
-      courseName,
-      displayTitle: courseName ? `Chưa đạt khảo sát: ${courseName}` : title,
-      explanation: courseName
-        ? `Khảo sát đầu vào chưa đạt điểm miễn học. Môn này đã được mở trong lộ trình để bạn bắt đầu học.`
-        : `Bài đánh giá đầu vào chưa đạt. Khóa học đã được đưa vào lộ trình để bạn hoàn thiện.`,
-      reviewerNote: reviewerNote || undefined,
-      actionText: 'Vào học khóa này',
-      actionLink: PULSE_PATHS.path,
-      actionType: 'primary',
-      createdAt,
-      isRead,
-      IconComponent: BookOpen,
-    };
+  // Nếu tiêu đề có dạng "Khóa học mới: TÊN KHÓA" hoặc "[Nhắc nhở] Sắp đến hạn: TÊN KHÓA"
+  if (!courseName && title.includes(':')) {
+    const candidateTitleCourse = title.split(':')[1]?.trim();
+    if (candidateTitleCourse && candidateTitleCourse.length >= 3) {
+      courseName = normalizeCourseName(candidateTitleCourse);
+    }
   }
 
-  // 2. Khảo sát đầu vào đạt -> Miễn học lý thuyết
-  if (isPrePassed) {
-    return {
-      id,
-      category: 'success',
-      categoryLabel: 'Đạt chuẩn năng lực',
-      courseName,
-      displayTitle: courseName ? `Đã công nhận: ${courseName}` : title,
-      explanation: courseName
-        ? `Bạn đã đạt bài đánh giá đầu vào môn ${courseName} và được miễn học toàn bộ lý thuyết.`
-        : `Bài đánh giá trước khi học đã đạt chuẩn. Khóa học đã được công nhận hoàn thành.`,
-      reviewerNote: reviewerNote || undefined,
-      actionText: 'Xem chứng nhận',
-      actionLink: PULSE_PATHS.outcomes,
-      actionType: 'success',
-      createdAt,
-      isRead,
-      IconComponent: CheckCircle2,
-    };
-  }
-
-  // 3. Bài cuối khóa cần chỉnh sửa
+  // 1. Bài thực hành cuối khóa cần chỉnh sửa
+  const isFinalRetry = rawText.includes('cần chỉnh sửa') || rawText.includes('cần sửa') || rawText.includes('sửa bài');
   if (isFinalRetry) {
     return {
       id,
@@ -132,8 +90,8 @@ function parseNotificationItem(notification: {
       courseName,
       displayTitle: courseName ? `Cần nộp lại: ${courseName}` : title,
       explanation: courseName
-        ? `Bài thực hành cuối khóa môn ${courseName} cần được bổ sung hoặc chỉnh sửa lại.`
-        : `Bài thực hành cuối khóa cần được chỉnh sửa theo nhận xét của người chấm.`,
+        ? `Bài thực hành cuối khóa ${courseName} cần được bổ sung hoặc chỉnh sửa lại.`
+        : `Bài thực hành cuối khóa cần được chỉnh sửa theo nhận xét của người đánh giá.`,
       reviewerNote: reviewerNote || undefined,
       actionText: 'Xem nhận xét & Sửa bài',
       actionLink: PULSE_PATHS.practice,
@@ -144,7 +102,8 @@ function parseNotificationItem(notification: {
     };
   }
 
-  // 4. Bài cuối khóa cần hỗ trợ thêm
+  // 2. Bài cuối khóa cần hỗ trợ thêm
+  const isFinalSupport = rawText.includes('hỗ trợ thêm') || rawText.includes('hướng dẫn thêm');
   if (isFinalSupport) {
     return {
       id,
@@ -153,8 +112,8 @@ function parseNotificationItem(notification: {
       courseName,
       displayTitle: courseName ? `Cần hỗ trợ: ${courseName}` : title,
       explanation: courseName
-        ? `Bài cuối khóa môn ${courseName} chưa đạt sau các lần nộp. Cần người quản lý/giảng viên hỗ trợ trực tiếp.`
-        : `Bài làm cuối khóa cần thêm sự hướng dẫn từ giảng viên/quản lý.`,
+        ? `Bài cuối khóa ${courseName} chưa đạt sau các lần nộp. Cần người quản lý/chuyên gia đào tạo hỗ trợ trực tiếp.`
+        : `Bài làm cuối khóa cần thêm sự hướng dẫn từ chuyên gia đào tạo/quản lý.`,
       reviewerNote: reviewerNote || undefined,
       actionText: 'Xem chi tiết bài làm',
       actionLink: PULSE_PATHS.practice,
@@ -165,7 +124,8 @@ function parseNotificationItem(notification: {
     };
   }
 
-  // 5. Bài cuối khóa đã được duyệt
+  // 3. Bài cuối khóa đã được duyệt
+  const isFinalApproved = rawText.includes('đã được duyệt') || rawText.includes('được duyệt');
   if (isFinalApproved) {
     return {
       id,
@@ -174,7 +134,7 @@ function parseNotificationItem(notification: {
       courseName,
       displayTitle: courseName ? `Duyệt đạt chuẩn: ${courseName}` : title,
       explanation: courseName
-        ? `Bài thực hành cuối khóa môn ${courseName} đã được hội đồng duyệt đạt chuẩn năng lực.`
+        ? `Bài thực hành cuối khóa ${courseName} đã được hội đồng duyệt đạt chuẩn năng lực.`
         : `Bài làm cuối khóa của bạn đã được duyệt đạt chuẩn năng lực.`,
       reviewerNote: reviewerNote || undefined,
       actionText: 'Xem chứng nhận',
@@ -186,11 +146,187 @@ function parseNotificationItem(notification: {
     };
   }
 
-  // 6. Thông báo hệ thống mặc định
+  // 4. Khảo sát đầu vào chưa đạt
+  const isPreNotYet =
+    rawText.includes('trước khi học chưa đạt') ||
+    (rawText.includes('đánh giá') && rawText.includes('chưa đạt'));
+  if (isPreNotYet) {
+    return {
+      id,
+      category: 'study',
+      categoryLabel: 'Lộ trình học tập',
+      courseName,
+      displayTitle: courseName ? `Chưa đạt khảo sát: ${courseName}` : title,
+      explanation: courseName
+        ? `Khảo sát đầu vào chưa đạt điểm miễn học. Khóa này đã được mở trong lộ trình để bạn bắt đầu học.`
+        : `Bài đánh giá đầu vào chưa đạt. Khóa học đã được đưa vào lộ trình để bạn hoàn thiện.`,
+      reviewerNote: reviewerNote || undefined,
+      actionText: 'Vào học khóa này',
+      actionLink: PULSE_PATHS.path,
+      actionType: 'primary',
+      createdAt,
+      isRead,
+      IconComponent: BookOpen,
+    };
+  }
+
+  // 5. Khảo sát đầu vào đạt
+  const isPrePassed =
+    rawText.includes('trước khi học đạt') ||
+    (rawText.includes('đánh giá') && rawText.includes('đạt') && !rawText.includes('chưa đạt') && !rawText.includes('kết quả'));
+  if (isPrePassed) {
+    return {
+      id,
+      category: 'success',
+      categoryLabel: 'Đạt chuẩn năng lực',
+      courseName,
+      displayTitle: courseName ? `Đã công nhận: ${courseName}` : title,
+      explanation: courseName
+        ? `Bạn đã đạt bài đánh giá đầu vào khóa ${courseName} và được miễn học toàn bộ lý thuyết.`
+        : `Bài đánh giá trước khi học đã đạt chuẩn. Khóa học đã được công nhận hoàn thành.`,
+      reviewerNote: reviewerNote || undefined,
+      actionText: 'Xem chứng nhận',
+      actionLink: PULSE_PATHS.outcomes,
+      actionType: 'success',
+      createdAt,
+      isRead,
+      IconComponent: CheckCircle2,
+    };
+  }
+
+  const titleLower = title.toLowerCase();
+
+  // 6. Kết quả khảo thí / Đánh giá năng lực (ví dụ: "Đã có kết quả đánh giá", "Bảng năng lực")
+  const isAssessmentResult =
+    rawText.includes('kết quả đánh giá') ||
+    rawText.includes('bảng năng lực') ||
+    rawText.includes('kết quả khảo thí') ||
+    (rawText.includes('đã có kết quả') && rawText.includes('đánh giá'));
+  if (isAssessmentResult) {
+    return {
+      id,
+      category: 'study',
+      categoryLabel: 'Kết quả đánh giá',
+      courseName,
+      displayTitle: title,
+      explanation: message,
+      reviewerNote: undefined,
+      actionText: 'Xem kết quả năng lực',
+      actionLink: PULSE_PATHS.path,
+      actionType: 'primary',
+      createdAt,
+      isRead,
+      IconComponent: Target,
+    };
+  }
+
+  // 7. Nhắc nhở hạn hoàn thành khóa học (ưu tiên khi tiêu đề là Nhắc nhở hoặc Sắp đến hạn)
+  const isDeadlineReminder =
+    titleLower.includes('nhắc nhở') ||
+    titleLower.includes('sắp đến hạn') ||
+    titleLower.includes('quá hạn') ||
+    (rawText.includes('sắp đến hạn') && !rawText.includes('khóa học mới') && !rawText.includes('bắt buộc'));
+  if (isDeadlineReminder) {
+    return {
+      id,
+      category: 'warning',
+      categoryLabel: 'Nhắc nhở hạn học',
+      courseName,
+      displayTitle: title,
+      explanation: message,
+      reviewerNote: undefined,
+      actionText: 'Vào học ngay',
+      actionLink: PULSE_PATHS.path,
+      actionType: 'warning',
+      createdAt,
+      isRead,
+      IconComponent: Clock,
+    };
+  }
+
+  // 8. Đào tạo bắt buộc theo yêu cầu doanh nghiệp
+  const isMandatoryCourse =
+    rawText.includes('bắt buộc') ||
+    rawText.includes('chuyên môn bắt buộc');
+  if (isMandatoryCourse) {
+    return {
+      id,
+      category: 'study',
+      categoryLabel: 'Đào tạo bắt buộc',
+      courseName,
+      displayTitle: title,
+      explanation: message,
+      reviewerNote: undefined,
+      actionText: 'Vào học ngay',
+      actionLink: PULSE_PATHS.path,
+      actionType: 'primary',
+      createdAt,
+      isRead,
+      IconComponent: BookOpen,
+    };
+  }
+
+  // 9. Phân công khóa học mới
+  const isCourseAssignment =
+    rawText.includes('khóa học mới') ||
+    rawText.includes('phân công') ||
+    rawText.includes('được giao') ||
+    rawText.includes('bắt đầu học') ||
+    rawText.includes('khóa học bắt đầu');
+  if (isCourseAssignment) {
+    return {
+      id,
+      category: 'study',
+      categoryLabel: 'Phân công khóa học',
+      courseName,
+      displayTitle: title,
+      explanation: message,
+      reviewerNote: undefined,
+      actionText: 'Xem khóa học',
+      actionLink: PULSE_PATHS.path,
+      actionType: 'primary',
+      createdAt,
+      isRead,
+      IconComponent: BookOpen,
+    };
+  }
+
+  // 10. Công bố khung năng lực / Chuẩn chức danh
+  const isFramework =
+    rawText.includes('kiến trúc năng lực') ||
+    rawText.includes('khung năng lực') ||
+    rawText.includes('phân bổ vị trí') ||
+    rawText.includes('chuẩn chức danh');
+  if (isFramework) {
+    return {
+      id,
+      category: 'study',
+      categoryLabel: 'Khung năng lực số',
+      courseName,
+      displayTitle: title,
+      explanation: message,
+      reviewerNote: undefined,
+      actionText: 'Xem khung năng lực',
+      actionLink: PULSE_PATHS.profile,
+      actionType: 'primary',
+      createdAt,
+      isRead,
+      IconComponent: Target,
+    };
+  }
+
+  // 11. Thông báo chung / Thông báo đào tạo mặc định (thay thế hoàn toàn 'Cập nhật hệ thống')
+  const isSystemSecurity = rawText.includes('mật khẩu') || rawText.includes('bảo mật') || rawText.includes('đăng nhập');
+  const isSystemMaintenance = rawText.includes('bảo trì') || rawText.includes('nâng cấp máy chủ');
+
   return {
     id,
     category: 'system',
-    categoryLabel: 'Cập nhật hệ thống',
+    categoryLabel: isSystemSecurity
+      ? 'Bảo mật tài khoản'
+      : isSystemMaintenance
+        ? 'Bảo trì hệ thống'
+        : 'Thông báo đào tạo',
     courseName,
     displayTitle: title,
     explanation: message,
@@ -214,24 +350,17 @@ export function PulseActivityPage() {
 
   const unreadCount = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications]);
 
-  const actionCount = useMemo(() => {
-    return notifications.filter((n) => {
-      const t = (n.title + ' ' + n.message).toLowerCase();
-      return t.includes('chỉnh sửa') || t.includes('chưa đạt') || t.includes('cần học') || t.includes('cần cải thiện');
-    }).length;
-  }, [notifications]);
-
-  const successCount = useMemo(() => {
-    return notifications.filter((n) => {
-      const t = (n.title + ' ' + n.message).toLowerCase();
-      const isNeedStudy = t.includes('chưa đạt') || t.includes('cần học') || t.includes('cần cải thiện');
-      return (t.includes('đạt') || t.includes('duyệt')) && !isNeedStudy;
-    }).length;
-  }, [notifications]);
-
   const parsedItems = useMemo(() => {
     return notifications.map(parseNotificationItem);
   }, [notifications]);
+
+  const actionCount = useMemo(() => {
+    return parsedItems.filter((item) => item.category === 'warning' || item.category === 'study').length;
+  }, [parsedItems]);
+
+  const successCount = useMemo(() => {
+    return parsedItems.filter((item) => item.category === 'success').length;
+  }, [parsedItems]);
 
   const filteredData = useMemo(() => {
     return parsedItems.filter((item) => {
@@ -315,7 +444,7 @@ export function PulseActivityPage() {
           </div>
           <div className="pu-act-stat-info">
             <span className="pu-act-stat-num">{successCount}</span>
-            <span className="pu-act-stat-label">Môn học đạt chuẩn</span>
+            <span className="pu-act-stat-label">Khóa học đạt chuẩn</span>
           </div>
         </div>
       </div>
@@ -379,7 +508,7 @@ export function PulseActivityPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Tìm theo môn học, nhận xét..."
+                placeholder="Tìm theo khóa học, nhận xét..."
                 className="pu-act-search-input"
                 aria-label="Tìm kiếm thông báo"
               />
@@ -436,7 +565,7 @@ export function PulseActivityPage() {
                       <p className="pu-act-desc">{item.explanation}</p>
 
                       {item.reviewerNote && (
-                        <div className="pu-act-reviewer-note" title="Lời nhắn từ người chấm bài">
+                        <div className="pu-act-reviewer-note" title="Lời nhắn từ người đánh giá">
                           <MessageSquare size={12} className="text-amber-700 flex-shrink-0" />
                           <span>
                             Nhận xét: <em>"{item.reviewerNote}"</em>

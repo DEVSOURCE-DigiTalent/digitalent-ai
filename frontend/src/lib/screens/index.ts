@@ -1,19 +1,24 @@
 import { findEnterpriseScreen } from './enterprise';
+import { findMentorScreen } from './mentor';
 import { findPlatformScreen } from './platform';
 import { WORKSPACES, type Workspace } from '../roles';
 import type { ScreenDef } from './types';
 
 export * from './types';
 export * from './enterprise';
+export * from './mentor';
 export * from './platform';
 
 /**
- * Unified screen resolver across Enterprise and Platform portals.
+ * Unified screen resolver across Enterprise, Platform, and Mentor portals.
  * Prioritizes the active workspace and screen prefix patterns.
  */
 export function findScreen(id: string, workspace?: Workspace | string): ScreenDef | undefined {
-  if (workspace === WORKSPACES.PLATFORM || id.startsWith('PA-') || id.startsWith('PLT-')) {
-    return findPlatformScreen(id) ?? findEnterpriseScreen(id);
+  if (workspace === WORKSPACES.MENTOR || id.startsWith('MT-')) {
+    return findMentorScreen(id) ?? findPlatformScreen(id) ?? findEnterpriseScreen(id);
   }
-  return findEnterpriseScreen(id) ?? findPlatformScreen(id);
+  if (workspace === WORKSPACES.PLATFORM || id.startsWith('PA-') || id.startsWith('PLT-')) {
+    return findPlatformScreen(id) ?? findMentorScreen(id) ?? findEnterpriseScreen(id);
+  }
+  return findEnterpriseScreen(id) ?? findPlatformScreen(id) ?? findMentorScreen(id);
 }

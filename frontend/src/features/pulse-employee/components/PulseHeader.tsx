@@ -1,5 +1,3 @@
-import { translateUi, useUiLanguage } from '@/lib/i18n';
-import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -8,14 +6,14 @@ import {
   Bell,
   BookOpen,
   BriefcaseBusiness,
-  Bug,
+  Clock,
   Compass,
   FileCheck,
   FileText,
   LogOut,
-  MessageSquare,
   Search,
   Sparkles,
+  Target,
   UserRound,
   X,
 } from 'lucide-react';
@@ -30,6 +28,7 @@ import { useMyTrialAssessment } from '@/hooks/use-trial-program';
 import { usePulseOverview } from '@/hooks/use-pulse';
 import { initials } from '../lib/labels';
 import { PULSE_PATHS, isExamPath } from '../lib/paths';
+import { trialGateOf, type TrialGateState } from '../lib/trial-gate';
 
 type NavItem = { to: string; label: string; end?: boolean; match: string[]; screenId: string };
 
@@ -45,13 +44,14 @@ function getPageTitle(pathname: string): string {
   if (pathname === PULSE_PATHS.path) return 'Lộ trình năng lực';
   if (pathname.startsWith('/enterprise/me/courses')) return 'Chi tiết khóa học';
   if (pathname === PULSE_PATHS.practice) return 'Đánh giá năng lực';
+  if (pathname === PULSE_PATHS.trialTest) return 'Báo cáo năng lực đầu vào';
   if (pathname === PULSE_PATHS.outcomes) return 'Chứng nhận và kết quả';
   if (pathname.startsWith('/enterprise/me/outcomes/')) return 'Chi tiết chứng nhận';
   if (pathname === PULSE_PATHS.activity) return 'Hoạt động';
   if (pathname === PULSE_PATHS.profile) return 'Hồ sơ cá nhân';
   if (pathname === PULSE_PATHS.feedbacks) return 'Góp ý của tôi';
   if (pathname === PULSE_PATHS.bugReports) return 'Báo lỗi của tôi';
-  return 'Cổng học tập DigiTalent AI';
+  return 'Cổng đào tạo DigiTalent AI';
 }
 
 const QUICK_SEARCH_ITEMS = [
@@ -71,8 +71,12 @@ const TRIAL_NAV: NavItem[] = [
   { to: PULSE_PATHS.practice, label: 'Thực hành', match: [PULSE_PATHS.practice], screenId: 'EM-03' },
 ];
 
-export function PulseHeader() {
-  useUiLanguage();
+export interface PulseHeaderProps {
+  gate?: TrialGateState | null;
+  isGateActive?: boolean;
+}
+
+export function PulseHeader({ gate, isGateActive }: PulseHeaderProps = {}) {
   const user = useCurrentUser((s) => s.user);
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -88,6 +92,9 @@ export function PulseHeader() {
   const { data: myTrial } = useMyTrialAssessment(trial);
   const { data: overview } = usePulseOverview();
   const hasRoadmap = Boolean(overview?.hasTargets);
+
+  const activeGate = gate !== undefined ? gate : trialGateOf(myTrial);
+  const isGated = isGateActive !== undefined ? isGateActive : Boolean(trial && activeGate);
 
   // Tài khoản mới vào làm bài đánh giá và chưa có công bố khung năng lực từ doanh nghiệp:
   // Hiển thị thanh dùng thử (Học thử / Bài đánh giá / Thực hành).
@@ -165,50 +172,71 @@ export function PulseHeader() {
     <>
       <header className="pu-header">
         <div className="pu-header-left">
-          {/* Brand logo đổi thành DigiTalent AI */}
-          <Link to={PULSE_PATHS.today} className="pu-brand" aria-label="DigiTalent AI — Bàn làm việc">
+          {/* Brand logo - nếu đang bị gate thì chỉ link tới trang bài test */}
+          <Link
+            to={isGated ? PULSE_PATHS.trialTest : PULSE_PATHS.today}
+            className="pu-brand"
+            aria-label="DigiTalent AI — Bàn làm việc"
+          >
             <img src={pulseMark} alt="" />
             <span>DigiTalent <em>AI</em></span>
           </Link>
 
           <span className="pu-header-divider" aria-hidden="true" />
 
-          {/* Tiêu đề trang */}
+          {/* Tiêu đề trang hoặc Huy hiệu trạng thái Gate */}
           <div className="pu-header-context" aria-label="Không gian làm việc hiện tại">
-            <span className="pu-header-title">{pageTitle}</span>
+            {isGated ? (
+              <span className={`pu-header-badge-gated ${activeGate === 'waiting' ? 'waiting' : 'todo'}`}>
+                {activeGate === 'waiting' ? (
+                  <>
+                    <Clock size={14} /> <span>Đang xử lý kết quả khảo thí</span>
+                  </>
+                ) : (
+                  <>
+                    <Target size={14} /> <span>Đánh giá năng lực đầu vào (Bắt buộc)</span>
+                  </>
+                )}
+              </span>
+            ) : (
+              <span className="pu-header-title">{pageTitle}</span>
+            )}
           </div>
         </div>
 
-        {/* Navigation cho tablet/mobile */}
-        <nav className="pu-nav" aria-label={translateUi("Học tập của tôi")}>
-          {nav.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              data-tour={item.screenId}
-              className={isActive(item.match, item.end) ? 'active' : ''}
-            >
-              {translateUi(item.label)}
-            </NavLink>
-          ))}
-        </nav>
+        {/* Navigation - Ẩn hoàn toàn khi đang ở Gate mode */}
+        {!isGated && (
+          <nav className="pu-nav" aria-label="Học tập của tôi">
+            {nav.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                data-tour={item.screenId}
+                className={isActive(item.match, item.end) ? 'active' : ''}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+        )}
 
         <div className="pu-header-actions">
-          <LanguageSwitcher />
-          {/* Nút tìm kiếm nhanh */}
-          <button
-            type="button"
-            onClick={() => setSearchOpen(true)}
-            className="pu-icon-btn pu-header-search-btn"
-            aria-label="Tìm kiếm nhanh khóa học và bài thi (Ctrl+K)"
-            title="Tìm kiếm nhanh (Ctrl+K)"
-          >
-            <Search size={18} />
-          </button>
+          {/* Nút tìm kiếm nhanh - ẩn khi bị gate */}
+          {!isGated && (
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              className="pu-icon-btn pu-header-search-btn"
+              aria-label="Tìm kiếm nhanh khóa học và bài đánh giá (Ctrl+K)"
+              title="Tìm kiếm nhanh (Ctrl+K)"
+            >
+              <Search size={18} />
+            </button>
+          )}
 
-          {/* Nút hướng dẫn */}
-          {!trial && (
+          {/* Nút hướng dẫn - ẩn khi bị gate */}
+          {!trial && !isGated && (
             <button
               type="button"
               onClick={() => useOnboardingStore.getState().startTour('EMPLOYEE')}
@@ -220,16 +248,18 @@ export function PulseHeader() {
             </button>
           )}
 
-          {/* Nút thông báo hoạt động */}
-          <Link
-            to={PULSE_PATHS.activity}
-            className="pu-icon-btn pu-header-bell-btn"
-            aria-label={translateUi(unread?.length ? translateUi(`Hoạt động, ${unread.length} chưa đọc`) : translateUi('Hoạt động'))}
-            title={translateUi("Nhật ký hoạt động")}
-          >
-            <Bell size={18} />
-            {Boolean(unread?.length) && <span className="pu-dot" />}
-          </Link>
+          {/* Nút thông báo hoạt động - ẩn khi bị gate */}
+          {!isGated && (
+            <Link
+              to={PULSE_PATHS.activity}
+              className="pu-icon-btn pu-header-bell-btn"
+              aria-label={unread?.length ? `Hoạt động, ${unread.length} chưa đọc` : 'Hoạt động'}
+              title="Nhật ký hoạt động"
+            >
+              <Bell size={18} />
+              {Boolean(unread?.length) && <span className="pu-dot" />}
+            </Link>
+          )}
 
           {/* Menu tài khoản người dùng */}
           <div className="pu-menu" ref={menuRef}>
@@ -242,26 +272,41 @@ export function PulseHeader() {
             >
               <span className="pu-avatar" aria-hidden>{initials(user?.fullName)}</span>
               <div>
-                <b>{user?.fullName ?? translateUi('Nhân viên')}</b>
-                <small>{translateUi(roleLabel)}</small>
+                <b>{user?.fullName ?? 'Nhân viên'}</b>
+                <small>{roleLabel}</small>
               </div>
             </button>
             {open && (
               <div className="pu-menu-panel" role="menu">
-                <Link role="menuitem" to={PULSE_PATHS.profile}><UserRound size={16} />{translateUi(" Hồ sơ cá nhân")}</Link>
-                <Link role="menuitem" to={PULSE_PATHS.outcomes}><Award size={16} /> Chứng chỉ năng lực</Link>
-                {(myTrial?.status !== 'NOT_STARTED' || overview?.placementTest?.hasTaken) && (
-                  <Link role="menuitem" to={PULSE_PATHS.trialTest}><FileText size={16} /> Kết quả đánh giá đầu vào</Link>
+                {isGated ? (
+                  <>
+                    <div style={{ padding: '8px 12px', fontSize: 12, color: 'var(--pu-muted)' }}>
+                      {activeGate === 'waiting'
+                        ? 'Bài thi đã nộp. Đang chờ doanh nghiệp công bố kết quả.'
+                        : 'Vui lòng hoàn thành bài đánh giá năng lực đầu vào.'}
+                    </div>
+                    <hr />
+                    <button role="menuitem" type="button" onClick={signOut} disabled={logout.isPending}>
+                      <LogOut size={16} /> Đăng xuất
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link role="menuitem" to={PULSE_PATHS.profile}><UserRound size={16} /> Hồ sơ cá nhân</Link>
+                    <Link role="menuitem" to={PULSE_PATHS.outcomes}><Award size={16} /> Chứng chỉ năng lực</Link>
+                    {(myTrial?.status !== 'NOT_STARTED' || overview?.placementTest?.hasTaken) && (
+                      <Link role="menuitem" to={PULSE_PATHS.trialTest}><FileText size={16} /> Kết quả đánh giá đầu vào</Link>
+                    )}
+                    <Link role="menuitem" to={PULSE_PATHS.activity}><Bell size={16} /> Nhật ký hoạt động</Link>
+                    {workspaceHome && (
+                      <Link role="menuitem" to={workspaceHome}><BriefcaseBusiness size={16} /> Về không gian quản lý</Link>
+                    )}
+                    <hr />
+                    <button role="menuitem" type="button" onClick={signOut} disabled={logout.isPending}>
+                      <LogOut size={16} /> Đăng xuất
+                    </button>
+                  </>
                 )}
-                <Link role="menuitem" to={PULSE_PATHS.activity}><Bell size={16} />{translateUi(" Nhật ký hoạt động")}</Link>
-                <Link role="menuitem" to={PULSE_PATHS.feedbacks}><MessageSquare size={16} />{translateUi(" Góp ý")}</Link>
-                <Link role="menuitem" to={PULSE_PATHS.bugReports}><Bug size={16} />{translateUi(" Báo lỗi")}</Link>
-                {workspaceHome && (
-                  <Link role="menuitem" to={workspaceHome}><BriefcaseBusiness size={16} /> Về không gian quản lý</Link>
-                )}
-                <hr />
-                <button role="menuitem" type="button" onClick={signOut} disabled={logout.isPending}>
-                  <LogOut size={16} />{translateUi(" Đăng xuất")}</button>
               </div>
             )}
           </div>
@@ -271,14 +316,14 @@ export function PulseHeader() {
       {/* Hộp thoại tra cứu nhanh (Quick Search Modal) */}
       {searchOpen && (
         <div className="pu-search-modal-backdrop" onClick={() => setSearchOpen(false)}>
-          <div className="pu-search-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={translateUi("Tìm kiếm nhanh")}>
+          <div className="pu-search-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Tìm kiếm nhanh">
             <div className="pu-search-input-wrap">
               <Search size={18} className="pu-search-icon" />
               <input
                 ref={searchInputRef}
                 type="text"
                 className="pu-search-input"
-                placeholder="Tìm khóa học, bài thi, chức danh... (hoặc nhấn Esc để thoát)"
+                placeholder="Tìm khóa học, bài đánh giá, chức danh... (hoặc nhấn Esc để thoát)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -312,7 +357,7 @@ export function PulseHeader() {
                         <Icon size={16} />
                       </span>
                       <div className="pu-search-item-info">
-                        <strong>{translateUi(item.title)}</strong>
+                        <strong>{item.title}</strong>
                         <small>{item.category}</small>
                       </div>
                       <span className="pu-search-item-arrow">

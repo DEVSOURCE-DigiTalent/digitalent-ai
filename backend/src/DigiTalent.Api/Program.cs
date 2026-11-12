@@ -10,6 +10,13 @@ using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Mặc định Development khi chạy cục bộ mà chưa đặt biến môi trường ASPNETCORE_ENVIRONMENT
+if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")) &&
+    string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")))
+{
+    builder.Environment.EnvironmentName = Environments.Development;
+}
+
 // ──────────────────────────────────────────────
 // 1. Đăng ký service
 // ──────────────────────────────────────────────

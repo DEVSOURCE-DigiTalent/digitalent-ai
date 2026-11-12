@@ -8,19 +8,23 @@ interface DemoAccountPickerProps {
   enterpriseOnly?: boolean;
 }
 
+interface DemoAccountItem extends SessionUser {
+  customPassword?: string;
+}
+
 interface DemoAccounts {
-  accounts: SessionUser[];
+  accounts: DemoAccountItem[];
   password: string;
 }
 
-const SEEDED_API_ACCOUNTS: SessionUser[] = [
-  { id: 'seed-platform', email: 'platform@digitalent.ai', fullName: 'Platform Administrator', roles: ['PLATFORM_ADMIN'], permissions: [], workspace: 'platform' },
-  { id: 'seed-owner', email: 'owner@digitalent.ai', fullName: 'Enterprise Owner', roles: ['OWNER'], permissions: [], workspace: 'enterprise' },
-  { id: 'seed-manager', email: 'manager@digitalent.ai', fullName: 'Department Manager', roles: ['MANAGER'], permissions: [], workspace: 'enterprise' },
-  { id: 'seed-employee', email: 'employee@digitalent.ai', fullName: 'Employee', roles: ['EMPLOYEE'], permissions: [], workspace: 'enterprise' },
-  { id: 'seed-personal', email: 'personal@digitalent.ai', fullName: 'Bùi Thị Cá Nhân', roles: ['LEARNER'], permissions: [], workspace: 'personal' },
-  { id: 'seed-trial', email: 'trial@digitalent.ai', fullName: 'Lý Văn Dùng Thử', roles: ['LEARNER'], permissions: [], workspace: 'personal' },
-  { id: 'seed-free', email: 'free@digitalent.ai', fullName: 'Mai Thị Miễn Phí', roles: ['LEARNER'], permissions: [], workspace: 'personal' },
+const SEEDED_API_ACCOUNTS: DemoAccountItem[] = [
+  { id: 'seed-mentor', email: 'mentor@digitalent.ai', fullName: 'Mentor Thẩm định (mentor)', roles: ['MENTOR'], permissions: [], workspace: 'mentor', customPassword: 'Admin@1234' },
+  { id: 'seed-admin', email: 'admin@digitalent.ai', fullName: 'Quản trị viên Nền tảng (admin)', roles: ['PLATFORM_ADMIN'], permissions: [], workspace: 'platform', customPassword: 'Admin@1234' },
+  { id: 'seed-owner', email: 'owner@digitalent.ai', fullName: 'Chủ Doanh nghiệp (owner)', roles: ['OWNER'], permissions: [], workspace: 'enterprise', customPassword: 'Admin@1234' },
+  { id: 'seed-manager', email: 'manager@digitalent.ai', fullName: 'Trưởng bộ phận (manager)', roles: ['MANAGER'], permissions: [], workspace: 'enterprise', customPassword: 'Admin@1234' },
+  { id: 'seed-employee', email: 'employee@digitalent.ai', fullName: 'Nhân viên (employee)', roles: ['EMPLOYEE'], permissions: [], workspace: 'enterprise', customPassword: 'Admin@1234' },
+  { id: 'seed-personal', email: 'personal@digitalent.ai', fullName: 'Bùi Thị Cá Nhân', roles: ['LEARNER'], permissions: [], workspace: 'personal', customPassword: 'Admin@1234' },
+  { id: 'seed-trial', email: 'trial@digitalent.ai', fullName: 'Lý Văn Dùng Thử', roles: ['LEARNER'], permissions: [], workspace: 'personal', customPassword: 'Admin@1234' },
 ];
 
 function describeAccount(account: SessionUser): string {
@@ -65,17 +69,18 @@ export function DemoAccountPicker({ onPick, enterpriseOnly = false }: DemoAccoun
       </summary>
       <div className="pulse-auth-demo-body">
         <p className="pulse-auth-demo-hint">
-          Mật khẩu chung: <code>{demo.password}</code>
+          Mật khẩu chung cho tất cả tài khoản: <code>{demo.password}</code>
         </p>
         <ul className="pulse-auth-demo-list">
           {demo.accounts.filter(account => !enterpriseOnly || account.workspace !== 'personal').map((account) => {
             const role = account.roles[0] as Role | undefined;
             const roleClass = role === 'OWNER' ? 'owner' : role === 'MANAGER' ? 'manager' : 'employee';
+            const pwd = account.customPassword || demo.password;
             return (
               <li key={account.id}>
                 <button
                   type="button"
-                  onClick={() => onPick(account.email, demo.password)}
+                  onClick={() => onPick(account.email, pwd)}
                   className="pulse-auth-demo-item"
                 >
                   <span className="pulse-auth-demo-email">{account.email}</span>

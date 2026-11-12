@@ -1,33 +1,37 @@
-import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { ReactNode } from 'react';
 import { Link, type LinkProps } from 'react-router-dom';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 import { btn, type ButtonKind } from '../lib/button';
-import { SectionLoading } from '@/components/shared/LoadingState';
+import {
+  PulseTodaySkeleton,
+  PulsePathSkeleton,
+  PulseCourseDetailSkeleton,
+  PulseModulePlayerSkeleton,
+  PulsePracticeSkeleton,
+  PulseOutcomesSkeleton,
+  PulseExamReadySkeleton,
+} from './loading/PulseEmployeeSkeletons';
+
+export * from './loading';
 
 /** Liên kết trông như nút (điều hướng trong ứng dụng). */
 export function PuLink({ kind = 'primary', small, className, ...props }: LinkProps & { kind?: ButtonKind; small?: boolean }) {
-  useUiLanguage();
   return <Link {...props} className={`${btn(kind, small)}${className ? ` ${className}` : ''}`} />;
 }
 
 export function Eyebrow({ children }: { children: ReactNode }) {
-  useUiLanguage();
   return <span className="pu-eyebrow">{children}</span>;
 }
 
 export function Mini({ children }: { children: ReactNode }) {
-  useUiLanguage();
   return <span className="pu-mini">{children}</span>;
 }
 
 export function Pill({ children, tone = '' }: { children: ReactNode; tone?: '' | 'green' | 'coral' | 'gray' }) {
-  useUiLanguage();
   return <span className={`pu-pill${tone ? ` ${tone}` : ''}`}>{children}</span>;
 }
 
 export function Notice({ children, tone }: { children: ReactNode; tone?: 'warning' | 'success' }) {
-  useUiLanguage();
   return (
     <div className={`pu-notice${tone ? ` ${tone}` : ''}`} role={tone === 'warning' ? 'status' : undefined}>
       {children}
@@ -36,23 +40,21 @@ export function Notice({ children, tone }: { children: ReactNode; tone?: 'warnin
 }
 
 export function Bar({ value, label }: { value: number; label?: string }) {
-  useUiLanguage();
   const percent = Math.max(0, Math.min(100, value));
   return (
-    <div className="pu-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(percent)} aria-label={translateUi(label)}>
+    <div className="pu-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(percent)} aria-label={label}>
       <i style={{ width: `${percent}%` }} />
     </div>
   );
 }
 
 export function PageHead({ eyebrow, title, description, actions }: { eyebrow: string; title: string; description?: ReactNode; actions?: ReactNode }) {
-  useUiLanguage();
   return (
     <div className="pu-page-head">
       <div>
         <Eyebrow>{eyebrow}</Eyebrow>
-        <h1>{translateUi(title)}</h1>
-        {description && <p>{translateUi(description)}</p>}
+        <h1>{title}</h1>
+        {description && <p>{description}</p>}
       </div>
       {actions && <div className="pu-row">{actions}</div>}
     </div>
@@ -60,37 +62,50 @@ export function PageHead({ eyebrow, title, description, actions }: { eyebrow: st
 }
 
 export function Empty({ icon, title, children, action }: { icon?: ReactNode; title: string; children?: ReactNode; action?: ReactNode }) {
-  useUiLanguage();
   return (
     <div className="pu-empty">
       {icon && <div className="pu-empty-icon" aria-hidden>{icon}</div>}
-      <h2>{translateUi(title)}</h2>
+      <h2>{title}</h2>
       {children && <p>{children}</p>}
       {action}
     </div>
   );
 }
 
-/** Khung chờ tải giữ bố cục trang khi dữ liệu đang được lấy. */
-export function PageSkeleton({ blocks = [320, 180, 260] }: { blocks?: number[] }) {
-  useUiLanguage();
-  return (
-    <SectionLoading label="Đang tải nội dung" count={blocks.length} />
-  );
+/**
+ * Khung chờ tải giữ bố cục trang khi dữ liệu đang được lấy.
+ * Tự động nhận diện ngữ cảnh route trong /enterprise/me để render Skeleton chuẩn hóa 1:1.
+ */
+export function PageSkeleton({ blocks: _blocks }: { blocks?: number[] } = {}) {
+  const path = typeof window !== 'undefined' ? window.location.pathname : '';
+  if (path.includes('/modules/')) return <PulseModulePlayerSkeleton />;
+  if (path.includes('/courses/')) return <PulseCourseDetailSkeleton />;
+  if (path.includes('/path')) return <PulsePathSkeleton />;
+  if (path.includes('/practice') || path.includes('/tasks')) return <PulsePracticeSkeleton />;
+  if (path.includes('/outcomes') || path.includes('/achievements')) return <PulseOutcomesSkeleton />;
+  if (
+    path.includes('/exam') ||
+    path.includes('/trial-test') ||
+    path.includes('/final') ||
+    path.includes('/pre-assessment')
+  ) {
+    return <PulseExamReadySkeleton />;
+  }
+  return <PulseTodaySkeleton />;
 }
 
 export function LoadError({ message, onRetry }: { message: string; onRetry?: () => void }) {
-  useUiLanguage();
   return (
     <Empty
       icon={<AlertTriangle size={24} />}
       title="Chưa tải được dữ liệu"
       action={onRetry && (
         <button type="button" className={btn('outline')} onClick={onRetry}>
-          <RotateCcw size={16} />{translateUi(" Thử lại")}</button>
+          <RotateCcw size={16} /> Thử lại
+        </button>
       )}
     >
-      {translateUi(message)}
+      {message}
     </Empty>
   );
 }

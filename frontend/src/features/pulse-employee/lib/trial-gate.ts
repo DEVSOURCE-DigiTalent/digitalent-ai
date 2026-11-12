@@ -4,12 +4,24 @@ import type { MyTrialAssessment } from '@/services/trial-program.service';
 export type TrialGateState = 'todo' | 'waiting' | 'closed';
 
 /**
- * Trạng thái chặn học thử của một người tham gia; null = đã công bố kết quả (hoặc không dùng thử) → học được. Chưa nộp mà
- * hạn làm bài đã qua → 'closed'; chưa tới lúc làm (doanh nghiệp chưa đặt hạn) vẫn là 'todo'.
+ * Trạng thái chặn học thử của một người tham gia; null = đã công bố kết quả cá nhân của học viên → học được.
+ * Nếu chưa làm bài test (status === 'NOT_STARTED' hoặc chưa nộp) → bắt buộc phải làm ('todo' hoặc 'closed').
+ * Nếu đã nộp nhưng chưa công bố kết quả cho học viên (status === 'SUBMITTED' hoặc levels == null) → 'waiting'.
  */
 export function trialGateOf(mine?: MyTrialAssessment | null, now = Date.now()): TrialGateState | null {
-  if (!mine || mine.reportPublished) return null;
-  if (mine.status !== 'NOT_STARTED') return 'waiting';
-  const deadlinePassed = mine.testDeadline != null && new Date(mine.testDeadline).getTime() < now;
-  return !mine.canStart && deadlinePassed ? 'closed' : 'todo';
+  if (!mine) return null;
+
+  // 1. Học viên chưa nộp bài test: BẮT BUỘC vào làm bài test (todo hoặc closed nếu quá hạn)
+  if (mine.status === 'NOT_STARTED' || !mine.submittedAt) {
+    const deadlinePassed = mine.testDeadline != null && new Date(mine.testDeadline).getTime() < now;
+    return !mine.canStart && deadlinePassed ? 'closed' : 'todo';
+  }
+
+  // 2. Học viên đã nộp bài nhưng chưa có kết quả thẩm định chính thức: chờ mentor/doanh nghiệp công bố
+  if (mine.status === 'SUBMITTED' || !mine.reportPublished || !mine.levels) {
+    return 'waiting';
+  }
+
+  // 3. Đã có kết quả thẩm định và công bố báo cáo (status === 'REVIEWED', reportPublished, levels != null)
+  return null;
 }

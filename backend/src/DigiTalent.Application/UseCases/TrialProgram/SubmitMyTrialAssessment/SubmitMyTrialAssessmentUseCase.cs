@@ -11,8 +11,8 @@ namespace DigiTalent.Application.UseCases.TrialProgram;
 
 /// <summary>
 /// POST /me/trial-assessment — nộp bài đánh giá tổng hợp: đóng phiên giám sát (đã có bản ghi màn hình và camera), chấm
-/// trắc nghiệm, lưu số câu đúng theo lĩnh vực × cấp và cập nhật kết quả tự động.
-/// Hạn nộp áp dụng cả các phiên đã bắt đầu để kết quả chốt không tiếp tục thay đổi.
+/// trắc nghiệm tự động theo 6 lĩnh vực × 3 cấp cùng mức đề xuất và mức chính thức.
+/// Doanh nghiệp nhận kết quả ngay để rà soát năng lực và công bố lộ trình đào tạo phù hợp.
 /// </summary>
 public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUseCaseInput, SubmitMyTrialAssessmentUseCaseOutput>
 {
@@ -37,40 +37,53 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
         var employee = await _me.GetAsync();
         var trial = await _reader.ForEmployeeAsync(employee);
         var now = _reader.Now;
+        var startedAt = await _context.ProctoringSessions.AsNoTracking()
+            .Where(s => s.Id == input.ProctoringSessionId && s.EmployeeId == employee.Id)
+            .Select(s => (DateTimeOffset?)s.StartedAt)
+            .FirstOrDefaultAsync();
         var existing = await _context.TrialAssessments.AsNoTracking().FirstOrDefaultAsync(a => a.EmployeeId == employee.Id);
-        if (TrialProgramReader.ClosedReason(trial, existing, now) is { } reason)
+        if (TrialProgramReader.ClosedReason(trial, existing, startedAt ?? now) is { } reason)
         {
             throw new BadRequestException(reason, "proctoringSessionId", StartMyTrialAssessmentUseCase.NotOpen);
         }
 
-
+        var session = await _proctoring.CloseForSubmitAsync(
+            input.ProctoringSessionId, employee.Id, Statuses.ProctoringKind.TrialAssessment, null, now);
         var paper = await _paper.BuildAsync(trial.OrganizationId, employee.Id);
         var grade = PulseExamPaper.Grade(paper.Items.Select(i => i.Question).ToList(), input.Answers)
                     ?? throw new BadRequestException("Đề đánh giá chưa sẵn sàng.", "answers", StartMyTrialAssessmentUseCase.PaperEmpty);
-
-        var session = await _proctoring.CloseForSubmitAsync(
-            input.ProctoringSessionId, employee.Id, Statuses.ProctoringKind.TrialAssessment, null, now);
 
         var assessment = new TrialAssessment
         {
             OrganizationId = trial.OrganizationId,
             EmployeeId = employee.Id,
             ProctoringSessionId = session.Id,
-            EssayBasic = string.Empty,
-            EssayIntermediate = string.Empty,
-            EssayAdvanced = string.Empty,
+            EssayBasic = (input.EssayBasic ?? string.Empty).Trim(),
+            EssayIntermediate = (input.EssayIntermediate ?? string.Empty).Trim(),
+            EssayAdvanced = (input.EssayAdvanced ?? string.Empty).Trim(),
             ChoiceScore = grade.Score,
             ChoiceTotal = grade.Total,
             SubmittedAt = now,
+            ReviewedByUserId = trial.OwnerUserId,
+            ReviewedAt = now,
         };
         _context.TrialAssessments.Add(assessment);
+
+        var optionIds = grade.Answers.Select(a => a.SelectedOptionId).Distinct().ToList();
+        var validOptions = await _context.QuestionOptions.AsNoTracking()
+            .Where(o => optionIds.Contains(o.Id))
+            .Select(o => new { o.Id, o.QuestionId })
+            .ToListAsync();
+        var validOptionMap = validOptions.ToDictionary(o => o.Id, o => o.QuestionId);
+
         foreach (var answer in grade.Answers)
         {
-            answer.TrialAssessmentId = assessment.Id;
-            _context.ExamChoiceAnswers.Add(answer);
+            if (validOptionMap.TryGetValue(answer.SelectedOptionId, out var qId) && qId == answer.QuestionId)
+            {
+                answer.TrialAssessmentId = assessment.Id;
+                _context.ExamChoiceAnswers.Add(answer);
+            }
         }
-
-        assessment.ReviewedAt = now;
 
         var correct = grade.Answers.ToDictionary(a => a.QuestionId, a => a.IsCorrect);
         foreach (var domain in paper.Domains)
@@ -94,10 +107,20 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
                 AdvancedCorrect = (short)cells[2].Correct,
                 AdvancedTotal = (short)cells[2].Total,
                 SuggestedLevel = suggested,
-                MentorLevel = null,
+                MentorLevel = suggested,
             });
         }
 
+        if (trial.MentorUserId is { } mentor)
+        {
+            _reader.Notify(new[] { mentor }, TrialProgramRules.NotificationSubmitted, "Có bài đánh giá doanh nghiệp mới",
+                $"{employee.FullName} ({await _reader.OrganizationNameAsync(trial.OrganizationId)}) đã hoàn thành bài đánh giá.",
+                trial.OrganizationId);
+        }
+
+        _reader.Notify(new[] { trial.OwnerUserId }, TrialProgramRules.NotificationSubmitted, "Nhân viên đã hoàn thành đánh giá",
+            $"{employee.FullName} đã hoàn thành bài đánh giá năng lực.",
+            trial.OrganizationId);
 
         try
         {
@@ -109,7 +132,6 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
             throw new ConflictException("Bài đánh giá đang được gửi, vui lòng tải lại trang.");
         }
 
-        await _reader.FinalizeSurveyAsync(trial);
         return new SubmitMyTrialAssessmentUseCaseOutput
         {
             AssessmentId = assessment.Id,

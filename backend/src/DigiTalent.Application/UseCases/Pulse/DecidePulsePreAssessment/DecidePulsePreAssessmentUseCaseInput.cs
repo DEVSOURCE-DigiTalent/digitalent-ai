@@ -9,4 +9,7 @@ public class DecidePulsePreAssessmentUseCaseInput
 
     /// <summary>Lý do gửi nhân viên — nêu tiêu chí và điều thấy trong bản ghi (≥ 10 ký tự).</summary>
     public string Reason { get; set; } = string.Empty;
+
+    /// <summary>Kết quả chấm chi tiết theo từng tiêu chí tự luận (tùy chọn).</summary>
+    public List<PulseCriterionEvaluationInput>? CriterionEvaluations { get; set; }
 }

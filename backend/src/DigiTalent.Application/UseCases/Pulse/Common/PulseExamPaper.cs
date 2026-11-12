@@ -1,3 +1,4 @@
+using DigiTalent.Application.UseCases.TrialProgram;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Domain.Constants;
@@ -156,24 +157,22 @@ public class PulseExamPaper
             return new Dictionary<Guid, List<PulseChoiceItemDto>>();
         }
 
-        var rows = await (
-                from answer in _context.ExamChoiceAnswers.AsNoTracking()
-                join question in _context.Questions.AsNoTracking() on answer.QuestionId equals question.Id
-                join selected in _context.QuestionOptions.AsNoTracking() on answer.SelectedOptionId equals selected.Id
-                where (answer.FinalSubmissionId != null && ownerIds.Contains(answer.FinalSubmissionId.Value))
-                      || (answer.PreAssessmentId != null && ownerIds.Contains(answer.PreAssessmentId.Value))
-                      || (answer.TrialAssessmentId != null && ownerIds.Contains(answer.TrialAssessmentId.Value))
-                select new
-                {
-                    OwnerId = answer.FinalSubmissionId ?? answer.PreAssessmentId ?? answer.TrialAssessmentId!.Value,
-                    answer.SortOrder,
-                    answer.IsCorrect,
-                    answer.QuestionId,
-                    Question = question.Content,
-                    Selected = selected.Content,
-                })
+        var answers = await _context.ExamChoiceAnswers.AsNoTracking()
+            .Where(a => (a.FinalSubmissionId != null && ownerIds.Contains(a.FinalSubmissionId.Value))
+                     || (a.PreAssessmentId != null && ownerIds.Contains(a.PreAssessmentId.Value))
+                     || (a.TrialAssessmentId != null && ownerIds.Contains(a.TrialAssessmentId.Value)))
             .ToListAsync();
-        var questionIds = rows.Select(r => r.QuestionId).Distinct().ToList();
+
+        var questionIds = answers.Select(a => a.QuestionId).Distinct().ToList();
+        var questions = await _context.Questions.AsNoTracking()
+            .Where(q => questionIds.Contains(q.Id))
+            .ToDictionaryAsync(q => q.Id, q => q.Content);
+
+        var optionIds = answers.Select(a => a.SelectedOptionId).Distinct().ToList();
+        var options = await _context.QuestionOptions.AsNoTracking()
+            .Where(o => optionIds.Contains(o.Id))
+            .ToDictionaryAsync(o => o.Id, o => o.Content);
+
         var correct = await _context.QuestionOptions.AsNoTracking()
             .Where(o => questionIds.Contains(o.QuestionId) && o.IsCorrect)
             .OrderBy(o => o.SortOrder)
@@ -181,17 +180,25 @@ public class PulseExamPaper
             .ToListAsync();
         var correctByQuestion = correct.GroupBy(o => o.QuestionId).ToDictionary(g => g.Key, g => g.First().Content);
 
-        return rows
-            .GroupBy(r => r.OwnerId)
+        return answers
+            .GroupBy(a => a.FinalSubmissionId ?? a.PreAssessmentId ?? a.TrialAssessmentId!.Value)
             .ToDictionary(g => g.Key, g => g
-                .OrderBy(r => r.SortOrder)
-                .Select(r => new PulseChoiceItemDto
+                .OrderBy(a => a.SortOrder)
+                .Select(a =>
                 {
-                    Number = r.SortOrder,
-                    Question = r.Question,
-                    Selected = r.Selected,
-                    Correct = correctByQuestion.GetValueOrDefault(r.QuestionId) ?? string.Empty,
-                    IsCorrect = r.IsCorrect,
+                    var bq = TrialAssessmentPaper.FindBenchmarkQuestion(a.QuestionId);
+                    var question = questions.GetValueOrDefault(a.QuestionId) ?? bq?.Content ?? "Câu hỏi năng lực số";
+                    var correctText = correctByQuestion.GetValueOrDefault(a.QuestionId) ?? bq?.Options.FirstOrDefault(o => o.IsCorrect)?.Content ?? string.Empty;
+                    var selectedText = options.GetValueOrDefault(a.SelectedOptionId) ?? bq?.Options.FirstOrDefault(o => o.OptionId == a.SelectedOptionId)?.Content ?? (a.IsCorrect ? correctText : "Đáp án đã chọn");
+
+                    return new PulseChoiceItemDto
+                    {
+                        Number = a.SortOrder,
+                        Question = question,
+                        Selected = selectedText,
+                        Correct = correctText,
+                        IsCorrect = a.IsCorrect,
+                    };
                 })
                 .ToList());
     }

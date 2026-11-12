@@ -22,9 +22,7 @@ const PlatformCommercePage = lazyPage(() => import('../../features/platform/cons
 const PlatformAuditLogPage = lazyPage(() => import('../../features/platform/console/PlatformAuditLogPage'), 'PlatformAuditLogPage');
 const PlatformProfilePage = lazyPage(() => import('../../features/platform/console/PlatformProfilePage'), 'PlatformProfilePage');
 const PlatformTrialsPage = lazyPage(() => import('../../features/trial-program/pages/PlatformTrialsPage'), 'PlatformTrialsPage');
-const MentorTrialsPage = lazyPage(() => import('../../features/trial-program/pages/MentorTrialsPage'), 'MentorTrialsPage');
-const MentorTrialPage = lazyPage(() => import('../../features/trial-program/pages/MentorTrialPage'), 'MentorTrialPage');
-const MentorCourseReviewsPage = lazyPage(() => import('../../features/trial-program/pages/MentorCourseReviewsPage'), 'MentorCourseReviewsPage');
+
 const PlatformFeedbacksPage = lazyPage(() => import('../../features/feedback/pages/PlatformFeedbacksPage'), 'PlatformFeedbacksPage');
 const PlatformBugReportsPage = lazyPage(() => import('../../features/feedback/pages/PlatformFeedbacksPage'), 'PlatformBugReportsPage');
 
@@ -50,14 +48,11 @@ const PLATFORM_PAGES: PageRegistry = {
   'PA-09': PlatformCommercePage,
   'PA-10': PlatformAuditLogPage,
   'PA-14': PlatformTrialsPage,
-  'MT-01': MentorTrialsPage,
-  'MT-02': MentorTrialPage,
-  'MT-03': MentorCourseReviewsPage,
   'PA-15': PlatformFeedbacksPage,
   'PA-16': PlatformBugReportsPage,
 };
 
-/** /platform → trang chính theo vai trò (quản trị: tổng quan; mentor: bài cần chấm). */
+/** /platform -> trang chính quản trị nền tảng. */
 function PlatformHome() {
   const user = useCurrentUser((s) => s.user);
   return <Navigate to={user ? getHomePath(user) : '/login'} replace />;
