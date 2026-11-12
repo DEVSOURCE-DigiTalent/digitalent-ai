@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { FileText, ShieldCheck } from 'lucide-react';
 import { levelWithTier } from '@/lib/competency-levels';
@@ -35,6 +36,7 @@ export function RequirementDomainSection({
   onRowLevelChange,
   onApplyDomainLevel,
 }: RequirementDomainSectionProps) {
+  useUiLanguage();
   const [openNotes, setOpenNotes] = useState<Record<string, boolean>>({});
 
   const toggleNote = (id: string) => {
@@ -74,7 +76,7 @@ export function RequirementDomainSection({
               </h3>
               {currentDomainLevel > 0 && (
                 <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200">
-                  Trần: {levelOptionLabel(currentDomainLevel)}
+                  Giới hạn áp dụng: {levelOptionLabel(currentDomainLevel)}
                 </span>
               )}
             </div>
@@ -86,8 +88,12 @@ export function RequirementDomainSection({
 
         {/* ── Nút áp dụng nhanh cả miền (1 chạm) ── */}
         {canEdit && (
-          <div className="flex items-center gap-1.5 shrink-0 bg-slate-50 p-1 rounded-xl border border-slate-200/80">
-            <span className="text-[10px] font-bold text-slate-400 px-1.5 uppercase tracking-wider">
+          <div
+            role="group"
+            aria-label={`Áp mức cho cả miền ${domainName}`}
+            className="flex items-center gap-1.5 shrink-0 bg-slate-50 p-1 rounded-xl border border-slate-200/80"
+          >
+            <span aria-hidden="true" className="text-[10px] font-bold text-slate-400 px-1.5 uppercase tracking-wider">
               Áp cả miền:
             </span>
             <button
@@ -101,23 +107,17 @@ export function RequirementDomainSection({
               type="button"
               onClick={() => onApplyDomainLevel(group.domain.categoryId, 1)}
               className="px-2.5 py-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors border border-emerald-200 cursor-pointer"
-            >
-              Cơ bản
-            </button>
+            >{translateUi("Cơ bản")}</button>
             <button
               type="button"
               onClick={() => onApplyDomainLevel(group.domain.categoryId, 2)}
               className="px-2.5 py-1 text-[11px] font-semibold text-teal-800 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors border border-teal-200 cursor-pointer"
-            >
-              Trung cấp
-            </button>
+            >{translateUi("Trung cấp")}</button>
             <button
               type="button"
               onClick={() => onApplyDomainLevel(group.domain.categoryId, 3)}
               className="px-2.5 py-1 text-[11px] font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors border border-amber-200 cursor-pointer"
-            >
-              Nâng cao
-            </button>
+            >{translateUi("Nâng cao")}</button>
           </div>
         )}
       </div>
@@ -128,6 +128,8 @@ export function RequirementDomainSection({
           const isRequired = row.requiredLevel > NOT_REQUIRED;
           const isCore = !!row.frameworkCode && CORE_COMPETENCY_CODES.includes(row.frameworkCode);
           const isNoteOpen = openNotes[row.competencyId] || Boolean(row.note?.trim());
+          // Accessible name of the row's controls: framework code and competency name.
+          const rowName = `${row.frameworkCode || row.competencyCode} ${row.competencyName}`;
 
           return (
             <div
@@ -164,7 +166,11 @@ export function RequirementDomainSection({
                 </div>
 
                 {/* Cột 2: Chọn mức năng lực dạng Segmented Button (1 chạm chuyển ngay) */}
-                <div className="pr-level-selector inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200/60 shrink-0 select-none">
+                <div
+                  role="group"
+                  aria-label={`Trình độ yêu cầu của ${rowName}`}
+                  className="pr-level-selector inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200/60 shrink-0 select-none"
+                >
                   {[
                     { level: 0, label: 'Bỏ qua' },
                     { level: 1, label: 'Cơ bản (1–2)' },
@@ -178,6 +184,7 @@ export function RequirementDomainSection({
                         type="button"
                         onClick={() => onRowLevelChange(row.competencyId, opt.level)}
                         disabled={!canEdit}
+                        aria-pressed={isSelected}
                         className={`rounded-lg px-2.5 sm:px-3 py-2 text-[13px] font-semibold transition-all cursor-pointer ${
                           isSelected
                             ? opt.level === 0
@@ -190,7 +197,7 @@ export function RequirementDomainSection({
                             : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/60'
                         }`}
                       >
-                        {opt.label}
+                        {translateUi(opt.label)}
                       </button>
                     );
                   })}
@@ -208,6 +215,7 @@ export function RequirementDomainSection({
                         max={100}
                         step={0.01}
                         value={row.weightPercent}
+                        aria-label={`Trọng số của ${rowName}`}
                         onChange={(e) => onRowChange(row.competencyId, 'weightPercent', Number(e.target.value))}
                         disabled={!canEdit || !isRequired}
                         className="w-18 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm font-bold text-slate-800 text-right focus:border-emerald-600 focus:outline-hidden disabled:bg-slate-100 disabled:text-slate-400"
@@ -223,14 +231,16 @@ export function RequirementDomainSection({
                     type="button"
                     onClick={() => !isCore && onRowChange(row.competencyId, 'isMandatory', !row.isMandatory)}
                     disabled={!canEdit || !isRequired || isCore}
+                    aria-pressed={row.isMandatory}
+                    aria-label={`Bắt buộc: ${rowName}`}
                     className={`rounded-lg px-2.5 py-1 text-xs font-semibold border transition-all cursor-pointer ${
                       row.isMandatory
                         ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold'
                         : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
                     }`}
-                    title={isCore ? 'Năng lực cốt lõi luôn bắt buộc' : 'Bấm để chuyển đổi bắt buộc / tùy chọn'}
+                    title={translateUi(isCore ? 'Năng lực cốt lõi luôn bắt buộc' : 'Bấm để chuyển đổi bắt buộc / tùy chọn')}
                   >
-                    {row.isMandatory ? '✓ Bắt buộc' : 'Tùy chọn'}
+                    {row.isMandatory ? '✓ Bắt buộc' : translateUi('Tùy chọn')}
                   </button>
 
                   {/* Toggle Cần minh chứng thực tế */}
@@ -238,6 +248,8 @@ export function RequirementDomainSection({
                     type="button"
                     onClick={() => onRowChange(row.competencyId, 'requiresPracticalEvidence', !row.requiresPracticalEvidence)}
                     disabled={!canEdit || !isRequired}
+                    aria-pressed={row.requiresPracticalEvidence}
+                    aria-label={`Cần minh chứng thực tế: ${rowName}`}
                     className={`rounded-lg px-2.5 py-1 text-xs font-semibold border transition-all cursor-pointer ${
                       row.requiresPracticalEvidence
                         ? 'bg-blue-50 text-blue-800 border-blue-300 font-bold'
@@ -252,6 +264,8 @@ export function RequirementDomainSection({
                   <button
                     type="button"
                     onClick={() => toggleNote(row.competencyId)}
+                    aria-expanded={isNoteOpen}
+                    aria-label={`Ghi chú lý do: ${rowName}`}
                     className={`rounded-lg p-1.5 border transition-colors cursor-pointer ${
                       row.note?.trim()
                         ? 'bg-amber-50 text-amber-800 border-amber-300'
@@ -273,6 +287,7 @@ export function RequirementDomainSection({
                   <input
                     type="text"
                     placeholder="Mô tả lý do hoặc bối cảnh năng lực này áp dụng cho vị trí..."
+                    aria-label={`Lý do yêu cầu: ${rowName}`}
                     value={row.note || ''}
                     onChange={(e) => onRowChange(row.competencyId, 'note', e.target.value)}
                     disabled={!canEdit || !isRequired}

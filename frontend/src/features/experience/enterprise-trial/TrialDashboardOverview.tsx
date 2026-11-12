@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -62,6 +63,7 @@ function actionsFor(roles: readonly string[]): ProductAction[] {
 }
 
 export function TrialDashboardOverview({ now = new Date() }: { now?: Date }) {
+  useUiLanguage();
   const user = useCurrentUser((state) => state.user);
   const context = useTrialQuery('context', service.context);
 
@@ -93,14 +95,14 @@ export function TrialDashboardOverview({ now = new Date() }: { now?: Date }) {
               <p className="mt-2 max-w-xl text-sm leading-6 text-ent-fg-2">Dashboard chỉ theo dõi tiến độ. Mỗi bước sẽ đưa bạn tới đúng màn hình Enterprise để thao tác như khi triển khai thật.</p>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
-              <Link className={primaryButton} to={model.nextAction.href}>{model.nextAction.label} <ArrowRight className="size-4" /></Link>
+              <Link className={primaryButton} to={model.nextAction.href}>{translateUi(model.nextAction.label)} <ArrowRight className="size-4" /></Link>
               {isOwner && <Link className={secondaryButton} to="/business/pricing">Xem gói phù hợp</Link>}
             </div>
           </div>
 
           <div className="mt-5">
             <div className="mb-2 flex items-center justify-between gap-3 text-xs">
-              <span className="font-semibold text-ent-fg">Tiến độ kích hoạt {model.completedSteps}/{model.totalSteps} bước</span>
+              <span className="font-semibold text-ent-fg">Tiến độ kích hoạt {model.completedSteps}/{model.totalSteps}{translateUi(" bước")}</span>
               <span className="tabular-nums text-ent-fg-3">{model.progressPercent}%</span>
             </div>
             <div role="progressbar" aria-label="Tiến độ trải nghiệm" aria-valuemin={0} aria-valuemax={100} aria-valuenow={model.progressPercent} className="h-2 overflow-hidden rounded-full bg-ent-line">
@@ -110,9 +112,9 @@ export function TrialDashboardOverview({ now = new Date() }: { now?: Date }) {
         </div>
 
         <div className="grid divide-y divide-ent-line sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          <div className="flex items-center gap-3 px-5 py-4"><Clock3 className="size-5 text-ent-accent" /><div><p className="text-xs text-ent-fg-3">Thời gian còn lại</p><p className="font-semibold text-ent-fg">{model.remainingLabel}</p></div></div>
+          <div className="flex items-center gap-3 px-5 py-4"><Clock3 className="size-5 text-ent-accent" /><div><p className="text-xs text-ent-fg-3">{translateUi("Thời gian còn lại")}</p><p className="font-semibold text-ent-fg">{model.remainingLabel}</p></div></div>
           <div className="flex items-center gap-3 px-5 py-4"><Users className="size-5 text-ent-accent" /><div><p className="text-xs text-ent-fg-3">Ghế đang giữ</p><p className="font-semibold tabular-nums text-ent-fg">{model.usedSeats} / {value.limits.maxAccounts}</p></div></div>
-          <div className="flex items-center gap-3 px-5 py-4"><Sparkles className="size-5 text-ent-accent" /><div><p className="text-xs text-ent-fg-3">Trạng thái</p><p className="font-semibold text-ent-fg">{model.writable ? 'Đang dùng thử' : 'Chỉ đọc'}</p></div></div>
+          <div className="flex items-center gap-3 px-5 py-4"><Sparkles className="size-5 text-ent-accent" /><div><p className="text-xs text-ent-fg-3">{translateUi("Trạng thái")}</p><p className="font-semibold text-ent-fg">{model.writable ? 'Đang dùng thử' : 'Chỉ đọc'}</p></div></div>
         </div>
       </section>
 
@@ -129,7 +131,7 @@ export function TrialDashboardOverview({ now = new Date() }: { now?: Date }) {
               return (
                 <Link key={action.href} to={action.href} className="group flex min-h-32 flex-col justify-between rounded-xl border border-ent-line bg-ent-raised p-4 transition hover:-translate-y-0.5 hover:border-ent-accent/40 hover:bg-ent-card">
                   <div className="flex items-start justify-between gap-3"><span className="grid size-9 place-items-center rounded-lg bg-ent-accent/10 text-ent-accent"><Icon className="size-4.5" /></span><ArrowRight className="size-4 text-ent-fg-3 transition group-hover:translate-x-0.5 group-hover:text-ent-accent" /></div>
-                  <div className="mt-4"><h3 className="text-sm font-semibold text-ent-fg">{action.label}</h3><p className="mt-1 text-xs leading-5 text-ent-fg-3">{action.description}</p></div>
+                  <div className="mt-4"><h3 className="text-sm font-semibold text-ent-fg">{translateUi(action.label)}</h3><p className="mt-1 text-xs leading-5 text-ent-fg-3">{translateUi(action.description)}</p></div>
                 </Link>
               );
             })}
@@ -144,7 +146,7 @@ export function TrialDashboardOverview({ now = new Date() }: { now?: Date }) {
                 <li key={item.key}>
                   <Link to={trialStepHref(item.key, roles)} className="group flex gap-3 rounded-lg px-2 py-2.5 hover:bg-ent-raised">
                     <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border ${item.complete ? 'border-ent-ok bg-ent-ok text-white' : 'border-ent-line bg-ent-raised text-ent-fg-3'}`}>{item.complete ? <Check className="size-3.5" /> : <Circle className="size-3.5" />}</span>
-                    <div className="min-w-0 flex-1"><p className={`text-sm font-medium ${item.complete ? 'text-ent-fg-3' : 'text-ent-fg'}`}>{index + 1}. {TRIAL_STEP_LABELS[item.key] ?? item.key}</p><p className="mt-0.5 text-xs text-ent-fg-3">{item.complete ? 'Đã hoàn tất · mở lại' : item.key === model.nextAction.key ? 'Nên làm tiếp' : 'Đi tới chức năng'}</p></div>
+                    <div className="min-w-0 flex-1"><p className={`text-sm font-medium ${item.complete ? 'text-ent-fg-3' : 'text-ent-fg'}`}>{index + 1}. {translateUi(TRIAL_STEP_LABELS[item.key]) ?? item.key}</p><p className="mt-0.5 text-xs text-ent-fg-3">{item.complete ? 'Đã hoàn tất · mở lại' : item.key === model.nextAction.key ? 'Nên làm tiếp' : 'Đi tới chức năng'}</p></div>
                     <ArrowRight className="mt-1 size-3.5 shrink-0 text-ent-fg-3 group-hover:text-ent-accent" />
                   </Link>
                 </li>

@@ -7,7 +7,7 @@ namespace DigiTalent.Application.UseCases.Pulse;
 /// <summary>
 /// 18 khóa chuẩn của một tổ chức: một khóa cho mỗi (lĩnh vực, cấp) trong số khóa PUBLISHED. Cấp khóa = target_level
 /// lớn nhất trong course_competencies; lĩnh vực = lĩnh vực có nhiều năng lực nhất của khóa; mỗi mã khóa lấy bản mới
-/// nhất, trùng ô thì lấy mã nhỏ nhất. Dùng chung cho lộ trình nhân viên, trần năng lực và hàng chờ chấm bài.
+/// nhất, trùng ô thì lấy mã nhỏ nhất. Dùng chung cho lộ trình nhân viên, phạm vi năng lực và hàng chờ chấm bài.
 /// </summary>
 public class PulseCatalogReader
 {

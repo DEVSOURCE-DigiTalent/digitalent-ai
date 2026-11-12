@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { BILLING_CYCLE_LABELS, formatVnd, getPlan, priceFor } from '@/lib/plans';
@@ -12,6 +13,7 @@ interface PlanSummaryProps {
 
 /** The plan, seats and amount a buyer is about to commit to. */
 export function PlanSummary({ selection, changeTo, className }: PlanSummaryProps) {
+  useUiLanguage();
   const plan = getPlan(selection.planCode);
   if (!plan) return null;
   const total = priceFor(plan, selection.seats, selection.cycle);
@@ -22,10 +24,10 @@ export function PlanSummary({ selection, changeTo, className }: PlanSummaryProps
         <p className="text-xs uppercase tracking-[0.12em] text-[#F5CA65] font-semibold">Gói đã chọn</p>
         <p className="mt-1 truncate font-medium text-cream">
           {plan.name}
-          {plan.users && plan.audience === 'enterprise' ? ` · ${selection.seats} người dùng` : ''}
+          {plan.users && plan.audience === 'enterprise' ? translateUi(` · ${selection.seats} người dùng`) : ''}
         </p>
         <p className="text-sm font-light text-amber-200/90 tabular-nums">
-          {total === null ? 'Liên hệ' : `${formatVnd(total)} / ${BILLING_CYCLE_LABELS[selection.cycle]}`}
+          {total === null ? translateUi('Liên hệ') : `${formatVnd(total)} / ${BILLING_CYCLE_LABELS[selection.cycle]}`}
         </p>
       </div>
       {changeTo && (

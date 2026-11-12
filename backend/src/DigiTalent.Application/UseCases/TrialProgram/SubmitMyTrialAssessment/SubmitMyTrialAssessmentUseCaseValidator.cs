@@ -13,9 +13,6 @@ public class SubmitMyTrialAssessmentUseCaseValidator : AbstractValidator<SubmitM
             .NotNull()
             .Must(answers => answers == null || answers.Count <= 100)
             .WithMessage("Phần trắc nghiệm có tối đa 100 câu.");
-        Essay(x => x.EssayBasic, "EssayBasic", "Cơ bản");
-        Essay(x => x.EssayIntermediate, "EssayIntermediate", "Trung cấp");
-        Essay(x => x.EssayAdvanced, "EssayAdvanced", "Nâng cao");
     }
 
     private void Essay(Func<SubmitMyTrialAssessmentUseCaseInput, string> value, string name, string tier)

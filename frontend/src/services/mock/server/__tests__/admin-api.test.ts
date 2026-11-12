@@ -64,7 +64,7 @@ describe('members', () => {
     asUser('owner');
     expect((await call('get', '/members', { status: 'PENDING' })).totalItems).toBe(2);
     expect((await call('get', '/members', { role: 'MANAGER' })).items.map((m: { fullName: string }) => m.fullName).sort()).toEqual(['Bùi Thanh Tùng', 'Phạm Thị Quản Lý', 'Đặng Văn Kiên']);
-    expect((await call('get', '/members', { departmentId: 'dep-kt' })).totalItems).toBe(3);
+    expect((await call('get', '/members', { departmentId: 'dep-kt' })).totalItems).toBe(2);
     expect((await call('get', '/members', { search: 'quan ly' })).items[0].fullName).toBe('Phạm Thị Quản Lý');
   });
 
@@ -77,7 +77,7 @@ describe('members', () => {
     asUser('owner');
     const detail = await call('get', '/members/mock-employee');
 
-    expect(detail).toMatchObject({ fullName: 'Hoàng Văn Nhân Viên', departmentName: 'Kế toán', positionName: 'Kế toán', roles: ['EMPLOYEE'] });
+    expect(detail).toMatchObject({ fullName: 'Hoàng Văn Nhân Viên', departmentName: 'Kinh doanh', positionName: 'Kinh doanh (CRM)', roles: ['EMPLOYEE'] });
     expect(detail.employeeCode).toBe('NV001');
   });
 });
@@ -349,11 +349,11 @@ describe('courses and assignments', () => {
     asUser('owner');
     const result = await call('post', '/course-assignments', { courseId: 'crs-A5-F', targets: { departmentId: 'dep-kt' }, dueDate: '2099-01-01' });
 
-    expect(result.created.map((a: { employeeName: string }) => a.employeeName).sort()).toEqual(['Hoàng Văn Nhân Viên', 'Lý Mai Phương', 'Đặng Văn Kiên']);
-    const again = await call('post', '/course-assignments', { courseId: 'crs-A5-F', targets: { employeeIds: ['emp-01', 'emp-12'] }, dueDate: '2099-01-01' });
+    expect(result.created.map((a: { employeeName: string }) => a.employeeName).sort()).toEqual(['Lý Mai Phương', 'Đặng Văn Kiên']);
+    const again = await call('post', '/course-assignments', { courseId: 'crs-A5-F', targets: { employeeIds: ['emp-11', 'emp-12'] }, dueDate: '2099-01-01' });
     expect(again.created).toEqual([]);
     expect(again.skipped).toEqual([
-      { employeeId: 'emp-01', employeeName: 'Hoàng Văn Nhân Viên', reason: 'ALREADY_ASSIGNED' },
+      { employeeId: 'emp-11', employeeName: 'Lý Mai Phương', reason: 'ALREADY_ASSIGNED' },
       { employeeId: 'emp-12', employeeName: 'Trịnh Quốc Bảo', reason: 'NOT_ACTIVE' },
     ]);
   });
@@ -385,10 +385,12 @@ describe('courses and assignments', () => {
   });
 
   it('shows a manager only the assignments of the department', async () => {
+    // Managers may read assignments since 57c692e, limited to their own department (Kinh doanh).
     asUser('manager');
-    const page = await call('get', '/course-assignments', { pageSize: 50 }).catch(() => null);
+    const page = await call('get', '/course-assignments', { pageSize: 50 });
 
-    expect(page).toBeNull();
+    expect(page.totalItems).toBeGreaterThan(0);
+    expect(page.items.every((a: { departmentName: string }) => a.departmentName === 'Kinh doanh')).toBe(true);
   });
 });
 
@@ -401,7 +403,7 @@ describe('workforce', () => {
     expect(page.items[0]).toMatchObject({ fullName: 'Phan Gia Hân', hasSnapshot: true });
     const newHire = page.items.find((r: { fullName: string }) => r.fullName === 'Cao Đức Long');
     expect(newHire).toMatchObject({ hasSnapshot: false, blocker: 'NO_JOB_POSITION', coveragePercent: null });
-    expect(page.items.find((r: { fullName: string }) => r.fullName === 'Hoàng Văn Nhân Viên')).toMatchObject({ coveragePercent: 62.03, gapCount: 15, highCount: 4, activeCourses: 2 });
+    expect(page.items.find((r: { fullName: string }) => r.fullName === 'Hoàng Văn Nhân Viên')).toMatchObject({ coveragePercent: 59.81, gapCount: 15, highCount: 6, activeCourses: 2 });
   });
 
   it('filters by gap, learning status and department', async () => {
@@ -418,16 +420,17 @@ describe('workforce', () => {
     expect(detail.employee.fullName).toBe('Hoàng Văn Nhân Viên');
     expect(detail.competencies).toHaveLength(24);
     expect(detail.competencies.find((c: { frameworkCode: string }) => c.frameworkCode === '4.2')).toMatchObject({ currentLevel: 1, requiredLevel: 3, source: 'MIGRATION' });
-    expect(detail.competencies.find((c: { frameworkCode: string }) => c.frameworkCode === '3.2')).toMatchObject({ requiredLevel: 0 });
+    expect(detail.competencies.find((c: { frameworkCode: string }) => c.frameworkCode === '3.3')).toMatchObject({ requiredLevel: 0 });
     expect(detail.skillGap.summary.totalGap).toBe(15);
-    expect(detail.recommendations[0].courseCode).toBe('A1-I');
+    expect(detail.recommendations[0].courseCode).toBe('A2-I');
     expect(detail.learning).toHaveLength(2);
     expect(detail.evidence.length).toBeGreaterThan(0);
   });
 
   it('keeps a manager inside the department and an employee out of the workforce screens', async () => {
     asUser('manager');
-    expect(await failure(call('get', '/workforce/emp-01'))).toMatchObject({ status: 404 });
+    expect(await call('get', '/workforce/emp-01')).toMatchObject({ employee: expect.objectContaining({ fullName: 'Hoàng Văn Nhân Viên' }) });
+    expect(await failure(call('get', '/workforce/emp-11'))).toMatchObject({ status: 404 });
     asUser('employee');
     expect(await failure(call('get', '/workforce'))).toMatchObject({ status: 403 });
   });
@@ -451,7 +454,7 @@ describe('analytics, recommendation review and dashboard', () => {
     const competencies = await call('get', '/intelligence/analytics/competencies', { jobPositionId: 'pos-acc' });
 
     expect(competencies[0].highCount).toBeGreaterThanOrEqual(competencies[1].highCount);
-    expect(competencies.every((c: { employeesRequired: number }) => c.employeesRequired === 2)).toBe(true);
+    expect(competencies.every((c: { employeesRequired: number }) => c.employeesRequired === 1)).toBe(true);
   });
 
   it('lists recommendations to review and tracks what was done with each', async () => {

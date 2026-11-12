@@ -71,12 +71,12 @@ describe('AssistantWidget', () => {
   it('shows the launcher for an employee with assistant.chat', () => {
     signInAsMock(MOCK_EMAILS.employee);
     renderWidget();
-    expect(screen.getByRole('button', { name: 'Mở trợ lý AI' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mở trợ lý hỗ trợ đào tạo' })).toBeInTheDocument();
   });
 
   it('is hidden without the permission', () => {
     signInAsMock(MOCK_EMAILS.employee, { permissions: [] });
     renderWidget();
-    expect(screen.queryByRole('button', { name: 'Mở trợ lý AI' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Mở trợ lý hỗ trợ đào tạo' })).toBeNull();
   });
 });

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { SkillGapRunDetail } from '@/services/intelligence.service';
 import { formatDateTime } from '@/lib/utils';
 import { CompetencyRadarChart } from './CompetencyRadarChart';
@@ -10,13 +11,14 @@ import { shouldChartByDomain, summarizeByDomain, toDomainChartItems } from '../u
  * From 3 domains up the radar has one axis per domain showing the average confirmed level (D-B3).
  */
 export function SkillGapDetailView({ run }: { run: SkillGapRunDetail }) {
+  useUiLanguage();
   const byDomain = shouldChartByDomain(run.items);
 
   return (
     <div className="space-y-6">
       <p className="text-xs text-slate-500">
         {run.jobPositionName} · chuẩn v{run.requirementSetVersionNo} · tính lúc {formatDateTime(run.generatedAt)} (
-        {run.generatedBy === 'SYSTEM' ? 'tự động' : 'theo yêu cầu'})
+        {run.generatedBy === 'SYSTEM' ? translateUi('tự động') : 'theo yêu cầu'})
       </p>
 
       <SkillGapKpiCards summary={run.summary} />
@@ -49,6 +51,7 @@ export function SkillGapDetailView({ run }: { run: SkillGapRunDetail }) {
 
 /** Placeholder with the same footprint as SkillGapDetailView while loading. */
 export function SkillGapDetailSkeleton() {
+  useUiLanguage();
   return (
     <div className="space-y-6 animate-pulse" aria-label="Đang tải khoảng trống năng lực">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

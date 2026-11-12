@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -39,6 +40,7 @@ export function QuickSyllabusDrawer({
   open,
   onClose,
 }: QuickSyllabusDrawerProps) {
+  useUiLanguage();
   // Fetch deep course details (modules, description, learning outcomes)
   const { data: detail, isLoading } = usePulseCourse(course?.courseId);
 
@@ -86,7 +88,7 @@ export function QuickSyllabusDrawer({
           <div className="pu-drawer-domain-badge">
             <BookOpen size={13} className="text-blue-700" />
             <span>
-              {course.domainName || `Lĩnh vực ${course.domainNumber}`} · {levelName(course.tier)}
+              {translateUi(course.domainName) || translateUi(`Lĩnh vực ${course.domainNumber}`)} · {levelName(course.tier)}
             </span>
           </div>
 
@@ -222,8 +224,7 @@ export function QuickSyllabusDrawer({
               <div className="pu-drawer-prog-track">
                 <div className="pu-drawer-prog-fill" style={{ width: `${course.progressPercent}%` }} />
               </div>
-              <span className="pu-drawer-prog-hint">
-                Đã đạt {course.modulesPassed} / {course.moduleCount || 3} mô đun kiến thức
+              <span className="pu-drawer-prog-hint">{translateUi("Đã đạt ")}{course.modulesPassed} / {course.moduleCount || 3} mô đun kiến thức
               </span>
             </div>
           )}
@@ -234,7 +235,7 @@ export function QuickSyllabusDrawer({
               <FileText size={15} /> Mục tiêu bồi dưỡng năng lực
             </h3>
             <p className="pu-drawer-desc-text">
-              {detail?.description ||
+              {translateUi(detail?.description) ||
                 'Chuyên đề được thiết kế chuẩn theo khung năng lực chức danh, hỗ trợ nhân viên làm chủ kỹ năng số, xử lý nghiệp vụ chính xác, bảo mật dữ liệu và nâng cao hiệu suất công việc thực tế.'}
             </p>
           </section>
@@ -302,9 +303,7 @@ export function QuickSyllabusDrawer({
 
         {/* Sticky Footer Actions */}
         <footer className="pu-drawer-footer">
-          <button type="button" className="pu-drawer-cancel-btn" onClick={onClose}>
-            Đóng
-          </button>
+          <button type="button" className="pu-drawer-cancel-btn" onClick={onClose}>{translateUi("Đóng")}</button>
 
           {isPreAssessment && !isCompleted ? (
             <Link

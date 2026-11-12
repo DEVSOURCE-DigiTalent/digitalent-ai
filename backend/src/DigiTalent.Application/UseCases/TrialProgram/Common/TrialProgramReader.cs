@@ -98,6 +98,20 @@ public class TrialProgramReader
         return null;
     }
 
+    /// <summary>Publish automatically when the entire roster submits, or summarize submitted work after the deadline.</summary>
+    public async Task FinalizeSurveyAsync(TrialWorkspace trial)
+    {
+        if (trial.RequestedAt == null || trial.ReportPublishedAt != null) return;
+        var participants = await LoadParticipantsAsync(trial);
+        var completed = participants.Count(p => p.Status == TrialProgramRules.ParticipantReviewed);
+        if (completed == 0 || (completed != participants.Count && !(trial.TestDeadline <= Now))) return;
+        trial.ReportPublishedAt = Now;
+        trial.Revision++;
+        Notify(new[] { trial.OwnerUserId }, TrialProgramRules.NotificationReported, "Đã có kết quả khảo sát",
+            $"{completed}/{participants.Count} người đã hoàn thành. Xem tổng quan năng lực đội ngũ.", trial.OrganizationId);
+        await _context.SaveChangesAsync();
+    }
+
     public Task<List<TrialDomainInfo>> LoadDomainsAsync(Guid organizationId) => _paper.LoadDomainsAsync(organizationId);
 
     public async Task<string> OrganizationNameAsync(Guid organizationId) =>

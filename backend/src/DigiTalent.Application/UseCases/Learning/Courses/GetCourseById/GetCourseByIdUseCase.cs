@@ -131,6 +131,7 @@ public class GetCourseByIdUseCase : IUseCase<GetCourseByIdUseCaseInput, CourseDe
             SeatsPurchased = seatsPurchased,
             SeatsGranted = seatsGranted,
             SeatsAvailable = Math.Max(0, totalSeats - usedSeats),
+            SeatsUsed = usedSeats,
             HasLicense = hasLicense,
             Modules = modules
         };

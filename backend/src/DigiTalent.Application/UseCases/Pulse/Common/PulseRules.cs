@@ -65,7 +65,7 @@ public static class PulseRules
 
     /// <summary>
     /// Vùng của một khóa (cấp <paramref name="tier"/>) trên lộ trình: vị trí không yêu cầu lĩnh vực → ngoài lộ trình;
-    /// cao hơn trần phòng ban → ngoài trần; cao hơn mục tiêu vị trí nhưng trong trần → tùy chọn; còn lại → lộ trình.
+    /// cao hơn phạm vi phòng ban → ngoài phạm vi; cao hơn mục tiêu vị trí nhưng trong phạm vi → tùy chọn; còn lại → lộ trình.
     /// </summary>
     public static string ZoneOf(int tier, int target, int ceiling) =>
         target == 0 ? PulseCourseZone.OutsidePath
@@ -240,14 +240,14 @@ public static class PulseCourseAccess
     public const string Preview = "PREVIEW";
 }
 
-/// <summary>Vùng của một khóa trên lộ trình: mục tiêu vị trí giới hạn bởi trần năng lực của phòng ban.</summary>
+/// <summary>Vùng của một khóa trên lộ trình: mục tiêu vị trí giới hạn bởi phạm vi năng lực của phòng ban.</summary>
 public static class PulseCourseZone
 {
-    /// <summary>Trong lộ trình: từ Cơ bản tới min(mục tiêu vị trí, trần phòng ban).</summary>
+    /// <summary>Trong lộ trình: từ Cơ bản tới min(mục tiêu vị trí, phạm vi phòng ban).</summary>
     public const string Path = "PATH";
-    /// <summary>Cao hơn mục tiêu vị trí nhưng trong trần phòng ban: học thêm nếu muốn.</summary>
+    /// <summary>Cao hơn mục tiêu vị trí nhưng trong phạm vi phòng ban: học thêm nếu muốn.</summary>
     public const string Optional = "OPTIONAL";
-    /// <summary>Cao hơn trần doanh nghiệp đặt cho phòng ban: chưa mở.</summary>
+    /// <summary>Cao hơn phạm vi doanh nghiệp đặt cho phòng ban: chưa mở.</summary>
     public const string AboveCeiling = "ABOVE_CEILING";
     /// <summary>Vị trí không yêu cầu lĩnh vực này.</summary>
     public const string OutsidePath = "OUTSIDE_PATH";
@@ -258,7 +258,7 @@ public static class PulsePreStatus
 {
     /// <summary>Phải làm bài đánh giá trước khi học (đã đủ điều kiện).</summary>
     public const string Required = "REQUIRED";
-    /// <summary>Chưa mở: khóa cấp trước chưa đạt, khóa ngoài trần / ngoài lộ trình, hoặc chưa có vị trí.</summary>
+    /// <summary>Chưa mở: khóa cấp trước chưa đạt, khóa ngoài phạm vi / ngoài lộ trình, hoặc chưa có vị trí.</summary>
     public const string Locked = "LOCKED";
     /// <summary>Đã nộp, chờ quản lý chấm.</summary>
     public const string Pending = "PENDING";
@@ -300,7 +300,7 @@ public static class PulseBlockReason
     public const string QuizChanged = "QUIZ_CHANGED";
 }
 
-/// <summary>Trạng thái một lĩnh vực trên lộ trình (so mức đã xác nhận với đỉnh lộ trình = min(mục tiêu, trần)).</summary>
+/// <summary>Trạng thái một lĩnh vực trên lộ trình (so mức đã xác nhận với đỉnh lộ trình = min(mục tiêu, phạm vi)).</summary>
 public static class PulseDomainStatus
 {
     public const string Pending = "PENDING";

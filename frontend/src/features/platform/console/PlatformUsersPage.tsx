@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { usePlatformUsers } from '@/hooks/use-platform-admin';
@@ -34,6 +35,7 @@ const isTrialFilter = (value: string | null): value is TrialFilter => ['ACTIVE',
 
 /** PA-07 · Quản trị Người dùng: all accounts & trial management with In-Context Slide-in Drawer (PA-08). */
 export function PlatformUsersPage() {
+  useUiLanguage();
   const [params, setParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('');
@@ -143,7 +145,7 @@ export function PlatformUsersPage() {
         <div className="pa-tabs" role="group" aria-label="Lọc theo dùng thử" style={{ marginBottom: 16 }}>
           {TRIAL_TABS.map((t) => (
             <button key={t.key || 'ALL'} type="button" aria-pressed={trial === t.key} onClick={() => chooseTrial(t.key)}>
-              {t.label}
+              {translateUi(t.label)}
             </button>
           ))}
         </div>
@@ -163,19 +165,19 @@ export function PlatformUsersPage() {
           </div>
 
           <select value={role} onChange={(e) => filter(setRole)(e.target.value)} aria-label="Lọc theo vai trò" style={{ height: 40 }}>
-            <option value="">Tất cả vai trò</option>
+            <option value="">{translateUi("Tất cả vai trò")}</option>
             {Object.entries(ROLE_LABELS).map(([code, label]) => (
               <option key={code} value={code}>
-                {label}
+                {translateUi(label)}
               </option>
             ))}
           </select>
 
-          <select value={status} onChange={(e) => filter(setStatus)(e.target.value)} aria-label="Lọc theo trạng thái" style={{ height: 40 }}>
-            <option value="">Tất cả trạng thái</option>
-            <option value="ACTIVE">Đang hoạt động</option>
+          <select value={status} onChange={(e) => filter(setStatus)(e.target.value)} aria-label={translateUi("Lọc theo trạng thái")} style={{ height: 40 }}>
+            <option value="">{translateUi("Tất cả trạng thái")}</option>
+            <option value="ACTIVE">{translateUi("Đang hoạt động")}</option>
             <option value="LOCKED">Đã khóa</option>
-            <option value="INACTIVE">Vô hiệu hóa</option>
+            <option value="INACTIVE">{translateUi("Vô hiệu hóa")}</option>
           </select>
         </div>
 
@@ -195,12 +197,12 @@ export function PlatformUsersPage() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Người dùng</th>
-                    <th>Vai trò</th>
+                    <th>{translateUi("Người dùng")}</th>
+                    <th>{translateUi("Vai trò")}</th>
                     <th>Phạm vi / Tổ chức</th>
                     <th>Gói dịch vụ & Dùng thử</th>
-                    <th>Trạng thái</th>
-                    <th style={{ width: 100 }}>Thao tác</th>
+                    <th>{translateUi("Trạng thái")}</th>
+                    <th style={{ width: 100 }}>{translateUi("Thao tác")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -244,7 +246,7 @@ export function PlatformUsersPage() {
                       </td>
                       <td>
                         <span style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>
-                          {ROLE_LABELS[u.role] ?? u.role}
+                          {translateUi(ROLE_LABELS[u.role]) ?? u.role}
                         </span>
                       </td>
                       <td>
@@ -258,7 +260,7 @@ export function PlatformUsersPage() {
                         <TrialCell user={u} />
                       </td>
                       <td>
-                        <Pill tone={USER_STATUS[u.status]?.tone}>{USER_STATUS[u.status]?.label ?? u.status}</Pill>
+                        <Pill tone={USER_STATUS[u.status]?.tone}>{translateUi(USER_STATUS[u.status]?.label) ?? u.status}</Pill>
                       </td>
                       <td>
                         <button
@@ -288,13 +290,13 @@ export function PlatformUsersPage() {
       <PlatformDrawer
         isOpen={Boolean(drawerUserId)}
         onClose={() => setDrawerUserId(null)}
-        title={selectedUser?.displayName ?? 'Chi tiết người dùng'}
-        subtitle={selectedUser?.email}
+        title={translateUi(selectedUser?.displayName ?? 'Chi tiết người dùng')}
+        subtitle={translateUi(selectedUser?.email)}
         icon={Users}
         badge={
           selectedUser && (
             <Pill tone={USER_STATUS[selectedUser.status]?.tone}>
-              {USER_STATUS[selectedUser.status]?.label ?? selectedUser.status}
+              {translateUi(USER_STATUS[selectedUser.status]?.label) ?? selectedUser.status}
             </Pill>
           )
         }
@@ -309,9 +311,7 @@ export function PlatformUsersPage() {
               >
                 Mở toàn màn hình <ExternalLink size={13} style={{ marginLeft: 4 }} />
               </Link>
-              <button type="button" className="btn btn-outline btn-small" onClick={() => setDrawerUserId(null)}>
-                Đóng
-              </button>
+              <button type="button" className="btn btn-outline btn-small" onClick={() => setDrawerUserId(null)}>{translateUi("Đóng")}</button>
             </div>
           ) : undefined
         }
@@ -325,14 +325,15 @@ export function PlatformUsersPage() {
 }
 
 function TrialCell({ user: u }: { user: PlatformUser }) {
-  if (!u.planCode) return <span style={{ color: '#94a3b8', fontSize: 12 }}>{u.organizationName ? 'Theo tổ chức' : 'Tài khoản tiêu chuẩn'}</span>;
+  useUiLanguage();
+  if (!u.planCode) return <span style={{ color: '#94a3b8', fontSize: 12 }}>{u.organizationName ? translateUi('Theo tổ chức') : translateUi('Tài khoản tiêu chuẩn')}</span>;
   const plan = PERSONAL_PLANS[u.planCode] ?? u.planCode;
 
   if (u.trialState === 'ACTIVE') {
     const left = daysUntil(u.trialEndsAt);
     return (
       <div className="stack pa-gap-sm">
-        <Pill tone={left <= 2 ? 'coral' : 'green'}>Dùng thử · còn {left} ngày</Pill>
+        <Pill tone={left <= 2 ? 'coral' : 'green'}>Dùng thử · còn {left}{translateUi(" ngày")}</Pill>
         <small className="pa-cell-sub">
           {plan} · hết hạn {formatDate(u.trialEndsAt)}
         </small>

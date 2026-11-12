@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import pulseMark from '@/assets/pulse/pulse-mark.svg';
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import './loading-state.css';
 import { PulseEmployeeLoadingScreen } from '@/features/pulse-employee/components/loading/PulseEmployeeLoadingScreen';
 import { PulsePublicLoadingScreen } from '@/features/public/components/loading/PulsePublicLoadingScreen';
@@ -19,6 +20,7 @@ const GENERAL_STAGES = [
 
 /** A full-screen handoff while the application or session is being prepared. */
 export function AppLoadingScreen({ forceVariant }: { forceVariant?: 'default' | 'employee' | 'public' } = {}) {
+  useUiLanguage();
   const path = typeof window !== 'undefined' ? window.location.pathname : '';
   const search = typeof window !== 'undefined' ? window.location.search : '';
 
@@ -74,14 +76,14 @@ function GeneralLoadingScreen() {
           />
         </div>
         <strong className="app-loading__brand">DigiTalent <span>AI</span></strong>
-        <span className="app-loading__sub">Nền Tảng Quản Trị & Phát Triển Năng Lực Số</span>
+        <span className="app-loading__sub">{translateUi('Nền Tảng Quản Trị & Phát Triển Năng Lực Số')}</span>
 
         <div className="app-loading__progress" aria-hidden="true">
           <div className="app-loading__progress-fill" style={{ width: `${progressPercent}%` }} />
         </div>
 
-        <p className="app-loading__stage">{GENERAL_STAGES[stageIndex]}</p>
-        <span className="app-loading__footer-badge">Doanh Nghiệp Số Chuẩn TT 02/2025/TT-BGDĐT</span>
+        <p className="app-loading__stage">{translateUi(GENERAL_STAGES[stageIndex])}</p>
+        <span className="app-loading__footer-badge">{translateUi('Doanh Nghiệp Số Chuẩn TT 02/2025/TT-BGDĐT')}</span>
       </div>
 
       {isPreview && (
@@ -129,12 +131,13 @@ function GeneralLoadingScreen() {
 
 /** Page-shaped placeholders prevent a blank canvas while data or a route loads. */
 export function PageLoading({ label = 'Đang tải nội dung', variant = 'dashboard' }: PageLoadingProps) {
+  useUiLanguage();
   if (variant === 'public') {
     return <PulsePublicLoadingScreen />;
   }
 
   return (
-    <main className={`page-loading page-loading--${variant}`} role="status" aria-live="polite" aria-busy="true" aria-label={label}>
+    <main className={`page-loading page-loading--${variant}`} role="status" aria-live="polite" aria-busy="true" aria-label={translateUi(label)}>
       <div className="page-loading__shell">
         <div className="page-loading__head" aria-hidden="true">
           <div className="page-loading__head-copy">
@@ -161,7 +164,7 @@ export function PageLoading({ label = 'Đang tải nội dung', variant = 'dashb
             </div>)}
           </div>
         </div>
-        <span className="page-loading__sr">{label}…</span>
+        <span className="page-loading__sr">{translateUi(label)}…</span>
       </div>
     </main>
   );
@@ -169,12 +172,13 @@ export function PageLoading({ label = 'Đang tải nội dung', variant = 'dashb
 
 /** Compact placeholder inside an existing panel. */
 export function SectionLoading({ label = 'Đang tải danh sách', count = 3 }: { label?: string; count?: number }) {
-  return <div className="section-loading" role="status" aria-live="polite" aria-busy="true" aria-label={label}>
+  useUiLanguage();
+  return <div className="section-loading" role="status" aria-live="polite" aria-busy="true" aria-label={translateUi(label)}>
     {Array.from({ length: count }, (_, index) => <div className="section-loading__row" key={index} aria-hidden="true">
       <span className="page-loading__bone section-loading__icon" />
       <div><span className="page-loading__bone section-loading__name" /><span className="page-loading__bone section-loading__meta" /></div>
       <span className="page-loading__bone section-loading__end" />
     </div>)}
-    <span className="page-loading__sr">{label}…</span>
+    <span className="page-loading__sr">{translateUi(label)}…</span>
   </div>;
 }

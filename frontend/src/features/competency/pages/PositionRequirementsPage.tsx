@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -90,6 +91,7 @@ const snapshotRows = (rows: EditableRequirementRow[]) => JSON.stringify(rows.map
 })));
 
 export function PositionRequirementsPage() {
+  useUiLanguage();
   const { can } = usePermission();
   const canManage = can(PERMISSIONS.POSITION_REQUIREMENT_MANAGE) || can('position_requirement.create_update');
 
@@ -312,14 +314,14 @@ export function PositionRequirementsPage() {
               className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer"
             >
               <Save className="size-3.5 text-slate-600" />
-              <span>{isSaving ? 'Đang lưu…' : 'Lưu bản nháp'}</span>
+              <span>{isSaving ? translateUi('Đang lưu…') : translateUi('Lưu bản nháp')}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setConfirmOpen(true)}
               disabled={isSaving || activateBlockedReason !== null}
-              title={activateBlockedReason ?? 'Kích hoạt phiên bản này'}
+              title={translateUi(activateBlockedReason ?? 'Kích hoạt phiên bản này')}
               className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <CheckCircle2 className="size-3.5" />
@@ -363,7 +365,7 @@ export function PositionRequirementsPage() {
                     </option>
                   ))
                 ) : (
-                  <option value="">Chưa có vị trí công việc</option>
+                  <option value="">{translateUi("Chưa có vị trí công việc")}</option>
                 )}
               </select>
             </div>
@@ -374,13 +376,14 @@ export function PositionRequirementsPage() {
                 <span className="text-xs text-slate-400">Phiên bản:</span>
                 <select
                   value={reqData?.versionNo}
+                  aria-label="Phiên bản"
                   onChange={(e) => setSelectedVersionNo(Number(e.target.value))}
                   disabled={isSaving}
                   className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs focus:outline-hidden"
                 >
                   {versions.map((v) => (
                     <option key={v.id} value={v.versionNo}>
-                      v{v.versionNo} · {STATUS_LABELS[v.status] ?? v.status}
+                      v{v.versionNo} · {translateUi(STATUS_LABELS[v.status]) ?? v.status}
                     </option>
                   ))}
                 </select>
@@ -399,7 +402,7 @@ export function PositionRequirementsPage() {
               }`}
             >
               <span className={`size-1.5 rounded-full ${reqData?.status === 'ACTIVE' ? 'bg-emerald-600' : 'bg-amber-600'}`} />
-              <span>{isUnsavedDraft ? 'Bản nháp chưa lưu' : STATUS_LABELS[reqData?.status || 'DRAFT'] ?? 'Bản nháp'}</span>
+              <span>{isUnsavedDraft ? 'Bản nháp chưa lưu' : translateUi(STATUS_LABELS[reqData?.status || 'DRAFT']) ?? translateUi('Bản nháp')}</span>
             </span>
 
             {/* Số năng lực yêu cầu */}
@@ -425,7 +428,7 @@ export function PositionRequirementsPage() {
             >
               <ShieldCheck className="size-3.5" />
               <span>Cốt lõi 4.1 & 4.2:</span>
-              <b>{issues.missingCore.length === 0 ? 'Đạt' : 'Thiếu'}</b>
+              <b>{issues.missingCore.length === 0 ? 'Đạt' : translateUi('Thiếu')}</b>
             </span>
 
             {/* Tổng trọng số */}
@@ -535,8 +538,7 @@ export function PositionRequirementsPage() {
                   ? 'bg-emerald-700 text-white font-bold shadow-2xs'
                   : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
               }`}
-            >
-              Miền {group.domain.sortOrder}: {group.domain.name.split(' ')[0]} ({group.rows.length})
+            >{translateUi("Miền ")}{group.domain.sortOrder}: {group.domain.name.split(' ')[0]} ({group.rows.length})
             </button>
           );
         })}
@@ -596,12 +598,12 @@ export function PositionRequirementsPage() {
           <div className="pr-save-dot" aria-hidden="true" />
           <div className="pr-save-copy">
             <strong>Thay đổi chuẩn năng lực chưa được lưu</strong>
-            <span>{selectedPosition?.name ?? 'Vị trí công việc'} · {issues.requiredCount}/24 năng lực · Trọng số {totalWeight}%</span>
+            <span>{selectedPosition?.name ?? translateUi('Vị trí công việc')} · {issues.requiredCount}/24 năng lực · Trọng số {totalWeight}%</span>
           </div>
           <div className="pr-save-actions">
             {!isWeightValid && <button type="button" onClick={handleBalanceWeights} disabled={!canEdit}>Cân bằng 100%</button>}
             <button type="button" className="pr-save-primary" onClick={executeSaveDraft} disabled={!canEdit}>
-              <Save className="size-4" /> {isSaving ? 'Đang lưu…' : 'Lưu bản nháp'}
+              <Save className="size-4" /> {isSaving ? translateUi('Đang lưu…') : translateUi('Lưu bản nháp')}
             </button>
           </div>
         </div>,
@@ -610,17 +612,17 @@ export function PositionRequirementsPage() {
 
       {/* ── MODAL XÁC NHẬN KÍCH HOẠT PHIÊN BẢN ── */}
       {confirmOpen && (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+        <div role="dialog" aria-modal="true" aria-labelledby="activate-title" aria-describedby="activate-subtitle" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 shrink-0">
                 <CheckCircle2 className="size-5" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-slate-800">
+                <h3 id="activate-title" className="text-base font-semibold text-slate-800">
                   Kích hoạt chuẩn năng lực
                 </h3>
-                <span className="text-xs text-slate-500">
+                <span id="activate-subtitle" className="text-xs text-slate-500">
                   {selectedPosition?.name} · Phiên bản v{reqData?.versionNo ?? 1}
                 </span>
               </div>
@@ -653,9 +655,7 @@ export function PositionRequirementsPage() {
                   setChangeReason('');
                 }}
                 className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
-              >
-                Hủy bỏ
-              </button>
+              >{translateUi("Hủy bỏ")}</button>
               <button
                 type="button"
                 onClick={executeActivate}

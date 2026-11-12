@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { WizardShell, type WizardStep } from '@/components/shared';
@@ -52,6 +53,7 @@ const TITLES: Record<string, { title: string; description: string }> = {
 
 /** AUTH-04 / AUTH-05 / ENT-ONB-05: the organization setup wizard, shown to a new owner after payment and before the portal. */
 export function SetupWizardPage() {
+  useUiLanguage();
   const user = useCurrentUser((s) => s.user)!;
   const navigate = useNavigate();
   const refreshSession = useRefreshSession();
@@ -129,7 +131,7 @@ export function SetupWizardPage() {
           )}
         </div>
 
-        {setupQuery.isLoading && <p className="text-sm text-slate-500">Đang tải…</p>}
+        {setupQuery.isLoading && <p className="text-sm text-slate-500">{translateUi("Đang tải…")}</p>}
         {setupQuery.isError && (
           <p role="alert" className="text-sm text-red-600">
             Không tải được dữ liệu thiết lập. Hãy tải lại trang.
@@ -142,8 +144,8 @@ export function SetupWizardPage() {
             current={current}
             completed={completed}
             onStepSelect={isOrgSaved ? goTo : undefined}
-            title={TITLES[step.id]?.title ?? ''}
-            description={TITLES[step.id]?.description}
+            title={translateUi(translateUi(TITLES[step.id]?.title) ?? '')}
+            description={translateUi(TITLES[step.id]?.description)}
           >
             {step.id === 'organization' && <OrganizationStep setup={setup} onDone={next} />}
             {step.id === 'grades' && <GradesStep setup={setup} onBack={back} onDone={next} onSkip={skip} />}

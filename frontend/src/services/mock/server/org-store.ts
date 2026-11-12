@@ -1,8 +1,9 @@
 import { REFERENCE_POSITIONS } from '../../../lib/reference-positions';
+import { COURSES } from './catalog';
 import { MOCK_ACCOUNTS } from '../mock-accounts';
 import { getDb, onMockReset } from '../mock-store';
 import type { ReferencePositionCode } from './catalog';
-import { ACME_ORGANIZATION_ID, buildAcmeData } from './seed-acme';
+import { ACME_ORGANIZATION_ID, buildAcmeData, demoOverallAssessments } from './seed-acme';
 import type { DepartmentRecord, JobPositionRecord, OrgData } from './types';
 
 /**
@@ -89,12 +90,78 @@ function load(): Record<string, OrgData> {
   return cache;
 }
 
+/** Bring an untouched older owner demo seed up to the five-department/five-position showcase. */
+function updateOwnerDemoSeed(data: OrgData): boolean {
+  let changed = false;
+  if (!data.overallAssessments) { data.overallAssessments = demoOverallAssessments(); changed = true; }
+  // Legacy demo storage predates explicit course-seat purchases. Give the showcase
+  // its documented sample licenses once; no runtime ceiling is used as evidence of purchase.
+  if (!data.courseSeatOrders) {
+    data.courseSeatOrders = Object.fromEntries(
+      [['cat-1', 3], ['cat-2', 2], ['cat-3', 3], ['cat-4', 2], ['cat-6', 2]].map(([categoryId, level]) => {
+        const course = COURSES.find((item) => item.categoryId === categoryId && item.level === level)!;
+        return [course.id, 12];
+      }),
+    );
+    changed = true;
+  }
+  const departmentNames: Record<string, [string, string]> = {
+    'dep-bgd': ['Ban giám đốc', 'CEO'],
+    'dep-kd': ['Kinh doanh', 'Sales/CRM'],
+    'dep-ns': ['Nhân sự', 'HR'],
+  };
+  for (const department of data.departments) {
+    const names = departmentNames[department.id];
+    if (names && department.name === names[0]) { department.name = names[1]; changed = true; }
+  }
+  const positionNames: Record<string, [string, string]> = {
+    'pos-ceo': ['Giám đốc điều hành', 'CEO'],
+    'pos-hr': ['Nhân sự', 'HR'],
+    'pos-sales': ['Kinh doanh (CRM)', 'Sales/CRM'],
+  };
+  for (const position of data.positions) {
+    const names = positionNames[position.id];
+    if (names && position.name === names[0]) { position.name = names[1]; changed = true; }
+  }
+  const defaultCodes = new Set(['CEO', 'HR', 'MARKETING', 'SALES_CRM', 'ACCOUNTANT', 'SALES_LEAD', 'ACCOUNTANT_LEAD']);
+  const defaultLeadNames = data.positions.some((position) => position.id === 'pos-sales-lead' && position.name === 'Trưởng phòng Kinh doanh')
+    && data.positions.some((position) => position.id === 'pos-acc-lead' && position.name === 'Trưởng phòng Kế toán');
+  if (data.positions.length === 7 && data.positions.every((position) => defaultCodes.has(position.code)) && defaultLeadNames) {
+    data.positions = data.positions.filter((position) => position.id !== 'pos-sales-lead' && position.id !== 'pos-acc-lead');
+    for (const employee of data.employees) {
+      if (employee.jobPositionId === 'pos-sales-lead') employee.jobPositionId = 'pos-sales';
+      if (employee.jobPositionId === 'pos-acc-lead') employee.jobPositionId = 'pos-acc';
+    }
+    changed = true;
+  }
+  const extraPeople = [
+    { id: 'emp-15', name: 'Nguyễn Minh Anh', departmentId: 'dep-bgd', positionId: 'pos-ceo' },
+    { id: 'emp-16', name: 'Phạm Thu Trang', departmentId: 'dep-ns', positionId: 'pos-hr' },
+    { id: 'emp-17', name: 'Trần Gia Bảo', departmentId: 'dep-kt', positionId: 'pos-acc' },
+    { id: 'emp-18', name: 'Lê Ngọc Mai', departmentId: 'dep-mkt', positionId: 'pos-mkt' },
+    { id: 'emp-19', name: 'Đỗ Khánh Linh', departmentId: 'dep-kd', positionId: 'pos-sales' },
+    { id: 'emp-20', name: 'Vũ Thanh Tâm', departmentId: 'dep-ns', positionId: 'pos-hr' },
+    { id: 'emp-21', name: 'Bùi Đức Huy', departmentId: 'dep-kd', positionId: 'pos-sales' },
+  ];
+  const at = new Date().toISOString();
+  for (const person of extraPeople) {
+    if (data.employees.some((employee) => employee.id === person.id)) continue;
+    const number = person.id.slice(4);
+    const email = `demo${number}@digitalent.ai`;
+    data.employees.push({ id: person.id, departmentId: person.departmentId, jobPositionId: person.positionId, employeeCode: `NV${number.padStart(3, '0')}`, fullName: person.name, workEmail: email, status: 'ACTIVE', joinedAt: at.slice(0, 10), createdAt: at, updatedAt: at });
+    data.seedMembers.push({ id: `usr-showcase-${number}`, fullName: person.name, email, roles: ['EMPLOYEE'], status: 'ACTIVE', employeeId: person.id, joinedAt: at.slice(0, 10), lastActiveAt: at });
+    changed = true;
+  }
+  return changed;
+}
+
 export function getOrgData(organizationId: string): OrgData {
   const all = load();
   if (!all[organizationId]) {
     all[organizationId] = organizationId === ACME_ORGANIZATION_ID ? buildAcmeData() : seedFromRegistration(organizationId);
     write(all);
   }
+  if (import.meta.env.VITE_OWNER_SHOWCASE === 'true' && organizationId === ACME_ORGANIZATION_ID && updateOwnerDemoSeed(all[organizationId])) write(all);
   return all[organizationId];
 }
 

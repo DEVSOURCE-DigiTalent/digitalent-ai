@@ -45,11 +45,15 @@ public static class CourseContentSeeder
             if (hasModules) continue;
 
             // Xác định miền và các năng lực của khóa học
-            // Mã khóa học dạng "A1-F", "A2-I", v.v.
+            // Mã khóa học dạng "M1-F", "M2-I"… (trước đây "A1-F"): miền lấy theo số sau chữ cái đầu,
+            // vì catalog cá nhân vẫn giữ tiền tố "A1".."A5".
             var prefix = course.Code.Split('-')[0];
             var domainDef = PersonalLearningCatalog.Domains.FirstOrDefault(d =>
                 d.CoursePrefix.Equals(prefix, StringComparison.OrdinalIgnoreCase)
-                || string.Equals($"M{d.Number}", prefix, StringComparison.OrdinalIgnoreCase));
+                || string.Equals($"M{d.Number}", prefix, StringComparison.OrdinalIgnoreCase))
+                ?? (prefix.Length == 2 && char.IsDigit(prefix[1])
+                    ? PersonalLearningCatalog.Domains.FirstOrDefault(d => d.Number == prefix[1] - '0')
+                    : null);
             if (domainDef == null) continue;
 
             var courseLevel = (short)(course.EntryLevel.HasValue ? Math.Min(3, course.EntryLevel.Value + 1) : 1);

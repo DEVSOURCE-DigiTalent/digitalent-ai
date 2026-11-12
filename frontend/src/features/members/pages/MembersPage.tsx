@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
@@ -25,6 +26,7 @@ const SELECT_CLASS =
  * Redesigned with Enterprise "Mực & Giấy" theme tokens, width="wide", clean toolbar and data table.
  */
 export function MembersPage() {
+  useUiLanguage();
   const navigate = useNavigate();
   const user = useCurrentUser((s) => s.user)!;
   const canInvite =
@@ -104,7 +106,7 @@ export function MembersPage() {
       header: 'Trạng thái',
       cell: (m) => (
         <StatusBadge
-          label={MEMBER_STATUS_LABELS[m.status]}
+          label={translateUi(MEMBER_STATUS_LABELS[m.status])}
           variant={MEMBER_STATUS_VARIANTS[m.status]}
         />
       ),
@@ -120,12 +122,11 @@ export function MembersPage() {
             </span>
             {m.highGapCount && m.highGapCount > 0 ? (
               <span className="inline-flex items-center rounded bg-[var(--ent-bad-soft)] px-1.5 py-0.5 text-[11px] font-medium text-ent-bad">
-                {m.highGapCount} khoảng trống cao
-              </span>
+                {m.highGapCount}{translateUi(" khoảng trống cao")}</span>
             ) : null}
           </div>
         ) : (
-          <span className="text-xs text-ent-fg-3 whitespace-nowrap">Chưa đánh giá</span>
+          <span className="text-xs text-ent-fg-3 whitespace-nowrap">{translateUi("Chưa đánh giá")}</span>
         ),
       hideOnMobile: true,
     },
@@ -135,7 +136,7 @@ export function MembersPage() {
       cell: (m) =>
         m.activeCourses !== undefined && m.activeCourses !== null ? (
           <span className="text-xs text-ent-fg-2 whitespace-nowrap">
-            {m.activeCourses > 0 ? `${m.activeCourses} khóa đang học` : 'Chưa có khóa'}
+            {m.activeCourses > 0 ? translateUi(`${m.activeCourses} khóa đang học`) : 'Chưa có khóa'}
           </span>
         ) : (
           '—'
@@ -147,7 +148,7 @@ export function MembersPage() {
       header: 'Tham gia',
       cell: (m) => (
         <span className="text-xs text-ent-fg-3 whitespace-nowrap tabular-nums">
-          {m.kind === 'invitation' ? `Mời ${formatDate(m.invitedAt)}` : formatDate(m.joinedAt)}
+          {m.kind === 'invitation' ? translateUi(`Mời ${formatDate(m.invitedAt)}`) : formatDate(m.joinedAt)}
         </span>
       ),
       className: 'hidden 2xl:table-cell',
@@ -162,11 +163,11 @@ export function MembersPage() {
   return (
     <PageContainer width="wide" className="space-y-6">
       <PageHeader
-        title="Thành viên"
+        title={translateUi("Thành viên")}
         description={
-          seats !== undefined && user.subscription?.seatsUsed !== undefined
-            ? `${user.subscription.seatsUsed} / ${seats} quyền sử dụng đã cấp · Quản lý nhân sự, vai trò và phân bố năng lực`
-            : 'Những người có quyền truy cập tổ chức'
+          translateUi(seats !== undefined && user.subscription?.seatsUsed !== undefined
+            ? translateUi(`${user.subscription.seatsUsed} / ${seats} quyền sử dụng đã cấp · Quản lý nhân sự, vai trò và phân bố năng lực`)
+            : 'Những người có quyền truy cập tổ chức')
         }
         actions={
           canInvite && (
@@ -175,9 +176,7 @@ export function MembersPage() {
               onClick={() => setInviting(true)}
               className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium bg-ent-primary text-ent-on-primary rounded-lg hover:opacity-90 transition-opacity"
             >
-              <UserPlus className="size-4" aria-hidden="true" />
-              Mời thành viên
-            </button>
+              <UserPlus className="size-4" aria-hidden="true" />{translateUi("Mời thành viên")}</button>
           )
         }
       />
@@ -202,12 +201,12 @@ export function MembersPage() {
         filters={
           <>
             <select
-              aria-label="Lọc theo phòng ban"
+              aria-label={translateUi("Lọc theo phòng ban")}
               value={departmentId}
               onChange={(e) => resetPage(setDepartmentId)(e.target.value)}
               className={SELECT_CLASS}
             >
-              <option value="">Mọi phòng ban</option>
+              <option value="">{translateUi("Mọi phòng ban")}</option>
               {departments.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
@@ -233,7 +232,7 @@ export function MembersPage() {
               onChange={(e) => resetPage(setRole)(e.target.value)}
               className={SELECT_CLASS}
             >
-              <option value="">Mọi vai trò</option>
+              <option value="">{translateUi("Mọi vai trò")}</option>
               {ENTERPRISE_ROLES.map((r) => (
                 <option key={r} value={r}>
                   {roleLabel(r)}
@@ -241,15 +240,15 @@ export function MembersPage() {
               ))}
             </select>
             <select
-              aria-label="Lọc theo trạng thái"
+              aria-label={translateUi("Lọc theo trạng thái")}
               value={status}
               onChange={(e) => resetPage(setStatus)(e.target.value as MemberStatus | '')}
               className={SELECT_CLASS}
             >
-              <option value="">Mọi trạng thái</option>
+              <option value="">{translateUi("Mọi trạng thái")}</option>
               {(Object.keys(MEMBER_STATUS_LABELS) as MemberStatus[]).map((s) => (
                 <option key={s} value={s}>
-                  {MEMBER_STATUS_LABELS[s]}
+                  {translateUi(MEMBER_STATUS_LABELS[s])}
                 </option>
               ))}
             </select>

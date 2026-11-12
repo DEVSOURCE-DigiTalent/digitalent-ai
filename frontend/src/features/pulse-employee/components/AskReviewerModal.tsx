@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { BookOpen, Clock, MessageSquare, Send, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -31,6 +32,7 @@ export function AskReviewerModal({
   slideIndex,
   slideTitle,
 }: AskReviewerModalProps) {
+  useUiLanguage();
   const [question, setQuestion] = useState('');
   const [isSent, setIsSent] = useState(false);
 
@@ -74,7 +76,7 @@ export function AskReviewerModal({
             type="button"
             className="pu-modal-close-btn"
             onClick={onClose}
-            aria-label="Đóng"
+            aria-label={translateUi("Đóng")}
           >
             <X size={18} />
           </button>
@@ -134,16 +136,14 @@ export function AskReviewerModal({
               type="button"
               className="pu-ask-cancel-btn"
               onClick={onClose}
-            >
-              Hủy
-            </button>
+            >{translateUi("Hủy")}</button>
             <button
               type="submit"
               className="pu-ask-submit-btn"
               disabled={isSent || !question.trim()}
             >
               <Send size={15} />
-              <span>{isSent ? 'Đang gửi...' : 'Gửi câu hỏi'}</span>
+              <span>{isSent ? translateUi('Đang gửi...') : 'Gửi câu hỏi'}</span>
             </button>
           </footer>
         </form>

@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "branch": "feature/DT-role-based-tests",
+    "commit": "c51a6d6",
+    "api": "http://localhost:5000",
+    "fe": "http://localhost:5173",
+    "db": "PostgreSQL 16 (DB mới: migration + seed Development)",
+    "date": "09/11/2026"
+  },
+  "role": {
+    "label": "EMPLOYEE",
+    "email": "employee@digitalent.ai",
+    "title": "NHÂN VIÊN (EMPLOYEE)"
+  },
+  "cases": [
+    {
+      "id": "FE01",
+      "screen": "EM-T1 Bài đánh giá năng lực",
+      "title": "Đăng nhập employee@digitalent.ai và vào đúng không gian làm việc",
+      "url": "/login",
+      "role": "EMPLOYEE (employee@digitalent.ai)",
+      "precondition": "DB mới, seed Development",
+      "steps": [
+        "1. Mở /login",
+        "2. Nhập employee@digitalent.ai / Admin@1234, bấm \"Đăng nhập vào hệ thống\""
+      ],
+      "expected": "Chuyển tới /enterprise/me/trial-test; tiêu đề \"Bài đánh giá năng lực\"; menu của vai trò (6+ mục).",
+      "actual": "Đăng nhập thành công, vào /enterprise/me/trial-test; tiêu đề \"Bài đánh giá năng lực\"; menu 8 mục: Tổng quan, Lộ trình năng lực, Khảo thí & Đánh giá, Chứng nhận số, Nhật ký hoạt động, Hồ sơ cá nhân, Góp ý, Báo lỗi.",
+      "status": "PASS",
+      "api": [
+        "POST /api/v1/auth/login → 200",
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/me/trial-assessment → 200",
+        "GET /api/v1/notifications?unreadOnly=true → 200",
+        "GET /api/v1/me/pulse/overview → 200"
+      ],
+      "marks": [
+        "1. Menu cổng học của nhân viên",
+        "2. Màn hình đầu tiên của vai trò"
+      ],
+      "at": "09/11/2026 07:55:03"
+    },
+    {
+      "id": "FE02",
+      "screen": "EM-02 Lộ trình",
+      "title": "Lộ trình năng lực của vị trí Kế toán theo 6 trạm",
+      "url": "/enterprise/me/path",
+      "role": "EMPLOYEE (employee@digitalent.ai)",
+      "precondition": "employee@ là Kế toán",
+      "steps": [
+        "1. Bấm menu \"Lộ trình năng lực\""
+      ],
+      "expected": "Tiêu đề là vị trí \"Kế toán\"; 6 trạm tương ứng 6 lĩnh vực.",
+      "actual": "Tiêu đề \"Kế toán\"; có Trạm 01 → Trạm 06. (URL: /enterprise/me/path)",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/notifications?unreadOnly=true → 200",
+        "GET /api/v1/me/trial-assessment → 200",
+        "GET /api/v1/me/pulse/overview → 200"
+      ],
+      "marks": [
+        "1. Vị trí: Kế toán",
+        "2. Trạm 01 của lộ trình"
+      ],
+      "at": "09/11/2026 07:55:08"
+    },
+    {
+      "id": "FE03",
+      "screen": "Phân quyền",
+      "title": "Nhân viên không mở được tổng quan doanh nghiệp",
+      "url": "/enterprise/dashboard",
+      "role": "EMPLOYEE (employee@digitalent.ai)",
+      "precondition": "EMPLOYEE không có quyền dashboard.hr_company.read",
+      "steps": [
+        "1. Mở trực tiếp /enterprise/dashboard"
+      ],
+      "expected": "Giao diện chặn bằng trang \"Truy cập bị từ chối\", không hiện dữ liệu của màn hình.",
+      "actual": "Hiện \"Truy cập bị từ chối\" tại /enterprise/dashboard; không hiện nội dung của màn hình.",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/notifications → 200"
+      ],
+      "marks": [
+        "1. Bị chặn: không đủ quyền"
+      ],
+      "at": "09/11/2026 07:55:12"
+    },
+    {
+      "id": "FE04",
+      "screen": "Phân quyền",
+      "title": "Nhân viên không mở được trang chấm bài",
+      "url": "/enterprise/team/final-reviews",
+      "role": "EMPLOYEE (employee@digitalent.ai)",
+      "precondition": "EMPLOYEE không có quyền task.evaluate",
+      "steps": [
+        "1. Mở trực tiếp /enterprise/team/final-reviews"
+      ],
+      "expected": "Giao diện chặn bằng trang \"Truy cập bị từ chối\", không hiện dữ liệu của màn hình.",
+      "actual": "Hiện \"Truy cập bị từ chối\" tại /enterprise/team/final-reviews; không hiện nội dung của màn hình.",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/notifications → 200"
+      ],
+      "marks": [
+        "1. Bị chặn: không đủ quyền"
+      ],
+      "at": "09/11/2026 07:55:16"
+    }
+  ]
+}

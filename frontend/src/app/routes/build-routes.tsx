@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Suspense, type ComponentType, type ReactNode } from 'react';
 import type { RouteObject } from 'react-router-dom';
 import { RequireActiveSubscription } from '../../components/guards/RequireActiveSubscription';
@@ -15,11 +16,12 @@ import { PageSkeleton } from '../../features/pulse-employee/components/ui';
  * Tự động chuyển sang Pulse Skeleton chuyên biệt khi người dùng ở phân hệ Employee (/enterprise/me).
  */
 export function RouteFallback() {
+  useUiLanguage();
   const path = typeof window !== 'undefined' ? window.location.pathname : '';
   if (path.startsWith('/enterprise/me')) {
     return <PageSkeleton />;
   }
-  return <PageLoading label="Đang tải trang" />;
+  return <PageLoading label={translateUi('Đang tải trang')} />;
 }
 
 /** Real pages by screen ID. Screens without an entry render a placeholder until they are built. */
@@ -43,7 +45,7 @@ export function buildRoutes(screens: ScreenDef[], pages: PageRegistry, base: str
         <Page />
       </Suspense>
     ) : (
-      <PlaceholderPage screenId={screen.id} title={screen.title} priority={screen.priority} />
+      <PlaceholderPage screenId={screen.id} title={translateUi(screen.title)} priority={screen.priority} />
     );
     return { path: screen.path.slice(base.length + 1), element: guard(screen, page) };
   });

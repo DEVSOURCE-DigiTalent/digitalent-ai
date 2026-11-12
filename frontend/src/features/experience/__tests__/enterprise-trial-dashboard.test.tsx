@@ -151,20 +151,17 @@ describe('enterprise trial dashboard UI', () => {
 });
 
 describe('trial sidebar', () => {
-  it('gives a trial owner only Dùng thử and Học thử', () => {
+  // Since bb63ee0 a trial owner uses the full owner menu; the trial itself is its "Đánh giá đội ngũ" entry (OW-T1).
+  it('gives a trial owner the owner menu with the team assessment entry', () => {
     const owner = {
       id: 'owner-1', email: 'owner@example.test', fullName: 'Owner', roles: ['OWNER'], permissions: [],
       workspace: 'enterprise' as const, enterpriseTrialStatus: 'trial_active' as const,
       subscription: { planCode: 'ENT_TRIAL', planName: 'Dùng thử Enterprise', status: 'trialing' as const, entitlements: [] },
     };
 
-    // Chưa tham gia làm bài: Học thử = OW-T2 (cảnh báo làm bài test trước, khóa đang khóa, mua khóa).
-    expect(sidebarFor(owner).map((item) => [item.label, item.screenId])).toEqual([['Dùng thử', 'OW-T1'], ['Học thử', 'OW-T2']]);
-    // Đã tham gia (có role Nhân viên): Học thử = trang Học thử của cổng nhân viên; trang mua khóa vẫn thuộc mục này.
-    const joined = sidebarFor({ ...owner, roles: ['OWNER', 'EMPLOYEE'] });
-    expect(joined.map((item) => item.screenId)).toEqual(['OW-T1', 'EM-02']);
-    expect(joined[1].activeFor).toEqual(expect.arrayContaining(['EM-T1', 'OW-23']));
-    // Hết dùng thử: menu chủ doanh nghiệp đầy đủ.
-    expect(sidebarFor({ ...owner, enterpriseTrialStatus: 'converted' })).toEqual(OWNER_SIDEBAR);
+    expect(sidebarFor(owner)).toBe(OWNER_SIDEBAR);
+    expect(sidebarFor({ ...owner, roles: ['OWNER', 'EMPLOYEE'] })).toBe(OWNER_SIDEBAR);
+    expect(sidebarFor({ ...owner, enterpriseTrialStatus: 'converted' })).toBe(OWNER_SIDEBAR);
+    expect(OWNER_SIDEBAR.find((item) => item.screenId === 'OW-T1')?.label).toBe('Đánh giá đội ngũ');
   });
 });

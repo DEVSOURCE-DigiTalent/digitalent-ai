@@ -22,6 +22,19 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const daysFromNow = (days: number) => new Date(Date.now() + days * DAY_MS).toISOString();
 const dateFromNow = (days: number) => daysFromNow(days).slice(0, 10);
 
+/** Explicit sample published assessments for the demo account, independent of current profiles. */
+export function demoOverallAssessments(): NonNullable<OrgData['overallAssessments']> {
+  const samples: Record<string, number[]> = {
+    'emp-01': [1, 1, 1, 1, 0, 1], 'emp-03': [2, 2, 2, 2, 2, 2],
+    'emp-04': [1, 2, 1, 1, 1, 1], 'emp-08': [2, 1, 2, 1, 1, 1],
+    'emp-17': [1, 1, 1, 2, 1, 1], 'emp-19': [1, 2, 1, 1, 2, 1],
+  };
+  return Object.entries(samples).map(([employeeId, levels]) => ({ employeeId,
+    reviewedAt: daysFromNow(-7), publishedAt: daysFromNow(-6),
+    domains: Object.fromEntries(levels.map((level, index) => [`cat-${index + 1}`, level])),
+  }));
+}
+
 export const JOB_GRADES: JobGradeRecord[] = [
   { code: 'G1', name: 'Nhân viên', description: 'Cấp bậc nhân viên thực thi trực tiếp chuyên môn.' },
   { code: 'G2', name: 'Phó phòng', description: 'Cấp bậc quản lý cấp phó hoặc chuyên gia phụ trách mảng.' },
@@ -337,6 +350,19 @@ export function buildAcmeData(): OrgData {
     { id: 'inv-seed-02', fullName: 'Mai Hoàng', email: 'mai.hoang@acme.vn', role: 'EMPLOYEE', departmentId: 'dep-kd', jobPositionId: 'pos-sales', invitedAt: daysFromNow(-2) },
   ];
 
+  // Demo licenses are explicit purchase data, never inferred from saved ceilings.
+  // Category 5 intentionally has only the free foundation course, so the owner can
+  // immediately see and test the purchase gate for Trung cấp / Nâng cao.
+  const courseSeatOrders = Object.fromEntries(
+    [
+      ['cat-1', 3], ['cat-2', 2], ['cat-3', 3],
+      ['cat-4', 2], ['cat-6', 2],
+    ].map(([categoryId, level]) => {
+      const course = COURSES.find((item) => item.categoryId === categoryId && item.level === level)!;
+      return [course.id, 12];
+    }),
+  );
+
   function buildTrainingBatches(): TrainingBatchRecord[] {
     return [
       {
@@ -404,6 +430,7 @@ export function buildAcmeData(): OrgData {
     employees,
     requirementSets: buildRequirementSets(),
     profiles: buildProfiles(),
+    overallAssessments: demoOverallAssessments(),
     skillGapRuns: [],
     assignments: buildAssignments(),
     decisions: [],
@@ -413,6 +440,7 @@ export function buildAcmeData(): OrgData {
     memberOverrides: {},
     audit: buildAudit(),
     internalCourses: buildInternalCourses(),
+    courseSeatOrders,
   };
 
   seedWork(data);

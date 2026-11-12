@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import type { AccessMode } from '@/lib/personal-access';
@@ -18,13 +19,14 @@ interface PlanLockBlockProps {
  * used, or the Free plan (spec §8.9). It says why and offers the way on; the page around it stays readable.
  */
 export function PlanLockBlock({ mode, courseLimit, placement, className }: PlanLockBlockProps) {
+  useUiLanguage();
   return (
     <Card className={className} role="note">
       <div className="flex flex-col gap-4 p-5">
         <p className="flex items-start gap-2.5 text-sm text-pt-fg">
           <Lock className="mt-0.5 size-4 shrink-0 text-pt-fg-3" aria-hidden="true" />
           {mode === 'trial'
-            ? `Bạn đã dùng hết ${courseLimit ?? INDIVIDUAL_TRIAL.courseLimit} lượt học thử.`
+            ? translateUi(`Bạn đã dùng hết ${courseLimit ?? INDIVIDUAL_TRIAL.courseLimit} lượt học thử.`)
             : 'Gói Miễn phí không mở khóa mới.'}
         </p>
         <div className="flex flex-wrap items-center gap-3">

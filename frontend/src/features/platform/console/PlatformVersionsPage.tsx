@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -34,6 +35,7 @@ const CODE_PATTERN = /^[A-Z0-9][A-Z0-9-]{1,29}$/;
  * PA-03 / PA-12 · Phiên bản khóa học: catalog version management.
  */
 export function PlatformVersionsPage() {
+  useUiLanguage();
   const { versionNo: param } = useParams<{ versionNo?: string }>();
   const versions = useCatalogVersions();
   const navigate = useNavigate();
@@ -86,7 +88,7 @@ export function PlatformVersionsPage() {
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
                 >
                   <Plus size={16} />
-                  {createDraft.isPending ? 'Đang tạo…' : `Tạo phiên bản v${nextNo}`}
+                  {createDraft.isPending ? 'Đang tạo…' : translateUi(`Tạo phiên bản v${nextNo}`)}
                 </button>
               )
             ))}
@@ -114,6 +116,7 @@ export function PlatformVersionsPage() {
 }
 
 function AnchorBar({ versions }: { versions: CatalogVersionsOutput }) {
+  useUiLanguage();
   const current = versions.items.find((v) => v.status === 'CURRENT');
   if (!current) return <div className="notice warning">Chưa có phiên bản nào được công bố.</div>;
   return (
@@ -151,14 +154,12 @@ function AnchorBar({ versions }: { versions: CatalogVersionsOutput }) {
             <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#b45309', letterSpacing: '0.05em' }}>
               PHIÊN BẢN NEO HIỆN TẠI
             </span>
-            <span style={{ padding: '2px 8px', borderRadius: 6, background: '#fef3c7', color: '#b45309', fontSize: 11, fontWeight: 700 }}>
-              Đang áp dụng
-            </span>
+            <span style={{ padding: '2px 8px', borderRadius: 6, background: '#fef3c7', color: '#b45309', fontSize: 11, fontWeight: 700 }}>{translateUi("Đang áp dụng")}</span>
           </div>
           <strong style={{ fontSize: 17, color: '#0f172a', display: 'block', marginTop: 2 }}>Phiên bản v{current.versionNo}</strong>
           <small style={{ fontSize: 12, color: '#64748b' }}>
-            {current.courseCount} khóa · {current.frameworkCount} khung · công bố {formatDate(current.publishedAt)}
-            {current.publishedByEmail ? ` bởi ${current.publishedByEmail}` : ''}
+            {current.courseCount}{translateUi(" khóa · ")}{current.frameworkCount} khung · công bố {formatDate(current.publishedAt)}
+            {current.publishedByEmail ? translateUi(` bởi ${current.publishedByEmail}`) : ''}
           </small>
         </div>
       </div>
@@ -175,6 +176,7 @@ function AnchorBar({ versions }: { versions: CatalogVersionsOutput }) {
 }
 
 function VersionStatus({ version }: { version: CatalogVersionSummary }) {
+  useUiLanguage();
   if (version.status === 'CURRENT')
     return (
       <span
@@ -190,8 +192,7 @@ function VersionStatus({ version }: { version: CatalogVersionSummary }) {
           fontWeight: 700,
         }}
       >
-        <Anchor size={11} /> Đang dùng
-      </span>
+        <Anchor size={11} />{translateUi(" Đang dùng")}</span>
     );
   if (version.status === 'DRAFT')
     return (
@@ -208,13 +209,13 @@ function VersionStatus({ version }: { version: CatalogVersionSummary }) {
           fontWeight: 700,
         }}
       >
-        <Edit3 size={11} /> Bản nháp
-      </span>
+        <Edit3 size={11} />{translateUi(" Bản nháp")}</span>
     );
   return <Pill tone="gray">Đã thay</Pill>;
 }
 
 function VersionList({ versions, selected }: { versions: CatalogVersionsOutput; selected: number | undefined }) {
+  useUiLanguage();
   return (
     <nav className="pa-ver-list" aria-label="Các phiên bản" style={{ display: 'grid', gap: 8 }}>
       {versions.items.map((v) => {
@@ -242,7 +243,7 @@ function VersionList({ versions, selected }: { versions: CatalogVersionsOutput; 
               <VersionStatus version={v} />
             </div>
             <small style={{ fontSize: 12, color: '#64748b' }}>
-              {v.courseCount} khóa · {v.status === 'DRAFT' ? `tạo ${formatDate(v.createdAt)}` : `công bố ${formatDate(v.publishedAt)}`}
+              {v.courseCount}{translateUi(" khóa · ")}{v.status === 'DRAFT' ? translateUi(`tạo ${formatDate(v.createdAt)}`) : translateUi(`công bố ${formatDate(v.publishedAt)}`)}
             </small>
             {v.status === 'DRAFT' && (
               <small style={{ fontSize: 11, color: '#d97706', fontWeight: 600 }}>
@@ -262,6 +263,7 @@ function VersionList({ versions, selected }: { versions: CatalogVersionsOutput; 
 }
 
 function VersionCourses({ detail, canManage }: { detail: CatalogVersionDetail; canManage: boolean }) {
+  useUiLanguage();
   const { version } = detail;
   const editable = detail.editable && canManage;
   const [adding, setAdding] = useState(false);
@@ -333,7 +335,7 @@ function VersionCourses({ detail, canManage }: { detail: CatalogVersionDetail; c
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo tên, mã khóa hoặc lĩnh vực..."
-              aria-label="Tìm khóa học"
+              aria-label={translateUi("Tìm khóa học")}
               style={{ paddingLeft: 34, height: 38, width: '100%', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13 }}
             />
           </div>
@@ -355,12 +357,12 @@ function VersionCourses({ detail, canManage }: { detail: CatalogVersionDetail; c
             <thead>
               <tr style={{ background: '#f8fafc' }}>
                 <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569' }}>KHÓA HỌC & LĨNH VỰC</th>
-                <th style={{ padding: '12px 12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>CẤP ĐỘ</th>
+                <th style={{ padding: '12px 12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>{translateUi("CẤP ĐỘ")}</th>
                 <th className="num" style={{ padding: '12px 12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>MÔ ĐUN</th>
                 <th className="num" style={{ padding: '12px 12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>CÂU HỎI</th>
-                <th className="num" style={{ padding: '12px 16px', textAlign: 'right', fontSize: 12, fontWeight: 700, color: '#475569' }}>ĐƠN GIÁ</th>
-                <th style={{ padding: '12px 12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>TRẠNG THÁI</th>
-                <th style={{ width: 110, padding: '12px 16px', textAlign: 'right', fontSize: 12, fontWeight: 700, color: '#475569' }}>THAO TÁC</th>
+                <th className="num" style={{ padding: '12px 16px', textAlign: 'right', fontSize: 12, fontWeight: 700, color: '#475569' }}>{translateUi("ĐƠN GIÁ")}</th>
+                <th style={{ padding: '12px 12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>{translateUi("TRẠNG THÁI")}</th>
+                <th style={{ width: 110, padding: '12px 16px', textAlign: 'right', fontSize: 12, fontWeight: 700, color: '#475569' }}>{translateUi("THAO TÁC")}</th>
               </tr>
             </thead>
             <tbody>
@@ -384,6 +386,7 @@ function VersionCourses({ detail, canManage }: { detail: CatalogVersionDetail; c
 }
 
 function CourseGroup({ name, courses, detail, editable }: { name: string; courses: CatalogCourseRow[]; detail: CatalogVersionDetail; editable: boolean }) {
+  useUiLanguage();
   const navigate = useNavigate();
   const remove = useRemoveCatalogCourse(detail.version.versionNo);
   const [confirm, setConfirm] = useState<string | null>(null);
@@ -407,8 +410,7 @@ function CourseGroup({ name, courses, detail, editable }: { name: string; course
               {name}
             </span>
             <span style={{ padding: '2px 8px', borderRadius: 12, background: '#e2e8f0', color: '#475569', fontSize: 11, fontWeight: 600 }}>
-              {courses.length} khóa
-            </span>
+              {courses.length}{translateUi(" khóa")}</span>
           </div>
         </td>
       </tr>
@@ -429,8 +431,8 @@ function CourseGroup({ name, courses, detail, editable }: { name: string; course
                   {c.code}
                 </code>
                 <div>
-                  <strong style={{ fontSize: 13, color: '#0f172a', display: 'block' }}>{c.title}</strong>
-                  <small style={{ fontSize: 12, color: '#64748b' }}>{c.domainName}</small>
+                  <strong style={{ fontSize: 13, color: '#0f172a', display: 'block' }}>{translateUi(c.title)}</strong>
+                  <small style={{ fontSize: 12, color: '#64748b' }}>{translateUi(c.domainName)}</small>
                 </div>
               </div>
             </td>
@@ -447,7 +449,7 @@ function CourseGroup({ name, courses, detail, editable }: { name: string; course
                   border: `1px solid ${levelStyle.border}`,
                 }}
               >
-                {LEVEL_NAMES[c.level] ?? c.levelName}
+                {translateUi(LEVEL_NAMES[c.level]) ?? c.levelName}
               </span>
             </td>
             <td className="num" style={{ padding: '12px', textAlign: 'center', fontSize: 13, fontWeight: 600 }}>
@@ -457,10 +459,10 @@ function CourseGroup({ name, courses, detail, editable }: { name: string; course
               {c.questionCount}
             </td>
             <td className="num" style={{ padding: '12px 16px', textAlign: 'right', fontSize: 13, fontWeight: 600 }}>
-              {c.level === 1 ? <span style={{ color: '#16a34a' }}>Miễn phí</span> : formatMoney(c.pricePerSeat)}
+              {c.level === 1 ? <span style={{ color: '#16a34a' }}>{translateUi("Miễn phí")}</span> : formatMoney(c.pricePerSeat)}
             </td>
             <td style={{ padding: '12px', textAlign: 'center' }}>
-              <Pill tone={kind?.tone}>{kind?.label ?? c.changeKind}</Pill>
+              <Pill tone={kind?.tone}>{translateUi(kind?.label) ?? c.changeKind}</Pill>
               {c.salesStatus === 'PAUSED' && (
                 <span style={{ marginLeft: 4 }}>
                   <Pill tone="coral">Tạm ngưng</Pill>
@@ -485,7 +487,7 @@ function CourseGroup({ name, courses, detail, editable }: { name: string; course
                     onClick={() => open(c)}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 30, padding: '0 10px' }}
                   >
-                    {editable ? 'Sửa' : 'Xem'}
+                    {editable ? translateUi('Sửa') : translateUi('Xem')}
                     <ArrowRight size={12} />
                   </button>
                   {editable && c.changeKind === 'NEW' && (
@@ -493,7 +495,7 @@ function CourseGroup({ name, courses, detail, editable }: { name: string; course
                       type="button"
                       className="btn btn-ghost btn-small"
                       onClick={() => setConfirm(c.courseId)}
-                      aria-label={`Bỏ ${c.code} khỏi bản nháp`}
+                      aria-label={translateUi(`Bỏ ${c.code} khỏi bản nháp`)}
                       style={{ color: '#ef4444', height: 30, padding: '0 6px' }}
                     >
                       <Trash2 size={13} />
@@ -510,6 +512,7 @@ function CourseGroup({ name, courses, detail, editable }: { name: string; course
 }
 
 function AddCourseForm({ versionNo, onClose }: { versionNo: number; onClose: () => void }) {
+  useUiLanguage();
   const navigate = useNavigate();
   const frameworks = useFrameworks();
   const create = useCreateCatalogCourse(versionNo);
@@ -539,9 +542,7 @@ function AddCourseForm({ versionNo, onClose }: { versionNo: number; onClose: () 
         <h2 id="add-course-title" className="panel-title">
           Thêm khóa học vào v{versionNo}
         </h2>
-        <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>
-          Hủy
-        </button>
+        <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>{translateUi("Hủy")}</button>
       </div>
       <div className="pa-fields-3">
         <label className="field">
@@ -555,11 +556,9 @@ function AddCourseForm({ versionNo, onClose }: { versionNo: number; onClose: () 
             ))}
           </select>
         </label>
-        <label className="field">
-          Lĩnh vực
-          <select value={form.domainId} onChange={(e) => setForm({ ...form, domainId: e.target.value })} required>
+        <label className="field">{translateUi("Lĩnh vực")}<select value={form.domainId} onChange={(e) => setForm({ ...form, domainId: e.target.value })} required>
             <option value="" disabled>
-              {framework.isLoading ? 'Đang tải…' : 'Chọn lĩnh vực'}
+              {framework.isLoading ? translateUi('Đang tải…') : 'Chọn lĩnh vực'}
             </option>
             {(framework.data?.domains ?? []).map((d) => (
               <option key={d.id} value={d.id}>
@@ -568,12 +567,10 @@ function AddCourseForm({ versionNo, onClose }: { versionNo: number; onClose: () 
             ))}
           </select>
         </label>
-        <label className="field">
-          Cấp độ
-          <select value={form.level} onChange={(e) => setForm({ ...form, level: Number(e.target.value) })}>
+        <label className="field">{translateUi("Cấp độ")}<select value={form.level} onChange={(e) => setForm({ ...form, level: Number(e.target.value) })}>
             {[1, 2, 3].map((l) => (
               <option key={l} value={l}>
-                {LEVEL_NAMES[l]}
+                {translateUi(LEVEL_NAMES[l])}
               </option>
             ))}
           </select>
@@ -585,9 +582,7 @@ function AddCourseForm({ versionNo, onClose }: { versionNo: number; onClose: () 
           <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} maxLength={30} placeholder="VD: AI1-F" required />
           <small className={`field-hint ${form.code && !codeValid ? 'pa-error' : ''}`}>Chữ in hoa, chữ số, dấu gạch ngang; không trùng khóa khác.</small>
         </label>
-        <label className="field">
-          Tên khóa học
-          <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} maxLength={250} placeholder="VD: Viết câu lệnh AI cho công việc hằng ngày" required />
+        <label className="field">{translateUi("Tên khóa học")}<input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} maxLength={250} placeholder="VD: Viết câu lệnh AI cho công việc hằng ngày" required />
         </label>
       </div>
       <p className="field-hint">
@@ -602,6 +597,7 @@ function AddCourseForm({ versionNo, onClose }: { versionNo: number; onClose: () 
 }
 
 function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onClose: () => void }) {
+  useUiLanguage();
   const versionNo = detail.version.versionNo;
   const check = usePublishCheck(versionNo, true);
   const publish = usePublishVersion(versionNo);
@@ -658,7 +654,7 @@ function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onCl
 
         <div style={{ padding: '20px 24px', display: 'grid', gap: 18 }}>
           <div style={{ padding: '12px 16px', borderRadius: 10, background: '#eff6ff', border: '1px solid #bfdbfe', fontSize: 13, color: '#1e40af' }}>
-            Sau khi công bố, mốc neo ⚓ sẽ chuyển {currentNo ? `từ v${currentNo} ` : ''}sang <strong>v{versionNo}</strong>. Các tổ chức doanh nghiệp sẽ ngay lập tức được truy cập danh mục khóa học mới.
+            Sau khi công bố, mốc neo ⚓ sẽ chuyển {currentNo ? translateUi(`từ v${currentNo} `) : ''}sang <strong>v{versionNo}</strong>. Các tổ chức doanh nghiệp sẽ ngay lập tức được truy cập danh mục khóa học mới.
           </div>
 
           <div>
@@ -669,8 +665,8 @@ function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onCl
               {changed.map((c) => (
                 <li key={c.courseId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: 13 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Pill tone={CHANGE_KIND[c.changeKind]?.tone}>{CHANGE_KIND[c.changeKind]?.label}</Pill>
-                    <span style={{ fontWeight: 600, color: '#0f172a' }}>{c.code}</span> · {c.title}
+                    <Pill tone={CHANGE_KIND[c.changeKind]?.tone}>{translateUi(CHANGE_KIND[c.changeKind]?.label)}</Pill>
+                    <span style={{ fontWeight: 600, color: '#0f172a' }}>{c.code}</span> · {translateUi(c.title)}
                   </div>
                   <small style={{ color: '#64748b' }}>
                     {c.moduleCount} mô đun · {c.questionCount} câu hỏi
@@ -701,7 +697,7 @@ function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onCl
                         </Link>
                       ) : null}
                       {item.courseCode ? ' · ' : ''}
-                      {item.message}
+                      {translateUi(item.message)}
                     </div>
                   </li>
                 ))}
@@ -729,9 +725,7 @@ function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onCl
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid #f1f5f9' }}>
-            <button type="button" className="btn btn-ghost" onClick={onClose}>
-              Hủy bỏ
-            </button>
+            <button type="button" className="btn btn-ghost" onClick={onClose}>{translateUi("Hủy bỏ")}</button>
             <button
               type="button"
               className="btn btn-primary"
@@ -740,7 +734,7 @@ function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onCl
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
               <Anchor size={15} />
-              {publish.isPending ? 'Đang xuất bản…' : `Xác nhận công bố v${versionNo}`}
+              {publish.isPending ? 'Đang xuất bản…' : translateUi(`Xác nhận công bố v${versionNo}`)}
             </button>
           </div>
         </div>

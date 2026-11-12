@@ -38,9 +38,9 @@ public class PulseDomainDto
     public string Name { get; set; } = string.Empty;
     /// <summary>Mục tiêu vị trí, 0 = vị trí không yêu cầu lĩnh vực.</summary>
     public int Target { get; set; }
-    /// <summary>Trần năng lực doanh nghiệp đặt cho phòng ban (0..3).</summary>
+    /// <summary>Phạm vi năng lực doanh nghiệp đặt cho phòng ban (0..3).</summary>
     public int Ceiling { get; set; }
-    /// <summary>Đỉnh lộ trình = min(mục tiêu, trần); 0 = ngoài lộ trình.</summary>
+    /// <summary>Đỉnh lộ trình = min(mục tiêu, phạm vi); 0 = ngoài lộ trình.</summary>
     public int PathTop { get; set; }
     /// <summary>Mức đã xác nhận; 0 = chưa xác nhận.</summary>
     public int Verified { get; set; }

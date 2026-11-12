@@ -1,3 +1,4 @@
+import { translateUi } from '@/lib/i18n';
 import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -35,15 +36,13 @@ export const TermsCheckbox = forwardRef<HTMLInputElement, TermsCheckboxProps>(
               href="#privacy"
               onClick={(e) => e.preventDefault()}
               className="text-cream underline underline-offset-2 hover:text-cream-soft"
-            >
-              Chính sách bảo mật
-            </a>{' '}
+            >{translateUi("Chính sách bảo mật")}</a>{' '}
             của DigiTalent AI.{note && <> {note}</>}
           </span>
         </label>
         {error && (
           <p id={`${id}-error`} role="alert" className="text-xs text-red-300">
-            {error}
+            {translateUi(error)}
           </p>
         )}
       </div>

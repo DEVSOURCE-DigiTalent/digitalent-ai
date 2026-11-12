@@ -1,0 +1,333 @@
+{
+  "meta": {
+    "branch": "feature/DT-role-based-tests",
+    "commit": "c51a6d6",
+    "api": "http://localhost:5000",
+    "fe": "http://localhost:5173",
+    "db": "PostgreSQL 16 (DB mới: migration + seed Development)",
+    "date": "09/11/2026"
+  },
+  "role": {
+    "label": "MANAGER",
+    "email": "manager@digitalent.ai",
+    "title": "QUẢN LÝ PHÒNG BAN (MANAGER)"
+  },
+  "cases": [
+    {
+      "id": "TC01",
+      "feature": "Xác thực",
+      "title": "Đăng nhập tài khoản demo manager@digitalent.ai để lấy access token",
+      "role": "Ẩn danh",
+      "endpoint": "POST /api/v1/auth/login",
+      "precondition": "Tài khoản demo manager@digitalent.ai (seed Development), mật khẩu Admin@1234",
+      "expected": "200, success = true, trả về accessToken và refreshToken",
+      "status": "PASS",
+      "http": 200,
+      "ms": 327,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "success = true",
+          "ok": true
+        },
+        {
+          "label": "Có accessToken và refreshToken",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; success = true: đạt; Có accessToken và refreshToken: đạt",
+      "at": "09/11/2026 07:45:07"
+    },
+    {
+      "id": "TC02",
+      "feature": "Phiên đăng nhập",
+      "title": "MANAGER đọc thông tin phiên: vai trò, workspace và tổ chức",
+      "role": "MANAGER",
+      "endpoint": "GET /api/v1/auth/me",
+      "precondition": "Đã đăng nhập (ca trước)",
+      "expected": "200; roles = [MANAGER]; workspace = enterprise; organizationId có giá trị",
+      "status": "PASS",
+      "http": 200,
+      "ms": 19,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "roles = [MANAGER]",
+          "ok": true
+        },
+        {
+          "label": "workspace = enterprise",
+          "ok": true
+        },
+        {
+          "label": "organizationId có giá trị",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; roles = [MANAGER]: đạt; workspace = enterprise: đạt; organizationId có giá trị: đạt",
+      "at": "09/11/2026 07:45:07"
+    },
+    {
+      "id": "TC03",
+      "feature": "Nhân sự của phòng",
+      "title": "Xem nhân sự trong phạm vi phòng ban mình quản lý",
+      "role": "MANAGER",
+      "endpoint": "GET /api/v1/workforce?pageSize=50",
+      "precondition": "manager@ quản lý phòng OPS (seed)",
+      "expected": "200; mọi nhân sự thuộc phòng Operations",
+      "status": "PASS",
+      "http": 200,
+      "ms": 49,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "Có nhân sự",
+          "ok": true
+        },
+        {
+          "label": "Tất cả thuộc phòng Operations",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; Có nhân sự: đạt; Tất cả thuộc phòng Operations: đạt",
+      "at": "09/11/2026 07:45:08"
+    },
+    {
+      "id": "TC04",
+      "feature": "Tổng quan nhóm",
+      "title": "Xem dashboard năng lực của nhóm",
+      "role": "MANAGER",
+      "endpoint": "GET /api/v1/intelligence/dashboard",
+      "precondition": "Phạm vi phòng OPS",
+      "expected": "200; có kpis và đủ 6 lĩnh vực",
+      "status": "PASS",
+      "http": 200,
+      "ms": 37,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "Có kpis",
+          "ok": true
+        },
+        {
+          "label": "6 lĩnh vực",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; Có kpis: đạt; 6 lĩnh vực: đạt",
+      "at": "09/11/2026 07:45:08"
+    },
+    {
+      "id": "TC05",
+      "feature": "MG-13 Chấm bài",
+      "title": "Xem hàng đợi chấm bài cuối khóa của nhóm",
+      "role": "MANAGER",
+      "endpoint": "GET /api/v1/pulse/final-reviews",
+      "precondition": "Phạm vi phòng OPS",
+      "expected": "200; có 3 tiêu chí chấm và các bộ đếm",
+      "status": "PASS",
+      "http": 200,
+      "ms": 33,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "3 tiêu chí",
+          "ok": true
+        },
+        {
+          "label": "Có pendingCount",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; 3 tiêu chí: đạt; Có pendingCount: đạt",
+      "at": "09/11/2026 07:45:08"
+    },
+    {
+      "id": "TC06",
+      "feature": "EM-01 Học như nhân viên",
+      "title": "Quản lý cũng học trong cổng nhân viên",
+      "role": "MANAGER",
+      "endpoint": "GET /api/v1/me/pulse/overview",
+      "precondition": "manager@ có vị trí Sales / CRM",
+      "expected": "200; hasPosition = true; 6 lĩnh vực; positionName = Sales / CRM",
+      "status": "PASS",
+      "http": 200,
+      "ms": 94,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "hasPosition = true",
+          "ok": true
+        },
+        {
+          "label": "6 lĩnh vực",
+          "ok": true
+        },
+        {
+          "label": "positionName = Sales / CRM",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; hasPosition = true: đạt; 6 lĩnh vực: đạt; positionName = Sales / CRM: đạt",
+      "at": "09/11/2026 07:45:09"
+    },
+    {
+      "id": "TC07",
+      "feature": "Phân quyền",
+      "title": "MANAGER không được quản trị thành viên doanh nghiệp",
+      "role": "MANAGER",
+      "endpoint": "GET /api/v1/members",
+      "precondition": "Vai trò không có quyền user.read",
+      "expected": "403 Forbidden, success = false",
+      "status": "PASS",
+      "http": 403,
+      "ms": 30,
+      "checks": [
+        {
+          "label": "HTTP status = 403",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 403; success = false: đạt",
+      "at": "09/11/2026 07:45:09"
+    },
+    {
+      "id": "TC08",
+      "feature": "Phân quyền",
+      "title": "MANAGER không được giao khóa học",
+      "role": "MANAGER",
+      "endpoint": "POST /api/v1/course-assignments",
+      "precondition": "Vai trò không có quyền course_assignment.create",
+      "expected": "403 Forbidden, success = false",
+      "status": "PASS",
+      "http": 403,
+      "ms": 13,
+      "checks": [
+        {
+          "label": "HTTP status = 403",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 403; success = false: đạt",
+      "at": "09/11/2026 07:45:09"
+    },
+    {
+      "id": "TC09",
+      "feature": "Phân quyền",
+      "title": "MANAGER không được đặt trần năng lực doanh nghiệp",
+      "role": "MANAGER",
+      "endpoint": "PUT /api/v1/capability-ceilings/organization",
+      "precondition": "Vai trò không có quyền position_requirement.manage",
+      "expected": "403 Forbidden, success = false",
+      "status": "PASS",
+      "http": 403,
+      "ms": 34,
+      "checks": [
+        {
+          "label": "HTTP status = 403",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 403; success = false: đạt",
+      "at": "09/11/2026 07:45:09"
+    },
+    {
+      "id": "TC10",
+      "feature": "Phân quyền",
+      "title": "MANAGER không được xem tổng quan doanh nghiệp",
+      "role": "MANAGER",
+      "endpoint": "GET /api/v1/organization/overview",
+      "precondition": "Vai trò không có quyền dashboard.hr_company.read",
+      "expected": "403 Forbidden, success = false",
+      "status": "PASS",
+      "http": 403,
+      "ms": 19,
+      "checks": [
+        {
+          "label": "HTTP status = 403",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 403; success = false: đạt",
+      "at": "09/11/2026 07:45:10"
+    },
+    {
+      "id": "TC11",
+      "feature": "Phân quyền",
+      "title": "Gọi danh sách nhân sự không kèm token",
+      "role": "Ẩn danh",
+      "endpoint": "GET /api/v1/workforce",
+      "precondition": "Không gửi header Authorization",
+      "expected": "401 Unauthorized",
+      "status": "PASS",
+      "http": 401,
+      "ms": 12,
+      "checks": [
+        {
+          "label": "HTTP status = 401",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 401; success = false: đạt",
+      "at": "09/11/2026 07:45:10"
+    }
+  ],
+  "auto": [
+    {
+      "id": "AUTO01",
+      "filter": "ManagerAccessTests",
+      "description": "Ma trận quyền API của MANAGER",
+      "total": 25,
+      "passed": 25,
+      "failed": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "AUTO02",
+      "filter": "DepartmentScopeTests",
+      "description": "Phạm vi dữ liệu theo phòng ban (EmployeeScope)",
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "status": "PASS"
+    }
+  ]
+}

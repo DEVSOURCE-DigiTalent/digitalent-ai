@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import type { CompetencyCategory } from '@/services/competency.service';
 import type { CompetencyListItem } from '@/services/competency.service';
@@ -19,6 +20,7 @@ export function FrameworkDomainList({
   competencies,
   isLoading,
 }: FrameworkDomainListProps) {
+  useUiLanguage();
   if (isLoading) {
     return (
       <div
@@ -67,8 +69,7 @@ export function FrameworkDomainList({
             <span
               className="text-[10px] font-black uppercase tracking-[0.12em]"
               style={{ color: 'var(--po-muted)' }}
-            >
-              MIỀN 0{cat.sortOrder}
+            >{translateUi("MIỀN 0")}{cat.sortOrder}
             </span>
             <h2
               className="mt-[11px] mb-[7px] text-xl font-semibold"
@@ -99,7 +100,7 @@ export function FrameworkDomainList({
                   style={{ background: 'var(--po-soft)', color: 'var(--po-accent-strong)' }}
                 >
                   <b style={{ color: 'var(--po-accent)' }}>{l.num}</b>{' '}
-                  {l.label}
+                  {translateUi(l.label)}
                 </span>
               ))}
             </div>

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { X } from 'lucide-react';
@@ -29,6 +30,7 @@ export function PlatformDrawer({
   footer,
   width = 560,
 }: PlatformDrawerProps) {
+  useUiLanguage();
   // Handle Escape key and lock body scroll
   useEffect(() => {
     if (!isOpen) return;
@@ -66,10 +68,10 @@ export function PlatformDrawer({
             )}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <h3 className="pa-drawer-title">{title}</h3>
+                <h3 className="pa-drawer-title">{translateUi(title)}</h3>
                 {badge}
               </div>
-              {subtitle && <p className="pa-drawer-sub">{subtitle}</p>}
+              {subtitle && <p className="pa-drawer-sub">{translateUi(subtitle)}</p>}
             </div>
           </div>
 

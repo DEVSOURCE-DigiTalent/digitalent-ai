@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ArrowRight, ShieldCheck, Mail, Users } from 'lucide-react';
@@ -14,6 +15,7 @@ import type { EmployeeDto } from '@/services/employee.service';
  * - Trạng thái trống hướng dẫn liên hệ Owner nếu Manager chưa được phân công phòng ban.
  */
 export function TeamMembersPage() {
+  useUiLanguage();
   const [search, setSearch] = useState('');
   const [positionId, setPositionId] = useState('');
   const [status, setStatus] = useState<'ACTIVE' | 'INACTIVE' | ''>('');
@@ -118,7 +120,7 @@ export function TeamMembersPage() {
           to={`/enterprise/team/members/${row.id}`}
           className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 transition"
         >
-          <span>Hồ sơ năng lực</span>
+          <span>{translateUi("Hồ sơ năng lực")}</span>
           <ArrowRight className="size-3.5" />
         </Link>
       ),
@@ -136,7 +138,7 @@ export function TeamMembersPage() {
           to="/enterprise/team/skill-gap"
           className="inline-flex items-center gap-2 px-3.5 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-sm rounded-xl transition shrink-0"
         >
-          <span>Xem khoảng trống năng lực</span>
+          <span>{translateUi("Xem khoảng trống năng lực")}</span>
         </Link>
       </div>
 
@@ -183,10 +185,10 @@ export function TeamMembersPage() {
               setStatus(e.target.value as any);
               setPageIndex(1);
             }}
-            aria-label="Lọc theo trạng thái"
+            aria-label={translateUi("Lọc theo trạng thái")}
             className={INPUT_CLASS}
           >
-            <option value="">Mọi trạng thái</option>
+            <option value="">{translateUi("Mọi trạng thái")}</option>
             <option value="ACTIVE">Đang làm việc</option>
             <option value="INACTIVE">Đã nghỉ việc</option>
           </select>

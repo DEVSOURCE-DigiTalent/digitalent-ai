@@ -54,6 +54,7 @@ public class CourseDetailDto
     public int SeatsGranted { get; set; }
     public int TotalSeats => SeatsPurchased + SeatsGranted;
     public int SeatsAvailable { get; set; }
+    public int SeatsUsed { get; set; }
     public bool HasLicense { get; set; }
 
     public List<CourseModuleDto> Modules { get; set; } = new();

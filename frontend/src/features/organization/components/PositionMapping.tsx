@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 
 interface DomainLevel {
@@ -16,6 +17,7 @@ const LEVEL_LABELS = ['—', 'Cơ bản', 'Trung cấp', 'Nâng cao'];
 const DIGITAL_AI_LEVEL = 3;
 
 export function PositionMapping({ domains, isLoading }: PositionMappingProps) {
+  useUiLanguage();
   return (
     <section
       className="rounded-[22px] border p-6"
@@ -30,19 +32,12 @@ export function PositionMapping({ domains, isLoading }: PositionMappingProps) {
           <span
             className="text-[10px] font-black uppercase tracking-[0.12em]"
             style={{ color: 'var(--po-accent)' }}
-          >
-            Mức yêu cầu theo miền
-          </span>
+          >{translateUi("Mức yêu cầu theo miền")}</span>
           <h2
             className="mt-2 text-xl font-semibold"
             style={{ color: 'var(--po-ink)', letterSpacing: '-0.045em' }}
-          >
-            Thiết lập mức theo miền năng lực.
-          </h2>
-          <p className="mt-1 text-xs" style={{ color: 'var(--po-muted)' }}>
-            Trần con không được vượt trần cha. Công bố trước khi mời nhân
-            viên.
-          </p>
+          >{translateUi("Thiết lập mức theo miền năng lực.")}</h2>
+          <p className="mt-1 text-xs" style={{ color: 'var(--po-muted)' }}>{translateUi("Phạm vi phòng ban không được vượt phạm vi doanh nghiệp. Công bố trước khi mời nhân viên.")}</p>
         </div>
       </div>
 
@@ -50,16 +45,12 @@ export function PositionMapping({ domains, isLoading }: PositionMappingProps) {
         <p
           className="py-6 text-center text-sm"
           style={{ color: 'var(--po-muted)' }}
-        >
-          Đang tải…
-        </p>
+        >{translateUi("Đang tải…")}</p>
       ) : domains.length === 0 ? (
         <p
           className="py-6 text-center text-sm"
           style={{ color: 'var(--po-muted)' }}
-        >
-          Chưa có dữ liệu miền năng lực.
-        </p>
+        >{translateUi("Chưa có dữ liệu miền năng lực.")}</p>
       ) : (
         <>
           {/* Header row */}
@@ -71,9 +62,9 @@ export function PositionMapping({ domains, isLoading }: PositionMappingProps) {
               borderBottom: '1px solid var(--po-line)',
             }}
           >
-            <span>Khung tham chiếu</span>
-            <span className="text-center">Mục tiêu TB</span>
-            <span className="text-center">Hiện tại TB</span>
+            <span>{translateUi("Khung tham chiếu")}</span>
+            <span className="text-center">{translateUi("Mục tiêu TB")}</span>
+            <span className="text-center">{translateUi("Hiện tại TB")}</span>
           </div>
 
           {/* Domain rows */}
@@ -103,8 +94,7 @@ export function PositionMapping({ domains, isLoading }: PositionMappingProps) {
                     <small
                       className="text-[11px]"
                       style={{ color: 'var(--po-muted)' }}
-                    >
-                      Mức tham chiếu: {LEVEL_LABELS[DIGITAL_AI_LEVEL]}
+                    >{translateUi("Mức tham chiếu: ")}{translateUi(LEVEL_LABELS[DIGITAL_AI_LEVEL])}
                     </small>
                   </div>
                   <span
@@ -132,32 +122,25 @@ export function PositionMapping({ domains, isLoading }: PositionMappingProps) {
 
       <div className="mt-5 flex flex-wrap gap-2.5">
         <Link
-          to="/enterprise/requirements/builder"
+          to="/enterprise/setup?tab=ceilings"
           className="inline-flex items-center gap-2 rounded-[11px] px-4 py-3 text-[13px] font-bold transition-transform hover:-translate-y-0.5"
           style={{
             background: 'var(--po-accent)',
             color: '#fff',
             boxShadow: '0 9px 18px rgba(19,123,132,.17)',
           }}
-        >
-          Yêu cầu riêng của doanh nghiệp →
-        </Link>
+        >{translateUi("Chuẩn theo khóa học →")}</Link>
         <Link
           to="/enterprise/members"
           className="inline-flex items-center gap-2 rounded-[11px] border px-4 py-3 text-[13px] font-bold transition-transform hover:-translate-y-0.5"
           style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)' }}
-        >
-          Tiếp tục mời nhân viên
-        </Link>
+        >{translateUi("Tiếp tục mời nhân viên")}</Link>
       </div>
 
       <p
         className="mt-4 text-[11px] leading-relaxed"
         style={{ color: '#789' }}
-      >
-        Khung năng lực số 6 miền do Platform Admin công bố. Tổ chức chỉ chỉnh
-        sửa trần và mục tiêu bên dưới khung nền tảng.
-      </p>
+      >{translateUi("Khung năng lực số 6 miền do Platform Admin công bố. Tổ chức chỉ chỉnh sửa phạm vi và mục tiêu bên dưới khung nền tảng.")}</p>
     </section>
   );
 }

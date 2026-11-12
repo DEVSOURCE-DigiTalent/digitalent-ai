@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { Award, CheckCircle, ExternalLink, ShieldCheck } from 'lucide-react';
@@ -19,6 +20,7 @@ interface CertificateDocumentProps {
  * Con dấu số vàng kim (Gold Digital Seal), và chữ ký số thẩm định.
  */
 export function CertificateDocument({ certificate, showVerificationLink = true }: CertificateDocumentProps) {
+  useUiLanguage();
   const [qrSvg, setQrSvg] = useState<string>('');
 
   const verifyUrl = typeof window !== 'undefined'
@@ -125,7 +127,7 @@ export function CertificateDocument({ certificate, showVerificationLink = true }
               {levelWithTier(certificate.level, 'vi')}
             </span>
             <span>·</span>
-            <span>{certificate.domainName}</span>
+            <span>{translateUi(certificate.domainName)}</span>
             <span>·</span>
             <span className="font-semibold text-emerald-700">Điểm đánh giá: {certificate.scorePercent}%</span>
           </div>
@@ -140,7 +142,7 @@ export function CertificateDocument({ certificate, showVerificationLink = true }
                 <div key={c.code} className="flex items-start gap-1.5 truncate">
                   <CheckCircle className="size-3 text-emerald-600 shrink-0 mt-0.5" />
                   <span className="font-mono font-semibold text-[#8c6d32] shrink-0">{c.code}</span>
-                  <span className="truncate text-[10.5px]" title={c.name}>{c.name}</span>
+                  <span className="truncate text-[10.5px]" title={translateUi(c.name)}>{c.name}</span>
                 </div>
               ))}
             </div>
@@ -234,6 +236,7 @@ export function CertificateDocument({ certificate, showVerificationLink = true }
 }
 
 function CornerOrnament({ className = '' }: { className?: string }) {
+  useUiLanguage();
   return (
     <svg
       viewBox="0 0 40 40"

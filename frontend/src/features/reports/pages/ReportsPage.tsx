@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useMemo } from 'react';
 import {
   Users,
@@ -25,6 +26,7 @@ type ReportTab = 'workforce' | 'competency' | 'training' | 'assessment' | 'evide
 type TrainingCourseRow = ReportsOverviewDto['training']['courses'][number];
 
 export function ReportsPage() {
+  useUiLanguage();
   const [activeTab, setActiveTab] = useState<ReportTab>('workforce');
   const [departmentId, setDepartmentId] = useState('');
   const [jobPositionId, setJobPositionId] = useState('');
@@ -240,7 +242,7 @@ export function ReportsPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Phòng ban</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{translateUi("Phòng ban")}</label>
             <select
               value={departmentId}
               onChange={(e) => setDepartmentId(e.target.value)}
@@ -256,13 +258,13 @@ export function ReportsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Vị trí công việc</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{translateUi("Vị trí công việc")}</label>
             <select
               value={jobPositionId}
               onChange={(e) => setJobPositionId(e.target.value)}
               className={INPUT_CLASS}
             >
-              <option value="">Tất cả vị trí</option>
+              <option value="">{translateUi("Tất cả vị trí")}</option>
               {positions.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -272,7 +274,7 @@ export function ReportsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Cấp bậc</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{translateUi("Cấp bậc")}</label>
             <select
               value={jobGrade}
               onChange={(e) => setJobGrade(e.target.value as JobGradeCode | '')}
@@ -280,8 +282,7 @@ export function ReportsPage() {
             >
               <option value="">Tất cả cấp bậc</option>
               {JOB_GRADES.map((g) => (
-                <option key={g} value={g}>
-                  Cấp bậc {g} ({JOB_GRADE_DEFAULT_NAMES[g]})
+                <option key={g} value={g}>{translateUi("Cấp bậc ")}{g} ({translateUi(JOB_GRADE_DEFAULT_NAMES[g])})
                 </option>
               ))}
             </select>
@@ -326,7 +327,7 @@ export function ReportsPage() {
               }`}
             >
               <Icon className="size-4" />
-              <span>{t.label}</span>
+              <span>{translateUi(t.label)}</span>
             </button>
           );
         })}
@@ -336,7 +337,7 @@ export function ReportsPage() {
       {activeTab === 'workforce' && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <ScoreCard label="Tổng nhân sự" value={totalEmployees} subtitle="Quy mô khảo sát" />
+            <ScoreCard label={translateUi("Tổng nhân sự")} value={totalEmployees} subtitle="Quy mô khảo sát" />
             <ScoreCard label="Tài khoản hoạt động" value={activeEmployees} variant="success" subtitle="Sẵn sàng tham gia" />
             <ScoreCard label="Số phòng ban" value={departments.length} subtitle="Đã cơ cấu tổ chức" />
             <ScoreCard label="Số vị trí công việc" value={positions.length} subtitle="Đã chuẩn hóa tiêu chuẩn" />
@@ -394,9 +395,9 @@ export function ReportsPage() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-slate-100 text-xs text-slate-500 uppercase font-semibold">
-                      <th className="pb-3">Phòng ban</th>
-                      <th className="pb-3 text-center">Mã</th>
-                      <th className="pb-3 text-right">Nhân sự</th>
+                      <th className="pb-3">{translateUi("Phòng ban")}</th>
+                      <th className="pb-3 text-center">{translateUi("Mã")}</th>
+                      <th className="pb-3 text-right">{translateUi("Nhân sự")}</th>
                       <th className="pb-3 text-right">Độ bao phủ đạt chuẩn</th>
                     </tr>
                   </thead>
@@ -492,7 +493,7 @@ export function ReportsPage() {
                       <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded mr-2">
                         {g.code}
                       </span>
-                      <span className="font-medium text-sm text-slate-900">{g.title}</span>
+                      <span className="font-medium text-sm text-slate-900">{translateUi(g.title)}</span>
                     </div>
                     <div className="flex items-center gap-4 shrink-0">
                       <span className="text-xs text-slate-500 font-medium">
@@ -500,7 +501,7 @@ export function ReportsPage() {
                       </span>
                       <StatusBadge
                         variant={g.severity === 'Cao' ? 'danger' : 'warning'}
-                        label={`Mức độ: ${g.severity}`}
+                        label={translateUi(`Mức độ: ${g.severity}`)}
                       />
                     </div>
                   </div>
@@ -521,7 +522,7 @@ export function ReportsPage() {
               subtitle="Toàn hệ thống"
             />
             <ScoreCard
-              label="Đã hoàn thành"
+              label={translateUi("Đã hoàn thành")}
               value={reports?.training.completedAssignments ?? summary?.completed ?? 36}
               variant="success"
               subtitle="Đạt chứng chỉ"
@@ -532,7 +533,7 @@ export function ReportsPage() {
               subtitle="Đang tiến hành"
             />
             <ScoreCard
-              label="Tỷ lệ hoàn thành"
+              label={translateUi("Tỷ lệ hoàn thành")}
               value={`${reports?.training.completionRate ?? summary?.completionRate ?? 75}%`}
               variant="success"
               subtitle="Tiến độ chung"
@@ -555,8 +556,8 @@ export function ReportsPage() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-slate-100 text-xs text-slate-500 uppercase font-semibold">
-                      <th className="pb-3">Khóa học</th>
-                      <th className="pb-3">Miền năng lực</th>
+                      <th className="pb-3">{translateUi("Khóa học")}</th>
+                      <th className="pb-3">{translateUi("Miền năng lực")}</th>
                       <th className="pb-3 text-center">Số học viên</th>
                       <th className="pb-3 text-right">Tiến độ trung bình</th>
                     </tr>
@@ -564,8 +565,8 @@ export function ReportsPage() {
                   <tbody className="divide-y divide-slate-100 text-slate-700">
                     {trainingCourses.map((c) => (
                       <tr key={c.id} className="hover:bg-slate-50/50">
-                        <td className="py-3 font-semibold text-slate-900">{c.title}</td>
-                        <td className="py-3 text-xs text-slate-500">{c.domainName}</td>
+                        <td className="py-3 font-semibold text-slate-900">{translateUi(c.title)}</td>
+                        <td className="py-3 text-xs text-slate-500">{translateUi(c.domainName)}</td>
                         <td className="py-3 text-center font-bold">{c.learnerCount}</td>
                         <td className="py-3 text-right text-emerald-600 font-bold">{c.averageProgress}%</td>
                       </tr>
@@ -603,7 +604,7 @@ export function ReportsPage() {
                 <ScoreCard
                   label="Điểm số trung bình"
                   value={`${assessmentStats.averageScore}%`}
-                  subtitle="Toàn doanh nghiệp"
+                  subtitle={translateUi("Toàn doanh nghiệp")}
                 />
                 <ScoreCard
                   label="Lượt thi lại"
@@ -678,7 +679,7 @@ export function ReportsPage() {
                   </p>
                   <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100 space-y-2 text-xs text-slate-700">
                     <p className="font-semibold text-blue-900">Thống kê vận hành:</p>
-                    <p>• Thời gian hoàn thành trung bình: <strong>{assessmentStats.averageDurationMinutes} phút</strong> / 30 phút tối đa.</p>
+                    <p>• Thời gian hoàn thành trung bình: <strong>{assessmentStats.averageDurationMinutes}{translateUi(" phút")}</strong> / 30 phút tối đa.</p>
                     <p>• Tỷ lệ đạt chuẩn ngay lần thi đầu tiên (First-time pass): <strong>{assessmentStats.firstTimePassRate}%</strong>.</p>
                     <p>• Tỷ lệ khiếu nại hoặc xem lại đáp án: <strong>0%</strong>.</p>
                   </div>
@@ -734,10 +735,10 @@ export function ReportsPage() {
                   <table className="w-full text-left text-sm">
                     <thead>
                       <tr className="border-b border-slate-100 text-xs text-slate-500 uppercase font-semibold">
-                        <th className="pb-3">Phòng ban</th>
+                        <th className="pb-3">{translateUi("Phòng ban")}</th>
                         <th className="pb-3 text-center">Nhiệm vụ đã giao</th>
-                        <th className="pb-3 text-center">Đã nộp</th>
-                        <th className="pb-3 text-center">Đã duyệt</th>
+                        <th className="pb-3 text-center">{translateUi("Đã nộp")}</th>
+                        <th className="pb-3 text-center">{translateUi("Đã duyệt")}</th>
                         <th className="pb-3 text-right">Tỷ lệ công nhận</th>
                       </tr>
                     </thead>

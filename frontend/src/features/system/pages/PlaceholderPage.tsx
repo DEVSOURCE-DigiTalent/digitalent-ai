@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { PageHeader } from '@/components/shared';
 
 interface PlaceholderPageProps {
@@ -10,9 +11,10 @@ interface PlaceholderPageProps {
 
 /** Stand-in for a screen in the sitemap that is not built yet. Replace by registering the real page. */
 export function PlaceholderPage({ screenId, title, priority }: PlaceholderPageProps) {
+  useUiLanguage();
   return (
     <div>
-      <PageHeader title={title} subtitle={`Màn hình ${screenId}${priority ? ` · ${priority}` : ''}`} />
+      <PageHeader title={translateUi(title)} subtitle={translateUi(`Màn hình ${screenId}${priority ? ` · ${priority}` : ''}`)} />
       <div className="bg-white rounded-lg border border-dashed border-slate-300 p-6">
         <p className="text-sm text-slate-500">Màn hình này sẽ được xây dựng theo tài liệu UI/UX v1.0.</p>
       </div>

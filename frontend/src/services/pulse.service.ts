@@ -11,7 +11,7 @@ import type { ApiResponse } from '../types/api';
 export type PulseDomainStatus = 'PENDING' | 'GAP' | 'MET' | 'OUTSIDE_PATH';
 export type PulseLevelSource = 'NONE' | 'COURSE' | 'PRACTICAL_EVIDENCE';
 export type PulseCourseAccess = 'FREE_FULL' | 'SEAT_ACTIVE' | 'PREVIEW';
-/** Vùng của khóa trên lộ trình: mục tiêu vị trí giới hạn bởi trần năng lực của phòng ban. */
+/** Vùng của khóa trên lộ trình: mục tiêu vị trí giới hạn bởi phạm vi năng lực của phòng ban. */
 export type PulseCourseZone = 'PATH' | 'OPTIONAL' | 'ABOVE_CEILING' | 'OUTSIDE_PATH';
 export type PulseBlockReason =
   | 'NO_POSITION'
@@ -107,9 +107,9 @@ export interface PulseDomain {
   name: string;
   /** Mục tiêu vị trí; 0 = vị trí không yêu cầu lĩnh vực. */
   target: number;
-  /** Trần năng lực doanh nghiệp đặt cho phòng ban. */
+  /** Phạm vi năng lực doanh nghiệp đặt cho phòng ban. */
   ceiling: number;
-  /** Đỉnh lộ trình = min(mục tiêu, trần); 0 = ngoài lộ trình. */
+  /** Đỉnh lộ trình = min(mục tiêu, phạm vi); 0 = ngoài lộ trình. */
   pathTop: number;
   verified: number;
   source: PulseLevelSource;

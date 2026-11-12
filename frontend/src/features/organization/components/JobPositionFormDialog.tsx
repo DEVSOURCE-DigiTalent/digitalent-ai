@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { BriefcaseBusiness, X } from 'lucide-react';
@@ -34,6 +35,7 @@ interface JobPositionFormDialogProps {
 }
 
 export function JobPositionFormDialog({ open, onClose, position }: JobPositionFormDialogProps) {
+  useUiLanguage();
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocus(open, dialogRef, onClose);
   const isEditing = Boolean(position);
@@ -125,50 +127,50 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
         <div className="position-form-head">
           <div className="position-form-icon"><BriefcaseBusiness className="size-5" /></div>
           <div className="flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-teal-700">CẤU TRÚC TỔ CHỨC</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-teal-700">{translateUi("CẤU TRÚC TỔ CHỨC")}</p>
             <h2 id="position-dialog-title" className="text-xl font-black tracking-tight text-slate-900">
-              {isEditing ? 'Sửa vị trí công việc' : 'Tạo vị trí công việc'}
+              {isEditing ? translateUi('Sửa vị trí công việc') : translateUi('Tạo vị trí công việc')}
             </h2>
-            <p className="text-sm text-slate-500">Thông tin vị trí dùng để gắn nhân sự và thiết lập chuẩn năng lực.</p>
+            <p className="text-sm text-slate-500">{translateUi("Thông tin vị trí dùng để gắn nhân sự và thiết lập chuẩn năng lực.")}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Đóng" className="position-form-close"><X className="size-5" /></button>
+          <button type="button" onClick={onClose} aria-label={translateUi("Đóng")} className="position-form-close"><X className="size-5" /></button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="position-form-body position-dialog-form">
           <div className="position-form-grid">
           <div>
-            <label htmlFor="position-code" className="block text-sm font-semibold text-slate-700 mb-1.5">Mã vị trí <span className="text-rose-600">*</span></label>
+            <label htmlFor="position-code" className="block text-sm font-semibold text-slate-700 mb-1.5">{translateUi("Mã vị trí ")}<span className="text-rose-600">*</span></label>
             <input
               id="position-code"
               {...register('code')}
               className={INPUT_CLASS}
-              placeholder="Ví dụ: KT-01"
+              placeholder={translateUi("Ví dụ: KT-01")}
               disabled={isSubmitting}
             />
-            {errors.code && <p className="mt-1 text-sm text-red-500">{errors.code.message}</p>}
+            {errors.code && <p className="mt-1 text-sm text-red-500">{translateUi(errors.code.message)}</p>}
           </div>
 
           <div>
-            <label htmlFor="position-name" className="block text-sm font-semibold text-slate-700 mb-1.5">Tên vị trí <span className="text-rose-600">*</span></label>
+            <label htmlFor="position-name" className="block text-sm font-semibold text-slate-700 mb-1.5">{translateUi("Tên vị trí ")}<span className="text-rose-600">*</span></label>
             <input
               id="position-name"
               {...register('name')}
               className={INPUT_CLASS}
-              placeholder="Ví dụ: Kế toán viên"
+              placeholder={translateUi("Ví dụ: Kế toán viên")}
               disabled={isSubmitting}
             />
-            {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>}
+            {errors.name && <p className="mt-1 text-sm text-red-500">{translateUi(errors.name.message)}</p>}
           </div>
 
           <div>
-            <label htmlFor="position-department" className="block text-sm font-semibold text-slate-700 mb-1.5">Phòng ban</label>
+            <label htmlFor="position-department" className="block text-sm font-semibold text-slate-700 mb-1.5">{translateUi("Phòng ban")}</label>
             <select
               id="position-department"
               {...register('departmentId')}
               className={INPUT_CLASS}
               disabled={isSubmitting}
             >
-              <option value="">Chưa gắn phòng ban</option>
+              <option value="">{translateUi("Chưa gắn phòng ban")}</option>
               {departments.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
@@ -178,27 +180,25 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
           </div>
 
           <div>
-            <label htmlFor="position-grade" className="block text-sm font-semibold text-slate-700 mb-1.5">Cấp bậc</label>
+            <label htmlFor="position-grade" className="block text-sm font-semibold text-slate-700 mb-1.5">{translateUi("Cấp bậc")}</label>
             <select
               id="position-grade"
               {...register('jobGrade')}
               className={INPUT_CLASS}
               disabled={isSubmitting}
             >
-              <option value="">Chưa xếp cấp bậc</option>
+              <option value="">{translateUi("Chưa xếp cấp bậc")}</option>
               {JOB_GRADES.map((code) => (
                 <option key={code} value={code}>
                   {gradeLabel(code)}
                 </option>
               ))}
             </select>
-            <p className="mt-1.5 text-xs text-slate-500">
-              Nhân sự giữ vị trí này được tính theo cấp bậc đã chọn.
-            </p>
+            <p className="mt-1.5 text-xs text-slate-500">{translateUi("Nhân sự giữ vị trí này được tính theo cấp bậc đã chọn.")}</p>
           </div>
 
           <div className="position-form-full">
-            <label htmlFor="position-description" className="block text-sm font-semibold text-slate-700 mb-1.5">Mô tả</label>
+            <label htmlFor="position-description" className="block text-sm font-semibold text-slate-700 mb-1.5">{translateUi("Mô tả")}</label>
             <textarea
               id="position-description"
               {...register('description')}
@@ -210,15 +210,15 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
 
           {isEditing && (
             <div>
-              <label htmlFor="position-status" className="block text-sm font-semibold text-slate-700 mb-1.5">Trạng thái</label>
+              <label htmlFor="position-status" className="block text-sm font-semibold text-slate-700 mb-1.5">{translateUi("Trạng thái")}</label>
               <select
                 id="position-status"
                 {...register('status')}
                 className={INPUT_CLASS}
                 disabled={isSubmitting}
               >
-                <option value="ACTIVE">Đang dùng</option>
-                <option value="INACTIVE">Ngừng dùng</option>
+                <option value="ACTIVE">{translateUi("Đang dùng")}</option>
+                <option value="INACTIVE">{translateUi("Ngừng dùng")}</option>
               </select>
             </div>
           )}
@@ -230,15 +230,13 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
               onClick={onClose}
               className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               disabled={isSubmitting}
-            >
-              Hủy
-            </button>
+            >{translateUi("Hủy")}</button>
             <button
               type="submit"
               className="position-form-save rounded-xl px-6 py-2.5 text-sm font-bold text-white disabled:opacity-50"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Đang lưu…' : 'Lưu'}
+              {isSubmitting ? translateUi('Đang lưu…') : translateUi('Lưu')}
             </button>
           </div>
         </form>

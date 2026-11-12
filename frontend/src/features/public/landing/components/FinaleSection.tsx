@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { SECTION_IDS } from '../landing-content';
@@ -10,6 +11,7 @@ const delay = (seconds: number) => ({ '--lp-delay': `${seconds}s` }) as CSSPrope
 const SMALL_LINK = 'text-cream/80 underline-offset-4 transition-colors hover:text-cream hover:underline';
 
 export function FinaleSection() {
+  useUiLanguage();
   const cta = useLandingCta();
   const { finale: FINALE, cta: ctaCopy, media } = useLandingContent();
   const [contentRef, inView] = useInView<HTMLDivElement>({ rootMargin: '0px 0px -100px 0px' });
@@ -41,8 +43,7 @@ export function FinaleSection() {
           </div>
           <p className="lp-reveal-up mt-7 flex flex-wrap justify-center gap-x-3.5 gap-y-2 text-sm text-stone-400" style={delay(0.55)}>
             {!cta.isSignedIn && (
-              <span>
-                Đã có tài khoản? <Link to={ctaCopy.loginPath} className={SMALL_LINK}>Đăng nhập</Link>
+              <span>{translateUi("Đã có tài khoản? ")}<Link to={ctaCopy.loginPath} className={SMALL_LINK}>{translateUi("Đăng nhập")}</Link>
               </span>
             )}
           </p>

@@ -43,7 +43,7 @@ public class GetMyTrialAssessmentUseCase : IUseCase<GetMyTrialAssessmentUseCaseI
         List<MyTrialEssayResultDto>? essayResults = null;
         string? essaySummary = null;
 
-        if (published && assessment?.ReviewedAt != null)
+        if (assessment?.ReviewedAt != null)
         {
             var results = (await _reader.LoadDomainResultsAsync(new[] { assessment.Id })).GetValueOrDefault(assessment.Id) ?? new();
             var byCategory = results.ToDictionary(r => r.CategoryId);
@@ -91,73 +91,6 @@ public class GetMyTrialAssessmentUseCase : IUseCase<GetMyTrialAssessmentUseCaseI
             }).ToList();
             levels = domainDetails.Select(d => d.Level).ToList();
 
-            TrialEssayAiReviewDto? aiReview = TrialEssayAiReviewDto.FromJson(assessment.AiEssayReview);
-
-            // Nếu chưa có AI review và Gemini đã được cấu hình key, tự động gọi AI đánh giá 3 bài tự luận
-            if (aiReview == null && _ai.IsConfigured &&
-                (!string.IsNullOrWhiteSpace(assessment.EssayBasic) ||
-                 !string.IsNullOrWhiteSpace(assessment.EssayIntermediate) ||
-                 !string.IsNullOrWhiteSpace(assessment.EssayAdvanced)))
-            {
-                try
-                {
-                    var essayInputs = TrialProgramRules.Essays
-                        .Select(e => new TrialEssayAiInput(
-                            e.Tier,
-                            e.Title,
-                            e.Prompt,
-                            e.Tier switch { 1 => assessment.EssayBasic, 2 => assessment.EssayIntermediate, _ => assessment.EssayAdvanced }))
-                        .ToList();
-
-                    aiReview = await _ai.EvaluateTrialEssaysAsync(essayInputs);
-                    if (aiReview != null)
-                    {
-                        aiReview.ReviewedAt = _reader.Now;
-                        var trackableAssessment = await _context.TrialAssessments.FirstOrDefaultAsync(a => a.Id == assessment.Id);
-                        if (trackableAssessment != null)
-                        {
-                            trackableAssessment.AiEssayReview = aiReview.ToJson();
-                            trackableAssessment.AiEssayReviewedAt = aiReview.ReviewedAt;
-                            await _context.SaveChangesAsync();
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Không thể tự động gọi AI Gemini đánh giá bài tự luận dùng thử.");
-                }
-            }
-
-            essaySummary = aiReview?.Summary;
-            essayResults = TrialProgramRules.Essays.Select(e =>
-            {
-                var answer = e.Tier switch
-                {
-                    1 => assessment.EssayBasic,
-                    2 => assessment.EssayIntermediate,
-                    _ => assessment.EssayAdvanced
-                };
-                var aiScore = aiReview?.Essays.FirstOrDefault(x => x.Tier == e.Tier);
-                var mentorScore = e.Tier switch
-                {
-                    1 => assessment.EssayBasicScore,
-                    2 => assessment.EssayIntermediateScore,
-                    _ => assessment.EssayAdvancedScore
-                };
-                var score = mentorScore.HasValue ? (int)mentorScore.Value : aiScore?.Score;
-                var passed = score.HasValue ? score.Value >= TrialProgramRules.EssayPassScore : (bool?)null;
-
-                return new MyTrialEssayResultDto
-                {
-                    Tier = e.Tier,
-                    Title = e.Title,
-                    Prompt = e.Prompt,
-                    Answer = answer,
-                    Score = score,
-                    Passed = passed,
-                    Feedback = aiScore?.Feedback ?? (score.HasValue && score.Value >= 5 ? "Bài viết đạt yêu cầu thực hành." : "Bài viết chưa đạt đủ tiêu chí yêu cầu.")
-                };
-            }).ToList();
         }
 
         return new GetMyTrialAssessmentUseCaseOutput
@@ -171,7 +104,7 @@ public class GetMyTrialAssessmentUseCase : IUseCase<GetMyTrialAssessmentUseCaseI
             ClosedMessage = closed,
             ChoiceCount = domains.Count * 3 * TrialProgramRules.ChoicePerCell,
             Domains = domains.Select(TrialDomainDto.From).ToList(),
-            Essays = TrialProgramRules.Essays.ToList(),
+            Essays = new(),
             SubmittedAt = assessment?.SubmittedAt,
             ReportPublished = published && levels != null,
             Levels = levels,
@@ -179,7 +112,7 @@ public class GetMyTrialAssessmentUseCase : IUseCase<GetMyTrialAssessmentUseCaseI
             EssayResults = essayResults,
             EssaySummary = essaySummary,
             ReviewNote = levels != null ? assessment!.ReviewNote : null,
-            MentorName = await _reader.UserNameAsync(trial.MentorUserId),
+            MentorName = null,
         };
     }
 }

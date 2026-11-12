@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -57,6 +58,7 @@ export function AccountForm({
   submitLabel = 'Tạo tài khoản và thanh toán',
   consentNote,
 }: AccountFormProps) {
+  useUiLanguage();
   const isEnterprise = audience === 'enterprise';
   const nameInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -92,22 +94,17 @@ export function AccountForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="grid gap-5">
       {emailTaken ? (
-        <div role="alert" className="rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-          Email này đã có tài khoản.{' '}
-          <Link to={loginPath} className="text-cream font-semibold underline underline-offset-4 hover:text-cream-soft">
-            Đăng nhập
-          </Link>{' '}
+        <div role="alert" className="rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-200">{translateUi("Email này đã có tài khoản.")}{' '}
+          <Link to={loginPath} className="text-cream font-semibold underline underline-offset-4 hover:text-cream-soft">{translateUi("Đăng nhập")}</Link>{' '}
           để tiếp tục.
         </div>
       ) : (
-        <FormError message={submitError} />
+        <FormError message={translateUi(submitError)} />
       )}
 
       {/* Field: Full Name */}
       <div className="grid gap-1.5">
-        <label htmlFor="fullName" className="text-sm text-cream/90">
-          Họ và tên
-        </label>
+        <label htmlFor="fullName" className="text-sm text-cream/90">{translateUi("Họ và tên")}</label>
         <input
           id="fullName"
           type="text"
@@ -124,7 +121,7 @@ export function AccountForm({
         />
         {errors.fullName && (
           <p id="fullName-error" role="alert" className="text-xs text-red-300">
-            {errors.fullName.message}
+            {translateUi(errors.fullName.message)}
           </p>
         )}
       </div>
@@ -132,14 +129,14 @@ export function AccountForm({
       {/* Field: Email */}
       <div className="grid gap-1.5">
         <label htmlFor="email" className="text-sm text-cream/90">
-          {isEnterprise ? 'Email công việc' : 'Email'}
+          {isEnterprise ? translateUi('Email công việc') : translateUi('Email')}
         </label>
         <input
           id="email"
           type="email"
           inputMode="email"
           autoComplete="email"
-          placeholder={isEnterprise ? 'ban@congty.vn' : 'ban@email.com'}
+          placeholder={translateUi(isEnterprise ? 'ban@congty.vn' : 'ban@email.com')}
           className={DARK_INPUT_CLASS}
           aria-invalid={errors.email ? true : undefined}
           aria-describedby={errors.email ? 'email-error' : undefined}
@@ -148,16 +145,14 @@ export function AccountForm({
         />
         {errors.email && (
           <p id="email-error" role="alert" className="text-xs text-red-300">
-            {errors.email.message}
+            {translateUi(errors.email.message)}
           </p>
         )}
       </div>
 
       {/* Field: Password */}
       <div className="grid gap-1.5">
-        <label htmlFor="password" className="text-sm text-cream/90">
-          Mật khẩu
-        </label>
+        <label htmlFor="password" className="text-sm text-cream/90">{translateUi("Mật khẩu")}</label>
         <PasswordField
           id="password"
           placeholder="Tối thiểu 8 ký tự"
@@ -169,19 +164,17 @@ export function AccountForm({
         />
         {errors.password && (
           <p id="password-error" role="alert" className="text-xs text-red-300">
-            {errors.password.message}
+            {translateUi(errors.password.message)}
           </p>
         )}
       </div>
 
       {/* Field: Confirm Password */}
       <div className="grid gap-1.5">
-        <label htmlFor="confirmPassword" className="text-sm text-cream/90">
-          Xác nhận mật khẩu
-        </label>
+        <label htmlFor="confirmPassword" className="text-sm text-cream/90">{translateUi("Xác nhận mật khẩu")}</label>
         <PasswordField
           id="confirmPassword"
-          placeholder="Nhập lại mật khẩu"
+          placeholder={translateUi("Nhập lại mật khẩu")}
           showMinHint={false}
           error={errors.confirmPassword?.message}
           value={confirmPasswordValue}
@@ -191,7 +184,7 @@ export function AccountForm({
         />
         {errors.confirmPassword && (
           <p id="confirmPassword-error" role="alert" className="text-xs text-red-300">
-            {errors.confirmPassword.message}
+            {translateUi(errors.confirmPassword.message)}
           </p>
         )}
       </div>
@@ -214,11 +207,8 @@ export function AccountForm({
         {submitLabel}
       </button>
 
-      <p className="text-center text-xs text-stone-400">
-        Đã có tài khoản?{' '}
-        <Link to={loginPath} className="text-cream underline underline-offset-4 hover:text-cream-soft">
-          Đăng nhập
-        </Link>
+      <p className="text-center text-xs text-stone-400">{translateUi("Đã có tài khoản?")}{' '}
+        <Link to={loginPath} className="text-cream underline underline-offset-4 hover:text-cream-soft">{translateUi("Đăng nhập")}</Link>
       </p>
     </form>
   );

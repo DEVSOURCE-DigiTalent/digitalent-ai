@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -14,6 +15,7 @@ import { useOnboardingStore } from './onboarding-store';
 import { TUTORIAL_CONFIGS } from './tutorial-configs';
 
 export function OnboardingChecklistWidget() {
+  useUiLanguage();
   const navigate = useNavigate();
   const {
     currentRole,
@@ -78,14 +80,14 @@ export function OnboardingChecklistWidget() {
             <div className="flex items-center justify-between">
               <div className="ob-checklist-header-title">
                 <Sparkles className="size-4 text-indigo-600" />
-                <h4>Nhiệm vụ {config.roleName}</h4>
+                <h4>{translateUi("Nhiệm vụ ")}{config.roleName}</h4>
               </div>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
                   className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/50 transition-colors"
-                  aria-label="Thu gọn"
+                  aria-label={translateUi("Thu gọn")}
                 >
                   <ChevronDown className="size-4" />
                 </button>
@@ -128,7 +130,7 @@ export function OnboardingChecklistWidget() {
                   type="button"
                   onClick={() => toggleTask(task.id)}
                   className="ob-task-check focus:outline-none"
-                  aria-label={isDone ? 'Đánh dấu chưa hoàn thành' : 'Đánh dấu đã hoàn thành'}
+                  aria-label={translateUi(isDone ? 'Đánh dấu chưa hoàn thành' : 'Đánh dấu đã hoàn thành')}
                 >
                   {isDone ? (
                     <CheckCircle2 className="size-4 text-emerald-500 fill-emerald-50" />
@@ -139,14 +141,14 @@ export function OnboardingChecklistWidget() {
 
                 <div className="ob-task-info">
                   <div className="flex items-center gap-2">
-                    <span className="ob-task-title">{task.title}</span>
+                    <span className="ob-task-title">{translateUi(task.title)}</span>
                     {task.badge && (
                       <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-200/60 text-slate-600">
                         {task.badge}
                       </span>
                     )}
                   </div>
-                  <p className="ob-task-sub">{task.subtitle}</p>
+                  <p className="ob-task-sub">{translateUi(task.subtitle)}</p>
                   <button
                     type="button"
                     onClick={() => handleTaskClick(task)}
@@ -173,8 +175,7 @@ export function OnboardingChecklistWidget() {
           </button>
 
           <span className="text-[11px] text-slate-400">
-            {completedCount}/{tasks.length} hoàn thành
-          </span>
+            {completedCount}/{tasks.length}{translateUi(" hoàn thành")}</span>
         </div>
       </div>
     </div>

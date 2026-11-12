@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -16,6 +17,7 @@ import { categoryDomain, courseCategories, courseCodeMetadata, filterCourseCatal
  * Owner xem nội dung nhưng không sửa lesson chuẩn.
  */
 export function StandardCourseCatalogPage() {
+  useUiLanguage();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -71,7 +73,7 @@ export function StandardCourseCatalogPage() {
       case 3:
         return <span className="inline-flex items-center rounded-full bg-violet-50 px-2 py-0.5 text-xs font-semibold text-violet-700 border border-violet-200">Nâng cao · Bậc 5–6</span>;
       default:
-        return <span className="inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-700">Mức {level}</span>;
+        return <span className="inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-700">{translateUi("Mức ")}{level}</span>;
     }
   };
 
@@ -87,16 +89,12 @@ export function StandardCourseCatalogPage() {
             to="/enterprise/training-batches/new"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 shadow-sm"
           >
-            <Layers className="size-4 text-primary-600" />
-            Tạo đợt đào tạo
-          </Link>
+            <Layers className="size-4 text-primary-600" />{translateUi("Tạo đợt đào tạo")}</Link>
           <Link
             to="/enterprise/assignments"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 shadow-sm transition-colors"
           >
-            <UserCheck className="size-4" />
-            Giao khóa học
-          </Link>
+            <UserCheck className="size-4" />{translateUi("Giao khóa học")}</Link>
         </div>
       </div>
 
@@ -186,8 +184,8 @@ export function StandardCourseCatalogPage() {
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="code-asc">Mã khóa học A–Z</option>
-              <option value="title-asc">Tên A–Z</option>
-              <option value="title-desc">Tên Z–A</option>
+              <option value="title-asc">{translateUi("Tên A–Z")}</option>
+              <option value="title-desc">{translateUi("Tên Z–A")}</option>
               <option value="duration-asc">Thời lượng ngắn trước</option>
               <option value="newest">Tạo gần đây</option>
             </select>
@@ -200,7 +198,7 @@ export function StandardCourseCatalogPage() {
         <div className="py-20 text-center text-sm text-slate-500">Đang tải danh mục khóa học chuẩn…</div>
       ) : isError ? (
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-8 text-center text-sm text-rose-800">
-          Không tải được danh mục khóa học. <button type="button" className="font-semibold underline" onClick={() => refetch()}>Thử lại</button>
+          Không tải được danh mục khóa học. <button type="button" className="font-semibold underline" onClick={() => refetch()}>{translateUi("Thử lại")}</button>
         </div>
       ) : courses.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white p-12 text-center shadow-sm">
@@ -225,23 +223,23 @@ export function StandardCourseCatalogPage() {
                   {levelBadge(courseCodeMetadata(course.code)?.level ?? course.level)}
                 </div>
                 <StatusBadge
-                  label={course.status === 'PUBLISHED' ? 'Chuẩn' : course.status === 'ARCHIVED' ? 'Đã lưu trữ' : 'Bản nháp'}
+                  label={translateUi(course.status === 'PUBLISHED' ? 'Chuẩn' : course.status === 'ARCHIVED' ? 'Đã lưu trữ' : translateUi('Bản nháp'))}
                   variant={course.status === 'PUBLISHED' ? 'success' : 'default'}
                 />
               </div>
 
               <h3 className="text-base font-semibold text-slate-900 line-clamp-2 group-hover:text-primary-600 transition-colors">
-                <Link to={`/enterprise/courses/${course.id}`}>{course.title}</Link>
+                <Link to={`/enterprise/courses/${course.id}`}>{translateUi(course.title)}</Link>
               </h3>
 
               <div className="mt-2 text-xs text-slate-500 font-medium">
-                {course.categoryName || categories.find((category) => categoryDomain(category) === courseCodeMetadata(course.code)?.domain)?.name || 'Miền năng lực số'}
+                {translateUi(course.categoryName) || translateUi(categories.find((category) => categoryDomain(category) === courseCodeMetadata(course.code)?.domain)?.name) || 'Miền năng lực số'}
               </div>
 
               <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  <span>{course.estimatedDurationMinutes == null ? 'Chưa cập nhật' : `${course.estimatedDurationMinutes} phút`}</span>
+                  <span>{course.estimatedDurationMinutes == null ? translateUi('Chưa cập nhật') : translateUi(`${course.estimatedDurationMinutes} phút`)}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Layers className="w-3.5 h-3.5 text-slate-400" />
@@ -275,9 +273,9 @@ export function StandardCourseCatalogPage() {
       {!isLoading && !isError && courses.length > 0 && (
         <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3 text-slate-600">
-            <span>Hiển thị <strong>{(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, courses.length)}</strong> / <strong>{courses.length}</strong> khóa học</span>
+            <span>{translateUi("Hiển thị ")}<strong>{(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, courses.length)}</strong> / <strong>{courses.length}</strong>{translateUi(" khóa học")}</span>
             <select
-              aria-label="Số khóa học mỗi trang"
+              aria-label={translateUi("Số khóa học mỗi trang")}
               value={pageSize}
               onChange={(event) => { setPageSize(Number(event.target.value)); setPageIndex(1); }}
               className="rounded-lg border border-slate-300 bg-white px-2 py-1.5"
@@ -289,17 +287,17 @@ export function StandardCourseCatalogPage() {
           </div>
           <nav className="flex items-center gap-1" aria-label="Phân trang khóa học">
             <button type="button" disabled={currentPage <= 1} onClick={() => setPageIndex(currentPage - 1)}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 disabled:opacity-40">Trước</button>
+              className="rounded-lg border border-slate-300 px-3 py-1.5 disabled:opacity-40">{translateUi("Trước")}</button>
             {pageButtons.map((page, index) => (
               <span key={page} className="flex items-center gap-1">
                 {index > 0 && page - pageButtons[index - 1] > 1 && <span className="px-1 text-slate-400">…</span>}
-                <button type="button" aria-label={`Trang ${page}`} aria-current={page === currentPage ? 'page' : undefined}
+                <button type="button" aria-label={translateUi(`Trang ${page}`)} aria-current={page === currentPage ? 'page' : undefined}
                   onClick={() => setPageIndex(page)}
                   className={`min-w-9 rounded-lg border px-2 py-1.5 ${page === currentPage ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-300 hover:bg-slate-50'}`}>{page}</button>
               </span>
             ))}
             <button type="button" disabled={currentPage >= totalPages} onClick={() => setPageIndex(currentPage + 1)}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 disabled:opacity-40">Sau</button>
+              className="rounded-lg border border-slate-300 px-3 py-1.5 disabled:opacity-40">{translateUi("Sau")}</button>
           </nav>
         </div>
       )}

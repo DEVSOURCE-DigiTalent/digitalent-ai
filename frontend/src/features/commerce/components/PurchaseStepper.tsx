@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -30,6 +31,7 @@ export function PurchaseStepper({
   changePlanPath = audience === 'enterprise' ? '/business/pricing' : '/individual/pricing',
   className,
 }: PurchaseStepperProps) {
+  useUiLanguage();
   const steps = audience === 'enterprise' ? ENTERPRISE_STEPS : INDIVIDUAL_STEPS;
   const total = steps.length;
   const current = steps.find((s) => s.id === currentStep) ?? steps[0];
@@ -38,8 +40,7 @@ export function PurchaseStepper({
     <nav aria-label="Tiến trình mua gói" className={cn('w-full', className)}>
       {/* Mobile view (< 640px) */}
       <div className="flex items-center justify-between gap-3 rounded-full bg-landing-card px-4 py-2 text-xs sm:hidden ring-1 ring-cream/10">
-        <span className="font-medium text-cream">
-          Bước {currentStep}/{total} · {current.name}
+        <span className="font-medium text-cream">{translateUi("Bước ")}{currentStep}/{total} · {current.name}
         </span>
         {currentStep > 1 && changePlanPath && (
           <Link

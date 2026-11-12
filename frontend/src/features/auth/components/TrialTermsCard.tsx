@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { BookOpen, CalendarDays, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { INDIVIDUAL_TRIAL } from '@/lib/plans';
@@ -35,6 +36,7 @@ const LOOKS = {
 
 /** What a 7-day trial gives and what happens when it ends: the same three lines wherever the trial is introduced. */
 export function TrialTermsCard({ positionName, fromTry = false, heading, variant = 'card', className }: TrialTermsCardProps) {
+  useUiLanguage();
   const look = LOOKS[variant];
   const terms = [
     { icon: CalendarDays, text: `${INDIVIDUAL_TRIAL.days} ngày quyền gói Plus` },
@@ -44,7 +46,7 @@ export function TrialTermsCard({ positionName, fromTry = false, heading, variant
 
   return (
     <section aria-label="Quyền lợi dùng thử" className={cn('rounded-2xl px-5 py-4', look.box, className)}>
-      {heading && <p className={cn(GOLD_KICKER, 'mb-3')}>{heading}</p>}
+      {heading && <p className={cn(GOLD_KICKER, 'mb-3')}>{translateUi(heading)}</p>}
       <ul className="grid gap-2.5">
         {terms.map(({ icon: Icon, text }) => (
           <li key={text} className={cn('flex items-start gap-3 text-sm leading-snug', look.text)}>

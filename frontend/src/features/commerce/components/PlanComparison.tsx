@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Check, Minus } from 'lucide-react';
 import { ENTITLEMENT_LABELS, ENTITLEMENTS, type Entitlement } from '@/lib/entitlements';
 import { plansFor, type PlanAudience } from '@/lib/plans';
@@ -16,6 +17,7 @@ const COMPARED: Record<PlanAudience, Entitlement[]> = {
 
 /** Feature-by-plan table under the plan cards. */
 export function PlanComparison({ audience }: { audience: PlanAudience }) {
+  useUiLanguage();
   const isIndividual = audience === 'individual';
   const plans = plansFor(audience);
   const rows = COMPARED[audience];
@@ -52,7 +54,7 @@ export function PlanComparison({ audience }: { audience: PlanAudience }) {
             {rows.map((entitlement) => (
               <tr key={entitlement} className={cn(isIndividual ? 'border-t border-pt-line' : 'border-t border-white/10')}>
                 <th scope="row" className={cn('px-5 py-3.5 font-normal', isIndividual ? 'text-pt-fg' : 'text-cream/85')}>
-                  {ENTITLEMENT_LABELS[entitlement]}
+                  {translateUi(ENTITLEMENT_LABELS[entitlement])}
                 </th>
                 {plans.map((plan) => {
                   const included = plan.entitlements.includes(entitlement);
@@ -61,7 +63,7 @@ export function PlanComparison({ audience }: { audience: PlanAudience }) {
                       {included ? (
                         <Check
                           className={cn('mx-auto size-4', isIndividual ? 'text-pt-accent' : 'text-[#F5CA65]')}
-                          aria-label="Có"
+                          aria-label={translateUi("Có")}
                         />
                       ) : (
                         <Minus

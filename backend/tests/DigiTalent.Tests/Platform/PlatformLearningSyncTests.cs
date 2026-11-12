@@ -34,7 +34,7 @@ public class PlatformLearningSyncTests
     {
         await using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
         await PlatformCatalogSeeder.SeedAsync(db);
-        var identity = await db.PlatformCourses.SingleAsync(c => c.Code == "A1-F");
+        var identity = await db.PlatformCourses.SingleAsync(c => c.Code == "M1-F");
         var catalog = await db.PlatformCatalogCourses.SingleAsync(c => c.CourseId == identity.Id);
         catalog.ChangeKind = PlatformCatalog.ChangeKind.Edited;
         catalog.Title = "Học liệu mới từ Admin";
@@ -55,7 +55,7 @@ public class PlatformLearningSyncTests
         foreach (var b in sourceBlocks) b.SortOrder *= 2;
         db.PlatformModuleBlocks.Add(new PlatformModuleBlock { ModuleId = module.Id, SortOrder = sourceBlock.SortOrder + 1, BlockType = "IMAGE", AssetId = illustration.Id, AltText = "Ảnh được Admin quản lý" });
         var org = Guid.NewGuid();
-        var original = new Course { OrganizationId = org, Code = "A1-F", VersionNo = 2, Title = "Bản đã học", Status = Statuses.Course.Published, CreatedByUserId = Guid.NewGuid() };
+        var original = new Course { OrganizationId = org, Code = "M1-F", VersionNo = 2, Title = "Bản đã học", Status = Statuses.Course.Published, CreatedByUserId = Guid.NewGuid() };
         db.Courses.Add(original);
         var enrollment = new Enrollment { CourseId = original.Id, EmployeeId = Guid.NewGuid(), Status = Statuses.Enrollment.Completed, ProgressPercent = 100 };
         db.Enrollments.Add(enrollment);
@@ -89,11 +89,11 @@ public class PlatformLearningSyncTests
     }
 
     [Fact]
-    public async Task LegacyM1Organization_KeepsItsCode_WhenPublishingTheA1Catalog()
+    public async Task OrganizationM1Course_KeepsItsCode_WhenPublishingTheM1Catalog()
     {
         await using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
         await PlatformCatalogSeeder.SeedAsync(db);
-        var identity = await db.PlatformCourses.SingleAsync(c => c.Code == "A1-I");
+        var identity = await db.PlatformCourses.SingleAsync(c => c.Code == "M1-I");
         var catalog = await db.PlatformCatalogCourses.SingleAsync(c => c.CourseId == identity.Id);
         catalog.ChangeKind = "EDITED";
         var original = new Course { OrganizationId = Guid.NewGuid(), Code = "M1-I", VersionNo = 2, Title = "Cũ", Status = "PUBLISHED", CreatedByUserId = Guid.NewGuid() };

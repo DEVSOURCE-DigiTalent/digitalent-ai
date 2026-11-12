@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Check } from 'lucide-react';
@@ -14,6 +15,7 @@ const CARD = 'lp-card relative flex min-h-[440px] flex-col overflow-hidden round
 const stagger = (index: number) => ({ '--i': index }) as CSSProperties;
 
 export function FeaturesSection() {
+  useUiLanguage();
   const content = useLandingContent();
   const [gridRef, gridInView] = useInView<HTMLDivElement>({ rootMargin: '0px 0px -100px 0px' });
 
@@ -51,7 +53,7 @@ export function FeaturesSection() {
           <BackgroundStage scene="ember" seed={29} video={content.media.card} />
           <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-transparent from-45% to-black/65" aria-hidden="true" />
           <p className="relative z-10 p-6 text-[22px] leading-[1.25] tracking-[-0.015em] text-cream">
-            <span className="mb-2.5 block text-[11px] uppercase tracking-[0.14em] text-cream/70">{content.mediaCard.label}</span>
+            <span className="mb-2.5 block text-[11px] uppercase tracking-[0.14em] text-cream/70">{translateUi(content.mediaCard.label)}</span>
             {content.mediaCard.caption}
           </p>
         </article>
@@ -65,12 +67,13 @@ export function FeaturesSection() {
 }
 
 function FeatureCard({ feature, index }: { feature: Feature; index: number }) {
+  useUiLanguage();
   return (
     <article className={`${CARD} justify-between gap-9 bg-landing-card p-6`} style={stagger(index)}>
       <FeatureVisual kind={feature.visual} />
       <div>
         <p className="mb-3 text-xs font-medium tracking-[0.1em] text-[#F5CA65] tabular-nums">{feature.number}</p>
-        <h3 className="text-balance text-[22px] font-normal leading-[1.22] tracking-[-0.015em] text-cream">{feature.title}</h3>
+        <h3 className="text-balance text-[22px] font-normal leading-[1.22] tracking-[-0.015em] text-cream">{translateUi(feature.title)}</h3>
         <ul className="mt-5 grid gap-2.5">
           {feature.points.map((point) => (
             <li key={point} className="grid grid-cols-[16px_minmax(0,1fr)] gap-2.5 text-sm leading-[1.45] text-stone-400">
@@ -81,7 +84,7 @@ function FeatureCard({ feature, index }: { feature: Feature; index: number }) {
         </ul>
         {feature.link && (
           <Link to={feature.link.to} className="group/link mt-6 inline-flex items-center gap-1.5 text-sm text-cream/90 hover:text-[#F5CA65] transition-colors">
-            {feature.link.label}
+            {translateUi(feature.link.label)}
             <span className="sr-only"> về {feature.title.replace(/\.$/, '')}</span>
             <ArrowRight className="size-4 -rotate-45 transition-transform duration-300 ease-cinematic motion-safe:group-hover/link:rotate-0 motion-safe:group-hover/link:text-[#F5CA65]" aria-hidden="true" />
           </Link>

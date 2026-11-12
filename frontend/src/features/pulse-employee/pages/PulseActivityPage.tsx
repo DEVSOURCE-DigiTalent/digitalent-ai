@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -338,6 +339,7 @@ function parseNotificationItem(notification: {
 
 /** Trung tâm hoạt động (§12.6): giao bài, nộp, chấm và phản hồi của chính nhân viên. */
 export function PulseActivityPage() {
+  useUiLanguage();
   const { data, isLoading, error, refetch } = useNotifications();
   const markAll = useMarkAllNotificationsRead();
   const markOne = useMarkNotificationRead();
@@ -406,10 +408,10 @@ export function PulseActivityPage() {
               onError: (err) => toast.error(pulseErrorMessage(err, 'Chưa đánh dấu được.')),
             })
           }
-          title={unreadCount > 0 ? 'Đánh dấu tất cả thông báo là đã đọc' : 'Không có thông báo chưa đọc'}
+          title={translateUi(unreadCount > 0 ? 'Đánh dấu tất cả thông báo là đã đọc' : 'Không có thông báo chưa đọc')}
         >
           <CheckCheck size={16} />
-          <span>Đánh dấu tất cả đã đọc {unreadCount > 0 ? `(${unreadCount})` : ''}</span>
+          <span>{translateUi("Đánh dấu tất cả đã đọc ")}{unreadCount > 0 ? `(${unreadCount})` : ''}</span>
         </button>
       </header>
 
@@ -450,7 +452,7 @@ export function PulseActivityPage() {
       {isLoading ? (
         <PageSkeleton blocks={[80, 80, 80]} />
       ) : error || !data ? (
-        <LoadError message={pulseErrorMessage(error, 'Không tải được hoạt động.')} onRetry={() => refetch()} />
+        <LoadError message={translateUi(pulseErrorMessage(error, 'Không tải được hoạt động.'))} onRetry={() => refetch()} />
       ) : notifications.length === 0 ? (
         <Empty icon={<BellOff size={28} className="text-blue-700" />} title="Chưa có hoạt động nào">
           Thông báo về khóa học, bài nộp và quyết định của quản lý sẽ xuất hiện ở đây.
@@ -465,7 +467,7 @@ export function PulseActivityPage() {
                 className={`pu-act-tab-btn${filter === 'all' ? ' active' : ''}`}
                 onClick={() => setFilter('all')}
               >
-                <span>Tất cả</span>
+                <span>{translateUi("Tất cả")}</span>
                 <span className="pu-act-tab-badge">{notifications.length}</span>
               </button>
 
@@ -475,7 +477,7 @@ export function PulseActivityPage() {
                 onClick={() => setFilter('unread')}
               >
                 <Bell size={13} />
-                <span>Chưa đọc</span>
+                <span>{translateUi("Chưa đọc")}</span>
                 {unreadCount > 0 && <span className="pu-act-tab-badge unread">{unreadCount}</span>}
               </button>
 
@@ -495,7 +497,7 @@ export function PulseActivityPage() {
                 onClick={() => setFilter('success')}
               >
                 <CheckCircle2 size={13} />
-                <span>Đạt chuẩn</span>
+                <span>{translateUi("Đạt chuẩn")}</span>
                 <span className="pu-act-tab-badge">{successCount}</span>
               </button>
             </div>
@@ -515,7 +517,7 @@ export function PulseActivityPage() {
                   type="button"
                   onClick={() => setSearchQuery('')}
                   className="pu-act-search-clear"
-                  title="Xóa tìm kiếm"
+                  title={translateUi("Xóa tìm kiếm")}
                 >
                   ×
                 </button>
@@ -554,9 +556,7 @@ export function PulseActivityPage() {
                         </span>
                         {!item.isRead && (
                           <span className="pu-act-unread-pill">
-                            <span className="pu-act-unread-dot" />
-                            Chưa đọc
-                          </span>
+                            <span className="pu-act-unread-dot" />{translateUi("Chưa đọc")}</span>
                         )}
                       </div>
 
@@ -596,7 +596,7 @@ export function PulseActivityPage() {
                           title="Đánh dấu thông báo này là đã đọc"
                         >
                           <Check size={13} />
-                          <span>Đã đọc</span>
+                          <span>{translateUi("Đã đọc")}</span>
                         </button>
                       ) : (
                         <span className="pu-act-read-badge">

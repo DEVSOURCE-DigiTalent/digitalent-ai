@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
@@ -23,6 +24,7 @@ type WizardStep = 1 | 2 | 3 | 4;
  * Name, dates, target selector (Department/Position/Grade/Employees), courses, deadline.
  */
 export function TrainingBatchWizardPage() {
+  useUiLanguage();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const preselectedCourseId = params.get('courseId');
@@ -170,7 +172,7 @@ export function TrainingBatchWizardPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> Quay lại danh sách đợt đào tạo
         </Link>
         <PageHeader
-          title="Tạo đợt đào tạo mới"
+          title={translateUi("Tạo đợt đào tạo mới")}
           subtitle="Thiết lập chương trình bồi dưỡng năng lực tập trung: Chọn khóa học, nhóm đối tượng (theo Phòng ban / Vị trí / Cấp bậc G1–G3) và lên lịch thực hiện."
         />
       </div>
@@ -202,7 +204,7 @@ export function TrainingBatchWizardPage() {
                     step === s.num ? 'text-primary-700' : step > s.num ? 'text-slate-800' : 'text-slate-400'
                   }`}
                 >
-                  {s.label}
+                  {translateUi(s.label)}
                 </span>
               </div>
               {idx < 3 && <div className="flex-1 mx-4 h-0.5 bg-slate-200" />}
@@ -222,8 +224,7 @@ export function TrainingBatchWizardPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="sm:col-span-2 space-y-1">
-                <label className="block text-xs font-semibold text-slate-700">
-                  Tên đợt đào tạo <span className="text-rose-500">*</span>
+                <label className="block text-xs font-semibold text-slate-700">{translateUi("Tên đợt đào tạo ")}<span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -234,7 +235,7 @@ export function TrainingBatchWizardPage() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-700">Mã đợt</label>
+                <label className="block text-xs font-semibold text-slate-700">{translateUi("Mã đợt")}</label>
                 <input
                   type="text"
                   value={code}
@@ -246,8 +247,7 @@ export function TrainingBatchWizardPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-700">
-                  Ngày bắt đầu <span className="text-rose-500">*</span>
+                <label className="block text-xs font-semibold text-slate-700">{translateUi("Ngày bắt đầu ")}<span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="date"
@@ -288,9 +288,7 @@ export function TrainingBatchWizardPage() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-base font-semibold text-slate-900">2. Chọn khóa học cho đợt</h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Đã chọn <strong className="text-primary-700">{selectedCourseIds.length}</strong> khóa học
-                </p>
+                <p className="text-xs text-slate-500 mt-0.5">{translateUi("Đã chọn ")}<strong className="text-primary-700">{selectedCourseIds.length}</strong>{translateUi(" khóa học")}</p>
               </div>
               <div className="w-64">
                 <div className="relative">
@@ -332,11 +330,11 @@ export function TrainingBatchWizardPage() {
                         </span>
                         <LevelBadge level={c.level} />
                       </div>
-                      <div className="font-semibold text-sm text-slate-900 truncate">{c.title}</div>
+                      <div className="font-semibold text-sm text-slate-900 truncate">{translateUi(c.title)}</div>
                       <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-1">
-                        <span>{c.categoryName || 'Năng lực số'}</span>
+                        <span>{translateUi(c.categoryName) || 'Năng lực số'}</span>
                         <span>·</span>
-                        <span>{c.estimatedDurationMinutes == null ? 'Chưa cập nhật' : `${c.estimatedDurationMinutes} phút`}</span>
+                        <span>{c.estimatedDurationMinutes == null ? translateUi('Chưa cập nhật') : translateUi(`${c.estimatedDurationMinutes} phút`)}</span>
                       </div>
                     </div>
                   </div>
@@ -357,8 +355,7 @@ export function TrainingBatchWizardPage() {
                 </p>
               </div>
               <div className="rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-800 border border-primary-200">
-                {resolvedEmployees.length} học viên tham gia
-              </div>
+                {resolvedEmployees.length}{translateUi(" học viên tham gia")}</div>
             </div>
 
             {/* Target Mode Toggle */}
@@ -418,9 +415,7 @@ export function TrainingBatchWizardPage() {
 
                 {/* Lọc theo Phòng ban */}
                 <div className="space-y-2">
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    Phòng ban
-                  </label>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">{translateUi("Phòng ban")}</label>
                   <div className="flex flex-wrap gap-2">
                     {departments.map((dep) => {
                       const isSelected = selectedDepartments.includes(dep.id);
@@ -444,9 +439,7 @@ export function TrainingBatchWizardPage() {
 
                 {/* Lọc theo Vị trí công việc */}
                 <div className="space-y-2">
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    Vị trí công việc
-                  </label>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">{translateUi("Vị trí công việc")}</label>
                   <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
                     {allPositions.map((pos) => {
                       const isSelected = selectedPositions.includes(pos.id);
@@ -510,25 +503,23 @@ export function TrainingBatchWizardPage() {
                 <div className="text-slate-500 font-semibold uppercase tracking-wider">Thông tin đợt đào tạo</div>
                 <div className="text-sm font-bold text-slate-900">{name}</div>
                 <div className="text-slate-600">Mã đợt: <strong className="font-mono text-slate-800">{code}</strong></div>
-                <div className="text-slate-600">Thời gian: {startDate} → {endDate}</div>
+                <div className="text-slate-600">{translateUi("Thời gian: ")}{startDate} → {endDate}</div>
               </div>
 
               <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/50 space-y-2 text-xs">
                 <div className="text-slate-500 font-semibold uppercase tracking-wider">Quy mô đào tạo</div>
                 <div className="flex justify-between py-1 border-b border-slate-200/60">
                   <span className="text-slate-600">Số khóa học được chọn:</span>
-                  <span className="font-bold text-slate-900">{selectedCourseIds.length} khóa</span>
+                  <span className="font-bold text-slate-900">{selectedCourseIds.length}{translateUi(" khóa")}</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-slate-600">Tổng số học viên tham gia:</span>
-                  <span className="font-bold text-primary-700">{resolvedEmployees.length} nhân sự</span>
+                  <span className="font-bold text-primary-700">{resolvedEmployees.length}{translateUi(" nhân sự")}</span>
                 </div>
               </div>
             </div>
 
-            <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
-              Đợt được tạo ở trạng thái bản nháp. Mở chi tiết đợt để bắt đầu; học viên cần được giao khóa học riêng ở mục Giao khóa học.
-            </p>
+            <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">{translateUi("Đợt được tạo ở trạng thái bản nháp. Mở chi tiết đợt để bắt đầu; học viên cần được giao khóa học riêng ở mục Giao khóa học.")}</p>
           </div>
         )}
       </div>
@@ -541,8 +532,7 @@ export function TrainingBatchWizardPage() {
           disabled={step === 1}
           className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" /> Quay lại
-        </button>
+          <ArrowLeft className="w-4 h-4" />{translateUi(" Quay lại")}</button>
 
         <div className="flex items-center gap-2">
           {step === 4 ? (
@@ -563,8 +553,7 @@ export function TrainingBatchWizardPage() {
               onClick={() => setStep((prev) => Math.min(4, prev + 1) as WizardStep)}
               disabled={!canProceed()}
               className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 shadow-sm disabled:opacity-40 transition-colors"
-            >
-              Tiếp tục <ArrowRight className="w-4 h-4" />
+            >{translateUi("Tiếp tục ")}<ArrowRight className="w-4 h-4" />
             </button>
           )}
         </div>

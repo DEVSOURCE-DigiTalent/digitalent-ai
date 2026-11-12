@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link, useParams } from 'react-router-dom';
 import { usePlatformUser } from '@/hooks/use-platform-admin';
 import { Box, Footer, ListItem, LoadError, Loading, PageHead, Pill } from '../components/pulse-ui';
@@ -7,6 +8,7 @@ import { ArrowLeft, History } from 'lucide-react';
 
 /** PA-08 · Chi tiết người dùng: standalone view with UserDetailContent and full audit history. */
 export function PlatformUserDetailPage() {
+  useUiLanguage();
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = usePlatformUser(id);
 
@@ -20,7 +22,7 @@ export function PlatformUserDetailPage() {
   if (isLoading || error || !data) {
     return (
       <>
-        <PageHead eyebrow="Nền tảng / Chi tiết người dùng" title="Người dùng" actions={back} />
+        <PageHead eyebrow="Nền tảng / Chi tiết người dùng" title={translateUi("Người dùng")} actions={back} />
         {isLoading ? <Loading /> : <LoadError error={error} />}
       </>
     );
@@ -40,7 +42,7 @@ export function PlatformUserDetailPage() {
             <h1 style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', margin: 0 }}>
               {u.displayName}
             </h1>
-            <Pill tone={USER_STATUS[u.status]?.tone}>{USER_STATUS[u.status]?.label ?? u.status}</Pill>
+            <Pill tone={USER_STATUS[u.status]?.tone}>{translateUi(USER_STATUS[u.status]?.label) ?? u.status}</Pill>
           </div>
           <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>
             {u.email} · Xem chi tiết phân quyền, phạm vi đơn vị và thực hiện thao tác khóa/mở khóa tài khoản có kiểm toán.
@@ -71,7 +73,7 @@ export function PlatformUserDetailPage() {
                 {data.supportHistory.map((h, i) => (
                   <ListItem
                     key={`${h.createdAt}-${i}`}
-                    title={auditActionLabel(h.action)}
+                    title={translateUi(auditActionLabel(h.action))}
                     detail={[auditReason(h.newValues), formatDateTime(h.createdAt), h.actorEmail].filter(Boolean).join(' · ')}
                   />
                 ))}

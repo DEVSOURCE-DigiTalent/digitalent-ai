@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -24,6 +25,7 @@ const STATUS_LABELS = {
 
 /** OW-41: Subscription Overview - Current plan, seats, storage, entitlements, renewal. */
 export function SubscriptionOverviewPage() {
+  useUiLanguage();
   const { data: subscription, isLoading, isError } = useSubscription();
   const cancel = useCancelSubscription();
   const resume = useResumeSubscription();
@@ -55,7 +57,7 @@ export function SubscriptionOverviewPage() {
     { key: 'issuedAt', header: 'Ngày phát hành', cell: (i) => formatDate(i.issuedAt) },
     { key: 'description', header: 'Nội dung', cell: (i) => i.description },
     { key: 'amount', header: 'Số tiền', cell: (i) => formatVnd(i.amount), className: 'text-right tabular-nums font-semibold' },
-    { key: 'status', header: 'Trạng thái', cell: (i) => <StatusBadge label={i.status} variant={i.status === 'PAID' ? 'success' : 'warning'} /> },
+    { key: 'status', header: 'Trạng thái', cell: (i) => <StatusBadge label={translateUi(i.status)} variant={i.status === 'PAID' ? 'success' : 'warning'} /> },
   ];
 
   return (
@@ -71,7 +73,7 @@ export function SubscriptionOverviewPage() {
             <div className="flex items-center gap-2">
               <span className="text-xs uppercase font-bold tracking-wider text-slate-500">Gói hiện tại</span>
               <StatusBadge
-                label={STATUS_LABELS[subscription.status] ?? subscription.status}
+                label={translateUi(translateUi(STATUS_LABELS[subscription.status]) ?? subscription.status)}
                 variant={subscription.status === 'active' ? 'success' : 'danger'}
               />
               {subscription.cancelAtPeriodEnd && <StatusBadge label="Sẽ ngừng gia hạn" variant="warning" />}
@@ -113,14 +115,14 @@ export function SubscriptionOverviewPage() {
             <dt className="text-xs uppercase font-semibold text-slate-500">Chi phí định kỳ</dt>
             <dd className="mt-1 font-bold text-slate-900 text-base">
               {subscription.amountPerPeriod === null
-                ? 'Miễn phí'
+                ? translateUi('Miễn phí')
                 : `${formatVnd(subscription.amountPerPeriod)} / ${BILLING_CYCLE_LABELS[subscription.cycle]}`}
             </dd>
           </div>
           <div>
             <dt className="text-xs uppercase font-semibold text-slate-500">Người dùng đã kích hoạt</dt>
             <dd className={`mt-1 font-bold text-base ${seatsFull ? 'text-red-600' : 'text-slate-900'}`}>
-              {subscription.seatsUsed} {subscription.seatLimit != null ? `/ ${subscription.seatLimit} người dùng đã kích hoạt` : 'người dùng đã kích hoạt (Không giới hạn)'}
+              {subscription.seatsUsed} {subscription.seatLimit != null ? translateUi(`/ ${subscription.seatLimit} người dùng đã kích hoạt`) : 'người dùng đã kích hoạt (Không giới hạn)'}
             </dd>
           </div>
           <div>
@@ -131,7 +133,7 @@ export function SubscriptionOverviewPage() {
           </div>
           <div>
             <dt className="text-xs uppercase font-semibold text-slate-500">Chu kỳ thanh toán</dt>
-            <dd className="mt-1 text-slate-900 font-semibold text-base">Theo {BILLING_CYCLE_LABELS[subscription.cycle]}</dd>
+            <dd className="mt-1 text-slate-900 font-semibold text-base">Theo {translateUi(BILLING_CYCLE_LABELS[subscription.cycle])}</dd>
           </div>
         </dl>
 
@@ -145,7 +147,7 @@ export function SubscriptionOverviewPage() {
               <li key={key}>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-lg">
                   <ShieldCheck className="size-3.5 text-blue-600" />
-                  {ENTITLEMENT_LABELS[key as Entitlement] ?? key}
+                  {translateUi(ENTITLEMENT_LABELS[key as Entitlement]) ?? key}
                 </span>
               </li>
             ))}
@@ -225,9 +227,9 @@ export function SubscriptionOverviewPage() {
         open={confirmCancel}
         onClose={() => setConfirmCancel(false)}
         title="Xác nhận ngừng gia hạn gói dịch vụ?"
-        description={`Gói dịch vụ của tổ chức vẫn duy trì hiệu lực sử dụng đầy đủ đến ngày ${formatDate(
+        description={translateUi(`Gói dịch vụ của tổ chức vẫn duy trì hiệu lực sử dụng đầy đủ đến ngày ${formatDate(
           subscription.renewsAt
-        )}. Sau ngày đó, tài khoản sẽ chuyển sang chế độ chỉ đọc nhưng toàn bộ dữ liệu tổ chức vẫn được lưu giữ an toàn.`}
+        )}. Sau ngày đó, tài khoản sẽ chuyển sang chế độ chỉ đọc nhưng toàn bộ dữ liệu tổ chức vẫn được lưu giữ an toàn.`)}
         confirmLabel="Ngừng gia hạn"
         onConfirm={toggleCancellation}
       />

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -14,6 +15,7 @@ const YEARLY_DISCOUNT_PERCENT = Math.round((1 - YEARLY_PRICE_FACTOR) * 100);
 
 /** Preview of the paid plans, read from the plan catalogue so prices never drift from the pricing page. */
 export function PricingPreviewSection({ section }: { section: PricingSection }) {
+  useUiLanguage();
   const plans = plansFor(section.audience).filter((plan) => plan.monthlyPrice !== null);
 
   return (
@@ -36,13 +38,14 @@ export function PricingPreviewSection({ section }: { section: PricingSection }) 
 }
 
 function PlanPanel({ plan }: { plan: Plan }) {
+  useUiLanguage();
   const monthly = priceFor(plan, 1, 'month');
   const yearly = priceFor(plan, 1, 'year');
   const choose = `${REGISTER_PATH}?${planSelectionToQuery({ planCode: plan.code, seats: 1, cycle: 'month' })}`;
 
   return (
     <article
-      aria-label={`Gói ${plan.name}`}
+      aria-label={translateUi(`Gói ${plan.name}`)}
       className={cn(
         'group flex flex-col rounded-[20px] bg-landing-panel p-7 ring-1 transition-all duration-300 md:p-8 hover:-translate-y-1.5',
         plan.recommended

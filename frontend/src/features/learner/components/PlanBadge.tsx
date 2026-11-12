@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Clock } from 'lucide-react';
 import { usePersonalAccess } from '@/hooks/use-personal-learning';
 import { planBadgeText } from '@/lib/personal-access';
@@ -12,6 +13,7 @@ import { UpgradeLink } from './UpgradeLink';
  * screen readers. "Nâng cấp" sits beside it from tablet width up; on a phone the upgrade is in the account menu.
  */
 export function PlanBadge() {
+  useUiLanguage();
   const { data: access } = usePersonalAccess();
   if (!access || access.mode === 'full') return null;
 
@@ -30,7 +32,7 @@ export function PlanBadge() {
         <span className="sm:hidden" aria-hidden="true">{compact}</span>
         <span className="sr-only sm:not-sr-only">{full}</span>
       </span>
-      <UpgradeLink placement="topbar" variant="text" className="hidden sm:inline">Nâng cấp</UpgradeLink>
+      <UpgradeLink placement="topbar" variant="text" className="hidden sm:inline">{translateUi("Nâng cấp")}</UpgradeLink>
     </div>
   );
 }

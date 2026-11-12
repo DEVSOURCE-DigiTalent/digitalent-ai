@@ -100,14 +100,16 @@ describe('employees and data scope', () => {
     const byName = await call('get', '/employees', { search: 'hoang van' });
     const left = await call('get', '/employees', { status: 'INACTIVE' });
 
-    expect(accountants.items.map((e: { employeeCode: string }) => e.employeeCode)).toEqual(['NV001', 'NV011']);
+    expect(accountants.items.map((e: { employeeCode: string }) => e.employeeCode)).toEqual(['NV011']);
     expect(byName.items.map((e: { fullName: string }) => e.fullName)).toEqual([expect.stringMatching(/Hoàng Văn (Học|Nhân) Viên/)]);
     expect(left.items.map((e: { fullName: string }) => e.fullName)).toEqual(['Trịnh Quốc Bảo']);
   });
 
   it('keeps a manager from reading an employee of another department', async () => {
     asUser('manager');
-    expect(await failure(call('get', '/employees/emp-01'))).toMatchObject({ status: 404 });
+    // manager@ heads Kinh doanh: employee@ (emp-01) is in the team, the accountant emp-11 is not.
+    expect(await call('get', '/employees/emp-01')).toMatchObject({ id: 'emp-01', departmentId: 'dep-kd' });
+    expect(await failure(call('get', '/employees/emp-11'))).toMatchObject({ status: 404 });
   });
 
   it('transfers an employee and rejects a department that does not exist', async () => {
@@ -213,25 +215,29 @@ describe('competency framework', () => {
   });
 });
 
-describe('skill gap and recommendations of the demo accountant (spec section 8)', () => {
-  it('matches the numbers of the spec: 21 required, 6 met, 4 HIGH, 1 MEDIUM, 10 LOW, 62.03% covered', async () => {
+// Demo data (seed-acme.ts): employee@ is Hoàng Văn Nhân Viên, Kinh doanh (CRM), in manager@'s department.
+describe('skill gap and recommendations of the demo employee', () => {
+  it('summarises the snapshot consistently: 20 required, 5 met, 6 HIGH, 1 MEDIUM, 8 LOW, 59.81% covered', async () => {
     asUser('learner');
     const run = await call('get', '/intelligence/skill-gaps/me/latest');
 
-    expect(run.summary).toMatchObject({ totalRequired: 21, totalMet: 6, totalGap: 15, highCount: 4, mediumCount: 1, lowCount: 10, coveragePercent: 62.03 });
-    expect(run.employeeName).toMatch(/Hoàng Văn (Học|Nhân) Viên/);
+    expect(run.summary).toMatchObject({ totalRequired: 20, totalMet: 5, totalGap: 15, highCount: 6, mediumCount: 1, lowCount: 8, coveragePercent: 59.81 });
+    expect(run.summary.totalGap).toBe(run.summary.totalRequired - run.summary.totalMet);
+    expect(run.summary.highCount + run.summary.mediumCount + run.summary.lowCount).toBe(run.summary.totalGap);
+    expect(run.employeeName).toBe('Hoàng Văn Nhân Viên');
     expect(run.items[0].severity).toBe('HIGH');
   });
 
   it('recommends the next-step courses, the most useful first', async () => {
     asUser('learner');
     const result = await call('get', '/intelligence/recommendations');
+    const status = (code: string) => result.items.find((i: { courseCode: string }) => i.courseCode === code).enrollmentStatus;
 
     expect(result.reason).toBeNull();
-    expect(result.items[0].courseCode).toBe('A1-I');
+    expect(result.items[0].courseCode).toBe('A2-I');
     // A4-I is already assigned to this learner, A1-I is in progress.
-    expect(result.items.find((i: { courseCode: string }) => i.courseCode === 'A1-I').enrollmentStatus).toBe('IN_PROGRESS');
-    expect(result.items.find((i: { courseCode: string }) => i.courseCode === 'A4-I').enrollmentStatus).toBe('NOT_STARTED');
+    expect(status('A1-I')).toBe('IN_PROGRESS');
+    expect(status('A4-I')).toBe('NOT_STARTED');
   });
 
   it('updates the snapshot and the recommendations when HR confirms a level (spec step 5)', async () => {
@@ -240,7 +246,8 @@ describe('skill gap and recommendations of the demo accountant (spec section 8)'
 
     asUser('learner');
     const run = await call('get', '/intelligence/skill-gaps/me/latest');
-    expect(run.summary).toMatchObject({ coveragePercent: 63.89, highCount: 3 });
+    // 4.2 (mandatory, level 3 required) moves from 1 to 2: one HIGH becomes MEDIUM.
+    expect(run.summary).toMatchObject({ coveragePercent: 61.66, highCount: 5, mediumCount: 2 });
     expect(run.items.find((i: { frameworkCode: string }) => i.frameworkCode === '4.2')).toMatchObject({ currentLevel: 2, severity: 'MEDIUM' });
   });
 
@@ -249,7 +256,7 @@ describe('skill gap and recommendations of the demo accountant (spec section 8)'
     expect(await failure(call('post', '/competency-evidences/manual', { employeeId: 'emp-01', competencyId: 'cmp-4-2', confirmedLevel: 2, reviewNote: ' ' }))).toMatchObject({ status: 400 });
     expect(await failure(call('post', '/competency-evidences/manual', { employeeId: 'emp-01', competencyId: 'cmp-4-2', confirmedLevel: 4, reviewNote: 'x' }))).toMatchObject({ status: 400 });
     asUser('manager');
-    expect(await failure(call('post', '/competency-evidences/manual', { employeeId: 'emp-01', competencyId: 'cmp-4-2', confirmedLevel: 2, reviewNote: 'x' }))).toMatchObject({ status: 404 });
+    expect(await failure(call('post', '/competency-evidences/manual', { employeeId: 'emp-11', competencyId: 'cmp-4-2', confirmedLevel: 2, reviewNote: 'x' }))).toMatchObject({ status: 404 });
   });
 
   it('explains why a skill gap cannot be calculated, with the backend reason codes', async () => {
@@ -281,10 +288,14 @@ describe('skill gap and recommendations of the demo accountant (spec section 8)'
   it('lets an employee read their own snapshot only', async () => {
     asUser('learner');
     const learnerRun = await call('get', '/intelligence/skill-gaps/me/latest');
+    const visible = (await call('get', '/intelligence/skill-gaps', { pageSize: 50 })).items;
     asUser('manager');
-    const accountantRun = (await call('get', '/intelligence/skill-gaps', { pageSize: 50 })).items;
+    const team = (await call('get', '/intelligence/skill-gaps', { pageSize: 50 })).items;
 
-    expect(learnerRun.employeeName).toMatch(/Hoàng Văn (Học|Nhân) Viên/);
-    expect(accountantRun.every((r: { employeeName: string }) => r.employeeName !== learnerRun.employeeName)).toBe(true);
+    expect(learnerRun.employeeName).toBe('Hoàng Văn Nhân Viên');
+    expect(visible.map((r: { employeeId: string }) => r.employeeId)).toEqual(['emp-01']);
+    // The manager sees the whole Kinh doanh team, the learner included, and nobody outside it.
+    expect(team.map((r: { employeeName: string }) => r.employeeName)).toContain('Hoàng Văn Nhân Viên');
+    expect(team.map((r: { employeeId: string }) => r.employeeId)).not.toContain('emp-11');
   });
 });

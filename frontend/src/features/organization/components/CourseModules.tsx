@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { CourseDetailDto } from '@/services/assignment.service';
 import { useState } from 'react';
 import { BookOpen, ChevronDown, PlayCircle } from 'lucide-react';
@@ -9,6 +10,7 @@ interface CourseModulesProps {
 }
 
 export function CourseModules({ modules, courseCode }: CourseModulesProps) {
+  useUiLanguage();
   const [selected, setSelected] = useState<{ id: string; module: number; index: number; count: number } | null>(null);
   const [openModule, setOpenModule] = useState<number | null>(0);
   const [lessonPage, setLessonPage] = useState(0);
@@ -32,20 +34,14 @@ export function CourseModules({ modules, courseCode }: CourseModulesProps) {
       <span
         className="text-[10px] font-black uppercase tracking-[0.12em]"
         style={{ color: 'var(--po-accent)' }}
-      >
-        Cấu trúc khóa học
-      </span>
+      >{translateUi("Cấu trúc khóa học")}</span>
       <h2
         className="mt-2 text-xl font-semibold"
         style={{ color: 'var(--po-ink)', letterSpacing: '-0.045em' }}
-      >
-        Nội dung khóa học
-      </h2>
+      >{translateUi("Nội dung khóa học")}</h2>
 
       {modules.length === 0 ? (
-        <p className="mt-4 text-sm" style={{ color: 'var(--po-muted)' }}>
-          Chưa có cấu trúc bài giảng cho khóa học này.
-        </p>
+        <p className="mt-4 text-sm" style={{ color: 'var(--po-muted)' }}>{translateUi("Chưa có cấu trúc bài giảng cho khóa học này.")}</p>
       ) : (
         <div className="course-module-list mt-4">
           {modules.map((mod, mi) => (
@@ -67,14 +63,14 @@ export function CourseModules({ modules, courseCode }: CourseModulesProps) {
                     className="block text-[13px]"
                     style={{ color: 'var(--po-ink)' }}
                   >
-                    {mod.title}
+                    {translateUi(mod.title)}
                   </strong>
                   {mod.description && (
                     <small
                       className="block mt-0.5 text-[10px]"
                       style={{ color: 'var(--po-muted)' }}
                     >
-                      {mod.description}
+                      {translateUi(mod.description)}
                     </small>
                   )}
                 </span>
@@ -82,8 +78,7 @@ export function CourseModules({ modules, courseCode }: CourseModulesProps) {
                   className="course-module-count text-[10px] font-bold"
                   style={{ color: 'var(--po-muted)' }}
                 >
-                  <BookOpen size={15} /> {mod.lessons.length} bài
-                </span>
+                  <BookOpen size={15} /> {mod.lessons.length}{translateUi(" bài")}</span>
                 <ChevronDown className="course-module-chevron" size={18} />
               </button>
 
@@ -111,7 +106,7 @@ export function CourseModules({ modules, courseCode }: CourseModulesProps) {
                       className="block text-xs"
                       style={{ color: 'var(--po-ink)' }}
                     >
-                      {lesson.title}
+                      {translateUi(lesson.title)}
                     </strong>
                     <small
                       className="block mt-0.5 text-[10px]"
@@ -122,13 +117,13 @@ export function CourseModules({ modules, courseCode }: CourseModulesProps) {
                         : lesson.lessonType === 'QUIZ'
                           ? 'Bài kiểm tra'
                           : 'Bài giảng'}
-                      {lesson.estimatedMinutes ? ` · ${lesson.estimatedMinutes} phút` : ''}
+                      {lesson.estimatedMinutes ? translateUi(` · ${lesson.estimatedMinutes} phút`) : ''}
                     </small>
                   </div>
-                  <span className="course-lesson-action"><PlayCircle size={16} /> Xem bài</span>
+                  <span className="course-lesson-action"><PlayCircle size={16} />{translateUi(" Xem bài")}</span>
                 </button>
               ); })}
-              {openModule === mi && mod.lessons.length > pageSize && <div className="course-lesson-pagination"><span>{lessonPage * pageSize + 1}–{Math.min((lessonPage + 1) * pageSize, mod.lessons.length)} / {mod.lessons.length} bài</span><div><button type="button" disabled={lessonPage === 0} onClick={() => setLessonPage((value) => value - 1)}>Trước</button><button type="button" disabled={(lessonPage + 1) * pageSize >= mod.lessons.length} onClick={() => setLessonPage((value) => value + 1)}>Sau</button></div></div>}
+              {openModule === mi && mod.lessons.length > pageSize && <div className="course-lesson-pagination"><span>{lessonPage * pageSize + 1}–{Math.min((lessonPage + 1) * pageSize, mod.lessons.length)} / {mod.lessons.length}{translateUi(" bài")}</span><div><button type="button" disabled={lessonPage === 0} onClick={() => setLessonPage((value) => value - 1)}>{translateUi("Trước")}</button><button type="button" disabled={(lessonPage + 1) * pageSize >= mod.lessons.length} onClick={() => setLessonPage((value) => value + 1)}>{translateUi("Sau")}</button></div></div>}
             </div>
           ))}
         </div>

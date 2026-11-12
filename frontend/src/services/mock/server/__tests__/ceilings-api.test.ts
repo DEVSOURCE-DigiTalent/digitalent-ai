@@ -20,7 +20,7 @@ afterEach(() => {
 
 const asUser = (accountId: 'mock-owner' | 'mock-employee') => localStorage.setItem('accessToken', `mock-token:${accountId}`);
 
-async function call<T = CapabilityCeilings>(method: 'get' | 'put', url: string, payload?: unknown): Promise<T> {
+async function call<T = CapabilityCeilings>(method: 'get' | 'put' | 'post', url: string, payload?: unknown): Promise<T> {
   const response = await apiClient.request({ method, url, data: payload });
   return response.data.data as T;
 }
@@ -38,7 +38,7 @@ async function failure(promise: Promise<unknown>) {
 const levels = (matrix: CapabilityCeilings) => matrix.domains.map((d) => d.organizationCeiling);
 const department = (matrix: CapabilityCeilings, id: string) => matrix.departments.find((d) => d.departmentId === id)!;
 
-describe('capability ceilings (Lý thuyết trần nhà)', () => {
+describe('capability ceilings (Phạm vi năng lực)', () => {
   it('returns the 6 × 3 matrix of the demo organization with its saved ceilings', async () => {
     asUser('mock-owner');
     const matrix = await call('get', '/capability-ceilings');
@@ -68,13 +68,36 @@ describe('capability ceilings (Lý thuyết trần nhà)', () => {
     asUser('mock-owner');
     const ceilings = ['cat-1', 'cat-2', 'cat-3', 'cat-4', 'cat-5', 'cat-6'].map((categoryId) => ({
       categoryId,
-      level: categoryId === 'cat-3' ? 1 : 2,
+      level: categoryId === 'cat-3' ? 1 : categoryId === 'cat-5' ? 1 : 2,
     }));
     const matrix = await call('put', '/capability-ceilings/organization', { ceilings });
 
-    expect(levels(matrix)).toEqual([2, 2, 1, 2, 2, 2]);
+    expect(levels(matrix)).toEqual([2, 2, 1, 2, 1, 2]);
     expect(matrix.adjustedDepartmentCount).toBe(1); // Marketing had Sáng tạo nội dung at 3
     expect(department(matrix, 'dep-mkt').ceilings[2].level).toBe(1);
+  });
+
+  it('refuses an organization ceiling level when its course has not been purchased', async () => {
+    asUser('mock-owner');
+    const ceilings = ['cat-1', 'cat-2', 'cat-3', 'cat-4', 'cat-5', 'cat-6'].map((categoryId) => ({
+      categoryId,
+      level: categoryId === 'cat-5' ? 2 : 1,
+    }));
+
+    const result = await failure(call('put', '/capability-ceilings/organization', { ceilings }));
+    expect(result).toEqual({ status: 400, codes: ['COURSE_LICENSE_REQUIRED'] });
+  });
+
+  it('unlocks the matching organization ceiling after purchasing its course seats', async () => {
+    asUser('mock-owner');
+    await call('post', '/courses/crs-A5-I/purchase-seats', { seats: 1 });
+    const ceilings = ['cat-1', 'cat-2', 'cat-3', 'cat-4', 'cat-5', 'cat-6'].map((categoryId) => ({
+      categoryId,
+      level: categoryId === 'cat-5' ? 2 : 1,
+    }));
+
+    const matrix = await call('put', '/capability-ceilings/organization', { ceilings });
+    expect(matrix.domains.find((domain) => domain.categoryId === 'cat-5')?.organizationCeiling).toBe(2);
   });
 
   it('lets a department go back to the organization ceiling', async () => {

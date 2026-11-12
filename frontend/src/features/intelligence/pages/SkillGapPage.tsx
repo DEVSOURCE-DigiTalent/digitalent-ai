@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
@@ -21,6 +22,7 @@ const SELECT_CLASS =
  * sorted by number of gaps. HR sees the organization, department managers their department.
  */
 export function SkillGapPage({ embedded = false }: { embedded?: boolean }) {
+  useUiLanguage();
   const { can, is } = usePermission();
   const canCalculate = can(PERMISSIONS.SKILL_GAP_CALCULATE);
   // Department managers are scoped to their own department by the API — no department filter for them.
@@ -99,7 +101,7 @@ export function SkillGapPage({ embedded = false }: { embedded?: boolean }) {
       cell: (row) => (
         <span className="tabular-nums">
           {row.gapCount}
-          {row.highCount > 0 && <span className="ml-2 text-xs font-medium text-danger-600">{row.highCount} mức cao</span>}
+          {row.highCount > 0 && <span className="ml-2 text-xs font-medium text-danger-600">{row.highCount}{translateUi(" mức cao")}</span>}
         </span>
       ),
     },
@@ -120,7 +122,7 @@ export function SkillGapPage({ embedded = false }: { embedded?: boolean }) {
     <div className="flex flex-wrap items-center gap-3">
       {showDepartmentFilter && (
         <select
-          aria-label="Phòng ban"
+          aria-label={translateUi("Phòng ban")}
           value={departmentId}
           onChange={(e) => {
             setDepartmentId(e.target.value);
@@ -128,7 +130,7 @@ export function SkillGapPage({ embedded = false }: { embedded?: boolean }) {
           }}
           className={SELECT_CLASS}
         >
-          <option value="">Mọi phòng ban</option>
+          <option value="">{translateUi("Mọi phòng ban")}</option>
           {departments?.items?.map((d) => (
             <option key={d.id} value={d.id}>
               {d.name}
@@ -137,7 +139,7 @@ export function SkillGapPage({ embedded = false }: { embedded?: boolean }) {
         </select>
       )}
       <select
-        aria-label="Vị trí"
+        aria-label={translateUi("Vị trí")}
         value={jobPositionId}
         onChange={(e) => {
           setJobPositionId(e.target.value);
@@ -195,7 +197,7 @@ export function SkillGapPage({ embedded = false }: { embedded?: boolean }) {
           setSearch(value);
           setPage(1);
         }}
-        searchPlaceholder="Tìm theo tên hoặc mã nhân viên"
+        searchPlaceholder={translateUi("Tìm theo tên hoặc mã nhân viên")}
         filters={filters}
         onRowClick={(row) => setSelectedRunId(row.runId)}
         emptyTitle="Chưa có kết quả khoảng trống năng lực"

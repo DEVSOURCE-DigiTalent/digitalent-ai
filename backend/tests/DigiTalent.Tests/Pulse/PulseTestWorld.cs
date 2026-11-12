@@ -59,8 +59,8 @@ internal sealed class MemoryFileStorage : IFileStorageService
 
 /// <summary>
 /// Dữ liệu Development thật (DbSeeder: TT02 + nội dung khóa + PulseContentSeeder) trên EF InMemory.
-/// employee@ là Kế toán (mục tiêu: 3/3/2/3/2/2), thuộc phòng OPS do manager@ quản lý; đã có A2-F hoàn thành (luồng cũ),
-/// A1-I và A4-I được giao (suất học).
+/// employee@ là Kế toán (mục tiêu: 3/3/2/3/2/2), thuộc phòng OPS do manager@ quản lý; đã có M2-F hoàn thành (luồng cũ),
+/// M1-I và M4-I được giao (suất học).
 /// </summary>
 internal sealed class PulseTestWorld : IDisposable
 {

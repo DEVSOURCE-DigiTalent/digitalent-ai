@@ -1,3 +1,4 @@
+import { useUiLanguage } from '@/lib/i18n';
 import { lazy, Suspense, type ReactNode } from 'react';
 import { Navigate, useLocation, type RouteObject } from 'react-router-dom';
 import { PortalSelectorPage, RootRoute } from '../../features/portal/PortalSelectorPage';
@@ -28,6 +29,7 @@ const withPublicFallback = (element: ReactNode) => <Suspense fallback={publicLan
 
 /** Old bookmarks and emails still point at /business/login and /individual/login; keep their returnTo. */
 function LegacyLoginRedirect() {
+  useUiLanguage();
   const { search } = useLocation();
   return <Navigate to={{ pathname: '/login', search }} replace />;
 }

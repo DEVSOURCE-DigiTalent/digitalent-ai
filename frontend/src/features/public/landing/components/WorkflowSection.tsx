@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { SECTION_IDS, type LandingSectionConfig } from '../landing-content';
 import { useActiveStep } from '../hooks/use-active-step';
@@ -13,6 +14,7 @@ type WorkflowSection = Extract<LandingSectionConfig, { kind: 'workflow' }>;
  * preview. Every step stays in the DOM and in reading order.
  */
 export function WorkflowSection({ section }: { section: WorkflowSection }) {
+  useUiLanguage();
   const { active, register, scrollToStep } = useActiveStep(section.steps.length);
   const current = section.steps[active] ?? section.steps[0];
 
@@ -43,9 +45,9 @@ export function WorkflowSection({ section }: { section: WorkflowSection }) {
               />
               <div className={cn('transition-opacity duration-500', index === active ? 'opacity-100' : 'lg:opacity-40')}>
                 <p className={LP_KICKER}>
-                  <span className="tabular-nums">{String(index + 1).padStart(2, '0')}</span> · {step.label}
+                  <span className="tabular-nums">{String(index + 1).padStart(2, '0')}</span> · {translateUi(step.label)}
                 </p>
-                <h3 className="mt-3 text-balance text-[clamp(24px,2.6vw,36px)] font-normal leading-[1.15] tracking-[-0.02em] text-cream">{step.title}</h3>
+                <h3 className="mt-3 text-balance text-[clamp(24px,2.6vw,36px)] font-normal leading-[1.15] tracking-[-0.02em] text-cream">{translateUi(step.title)}</h3>
                 <p className="mt-3 max-w-[42ch] text-base leading-[1.6] text-stone-400">{step.text}</p>
               </div>
               <div className="rounded-[20px] bg-landing-card p-5 lg:hidden">
@@ -57,7 +59,7 @@ export function WorkflowSection({ section }: { section: WorkflowSection }) {
 
         <div className="hidden lg:block">
           <div className="sticky top-24 min-h-[30rem] rounded-[20px] bg-landing-card p-10">
-            <p className={cn('mb-6', LP_KICKER)}>Ví dụ minh họa · {current.label}</p>
+            <p className={cn('mb-6', LP_KICKER)}>Ví dụ minh họa · {translateUi(current.label)}</p>
             <div key={current.preview} className="lp-preview-in">
               <WorkflowPreviewView kind={current.preview} />
             </div>

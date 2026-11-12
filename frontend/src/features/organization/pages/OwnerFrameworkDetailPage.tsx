@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useCompetency } from '@/hooks/use-competencies';
@@ -13,11 +14,12 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export function OwnerFrameworkDetailPage() {
+  useUiLanguage();
   const { id = '' } = useParams();
   const { data: competency, isLoading, isError } = useCompetency(id);
 
   if (isLoading) {
-    return <div className="po-owner -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label="Đang tải chi tiết năng lực" variant="detail" /></div>;
+    return <div className="po-owner -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label={translateUi("Đang tải chi tiết năng lực")} variant="detail" /></div>;
   }
 
   if (isError || !competency) {
@@ -36,9 +38,7 @@ export function OwnerFrameworkDetailPage() {
           <h2
             className="text-xl font-semibold"
             style={{ color: 'var(--po-ink)' }}
-          >
-            Không tìm thấy năng lực
-          </h2>
+          >{translateUi("Không tìm thấy năng lực")}</h2>
           <Link
             to="/enterprise/framework"
             className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold"
@@ -98,11 +98,10 @@ export function OwnerFrameworkDetailPage() {
               className="text-xs mt-0.5"
               style={{ color: 'var(--po-muted)' }}
             >
-              {competency.categoryName} ·{' '}
-              {TYPE_LABELS[competency.competencyType] ??
+              {translateUi(competency.categoryName)} ·{' '}
+              {translateUi(TYPE_LABELS[competency.competencyType]) ??
                 competency.competencyType}{' '}
-              · {competency.criteria.length} tiêu chí
-            </p>
+              · {competency.criteria.length}{translateUi(" tiêu chí")}</p>
           </div>
           <span
             className="rounded-full border px-2.5 py-1 text-[11px] font-bold shrink-0"
@@ -127,9 +126,9 @@ export function OwnerFrameworkDetailPage() {
             }
           >
             {competency.status === 'ACTIVE'
-              ? 'Đang dùng'
+              ? translateUi('Đang dùng')
               : competency.status === 'DRAFT'
-                ? 'Bản nháp'
+                ? translateUi('Bản nháp')
                 : 'Đã lưu trữ'}
           </span>
         </div>

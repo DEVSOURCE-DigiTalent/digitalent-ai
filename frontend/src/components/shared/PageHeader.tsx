@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -38,13 +39,14 @@ export function PageHeader({
   onTabChange,
   className,
 }: PageHeaderProps) {
+  useUiLanguage();
   const rightSlot = actions ?? children;
 
   return (
     <div className={cn('mb-6', className)}>
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.03em] heading-gradient leading-tight">{title}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.03em] heading-gradient leading-tight">{translateUi(title)}</h1>
         </div>
         {rightSlot && (
           <div className="flex items-center gap-2 shrink-0">{rightSlot}</div>
@@ -65,7 +67,7 @@ export function PageHeader({
                   : 'border-transparent text-ent-fg-2 hover:text-ent-fg',
               )}
             >
-              {tab.label}
+              {translateUi(tab.label)}
             </button>
           ))}
         </div>

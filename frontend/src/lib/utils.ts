@@ -2,6 +2,7 @@ import { isAxiosError } from 'axios';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import type { ApiResponse } from '@/types/api';
+import { translateUi, uiLocale } from '@/lib/i18n';
 
 /** Merge Tailwind classes safely */
 export function cn(...inputs: ClassValue[]) {
@@ -21,7 +22,7 @@ export function formatDate(isoString: string | null | undefined): string {
   if (!isoString) return '—';
   const date = new Date(isoString);
   if (Number.isNaN(date.getTime())) return '—';
-  return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+  return new Intl.DateTimeFormat(uiLocale(), { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
 }
 
 /** dd/mm/yyyy HH:mm in local time (SRS CR-05). */
@@ -29,7 +30,7 @@ export function formatDateTime(isoString: string | null | undefined): string {
   if (!isoString) return '—';
   const date = new Date(isoString);
   if (Number.isNaN(date.getTime())) return '—';
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat(uiLocale(), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -47,12 +48,13 @@ export function formatRelativeTime(isoString: string | null | undefined): string
     const then = new Date(isoString).getTime();
     const diffMs = now - then;
     const diffMinutes = Math.floor(diffMs / 60000);
-    if (diffMinutes < 1) return 'Vừa xong';
-    if (diffMinutes < 60) return `${diffMinutes} phút trước`;
+    if (!Number.isFinite(then)) return '—';
+    if (diffMinutes < 1) return translateUi('Vừa xong');
+    if (diffMinutes < 60) return translateUi(`${diffMinutes} phút trước`);
     const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `${diffHours} giờ trước`;
+    if (diffHours < 24) return translateUi(`${diffHours} giờ trước`);
     const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `${diffDays} ngày trước`;
+    if (diffDays < 7) return translateUi(`${diffDays} ngày trước`);
     return formatDate(isoString);
   } catch {
     return '—';

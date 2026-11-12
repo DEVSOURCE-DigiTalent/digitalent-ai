@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { PageHeader, ScoreCard } from '@/components/shared';
@@ -23,6 +24,7 @@ interface TrainingMonitorPageProps {
  * Real-time monitoring of course progress, deadlines, overdue items with filters by Dept, Position, and Job Grade (G1–G3).
  */
 export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingMonitorPageProps) {
+  useUiLanguage();
   const location = useLocation();
   const isManager = propIsManager ?? location.pathname.includes('/team/training');
 
@@ -71,18 +73,18 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
   return (
     <div className="space-y-6">
       <PageHeader
-        title={isManager ? 'Tiến độ đào tạo nhóm' : 'Theo dõi đào tạo'}
-        subtitle={isManager ? 'Theo dõi tiến độ học tập, hạn hoàn thành và học viên cần đôn đốc trong nhóm phụ trách' : undefined}
+        title={translateUi(isManager ? 'Tiến độ đào tạo nhóm' : 'Theo dõi đào tạo')}
+        subtitle={translateUi(isManager ? 'Theo dõi tiến độ học tập, hạn hoàn thành và học viên cần đôn đốc trong nhóm phụ trách' : undefined)}
       />
 
       {summary && (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-            <ScoreCard label="Đang hiệu lực" value={summary.total} subtitle={`${summary.completed} đã hoàn thành`} />
-            <ScoreCard label="Đang học" value={summary.inProgress} />
-            <ScoreCard label="Chờ đánh giá" value={summary.readyForAssessment} />
+            <ScoreCard label="Đang hiệu lực" value={summary.total} subtitle={translateUi(`${summary.completed} đã hoàn thành`)} />
+            <ScoreCard label={translateUi("Đang học")} value={summary.inProgress} />
+            <ScoreCard label={translateUi("Chờ đánh giá")} value={summary.readyForAssessment} />
             <ScoreCard
-              label="Tỷ lệ hoàn thành"
+              label={translateUi("Tỷ lệ hoàn thành")}
               value={`${summary.completionRate}%`}
               variant={summary.completionRate >= 70 ? 'success' : 'default'}
             />
@@ -90,7 +92,7 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
               label="Quá hạn"
               value={summary.overdue}
               variant={summary.overdue > 0 ? 'danger' : 'success'}
-              subtitle={summary.dueSoon > 0 ? `${summary.dueSoon} sắp đến hạn` : undefined}
+              subtitle={translateUi(summary.dueSoon > 0 ? translateUi(`${summary.dueSoon} sắp đến hạn`) : undefined)}
               onClick={summary.overdue > 0 ? () => pick('overdue') : undefined}
             />
           </div>
@@ -106,7 +108,7 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
                     <span className="font-medium text-slate-800">{d.name}</span>
                     <div
                       role="progressbar"
-                      aria-label={`Tiến độ trung bình của ${d.name}`}
+                      aria-label={translateUi(`Tiến độ trung bình của ${d.name}`)}
                       aria-valuemin={0}
                       aria-valuemax={100}
                       aria-valuenow={d.averageProgress}
@@ -115,7 +117,7 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
                       <div className="h-full rounded-full bg-primary-600" style={{ width: `${d.averageProgress}%` }} />
                     </div>
                     <span className="text-xs tabular-nums text-slate-600">
-                      {d.averageProgress}% · {d.completed}/{d.total} xong{d.overdue > 0 ? ` · ${d.overdue} quá hạn` : ''}
+                      {d.averageProgress}% · {d.completed}/{d.total} xong{d.overdue > 0 ? translateUi(` · ${d.overdue} quá hạn`) : ''}
                     </span>
                   </li>
                 ))}
@@ -137,15 +139,15 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
         }}
         filters={
           <>
-            <OwnerFilterSelect label="Lọc theo trạng thái" value={status} onChange={(value) => { setStatus(value as AssignmentStatus | ''); setPage(1); }} options={[{ value: '', label: 'Tất cả trạng thái' }, ...((import.meta.env.VITE_USE_MOCK === 'true' ? ['NOT_STARTED', 'IN_PROGRESS', 'READY_FOR_ASSESSMENT', 'COMPLETED'] : ['ACTIVE', 'CANCELLED']) as AssignmentStatus[]).map((s) => ({ value: s, label: ASSIGNMENT_STATUS_LABELS[s] }))]} />
+            <OwnerFilterSelect label={translateUi("Lọc theo trạng thái")} value={status} onChange={(value) => { setStatus(value as AssignmentStatus | ''); setPage(1); }} options={[{ value: '', label: 'Tất cả trạng thái' }, ...((import.meta.env.VITE_USE_MOCK === 'true' ? ['NOT_STARTED', 'IN_PROGRESS', 'READY_FOR_ASSESSMENT', 'COMPLETED'] : ['ACTIVE', 'CANCELLED']) as AssignmentStatus[]).map((s) => ({ value: s, label: ASSIGNMENT_STATUS_LABELS[s] }))]} />
 
             {!isManager && (
-              <OwnerFilterSelect label="Lọc theo phòng ban" value={departmentId} onChange={(value) => { setDepartmentId(value); setPage(1); }} options={[{ value: '', label: 'Mọi phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
+              <OwnerFilterSelect label={translateUi("Lọc theo phòng ban")} value={departmentId} onChange={(value) => { setDepartmentId(value); setPage(1); }} options={[{ value: '', label: 'Mọi phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
             )}
 
             <OwnerFilterSelect label="Lọc theo vị trí" value={jobPositionId} onChange={(value) => { setJobPositionId(value); setPage(1); }} options={[{ value: '', label: 'Mọi vị trí' }, ...positions.map((p) => ({ value: p.id, label: p.name }))]} />
 
-            {import.meta.env.VITE_USE_MOCK === 'true' && <OwnerFilterSelect label="Lọc theo cấp bậc" value={jobGrade} onChange={(value) => { setJobGrade(value as JobGradeCode | ''); setPage(1); }} options={[{ value: '', label: 'Mọi cấp bậc' }, ...JOB_GRADES.map((code) => ({ value: code, label: `Cấp bậc ${code} (${JOB_GRADE_DEFAULT_NAMES[code]})` }))]} />}
+            {import.meta.env.VITE_USE_MOCK === 'true' && <OwnerFilterSelect label={translateUi("Lọc theo cấp bậc")} value={jobGrade} onChange={(value) => { setJobGrade(value as JobGradeCode | ''); setPage(1); }} options={[{ value: '', label: 'Mọi cấp bậc' }, ...JOB_GRADES.map((code) => ({ value: code, label: `Cấp bậc ${code} (${JOB_GRADE_DEFAULT_NAMES[code]})` }))]} />}
 
             <OwnerFilterSelect label="Lọc theo hạn" value={quick} onChange={(value) => { setQuick(value as Quick); setPage(1); }} options={[{ value: '', label: 'Mọi hạn' }, { value: 'overdue', label: 'Quá hạn' }, { value: 'dueSoon', label: 'Sắp đến hạn (7 ngày)' }]} />
           </>

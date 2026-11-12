@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { BarChart3 } from 'lucide-react';
 import { useManagedDepartment } from '@/hooks/use-managed-department';
@@ -23,6 +24,7 @@ const level = (value: number | null | undefined) => (value && value > 0 ? `L${va
  * trong phòng ban. Năng lực chưa đo hiển thị "Chưa xác nhận mức" và không bị tính là khoảng trống.
  */
 export function ManagerCapabilityPage() {
+  useUiLanguage();
   const { department, isLoading: deptLoading, isError: deptError, refetch: refetchDept } = useManagedDepartment();
   const team = useWorkforce({ departmentId: department?.id, pageIndex: 1, pageSize: 100 }, Boolean(department));
   const people = (team.data?.items ?? []).filter((row) => !row.departmentId || row.departmentId === department?.id);
@@ -85,9 +87,7 @@ export function ManagerCapabilityPage() {
           <div className="pm-picker">
             <section className="pm-panel">
               <Mini>Chọn một nhân viên</Mini>
-              <label className="pu-field">
-                Nhân sự
-                <select value={selectedId} onChange={(e) => setPicked(e.target.value)}>
+              <label className="pu-field">{translateUi("Nhân sự")}<select value={selectedId} onChange={(e) => setPicked(e.target.value)}>
                   {people.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.fullName}{p.jobPositionName ? ` · ${p.jobPositionName}` : ''}
@@ -102,21 +102,21 @@ export function ManagerCapabilityPage() {
                   <div style={{ marginTop: 12 }}>
                     <Bar
                       value={selected.coveragePercent ?? 0}
-                      label={`Độ phủ mục tiêu ${Math.round(selected.coveragePercent ?? 0)}%`}
+                      label={translateUi(`Độ phủ mục tiêu ${Math.round(selected.coveragePercent ?? 0)}%`)}
                     />
                   </div>
                   <small>
                     {selected.hasSnapshot
-                      ? `Độ phủ mục tiêu ${Math.round(selected.coveragePercent ?? 0)}%`
+                      ? translateUi(`Độ phủ mục tiêu ${Math.round(selected.coveragePercent ?? 0)}%`)
                       : selected.blocker
-                        ? BLOCKER_LABELS[selected.blocker] ?? 'Chưa có bản đo năng lực'
+                        ? translateUi(BLOCKER_LABELS[selected.blocker]) ?? 'Chưa có bản đo năng lực'
                         : 'Chưa có bản đo năng lực'}
                   </small>
                 </div>
               )}
               {selected && (
                 <div className="pu-row" style={{ marginTop: 14 }}>
-                  <PuLink to={MANAGER_PATHS.member(selected.id)} kind="outline" small>Hồ sơ nhân viên</PuLink>
+                  <PuLink to={MANAGER_PATHS.member(selected.id)} kind="outline" small>{translateUi("Hồ sơ nhân viên")}</PuLink>
                   <PuLink to={MANAGER_PATHS.matrix} kind="ghost" small>Ma trận năng lực nhóm</PuLink>
                 </div>
               )}
@@ -128,10 +128,10 @@ export function ManagerCapabilityPage() {
                 <PageSkeleton blocks={[120]} />
               ) : recommendation ? (
                 <>
-                  <h2 className="pu-panel-title">{recommendation.title}</h2>
+                  <h2 className="pu-panel-title">{translateUi(recommendation.title)}</h2>
                   <p className="pu-panel-desc">
                     Đề xuất dựa trên khoảng cách đã xác nhận
-                    {recommendation.reasons[0] ? ` ở ${recommendation.reasons[0].competencyName}` : ''}. Hoàn thành khóa học không tự
+                    {recommendation.reasons[0] ? translateUi(` ở ${recommendation.reasons[0].competencyName}`) : ''}. Hoàn thành khóa học không tự
                     thay đổi mức năng lực — mức chỉ đổi khi bài cuối khóa hoặc minh chứng được duyệt.
                   </p>
                   <PuLink to={MANAGER_PATHS.training} small>Xem tiến độ đào tạo →</PuLink>
@@ -148,9 +148,9 @@ export function ManagerCapabilityPage() {
             <div className="pm-panel-head">
               <div>
                 <h2 id="pm-current-title">Hiện tại → mục tiêu vị trí</h2>
-                <p>Từng năng lực của {selected?.fullName ?? 'nhân viên'}, nhóm theo sáu lĩnh vực.</p>
+                <p>Từng năng lực của {selected?.fullName ?? translateUi('nhân viên')}, nhóm theo sáu lĩnh vực.</p>
               </div>
-              {capability.isSuccess && <Pill tone={summary.pending > 0 ? 'gray' : 'green'}>{summary.pending > 0 ? `${summary.pending} năng lực đang chờ đo` : 'Đã đo đủ'}</Pill>}
+              {capability.isSuccess && <Pill tone={summary.pending > 0 ? 'gray' : 'green'}>{summary.pending > 0 ? translateUi(`${summary.pending} năng lực đang chờ đo`) : 'Đã đo đủ'}</Pill>}
             </div>
             {capability.isLoading ? (
               <PageSkeleton blocks={[60, 60, 60, 60]} />
@@ -165,7 +165,7 @@ export function ManagerCapabilityPage() {
                 {domains.map((domain) => (
                   <div key={domain.name} className="pm-domain">
                     <div className="pm-domain-head">
-                      <h3>{domain.name}</h3>
+                      <h3>{translateUi(domain.name)}</h3>
                       <small>{domain.rows.filter((r) => r.status === 'GAP').length} khoảng cách đã xác nhận</small>
                     </div>
                     {domain.rows.map((row) => {
@@ -174,13 +174,12 @@ export function ManagerCapabilityPage() {
                         <div key={row.competencyId} className="pm-level-row">
                           <div>
                             <strong>{row.frameworkCode} · {row.name}</strong>
-                            <small>{row.confirmedAt ? `Xác nhận ${new Date(row.confirmedAt).toLocaleDateString('vi-VN')}` : 'Chưa có minh chứng xác nhận'}</small>
+                            <small>{row.confirmedAt ? translateUi(`Xác nhận ${new Date(row.confirmedAt).toLocaleDateString('vi-VN')}`) : 'Chưa có minh chứng xác nhận'}</small>
                           </div>
                           <div
                             className="pm-levels"
-                            aria-label={`Hiện tại ${levelName(row.currentLevel)}, mục tiêu ${row.requiredLevel > 0 ? levelName(row.requiredLevel) : 'không yêu cầu'}`}
-                          >
-                            Hiện tại <b className={row.status === 'PENDING' ? 'pending' : undefined}>{level(row.currentLevel)}</b>
+                            aria-label={translateUi(`Hiện tại ${levelName(row.currentLevel)}, mục tiêu ${row.requiredLevel > 0 ? levelName(row.requiredLevel) : 'không yêu cầu'}`)}
+                          >{translateUi("Hiện tại ")}<b className={row.status === 'PENDING' ? 'pending' : undefined}>{level(row.currentLevel)}</b>
                             → Mục tiêu{' '}
                             {row.requiredLevel > 0 ? <b className="target">{level(row.requiredLevel)}</b> : <b className="pending">—</b>}
                           </div>

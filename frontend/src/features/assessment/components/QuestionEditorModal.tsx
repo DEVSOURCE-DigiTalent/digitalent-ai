@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -50,6 +51,7 @@ interface QuestionEditorModalProps {
  * dynamic answer options, and taxonomy tag multi-select (S3-T012).
  */
 export function QuestionEditorModal({ open, onClose, bankId, tags, question }: QuestionEditorModalProps) {
+  useUiLanguage();
   const isEdit = !!question;
   const createQuestion = useCreateQuestion(bankId);
   const updateQuestion = useUpdateQuestion(bankId);
@@ -189,7 +191,7 @@ export function QuestionEditorModal({ open, onClose, bankId, tags, question }: Q
               className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Enter the question text..."
             />
-            {errors.content && <p className="text-xs text-danger-600 mt-1">{errors.content.message}</p>}
+            {errors.content && <p className="text-xs text-danger-600 mt-1">{translateUi(errors.content.message)}</p>}
           </div>
 
           <div>
@@ -232,7 +234,7 @@ export function QuestionEditorModal({ open, onClose, bankId, tags, question }: Q
                     />
                     <input
                       {...register(`options.${index}.content`)}
-                      placeholder={`Option ${index + 1}`}
+                      placeholder={translateUi(`Option ${index + 1}`)}
                       className="flex-1 px-3 py-1.5 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                     <button

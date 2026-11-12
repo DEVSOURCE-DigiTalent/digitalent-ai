@@ -1,3 +1,5 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
+import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 import { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, CreditCard, Home, LogOut, Menu } from 'lucide-react';
@@ -27,13 +29,14 @@ function initials(fullName: string): string {
 
 /** Plan line of the account menu: trial and Free say so; a paying plan keeps its renewal date. */
 function PlanLine() {
+  useUiLanguage();
   const user = useCurrentUser((state) => state.user);
   const { data: access } = usePersonalAccess();
   if (!user?.subscription) return null;
   const { subscription } = user;
 
   // The top bar has room for the upgrade link only from tablet width up; on a phone it is here.
-  const upgrade = <UpgradeLink placement="topbar" variant="text" className="mt-1 inline-block sm:hidden">Nâng cấp</UpgradeLink>;
+  const upgrade = <UpgradeLink placement="topbar" variant="text" className="mt-1 inline-block sm:hidden">{translateUi("Nâng cấp")}</UpgradeLink>;
 
   if (access?.mode === 'trial') {
     return (
@@ -58,6 +61,7 @@ function PlanLine() {
 }
 
 function AccountMenu() {
+  useUiLanguage();
   const user = useCurrentUser((state) => state.user);
   const navigate = useNavigate();
   const logout = useLogout();
@@ -115,8 +119,7 @@ function AccountMenu() {
               <Home className="size-4" aria-hidden="true" /> Trang giới thiệu
             </Link>
             <button role="menuitem" type="button" onClick={handleLogout} className={itemClass} disabled={logout.isPending}>
-              <LogOut className="size-4" aria-hidden="true" /> Đăng xuất
-            </button>
+              <LogOut className="size-4" aria-hidden="true" />{translateUi(" Đăng xuất")}</button>
           </div>
         </div>
       )}
@@ -125,6 +128,7 @@ function AccountMenu() {
 }
 
 export const PersonalShell = () => {
+  useUiLanguage();
   const theme = usePersonalTheme((state) => state.theme);
   const { pathname } = useLocation();
   const [drawer, setDrawer] = useState(false);
@@ -147,25 +151,25 @@ export const PersonalShell = () => {
   }, []);
   return (
     <PersonalFocusContext.Provider value={setPageFocus}>
-      <div data-testid="personal-layout" data-theme={theme} data-individual-theme={theme} data-focus={focus} lang="vi"
+      <div data-testid="personal-layout" data-theme={theme} data-individual-theme={theme} data-focus={focus}
         className="personal-theme pt-workspace min-h-screen bg-pt-bg font-landing text-pt-fg antialiased">
         <div inert={drawer}>
-          <a href="#personal-main" className="fixed -top-16 left-4 z-[100] rounded-lg bg-pt-accent px-4 py-2.5 text-sm text-pt-on-accent focus:top-3">Bỏ qua đến nội dung</a>
+          <a href="#personal-main" className="fixed -top-16 left-4 z-[100] rounded-lg bg-pt-accent px-4 py-2.5 text-sm text-pt-on-accent focus:top-3">{translateUi("Bỏ qua đến nội dung")}</a>
           <div className="pt-workspace-body flex min-h-screen min-w-0 flex-col">
             <header className="sticky top-0 z-40 border-b border-pt-line bg-pt-bg">
               <div className="mx-auto flex min-h-[60px] w-full max-w-[1440px] items-center justify-between gap-2 px-4 md:px-6 lg:px-8">
-                <button type="button" onClick={() => setDrawer(true)} aria-label="Mở menu" aria-expanded={drawer} aria-haspopup="dialog" className="grid size-11 shrink-0 place-items-center rounded-lg hover:bg-pt-raised lg:hidden"><Menu className="size-5" /></button>
+                <button type="button" onClick={() => setDrawer(true)} aria-label={translateUi("Mở menu")} aria-expanded={drawer} aria-haspopup="dialog" className="grid size-11 shrink-0 place-items-center rounded-lg hover:bg-pt-raised lg:hidden"><Menu className="size-5" /></button>
                 <Link to="/personal" aria-label="DigiTalent AI, về tổng quan" className="hidden w-[232px] shrink-0 items-center lg:flex">
                   <Wordmark className="text-base [--wordmark-on:var(--pt-bg)]" />
                 </Link>
-                <nav aria-label="Đường dẫn" className="min-w-0 flex-1 text-sm text-pt-fg-2">
+                <nav aria-label={translateUi("Đường dẫn")} className="min-w-0 flex-1 text-sm text-pt-fg-2">
                   <ol className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     {item.group && <li className="hidden sm:block">{item.group}<span className="ml-2" aria-hidden="true">/</span></li>}
-                    <li>{detail ? <Link to={item.to} className="hover:text-pt-accent">{item.label}</Link> : <span aria-current="page">{item.label}</span>}</li>
+                    <li>{detail ? <Link to={item.to} className="hover:text-pt-accent">{translateUi(item.label)}</Link> : <span aria-current="page">{translateUi(item.label)}</span>}</li>
                     {detail && <li className="hidden sm:block"><span className="mr-2" aria-hidden="true">/</span><span aria-current="page">{detail}</span></li>}
                   </ol>
                 </nav>
-                <div className="flex shrink-0 items-center gap-2"><PlanBadge /><div className="hidden sm:block"><ThemeToggle /></div><AccountMenu /></div>
+                <div className="flex shrink-0 items-center gap-2"><LanguageSwitcher /><PlanBadge /><div className="hidden sm:block"><ThemeToggle /></div><AccountMenu /></div>
               </div>
             </header>
             <div className="pt-workspace-content mx-auto flex w-full min-w-0 max-w-[1440px] flex-1 gap-6 px-4 py-6 md:px-6 lg:px-8">
@@ -181,7 +185,7 @@ export const PersonalShell = () => {
   );
 };
 /** Personal workspace shell: signed-in individual users only. */
-export const PersonalLayout = () => (
+export const PersonalLayout = () => { useUiLanguage(); return (
   <AuthGuard>
     <RequireWorkspace workspace={WORKSPACES.PERSONAL}>
       <RequireOnboarded>
@@ -189,4 +193,4 @@ export const PersonalLayout = () => (
       </RequireOnboarded>
     </RequireWorkspace>
   </AuthGuard>
-);
+); };

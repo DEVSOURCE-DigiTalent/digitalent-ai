@@ -4,7 +4,7 @@ import { entitlementKeys, getPlan } from '../../../lib/plans';
 import type { SessionUser, SubscriptionContext } from '../../../types/session';
 import { findMockAccountById } from '../mock-accounts';
 import { permissionsForRoles } from '../mock-rbac';
-import { findUserById, settleTrial, toSessionUser } from '../mock-store';
+import { getDb, findUserById, settleTrial, toSessionUser } from '../mock-store';
 import { seatsInUse } from './members-logic';
 import { getOrgData } from './org-store';
 import type { OrgData } from './types';
@@ -45,7 +45,9 @@ export type SessionLookup =
 export function lookupSession(userId: string | undefined): SessionLookup {
   if (!userId) return { error: 'UNKNOWN' };
 
-  const seeded = findMockAccountById(userId);
+  const original = findMockAccountById(userId);
+  const profile = getDb().accountProfiles?.[userId];
+  const seeded = original && profile ? { ...original, fullName: profile.fullName } : original;
   if (seeded) {
     const organizationId = seeded.organization?.id;
     if (!organizationId) {

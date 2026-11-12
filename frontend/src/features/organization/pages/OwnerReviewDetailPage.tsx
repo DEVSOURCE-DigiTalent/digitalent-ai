@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
@@ -18,6 +19,7 @@ const inputStyle: React.CSSProperties = {
 };
 
 export function OwnerReviewDetailPage() {
+  useUiLanguage();
   const { submissionId } = useParams<{ submissionId: string }>();
   const navigate = useNavigate();
 
@@ -67,7 +69,7 @@ export function OwnerReviewDetailPage() {
   };
 
   if (subLoading || taskLoading) {
-    return <div className="po-owner -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label="Đang tải bài đánh giá" variant="detail" /></div>;
+    return <div className="po-owner -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label={translateUi("Đang tải bài đánh giá")} variant="detail" /></div>;
   }
 
   if (!task || !submission) {
@@ -83,16 +85,13 @@ export function OwnerReviewDetailPage() {
           >
             !
           </div>
-          <h2 className="text-xl font-semibold" style={{ color: 'var(--po-ink)' }}>
-            Không tìm thấy bài nộp
-          </h2>
+          <h2 className="text-xl font-semibold" style={{ color: 'var(--po-ink)' }}>{translateUi("Không tìm thấy bài nộp")}</h2>
           <Link
             to="/enterprise/reviews"
             className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold"
             style={{ color: 'var(--po-accent)' }}
           >
-            <ArrowLeft className="size-3.5" /> Hàng chờ chấm điểm
-          </Link>
+            <ArrowLeft className="size-3.5" />{translateUi(" Hàng chờ chấm điểm")}</Link>
         </div>
       </div>
     );
@@ -120,14 +119,11 @@ export function OwnerReviewDetailPage() {
           className="owner-operations__back"
           style={{ color: 'var(--po-muted)' }}
         >
-          <ArrowLeft className="size-4" /> Quay lại nhiệm vụ
-        </Link>
+          <ArrowLeft className="size-4" />{translateUi(" Quay lại nhiệm vụ")}</Link>
 
-        <h1 className="owner-operations__review-title heading-gradient">
-          Đánh giá bài nộp
-        </h1>
+        <h1 className="owner-operations__review-title heading-gradient">{translateUi("Đánh giá bài nộp")}</h1>
         <p className="owner-operations__review-subtitle" style={{ color: 'var(--po-muted)' }}>
-          {submission.employeeName} · {task.title} · Nộp {formatDate(submission.submittedAt)}
+          {submission.employeeName} · {translateUi(task.title)}{translateUi(" · Nộp ")}{formatDate(submission.submittedAt)}
         </p>
 
         <form onSubmit={handleSubmit} className="owner-operations__review-form">
@@ -138,7 +134,7 @@ export function OwnerReviewDetailPage() {
           >
             <div className="flex items-center justify-between" style={{ borderBottom: '1px solid var(--po-line)', paddingBottom: 12 }}>
               <div>
-                <span className="text-[10px] font-bold" style={{ color: 'var(--po-muted)' }}>Người nộp</span>
+                <span className="text-[10px] font-bold" style={{ color: 'var(--po-muted)' }}>{translateUi("Người nộp")}</span>
                 <strong className="block text-xs" style={{ color: 'var(--po-ink)' }}>
                   {submission.employeeName} ({submission.employeeCode})
                 </strong>
@@ -147,14 +143,12 @@ export function OwnerReviewDetailPage() {
                 className="text-[9px] font-black px-1.5 py-0.5 rounded"
                 style={{ background: 'var(--po-soft)', color: 'var(--po-accent-strong)' }}
               >
-                {task.targetLevel > 0 ? `Cấp ${task.targetLevel}` : 'Nhiệm vụ thực tế'}
+                {task.targetLevel > 0 ? translateUi(`Cấp ${task.targetLevel}`) : translateUi('Nhiệm vụ thực tế')}
               </span>
             </div>
 
             <div>
-              <span className="text-[10px] font-bold uppercase" style={{ color: 'var(--po-muted)' }}>
-                Nội dung báo cáo & giải pháp
-              </span>
+              <span className="text-[10px] font-bold uppercase" style={{ color: 'var(--po-muted)' }}>{translateUi("Nội dung báo cáo & giải pháp")}</span>
               <div
                 className="mt-1 rounded-[11px] border p-4 text-xs leading-relaxed whitespace-pre-line"
                 style={{ borderColor: 'var(--po-line)', background: 'var(--po-canvas)', color: 'var(--po-ink)' }}
@@ -165,9 +159,7 @@ export function OwnerReviewDetailPage() {
 
             {submission.linkUrls && submission.linkUrls.length > 0 && (
               <div>
-                <span className="text-[10px] font-bold uppercase" style={{ color: 'var(--po-muted)' }}>
-                  Đường dẫn đính kèm
-                </span>
+                <span className="text-[10px] font-bold uppercase" style={{ color: 'var(--po-muted)' }}>{translateUi("Đường dẫn đính kèm")}</span>
                 <div className="mt-1 space-y-1.5">
                   {submission.linkUrls.map((url: string, i: number) =>
                     /^https?:\/\//i.test(url) ? (
@@ -195,9 +187,8 @@ export function OwnerReviewDetailPage() {
               className="rounded-[13px] border p-5 space-y-2"
               style={{ borderColor: 'var(--po-line)', background: 'var(--po-canvas)' }}
             >
-              <strong className="text-xs" style={{ color: 'var(--po-ink)' }}>Bài nộp đã được đánh giá</strong>
-              <p className="text-[11px]" style={{ color: 'var(--po-muted)' }}>
-                Điểm: {submission.evaluation?.score ?? '—'} ·{' '}
+              <strong className="text-xs" style={{ color: 'var(--po-ink)' }}>{translateUi("Bài nộp đã được đánh giá")}</strong>
+              <p className="text-[11px]" style={{ color: 'var(--po-muted)' }}>{translateUi("Điểm: ")}{submission.evaluation?.score ?? '—'} ·{' '}
                 {{ APPROVED: 'Đạt', REVISION_REQUESTED: 'Cần sửa', REJECTED: 'Không đạt', PENDING_REVIEW: 'Chờ chấm' }[submission.status]}
               </p>
               {submission.evaluation?.feedback && (
@@ -216,16 +207,14 @@ export function OwnerReviewDetailPage() {
                 style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)', boxShadow: '0 10px 35px rgba(29,48,102,.025)' }}
               >
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>
-                    Tiêu chí đánh giá
-                  </p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>{translateUi("Tiêu chí đánh giá")}</p>
                   <div className="text-right">
                     <span className="text-xl font-black" style={{ color: 'var(--po-accent)' }}>{totalScore}</span>
-                    <span className="text-[10px] block" style={{ color: 'var(--po-muted)' }}>Tổng điểm</span>
+                    <span className="text-[10px] block" style={{ color: 'var(--po-muted)' }}>{translateUi("Tổng điểm")}</span>
                   </div>
                 </div>
 
-                {rubricCriteria.length === 0 && <p className="owner-operations__empty-inline">Nhiệm vụ chưa có tiêu chí đánh giá. Hãy bổ sung trước khi chấm bài.</p>}
+                {rubricCriteria.length === 0 && <p className="owner-operations__empty-inline">{translateUi("Nhiệm vụ chưa có tiêu chí đánh giá. Hãy bổ sung trước khi chấm bài.")}</p>}
                 {rubricCriteria.map((r: RubricCriterion) => (
                   <div
                     key={r.id}
@@ -233,9 +222,9 @@ export function OwnerReviewDetailPage() {
                     style={{ borderColor: 'var(--po-line)', background: 'var(--po-canvas)' }}
                   >
                     <div className="flex-1">
-                      <strong className="text-xs" style={{ color: 'var(--po-ink)' }}>{r.label}</strong>
+                      <strong className="text-xs" style={{ color: 'var(--po-ink)' }}>{translateUi(r.label)}</strong>
                       {r.description && (
-                        <p className="text-[10px] mt-0.5" style={{ color: 'var(--po-muted)' }}>{r.description}</p>
+                        <p className="text-[10px] mt-0.5" style={{ color: 'var(--po-muted)' }}>{translateUi(r.description)}</p>
                       )}
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
@@ -262,15 +251,13 @@ export function OwnerReviewDetailPage() {
                 className="rounded-[22px] border p-6 space-y-4"
                 style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)', boxShadow: '0 10px 35px rgba(29,48,102,.025)' }}
               >
-                <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>
-                  Nhận xét & quyết định
-                </p>
+                <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>{translateUi("Nhận xét & quyết định")}</p>
 
                 <textarea
                   rows={3}
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
-                  placeholder="Điểm mạnh, điểm cần cải thiện, yêu cầu bổ sung…"
+                  placeholder={translateUi("Điểm mạnh, điểm cần cải thiện, yêu cầu bổ sung…")}
                   required
                   className="w-full rounded-lg border px-3 py-2 text-xs outline-none resize-none"
                   style={inputStyle}
@@ -294,7 +281,7 @@ export function OwnerReviewDetailPage() {
                         style={{ color: decision === key ? colors.active : 'var(--po-muted)' }}
                       />
                       <div>
-                        <strong className="text-[11px] block" style={{ color: 'var(--po-ink)' }}>{label}</strong>
+                        <strong className="text-[11px] block" style={{ color: 'var(--po-ink)' }}>{translateUi(label)}</strong>
                         <span className="text-[10px]" style={{ color: 'var(--po-muted)' }}>{desc}</span>
                       </div>
                     </button>
@@ -310,9 +297,7 @@ export function OwnerReviewDetailPage() {
               to={`/enterprise/tasks/${taskId}`}
               className="rounded-[11px] border px-4 py-2.5 text-xs font-bold transition-transform hover:-translate-y-0.5"
               style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)' }}
-            >
-              Hủy
-            </Link>
+            >{translateUi("Hủy")}</Link>
             {!alreadyEvaluated && (
               <button
                 type="submit"
@@ -321,7 +306,7 @@ export function OwnerReviewDetailPage() {
                 style={{ background: 'var(--po-accent)', color: '#fff' }}
               >
                 <Send className="size-3.5" />
-                {evaluateMutation.isPending ? 'Đang lưu…' : 'Hoàn tất đánh giá'}
+                {evaluateMutation.isPending ? translateUi('Đang lưu…') : 'Hoàn tất đánh giá'}
               </button>
             )}
           </div>

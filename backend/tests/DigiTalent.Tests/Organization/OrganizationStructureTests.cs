@@ -90,9 +90,9 @@ public class OrganizationStructureTests
             new InviteMemberRow { Email = "not-an-email", FullName = "Bad" },
             new InviteMemberRow { Email = f.Owner.Email, FullName = "Taken" },
             new InviteMemberRow { Email = "role@test.local", FullName = "Role", Role = "SUPER" },
-            new InviteMemberRow { Email = "ok@test.local", FullName = "First" },
-            new InviteMemberRow { Email = "ok@test.local", FullName = "Duplicate in batch" },
-            new InviteMemberRow { Email = "late@test.local", FullName = "No seat left" });
+            new InviteMemberRow { Email = "ok@test.local", FullName = "First", DepartmentId = f.World.DepartmentA.Id, JobPositionId = f.World.DataAnalyst.Id },
+            new InviteMemberRow { Email = "ok@test.local", FullName = "Duplicate in batch", DepartmentId = f.World.DepartmentA.Id, JobPositionId = f.World.DataAnalyst.Id },
+            new InviteMemberRow { Email = "late@test.local", FullName = "No seat left", DepartmentId = f.World.DepartmentA.Id, JobPositionId = f.World.DataAnalyst.Id });
 
         result.Created.Select(c => c.Email).Should().Equal("ok@test.local");
         result.Rejected.Select(r => (r.Email, r.Reason)).Should().Equal(
@@ -152,9 +152,12 @@ public class OrganizationStructureTests
         var email = $"newjoiner_{Guid.NewGuid():N}@test.local";
         var profile = await f.Context.Employees.SingleAsync(e => e.Id == f.World.Unassigned.Id);
         profile.WorkEmail = email;
+        // An invitation now carries a department and a position; the linked profile must match both.
+        profile.DepartmentId = f.World.DepartmentA.Id;
+        profile.JobPositionId = f.World.DataAnalyst.Id;
         await f.Context.SaveChangesAsync();
 
-        var invite = await f.Invite(new InviteMemberRow { Email = email, FullName = "New Joiner" });
+        var invite = await f.Invite(new InviteMemberRow { Email = email, FullName = "New Joiner", DepartmentId = f.World.DepartmentA.Id, JobPositionId = f.World.DataAnalyst.Id });
         var activated = await f.Activate(invite.Created.Single().Token!, null);
 
         activated.EmployeeId.Should().Be(f.World.Unassigned.Id);
@@ -166,7 +169,7 @@ public class OrganizationStructureTests
     public async Task ResendAndRevoke_RotateTheTokenAndReleaseTheSeat()
     {
         var f = await Fixture.CreateAsync();
-        var invite = await f.Invite(new InviteMemberRow { Email = "resend@test.local", FullName = "Resend" });
+        var invite = await f.Invite(new InviteMemberRow { Email = "resend@test.local", FullName = "Resend", DepartmentId = f.World.DepartmentA.Id, JobPositionId = f.World.DataAnalyst.Id });
         var created = invite.Created.Single();
 
         var resent = await new ResendInvitationUseCase(f.Context, f.CurrentUser, f.Sender.Object, f.Audit.Object)

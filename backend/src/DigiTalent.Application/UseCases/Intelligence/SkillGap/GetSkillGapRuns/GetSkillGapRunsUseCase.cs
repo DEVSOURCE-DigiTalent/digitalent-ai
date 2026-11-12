@@ -42,6 +42,11 @@ public class GetSkillGapRunsUseCase : IUseCase<GetSkillGapRunsUseCaseInput, GetS
             employees = employees.Where(e => e.JobPositionId == input.JobPositionId.Value);
         }
 
+        if (!string.IsNullOrWhiteSpace(input.JobGrade))
+        {
+            employees = employees.Where(e => _context.JobPositions.Any(p => p.Id == e.JobPositionId && p.JobGrade == input.JobGrade));
+        }
+
         if (!string.IsNullOrWhiteSpace(input.Search))
         {
             var keyword = input.Search.Trim().ToLower();

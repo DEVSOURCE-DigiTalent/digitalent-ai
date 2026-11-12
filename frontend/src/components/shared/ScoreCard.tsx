@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { ChevronRight } from 'lucide-react';
 
@@ -22,6 +23,7 @@ export function ScoreCard({
   onClick,
   className,
 }: ScoreCardProps) {
+  useUiLanguage();
   const isLongText = typeof value === 'string' && isNaN(Number(value)) && !value.endsWith('%') && value.length > 6;
 
   return (
@@ -34,19 +36,19 @@ export function ScoreCard({
         className,
       )}
     >
-      <p className="text-xs font-medium text-ent-fg-3 uppercase tracking-wider truncate">{label}</p>
+      <p className="text-xs font-medium text-ent-fg-3 uppercase tracking-wider truncate">{translateUi(label)}</p>
       <p
         className={cn(
           'mt-1 text-ent-fg leading-tight truncate',
           isLongText ? 'text-lg font-medium py-1' : 'text-[28px] font-light tabular-nums tracking-tight',
         )}
-        title={typeof value === 'string' ? value : undefined}
+        title={translateUi(typeof value === 'string' ? value : undefined)}
       >
         {value}
       </p>
       {subtitle && (
         <p className="text-xs text-ent-fg-3 mt-1.5 flex items-center gap-1 truncate">
-          <span className="truncate">{subtitle}</span>
+          <span className="truncate">{translateUi(subtitle)}</span>
           {onClick && <ChevronRight className="w-3 h-3 ml-auto text-ent-fg-3 shrink-0" />}
         </p>
       )}

@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AxiosError, AxiosHeaders } from 'axios';
@@ -7,22 +8,23 @@ import type { SkillGapRunDetail } from '@/services/intelligence.service';
 import { ConfirmLevelDialog } from '../components/ConfirmLevelDialog';
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.stubGlobal('React', React);
 
 const run = {
   runId: 'run-1',
   employeeId: 'emp-1',
   employeeName: 'Employee',
   items: [
-    { competencyId: 'c1', competencyName: 'Data literacy', requiredLevel: 3, currentLevel: 1, gapSteps: 2 },
-    { competencyId: 'c3', competencyName: 'Information security', requiredLevel: 2, currentLevel: null, gapSteps: 2 },
+    { competencyId: 'c1', competencyName: 'Data literacy', categorySortOrder: 1, requiredLevel: 3, currentLevel: 1, gapSteps: 2 },
+    { competencyId: 'c3', competencyName: 'Information security', categorySortOrder: 4, requiredLevel: 2, currentLevel: null, gapSteps: 2 },
   ],
 } as unknown as SkillGapRunDetail;
 
-function setup(mutateAsync = vi.fn().mockResolvedValue({ confirmedLevel: 2 })) {
+function setup(mutateAsync = vi.fn().mockResolvedValue({ confirmedLevel: 2 }), initialCategoryNumber?: number) {
   vi.spyOn(evidenceHooks, 'useCreateManualEvidence').mockReturnValue({ mutateAsync, isPending: false } as never);
   const onClose = vi.fn();
   const onConfirmed = vi.fn();
-  render(<ConfirmLevelDialog run={run} open onClose={onClose} onConfirmed={onConfirmed} />);
+  render(<ConfirmLevelDialog run={run} open initialCategoryNumber={initialCategoryNumber} onClose={onClose} onConfirmed={onConfirmed} />);
   return { mutateAsync, onClose, onConfirmed };
 }
 
@@ -30,6 +32,12 @@ describe('ConfirmLevelDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.restoreAllMocks();
+  });
+
+  it('starts with the selected domain and its required level', () => {
+    setup(vi.fn(), 4);
+    expect(screen.getByLabelText('Năng lực')).toHaveValue('c3');
+    expect(screen.getByRole('radio', { name: 'Trung cấp' })).toBeChecked();
   });
 
   it('requires a review note', async () => {
@@ -45,8 +53,8 @@ describe('ConfirmLevelDialog', () => {
     const { mutateAsync, onClose, onConfirmed } = setup();
 
     fireEvent.change(screen.getByLabelText('Năng lực'), { target: { value: 'c3' } });
-    fireEvent.change(screen.getByLabelText('Trình độ xác nhận'), { target: { value: '2' } });
-    fireEvent.change(screen.getByLabelText('Bằng chứng / ghi chú đánh giá'), { target: { value: 'Led the phishing drill' } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Trung cấp' }));
+    fireEvent.change(screen.getByLabelText(/Bằng chứng \/ ghi chú đánh giá/), { target: { value: 'Led the phishing drill' } });
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận mức' }));
 
     await waitFor(() =>
@@ -57,8 +65,8 @@ describe('ConfirmLevelDialog', () => {
         reviewNote: 'Led the phishing drill',
       }),
     );
-    expect(onConfirmed).toHaveBeenCalledWith('emp-1');
-    expect(onClose).toHaveBeenCalled();
+    await waitFor(() => expect(onConfirmed).toHaveBeenCalledWith('emp-1'));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(toast.success).toHaveBeenCalled();
   });
 
@@ -72,10 +80,21 @@ describe('ConfirmLevelDialog', () => {
     });
     const { onClose } = setup(vi.fn().mockRejectedValue(forbidden));
 
-    fireEvent.change(screen.getByLabelText('Bằng chứng / ghi chú đánh giá'), { target: { value: 'self review' } });
+    fireEvent.change(screen.getByLabelText(/Bằng chứng \/ ghi chú đánh giá/), { target: { value: 'self review' } });
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận mức' }));
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('You cannot confirm your own competency level.'));
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('portals above the entire page and restores scrolling after Escape closes it', async () => {
+    const { onClose } = setup();
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.closest('.confirm-evidence')?.parentElement).toBe(document.body);
+    expect(document.body.style.overflow).toBe('hidden');
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(document.body.style.overflow).not.toBe('hidden');
   });
 });

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -13,6 +14,7 @@ import { useOnboardingStore } from './onboarding-store';
 import { TUTORIAL_CONFIGS } from './tutorial-configs';
 
 export function SpotlightOverlay() {
+  useUiLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const {
@@ -251,8 +253,7 @@ export function SpotlightOverlay() {
             <Sparkles className="size-3.5 text-indigo-600 shrink-0" />
             <span>{currentStep.badge}</span>
             <span className="ob-tooltip-badge-sep">·</span>
-            <span className="ob-tooltip-badge-step">
-              Bước {currentStepIndex + 1}/{totalSteps}
+            <span className="ob-tooltip-badge-step">{translateUi("Bước ")}{currentStepIndex + 1}/{totalSteps}
             </span>
           </div>
           <button
@@ -266,8 +267,8 @@ export function SpotlightOverlay() {
           </button>
         </div>
 
-        <h3 className="ob-tooltip-title">{currentStep.title}</h3>
-        <p className="ob-tooltip-desc">{currentStep.description}</p>
+        <h3 className="ob-tooltip-title">{translateUi(currentStep.title)}</h3>
+        <p className="ob-tooltip-desc">{translateUi(currentStep.description)}</p>
 
         {currentStep.tips && (
           <div className="ob-tooltip-tips">
@@ -288,8 +289,8 @@ export function SpotlightOverlay() {
                   type="button"
                   onClick={() => goToStep(i)}
                   className={`ob-dot ${i === currentStepIndex ? 'active' : i < currentStepIndex ? 'passed' : ''}`}
-                  aria-label={`Chuyển đến bước ${i + 1}`}
-                  title={`Bước ${i + 1}`}
+                  aria-label={translateUi(`Chuyển đến bước ${i + 1}`)}
+                  title={translateUi(`Bước ${i + 1}`)}
                 />
               ))}
             </div>
@@ -314,9 +315,7 @@ export function SpotlightOverlay() {
                 onClick={prevStep}
                 className="ob-btn ob-btn-ghost text-xs"
               >
-                <ArrowLeft className="size-3.5" />
-                Quay lại
-              </button>
+                <ArrowLeft className="size-3.5" />{translateUi("Quay lại")}</button>
             )}
 
             {isDifferentRoute && (
@@ -325,7 +324,7 @@ export function SpotlightOverlay() {
                 onClick={handleAction}
                 className="ob-btn ob-btn-outline text-xs"
               >
-                <span>{currentStep.actionText ?? 'Khám phá'}</span>
+                <span>{currentStep.actionText ?? translateUi('Khám phá')}</span>
                 <ExternalLink className="size-3 text-slate-400" />
               </button>
             )}
@@ -336,8 +335,7 @@ export function SpotlightOverlay() {
               className="ob-btn ob-btn-primary text-xs"
             >
               {currentStepIndex < totalSteps - 1 ? (
-                <>
-                  Tiếp theo <ArrowRight className="size-3.5" />
+                <>{translateUi("Tiếp theo ")}<ArrowRight className="size-3.5" />
                 </>
               ) : (
                 <>

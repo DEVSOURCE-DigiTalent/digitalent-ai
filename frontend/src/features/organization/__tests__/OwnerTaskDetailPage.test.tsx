@@ -19,7 +19,7 @@ describe('OwnerTaskDetailPage', () => {
     expect(screen.getByText(/Mô tả nhiệm vụ ở mức nâng cao/)).toBeInTheDocument();
     expect(screen.getByText('nguồn').tagName).toBe('B');
     expect(screen.queryByText(/<p>/)).not.toBeInTheDocument();
-    expect(screen.getByText('Nhiệm vụ này chưa có tiêu chí chấm riêng.')).toBeInTheDocument();
+    expect(screen.getByText('Nhiệm vụ này chưa có tiêu chí đánh giá.')).toBeInTheDocument();
     expect(screen.queryByText('LV0')).not.toBeInTheDocument();
   });
 });

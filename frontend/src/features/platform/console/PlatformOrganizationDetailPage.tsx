@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link, useParams } from 'react-router-dom';
 import { usePlatformOrganization } from '@/hooks/use-platform-admin';
 import { Footer, LoadError, Loading, PageHead, Pill } from '../components/pulse-ui';
@@ -9,6 +10,7 @@ import { ArrowLeft } from 'lucide-react';
  * PA-06 · Toàn cảnh tổ chức: standalone 360 view of a customer tenant.
  */
 export function PlatformOrganizationDetailPage() {
+  useUiLanguage();
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = usePlatformOrganization(id);
 
@@ -46,10 +48,10 @@ export function PlatformOrganizationDetailPage() {
             <h1 style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', margin: 0 }}>
               {o.name}
             </h1>
-            <Pill tone={statusPill.tone}>{statusPill.label}</Pill>
+            <Pill tone={statusPill.tone}>{translateUi(statusPill.label)}</Pill>
           </div>
           <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>
-            {o.ownerEmail ? `Chủ sở hữu: ${o.ownerEmail} · ` : ''}Quản lý gói cước, số lượng nhân sự và thao tác cấp quyền hoặc tạm ngưng.
+            {o.ownerEmail ? translateUi(`Chủ sở hữu: ${o.ownerEmail} · `) : ''}Quản lý gói cước, số lượng nhân sự và thao tác cấp quyền hoặc tạm ngưng.
           </p>
         </div>
 

@@ -6,7 +6,7 @@ public class GetPulseOverviewUseCaseOutput
     /// <summary>Người đánh giá quá trình học (chấm bài đánh giá trước khi học và bài cuối khóa).</summary>
     public PulseReviewerDto? Reviewer { get; set; }
     public bool HasPosition { get; set; }
-    /// <summary>Có ít nhất một lĩnh vực trong lộ trình (mục tiêu vị trí và trần phòng ban đều ≥ Cơ bản).</summary>
+    /// <summary>Có ít nhất một lĩnh vực trong lộ trình (mục tiêu vị trí và phạm vi phòng ban đều ≥ Cơ bản).</summary>
     public bool HasTargets { get; set; }
     public List<PulseDomainDto> Domains { get; set; } = new();
     public List<PulseCourseSummaryDto> Courses { get; set; } = new();
@@ -42,12 +42,12 @@ public class PulseOverviewStatsDto
     public int MetCount { get; set; }
     /// <summary>Số năng lực thành phần vị trí yêu cầu (bộ ACTIVE).</summary>
     public int RequiredCompetencies { get; set; }
-    /// <summary>Khóa trong lộ trình (Cơ bản → min(mục tiêu, trần)).</summary>
+    /// <summary>Khóa trong lộ trình (Cơ bản → min(mục tiêu, phạm vi)).</summary>
     public int PathCourses { get; set; }
     public int ApprovedPathCourses { get; set; }
-    /// <summary>Khóa cao hơn mục tiêu vị trí nhưng trong trần phòng ban.</summary>
+    /// <summary>Khóa cao hơn mục tiêu vị trí nhưng trong phạm vi phòng ban.</summary>
     public int OptionalCourses { get; set; }
-    /// <summary>Khóa vị trí yêu cầu tới nhưng cao hơn trần phòng ban.</summary>
+    /// <summary>Khóa vị trí yêu cầu tới nhưng cao hơn phạm vi phòng ban.</summary>
     public int AboveCeilingCourses { get; set; }
     public int LearningCourses { get; set; }
     /// <summary>Bài đánh giá trước khi học đang mở trong lộ trình.</summary>

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useId, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Modal } from '@/components/shared';
@@ -15,6 +16,7 @@ interface PlanChangeModalProps {
 
 /** ADM-10: pick another plan, seats and cycle; see what changes before anything does. */
 export function PlanChangeModal({ open, onClose, subscription }: PlanChangeModalProps) {
+  useUiLanguage();
   const base = useId();
   const { data: plans } = usePlanOptions(open);
   const purchasable = (plans ?? []).filter((plan) => plan.monthlyPrice !== null);
@@ -51,7 +53,7 @@ export function PlanChangeModal({ open, onClose, subscription }: PlanChangeModal
       description="Xem tác động trước khi xác nhận. Dữ liệu của tổ chức luôn được giữ."
       footer={
         <>
-          <button type="button" onClick={onClose} className={SECONDARY_BUTTON}>Hủy</button>
+          <button type="button" onClick={onClose} className={SECONDARY_BUTTON}>{translateUi("Hủy")}</button>
           <button
             type="button"
             onClick={confirm}
@@ -107,13 +109,13 @@ export function PlanChangeModal({ open, onClose, subscription }: PlanChangeModal
           {impact && impact.direction !== 'same' && (
             <div className="grid gap-3">
               <p className="font-medium text-slate-900">
-                {impact.direction === 'upgrade' ? 'Nâng cấp' : 'Hạ gói'}: {formatVnd(impact.currentAmount)} → {formatVnd(impact.newAmount)} / {BILLING_CYCLE_LABELS[cycle]}
+                {impact.direction === 'upgrade' ? translateUi('Nâng cấp') : 'Hạ gói'}: {formatVnd(impact.currentAmount)} → {formatVnd(impact.newAmount)} / {translateUi(BILLING_CYCLE_LABELS[cycle])}
                 <span className="ml-2 font-normal text-slate-600">({impact.difference >= 0 ? '+' : '−'}{formatVnd(Math.abs(impact.difference))})</span>
               </p>
               <p className="text-slate-600">{impact.note}</p>
               {impact.gained.length > 0 && <p><span className="font-medium text-emerald-700">Có thêm:</span> {impact.gained.join(', ')}</p>}
               {impact.lost.length > 0 && <p><span className="font-medium text-amber-700">Không còn:</span> {impact.lost.join(', ')}</p>}
-              <p className="text-slate-600">Đang dùng {impact.seatsUsed} quyền sử dụng.</p>
+              <p className="text-slate-600">{translateUi("Đang dùng ")}{impact.seatsUsed} quyền sử dụng.</p>
               {impact.blockers.map((blocker) => <p key={blocker} role="alert" className="font-medium text-red-600">{blocker}</p>)}
             </div>
           )}

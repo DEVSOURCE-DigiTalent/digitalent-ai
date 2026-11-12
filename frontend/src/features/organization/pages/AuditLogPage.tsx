@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { DataTable, PageHeader, type Column } from '@/components/shared';
 import { useAuditLog } from '@/hooks/use-organization';
@@ -10,6 +11,7 @@ const PAGE_SIZE = 20;
 
 /** ADM-11: who changed what in the organization: roles, members, plan and other sensitive settings. */
 export function AuditLogPage() {
+  useUiLanguage();
   const [search, setSearch] = useState('');
   const [action, setAction] = useState('');
   const [page, setPage] = useState(1);
@@ -25,7 +27,7 @@ export function AuditLogPage() {
 
   return (
     <div>
-      <PageHeader title="Nhật ký tổ chức" subtitle="Các thay đổi nhạy cảm: vai trò, thành viên, gói dịch vụ, cấu hình" />
+      <PageHeader title={translateUi("Nhật ký tổ chức")} subtitle={translateUi("Các thay đổi nhạy cảm: vai trò, thành viên, gói dịch vụ, cấu hình")} />
       <DataTable
         className="owner-filter-table"
         columns={columns}
@@ -34,10 +36,10 @@ export function AuditLogPage() {
         isLoading={isLoading}
         searchValue={search}
         onSearchChange={(value) => { setSearch(value); setPage(1); }}
-        searchPlaceholder="Tìm theo người, đối tượng hoặc chi tiết"
+        searchPlaceholder={translateUi("Tìm theo người, đối tượng hoặc chi tiết")}
         emptyTitle="Chưa có mục nào trong nhật ký"
         filters={
-          <OwnerFilterSelect label="Lọc theo hành động" value={action} onChange={(value) => { setAction(value); setPage(1); }} options={[{ value: '', label: 'Mọi hành động' }, ...Object.entries(AUDIT_ACTION_LABELS).map(([key, label]) => ({ value: key, label }))]} />
+          <OwnerFilterSelect label={translateUi("Lọc theo hành động")} value={action} onChange={(value) => { setAction(value); setPage(1); }} options={[{ value: '', label: 'Mọi hành động' }, ...Object.entries(AUDIT_ACTION_LABELS).map(([key, label]) => ({ value: key, label }))]} />
         }
         pageInfo={{ page, pageSize: PAGE_SIZE, total: data?.totalItems ?? 0, onPageChange: setPage }}
       />

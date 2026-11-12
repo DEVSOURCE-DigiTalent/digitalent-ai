@@ -72,7 +72,7 @@ describe('LandingPage', () => {
   it('reads the scroll-revealed paragraph as one sentence for screen readers', () => {
     renderLanding();
 
-    expect(screen.getByText(/^Thông tư 02\/2025\/TT-BGDĐT cung cấp khung 6 miền/)).toBeInTheDocument();
+    expect(screen.getByText(/^Khung chuẩn năng lực số gồm 6 miền, 24 năng lực thành phần, xếp theo 8 bậc/)).toBeInTheDocument();
   });
 
   it('lets visitors pause and resume the moving backgrounds', () => {

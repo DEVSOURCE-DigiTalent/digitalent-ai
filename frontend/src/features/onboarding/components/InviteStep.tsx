@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Plus, X, AlertTriangle } from 'lucide-react';
 import { useInviteMembers } from '@/hooks/use-onboarding';
@@ -43,6 +44,7 @@ const EMPTY_DRAFT: Draft = {
  * tự động suy ra Cấp bậc G1–G3, phân quyền (Nhân viên, Quản lý, Chủ doanh nghiệp).
  */
 export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
+  useUiLanguage();
   const invite = useInviteMembers();
   const [queue, setQueue] = useState<InviteRow[]>([]);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
@@ -125,9 +127,7 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
         <p className="mb-4 text-sm font-semibold text-ent-fg">Thêm nhân viên vào danh sách</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5">
-            <label htmlFor="invite-name" className="text-xs font-medium text-ent-fg">
-              Họ tên
-            </label>
+            <label htmlFor="invite-name" className="text-xs font-medium text-ent-fg">{translateUi("Họ tên")}</label>
             <input
               id="invite-name"
               placeholder="Nguyễn Văn A"
@@ -138,9 +138,7 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
           </div>
 
           <div className="grid gap-1.5">
-            <label htmlFor="invite-email" className="text-xs font-medium text-ent-fg">
-              Email
-            </label>
+            <label htmlFor="invite-email" className="text-xs font-medium text-ent-fg">{translateUi("Email")}</label>
             <input
               id="invite-email"
               type="email"
@@ -165,16 +163,14 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
           </div>
 
           <div className="grid gap-1.5">
-            <label htmlFor="invite-position" className="text-xs font-medium text-ent-fg">
-              Vị trí công việc
-            </label>
+            <label htmlFor="invite-position" className="text-xs font-medium text-ent-fg">{translateUi("Vị trí công việc")}</label>
             <select
               id="invite-position"
               value={draft.positionName}
               onChange={(e) => handlePositionChange(e.target.value)}
               className={INPUT_CLASS}
             >
-              <option value="" className="bg-[#11151E] text-cream">Chưa xếp</option>
+              <option value="" className="bg-[#11151E] text-cream">{translateUi("Chưa xếp")}</option>
               {known.positions.map((name) => (
                 <option key={name} value={name} className="bg-[#11151E] text-cream">{name}</option>
               ))}
@@ -182,16 +178,14 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
           </div>
 
           <div className="grid gap-1.5">
-            <label htmlFor="invite-department" className="text-xs font-medium text-ent-fg">
-              Phòng ban
-            </label>
+            <label htmlFor="invite-department" className="text-xs font-medium text-ent-fg">{translateUi("Phòng ban")}</label>
             <select
               id="invite-department"
               value={draft.departmentName}
               onChange={(e) => set('departmentName', e.target.value)}
               className={INPUT_CLASS}
             >
-              <option value="" className="bg-[#11151E] text-cream">Chưa xếp</option>
+              <option value="" className="bg-[#11151E] text-cream">{translateUi("Chưa xếp")}</option>
               {known.departments.map((name) => (
                 <option key={name} value={name} className="bg-[#11151E] text-cream">{name}</option>
               ))}
@@ -209,7 +203,7 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
               className={INPUT_CLASS}
             >
               {MEMBER_ROLES.map((role) => (
-                <option key={role} value={role} className="bg-[#11151E] text-cream">{ROLE_LABELS[role as keyof typeof ROLE_LABELS] || role}</option>
+                <option key={role} value={role} className="bg-[#11151E] text-cream">{translateUi(ROLE_LABELS[role as keyof typeof ROLE_LABELS]) || role}</option>
               ))}
             </select>
           </div>
@@ -254,7 +248,7 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
                     )}
                   </span>
                   <span className="block truncate text-xs text-ent-fg-3">
-                    {row.email} · {ROLE_LABELS[row.role as keyof typeof ROLE_LABELS] || row.role}
+                    {row.email} · {translateUi(ROLE_LABELS[row.role as keyof typeof ROLE_LABELS]) || row.role}
                     {row.positionName ? ` · ${row.positionName}` : ''}
                     {row.departmentName ? ` · ${row.departmentName}` : ''}
                     {row.jobGrade ? ` · [${row.jobGrade}]` : ''}
@@ -263,7 +257,7 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
                 <button
                   type="button"
                   onClick={() => setQueue(queue.filter((r) => r.email !== row.email))}
-                  aria-label={`Bỏ ${row.fullName} khỏi danh sách`}
+                  aria-label={translateUi(`Bỏ ${row.fullName} khỏi danh sách`)}
                   className="grid size-7 shrink-0 place-items-center rounded-full hover:bg-ent-raised text-ent-fg-3 hover:text-ent-fg"
                 >
                   <X className="size-4" aria-hidden="true" />
@@ -273,7 +267,7 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
           </ul>
           {submitError && <p role="alert" className="mt-2 text-sm text-red-400">{submitError}</p>}
           <button type="button" onClick={send} disabled={invite.isPending} className={`${PRIMARY_BUTTON} mt-4`}>
-            {invite.isPending ? 'Đang gửi…' : `Gửi ${queue.length} lời mời`}
+            {invite.isPending ? translateUi('Đang gửi…') : translateUi(`Gửi ${queue.length} lời mời`)}
           </button>
         </div>
       )}
@@ -281,8 +275,8 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
       {result && <InviteOutcome result={result} />}
 
       <div className="flex flex-wrap items-center gap-3 pt-2">
-        <button type="button" onClick={onBack} className={SECONDARY_BUTTON}>Quay lại</button>
-        <button type="button" onClick={onDone} className={PRIMARY_BUTTON}>Tiếp tục</button>
+        <button type="button" onClick={onBack} className={SECONDARY_BUTTON}>{translateUi("Quay lại")}</button>
+        <button type="button" onClick={onDone} className={PRIMARY_BUTTON}>{translateUi("Tiếp tục")}</button>
         <button type="button" onClick={onSkip} className={LINK_BUTTON}>Bỏ qua bước này</button>
       </div>
     </div>
@@ -290,12 +284,13 @@ export function InviteStep({ setup, onBack, onDone, onSkip }: InviteStepProps) {
 }
 
 function InviteOutcome({ result }: { result: InviteResult }) {
+  useUiLanguage();
   return (
     <div className="grid gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
       <p className="text-sm font-semibold text-slate-900">Kết quả gửi lời mời</p>
       {result.created.length > 0 && (
         <div>
-          <p className="mb-2 text-xs font-medium text-emerald-700">Đã gửi {result.created.length} lời mời.</p>
+          <p className="mb-2 text-xs font-medium text-emerald-700">{translateUi("Đã gửi ")}{result.created.length} lời mời.</p>
           <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
             {result.created.map((item) => (
               <li key={item.email} className="px-3 py-2 text-xs text-slate-700">

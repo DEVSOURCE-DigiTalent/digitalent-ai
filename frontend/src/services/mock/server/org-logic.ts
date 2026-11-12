@@ -41,6 +41,7 @@ export function enrollmentsFor(data: OrgData, employeeId: string): EnrollmentsBy
 export function latestRun(data: OrgData, employeeId: string): SkillGapRunRecord | undefined {
   return data.skillGapRuns
     .filter((run) => run.employeeId === employeeId)
+    .reverse()
     .sort((a, b) => b.generatedAt.localeCompare(a.generatedAt))[0];
 }
 
@@ -80,5 +81,9 @@ export function calculateRun(
 
 /** The newest snapshot; calculates one when the employee can have one and has none yet. */
 export function ensureLatestRun(data: OrgData, employeeId: string): SkillGapRunRecord | undefined {
-  return latestRun(data, employeeId) ?? (skillGapBlocker(data, employeeId) ? undefined : calculateRun(data, employeeId, 'SYSTEM'));
+  if (skillGapBlocker(data, employeeId)) return undefined;
+  const run = latestRun(data, employeeId);
+  const employee = data.employees.find((item) => item.id === employeeId);
+  const active = activeRequirementSet(data, employee?.jobPositionId);
+  return run?.requirementSetId === active?.id ? run : calculateRun(data, employeeId, 'SYSTEM');
 }

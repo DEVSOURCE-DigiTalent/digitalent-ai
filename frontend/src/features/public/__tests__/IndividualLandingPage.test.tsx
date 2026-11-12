@@ -97,7 +97,9 @@ describe('Individual landing page: discovery sections (careers, how it works, fr
       const link = within(section).getByRole('link', { name: new RegExp(`Xem yêu cầu vị trí.*${escapeRegExp(position.name)}`) });
       expect(link).toHaveAttribute('href', `/careers/${position.code.toLowerCase()}`);
       const { selected } = summarizeRequirements(position);
-      expect(within(section).getAllByText(new RegExp(`${selected}/24 năng lực`)).length).toBeGreaterThan(0);
+      // The count is highlighted in its own <span>: match the whole sentence of the element.
+      const count = `${selected}/24 năng lực được chọn`;
+      expect(within(section).getAllByText((_, element) => element?.textContent?.trim() === count).length).toBeGreaterThan(0);
     }
     expect(within(section).getByRole('link', { name: /Khám phá tất cả vị trí/ })).toHaveAttribute('href', '/careers');
   });

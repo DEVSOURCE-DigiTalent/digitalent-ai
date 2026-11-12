@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Plus, Search } from 'lucide-react';
@@ -28,6 +29,7 @@ const inputStyle: React.CSSProperties = {
 };
 
 export function OwnerNewTrainingBatchPage() {
+  useUiLanguage();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const preselectedCourseId = params.get('courseId');
@@ -175,12 +177,9 @@ export function OwnerNewTrainingBatchPage() {
           className="inline-flex items-center gap-1.5 text-[11px] font-bold mb-4 transition-opacity hover:opacity-70"
           style={{ color: 'var(--po-muted)' }}
         >
-          <ArrowLeft className="size-3" /> Đợt đào tạo
-        </Link>
+          <ArrowLeft className="size-3" />{translateUi(" Đợt đào tạo")}</Link>
 
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-[-0.04em] heading-gradient">
-          Tạo đợt đào tạo mới
-        </h1>
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-[-0.04em] heading-gradient">{translateUi("Tạo đợt đào tạo mới")}</h1>
 
         {/* ── Stepper ── */}
         <div
@@ -216,7 +215,7 @@ export function OwnerNewTrainingBatchPage() {
                           : 'var(--po-muted)',
                   }}
                 >
-                  {s.label}
+                  {translateUi(s.label)}
                 </span>
               </div>
               {idx < 3 && (
@@ -243,26 +242,20 @@ export function OwnerNewTrainingBatchPage() {
               <p
                 className="text-[10px] font-black uppercase tracking-[0.12em]"
                 style={{ color: 'var(--po-muted)' }}
-              >
-                Bước 1 · Thông tin chung
-              </p>
+              >{translateUi("Bước 1 · Thông tin chung")}</p>
               <div className="grid sm:grid-cols-[2fr_1fr] gap-3">
                 <label className="block space-y-1">
-                  <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>
-                    Tên đợt đào tạo *
-                  </span>
+                  <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>{translateUi("Tên đợt đào tạo *")}</span>
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Ví dụ: Đợt 1/2026 — Năng lực số Khối Nghiệp vụ"
+                    placeholder={translateUi("Ví dụ: Đợt 1/2026 — Năng lực số Khối Nghiệp vụ")}
                     className="w-full rounded-lg border px-3 py-2 text-xs outline-none"
                     style={inputStyle}
                   />
                 </label>
                 <label className="block space-y-1">
-                  <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>
-                    Mã đợt
-                  </span>
+                  <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>{translateUi("Mã đợt")}</span>
                   <input
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
@@ -273,9 +266,7 @@ export function OwnerNewTrainingBatchPage() {
               </div>
               <div className="grid sm:grid-cols-2 gap-3">
                 <label className="block space-y-1">
-                  <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>
-                    Ngày bắt đầu *
-                  </span>
+                  <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>{translateUi("Ngày bắt đầu *")}</span>
                   <input
                     type="date"
                     value={startDate}
@@ -285,9 +276,7 @@ export function OwnerNewTrainingBatchPage() {
                   />
                 </label>
                 <label className="block space-y-1">
-                  <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>
-                    Hạn hoàn thành *
-                  </span>
+                  <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>{translateUi("Hạn hoàn thành *")}</span>
                   <input
                     type="date"
                     value={endDate}
@@ -298,14 +287,12 @@ export function OwnerNewTrainingBatchPage() {
                 </label>
               </div>
               <label className="block space-y-1">
-                <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>
-                  Mô tả & mục tiêu
-                </span>
+                <span className="text-[11px] font-bold" style={{ color: 'var(--po-ink)' }}>{translateUi("Mô tả & mục tiêu")}</span>
                 <textarea
                   rows={3}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Nêu rõ mục tiêu cần đạt và các mốc đánh giá…"
+                  placeholder={translateUi("Nêu rõ mục tiêu cần đạt và các mốc đánh giá…")}
                   className="w-full rounded-lg border px-3 py-2 text-xs outline-none resize-none"
                   style={inputStyle}
                 />
@@ -319,20 +306,17 @@ export function OwnerNewTrainingBatchPage() {
                 <p
                   className="text-[10px] font-black uppercase tracking-[0.12em]"
                   style={{ color: 'var(--po-muted)' }}
-                >
-                  Bước 2 · Chọn khóa học
-                </p>
+                >{translateUi("Bước 2 · Chọn khóa học")}</p>
                 <span
                   className="text-[11px] font-bold"
                   style={{ color: 'var(--po-accent)' }}
                 >
-                  {selectedCourseIds.length} đã chọn
-                </span>
+                  {selectedCourseIds.length}{translateUi(" đã chọn")}</span>
               </div>
               <label className="owner-filter-search"><Search size={17} aria-hidden="true" /><input
                 type="search"
-                aria-label="Tìm khóa học"
-                placeholder="Tìm khóa học…"
+                aria-label={translateUi("Tìm khóa học")}
+                placeholder={translateUi("Tìm khóa học…")}
                 value={courseSearch}
                 onChange={(e) => setCourseSearch(e.target.value)}
                 className="w-full text-sm"
@@ -380,10 +364,10 @@ export function OwnerNewTrainingBatchPage() {
                           className="block text-xs mt-1 truncate"
                           style={{ color: 'var(--po-ink)' }}
                         >
-                          {c.title}
+                          {translateUi(c.title)}
                         </strong>
                         <small style={{ color: 'var(--po-muted)' }} className="text-[10px]">
-                          {c.categoryName || 'Năng lực số'}
+                          {translateUi(c.categoryName) || 'Năng lực số'}
                         </small>
                       </div>
                     </button>
@@ -399,9 +383,7 @@ export function OwnerNewTrainingBatchPage() {
                 <p
                   className="text-[10px] font-black uppercase tracking-[0.12em]"
                   style={{ color: 'var(--po-muted)' }}
-                >
-                  Bước 3 · Đối tượng học viên
-                </p>
+                >{translateUi("Bước 3 · Đối tượng học viên")}</p>
                 <span
                   className="rounded-full px-2.5 py-1 text-[11px] font-bold"
                   style={{
@@ -409,8 +391,7 @@ export function OwnerNewTrainingBatchPage() {
                     color: 'var(--po-accent)',
                   }}
                 >
-                  {resolvedEmployees.length} học viên
-                </span>
+                  {resolvedEmployees.length}{translateUi(" học viên")}</span>
               </div>
 
               <div className="flex gap-2">
@@ -445,9 +426,7 @@ export function OwnerNewTrainingBatchPage() {
                     <span
                       className="text-[10px] font-bold uppercase tracking-wider block mb-2"
                       style={{ color: 'var(--po-muted)' }}
-                    >
-                      Cấp bậc
-                    </span>
+                    >{translateUi("Cấp bậc")}</span>
                     <div className="flex flex-wrap gap-2">
                       {JOB_GRADES.map((g) => (
                         <button
@@ -470,7 +449,7 @@ export function OwnerNewTrainingBatchPage() {
                                 }
                           }
                         >
-                          {g} · {JOB_GRADE_DEFAULT_NAMES[g]}
+                          {g} · {translateUi(JOB_GRADE_DEFAULT_NAMES[g])}
                         </button>
                       ))}
                     </div>
@@ -479,9 +458,7 @@ export function OwnerNewTrainingBatchPage() {
                     <span
                       className="text-[10px] font-bold uppercase tracking-wider block mb-2"
                       style={{ color: 'var(--po-muted)' }}
-                    >
-                      Phòng ban
-                    </span>
+                    >{translateUi("Phòng ban")}</span>
                     <div className="flex flex-wrap gap-2">
                       {departments.map((d) => (
                         <button
@@ -515,9 +492,7 @@ export function OwnerNewTrainingBatchPage() {
                     <span
                       className="text-[10px] font-bold uppercase tracking-wider block mb-2"
                       style={{ color: 'var(--po-muted)' }}
-                    >
-                      Vị trí
-                    </span>
+                    >{translateUi("Vị trí")}</span>
                     <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
                       {allPositions.map((p) => (
                         <button
@@ -592,9 +567,7 @@ export function OwnerNewTrainingBatchPage() {
               <p
                 className="text-[10px] font-black uppercase tracking-[0.12em]"
                 style={{ color: 'var(--po-muted)' }}
-              >
-                Bước 4 · Xác nhận
-              </p>
+              >{translateUi("Bước 4 · Xác nhận")}</p>
               <div className="grid sm:grid-cols-2 gap-3">
                 <div
                   className="rounded-[13px] border p-4 space-y-2 text-[11px]"
@@ -606,17 +579,14 @@ export function OwnerNewTrainingBatchPage() {
                   <span
                     className="text-[10px] font-bold uppercase"
                     style={{ color: 'var(--po-muted)' }}
-                  >
-                    Thông tin đợt
-                  </span>
+                  >{translateUi("Thông tin đợt")}</span>
                   <strong
                     className="block text-sm"
                     style={{ color: 'var(--po-ink)' }}
                   >
                     {name}
                   </strong>
-                  <span style={{ color: 'var(--po-muted)' }}>
-                    Mã: <strong className="font-mono">{code}</strong>
+                  <span style={{ color: 'var(--po-muted)' }}>{translateUi("Mã: ")}<strong className="font-mono">{code}</strong>
                   </span>
                   <br />
                   <span style={{ color: 'var(--po-muted)' }}>
@@ -633,20 +603,18 @@ export function OwnerNewTrainingBatchPage() {
                   <span
                     className="text-[10px] font-bold uppercase"
                     style={{ color: 'var(--po-muted)' }}
-                  >
-                    Quy mô
-                  </span>
+                  >{translateUi("Quy mô")}</span>
                   <div
                     className="flex justify-between py-1 border-b"
                     style={{ borderColor: 'var(--po-line)' }}
                   >
-                    <span style={{ color: 'var(--po-muted)' }}>Khóa học:</span>
+                    <span style={{ color: 'var(--po-muted)' }}>{translateUi("Khóa học:")}</span>
                     <strong style={{ color: 'var(--po-ink)' }}>
                       {selectedCourseIds.length}
                     </strong>
                   </div>
                   <div className="flex justify-between py-1">
-                    <span style={{ color: 'var(--po-muted)' }}>Học viên:</span>
+                    <span style={{ color: 'var(--po-muted)' }}>{translateUi("Học viên:")}</span>
                     <strong style={{ color: 'var(--po-accent)' }}>
                       {resolvedEmployees.length}
                     </strong>
@@ -660,10 +628,7 @@ export function OwnerNewTrainingBatchPage() {
                   background: '#fff7ed',
                   color: '#c2410c',
                 }}
-              >
-                Đợt được tạo ở trạng thái bản nháp. Mở chi tiết đợt để bắt đầu;
-                học viên cần được giao khóa học riêng ở mục Giao khóa học.
-              </div>
+              >{translateUi("Đợt được tạo ở trạng thái bản nháp. Mở chi tiết đợt để bắt đầu; học viên cần được giao khóa học riêng ở mục Giao khóa học.")}</div>
             </div>
           )}
         </section>
@@ -680,8 +645,7 @@ export function OwnerNewTrainingBatchPage() {
               color: 'var(--po-ink)',
             }}
           >
-            <ArrowLeft className="size-3.5" /> Quay lại
-          </button>
+            <ArrowLeft className="size-3.5" />{translateUi(" Quay lại")}</button>
           {step === 4 ? (
             <button
               type="button"
@@ -700,8 +664,7 @@ export function OwnerNewTrainingBatchPage() {
               onClick={() => setStep((s) => Math.min(4, s + 1) as Step)}
               className="inline-flex items-center gap-1.5 rounded-[11px] px-5 py-2.5 text-xs font-extrabold transition-transform hover:-translate-y-0.5 disabled:opacity-40"
               style={{ background: 'var(--po-accent)', color: '#fff' }}
-            >
-              Tiếp tục <ArrowRight className="size-3.5" />
+            >{translateUi("Tiếp tục ")}<ArrowRight className="size-3.5" />
             </button>
           )}
         </div>

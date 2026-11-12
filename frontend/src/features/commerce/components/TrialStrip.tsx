@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import { INDIVIDUAL_TRIAL } from '@/lib/plans';
 import { GOLD_OUTLINE_BUTTON } from '../../experience/individual-trial/trial-style';
@@ -12,19 +13,18 @@ interface TrialStripProps {
  * does not want to pick a plan yet (spec §8.2).
  */
 export function TrialStrip({ position }: TrialStripProps) {
+  useUiLanguage();
   const query = new URLSearchParams({ trial: '1', source: 'pricing', ...(position ? { position } : {}) });
 
   return (
     <aside
-      aria-label="Dùng thử"
+      aria-label={translateUi("Dùng thử")}
       className="mx-auto mt-8 flex max-w-5xl flex-col items-start justify-between gap-4 rounded-2xl border border-pt-line bg-pt-card px-6 py-5 sm:flex-row sm:items-center"
     >
       <p className="text-sm leading-relaxed text-pt-fg-2">
-        Chưa chắc chọn gói nào? <strong className="font-semibold text-pt-fg">Dùng thử Plus {INDIVIDUAL_TRIAL.days} ngày</strong>, không cần thẻ.
+        Chưa chắc chọn gói nào? <strong className="font-semibold text-pt-fg">Dùng thử Plus {INDIVIDUAL_TRIAL.days}{translateUi(" ngày")}</strong>, không cần thẻ.
       </p>
-      <Link to={`/individual/register?${query.toString()}`} className={GOLD_OUTLINE_BUTTON}>
-        Dùng thử {INDIVIDUAL_TRIAL.days} ngày
-      </Link>
+      <Link to={`/individual/register?${query.toString()}`} className={GOLD_OUTLINE_BUTTON}>{translateUi("Dùng thử ")}{INDIVIDUAL_TRIAL.days}{translateUi(" ngày")}</Link>
     </aside>
   );
 }

@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -22,6 +23,7 @@ interface UserDetailContentProps {
 }
 
 export function UserDetailContent({ userId }: UserDetailContentProps) {
+  useUiLanguage();
   const { data, isLoading, error } = usePlatformUser(userId);
   const lockAction = useUserLockAction(userId);
   const { can, user: me } = usePermission();
@@ -103,11 +105,11 @@ export function UserDetailContent({ userId }: UserDetailContentProps) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <h4 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>{u.displayName}</h4>
-            <Pill tone={USER_STATUS[u.status]?.tone}>{USER_STATUS[u.status]?.label ?? u.status}</Pill>
+            <Pill tone={USER_STATUS[u.status]?.tone}>{translateUi(USER_STATUS[u.status]?.label) ?? u.status}</Pill>
           </div>
           <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>{u.email}</div>
           <div style={{ fontSize: 12, color: '#b45309', fontWeight: 600, marginTop: 4 }}>
-            {ROLE_LABELS[u.role] ?? u.role}
+            {translateUi(ROLE_LABELS[u.role]) ?? u.role}
           </div>
         </div>
       </div>
@@ -200,7 +202,7 @@ export function UserDetailContent({ userId }: UserDetailContentProps) {
                 disabled={!isReasonValid(reason) || lockAction.isPending}
                 style={{ marginTop: 8 }}
               >
-                {lockAction.isPending ? 'Đang xử lý…' : locked ? 'Mở khóa tài khoản →' : 'Khóa tài khoản này →'}
+                {lockAction.isPending ? translateUi('Đang xử lý…') : locked ? 'Mở khóa tài khoản →' : 'Khóa tài khoản này →'}
               </button>
             </form>
           )}

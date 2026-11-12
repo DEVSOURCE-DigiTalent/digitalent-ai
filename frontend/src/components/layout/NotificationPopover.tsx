@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle2, ShieldAlert, ExternalLink } from 'lucide-react';
@@ -10,6 +11,7 @@ interface NotificationPopoverProps {
 }
 
 export function NotificationPopover({ notificationsPath }: NotificationPopoverProps) {
+  useUiLanguage();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -54,8 +56,8 @@ export function NotificationPopover({ notificationsPath }: NotificationPopoverPr
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-        title="Thông báo"
-        aria-label={`Thông báo (${unreadCount} chưa đọc)`}
+        title={translateUi("Thông báo")}
+        aria-label={translateUi(`Thông báo (${unreadCount} chưa đọc)`)}
         aria-expanded={isOpen}
       >
         <Bell className="w-4.5 h-4.5" />
@@ -70,7 +72,7 @@ export function NotificationPopover({ notificationsPath }: NotificationPopoverPr
         <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-100">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/50">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm text-slate-900">Thông báo</span>
+              <span className="font-semibold text-sm text-slate-900">{translateUi("Thông báo")}</span>
               {unreadCount > 0 && (
                 <span className="px-1.5 py-0.5 text-xs font-medium text-primary-700 bg-primary-50 rounded-full">
                   {unreadCount} mới
@@ -111,9 +113,9 @@ export function NotificationPopover({ notificationsPath }: NotificationPopoverPr
                   <div className="mt-0.5">{renderIcon(n.type)}</div>
                   <div className="flex-1 min-w-0">
                     <p className={`text-sm leading-snug truncate ${!n.isRead ? 'font-semibold text-slate-900' : 'text-slate-700'}`}>
-                      {n.title}
+                      {translateUi(n.title)}
                     </p>
-                    <p className="text-xs text-slate-500 line-clamp-2 mt-0.5">{n.message}</p>
+                    <p className="text-xs text-slate-500 line-clamp-2 mt-0.5">{translateUi(n.message)}</p>
                     <span className="text-[11px] text-slate-400 mt-1 block">
                       {formatDateTime(n.createdAt)}
                     </span>
@@ -134,9 +136,7 @@ export function NotificationPopover({ notificationsPath }: NotificationPopoverPr
                 setIsOpen(false);
               }}
               className="text-xs font-medium text-primary-600 hover:text-primary-700 inline-flex items-center gap-1.5 py-1"
-            >
-              Xem tất cả thông báo
-              <ExternalLink className="size-3" />
+            >{translateUi("Xem tất cả thông báo")}<ExternalLink className="size-3" />
             </button>
           </div>
         </div>

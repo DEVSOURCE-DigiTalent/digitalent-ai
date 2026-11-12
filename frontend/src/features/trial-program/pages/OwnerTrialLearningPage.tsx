@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useId, useState, type FormEvent } from 'react';
 import { Navigate } from 'react-router-dom';
 import { ArrowRight, ClipboardList } from 'lucide-react';
@@ -23,6 +24,7 @@ const BASIC_CODE = /^[A-Z]\d+-F$/;
  * cảnh báo tiếp tục tới khi mentor công bố kết quả.
  */
 export function OwnerTrialLearningPage() {
+  useUiLanguage();
   const participating = useCurrentUser((s) => normalizeRoles(s.user?.roles ?? []).includes(ROLES.EMPLOYEE));
   if (participating) return <Navigate to={PULSE_PATHS.path} replace />;
   return (
@@ -35,6 +37,7 @@ export function OwnerTrialLearningPage() {
 }
 
 function JoinFirst() {
+  useUiLanguage();
   const { data: program } = useTrialProgram();
   const { data: catalog } = useCourseCatalog({});
   const join = useJoinTrialAsParticipant();
@@ -67,7 +70,7 @@ function JoinFirst() {
       <TrialLearningHead total={courses.length || 6} done={null} />
       <NoticeCard
         icon={<ClipboardList size={20} />}
-        title={reported ? 'Tham gia để học thử' : 'Làm bài đánh giá trước khi học'}
+        title={translateUi(reported ? 'Tham gia để học thử' : 'Làm bài đánh giá trước khi học')}
         text={
           reported
             ? 'Kết quả đã công bố: tham gia là học được ngay.'
@@ -76,18 +79,14 @@ function JoinFirst() {
         meta={program?.testDeadline && !reported ? `Hạn nộp ${formatWhen(program.testDeadline)}` : undefined}
       >
         <form className="pu-tl-join" onSubmit={submit}>
-          <label>
-            Phòng ban
-            <input list={`${listId}-d`} required maxLength={150} value={placement.department} onChange={(e) => setPlacement({ ...placement, department: e.target.value })} />
+          <label>{translateUi("Phòng ban")}<input list={`${listId}-d`} required maxLength={150} value={placement.department} onChange={(e) => setPlacement({ ...placement, department: e.target.value })} />
           </label>
-          <label>
-            Vị trí
-            <input list={`${listId}-p`} required maxLength={150} value={placement.position} onChange={(e) => setPlacement({ ...placement, position: e.target.value })} />
+          <label>{translateUi("Vị trí")}<input list={`${listId}-p`} required maxLength={150} value={placement.position} onChange={(e) => setPlacement({ ...placement, position: e.target.value })} />
           </label>
           <datalist id={`${listId}-d`}>{program?.departments.map((d) => <option key={d} value={d} />)}</datalist>
           <datalist id={`${listId}-p`}>{program?.positions.map((p) => <option key={p} value={p} />)}</datalist>
           <button type="submit" className="pu-btn pu-btn-primary" disabled={!ready || join.isPending}>
-            {join.isPending ? 'Đang xử lý…' : reported ? 'Tham gia học thử' : 'Tham gia làm bài đánh giá'} <ArrowRight size={15} aria-hidden />
+            {join.isPending ? translateUi('Đang xử lý…') : reported ? 'Tham gia học thử' : 'Tham gia làm bài đánh giá'} <ArrowRight size={15} aria-hidden />
           </button>
         </form>
       </NoticeCard>

@@ -1,0 +1,361 @@
+{
+  "meta": {
+    "branch": "feature/DT-role-based-tests",
+    "commit": "c51a6d6",
+    "api": "http://localhost:5000",
+    "fe": "http://localhost:5173",
+    "db": "PostgreSQL 16 (DB mới: migration + seed Development)",
+    "date": "09/11/2026"
+  },
+  "role": {
+    "label": "EMPLOYEE",
+    "email": "employee@digitalent.ai",
+    "title": "NHÂN VIÊN (EMPLOYEE)"
+  },
+  "cases": [
+    {
+      "id": "TC01",
+      "feature": "Xác thực",
+      "title": "Đăng nhập tài khoản demo employee@digitalent.ai để lấy access token",
+      "role": "Ẩn danh",
+      "endpoint": "POST /api/v1/auth/login",
+      "precondition": "Tài khoản demo employee@digitalent.ai (seed Development), mật khẩu Admin@1234",
+      "expected": "200, success = true, trả về accessToken và refreshToken",
+      "status": "PASS",
+      "http": 200,
+      "ms": 336,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "success = true",
+          "ok": true
+        },
+        {
+          "label": "Có accessToken và refreshToken",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; success = true: đạt; Có accessToken và refreshToken: đạt",
+      "at": "09/11/2026 07:45:46"
+    },
+    {
+      "id": "TC02",
+      "feature": "Phiên đăng nhập",
+      "title": "EMPLOYEE đọc thông tin phiên: vai trò, workspace và tổ chức",
+      "role": "EMPLOYEE",
+      "endpoint": "GET /api/v1/auth/me",
+      "precondition": "Đã đăng nhập (ca trước)",
+      "expected": "200; roles = [EMPLOYEE]; workspace = enterprise; organizationId có giá trị",
+      "status": "PASS",
+      "http": 200,
+      "ms": 39,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "roles = [EMPLOYEE]",
+          "ok": true
+        },
+        {
+          "label": "workspace = enterprise",
+          "ok": true
+        },
+        {
+          "label": "organizationId có giá trị",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; roles = [EMPLOYEE]: đạt; workspace = enterprise: đạt; organizationId có giá trị: đạt",
+      "at": "09/11/2026 07:45:46"
+    },
+    {
+      "id": "TC03",
+      "feature": "EM-01 Hôm nay",
+      "title": "Xem lộ trình năng lực của chính mình",
+      "role": "EMPLOYEE",
+      "endpoint": "GET /api/v1/me/pulse/overview",
+      "precondition": "employee@ là Kế toán, phòng Operations (seed)",
+      "expected": "200; positionName = Kế toán; 6 lĩnh vực; 18 khóa trong danh mục",
+      "status": "PASS",
+      "http": 200,
+      "ms": 77,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "positionName = Kế toán",
+          "ok": true
+        },
+        {
+          "label": "6 lĩnh vực",
+          "ok": true
+        },
+        {
+          "label": "18 khóa",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; positionName = Kế toán: đạt; 6 lĩnh vực: đạt; 18 khóa: đạt",
+      "at": "09/11/2026 07:45:47"
+    },
+    {
+      "id": "TC04",
+      "feature": "EM-03 Khóa học",
+      "title": "Mở khóa M1-F trong lộ trình",
+      "role": "EMPLOYEE",
+      "endpoint": "GET /api/v1/me/pulse/courses/{M1-F}",
+      "precondition": "Khóa đầu tiên của danh mục",
+      "expected": "200; code = M1-F; có danh sách mô đun",
+      "status": "PASS",
+      "http": 200,
+      "ms": 122,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "code = M1-F",
+          "ok": true
+        },
+        {
+          "label": "Có mô đun",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; code = M1-F: đạt; Có mô đun: đạt",
+      "at": "09/11/2026 07:45:47"
+    },
+    {
+      "id": "TC05",
+      "feature": "Nhiệm vụ thực tế",
+      "title": "Xem nhiệm vụ thực tế được giao",
+      "role": "EMPLOYEE",
+      "endpoint": "GET /api/v1/me/tasks",
+      "precondition": "Seed hành trình demo: 3 nhiệm vụ",
+      "expected": "200; 3 nhiệm vụ: cần làm / cần chỉnh sửa / đã đạt",
+      "status": "PASS",
+      "http": 200,
+      "ms": 82,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "total = 3",
+          "ok": true
+        },
+        {
+          "label": "1 cần chỉnh sửa, 1 đã đạt",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; total = 3: đạt; 1 cần chỉnh sửa, 1 đã đạt: đạt",
+      "at": "09/11/2026 07:45:48"
+    },
+    {
+      "id": "TC06",
+      "feature": "EM-T1 Bài test dùng thử",
+      "title": "Xem bài đánh giá năng lực của chương trình dùng thử",
+      "role": "EMPLOYEE",
+      "endpoint": "GET /api/v1/me/trial-assessment",
+      "precondition": "Tổ chức demo đang dùng thử; chưa làm bài",
+      "expected": "200; status = NOT_STARTED; 18 câu trắc nghiệm, 3 tự luận, 6 lĩnh vực",
+      "status": "PASS",
+      "http": 200,
+      "ms": 44,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "status = NOT_STARTED",
+          "ok": true
+        },
+        {
+          "label": "18 câu, 3 tự luận",
+          "ok": true
+        },
+        {
+          "label": "6 lĩnh vực",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; status = NOT_STARTED: đạt; 18 câu, 3 tự luận: đạt; 6 lĩnh vực: đạt",
+      "at": "09/11/2026 07:45:48"
+    },
+    {
+      "id": "TC07",
+      "feature": "EM-13 Góp ý",
+      "title": "Xem góp ý của chính mình",
+      "role": "EMPLOYEE",
+      "endpoint": "GET /api/v1/feedbacks/mine",
+      "precondition": "Chưa gửi góp ý",
+      "expected": "200; danh sách phân trang (rỗng)",
+      "status": "PASS",
+      "http": 200,
+      "ms": 36,
+      "checks": [
+        {
+          "label": "HTTP status = 200",
+          "ok": true
+        },
+        {
+          "label": "totalItems = 0",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 200; totalItems = 0: đạt",
+      "at": "09/11/2026 07:45:48"
+    },
+    {
+      "id": "TC08",
+      "feature": "Phân quyền",
+      "title": "EMPLOYEE không được xem danh sách nhân viên",
+      "role": "EMPLOYEE",
+      "endpoint": "GET /api/v1/employees",
+      "precondition": "Vai trò không có quyền employee.read",
+      "expected": "403 Forbidden, success = false",
+      "status": "PASS",
+      "http": 403,
+      "ms": 21,
+      "checks": [
+        {
+          "label": "HTTP status = 403",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 403; success = false: đạt",
+      "at": "09/11/2026 07:45:48"
+    },
+    {
+      "id": "TC09",
+      "feature": "Phân quyền",
+      "title": "EMPLOYEE không được chấm bài của người khác",
+      "role": "EMPLOYEE",
+      "endpoint": "GET /api/v1/pulse/final-reviews",
+      "precondition": "Vai trò không có quyền task.evaluate hoặc trial.review",
+      "expected": "403 Forbidden, success = false",
+      "status": "PASS",
+      "http": 403,
+      "ms": 26,
+      "checks": [
+        {
+          "label": "HTTP status = 403",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 403; success = false: đạt",
+      "at": "09/11/2026 07:45:48"
+    },
+    {
+      "id": "TC10",
+      "feature": "Phân quyền",
+      "title": "EMPLOYEE không được giao nhiệm vụ thực tế",
+      "role": "EMPLOYEE",
+      "endpoint": "POST /api/v1/tasks",
+      "precondition": "Vai trò không có quyền task.create",
+      "expected": "403 Forbidden, success = false",
+      "status": "PASS",
+      "http": 403,
+      "ms": 13,
+      "checks": [
+        {
+          "label": "HTTP status = 403",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 403; success = false: đạt",
+      "at": "09/11/2026 07:45:48"
+    },
+    {
+      "id": "TC11",
+      "feature": "Phân quyền",
+      "title": "EMPLOYEE không được xem nhân sự toàn doanh nghiệp",
+      "role": "EMPLOYEE",
+      "endpoint": "GET /api/v1/workforce",
+      "precondition": "Vai trò không có quyền employee.read",
+      "expected": "403 Forbidden, success = false",
+      "status": "PASS",
+      "http": 403,
+      "ms": 23,
+      "checks": [
+        {
+          "label": "HTTP status = 403",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 403; success = false: đạt",
+      "at": "09/11/2026 07:45:49"
+    },
+    {
+      "id": "TC12",
+      "feature": "Phân quyền",
+      "title": "Gọi cổng học của nhân viên không kèm token",
+      "role": "Ẩn danh",
+      "endpoint": "GET /api/v1/me/pulse/overview",
+      "precondition": "Không gửi header Authorization",
+      "expected": "401 Unauthorized",
+      "status": "PASS",
+      "http": 401,
+      "ms": 17,
+      "checks": [
+        {
+          "label": "HTTP status = 401",
+          "ok": true
+        },
+        {
+          "label": "success = false",
+          "ok": true
+        }
+      ],
+      "actual": "HTTP 401; success = false: đạt",
+      "at": "09/11/2026 07:45:49"
+    }
+  ],
+  "auto": [
+    {
+      "id": "AUTO01",
+      "filter": "EmployeeAccessTests",
+      "description": "Ma trận quyền API của EMPLOYEE",
+      "total": 25,
+      "passed": 25,
+      "failed": 0,
+      "status": "PASS"
+    },
+    {
+      "id": "AUTO02",
+      "filter": "PulseEmployeeFlowTests",
+      "description": "Luồng học Pulse: lộ trình, bài đầu vào, ôn tập mô đun, bài cuối khóa có giám sát",
+      "total": 15,
+      "passed": 15,
+      "failed": 0,
+      "status": "PASS"
+    }
+  ]
+}

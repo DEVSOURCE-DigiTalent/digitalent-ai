@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -25,12 +26,14 @@ interface FormValues {
 }
 
 export function InternalCourseEditorPage() {
+  useUiLanguage();
   return import.meta.env.VITE_USE_MOCK === 'true'
     ? <MockInternalCourseEditorPage />
     : <LiveInternalCourseEditorPage />;
 }
 
 function MockInternalCourseEditorPage() {
+  useUiLanguage();
   const { id } = useParams<{ id: string }>();
   const isNew = !id || id === 'new';
   const navigate = useNavigate();
@@ -160,7 +163,7 @@ function MockInternalCourseEditorPage() {
       </Link>
 
       <PageHeader
-        title={isNew ? 'Soạn khóa học nội bộ mới' : `Chỉnh sửa: ${existingCourse?.title}`}
+        title={translateUi(isNew ? 'Soạn khóa học nội bộ mới' : translateUi(`Chỉnh sửa: ${existingCourse?.title}`))}
         subtitle="Khóa học nội bộ dành cho đào tạo văn hóa, chính sách hoặc quy trình đặc thù của doanh nghiệp."
       />
 
@@ -212,8 +215,7 @@ function MockInternalCourseEditorPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="title" className="block text-sm font-semibold text-slate-800">
-              Tên khóa học <span className="text-red-500">*</span>
+            <label htmlFor="title" className="block text-sm font-semibold text-slate-800">{translateUi("Tên khóa học ")}<span className="text-red-500">*</span>
             </label>
             <input
               id="title"
@@ -221,7 +223,7 @@ function MockInternalCourseEditorPage() {
               placeholder="VD: Hướng dẫn an toàn thông tin và văn hóa làm việc số 2026"
               className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
-            {errors.title && <p className="text-xs text-red-600 mt-1">{errors.title.message}</p>}
+            {errors.title && <p className="text-xs text-red-600 mt-1">{translateUi(errors.title.message)}</p>}
           </div>
 
           <div className="space-y-1.5">
@@ -257,8 +259,7 @@ function MockInternalCourseEditorPage() {
                 Tổng quy mô tính toán
               </label>
               <div className="px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium">
-                {modules.length} học phần · {modules.reduce((sum, m) => sum + Number(m.durationMinutes || 0), 0)} phút
-              </div>
+                {modules.length} học phần · {modules.reduce((sum, m) => sum + Number(m.durationMinutes || 0), 0)}{translateUi(" phút")}</div>
             </div>
           </div>
         </div>
@@ -326,7 +327,7 @@ function MockInternalCourseEditorPage() {
                       onChange={(e) => handleUpdateModule(mod.id, 'durationMinutes', Number(e.target.value))}
                       className="w-16 px-2 py-1.5 text-xs border border-slate-200 rounded-lg text-center bg-white"
                     />
-                    <span className="text-xs text-slate-500">phút</span>
+                    <span className="text-xs text-slate-500">{translateUi("phút")}</span>
                   </div>
 
                   <button
@@ -349,16 +350,14 @@ function MockInternalCourseEditorPage() {
             type="button"
             onClick={() => navigate('/enterprise/internal-courses')}
             className="px-5 py-2.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition"
-          >
-            Hủy bỏ
-          </button>
+          >{translateUi("Hủy bỏ")}</button>
           <button
             type="submit"
             disabled={isSubmitting || createMutation.isPending}
             className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-sm transition disabled:opacity-50"
           >
             <Save className="size-4" />
-            <span>{isSubmitting || createMutation.isPending ? 'Đang lưu…' : 'Lưu khóa học nội bộ'}</span>
+            <span>{isSubmitting || createMutation.isPending ? translateUi('Đang lưu…') : 'Lưu khóa học nội bộ'}</span>
           </button>
         </StickyActionBar>
       </form>

@@ -1,0 +1,130 @@
+{
+  "meta": {
+    "branch": "feature/DT-role-based-tests",
+    "commit": "c51a6d6",
+    "api": "http://localhost:5000",
+    "fe": "http://localhost:5173",
+    "db": "PostgreSQL 16 (DB mới: migration + seed Development)",
+    "date": "09/11/2026"
+  },
+  "role": {
+    "label": "MENTOR",
+    "email": "mentor@digitalent.ai",
+    "title": "MENTOR CHẤM BÀI DÙNG THỬ (MENTOR)"
+  },
+  "cases": [
+    {
+      "id": "FE01",
+      "screen": "MT-01 Bài đánh giá dùng thử",
+      "title": "Đăng nhập mentor@digitalent.ai và vào đúng không gian làm việc",
+      "url": "/login",
+      "role": "MENTOR (mentor@digitalent.ai)",
+      "precondition": "DB mới, seed Development",
+      "steps": [
+        "1. Mở /login",
+        "2. Nhập mentor@digitalent.ai / Admin@1234, bấm \"Đăng nhập vào hệ thống\""
+      ],
+      "expected": "Chuyển tới /platform/reviews; tiêu đề \"Doanh nghiệp cần chấm.\"; menu của vai trò (2+ mục).",
+      "actual": "Đăng nhập thành công, vào /platform/reviews; tiêu đề \"Doanh nghiệp cần chấm.\"; menu 2 mục: Bài đánh giá dùng thử, Bài cuối khóa.",
+      "status": "PASS",
+      "api": [
+        "POST /api/v1/auth/login → 200",
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/mentor/trials → 200"
+      ],
+      "marks": [
+        "1. Menu mentor: 2 mục",
+        "2. Màn hình đầu tiên của vai trò"
+      ],
+      "at": "09/11/2026 07:53:23"
+    },
+    {
+      "id": "FE02",
+      "screen": "MT-01 Bài đánh giá dùng thử",
+      "title": "Chỉ có hai mục: bài đánh giá dùng thử và bài cuối khóa",
+      "url": "/platform/reviews",
+      "role": "MENTOR (mentor@digitalent.ai)",
+      "precondition": "Đã đăng nhập (FE01)",
+      "steps": [
+        "1. Xem menu bên trái"
+      ],
+      "expected": "Menu chỉ có \"Bài đánh giá dùng thử\" và \"Bài cuối khóa\", không có mục quản trị nền tảng.",
+      "actual": "Menu: Bài đánh giá dùng thử, Bài cuối khóa. (URL: /platform/reviews)",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/mentor/trials → 200"
+      ],
+      "marks": [
+        "1. Chỉ 2 mục của mentor",
+        "2. Doanh nghiệp được phân công chấm"
+      ],
+      "at": "09/11/2026 07:53:27"
+    },
+    {
+      "id": "FE03",
+      "screen": "MT-03 Bài cuối khóa",
+      "title": "Bài cuối khóa của doanh nghiệp dùng thử",
+      "url": "/platform/course-reviews",
+      "role": "MENTOR (mentor@digitalent.ai)",
+      "precondition": "Chưa có bài nộp",
+      "steps": [
+        "1. Bấm menu \"Bài cuối khóa\""
+      ],
+      "expected": "Trang \"Bài cuối khóa cần chấm.\" với trạng thái trống khi chưa có bài.",
+      "actual": "Tiêu đề \"Bài cuối khóa cần chấm.\"; hiện \"Chưa có bài nào cần quyết định.\" (URL: /platform/course-reviews)",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200",
+        "GET /api/v1/pulse/final-reviews → 200"
+      ],
+      "marks": [
+        "1. Bài cuối khóa cần chấm",
+        "2. Chưa có bài trong phạm vi"
+      ],
+      "at": "09/11/2026 07:53:31"
+    },
+    {
+      "id": "FE04",
+      "screen": "Phân quyền",
+      "title": "Mentor không mở được tổng quan quản trị nền tảng",
+      "url": "/platform/dashboard",
+      "role": "MENTOR (mentor@digitalent.ai)",
+      "precondition": "MENTOR không có quyền platform.*",
+      "steps": [
+        "1. Mở trực tiếp /platform/dashboard"
+      ],
+      "expected": "Giao diện chặn bằng trang \"Truy cập bị từ chối\", không hiện dữ liệu của màn hình.",
+      "actual": "Hiện \"Truy cập bị từ chối\" tại /platform/dashboard; không hiện nội dung của màn hình.",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200"
+      ],
+      "marks": [
+        "1. Bị chặn: không đủ quyền"
+      ],
+      "at": "09/11/2026 07:53:35"
+    },
+    {
+      "id": "FE05",
+      "screen": "Phân quyền",
+      "title": "Mentor không tự phân công được (PA-14)",
+      "url": "/platform/trials",
+      "role": "MENTOR (mentor@digitalent.ai)",
+      "precondition": "MENTOR không có quyền platform.trial.manage",
+      "steps": [
+        "1. Mở trực tiếp /platform/trials"
+      ],
+      "expected": "Giao diện chặn bằng trang \"Truy cập bị từ chối\", không hiện dữ liệu của màn hình.",
+      "actual": "Hiện \"Truy cập bị từ chối\" tại /platform/trials; không hiện nội dung của màn hình.",
+      "status": "PASS",
+      "api": [
+        "GET /api/v1/auth/me → 200"
+      ],
+      "marks": [
+        "1. Bị chặn: không đủ quyền"
+      ],
+      "at": "09/11/2026 07:53:39"
+    }
+  ]
+}

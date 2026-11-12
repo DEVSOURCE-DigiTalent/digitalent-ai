@@ -138,7 +138,7 @@ const platformState = {
     {
       id: 'notif-1',
       title: 'Kiến trúc năng lực đã công bố',
-      message: 'Trần doanh nghiệp, phòng ban và vị trí đã được xác nhận.',
+      message: 'Phạm vi doanh nghiệp, phòng ban và vị trí đã được xác nhận.',
       type: 'info',
       createdAt: new Date(Date.now() - 86400000 * 6).toISOString(),
       isRead: false,
@@ -1627,12 +1627,13 @@ route('PUT', '/platform/settings', (context) => {
 // ── SHR-01 & SHR-02: Shared Account Profile & Security ──
 route('GET', '/account/profile', (context) => {
   const { session } = context;
+  const stored = getDb().users.find((user) => user.id === session.id) ?? getDb().accountProfiles?.[session.id];
   const profile: UserProfileDto = {
     id: session.id,
-    fullName: session.fullName,
+    fullName: stored?.fullName ?? session.fullName,
     email: session.email,
-    phone: '0912345678',
-    jobTitle: session.roles.includes('PLATFORM_ADMIN') ? 'Quản trị viên Hệ thống' : 'Chuyên viên',
+    phone: stored?.phone ?? '',
+    jobTitle: stored?.jobTitle ?? '',
     roleTitle: session.roles[0],
   };
   return profile;
@@ -1644,8 +1645,10 @@ route('PUT', '/account/profile', (context) => {
   const phone = typeof body.phone === 'string' ? body.phone.trim() : undefined;
   const jobTitle = typeof body.jobTitle === 'string' ? body.jobTitle.trim() : undefined;
 
-  // Persist into mock DB if user is registered
+  // Preserve edits for both seeded demo identities and registered accounts.
   updateDb((db) => {
+    db.accountProfiles ??= {};
+    db.accountProfiles[session.id] = { fullName, phone, jobTitle };
     const user = db.users.find((u) => u.id === session.id);
     if (user) {
       user.fullName = fullName;

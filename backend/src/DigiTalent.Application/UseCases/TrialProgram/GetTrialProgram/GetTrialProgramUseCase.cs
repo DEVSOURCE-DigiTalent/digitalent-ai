@@ -20,6 +20,7 @@ public class GetTrialProgramUseCase : IUseCase<GetTrialProgramUseCaseInput, GetT
     public async Task<GetTrialProgramUseCaseOutput> ExecuteAsync(GetTrialProgramUseCaseInput input)
     {
         var trial = await _reader.ForOwnerAsync();
+        await _reader.FinalizeSurveyAsync(trial);
         var domains = await _reader.LoadDomainsAsync(trial.OrganizationId);
         var stage = TrialProgramRules.StageOf(trial);
 
@@ -37,7 +38,7 @@ public class GetTrialProgramUseCase : IUseCase<GetTrialProgramUseCaseInput, GetT
             ReportPublishedAt = trial.ReportPublishedAt,
             MaxParticipants = TrialProgramRules.MaxParticipants,
             ChoiceCount = domains.Count * 3 * TrialProgramRules.ChoicePerCell,
-            EssayCount = TrialProgramRules.Essays.Count,
+            EssayCount = 0,
             Participants = await _reader.LoadParticipantsAsync(trial),
             Departments = await _context.Departments.AsNoTracking()
                 .Where(d => d.OrganizationId == trial.OrganizationId && d.Status == Statuses.MasterData.Active)
@@ -45,7 +46,7 @@ public class GetTrialProgramUseCase : IUseCase<GetTrialProgramUseCaseInput, GetT
             Positions = await _context.JobPositions.AsNoTracking()
                 .Where(p => p.OrganizationId == trial.OrganizationId && p.Status == Statuses.MasterData.Active)
                 .OrderBy(p => p.Name).Select(p => p.Name).ToListAsync(),
-            Report = stage == TrialProgramRules.StageReported ? await _reader.BuildReportAsync(trial) : null,
+            Report = trial.RequestedAt != null ? await _reader.BuildReportAsync(trial) : null,
         };
     }
 }

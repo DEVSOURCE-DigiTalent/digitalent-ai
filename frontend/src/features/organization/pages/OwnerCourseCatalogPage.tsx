@@ -1,3 +1,4 @@
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, Search, Sparkles, X } from 'lucide-react';
@@ -41,6 +42,7 @@ const LEVEL_TONES: Record<number, { bg: string; fg: string; ring: string }> = {
 type Selection = { kind: 'course'; id: string } | null;
 
 export function OwnerCourseCatalogPage() {
+  useUiLanguage();
   const [search, setSearch] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
   const gapCode = searchParams.get('gap') ?? '';
@@ -80,14 +82,16 @@ export function OwnerCourseCatalogPage() {
 
   const query = search.trim();
   const visibleBranches = query
-    ? branches.filter((branch) => matchesSearch(branch.category.name, query)
+    ? branches.filter((branch) => matchesSearch(`${branch.category.name} ${translateUi(branch.category.name)}`, query)
       || branch.slots.some((slot) => slot.courses.some((course) => courseMatches(course, query))))
     : branches;
   const activeBranch = visibleBranches.find((branch) => branch.domain === activeDomain) ?? visibleBranches[0];
 
-  const allCourses = branches.flatMap((branch) => branch.slots.flatMap((slot) => slot.courses));
+  const allCourses = useMemo(() => branches.flatMap((branch) => branch.slots.flatMap((slot) => slot.courses)), [branches]);
   const gapCourse = findGapCourse(branches, gapCode, gapTargetLevel);
-  const focusCourse = focusCode ? allCourses.concat(others).find((course) => canonicalCode(course.code) === canonicalCode(focusCode)) : undefined;
+  const focusCourse = focusCode ? allCourses.concat(others).find((course) => course.id === focusCode)
+    ?? allCourses.concat(others).find((course) => canonicalCode(course.code) === canonicalCode(focusCode)) : undefined;
+  const contextDomain = branches.find((branch) => branch.slots.some((slot) => slot.courses.some((course) => course.id === (gapCourse ?? focusCourse)?.id)))?.domain;
   const visibleOthers = query ? others.filter((course) => courseMatches(course, query)) : others;
   const totalAssigned = allCourses.reduce((sum, course) => sum + course.assignedCount, 0);
 
@@ -103,9 +107,13 @@ export function OwnerCourseCatalogPage() {
       const match = allCourses.find((c) => preselectedCodes.has(canonicalCode(c.code)));
       if (match) {
         appliedSelectedParam.current = selectedParam;
+        setSearch('');
+        setLevelFilter(0);
         setSelection({ kind: 'course', id: match.id });
         const branch = branches.find((item) => item.slots.some((slot) => slot.courses.includes(match)));
         if (branch) setActiveDomain(branch.domain);
+        const timer = window.setTimeout(() => document.getElementById('course-tree')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+        return () => window.clearTimeout(timer);
       }
     }
   }, [preselectedCodes, selectedParam, allCourses, branches]);
@@ -120,6 +128,8 @@ export function OwnerCourseCatalogPage() {
 
   useEffect(() => {
     if (!focusCode || !focusCourse) return;
+    setSearch('');
+    setLevelFilter(0);
     setSelection({ kind: 'course', id: focusCourse.id });
     const branch = branches.find((item) => item.slots.some((slot) => slot.courses.some((course) => course.id === focusCourse.id)));
     if (branch) setActiveDomain(branch.domain);
@@ -130,35 +140,30 @@ export function OwnerCourseCatalogPage() {
   return (
     <div
       className="po-owner course-catalog-page -m-4 md:-m-6 min-h-screen"
+      data-course-domain={activeBranch?.domain}
       style={{ ...PULSE_TOKENS }}
     >
       <div className="course-catalog-container">
         {/* ── Header ── */}
         <header className="course-catalog-header mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <span className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em] mb-1.5" style={{ color: 'var(--po-accent)' }}>
-              <i className="inline-block size-[6px] rounded-full" style={{ background: 'var(--po-coral)' }} />
-              Chương trình chuẩn · Thông tư 02/2025
-            </span>
-            <h1 className="font-bold tracking-[-0.03em] heading-gradient">
-              Khóa học năng lực số
-            </h1>
+            <h1 className="font-bold tracking-[-0.03em] heading-gradient">{translateUi("Khóa học năng lực số")}</h1>
           </div>
           <dl className="course-catalog-stats grid grid-cols-3 gap-2 text-center">
-            <Stat label="Miền" value={branches.length} />
-            <Stat label="Khóa học" value={allCourses.length} />
-            <Stat label="Đang phân công" value={totalAssigned} />
+            <Stat label={translateUi("Lĩnh vực")} value={branches.length} />
+            <Stat label={translateUi("Khóa học")} value={allCourses.length} />
+            <Stat label={translateUi("Đang phân công")} value={totalAssigned} />
           </dl>
         </header>
 
         {gapCode && !isLoading && !isError && (
-          <div className="course-gap-context" role="status">
+          <div className="course-gap-context" data-course-domain={contextDomain} role="status">
             <span className="course-gap-context-icon"><Sparkles size={18} /></span>
-            <div><strong>{gapCourse ? `Khóa học bù đắp cho năng lực ${gapCode}` : `Chưa tìm thấy khóa học cho năng lực ${gapCode}`}</strong><span>{gapCourse ? `${gapCourse.code} · ${gapCourse.title} · ${levelName(gapTargetLevel)}` : 'Bạn có thể xem các cấp độ khác trong lĩnh vực này.'}</span></div>
-            <Link to="/enterprise/skill-gap">← Về khoảng trống năng lực</Link>
+            <div><strong>{gapCourse ? translateUi(`Khóa học bù đắp cho năng lực ${gapCode}`) : translateUi(`Chưa tìm thấy khóa học cho năng lực ${gapCode}`)}</strong><span>{gapCourse ? `${gapCourse.code} · ${gapCourse.title} · ${levelName(gapTargetLevel)}` : 'Bạn có thể xem các cấp độ khác trong lĩnh vực này.'}</span></div>
+            <Link to="/enterprise/skill-gap">{translateUi("← Về khoảng trống năng lực")}</Link>
           </div>
         )}
-        {focusCode && !gapCode && !isLoading && !isError && <div className="course-gap-context" role="status"><span className="course-gap-context-icon"><BookOpen size={18} /></span><div><strong>{focusCourse ? 'Khóa học đề xuất cho nhân viên' : 'Chưa tìm thấy khóa học'}</strong><span>{focusCourse ? `${focusCourse.code} · ${focusCourse.title}` : `Mã khóa học ${focusCode}`}</span></div><Link to="/enterprise/skill-gap">← Về khoảng trống năng lực</Link></div>}
+        {focusCode && !gapCode && !isLoading && !isError && <div className="course-gap-context" data-course-domain={contextDomain} role="status"><span className="course-gap-context-icon"><BookOpen size={18} /></span><div><strong>{focusCourse ? translateUi('Khóa học đề xuất cho nhân viên') : 'Chưa tìm thấy khóa học'}</strong><span>{focusCourse ? `${focusCourse.code} · ${focusCourse.title}` : translateUi(`Mã khóa học ${focusCode}`)}</span></div><Link to="/enterprise/skill-gap">{translateUi("← Về khoảng trống năng lực")}</Link></div>}
 
         {/* ── Banner làm nổi bật các khóa học đã chọn từ Khung năng lực ── */}
         {preselectedCodes.size > 0 && (
@@ -169,21 +174,27 @@ export function OwnerCourseCatalogPage() {
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-sm font-semibold text-slate-800">
-                    Khóa học đã chọn từ Thiết lập Khung năng lực ({preselectedCodes.size} khóa)
-                  </h3>
-                  <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10.5px] font-bold text-amber-800 border border-amber-300">
-                    Đang làm nổi bật
-                  </span>
+                  <h3 className="text-sm font-semibold text-slate-800">{translateUi("Khóa học đã chọn từ Thiết lập Khung năng lực (")}{preselectedCodes.size}{translateUi(" khóa)")}</h3>
+                  <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10.5px] font-bold text-amber-800 border border-amber-300">{translateUi("Đang làm nổi bật")}</span>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   {Array.from(preselectedCodes).map((code) => (
-                    <span
+                    <button
                       key={code}
-                      className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-0.5 text-xs font-bold text-amber-800 border border-amber-200 shadow-xs"
+                      type="button"
+                      className="course-picked-shortcut"
+                      data-course-domain={Number(code.match(/^[AM](\d)/)?.[1]) || undefined}
+                      aria-label={translateUi(`Xem khóa đã chọn ${code}`)}
+                      onClick={() => {
+                        const match = allCourses.find((course) => canonicalCode(course.code) === code);
+                        const branch = branches.find((item) => item.slots.some((slot) => slot.courses.some((course) => course.id === match?.id)));
+                        if (!match || !branch) return;
+                        setSearch(''); setLevelFilter(0); setActiveDomain(branch.domain); setSelection({ kind: 'course', id: match.id });
+                        document.getElementById('course-tree')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }}
                     >
                       <span>{code}</span>
-                    </span>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -193,9 +204,7 @@ export function OwnerCourseCatalogPage() {
               <Link
                 to="/enterprise/setup"
                 className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-xs"
-              >
-                ← Về Khung năng lực
-              </Link>
+              >{translateUi("← Về Khung năng lực")}</Link>
               <button
                 type="button"
                 onClick={() => {
@@ -204,15 +213,13 @@ export function OwnerCourseCatalogPage() {
                   setSearchParams(next, { replace: true });
                 }}
                 className="rounded-xl border border-amber-200 bg-amber-100/70 px-3 py-2 text-xs font-bold text-amber-800 hover:bg-amber-200 transition-colors"
-              >
-                Tắt làm nổi bật
-              </button>
+              >{translateUi("Tắt làm nổi bật")}</button>
               <Link
                 to={`/enterprise/courses/checkout?courses=${encodeURIComponent(Array.from(preselectedCodes).join(','))}`}
                 className="rounded-xl px-4 py-2 text-xs font-bold text-white shadow-sm hover:brightness-105 transition-all flex items-center gap-1.5"
                 style={{ background: 'var(--po-accent)' }}
               >
-                <span>Thanh toán & Ký online ({preselectedCodes.size} khóa) →</span>
+                <span>Thanh toán & Ký online ({preselectedCodes.size}{translateUi(" khóa) →")}</span>
               </Link>
             </div>
           </div>
@@ -229,19 +236,19 @@ export function OwnerCourseCatalogPage() {
               <input
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setSelection(null); }}
-                placeholder="Tìm miền, tên hoặc mã khóa (VD: A4-I)…"
-                aria-label="Tìm khóa học"
+                placeholder={translateUi("Tìm miền, tên hoặc mã khóa (VD: A4-I)…")}
+                aria-label={translateUi("Tìm khóa học")}
                 className="w-full text-sm"
               />
               {search && (
-                <button type="button" aria-label="Xóa tìm kiếm" onClick={() => { setSearch(''); setSelection(null); }} className="owner-filter-search__clear" style={{ color: 'var(--po-muted)' }}>
+                <button type="button" aria-label={translateUi("Xóa tìm kiếm")} onClick={() => { setSearch(''); setSelection(null); }} className="owner-filter-search__clear" style={{ color: 'var(--po-muted)' }}>
                   <X className="size-4" />
                 </button>
               )}
             </label>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <ChipGroup label="Cấp độ">
+            <ChipGroup label={translateUi("Cấp độ")}>
               {[{ level: 0, name: 'Tất cả' }, ...LEVELS].map(({ level, name }) => {
                 const active = levelFilter === level;
                 const tone = LEVEL_TONES[level];
@@ -265,29 +272,28 @@ export function OwnerCourseCatalogPage() {
         </div>
 
         {isLoading ? (
-          <SectionLoading label="Đang tải khóa học" />
+          <SectionLoading label={translateUi("Đang tải khóa học")} />
         ) : isError ? (
-          <div className="rounded-[18px] border p-8 text-center text-sm" style={{ borderColor: '#fecdd3', background: '#fff1f2', color: '#be123c' }}>
-            Không tải được danh mục.{' '}
-            <button type="button" className="font-bold underline" onClick={() => refetch()}>Thử lại</button>
+          <div className="rounded-[18px] border p-8 text-center text-sm" style={{ borderColor: '#fecdd3', background: '#fff1f2', color: '#be123c' }}>{translateUi("Không tải được danh mục.")}{' '}
+            <button type="button" className="font-bold underline" onClick={() => refetch()}>{translateUi("Thử lại")}</button>
           </div>
         ) : (
           <>
-            <nav className="course-domain-nav" aria-label="Lĩnh vực năng lực">
+            <nav className="course-domain-nav" aria-label={translateUi("Lĩnh vực năng lực")}>
               {visibleBranches.map((branch) => (
-                <button key={branch.domain} type="button" aria-current={activeBranch?.domain === branch.domain ? 'true' : undefined} onClick={() => { setActiveDomain(branch.domain); setSelection(null); }}>
+                <button key={branch.domain} data-course-domain={branch.domain} type="button" aria-current={activeBranch?.domain === branch.domain ? 'true' : undefined} onClick={() => { setActiveDomain(branch.domain); setSelection(null); }}>
                   <span className="course-domain-number"><CourseDomainIcon domain={branch.domain} size={19} /><small>{String(branch.domain).padStart(2, '0')}</small></span>
-                  <span className="course-domain-info"><strong>{branch.category.name}</strong><small>{branch.slots.reduce((sum, slot) => sum + slot.courses.length, 0)} khóa học{branch.assignedCount ? ` · ${branch.assignedCount} phân công` : ''}</small></span>
-                  {branch.slots.some((slot) => slot.courses.some((course) => preselectedCodes.has(canonicalCode(course.code)))) && <span className="course-domain-selected">Đã chọn</span>}
+                  <span className="course-domain-info"><strong>{translateUi(branch.category.name)}</strong><small>{branch.slots.reduce((sum, slot) => sum + slot.courses.length, 0)}{translateUi(" khóa học")}{branch.assignedCount ? translateUi(` · ${branch.assignedCount} phân công`) : ''}</small></span>
+                  {branch.slots.some((slot) => slot.courses.some((course) => preselectedCodes.has(canonicalCode(course.code)))) && <span className="course-domain-selected">{translateUi("Đã chọn")}</span>}
                 </button>
               ))}
-              {visibleBranches.length === 0 && <p>{visibleOthers.length ? 'Khóa học phù hợp nằm ngoài khung TT02.' : `Không có lĩnh vực hoặc khóa học nào khớp “${query}”.`}</p>}
+              {visibleBranches.length === 0 && <p>{visibleOthers.length ? 'Xem thêm khóa học khác bên dưới.' : translateUi(`Không có lĩnh vực hoặc khóa học nào khớp “${query}”.`)}</p>}
             </nav>
             <div className="course-catalog-main">
             <section id="course-tree" className="course-domain-panel scroll-mt-[72px]">
               {activeBranch && <BranchNode
                 branch={activeBranch}
-                query={matchesSearch(activeBranch.category.name, query) ? '' : query}
+                query={matchesSearch(`${activeBranch.category.name} ${translateUi(activeBranch.category.name)}`, query) ? '' : query}
                 levelFilter={levelFilter}
                 selection={displaySelection}
                 onSelect={setSelection}
@@ -297,7 +303,7 @@ export function OwnerCourseCatalogPage() {
 
               {visibleOthers.length > 0 && (
                 <div className="mt-6 border-t pt-4" style={{ borderColor: 'var(--po-line)' }}>
-                  <p className="mb-2 text-xs font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>Ngoài khung TT02</p>
+                  <p className="mb-2 text-xs font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>{translateUi("Khóa học khác")}</p>
                   <div className="flex flex-wrap gap-2">
                     {visibleOthers.map((course) => (
                       <button
@@ -308,7 +314,7 @@ export function OwnerCourseCatalogPage() {
                         className={`rounded-[10px] border px-3 py-2 text-left text-xs font-semibold ${course.id === focusCourse?.id ? 'course-gap-target' : ''}`}
                         style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)' }}
                       >
-                        {course.code} · {course.title}
+                        {course.code} · {translateUi(course.title)}
                       </button>
                     ))}
                   </div>
@@ -317,14 +323,14 @@ export function OwnerCourseCatalogPage() {
             </section>
 
             {/* ── Detail ── */}
-            <aside className="course-catalog-detail lg:sticky lg:top-[84px]">
+            <aside data-course-domain={selectedBranch?.domain} className="course-catalog-detail lg:sticky lg:top-[84px]">
               {selectedCourse ? (
                 <CourseDetail
                   course={selectedCourse}
                   branch={selectedBranch}
                   onBuySeats={(c) => setPurchaseModalCourse(c)}
                 />
-              ) : <div className="course-detail-empty"><BookOpen size={26} /><strong>Chọn khóa học</strong><span>Chi tiết sẽ hiển thị tại đây.</span></div>}
+              ) : <div className="course-detail-empty"><BookOpen size={26} /><strong>{translateUi("Chọn khóa học")}</strong><span>{translateUi("Chi tiết sẽ hiển thị tại đây.")}</span></div>}
             </aside>
             </div>
           </>
@@ -349,18 +355,20 @@ function courseMatches(course: CourseListItem, query: string) {
 }
 
 function Stat({ label, value }: { label: string; value: number }) {
+  useUiLanguage();
   return (
     <div className="min-w-[88px] rounded-[14px] border px-3 py-2" style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)' }}>
       <dd className="text-xl font-bold" style={{ color: 'var(--po-ink)' }}>{value}</dd>
-      <dt className="text-[11px] font-semibold" style={{ color: 'var(--po-muted)' }}>{label}</dt>
+      <dt className="text-[11px] font-semibold" style={{ color: 'var(--po-muted)' }}>{translateUi(label)}</dt>
     </div>
   );
 }
 
 function ChipGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  useUiLanguage();
   return (
-    <div role="group" aria-label={label} className="flex flex-wrap items-center gap-1.5">
-      <span className="mr-1 text-[11px] font-bold" style={{ color: 'var(--po-muted)' }}>{label}</span>
+    <div role="group" aria-label={translateUi(label)} className="flex flex-wrap items-center gap-1.5">
+      <span className="mr-1 text-[11px] font-bold" style={{ color: 'var(--po-muted)' }}>{translateUi(label)}</span>
       {children}
     </div>
   );
@@ -377,14 +385,15 @@ interface BranchNodeProps {
 }
 
 function BranchNode({ branch, query, levelFilter, selection, onSelect, preselectedCodes, gapCourseId }: BranchNodeProps) {
+  useUiLanguage();
   const courseCount = branch.slots.reduce((sum, slot) => sum + slot.courses.length, 0);
   return (
     <div>
       <div className="course-domain-panel-heading">
         <span>{String(branch.domain).padStart(2, '0')}</span>
-        <div><h2>{branch.category.name}</h2><p>{courseCount} khóa học · 3 cấp độ</p></div>
+        <div><h2>{translateUi(branch.category.name)}</h2><p>{courseCount}{translateUi(" khóa học · 3 cấp độ")}</p></div>
       </div>
-        <ol role="group" aria-label={`Khóa học ${branch.category.name}`} className="course-level-grid">
+        <ol role="group" aria-label={translateUi(`Khóa học ${branch.category.name}`)} className="course-level-grid">
           {branch.slots.map((slot, index) => (
             <LevelSlotNode
               key={slot.level}
@@ -417,6 +426,7 @@ interface LevelSlotNodeProps {
 }
 
 function LevelSlotNode({ slot, domain, arrow, query, levelFilter, selection, onSelect, preselectedCodes, gapCourseId }: LevelSlotNodeProps) {
+  useUiLanguage();
   const tone = LEVEL_TONES[slot.level];
   const level = LEVELS.find((l) => l.level === slot.level)!;
   const pricing = levelPricing(slot.level);
@@ -428,9 +438,7 @@ function LevelSlotNode({ slot, domain, arrow, query, levelFilter, selection, onS
       <li className="flex flex-col gap-2">
         {slot.courses.length === 0 ? (
           <div className="flex h-full min-h-[96px] flex-col justify-center rounded-[14px] border border-dashed px-3 py-2.5 text-xs" style={{ borderColor: '#d5ddec', color: 'var(--po-muted)' }}>
-            <span className="font-black" style={{ color: tone.fg }}>{level.code} · {level.name}</span>
-            Chưa có khóa học
-          </div>
+            <span className="font-black" style={{ color: tone.fg }}>{level.code} · {translateUi(level.name)}</span>{translateUi("Chưa có khóa học")}</div>
         ) : slot.courses.map((course) => {
           const selected = selection?.kind === 'course' && selection.id === course.id;
           const isPreselected = preselectedCodes.has(canonicalCode(course.code));
@@ -443,6 +451,9 @@ function LevelSlotNode({ slot, domain, arrow, query, levelFilter, selection, onS
             <button
               key={course.id}
               id={isGapTarget ? 'gap-target-course' : undefined}
+              data-domain={domain}
+              data-course-domain={domain}
+              data-preselected={isPreselected || undefined}
               type="button"
               aria-pressed={selected}
               onClick={() => onSelect({ kind: 'course', id: course.id })}
@@ -460,13 +471,11 @@ function LevelSlotNode({ slot, domain, arrow, query, levelFilter, selection, onS
             >
               <CourseArtwork domain={domain} level={slot.level} compact />
               {isPreselected && (
-                <span className="mb-1.5 inline-flex w-fit items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-xs animate-pulse">
-                  <Sparkles className="size-2.5" />
-                  Đã chọn từ Khung năng lực
-                </span>
+                <span className="course-preselected-badge mb-1.5 inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-xs">
+                  <Sparkles className="size-2.5" />{translateUi("Đã chọn từ Khung năng lực")}</span>
               )}
               <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.08em]">
-                <span className="rounded px-1.5 py-0.5" style={{ background: tone.bg, color: tone.fg }}>{level.code} · {level.name}</span>
+                <span className="rounded px-1.5 py-0.5" style={{ background: tone.bg, color: tone.fg }}>{level.code} · {translateUi(level.name)}</span>
                 <span style={{ color: isPreselected ? '#b45309' : 'var(--po-muted)', fontWeight: isPreselected ? 800 : undefined }}>
                   {course.code}
                 </span>
@@ -479,11 +488,11 @@ function LevelSlotNode({ slot, domain, arrow, query, levelFilter, selection, onS
                     ? 'bg-amber-100 text-amber-900 border border-amber-300 font-extrabold'
                     : 'bg-slate-100 text-slate-700 border border-slate-200'
                 }`}>
-                  {pricing.isFree ? pricing.badge : isLicensed ? `Đã có ${totalSeats} suất` : pricing.badge}
+                  {pricing.isFree ? pricing.badge : isLicensed ? translateUi(`Đã có ${totalSeats} suất`) : pricing.badge}
                 </span>
-                {course.status === 'DRAFT' && <span className="rounded px-1.5 py-0.5" style={{ background: '#f0f2f6', color: '#66748d' }}>Nháp</span>}
+                {course.status === 'DRAFT' && <span className="rounded px-1.5 py-0.5" style={{ background: '#f0f2f6', color: '#66748d' }}>{translateUi("Nháp")}</span>}
               </span>
-              <span className="mt-1.5 line-clamp-2 text-[13px] font-semibold leading-snug" style={{ color: 'var(--po-ink)' }}>{course.title}</span>
+              <span className="mt-1.5 line-clamp-2 text-[13px] font-semibold leading-snug" style={{ color: 'var(--po-ink)' }}>{translateUi(course.title)}</span>
               <span className="mt-auto pt-1.5 text-[11px]" style={{ color: 'var(--po-muted)' }}>
                 {[`${course.modules} học phần`, duration, course.assignedCount ? `${course.assignedCount} đang học` : null].filter(Boolean).join(' · ')}
               </span>
@@ -496,10 +505,11 @@ function LevelSlotNode({ slot, domain, arrow, query, levelFilter, selection, onS
 }
 
 function Panel({ children, onClose }: { children: React.ReactNode; onClose?: () => void }) {
+  useUiLanguage();
   return (
     <div className="relative rounded-[20px] border p-5" style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)', boxShadow: '0 10px 35px rgba(29,48,102,.04)' }}>
       {onClose && (
-        <button type="button" aria-label="Đóng" onClick={onClose} className="absolute right-3 top-3 grid size-7 place-items-center rounded-md hover:bg-[var(--po-soft)]" style={{ color: 'var(--po-muted)' }}>
+        <button type="button" aria-label={translateUi("Đóng")} onClick={onClose} className="absolute right-3 top-3 grid size-7 place-items-center rounded-md hover:bg-[var(--po-soft)]" style={{ color: 'var(--po-muted)' }}>
           <X className="size-4" />
         </button>
       )}
@@ -509,9 +519,10 @@ function Panel({ children, onClose }: { children: React.ReactNode; onClose?: () 
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  useUiLanguage();
   return (
     <div className="flex justify-between gap-3 border-b py-2 text-xs last:border-0" style={{ borderColor: 'var(--po-line)' }}>
-      <dt style={{ color: 'var(--po-muted)' }}>{label}</dt>
+      <dt style={{ color: 'var(--po-muted)' }}>{translateUi(label)}</dt>
       <dd className="text-right font-semibold" style={{ color: 'var(--po-ink)' }}>{children}</dd>
     </div>
   );
@@ -526,6 +537,7 @@ function CourseDetail({
   branch?: DomainBranch;
   onBuySeats?: (course: CourseListItem) => void;
 }) {
+  useUiLanguage();
   const level = courseLevel(course);
   const tone = LEVEL_TONES[level] ?? LEVEL_TONES[1];
   const pricing = levelPricing(level);
@@ -536,11 +548,10 @@ function CourseDetail({
     <Panel>
       <CourseArtwork domain={branch?.domain ?? 0} level={level} />
       <p className="pr-8 text-[11px] font-bold" style={{ color: 'var(--po-muted)' }}>
-        {branch ? `Miền ${String(branch.domain).padStart(2, '0')} · ${branch.category.name}` : 'Ngoài khung TT02'}
+        {branch ? translateUi(`Lĩnh vực ${String(branch.domain).padStart(2, '0')} · ${branch.category.name}`) : translateUi('Khóa học khác')}
       </p>
       <div className="mt-3 flex items-center gap-2">
-        <span className="inline-block rounded px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em]" style={{ background: tone.bg, color: tone.fg }}>
-          Bậc {level} · {levelName(level)}
+        <span className="inline-block rounded px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em]" style={{ background: tone.bg, color: tone.fg }}>{translateUi("Bậc ")}{level} · {levelName(level)}
         </span>
         <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${
           level === 1
@@ -549,18 +560,18 @@ function CourseDetail({
             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
             : 'bg-amber-50 text-amber-800 border border-amber-200'
         }`}>
-          {level === 1 ? pricing.formatted : isLicensed ? `Đã có ${totalSeats} suất` : pricing.formatted}
+          {level === 1 ? pricing.formatted : isLicensed ? translateUi(`Đã có ${totalSeats} suất`) : pricing.formatted}
         </span>
       </div>
-      <h2 className="mt-2 text-[20px] font-bold leading-tight" style={{ color: 'var(--po-ink)', letterSpacing: '-0.03em' }}>{course.title}</h2>
+      <h2 className="mt-2 text-[20px] font-bold leading-tight" style={{ color: 'var(--po-ink)', letterSpacing: '-0.03em' }}>{translateUi(course.title)}</h2>
 
       <dl className="mt-4">
-        <Row label="Mã khóa">{course.code}</Row>
-        <Row label="Học phần">{course.modules}</Row>
-        {formatDuration(course.estimatedDurationMinutes) && <Row label="Thời lượng">{formatDuration(course.estimatedDurationMinutes)}</Row>}
-        <Row label="Điều kiện">{course.prerequisiteTitle ?? 'Không yêu cầu'}</Row>
-        {level > 1 && isLicensed && <Row label="Suất khả dụng">{course.seatsAvailable ?? totalSeats}</Row>}
-        <Row label="Phân công">{course.assignedCount} nhân viên</Row>
+        <Row label={translateUi("Mã khóa")}>{course.code}</Row>
+        <Row label={translateUi("Học phần")}>{course.modules}</Row>
+        {formatDuration(course.estimatedDurationMinutes) && <Row label={translateUi("Thời lượng")}>{formatDuration(course.estimatedDurationMinutes)}</Row>}
+        <Row label={translateUi("Điều kiện")}>{course.prerequisiteTitle ?? translateUi('Không yêu cầu')}</Row>
+        {level > 1 && isLicensed && <Row label={translateUi("Suất khả dụng")}>{course.seatsAvailable ?? totalSeats}</Row>}
+        <Row label={translateUi("Phân công")}>{course.assignedCount}{translateUi(" nhân viên")}</Row>
       </dl>
 
       <div className="mt-4 grid gap-2">
@@ -577,17 +588,13 @@ function CourseDetail({
               to={`/enterprise/training-batches/new?courseId=${course.id}`}
               className="rounded-[11px] border px-3 py-2.5 text-center text-xs font-bold transition-all hover:bg-slate-50"
               style={{ borderColor: '#cdd7f5', color: 'var(--po-accent)' }}
-            >
-              Đưa vào đợt đào tạo
-            </Link>
+            >{translateUi("Đưa vào đợt đào tạo")}</Link>
             {level > 1 && (
               <Link
                 to={`/enterprise/courses/checkout?courses=${encodeURIComponent(course.code)}`}
                 className="rounded-[11px] border px-3 py-2 text-center text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all block"
                 style={{ borderColor: 'var(--po-line)' }}
-              >
-                + Mua thêm suất & Ký online
-              </Link>
+              >{translateUi("+ Mua thêm suất & Ký online")}</Link>
             )}
           </>
         ) : (
@@ -613,6 +620,7 @@ function CourseSeatPurchaseModal({
   onClose: () => void;
   onSuccess?: () => void;
 }) {
+  useUiLanguage();
   const level = courseLevel(course);
   const pricing = levelPricing(level);
   const [seats, setSeats] = useState(10);
@@ -655,8 +663,8 @@ function CourseSeatPurchaseModal({
             <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
               🔒 Bản quyền khóa học thương mại
             </span>
-            <h2 className="mt-2 text-lg font-bold text-slate-900">{course.title}</h2>
-            <p className="text-xs text-slate-500 font-mono mt-0.5">{course.code} · Bậc {level} ({levelName(level)})</p>
+            <h2 className="mt-2 text-lg font-bold text-slate-900">{translateUi(course.title)}</h2>
+            <p className="text-xs text-slate-500 font-mono mt-0.5">{course.code}{translateUi(" · Bậc ")}{level} ({levelName(level)})</p>
           </div>
           <button
             type="button"
@@ -672,10 +680,9 @@ function CourseSeatPurchaseModal({
             <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 font-bold text-xl">
               ✓
             </div>
-            <h3 className="text-base font-bold text-slate-900">Kích hoạt suất học & Mở trần thành công!</h3>
-            <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
-              Bạn đã trang bị thành công <b>{result.seats} suất</b> cho khóa học <b>{course.code}</b>.
-              Khóa học đã được mở bản quyền và trần năng lực của doanh nghiệp đã được nâng lên <b>Bậc {level} ({levelName(level)})</b>.
+            <h3 className="text-base font-bold text-slate-900">{translateUi("Kích hoạt suất học & Mở rộng phạm vi thành công!")}</h3>
+            <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">{translateUi("Bạn đã trang bị thành công ")}<b>{result.seats}{translateUi(" suất")}</b>{translateUi(" cho khóa học ")}<b>{course.code}</b>.
+              Khóa học đã được mở bản quyền và phạm vi năng lực của doanh nghiệp đã được nâng lên <b>{translateUi("Bậc ")}{level} ({levelName(level)})</b>.
             </p>
             <div className="mx-auto max-w-sm rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-left text-xs space-y-1">
               <div className="flex justify-between text-slate-600">
@@ -683,11 +690,11 @@ function CourseSeatPurchaseModal({
                 <span className="font-mono font-semibold text-slate-800">{result.orderId.substring(0, 8)}...</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Tổng chi phí:</span>
+                <span>{translateUi("Tổng chi phí:")}</span>
                 <span className="font-bold text-emerald-800">{result.totalAmount.toLocaleString('vi-VN')} ₫</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Thời gian:</span>
+                <span>{translateUi("Thời gian:")}</span>
                 <span className="text-slate-700">{result.createdAt ? new Date(result.createdAt).toLocaleString('vi-VN') : new Date().toLocaleString('vi-VN')}</span>
               </div>
             </div>
@@ -710,22 +717,18 @@ function CourseSeatPurchaseModal({
                 onClick={onClose}
                 className="rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-sm"
                 style={{ background: 'var(--po-accent)' }}
-              >
-                Hoàn tất & Bắt đầu đào tạo
-              </button>
+              >{translateUi("Hoàn tất & Bắt đầu đào tạo")}</button>
             </div>
           </div>
         ) : (
           <div className="space-y-4 py-4">
             <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 text-xs text-slate-700 leading-relaxed">
-              💡 Doanh nghiệp của bạn đang dùng thử và được <b>miễn phí 100% toàn bộ khóa Cơ bản</b>.
-              Khóa Trung cấp & Nâng cao cung cấp kỹ năng thực chiến và cấp chứng chỉ chuẩn TT02 theo từng đầu người (1 suất = 1 nhân viên).
+              💡 Doanh nghiệp của bạn đang dùng thử và được <b>{translateUi("miễn phí 100% toàn bộ khóa Cơ bản")}</b>.
+              Mỗi suất học dành cho một nhân viên trong khóa học Trung cấp hoặc Nâng cao.
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Số lượng suất cần trang bị cho nhân sự:
-              </label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">{translateUi("Số lượng suất cần trang bị cho nhân sự:")}</label>
               <div className="flex items-center gap-2 mb-2">
                 {[5, 10, 20, 50].map((count) => (
                   <button
@@ -738,8 +741,7 @@ function CourseSeatPurchaseModal({
                         : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                     }`}
                   >
-                    {count} suất
-                  </button>
+                    {count}{translateUi(" suất")}</button>
                 ))}
               </div>
               <input
@@ -758,19 +760,19 @@ function CourseSeatPurchaseModal({
                 <span className="font-semibold text-slate-900">{pricing.formatted}</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Số lượng nhân viên đào tạo:</span>
-                <span className="font-semibold text-slate-900">{seats} nhân viên</span>
+                <span>{translateUi("Số lượng nhân viên đào tạo:")}</span>
+                <span className="font-semibold text-slate-900">{seats}{translateUi(" nhân viên")}</span>
               </div>
               <div className="flex justify-between border-t border-amber-200/60 pt-2 text-sm font-bold text-slate-900">
-                <span>Tổng chi phí đầu tư:</span>
+                <span>{translateUi("Tổng chi phí đầu tư:")}</span>
                 <span className="text-primary-700 font-extrabold">{totalAmount.toLocaleString('vi-VN')} ₫</span>
               </div>
             </div>
 
             {purchaseMutation.isError && (
               <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
-                {(purchaseMutation.error as any)?.response?.data?.message ||
-                  (purchaseMutation.error as any)?.message ||
+                {translateUi((purchaseMutation.error as any)?.response?.data?.message) ||
+                  translateUi((purchaseMutation.error as any)?.message) ||
                   'Có lỗi xảy ra khi thực hiện mua suất học.'}
               </div>
             )}
@@ -781,9 +783,7 @@ function CourseSeatPurchaseModal({
                 onClick={onClose}
                 disabled={purchaseMutation.isPending}
                 className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-              >
-                Để sau
-              </button>
+              >{translateUi("Để sau")}</button>
               <button
                 type="button"
                 onClick={handlePurchase}
@@ -792,7 +792,7 @@ function CourseSeatPurchaseModal({
                 style={{ background: 'var(--po-accent)' }}
               >
                 {purchaseMutation.isPending && <span className="animate-spin inline-block size-3.5 border-2 border-white border-t-transparent rounded-full" />}
-                <span>{purchaseMutation.isPending ? 'Đang xử lý...' : `Xác nhận mua suất học (${totalAmount.toLocaleString('vi-VN')} ₫)`}</span>
+                <span>{purchaseMutation.isPending ? translateUi('Đang xử lý...') : translateUi(`Xác nhận mua suất học (${totalAmount.toLocaleString('vi-VN')} ₫)`)}</span>
               </button>
             </div>
           </div>
