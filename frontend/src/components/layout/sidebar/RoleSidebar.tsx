@@ -40,7 +40,7 @@ export function RoleSidebar({
   const drawerRef = useRef<HTMLElement>(null);
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  useDialogFocus(Boolean(isMobileOpen && isMobile), drawerRef, onMobileClose ?? (() => {}));
+  useDialogFocus(Boolean(isMobileOpen && isMobile), drawerRef, onMobileClose ?? (() => { }));
 
   useEffect(() => {
     if (isMobileOpen) onMobileClose?.();
