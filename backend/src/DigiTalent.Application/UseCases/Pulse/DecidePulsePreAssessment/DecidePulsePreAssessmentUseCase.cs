@@ -41,6 +41,14 @@ public class DecidePulsePreAssessmentUseCase : IUseCase<DecidePulsePreAssessment
         }
 
         PulseExamPaper.EnsureCanPass(input.Decision, preAssessment.ChoiceScore, preAssessment.ChoiceTotal);
+        var rubricMetrics = PulseEssayRubric.ComputeAuditMetrics(input.CriterionEvaluations);
+        if (input.Decision == Statuses.FinalSubmissionDecision.Passed && rubricMetrics.GateFailed)
+        {
+            throw new BadRequestException(
+                "Tiêu chí bắt buộc (Gate) chưa đạt nên chưa đủ điều kiện công nhận.",
+                "CriterionEvaluations",
+                "RUBRIC_GATE_FAILED");
+        }
 
         var now = _clock.GetUtcNow();
         var reason = input.Reason.Trim();
@@ -112,11 +120,32 @@ public class DecidePulsePreAssessmentUseCase : IUseCase<DecidePulsePreAssessment
             throw new ConflictException("Bài đánh giá vừa được cập nhật, vui lòng tải lại hàng chờ.");
         }
 
+        var criteriaAudit = input.CriterionEvaluations is { Count: > 0 } evals
+            ? evals.Select(c => new
+            {
+                Number = (c.Number ?? string.Empty).Trim(),
+                Title = (c.Title ?? string.Empty).Trim(),
+                Status = (c.Status ?? string.Empty).Trim(),
+                Note = string.IsNullOrWhiteSpace(c.Note) ? null : c.Note.Trim(),
+                c.WeightPercent,
+                c.IsRequired,
+            }).ToList()
+            : null;
+
         await _audit.LogAsync(
             "PULSE_PRE_ASSESSMENT_DECIDED",
             "course_pre_assessments",
             preAssessment.Id,
-            newValues: new { preAssessment.Decision, preAssessment.EnrollmentId, CourseId = course.Id, EmployeeId = employee.Id },
+            newValues: new
+            {
+                preAssessment.Decision,
+                preAssessment.EnrollmentId,
+                CourseId = course.Id,
+                EmployeeId = employee.Id,
+                EssayScorePercent = criteriaAudit != null ? rubricMetrics.WeightedScorePercent : (int?)null,
+                GateFailed = criteriaAudit != null ? rubricMetrics.GateFailed : (bool?)null,
+                CriterionEvaluations = criteriaAudit,
+            },
             entityLabel: $"{employee.FullName} · {course.Title}");
 
         return new DecidePulsePreAssessmentUseCaseOutput

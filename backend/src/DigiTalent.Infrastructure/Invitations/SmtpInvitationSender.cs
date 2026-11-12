@@ -34,9 +34,9 @@ public sealed class SmtpInvitationSender : IInvitationSender
         using var email = new MailMessage
         {
             From = new MailAddress(_smtp.FromEmail, _smtp.FromName),
-            Subject = $"Lời mời tham gia {invitation.OrganizationName} · DigiTalent Pulse",
+            Subject = $"Lời mời tham gia {invitation.OrganizationName} · DigiTalent AI",
             IsBodyHtml = true,
-            Body = $"<p>Xin chào {safeName},</p><p>{safeOrganization} đã mời bạn tham gia DigiTalent Pulse.</p>" +
+            Body = $"<p>Xin chào {safeName},</p><p>{safeOrganization} đã mời bạn tham gia DigiTalent AI.</p>" +
                    (string.IsNullOrWhiteSpace(invitation.Note) ? "" : $"<p><strong>{HtmlEncoder.Default.Encode(invitation.Note)}</strong></p>") +
                    $"<p><a href=\"{safeLink}\">Xác nhận lời mời và tự đặt mật khẩu</a></p>" +
                    $"<p>Liên kết chỉ dùng một lần và có thời hạn. Nếu bạn không mong đợi lời mời này, hãy bỏ qua email.</p>" +

@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Constants.Authorization;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -9,9 +10,10 @@ namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
 /// Phạm vi chấm bài cuối khóa (§10.1): quản lý chỉ thấy nhân viên phòng ban mình, chủ doanh nghiệp thấy toàn tổ chức
-/// (EmployeeScope); không ai tự chấm bài của chính mình. Doanh nghiệp dùng thử (docs/specs/2026-10-27-enterprise-trial-assessment.md)
-/// chỉ do mentor DigiTalent được phân công chấm: mentor thấy nhân viên của các doanh nghiệp đó, người trong doanh nghiệp
-/// không thấy. Ngoài phạm vi → 404.
+/// (EmployeeScope); không ai tự chấm bài của chính mình.
+/// Với mentor DigiTalent: chấm bài dùng thử của doanh nghiệp được phân công (khi doanh nghiệp đang dùng thử) VÀ bài
+/// nộp hoàn thành từng cấp/miền của nhân viên thuộc các doanh nghiệp chính thức / đã chuyển gói.
+/// Doanh nghiệp dùng thử chưa phân công hoặc đã giao mentor khác nằm ngoài phạm vi của mentor → 404.
 /// </summary>
 public class PulseReviewScope
 {
@@ -34,13 +36,40 @@ public class PulseReviewScope
         var openTrials = _context.TrialWorkspaces.Where(t => t.ConvertedAt == null);
         if (_currentUser.Roles.Contains(Roles.Mentor))
         {
-            var assigned = openTrials.Where(t => t.MentorUserId == reviewerUserId).Select(t => t.OrganizationId);
-            return _context.Employees.Where(e => assigned.Contains(e.OrganizationId));
+            var excludedTrials = openTrials
+                .Where(t => t.MentorUserId == null || t.MentorUserId != reviewerUserId)
+                .Select(t => t.OrganizationId);
+            return _context.Employees.Where(e =>
+                (e.UserId == null || e.UserId != reviewerUserId)
+                && !excludedTrials.Contains(e.OrganizationId));
         }
 
         var trialOrganizations = openTrials.Select(t => t.OrganizationId);
         return _scope.VisibleEmployees()
             .Where(e => (e.UserId == null || e.UserId != reviewerUserId) && !trialOrganizations.Contains(e.OrganizationId));
+    }
+
+    public IQueryable<DigiTalent.Domain.Entities.Organization> ReviewableOrganizations()
+    {
+        var reviewerUserId = ReviewerUserId;
+        var openTrials = _context.TrialWorkspaces.Where(t => t.ConvertedAt == null);
+        if (_currentUser.Roles.Contains(Roles.Mentor))
+        {
+            var excludedTrials = openTrials
+                .Where(t => t.MentorUserId == null || t.MentorUserId != reviewerUserId)
+                .Select(t => t.OrganizationId);
+            return _context.Organizations.Where(o =>
+                o.Status == Statuses.Simple.Active
+                && !excludedTrials.Contains(o.Id));
+        }
+
+        var trialOrganizations = openTrials.Select(t => t.OrganizationId);
+        var organizationId = _currentUser.OrganizationId;
+        return _context.Organizations.Where(o =>
+            organizationId != null
+            && o.Id == organizationId.Value
+            && o.Status == Statuses.Simple.Active
+            && !trialOrganizations.Contains(o.Id));
     }
 
     /// <summary>Lần nộp (được theo dõi) + lượt học + nhân viên, nếu nhân viên nằm trong phạm vi chấm.</summary>

@@ -47,7 +47,9 @@ public static class CourseContentSeeder
             // Xác định miền và các năng lực của khóa học
             // Mã khóa học dạng "A1-F", "A2-I", v.v.
             var prefix = course.Code.Split('-')[0];
-            var domainDef = PersonalLearningCatalog.Domains.FirstOrDefault(d => d.CoursePrefix.Equals(prefix, StringComparison.OrdinalIgnoreCase));
+            var domainDef = PersonalLearningCatalog.Domains.FirstOrDefault(d =>
+                d.CoursePrefix.Equals(prefix, StringComparison.OrdinalIgnoreCase)
+                || string.Equals($"M{d.Number}", prefix, StringComparison.OrdinalIgnoreCase));
             if (domainDef == null) continue;
 
             var courseLevel = (short)(course.EntryLevel.HasValue ? Math.Min(3, course.EntryLevel.Value + 1) : 1);

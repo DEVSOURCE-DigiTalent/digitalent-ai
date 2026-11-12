@@ -39,6 +39,31 @@ public class GetCurrentUserWorkspaceTests
     }
 
     [Fact]
+    public async Task MentorWithoutOrganizationGetsMentorWorkspace()
+    {
+        await using var context = CreateContext();
+        var user = new User { Email = "mentor@example.com", DisplayName = "Mentor" };
+        var role = new Role { Code = Roles.Mentor, Name = "Mentor", ScopeType = "GLOBAL" };
+        user.UserRoles.Add(new UserRole { User = user, Role = role });
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        var currentUser = new Mock<ICurrentUser>();
+        currentUser.SetupGet(x => x.UserId).Returns(user.Id);
+        var permissions = new Mock<IPermissionService>();
+        permissions.Setup(x => x.GetPermissionsAsync(It.IsAny<IReadOnlyCollection<string>>()))
+            .ReturnsAsync(Array.Empty<string>());
+
+        var result = await new GetCurrentUserUseCase(context, currentUser.Object, permissions.Object)
+            .ExecuteAsync(new GetCurrentUserUseCaseInput());
+
+        result.Workspace.Should().Be("mentor");
+        result.OnboardingStatus.Should().BeNull();
+        result.Subscription.Should().BeNull();
+        result.Roles.Should().ContainSingle().Which.Should().Be(Roles.Mentor);
+    }
+
+    [Fact]
     public async Task PersonalUserWithoutOrganizationKeepsLearnerRole()
     {
         await using var context = CreateContext();

@@ -239,10 +239,12 @@ public class TrialProgramFlowTests
         var mentor = await world.UserAsync("mentor@digitalent.ai");
         var employee = await world.EmployeeAsync(PulseTestWorld.EmployeeEmail);
 
-        // Doanh nghiệp thường: chủ doanh nghiệp chấm được, mentor không thấy ai.
+        // Doanh nghiệp thường: chủ doanh nghiệp, quản lý và mentor đều thấy nhân viên để chấm.
         (await (await TrialAsAsync(world, PulseTestWorld.OwnerEmail, Roles.Owner)).ReviewScope.ReviewableEmployees().AnyAsync(e => e.Id == employee.Id))
             .Should().BeTrue();
-        (await (await TrialAsAsync(world, "mentor@digitalent.ai", Roles.Mentor)).ReviewScope.ReviewableEmployees().AnyAsync()).Should().BeFalse();
+        (await (await TrialAsAsync(world, "mentor@digitalent.ai", Roles.Mentor)).ReviewScope.ReviewableEmployees().AnyAsync(e => e.Id == employee.Id))
+            .Should().BeTrue();
+        (await PulseReviewers.UserIdsAsync(world.Context, employee)).Should().Contain(mentor.Id);
 
         // Dùng thử, chưa phân công: không ai chấm, không ai nhận thông báo.
         world.Context.TrialWorkspaces.Add(new TrialWorkspace
@@ -253,9 +255,15 @@ public class TrialProgramFlowTests
         world.Context.ChangeTracker.Clear();
         (await (await TrialAsAsync(world, PulseTestWorld.OwnerEmail, Roles.Owner)).ReviewScope.ReviewableEmployees().AnyAsync()).Should().BeFalse();
         (await (await TrialAsAsync(world, PulseTestWorld.ManagerEmail, Roles.Manager)).ReviewScope.ReviewableEmployees().AnyAsync()).Should().BeFalse();
+        (await (await TrialAsAsync(world, "mentor@digitalent.ai", Roles.Mentor)).ReviewScope.ReviewableEmployees().AnyAsync()).Should().BeFalse();
         (await PulseReviewers.UserIdsAsync(world.Context, employee)).Should().BeEmpty();
 
-        // Phân công mentor: chỉ mentor đó chấm và nhận thông báo bài nộp.
+        // Phân công mentor: chỉ mentor đó chấm và nhận thông báo bài nộp; mentor khác không thấy.
+        var mentorRole = await world.Context.Roles.SingleAsync(r => r.Code == Roles.Mentor);
+        var otherMentor = new User { Email = "mentor2@digitalent.ai", DisplayName = "Mentor 2", PasswordHash = "x" };
+        otherMentor.UserRoles.Add(new UserRole { RoleId = mentorRole.Id, AssignedAt = world.Clock.Now });
+        world.Context.Users.Add(otherMentor);
+
         var trial = await world.Context.TrialWorkspaces.SingleAsync();
         trial.MentorUserId = mentor.Id;
         trial.MentorAssignedAt = world.Clock.Now;
@@ -263,8 +271,246 @@ public class TrialProgramFlowTests
         world.Context.ChangeTracker.Clear();
         (await (await TrialAsAsync(world, "mentor@digitalent.ai", Roles.Mentor)).ReviewScope.ReviewableEmployees().AnyAsync(e => e.Id == employee.Id))
             .Should().BeTrue();
+        (await (await TrialAsAsync(world, "mentor2@digitalent.ai", Roles.Mentor)).ReviewScope.ReviewableEmployees().AnyAsync()).Should().BeFalse();
         (await (await TrialAsAsync(world, PulseTestWorld.OwnerEmail, Roles.Owner)).ReviewScope.ReviewableEmployees().AnyAsync()).Should().BeFalse();
         (await PulseReviewers.UserIdsAsync(world.Context, employee)).Should().Equal(mentor.Id);
+    }
+
+    [Fact]
+    public async Task Mentor_sees_and_grades_regular_org_assignments_across_domains_and_levels()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
+        var mentor = await world.AsAsync("mentor@digitalent.ai", Roles.Mentor);
+        var mentorUser = await world.UserAsync("mentor@digitalent.ai");
+
+        // Nhân viên nộp bài cuối cấp M1-F (Cơ bản), bài cuối cấp M3-F (Cơ bản, miền khác), và bài đánh giá trước khi học M2-F (để chứng minh mentor không nhận bài đánh giá trước khi học).
+        var m1f = await world.OpenForLearningAsync(employee, "M1-F");
+        await world.PassAllModulesAsync(employee, m1f.CourseId);
+        var finalM1f = await world.SubmitFinalAsync(employee, m1f.CourseId);
+
+        var m3f = await world.OpenForLearningAsync(employee, "M3-F");
+        await world.PassAllModulesAsync(employee, m3f.CourseId);
+        var finalM3f = await world.SubmitFinalAsync(employee, m3f.CourseId);
+
+        await world.SubmitPreAssessmentAsync(employee, "M2-F");
+
+        var opsManager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
+        var managerQueue = await opsManager.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput());
+        managerQueue.Items.Should().Contain(
+            i => i.CourseCode == "M2-F" && i.Kind == Statuses.ProctoringKind.PreAssessment,
+            "quản lý vẫn nhận bài đánh giá trước khi học trong hàng chờ của phòng ban");
+
+        (await world.Context.Notifications.AnyAsync(n =>
+            n.RecipientUserId == mentorUser.Id && n.Type == SubmitPulseFinalUseCase.NotificationType))
+            .Should().BeTrue("mentor nhận thông báo khi nhân viên doanh nghiệp chính thức nộp bài cuối cấp");
+
+        var activeQueue = await mentor.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput());
+        activeQueue.PendingCount.Should().Be(2);
+        activeQueue.PreAssessmentCount.Should().Be(0, "mentor không chấm bài đánh giá trước khi học");
+        activeQueue.ReviewedCount.Should().Be(0);
+        activeQueue.Items.Select(i => i.CourseCode).Should().BeEquivalentTo(new[] { "M1-F", "M3-F" });
+        activeQueue.Items.Should().OnlyContain(i =>
+            i.Kind == Statuses.ProctoringKind.Final
+            && i.OrganizationId != Guid.Empty
+            && !string.IsNullOrEmpty(i.DomainName)
+            && i.Tier == 1);
+
+        var withHistory = await mentor.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput { IncludeReviewed = true });
+        withHistory.ReviewedCount.Should().Be(0);
+        withHistory.PendingCount.Should().Be(2);
+        withHistory.PreAssessmentCount.Should().Be(0);
+        withHistory.Items.Should().OnlyContain(i => i.Kind == Statuses.ProctoringKind.Final);
+
+        // Mentor chấm đạt M1-F (cuối cấp -> mở khóa M1-I) và đạt M3-F.
+        await mentor.Decide.ExecuteAsync(new DecidePulseFinalUseCaseInput
+        {
+            SubmissionId = finalM1f.SubmissionId,
+            Decision = Statuses.FinalSubmissionDecision.Passed,
+            Reason = "Đạt đầy đủ ba tiêu chí theo chuẩn.",
+        });
+        await mentor.Decide.ExecuteAsync(new DecidePulseFinalUseCaseInput
+        {
+            SubmissionId = finalM3f.SubmissionId,
+            Decision = Statuses.FinalSubmissionDecision.Passed,
+            Reason = "Bài thực hành cuối cấp đạt yêu cầu.",
+        });
+        world.Context.ChangeTracker.Clear();
+
+        // Nhân viên đạt M1-F -> cấp suất học cấp Trung cấp M1-I, học xong các mô đun rồi nộp bài cuối cấp M1-I để mentor thấy nhiều cấp độ.
+        var m1i = await world.OpenForLearningAsync(employee, "M1-I");
+        var empEntity = await world.EmployeeAsync(PulseTestWorld.EmployeeEmail);
+        var ownerUser = await world.UserAsync(PulseTestWorld.OwnerEmail);
+        var m1iAssignment = new CourseAssignment
+        {
+            CourseId = m1i.CourseId,
+            EmployeeId = empEntity.Id,
+            AssignmentSource = Statuses.CourseAssignmentSource.SkillGap,
+            AssignedByUserId = ownerUser.Id,
+            AssignedAt = world.Clock.Now,
+            Status = Statuses.CourseAssignment.Active,
+        };
+        world.Context.CourseAssignments.Add(m1iAssignment);
+        world.Context.Enrollments.Add(new Enrollment
+        {
+            CourseAssignmentId = m1iAssignment.Id,
+            EmployeeId = empEntity.Id,
+            CourseId = m1i.CourseId,
+            Status = Statuses.Enrollment.NotStarted,
+            ProgressPercent = 0,
+        });
+        await world.Context.SaveChangesAsync();
+        world.Context.ChangeTracker.Clear();
+        await world.PassAllModulesAsync(employee, m1i.CourseId);
+        var finalM1i = await world.SubmitFinalAsync(employee, m1i.CourseId);
+
+        var afterUpgrade = await mentor.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput());
+        var itemM1i = afterUpgrade.Items.Should().ContainSingle(i => i.SubmissionId == finalM1i.SubmissionId).Subject;
+        itemM1i.CourseCode.Should().Be("M1-I");
+        itemM1i.Tier.Should().Be(2);
+        itemM1i.Kind.Should().Be(Statuses.ProctoringKind.Final);
+
+        var fullHistory = await mentor.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput { IncludeReviewed = true });
+        fullHistory.PendingCount.Should().Be(1);
+        fullHistory.PreAssessmentCount.Should().Be(0);
+        fullHistory.ReviewedCount.Should().Be(2);
+        fullHistory.Items.Should().Contain(i => i.SubmissionId == finalM1f.SubmissionId && i.Status == PulseFinalStatus.Approved);
+        fullHistory.Items.Should().Contain(i => i.SubmissionId == finalM3f.SubmissionId && i.Status == PulseFinalStatus.Approved);
+    }
+
+    [Fact]
+    public async Task Mentor_enterprises_endpoint_lists_scoped_enterprises_and_filters_final_reviews_by_organization()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
+        var mentor = await world.AsAsync("mentor@digitalent.ai", Roles.Mentor);
+        var mentorUser = await world.UserAsync("mentor@digitalent.ai");
+        var ownerUser = await world.UserAsync(PulseTestWorld.OwnerEmail);
+        var officialOrg = await world.Context.Organizations.AsNoTracking().SingleAsync(o => o.Id == ownerUser.OrganizationId!.Value);
+
+        // Tạo 2 doanh nghiệp dùng thử khác: một doanh nghiệp giao cho mentor@, một doanh nghiệp giao cho mentor2@ (ngoài phạm vi).
+        var mentorRole = await world.Context.Roles.SingleAsync(r => r.Code == Roles.Mentor);
+        var otherMentor = new User { Email = "mentor2@digitalent.ai", DisplayName = "Mentor 2", PasswordHash = "x" };
+        otherMentor.UserRoles.Add(new UserRole { RoleId = mentorRole.Id, AssignedAt = world.Clock.Now });
+        world.Context.Users.Add(otherMentor);
+
+        var assignedTrialOrg = new DigiTalent.Domain.Entities.Organization { Code = "TRIAL-A", Name = "Công ty Dùng thử A", Status = Statuses.Organization.Active };
+        var foreignTrialOrg = new DigiTalent.Domain.Entities.Organization { Code = "TRIAL-B", Name = "Công ty Dùng thử B", Status = Statuses.Organization.Active };
+        world.Context.Organizations.AddRange(assignedTrialOrg, foreignTrialOrg);
+
+        var assignedOwner = new User
+        {
+            Email = "owner-trial-a@digitalent.ai",
+            DisplayName = "Chủ DN A",
+            PasswordHash = "x",
+            OrganizationId = assignedTrialOrg.Id,
+        };
+        var ownerRole = await world.Context.Roles.SingleAsync(r => r.Code == Roles.Owner);
+        assignedOwner.UserRoles.Add(new UserRole { RoleId = ownerRole.Id, AssignedAt = world.Clock.Now });
+        world.Context.Users.Add(assignedOwner);
+
+        world.Context.TrialWorkspaces.AddRange(
+            new TrialWorkspace
+            {
+                OrganizationId = assignedTrialOrg.Id,
+                OwnerUserId = assignedOwner.Id,
+                MentorUserId = mentorUser.Id,
+                MentorAssignedAt = world.Clock.Now.AddDays(-1),
+                StartedAt = world.Clock.Now.AddDays(-2),
+                EndsAt = world.Clock.Now.AddDays(12),
+                PolicyJson = "{}",
+            },
+            new TrialWorkspace
+            {
+                OrganizationId = foreignTrialOrg.Id,
+                OwnerUserId = assignedOwner.Id,
+                MentorUserId = otherMentor.Id,
+                MentorAssignedAt = world.Clock.Now.AddDays(-1),
+                StartedAt = world.Clock.Now.AddDays(-2),
+                EndsAt = world.Clock.Now.AddDays(12),
+                PolicyJson = "{}",
+            });
+        await world.Context.SaveChangesAsync();
+        world.Context.ChangeTracker.Clear();
+
+        // Nhân viên thuộc doanh nghiệp chính thức nộp 1 bài cuối cấp M1-F.
+        var m1f = await world.OpenForLearningAsync(employee, "M1-F");
+        await world.PassAllModulesAsync(employee, m1f.CourseId);
+        var submitted = await world.SubmitFinalAsync(employee, m1f.CourseId);
+
+        var mentorTrialUc = await TrialAsAsync(world, "mentor@digitalent.ai", Roles.Mentor);
+        var enterprisesUc = new GetMentorEnterprisesUseCase(world.Context, mentorTrialUc.ReviewScope, world.Clock);
+        var result = await enterprisesUc.ExecuteAsync(new GetMentorEnterprisesUseCaseInput());
+
+        result.TotalEnterprises.Should().Be(2);
+        result.PendingCount.Should().Be(1);
+        result.ReviewedCount.Should().Be(0);
+        result.Items.Select(i => i.OrganizationId).Should().BeEquivalentTo(new[] { officialOrg.Id, assignedTrialOrg.Id });
+        result.Items.Should().NotContain(i => i.OrganizationId == foreignTrialOrg.Id);
+
+        var officialItem = result.Items.Single(i => i.OrganizationId == officialOrg.Id);
+        officialItem.Stage.Should().Be("OFFICIAL");
+        officialItem.PendingCount.Should().Be(1);
+        officialItem.TotalSubmissions.Should().Be(1);
+        officialItem.EmployeeCount.Should().BeGreaterThan(0);
+        officialItem.DepartmentCount.Should().BeGreaterThan(0);
+        officialItem.OwnerEmail.Should().Be(PulseTestWorld.OwnerEmail);
+        officialItem.LatestSubmittedAt.Should().NotBeNull();
+
+        var assignedTrialItem = result.Items.Single(i => i.OrganizationId == assignedTrialOrg.Id);
+        assignedTrialItem.Stage.Should().Be("TRIAL");
+        assignedTrialItem.PendingCount.Should().Be(0);
+        assignedTrialItem.TotalSubmissions.Should().Be(0);
+        assignedTrialItem.OwnerEmail.Should().Be("owner-trial-a@digitalent.ai");
+
+        // Lọc GET /pulse/final-reviews?organizationId=... trả đúng bài theo từng doanh nghiệp.
+        var officialQueue = await mentor.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput { OrganizationId = officialOrg.Id });
+        officialQueue.Items.Should().ContainSingle(i => i.SubmissionId == submitted.SubmissionId && i.OrganizationId == officialOrg.Id);
+
+        var emptyTrialQueue = await mentor.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput { OrganizationId = assignedTrialOrg.Id });
+        emptyTrialQueue.Items.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Platform_can_assign_unassigned_reported_trial_but_cannot_reassign_already_assigned_reported_trial()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var owner = await world.UserAsync(PulseTestWorld.OwnerEmail);
+        var mentor = await world.UserAsync("mentor@digitalent.ai");
+        var mentorRole = await world.Context.Roles.SingleAsync(r => r.Code == Roles.Mentor);
+        var otherMentor = new User { Email = "mentor2@digitalent.ai", DisplayName = "Mentor 2", PasswordHash = "x" };
+        otherMentor.UserRoles.Add(new UserRole { RoleId = mentorRole.Id, AssignedAt = world.Clock.Now });
+        world.Context.Users.Add(otherMentor);
+
+        world.Context.TrialWorkspaces.Add(new TrialWorkspace
+        {
+            OrganizationId = owner.OrganizationId!.Value,
+            OwnerUserId = owner.Id,
+            StartedAt = world.Clock.Now.AddDays(-3),
+            EndsAt = world.Clock.Now.AddDays(57),
+            RequestedAt = world.Clock.Now.AddDays(-2),
+            ReportPublishedAt = world.Clock.Now.AddDays(-1),
+            PolicyJson = "{}",
+        });
+        await world.Context.SaveChangesAsync();
+        world.Context.ChangeTracker.Clear();
+
+        var asAdmin = await TrialAsAsync(world, "platform@digitalent.ai", Roles.PlatformAdmin);
+        var assigned = await asAdmin.Assign.ExecuteAsync(new AssignTrialMentorUseCaseInput
+        {
+            OrganizationId = owner.OrganizationId!.Value,
+            MentorUserId = mentor.Id,
+        });
+        assigned.MentorUserId.Should().Be(mentor.Id);
+        world.Context.ChangeTracker.Clear();
+
+        await FluentActions.Awaiting(() => asAdmin.Assign.ExecuteAsync(new AssignTrialMentorUseCaseInput
+            {
+                OrganizationId = owner.OrganizationId!.Value,
+                MentorUserId = otherMentor.Id,
+            }))
+            .Should().ThrowAsync<BadRequestException>()
+            .Where(e => e.Errors.Any(err => err.Code == "TRIAL_REPORTED"));
     }
 
     private static async Task<List<PulseAnswerInput>> AnswersAsync(PulseTestWorld world, IReadOnlyList<TrialExamQuestionDto> questions, int correctTiers)

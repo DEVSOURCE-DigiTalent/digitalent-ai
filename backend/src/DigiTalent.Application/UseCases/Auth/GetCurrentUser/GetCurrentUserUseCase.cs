@@ -57,9 +57,10 @@ public class GetCurrentUserUseCase : IUseCase<GetCurrentUserUseCaseInput, GetCur
             .Where(r => !string.IsNullOrEmpty(r))
             .Distinct()
             .ToList();
-        // Mentor = nhân sự nền tảng (không thuộc tổ chức), dùng không gian platform như quản trị nền tảng.
-        var isPlatform = roles.Contains(Roles.PlatformAdmin) || roles.Contains(Roles.Mentor);
-        var isPersonal = user.OrganizationId == null && !isPlatform;
+        // Mentor = nhân sự thẩm định độc lập của DigiTalent, dùng không gian /mentor riêng tách khỏi quản trị nền tảng.
+        var isPlatformAdmin = roles.Contains(Roles.PlatformAdmin);
+        var isMentor = !isPlatformAdmin && roles.Contains(Roles.Mentor);
+        var isPersonal = user.OrganizationId == null && !isPlatformAdmin && !isMentor;
         if (isPersonal)
         {
             roles = new List<string> { "LEARNER" };
@@ -119,7 +120,7 @@ public class GetCurrentUserUseCase : IUseCase<GetCurrentUserUseCaseInput, GetCur
             FullName = user.DisplayName,
             EmployeeId = user.EmployeeId,
             OrganizationId = user.OrganizationId,
-            Workspace = isPlatform ? "platform" : isPersonal ? "personal" : "enterprise",
+            Workspace = isPlatformAdmin ? "platform" : isMentor ? "mentor" : isPersonal ? "personal" : "enterprise",
             EmailVerified = user.EmailVerifiedAt != null,
             OnboardingStatus = onboardingStatus,
             Subscription = subDto,

@@ -194,6 +194,18 @@ public class PulseAnswerInput
     public Guid OptionId { get; set; }
 }
 
+/// <summary>Đánh giá chi tiết theo từng tiêu chí chấm phần tự luận.</summary>
+public class PulseCriterionEvaluationInput
+{
+    public string Number { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    /// <summary>PASS | PARTIAL | FAIL</summary>
+    public string Status { get; set; } = string.Empty;
+    public string? Note { get; set; }
+    public int? WeightPercent { get; set; }
+    public bool? IsRequired { get; set; }
+}
+
 public static class PulseMapping
 {
     public static PulsePersonDto Person(PulseLearnerSnapshot snapshot) => new()

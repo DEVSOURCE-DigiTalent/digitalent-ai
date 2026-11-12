@@ -100,7 +100,10 @@ internal sealed class PulseTestWorld : IDisposable
         var user = await UserAsync(email);
         var employee = await Context.Employees.AsNoTracking().FirstOrDefaultAsync(e => e.UserId == user.Id);
         var current = new Mock<ICurrentUser>();
-        current.Setup(c => c.GetRequiredOrganizationId()).Returns(user.OrganizationId!.Value);
+        if (user.OrganizationId is { } organizationId)
+        {
+            current.Setup(c => c.GetRequiredOrganizationId()).Returns(organizationId);
+        }
         current.Setup(c => c.OrganizationId).Returns(user.OrganizationId);
         current.Setup(c => c.UserId).Returns(user.Id);
         current.Setup(c => c.EmployeeId).Returns(employee?.Id);

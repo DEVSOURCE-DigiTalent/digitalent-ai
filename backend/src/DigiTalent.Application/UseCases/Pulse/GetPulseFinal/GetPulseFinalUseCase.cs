@@ -32,6 +32,7 @@ public class GetPulseFinalUseCase : IUseCase<GetPulseFinalUseCaseInput, GetPulse
         var choiceCount = PulseExamPaper.SizeOf(state.Modules);
         var courseId = state.Enrollment?.CourseId ?? state.Course.CourseId;
         var assignment = _content == null ? null : (await _content.FinalsAsync(new[] { courseId })).GetValueOrDefault(courseId);
+        var rubric = PulseEssayRubric.Build(state.Domain.Number, state.Domain.Name, state.Course.Tier, assignment?.Criteria, state.Course.Code);
 
         return new GetPulseFinalUseCaseOutput
         {
@@ -40,7 +41,7 @@ public class GetPulseFinalUseCase : IUseCase<GetPulseFinalUseCaseInput, GetPulse
             PositionName = snapshot.PositionName,
             Reviewer = PulseMapping.Reviewer(snapshot),
             Assignment = assignment,
-            Criteria = PulseRules.FinalCriteria.ToList(),
+            Criteria = rubric,
             ChoiceCount = choiceCount,
             ChoicePassMark = PulseRules.ChoicePassMark(choiceCount),
             Status = state.FinalStatus,

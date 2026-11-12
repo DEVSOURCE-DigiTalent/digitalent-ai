@@ -11,16 +11,30 @@ namespace DigiTalent.Infrastructure.AI;
 
 public sealed class GeminiService : IGeminiService
 {
+    private const string DefaultModel = "gemini-2.5-flash";
+    private static readonly string[] DefaultFallbackModels = { "gemini-2.5-flash", "gemini-2.0-flash" };
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
+
     private readonly HttpClient _http;
     private readonly string _apiKey;
     private readonly string _model;
+    private readonly IReadOnlyList<string> _models;
     private readonly ILogger<GeminiService> _logger;
 
     public GeminiService(HttpClient http, IConfiguration config, ILogger<GeminiService> logger)
     {
         _http = http;
         _apiKey = ResolveApiKey(config);
-        _model = config["Gemini:Model"] ?? "gemini-3.8-flash";
+        var configured = config["Gemini:Model"]?.Trim();
+        _model = string.IsNullOrWhiteSpace(configured) ? DefaultModel : configured;
+        var configuredFallbacks = config.GetSection("Gemini:FallbackModels").Get<string[]>() ?? Array.Empty<string>();
+        _models = new[] { _model }
+            .Concat(configuredFallbacks)
+            .Concat(DefaultFallbackModels)
+            .Where(m => !string.IsNullOrWhiteSpace(m))
+            .Select(m => m.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
         _logger = logger;
     }
 
@@ -51,16 +65,20 @@ public sealed class GeminiService : IGeminiService
         IReadOnlyList<string> criteria,
         IReadOnlyList<ProctoringEventInfo>? proctoringEvents = null,
         string? courseContent = null,
+        string? domainName = null,
+        int? tier = null,
+        IReadOnlyList<PulseCriterionDto>? rubric = null,
         CancellationToken cancellationToken = default)
     {
+        var domainNumber = PulseEssayRubric.ResolveDomainNumber(null, domainName);
         if (string.IsNullOrWhiteSpace(_apiKey))
         {
             _logger.LogWarning("Gemini API key not configured, falling back to keyword matching.");
-            return PulseRules.AiHint(evidenceText);
+            return PulseRules.AiHint(evidenceText, finalPrompt, rubric, domainNumber, tier);
         }
 
-        var prompt = EvidencePrompt(evidenceText, finalPrompt, criteria, proctoringEvents, courseContent);
-        return await SendEvidenceAsync(prompt, evidenceText, criteria.Count, cancellationToken);
+        var prompt = EvidencePrompt(evidenceText, finalPrompt, criteria, proctoringEvents, courseContent, domainName, tier, rubric);
+        return await SendEvidenceAsync(prompt, evidenceText, finalPrompt, criteria.Count, rubric, domainNumber, tier, cancellationToken);
     }
 
     /// <summary>Text sent to Gemini for one course-final or pre-assessment answer.</summary>
@@ -69,9 +87,40 @@ public sealed class GeminiService : IGeminiService
         string finalPrompt,
         IReadOnlyList<string> criteria,
         IReadOnlyList<ProctoringEventInfo>? proctoringEvents,
-        string? courseContent)
+        string? courseContent) =>
+        EvidencePrompt(evidenceText, finalPrompt, criteria, proctoringEvents, courseContent, null, null, null);
+
+    public static string EvidencePrompt(
+        string evidenceText,
+        string finalPrompt,
+        IReadOnlyList<string> criteria,
+        IReadOnlyList<ProctoringEventInfo>? proctoringEvents,
+        string? courseContent,
+        string? domainName,
+        int? tier,
+        IReadOnlyList<PulseCriterionDto>? rubric)
     {
-        var criteriaList = string.Join("\n", criteria.Select((c, i) => (i + 1) + ". " + c));
+        var criteriaList = rubric is { Count: > 0 }
+            ? string.Join("\n", rubric.Select((c, i) =>
+            {
+                var tags = new List<string>();
+                if (c.WeightPercent > 0) tags.Add($"Trọng số {c.WeightPercent}%");
+                if (c.IsRequired) tags.Add("TIÊU CHÍ BẮT BUỘC (GATE)");
+                var tagPrefix = tags.Count > 0 ? $" [{string.Join(" · ", tags)}]" : "";
+                var desc = string.IsNullOrWhiteSpace(c.Description) ? "" : $": {c.Description}";
+                return $"{i + 1}. {c.Title}{tagPrefix}{desc}";
+            }))
+            : string.Join("\n", criteria.Select((c, i) => (i + 1) + ". " + c));
+
+        var criteriaCount = rubric is { Count: > 0 } ? rubric.Count : criteria.Count;
+
+        var domainLine = string.IsNullOrWhiteSpace(domainName) ? "" : $"LĨNH VỰC NĂNG LỰC (TT02): {domainName.Trim()}\n";
+        var tierLine = tier.HasValue ? $"CẤP ĐỘ KHÓA HỌC: {PulseEssayRubric.TierExpectationLabel(tier)}\n" : "";
+        var contextBlock = (domainLine + tierLine).Length > 0 ? domainLine + tierLine + "\n" : "";
+        var hasGate = rubric?.Any(c => c.IsRequired) == true;
+        var gateRule = hasGate
+            ? $"Chuẩn đạt tự luận: tổng điểm trọng số >= {PulseEssayRubric.EssayPassPercent}% VÀ không rớt TIÊU CHÍ BẮT BUỘC (GATE). Nếu bài thiếu hoặc sai nghiêm trọng nội dung của tiêu chí GATE, phải đánh dấu checks=false ở tiêu chí đó và khuyến nghị chưa đạt.\n"
+            : "";
 
         var courseText = string.IsNullOrWhiteSpace(courseContent)
             ? ""
@@ -101,39 +150,41 @@ public sealed class GeminiService : IGeminiService
         }
 
         return
-            "Bạn là hệ thống AI đánh giá bài cuối khóa năng lực số cho doanh nghiệp. "
-            + "Phân tích bài nộp của nhân viên và trả lời JSON thuần (không markdown).\n\n"
+            "Bạn là hệ thống AI hỗ trợ mentor chấm bài cuối cấp năng lực số doanh nghiệp. "
+            + "Phân tích bài nộp theo từng tiêu chí đã cấu hình và trả lời JSON thuần (không markdown).\n\n"
+            + "QUY TẮC QUAN TRỌNG: Chỉ chấm đạt tiêu chí (true) khi nhân viên nêu ví dụ, nguồn dữ liệu, công cụ, con số hoặc bước làm THỰC TẾ của bản thân. "
+            + "Nếu bài nộp chỉ chép lại câu hỏi đề bài hoặc nói chung chung không có dẫn chứng cụ thể, phải đánh dấu tất cả checks=false, plagiarism_score>=85, relevance_score<=20 và depth_score<=15.\n\n"
+            + contextBlock
             + "ĐỀ BÀI:\n" + StripHtml(finalPrompt) + "\n\n"
-            + "TIÊU CHÍ CHẤM (" + criteria.Count + " tiêu chí):\n" + criteriaList + "\n\n"
+            + "TIÊU CHÍ CHẤM (" + criteriaCount + " tiêu chí):\n" + criteriaList + "\n\n"
             + courseText
             + "BÀI NỘP CỦA NHÂN VIÊN:\n" + evidenceText
             + eventsText + "\n\n"
             + "YÊU CẦU ĐÁNH GIÁ:\n"
+            + gateRule
             + courseRule
-            + "1. checks: đánh giá từng tiêu chí (true/false)\n"
-            + "2. summary: tóm tắt tổng quan 2-3 câu\n"
-            + "3. detail: phân tích chi tiết gồm:\n"
-            + "   - plagiarism_score (0-100): 0=nguyên bản, 100=sao chép hoàn toàn\n"
+            + "1. checks: mảng " + criteriaCount + " boolean đánh giá đạt/chưa đạt theo đúng thứ tự tiêu chí.\n"
+            + "2. criterion_notes: mảng " + criteriaCount + " chuỗi nhận xét ngắn (1-2 câu tiếng Việt/tiêu chí), trích dẫn cụ thể điểm bài đã nêu hoặc điểm còn thiếu cho đúng tiêu chí đó.\n"
+            + "3. summary: tóm tắt tổng quan 2 câu ngắn gọn.\n"
+            + "4. detail: phân tích chi tiết gồm:\n"
+            + "   - plagiarism_score (0-100): 0=nguyên bản, 100=sao chép hoàn toàn hoặc lặp nguyên văn đề bài\n"
             + "   - plagiarism_note: giải thích ngắn gọn\n"
             + "   - ai_generated_score (0-100): 0=con người viết, 100=AI viết hoàn toàn\n"
             + "   - ai_generated_note: giải thích ngắn gọn\n"
-            + "   - relevance_score (0-100): 0=lạc đề, 100=hoàn toàn đúng\n"
+            + "   - relevance_score (0-100): 0=lạc đề/chép lại đề, 100=hoàn toàn sát yêu cầu thực tế\n"
             + "   - relevance_note: giải thích ngắn gọn\n"
-            + "   - depth_score (0-100): 0=sơ sài, 100=rất chi tiết\n"
+            + "   - depth_score (0-100): 0=sơ sài, 100=rất chi tiết, kiểm chứng được\n"
             + "   - depth_note: giải thích ngắn gọn\n"
             + "   - clarity_score (0-100): 0=khó hiểu, 100=rất rõ ràng\n"
             + "   - clarity_note: giải thích ngắn gọn\n"
-            + "   - verdict: kết luận tổng thể 1 câu\n"
-            + "4. fraud: phân tích gian lận từ sự kiện giám sát (nếu có events):\n"
+            + "   - verdict: kết luận tổng thể 1 câu cho mentor\n"
+            + "5. fraud: phân tích gian lận từ sự kiện giám sát (nếu có events):\n"
             + "   - level: mức nghi ngờ (LOW/MEDIUM/HIGH)\n"
-            + "   - summary: tóm tắt 1 câu về tình trạng gian lận\n"
-            + "   - items: danh sách sự kiện nghi ngờ, mỗi item gồm:\n"
-            + "     - time: thời điểm (mm:ss)\n"
-            + "     - event: loại sự kiện (Rời tab, Tắt camera...)\n"
-            + "     - note: giải thích vì sao nghi ngờ\n"
+            + "   - summary: tóm tắt 1 câu về tình trạng giám sát\n"
+            + "   - items: danh sách sự kiện nghi ngờ, mỗi item gồm: time (mm:ss), event, note.\n"
             + "   Nếu không có events hoặc không có gì bất thường, trả fraud.level=LOW, items=[]\n\n"
             + "Trả JSON theo cấu trúc:\n"
-            + "{\"checks\":[...],\"summary\":\"...\","
+            + "{\"checks\":[...],\"criterion_notes\":[...],\"summary\":\"...\","
             + "\"detail\":{\"plagiarism_score\":0,\"plagiarism_note\":\"...\",\"ai_generated_score\":0,\"ai_generated_note\":\"...\","
             + "\"relevance_score\":0,\"relevance_note\":\"...\",\"depth_score\":0,\"depth_note\":\"...\","
             + "\"clarity_score\":0,\"clarity_note\":\"...\",\"verdict\":\"...\"},"
@@ -141,22 +192,30 @@ public sealed class GeminiService : IGeminiService
             + "Trả lời bằng tiếng Việt.";
     }
 
-    private async Task<PulseAiHintDto> SendEvidenceAsync(string prompt, string evidenceText, int criteriaCount, CancellationToken cancellationToken)
+    private async Task<PulseAiHintDto> SendEvidenceAsync(
+        string prompt,
+        string evidenceText,
+        string finalPrompt,
+        int criteriaCount,
+        IReadOnlyList<PulseCriterionDto>? rubric,
+        int domainNumber,
+        int? tier,
+        CancellationToken cancellationToken)
     {
         try
         {
-            var text = await GenerateJsonAsync(prompt, cancellationToken);
+            var (text, usedModel) = await GenerateJsonAsync(prompt, cancellationToken);
             if (string.IsNullOrWhiteSpace(text))
             {
                 _logger.LogWarning("Gemini returned no answer, falling back.");
-                return PulseRules.AiHint(evidenceText);
+                return PulseRules.AiHint(evidenceText, finalPrompt, rubric, domainNumber, tier);
             }
 
-            var parsed = JsonSerializer.Deserialize<AiHintResponse>(text);
+            var parsed = JsonSerializer.Deserialize<AiHintResponse>(TrimCodeFences(text), JsonOptions);
             if (parsed?.Checks == null || parsed.Checks.Count != criteriaCount)
             {
                 _logger.LogWarning("Gemini returned invalid checks count, falling back.");
-                return PulseRules.AiHint(evidenceText);
+                return PulseRules.AiHint(evidenceText, finalPrompt, rubric, domainNumber, tier);
             }
 
             // Map detail
@@ -198,12 +257,50 @@ public sealed class GeminiService : IGeminiService
                 };
             }
 
-            return new PulseAiHintDto(parsed.Checks, parsed.Summary ?? "") { Detail = detail, Fraud = fraud };
+            var checks = parsed.Checks.ToList();
+            var criterionNotes = parsed.CriterionNotes is { Count: > 0 }
+                ? Enumerable.Range(0, criteriaCount)
+                    .Select(idx => idx < parsed.CriterionNotes.Count ? (parsed.CriterionNotes[idx] ?? "").Trim() : "")
+                    .ToList()
+                : null;
+            var summary = parsed.Summary ?? "";
+
+            // Guard cứng ở backend: nếu bài chép nguyên văn đề bài, không để Gemini lọt checks=true.
+            if (PulseEssayRubric.AnalyzePromptCopy(evidenceText, finalPrompt).IsPromptCopy)
+            {
+                checks = Enumerable.Repeat(false, criteriaCount).ToList();
+                criterionNotes = Enumerable.Range(0, criteriaCount)
+                    .Select(_ => "Nội dung lặp lại câu chữ đề bài, chưa có tình huống thực tế và dẫn chứng kiểm chứng.")
+                    .ToList();
+                summary = "Cảnh báo: Bài nộp đang lặp lại nội dung đề bài, chưa nêu tình huống công việc thực tế và dẫn chứng kiểm chứng. Cần yêu cầu bổ sung trước khi công nhận.";
+                if (detail != null)
+                {
+                    detail = detail with
+                    {
+                        PlagiarismScore = Math.Max(detail.PlagiarismScore, 90),
+                        PlagiarismNote = string.IsNullOrWhiteSpace(detail.PlagiarismNote)
+                            ? "Lặp lại nội dung câu hỏi đề bài."
+                            : detail.PlagiarismNote,
+                        RelevanceScore = Math.Min(detail.RelevanceScore, 20),
+                        DepthScore = Math.Min(detail.DepthScore, 15),
+                        Verdict = "Chưa đạt: bài nộp lặp lại nội dung đề bài, thiếu ví dụ thực tế và dẫn chứng kiểm chứng.",
+                    };
+                }
+            }
+
+            return new PulseAiHintDto(checks, summary)
+            {
+                CriterionNotes = criterionNotes,
+                Source = "GEMINI",
+                Model = usedModel ?? _model,
+                Detail = detail,
+                Fraud = fraud,
+            };
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Gemini API call failed, falling back to keyword matching.");
-            return PulseRules.AiHint(evidenceText);
+            return PulseRules.AiHint(evidenceText, finalPrompt, rubric, domainNumber, tier);
         }
     }
 
@@ -231,10 +328,10 @@ public sealed class GeminiService : IGeminiService
 
         try
         {
-            var text = await GenerateJsonAsync(prompt, cancellationToken);
+            var (text, usedModel) = await GenerateJsonAsync(prompt, cancellationToken);
             if (string.IsNullOrWhiteSpace(text)) return null;
 
-            var parsed = JsonSerializer.Deserialize<EssayReviewResponse>(text);
+            var parsed = JsonSerializer.Deserialize<EssayReviewResponse>(TrimCodeFences(text), JsonOptions);
             var byTier = (parsed?.Essays ?? new List<EssayScoreResponse>())
                 .GroupBy(e => e.Tier)
                 .ToDictionary(g => g.Key, g => g.First());
@@ -258,7 +355,7 @@ public sealed class GeminiService : IGeminiService
                     };
                 }).ToList(),
                 Summary = parsed?.Summary?.Trim() ?? "",
-                Model = _model,
+                Model = usedModel ?? _model,
             };
         }
         catch (Exception ex)
@@ -268,10 +365,9 @@ public sealed class GeminiService : IGeminiService
         }
     }
 
-    /// <summary>Gọi generateContent (trả JSON), thử lại khi 429/503. Khóa gửi qua header, không nằm trong URL / log.</summary>
-    private async Task<string?> GenerateJsonAsync(string prompt, CancellationToken cancellationToken)
+    /// <summary>Gọi generateContent (trả JSON), thử lại khi 429/503 và chuyển model dự phòng nếu model chính không khả dụng. Khóa gửi qua header.</summary>
+    private async Task<(string? Text, string? Model)> GenerateJsonAsync(string prompt, CancellationToken cancellationToken)
     {
-        var url = "https://generativelanguage.googleapis.com/v1beta/models/" + _model + ":generateContent";
         var request = new GeminiRequest
         {
             Contents = new[]
@@ -287,22 +383,57 @@ public sealed class GeminiService : IGeminiService
             }
         };
 
-        HttpResponseMessage? response = null;
-        for (var attempt = 0; attempt < 3; attempt++)
+        foreach (var model in _models)
         {
-            using var message = new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent.Create(request) };
-            message.Headers.Add("x-goog-api-key", _apiKey);
-            response = await _http.SendAsync(message, cancellationToken);
-            if (response.IsSuccessStatusCode) break;
-            var body = await response.Content.ReadAsStringAsync(cancellationToken);
-            _logger.LogWarning("Gemini API attempt {Attempt} returned {Status}: {Body}", attempt + 1, (int)response.StatusCode, body);
-            if ((int)response.StatusCode != 503 && (int)response.StatusCode != 429) break;
-            await Task.Delay(2000 * (attempt + 1), cancellationToken);
+            var url = "https://generativelanguage.googleapis.com/v1beta/models/" + Uri.EscapeDataString(model) + ":generateContent";
+            for (var attempt = 0; attempt < 2; attempt++)
+            {
+                using var message = new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent.Create(request) };
+                message.Headers.Add("x-goog-api-key", _apiKey);
+                using var response = await _http.SendAsync(message, cancellationToken);
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<GeminiResponse>(cancellationToken: cancellationToken);
+                    var raw = result?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text;
+                    if (!string.IsNullOrWhiteSpace(raw))
+                    {
+                        return (raw, model);
+                    }
+                    break;
+                }
+
+                var status = (int)response.StatusCode;
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogWarning("Gemini API model {Model} attempt {Attempt} returned {Status}: {Body}", model, attempt + 1, status, body);
+
+                // Model không tồn tại / không hỗ trợ generateContent -> chuyển model dự phòng ngay
+                if (status is 400 or 404) break;
+                // Key sai / hết quyền -> dừng luôn, không retry vô ích
+                if (status is 401 or 403) return (null, null);
+                // Rate limit / Quá tải tạm thời -> thử lại ngắn rồi sang model dự phòng
+                if (status is 429 or 503 && attempt == 0)
+                {
+                    await Task.Delay(1200, cancellationToken);
+                    continue;
+                }
+                break;
+            }
         }
 
-        if (response is not { IsSuccessStatusCode: true }) return null;
-        var result = await response.Content.ReadFromJsonAsync<GeminiResponse>(cancellationToken: cancellationToken);
-        return result?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text;
+        return (null, null);
+    }
+
+    private static string TrimCodeFences(string text)
+    {
+        var trimmed = text.Trim();
+        if (!trimmed.StartsWith("```", StringComparison.Ordinal)) return trimmed;
+        var firstNewline = trimmed.IndexOf('\n');
+        var lastFence = trimmed.LastIndexOf("```", StringComparison.Ordinal);
+        if (firstNewline >= 0 && lastFence > firstNewline)
+        {
+            return trimmed[(firstNewline + 1)..lastFence].Trim();
+        }
+        return trimmed;
     }
 
     private static int Clamp(int v) => Math.Clamp(v, 0, 100);
@@ -327,6 +458,8 @@ public sealed class GeminiService : IGeminiService
     {
         [JsonPropertyName("checks")]
         public List<bool> Checks { get; set; } = new();
+        [JsonPropertyName("criterion_notes")]
+        public List<string>? CriterionNotes { get; set; }
         [JsonPropertyName("summary")]
         public string? Summary { get; set; }
         [JsonPropertyName("detail")]

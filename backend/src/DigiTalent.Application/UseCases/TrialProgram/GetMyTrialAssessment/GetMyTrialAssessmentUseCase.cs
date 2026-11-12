@@ -173,7 +173,7 @@ public class GetMyTrialAssessmentUseCase : IUseCase<GetMyTrialAssessmentUseCaseI
             Domains = domains.Select(TrialDomainDto.From).ToList(),
             Essays = TrialProgramRules.Essays.ToList(),
             SubmittedAt = assessment?.SubmittedAt,
-            ReportPublished = published,
+            ReportPublished = published && levels != null,
             Levels = levels,
             DomainDetails = domainDetails,
             EssayResults = essayResults,

@@ -17,9 +17,13 @@ internal sealed class StubGeminiService : IGeminiService
         IReadOnlyList<string> criteria,
         IReadOnlyList<ProctoringEventInfo>? proctoringEvents = null,
         string? courseContent = null,
+        string? domainName = null,
+        int? tier = null,
+        IReadOnlyList<PulseCriterionDto>? rubric = null,
         CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(PulseRules.AiHint(evidenceText));
+        var domainNumber = PulseEssayRubric.ResolveDomainNumber(null, domainName);
+        return Task.FromResult(PulseRules.AiHint(evidenceText, finalPrompt, rubric, domainNumber, tier));
     }
 
     public Task<TrialEssayAiReviewDto?> EvaluateTrialEssaysAsync(
