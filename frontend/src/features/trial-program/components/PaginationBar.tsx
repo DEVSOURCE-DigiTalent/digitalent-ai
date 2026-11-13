@@ -66,6 +66,7 @@ export function PaginationBar({
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
             aria-label="Số dòng mỗi trang"
+            title="Số dòng mỗi trang"
           >
             {pageSizeOptions.map((opt) => (
               <option key={opt} value={opt}>
@@ -83,6 +84,7 @@ export function PaginationBar({
           disabled={safePage <= 1}
           onClick={() => onPageChange(safePage - 1)}
           aria-label="Trang trước"
+          title="Trang trước"
         >
           <ChevronLeft size={14} aria-hidden="true" />
           <span>Trước</span>
@@ -112,6 +114,7 @@ export function PaginationBar({
           disabled={safePage >= totalPages}
           onClick={() => onPageChange(safePage + 1)}
           aria-label="Trang sau"
+          title="Trang sau"
         >
           <span>Sau</span>
           <ChevronRight size={14} aria-hidden="true" />

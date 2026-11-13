@@ -5635,19 +5635,44 @@
 }
 
 .mw-queue-rail .mw-pagination-bar {
-  padding: 10px 12px;
-  flex-direction: column;
-  align-items: stretch;
+  padding: 8px 12px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
 }
 
 .mw-queue-rail .mw-pagination-summary {
-  justify-content: space-between;
+  gap: 8px;
   font-size: 11.5px;
 }
 
+/* Gọn một dòng: ẩn chữ "Số dòng", "Trước", "Sau" (đã có aria-label và title) */
+.mw-queue-rail .mw-page-size-label > span,
+.mw-queue-rail .mw-page-btn > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.mw-queue-rail .mw-page-size-select {
+  height: 28px;
+  padding: 0 4px;
+}
+
 .mw-queue-rail .mw-pagination-controls {
-  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+
+.mw-queue-rail .mw-page-btn,
+.mw-queue-rail .mw-page-num-btn {
+  height: 28px;
+  min-width: 28px;
+  padding: 0 6px;
 }
 
 /* Right Grading Stage */
