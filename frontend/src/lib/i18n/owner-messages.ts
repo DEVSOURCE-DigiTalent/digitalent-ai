@@ -1,5 +1,6 @@
 export const ownerEnglish: Record<string, string> = Object.fromEntries(`
 Theo dõi đội ngũ|Team progress
+Chưa đạt cấp nào|No level reached
 Tiếp tục đặt hạn|Continue to deadline
 Quay lại danh sách|Back to participants
 Chọn ngày nộp bài|Choose the due date

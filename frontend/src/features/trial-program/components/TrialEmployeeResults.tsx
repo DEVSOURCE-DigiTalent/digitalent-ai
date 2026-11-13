@@ -9,7 +9,7 @@ import { TIER_LABELS } from '../lib/trial-format';
 import '../trial-employee-results.css';
 
 function levelName(level: number) {
-  return level > 0 ? TIER_LABELS[level as 1 | 2 | 3] : 'Chưa đạt Cơ bản';
+  return level > 0 ? TIER_LABELS[level as 1 | 2 | 3] : 'Chưa đạt cấp nào';
 }
 
 export function TrialEmployeeResults({ assessment, overview }: {
@@ -101,6 +101,7 @@ export function TrialEmployeeResults({ assessment, overview }: {
                     <div>
                       <div className="tt-domain-name">{domain.name}</div>
                       <div className="tt-domain-subline">
+                        {translateUi('Hiện tại')}{' '}
                         <strong className="tt-domain-highlight">{translateUi(levelName(level))}</strong>
                         {target ? <span> · {translateUi('Mục tiêu')}: {translateUi(levelName(target))}</span> : null}
                       </div>
