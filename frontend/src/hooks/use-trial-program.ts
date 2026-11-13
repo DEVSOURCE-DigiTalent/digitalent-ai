@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from './use-current-user';
+import { SKILL_GAPS_KEY } from './use-skill-gaps';
 import { memberService } from '../services/member.service';
 import { refreshSessionTokens } from '../services/api-client';
 import { authService } from '../services/auth.service';
@@ -119,7 +120,7 @@ export function useSubmitTrialExam() {
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.mine });
       void client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.owner });
-      void client.invalidateQueries({ queryKey: ['learning-needs'] });
+      void client.invalidateQueries({ queryKey: [...SKILL_GAPS_KEY, 'learning-needs'] });
       void client.invalidateQueries({ queryKey: ['pulse'] });
     },
   });

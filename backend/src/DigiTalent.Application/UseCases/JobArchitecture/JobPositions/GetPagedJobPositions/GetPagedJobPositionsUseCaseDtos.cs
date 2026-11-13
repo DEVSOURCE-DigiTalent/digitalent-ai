@@ -8,6 +8,7 @@ public class GetPagedJobPositionsUseCaseInput
     public string? Status { get; set; }
     public Guid? JobFamilyId { get; set; }
     public Guid? DepartmentId { get; set; }
+    public bool IncludeAssignedPositions { get; set; }
     public string? JobGrade { get; set; } // G1 | G2 | G3
 }
 

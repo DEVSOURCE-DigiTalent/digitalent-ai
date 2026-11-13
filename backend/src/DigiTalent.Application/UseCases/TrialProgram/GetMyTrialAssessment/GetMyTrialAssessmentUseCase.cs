@@ -43,10 +43,11 @@ public class GetMyTrialAssessmentUseCase : IUseCase<GetMyTrialAssessmentUseCaseI
         List<MyTrialEssayResultDto>? essayResults = null;
         string? essaySummary = null;
 
-        if (assessment?.ReviewedAt != null)
+        var results = assessment == null ? null
+            : (await _reader.LoadDomainResultsAsync(new[] { assessment.Id })).GetValueOrDefault(assessment.Id);
+        if (TrialAssessmentResults.IsReady(assessment, results))
         {
-            var results = (await _reader.LoadDomainResultsAsync(new[] { assessment.Id })).GetValueOrDefault(assessment.Id) ?? new();
-            var byCategory = results.ToDictionary(r => r.CategoryId);
+            var byCategory = (results ?? new()).ToDictionary(r => r.CategoryId);
 
             var categoryIds = domains.Select(d => d.CategoryId).ToList();
             var ceilingRows = await _context.CapabilityCeilings.AsNoTracking()
@@ -103,6 +104,8 @@ public class GetMyTrialAssessmentUseCase : IUseCase<GetMyTrialAssessmentUseCaseI
             CanStart = closed == null,
             ClosedMessage = closed,
             ChoiceCount = domains.Count * 3 * TrialProgramRules.ChoicePerCell,
+            ChoiceScore = levels != null ? assessment?.ChoiceScore : null,
+            ChoiceTotal = levels != null ? assessment?.ChoiceTotal : null,
             Domains = domains.Select(TrialDomainDto.From).ToList(),
             Essays = new(),
             SubmittedAt = assessment?.SubmittedAt,

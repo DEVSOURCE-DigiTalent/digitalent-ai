@@ -2,6 +2,7 @@ using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.UseCases.Pulse;
+using DigiTalent.Application.UseCases.TrialProgram;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Intelligence.SkillGap;
@@ -54,7 +55,7 @@ public class GetLearningNeedsOutput
     public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
 }
 
-/// <summary>Actionable training needs: published overall assessment versus the current position standard.
+/// <summary>Actionable training needs: available overall assessment versus the current position standard.
 /// Later confirmed evidence can resolve a gap. Buying or completing a course alone cannot resolve it.</summary>
 public class GetLearningNeedsUseCase : IUseCase<GetSkillGapRunsUseCaseInput, GetLearningNeedsOutput>
 {
@@ -90,9 +91,22 @@ public class GetLearningNeedsUseCase : IUseCase<GetSkillGapRunsUseCaseInput, Get
         var departments = await _db.Departments.AsNoTracking().Where(d => d.OrganizationId == orgId).ToDictionaryAsync(d => d.Id, d => d.Name);
         var publishedAt = await _db.TrialWorkspaces.AsNoTracking().Where(w => w.OrganizationId == orgId && w.ReportPublishedAt != null)
             .OrderByDescending(w => w.ReportPublishedAt).Select(w => w.ReportPublishedAt).FirstOrDefaultAsync();
-        var assessments = await _db.TrialAssessments.AsNoTracking().Where(a => a.OrganizationId == orgId && employeeIds.Contains(a.EmployeeId) && a.ReviewedAt != null && a.ReviewedAt <= publishedAt).OrderByDescending(a => a.ReviewedAt).ToListAsync();
-        var assessmentIds = assessments.Select(a => a.Id).ToList();
+        var candidates = await _db.TrialAssessments.AsNoTracking()
+            .Where(a => a.OrganizationId == orgId && employeeIds.Contains(a.EmployeeId)
+                && (a.ChoiceTotal > 0 || (a.ReviewedAt != null && a.ReviewedAt <= publishedAt)))
+            .ToListAsync();
+        var assessmentIds = candidates.Select(a => a.Id).ToList();
         var results = await _db.TrialAssessmentDomains.AsNoTracking().Where(d => assessmentIds.Contains(d.TrialAssessmentId)).ToListAsync();
+        var resultsByAssessment = results.GroupBy(d => d.TrialAssessmentId).ToDictionary(g => g.Key, g => g.ToArray());
+        // Complete multiple-choice scores are available immediately, including older submissions without ReviewedAt.
+        // Keep mentor-reviewed results behind the existing publication gate.
+        var assessments = candidates
+            .Where(a => (a.ReviewedAt != null && a.ReviewedAt <= publishedAt)
+                || (a.ReviewedByUserId == null && resultsByAssessment.TryGetValue(a.Id, out var domains)
+                    && domains.All(d => d.MentorLevel == null)
+                    && TrialAssessmentResults.IsReady(null, a.ChoiceScore, a.ChoiceTotal, domains)))
+            .OrderByDescending(a => a.ReviewedAt ?? a.SubmittedAt)
+            .ToLookup(a => a.EmployeeId);
         var profiles = await _db.EmployeeCompetencyProfiles.AsNoTracking().Where(p => employeeIds.Contains(p.EmployeeId)).ToDictionaryAsync(p => new { p.EmployeeId, p.CompetencyId });
         var catalog = await new PulseCatalogReader(_db).LoadAsync(orgId);
         foreach (var employee in employees)
@@ -103,8 +117,9 @@ public class GetLearningNeedsUseCase : IUseCase<GetSkillGapRunsUseCaseInput, Get
             output.Items.Add(row);
             var standard = sets.FirstOrDefault(s => s.JobPositionId == employee.JobPositionId);
             if (standard == null) { row.State = "NO_STANDARD"; continue; }
-            var assessment = assessments.FirstOrDefault(a => a.EmployeeId == employee.Id);
-            var domainResults = results.Where(d => d.TrialAssessmentId == assessment?.Id).ToDictionary(d => d.CategoryId);
+            var assessment = assessments[employee.Id].FirstOrDefault();
+            var assessedAt = assessment?.ReviewedAt ?? assessment?.SubmittedAt;
+            var domainResults = assessment == null ? null : resultsByAssessment.GetValueOrDefault(assessment.Id)?.ToDictionary(d => d.CategoryId);
             foreach (var domain in requirements.Where(r => r.RequirementSetId == standard.Id && r.RequiredLevel > 0).GroupBy(r => r.CategoryId).OrderBy(g => g.First().SortOrder))
             {
                 var first = domain.First();
@@ -112,17 +127,17 @@ public class GetLearningNeedsUseCase : IUseCase<GetSkillGapRunsUseCaseInput, Get
                 var need = new LearningNeedDomain { CategoryId = first.CategoryId, Name = first.CategoryName, Number = first.SortOrder, RequiredLevel = target };
                 row.Domains.Add(need);
                 need.Competencies = domain.Select(r => new LearningNeedCompetency { CompetencyId = r.CompetencyId, Name = r.Name, RequiredLevel = target }).ToList();
-                if (assessment == null || !domainResults.TryGetValue(domain.Key, out var result)) continue;
+                if (domainResults == null || !domainResults.TryGetValue(domain.Key, out var result)) continue;
                 var baseline = result.MentorLevel ?? result.SuggestedLevel;
                 need.AssessmentLevel = baseline;
-                need.AssessmentReviewedAt = assessment.ReviewedAt;
+                need.AssessmentReviewedAt = assessedAt;
                 var levels = domain.Select(requirement => {
                     var profile = profiles.GetValueOrDefault(new { EmployeeId = employee.Id, requirement.CompetencyId });
-                    var newerEvidence = profile != null && profile.ConfirmedAt > assessment.ReviewedAt;
+                    var newerEvidence = profile != null && profile.ConfirmedAt > assessedAt;
                     var level = newerEvidence ? profile!.ConfirmedLevel : baseline;
                     var competency = need.Competencies.First(c => c.CompetencyId == requirement.CompetencyId);
                     competency.CurrentLevel = level;
-                    competency.ConfirmedAt = newerEvidence ? profile!.ConfirmedAt : assessment.ReviewedAt;
+                    competency.ConfirmedAt = newerEvidence ? profile!.ConfirmedAt : assessedAt;
                     competency.Source = newerEvidence ? "EVIDENCE" : "ASSESSMENT";
                     if (level < target) need.MissingCompetencies.Add(requirement.Name);
                     return (int)level;

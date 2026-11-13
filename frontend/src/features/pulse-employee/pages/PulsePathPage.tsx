@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { translateUi } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import {
   Award,
@@ -46,8 +47,8 @@ export function PulsePathPage() {
   const [expandedCriteria, setExpandedCriteria] = useState<Set<string>>(new Set());
 
   if (isLoading) return <PageSkeleton blocks={[100, 240, 400]} />;
-  if (error || !data) return <LoadError message={pulseErrorMessage(error, 'Không tải được lộ trình của bạn.')} onRetry={() => refetch()} />;
-  if (trial && !data.hasTargets) return <TrialLearning overview={data} />;
+  if (error || !data) return <LoadError message={translateUi(pulseErrorMessage(error, 'Không tải được lộ trình của bạn.'))} onRetry={() => refetch()} />;
+  if (data.awaitingFramework || (trial && !data.hasTargets)) return <TrialLearning overview={data} />;
   if (!data.hasPosition || !data.hasTargets) return <NoPath overview={data} />;
 
   const toggleCriteria = (categoryId: string) => {

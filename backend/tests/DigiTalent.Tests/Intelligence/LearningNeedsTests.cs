@@ -12,8 +12,10 @@ namespace DigiTalent.Tests.Intelligence;
 
 public class LearningNeedsTests
 {
-    [Fact]
-    public async Task ComparesPublishedAssessmentWithLiveStandardAndOnlyLaterEvidenceResolvesNeeds()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ComparesAvailableAssessmentWithLiveStandardAndOnlyLaterEvidenceResolvesNeeds(bool automatic)
     {
         using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
         var org = Guid.NewGuid(); var department = Guid.NewGuid(); var position = Guid.NewGuid(); var category = Guid.NewGuid(); var competency = Guid.NewGuid(); var employee = Guid.NewGuid(); var standard = Guid.NewGuid(); var assessment = Guid.NewGuid();
@@ -34,8 +36,14 @@ public class LearningNeedsTests
         var reviewedAt = DateTimeOffset.UtcNow.AddDays(-2);
         var workspace = new TrialWorkspace { OrganizationId = org };
         db.TrialWorkspaces.Add(workspace);
-        db.TrialAssessments.Add(new TrialAssessment { Id = assessment, OrganizationId = org, EmployeeId = employee, ReviewedAt = reviewedAt });
-        db.TrialAssessmentDomains.Add(new TrialAssessmentDomain { TrialAssessmentId = assessment, CategoryId = category, SuggestedLevel = 1, MentorLevel = 1 });
+        var stored = new TrialAssessment
+        {
+            Id = assessment, OrganizationId = org, EmployeeId = employee, SubmittedAt = reviewedAt,
+            ReviewedAt = automatic ? null : reviewedAt, ChoiceTotal = automatic ? (short)1 : (short)0,
+        };
+        var result = new TrialAssessmentDomain { TrialAssessmentId = assessment, CategoryId = category, SuggestedLevel = 1, MentorLevel = automatic ? null : (short)1 };
+        db.TrialAssessments.Add(stored);
+        db.TrialAssessmentDomains.Add(result);
         await db.SaveChangesAsync();
         var useCase = new GetLearningNeedsUseCase(db, user.Object, new EmployeeScope(db, user.Object));
         var input = new GetSkillGapRunsUseCaseInput { EmployeeId = employee };
@@ -43,7 +51,10 @@ public class LearningNeedsTests
         waiting.State.Should().Be("WAITING_ASSESSMENT");
         waiting.Domains.Single().CourseId.Should().BeNull();
 
-        workspace.ReportPublishedAt = reviewedAt.AddDays(1);
+        if (automatic)
+            result.BasicTotal = 1;
+        else
+            workspace.ReportPublishedAt = reviewedAt.AddDays(1);
         await db.SaveChangesAsync();
         var need = (await useCase.ExecuteAsync(input)).Items.Single().Domains.Single();
         need.CurrentLevel.Should().Be(1);
@@ -51,6 +62,7 @@ public class LearningNeedsTests
         need.CourseId.Should().Be(course.Id);
         need.MissingCompetencies.Should().ContainSingle().Which.Should().Be("Tìm kiếm dữ liệu");
         need.AssessmentLevel.Should().Be(1);
+        need.AssessmentReviewedAt.Should().Be(reviewedAt);
         need.Competencies.Single().CurrentLevel.Should().Be(1);
         need.Competencies.Single().RequiredLevel.Should().Be(3);
 

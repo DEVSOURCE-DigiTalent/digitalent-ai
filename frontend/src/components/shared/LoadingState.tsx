@@ -129,6 +129,20 @@ function GeneralLoadingScreen() {
   );
 }
 
+/** An in-panel progress indicator for requests without a measured completion percentage. */
+export function LoadingProgress({ label }: { label: string }) {
+  useUiLanguage();
+  const message = translateUi(label);
+  return (
+    <div className="loading-progress">
+      <span>{message}</span>
+      <div className="loading-progress__track" role="progressbar" aria-label={message}>
+        <span aria-hidden="true" />
+      </div>
+    </div>
+  );
+}
+
 /** Page-shaped placeholders prevent a blank canvas while data or a route loads. */
 export function PageLoading({ label = 'Đang tải nội dung', variant = 'dashboard' }: PageLoadingProps) {
   useUiLanguage();

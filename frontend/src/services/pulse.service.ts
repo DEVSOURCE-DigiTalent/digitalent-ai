@@ -186,6 +186,7 @@ export interface PulseOverview {
   placementTest?: PulsePlacementTest | null;
   hasPosition: boolean;
   hasTargets: boolean;
+  awaitingFramework?: boolean;
   domains: PulseDomain[];
   courses: PulseCourseSummary[];
   nextCourse?: PulseCourseSummary | null;

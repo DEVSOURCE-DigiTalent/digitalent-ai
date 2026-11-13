@@ -11,10 +11,11 @@ import {
 } from 'lucide-react';
 import { useOrganizationOverview } from '@/hooks/use-organization';
 import { useCapabilityDashboard } from '@/hooks/use-analytics';
-import { OwnerAssessmentHeatmap } from '../components/OwnerAssessmentHeatmap';
+import { OwnerProgressTabs } from '../components/OwnerProgressTabs';
 import { SendAnnouncementModal } from '../components/SendAnnouncementModal';
 import { PULSE_TOKENS } from '../owner-theme';
 import { PageLoading } from '@/components/shared/LoadingState';
+import './owner-overview-motion.css';
 
 export function OwnerOverviewPage() {
   useUiLanguage();
@@ -44,7 +45,7 @@ export function OwnerOverviewPage() {
 
   return (
     <div
-      className="po-owner -m-4 md:-m-6 min-h-screen text-[#17243f] relative overflow-hidden"
+      className="po-owner owner-overview -m-4 md:-m-6 min-h-screen text-[#17243f] relative overflow-hidden"
       style={{
         ...PULSE_TOKENS,
         background: `
@@ -59,7 +60,7 @@ export function OwnerOverviewPage() {
       {/* ── Container Toàn Chiều Ngang: Tràn đều, không bị dồn cục ở giữa ── */}
       <div className="w-full px-5 sm:px-6 lg:px-8 xl:px-10 py-6 lg:py-8 relative z-10 max-w-[1920px] mx-auto">
         {/* ── Page Header: Sáng, Tinh tế, Đẳng cấp ── */}
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="owner-overview__header mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 border border-slate-200/80 shadow-2xs mb-2">
               <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -86,7 +87,7 @@ export function OwnerOverviewPage() {
         {/* ── Content Stack: Tràn đều, Khớp đẹp với độ rộng màn hình ── */}
         <div className="flex flex-col gap-6">
           {/* 1. Hàng Thẻ Chỉ số Điều hành: Tràn đều 4 cột ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="owner-overview__metrics grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {/* KPI 1: Nhân sự */}
             <div className="group rounded-2xl border border-slate-200/80 bg-white/95 backdrop-blur-xs p-5 shadow-xs hover:shadow-[0_12px_28px_rgba(19,123,132,0.1)] hover:border-teal-300 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
               <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-teal-500/8 to-transparent rounded-bl-full pointer-events-none" />
@@ -224,7 +225,7 @@ export function OwnerOverviewPage() {
             </div>
           </div>
 
-          <OwnerAssessmentHeatmap />
+          <OwnerProgressTabs />
         </div>
       </div>
 

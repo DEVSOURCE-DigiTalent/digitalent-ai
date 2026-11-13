@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Competency.Ceilings;
 using DigiTalent.Application.UseCases.Me;
+using DigiTalent.Application.UseCases.TrialProgram;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Constants.Authorization;
 using DigiTalent.Domain.Entities;
@@ -98,6 +99,7 @@ public sealed class PulseLearnerSnapshot
     public string? PositionName { get; init; }
     public string? OrganizationName { get; init; }
     public bool HasPosition { get; init; }
+    public bool AwaitingFramework { get; init; }
     public PulseReviewerInfo? Reviewer { get; init; }
     public PulsePlacementTestInfo? PlacementTest { get; init; }
     public IReadOnlyList<PulseDomainState> Domains { get; init; } = Array.Empty<PulseDomainState>();
@@ -191,7 +193,15 @@ public class PulseLearnerReader
                 })
             .FirstOrDefaultAsync();
 
-        var courses = await _catalog.LoadAsync(organizationId);
+        var trialAccess = new TrialLearningAccess(_context);
+        var learningMode = await trialAccess.GetModeAsync(employee);
+        var awaitingFramework = learningMode == TrialLearningMode.PublicBasics;
+        var courses = learningMode switch
+        {
+            TrialLearningMode.AwaitingResult => new List<PulseCourseRef>(),
+            TrialLearningMode.PublicBasics => await _catalog.LoadAsync(organizationId, await trialAccess.LoadPublicBasicCodesAsync()),
+            _ => await _catalog.LoadAsync(organizationId),
+        };
         var categoryIds = courses.Select(c => c.CategoryId).Distinct().ToList();
         var categories = await _context.CompetencyCategories
             .AsNoTracking()
@@ -217,43 +227,6 @@ public class PulseLearnerReader
             {
                 targets[id] = ceilings.TryGetValue(id, out var c) && c > 0 ? c : 1;
             }
-        }
-        var trialPublished = await _context.TrialWorkspaces.AsNoTracking()
-            .Where(t => t.OrganizationId == organizationId && t.ConvertedAt == null)
-            .Select(t => (bool?)(t.ReportPublishedAt != null))
-            .FirstOrDefaultAsync();
-        var trialBasic = trialPublished == true;
-        if (trialPublished.HasValue)
-        {
-            if (!trialBasic)
-            {
-                targets = categoryIds.ToDictionary(id => id, _ => 0);
-                ceilings = categoryIds.ToDictionary(id => id, _ => 0);
-            }
-            else
-            {
-                var hasCustomCeilings = await _context.CapabilityCeilings.AsNoTracking()
-                    .AnyAsync(c => c.OrganizationId == organizationId);
-                var hasPurchasedSeats = await _context.CourseSeatOrders.AsNoTracking()
-                    .AnyAsync(o => o.OrganizationId == organizationId);
-
-                if (!hasCustomCeilings && !hasPurchasedSeats)
-                {
-                    targets = categoryIds.ToDictionary(id => id, _ => 1);
-                    ceilings = categoryIds.ToDictionary(id => id, _ => 1);
-        
-                }
-                else
-                {
-                    targets = categoryIds.ToDictionary(id => id, id =>
-                    {
-                        var ceilingVal = ceilings.TryGetValue(id, out var c) && c > 0 ? c : 1;
-                        var targetVal = targets.TryGetValue(id, out var t) && t > 0 ? t : ceilingVal;
-                        return Math.Max(targetVal, ceilingVal);
-                    });
-                }
-            }
-
         }
         var evidenceLevels = await LoadEvidenceLevelsAsync(employee.Id);
 
@@ -287,9 +260,10 @@ public class PulseLearnerReader
                 .ToListAsync()
             : new List<TrialAssessmentDomain>();
 
+        var placementHasResult = TrialAssessmentResults.IsReady(placementTest, placementDomains);
         var placementLevels = placementDomains.ToDictionary(
             d => d.CategoryId,
-            d => (int)(d.MentorLevel ?? (placementTest?.ReviewedAt != null ? d.SuggestedLevel : 0)));
+            d => (int)(d.MentorLevel ?? (placementHasResult ? d.SuggestedLevel : 0)));
 
         var placementApprovedCodes = courses
             .Where(c => placementLevels.TryGetValue(c.CategoryId, out var lvl) && lvl >= c.Tier)
@@ -367,7 +341,7 @@ public class PulseLearnerReader
             .ToDictionary(g => g.Key, g => (IReadOnlyList<PulseCompetencyRequirement>)g.Select(r => r.Requirement).OrderBy(r => r.Code, NaturalCode).ToList());
         var domains = categories.Select((category, index) =>
         {
-            var target = targets.GetValueOrDefault(category.Id);
+            var target = awaitingFramework ? 0 : targets.GetValueOrDefault(category.Id);
             var ceiling = ceilings.TryGetValue(category.Id, out var value) ? value : PulseRules.MaxLevel;
             var courseLevel = approvedTierByCategory.GetValueOrDefault(category.Id);
             var evidenceLevel = evidenceLevels.GetValueOrDefault(category.Id);
@@ -422,7 +396,7 @@ public class PulseLearnerReader
             .Select(course =>
             {
                 var domain = domains.First(d => d.CategoryId == course.CategoryId);
-                var zone = PulseRules.ZoneOf(course.Tier, domain.Target, domain.Ceiling);
+                var zone = awaitingFramework ? PulseCourseZone.Optional : PulseRules.ZoneOf(course.Tier, domain.Target, domain.Ceiling);
                 var enrollment = enrollmentByCode.GetValueOrDefault(course.Code);
                 var approved = approvedCodes.Contains(course.Code);
                 var prior = courses.FirstOrDefault(c => c.CategoryId == course.CategoryId && c.Tier == course.Tier - 1);
@@ -437,7 +411,7 @@ public class PulseLearnerReader
                     ? pre.Decision == null ? PulsePreStatus.Pending
                     : pre.Decision == Statuses.FinalSubmissionDecision.Passed ? PulsePreStatus.Passed
                     : PulsePreStatus.NotYet
-                    : approved || started || (trialBasic && course.Tier == 1) || (placementTest != null && trialBasic) ? PulsePreStatus.NotNeeded
+                    : approved || started || awaitingFramework ? PulsePreStatus.NotNeeded
                     : !hasPosition || zone is PulseCourseZone.OutsidePath or PulseCourseZone.AboveCeiling || !prereqApproved ? PulsePreStatus.Locked
                     : PulsePreStatus.Required;
                 var hasPurchasedSeat = purchasedSeatsByCode.GetValueOrDefault(course.Code) > usedSeatsByCode.GetValueOrDefault(course.Code)
@@ -447,7 +421,7 @@ public class PulseLearnerReader
                 var access = course.Tier == 1 ? PulseCourseAccess.FreeFull
                     : (enrollment != null || hasPurchasedSeat) ? PulseCourseAccess.SeatActive
                     : PulseCourseAccess.Preview;
-                var block = !hasPosition ? PulseBlockReason.NoPosition
+                var block = !hasPosition && !awaitingFramework ? PulseBlockReason.NoPosition
                     : zone == PulseCourseZone.OutsidePath ? PulseBlockReason.OutsidePath
                     : zone == PulseCourseZone.AboveCeiling ? PulseBlockReason.AboveCeiling
                     : !prereqApproved ? PulseBlockReason.PriorLevelRequired
@@ -466,7 +440,7 @@ public class PulseLearnerReader
                     : pre?.Decision == Statuses.FinalSubmissionDecision.Passed ? PulseApprovedVia.PreAssessment
                     : courseSubmissions.Any(s => s.Decision == Statuses.FinalSubmissionDecision.Passed) ? PulseApprovedVia.Final
                     : PulseApprovedVia.Legacy;
-                var slot = !hasPosition ? PulseSlotStatus.NoPosition
+                var slot = !hasPosition && !awaitingFramework ? PulseSlotStatus.NoPosition
                     : approved ? PulseSlotStatus.Completed
                     : zone == PulseCourseZone.OutsidePath ? PulseSlotStatus.OutsidePath
                     : zone == PulseCourseZone.AboveCeiling ? PulseSlotStatus.AboveCeiling
@@ -506,6 +480,7 @@ public class PulseLearnerReader
         return new PulseLearnerSnapshot
         {
             Employee = employee,
+            AwaitingFramework = awaitingFramework,
             DepartmentName = names?.DepartmentName,
             PositionName = names?.PositionName,
             OrganizationName = names?.OrganizationName,

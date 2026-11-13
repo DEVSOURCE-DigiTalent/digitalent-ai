@@ -1,0 +1,40 @@
+.owner-progress__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.owner-progress__nav [role="tablist"] {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #d8e7ea;
+  border-radius: 14px;
+  background: #f5fafb;
+}
+
+.owner-progress__nav button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 7px 14px;
+  border-radius: 10px;
+  color: #31596b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.owner-progress__nav button:hover { background: #e5f2f2; }
+.owner-progress__nav button[aria-selected="true"] { background: #164c59; color: white; }
+.owner-progress__nav button:focus-visible { outline: 2px solid #168879; outline-offset: 2px; }
+.owner-progress__nav .owner-progress__switch { flex: none; width: 42px; padding: 0; border: 1px solid #d8e7ea; background: #fff; }
+.owner-progress__panels .owner-heatmap > :not(.owner-heatmap__scroll) { touch-action: pan-y pinch-zoom; }
+.owner-progress__panels [role="tabpanel"][hidden] { display: none; }
+@media (max-width: 670px) {
+  .owner-progress__nav button { padding-inline: 8px; gap: 5px; font-size: 12px; }
+  .owner-progress__nav button[role="tab"] svg { display: none; }
+}

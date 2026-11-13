@@ -1,7 +1,7 @@
 import React from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { CompetencyReport, Steps } from '../components/TrialUi';
+import { CompetencyReport, Steps } from '../components/OwnerTrialUi';
 import { TrialDisclosure } from '../components/TrialDisclosure';
 import type { TrialReport } from '@/services/trial-program.service';
 

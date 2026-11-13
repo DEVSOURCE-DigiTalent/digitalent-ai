@@ -2,10 +2,15 @@ import React from 'react';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CompanyLearningOverview } from './OwnerCapabilityGapPage';
+import { CompanyLearningOverview, OwnerCapabilityGapPage } from './OwnerCapabilityGapPage';
 import type { LearningNeedsOverview } from '@/services/intelligence.service';
 
 vi.stubGlobal('React', React);
+vi.mock('@/hooks/use-departments', () => ({ useDepartments: () => ({}) }));
+vi.mock('@/hooks/use-job-positions', () => ({ useJobPositions: () => ({}) }));
+vi.mock('@/hooks/use-skill-gaps', () => ({
+  useLearningNeeds: (_params: unknown, enabled = true) => ({ isLoading: enabled, isFetching: enabled }),
+}));
 afterEach(cleanup);
 const overview: LearningNeedsOverview = {
   employees: 20, assessedEmployees: 12, waitingEmployees: 8, noStandardEmployees: 0,
@@ -20,7 +25,7 @@ describe('company learning overview', () => {
     expect(screen.getByText('75%')).toBeInTheDocument();
     expect(screen.getByRole('progressbar', { name: 'Đạt chuẩn Dữ liệu' })).toHaveAttribute('aria-valuenow', '50');
     expect(screen.getByText('Đánh giá dữ liệu')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Xem khóa học' })).toHaveAttribute('href', '/enterprise/courses/a1a');
+    expect(screen.getByRole('link', { name: 'Xem khóa học' })).toHaveAttribute('href', '/enterprise/courses?focus=a1a');
     fireEvent.click(screen.getByRole('button', { name: /Trí tuệ nhân tạo/ }));
     expect(screen.getByText('Chưa cần bổ sung khóa học.')).toBeInTheDocument();
     expect(screen.queryByText('Phân tích nâng cao')).not.toBeInTheDocument();
@@ -31,4 +36,10 @@ describe('company learning overview', () => {
     expect(screen.getByText('Sẵn sàng đối chiếu')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Xem khóa học' })).not.toBeInTheDocument();
   });
+});
+
+it('shows an indeterminate progress bar while comparing against standards', () => {
+  render(<MemoryRouter><OwnerCapabilityGapPage /></MemoryRouter>);
+  expect(screen.getByRole('progressbar', { name: 'Đang đối chiếu năng lực…' })).not.toHaveAttribute('aria-valuenow');
+  expect(screen.getByRole('button', { name: 'Làm mới' })).toBeDisabled();
 });

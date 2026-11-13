@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import type { TrialParticipantRow } from '@/services/trial-program.service';
 import { useDepartments } from '@/hooks/use-departments';
 import { useJobPositions } from '@/hooks/use-job-positions';
+import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import { readParticipantFile, rowsFromCells, TEMPLATE_COLUMNS } from '../lib/participant-file';
 import { EMPTY_ROW as EMPTY, isRowEmpty, rowError } from '../lib/participant-rows';
 
@@ -71,6 +72,11 @@ export function ParticipantsEditor({
 
   // Tabs: 'excel' | 'manual'
   const [tab, setTab] = useState<'excel' | 'manual'>('excel');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+  const activePage = Math.min(page, pageCount);
+  const start = (activePage - 1) * pageSize;
 
   // Excel / Paste state
   const [over, setOver] = useState(false);
@@ -104,7 +110,7 @@ export function ParticipantsEditor({
       container.querySelector<HTMLInputElement>('tbody tr:last-child input')?.focus({ preventScroll: true });
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [rows.length]);
+  }, [rows.length, activePage]);
 
   useEffect(() => {
     if (!batchMenuOpen) return;
@@ -125,11 +131,13 @@ export function ParticipantsEditor({
   // Remove specific row
   const removeRow = (index: number) => {
     const updated = rows.filter((_, i) => i !== index);
+    setPage(Math.min(activePage, Math.max(1, Math.ceil(updated.length / pageSize))));
     onChange(updated.length > 0 ? updated : [{ ...EMPTY }]);
   };
 
   // Clear all filled rows
   const clearAll = () => {
+    setPage(1);
     onChange([{ ...EMPTY }]);
     toast.info('Đã xóa toàn bộ danh sách nhân sự');
   };
@@ -183,6 +191,7 @@ export function ParticipantsEditor({
       }
       const existingFilled = rows.filter((r) => !isRowEmpty(r));
       const combined = [...existingFilled, ...imported].slice(0, limit);
+      setPage(1);
       onChange(combined);
       toast.success(`Đã nhập thành công ${imported.length} nhân sự từ file!`);
       if (existingFilled.length + imported.length > limit) {
@@ -217,6 +226,7 @@ export function ParticipantsEditor({
 
       const existingFilled = rows.filter((r) => !isRowEmpty(r));
       const combined = [...existingFilled, ...parsed].slice(0, limit);
+      setPage(1);
       onChange(combined);
       setPastedText('');
       setIsPasting(false);
@@ -259,6 +269,7 @@ export function ParticipantsEditor({
       ? [newRow]
       : [...filledRows, newRow];
 
+    setPage(Math.ceil(updated.length / pageSize));
     onChange(updated);
     toast.success(`Đã thêm "${fullName}" vào danh sách đánh giá!`);
 
@@ -528,7 +539,7 @@ export function ParticipantsEditor({
         </div>
 
         {/* Table of Rows */}
-        <div ref={tableScrollRef} className="max-h-80 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
+        <div ref={tableScrollRef} className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
           <table className="w-full text-left border-collapse text-xs">
             <thead className="bg-slate-50 sticky top-0 z-10 text-slate-700 font-bold border-b border-slate-200">
               <tr>
@@ -542,7 +553,8 @@ export function ParticipantsEditor({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
-              {rows.map((row, idx) => {
+              {rows.slice(start, start + pageSize).map((row, index) => {
+                const idx = start + index;
                 const empty = isRowEmpty(row);
                 const err = empty ? null : rowError(row);
 
@@ -622,13 +634,28 @@ export function ParticipantsEditor({
             </tbody>
           </table>
         </div>
+        {rows.length > 0 && <nav className="tp-participant-pagination" aria-label={translateUi('Phân trang danh sách nhân viên')}>
+          <span>{start + 1}–{Math.min(start + pageSize, rows.length)} / {rows.length}</span>
+          <div>
+            <OwnerFilterSelect label={translateUi('Số nhân viên mỗi trang')} value={String(pageSize)}
+              onChange={(value) => { setPageSize(Number(value)); setPage(1); }}
+              options={[5, 10, 15, 25, 50].map((size) => ({ value: String(size), label: `${size} / trang` }))} />
+            <button type="button" disabled={activePage === 1} onClick={() => setPage(activePage - 1)}>{translateUi('Trước')}</button>
+            <strong>{activePage}/{pageCount}</strong>
+            <button type="button" disabled={activePage === pageCount} onClick={() => setPage(activePage + 1)}>{translateUi('Sau')}</button>
+          </div>
+        </nav>}
 
         {/* Bottom Actions */}
         <div className="flex items-center justify-between pt-1">
           <button
             type="button"
             disabled={rows.length >= limit}
-            onClick={() => { pendingNewRow.current = true; onChange([...rows, { ...EMPTY }]); }}
+            onClick={() => {
+              pendingNewRow.current = true;
+              setPage(Math.ceil((rows.length + 1) / pageSize));
+              onChange([...rows, { ...EMPTY }]);
+            }}
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition-all cursor-pointer"
           >
             <Plus className="size-3.5" />{translateUi(" Thêm dòng mới")}</button>

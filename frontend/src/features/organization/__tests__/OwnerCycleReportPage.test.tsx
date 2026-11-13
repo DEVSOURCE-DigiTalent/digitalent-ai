@@ -4,21 +4,33 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OwnerCycleReportPage } from '../pages/OwnerCycleReportPage';
 
-const state = vi.hoisted(() => ({ total: 8, error: false, reports: vi.fn(), needs: vi.fn() }));
+const state = vi.hoisted(() => ({ total: 8, error: false, loadingTraining: false, loadingCapability: false, reports: vi.fn(), needs: vi.fn() }));
 const courses = Array.from({ length: 8 }, (_, index) => ({ id: `course-${index + 1}`, code: `M1-${index}`, title: `Khóa báo cáo ${index + 1}`, domainName: 'Dữ liệu', learnerCount: 1, averageProgress: index === 0 ? 100 : 0 }));
-vi.mock('@/hooks/use-analytics', () => ({ useReportsOverview: (scope: unknown) => { state.reports(scope); return { isLoading: false, data: { training: { totalAssignments: state.total, completedAssignments: state.total ? 1 : 0, inProgressAssignments: state.total ? 7 : 0, completionRate: state.total ? 12.5 : 0, courses: state.total ? courses : [] } } }; } }));
+vi.mock('@/hooks/use-analytics', () => ({ useReportsOverview: (scope: unknown) => { state.reports(scope); return { isLoading: state.loadingTraining, data: { training: { totalAssignments: state.total, completedAssignments: state.total ? 1 : 0, inProgressAssignments: state.total ? 7 : 0, completionRate: state.total ? 12.5 : 0, courses: state.total ? courses : [] } } }; } }));
 vi.mock('@/hooks/use-departments', () => ({ useDepartments: () => ({ data: { items: [{ id: 'hr', name: 'HR' }] } }) }));
 vi.mock('@/hooks/use-job-positions', () => ({ useJobPositions: () => ({ data: { items: [{ id: 'p1', departmentId: 'hr', name: 'Chuyên viên HR' }] } }) }));
-vi.mock('@/hooks/use-skill-gaps', () => ({ useLearningNeeds: (scope: unknown) => { state.needs(scope); return { isLoading: false, isError: state.error, data: { overview: { employees: 4, assessedEmployees: 2, waitingEmployees: 2, noStandardEmployees: 0, domains: [
+vi.mock('@/hooks/use-skill-gaps', () => ({ useLearningNeeds: (scope: unknown) => { state.needs(scope); return { isLoading: state.loadingCapability, isError: state.error, data: { overview: { employees: 4, assessedEmployees: 2, waitingEmployees: 2, noStandardEmployees: 0, domains: [
   { categoryId: 'd1', number: 1, name: 'Dữ liệu', assessed: 2, met: 1, needsLearning: 1, waiting: 2, courses: [{ requiredLevel: 3, courseId: 'a1a', courseCode: 'A1-A', courseTitle: 'Phân tích dữ liệu', employees: 1, missingCompetencies: ['Quản lý dữ liệu'] }] },
   { categoryId: 'd4', number: 4, name: 'An toàn', assessed: 0, met: 0, needsLearning: 0, waiting: 4, courses: [] },
 ] } } }; } }));
 vi.stubGlobal('React', React);
 afterEach(cleanup);
-beforeEach(() => { state.total = 8; state.error = false; vi.clearAllMocks(); });
+beforeEach(() => { state.total = 8; state.error = false; state.loadingTraining = false; state.loadingCapability = false; vi.clearAllMocks(); });
 const setup = () => render(<MemoryRouter><OwnerCycleReportPage /></MemoryRouter>);
 
 describe('Báo cáo theo chuẩn vị trí hiện tại', () => {
+  it('shows independent loading states for capability and training', () => {
+    state.loadingCapability = true;
+    state.loadingTraining = true;
+    const { rerender } = setup();
+    expect(screen.getByRole('progressbar', { name: 'Đang đối chiếu với chuẩn vị trí…' })).toBeVisible();
+    expect(screen.getByRole('status', { name: 'Đang tải tiến độ học tập' })).toBeVisible();
+
+    state.loadingCapability = false;
+    rerender(<MemoryRouter><OwnerCycleReportPage /></MemoryRouter>);
+    expect(screen.getByText('1 / 2 lượt đối chiếu lĩnh vực đã đạt chuẩn')).toBeVisible();
+    expect(screen.getByRole('status', { name: 'Đang tải tiến độ học tập' })).toBeVisible();
+  });
   it('excludes unassessed staff from the achieved rate and maps the exact required course', () => {
     setup();
     expect(screen.getByText('1 / 2 lượt đối chiếu lĩnh vực đã đạt chuẩn')).toBeVisible();

@@ -8,6 +8,7 @@ public class GetPulseOverviewUseCaseOutput
     public bool HasPosition { get; set; }
     /// <summary>Có ít nhất một lĩnh vực trong lộ trình (mục tiêu vị trí và phạm vi phòng ban đều ≥ Cơ bản).</summary>
     public bool HasTargets { get; set; }
+    public bool AwaitingFramework { get; set; }
     public List<PulseDomainDto> Domains { get; set; } = new();
     public List<PulseCourseSummaryDto> Courses { get; set; } = new();
     /// <summary>Việc nên làm tiếp đầu tiên (= NextSteps[0]).</summary>
