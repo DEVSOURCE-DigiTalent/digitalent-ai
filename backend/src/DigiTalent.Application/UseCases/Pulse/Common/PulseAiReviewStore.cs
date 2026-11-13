@@ -77,7 +77,9 @@ public static class PulseAiReviewStore
 
         try
         {
-            return JsonSerializer.Deserialize<PulseAiHintDto>(row.Result, Json);
+            return JsonSerializer.Deserialize<PulseAiHintDto>(row.Result, Json) is { } hint
+                ? hint with { ReviewedAt = row.UpdatedAt }
+                : null;
         }
         catch (JsonException)
         {

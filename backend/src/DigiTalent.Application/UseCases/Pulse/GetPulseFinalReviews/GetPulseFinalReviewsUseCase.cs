@@ -339,7 +339,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                     courseContent,
                     item.DomainName,
                     item.Tier,
-                    rubric);
+                    rubric) with { ReviewedAt = _clock.GetUtcNow() };
                 item.AiHint = evaluated;
                 reviewed.Add(new PulseAiReviewStore.Entry(item.OrganizationId, item.Kind, item.SubmissionId, inputHash, evaluated));
             })
