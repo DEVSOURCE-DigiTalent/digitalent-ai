@@ -204,7 +204,7 @@ function DomainAccordionItem({
                   ? translateUi(`Đã đạt mức ${detail?.levelLabel ?? TIER_LABELS[level]}. Kết quả được chấm tự động từ bài khảo sát.`)
                   : `Chưa đạt số câu đúng tối thiểu ở cấp Cơ bản. Cần củng cố thêm nền tảng ở lĩnh vực này.`)}
             </div>
-          )}
+          </div>
 
           {/* Khóa học đề xuất trên lộ trình */}
           {!resultsOnly && detail?.recommendedCourse && (
