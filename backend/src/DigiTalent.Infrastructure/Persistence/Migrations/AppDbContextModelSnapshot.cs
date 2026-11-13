@@ -5298,6 +5298,69 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("DigiTalent.Domain.Entities.PulseAiReview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("InputHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("input_hash");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("model");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("result");
+
+                    b.Property<Guid>("SubmissionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("submission_id");
+
+                    b.Property<string>("SubmissionKind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("submission_kind");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_pulse_ai_reviews");
+
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("ix_pulse_ai_reviews_organization_id");
+
+                    b.HasIndex("SubmissionKind", "SubmissionId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_pulse_ai_reviews_submission");
+
+                    b.ToTable("pulse_ai_reviews", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_pulse_ai_reviews_input_hash", "char_length(input_hash) = 64");
+
+                            t.HasCheckConstraint("ck_pulse_ai_reviews_kind", "submission_kind IN ('FINAL', 'PRE_ASSESSMENT')");
+                        });
+                });
+
             modelBuilder.Entity("DigiTalent.Domain.Entities.PurchaseDraft", b =>
                 {
                     b.Property<Guid>("Id")
@@ -8918,6 +8981,16 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_proctoring_sessions_employees_employee_id");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.PulseAiReview", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_pulse_ai_reviews_organizations_organization_id");
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.PurchaseDraft", b =>
