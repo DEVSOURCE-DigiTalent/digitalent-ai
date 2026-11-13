@@ -20,6 +20,9 @@ export const PULSE_PATHS = {
   trialExam: '/enterprise/me/trial-test/exam',
 } as const;
 
+/** Trang học một mô-đun (có cột đề cương riêng): menu nhân viên thu gọn mặc định để nhường chỗ cho bài học. */
+export const isModulePath = (pathname: string) => /^\/enterprise\/me\/courses\/[^/]+\/modules\/[^/]+\/?$/.test(pathname);
+
 /** Trang làm bài có giám sát: dùng khung riêng, không có thanh điều hướng chính. */
 export const isExamPath = (pathname: string) =>
   /^\/enterprise\/me\/courses\/[^/]+\/(pre-assessment|final)\/?$/.test(pathname) || /^\/enterprise\/me\/trial-test\/exam\/?$/.test(pathname);
