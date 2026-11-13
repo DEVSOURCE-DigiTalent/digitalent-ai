@@ -27,7 +27,7 @@ function fail(message: string, status = 400): never { throw { response: { status
 const date = () => new Date().toISOString();
 const later = (hours: number) => new Date(Date.now() + hours * 3600000).toISOString();
 const link = (kind: 'verify' | 'accept', token: string) => `/business/try/${kind}?token=${encodeURIComponent(token)}`;
-const password = (value: string) => { if (value.length < 12 || value.length > 72) fail('Mật khẩu cần 12–72 ký tự.'); };
+const password = (value: string) => { if (value.length < 8 || value.length > 72) fail('Mật khẩu cần 8 đến 72 ký tự.'); };
 const email = (value: string) => { const normalized = value.trim().toLowerCase(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) fail('Email không hợp lệ.'); return normalized; };
 const text = (value: string) => { if (!value.trim() || value.length > 200) fail('Tên bắt buộc, tối đa 200 ký tự.'); return value.trim(); };
 function initialTrial(ownerId: string, organizationId: string): Trial {

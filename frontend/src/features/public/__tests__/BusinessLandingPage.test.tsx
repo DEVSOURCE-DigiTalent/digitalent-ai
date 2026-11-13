@@ -31,46 +31,57 @@ describe('Pulse enterprise landing page', () => {
     expect(screen.getAllByRole('link', { name: 'Đăng nhập' })[0]).toHaveAttribute('href', '/login');
   });
 
-  it('renders Scene 6 data governance and security control elements', () => {
+  it('renders Scene 6 data governance dome slices and compact rim switcher', () => {
     renderBusiness();
 
-    expect(screen.getByText('AN TOÀN & VẬN HÀNH DỮ LIỆU')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Kiểm Soát Dữ Liệu & Ranh Giới Bảo Mật' })).toBeInTheDocument();
+    const nav = screen.getByRole('navigation', { name: 'Điều hướng phân khu' });
+    fireEvent.click(within(nav).getByRole('button', { name: 'Bảo mật & FAQ' }));
+
+    expect(screen.getByText('AN TOÀN THÔNG TIN & VẬN HÀNH DỮ LIỆU')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Kiến Trúc An Toàn & Kiểm Soát Dữ Liệu' })).toBeInTheDocument();
 
     // 4 operational chips
-    expect(screen.getByText('Máy chủ: Nội địa Việt Nam')).toBeInTheDocument();
-    expect(screen.getByText('Đường truyền: Mã hóa TLS')).toBeInTheDocument();
-    expect(screen.getByText('Sao lưu: Tự động hàng ngày')).toBeInTheDocument();
-    expect(screen.getByText('Xuất file: PDF & Excel')).toBeInTheDocument();
+    expect(screen.getByText('Cách ly theo OrganizationId')).toBeInTheDocument();
+    expect(screen.getByText('Lưu trữ tệp MinIO riêng biệt')).toBeInTheDocument();
+    expect(screen.getByText('Kết nối mã hóa HTTPS / TLS')).toBeInTheDocument();
+    expect(screen.getByText('Xác thực JWT theo vai trò')).toBeInTheDocument();
 
-    // 4 security control grid cards
-    expect(screen.getByRole('heading', { name: 'Tách biệt dữ liệu' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Phân quyền chức vụ' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Ranh giới dữ liệu AI' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Nhật ký đối soát' })).toBeInTheDocument();
+    // Compact top-rim switcher tabs
+    const rimSwitcher = screen.getByRole('tablist', { name: 'Danh sách phân vùng dữ liệu' });
+    expect(within(rimSwitcher).getByRole('tab', { name: /Cô Lập Dữ Liệu Theo Tổ Chức/i })).toHaveAttribute('aria-selected', 'true');
+    expect(within(rimSwitcher).getByRole('tab', { name: /Phân Quyền 3 Vai Trò & Phòng Ban/i })).toBeInTheDocument();
+    expect(within(rimSwitcher).getByRole('tab', { name: /Kiểm Soát Dữ Liệu Trợ Lý AI/i })).toBeInTheDocument();
   });
 
-  it('handles 2-column FAQ accordion interactions', () => {
+  it('handles FAQ accordion interactions in Scene 6', () => {
     renderBusiness();
 
-    const faqTrigger = screen.getByRole('button', { name: 'Dữ liệu nhân sự và bài thi được lưu ở đâu?' });
+    const nav = screen.getByRole('navigation', { name: 'Điều hướng phân khu' });
+    fireEvent.click(within(nav).getByRole('button', { name: 'Bảo mật & FAQ' }));
+
+    const faqTrigger = screen.getByRole('button', {
+      name: 'Dữ liệu bài thi và nhân sự được bảo vệ thế nào trước nguy cơ rò rỉ?',
+    });
     expect(faqTrigger).toBeInTheDocument();
     expect(faqTrigger).toHaveAttribute('aria-expanded', 'false');
 
     // Click to open
     fireEvent.click(faqTrigger);
     expect(faqTrigger).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByText(/hạ tầng máy chủ nội địa tại Việt Nam/)).toBeInTheDocument();
+    expect(screen.getByText(/ngăn chặn truy cập chéo giữa các doanh nghiệp/)).toBeInTheDocument();
 
     // Click again to close
     fireEvent.click(faqTrigger);
     expect(faqTrigger).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('renders enterprise CTA and registration form', () => {
+  it('renders enterprise CTA and registration form in Scene 7', () => {
     renderBusiness();
 
+    const nav = screen.getByRole('navigation', { name: 'Điều hướng phân khu' });
+    fireEvent.click(within(nav).getByRole('button', { name: 'Đăng ký' }));
+
     expect(screen.getByText('ĐĂNG KÝ TRẢI NGHIỆM')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Khởi tạo phiên trải nghiệm' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Khởi tạo phiên trải nghiệm/i })).toBeInTheDocument();
   });
 });
