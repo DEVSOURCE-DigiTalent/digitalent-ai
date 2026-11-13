@@ -303,7 +303,9 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
         var defaultCriteria = PulseRules.FinalCriteria.Select(c => c.Title).ToList();
         var toEvaluate = items.Where(i => i.Status == PulseFinalStatus.Pending && i.Attempts.Count > 0).ToList();
         var courseText = await PulseCourseText.LoadAsync(_context, toEvaluate.Select(i => i.CourseId).Distinct().ToList());
-        // AI calls run in parallel without touching the DbContext; their results are stored once they are all back.
+        // Stored reviews are read first; AI calls run in parallel without touching the DbContext and their results
+        // are stored once they are all back.
+        var stored = await PulseAiReviewStore.LoadAsync(_context, toEvaluate.Select(i => i.SubmissionId).ToList());
         var reviewed = new System.Collections.Concurrent.ConcurrentBag<PulseAiReviewStore.Entry>();
         var aiTasks = toEvaluate
             .Select(async item =>
@@ -326,6 +328,15 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                 var courseContent = courseText.GetValueOrDefault(item.CourseId);
                 var forceRefresh = input.RefreshAi && (input.RefreshSubmissionId == null || input.RefreshSubmissionId == item.SubmissionId);
                 var cacheKey = BuildAiCacheKey(item.SubmissionId, evidence, prompt, criteria, courseContent, item.DomainName, item.Tier, rubric, events);
+                var inputHash = PulseAiReviewStore.InputHash(evidence, prompt, criteria, courseContent, item.DomainName, item.Tier, rubric, events);
+
+                // Same submission, same inputs: the stored review is shown and the AI is not called again.
+                var saved = forceRefresh ? null : PulseAiReviewStore.Reuse(stored, item.Kind, item.SubmissionId, inputHash);
+                if (saved != null)
+                {
+                    item.AiHint = saved;
+                    return;
+                }
 
                 if (!forceRefresh && _cache != null && _cache.TryGetValue<PulseAiHintDto>(cacheKey, out var cachedHint) && cachedHint != null)
                 {
@@ -348,7 +359,6 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                 }
 
                 item.AiHint = evaluated;
-                var inputHash = PulseAiReviewStore.InputHash(evidence, prompt, criteria, courseContent, item.DomainName, item.Tier, rubric, events);
                 reviewed.Add(new PulseAiReviewStore.Entry(item.OrganizationId, item.Kind, item.SubmissionId, inputHash, evaluated));
             })
             .ToList();

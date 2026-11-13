@@ -47,6 +47,44 @@ public static class PulseAiReviewStore
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(signature.ToString())));
     }
 
+    /// <summary>Stored reviews of these submissions, by (kind, submission id). Loaded once, before the parallel AI calls.</summary>
+    public static async Task<Dictionary<(string Kind, Guid SubmissionId), PulseAiReview>> LoadAsync(
+        IApplicationDbContext context,
+        IReadOnlyCollection<Guid> submissionIds)
+    {
+        if (submissionIds.Count == 0)
+        {
+            return new Dictionary<(string Kind, Guid SubmissionId), PulseAiReview>();
+        }
+
+        return (await context.PulseAiReviews.AsNoTracking()
+                .Where(r => submissionIds.Contains(r.SubmissionId))
+                .ToListAsync())
+            .ToDictionary(r => (r.SubmissionKind, r.SubmissionId));
+    }
+
+    /// <summary>The stored hint when it was made from exactly these inputs; null when there is none or it is out of date.</summary>
+    public static PulseAiHintDto? Reuse(
+        IReadOnlyDictionary<(string Kind, Guid SubmissionId), PulseAiReview> stored,
+        string kind,
+        Guid submissionId,
+        string inputHash)
+    {
+        if (!stored.TryGetValue((kind, submissionId), out var row) || row.InputHash != inputHash)
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<PulseAiHintDto>(row.Result, Json);
+        }
+        catch (JsonException)
+        {
+            return null; // An unreadable row is reviewed again and overwritten.
+        }
+    }
+
     /// <summary>
     /// Stores the AI results (a new row, or the submission's row updated in place). Two reviewers opening the queue
     /// at the same moment may both try to insert the same submission: the unique index keeps one row, the other save
