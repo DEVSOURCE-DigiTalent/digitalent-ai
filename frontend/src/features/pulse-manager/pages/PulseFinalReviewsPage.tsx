@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Check, ClipboardCheck, X, ArrowRight, GraduationCap, Building2, Clock, CheckCircle2, AlertCircle, FileCheck2, Sparkles } from 'lucide-react';
 import '@/features/trial-program/mentor-workspace.css';
 import { toast } from 'sonner';
-import { useDecidePulseFinal, useDecidePulsePreAssessment, usePulseFinalReviews, useRecordPulseSupport } from '@/hooks/use-pulse';
+import { useDecidePulseFinal, useDecidePulsePreAssessment, usePulseFinalReviews, useRecordPulseSupport, useRefreshPulseFinalAi } from '@/hooks/use-pulse';
 import type {
   PulseAiHint,
   PulseChoiceResult,
@@ -312,6 +312,16 @@ function ReviewCard({ item, criteria, showOrganization }: { item: PulseFinalRevi
   const pill = STATUS_PILL[item.status];
   const firstMiss = item.attempts.find((a) => a.retryOpensAt || a.retryDueAt);
   const isPre = item.kind === 'PRE_ASSESSMENT';
+  const refreshAi = useRefreshPulseFinalAi();
+  // The stored AI review is reused on every opening; this asks the AI to review this one submission again.
+  const reviewAgain = () =>
+    refreshAi.mutate(
+      { includeReviewed: false, submissionId: item.submissionId },
+      {
+        onSuccess: () => toast.success('AI đã chấm lại bài này.'),
+        onError: (err) => toast.error(pulseErrorMessage(err, 'Chưa chấm lại được, thử lại sau.')),
+      },
+    );
 
   return (
     <article className="pu-surface pu-pad pu-review-card" aria-label={`${item.employeeName} · ${item.courseTitle}`}>
@@ -384,7 +394,7 @@ function ReviewCard({ item, criteria, showOrganization }: { item: PulseFinalRevi
               );
             })}
           </div>
-          <AiEvaluationPanel hint={item.aiHint} />
+          <AiEvaluationPanel hint={item.aiHint} onReviewAgain={reviewAgain} reviewing={refreshAi.isPending} />
         </div>
       )}
 
@@ -441,7 +451,15 @@ function FraudLevelLabel(level: string) {
   return 'THẤP';
 }
 
-function AiEvaluationPanel({ hint }: { hint?: PulseAiHint | null }) {
+function AiEvaluationPanel({
+  hint,
+  onReviewAgain,
+  reviewing = false,
+}: {
+  hint?: PulseAiHint | null;
+  onReviewAgain?: () => void;
+  reviewing?: boolean;
+}) {
   const d = hint?.detail;
   const f = hint?.fraud;
   return (
@@ -472,10 +490,17 @@ function AiEvaluationPanel({ hint }: { hint?: PulseAiHint | null }) {
 
       {/* Phần đánh giá bài viết */}
       <h3 style={{ display: "flex", alignItems: "center", gap: 6 }}><Sparkles size={15} style={{ color: "var(--mw-ai, #7c3aed)" }} aria-hidden="true" /> Đánh giá của AI (Gemini)</h3>
-      {hint?.reviewedAt && (
-        <p style={{ margin: '-4px 0 8px', fontSize: 12, color: '#64748b' }}>
-          Chấm lúc {formatDateTime(hint.reviewedAt)}
-        </p>
+      {(hint?.reviewedAt || onReviewAgain) && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, margin: '-4px 0 8px' }}>
+          <span style={{ fontSize: 12, color: '#64748b' }}>
+            {hint?.reviewedAt ? `Chấm lúc ${formatDateTime(hint.reviewedAt)}` : ''}
+          </span>
+          {onReviewAgain && (
+            <button type="button" className={btn('outline', true)} onClick={onReviewAgain} disabled={reviewing}>
+              {reviewing ? 'AI đang chấm lại…' : 'Chấm lại bằng AI'}
+            </button>
+          )}
+        </div>
       )}
       {d ? (
         <>
