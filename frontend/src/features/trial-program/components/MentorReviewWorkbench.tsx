@@ -1845,7 +1845,11 @@ function MentorReviewDetailPane({
 
                 {recording ? (
                   <div className="tp-pu">
-                    <RecordingPlayer key={recording.sessionId} recording={recording} />
+                    <RecordingPlayer
+                      key={recording.sessionId}
+                      recording={recording}
+                      aiFraud={organizationId ? activeItem.aiHint?.fraud : undefined}
+                    />
                   </div>
                 ) : (
                   <div
@@ -2059,7 +2063,9 @@ function MentorReviewDetailPane({
               </div>
             )}
 
-            {activeItem.aiHint?.fraud && activeItem.aiHint.fraud.items.length > 0 && (
+            {!(organizationId && activeItem.recording) &&
+              activeItem.aiHint?.fraud &&
+              activeItem.aiHint.fraud.items.length > 0 && (
               <div
                 style={{
                   background: '#fff1f2',
