@@ -76,7 +76,7 @@ describe('PulseFinalReviewsPage · stored AI review', () => {
     renderPage();
 
     const card = await screen.findByRole('article', { name: 'Nguyễn An · Tìm kiếm và lưu trữ thông tin cơ bản' });
-    expect(within(card).getByText(`Chấm lúc ${formatDateTime(FIRST_REVIEW)}`)).toBeTruthy();
+    expect(within(card).getByText(`AI phân tích lúc ${formatDateTime(FIRST_REVIEW)}`)).toBeTruthy();
     expect(within(card).getByText('Bài có nguồn rõ ràng.')).toBeTruthy();
   });
 
@@ -90,7 +90,7 @@ describe('PulseFinalReviewsPage · stored AI review', () => {
     fireEvent.click(within(card).getByRole('button', { name: 'Chấm lại bằng AI' }));
 
     await waitFor(() => expect(getQueue).toHaveBeenCalledWith(false, undefined, true, 'sub-1'));
-    expect(await screen.findByText(`Chấm lúc ${formatDateTime(SECOND_REVIEW)}`)).toBeTruthy();
+    expect(await screen.findByText(`AI phân tích lúc ${formatDateTime(SECOND_REVIEW)}`)).toBeTruthy();
     expect(screen.getByText('Lần chấm lại: thiếu kết luận.')).toBeTruthy();
   });
 });

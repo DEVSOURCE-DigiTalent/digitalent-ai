@@ -493,7 +493,7 @@ function AiEvaluationPanel({
       {(hint?.reviewedAt || onReviewAgain) && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, margin: '-4px 0 8px' }}>
           <span style={{ fontSize: 12, color: '#64748b' }}>
-            {hint?.reviewedAt ? `Chấm lúc ${formatDateTime(hint.reviewedAt)}` : ''}
+            {hint?.reviewedAt ? `AI phân tích lúc ${formatDateTime(hint.reviewedAt)}` : ''}
           </span>
           {onReviewAgain && (
             <button type="button" className={btn('outline', true)} onClick={onReviewAgain} disabled={reviewing}>
