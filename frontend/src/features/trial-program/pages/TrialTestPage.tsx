@@ -78,7 +78,15 @@ function DomainAccordionItem({
           <div>
             <div className="tt-domain-name">{domain.name}</div>
             <div className="tt-domain-subline">
-              <span>Đạt: <strong className="tt-domain-highlight">Cấp {level} ({levelName})</strong></span>
+              {/* The scale shown to employees is Cấp 1 → 3: below Cấp 1 the domain is "Chưa đạt cấp nào", never "Cấp 0". */}
+              <span>
+                Hiện tại:{' '}
+                {level >= 1 ? (
+                  <strong className="tt-domain-highlight">Cấp {level} ({levelName})</strong>
+                ) : (
+                  <strong style={{ color: '#64748b' }}>Chưa đạt cấp nào</strong>
+                )}
+              </span>
               <span className="tt-domain-sep">•</span>
               <span>Chuẩn vị trí: <strong>Cấp {targetLevel} ({targetName})</strong></span>
             </div>
@@ -94,7 +102,7 @@ function DomainAccordionItem({
             </span>
           ) : (
             <span className="tt-badge tt-badge--amber" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-              <AlertCircle size={13} /> Cần bồi dưỡng (Thiếu {detail?.skillGap ?? 1} cấp)
+              <AlertCircle size={13} /> Cần cải thiện (Thiếu {detail?.skillGap ?? 1} cấp)
             </span>
           )}
           <ChevronDown
@@ -192,32 +200,16 @@ function DomainAccordionItem({
             </div>
           </div>
 
-          {/* Khoảng cách năng lực & Chính sách đào tạo */}
-          <div
-            className={`tt-gap-box ${
-              isPassed ? 'tt-gap-box--ok' : 'tt-gap-box--gap'
-            }`}
-          >
-            {isPassed ? (
+          {/* Chính sách đào tạo (chỉ khi đạt chuẩn) */}
+          {isPassed && (
+            <div className="tt-gap-box tt-gap-box--ok">
               <CheckCircle2 size={18} style={{ color: '#2563eb', flexShrink: 0, marginTop: 2 }} />
-            ) : (
-              <AlertCircle size={18} style={{ color: '#d97706', flexShrink: 0, marginTop: 2 }} />
-            )}
-            <div>
-              <strong>
-                {isPassed
-                  ? 'Chính sách đào tạo: '
-                  : 'Khoảng cách năng lực: '}
-              </strong>
-              {isPassed ? (
-                <>
-                  Đạt trần năng lực yêu cầu của chức danh. Học phần tương ứng của lĩnh vực này được tự động công nhận hoàn thành <span className="tt-pill-exempt" style={{ marginLeft: 3 }}>Miễn học</span>.
-                </>
-              ) : (
-                'Chưa đạt trần năng lực yêu cầu của chức danh. Bạn cần hoàn thành khóa học bồi dưỡng để nâng chuẩn năng lực cho vị trí này.'
-              )}
+              <div>
+                <strong>Chính sách đào tạo: </strong>
+                Đạt trần năng lực yêu cầu của chức danh. Học phần tương ứng của lĩnh vực này được tự động công nhận hoàn thành <span className="tt-pill-exempt" style={{ marginLeft: 3 }}>Miễn học</span>.
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Khóa học đề xuất */}
           {detail?.recommendedCourse && (
@@ -225,7 +217,7 @@ function DomainAccordionItem({
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <BookOpen size={16} style={{ color: '#2563eb', flexShrink: 0 }} />
                 <span>
-                  Khóa học bồi dưỡng: <strong>{detail.recommendedCourse}</strong>
+                  Khóa học đề xuất: <strong>{detail.recommendedCourse}</strong>
                 </span>
               </div>
               <Link to={PULSE_PATHS.path} className="tt-btn-primary" style={{ padding: '6px 14px', fontSize: 12 }}>
@@ -501,7 +493,7 @@ function ReviewedDashboard({
           </div>
           <div className="tt-score-metric-box tt-score-metric-box--exempt">
             <span className="tt-score-metric-val green">
-              {exemptCount} môn
+              {exemptCount} lĩnh vực
             </span>
             <span className="tt-score-metric-lbl">Được miễn học</span>
           </div>
@@ -524,12 +516,12 @@ function ReviewedDashboard({
             <h3 className="tt-action-callout-title">
               {gapCount === 0
                 ? 'Đã đạt 100% chuẩn trần năng lực của vị trí việc làm'
-                : `Lộ trình đào tạo cá nhân hóa: Cần bồi dưỡng ${gapCount} môn`}
+                : `Lộ trình đào tạo cá nhân hóa: Cần cải thiện ${gapCount} lĩnh vực`}
             </h3>
             <p className="tt-action-callout-desc">
               {gapCount === 0
                 ? 'Bạn được tự động miễn tất cả các học phần cơ bản. Bấm xem chứng nhận để kiểm tra và lưu chứng nhận số của bạn.'
-                : `Bạn được miễn học ${exemptCount} môn và cần hoàn thành ${gapCount} môn còn lại để đạt chuẩn trần năng lực vị trí.`}
+                : `Bạn được miễn học ${exemptCount} lĩnh vực đã đạt chuẩn và cần cải thiện ${gapCount} lĩnh vực còn lại để đạt chuẩn trần năng lực vị trí.`}
             </p>
           </div>
         </div>
@@ -538,7 +530,7 @@ function ReviewedDashboard({
           to={gapCount === 0 ? PULSE_PATHS.outcomes : PULSE_PATHS.path}
           className="tt-btn-primary tt-action-callout-btn"
         >
-          {gapCount === 0 ? 'Xem chứng nhận' : 'Vào học các môn cần bổ sung'} <ArrowRight size={15} />
+          {gapCount === 0 ? 'Xem chứng nhận' : 'Vào học các lĩnh vực cần cải thiện'} <ArrowRight size={15} />
         </Link>
       </section>
 
@@ -548,7 +540,7 @@ function ReviewedDashboard({
           <div>
             <h3 className="tt-card-title">Kết quả chi tiết 6 lĩnh vực năng lực số</h3>
             <p className="tt-card-desc">
-              Bấm vào từng lĩnh vực để xem chi tiết kết quả trắc nghiệm và môn học tương ứng.
+              Bấm vào từng lĩnh vực để xem chi tiết kết quả trắc nghiệm và khóa học tương ứng.
             </p>
           </div>
           <span className={`tt-badge ${passedCount === totalDomains ? 'tt-badge--blue' : 'tt-badge--amber'}`}>
