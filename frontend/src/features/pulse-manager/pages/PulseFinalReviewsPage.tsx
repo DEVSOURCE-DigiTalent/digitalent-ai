@@ -472,6 +472,11 @@ function AiEvaluationPanel({ hint }: { hint?: PulseAiHint | null }) {
 
       {/* Phần đánh giá bài viết */}
       <h3 style={{ display: "flex", alignItems: "center", gap: 6 }}><Sparkles size={15} style={{ color: "var(--mw-ai, #7c3aed)" }} aria-hidden="true" /> Đánh giá của AI (Gemini)</h3>
+      {hint?.reviewedAt && (
+        <p style={{ margin: '-4px 0 8px', fontSize: 12, color: '#64748b' }}>
+          Chấm lúc {formatDateTime(hint.reviewedAt)}
+        </p>
+      )}
       {d ? (
         <>
           <div className="pu-ai-scores">
