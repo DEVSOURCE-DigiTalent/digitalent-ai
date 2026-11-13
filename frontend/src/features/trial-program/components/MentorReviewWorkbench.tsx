@@ -1583,11 +1583,11 @@ function MentorReviewDetailPane({
               <span className="mw-chip indigo" style={{ fontSize: 11.5 }}>
                 {`Lần ${activeItem.attemptNo}/${activeItem.maxAttempts}`}
               </span>
-              {risk && <RiskTag risk={risk} />}
+              {risk && !organizationId && <RiskTag risk={risk} />}
             </div>
 
             <div className="mw-learner-banner-meta">
-              {activeItem.organizationName && (
+              {activeItem.organizationName && !organizationId && (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   <Building2 size={13} style={{ color: '#4f46e5' }} aria-hidden="true" />
                   <strong>{activeItem.organizationName}</strong>
