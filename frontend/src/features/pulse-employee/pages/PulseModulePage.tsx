@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   AlertCircle,
   ArrowLeft,
@@ -34,6 +34,9 @@ import { LoadError, PageSkeleton, PuLink } from '../components/ui';
 import { BLOCK_MESSAGES, levelName, pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 import '../pulse-lesson.css';
+
+/** Seconds before moving on to the next module after passing a module quiz. */
+const AUTO_NEXT_SECONDS = 5;
 
 function toSentenceCase(str: string): string {
   if (!str) return '';
@@ -72,6 +75,9 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
   const [askOpen, setAskOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'reading' | 'quiz'>('reading');
   const [forceRetake, setForceRetake] = useState(false);
+  // Result of the quiz the learner has just passed here. Kept at this level because the refetch after passing
+  // can bring a new attempt, which remounts the quiz form and would lose its own state.
+  const [justPassed, setJustPassed] = useState<PulseQuizResult | null>(null);
   const markViewed = useMarkPulseModuleViewed();
   const markPage = useMarkPulsePageViewed();
   const marked = useRef(detail.viewed);
@@ -280,12 +286,21 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                 detail={detail}
                 viewed={true}
                 forceRetake={forceRetake}
-                onRetake={() => setForceRetake(true)}
+                justPassed={justPassed}
+                onPassed={(result) => {
+                  setForceRetake(false);
+                  setJustPassed(result);
+                }}
+                onRetake={() => {
+                  setJustPassed(null);
+                  setForceRetake(true);
+                }}
                 onOpenPart={handleReviewOpenPart}
                 opening={markPage.isPending}
                 onBackToLesson={() => {
                   setViewMode('reading');
                   setForceRetake(false);
+                  setJustPassed(null);
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
               />
@@ -548,17 +563,21 @@ interface QuizAreaProps {
   onBackToLesson?: () => void;
   forceRetake?: boolean;
   onRetake?: () => void;
+  /** The quiz passed a moment ago on this page: shows the success card and moves on to the next module. */
+  justPassed?: PulseQuizResult | null;
+  onPassed?: (result: PulseQuizResult) => void;
 }
 
-function QuizArea({ detail, viewed, reachedEnd, onOpenPart, opening, onBackToLesson, forceRetake, onRetake }: QuizAreaProps) {
+function QuizArea({ detail, viewed, reachedEnd, onOpenPart, opening, onBackToLesson, forceRetake, onRetake, justPassed, onPassed }: QuizAreaProps) {
   const { course } = detail;
-  const nextPath = detail.nextModuleId
-    ? PULSE_PATHS.module(course.courseId, detail.nextModuleId)
+  const nextModuleId = justPassed?.nextModuleId ?? detail.nextModuleId;
+  const nextPath = nextModuleId
+    ? PULSE_PATHS.module(course.courseId, nextModuleId)
     : PULSE_PATHS.final(course.courseId);
-  const nextLabel = detail.nextModuleId ? 'Học mô-đun tiếp theo →' : 'Đến bài đánh giá cuối khóa →';
+  const nextLabel = nextModuleId ? 'Học mô-đun tiếp theo →' : 'Đến bài đánh giá cuối khóa →';
 
-  if (!forceRetake && (detail.quizPassed || (!detail.quiz && !detail.quizBlockReason && viewed && !detail.sample && course.canWork))) {
-    const score = detail.lastQuiz;
+  if (justPassed || (!forceRetake && (detail.quizPassed || (!detail.quiz && !detail.quizBlockReason && viewed && !detail.sample && course.canWork)))) {
+    const score = justPassed ? { score: justPassed.score, total: justPassed.total } : detail.lastQuiz;
     return (
       <section className="pu-quiz-passed-view" aria-labelledby="pu-quiz-passed-title">
         <div className="pu-qpv-card">
@@ -574,6 +593,8 @@ function QuizArea({ detail, viewed, reachedEnd, onOpenPart, opening, onBackToLes
               ? `Bạn đã đạt bài kiểm tra củng cố${score ? ` (đúng ${score.score}/${score.total} câu)` : ''}. Tiến độ học tập đã được lưu thành công.`
               : 'Bạn đã hoàn thành nội dung bài học này. Tiến độ đã được lưu thành công.'}
           </p>
+          {/* Mô-đun cuối không tự mở bài cuối khóa: đó là bài thi có giám sát, người học phải chủ động vào. */}
+          {justPassed && nextModuleId && <AutoNextModule to={nextPath} />}
 
           <div className="pu-qpv-actions">
             {onBackToLesson && (
@@ -636,7 +657,38 @@ function QuizArea({ detail, viewed, reachedEnd, onOpenPart, opening, onBackToLes
       viewed={viewed}
       reachedEnd={reachedEnd ?? true}
       onBackToLesson={onBackToLesson}
+      onPassed={onPassed}
     />
+  );
+}
+
+/** Đếm ngược rồi tự mở mô-đun tiếp theo; người học có thể ở lại trang. */
+function AutoNextModule({ to }: { to: string }) {
+  const navigate = useNavigate();
+  const [countdown, setCountdown] = useState<number | null>(AUTO_NEXT_SECONDS);
+
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown <= 0) {
+      navigate(to);
+      return;
+    }
+    const timer = window.setTimeout(() => setCountdown((value) => (value === null ? null : value - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [countdown, navigate, to]);
+
+  if (countdown === null) return null;
+  return (
+    <p className="pu-qpv-desc" role="status">
+      Tự chuyển sang mô-đun tiếp theo sau <strong>{countdown}</strong> giây…{' '}
+      <button
+        type="button"
+        onClick={() => setCountdown(null)}
+        style={{ background: 'none', border: 0, padding: 0, color: '#1d4ed8', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}
+      >
+        Ở lại trang này
+      </button>
+    </p>
   );
 }
 
@@ -727,12 +779,14 @@ function QuizForm({
   viewed,
   reachedEnd,
   onBackToLesson,
+  onPassed,
 }: {
   detail: PulseModuleDetail;
   quiz: PulseModuleQuiz;
   viewed: boolean;
   reachedEnd: boolean;
   onBackToLesson?: () => void;
+  onPassed?: (result: PulseQuizResult) => void;
 }) {
   const { course, module } = detail;
   const submit = useSubmitPulseModuleQuiz();
@@ -754,6 +808,7 @@ function QuizForm({
         onSuccess: (res) => {
           setResult(res);
           if (res.passed) {
+            onPassed?.(res);
             toast.success(
               res.allModulesPassed
                 ? 'Đã hoàn thành mọi mô đun! Bài đánh giá cuối khóa đã sẵn sàng.'
@@ -771,7 +826,7 @@ function QuizForm({
     : PULSE_PATHS.final(course.courseId);
   const nextLabel = detail.nextModuleId ? 'Học mô-đun tiếp theo →' : 'Đến bài đánh giá cuối khóa →';
 
-  // Khi đã submit và đạt
+  // Khi đã submit và đạt (trang mô-đun hiện thẻ kết quả qua onPassed; thẻ này chỉ dùng khi không có onPassed)
   if (result?.passed) {
     return (
       <section className="pu-quiz-passed-view" aria-labelledby="pu-quiz-passed-title">

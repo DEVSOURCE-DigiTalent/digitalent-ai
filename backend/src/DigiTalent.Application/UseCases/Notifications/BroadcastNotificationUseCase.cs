@@ -1,10 +1,12 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.IndividualCommerce;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DigiTalent.Application.UseCases.Notifications;
 
@@ -15,19 +17,22 @@ public class BroadcastNotificationUseCase : IUseCase<BroadcastNotificationInput,
     private readonly INotificationSender _notificationSender;
     private readonly IAppEmailSender _emailSender;
     private readonly ILogger<BroadcastNotificationUseCase> _logger;
+    private readonly string _appUrl;
 
     public BroadcastNotificationUseCase(
         IApplicationDbContext context,
         ICurrentUser currentUser,
         INotificationSender notificationSender,
         IAppEmailSender emailSender,
-        ILogger<BroadcastNotificationUseCase> logger)
+        ILogger<BroadcastNotificationUseCase> logger,
+        IOptions<IndividualCommerceOptions> options)
     {
         _context = context;
         _currentUser = currentUser;
         _notificationSender = notificationSender;
         _emailSender = emailSender;
         _logger = logger;
+        _appUrl = options.Value.Security.PublicAppUrl.TrimEnd('/');
     }
 
     public async Task<BroadcastNotificationOutput> ExecuteAsync(BroadcastNotificationInput input)
@@ -140,9 +145,10 @@ public class BroadcastNotificationUseCase : IUseCase<BroadcastNotificationInput,
         if (input.SendEmail)
         {
             var emailTasks = new List<Task>();
-            var actionUrl = !string.IsNullOrWhiteSpace(input.ActionUrl)
-                ? input.ActionUrl
-                : "http://localhost:5173/enterprise";
+            // A relative link ("/enterprise/...") becomes absolute so it opens from the mailbox.
+            var actionUrl = string.IsNullOrWhiteSpace(input.ActionUrl) ? _appUrl + "/enterprise"
+                : input.ActionUrl.StartsWith('/') ? _appUrl + input.ActionUrl
+                : input.ActionUrl;
 
             foreach (var emp in employees)
             {

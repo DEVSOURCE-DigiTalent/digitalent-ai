@@ -117,6 +117,12 @@ services:
       MinIO__SecretKey: ${MINIO_SECRET_KEY:-changeme}
       MinIO__UseSSL: "false"
       AllowedOrigins: ${ALLOWED_ORIGINS:-http://localhost:80}
+      # Public address of the web app, used in e-mail and payment links (appsettings defaults to localhost:5173).
+      Invitations__FrontendBaseUrl: ${PUBLIC_APP_URL:-https://digitalent-ai.duckdns.org}
+      EnterpriseTrial__PublicAppUrl: ${PUBLIC_APP_URL:-https://digitalent-ai.duckdns.org}
+      IndividualCommerce__Security__PublicAppUrl: ${PUBLIC_APP_URL:-https://digitalent-ai.duckdns.org}
+      IndividualCommerce__PayOS__ReturnUrl: ${PUBLIC_APP_URL:-https://digitalent-ai.duckdns.org}/payment/success
+      IndividualCommerce__PayOS__CancelUrl: ${PUBLIC_APP_URL:-https://digitalent-ai.duckdns.org}/payment/cancel
     depends_on:
       postgres:
         condition: service_healthy
