@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Unicode;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +18,11 @@ public static class PulseAiReviewStore
 {
     public const string AiSource = "GEMINI";
 
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+    // Vietnamese stays readable in the stored JSON (no \uXXXX); HTML-sensitive characters are still escaped.
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
+    {
+        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+    };
 
     /// <summary>A result to store for one submission.</summary>
     public sealed record Entry(Guid OrganizationId, string Kind, Guid SubmissionId, string InputHash, PulseAiHintDto Hint);
