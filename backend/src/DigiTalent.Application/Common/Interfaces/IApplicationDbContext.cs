@@ -58,6 +58,7 @@ public interface IApplicationDbContext
     DbSet<ProctoringSession> ProctoringSessions { get; }
     DbSet<ProctoringRecording> ProctoringRecordings { get; }
     DbSet<ProctoringEvent> ProctoringEvents { get; }
+    DbSet<PulseAiReview> PulseAiReviews { get; }
     DbSet<Enrollment> Enrollments { get; }
     DbSet<LearningMaterial> LearningMaterials { get; }
     DbSet<Lesson> Lessons { get; }

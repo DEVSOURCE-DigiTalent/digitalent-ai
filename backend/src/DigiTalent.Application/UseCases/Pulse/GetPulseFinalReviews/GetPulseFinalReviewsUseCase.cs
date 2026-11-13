@@ -1,12 +1,9 @@
-using System.Security.Cryptography;
-using System.Text;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Constants.Authorization;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace DigiTalent.Application.UseCases.Pulse;
 
@@ -40,7 +37,6 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
     private readonly ICurrentUser _currentUser;
     private readonly TimeProvider _clock;
     private readonly IGeminiService _gemini;
-    private readonly IMemoryCache? _cache;
 
     public GetPulseFinalReviewsUseCase(
         IApplicationDbContext context,
@@ -51,8 +47,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
         PulseExamPaper paper,
         ICurrentUser currentUser,
         TimeProvider clock,
-        IGeminiService gemini,
-        IMemoryCache? cache = null)
+        IGeminiService gemini)
     {
         _context = context;
         _scope = scope;
@@ -63,7 +58,6 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
         _currentUser = currentUser;
         _clock = clock;
         _gemini = gemini;
-        _cache = cache;
     }
 
     private sealed record PreAssessmentRow(
@@ -303,6 +297,10 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
         var defaultCriteria = PulseRules.FinalCriteria.Select(c => c.Title).ToList();
         var toEvaluate = items.Where(i => i.Status == PulseFinalStatus.Pending && i.Attempts.Count > 0).ToList();
         var courseText = await PulseCourseText.LoadAsync(_context, toEvaluate.Select(i => i.CourseId).Distinct().ToList());
+        // Stored reviews are read first; AI calls run in parallel without touching the DbContext and their results
+        // are stored once they are all back.
+        var stored = await PulseAiReviewStore.LoadAsync(_context, toEvaluate.Select(i => i.SubmissionId).ToList());
+        var reviewed = new System.Collections.Concurrent.ConcurrentBag<PulseAiReviewStore.Entry>();
         var aiTasks = toEvaluate
             .Select(async item =>
             {
@@ -323,11 +321,13 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
 
                 var courseContent = courseText.GetValueOrDefault(item.CourseId);
                 var forceRefresh = input.RefreshAi && (input.RefreshSubmissionId == null || input.RefreshSubmissionId == item.SubmissionId);
-                var cacheKey = BuildAiCacheKey(item.SubmissionId, evidence, prompt, criteria, courseContent, item.DomainName, item.Tier, rubric, events);
+                var inputHash = PulseAiReviewStore.InputHash(evidence, prompt, criteria, courseContent, item.DomainName, item.Tier, rubric, events);
 
-                if (!forceRefresh && _cache != null && _cache.TryGetValue<PulseAiHintDto>(cacheKey, out var cachedHint) && cachedHint != null)
+                // Same submission, same inputs: the stored review is shown and the AI is not called again.
+                var saved = forceRefresh ? null : PulseAiReviewStore.Reuse(stored, item.Kind, item.SubmissionId, inputHash);
+                if (saved != null)
                 {
-                    item.AiHint = cachedHint;
+                    item.AiHint = saved;
                     return;
                 }
 
@@ -339,16 +339,13 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                     courseContent,
                     item.DomainName,
                     item.Tier,
-                    rubric);
-                if (_cache != null && evaluated.Source == "GEMINI")
-                {
-                    _cache.Set(cacheKey, evaluated, TimeSpan.FromHours(6));
-                }
-
+                    rubric) with { ReviewedAt = _clock.GetUtcNow() };
                 item.AiHint = evaluated;
+                reviewed.Add(new PulseAiReviewStore.Entry(item.OrganizationId, item.Kind, item.SubmissionId, inputHash, evaluated));
             })
             .ToList();
         await Task.WhenAll(aiTasks);
+        await PulseAiReviewStore.SaveAsync(_context, reviewed.ToList());
 
         items = items
             .OrderBy(i => Array.IndexOf(statusOrder, i.Status))
@@ -366,30 +363,5 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
             Criteria = PulseRules.FinalCriteria.ToList(),
             Items = items,
         };
-    }
-
-    private static string BuildAiCacheKey(
-        Guid submissionId,
-        string evidence,
-        string prompt,
-        IReadOnlyList<string> criteria,
-        string? courseContent,
-        string? domainName,
-        int? tier,
-        IReadOnlyList<PulseCriterionDto> rubric,
-        IReadOnlyList<ProctoringEventInfo>? events)
-    {
-        var signature = new StringBuilder()
-            .Append(submissionId).Append('|')
-            .Append(evidence).Append('|')
-            .Append(prompt).Append('|')
-            .Append(domainName ?? "").Append('|')
-            .Append(tier?.ToString() ?? "").Append('|')
-            .Append(string.Join(";", criteria)).Append('|')
-            .Append(string.Join(";", rubric.Select(r => $"{r.Number}:{r.Title}:{r.WeightPercent}:{r.IsRequired}"))).Append('|')
-            .Append(courseContent ?? "").Append('|')
-            .Append(events == null ? "" : string.Join(",", events.Select(e => $"{e.Kind}:{e.OffsetMs}:{e.DurationMs}")));
-        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(signature.ToString())));
-        return $"pulse:ai-hint:v3:{submissionId}:{hash[..16]}";
     }
 }

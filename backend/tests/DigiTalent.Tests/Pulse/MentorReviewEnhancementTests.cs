@@ -14,7 +14,6 @@ using DigiTalent.Infrastructure.Persistence;
 using DigiTalent.Infrastructure.Persistence.Seed;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -182,7 +181,7 @@ public class MentorReviewEnhancementTests
     }
 
     [Fact]
-    public async Task GetPulseFinalReviewsUseCase_CachesGeminiResults_AndDoesNotCacheKeywordFallback()
+    public async Task GetPulseFinalReviewsUseCase_StoresGeminiResults_AndDoesNotStoreKeywordFallback()
     {
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
@@ -210,11 +209,10 @@ public class MentorReviewEnhancementTests
         var signer = new ProctoringRecordingUrlSigner(new JwtSettings { SigningKey = "pulse-test-signing-key-0123456789abcdef" }, world.Clock);
         var recordings = new PulseRecordingReader(world.Context, signer);
 
-        // 1. KEYWORD_FALLBACK should NEVER be cached -> calls AI twice.
+        // 1. KEYWORD_FALLBACK is never stored -> calls AI twice.
         var fallbackGemini = new CountingGeminiService("KEYWORD_FALLBACK");
-        var cache = new MemoryCache(new MemoryCacheOptions());
         var ucFallback = new GetPulseFinalReviewsUseCase(
-            world.Context, scope, catalog, final, recordings, paper, current.Object, world.Clock, fallbackGemini, cache);
+            world.Context, scope, catalog, final, recordings, paper, current.Object, world.Clock, fallbackGemini);
 
         var r1 = await ucFallback.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput());
         var r2 = await ucFallback.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput());
@@ -222,10 +220,10 @@ public class MentorReviewEnhancementTests
         r1.Items.Single().AiHint!.Source.Should().Be("KEYWORD_FALLBACK");
         r2.Items.Single().AiHint!.Source.Should().Be("KEYWORD_FALLBACK");
 
-        // 2. GEMINI should be cached across repeated GETs, and bypassed when RefreshAi + RefreshSubmissionId match.
+        // 2. GEMINI is stored (pulse_ai_reviews) and reused across repeated GETs, bypassed when RefreshAi + RefreshSubmissionId match.
         var realGemini = new CountingGeminiService("GEMINI");
         var ucReal = new GetPulseFinalReviewsUseCase(
-            world.Context, scope, catalog, final, recordings, paper, current.Object, world.Clock, realGemini, cache);
+            world.Context, scope, catalog, final, recordings, paper, current.Object, world.Clock, realGemini);
 
         var g1 = await ucReal.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput());
         var g2 = await ucReal.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput());

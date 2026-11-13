@@ -562,6 +562,8 @@ export interface PulseAiHint {
   criterionNotes?: string[] | null;
   source?: 'GEMINI' | 'KEYWORD_FALLBACK';
   model?: string | null;
+  /** When the AI made this review (ISO). Stored reviews keep their time, so reopening the queue does not change it. */
+  reviewedAt?: string | null;
   summary: string;
   detail?: PulseAiDetail | null;
   fraud?: PulseAiFraud | null;
