@@ -589,11 +589,11 @@ export function MentorReviewWorkbench({
             <span>{organizationId ? 'Đơn vị phụ trách' : 'Thẩm định bài cuối cấp'}</span>
           </div>
           <h1>{organizationId ? scopedOrgTitle : 'Chấm bài & Thẩm định Năng lực'}</h1>
-          <p className="mw-wb-subtitle">
-            {organizationId
-              ? 'Kiểm tra và chấm điểm bài cuối cấp sau mỗi cấp độ của nhân viên thuộc đơn vị này.'
-              : 'Kiểm tra và chấm điểm bài cuối cấp sau mỗi cấp độ theo từng lĩnh vực.'}
-          </p>
+          {!organizationId && (
+            <p className="mw-wb-subtitle">
+              Kiểm tra và chấm điểm bài cuối cấp sau mỗi cấp độ theo từng lĩnh vực.
+            </p>
+          )}
         </div>
 
         <div className="mw-workbench-actions">
@@ -1062,7 +1062,7 @@ export function MentorReviewWorkbench({
                               </span>
                               <div style={{ minWidth: 0 }}>
                                 <div className="mw-rail-name">{item.employeeName}</div>
-                                <div className="mw-rail-role">{roleLabel}</div>
+                                {!organizationId && <div className="mw-rail-role">{roleLabel}</div>}
                               </div>
                             </div>
 
@@ -1105,6 +1105,7 @@ export function MentorReviewWorkbench({
                   pageSize={pageSize}
                   totalItems={sortedFilteredItems.length}
                   unitLabel="bài nộp"
+                  showSummary={!organizationId}
                   onPageChange={setPage}
                   onPageSizeChange={(nextSize) => {
                     setPageSize(nextSize);
