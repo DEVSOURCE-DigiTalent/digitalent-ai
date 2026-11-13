@@ -163,6 +163,34 @@ public class JobPositionTests
     }
 
     [Fact]
+    public async Task GetPagedJobPositions_CanIncludePositionsHeldByActiveDepartmentMembers()
+    {
+        using var context = new AppDbContext(GetOptions(Guid.NewGuid().ToString()));
+        var org = Guid.NewGuid();
+        var department = Guid.NewGuid();
+        var otherDepartment = Guid.NewGuid();
+        var shared = new JobPosition { Id = Guid.NewGuid(), OrganizationId = org, Code = "SHARED", Name = "Shared" };
+        var owned = new JobPosition { Id = Guid.NewGuid(), OrganizationId = org, DepartmentId = department, Code = "OWNED", Name = "Owned" };
+        var unrelated = new JobPosition { Id = Guid.NewGuid(), OrganizationId = org, Code = "UNRELATED", Name = "Unrelated" };
+        context.JobPositions.AddRange(shared, owned, unrelated);
+        context.Employees.AddRange(
+            new Employee { OrganizationId = org, DepartmentId = department, JobPositionId = shared.Id, Status = "ACTIVE" },
+            new Employee { OrganizationId = org, DepartmentId = otherDepartment, JobPositionId = shared.Id, Status = "ACTIVE" },
+            new Employee { OrganizationId = org, DepartmentId = department, JobPositionId = unrelated.Id, Status = "ARCHIVED" });
+        await context.SaveChangesAsync();
+        var user = new Mock<ICurrentUser>();
+        user.Setup(c => c.GetRequiredOrganizationId()).Returns(org);
+        var useCase = new GetPagedJobPositionsUseCase(context, user.Object);
+        var input = new GetPagedJobPositionsUseCaseInput { DepartmentId = department };
+
+        (await useCase.ExecuteAsync(input)).Items.Select(p => p.Id).Should().Equal(owned.Id);
+        input.IncludeAssignedPositions = true;
+        var positions = (await useCase.ExecuteAsync(input)).Items;
+        positions.Select(p => p.Id).Should().Equal(owned.Id, shared.Id);
+        positions.Single(p => p.Id == shared.Id).Headcount.Should().Be(1);
+    }
+
+    [Fact]
     public async Task ArchiveJobPosition_SetsStatusToArchived()
     {
         var dbName = Guid.NewGuid().ToString();

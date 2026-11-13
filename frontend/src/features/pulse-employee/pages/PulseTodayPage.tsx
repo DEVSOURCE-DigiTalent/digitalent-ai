@@ -42,7 +42,7 @@ export function PulseTodayPage() {
   if (isLoading) return <PageSkeleton blocks={[200, 240, 500]} />;
   if (error || !data) return <LoadError message={pulseErrorMessage(error, 'Không tải được không gian học của bạn.')} onRetry={() => refetch()} />;
   // Doanh nghiệp dùng thử chưa có khung năng lực: một trang Học thử duy nhất (Lộ trình).
-  if (trial && !data.hasTargets) return <Navigate to={PULSE_PATHS.path} replace />;
+  if (data.awaitingFramework || (trial && !data.hasTargets)) return <Navigate to={PULSE_PATHS.path} replace />;
   if (!data.hasPosition || !data.hasTargets) return <NoPath overview={data} />;
 
   return (

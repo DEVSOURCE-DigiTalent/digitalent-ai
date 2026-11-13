@@ -68,7 +68,6 @@
 .owner-heatmap__distribution-segment--invited,.owner-heatmap__legend-dot--invited{background:#9eacb9}
 .owner-heatmap__distribution-segment--active,.owner-heatmap__legend-dot--active{background:#efb366}
 .owner-heatmap__distribution-segment--submitted,.owner-heatmap__legend-dot--submitted{background:#62b4d9}
-.owner-heatmap__distribution-segment--reviewed,.owner-heatmap__legend-dot--reviewed{background:#36b3a4}
 .owner-heatmap__legend{display:flex;flex-wrap:wrap;gap:5px 15px}
 .owner-heatmap__legend>span{display:inline-flex;align-items:center;gap:5px;color:#758b98;font-size:10px;white-space:nowrap}
 .owner-heatmap__legend b{color:#314f60;font-variant-numeric:tabular-nums}
@@ -92,7 +91,6 @@
 .owner-heatmap__cell--invited{--heat-ink:#334d5c;--heat-fill:#9eacb9}
 .owner-heatmap__cell--active{--heat-ink:#784813;--heat-fill:#efb366}
 .owner-heatmap__cell--submitted{--heat-ink:#125a7c;--heat-fill:#62b4d9}
-.owner-heatmap__cell--reviewed{--heat-ink:#0d675e;--heat-fill:#36b3a4}
 .owner-heatmap__cell[data-strength=low]{background:color-mix(in srgb,var(--heat-fill) 38%,white);color:var(--heat-ink)}
 .owner-heatmap__cell[data-strength=mid]{background:color-mix(in srgb,var(--heat-fill) 64%,white);color:var(--heat-ink)}
 .owner-heatmap__cell[data-strength=high]{background:color-mix(in srgb,var(--heat-fill) 90%,white);color:var(--heat-ink)}
@@ -139,13 +137,12 @@
 .owner-heatmap__distribution-segment{min-width:0;border-radius:3px}
 .owner-heatmap__distribution-segment:first-child{border-radius:99px 3px 3px 99px}
 .owner-heatmap__distribution-segment:last-child{border-radius:3px 99px 99px 3px}
-.owner-heatmap__status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.owner-heatmap__status-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .owner-heatmap__status{display:flex;flex-direction:column;justify-content:space-between;gap:4px;min-width:0;min-height:72px;padding:11px 12px;border:1px solid var(--status-border);border-radius:11px;background:var(--status-bg);transition:transform .18s,box-shadow .18s}
 .owner-heatmap__status:hover{transform:translateY(-2px);box-shadow:0 7px 15px rgba(25,69,83,.08)}
 .owner-heatmap__status--invited{--status-bg:#f3f6f8;--status-border:#e4eaed;--status-ink:#5f7485;--status-dot:#96a9b8}
 .owner-heatmap__status--active{--status-bg:#fff7eb;--status-border:#fae9cf;--status-ink:#a66317;--status-dot:#eda950}
 .owner-heatmap__status--submitted{--status-bg:#edf8fc;--status-border:#d9edf5;--status-ink:#197ca5;--status-dot:#55afd4}
-.owner-heatmap__status--reviewed{--status-bg:#ebf9f6;--status-border:#d4eee7;--status-ink:#148475;--status-dot:#36ad9b}
 .owner-heatmap__status-label{display:flex;align-items:center;gap:6px;overflow:hidden;color:var(--status-ink);font-size:10px;font-weight:750;text-overflow:ellipsis;white-space:nowrap}
 .owner-heatmap__status-label i{flex:none;width:7px;height:7px;border-radius:50%;background:var(--status-dot);box-shadow:0 0 0 3px color-mix(in srgb,var(--status-dot) 15%,transparent)}
 .owner-heatmap__status strong{color:var(--status-ink);font-size:21px;font-weight:850;line-height:1;font-variant-numeric:tabular-nums}
@@ -157,7 +154,7 @@
 .owner-heatmap th,.owner-heatmap td{padding:12px 16px}
 .owner-heatmap thead th{background:#f0f5f6;color:#4d6b7d;font-size:10px;letter-spacing:.085em}
 .owner-heatmap thead th[class^="owner-heatmap__column"]{box-shadow:inset 0 3px var(--column-accent)}
-.owner-heatmap__column--invited{--column-accent:#9eacb9}.owner-heatmap__column--active{--column-accent:#efb366}.owner-heatmap__column--submitted{--column-accent:#62b4d9}.owner-heatmap__column--reviewed{--column-accent:#36b3a4}
+.owner-heatmap__column--invited{--column-accent:#9eacb9}.owner-heatmap__column--active{--column-accent:#efb366}.owner-heatmap__column--submitted{--column-accent:#62b4d9}
 .owner-heatmap tbody tr:nth-child(even):not(.owner-heatmap__detail){background:#fbfdfd}
 .owner-heatmap tbody tr:hover>td,.owner-heatmap tbody tr:hover>th{background:#f3faf9}
 .owner-heatmap tbody th button{font-size:13px;font-weight:800}
@@ -173,9 +170,9 @@
 .owner-heatmap__rate[data-level=low]+.owner-heatmap__rate-track i{background:#d97a65}
 .owner-heatmap__rate[data-level=mid]+.owner-heatmap__rate-track i{background:#d9a340}
 .owner-heatmap__rate[data-level=high]+.owner-heatmap__rate-track i{background:#22aa8b}
-@media(max-width:1180px){.owner-heatmap__overview{grid-template-columns:minmax(250px,38%) minmax(0,1fr)}.owner-heatmap__status-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.owner-heatmap__overview>div{min-height:225px}}
+@media(max-width:1180px){.owner-heatmap__overview{grid-template-columns:minmax(250px,38%) minmax(0,1fr)}.owner-heatmap__overview>div{min-height:225px}}
 @media(max-width:800px){.owner-heatmap__overview{grid-template-columns:1fr}.owner-heatmap__overview>div{min-height:0}.owner-heatmap__headline{min-height:160px}.owner-heatmap__distribution{gap:11px}.owner-heatmap__sort{margin-left:0}}
-@media(max-width:670px){.owner-heatmap__header{padding:18px}.owner-heatmap__header-actions{width:100%;justify-content:space-between}.owner-heatmap__overview{padding:0 18px 18px}.owner-heatmap__toolbar{padding:12px 18px}.owner-heatmap__search{max-width:none}.owner-heatmap__status-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:670px){.owner-heatmap__header{padding:18px}.owner-heatmap__header-actions{width:100%;justify-content:space-between}.owner-heatmap__overview{padding:0 18px 18px}.owner-heatmap__toolbar{padding:12px 18px}.owner-heatmap__search{max-width:none}.owner-heatmap__status-grid{grid-template-columns:repeat(auto-fit,minmax(88px,1fr))}}
 @media(prefers-reduced-motion:reduce){.owner-heatmap__status,.owner-heatmap__score-ring{transition:none}.owner-heatmap__status:hover,.owner-heatmap__cell:hover{transform:none}}
 
 /* Floating controls stay within the viewport and never take over page scrolling. */
@@ -238,7 +235,6 @@
 .owner-heatmap__person-status--invited{background:#edf1f4;color:#617687}
 .owner-heatmap__person-status--active{background:#fff0db;color:#9b641c}
 .owner-heatmap__person-status--submitted{background:#e8f6fb;color:#177b9f}
-.owner-heatmap__person-status--reviewed{background:#e3f7f0;color:#117f70}
 .owner-heatmap__people-empty{margin:0;padding:18px;color:#718b97;font-size:12px;text-align:center}
 .owner-heatmap__people-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:13px;color:#708996;font-size:11px;font-weight:650;font-variant-numeric:tabular-nums}
 .owner-heatmap__people-footer>div{display:flex;align-items:center;gap:9px}

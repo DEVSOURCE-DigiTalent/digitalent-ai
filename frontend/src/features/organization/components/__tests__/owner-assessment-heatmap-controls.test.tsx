@@ -4,11 +4,13 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { MemoryRouter } from 'react-router-dom';
 import { OwnerAssessmentHeatmap } from '../OwnerAssessmentHeatmap';
 
+const state = vi.hoisted(() => ({ loading: false }));
+
 vi.mock('@/hooks/use-trial-program', () => ({
   useTrialProgram: () => ({
-    isLoading: false,
+    isLoading: state.loading,
     isError: false,
-    data: {
+    data: state.loading ? undefined : {
       departments: ['HR', 'CEO', 'Marketing'],
       participants: [
         { id: '1', fullName: 'Nhân viên HR', departmentName: 'HR', status: 'ACTIVE' },
@@ -20,9 +22,34 @@ vi.mock('@/hooks/use-trial-program', () => ({
   }),
 }));
 
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+afterEach(() => { cleanup(); state.loading = false; vi.restoreAllMocks(); });
 
 describe('Owner assessment heatmap controls', () => {
+  it('shows loading progress until the assessment summary is available', () => {
+    state.loading = true;
+    const view = <MemoryRouter><OwnerAssessmentHeatmap /></MemoryRouter>;
+    const { rerender } = render(view);
+    expect(screen.getByRole('progressbar', { name: 'Đang tải tiến độ đánh giá…' })).toBeInTheDocument();
+    expect(screen.queryByText('TỶ LỆ NỘP BÀI')).not.toBeInTheDocument();
+    expect(screen.queryByText('0 phòng ban')).not.toBeInTheDocument();
+
+    state.loading = false;
+    rerender(<MemoryRouter><OwnerAssessmentHeatmap /></MemoryRouter>);
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    expect(screen.getByText('TỶ LỆ NỘP BÀI')).toBeInTheDocument();
+  });
+
+  it('counts submitted and reviewed participants together in the submission column and summary', () => {
+    render(<MemoryRouter><OwnerAssessmentHeatmap /></MemoryRouter>);
+    const submittedColumn = screen.getByRole('columnheader', { name: 'Đã nộp' }) as HTMLTableCellElement;
+    expect(screen.queryByRole('columnheader', { name: 'Đã chấm' })).not.toBeInTheDocument();
+    for (const department of ['CEO', 'Marketing']) {
+      const row = screen.getByRole('rowheader', { name: department }).closest('tr')!;
+      expect(within(row).getAllByRole('cell')[submittedColumn.cellIndex - 1]).toHaveTextContent('1');
+    }
+    expect(screen.getByRole('img', { name: /Đã nộp: 2/ })).toBeInTheDocument();
+  });
+
   it('opens the filter above a low trigger, keeps page scrolling, and excludes only the unchecked department', () => {
     const rectSpy = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({ top: 530, bottom: 570, left: 100, right: 260, width: 160, height: 40, x: 100, y: 530, toJSON: () => ({}) });
     vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(270);

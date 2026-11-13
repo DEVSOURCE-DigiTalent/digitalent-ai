@@ -10,6 +10,8 @@ public class GetMyTrialAssessmentUseCaseOutput
     public bool CanStart { get; set; }
     public string? ClosedMessage { get; set; }
     public int ChoiceCount { get; set; }
+    public int? ChoiceScore { get; set; }
+    public int? ChoiceTotal { get; set; }
     public List<TrialDomainDto> Domains { get; set; } = new();
     public List<TrialEssayPromptDto> Essays { get; set; } = new();
     public DateTimeOffset? SubmittedAt { get; set; }

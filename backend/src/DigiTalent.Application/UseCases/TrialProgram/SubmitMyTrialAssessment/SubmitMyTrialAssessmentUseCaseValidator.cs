@@ -18,9 +18,9 @@ public class SubmitMyTrialAssessmentUseCaseValidator : AbstractValidator<SubmitM
     private void Essay(Func<SubmitMyTrialAssessmentUseCaseInput, string> value, string name, string tier)
     {
         RuleFor(x => (value(x) ?? string.Empty).Trim().Length)
-
-
-
+            .GreaterThanOrEqualTo(TrialProgramRules.MinEssayLength)
+            .WithName(name)
+            .WithMessage($"Bài tự luận {tier} cần ít nhất {TrialProgramRules.MinEssayLength} ký tự.")
             .LessThanOrEqualTo(TrialProgramRules.MaxEssayLength)
             .WithMessage($"Bài tự luận {tier} tối đa {TrialProgramRules.MaxEssayLength} ký tự.");
     }

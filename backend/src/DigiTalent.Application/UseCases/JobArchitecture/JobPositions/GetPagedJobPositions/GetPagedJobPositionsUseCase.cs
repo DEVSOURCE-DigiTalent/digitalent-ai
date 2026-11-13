@@ -47,7 +47,19 @@ public class GetPagedJobPositionsUseCase : IUseCase<GetPagedJobPositionsUseCaseI
 
         if (input.DepartmentId.HasValue)
         {
-            query = query.Where(p => p.DepartmentId == input.DepartmentId.Value);
+            var departmentId = input.DepartmentId.Value;
+            if (input.IncludeAssignedPositions)
+            {
+                var assignedPositionIds = _context.Employees
+                    .Where(e => e.OrganizationId == organizationId && e.DepartmentId == departmentId
+                        && e.Status == Statuses.Employee.Active && e.JobPositionId.HasValue)
+                    .Select(e => e.JobPositionId!.Value);
+                query = query.Where(p => p.DepartmentId == departmentId || assignedPositionIds.Contains(p.Id));
+            }
+            else
+            {
+                query = query.Where(p => p.DepartmentId == departmentId);
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(input.JobGrade))
@@ -89,7 +101,8 @@ public class GetPagedJobPositionsUseCase : IUseCase<GetPagedJobPositionsUseCaseI
                     .FirstOrDefault(),
                 JobGrade = p.JobGrade,
                 Headcount = _context.Employees
-                    .Count(e => e.JobPositionId == p.Id && e.Status == Statuses.Employee.Active),
+                    .Count(e => e.JobPositionId == p.Id && e.Status == Statuses.Employee.Active
+                        && (!input.IncludeAssignedPositions || !input.DepartmentId.HasValue || e.DepartmentId == input.DepartmentId)),
                 HasRequirementSet = _context.PositionRequirementSets
                     .Any(s => s.JobPositionId == p.Id && s.Status == Statuses.PositionRequirementSet.Active),
                 Status = p.Status,

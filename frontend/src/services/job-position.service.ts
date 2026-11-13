@@ -42,6 +42,7 @@ export interface JobPositionListItem {
 export interface JobPositionListParams extends PaginationRequest {
   status?: JobPositionStatus;
   departmentId?: string;
+  includeAssignedPositions?: boolean;
   jobGrade?: string;
   jobFamilyId?: string;
 }

@@ -26,8 +26,8 @@ export const PULSE_KEYS = {
   mentorEnterprises: ['pulse', 'mentor-enterprises'] as const,
 };
 
-export function usePulseOverview() {
-  return useQuery({ ...learningContentQueryOptions, queryKey: PULSE_KEYS.overview, queryFn: () => pulseService.getOverview().then((r) => r.data.data!) });
+export function usePulseOverview(enabled = true) {
+  return useQuery({ ...learningContentQueryOptions, enabled, queryKey: PULSE_KEYS.overview, queryFn: () => pulseService.getOverview().then((r) => r.data.data!) });
 }
 
 export function usePulseCourse(courseId?: string) {

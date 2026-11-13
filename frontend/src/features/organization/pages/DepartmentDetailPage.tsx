@@ -30,6 +30,7 @@ export function DepartmentDetailPage() {
   });
   const { data: positionsData, isLoading: positionsLoading } = useJobPositions({
     departmentId: id,
+    includeAssignedPositions: true,
     pageSize: 50,
   });
 
@@ -200,7 +201,7 @@ export function DepartmentDetailPage() {
         tabs={[
           { id: 'overview', label: 'Tổng quan' },
           { id: 'members', label: 'Thành viên', badge: members.length },
-          { id: 'positions', label: 'Vị trí công việc', badge: positions.length },
+          { id: 'positions', label: 'Vị trí công việc', badge: positionsData?.totalItems ?? 0 },
           { id: 'training', label: 'Tiến độ đào tạo' },
         ]}
       >
@@ -314,7 +315,7 @@ export function DepartmentDetailPage() {
               keyExtractor={(p) => p.id}
               isLoading={positionsLoading}
               emptyTitle="Chưa có vị trí nào"
-              emptyDescription="Chưa có vị trí công việc nào trực thuộc phòng ban này."
+              emptyDescription="Chưa có vị trí trực thuộc hoặc được gán cho nhân viên trong phòng ban này."
             />
           </div>
         )}

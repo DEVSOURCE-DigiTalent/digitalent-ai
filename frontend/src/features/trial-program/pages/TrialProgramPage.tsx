@@ -1,139 +1,142 @@
-import { useId, useState } from 'react';
+import { translateUi, useUiLanguage } from '@/lib/i18n';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Camera, Compass, Mic, Monitor, Send, Sparkles } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  Briefcase,
+  Clock,
+  FileCheck,
+  Search,
+  Send,
+  TrendingUp,
+  Users,
+  Zap,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { PageContainer } from '@/components/shared/PageContainer';
-import { useInviteTrialParticipants, useJoinTrialAsParticipant, usePublishTrialReport, useResendTrialInvitation, useSubmitTrialRequest, useTrialProgram } from '@/hooks/use-trial-program';
-import type { TrialInviteResult, TrialParticipant, TrialParticipantRow, TrialProgram, TrialReport } from '@/services/trial-program.service';
+import {
+  useInviteTrialParticipants,
+  useResendTrialInvitation,
+  useSubmitTrialRequest,
+  useTrialProgram,
+} from '@/hooks/use-trial-program';
+import type {
+  TrialInviteResult,
+  TrialParticipant,
+  TrialParticipantRow,
+  TrialProgram,
+  TrialReport,
+} from '@/services/trial-program.service';
 import { apiErrorMessage } from '@/lib/utils';
+import { PageLoading } from '@/components/shared/LoadingState';
+import { PULSE_TOKENS } from '@/features/organization/owner-theme';
 import { ParticipantsEditor } from '../components/ParticipantsEditor';
-import { CompetencyReport, ParticipantStatus, StageBadge, Steps } from '../components/TrialUi';
+import { TrialDeadlinePicker } from '../components/TrialDeadlinePicker';
+import { TrialDisclosure } from '../components/TrialDisclosure';
+import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
+import { OwnerSurveyAction } from '../components/OwnerSurveyAction';
+import { CompetencyReport, ParticipantStatus, Steps } from '../components/OwnerTrialUi';
 import { emptyRows, isRowEmpty, rowError } from '../lib/participant-rows';
 import { formatWhen, toLocalInput } from '../lib/trial-format';
 import '../trial-program.css';
+import '../owner-team-assessment.css';
+import '@/features/organization/components/owner-filter-controls.css';
 
-const STEPS = ['Nhân viên', 'Hạn làm bài', 'Thực hiện đánh giá', 'Kết quả & Lộ trình'];
+const STEPS = ['Nhân sự tham gia', 'Hạn làm bài', 'Theo dõi bài làm', 'Báo cáo năng lực'];
 
-/** OW-T1 · Dùng thử: mời nhân viên, đặt hạn làm bài + giờ mong muốn chấm, theo dõi và xem bảng năng lực. */
+/** OW-T1 · Đánh giá đội ngũ: giao diện hiện đại, trải rộng toàn màn hình, ít chữ, không rườm rà */
 export function TrialProgramPage() {
+  useUiLanguage();
   const { data, isLoading, error } = useTrialProgram();
 
   return (
-    <PageContainer>
-      <div className="tp tp-page">
-        {isLoading && <p className="tp-muted">Đang tải…</p>}
-        {error && <p className="tp-notice bad">{apiErrorMessage(error, 'Không tải được trang dùng thử.')}</p>}
+    <div
+      className="po-owner owner-team-assessment -m-4 md:-m-6 min-h-screen text-[#17243f] relative"
+      style={{
+        ...PULSE_TOKENS,
+        background: `
+          radial-gradient(circle 800px at 90% 5%, rgba(19, 123, 132, 0.08), transparent 60%),
+          radial-gradient(circle 700px at 5% 35%, rgba(56, 189, 248, 0.07), transparent 60%),
+          radial-gradient(circle 900px at 50% 90%, rgba(99, 102, 241, 0.05), transparent 65%),
+          #f8fafc
+        `,
+        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      }}
+    >
+      {/* ── Tràn đều toàn màn hình, max 1920px ── */}
+      <div className="w-full px-5 sm:px-6 lg:px-8 xl:px-10 py-6 lg:py-8 relative z-10 max-w-[1920px] mx-auto space-y-6">
+        {isLoading && <PageLoading label="Đang tải bài đánh giá" />}
+        {error && (
+          <div className="rounded-2xl border border-red-200 bg-red-50/80 p-6 text-center max-w-md mx-auto shadow-xs">
+            <p className="text-xs font-bold text-red-700">
+              {apiErrorMessage(error, 'Không thể tải thông tin đợt đánh giá.')}
+            </p>
+          </div>
+        )}
         {data && <TrialProgramView program={data} />}
       </div>
-    </PageContainer>
+    </div>
   );
 }
 
 function TrialProgramView({ program }: { program: TrialProgram }) {
-  const current = program.stage === 'SETUP' ? 0 : program.stage === 'REPORTED' ? 3 : 2;
-  // Kết quả lần mời đầu (lỗi từng dòng, link kích hoạt ở môi trường thử) vẫn hiện sau khi chuyển sang bước theo dõi.
+  useUiLanguage();
+  const [setupStep, setSetupStep] = useState<0 | 1>(0);
+  const current = program.stage === 'SETUP' ? setupStep : program.stage === 'REPORTED' ? 3 : 2;
   const [lastInvite, setLastInvite] = useState<TrialInviteResult | null>(null);
+
   return (
-    <>
-      <header className="tp-head">
+    <div className="space-y-6">
+      {/* ── Header: Đẳng cấp, Tinh tế, Ít chữ ── */}
+      <div className="trial-page-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <span className="tp-eyebrow">Đánh giá đội ngũ · {program.organizationName}</span>
-          <h1>{program.stage === 'REPORTED' ? 'Bảng năng lực của doanh nghiệp' : 'Đánh giá năng lực đội ngũ'}</h1>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 border border-slate-200/80 shadow-2xs mb-2">
+            <span className="size-2 rounded-full bg-teal-500 animate-pulse" />
+            <span className="text-[11px] font-semibold text-slate-700">{program.organizationName}</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#17243f]">
+            {program.stage === 'REPORTED' ? 'Kết quả đánh giá đội ngũ' : translateUi('Đánh giá đội ngũ')}
+          </h1>
         </div>
-        <div className="tp-row" style={{ gap: 8, alignItems: 'center' }}>
-          <Link to="/enterprise/dashboard" className="tp-btn ghost small">
-            Về Tổng quan ➔
+
+        <div className="flex items-center gap-2.5">
+          <Link
+            to="/enterprise/dashboard"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white/90 hover:bg-white px-4 py-2.5 text-xs font-bold text-[#17243f] hover:text-[#137b84] transition-all shadow-2xs hover:shadow-xs hover:-translate-y-0.5"
+          >{translateUi("Về Tổng quan")}<ArrowRight className="size-3.5" />
           </Link>
-          <StageBadge stage={program.stage} />
+          <span className="rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-bold text-teal-800">
+            {program.stage === 'SETUP' ? translateUi('Chưa gửi') : program.stage === 'REPORTED' ? 'Đã chốt kết quả' : program.testDeadline && Date.parse(program.testDeadline) <= Date.now() ? translateUi('Đã hết hạn') : translateUi('Đang đánh giá')}
+          </span>
         </div>
-      </header>
-      <Steps steps={STEPS} current={current} />
-      <OwnerParticipation program={program} />
+      </div>
+
+      {/* ── Stepper: Thanh tiến trình gọn gàng ── */}
+      <div className="trial-journey"><Steps steps={STEPS} current={current} label={translateUi("Tiến trình đánh giá")} /></div>
+
       {program.stage === 'SETUP' ? (
-        <SetupView program={program} onInvited={setLastInvite} />
+        <div className="space-y-6">
+          <SetupView program={program} step={setupStep} onStepChange={setSetupStep} onInvited={setLastInvite} />
+        </div>
       ) : (
-        <>
+        <div className="space-y-6">
           <InviteResult result={lastInvite} />
           <TrackView program={program} />
-        </>
-      )}
-    </>
-  );
-}
-
-/**
- * Chủ doanh nghiệp tùy chọn tự làm bài (mentor chấm như nhân viên) và học thử cùng nhân viên; không chấm bài của ai.
- */
-function OwnerParticipation({ program }: { program: TrialProgram }) {
-  const me = program.participants.find((p) => p.isOwner);
-  const [open, setOpen] = useState(false);
-  const [placement, setPlacement] = useState({ department: '', position: '' });
-  const join = useJoinTrialAsParticipant();
-  const listId = useId();
-  const reported = program.stage === 'REPORTED';
-
-  if (me) {
-    return (
-      <section className="tp-card tp-row" style={{ justifyContent: 'space-between' }}>
-        <span className="tp-row">
-          Bạn đang tham gia · <ParticipantStatus status={me.status} />
-        </span>
-        <Link to="/enterprise/me/trial-test" className="tp-btn small">
-          {reported ? 'Kết quả & học thử của tôi' : 'Bài đánh giá của tôi'} <ArrowRight size={14} aria-hidden />
-        </Link>
-      </section>
-    );
-  }
-
-  const ready = placement.department.trim() && placement.position.trim();
-  return (
-    <section className="tp-card">
-      <div className="tp-card-head">
-        <span>{reported ? 'Bạn muốn học thử cùng nhân viên?' : 'Bạn cũng muốn tham gia đánh giá năng lực?'}</span>
-        {!open && <button type="button" className="tp-btn ghost small" onClick={() => setOpen(true)}>Tham gia</button>}
-      </div>
-      {open && (
-        <div className="tp-row" style={{ alignItems: 'flex-end' }}>
-          <label className="tp-field" style={{ flex: '1 1 180px' }}>
-            Phòng ban
-            <input list={`${listId}-d`} value={placement.department} maxLength={150} onChange={(e) => setPlacement({ ...placement, department: e.target.value })} />
-          </label>
-          <label className="tp-field" style={{ flex: '1 1 180px' }}>
-            Vị trí
-            <input list={`${listId}-p`} value={placement.position} maxLength={150} onChange={(e) => setPlacement({ ...placement, position: e.target.value })} />
-          </label>
-          <datalist id={`${listId}-d`}>{program.departments.map((d) => <option key={d} value={d} />)}</datalist>
-          <datalist id={`${listId}-p`}>{program.positions.map((p) => <option key={p} value={p} />)}</datalist>
-          <button
-            type="button"
-            className="tp-btn"
-            disabled={!ready || join.isPending}
-            onClick={() =>
-              join.mutate(
-                { department: placement.department.trim(), position: placement.position.trim() },
-                {
-                  onSuccess: ({ refreshed }) =>
-                    refreshed
-                      ? toast.success('Bạn đã tham gia. Bạn có thể vào thực hiện bài đánh giá đầu vào.')
-                      : toast.warning('Bạn đã tham gia. Hãy đăng xuất rồi đăng nhập lại để vào bài đánh giá.'),
-                  onError: (err) => toast.error(apiErrorMessage(err, 'Chưa tham gia được.')),
-                },
-              )
-            }
-          >
-            {join.isPending ? 'Đang xử lý…' : 'Xác nhận'}
-          </button>
-          <button type="button" className="tp-btn ghost" onClick={() => setOpen(false)}>Hủy</button>
         </div>
       )}
-    </section>
+    </div>
   );
 }
 
 /** Bước 1–2: danh sách nhân viên + hạn làm bài, gửi một lần. */
-function SetupView({ program, onInvited }: { program: TrialProgram; onInvited: (result: TrialInviteResult) => void }) {
+function SetupView({ program, step, onStepChange, onInvited }: {
+  program: TrialProgram; step: 0 | 1; onStepChange: (step: 0 | 1) => void; onInvited: (result: TrialInviteResult) => void;
+}) {
+  useUiLanguage();
   const [rows, setRows] = useState<TrialParticipantRow[]>(emptyRows());
-  const [schedule, setSchedule] = useState(defaultSchedule());
+  const [schedule, setSchedule] = useState(defaultSchedule);
   const [result, setResult] = useState<TrialInviteResult | null>(null);
   const invite = useInviteTrialParticipants();
   const request = useSubmitTrialRequest();
@@ -144,263 +147,430 @@ function SetupView({ program, onInvited }: { program: TrialProgram; onInvited: (
   const busy = invite.isPending || request.isPending;
 
   const submit = async () => {
+    if (busy || invalid || scheduleError || existing + filled.length === 0) return;
     try {
       let invited = 0;
       if (filled.length > 0) {
-        const outcome = await invite.mutateAsync(filled);
+        const outcome = await invite.mutateAsync({ rows: filled, testDeadline: toRequest(schedule).testDeadline });
         setResult(outcome);
         onInvited(outcome);
         invited = outcome.invited.length;
         const rejected = new Set(outcome.rejected.map((r) => r.email.toLowerCase()));
-        setRows(filled.filter((r) => rejected.has(r.email.trim().toLowerCase())));
+        const rejectedRows = filled.filter((r) => rejected.has(r.email.trim().toLowerCase()));
+        setRows(rejectedRows.length ? rejectedRows : emptyRows(1));
+        if (outcome.rejected.length) {
+          onStepChange(0);
+          toast.warning(`Đã mời ${outcome.invited.length} người. Kiểm tra các dòng chưa hợp lệ trước khi bắt đầu khảo sát.`);
+          return;
+        }
       }
       if (existing + invited === 0) return;
       await request.mutateAsync(toRequest(schedule));
-      toast.success('Đã gửi lời mời và kích hoạt đợt đánh giá');
+      toast.success('Đã gửi lời mời và bắt đầu đợt đánh giá');
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Chưa gửi được.'));
     }
   };
 
   return (
-    <>
-      <section
-        className="tp-card rounded-2xl border p-6 space-y-4 transition-all"
-        style={{
-          borderColor: 'var(--tp-line)',
-          background: 'var(--tp-card)',
-          boxShadow: '0 8px 30px rgba(29,48,102,.025)',
-        }}
-      >
+    <div className="space-y-6">
+      {/* ── Thẻ 1: Danh sách nhân sự ── */}
+      {step === 0 && <section className="rounded-2xl border border-slate-200/90 bg-white/95 p-5 sm:p-6 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-slate-100">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span
-                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider"
-                style={{ background: '#e0f2f1', color: '#137b84' }}
-              >
-                Bước 1 / Khởi đầu
-              </span>
-              {existing > 0 && (
-                <span className="rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 text-[11px] font-bold">
-                  Đã mời {existing} nhân sự
-                </span>
-              )}
-            </div>
-            <h2 className="text-lg md:text-xl font-bold tracking-tight text-slate-900">
-              Danh sách nhân sự tham gia đánh giá năng lực số
-            </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">{translateUi("Danh sách nhân sự tham gia")}</h2>
+            {existing > 0 && (
+              <span className="rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 text-[11px] font-bold">{translateUi("Đã mời ")}{existing}{translateUi(" người")}</span>
+            )}
           </div>
         </div>
-        <ParticipantsEditor rows={rows} onChange={setRows} departments={program.departments} positions={program.positions} limit={program.maxParticipants - existing} />
+        <ParticipantsEditor
+          rows={rows}
+          onChange={setRows}
+          departments={program.departments}
+          positions={program.positions}
+          limit={program.maxParticipants - existing}
+        />
         <InviteResult result={result} />
-      </section>
+      </section>}
 
-      <section
-        className="tp-card rounded-2xl border p-6 space-y-4 transition-all"
-        style={{
-          borderColor: 'var(--tp-line)',
-          background: 'var(--tp-card)',
-          boxShadow: '0 8px 30px rgba(29,48,102,.025)',
-        }}
-      >
+      {/* ── Hạn làm bài ── */}
+      {step === 1 && <section className="rounded-2xl border border-slate-200/90 bg-white/95 p-5 sm:p-6 shadow-xs space-y-4">
         <div className="pb-3 border-b border-slate-100">
-          <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider mb-1"
-            style={{ background: '#e0f2f1', color: '#137b84' }}
-          >
-            Bước 2 / Kế hoạch
-          </span>
-          <h2 className="text-lg md:text-xl font-bold tracking-tight text-slate-900">
-            Hạn làm bài & Lịch DigiTalent đánh giá
-          </h2>
+          <h2 className="text-base sm:text-lg font-bold text-slate-900">{translateUi("Hạn hoàn thành đánh giá")}</h2>
         </div>
         <ScheduleFields value={schedule} onChange={setSchedule} />
-        <ExamSummary program={program} />
-      </section>
+      </section>}
 
-      <div className="flex items-center justify-end gap-3 pt-2">
+      {/* ── Nút kích hoạt ── */}
+      <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+        {step === 0 ? (
+          <button type="button" className="rounded-xl bg-[#137b84] px-5 py-3 text-sm font-bold text-white disabled:opacity-40"
+            disabled={busy || invalid || existing + filled.length === 0} onClick={() => onStepChange(1)}>
+            {translateUi('Tiếp tục đặt hạn')}
+          </button>
+        ) : <>
+        <button type="button" className="mr-auto rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-teal-800"
+          disabled={busy} onClick={() => onStepChange(0)}>{translateUi('Quay lại danh sách')}</button>
         {scheduleError && <span className="text-xs font-semibold text-amber-600">{scheduleError}</span>}
         <button
           type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#137b84] hover:bg-[#0e5f66] px-6 py-3 text-sm font-bold text-white shadow-md shadow-[#137b84]/20 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#137b84] to-[#0d9488] hover:from-[#0e5968] hover:to-[#0f766e] px-6 py-3 text-sm font-bold text-white shadow-md shadow-[#137b84]/20 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           disabled={busy || invalid || !!scheduleError || existing + filled.length === 0}
           onClick={submit}
         >
           <Send className="size-4" />
-          {busy ? 'Đang gửi…' : 'Gửi lời mời & kích hoạt đánh giá'}
+          {busy ? translateUi('Đang xử lý…') : translateUi('Gửi lời mời & bắt đầu đánh giá')}
         </button>
+        </>}
       </div>
-    </>
+    </div>
   );
 }
 
 /** Bước 3–4: theo dõi bài làm, mời thêm, đổi lịch; bảng năng lực khi có kết quả. */
 function TrackView({ program }: { program: TrialProgram }) {
+  useUiLanguage();
   const [adding, setAdding] = useState(false);
-  const [editing, setEditing] = useState(false);
   const [resent, setResent] = useState<TrialInviteResult | null>(null);
-  const publishMutation = usePublishTrialReport();
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<'name' | 'department' | 'status' | 'submitted'>('name');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const count = (statuses: string[]) => program.participants.filter((p) => statuses.includes(p.status)).length;
-  const submittedCount = count(['SUBMITTED', 'REVIEWED']);
   const reported = program.stage === 'REPORTED';
+  const [showParticipants, setShowParticipants] = useState(!reported);
+
+  const filteredParticipants = program.participants.filter((p) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      p.fullName.toLowerCase().includes(q) ||
+      p.email.toLowerCase().includes(q) ||
+      (p.departmentName && p.departmentName.toLowerCase().includes(q)) ||
+      (p.positionName && p.positionName.toLowerCase().includes(q))
+    );
+  });
+  const sortedParticipants = [...filteredParticipants].sort((a, b) => {
+    if (sort === 'submitted') return (b.submittedAt ?? '').localeCompare(a.submittedAt ?? '');
+    if (sort === 'status') {
+      const status = (p: TrialParticipant) => !reported && p.status === 'REVIEWED' ? 'SUBMITTED' : p.status;
+      return status(a).localeCompare(status(b)) || a.fullName.localeCompare(b.fullName, 'vi');
+    }
+    if (sort === 'department') return (a.departmentName ?? '').localeCompare(b.departmentName ?? '', 'vi') || a.fullName.localeCompare(b.fullName, 'vi');
+    return a.fullName.localeCompare(b.fullName, 'vi');
+  });
+  const pageCount = Math.max(1, Math.ceil(sortedParticipants.length / pageSize));
+  const activePage = Math.min(page, pageCount);
+  const visibleParticipants = sortedParticipants.slice((activePage - 1) * pageSize, activePage * pageSize);
 
   return (
-    <>
-      <div className="tp-stats">
-        <Stat label="Nhân viên" value={program.participants.length} />
-        <Stat label="Đã kích hoạt" value={count(['ACTIVE', 'SUBMITTED', 'REVIEWED'])} />
-        <Stat label="Đã nộp bài" value={count(['SUBMITTED', 'REVIEWED'])} />
-        <Stat label="Đã đánh giá" value={count(['REVIEWED'])} />
+    <div className="space-y-6">
+      <div className="trial-participation-stats grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+        {/* 1. Tổng nhân sự */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white/95 p-4 sm:p-5 shadow-2xs hover:border-slate-300 transition-all relative overflow-hidden group">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{translateUi("Nhân sự tham gia")}</span>
+            <div className="size-8 rounded-xl bg-teal-50 border border-teal-100/80 flex items-center justify-center text-[#137b84] shadow-2xs">
+              <Users size={16} />
+            </div>
+          </div>
+          <div className="mt-2.5 flex items-baseline gap-1.5">
+            <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight tabular-nums">
+              {program.participants.length}
+            </span>
+            <span className="text-sm text-slate-500 font-semibold">/ {program.maxParticipants}</span>
+          </div>
+          <div className="mt-2 text-xs sm:text-[13px] text-slate-600 font-medium">{translateUi("Đã đăng ký danh sách")}</div>
+        </div>
+
+        {/* 2. Đã kích hoạt */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white/95 p-4 sm:p-5 shadow-2xs hover:border-amber-300 transition-all relative overflow-hidden group">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{translateUi("Đã kích hoạt")}</span>
+            <div className="size-8 rounded-xl bg-amber-50 border border-amber-100/80 flex items-center justify-center text-amber-700 shadow-2xs">
+              <Zap size={16} />
+            </div>
+          </div>
+          <div className="mt-2.5 flex items-baseline gap-1.5">
+            <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight tabular-nums">
+              {count(['ACTIVE', 'SUBMITTED', 'REVIEWED'])}
+            </span>
+            <span className="text-xs text-slate-500 font-semibold">
+              ({Math.round((count(['ACTIVE', 'SUBMITTED', 'REVIEWED']) / Math.max(1, program.participants.length)) * 100)}%)
+            </span>
+          </div>
+          <div className="mt-2 text-xs sm:text-[13px] text-slate-600 font-medium">{translateUi("Đã sẵn sàng làm bài")}</div>
+        </div>
+
+        {/* Người đã nộp hoặc được chấm cùng thuộc một nhóm hoàn thành bài làm. */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white/95 p-4 sm:p-5 shadow-2xs hover:border-blue-300 transition-all relative overflow-hidden group">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{translateUi("Hoàn thành bài làm")}</span>
+            <div className="size-8 rounded-xl bg-blue-50 border border-blue-100/80 flex items-center justify-center text-blue-700 shadow-2xs">
+              <FileCheck size={16} />
+            </div>
+          </div>
+          <div className="mt-2.5 flex items-baseline gap-1.5">
+            <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight tabular-nums">
+              {count(['SUBMITTED', 'REVIEWED'])}
+            </span>
+            <span className="text-sm text-slate-500 font-semibold">/{program.participants.length}</span>
+          </div>
+          <div className="mt-2 text-xs sm:text-[13px] text-slate-600 font-medium">{translateUi("Đã nộp bài đánh giá")}</div>
+        </div>
       </div>
 
-      {!reported && submittedCount > 0 && (
-        <section className="tp-card" style={{ background: '#f8faff', border: '1.5px solid #c7d2fe' }}>
-          <div className="tp-card-head" style={{ alignItems: 'flex-start' }}>
-            <div style={{ display: 'grid', gap: 4 }}>
-              <h2 style={{ color: '#1e1b4b', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Sparkles size={18} style={{ color: '#4f46e5' }} />
-                Rà soát kết quả & Công bố lộ trình đào tạo
-              </h2>
-              <p className="tp-muted" style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>
-                Hệ thống đã tự động đánh giá năng lực trắc nghiệm ({submittedCount}/{program.participants.length} nhân sự đã nộp).
-                Bạn có thể xem kết quả đánh giá bên dưới, tùy chỉnh trần năng lực theo mục tiêu doanh nghiệp, sau đó công bố kết quả để nhân viên truy cập lộ trình đào tạo.
-              </p>
-            </div>
-            <div className="tp-row" style={{ gap: 8, marginTop: 4 }}>
-              <Link to="/enterprise/setup" className="tp-btn ghost small">
-                Cấu hình trần năng lực ➔
-              </Link>
-              <button
-                type="button"
-                className="tp-btn small"
-                disabled={publishMutation.isPending}
-                onClick={() => {
-                  if (window.confirm('Xác nhận công bố kết quả cho nhân viên? Sau khi công bố, nhân viên sẽ thấy báo cáo khoảng cách năng lực và lộ trình học tương ứng.')) {
-                    publishMutation.mutate(undefined, {
-                      onSuccess: () => toast.success('Đã công bố kết quả và mở lộ trình học tập cho nhân viên'),
-                      onError: (err) => toast.error(apiErrorMessage(err, 'Chưa công bố được kết quả.')),
-                    });
-                  }
-                }}
-              >
-                {publishMutation.isPending ? 'Đang công bố…' : 'Công bố kết quả cho nhân viên'}
-              </button>
-            </div>
-          </div>
-        </section>
-      )}
-
-      <section className="tp-card">
-        <div className="tp-card-head">
-          <h2>Lịch</h2>
-          {!reported && <button type="button" className="tp-btn ghost small" onClick={() => setEditing((v) => !v)}>{editing ? 'Đóng' : 'Đổi lịch'}</button>}
-        </div>
-        {editing ? (
-          <RescheduleForm program={program} onDone={() => setEditing(false)} />
-        ) : (
-          <div className="tp-grid-2">
-            <Info label="Hạn làm bài" value={formatWhen(program.testDeadline)} />
-            <Info label="Thời gian mong muốn hoàn tất" value={formatWhen(program.preferredReviewAt)} />
-            <Info label="Mentor" value={program.mentorName ?? 'Tự động đánh giá hệ thống'} />
-          </div>
-        )}
+      <section className="rounded-2xl border border-teal-100 bg-gradient-to-r from-teal-50/90 to-white px-5 py-4 shadow-2xs">
+        <span className="inline-flex items-center gap-2 text-sm text-slate-700">
+          <Clock size={16} className="text-teal-700" />{translateUi("Hạn hoàn thành bài đánh giá")}<strong className="font-bold text-slate-900">{program.testDeadline ? formatWhen(program.testDeadline) : 'Chưa đặt thời hạn'}</strong>
+        </span>
+        {!reported && <SurveyDeadline program={program} />}
       </section>
 
-      {reported && program.report && (
-        <>
-          <div className="tp-row" style={{ justifyContent: 'space-between', alignItems: 'center', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '10px 14px' }}>
-            <span style={{ fontSize: 13, color: '#166534', fontWeight: 500 }}>
-              ✓ Đã công bố kết quả đánh giá cho nhân viên. Nhân viên có thể vào học các khóa tương ứng theo trần năng lực.
-            </span>
-            <Link to="/enterprise/setup" className="tp-btn ghost small" style={{ color: '#15803d', borderColor: '#86efac' }}>
-              Kiến trúc & Trần năng lực ➔
-            </Link>
-          </div>
-          <SetupFramework report={program.report} />
+      <OwnerSurveyAction program={program} />
+
+      {(!program.report || program.report.assessed === 0) && <div className="trial-live-report" role="status"><span className="trial-live-report__dot" /><div><strong>{program.testDeadline && Date.parse(program.testDeadline) <= Date.now() ? 'Đã hết hạn · Chưa có bài nộp' : 'Đang chờ bài nộp đầu tiên'}</strong><p>{program.testDeadline && Date.parse(program.testDeadline) <= Date.now() ? 'Có thể điều chỉnh thời hạn để tiếp tục nhận bài.' : 'Tổng quan sẽ xuất hiện tại đây ngay khi có kết quả.'}</p></div></div>}
+      {/* Tổng quan trực tiếp; chỉ mở thiết lập khung sau khi kết quả đã chốt. */}
+      {program.report && program.report.assessed > 0 && (
+        <div className="space-y-6">
+          <div className="trial-live-report" role="status"><span className="trial-live-report__dot" /><div><strong>{reported ? 'Kết quả đã chốt' : 'Tổng quan đang cập nhật'}</strong><p>{program.report.assessed}/{program.participants.length} người có kết quả{reported ? ' · Đợt khảo sát đã kết thúc.' : ' · Tự cập nhật khi có bài nộp mới.'}</p></div></div>
+          {reported && <SetupFramework report={program.report} />}
           <CompetencyReport report={program.report} />
-        </>
+        </div>
       )}
 
-      <section className="tp-card">
-        <div className="tp-card-head">
-          <h2>Nhân viên</h2>
-          {!reported && program.participants.length < program.maxParticipants && (
-            <button type="button" className="tp-btn ghost small" onClick={() => setAdding((v) => !v)}>{adding ? 'Đóng' : '+ Mời thêm'}</button>
-          )}
-        </div>
-        {adding && <AddParticipants program={program} onDone={() => setAdding(false)} />}
-        <InviteResult result={resent} />
-        <div className="tp-table-wrap">
-          <table className="tp-table">
-            <thead>
-              <tr>
-                <th>Nhân viên</th>
-                <th>Phòng ban · Vị trí</th>
-                <th>Trạng thái</th>
-                <th>Điểm trắc nghiệm</th>
-                <th>Nộp lúc</th>
-                {!reported && <th aria-label="Thao tác" />}
-              </tr>
-            </thead>
-            <tbody>
-              {program.participants.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.fullName}{p.isOwner ? ' (bạn)' : ''}<small>{p.email}</small></td>
-                  <td>{[p.departmentName, p.positionName].filter(Boolean).join(' · ') || '—'}</td>
-                  <td><ParticipantStatus status={p.status} /></td>
-                  <td>
-                    {p.choiceScore != null ? (
-                      <span style={{ fontWeight: 600, color: '#047857' }}>
-                        {p.choiceScore}/{p.choiceTotal ?? 18} câu
-                      </span>
-                    ) : (
-                      <span style={{ color: '#94a3b8' }}>—</span>
-                    )}
-                  </td>
-                  <td>{formatWhen(p.submittedAt)}</td>
-                  {!reported && (
-                    <td>
-                      {p.invitationId && <ResendButton participant={p} onResent={setResent} />}
-                    </td>
+      {/* ── DANH SÁCH NHÂN VIÊN THAM GIA ĐÁNH GIÁ (COLLAPSIBLE / HIỂN THỊ PHỤ) ── */}
+      <section className="rounded-2xl border border-slate-200/90 bg-white/95 shadow-xs overflow-hidden transition-all">
+        <button
+          type="button"
+          onClick={() => setShowParticipants((v) => !v)}
+          aria-expanded={showParticipants}
+          aria-controls="trial-participant-list"
+          className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 sm:p-6 text-left hover:bg-slate-50/70 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="size-11 rounded-xl bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-700 shadow-2xs shrink-0">
+              <Users size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900">{translateUi("Tiến độ tham gia")}</h3>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors">
+              {showParticipants ? (
+                <>
+                  <ChevronUp size={15} />{translateUi(" Thu gọn danh sách")}</>
+              ) : (
+                <>
+                  <ChevronDown size={15} />{translateUi(" Mở rộng danh sách")}</>
+              )}
+            </span>
+          </div>
+        </button>
+
+        <TrialDisclosure open={showParticipants} id="trial-participant-list">
+          <div className="p-5 sm:p-6 pt-0 border-t border-slate-100 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                <label className="owner-filter-search w-full sm:w-80">
+                  <Search className="size-4" aria-hidden="true" />
+                  <input
+                    type="text"
+                    aria-label={translateUi("Tìm nhân viên hoặc phòng ban")}
+                    placeholder={translateUi("Tìm tên, email, phòng ban hoặc vị trí...")}
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                    className="w-full text-sm"
+                  />
+                </label>
+                <OwnerFilterSelect label={translateUi("Sắp xếp danh sách nhân viên")} value={sort} onChange={(value) => { setSort(value as typeof sort); setPage(1); }} options={[{ value: 'name', label: 'Tên nhân viên' }, { value: 'department', label: 'Phòng ban' }, { value: 'status', label: 'Trạng thái' }, { value: 'submitted', label: 'Nộp gần nhất' }]} />
+              </div>
+              <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                <span className="text-xs text-slate-500 tabular-nums whitespace-nowrap">
+                  {filteredParticipants.length ? `${(activePage - 1) * pageSize + 1}–${Math.min(activePage * pageSize, filteredParticipants.length)} / ${filteredParticipants.length}` : '0 người'}
+                </span>
+                <OwnerFilterSelect label={translateUi("Số nhân viên mỗi trang")} value={String(pageSize)} onChange={(value) => { setPageSize(Number(value)); setPage(1); }} options={[5, 10, 15, 25, 50].map((size) => ({ value: String(size), label: `${size} / trang` }))} />
+                {!reported && program.participants.length < program.maxParticipants && (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#137b84] hover:bg-[#0e5968] text-white font-bold text-xs transition-colors shadow-2xs cursor-pointer shrink-0"
+                    onClick={() => setAdding((v) => !v)}
+                  >
+                    {adding ? translateUi('Đóng') : '+ Mời thêm'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {adding && <AddParticipants program={program} onDone={() => setAdding(false)} />}
+            <InviteResult result={resent} />
+
+            <div className="overflow-x-auto rounded-xl border border-slate-200/80">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead className="bg-slate-50/80 text-slate-600 font-bold border-b border-slate-200/80">
+                  <tr>
+                    <th className="py-3 px-3.5">{translateUi("Nhân viên")}</th>
+                    <th className="py-3 px-3">{translateUi("Phòng ban · Vị trí")}</th>
+                    <th className="py-3 px-3 text-center">{translateUi("Trạng thái")}</th>
+                    <th className="py-3 px-3">{translateUi("Thời điểm nộp")}</th>
+                    {!reported && <th className="py-3 px-3.5 text-center w-28">{translateUi("Thao tác")}</th>}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {filteredParticipants.length === 0 ? (
+                    <tr>
+                      <td colSpan={reported ? 4 : 5} className="py-8 text-center text-slate-400">{translateUi("Không tìm thấy nhân viên nào phù hợp")}</td>
+                    </tr>
+                  ) : (
+                    visibleParticipants.map((p) => {
+                      const initials = p.fullName
+                        .trim()
+                        .split(/\s+/)
+                        .slice(-2)
+                        .map((w) => w[0])
+                        .join('')
+                        .toUpperCase();
+
+                      return (
+                        <tr key={p.id} className="hover:bg-slate-50/70 transition-colors">
+                          <td className="py-3 px-3.5">
+                            <div className="flex items-center gap-2.5">
+                              <div className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-[#137b84] to-[#0e5968] text-white font-bold text-xs shadow-2xs shrink-0">
+                                {initials}
+                              </div>
+                              <div>
+                                <strong className="text-slate-900 block font-semibold text-xs sm:text-sm">
+                                  {p.fullName}{p.isOwner ? ' (bạn)' : ''}
+                                </strong>
+                                <span className="text-xs text-slate-500 block font-mono">{p.email}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className="text-slate-700 font-medium text-xs sm:text-sm">
+                              {[p.departmentName, p.positionName].filter(Boolean).join(' · ') || '—'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <ParticipantStatus status={!reported && p.status === 'REVIEWED' ? 'SUBMITTED' : p.status} />
+                          </td>
+                          <td className="py-3 px-3 text-slate-600 text-xs sm:text-sm">
+                            {p.submittedAt ? formatWhen(p.submittedAt) : '—'}
+                          </td>
+                          {!reported && (
+                            <td className="py-3 px-3.5 text-center">
+                              {p.invitationId && <ResendButton participant={p} onResent={setResent} />}
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })
                   )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                </tbody>
+              </table>
+            </div>
+            {filteredParticipants.length > pageSize && (
+              <div className="tp-participant-pagination" aria-label={translateUi("Phân trang danh sách nhân viên")}>
+                <div>
+                  <button type="button" disabled={activePage === 1} onClick={() => setPage(activePage - 1)}>{translateUi("Trước")}</button>
+                  <strong>{translateUi("Trang ")}{activePage}/{pageCount}</strong>
+                  <button type="button" disabled={activePage === pageCount} onClick={() => setPage(activePage + 1)}>{translateUi("Sau")}</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </TrialDisclosure>
       </section>
-    </>
+    </div>
   );
 }
 
 /**
- * Sau khi có bảng năng lực: nhân viên đã hoàn thành đánh giá, doanh nghiệp thiết lập khung năng lực số để đối soát khoảng trống trước khi mua/gán khóa học.
+ * 3 bước chuẩn hóa năng lực sau đánh giá: thiết kế dạng dải ruy băng tinh tế.
  */
-function SetupFramework({ report }: { report: TrialReport }) {
-  const weakest = [...report.summary].filter((d) => d.level < 2).sort((a, b) => a.average - b.average).slice(0, 2);
+function SetupFramework(_props: { report: TrialReport }) {
+  useUiLanguage();
   return (
-    <section className="tp-buy" aria-labelledby="tp-framework-title">
-      <span className="tp-buy-icon" aria-hidden><Compass size={18} /></span>
-      <div>
-        <strong id="tp-framework-title">Thiết lập Khung năng lực số</strong>
-        <span>
-          Dựa trên kết quả đánh giá, thiết lập mức năng lực chuẩn cho từng vị trí để xác định chính xác khoảng trống.
-          {weakest.length > 0 && ` Cần ưu tiên: ${weakest.map((d) => d.name).join(', ')}.`}
-        </span>
+    <section className="rounded-2xl border border-slate-200/90 bg-white/95 p-5 sm:p-6 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3.5 mb-4 border-b border-slate-100">
+        <div className="flex items-center gap-2.5">
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-2xs">{translateUi("Lộ trình tiếp theo")}</span>
+          <h3 className="text-base sm:text-lg font-bold text-slate-900">{translateUi("Chuẩn hóa năng lực sau đánh giá")}</h3>
+        </div>
       </div>
-      <Link to="/enterprise/setup" className="tp-btn light">Thiết lập khung năng lực <ArrowRight size={15} aria-hidden /></Link>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+        {/* Bước 1 */}
+        <Link
+          to="/enterprise/setup?tab=ceilings"
+          className="group flex items-center justify-between p-4 sm:p-4.5 rounded-2xl border border-emerald-200/90 bg-gradient-to-r from-emerald-50/60 to-white hover:border-emerald-500 hover:shadow-xs transition-all"
+        >
+          <div className="flex items-center gap-3.5 min-w-0">
+            <span className="size-10 rounded-xl bg-emerald-100/90 border border-emerald-200 text-emerald-800 grid place-items-center shrink-0 shadow-2xs">
+              <Briefcase className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <strong className="text-sm sm:text-[15px] font-bold text-slate-900 group-hover:text-emerald-700 transition-colors block truncate">{translateUi("1. Cài đặt chuẩn vị trí")}</strong>
+              <span className="text-xs sm:text-[13px] text-slate-600 font-medium block truncate mt-0.5">{translateUi("Khung chuẩn kỳ vọng")}</span>
+            </div>
+          </div>
+          <ArrowRight size={16} className="text-emerald-600 shrink-0 group-hover:translate-x-1 transition-transform" />
+        </Link>
+
+        {/* Bước 2 */}
+        <Link
+          to="/enterprise/skill-gap"
+          className="group flex items-center justify-between p-4 sm:p-4.5 rounded-2xl border border-blue-200/90 bg-gradient-to-r from-blue-50/60 to-white hover:border-blue-500 hover:shadow-xs transition-all"
+        >
+          <div className="flex items-center gap-3.5 min-w-0">
+            <span className="size-10 rounded-xl bg-blue-100/90 border border-blue-200 text-blue-800 grid place-items-center shrink-0 shadow-2xs">
+              <TrendingUp className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <strong className="text-sm sm:text-[15px] font-bold text-slate-900 group-hover:text-blue-700 transition-colors block truncate">{translateUi("2. Báo cáo khoảng trống")}</strong>
+              <span className="text-xs sm:text-[13px] text-slate-600 font-medium block truncate mt-0.5">{translateUi("Phân tích chênh lệch")}</span>
+            </div>
+          </div>
+          <ArrowRight size={16} className="text-blue-600 shrink-0 group-hover:translate-x-1 transition-transform" />
+        </Link>
+
+        {/* Bước 3 */}
+        <Link
+          to="/enterprise/courses"
+          className="group flex items-center justify-between p-4 sm:p-4.5 rounded-2xl border border-purple-200/90 bg-gradient-to-r from-purple-50/60 to-white hover:border-purple-500 hover:shadow-xs transition-all"
+        >
+          <div className="flex items-center gap-3.5 min-w-0">
+            <span className="size-10 rounded-xl bg-purple-100/90 border border-purple-200 text-purple-800 grid place-items-center shrink-0 shadow-2xs">
+              <BookOpen className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <strong className="text-sm sm:text-[15px] font-bold text-slate-900 group-hover:text-purple-700 transition-colors block truncate">{translateUi("3. Trang bị khóa học")}</strong>
+              <span className="text-xs sm:text-[13px] text-slate-600 font-medium block truncate mt-0.5">
+                Đào tạo đúng điểm nghẽn
+              </span>
+            </div>
+          </div>
+          <ArrowRight size={16} className="text-purple-600 shrink-0 group-hover:translate-x-1 transition-transform" />
+        </Link>
+      </div>
     </section>
   );
 }
 
-/** Gửi lại email mời (link mới, lời mời cũ hết hiệu lực) cho nhân viên chưa kích hoạt. */
+/** Gửi lại email mời cho nhân viên chưa kích hoạt. */
 function ResendButton({ participant, onResent }: { participant: TrialParticipant; onResent: (result: TrialInviteResult) => void }) {
+  useUiLanguage();
   const resend = useResendTrialInvitation();
   return (
     <button
       type="button"
-      className="tp-btn ghost small"
+      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors disabled:opacity-40 cursor-pointer"
       disabled={resend.isPending}
       onClick={() =>
         resend.mutate(participant.invitationId!, {
@@ -412,12 +582,13 @@ function ResendButton({ participant, onResent }: { participant: TrialParticipant
         })
       }
     >
-      {resend.isPending ? 'Đang gửi…' : 'Gửi lại'}
+      {resend.isPending ? translateUi('Đang gửi…') : translateUi('Gửi lại')}
     </button>
   );
 }
 
 function AddParticipants({ program, onDone }: { program: TrialProgram; onDone: () => void }) {
+  useUiLanguage();
   const [rows, setRows] = useState<TrialParticipantRow[]>(emptyRows(1));
   const [result, setResult] = useState<TrialInviteResult | null>(null);
   const invite = useInviteTrialParticipants();
@@ -434,168 +605,108 @@ function AddParticipants({ program, onDone }: { program: TrialProgram; onDone: (
       },
       onError: (err) => toast.error(apiErrorMessage(err, 'Chưa mời được.')),
     });
+
   return (
-    <div
-      className="rounded-2xl border p-5 space-y-4 mb-4 shadow-sm"
-      style={{
-        borderColor: 'var(--tp-line)',
-        background: 'var(--tp-card)',
-      }}
-    >
-      <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-        <h3 className="text-sm font-bold text-slate-900">
-          Mời thêm nhân viên tham gia đợt đánh giá
-        </h3>
+    <div className="rounded-2xl border border-slate-200/90 bg-slate-50/70 p-4 sm:p-5 space-y-4 mb-4 shadow-2xs">
+      <div className="flex items-center justify-between pb-2 border-b border-slate-200/70">
+        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">{translateUi("Mời thêm nhân viên tham gia")}</h3>
         <button
           type="button"
           onClick={onDone}
           className="text-slate-400 hover:text-slate-600 text-xs font-semibold cursor-pointer"
-        >
-          Đóng
-        </button>
+        >{translateUi("Đóng")}</button>
       </div>
-      <ParticipantsEditor rows={rows} onChange={setRows} departments={program.departments} positions={program.positions} limit={program.maxParticipants - program.participants.length} />
+      <ParticipantsEditor
+        rows={rows}
+        onChange={setRows}
+        departments={program.departments}
+        positions={program.positions}
+        limit={program.maxParticipants - program.participants.length}
+      />
       <InviteResult result={result} />
       <div className="flex justify-end pt-2">
         <button
           type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#137b84] hover:bg-[#0e5f66] px-5 py-2.5 text-xs font-bold text-white shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#137b84] hover:bg-[#0e5f66] px-5 py-2 text-xs font-bold text-white shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           disabled={invite.isPending || filled.length === 0 || filled.some((r) => rowError(r) !== null)}
           onClick={send}
         >
-          {invite.isPending ? 'Đang gửi…' : `Gửi lời mời (${filled.length} người)`}
+          {invite.isPending ? translateUi('Đang gửi…') : translateUi(`Gửi lời mời (${filled.length} người)`)}
         </button>
       </div>
     </div>
   );
 }
 
-function RescheduleForm({ program, onDone }: { program: TrialProgram; onDone: () => void }) {
-  const [schedule, setSchedule] = useState({
-    deadline: toLocalInput(program.testDeadline),
-    review: toLocalInput(program.preferredReviewAt),
-    note: program.requestNote ?? '',
-  });
-  const request = useSubmitTrialRequest();
-  const error = validateSchedule(schedule);
-  return (
-    <div className="tp" style={{ gap: 10 }}>
-      <ScheduleFields value={schedule} onChange={setSchedule} />
-      <div className="tp-row" style={{ justifyContent: 'flex-end' }}>
-        {error && <span className="tp-muted">{error}</span>}
-        <button
-          type="button"
-          className="tp-btn"
-          disabled={!!error || request.isPending}
-          onClick={() =>
-            request.mutate(toRequest(schedule), {
-              onSuccess: () => {
-                toast.success('Đã cập nhật lịch');
-                onDone();
-              },
-              onError: (err) => toast.error(apiErrorMessage(err, 'Chưa cập nhật được.')),
-            })
-          }
-        >
-          Lưu lịch
-        </button>
-      </div>
-    </div>
-  );
-}
-
-type Schedule = { deadline: string; review: string; note: string };
+type Schedule = { deadline: string };
 
 function defaultSchedule(): Schedule {
   const deadline = new Date();
   deadline.setDate(deadline.getDate() + 3);
   deadline.setHours(17, 0, 0, 0);
-  const review = new Date(deadline);
-  review.setDate(review.getDate() + 1);
-  review.setHours(9, 0, 0, 0);
-  return { deadline: toLocalInput(deadline), review: toLocalInput(review), note: '' };
+  return { deadline: toLocalInput(deadline) };
 }
 
 function validateSchedule(s: Schedule): string | null {
-  if (!s.deadline || !s.review) return 'Chọn hạn làm bài và thời gian mong muốn hoàn tất.';
+  if (!s.deadline) return 'Chọn hạn làm bài.';
   const deadline = new Date(s.deadline).getTime();
-  if (deadline < Date.now() + 30 * 60_000) return 'Hạn làm bài cần sau ít nhất 30 phút.';
-  if (new Date(s.review).getTime() < deadline) return 'Thời gian hoàn tất phải sau hạn làm bài.';
+  if (!Number.isFinite(deadline)) return 'Chọn ngày giờ hợp lệ.';
+  if (deadline <= Date.now() + 30 * 60_000) return 'Hạn làm bài cần sau ít nhất 30 phút.';
+  if (deadline > Date.now() + 60 * 86400000) return 'Hạn làm bài tối đa 60 ngày.';
   return null;
 }
 
-const toRequest = (s: Schedule) => ({
-  testDeadline: new Date(s.deadline).toISOString(),
-  preferredReviewAt: new Date(s.review).toISOString(),
-  note: s.note.trim() || null,
-});
+const toRequest = (s: Schedule) => {
+  const deadline = new Date(s.deadline);
+  return {
+    testDeadline: deadline.toISOString(),
+  };
+};
 
-function ScheduleFields({ value, onChange }: { value: Schedule; onChange: (v: Schedule) => void }) {
-  return (
-    <div className="tp-grid-2">
-      <label className="tp-field">
-        Hạn hoàn thành bài đánh giá
-        <input type="datetime-local" value={value.deadline} onChange={(e) => onChange({ ...value, deadline: e.target.value })} />
-      </label>
-      <label className="tp-field">
-        Thời gian mong muốn hoàn tất đánh giá
-        <input type="datetime-local" value={value.review} onChange={(e) => onChange({ ...value, review: e.target.value })} />
-      </label>
-      <label className="tp-field" style={{ gridColumn: '1 / -1' }}>
-        Ghi chú cho DigiTalent (không bắt buộc)
-        <input value={value.note} maxLength={500} placeholder="VD: Ưu tiên đánh giá phòng Kế toán trước" onChange={(e) => onChange({ ...value, note: e.target.value })} />
-      </label>
-    </div>
-  );
+function SurveyDeadline({ program }: { program: TrialProgram }) {
+  useUiLanguage();
+  const [editing, setEditing] = useState(false);
+  const [schedule, setSchedule] = useState<Schedule>({ deadline: toLocalInput(program.testDeadline) });
+  const request = useSubmitTrialRequest();
+  const error = validateSchedule(schedule);
+  return <div className="mt-3">
+    <button type="button" className="text-xs font-bold text-teal-700" aria-expanded={editing} onClick={() => { setSchedule({deadline:toLocalInput(program.testDeadline)}); setEditing(!editing); }}>{editing ? translateUi('Thu gọn') : translateUi('Điều chỉnh thời hạn')}</button>
+    <TrialDisclosure open={editing}><div className="flex flex-wrap items-end gap-3 pt-4">{editing && <ScheduleFields value={schedule} onChange={setSchedule} />}<button type="button" className="rounded-xl bg-teal-700 px-4 py-2 text-xs font-bold text-white disabled:opacity-40" disabled={!!error || request.isPending} onClick={() => request.mutate(toRequest(schedule),{onSuccess:()=>{setEditing(false);toast.success('Đã cập nhật hạn khảo sát.');},onError:(failure)=>toast.error(apiErrorMessage(failure,'Chưa cập nhật được thời hạn.'))})}>{request.isPending ? translateUi('Đang lưu…') : translateUi('Lưu thời hạn')}</button>{error && <span role="status" className="text-xs text-amber-700">{translateUi(error)}</span>}</div></TrialDisclosure>
+  </div>;
 }
 
-function ExamSummary({ program }: { program: TrialProgram }) {
-  return (
-    <p className="tp-muted tp-row">
-      Bài đánh giá: {program.choiceCount || 54} câu trắc nghiệm (6 lĩnh vực × 3 cấp độ: Cơ bản · Trung cấp · Nâng cao){program.essayCount > 0 ? ` · ${program.essayCount} bài tự luận (Mentor & AI chấm điểm)` : ' · Không có tự luận'} ·
-      <Camera size={14} aria-hidden /> camera <Mic size={14} aria-hidden /> micro <Monitor size={14} aria-hidden /> chia sẻ màn hình
-    </p>
-  );
+function ScheduleFields({ value, onChange }: { value: Schedule; onChange: (v: Schedule) => void }) {
+  return <TrialDeadlinePicker value={value.deadline} onChange={(deadline) => onChange({ deadline })} />;
 }
 
 function InviteResult({ result }: { result: TrialInviteResult | null }) {
+  useUiLanguage();
   if (!result) return null;
   const links = result.invited.filter((i) => i.debugLink);
   return (
-    <>
+    <div className="space-y-2 text-xs">
       {result.rejected.length > 0 && (
-        <div className="tp-notice bad" role="alert">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-red-800 space-y-1" role="alert">
           {result.rejected.map((r) => (
-            <div key={r.email}>{r.email || '(trống)'}: {r.reason}</div>
+            <div key={r.email}>
+              <strong>{r.email || '(trống)'}:</strong> {r.reason}
+            </div>
           ))}
         </div>
       )}
       {links.length > 0 && (
-        <div className="tp-notice">
-          <strong>Link kích hoạt (môi trường thử):</strong>
+        <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-3 text-blue-900 space-y-1">
+          <strong className="block text-[11px] uppercase tracking-wider text-blue-800">{translateUi("Link kích hoạt tài khoản thử nghiệm:")}</strong>
           {links.map((i) => (
-            <div key={i.email}>{i.email}: <a href={i.debugLink!}>{i.debugLink}</a></div>
+            <div key={i.email} className="truncate">
+              <span className="font-semibold">{i.email}:</span>{' '}
+              <a href={i.debugLink!} className="text-blue-700 underline font-mono text-[11px]">
+                {i.debugLink}
+              </a>
+            </div>
           ))}
         </div>
       )}
-    </>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="tp-stat">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="tp-field">
-      {label}
-      <strong style={{ color: 'var(--tp-fg)', fontSize: 14 }}>{value}</strong>
     </div>
   );
 }

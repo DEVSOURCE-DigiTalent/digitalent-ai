@@ -1,0 +1,203 @@
+.business-map {
+  --map-ink: #183e50;
+  --map-line: #c4d8de;
+  --map-surface: #fff;
+  --map-canvas: #f5fafb;
+  color: var(--map-ink);
+}
+
+.business-map h2 { font-size: 22px; font-weight: 780; }
+.business-map__canvas {
+  --hub-width: clamp(140px, 23cqw, 250px);
+  --row-gap: 14px;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--hub-width) minmax(0, 1fr);
+  grid-auto-rows: 1fr;
+  gap: var(--row-gap) 54px;
+  margin: 0 24px;
+  padding: 20px;
+  border: 1px solid var(--map-line);
+  border-radius: 18px;
+  background: radial-gradient(circle, #abc9cf80 1px, transparent 1px) 0 0 / 17px 17px, var(--map-canvas);
+}
+
+.business-map__hub {
+  position: relative;
+  grid-area: 1 / 2 / 5;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.business-map__hub::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0 auto;
+  left: 50%;
+  width: 2px;
+  background: var(--map-line);
+  content: '';
+}
+
+.business-map__hub > span {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #136f7f, #224571);
+  box-shadow: 0 0 0 5px var(--tint), 0 8px 20px #16475632;
+  color: white;
+}
+
+.business-map__hub > strong {
+  position: absolute;
+  top: calc(50% + 36px);
+  inset-inline: 0;
+  padding: 6px 10px;
+  border-radius: 9px;
+  background: var(--map-surface);
+  box-shadow: 0 4px 16px #183e5010;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+}
+
+.business-map__branch, .business-map__details, .business-map__hub { --accent: #176483; --tint: #e9f4fb; }
+.business-map__branch { position: relative; grid-row: var(--branch-row); min-width: 0; }
+.business-map__branch[data-side='left'] { grid-column: 1; }
+.business-map__branch[data-side='right'] { grid-column: 3; }
+.business-map [data-tone='violet'] { --accent: #6349a2; --tint: #f1edff; }
+.business-map [data-tone='teal'] { --accent: #08756a; --tint: #e5f6f1; }
+.business-map [data-tone='amber'] { --accent: #9b521c; --tint: #fff1e2; }
+
+.business-map__branch::before {
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  width: calc(54px + var(--hub-width) / 2);
+  height: 2px;
+  background: var(--map-line);
+  content: '';
+}
+
+.business-map { container-type: inline-size; }
+.business-map__branch[data-side='left']::before { left: 100%; }
+.business-map__branch[data-side='right']::before { right: 100%; }
+.business-map__branch[data-active='true']::before { background: var(--accent); }
+.business-map__branch[data-active='true']::after {
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  width: 2px;
+  height: calc((100% + var(--row-gap)) * var(--hub-distance));
+  background: var(--accent);
+  content: '';
+}
+.business-map__branch[data-active='true'][data-above-hub='false']::after { top: auto; bottom: calc(50% - 2px); }
+.business-map__branch[data-side='left']::after { left: calc(100% + 54px + var(--hub-width) / 2); }
+.business-map__branch[data-side='right']::after { right: calc(100% + 54px + var(--hub-width) / 2 - 2px); }
+
+.business-map__branch button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 68px;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--map-line);
+  border-radius: 12px;
+  background: var(--map-surface);
+  text-align: left;
+}
+
+.business-map__branch button:hover, .business-map__branch button[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--tint);
+}
+.business-map__branch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.business-map__icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: var(--tint); color: var(--accent); }
+.business-map__label { display: grid; gap: 3px; overflow-wrap: anywhere; }
+.business-map__label strong { font-size: 14px; }
+.business-map__label small { font-size: 11px; color: #516e7e; }
+.business-map__branch b { color: var(--accent); font-size: 19px; font-variant-numeric: tabular-nums; }
+.business-map__details {
+  margin: 16px 24px 24px;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, white);
+  border-radius: 18px;
+  background: radial-gradient(ellipse at 100% 0, var(--tint), transparent 68%), var(--map-surface);
+  box-shadow: 0 12px 28px #193e500d;
+}
+.business-map__details header { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 14px; }
+.business-map__details header a { margin-inline-start: auto; }
+.business-map__details h3 { font-size: 17px; font-weight: 750; }
+.business-map__detail-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+.business-map__details dl { display: flex; flex: 2 1 370px; flex-wrap: wrap; gap: 10px; }
+.business-map__details dl > div {
+  flex: 1 1 132px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 13%, white);
+  border-radius: 12px;
+  background: var(--map-surface);
+}
+.business-map__details dt { font-size: 12px; }
+.business-map__details dd { margin-top: 4px; color: var(--accent); font-size: 25px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.business-map__completion {
+  display: flex;
+  flex: 1 1 225px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: linear-gradient(125deg, #163c58, #086c69);
+  color: #fff;
+}
+.business-map__completion p { margin-top: 4px; color: #d1eeeb; font-size: 12px; }
+.business-map__completion-ring {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: radial-gradient(circle closest-side, #15485b 81%, transparent 83%),
+    conic-gradient(#68e8c9 var(--completion), #ffffff30 0);
+  font-size: 17px;
+}
+.business-map__courses { margin-top: 16px; border-radius: 14px; overflow: hidden; border: 1px solid var(--map-line); background: var(--map-surface); }
+.business-map__courses h4 { padding: 12px 16px; background: var(--tint); color: var(--accent); font-size: 14px; font-weight: 750; }
+.business-map__course { display: grid; grid-template-columns: minmax(0, 1fr) minmax(56px, 30%) 3em; gap: 12px; align-items: center; padding: 12px 16px; font-size: 13px; }
+.business-map__course + .business-map__course { border-top: 1px solid var(--map-line); }
+.business-map__course small { display: block; margin-top: 3px; color: #516e7e; }
+.business-map__course b { color: var(--accent); text-align: right; font-variant-numeric: tabular-nums; }
+.business-map__course progress { display: block; appearance: none; width: 100%; height: 8px; overflow: hidden; border: 0; border-radius: 99px; background: var(--tint); color: var(--accent); }
+.business-map__course progress::-webkit-progress-bar { background: var(--tint); border-radius: 99px; }
+.business-map__course progress::-webkit-progress-value { background: linear-gradient(90deg, var(--accent), #43bdaf); border-radius: 99px; }
+.business-map__course progress::-moz-progress-bar { background: var(--accent); border-radius: 99px; }
+.business-map__status { margin: 12px 24px 0; font-size: 13px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .business-map__branch button, .business-map__branch::before, .business-map__details {
+    transition: background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+  }
+  .business-map__branch button:hover { box-shadow: 0 5px 18px color-mix(in srgb, var(--accent) 15%, transparent); }
+  .business-map__detail-content { animation: owner-overview-enter 280ms cubic-bezier(.22, 1, .36, 1) both; }
+}
+
+@container (max-width: 760px) {
+  .business-map__canvas { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; gap: 8px; margin-inline: 14px; padding: 12px; }
+  .business-map__hub { grid-area: auto / 1 / auto / -1; margin-bottom: 4px; }
+  .business-map__hub > strong { position: static; }
+  .business-map__hub::before, .business-map__branch::before, .business-map__branch::after { display: none; }
+  .business-map__branch[data-side] { grid-area: auto; }
+  .business-map__branch button { grid-template-columns: minmax(0, 1fr) auto; padding: 8px; gap: 4px; }
+  .business-map__icon { display: none; }
+  .business-map__label strong { font-size: 12px; }
+  .business-map__details { margin-inline: 14px; padding-inline: 12px; }
+}

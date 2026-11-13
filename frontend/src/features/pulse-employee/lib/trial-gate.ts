@@ -12,13 +12,13 @@ export function trialGateOf(mine?: MyTrialAssessment | null, now = Date.now()): 
   if (!mine) return null;
 
   // 1. Học viên chưa nộp bài test: BẮT BUỘC vào làm bài test (todo hoặc closed nếu quá hạn)
-  if (mine.status === 'NOT_STARTED' || !mine.submittedAt) {
+  if (mine.status === 'NOT_STARTED') {
     const deadlinePassed = mine.testDeadline != null && new Date(mine.testDeadline).getTime() < now;
     return !mine.canStart && deadlinePassed ? 'closed' : 'todo';
   }
 
   // 2. Học viên đã nộp bài nhưng chưa có kết quả thẩm định chính thức: chờ mentor/doanh nghiệp công bố
-  if (mine.status === 'SUBMITTED' || !mine.reportPublished || !mine.levels) {
+  if (mine.status === 'SUBMITTED' || !mine.reportPublished) {
     return 'waiting';
   }
 

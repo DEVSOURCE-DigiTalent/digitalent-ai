@@ -1,10 +1,12 @@
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Application.IndividualCommerce;
 using DigiTalent.Domain.Entities;
 using DigiTalent.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DigiTalent.Infrastructure.BackgroundServices;
 
@@ -16,13 +18,16 @@ public class DeadlineReminderBackgroundService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<DeadlineReminderBackgroundService> _logger;
+    private readonly string _appUrl;
 
     public DeadlineReminderBackgroundService(
         IServiceProvider serviceProvider,
-        ILogger<DeadlineReminderBackgroundService> logger)
+        ILogger<DeadlineReminderBackgroundService> logger,
+        IOptions<IndividualCommerceOptions> options)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+        _appUrl = options.Value.Security.PublicAppUrl.TrimEnd('/');
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -156,7 +161,7 @@ public class DeadlineReminderBackgroundService : BackgroundService
             <div style='color: #ea580c; font-weight: 600; margin-top: 6px;'>Hạn hoàn thành: {dueDateStr}</div>
         </div>
         <p style='text-align: center; margin-top: 24px;'>
-            <a href='http://localhost:5173/enterprise/my-learning' style='background: #304bdf; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;'>Tiếp tục học ngay</a>
+            <a href='{_appUrl}/enterprise/my-learning' style='background: #304bdf; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;'>Tiếp tục học ngay</a>
         </p>
     </div>
 </body>

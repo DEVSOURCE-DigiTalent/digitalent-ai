@@ -6,6 +6,7 @@ import { useReportsOverview } from '@/hooks/use-analytics';
 import { useLearningNeeds } from '@/hooks/use-skill-gaps';
 import { useDepartments } from '@/hooks/use-departments';
 import { useJobPositions } from '@/hooks/use-job-positions';
+import { LoadingProgress, SectionLoading } from '@/components/shared/LoadingState';
 import { OwnerFilterSelect } from '../components/OwnerFilterSelect';
 import { PULSE_TOKENS } from '../owner-theme';
 import './owner-cycle-report.css';
@@ -17,6 +18,38 @@ const DOMAINS = [
 ];
 const LEVELS = ['', 'Cơ bản', 'Trung cấp', 'Nâng cao'];
 const percent = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
+
+function CapabilityLoading() {
+  return (
+    <div className="cycle-loading-stack" aria-busy="true">
+      <div className="cycle-outcome" aria-hidden="true">
+        <div className="cycle-outcome-main cycle-loading-hero">
+          <span className="page-loading__bone cycle-loading-circle" />
+          <div className="cycle-loading-copy">
+            <span className="page-loading__bone cycle-loading-line" />
+            <span className="page-loading__bone cycle-loading-line cycle-loading-line--short" />
+          </div>
+        </div>
+        <div className="cycle-outcome-side">
+          {[0, 1].map((item) => <span className="page-loading__bone cycle-loading-stat" key={item} />)}
+        </div>
+      </div>
+      <div className="cycle-section cycle-loading-chart">
+        <LoadingProgress label="Đang đối chiếu với chuẩn vị trí…" />
+        <div className="cycle-analysis-layout" aria-hidden="true">
+          <div className="cycle-loading-bars">
+            {DOMAINS.map(({ color }) => <span key={color} className="page-loading__bone" />)}
+          </div>
+          <div className="cycle-loading-copy">
+            <span className="page-loading__bone cycle-loading-line" />
+            <span className="page-loading__bone cycle-loading-line cycle-loading-line--short" />
+            <span className="page-loading__bone cycle-loading-stat" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function OwnerCycleReportPage() {
   useUiLanguage();
@@ -54,9 +87,10 @@ export function OwnerCycleReportPage() {
       <header className="cycle-page-heading"><div><span className="cycle-page-kicker">{translateUi("PHÁT TRIỂN ĐỘI NGŨ")}</span><h1>{translateUi("Từ năng lực đến hành động")}</h1></div><div className="cycle-scope">
         <OwnerFilterSelect label={translateUi("Phòng ban báo cáo")} value={departmentId} onChange={(value) => { setDepartmentId(value); setPositionId(''); changeScope(); }} options={[{ value: '', label: 'Toàn doanh nghiệp' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
         <OwnerFilterSelect label={translateUi("Vị trí báo cáo")} value={positionId} onChange={(value) => { setPositionId(value); changeScope(); }} options={[{ value: '', label: 'Tất cả vị trí' }, ...positions.filter((p) => !departmentId || p.departmentId === departmentId).map((p) => ({ value: p.id, label: p.name }))]} />
-        <button type="button" className="cycle-refresh" aria-label={translateUi("Làm mới báo cáo")} onClick={refresh} disabled={busy}><RefreshCw size={17} className={busy ? 'animate-spin' : ''} /></button>
+        <button type="button" className="cycle-refresh" aria-label={translateUi("Làm mới báo cáo")} onClick={refresh} disabled={busy}><RefreshCw size={17} /></button>
       </div></header>
-      {needs.isLoading ? <div className="cycle-feedback" role="status">{translateUi("Đang đối chiếu với chuẩn vị trí…")}</div> : needs.isError ? <div className="cycle-feedback" role="alert">{translateUi("Không tải được kết quả năng lực. ")}<button type="button" onClick={() => void needs.refetch()}>{translateUi("Thử lại")}</button></div> : overview && <>
+      {busy && !needs.isLoading && !reports.isLoading && <LoadingProgress label="Đang tải báo cáo chu kỳ…" />}
+      {needs.isLoading ? <CapabilityLoading /> : needs.isError ? <div className="cycle-feedback" role="alert">{translateUi("Không tải được kết quả năng lực. ")}<button type="button" onClick={() => void needs.refetch()}>{translateUi("Thử lại")}</button></div> : overview && <>
         <section className="cycle-outcome" aria-label={translateUi("Kết quả năng lực doanh nghiệp")}>
           <div className="cycle-outcome-main"><span className="cycle-eyebrow">{translateUi("MỨC ĐÁP ỨNG VỊ TRÍ")}</span><div className="cycle-outcome-body"><div className="cycle-outcome-ring" style={{ '--coverage': `${coverage ?? 0}%` } as CSSProperties}><div><strong>{coverage == null ? '—' : `${coverage}%`}</strong><span>{translateUi("đạt chuẩn")}</span></div></div><div><h2>{!overview.employees ? translateUi('Chưa có nhân sự') : !comparisons ? translateUi('Chờ kết quả đánh giá') : priority ? translateUi(`Còn ${domains.filter((d) => d.needsLearning > 0).length} lĩnh vực cần nâng cấp`) : translateUi('Nhân viên đã đánh giá đều đạt chuẩn')}</h2><p>{comparisons ? translateUi(`${met} / ${comparisons} lượt đối chiếu lĩnh vực đã đạt chuẩn`) : translateUi('Đánh giá nhân viên để xác định năng lực cần bổ sung.')}</p><Link to="/enterprise/skill-gap">{translateUi("Xem khoảng trống ")}<ArrowRight size={15} /></Link></div></div></div>
           <div className="cycle-outcome-side"><Link to="/enterprise/trial"><span>{translateUi("Cần đánh giá")}</span><strong>{overview.waitingEmployees}<small>{translateUi("nhân viên")}</small></strong><ChevronRight size={17} /></Link><Link to="/enterprise/setup"><span>{translateUi("Cần thiết lập chuẩn")}</span><strong>{overview.noStandardEmployees}<small>{translateUi("nhân viên")}</small></strong><ChevronRight size={17} /></Link><p>{overview.assessedEmployees} / {overview.employees}{translateUi(" nhân viên đã được đối chiếu")}</p></div>
@@ -69,7 +103,12 @@ export function OwnerCycleReportPage() {
         </section>
       </>}
       <section className="cycle-section cycle-training" aria-labelledby="cycle-training-title"><header className="cycle-section-heading"><h2 id="cycle-training-title">{translateUi("Tiến độ đào tạo")}</h2><Link to="/enterprise/courses">{translateUi("Danh mục khóa học ")}<ArrowRight size={15} /></Link></header>
-        {reports.isLoading ? <p className="cycle-feedback" role="status">{translateUi("Đang tải tiến độ học tập…")}</p> : reports.isError ? <div className="cycle-feedback" role="alert">{translateUi("Không tải được tiến độ đào tạo. ")}<button type="button" onClick={() => void reports.refetch()}>{translateUi("Thử lại")}</button></div> : training && <>
+        {reports.isLoading ? <div className="cycle-loading-training">
+          <div className="cycle-training-summary" aria-hidden="true">
+            {[0, 1].map((item) => <span className="page-loading__bone cycle-loading-stat" key={item} />)}
+          </div>
+          <SectionLoading label="Đang tải tiến độ học tập" />
+        </div> : reports.isError ? <div className="cycle-feedback" role="alert">{translateUi("Không tải được tiến độ đào tạo. ")}<button type="button" onClick={() => void reports.refetch()}>{translateUi("Thử lại")}</button></div> : training && <>
           <div className="cycle-training-summary"><div><span>{translateUi("Đã hoàn thành")}</span><strong>{training.totalAssignments ? `${percent(training.completionRate)}%` : '—'}</strong><small>{training.completedAssignments} / {training.totalAssignments}{translateUi(" lượt giao")}</small></div><div><span>{translateUi("Đang học")}</span><strong>{training.inProgressAssignments}</strong><Link to="/enterprise/assignments">{translateUi("Xem phân công ")}<ArrowRight size={14} /></Link></div></div>
           {training.totalAssignments > 0 || filteredCourses.length > 0 || courseSearch ? <><div className="cycle-course-tools"><label className="cycle-course-search"><Search size={17} /><input type="search" value={courseSearch} onChange={(e) => { setCourseSearch(e.target.value); setCoursePage(1); }} placeholder={translateUi("Tìm khóa học")} aria-label={translateUi("Tìm khóa học báo cáo")} /></label><OwnerFilterSelect label={translateUi("Sắp xếp khóa học báo cáo")} value={sort} onChange={(value) => { setSort(value); setCoursePage(1); }} options={[{ value: 'progress', label: 'Tiến độ thấp trước' }, { value: 'learners', label: 'Nhiều lượt học trước' }, { value: 'name', label: 'Tên khóa học' }]} /><OwnerFilterSelect label={translateUi("Số khóa học mỗi trang")} value={String(pageSize)} onChange={(value) => { setPageSize(Number(value)); setCoursePage(1); }} options={[5, 10, 15, 20].map((size) => ({ value: String(size), label: `${size} / trang` }))} /></div>
             <div className="cycle-ledger-heading" aria-hidden="true"><span>{translateUi("Khóa học đang triển khai")}</span><span>{translateUi("Trạng thái & tiến độ")}</span></div><div className="cycle-course-list">{filteredCourses.slice((safePage - 1) * pageSize, safePage * pageSize).map((course) => {

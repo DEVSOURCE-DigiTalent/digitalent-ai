@@ -2016,6 +2016,11 @@ function MentorReviewDetailPane({
                 >
                   {essayReport.mode === 'GEMINI' ? 'Trợ lý phân tích' : 'Dò từ khóa'}
                 </span>
+                {essayReport.mode === 'GEMINI' && activeItem.aiHint?.reviewedAt && (
+                  <span style={{ fontSize: 11, color: 'var(--mw-slate-500, #64748b)' }}>
+                    Chấm lúc {formatDateTime(activeItem.aiHint.reviewedAt)}
+                  </span>
+                )}
                 {essayReport.mode === 'GEMINI' && isPending && (
                   <button
                     type="button"

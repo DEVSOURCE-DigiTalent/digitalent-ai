@@ -62,7 +62,7 @@ function useTrialProctor() {
 
 /**
  * Phòng thi của bài đánh giá năng lực đầu vào dùng thử: chia sẻ toàn bộ màn hình + camera + micro.
- * Đề gồm 54 câu trắc nghiệm phủ 6 lĩnh vực năng lực số (18 câu Cơ bản, 18 câu Trung cấp, 18 câu Nâng cao).
+ * Đề trắc nghiệm phủ 6 lĩnh vực năng lực số ở ba cấp.
  * 100% trắc nghiệm khách quan, không có tự luận. Nộp bài xong hệ thống chấm tự động và ghi nhận kết quả.
  */
 export function TrialExam({ organizationName, deadline }: { organizationName: string; deadline?: string | null }) {
@@ -138,8 +138,8 @@ export function TrialExam({ organizationName, deadline }: { organizationName: st
   const currentDomainName = currentQuestions[0]?.domainName || DOMAIN_NAMES[domainNumber] || `Lĩnh vực ${domainNumber}`;
   const answeredInDomain = currentQuestions.filter((q) => Boolean(answers[q.questionId])).length;
   const totalAnswered = questions.filter((q) => Boolean(answers[q.questionId])).length;
-  const totalQuestions = questions.length || 54;
-  const totalPercent = Math.round((totalAnswered / totalQuestions) * 100);
+  const totalQuestions = questions.length;
+  const totalPercent = totalQuestions ? Math.round((totalAnswered / totalQuestions) * 100) : 0;
 
   const isCurrentDomainComplete =
     currentQuestions.length > 0 && currentQuestions.every((q) => Boolean(answers[q.questionId]));
@@ -335,7 +335,7 @@ export function TrialExam({ organizationName, deadline }: { organizationName: st
         />
       )}
 
-      {/* ── 2. GIAI ĐOẠN LÀM BÀI 54 CÂU TRẮC NGHIỆM ───────────────────────── */}
+      {/* ── 2. GIAI ĐOẠN LÀM BÀI TRẮC NGHIỆM ───────────────────────── */}
       {stage === 'work' && (
         <main className="pu-exam-body pu-exam-workspace">
           {/* ── THANH TIẾN ĐỘ 6 LĨNH VỰC TOÀN BỀ NGANG (FULL-WIDTH TRÊN CẢ 2 CỘT) ── */}
@@ -559,7 +559,7 @@ export function TrialExam({ organizationName, deadline }: { organizationName: st
                       >
                         <Check size={13} strokeWidth={3} />
                         {domainNumber === 6 && allExamDone
-                          ? 'Đã hoàn thành toàn bộ 54/54 câu trắc nghiệm'
+                          ? 'Đã hoàn thành toàn bộ câu trắc nghiệm'
                           : 'Đã hoàn thành ' + currentQuestions.length + '/' + currentQuestions.length + ' câu'}
                       </span>
                     )}
@@ -774,7 +774,7 @@ export function TrialExam({ organizationName, deadline }: { organizationName: st
             <span className="pu-exam-done-icon" aria-hidden><Check size={28} strokeWidth={3} /></span>
             <h1 id="tp-done-title">Đã nộp bài thành công</h1>
             <p style={{ fontSize: 14.5, color: '#64748b', marginTop: 4, lineHeight: 1.5 }}>
-              Hệ thống đã tiếp nhận toàn bộ 54 câu trả lời trắc nghiệm và bản ghi giám sát an toàn của bạn.
+              Hệ thống đã tiếp nhận toàn bộ {totalQuestions} câu trả lời trắc nghiệm và bản ghi giám sát an toàn của bạn.
             </p>
 
             {/* Bảng tóm tắt thông số rõ ràng */}
@@ -796,7 +796,7 @@ export function TrialExam({ organizationName, deadline }: { organizationName: st
                   Số câu đã làm
                 </span>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginTop: 3 }}>
-                  {questions.length || 54} câu
+                  {questions.length} câu
                 </div>
               </div>
 
@@ -1089,7 +1089,7 @@ function DeviceCheck({
           <dl>
             <div>
               <dt>Số câu hỏi</dt>
-              <dd>54 câu trắc nghiệm</dd>
+              <dd>Trắc nghiệm</dd>
             </div>
             <div>
               <dt>Phân bổ 3 cấp</dt>
@@ -1168,7 +1168,7 @@ function DeviceCheck({
                 <div className="pu-modal-rule-num">4</div>
                 <div className="pu-modal-rule-text">
                   <strong>Tự động lưu câu trả lời trắc nghiệm</strong>
-                  <p>Đề gồm 54 câu hỏi trắc nghiệm chia đều cho 6 lĩnh vực. Đáp án được tự động lưu ngay khi bạn chọn, không lo mất dữ liệu nếu gặp sự cố mạng tạm thời.</p>
+                  <p>Đề gồm câu hỏi trắc nghiệm chia theo 6 lĩnh vực. Đáp án được tự động lưu ngay khi bạn chọn, không lo mất dữ liệu nếu gặp sự cố mạng tạm thời.</p>
                 </div>
               </div>
             </div>

@@ -6,6 +6,7 @@ using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DigiTalent.Application.UseCases.Learning.Courses.PurchaseCourseSeats;
 
@@ -37,17 +38,20 @@ public class PurchaseCourseSeatsUseCase : IUseCase<PurchaseCourseSeatsInput, Pur
     private readonly ICurrentUser _currentUser;
     private readonly IPayOSService? _payOSService;
     private readonly ILogger<PurchaseCourseSeatsUseCase>? _logger;
+    private readonly string _appUrl;
 
     public PurchaseCourseSeatsUseCase(
         IApplicationDbContext context,
         ICurrentUser currentUser,
         IPayOSService? payOSService = null,
-        ILogger<PurchaseCourseSeatsUseCase>? logger = null)
+        ILogger<PurchaseCourseSeatsUseCase>? logger = null,
+        IOptions<IndividualCommerceOptions>? options = null)
     {
         _context = context;
         _currentUser = currentUser;
         _payOSService = payOSService;
         _logger = logger;
+        _appUrl = (options?.Value.Security.PublicAppUrl ?? "http://localhost:5173").TrimEnd('/');
     }
 
     public async Task<PurchaseCourseSeatsOutput> ExecuteAsync(PurchaseCourseSeatsInput input)
@@ -168,8 +172,8 @@ public class PurchaseCourseSeatsUseCase : IUseCase<PurchaseCourseSeatsInput, Pur
                     orderCode: orderCode,
                     amount: totalAmount,
                     description: $"DT {normalizedCode} {input.Seats}suat",
-                    returnUrl: "http://localhost:5173/enterprise/courses",
-                    cancelUrl: "http://localhost:5173/enterprise/courses"
+                    returnUrl: _appUrl + "/enterprise/courses",
+                    cancelUrl: _appUrl + "/enterprise/courses"
                 );
                 checkoutUrl = payResult.CheckoutUrl;
                 qrCode = payResult.QrCode;

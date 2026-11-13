@@ -135,8 +135,6 @@ export interface TrialInviteResult {
 
 export interface TrialRequestInput {
   testDeadline: string;
-  preferredReviewAt?: string;
-  note?: string | null;
 }
 
 export interface TrialEssayPrompt {
@@ -152,6 +150,8 @@ export interface MyTrialAssessment {
   canStart: boolean;
   closedMessage?: string | null;
   choiceCount: number;
+  choiceScore?: number | null;
+  choiceTotal?: number | null;
   domains: TrialDomain[];
   essays: TrialEssayPrompt[];
   submittedAt?: string | null;

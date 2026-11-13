@@ -18,13 +18,19 @@ public class PulseCatalogReader
         _context = context;
     }
 
-    public async Task<List<PulseCourseRef>> LoadAsync(Guid organizationId)
+    public async Task<List<PulseCourseRef>> LoadAsync(Guid organizationId, IReadOnlyCollection<string>? trialCourseCodes = null)
     {
+        var publishedCourses = _context.Courses.AsNoTracking()
+            .Where(course => course.OrganizationId == organizationId && course.Status == Statuses.Course.Published);
+        if (trialCourseCodes != null)
+        {
+            publishedCourses = publishedCourses.Where(course => trialCourseCodes.Contains(course.Code));
+        }
+
         var rows = await (
-                from course in _context.Courses.AsNoTracking()
+                from course in publishedCourses
                 join teaching in _context.CourseCompetencies.AsNoTracking() on course.Id equals teaching.CourseId
                 join competency in _context.Competencies.AsNoTracking() on teaching.CompetencyId equals competency.Id
-                where course.OrganizationId == organizationId && course.Status == Statuses.Course.Published
                 select new
                 {
                     course.Id,
@@ -58,6 +64,7 @@ public class PulseCatalogReader
                     Tier = Math.Clamp((int)g.Max(r => r.TargetLevel), 1, PulseRules.MaxLevel),
                 };
             })
+            .Where(course => trialCourseCodes == null || course.Tier == 1)
             .ToList();
 
         return perCourse

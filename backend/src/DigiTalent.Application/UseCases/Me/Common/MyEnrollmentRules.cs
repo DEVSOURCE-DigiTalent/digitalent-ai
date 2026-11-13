@@ -1,5 +1,6 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Services.Intelligence.Recommendation;
+using DigiTalent.Application.UseCases.TrialProgram;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -71,6 +72,10 @@ public class MyEnrollmentRules
         if (course.OrganizationId != employee.OrganizationId || course.Status != Statuses.Course.Published)
         {
             return new EnrollCheck(false, "Khóa học chưa mở để ghi danh.", prerequisites);
+        }
+        if (await new TrialLearningAccess(_context).CourseBlockReasonAsync(employee, course.Id) is { } reason)
+        {
+            return new EnrollCheck(false, reason, prerequisites);
         }
 
         var hasNewerVersion = await _context.Courses.AsNoTracking().AnyAsync(c =>

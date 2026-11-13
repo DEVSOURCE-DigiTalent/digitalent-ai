@@ -1,0 +1,20 @@
+.trial-deadline-picker { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 280px); align-items: start; gap: 14px; width: 100%; }
+.trial-deadline-picker__calendar, .trial-deadline-picker__time { padding: 16px; border: 1px solid #d7e8ec; border-radius: 16px; background: #fff; color: #193f51; }
+.trial-deadline-picker__calendar header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+.trial-deadline-picker__calendar button { display: grid; place-items: center; min-width: 0; min-height: 36px; border-radius: 9px; font-weight: 650; }
+.trial-deadline-picker__calendar header button { width: 36px; background: #f0f7f8; }
+.trial-deadline-picker__calendar button:hover:not(:disabled) { background: #e4f3f0; }
+.trial-deadline-picker__calendar button[aria-pressed='true']:not(:disabled) { background: #126a71; color: white; }
+.trial-deadline-picker__calendar button:disabled { opacity: .35; }
+.trial-deadline-picker__days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; text-align: center; font-size: 13px; }
+.trial-deadline-picker__days > span { padding: 5px 0; color: #597687; font-size: 11px; }
+.trial-deadline-picker__time { background: linear-gradient(155deg, #f1faf8, white); }
+.trial-deadline-picker__time h3, .trial-deadline-picker__summary { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.trial-deadline-picker__summary svg { flex: none; }
+.trial-deadline-picker__selectors { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 12px 0; }
+.trial-deadline-picker__selectors label { display: grid; gap: 4px; font-size: 12px; }
+.trial-deadline-picker__selectors select { min-height: 42px; padding: 6px 10px; border: 1px solid #cbdfe4; border-radius: 10px; background: white; font-size: 16px; }
+.trial-deadline-picker__summary { font-size: 13px; }
+.trial-deadline-picker__time small { display: block; margin-top: 6px; color: #597687; }
+.trial-deadline-picker :is(button, select):focus-visible { outline: 2px solid #137b84; outline-offset: 2px; }
+@media (max-width: 620px) { .trial-deadline-picker { grid-template-columns: minmax(0, 1fr); } }

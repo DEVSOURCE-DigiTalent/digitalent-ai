@@ -5,6 +5,7 @@ import { ArrowRight, BookOpen, BrainCircuit, Check, ChevronDown, Database, Light
 import { useLearningNeeds } from '@/hooks/use-skill-gaps';
 import { useDepartments } from '@/hooks/use-departments';
 import { useJobPositions } from '@/hooks/use-job-positions';
+import { LoadingProgress } from '@/components/shared/LoadingState';
 import { OwnerFilterSelect } from '../components/OwnerFilterSelect';
 import type { LearningNeedsOverview } from '@/services/intelligence.service';
 import './owner-learning-overview.css';
@@ -77,17 +78,28 @@ export function OwnerCapabilityGapPage() {
   const [pageSize, setPageSize] = useState(5);
   const [peopleOpen, setPeopleOpen] = useState(false);
   const departments = useDepartments({ pageSize: 100 }).data?.items ?? [];
-  const positions = useJobPositions({ pageSize: 100 }).data?.items ?? [];
+  const positions = useJobPositions({
+    pageSize: 100,
+    departmentId: departmentId || undefined,
+    includeAssignedPositions: !!departmentId,
+  }).data?.items ?? [];
   const scope = { departmentId: departmentId || undefined, jobPositionId: jobPositionId || undefined };
   const company = useLearningNeeds({ ...scope, pageIndex: 1, pageSize: 1 });
   const people = useLearningNeeds({ ...scope, search: search || undefined, pageIndex: page, pageSize }, peopleOpen);
   return <div className="company-gap-page">
     <header className="company-gap-page-header"><h1>{translateUi("Khoảng trống năng lực")}</h1><div>
       <OwnerFilterSelect label={translateUi("Phòng ban")} value={departmentId} onChange={(value) => { setDepartmentId(value); setJobPositionId(''); setPage(1); }} options={[{ value: '', label: 'Toàn doanh nghiệp' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
-      <OwnerFilterSelect label={translateUi("Vị trí")} value={jobPositionId} onChange={(value) => { setJobPositionId(value); setPage(1); }} options={[{ value: '', label: 'Tất cả vị trí' }, ...positions.filter((p) => !departmentId || p.departmentId === departmentId).map((p) => ({ value: p.id, label: p.name }))]} />
-      <button className="company-gap-refresh" type="button" aria-label={translateUi("Làm mới")} onClick={() => { void company.refetch(); if (peopleOpen) void people.refetch(); }} disabled={company.isFetching}><RefreshCw size={17} className={company.isFetching ? 'animate-spin' : ''} /></button>
+      <OwnerFilterSelect label={translateUi("Vị trí")} value={jobPositionId} onChange={(value) => { setJobPositionId(value); setPage(1); }} options={[{ value: '', label: 'Tất cả vị trí' }, ...positions.map((p) => ({ value: p.id, label: p.name }))]} />
+      <button className="company-gap-refresh" type="button" aria-label={translateUi("Làm mới")} onClick={() => { void company.refetch(); if (peopleOpen) void people.refetch(); }} disabled={company.isFetching}><RefreshCw size={17} /></button>
     </div></header>
-    {company.isLoading ? <div className="company-gap-loading" role="status">{translateUi("Đang đối chiếu năng lực…")}</div> : company.isError ? <div role="alert" className="company-gap-loading">{translateUi("Không tải được kết quả. Vui lòng làm mới.")}</div> : company.data?.overview && <CompanyLearningOverview overview={company.data.overview} />}
+    {(company.isLoading || company.isFetching) && (
+      <div className={company.isLoading ? 'company-gap-loading' : undefined}>
+        <LoadingProgress label="Đang đối chiếu năng lực…" />
+      </div>
+    )}
+    {!company.isLoading && (company.isError
+      ? <div role="alert" className="company-gap-loading">{translateUi("Không tải được kết quả. Vui lòng làm mới.")}</div>
+      : company.data?.overview && <CompanyLearningOverview overview={company.data.overview} />)}
 
     <section className="company-gap-people">
       <button className="company-gap-people-toggle" type="button" aria-expanded={peopleOpen} aria-controls="company-gap-people-content" onClick={() => setPeopleOpen(!peopleOpen)}><Users size={20} /><span>{translateUi("Tra cứu nhân viên")}</span><span className="company-gap-people-hint">{translateUi("Xem chi tiết từng người")}</span><ChevronDown size={18} /></button>

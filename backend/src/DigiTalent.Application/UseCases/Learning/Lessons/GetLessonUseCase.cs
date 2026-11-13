@@ -3,6 +3,7 @@ using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using Microsoft.EntityFrameworkCore;
 using DigiTalent.Application.UseCases.Learning.Content;
+using DigiTalent.Application.UseCases.TrialProgram;
 
 namespace DigiTalent.Application.UseCases.Learning.Lessons;
 
@@ -51,6 +52,12 @@ public class GetLessonUseCase : IUseCase<GetLessonInput, LessonContentOutput>
 
         if (result == null)
             throw new NotFoundException($"Lesson '{input.Id}' not found.");
+
+        if (!_currentUser.IsAdmin && _currentUser.EmployeeId is { } employeeId
+            && await _context.Employees.AsNoTracking().FirstOrDefaultAsync(e => e.Id == employeeId && e.OrganizationId == organizationId) is { } employee)
+        {
+            await new TrialLearningAccess(_context).EnsureCourseAccessAsync(employee, result.CourseId);
+        }
 
         var isPaidCourse = result.CourseCode.EndsWith("-I", StringComparison.OrdinalIgnoreCase) ||
                            result.CourseCode.EndsWith("-A", StringComparison.OrdinalIgnoreCase);

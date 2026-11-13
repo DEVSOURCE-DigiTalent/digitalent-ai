@@ -357,6 +357,8 @@ public sealed record PulseAiHintDto(IReadOnlyList<bool> Checks, string Summary)
     public IReadOnlyList<string>? CriterionNotes { get; init; }
     public string Source { get; init; } = "KEYWORD_FALLBACK";
     public string? Model { get; init; }
+    /// <summary>When this hint was made: now for a fresh review, the stored time for one reused from pulse_ai_reviews.</summary>
+    public DateTimeOffset? ReviewedAt { get; init; }
     public PulseAiDetailDto? Detail { get; init; }
     public PulseAiFraudDto? Fraud { get; init; }
 }

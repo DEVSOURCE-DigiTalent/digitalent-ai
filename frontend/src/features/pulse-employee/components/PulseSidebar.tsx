@@ -14,7 +14,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { useNotifications } from '@/hooks/use-platform';
-import { PULSE_PATHS, isExamPath } from '../lib/paths';
+import { PULSE_PATHS, isExamPath, isModulePath } from '../lib/paths';
 
 /**
  * Pulse Employee Sidebar — Thiết kế khung nhỏ dạng Card nổi chuẩn phong cách Personal
@@ -106,7 +106,17 @@ export function PulseSidebar() {
     }
   });
 
+  // A module page already has its own course outline column: the menu starts as the icon rail there,
+  // can still be opened, and the saved preference of the other pages is left untouched.
+  const onModule = isModulePath(pathname);
+  const [moduleExpanded, setModuleExpanded] = useState(false);
+  const isCollapsed = onModule ? !moduleExpanded : collapsed;
+
   const toggleCollapse = () => {
+    if (onModule) {
+      setModuleExpanded((prev) => !prev);
+      return;
+    }
     setCollapsed((prev) => {
       const next = !prev;
       try {
@@ -130,20 +140,20 @@ export function PulseSidebar() {
 
   return (
     <aside
-      className={`pu-side-card${collapsed ? ' is-collapsed' : ' is-expanded'}`}
+      className={`pu-side-card${isCollapsed ? ' is-collapsed' : ' is-expanded'}`}
       aria-label="Menu cá nhân nhân viên"
     >
       {/* ── Top Micro-bar: Nút Thu / Phóng tinh giản không chiếm diện tích ── */}
       <div className="pu-side-card-topbar">
-        {!collapsed && <span className="pu-side-card-brand">{translateUi("Nhân viên")}</span>}
+        {!isCollapsed && <span className="pu-side-card-brand">{translateUi("Nhân viên")}</span>}
         <button
           type="button"
           onClick={toggleCollapse}
           className="pu-side-card-toggle"
-          aria-label={translateUi(collapsed ? 'Mở rộng thanh menu' : 'Thu gọn thanh menu')}
-          title={translateUi(collapsed ? 'Mở rộng thanh menu' : 'Thu gọn thanh menu')}
+          aria-label={translateUi(isCollapsed ? 'Mở rộng thanh menu' : 'Thu gọn thanh menu')}
+          title={translateUi(isCollapsed ? 'Mở rộng thanh menu' : 'Thu gọn thanh menu')}
         >
-          {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
+          {isCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
         </button>
       </div>
 
@@ -164,14 +174,14 @@ export function PulseSidebar() {
                   className={`pu-side-card-item${active ? ' active' : ''}`}
                 >
                   <Icon size={18} className="pu-side-card-icon" strokeWidth={active ? 2.2 : 1.8} aria-hidden />
-                  {!collapsed && <span className="pu-side-card-label truncate">{translateUi(item.label)}</span>}
-                  {!collapsed && item.to === PULSE_PATHS.activity && hasUnread && (
+                  {!isCollapsed && <span className="pu-side-card-label truncate">{translateUi(item.label)}</span>}
+                  {!isCollapsed && item.to === PULSE_PATHS.activity && hasUnread && (
                     <span className="pu-side-card-pill">{unread?.length}</span>
                   )}
-                  {collapsed && item.to === PULSE_PATHS.activity && hasUnread && (
+                  {isCollapsed && item.to === PULSE_PATHS.activity && hasUnread && (
                     <span className="pu-side-card-dot" />
                   )}
-                  {collapsed && <span className="pu-side-tooltip">{translateUi(item.label)}</span>}
+                  {isCollapsed && <span className="pu-side-tooltip">{translateUi(item.label)}</span>}
                 </NavLink>
               </li>
             );

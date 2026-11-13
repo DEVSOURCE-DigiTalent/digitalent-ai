@@ -1,10 +1,12 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.IndividualCommerce;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DigiTalent.Application.UseCases.Learning.CourseAssignments;
 
@@ -15,19 +17,22 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
     private readonly INotificationSender _notificationSender;
     private readonly IAppEmailSender _emailSender;
     private readonly ILogger<CreateCourseAssignmentUseCase> _logger;
+    private readonly string _appUrl;
 
     public CreateCourseAssignmentUseCase(
         IApplicationDbContext context,
         ICurrentUser currentUser,
         INotificationSender notificationSender,
         IAppEmailSender emailSender,
-        ILogger<CreateCourseAssignmentUseCase> logger)
+        ILogger<CreateCourseAssignmentUseCase> logger,
+        IOptions<IndividualCommerceOptions> options)
     {
         _context = context;
         _currentUser = currentUser;
         _notificationSender = notificationSender;
         _emailSender = emailSender;
         _logger = logger;
+        _appUrl = options.Value.Security.PublicAppUrl.TrimEnd('/');
     }
 
     public async Task<CreateCourseAssignmentOutput> ExecuteAsync(CreateCourseAssignmentInput input)
@@ -218,7 +223,7 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
         <p>Bạn vừa được phân công tham gia khóa học: <strong>{course.Code} · {course.Title}</strong>.</p>
         {(dueDate.HasValue ? $"<div style='background: #fff7ed; border-left: 4px solid #f97316; padding: 12px; margin: 16px 0;'><strong>Hạn hoàn thành:</strong> {dueDate.Value:dd/MM/yyyy}</div>" : "")}
         <p style='text-align: center; margin-top: 24px;'>
-            <a href='http://localhost:5173/enterprise/my-learning' style='background: #304bdf; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;'>Bắt đầu học ngay</a>
+            <a href='{_appUrl}/enterprise/my-learning' style='background: #304bdf; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;'>Bắt đầu học ngay</a>
         </p>
     </div>
 </body>
