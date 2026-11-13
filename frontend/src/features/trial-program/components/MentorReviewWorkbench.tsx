@@ -2340,14 +2340,16 @@ function MentorReviewDetailPane({
                   )}
                 </div>
 
-                <div style={{ paddingBottom: 10, borderBottom: '1px solid #f1f5f9' }}>
-                  <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0f172a' }}>
-                    Quyết định chấm điểm
-                  </h3>
-                  <p style={{ margin: '3px 0 0', fontSize: 12.5, color: '#64748b' }}>
-                    Chọn Đạt để công nhận cấp độ khóa học, hoặc Chưa đạt để gửi nhận xét yêu cầu bổ sung.
-                  </p>
-                </div>
+                {!organizationId && (
+                  <div style={{ paddingBottom: 10, borderBottom: '1px solid #f1f5f9' }}>
+                    <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0f172a' }}>
+                      Quyết định chấm điểm
+                    </h3>
+                    <p style={{ margin: '3px 0 0', fontSize: 12.5, color: '#64748b' }}>
+                      Chọn Đạt để công nhận cấp độ khóa học, hoặc Chưa đạt để gửi nhận xét yêu cầu bổ sung.
+                    </p>
+                  </div>
+                )}
 
                 {choiceFails && (
                   <div
@@ -2424,40 +2426,42 @@ function MentorReviewDetailPane({
                   </button>
                 </div>
 
-                <div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 800,
-                      color: '#64748b',
-                      textTransform: 'uppercase',
-                      marginBottom: 6,
-                    }}
-                  >
-                    Mẫu nhận xét nhanh
+                {!organizationId && (
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 800,
+                        color: '#64748b',
+                        textTransform: 'uppercase',
+                        marginBottom: 6,
+                      }}
+                    >
+                      Mẫu nhận xét nhanh
+                    </div>
+                    <div className="mw-template-chips">
+                      {QUICK_TEMPLATES.map((tmpl, idx) => {
+                        const disabled = (choiceFails || rubricStats.gateFailed) && tmpl.decision === 'PASSED';
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            disabled={disabled}
+                            className="mw-template-chip"
+                            onClick={() => {
+                              setReason(tmpl.text);
+                              setReasonTouchedByUser(true);
+                              setDecision(tmpl.decision);
+                              setDecisionTouchedByUser(true);
+                            }}
+                          >
+                            {tmpl.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="mw-template-chips">
-                    {QUICK_TEMPLATES.map((tmpl, idx) => {
-                      const disabled = (choiceFails || rubricStats.gateFailed) && tmpl.decision === 'PASSED';
-                      return (
-                        <button
-                          key={idx}
-                          type="button"
-                          disabled={disabled}
-                          className="mw-template-chip"
-                          onClick={() => {
-                            setReason(tmpl.text);
-                            setReasonTouchedByUser(true);
-                            setDecision(tmpl.decision);
-                            setDecisionTouchedByUser(true);
-                          }}
-                        >
-                          {tmpl.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                )}
 
                 <div>
                   <label
