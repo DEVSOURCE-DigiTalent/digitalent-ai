@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
@@ -50,6 +50,7 @@ import { RichText } from '@/features/pulse-employee/components/RichText';
 import { RecordingPlayer } from '@/features/pulse-manager/components/RecordingPlayer';
 import { RiskTag } from '@/features/pulse-manager/components/ProctoringRiskPanel';
 import { PaginationBar } from '@/features/trial-program/components/PaginationBar';
+import { ResizeHandle, useStoredWidth } from '@/features/trial-program/components/ResizeHandle';
 import {
   buildEssayGuidance,
   compileRubricFeedback,
@@ -261,6 +262,7 @@ export function MentorReviewWorkbench({
     () => initialFilter?.queueCollapsed ?? false,
   );
   const [showMobileQueue, setShowMobileQueue] = useState(false);
+  const [railWidth, setRailWidth] = useStoredWidth('mw-wb-rail-width');
   const [justFinishedQueue, setJustFinishedQueue] = useState(false);
 
   useEffect(() => {
@@ -690,7 +692,10 @@ export function MentorReviewWorkbench({
           </div>
         </div>
       ) : (
-        <div className={`mw-split-shell${desktopQueueCollapsed ? ' is-queue-collapsed' : ''}`}>
+        <div
+          className={`mw-split-shell${desktopQueueCollapsed ? ' is-queue-collapsed' : ''}`}
+          style={railWidth ? ({ '--mw-rail-w': `${railWidth}px` } as CSSProperties) : undefined}
+        >
           {/* Left Queue Rail */}
           <aside
             id="mw-employee-queue-rail"
@@ -1117,6 +1122,16 @@ export function MentorReviewWorkbench({
             </div>
           </aside>
 
+          <ResizeHandle
+            target="prev"
+            min={260}
+            max={(container) => container - 18 - 640}
+            onResize={setRailWidth}
+            onReset={() => setRailWidth(null)}
+            label="Đổi độ rộng danh sách nhân viên"
+            disabled={desktopQueueCollapsed}
+          />
+
           {/* Right Grading Stage */}
           <div className="mw-stage-col">
             {justFinishedQueue && remainingPendingCount === 0 && (
@@ -1342,6 +1357,7 @@ function MentorReviewDetailPane({
   const assignmentCriteria = activeItem.assignment?.criteria ?? [];
   const avatarTone = getAvatarColor(activeItem.employeeName);
 
+  const [sideWidth, setSideWidth] = useStoredWidth('mw-wb-side-width');
   const recording = activeItem.recording ?? null;
   const segments = recording?.segments ?? [];
   const hasScreen = segments.some((s) => s.track === 'SCREEN');
@@ -1615,7 +1631,10 @@ function MentorReviewDetailPane({
       </section>
 
       {/* Main Two-Column Grading Stage */}
-      <div className="mw-grade-core">
+      <div
+        className={`mw-grade-core${sideWidth ? ' has-custom-side' : ''}`}
+        style={sideWidth ? ({ '--mw-side-w': `${sideWidth}px` } as CSSProperties) : undefined}
+      >
         {/* Evidence Column */}
         <section className="mw-evidence-card" aria-label="Chi tiết bài nộp và giám sát">
           <div className="mw-ev-tabs" role="tablist" aria-label="Chuyển phần kiểm tra bài làm">
@@ -2002,6 +2021,15 @@ function MentorReviewDetailPane({
             )}
           </div>
         </section>
+
+        <ResizeHandle
+          target="next"
+          min={300}
+          max={(container) => container - 16 - 420}
+          onResize={setSideWidth}
+          onReset={() => setSideWidth(null)}
+          label="Đổi độ rộng khung gợi ý chấm"
+        />
 
         {/* Action, Detailed Rubric & Guidance Column */}
         <aside className="mw-action-col" aria-label="Gợi ý thẩm định và khung quyết định">
