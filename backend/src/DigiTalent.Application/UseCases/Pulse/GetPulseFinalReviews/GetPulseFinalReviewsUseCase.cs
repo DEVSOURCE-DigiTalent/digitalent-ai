@@ -303,6 +303,8 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
         var defaultCriteria = PulseRules.FinalCriteria.Select(c => c.Title).ToList();
         var toEvaluate = items.Where(i => i.Status == PulseFinalStatus.Pending && i.Attempts.Count > 0).ToList();
         var courseText = await PulseCourseText.LoadAsync(_context, toEvaluate.Select(i => i.CourseId).Distinct().ToList());
+        // AI calls run in parallel without touching the DbContext; their results are stored once they are all back.
+        var reviewed = new System.Collections.Concurrent.ConcurrentBag<PulseAiReviewStore.Entry>();
         var aiTasks = toEvaluate
             .Select(async item =>
             {
@@ -346,9 +348,12 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                 }
 
                 item.AiHint = evaluated;
+                var inputHash = PulseAiReviewStore.InputHash(evidence, prompt, criteria, courseContent, item.DomainName, item.Tier, rubric, events);
+                reviewed.Add(new PulseAiReviewStore.Entry(item.OrganizationId, item.Kind, item.SubmissionId, inputHash, evaluated));
             })
             .ToList();
         await Task.WhenAll(aiTasks);
+        await PulseAiReviewStore.SaveAsync(_context, reviewed.ToList());
 
         items = items
             .OrderBy(i => Array.IndexOf(statusOrder, i.Status))
