@@ -14,8 +14,8 @@ public static class TrialProgramRules
     /// <summary>Số nhân viên tối đa của một doanh nghiệp dùng thử (không tính chủ doanh nghiệp).</summary>
     public const int MaxParticipants = 30;
 
-    /// <summary>Số câu trắc nghiệm cho mỗi (lĩnh vực, cấp): 6 lĩnh vực × 3 cấp × 3 câu → 54 câu.</summary>
-    public const int ChoicePerCell = 3;
+    /// <summary>Số câu trắc nghiệm cho mỗi (lĩnh vực, cấp): 6 lĩnh vực × 3 cấp → 18 câu.</summary>
+    public const int ChoicePerCell = 1;
 
     public const int MinEssayLength = 30;
     public const int MaxEssayLength = 6000;
@@ -67,22 +67,15 @@ public static class TrialProgramRules
             "Đề xuất số hóa hoặc tự động hóa một quy trình của bộ phận: hiện trạng, giải pháp, rủi ro dữ liệu và cách đo hiệu quả."),
     };
 
-    /// <summary>Số câu đúng tối thiểu để đạt một cấp trong bài đánh giá tổng hợp: 3 câu → 2 câu (66.7% ~ 70%).</summary>
-    public static int ChoicePassMark(int total) =>
-        total <= 0 ? 0 :
-        total == 1 ? 1 :
-        total <= 3 ? 2 :
-        (total * 7 + 4) / 10;
-
     /// <summary>
-    /// Mức gợi ý của một lĩnh vực từ trắc nghiệm: cấp cao nhất mà mọi cấp từ Cơ bản tới đó đều đạt (≥ 70% số câu của cấp, tức từ 2/3 câu).
+    /// Mức gợi ý của một lĩnh vực từ trắc nghiệm: cấp cao nhất mà mọi cấp từ Cơ bản tới đó đều đạt (≥ 70% số câu của cấp).
     /// </summary>
     public static short SuggestedLevel(IReadOnlyList<(int Correct, int Total)> byTier)
     {
         short level = 0;
         foreach (var (correct, total) in byTier)
         {
-            if (total == 0 || correct < ChoicePassMark(total))
+            if (total == 0 || correct < PulseRules.ChoicePassMark(total))
             {
                 break;
             }

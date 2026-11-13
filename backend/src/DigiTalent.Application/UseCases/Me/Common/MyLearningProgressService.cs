@@ -1,5 +1,6 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Application.UseCases.TrialProgram;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -53,6 +54,7 @@ public class MyLearningProgressService
         var lessons = courseExists ? await LoadLessonsAsync(courseId) : new List<CourseLessonInfo>();
         var lesson = lessons.FirstOrDefault(l => l.LessonId == lessonId)
             ?? throw new NotFoundException("Không tìm thấy bài học trong khóa này.");
+        await new TrialLearningAccess(_context).EnsureCourseAccessAsync(employee, courseId);
 
         var enrollments = trackEnrollment ? _context.Enrollments : _context.Enrollments.AsNoTracking();
         var enrollment = await enrollments

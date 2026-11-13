@@ -1,0 +1,36 @@
+.owner-overview::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: min(600px, 85vh);
+  background: radial-gradient(ellipse at 14% 12%, #87dbe03d, transparent 52%),
+    radial-gradient(ellipse at 86% 24%, #a6a3f737, transparent 55%);
+  pointer-events: none;
+  content: '';
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .owner-overview::before { animation: owner-overview-light 1.2s ease-out both; }
+  .owner-overview__header, .owner-overview__metrics > div, .owner-overview .owner-progress {
+    animation: owner-overview-enter 460ms cubic-bezier(.22, 1, .36, 1) both;
+  }
+  .owner-overview__metrics > :nth-child(1) { animation-delay: 50ms; }
+  .owner-overview__metrics > :nth-child(2) { animation-delay: 90ms; }
+  .owner-overview__metrics > :nth-child(3) { animation-delay: 130ms; }
+  .owner-overview__metrics > :nth-child(4) { animation-delay: 170ms; }
+  .owner-overview .owner-progress { animation-delay: 180ms; }
+  .owner-overview .owner-progress__panels > :not([hidden]) { animation: owner-overview-enter 280ms ease-out both; }
+}
+
+@keyframes owner-overview-enter {
+  from { opacity: 0; translate: 0 8px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@keyframes owner-overview-light {
+  from { opacity: .2; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .owner-overview__header .animate-pulse { animation: none; }
+}

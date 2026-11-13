@@ -25,9 +25,14 @@ interface Props {
 /** A domain has three sellable courses. Position standards choose one course without requiring a seat purchase. */
 export function DomainPositionStandardPanel({ domain, domains, departmentId, initialPositionId, canEdit }: Props) {
   useUiLanguage();
-  const { data: positionsData, isLoading: positionsLoading } = useJobPositions({ pageSize: 100, status: 'ACTIVE' });
+  const { data: positionsData, isLoading: positionsLoading } = useJobPositions({
+    pageSize: 100,
+    status: 'ACTIVE',
+    departmentId: departmentId ?? undefined,
+    includeAssignedPositions: !!departmentId,
+  });
   const { data: competencyData } = useAllActiveCompetencies();
-  const positions = useMemo(() => (positionsData?.items ?? []).filter((position) => !departmentId || position.departmentId === departmentId), [positionsData, departmentId]);
+  const positions = useMemo(() => positionsData?.items ?? [], [positionsData]);
   const competencies = useMemo(() => (competencyData ?? []).filter((item) => TT02_CODES.has(item.frameworkCode ?? '')), [competencyData]);
   const [positionId, setPositionId] = useState(initialPositionId ?? '');
   const [selectedLevel, setSelectedLevel] = useState(0);
@@ -112,6 +117,6 @@ export function DomainPositionStandardPanel({ domain, domains, departmentId, ini
           <Save size={15} /> {busy ? translateUi('Đang lưu…') : canApply ? translateUi('Lưu chuẩn vị trí') : selectedLevel && currentLevel === selectedLevel ? translateUi('Đang áp dụng') : translateUi('Chọn khóa học')}
         </button>
       </div>
-    </> : <p className="cp-standard__empty">{positionsLoading ? translateUi('Đang tải vị trí…') : 'Tạo vị trí công việc trong phòng ban để đặt chuẩn.'}</p>}
+    </> : <p className="cp-standard__empty">{positionsLoading ? translateUi('Đang tải vị trí…') : translateUi('Chưa có vị trí đang hoạt động trong phạm vi đã chọn.')}</p>}
   </section>;
 }

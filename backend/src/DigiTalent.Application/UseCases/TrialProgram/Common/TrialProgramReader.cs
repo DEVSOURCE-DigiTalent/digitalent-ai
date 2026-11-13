@@ -89,8 +89,13 @@ public class TrialProgramReader
             return "Bạn đã nộp bài đánh giá.";
         }
 
+        if (trial.RequestedAt == null)
+        {
+            return "Doanh nghiệp chưa bắt đầu đợt khảo sát.";
+        }
+
         // Đợt khảo sát ban đầu nếu chưa công bố và có đặt hạn chót
-        if (trial.ReportPublishedAt == null && trial.TestDeadline.HasValue && now >= trial.TestDeadline.Value)
+        if (trial.TestDeadline.HasValue && now >= trial.TestDeadline.Value)
         {
             return "Đã quá hạn làm bài của đợt khảo sát.";
         }
@@ -148,6 +153,7 @@ public class TrialProgramReader
         var assessmentIds = assessments.Values.Select(a => a.Id).ToList();
         var domainResults = await LoadDomainResultsAsync(assessmentIds);
 
+
         var rows = employees.Select(e =>
         {
             var assessment = assessments.GetValueOrDefault(e.Id);
@@ -169,7 +175,8 @@ public class TrialProgramReader
                 Email = e.Email,
                 DepartmentName = departments.GetValueOrDefault(e.DepartmentId),
                 PositionName = e.JobPositionId is { } p ? positions.GetValueOrDefault(p) : null,
-                Status = assessment?.ReviewedAt != null ? TrialProgramRules.ParticipantReviewed
+                Status = TrialAssessmentResults.IsReady(assessment, assessment == null ? null : domainResults.GetValueOrDefault(assessment.Id))
+                    ? TrialProgramRules.ParticipantReviewed
                     : assessment != null ? TrialProgramRules.ParticipantSubmitted
                     : TrialProgramRules.ParticipantActive,
                 AssessmentId = assessment?.Id,
@@ -216,7 +223,7 @@ public class TrialProgramReader
     }
 
     /// <summary>
-    /// Bảng năng lực của doanh nghiệp từ các bài mentor đã chấm: mỗi lĩnh vực có số nhân viên ở từng mức (0..3), mức trung
+    /// Bảng năng lực của doanh nghiệp từ các bài có kết quả: mỗi lĩnh vực có số nhân viên ở từng mức (0..3), mức trung
     /// bình và mức chung (trung bình làm tròn); kèm mức từng nhân viên.
     /// </summary>
     public async Task<TrialReportDto> BuildReportAsync(TrialWorkspace trial)
@@ -226,7 +233,8 @@ public class TrialProgramReader
                 from assessment in _context.TrialAssessments.AsNoTracking()
                 join employee in _context.Employees.AsNoTracking() on assessment.EmployeeId equals employee.Id
                 join user in _context.Users.AsNoTracking() on employee.UserId equals user.Id
-                where assessment.OrganizationId == trial.OrganizationId && assessment.ReviewedAt != null
+                where assessment.OrganizationId == trial.OrganizationId
+                      && (assessment.ReviewedAt != null || assessment.ChoiceTotal > 0)
                 select new
                 {
                     assessment.Id,
@@ -262,6 +270,7 @@ public class TrialProgramReader
             .ToDictionary(g => g.Key, g => g.ToDictionary(c => c.CompetencyCategoryId, c => (int)c.CeilingLevel));
 
         var employees = reviewed
+            .Where(r => TrialAssessmentResults.IsReady(r.ReviewedAt, r.ChoiceScore, r.ChoiceTotal, results.GetValueOrDefault(r.Id)))
             .Select(r =>
             {
                 var byCategory = (results.GetValueOrDefault(r.Id) ?? new List<TrialAssessmentDomain>()).ToDictionary(d => d.CategoryId);

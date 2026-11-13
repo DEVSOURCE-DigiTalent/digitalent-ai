@@ -5,8 +5,7 @@ using DigiTalent.Application.Common.UseCases;
 namespace DigiTalent.Application.UseCases.TrialProgram;
 
 /// <summary>
-/// PUT /trial/request — chủ doanh nghiệp đặt hạn làm bài và giờ mong muốn chấm rồi gửi yêu cầu chấm cho quản trị nền tảng
-/// (lần đầu: thông báo tới quản trị nền tảng; lần sau: cập nhật, báo cho mentor nếu đã phân công). Cần ít nhất một nhân viên.
+/// PUT /trial/request — đặt hạn nộp bài và bắt đầu đợt khảo sát trắc nghiệm. Cần ít nhất một nhân viên.
 /// </summary>
 public class SubmitTrialRequestUseCase : IUseCase<SubmitTrialRequestUseCaseInput, SubmitTrialRequestUseCaseOutput>
 {
@@ -36,7 +35,7 @@ public class SubmitTrialRequestUseCase : IUseCase<SubmitTrialRequestUseCaseInput
 
         if ((await _reader.LoadParticipantsAsync(trial)).Count == 0)
         {
-            throw new BadRequestException("Mời ít nhất một nhân viên trước khi gửi yêu cầu chấm.", "testDeadline", "TRIAL_NO_PARTICIPANTS");
+            throw new BadRequestException("Thêm ít nhất một nhân viên trước khi bắt đầu đánh giá.", "testDeadline", "TRIAL_NO_PARTICIPANTS");
         }
 
         var first = trial.RequestedAt == null;

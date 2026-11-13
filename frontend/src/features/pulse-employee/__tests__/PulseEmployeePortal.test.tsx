@@ -295,7 +295,7 @@ describe('enterprise trial learning', () => {
 
     getMine.mockResolvedValue(ok({ ...mine, status: 'SUBMITTED', submittedAt: '2026-10-29T03:00:00Z' }));
     renderAt(PULSE_PATHS.path, null, routes);
-    expect(await screen.findByRole('status', { name: 'Đang chờ mentor chấm bài' })).toBeInTheDocument();
+    expect(await screen.findByRole('status', { name: 'Đang chờ công bố kết quả' })).toBeInTheDocument();
   });
 });
 

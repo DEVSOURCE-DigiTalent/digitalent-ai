@@ -1,10 +1,41 @@
 export const ownerEnglish: Record<string, string> = Object.fromEntries(`
+Theo dõi đội ngũ|Team progress
+Tiếp tục đặt hạn|Continue to deadline
+Quay lại danh sách|Back to participants
+Chọn ngày nộp bài|Choose the due date
+Chọn giờ nộp bài|Choose the due time
+Giờ nộp bài|Due time
+Giờ|Hour
+Phút|Minute
+Tháng trước|Previous month
+Tháng sau|Next month
+Theo múi giờ trên thiết bị của bạn|Times use your device's time zone
+Bản đồ doanh nghiệp|Business map
+Cơ cấu đội ngũ|Team structure
+Phân bố nhân sự theo phòng ban|Staff by department
+Nhân sự hoạt động|Active employees
+Lượt đối chiếu đạt chuẩn|Position-standard attainment
+Nhân sự đã đối chiếu|Employees assessed against standards
+Lĩnh vực cần bổ sung|Domains needing development
+Khóa đã có lượt học|Courses with enrollments
+Lượt đang học|In-progress enrollments
+Đợt đang chạy|Active training cohorts
+Lượt đã hoàn thành|Completed enrollments
+Mẫu nhiệm vụ|Task templates
+Minh chứng đã nộp|Evidence submissions
+Minh chứng đạt|Approved evidence
+Đang tải báo cáo chu kỳ…|Loading cycle report…
+Không tải được báo cáo chu kỳ.|Could not load cycle report.
+Tiến độ học tập|Learning progress
+Lượt giao đang hiệu lực|Active course assignments
+Tiến độ trung bình theo khóa|Average progress by course
+Chưa có lượt học để tính tiến độ theo khóa.|No learning activity to report by course yet.
+Không tải được tiến độ đào tạo.|Could not load training progress.
 % hoàn thành (|% complete (
 % tiến độ|% progress
 % trung bình toàn tổ chức|% organization average
 (mới, chưa khảo sát)|(new, not assessed)
 (từ|(from
-(Đã nộp + đã chấm) / tổng người tham gia|(Submitted + graded) / total participants
 + Mua thêm suất|+ Buy more seats
 + Mua thêm suất & Ký online|+ Buy seats & sign online
 + Thêm khóa|+ Add course
@@ -388,6 +419,7 @@ Nhân viên đã đánh giá đều đáp ứng lĩnh vực này.|All assessed e
 Chờ đánh giá để xác định năng lực cần bổ sung.|Awaiting assessments to identify development needs.
 Đang đối chiếu với chuẩn vị trí…|Comparing against position standards…
 Đang tải tiến độ học tập…|Loading learning progress…
+Đang tải tiến độ học tập|Loading learning progress
 {count} / trang|{count} / page
 {count} người|{count} people
 {count} nhân viên|{count} employees
@@ -506,7 +538,7 @@ Tự động gửi mail nhắc trước khi hết hạn 24 giờ|Email a reminde
 Tự động nhắc nhở|Automatic reminders
 TỶ LỆ ĐÁP ỨNG|READINESS RATE
 Tỷ lệ Cấp độ|Level distribution
-Tỷ lệ nộp bài bằng số người đã nộp hoặc được chấm chia tổng người tham gia của phòng ban.|The submission rate is submitted or graded participants divided by all department participants.
+Tỷ lệ nộp bài bằng số người đã nộp chia tổng người tham gia của phòng ban.|The submission rate is the number of participants who submitted divided by all department participants.
 Tỷ lệ đáp ứng TB|Average readiness
 Tỷ lệ đạt:|Pass rate:
 VD: Công ty Cổ phần Công nghệ ABC|e.g. ABC Technology Company
@@ -623,6 +655,7 @@ trên|of
 Đang tải đợt đào tạo|Loading training programs
 Đang xem|Viewing
 Đang đối chiếu năng lực…|Comparing competencies…
+Đã nộp / tổng người tham gia|Submitted / total participants
 Điểm TB|Average level
 Điểm TB (0 - 3.0)|Average level (0–3)
 Điểm mạnh, điểm cần cải thiện, yêu cầu bổ sung…|Strengths, areas for improvement and additional requirements…

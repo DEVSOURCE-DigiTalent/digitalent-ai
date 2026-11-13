@@ -71,6 +71,7 @@ export function CapabilityLearningPath({ competencies, isLoading }: CapabilityLe
               const currentPct = Math.max(0, Math.min(100, comp.averageCurrentLevel / 3 * 100));
               const requiredPct = Math.max(0, Math.min(100, comp.averageRequiredLevel / 3 * 100));
               const hasGap = comp.employeesWithGap > 0;
+              const targetLevel = Math.max(1, Math.min(3, Math.ceil(comp.averageRequiredLevel)));
               return <article className="gap-competency" key={comp.competencyId}>
                 <div className="gap-competency-name"><span className="gap-code">{comp.frameworkCode}</span><div><strong>{comp.name}</strong><small>{translateUi(comp.categoryName) ?? 'Năng lực số'}</small></div></div>
                 <div className="gap-levels" aria-label={translateUi(`Hiện tại ${comp.averageCurrentLevel.toFixed(1)}, yêu cầu ${comp.averageRequiredLevel.toFixed(1)}`)}>
@@ -79,7 +80,7 @@ export function CapabilityLearningPath({ competencies, isLoading }: CapabilityLe
                 </div>
                 <div className="gap-competency-end">
                   {hasGap ? <><span className="gap-severity">{comp.highCount > 0 ? translateUi(`${comp.highCount} mức cao`) : translateUi(`${comp.employeesWithGap} khoảng trống`)}</span><small>{comp.employeesWithGap}/{comp.employeesRequired}{translateUi(" nhân sự")}</small></> : <span className="gap-met">{translateUi("Đạt chuẩn")}</span>}
-                  {hasGap && <Link to={`/enterprise/courses?gap=${encodeURIComponent(comp.frameworkCode)}`} aria-label={translateUi(`Xem khóa học cho ${comp.name}`)}>{translateUi("Khóa lĩnh vực ")}<ArrowRight size={15} /></Link>}
+                  {hasGap && <Link to={`/enterprise/courses?gap=${encodeURIComponent(comp.frameworkCode)}&level=${targetLevel}`} aria-label={translateUi(`Xem khóa học cho ${comp.name}`)}>{translateUi("Khóa lĩnh vực ")}<ArrowRight size={15} /></Link>}
                 </div>
               </article>;
             })}
