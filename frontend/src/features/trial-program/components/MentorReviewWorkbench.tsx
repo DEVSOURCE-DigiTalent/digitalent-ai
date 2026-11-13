@@ -2048,7 +2048,7 @@ function MentorReviewDetailPane({
                   <strong>Cảnh báo:</strong> Bài nộp lặp lại nội dung đề bài, chưa có minh chứng công việc thực tế.
                 </span>
               </div>
-            ) : (
+            ) : organizationId ? null : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <strong style={{ fontSize: 13, color: '#0f172a' }}>{essayReport.verdictTitle}</strong>
                 {essayReport.summaryText && (
