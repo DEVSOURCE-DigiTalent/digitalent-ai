@@ -8,6 +8,8 @@ interface PaginationBarProps {
   onPageChange: (nextPage: number) => void;
   onPageSizeChange: (nextSize: number) => void;
   pageSizeOptions?: number[];
+  /** Show the "Hiển thị x đến y trong tổng z" text. */
+  showSummary?: boolean;
 }
 
 function buildPageNumbers(current: number, totalPages: number): (number | 'ellipsis')[] {
@@ -37,6 +39,7 @@ export function PaginationBar({
   onPageChange,
   onPageSizeChange,
   pageSizeOptions = [10, 20, 50],
+  showSummary = true,
 }: PaginationBarProps) {
   if (totalItems <= 0) return null;
 
@@ -49,10 +52,12 @@ export function PaginationBar({
   return (
     <div className="mw-pagination-bar" role="navigation" aria-label="Phân trang danh sách">
       <div className="mw-pagination-summary">
-        <span>
-          Hiển thị <strong>{startIdx}</strong> đến <strong>{endIdx}</strong> trong tổng{' '}
-          <strong>{totalItems}</strong> {unitLabel}
-        </span>
+        {showSummary && (
+          <span>
+            Hiển thị <strong>{startIdx}</strong> đến <strong>{endIdx}</strong> trong tổng{' '}
+            <strong>{totalItems}</strong> {unitLabel}
+          </span>
+        )}
 
         <label className="mw-page-size-label">
           <span>Số dòng:</span>
