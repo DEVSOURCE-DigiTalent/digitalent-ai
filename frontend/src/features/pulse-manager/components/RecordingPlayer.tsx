@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pause, Play, Volume2, VolumeX } from 'lucide-react';
-import { recordingUrl, type PulseRecording, type PulseRecordingSegment } from '@/services/pulse.service';
+import {
+  recordingUrl,
+  type PulseAiFraud,
+  type PulseAiFraudItem,
+  type PulseRecording,
+  type PulseProctoringEvent,
+  type PulseRecordingSegment,
+} from '@/services/pulse.service';
 import { PROCTORING_EVENT_LABELS, RISK_LEVEL_LABELS, clock, formatDuration } from '@/features/pulse-employee/lib/labels';
 import { ProctoringRiskPanel, RiskTag } from './ProctoringRiskPanel';
 
@@ -39,6 +46,32 @@ function gapsOf(spans: Span[], total: number): { start: number; end: number }[] 
   }
   if (total - cursor > 500) gaps.push({ start: cursor, end: total });
   return gaps;
+}
+
+/** "mm:ss" hoặc "h:mm:ss" → ms; null khi không đọc được. */
+function parseClock(value: string): number | null {
+  const parts = value.trim().split(':').map((p) => Number(p));
+  if (parts.length < 2 || parts.length > 3 || parts.some((p) => !Number.isFinite(p) || p < 0)) return null;
+  return parts.reduce((acc, p) => acc * 60 + p, 0) * 1000;
+}
+
+type LogRow =
+  | { type: 'event'; event: PulseProctoringEvent; offsetMs: number; notes: string[] }
+  | { type: 'ai'; item: PulseAiFraudItem; offsetMs: number | null };
+
+/** Gộp nhận định AI vào nhật ký giám sát: khớp theo mốc thời gian (ưu tiên cùng loại sự kiện), phần còn lại thành dòng riêng. */
+export function mergeLog(events: PulseProctoringEvent[], fraud: PulseAiFraud | null | undefined): LogRow[] {
+  const rows: LogRow[] = events.map((event) => ({ type: 'event', event, offsetMs: event.offsetMs, notes: [] }));
+  const extra: LogRow[] = [];
+  for (const item of fraud?.items ?? []) {
+    const candidates = rows.filter(
+      (r): r is Extract<LogRow, { type: 'event' }> => r.type === 'event' && clock(r.offsetMs) === item.time.trim(),
+    );
+    const match = candidates.find((r) => r.event.kind === item.event) ?? candidates[0];
+    if (match) match.notes.push(item.note);
+    else extra.push({ type: 'ai', item, offsetMs: parseClock(item.time) });
+  }
+  return [...rows, ...extra].sort((a, b) => (a.offsetMs ?? Infinity) - (b.offsetMs ?? Infinity));
 }
 
 const activeAt = (spans: Span[], t: number) => spans.find((s) => t >= s.start && t < s.end) ?? null;
@@ -84,7 +117,14 @@ function syncVideo(
  * Bản ghi bài làm có giám sát cho người chấm (MG-13): màn hình (toàn bộ) + camera kèm micro trên một đồng hồ phiên.
  * Khoảng nhân viên dừng chia sẻ hiện là khoảng trống; mỗi lần rời tab hoặc dừng chia sẻ là một mốc để tua tới.
  */
-export function RecordingPlayer({ recording }: { recording: PulseRecording }) {
+export function RecordingPlayer({
+  recording,
+  aiFraud,
+}: {
+  recording: PulseRecording;
+  /** Nhận định hành vi thi của AI, gộp vào nhật ký giám sát. */
+  aiFraud?: PulseAiFraud | null;
+}) {
   const total = useMemo(() => Math.max(
     1000,
     recording.durationMs ?? 0,
@@ -97,6 +137,7 @@ export function RecordingPlayer({ recording }: { recording: PulseRecording }) {
   const screenGaps = useMemo(() => gapsOf(screens, total), [screens, total]);
   const events = useMemo(() => [...recording.events].sort((a, b) => a.offsetMs - b.offsetMs), [recording]);
   const risk = recording.risk ?? null;
+  const logRows = useMemo(() => mergeLog(events, aiFraud), [events, aiFraud]);
 
   // Bỏ qua độ trễ khởi tạo luồng dưới 3 giây khi bắt đầu phiên để khung hình đầu tiên hiện ngay thay vì báo trống.
   const initialStart = useMemo(() => {
@@ -466,26 +507,56 @@ export function RecordingPlayer({ recording }: { recording: PulseRecording }) {
 
       {risk && <ProctoringRiskPanel risk={risk} t={t} onSeek={jumpAndPlay} />}
 
-      {events.length > 0 && (
+      {aiFraud?.summary && aiFraud.items.length > 0 && (
+        <p className="pu-rplayer-ai-summary">
+          <strong>Cảnh báo hành vi thi (AI):</strong> {aiFraud.summary}
+        </p>
+      )}
+
+      {logRows.length > 0 && (
         <ol className="pu-rplayer-events" aria-label="Nhật ký giám sát">
-          {events.map((e, index) => (
-            <li key={`${e.kind}-${e.offsetMs}-${index}`} className={e.flagged ? 'flagged' : undefined}>
-              <button
-                type="button"
-                onClick={() => jumpAndPlay(e.offsetMs - 2000)}
-                aria-current={current === e ? 'true' : undefined}
-              >
-                <time>{clock(e.offsetMs)}</time>
-                <span className="dot" aria-hidden />
-                <span className="text">
-                  {PROCTORING_EVENT_LABELS[e.kind]}
-                  {e.durationMs ? ` · ${formatDuration(e.durationMs)}` : ''}
-                  {e.detail && e.kind !== 'FACE_CHECK_OFF' ? ` · ${e.detail}` : ''}
-                </span>
-                {e.flagged && <span className="tag">Cần xem</span>}
-              </button>
-            </li>
-          ))}
+          {logRows.map((row, index) => {
+            if (row.type === 'ai') {
+              const label = PROCTORING_EVENT_LABELS[row.item.event as keyof typeof PROCTORING_EVENT_LABELS] ?? row.item.event;
+              const at = row.offsetMs;
+              return (
+                <li key={`ai-${row.item.time}-${index}`} className="flagged">
+                  <button type="button" disabled={at === null} onClick={() => at !== null && jumpAndPlay(at - 2000)}>
+                    <time>{row.item.time}</time>
+                    <span className="dot" aria-hidden />
+                    <span className="text">
+                      {label}
+                      <span className="ai-note">AI: {row.item.note}</span>
+                    </span>
+                    <span className="tag">Cần xem</span>
+                  </button>
+                </li>
+              );
+            }
+            const e = row.event;
+            const flagged = e.flagged || row.notes.length > 0;
+            return (
+              <li key={`${e.kind}-${e.offsetMs}-${index}`} className={flagged ? 'flagged' : undefined}>
+                <button
+                  type="button"
+                  onClick={() => jumpAndPlay(e.offsetMs - 2000)}
+                  aria-current={current === e ? 'true' : undefined}
+                >
+                  <time>{clock(e.offsetMs)}</time>
+                  <span className="dot" aria-hidden />
+                  <span className="text">
+                    {PROCTORING_EVENT_LABELS[e.kind]}
+                    {e.durationMs ? ` · ${formatDuration(e.durationMs)}` : ''}
+                    {e.detail && e.kind !== 'FACE_CHECK_OFF' ? ` · ${e.detail}` : ''}
+                    {row.notes.map((note, k) => (
+                      <span key={k} className="ai-note">AI: {note}</span>
+                    ))}
+                  </span>
+                  {flagged && <span className="tag">Cần xem</span>}
+                </button>
+              </li>
+            );
+          })}
         </ol>
       )}
     </section>
