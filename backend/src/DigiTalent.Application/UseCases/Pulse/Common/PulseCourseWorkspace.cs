@@ -90,7 +90,7 @@ public class PulseCourseWorkspace
         PulseBlockReason.AboveCeiling => "Doanh nghiệp chưa mở cấp độ này của lĩnh vực cho phòng ban của bạn.",
         PulseBlockReason.PriorLevelRequired => "Cần đạt khóa ở cấp trước của cùng lĩnh vực trước.",
         PulseBlockReason.PreAssessmentRequired => "Hãy làm bài đánh giá trước khi học của khóa này trước. Đạt thì khóa được công nhận, chưa đạt thì bạn học khóa.",
-        PulseBlockReason.PreAssessmentPending => "Bài đánh giá trước khi học đang chờ quản lý chấm. Khóa mở để học nếu bài chưa đạt.",
+        PulseBlockReason.PreAssessmentPending => "Bài đánh giá trước khi học đang chờ chấm. Khóa mở để học nếu bài chưa đạt.",
         PulseBlockReason.SeatRequired => "Khóa học có phí cần suất học do chủ doanh nghiệp phân bổ trước khi mở toàn bộ nội dung.",
         PulseBlockReason.PreviousModuleRequired => "Hãy đạt câu hỏi ôn tập của mô đun trước.",
         PulseBlockReason.SlidesNotViewed => "Hãy đọc hết các trang nội dung của mô đun trước khi làm câu hỏi ôn tập.",
@@ -102,7 +102,7 @@ public class PulseCourseWorkspace
     /// <summary>Vì sao bài đánh giá trước khi học không mở cho nhân viên lúc này.</summary>
     public static string PreAssessmentClosedMessage(PulseCourseState state) => state.PreStatus switch
     {
-        PulsePreStatus.Pending => "Bài đánh giá trước khi học của khóa này đang chờ quản lý chấm.",
+        PulsePreStatus.Pending => "Bài đánh giá trước khi học của khóa này đang chờ chấm.",
         PulsePreStatus.Passed => "Bạn đã đạt bài đánh giá trước khi học của khóa này.",
         PulsePreStatus.NotYet => "Mỗi khóa có một bài đánh giá trước khi học. Bài của bạn chưa đạt — hãy học khóa rồi làm bài cuối khóa.",
         PulsePreStatus.NotNeeded => "Khóa này không cần bài đánh giá trước khi học: khóa đã được công nhận hoặc bạn đã bắt đầu học.",
@@ -114,7 +114,7 @@ public class PulseCourseWorkspace
     /// <summary>Vì sao bài cuối khóa không mở để làm lúc này.</summary>
     public static string FinalClosedMessage(PulseCourseState state) => state.FinalStatus switch
     {
-        PulseFinalStatus.Pending => "Bài của bạn đang chờ quản lý chấm, chưa thể nộp thêm.",
+        PulseFinalStatus.Pending => "Bài của bạn đang chờ chấm, chưa thể nộp thêm.",
         PulseFinalStatus.Approved => "Khóa học đã được quản lý duyệt.",
         PulseFinalStatus.RetryWait => "Lần nộp cuối chưa mở. Hãy xem nhận xét và chờ tới thời điểm mở.",
         PulseFinalStatus.DeadlineMissed => "Đã quá hạn nộp lần cuối. Quản lý sẽ sắp xếp hỗ trợ.",

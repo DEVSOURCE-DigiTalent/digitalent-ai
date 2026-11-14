@@ -26,13 +26,13 @@ export function TrialEmployeeResults({ assessment, overview }: {
   ]);
   const total = assessment.choiceTotal ?? scores.reduce((sum, [, count]) => sum + (count ?? 0), 0);
   const correct = assessment.choiceScore ?? scores.reduce((sum, [count]) => sum + (count ?? 0), 0);
-  const roadmapReady = Boolean(assessment.reportPublished && overview?.hasPosition && overview.hasTargets);
-  const canTryCourses = Boolean(assessment.reportPublished && overview?.awaitingFramework);
+  const roadmapReady = Boolean(overview?.hasPosition && overview.hasTargets && !overview.awaitingFramework);
+  const canTryCourses = Boolean(overview?.awaitingFramework);
   const attained = assessment.levels?.filter((level) => level > 0).length ?? 0;
   const targets = new Map(overview?.domains?.map((domain) => [domain.categoryId, domain.pathTop]));
 
   return (
-    <div className="tt-container">
+    <>
       <section className="tt-score-hero">
         <div className="tt-score-hero-lead">
           <span className="tt-score-hero-badge"><CheckCircle2 size={13} />{translateUi('Đã có kết quả trắc nghiệm')}</span>
@@ -68,8 +68,8 @@ export function TrialEmployeeResults({ assessment, overview }: {
                 : 'Bạn có thể học thử các khóa Cơ bản đang công khai.')}</p>
             </div>
           </div>
-          <Link to={PULSE_PATHS.path} className="tt-btn-primary tt-action-callout-btn">
-            {translateUi(roadmapReady ? 'Xem lộ trình học tập' : 'Xem khóa học thử')} <ArrowRight size={15} />
+          <Link to={roadmapReady ? PULSE_PATHS.today : PULSE_PATHS.path} className="tt-btn-primary tt-action-callout-btn">
+            {translateUi(roadmapReady ? 'Về Tổng quan' : 'Xem khóa học thử')} <ArrowRight size={15} />
           </Link>
         </section>
       )}
@@ -127,6 +127,6 @@ export function TrialEmployeeResults({ assessment, overview }: {
         </div>
         {assessment.reviewNote && <p className="tt-card-desc">{assessment.reviewNote}</p>}
       </section>
-    </div>
+    </>
   );
 }

@@ -8,26 +8,34 @@ import { ROLES } from '@/lib/roles';
 import { MANAGER_SIDEBAR, OWNER_SIDEBAR, EMPLOYEE_SIDEBAR } from '@/lib/sidebars';
 import { findEnterpriseScreen } from '@/lib/screens/enterprise';
 import { SidebarNav } from '@/components/layout/sidebar/SidebarNav';
-import { ManagerTopbar } from '@/components/layout/ManagerTopbar';
+import { SidebarManagerCard } from '@/components/layout/sidebar/SidebarManagerCard';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { CommandPalette } from '@/components/layout/CommandPalette';
+import { WORK_PAGES } from '@/app/routes/enterprise-pages/work';
 import { ENTERPRISE_PORTAL } from '@/lib/portals';
 import { departmentService } from '@/services/department.service';
 import { workforceService, type CompetencyLevelRow, type WorkforceRow } from '@/services/workforce.service';
-import { taskService } from '@/services/task.service';
+import { assignmentService, type AssignmentRow } from '@/services/assignment.service';
+import { employeeService } from '@/services/employee.service';
+import { jobPositionService } from '@/services/job-position.service';
+import { TeamMembersPage } from '@/features/manager/pages/team/TeamMembersPage';
 import { platformService } from '@/services/platform.service';
+import { pulseReviewService } from '@/services/pulse.service';
 import { competencyService } from '@/services/competency.service';
 import { buildCapability, levelStatus } from '../lib/capability';
 import { MANAGER_PATHS } from '../lib/paths';
 import { ManagerCapabilityPage } from '../pages/ManagerCapabilityPage';
-import { ManagerEvidencePage } from '../pages/ManagerEvidencePage';
 import { ManagerActivityPage } from '../pages/ManagerActivityPage';
-import { ManagerFrameworkPage } from '../pages/ManagerFrameworkPage';
+import { ManagerOverviewPage } from '../pages/ManagerOverviewPage';
+import { ManagerCycleReportPage } from '../pages/ManagerCycleReportPage';
+import { ManagerTeamTrainingPage } from '../pages/ManagerTeamTrainingPage';
 
 const ok = <T,>(data: T) => ({ data: { success: true, message: 'Success', data } }) as never;
 const page = <T,>(items: T[]) => ok({ items, pageIndex: 1, pageSize: 100, totalItems: items.length, totalPages: 1 });
 
 const MANAGER_PERMISSIONS = [
   'dashboard.department.read', 'employee.read', 'competency.read', 'competency.profile.read', 'employee_competency_profile.read',
-  'skill_gap.read', 'learning_progress.read', 'task.read', 'task.create', 'task.evaluate', 'department.read', 'notification.read_own',
+  'skill_gap.read', 'learning_progress.read', 'task.read', 'task.create', 'department.read', 'notification.read_own',
 ];
 
 function signInManager(permissions = MANAGER_PERMISSIONS) {
@@ -79,11 +87,156 @@ beforeEach(() => {
 
 const labelsOf = (config: typeof MANAGER_SIDEBAR) => config.map((section) => section.label);
 
+it('filters department training and preserves separate links for assigned and independent learning', async () => {
+  signInManager([...MANAGER_PERMISSIONS, 'course_assignment.read']);
+  const assigned = {
+    id: 'assignment-1', employeeId: 'emp-1', employeeName: 'Nguyễn An', employeeCode: 'E1',
+    courseId: 'course-1', courseCode: 'M1', courseTitle: 'Kỹ năng số', assignedByName: 'Chủ doanh nghiệp',
+    assignedAt: '2026-10-01T00:00:00Z', progressPercent: 100, overdue: true, status: 'IN_PROGRESS',
+  } as AssignmentRow;
+  const getAssignments = vi.spyOn(assignmentService, 'getList').mockImplementation(async (params) => ok({
+    items: params?.pageIndex === 1 ? [assigned] : [{
+      ...assigned, id: 'independent-2', employeeId: 'emp-2', employeeName: 'Mai Linh', employeeCode: 'E2',
+      source: 'SELF_ENROLLED', overdue: false, progressPercent: 0,
+    }],
+    totalPages: 2,
+  }));
+  vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok({ items: [] }));
+  renderAt(MANAGER_PATHS.training, <ManagerTeamTrainingPage />);
+
+  const courseTitle = await screen.findByRole('heading', { name: 'Kỹ năng số' });
+  fireEvent.click(courseTitle.closest('summary')!);
+  expect(await screen.findByRole('link', { name: 'Nguyễn An' })).toHaveAttribute('href', MANAGER_PATHS.trainingDetail('assignment-1'));
+  expect(screen.getByRole('link', { name: 'Mai Linh' })).toHaveAttribute('href', MANAGER_PATHS.member('emp-2'));
+  expect(screen.getByText('Quá hạn học')).toBeInTheDocument();
+  expect(getAssignments).toHaveBeenLastCalledWith(expect.objectContaining({
+    departmentId: 'dep-ops', includeIndependentLearning: true, pageIndex: 2,
+  }));
+  fireEvent.click(screen.getByRole('button', { name: /Cần hỗ trợ/ }));
+  expect(screen.queryByRole('link', { name: 'Mai Linh' })).not.toBeInTheDocument();
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'nguyen an' } });
+  expect(screen.getByRole('link', { name: 'Nguyễn An' })).toBeInTheDocument();
+});
+
+it('uses all assignment pages in the selected department and resets course pagination on search', async () => {
+  signInManager([...MANAGER_PERMISSIONS, 'course_assignment.read']);
+  const assignment = (index: number): AssignmentRow => ({
+    id: `assignment-${index}`, employeeId: 'emp-1', employeeName: 'Nguyễn An',
+    courseId: `course-${index}`, courseCode: `M${index}`, courseTitle: `Khóa ${index}`,
+    progressPercent: 0, status: 'NOT_STARTED', assignedAt: '2026-10-01T00:00:00Z',
+  } as AssignmentRow);
+  const getList = vi.spyOn(assignmentService, 'getList').mockImplementation(async (params) => ok({
+    items: params?.pageIndex === 2 ? [assignment(7)] : Array.from({ length: 6 }, (_, index) => assignment(index + 1)),
+    totalPages: 2,
+    totalItems: 7,
+  }));
+  vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok({ items: [] }));
+  renderAt(MANAGER_PATHS.reports, <ManagerCycleReportPage />);
+
+  expect(await screen.findByRole('rowheader', { name: /Khóa 1/ })).toBeInTheDocument();
+  expect(getList).toHaveBeenLastCalledWith(expect.objectContaining({
+    departmentId: 'dep-ops', includeIndependentLearning: true, pageIndex: 2,
+  }));
+  expect(screen.queryByRole('rowheader', { name: /Khóa 7/ })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Trang sau' }));
+  expect(screen.getByRole('rowheader', { name: /Khóa 7/ })).toBeInTheDocument();
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'M1' } });
+  expect(screen.getByRole('rowheader', { name: /Khóa 1/ })).toBeInTheDocument();
+  expect(screen.queryByRole('rowheader', { name: /Khóa 7/ })).not.toBeInTheDocument();
+});
+
+it('keeps pagination visible for four employees and returns to page one when filters change', async () => {
+  const getList = vi.spyOn(employeeService, 'getList').mockImplementation(async (params) => ok({
+    items: [person({ fullName: params?.pageIndex === 2 ? 'Nhân viên trang hai' : 'Nguyễn An' })],
+    totalItems: 4,
+  }));
+  vi.spyOn(jobPositionService, 'getAll').mockResolvedValue(page([]));
+  renderAt(MANAGER_PATHS.members, <TeamMembersPage />);
+
+  expect(await screen.findByRole('link', { name: /Nguyễn An/ })).toBeInTheDocument();
+  const statusFilter = screen.getByRole('button', { name: 'Lọc theo trạng thái' });
+  fireEvent.click(statusFilter);
+  const currentStatus = within(screen.getByRole('group', { name: 'Lọc theo trạng thái' })).getByRole('button', { pressed: true });
+  expect(currentStatus).toHaveFocus();
+  fireEvent.keyDown(currentStatus, { key: 'Escape' });
+  expect(statusFilter).toHaveFocus();
+  expect(statusFilter).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.getByRole('button', { name: 'Trang sau' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Số dòng mỗi trang' }));
+  const picker = within(screen.getByRole('group', { name: 'Số dòng mỗi trang' }));
+  expect(picker.getByRole('button', { pressed: true })).toHaveTextContent('10');
+  fireEvent.click(picker.getByRole('button', { name: '2 / trang' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Trang sau' })).toBeEnabled());
+  fireEvent.click(screen.getByRole('button', { name: 'Trang sau' }));
+  expect(await screen.findByRole('link', { name: /Nhân viên trang hai/ })).toBeInTheDocument();
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Nguyễn' } });
+  await waitFor(() => expect(getList).toHaveBeenLastCalledWith(expect.objectContaining({
+    departmentId: 'dep-ops', pageIndex: 1, pageSize: 2, search: 'Nguyễn',
+  })));
+  fireEvent.click(await screen.findByRole('button', { name: 'Số dòng mỗi trang' }));
+  fireEvent.click(within(screen.getByRole('group', { name: 'Số dòng mỗi trang' })).getByRole('button', { name: '5 / trang' }));
+  await waitFor(() => expect(getList).toHaveBeenLastCalledWith(expect.objectContaining({
+    departmentId: 'dep-ops', pageIndex: 1, pageSize: 5, search: 'Nguyễn',
+  })));
+});
+
+describe('Manager overview', () => {
+  it('charts department totals and opens the matching Manager screen', async () => {
+    const workforce = vi.spyOn(workforceService, 'getList').mockImplementation(async (params) =>
+      ok({ items: [], totalItems: params?.learning === 'ACTIVE' || params?.gap === 'ANY' ? 1 : 0 }),
+    );
+    const queue = vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok({
+      items: [
+        { kind: 'FINAL', status: 'PENDING' },
+        { kind: 'FINAL', status: 'FLAGGED' },
+        { kind: 'PRE_ASSESSMENT', status: 'PENDING' },
+      ],
+    }));
+    renderAt(MANAGER_PATHS.overview, <ManagerOverviewPage />);
+
+    const summary = within(await screen.findByRole('region', { name: 'Tóm tắt phòng ban' }));
+    expect(summary.getByRole('link', { name: /Nhân viên.*Đang làm việc/ })).toHaveAttribute('href', MANAGER_PATHS.members);
+    const attention = within(await screen.findByRole('region', { name: 'Cần theo dõi' }));
+    expect(attention.getByRole('link', { name: /1 Cần hỗ trợ/ })).toHaveAttribute('href', MANAGER_PATHS.finalReviews);
+    const metrics = within(await screen.findByRole('region', { name: 'Chỉ số phòng ban' }));
+    await waitFor(() => expect(metrics.getByText('Đang có khóa học').closest('li')).toHaveTextContent('1'));
+    fireEvent.click(metrics.getByRole('button', { name: 'Năng lực đội ngũ' }));
+    await waitFor(() => expect(metrics.getByText('Có khoảng trống năng lực').closest('li')).toHaveTextContent('1'));
+    fireEvent.click(metrics.getByRole('button', { name: 'Kết quả bài làm' }));
+    expect(metrics.getByText('Chờ đánh giá').closest('li')).toHaveTextContent('1');
+    expect(metrics.getByText('Cần hỗ trợ').closest('li')).toHaveTextContent('1');
+    expect(metrics.getByRole('link', { name: /Kết quả bài làm/ })).toHaveAttribute('href', MANAGER_PATHS.finalReviews);
+    expect(workforce).toHaveBeenCalledWith(expect.objectContaining({ departmentId: 'dep-ops', pageSize: 1, gap: 'ANY' }));
+    expect(queue).toHaveBeenCalledWith(true, undefined, false, undefined, 'dep-ops');
+  });
+});
+
 describe('Manager sidebar (Pulse)', () => {
+  it('switches between assigned departments and refreshes the displayed scope', async () => {
+    vi.mocked(departmentService.getList).mockResolvedValue(page([
+      ...DEPARTMENTS,
+      { id: 'dep-support', code: 'SUP', name: 'Hỗ trợ', managerEmployeeId: 'emp-mgr', headcount: 8, status: 'ACTIVE' },
+    ]));
+    const getWorkforce = vi.spyOn(workforceService, 'getList').mockResolvedValue(ok({ items: [], totalItems: 0, totalPages: 1 }));
+    renderAt('/enterprise/team/skill-gap', <><SidebarManagerCard /><ManagerCapabilityPage /></>);
+
+    const select = await screen.findByRole('combobox', { name: 'Phòng ban đang quản lý' });
+    fireEvent.click(select);
+    const options = within(screen.getByRole('listbox', { name: 'Phòng ban đang quản lý' }));
+    expect(options.queryByRole('option', { name: 'Tài chính' })).toBeNull();
+    fireEvent.click(options.getByRole('option', { name: 'Hỗ trợ' }));
+    await waitFor(() => expect(getWorkforce).toHaveBeenLastCalledWith(expect.objectContaining({ departmentId: 'dep-support' })));
+    expect(screen.getByText('8 nhân viên trong phòng ban')).toBeInTheDocument();
+    fireEvent.keyDown(select, { key: 'ArrowUp' });
+    fireEvent.keyDown(select, { key: 'Home' });
+    fireEvent.keyDown(select, { key: 'Enter' });
+    await waitFor(() => expect(getWorkforce).toHaveBeenLastCalledWith(expect.objectContaining({ departmentId: 'dep-ops' })));
+  });
+
   it('has the two prototype groups with their items in order', () => {
     expect(labelsOf(MANAGER_SIDEBAR)).toEqual([
-      'Quản lý đội', 'Tổng quan', 'Năng lực đội ngũ', 'Chấm bài', 'Báo cáo chu kỳ',
-      'Các công cụ khác', 'Khung năng lực chung', 'Đào tạo đội ngũ', 'Minh chứng thực tế', 'Hoạt động', 'Góp ý', 'Báo lỗi',
+      'Quản lý đội', 'Tổng quan', 'Nhân viên', 'Năng lực đội ngũ', 'Kết quả bài làm', 'Báo cáo chu kỳ',
+      'Các công cụ khác', 'Đào tạo đội ngũ', 'Hoạt động', 'Góp ý', 'Báo lỗi',
     ]);
   });
 
@@ -105,16 +258,12 @@ describe('Manager sidebar (Pulse)', () => {
   it.each([
     ['/enterprise/team', 'Tổng quan'],
     ['/enterprise/team/skill-gap', 'Năng lực đội ngũ'],
-    ['/enterprise/team/members/emp-1', 'Năng lực đội ngũ'],
+    ['/enterprise/team/members/emp-1', 'Nhân viên'],
     ['/enterprise/team/competency', 'Năng lực đội ngũ'],
-    ['/enterprise/team/final-reviews', 'Chấm bài'],
+    ['/enterprise/team/final-reviews', 'Kết quả bài làm'],
     ['/enterprise/team/reports', 'Báo cáo chu kỳ'],
-    ['/enterprise/team/framework', 'Khung năng lực chung'],
     ['/enterprise/team/training', 'Đào tạo đội ngũ'],
     ['/enterprise/team/training/asg-1', 'Đào tạo đội ngũ'],
-    ['/enterprise/reviews', 'Minh chứng thực tế'],
-    ['/enterprise/reviews/sub-9', 'Minh chứng thực tế'],
-    ['/enterprise/tasks/new', 'Minh chứng thực tế'],
     ['/enterprise/notifications', 'Hoạt động'],
   ])('on %s highlights exactly "%s"', (path, label) => {
     render(
@@ -127,22 +276,37 @@ describe('Manager sidebar (Pulse)', () => {
     expect(current[0].firstElementChild).toHaveClass('pm-side-link', 'active');
   });
 
-  it('hides an item the manager lacks the permission for', () => {
-    signInManager(MANAGER_PERMISSIONS.filter((p) => p !== 'task.evaluate'));
+  it('shows final results without the grading permission', () => {
     render(
       <MemoryRouter initialEntries={['/enterprise/team']}>
         <SidebarNav config={MANAGER_SIDEBAR} isRail={false} variant="pulse-manager" />
       </MemoryRouter>,
     );
-    expect(screen.queryByRole('link', { name: 'Chấm bài' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Minh chứng thực tế' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Kết quả bài làm' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Minh chứng thực tế' })).not.toBeInTheDocument();
   });
 });
 
 describe('Manager route access', () => {
-  it('opens the cycle report and the shared framework as manager-only, read-only screens', () => {
+  it.each(['MG-08', 'MG-09', 'MG-10', 'MG-11', 'MG-12'])('redirects the retired Manager screen %s to the overview', async (id) => {
+    const path = findEnterpriseScreen(id)!.path.replace(/:\w+/g, 'example');
+    const Page = WORK_PAGES[id]!;
+    render(<MemoryRouter initialEntries={[path]}><Routes>
+      <Route path={path} element={<Page />} />
+      <Route path={MANAGER_PATHS.overview} element={<h1>Tổng quan phòng ban</h1>} />
+    </Routes></MemoryRouter>);
+    expect(await screen.findByRole('heading', { name: 'Tổng quan phòng ban' })).toBeInTheDocument();
+  });
+
+  it('omits practical task screens from Manager quick search', () => {
+    renderAt(MANAGER_PATHS.overview, <CommandPalette isOpen onClose={() => {}} />);
+    fireEvent.change(screen.getByPlaceholderText('Tìm màn hình…'), { target: { value: 'nhiệm vụ' } });
+    expect(screen.queryAllByRole('option')).toHaveLength(0);
+  });
+
+  it('keeps the cycle report manager-only and omits the standalone framework', () => {
     expect(findEnterpriseScreen('MG-14')).toMatchObject({ path: '/enterprise/team/reports', roles: [ROLES.MANAGER], permission: 'dashboard.department.read' });
-    expect(findEnterpriseScreen('MG-15')).toMatchObject({ path: '/enterprise/team/framework', roles: [ROLES.MANAGER], permission: 'competency.read' });
+    expect(findEnterpriseScreen('MG-15')).toBeUndefined();
   });
 
   it('keeps the owner framework and company report closed to managers', () => {
@@ -152,44 +316,7 @@ describe('Manager route access', () => {
 
   it('builds every manager link from the sitemap', () => {
     expect(MANAGER_PATHS.finalReviews).toBe('/enterprise/team/final-reviews');
-    expect(MANAGER_PATHS.evidence).toBe('/enterprise/reviews');
-    expect(MANAGER_PATHS.evidenceDetail('sub-1')).toBe('/enterprise/reviews/sub-1');
     expect(MANAGER_PATHS.member('emp-1')).toBe('/enterprise/team/members/emp-1');
-  });
-});
-
-describe('Evidence and final assignment are separate flows', () => {
-  it('routes "Minh chứng thực tế" and "Chấm bài" to different screens', () => {
-    const evidence = MANAGER_SIDEBAR.find((s) => s.label === 'Minh chứng thực tế')!;
-    const finals = MANAGER_SIDEBAR.find((s) => s.label === 'Chấm bài')!;
-    expect(findEnterpriseScreen(evidence.screenId!)!.path).toBe('/enterprise/reviews');
-    expect(findEnterpriseScreen(finals.screenId!)!.path).toBe('/enterprise/team/final-reviews');
-    expect(evidence.activeFor).not.toContain(finals.screenId);
-  });
-
-  it('lists only this department’s practical evidence and sends the decision to the evaluation screen', async () => {
-    vi.spyOn(taskService, 'getTasks').mockResolvedValue(page([
-      { id: 'tsk-1', title: 'Báo cáo tài chính truy vết được', description: 'Dùng báo cáo nguồn.', expectedOutput: '', competencyIds: [], targetLevel: 2,
-        departmentId: 'dep-ops', assignedEmployeesCount: 2, assignedByEmployeeId: 'emp-mgr', assignedByName: 'Lê Quản Lý', assignedAt: '2026-10-01',
-        dueDate: '2026-10-21', status: 'ACTIVE', submissionsCount: 1, approvedCount: 0,
-        rubricCriteria: [{ id: 'r1', label: 'Nguồn', maxPoints: 5, description: 'Nguồn được nêu rõ' }] },
-    ]));
-    const getQueue = vi.spyOn(taskService, 'getReviewQueue').mockResolvedValue(page([
-      { id: 'sub-ops', taskId: 'tsk-1', taskTitle: 'Báo cáo tài chính truy vết được', targetLevel: 2, employeeId: 'emp-1', employeeName: 'Nguyễn An',
-        employeeCode: 'E1', departmentName: 'Vận hành', submittedAt: '2026-10-10T08:00:00Z', content: 'Đã đối chiếu sổ cái.', linkUrls: [], status: 'PENDING_REVIEW' },
-      { id: 'sub-fin', taskId: 'tsk-9', taskTitle: 'Việc của phòng khác', targetLevel: 1, employeeId: 'emp-9', employeeName: 'Phòng Khác',
-        employeeCode: 'E9', departmentName: 'Tài chính', submittedAt: '2026-10-10T08:00:00Z', content: 'Không được thấy.', linkUrls: [], status: 'PENDING_REVIEW' },
-    ]));
-
-    renderAt('/enterprise/reviews', <ManagerEvidencePage />);
-
-    const card = await screen.findByRole('article', { name: 'Báo cáo tài chính truy vết được' });
-    expect(within(card).getByText('Nguồn được nêu rõ · tối đa 5 điểm', { exact: false })).toBeInTheDocument();
-    expect(within(card).getByRole('link', { name: 'Đánh giá minh chứng →' })).toHaveAttribute('href', '/enterprise/reviews/sub-ops');
-    expect(screen.queryByText('Phòng Khác', { exact: false })).toBeNull();
-    expect(screen.queryByRole('article', { name: 'Việc của phòng khác' })).toBeNull();
-    expect(screen.getByRole('link', { name: 'Chấm bài' })).toHaveAttribute('href', '/enterprise/team/final-reviews');
-    expect(getQueue).toHaveBeenCalled();
   });
 });
 
@@ -222,12 +349,22 @@ describe('Team capability (department scope, honest gaps)', () => {
 
     renderAt('/enterprise/team/skill-gap', <ManagerCapabilityPage />);
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Xem tiến độ đã xác nhận bên cạnh mục tiêu.' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Năng lực đội ngũ' })).toBeInTheDocument();
+    const select = await screen.findByRole('combobox', { name: /Nhân sự/ });
     expect(getList).toHaveBeenCalledWith(expect.objectContaining({ departmentId: 'dep-ops' }));
-    const select = screen.getByRole('combobox', { name: /Nhân sự/ });
-    expect(within(select).getAllByRole('option').map((o) => o.textContent)).toEqual(['Nguyễn An · Kế toán viên']);
-    expect(await screen.findByText('Còn 1 mức')).toBeInTheDocument();
-    expect(screen.getByText('Chưa xác nhận mức')).toBeInTheDocument();
+    fireEvent.click(select);
+    const options = within(screen.getByRole('listbox', { name: 'Nhân sự' }));
+    expect(options.getAllByRole('option').map((option) => option.textContent)).toEqual(['Nguyễn An']);
+    fireEvent.keyDown(select, { key: 'Escape' });
+    expect(screen.queryByRole('listbox', { name: 'Nhân sự' })).not.toBeInTheDocument();
+    expect(await screen.findByText('Chưa đạt · Còn 1 mức')).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).getByText('Chưa xác nhận mức')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Xem chi tiết · Tìm kiếm thông tin/ }));
+    expect(screen.getByText('Minh chứng xác nhận')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Tìm năng lực' }), { target: { value: 'danh gia du lieu' } });
+    expect(screen.getByRole('rowheader', { name: /Đánh giá dữ liệu/ })).toBeInTheDocument();
+    expect(screen.queryByRole('rowheader', { name: /Tìm kiếm thông tin/ })).not.toBeInTheDocument();
+    expect(screen.queryByText('Mức yêu cầu chung')).not.toBeInTheDocument();
   });
 
   it('explains when the manager heads no department instead of showing org-wide data', async () => {
@@ -245,19 +382,44 @@ describe('Shared framework (read-only)', () => {
     vi.spyOn(competencyService, 'getCategories').mockResolvedValue(ok(names.map((name, i) => ({ id: `cat-${i}`, code: `D${i}`, name, sortOrder: i + 1 }))));
     vi.spyOn(competencyService, 'getList').mockResolvedValue(page([]));
 
-    renderAt('/enterprise/team/framework', <ManagerFrameworkPage />);
+    vi.spyOn(workforceService, 'getList').mockResolvedValue(page([]));
+    vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok({ items: [] }));
+    renderAt(MANAGER_PATHS.overview, <ManagerOverviewPage />);
+    const trigger = await screen.findByRole('button', { name: 'Khung năng lực chung' });
+    expect(competencyService.getCategories).not.toHaveBeenCalled();
+    fireEvent.click(trigger);
+    expect(screen.getByRole('dialog', { name: 'Khung năng lực chung' })).toBeInTheDocument();
 
     expect(await screen.findAllByRole('article')).toHaveLength(6);
     expect(screen.getAllByText('03 Nâng cao')).toHaveLength(6);
-    expect(screen.getByText('Chỉ đọc')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Xem năng lực đội ngũ' })).toHaveAttribute('href', '/enterprise/team/skill-gap');
     expect(screen.queryByRole('button', { name: /Sửa|Lưu|Tạo/ })).toBeNull();
     expect(screen.queryByRole('link', { name: /Sửa/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Đóng' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });
 
 describe('Activity (notifications)', () => {
+  it('searches older API pages and presents legacy submissions without a grading action', async () => {
+    const getNotifications = vi.spyOn(platformService, 'getNotifications').mockImplementation(async (params) => ok({
+      items: params?.pageIndex === 1
+        ? [{ id: 'a', title: 'Khóa học mới', message: 'Bắt đầu học.', type: 'COURSE', createdAt: '2026-10-14T08:00:00Z', isRead: true }]
+        : [{ id: 'b', title: 'Có bài cuối khóa cần chấm', message: 'Hoàng Anh Thư đã nộp bài.', type: 'PULSE_FINAL_SUBMITTED', createdAt: '2026-10-13T08:00:00Z', isRead: false }],
+      total: 2, pageSize: 1,
+    }));
+    renderAt('/enterprise/notifications', <ManagerActivityPage />);
+
+    expect(await screen.findByRole('heading', { name: 'Nhân viên đã nộp bài cuối khóa' })).toBeInTheDocument();
+    expect(getNotifications).toHaveBeenLastCalledWith(expect.objectContaining({ pageIndex: 2 }));
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'hoang anh thu' } });
+    expect(screen.getByText('Hoàng Anh Thư đã nộp bài.')).toBeInTheDocument();
+    expect(screen.queryByText('Khóa học mới')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /đánh dấu/i })).not.toBeInTheDocument();
+  });
+
   it('marks one unread item and all items read through the existing notification API', async () => {
+    signInManager([...MANAGER_PERMISSIONS, 'notification.mark_read']);
     vi.spyOn(platformService, 'getNotifications').mockResolvedValue(ok([
       { id: 'n-1', title: 'Bài cuối khóa mới', message: 'Nguyễn An đã nộp bài.', type: 'info', createdAt: '2026-10-14T08:00:00Z', isRead: false },
       { id: 'n-2', title: 'Đã duyệt minh chứng', message: 'Lê Chi đạt.', type: 'success', createdAt: '2026-10-13T08:00:00Z', isRead: true },
@@ -276,17 +438,21 @@ describe('Activity (notifications)', () => {
   });
 });
 
-describe('Manager topbar', () => {
-  it('shows the four Pulse sections and keeps the manager’s own learning in the account menu', async () => {
+describe('Manager layout', () => {
+  it('uses the Owner shell with Manager navigation and personal learning access', () => {
     vi.spyOn(platformService, 'getNotifications').mockResolvedValue(ok([]));
-    renderAt('/enterprise/team/reports', <ManagerTopbar portal={ENTERPRISE_PORTAL} />, '/enterprise/team/reports');
+    renderAt('/enterprise/team/reports', (
+      <MainLayout portal={ENTERPRISE_PORTAL} sidebarConfig={MANAGER_SIDEBAR}>
+        <h1>Tổng hợp đào tạo</h1>
+      </MainLayout>
+    ));
 
-    const nav = screen.getByRole('navigation', { name: 'Không gian quản lý' });
-    expect(within(nav).getAllByRole('link').map((a) => a.textContent)).toEqual(['Tổng quan', 'Năng lực', 'Khóa học', 'Báo cáo']);
-    expect(within(nav).getByRole('link', { name: 'Báo cáo' })).toHaveAttribute('aria-current', 'page');
-    expect(within(nav).getByRole('link', { name: 'Tổng quan' })).not.toHaveAttribute('aria-current');
+    expect(screen.getByRole('main').closest('.owner-shell')).toBeInTheDocument();
+    const nav = screen.getByRole('complementary', { name: 'Thanh điều hướng' });
+    expect(within(nav).getByRole('link', { name: 'Báo cáo chu kỳ' })).toHaveAttribute('href', '/enterprise/team/reports');
+    expect(within(nav).getByRole('link', { name: 'Kết quả bài làm' })).toBeInTheDocument();
+    expect(screen.getByRole('banner')).toHaveTextContent('Báo cáo chu kỳ');
     expect(screen.queryByText(/^\s*\/enterprise/)).toBeNull();
-    expect(document.querySelector('a[href^="#/"]')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu tài khoản' }));
     expect(screen.getByRole('button', { name: 'Học tập của tôi' })).toBeInTheDocument();

@@ -1,6 +1,6 @@
 import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { OwnerFilterSelect } from './OwnerFilterSelect';
 
 const options = [
@@ -8,6 +8,8 @@ const options = [
   { value: 'ACTIVE', label: 'Đang hoạt động' },
   { value: 'INACTIVE', label: 'Đã vô hiệu hóa' },
 ];
+
+afterEach(cleanup);
 
 describe('OwnerFilterSelect', () => {
   it('opens a styled list and applies the selected filter', () => {

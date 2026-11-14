@@ -39,7 +39,7 @@ public class CalculateSkillGapUseCase : IUseCase<CalculateSkillGapUseCaseInput, 
     public async Task<SkillGapRunDetail> ExecuteAsync(CalculateSkillGapUseCaseInput input)
     {
         var organizationId = _currentUser.GetRequiredOrganizationId();
-        var employee = await _employeeScope.GetVisibleEmployeeAsync(input.EmployeeId);
+        var employee = await _employeeScope.GetVisibleEmployeeAsync(input.EmployeeId, includeSelf: true);
         var requirementSetOverride = input.RequirementSetId.HasValue
             ? await GetActiveRequirementSetAsync(input.RequirementSetId.Value, organizationId)
             : null;
@@ -54,7 +54,7 @@ public class CalculateSkillGapUseCase : IUseCase<CalculateSkillGapUseCaseInput, 
 
         await _context.SaveChangesAsync();
 
-        return await _runReader.FindDetailAsync(_employeeScope.VisibleEmployees(), outcome.Run!.Id)
+        return await _runReader.FindDetailAsync(_employeeScope.VisibleEmployees(includeSelf: true), outcome.Run!.Id)
             ?? throw new NotFoundException($"Skill gap run '{outcome.Run.Id}' not found.");
     }
 

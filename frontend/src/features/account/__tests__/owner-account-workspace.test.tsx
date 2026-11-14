@@ -5,11 +5,11 @@ import { MemoryRouter } from 'react-router-dom';
 import { AccountProfilePage } from '../pages/AccountProfilePage';
 import { SecuritySettingsPage } from '../pages/SecuritySettingsPage';
 import { OrganizationSettingsPage } from '@/features/organization/pages/OrganizationSettingsPage';
-const state=vi.hoisted(()=>({profile:{id:'owner',fullName:'Nguyễn Văn Chủ',email:'owner@example.test',phone:'',jobTitle:'Giám đốc'},org:{id:'org',name:'DigiTalent',ownerName:'Nguyễn Văn Chủ',industry:'Công nghệ thông tin',size:'11-50',timezone:'Asia/Ho_Chi_Minh',defaultAssignmentDays:30},profileSave:vi.fn().mockResolvedValue({}),passwordSave:vi.fn().mockResolvedValue({}),orgSave:vi.fn().mockResolvedValue({})}));
-vi.mock('@/hooks/use-current-user',()=>({useCurrentUser:(selector:(s:{user:{id:string;fullName:string;email:string;roles:string[]}})=>unknown)=>selector({user:{id:'owner',fullName:'Nguyễn Văn Chủ',email:'owner@example.test',roles:['OWNER']}})}));
-vi.mock('@/hooks/use-platform',()=>({useUserProfile:()=>({data:state.profile,isLoading:false,isError:false}),useUpdateUserProfile:()=>({mutateAsync:state.profileSave,isPending:false}),useChangePassword:()=>({mutateAsync:state.passwordSave,isPending:false}),useLoginHistory:()=>({data:[],isLoading:false,isError:false,isFetching:false,refetch:vi.fn()})}));
+const state=vi.hoisted(()=>({roles:['OWNER'],sessions:[] as Array<{id:string;timestamp:string;browser:string;status:string}>,profile:{id:'owner',fullName:'Nguyễn Văn Chủ',email:'owner@example.test',phone:'',jobTitle:'Giám đốc'},org:{id:'org',name:'DigiTalent',ownerName:'Nguyễn Văn Chủ',industry:'Công nghệ thông tin',size:'11-50',timezone:'Asia/Ho_Chi_Minh',defaultAssignmentDays:30},profileSave:vi.fn().mockResolvedValue({}),passwordSave:vi.fn().mockResolvedValue({}),orgSave:vi.fn().mockResolvedValue({})}));
+vi.mock('@/hooks/use-current-user',()=>({useCurrentUser:(selector:(s:{user:{id:string;fullName:string;email:string;roles:string[]}})=>unknown)=>selector({user:{id:'owner',fullName:'Nguyễn Văn Chủ',email:'owner@example.test',roles:state.roles}})}));
+vi.mock('@/hooks/use-platform',()=>({useUserProfile:()=>({data:state.profile,isLoading:false,isError:false}),useUpdateUserProfile:()=>({mutateAsync:state.profileSave,isPending:false}),useChangePassword:()=>({mutateAsync:state.passwordSave,isPending:false}),useLoginHistory:()=>({data:state.sessions,isLoading:false,isError:false,isFetching:false,refetch:vi.fn()})}));
 vi.mock('@/hooks/use-organization',()=>({useOrganization:()=>({data:state.org,isLoading:false,isError:false,refetch:vi.fn()}),useUpdateOrganizationSettings:()=>({mutateAsync:state.orgSave,isPending:false})}));
-afterEach(()=>{cleanup();vi.clearAllMocks();});
+afterEach(()=>{cleanup();vi.clearAllMocks();state.roles=['OWNER'];state.sessions=[];});
 const mount=(node:React.ReactNode,path:string)=>render(<MemoryRouter initialEntries={[path]}>{node}</MemoryRouter>);
 describe('owner account workspace',()=>{
   it('saves trimmed profile fields and keeps the login email read-only',async()=>{
@@ -53,4 +53,18 @@ describe('owner account workspace',()=>{
     fireEvent.click(screen.getByRole('button',{name:'Lưu cài đặt'}));
     await waitFor(()=>expect(state.orgSave).toHaveBeenCalledWith(expect.objectContaining({defaultAssignmentDays:45,name:'DigiTalent'})));
   });
+});
+
+it('uses the enterprise security layout and expands the login history for a manager', () => {
+  state.roles = ['MANAGER'];
+  state.sessions = Array.from({ length: 6 }, (_, index) => ({
+    id: String(index), timestamp: new Date(Date.UTC(2026, 10, index + 1)).toISOString(), browser: 'Chrome', status: 'SUCCESS',
+  }));
+  mount(<SecuritySettingsPage />, '/enterprise/account/security');
+  expect(screen.getByRole('heading', { name: 'Bảo mật tài khoản' })).toBeInTheDocument();
+  expect(screen.getAllByText('Thành công')).toHaveLength(5);
+  fireEvent.click(screen.getByRole('button', { name: 'Xem thêm' }));
+  expect(screen.getAllByText('Thành công')).toHaveLength(6);
+  fireEvent.click(screen.getByRole('button', { name: 'Thu gọn' }));
+  expect(screen.getAllByText('Thành công')).toHaveLength(5);
 });

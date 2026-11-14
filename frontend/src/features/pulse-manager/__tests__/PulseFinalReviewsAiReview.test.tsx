@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -7,6 +7,8 @@ import { ROLES } from '@/lib/roles';
 import { formatDateTime } from '@/lib/utils';
 import { pulseReviewService, type PulseFinalReviewItem, type PulseFinalReviewQueue } from '@/services/pulse.service';
 import { PulseFinalReviewsPage } from '../pages/PulseFinalReviewsPage';
+
+afterEach(cleanup);
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -52,9 +54,9 @@ function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/enterprise/team/final-reviews']}>
+      <MemoryRouter initialEntries={['/mentor/reviews']}>
         <Routes>
-          <Route path="/enterprise/team/final-reviews" element={<PulseFinalReviewsPage />} />
+          <Route path="/mentor/reviews" element={<PulseFinalReviewsPage audience="mentor" />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -64,7 +66,7 @@ function renderPage() {
 beforeEach(() => {
   vi.restoreAllMocks();
   useCurrentUser.setState({
-    user: { id: 'u-1', email: 'manager@digitalent.ai', fullName: 'Trưởng phòng', roles: [ROLES.MANAGER], permissions: ['task.evaluate'], workspace: 'enterprise' },
+    user: { id: 'u-1', email: 'mentor@digitalent.ai', fullName: 'Mentor', roles: [ROLES.MENTOR], permissions: ['task.evaluate'], workspace: 'enterprise' },
     isAuthenticated: true,
   });
 });

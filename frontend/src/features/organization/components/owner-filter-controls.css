@@ -13,3 +13,80 @@ html[data-theme='dark'] .owner-filter-select__options>button.is-selected{backgro
 html[data-theme='dark'] .owner-filter-select__search{border-color:#37515a}
 html[data-theme='dark'] .owner-filter-toolbar,
 html[data-theme='dark'] .owner-filter-table>div:first-child{background:linear-gradient(110deg,#172c34,#1a3038)!important;border-color:#37515a!important}
+
+/* The dropdown is portalled to the body, so both surfaces carry the variant. */
+:is(.owner-filter-select, .owner-filter-select__menu)[data-variant='manager'] {
+  --select-surface: #fff;
+  --select-text: #292541;
+  --select-muted: #686080;
+  --select-line: #ded8f1;
+  --select-accent: #5941b6;
+  --select-hover: #f5f2fc;
+  --select-selected: #ece5ff;
+  --select-ring: #8468dd30;
+}
+.owner-filter-select[data-variant='manager'] {
+  min-width: 0;
+  max-width: 100%;
+  height: 42px;
+  padding-inline: 12px;
+  border-color: var(--select-line);
+  border-radius: 11px;
+  background: var(--select-surface);
+  color: var(--select-text);
+  font-size: 13px;
+}
+.owner-filter-select[data-variant='manager'] > svg { color: var(--select-accent); }
+.owner-filter-select[data-variant='manager']:hover,
+.owner-filter-select[data-variant='manager']:is(.is-open, :focus-visible) {
+  border-color: var(--select-accent);
+  outline: 0;
+  box-shadow: 0 0 0 3px var(--select-ring);
+}
+.owner-filter-select__menu[data-variant='manager'] {
+  border-color: var(--select-line);
+  background: var(--select-surface);
+  box-shadow: 0 14px 38px #2817462e;
+}
+.owner-filter-select__menu[data-variant='manager'] [role='option'] { color: var(--select-text); }
+.owner-filter-select__menu[data-variant='manager'] [role='option'] > span { min-width: 0; overflow-wrap: anywhere; }
+.owner-filter-select__menu[data-variant='manager'] [role='option']:is(:hover, .is-active) {
+  background: var(--select-hover);
+  color: var(--select-accent);
+}
+.owner-filter-select__menu[data-variant='manager'] [role='option'].is-selected {
+  background: var(--select-selected);
+  color: var(--select-accent);
+}
+.owner-filter-select__menu[data-variant='manager'] [role='option']:focus-visible {
+  outline: 2px solid var(--select-accent);
+  outline-offset: -2px;
+}
+.owner-filter-select__menu[data-variant='manager'] .owner-filter-select__search {
+  border-color: var(--select-line);
+  color: var(--select-muted);
+}
+.owner-filter-select__menu[data-variant='manager'] .owner-filter-select__search input { color: var(--select-text); }
+.owner-filter-select__menu[data-variant='manager'] .owner-filter-select__search:focus-within {
+  border-color: var(--select-accent);
+  box-shadow: 0 0 0 3px var(--select-ring);
+}
+html[data-theme='dark'] :is(.owner-filter-select, .owner-filter-select__menu)[data-variant='manager'] {
+  --select-surface: #25213a;
+  --select-text: #f1ecfc;
+  --select-muted: #c0b5d9;
+  --select-line: #4a4167;
+  --select-accent: #d0c0ff;
+  --select-hover: #33294d;
+  --select-selected: #433467;
+}
+.owner-filter-select[data-variant='manager'].pm-department-select {
+  width: 100%;
+  min-height: 34px;
+  height: auto;
+  padding-block: 6px;
+  background: #ffffff0d;
+  color: #f1ecfc;
+  border-color: #b7a4ea50;
+  --select-accent: #d0c0ff;
+}

@@ -14,12 +14,16 @@ import { cn } from '@/lib/utils';
 import { WORKSPACES } from '@/lib/roles';
 import { PLATFORM_SCREENS } from '@/lib/screens/platform';
 import { PLATFORM_SIDEBAR } from '@/lib/sidebars/platform';
+import { MANAGER_SIDEBAR } from '@/lib/sidebars/manager';
+import type { SidebarConfig } from '@/lib/sidebars/types';
+import { findEnterpriseScreen } from '@/lib/screens/enterprise';
 import { useDirectionalHeader } from './use-directional-header';
 import './owner-header.css';
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 
 interface TopbarProps {
   portal: PortalConfig;
+  sidebarConfig?: SidebarConfig;
   onOpenMobileNav?: () => void;
   isMobileNavOpen?: boolean;
   autoHide?: boolean;
@@ -53,7 +57,6 @@ function QuickCreateMenu() {
   const actions = [
     { label: 'Mời thành viên', perm: PERMISSIONS.USER_CREATE, href: '/enterprise/members?invite=1' },
     { label: 'Tạo đợt đào tạo', perm: PERMISSIONS.COURSE_ASSIGNMENT_CREATE, href: '/enterprise/training-batches/new' },
-    { label: 'Giao nhiệm vụ', perm: PERMISSIONS.TASK_ASSIGN, href: '/enterprise/tasks/new' },
   ].filter((a) => hasPermission(a.perm));
 
   if (actions.length === 0) return null;
@@ -90,7 +93,7 @@ function QuickCreateMenu() {
   );
 }
 
-export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false, autoHide = false }: TopbarProps) {
+export function Topbar({ portal, sidebarConfig, onOpenMobileNav, isMobileNavOpen = false, autoHide = false }: TopbarProps) {
   useUiLanguage();
   const { pathname } = useLocation();
   const hasPermission = useCurrentUser((s) => s.hasPermission);
@@ -101,9 +104,9 @@ export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false, autoH
   const { hidden, reveal } = useDirectionalHeader(headerRef, autoHide, pathname, paletteOpen || isMobileNavOpen);
 
   const isPlatform = portal.workspace === WORKSPACES.PLATFORM;
+  const isManager = sidebarConfig === MANAGER_SIDEBAR;
   const screens = isPlatform ? PLATFORM_SCREENS : undefined;
-  const sidebarConfig = isPlatform ? PLATFORM_SIDEBAR : undefined;
-  const breadcrumbs = buildBreadcrumbs(pathname, screens, sidebarConfig);
+  const breadcrumbs = buildBreadcrumbs(pathname, screens, isPlatform ? PLATFORM_SIDEBAR : isManager ? MANAGER_SIDEBAR : undefined);
 
   // Global Ctrl+K shortcut
   useEffect(() => {
@@ -135,7 +138,7 @@ export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false, autoH
               : 'h-14 px-4 lg:px-8 border-b border-slate-200/70 backdrop-blur-md shadow-[0_1px_6px_rgba(15,23,42,0.02)]',
           )}
           style={{
-            background: scrolled
+            background: isManager ? 'var(--manager-header)' : scrolled
               ? `linear-gradient(90deg,
                   rgba(224, 247, 244, 0.88) 0%,
                   rgba(235, 245, 255, 0.82) 28%,
@@ -177,7 +180,7 @@ export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false, autoH
                       </Link>
                     ) : (
                       <span className="text-[#17243f] font-bold tracking-tight truncate max-w-[220px] flex items-center gap-2">
-                        <span className="size-2 rounded-full bg-[#137b84] inline-block shadow-2xs" />
+                        <span className={cn("size-2 rounded-full inline-block shadow-2xs", isManager ? "bg-ent-accent" : "bg-[#137b84]")} />
                         {translateUi(crumb.label)}
                       </span>
                     )}
@@ -208,7 +211,7 @@ export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false, autoH
               type="button"
               onClick={() => {
                 const store = useOnboardingStore.getState();
-                store.startTour(store.currentRole || 'OWNER');
+                store.startTour(isManager ? 'MANAGER' : store.currentRole || 'OWNER');
               }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-50/90 to-purple-50/90 hover:from-indigo-100 hover:to-purple-100 border border-indigo-200/70 hover:border-indigo-300 text-indigo-700 hover:text-indigo-800 text-xs font-bold transition-all shadow-2xs hover:shadow-xs hover:-translate-y-0.2 cursor-pointer"
               title={translateUi("Xem lại hướng dẫn sử dụng")}
@@ -218,7 +221,7 @@ export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false, autoH
             </button>
 
             {/* Quick create menu (+) */}
-            <QuickCreateMenu />
+            {!isManager && <QuickCreateMenu />}
 
             {/* Notifications */}
             <NotificationPopover notificationsPath={portal.notificationsPath} />
@@ -226,7 +229,8 @@ export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false, autoH
             {/* User Avatar */}
             <UserAvatarMenu
               accountPath={portal.accountPath}
-              settingsPath={portal.settingsPath}
+              learningPath={isManager ? findEnterpriseScreen('EM-01')?.path : undefined}
+              settingsPath={isManager ? undefined : portal.settingsPath}
               canManageSettings={canManageSettings}
             />
           </div>
@@ -240,7 +244,7 @@ export function Topbar({ portal, onOpenMobileNav, isMobileNavOpen = false, autoH
           >
             <div
               className="h-full bg-gradient-to-r from-[#137b84] via-[#0284c7] to-[#10b981] rounded-full transition-all duration-150"
-              style={{ width: `${scrollProgress}%` }}
+              style={{ width: `${scrollProgress}%`, background: isManager ? 'var(--manager-gradient)' : undefined }}
             />
           </div>
         </header>

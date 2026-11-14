@@ -1,224 +1,210 @@
-import { translateUi, useUiLanguage } from '@/lib/i18n';
-import { Link } from 'react-router-dom';
-import journeyArt from '@/assets/pulse/learning-journey-abstract.webp';
+import { useState, type ReactNode } from 'react';
+import { ArrowUpRight, ClipboardCheck, FileBarChart, GraduationCap, Layers, TrendingUp, Users } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { LoadingProgress, PageLoading } from '@/components/shared/LoadingState';
+import { LoadError } from '@/features/pulse-employee/components/ui';
+import { useAssignments } from '@/hooks/use-assignments';
 import { useManagedDepartment } from '@/hooks/use-managed-department';
-import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
+import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
 import { usePulseFinalReviews } from '@/hooks/use-pulse';
 import { useWorkforce } from '@/hooks/use-workforce';
-import { BLOCKER_LABELS, type WorkforceRow } from '@/services/workforce.service';
-import type { PulseReviewStatus } from '@/services/pulse.service';
-import { LoadError, Mini, PageHead, PageSkeleton, Pill, PuLink } from '@/features/pulse-employee/components/ui';
-import { btn } from '@/features/pulse-employee/lib/button';
-import { Initials, KpiRow, ManagerPage, NoDepartment } from '../components/ManagerUi';
+import { translateUi, useUiLanguage } from '@/lib/i18n';
+import { ManagerPage, ManagerPageHeader, NoDepartment } from '../components/ManagerUi';
+import { ManagerFrameworkDialog } from './ManagerFrameworkPage';
 import { MANAGER_PATHS } from '../lib/paths';
+import './manager-overview-chart.css';
 
-const QUEUE_PILL: Record<PulseReviewStatus, { label: string; tone: 'gray' | 'coral' | 'green' }> = {
-  PENDING: { label: 'Cần quyết định', tone: 'gray' },
-  RETRY_WAIT: { label: 'Chờ nộp lại', tone: 'green' },
-  RETRY_READY: { label: 'Đang mở lần cuối', tone: 'green' },
-  DEADLINE_MISSED: { label: 'Quá hạn nộp lại', tone: 'coral' },
-  FLAGGED: { label: 'Cần hỗ trợ', tone: 'coral' },
-  APPROVED: { label: 'Đã duyệt', tone: 'green' },
-  NOT_YET: { label: 'Chưa đạt', tone: 'coral' },
-};
-
-/** Trạng thái đo của một người: chỉ "Đã đo" khi có bản phân tích năng lực, không suy ra khoảng trống khi chưa đo. */
-function measureState(row: WorkforceRow): { label: string; tone: 'green' | 'gray' | 'coral'; detail: string } {
-  if (row.hasSnapshot) {
-    const gaps = row.gapCount ?? 0;
-    return {
-      label: gaps === 0 ? 'Đạt mục tiêu' : 'Đã đo',
-      tone: 'green',
-      detail: gaps === 0 ? 'Không còn khoảng trống so với vị trí' : `${gaps} khoảng trống đã xác nhận`,
-    };
-  }
-  return {
-    label: 'Đang chờ đo',
-    tone: 'gray',
-    detail: row.blocker ? BLOCKER_LABELS[row.blocker] ?? 'Chưa có bản đo năng lực' : 'Chưa có bản đo năng lực',
-  };
+interface ChartView {
+  id: string;
+  label: string;
+  path: string;
+  icon: ReactNode;
+  unit: string;
+  ceiling?: number;
+  rows: { label: string; value?: number | null }[];
+  loading: boolean;
+  retry?: () => void;
 }
 
-/**
- * MG-01 · Tổng quan của quản lý (mock `#/manager`): hero ra quyết định, KPI hàng chờ / cờ hỗ trợ / quy mô phòng ban,
- * ba việc cụ thể, đội ngũ và hàng chờ bài cuối khóa — chỉ trong phòng ban quản lý phụ trách.
- */
 export function ManagerOverviewPage() {
-  useUiLanguage();
+  const locale = useUiLanguage();
+  const format = new Intl.NumberFormat(locale);
   const { can } = usePermission();
-  const canReview = can(PERMISSIONS.TASK_EVALUATE);
-  const { department, isLoading: deptLoading, isError: deptError, refetch: refetchDept } = useManagedDepartment();
-  const team = useWorkforce({ departmentId: department?.id, pageIndex: 1, pageSize: 100 }, Boolean(department));
-  const reviews = usePulseFinalReviews(canReview && Boolean(department));
+  const [params, setParams] = useSearchParams();
+  const frameworkOpen = can(PERMISSIONS.COMPETENCY_READ) && params.get('framework') === '1';
+  function setFramework(open: boolean) {
+    const next = new URLSearchParams(params);
+    if (open) next.set('framework', '1');
+    else next.delete('framework');
+    setParams(next, { replace: true, preventScrollReset: true });
+  }
+  const frameworkButton = can(PERMISSIONS.COMPETENCY_READ) && (
+    <button type="button" className="manager-heading-back" aria-haspopup="dialog" onClick={() => setFramework(true)}>
+      <Layers size={16} aria-hidden="true" />{translateUi('Khung năng lực chung')}
+    </button>
+  );
+  const { department, isLoading, isError, refetch } = useManagedDepartment();
+  const departmentId = department?.id;
+  const canPeople = can(PERMISSIONS.EMPLOYEE_READ);
+  const canTraining = can(PERMISSIONS.LEARNING_PROGRESS_READ);
+  const canGaps = canPeople && can(PERMISSIONS.SKILL_GAP_READ);
+  const canReviews = can(PERMISSIONS.DASHBOARD_DEPARTMENT_READ);
+  const canReport = canReviews && can(PERMISSIONS.COURSE_ASSIGNMENT_READ);
+  const scope = { departmentId, pageIndex: 1, pageSize: 1 } as const;
+  const activeScope = { ...scope, status: 'ACTIVE' } as const;
+  const learning = useWorkforce({ ...activeScope, learning: 'ACTIVE' }, Boolean(departmentId && canPeople && canTraining));
+  const gaps = useWorkforce({ ...activeScope, gap: 'ANY' }, Boolean(departmentId && canGaps));
+  const unknown = useWorkforce({ ...activeScope, gap: 'UNKNOWN' }, Boolean(departmentId && canGaps));
+  const reviews = usePulseFinalReviews({ enabled: Boolean(departmentId && canReviews), departmentId, includeReviewed: true });
+  const completed = useAssignments({ ...scope, status: 'COMPLETED', includeIndependentLearning: true }, Boolean(departmentId && canReport));
+  const overdue = useAssignments({ ...scope, overdue: true }, Boolean(departmentId && canReport));
 
-  if (deptLoading) {
-    return <ManagerPage><PageSkeleton blocks={[110, 320, 110, 260]} /></ManagerPage>;
-  }
-  if (deptError) {
-    return <ManagerPage><LoadError message="Không tải được phòng ban bạn phụ trách." onRetry={() => refetchDept()} /></ManagerPage>;
-  }
-  if (!department) {
-    return (
-      <ManagerPage>
-        <PageHead eyebrow="Quản lý đội" title="Quyết định việc cần ưu tiên." />
-        <NoDepartment />
-      </ManagerPage>
-    );
-  }
+  if (isLoading) return <ManagerPage><PageLoading label="Đang tải tổng quan" /></ManagerPage>;
+  if (isError) return <ManagerPage><LoadError message="Không tải được phòng ban bạn phụ trách." onRetry={refetch} /></ManagerPage>;
+  if (!department) return <ManagerPage><ManagerPageHeader title="Tổng quan phòng ban" actions={frameworkButton} /><NoDepartment /><ManagerFrameworkDialog open={frameworkOpen} onClose={() => setFramework(false)} /></ManagerPage>;
 
-  // Lọc theo phòng ban ở cả phía giao diện: hàng chờ chỉ hiển thị bài của phòng ban này.
-  const queue = (reviews.data?.items ?? []).filter((item) => !item.departmentName || item.departmentName === department.name);
-  const people = (team.data?.items ?? []).filter((row) => !row.departmentId || row.departmentId === department.id);
-  const reviewsReady = canReview && reviews.isSuccess;
-  const pending = queue.filter((item) => item.status === 'PENDING').length;
-  const flagged = queue.filter((item) => item.status === 'FLAGGED' || item.status === 'DEADLINE_MISSED').length;
-  // Cùng cách đếm với số nhân sự của phòng ban: chỉ người đang làm việc.
-  const headcount = team.isSuccess ? people.filter((row) => row.status === 'ACTIVE').length : department.headcount;
+  const active = department.headcount;
+  const learningCount = learning.isPlaceholderData ? undefined : learning.data?.totalItems;
+  const final = reviews.data?.items.filter((item) => item.kind === 'FINAL');
+  const views: ChartView[] = [];
+  if (canPeople) views.push({
+    id: 'people', label: 'Nhân viên', path: MANAGER_PATHS.members, icon: <Users size={17} />, unit: 'nhân viên',
+    rows: [{ label: 'Đang làm việc', value: active }], loading: false, ceiling: active,
+  });
+  if (canGaps) views.push({
+    id: 'capability', label: 'Năng lực đội ngũ', path: MANAGER_PATHS.capability, icon: <TrendingUp size={17} />, unit: 'nhân viên',
+    rows: [
+      { label: 'Có khoảng trống năng lực', value: gaps.isPlaceholderData ? undefined : gaps.data?.totalItems },
+      { label: 'Chưa đối chiếu', value: unknown.isPlaceholderData ? undefined : unknown.data?.totalItems },
+    ],
+    ceiling: active, loading: gaps.isLoading || unknown.isLoading || gaps.isPlaceholderData || unknown.isPlaceholderData,
+    retry: gaps.isError || unknown.isError ? () => { void gaps.refetch(); void unknown.refetch(); } : undefined,
+  });
+  if (canReviews) views.push({
+    id: 'reviews', label: 'Kết quả bài làm', path: MANAGER_PATHS.finalReviews, icon: <ClipboardCheck size={17} />, unit: 'bài cuối khóa',
+    rows: [
+      { label: 'Chờ đánh giá', value: final?.filter(({ status }) => status === 'PENDING').length },
+      { label: 'Cần hỗ trợ', value: final?.filter(({ status }) => status === 'FLAGGED' || status === 'DEADLINE_MISSED').length },
+      { label: 'Đạt', value: final?.filter(({ status }) => status === 'APPROVED').length },
+    ],
+    loading: reviews.isLoading, retry: reviews.isError ? reviews.refetch : undefined,
+  });
+  if (canPeople && canTraining) views.push({
+    id: 'training', label: 'Đào tạo đội ngũ', path: MANAGER_PATHS.training, icon: <GraduationCap size={17} />, unit: 'nhân viên',
+    rows: [
+      { label: 'Đang có khóa học', value: learningCount },
+      { label: 'Không có khóa đang học', value: active != null && learningCount != null && active >= learningCount ? active - learningCount : undefined },
+    ],
+    ceiling: active, loading: learning.isLoading || learning.isPlaceholderData, retry: learning.isError ? learning.refetch : undefined,
+  });
+  if (canReport) views.push({
+    id: 'reports', label: 'Báo cáo chu kỳ', path: MANAGER_PATHS.reports, icon: <FileBarChart size={17} />, unit: 'lượt học',
+    rows: [
+      { label: 'Đã hoàn thành', value: completed.isPlaceholderData ? undefined : completed.data?.totalItems },
+      { label: 'Quá hạn', value: overdue.isPlaceholderData ? undefined : overdue.data?.totalItems },
+    ],
+    loading: completed.isLoading || overdue.isLoading || completed.isPlaceholderData || overdue.isPlaceholderData,
+    retry: completed.isError || overdue.isError ? () => { void completed.refetch(); void overdue.refetch(); } : undefined,
+  });
+
+  const highlights = views.filter(({ id }) => ['people', 'capability', 'reviews', 'reports'].includes(id));
+  const attention = views.flatMap((view) => {
+    if (view.loading || view.retry) return [];
+    if (view.id === 'reviews') return view.rows.slice(0, 2).map((row) => ({ ...row, path: view.path }));
+    if (view.id === 'reports') return [{ ...view.rows[1], path: view.path }];
+    return [];
+  }).filter(({ value }) => value != null && value > 0);
+  const coverage = active != null && active > 0 && learningCount != null && learningCount <= active
+    ? learningCount / active
+    : undefined;
+  const percent = new Intl.NumberFormat(locale, { style: 'percent' });
+  const display = (value?: number | null) => value == null ? '—' : format.format(value);
 
   return (
     <ManagerPage testId="manager-overview">
-      <PageHead
-        eyebrow={`Quản lý đội / ${department.name}`}
-        title="Quyết định việc cần ưu tiên."
-        description="Không gian làm việc chỉ hiển thị phòng ban của bạn, từ khoảng cách năng lực đến minh chứng khóa học."
-      />
+      <ManagerPageHeader featured scope={department.name} title="Tổng quan phòng ban"
+        subtitle="Theo dõi nhân sự, năng lực và kết quả đào tạo của đội ngũ."
+        actions={<>{frameworkButton}{canPeople && canTraining && (
+          <Link to={MANAGER_PATHS.training} className="manager-dashboard-coverage">
+            <span className="manager-dashboard-ring">
+              <svg viewBox="0 0 44 44" aria-hidden="true">
+                <circle cx="22" cy="22" r="18" />
+                <circle cx="22" cy="22" r="18" pathLength="100" strokeDasharray={`${100 * (coverage ?? 0)} 100`} />
+              </svg>
+              <strong>{coverage == null ? '—' : percent.format(coverage)}</strong>
+            </span>
+            <span>{translateUi('Nhân viên đang có khóa học')}
+              {coverage != null && <small>{display(learningCount)} / {display(active)} {translateUi('nhân viên')}</small>}
+            </span>
+            <ArrowUpRight size={16} aria-hidden="true" />
+          </Link>
+        )}</>} />
+      <ManagerFrameworkDialog open={frameworkOpen} onClose={() => setFramework(false)} />
 
-      <section className="pm-hero" aria-label="Việc của quản lý hôm nay">
-        <div>
-          <span className="pm-hero-eyebrow">Quản lý / {department.name}</span>
-          <h2>Đọc minh chứng. <em>Ghi quyết định rõ ràng.</em></h2>
-          <p>Chấm bài cuối mỗi khóa, theo dõi lượt nộp thứ hai có giới hạn thời gian và so với mục tiêu vị trí.</p>
-          <div className="pu-row">
-            {canReview && <Link to={MANAGER_PATHS.finalReviews} className={btn('light')}>Mở hàng chờ bài cuối khóa</Link>}
-            <Link to={MANAGER_PATHS.capability} className={btn('on-dark')}>Xem năng lực đội ngũ</Link>
-          </div>
-        </div>
-        <img src={journeyArt} alt="" />
-      </section>
-
-      <KpiRow
-        label="Tình hình phòng ban"
-        items={[
-          { value: reviewsReady ? pending : '—', label: 'Bài chờ quyết định', muted: !reviewsReady },
-          { value: reviewsReady ? flagged : '—', label: 'Cờ hỗ trợ sau hai lần chưa đạt', muted: !reviewsReady },
-          { value: headcount ?? '—', label: `Nhân viên đang làm việc · ${department.name}`, muted: headcount == null },
-        ]}
-      />
-
-      <Mini>Đánh giá đầu tiên</Mini>
-      <h2 className="pm-section-title">Việc cụ thể, bước tiếp theo cụ thể.</h2>
-      <div className="pm-cards">
-        <Link className="pm-card" to={canReview ? MANAGER_PATHS.finalReviews : MANAGER_PATHS.training}>
-          <b>01 / Chấm bài</b>
-          <h3>Xem bài nộp của khóa tiếp theo</h3>
-          <small>
-            {!reviewsReady
-              ? 'Hàng chờ chưa tải được; mở trang chấm bài để xem.'
-              : pending > 0
-                ? translateUi(`${pending} bài đang chờ bạn quyết định.`)
-                : 'Hiện chưa có việc chờ xử lý.'}
-          </small>
-          <em>Mở tiêu chí ↗</em>
-        </Link>
-        <Link className="pm-card" to={MANAGER_PATHS.capability}>
-          <b>02 / Năng lực</b>
-          <h3>Mức hiện tại bên cạnh mục tiêu vị trí.</h3>
-          <small>Chỉ nhân viên phòng {department.name} hiển thị ở đây.</small>
-          <em>Xem khoảng cách năng lực của đội ↗</em>
-        </Link>
-        <Link className="pm-card" to={MANAGER_PATHS.training}>
-          <b>03 / Hỗ trợ</b>
-          <h3>Giải thích lý do cho bước tiếp theo.</h3>
-          <small>Theo dõi tiến độ học và người cần hỗ trợ trước hạn.</small>
-          <em>Theo dõi việc học ↗</em>
-        </Link>
-      </div>
-
-      <div className="pm-split" style={{ marginTop: 16 }}>
-        <section className="pm-panel" aria-labelledby="pm-team-title">
-          <div className="pm-panel-head">
-            <div>
-              <Mini>Đội ngũ của bạn</Mini>
-              <h2 id="pm-team-title">Năng lực và học tập trong một góc nhìn.</h2>
-            </div>
-            <PuLink to={MANAGER_PATHS.capability} kind="outline" small>Xem khoảng cách năng lực</PuLink>
-          </div>
-          {team.isLoading ? (
-            <PageSkeleton blocks={[56, 56, 56]} />
-          ) : team.isError ? (
-            <LoadError message="Không tải được danh sách nhân viên trong phòng ban." onRetry={() => team.refetch()} />
-          ) : people.length === 0 ? (
-            <p className="pu-panel-desc">Phòng ban chưa có nhân viên.</p>
-          ) : (
-            <div className="pm-rows">
-              {people.slice(0, 6).map((row) => {
-                const state = measureState(row);
-                return (
-                  <Link key={row.id} className="pm-row" to={MANAGER_PATHS.member(row.id)}>
-                    <Initials name={row.fullName} />
-                    <div>
-                      <strong>{row.fullName}{row.jobPositionName ? ` · ${row.jobPositionName}` : ''}</strong>
-                      <small>
-                        {state.detail}
-                        {row.activeCourses > 0 ? translateUi(` · ${row.activeCourses} khóa đang học`) : ''}
-                      </small>
-                    </div>
-                    <Pill tone={state.tone}>{translateUi(state.label)}</Pill>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-          {people.length > 6 && (
-            <p className="pu-footer-note">Và {people.length - 6} nhân viên khác — xem đầy đủ ở Năng lực đội ngũ.</p>
-          )}
+      {highlights.length > 0 && (
+        <section className="manager-dashboard-stats" aria-label={translateUi('Tóm tắt phòng ban')}>
+          {highlights.map(({ id, label, path, icon, rows, loading }) => (
+            <Link key={id} to={path} className="manager-dashboard-stat" data-metric={id} aria-busy={loading}>
+              <span className="manager-dashboard-stat-icons"><span>{icon}</span><ArrowUpRight size={16} aria-hidden="true" /></span>
+              <span>{translateUi(label)}</span>
+              <strong>{display(rows[0].value)}</strong>
+              <small>{translateUi(rows[0].label)}</small>
+            </Link>
+          ))}
         </section>
+      )}
 
-        <section className="pm-panel" aria-labelledby="pm-queue-title">
-          <div className="pm-panel-head">
-            <div>
-              <Mini>Hàng chờ chấm bài</Mini>
-              <h2 id="pm-queue-title">Bài nộp cần bạn đọc.</h2>
-              <p>Bài đánh giá trước khi học và bài cuối khóa tách riêng khỏi minh chứng thực tế trong lúc học.</p>
-            </div>
-          </div>
-          {!canReview ? (
-            <p className="pu-panel-desc">Tài khoản của bạn chưa có quyền chấm bài.</p>
-          ) : reviews.isLoading ? (
-            <PageSkeleton blocks={[56, 56]} />
-          ) : reviews.isError ? (
-            <LoadError message="Không tải được hàng chờ bài cuối khóa." onRetry={() => reviews.refetch()} />
-          ) : queue.length === 0 ? (
-            <p className="pu-panel-desc">Không có bài cuối khóa nào đang chờ trong phòng ban.</p>
-          ) : (
-            <div className="pm-rows">
-              {queue.slice(0, 5).map((item) => (
-                <Link key={item.submissionId} className="pm-row" to={MANAGER_PATHS.finalReviews}>
-                  <Initials name={item.employeeName} />
-                  <div>
-                    <strong>{item.employeeName}</strong>
-                    <small>{item.courseTitle} · lần nộp {item.attemptNo}/{item.maxAttempts}</small>
-                  </div>
-                  <Pill tone={QUEUE_PILL[item.status].tone}>{translateUi(QUEUE_PILL[item.status].label)}</Pill>
-                </Link>
-              ))}
-            </div>
+      {views.length > 0 && (
+        <div className="manager-dashboard-grid" data-attention={attention.length > 0}>
+          <DepartmentChart key={department.id} views={views} />
+          {attention.length > 0 && (
+            <section className="manager-dashboard-attention" aria-labelledby="manager-attention-title">
+              <h2 id="manager-attention-title">{translateUi('Cần theo dõi')}</h2>
+              <ul role="list">
+                {attention.map(({ label, value, path }) => (
+                  <li key={label}>
+                    <Link to={path}><strong>{display(value)}</strong><span>{translateUi(label)}</span><ArrowUpRight size={16} aria-hidden="true" /></Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
-          {canReview && (
-            <div style={{ marginTop: 14 }}>
-              <PuLink to={MANAGER_PATHS.finalReviews} kind="outline" small>Mở hàng chờ</PuLink>
-            </div>
-          )}
-        </section>
-      </div>
-
-      <div className="pm-strip" style={{ marginTop: 16 }}>
-        <p><span className="pu-mini">Luồng đánh giá riêng</span>Minh chứng thực tế có tiêu chí và quyết định riêng.</p>
-        <div className="pu-row">
-          <PuLink to={MANAGER_PATHS.evidence} kind="outline" small>Mở minh chứng thực tế</PuLink>
-          <PuLink to={MANAGER_PATHS.training} kind="outline" small>Đào tạo đội ngũ</PuLink>
         </div>
-      </div>
+      )}
     </ManagerPage>
+  );
+}
+
+function DepartmentChart({ views }: { views: ChartView[] }) {
+  const [selected, setSelected] = useState('training');
+  const view = views.find(({ id }) => id === selected) ?? views[0];
+  const max = Math.max(1, view.ceiling ?? 0, ...view.rows.map(({ value }) => value ?? 0));
+  const format = new Intl.NumberFormat(useUiLanguage());
+
+  return (
+    <section className="manager-overview-chart" aria-labelledby="department-chart-title">
+      <header>
+        <h2 id="department-chart-title">{translateUi('Chỉ số phòng ban')}</h2>
+        <Link to={view.path}>{translateUi('Mở trang')} · {translateUi(view.label)}<ArrowUpRight size={16} aria-hidden="true" /></Link>
+      </header>
+      <div className="manager-overview-chart__filters" role="group" aria-label={translateUi('Chọn nhóm chỉ số')}>
+        {views.map(({ id, label, icon }) => (
+          <button type="button" key={id} aria-pressed={view.id === id} onClick={() => setSelected(id)}>{icon}{translateUi(label)}</button>
+        ))}
+      </div>
+      <div className="manager-overview-chart__plot" key={view.id} aria-busy={view.loading}>
+        <p className="manager-overview-chart__unit">{translateUi(view.unit)}</p>
+        <ul role="list">
+          {view.rows.map(({ label, value }) => (
+            <li key={label}>
+              <div><span>{translateUi(label)}</span><strong>{value == null ? <><span aria-hidden="true">—</span><span className="sr-only">{translateUi(view.loading ? 'Đang tải số liệu…' : 'Chưa có số liệu')}</span></> : format.format(value)}</strong></div>
+              <div className="manager-overview-chart__track" aria-hidden="true"><span style={{ width: `${(value ?? 0) / max * 100}%` }} /></div>
+            </li>
+          ))}
+        </ul>
+        {view.loading && <LoadingProgress label="Đang tải số liệu…" />}
+        {view.retry && <LoadError message="Không tải được số liệu." onRetry={view.retry} />}
+      </div>
+    </section>
   );
 }

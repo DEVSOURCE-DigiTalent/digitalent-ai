@@ -43,7 +43,7 @@ public class GetCourseRecommendationsUseCase : IUseCase<GetCourseRecommendations
             return WithReason(output, RecommendationEmptyReasons.NoEmployeeProfile);
         }
 
-        var employee = await _employeeScope.GetVisibleEmployeeAsync(employeeId.Value);
+        var employee = await _employeeScope.GetVisibleEmployeeAsync(employeeId.Value, includeSelf: true);
         output.EmployeeId = employee.Id;
 
         var run = await LoadLatestRunWithGapsAsync(employee.Id);

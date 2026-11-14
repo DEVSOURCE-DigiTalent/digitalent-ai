@@ -1,204 +1,231 @@
+import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
+import { useId, useState } from 'react';
+import { BarChart3, BrainCircuit, ChevronDown, Database, Lightbulb, MessagesSquare, Palette, Search, ShieldCheck, Target, Users } from 'lucide-react';
+import { PageLoading, SectionLoading } from '@/components/shared/LoadingState';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
-import { useState } from 'react';
-import { BarChart3 } from 'lucide-react';
 import { useManagedDepartment } from '@/hooks/use-managed-department';
-import { useEmployeeCapability, useWorkforce } from '@/hooks/use-workforce';
-import { BLOCKER_LABELS } from '@/services/workforce.service';
-import { Bar, Empty, LoadError, Mini, PageHead, PageSkeleton, Pill, PuLink } from '@/features/pulse-employee/components/ui';
-import { levelName } from '@/features/pulse-employee/lib/labels';
-import { ManagerPage, NoDepartment } from '../components/ManagerUi';
-import { buildCapability, type LevelStatus } from '../lib/capability';
+import { useDepartmentWorkforce, useEmployeeCapability } from '@/hooks/use-workforce';
+import { BLOCKER_LABELS, type EmployeeCapability, type EvidenceSource, type WorkforceRow } from '@/services/workforce.service';
+import { Bar, Empty, LoadError, PuLink } from '@/features/pulse-employee/components/ui';
+import { ManagerPage, ManagerPageHeader, NoDepartment } from '../components/ManagerUi';
+import { buildCapability, type CapabilityDomain, type LevelStatus } from '../lib/capability';
 import { MANAGER_PATHS } from '../lib/paths';
+import './manager-capability.css';
 
-const STATUS_PILL: Record<LevelStatus, { label: (gap: number) => string; tone: 'green' | 'coral' | 'gray' }> = {
-  MET: { label: () => 'Đạt mục tiêu', tone: 'green' },
-  GAP: { label: (gap) => `Còn ${gap} mức`, tone: 'coral' },
-  PENDING: { label: () => 'Chưa xác nhận mức', tone: 'gray' },
-  OUTSIDE_PATH: { label: () => 'Ngoài lộ trình', tone: 'gray' },
+const STATUS: Record<LevelStatus, string> = {
+  MET: 'Đạt yêu cầu', GAP: 'Chưa đạt', PENDING: 'Chưa xác nhận mức', OUTSIDE_PATH: 'Ngoài lộ trình',
 };
+const DOMAIN_ICONS = [Database, MessagesSquare, Palette, ShieldCheck, Lightbulb, BrainCircuit];
+const STATUS_KEYS = Object.keys(STATUS) as LevelStatus[];
+const SOURCES: Record<EvidenceSource, string> = {
+  MIGRATION: 'Dữ liệu chuyển đổi', ASSESSMENT: 'Bài đánh giá', TASK: 'Nhiệm vụ thực tế', MANUAL: 'Xác nhận thủ công',
+};
+const level = (value: number | null) => value != null && value > 0 ? `L${value}` : '—';
+const searchKey = (value: string) => value.toLocaleLowerCase('vi').normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/đ/g, 'd');
 
-const level = (value: number | null | undefined) => (value && value > 0 ? `L${value}` : 'Đang chờ');
-
-/**
- * MG-05 · Năng lực đội ngũ (mock `#/gap`): mức hiện tại đã xác nhận bên cạnh mục tiêu vị trí, theo từng nhân viên
- * trong phòng ban. Năng lực chưa đo hiển thị "Chưa xác nhận mức" và không bị tính là khoảng trống.
- */
 export function ManagerCapabilityPage() {
   useUiLanguage();
-  const { department, isLoading: deptLoading, isError: deptError, refetch: refetchDept } = useManagedDepartment();
-  const team = useWorkforce({ departmentId: department?.id, pageIndex: 1, pageSize: 100 }, Boolean(department));
-  const people = (team.data?.items ?? []).filter((row) => !row.departmentId || row.departmentId === department?.id);
-  const [picked, setPicked] = useState<string>();
-  const selectedId = people.some((p) => p.id === picked) ? picked : people[0]?.id;
-  const selected = people.find((p) => p.id === selectedId);
-  const capability = useEmployeeCapability(selectedId);
-
-  if (deptLoading || (department && team.isLoading)) {
-    return <ManagerPage><PageSkeleton blocks={[120, 110, 230, 420]} /></ManagerPage>;
-  }
-  if (deptError || team.isError) {
-    return (
-      <ManagerPage>
-        <LoadError
-          message="Không tải được nhân sự của phòng ban."
-          onRetry={() => (deptError ? refetchDept() : team.refetch())}
-        />
-      </ManagerPage>
-    );
-  }
-  if (!department) {
-    return <ManagerPage><PageHead eyebrow="Năng lực đội ngũ" title="Xem tiến độ đã xác nhận bên cạnh mục tiêu." /><NoDepartment /></ManagerPage>;
-  }
-
-  const { domains, summary } = buildCapability(capability.data?.competencies ?? []);
-  const measuredPeople = people.filter((p) => p.hasSnapshot).length;
-  const recommendation = capability.data?.recommendations?.[0];
+  const { department, isLoading, isError, refetch } = useManagedDepartment();
+  const team = useDepartmentWorkforce(department?.id);
+  const people = (team.data ?? []).filter((row) => row.departmentId === department?.id);
 
   return (
     <ManagerPage testId="manager-capability">
-      <PageHead
-        eyebrow={`Năng lực đội ngũ · ${department.name}`}
-        title="Xem tiến độ đã xác nhận bên cạnh mục tiêu."
-        description="Mức đầu vào, năng lực đã xác nhận và mục tiêu vị trí luôn hiển thị cùng nhau. Chỉ nhân viên phòng ban của bạn."
-        actions={<Pill>{measuredPeople}/{people.length} nhân viên đã đo</Pill>}
-      />
-
-      {people.length === 0 ? (
-        <Empty icon={<BarChart3 size={24} />} title="Phòng ban chưa có nhân viên.">
-          Khi chủ doanh nghiệp xếp nhân viên vào phòng {department.name}, năng lực của họ sẽ hiển thị ở đây.
-        </Empty>
-      ) : (
-        <>
-          <section className="pm-summary" aria-label="Tóm tắt năng lực của nhân viên đang xem">
-            <div>
-              <span>Mức hiện tại đã xác nhận</span>
-              <div><strong>{capability.isSuccess ? summary.measured : '—'}</strong><small>/ {capability.isSuccess ? summary.targets : '—'} năng lực đã xác nhận</small></div>
-            </div>
-            <div className="warm">
-              <span>Khoảng cách đã xác nhận</span>
-              <div><strong>{capability.isSuccess ? summary.gaps : '—'}</strong><small>chỉ tính năng lực đã đo</small></div>
-            </div>
-            <div>
-              <span>Mục tiêu vị trí</span>
-              <div><strong>{capability.isSuccess ? summary.targets : '—'}</strong><small>năng lực vị trí yêu cầu</small></div>
-            </div>
-          </section>
-
-          <div className="pm-picker">
-            <section className="pm-panel">
-              <Mini>Chọn một nhân viên</Mini>
-              <label className="pu-field">{translateUi("Nhân sự")}<select value={selectedId} onChange={(e) => setPicked(e.target.value)}>
-                  {people.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.fullName}{p.jobPositionName ? ` · ${p.jobPositionName}` : ''}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {selected && (
-                <div className="pm-person">
-                  <strong>{selected.jobPositionName ?? 'Chưa gán vị trí'} / {department.name}</strong>
-                  <small>Mục tiêu theo vị trí; khóa được mở theo phạm vi doanh nghiệp và phòng ban.</small>
-                  <div style={{ marginTop: 12 }}>
-                    <Bar
-                      value={selected.coveragePercent ?? 0}
-                      label={translateUi(`Độ phủ mục tiêu ${Math.round(selected.coveragePercent ?? 0)}%`)}
-                    />
-                  </div>
-                  <small>
-                    {selected.hasSnapshot
-                      ? translateUi(`Độ phủ mục tiêu ${Math.round(selected.coveragePercent ?? 0)}%`)
-                      : selected.blocker
-                        ? translateUi(BLOCKER_LABELS[selected.blocker]) ?? 'Chưa có bản đo năng lực'
-                        : 'Chưa có bản đo năng lực'}
-                  </small>
-                </div>
-              )}
-              {selected && (
-                <div className="pu-row" style={{ marginTop: 14 }}>
-                  <PuLink to={MANAGER_PATHS.member(selected.id)} kind="outline" small>{translateUi("Hồ sơ nhân viên")}</PuLink>
-                  <PuLink to={MANAGER_PATHS.matrix} kind="ghost" small>Ma trận năng lực nhóm</PuLink>
-                </div>
-              )}
-            </section>
-
-            <section className="pm-panel">
-              <Mini>Khóa học tiếp theo được đề xuất</Mini>
-              {capability.isLoading ? (
-                <PageSkeleton blocks={[120]} />
-              ) : recommendation ? (
-                <>
-                  <h2 className="pu-panel-title">{translateUi(recommendation.title)}</h2>
-                  <p className="pu-panel-desc">
-                    Đề xuất dựa trên khoảng cách đã xác nhận
-                    {recommendation.reasons[0] ? translateUi(` ở ${recommendation.reasons[0].competencyName}`) : ''}. Hoàn thành khóa học không tự
-                    thay đổi mức năng lực — mức chỉ đổi khi bài cuối khóa hoặc minh chứng được duyệt.
-                  </p>
-                  <PuLink to={MANAGER_PATHS.training} small>Xem tiến độ đào tạo →</PuLink>
-                </>
-              ) : (
-                <p className="pu-panel-desc" style={{ marginTop: 10 }}>
-                  Chưa có đề xuất. Đề xuất chỉ xuất hiện khi nhân viên đã có khoảng cách được xác nhận; năng lực chưa đo vẫn đang chờ.
-                </p>
-              )}
-            </section>
-          </div>
-
-          <section className="pm-panel" aria-labelledby="pm-current-title">
-            <div className="pm-panel-head">
-              <div>
-                <h2 id="pm-current-title">Hiện tại → mục tiêu vị trí</h2>
-                <p>Từng năng lực của {selected?.fullName ?? translateUi('nhân viên')}, nhóm theo sáu lĩnh vực.</p>
-              </div>
-              {capability.isSuccess && <Pill tone={summary.pending > 0 ? 'gray' : 'green'}>{summary.pending > 0 ? translateUi(`${summary.pending} năng lực đang chờ đo`) : 'Đã đo đủ'}</Pill>}
-            </div>
-            {capability.isLoading ? (
-              <PageSkeleton blocks={[60, 60, 60, 60]} />
-            ) : capability.isError ? (
-              <LoadError message="Không tải được hồ sơ năng lực của nhân viên này." onRetry={() => capability.refetch()} />
-            ) : domains.length === 0 ? (
-              <p className="pu-panel-desc">
-                Vị trí của nhân viên chưa có bộ yêu cầu năng lực đang áp dụng, nên chưa có mục tiêu để so sánh.
-              </p>
-            ) : (
-              <>
-                {domains.map((domain) => (
-                  <div key={domain.name} className="pm-domain">
-                    <div className="pm-domain-head">
-                      <h3>{translateUi(domain.name)}</h3>
-                      <small>{domain.rows.filter((r) => r.status === 'GAP').length} khoảng cách đã xác nhận</small>
-                    </div>
-                    {domain.rows.map((row) => {
-                      const pill = STATUS_PILL[row.status];
-                      return (
-                        <div key={row.competencyId} className="pm-level-row">
-                          <div>
-                            <strong>{row.frameworkCode} · {row.name}</strong>
-                            <small>{row.confirmedAt ? translateUi(`Xác nhận ${new Date(row.confirmedAt).toLocaleDateString('vi-VN')}`) : 'Chưa có minh chứng xác nhận'}</small>
-                          </div>
-                          <div
-                            className="pm-levels"
-                            aria-label={translateUi(`Hiện tại ${levelName(row.currentLevel)}, mục tiêu ${row.requiredLevel > 0 ? levelName(row.requiredLevel) : 'không yêu cầu'}`)}
-                          >{translateUi("Hiện tại ")}<b className={row.status === 'PENDING' ? 'pending' : undefined}>{level(row.currentLevel)}</b>
-                            → Mục tiêu{' '}
-                            {row.requiredLevel > 0 ? <b className="target">{level(row.requiredLevel)}</b> : <b className="pending">—</b>}
-                          </div>
-                          <Pill tone={pill.tone}>{pill.label(Math.max(0, row.requiredLevel - (row.currentLevel ?? 0)))}</Pill>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-                <div className="pm-legend">
-                  <span>Mức hiện tại đã xác nhận</span>
-                  <span className="target">Mục tiêu vị trí</span>
-                  <span className="pending">Chưa xác nhận / ngoài lộ trình</span>
-                </div>
-              </>
-            )}
-          </section>
-        </>
-      )}
+      <ManagerPageHeader scope={department?.name} title="Năng lực đội ngũ" />
+      {isLoading || (department && team.isLoading) ? <PageLoading label="Đang tải năng lực đội ngũ" />
+        : isError || team.isError ? <LoadError message="Không tải được nhân sự của phòng ban." onRetry={isError ? refetch : team.refetch} />
+        : !department ? <NoDepartment />
+        : people.length === 0 ? <Empty icon={<BarChart3 size={24} />} title="Phòng ban chưa có nhân viên." />
+        : <DepartmentCapabilities key={department.id} people={people} />}
     </ManagerPage>
   );
+}
+
+function DepartmentCapabilities({ people }: { people: WorkforceRow[] }) {
+  const [selectedId, setSelectedId] = useState(people[0].id);
+  const employee = people.find(({ id }) => id === selectedId) ?? people[0];
+  const capability = useEmployeeCapability(employee.id);
+  const evaluated = people.filter(({ hasSnapshot }) => hasSnapshot).length;
+  const model = buildCapability(capability.data?.competencies ?? []);
+  const { summary } = model;
+
+  return (
+    <div className="mc-workspace">
+      <div className="mc-controls">
+        <div className="mc-person-select">
+          <span>{translateUi('Nhân sự')}</span>
+          <OwnerFilterSelect variant="manager" label="Nhân sự" value={employee.id} onChange={setSelectedId}
+            options={people.map(({ id, fullName }) => ({ value: id, label: fullName }))} />
+        </div>
+        <div className="mc-position">
+          <small>{translateUi('Vị trí công việc')}</small>
+          <strong>{employee.jobPositionName || employee.positionName || translateUi('Chưa có vị trí')}</strong>
+          {employee.blocker && BLOCKER_LABELS[employee.blocker] && <small>{translateUi(BLOCKER_LABELS[employee.blocker])}</small>}
+        </div>
+        <div className="pu-row">
+          <PuLink to={MANAGER_PATHS.member(employee.id)} kind="outline" small>{translateUi('Hồ sơ nhân viên')}</PuLink>
+          <PuLink to={MANAGER_PATHS.matrix} kind="ghost" small>{translateUi('Ma trận năng lực')}</PuLink>
+        </div>
+      </div>
+      <dl className="mc-metrics">
+        <div><Users size={19} aria-hidden="true" /><dt>{translateUi('Nhân viên có kết quả đối chiếu')}</dt><dd>{evaluated}<small> / {people.length}</small></dd><span>{translateUi('Phòng ban')}</span></div>
+        <div><ShieldCheck size={19} aria-hidden="true" /><dt>{translateUi('Năng lực yêu cầu đã xác nhận')}</dt><dd>{capability.data ? <>{summary.measured}<small> / {summary.targets}</small></> : '—'}</dd><span>{translateUi('Nhân viên đang xem')}</span></div>
+        <div data-tone="gap"><Target size={19} aria-hidden="true" /><dt>{translateUi('Khoảng cách đã xác nhận')}</dt><dd>{summary.measured ? summary.gaps : '—'}</dd><span>{translateUi(summary.measured ? 'Trong các năng lực đã xác nhận' : capability.data ? 'Chưa đủ dữ liệu đối chiếu' : 'Chưa có số liệu')}</span></div>
+      </dl>
+      {capability.isLoading ? <SectionLoading label="Đang tải năng lực nhân viên" />
+        : capability.isError || !capability.data ? <LoadError message="Không tải được hồ sơ năng lực của nhân viên này." onRetry={capability.refetch} />
+        : <EmployeeCapabilities key={employee.id} data={capability.data} model={model} />}
+    </div>
+  );
+}
+
+function EmployeeCapabilities({ data, model }: { data: EmployeeCapability; model: ReturnType<typeof buildCapability> }) {
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('');
+  const [status, setStatus] = useState('');
+  const [expanded, setExpanded] = useState<string>();
+  const [detail, setDetail] = useState<string>();
+  const { domains, summary } = model;
+  const query = searchKey(search.trim());
+  const filtering = Boolean(query || category || status);
+  const visible = domains.filter((domain) => !category || domain.name === category).map((domain) => ({
+    ...domain, allRows: domain.rows, rows: domain.rows.filter((row) => (!status || row.status === status) &&
+      searchKey(`${row.frameworkCode} ${row.name} ${translateUi(row.name)}`).includes(query)),
+  })).filter(({ rows }) => rows.length > 0);
+  const activeDomain = visible.find(({ name }) => name === expanded)
+    ?? (expanded == null && (filtering || domains.length === 1) ? visible[0] : undefined);
+  const panelId = useId();
+  const recommendations = data.recommendations ?? [];
+  const coverage = summary.measured > 0 ? data.summary.coveragePercent : null;
+
+  function reset() {
+    setSearch(''); setCategory(''); setStatus(''); setExpanded(undefined); setDetail(undefined);
+  }
+
+  return <>
+    <section className="mc-panel" aria-labelledby="mc-levels-title">
+      <header className="mc-section-head">
+        <h2 id="mc-levels-title">{translateUi('Đối chiếu theo lĩnh vực')}</h2>
+        {coverage != null && <div className="mc-coverage">
+          <span>{translateUi('Độ phủ mục tiêu')} <strong>{Math.round(coverage)}%</strong></span>
+          <Bar value={coverage} label={translateUi('Độ phủ mục tiêu')} />
+        </div>}
+      </header>
+      {domains.length === 0 ? <p>{translateUi('Chưa có năng lực để đối chiếu theo vị trí.')}</p> : <>
+        <div className="mc-filters">
+          <label className="mc-search"><Search size={16} aria-hidden="true" />
+            <input type="search" aria-label={translateUi('Tìm năng lực')} placeholder={translateUi('Tìm theo tên hoặc mã năng lực')} value={search}
+              onChange={(event) => { setSearch(event.target.value); setExpanded(undefined); setDetail(undefined); }} />
+          </label>
+          <OwnerFilterSelect variant="manager" label="Lọc theo lĩnh vực" value={category}
+            onChange={(value) => { setCategory(value); setExpanded(undefined); setDetail(undefined); }}
+            options={[{ value: '', label: 'Tất cả lĩnh vực' }, ...domains.map(({ name }) => ({ value: name, label: name }))]} />
+          <OwnerFilterSelect variant="manager" label="Lọc theo trạng thái" value={status}
+            onChange={(value) => { setStatus(value); setExpanded(undefined); setDetail(undefined); }}
+            options={[{ value: '', label: 'Mọi trạng thái' }, ...STATUS_KEYS.map((key) => ({ value: key, label: STATUS[key] }))]} />
+          {filtering && <button type="button" className="mc-link" onClick={reset}>{translateUi('Xóa bộ lọc')}</button>}
+        </div>
+        {visible.length === 0 && <p role="status">{translateUi('Không tìm thấy năng lực phù hợp.')}</p>}
+        {visible.length > 0 && (
+          <>
+            <ul className="mc-legend" aria-label={translateUi('Chú giải trạng thái')} role="list">
+              {STATUS_KEYS.map((key) => <li key={key} data-status={key}>{translateUi(STATUS[key])}</li>)}
+            </ul>
+            <div className="mc-groups">
+              {visible.map((domain) => {
+                const Icon = DOMAIN_ICONS[domain.order - 1] ?? BarChart3;
+                const open = activeDomain?.name === domain.name;
+                const stats = STATUS_KEYS.map((key) => ({
+                  key,
+                  count: domain.rows.filter((row) => row.status === key).length,
+                })).filter(({ count }) => count > 0);
+                return (
+                  <button key={domain.name} type="button" className="mc-domain-card" aria-expanded={open} aria-controls={panelId}
+                    onClick={() => { setExpanded(open ? '' : domain.name); setDetail(undefined); }}>
+                    <span className="mc-domain-card__heading"><span className="mc-domain-icon"><Icon size={20} aria-hidden="true" /></span>
+                      <strong>{translateUi(domain.name)}</strong><ChevronDown size={17} aria-hidden="true" />
+                    </span>
+                    <span className="mc-domain-bar" aria-hidden="true">
+                      {stats.map(({ key, count }) => <i key={key} data-status={key} style={{ flexGrow: count }} />)}
+                    </span>
+                    <span className="mc-domain-card__counts">
+                      <span>{domain.rows.length !== domain.allRows.length ? `${domain.rows.length}/${domain.allRows.length}` : domain.rows.length} {translateUi('năng lực')}</span>
+                      {stats.map(({ key, count }) => <span className="mc-domain-count" key={key} data-status={key}>
+                        <span className="sr-only">{translateUi(STATUS[key])}: </span>{count}
+                      </span>)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+        <div id={panelId} hidden={!activeDomain}>
+          {activeDomain && <CapabilityGroup key={activeDomain.name} domain={activeDomain} allRows={activeDomain.allRows} detail={detail} onDetail={setDetail} />}
+        </div>
+      </>}
+    </section>
+
+    <section className="mc-panel mc-recommendations" aria-labelledby="mc-recommendations-title">
+      <div>
+        <h2 id="mc-recommendations-title">{translateUi('Đào tạo đề xuất')}</h2>
+        {recommendations.length === 0 && <p>{translateUi(summary.measured ? 'Chưa có khóa học phù hợp.' : 'Cần mức năng lực đã xác nhận để đề xuất khóa học.')}</p>}
+      </div>
+      <PuLink to={MANAGER_PATHS.training} kind="outline" small>{translateUi('Xem tiến độ đào tạo')}</PuLink>
+      {recommendations.length > 0 && <ul>
+        {recommendations.map((course) => <li key={course.courseId}><strong>{translateUi(course.title)}</strong>
+          {course.reasons.length > 0 && <small>{course.reasons.map(({ competencyName }) => translateUi(competencyName)).join(' · ')}</small>}
+        </li>)}
+      </ul>}
+    </section>
+  </>;
+}
+
+function CapabilityGroup({ domain, allRows, detail, onDetail }: {
+  domain: CapabilityDomain; allRows: CapabilityDomain['rows']; detail?: string;
+  onDetail: (id?: string) => void;
+}) {
+  const locale = useUiLanguage();
+  const shared = domain.rows[0].requiredLevel;
+  const sharedTarget = shared > 0 && allRows.every((row) => row.requiredLevel === shared);
+  return <section className="mc-group">
+    <header className="mc-detail-heading">
+      <h3>{translateUi(domain.name)}</h3>
+      {sharedTarget && <span>{translateUi('Mức yêu cầu chung')} <b>{level(shared)}</b></span>}
+    </header>
+    <div className="mc-table" tabIndex={0} role="region" aria-label={translateUi(domain.name)}>
+        <table>
+          <thead><tr>
+            <th scope="col">{translateUi('Năng lực')}</th><th scope="col">{translateUi('Mức hiện tại')}</th>
+            <th scope="col">{translateUi('Mức yêu cầu')}</th><th scope="col">{translateUi('Trạng thái')}</th>
+            <th scope="col">{translateUi('Chi tiết')}</th>
+          </tr></thead>
+          {domain.rows.map((row) => {
+            const showDetail = detail === row.competencyId;
+            return <tbody key={row.competencyId}>
+              <tr>
+                <th scope="row"><small>{row.frameworkCode}</small> {translateUi(row.name)}</th>
+                <td><span className="mc-level" data-status={row.status}>{level(row.currentLevel)}</span></td>
+                <td>{row.requiredLevel > 0 ? <span className="mc-level">{level(row.requiredLevel)}</span> : translateUi('Không yêu cầu')}</td>
+                <td><span className="mc-badge" data-status={row.status}>
+                  {translateUi(STATUS[row.status])}
+                  {row.status === 'GAP' && row.currentLevel != null && ` · ${translateUi(`Còn ${row.requiredLevel - row.currentLevel} mức`)}`}
+                </span></td>
+                <td><button type="button" className="mc-link" aria-expanded={showDetail} aria-label={`${translateUi(showDetail ? 'Thu gọn' : 'Xem chi tiết')} · ${translateUi(row.name)}`} onClick={() => onDetail(showDetail ? undefined : row.competencyId)}>
+                  {translateUi(showDetail ? 'Thu gọn' : 'Xem chi tiết')}
+                </button></td>
+              </tr>
+              {showDetail && <tr className="mc-detail"><td colSpan={5}>
+                <strong>{translateUi('Minh chứng xác nhận')}</strong>
+                {row.source || row.confirmedAt || row.note ? <dl>
+                  {row.source && <div><dt>{translateUi('Nguồn')}</dt><dd>{translateUi(SOURCES[row.source] ?? row.source)}</dd></div>}
+                  {row.confirmedAt && <div><dt>{translateUi('Ngày xác nhận')}</dt><dd>{new Date(row.confirmedAt).toLocaleDateString(locale)}</dd></div>}
+                  {row.note && <div><dt>{translateUi('Ghi chú')}</dt><dd>{row.note}</dd></div>}
+                </dl> : <p>{translateUi('Chưa có minh chứng xác nhận.')}</p>}
+              </td></tr>}
+            </tbody>;
+          })}
+        </table>
+    </div>
+  </section>;
 }

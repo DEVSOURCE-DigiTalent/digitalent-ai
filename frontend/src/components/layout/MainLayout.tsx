@@ -8,13 +8,15 @@ import { USE_MOCK } from '@/services/mock/mock-config';
 import type { SidebarConfig } from '@/lib/sidebars/types';
 import { RoleSidebar } from './sidebar';
 import { Topbar } from './Topbar';
-import { ManagerTopbar } from './ManagerTopbar';
 import { MANAGER_SIDEBAR } from '@/lib/sidebars/manager';
 import { OWNER_SIDEBAR } from '@/lib/sidebars/owner';
 import { useSidebarState } from '@/hooks/use-sidebar-state';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { ROLES } from '@/lib/roles';
 import './owner-shell.css';
+import './manager-shell.css';
+import './manager-account.css';
+import '@/features/pulse-manager/components/manager-page-heading.css';
 
 interface MainLayoutProps {
   portal: PortalConfig;
@@ -53,9 +55,9 @@ export function MainLayout({ portal, sidebarConfig, isUnpaid = false, children }
 
   const user = useCurrentUser((s) => s.user);
   const isOwner = Boolean(user?.roles?.includes(ROLES.OWNER));
-  // Không gian Quản lý theo Pulse: thanh đầu trang toàn chiều ngang, menu bên nằm dưới nó, nền sáng.
   const isPulseManager = sidebarConfig === MANAGER_SIDEBAR;
   const isPulseOwner = sidebarConfig === OWNER_SIDEBAR || (sidebarConfig == null && isOwner && portal.workspace === 'enterprise');
+  const useOwnerShell = isPulseOwner || isPulseManager;
   const sidebarWidth = state === 'collapsed' ? '64px' : isOwner || isPulseManager ? '230px' : '248px';
 
   const unpaidBanner = isUnpaid && (
@@ -74,41 +76,9 @@ export function MainLayout({ portal, sidebarConfig, isUnpaid = false, children }
     </div>
   );
 
-  if (isPulseManager) {
-    return (
-      <div className="enterprise-shell pm-shell" style={{ '--sidebar-w': sidebarWidth, '--pm-banner-h': isUnpaid ? '36px' : '0px' } as React.CSSProperties}>
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:p-2 focus:bg-white focus:text-[#17243f] focus:border focus:rounded-md">{translateUi("Bỏ qua đến nội dung")}</a>
-
-        {!USE_MOCK && <RealtimeNotifications />}
-
-        <div className="sticky top-0 z-30">
-          <ManagerTopbar portal={portal} isMobileNavOpen={isMobileOpen} onOpenMobileNav={() => setMobileOpen(true)} />
-          {unpaidBanner}
-        </div>
-
-        {isMobileOpen && (
-          <div
-            data-testid="sidebar-backdrop"
-            aria-hidden="true"
-            className="fixed inset-0 z-30 bg-black/40 md:hidden"
-            onClick={() => setMobileOpen(false)}
-          />
-        )}
-
-        <RoleSidebar portal={portal} sidebarConfig={sidebarConfig} isMobileOpen={isMobileOpen} onMobileClose={() => setMobileOpen(false)} />
-
-        <main id="main-content" className="pm-main min-w-0 min-h-[calc(100dvh-var(--pm-topbar-h))] md:pl-[var(--sidebar-w)]">
-          <div className="pm-main-inner">
-            {children ?? <Outlet />}
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div
-      className={`enterprise-shell${isPulseOwner ? ' owner-shell' : ''}`}
+      className={`enterprise-shell${useOwnerShell ? ' owner-shell' : ''}${isPulseManager ? ' manager-shell' : ''}`}
       style={{ 
         '--sidebar-w': sidebarWidth, 
         '--topbar-h': '56px',
@@ -133,12 +103,12 @@ export function MainLayout({ portal, sidebarConfig, isUnpaid = false, children }
       
       <div className="flex flex-col min-w-0 min-h-screen md:pl-[var(--sidebar-w)]">
         <div className="sticky top-0 z-30">
-          <Topbar portal={portal} autoHide={isPulseOwner} isMobileNavOpen={isMobileOpen} onOpenMobileNav={() => setMobileOpen(true)} />
+          <Topbar portal={portal} sidebarConfig={sidebarConfig} autoHide={useOwnerShell} isMobileNavOpen={isMobileOpen} onOpenMobileNav={() => setMobileOpen(true)} />
           {unpaidBanner}
         </div>
         <main id="main-content" className="flex-1 bg-ent-bg text-ent-fg">
           <div className="p-4 md:p-6">
-            {isPulseOwner ? <div className="owner-route-stage" key={pathname}>{children ?? <Outlet />}</div> : children ?? <Outlet />}
+            {useOwnerShell ? <div className="owner-route-stage" key={pathname}>{children ?? <Outlet />}</div> : children ?? <Outlet />}
           </div>
         </main>
       </div>

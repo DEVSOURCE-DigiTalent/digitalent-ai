@@ -13,7 +13,7 @@ import { LevelBadge } from '../components/TrialUi';
 import { TIER_LABELS, formatWhen } from '../lib/trial-format';
 import { TrialExam } from '../components/TrialExam';
 import { TrialDisclosure } from '../components/TrialDisclosure';
-import { TrialEmployeeResults } from '../components/TrialEmployeeResults';
+import { TrialEmployeeSurvey } from '../components/TrialEmployeeSurvey';
 import '../trial-program.css';
 
 const passedTier = (correct = 0, total = 0) => total > 0 && correct >= Math.ceil(total * .7);
@@ -253,16 +253,20 @@ function DomainAccordionItem({
 export function TrialTestPage() {
   useUiLanguage();
   const owner = useCurrentUser((state) => state.user?.roles.includes('OWNER'));
-  const { data, isLoading, error } = useMyTrialAssessment();
-  const { data: overview } = usePulseOverview(!owner && Boolean(data?.reportPublished && data.status === 'REVIEWED'));
+  const { data, isLoading, error, refetch, isFetching } = useMyTrialAssessment();
+  const { data: overview } = usePulseOverview(!owner && data?.status === 'REVIEWED');
   const [openCategory, setOpenCategory] = useState<string | null>(null);
 
   if (isLoading) return <p className="pu-muted">{translateUi("Đang tải…")}</p>;
   if (error || !data) return <p className="pu-notice warning">{apiErrorMessage(error, 'Không tải được bài đánh giá.')}</p>;
 
+  if (!owner) {
+    return <TrialEmployeeSurvey data={data} overview={overview} refresh={() => void refetch()} refreshing={isFetching} />;
+  }
+
   return (
-    <div className={`tp tp-survey-page ${owner ? 'tp-survey-page--owner' : ''}`}>
-      {owner && <Link to="/enterprise/trial" className="tp-survey-back">← Đánh giá đội ngũ</Link>}
+    <div className="tp tp-survey-page tp-survey-page--owner">
+      <Link to="/enterprise/trial" className="tp-survey-back">← Đánh giá đội ngũ</Link>
       <header className="tp-head">
         <div>
           <span className="tp-eyebrow">{data.organizationName}</span>
@@ -301,11 +305,8 @@ export function TrialTestPage() {
         </section>
       )}
 
-      {!owner && data.status === 'REVIEWED' && data.levels && (
-        <TrialEmployeeResults assessment={data} overview={overview} />
-      )}
 
-      {owner && data.status === 'REVIEWED' && data.levels && (
+      {data.status === 'REVIEWED' && data.levels && (
         <>
           {/* Phần 1: 6 Lĩnh vực Năng lực Trắc nghiệm */}
           <section className="tp-card">

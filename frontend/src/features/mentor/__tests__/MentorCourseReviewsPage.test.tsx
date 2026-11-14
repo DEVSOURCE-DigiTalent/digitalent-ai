@@ -105,7 +105,7 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
     vi.restoreAllMocks();
   });
 
-  it('hides PRE_ASSESSMENT, sorts priority PENDING -> FLAGGED -> APPROVED in queue rail, and auto-selects top item', async () => {
+  it('includes PRE_ASSESSMENT, sorts priority PENDING -> FLAGGED -> APPROVED in queue rail, and auto-selects top item', async () => {
     const queue: PulseFinalReviewQueue = {
       pendingCount: 1,
       preAssessmentCount: 1,
@@ -142,7 +142,8 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
           tier: 2,
         }),
         makeItem({
-          submissionId: 'sub-pre-ignored',
+          submissionId: 'sub-pre',
+          attempts: [{ submissionId: 'sub-pre', attemptNo: 1, evidenceText: 'Bài đầu vào', submittedAt: '2026-11-05T12:00:00.000Z' }],
           status: 'PENDING',
           kind: 'PRE_ASSESSMENT',
           employeeName: 'Nhân viên trước khóa',
@@ -169,19 +170,19 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
 
     const list = await screen.findByRole('list', { name: 'Danh sách bài nộp' });
     const railItems = within(list).getAllByRole('listitem');
-    expect(railItems).toHaveLength(3);
+    expect(railItems).toHaveLength(4);
 
     expect(within(railItems[0]).getByText('Lê Hoàng Long')).toBeInTheDocument();
-    expect(within(railItems[1]).getByText('Nguyễn Gia Bảo')).toBeInTheDocument();
-    expect(within(railItems[1]).getByText('Sale')).toBeInTheDocument();
-    expect(within(railItems[2]).getByText('Trần Minh Anh')).toBeInTheDocument();
-    expect(within(railItems[2]).getByText('Chưa phân vị trí')).toBeInTheDocument();
+    expect(within(railItems[2]).getByText('Nguyễn Gia Bảo')).toBeInTheDocument();
+    expect(within(railItems[2]).getByText('Sale')).toBeInTheDocument();
+    expect(within(railItems[3]).getByText('Trần Minh Anh')).toBeInTheDocument();
+    expect(within(railItems[3]).getByText('Chưa phân vị trí')).toBeInTheDocument();
 
-    expect(screen.queryByText('Nhân viên trước khóa')).not.toBeInTheDocument();
+    expect(within(railItems[1]).getByText('Nhân viên trước khóa')).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
     const orgSelect = screen.getByLabelText('Lọc theo doanh nghiệp') as HTMLSelectElement;
     expect(orgSelect).toBeInTheDocument();
-    expect(orgSelect.textContent).toContain('DigiTalent Demo Company (3 bài)');
+    expect(orgSelect.textContent).toContain('DigiTalent Demo Company (4 bài)');
     expect(screen.queryByRole('group', { name: 'Tóm tắt ba phần cần kiểm tra' })).not.toBeInTheDocument();
 
     // Auto-selects top queue item on right grading stage with essay tab and prompt active by default
@@ -189,6 +190,9 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
     expect(within(stageBanner).getByRole('heading', { name: 'Lê Hoàng Long' })).toBeInTheDocument();
     expect(screen.getByText('Đề bài thực hành yêu cầu: Bài thực hành phân tích doanh thu')).toBeInTheDocument();
     expect(screen.getByText('Minh chứng tự luận của nhân viên')).toBeInTheDocument();
+
+    fireEvent.click(within(railItems[1]).getByRole('button'));
+    expect(await screen.findByRole('combobox', { name: 'Quyết định của mentor' })).toBeInTheDocument();
   });
 
   it('switches evidence tabs (Essay -> Video RecordingPlayer -> Choice filter) and inserts AI essay draft into feedback', async () => {

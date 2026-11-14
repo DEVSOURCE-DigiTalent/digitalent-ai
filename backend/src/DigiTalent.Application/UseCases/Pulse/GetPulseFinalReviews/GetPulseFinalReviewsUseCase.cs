@@ -8,8 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
-/// GET /pulse/final-reviews — hàng chờ chấm bài (§10): quản lý nhận bài đánh giá trước khi học và bài cuối khóa;
-/// mentor DigiTalent chỉ nhận bài cuối cấp sau mỗi cấp độ theo từng lĩnh vực của các doanh nghiệp thuộc phạm vi.
+/// GET /pulse/final-reviews — kết quả bài đầu vào và bài cuối khóa cho quản lý; hàng chờ chấm cho mentor.
 /// Mỗi bài kèm kết quả phần trắc nghiệm (từng câu) và bản ghi (màn hình / camera với link đã ký, nhật ký giám sát).
 /// Phạm vi theo <see cref="PulseReviewScope"/>.
 /// </summary>
@@ -74,12 +73,18 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
     public async Task<GetPulseFinalReviewsUseCaseOutput> ExecuteAsync(GetPulseFinalReviewsUseCaseInput input)
     {
         var statusOrder = input.IncludeReviewed ? AllStatusOrder : ActiveStatusOrder;
-        var isMentor = _currentUser.Roles.Contains(Roles.Mentor);
+        var managerView = _currentUser.IsDepartmentManager && !_currentUser.IsAdmin
+            && !_currentUser.Roles.Contains(Roles.Mentor);
+        var employees = _scope.ResultEmployees();
+        if (input.DepartmentId is { } departmentId)
+        {
+            employees = employees.Where(e => e.DepartmentId == departmentId);
+        }
 
         var rows = await (
                 from submission in _context.CourseFinalSubmissions.AsNoTracking()
                 join enrollment in _context.Enrollments.AsNoTracking() on submission.EnrollmentId equals enrollment.Id
-                join employee in _scope.ReviewableEmployees().AsNoTracking() on enrollment.EmployeeId equals employee.Id
+                join employee in employees.AsNoTracking() on enrollment.EmployeeId equals employee.Id
                 join course in _context.Courses.AsNoTracking() on enrollment.CourseId equals course.Id
                 join department in _context.Departments.AsNoTracking() on employee.DepartmentId equals department.Id
                 where enrollment.Status != Statuses.Enrollment.Cancelled
@@ -100,11 +105,9 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                 })
             .ToListAsync();
 
-        var preRows = isMentor
-            ? new List<PreAssessmentRow>()
-            : await (
+        var preRows = await (
                     from preAssessment in _context.CoursePreAssessments.AsNoTracking()
-                    join employee in _scope.ReviewableEmployees().AsNoTracking() on preAssessment.EmployeeId equals employee.Id
+                    join employee in employees.AsNoTracking() on preAssessment.EmployeeId equals employee.Id
                     join course in _context.Courses.AsNoTracking() on preAssessment.CourseId equals course.Id
                     join department in _context.Departments.AsNoTracking() on employee.DepartmentId equals department.Id
                     where (input.OrganizationId == null || employee.OrganizationId == input.OrganizationId)
@@ -295,7 +298,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
 
         // AI evaluation: gọi Gemini song song cho tất cả bài PENDING (đánh giá bài + phát hiện gian lận)
         var defaultCriteria = PulseRules.FinalCriteria.Select(c => c.Title).ToList();
-        var toEvaluate = items.Where(i => i.Status == PulseFinalStatus.Pending && i.Attempts.Count > 0).ToList();
+        var toEvaluate = items.Where(i => !managerView && i.Status == PulseFinalStatus.Pending && i.Attempts.Count > 0).ToList();
         var courseText = await PulseCourseText.LoadAsync(_context, toEvaluate.Select(i => i.CourseId).Distinct().ToList());
         // Stored reviews are read first; AI calls run in parallel without touching the DbContext and their results
         // are stored once they are all back.

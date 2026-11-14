@@ -16,6 +16,7 @@ import { PageSkeleton } from '../../features/pulse-employee/components/ui';
 import { trialGateOf } from '../../features/pulse-employee/lib/trial-gate';
 import '../../features/pulse-employee/pulse-trial.css';
 import { useIsEnterpriseTrial, useMyTrialAssessment } from '../../hooks/use-trial-program';
+import { usePulseOverview } from '../../hooks/use-pulse';
 import { AssistantWidget } from '../../features/assistant/components/AssistantWidget';
 import { RoleTutorialContainer } from '../../features/onboarding-tutorial';
 import '../../features/pulse-employee/pulse.css';
@@ -52,7 +53,10 @@ export function PulseEmployeeLayout() {
   const trial = useIsEnterpriseTrial();
   const owner = useCurrentUser((s) => Boolean(s.user?.roles.includes(ROLES.OWNER)));
   const { data: myTrial, isLoading: isTrialLoading } = useMyTrialAssessment(trial);
-  const gate = trialGateOf(myTrial);
+  const gate = trialGateOf(myTrial, undefined, owner);
+  const { data: overview } = usePulseOverview(trial && !owner && myTrial?.status === 'REVIEWED');
+  const trialLearning = trial && !owner && myTrial?.status === 'REVIEWED' &&
+    (!overview?.hasPosition || !overview.hasTargets || Boolean(overview.awaitingFramework));
   const isWaiting = myTrial?.status === 'SUBMITTED' || gate === 'waiting';
   const isGateActive = Boolean(gate && myTrial);
   const shouldFocus = Boolean(exam || isGateActive || (pathname === PULSE_PATHS.trialTest && isWaiting));
@@ -100,7 +104,7 @@ export function PulseEmployeeLayout() {
                     : 'pu-workspace-content'
                 }
               >
-                {!exam && !shouldFocus && <PulseSidebar />}
+                {!exam && !shouldFocus && <PulseSidebar trialLearning={trialLearning} />}
                 <main
                   className={
                     exam

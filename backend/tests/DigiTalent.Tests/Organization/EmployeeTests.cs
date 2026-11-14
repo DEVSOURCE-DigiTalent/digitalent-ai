@@ -33,13 +33,14 @@ public class EmployeeTests
         return mock;
     }
 
-    private static Mock<ICurrentUser> MockDepartmentManager(Guid organizationId, Guid departmentId)
+    private static Mock<ICurrentUser> MockDepartmentManager(Guid organizationId, Guid departmentId, Guid employeeId)
     {
         var mock = new Mock<ICurrentUser>();
         mock.Setup(c => c.GetRequiredOrganizationId()).Returns(organizationId);
         mock.Setup(c => c.OrganizationId).Returns(organizationId);
         mock.Setup(c => c.IsDepartmentManager).Returns(true);
         mock.Setup(c => c.DepartmentId).Returns(departmentId);
+        mock.Setup(c => c.EmployeeId).Returns(employeeId);
         return mock;
     }
 
@@ -580,7 +581,7 @@ public class EmployeeTests
     }
 
     [Fact]
-    public async Task DepartmentManager_SeesOnlyOwnDepartment_AndOtherDepartmentIsNotFound()
+    public async Task DepartmentManager_SeesAssignedDepartment_EvenWhenTokenDepartmentDiffers()
     {
         using var context = await CreateDatabaseAsync();
         var org = await SeedOrganizationAsync(context);
@@ -601,7 +602,10 @@ public class EmployeeTests
         context.Employees.AddRange(colleague, outsider);
         await context.SaveChangesAsync();
 
-        var manager = MockDepartmentManager(org.Id, ownDept.Id).Object;
+        var managerId = colleague.Id;
+        ownDept.ManagerEmployeeId = managerId;
+        await context.SaveChangesAsync();
+        var manager = MockDepartmentManager(org.Id, otherDept.Id, managerId).Object;
 
         // BR-12: list only contains the manager's department, even when filtering by another department
         var list = await PagedUseCase(context, manager).ExecuteAsync(new GetPagedEmployeesUseCaseInput { PageSize = 50 });
