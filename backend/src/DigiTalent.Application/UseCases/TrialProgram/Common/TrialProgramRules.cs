@@ -68,23 +68,33 @@ public static class TrialProgramRules
     };
 
     /// <summary>
-    /// Số câu đúng tối thiểu để đạt một cấp của bài khảo sát: 3 câu → 2 câu (66,7%, gần 70% nhất), 1 câu → 1 câu,
-    /// số câu khác → 70% làm tròn lên. Giao diện báo cáo dùng cùng luật (trial-format.ts tierPassMark).
+    /// Tỷ lệ câu đúng của cả lĩnh vực (%) cần để đạt mức 1 Cơ bản / 2 Trung cấp / 3 Nâng cao. Với 15 câu: 6 / 9 / 12 câu.
+    /// Giao diện báo cáo dùng cùng mốc (trial-format.ts LEVEL_SHARE_PERCENTS).
     /// </summary>
-    public static int TierPassMark(int total) =>
-        total <= 0 ? 0
-        : total == 3 ? 2
-        : PulseRules.ChoicePassMark(total);
+    public static readonly IReadOnlyList<int> LevelSharePercents = new[] { 40, 60, 80 };
 
     /// <summary>
-    /// Mức gợi ý của một lĩnh vực từ trắc nghiệm: cấp cao nhất mà mọi cấp từ Cơ bản tới đó đều đạt (<see cref="TierPassMark"/>).
+    /// Mức gợi ý của một lĩnh vực từ trắc nghiệm: tỷ lệ câu đúng trên tổng số câu đã phát của lĩnh vực, mọi cấp cộng lại
+    /// (<see cref="LevelFromShare"/>). Số câu từng cấp chỉ để hiển thị.
     /// </summary>
-    public static short SuggestedLevel(IReadOnlyList<(int Correct, int Total)> byTier)
+    public static short SuggestedLevel(IReadOnlyList<(int Correct, int Total)> byTier) =>
+        LevelFromShare(byTier.Sum(t => t.Correct), byTier.Sum(t => t.Total));
+
+    /// <summary>
+    /// Dưới 40% → 0 (chưa đạt cấp nào), từ 40% → 1, từ 60% → 2, từ 80% → 3. Chia cho số câu thật đã phát, nên một lĩnh vực
+    /// thiếu câu (khóa có ít câu ôn tập) vẫn tính đúng tỷ lệ.
+    /// </summary>
+    public static short LevelFromShare(int correct, int total)
     {
-        short level = 0;
-        foreach (var (correct, total) in byTier)
+        if (total <= 0)
         {
-            if (total == 0 || correct < TierPassMark(total))
+            return 0;
+        }
+
+        short level = 0;
+        foreach (var percent in LevelSharePercents)
+        {
+            if (correct * 100 < total * percent)
             {
                 break;
             }

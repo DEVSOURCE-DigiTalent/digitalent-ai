@@ -24,29 +24,13 @@ namespace DigiTalent.Tests.Trial;
 public class OwnerSurveyFlowTests
 {
     [Fact]
-    public void Suggested_level_is_the_highest_tier_passed_in_a_row()
+    public void Suggested_level_comes_from_the_share_of_right_answers_in_the_domain()
     {
         TrialProgramRules.SuggestedLevel(new[] { (1, 1), (1, 1), (1, 1) }).Should().Be(3);
-        TrialProgramRules.SuggestedLevel(new[] { (1, 1), (0, 1), (1, 1) }).Should().Be(1);
-        TrialProgramRules.SuggestedLevel(new[] { (0, 1), (1, 1), (1, 1) }).Should().Be(0);
-        TrialProgramRules.SuggestedLevel(new[] { (1, 2), (2, 2), (0, 0) }).Should().Be(0);
-        // Three questions per level: two right answers pass the level.
-        TrialProgramRules.SuggestedLevel(new[] { (2, 2), (2, 3), (0, 0) }).Should().Be(2);
-    }
-
-    [Fact]
-    public void Survey_with_three_questions_per_level_needs_two_right_answers_from_the_basic_level_up()
-    {
-        TrialProgramRules.TierPassMark(3).Should().Be(2);
-        TrialProgramRules.TierPassMark(1).Should().Be(1);
-        TrialProgramRules.TierPassMark(10).Should().Be(7);
-        TrialProgramRules.TierPassMark(0).Should().Be(0);
-
-        TrialProgramRules.SuggestedLevel(new[] { (2, 3), (2, 3), (2, 3) }).Should().Be(3);
-        TrialProgramRules.SuggestedLevel(new[] { (3, 3), (2, 3), (1, 3) }).Should().Be(2);
-        TrialProgramRules.SuggestedLevel(new[] { (3, 3), (1, 3), (3, 3) }).Should().Be(1);
-        // Basic and Intermediate failed: all three Advanced answers right still give level 0.
-        TrialProgramRules.SuggestedLevel(new[] { (1, 3), (0, 3), (3, 3) }).Should().Be(0);
+        TrialProgramRules.SuggestedLevel(new[] { (1, 1), (0, 1), (1, 1) }).Should().Be(2);
+        TrialProgramRules.SuggestedLevel(new[] { (0, 1), (0, 1), (1, 1) }).Should().Be(0);
+        TrialProgramRules.SuggestedLevel(new[] { (1, 2), (2, 2), (0, 0) }).Should().Be(2);
+        TrialProgramRules.SuggestedLevel(new[] { (0, 0), (0, 0), (0, 0) }).Should().Be(0);
     }
 
     [Fact]
