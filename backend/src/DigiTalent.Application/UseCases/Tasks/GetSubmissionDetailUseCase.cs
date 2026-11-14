@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
@@ -24,14 +25,16 @@ public class GetSubmissionDetailUseCase : IUseCase<GetSubmissionDetailInput, Sub
             .FirstOrDefaultAsync(s => s.Id == input.Id)
             ?? throw new NotFoundException($"Submission '{input.Id}' not found.");
 
+        var employees = new EmployeeScope(_context, _currentUser).VisibleEmployees().AsNoTracking();
         var assignment = await _context.TaskAssignments.AsNoTracking()
+            .Where(a => employees.Any(e => e.Id == a.EmployeeId))
             .Where(a => a.Id == sub.TaskAssignmentId)
             .Where(a => a.TaskTemplateId.HasValue &&
                 _context.PracticalTaskTemplates.Any(t => t.Id == a.TaskTemplateId && t.OrganizationId == organizationId))
             .FirstOrDefaultAsync()
             ?? throw new NotFoundException("Assignment not found.");
 
-        var emp = await _context.Employees.AsNoTracking()
+        var emp = await employees
             .Where(e => e.Id == assignment.EmployeeId)
             .Select(e => new { e.Id, e.FullName, e.EmployeeCode, e.DepartmentId })
             .FirstOrDefaultAsync();

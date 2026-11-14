@@ -1,14 +1,13 @@
 import {
   Bell,
   Bug,
-  ClipboardCheck,
   FileBarChart,
   FileCheck2,
   GraduationCap,
-  Layers,
   LayoutDashboard,
   MessageSquare,
   TrendingUp,
+  Users,
 } from 'lucide-react';
 import type { SidebarConfig } from './types';
 
@@ -17,21 +16,19 @@ import type { SidebarConfig } from './types';
  * Hai nhóm phẳng: việc quản lý đội và các công cụ khác. Chỉ màn hình thuộc phạm vi phòng ban;
  * việc tự học của quản lý mở từ menu tài khoản (cổng nhân viên Pulse), không nằm ở đây.
  *
- * Nhiệm vụ thực tế dùng mã phụ MG-08..12 (cùng màn với OW-35..39).
  */
 export const MANAGER_SIDEBAR: SidebarConfig = [
   // ── QUẢN LÝ ĐỘI ──
   { label: 'Quản lý đội' },
   { label: 'Tổng quan', icon: LayoutDashboard, screenId: 'MG-01' },
-  { label: 'Năng lực đội ngũ', icon: TrendingUp, screenId: 'MG-05', activeFor: ['MG-02', 'MG-03', 'MG-04'] },
-  { label: 'Chấm bài', icon: FileCheck2, screenId: 'MG-13' },
+  { label: 'Nhân viên', icon: Users, screenId: 'MG-02', activeFor: ['MG-03'] },
+  { label: 'Năng lực đội ngũ', icon: TrendingUp, screenId: 'MG-05', activeFor: ['MG-04'] },
+  { label: 'Kết quả bài làm', icon: FileCheck2, screenId: 'MG-13' },
   { label: 'Báo cáo chu kỳ', icon: FileBarChart, screenId: 'MG-14' },
 
   // ── CÁC CÔNG CỤ KHÁC ──
   { label: 'Các công cụ khác' },
-  { label: 'Khung năng lực chung', icon: Layers, screenId: 'MG-15' },
   { label: 'Đào tạo đội ngũ', icon: GraduationCap, screenId: 'MG-06', activeFor: ['MG-07'] },
-  { label: 'Minh chứng thực tế', icon: ClipboardCheck, screenId: 'MG-11', activeFor: ['MG-12', 'MG-08', 'MG-09', 'MG-10'] },
   { label: 'Hoạt động', icon: Bell, screenId: 'SHR-03' },
   { label: 'Góp ý', icon: MessageSquare, screenId: 'SHR-04' },
   { label: 'Báo lỗi', icon: Bug, screenId: 'SHR-05' },

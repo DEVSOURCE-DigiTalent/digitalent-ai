@@ -362,3 +362,38 @@ html[data-theme='dark'] .pu-manager .pu-pill.gray { background: rgba(255, 255, 2
 html[data-theme='dark'] .pu-manager .pm-summary > div.warm { border-color: rgba(232, 161, 127, .3); background: rgba(232, 161, 127, .1); }
 html[data-theme='dark'] .pu-manager .pu-ai-verdict { background: var(--pm-tint); color: #b8e0dc; }
 html[data-theme='dark'] .pu-manager .pu-field :is(textarea, input, select):focus { outline-color: rgba(92, 194, 184, .35); }
+
+.pu.manager-owner-page {
+  --pu-ink: var(--po-ink);
+  --pu-muted: var(--po-muted);
+  --pu-blue: var(--po-accent);
+  --pu-violet: var(--po-accent);
+  --pu-violet-2: var(--po-accent);
+  --pu-line: var(--po-line);
+  --pu-line-2: var(--po-glow);
+  --pu-soft: var(--po-tint);
+  --pu-paper: var(--po-surface);
+  --pm-accent: var(--po-accent);
+  --pm-strong: var(--po-accent-strong);
+  --pm-tint: var(--po-tint);
+}
+.manager-owner-page .pu-btn-primary {
+  background: linear-gradient(125deg, #43359b, #5d4bc4);
+  box-shadow: 0 10px 23px #5140ae35;
+}
+.manager-owner-page .pu-btn-primary:hover:not(:disabled) { box-shadow: 0 14px 25px #5140ae46; }
+.manager-owner-page :is(.pu-btn-outline, .pu-btn-ghost, .pu-empty) { border-color: var(--po-line); }
+.manager-owner-page .pu-empty { background: var(--po-raised); }
+.manager-owner-page .pu-bar > i { background: linear-gradient(90deg, #5945bb, #8f7bef); }
+.manager-owner-page .pu-field :is(input, select, textarea):focus { outline-color: var(--po-glow); }
+html[data-theme='dark'] .pu.manager-owner-page {
+  --pu-canvas: var(--po-canvas);
+  --pu-ink: var(--po-ink);
+  --pu-muted: var(--po-muted);
+  --pu-line: var(--po-line);
+  --pu-paper: var(--po-surface);
+  --pm-accent: var(--po-accent);
+  --pm-strong: var(--po-accent-strong);
+  --pm-tint: var(--po-tint);
+}
+html[data-theme='dark'] .pu.manager-owner-page .pu-pill:not(.green, .coral, .gray) { color: var(--pm-strong); }

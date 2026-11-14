@@ -147,6 +147,7 @@ export function OwnerNewTaskPage() {
       }}
     >
       <div className="px-4 md:px-6 pt-6 pb-8 mx-auto" style={{ maxWidth: 1440 }}>
+        <header className="manager-work-hero">
         <Link
           to="/enterprise/tasks"
           className="inline-flex items-center gap-1.5 text-[11px] font-bold mb-4 transition-opacity hover:opacity-70"
@@ -155,6 +156,7 @@ export function OwnerNewTaskPage() {
           <ArrowLeft className="size-3" />{translateUi(" Nhiệm vụ thực tế")}</Link>
 
         <h1 className="text-3xl sm:text-4xl font-bold tracking-[-0.04em] heading-gradient">{translateUi("Giao bài tập thực hành")}</h1>
+        </header>
 
         <form onSubmit={handleSubmit(onSubmit)} className="owner-operations__task-form mt-5 space-y-4">
           {/* Card 1: Info */}

@@ -1,0 +1,75 @@
+.manager-shell {
+  --ent-bg: #f6f6fc;
+  --ent-line: #e0dff0;
+  --ent-raised: #f3f2fc;
+  --ent-primary: #5343b5;
+  --ent-accent: #5343b5;
+  --ent-accent-soft: #eeebff;
+  --manager-header: linear-gradient(105deg, #f0efff, #fafaff 68%, #eef4ff);
+  --manager-gradient: linear-gradient(125deg, #43359b, #5d4bc4);
+}
+
+.manager-shell #main-content {
+  background: radial-gradient(ellipse 820px 420px at 95% 0, #dedafb75, transparent 74%), var(--ent-bg);
+}
+.manager-shell .sidebar-pulse-manager {
+  background: radial-gradient(ellipse at 0 0, #3b3674, transparent 58%), linear-gradient(165deg, #252442, #171a32);
+  border-color: #3a365c;
+}
+.manager-shell .sidebar-pulse-manager nav { scrollbar-color: #a7a4db55 transparent; }
+.manager-shell :is(.pm-side-label, .pm-side-foot dt, .pm-side-toggle) { color: #bab7dd; }
+.manager-shell :is(.pm-side-link, .pm-side-foot) { color: #e0def2; }
+.manager-shell .pm-side-link svg { color: #bcb8f4; }
+.manager-shell .pm-side-link:not(.active):hover {
+  background: #b8adfa24;
+  box-shadow: inset 2px 0 #a798ff88;
+}
+.manager-shell .pm-side-link:not(.active):hover svg { color: #e5dfff; }
+.manager-shell .pm-side-link.active {
+  background: linear-gradient(105deg, #f1edff, #dbd7ff);
+  color: #33266f;
+  box-shadow: inset 3px 0 #9e83ff, 0 8px 18px #12133135;
+}
+.manager-shell :is(.pm-side-link.active svg, .pm-side-avatar) { color: #49378e; }
+.manager-shell .pm-side-avatar { background: #e8e2ff; }
+.manager-shell a:focus-visible > .pm-side-link { outline-color: #cbbbff; }
+.manager-shell .owner-adaptive-header > header { box-shadow: inset 0 -1px #c0b5eb70, 0 10px 26px #35296412; }
+.manager-shell .account-menu__avatar { background: var(--manager-gradient); }
+.manager-shell #main-content .owner-operations__primary { background: var(--manager-gradient); box-shadow: 0 9px 22px #4937a22b; }
+
+html[data-theme='dark'] .manager-shell {
+  --ent-bg: #171729;
+  --ent-raised: #272641;
+  --ent-card: #202035;
+  --ent-line: #b4a5fb30;
+  --ent-primary: #c3b4ff;
+  --ent-on-primary: #211942;
+  --ent-accent: #c3b4ff;
+  --ent-accent-soft: #a998ff26;
+}
+html[data-theme='dark'] .manager-shell #main-content {
+  background: radial-gradient(ellipse 820px 420px at 95% 0, #5e4f9d38, transparent 74%), var(--ent-bg);
+}
+
+.manager-shell #main-content :is(.owner-operations__task-form, .owner-operations__review-form) > section {
+  border-radius: 16px;
+}
+
+/* Older work screens set their palette inline for both roles. */
+.manager-shell #main-content .po-owner {
+  --po-canvas: var(--ent-bg) !important;
+  --po-surface: var(--ent-card) !important;
+  --po-raised: var(--ent-raised) !important;
+  --po-ink: var(--ent-fg) !important;
+  --po-muted: var(--ent-fg-2) !important;
+  --po-accent: var(--ent-accent) !important;
+  --po-accent-strong: var(--ent-accent) !important;
+  --po-line: var(--ent-line) !important;
+  --po-soft: var(--ent-accent-soft) !important;
+  --po-tint: var(--ent-accent-soft) !important;
+  --po-glow: var(--ent-accent-soft) !important;
+}
+.manager-shell #main-content .owner-operations {
+  background: radial-gradient(ellipse 72% 32% at 78% 0%, var(--po-tint), transparent 75%), var(--po-canvas);
+}
+.manager-shell #main-content .owner-operations__filters { background: var(--po-raised); }

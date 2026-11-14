@@ -87,12 +87,13 @@ export interface AssignmentRow {
   progressPercent: number;
   completedAt?: string;
   cancelReason?: string;
-  source: 'MANUAL' | 'SKILL_GAP' | 'DEPARTMENT' | 'POSITION' | 'RECOMMENDATION';
+  source: 'MANUAL' | 'SKILL_GAP' | 'DEPARTMENT' | 'POSITION' | 'RECOMMENDATION' | 'SELF_ENROLLED';
   overdue: boolean;
   dueSoon: boolean;
 }
 
 export interface AssignmentListParams {
+  includeIndependentLearning?: boolean;
   pageIndex?: number;
   pageSize?: number;
   search?: string;

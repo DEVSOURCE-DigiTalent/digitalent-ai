@@ -23,7 +23,7 @@ export const MANAGER_SCREENS: ScreenDef[] = [
   // ── Nhóm của tôi ──
   {
     id: 'MG-02',
-    title: 'Thành viên nhóm',
+    title: 'Nhân viên',
     path: '/enterprise/team/members',
     roles: MANAGER_ROLES,
     permission: P.EMPLOYEE_READ,
@@ -69,13 +69,13 @@ export const MANAGER_SCREENS: ScreenDef[] = [
     permission: P.LEARNING_PROGRESS_READ,
     priority: 'P1',
   },
-  // ── Chấm bài (Pulse, mock #/review): hàng chờ đánh giá trước khi học + bài cuối khóa của phòng ban ──
+  // ── Kết quả đánh giá trước khi học và bài cuối khóa của phòng ban ──
   {
     id: 'MG-13',
-    title: 'Chấm bài',
+    title: 'Kết quả bài làm',
     path: '/enterprise/team/final-reviews',
     roles: MANAGER_ROLES,
-    permission: P.TASK_EVALUATE,
+    permission: P.DASHBOARD_DEPARTMENT_READ,
     priority: 'P0',
   },
   // ── Pulse mock #/report: báo cáo chu kỳ khóa học của phòng ban (OW-40 là báo cáo toàn doanh nghiệp) ──
@@ -85,15 +85,6 @@ export const MANAGER_SCREENS: ScreenDef[] = [
     path: '/enterprise/team/reports',
     roles: MANAGER_ROLES,
     permission: P.DASHBOARD_DEPARTMENT_READ,
-    priority: 'P1',
-  },
-  // ── Pulse mock #/framework: khung năng lực chung, chỉ đọc (OW-14 là màn quản trị của chủ doanh nghiệp) ──
-  {
-    id: 'MG-15',
-    title: 'Khung năng lực chung',
-    path: '/enterprise/team/framework',
-    roles: MANAGER_ROLES,
-    permission: P.COMPETENCY_READ,
     priority: 'P1',
   },
 ];

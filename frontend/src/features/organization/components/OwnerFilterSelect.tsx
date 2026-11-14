@@ -18,9 +18,10 @@ interface OwnerFilterSelectProps {
   disabled?: boolean;
   onSearchChange?: (query: string) => void;
   loading?: boolean;
+  variant?: 'owner' | 'manager';
 }
 
-export function OwnerFilterSelect({ label, value, options, onChange, className = '', disabled = false, onSearchChange, loading = false }: OwnerFilterSelectProps) {
+export function OwnerFilterSelect({ label, value, options, onChange, className = '', disabled = false, onSearchChange, loading = false, variant = 'owner' }: OwnerFilterSelectProps) {
   useUiLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -72,6 +73,10 @@ export function OwnerFilterSelect({ label, value, options, onChange, className =
     if (open && searchable) searchRef.current?.focus();
   }, [open, searchable]);
 
+  useEffect(() => {
+    if (open) document.getElementById(`${menuId}-option-${activeIndex}`)?.scrollIntoView?.({ block: 'nearest' });
+  }, [activeIndex, menuId, open]);
+
   const choose = (option: OwnerFilterOption) => {
     onChange(option.value);
     setOpen(false);
@@ -90,20 +95,24 @@ export function OwnerFilterSelect({ label, value, options, onChange, className =
       if (!open) { setOpen(true); setActiveIndex(Math.max(0, options.findIndex((option) => option.value === value))); }
       else setActiveIndex((index) => Math.max(0, Math.min(visibleOptions.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1))));
     }
-    if (open && event.key === 'Enter' && visibleOptions[activeIndex]) {
+    if (open && (event.key === 'Home' || event.key === 'End') && event.target === buttonRef.current) {
+      event.preventDefault();
+      setActiveIndex(event.key === 'Home' ? 0 : Math.max(0, visibleOptions.length - 1));
+    }
+    if (open && (event.key === 'Enter' || (event.key === ' ' && event.target === buttonRef.current)) && visibleOptions[activeIndex]) {
       event.preventDefault();
       choose(visibleOptions[activeIndex]);
     }
   };
 
   return <>
-    <button ref={buttonRef} type="button" role="combobox" className={`owner-filter-select ${open ? 'is-open' : ''} ${className}`} aria-label={translateUi(label)} aria-haspopup="listbox" aria-expanded={open} aria-controls={open ? menuId : undefined} disabled={disabled} onKeyDown={handleKeyDown} onClick={() => { setQuery(''); onSearchChange?.(''); setActiveIndex(Math.max(0, options.findIndex((option) => option.value === value))); setOpen((current) => !current); }}>
+    <button ref={buttonRef} type="button" role="combobox" data-variant={variant} aria-activedescendant={open && visibleOptions[activeIndex] ? `${menuId}-option-${activeIndex}` : undefined} className={`owner-filter-select ${open ? 'is-open' : ''} ${className}`} aria-label={translateUi(label)} aria-haspopup="listbox" aria-expanded={open} aria-controls={open ? menuId : undefined} disabled={disabled} onKeyDown={handleKeyDown} onClick={() => { setQuery(''); onSearchChange?.(''); setActiveIndex(Math.max(0, options.findIndex((option) => option.value === value))); setOpen((current) => !current); }}>
       <span>{translateUi(selected?.label) ?? translateUi(options[0]?.label) ?? translateUi(label)}</span><ChevronDown size={17} aria-hidden="true" />
     </button>
-    {open && createPortal(<div ref={menuRef} className="owner-filter-select__menu" style={{ top: position.top, left: position.left, width: position.width, maxHeight: position.maxHeight }} onKeyDown={handleKeyDown}>
+    {open && createPortal(<div ref={menuRef} className="owner-filter-select__menu" data-variant={variant} style={{ top: position.top, left: position.left, width: position.width, maxHeight: position.maxHeight }} onKeyDown={handleKeyDown}>
       {searchable && <label className="owner-filter-select__search"><Search size={15} aria-hidden="true" /><input ref={searchRef} value={query} onChange={(event) => { setQuery(event.target.value); onSearchChange?.(event.target.value); setActiveIndex(0); }} placeholder={translateUi("Tìm trong danh sách")} aria-label={translateUi(`Tìm ${label.toLocaleLowerCase('vi')}`)} /></label>}
       <div id={menuId} role="listbox" aria-label={translateUi(label)} className="owner-filter-select__options">
-        {visibleOptions.map((option, index) => <button key={option.value} type="button" role="option" aria-selected={option.value === value} className={`${option.value === value ? 'is-selected' : ''} ${index === activeIndex ? 'is-active' : ''}`} onMouseEnter={() => setActiveIndex(index)} onClick={() => choose(option)}><span>{translateUi(option.label)}</span>{option.value === value && <Check size={16} aria-hidden="true" />}</button>)}
+        {visibleOptions.map((option, index) => <button key={option.value} id={`${menuId}-option-${index}`} type="button" role="option" aria-selected={option.value === value} className={`${option.value === value ? 'is-selected' : ''} ${index === activeIndex ? 'is-active' : ''}`} onMouseEnter={() => setActiveIndex(index)} onFocus={() => setActiveIndex(index)} onClick={() => choose(option)}><span>{translateUi(option.label)}</span>{option.value === value && <Check size={16} aria-hidden="true" />}</button>)}
         {visibleOptions.length === 0 && <p className="owner-filter-select__none">{loading ? 'Đang tìm phòng ban…' : translateUi('Không có kết quả phù hợp')}</p>}
       </div>
     </div>, document.body)}

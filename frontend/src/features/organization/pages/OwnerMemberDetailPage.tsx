@@ -8,7 +8,6 @@ import { useEmployeeCapability } from '@/hooks/use-workforce';
 import { useLearningNeeds } from '@/hooks/use-skill-gaps';
 import { EmployeeLearningPlan } from '@/features/intelligence/components/EmployeeLearningPlan';
 import { PERMISSIONS } from '@/hooks/use-permission';
-import { competencyCodeMap } from '@/lib/competency-levels';
 import { assignableRoles, canManageMember } from '@/lib/role-policy';
 import { ConfirmLevelDialog } from '@/features/intelligence/components/ConfirmLevelDialog';
 import type { SkillGapRunDetail, EmployeeLearningNeeds } from '@/services/intelligence.service';
@@ -26,7 +25,6 @@ import {
   OverviewTab,
   LearningTab,
   AssessmentsTab,
-  TasksTab,
   EvidencesTab,
   AchievementsTab,
 } from '@/features/members/components/employee-tabs';
@@ -46,7 +44,6 @@ const TABS = [
   { id: 'skill-gap', label: 'Khoảng trống' },
   { id: 'learning', label: 'Học tập' },
   { id: 'assessments', label: 'Đánh giá' },
-  { id: 'tasks', label: 'Nhiệm vụ' },
   { id: 'evidence', label: 'Minh chứng' },
   { id: 'achievements', label: 'Thành tựu' },
 ] as const;
@@ -259,7 +256,7 @@ export function OwnerMemberDetailPage() {
 
         {/* Tab content */}
         <section key={tab} className={`member-detail-content member-detail-content--${tab}`} role="tabpanel" id={`${tabId}-panel`} aria-labelledby={availableTabs.length > 1 ? `${tabId}-${tab}` : undefined}>
-          {capError && ['learning', 'assessments', 'tasks', 'evidence', 'achievements'].includes(tab) && <div className="member-detail-notice" role="alert"><CircleAlert size={20} /><div><strong>{translateUi("Không tải được lịch sử nhân viên")}</strong><p>{translateUi("Thử lại để xem dữ liệu mới nhất.")}</p></div><button type="button" onClick={() => void refetchCap()}>{translateUi("Thử lại")}</button></div>}
+          {capError && ['learning', 'assessments', 'evidence', 'achievements'].includes(tab) && <div className="member-detail-notice" role="alert"><CircleAlert size={20} /><div><strong>{translateUi("Không tải được lịch sử nhân viên")}</strong><p>{translateUi("Thử lại để xem dữ liệu mới nhất.")}</p></div><button type="button" onClick={() => void refetchCap()}>{translateUi("Thử lại")}</button></div>}
           {tab === 'overview' && <><OverviewTab member={member} />{employeeId && <div className="member-profile-shortcuts"><Link to={`/enterprise/setup${learningProfile?.positionId ? `?positionId=${encodeURIComponent(learningProfile.positionId)}` : ''}`}><BriefcaseBusiness size={21} /><div><strong>{translateUi("Chuẩn vị trí")}</strong><span>{learningProfile?.positionName ?? member.positionName ?? 'Chưa thiết lập vị trí'}</span></div><ChevronRight size={16} /></Link><Link to={`/enterprise/skill-gap/${employeeId}`}><BadgeCheck size={21} /><div><strong>{translateUi("Năng lực & khóa học")}</strong><span>{learningProfile?.state === 'MET' ? 'Đã đáp ứng chuẩn' : learningProfile?.state === 'NEEDS_LEARNING' ? 'Xem năng lực cần bổ sung' : learningProfile?.state === 'NO_STANDARD' ? translateUi('Chưa có chuẩn vị trí') : translateUi('Chờ kết quả đánh giá')}</span></div><ChevronRight size={16} /></Link></div>}</>}
           {(tab === 'competency' || tab === 'skill-gap') && employeeId && <div className="member-live-capability">{learningNeeds.isLoading ? <p role="status">{translateUi("Đang đối chiếu với chuẩn vị trí…")}</p> : learningNeeds.isError ? <p role="alert">{translateUi("Không tải được kết quả năng lực. ")}<button type="button" onClick={() => void learningNeeds.refetch()}>{translateUi("Thử lại")}</button></p> : learningProfile && <EmployeeLearningPlan key={`${employeeId}-${tab}`} employee={learningProfile} embedded view={tab === 'competency' ? 'competencies' : 'gaps'} canConfirm={canConfirm} onConfirm={() => setConfirming(true)} onRefresh={() => void learningNeeds.refetch()} refreshing={learningNeeds.isFetching} onDomainChange={setDomainNumber} />}</div>}
           {tab === 'learning' && capData && (
@@ -267,12 +264,6 @@ export function OwnerMemberDetailPage() {
           )}
           {tab === 'assessments' && !capError && (
             <div className="member-assessment-stack">{learningProfile && <section className="member-overall-assessment"><header><h2>{translateUi("Đánh giá tổng thể")}</h2><span>{learningProfile.domains.some((domain) => domain.assessmentLevel != null) ? 'Kết quả đã công bố' : translateUi('Chờ đánh giá')}</span></header>{learningProfile.domains.length ? <div>{learningProfile.domains.map((domain) => <article key={domain.categoryId}><strong>{translateUi(domain.name)}</strong><span className={domain.assessmentLevel == null ? 'is-waiting' : ''}>{domain.assessmentLevel == null ? translateUi('Chờ đánh giá') : domain.assessmentLevel === 0 ? 'Chưa đạt cơ bản' : levelLabel(domain.assessmentLevel)}</span>{domain.assessmentReviewedAt && <small>{formatDate(domain.assessmentReviewedAt)}</small>}</article>)}</div> : <p>{translateUi("Thiết lập chuẩn vị trí để theo dõi đánh giá theo lĩnh vực.")}</p>}</section>}<AssessmentsTab attempts={capData?.assessments} title={translateUi("Đánh giá khóa học")} /></div>
-          )}
-          {tab === 'tasks' && !capError && (
-            <TasksTab
-              tasks={capData?.tasks}
-              competencyCodes={competencyCodeMap(capData?.competencies)}
-            />
           )}
           {tab === 'evidence' && !capError && (
             <EvidencesTab

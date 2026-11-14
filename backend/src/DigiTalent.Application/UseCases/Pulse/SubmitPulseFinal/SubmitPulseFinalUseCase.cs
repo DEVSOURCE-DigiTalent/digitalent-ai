@@ -90,7 +90,7 @@ public class SubmitPulseFinalUseCase : IUseCase<SubmitPulseFinalUseCaseInput, Su
             {
                 RecipientUserId = reviewerUserId,
                 Type = NotificationType,
-                Title = "Có bài cuối khóa cần chấm",
+                Title = "Nhân viên đã nộp bài cuối khóa",
                 Message = $"{snapshot.Employee.FullName} đã nộp bài cuối khóa \"{state.Course.Title}\" (lần {attemptNo}/{PulseRules.MaxFinalAttempts}).",
                 RelatedEntityType = "course_final_submissions",
                 RelatedEntityId = submission.Id,

@@ -305,7 +305,7 @@ export const platformService = {
   getLoginHistory: () => apiClient.get<ApiResponse<LoginHistoryEntry[]>>('/account/login-history'),
 
   // Shared Notifications (SHR-03)
-  getNotifications: (params?: { unreadOnly?: boolean }) =>
+  getNotifications: (params?: { unreadOnly?: boolean; pageIndex?: number; pageSize?: number }) =>
     apiClient.get<ApiResponse<NotificationListDto | NotificationDto[]>>('/notifications', { params }),
   markNotificationRead: (id: string) => apiClient.put<ApiResponse<null>>(`/notifications/${id}/read`),
   markAllNotificationsRead: () => apiClient.put<ApiResponse<null>>('/notifications/read-all'),

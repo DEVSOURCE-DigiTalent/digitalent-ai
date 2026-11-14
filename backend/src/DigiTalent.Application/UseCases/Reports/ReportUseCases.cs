@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.UseCases.Intelligence.SkillGap.Common;
@@ -24,11 +25,18 @@ public class GetDashboardUseCase : IUseCase<GetDashboardInput, DashboardDto>
         var orgId = _currentUser.GetRequiredOrganizationId();
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        var employeeCount = await _context.Employees.AsNoTracking()
-            .CountAsync(e => e.OrganizationId == orgId && e.Status == "ACTIVE");
+        var scope = new EmployeeScope(_context, _currentUser);
+        var employees = _currentUser.IsDepartmentManager
+            ? scope.VisibleEmployees().AsNoTracking()
+            : _context.Employees.AsNoTracking().Where(e => e.OrganizationId == orgId);
+        var employeeCount = await employees.CountAsync(e => e.Status == "ACTIVE");
 
         var assignments = _context.CourseAssignments.AsNoTracking()
             .Where(ca => _context.Courses.AsNoTracking().Any(c => c.Id == ca.CourseId && c.OrganizationId == orgId));
+        if (_currentUser.IsDepartmentManager && !_currentUser.IsAdmin)
+        {
+            assignments = assignments.Where(ca => employees.Any(e => e.Id == ca.EmployeeId));
+        }
 
         var totalAssignments = await assignments.CountAsync(ca => ca.Status == "ACTIVE");
 
@@ -44,8 +52,8 @@ public class GetDashboardUseCase : IUseCase<GetDashboardInput, DashboardDto>
             : 0;
 
         // ── Skill gap snapshots for all active employees ──
-        var orgEmployeeIds = await _context.Employees.AsNoTracking()
-            .Where(e => e.OrganizationId == orgId && e.Status == "ACTIVE")
+        var orgEmployeeIds = await employees
+            .Where(e => e.Status == "ACTIVE")
             .Select(e => e.Id)
             .ToListAsync();
 
@@ -180,8 +188,14 @@ public class GetReportsOverviewUseCase : IUseCase<GetReportsOverviewInput, Repor
         var orgId = _currentUser.GetRequiredOrganizationId();
 
         // ── Workforce ──
-        var empQuery = _context.Employees.AsNoTracking()
-            .Where(e => e.OrganizationId == orgId);
+        var scope = new EmployeeScope(_context, _currentUser);
+        var managerView = _currentUser.IsDepartmentManager && !_currentUser.IsAdmin;
+        var departments = scope.VisibleDepartments().AsNoTracking();
+        if (managerView && input.DepartmentId is Guid departmentId)
+            departments = departments.Where(d => d.Id == departmentId);
+        var empQuery = managerView
+            ? scope.VisibleEmployees().AsNoTracking()
+            : _context.Employees.AsNoTracking().Where(e => e.OrganizationId == orgId);
 
         if (input.DepartmentId.HasValue)
             empQuery = empQuery.Where(e => e.DepartmentId == input.DepartmentId.Value);
@@ -191,14 +205,12 @@ public class GetReportsOverviewUseCase : IUseCase<GetReportsOverviewInput, Repor
         var totalEmployees = await empQuery.CountAsync();
         var activeEmployees = await empQuery.CountAsync(e => e.Status == "ACTIVE");
 
-        var departmentsCount = await _context.Departments.AsNoTracking()
-            .CountAsync(d => d.OrganizationId == orgId);
+        var departmentsCount = await departments.CountAsync();
         var positionsCount = await _context.JobPositions.AsNoTracking()
-            .CountAsync(j => j.OrganizationId == orgId);
+            .CountAsync(j => j.OrganizationId == orgId && (!managerView || departments.Any(d => d.Id == j.DepartmentId)));
 
         var byDepartment = await (
-            from dept in _context.Departments.AsNoTracking()
-            where dept.OrganizationId == orgId
+            from dept in departments
             select new DepartmentSummary
             {
                 Id = dept.Id.ToString(),
@@ -244,6 +256,12 @@ public class GetReportsOverviewUseCase : IUseCase<GetReportsOverviewInput, Repor
             .Where(a => _context.Assessments.Any(asmt => asmt.Id == a.AssessmentId &&
                 _context.Courses.Any(c => c.Id == asmt.CourseId && c.OrganizationId == orgId)));
 
+        if (managerView)
+        {
+            attempts = attempts.Where(a => _context.Enrollments.Any(enrollment =>
+                enrollment.Id == a.EnrollmentId && empQuery.Any(e => e.Id == enrollment.EmployeeId)));
+        }
+
         var totalAttempts = await attempts.CountAsync();
         var passedAttempts = await attempts.CountAsync(a => a.Passed == true);
         var passRate = totalAttempts > 0 ? Math.Round((decimal)passedAttempts / totalAttempts * 100, 1) : 0;
@@ -260,10 +278,16 @@ public class GetReportsOverviewUseCase : IUseCase<GetReportsOverviewInput, Repor
         // ── Evidence ──
         var taskTemplates = _context.PracticalTaskTemplates.AsNoTracking()
             .Where(t => t.OrganizationId == orgId);
+        var taskAssignments = _context.TaskAssignments.AsNoTracking();
+        if (managerView)
+        {
+            taskAssignments = taskAssignments.Where(a => empQuery.Any(e => e.Id == a.EmployeeId));
+            taskTemplates = taskTemplates.Where(t => taskAssignments.Any(a => a.TaskTemplateId == t.Id));
+        }
         var totalTasks = await taskTemplates.CountAsync();
 
         var submissions = _context.TaskSubmissions.AsNoTracking()
-            .Where(s => _context.TaskAssignments.Any(ta => ta.Id == s.TaskAssignmentId &&
+            .Where(s => taskAssignments.Any(ta => ta.Id == s.TaskAssignmentId &&
                 _context.PracticalTaskTemplates.Any(t => t.Id == ta.TaskTemplateId && t.OrganizationId == orgId)));
         var currentSubmissions = submissions.Where(s => s.Status != "SUPERSEDED");
         var totalSubmissions = await currentSubmissions.CountAsync();
@@ -275,12 +299,11 @@ public class GetReportsOverviewUseCase : IUseCase<GetReportsOverviewInput, Repor
             : 0;
 
         // Hai bước (không lồng IQueryable trong phép chiếu) để EF dịch được sang SQL.
-        var orgDepartments = await _context.Departments.AsNoTracking()
-            .Where(d => d.OrganizationId == orgId)
+        var orgDepartments = await departments
             .Select(d => new { d.Id, d.Name })
             .ToListAsync();
         var orgAssignments = await (
-            from ta in _context.TaskAssignments.AsNoTracking()
+            from ta in taskAssignments
             join e in _context.Employees.AsNoTracking() on ta.EmployeeId equals e.Id
             where e.OrganizationId == orgId
                 && _context.PracticalTaskTemplates.Any(t => t.Id == ta.TaskTemplateId && t.OrganizationId == orgId)
@@ -288,7 +311,7 @@ public class GetReportsOverviewUseCase : IUseCase<GetReportsOverviewInput, Repor
         ).ToListAsync();
         var orgSubmissions = await _context.TaskSubmissions.AsNoTracking()
             .Where(s => s.Status != "SUPERSEDED"
-                && _context.TaskAssignments.Any(ta => ta.Id == s.TaskAssignmentId
+                && taskAssignments.Any(ta => ta.Id == s.TaskAssignmentId
                     && _context.PracticalTaskTemplates.Any(t => t.Id == ta.TaskTemplateId && t.OrganizationId == orgId)))
             .Select(s => new { s.Id, s.TaskAssignmentId })
             .ToListAsync();

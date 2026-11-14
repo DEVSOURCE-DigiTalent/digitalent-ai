@@ -3,7 +3,6 @@ import {
   Bell,
   BookOpen,
   Bug,
-  ClipboardList,
   Compass,
   FileBarChart,
   FlaskConical,
@@ -33,7 +32,6 @@ export const OWNER_SIDEBAR: SidebarConfig = [
   // ── CÁC CÔNG CỤ KHÁC ──
   { label: 'Các công cụ khác' },
   { label: 'Đợt đào tạo', icon: UsersRound, screenId: 'OW-25', activeFor: ['OW-26', 'OW-27'] },
-  { label: 'Nhiệm vụ thực tế', icon: ClipboardList, screenId: 'MG-08', activeFor: ['OW-35', 'OW-36', 'OW-37', 'MG-09', 'MG-10', 'OW-38', 'OW-39', 'MG-11', 'MG-12'] },
   { label: 'Chứng nhận', icon: Award, screenId: 'OW-46', activeFor: ['OW-47'] },
   { label: 'Hoạt động', icon: Bell, screenId: 'SHR-03' },
   { label: 'Góp ý', icon: MessageSquare, screenId: 'SHR-04' },

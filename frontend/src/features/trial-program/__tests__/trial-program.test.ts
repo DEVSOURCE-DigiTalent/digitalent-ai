@@ -72,6 +72,8 @@ describe('trial learning gate', () => {
     expect(trialGateOf(mine({ canStart: false, testDeadline: '2026-10-27T10:00:00Z', closedMessage: 'Đã hết hạn.' }), now)).toBe('closed');
     expect(trialGateOf(mine({ status: 'SUBMITTED' }), now)).toBe('waiting');
     expect(trialGateOf(mine({ status: 'REVIEWED', reportPublished: true }), now)).toBeNull();
+    expect(trialGateOf(mine({ status: 'REVIEWED', reportPublished: false }), now)).toBeNull();
+    expect(trialGateOf(mine({ status: 'REVIEWED', reportPublished: false }), now, true)).toBe('waiting');
     expect(trialGateOf(undefined, now)).toBeNull();
   });
 });

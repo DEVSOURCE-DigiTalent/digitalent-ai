@@ -660,7 +660,7 @@ export function TrialExam({ organizationName, deadline }: { organizationName: st
                           <div className="pu-modal-summary-item">
                             <span className="pu-modal-summary-label">Quy trình tiếp theo</span>
                             <span className="pu-modal-summary-val text-slate-800">
-                              Chờ duyệt kết quả
+                              Kết quả khảo sát
                             </span>
                           </div>
                         </div>
@@ -824,14 +824,14 @@ export function TrialExam({ organizationName, deadline }: { organizationName: st
               <div className="pu-done-publish-head">
                 <span className="pu-done-publish-badge">
                   <Clock size={13} />
-                  <span>Chờ duyệt kết quả</span>
+                  <span>Kết quả khảo sát</span>
                 </span>
               </div>
               <h2 className="pu-done-publish-title">
-                Bài làm đang chờ duyệt
+                Xem kết quả cá nhân
               </h2>
               <p className="pu-done-publish-desc">
-                Hệ thống đã tiếp nhận bài thi và bản ghi giám sát an toàn. Lộ trình đào tạo sẽ mở khóa ngay sau khi ban quản lý duyệt đợt khảo thí.
+                Quay lại trang khảo sát để xem kết quả trắc nghiệm và các lựa chọn học tập đang mở.
               </p>
             </div>
 
@@ -848,7 +848,7 @@ export function TrialExam({ organizationName, deadline }: { organizationName: st
                   borderRadius: 12,
                 }}
               >
-                Về Trang tổng quan theo dõi trạng thái →
+                Về trang khảo sát →
               </Link>
             </div>
           </section>

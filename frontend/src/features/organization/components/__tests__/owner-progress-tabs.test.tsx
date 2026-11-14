@@ -44,7 +44,14 @@ describe('Owner progress tabs', () => {
     expect(map.queryByRole('link', { name: 'Báo cáo chu kỳ' })).not.toBeInTheDocument();
     expect(map.getByText('25%')).toBeInTheDocument();
     expect(map.getByText('1 / 4 lượt giao')).toBeInTheDocument();
-    expect(map.getAllByRole('button', { pressed: false })).toHaveLength(7);
+    expect(map.getAllByRole('button', { pressed: false })).toHaveLength(6);
+    const branches = screen.getByRole('tabpanel', { name: 'Bản đồ doanh nghiệp' });
+    expect(branches.querySelectorAll('[data-side="left"]')).toHaveLength(3);
+    expect(branches.querySelectorAll('[data-side="right"]')).toHaveLength(3);
+    const gap = map.getByRole('button', { name: /^Khoảng trống năng lực/ });
+    expect(gap.parentElement).toHaveAttribute('data-side', 'bottom');
+    fireEvent.click(gap);
+    expect(map.getByRole('link', { name: 'Xem chi tiết' })).toHaveAttribute('href', '/enterprise/skill-gap');
     const team = map.getByRole('button', { name: /Cơ cấu đội ngũ/ });
     expect(team).toHaveTextContent('Chờ kích hoạt');
     expect(team).not.toHaveTextContent('Nhân sự hoạt động');

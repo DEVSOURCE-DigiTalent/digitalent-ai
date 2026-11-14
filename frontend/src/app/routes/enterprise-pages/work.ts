@@ -1,3 +1,6 @@
+import { Navigate } from 'react-router-dom';
+import { useIsPulseManager } from '@/features/pulse-manager/lib/use-is-pulse-manager';
+import { createElement, type ComponentType } from 'react';
 import type { PageRegistry } from '../build-routes';
 import { lazyPage } from '../lazy-page';
 
@@ -9,27 +12,27 @@ const AccountProfilePage = lazyPage(() => import('../../../features/account/page
 const MyFeedbacksPage = lazyPage(() => import('../../../features/feedback/pages/MyFeedbacksPage'), 'MyFeedbacksPage');
 const MyBugReportsPage = lazyPage(() => import('../../../features/feedback/pages/MyBugReportsPage'), 'MyBugReportsPage');
 const SecuritySettingsPage = lazyPage(() => import('../../../features/account/pages/SecuritySettingsPage'), 'SecuritySettingsPage');
-const RoleAwareEvidencePage = lazyPage(() => import('../../../features/pulse-manager/components/RoleAwarePages'), 'RoleAwareEvidencePage');
+const ManagerEvidencePage = lazyPage(() => import('../../../features/pulse-manager/pages/ManagerEvidencePage'), 'ManagerEvidencePage');
 const RoleAwareNotificationsPage = lazyPage(() => import('../../../features/pulse-manager/components/RoleAwarePages'), 'RoleAwareNotificationsPage');
+
+function withoutManager(Page: ComponentType) {
+  return function WorkPage() {
+    const isManager = useIsPulseManager();
+    return isManager ? createElement(Navigate, { to: '/enterprise/team', replace: true }) : createElement(Page);
+  };
+}
 
 /** Shared Work (Practical tasks, evidence review) and Shared Topbar/Account pages. */
 export const WORK_PAGES: PageRegistry = {
-  // Shared Work (OW-35..39 / MG-08..12)
-  'OW-35': OwnerTasksPage,
-  'MG-08': OwnerTasksPage,
+  'MG-08': withoutManager(OwnerTasksPage),
 
-  'OW-36': OwnerNewTaskPage,
-  'MG-09': OwnerNewTaskPage,
+  'MG-09': withoutManager(OwnerNewTaskPage),
 
-  'OW-37': OwnerTaskDetailPage,
-  'MG-10': OwnerTaskDetailPage,
+  'MG-10': withoutManager(OwnerTaskDetailPage),
 
-  // Quản lý (khung Pulse) thấy "Minh chứng thực tế"; chủ doanh nghiệp giữ OwnerReviewsPage.
-  'OW-38': RoleAwareEvidencePage,
-  'MG-11': RoleAwareEvidencePage,
+  'MG-11': withoutManager(ManagerEvidencePage),
 
-  'OW-39': OwnerReviewDetailPage,
-  'MG-12': OwnerReviewDetailPage,
+  'MG-12': withoutManager(OwnerReviewDetailPage),
 
   // Shared Account & Notifications
   'SHR-01': AccountProfilePage,

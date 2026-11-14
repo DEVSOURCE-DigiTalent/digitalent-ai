@@ -1,15 +1,27 @@
+import { create } from 'zustand';
 import { useCurrentUser } from './use-current-user';
 import { useDepartments } from './use-departments';
 
-/**
- * Phòng ban mà quản lý đang phụ trách (phòng ban có `managerEmployeeId` là hồ sơ nhân viên của người dùng).
- * Các màn quản lý dùng nó để chỉ hiển thị dữ liệu của phòng ban này; `null` khi chưa được gán phòng ban nào.
- */
+const useDepartmentSelection = create<{
+  selection?: { employeeId: string; departmentId: string };
+  select: (employeeId: string, departmentId: string) => void;
+}>((set) => ({
+  select: (employeeId, departmentId) => set({ selection: { employeeId, departmentId } }),
+}));
+
+/** Phòng ban đang xem trong danh sách phòng ban được giao cho tài khoản quản lý. */
 export function useManagedDepartment() {
   const employeeId = useCurrentUser((s) => s.user?.employeeId);
   const query = useDepartments({ pageIndex: 1, pageSize: 100 });
-  const department = employeeId
-    ? query.data?.items.find((item) => item.managerEmployeeId === employeeId) ?? null
-    : null;
-  return { department, isLoading: query.isLoading, isError: query.isError, refetch: query.refetch };
+  const { selection, select } = useDepartmentSelection();
+  const departments = employeeId
+    ? (query.data?.items ?? []).filter((item) => item.managerEmployeeId === employeeId)
+    : [];
+  const department = (selection?.employeeId === employeeId
+    ? departments.find((item) => item.id === selection?.departmentId)
+    : undefined) ?? departments[0] ?? null;
+  const selectDepartment = (id: string) => {
+    if (employeeId && departments.some((item) => item.id === id)) select(employeeId, id);
+  };
+  return { department, departments, selectDepartment, isLoading: query.isLoading, isError: query.isError, refetch: query.refetch };
 }

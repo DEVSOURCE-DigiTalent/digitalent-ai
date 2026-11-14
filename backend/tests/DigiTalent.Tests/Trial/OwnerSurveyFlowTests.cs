@@ -148,6 +148,15 @@ public class OwnerSurveyFlowTests
         result.ChoiceScore.Should().Be(assessment.ChoiceScore);
         result.ChoiceTotal.Should().Be(assessment.ChoiceTotal);
         result.ReportPublished.Should().BeFalse();
+        world.Context.CapabilityCeilings.RemoveRange(world.Context.CapabilityCeilings
+            .Where(c => c.OrganizationId == employee.OrganizationId));
+        await world.Context.SaveChangesAsync();
+        var employeeUc = await world.AsAsync(PulseTestWorld.EmployeeEmail);
+        var preview = await employeeUc.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
+        preview.AwaitingFramework.Should().BeTrue();
+        preview.HasTargets.Should().BeFalse();
+        preview.Courses.Should().NotBeEmpty().And.OnlyContain(c => c.Tier == 1 && c.CanWork);
+
 
         var live = await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput());
         live.Stage.Should().Be(TrialProgramRules.StageRequested);

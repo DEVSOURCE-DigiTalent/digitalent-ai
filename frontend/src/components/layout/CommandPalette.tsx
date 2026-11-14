@@ -7,6 +7,8 @@ import { ENTERPRISE_SCREENS } from '@/lib/screens/enterprise';
 import { PLATFORM_SCREENS } from '@/lib/screens/platform';
 import { ROLES, WORKSPACES } from '@/lib/roles';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { useIsPulseManager } from '@/features/pulse-manager/lib/use-is-pulse-manager';
+import { WORK_SCREENS } from '@/lib/screens/enterprise/work';
 import type { ScreenDef } from '@/lib/screens/types';
 
 interface CommandPaletteProps {
@@ -18,9 +20,11 @@ function useFilteredScreens(query: string): ScreenDef[] {
   const hasPermission = useCurrentUser((s) => s.hasPermission);
   const user = useCurrentUser((s) => s.user);
   const isPlatform = user?.workspace === WORKSPACES.PLATFORM || Boolean(user?.roles?.includes(ROLES.PLATFORM_ADMIN));
+  const isManager = useIsPulseManager();
   const pool = isPlatform ? PLATFORM_SCREENS : ENTERPRISE_SCREENS;
 
   return pool.filter((screen) => {
+    if (isManager && WORK_SCREENS.includes(screen)) return false;
     if (screen.path.includes(':')) return false; // skip detail pages
     if (screen.permission && !hasPermission(screen.permission)) return false;
     if (!screen.roles.includes('*') && !screen.roles.some((r) => user?.roles.includes(r))) return false;

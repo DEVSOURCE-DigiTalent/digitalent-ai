@@ -249,7 +249,7 @@ internal sealed class PulseTestWorld : IDisposable
     /// <summary>Bài đánh giá trước khi học chưa đạt → khóa mở để học (bước chuẩn bị của các test học mô đun).</summary>
     public async Task<PulseCourseSummaryDto> OpenForLearningAsync(UseCases employee, string code)
     {
-        var manager = await AsAsync(ManagerEmail, Roles.Manager);
+        var manager = await AsAsync(OwnerEmail, Roles.Owner);
         await DecidePreAssessmentAsync(employee, manager, code, Statuses.FinalSubmissionDecision.NotYet);
         return await CourseAsync(employee, code);
     }

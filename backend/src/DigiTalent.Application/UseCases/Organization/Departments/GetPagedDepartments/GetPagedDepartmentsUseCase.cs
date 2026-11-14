@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Domain.Constants;
@@ -23,9 +24,7 @@ public class GetPagedDepartmentsUseCase : IUseCase<GetPagedDepartmentsUseCaseInp
     public async Task<GetPagedDepartmentsUseCaseOutput> ExecuteAsync(GetPagedDepartmentsUseCaseInput input)
     {
         // 1. Tạo câu query (CHƯA chạy xuống database) — chỉ trong tổ chức của người gọi
-        var organizationId = _currentUser.GetRequiredOrganizationId();
-        var query = _context.Departments
-            .Where(d => d.OrganizationId == organizationId);
+        var query = new EmployeeScope(_context, _currentUser).VisibleDepartments();
 
         // 2. Thêm điều kiện lọc nếu frontend có gửi
         if (!string.IsNullOrWhiteSpace(input.Search))
