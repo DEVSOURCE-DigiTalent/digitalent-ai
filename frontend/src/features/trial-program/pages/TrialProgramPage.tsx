@@ -33,7 +33,7 @@ import { apiErrorMessage } from '@/lib/utils';
 import { PageLoading } from '@/components/shared/LoadingState';
 import { PULSE_TOKENS } from '@/features/organization/owner-theme';
 import { ParticipantsEditor } from '../components/ParticipantsEditor';
-import { TrialDeadlinePicker } from '../components/TrialDeadlinePicker';
+import { normalizeDeadlineTime, TrialDeadlinePicker } from '../components/TrialDeadlinePicker';
 import { TrialDisclosure } from '../components/TrialDisclosure';
 import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import { OwnerSurveyAction } from '../components/OwnerSurveyAction';
@@ -647,9 +647,15 @@ function defaultSchedule(): Schedule {
   return { deadline: toLocalInput(deadline) };
 }
 
+function scheduleDate(s: Schedule) {
+  const [day, time = ''] = s.deadline.split('T');
+  const normalizedTime = normalizeDeadlineTime(time);
+  return new Date(normalizedTime ? day + 'T' + normalizedTime : NaN);
+}
+
 function validateSchedule(s: Schedule): string | null {
   if (!s.deadline) return 'Chọn hạn làm bài.';
-  const deadline = new Date(s.deadline).getTime();
+  const deadline = scheduleDate(s).getTime();
   if (!Number.isFinite(deadline)) return 'Chọn ngày giờ hợp lệ.';
   if (deadline <= Date.now() + 30 * 60_000) return 'Hạn làm bài cần sau ít nhất 30 phút.';
   if (deadline > Date.now() + 60 * 86400000) return 'Hạn làm bài tối đa 60 ngày.';
@@ -657,7 +663,7 @@ function validateSchedule(s: Schedule): string | null {
 }
 
 const toRequest = (s: Schedule) => {
-  const deadline = new Date(s.deadline);
+  const deadline = scheduleDate(s);
   return {
     testDeadline: deadline.toISOString(),
   };
