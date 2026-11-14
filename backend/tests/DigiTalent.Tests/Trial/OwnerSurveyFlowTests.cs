@@ -35,6 +35,21 @@ public class OwnerSurveyFlowTests
     }
 
     [Fact]
+    public void Survey_with_three_questions_per_level_needs_two_right_answers_from_the_basic_level_up()
+    {
+        TrialProgramRules.TierPassMark(3).Should().Be(2);
+        TrialProgramRules.TierPassMark(1).Should().Be(1);
+        TrialProgramRules.TierPassMark(10).Should().Be(7);
+        TrialProgramRules.TierPassMark(0).Should().Be(0);
+
+        TrialProgramRules.SuggestedLevel(new[] { (2, 3), (2, 3), (2, 3) }).Should().Be(3);
+        TrialProgramRules.SuggestedLevel(new[] { (3, 3), (2, 3), (1, 3) }).Should().Be(2);
+        TrialProgramRules.SuggestedLevel(new[] { (3, 3), (1, 3), (3, 3) }).Should().Be(1);
+        // Basic and Intermediate failed: all three Advanced answers right still give level 0.
+        TrialProgramRules.SuggestedLevel(new[] { (1, 3), (0, 3), (3, 3) }).Should().Be(0);
+    }
+
+    [Fact]
     public async Task Multiple_choice_submission_is_graded_and_published_without_a_mentor()
     {
         using var world = await PulseTestWorld.CreateAsync();
