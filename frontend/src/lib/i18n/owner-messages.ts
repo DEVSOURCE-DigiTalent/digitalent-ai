@@ -6,6 +6,8 @@ Quay lại danh sách|Back to participants
 Chọn ngày nộp bài|Choose the due date
 Chọn giờ nộp bài|Choose the due time
 Giờ nộp bài|Due time
+Chọn giờ nhanh|Quick times
+Nhập giờ và phút hoặc chọn một mốc giờ.|Enter an hour and minute or choose a preset.
 Giờ|Hour
 Phút|Minute
 Tháng trước|Previous month
