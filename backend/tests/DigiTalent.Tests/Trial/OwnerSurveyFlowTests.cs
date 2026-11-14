@@ -34,6 +34,26 @@ public class OwnerSurveyFlowTests
     }
 
     [Fact]
+    public void Survey_of_fifteen_questions_per_domain_uses_six_nine_and_twelve_right_answers()
+    {
+        TrialProgramRules.LevelFromShare(5, 15).Should().Be(0);
+        TrialProgramRules.LevelFromShare(6, 15).Should().Be(1);
+        TrialProgramRules.LevelFromShare(8, 15).Should().Be(1);
+        TrialProgramRules.LevelFromShare(9, 15).Should().Be(2);
+        TrialProgramRules.LevelFromShare(11, 15).Should().Be(2);
+        TrialProgramRules.LevelFromShare(12, 15).Should().Be(3);
+        TrialProgramRules.LevelFromShare(15, 15).Should().Be(3);
+
+        // Solid at Basic only, solid up to Intermediate, and the disputed case (Basic forgotten, harder levels right).
+        TrialProgramRules.SuggestedLevel(new[] { (5, 5), (2, 5), (0, 5) }).Should().Be(1);
+        TrialProgramRules.SuggestedLevel(new[] { (5, 5), (4, 5), (1, 5) }).Should().Be(2);
+        TrialProgramRules.SuggestedLevel(new[] { (2, 5), (5, 5), (5, 5) }).Should().Be(3);
+        TrialProgramRules.SuggestedLevel(new[] { (3, 5), (1, 5), (1, 5) }).Should().Be(0);
+        // A domain short of questions is measured on the questions it really had: 4 of 10 is 40%.
+        TrialProgramRules.SuggestedLevel(new[] { (3, 5), (1, 3), (0, 2) }).Should().Be(1);
+    }
+
+    [Fact]
     public async Task Multiple_choice_submission_is_graded_and_published_without_a_mentor()
     {
         using var world = await PulseTestWorld.CreateAsync();
