@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
@@ -50,6 +50,7 @@ import { RichText } from '@/features/pulse-employee/components/RichText';
 import { RecordingPlayer } from '@/features/pulse-manager/components/RecordingPlayer';
 import { RiskTag } from '@/features/pulse-manager/components/ProctoringRiskPanel';
 import { PaginationBar } from '@/features/trial-program/components/PaginationBar';
+import { ResizeHandle, useStoredWidth } from '@/features/trial-program/components/ResizeHandle';
 import {
   buildEssayGuidance,
   compileRubricFeedback,
@@ -261,6 +262,7 @@ export function MentorReviewWorkbench({
     () => initialFilter?.queueCollapsed ?? false,
   );
   const [showMobileQueue, setShowMobileQueue] = useState(false);
+  const [railWidth, setRailWidth] = useStoredWidth('mw-wb-rail-width');
   const [justFinishedQueue, setJustFinishedQueue] = useState(false);
 
   useEffect(() => {
@@ -589,11 +591,11 @@ export function MentorReviewWorkbench({
             <span>{organizationId ? 'Đơn vị phụ trách' : 'Thẩm định bài cuối cấp'}</span>
           </div>
           <h1>{organizationId ? scopedOrgTitle : 'Chấm bài & Thẩm định Năng lực'}</h1>
-          <p className="mw-wb-subtitle">
-            {organizationId
-              ? 'Kiểm tra và chấm điểm bài cuối cấp sau mỗi cấp độ của nhân viên thuộc đơn vị này.'
-              : 'Kiểm tra và chấm điểm bài cuối cấp sau mỗi cấp độ theo từng lĩnh vực.'}
-          </p>
+          {!organizationId && (
+            <p className="mw-wb-subtitle">
+              Kiểm tra và chấm điểm bài cuối cấp sau mỗi cấp độ theo từng lĩnh vực.
+            </p>
+          )}
         </div>
 
         <div className="mw-workbench-actions">
@@ -690,7 +692,10 @@ export function MentorReviewWorkbench({
           </div>
         </div>
       ) : (
-        <div className={`mw-split-shell${desktopQueueCollapsed ? ' is-queue-collapsed' : ''}`}>
+        <div
+          className={`mw-split-shell${desktopQueueCollapsed ? ' is-queue-collapsed' : ''}`}
+          style={railWidth ? ({ '--mw-rail-w': `${railWidth}px` } as CSSProperties) : undefined}
+        >
           {/* Left Queue Rail */}
           <aside
             id="mw-employee-queue-rail"
@@ -1062,7 +1067,7 @@ export function MentorReviewWorkbench({
                               </span>
                               <div style={{ minWidth: 0 }}>
                                 <div className="mw-rail-name">{item.employeeName}</div>
-                                <div className="mw-rail-role">{roleLabel}</div>
+                                {!organizationId && <div className="mw-rail-role">{roleLabel}</div>}
                               </div>
                             </div>
 
@@ -1105,6 +1110,7 @@ export function MentorReviewWorkbench({
                   pageSize={pageSize}
                   totalItems={sortedFilteredItems.length}
                   unitLabel="bài nộp"
+                  showSummary={!organizationId}
                   onPageChange={setPage}
                   onPageSizeChange={(nextSize) => {
                     setPageSize(nextSize);
@@ -1115,6 +1121,16 @@ export function MentorReviewWorkbench({
             )}
             </div>
           </aside>
+
+          <ResizeHandle
+            target="prev"
+            min={260}
+            max={(container) => container - 18 - 640}
+            onResize={setRailWidth}
+            onReset={() => setRailWidth(null)}
+            label="Đổi độ rộng danh sách nhân viên"
+            disabled={desktopQueueCollapsed}
+          />
 
           {/* Right Grading Stage */}
           <div className="mw-stage-col">
@@ -1341,6 +1357,7 @@ function MentorReviewDetailPane({
   const assignmentCriteria = activeItem.assignment?.criteria ?? [];
   const avatarTone = getAvatarColor(activeItem.employeeName);
 
+  const [sideWidth, setSideWidth] = useStoredWidth('mw-wb-side-width');
   const recording = activeItem.recording ?? null;
   const segments = recording?.segments ?? [];
   const hasScreen = segments.some((s) => s.track === 'SCREEN');
@@ -1566,11 +1583,11 @@ function MentorReviewDetailPane({
               <span className="mw-chip indigo" style={{ fontSize: 11.5 }}>
                 {`Lần ${activeItem.attemptNo}/${activeItem.maxAttempts}`}
               </span>
-              {risk && <RiskTag risk={risk} />}
+              {risk && !organizationId && <RiskTag risk={risk} />}
             </div>
 
             <div className="mw-learner-banner-meta">
-              {activeItem.organizationName && (
+              {activeItem.organizationName && !organizationId && (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   <Building2 size={13} style={{ color: '#4f46e5' }} aria-hidden="true" />
                   <strong>{activeItem.organizationName}</strong>
@@ -1614,7 +1631,10 @@ function MentorReviewDetailPane({
       </section>
 
       {/* Main Two-Column Grading Stage */}
-      <div className="mw-grade-core">
+      <div
+        className={`mw-grade-core${sideWidth ? ' has-custom-side' : ''}`}
+        style={sideWidth ? ({ '--mw-side-w': `${sideWidth}px` } as CSSProperties) : undefined}
+      >
         {/* Evidence Column */}
         <section className="mw-evidence-card" aria-label="Chi tiết bài nộp và giám sát">
           <div className="mw-ev-tabs" role="tablist" aria-label="Chuyển phần kiểm tra bài làm">
@@ -1844,7 +1864,11 @@ function MentorReviewDetailPane({
 
                 {recording ? (
                   <div className="tp-pu">
-                    <RecordingPlayer key={recording.sessionId} recording={recording} />
+                    <RecordingPlayer
+                      key={recording.sessionId}
+                      recording={recording}
+                      aiFraud={organizationId ? activeItem.aiHint?.fraud : undefined}
+                    />
                   </div>
                 ) : (
                   <div
@@ -1998,6 +2022,15 @@ function MentorReviewDetailPane({
           </div>
         </section>
 
+        <ResizeHandle
+          target="next"
+          min={300}
+          max={(container) => container - 16 - 420}
+          onResize={setSideWidth}
+          onReset={() => setSideWidth(null)}
+          label="Đổi độ rộng khung gợi ý chấm"
+        />
+
         {/* Action, Detailed Rubric & Guidance Column */}
         <aside className="mw-action-col" aria-label="Gợi ý thẩm định và khung quyết định">
           {/* Compact Honest Guidance Card */}
@@ -2018,7 +2051,7 @@ function MentorReviewDetailPane({
                 </span>
                 {essayReport.mode === 'GEMINI' && activeItem.aiHint?.reviewedAt && (
                   <span style={{ fontSize: 11, color: 'var(--mw-slate-500, #64748b)' }}>
-                    Chấm lúc {formatDateTime(activeItem.aiHint.reviewedAt)}
+                    AI phân tích lúc {formatDateTime(activeItem.aiHint.reviewedAt)}
                   </span>
                 )}
                 {essayReport.mode === 'GEMINI' && isPending && (
@@ -2047,7 +2080,7 @@ function MentorReviewDetailPane({
                   <strong>Cảnh báo:</strong> Bài nộp lặp lại nội dung đề bài, chưa có minh chứng công việc thực tế.
                 </span>
               </div>
-            ) : (
+            ) : organizationId ? null : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <strong style={{ fontSize: 13, color: '#0f172a' }}>{essayReport.verdictTitle}</strong>
                 {essayReport.summaryText && (
@@ -2058,7 +2091,9 @@ function MentorReviewDetailPane({
               </div>
             )}
 
-            {activeItem.aiHint?.fraud && activeItem.aiHint.fraud.items.length > 0 && (
+            {!(organizationId && activeItem.recording) &&
+              activeItem.aiHint?.fraud &&
+              activeItem.aiHint.fraud.items.length > 0 && (
               <div
                 style={{
                   background: '#fff1f2',
@@ -2339,14 +2374,16 @@ function MentorReviewDetailPane({
                   )}
                 </div>
 
-                <div style={{ paddingBottom: 10, borderBottom: '1px solid #f1f5f9' }}>
-                  <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0f172a' }}>
-                    Quyết định chấm điểm
-                  </h3>
-                  <p style={{ margin: '3px 0 0', fontSize: 12.5, color: '#64748b' }}>
-                    Chọn Đạt để công nhận cấp độ khóa học, hoặc Chưa đạt để gửi nhận xét yêu cầu bổ sung.
-                  </p>
-                </div>
+                {!organizationId && (
+                  <div style={{ paddingBottom: 10, borderBottom: '1px solid #f1f5f9' }}>
+                    <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0f172a' }}>
+                      Quyết định chấm điểm
+                    </h3>
+                    <p style={{ margin: '3px 0 0', fontSize: 12.5, color: '#64748b' }}>
+                      Chọn Đạt để công nhận cấp độ khóa học, hoặc Chưa đạt để gửi nhận xét yêu cầu bổ sung.
+                    </p>
+                  </div>
+                )}
 
                 {choiceFails && (
                   <div
@@ -2423,40 +2460,42 @@ function MentorReviewDetailPane({
                   </button>
                 </div>
 
-                <div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 800,
-                      color: '#64748b',
-                      textTransform: 'uppercase',
-                      marginBottom: 6,
-                    }}
-                  >
-                    Mẫu nhận xét nhanh
+                {!organizationId && (
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 800,
+                        color: '#64748b',
+                        textTransform: 'uppercase',
+                        marginBottom: 6,
+                      }}
+                    >
+                      Mẫu nhận xét nhanh
+                    </div>
+                    <div className="mw-template-chips">
+                      {QUICK_TEMPLATES.map((tmpl, idx) => {
+                        const disabled = (choiceFails || rubricStats.gateFailed) && tmpl.decision === 'PASSED';
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            disabled={disabled}
+                            className="mw-template-chip"
+                            onClick={() => {
+                              setReason(tmpl.text);
+                              setReasonTouchedByUser(true);
+                              setDecision(tmpl.decision);
+                              setDecisionTouchedByUser(true);
+                            }}
+                          >
+                            {tmpl.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="mw-template-chips">
-                    {QUICK_TEMPLATES.map((tmpl, idx) => {
-                      const disabled = (choiceFails || rubricStats.gateFailed) && tmpl.decision === 'PASSED';
-                      return (
-                        <button
-                          key={idx}
-                          type="button"
-                          disabled={disabled}
-                          className="mw-template-chip"
-                          onClick={() => {
-                            setReason(tmpl.text);
-                            setReasonTouchedByUser(true);
-                            setDecision(tmpl.decision);
-                            setDecisionTouchedByUser(true);
-                          }}
-                        >
-                          {tmpl.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                )}
 
                 <div>
                   <label

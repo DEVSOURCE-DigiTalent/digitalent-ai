@@ -691,6 +691,9 @@
 .pu-rplayer-events .flagged .dot { background: #ff8f7a; }
 .pu-rplayer-events span.text { flex: 1; font-size: 13px; }
 .pu-rplayer-events .tag { padding: 3px 8px; border-radius: 999px; background: #fff0e9; color: #8c4430; font-size: 11px; font-weight: 800; }
+.pu-rplayer-events .ai-note { display: block; margin-top: 3px; color: #9f1239; font-size: 12px; line-height: 1.45; }
+.pu-rplayer-events button:disabled { cursor: default; }
+.pu-rplayer-ai-summary { margin: 0; padding: 10px 12px; border: 1px solid #fecdd3; border-radius: 10px; background: #fff1f2; color: #9f1239; font-size: 12.5px; line-height: 1.5; }
 .pu-rplayer-missing { padding: 14px 16px; border: 1px dashed #d6d1f2; border-radius: 14px; color: var(--pu-muted); font-size: 13px; }
 .pu-kind-tag { display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 800; }
 .pu-kind-tag.pre { background: #e8ecff; color: #2a3cb8; }
