@@ -68,7 +68,7 @@ public class OwnerSurveyFlowTests
         var session = await asEmployee.Start.ExecuteAsync(new StartMyTrialAssessmentUseCaseInput());
         session.Essays.Should().BeEmpty();
         session.Kind.Should().Be(Statuses.ProctoringKind.TrialAssessment);
-        session.Questions.Should().HaveCount(54);
+        session.Questions.Should().HaveCount(90);
         session.Questions.Select(q => q.Tier).Should().BeInAscendingOrder();
         session.Questions.Select(q => q.Tier).Distinct().Should().BeEquivalentTo(new[] { 1, 2, 3 });
         var employeeUc = await world.AsAsync(PulseTestWorld.EmployeeEmail);
