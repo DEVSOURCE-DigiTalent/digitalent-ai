@@ -24,6 +24,7 @@ public class GetPlatformOverviewUseCase : IUseCase<GetPlatformOverviewUseCaseInp
     public async Task<GetPlatformOverviewUseCaseOutput> ExecuteAsync(GetPlatformOverviewUseCaseInput input)
     {
         var now = _clock.GetUtcNow();
+        var sevenDaysAgo = now.AddDays(-7);
         var organizations = await PlatformOrganizationReader.ReadAllAsync(_context);
         var courses = await PlatformCatalogReader.ReadCoursesAsync(_context);
         var frameworks = await _context.PlatformFrameworks.AsNoTracking()
@@ -55,6 +56,9 @@ public class GetPlatformOverviewUseCase : IUseCase<GetPlatformOverviewUseCaseInp
             ConversionRate = organizations.Count == 0 ? 0 : Math.Round(paid * 100.0 / organizations.Count, 1),
             UserCount = await _context.Users.CountAsync(),
             EmployeeCount = organizations.Sum(o => o.EmployeeCount),
+            RecentUsers7d = await _context.Users.CountAsync(u => u.CreatedAt >= sevenDaysAgo),
+            RecentEmployees7d = await _context.Employees.AsNoTracking()
+                .CountAsync(e => e.Status != Statuses.Employee.Archived && e.CreatedAt >= sevenDaysAgo),
             LockedUserCount = await _context.Users.CountAsync(u => u.Status == Statuses.User.Locked && u.LockedUntil == null),
             TrialUserCount = trials.Count,
             TrialEndingSoonCount = trials.Count(end => end - now <= EndingSoon),

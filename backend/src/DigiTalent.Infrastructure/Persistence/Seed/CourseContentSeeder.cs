@@ -38,8 +38,17 @@ public static class CourseContentSeeder
 
         var now = DateTimeOffset.UtcNow;
 
+        // Older revisions of a course are history (an enrollment keeps its revision; the catalog uses the newest one),
+        // so only the newest revision of each code may get illustrative content when it has none.
+        var newestRevisionIds = publishedCourses
+            .GroupBy(c => c.Code, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.OrderByDescending(c => c.VersionNo).First().Id)
+            .ToHashSet();
+
         foreach (var course in publishedCourses)
         {
+            if (!newestRevisionIds.Contains(course.Id)) continue;
+
             // Kiểm tra xem khóa học đã có module chưa (tránh seed trùng)
             var hasModules = await db.CourseModules.AnyAsync(m => m.CourseId == course.Id);
             if (hasModules) continue;

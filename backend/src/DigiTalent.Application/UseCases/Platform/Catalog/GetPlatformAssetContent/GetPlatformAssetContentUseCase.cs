@@ -14,12 +14,18 @@ public class GetPlatformAssetContentUseCase : IUseCase<GetPlatformAssetContentUs
     private readonly IApplicationDbContext _context;
     private readonly IFileStorageService _storage;
     private readonly IPlatformAssetUrlSigner _signer;
+    private readonly IDirectFileStorageService? _directStorage;
 
-    public GetPlatformAssetContentUseCase(IApplicationDbContext context, IFileStorageService storage, IPlatformAssetUrlSigner signer)
+    public GetPlatformAssetContentUseCase(
+        IApplicationDbContext context,
+        IFileStorageService storage,
+        IPlatformAssetUrlSigner signer,
+        IDirectFileStorageService? directStorage = null)
     {
         _context = context;
         _storage = storage;
         _signer = signer;
+        _directStorage = directStorage;
     }
 
     public async Task<GetPlatformAssetContentUseCaseOutput> ExecuteAsync(GetPlatformAssetContentUseCaseInput input)
@@ -31,6 +37,25 @@ public class GetPlatformAssetContentUseCase : IUseCase<GetPlatformAssetContentUs
 
         var asset = await _context.PlatformAssets.AsNoTracking().FirstOrDefaultAsync(a => a.Id == input.AssetId)
                     ?? throw new NotFoundException("Không tìm thấy tệp.");
+
+        if (_directStorage is { SupportsDirectAccess: true })
+        {
+            var presignedUrl = await _directStorage.GetPresignedDownloadUrlAsync(
+                asset.StorageKey,
+                TimeSpan.FromMinutes(15),
+                fileName: asset.FileName,
+                inline: true);
+            if (!string.IsNullOrEmpty(presignedUrl))
+            {
+                return new GetPlatformAssetContentUseCaseOutput
+                {
+                    RedirectUrl = presignedUrl,
+                    ContentType = asset.ContentType,
+                    FileName = asset.FileName,
+                };
+            }
+        }
+
         Stream content;
         try
         {

@@ -16,6 +16,8 @@ public class GetPlatformOverviewUseCaseOutput
     public double ConversionRate { get; set; }
     public int UserCount { get; set; }
     public int EmployeeCount { get; set; }
+    public int RecentUsers7d { get; set; }
+    public int RecentEmployees7d { get; set; }
     public int LockedUserCount { get; set; }
     /// <summary>Individual learners in their trial now, and those whose trial ends within 2 days.</summary>
     public int TrialUserCount { get; set; }

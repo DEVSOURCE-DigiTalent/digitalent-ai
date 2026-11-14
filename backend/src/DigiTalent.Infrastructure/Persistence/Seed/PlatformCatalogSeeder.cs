@@ -185,8 +185,10 @@ public static class PlatformCatalogSeeder
 
     private static async Task SeedV1ContentAsync(AppDbContext db, List<PlatformFrameworkDomain> domains)
     {
+        // Only a fresh catalog (v1 still in use) gets the illustrative content. Once a later version is published,
+        // v1 is history: its content may have been cleared on purpose and must not be refilled with placeholders.
         var v1 = await db.PlatformCatalogVersions.FirstOrDefaultAsync(v => v.VersionNo == 1);
-        if (v1 == null) return;
+        if (v1 == null || v1.Status != Statuses.PlatformCatalogVersion.Current) return;
 
         var rows = await (
                 from catalogCourse in db.PlatformCatalogCourses

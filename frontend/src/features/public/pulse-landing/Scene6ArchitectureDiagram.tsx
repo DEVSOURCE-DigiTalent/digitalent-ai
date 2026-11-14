@@ -76,6 +76,7 @@ export const Scene6ArchitectureDiagram = memo(function Scene6ArchitectureDiagram
           {suiteId === 'ai-boundary' && <AiBoundaryDiagram />}
           {suiteId === 'audit-log' && <AuditLogDiagram />}
           {suiteId === 'infrastructure' && <InfrastructureDiagram />}
+          {suiteId === 'sovereignty' && <SovereigntyDiagram />}
         </g>
       </svg>
     </div>
@@ -683,6 +684,65 @@ function InfrastructureDiagram() {
       <rect x="140" y="405" width="520" height="34" rx="17" fill="#0f172a" />
       <text x="400" y="426" textAnchor="middle" fill="#38bdf8" fontSize="9.5" fontWeight="700">
         TRUNG TÂM DỮ LIỆU TẠI VIỆT NAM • SAO LƯU TỰ ĐỘNG HẰNG NGÀY &amp; SẴN SÀNG CHỊU TẢI
+      </text>
+    </g>
+  );
+}
+
+// ============================================================================
+// 6. CHỦ QUYỀN DỮ LIỆU & NGHỊ ĐỊNH 13/2023 (DATA SOVEREIGNTY VAULT)
+// ============================================================================
+function SovereigntyDiagram() {
+  return (
+    <g className="diag-group animate-diagram">
+      <rect x="36" y="32" width="290" height="26" rx="6" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1" />
+      <circle cx="50" cy="45" r="4" fill="#2563eb" />
+      <text x="62" y="49" fill="#1e40af" fontSize="9.5" fontWeight="700" fontFamily="monospace">
+        CHỦ QUYỀN // TUÂN THỦ NGHỊ ĐỊNH 13/2023/NĐ-CP
+      </text>
+
+      <g filter="url(#soft-shadow)">
+        <rect x="120" y="85" width="560" height="285" rx="16" fill="#ffffff" stroke="#2563eb" strokeWidth="2" />
+        <rect x="120" y="85" width="560" height="42" rx="16" fill="url(#badge-glow)" />
+        <circle cx="148" cy="106" r="5" fill="#10b981" />
+        <text x="164" y="110" fill="#ffffff" fontSize="11" fontWeight="800">
+          KHO CHỦ QUYỀN DỮ LIỆU DOANH NGHIỆP (DATA SOVEREIGNTY VAULT)
+        </text>
+
+        <rect x="155" y="150" width="230" height="175" rx="12" fill="#f0f9ff" stroke="#7dd3fc" strokeWidth="1.5" />
+        <text x="270" y="182" textAnchor="middle" fill="#0369a1" fontSize="11" fontWeight="800">
+          TRÍCH XUẤT TOÀN PHẦN
+        </text>
+        <text x="270" y="206" textAnchor="middle" fill="#334155" fontSize="9.5" fontWeight="600">
+          Tải về trọn bộ danh sách nhân sự,
+        </text>
+        <text x="270" y="222" textAnchor="middle" fill="#334155" fontSize="9.5" fontWeight="600">
+          điểm đánh giá và báo cáo định dạng
+        </text>
+        <rect x="200" y="250" width="140" height="32" rx="8" fill="#0284c7" />
+        <text x="270" y="270" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="800">
+          XUẤT EXCEL / JSON
+        </text>
+
+        <rect x="415" y="150" width="230" height="175" rx="12" fill="#fef2f2" stroke="#fca5a5" strokeWidth="1.5" />
+        <text x="530" y="182" textAnchor="middle" fill="#b91c1c" fontSize="11" fontWeight="800">
+          XÓA HỦY THEO YÊU CẦU
+        </text>
+        <text x="530" y="206" textAnchor="middle" fill="#334155" fontSize="9.5" fontWeight="600">
+          Quyền yêu cầu xóa vĩnh viễn dữ liệu
+        </text>
+        <text x="530" y="222" textAnchor="middle" fill="#334155" fontSize="9.5" fontWeight="600">
+          nhân sự khỏi máy chủ bất kỳ lúc nào
+        </text>
+        <rect x="460" y="250" width="140" height="32" rx="8" fill="#dc2626" />
+        <text x="530" y="270" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="800">
+          XÓA VĨNH VIỄN
+        </text>
+      </g>
+
+      <rect x="140" y="405" width="520" height="34" rx="17" fill="#0f172a" />
+      <text x="400" y="426" textAnchor="middle" fill="#38bdf8" fontSize="9.5" fontWeight="700">
+        100% QUYỀN SỞ HỮU THUỘC DOANH NGHIỆP • TUÂN THỦ NGHỊ ĐỊNH 13/2023/NĐ-CP
       </text>
     </g>
   );
