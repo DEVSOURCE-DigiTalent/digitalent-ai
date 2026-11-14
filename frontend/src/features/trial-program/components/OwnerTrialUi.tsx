@@ -30,7 +30,7 @@ import { Modal } from '@/components/shared';
 import { TrialDisclosure } from './TrialDisclosure';
 import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import type { TrialParticipantStatus, TrialReport, TrialReportEmployee, TrialStage } from '@/services/trial-program.service';
-import { LEVEL_LABELS, STAGE } from '../lib/trial-format';
+import { LEVEL_LABELS, STAGE, domainTotals } from '../lib/trial-format';
 
 export const DOMAIN_THEMES = [
   {
@@ -1202,38 +1202,26 @@ export function CompetencyReport({ report }: { report: TrialReport }) {
 
                       {/* Middle: Thông tin Trắc nghiệm lý thuyết */}
                       <div className="rounded-xl bg-slate-50 border border-slate-100 p-2.5 space-y-1.5">
+                        {/* The level comes from the share of right answers in the whole domain; per-level counts are for reference. */}
                         <div className="flex items-center justify-between text-[11px]">
                           <span className="font-semibold text-slate-600">{translateUi("Trắc nghiệm lý thuyết:")}</span>
                           <span className="font-bold text-slate-800">
-                            {(detail.basicCorrect ?? 0) + (detail.intermediateCorrect ?? 0) + (detail.advancedCorrect ?? 0)}/
-                            {(detail.basicTotal ?? 1) + (detail.intermediateTotal ?? 1) + (detail.advancedTotal ?? 1)} câu đúng
+                            {domainTotals(detail).correct}/{domainTotals(detail).total} {translateUi('câu đúng')} ({domainTotals(detail).percent}%)
                           </span>
                         </div>
                         <div className="grid grid-cols-3 gap-1 text-center">
-                          <span
-                            className={`px-1.5 py-0.5 rounded-lg text-[10px] font-bold border ${
-                              detail.basicCorrect >= detail.basicTotal && detail.basicTotal > 0
-                                ? 'bg-sky-50 text-sky-800 border-sky-200/80'
-                                : 'bg-slate-100 text-slate-500 border-slate-200'
-                            }`}
-                          >{translateUi("Cơ bản: ")}{detail.basicCorrect}/{detail.basicTotal}
-                          </span>
-                          <span
-                            className={`px-1.5 py-0.5 rounded-lg text-[10px] font-bold border ${
-                              detail.intermediateCorrect >= detail.intermediateTotal && detail.intermediateTotal > 0
-                                ? 'bg-indigo-50 text-indigo-800 border-indigo-200/80'
-                                : 'bg-slate-100 text-slate-500 border-slate-200'
-                            }`}
-                          >{translateUi("Trung cấp: ")}{detail.intermediateCorrect}/{detail.intermediateTotal}
-                          </span>
-                          <span
-                            className={`px-1.5 py-0.5 rounded-lg text-[10px] font-bold border ${
-                              detail.advancedCorrect >= detail.advancedTotal && detail.advancedTotal > 0
-                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200/80'
-                                : 'bg-slate-100 text-slate-500 border-slate-200'
-                            }`}
-                          >{translateUi("Nâng cao: ")}{detail.advancedCorrect}/{detail.advancedTotal}
-                          </span>
+                          {[
+                            { label: 'Cơ bản: ', correct: detail.basicCorrect, total: detail.basicTotal },
+                            { label: 'Trung cấp: ', correct: detail.intermediateCorrect, total: detail.intermediateTotal },
+                            { label: 'Nâng cao: ', correct: detail.advancedCorrect, total: detail.advancedTotal },
+                          ].map((tier) => (
+                            <span
+                              key={tier.label}
+                              className="px-1.5 py-0.5 rounded-lg text-[10px] font-bold border bg-slate-100 text-slate-600 border-slate-200"
+                            >
+                              {translateUi(tier.label)}{tier.correct ?? 0}/{tier.total ?? 0}
+                            </span>
+                          ))}
                         </div>
                       </div>
 
