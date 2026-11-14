@@ -29,7 +29,7 @@ import { PULSE_PATHS } from '@/features/pulse-employee/lib/paths';
 import { ProctorController, proctoringSupported, type ProctorSnapshot } from '@/features/pulse-employee/exam/proctor';
 import { LeaveGuard, LockOverlay, MicMeter, ProctorPanel, StreamPreview } from '@/features/pulse-employee/exam/ProctoredExam';
 import { useNow } from '@/features/pulse-employee/exam/exam-helpers';
-import { TIER_LABELS, formatWhen } from '../lib/trial-format';
+import { formatWhen } from '../lib/trial-format';
 
 const DOMAIN_NUMBERS = [1, 2, 3, 4, 5, 6] as const;
 
@@ -438,7 +438,7 @@ export function TrialExam({ organizationName, deadline }: { organizationName: st
                 <header className="tp-exam-part-header">
                   <div className="tp-exam-part-header-left">
                     <p className="tp-exam-part-subtitle">
-                      {currentQuestions.length} câu hỏi trắc nghiệm · Đánh giá theo 3 cấp độ (Cơ bản · Trung cấp · Nâng cao)
+                      {currentQuestions.length} câu hỏi trắc nghiệm
                     </p>
                   </div>
                   <div className={`pu-answered-pill ${isCurrentDomainComplete ? 'complete' : ''}`}>
@@ -458,15 +458,11 @@ export function TrialExam({ organizationName, deadline }: { organizationName: st
                   </div>
                 </header>
 
-                {currentQuestions.map((q) => (
+                {/* Employees do not see which level a question tests; questions are numbered within the domain. */}
+                {currentQuestions.map((q, index) => (
                   <fieldset key={q.questionId} className="tp-q" disabled={snapshot.phase !== 'recording'}>
                     <legend>
-                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                        <span className="inline-flex items-center rounded-md bg-blue-50 text-blue-700 px-2.5 py-0.5 text-[11px] font-semibold border border-blue-100">
-                          Cấp {q.tier}: {TIER_LABELS[q.tier]}
-                        </span>
-                      </div>
-                      <span className="tp-q-title">Câu {q.number}: {q.content}</span>
+                      <span className="tp-q-title">Câu {index + 1}: {q.content}</span>
                     </legend>
                     {q.options.map((o) => (
                       <label key={o.optionId}>
