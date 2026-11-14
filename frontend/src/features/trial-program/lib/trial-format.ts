@@ -5,6 +5,18 @@ export const LEVEL_LABELS = ['Chưa đạt', 'Cơ bản', 'Trung cấp', 'Nâng 
 export const TIER_LABELS = ['', 'Cơ bản', 'Trung cấp', 'Nâng cao'] as const;
 
 /**
+ * Right answers needed to pass one level of the survey, as on the backend (TrialProgramRules.TierPassMark):
+ * 3 questions → 2, any other count → 70% rounded up.
+ */
+export function tierPassMark(total: number): number {
+  if (total <= 0) return 0;
+  if (total === 3) return 2;
+  return Math.ceil((total * 7) / 10);
+}
+
+export const passedTier = (correct = 0, total = 0) => total > 0 && correct >= tierPassMark(total);
+
+/**
  * Mức gợi ý của một lĩnh vực: số cấp đạt liên tiếp từ Cơ bản ở trắc nghiệm (máy chấm), giới hạn bởi số cấp tự luận đạt
  * liên tiếp (điểm mentor ≥ điểm đạt). Chưa chấm đủ tự luận thì chỉ theo trắc nghiệm.
  */

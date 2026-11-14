@@ -68,14 +68,23 @@ public static class TrialProgramRules
     };
 
     /// <summary>
-    /// Mức gợi ý của một lĩnh vực từ trắc nghiệm: cấp cao nhất mà mọi cấp từ Cơ bản tới đó đều đạt (≥ 70% số câu của cấp).
+    /// Số câu đúng tối thiểu để đạt một cấp của bài khảo sát: 3 câu → 2 câu (66,7%, gần 70% nhất), 1 câu → 1 câu,
+    /// số câu khác → 70% làm tròn lên. Giao diện báo cáo dùng cùng luật (trial-format.ts tierPassMark).
+    /// </summary>
+    public static int TierPassMark(int total) =>
+        total <= 0 ? 0
+        : total == 3 ? 2
+        : PulseRules.ChoicePassMark(total);
+
+    /// <summary>
+    /// Mức gợi ý của một lĩnh vực từ trắc nghiệm: cấp cao nhất mà mọi cấp từ Cơ bản tới đó đều đạt (<see cref="TierPassMark"/>).
     /// </summary>
     public static short SuggestedLevel(IReadOnlyList<(int Correct, int Total)> byTier)
     {
         short level = 0;
         foreach (var (correct, total) in byTier)
         {
-            if (total == 0 || correct < PulseRules.ChoicePassMark(total))
+            if (total == 0 || correct < TierPassMark(total))
             {
                 break;
             }

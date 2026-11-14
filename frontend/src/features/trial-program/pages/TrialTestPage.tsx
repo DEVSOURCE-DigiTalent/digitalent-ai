@@ -10,13 +10,11 @@ import { btn } from '@/features/pulse-employee/lib/button';
 import { PULSE_PATHS } from '@/features/pulse-employee/lib/paths';
 import { apiErrorMessage } from '@/lib/utils';
 import { LevelBadge } from '../components/TrialUi';
-import { TIER_LABELS, formatWhen } from '../lib/trial-format';
+import { TIER_LABELS, formatWhen, passedTier } from '../lib/trial-format';
 import { TrialExam } from '../components/TrialExam';
 import { TrialDisclosure } from '../components/TrialDisclosure';
 import { TrialEmployeeResults } from '../components/TrialEmployeeResults';
 import '../trial-program.css';
-
-const passedTier = (correct = 0, total = 0) => total > 0 && correct >= Math.ceil(total * .7);
 
 function DomainAccordionItem({
   domain,
