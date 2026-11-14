@@ -382,6 +382,22 @@ public class PlatformCatalogController : ControllerBase
 
     // ----- Media -------------------------------------------------------------------------------
 
+    // POST api/v1/platform/assets/presign — issue direct Object Storage PUT URL or return PROXY mode
+    [HttpPost("assets/presign")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PresignPlatformAssetUseCaseOutput>>> PresignAsset(
+        [FromBody] PresignPlatformAssetUseCaseInput input,
+        [FromServices] IUseCase<PresignPlatformAssetUseCaseInput, PresignPlatformAssetUseCaseOutput> useCase) =>
+        Ok(ApiResponse<PresignPlatformAssetUseCaseOutput>.Ok(await useCase.ExecuteAsync(input)));
+
+    // POST api/v1/platform/assets/complete — verify direct upload and persist PlatformAsset
+    [HttpPost("assets/complete")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformAssetDto>>> CompleteAssetUpload(
+        [FromBody] CompletePlatformAssetUploadUseCaseInput input,
+        [FromServices] IUseCase<CompletePlatformAssetUploadUseCaseInput, PlatformAssetDto> useCase) =>
+        Ok(ApiResponse<PlatformAssetDto>.Ok(await useCase.ExecuteAsync(input), "File uploaded."));
+
     // POST api/v1/platform/assets — multipart/form-data, field "file" (image ≤ 10 MB, video ≤ 500 MB)
     [HttpPost("assets")]
     [HasPermission(Permissions.Platform.CatalogManage)]
@@ -411,6 +427,12 @@ public class PlatformCatalogController : ControllerBase
         [FromServices] IUseCase<GetPlatformAssetContentUseCaseInput, GetPlatformAssetContentUseCaseOutput> useCase)
     {
         var result = await useCase.ExecuteAsync(new GetPlatformAssetContentUseCaseInput { AssetId = id, ExpiresAt = exp, Signature = sig });
+        if (!string.IsNullOrEmpty(result.RedirectUrl))
+        {
+            Response.Headers.CacheControl = "private, max-age=300";
+            return Redirect(result.RedirectUrl);
+        }
+
         Response.Headers.CacheControl = "private, max-age=3600";
         return File(result.Content, result.ContentType, enableRangeProcessing: true);
     }

@@ -13,11 +13,13 @@ public class EndPulseRecordingUseCase : IUseCase<EndPulseRecordingUseCaseInput, 
 {
     private readonly IApplicationDbContext _context;
     private readonly PulseProctoring _proctoring;
+    private readonly IChunkedFileFinalizer? _finalizer;
 
-    public EndPulseRecordingUseCase(IApplicationDbContext context, PulseProctoring proctoring)
+    public EndPulseRecordingUseCase(IApplicationDbContext context, PulseProctoring proctoring, IChunkedFileFinalizer? finalizer = null)
     {
         _context = context;
         _proctoring = proctoring;
+        _finalizer = finalizer;
     }
 
     public async Task<EndPulseRecordingUseCaseOutput> ExecuteAsync(EndPulseRecordingUseCaseInput input)
@@ -26,6 +28,10 @@ public class EndPulseRecordingUseCase : IUseCase<EndPulseRecordingUseCaseInput, 
         var recording = await _context.ProctoringRecordings.FirstOrDefaultAsync(r => r.Id == input.RecordingId && r.SessionId == session.Id)
                         ?? throw new NotFoundException("Không tìm thấy đoạn ghi của phiên làm bài.");
         recording.EndOffsetMs = Math.Max(recording.StartOffsetMs, input.EndOffsetMs);
+        if (_finalizer != null && !string.IsNullOrWhiteSpace(recording.StoragePath) && recording.SizeBytes > 0)
+        {
+            await _finalizer.FinalizeAsync(recording.StoragePath, recording.ContentType);
+        }
         await _context.SaveChangesAsync();
 
         return new EndPulseRecordingUseCaseOutput

@@ -45,14 +45,27 @@ public static class DependencyInjection
         services.AddMemoryCache();
         services.AddScoped<IPermissionReader, PermissionReader>();
 
-        // Lưu trữ file (File Storage)
+        // Lưu trữ file (File Storage): hỗ trợ "Local" (đĩa cục bộ) hoặc "Minio" (S3-compatible object storage)
         var fileStorageSettings = configuration.GetSection("FileStorage").Get<FileStorageSettings>() ?? new FileStorageSettings();
+        ApplyLegacyMinioConfiguration(configuration, fileStorageSettings);
         services.AddSingleton(fileStorageSettings);
-        services.AddScoped<IFileStorageService, LocalFileStorageService>();
+
+        if (string.Equals(fileStorageSettings.Provider, "Minio", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddSingleton<MinioFileStorageService>();
+            services.AddScoped<IFileStorageService>(sp => sp.GetRequiredService<MinioFileStorageService>());
+            services.AddScoped<IDirectFileStorageService>(sp => sp.GetRequiredService<MinioFileStorageService>());
+            services.AddScoped<IChunkedFileFinalizer>(sp => sp.GetRequiredService<MinioFileStorageService>());
+        }
+        else
+        {
+            services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        }
 
         // Platform course builder: rich text sanitizer and signed links to uploaded media
         services.AddSingleton<IHtmlContentSanitizer, DigiTalent.Infrastructure.Content.HtmlContentSanitizer>();
         services.AddSingleton<IPlatformAssetUrlSigner, DigiTalent.Infrastructure.Content.PlatformAssetUrlSigner>();
+        services.AddSingleton<IPlatformAssetUploadSigner, DigiTalent.Infrastructure.Content.PlatformAssetUploadSigner>();
         services.AddSingleton<IProctoringRecordingUrlSigner, DigiTalent.Infrastructure.Content.ProctoringRecordingUrlSigner>();
 
         // Audit Logging
@@ -111,5 +124,28 @@ public static class DependencyInjection
         services.AddHostedService<DigiTalent.Infrastructure.BackgroundServices.DeadlineReminderBackgroundService>();
 
         return services;
+    }
+
+    private static void ApplyLegacyMinioConfiguration(IConfiguration configuration, FileStorageSettings settings)
+    {
+        var legacyEndpoint = configuration["MinIO:Endpoint"];
+        var legacyAccessKey = configuration["MinIO:AccessKey"];
+        var legacySecretKey = configuration["MinIO:SecretKey"];
+        var legacyBucket = configuration["MinIO:Bucket"];
+        var legacyUseSsl = configuration["MinIO:UseSSL"];
+
+        if (string.IsNullOrWhiteSpace(settings.MinioEndpoint) && !string.IsNullOrWhiteSpace(legacyEndpoint))
+            settings.MinioEndpoint = legacyEndpoint;
+        if (string.IsNullOrWhiteSpace(settings.MinioAccessKey) && !string.IsNullOrWhiteSpace(legacyAccessKey))
+            settings.MinioAccessKey = legacyAccessKey;
+        if (string.IsNullOrWhiteSpace(settings.MinioSecretKey) && !string.IsNullOrWhiteSpace(legacySecretKey))
+            settings.MinioSecretKey = legacySecretKey;
+        if (!string.IsNullOrWhiteSpace(legacyBucket) && string.IsNullOrWhiteSpace(configuration["FileStorage:MinioBucketName"]))
+            settings.MinioBucketName = legacyBucket;
+        if (bool.TryParse(legacyUseSsl, out var useSsl) && string.IsNullOrWhiteSpace(configuration["FileStorage:MinioUseSsl"]))
+            settings.MinioUseSsl = useSsl;
+
+        if (string.IsNullOrWhiteSpace(configuration["FileStorage:Provider"]) && !string.IsNullOrWhiteSpace(settings.MinioEndpoint))
+            settings.Provider = "Minio";
     }
 }
