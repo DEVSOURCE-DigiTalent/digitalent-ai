@@ -119,9 +119,31 @@ public static partial class PulseEssayRubric
         return cleaned.All(c => PlatformCatalog.DefaultFinalCriteria.Any(d => string.Equals(d, c, StringComparison.OrdinalIgnoreCase)));
     }
 
+    /// <summary>Trọng số ghi ở cuối tên tiêu chí, ví dụ "Trình bày rõ ràng (15%)".</summary>
+    [GeneratedRegex(@"^(?<title>.*?)\s*\((?<weight>\d{1,3})\s*%\)$")]
+    private static partial Regex StatedWeight();
+
+    /// <summary>
+    /// Tên và trọng số của các tiêu chí tùy chỉnh: dùng trọng số ghi trong tên (bỏ phần ghi khỏi tên) khi mọi tiêu chí đều
+    /// ghi và tổng đúng 100%; ngược lại giữ nguyên tên và chia đều 100%.
+    /// </summary>
+    private static List<(string Title, int Weight)> CustomWeights(IReadOnlyList<string> criteria)
+    {
+        var stated = criteria.Select(c => StatedWeight().Match(c)).ToList();
+        var weights = stated.Select(m => m.Success ? int.Parse(m.Groups["weight"].Value, CultureInfo.InvariantCulture) : 0).ToList();
+        if (stated.All(m => m.Success) && weights.All(w => w > 0) && weights.Sum() == 100)
+        {
+            return stated.Select((m, i) => (m.Groups["title"].Value.Trim(), weights[i])).ToList();
+        }
+
+        var baseWeight = 100 / criteria.Count;
+        var remainder = 100 % criteria.Count;
+        return criteria.Select((title, i) => (title, baseWeight + (i == criteria.Count - 1 ? remainder : 0))).ToList();
+    }
+
     /// <summary>
     /// Xây dựng bộ tiêu chí có trọng số cho một bài nộp:
-    /// nếu khóa có tiêu chí tùy chỉnh riêng thì giữ nguyên và phân bổ đều 100%;
+    /// nếu khóa có tiêu chí tùy chỉnh riêng thì giữ nguyên, với trọng số ghi trong tiêu chí (tổng 100%) hoặc chia đều;
     /// ngược lại dùng rubric V2 gồm 4 tiêu chí (20% / 20% / 20% / 40% Gate) theo Lĩnh vực × Cấp độ.
     /// </summary>
     public static List<PulseCriterionDto> Build(
@@ -139,15 +161,13 @@ public static partial class PulseEssayRubric
                 .ToList();
             if (cleaned.Count > 0)
             {
-                var baseWeight = 100 / cleaned.Count;
-                var remainder = 100 % cleaned.Count;
-                return cleaned
-                    .Select((title, idx) => new PulseCriterionDto(
+                return CustomWeights(cleaned)
+                    .Select((criterion, idx) => new PulseCriterionDto(
                         (idx + 1).ToString("D2", CultureInfo.InvariantCulture),
-                        title,
+                        criterion.Title,
                         "Tiêu chí đánh giá thực hành riêng của khóa học.")
                     {
-                        WeightPercent = baseWeight + (idx == cleaned.Count - 1 ? remainder : 0),
+                        WeightPercent = criterion.Weight,
                         IsRequired = false,
                     })
                     .ToList();

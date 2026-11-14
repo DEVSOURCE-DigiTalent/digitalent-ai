@@ -244,6 +244,7 @@ function PracticeCard({ section }: { section: LessonSection }) {
 export function LessonSlide({
   slide,
   hideMedia = false,
+  hideMediaNotice = false,
   partNumber,
   partTitle,
 }: {
@@ -253,6 +254,8 @@ export function LessonSlide({
   index?: number;
   count?: number;
   hideMedia?: boolean;
+  /** The module already has slides or media on another page: no "coming soon" notice here. */
+  hideMediaNotice?: boolean;
   partNumber?: number;
   partTitle?: string;
 }) {
@@ -333,7 +336,7 @@ export function LessonSlide({
               </button>
             </div>
           </section>
-        ) : (
+        ) : documents.length > 0 || hideMediaNotice ? null : (
           <div className="pu-media-notice-banner" role="status">
             <div className="pu-mnb-left">
               <div className="pu-mnb-icon-wrap">
