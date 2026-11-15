@@ -19,7 +19,7 @@ export interface PlatformNavItem {
   readonly glyph: string;
   readonly icon: LucideIcon;
   readonly description?: string;
-  readonly badgeKey?: 'pendingTrials';
+  readonly badgeKey?: 'pendingTrials' | 'pendingFeedbacks' | 'pendingBugs';
 }
 
 export interface PlatformNavGroup {
@@ -43,7 +43,7 @@ export const PLATFORM_NAV_GROUPS: readonly PlatformNavGroup[] = [
         label: 'Tổng quan',
         glyph: '',
         icon: LayoutDashboard,
-        description: 'Bảng điều khiển KPI & vận hành toàn diện',
+        description: 'Bảng điều khiển KPI & tác vụ vận hành nền tảng',
       },
       {
         to: '/platform/trials',
@@ -122,6 +122,7 @@ export const PLATFORM_NAV_GROUPS: readonly PlatformNavGroup[] = [
         label: 'Ý kiến phản hồi',
         glyph: '',
         icon: MessageSquare,
+        badgeKey: 'pendingFeedbacks',
         description: 'Ý kiến đóng góp và đề xuất từ người dùng',
       },
       {
@@ -129,6 +130,7 @@ export const PLATFORM_NAV_GROUPS: readonly PlatformNavGroup[] = [
         label: 'Báo lỗi kỹ thuật',
         glyph: '',
         icon: Bug,
+        badgeKey: 'pendingBugs',
         description: 'Sự cố và lỗi người dùng gửi về hệ thống',
       },
     ],

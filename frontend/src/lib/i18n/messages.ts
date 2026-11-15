@@ -1000,4 +1000,45 @@ Xem thêm khóa học|Explore more courses
 Điều khoản|Terms
 Chính sách|Policies
 Tất cả quyền được bảo lưu.|All rights reserved.
+Vận hành & Khách hàng|Operations & Customers
+Nội dung & Chuẩn năng lực|Content & Competency
+Thương mại & Tài chính|Commerce & Finance
+Quản trị & Hỗ trợ|Governance & Support
+Quản trị vận hành|Operations
+Nội dung & Năng lực|Content & Competency
+Thương mại|Commerce
+Hệ thống & Phản hồi|System & Feedback
+Tổ chức doanh nghiệp|Enterprise organizations
+Tài khoản người dùng|User accounts
+Khung chuẩn năng lực|Competency frameworks
+Mẫu vị trí chuẩn|Reference positions
+Phiên bản khóa học|Course versions
+Đơn giá & Suất học|Pricing & Seats
+Nhật ký kiểm tra|Audit log
+Ý kiến phản hồi|User feedback
+Báo lỗi kỹ thuật|Bug reports
+Đánh giá dùng thử|Trial reviews
+Phiên bản đang chạy|Active version
+Chưa xuất bản|Unpublished
+Nháp|Draft
+Tìm nhanh trang, tổ chức, người dùng...|Search pages, organizations, users...
+Tìm kiếm trang quản trị, tổ chức, người dùng hoặc khóa học...|Search admin pages, organizations, users, or courses...
+Mở menu điều hướng|Open navigation menu
+Đóng menu điều hướng|Close navigation menu
+Trung tâm thông báo|Notification center
+Quản trị viên nền tảng|Platform administrator
+Không tìm thấy kết quả phù hợp.|No matching results found.
+Thử từ khóa ngắn hơn hoặc tìm theo mã khóa học, email, tên công ty.|Try a shorter keyword or search by course code, email, or company name.
+Tất cả thông báo|All notifications
+Không có thông báo mới.|No new notifications.
+Hệ thống sẽ hiển thị thông báo mới ngay khi có hoạt động liên quan.|New alerts will appear here as related activity arrives.
+Mở bản nháp hoặc tạo phiên bản mới|Open draft or create new version
+Thêm lĩnh vực vào khung năng lực|Add domain to competency framework
+Cấp suất & Quản lý tổ chức|Grant seats & manage organizations
+Phân công & Duyệt dùng thử|Assign mentors & review trials
+Tạo hoặc thao tác nhanh|Quick actions
+Tìm trang, tổ chức, user...|Find page, org, or user...
+Menu người dùng|User menu
+Hồ sơ quản trị viên|Admin profile
+Đăng xuất hệ thống|Sign out of system
 `.trim().split('\n').map(line => { const separator = line.indexOf('|'); return [line.slice(0, separator), line.slice(separator + 1)]; })) };
