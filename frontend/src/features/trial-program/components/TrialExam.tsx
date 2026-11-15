@@ -30,6 +30,7 @@ import { ProctorController, proctoringSupported, type ProctorSnapshot } from '@/
 import { LeaveGuard, LockOverlay, MicMeter, ProctorPanel, StreamPreview } from '@/features/pulse-employee/exam/ProctoredExam';
 import { useNow } from '@/features/pulse-employee/exam/exam-helpers';
 import { formatWhen } from '../lib/trial-format';
+import { AutoReturnNotice } from './AutoReturnNotice';
 
 const DOMAIN_NUMBERS = [1, 2, 3, 4, 5, 6] as const;
 
@@ -854,6 +855,7 @@ export function TrialExam({ organizationName, deadline, choiceCount, domainCount
               >
                 Về Trang tổng quan theo dõi trạng thái →
               </Link>
+              <AutoReturnNotice to={PULSE_PATHS.trialTest} label="về trang tổng quan" />
             </div>
           </section>
         </main>
