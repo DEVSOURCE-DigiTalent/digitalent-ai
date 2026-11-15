@@ -603,6 +603,13 @@
   background: #fffbeb;
 }
 
+.pulse-ui .data-table tbody tr.pa-row-link:hover .pa-row-chevron {
+  color: var(--pa-accent-solid, #b85c24) !important;
+  background: var(--pa-accent-soft, #fef3e7) !important;
+  border-color: var(--pa-accent-border, #fed7aa) !important;
+  transform: translateX(2px);
+}
+
 .pulse-ui .data-table .num {
   text-align: right;
   font-variant-numeric: tabular-nums;

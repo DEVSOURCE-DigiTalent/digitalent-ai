@@ -60,6 +60,7 @@ export function PlatformUsersPage() {
   const activeTabConfig = TABS.find((t) => t.key === tab) ?? TABS[0];
   const queryRole = (activeTabConfig.role || undefined) as string | undefined;
   const queryStatus = (status || undefined) as string | undefined;
+  const isAllTab = tab === 'ALL';
 
   const { data, isLoading, error } = usePlatformUsers({
     search,
@@ -557,13 +558,16 @@ export function PlatformUsersPage() {
               <table className="data-table pa-org-table" style={{ width: '100%' }}>
                 <thead>
                   <tr>
-                    <th style={{ minWidth: 200 }}>{translateUi('Người dùng')}</th>
-                    <th style={{ minWidth: 140 }}>{translateUi('Vai trò')}</th>
-                    <th style={{ minWidth: 190 }}>Tổ chức / Phòng ban</th>
-                    <th style={{ minWidth: 195 }}>{dynamicColumnHeader}</th>
-                    <th style={{ minWidth: 130 }}>{translateUi('Trạng thái')}</th>
-                    <th style={{ minWidth: 130 }}>Đăng nhập gần nhất</th>
-                    <th style={{ minWidth: 120, textAlign: 'right', paddingRight: 16 }}>{translateUi('Thao tác')}</th>
+                    <th style={{ minWidth: 190 }}>{translateUi('Người dùng')}</th>
+                    {isAllTab ? (
+                      <th style={{ minWidth: 130 }}>{translateUi('Vai trò')}</th>
+                    ) : (
+                      <th style={{ minWidth: 175 }}>{dynamicColumnHeader}</th>
+                    )}
+                    <th style={{ minWidth: 175 }}>Tổ chức / Phòng ban</th>
+                    <th style={{ minWidth: 110 }}>{translateUi('Trạng thái')}</th>
+                    <th style={{ minWidth: 120 }}>Đăng nhập gần nhất</th>
+                    <th style={{ width: 44, textAlign: 'right', paddingRight: 14 }} aria-label="Chi tiết" />
                   </tr>
                 </thead>
                 <tbody>
@@ -622,19 +626,63 @@ export function PlatformUsersPage() {
                           </div>
                         </td>
 
-                        <td>
-                          <span
-                            className="pa-org-level-pill"
-                            style={{
-                              background: roleBadgeBg,
-                              color: roleBadgeColor,
-                              borderColor: roleBadgeBorder,
-                              fontWeight: 700,
-                            }}
-                          >
-                            {ROLE_LABELS[primary] ?? primary}
-                          </span>
-                        </td>
+                        {isAllTab ? (
+                          <td>
+                            <span
+                              className="pa-org-level-pill"
+                              style={{
+                                background: roleBadgeBg,
+                                color: roleBadgeColor,
+                                borderColor: roleBadgeBorder,
+                                fontWeight: 700,
+                              }}
+                            >
+                              {ROLE_LABELS[primary] ?? primary}
+                            </span>
+                          </td>
+                        ) : (
+                          <td>
+                            {isEmployee ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                  <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0f172a' }}>2 khóa học</span>
+                                  <span style={{ fontSize: 11.5, fontWeight: 500, color: '#16a34a' }}>· 1 hoàn thành</span>
+                                </div>
+                                <div style={{ width: 90, height: 4, background: '#e2e8f0', borderRadius: 999, overflow: 'hidden' }} aria-hidden="true">
+                                  <div style={{ width: '50%', height: '100%', background: '#16a34a', borderRadius: 999 }} />
+                                </div>
+                              </div>
+                            ) : isMentor ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <span style={{ fontSize: 12.5, fontWeight: 600, color: '#7c3aed' }}>
+                                  Thẩm định bài thi
+                                </span>
+                                <span style={{ fontSize: 11, color: '#64748b' }}>4 bài chờ chấm · Đã duyệt 18</span>
+                              </div>
+                            ) : isOwner ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <span style={{ fontSize: 12.5, fontWeight: 600, color: '#334155' }}>
+                                  Bản quyền doanh nghiệp
+                                </span>
+                                <span style={{ fontSize: 11, color: '#64748b' }}>Quản trị tổ chức · Đại diện pháp lý</span>
+                              </div>
+                            ) : isManager ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <span style={{ fontSize: 12.5, fontWeight: 600, color: '#334155' }}>
+                                  Điều phối phòng ban
+                                </span>
+                                <span style={{ fontSize: 11, color: '#64748b' }}>Theo dõi lộ trình đào tạo nội bộ</span>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <span style={{ fontSize: 12.5, fontWeight: 600, color: '#475569' }}>
+                                  Quản trị hệ thống
+                                </span>
+                                <span style={{ fontSize: 11, color: '#64748b' }}>Toàn quyền cấu hình nền tảng</span>
+                              </div>
+                            )}
+                          </td>
+                        )}
 
                         <td>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -653,48 +701,6 @@ export function PlatformUsersPage() {
                                 (isSuperAdmin ? 'Quản trị hệ thống' : isMentor ? 'Chuyên gia thẩm định bài thi' : 'Nhân sự')}
                             </span>
                           </div>
-                        </td>
-
-                        <td>
-                          {isEmployee ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                                <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0f172a' }}>2 khóa học</span>
-                                <span style={{ fontSize: 11.5, fontWeight: 500, color: '#16a34a' }}>· 1 hoàn thành</span>
-                              </div>
-                              <div style={{ width: 90, height: 4, background: '#e2e8f0', borderRadius: 999, overflow: 'hidden' }} aria-hidden="true">
-                                <div style={{ width: '50%', height: '100%', background: '#16a34a', borderRadius: 999 }} />
-                              </div>
-                            </div>
-                          ) : isMentor ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#7c3aed' }}>
-                                Thẩm định bài thi
-                              </span>
-                              <span style={{ fontSize: 11, color: '#64748b' }}>4 bài chờ chấm · Đã duyệt 18</span>
-                            </div>
-                          ) : isOwner ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#334155' }}>
-                                Bản quyền doanh nghiệp
-                              </span>
-                              <span style={{ fontSize: 11, color: '#64748b' }}>Quản trị tổ chức · Đại diện pháp lý</span>
-                            </div>
-                          ) : isManager ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#334155' }}>
-                                Điều phối phòng ban
-                              </span>
-                              <span style={{ fontSize: 11, color: '#64748b' }}>Theo dõi lộ trình đào tạo nội bộ</span>
-                            </div>
-                          ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#475569' }}>
-                                Quản trị hệ thống
-                              </span>
-                              <span style={{ fontSize: 11, color: '#64748b' }}>Toàn quyền cấu hình nền tảng</span>
-                            </div>
-                          )}
                         </td>
 
                         <td>
@@ -722,19 +728,25 @@ export function PlatformUsersPage() {
                           </span>
                         </td>
 
-                        <td style={{ textAlign: 'right', paddingRight: 16 }}>
-                          <button
-                            type="button"
-                            className="pa-btn-detail"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDrawerUserId(u.id);
+                        <td style={{ textAlign: 'right', paddingRight: 14 }}>
+                          <span
+                            className="pa-row-chevron"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: 26,
+                              height: 26,
+                              borderRadius: 6,
+                              color: '#94a3b8',
+                              background: '#f8fafc',
+                              border: '1px solid #e2e8f0',
+                              transition: 'all 0.15s ease',
                             }}
                             title="Xem chi tiết tài khoản"
                           >
-                            <span>Xem chi tiết</span>
-                            <ChevronRight size={13} className="pa-btn-detail-icon" aria-hidden="true" />
-                          </button>
+                            <ChevronRight size={14} aria-hidden="true" />
+                          </span>
                         </td>
                       </tr>
                     );
