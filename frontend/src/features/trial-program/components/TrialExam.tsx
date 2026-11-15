@@ -855,7 +855,7 @@ export function TrialExam({ organizationName, deadline, choiceCount, domainCount
               >
                 Về trang khảo sát →
               </Link>
-              <AutoReturnNotice to={PULSE_PATHS.trialTest} label="về trang tổng quan" />
+              <AutoReturnNotice to={PULSE_PATHS.trialTest} label="về trang khảo sát" />
             </div>
           </section>
         </main>

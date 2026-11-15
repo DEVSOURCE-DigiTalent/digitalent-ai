@@ -7,8 +7,8 @@ function renderDone() {
   render(
     <MemoryRouter initialEntries={['/exam']}>
       <Routes>
-        <Route path="/exam" element={<AutoReturnNotice to="/overview" label="về trang tổng quan" />} />
-        <Route path="/overview" element={<p>Trang tổng quan khảo sát</p>} />
+        <Route path="/exam" element={<AutoReturnNotice to="/overview" label="về trang khảo sát" />} />
+        <Route path="/overview" element={<p>Trang khảo sát</p>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -24,11 +24,11 @@ describe('AutoReturnNotice', () => {
 
   it('counts down five seconds then opens the overview', () => {
     renderDone();
-    expect(screen.getByRole('status').textContent).toContain('Tự về trang tổng quan sau 5 giây');
+    expect(screen.getByRole('status').textContent).toContain('Tự về trang khảo sát sau 5 giây');
     tick(4);
     expect(screen.getByRole('status').textContent).toContain('sau 1 giây');
     tick(1);
-    expect(screen.getByText('Trang tổng quan khảo sát')).toBeTruthy();
+    expect(screen.getByText('Trang khảo sát')).toBeTruthy();
   });
 
   it('stays on the page when asked to', () => {
@@ -36,6 +36,6 @@ describe('AutoReturnNotice', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ở lại trang này' }));
     tick(6);
     expect(screen.queryByRole('status')).toBeNull();
-    expect(screen.queryByText('Trang tổng quan khảo sát')).toBeNull();
+    expect(screen.queryByText('Trang khảo sát')).toBeNull();
   });
 });
