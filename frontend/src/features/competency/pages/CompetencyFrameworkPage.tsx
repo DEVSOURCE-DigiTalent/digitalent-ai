@@ -1,3 +1,4 @@
+import { NativeFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -151,7 +152,7 @@ export function CompetencyFrameworkPage() {
           />
         </div>
         <div className="w-56">
-          <select
+          <NativeFilterSelect
             aria-label="Lọc theo miền năng lực"
             value={selectedCategory}
             onChange={(e) => {
@@ -166,10 +167,10 @@ export function CompetencyFrameworkPage() {
                 {c.code}: {c.name}
               </option>
             ))}
-          </select>
+          </NativeFilterSelect>
         </div>
         <div className="w-44">
-          <select
+          <NativeFilterSelect
             aria-label="Lọc theo loại năng lực"
             value={competencyType}
             onChange={(e) => {
@@ -184,7 +185,7 @@ export function CompetencyFrameworkPage() {
                 {translateUi(label)}
               </option>
             ))}
-          </select>
+          </NativeFilterSelect>
         </div>
       </div>
 

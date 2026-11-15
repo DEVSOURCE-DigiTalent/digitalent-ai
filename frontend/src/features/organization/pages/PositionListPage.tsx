@@ -227,21 +227,21 @@ export function PositionListPage() {
         emptyDescription="Tạo vị trí công việc để thiết lập bộ yêu cầu năng lực cho tổ chức."
         filters={
           <>
-            <OwnerFilterSelect
+            <OwnerFilterSelect icon="filter"
               label={translateUi("Lọc theo phòng ban")}
               value={departmentId}
               onChange={resetPage(setDepartmentId)}
               options={[{ value: '', label: 'Mọi phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]}
               className="positions-filter"
             />
-            <OwnerFilterSelect
+            <OwnerFilterSelect icon="filter"
               label={translateUi("Lọc theo cấp bậc")}
               value={jobGrade}
               onChange={resetPage(setJobGrade)}
               options={[{ value: '', label: 'Mọi cấp bậc' }, ...JOB_GRADES.map((code) => ({ value: code, label: gradeLabel(code) }))]}
               className="positions-filter"
             />
-            <OwnerFilterSelect
+            <OwnerFilterSelect icon="filter"
               label={translateUi("Lọc theo trạng thái")}
               value={status || ''}
               onChange={(value) => resetPage(setStatus)(value ? value as JobPositionStatus : undefined)}

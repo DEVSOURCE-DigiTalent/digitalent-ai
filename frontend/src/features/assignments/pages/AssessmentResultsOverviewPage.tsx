@@ -397,7 +397,7 @@ export function AssessmentResultsOverviewPage() {
         </label>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <OwnerFilterSelect
+          <OwnerFilterSelect icon="filter"
             label="Lọc theo kết quả"
             value={passed}
             onChange={(value) => {

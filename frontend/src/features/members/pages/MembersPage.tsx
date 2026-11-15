@@ -1,3 +1,4 @@
+import { NativeFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -200,7 +201,7 @@ export function MembersPage() {
         emptyDescription="Mời nhân viên để họ bắt đầu học và được đánh giá năng lực."
         filters={
           <>
-            <select
+            <NativeFilterSelect
               aria-label={translateUi("Lọc theo phòng ban")}
               value={departmentId}
               onChange={(e) => resetPage(setDepartmentId)(e.target.value)}
@@ -212,8 +213,8 @@ export function MembersPage() {
                   {d.name}
                 </option>
               ))}
-            </select>
-            <select
+            </NativeFilterSelect>
+            <NativeFilterSelect
               aria-label="Lọc theo vị trí"
               value={jobPositionId}
               onChange={(e) => resetPage(setJobPositionId)(e.target.value)}
@@ -225,8 +226,8 @@ export function MembersPage() {
                   {p.name}
                 </option>
               ))}
-            </select>
-            <select
+            </NativeFilterSelect>
+            <NativeFilterSelect
               aria-label="Lọc theo vai trò"
               value={role}
               onChange={(e) => resetPage(setRole)(e.target.value)}
@@ -238,8 +239,8 @@ export function MembersPage() {
                   {roleLabel(r)}
                 </option>
               ))}
-            </select>
-            <select
+            </NativeFilterSelect>
+            <NativeFilterSelect
               aria-label={translateUi("Lọc theo trạng thái")}
               value={status}
               onChange={(e) => resetPage(setStatus)(e.target.value as MemberStatus | '')}
@@ -251,7 +252,7 @@ export function MembersPage() {
                   {translateUi(MEMBER_STATUS_LABELS[s])}
                 </option>
               ))}
-            </select>
+            </NativeFilterSelect>
           </>
         }
         pageInfo={{ page, pageSize: PAGE_SIZE, total: data?.totalItems ?? 0, onPageChange: setPage }}

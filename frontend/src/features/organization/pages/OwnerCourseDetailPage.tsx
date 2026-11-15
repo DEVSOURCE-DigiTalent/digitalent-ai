@@ -118,10 +118,9 @@ export function OwnerCourseDetailPage() {
         <div className="course-detail-hero-copy">
           <Link
             to="/enterprise/courses"
-            className="inline-flex items-center gap-1.5 text-[11px] font-bold mb-4 opacity-70 hover:opacity-100 transition-opacity"
-            style={{ color: '#dbe4ff' }}
+            className="course-detail-back"
           >
-            <ArrowLeft className="size-3" />{translateUi(" Danh mục khóa học")}</Link>
+            <ArrowLeft className="size-4 shrink-0" aria-hidden="true" />{translateUi(" Danh mục khóa học")}</Link>
 
           <span
             className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em]"

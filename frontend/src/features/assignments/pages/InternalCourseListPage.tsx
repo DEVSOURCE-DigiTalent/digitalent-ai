@@ -177,7 +177,7 @@ export function InternalCourseListPage() {
         </label>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          {mock && <OwnerFilterSelect
+          {mock && <OwnerFilterSelect icon="filter"
             label="Lọc theo chuyên mục"
             value={category}
             onChange={(value) => {
@@ -187,7 +187,7 @@ export function InternalCourseListPage() {
             options={[{ value: '', label: 'Tất cả chuyên mục' }, { value: 'Văn hóa & Hội nhập', label: 'Văn hóa & Hội nhập' }, { value: 'Chính sách & Tuân thủ', label: 'Chính sách & Tuân thủ' }, { value: 'Quy trình vận hành', label: 'Quy trình vận hành' }, { value: 'Kỹ năng chuyên môn', label: 'Kỹ năng chuyên môn' }]}
           />}
 
-          <OwnerFilterSelect
+          <OwnerFilterSelect icon="filter"
             label={translateUi("Lọc theo trạng thái")}
             value={status}
             onChange={(value) => {

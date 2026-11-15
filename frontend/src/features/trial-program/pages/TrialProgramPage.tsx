@@ -230,6 +230,7 @@ function TrackView({ program }: { program: TrialProgram }) {
   const [adding, setAdding] = useState(false);
   const [resent, setResent] = useState<TrialInviteResult | null>(null);
   const [search, setSearch] = useState('');
+  const [submissionFilter, setSubmissionFilter] = useState('all');
   const [sort, setSort] = useState<'name' | 'department' | 'status' | 'submitted'>('name');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -239,6 +240,8 @@ function TrackView({ program }: { program: TrialProgram }) {
   const [showParticipants, setShowParticipants] = useState(!reported);
 
   const filteredParticipants = program.participants.filter((p) => {
+    const hasSubmitted = p.status === 'SUBMITTED' || p.status === 'REVIEWED';
+    if (submissionFilter !== 'all' && hasSubmitted !== (submissionFilter === 'submitted')) return false;
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return (
@@ -344,7 +347,17 @@ function TrackView({ program }: { program: TrialProgram }) {
                     className="w-full text-sm"
                   />
                 </label>
-                <OwnerFilterSelect label={translateUi("Sắp xếp danh sách nhân viên")} value={sort} onChange={(value) => { setSort(value as typeof sort); setPage(1); }} options={[{ value: 'name', label: 'Tên nhân viên' }, { value: 'department', label: 'Phòng ban' }, { value: 'status', label: 'Trạng thái' }, { value: 'submitted', label: 'Nộp gần nhất' }]} />
+                <OwnerFilterSelect icon="filter"
+                  label={translateUi('Trạng thái bài làm')}
+                  value={submissionFilter}
+                  onChange={(value) => { setSubmissionFilter(value); setPage(1); }}
+                  options={[
+                    { value: 'all', label: translateUi('Mọi trạng thái') },
+                    { value: 'submitted', label: translateUi('Đã làm bài') },
+                    { value: 'pending', label: translateUi('Chưa làm bài') },
+                  ]}
+                />
+                <OwnerFilterSelect icon="sort" label={translateUi("Sắp xếp danh sách nhân viên")} value={sort} onChange={(value) => { setSort(value as typeof sort); setPage(1); }} options={[{ value: 'name', label: 'Tên nhân viên' }, { value: 'department', label: 'Phòng ban' }, { value: 'status', label: 'Trạng thái' }, { value: 'submitted', label: 'Nộp gần nhất' }]} />
               </div>
               <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                 <span className="text-xs text-slate-500 tabular-nums whitespace-nowrap">
