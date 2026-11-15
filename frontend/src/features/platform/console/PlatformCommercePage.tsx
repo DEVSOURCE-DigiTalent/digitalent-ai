@@ -1,12 +1,12 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useMemo, useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { usePlatformCommerce } from '@/hooks/use-platform-admin';
 import { useCatalogVersions, useCreateDraft, useUpdatePrices } from '@/hooks/use-platform-catalog';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import type { PlatformCourse, SalesStatus } from '@/services/platform-admin.service';
-import { Footer, LoadError, Loading, Pager, Pill } from '../components/pulse-ui';
+import { Box, Footer, LoadError, Loading, Pager, Pill } from '../components/pulse-ui';
 import { LEVEL_NAMES, SALES_STATUS, errorMessage, formatDateTime, formatMoney, formatNumber } from '../components/pulse-format';
 import {
   ReceiptText,
@@ -17,184 +17,450 @@ import {
   RotateCcw,
   Edit3,
   History,
+  FileSpreadsheet,
+  TrendingUp,
+  Search,
+  Tag,
+  Info,
+  X,
+  Layers,
 } from 'lucide-react';
 
 type Edit = { price: number; sales: SalesStatus };
+type CommerceTab = 'PRICING' | 'ORDERS' | 'ALL';
 
 /**
- * PA-09 · Đơn giá: per-seat price of every published course.
+ * PA-09 · Đơn giá & Doanh thu suất học B2B
+ * Quản trị biểu giá niêm yết theo phiên bản và sổ cái giao dịch mua/cấp bù suất học.
  */
 export function PlatformCommercePage() {
   useUiLanguage();
+  const [params, setParams] = useSearchParams();
+  const activeTab = (params.get('tab') as CommerceTab) || 'PRICING';
   const [kind, setKind] = useState('');
   const [pageIndex, setPageIndex] = useState(1);
+  const [domainFilter, setDomainFilter] = useState('ALL');
+  const [orderSearch, setOrderSearch] = useState('');
+
   const { data, isLoading, error } = usePlatformCommerce({ kind, pageIndex, pageSize: 20 });
   const versions = useCatalogVersions();
   const currentNo = versions.data?.currentVersionNo ?? null;
   const draftNo = versions.data?.draftVersionNo ?? null;
 
+  const { can } = usePermission();
+  const canManage = can(PERMISSIONS.PLATFORM_CATALOG_MANAGE);
+  const createDraft = useCreateDraft();
+
+  const onCreateDraft = () =>
+    createDraft.mutate(undefined, {
+      onSuccess: (draft) => toast.success(`Đã tạo bản nháp v${draft.version.versionNo}. Quản trị viên hiện có thể điều chỉnh đơn giá.`),
+      onError: (err) => toast.error(errorMessage(err)),
+    });
+
+  const chooseTab = (tab: CommerceTab) => {
+    setParams(tab !== 'PRICING' ? { tab } : {}, { replace: true });
+  };
+
+  // Metrics calculations
+  const totalRevenue = data?.revenue ?? 0;
+  const seatsPurchased = data?.seatsPurchased ?? 0;
+  const avgPricePerSeat = seatsPurchased > 0 ? Math.round(totalRevenue / seatsPurchased) : 0;
+  const seatsGranted = data?.seatsGranted ?? 0;
+
+  // Filtered orders for client-side search
+  const filteredOrders = useMemo(() => {
+    if (!data?.orders?.items) return [];
+    if (!orderSearch.trim()) return data.orders.items;
+    const q = orderSearch.trim().toLowerCase();
+    return data.orders.items.filter(
+      (o) =>
+        o.organizationName.toLowerCase().includes(q) ||
+        o.courseTitle.toLowerCase().includes(q) ||
+        (o.createdByEmail && o.createdByEmail.toLowerCase().includes(q)) ||
+        (o.reason && o.reason.toLowerCase().includes(q)),
+    );
+  }, [data?.orders?.items, orderSearch]);
+
   return (
     <>
-      <div className="pa-page-header">
-        <div className="pa-row-between" style={{ alignItems: 'flex-start' }}>
-          <div>
-            <div className="pa-header-eyebrow">
-              <span className="pa-eyebrow-dot" />
-              QUẢN TRỊ NỀN TẢNG / ĐƠN GIÁ & DOANH THU B2B
-            </div>
-            <h1 className="pa-header-title">Biểu giá mỗi suất theo khóa học</h1>
-            <p className="pa-header-subtitle">
-              Khóa Cơ bản luôn miễn phí theo Thông tư 02. Đổi giá trong bản nháp phiên bản; giá mới áp dụng khi bản nháp được công bố.
-            </p>
-          </div>
+      {/* Modern, clean executive header (zero kicker badge, clear typography) */}
+      <header className="pa-org-header">
+        <div>
+          <h1 className="pa-org-title" aria-label="Đơn giá và Doanh thu suất học">
+            Đơn giá & Doanh thu suất học
+          </h1>
+          <p className="pa-org-subtitle">
+            Quản trị biểu giá niêm yết theo phiên bản khóa học, theo dõi doanh thu và lịch sử cấp phát suất học doanh nghiệp.
+          </p>
         </div>
-      </div>
+
+        <div className="pa-org-actions">
+          {canManage && draftNo === null && (
+            <button
+              type="button"
+              className="btn btn-primary btn-small inline-flex items-center gap-1.5"
+              onClick={onCreateDraft}
+              disabled={createDraft.isPending}
+              title="Tạo phiên bản nháp mới để điều chỉnh đơn giá niêm yết"
+            >
+              <Sparkles size={14} aria-hidden="true" />
+              <span>{createDraft.isPending ? 'Đang tạo…' : 'Tạo bản nháp đổi giá'}</span>
+            </button>
+          )}
+
+          {draftNo !== null && (
+            <Link
+              className="btn btn-primary btn-small inline-flex items-center gap-1.5"
+              to={`/platform/versions/${draftNo}`}
+              title={`Mở bản nháp v${draftNo} để chỉnh sửa và công bố`}
+            >
+              <Edit3 size={14} aria-hidden="true" />
+              <span>Mở bản nháp v{draftNo}</span>
+            </Link>
+          )}
+
+          <button
+            type="button"
+            className="btn btn-outline btn-small inline-flex items-center gap-1.5"
+            title="Xuất bảng tính biểu giá và doanh thu suất học"
+            onClick={() => window.print()}
+          >
+            <FileSpreadsheet size={14} aria-hidden="true" />
+            <span>Xuất dữ liệu</span>
+          </button>
+        </div>
+      </header>
 
       {(isLoading || versions.isLoading) && <Loading />}
       {error && <LoadError error={error} />}
+
       {data && versions.data && (
         <>
-          {/* Bento KPI Grid */}
-          <div className="pa-bento-kpi-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 24 }}>
-            <div className="pa-bento-card">
-              <div className="pa-bento-top">
-                <span className="pa-bento-label">DOANH THU SUẤT KHÓA</span>
-                <ReceiptText size={16} style={{ color: '#059669' }} />
+          {/* Executive 4 Financial KPI Cards */}
+          <div className="pa-org-kpi-grid" role="region" aria-label="Thống kê doanh thu và quy mô suất học">
+            {/* Card 1: Doanh thu suất học */}
+            <div className="pa-org-stat-card">
+              <div className="pa-org-kpi-head">
+                <span className="pa-org-kpi-label">Doanh thu suất học</span>
+                <div className="pa-kpi-icon-wrap emerald" aria-hidden="true">
+                  <ReceiptText size={14} />
+                </div>
               </div>
-              <div className="pa-bento-value" style={{ color: '#059669' }}>{formatMoney(data.revenue)}</div>
-              <div className="pa-bento-sub">Tổng thu từ bán suất khóa trả phí</div>
+              <div className="pa-org-kpi-val-row">
+                <span className="pa-org-kpi-val" style={{ color: '#15803d', whiteSpace: 'nowrap', fontSize: 20 }}>
+                  {formatMoney(totalRevenue)}
+                </span>
+                <span className="pa-org-kpi-sub">Lũy kế có phí</span>
+              </div>
             </div>
 
-            <div className="pa-bento-card">
-              <div className="pa-bento-top">
-                <span className="pa-bento-label">SUẤT DOANH NGHIỆP ĐÃ MUA</span>
-                <Building2 size={16} style={{ color: '#2563eb' }} />
+            {/* Card 2: Suất doanh nghiệp mua */}
+            <div className="pa-org-stat-card">
+              <div className="pa-org-kpi-head">
+                <span className="pa-org-kpi-label">Suất doanh nghiệp mua</span>
+                <div className="pa-kpi-icon-wrap sky" aria-hidden="true">
+                  <Building2 size={14} />
+                </div>
               </div>
-              <div className="pa-bento-value">{formatNumber(data.seatsPurchased)}</div>
-              <div className="pa-bento-sub">Số suất nhân viên được mở quyền học</div>
+              <div className="pa-org-kpi-val-row">
+                <span className="pa-org-kpi-val" style={{ color: '#0284c7' }}>
+                  {formatNumber(seatsPurchased)}
+                </span>
+                <span className="pa-org-kpi-sub">Đã kích hoạt đào tạo</span>
+              </div>
             </div>
 
-            <div className="pa-bento-card">
-              <div className="pa-bento-top">
-                <span className="pa-bento-label">SUẤT QUẢN TRỊ CẤP HỖ TRỢ</span>
-                <ShieldCheck size={16} style={{ color: '#d97706' }} />
+            {/* Card 3: Đơn giá trung bình / suất */}
+            <div className="pa-org-stat-card">
+              <div className="pa-org-kpi-head">
+                <span className="pa-org-kpi-label">Giá trung bình / suất</span>
+                <div className="pa-kpi-icon-wrap emerald" aria-hidden="true">
+                  <TrendingUp size={14} />
+                </div>
               </div>
-              <div className="pa-bento-value">{formatNumber(data.seatsGranted)}</div>
-              <div className="pa-bento-sub">Suất cấp qua nghiệp vụ hỗ trợ</div>
+              <div className="pa-org-kpi-val-row">
+                <span className="pa-org-kpi-val" style={{ color: '#0f172a', whiteSpace: 'nowrap', fontSize: 20 }}>
+                  {formatMoney(avgPricePerSeat)}
+                </span>
+                <span className="pa-org-kpi-sub">Trên {formatNumber(seatsPurchased)} suất</span>
+              </div>
+            </div>
+
+            {/* Card 4: Suất quản trị cấp hỗ trợ */}
+            <div className="pa-org-stat-card">
+              <div className="pa-org-kpi-head">
+                <span className="pa-org-kpi-label">Suất cấp hỗ trợ</span>
+                <div className="pa-kpi-icon-wrap amber" aria-hidden="true">
+                  <ShieldCheck size={14} />
+                </div>
+              </div>
+              <div className="pa-org-kpi-val-row">
+                <span className="pa-org-kpi-val" style={{ color: '#d97706' }}>
+                  {formatNumber(seatsGranted)}
+                </span>
+                <span className="pa-org-kpi-sub">Cấp bù kỹ thuật</span>
+              </div>
             </div>
           </div>
 
-          <PriceTable key={`${draftNo}-${data.courses.map((c) => `${c.draftPricePerSeat}${c.draftSalesStatus}`).join()}`} courses={data.courses} currentNo={currentNo} draftNo={draftNo} />
+          {/* Workstream Tabs Switcher */}
+          <div className="pa-commerce-workstream-bar">
+            <div className="pa-org-tabs" role="tablist" aria-label="Phân khu làm việc thương mại">
+              <button
+                type="button"
+                role="tab"
+                className="pa-org-tab-btn"
+                aria-selected={activeTab === 'PRICING'}
+                aria-pressed={activeTab === 'PRICING'}
+                onClick={() => chooseTab('PRICING')}
+              >
+                <Tag size={14} aria-hidden="true" />
+                <span>Biểu giá khóa học</span>
+                <span className="pa-org-tab-count">{data.courses.length}</span>
+              </button>
 
-          {/* Orders Section */}
-          <section className="surface pad" style={{ marginTop: 24, borderRadius: 16, border: '1px solid #e2e8f0', background: '#fff' }} aria-labelledby="orders-title">
-            <div className="pa-row-between" style={{ marginBottom: 16, alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <History size={18} style={{ color: '#0f172a' }} />
+              <button
+                type="button"
+                role="tab"
+                className="pa-org-tab-btn"
+                aria-selected={activeTab === 'ORDERS'}
+                aria-pressed={activeTab === 'ORDERS'}
+                onClick={() => chooseTab('ORDERS')}
+              >
+                <History size={14} aria-hidden="true" />
+                <span>Lịch sử đơn hàng & Cấp phát</span>
+                <span className="pa-org-tab-count">{data.orders.totalItems}</span>
+              </button>
+
+              <button
+                type="button"
+                role="tab"
+                className="pa-org-tab-btn"
+                aria-selected={activeTab === 'ALL'}
+                aria-pressed={activeTab === 'ALL'}
+                onClick={() => chooseTab('ALL')}
+              >
+                <Layers size={14} aria-hidden="true" />
+                <span>Toàn bộ phân khu</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Workstream Section 1: Biểu giá khóa học */}
+          {(activeTab === 'PRICING' || activeTab === 'ALL') && (
+            <div style={{ marginBottom: activeTab === 'ALL' ? 24 : 0 }}>
+              <PriceTable
+                key={`${draftNo}-${data.courses.map((c) => `${c.draftPricePerSeat}${c.draftSalesStatus}`).join()}`}
+                courses={data.courses}
+                currentNo={currentNo}
+                draftNo={draftNo}
+                domainFilter={domainFilter}
+                onSelectDomain={setDomainFilter}
+              />
+            </div>
+          )}
+
+          {/* Workstream Section 2: Lịch sử đơn hàng & Cấp phát */}
+          {(activeTab === 'ORDERS' || activeTab === 'ALL') && (
+            <Box>
+              <div className="pa-commerce-section-head">
                 <div>
-                  <h2 id="orders-title" className="panel-title" style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#0f172a' }}>
-                    Lịch sử đơn hàng & Cấp phát suất học
+                  <h2 className="pa-commerce-section-title">
+                    <History size={17} style={{ color: '#0f172a' }} aria-hidden="true" />
+                    <span>Lịch sử đơn hàng & Cấp phát suất học</span>
                   </h2>
-                  <span style={{ fontSize: 12, color: '#64748b' }}>Giao dịch mua suất từ doanh nghiệp và các lượt cấp bù từ quản trị</span>
+                  <p className="pa-commerce-section-desc">
+                    Nhật ký giao dịch mua suất từ doanh nghiệp và các lượt cấp bù hỗ trợ từ quản trị viên.
+                  </p>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <span style={{ fontSize: 12, color: '#64748b' }}>Phân loại:</span>
+
+              {/* Order filters toolbar */}
+              <div className="pa-users-search-row" style={{ marginBottom: 16 }}>
+                <div className="pa-tr-search-wrap">
+                  <Search size={15} className="pa-tr-search-icon" aria-hidden="true" />
+                  <input
+                    type="search"
+                    className="pa-tr-search-input"
+                    placeholder="Tìm theo tên doanh nghiệp, khóa học, mã hợp đồng..."
+                    value={orderSearch}
+                    onChange={(e) => setOrderSearch(e.target.value)}
+                    aria-label="Tìm kiếm đơn hàng"
+                  />
+                  {orderSearch && (
+                    <button
+                      type="button"
+                      className="pa-tr-search-clear"
+                      onClick={() => setOrderSearch('')}
+                      aria-label="Xóa từ khóa tìm kiếm"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+
                 <select
                   value={kind}
                   onChange={(e) => {
                     setKind(e.target.value);
                     setPageIndex(1);
                   }}
-                  aria-label="Loại đơn"
-                  style={{ height: 34, padding: '0 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 12 }}
+                  aria-label="Phân loại đơn hàng"
+                  style={{
+                    height: 36,
+                    padding: '0 12px',
+                    borderRadius: 8,
+                    border: '1px solid #cbd5e1',
+                    background: '#ffffff',
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: '#334155',
+                    flexShrink: 0,
+                  }}
                 >
                   <option value="">Tất cả loại đơn</option>
                   <option value="PURCHASE">Doanh nghiệp mua</option>
                   <option value="ADMIN_GRANT">Quản trị viên cấp</option>
                 </select>
-              </div>
-            </div>
 
-            {data.orders.items.length === 0 ? (
-              <p style={{ padding: '32px 16px', textAlign: 'center', color: '#64748b', fontSize: 13, background: '#f8fafc', borderRadius: 10 }}>
-                Chưa có đơn hàng hoặc suất cấp hỗ trợ nào được ghi nhận.
-              </p>
-            ) : (
-              <div className="table-scroll">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 160 }}>{translateUi("Thời gian")}</th>
-                      <th>Khóa học & Doanh nghiệp</th>
-                      <th style={{ width: 160 }}>Loại đơn</th>
-                      <th className="num" style={{ width: 100, textAlign: 'right' }}>{translateUi("Số suất")}</th>
-                      <th className="num" style={{ width: 140, textAlign: 'right' }}>{translateUi("Tổng tiền")}</th>
-                      <th>Người thực hiện / Lý do</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.orders.items.map((o) => {
-                      const isPurchase = o.kind === 'PURCHASE';
-                      return (
-                        <tr key={o.id}>
-                          <td>
-                            <div style={{ fontFamily: 'monospace', fontSize: 12, color: '#475569' }}>
-                              {formatDateTime(o.createdAt)}
-                            </div>
-                          </td>
-                          <td>
-                            <div>
-                              <strong style={{ fontSize: 13, color: '#0f172a', display: 'block' }}>{o.courseTitle}</strong>
-                              <Link to={`/platform/organizations/${o.organizationId}`} style={{ fontSize: 12, color: '#0284c7', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                                <Building2 size={12} /> {o.organizationName}
-                              </Link>
-                            </div>
-                          </td>
-                          <td>
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 4,
-                                fontSize: 11,
-                                fontWeight: 600,
-                                padding: '2px 8px',
-                                borderRadius: 999,
-                                background: isPurchase ? '#ecfdf5' : '#eff6ff',
-                                color: isPurchase ? '#059669' : '#2563eb',
-                                border: `1px solid ${isPurchase ? '#a7f3d0' : '#bfdbfe'}`,
-                              }}
-                            >
-                              {isPurchase ? 'Doanh nghiệp mua' : 'Quản trị cấp'}
-                            </span>
-                          </td>
-                          <td className="num" style={{ textAlign: 'right' }}>
-                            <span style={{ fontWeight: 700, fontSize: 13, color: '#0f172a' }}>{o.seats}</span>
-                            <span style={{ fontSize: 11, color: '#64748b', marginLeft: 3 }}>{translateUi("suất")}</span>
-                          </td>
-                          <td className="num" style={{ textAlign: 'right' }}>
-                            <strong style={{ fontSize: 13, color: isPurchase ? '#059669' : '#64748b' }}>
-                              {o.totalAmount > 0 ? formatMoney(o.totalAmount) : translateUi('Miễn phí')}
-                            </strong>
-                          </td>
-                          <td>
-                            <div style={{ fontSize: 12, color: '#475569' }}>
-                              {o.createdByEmail && <span>{o.createdByEmail}</span>}
-                              {o.reason && <div style={{ fontSize: 11, color: '#64748b', fontStyle: 'italic', marginTop: 2 }}>“{o.reason}”</div>}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                <div style={{ marginTop: 14 }}>
-                  <Pager pageIndex={data.orders.pageIndex} totalPages={data.orders.totalPages} totalItems={data.orders.totalItems} onChange={setPageIndex} />
-                </div>
+                {(orderSearch || kind) && (
+                  <button
+                    type="button"
+                    className="pa-btn-reset-filters"
+                    onClick={() => {
+                      setOrderSearch('');
+                      setKind('');
+                      setPageIndex(1);
+                    }}
+                    title="Khôi phục bộ lọc đơn hàng về mặc định"
+                  >
+                    <RotateCcw size={13} aria-hidden="true" />
+                    <span>Đặt lại</span>
+                  </button>
+                )}
               </div>
-            )}
-          </section>
+
+              {filteredOrders.length === 0 ? (
+                <div className="pa-org-empty-box">
+                  <ReceiptText size={36} style={{ color: '#94a3b8', margin: '0 auto 8px' }} />
+                  <div className="pa-org-empty-title">Không tìm thấy đơn hàng hoặc lượt cấp phát nào</div>
+                  <p className="pa-org-empty-sub">Thử đổi từ khóa tìm kiếm hoặc chọn loại đơn khác.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="table-scroll">
+                    <table className="data-table pa-org-table" style={{ width: '100%' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ width: 150 }}>Thời gian</th>
+                          <th style={{ minWidth: 260 }}>Khóa học & Doanh nghiệp</th>
+                          <th style={{ width: 160 }}>Loại đơn</th>
+                          <th style={{ width: 110, textAlign: 'right' }}>Số suất</th>
+                          <th style={{ width: 140, textAlign: 'right' }}>Tổng tiền</th>
+                          <th style={{ minWidth: 260 }}>Người thực hiện & Ghi chú</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredOrders.map((o) => {
+                          const isPurchase = o.kind === 'PURCHASE';
+                          return (
+                            <tr key={o.id}>
+                              <td>
+                                <span style={{ fontSize: 12, color: '#475569', fontVariantNumeric: 'tabular-nums' }}>
+                                  {formatDateTime(o.createdAt)}
+                                </span>
+                              </td>
+                              <td>
+                                <div>
+                                  <strong style={{ fontSize: 13, color: '#0f172a', display: 'block', lineHeight: 1.35 }}>
+                                    {o.courseTitle}
+                                  </strong>
+                                  <Link
+                                    to={`/platform/organizations/${o.organizationId}`}
+                                    style={{
+                                      fontSize: 12,
+                                      color: '#0284c7',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 4,
+                                      marginTop: 3,
+                                      fontWeight: 500,
+                                      textDecoration: 'none',
+                                    }}
+                                    title="Xem chi tiết tổ chức doanh nghiệp"
+                                  >
+                                    <Building2 size={12} />
+                                    <span>{o.organizationName}</span>
+                                  </Link>
+                                </div>
+                              </td>
+                              <td>
+                                <span
+                                  className="pa-org-level-pill"
+                                  style={{
+                                    background: isPurchase ? '#ecfdf5' : '#eff6ff',
+                                    color: isPurchase ? '#059669' : '#1d4ed8',
+                                    borderColor: isPurchase ? '#a7f3d0' : '#bfdbfe',
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {isPurchase ? 'Doanh nghiệp mua' : 'Quản trị cấp'}
+                                </span>
+                              </td>
+                              <td style={{ textAlign: 'right' }}>
+                                <span style={{ fontWeight: 700, fontSize: 13, color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
+                                  {o.seats}
+                                </span>
+                                <span style={{ fontSize: 11.5, color: '#64748b', marginLeft: 4 }}>suất</span>
+                              </td>
+                              <td style={{ textAlign: 'right' }}>
+                                <strong
+                                  style={{
+                                    fontSize: 13,
+                                    color: isPurchase ? '#15803d' : '#64748b',
+                                    fontVariantNumeric: 'tabular-nums',
+                                  }}
+                                >
+                                  {o.totalAmount > 0 ? formatMoney(o.totalAmount) : 'Miễn phí'}
+                                </strong>
+                              </td>
+                              <td>
+                                <div style={{ fontSize: 12, color: '#334155' }}>
+                                  {o.createdByEmail && <div style={{ fontWeight: 500 }}>{o.createdByEmail}</div>}
+                                  {o.reason && (
+                                    <div
+                                      style={{
+                                        fontSize: 11.5,
+                                        color: '#64748b',
+                                        marginTop: 2,
+                                        lineHeight: 1.35,
+                                        wordBreak: 'break-word',
+                                      }}
+                                    >
+                                      {o.reason}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div style={{ marginTop: 14 }}>
+                    <Pager
+                      pageIndex={data.orders.pageIndex}
+                      totalPages={data.orders.totalPages}
+                      totalItems={data.orders.totalItems}
+                      onChange={setPageIndex}
+                    />
+                  </div>
+                </>
+              )}
+            </Box>
+          )}
         </>
       )}
       <Footer />
@@ -202,13 +468,24 @@ export function PlatformCommercePage() {
   );
 }
 
-function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]; currentNo: number | null; draftNo: number | null }) {
+function PriceTable({
+  courses,
+  currentNo,
+  draftNo,
+  domainFilter,
+  onSelectDomain,
+}: {
+  courses: PlatformCourse[];
+  currentNo: number | null;
+  draftNo: number | null;
+  domainFilter: string;
+  onSelectDomain: (domain: string) => void;
+}) {
   useUiLanguage();
   const { can } = usePermission();
   const canManage = can(PERMISSIONS.PLATFORM_CATALOG_MANAGE);
   const editable = canManage && draftNo !== null;
   const save = useUpdatePrices(draftNo ?? 0);
-  const createDraft = useCreateDraft();
 
   const initial = useMemo(
     () =>
@@ -220,7 +497,9 @@ function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]
   const [edits, setEdits] = useState<Record<string, Edit>>(initial);
   const changed = courses.filter((c) => edits[c.id]!.price !== initial[c.id]!.price || edits[c.id]!.sales !== initial[c.id]!.sales);
   const invalid = changed.some((c) => !Number.isFinite(edits[c.id]!.price) || edits[c.id]!.price < 0);
-  const groups = useMemo(() => {
+
+  // Group courses by domain
+  const allGroups = useMemo(() => {
     const map = new Map<string, PlatformCourse[]>();
     for (const c of courses) {
       const list = map.get(c.domainName) ?? [];
@@ -233,6 +512,12 @@ function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]
     }));
   }, [courses]);
 
+  // Filter groups by selected domain chip
+  const displayedGroups = useMemo(() => {
+    if (domainFilter === 'ALL') return allGroups;
+    return allGroups.filter((g) => g.name === domainFilter);
+  }, [allGroups, domainFilter]);
+
   const set = (id: string, patch: Partial<Edit>) => setEdits((all) => ({ ...all, [id]: { ...all[id]!, ...patch } }));
 
   const onSave = () =>
@@ -244,59 +529,89 @@ function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]
       },
     );
 
-  const onCreateDraft = () =>
-    createDraft.mutate(undefined, {
-      onSuccess: (draft) => toast.success(`Đã tạo bản nháp v${draft.version.versionNo}. Giờ có thể đổi giá.`),
-      onError: (err) => toast.error(errorMessage(err)),
-    });
-
   return (
-    <section className="surface pad" style={{ borderRadius: 16, border: '1px solid #e2e8f0', background: '#fff' }} aria-labelledby="pricing-title">
-      <div className="pa-card-head" style={{ marginBottom: 16 }}>
+    <Box>
+      {/* Policy Notice Banner */}
+      <div className="pa-commerce-policy-banner" role="status">
+        <Info size={17} className="pa-commerce-policy-icon" aria-hidden="true" />
         <div>
-          <h2 id="pricing-title" className="panel-title" style={{ fontSize: 17, fontWeight: 700, color: '#0f172a' }}>
-            Bảng đơn giá khóa học
+          <strong>Chính sách chuẩn mực đào tạo:</strong> Khóa học cấp độ Cơ bản luôn miễn phí 100% theo quy định tại Thông tư 02/2025.
+          Đơn giá hiện tại đang neo theo phiên bản chính thức <strong>⚓ v{currentNo ?? 6}</strong>. Mọi điều chỉnh chỉ áp dụng cho người dùng khi phiên bản mới được công bố.
+        </div>
+      </div>
+
+      <div className="pa-commerce-section-head">
+        <div>
+          <h2 className="pa-commerce-section-title">
+            <Tag size={17} style={{ color: '#0f172a' }} aria-hidden="true" />
+            <span>Biểu giá khóa học theo phiên bản</span>
           </h2>
-          <p className="panel-desc" style={{ fontSize: 13, color: '#64748b' }}>
+          <p className="pa-commerce-section-desc">
             {draftNo !== null
-              ? translateUi(`Giá đang áp dụng thuộc phiên bản neo ⚓ v${currentNo}. Mọi thay đổi giá trong bản nháp v${draftNo} sẽ có hiệu lực ngay khi công bố.`)
-              : translateUi(`Giá đang dùng thuộc ⚓ v${currentNo ?? '—'}. Tạo bản nháp mới để điều chỉnh đơn giá.`)}
+              ? `Đang áp dụng phiên bản neo v${currentNo}. Mọi thay đổi trong bản nháp v${draftNo} sẽ có hiệu lực ngay khi công bố.`
+              : `Giá đang dùng thuộc phiên bản v${currentNo ?? 6}. Tạo bản nháp mới để điều chỉnh đơn giá niêm yết.`}
           </p>
         </div>
-        {canManage && draftNo === null && (
-          <button type="button" className="btn btn-primary" onClick={onCreateDraft} disabled={createDraft.isPending} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <Sparkles size={15} />
-            {createDraft.isPending ? 'Đang tạo…' : 'Tạo bản nháp để đổi giá'}
-          </button>
-        )}
+
         {draftNo !== null && (
-          <Link className="btn btn-outline btn-small" to={`/platform/versions/${draftNo}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <Edit3 size={14} />
-            Mở bản nháp v{draftNo} →
+          <Link
+            className="btn btn-outline btn-small inline-flex items-center gap-1.5"
+            to={`/platform/versions/${draftNo}`}
+            title={`Xem chi tiết bản nháp v${draftNo}`}
+          >
+            <Edit3 size={13} aria-hidden="true" />
+            <span>Mở bản nháp v{draftNo}</span>
           </Link>
         )}
       </div>
 
-      <div className="table-scroll" style={{ borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-        <table className="data-table pa-price-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+      {/* Domain Quick Filter Chips */}
+      <div className="pa-domain-chips-track" role="group" aria-label="Lọc biểu giá theo lĩnh vực">
+        <button
+          type="button"
+          className="pa-domain-chip-btn"
+          aria-pressed={domainFilter === 'ALL'}
+          onClick={() => onSelectDomain('ALL')}
+        >
+          <span>Tất cả lĩnh vực</span>
+          <span className="pa-domain-chip-count">{courses.length}</span>
+        </button>
+
+        {allGroups.map((g) => {
+          const isSelected = domainFilter === g.name;
+          return (
+            <button
+              key={g.name}
+              type="button"
+              className="pa-domain-chip-btn"
+              aria-pressed={isSelected}
+              onClick={() => onSelectDomain(g.name)}
+            >
+              <span>{g.name}</span>
+              <span className="pa-domain-chip-count">{g.courses.length}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="table-scroll">
+        <table className="data-table pa-org-table" style={{ width: '100%' }}>
           <thead>
-            <tr style={{ background: '#f8fafc' }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569' }}>KHÓA HỌC & LĨNH VỰC</th>
-              <th style={{ padding: '12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>{translateUi("CẤP ĐỘ")}</th>
-              <th className="num" style={{ padding: '12px 16px', textAlign: 'right', fontSize: 12, fontWeight: 700, color: '#475569' }}>
-                GIÁ ĐANG DÙNG (v{currentNo ?? '—'})
-              </th>
+            <tr>
+              <th style={{ minWidth: 260 }}>Khóa học & Lĩnh vực</th>
+              <th style={{ width: 130, textAlign: 'center' }}>Cấp độ</th>
+              <th style={{ width: 170, textAlign: 'right' }}>Giá đang dùng (v{currentNo ?? 6})</th>
               {draftNo !== null && (
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#d97706' }}>
-                  GIÁ BẢN NHÁP v{draftNo}
+                <th style={{ width: 180, textAlign: 'left', color: '#c2410c' }}>
+                  Giá bản nháp v{draftNo}
                 </th>
               )}
-              <th style={{ padding: '12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>TRẠNG THÁI BÁN</th>
-              <th className="num" style={{ padding: '12px 16px', textAlign: 'right', fontSize: 12, fontWeight: 700, color: '#475569' }}>SUẤT ĐÃ CẤP</th>
+              <th style={{ width: 140, textAlign: 'center' }}>Trạng thái bán</th>
+              <th style={{ width: 150, textAlign: 'right' }}>Suất đã cấp</th>
             </tr>
           </thead>
           <tbody>
-            {groups.map((group) => (
+            {displayedGroups.map((group) => (
               <PriceGroup key={group.name} name={group.name} count={group.courses.length} colSpan={draftNo !== null ? 6 : 5}>
                 {group.courses.map((c) => {
                   const edit = edits[c.id]!;
@@ -304,45 +619,63 @@ function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]
                   const draftDiffers = c.draftPricePerSeat !== null && (c.draftPricePerSeat !== c.pricePerSeat || c.draftSalesStatus !== c.salesStatus);
                   const levelStyle =
                     c.level === 1
-                      ? { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0' }
+                      ? { bg: '#f0fdf4', color: '#166534', border: '#bbf7d0' }
                       : c.level === 2
-                        ? { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' }
-                        : { bg: '#fffbeb', color: '#d97706', border: '#fde68a' };
+                        ? { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' }
+                        : { bg: '#fffbeb', color: '#b45309', border: '#fde68a' };
 
                   return (
-                    <tr key={c.id} style={{ borderTop: '1px solid #f1f5f9', background: isChanged ? '#fffbeb' : '#fff' }}>
-                      <td style={{ padding: '12px 16px' }}>
+                    <tr key={c.id} style={{ background: isChanged ? '#fffbeb' : undefined }}>
+                      <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <code style={{ fontSize: 12, fontWeight: 700, color: '#0f172a', background: '#f1f5f9', padding: '2px 6px', borderRadius: 4 }}>
+                          <code
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: '#0f172a',
+                              background: '#f1f5f9',
+                              padding: '2px 7px',
+                              borderRadius: 6,
+                              border: '1px solid #e2e8f0',
+                            }}
+                          >
                             {c.code}
                           </code>
                           <div>
-                            <strong style={{ fontSize: 13, color: '#0f172a', display: 'block' }}>{translateUi(c.title)}</strong>
-                            <small style={{ fontSize: 12, color: '#64748b' }}>{translateUi(c.domainName)}</small>
+                            <strong style={{ fontSize: 13, color: '#0f172a', display: 'block', lineHeight: 1.35 }}>
+                              {translateUi(c.title)}
+                            </strong>
+                            <span style={{ fontSize: 11.5, color: '#64748b' }}>{translateUi(c.domainName)}</span>
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '12px', textAlign: 'center' }}>
+
+                      <td style={{ textAlign: 'center' }}>
                         <span
+                          className="pa-org-level-pill"
                           style={{
-                            display: 'inline-block',
-                            padding: '3px 8px',
-                            borderRadius: 6,
-                            fontSize: 11,
-                            fontWeight: 700,
                             background: levelStyle.bg,
                             color: levelStyle.color,
-                            border: `1px solid ${levelStyle.border}`,
+                            borderColor: levelStyle.border,
+                            fontWeight: 700,
                           }}
                         >
                           {translateUi(LEVEL_NAMES[c.level]) ?? c.levelName}
                         </span>
                       </td>
-                      <td className="num" style={{ padding: '12px 16px', textAlign: 'right', fontSize: 13, fontWeight: 600 }}>
-                        {c.isFree ? <span style={{ color: '#16a34a' }}>{translateUi("Miễn phí")}</span> : formatMoney(c.pricePerSeat)}
+
+                      <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                        {c.isFree ? (
+                          <span style={{ color: '#166534', fontWeight: 600, fontSize: 13 }}>Miễn phí</span>
+                        ) : (
+                          <span style={{ fontWeight: 700, fontSize: 13, color: '#0f172a' }}>
+                            {formatMoney(c.pricePerSeat)}
+                          </span>
+                        )}
                       </td>
+
                       {draftNo !== null && (
-                        <td style={{ padding: '10px 16px' }}>
+                        <td>
                           {c.isFree ? (
                             <span style={{ fontSize: 12, color: '#64748b', fontStyle: 'italic' }}>Luôn miễn phí</span>
                           ) : editable ? (
@@ -354,23 +687,42 @@ function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]
                                 value={Number.isFinite(edit.price) ? edit.price : ''}
                                 onChange={(e) => set(c.id, { price: e.target.value === '' ? Number.NaN : Number(e.target.value) })}
                                 aria-label={translateUi(`Giá bản nháp của ${c.code}`)}
-                                style={{ width: 120, height: 32, padding: '0 8px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600 }}
+                                style={{
+                                  width: 120,
+                                  height: 32,
+                                  padding: '0 8px',
+                                  borderRadius: 6,
+                                  border: '1px solid #cbd5e1',
+                                  fontSize: 13,
+                                  fontWeight: 600,
+                                }}
                               />
                               <span style={{ fontSize: 13, color: '#64748b' }}>₫</span>
                             </div>
                           ) : (
                             <span style={{ fontSize: 13, fontWeight: 600 }}>{formatMoney(c.draftPricePerSeat ?? c.pricePerSeat)}</span>
                           )}
-                          {draftDiffers && !isChanged && <small style={{ display: 'block', fontSize: 11, color: '#d97706' }}>Khác giá đang dùng</small>}
+                          {draftDiffers && !isChanged && (
+                            <small style={{ display: 'block', fontSize: 11, color: '#c2410c', marginTop: 2 }}>
+                              Khác giá đang áp dụng
+                            </small>
+                          )}
                         </td>
                       )}
-                      <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+
+                      <td style={{ textAlign: 'center' }}>
                         {editable ? (
                           <select
                             value={edit.sales}
                             onChange={(e) => set(c.id, { sales: e.target.value as SalesStatus })}
                             aria-label={translateUi(`Trạng thái bán của ${c.code}`)}
-                            style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 12, fontWeight: 600 }}
+                            style={{
+                              padding: '4px 8px',
+                              borderRadius: 6,
+                              border: '1px solid #cbd5e1',
+                              fontSize: 12,
+                              fontWeight: 600,
+                            }}
                           >
                             <option value="OPEN">Đang mở bán</option>
                             <option value="PAUSED">Tạm ngưng bán</option>
@@ -379,8 +731,13 @@ function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]
                           <Pill tone={SALES_STATUS[c.salesStatus]?.tone}>{translateUi(SALES_STATUS[c.salesStatus]?.label)}</Pill>
                         )}
                       </td>
-                      <td className="num" style={{ padding: '12px 16px', textAlign: 'right', fontSize: 12, color: '#64748b' }}>
-                        {c.isFree ? '—' : translateUi(`${c.seatsPurchased} mua · ${c.seatsGranted} cấp`)}
+
+                      <td style={{ textAlign: 'right', fontSize: 12, color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
+                        {c.isFree ? (
+                          <span style={{ color: '#94a3b8' }}>Miễn phí</span>
+                        ) : (
+                          <span>{c.seatsPurchased} mua · {c.seatsGranted} cấp</span>
+                        )}
                       </td>
                     </tr>
                   );
@@ -409,49 +766,80 @@ function PriceTable({ courses, currentNo, draftNo }: { courses: PlatformCourse[]
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Sparkles size={16} style={{ color: changed.length ? '#d97706' : '#64748b' }} />
             <span style={{ fontSize: 13, color: '#334155' }}>
-              {changed.length ? <strong>{changed.length} khóa có giá mới chưa lưu.</strong> : 'Chưa có thay đổi đơn giá nào.'} Tạm ngưng bán chỉ chặn lượt mua mới; suất cũ vẫn học bình thường.
+              {changed.length ? (
+                <strong>{changed.length} khóa học có giá mới chưa lưu vào bản nháp.</strong>
+              ) : (
+                'Chưa có thay đổi đơn giá nào.'
+              )}{' '}
+              Tạm ngưng bán chỉ chặn lượt mua mới, suất cũ đã mua vẫn học bình thường.
             </span>
           </div>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               type="button"
-              className="btn btn-ghost btn-small"
+              className="btn btn-ghost btn-small inline-flex items-center gap-1.5"
               onClick={() => setEdits(initial)}
               disabled={!changed.length || save.isPending}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
-              <RotateCcw size={14} />{translateUi("Hủy thay đổi")}</button>
+              <RotateCcw size={14} />
+              <span>Hủy thay đổi</span>
+            </button>
             <button
               type="button"
-              className="btn btn-primary"
+              className="btn btn-primary inline-flex items-center gap-1.5"
               onClick={onSave}
               disabled={!changed.length || invalid || save.isPending}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
               <Save size={15} />
-              {save.isPending ? translateUi('Đang lưu…') : translateUi(`Lưu giá vào bản nháp v${draftNo}`)}
+              <span>{save.isPending ? 'Đang lưu…' : `Lưu giá vào bản nháp v${draftNo}`}</span>
             </button>
           </div>
         </div>
       )}
-      {draftNo !== null && !canManage && <p className="pa-hint" style={{ marginTop: 12 }}>Bạn chỉ có quyền xem bảng giá.</p>}
-    </section>
+
+      {draftNo !== null && !canManage && (
+        <p style={{ marginTop: 12, fontSize: 12, color: '#64748b', textAlign: 'center' }}>
+          Tài khoản hiện tại chỉ có quyền xem biểu giá khóa học.
+        </p>
+      )}
+    </Box>
   );
 }
 
-function PriceGroup({ name, colSpan, count, children }: { name: string; colSpan: number; count: number; children: ReactNode }) {
+function PriceGroup({
+  name,
+  colSpan,
+  count,
+  children,
+}: {
+  name: string;
+  colSpan: number;
+  count: number;
+  children: ReactNode;
+}) {
   useUiLanguage();
   return (
     <>
       <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
-        <td colSpan={colSpan} style={{ padding: '9px 16px' }}>
+        <td colSpan={colSpan} style={{ padding: '8px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563eb' }} />
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0284c7' }} />
               <strong style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{name}</strong>
             </div>
-            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: '#e2e8f0', color: '#475569', fontWeight: 600 }}>
-              {count}{translateUi(" khóa học")}</span>
+            <span
+              style={{
+                fontSize: 11.5,
+                padding: '2px 8px',
+                borderRadius: 999,
+                background: '#e2e8f0',
+                color: '#475569',
+                fontWeight: 600,
+              }}
+            >
+              {count} khóa học
+            </span>
           </div>
         </td>
       </tr>
