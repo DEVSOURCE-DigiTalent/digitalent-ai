@@ -9,6 +9,8 @@ public class PlatformQuestionContentInput
     public string? Explanation { get; set; }
     /// <summary>The block of the same module the learner reopens after a wrong answer.</summary>
     public Guid? BlockId { get; set; }
+    /// <summary>Marks the question as part of the course's final multiple-choice test; null keeps it (false on add).</summary>
+    public bool? IsFinalQuiz { get; set; }
     /// <summary>2 to 5 options, exactly one correct; null on add = three empty options, the first correct.</summary>
     public List<PlatformOptionInput>? Options { get; set; }
 }

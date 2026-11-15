@@ -105,6 +105,7 @@ public class PlatformCourseContentReader
                     Text = q.QuestionText,
                     Explanation = q.Explanation,
                     BlockId = q.BlockId,
+                    IsFinalQuiz = q.IsFinalQuiz,
                     Options = options.Where(o => o.QuestionId == q.Id).Select(o => new PlatformOptionDto
                     {
                         OptionId = o.Id,
