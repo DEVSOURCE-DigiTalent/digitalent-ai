@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { StrictMode } from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { toast } from 'sonner';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CapabilityCeilingMatrix } from '../CapabilityCeilingMatrix';
 
@@ -25,7 +26,7 @@ beforeEach(() => {
   vi.stubGlobal('React', React);
   vi.stubGlobal('matchMedia', () => ({ matches: false }));
 });
-afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe('ceiling information clicks', () => {
   it('matches the expanded domain and allows closing from its own header without closing on form clicks', () => {
@@ -65,6 +66,20 @@ describe('ceiling information clicks', () => {
     fireEvent.click(cell);
     expect(cell.getAttribute('aria-pressed')).toBe('true');
     expect(screen.queryByText('Chi tiết A1-2')).toBeNull();
+  });
+
+  it('shows a single toast per click when picking a course to buy under StrictMode', () => {
+    const success = vi.spyOn(toast, 'success');
+    const info = vi.spyOn(toast, 'info');
+    render(<StrictMode><MemoryRouter><CapabilityCeilingMatrix /></MemoryRouter></StrictMode>);
+
+    fireEvent.click(screen.getByRole('button', { name: /Lĩnh vực 2, cấp 3: chưa mua suất/ }));
+    expect(success).toHaveBeenCalledTimes(1);
+    expect(success).toHaveBeenCalledWith('Đã chọn khóa A2-3 để mua bản quyền', expect.anything());
+
+    fireEvent.click(screen.getByRole('button', { name: /Lĩnh vực 2, cấp 3: đã chọn mua/ }));
+    expect(info).toHaveBeenCalledTimes(1);
+    expect(info).toHaveBeenCalledWith('Đã bỏ chọn khóa A2-3');
   });
 
   it('stacks both action bars inside the enterprise shell and clears them independently', () => {

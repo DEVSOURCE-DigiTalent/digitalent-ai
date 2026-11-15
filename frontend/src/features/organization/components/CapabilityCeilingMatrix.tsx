@@ -110,11 +110,12 @@ export function CapabilityCeilingMatrix() {
       return;
     }
     const code = course.code || `M${domain.sortOrder}-${course.level === 2 ? 'I' : 'A'}`;
+    const deselect = selectedToBuy.has(code);
+    // The updater stays pure: StrictMode runs it twice, so a toast inside it would show twice.
     setSelectedToBuy((prev) => {
       const next = new Map(prev);
-      if (next.has(code)) {
+      if (deselect) {
         next.delete(code);
-        toast.info(`Đã bỏ chọn khóa ${code}`);
       } else {
         next.set(code, {
           code,
@@ -123,12 +124,16 @@ export function CapabilityCeilingMatrix() {
           domainName: domain.name,
           price: course.pricePerSeat || (course.level === 3 ? 699000 : 399000),
         });
-        toast.success(`Đã chọn khóa ${code} để mua bản quyền`, {
-          description: 'Bạn có thể chọn thêm nhiều khóa khác trước khi bấm Tiếp tục.',
-        });
       }
       return next;
     });
+    if (deselect) {
+      toast.info(`Đã bỏ chọn khóa ${code}`);
+    } else {
+      toast.success(`Đã chọn khóa ${code} để mua bản quyền`, {
+        description: 'Bạn có thể chọn thêm nhiều khóa khác trước khi bấm Tiếp tục.',
+      });
+    }
   };
 
   if (isLoading) {
