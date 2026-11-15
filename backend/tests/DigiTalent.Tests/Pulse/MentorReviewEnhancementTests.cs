@@ -347,6 +347,33 @@ public class MentorReviewEnhancementTests
     }
 
     [Fact]
+    public void PulseEssayRubric_UsesWeightsStatedInCustomCriteria_WhenTheyAddUpTo100()
+    {
+        var stated = PulseEssayRubric.Build(1, "Khai thác dữ liệu", 1, new[]
+        {
+            "Đúng và đủ 3 nhóm năng lực (40%)",
+            "Tính khả thi với doanh nghiệp nhỏ (30%)",
+            "Có nguồn và ngày rõ ràng (15%)",
+            "Trình bày rõ ràng (15 %)",
+        }, "M1-F");
+
+        stated.Select(c => c.WeightPercent).Should().Equal(40, 30, 15, 15);
+        stated.Select(c => c.Title).Should().Equal(
+            "Đúng và đủ 3 nhóm năng lực", "Tính khả thi với doanh nghiệp nhỏ", "Có nguồn và ngày rõ ràng", "Trình bày rõ ràng");
+    }
+
+    [Fact]
+    public void PulseEssayRubric_SplitsEvenly_WhenStatedWeightsAreIncompleteOrDoNotAddUpTo100()
+    {
+        var incomplete = PulseEssayRubric.Build(1, "Khai thác dữ liệu", 1, new[] { "Nội dung (60%)", "Trình bày" }, "M1-F");
+        incomplete.Select(c => c.WeightPercent).Should().Equal(50, 50);
+        incomplete[0].Title.Should().Be("Nội dung (60%)");
+
+        var wrongTotal = PulseEssayRubric.Build(1, "Khai thác dữ liệu", 1, new[] { "Nội dung (60%)", "Trình bày (30%)" }, "M1-F");
+        wrongTotal.Select(c => c.WeightPercent).Should().Equal(50, 50);
+    }
+
+    [Fact]
     public void PulseEssayRubric_RejectsCopiedPrompt_AndAllowsGenuineWorkEssay()
     {
         const string promptCopyText =

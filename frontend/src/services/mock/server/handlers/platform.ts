@@ -26,6 +26,22 @@ import type {
   UserProfileDto, LoginHistoryEntry, NotificationDto,
   PlatformUserDto, PlatformCompetencyDetailDto, PlatformAssessmentTemplateDto, PlatformSubscriptionDetailDto,
 } from '../../../platform.service';
+import type {
+  CatalogVersionSummary,
+  CatalogCourseRow,
+  CatalogCourseDetail,
+  CatalogModule,
+  CatalogBlock,
+  CatalogQuestion,
+  CatalogSalesStatus,
+  CatalogVersionStatus,
+  ChangeKind,
+  BlockType,
+  PublishCheck,
+  CourseInfoInput,
+  QuestionInput,
+  BlockInput,
+} from '../../../platform-catalog.service';
 
 // In-memory / mock store state for platform modifications
 const platformState = {
@@ -246,6 +262,8 @@ route('GET', '/platform/overview', () => {
     conversionRate: orgs.length ? Math.round((paidOrgs.length / orgs.length) * 100) : 0,
     userCount: totalUsers,
     employeeCount: totalLearners,
+    recentUsers7d: 3,
+    recentEmployees7d: 2,
     lockedUserCount: platformState.userLocks.size,
     trialUserCount: 8,
     trialEndingSoonCount: 2,
@@ -366,7 +384,42 @@ route('GET', '/platform/organizations', (context) => {
 route('GET', '/platform/organizations/:id', (context) => {
   const org = getAllOrganizations().find((o) => o.id === context.params.id);
   if (!org) throw notFound('Không tìm thấy tổ chức.');
-  return org;
+
+  return {
+    organization: org,
+    departments: [
+      { id: 'dept-1', name: 'Công nghệ thông tin', managerName: 'Nguyễn Văn Quản', employeeCount: 4 },
+      { id: 'dept-2', name: 'Kinh doanh & Tiếp thị', managerName: 'Trần Thị Trưởng', employeeCount: 3 },
+      { id: 'dept-3', name: 'Tài chính - Kế toán', managerName: 'Lê Văn Tài', employeeCount: 2 },
+    ],
+    people: [
+      { userId: 'usr-1', fullName: org.ownerName || 'Chủ doanh nghiệp', email: org.ownerEmail, role: 'OWNER', departmentName: 'Ban Giám đốc', positionName: 'Giám đốc', status: 'ACTIVE' },
+      { userId: 'usr-2', fullName: 'Bùi Minh Khang', email: 'khang.bm@doanhnghiep.vn', role: 'MEMBER', departmentName: 'Kinh doanh & Tiếp thị', positionName: 'Chuyên viên CRM', status: 'ACTIVE' },
+      { userId: 'usr-3', fullName: 'Đặng Quốc Huy', email: 'huy.dq@doanhnghiep.vn', role: 'MEMBER', departmentName: 'Tài chính - Kế toán', positionName: 'Kế toán tổng hợp', status: 'ACTIVE' },
+    ],
+    seats: [
+      { courseCode: 'DGT-BAS-01', courseTitle: 'Chiến lược tìm kiếm và quản lý thông tin số', seatsPurchased: org.seatLimit || 10, seatsGranted: 0 },
+    ],
+    orders: [
+      {
+        id: `ord-${org.id.slice(0, 6)}`,
+        organizationId: org.id,
+        organizationName: org.name,
+        courseCode: 'DGT-BAS-01',
+        courseTitle: 'Chiến lược tìm kiếm và quản lý thông tin số',
+        seats: org.seatLimit || 10,
+        kind: 'PURCHASE',
+        unitPrice: 399000,
+        totalAmount: (org.seatLimit || 10) * 399000,
+        reason: `[Hợp đồng điện tử: DT-ESIGN-${org.id.replace(/-/g, '').slice(0, 8).toUpperCase()}] Đại diện: ${org.ownerName || 'Chủ tài khoản'}`,
+        createdByEmail: org.ownerEmail,
+        createdAt: org.createdAt,
+      },
+    ],
+    coursesInUse: [
+      { courseCode: 'DGT-BAS-01', courseTitle: 'Chiến lược tìm kiếm và quản lý thông tin số', level: 1, levelName: 'Cơ bản', participants: Math.min(org.membersCount || 3, 10), completed: 2 },
+    ],
+  };
 });
 
 route('PUT', '/platform/organizations/:id/status', (context) => {
@@ -444,6 +497,19 @@ const DEMO_PLATFORM_USERS: PlatformUserDto[] = [
     lastLoginAt: new Date(Date.now() - 3600000 * 2).toISOString(),
   },
   {
+    id: 'usr-mtr-01',
+    email: 'mentor@digitalent.ai',
+    fullName: 'Hoàng Minh Mentor',
+    phone: '0908889999',
+    jobTitle: 'Chuyên gia Đánh giá Năng lực',
+    roles: ['MENTOR'],
+    workspace: 'mentor',
+    status: 'ACTIVE',
+    emailVerified: true,
+    createdAt: new Date(Date.now() - 86400000 * 80).toISOString(),
+    lastLoginAt: new Date(Date.now() - 3600000 * 3).toISOString(),
+  },
+  {
     id: 'usr-own-01',
     email: 'owner@digitalent.ai',
     fullName: 'Nguyễn Văn Chủ',
@@ -489,6 +555,21 @@ const DEMO_PLATFORM_USERS: PlatformUserDto[] = [
     lastLoginAt: new Date(Date.now() - 3600000 * 24).toISOString(),
   },
   {
+    id: 'usr-emp-02',
+    email: 'dev.emp@digitalent.ai',
+    fullName: 'Vũ Thị Nhân Sự',
+    phone: '0967890123',
+    jobTitle: 'Kỹ sư phần mềm',
+    roles: ['EMPLOYEE'],
+    workspace: 'enterprise',
+    organizationId: ACME_ORGANIZATION_ID,
+    organizationName: 'DigiTalent AI',
+    status: 'ACTIVE',
+    emailVerified: true,
+    createdAt: new Date(Date.now() - 86400000 * 20).toISOString(),
+    lastLoginAt: new Date(Date.now() - 86400000 * 1).toISOString(),
+  },
+  {
     id: 'usr-own-02',
     email: 'starter@digitalent.ai',
     fullName: 'Phạm Khởi Nghiệp',
@@ -518,20 +599,24 @@ const DEMO_PLATFORM_USERS: PlatformUserDto[] = [
     createdAt: new Date(Date.now() - 86400000 * 120).toISOString(),
     lastLoginAt: new Date(Date.now() - 86400000 * 10).toISOString(),
   },
-  {
-    id: 'usr-per-01',
-    email: 'personal@digitalent.ai',
-    fullName: 'Vũ Học Viên Cá Nhân',
-    phone: '0967890123',
-    jobTitle: 'Chuyên viên tự do',
-    roles: [],
-    workspace: 'personal',
-    status: 'ACTIVE',
-    emailVerified: true,
-    createdAt: new Date(Date.now() - 86400000 * 20).toISOString(),
-    lastLoginAt: new Date(Date.now() - 86400000 * 1).toISOString(),
-  },
 ];
+
+function computeTaskSummary(role: string): string {
+  switch (role) {
+    case 'EMPLOYEE':
+      return '2 khóa học · 1 hoàn thành';
+    case 'MENTOR':
+      return 'Thẩm định bài thi · 4 bài chờ chấm';
+    case 'OWNER':
+      return 'Quản trị toàn tổ chức';
+    case 'MANAGER':
+      return 'Quản lý phòng ban · 12 nhân sự';
+    case 'PLATFORM_ADMIN':
+      return 'Quản trị nền tảng · Toàn hệ thống';
+    default:
+      return 'Đang tham gia hệ thống';
+  }
+}
 
 function getAllUsers(): PlatformUserDto[] {
   const db = getDb();
@@ -540,10 +625,17 @@ function getAllUsers(): PlatformUserDto[] {
 
   for (const u of DEMO_PLATFORM_USERS) {
     const isLocked = platformState.userLocks.has(u.id);
+    const primary = (u.roles[0] || 'EMPLOYEE').toUpperCase();
     list.push({
       ...u,
+      displayName: u.fullName || u.email,
+      role: primary,
+      planCode: null,
+      trialState: null,
+      trialEndsAt: null,
       status: isLocked ? 'LOCKED' : u.status,
       lockReason: platformState.userLocks.get(u.id),
+      taskSummary: computeTaskSummary(primary),
     });
   }
 
@@ -551,21 +643,28 @@ function getAllUsers(): PlatformUserDto[] {
     if (list.some((existing) => existing.id === u.id || existing.email === u.email)) continue;
     const isLocked = platformState.userLocks.has(u.id) || u.status === 'INACTIVE';
     const org = orgs.find((o) => o.id === u.organizationId);
+    const primary = (u.roles && u.roles.length > 0 ? u.roles[0] : (u.workspace === 'mentor' ? 'MENTOR' : u.workspace === 'platform' ? 'PLATFORM_ADMIN' : 'EMPLOYEE')).toUpperCase();
     list.push({
       id: u.id,
       email: u.email,
       fullName: u.fullName,
+      displayName: u.fullName || u.email,
+      role: primary,
       phone: u.phone,
       jobTitle: u.jobTitle,
-      roles: u.roles,
-      workspace: u.workspace,
+      roles: u.roles && u.roles.length ? u.roles : [primary],
+      workspace: (u.workspace as 'enterprise' | 'personal' | 'platform' | 'mentor') || 'enterprise',
       organizationId: u.organizationId,
       organizationName: org?.name,
+      planCode: null,
+      trialState: null,
+      trialEndsAt: null,
       status: isLocked ? 'LOCKED' : 'ACTIVE',
       lockReason: platformState.userLocks.get(u.id) ?? u.deactivatedReason,
       emailVerified: u.emailVerified,
       createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
       lastLoginAt: new Date(Date.now() - 3600000 * 6).toISOString(),
+      taskSummary: computeTaskSummary(primary),
     });
   }
 
@@ -574,13 +673,35 @@ function getAllUsers(): PlatformUserDto[] {
 
 route('GET', '/platform/users', (context) => {
   const { query } = context;
-  let list = getAllUsers();
+  const allUsersList = getAllUsers();
+
+  const stats = {
+    total: allUsersList.length,
+    owners: allUsersList.filter((u) => (u.role || u.roles[0]) === 'OWNER').length,
+    managers: allUsersList.filter((u) => (u.role || u.roles[0]) === 'MANAGER').length,
+    employees: allUsersList.filter((u) => (u.role || u.roles[0]) === 'EMPLOYEE').length,
+    mentors: allUsersList.filter((u) => (u.role || u.roles[0]) === 'MENTOR').length,
+    admins: allUsersList.filter((u) => (u.role || u.roles[0]) === 'PLATFORM_ADMIN').length,
+    locked: allUsersList.filter((u) => u.status === 'LOCKED').length,
+    active: allUsersList.filter((u) => u.status === 'ACTIVE').length,
+  };
+
+  let list = allUsersList;
+
+  const allPersonalTrials = list.filter((u) => u.planCode && u.trialState);
+  const activeCount = allPersonalTrials.filter((u) => u.trialState === 'ACTIVE').length;
+  const endingSoonCount = allPersonalTrials.filter((u) => {
+    if (u.trialState !== 'ACTIVE' || !u.trialEndsAt) return false;
+    const leftMs = Date.parse(u.trialEndsAt) - Date.now();
+    return leftMs > 0 && leftMs <= 48 * 3600 * 1000;
+  }).length;
+  const endedCount = allPersonalTrials.filter((u) => u.trialState === 'ENDED').length;
 
   if (query.search) {
-    list = list.filter((u) => matchesSearch(u.fullName, query.search) || matchesSearch(u.email, query.search));
+    list = list.filter((u) => matchesSearch(u.fullName || '', query.search) || matchesSearch(u.displayName || '', query.search) || matchesSearch(u.email || '', query.search));
   }
   if (query.role) {
-    list = list.filter((u) => u.roles.includes(query.role as string));
+    list = list.filter((u) => (u.role || u.roles?.[0]) === query.role || u.roles?.includes(query.role as string));
   }
   if (query.workspace) {
     list = list.filter((u) => u.workspace === query.workspace);
@@ -592,13 +713,47 @@ route('GET', '/platform/users', (context) => {
     list = list.filter((u) => u.organizationId === query.organizationId);
   }
 
-  return paginate(list, pageRequest(query));
+  const result = paginate(list, pageRequest(query));
+  return {
+    ...result,
+    stats,
+    trials: {
+      active: activeCount,
+      endingSoon: endingSoonCount,
+      ended: endedCount,
+    },
+  };
 });
 
 route('GET', '/platform/users/:id', (context) => {
   const user = getAllUsers().find((u) => u.id === context.params.id);
   if (!user) throw notFound('Không tìm thấy tài khoản người dùng.');
-  return user;
+  return {
+    user,
+    organizationStatus: 'ACTIVE' as const,
+    enrolledCourses: [
+      {
+        courseCode: 'DGT-BAS-01',
+        courseTitle: 'Chiến lược tìm kiếm và quản lý thông tin số',
+        level: 1,
+        levelName: 'Cơ bản',
+        progress: 100,
+        completedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+        score: 8.5,
+        status: 'COMPLETED',
+      },
+      {
+        courseCode: 'DGT-INT-02',
+        courseTitle: 'Tư duy phản biện và giải quyết vấn đề số',
+        level: 2,
+        levelName: 'Trung cấp',
+        progress: 65,
+        completedAt: null,
+        score: null,
+        status: 'IN_PROGRESS',
+      },
+    ],
+  };
 });
 
 route('PUT', '/platform/users/:id/status', (context) => {
@@ -1010,13 +1165,227 @@ route('GET', '/platform/frameworks/:id', () => {
     releases: [
       {
         versionNo: 1,
-        releaseNote: 'Công bố chuẩn Thông tư 02/2025/TT-BGDĐT phiên bản neo ban đầu.',
+        releaseNote: 'Công bố chuẩn phiên bản neo ban đầu.',
         publishedByEmail: 'admin@digitalent.ai',
         publishedAt: '2026-10-01T00:00:00Z',
       },
     ],
   };
 });
+
+route('PUT', '/platform/frameworks/:id/draft', (context) => {
+  const { id } = context.params;
+  return {
+    id,
+    code: 'TT02_2025',
+    name: 'Khung chuẩn năng lực số doanh nghiệp',
+    description: 'Bộ 24 năng lực số cốt lõi chuẩn hóa cho doanh nghiệp.',
+    status: 'PUBLISHED' as const,
+    currentVersionNo: catalogStore.currentVersionNo,
+    domainCount: 6,
+    courseCount: 18,
+    coursesByLevel: [6, 6, 6],
+    draftCourseCount: null,
+    hasDraft: false,
+    currentCatalogVersionNo: catalogStore.currentVersionNo,
+    draftCatalogVersionNo: catalogStore.draftVersionNo,
+    domains: CATEGORIES.map((cat, idx) => ({
+      id: cat.id,
+      code: cat.code,
+      name: cat.name,
+      sortOrder: cat.sortOrder,
+      publishedDescription: `Lĩnh vực ${idx + 1}: ${cat.name}.`,
+      draftDescription: '',
+      hasDraft: false,
+      courses: COURSES.filter((c) => c.categoryId === cat.id && c.status === 'PUBLISHED').map((c) => ({
+        courseId: c.id,
+        code: c.code,
+        title: c.title,
+        level: c.level,
+        levelName: levelLabel(c.level),
+      })),
+      draftNewCourses: [],
+    })),
+    releases: [
+      {
+        versionNo: 1,
+        releaseNote: 'Công bố chuẩn ban đầu.',
+        publishedByEmail: 'admin@digitalent.ai',
+        publishedAt: '2026-10-01T00:00:00Z',
+      },
+    ],
+  };
+}, { message: 'Đã lưu bản nháp khung năng lực.' });
+
+route('POST', '/platform/frameworks/:id/publish', (context) => {
+  const { id } = context.params;
+  return {
+    id,
+    code: 'TT02_2025',
+    name: 'Khung chuẩn năng lực số doanh nghiệp',
+    description: 'Bộ 24 năng lực số cốt lõi chuẩn hóa cho doanh nghiệp.',
+    status: 'PUBLISHED' as const,
+    currentVersionNo: catalogStore.currentVersionNo,
+    domainCount: 6,
+    courseCount: 18,
+    coursesByLevel: [6, 6, 6],
+    draftCourseCount: null,
+    hasDraft: false,
+    currentCatalogVersionNo: catalogStore.currentVersionNo,
+    draftCatalogVersionNo: catalogStore.draftVersionNo,
+    domains: CATEGORIES.map((cat, idx) => ({
+      id: cat.id,
+      code: cat.code,
+      name: cat.name,
+      sortOrder: cat.sortOrder,
+      publishedDescription: `Lĩnh vực ${idx + 1}: ${cat.name}.`,
+      draftDescription: '',
+      hasDraft: false,
+      courses: COURSES.filter((c) => c.categoryId === cat.id && c.status === 'PUBLISHED').map((c) => ({
+        courseId: c.id,
+        code: c.code,
+        title: c.title,
+        level: c.level,
+        levelName: levelLabel(c.level),
+      })),
+      draftNewCourses: [],
+    })),
+    releases: [
+      {
+        versionNo: 1,
+        releaseNote: 'Công bố chuẩn ban đầu.',
+        publishedByEmail: 'admin@digitalent.ai',
+        publishedAt: '2026-10-01T00:00:00Z',
+      },
+    ],
+  };
+}, { message: 'Đã công bố khung năng lực.' });
+
+route('POST', '/platform/frameworks/:id/domains', (context) => {
+  const { id } = context.params;
+  const body = context.body as { name: string; description?: string };
+  return {
+    id,
+    code: 'TT02_2025',
+    name: 'Khung chuẩn năng lực số doanh nghiệp',
+    description: 'Bộ 24 năng lực số cốt lõi chuẩn hóa cho doanh nghiệp.',
+    status: 'PUBLISHED' as const,
+    currentVersionNo: catalogStore.currentVersionNo,
+    domainCount: 7,
+    courseCount: 18,
+    coursesByLevel: [6, 6, 6],
+    draftCourseCount: null,
+    hasDraft: false,
+    currentCatalogVersionNo: catalogStore.currentVersionNo,
+    draftCatalogVersionNo: catalogStore.draftVersionNo,
+    domains: [
+      ...CATEGORIES.map((cat, idx) => ({
+        id: cat.id,
+        code: cat.code,
+        name: cat.name,
+        sortOrder: cat.sortOrder,
+        publishedDescription: `Lĩnh vực ${idx + 1}: ${cat.name}.`,
+        draftDescription: '',
+        hasDraft: false,
+        courses: COURSES.filter((c) => c.categoryId === cat.id && c.status === 'PUBLISHED').map((c) => ({
+          courseId: c.id,
+          code: c.code,
+          title: c.title,
+          level: c.level,
+          levelName: levelLabel(c.level),
+        })),
+        draftNewCourses: [],
+      })),
+      {
+        id: `cat-${Date.now()}`,
+        code: 'NEW',
+        name: body.name || 'Lĩnh vực mới',
+        sortOrder: 7,
+        publishedDescription: body.description ?? '',
+        draftDescription: '',
+        hasDraft: false,
+        courses: [],
+        draftNewCourses: [],
+      },
+    ],
+    releases: [],
+  };
+}, { status: 201, message: 'Đã thêm lĩnh vực mới.' });
+
+route('PUT', '/platform/frameworks/:id/domains/:domainId', (context) => {
+  const { id, domainId } = context.params;
+  const body = context.body as { name: string; description?: string };
+  return {
+    id,
+    code: 'TT02_2025',
+    name: 'Khung chuẩn năng lực số doanh nghiệp',
+    description: 'Bộ 24 năng lực số cốt lõi chuẩn hóa cho doanh nghiệp.',
+    status: 'PUBLISHED' as const,
+    currentVersionNo: catalogStore.currentVersionNo,
+    domainCount: 6,
+    courseCount: 18,
+    coursesByLevel: [6, 6, 6],
+    draftCourseCount: null,
+    hasDraft: false,
+    currentCatalogVersionNo: catalogStore.currentVersionNo,
+    draftCatalogVersionNo: catalogStore.draftVersionNo,
+    domains: CATEGORIES.map((cat, idx) => ({
+      id: cat.id,
+      code: cat.code,
+      name: cat.id === domainId ? (body.name || cat.name) : cat.name,
+      sortOrder: cat.sortOrder,
+      publishedDescription: cat.id === domainId ? (body.description ?? `Lĩnh vực ${idx + 1}`) : `Lĩnh vực ${idx + 1}: ${cat.name}.`,
+      draftDescription: '',
+      hasDraft: false,
+      courses: COURSES.filter((c) => c.categoryId === cat.id && c.status === 'PUBLISHED').map((c) => ({
+        courseId: c.id,
+        code: c.code,
+        title: c.title,
+        level: c.level,
+        levelName: levelLabel(c.level),
+      })),
+      draftNewCourses: [],
+    })),
+    releases: [],
+  };
+}, { message: 'Đã cập nhật lĩnh vực.' });
+
+route('DELETE', '/platform/frameworks/:id/domains/:domainId', (context) => {
+  const { id } = context.params;
+  return {
+    id,
+    code: 'TT02_2025',
+    name: 'Khung chuẩn năng lực số doanh nghiệp',
+    description: 'Bộ 24 năng lực số cốt lõi chuẩn hóa cho doanh nghiệp.',
+    status: 'PUBLISHED' as const,
+    currentVersionNo: catalogStore.currentVersionNo,
+    domainCount: 5,
+    courseCount: 18,
+    coursesByLevel: [6, 6, 6],
+    draftCourseCount: null,
+    hasDraft: false,
+    currentCatalogVersionNo: catalogStore.currentVersionNo,
+    draftCatalogVersionNo: catalogStore.draftVersionNo,
+    domains: CATEGORIES.slice(0, 5).map((cat, idx) => ({
+      id: cat.id,
+      code: cat.code,
+      name: cat.name,
+      sortOrder: cat.sortOrder,
+      publishedDescription: `Lĩnh vực ${idx + 1}: ${cat.name}.`,
+      draftDescription: '',
+      hasDraft: false,
+      courses: COURSES.filter((c) => c.categoryId === cat.id && c.status === 'PUBLISHED').map((c) => ({
+        courseId: c.id,
+        code: c.code,
+        title: c.title,
+        level: c.level,
+        levelName: levelLabel(c.level),
+      })),
+      draftNewCourses: [],
+    })),
+    releases: [],
+  };
+}, { message: 'Đã xóa lĩnh vực.' });
 
 route('GET', '/platform/framework', () => {
   const competencies = COMPETENCIES.map((c) => {
@@ -1250,71 +1619,737 @@ route('GET', '/platform/commerce', () => {
   };
 });
 
-route('GET', '/platform/catalog/versions', () => {
-  return {
-    current: {
-      versionNo: 1,
-      status: 'CURRENT' as const,
-      publishedAt: '2026-10-01T00:00:00Z',
+// ── PLT-03 & PLT-04: Catalog Versions & Course Builder Mock Store ──
+interface CatalogStoreState {
+  currentVersionNo: number;
+  draftVersionNo: number | null;
+  versions: Map<number, CatalogVersionSummary>;
+  courseRowsByVersion: Map<number, CatalogCourseRow[]>;
+  courseDetails: Map<string, CatalogCourseDetail>;
+}
+
+function createDefaultCourseRows(): CatalogCourseRow[] {
+  return COURSES.filter((c) => c.status === 'PUBLISHED').map((c) => {
+    const cat = CATEGORIES.find((category) => category.id === c.categoryId);
+    return {
+      courseId: c.id,
+      code: c.code,
+      title: c.title,
+      frameworkId: 'fw-standard',
+      frameworkName: 'Khung chuẩn năng lực số doanh nghiệp',
+      domainId: c.categoryId,
+      domainName: cat?.name ?? '',
+      level: c.level,
+      levelName: levelLabel(c.level),
+      moduleCount: c.modules,
+      questionCount: 12,
+      pricePerSeat: c.level === 1 ? 0 : 500000 * c.level,
+      salesStatus: 'OPEN' as CatalogSalesStatus,
+      changeKind: 'UNCHANGED' as ChangeKind,
+    };
+  });
+}
+
+const catalogStore: CatalogStoreState = (() => {
+  const versions = new Map<number, CatalogVersionSummary>();
+  const courseRowsByVersion = new Map<number, CatalogCourseRow[]>();
+
+  const summaries: CatalogVersionSummary[] = [
+    {
+      versionNo: 5,
+      status: 'CURRENT',
+      basedOnVersionNo: 4,
+      releaseNote: 'Công bố chuẩn hóa danh mục khóa học số v5.',
+      createdAt: '2026-11-01T00:00:00Z',
+      publishedAt: '2026-11-05T08:00:00Z',
       publishedByEmail: 'admin@digitalent.ai',
-      releaseNote: 'Phiên bản neo chính thức (Anchor v1).',
       courseCount: 18,
-      courses: COURSES.filter((c) => c.status === 'PUBLISHED').map((c) => {
-        const d = parseInt(c.categoryId.replace('cat-', ''), 10) || 1;
-        return {
-          id: c.id,
-          code: c.code,
-          frameworkId: 'fw-tt02',
-          frameworkCode: 'TT02_2025',
-          domainCode: `D${d}`,
-          domainName: CATEGORIES.find((cat) => cat.id === c.categoryId)?.name ?? '',
-          level: c.level,
-          levelName: levelLabel(c.level),
-          title: c.title,
-          outcome: `Đạt chuẩn mức độ ${levelLabel(c.level)}`,
-          pricePerSeat: c.level === 1 ? 0 : 500000 * c.level,
-          salesStatus: 'OPEN' as const,
-          changeKind: 'UNCHANGED' as const,
-          moduleCount: c.modules,
-          questionCount: 12,
-          hasDraftPrice: false,
-        };
-      }),
+      frameworkCount: 1,
+      newCount: 0,
+      editedCount: 0,
     },
-    draft: null,
-    retired: [],
+    {
+      versionNo: 4,
+      status: 'RETIRED',
+      basedOnVersionNo: 3,
+      releaseNote: 'Phiên bản v4 lưu trữ.',
+      createdAt: '2026-10-15T00:00:00Z',
+      publishedAt: '2026-10-20T08:00:00Z',
+      publishedByEmail: 'admin@digitalent.ai',
+      courseCount: 18,
+      frameworkCount: 1,
+      newCount: 0,
+      editedCount: 0,
+    },
+    {
+      versionNo: 3,
+      status: 'RETIRED',
+      basedOnVersionNo: 2,
+      releaseNote: 'Phiên bản v3 lưu trữ.',
+      createdAt: '2026-09-01T00:00:00Z',
+      publishedAt: '2026-09-10T08:00:00Z',
+      publishedByEmail: 'admin@digitalent.ai',
+      courseCount: 18,
+      frameworkCount: 1,
+      newCount: 0,
+      editedCount: 0,
+    },
+    {
+      versionNo: 2,
+      status: 'RETIRED',
+      basedOnVersionNo: 1,
+      releaseNote: 'Phiên bản v2 lưu trữ.',
+      createdAt: '2026-07-01T00:00:00Z',
+      publishedAt: '2026-07-15T08:00:00Z',
+      publishedByEmail: 'admin@digitalent.ai',
+      courseCount: 18,
+      frameworkCount: 1,
+      newCount: 0,
+      editedCount: 0,
+    },
+    {
+      versionNo: 1,
+      status: 'RETIRED',
+      basedOnVersionNo: null,
+      releaseNote: 'Phiên bản khởi tạo v1.',
+      createdAt: '2026-05-01T00:00:00Z',
+      publishedAt: '2026-05-15T08:00:00Z',
+      publishedByEmail: 'admin@digitalent.ai',
+      courseCount: 18,
+      frameworkCount: 1,
+      newCount: 0,
+      editedCount: 0,
+    },
+  ];
+
+  for (const s of summaries) {
+    versions.set(s.versionNo, s);
+    courseRowsByVersion.set(s.versionNo, createDefaultCourseRows());
+  }
+
+  return {
+    currentVersionNo: 5,
+    draftVersionNo: null,
+    versions,
+    courseRowsByVersion,
+    courseDetails: new Map<string, CatalogCourseDetail>(),
+  };
+})();
+
+function getCoursesForVersion(versionNo: number): CatalogCourseRow[] {
+  let rows = catalogStore.courseRowsByVersion.get(versionNo);
+  if (!rows) {
+    rows = createDefaultCourseRows();
+    catalogStore.courseRowsByVersion.set(versionNo, rows);
+  }
+  return rows;
+}
+
+function getOrCreateCourseDetail(versionNo: number, courseId: string): CatalogCourseDetail {
+  const key = `${versionNo}-${courseId}`;
+  const isDraft = versionNo === catalogStore.draftVersionNo;
+  const versionStatus: CatalogVersionStatus = isDraft
+    ? 'DRAFT'
+    : versionNo === catalogStore.currentVersionNo
+      ? 'CURRENT'
+      : 'RETIRED';
+
+  const existing = catalogStore.courseDetails.get(key);
+  if (existing) {
+    existing.versionStatus = versionStatus;
+    existing.editable = isDraft;
+    return existing;
+  }
+
+  const course = COURSES.find((c) => c.id === courseId || c.code === courseId || c.code === courseId.replace(/^crs-|^c-/, ''));
+  const cat = course ? CATEGORIES.find((category) => category.id === course.categoryId) : undefined;
+  const code = course ? course.code : courseId.replace(/^crs-|^c-/, '');
+  const title = course ? course.title : `Khóa học ${code}`;
+  const level = course ? course.level : 1;
+  const modulesCount = Math.max(1, course?.modules ?? 2);
+
+  const modules: CatalogModule[] = Array.from({ length: modulesCount }, (_, i) => {
+    const mIndex = i + 1;
+    return {
+      moduleId: `mod-${code.toLowerCase()}-${mIndex}`,
+      index: i,
+      title: `Bài học ${mIndex}: Kiến thức và kỹ năng cốt lõi`,
+      quizTitle: `Trắc nghiệm ôn tập bài ${mIndex}`,
+      blocks: [
+        {
+          blockId: `blk-${code.toLowerCase()}-${mIndex}-1`,
+          index: 0,
+          type: 'TEXT' as const,
+          bodyHtml: `<p>Nội dung kiến thức chuẩn hóa cho học phần <strong>${title}</strong>.</p><p>Học viên nắm bắt phương pháp, công cụ và quy trình thực hiện công việc hiệu quả trên môi trường số.</p>`,
+          asset: null,
+          caption: null,
+          altText: null,
+          items: [],
+        },
+      ],
+      questions: [
+        {
+          questionId: `q-${code.toLowerCase()}-${mIndex}-1`,
+          index: 0,
+          text: `Mục tiêu quan trọng nhất của bài học này là gì?`,
+          explanation: 'Hiểu rõ nguyên lý cốt lõi và phương pháp triển khai thực tiễn.',
+          blockId: null,
+          options: [
+            { optionId: `opt-${mIndex}-1`, text: 'Nắm vững nguyên lý và phương pháp vận dụng thực tế', isCorrect: true },
+            { optionId: `opt-${mIndex}-2`, text: 'Bỏ qua các bước thẩm định tính chính xác của dữ liệu', isCorrect: false },
+            { optionId: `opt-${mIndex}-3`, text: 'Chỉ thực hiện khi có văn bản yêu cầu riêng', isCorrect: false },
+          ],
+        },
+      ],
+    };
+  });
+
+  const detail: CatalogCourseDetail = {
+    versionNo,
+    versionStatus,
+    editable: isDraft,
+    courseId,
+    code,
+    codeEditable: isDraft,
+    changeKind: isDraft ? 'NEW' : 'UNCHANGED',
+    frameworkId: 'fw-standard',
+    frameworkName: 'Khung chuẩn năng lực số doanh nghiệp',
+    domainId: course ? course.categoryId : 'cat-1',
+    domainName: cat?.name ?? 'Dữ liệu và thông tin số',
+    level,
+    levelName: levelLabel(level),
+    title,
+    outcome: 'Học viên hoàn thành khóa học sẽ nắm vững kỹ năng thực hành theo chuẩn năng lực số doanh nghiệp.',
+    pricePerSeat: level === 1 ? 0 : 500000 * level,
+    salesStatus: 'OPEN',
+    final: {
+      title: `Bài đánh giá tổng hợp: ${title}`,
+      promptHtml: `<p>Thực hiện bài kiểm tra cuối khóa nhằm đánh giá mức độ tiếp thu và vận dụng kiến thức <strong>${title}</strong> vào thực tế công việc.</p>`,
+      criteria: [
+        'Nắm vững kiến thức và kỹ năng trọng tâm',
+        'Vận dụng giải quyết tình huống thực tế chính xác',
+        'Tuân thủ quy chuẩn kỹ thuật và an toàn số',
+      ],
+    },
+    modules,
+  };
+
+  catalogStore.courseDetails.set(key, detail);
+  return detail;
+}
+
+route('GET', '/platform/catalog/versions', () => {
+  const items = Array.from(catalogStore.versions.values()).sort((a, b) => b.versionNo - a.versionNo);
+  return {
+    items,
+    currentVersionNo: catalogStore.currentVersionNo,
+    draftVersionNo: catalogStore.draftVersionNo,
   };
 });
 
-route('GET', '/platform/catalog/versions/:versionNo', (context) => {
-  return {
-    versionNo: Number(context.params.versionNo) || 1,
-    status: 'CURRENT' as const,
-    publishedAt: '2026-10-01T00:00:00Z',
-    publishedByEmail: 'admin@digitalent.ai',
-    releaseNote: 'Phiên bản neo chính thức (Anchor v1).',
-    courseCount: 18,
-    courses: COURSES.filter((c) => c.status === 'PUBLISHED').map((c) => {
-      const d = parseInt(c.categoryId.replace('cat-', ''), 10) || 1;
+route('POST', '/platform/catalog/versions', () => {
+  if (catalogStore.draftVersionNo !== null) {
+    const draft = catalogStore.versions.get(catalogStore.draftVersionNo);
+    if (draft) {
       return {
-        id: c.id,
-        code: c.code,
-        frameworkId: 'fw-tt02',
-        frameworkCode: 'TT02_2025',
-        domainCode: `D${d}`,
-        domainName: CATEGORIES.find((cat) => cat.id === c.categoryId)?.name ?? '',
-        level: c.level,
-        levelName: levelLabel(c.level),
-        title: c.title,
-        outcome: `Đạt chuẩn mức độ ${levelLabel(c.level)}`,
-        pricePerSeat: c.level === 1 ? 0 : 500000 * c.level,
-        salesStatus: 'OPEN' as const,
-        changeKind: 'UNCHANGED' as const,
-        moduleCount: c.modules,
-        questionCount: 12,
-        hasDraftPrice: false,
+        version: draft,
+        editable: true,
+        courses: getCoursesForVersion(catalogStore.draftVersionNo),
       };
-    }),
+    }
+  }
+
+  const nextNo = catalogStore.currentVersionNo + 1;
+  catalogStore.draftVersionNo = nextNo;
+  const draftSummary: CatalogVersionSummary = {
+    versionNo: nextNo,
+    status: 'DRAFT',
+    basedOnVersionNo: catalogStore.currentVersionNo,
+    releaseNote: '',
+    createdAt: new Date().toISOString(),
+    publishedAt: null,
+    publishedByEmail: null,
+    courseCount: 18,
+    frameworkCount: 1,
+    newCount: 0,
+    editedCount: 0,
+  };
+  catalogStore.versions.set(nextNo, draftSummary);
+
+  const currentCourses = getCoursesForVersion(catalogStore.currentVersionNo);
+  const draftCourses = currentCourses.map((c) => ({
+    ...c,
+    changeKind: 'UNCHANGED' as ChangeKind,
+  }));
+  catalogStore.courseRowsByVersion.set(nextNo, draftCourses);
+
+  return {
+    version: draftSummary,
+    editable: true,
+    courses: draftCourses,
+  };
+}, { message: 'Đã tạo bản nháp mới.' });
+
+route('GET', '/platform/catalog/versions/:versionNo', (context) => {
+  const vNo = Number(context.params.versionNo) || catalogStore.currentVersionNo;
+  let summary = catalogStore.versions.get(vNo);
+  if (!summary) {
+    summary = {
+      versionNo: vNo,
+      status: vNo === catalogStore.draftVersionNo ? 'DRAFT' : vNo === catalogStore.currentVersionNo ? 'CURRENT' : 'RETIRED',
+      basedOnVersionNo: vNo > 1 ? vNo - 1 : null,
+      releaseNote: `Phiên bản v${vNo}.`,
+      createdAt: '2026-01-01T00:00:00Z',
+      publishedAt: '2026-01-02T00:00:00Z',
+      publishedByEmail: 'admin@digitalent.ai',
+      courseCount: 18,
+      frameworkCount: 1,
+      newCount: 0,
+      editedCount: 0,
+    };
+    catalogStore.versions.set(vNo, summary);
+  }
+  const courses = getCoursesForVersion(vNo);
+  return {
+    version: summary,
+    editable: summary.status === 'DRAFT',
+    courses,
+  };
+});
+
+route('POST', '/platform/catalog/versions/:versionNo/publish', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const body = context.body as { releaseNote?: string } | undefined;
+  const summary = catalogStore.versions.get(vNo);
+  if (!summary) throw notFound(`Không tìm thấy phiên bản v${vNo}.`);
+
+  const oldCurrent = catalogStore.versions.get(catalogStore.currentVersionNo);
+  if (oldCurrent && oldCurrent.versionNo !== vNo) {
+    oldCurrent.status = 'RETIRED';
+  }
+
+  summary.status = 'CURRENT';
+  summary.publishedAt = new Date().toISOString();
+  summary.publishedByEmail = context.session?.email || 'admin@digitalent.ai';
+  if (body?.releaseNote) {
+    summary.releaseNote = body.releaseNote;
+  }
+  catalogStore.currentVersionNo = vNo;
+  if (catalogStore.draftVersionNo === vNo) {
+    catalogStore.draftVersionNo = null;
+  }
+
+  return {
+    version: summary,
+    editable: false,
+    courses: getCoursesForVersion(vNo),
+  };
+}, { message: 'Đã công bố phiên bản danh mục.' });
+
+route('GET', '/platform/catalog/versions/:versionNo/publish-check', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const check: PublishCheck = {
+    versionNo: vNo,
+    canPublish: true,
+    changedCount: 0,
+    items: [],
+  };
+  return check;
+});
+
+route('PUT', '/platform/catalog/versions/:versionNo/prices', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const body = context.body as { items: { courseId: string; pricePerSeat: number; salesStatus: CatalogSalesStatus }[] };
+  const courses = getCoursesForVersion(vNo);
+  for (const item of body.items ?? []) {
+    const c = courses.find((row) => row.courseId === item.courseId);
+    if (c) {
+      if (c.level > 1) {
+        c.pricePerSeat = item.pricePerSeat;
+      }
+      c.salesStatus = item.salesStatus;
+      c.changeKind = 'EDITED';
+    }
+  }
+  const summary = catalogStore.versions.get(vNo)!;
+  return {
+    version: summary,
+    editable: summary.status === 'DRAFT',
+    courses,
+  };
+}, { message: 'Đã cập nhật bảng giá khóa học.' });
+
+route('GET', '/platform/catalog/versions/:versionNo/courses/:courseId', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const { courseId } = context.params;
+  return getOrCreateCourseDetail(vNo, courseId);
+});
+
+route('PUT', '/platform/catalog/versions/:versionNo/courses/:courseId', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const { courseId } = context.params;
+  const detail = getOrCreateCourseDetail(vNo, courseId);
+  const body = context.body as Partial<CourseInfoInput>;
+
+  if (body.title !== undefined) detail.title = body.title;
+  if (body.outcome !== undefined) detail.outcome = body.outcome;
+  if (body.domainId !== undefined) {
+    detail.domainId = body.domainId;
+    const cat = CATEGORIES.find((c) => c.id === body.domainId);
+    if (cat) detail.domainName = cat.name;
+  }
+  if (body.level !== undefined) {
+    detail.level = body.level;
+    detail.levelName = levelLabel(body.level);
+    if (body.level === 1) detail.pricePerSeat = 0;
+  }
+  if (body.pricePerSeat !== undefined && detail.level > 1) {
+    detail.pricePerSeat = body.pricePerSeat;
+  }
+  if (body.salesStatus !== undefined) detail.salesStatus = body.salesStatus;
+  if (body.code !== undefined && detail.codeEditable) detail.code = body.code;
+  detail.changeKind = 'EDITED';
+
+  const rows = getCoursesForVersion(vNo);
+  const row = rows.find((r) => r.courseId === courseId);
+  if (row) {
+    row.title = detail.title;
+    row.domainId = detail.domainId;
+    row.domainName = detail.domainName;
+    row.level = detail.level;
+    row.levelName = detail.levelName;
+    row.pricePerSeat = detail.pricePerSeat;
+    row.salesStatus = detail.salesStatus;
+    row.code = detail.code;
+    row.changeKind = 'EDITED';
+  }
+
+  return detail;
+}, { message: 'Đã lưu thông tin khóa học.' });
+
+route('POST', '/platform/catalog/versions/:versionNo/courses', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const body = context.body as { code: string; title: string; domainId: string; level: number };
+  const courseId = `crs-${body.code || Date.now()}`;
+  const cat = CATEGORIES.find((c) => c.id === body.domainId);
+
+  const detail: CatalogCourseDetail = {
+    versionNo: vNo,
+    versionStatus: 'DRAFT',
+    editable: true,
+    courseId,
+    code: body.code,
+    codeEditable: true,
+    changeKind: 'NEW',
+    frameworkId: 'fw-standard',
+    frameworkName: 'Khung chuẩn năng lực số doanh nghiệp',
+    domainId: body.domainId,
+    domainName: cat?.name ?? 'Dữ liệu và thông tin số',
+    level: body.level,
+    levelName: levelLabel(body.level),
+    title: body.title,
+    outcome: '',
+    pricePerSeat: body.level === 1 ? 0 : 500000 * body.level,
+    salesStatus: 'OPEN',
+    final: { title: 'Bài đánh giá cuối khóa', promptHtml: '', criteria: [] },
+    modules: [],
+  };
+
+  catalogStore.courseDetails.set(`${vNo}-${courseId}`, detail);
+
+  const rows = getCoursesForVersion(vNo);
+  rows.push({
+    courseId,
+    code: detail.code,
+    title: detail.title,
+    frameworkId: detail.frameworkId,
+    frameworkName: detail.frameworkName,
+    domainId: detail.domainId,
+    domainName: detail.domainName,
+    level: detail.level,
+    levelName: detail.levelName,
+    moduleCount: 0,
+    questionCount: 0,
+    pricePerSeat: detail.pricePerSeat,
+    salesStatus: detail.salesStatus,
+    changeKind: 'NEW',
+  });
+
+  return detail;
+}, { status: 201, message: 'Đã thêm khóa học mới vào bản nháp.' });
+
+route('DELETE', '/platform/catalog/versions/:versionNo/courses/:courseId', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const { courseId } = context.params;
+  const rows = getCoursesForVersion(vNo);
+  const idx = rows.findIndex((r) => r.courseId === courseId);
+  if (idx >= 0) rows.splice(idx, 1);
+  catalogStore.courseDetails.delete(`${vNo}-${courseId}`);
+
+  const summary = catalogStore.versions.get(vNo)!;
+  return {
+    version: summary,
+    editable: summary.status === 'DRAFT',
+    courses: rows,
+  };
+}, { message: 'Đã xóa khóa học khỏi bản nháp.' });
+
+route('PUT', '/platform/catalog/versions/:versionNo/courses/:courseId/final', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const { courseId } = context.params;
+  const detail = getOrCreateCourseDetail(vNo, courseId);
+  const body = context.body as { title: string; promptHtml: string; criteria: string[] };
+  detail.final = { ...body };
+  detail.changeKind = 'EDITED';
+  return detail;
+}, { message: 'Đã lưu bài cuối khóa.' });
+
+route('POST', '/platform/catalog/versions/:versionNo/courses/:courseId/modules', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const { courseId } = context.params;
+  const detail = getOrCreateCourseDetail(vNo, courseId);
+  const title = String((context.body as { title?: string }).title ?? 'Mô đun mới').trim();
+
+  const newModule: CatalogModule = {
+    moduleId: `mod-${Date.now()}`,
+    index: detail.modules.length,
+    title,
+    quizTitle: 'Trắc nghiệm ôn tập',
+    blocks: [],
+    questions: [],
+  };
+  detail.modules.push(newModule);
+  detail.changeKind = 'EDITED';
+
+  const rows = getCoursesForVersion(vNo);
+  const row = rows.find((r) => r.courseId === courseId);
+  if (row) row.moduleCount = detail.modules.length;
+
+  return detail;
+}, { status: 201, message: 'Đã thêm mô đun mới.' });
+
+route('PUT', '/platform/catalog/versions/:versionNo/courses/:courseId/modules/:moduleId', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const { courseId, moduleId } = context.params;
+  const detail = getOrCreateCourseDetail(vNo, courseId);
+  const body = context.body as { title?: string; quizTitle?: string };
+
+  const mod = detail.modules.find((m) => m.moduleId === moduleId);
+  if (mod) {
+    if (body.title !== undefined) mod.title = body.title;
+    if (body.quizTitle !== undefined) mod.quizTitle = body.quizTitle;
+    detail.changeKind = 'EDITED';
+  }
+  return detail;
+}, { message: 'Đã cập nhật mô đun.' });
+
+route('DELETE', '/platform/catalog/versions/:versionNo/courses/:courseId/modules/:moduleId', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const { courseId, moduleId } = context.params;
+  const detail = getOrCreateCourseDetail(vNo, courseId);
+
+  detail.modules = detail.modules.filter((m) => m.moduleId !== moduleId);
+  detail.modules.forEach((m, idx) => { m.index = idx; });
+  detail.changeKind = 'EDITED';
+
+  const rows = getCoursesForVersion(vNo);
+  const row = rows.find((r) => r.courseId === courseId);
+  if (row) row.moduleCount = detail.modules.length;
+
+  return detail;
+}, { message: 'Đã xóa mô đun.' });
+
+route('POST', '/platform/catalog/versions/:versionNo/courses/:courseId/modules/:moduleId/move', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const { courseId, moduleId } = context.params;
+  const detail = getOrCreateCourseDetail(vNo, courseId);
+  const toIndex = Number((context.body as { toIndex?: number }).toIndex ?? 0);
+
+  const curIndex = detail.modules.findIndex((m) => m.moduleId === moduleId);
+  if (curIndex >= 0) {
+    const [item] = detail.modules.splice(curIndex, 1);
+    detail.modules.splice(toIndex, 0, item);
+    detail.modules.forEach((m, idx) => { m.index = idx; });
+    detail.changeKind = 'EDITED';
+  }
+  return detail;
+});
+
+route('POST', '/platform/catalog/versions/:versionNo/courses/:courseId/modules/:moduleId/blocks', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const { courseId, moduleId } = context.params;
+  const detail = getOrCreateCourseDetail(vNo, courseId);
+  const body = context.body as { type: BlockType; position?: number };
+
+  const mod = detail.modules.find((m) => m.moduleId === moduleId);
+  if (mod) {
+    const newBlock: CatalogBlock = {
+      blockId: `blk-${Date.now()}`,
+      index: mod.blocks.length,
+      type: body.type || 'TEXT',
+      bodyHtml: body.type === 'TEXT' ? '<p>Nội dung bài học...</p>' : null,
+      asset: null,
+      caption: null,
+      altText: null,
+      items: [],
+    };
+    if (typeof body.position === 'number' && body.position >= 0) {
+      mod.blocks.splice(body.position, 0, newBlock);
+      mod.blocks.forEach((b, idx) => { b.index = idx; });
+    } else {
+      mod.blocks.push(newBlock);
+    }
+    detail.changeKind = 'EDITED';
+  }
+  return detail;
+}, { status: 201, message: 'Đã thêm khối nội dung.' });
+
+route('PUT', '/platform/catalog/versions/:versionNo/courses/:courseId/blocks/:blockId', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const { courseId, blockId } = context.params;
+  const detail = getOrCreateCourseDetail(vNo, courseId);
+  const body = context.body as BlockInput;
+
+  for (const mod of detail.modules) {
+    const block = mod.blocks.find((b) => b.blockId === blockId);
+    if (block) {
+      if (body.bodyHtml !== undefined) block.bodyHtml = body.bodyHtml;
+      if (body.caption !== undefined) block.caption = body.caption;
+      if (body.altText !== undefined) block.altText = body.altText;
+      detail.changeKind = 'EDITED';
+      break;
+    }
+  }
+  return detail;
+}, { message: 'Đã lưu khối nội dung.' });
+
+route('DELETE', '/platform/catalog/versions/:versionNo/courses/:courseId/blocks/:blockId', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const { courseId, blockId } = context.params;
+  const detail = getOrCreateCourseDetail(vNo, courseId);
+
+  for (const mod of detail.modules) {
+    const idx = mod.blocks.findIndex((b) => b.blockId === blockId);
+    if (idx >= 0) {
+      mod.blocks.splice(idx, 1);
+      mod.blocks.forEach((b, i) => { b.index = i; });
+      detail.changeKind = 'EDITED';
+      break;
+    }
+  }
+  return detail;
+}, { message: 'Đã xóa khối nội dung.' });
+
+route('POST', '/platform/catalog/versions/:versionNo/courses/:courseId/blocks/:blockId/move', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const { courseId, blockId } = context.params;
+  const detail = getOrCreateCourseDetail(vNo, courseId);
+  const toIndex = Number((context.body as { toIndex?: number }).toIndex ?? 0);
+
+  for (const mod of detail.modules) {
+    const idx = mod.blocks.findIndex((b) => b.blockId === blockId);
+    if (idx >= 0) {
+      const [block] = mod.blocks.splice(idx, 1);
+      mod.blocks.splice(toIndex, 0, block);
+      mod.blocks.forEach((b, i) => { b.index = i; });
+      detail.changeKind = 'EDITED';
+      break;
+    }
+  }
+  return detail;
+});
+
+route('POST', '/platform/catalog/versions/:versionNo/courses/:courseId/modules/:moduleId/questions', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const { courseId, moduleId } = context.params;
+  const detail = getOrCreateCourseDetail(vNo, courseId);
+  const body = context.body as QuestionInput;
+
+  const mod = detail.modules.find((m) => m.moduleId === moduleId);
+  if (mod) {
+    const newQuestion: CatalogQuestion = {
+      questionId: `q-${Date.now()}`,
+      index: mod.questions.length,
+      text: body.text || 'Câu hỏi trắc nghiệm mới',
+      explanation: body.explanation ?? null,
+      blockId: body.blockId ?? null,
+      options: body.options?.map((opt, i) => ({
+        optionId: `opt-${Date.now()}-${i}`,
+        text: opt.text,
+        isCorrect: opt.isCorrect,
+      })) ?? [
+        { optionId: `opt-${Date.now()}-1`, text: 'Lựa chọn A', isCorrect: true },
+        { optionId: `opt-${Date.now()}-2`, text: 'Lựa chọn B', isCorrect: false },
+      ],
+    };
+    mod.questions.push(newQuestion);
+    detail.changeKind = 'EDITED';
+
+    const rows = getCoursesForVersion(vNo);
+    const row = rows.find((r) => r.courseId === courseId);
+    if (row) {
+      row.questionCount = detail.modules.reduce((sum, m) => sum + m.questions.length, 0);
+    }
+  }
+  return detail;
+}, { status: 201, message: 'Đã thêm câu hỏi trắc nghiệm.' });
+
+route('PUT', '/platform/catalog/versions/:versionNo/courses/:courseId/questions/:questionId', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const { courseId, questionId } = context.params;
+  const detail = getOrCreateCourseDetail(vNo, courseId);
+  const body = context.body as QuestionInput;
+
+  for (const mod of detail.modules) {
+    const q = mod.questions.find((question) => question.questionId === questionId);
+    if (q) {
+      if (body.text !== undefined) q.text = body.text;
+      if (body.explanation !== undefined) q.explanation = body.explanation;
+      if (body.blockId !== undefined) q.blockId = body.blockId;
+      if (body.options !== undefined) {
+        q.options = body.options.map((opt, i) => ({
+          optionId: `opt-${i}`,
+          text: opt.text,
+          isCorrect: opt.isCorrect,
+        }));
+      }
+      detail.changeKind = 'EDITED';
+      break;
+    }
+  }
+  return detail;
+}, { message: 'Đã lưu câu hỏi.' });
+
+route('DELETE', '/platform/catalog/versions/:versionNo/courses/:courseId/questions/:questionId', (context) => {
+  const vNo = Number(context.params.versionNo);
+  const { courseId, questionId } = context.params;
+  const detail = getOrCreateCourseDetail(vNo, courseId);
+
+  for (const mod of detail.modules) {
+    const idx = mod.questions.findIndex((q) => q.questionId === questionId);
+    if (idx >= 0) {
+      mod.questions.splice(idx, 1);
+      mod.questions.forEach((q, i) => { q.index = i; });
+      detail.changeKind = 'EDITED';
+      break;
+    }
+  }
+
+  const rows = getCoursesForVersion(vNo);
+  const row = rows.find((r) => r.courseId === courseId);
+  if (row) {
+    row.questionCount = detail.modules.reduce((sum, m) => sum + m.questions.length, 0);
+  }
+
+  return detail;
+}, { message: 'Đã xóa câu hỏi.' });
+
+route('POST', '/platform/assets/presign', () => {
+  return {
+    mode: 'PROXY' as const,
+    uploadUrl: null,
+    uploadToken: null,
+    method: null,
   };
 });
 

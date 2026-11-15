@@ -27,6 +27,8 @@ import {
   Trash2,
   X,
   Sparkles,
+  RefreshCw,
+  Layers,
 } from 'lucide-react';
 
 const CODE_PATTERN = /^[A-Z0-9][A-Z0-9-]{1,29}$/;
@@ -45,7 +47,15 @@ export function PlatformVersionsPage() {
   const selected = param !== undefined ? Number(param) : (versions.data?.draftVersionNo ?? versions.data?.currentVersionNo ?? undefined);
   const version = useCatalogVersion(Number.isFinite(selected) ? selected : undefined);
   const data = versions.data;
-  const nextNo = data ? Math.max(0, ...data.items.map((v) => v.versionNo)) + 1 : null;
+  const items = data?.items ?? [];
+  const nextNo = items.length > 0 ? Math.max(0, ...items.map((v) => v.versionNo)) + 1 : 1;
+
+  const handleRefresh = () => {
+    void versions.refetch();
+    if (selected !== undefined) {
+      void version.refetch();
+    }
+  };
 
   const onCreateDraft = () =>
     createDraft.mutate(undefined, {
@@ -58,206 +68,183 @@ export function PlatformVersionsPage() {
 
   return (
     <>
-      <div className="pa-page-header">
-        <div className="pa-row-between" style={{ alignItems: 'flex-start' }}>
-          <div>
-            <div className="pa-header-eyebrow">
-              <span className="pa-eyebrow-dot" />
-              QUẢN TRỊ NỀN TẢNG / PHIÊN BẢN KHÓA HỌC
-            </div>
-            <h1 className="pa-header-title" aria-label="Mỗi lần thêm hoặc sửa khóa là một phiên bản.">Quản trị phiên bản Catalog khóa học chuẩn</h1>
-            <p className="pa-header-subtitle">
-              Phiên bản có neo là bản các tổ chức đang học tập. Soạn thảo khóa học trong bản nháp rồi công bố để chuyển neo sang phiên bản mới.
-            </p>
+      <header className="pa-ov-header">
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h1 aria-label="Mỗi lần thêm hoặc sửa khóa là một phiên bản.">
+              {translateUi('Phiên bản khóa học chuẩn')}
+            </h1>
+            {data?.currentVersionNo && (
+              <span className="pa-rp-version-badge">v{data.currentVersionNo}</span>
+            )}
           </div>
+          <p className="pa-ov-subtitle">
+            {translateUi('Quản lý các mốc phiên bản nội dung đào tạo chuẩn hóa, hỗ trợ biên soạn bản nháp và công bố áp dụng trên toàn hệ thống.')}
+          </p>
+        </div>
+
+        <div className="pa-ov-actions">
+          <button
+            type="button"
+            className="btn btn-outline btn-small inline-flex items-center gap-1.5"
+            onClick={handleRefresh}
+            disabled={versions.isFetching}
+            title="Tải lại danh sách phiên bản từ máy chủ"
+          >
+            <RefreshCw size={14} className={versions.isFetching ? 'animate-spin' : ''} aria-hidden="true" />
+            <span>{versions.isFetching ? translateUi('Đang tải...') : translateUi('Làm mới')}</span>
+          </button>
+
           {data &&
             (data.draftVersionNo !== null ? (
               selected !== data.draftVersionNo && (
-                <Link className="btn btn-primary" to={`/platform/versions/${data.draftVersionNo}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <Edit3 size={15} />
-                  Mở bản nháp v{data.draftVersionNo}
+                <Link
+                  className="btn btn-primary btn-small inline-flex items-center gap-1.5"
+                  to={`/platform/versions/${data.draftVersionNo}`}
+                >
+                  <Edit3 size={14} />
+                  <span>{translateUi(`Mở bản nháp v${data.draftVersionNo}`)}</span>
                 </Link>
               )
             ) : (
               canManage && (
                 <button
                   type="button"
-                  className="btn btn-primary"
+                  className="btn btn-primary btn-small inline-flex items-center gap-1.5"
                   onClick={onCreateDraft}
                   disabled={createDraft.isPending}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
                 >
-                  <Plus size={16} />
-                  {createDraft.isPending ? 'Đang tạo…' : translateUi(`Tạo phiên bản v${nextNo}`)}
+                  <Plus size={14} />
+                  <span>{createDraft.isPending ? translateUi('Đang tạo…') : translateUi(`Tạo phiên bản v${nextNo}`)}</span>
                 </button>
               )
             ))}
         </div>
-      </div>
+      </header>
 
       {versions.isLoading && <Loading />}
       {versions.error && <LoadError error={versions.error} />}
       {data && (
-        <>
-          <AnchorBar versions={data} />
-          <div className="pa-ver-layout">
-            <VersionList versions={data} selected={selected} />
-            <div className="stack pa-min0">
-              {version.isLoading && <Loading />}
-              {version.error && <LoadError error={version.error} />}
-              {version.data && <VersionCourses key={version.data.version.versionNo} detail={version.data} canManage={canManage} />}
-            </div>
+        <div className="pa-ver-layout">
+          <VersionList versions={data} selected={selected} />
+          <div className="stack pa-min0">
+            {version.isLoading && <Loading />}
+            {version.error && <LoadError error={version.error} />}
+            {version.data && <VersionCourses key={version.data.version.versionNo} detail={version.data} canManage={canManage} />}
           </div>
-        </>
+        </div>
       )}
       <Footer />
     </>
   );
 }
 
-function AnchorBar({ versions }: { versions: CatalogVersionsOutput }) {
+function VersionStatus({ version, compact = false }: { version: CatalogVersionSummary; compact?: boolean }) {
   useUiLanguage();
-  const current = versions.items.find((v) => v.status === 'CURRENT');
-  if (!current) return <div className="notice warning">Chưa có phiên bản nào được công bố.</div>;
+  if (version.status === 'CURRENT') {
+    if (compact) {
+      return (
+        <span className="pa-ver-badge is-live" style={{ padding: '3px 6px' }} title={translateUi("Phiên bản chính thức")}>
+          <span className="pa-ver-badge-dot" style={{ margin: 0 }} />
+        </span>
+      );
+    }
+    return (
+      <span className="pa-ver-badge is-live">
+        <span className="pa-ver-badge-dot" />
+        {translateUi("Đang dùng")}
+      </span>
+    );
+  }
+  if (version.status === 'DRAFT') {
+    return (
+      <span className="pa-ver-badge is-draft">
+        <Edit3 size={11} />
+        {translateUi("Bản nháp")}
+      </span>
+    );
+  }
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '16px 22px',
-        borderRadius: 14,
-        background: '#fff',
-        border: '1px solid #e2e8f0',
-        borderLeft: '4px solid #d97706',
-        marginBottom: 20,
-        boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 10,
-            background: '#fef3c7',
-            color: '#d97706',
-            display: 'grid',
-            placeItems: 'center',
-            flexShrink: 0,
-          }}
-        >
-          <Anchor size={20} />
-        </div>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#b45309', letterSpacing: '0.05em' }}>
-              PHIÊN BẢN NEO HIỆN TẠI
-            </span>
-            <span style={{ padding: '2px 8px', borderRadius: 6, background: '#fef3c7', color: '#b45309', fontSize: 11, fontWeight: 700 }}>{translateUi("Đang áp dụng")}</span>
-          </div>
-          <strong style={{ fontSize: 17, color: '#0f172a', display: 'block', marginTop: 2 }}>Phiên bản v{current.versionNo}</strong>
-          <small style={{ fontSize: 12, color: '#64748b' }}>
-            {current.courseCount}{translateUi(" khóa · ")}{current.frameworkCount} khung · công bố {formatDate(current.publishedAt)}
-            {current.publishedByEmail ? translateUi(` bởi ${current.publishedByEmail}`) : ''}
-          </small>
-        </div>
-      </div>
-      <Link
-        className="btn btn-light"
-        to={`/platform/versions/${current.versionNo}`}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-      >
-        Xem khóa của v{current.versionNo}
-        <ArrowRight size={14} />
-      </Link>
-    </div>
+    <span className="pa-ver-badge is-archived">
+      {translateUi("Đã thay")}
+    </span>
   );
-}
-
-function VersionStatus({ version }: { version: CatalogVersionSummary }) {
-  useUiLanguage();
-  if (version.status === 'CURRENT')
-    return (
-      <span
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 4,
-          padding: '2px 8px',
-          borderRadius: 6,
-          background: '#fef3c7',
-          color: '#b45309',
-          fontSize: 11,
-          fontWeight: 700,
-        }}
-      >
-        <Anchor size={11} />{translateUi(" Đang dùng")}</span>
-    );
-  if (version.status === 'DRAFT')
-    return (
-      <span
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 4,
-          padding: '2px 8px',
-          borderRadius: 6,
-          background: '#e0e7ff',
-          color: '#4338ca',
-          fontSize: 11,
-          fontWeight: 700,
-        }}
-      >
-        <Edit3 size={11} />{translateUi(" Bản nháp")}</span>
-    );
-  return <Pill tone="gray">Đã thay</Pill>;
 }
 
 function VersionList({ versions, selected }: { versions: CatalogVersionsOutput; selected: number | undefined }) {
   useUiLanguage();
+  const current = versions.items.find((v) => v.status === 'CURRENT');
+  const draft = versions.items.find((v) => v.status === 'DRAFT');
+  const archived = versions.items.filter((v) => v.status === 'RETIRED');
+  const standardIds = new Set([current?.versionNo, draft?.versionNo, ...archived.map((v) => v.versionNo)]);
+  const others = versions.items.filter((v) => !standardIds.has(v.versionNo));
+
+  const renderCard = (v: CatalogVersionSummary) => {
+    const isCurrent = v.versionNo === selected;
+    return (
+      <Link
+        key={v.versionNo}
+        to={`/platform/versions/${v.versionNo}`}
+        className={`pa-ver-card ${isCurrent ? 'is-selected' : ''}`}
+        aria-current={isCurrent ? 'page' : undefined}
+      >
+        <div className="pa-ver-card-top">
+          <span className="pa-ver-card-title">Phiên bản v{v.versionNo}</span>
+          <VersionStatus version={v} compact={v.status === 'CURRENT'} />
+        </div>
+        <div className="pa-ver-card-meta">
+          <span>{v.courseCount} {translateUi("khóa")}</span>
+          <span className="pa-ver-meta-dot">·</span>
+          <span>
+            {v.status === 'DRAFT'
+              ? translateUi(`tạo ${formatDate(v.createdAt)}`)
+              : translateUi(`công bố ${formatDate(v.publishedAt)}`)}
+          </span>
+        </div>
+        {v.status === 'DRAFT' && (
+          <div className="pa-ver-changes-tag">
+            +{v.newCount} {translateUi("mới")} · {v.editedCount} {translateUi("đã sửa")}
+          </div>
+        )}
+        {v.releaseNote && (
+          <div className="pa-ver-card-note" title={v.releaseNote}>
+            “{v.releaseNote}”
+          </div>
+        )}
+      </Link>
+    );
+  };
+
   return (
-    <nav className="pa-ver-list" aria-label="Các phiên bản" style={{ display: 'grid', gap: 8 }}>
-      {versions.items.map((v) => {
-        const isCurrent = v.versionNo === selected;
-        return (
-          <Link
-            key={v.versionNo}
-            to={`/platform/versions/${v.versionNo}`}
-            style={{
-              display: 'grid',
-              gap: 4,
-              padding: '14px 16px',
-              borderRadius: 12,
-              background: '#fff',
-              border: isCurrent ? '1px solid #0f172a' : '1px solid #e2e8f0',
-              borderLeft: isCurrent ? '4px solid #d97706' : '1px solid #e2e8f0',
-              boxShadow: isCurrent ? '0 2px 8px rgba(15, 23, 42, 0.08)' : 'none',
-              textDecoration: 'none',
-              color: '#0f172a',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 15, fontWeight: 700 }}>v{v.versionNo}</span>
-              <VersionStatus version={v} />
-            </div>
-            <small style={{ fontSize: 12, color: '#64748b' }}>
-              {v.courseCount}{translateUi(" khóa · ")}{v.status === 'DRAFT' ? translateUi(`tạo ${formatDate(v.createdAt)}`) : translateUi(`công bố ${formatDate(v.publishedAt)}`)}
-            </small>
-            {v.status === 'DRAFT' && (
-              <small style={{ fontSize: 11, color: '#d97706', fontWeight: 600 }}>
-                {v.newCount} khóa mới · {v.editedCount} đã sửa
-              </small>
-            )}
-            {v.releaseNote && (
-              <small style={{ fontSize: 11, color: '#64748b', fontStyle: 'italic', marginTop: 2 }}>
-                “{v.releaseNote}”
-              </small>
-            )}
-          </Link>
-        );
-      })}
+    <nav className="pa-ver-sidebar pa-ver-list" aria-label="Các phiên bản">
+      {draft && (
+        <div className="pa-ver-section">
+          <div className="pa-ver-section-label">Bản nháp đang soạn</div>
+          {renderCard(draft)}
+        </div>
+      )}
+      {current && (
+        <div className="pa-ver-section">
+          <div className="pa-ver-section-label">Đang áp dụng chính thức</div>
+          {renderCard(current)}
+        </div>
+      )}
+      {archived.length > 0 && (
+        <div className="pa-ver-section">
+          <div className="pa-ver-section-label">Lịch sử lưu trữ ({archived.length})</div>
+          <div className="pa-ver-history-list">
+            {archived.map(renderCard)}
+          </div>
+        </div>
+      )}
+      {others.length > 0 && (
+        <div className="pa-ver-section">
+          <div className="pa-ver-section-label">Phiên bản khác</div>
+          <div className="pa-ver-history-list">
+            {others.map(renderCard)}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
@@ -269,46 +256,68 @@ function VersionCourses({ detail, canManage }: { detail: CatalogVersionDetail; c
   const [adding, setAdding] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [search, setSearch] = useState('');
+  const [levelFilter, setLevelFilter] = useState<'ALL' | number>('ALL');
   const [changedOnly, setChangedOnly] = useState(false);
 
   const term = search.trim().toLowerCase();
   const rows = detail.courses.filter(
     (c) =>
       (!changedOnly || c.changeKind !== 'UNCHANGED') &&
+      (levelFilter === 'ALL' || c.level === levelFilter) &&
       (!term || c.title.toLowerCase().includes(term) || c.code.toLowerCase().includes(term) || c.domainName.toLowerCase().includes(term)),
   );
-  const groups = [...new Set(rows.map((c) => c.frameworkId))].map((id) => ({
-    id,
-    name: rows.find((c) => c.frameworkId === id)!.frameworkName,
-    courses: rows.filter((c) => c.frameworkId === id),
-  }));
+
+  const totalCount = detail.courses.length;
+  const basicCount = detail.courses.filter((c) => c.level === 1).length;
+  const interCount = detail.courses.filter((c) => c.level === 2).length;
+  const advCount = detail.courses.filter((c) => c.level === 3).length;
+  const changedCount = detail.courses.filter((c) => c.changeKind !== 'UNCHANGED').length;
+
+  const navigate = useNavigate();
+  const remove = useRemoveCatalogCourse(detail.version.versionNo);
+  const [confirm, setConfirm] = useState<string | null>(null);
+  const open = (c: CatalogCourseRow) => navigate(`/platform/versions/${detail.version.versionNo}/courses/${c.courseId}`);
+
+  const onRemove = (c: CatalogCourseRow) =>
+    remove.mutate(c.courseId, {
+      onSuccess: () => {
+        toast.success(`Đã bỏ ${c.code} khỏi bản nháp.`);
+        setConfirm(null);
+      },
+      onError: (err) => toast.error(errorMessage(err)),
+    });
+
+  const frameworkName = cleanFrameworkName(detail.courses[0]?.frameworkName || 'Khung chuẩn năng lực số doanh nghiệp');
 
   const summary =
     version.status === 'DRAFT'
       ? `Bản nháp chép từ v${version.basedOnVersionNo ?? '—'}: ${version.newCount} khóa mới, ${version.editedCount} khóa đã sửa.`
       : version.status === 'CURRENT'
-        ? 'Phiên bản đang áp dụng chính thức toàn hệ thống. Mở bản nháp để thực hiện cập nhật hoặc bổ sung khóa học.'
+        ? 'Nội dung đào tạo chuẩn hóa phục vụ đào tạo và đánh giá cho toàn bộ doanh nghiệp.'
         : 'Phiên bản lưu trữ lịch sử (chỉ xem).';
 
   return (
     <>
       {adding && <AddCourseForm versionNo={version.versionNo} onClose={() => setAdding(false)} />}
-      <section className="surface pad" style={{ borderRadius: 16, border: '1px solid #e2e8f0', background: '#fff' }} aria-labelledby="version-courses">
-        <div className="pa-card-head" style={{ marginBottom: 16 }}>
-          <div>
-            <h2 id="version-courses" className="panel-title" style={{ fontSize: 17, fontWeight: 700, color: '#0f172a' }}>
-              Danh mục khóa học thuộc v{version.versionNo}
-            </h2>
-            <p className="panel-desc" style={{ fontSize: 13, color: '#64748b' }}>{summary}</p>
+      <section className="pa-ver-detail-panel" aria-labelledby="version-courses">
+        <div className="pa-ver-detail-head">
+          <div className="pa-ver-detail-head-left">
+            <div className="pa-ver-title-row">
+              <h2 id="version-courses" className="panel-title" style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                Danh mục khóa học thuộc v{version.versionNo}
+              </h2>
+              {version.status !== 'CURRENT' && <VersionStatus version={version} />}
+            </div>
+            <p className="panel-desc" style={{ fontSize: 13, color: '#64748b', margin: 0 }}>{summary}</p>
           </div>
           {editable && (
-            <div className="button-row" style={{ display: 'flex', gap: 8 }}>
+            <div className="pa-ver-detail-actions">
               {!adding && (
                 <button
                   type="button"
                   className="btn btn-outline"
                   onClick={() => setAdding(true)}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, fontSize: 13 }}
                 >
                   <Plus size={15} />
                   Thêm khóa học
@@ -318,7 +327,7 @@ function VersionCourses({ detail, canManage }: { detail: CatalogVersionDetail; c
                 type="button"
                 className="btn btn-primary"
                 onClick={() => setPublishing(true)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, fontSize: 13 }}
               >
                 <Sparkles size={15} />
                 Công bố v{version.versionNo}
@@ -327,47 +336,111 @@ function VersionCourses({ detail, canManage }: { detail: CatalogVersionDetail; c
           )}
         </div>
 
-        {/* Filter bar */}
-        <div className="pa-row-between" style={{ marginBottom: 16, alignItems: 'center' }}>
-          <div style={{ position: 'relative', minWidth: 320, flex: 1 }}>
-            <Search size={15} style={{ position: 'absolute', left: 12, top: 12, color: '#94a3b8', pointerEvents: 'none' }} />
+        {/* Filter toolbar */}
+        <div className="pa-ver-filter-toolbar">
+          <div className="pa-ver-search-box">
+            <Search size={15} className="pa-ver-search-icon" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo tên, mã khóa hoặc lĩnh vực..."
               aria-label={translateUi("Tìm khóa học")}
-              style={{ paddingLeft: 34, height: 38, width: '100%', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13 }}
+              className="pa-ver-search-input"
             />
+            {search && (
+              <button
+                type="button"
+                className="pa-ver-search-clear"
+                onClick={() => setSearch('')}
+                aria-label="Xóa tìm kiếm"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
-          {version.status === 'DRAFT' && (
-            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: '#334155', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={changedOnly}
-                onChange={(e) => setChangedOnly(e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: '#d97706' }}
-              />
-              Chỉ khóa đã thay đổi ({detail.courses.filter((c) => c.changeKind !== 'UNCHANGED').length})
-            </label>
-          )}
+
+          <div className="pa-ver-filter-group">
+            <div className="pa-ver-level-tabs" role="group" aria-label="Lọc theo cấp độ">
+              <button
+                type="button"
+                className={`pa-ver-level-tab ${levelFilter === 'ALL' ? 'is-active' : ''}`}
+                onClick={() => setLevelFilter('ALL')}
+              >
+                Tất cả ({totalCount})
+              </button>
+              <button
+                type="button"
+                className={`pa-ver-level-tab ${levelFilter === 1 ? 'is-active' : ''}`}
+                onClick={() => setLevelFilter(1)}
+              >
+                Cơ bản ({basicCount})
+              </button>
+              <button
+                type="button"
+                className={`pa-ver-level-tab ${levelFilter === 2 ? 'is-active' : ''}`}
+                onClick={() => setLevelFilter(2)}
+              >
+                Trung cấp ({interCount})
+              </button>
+              <button
+                type="button"
+                className={`pa-ver-level-tab ${levelFilter === 3 ? 'is-active' : ''}`}
+                onClick={() => setLevelFilter(3)}
+              >
+                Nâng cao ({advCount})
+              </button>
+            </div>
+
+            {version.status === 'DRAFT' && (
+              <label className="pa-ver-changed-toggle">
+                <input
+                  type="checkbox"
+                  checked={changedOnly}
+                  onChange={(e) => setChangedOnly(e.target.checked)}
+                />
+                Chỉ khóa đã thay đổi ({changedCount})
+              </label>
+            )}
+          </div>
         </div>
 
-        <div className="table-scroll" style={{ borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-          <table className="data-table pa-course-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="pa-ver-table-wrapper">
+          <div className="pa-ver-table-context-strip">
+            <div className="pa-ver-table-context-left">
+              <Layers size={14} className="pa-ver-context-icon" />
+              <span className="pa-ver-context-title">{frameworkName}</span>
+            </div>
+            <span className="pa-ver-context-meta">
+              {term || levelFilter !== 'ALL' || changedOnly
+                ? `Hiển thị ${rows.length} / ${totalCount} khóa`
+                : `${totalCount} khóa học chuẩn hóa`}
+            </span>
+          </div>
+
+          <table className="pa-ver-table pa-course-table">
             <thead>
-              <tr style={{ background: '#f8fafc' }}>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#475569' }}>KHÓA HỌC & LĨNH VỰC</th>
-                <th style={{ padding: '12px 12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>{translateUi("CẤP ĐỘ")}</th>
-                <th className="num" style={{ padding: '12px 12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>MÔ ĐUN</th>
-                <th className="num" style={{ padding: '12px 12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>CÂU HỎI</th>
-                <th className="num" style={{ padding: '12px 16px', textAlign: 'right', fontSize: 12, fontWeight: 700, color: '#475569' }}>{translateUi("ĐƠN GIÁ")}</th>
-                <th style={{ padding: '12px 12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>{translateUi("TRẠNG THÁI")}</th>
-                <th style={{ width: 110, padding: '12px 16px', textAlign: 'right', fontSize: 12, fontWeight: 700, color: '#475569' }}>{translateUi("THAO TÁC")}</th>
+              <tr>
+                <th style={{ textAlign: 'left', minWidth: 260 }}>KHÓA HỌC & LĨNH VỰC</th>
+                <th style={{ textAlign: 'center', width: 110 }}>{translateUi("CẤP ĐỘ")}</th>
+                <th style={{ textAlign: 'center', width: 85 }}>MÔ ĐUN</th>
+                <th style={{ textAlign: 'center', width: 85 }}>CÂU HỎI</th>
+                <th style={{ textAlign: 'right', width: 120 }}>{translateUi("ĐƠN GIÁ")}</th>
+                <th style={{ textAlign: 'center', width: 110 }}>{translateUi("TRẠNG THÁI")}</th>
+                <th style={{ width: 105, textAlign: 'right' }}>{translateUi("THAO TÁC")}</th>
               </tr>
             </thead>
             <tbody>
-              {groups.map((group) => (
-                <CourseGroup key={group.id} name={group.name} courses={group.courses} detail={detail} editable={editable} />
+              {rows.map((c) => (
+                <CourseRowItem
+                  key={c.courseId}
+                  c={c}
+                  editable={editable}
+                  open={open}
+                  onRemove={onRemove}
+                  confirm={confirm}
+                  setConfirm={setConfirm}
+                  isRemoving={remove.isPending}
+                />
               ))}
               {rows.length === 0 && (
                 <tr>
@@ -385,129 +458,103 @@ function VersionCourses({ detail, canManage }: { detail: CatalogVersionDetail; c
   );
 }
 
-function CourseGroup({ name, courses, detail, editable }: { name: string; courses: CatalogCourseRow[]; detail: CatalogVersionDetail; editable: boolean }) {
-  useUiLanguage();
-  const navigate = useNavigate();
-  const remove = useRemoveCatalogCourse(detail.version.versionNo);
-  const [confirm, setConfirm] = useState<string | null>(null);
-  const open = (c: CatalogCourseRow) => navigate(`/platform/versions/${detail.version.versionNo}/courses/${c.courseId}`);
+function cleanFrameworkName(rawName: string): string {
+  const sanitized = rawName.replace(/\s*\(?Thông tư\s*02\/2025[^)]*\)?/gi, '').trim();
+  return sanitized || 'Khung chuẩn năng lực số doanh nghiệp';
+}
 
-  const onRemove = (c: CatalogCourseRow) =>
-    remove.mutate(c.courseId, {
-      onSuccess: () => {
-        toast.success(`Đã bỏ ${c.code} khỏi bản nháp.`);
-        setConfirm(null);
-      },
-      onError: (err) => toast.error(errorMessage(err)),
-    });
+function CourseRowItem({
+  c,
+  editable,
+  open,
+  onRemove,
+  confirm,
+  setConfirm,
+  isRemoving,
+}: {
+  c: CatalogCourseRow;
+  editable: boolean;
+  open: (c: CatalogCourseRow) => void;
+  onRemove: (c: CatalogCourseRow) => void;
+  confirm: string | null;
+  setConfirm: (id: string | null) => void;
+  isRemoving: boolean;
+}) {
+  useUiLanguage();
+  const kind = CHANGE_KIND[c.changeKind];
+  const levelClass = c.level === 1 ? 'is-basic' : c.level === 2 ? 'is-inter' : 'is-adv';
 
   return (
-    <>
-      <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
-        <td colSpan={7} style={{ padding: '10px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#0f172a' }}>
-              {name}
-            </span>
-            <span style={{ padding: '2px 8px', borderRadius: 12, background: '#e2e8f0', color: '#475569', fontSize: 11, fontWeight: 600 }}>
-              {courses.length}{translateUi(" khóa")}</span>
+    <tr className="pa-ver-course-row pa-row-link" onClick={() => open(c)}>
+      <td>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span className="pa-ver-code-badge">
+            {c.code}
+          </span>
+          <div>
+            <strong style={{ fontSize: 13, color: '#0f172a', display: 'block' }}>{translateUi(c.title)}</strong>
+            <small style={{ fontSize: 12, color: '#64748b' }}>{translateUi(c.domainName)}</small>
           </div>
-        </td>
-      </tr>
-      {courses.map((c) => {
-        const kind = CHANGE_KIND[c.changeKind];
-        const levelStyle =
-          c.level === 1
-            ? { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0' }
-            : c.level === 2
-              ? { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' }
-              : { bg: '#fffbeb', color: '#d97706', border: '#fde68a' };
-
-        return (
-          <tr key={c.courseId} className="pa-row-link" onClick={() => open(c)} style={{ borderTop: '1px solid #f1f5f9' }}>
-            <td style={{ padding: '12px 16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <code style={{ fontSize: 12, fontWeight: 700, color: '#0f172a', background: '#f1f5f9', padding: '2px 6px', borderRadius: 4 }}>
-                  {c.code}
-                </code>
-                <div>
-                  <strong style={{ fontSize: 13, color: '#0f172a', display: 'block' }}>{translateUi(c.title)}</strong>
-                  <small style={{ fontSize: 12, color: '#64748b' }}>{translateUi(c.domainName)}</small>
-                </div>
-              </div>
-            </td>
-            <td style={{ padding: '12px', textAlign: 'center' }}>
-              <span
-                style={{
-                  display: 'inline-block',
-                  padding: '3px 8px',
-                  borderRadius: 6,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  background: levelStyle.bg,
-                  color: levelStyle.color,
-                  border: `1px solid ${levelStyle.border}`,
-                }}
+        </div>
+      </td>
+      <td style={{ textAlign: 'center' }}>
+        <span className={`pa-ver-level-badge ${levelClass}`}>
+          {translateUi(LEVEL_NAMES[c.level]) ?? c.levelName}
+        </span>
+      </td>
+      <td style={{ textAlign: 'center', fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+        {c.moduleCount}
+      </td>
+      <td style={{ textAlign: 'center', fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+        {c.questionCount}
+      </td>
+      <td style={{ textAlign: 'right', fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+        {c.level === 1 ? <span style={{ color: '#16a34a' }}>{translateUi("Miễn phí")}</span> : formatMoney(c.pricePerSeat)}
+      </td>
+      <td style={{ textAlign: 'center' }}>
+        <Pill tone={kind?.tone}>{translateUi(kind?.label) ?? c.changeKind}</Pill>
+        {c.salesStatus === 'PAUSED' && (
+          <span style={{ marginLeft: 4 }}>
+            <Pill tone="coral">Tạm ngưng</Pill>
+          </span>
+        )}
+      </td>
+      <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+        {confirm === c.courseId ? (
+          <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-small pa-danger" onClick={() => onRemove(c)} disabled={isRemoving}>
+              Bỏ
+            </button>
+            <button type="button" className="btn btn-ghost btn-small" onClick={() => setConfirm(null)}>
+              Giữ
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
+            <button
+              type="button"
+              className="btn btn-small btn-light"
+              onClick={() => open(c)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 30, padding: '0 10px' }}
+            >
+              {editable ? translateUi('Sửa') : translateUi('Xem')}
+              <ArrowRight size={12} />
+            </button>
+            {editable && c.changeKind === 'NEW' && (
+              <button
+                type="button"
+                className="btn btn-ghost btn-small"
+                onClick={() => setConfirm(c.courseId)}
+                aria-label={translateUi(`Bỏ ${c.code} khỏi bản nháp`)}
+                style={{ color: '#ef4444', height: 30, padding: '0 6px' }}
               >
-                {translateUi(LEVEL_NAMES[c.level]) ?? c.levelName}
-              </span>
-            </td>
-            <td className="num" style={{ padding: '12px', textAlign: 'center', fontSize: 13, fontWeight: 600 }}>
-              {c.moduleCount}
-            </td>
-            <td className="num" style={{ padding: '12px', textAlign: 'center', fontSize: 13, fontWeight: 600 }}>
-              {c.questionCount}
-            </td>
-            <td className="num" style={{ padding: '12px 16px', textAlign: 'right', fontSize: 13, fontWeight: 600 }}>
-              {c.level === 1 ? <span style={{ color: '#16a34a' }}>{translateUi("Miễn phí")}</span> : formatMoney(c.pricePerSeat)}
-            </td>
-            <td style={{ padding: '12px', textAlign: 'center' }}>
-              <Pill tone={kind?.tone}>{translateUi(kind?.label) ?? c.changeKind}</Pill>
-              {c.salesStatus === 'PAUSED' && (
-                <span style={{ marginLeft: 4 }}>
-                  <Pill tone="coral">Tạm ngưng</Pill>
-                </span>
-              )}
-            </td>
-            <td style={{ padding: '12px 16px', textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
-              {confirm === c.courseId ? (
-                <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-                  <button type="button" className="btn btn-small pa-danger" onClick={() => onRemove(c)} disabled={remove.isPending}>
-                    Bỏ
-                  </button>
-                  <button type="button" className="btn btn-ghost btn-small" onClick={() => setConfirm(null)}>
-                    Giữ
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
-                  <button
-                    type="button"
-                    className="btn btn-small btn-light"
-                    onClick={() => open(c)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 30, padding: '0 10px' }}
-                  >
-                    {editable ? translateUi('Sửa') : translateUi('Xem')}
-                    <ArrowRight size={12} />
-                  </button>
-                  {editable && c.changeKind === 'NEW' && (
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-small"
-                      onClick={() => setConfirm(c.courseId)}
-                      aria-label={translateUi(`Bỏ ${c.code} khỏi bản nháp`)}
-                      style={{ color: '#ef4444', height: 30, padding: '0 6px' }}
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  )}
-                </div>
-              )}
-            </td>
-          </tr>
-        );
-      })}
-    </>
+                <Trash2 size={13} />
+              </button>
+            )}
+          </div>
+        )}
+      </td>
+    </tr>
   );
 }
 
@@ -719,7 +766,7 @@ function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onCl
               value={note}
               onChange={(e) => setNote(e.target.value)}
               maxLength={1000}
-              placeholder="VD: Cập nhật học liệu Thông tư 02 theo lộ trình quý 4/2026..."
+              placeholder="VD: Cập nhật chuẩn hóa nội dung học liệu quý 4/2026..."
               style={{ width: '100%', height: 70, padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13 }}
             />
           </div>

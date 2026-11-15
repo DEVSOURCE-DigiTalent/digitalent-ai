@@ -1,21 +1,76 @@
 import { route } from '../router';
-import type { PlatformTrialItem, MentorTrial, TrialEssayAiReview } from '../../../trial-program.service';
+import { badRequest, conflict, notFound } from '../http';
+import type { MentorItem, PlatformTrialItem, MentorTrial, TrialEssayAiReview } from '../../../trial-program.service';
 import type { PulseDecision, PulseFinalReviewItem, PulseFinalReviewQueue, PulseSupportAction } from '../../../pulse.service';
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const MOCK_MENTORS: MentorItem[] = [
+  {
+    userId: 'mock-mentor',
+    fullName: 'Mentor DigiTalent',
+    email: 'mentor@digitalent.ai',
+    status: 'ACTIVE',
+    activeTrials: 2,
+    createdAt: '2026-06-15T08:00:00Z',
+  },
+  {
+    userId: 'mentor-minh',
+    fullName: 'Lê Minh Tuấn',
+    email: 'tuan.le@digitalent.ai',
+    status: 'ACTIVE',
+    activeTrials: 0,
+    createdAt: '2026-08-01T08:30:00Z',
+  },
+  {
+    userId: 'mentor-huong',
+    fullName: 'Nguyễn Thu Hương',
+    email: 'huong.nguyen@digitalent.ai',
+    status: 'ACTIVE',
+    activeTrials: 1,
+    createdAt: '2026-09-10T09:00:00Z',
+  },
+  {
+    userId: 'mentor-khanh',
+    fullName: 'Phạm Quốc Khánh',
+    email: 'khanh.pham@digitalent.ai',
+    status: 'LOCKED',
+    activeTrials: 0,
+    createdAt: '2026-05-20T08:00:00Z',
+  },
+];
+
 const MOCK_TRIALS: PlatformTrialItem[] = [
+  {
+    organizationId: 'org-phuongdong',
+    organizationName: 'Công ty Cổ phần Logistics Phương Đông',
+    stage: 'REQUESTED',
+    testDeadline: new Date(Date.now() + 2 * DAY_MS).toISOString(),
+    preferredReviewAt: new Date(Date.now() + 18 * 3600 * 1000).toISOString(),
+    requestNote: 'Ưu tiên chấm trước nhóm Điều phối kho vận và Chăm sóc khách hàng.',
+    requestedAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
+    mentorUserId: null,
+    mentorName: null,
+    ownerName: 'Trần Hoàng Nam',
+    ownerEmail: 'nam.tran@phuongdonglogistics.vn',
+    startedAt: new Date(Date.now() - 5 * DAY_MS).toISOString(),
+    participants: 10,
+    submitted: 9,
+    reviewed: 0,
+  },
   {
     organizationId: 'org-acme',
     organizationName: 'DigiTalent AI Enterprise',
     stage: 'ASSIGNED',
-    testDeadline: '2026-11-08T23:59:59Z',
-    preferredReviewAt: '2026-11-05T14:00:00Z',
+    testDeadline: new Date(Date.now() + 3 * DAY_MS).toISOString(),
+    preferredReviewAt: new Date(Date.now() + 5 * DAY_MS).toISOString(),
     requestNote: 'Đề nghị mentor hỗ trợ đánh giá kỹ phần phân tích dữ liệu số và an toàn thông tin.',
-    requestedAt: '2026-10-28T09:00:00Z',
+    requestedAt: new Date(Date.now() - 3 * DAY_MS).toISOString(),
     mentorUserId: 'mock-mentor',
     mentorName: 'Mentor DigiTalent',
     ownerName: 'Nguyễn Văn Chủ',
     ownerEmail: 'owner@digitalent.ai',
-    startedAt: '2026-10-25T08:00:00Z',
+    startedAt: new Date(Date.now() - 6 * DAY_MS).toISOString(),
     participants: 5,
     submitted: 4,
     reviewed: 1,
@@ -24,15 +79,15 @@ const MOCK_TRIALS: PlatformTrialItem[] = [
     organizationId: 'org-vintech',
     organizationName: 'Tập đoàn Công nghệ VinTech Solutions',
     stage: 'ASSIGNED',
-    testDeadline: '2026-11-10T17:00:00Z',
-    preferredReviewAt: '2026-11-06T10:00:00Z',
+    testDeadline: new Date(Date.now() - DAY_MS).toISOString(),
+    preferredReviewAt: new Date(Date.now() - 12 * 3600 * 1000).toISOString(),
     requestNote: 'Đội ngũ chuyển đổi số khối vận hành, cần hoàn tất báo cáo năng lực trước phiên họp tuần sau.',
-    requestedAt: '2026-10-29T14:30:00Z',
-    mentorUserId: 'mock-mentor',
-    mentorName: 'Mentor DigiTalent',
+    requestedAt: new Date(Date.now() - 4 * DAY_MS).toISOString(),
+    mentorUserId: 'mentor-huong',
+    mentorName: 'Nguyễn Thu Hương',
     ownerName: 'Trần Đại Diện',
     ownerEmail: 'owner@vintech.vn',
-    startedAt: '2026-10-26T09:00:00Z',
+    startedAt: new Date(Date.now() - 7 * DAY_MS).toISOString(),
     participants: 8,
     submitted: 8,
     reviewed: 0,
@@ -41,19 +96,36 @@ const MOCK_TRIALS: PlatformTrialItem[] = [
     organizationId: 'org-eduglobal',
     organizationName: 'Công ty Cổ phần Giáo dục Số EduGlobal',
     stage: 'REPORTED',
-    testDeadline: '2026-10-25T18:00:00Z',
-    preferredReviewAt: '2026-10-27T09:00:00Z',
+    testDeadline: new Date(Date.now() - 10 * DAY_MS).toISOString(),
+    preferredReviewAt: new Date(Date.now() - 8 * DAY_MS).toISOString(),
     requestNote: 'Đánh giá năng lực số cho đội ngũ giảng viên và nhân sự nội dung.',
-    requestedAt: '2026-10-20T08:00:00Z',
-    reportPublishedAt: '2026-10-30T16:00:00Z',
+    requestedAt: new Date(Date.now() - 14 * DAY_MS).toISOString(),
+    reportPublishedAt: new Date(Date.now() - 6 * DAY_MS).toISOString(),
     mentorUserId: 'mock-mentor',
     mentorName: 'Mentor DigiTalent',
     ownerName: 'Phạm Giảng Viên',
     ownerEmail: 'owner@eduglobal.edu.vn',
-    startedAt: '2026-10-18T08:00:00Z',
+    startedAt: new Date(Date.now() - 16 * DAY_MS).toISOString(),
     participants: 12,
     submitted: 12,
     reviewed: 12,
+  },
+  {
+    organizationId: 'org-sao-viet',
+    organizationName: 'Công ty TNHH Thương mại Sao Việt',
+    stage: 'SETUP',
+    testDeadline: new Date(Date.now() + 6 * DAY_MS).toISOString(),
+    preferredReviewAt: null,
+    requestNote: null,
+    requestedAt: null,
+    mentorUserId: null,
+    mentorName: null,
+    ownerName: 'Lê Thị Mai',
+    ownerEmail: 'mai.le@saoviet.vn',
+    startedAt: new Date(Date.now() - DAY_MS).toISOString(),
+    participants: 6,
+    submitted: 2,
+    reviewed: 0,
   },
 ];
 
@@ -500,6 +572,87 @@ function buildQueue(includeReviewed: boolean): PulseFinalReviewQueue {
     items,
   };
 }
+
+// Register Mock Routes for Platform Admin Trial Management
+const TRIAL_STAGE_ORDER: Record<PlatformTrialItem['stage'], number> = {
+  REQUESTED: 0,
+  ASSIGNED: 1,
+  REPORTED: 2,
+  SETUP: 3,
+};
+
+route(
+  'GET',
+  '/platform/trials',
+  () => ({
+    items: [...MOCK_TRIALS].sort((a, b) => TRIAL_STAGE_ORDER[a.stage] - TRIAL_STAGE_ORDER[b.stage]),
+  }),
+  { roles: ['PLATFORM_ADMIN'] },
+);
+
+route(
+  'PUT',
+  '/platform/trials/:organizationId/mentor',
+  (ctx) => {
+    const { organizationId } = ctx.params;
+    const { mentorUserId } = ctx.body as { mentorUserId?: string };
+    const trial = MOCK_TRIALS.find((t) => t.organizationId === organizationId);
+    if (!trial) throw notFound('Không tìm thấy doanh nghiệp dùng thử.');
+    if (trial.stage === 'SETUP') throw badRequest('Doanh nghiệp chưa gửi yêu cầu chấm.');
+    if (trial.stage === 'REPORTED' && trial.mentorUserId) {
+      throw badRequest('Kết quả đã được công bố, không đổi mentor.');
+    }
+    const mentor = MOCK_MENTORS.find((m) => m.userId === mentorUserId && m.status === 'ACTIVE');
+    if (!mentor) throw badRequest('Chọn một mentor đang hoạt động.');
+    trial.mentorUserId = mentor.userId;
+    trial.mentorName = mentor.fullName;
+    if (trial.stage === 'REQUESTED') trial.stage = 'ASSIGNED';
+    return { success: true };
+  },
+  { roles: ['PLATFORM_ADMIN'] },
+);
+
+route(
+  'GET',
+  '/platform/mentors',
+  () => ({
+    items: MOCK_MENTORS.map((m) => ({
+      ...m,
+      activeTrials: MOCK_TRIALS.filter(
+        (t) => t.mentorUserId === m.userId && t.stage !== 'REPORTED' && !t.reportPublishedAt,
+      ).length,
+    })),
+  }),
+  { roles: ['PLATFORM_ADMIN'] },
+);
+
+route(
+  'POST',
+  '/platform/mentors',
+  (ctx) => {
+    const body = ctx.body as { fullName?: string; email?: string; password?: string };
+    const fullName = body.fullName?.trim() ?? '';
+    const email = body.email?.trim().toLowerCase() ?? '';
+    const password = body.password ?? '';
+    if (fullName.length < 2) throw badRequest('Họ tên cần tối thiểu 2 ký tự.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw badRequest('Email không đúng định dạng.');
+    if (password.length < 12) throw badRequest('Mật khẩu cần tối thiểu 12 ký tự.');
+    if (MOCK_MENTORS.some((m) => m.email.toLowerCase() === email)) {
+      throw conflict('Email này đã có tài khoản.');
+    }
+    const mentor: MentorItem = {
+      userId: `mentor-${Date.now()}`,
+      fullName,
+      email,
+      status: 'ACTIVE',
+      activeTrials: 0,
+      createdAt: new Date().toISOString(),
+    };
+    MOCK_MENTORS.unshift(mentor);
+    return { mentor };
+  },
+  { roles: ['PLATFORM_ADMIN'] },
+);
 
 // Register Mock Routes for Mentor
 route('GET', '/mentor/trials', () => ({ items: MOCK_TRIALS }), { roles: ['MENTOR', 'PLATFORM_ADMIN'] });

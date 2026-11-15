@@ -1,5 +1,4 @@
-import { translateUi, useUiLanguage } from '@/lib/i18n';
-import { useState, type FormEvent } from 'react';
+import { useState, useMemo, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
@@ -10,10 +9,13 @@ import {
   usePublishFramework,
   useUpdateDomain,
 } from '@/hooks/use-platform-catalog';
+import { usePlatformOverview } from '@/hooks/use-platform-admin';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import type { FrameworkDetail, FrameworkDomain } from '@/services/platform-catalog.service';
-import { Footer, LoadError, Loading } from '../components/pulse-ui';
-import { LEVEL_NAMES, errorMessage, formatDateTime } from '../components/pulse-format';
+import { Footer, LoadError } from '../components/pulse-ui';
+import { LEVEL_NAMES, errorMessage, formatDate, formatDateTime } from '../components/pulse-format';
+import { PlatformFrameworkSkeleton } from './PlatformFrameworkSkeleton';
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import {
   Database,
   MessageSquare,
@@ -28,158 +30,388 @@ import {
   Trash2,
   Send,
   History,
-  CheckCircle2,
+  RefreshCw,
+  Search,
+  X,
+  BookOpen,
+  AlertCircle,
+  GraduationCap,
 } from 'lucide-react';
 
 const DESCRIPTION_MIN = 10;
 
 const DOMAIN_THEMES = [
-  { icon: Database, color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', label: 'Lĩnh vực 01 · Dữ liệu & Thông tin' },
-  { icon: MessageSquare, color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe', label: 'Lĩnh vực 02 · Giao tiếp & Hợp tác' },
-  { icon: Palette, color: '#8b5cf6', bg: '#f5f3ff', border: '#ddd6fe', label: 'Lĩnh vực 03 · Sáng tạo nội dung số' },
-  { icon: ShieldCheck, color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', label: 'Lĩnh vực 04 · An toàn số' },
-  { icon: Cpu, color: '#d97706', bg: '#fffbeb', border: '#fde68a', label: 'Lĩnh vực 05 · Giải quyết vấn đề' },
-  { icon: Sparkles, color: '#e11d48', bg: '#fff1f2', border: '#fecdd3', label: 'Lĩnh vực 06 · Trí tuệ nhân tạo (AI)' },
+  { icon: Database, color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', name: 'Dữ liệu và Thông tin' },
+  { icon: MessageSquare, color: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe', name: 'Giao tiếp và Hợp tác' },
+  { icon: Palette, color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe', name: 'Sáng tạo nội dung số' },
+  { icon: ShieldCheck, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', name: 'An toàn số' },
+  { icon: Cpu, color: '#b45309', bg: '#fef3c7', border: '#fde68a', name: 'Giải quyết vấn đề' },
+  { icon: Sparkles, color: '#b91c1c', bg: '#fef2f2', border: '#fecaca', name: 'Trí tuệ nhân tạo (AI)' },
 ];
 
 /**
- * PA-02 · Khung chuẩn: the platform's one competency framework (Thông tư 02/2025).
+ * PA-02 · Khung chuẩn năng lực số doanh nghiệp.
+ * Redesigned with Ink & Paper standard: 4-tier hierarchy, enterprise-aligned KPI cards,
+ * live search/filter, matched 1:1 skeleton loader, and strict Anti-AI writing compliance.
  */
 export function PlatformFrameworkPage() {
   useUiLanguage();
   const list = useFrameworks();
   const frameworkId = list.data?.items[0]?.id;
   const framework = useFramework(frameworkId);
+  const overviewQuery = usePlatformOverview();
+
+  const isLoading = list.isLoading || framework.isLoading;
+
+  const handleRefresh = () => {
+    void list.refetch();
+    void overviewQuery.refetch();
+    if (frameworkId) {
+      void framework.refetch();
+    }
+  };
 
   return (
     <>
-      {(list.isLoading || framework.isLoading) && <Loading />}
+      {isLoading && <PlatformFrameworkSkeleton />}
       {list.error && <LoadError error={list.error} />}
       {framework.error && <LoadError error={framework.error} />}
-      {list.data && list.data.items.length === 0 && <div className="notice warning">Chưa có khung chuẩn.</div>}
-      {framework.data && <FrameworkView key={framework.data.id} framework={framework.data} />}
+
+      {!isLoading && list.data && list.data.items.length === 0 && (
+        <div className="notice warning" role="alert">
+          Chưa có khung chuẩn trong hệ thống. Liên hệ quản trị viên kỹ thuật để khởi tạo dữ liệu mẫu.
+        </div>
+      )}
+
+      {!isLoading && framework.data && (
+        <FrameworkView
+          key={framework.data.id}
+          framework={framework.data}
+          overviewData={overviewQuery.data}
+          isRefreshing={list.isFetching || framework.isFetching || overviewQuery.isFetching}
+          onRefresh={handleRefresh}
+        />
+      )}
+
       <Footer />
     </>
   );
 }
 
-function FrameworkView({ framework: f }: { framework: FrameworkDetail }) {
+interface FrameworkViewProps {
+  framework: FrameworkDetail;
+  overviewData?: ReturnType<typeof usePlatformOverview>['data'];
+  isRefreshing: boolean;
+  onRefresh: () => void;
+}
+
+function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh }: FrameworkViewProps) {
   useUiLanguage();
   const { can } = usePermission();
   const canManage = can(PERMISSIONS.PLATFORM_CATALOG_MANAGE);
   const publish = usePublishFramework(f.id);
+
   const [note, setNote] = useState('');
   const [addingDomain, setAddingDomain] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLevel, setSelectedLevel] = useState<'ALL' | 1 | 2 | 3>('ALL');
 
   const drafted = f.domains.filter((d) => d.draftDescription !== d.publishedDescription);
   const tooShort = f.domains.filter((d) => d.draftDescription.trim().length < DESCRIPTION_MIN);
   const unpublished = f.status === 'DRAFT' || drafted.length > 0;
   const [byLevel1, byLevel2, byLevel3] = f.coursesByLevel;
 
+  // Synced with Backend overview data & catalog version
+  const currentCatalogVersion = ov?.currentVersionNo ?? f.currentCatalogVersionNo ?? f.currentVersionNo;
+  const totalCourses = ov?.courseCount ?? f.courseCount;
+  const publishedDate = ov?.currentVersionPublishedAt;
+  const draftCatalogVersion = ov?.draftVersionNo ?? f.draftCatalogVersionNo;
+  const draftNewCourseCount = ov?.draftNewCourseCount ?? f.draftCourseCount ?? 0;
+
+  // Clean framework title without regulatory noise
+  const displayTitle = f.name.includes('Thông tư 02/2025')
+    ? 'Khung chuẩn năng lực số'
+    : f.name;
+
   const onPublish = () =>
     publish.mutate(note.trim() || undefined, {
       onSuccess: (result) => {
         setNote('');
-        toast.success(`Đã công bố mô tả lĩnh vực · khung v${result.currentVersionNo}`);
+        toast.success(`Đã công bố mô tả lĩnh vực cho khung v${result.currentVersionNo}.`);
       },
       onError: (err) => toast.error(errorMessage(err)),
     });
 
+  // Filtered domains by search query and level
+  const filteredDomains = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return f.domains
+      .map((domain) => {
+        const matchesLevel = (courseLevel: number) => {
+          if (selectedLevel === 'ALL') return true;
+          return courseLevel === selectedLevel;
+        };
+
+        const matchingCourses = domain.courses.filter(
+          (c) =>
+            matchesLevel(c.level) &&
+            (!q || c.code.toLowerCase().includes(q) || c.title.toLowerCase().includes(q)),
+        );
+
+        const matchingDraftCourses = domain.draftNewCourses.filter(
+          (c) =>
+            matchesLevel(c.level) &&
+            (!q || c.code.toLowerCase().includes(q) || c.title.toLowerCase().includes(q)),
+        );
+
+        const domainNameMatches = domain.name.toLowerCase().includes(q);
+        const domainDescMatches =
+          domain.publishedDescription.toLowerCase().includes(q) ||
+          domain.draftDescription.toLowerCase().includes(q);
+
+        const isDomainMatch = domainNameMatches || domainDescMatches;
+
+        if (q && !isDomainMatch && matchingCourses.length === 0 && matchingDraftCourses.length === 0) {
+          return null;
+        }
+
+        return {
+          ...domain,
+          visibleCourses: isDomainMatch && selectedLevel === 'ALL' && !q ? domain.courses : matchingCourses,
+          visibleDraftCourses: isDomainMatch && selectedLevel === 'ALL' && !q ? domain.draftNewCourses : matchingDraftCourses,
+        };
+      })
+      .filter((d): d is NonNullable<typeof d> => d !== null);
+  }, [f.domains, searchQuery, selectedLevel]);
+
   return (
-    <>
+    <div className={`pa-ov-stage${isRefreshing ? ' is-refreshing' : ''}`}>
       {/* Page Header */}
-      <div className="pa-page-header">
-        <div className="pa-row-between" style={{ alignItems: 'flex-start' }}>
-          <div>
-            <div className="pa-header-eyebrow">
-              <span className="pa-eyebrow-dot" />
-              QUẢN TRỊ NỀN TẢNG / KHUNG CHUẨN THÔNG TƯ 02/2025
-            </div>
-            <h1 className="pa-header-title">{f.name}</h1>
-            <p className="pa-header-subtitle">
-              {translateUi(f.description) || 'Khung năng lực số tham chiếu theo Thông tư 02/2025/TT-BGDĐT: 6 lĩnh vực trụ cột, 18 khóa học chuẩn quốc gia.'}
-            </p>
-          </div>
+      <header className="pa-ov-header">
+        <div>
+          <h1>{displayTitle}</h1>
+          <p className="pa-ov-subtitle">
+            {translateUi('Hệ thống 6 lĩnh vực năng lực số cốt lõi và lộ trình đào tạo chuẩn hóa cho doanh nghiệp.')}
+          </p>
+        </div>
+
+        <div className="pa-ov-actions">
+          <button
+            type="button"
+            className="btn btn-outline btn-small inline-flex items-center gap-1.5"
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            title="Làm mới dữ liệu khung từ máy chủ"
+          >
+            <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} aria-hidden="true" />
+            <span>{translateUi('Làm mới')}</span>
+          </button>
+
           {canManage && !addingDomain && (
             <button
               type="button"
-              className="btn btn-primary"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+              className="btn btn-primary btn-small inline-flex items-center gap-1.5"
               onClick={() => setAddingDomain(true)}
             >
-              <Plus size={16} />
-              Thêm lĩnh vực
+              <Plus size={14} aria-hidden="true" />
+              <span>{translateUi('Thêm lĩnh vực')}</span>
             </button>
           )}
         </div>
-      </div>
+      </header>
 
-      {/* Bento KPI Grid */}
-      <div className="pa-bento-kpi-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 24 }}>
-        <div className="pa-bento-card">
-          <div className="pa-bento-top">
-            <span className="pa-bento-label">{translateUi("LĨNH VỰC NĂNG LỰC")}</span>
-            <Layers size={16} style={{ color: '#0284c7' }} />
-          </div>
-          <div className="pa-bento-value">{f.domainCount}</div>
-          <div className="pa-bento-sub">Chuẩn Thông tư 02/2025/TT-BGDĐT</div>
+      {/* Tier 1: Version Status Strip (Aligned with Backend Overview & Catalog) */}
+      <div className="pa-ov-version-bar" role="region" aria-label="Trạng thái phiên bản khung chuẩn">
+        <div className="pa-ov-version-item">
+          <span className="pa-status-dot is-live" aria-hidden="true" />
+          <span className="pa-ov-version-label">{translateUi('Phiên bản đang dùng')}</span>
+          <strong className="pa-ov-version-val">
+            v{currentCatalogVersion}
+          </strong>
+          <span className="pa-ov-version-meta">
+            {totalCourses} khóa học{publishedDate ? ` · Công bố ${formatDate(publishedDate)}` : ''}
+          </span>
         </div>
 
-        <div className="pa-bento-card">
-          <div className="pa-bento-top">
-            <span className="pa-bento-label">KHÓA HỌC TRONG v{f.currentCatalogVersionNo ?? '—'} (ĐANG DÙNG)</span>
-            <CheckCircle2 size={16} style={{ color: '#059669' }} />
-          </div>
-          <div className="pa-bento-value">{f.courseCount}</div>
-          <div className="pa-bento-sub">
-            {translateUi(LEVEL_NAMES[1])} {byLevel1 ?? 0} · {translateUi(LEVEL_NAMES[2])} {byLevel2 ?? 0} · {translateUi(LEVEL_NAMES[3])} {byLevel3 ?? 0}
-          </div>
-        </div>
+        <div className="pa-ov-version-divider" aria-hidden="true" />
 
-        <div className="pa-bento-card">
-          <div className="pa-bento-top">
-            <span className="pa-bento-label">BẢN NHÁP BIÊN SOẠN</span>
-            <Sparkles size={16} style={{ color: '#d97706' }} />
-          </div>
-          {f.draftCatalogVersionNo !== null ? (
+        <div className="pa-ov-version-item">
+          {draftCatalogVersion !== null ? (
             <>
-              <div className="pa-bento-value">{f.draftCourseCount ?? 0} <span style={{ fontSize: 13, fontWeight: 500, color: '#64748b' }}>khóa ở v{f.draftCatalogVersionNo}</span></div>
-              <div className="pa-bento-sub">
-                <Link to={`/platform/versions/${f.draftCatalogVersionNo}`} style={{ color: '#d97706', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  Mở biên soạn phiên bản nháp <ArrowRight size={12} />
-                </Link>
-              </div>
+              <span className="pa-status-dot is-amber" style={{ background: '#d97706' }} aria-hidden="true" />
+              <span className="pa-ov-version-label">{translateUi('Bản nháp đang soạn')}</span>
+              <strong className="pa-ov-version-val">v{draftCatalogVersion}</strong>
+              <span className="pa-ov-version-meta">
+                {draftNewCourseCount > 0
+                  ? `+${draftNewCourseCount} khóa mới trong nháp`
+                  : 'Đang biên soạn nội dung'}
+              </span>
+              <Link
+                to={`/platform/versions/${draftCatalogVersion}`}
+                className="pa-ov-version-link"
+              >
+                <span>{translateUi('Mở biên soạn phiên bản nháp')}</span>
+                <ArrowRight size={13} aria-hidden="true" />
+              </Link>
             </>
           ) : (
             <>
-              <div className="pa-bento-value" style={{ color: '#94a3b8' }}>—</div>
-              <div className="pa-bento-sub">
-                <Link to="/platform/versions" style={{ color: '#6366f1', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  Tạo bản nháp mới <ArrowRight size={12} />
-                </Link>
-              </div>
+              <span className="pa-status-dot" aria-hidden="true" />
+              <span className="pa-ov-version-label">{translateUi('Bản nháp')}</span>
+              <span className="pa-ov-version-meta">{translateUi('Không có bản nháp đang mở.')}</span>
+              <Link to="/platform/versions" className="pa-ov-version-link">
+                <span>{translateUi('Tạo bản nháp mới')}</span>
+                <ArrowRight size={13} aria-hidden="true" />
+              </Link>
             </>
           )}
         </div>
       </div>
 
-      {/* Main Domains Section */}
-      <section className="surface pad" aria-labelledby="domains-title" style={{ borderRadius: 16, border: '1px solid #e2e8f0', background: '#fff' }}>
-        <div className="pa-card-head" style={{ marginBottom: 16 }}>
-          <div>
-            <h2 id="domains-title" className="panel-title" style={{ fontSize: 17, fontWeight: 700, color: '#0f172a' }}>
-              6 Lĩnh vực năng lực số & Các khóa học trực thuộc
-            </h2>
-            <p className="panel-desc" style={{ fontSize: 13, color: '#64748b' }}>
-              Tên lĩnh vực đổi ngay khi lưu. Mô tả mới được lưu vào bản nháp và tự động đồng bộ tới doanh nghiệp sau khi công bố.
-            </p>
+      {/* Tier 2: 4 Core Enterprise KPI Cards (Compact) */}
+      <div className="pa-ov-kpi-grid pa-kpi-compact" role="region" aria-label="Chỉ số tổng hợp khung năng lực">
+        {/* KPI 1: Lĩnh vực trụ cột */}
+        <div className="pa-ov-kpi-card is-tone-sky">
+          <div className="pa-ov-kpi-top">
+            <span className="pa-ov-kpi-label">{translateUi('LĨNH VỰC TRỤ CỘT')}</span>
+            <div className="pa-kpi-icon-box" aria-hidden="true">
+              <Layers size={18} />
+            </div>
+          </div>
+          <div className="pa-ov-kpi-val">{f.domainCount} {translateUi('Lĩnh vực')}</div>
+          <div className="pa-ov-kpi-sub">
+            {translateUi('Khung kỹ năng số chuẩn hóa doanh nghiệp')}
           </div>
         </div>
 
-        {addingDomain && <AddDomainForm frameworkId={f.id} onClose={() => setAddingDomain(false)} />}
+        {/* KPI 2: Danh mục khóa học */}
+        <div className="pa-ov-kpi-card is-tone-orange">
+          <div className="pa-ov-kpi-top">
+            <span className="pa-ov-kpi-label">{translateUi('DANH MỤC KHÓA HỌC')}</span>
+            <div className="pa-kpi-icon-box" aria-hidden="true">
+              <BookOpen size={18} />
+            </div>
+          </div>
+          <div className="pa-ov-kpi-val">{totalCourses} {translateUi('Khóa học')}</div>
+          <div className="pa-ov-kpi-sub">
+            {translateUi(`Phiên bản v${currentCatalogVersion} đang áp dụng`)}
+          </div>
+        </div>
 
-        <div style={{ display: 'grid', gap: 14 }}>
-          {f.domains.map((d, i) => (
+        {/* KPI 3: Phân tầng đào tạo */}
+        <div className="pa-ov-kpi-card is-tone-purple">
+          <div className="pa-ov-kpi-top">
+            <span className="pa-ov-kpi-label">{translateUi('PHÂN TẦNG ĐÀO TẠO')}</span>
+            <div className="pa-kpi-icon-box" aria-hidden="true">
+              <GraduationCap size={18} />
+            </div>
+          </div>
+          <div className="pa-ov-kpi-val">3 {translateUi('Cấp độ')}</div>
+          <div className="pa-ov-kpi-sub">
+            {translateUi('Cơ bản · Trung cấp · Nâng cao')}
+          </div>
+        </div>
+
+        {/* KPI 4: Trạng thái biên soạn & công bố */}
+        <div className={`pa-ov-kpi-card ${draftCatalogVersion !== null ? 'is-tone-amber' : 'is-tone-green'}`}>
+          <div className="pa-ov-kpi-top">
+            <span className="pa-ov-kpi-label">{translateUi('TÌNH TRẠNG ÁP DỤNG')}</span>
+            <div className="pa-kpi-icon-box" aria-hidden="true">
+              {draftCatalogVersion !== null ? <Sparkles size={18} /> : <ShieldCheck size={18} />}
+            </div>
+          </div>
+          <div className="pa-ov-kpi-val">
+            {draftCatalogVersion !== null ? (
+              <span style={{ fontSize: 24, color: 'var(--pa-amber)' }}>Bản nháp v{draftCatalogVersion}</span>
+            ) : (
+              <span style={{ fontSize: 24, color: 'var(--pa-live)' }}>Phiên bản v{currentCatalogVersion}</span>
+            )}
+          </div>
+          <div className="pa-ov-kpi-sub">
+            {draftCatalogVersion !== null
+              ? (draftNewCourseCount > 0 ? `+${draftNewCourseCount} khóa mới đang biên soạn` : translateUi('Đang cập nhật nội dung'))
+              : translateUi('Đồng bộ trên toàn bộ hệ thống')}
+          </div>
+        </div>
+      </div>
+
+      {/* Tier 3: Main Framework Domains Section */}
+      <section className="pa-ov-panel" aria-labelledby="domains-title">
+        <div className="pa-ov-panel-head" style={{ marginBottom: 14 }}>
+          <div>
+            <h2 id="domains-title" className="pa-ov-panel-title">
+              Danh mục {f.domains.length} lĩnh vực năng lực số
+            </h2>
+          </div>
+        </div>
+
+        {/* Quick Search & Level Filter Toolbar */}
+        <div className="pa-fw-toolbar">
+          <div className="pa-fw-search-box">
+            <Search size={15} className="pa-fw-search-icon" aria-hidden="true" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Tìm theo tên lĩnh vực, mã khóa hoặc tiêu đề khóa..."
+              className="pa-fw-search-input"
+              aria-label="Tìm kiếm lĩnh vực hoặc khóa học"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                className="pa-fw-search-clear"
+                onClick={() => setSearchQuery('')}
+                title="Xóa tìm kiếm"
+              >
+                <X size={14} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+
+          <div className="pa-fw-filter-pills" role="radiogroup" aria-label="Lọc theo cấp độ khóa học">
+            <button
+              type="button"
+              className={`pa-fw-filter-pill${selectedLevel === 'ALL' ? ' is-active' : ''}`}
+              onClick={() => setSelectedLevel('ALL')}
+            >
+              {translateUi('Tất cả khóa')} ({f.courseCount})
+            </button>
+            <button
+              type="button"
+              className={`pa-fw-filter-pill${selectedLevel === 1 ? ' is-active' : ''}`}
+              onClick={() => setSelectedLevel(1)}
+            >
+              {translateUi(LEVEL_NAMES[1])} ({byLevel1 ?? 0})
+            </button>
+            <button
+              type="button"
+              className={`pa-fw-filter-pill${selectedLevel === 2 ? ' is-active' : ''}`}
+              onClick={() => setSelectedLevel(2)}
+            >
+              {translateUi(LEVEL_NAMES[2])} ({byLevel2 ?? 0})
+            </button>
+            <button
+              type="button"
+              className={`pa-fw-filter-pill${selectedLevel === 3 ? ' is-active' : ''}`}
+              onClick={() => setSelectedLevel(3)}
+            >
+              {translateUi(LEVEL_NAMES[3])} ({byLevel3 ?? 0})
+            </button>
+          </div>
+        </div>
+
+        {/* Inline Add Domain Form */}
+        {addingDomain && (
+          <AddDomainForm
+            frameworkId={f.id}
+            onClose={() => setAddingDomain(false)}
+          />
+        )}
+
+        {/* Domains List */}
+        <div style={{ display: 'grid', gap: 16 }}>
+          {filteredDomains.map((d, i) => (
             <DomainRow
               key={d.id}
               frameworkId={f.id}
@@ -187,129 +419,111 @@ function FrameworkView({ framework: f }: { framework: FrameworkDetail }) {
               index={i}
               onlyOne={f.domains.length === 1}
               editable={canManage}
-              currentNo={f.currentCatalogVersionNo}
-              draftNo={f.draftCatalogVersionNo}
+              currentNo={currentCatalogVersion}
+              draftNo={draftCatalogVersion}
             />
           ))}
         </div>
 
-        {f.domains.length === 0 && <p className="pa-empty">Khung chưa có lĩnh vực nào.</p>}
+        {filteredDomains.length === 0 && (
+          <div className="notice" style={{ marginTop: 12 }}>
+            <p style={{ margin: 0 }}>
+              Không tìm thấy lĩnh vực hoặc khóa học phù hợp với từ khóa &ldquo;{searchQuery}&rdquo;.
+              Thử tìm kiếm với từ khóa khác hoặc đặt lại bộ lọc cấp độ.
+            </p>
+          </div>
+        )}
 
         {/* Publish Action Callout Banner */}
         {canManage && (
-          <div
-            style={{
-              marginTop: 24,
-              padding: '20px 24px',
-              borderRadius: 14,
-              background: '#f8fafc',
-              border: unpublished ? '1px solid #fde68a' : '1px solid #e2e8f0',
-              display: 'grid',
-              gap: 12,
-            }}
-          >
-            <div className="pa-row-between">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className={`pa-fw-publish-callout${unpublished ? ' has-drafts' : ''}`}>
+            <div className="pa-fw-publish-top">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div
+                  className="pa-fw-publish-icon"
                   style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 10,
                     background: unpublished ? '#fef3c7' : '#f1f5f9',
-                    color: unpublished ? '#d97706' : '#64748b',
-                    display: 'grid',
-                    placeItems: 'center',
+                    color: unpublished ? '#b45309' : '#64748b',
                   }}
                 >
-                  <Send size={18} />
+                  <Send size={18} aria-hidden="true" />
                 </div>
                 <div>
-                  <strong style={{ fontSize: 14, color: '#0f172a' }}>Công bố cập nhật khung năng lực</strong>
-                  <div style={{ fontSize: 12, color: '#64748b' }}>
+                  <strong style={{ fontSize: 14.5, color: '#0f172a' }}>
+                    {translateUi('Công bố cập nhật khung năng lực')}
+                  </strong>
+                  <div style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>
                     {tooShort.length > 0
-                      ? translateUi(`Cần mô tả ít nhất ${DESCRIPTION_MIN} ký tự trước khi công bố (chưa đủ: ${tooShort.map((d) => d.name).join(', ')}).`)
+                      ? translateUi(
+                          `Cần mô tả ít nhất ${DESCRIPTION_MIN} ký tự trước khi công bố (chưa đủ: ${tooShort.map((d) => d.name).join(', ')}).`,
+                        )
                       : unpublished
                         ? translateUi(`${drafted.length} lĩnh vực có mô tả mới trong bản nháp sẵn sàng công bố.`)
-                        : 'Toàn bộ mô tả lĩnh vực hiện đang đồng bộ với phiên bản công bố.'}
+                        : translateUi('Toàn bộ mô tả lĩnh vực hiện đang đồng bộ với phiên bản công bố.')}
                   </div>
                 </div>
               </div>
+
               <button
                 type="button"
-                className="btn btn-primary"
+                className="btn btn-primary inline-flex items-center gap-1.5"
                 onClick={onPublish}
                 disabled={!unpublished || tooShort.length > 0 || publish.isPending}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
               >
-                <Send size={15} />
-                {publish.isPending ? 'Đang công bố…' : translateUi(`Công bố khung v${f.currentVersionNo + 1}`)}
+                <Send size={14} aria-hidden="true" />
+                <span>
+                  {publish.isPending
+                    ? translateUi('Đang công bố…')
+                    : translateUi(`Công bố khung v${f.currentVersionNo + 1}`)}
+                </span>
               </button>
             </div>
 
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <input
+                type="text"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 maxLength={1000}
                 placeholder="Ghi chú công bố (tùy chọn: lý do thay đổi, căn cứ quyết định)..."
-                style={{
-                  flex: 1,
-                  height: 38,
-                  padding: '0 12px',
-                  borderRadius: 8,
-                  border: '1px solid #cbd5e1',
-                  fontSize: 13,
-                }}
+                className="pa-fw-publish-input"
+                aria-label="Ghi chú công bố khung chuẩn"
               />
             </div>
           </div>
         )}
       </section>
 
-      {/* Releases History */}
+      {/* Tier 4: Releases History */}
       {f.releases.length > 0 && (
-        <section
-          className="surface pad"
-          style={{ marginTop: 24, borderRadius: 16, border: '1px solid #e2e8f0', background: '#fff' }}
-          aria-labelledby="releases-title"
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <History size={18} style={{ color: '#64748b' }} />
-            <h2 id="releases-title" className="panel-title" style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>
-              Lịch sử các lần công bố khung chuẩn
-            </h2>
+        <section className="pa-ov-panel" aria-labelledby="releases-title">
+          <div className="pa-ov-panel-head">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <History size={18} style={{ color: '#64748b' }} aria-hidden="true" />
+              <div>
+                <h2 id="releases-title" className="pa-ov-panel-title">
+                  {translateUi('Lịch sử các lần công bố khung chuẩn')}
+                </h2>
+                <p className="pa-ov-panel-sub">
+                  Các mốc phiên bản đã được công bố chính thức và áp dụng cho toàn hệ thống.
+                </p>
+              </div>
+            </div>
           </div>
+
           <div style={{ display: 'grid', gap: 10 }}>
             {f.releases.map((r) => (
-              <div
-                key={r.versionNo}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px 16px',
-                  borderRadius: 10,
-                  background: '#f8fafc',
-                  border: '1px solid #f1f5f9',
-                }}
-              >
+              <div key={r.versionNo} className="pa-fw-release-item">
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span
-                      style={{
-                        padding: '2px 8px',
-                        borderRadius: 6,
-                        background: '#0f172a',
-                        color: '#fff',
-                        fontWeight: 700,
-                        fontSize: 11,
-                      }}
-                    >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span className="pa-fw-release-badge">
                       Khung v{r.versionNo}
                     </span>
-                    <strong style={{ fontSize: 13, color: '#0f172a' }}>{r.releaseNote || 'Công bố định kỳ tiêu chuẩn'}</strong>
+                    <strong style={{ fontSize: 13.5, color: '#0f172a' }}>
+                      {r.releaseNote || 'Công bố định kỳ tiêu chuẩn'}
+                    </strong>
                   </div>
-                  <small style={{ fontSize: 12, color: '#64748b', marginTop: 4, display: 'block' }}>
+                  <small style={{ fontSize: 12.5, color: '#475569', marginTop: 4, display: 'block' }}>
                     Người thực hiện: {r.publishedByEmail ?? translateUi('Hệ thống')} · {formatDateTime(r.publishedAt)}
                   </small>
                 </div>
@@ -318,8 +532,18 @@ function FrameworkView({ framework: f }: { framework: FrameworkDetail }) {
           </div>
         </section>
       )}
-    </>
+    </div>
   );
+}
+
+interface DomainRowProps {
+  frameworkId: string;
+  domain: FrameworkDomain & { visibleCourses?: FrameworkDomain['courses']; visibleDraftCourses?: FrameworkDomain['draftNewCourses'] };
+  index: number;
+  onlyOne: boolean;
+  editable: boolean;
+  currentNo: number | null;
+  draftNo: number | null;
 }
 
 function DomainRow({
@@ -330,26 +554,29 @@ function DomainRow({
   editable,
   currentNo,
   draftNo,
-}: {
-  frameworkId: string;
-  domain: FrameworkDomain;
-  index: number;
-  onlyOne: boolean;
-  editable: boolean;
-  currentNo: number | null;
-  draftNo: number | null;
-}) {
+}: DomainRowProps) {
   useUiLanguage();
   const [mode, setMode] = useState<'view' | 'edit' | 'delete'>('view');
   const archive = useArchiveDomain(frameworkId);
   const draftDiffers = d.draftDescription !== d.publishedDescription;
-  const courses = [...d.courses.map((c) => ({ ...c, isNew: false })), ...d.draftNewCourses.map((c) => ({ ...c, isNew: true }))];
+
+  // Use visible courses if search/filter applied, else standard domain courses
+  const sourceCourses = d.visibleCourses ?? d.courses;
+  const sourceDraftCourses = d.visibleDraftCourses ?? d.draftNewCourses;
+
+  const courses = [
+    ...sourceCourses.map((c) => ({ ...c, isNew: false })),
+    ...sourceDraftCourses.map((c) => ({ ...c, isNew: true })),
+  ];
+
+  const totalDomainCourses = d.courses.length + d.draftNewCourses.length;
+
   const label = `Lĩnh vực ${String(index + 1).padStart(2, '0')}`;
   const theme = DOMAIN_THEMES[index % DOMAIN_THEMES.length];
   const Icon = theme.icon;
 
-  const blockedReason = courses.length
-    ? `Lĩnh vực có ${courses.length} khóa học${d.draftNewCourses.length ? ` (gồm ${d.draftNewCourses.length} khóa mới trong bản nháp v${draftNo})` : ''} nên không xóa được.${d.courses.length ? ' Khóa đã công bố được doanh nghiệp sử dụng nên luôn được giữ lại.' : ' Bỏ các khóa mới khỏi bản nháp trước.'}`
+  const blockedReason = totalDomainCourses > 0
+    ? `Lĩnh vực có ${totalDomainCourses} khóa học${d.draftNewCourses.length ? ` (gồm ${d.draftNewCourses.length} khóa mới trong bản nháp v${draftNo})` : ''} nên không xóa được.${d.courses.length ? ' Khóa đã công bố được doanh nghiệp sử dụng nên luôn được giữ lại.' : ' Bỏ các khóa mới khỏi bản nháp trước.'}`
     : onlyOne
       ? 'Khung cần ít nhất một lĩnh vực.'
       : null;
@@ -361,96 +588,71 @@ function DomainRow({
     });
 
   return (
-    <div
-      style={{
-        padding: '20px 24px',
-        borderRadius: 14,
-        background: '#fff',
-        border: '1px solid #e2e8f0',
-        display: 'grid',
-        gridTemplateColumns: '1.2fr 1fr',
-        gap: 24,
-        alignItems: 'start',
-      }}
-    >
-      {/* Left Column: Domain Meta & Description */}
-      <div style={{ display: 'grid', gap: 12 }}>
-        <div className="pa-row-between" style={{ alignItems: 'flex-start' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <div className="pa-fw-domain-card">
+      {/* Left Column: Domain Meta, Descriptions & Forms */}
+      <div className="pa-fw-domain-left">
+        <div className="pa-fw-domain-head">
+          <div className="pa-fw-identity-wrap">
             <div
+              className="pa-fw-icon-box"
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 10,
                 background: theme.bg,
                 border: `1px solid ${theme.border}`,
                 color: theme.color,
-                display: 'grid',
-                placeItems: 'center',
-                flexShrink: 0,
               }}
             >
-              <Icon size={20} />
+              <Icon size={22} aria-hidden="true" />
             </div>
             <div>
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase',
-                  color: theme.color,
-                }}
+              <div
+                className="pa-fw-domain-tag"
+                style={{ color: theme.color }}
               >
                 {translateUi(label)}
-              </span>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{d.name}</h3>
+              </div>
+              <h3 className="pa-fw-domain-title">{d.name}</h3>
             </div>
           </div>
 
           {editable && mode === 'view' && (
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div className="pa-fw-domain-actions">
               <button
                 type="button"
-                className="btn btn-light btn-small"
+                className="pa-fw-action-btn"
                 onClick={() => setMode('edit')}
                 aria-label={translateUi(`Sửa ${d.name}`)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 32, padding: '0 10px' }}
               >
-                <Edit2 size={13} />{translateUi("Sửa")}</button>
+                <Edit2 size={13} aria-hidden="true" />
+                <span>{translateUi('Sửa')}</span>
+              </button>
               <button
                 type="button"
-                className="btn btn-ghost btn-small"
+                className="pa-fw-action-btn is-danger"
                 onClick={() => setMode('delete')}
                 aria-label={translateUi(`Xóa ${d.name}`)}
-                style={{ color: '#ef4444', height: 32, padding: '0 8px' }}
               >
-                <Trash2 size={14} />
+                <Trash2 size={14} aria-hidden="true" />
               </button>
             </div>
           )}
         </div>
 
         {mode === 'edit' ? (
-          <DomainEditForm frameworkId={frameworkId} domain={d} label={translateUi(label)} onClose={() => setMode('view')} />
+          <DomainEditForm
+            frameworkId={frameworkId}
+            domain={d}
+            label={translateUi(label)}
+            onClose={() => setMode('view')}
+          />
         ) : (
           <>
-            <p style={{ margin: 0, fontSize: 13, lineHeight: '1.5', color: '#475569' }}>
-              {d.publishedDescription || <span className="pa-empty">Chưa có mô tả công bố.</span>}
+            <p className="pa-fw-desc-box">
+              {d.publishedDescription || <span className="pa-empty">Chưa có mô tả công bố chính thức.</span>}
             </p>
+
             {draftDiffers && (
-              <div
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: 8,
-                  background: '#fef3c7',
-                  border: '1px solid #fde68a',
-                  fontSize: 12,
-                  color: '#92400e',
-                  lineHeight: '1.4',
-                }}
-              >
-                <strong>Bản nháp chưa công bố:</strong> “{d.draftDescription || translateUi('trống')}”
+              <div className="pa-fw-draft-alert">
+                <strong>Bản nháp chưa công bố:</strong> &ldquo;{d.draftDescription || translateUi('trống')}&rdquo;
               </div>
             )}
           </>
@@ -459,104 +661,116 @@ function DomainRow({
         {mode === 'delete' &&
           (blockedReason ? (
             <div className="notice warning pa-row-between" role="alert" style={{ marginTop: 8 }}>
-              <span style={{ fontSize: 12 }}>{blockedReason}</span>
-              <button type="button" className="btn btn-ghost btn-small" onClick={() => setMode('view')}>{translateUi("Đóng")}</button>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <AlertCircle size={16} style={{ color: '#b45309', flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
+                <span style={{ fontSize: 13, color: '#92400e' }}>{blockedReason}</span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost btn-small"
+                onClick={() => setMode('view')}
+              >
+                {translateUi('Đóng')}
+              </button>
             </div>
           ) : (
             <div className="notice pa-row-between" role="alert" style={{ marginTop: 8 }}>
-              <span style={{ fontSize: 12 }}>Xóa lĩnh vực “{d.name}”? Lĩnh vực sẽ không còn trong khung.</span>
+              <span style={{ fontSize: 13 }}>
+                Xóa lĩnh vực &ldquo;{d.name}&rdquo;? Lĩnh vực sẽ không còn trong khung.
+              </span>
               <div className="button-row">
-                <button type="button" className="btn btn-small pa-danger" onClick={onDelete} disabled={archive.isPending}>
+                <button
+                  type="button"
+                  className="btn btn-small pa-danger"
+                  onClick={onDelete}
+                  disabled={archive.isPending}
+                >
                   {archive.isPending ? 'Đang xóa…' : 'Xóa lĩnh vực'}
                 </button>
-                <button type="button" className="btn btn-ghost btn-small" onClick={() => setMode('view')}>{translateUi("Giữ lại")}</button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-small"
+                  onClick={() => setMode('view')}
+                >
+                  {translateUi('Giữ lại')}
+                </button>
               </div>
             </div>
           ))}
       </div>
 
       {/* Right Column: Courses in this Domain */}
-      <div style={{ display: 'grid', gap: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' }}>
-            {d.courses.length} Khóa trong v{currentNo ?? '—'}
+      <div className="pa-fw-domain-right">
+        <div className="pa-fw-courses-header">
+          <span>
+            {d.courses.length} Khóa trong v{currentNo ?? ''}
             {d.draftNewCourses.length ? translateUi(` · +${d.draftNewCourses.length} khóa mới (nháp)`) : ''}
           </span>
-          <span style={{ fontSize: 11, color: '#94a3b8' }}>Bấm để mở Studio</span>
         </div>
 
-        {courses.length ? (
-          courses.map((c) => {
-            const levelClass =
-              c.level === 1
-                ? { bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0' }
-                : c.level === 2
-                  ? { bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe' }
-                  : { bg: '#fffbeb', text: '#d97706', border: '#fde68a' };
+        <div className="pa-fw-course-list">
+          {courses.length > 0 ? (
+            courses.map((c) => {
+              const levelClass =
+                c.level === 1
+                  ? 'is-level-1'
+                  : c.level === 2
+                    ? 'is-level-2'
+                    : 'is-level-3';
 
-            return (
-              <Link
-                key={`${c.courseId}-${c.isNew}`}
-                to={`/platform/versions/${c.isNew ? draftNo : currentNo}/courses/${c.courseId}`}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '10px 14px',
-                  borderRadius: 10,
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  textDecoration: 'none',
-                  color: '#0f172a',
-                  transition: 'all 0.15s ease',
-                }}
-                className="pa-course-row-link"
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
-                  <code style={{ fontSize: 12, fontWeight: 700, color: '#0f172a', background: '#e2e8f0', padding: '2px 6px', borderRadius: 4 }}>
-                    {c.code}
-                  </code>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {translateUi(c.title)}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                  {c.isNew ? (
-                    <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: '#dcfce7', color: '#15803d', fontWeight: 600 }}>
-                      Mới (nháp)
+              return (
+                <Link
+                  key={`${c.courseId}-${c.isNew}`}
+                  to={`/platform/versions/${c.isNew ? draftNo : currentNo}/courses/${c.courseId}`}
+                  className="pa-fw-course-item"
+                >
+                  <div className="pa-fw-course-info">
+                    <code className="pa-fw-course-code">
+                      {c.code}
+                    </code>
+                    <span className="pa-fw-course-title" title={c.title}>
+                      {translateUi(c.title)}
                     </span>
-                  ) : (
-                    <span
-                      style={{
-                        fontSize: 11,
-                        padding: '2px 8px',
-                        borderRadius: 6,
-                        background: levelClass.bg,
-                        color: levelClass.text,
-                        border: `1px solid ${levelClass.border}`,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {c.levelName}
-                    </span>
-                  )}
-                  <ArrowRight size={14} style={{ color: '#94a3b8' }} />
-                </div>
-              </Link>
-            );
-          })
-        ) : (
-          <div className="notice warning" style={{ margin: 0, fontSize: 12 }}>
-            Chưa có khóa học nào. Thêm khóa trong bản nháp phiên bản.
-          </div>
-        )}
+                  </div>
+
+                  <div className="pa-fw-course-meta">
+                    {c.isNew ? (
+                      <span className="pa-fw-new-tag">
+                        Mới (nháp)
+                      </span>
+                    ) : (
+                      <span className={`pa-fw-level-pill ${levelClass}`}>
+                        {c.levelName}
+                      </span>
+                    )}
+                    <ArrowRight size={14} style={{ color: '#94a3b8' }} aria-hidden="true" />
+                  </div>
+                </Link>
+              );
+            })
+          ) : (
+            <div className="notice warning" style={{ margin: 0, fontSize: 13 }}>
+              Chưa có khóa học nào thuộc lĩnh vực này. Thêm khóa mới trong bản nháp phiên bản.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-/** Sửa lĩnh vực: the name changes at once, the description goes to the draft. */
-function DomainEditForm({ frameworkId, domain: d, label, onClose }: { frameworkId: string; domain: FrameworkDomain; label: string; onClose: () => void }) {
+/** Form chỉnh sửa lĩnh vực: tên thay đổi ngay, mô tả lưu vào bản nháp */
+function DomainEditForm({
+  frameworkId,
+  domain: d,
+  label,
+  onClose,
+}: {
+  frameworkId: string;
+  domain: FrameworkDomain;
+  label: string;
+  onClose: () => void;
+}) {
   useUiLanguage();
   const update = useUpdateDomain(frameworkId);
   const [name, setName] = useState(d.name);
@@ -570,8 +784,11 @@ function DomainEditForm({ frameworkId, domain: d, label, onClose }: { frameworkI
       { domainId: d.id, name: name.trim(), description: description.trim() },
       {
         onSuccess: () => {
-          toast.success(`Đã lưu ${name.trim()}.`, {
-            description: description.trim() !== d.publishedDescription ? 'Mô tả mới hiện với doanh nghiệp sau khi công bố khung.' : undefined,
+          toast.success(`Đã lưu lĩnh vực ${name.trim()}.`, {
+            description:
+              description.trim() !== d.publishedDescription
+                ? 'Mô tả mới sẽ hiển thị với doanh nghiệp sau khi công bố khung.'
+                : undefined,
           });
           onClose();
         },
@@ -581,27 +798,55 @@ function DomainEditForm({ frameworkId, domain: d, label, onClose }: { frameworkI
   };
 
   return (
-    <form className="pa-domain-edit" onSubmit={submit} aria-label={translateUi(`Sửa ${label}`)}>
-      <label className="field">{translateUi("Tên lĩnh vực")}<input value={name} onChange={(e) => setName(e.target.value)} maxLength={150} autoFocus required />
+    <form className="pa-domain-edit pa-fw-form-card" onSubmit={submit} aria-label={translateUi(`Sửa ${label}`)}>
+      <label className="field">
+        {translateUi('Tên lĩnh vực')}
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          maxLength={150}
+          autoFocus
+          required
+        />
       </label>
+
       <label className="field">
         Mô tả (bản nháp)
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={4000} />
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          maxLength={4000}
+          rows={3}
+        />
         <small className={`field-hint ${description.trim().length < DESCRIPTION_MIN ? 'pa-error' : ''}`}>
-          Cần ít nhất {DESCRIPTION_MIN} ký tự để công bố. Đang công bố: “{d.publishedDescription || 'chưa có'}”
+          Cần ít nhất {DESCRIPTION_MIN} ký tự để công bố. Đang công bố: &ldquo;{d.publishedDescription || 'chưa có'}&rdquo;
         </small>
       </label>
+
       <div className="button-row">
-        <button type="submit" className="btn btn-primary btn-small" disabled={!dirty || !valid || update.isPending}>
+        <button
+          type="submit"
+          className="btn btn-primary btn-small"
+          disabled={!dirty || !valid || update.isPending}
+        >
           {update.isPending ? translateUi('Đang lưu…') : translateUi('Lưu')}
         </button>
-        <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>{translateUi("Hủy")}</button>
+        <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>
+          {translateUi('Hủy')}
+        </button>
       </div>
     </form>
   );
 }
 
-function AddDomainForm({ frameworkId, onClose }: { frameworkId: string; onClose: () => void }) {
+/** Form thêm mới lĩnh vực */
+function AddDomainForm({
+  frameworkId,
+  onClose,
+}: {
+  frameworkId: string;
+  onClose: () => void;
+}) {
   useUiLanguage();
   const add = useAddFrameworkDomain(frameworkId);
   const [name, setName] = useState('');
@@ -613,7 +858,9 @@ function AddDomainForm({ frameworkId, onClose }: { frameworkId: string; onClose:
       { name: name.trim(), description: description.trim() || undefined },
       {
         onSuccess: () => {
-          toast.success(`Đã thêm lĩnh vực ${name.trim()}.`, { description: 'Mô tả hiện với doanh nghiệp sau khi công bố khung.' });
+          toast.success(`Đã thêm lĩnh vực ${name.trim()}.`, {
+            description: 'Mô tả sẽ hiển thị với doanh nghiệp sau khi công bố khung.',
+          });
           onClose();
         },
         onError: (err) => toast.error(errorMessage(err)),
@@ -622,20 +869,41 @@ function AddDomainForm({ frameworkId, onClose }: { frameworkId: string; onClose:
   };
 
   return (
-    <form className="pa-add-domain" onSubmit={submit} aria-label="Thêm lĩnh vực">
-      <div className="inline-fields">
+    <form className="pa-add-domain pa-fw-form-card" onSubmit={submit} aria-label="Thêm lĩnh vực">
+      <div className="pa-fw-form-grid">
         <label className="field">
           Tên lĩnh vực mới
-          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={150} autoFocus required />
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={150}
+            autoFocus
+            required
+            placeholder="Ví dụ: Dữ liệu khách hàng"
+          />
         </label>
-        <label className="field">{translateUi("Mô tả")}<input value={description} onChange={(e) => setDescription(e.target.value)} maxLength={4000} placeholder="Năng lực này giúp người học làm được gì" />
+        <label className="field">
+          {translateUi('Mô tả')}
+          <input
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            maxLength={4000}
+            placeholder="Năng lực này giúp người học làm được gì trong thực tế công việc"
+          />
         </label>
       </div>
+
       <div className="button-row">
-        <button type="submit" className="btn btn-primary btn-small" disabled={name.trim().length < 2 || add.isPending}>
+        <button
+          type="submit"
+          className="btn btn-primary btn-small"
+          disabled={name.trim().length < 2 || add.isPending}
+        >
           {add.isPending ? 'Đang thêm…' : 'Thêm lĩnh vực'}
         </button>
-        <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>{translateUi("Hủy")}</button>
+        <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>
+          {translateUi('Hủy')}
+        </button>
       </div>
     </form>
   );

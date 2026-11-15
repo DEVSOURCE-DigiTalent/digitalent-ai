@@ -30,10 +30,13 @@ public class GetPlatformUsersUseCase : IUseCase<GetPlatformUsersUseCaseInput, Ge
             .Select(u => u.Id)
             .ToListAsync();
 
+        var stats = await PlatformUserReader.SummarizeRoleStatsAsync(_context);
+
         return new GetPlatformUsersUseCaseOutput
         {
             Items = await PlatformUserReader.ReadAsync(_context, pageIds, now),
             Trials = await PlatformUserTrials.SummarizeAsync(_context, now),
+            Stats = stats,
             PageIndex = input.PageIndex,
             PageSize = input.PageSize,
             TotalItems = total,

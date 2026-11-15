@@ -47,6 +47,11 @@ function toSentenceCase(str: string): string {
   return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
 
+/** Short name of a page for the chapter contents: the part before " · " ("Slide bài giảng · Mô đun 1" → "Slide bài giảng"). */
+function partLabel(title: string): string {
+  return title.split(' · ')[0]?.trim() || title;
+}
+
 /**
  * PulseModulePage — Không gian Học tập & Đọc bài giảng (Module Reader V2)
  * Thiết kế Enterprise SaaS chuẩn Brand Blue (#1e40af), Zero Emoji, Vector SVG:
@@ -71,6 +76,8 @@ export function PulseModulePage() {
 function ModuleView({ detail }: { detail: PulseModuleDetail }) {
   const { course, module, slides } = detail;
   const courseId = course.courseId;
+  // A module with its own slide deck or media does not need the "video and slides coming soon" notice.
+  const moduleHasMedia = slides.some((s) => (s.media ?? []).length > 0);
   const [focused, setFocused] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'reading' | 'quiz'>('reading');
@@ -369,26 +376,18 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                     </div>
 
                     <div className="pu-cab-links">
-                      {slides.map((s, sIdx) => {
-                        const titleShort =
-                          sIdx === 0
-                            ? '01. Lý thuyết & Quy chuẩn'
-                            : sIdx === 1
-                            ? '02. Tình huống thực tế'
-                            : '03. Cẩm nang tác nghiệp';
-                        return (
-                          <button
-                            key={s.lessonId}
-                            type="button"
-                            className="pu-cab-anchor-btn"
-                            onClick={() => scrollToPart(sIdx + 1)}
-                            title={s.title}
-                          >
-                            <span className="pu-cab-pill-num">{pad2(sIdx + 1)}</span>
-                            <span>{titleShort}</span>
-                          </button>
-                        );
-                      })}
+                      {slides.map((s, sIdx) => (
+                        <button
+                          key={s.lessonId}
+                          type="button"
+                          className="pu-cab-anchor-btn"
+                          onClick={() => scrollToPart(sIdx + 1)}
+                          title={s.title}
+                        >
+                          <span className="pu-cab-pill-num">{pad2(sIdx + 1)}</span>
+                          <span>{partLabel(s.title)}</span>
+                        </button>
+                      ))}
                     </div>
 
                     <button
@@ -416,11 +415,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                         {sIdx > 0 && (
                           <div className="pu-part-divider-strip" aria-hidden="true">
                             <span className="pu-pds-line" />
-                            <span className="pu-pds-badge">
-                              {sIdx === 1
-                                ? 'Phần 02 · Nghiên cứu tình huống thực tế (Case study)'
-                                : 'Phần 03 · Cẩm nang tác nghiệp & Tiêu chuẩn bàn giao (Job Aid)'}
-                            </span>
+                            <span className="pu-pds-badge">{`Phần ${pad2(sIdx + 1)} · ${partLabel(s.title)}`}</span>
                             <span className="pu-pds-line" />
                           </div>
                         )}
@@ -431,14 +426,9 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                           index={sIdx}
                           count={slides.length}
                           hideMedia={sIdx > 0}
+                          hideMediaNotice={moduleHasMedia}
                           partNumber={sIdx + 1}
-                          partTitle={
-                            sIdx === 0
-                              ? 'Phần 01 · Lý thuyết nền tảng & Quy chuẩn số'
-                              : sIdx === 1
-                              ? 'Phần 02 · Nghiên cứu tình huống thực tế (Case study)'
-                              : 'Phần 03 · Cẩm nang tác nghiệp & Tiêu chuẩn bàn giao'
-                          }
+                          partTitle={`Phần ${pad2(sIdx + 1)} · ${partLabel(s.title)}`}
                         />
                       </div>
                     ))}

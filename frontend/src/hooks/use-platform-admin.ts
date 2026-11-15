@@ -44,7 +44,7 @@ export function useOrganizationAction(id: string) {
   });
 }
 
-export const usePlatformUsers = (query: PageQuery & { role?: string; status?: string; trial?: TrialFilter | ''; organizationId?: string }) =>
+export const usePlatformUsers = (query: PageQuery & { role?: string; status?: string; trial?: TrialFilter | ''; organizationId?: string; workspace?: string }) =>
   useQuery({
     queryKey: [...KEY, 'users', query],
     queryFn: () => platformAdminService.getUsers(query),

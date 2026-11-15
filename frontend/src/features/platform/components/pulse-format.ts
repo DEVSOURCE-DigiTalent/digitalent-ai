@@ -12,19 +12,18 @@ export const isReasonValid = (reason: string) => reason.trim().length >= REASON_
 export const formatMoney = (value: number) => `${new Intl.NumberFormat('vi-VN').format(value)} ₫`;
 export const formatNumber = (value: number) => new Intl.NumberFormat('vi-VN').format(value);
 export const formatDate = (value: string | null | undefined) =>
-  value ? new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value)) : '—';
+  value ? new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value)) : '-';
 export const formatDateTime = (value: string | null | undefined) =>
   value
     ? new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value))
-    : '—';
+    : '-';
 
 export const ROLE_LABELS: Record<string, string> = {
   PLATFORM_ADMIN: 'Quản trị nền tảng',
-  MENTOR: 'Mentor',
+  MENTOR: 'Chuyên gia (Mentor)',
   OWNER: 'Chủ doanh nghiệp',
   MANAGER: 'Quản lý phòng ban',
   EMPLOYEE: 'Nhân viên',
-  LEARNER: 'Học viên cá nhân',
 };
 
 export const USER_STATUS: Record<string, { label: string; tone: PillTone }> = {

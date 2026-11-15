@@ -1,5 +1,6 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { LucideIcon } from 'lucide-react';
 import { X } from 'lucide-react';
 
@@ -9,6 +10,7 @@ export interface PlatformDrawerProps {
   title: ReactNode;
   subtitle?: ReactNode;
   icon?: LucideIcon;
+  avatar?: ReactNode;
   badge?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
@@ -25,6 +27,7 @@ export function PlatformDrawer({
   title,
   subtitle,
   icon: Icon,
+  avatar,
   badge,
   children,
   footer,
@@ -51,47 +54,53 @@ export function PlatformDrawer({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="pa-drawer-backdrop" onClick={onClose} role="dialog" aria-modal="true">
-      <div
-        className="pa-drawer-panel"
-        style={{ width: typeof width === 'number' ? `${width}px` : width }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Drawer Header */}
-        <div className="pa-drawer-header">
-          <div className="pa-drawer-title-wrap">
-            {Icon && (
-              <div className="pa-drawer-icon">
-                <Icon size={18} />
+  const content = (
+    <div className="pulse-ui pa-console">
+      <div className="pa-drawer-backdrop" onClick={onClose} role="dialog" aria-modal="true">
+        <div
+          className="pa-drawer-panel"
+          style={{ width: typeof width === 'number' ? `${width}px` : width }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Drawer Header */}
+          <div className="pa-drawer-header">
+            <div className="pa-drawer-title-wrap">
+              {avatar ? (
+                <div style={{ flexShrink: 0 }}>{avatar}</div>
+              ) : Icon ? (
+                <div className="pa-drawer-icon">
+                  <Icon size={18} />
+                </div>
+              ) : null}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <h3 className="pa-drawer-title">{translateUi(title)}</h3>
+                  {badge}
+                </div>
+                {subtitle && <p className="pa-drawer-sub">{translateUi(subtitle)}</p>}
               </div>
-            )}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <h3 className="pa-drawer-title">{translateUi(title)}</h3>
-                {badge}
-              </div>
-              {subtitle && <p className="pa-drawer-sub">{translateUi(subtitle)}</p>}
             </div>
+
+            <button
+              type="button"
+              className="pa-drawer-close"
+              onClick={onClose}
+              aria-label="Đóng ngăn kéo (Esc)"
+              title="Đóng (Esc)"
+            >
+              <X size={18} />
+            </button>
           </div>
 
-          <button
-            type="button"
-            className="pa-drawer-close"
-            onClick={onClose}
-            aria-label="Đóng ngăn kéo (Esc)"
-            title="Đóng (Esc)"
-          >
-            <X size={18} />
-          </button>
+          {/* Drawer Content */}
+          <div className="pa-drawer-body">{children}</div>
+
+          {/* Drawer Footer */}
+          {footer && <div className="pa-drawer-footer">{footer}</div>}
         </div>
-
-        {/* Drawer Content */}
-        <div className="pa-drawer-body">{children}</div>
-
-        {/* Drawer Footer */}
-        {footer && <div className="pa-drawer-footer">{footer}</div>}
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : content;
 }

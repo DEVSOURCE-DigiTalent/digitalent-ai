@@ -42,6 +42,7 @@ describe('Học liệu theo từng slide', () => {
     expect(screen.queryByText('Trang này chưa có nội dung văn bản.')).toBeNull();
     expect(screen.queryByText(/Kịch bản video/)).toBeNull();
     expect(container.querySelector('.pu-lesson-grid')).toBeNull();
+    expect(screen.queryByText(/Đang hoàn thiện biên tập/)).toBeNull();
   });
 
   it('keeps the text of a page that also has a PDF', () => {

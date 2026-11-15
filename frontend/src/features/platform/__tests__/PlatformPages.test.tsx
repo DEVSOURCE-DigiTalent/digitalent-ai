@@ -73,10 +73,18 @@ const catalog = vi.hoisted(() => ({
   uploadAsset: vi.fn(),
 }));
 
+const refPosService = vi.hoisted(() => ({
+  get: vi.fn(),
+  update: vi.fn(),
+}));
+
 vi.mock('@/services/platform-admin.service', () => ({ platformAdminService: service }));
 vi.mock('@/services/platform-catalog.service', () => ({
   platformCatalogService: catalog,
   assetUrl: (asset: { url: string }) => `/api/v1/${asset.url}`,
+}));
+vi.mock('@/services/reference-position-levels.service', () => ({
+  referencePositionLevelsService: refPosService,
 }));
 
 function App() {
@@ -145,6 +153,8 @@ const overview: PlatformOverview = {
   conversionRate: 50,
   userCount: 12,
   employeeCount: 9,
+  recentUsers7d: 3,
+  recentEmployees7d: 2,
   lockedUserCount: 0,
   trialUserCount: 3,
   trialEndingSoonCount: 1,
@@ -283,10 +293,54 @@ describe('Platform Admin console (v2)', () => {
     vi.clearAllMocks();
     service.getOverview.mockResolvedValue(overview);
     service.getCourses.mockResolvedValue([course('A1-F', 1), course('A1-I', 2), course('A1-A', 3)]);
+    service.getCommerce.mockResolvedValue({
+      courses: [course('A1-F', 1), course('A1-I', 2), course('A1-A', 3)],
+      seatsPurchased: 3,
+      seatsGranted: 0,
+      revenue: 1197000,
+      orders: {
+        items: [
+          {
+            id: 'ord-1',
+            organizationId: 'org-1',
+            organizationName: 'Northstar Studio',
+            courseCode: 'A1-I',
+            courseTitle: 'Dữ liệu · Trung cấp',
+            seats: 3,
+            kind: 'PURCHASE',
+            unitPrice: 399000,
+            totalAmount: 1197000,
+            reason: null,
+            createdByEmail: 'owner@northstar.vn',
+            createdAt: '2026-10-12T08:00:00Z',
+          },
+        ],
+        pageIndex: 1,
+        pageSize: 100,
+        totalItems: 1,
+        totalPages: 1,
+      },
+    });
     catalog.getFrameworks.mockResolvedValue({ items: [frameworkSummary], currentCatalogVersionNo: 3, draftCatalogVersionNo: 4 } satisfies FrameworksOutput);
     catalog.getFramework.mockResolvedValue(frameworkDetail);
     catalog.getVersions.mockResolvedValue(versions);
     catalog.getVersion.mockImplementation(async (no: number) => versionDetail(no));
+    refPosService.get.mockResolvedValue({
+      data: {
+        status: 200,
+        message: 'OK',
+        data: {
+          version: 5,
+          levels: {
+            CEO: [3, 3, 2, 3, 3, 2],
+            HR: [2, 3, 2, 3, 2, 1],
+            MARKETING: [3, 3, 3, 2, 3, 3],
+            SALES_CRM: [2, 3, 2, 2, 2, 1],
+            ACCOUNTANT: [3, 2, 1, 3, 2, 1],
+          },
+        },
+      },
+    });
   });
 
   const renderAt = (path: string) =>
@@ -305,10 +359,30 @@ describe('Platform Admin console (v2)', () => {
     expect((await screen.findByText('Phiên bản đang dùng')).nextElementSibling).toHaveTextContent('v3');
     expect(screen.getByText('+1 khóa mới · 2 đã sửa')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Mở bản nháp' })).toHaveAttribute('href', '/platform/versions/4');
-    expect(screen.getByText('1 người dùng thử nghiệm sẽ hết hạn trong vòng 48 giờ tới.')).toBeInTheDocument();
+    expect(screen.getByText('+29%')).toBeInTheDocument();
+    expect(screen.queryByText(/hết hạn trong vòng 48 giờ/)).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Doanh thu suất học' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Cơ cấu tổ chức' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Nhật ký' }));
+    expect(screen.getByText(/Chưa có thao tác quản trị nào được ghi nhận/)).toBeInTheDocument();
     const sidebar = screen.getByRole('complementary', { name: 'Điều hướng quản trị nền tảng' });
     expect(within(sidebar).getByRole('link', { name: /Phiên bản khóa học/ })).toHaveAttribute('href', '/platform/versions');
     expect(within(sidebar).getByRole('link', { name: /Đơn giá/ })).toHaveAttribute('href', '/platform/commerce');
+  });
+
+  it('PA-01 shows matched skeleton loading state while overview data is pending', async () => {
+    service.getOverview.mockReturnValue(new Promise(() => {}));
+    renderAt('/platform/dashboard');
+
+    expect(await screen.findByRole('status', { name: 'Đang tải dữ liệu tổng quan nền tảng' })).toBeInTheDocument();
+  });
+
+  it('PA-02 shows skeleton loader while loading the competency framework', async () => {
+    catalog.getFrameworks.mockReturnValue(new Promise(() => {}));
+    catalog.getFramework.mockReturnValue(new Promise(() => {}));
+    renderAt('/platform/frameworks');
+
+    expect(await screen.findByRole('status', { name: 'Đang tải khung chuẩn năng lực số' })).toBeInTheDocument();
   });
 
   it('PA-02 shows the one framework with its domains and courses, without adding frameworks', async () => {
@@ -589,12 +663,30 @@ describe('Platform Admin console (v2)', () => {
     // The header menu leads back to this page and signs out.
     fireEvent.click(screen.getByRole('button', { name: `Menu người dùng: ${name}` }));
     expect(screen.getByRole('link', { name: 'Hồ sơ quản trị viên' })).toHaveAttribute('href', '/platform/account');
-    expect(screen.getByRole('button', { name: 'Đăng xuất hệ thống' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Đăng xuất hệ thống' }).length).toBeGreaterThanOrEqual(1);
   });
 
   it('redirects the retired curriculum editor to the catalog versions', async () => {
     renderAt('/platform/curriculum/A1-F');
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Mỗi lần thêm hoặc sửa khóa là một phiên bản.' })).toBeInTheDocument();
+  });
+
+  it('PA-13 shows skeleton loader while reference position levels are pending', async () => {
+    refPosService.get.mockReturnValue(new Promise(() => {}));
+    renderAt('/platform/reference-positions');
+
+    expect(await screen.findByRole('status', { name: 'Đang tải mẫu vị trí chuẩn' })).toBeInTheDocument();
+  });
+
+  it('PA-13 renders enterprise reference positions matrix with 4 KPI cards without regulatory text', async () => {
+    renderAt('/platform/reference-positions');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Mẫu vị trí chuẩn doanh nghiệp' })).toBeInTheDocument();
+    expect(await screen.findByText('CHỨC DANH CHUẨN')).toBeInTheDocument();
+    expect(screen.getByText('ĐỘ PHỦ NĂNG LỰC')).toBeInTheDocument();
+    expect(screen.getByText('KỲ VỌNG TRUNG BÌNH')).toBeInTheDocument();
+    expect(screen.getByText('TRẠNG THÁI ÁP DỤNG')).toBeInTheDocument();
+    expect(screen.queryByText(/Thông tư 02/i)).not.toBeInTheDocument();
   });
 });

@@ -109,6 +109,9 @@ export interface PlatformUser {
   displayName: string;
   role: string;
   roles: string[];
+  workspace?: string | null;
+  phone?: string | null;
+  jobTitle?: string | null;
   organizationId: string | null;
   organizationName: string | null;
   departmentName: string | null;
@@ -124,14 +127,27 @@ export interface PlatformUser {
   trialState: TrialState | null;
   trialStartedAt: string | null;
   trialEndsAt: string | null;
+  taskSummary?: string | null;
 }
 
 export type TrialState = 'ACTIVE' | 'ENDED';
 export type TrialFilter = 'ACTIVE' | 'ENDING_SOON' | 'ENDED' | 'ANY';
 
+export interface PlatformUsersStats {
+  total: number;
+  owners: number;
+  managers: number;
+  employees: number;
+  mentors: number;
+  admins: number;
+  locked: number;
+  active: number;
+}
+
 export interface PlatformUsersPage extends PagedList<PlatformUser> {
   /** Trial counts over every personal account (not limited by the filters). */
   trials: { active: number; endingSoon: number; ended: number };
+  stats?: PlatformUsersStats;
 }
 
 export interface PlatformUserDetail {
@@ -162,6 +178,8 @@ export interface PlatformOverview {
   conversionRate: number;
   userCount: number;
   employeeCount: number;
+  recentUsers7d?: number;
+  recentEmployees7d?: number;
   lockedUserCount: number;
   trialUserCount: number;
   trialEndingSoonCount: number;
@@ -224,7 +242,7 @@ export const platformAdminService = {
   restoreOrganization: (id: string, reason: string) =>
     unwrap<PlatformOrganizationDetail>(apiClient.post(`/platform/organizations/${id}/restore`, { reason })),
 
-  getUsers: (query: PageQuery & { role?: string; status?: string; trial?: TrialFilter | ''; organizationId?: string } = {}) =>
+  getUsers: (query: PageQuery & { role?: string; status?: string; trial?: TrialFilter | ''; organizationId?: string; workspace?: string } = {}) =>
     unwrap<PlatformUsersPage>(apiClient.get('/platform/users', { params: params(query) })),
   getUser: (id: string) => unwrap<PlatformUserDetail>(apiClient.get(`/platform/users/${id}`)),
   lockUser: (id: string, reason: string) => unwrap<PlatformUserDetail>(apiClient.post(`/platform/users/${id}/lock`, { reason })),

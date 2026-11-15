@@ -1,10 +1,26 @@
-import { translateUi, useUiLanguage } from '@/lib/i18n';
-import type { ReactNode } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { usePlatformOverview } from '@/hooks/use-platform-admin';
+import {
+  ArrowRight,
+  BookOpen,
+  Building2,
+  CheckCircle2,
+  CreditCard,
+  FileEdit,
+  Plus,
+  RefreshCw,
+  TrendingUp,
+  Users,
+} from 'lucide-react';
+import { translateUi, useUiLanguage } from '@/lib/i18n';
+import {
+  usePlatformCommerce,
+  usePlatformCourses,
+  usePlatformOverview,
+} from '@/hooks/use-platform-admin';
 import { usePlatformTrials } from '@/hooks/use-trial-program';
 import type { PlatformOverview } from '@/services/platform-admin.service';
-import { Footer, LoadError, Loading, Pill } from '../components/pulse-ui';
+import { Footer, LoadError, Pill } from '../components/pulse-ui';
 import {
   ORG_STATUS,
   STAGE_LABELS,
@@ -15,612 +31,489 @@ import {
   formatMoney,
   formatNumber,
 } from '../components/pulse-format';
-import {
-  Anchor,
-  FileEdit,
-  Building2,
-  Users,
-  CreditCard,
-  ArrowRight,
-  Briefcase,
-  AlertTriangle,
-  CheckCircle2,
-  Activity,
-  Plus,
-  Clock,
-  Sparkles,
-  Gem,
-  RefreshCw,
-  FlaskConical,
-} from 'lucide-react';
+import { PlatformOverviewSkeleton } from './components/OverviewSkeleton';
+import { OrganizationDonutCard, RevenueColumnCard } from './components/OverviewCharts';
 
-/** PA-01 · Bento Executive Dashboard: the catalog anchor, draft, customers, trials, action center & quick actions. */
+type FeedTab = 'orgs' | 'audit';
+
+interface ActionRow {
+  key: string;
+  severity: 'danger' | 'warn' | 'info';
+  text: string;
+  to: string;
+  action: string;
+}
+
+function formatGrowthPct(added: number, total: number): number {
+  if (added <= 0) return 0;
+  const previous = total - added;
+  if (previous <= 0) return 100;
+  return Math.round((added / previous) * 100);
+}
+
+/** PA-01: Platform Executive Overview with 4-tier hierarchy, Recharts analytics and matched Skeleton loading. */
 export function PlatformOverviewPage() {
   useUiLanguage();
-  const { data, isLoading, error, refetch, isFetching } = usePlatformOverview();
-  const trials = usePlatformTrials();
-  const pendingTrialsCount = (trials.data ?? []).filter((t) => t.stage === 'REQUESTED').length;
+  const overview = usePlatformOverview();
+  const commerce = usePlatformCommerce({ pageIndex: 1, pageSize: 100 });
+  const coursesQuery = usePlatformCourses();
+  const trialsQuery = usePlatformTrials();
+
+  const [feedTab, setFeedTab] = useState<FeedTab>('orgs');
+
+  const data = overview.data;
+  const trialItems = trialsQuery.data ?? [];
+  const pendingTrialsCount = trialItems.filter((item) => item.stage === 'REQUESTED').length;
+  const orders = commerce.data?.orders?.items ?? [];
+  const courseList = coursesQuery.data ?? commerce.data?.courses ?? [];
+
+  const isRefreshing =
+    !overview.isLoading &&
+    (overview.isFetching || commerce.isFetching || trialsQuery.isFetching);
+
+  const handleRefresh = () => {
+    void overview.refetch();
+    void commerce.refetch();
+    void coursesQuery.refetch();
+    void trialsQuery.refetch();
+  };
+
+  const handleFeedKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'Home' && event.key !== 'End') {
+      return;
+    }
+    event.preventDefault();
+    setFeedTab((prev) => (prev === 'orgs' ? 'audit' : 'orgs'));
+  };
 
   return (
     <>
-      <div className="flex items-start justify-between flex-wrap gap-4 pb-2 border-b border-slate-200/80 mb-6">
+      <header className="pa-ov-header">
         <div>
-          <span className="text-xs font-bold text-amber-700 tracking-wider uppercase flex items-center gap-1.5 mb-1">
-            <span className="w-2 h-2 rounded-full bg-amber-600 inline-block" />
-            Quản trị nền tảng / Tổng quan
-          </span>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight m-0" aria-label="Toàn cảnh nền tảng hôm nay.">
-            Bảng điều khiển vận hành nền tảng
-          </h1>
-          <p className="text-sm text-slate-500 mt-1 mb-0">
-            Giám sát phiên bản chuẩn, khách hàng doanh nghiệp B2B, đánh giá dùng thử và hàng chờ tác vụ khẩn cấp.
+          <h1 aria-label={translateUi('Toàn cảnh nền tảng hôm nay.')}>Tổng quan hệ thống</h1>
+          <p className="pa-ov-subtitle">
+            Tổng hợp doanh thu, tổ chức, nhân sự và nội dung đào tạo.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="pa-ov-actions">
           <button
             type="button"
             className="btn btn-outline btn-small inline-flex items-center gap-1.5"
-            onClick={() => {
-              void refetch();
-              void trials.refetch();
-            }}
+            onClick={handleRefresh}
+            disabled={overview.isLoading || isRefreshing}
             title="Làm mới dữ liệu từ máy chủ"
           >
-            <RefreshCw size={14} className={isFetching ? 'animate-spin' : ''} />
-            <span>{translateUi("Làm mới")}</span>
+            <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} aria-hidden="true" />
+            <span>{translateUi('Làm mới')}</span>
           </button>
           <Link to="/platform/organizations" className="btn btn-primary btn-small inline-flex items-center gap-1.5">
-            <Plus size={14} />
-            <span>{translateUi("Thêm tổ chức mới")}</span>
+            <Plus size={14} aria-hidden="true" />
+            <span>{translateUi('Thêm tổ chức mới')}</span>
           </Link>
         </div>
-      </div>
+      </header>
 
-      {isLoading && <Loading />}
-      {error && <LoadError error={error} />}
+      {overview.isLoading && <PlatformOverviewSkeleton />}
+      {overview.error && <LoadError error={overview.error} />}
 
       {data && (
-        <>
-          {/* Row 1: Bento 5 KPI Bar */}
-          <div className="pa-bento-kpi-grid">
-            {/* Card 1: Anchor Version */}
-            <div className="pa-bento-card anchor-card">
-              <div>
-                <div className="pa-bento-kpi-head">
-                  <div className="pa-kpi-icon-wrap amber">
-                    <Anchor size={17} />
-                  </div>
-                  <span className="pa-brand-badge" style={{ margin: 0 }}>Đang phục vụ</span>
-                </div>
-                <div className="pa-bento-kpi-title">Phiên bản đang dùng</div>
-                <div className="pa-bento-kpi-val">{data.currentVersionNo ? `v${data.currentVersionNo}` : '—'}</div>
-              </div>
-              <div className="pa-bento-kpi-sub">
-                {data.courseCount} khóa · Ban hành {formatDate(data.currentVersionPublishedAt)}
-              </div>
+        <div className={`pa-ov-stage${isRefreshing ? ' is-refreshing' : ''}`}>
+          {/* Tier 1: Catalog Version Status Strip */}
+          <div className="pa-ov-version-bar" role="region" aria-label="Trạng thái phiên bản khóa học">
+            <div className="pa-ov-version-item">
+              <span className="pa-status-dot is-live" aria-hidden="true" />
+              <span className="pa-ov-version-label">Phiên bản đang dùng</span>
+              <strong className="pa-ov-version-val">
+                {data.currentVersionNo ? `v${data.currentVersionNo}` : 'Chưa có'}
+              </strong>
+              <span className="pa-ov-version-meta">
+                {data.courseCount} khóa học · Công bố {formatDate(data.currentVersionPublishedAt)}
+              </span>
             </div>
 
-            {/* Card 2: Draft Version */}
-            <div className="pa-bento-card draft-card">
-              <div>
-                <div className="pa-bento-kpi-head">
-                  <div className="pa-kpi-icon-wrap sky">
-                    <FileEdit size={17} />
-                  </div>
-                  {data.draftVersionNo ? (
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#0369a1', background: '#e0f2fe', padding: '2px 7px', borderRadius: 9999 }}>
-                      Đang soạn
-                    </span>
-                  ) : (
-                    <span style={{ fontSize: 11, color: '#94a3b8' }}>Chưa tạo</span>
-                  )}
-                </div>
-                <div className="pa-bento-kpi-title">Bản nháp đang soạn</div>
-                <div className="pa-bento-kpi-val">{data.draftVersionNo ? `v${data.draftVersionNo}` : '—'}</div>
-              </div>
-              <div className="pa-bento-kpi-sub">
-                {data.draftVersionNo
-                  ? translateUi(`+${data.draftNewCourseCount} khóa mới · ${data.draftEditedCourseCount} đã sửa`)
-                  : 'Chưa có bản nháp mới'}
-              </div>
-            </div>
+            <div className="pa-ov-version-divider" aria-hidden="true" />
 
-            {/* Card 3: Organizations */}
-            <div className="pa-bento-card">
-              <div>
-                <div className="pa-bento-kpi-head">
-                  <div className="pa-kpi-icon-wrap emerald">
-                    <Building2 size={17} />
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: '#15803d' }}>
-                    {data.paidOrganizationCount} trả phí
+            <div className="pa-ov-version-item">
+              {data.draftVersionNo ? (
+                <>
+                  <span className="pa-status-dot is-info" aria-hidden="true" />
+                  <span className="pa-ov-version-label">Bản nháp đang soạn</span>
+                  <strong className="pa-ov-version-val">v{data.draftVersionNo}</strong>
+                  <span className="pa-ov-version-meta">
+                    {translateUi(`+${data.draftNewCourseCount} khóa mới · ${data.draftEditedCourseCount} đã sửa`)}
                   </span>
-                </div>
-                <div className="pa-bento-kpi-title">Tổ chức khách hàng</div>
-                <div className="pa-bento-kpi-val">{formatNumber(data.organizationCount)}</div>
-              </div>
-              <div className="pa-bento-kpi-sub">
-                {data.trialOrganizationCount} dùng thử · {data.suspendedOrganizationCount} tạm ngưng
-              </div>
-            </div>
-
-            {/* Card 4: Trial Users */}
-            <div className="pa-bento-card">
-              <div>
-                <div className="pa-bento-kpi-head">
-                  <div className="pa-kpi-icon-wrap indigo">
-                    <Users size={17} />
-                  </div>
-                  {data.trialEndingSoonCount > 0 ? (
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#b91c1c', background: '#fee2e2', padding: '2px 6px', borderRadius: 9999 }}>
-                      {data.trialEndingSoonCount} sắp hết
-                    </span>
-                  ) : (
-                    <span style={{ fontSize: 11, color: '#64748b' }}>Bình thường</span>
-                  )}
-                </div>
-                <div className="pa-bento-kpi-title">Học viên dùng thử</div>
-                <div className="pa-bento-kpi-val">{formatNumber(data.trialUserCount)}</div>
-              </div>
-              <div className="pa-bento-kpi-sub">
-                {data.trialEndingSoonCount > 0
-                  ? translateUi(`${data.trialEndingSoonCount} người hết hạn trong 48 giờ`)
-                  : 'Không có người dùng sắp hết hạn'}
-              </div>
-            </div>
-
-            {/* Card 5: B2B Revenue */}
-            <div className="pa-bento-card">
-              <div>
-                <div className="pa-bento-kpi-head">
-                  <div className="pa-kpi-icon-wrap slate">
-                    <CreditCard size={17} />
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: '#475569' }}>Doanh thu</span>
-                </div>
-                <div className="pa-bento-kpi-title">Doanh thu suất khóa</div>
-                <div className="pa-bento-kpi-val" style={{ fontSize: 20 }}>{formatMoney(data.revenue)}</div>
-              </div>
-              <div className="pa-bento-kpi-sub">
-                {formatNumber(data.seatsPurchased)} suất bán · {formatNumber(data.seatsGranted)} suất cấp
-              </div>
-            </div>
-          </div>
-
-          {/* Row 2: Action Center (7) + Quick Actions & Conversion Health (5) */}
-          <div className="pa-bento-row">
-            {/* Action Center */}
-            <div className="pa-bento-box">
-              <div className="pa-box-header">
-                <div className="pa-box-title-group">
-                  <AlertTriangle size={17} style={{ color: '#d97706' }} />
-                  <h2 className="pa-box-title">Việc cần xử lý khẩn cấp</h2>
-                </div>
-                <ActionCenterBadge data={data} pendingTrialsCount={pendingTrialsCount} />
-              </div>
-              <ActionCenterItems data={data} pendingTrialsCount={pendingTrialsCount} />
-            </div>
-
-            {/* Quick Actions Card & Conversion Health */}
-            <div className="pa-bento-box">
-              <div className="pa-box-header">
-                <div className="pa-box-title-group">
-                  <Sparkles size={17} style={{ color: '#d97706' }} />
-                  <h2 className="pa-box-title">{translateUi("Thao tác nhanh")}</h2>
-                </div>
-                <span style={{ fontSize: 12, color: '#64748b' }}>Phím tắt vận hành</span>
-              </div>
-
-              <div className="pa-quick-action-grid">
-                <Link to="/platform/organizations" className="pa-quick-action-btn">
-                  <div className="pa-quick-action-top">
-                    <Building2 size={16} style={{ color: '#d97706' }} />
-                    <span className="pa-quick-action-title">Thêm tổ chức</span>
-                  </div>
-                  <span className="pa-quick-action-desc">Kích hoạt doanh nghiệp B2B mới</span>
-                </Link>
-
-                <Link to="/platform/trials" className="pa-quick-action-btn">
-                  <div className="pa-quick-action-top">
-                    <FlaskConical size={16} style={{ color: '#d97706' }} />
-                    <span className="pa-quick-action-title">Đánh giá dùng thử</span>
-                  </div>
-                  <span className="pa-quick-action-desc">Phân công mentor & thẩm định</span>
-                </Link>
-
-                <Link to="/platform/versions" className="pa-quick-action-btn">
-                  <div className="pa-quick-action-top">
-                    <FileEdit size={16} style={{ color: '#15803d' }} />
-                    <span className="pa-quick-action-title">Soạn bản nháp</span>
-                  </div>
-                  <span className="pa-quick-action-desc">Cập nhật catalog chương trình</span>
-                </Link>
-
-                <Link to="/platform/commerce" className="pa-quick-action-btn">
-                  <div className="pa-quick-action-top">
-                    <CreditCard size={16} style={{ color: '#6366f1' }} />
-                    <span className="pa-quick-action-title">Đơn giá khóa</span>
-                  </div>
-                  <span className="pa-quick-action-desc">Điều chỉnh giá bán B2B</span>
-                </Link>
-              </div>
-
-              {/* Conversion Health Bar */}
-              <div className="pa-health-widget">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#0f172a' }}>Tỷ lệ chuyển đổi khách hàng</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#15803d' }}>
-                    {data.conversionRate}% trả phí
-                  </span>
-                </div>
-
-                <div className="pa-progress-segmented">
-                  <div
-                    className="pa-progress-seg-paid"
-                    style={{
-                      width: `${data.organizationCount > 0 ? (data.paidOrganizationCount / data.organizationCount) * 100 : 50}%`,
-                    }}
-                    title={translateUi(`Trả phí: ${data.paidOrganizationCount}`)}
-                  />
-                  <div
-                    className="pa-progress-seg-trial"
-                    style={{
-                      width: `${data.organizationCount > 0 ? (data.trialOrganizationCount / data.organizationCount) * 100 : 50}%`,
-                    }}
-                    title={translateUi(`Dùng thử: ${data.trialOrganizationCount}`)}
-                  />
-                  <div
-                    className="pa-progress-seg-suspended"
-                    style={{
-                      width: `${data.organizationCount > 0 ? (data.suspendedOrganizationCount / data.organizationCount) * 100 : 0}%`,
-                    }}
-                    title={translateUi(`Tạm ngưng: ${data.suspendedOrganizationCount}`)}
-                  />
-                </div>
-
-                <div className="pa-health-legend">
-                  <div className="pa-legend-item">
-                    <span className="pa-legend-dot" style={{ background: '#10b981' }} />
-                    <span>Trả phí ({data.paidOrganizationCount})</span>
-                  </div>
-                  <div className="pa-legend-item">
-                    <span className="pa-legend-dot" style={{ background: '#f59e0b' }} />
-                    <span>Dùng thử ({data.trialOrganizationCount})</span>
-                  </div>
-                  <div className="pa-legend-item">
-                    <span className="pa-legend-dot" style={{ background: '#f43f5e' }} />
-                    <span>Tạm ngưng ({data.suspendedOrganizationCount})</span>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: 12, fontSize: 12, color: '#64748b' }}>
-                  Quy mô nhân sự toàn nền tảng: <strong style={{ color: '#0f172a' }}>{formatNumber(data.employeeCount)}{translateUi(" nhân viên")}</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Row 3: Live Audit Timeline (7) + Recent Organizations (5) */}
-          <div className="pa-bento-row">
-            {/* Live Audit Timeline */}
-            <div className="pa-bento-box">
-              <div className="pa-box-header">
-                <div className="pa-box-title-group">
-                  <Activity size={17} style={{ color: '#d97706' }} />
-                  <h2 className="pa-box-title">Thao tác nền tảng gần đây</h2>
-                </div>
-                <Link to="/platform/audit-log" className="btn btn-ghost btn-small">
-                  Nhật ký đầy đủ →
-                </Link>
-              </div>
-
-              {data.recentActivity.length === 0 ? (
-                <p style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', padding: '24px 0' }}>
-                  Chưa có thao tác nền tảng nào được ghi nhận.
-                </p>
+                  <Link to={`/platform/versions/${data.draftVersionNo}`} className="pa-ov-version-link">
+                    <FileEdit size={13} aria-hidden="true" />
+                    <span>Chi tiết nháp</span>
+                  </Link>
+                </>
               ) : (
-                <div className="pa-timeline-feed">
-                  {data.recentActivity.slice(0, 5).map((a) => (
-                    <div key={a.id} className="pa-timeline-entry">
-                      <div className="pa-timeline-dot" />
-                      <div className="pa-timeline-main">{auditActionLabel(a.action)}</div>
-                      <div className="pa-timeline-meta">
-                        {a.entityLabel && <span>Thực thể: <strong>{a.entityLabel}</strong></span>}
-                        {auditReason(a.newValues) && <span>Lý do: <em>{auditReason(a.newValues)}</em></span>}
-                        <span>· {formatDateTime(a.createdAt)}</span>
-                        <span>· {a.actorEmail}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <span className="pa-ov-version-meta">Không có bản nháp khóa học đang mở.</span>
               )}
             </div>
+          </div>
 
-            {/* Recent Organizations */}
-            <div className="pa-bento-box">
-              <div className="pa-box-header">
-                <div className="pa-box-title-group">
-                  <Building2 size={17} style={{ color: '#d97706' }} />
-                  <h2 className="pa-box-title">Doanh nghiệp mới đăng ký</h2>
+          {/* Tier 2: 4 Core Executive KPI Cards */}
+          <div className="pa-ov-kpi-grid">
+            <Link to="/platform/commerce" className="pa-ov-kpi-card is-tone-orange">
+              <div className="pa-ov-kpi-top">
+                <span className="pa-ov-kpi-label">Doanh thu suất khóa</span>
+                <span className="pa-kpi-icon is-orange" aria-hidden="true">
+                  <CreditCard size={16} />
+                </span>
+              </div>
+              <div className="pa-ov-kpi-val is-money">{formatMoney(data.revenue)}</div>
+              <div className="pa-ov-kpi-sub">
+                <strong>{formatNumber(data.seatsPurchased)}</strong> bán ·{' '}
+                <strong>{formatNumber(data.seatsGranted)}</strong> cấp
+              </div>
+            </Link>
+
+            <Link to="/platform/organizations" className="pa-ov-kpi-card is-tone-sky">
+              <div className="pa-ov-kpi-top">
+                <span className="pa-ov-kpi-label">Tổ chức khách hàng</span>
+                <span className="pa-kpi-icon is-sky" aria-hidden="true">
+                  <Building2 size={16} />
+                </span>
+              </div>
+              <div className="pa-ov-kpi-val-row">
+                <span className="pa-ov-kpi-val">{formatNumber(data.organizationCount)}</span>
+                {data.conversionRate > 0 && (
+                  <span className="pa-ov-delta-pill">
+                    <TrendingUp size={12} aria-hidden="true" />
+                    <span>{data.conversionRate}% trả phí</span>
+                  </span>
+                )}
+              </div>
+              <div className="pa-ov-kpi-sub">
+                <span className="pa-inline-status is-live">{data.paidOrganizationCount} trả phí</span>
+                <span>· {data.trialOrganizationCount} dùng thử</span>
+                {data.suspendedOrganizationCount > 0 && (
+                  <span>· {data.suspendedOrganizationCount} tạm ngưng</span>
+                )}
+              </div>
+            </Link>
+
+            <Link to="/platform/users" className="pa-ov-kpi-card is-tone-green">
+              <div className="pa-ov-kpi-top">
+                <span className="pa-ov-kpi-label">Tài khoản &amp; Nhân sự</span>
+                <span className="pa-kpi-icon is-amber" aria-hidden="true">
+                  <Users size={16} />
+                </span>
+              </div>
+              <div className="pa-ov-kpi-val-row">
+                <span className="pa-ov-kpi-val">{formatNumber(data.userCount)}</span>
+                {(() => {
+                  const userGrowthPct = formatGrowthPct(data.recentUsers7d ?? 0, data.userCount);
+                  return userGrowthPct > 0 ? (
+                    <span className="pa-ov-delta-pill">
+                      <TrendingUp size={12} aria-hidden="true" />
+                      <span>+{userGrowthPct}%</span>
+                    </span>
+                  ) : null;
+                })()}
+              </div>
+              <div className="pa-ov-kpi-sub">
+                <span>
+                  <strong>{formatNumber(data.employeeCount)}</strong> nhân sự DN
+                </span>
+                <span>·</span>
+                {(() => {
+                  const empGrowthPct = formatGrowthPct(data.recentEmployees7d ?? 0, data.employeeCount);
+                  return (
+                    <span className={`pa-ov-delta-inline ${empGrowthPct > 0 ? 'is-live' : ''}`}>
+                      <TrendingUp size={12} aria-hidden="true" />
+                      <span>+{empGrowthPct}%</span>
+                    </span>
+                  );
+                })()}
+              </div>
+            </Link>
+
+            <Link to="/platform/versions" className="pa-ov-kpi-card is-tone-amber">
+              <div className="pa-ov-kpi-top">
+                <span className="pa-ov-kpi-label">Khung chuẩn &amp; Nội dung</span>
+                <span className="pa-kpi-icon is-amber" aria-hidden="true">
+                  <BookOpen size={16} />
+                </span>
+              </div>
+              <div className="pa-ov-kpi-val">{formatNumber(data.courseCount)} khóa</div>
+              <div className="pa-ov-kpi-sub">
+                {data.domainCount} lĩnh vực · {formatNumber(data.questionCount)} câu hỏi
+              </div>
+            </Link>
+          </div>
+
+          {/* Tier 3: Recharts Column Chart (7fr) + Organization & Trial Donut (5fr) */}
+          <div className="pa-ov-charts-grid">
+            <RevenueColumnCard
+              orders={orders}
+              courses={courseList}
+              totalRevenue={data.revenue}
+              seatsPurchased={data.seatsPurchased}
+              isSubLoading={commerce.isLoading && coursesQuery.isLoading}
+            />
+
+            <OrganizationDonutCard data={data} trials={trialItems} />
+          </div>
+
+          {/* Tier 4: Priority Action Queue (6fr) + Tabbed Recent Activity Monitor (6fr) */}
+          <div className="pa-ov-ops-grid">
+            <section className="pa-ov-panel" aria-label="Việc cần xử lý">
+              <div className="pa-ov-panel-head">
+                <div>
+                  <h2 className="pa-ov-panel-title">Việc cần xử lý</h2>
+                  <p className="pa-ov-panel-sub">Ưu tiên xử lý ngay</p>
                 </div>
-                <Link to="/platform/organizations" className="btn btn-ghost btn-small">
-                  Tất cả tổ chức →
-                </Link>
+                <ActionCountBadge data={data} pendingTrialsCount={pendingTrialsCount} />
               </div>
 
-              {data.recentOrganizations.length === 0 ? (
-                <p style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', padding: '24px 0' }}>
-                  Chưa có doanh nghiệp nào đăng ký.
-                </p>
-              ) : (
+              <PriorityActionList data={data} pendingTrialsCount={pendingTrialsCount} />
+            </section>
+
+            <section className="pa-ov-panel" aria-label="Theo dõi gần đây">
+              <div className="pa-ov-panel-head">
                 <div>
-                  {data.recentOrganizations.slice(0, 5).map((o) => (
-                    <div key={o.id} className="pa-recent-org-item">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div className="pa-org-avatar">
-                          {o.name.slice(0, 2).toUpperCase()}
-                        </div>
-                        <div>
-                          <Link
-                            to={`/platform/organizations/${o.id}`}
-                            style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', textDecoration: 'none' }}
-                          >
-                            {o.name}
-                          </Link>
-                          <div style={{ fontSize: 11, color: '#64748b' }}>
-                            {o.ownerEmail ?? 'Chưa gán chủ doanh nghiệp'} · {o.employeeCount} nhân viên · {formatDate(o.createdAt)}
+                  <h2 className="pa-ov-panel-title">Theo dõi gần đây</h2>
+                  <p className="pa-ov-panel-sub">
+                    {feedTab === 'orgs'
+                      ? 'Đăng ký mới gần đây'
+                      : 'Thao tác gần đây'}
+                  </p>
+                </div>
+
+                <div
+                  className="pa-ov-tablist"
+                  role="tablist"
+                  aria-label="Loại hoạt động gần đây"
+                  onKeyDown={handleFeedKeyDown}
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    id="pa-feed-tab-orgs"
+                    aria-selected={feedTab === 'orgs'}
+                    tabIndex={feedTab === 'orgs' ? 0 : -1}
+                    className="pa-ov-tab"
+                    onClick={() => setFeedTab('orgs')}
+                  >
+                    {translateUi('Doanh nghiệp mới')}
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    id="pa-feed-tab-audit"
+                    aria-selected={feedTab === 'audit'}
+                    tabIndex={feedTab === 'audit' ? 0 : -1}
+                    className="pa-ov-tab"
+                    onClick={() => setFeedTab('audit')}
+                  >
+                    {translateUi('Nhật ký')}
+                  </button>
+                </div>
+              </div>
+
+              {feedTab === 'orgs' ? (
+                <div role="tabpanel" aria-labelledby="pa-feed-tab-orgs">
+                  {data.recentOrganizations.length === 0 ? (
+                    <div className="pa-ov-empty-inline">
+                      <p>Chưa có doanh nghiệp nào đăng ký. Bấm &ldquo;Thêm tổ chức mới&rdquo; phía trên để tạo hồ sơ đầu tiên.</p>
+                    </div>
+                  ) : (
+                    <div className="pa-ov-feed-list">
+                      {data.recentOrganizations.slice(0, 5).map((org) => (
+                        <div key={org.id} className="pa-recent-org-item">
+                          <div className="pa-recent-org-left">
+                            <div className="pa-org-avatar" aria-hidden="true">
+                              {org.name.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <Link to={`/platform/organizations/${org.id}`} className="pa-recent-org-link">
+                                {org.name}
+                              </Link>
+                              <div className="pa-recent-org-meta">
+                                {org.ownerEmail ?? 'Chưa gán chủ doanh nghiệp'} · {formatNumber(org.employeeCount ?? 0)} nhân viên ·{' '}
+                                {formatDate(org.createdAt)}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            {org.status === 'SUSPENDED' ? (
+                              <Pill tone={ORG_STATUS.SUSPENDED.tone}>{translateUi(ORG_STATUS.SUSPENDED.label)}</Pill>
+                            ) : (
+                              <Pill tone={STAGE_LABELS[org.stage]?.tone}>
+                                {translateUi(STAGE_LABELS[org.stage]?.label) ?? translateUi('Đang hoạt động')}
+                              </Pill>
+                            )}
                           </div>
                         </div>
-                      </div>
-
-                      <div>
-                        {o.status === 'SUSPENDED' ? (
-                          <Pill tone={ORG_STATUS.SUSPENDED.tone}>{translateUi(ORG_STATUS.SUSPENDED.label)}</Pill>
-                        ) : (
-                          <Pill tone={STAGE_LABELS[o.stage]?.tone}>{translateUi(STAGE_LABELS[o.stage]?.label) ?? translateUi('Đang hoạt động')}</Pill>
-                        )}
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
+                  <div className="pa-ov-panel-foot">
+                    <Link to="/platform/organizations" className="pa-box-link">
+                      <span>Xem tất cả tổ chức</span>
+                      <ArrowRight size={14} />
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div role="tabpanel" aria-labelledby="pa-feed-tab-audit">
+                  {data.recentActivity.length === 0 ? (
+                    <div className="pa-ov-empty-inline">
+                      <p>Chưa có thao tác quản trị nào được ghi nhận. Nhật ký sẽ hiển thị khi có thay đổi mới.</p>
+                    </div>
+                  ) : (
+                    <div className="pa-timeline-feed">
+                      {data.recentActivity.slice(0, 5).map((entry) => (
+                        <div key={entry.id} className="pa-timeline-entry">
+                          <div className="pa-timeline-dot" aria-hidden="true" />
+                          <div className="pa-timeline-main">{auditActionLabel(entry.action)}</div>
+                          <div className="pa-timeline-meta">
+                            {entry.entityLabel && (
+                              <span>
+                                Thực thể: <strong>{entry.entityLabel}</strong>
+                              </span>
+                            )}
+                            {auditReason(entry.newValues) && (
+                              <span>
+                                Lý do: <em>{auditReason(entry.newValues)}</em>
+                              </span>
+                            )}
+                            <span>· {formatDateTime(entry.createdAt)}</span>
+                            {entry.actorEmail && <span>· {entry.actorEmail}</span>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="pa-ov-panel-foot">
+                    <Link to="/platform/audit-log" className="pa-box-link">
+                      <span>Mở nhật ký đầy đủ</span>
+                      <ArrowRight size={14} />
+                    </Link>
+                  </div>
                 </div>
               )}
-            </div>
+            </section>
           </div>
-
-          {/* Standard Content Strip */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-              gap: 16,
-              marginBottom: 24,
-            }}
-          >
-            <Link
-              to="/platform/frameworks"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '14px 18px',
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: 12,
-                textDecoration: 'none',
-                color: '#0f172a',
-                boxShadow: '0 1px 3px 0 rgba(15, 23, 42, 0.04)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: '#fef3c7', color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Gem size={18} />
-              </div>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>Khung chuẩn TT 02/2025</div>
-                <div style={{ fontSize: 12, color: '#64748b' }}>
-                  {data.frameworkCount} khung · {data.domainCount}{translateUi(" lĩnh vực")}{data.draftFrameworkCount ? translateUi(` · ${data.draftFrameworkCount} bản nháp`) : ''}
-                </div>
-              </div>
-            </Link>
-
-            <Link
-              to="/platform/versions"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '14px 18px',
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: 12,
-                textDecoration: 'none',
-                color: '#0f172a',
-                boxShadow: '0 1px 3px 0 rgba(15, 23, 42, 0.04)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: '#e0f2fe', color: '#0369a1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Anchor size={18} />
-              </div>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>Catalog khóa học chuẩn</div>
-                <div style={{ fontSize: 12, color: '#64748b' }}>
-                  {data.courseCount}{translateUi(" khóa · ")}{formatNumber(data.questionCount)} câu hỏi ôn tập
-                </div>
-              </div>
-            </Link>
-
-            <Link
-              to="/platform/users"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '14px 18px',
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: 12,
-                textDecoration: 'none',
-                color: '#0f172a',
-                boxShadow: '0 1px 3px 0 rgba(15, 23, 42, 0.04)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: '#f1f5f9', color: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Users size={18} />
-              </div>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>Tài khoản toàn hệ thống</div>
-                <div style={{ fontSize: 12, color: '#64748b' }}>
-                  {formatNumber(data.userCount)} tài khoản · {formatNumber(data.employeeCount)}{translateUi(" nhân sự")}</div>
-              </div>
-            </Link>
-          </div>
-        </>
+        </div>
       )}
-
 
       <Footer />
     </>
   );
 }
 
-function ActionCenterBadge({ data, pendingTrialsCount = 0 }: { data: PlatformOverview; pendingTrialsCount?: number }) {
-  useUiLanguage();
-  let count = 0;
-  if (data.draftVersionNo && (data.draftNewCourseCount + data.draftEditedCourseCount > 0)) count++;
-  if (data.trialEndingSoonCount > 0) count++;
-  if (data.suspendedOrganizationCount > 0) count++;
-  if (data.lockedUserCount > 0) count++;
-  if (data.draftFrameworkCount > 0) count++;
-  if (data.pausedCourseCount > 0) count++;
-  if (pendingTrialsCount > 0) count++;
+function buildActionRows(data: PlatformOverview, pendingTrialsCount: number): ActionRow[] {
+  const items: ActionRow[] = [];
 
+  if (pendingTrialsCount > 0) {
+    items.push({
+      key: 'trials_pending',
+      severity: 'warn',
+      text: `${pendingTrialsCount} hồ sơ dùng thử chờ phân công Mentor.`,
+      to: '/platform/trials',
+      action: 'Phân công ngay',
+    });
+  }
+
+  if (data.suspendedOrganizationCount > 0) {
+    items.push({
+      key: 'suspended',
+      severity: 'danger',
+      text: `${data.suspendedOrganizationCount} tổ chức đang tạm ngưng.`,
+      to: '/platform/organizations?status=SUSPENDED',
+      action: 'Xem tổ chức',
+    });
+  }
+
+  if (data.lockedUserCount > 0) {
+    items.push({
+      key: 'locked',
+      severity: 'danger',
+      text: `${data.lockedUserCount} tài khoản đang bị khóa.`,
+      to: '/platform/users?status=LOCKED',
+      action: 'Xem tài khoản',
+    });
+  }
+
+  if (data.draftVersionNo) {
+    const changed = data.draftNewCourseCount + data.draftEditedCourseCount;
+    if (changed > 0) {
+      items.push({
+        key: 'draft',
+        severity: 'warn',
+        text: `Bản nháp v${data.draftVersionNo} có ${changed} khóa chưa công bố.`,
+        to: `/platform/versions/${data.draftVersionNo}`,
+        action: 'Mở bản nháp',
+      });
+    }
+  }
+
+  if (data.draftFrameworkCount > 0) {
+    items.push({
+      key: 'framework',
+      severity: 'warn',
+      text: `${data.draftFrameworkCount} khung năng lực đang có bản nháp.`,
+      to: '/platform/frameworks',
+      action: 'Xem khung chuẩn',
+    });
+  }
+
+  if (data.pausedCourseCount > 0) {
+    items.push({
+      key: 'paused',
+      severity: 'info',
+      text: `${data.pausedCourseCount} khóa nâng cao tạm ngưng bán.`,
+      to: '/platform/commerce',
+      action: 'Xem đơn giá',
+    });
+  }
+
+  return items;
+}
+
+function ActionCountBadge({ data, pendingTrialsCount }: { data: PlatformOverview; pendingTrialsCount: number }) {
+  const count = buildActionRows(data, pendingTrialsCount).length;
   if (count === 0) {
     return <span className="pa-count-badge neutral">0 việc</span>;
   }
   return <span className="pa-count-badge">{count} việc cần xử lý</span>;
 }
 
-function ActionCenterItems({ data, pendingTrialsCount = 0 }: { data: PlatformOverview; pendingTrialsCount?: number }) {
+function PriorityActionList({ data, pendingTrialsCount }: { data: PlatformOverview; pendingTrialsCount: number }) {
   useUiLanguage();
-  const items: { key: string; tone: string; text: string; to: string; action: string; icon: ReactNode }[] = [];
-
-  // 1. Pending Trial Assessments Queue
-  if (pendingTrialsCount > 0) {
-    items.push({
-      key: 'trials_pending',
-      tone: 'amber',
-      text: `${pendingTrialsCount} yêu cầu chấm bài dùng thử của doanh nghiệp đang chờ phân công Mentor thẩm định.`,
-      to: '/platform/trials',
-      action: 'Phân công ngay',
-      icon: <FlaskConical size={16} style={{ color: '#d97706' }} />,
-    });
-  }
-
-  // 2. Draft Catalog changes
-  if (data.draftVersionNo) {
-    const changed = data.draftNewCourseCount + data.draftEditedCourseCount;
-    if (changed > 0) {
-      items.push({
-        key: 'draft',
-        tone: 'amber',
-        text: `Bản nháp v${data.draftVersionNo} có ${changed} khóa học thay đổi chưa công bố ra thị trường.`,
-        to: `/platform/versions/${data.draftVersionNo}`,
-        action: 'Mở bản nháp',
-        icon: <FileEdit size={16} style={{ color: '#d97706' }} />,
-      });
-    }
-  }
-
-  // 3. Personal trials ending soon
-  if (data.trialEndingSoonCount > 0) {
-    items.push({
-      key: 'trial',
-      tone: 'coral',
-      text: `${data.trialEndingSoonCount} người dùng thử nghiệm sẽ hết hạn trong vòng 48 giờ tới.`,
-      to: '/platform/users?trial=ENDING_SOON',
-      action: 'Xem danh sách',
-      icon: <Clock size={16} style={{ color: '#b91c1c' }} />,
-    });
-  }
-
-  // 4. Suspended organizations
-  if (data.suspendedOrganizationCount > 0) {
-    items.push({
-      key: 'suspended',
-      tone: 'coral',
-      text: `${data.suspendedOrganizationCount} tổ chức khách hàng đang trong trạng thái tạm ngưng.`,
-      to: '/platform/organizations?status=SUSPENDED',
-      action: 'Xem tổ chức',
-      icon: <AlertTriangle size={16} style={{ color: '#b91c1c' }} />,
-    });
-  }
-
-  // 5. Locked users
-  if (data.lockedUserCount > 0) {
-    items.push({
-      key: 'locked',
-      tone: 'coral',
-      text: `${data.lockedUserCount} tài khoản cá nhân đang bị khóa bởi quản trị viên.`,
-      to: '/platform/users?status=LOCKED',
-      action: 'Xem tài khoản',
-      icon: <AlertTriangle size={16} style={{ color: '#b91c1c' }} />,
-    });
-  }
-
-  // 6. Draft frameworks
-  if (data.draftFrameworkCount > 0) {
-    items.push({
-      key: 'framework',
-      tone: 'amber',
-      text: `${data.draftFrameworkCount} khung năng lực số còn thay đổi ở trạng thái bản nháp.`,
-      to: '/platform/frameworks',
-      action: 'Xem khung chuẩn',
-      icon: <Briefcase size={16} style={{ color: '#d97706' }} />,
-    });
-  }
-
-  // 7. Paused courses
-  if (data.pausedCourseCount > 0) {
-    items.push({
-      key: 'paused',
-      tone: 'gray',
-      text: `${data.pausedCourseCount} khóa học nâng cao đang tạm ngưng mở bán.`,
-      to: '/platform/commerce',
-      action: 'Xem đơn giá',
-      icon: <CreditCard size={16} style={{ color: '#64748b' }} />,
-    });
-  }
+  const items = buildActionRows(data, pendingTrialsCount);
 
   if (items.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '32px 16px', background: '#f8fafc', borderRadius: 10, border: '1px dashed #e2e8f0' }}>
-        <CheckCircle2 size={32} style={{ color: '#10b981', margin: '0 auto 8px' }} />
-        <div style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>Hệ thống đang vận hành ổn định</div>
-        <p style={{ fontSize: 12, color: '#64748b', margin: '4px 0 0' }}>
-          Không có cảnh báo khẩn cấp hoặc việc tồn đọng cần xử lý.
+      <div className="pa-action-empty">
+        <CheckCircle2 size={24} className="pa-action-empty-icon" aria-hidden="true" />
+        <div className="pa-action-empty-title">Hệ thống đang vận hành ổn định</div>
+        <p className="pa-action-empty-desc">
+          Không có cảnh báo khẩn cấp hoặc việc tồn đọng. Tiếp tục theo dõi định kỳ tại mục Tổ chức và Nhật ký.
         </p>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="pa-ov-action-list">
       {items.map((item) => (
-        <div key={item.key} className="pa-action-item">
-          <div className="pa-action-left">
-            {item.icon}
-            <span className="pa-action-text">{item.text}</span>
+        <div key={item.key} className="pa-ov-action-row">
+          <div className="pa-ov-action-left">
+            <span className={`pa-ov-sev-dot is-${item.severity}`} aria-hidden="true" />
+            <span className="pa-ov-action-text">{item.text}</span>
           </div>
-          <Link to={item.to} className="btn btn-outline btn-small" style={{ whiteSpace: 'nowrap', marginLeft: 12 }}>
-            {item.action}
-            <ArrowRight size={13} style={{ marginLeft: 4 }} />
+          <Link to={item.to} className="btn btn-outline btn-small pa-ov-action-btn">
+            <span>{item.action}</span>
+            <ArrowRight size={13} aria-hidden="true" />
           </Link>
         </div>
       ))}
     </div>
   );
 }
-

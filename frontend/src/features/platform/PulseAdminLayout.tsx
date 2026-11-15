@@ -1,154 +1,673 @@
-import { translateUi, useUiLanguage } from '@/lib/i18n';
-import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
-import { useState, useRef, useEffect, useMemo } from 'react';
-import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { translateUi, uiLocale, useUiLanguage } from '@/lib/i18n';
+import { useState, useRef, useEffect, useMemo, useCallback, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { AuthGuard } from '@/components/guards/AuthGuard';
 import { RequireWorkspace } from '@/components/guards/RequireWorkspace';
 import { WORKSPACES } from '@/lib/roles';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useLogout } from '@/hooks/use-auth';
 import { usePlatformTrials } from '@/hooks/use-trial-program';
+import {
+  useNotifications,
+  useMarkNotificationRead,
+  useMarkAllNotificationsRead,
+} from '@/hooks/use-platform';
+import { platformAdminService } from '@/services/platform-admin.service';
+import { feedbackService } from '@/services/feedback.service';
+import type { NotificationDto } from '@/services/platform.service';
+import pulseMark from '@/assets/pulse/pulse-mark.svg';
 import { initials } from './components/pulse-format';
 import { PLATFORM_NAV_GROUPS } from './platform-nav';
-import pulseMark from './assets/pulse-mark.svg';
 import {
-  Search,
-  ChevronDown,
-  ChevronRight,
-  Building2,
-  Users2,
-  User,
-  ShieldCheck,
+  Anchor,
   Bell,
-  Settings,
-  LogOut,
-  Check,
-  Sparkles,
-  CheckCircle2,
-  LayoutDashboard,
+  BookOpen,
+  BriefcaseBusiness,
+  Building2,
+  Bug,
+  CheckCheck,
+  ChevronRight,
   FlaskConical,
-  ScrollText,
-  X,
-  ArrowRight,
-  Plus,
+  Gem,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
+  Plus,
+  ReceiptText,
+  ScrollText,
+  Search,
+  ShieldCheck,
+  User as UserIcon,
+  Users,
+  X,
+  type LucideIcon,
 } from 'lucide-react';
 import './pulse-mock.css';
 import './pulse-admin.css';
 import './pulse-catalog.css';
+import './pulse-admin-shell.css';
 
-interface QuickSearchItem {
+const SIDEBAR_STORAGE_KEY = 'dt-pa-sidebar-collapsed';
+
+interface QuickSearchRouteItem {
+  id: string;
   title: string;
+  subtitle?: string;
   category: string;
   path: string;
-  icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>;
+  icon: LucideIcon;
 }
 
-const PLATFORM_QUICK_SEARCH: QuickSearchItem[] = [
-  { title: 'Tổng quan nền tảng', category: 'Quản trị', path: '/platform/dashboard', icon: LayoutDashboard },
-  { title: 'Đánh giá dùng thử doanh nghiệp', category: 'Quản trị', path: '/platform/trials', icon: FlaskConical },
-  { title: 'Tổ chức doanh nghiệp', category: 'Quản trị', path: '/platform/organizations', icon: Building2 },
-  { title: 'Tài khoản người dùng', category: 'Quản trị', path: '/platform/users', icon: User },
-  { title: 'Khung chuẩn năng lực', category: 'Chuẩn hóa', path: '/platform/frameworks', icon: Sparkles },
-  { title: 'Phiên bản khóa học', category: 'Nội dung', path: '/platform/versions', icon: Sparkles },
-  { title: 'Đơn giá & Suất học', category: 'Thương mại', path: '/platform/commerce', icon: ScrollText },
-  { title: 'Nhật ký kiểm toán', category: 'Hệ thống', path: '/platform/audit-log', icon: ScrollText },
-  { title: 'Hồ sơ cá nhân', category: 'Tài khoản', path: '/platform/account', icon: Settings },
-  { title: 'Bảo mật & Xác thực 2 bước', category: 'Tài khoản', path: '/platform/account/security', icon: ShieldCheck },
-  { title: 'Trung tâm thông báo', category: 'Tài khoản', path: '/platform/notifications', icon: Bell },
+const PLATFORM_ROUTE_ITEMS: readonly QuickSearchRouteItem[] = [
+  { id: 'r-dash', title: 'Tổng quan', subtitle: 'Bảng điều phối hoạt động toàn nền tảng', category: 'Quản trị', path: '/platform/dashboard', icon: LayoutDashboard },
+  { id: 'r-trials', title: 'Đánh giá dùng thử', subtitle: 'Phân công mentor và xét duyệt báo cáo thử nghiệm', category: 'Quản trị', path: '/platform/trials', icon: FlaskConical },
+  { id: 'r-orgs', title: 'Tổ chức doanh nghiệp', subtitle: 'Danh sách công ty, trạng thái gói và cấp suất học', category: 'Quản trị', path: '/platform/organizations', icon: Building2 },
+  { id: 'r-users', title: 'Tài khoản người dùng', subtitle: 'Tra cứu tài khoản, khóa hoặc mở quyền đăng nhập', category: 'Quản trị', path: '/platform/users', icon: Users },
+  { id: 'r-fw', title: 'Khung chuẩn năng lực', subtitle: 'Lĩnh vực năng lực theo chuẩn TT02', category: 'Nội dung', path: '/platform/frameworks', icon: Gem },
+  { id: 'r-pos', title: 'Mẫu vị trí chuẩn', subtitle: 'Bộ vị trí công việc và mức năng lực tham chiếu', category: 'Nội dung', path: '/platform/reference-positions', icon: BriefcaseBusiness },
+  { id: 'r-ver', title: 'Phiên bản khóa học', subtitle: 'Biên tập khóa học, bản nháp và phát hành', category: 'Nội dung', path: '/platform/versions', icon: Anchor },
+  { id: 'r-com', title: 'Đơn giá & Suất học', subtitle: 'Bảng giá theo khóa học và lịch sử mua suất', category: 'Thương mại', path: '/platform/commerce', icon: ReceiptText },
+  { id: 'r-aud', title: 'Nhật ký kiểm tra', subtitle: 'Lịch sử thao tác hệ thống và kiểm toán', category: 'Hệ thống', path: '/platform/audit-log', icon: ScrollText },
+  { id: 'r-fb', title: 'Ý kiến phản hồi', subtitle: 'Góp ý cải thiện sản phẩm từ doanh nghiệp và học viên', category: 'Hệ thống', path: '/platform/feedbacks', icon: MessageSquare },
+  { id: 'r-bug', title: 'Báo lỗi kỹ thuật', subtitle: 'Sự cố kỹ thuật cần xác minh và xử lý', category: 'Hệ thống', path: '/platform/bug-reports', icon: Bug },
+  { id: 'r-notif', title: 'Trung tâm thông báo', subtitle: 'Danh sách đầy đủ thông báo của tài khoản', category: 'Tài khoản', path: '/platform/notifications', icon: Bell },
+  { id: 'r-prof', title: 'Hồ sơ cá nhân', subtitle: 'Thông tin hiển thị và tùy chọn cá nhân', category: 'Tài khoản', path: '/platform/account', icon: UserIcon },
+  { id: 'r-sec', title: 'Bảo mật tài khoản', subtitle: 'Đổi mật khẩu và lịch sử đăng nhập', category: 'Tài khoản', path: '/platform/account/security', icon: ShieldCheck },
 ];
 
-function getPlatformBreadcrumb(pathname: string): { root: string; current: string } {
-  if (pathname.startsWith('/platform/trials')) return { root: 'Vận hành', current: 'Đánh giá dùng thử' };
-  if (pathname.startsWith('/platform/organizations')) return { root: 'Vận hành', current: 'Tổ chức doanh nghiệp' };
-  if (pathname.startsWith('/platform/users')) return { root: 'Vận hành', current: 'Tài khoản người dùng' };
-  if (pathname.startsWith('/platform/frameworks')) return { root: 'Chuẩn hóa', current: 'Khung chuẩn năng lực' };
-  if (pathname.startsWith('/platform/reference-positions')) return { root: 'Chuẩn hóa', current: 'Mẫu vị trí chuẩn' };
-  if (pathname.startsWith('/platform/versions')) return { root: 'Nội dung', current: 'Phiên bản khóa học' };
-  if (pathname.startsWith('/platform/commerce')) return { root: 'Thương mại', current: 'Đơn giá & Suất học' };
-  if (pathname.startsWith('/platform/audit-log')) return { root: 'Hệ thống', current: 'Nhật ký kiểm toán' };
-  if (pathname.startsWith('/platform/feedbacks')) return { root: 'Hỗ trợ', current: 'Ý kiến phản hồi' };
-  if (pathname.startsWith('/platform/bug-reports')) return { root: 'Hỗ trợ', current: 'Báo lỗi kỹ thuật' };
-  if (pathname.startsWith('/platform/account/security')) return { root: 'Tài khoản', current: 'Bảo mật & Xác thực' };
-  if (pathname.startsWith('/platform/account')) return { root: 'Tài khoản', current: 'Hồ sơ cá nhân' };
-  if (pathname.startsWith('/platform/notifications')) return { root: 'Tài khoản', current: 'Trung tâm thông báo' };
-  return { root: 'Vận hành', current: 'Tổng quan nền tảng' };
+interface BreadcrumbInfo {
+  groupLabel: string;
+  groupPath: string;
+  current: string;
 }
 
-function PlatformQuickCreateMenu() {
-  const [open, setOpen] = useState(false);
+function getPlatformBreadcrumb(pathname: string): BreadcrumbInfo {
+  if (pathname.startsWith('/platform/trials')) {
+    return { groupLabel: 'Vận hành & Khách hàng', groupPath: '/platform/dashboard', current: 'Đánh giá dùng thử' };
+  }
+  if (pathname.startsWith('/platform/organizations/')) {
+    return { groupLabel: 'Vận hành & Khách hàng', groupPath: '/platform/organizations', current: 'Chi tiết tổ chức' };
+  }
+  if (pathname.startsWith('/platform/organizations')) {
+    return { groupLabel: 'Vận hành & Khách hàng', groupPath: '/platform/dashboard', current: 'Tổ chức doanh nghiệp' };
+  }
+  if (pathname.startsWith('/platform/users/')) {
+    return { groupLabel: 'Vận hành & Khách hàng', groupPath: '/platform/users', current: 'Hồ sơ người dùng' };
+  }
+  if (pathname.startsWith('/platform/users')) {
+    return { groupLabel: 'Vận hành & Khách hàng', groupPath: '/platform/dashboard', current: 'Tài khoản người dùng' };
+  }
+  if (pathname.startsWith('/platform/frameworks')) {
+    return { groupLabel: 'Nội dung & Chuẩn năng lực', groupPath: '/platform/frameworks', current: 'Khung chuẩn năng lực' };
+  }
+  if (pathname.startsWith('/platform/reference-positions')) {
+    return { groupLabel: 'Nội dung & Chuẩn năng lực', groupPath: '/platform/frameworks', current: 'Mẫu vị trí chuẩn' };
+  }
+  if (/^\/platform\/versions\/[^/]+\/courses\//.test(pathname)) {
+    return { groupLabel: 'Nội dung & Chuẩn năng lực', groupPath: '/platform/versions', current: 'Biên tập khóa học' };
+  }
+  if (/^\/platform\/versions\/[^/]+/.test(pathname)) {
+    return { groupLabel: 'Nội dung & Chuẩn năng lực', groupPath: '/platform/versions', current: 'Chi tiết phiên bản' };
+  }
+  if (pathname.startsWith('/platform/versions')) {
+    return { groupLabel: 'Nội dung & Chuẩn năng lực', groupPath: '/platform/frameworks', current: 'Phiên bản khóa học' };
+  }
+  if (pathname.startsWith('/platform/commerce')) {
+    return { groupLabel: 'Thương mại & Tài chính', groupPath: '/platform/commerce', current: 'Đơn giá & Suất học' };
+  }
+  if (pathname.startsWith('/platform/audit-log')) {
+    return { groupLabel: 'Quản trị & Hỗ trợ', groupPath: '/platform/audit-log', current: 'Nhật ký kiểm tra' };
+  }
+  if (pathname.startsWith('/platform/feedbacks')) {
+    return { groupLabel: 'Quản trị & Hỗ trợ', groupPath: '/platform/audit-log', current: 'Ý kiến phản hồi' };
+  }
+  if (pathname.startsWith('/platform/bug-reports')) {
+    return { groupLabel: 'Quản trị & Hỗ trợ', groupPath: '/platform/audit-log', current: 'Báo lỗi kỹ thuật' };
+  }
+  if (pathname.startsWith('/platform/account/security')) {
+    return { groupLabel: 'Tài khoản', groupPath: '/platform/account', current: 'Bảo mật tài khoản' };
+  }
+  if (pathname.startsWith('/platform/account')) {
+    return { groupLabel: 'Tài khoản', groupPath: '/platform/dashboard', current: 'Hồ sơ cá nhân' };
+  }
+  if (pathname.startsWith('/platform/notifications')) {
+    return { groupLabel: 'Tài khoản', groupPath: '/platform/dashboard', current: 'Trung tâm thông báo' };
+  }
+  return { groupLabel: 'Vận hành & Khách hàng', groupPath: '/platform/dashboard', current: 'Tổng quan' };
+}
+
+function readStoredSidebarState(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function persistSidebarState(collapsed: boolean) {
+  try {
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, collapsed ? '1' : '0');
+  } catch {
+    // Ignore storage quota / privacy mode failures
+  }
+}
+
+function formatNotifTimestamp(iso: string, language: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  const diffMin = Math.floor((Date.now() - date.getTime()) / 60_000);
+  if (diffMin < 1) return language === 'en' ? 'Just now' : 'Vừa xong';
+  if (diffMin < 60) return language === 'en' ? `${diffMin}m ago` : `${diffMin} phút trước`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return language === 'en' ? `${diffHours}h ago` : `${diffHours} giờ trước`;
+  return date.toLocaleDateString(uiLocale(), { day: '2-digit', month: '2-digit' });
+}
+
+interface QuickCreateProps {
+  isOpen: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+}
+
+function PlatformQuickCreateMenu({ isOpen, onToggle, onClose }: QuickCreateProps) {
   const navigate = useNavigate();
-  const ref = useRef<HTMLDivElement>(null);
+  const anchorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
+    if (!isOpen) return;
+    function onPointerDown(e: MouseEvent) {
+      if (anchorRef.current && !anchorRef.current.contains(e.target as Node)) {
+        onClose();
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [isOpen, onClose]);
+
+  const actions = [
+    {
+      label: 'Tổ chức doanh nghiệp',
+      desc: 'Cấp suất & Quản lý tổ chức',
+      icon: Building2,
+      path: '/platform/organizations',
+    },
+    {
+      label: 'Đánh giá dùng thử',
+      desc: 'Phân công & Duyệt dùng thử',
+      icon: FlaskConical,
+      path: '/platform/trials',
+    },
+    {
+      label: 'Phiên bản khóa học',
+      desc: 'Mở bản nháp hoặc tạo phiên bản mới',
+      icon: Anchor,
+      path: '/platform/versions',
+    },
+    {
+      label: 'Khung chuẩn năng lực',
+      desc: 'Thêm lĩnh vực vào khung năng lực',
+      icon: Gem,
+      path: '/platform/frameworks',
+    },
+  ];
 
   return (
-    <div className="pa-quick-action-container" ref={ref}>
+    <div className="pa-popover-anchor" ref={anchorRef}>
       <button
         type="button"
-        className="pa-quick-create-btn"
-        onClick={() => setOpen((prev) => !prev)}
-        aria-expanded={open}
-        aria-haspopup="true"
-        title="Thao tác tạo nhanh"
+        className="pa-btn-create"
+        onClick={onToggle}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        aria-controls="pa-quick-create-menu"
+        title={translateUi('Tạo hoặc thao tác nhanh')}
       >
-        <Plus size={14} />
-        <span>Tạo mới</span>
-        <ChevronDown size={12} style={{ opacity: 0.7 }} />
+        <Plus size={14} strokeWidth={2.4} aria-hidden="true" />
+        <span className="pa-btn-create-label">{translateUi('Tạo mới')}</span>
       </button>
 
-      {open && (
-        <div className="pa-dropdown-card" style={{ right: 0, width: 230, top: 'calc(100% + 6px)' }}>
-          <div className="pa-dropdown-heading">Thao tác tạo nhanh</div>
-          <button
-            type="button"
-            className="pa-dropdown-menu-item"
-            onClick={() => {
-              navigate('/platform/organizations');
-              setOpen(false);
-            }}
-          >
-            <Building2 size={15} style={{ color: '#0284c7' }} />
-            <span>Thêm tổ chức mới</span>
-          </button>
-          <button
-            type="button"
-            className="pa-dropdown-menu-item"
-            onClick={() => {
-              navigate('/platform/trials');
-              setOpen(false);
-            }}
-          >
-            <FlaskConical size={15} style={{ color: '#d97706' }} />
-            <span>Phân công Mentor</span>
-          </button>
-          <button
-            type="button"
-            className="pa-dropdown-menu-item"
-            onClick={() => {
-              navigate('/platform/versions');
-              setOpen(false);
-            }}
-          >
-            <Sparkles size={15} style={{ color: '#10b981' }} />
-            <span>Soạn phiên bản mới</span>
-          </button>
+      {isOpen && (
+        <div
+          id="pa-quick-create-menu"
+          role="menu"
+          aria-label={translateUi('Tạo nhanh')}
+          className="pa-menu-panel"
+        >
+          <div className="pa-menu-head">{translateUi('Tạo hoặc thao tác nhanh')}</div>
+          {actions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <button
+                key={action.path}
+                type="button"
+                role="menuitem"
+                className="pa-menu-item"
+                onClick={() => {
+                  navigate(action.path);
+                  onClose();
+                }}
+              >
+                <Icon size={15} className="pa-menu-item-icon" aria-hidden="true" />
+                <span className="pa-menu-item-copy">
+                  <span className="pa-menu-item-title">{translateUi(action.label)}</span>
+                  <span className="pa-menu-item-desc">{translateUi(action.desc)}</span>
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
-/** Header + Enterprise Left Sidebar of the Platform Admin console. */
+interface NotificationMenuProps {
+  isOpen: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+}
+
+function PlatformNotificationMenu({ isOpen, onToggle, onClose }: NotificationMenuProps) {
+  const language = useUiLanguage();
+  const navigate = useNavigate();
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const { data: notifications = [], isLoading } = useNotifications();
+  const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllNotificationsRead();
+
+  const unreadCount = useMemo(() => notifications.filter((item) => !item.isRead).length, [notifications]);
+  const recentItems = useMemo(() => notifications.slice(0, 6), [notifications]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    function onPointerDown(e: MouseEvent) {
+      if (anchorRef.current && !anchorRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [isOpen, onClose]);
+
+  const handleOpenNotification = (item: NotificationDto) => {
+    if (!item.isRead) {
+      markRead.mutate(item.id);
+    }
+    onClose();
+    if (item.link && item.link.startsWith('/platform')) {
+      navigate(item.link);
+      return;
+    }
+    navigate('/platform/notifications');
+  };
+
+  return (
+    <div className="pa-popover-anchor" ref={anchorRef}>
+      <button
+        type="button"
+        className="pa-icon-btn"
+        onClick={onToggle}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        aria-controls="pa-notif-menu"
+        aria-label={
+          unreadCount > 0
+            ? `${translateUi('Thông báo')} (${unreadCount})`
+            : translateUi('Thông báo')
+        }
+        title={translateUi('Thông báo')}
+      >
+        <Bell size={16} strokeWidth={1.85} aria-hidden="true" />
+        {unreadCount > 0 && (
+          <span className="pa-bell-badge" aria-hidden="true">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {isOpen && (
+        <div
+          id="pa-notif-menu"
+          role="menu"
+          aria-label={translateUi('Trung tâm thông báo')}
+          className="pa-menu-panel is-wide"
+        >
+          <div className="pa-notif-head">
+            <span className="pa-notif-title-wrap">
+              <span>{translateUi('Thông báo')}</span>
+              {unreadCount > 0 && <span className="pa-notif-count-pill">{unreadCount}</span>}
+            </span>
+            <button
+              type="button"
+              className="pa-notif-markall"
+              disabled={unreadCount === 0 || markAllRead.isPending}
+              onClick={() => markAllRead.mutate()}
+            >
+              <CheckCheck size={13} style={{ display: 'inline', verticalAlign: '-2px', marginRight: 4 }} aria-hidden="true" />
+              {translateUi('Đánh dấu tất cả đã đọc')}
+            </button>
+          </div>
+
+          <div className="pa-notif-list">
+            {isLoading ? (
+              <div className="pa-notif-empty">{translateUi('Đang tải...')}</div>
+            ) : recentItems.length === 0 ? (
+              <div className="pa-notif-empty">
+                {translateUi('Không có thông báo mới.')}
+                <span className="pa-notif-empty-sub">
+                  {translateUi('Hệ thống sẽ hiển thị thông báo mới ngay khi có hoạt động liên quan.')}
+                </span>
+              </div>
+            ) : (
+              recentItems.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="menuitem"
+                  className={`pa-notif-row${item.isRead ? '' : ' is-unread'}`}
+                  onClick={() => handleOpenNotification(item)}
+                >
+                  <span className="pa-notif-dot" aria-hidden="true" />
+                  <span className="pa-notif-copy">
+                    <span className="pa-notif-row-title">{item.title}</span>
+                    <span className="pa-notif-row-msg">{item.message}</span>
+                    <span className="pa-notif-row-time">{formatNotifTimestamp(item.createdAt, language)}</span>
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+
+          <div className="pa-notif-foot">
+            <button
+              type="button"
+              className="pa-notif-all-btn"
+              onClick={() => {
+                onClose();
+                navigate('/platform/notifications');
+              }}
+            >
+              {translateUi('Tất cả thông báo')}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface CommandDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+function PlatformCommandDialog({ isOpen, onClose }: CommandDialogProps) {
+  const navigate = useNavigate();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [selectedIdx, setSelectedIdx] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 150);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  const resetAndClose = useCallback(() => {
+    setQuery('');
+    setDebouncedQuery('');
+    setSelectedIdx(0);
+    onClose();
+  }, [onClose]);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (isOpen) {
+      if (typeof dialog.showModal === 'function') {
+        if (!dialog.open) {
+          dialog.showModal();
+        }
+      } else {
+        dialog.setAttribute('open', '');
+      }
+      window.requestAnimationFrame(() => inputRef.current?.focus());
+    } else if (dialog.open) {
+      if (typeof dialog.close === 'function') {
+        dialog.close();
+      } else {
+        dialog.removeAttribute('open');
+      }
+    }
+  }, [isOpen]);
+
+  const { data: orgsData } = useQuery({
+    queryKey: ['platform', 'cmd-search', 'orgs', debouncedQuery],
+    enabled: isOpen,
+    retry: false,
+    staleTime: 30_000,
+    queryFn: async () => {
+      try {
+        if (typeof platformAdminService.getOrganizations !== 'function') return [];
+        const res = await platformAdminService.getOrganizations({ search: debouncedQuery || undefined, pageSize: 4 });
+        return res?.items ?? [];
+      } catch {
+        return [];
+      }
+    },
+  });
+
+  const { data: usersData } = useQuery({
+    queryKey: ['platform', 'cmd-search', 'users', debouncedQuery],
+    enabled: isOpen,
+    retry: false,
+    staleTime: 30_000,
+    queryFn: async () => {
+      try {
+        if (typeof platformAdminService.getUsers !== 'function') return [];
+        const res = await platformAdminService.getUsers({ search: debouncedQuery || undefined, pageSize: 4 });
+        return res?.items ?? [];
+      } catch {
+        return [];
+      }
+    },
+  });
+
+  const { data: coursesData } = useQuery({
+    queryKey: ['platform', 'cmd-search', 'courses'],
+    enabled: isOpen && debouncedQuery.length > 0,
+    retry: false,
+    staleTime: 60_000,
+    queryFn: async () => {
+      try {
+        if (typeof platformAdminService.getCourses !== 'function') return [];
+        return (await platformAdminService.getCourses()) ?? [];
+      } catch {
+        return [];
+      }
+    },
+  });
+
+  const allItems = useMemo<QuickSearchRouteItem[]>(() => {
+    const q = query.trim().toLocaleLowerCase('vi');
+
+    const routeMatches = PLATFORM_ROUTE_ITEMS.filter((item) => {
+      if (!q) return true;
+      const localizedTitle = translateUi(item.title).toLocaleLowerCase('vi');
+      const localizedCat = translateUi(item.category).toLocaleLowerCase('vi');
+      return (
+        item.title.toLocaleLowerCase('vi').includes(q) ||
+        localizedTitle.includes(q) ||
+        item.category.toLocaleLowerCase('vi').includes(q) ||
+        localizedCat.includes(q) ||
+        (item.subtitle?.toLocaleLowerCase('vi').includes(q) ?? false)
+      );
+    }).slice(0, q ? 8 : 6);
+
+    const orgMatches: QuickSearchRouteItem[] = (orgsData ?? [])
+      .slice(0, q ? 4 : 3)
+      .map((org) => ({
+        id: `org-${org.id}`,
+        title: org.name,
+        subtitle: `${org.code} · ${org.userCount} tài khoản`,
+        category: 'Tổ chức',
+        path: `/platform/organizations/${org.id}`,
+        icon: Building2,
+      }));
+
+    const userMatches: QuickSearchRouteItem[] = (usersData ?? [])
+      .slice(0, q ? 4 : 0)
+      .map((u) => ({
+        id: `usr-${u.id}`,
+        title: u.displayName || u.email,
+        subtitle: `${u.email}${u.organizationName ? ` · ${u.organizationName}` : ''}`,
+        category: 'Tài khoản',
+        path: `/platform/users/${u.id}`,
+        icon: Users,
+      }));
+
+    const courseMatches: QuickSearchRouteItem[] = q
+      ? (coursesData ?? [])
+        .filter(
+          (c) =>
+            c.code.toLocaleLowerCase('vi').includes(q) ||
+            c.title.toLocaleLowerCase('vi').includes(q) ||
+            c.domainName.toLocaleLowerCase('vi').includes(q),
+        )
+        .slice(0, 4)
+        .map((c) => ({
+          id: `crs-${c.id}`,
+          title: `${c.code} · ${c.title}`,
+          subtitle: `${c.domainName} · ${c.levelName}`,
+          category: 'Khóa học',
+          path: `/platform/versions/${c.versionNo}`,
+          icon: BookOpen,
+        }))
+      : [];
+
+    return [...routeMatches, ...orgMatches, ...userMatches, ...courseMatches];
+  }, [query, orgsData, usersData, coursesData]);
+
+  const safeIndex = allItems.length === 0 ? -1 : Math.min(selectedIdx, allItems.length - 1);
+
+  const activateItem = useCallback(
+    (item: QuickSearchRouteItem) => {
+      resetAndClose();
+      navigate(item.path);
+    },
+    [navigate, resetAndClose],
+  );
+
+  const handleInputKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (allItems.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIdx((prev) => (prev + 1) % allItems.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIdx((prev) => (prev - 1 + allItems.length) % allItems.length);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      setSelectedIdx(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      setSelectedIdx(allItems.length - 1);
+    } else if (e.key === 'Enter' && safeIndex >= 0 && allItems[safeIndex]) {
+      e.preventDefault();
+      activateItem(allItems[safeIndex]!);
+    }
+  };
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="pa-cmd-dialog"
+      closedby="any"
+      aria-label={translateUi('Tìm nhanh')}
+      onClose={resetAndClose}
+      onClick={(e) => {
+        if (!('closedBy' in HTMLDialogElement.prototype) && e.target === dialogRef.current) {
+          resetAndClose();
+        }
+      }}
+    >
+      <div className="pa-cmd-header">
+        <Search size={17} className="pa-cmd-search-icon" aria-hidden="true" />
+        <input
+          ref={inputRef}
+          type="search"
+          className="pa-cmd-input"
+          placeholder={translateUi('Tìm kiếm trang quản trị, tổ chức, người dùng hoặc khóa học...')}
+          aria-label={translateUi('Tìm kiếm')}
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setSelectedIdx(0);
+          }}
+          onKeyDown={handleInputKeyDown}
+        />
+        <button type="button" className="pa-cmd-close-btn" onClick={resetAndClose}>
+          Esc
+        </button>
+      </div>
+
+      <div className="pa-cmd-results" role="listbox" aria-label={translateUi('Tìm nhanh')}>
+        {allItems.length === 0 ? (
+          <div className="pa-cmd-empty">
+            <div>{translateUi('Không tìm thấy kết quả phù hợp.')}</div>
+            <div className="pa-cmd-empty-sub">
+              {translateUi('Thử từ khóa ngắn hơn hoặc tìm theo mã khóa học, email, tên công ty.')}
+            </div>
+          </div>
+        ) : (
+          allItems.map((item, idx) => {
+            const Icon = item.icon;
+            const isSelected = idx === safeIndex;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                className={`pa-cmd-row${isSelected ? ' is-selected' : ''}`}
+                onMouseEnter={() => setSelectedIdx(idx)}
+                onClick={() => activateItem(item)}
+              >
+                <span className="pa-cmd-row-icon">
+                  <Icon size={15} strokeWidth={1.85} aria-hidden="true" />
+                </span>
+                <span className="pa-cmd-row-main">
+                  <span className="pa-cmd-row-title">{translateUi(item.title)}</span>
+                  {item.subtitle && <span className="pa-cmd-row-sub">{item.subtitle}</span>}
+                </span>
+                <span className="pa-cmd-row-cat">{translateUi(item.category)}</span>
+              </button>
+            );
+          })
+        )}
+      </div>
+
+      <div className="pa-cmd-footer">
+        <span className="pa-cmd-hints">
+          <span>
+            <kbd className="pa-kbd">↑↓</kbd> {translateUi('Di chuyển')}
+          </span>
+          <span>
+            <kbd className="pa-kbd">Enter</kbd> {translateUi('Mở')}
+          </span>
+        </span>
+        <span>{allItems.length} {translateUi('Kết quả')}</span>
+      </div>
+    </dialog>
+  );
+}
+
 function PulseAdminShell() {
   useUiLanguage();
   const user = useCurrentUser((s) => s.user);
@@ -156,411 +675,442 @@ function PulseAdminShell() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(readStoredSidebarState);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('pa_sidebar_collapsed') === 'true';
-    }
-    return false;
+  const [lastPathname, setLastPathname] = useState(location.pathname);
+
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  if (lastPathname !== location.pathname) {
+    setLastPathname(location.pathname);
+    setProfileOpen(false);
+    setQuickCreateOpen(false);
+    setNotifOpen(false);
+    setMobileNavOpen(false);
+    setSearchModalOpen(false);
+  }
+
+  // Real pending queue badges
+  const { data: trials } = usePlatformTrials();
+  const pendingTrialsCount = useMemo(
+    () => (trials ?? []).filter((t) => t.stage === 'REQUESTED').length,
+    [trials],
+  );
+
+  const { data: pendingFeedbacksCount = 0 } = useQuery({
+    queryKey: ['platform', 'sidebar-badge', 'feedbacks'],
+    retry: false,
+    staleTime: 60_000,
+    queryFn: async () => {
+      try {
+        if (typeof feedbackService.getAll !== 'function') return 0;
+        const res = await feedbackService.getAll({ pageIndex: 1, pageSize: 1, type: 'FEEDBACK', status: 'OPEN' });
+        return res?.data?.totalItems ?? 0;
+      } catch {
+        return 0;
+      }
+    },
   });
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const { data: pendingBugsCount = 0 } = useQuery({
+    queryKey: ['platform', 'sidebar-badge', 'bugs'],
+    retry: false,
+    staleTime: 60_000,
+    queryFn: async () => {
+      try {
+        if (typeof feedbackService.getAll !== 'function') return 0;
+        const res = await feedbackService.getAll({ pageIndex: 1, pageSize: 1, type: 'BUG', status: 'OPEN' });
+        return res?.data?.totalItems ?? 0;
+      } catch {
+        return 0;
+      }
+    },
+  });
 
-  const roleLabel = 'Quản trị nền tảng';
-  const home = '/platform/dashboard';
-  const name = user?.fullName || user?.email || roleLabel;
+  const badgeCounts = useMemo(
+    () => ({
+      pendingTrials: pendingTrialsCount,
+      pendingFeedbacks: pendingFeedbacksCount,
+      pendingBugs: pendingBugsCount,
+    }),
+    [pendingTrialsCount, pendingFeedbacksCount, pendingBugsCount],
+  );
 
-  const trials = usePlatformTrials();
-  const pendingTrialsCount = useMemo(() => {
-    return (trials.data ?? []).filter((t) => t.stage === 'REQUESTED').length;
-  }, [trials.data]);
-
+  const displayName = user?.fullName || user?.email || translateUi('Quản trị viên nền tảng');
+  const displayEmail = user?.email || 'platform@digitalent.vn';
   const breadcrumb = useMemo(() => getPlatformBreadcrumb(location.pathname), [location.pathname]);
 
-  const toggleCollapse = () => {
-    setIsCollapsed((prev) => {
+  const toggleSidebarCollapsed = useCallback(() => {
+    setSidebarCollapsed((prev) => {
       const next = !prev;
-      localStorage.setItem('pa_sidebar_collapsed', String(next));
+      persistSidebarState(next);
       return next;
     });
-  };
+  }, []);
 
-  // Keyboard shortcut Ctrl+K to toggle search, Ctrl+B to toggle sidebar collapse
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      const isEditable =
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.tagName === 'SELECT' ||
+        Boolean(target?.isContentEditable);
+
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        setSearchModalOpen((prev) => !prev);
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
-        e.preventDefault();
-        toggleCollapse();
-      }
-      if (e.key === 'Escape') {
-        setSearchModalOpen(false);
         setProfileOpen(false);
+        setQuickCreateOpen(false);
+        setNotifOpen(false);
+        setSearchModalOpen((prev) => !prev);
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b' && !isEditable) {
+        e.preventDefault();
+        toggleSidebarCollapsed();
+      } else if (e.key === 'Escape') {
+        setProfileOpen(false);
+        setQuickCreateOpen(false);
+        setNotifOpen(false);
+        setMobileNavOpen(false);
       }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [toggleSidebarCollapsed]);
 
   useEffect(() => {
-    if (searchModalOpen) {
-      setTimeout(() => searchInputRef.current?.focus(), 50);
-    } else {
-      setSearchQuery('');
-    }
-  }, [searchModalOpen]);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+    if (!profileOpen) return;
+    function onPointerDown(e: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
         setProfileOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [profileOpen]);
 
-  useEffect(() => {
-    setProfileOpen(false);
-    setSearchModalOpen(false);
-  }, [location.pathname]);
-
-  const signOut = () => {
-    setProfileOpen(false);
+  const handleLogout = () => {
     logout.mutate(undefined, { onSettled: () => navigate('/login', { replace: true }) });
   };
 
-  const filteredSearchItems = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return PLATFORM_QUICK_SEARCH;
-    return PLATFORM_QUICK_SEARCH.filter(
-      (item) => item.title.toLowerCase().includes(q) || item.category.toLowerCase().includes(q),
-    );
-  }, [searchQuery]);
-
   return (
-    <div className="pulse-ui" data-testid="platform-layout">
-      {/* Enterprise Topbar */}
-      <header className="app-header">
-        {/* Left: Brand + Breadcrumbs */}
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <NavLink className="brand" to={home} aria-label="DigiTalent AI, trang chủ">
-            <img src={pulseMark} alt="" />
-            <span>
-              DigiTalent <em>AI</em>
-            </span>
-          </NavLink>
-          <span className="pa-brand-badge">{translateUi("Console")}</span>
+    <div
+      className={[
+        'pulse-ui',
+        'pa-console',
+        sidebarCollapsed ? 'is-collapsed' : '',
+        mobileNavOpen ? 'is-mobile-nav-open' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {/* Mobile Drawer Backdrop */}
+      <button
+        type="button"
+        className="pa-mobile-backdrop"
+        aria-label={translateUi('Đóng menu điều hướng')}
+        onClick={() => setMobileNavOpen(false)}
+      />
 
-          {/* Dynamic Breadcrumbs */}
-          <nav aria-label={translateUi("Đường dẫn phân cấp")} className="pa-header-breadcrumb">
-            <span className="pa-breadcrumb-root">{translateUi(breadcrumb.root)}</span>
-            <ChevronRight size={13} className="pa-breadcrumb-sep" />
-            <span className="pa-breadcrumb-current">{translateUi(breadcrumb.current)}</span>
-          </nav>
-        </div>
-
-        {/* Center: Command Search */}
-        <div className="pa-header-search" onClick={() => setSearchModalOpen(true)}>
-          <Search size={16} className="pa-header-search-icon" />
-          <input
-            type="search"
-            className="pa-header-search-input"
-            placeholder="Tìm tổ chức, chức năng, khung chuẩn..."
-            aria-label="Tìm kiếm toàn hệ thống"
-            readOnly
-          />
-          <kbd className="pa-header-search-kbd">Ctrl K</kbd>
-        </div>
-
-        {/* Right: Quick Actions, System Status & Profile */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <LanguageSwitcher />
-          {/* Quick Create Action */}
-          <PlatformQuickCreateMenu />
-
-          {/* System Status Pill */}
-          <div className="pa-system-status" title="Catalog phiên bản neo đang phục vụ">
-            <span className="pa-status-dot" aria-hidden="true" />
-            <span>Catalog neo v1</span>
-          </div>
-
-          {/* User Profile & Role Switcher */}
-          <div className="pa-profile-container" ref={dropdownRef}>
+      {/* Full-Height White Sidebar + Main Column (60px White Topbar + Content Sheet) */}
+      <div className="app-shell role-admin">
+        <aside
+          id="pa-admin-sidebar"
+          className="sidebar pa-sidebar"
+          aria-label={translateUi('Điều hướng quản trị nền tảng')}
+        >
+          <div className="pa-sidebar-head">
             <button
               type="button"
-              className="pa-profile-trigger"
-              onClick={() => setProfileOpen((prev) => !prev)}
-              aria-expanded={profileOpen}
-              aria-haspopup="true"
-              aria-label={translateUi(`Menu người dùng: ${name}`)}
+              className="pa-brand-link"
+              aria-label="DigiTalent AI Admin"
+              onClick={() => {
+                setMobileNavOpen(false);
+                navigate('/platform/dashboard');
+              }}
             >
-              <div className="pa-avatar-circle">{initials(name)}</div>
-              <div className="pa-profile-info">
-                <span className="pa-profile-name">{name}</span>
-                <span className="pa-profile-role">{translateUi(roleLabel)}</span>
-              </div>
-              <ChevronDown size={14} style={{ color: '#64748b', marginLeft: 2 }} />
-            </button>
-
-            {profileOpen && (
-              <div className="pa-dropdown-card" role="menu">
-                <div className="pa-dropdown-user-summary">
-                  <div style={{ fontWeight: 600, fontSize: 13, color: '#0f172a' }}>{name}</div>
-                  <div style={{ fontSize: 11, color: '#64748b' }}>{user?.email ?? 'platform@digitalent.ai'}</div>
-                </div>
-
-                <div className="pa-dropdown-heading">Chuyển đổi góc nhìn vai trò</div>
-                <button
-                  type="button"
-                  className="pa-role-switch-item active"
-                  onClick={() => {
-                    navigate('/platform/dashboard');
-                    setProfileOpen(false);
-                  }}
-                >
-                  <div className="pa-role-left">
-                    <Sparkles size={16} style={{ color: '#d97706' }} />
-                    <span>Quản trị Nền tảng (Hiện tại)</span>
-                  </div>
-                  <Check size={14} style={{ color: '#d97706' }} />
-                </button>
-
-                <button
-                  type="button"
-                  className="pa-role-switch-item"
-                  onClick={() => {
-                    navigate('/enterprise');
-                    setProfileOpen(false);
-                  }}
-                >
-                  <div className="pa-role-left">
-                    <Building2 size={16} style={{ color: '#64748b' }} />
-                    <span>{translateUi("Chủ doanh nghiệp (Owner)")}</span>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  className="pa-role-switch-item"
-                  onClick={() => {
-                    navigate('/enterprise/manager');
-                    setProfileOpen(false);
-                  }}
-                >
-                  <div className="pa-role-left">
-                    <Users2 size={16} style={{ color: '#64748b' }} />
-                    <span>{translateUi("Quản lý phòng ban (Manager)")}</span>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  className="pa-role-switch-item"
-                  onClick={() => {
-                    navigate('/enterprise/me');
-                    setProfileOpen(false);
-                  }}
-                >
-                  <div className="pa-role-left">
-                    <User size={16} style={{ color: '#64748b' }} />
-                    <span>Nhân viên Pulse (Employee)</span>
-                  </div>
-                </button>
-
-                <div className="pa-dropdown-divider" />
-
-                <div className="pa-dropdown-heading">{translateUi("Cài đặt tài khoản")}</div>
-                <NavLink to="/platform/account" className="pa-dropdown-menu-item" onClick={() => setProfileOpen(false)}>
-                  <Settings size={15} style={{ color: '#64748b' }} />
-                  <span>Hồ sơ cá nhân</span>
-                </NavLink>
-
-                <NavLink to="/platform/account/security" className="pa-dropdown-menu-item" onClick={() => setProfileOpen(false)}>
-                  <ShieldCheck size={15} style={{ color: '#64748b' }} />
-                  <span>Bảo mật & Xác thực 2 bước</span>
-                </NavLink>
-
-                <NavLink to="/platform/notifications" className="pa-dropdown-menu-item" onClick={() => setProfileOpen(false)}>
-                  <Bell size={15} style={{ color: '#64748b' }} />
-                  <span>Trung tâm thông báo</span>
-                </NavLink>
-
-                <div className="pa-dropdown-divider" />
-
-                <button
-                  type="button"
-                  className="pa-dropdown-menu-item logout"
-                  onClick={signOut}
-                  disabled={logout.isPending}
-                >
-                  <LogOut size={15} />
-                  <span>Đăng xuất hệ thống</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Enterprise App Shell: Grouped Sidebar + Main Area */}
-      <div className={`app-shell role-admin${isCollapsed ? ' collapsed' : ''}`}>
-        <aside className="sidebar" aria-label="Điều hướng quản trị nền tảng">
-          <div>
-            {PLATFORM_NAV_GROUPS.map((group) => (
-              <div key={group.groupTitle} className="pa-side-nav-group">
-                <span className="pa-side-nav-group-title">{translateUi(group.groupTitle)}</span>
-                <div className="pa-side-nav-group-divider" />
-
-                {group.items.map((item) => {
-                  const Icon = item.icon;
-                  const isTrials = item.badgeKey === 'pendingTrials';
-                  return (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      end={item.to === '/platform/dashboard'}
-                      className={({ isActive }) => `pa-side-nav-link${isActive ? ' active' : ''}`}
-                      title={translateUi(item.description)}
-                    >
-                      <Icon size={18} aria-hidden="true" />
-                      <span>{translateUi(item.label)}</span>
-
-                      {/* Pending Trials Badge */}
-                      {isTrials && pendingTrialsCount > 0 && (
-                        <span
-                          className="pa-nav-badge"
-                          style={{
-                            marginLeft: 'auto',
-                            fontSize: 11,
-                            fontWeight: 700,
-                            background: '#d97706',
-                            color: '#ffffff',
-                            borderRadius: 9999,
-                            padding: '1px 6px',
-                            lineHeight: '16px',
-                          }}
-                          title={`${pendingTrialsCount} yêu cầu chờ phân công`}
-                        >
-                          {pendingTrialsCount}
-                        </span>
-                      )}
-                    </NavLink>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-
-          <div>
-            {/* Catalog Anchor Status Card */}
-            <div className="pa-sidebar-footer-card">
-              <div className="pa-sidebar-footer-title">
-                <CheckCircle2 size={15} style={{ color: '#d97706', flexShrink: 0 }} />
-                <span>DigiTalent Platform</span>
-              </div>
-              <span className="pa-sidebar-footer-sub">
-                Khung chuẩn năng lực số
-                <br />
-                Catalog neo v1 · Ổn định
+              <img src={pulseMark} alt="" className="pa-brand-img" />
+              <span className="pa-brand-wordmark">
+                <span className="pa-brand-title">
+                  DigiTalent <em>AI</em>
+                </span>
+                <span className="pa-brand-role-pill">Admin</span>
               </span>
-            </div>
+            </button>
 
-            {/* Sidebar Collapse Toggle */}
             <button
               type="button"
-              className="pa-sidebar-collapse-btn"
-              onClick={toggleCollapse}
-              title={isCollapsed ? 'Mở rộng menu bên (Ctrl+B)' : 'Thu gọn menu bên (Ctrl+B)'}
+              className="pa-sidebar-mobile-close"
+              aria-label={translateUi('Đóng menu điều hướng')}
+              onClick={() => setMobileNavOpen(false)}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                {isCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
-                <span>Thu gọn menu</span>
-              </div>
-              <span>Ctrl B</span>
+              <X size={18} aria-hidden="true" />
             </button>
+          </div>
+
+          <div className="pa-sidebar-scroll">
+            <nav aria-label={translateUi('Điều hướng chính')}>
+              {PLATFORM_NAV_GROUPS.map((group) => (
+                <div key={group.groupTitle} className="pa-nav-group">
+                  <div className="pa-nav-group-divider" aria-hidden="true" />
+                  <div className="pa-nav-group-label">{translateUi(group.groupTitle)}</div>
+                  <ul className="pa-nav-list">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      const badgeValue = item.badgeKey ? badgeCounts[item.badgeKey] : 0;
+                      const isNeutralBadge = item.badgeKey === 'pendingFeedbacks';
+
+                      return (
+                        <li key={item.to}>
+                          <NavLink
+                            to={item.to}
+                            title={sidebarCollapsed ? translateUi(item.label) : undefined}
+                            className={({ isActive }) => `pa-nav-link${isActive ? ' active' : ''}`}
+                            onClick={() => setMobileNavOpen(false)}
+                          >
+                            <span className="pa-nav-icon-box" aria-hidden="true">
+                              <Icon size={18} strokeWidth={2} className="pa-nav-icon" />
+                            </span>
+                            <span className="pa-nav-label">{translateUi(item.label)}</span>
+                            {badgeValue > 0 && (
+                              <span
+                                className={`pa-nav-badge ${isNeutralBadge ? 'is-neutral' : 'is-attention'}`}
+                              >
+                                {badgeValue > 99 ? '99+' : badgeValue}
+                              </span>
+                            )}
+                          </NavLink>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </nav>
+          </div>
+
+          <div className="pa-sidebar-footer">
+            <div className="pa-sidebar-user-card">
+              <span className="pa-avatar is-lg" aria-hidden="true">
+                {initials(displayName)}
+              </span>
+              <div className="pa-sidebar-user-meta">
+                <span className="pa-sidebar-user-name" title={displayName}>
+                  {displayName}
+                </span>
+                <span className="pa-sidebar-user-email" title={displayEmail}>
+                  {displayEmail}
+                </span>
+              </div>
+              <button
+                type="button"
+                className="pa-sidebar-logout-btn"
+                onClick={handleLogout}
+                aria-label={translateUi('Đăng xuất hệ thống')}
+                title={translateUi('Đăng xuất hệ thống')}
+              >
+                <LogOut size={18} strokeWidth={2} aria-hidden="true" />
+              </button>
+            </div>
           </div>
         </aside>
 
-        <main className="main-area">
-          <Outlet />
-        </main>
-      </div>
-
-      {/* Global Quick Search Modal (Ctrl + K) */}
-      {searchModalOpen && (
-        <div className="pa-search-modal-backdrop" onClick={() => setSearchModalOpen(false)}>
-          <div className="pa-search-modal-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="pa-search-modal-header">
-              <Search size={18} className="pa-search-modal-icon" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                className="pa-search-modal-input"
-                placeholder="Tìm trang hoặc chức năng nhanh..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+        <div className="pa-workspace-sheet">
+          <header className="app-header pa-topbar">
+            <div className="pa-topbar-left">
               <button
                 type="button"
-                className="pa-search-modal-close"
-                onClick={() => setSearchModalOpen(false)}
-                title="Đóng (ESC)"
+                className="pa-sidebar-trigger"
+                onClick={toggleSidebarCollapsed}
+                aria-expanded={!sidebarCollapsed}
+                aria-label={translateUi(sidebarCollapsed ? 'Mở rộng thanh bên (Ctrl+B)' : 'Thu gọn thanh bên (Ctrl+B)')}
+                title={translateUi(sidebarCollapsed ? 'Mở rộng thanh bên (Ctrl+B)' : 'Thu gọn thanh bên (Ctrl+B)')}
               >
-                <X size={16} />
+                {sidebarCollapsed ? (
+                  <PanelLeftOpen size={18} strokeWidth={2} aria-hidden="true" />
+                ) : (
+                  <PanelLeftClose size={18} strokeWidth={2} aria-hidden="true" />
+                )}
+              </button>
+              <span className="pa-topbar-sep" aria-hidden="true" />
+
+              <div className="pa-topbar-mobile-brand">
+                <button
+                  type="button"
+                  className="pa-mobile-nav-btn"
+                  aria-label={translateUi('Mở menu điều hướng')}
+                  aria-expanded={mobileNavOpen}
+                  aria-controls="pa-admin-sidebar"
+                  onClick={() => setMobileNavOpen((prev) => !prev)}
+                >
+                  <Menu size={20} strokeWidth={2} aria-hidden="true" />
+                </button>
+
+                <Link
+                  to="/platform/dashboard"
+                  className="pa-brand-link"
+                  aria-label="DigiTalent AI Admin"
+                >
+                  <img src={pulseMark} alt="" className="pa-brand-img" />
+                  <span className="pa-brand-wordmark">
+                    <span className="pa-brand-title">
+                      DigiTalent <em>AI</em>
+                    </span>
+                    <span className="pa-brand-role-pill">Admin</span>
+                  </span>
+                </Link>
+              </div>
+
+              <nav className="pa-breadcrumb" aria-label={translateUi('Đường dẫn')}>
+                <Link to={breadcrumb.groupPath} className="pa-breadcrumb-root">
+                  {translateUi(breadcrumb.groupLabel)}
+                </Link>
+                <ChevronRight size={15} className="pa-breadcrumb-sep" aria-hidden="true" />
+                <span className="pa-breadcrumb-current" aria-current="page">
+                  {translateUi(breadcrumb.current)}
+                </span>
+              </nav>
+            </div>
+
+            <div className="pa-topbar-center">
+              <button
+                type="button"
+                className="pa-cmd-trigger"
+                onClick={() => {
+                  setProfileOpen(false);
+                  setQuickCreateOpen(false);
+                  setNotifOpen(false);
+                  setSearchModalOpen(true);
+                }}
+                aria-label={translateUi('Tìm kiếm (Ctrl+K)')}
+              >
+                <span className="pa-cmd-trigger-left">
+                  <Search size={16} strokeWidth={2} aria-hidden="true" />
+                  <span className="pa-cmd-trigger-label">
+                    {translateUi('Tìm trang, tổ chức, người dùng...')}
+                  </span>
+                </span>
+                <kbd className="pa-kbd">Ctrl K</kbd>
               </button>
             </div>
-            <div className="pa-search-modal-body">
-              {filteredSearchItems.length === 0 ? (
-                <div style={{ padding: '24px 16px', textAlign: 'center', color: '#64748b', fontSize: 13 }}>
-                  Không tìm thấy mục nào phù hợp với từ khóa.
-                </div>
-              ) : (
-                filteredSearchItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.path}
-                      type="button"
-                      className="pa-search-modal-item"
-                      onClick={() => {
-                        navigate(item.path);
-                        setSearchModalOpen(false);
-                      }}
+
+            <div className="pa-topbar-actions">
+              <PlatformQuickCreateMenu
+                isOpen={quickCreateOpen}
+                onToggle={() => {
+                  setNotifOpen(false);
+                  setProfileOpen(false);
+                  setQuickCreateOpen((prev) => !prev);
+                }}
+                onClose={() => setQuickCreateOpen(false)}
+              />
+
+              <PlatformNotificationMenu
+                isOpen={notifOpen}
+                onToggle={() => {
+                  setQuickCreateOpen(false);
+                  setProfileOpen(false);
+                  setNotifOpen((prev) => !prev);
+                }}
+                onClose={() => setNotifOpen(false)}
+              />
+
+              <div className="pa-popover-anchor" ref={profileRef}>
+                <button
+                  type="button"
+                  className="pa-user-btn is-avatar-only"
+                  onClick={() => {
+                    setQuickCreateOpen(false);
+                    setNotifOpen(false);
+                    setProfileOpen((prev) => !prev);
+                  }}
+                  aria-haspopup="menu"
+                  aria-expanded={profileOpen}
+                  aria-controls="pa-account-menu"
+                  aria-label={`${translateUi('Menu người dùng')}: ${displayName}`}
+                  title={displayName}
+                >
+                  <span className="pa-avatar is-topbar" aria-hidden="true">
+                    {initials(displayName)}
+                  </span>
+                </button>
+
+                {profileOpen && (
+                  <div
+                    id="pa-account-menu"
+                    aria-label={translateUi('Menu tài khoản')}
+                    className="pa-menu-panel"
+                  >
+                    <div className="pa-menu-user-meta">
+                      <div className="pa-menu-user-name">{displayName}</div>
+                      <div className="pa-menu-user-email">{displayEmail}</div>
+                      <span className="pa-menu-user-tag">{translateUi('Quản trị viên nền tảng')}</span>
+                    </div>
+
+                    <Link
+                      to="/platform/account"
+                      className="pa-menu-item"
+                      onClick={() => setProfileOpen(false)}
                     >
-                      <div className="pa-search-item-left">
-                        <div className="pa-search-item-icon">
-                          <Icon size={16} />
-                        </div>
-                        <div className="pa-search-item-meta">
-                          <span className="pa-search-item-title">{item.title}</span>
-                          <span className="pa-search-item-category">{item.category}</span>
-                        </div>
-                      </div>
-                      <ArrowRight size={14} className="pa-search-item-arrow" />
+                      <UserIcon size={16} className="pa-menu-item-icon" aria-hidden="true" />
+                      <span>{translateUi('Hồ sơ quản trị viên')}</span>
+                    </Link>
+
+                    <Link
+                      to="/platform/account/security"
+                      className="pa-menu-item"
+                      onClick={() => setProfileOpen(false)}
+                    >
+                      <ShieldCheck size={16} className="pa-menu-item-icon" aria-hidden="true" />
+                      <span>{translateUi('Bảo mật tài khoản')}</span>
+                    </Link>
+
+                    <Link
+                      to="/platform/notifications"
+                      className="pa-menu-item"
+                      onClick={() => setProfileOpen(false)}
+                    >
+                      <Bell size={16} className="pa-menu-item-icon" aria-hidden="true" />
+                      <span>{translateUi('Trung tâm thông báo')}</span>
+                    </Link>
+
+                    <div className="pa-menu-divider" role="separator" />
+
+                    <button
+                      type="button"
+                      className="pa-menu-item is-danger"
+                      onClick={handleLogout}
+                    >
+                      <LogOut size={16} className="pa-menu-item-icon" aria-hidden="true" />
+                      <span>{translateUi('Đăng xuất hệ thống')}</span>
                     </button>
-                  );
-                })
-              )}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="pa-search-modal-footer">
-              <span>Phím tắt: <strong>ESC</strong> để đóng · <strong>Ctrl+K</strong> để mở lại</span>
+          </header>
+
+          <main className="main-area">
+            <div key={location.pathname} className="pa-route-stage">
+              <Outlet />
             </div>
-          </div>
+          </main>
         </div>
-      )}
+      </div>
+
+      <PlatformCommandDialog
+        isOpen={searchModalOpen}
+        onClose={() => setSearchModalOpen(false)}
+      />
     </div>
   );
 }
 
+/** Platform Admin console layout */
 export function PulseAdminLayout() {
-  useUiLanguage();
   return (
     <AuthGuard>
       <RequireWorkspace workspace={WORKSPACES.PLATFORM}>

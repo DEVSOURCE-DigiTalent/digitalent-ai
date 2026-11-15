@@ -1,3 +1,4 @@
+import axios from 'axios';
 import apiClient from './api-client';
 import type { ApiResponse } from '../types/api';
 
@@ -277,8 +278,35 @@ export const platformCatalogService = {
   removeQuestion: (versionNo: number, courseId: string, questionId: string) =>
     unwrap<CatalogCourseDetail>(apiClient.delete(`${course(versionNo, courseId)}/questions/${questionId}`)),
 
-  /** Uploads an image (≤ 10 MB) or a video (≤ 500 MB); onProgress receives 0..100. */
-  uploadAsset: (file: File, onProgress?: (percent: number) => void) => {
+  /** Uploads an image (≤ 10 MB), PDF (≤ 50 MB), or video (≤ 500 MB) directly to Object Storage when enabled, falling back to API proxy; onProgress receives 0..100. */
+  uploadAsset: async (file: File, onProgress?: (percent: number) => void): Promise<PlatformAsset> => {
+    const contentType = file.type || 'application/octet-stream';
+    const presign = await unwrap<{
+      mode: 'DIRECT' | 'PROXY';
+      uploadUrl?: string | null;
+      uploadToken?: string | null;
+      method?: string | null;
+    }>(
+      apiClient.post('/platform/assets/presign', {
+        fileName: file.name,
+        contentType,
+        sizeBytes: file.size,
+      }),
+    );
+
+    if (presign.mode === 'DIRECT' && presign.uploadUrl && presign.uploadToken) {
+      await axios.put(presign.uploadUrl, file, {
+        headers: { 'Content-Type': contentType },
+        timeout: 0,
+        onUploadProgress: (event) => {
+          if (onProgress && event.total) onProgress(Math.round((event.loaded / event.total) * 100));
+        },
+      });
+      return unwrap<PlatformAsset>(
+        apiClient.post('/platform/assets/complete', { uploadToken: presign.uploadToken }),
+      );
+    }
+
     const form = new FormData();
     form.append('file', file);
     return unwrap<PlatformAsset>(

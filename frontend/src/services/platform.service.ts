@@ -142,9 +142,11 @@ export interface PlatformUserDto {
   id: string;
   email: string;
   fullName: string;
+  displayName?: string;
   phone?: string;
   jobTitle?: string;
   roles: string[];
+  role?: string;
   workspace: 'enterprise' | 'personal' | 'platform' | 'mentor';
   organizationId?: string;
   organizationName?: string;
@@ -153,6 +155,10 @@ export interface PlatformUserDto {
   emailVerified: boolean;
   createdAt: string;
   lastLoginAt?: string;
+  planCode?: string | null;
+  trialState?: 'ACTIVE' | 'ENDED' | null;
+  trialEndsAt?: string | null;
+  taskSummary?: string | null;
 }
 
 export interface PlatformUserQueryParams {

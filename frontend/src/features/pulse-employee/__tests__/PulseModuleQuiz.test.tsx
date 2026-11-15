@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -207,5 +207,25 @@ describe('Câu hỏi ôn tập mô đun (§9.2)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Trang trước' }));
     await waitFor(() => expect(markPage).toHaveBeenCalledWith('course-1', 'mod-1', 'l-1'));
     expect(markPage).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Mục lục chương theo trang của giáo trình', () => {
+  it('names each part after its page and drops the "slides coming soon" notice when the module has a slide deck', async () => {
+    vi.spyOn(pulseService, 'getModule').mockResolvedValue(ok(detail({
+      slides: [
+        { lessonId: 'l-1', title: 'Mục tiêu học tập và căn cứ Thông tư 02/2025', lessonType: 'TEXT', contentBody: 'Mục tiêu của mô đun', estimatedMinutes: 5 },
+        { lessonId: 'l-2', title: 'Slide bài giảng · Hiểu biết về AI', lessonType: 'TEXT', contentBody: null, media: [{ kind: 'PDF', url: 'platform/assets/a/content', alt: 'Slide bài giảng · Hiểu biết về AI' }] },
+        { lessonId: 'l-3', title: 'Ví dụ trong công việc', lessonType: 'TEXT', contentBody: 'Ví dụ một', estimatedMinutes: 5 },
+      ],
+    })));
+    renderModule();
+
+    const contents = await screen.findByRole('navigation', { name: 'Mục lục các phần trong chương' });
+    expect(within(contents).getByText('Mục tiêu học tập và căn cứ Thông tư 02/2025')).toBeTruthy();
+    expect(within(contents).getByText('Slide bài giảng')).toBeTruthy();
+    expect(within(contents).getByText('Ví dụ trong công việc')).toBeTruthy();
+    expect(screen.queryByText(/Tình huống thực tế|Cẩm nang tác nghiệp/)).toBeNull();
+    expect(screen.queryByText(/Đang hoàn thiện biên tập/)).toBeNull();
   });
 });

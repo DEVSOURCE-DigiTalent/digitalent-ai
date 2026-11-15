@@ -144,4 +144,55 @@ public static class PlatformUserReader
             };
         }).ToList();
     }
+
+    public static async Task<PlatformUsersRoleStats> SummarizeRoleStatsAsync(IApplicationDbContext context)
+    {
+        var total = await context.Users.CountAsync();
+        var locked = await context.Users.CountAsync(u => u.Status == Statuses.User.Locked && u.LockedUntil == null);
+
+        var userRoles = await (
+            from userRole in context.UserRoles.AsNoTracking()
+            join role in context.Roles on userRole.RoleId equals role.Id
+            select new { userRole.UserId, RoleCode = role.Code }
+        ).ToListAsync();
+
+        var rolesByUser = userRoles.GroupBy(ur => ur.UserId)
+            .ToDictionary(g => g.Key, g => RoleRank.FirstOrDefault(r => g.Any(x => x.RoleCode == r)) ?? LearnerRole);
+
+        var allUserIds = await context.Users.AsNoTracking().Select(u => u.Id).ToListAsync();
+
+        var owners = 0;
+        var managers = 0;
+        var employees = 0;
+        var mentors = 0;
+        var admins = 0;
+        var learners = 0;
+
+        foreach (var uid in allUserIds)
+        {
+            var role = rolesByUser.GetValueOrDefault(uid, LearnerRole);
+            switch (role)
+            {
+                case Roles.Owner: owners++; break;
+                case Roles.Manager: managers++; break;
+                case Roles.Employee: employees++; break;
+                case Roles.Mentor: mentors++; break;
+                case Roles.PlatformAdmin: admins++; break;
+                default: learners++; break;
+            }
+        }
+
+        return new PlatformUsersRoleStats
+        {
+            Total = total,
+            Owners = owners,
+            Managers = managers,
+            Employees = employees,
+            Mentors = mentors,
+            Admins = admins,
+            Learners = learners,
+            Locked = locked,
+            Active = total - locked,
+        };
+    }
 }
