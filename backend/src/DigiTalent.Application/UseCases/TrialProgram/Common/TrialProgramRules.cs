@@ -68,6 +68,41 @@ public static class TrialProgramRules
     };
 
     /// <summary>
+    /// Ma trận đề của một ô (lĩnh vực, cấp): rút <paramref name="count"/> câu lần lượt từng mô đun theo vòng tròn, bắt đầu ở
+    /// mô đun <paramref name="start"/> (chia lấy dư cho số mô đun). Mô đun k của ba khóa Cơ bản / Trung cấp / Nâng cao cùng
+    /// một năng lực TT02 (x.k), nên khi cấp sau nối tiếp vòng của cấp trước (start = (cấp − 1) × <see cref="ChoicePerCell"/>)
+    /// mỗi năng lực của lĩnh vực được hỏi đều nhau: 3 mô đun → 5/5/5, 4 → 4/4/4/3, 6 → 3/3/3/2/2/2 câu.
+    /// Mô đun hết câu thì bỏ qua; câu bị <paramref name="accept"/> từ chối (trùng nội dung) được thay bằng câu kế tiếp của
+    /// chính mô đun đó.
+    /// </summary>
+    public static List<T> SpreadOverModules<T>(IReadOnlyList<Queue<T>> modules, int start, int count, Func<T, bool> accept)
+    {
+        var picked = new List<T>();
+        if (modules.Count == 0)
+        {
+            return picked;
+        }
+
+        var index = ((start % modules.Count) + modules.Count) % modules.Count;
+        while (picked.Count < count && modules.Any(m => m.Count > 0))
+        {
+            var queue = modules[index];
+            index = (index + 1) % modules.Count;
+            while (queue.Count > 0)
+            {
+                var next = queue.Dequeue();
+                if (accept(next))
+                {
+                    picked.Add(next);
+                    break;
+                }
+            }
+        }
+
+        return picked;
+    }
+
+    /// <summary>
     /// Tỷ lệ câu đúng của cả lĩnh vực (%) cần để đạt mức 1 Cơ bản / 2 Trung cấp / 3 Nâng cao. Với 15 câu: 6 / 9 / 12 câu.
     /// Giao diện báo cáo dùng cùng mốc (trial-format.ts LEVEL_SHARE_PERCENTS).
     /// </summary>

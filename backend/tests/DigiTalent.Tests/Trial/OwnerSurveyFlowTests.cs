@@ -53,6 +53,39 @@ public class OwnerSurveyFlowTests
         TrialProgramRules.SuggestedLevel(new[] { (3, 5), (1, 3), (0, 2) }).Should().Be(1);
     }
 
+    [Theory]
+    [InlineData(3, new[] { 5, 5, 5 })]
+    [InlineData(4, new[] { 4, 4, 4, 3 })]
+    [InlineData(6, new[] { 3, 3, 3, 2, 2, 2 })]
+    [InlineData(7, new[] { 3, 2, 2, 2, 2, 2, 2 })]
+    public void The_fifteen_questions_of_a_domain_cover_every_module_evenly(int moduleCount, int[] expected)
+    {
+        // Module k of the Basic, Intermediate and Advanced courses is the same TT02 competency x.k.
+        var perModule = new int[moduleCount];
+        for (var tier = 1; tier <= PulseRules.MaxLevel; tier++)
+        {
+            var modules = Enumerable.Range(0, moduleCount).Select(m => new Queue<int>(Enumerable.Repeat(m, 20))).ToList();
+            var picked = TrialProgramRules.SpreadOverModules(
+                modules, (tier - 1) * TrialProgramRules.ChoicePerCell, TrialProgramRules.ChoicePerCell, _ => true);
+            picked.Should().HaveCount(TrialProgramRules.ChoicePerCell);
+            foreach (var module in picked) perModule[module]++;
+        }
+
+        perModule.Should().Equal(expected);
+    }
+
+    [Fact]
+    public void A_module_without_questions_is_skipped_and_a_repeated_question_is_replaced_from_the_same_module()
+    {
+        var seen = new HashSet<string> { "c-dup" };
+        var modules = new List<Queue<string>> { new(new[] { "a1", "a2", "a3" }), new(), new(new[] { "c1", "c-dup", "c2" }) };
+
+        TrialProgramRules.SpreadOverModules(modules, 0, 5, q => seen.Add(q)).Should().Equal("a1", "c1", "a2", "c2", "a3");
+        TrialProgramRules.SpreadOverModules(new List<Queue<string>> { new(new[] { "x" }), new() }, 1, 5, _ => true)
+            .Should().Equal(new[] { "x" }, "the draw stops when every module is empty");
+        TrialProgramRules.SpreadOverModules(new List<Queue<string>>(), 0, 5, _ => true).Should().BeEmpty();
+    }
+
     [Fact]
     public async Task Multiple_choice_submission_is_graded_and_published_without_a_mentor()
     {
