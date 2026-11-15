@@ -4603,6 +4603,10 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("explanation");
 
+                    b.Property<bool>("IsFinalQuiz")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_final_quiz");
+
                     b.Property<Guid>("ModuleId")
                         .HasColumnType("uuid")
                         .HasColumnName("module_id");
@@ -5476,6 +5480,10 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                     b.Property<string>("Explanation")
                         .HasColumnType("text")
                         .HasColumnName("explanation");
+
+                    b.Property<bool>("IsFinalQuiz")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_final_quiz");
 
                     b.Property<string>("QuestionType")
                         .IsRequired()

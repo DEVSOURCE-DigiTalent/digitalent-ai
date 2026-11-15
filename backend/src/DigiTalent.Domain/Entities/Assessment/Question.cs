@@ -15,6 +15,8 @@ public class Question : IHasTimestamps
     public string Content { get; set; } = string.Empty;
     public string? Explanation { get; set; }
     public bool AiGeneratedFlag { get; set; }
+    /// <summary>Câu của bài trắc nghiệm cuối khóa trong giáo trình (chép từ catalog nền tảng), không phải câu ôn tập module.</summary>
+    public bool IsFinalQuiz { get; set; }
     public string Status { get; set; } = string.Empty;
     public Guid CreatedByUserId { get; set; }
     public DateTimeOffset CreatedAt { get; set; }

@@ -74,7 +74,8 @@ public class PlatformSlideItem : BaseEntity
 
 /// <summary>
 /// Table platform_module_questions: a review question of a module. BlockId = the block the learner reopens after
-/// answering it wrong.
+/// answering it wrong. IsFinalQuiz = the question belongs to the course's final multiple-choice test of the
+/// curriculum and was filed under the module whose content it matches best.
 /// </summary>
 public class PlatformModuleQuestion : BaseEntity
 {
@@ -83,6 +84,7 @@ public class PlatformModuleQuestion : BaseEntity
     public string QuestionText { get; set; } = string.Empty;
     public string? Explanation { get; set; }
     public Guid? BlockId { get; set; }
+    public bool IsFinalQuiz { get; set; }
 }
 
 /// <summary>Table platform_question_options: an option of a review question; exactly one is correct.</summary>
