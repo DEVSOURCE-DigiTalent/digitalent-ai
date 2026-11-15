@@ -114,6 +114,14 @@ public class PlatformCatalogController : ControllerBase
         [FromServices] IUseCase<CreatePlatformCatalogDraftUseCaseInput, PlatformCatalogVersionDetail> useCase) =>
         Ok(ApiResponse<PlatformCatalogVersionDetail>.Ok(await useCase.ExecuteAsync(new CreatePlatformCatalogDraftUseCaseInput()), "Draft created."));
 
+    // DELETE api/v1/platform/catalog/versions/{versionNo:int} — discards the open draft
+    [HttpDelete("catalog/versions/{versionNo:int}")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformCatalogVersionsOutput>>> DiscardDraft(
+        int versionNo,
+        [FromServices] IUseCase<DiscardPlatformCatalogDraftUseCaseInput, PlatformCatalogVersionsOutput> useCase) =>
+        Ok(ApiResponse<PlatformCatalogVersionsOutput>.Ok(await useCase.ExecuteAsync(new DiscardPlatformCatalogDraftUseCaseInput { VersionNo = versionNo }), "Draft discarded."));
+
     // GET api/v1/platform/catalog/versions/{versionNo}
     [HttpGet("catalog/versions/{versionNo:int}")]
     [HasPermission(Permissions.Platform.CatalogRead)]
