@@ -94,6 +94,14 @@ export function useCreateDraft() {
   return useMutation({ mutationFn: () => platformCatalogService.createDraft(), onSuccess: () => refresh() });
 }
 
+export function useDiscardDraft() {
+  const refresh = useRefreshCatalog();
+  return useMutation({
+    mutationFn: (versionNo: number) => platformCatalogService.discardDraft(versionNo),
+    onSuccess: () => refresh(),
+  });
+}
+
 export function usePublishVersion(versionNo: number) {
   const refresh = useRefreshCatalog();
   const queryClient = useQueryClient();

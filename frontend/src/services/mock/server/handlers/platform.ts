@@ -1890,6 +1890,21 @@ route('POST', '/platform/catalog/versions', () => {
   };
 }, { message: 'Đã tạo bản nháp mới.' });
 
+route('DELETE', '/platform/catalog/versions/:versionNo', (context) => {
+  const vNo = Number(context.params.versionNo);
+  if (catalogStore.draftVersionNo === vNo) {
+    catalogStore.draftVersionNo = null;
+    catalogStore.versions.delete(vNo);
+    catalogStore.courseRowsByVersion.delete(vNo);
+  }
+  const items = Array.from(catalogStore.versions.values()).sort((a, b) => b.versionNo - a.versionNo);
+  return {
+    items,
+    currentVersionNo: catalogStore.currentVersionNo,
+    draftVersionNo: catalogStore.draftVersionNo,
+  };
+}, { message: 'Đã hủy bản nháp.' });
+
 route('GET', '/platform/catalog/versions/:versionNo', (context) => {
   const vNo = Number(context.params.versionNo) || catalogStore.currentVersionNo;
   let summary = catalogStore.versions.get(vNo);
