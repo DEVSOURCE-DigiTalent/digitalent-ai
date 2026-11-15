@@ -81,6 +81,8 @@ services:
       dockerfile: ../backend/src/DigiTalent.Api/Dockerfile
     container_name: digitalent-api
     restart: unless-stopped
+    volumes:
+      - platform_assets_data:/app/uploads/platform-assets
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -138,3 +140,5 @@ networks:
 volumes:
   postgres_data:
   minio_data:
+  platform_assets_data:
+    name: digitalent-platform-assets
