@@ -1,5 +1,6 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { usePlatformCommerce } from '@/hooks/use-platform-admin';
@@ -526,76 +527,80 @@ export function PlatformCommercePage() {
           )}
 
           {/* Discard Draft Confirmation Modal */}
-          {discardModalOpen && draftNo !== null && (
-            <div className="pa-modal-overlay" onClick={() => setDiscardModalOpen(false)}>
-              <div
-                className="pa-modal-dialog"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="discard-draft-title"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="pa-modal-header">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 8,
-                        background: '#fef2f2',
-                        color: '#dc2626',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <AlertTriangle size={18} />
+          {discardModalOpen &&
+            draftNo !== null &&
+            typeof document !== 'undefined' &&
+            createPortal(
+              <div className="pulse-ui pa-modal-overlay" onClick={() => setDiscardModalOpen(false)}>
+                <div
+                  className="pa-modal-dialog"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="discard-draft-title"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="pa-modal-header">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 8,
+                          background: '#fef2f2',
+                          color: '#dc2626',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <AlertTriangle size={18} />
+                      </div>
+                      <h2 id="discard-draft-title" className="pa-modal-title">
+                        Hủy bản nháp v{draftNo}
+                      </h2>
                     </div>
-                    <h2 id="discard-draft-title" className="pa-modal-title">
-                      Hủy bản nháp v{draftNo}
-                    </h2>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-small"
+                      onClick={() => setDiscardModalOpen(false)}
+                      aria-label="Đóng"
+                    >
+                      <X size={15} />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-small"
-                    onClick={() => setDiscardModalOpen(false)}
-                    aria-label="Đóng"
-                  >
-                    <X size={15} />
-                  </button>
-                </div>
 
-                <div className="pa-modal-body">
-                  <p style={{ fontSize: 13.5, color: '#334155', lineHeight: 1.5, margin: 0 }}>
-                    Bạn có chắc chắn muốn hủy bản nháp <strong>v{draftNo}</strong>?
-                  </p>
-                  <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5, marginTop: 8, marginBottom: 0 }}>
-                    Mọi điều chỉnh đơn giá và các khóa học mới thêm trong phiên bản nháp này sẽ bị xóa bỏ. Hệ thống sẽ quay về phiên bản chính thức <strong>v{currentNo}</strong> đang áp dụng.
-                  </p>
-                </div>
+                  <div className="pa-modal-body">
+                    <p style={{ fontSize: 13.5, color: '#334155', lineHeight: 1.5, margin: 0 }}>
+                      Bạn có chắc chắn muốn hủy bản nháp <strong>v{draftNo}</strong>?
+                    </p>
+                    <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5, marginTop: 8, marginBottom: 0 }}>
+                      Mọi điều chỉnh đơn giá và các khóa học mới thêm trong phiên bản nháp này sẽ bị xóa bỏ. Hệ thống sẽ quay về phiên bản chính thức <strong>v{currentNo}</strong> đang áp dụng.
+                    </p>
+                  </div>
 
-                <div className="pa-modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-small"
-                    onClick={() => setDiscardModalOpen(false)}
-                    disabled={discardDraft.isPending}
-                  >
-                    Đóng
-                  </button>
-                  <button
-                    type="button"
-                    className="pa-btn-danger-solid"
-                    onClick={onConfirmDiscard}
-                    disabled={discardDraft.isPending}
-                  >
-                    <Trash2 size={14} />
-                    <span>{discardDraft.isPending ? 'Đang hủy...' : 'Xác nhận hủy bản nháp'}</span>
-                  </button>
+                  <div className="pa-modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-small"
+                      onClick={() => setDiscardModalOpen(false)}
+                      disabled={discardDraft.isPending}
+                    >
+                      Đóng
+                    </button>
+                    <button
+                      type="button"
+                      className="pa-btn-danger-solid"
+                      onClick={onConfirmDiscard}
+                      disabled={discardDraft.isPending}
+                    >
+                      <Trash2 size={14} />
+                      <span>{discardDraft.isPending ? 'Đang hủy…' : 'Xác nhận hủy bản nháp'}</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              </div>,
+              document.body,
+            )}
         </>
       )}
       <Footer />
@@ -1172,78 +1177,81 @@ function PriceTable({
       )}
 
       {/* Prompt Create Draft Modal when adding course without draft */}
-      {isPromptDraftOpen && (
-        <div className="pa-modal-overlay" onClick={() => setIsPromptDraftOpen(false)}>
-          <div
-            className="pa-modal-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="prompt-draft-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="pa-modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 8,
-                    background: '#fef3c7',
-                    color: '#d97706',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Sparkles size={18} />
+      {isPromptDraftOpen &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="pulse-ui pa-modal-overlay" onClick={() => setIsPromptDraftOpen(false)}>
+            <div
+              className="pa-modal-dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="prompt-draft-title"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="pa-modal-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      background: '#fef3c7',
+                      color: '#d97706',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Sparkles size={18} />
+                  </div>
+                  <h2 id="prompt-draft-title" className="pa-modal-title">
+                    Tạo bản nháp để thêm khóa học
+                  </h2>
                 </div>
-                <h2 id="prompt-draft-title" className="pa-modal-title">
-                  Tạo bản nháp để thêm khóa học
-                </h2>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-small"
+                  onClick={() => setIsPromptDraftOpen(false)}
+                  aria-label="Đóng"
+                >
+                  <X size={15} />
+                </button>
               </div>
-              <button
-                type="button"
-                className="btn btn-ghost btn-small"
-                onClick={() => setIsPromptDraftOpen(false)}
-                aria-label="Đóng"
-              >
-                <X size={15} />
-              </button>
-            </div>
 
-            <div className="pa-modal-body">
-              <p style={{ fontSize: 13.5, color: '#334155', lineHeight: 1.5, margin: 0 }}>
-                Các khóa học mới và điều chỉnh đơn giá được thực hiện trên một phiên bản nháp trước khi công bố chính thức.
-              </p>
-              <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5, marginTop: 8, marginBottom: 0 }}>
-                Bạn có muốn tạo bản nháp mới ngay bây giờ không?
-              </p>
-            </div>
+              <div className="pa-modal-body">
+                <p style={{ fontSize: 13.5, color: '#334155', lineHeight: 1.5, margin: 0 }}>
+                  Các khóa học mới và điều chỉnh đơn giá được thực hiện trên một phiên bản nháp trước khi công bố chính thức.
+                </p>
+                <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5, marginTop: 8, marginBottom: 0 }}>
+                  Bạn có muốn tạo bản nháp mới ngay bây giờ không?
+                </p>
+              </div>
 
-            <div className="pa-modal-footer">
-              <button
-                type="button"
-                className="btn btn-ghost btn-small"
-                onClick={() => setIsPromptDraftOpen(false)}
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary btn-small inline-flex items-center gap-1.5"
-                onClick={() => {
-                  setIsPromptDraftOpen(false);
-                  onCreateDraft();
-                }}
-                disabled={isCreatingDraft}
-              >
-                <Sparkles size={14} />
-                <span>{isCreatingDraft ? 'Đang tạo...' : 'Tạo bản nháp và tiếp tục'}</span>
-              </button>
+              <div className="pa-modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-small"
+                  onClick={() => setIsPromptDraftOpen(false)}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-small inline-flex items-center gap-1.5"
+                  onClick={() => {
+                    setIsPromptDraftOpen(false);
+                    onCreateDraft();
+                  }}
+                  disabled={isCreatingDraft}
+                >
+                  <Sparkles size={14} />
+                  <span>{isCreatingDraft ? 'Đang tạo…' : 'Tạo bản nháp và tiếp tục'}</span>
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
 
       {draftNo !== null && !canManage && (
         <p style={{ marginTop: 12, fontSize: 12, color: '#64748b', textAlign: 'center' }}>
@@ -1322,8 +1330,10 @@ function AddCourseModal({
     );
   };
 
-  return (
-    <div className="pa-modal-overlay" onClick={onClose}>
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div className="pulse-ui pa-modal-overlay" onClick={onClose}>
       <div
         className="pa-modal-dialog"
         role="dialog"
@@ -1357,7 +1367,7 @@ function AddCourseModal({
           </button>
         </div>
 
-        <form onSubmit={submit}>
+        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', overflow: 'hidden', minHeight: 0 }}>
           <div className="pa-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, fontWeight: 600, color: '#334155' }}>
@@ -1514,7 +1524,8 @@ function AddCourseModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

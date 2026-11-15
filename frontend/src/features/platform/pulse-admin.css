@@ -1610,26 +1610,38 @@
 }
 
 /* Platform Modal Dialog System */
-.pulse-ui .pa-modal-overlay {
+.pulse-ui .pa-modal-overlay,
+.pa-modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 23, 42, 0.45);
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.55);
   backdrop-filter: blur(4px);
-  display: grid;
-  place-items: center;
-  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
   padding: 16px;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
-.pulse-ui .pa-modal-dialog {
+.pulse-ui .pa-modal-dialog,
+.pa-modal-dialog {
   width: 100%;
   max-width: 520px;
+  max-height: min(90vh, 620px);
   background-color: #ffffff;
   border-radius: 14px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(15, 23, 42, 0.08);
   border: 1px solid #e2e8f0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   animation: pa-dialog-enter 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  margin: auto;
+  position: relative;
 }
 
 @keyframes pa-dialog-enter {
@@ -1643,16 +1655,19 @@
   }
 }
 
-.pulse-ui .pa-modal-header {
+.pulse-ui .pa-modal-header,
+.pa-modal-header {
   padding: 16px 20px;
   border-bottom: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   background-color: #ffffff;
+  flex-shrink: 0;
 }
 
-.pulse-ui .pa-modal-title {
+.pulse-ui .pa-modal-title,
+.pa-modal-title {
   font-size: 15px;
   font-weight: 700;
   color: #0f172a;
@@ -1660,11 +1675,15 @@
   line-height: 1.3;
 }
 
-.pulse-ui .pa-modal-body {
+.pulse-ui .pa-modal-body,
+.pa-modal-body {
   padding: 20px;
+  overflow-y: auto;
+  flex: 1 1 auto;
 }
 
-.pulse-ui .pa-modal-footer {
+.pulse-ui .pa-modal-footer,
+.pa-modal-footer {
   padding: 14px 20px;
   border-top: 1px solid #e2e8f0;
   background-color: #f8fafc;
@@ -1672,9 +1691,11 @@
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
+  flex-shrink: 0;
 }
 
-.pulse-ui .pa-btn-danger-solid {
+.pulse-ui .pa-btn-danger-solid,
+.pa-btn-danger-solid {
   background-color: #dc2626;
   color: #ffffff;
   border: 1px solid #b91c1c;
@@ -1689,11 +1710,13 @@
   transition: background-color 0.12s ease;
 }
 
-.pulse-ui .pa-btn-danger-solid:hover:not(:disabled) {
+.pulse-ui .pa-btn-danger-solid:hover:not(:disabled),
+.pa-btn-danger-solid:hover:not(:disabled) {
   background-color: #b91c1c;
 }
 
-.pulse-ui .pa-btn-danger-solid:disabled {
+.pulse-ui .pa-btn-danger-solid:disabled,
+.pa-btn-danger-solid:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
