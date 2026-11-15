@@ -10,13 +10,11 @@ import { btn } from '@/features/pulse-employee/lib/button';
 import { PULSE_PATHS } from '@/features/pulse-employee/lib/paths';
 import { apiErrorMessage } from '@/lib/utils';
 import { LevelBadge } from '../components/TrialUi';
-import { TIER_LABELS, formatWhen } from '../lib/trial-format';
+import { TIER_LABELS, domainTotals, formatWhen } from '../lib/trial-format';
 import { TrialExam } from '../components/TrialExam';
 import { TrialDisclosure } from '../components/TrialDisclosure';
 import { TrialEmployeeSurvey } from '../components/TrialEmployeeSurvey';
 import '../trial-program.css';
-
-const passedTier = (correct = 0, total = 0) => total > 0 && correct >= Math.ceil(total * .7);
 
 function DomainAccordionItem({
   domain,
@@ -120,66 +118,45 @@ function DomainAccordionItem({
             gap: 14,
           }}
         >
-          {/* Chi tiết điểm chỉ hiển thị khi có dữ liệu gốc. */}
-          {detail && <div>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: 8, letterSpacing: '0.04em' }}>{translateUi("Kết quả theo cấp · đạt từ 70%, liên tiếp từ Cơ bản")}</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-              {[
-                {
-                  tier: 'Cấp 1 · Cơ bản',
-                  correct: detail?.basicCorrect ?? 0,
-                  total: detail?.basicTotal ?? 1,
-                  passed: passedTier(detail?.basicCorrect, detail?.basicTotal),
-                },
-                {
-                  tier: 'Cấp 2 · Trung cấp',
-                  correct: detail?.intermediateCorrect ?? 0,
-                  total: detail?.intermediateTotal ?? 1,
-                  passed: passedTier(detail?.intermediateCorrect, detail?.intermediateTotal) && passedTier(detail?.basicCorrect, detail?.basicTotal),
-                },
-                {
-                  tier: 'Cấp 3 · Nâng cao',
-                  correct: detail?.advancedCorrect ?? 0,
-                  total: detail?.advancedTotal ?? 1,
-                  passed: passedTier(detail?.advancedCorrect, detail?.advancedTotal) && passedTier(detail?.intermediateCorrect, detail?.intermediateTotal) && passedTier(detail?.basicCorrect, detail?.basicTotal),
-                },
-              ].map((tierItem, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    background: '#fff',
-                    border: `1.5px solid ${tierItem.passed ? '#86efac' : '#e2e8f0'}`,
-                    borderRadius: 8,
-                    padding: '10px 12px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 4,
-                  }}
-                >
-                  <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>{tierItem.tier}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: tierItem.passed ? '#15803d' : '#334155' }}>
-                      {tierItem.correct}/{tierItem.total} <small style={{ fontSize: 11, fontWeight: 400 }}>{translateUi("câu")}</small>
-                    </span>
-                    <span
+          {/* Chi tiết điểm chỉ hiển thị khi có dữ liệu gốc. Mức tính theo tỷ lệ đúng của cả lĩnh vực; số câu từng cấp để tham khảo. */}
+          {detail && (() => {
+            const totals = domainTotals(detail);
+            return (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: 8, letterSpacing: '0.04em' }}>
+                  {translateUi('Trắc nghiệm')} · {translateUi('đúng')} {totals.correct}/{totals.total} {translateUi('câu')} ({totals.percent}%)
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                  {[
+                    { tier: 'Câu Cơ bản', correct: detail.basicCorrect ?? 0, total: detail.basicTotal ?? 0 },
+                    { tier: 'Câu Trung cấp', correct: detail.intermediateCorrect ?? 0, total: detail.intermediateTotal ?? 0 },
+                    { tier: 'Câu Nâng cao', correct: detail.advancedCorrect ?? 0, total: detail.advancedTotal ?? 0 },
+                  ].map((tierItem) => (
+                    <div
+                      key={tierItem.tier}
                       style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        padding: '2px 6px',
-                        borderRadius: 4,
-                        background: tierItem.passed ? '#dcfce7' : '#f1f5f9',
-                        color: tierItem.passed ? '#166534' : '#64748b',
+                        background: '#fff',
+                        border: '1.5px solid #e2e8f0',
+                        borderRadius: 8,
+                        padding: '10px 12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 4,
                       }}
                     >
-                      {tierItem.passed ? 'Đạt' : translateUi('Chưa đạt')}
-                    </span>
-                  </div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>{translateUi(tierItem.tier)}</div>
+                      <span style={{ fontSize: 16, fontWeight: 700, color: '#334155' }}>
+                        {tierItem.correct}/{tierItem.total} <small style={{ fontSize: 11, fontWeight: 400 }}>{translateUi('câu')}</small>
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          }
+                <p style={{ margin: '8px 0 0', fontSize: 12, color: '#64748b' }}>
+                  {translateUi('Mức theo tỷ lệ đúng của cả lĩnh vực: từ 40% Cơ bản, từ 60% Trung cấp, từ 80% Nâng cao.')}
+                </p>
+              </div>
+            );
+          })()}
           {/* Lý do chi tiết & Đánh giá */}
           <div
             style={{
@@ -202,7 +179,7 @@ function DomainAccordionItem({
               {detail?.gapText ||
                 (isPassed
                   ? translateUi(`Đã đạt mức ${detail?.levelLabel ?? TIER_LABELS[level]}. Kết quả được chấm tự động từ bài khảo sát.`)
-                  : `Chưa đạt số câu đúng tối thiểu ở cấp Cơ bản. Cần củng cố thêm nền tảng ở lĩnh vực này.`)}
+                  : translateUi('Đúng dưới 40% số câu của lĩnh vực. Cần củng cố thêm nền tảng ở lĩnh vực này.'))}
             </div>
           </div>
 
@@ -277,14 +254,15 @@ export function TrialTestPage() {
 
       {data.status === 'NOT_STARTED' && (
         <section className="tp-card">
+          {/* The survey does not tell employees which level a question tests: only domains and question counts. */}
           <div className="tp-grid-2">
-            {[1, 2, 3].map((tier) => (
-              <div key={tier} className="tp-stat">
-                <span>{translateUi("Phần ")}{tier}</span>
-                <strong style={{ fontSize: 16 }}>{translateUi(TIER_LABELS[tier])}</strong>
-                <span>{data.choiceCount / 3} câu trắc nghiệm</span>
-              </div>
-            ))}
+            <div className="tp-stat">
+              <span>{translateUi('Trắc nghiệm')}</span>
+              <strong style={{ fontSize: 16 }}>{data.choiceCount} {translateUi('câu')}</strong>
+              <span>
+                {data.domains.length || 6} {translateUi('lĩnh vực')} · {Math.round(data.choiceCount / Math.max(1, data.domains.length || 6))} {translateUi('câu mỗi lĩnh vực')}
+              </span>
+            </div>
           </div>
           <p className="tp-muted tp-row">{translateUi("Cần: ")}<Monitor size={14} aria-hidden /> chia sẻ màn hình · <Camera size={14} aria-hidden /> camera · <Mic size={14} aria-hidden /> micro · làm một lần.
           </p>
@@ -354,5 +332,12 @@ export function TrialExamPage() {
   if (isLoading) return null;
   entered.current ??= Boolean(data?.canStart);
   if (!entered.current || !data) return <Navigate to={PULSE_PATHS.trialTest} replace />;
-  return <TrialExam organizationName={data.organizationName} deadline={data.testDeadline} />;
+  return (
+    <TrialExam
+      organizationName={data.organizationName}
+      deadline={data.testDeadline}
+      choiceCount={data.choiceCount}
+      domainCount={data.domains.length || 6}
+    />
+  );
 }

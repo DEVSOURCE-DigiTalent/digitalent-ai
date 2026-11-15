@@ -21,6 +21,7 @@ public class QuestionConfiguration : IEntityTypeConfiguration<Question>
         builder.Property(x => x.Difficulty).HasMaxLength(30);
         builder.Property(x => x.Content).IsRequired();
         builder.Property(x => x.Status).IsRequired().HasMaxLength(30);
+        builder.Property(x => x.IsFinalQuiz).IsRequired();
 
         builder.HasOne<QuestionBank>().WithMany().HasForeignKey(x => x.BankId);
         builder.HasOne<Competency>().WithMany().HasForeignKey(x => x.CompetencyId);

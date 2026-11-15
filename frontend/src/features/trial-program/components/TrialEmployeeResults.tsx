@@ -5,7 +5,7 @@ import { PULSE_PATHS } from '@/features/pulse-employee/lib/paths';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { PulseOverview } from '@/services/pulse.service';
 import type { MyTrialAssessment } from '@/services/trial-program.service';
-import { TIER_LABELS } from '../lib/trial-format';
+import { TIER_LABELS, domainTotals } from '../lib/trial-format';
 import '../trial-employee-results.css';
 
 function levelName(level: number) {
@@ -111,6 +111,15 @@ export function TrialEmployeeResults({ assessment, overview }: {
                 </button>
                 {open && (
                   <div className="tt-domain-body">
+                    {detail && (() => {
+                      const totals = domainTotals(detail);
+                      return (
+                        <p className="tt-card-desc">
+                          {translateUi('Đúng')} <strong>{totals.correct}/{totals.total}</strong> {translateUi('câu')} ({totals.percent}%) ·{' '}
+                          {translateUi('từ 40% Cơ bản, từ 60% Trung cấp, từ 80% Nâng cao')}
+                        </p>
+                      );
+                    })()}
                     <div className="tt-tier-results-grid">
                       {tiers.map(([right, count], tier) => (
                         <div key={tier} className="tt-tier-result-card">

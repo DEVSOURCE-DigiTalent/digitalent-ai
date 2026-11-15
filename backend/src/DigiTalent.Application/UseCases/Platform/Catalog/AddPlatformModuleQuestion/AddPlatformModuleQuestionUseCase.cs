@@ -38,6 +38,7 @@ public class AddPlatformModuleQuestionUseCase : IUseCase<AddPlatformModuleQuesti
             QuestionText = input.Text?.Trim() ?? string.Empty,
             Explanation = string.IsNullOrWhiteSpace(input.Explanation) ? null : input.Explanation.Trim(),
             BlockId = input.BlockId ?? (blocks.Count > 0 ? blocks[0] : null),
+            IsFinalQuiz = input.IsFinalQuiz ?? false,
         };
         _context.PlatformModuleQuestions.Add(question);
         var options = input.Options ?? new List<PlatformOptionInput> { new() { IsCorrect = true }, new(), new() };

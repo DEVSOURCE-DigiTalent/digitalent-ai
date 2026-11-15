@@ -265,6 +265,7 @@ public class PlatformModuleQuestionConfiguration : IEntityTypeConfiguration<Plat
         builder.HasKey(q => q.Id);
         builder.Property(q => q.QuestionText).IsRequired().HasMaxLength(1000);
         builder.Property(q => q.Explanation).HasMaxLength(1000);
+        builder.Property(q => q.IsFinalQuiz).IsRequired();
         builder.HasIndex(q => new { q.ModuleId, q.SortOrder }).HasDatabaseName("ix_platform_module_questions_module");
         builder.HasOne<PlatformCourseModule>().WithMany().HasForeignKey(q => q.ModuleId);
         builder.HasOne<PlatformModuleBlock>().WithMany().HasForeignKey(q => q.BlockId);

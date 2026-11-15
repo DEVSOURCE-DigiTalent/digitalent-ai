@@ -22,13 +22,12 @@ namespace DigiTalent.Tests.Trial;
 public class TrialProgramFlowTests
 {
     [Fact]
-    public void Suggested_level_is_the_highest_tier_passed_in_a_row()
+    public void Suggested_level_comes_from_the_share_of_right_answers_in_the_domain()
     {
         TrialProgramRules.SuggestedLevel(new[] { (1, 1), (1, 1), (1, 1) }).Should().Be(3);
-        TrialProgramRules.SuggestedLevel(new[] { (1, 1), (0, 1), (1, 1) }).Should().Be(1);
-        TrialProgramRules.SuggestedLevel(new[] { (0, 1), (1, 1), (1, 1) }).Should().Be(0);
-        TrialProgramRules.SuggestedLevel(new[] { (1, 2), (2, 2), (0, 0) }).Should().Be(0);
-        TrialProgramRules.SuggestedLevel(new[] { (2, 2), (2, 3), (0, 0) }).Should().Be(1);
+        TrialProgramRules.SuggestedLevel(new[] { (1, 1), (0, 1), (1, 1) }).Should().Be(2);
+        TrialProgramRules.SuggestedLevel(new[] { (0, 1), (0, 1), (1, 1) }).Should().Be(0);
+        TrialProgramRules.SuggestedLevel(new[] { (2, 2), (2, 3), (0, 0) }).Should().Be(3);
     }
 
     [Fact]
@@ -74,8 +73,8 @@ public class TrialProgramFlowTests
         mine.Domains.Should().HaveCount(6);
         var session = await asEmployee.Start.ExecuteAsync(new StartMyTrialAssessmentUseCaseInput());
         session.Kind.Should().Be(Statuses.ProctoringKind.TrialAssessment);
-        // Một câu cho mỗi ô lĩnh vực × cấp có câu ôn tập (dữ liệu Development đầy đủ: 18 câu), xếp Cơ bản → Nâng cao.
-        session.Questions.Should().NotBeEmpty().And.HaveCountLessThanOrEqualTo(54);
+        // Năm câu cho mỗi ô lĩnh vực × cấp có câu ôn tập (dữ liệu Development đầy đủ: 90 câu), xếp Cơ bản → Nâng cao.
+        session.Questions.Should().NotBeEmpty().And.HaveCountLessThanOrEqualTo(90);
         session.Questions.Select(q => q.Tier).Should().BeInAscendingOrder();
         session.Questions.Select(q => q.Tier).Distinct().Should().BeEquivalentTo(new[] { 1, 2, 3 });
         world.Context.ChangeTracker.Clear();

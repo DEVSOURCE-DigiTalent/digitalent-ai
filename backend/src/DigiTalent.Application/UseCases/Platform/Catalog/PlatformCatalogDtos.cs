@@ -156,6 +156,8 @@ public class PlatformQuestionDto
     public string? Explanation { get; set; }
     /// <summary>The block the learner reopens after answering this question wrong.</summary>
     public Guid? BlockId { get; set; }
+    /// <summary>The question belongs to the course's final multiple-choice test of the curriculum.</summary>
+    public bool IsFinalQuiz { get; set; }
     public List<PlatformOptionDto> Options { get; set; } = new();
 }
 

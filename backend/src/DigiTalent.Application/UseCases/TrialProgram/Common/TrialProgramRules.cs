@@ -14,8 +14,8 @@ public static class TrialProgramRules
     /// <summary>Số nhân viên tối đa của một doanh nghiệp dùng thử (không tính chủ doanh nghiệp).</summary>
     public const int MaxParticipants = 30;
 
-    /// <summary>Số câu trắc nghiệm cho mỗi (lĩnh vực, cấp): 6 lĩnh vực × 3 cấp → 18 câu.</summary>
-    public const int ChoicePerCell = 1;
+    /// <summary>Số câu trắc nghiệm cho mỗi (lĩnh vực, cấp): 6 lĩnh vực × 3 cấp × 5 câu → 90 câu (15 câu mỗi lĩnh vực).</summary>
+    public const int ChoicePerCell = 5;
 
     public const int MinEssayLength = 30;
     public const int MaxEssayLength = 6000;
@@ -68,14 +68,68 @@ public static class TrialProgramRules
     };
 
     /// <summary>
-    /// Mức gợi ý của một lĩnh vực từ trắc nghiệm: cấp cao nhất mà mọi cấp từ Cơ bản tới đó đều đạt (≥ 70% số câu của cấp).
+    /// Ma trận đề của một ô (lĩnh vực, cấp): rút <paramref name="count"/> câu lần lượt từng mô đun theo vòng tròn, bắt đầu ở
+    /// mô đun <paramref name="start"/> (chia lấy dư cho số mô đun). Mô đun k của ba khóa Cơ bản / Trung cấp / Nâng cao cùng
+    /// một năng lực TT02 (x.k), nên khi cấp sau nối tiếp vòng của cấp trước (start = (cấp − 1) × <see cref="ChoicePerCell"/>)
+    /// mỗi năng lực của lĩnh vực được hỏi đều nhau: 3 mô đun → 5/5/5, 4 → 4/4/4/3, 6 → 3/3/3/2/2/2 câu.
+    /// Mô đun hết câu thì bỏ qua; câu bị <paramref name="accept"/> từ chối (trùng nội dung) được thay bằng câu kế tiếp của
+    /// chính mô đun đó.
     /// </summary>
-    public static short SuggestedLevel(IReadOnlyList<(int Correct, int Total)> byTier)
+    public static List<T> SpreadOverModules<T>(IReadOnlyList<Queue<T>> modules, int start, int count, Func<T, bool> accept)
     {
-        short level = 0;
-        foreach (var (correct, total) in byTier)
+        var picked = new List<T>();
+        if (modules.Count == 0)
         {
-            if (total == 0 || correct < PulseRules.ChoicePassMark(total))
+            return picked;
+        }
+
+        var index = ((start % modules.Count) + modules.Count) % modules.Count;
+        while (picked.Count < count && modules.Any(m => m.Count > 0))
+        {
+            var queue = modules[index];
+            index = (index + 1) % modules.Count;
+            while (queue.Count > 0)
+            {
+                var next = queue.Dequeue();
+                if (accept(next))
+                {
+                    picked.Add(next);
+                    break;
+                }
+            }
+        }
+
+        return picked;
+    }
+
+    /// <summary>
+    /// Tỷ lệ câu đúng của cả lĩnh vực (%) cần để đạt mức 1 Cơ bản / 2 Trung cấp / 3 Nâng cao. Với 15 câu: 6 / 9 / 12 câu.
+    /// Giao diện báo cáo dùng cùng mốc (trial-format.ts LEVEL_SHARE_PERCENTS).
+    /// </summary>
+    public static readonly IReadOnlyList<int> LevelSharePercents = new[] { 40, 60, 80 };
+
+    /// <summary>
+    /// Mức gợi ý của một lĩnh vực từ trắc nghiệm: tỷ lệ câu đúng trên tổng số câu đã phát của lĩnh vực, mọi cấp cộng lại
+    /// (<see cref="LevelFromShare"/>). Số câu từng cấp chỉ để hiển thị.
+    /// </summary>
+    public static short SuggestedLevel(IReadOnlyList<(int Correct, int Total)> byTier) =>
+        LevelFromShare(byTier.Sum(t => t.Correct), byTier.Sum(t => t.Total));
+
+    /// <summary>
+    /// Dưới 40% → 0 (chưa đạt cấp nào), từ 40% → 1, từ 60% → 2, từ 80% → 3. Chia cho số câu thật đã phát, nên một lĩnh vực
+    /// thiếu câu (khóa có ít câu ôn tập) vẫn tính đúng tỷ lệ.
+    /// </summary>
+    public static short LevelFromShare(int correct, int total)
+    {
+        if (total <= 0)
+        {
+            return 0;
+        }
+
+        short level = 0;
+        foreach (var percent in LevelSharePercents)
+        {
+            if (correct * 100 < total * percent)
             {
                 break;
             }

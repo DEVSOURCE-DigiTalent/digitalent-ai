@@ -99,6 +99,10 @@ public class PlatformCatalogTests
     public async Task Draft_IsADeepCopyOfTheVersionInUse_AndOnlyTheDraftCanBeEdited()
     {
         await using var world = await CreateWorldAsync();
+        var courseId = await world.CourseIdAsync("M6-I");
+        var firstQuestionId = (await world.CourseAsync(1, courseId)).Modules[0].Questions[0].QuestionId;
+        (await world.Context.PlatformModuleQuestions.SingleAsync(q => q.Id == firstQuestionId)).IsFinalQuiz = true;
+        await world.Context.SaveChangesAsync();
         var draft = await world.CreateDraftAsync();
         world.Context.ChangeTracker.Clear();
 
@@ -108,10 +112,11 @@ public class PlatformCatalogTests
         draft.Editable.Should().BeTrue();
         draft.Courses.Should().HaveCount(18).And.OnlyContain(c => c.ChangeKind == PlatformCatalog.ChangeKind.Unchanged);
 
-        var courseId = await world.CourseIdAsync("M6-I");
         var inUse = await world.CourseAsync(1, courseId);
         var copy = await world.CourseAsync(2, courseId);
         copy.Modules.Select(m => m.Title).Should().Equal(inUse.Modules.Select(m => m.Title));
+        copy.Modules[0].Questions.Select(q => q.IsFinalQuiz).Should().Equal(inUse.Modules[0].Questions.Select(q => q.IsFinalQuiz));
+        copy.Modules[0].Questions[0].IsFinalQuiz.Should().BeTrue("cờ câu cuối khóa đi theo bản sao");
         copy.Modules.Select(m => m.ModuleId).Should().NotIntersectWith(inUse.Modules.Select(m => m.ModuleId), "bản nháp có bản sao riêng");
         copy.Modules[0].Questions[0].BlockId.Should().Be(copy.Modules[0].Blocks[0].BlockId, "câu hỏi gắn với khối trong bản sao");
 

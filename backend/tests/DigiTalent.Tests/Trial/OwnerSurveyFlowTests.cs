@@ -24,13 +24,110 @@ namespace DigiTalent.Tests.Trial;
 public class OwnerSurveyFlowTests
 {
     [Fact]
-    public void Suggested_level_is_the_highest_tier_passed_in_a_row()
+    public void Suggested_level_comes_from_the_share_of_right_answers_in_the_domain()
     {
         TrialProgramRules.SuggestedLevel(new[] { (1, 1), (1, 1), (1, 1) }).Should().Be(3);
-        TrialProgramRules.SuggestedLevel(new[] { (1, 1), (0, 1), (1, 1) }).Should().Be(1);
-        TrialProgramRules.SuggestedLevel(new[] { (0, 1), (1, 1), (1, 1) }).Should().Be(0);
-        TrialProgramRules.SuggestedLevel(new[] { (1, 2), (2, 2), (0, 0) }).Should().Be(0);
-        TrialProgramRules.SuggestedLevel(new[] { (2, 2), (2, 3), (0, 0) }).Should().Be(1);
+        TrialProgramRules.SuggestedLevel(new[] { (1, 1), (0, 1), (1, 1) }).Should().Be(2);
+        TrialProgramRules.SuggestedLevel(new[] { (0, 1), (0, 1), (1, 1) }).Should().Be(0);
+        TrialProgramRules.SuggestedLevel(new[] { (1, 2), (2, 2), (0, 0) }).Should().Be(2);
+        TrialProgramRules.SuggestedLevel(new[] { (0, 0), (0, 0), (0, 0) }).Should().Be(0);
+    }
+
+    [Fact]
+    public void Survey_of_fifteen_questions_per_domain_uses_six_nine_and_twelve_right_answers()
+    {
+        TrialProgramRules.LevelFromShare(5, 15).Should().Be(0);
+        TrialProgramRules.LevelFromShare(6, 15).Should().Be(1);
+        TrialProgramRules.LevelFromShare(8, 15).Should().Be(1);
+        TrialProgramRules.LevelFromShare(9, 15).Should().Be(2);
+        TrialProgramRules.LevelFromShare(11, 15).Should().Be(2);
+        TrialProgramRules.LevelFromShare(12, 15).Should().Be(3);
+        TrialProgramRules.LevelFromShare(15, 15).Should().Be(3);
+
+        // Solid at Basic only, solid up to Intermediate, and the disputed case (Basic forgotten, harder levels right).
+        TrialProgramRules.SuggestedLevel(new[] { (5, 5), (2, 5), (0, 5) }).Should().Be(1);
+        TrialProgramRules.SuggestedLevel(new[] { (5, 5), (4, 5), (1, 5) }).Should().Be(2);
+        TrialProgramRules.SuggestedLevel(new[] { (2, 5), (5, 5), (5, 5) }).Should().Be(3);
+        TrialProgramRules.SuggestedLevel(new[] { (3, 5), (1, 5), (1, 5) }).Should().Be(0);
+        // A domain short of questions is measured on the questions it really had: 4 of 10 is 40%.
+        TrialProgramRules.SuggestedLevel(new[] { (3, 5), (1, 3), (0, 2) }).Should().Be(1);
+    }
+
+    [Theory]
+    [InlineData(3, new[] { 5, 5, 5 })]
+    [InlineData(4, new[] { 4, 4, 4, 3 })]
+    [InlineData(6, new[] { 3, 3, 3, 2, 2, 2 })]
+    [InlineData(7, new[] { 3, 2, 2, 2, 2, 2, 2 })]
+    public void The_fifteen_questions_of_a_domain_cover_every_module_evenly(int moduleCount, int[] expected)
+    {
+        // Module k of the Basic, Intermediate and Advanced courses is the same TT02 competency x.k.
+        var perModule = new int[moduleCount];
+        for (var tier = 1; tier <= PulseRules.MaxLevel; tier++)
+        {
+            var modules = Enumerable.Range(0, moduleCount).Select(m => new Queue<int>(Enumerable.Repeat(m, 20))).ToList();
+            var picked = TrialProgramRules.SpreadOverModules(
+                modules, (tier - 1) * TrialProgramRules.ChoicePerCell, TrialProgramRules.ChoicePerCell, _ => true);
+            picked.Should().HaveCount(TrialProgramRules.ChoicePerCell);
+            foreach (var module in picked) perModule[module]++;
+        }
+
+        perModule.Should().Equal(expected);
+    }
+
+    [Fact]
+    public void A_module_without_questions_is_skipped_and_a_repeated_question_is_replaced_from_the_same_module()
+    {
+        var seen = new HashSet<string> { "c-dup" };
+        var modules = new List<Queue<string>> { new(new[] { "a1", "a2", "a3" }), new(), new(new[] { "c1", "c-dup", "c2" }) };
+
+        TrialProgramRules.SpreadOverModules(modules, 0, 5, q => seen.Add(q)).Should().Equal("a1", "c1", "a2", "c2", "a3");
+        TrialProgramRules.SpreadOverModules(new List<Queue<string>> { new(new[] { "x" }), new() }, 1, 5, _ => true)
+            .Should().Equal(new[] { "x" }, "the draw stops when every module is empty");
+        TrialProgramRules.SpreadOverModules(new List<Queue<string>>(), 0, 5, _ => true).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Survey_draws_the_final_test_questions_first_spread_over_the_modules()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var employee = await world.EmployeeAsync(PulseTestWorld.EmployeeEmail);
+        var context = world.Context;
+        var catalog = new PulseCatalogReader(context);
+        var moduleReader = new PulseModuleReader(context);
+        var paperBuilder = new TrialAssessmentPaper(context, catalog, moduleReader);
+        var firstDomain = (await paperBuilder.LoadDomainsAsync(employee.OrganizationId))[0];
+        var course = (await catalog.LoadAsync(employee.OrganizationId)).First(c => c.CategoryId == firstDomain.CategoryId && c.Tier == 1);
+        var modules = (await moduleReader.LoadModulesAsync(new[] { course.CourseId }, includeContent: false))[course.CourseId]
+            .Where(m => m.QuizAssessmentId.HasValue).ToList();
+        modules.Count.Should().BeGreaterThanOrEqualTo(3, "two final-test questions per module then cover the five questions of the cell");
+
+        var moduleOfFinal = new Dictionary<Guid, int>();
+        for (var index = 0; index < modules.Count; index++)
+        {
+            var quizId = modules[index].QuizAssessmentId!.Value;
+            var ids = await context.AssessmentQuestions.Where(l => l.AssessmentId == quizId)
+                .OrderBy(l => l.SortOrder).Select(l => l.QuestionId).Take(2).ToListAsync();
+            foreach (var question in await context.Questions.Where(q => ids.Contains(q.Id)).ToListAsync())
+            {
+                question.IsFinalQuiz = true;
+                moduleOfFinal[question.Id] = index;
+            }
+        }
+
+        await context.SaveChangesAsync();
+
+        var paper = await paperBuilder.BuildAsync(employee.OrganizationId, employee.Id);
+        var cell = paper.Items.Where(i => i.CategoryId == firstDomain.CategoryId && i.Tier == 1).ToList();
+        cell.Should().HaveCount(TrialProgramRules.ChoicePerCell);
+        cell.Should().OnlyContain(i => moduleOfFinal.ContainsKey(i.Question.QuestionId), "final-test questions come before review questions");
+        var expected = Enumerable.Range(0, modules.Count)
+            .Select(m => Enumerable.Range(0, TrialProgramRules.ChoicePerCell).Count(slot => slot % modules.Count == m));
+        Enumerable.Range(0, modules.Count)
+            .Select(m => cell.Count(i => moduleOfFinal[i.Question.QuestionId] == m))
+            .Should().Equal(expected, "the Basic cell starts the round at the first module");
+
+        var again = await paperBuilder.BuildAsync(employee.OrganizationId, employee.Id);
+        again.Items.Select(i => i.Question.QuestionId).Should().Equal(paper.Items.Select(i => i.Question.QuestionId), "one fixed paper per employee");
     }
 
     [Fact]
@@ -52,7 +149,7 @@ public class OwnerSurveyFlowTests
         var session = await asEmployee.Start.ExecuteAsync(new StartMyTrialAssessmentUseCaseInput());
         session.Essays.Should().BeEmpty();
         session.Kind.Should().Be(Statuses.ProctoringKind.TrialAssessment);
-        session.Questions.Should().HaveCount(18);
+        session.Questions.Should().HaveCount(90);
         session.Questions.Select(q => q.Tier).Should().BeInAscendingOrder();
         session.Questions.Select(q => q.Tier).Distinct().Should().BeEquivalentTo(new[] { 1, 2, 3 });
         var employeeUc = await world.AsAsync(PulseTestWorld.EmployeeEmail);
