@@ -331,5 +331,12 @@ export function TrialExamPage() {
   if (isLoading) return null;
   entered.current ??= Boolean(data?.canStart);
   if (!entered.current || !data) return <Navigate to={PULSE_PATHS.trialTest} replace />;
-  return <TrialExam organizationName={data.organizationName} deadline={data.testDeadline} />;
+  return (
+    <TrialExam
+      organizationName={data.organizationName}
+      deadline={data.testDeadline}
+      choiceCount={data.choiceCount}
+      domainCount={data.domains.length || 6}
+    />
+  );
 }

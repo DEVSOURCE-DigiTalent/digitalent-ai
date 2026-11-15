@@ -65,7 +65,13 @@ function useTrialProctor() {
  * Đề trắc nghiệm phủ 6 lĩnh vực năng lực số ở ba cấp.
  * 100% trắc nghiệm khách quan, không có tự luận. Nộp bài xong hệ thống chấm tự động và ghi nhận kết quả.
  */
-export function TrialExam({ organizationName, deadline }: { organizationName: string; deadline?: string | null }) {
+export function TrialExam({ organizationName, deadline, choiceCount, domainCount = 6 }: {
+  organizationName: string;
+  deadline?: string | null;
+  /** Số câu trắc nghiệm của đề (GET /me/trial-assessment), để giới thiệu trước khi mở đề. */
+  choiceCount?: number;
+  domainCount?: number;
+}) {
   const { controller, snapshot } = useTrialProctor();
   const submitExam = useSubmitTrialExam();
   const [stage, setStage] = useState<'check' | 'work' | 'submitting' | 'done'>('check');
@@ -332,6 +338,8 @@ export function TrialExam({ organizationName, deadline }: { organizationName: st
           onStart={start}
           error={error}
           deadline={deadline}
+          choiceCount={choiceCount}
+          domainCount={domainCount}
         />
       )}
 
@@ -865,6 +873,8 @@ function DeviceCheck({
   onStart,
   error,
   deadline,
+  choiceCount,
+  domainCount,
 }: {
   controller: ProctorController;
   snapshot: ProctorSnapshot;
@@ -873,6 +883,8 @@ function DeviceCheck({
   onStart: () => void;
   error: string | null;
   deadline?: string | null;
+  choiceCount?: number;
+  domainCount: number;
 }) {
   const supported = proctoringSupported();
   const ready = supported && snapshot.screen === 'on' && snapshot.camera === 'on' && snapshot.mic === 'on' && agree;
@@ -1075,7 +1087,7 @@ function DeviceCheck({
               <span>Cấu trúc đề đánh giá</span>
             </span>
             <h3 style={{ margin: '8px 0 2px', fontSize: 15.5, fontWeight: 700, color: '#0f172a' }}>
-              6 Lĩnh vực năng lực số
+              {domainCount} lĩnh vực năng lực số
             </h3>
             <p style={{ margin: 0, fontSize: 12.5, color: '#64748b' }}>
               100% trắc nghiệm chuẩn hóa chức danh
@@ -1085,12 +1097,14 @@ function DeviceCheck({
           <dl>
             <div>
               <dt>Số câu hỏi</dt>
-              <dd>Trắc nghiệm</dd>
+              <dd>{choiceCount ? `${choiceCount} câu trắc nghiệm` : 'Trắc nghiệm'}</dd>
             </div>
-            <div>
-              <dt>Phân bổ 3 cấp</dt>
-              <dd>18 Cơ bản · 18 Trung cấp · 18 Nâng cao</dd>
-            </div>
+            {choiceCount ? (
+              <div>
+                <dt>Mỗi lĩnh vực</dt>
+                <dd>{Math.round(choiceCount / Math.max(1, domainCount))} câu</dd>
+              </div>
+            ) : null}
             <div>
               <dt>Đánh giá</dt>
               <dd style={{ color: '#2563eb', fontWeight: 600 }}>Tự động chấm điểm</dd>
